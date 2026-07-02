@@ -7,7 +7,14 @@ open System.Collections.Generic
 open FSharp.Compiler.GeneratedNames
 open FSharp.Compiler.Syntax.PrettyNaming
 
-/// <summary>Provides stable compiler-generated names across hot reload sessions.</summary>
+/// <summary>
+/// Provides stable compiler-generated names across hot reload sessions.
+///
+/// Replay buckets are keyed by line-normalized basic name. Bucket values remain the
+/// original generation-0 full names, so a matched closure whose code moves from line
+/// 28 to line 30 still gets its line-28 birth name back. That mirrors Roslyn EnC:
+/// identity is established at first allocation and replayed exactly.
+/// </summary>
 type FSharpSynthesizedTypeMaps() =
     let syncLock = obj ()
     let buckets = ConcurrentDictionary<string, ResizeArray<string>>()
@@ -28,33 +35,23 @@ type FSharpSynthesizedTypeMaps() =
 
     let computeName basicName index = makeHotReloadName basicName index
 
-    let tryGetHotReloadOrdinal (basicName: string) (name: string) =
-        let hotReloadPrefix = basicName + "@hotreload"
+    let tryGetHotReloadOrdinal (mapKey: string) (name: string) =
+        match GeneratedNames.TryNormalizeHotReloadReplayName name with
+        | Some replayName when replayName.NormalizedBasicName = mapKey -> Some replayName.ReplayOrdinal
+        | _ -> None
 
-        if name.Equals(hotReloadPrefix, StringComparison.Ordinal) then
-            Some 0
-        elif name.StartsWith(hotReloadPrefix + "-", StringComparison.Ordinal) then
-            let suffix = name.Substring(hotReloadPrefix.Length + 1)
-
-            match Int32.TryParse suffix with
-            | true, ordinal when ordinal > 0 -> Some ordinal
+    let tryGetStableOrdinal (mapKey: string) (name: string) =
+        match GeneratedNames.TryNormalizeHotReloadReplayName name with
+        | Some replayName when replayName.NormalizedBasicName = mapKey -> Some [ replayName.ReplayOrdinal ]
+        | _ ->
+            match GeneratedNames.TryNormalizeHotReloadGenerationName name with
+            | Some generationName when generationName.NormalizedBasicName = mapKey -> Some generationName.OccurrenceOrdinal
             | _ -> None
-        else
-            None
 
-    let canonicalizeSnapshotNames basicName (names: string[]) =
-        // Occurrence-keyed closure names ({base}@hotreload#g{N}_o{chain})
-        // are managed by the closure name allocator's assigned-name table, never by
-        // sequence replay, so they are dropped from the replay bucket. The replay SLOT
-        // each one consumed at allocation time (consume-then-override at the IlxGen
-        // closure call site) is preserved by the ordinal-positioned placement below.
-        let names =
-            names
-            |> Array.filter (fun name -> not (GeneratedNames.IsHotReloadGenerationSuffixedName name))
-
+    let canonicalizeSnapshotNames mapKey (names: string[]) =
         let parsed =
             names
-            |> Array.mapi (fun index name -> index, name, tryGetHotReloadOrdinal basicName name)
+            |> Array.mapi (fun index name -> index, name, tryGetHotReloadOrdinal mapKey name)
 
         if parsed |> Array.forall (fun (_, _, ordinalOpt) -> ordinalOpt.IsSome) then
             // IL metadata can enumerate synthesized helpers in a different order than allocation.
@@ -82,44 +79,80 @@ type FSharpSynthesizedTypeMaps() =
                     |> Array.map (fun (_, name, ordinalOpt) -> ordinalOpt.Value, name)
                     |> Map.ofArray
 
+                let replayFillBasicName =
+                    let rawBasicNames =
+                        sorted
+                        |> Array.choose (fun (_, name, _) ->
+                            let rawBasicName = GetBasicNameOfPossibleCompilerGeneratedName name
+
+                            if String.Equals(GeneratedNames.SynthesizedNameMapKey rawBasicName, mapKey, StringComparison.Ordinal) then
+                                Some rawBasicName
+                            else
+                                None)
+                        |> Array.distinct
+
+                    match rawBasicNames with
+                    | [| rawBasicName |] -> rawBasicName
+                    | _ -> mapKey
+
                 Array.init (maxOrdinal + 1) (fun slot ->
                     match Map.tryFind slot namesByOrdinal with
                     | Some name -> name
-                    | None -> makeHotReloadName basicName slot)
+                    | None -> makeHotReloadName replayFillBasicName slot)
             else
                 sorted |> Array.map (fun (_, name, _) -> name)
         else
-            names
+            let parsed =
+                names
+                |> Array.mapi (fun index name -> index, name, tryGetStableOrdinal mapKey name)
 
-    /// Validates that a generated name starts with the basicName followed by '@'.
-    let validateName basicName (name: string) index =
+            if parsed |> Array.forall (fun (_, _, ordinalOpt) -> ordinalOpt.IsSome) then
+                let sorted =
+                    parsed
+                    |> Array.sortBy (fun (index, _, ordinalOpt) -> struct (ordinalOpt.Value, index))
+
+                let ordinalsAreDistinct =
+                    let ordinals = sorted |> Array.map (fun (_, _, ordinalOpt) -> ordinalOpt.Value)
+                    (Array.distinct ordinals).Length = ordinals.Length
+
+                if ordinalsAreDistinct then
+                    sorted |> Array.map (fun (_, name, _) -> name)
+                else
+                    names
+            else
+                names
+
+    let nameMapKeyFromSnapshotName (name: string) =
+        GetBasicNameOfPossibleCompilerGeneratedName name
+        |> GeneratedNames.SynthesizedNameMapKey
+
+    /// Validates that a generated name belongs to the normalized map key.
+    let validateName mapKey (name: string) index =
         // Snapshots can contain legacy/basic synthesized names (for example "@_instance")
         // alongside hot-reload-managed names. Accept both forms so existing sessions restore.
-        let expectedPrefix = basicName + "@"
+        let actualKey = nameMapKeyFromSnapshotName name
 
-        if
-            not (
-                name.Equals(basicName, StringComparison.Ordinal)
-                || name.StartsWith(expectedPrefix, StringComparison.Ordinal)
-            )
-        then
-            invalidArg
-                "snapshot"
-                $"Name '{name}' at index {index} should equal '{basicName}' or start with '{expectedPrefix}' for basicName '{basicName}'"
+        if not (String.Equals(actualKey, mapKey, StringComparison.Ordinal)) then
+            invalidArg "snapshot" $"Name '{name}' at index {index} belongs to normalized key '{actualKey}', not snapshot key '{mapKey}'"
 
     member _.GetOrAddName(basicName: string) =
         lock syncLock (fun () ->
-            let bucket = buckets.GetOrAdd(basicName, fun _ -> ResizeArray())
+            let mapKey = GeneratedNames.SynthesizedNameMapKey basicName
+            let bucket = buckets.GetOrAdd(mapKey, fun _ -> ResizeArray())
 
             // Keep ordinal reservation and bucket mutation in one critical section so
             // concurrent callers cannot observe or produce out-of-order allocations.
+            // The ordinal is intentionally the encounter order within the normalized
+            // bucket. If same-bucket closures are reordered, the downstream
+            // positional-pairing shape guard owns that concern; this allocator only
+            // replays generation-0 names for matching allocation slots.
             let index =
-                match ordinals.TryGetValue basicName with
+                match ordinals.TryGetValue mapKey with
                 | true, current ->
-                    ordinals[basicName] <- current + 1
+                    ordinals[mapKey] <- current + 1
                     current
                 | _ ->
-                    ordinals[basicName] <- 1
+                    ordinals[mapKey] <- 1
                     0
 
             if index < bucket.Count then
@@ -151,13 +184,33 @@ type FSharpSynthesizedTypeMaps() =
             buckets.Clear()
             ordinals.Clear()
 
+            let normalizedBuckets =
+                Dictionary<string, ResizeArray<string>>(StringComparer.Ordinal)
+
             for struct (basicName, names) in snapshot do
-                // Validate each name matches expected pattern
-                names |> Array.iteri (fun i name -> validateName basicName name i)
-                let canonicalNames = canonicalizeSnapshotNames basicName names
-                let bucket = createBucket canonicalNames
-                buckets[basicName] <- bucket
-                ordinals[basicName] <- 0)
+                let mapKey = GeneratedNames.SynthesizedNameMapKey basicName
+
+                // Validate each name matches the normalized key. Loading normalizes
+                // old raw-key snapshots, so on-disk baselines captured before this
+                // change replay through the same line-stable buckets.
+                names |> Array.iteri (fun i name -> validateName mapKey name i)
+                let canonicalNames = canonicalizeSnapshotNames mapKey names
+
+                let bucket =
+                    match normalizedBuckets.TryGetValue mapKey with
+                    | true, existing -> existing
+                    | _ ->
+                        let created = ResizeArray<string>()
+                        normalizedBuckets[mapKey] <- created
+                        created
+
+                for name in canonicalNames do
+                    if not (bucket.Contains name) then
+                        bucket.Add name
+
+            for KeyValue(mapKey, bucket) in normalizedBuckets do
+                buckets[mapKey] <- createBucket (bucket.ToArray())
+                ordinals[mapKey] <- 0)
 
     interface ICompilerGeneratedNameMap with
         member this.BeginSession() = this.BeginSession()

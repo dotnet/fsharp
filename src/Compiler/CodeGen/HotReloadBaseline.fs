@@ -9,6 +9,7 @@ open FSharp.Compiler.AbstractIL.ILBinaryWriter
 open FSharp.Compiler.AbstractIL.BinaryConstants
 open FSharp.Compiler.AbstractIL.ILDeltaHandles
 open FSharp.Compiler.EncMethodDebugInformation
+open FSharp.Compiler.GeneratedNames
 open FSharp.Compiler.IlxGen
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.TypedTree
@@ -366,14 +367,15 @@ let private collectSynthesizedNameSnapshot (ilModule: ILModuleDef) =
     let recordName (name: string) =
         if not (String.IsNullOrWhiteSpace name) && IsCompilerGeneratedName name then
             let basicName = GetBasicNameOfPossibleCompilerGeneratedName name
+            let mapKey = GeneratedNames.SynthesizedNameMapKey basicName
 
-            if not (String.IsNullOrWhiteSpace basicName) then
+            if not (String.IsNullOrWhiteSpace mapKey) then
                 let bucket =
-                    match buckets.TryGetValue basicName with
+                    match buckets.TryGetValue mapKey with
                     | true, existing -> existing
                     | _ ->
                         let created = ResizeArray<string>()
-                        buckets[basicName] <- created
+                        buckets[mapKey] <- created
                         created
 
                 if not (bucket.Contains name) then

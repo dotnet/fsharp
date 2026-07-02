@@ -132,6 +132,7 @@ module GeneratedNamesTests =
         expectPositionalName "Pipe #1 input at line 28@28" "Pipe #1 input" [ 28; 0 ]
         expectPositionalName "Pipe #1 stage #2 at line 28@28" "Pipe #1 stage #2" [ 28; 0 ]
         expectPositionalName "Pipe #1 stage #2 at line 28" "Pipe #1 stage #2" [ 28; 0 ]
+        expectPositionalName "Pipe #1 stage #2 at line 28@hotreload-1" "Pipe #1 stage #2" [ 28; 1 ]
         expectPositionalName "endpoints@hotreload" "endpoints" [ 0 ]
         expectPositionalName "endpoints@hotreload-2" "endpoints" [ 2 ]
         expectPositionalName "endpoints@42-1" "endpoints" [ 42; 1 ]

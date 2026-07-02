@@ -10,7 +10,6 @@ open System.Reflection.Metadata.Ecma335
 open System.Reflection
 open System.Reflection.Emit
 open System.Reflection.PortableExecutable
-open System.Text.RegularExpressions
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.BinaryConstants
 open FSharp.Compiler.AbstractIL.ILDeltaHandles
@@ -22,6 +21,7 @@ open FSharp.Compiler.HotReloadBaseline
 open FSharp.Compiler.HotReloadPdb
 open FSharp.Compiler.IlxDeltaStreams
 open FSharp.Compiler.CodeGen.FSharpDefinitionIndex
+open FSharp.Compiler.GeneratedNames
 open FSharp.Compiler.SynthesizedTypeMaps
 open FSharp.Compiler.Syntax.PrettyNaming
 open FSharp.Compiler.TypedTreeDiff
@@ -276,12 +276,6 @@ let private traceMethodUpdates = traceFlag "FSHARP_HOTRELOAD_TRACE_METHODS"
 let private traceMetadata = traceFlag "FSHARP_HOTRELOAD_TRACE_METADATA"
 let private traceHeapOffsets = traceFlag "FSHARP_HOTRELOAD_TRACE_HEAP_OFFSETS"
 
-type internal SynthesizedPositionalName =
-    {
-        NormalizedBasicName: string
-        Ordinal: int list
-    }
-
 type private PositionalTypeInfo =
     {
         FullName: string
@@ -290,128 +284,6 @@ type private PositionalTypeInfo =
         Ordinal: int list
         Shape: SynthesizedTypeShape
     }
-
-let private debugPipeNameRegex =
-    lazy Regex(@"^Pipe #[1-9][0-9]* (?:input|stage #[1-9][0-9]*) at line ([1-9][0-9]*)$", RegexOptions.CultureInvariant)
-
-let private tryParseNonNegativeInt (text: string) =
-    match Int32.TryParse text with
-    | true, value when value >= 0 -> Some value
-    | _ -> None
-
-let private tryParsePositiveInt (text: string) =
-    match Int32.TryParse text with
-    | true, value when value > 0 -> Some value
-    | _ -> None
-
-let private tryParseLineOrdinalSuffix (suffix: string) =
-    let dashIndex = suffix.IndexOf('-')
-
-    if dashIndex < 0 then
-        tryParsePositiveInt suffix |> Option.map (fun line -> line, 0)
-    elif dashIndex > 0 && dashIndex < suffix.Length - 1 then
-        match tryParsePositiveInt (suffix.Substring(0, dashIndex)), tryParseNonNegativeInt (suffix.Substring(dashIndex + 1)) with
-        | Some line, Some ordinal -> Some(line, ordinal)
-        | _ -> None
-    else
-        None
-
-let private tryNormalizeDebugPipeName (name: string) =
-    let matchResult = debugPipeNameRegex.Value.Match name
-
-    if matchResult.Success then
-        let line = Int32.Parse matchResult.Groups[1].Value
-        let marker = " at line "
-        let markerIndex = name.LastIndexOf(marker, StringComparison.Ordinal)
-
-        if markerIndex > 0 then
-            Some
-                {
-                    NormalizedBasicName = name.Substring(0, markerIndex)
-                    Ordinal = [ line; 0 ]
-                }
-        else
-            None
-    else
-        None
-
-let private tryNormalizeHotReloadOrdinalName (name: string) =
-    let marker = "@hotreload"
-    let markerIndex = name.LastIndexOf(marker, StringComparison.Ordinal)
-
-    if markerIndex <= 0 then
-        None
-    else
-        let suffixStart = markerIndex + marker.Length
-        let suffix = name.Substring suffixStart
-        let baseName = name.Substring(0, markerIndex)
-
-        if
-            String.IsNullOrWhiteSpace baseName
-            || baseName.IndexOf("@", StringComparison.Ordinal) >= 0
-        then
-            None
-        else
-            let ordinalOpt =
-                if suffix = "" then
-                    Some 0
-                elif suffix.StartsWith("-", StringComparison.Ordinal) then
-                    tryParsePositiveInt (suffix.Substring 1)
-                else
-                    None
-
-            ordinalOpt
-            |> Option.map (fun ordinal ->
-                {
-                    NormalizedBasicName = baseName
-                    Ordinal = [ ordinal ]
-                })
-
-let private tryNormalizeLineOrdinalName (name: string) =
-    let atIndex = name.LastIndexOf('@')
-
-    if atIndex <= 0 || atIndex = name.Length - 1 then
-        None
-    else
-        let baseName = name.Substring(0, atIndex)
-        let suffix = name.Substring(atIndex + 1)
-
-        match tryParseLineOrdinalSuffix suffix with
-        | None -> None
-        | Some(line, ordinal) ->
-            match tryNormalizeDebugPipeName baseName with
-            | Some pipeName ->
-                match pipeName.Ordinal with
-                | pipeLine :: _ when pipeLine = line ->
-                    Some
-                        { pipeName with
-                            Ordinal = [ line; ordinal ]
-                        }
-                | _ -> None
-            | None ->
-                if
-                    String.IsNullOrWhiteSpace baseName
-                    || baseName.IndexOf("@", StringComparison.Ordinal) >= 0
-                    || baseName.StartsWith("Pipe #", StringComparison.Ordinal)
-                then
-                    None
-                else
-                    Some
-                        {
-                            NormalizedBasicName = baseName
-                            Ordinal = [ line; ordinal ]
-                        }
-
-let internal tryNormalizeSynthesizedTypeNameForPositionalPairing (name: string) =
-    if String.IsNullOrWhiteSpace name then
-        None
-    else
-        match tryNormalizeHotReloadOrdinalName name with
-        | Some normalized -> Some normalized
-        | None ->
-            match tryNormalizeLineOrdinalName name with
-            | Some normalized -> Some normalized
-            | None -> tryNormalizeDebugPipeName name
 
 let internal tryFindSynthesizedTypeShapeMismatch (baseline: SynthesizedTypeShape) (fresh: SynthesizedTypeShape) =
     if baseline.GenericArity <> fresh.GenericArity then
@@ -3780,8 +3652,9 @@ let emitDeltaWithDebugData (freshDebugPdb: byte[] option) (request: IlxDeltaRequ
         | Some _ when FSharp.Compiler.ClosureNameAllocator.isGenerationSuffixedClosureName typeName -> [| typeName |]
         | Some buckets when IsCompilerGeneratedName typeName ->
             let basicName = GetBasicNameOfPossibleCompilerGeneratedName typeName
+            let mapKey = SynthesizedNameMapKey basicName
 
-            match buckets.TryGetValue basicName with
+            match buckets.TryGetValue mapKey with
             | true, aliases when aliases.Length > 0 ->
                 if aliases |> Array.exists (fun alias -> alias = typeName) then
                     Array.append

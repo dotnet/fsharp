@@ -398,6 +398,56 @@ module HotReloadSessionTests =
         else
             $"{ns}.{typeName}::{methodName}"
 
+    let private readTypeNames (assemblyBytes: byte[]) =
+        use stream = new MemoryStream(assemblyBytes, false)
+        use peReader = new PEReader(stream)
+        let reader = peReader.GetMetadataReader()
+
+        let rec buildName (handle: TypeDefinitionHandle) =
+            let typeDef = reader.GetTypeDefinition handle
+            let name = reader.GetString typeDef.Name
+
+            let visibility = typeDef.Attributes &&& TypeAttributes.VisibilityMask
+
+            let isNested =
+                match visibility with
+                | TypeAttributes.NestedPublic
+                | TypeAttributes.NestedPrivate
+                | TypeAttributes.NestedFamily
+                | TypeAttributes.NestedAssembly
+                | TypeAttributes.NestedFamORAssem
+                | TypeAttributes.NestedFamANDAssem -> true
+                | _ -> false
+
+            if isNested then
+                $"{buildName (typeDef.GetDeclaringType())}+{name}"
+            else
+                let ns = reader.GetString typeDef.Namespace
+
+                if String.IsNullOrEmpty ns then
+                    name
+                else
+                    $"{ns}.{name}"
+
+        [ for handle in reader.TypeDefinitions -> buildName handle ]
+
+    let private assertMatchingTypeNames testLabel familyName predicate baselineTypeNames freshTypeNames =
+        let filteredBaseline: string list =
+            baselineTypeNames
+            |> List.filter predicate
+            |> List.sort
+
+        let filteredFresh: string list =
+            freshTypeNames
+            |> List.filter predicate
+            |> List.sort
+
+        let format names = names |> String.concat "; "
+
+        Assert.NotEmpty filteredBaseline
+        Assert.Equal<string list>(filteredBaseline, filteredFresh)
+        printfn "[%s] %s synthesized TypeDefs: %s" testLabel familyName (format filteredBaseline)
+
     let private decodeBaselineMethod (assemblyBytes: byte[]) methodToken =
         use stream = new MemoryStream(assemblyBytes, false)
         use peReader = new PEReader(stream)
@@ -1241,6 +1291,12 @@ let probe () = libValue ()
                     else
                         ""
 
+                let insertedTopLevelLine =
+                    if includeInsertedLine then
+                        "// inserted line shifts the pipe and endpoint closures below"
+                    else
+                        ""
+
                 $"""
 module SessionG2
 
@@ -1250,6 +1306,29 @@ let makePair input =
     let mapperA = fun value -> value + input
     let mapperB = fun value -> value * input
     message, mapperA, mapperB
+
+{insertedTopLevelLine}
+let transform (input: int list) =
+    let bias = 1
+    input
+    |> List.map (fun value -> value + bias)
+    |> List.filter (fun value -> value > 1)
+    |> List.map (fun value -> value * 2)
+
+let handler input =
+    input + 1
+
+let endpoints : (int -> int) list =
+    [
+        fun value -> handler value
+        fun value -> handler (value + 1)
+        fun value -> handler (value + 2)
+    ]
+
+let probe input =
+    let transformed = transform [ input; input + 1; input + 2 ] |> List.sum
+    let endpointTotal = endpoints |> List.sumBy (fun endpoint -> endpoint input)
+    transformed + endpointTotal
 """
 
             let baselineSource = source "baseline" false
@@ -1279,15 +1358,47 @@ let makePair input =
                     checker.NotifyFileChanged(fsPath, options) |> Async.RunImmediate
                     emitOrFail session (createProjectSnapshot options))
 
-            let updatedNames =
-                delta.UpdatedMethods
-                |> List.map (fun token -> (decodeBaselineMethod baselineBytes token).UpdatedMethod)
-
             let userUpdatedNames =
-                updatedNames
-                |> List.filter (fun name -> not (name.Contains("@", StringComparison.Ordinal)))
+                let userMethodTokenByToken =
+                    baselineView.Baseline.MethodTokens
+                    |> Map.toSeq
+                    |> Seq.choose (fun (key, token) ->
+                        if key.DeclaringType.Contains("@", StringComparison.Ordinal) then
+                            None
+                        else
+                            Some(token, $"{key.DeclaringType}::{key.Name}"))
+                    |> Map.ofSeq
 
-            Assert.Equal<string list>([ "SessionG2::makePair" ], userUpdatedNames))
+                delta.AddedOrChangedMethods
+                |> List.choose (fun methodInfo -> userMethodTokenByToken |> Map.tryFind methodInfo.MethodToken)
+                |> List.sort
+
+            Assert.Equal<string list>([ "SessionG2::makePair" ], userUpdatedNames)
+
+            let freshBytes = File.ReadAllBytes dllPath
+
+            let outputIsUnchanged =
+                baselineBytes.Length = freshBytes.Length
+                && Array.forall2 (=) baselineBytes freshBytes
+
+            Assert.False(outputIsUnchanged, "Expected the in-process compile to refresh the output assembly.")
+
+            let baselineTypeNames = readTypeNames baselineBytes
+            let freshTypeNames = readTypeNames freshBytes
+
+            assertMatchingTypeNames
+                "G2 closure replay"
+                "pipeline"
+                (fun name -> name.Contains("transform@hotreload", StringComparison.Ordinal))
+                baselineTypeNames
+                freshTypeNames
+
+            assertMatchingTypeNames
+                "G2 closure replay"
+                "endpoint"
+                (fun name -> name.Contains("endpoints@", StringComparison.Ordinal))
+                baselineTypeNames
+                freshTypeNames)
 
     [<Fact>]
     let ``EmitDelta recompiles in-process under FSHARP_HOTRELOAD_INPROCESS_COMPILE and refuses stale output once the flag is off`` () =

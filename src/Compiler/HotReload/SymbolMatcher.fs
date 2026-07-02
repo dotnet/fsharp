@@ -3,6 +3,7 @@ module internal FSharp.Compiler.HotReload.SymbolMatcher
 open System
 open System.Collections.Generic
 open FSharp.Compiler.AbstractIL.IL
+open FSharp.Compiler.GeneratedNames
 open FSharp.Compiler.HotReloadBaseline
 open FSharp.Compiler.Syntax.PrettyNaming
 open FSharp.Compiler.SynthesizedTypeMaps
@@ -77,8 +78,9 @@ module FSharpSymbolMatcher =
         match synthesizedBuckets with
         | Some buckets when IsCompilerGeneratedName typeDef.Name ->
             let basicName = GetBasicNameOfPossibleCompilerGeneratedName typeDef.Name
+            let mapKey = SynthesizedNameMapKey basicName
 
-            match buckets.TryGetValue basicName with
+            match buckets.TryGetValue mapKey with
             | true, aliases when aliases.Length > 0 ->
                 // Compute prefix directly from typeRef structure rather than string manipulation
                 // on FullName, which can fail for generic types or mangled names

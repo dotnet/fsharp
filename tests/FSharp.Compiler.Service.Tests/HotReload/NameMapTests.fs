@@ -61,6 +61,61 @@ module NameMapTests =
         Assert.Equal<string>(second, replaySecond)
 
     [<Fact>]
+    let ``line-normalized replay preserves generation-zero pipe name`` () =
+        let map = FSharpSynthesizedTypeMaps()
+        map.BeginSession()
+
+        let baselineName = map.GetOrAddName "Pipe #1 stage #2 at line 28"
+
+        map.BeginSession()
+
+        let replayedName = map.GetOrAddName "Pipe #1 stage #2 at line 30"
+
+        Assert.Equal("Pipe #1 stage #2 at line 28@hotreload", baselineName)
+        Assert.Equal(baselineName, replayedName)
+        Assert.Contains("line 28", replayedName)
+        Assert.DoesNotContain("line 30", replayedName)
+
+    [<Fact>]
+    let ``LoadSnapshot normalizes old raw pipe keys`` () =
+        let map = FSharpSynthesizedTypeMaps()
+        let oldSnapshot =
+            [| struct ("Pipe #1 stage #2 at line 28", [| "Pipe #1 stage #2 at line 28@hotreload" |]) |]
+
+        map.LoadSnapshot oldSnapshot
+        map.BeginSession()
+
+        let replayedName = map.GetOrAddName "Pipe #1 stage #2 at line 30"
+        let snapshot = map.Snapshot |> Seq.toArray
+        let struct (snapshotKey, snapshotNames) = Assert.Single snapshot
+
+        Assert.Equal("Pipe #1 stage #2 at line 28@hotreload", replayedName)
+        Assert.Equal("Pipe #1 stage #2", snapshotKey)
+        Assert.Equal<string[]>([| "Pipe #1 stage #2 at line 28@hotreload" |], snapshotNames)
+
+    [<Fact>]
+    let ``LoadSnapshot fills normalized pipe replay holes with birth-line names`` () =
+        let map = FSharpSynthesizedTypeMaps()
+
+        let gappedSnapshot =
+            [| struct (
+                "Pipe #1 stage #2",
+                [| "Pipe #1 stage #2 at line 28@hotreload-2"; "Pipe #1 stage #2 at line 28@hotreload" |]
+            ) |]
+
+        map.LoadSnapshot gappedSnapshot
+        map.BeginSession()
+
+        let replayed = [| for _ in 0 .. 2 -> map.GetOrAddName "Pipe #1 stage #2 at line 30" |]
+
+        Assert.Equal<string[]>(
+            [| "Pipe #1 stage #2 at line 28@hotreload"
+               "Pipe #1 stage #2 at line 28@hotreload-1"
+               "Pipe #1 stage #2 at line 28@hotreload-2" |],
+            replayed
+        )
+
+    [<Fact>]
     let ``LoadSnapshot canonicalizes hot reload ordinals for replay`` () =
         let map = FSharpSynthesizedTypeMaps()
 
@@ -84,13 +139,11 @@ module NameMapTests =
         Assert.Equal("closure@hotreload-10", replayed[10])
 
     [<Fact>]
-    let ``LoadSnapshot drops occurrence-keyed closure names and preserves replay slots`` () =
-        // Occurrence-keyed closure names ({base}@hotreload#g{N}_o{chain}) are managed by
-        // the closure name allocator, never by replay. The slots they consumed at
-        // allocation time (consume-then-override) must stay reserved so OTHER
-        // synthesized names sharing the basic name replay at their original positions:
-        // here the closure consumed slot 0, so the surviving helper names keep
-        // ordinals 1 and 2.
+    let ``LoadSnapshot preserves occurrence-keyed generation-zero names`` () =
+        // The closure-name allocator still wins when it has a stamp-keyed assignment.
+        // When it does not, sequence replay must preserve the generation-0 name that
+        // was actually emitted in the baseline instead of inventing a fresh ordinal
+        // name for the same allocation slot.
         let map = FSharpSynthesizedTypeMaps()
 
         let snapshot =
@@ -100,7 +153,7 @@ module NameMapTests =
         map.BeginSession()
 
         let replayed = [| for _ in 0 .. 2 -> map.GetOrAddName "f" |]
-        Assert.Equal<string[]>([| "f@hotreload"; "f@hotreload-1"; "f@hotreload-2" |], replayed)
+        Assert.Equal<string[]>([| "f@hotreload#g0_o0"; "f@hotreload-1"; "f@hotreload-2" |], replayed)
 
     [<Fact>]
     let ``LoadSnapshot validates name prefix`` () =
@@ -134,7 +187,7 @@ module NameMapTests =
         // Name doesn't start with basicName@
         let mismatchedSnapshot = [| struct ("foo", [| "bar@hotreload" |]) |]
         let ex = Assert.Throws<System.ArgumentException>(fun () -> map.LoadSnapshot mismatchedSnapshot)
-        Assert.Contains("foo@", ex.Message)
+        Assert.Contains("snapshot key 'foo'", ex.Message)
         Assert.Contains("bar@hotreload", ex.Message)
 
     [<Fact>]
@@ -144,4 +197,5 @@ module NameMapTests =
         // Name missing the @ marker entirely
         let invalidSnapshot = [| struct ("test", [| "testhotreload" |]) |]
         let ex = Assert.Throws<System.ArgumentException>(fun () -> map.LoadSnapshot invalidSnapshot)
-        Assert.Contains("test@", ex.Message)
+        Assert.Contains("snapshot key 'test'", ex.Message)
+        Assert.Contains("testhotreload", ex.Message)
