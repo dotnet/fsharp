@@ -11726,6 +11726,14 @@ and TcAttributeEx canFail (cenv: cenv) (env: TcEnv) attrTgt attrEx (synAttr: Syn
 
     let tcref = tcrefOfAppTy g ty
 
+    if not tcref.Typars.IsEmpty then
+        match canFail with
+        | TcCanFail.IgnoreAllErrors | TcCanFail.IgnoreMemberResoutionError -> [], true
+        | TcCanFail.ReportAllErrors ->
+            errorR(Error(FSComp.SR.tcGenericAttributesNotSupported(tcref.DisplayName), mAttr))
+            [], false
+    else
+
     let conditionalCallDefineOpt = TryFindTyconRefStringAttribute g mAttr g.attrib_ConditionalAttribute tcref
 
     match conditionalCallDefineOpt, cenv.conditionalDefines with
