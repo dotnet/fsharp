@@ -142,7 +142,13 @@ type internal FSharpHotReloadService
     let pendingOutputFingerprints =
         Dictionary<FSharp.Compiler.HotReloadState.HotReloadProjectKey, (DateTime * byte[] option) option>()
 
+    let traceTiming = lazy (isEnvVarTruthy "FSHARP_HOTRELOAD_TRACE_TIMING")
+
     let traceSessionTransitions = isEnvVarTruthy "FSHARP_HOTRELOAD_TRACE_SESSIONS"
+
+    let finishTiming stage (stopwatch: System.Diagnostics.Stopwatch) =
+        stopwatch.Stop()
+        printfn "[fsharp-hotreload][timing] %s=%dms" stage stopwatch.ElapsedMilliseconds
 
     let describeSessionStartTransition transition =
         match transition with
@@ -295,218 +301,267 @@ type internal FSharpHotReloadService
         // for the in-process emit path are tracked alongside #19941.
         (inProcessCompile: (FSharpCheckProjectResults * string -> Async<HotReloadInProcessCompileResult>) option)
         =
+        let shouldTraceTiming = traceTiming.Value
+
+        let timeAsync stage work =
+            if shouldTraceTiming then
+                async {
+                    let stopwatch = System.Diagnostics.Stopwatch.StartNew()
+
+                    try
+                        return! work ()
+                    finally
+                        finishTiming stage stopwatch
+                }
+            else
+                work ()
+
+        let timeSync stage work =
+            if shouldTraceTiming then
+                let stopwatch = System.Diagnostics.Stopwatch.StartNew()
+
+                try
+                    work ()
+                finally
+                    finishTiming stage stopwatch
+            else
+                work ()
+
         async {
-            match outputPath with
-            | None -> return Result.Error FSharpHotReloadError.MissingOutputPath
-            | Some outputPath ->
-                let! projectResults = parseAndCheckProject ()
-
-                let errors = getErrorDiagnostics projectResults.Diagnostics
-
-                if projectResults.HasCriticalErrors || errors.Length > 0 then
-                    return Result.Error(FSharpHotReloadError.CompilationFailed errors)
+            let totalStopwatch =
+                if shouldTraceTiming then
+                    ValueSome(System.Diagnostics.Stopwatch.StartNew())
                 else
-                    let tcGlobals, implementationFiles = getHotReloadDiffInputs projectResults
+                    ValueNone
 
-                    // Session-active validation must precede the experimental in-process compile
-                    // below: an untracked project must surface NoActiveSession (the documented
-                    // contract) without touching outputPath at all.
-                    let sessionActive =
-                        lock hotReloadGate (fun () ->
-                            match editAndContinueService.TryGetSession(projectKey) with
-                            | ValueSome _ -> true
-                            | ValueNone ->
-                                // Restore from the last committed snapshot if an overlapping
-                                // compile cleared the currently active session.
-                                match editAndContinueService.TryRestoreSession(projectKey) with
-                                | ValueSome restoredSession ->
-                                    let compilerState = tcGlobals.CompilerGlobalState.Value
-                                    let map = getOrCreateSynthesizedTypeMap projectKey
+            try
+                match outputPath with
+                | None -> return Result.Error FSharpHotReloadError.MissingOutputPath
+                | Some outputPath ->
+                    let! projectResults = timeAsync "parseAndCheck" parseAndCheckProject
 
-                                    restoredSession.Baseline.SynthesizedNameSnapshot
-                                    |> Map.toSeq
-                                    |> Seq.map (fun (k, v) -> struct (k, v))
-                                    |> map.LoadSnapshot
+                    let errors = getErrorDiagnostics projectResults.Diagnostics
 
-                                    map.BeginSession()
-                                    setCompilerGeneratedNameMap (compilerState :> obj) (map :> ICompilerGeneratedNameMap)
-                                    true
-                                | ValueNone -> false)
-
-                    if not sessionActive then
-                        return Result.Error FSharpHotReloadError.NoActiveSession
+                    if projectResults.HasCriticalErrors || errors.Length > 0 then
+                        return Result.Error(FSharpHotReloadError.CompilationFailed errors)
                     else
+                        let tcGlobals, implementationFiles = getHotReloadDiffInputs projectResults
 
-                        // Experimental (dotnet/fsharp#19941 dev-loop track): recompile the output
-                        // assembly in-process for this session-tracked project. Runs after session
-                        // validation (untracked projects never reach here) and before the
-                        // File.Exists/stable-file/fingerprint pipeline, which must observe the
-                        // freshly written output. Flag off: no code path change beyond the env read.
-                        let! inProcessCompileResult =
-                            if not (isEnvVarTruthy "FSHARP_HOTRELOAD_INPROCESS_COMPILE") then
-                                async.Return(Result.Ok None)
-                            else
-                                async {
-                                    match inProcessCompile with
-                                    | None -> return Result.Ok None
-                                    | Some compile ->
-                                        try
-                                            // The compile returns the emitted module (refs normalized as
-                                            // written) so the delta path can consume it directly instead of
-                                            // re-parsing the file it just wrote.
-                                            let! freshModule = compile (projectResults, outputPath)
-                                            return Result.Ok(Some freshModule)
-                                        with ex ->
-                                            return
-                                                Result.Error(
-                                                    FSharpHotReloadError.DeltaEmissionFailed($"In-process compile failed: {ex.Message}")
-                                                )
-                                }
+                        // Session-active validation must precede the experimental in-process compile
+                        // below: an untracked project must surface NoActiveSession (the documented
+                        // contract) without touching outputPath at all.
+                        let sessionActive =
+                            lock hotReloadGate (fun () ->
+                                match editAndContinueService.TryGetSession(projectKey) with
+                                | ValueSome _ -> true
+                                | ValueNone ->
+                                    // Restore from the last committed snapshot if an overlapping
+                                    // compile cleared the currently active session.
+                                    match editAndContinueService.TryRestoreSession(projectKey) with
+                                    | ValueSome restoredSession ->
+                                        let compilerState = tcGlobals.CompilerGlobalState.Value
+                                        let map = getOrCreateSynthesizedTypeMap projectKey
 
-                        match inProcessCompileResult with
-                        | Result.Error error -> return Result.Error error
-                        | Result.Ok inProcessCompileResult ->
+                                        restoredSession.Baseline.SynthesizedNameSnapshot
+                                        |> Map.toSeq
+                                        |> Seq.map (fun (k, v) -> struct (k, v))
+                                        |> map.LoadSnapshot
 
-                            if not (File.Exists(outputPath)) then
-                                return
-                                    Result.Error(
-                                        FSharpHotReloadError.DeltaEmissionFailed(
-                                            $"Output assembly '{outputPath}' was not found. Build the project before emitting a hot reload delta."
-                                        )
-                                    )
-                            else
-                                // The same process wrote and closed the output when the in-process
-                                // compile ran; only poll for stability when an external writer produced it.
-                                if inProcessCompileResult.IsNone then
-                                    waitForStableFile outputPath
+                                        map.BeginSession()
+                                        setCompilerGeneratedNameMap (compilerState :> obj) (map :> ICompilerGeneratedNameMap)
+                                        true
+                                    | ValueNone -> false)
 
-                                let outputFingerprint = tryGetOutputFingerprint outputPath
+                        if not sessionActive then
+                            return Result.Error FSharpHotReloadError.NoActiveSession
+                        else
 
-                                let staleOutputErrorOpt =
-                                    lock hotReloadGate (fun () ->
-                                        match editAndContinueService.TryGetSession(projectKey) with
-                                        | ValueNone -> None
-                                        | ValueSome session ->
-                                            let symbolChanges =
-                                                computeSymbolChanges
-                                                    tcGlobals
-                                                    session.Capabilities
-                                                    session.ImplementationFiles
-                                                    implementationFiles
-
-                                            match mapSymbolChangesToDelta session.Baseline symbolChanges with
-                                            | Error mappingErrors ->
-                                                Some(
-                                                    FSharpHotReloadError.UnsupportedEdit(
-                                                        mappingErrors
-                                                        |> List.map (
-                                                            RudeEditDiagnostics.unsupported >> FSharpHotReloadRudeEditMapping.ofDiagnostic
-                                                        )
-                                                    )
-                                                )
-                                            | Ok(updatedTypes, updatedMethods, accessorUpdates) ->
-                                                let hasUpdates =
-                                                    not (List.isEmpty updatedTypes)
-                                                    || not (List.isEmpty updatedMethods)
-                                                    || not (List.isEmpty accessorUpdates)
-                                                    || not (List.isEmpty symbolChanges.Added)
-
-                                                let committedFingerprint =
-                                                    match committedOutputFingerprints.TryGetValue projectKey with
-                                                    | true, fingerprint -> fingerprint
-                                                    | false, _ -> None
-
-                                                if
-                                                    (hasUpdates || trackedInputsChanged)
-                                                    && not (hasOutputFingerprintChanged outputPath committedFingerprint outputFingerprint)
-                                                then
-                                                    Some(
-                                                        FSharpHotReloadError.DeltaEmissionFailed(
-                                                            $"Output assembly '{outputPath}' did not change after compilation; refusing to emit a delta from stale build output."
-                                                        )
-                                                    )
-                                                else
-                                                    None)
-
-                                match staleOutputErrorOpt with
-                                | Some staleError -> return Result.Error staleError
-                                | None ->
-                                    let ilModuleResult: Result<_, FSharpHotReloadError> =
-                                        match inProcessCompileResult with
-                                        | Some result ->
-                                            // In-process compile already holds the emitted module; skip the
-                                            // on-disk re-parse of the file this process just wrote.
-                                            Ok result.IlModule
-                                        | None ->
+                            // Experimental (dotnet/fsharp#19941 dev-loop track): recompile the output
+                            // assembly in-process for this session-tracked project. Runs after session
+                            // validation (untracked projects never reach here) and before the
+                            // File.Exists/stable-file/fingerprint pipeline, which must observe the
+                            // freshly written output. Flag off: no code path change beyond the env read.
+                            let! inProcessCompileResult =
+                                if not (isEnvVarTruthy "FSHARP_HOTRELOAD_INPROCESS_COMPILE") then
+                                    async.Return(Result.Ok None)
+                                else
+                                    async {
+                                        match inProcessCompile with
+                                        | None -> return Result.Ok None
+                                        | Some compile ->
                                             try
-                                                readIlModule outputPath |> Ok
+                                                // The compile returns the emitted module (refs normalized as
+                                                // written) so the delta path can consume it directly instead of
+                                                // re-parsing the file it just wrote.
+                                                let! freshModule =
+                                                    timeAsync "inProcessCompile" (fun () -> compile (projectResults, outputPath))
+
+                                                return Result.Ok(Some freshModule)
                                             with ex ->
-                                                Result.Error(
-                                                    FSharpHotReloadError.DeltaEmissionFailed(
-                                                        $"Failed to read updated assembly '{outputPath}': {ex.Message}"
+                                                return
+                                                    Result.Error(
+                                                        FSharpHotReloadError.DeltaEmissionFailed($"In-process compile failed: {ex.Message}")
                                                     )
-                                                )
+                                    }
 
-                                    match ilModuleResult with
-                                    | Result.Error error -> return Result.Error error
-                                    | Ok ilModule ->
-                                        lock hotReloadGate (fun () ->
-                                            match synthesizedTypeMaps.TryGetValue projectKey with
-                                            | true, map ->
-                                                map.BeginSession()
+                            match inProcessCompileResult with
+                            | Result.Error error -> return Result.Error error
+                            | Result.Ok inProcessCompileResult ->
 
-                                                setCompilerGeneratedNameMap
-                                                    (tcGlobals.CompilerGlobalState.Value :> obj)
-                                                    (map :> ICompilerGeneratedNameMap)
-                                            | false, _ -> ())
-
-                                        // Sequence-point tracking: the fresh compile's on-disk PDB carries the sequence
-                                        // points the IL module read loses (readIlModule attaches no debug
-                                        // points). It feeds line-shift detection, active-statement
-                                        // remapping and the emitted PDB delta. Missing/unreadable PDBs
-                                        // degrade gracefully (analysis stays inert, fail closed).
-                                        let freshDebugPdb =
-                                            match
-                                                inProcessCompileResult
-                                                |> Option.bind (fun result -> result.EmittedArtifacts.PdbBytes)
-                                            with
-                                            | Some _ -> None
-                                            | None ->
-                                                let pdbPath =
-                                                    Path.ChangeExtension(outputPath, ".pdb")
-                                                    |> Option.ofObj
-                                                    |> Option.defaultValue (outputPath + ".pdb")
-
-                                                if File.Exists(pdbPath) then
-                                                    try
-                                                        Some(File.ReadAllBytes(pdbPath))
-                                                    with :? IOException ->
-                                                        None
-                                                else
-                                                    None
-
-                                        let emittedArtifacts =
-                                            inProcessCompileResult |> Option.map (fun result -> result.EmittedArtifacts)
-
-                                        match
-                                            editAndContinueService.EmitDeltaForCompilation(
-                                                tcGlobals,
-                                                implementationFiles,
-                                                ilModule,
-                                                ?freshDebugPdb = freshDebugPdb,
-                                                ?emittedArtifacts = emittedArtifacts,
-                                                projectKey = projectKey,
-                                                deferCommit = true
+                                if not (File.Exists(outputPath)) then
+                                    return
+                                        Result.Error(
+                                            FSharpHotReloadError.DeltaEmissionFailed(
+                                                $"Output assembly '{outputPath}' was not found. Build the project before emitting a hot reload delta."
                                             )
-                                        with
-                                        | Ok result ->
-                                            match result.Delta.UpdatedBaseline with
-                                            | Some _ ->
-                                                lock hotReloadGate (fun () -> pendingOutputFingerprints[projectKey] <- outputFingerprint)
-                                            | None -> ()
+                                        )
+                                else
+                                    // The same process wrote and closed the output when the in-process
+                                    // compile ran; only poll for stability when an external writer produced it.
+                                    if inProcessCompileResult.IsNone then
+                                        waitForStableFile outputPath
 
-                                            return Result.Ok(toPublicDelta result.Delta)
-                                        | Error error -> return Result.Error(mapHotReloadError error)
+                                    let outputFingerprint = tryGetOutputFingerprint outputPath
+
+                                    let staleOutputErrorOpt =
+                                        timeSync "staleCheck" (fun () ->
+                                            lock hotReloadGate (fun () ->
+                                                match editAndContinueService.TryGetSession(projectKey) with
+                                                | ValueNone -> None
+                                                | ValueSome session ->
+                                                    let symbolChanges =
+                                                        computeSymbolChanges
+                                                            tcGlobals
+                                                            session.Capabilities
+                                                            session.ImplementationFiles
+                                                            implementationFiles
+
+                                                    match mapSymbolChangesToDelta session.Baseline symbolChanges with
+                                                    | Error mappingErrors ->
+                                                        Some(
+                                                            FSharpHotReloadError.UnsupportedEdit(
+                                                                mappingErrors
+                                                                |> List.map (
+                                                                    RudeEditDiagnostics.unsupported
+                                                                    >> FSharpHotReloadRudeEditMapping.ofDiagnostic
+                                                                )
+                                                            )
+                                                        )
+                                                    | Ok(updatedTypes, updatedMethods, accessorUpdates) ->
+                                                        let hasUpdates =
+                                                            not (List.isEmpty updatedTypes)
+                                                            || not (List.isEmpty updatedMethods)
+                                                            || not (List.isEmpty accessorUpdates)
+                                                            || not (List.isEmpty symbolChanges.Added)
+
+                                                        let committedFingerprint =
+                                                            match committedOutputFingerprints.TryGetValue projectKey with
+                                                            | true, fingerprint -> fingerprint
+                                                            | false, _ -> None
+
+                                                        if
+                                                            (hasUpdates || trackedInputsChanged)
+                                                            && not (
+                                                                hasOutputFingerprintChanged
+                                                                    outputPath
+                                                                    committedFingerprint
+                                                                    outputFingerprint
+                                                            )
+                                                        then
+                                                            Some(
+                                                                FSharpHotReloadError.DeltaEmissionFailed(
+                                                                    $"Output assembly '{outputPath}' did not change after compilation; refusing to emit a delta from stale build output."
+                                                                )
+                                                            )
+                                                        else
+                                                            None))
+
+                                    match staleOutputErrorOpt with
+                                    | Some staleError -> return Result.Error staleError
+                                    | None ->
+                                        let ilModuleResult: Result<_, FSharpHotReloadError> =
+                                            match inProcessCompileResult with
+                                            | Some result ->
+                                                // In-process compile already holds the emitted module; skip the
+                                                // on-disk re-parse of the file this process just wrote.
+                                                Ok result.IlModule
+                                            | None ->
+                                                try
+                                                    timeSync "readIlModule" (fun () -> readIlModule outputPath) |> Ok
+                                                with ex ->
+                                                    Result.Error(
+                                                        FSharpHotReloadError.DeltaEmissionFailed(
+                                                            $"Failed to read updated assembly '{outputPath}': {ex.Message}"
+                                                        )
+                                                    )
+
+                                        match ilModuleResult with
+                                        | Result.Error error -> return Result.Error error
+                                        | Ok ilModule ->
+                                            lock hotReloadGate (fun () ->
+                                                match synthesizedTypeMaps.TryGetValue projectKey with
+                                                | true, map ->
+                                                    map.BeginSession()
+
+                                                    setCompilerGeneratedNameMap
+                                                        (tcGlobals.CompilerGlobalState.Value :> obj)
+                                                        (map :> ICompilerGeneratedNameMap)
+                                                | false, _ -> ())
+
+                                            // Sequence-point tracking: the fresh compile's on-disk PDB carries the sequence
+                                            // points the IL module read loses (readIlModule attaches no debug
+                                            // points). It feeds line-shift detection, active-statement
+                                            // remapping and the emitted PDB delta. Missing/unreadable PDBs
+                                            // degrade gracefully (analysis stays inert, fail closed).
+                                            let freshDebugPdb =
+                                                match
+                                                    inProcessCompileResult
+                                                    |> Option.bind (fun result -> result.EmittedArtifacts.PdbBytes)
+                                                with
+                                                | Some _ -> None
+                                                | None ->
+                                                    let pdbPath =
+                                                        Path.ChangeExtension(outputPath, ".pdb")
+                                                        |> Option.ofObj
+                                                        |> Option.defaultValue (outputPath + ".pdb")
+
+                                                    if File.Exists(pdbPath) then
+                                                        try
+                                                            Some(File.ReadAllBytes(pdbPath))
+                                                        with :? IOException ->
+                                                            None
+                                                    else
+                                                        None
+
+                                            let emittedArtifacts =
+                                                inProcessCompileResult |> Option.map (fun result -> result.EmittedArtifacts)
+
+                                            let emitDeltaResult =
+                                                timeSync "emitDelta" (fun () ->
+                                                    editAndContinueService.EmitDeltaForCompilation(
+                                                        tcGlobals,
+                                                        implementationFiles,
+                                                        ilModule,
+                                                        ?freshDebugPdb = freshDebugPdb,
+                                                        ?emittedArtifacts = emittedArtifacts,
+                                                        projectKey = projectKey,
+                                                        deferCommit = true
+                                                    ))
+
+                                            match emitDeltaResult with
+                                            | Ok result ->
+                                                match result.Delta.UpdatedBaseline with
+                                                | Some _ ->
+                                                    lock hotReloadGate (fun () ->
+                                                        pendingOutputFingerprints[projectKey] <- outputFingerprint)
+                                                | None -> ()
+
+                                                return Result.Ok(toPublicDelta result.Delta)
+                                            | Error error -> return Result.Error(mapHotReloadError error)
+            finally
+                match totalStopwatch with
+                | ValueNone -> ()
+                | ValueSome stopwatch -> finishTiming "total" stopwatch
         }
 
     /// <summary>
