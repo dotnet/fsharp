@@ -1355,15 +1355,24 @@ let BuildNewDelegateExpr (eventInfoOpt: EventInfo option, g, amap, delegateTy, d
                     | _ -> None
                 | _ -> None
 
+            let delInvokeArgNamesIfFeatureEnabled =
+                if g.langVersion.SupportsFeature LanguageFeature.ImprovedImpliedArgumentNamesPartTwo then
+                    delInvokeMeth.GetParamNames() |> List.concat
+                else
+                    []
+
             let delArgVals =
                 delArgTys
                 |> List.mapi (fun i argTy ->
                     let argName =
                         match delFuncArgNamesIfFeatureEnabled with
                         | Some argNames -> argNames[i]
-                        | None -> "delegateArg" + string i
+                        | None ->
+                            match List.tryItem i delInvokeArgNamesIfFeatureEnabled with
+                            | Some (Some name) when name <> "" -> name
+                            | _ -> "delegateArg" + string i
 
-                    fst (mkCompGenLocal m argName argTy)) 
+                    fst (mkCompGenLocal m argName argTy))
 
             let expr = 
                 let args = 

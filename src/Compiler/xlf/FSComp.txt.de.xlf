@@ -272,6 +272,11 @@
         <target state="new">{0} for F# {1}</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureAccessProtectedBaseFieldFromClosure">
+        <source>Access a protected base-class field from a closure inside a member</source>
+        <target state="new">Access a protected base-class field from a closure inside a member</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureAccessorFunctionShorthand">
         <source>underscore dot shorthand for accessor only function</source>
         <target state="translated">Unterstrich-Punkt-Kurzschreibweise für Accessorfunktion</target>
@@ -455,6 +460,11 @@
       <trans-unit id="featureImprovedImpliedArgumentNames">
         <source>Improved implied argument names</source>
         <target state="translated">Verbesserte implizite Argumentnamen</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureImprovedImpliedArgumentNamesPartTwo">
+        <source>Improved implied argument names with partial application</source>
+        <target state="new">Improved implied argument names with partial application</target>
         <note />
       </trans-unit>
       <trans-unit id="featureIndexerNotationWithoutDot">
@@ -1020,6 +1030,11 @@
       <trans-unit id="optsAllSigs">
         <source>Print the inferred interfaces of all compilation files to associated signature files</source>
         <target state="translated">Drucken der abgeleiteten Schnittstellen aller Dateien an zugehörige Signaturdateien</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="optsAlwaysInline">
+        <source>Always inline 'inline' functions</source>
+        <target state="new">Always inline 'inline' functions</target>
         <note />
       </trans-unit>
       <trans-unit id="optsCheckNulls">
@@ -1750,6 +1765,11 @@
       <trans-unit id="tcPassingWithoutNullTononNullFunction">
         <source>You can remove this `nonNull` assertion.</source>
         <target state="new">You can remove this `nonNull` assertion.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcRecursiveInlineNotAllowed">
+        <source>The value or member '{0}' has been marked 'inline' but is part of a recursive binding group. F# does not support recursive 'inline' values. Either remove the 'inline' modifier or refactor the recursion.</source>
+        <target state="new">The value or member '{0}' has been marked 'inline' but is part of a recursive binding group. F# does not support recursive 'inline' values. Either remove the 'inline' modifier or refactor the recursion.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcRequireMergeSourcesOrBindN">

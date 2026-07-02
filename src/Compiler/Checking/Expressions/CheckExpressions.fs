@@ -209,6 +209,15 @@ let ExitFamilyRegion env =
 
 let AreWithinCtorShape env = match env.eCtorInfo with None -> false | Some ctorInfo -> ctorInfo.ctorShapeCounter > 0
 
+/// #5302: keep the family region so a protected base field can be read from a closure (it nests under the
+/// declaring type, preserving family access) — except inside an object-expression body, whose closures are
+/// emitted beside the object-expression class rather than within it and so cannot keep family access.
+let KeepFamilyRegionForClosure (g: TcGlobals) env =
+    if g.langVersion.SupportsFeature LanguageFeature.AccessProtectedBaseFieldFromClosure && not env.eInObjectExpr then
+        env
+    else
+        ExitFamilyRegion env
+
 let GetCtorShapeCounter env = match env.eCtorInfo with None -> 0 | Some ctorInfo -> ctorInfo.ctorShapeCounter
 
 let GetRecdInfo env = match env.eCtorInfo with None -> RecdExpr | Some ctorInfo -> if ctorInfo.ctorShapeCounter = 1 then RecdExprIsObjInit else RecdExpr
@@ -6094,12 +6103,12 @@ and TcExprUndelayed (cenv: cenv) (overallTy: OverallTy) env tpenv (synExpr: SynE
         then
             warning (Error(FSComp.SR.chkDeprecatePlacesWhereSeqCanBeOmitted (), m))
 
-        let env = ExitFamilyRegion env
+        let env = KeepFamilyRegionForClosure cenv.g env
         cenv.TcSequenceExpressionEntry cenv env overallTy tpenv (hasSeqBuilder, comp) m
 
     | SynExpr.ArrayOrListComputed (isArray, comp, m) ->
         TcNonControlFlowExpr env <| fun env ->
-        let env = ExitFamilyRegion env
+        let env = KeepFamilyRegionForClosure cenv.g env
         CallExprHasTypeSink cenv.tcSink (m, env.NameEnv, overallTy.Commit, env.eAccessRights)
         cenv.TcArrayOrListComputedExpression cenv env overallTy tpenv (isArray, comp)  m
 
@@ -6250,7 +6259,7 @@ and TcExprMatchLambda (cenv: cenv) overallTy env tpenv (isExnMatch, mFunction, c
     let idv1, idve1 = mkCompGenLocal mFunction (cenv.synArgNameGenerator.New()) domainTy
     CallExprHasTypeSink cenv.tcSink (mFunction.StartRange, env.NameEnv, domainTy, env.AccessRights)
     CallExprHasTypeSink cenv.tcSink (m, env.NameEnv, overallTy.Commit, env.AccessRights)
-    let envinner = ExitFamilyRegion env
+    let envinner = KeepFamilyRegionForClosure cenv.g env
     let envinner = { envinner with eIsControlFlow = true }
     let idv2, matchExpr, tpenv = TcAndPatternCompileMatchClauses m mFunction (if isExnMatch then Throw else ThrowIncompleteMatchException) cenv None domainTy (MustConvertTo (false, resultTy)) envinner tpenv clauses
     let overallExpr = mkMultiLambda m [idv1] ((mkLet spMatch m idv2 idve1 matchExpr), resultTy)
@@ -6315,7 +6324,7 @@ and TcExprLazy (cenv: cenv) overallTy env tpenv (synInnerExpr, m) =
     let g = cenv.g
     let innerTy = NewInferenceType g
     UnifyTypes cenv env m overallTy.Commit (mkLazyTy g innerTy)
-    let envinner = ExitFamilyRegion env
+    let envinner = KeepFamilyRegionForClosure g env
     let envinner = { envinner with eIsControlFlow = true }
     let innerExpr, tpenv = TcExpr cenv (MustEqual innerTy) envinner tpenv synInnerExpr
     let expr = mkLazyDelayed g m innerTy (mkUnitDelayLambda g m innerExpr)
@@ -6641,8 +6650,15 @@ and TcIteratedLambdas (cenv: cenv) isFirst (env: TcEnv) overallTy takenNames tpe
 
         let envinner, _, vspecMap = MakeAndPublishSimpleValsForMergedScope cenv env m names
         let byrefs = vspecMap |> Map.map (fun _ v -> isByrefTy g v.Type, v)
-        let envinner = if isMember then envinner else ExitFamilyRegion envinner
+        // #5302: fields-only — a protected base field read type-checks here; methods/base stay FS0405.
+        let envinner =
+            if isMember then envinner else KeepFamilyRegionForClosure g envinner
         let vspecs = vs |> List.map (fun nm -> NameMap.find nm vspecMap)
+
+        // Mark these values as parameters so diagnostics (e.g. FS0027 on assignment to a
+        // non-mutable parameter) can distinguish them from ordinary local bindings.
+        for v in vspecs do
+            v.SetIsParameter()
 
         // Match up the arginfos with the generated arguments and apply any information extracted from the attributes
         let envinner =
@@ -6772,7 +6788,7 @@ and ExpandIndexArgs (cenv: cenv) (synLeftExprOpt: SynExpr option) indexArgs =
                    | Some (a2, isFromEnd2) ->
                        yield mkSynSomeExpr range2 (if isFromEnd2 then rewriteReverseExpr pos a2 range2 else a2)
                    | None ->
-                       yield mkSynNoneExpr range1
+                       yield mkSynNoneExpr range2
                 ]
         )
         |> List.collect id
@@ -7399,6 +7415,8 @@ and TcObjectExpr (cenv: cenv) env tpenv (objTy, realObjTy, argopt, binds, extraI
 
     // Object expression members can access protected members of the implemented type
     let env = EnterFamilyRegion tcref env
+    // #5302: closures inside an object-expression body cannot keep the family region (see eInObjectExpr).
+    let env = { env with eInObjectExpr = true }
     let ad = env.AccessRights
 
     if // record construction ? e.g { A = 1; B = 2 }
@@ -13176,6 +13194,56 @@ and FixupLetrecBind (cenv: cenv) denv generalizedTyparsForRecursiveBlock (bind: 
 
 and unionGeneralizedTypars typarSets = List.foldBack (ListSet.unionFavourRight typarEq) typarSets []
 
+and CheckRecursiveInlineGroup (bindings: PreInitializationGraphEliminationBinding list) =
+    let inlineBindings =
+        bindings
+        |> List.filter (fun pgrbind ->
+            let (TBind(v, _, _)) = pgrbind.Binding
+            v.ShouldInline)
+    if not (List.isEmpty inlineBindings) then
+        let inlineStamps =
+            inlineBindings
+            |> List.map (fun pgrbind ->
+                let (TBind(v, _, _)) = pgrbind.Binding
+                v.Stamp)
+            |> Set.ofList
+        // Map from inline stamp to set of free-local stamps in its body.
+        let freeStampsByStamp =
+            inlineBindings
+            |> List.map (fun pgrbind ->
+                let (TBind(v, e, _)) = pgrbind.Binding
+                let freeVals = (freeInExpr CollectLocalsNoCaching e).FreeLocals
+                let frees = Zset.fold (fun (fv: Val) acc -> Set.add fv.Stamp acc) freeVals Set.empty
+                v.Stamp, frees)
+            |> Map.ofList
+        // For each inline binding, do a BFS through inline-only reference edges and detect
+        // whether we can return to ourselves. A self-loop or any cycle through other inline
+        // bindings counts. Cycles routed through a non-inline sibling are intentionally allowed:
+        // inlining terminates at the non-inline binding, so such code compiles fine today.
+        for pgrbind in inlineBindings do
+            let (TBind(v, _, _)) = pgrbind.Binding
+            let startStamp = v.Stamp
+            let mutable foundCycle = false
+            let visited = HashSet<Stamp>()
+            let queue = Queue<Stamp>()
+            queue.Enqueue startStamp
+            while queue.Count > 0 && not foundCycle do
+                let cur = queue.Dequeue()
+                let frees = freeStampsByStamp |> Map.tryFind cur |> Option.defaultValue Set.empty
+                for fv in frees do
+                    if not foundCycle then
+                        if fv = startStamp then
+                            foundCycle <- true
+                        elif Set.contains fv inlineStamps && visited.Add fv then
+                            queue.Enqueue fv
+            if foundCycle then
+                // Downgrade the inline flag so the optimizer does not re-report the same binding
+                // via the FS1113/FS1114/FS1118 "not bound in optimization environment" cascade.
+                // This momentarily surfaces the binding as non-inline to the language service,
+                // which is acceptable because compilation already fails here with FS3890.
+                errorR(Error(FSComp.SR.tcRecursiveInlineNotAllowed(v.DisplayName), v.Range))
+                v.SetInlineInfo ValInline.Never
+
 and TcLetrecBindings overridesOK (cenv: cenv) env tpenv (binds, bindsm, scopem) =
 
     let g = cenv.g
@@ -13208,6 +13276,8 @@ and TcLetrecBindings overridesOK (cenv: cenv) env tpenv (binds, bindsm, scopem) 
 
     // Now that we know what we've generalized we can adjust the recursive references
     let vxbinds = vxbinds |> List.map (FixupLetrecBind cenv env.DisplayEnv generalizedTyparsForRecursiveBlock)
+
+    CheckRecursiveInlineGroup vxbinds
 
     // Now eliminate any initialization graphs
     let binds =
