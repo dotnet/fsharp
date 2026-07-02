@@ -157,6 +157,14 @@
     IL_00b4:  ret
   } 
 
+  .method assembly specialname static class [runtime]System.Tuple`4<int32,int32,int32,int32> get_arg@1() cil managed
+  {
+    
+    .maxstack  8
+    IL_0000:  ldsfld     class [runtime]System.Tuple`4<int32,int32,int32,int32> assembly::arg@1
+    IL_0005:  ret
+  } 
+
   .method private specialname rtspecialname static void  .cctor() cil managed
   {
     
@@ -166,14 +174,6 @@
     IL_0006:  ldsfld     int32 '<StartupCode$assembly>'.$assembly::init@
     IL_000b:  pop
     IL_000c:  ret
-  } 
-
-  .method assembly specialname static class [runtime]System.Tuple`4<int32,int32,int32,int32> get_arg@1() cil managed
-  {
-    
-    .maxstack  8
-    IL_0000:  ldsfld     class [runtime]System.Tuple`4<int32,int32,int32,int32> assembly::arg@1
-    IL_0005:  ret
   } 
 
   .method assembly static void  staticInitialization@() cil managed
