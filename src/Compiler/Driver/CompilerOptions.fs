@@ -1207,6 +1207,14 @@ let languageFlags tcConfigB =
             None,
             Some(FSComp.SR.optsStrictIndentation (formatOptionSwitch (Option.defaultValue false tcConfigB.strictIndentation)))
         )
+
+        CompilerOption(
+            "always-inline",
+            tagNone,
+            OptionSwitch(fun switch -> tcConfigB.alwaysInline <- Some(switch = OptionSwitch.On)),
+            None,
+            Some(FSComp.SR.optsAlwaysInline ())
+        )
     ]
 
 // OptionBlock: Advanced user options

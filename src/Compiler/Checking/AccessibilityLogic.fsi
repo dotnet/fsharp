@@ -69,6 +69,11 @@ val ComputeILAccess:
 
 val IsILFieldInfoAccessible: g: TcGlobals -> amap: ImportMap -> m: range -> ad: AccessorDomain -> x: ILFieldInfo -> bool
 
+/// True if the expression loads, stores, or takes the address of an IL field with protected (Family or
+/// FamilyOrAssembly) access. Such a field may only be reachable from inside the declaring family, so a
+/// closure or lifted helper that references one must not be relocated outside the declaring type (#19963, #5302).
+val exprReferencesProtectedILField: amap: ImportMap -> expr: Expr -> bool
+
 val GetILAccessOfILEventInfo: ILEventInfo -> ILMemberAccess
 
 val IsILEventInfoAccessible:
