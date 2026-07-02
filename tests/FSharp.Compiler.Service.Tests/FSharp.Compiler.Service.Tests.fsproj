@@ -29,6 +29,8 @@
     <Compile Include="TypeChecker\TypeCheckerRecoveryTests.fs" />
     <Compile Include="TypeChecker\Obsolete.fs" />
     <Compile Include="GeneratedCodeSymbolsTests.fs" />
+    <Compile Include="HotReload\GeneratedNamesTests.fs" />
+    <Compile Include="HotReload\NameMapTests.fs" />
     <Compile Include="BreakpointLocationTests.fs" />
     <Compile Include="AssemblyReaderShim.fs" />
     <Compile Include="ModuleReaderCancellationTests.fs" />
