@@ -6,15 +6,13 @@ open Xunit
 open FSharp.Test.Compiler
 
 // Regression tests for https://github.com/dotnet/fsharp/issues/13099
-// The Release-mode optimizer was eliminating a side-effectful receiver expression
-// when its result flowed into a unit-typed member access (e.g. `.End`) inside `task { }`.
+// State machine lowering (BindResumableCodeDefinitions) dropped a `let this = receiver in ()`
+// binding whose variable is unused, discarding the receiver's side effect. In Release the
+// optimizer reduces a unit-typed member access (e.g. `.End`) to that shape, so the receiver
+// exception was swallowed; Debug never produced the shape.
 //
-// In Debug, the call site is preserved and the side-effectful exception is observed.
-// In Release, the optimizer reduces the unit-typed property access to the unit constant
-// and drops the receiver, swallowing the exception.
-//
-// Each test compiles a snippet under both Debug (optimize=false) and Release
-// (optimize=true) and asserts the program completes without an unhandled exception.
+// Each test compiles a snippet under both Debug (optimize=false) and Release (optimize=true)
+// and asserts the side effect is observed.
 //
 // Note: snippets execute *in-process* via reflection. They MUST NOT call `exit`
 // because that would terminate the test runner. Use `failwith` (or simply let an

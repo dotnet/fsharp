@@ -1715,24 +1715,6 @@ let TryEliminateBinding cenv _env bind e2 _m =
               | _ -> None
 
         let (DebugPoints(e2, recreate0)) = e2
-
-        // Protect side-effectful member receiver temporaries from being dropped by
-        // state-machine lowering.  After the optimizer inlines a unit-returning property
-        // access (e.g. task { (f()).End }), it produces:
-        //     let this = receiver in ()
-        // where 'this' has IsMemberThisVal = true.  LowerStateMachines.BindResumableCodeDefinitions
-        // treats any IsMemberThisVal binding as a resumable-code definition and removes it from
-        // the expression tree.  If the variable is unused the side-effectful receiver is silently
-        // lost.  Converting to Expr.Sequential here makes the expression invisible to that pass.
-        // See issue #13099.
-        let xUnusedInBody () =
-            let fvs = accFreeInExpr (CollectLocalsWithStackGuard()) e2 emptyFreeVars
-            not (Zset.contains vspec1 fvs.FreeLocals)
-
-        if vspec1.IsMemberThisVal && ExprHasEffect g e1 && xUnusedInBody () then
-            Some (mkSequential e1.Range e1 e2 |> recreate0)
-        else
-
         match e2 with 
 
          // Immediate consumption of value as itself 'let x = e in x'
