@@ -44,14 +44,15 @@ let computeSymbolChanges
     let baselineLookup = buildLookup baselineFiles
     let updatedLookup = buildLookup updatedFiles
 
-    let definitionMap =
-        (emptyDefinitionMap, updatedFiles)
-        ||> Seq.fold (fun acc updatedFile ->
+    let definitionMap, skippedFiles, diffedFiles =
+        ((emptyDefinitionMap, 0, 0), updatedFiles)
+        ||> Seq.fold (fun (acc, skippedFiles, diffedFiles) updatedFile ->
             match Map.tryFind (fileKey updatedFile) baselineLookup with
+            | Some baselineFile when obj.ReferenceEquals(baselineFile, updatedFile) -> acc, skippedFiles + 1, diffedFiles
             | Some baselineFile ->
                 let diff = diffImplementationFile tcGlobals capabilities baselineFile updatedFile
                 let map = FSharpDefinitionMap.ofTypedTreeDiff diff
-                mergeDefinitionMaps acc map
+                mergeDefinitionMaps acc map, skippedFiles, diffedFiles + 1
             | None ->
                 // No matching baseline file: surface a rude edit rather than silently dropping the change.
                 let rudeEdit =
@@ -65,7 +66,12 @@ let computeSymbolChanges
                     acc
                     { emptyDefinitionMap with
                         RudeEdits = [ rudeEdit ]
-                    })
+                    },
+                skippedFiles,
+                diffedFiles)
+
+    if traceMethodResolution then
+        printfn "[fsharp-hotreload][diff] checked implementation files: skipped=%d diffed=%d" skippedFiles diffedFiles
 
     let definitionMap =
         ((definitionMap, baselineLookup)
@@ -567,7 +573,7 @@ let mapSymbolChangesToDelta
     // Added module-level values lower to a static backing field plus accessor methods, with
     // initialization appended to the startup-code class constructor
     // (`<StartupCode$asm>.$Path.Module..cctor`). The startup constructor is not a typed-tree
-    // binding, so the diff cannot pair its body change — when the baseline already contains
+    // binding, so the diff cannot pair its body change when the baseline already contains
     // it, resolve it here so the emitter re-emits the body that now initializes the new
     // value. When the baseline has no startup constructor yet (first value added to the
     // module), the fresh compile introduces it and the emitter discovers it as an added

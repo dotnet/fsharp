@@ -11,6 +11,7 @@ open FSharp.Compiler.CodeAnalysis.ProjectSnapshot
 open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.EditAndContinue
 open FSharp.Compiler.Text
+open FSharp.Compiler.TypedTree
 open FSharp.Test
 open FSharp.Test.Utilities
 
@@ -97,6 +98,16 @@ module HotReloadSessionTests =
         FSharpProjectSnapshot.FromOptions(projectOptions, DocumentSource.FileSystem)
         |> Async.RunImmediate
 
+    let private prepareMultiFileProjectOptions
+        (checker: FSharpChecker)
+        (fsPaths: string array)
+        (dllPath: string)
+        (firstSource: string)
+        (extraOptions: string list)
+        =
+        let options = prepareProjectOptions checker fsPaths[0] dllPath firstSource extraOptions
+        { options with SourceFiles = fsPaths }
+
     let private withProjectDir (testName: string) (action: string -> unit) =
         let projectDir =
             Path.Combine(Path.GetTempPath(), testName, Guid.NewGuid().ToString("N"))
@@ -126,6 +137,14 @@ module HotReloadSessionTests =
         | Ok delta -> delta
         | Error error -> failwithf "EmitDelta failed: %A" error
 
+    let private projectViewOrFail (session: FSharpHotReloadSession) snapshot =
+        match session.TryGetProjectView(snapshot) with
+        | ValueSome view -> view
+        | ValueNone -> failwith "Expected a session view for the project."
+
+    let private implFiles (CheckedAssemblyAfterOptimization files) =
+        files |> List.map (fun file -> file.ImplFile)
+
     let private libSource (generation: int) =
         $"""
 module SessionLib
@@ -139,6 +158,85 @@ module SessionApp
 
 let appValue () = "app generation {generation}"
 """
+
+    [<Fact>]
+    let ``EmitDelta reuses checked implementation files for unchanged earlier files`` () =
+        withProjectDir "fcs-hotreload-session-reference-equality" (fun projectDir ->
+            let fileAPath = Path.Combine(projectDir, "FileA.fs")
+            let fileBPath = Path.Combine(projectDir, "FileB.fs")
+            let fileCPath = Path.Combine(projectDir, "FileC.fs")
+            let dllPath = Path.Combine(projectDir, "ReferenceEquality.dll")
+
+            let fileASource =
+                """
+module FileA
+
+let baseValue = 41
+"""
+
+            let fileBSource =
+                """
+module FileB
+
+let derived () = FileA.baseValue + 1
+"""
+
+            let fileCSource generation =
+                $"""
+module FileC
+
+let current () = FileB.derived () + {generation}
+"""
+
+            File.WriteAllText(fileAPath, fileASource)
+            File.WriteAllText(fileBPath, fileBSource)
+            File.WriteAllText(fileCPath, fileCSource 0)
+
+            let checker = createChecker ()
+            let sourcePaths = [| fileAPath; fileBPath; fileCPath |]
+            let options = prepareMultiFileProjectOptions checker sourcePaths dllPath fileASource []
+            let snapshot = createProjectSnapshot options
+
+            checker.InvalidateAll()
+            compileProject checker options true
+
+            use session = checker.CreateHotReloadSession()
+            addProjectOrFail session snapshot
+
+            let baselineFiles =
+                (projectViewOrFail session snapshot).ImplementationFiles |> implFiles
+
+            let previousFlag =
+                Environment.GetEnvironmentVariable("FSHARP_HOTRELOAD_INPROCESS_COMPILE")
+
+            try
+                Environment.SetEnvironmentVariable("FSHARP_HOTRELOAD_INPROCESS_COMPILE", "1")
+
+                File.WriteAllText(fileCPath, fileCSource 1)
+                checker.NotifyFileChanged(fileCPath, options) |> Async.RunImmediate
+
+                let delta = emitOrFail session (createProjectSnapshot options)
+                Assert.NotEmpty(delta.UpdatedMethods)
+
+                let freshFiles =
+                    match (projectViewOrFail session snapshot).PendingUpdate with
+                    | Some pending ->
+                        match pending.ImplementationFiles with
+                        | Some implementationFiles -> implFiles implementationFiles
+                        | None -> failwith "Expected pending implementation files after EmitDelta."
+                    | None -> failwith "Expected a pending update after EmitDelta."
+
+                let equalityPairs =
+                    List.zip baselineFiles freshFiles
+                    |> List.map (fun (baselineFile, freshFile) -> obj.ReferenceEquals(baselineFile, freshFile))
+
+                let referenceEqualCount = equalityPairs |> List.filter id |> List.length
+                printfn "[fsharp-hotreload][typed-tree-reference-equality] unchanged-file hit rate: %d/%d" referenceEqualCount equalityPairs.Length
+
+                Assert.Equal<bool list>([ true; true; false ], equalityPairs)
+                session.Discard()
+            finally
+                Environment.SetEnvironmentVariable("FSHARP_HOTRELOAD_INPROCESS_COMPILE", previousFlag))
 
     [<Fact>]
     let ``Two independent sessions emit deltas without interference`` () =
@@ -178,7 +276,7 @@ let appValue () = "app generation {generation}"
             Assert.NotEmpty(deltaA1.UpdatedMethods)
             sessionA.Commit()
 
-            // Edit + emit on session B — unaffected by session A's activity.
+            // Edit + emit on session B, unaffected by session A's activity.
             writeAndCompile checker fsPathB optionsB (appSource 1) false
             let deltaB1 = emitOrFail sessionB (createProjectSnapshot optionsB)
             Assert.NotEmpty(deltaB1.Metadata)
@@ -304,7 +402,7 @@ let appValue () = "app generation {generation}: " + SessionLib.libValue ()
             // Solution-wide commit advances BOTH pending project updates together.
             session.Commit()
 
-            // The library's next generation chains from the library's own gen-1 id —
+            // The library's next generation chains from the library's own gen-1 id,
             // interleaved app edits do not perturb the lib chain (and vice versa).
             writeAndCompile checker libFsPath libOptions (libSource 2) false
             let libDelta2 = emitOrFail session (createProjectSnapshot libOptions)
