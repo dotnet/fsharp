@@ -69,6 +69,7 @@ module internal SymbolHelpers =
                 |> Option.orElseWith (fun () -> Some(rangeOfEntityRef preferFlag minfo.DeclaringTyconRef))
 #endif
         |   DefaultStructCtor(_, AppTy g (tcref, _)) -> Some(rangeOfEntityRef preferFlag tcref)
+        |   RecdCtor(_, AppTy g (tcref, _)) -> Some(rangeOfEntityRef preferFlag tcref)
         |   _ -> minfo.ArbitraryValRef |> Option.map (rangeOfValRef preferFlag)
 
     let rangeOfEventInfo preferFlag (einfo: EventInfo) =
@@ -819,6 +820,7 @@ module internal SymbolHelpers =
 
             | MethInfoWithModifiedReturnType(mi,_) -> getKeywordForMethInfo mi
             | DefaultStructCtor _  -> None
+            | RecdCtor _  -> None
 #if !NO_TYPEPROVIDERS
             | ProvidedMeth _ -> None
 #endif

@@ -155,6 +155,7 @@ let rec GetAttribInfosOfMethod amap m minfo =
     | FSMeth (g, _, vref, _) -> vref.Attribs |> AttribInfosOfFS g 
     | MethInfoWithModifiedReturnType(mi,_) -> GetAttribInfosOfMethod amap m mi
     | DefaultStructCtor _ -> []
+    | RecdCtor _ -> []
 #if !NO_TYPEPROVIDERS
     // TODO: provided attributes
     | ProvidedMeth (_, _mi, _, _m) -> 
@@ -191,6 +192,7 @@ let rec BindMethInfoAttributes m minfo f1 f2 f3 =
     | FSMeth (_, _, vref, _) -> f2 vref.Attribs
     | MethInfoWithModifiedReturnType(mi,_) -> BindMethInfoAttributes m mi f1 f2 f3
     | DefaultStructCtor _ -> f2 []
+    | RecdCtor _ -> f2 []
 #if !NO_TYPEPROVIDERS
     | ProvidedMeth (_, mi, _, _) -> f3 (mi.PApply((fun st -> (st :> IProvidedCustomAttributeProvider)), m))
 #endif
@@ -246,6 +248,7 @@ let rec MethInfoHasWellKnownAttribute g (m: range) (ilFlag: WellKnownILAttribute
     | ILMeth(_, ilMethInfo, _) -> ilMethInfo.RawMetadata.HasWellKnownAttribute(g, ilFlag)
     | FSMeth(_, _, vref, _) -> ValHasWellKnownAttribute g valFlag vref.Deref
     | DefaultStructCtor _ -> false
+    | RecdCtor _ -> false
     | MethInfoWithModifiedReturnType(mi, _) -> MethInfoHasWellKnownAttribute g m ilFlag valFlag attribSpec mi
 #if !NO_TYPEPROVIDERS
     | ProvidedMeth _ -> MethInfoHasAttribute g m attribSpec minfo

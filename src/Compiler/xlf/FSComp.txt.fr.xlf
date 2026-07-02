@@ -602,6 +602,11 @@
         <target state="translated">répertorier les littéraux de n’importe quelle taille</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureRecordConstructorSyntax">
+        <source>Constructing a record via its all-fields constructor</source>
+        <target state="new">Constructing a record via its all-fields constructor</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureRefCellNotationInformationals">
         <source>informational messages related to reference cells</source>
         <target state="translated">messages d’information liés aux cellules de référence</target>

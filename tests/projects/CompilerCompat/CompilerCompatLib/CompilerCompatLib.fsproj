@@ -28,6 +28,12 @@
   <!-- Note: This is imported here after SDK to ensure it can override SDK F# targets -->
   <Import Project="../../../../UseLocalCompiler.Directory.Build.props" Condition="'$(LoadLocalFSharpBuild)' == 'True'" />
 
+  <!-- Built with the local (preview-capable) compiler: enable preview language features. -->
+  <PropertyGroup Condition="'$(LoadLocalFSharpBuild)' == 'True'">
+    <LangVersion>preview</LangVersion>
+    <DefineConstants>$(DefineConstants);USES_PREVIEW_COMPILER</DefineConstants>
+  </PropertyGroup>
+
   <ItemGroup>
     <Compile Include="LibBuildInfo.fs" />
     <Compile Include="Library.fs" />

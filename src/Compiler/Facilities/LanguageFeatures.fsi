@@ -101,6 +101,7 @@ type LanguageFeature =
     | PreprocessorElif
     | ExceptionFieldSerializationSupport
     | ErrorOnMissingSignatureAttribute
+    | RecordConstructorSyntax
     | AccessProtectedBaseFieldFromClosure
     | ImprovedImpliedArgumentNamesPartTwo
 

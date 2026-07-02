@@ -110,6 +110,7 @@ type LanguageFeature =
     | PreprocessorElif
     | ExceptionFieldSerializationSupport
     | ErrorOnMissingSignatureAttribute
+    | RecordConstructorSyntax
     | AccessProtectedBaseFieldFromClosure
     | ImprovedImpliedArgumentNamesPartTwo
 
@@ -266,6 +267,7 @@ type LanguageVersion(versionText, ?disabledFeaturesArray: LanguageFeature array)
                 LanguageFeature.MethodOverloadsCache, previewVersion // Performance optimization for overload resolution
                 LanguageFeature.ImplicitDIMCoverage, languageVersion110
                 LanguageFeature.ErrorOnMissingSignatureAttribute, previewVersion // Opt-in: turn FS3888 from warning into error
+                LanguageFeature.RecordConstructorSyntax, previewVersion // Allow constructing a record via its all-fields constructor, e.g. MyRecord(a, b)
                 LanguageFeature.AccessProtectedBaseFieldFromClosure, previewVersion // #5302: read a protected base field from a closure
             ]
 
@@ -463,6 +465,7 @@ type LanguageVersion(versionText, ?disabledFeaturesArray: LanguageFeature array)
         | LanguageFeature.PreprocessorElif -> FSComp.SR.featurePreprocessorElif ()
         | LanguageFeature.ExceptionFieldSerializationSupport -> FSComp.SR.featureExceptionFieldSerializationSupport ()
         | LanguageFeature.ErrorOnMissingSignatureAttribute -> FSComp.SR.featureErrorOnMissingSignatureAttribute ()
+        | LanguageFeature.RecordConstructorSyntax -> FSComp.SR.featureRecordConstructorSyntax ()
         | LanguageFeature.AccessProtectedBaseFieldFromClosure -> FSComp.SR.featureAccessProtectedBaseFieldFromClosure ()
         | LanguageFeature.ImprovedImpliedArgumentNamesPartTwo -> FSComp.SR.featureImprovedImpliedArgumentNamesPartTwo ()
 
