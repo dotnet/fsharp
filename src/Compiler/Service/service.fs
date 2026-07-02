@@ -1441,17 +1441,7 @@ type FSharpChecker
                     ->
                     match tryGetCompilerGeneratedNameMap (tcGlobals.CompilerGlobalState.Value :> obj) with
                     | Some map ->
-                        let overrides =
-                            FSharp.Compiler.ClosureNameAllocationState.getSynthesizedNameOverrides (tcGlobals.CompilerGlobalState.Value :> obj)
-
-                        let emittedNames = HotReloadBaseline.collectTypeDefSimpleNames ilxMainModule
-
-                        map.Snapshot
-                        |> FSharp.Compiler.ClosureNameAllocationState.applySynthesizedNameOverrides overrides
-                        |> Seq.choose (fun struct (key, names) ->
-                            let names = names |> Array.filter emittedNames.Contains
-
-                            if names.Length = 0 then None else Some(struct (key, names)))
+                        HotReloadBaseline.collectRecordedSynthesizedNameSnapshot (tcGlobals.CompilerGlobalState.Value :> obj) map
                         |> EncMethodDebugInformation.computeSynthesizedNameSnapshotCustomDebugInfoRows
                     | None -> []
                 | _ -> []

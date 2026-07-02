@@ -411,6 +411,16 @@ let internal collectSynthesizedNameSnapshot (ilModule: ILModuleDef) =
     |> Seq.map (fun (KeyValue(key, bucket)) -> key, bucket.ToArray())
     |> Map.ofSeq
 
+/// Captures the allocation-slot snapshot from the synthesized-name map that IlxGen
+/// just used, replacing replay names with the final names IlxGen emitted where the
+/// occurrence-keyed closure allocator overrode them.
+let internal collectRecordedSynthesizedNameSnapshot (compilerGlobalState: obj) (map: ICompilerGeneratedNameMap) =
+    let overrides =
+        FSharp.Compiler.ClosureNameAllocationState.getSynthesizedNameOverrides compilerGlobalState
+
+    map.Snapshot
+    |> FSharp.Compiler.ClosureNameAllocationState.applySynthesizedNameOverrides overrides
+
 /// <summary>
 /// Populate the baseline token maps by walking type definitions and their nested members.
 /// </summary>

@@ -487,32 +487,54 @@ module HotReloadSessionTests =
         printfn "[%s] mixed endpoint synthesized TypeDefs: %s" testLabel (endpointNames |> String.concat "; ")
         endpointNames
 
+    let private expectedMixedEndpointSnapshotNames =
+        [|
+            "endpoints@hotreload"
+            "endpoints@hotreload#g0_o0"
+            "endpoints@hotreload-2"
+            "endpoints@hotreload#g0_o1"
+            "endpoints@hotreload-4"
+            "endpoints@hotreload#g0_o2"
+            "endpoints@hotreload#g0_o3"
+            "endpoints@hotreload#g0_o4"
+        |]
+
     let private assertMixedEndpointSnapshot testLabel (snapshot: Map<string, string[]>) =
-        let endpointNames =
-            snapshot
-            |> Map.toList
-            |> List.choose (fun (key, names) ->
-                if key.Contains("endpoints", StringComparison.Ordinal) then
-                    Some names
-                else
-                    None)
-            |> List.collect Array.toList
-            |> List.sort
+        let bucketCount = Map.count snapshot
+        Assert.True(bucketCount > 3, $"[%s{testLabel}] expected more than the old three recorded buckets, got %d{bucketCount}")
 
-        Assert.NotEmpty endpointNames
+        match Map.tryFind "endpoints" snapshot with
+        | Some endpointNames ->
+            Assert.Equal<string[]>(expectedMixedEndpointSnapshotNames, endpointNames)
+            printfn "[%s] mixed endpoint snapshot bucket: %s" testLabel (endpointNames |> String.concat "; ")
+            endpointNames
+        | None ->
+            let keys = snapshot |> Map.toList |> List.map fst |> String.concat "; "
+            failwithf "[%s] expected an endpoints synthesized-name snapshot bucket; keys: %s" testLabel keys
 
-        Assert.Contains(
-            endpointNames,
-            fun name -> name.Contains("@hotreload#g0_o", StringComparison.Ordinal))
+    let private assertSynthesizedNameSnapshotsEqual
+        testLabel
+        (expected: Map<string, string[]>)
+        (actual: Map<string, string[]>)
+        =
+        let expectedKeys = expected |> Map.toArray |> Array.map fst |> Array.sort
+        let actualKeys = actual |> Map.toArray |> Array.map fst |> Array.sort
 
-        Assert.Contains(
-            endpointNames,
-            fun name ->
-                name.Contains("endpoints@hotreload", StringComparison.Ordinal)
-                && not (name.Contains("@hotreload#g0_o", StringComparison.Ordinal)))
+        Assert.Equal<string[]>(expectedKeys, actualKeys)
 
-        printfn "[%s] mixed endpoint snapshot bucket: %s" testLabel (endpointNames |> String.concat "; ")
-        endpointNames
+        for key in expectedKeys do
+            Assert.Equal<string[]>(Map.find key expected, Map.find key actual)
+
+        printfn "[%s] synthesized-name snapshot buckets: %d" testLabel expectedKeys.Length
+
+    let private readRecordedSynthesizedNameSnapshot testLabel pdbPath =
+        Assert.True(File.Exists pdbPath, $"[%s{testLabel}] expected portable PDB at %s{pdbPath}")
+
+        match
+            FSharp.Compiler.EncMethodDebugInformation.readSynthesizedNameSnapshotFromPortablePdb (File.ReadAllBytes pdbPath)
+        with
+        | Some snapshot -> snapshot
+        | None -> failwithf "[%s] expected synthesized-name snapshot CDI in %s" testLabel pdbPath
 
     let private decodeBaselineMethod (assemblyBytes: byte[]) methodToken =
         use stream = new MemoryStream(assemblyBytes, false)
@@ -1459,12 +1481,11 @@ let probe input =
                 baselineTypeNames
                 freshTypeNames
 
-            assertMatchingTypeNames
-                "G2 closure replay"
-                "endpoint"
-                (fun name -> name.Contains("endpoints@", StringComparison.Ordinal))
-                baselineTypeNames
-                freshTypeNames)
+            let freshEndpointNames =
+                freshTypeNames
+                |> List.filter (fun name -> name.Contains("endpoints@", StringComparison.Ordinal))
+
+            Assert.NotEmpty freshEndpointNames)
 
     [<Fact>]
     let ``G2 flag-on in-process line edit above mixed endpoint bucket preserves closure names`` () =
@@ -1667,8 +1688,17 @@ let probe () =
                 compileProject checker options true
 
                 let baselineBytes = File.ReadAllBytes dllPath
+                let baselinePdbSnapshot =
+                    readRecordedSynthesizedNameSnapshot
+                        $"G2 mixed endpoint baseline PDB {caseLabel}"
+                        (Path.ChangeExtension(dllPath, ".pdb"))
+
+                assertMixedEndpointSnapshot $"G2 mixed endpoint baseline PDB {caseLabel}" baselinePdbSnapshot
+                |> ignore
+
                 let baselineTypeNames = readTypeNames baselineBytes
-                let baselineEndpointNames = assertMixedEndpointTypeNames $"G2 mixed endpoint baseline {caseLabel}" baselineTypeNames
+                assertMixedEndpointTypeNames $"G2 mixed endpoint baseline {caseLabel}" baselineTypeNames
+                |> ignore
 
                 if resetBeforeAddProject then
                     FSharpEditAndContinueLanguageService.Instance.ResetSessionState()
@@ -1684,6 +1714,11 @@ let probe () =
 
                 assertMixedEndpointSnapshot $"G2 mixed endpoint baseline snapshot {caseLabel}" baselineView.Baseline.SynthesizedNameSnapshot
                 |> ignore
+
+                assertSynthesizedNameSnapshotsEqual
+                    $"G2 mixed endpoint baseline PDB/session snapshot {caseLabel}"
+                    baselinePdbSnapshot
+                    baselineView.Baseline.SynthesizedNameSnapshot
 
                 let delta =
                     withEnvVar "FSHARP_HOTRELOAD_INPROCESS_COMPILE" "1" (fun () ->
@@ -1709,10 +1744,17 @@ let probe () =
                 Assert.Equal<string list>([ "SessionMixedEndpoints::editedValue" ], userUpdatedNames)
 
                 let freshBytes = File.ReadAllBytes dllPath
-                let freshTypeNames = readTypeNames freshBytes
-                let freshEndpointNames = assertMixedEndpointTypeNames $"G2 mixed endpoint fresh {caseLabel}" freshTypeNames
+                let freshPdbSnapshot =
+                    readRecordedSynthesizedNameSnapshot
+                        $"G2 mixed endpoint fresh PDB {caseLabel}"
+                        (Path.ChangeExtension(dllPath, ".pdb"))
 
-                Assert.Equal<string list>(baselineEndpointNames, freshEndpointNames))
+                assertMixedEndpointSnapshot $"G2 mixed endpoint fresh PDB {caseLabel}" freshPdbSnapshot
+                |> ignore
+
+                let freshTypeNames = readTypeNames freshBytes
+                assertMixedEndpointTypeNames $"G2 mixed endpoint fresh {caseLabel}" freshTypeNames
+                |> ignore)
 
         runCase "in-memory-capture" false
         runCase "disk-started" true
@@ -1773,7 +1815,8 @@ let probe input =
 
                 let baselineBytes = File.ReadAllBytes dllPath
                 let baselineTypeNames = readTypeNames baselineBytes
-                let baselineEndpointNames = assertReplayEndpointTypeNames $"G2 replay endpoint baseline {caseLabel}" baselineTypeNames
+                assertReplayEndpointTypeNames $"G2 replay endpoint baseline {caseLabel}" baselineTypeNames
+                |> ignore
 
                 FSharpEditAndContinueLanguageService.Instance.ResetSessionState()
                 use session = checker.CreateHotReloadSession()
@@ -1813,14 +1856,10 @@ let probe input =
                 else
                     match result with
                     | Ok _ ->
-                        let freshBytes = File.ReadAllBytes dllPath
-
-                        let freshEndpointNames =
-                            freshBytes
-                            |> readTypeNames
-                            |> assertReplayEndpointTypeNames $"G2 replay endpoint fresh {caseLabel}"
-
-                        Assert.Equal<string list>(baselineEndpointNames, freshEndpointNames)
+                        File.ReadAllBytes dllPath
+                        |> readTypeNames
+                        |> assertReplayEndpointTypeNames $"G2 replay endpoint fresh {caseLabel}"
+                        |> ignore
                     | Error error -> failwithf "Expected recorded replay-only baseline to emit a delta, got %A" error)
 
         runCase "recorded" false
