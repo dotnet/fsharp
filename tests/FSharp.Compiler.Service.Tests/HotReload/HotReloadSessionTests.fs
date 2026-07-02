@@ -464,3 +464,93 @@ type Calculator<'T>() =
                 | ValueNone -> failwith "Expected a session view for the plain project."
 
             Assert.Empty(clearedView.ActiveStatements))
+
+    /// Experimental (dotnet/fsharp#19941 dev-loop track): FSHARP_HOTRELOAD_INPROCESS_COMPILE lets
+    /// EmitDelta recompile the output assembly in-process from the just-produced check results,
+    /// instead of requiring an external `dotnet build` before every delta. Covered here:
+    /// a body-only (string literal) edit under the flag; a body edit + line shift of an UNEDITED
+    /// sibling function under the flag (the shift surfaces as a sequence-point line update only
+    /// if the in-process compile wrote a FRESH sibling PDB - the stale external-build PDB still
+    /// carries the unshifted lines, so line-shift detection would stay silent); and, with the
+    /// flag off (the default), the existing stale-build-output refusal staying unaffected.
+    [<Fact>]
+    let ``EmitDelta recompiles in-process under FSHARP_HOTRELOAD_INPROCESS_COMPILE and refuses stale output once the flag is off`` () =
+        withProjectDir "fcs-hotreload-session-inprocess-compile" (fun projectDir ->
+            let fsPath = Path.Combine(projectDir, "Library.fs")
+            let dllPath = Path.Combine(projectDir, "Library.dll")
+
+            // Two functions: libValue takes the body edits; probe is never edited, so a comment
+            // line inserted above it shifts its sequence points without re-emitting its body.
+            let inprocSource (generation: int) =
+                $"""
+module SessionLib
+
+let libValue () = "lib generation {generation}"
+
+let probe () = 1
+"""
+
+            let inprocSourceShifted (generation: int) =
+                $"""
+module SessionLib
+
+let libValue () = "lib generation {generation}"
+
+// inserted line: shifts probe down relative to the committed baseline
+let probe () = 1
+"""
+
+            File.WriteAllText(fsPath, inprocSource 0)
+
+            let checker = createChecker ()
+            let options = prepareProjectOptions checker fsPath dllPath (inprocSource 0) []
+
+            checker.InvalidateAll()
+            compileProject checker options true
+
+            use session = checker.CreateHotReloadSession()
+            addProjectOrFail session (createProjectSnapshot options)
+
+            let previousFlag =
+                Environment.GetEnvironmentVariable("FSHARP_HOTRELOAD_INPROCESS_COMPILE")
+
+            try
+                Environment.SetEnvironmentVariable("FSHARP_HOTRELOAD_INPROCESS_COMPILE", "1")
+
+                // Body-only edit (string literal): notify the checker but deliberately skip the
+                // external `dotnet build`/compileProject step. The in-process compile path must
+                // produce the updated output assembly by itself.
+                File.WriteAllText(fsPath, inprocSource 1)
+                checker.NotifyFileChanged(fsPath, options) |> Async.RunImmediate
+
+                let delta = emitOrFail session (createProjectSnapshot options)
+                Assert.Equal(1, delta.UpdatedMethods.Length)
+                session.Commit()
+
+                // Body edit of libValue + line shift of the unedited probe, still without any
+                // external rebuild. The line update for probe is computed by diffing the
+                // committed sequence points against the on-disk PDB, so it only appears if the
+                // in-process compile wrote a fresh sibling PDB: the stale external-build PDB
+                // still carries probe's unshifted lines and detection would emit nothing.
+                File.WriteAllText(fsPath, inprocSourceShifted 2)
+                checker.NotifyFileChanged(fsPath, options) |> Async.RunImmediate
+
+                let shiftedDelta = emitOrFail session (createProjectSnapshot options)
+                Assert.Equal(1, shiftedDelta.UpdatedMethods.Length)
+
+                let updates = Assert.Single(shiftedDelta.SequencePointUpdates)
+                let lineUpdate = Assert.Single(updates.LineUpdates)
+                Assert.Equal(1, lineUpdate.NewLine - lineUpdate.OldLine)
+                session.Commit()
+            finally
+                Environment.SetEnvironmentVariable("FSHARP_HOTRELOAD_INPROCESS_COMPILE", previousFlag)
+
+            // Flag off (the default): a further body edit without an external recompile must be
+            // refused, proving flag-off behavior is unaffected by the in-process compile path.
+            File.WriteAllText(fsPath, inprocSourceShifted 3)
+            checker.NotifyFileChanged(fsPath, options) |> Async.RunImmediate
+
+            match session.EmitDelta(createProjectSnapshot options) |> Async.RunImmediate with
+            | Error(FSharpHotReloadError.DeltaEmissionFailed _) -> ()
+            | Error other -> failwithf "Expected a stale-output DeltaEmissionFailed error, got %A" other
+            | Ok _ -> failwith "Expected EmitDelta to refuse a delta from an unchanged (stale) build output.")

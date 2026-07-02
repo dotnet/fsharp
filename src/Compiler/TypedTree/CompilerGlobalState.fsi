@@ -19,6 +19,11 @@ type NiceNameGenerator =
     member FreshCompilerGeneratedName: name: string * m: range -> string
     member IncrementOnly: name: string * m: range -> int
 
+    /// Reset the per-(basicName, file) occurrence counters so a subsequent codegen run assigns the
+    /// same compiler-generated occurrence names a fresh process would. Callers must ensure no
+    /// concurrent codegen is using this generator when resetting.
+    member ResetCompilerGeneratedNameState: unit -> unit
+
 /// Generates compiler-generated names marked up with a source code location, but if given the same unique value then
 /// return precisely the same name. Each name generated also includes the StartLine number of the range passed in
 /// at the point of first generation.
@@ -29,6 +34,10 @@ type StableNiceNameGenerator =
 
     new: unit -> StableNiceNameGenerator
     member GetUniqueCompilerGeneratedName: name: string * m: range * uniq: int64 -> string
+
+    /// Reset the stable-name cache and inner occurrence counters, so both the cached stable names and
+    /// the underlying occurrence counters are cleared. See NiceNameGenerator.ResetCompilerGeneratedNameState.
+    member ResetCompilerGeneratedNameState: unit -> unit
 
 type internal CompilerGlobalState =
 
@@ -42,6 +51,12 @@ type internal CompilerGlobalState =
 
     /// A global generator of stable compiler generated names
     member StableNameGenerator: StableNiceNameGenerator
+
+    /// Reset all compiler-generated-name occurrence counters on this state, so successive in-process
+    /// codegen runs over the same source produce identical generated names (a fresh-process layout).
+    /// Callers must ensure no compilation is concurrently generating names (quiescence). Needed by
+    /// Edit-and-Continue style scenarios that re-emit from a warm checker.
+    member ResetCompilerGeneratedNameState: unit -> unit
 
 type Unique = int64
 
