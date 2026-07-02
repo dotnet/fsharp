@@ -169,10 +169,19 @@ type internal FSharpHotReloadService
         clearCompilerGeneratedNameMap (compilerState :> obj)
         FSharp.Compiler.ClosureNameAllocationState.clearClosureNameState (compilerState :> obj)
 
+    let synthesizedSnapshotHasOccurrenceNames (snapshot: Map<string, string[]>) =
+        snapshot
+        |> Map.exists (fun _ names ->
+            names
+            |> Array.exists FSharp.Compiler.ClosureNameAllocator.isGenerationSuffixedClosureName)
+
     let installInProcessCompileNamingState (projectKey: FSharp.Compiler.HotReloadState.HotReloadProjectKey) (compileTcGlobals: TcGlobals) =
         lock hotReloadGate (fun () ->
             match editAndContinueService.TryGetSession(projectKey) with
-            | ValueSome session when not (Map.isEmpty session.Baseline.EncClosureNames) ->
+            | ValueSome session when
+                not (Map.isEmpty session.Baseline.EncClosureNames)
+                || synthesizedSnapshotHasOccurrenceNames session.Baseline.SynthesizedNameSnapshot
+                ->
                 let compilerState = compileTcGlobals.CompilerGlobalState.Value
 
                 let map = getOrCreateSynthesizedTypeMap projectKey

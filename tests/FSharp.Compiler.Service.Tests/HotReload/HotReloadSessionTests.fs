@@ -448,6 +448,70 @@ module HotReloadSessionTests =
         Assert.Equal<string list>(filteredBaseline, filteredFresh)
         printfn "[%s] %s synthesized TypeDefs: %s" testLabel familyName (format filteredBaseline)
 
+    let private assertReplayEndpointTypeNames testLabel (typeNames: string list) =
+        let endpointNames =
+            typeNames
+            |> List.filter (fun name -> name.Contains("endpoints@hotreload", StringComparison.Ordinal))
+            |> List.sort
+
+        Assert.NotEmpty endpointNames
+
+        Assert.Contains(
+            endpointNames,
+            fun name ->
+                name.Contains("endpoints@hotreload", StringComparison.Ordinal)
+                && not (name.Contains("@hotreload#g0_o", StringComparison.Ordinal)))
+
+        printfn "[%s] replay endpoint synthesized TypeDefs: %s" testLabel (endpointNames |> String.concat "; ")
+
+    let private assertMixedEndpointTypeNames testLabel (typeNames: string list) =
+        let endpointNames =
+            typeNames
+            |> List.filter (fun name -> name.Contains("endpoints@hotreload", StringComparison.Ordinal))
+            |> List.sort
+
+        Assert.NotEmpty endpointNames
+
+        Assert.Contains(
+            endpointNames,
+            fun name -> name.Contains("@hotreload#g0_o", StringComparison.Ordinal))
+
+        Assert.Contains(
+            endpointNames,
+            fun name ->
+                name.Contains("endpoints@hotreload", StringComparison.Ordinal)
+                && not (name.Contains("@hotreload#g0_o", StringComparison.Ordinal)))
+
+        printfn "[%s] mixed endpoint synthesized TypeDefs: %s" testLabel (endpointNames |> String.concat "; ")
+        endpointNames
+
+    let private assertMixedEndpointSnapshot testLabel (snapshot: Map<string, string[]>) =
+        let endpointNames =
+            snapshot
+            |> Map.toList
+            |> List.choose (fun (key, names) ->
+                if key.Contains("endpoints", StringComparison.Ordinal) then
+                    Some names
+                else
+                    None)
+            |> List.collect Array.toList
+            |> List.sort
+
+        Assert.NotEmpty endpointNames
+
+        Assert.Contains(
+            endpointNames,
+            fun name -> name.Contains("@hotreload#g0_o", StringComparison.Ordinal))
+
+        Assert.Contains(
+            endpointNames,
+            fun name ->
+                name.Contains("endpoints@hotreload", StringComparison.Ordinal)
+                && not (name.Contains("@hotreload#g0_o", StringComparison.Ordinal)))
+
+        printfn "[%s] mixed endpoint snapshot bucket: %s" testLabel (endpointNames |> String.concat "; ")
+        endpointNames
+
     let private decodeBaselineMethod (assemblyBytes: byte[]) methodToken =
         use stream = new MemoryStream(assemblyBytes, false)
         use peReader = new PEReader(stream)
@@ -1399,6 +1463,332 @@ let probe input =
                 (fun name -> name.Contains("endpoints@", StringComparison.Ordinal))
                 baselineTypeNames
                 freshTypeNames)
+
+    [<Fact>]
+    let ``G2 flag-on in-process line edit above mixed endpoint bucket preserves closure names`` () =
+        let routingLibrarySource =
+            """
+module SessionRoutingLike
+
+open System
+
+type HttpFunc = string -> string
+type HttpHandler = HttpFunc -> HttpFunc
+type ConfigureEndpoint = int -> int
+
+type HttpVerb =
+    | GET
+    | POST
+    | HEAD
+    | NotSpecified
+
+type Endpoint =
+    | SimpleEndpoint of HttpVerb * string * HttpHandler * ConfigureEndpoint
+    | TemplateEndpoint of HttpVerb * string * (string * char) list * (obj -> HttpHandler) * ConfigureEndpoint
+    | NestedEndpoint of string * Endpoint list * ConfigureEndpoint
+    | MultiEndpoint of Endpoint list
+
+let compose (handler1: HttpHandler) (handler2: HttpHandler) : HttpHandler =
+    fun (final: HttpFunc) ->
+        let func = final |> handler2 |> handler1
+        fun ctx -> func ctx
+
+let (>=>) = compose
+
+let text (str: string) : HttpHandler =
+    let bytes = str.ToCharArray()
+
+    fun (_: HttpFunc) (ctx: string) ->
+        String(bytes) + ctx
+
+let rec private applyHttpVerbToEndpoint (verb: HttpVerb) (endpoint: Endpoint) : Endpoint =
+    match endpoint with
+    | SimpleEndpoint(_, routeTemplate, requestDelegate, metadata) ->
+        SimpleEndpoint(verb, routeTemplate, requestDelegate, metadata)
+    | TemplateEndpoint(_, routeTemplate, mappings, requestDelegate, metadata) ->
+        TemplateEndpoint(verb, routeTemplate, mappings, requestDelegate, metadata)
+    | NestedEndpoint(routeTemplate, endpoints, metadata) ->
+        NestedEndpoint(routeTemplate, endpoints |> List.map (applyHttpVerbToEndpoint verb), metadata)
+    | MultiEndpoint endpoints ->
+        endpoints |> List.map (applyHttpVerbToEndpoint verb) |> MultiEndpoint
+
+let rec private applyHttpVerbToEndpoints (verb: HttpVerb) (endpoints: Endpoint list) : Endpoint =
+    endpoints
+    |> List.map (fun endpoint ->
+        match endpoint with
+        | SimpleEndpoint(_, routeTemplate, requestDelegate, metadata) ->
+            SimpleEndpoint(verb, routeTemplate, requestDelegate, metadata)
+        | TemplateEndpoint(_, routeTemplate, mappings, requestDelegate, metadata) ->
+            TemplateEndpoint(verb, routeTemplate, mappings, requestDelegate, metadata)
+        | NestedEndpoint(routeTemplate, endpoints, metadata) ->
+            NestedEndpoint(routeTemplate, endpoints |> List.map (applyHttpVerbToEndpoint verb), metadata)
+        | MultiEndpoint endpoints ->
+            applyHttpVerbToEndpoints verb endpoints)
+    |> MultiEndpoint
+
+let rec private applyHttpVerbsToEndpoints (verbs: HttpVerb list) (endpoints: Endpoint list) : Endpoint =
+    endpoints
+    |> List.map (fun endpoint ->
+        match endpoint with
+        | SimpleEndpoint(_, routeTemplate, requestDelegate, metadata) ->
+            verbs
+            |> List.map (fun verb -> SimpleEndpoint(verb, routeTemplate, requestDelegate, metadata))
+            |> MultiEndpoint
+        | TemplateEndpoint(_, routeTemplate, mappings, requestDelegate, metadata) ->
+            verbs
+            |> List.map (fun verb -> TemplateEndpoint(verb, routeTemplate, mappings, requestDelegate, metadata))
+            |> MultiEndpoint
+        | NestedEndpoint(routeTemplate, endpoints, metadata) ->
+            verbs
+            |> List.map (fun verb ->
+                NestedEndpoint(routeTemplate, endpoints |> List.map (applyHttpVerbToEndpoint verb), metadata))
+            |> MultiEndpoint
+        | MultiEndpoint endpoints ->
+            verbs
+            |> List.map (fun verb -> applyHttpVerbToEndpoints verb endpoints)
+            |> MultiEndpoint)
+    |> MultiEndpoint
+
+let GET_HEAD = applyHttpVerbsToEndpoints [ GET; HEAD ]
+let GET = applyHttpVerbToEndpoints GET
+let POST = applyHttpVerbToEndpoints POST
+
+let routeWithExtensions (configureEndpoint: ConfigureEndpoint) (path: string) (handler: HttpHandler) : Endpoint =
+    SimpleEndpoint(HttpVerb.NotSpecified, path, handler, configureEndpoint)
+
+let route (path: string) (handler: HttpHandler) : Endpoint =
+    routeWithExtensions id path handler
+
+let routefWithExtensions
+    (configureEndpoint: ConfigureEndpoint)
+    (path: PrintfFormat<_, _, _, _, 'T>)
+    (routeHandler: 'T -> HttpHandler)
+    : Endpoint =
+    let template = path.Value
+    let mappings = []
+
+    let boxedHandler (o: obj) =
+        let t = o :?> 'T
+        routeHandler t
+
+    TemplateEndpoint(HttpVerb.NotSpecified, template, mappings, boxedHandler, configureEndpoint)
+
+let routef (path: PrintfFormat<_, _, _, _, 'T>) (routeHandler: 'T -> HttpHandler) : Endpoint =
+    routefWithExtensions id path routeHandler
+
+let subRouteWithExtensions (configureEndpoint: ConfigureEndpoint) (path: string) (endpoints: Endpoint list) : Endpoint =
+    NestedEndpoint(path, endpoints, configureEndpoint)
+
+let subRoute (path: string) (endpoints: Endpoint list) : Endpoint =
+    subRouteWithExtensions id path endpoints
+"""
+
+        let source literal includeInsertedLine =
+            let insertedLine =
+                if includeInsertedLine then
+                    "    // inserted line shifts the mixed endpoint bucket below"
+                else
+                    ""
+
+            $"""
+module SessionMixedEndpoints
+
+open SessionRoutingLike
+
+let editedValue () =
+{insertedLine}
+    "{literal}"
+
+let handler1: HttpHandler =
+    fun (_: HttpFunc) (ctx: string) -> "Hello World" + ctx
+
+let handler2 (firstName: string, age: int) : HttpHandler =
+    fun (_: HttpFunc) (ctx: string) ->
+        sprintf "Hello %%s, you are %%i years old." firstName age + ctx
+
+let handler3 (a: string, b: string, c: string, d: int) : HttpHandler =
+    fun (_: HttpFunc) (ctx: string) -> sprintf "Hello %%s %%s %%s %%i" a b c d + ctx
+
+let handlerNamed (petId: int) : HttpHandler =
+    fun (_: HttpFunc) (ctx: string) -> sprintf "PetId: %%i" petId + ctx
+
+let jsonHandler: HttpHandler =
+    fun (next: HttpFunc) (ctx: string) -> next ("json:" + ctx)
+
+let endpoints =
+    [
+        subRoute "/foo" [ GET [ route "/bar" (text "Aloha!") ] ]
+        GET [
+            route "/" (text "Hello World")
+            routef "/%%s/%%i" handler2
+            routef "/%%s/%%s/%%s/%%i" handler3
+            routef "/pet/%%i:petId" handlerNamed
+        ]
+        GET_HEAD [
+            route "/foo" (text "Bar")
+            route "/x" (text "y")
+            route "/abc" (text "def")
+            route "/123" (text "456")
+        ]
+        subRoute "/sub" [ route "/test" handler1 ]
+        POST [ route "/json" jsonHandler ]
+    ]
+
+let probe () =
+    endpoints.Length + editedValue().Length
+"""
+
+        let runCase caseLabel resetBeforeAddProject =
+            withProjectDir $"fcs-hotreload-session-g2-mixed-endpoint-bucket-{caseLabel}" (fun projectDir ->
+                FSharpEditAndContinueLanguageService.Instance.ResetSessionState()
+
+                let routingPath = Path.Combine(projectDir, "SessionRoutingLike.fs")
+                let routingDllPath = Path.Combine(projectDir, "SessionRoutingLike.dll")
+                let fsPath = Path.Combine(projectDir, "Library.fs")
+                let dllPath = Path.Combine(projectDir, "Library.dll")
+                let baselineSource = (source "baseline" false).TrimStart()
+                let editedSource = (source "edited" true).TrimStart()
+                let checker = createChecker ()
+
+                File.WriteAllText(routingPath, routingLibrarySource.TrimStart())
+
+                let routingOptions = prepareProjectOptions checker routingPath routingDllPath routingLibrarySource []
+                checker.InvalidateAll()
+                compileProject checker routingOptions false
+
+                File.WriteAllText(fsPath, baselineSource)
+
+                let options =
+                    prepareProjectOptions checker fsPath dllPath baselineSource [ $"-r:{routingDllPath}" ]
+
+                checker.InvalidateAll()
+                compileProject checker options true
+
+                let baselineBytes = File.ReadAllBytes dllPath
+                let baselineTypeNames = readTypeNames baselineBytes
+                let baselineEndpointNames = assertMixedEndpointTypeNames $"G2 mixed endpoint baseline {caseLabel}" baselineTypeNames
+
+                if resetBeforeAddProject then
+                    FSharpEditAndContinueLanguageService.Instance.ResetSessionState()
+
+                use session = checker.CreateHotReloadSession()
+                addProjectOrFail session (createProjectSnapshot options)
+
+                let baselineView = projectViewOrFail session (createProjectSnapshot options)
+                printfn
+                    "[G2 mixed endpoint %s] reconstructed closure-name tables=%d"
+                    caseLabel
+                    (Map.count baselineView.Baseline.EncClosureNames)
+
+                assertMixedEndpointSnapshot $"G2 mixed endpoint baseline snapshot {caseLabel}" baselineView.Baseline.SynthesizedNameSnapshot
+                |> ignore
+
+                let delta =
+                    withEnvVar "FSHARP_HOTRELOAD_INPROCESS_COMPILE" "1" (fun () ->
+                        File.WriteAllText(fsPath, editedSource)
+                        checker.NotifyFileChanged(fsPath, options) |> Async.RunImmediate
+                        emitOrFail session (createProjectSnapshot options))
+
+                let userUpdatedNames =
+                    let userMethodTokenByToken =
+                        baselineView.Baseline.MethodTokens
+                        |> Map.toSeq
+                        |> Seq.choose (fun (key, token) ->
+                            if key.DeclaringType.Contains("@", StringComparison.Ordinal) then
+                                None
+                            else
+                                Some(token, $"{key.DeclaringType}::{key.Name}"))
+                        |> Map.ofSeq
+
+                    delta.AddedOrChangedMethods
+                    |> List.choose (fun methodInfo -> userMethodTokenByToken |> Map.tryFind methodInfo.MethodToken)
+                    |> List.sort
+
+                Assert.Equal<string list>([ "SessionMixedEndpoints::editedValue" ], userUpdatedNames)
+
+                let freshBytes = File.ReadAllBytes dllPath
+                let freshTypeNames = readTypeNames freshBytes
+                let freshEndpointNames = assertMixedEndpointTypeNames $"G2 mixed endpoint fresh {caseLabel}" freshTypeNames
+
+                Assert.Equal<string list>(baselineEndpointNames, freshEndpointNames))
+
+        runCase "in-memory-capture" false
+        runCase "disk-started" true
+
+    [<Fact>]
+    let ``G2 flag-on in-process line edit above replay endpoint bucket fails closed without occurrence snapshot`` () =
+        withProjectDir "fcs-hotreload-session-g2-replay-endpoint-bucket" (fun projectDir ->
+            let fsPath = Path.Combine(projectDir, "Library.fs")
+            let dllPath = Path.Combine(projectDir, "Library.dll")
+
+            let source handlerOffset includeInsertedLine =
+                let insertedLine =
+                    if includeInsertedLine then
+                        "    // inserted line shifts the endpoint bucket below"
+                    else
+                        ""
+
+                $"""
+module SessionReplayEndpoints
+
+type Handler = int -> string
+
+let handler2 value =
+{insertedLine}
+    string (value + {handlerOffset})
+
+let endpoints : Handler list =
+    let local prefix value =
+        prefix + string value
+
+    [
+        fun value -> string value
+        local "foo="
+        fun value -> string (value + 1)
+        local "bar="
+    ]
+
+let probe input =
+    endpoints |> List.sumBy (fun endpoint -> endpoint input |> String.length)
+"""
+
+            let baselineSource = (source 1 false).TrimStart()
+            let editedSource = (source 2 true).TrimStart()
+
+            File.WriteAllText(fsPath, baselineSource)
+
+            let checker = createChecker ()
+            let options = prepareProjectOptions checker fsPath dllPath baselineSource []
+
+            checker.InvalidateAll()
+            compileProject checker options true
+
+            let baselineBytes = File.ReadAllBytes dllPath
+            let baselineTypeNames = readTypeNames baselineBytes
+            assertReplayEndpointTypeNames "G2 replay endpoint baseline" baselineTypeNames
+
+            FSharpEditAndContinueLanguageService.Instance.ResetSessionState()
+            use session = checker.CreateHotReloadSession()
+            addProjectOrFail session (createProjectSnapshot options)
+
+            let baselineView = projectViewOrFail session (createProjectSnapshot options)
+
+            Assert.True(
+                Map.isEmpty baselineView.Baseline.EncClosureNames,
+                "Expected the replay endpoint bucket to have no occurrence-keyed closure-name reconstruction and rely on the synthesized-name snapshot.")
+
+            let result =
+                withEnvVar "FSHARP_HOTRELOAD_INPROCESS_COMPILE" "1" (fun () ->
+                    File.WriteAllText(fsPath, editedSource)
+                    checker.NotifyFileChanged(fsPath, options) |> Async.RunImmediate
+                    session.EmitDelta(createProjectSnapshot options) |> Async.RunImmediate)
+
+            match result with
+            | Error(FSharpHotReloadError.UnsupportedEdit edits) ->
+                let message = edits |> List.map (fun edit -> $"{edit.Id}: {edit.Message}") |> String.concat Environment.NewLine
+                Assert.DoesNotContain("DeltaEmissionFailed", message)
+            | Error other -> failwithf "Expected UnsupportedEdit, got %A" other
+            | Ok _ -> failwith "Expected replay-only empty-table endpoint bucket to fail closed.")
 
     [<Fact>]
     let ``EmitDelta recompiles in-process under FSHARP_HOTRELOAD_INPROCESS_COMPILE and refuses stale output once the flag is off`` () =
