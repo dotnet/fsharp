@@ -76,9 +76,9 @@
     IL_0004:  stloc.3
     IL_0005:  br.s       IL_0024
 
-    IL_0007:  ldloca.s   V_1
-    IL_0009:  ldloc.3
-    IL_000a:  stloc.s    V_4
+    IL_0007:  ldloc.3
+    IL_0008:  stloc.s    V_4
+    IL_000a:  ldloca.s   V_1
     IL_000c:  stloc.s    V_5
     IL_000e:  ldloc.s    V_5
     IL_0010:  ldloc.s    V_4

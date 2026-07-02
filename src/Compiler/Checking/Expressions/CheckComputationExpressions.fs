@@ -7,6 +7,7 @@ module internal FSharp.Compiler.CheckComputationExpressions
 open Internal.Utilities.Library
 open FSharp.Compiler.AccessibilityLogic
 open FSharp.Compiler.AttributeChecking
+open FSharp.Compiler.CheckComputationExpressionsCustomOps
 open FSharp.Compiler.CheckExpressionsOps
 open FSharp.Compiler.CheckExpressions
 open FSharp.Compiler.CheckBasics
@@ -61,6 +62,7 @@ type ComputationExpressionContext<'a> =
         origComp: SynExpr
         mWhole: range
         emptyVarSpace: LazyWithContext<list<Val> * TcEnv, range>
+        deferredCustomOpSinks: ResizeArray<DeferredCustomOpSink>
     }
 
 let inline noTailCall ceenv = { ceenv with tailCall = false }
@@ -81,7 +83,7 @@ let inline arbKeySelectors m =
 // Flag that a debug point should get emitted prior to both the evaluation of 'rhsExpr' and the call to Using
 let inline addBindDebugPoint spBind e =
     match spBind with
-    | DebugPointAtBinding.Yes m -> SynExpr.DebugPoint(DebugPointAtLeafExpr.Yes m, false, e)
+    | DebugPointAtBinding.Yes m -> SynExpr.DebugPoint(DebugPointAtLeafExpr.Yes(false, m), false, e)
     | _ -> e
 
 let inline mkSynDelay2 (e: SynExpr) = mkSynDelay (e.Range.MakeSynthetic()) e
@@ -178,6 +180,26 @@ let transferVarSpaceReferences (expr: Expr) =
             for v in vals do
                 v.SetHasBeenReferenced()
 
+let TryGetCustomOperationName g m (methInfo: MethInfo) : string option =
+    TryBindMethInfoAttribute
+        g
+        m
+        g.attrib_CustomOperationAttribute
+        methInfo
+        IgnoreAttribute // We do not respect this attribute for IL methods
+        (fun attr ->
+            // NOTE: right now, we support of custom operations with spaces in them ([<CustomOperation("foo bar")>])
+            // In the parameterless CustomOperationAttribute - we use the method name, and also allow it to be ````-quoted (member _.``foo bar`` _ = ...)
+            match attr with
+            // Empty string and parameterless constructor - we use the method name
+            | Attrib(unnamedArgs = [ AttribStringArg "" ]) // Empty string as parameter
+            | Attrib(unnamedArgs = []) -> // No parameters, same as empty string for compat reasons.
+                Some methInfo.LogicalName
+            // Use the specified name
+            | Attrib(unnamedArgs = [ AttribStringArg msg ]) -> Some msg
+            | _ -> None)
+        IgnoreAttribute // We do not respect this attribute for provided methods
+
 let hasMethInfo nm cenv env mBuilderVal ad builderTy =
     match TryFindIntrinsicOrExtensionMethInfo ResultCollectionSettings.AtMostOneResult cenv env mBuilderVal ad nm builderTy with
     | [] -> false
@@ -198,25 +220,7 @@ let getCustomOperationMethods (cenv: TcFileState) (env: TcEnv) ad mBuilderVal bu
     [
         for methInfo in allMethInfos do
             if IsMethInfoAccessible cenv.amap mBuilderVal ad methInfo then
-                let nameSearch =
-                    TryBindMethInfoAttribute
-                        cenv.g
-                        mBuilderVal
-                        cenv.g.attrib_CustomOperationAttribute
-                        methInfo
-                        IgnoreAttribute // We do not respect this attribute for IL methods
-                        (fun attr ->
-                            // NOTE: right now, we support of custom operations with spaces in them ([<CustomOperation("foo bar")>])
-                            // In the parameterless CustomOperationAttribute - we use the method name, and also allow it to be ````-quoted (member _.``foo bar`` _ = ...)
-                            match attr with
-                            // Empty string and parameterless constructor - we use the method name
-                            | Attrib(unnamedArgs = [ AttribStringArg "" ]) // Empty string as parameter
-                            | Attrib(unnamedArgs = []) -> // No parameters, same as empty string for compat reasons.
-                                Some methInfo.LogicalName
-                            // Use the specified name
-                            | Attrib(unnamedArgs = [ AttribStringArg msg ]) -> Some msg
-                            | _ -> None)
-                        IgnoreAttribute // We do not respect this attribute for provided methods
+                let nameSearch = TryGetCustomOperationName cenv.g mBuilderVal methInfo
 
                 match nameSearch with
                 | None -> ()
@@ -1124,15 +1128,16 @@ let rec TryTranslateComputationExpression
                 | Some opDatas ->
                     let opName, _, _, _, _, _, _, _, methInfo = opDatas[0]
 
-                    // Record the resolution of the custom operation for posterity
-                    let item =
-                        Item.CustomOperation(opName, (fun () -> customOpUsageText ceenv nm), Some methInfo)
-
-                    // FUTURE: consider whether we can do better than emptyTyparInst here, in order to display instantiations
-                    // of type variables in the quick info provided in the IDE.
-                    CallNameResolutionSink
-                        cenv.tcSink
-                        (nm.idRange, ceenv.env.NameEnv, item, emptyTyparInst, ItemOccurrence.Use, ceenv.env.eAccessRights)
+                    enqueueDeferredCustomOpSink
+                        ceenv.cenv.tcSink
+                        ceenv.env.NameEnv
+                        ceenv.env.eAccessRights
+                        ceenv.deferredCustomOpSinks
+                        nm
+                        opName
+                        (fun () -> customOpUsageText ceenv nm)
+                        (mOpCore.MakeSynthetic())
+                        methInfo
 
                     let mkJoinExpr keySelector1 keySelector2 innerPat e =
                         let mSynthetic = mOpCore.MakeSynthetic()
@@ -1345,7 +1350,7 @@ let rec TryTranslateComputationExpression
 
                     let forCall =
                         match spFor with
-                        | DebugPointAtFor.Yes _ -> SynExpr.DebugPoint(DebugPointAtLeafExpr.Yes mFor, false, forCall)
+                        | DebugPointAtFor.Yes _ -> SynExpr.DebugPoint(DebugPointAtLeafExpr.Yes(false, mFor), false, forCall)
                         | DebugPointAtFor.No -> forCall
 
                     translatedCtxt forCall)
@@ -1389,7 +1394,7 @@ let rec TryTranslateComputationExpression
             // 'while' is hit just before each time the guard is called
             let guardExpr =
                 match spWhile with
-                | DebugPointAtWhile.Yes _ -> SynExpr.DebugPoint(DebugPointAtLeafExpr.Yes mWhile, false, guardExpr)
+                | DebugPointAtWhile.Yes _ -> SynExpr.DebugPoint(DebugPointAtLeafExpr.Yes(false, mWhile), false, guardExpr)
                 | DebugPointAtWhile.No -> guardExpr
 
             Some(
@@ -1419,7 +1424,7 @@ let rec TryTranslateComputationExpression
             // 'while!' is hit just before each time the guard is called
             let guardExpr =
                 match spWhile with
-                | DebugPointAtWhile.Yes _ -> SynExpr.DebugPoint(DebugPointAtLeafExpr.Yes mWhile, false, guardExpr)
+                | DebugPointAtWhile.Yes _ -> SynExpr.DebugPoint(DebugPointAtLeafExpr.Yes(false, mWhile), false, guardExpr)
                 | DebugPointAtWhile.No -> guardExpr
 
             let rewrittenWhileExpr =
@@ -1557,7 +1562,7 @@ let rec TryTranslateComputationExpression
             // Put down a debug point for the 'finally'
             let unwindExpr2 =
                 match spFinally with
-                | DebugPointAtFinally.Yes _ -> SynExpr.DebugPoint(DebugPointAtLeafExpr.Yes mFinally, true, unwindExpr)
+                | DebugPointAtFinally.Yes _ -> SynExpr.DebugPoint(DebugPointAtLeafExpr.Yes(false, mFinally), true, unwindExpr)
                 | DebugPointAtFinally.No -> unwindExpr
 
             if ceenv.isQuery then
@@ -1571,7 +1576,7 @@ let rec TryTranslateComputationExpression
 
             let innerExpr =
                 match spTry with
-                | DebugPointAtTry.Yes _ -> SynExpr.DebugPoint(DebugPointAtLeafExpr.Yes mTry, true, innerExpr)
+                | DebugPointAtTry.Yes _ -> SynExpr.DebugPoint(DebugPointAtLeafExpr.Yes(false, mTry), true, innerExpr)
                 | _ -> innerExpr
 
             Some(
@@ -1610,7 +1615,8 @@ let rec TryTranslateComputationExpression
                     error (Error(FSComp.SR.tcEmptyBodyRequiresBuilderZeroMethod (), ceenv.mWhole))
                 | _ -> error (Error(FSComp.SR.tcRequireBuilderMethod "Zero", m))
 
-            Some(translatedCtxt (mkSynCall "Zero" m [] ceenv.builderValName))
+            let mCall = if equals m range0 then ceenv.mWhole else m
+            Some(translatedCtxt (mkSynCall "Zero" mCall [] ceenv.builderValName))
 
         | OptionalSequential(JoinOrGroupJoinOrZipClause ceenv (_, _, _, _, _, mClause), _) when firstTry = CompExprTranslationPass.Initial ->
 
@@ -2308,7 +2314,7 @@ let rec TryTranslateComputationExpression
 
             let innerExpr =
                 match spTry with
-                | DebugPointAtTry.Yes _ -> SynExpr.DebugPoint(DebugPointAtLeafExpr.Yes mTry, true, innerExpr)
+                | DebugPointAtTry.Yes _ -> SynExpr.DebugPoint(DebugPointAtLeafExpr.Yes(false, mTry), true, innerExpr)
                 | _ -> innerExpr
 
             let callExpr =
@@ -2345,7 +2351,7 @@ let rec TryTranslateComputationExpression
                 if IsControlFlowExpression synYieldExpr then
                     yieldFromCall
                 else
-                    SynExpr.DebugPoint(DebugPointAtLeafExpr.Yes mFull, false, yieldFromCall)
+                    SynExpr.DebugPoint(DebugPointAtLeafExpr.Yes(false, mFull), false, yieldFromCall)
 
             Some(translatedCtxt yieldFromCall)
 
@@ -2374,7 +2380,7 @@ let rec TryTranslateComputationExpression
                 if IsControlFlowExpression synReturnExpr then
                     returnFromCall
                 else
-                    SynExpr.DebugPoint(DebugPointAtLeafExpr.Yes mFull, false, returnFromCall)
+                    SynExpr.DebugPoint(DebugPointAtLeafExpr.Yes(false, mFull), false, returnFromCall)
 
             Some(translatedCtxt returnFromCall)
 
@@ -2393,7 +2399,7 @@ let rec TryTranslateComputationExpression
                 if IsControlFlowExpression synYieldOrReturnExpr then
                     yieldOrReturnCall
                 else
-                    SynExpr.DebugPoint(DebugPointAtLeafExpr.Yes mFull, false, yieldOrReturnCall)
+                    SynExpr.DebugPoint(DebugPointAtLeafExpr.Yes(false, mFull), false, yieldOrReturnCall)
 
             Some(translatedCtxt yieldOrReturnCall)
 
@@ -2429,15 +2435,16 @@ and ConsumeCustomOpClauses
 
         let isLikeGroupJoin = customOperationIsLikeZip ceenv nm
 
-        // Record the resolution of the custom operation for posterity
-        let item =
-            Item.CustomOperation(opName, (fun () -> customOpUsageText ceenv nm), Some methInfo)
-
-        // FUTURE: consider whether we can do better than emptyTyparInst here, in order to display instantiations
-        // of type variables in the quick info provided in the IDE.
-        CallNameResolutionSink
+        enqueueDeferredCustomOpSink
             ceenv.cenv.tcSink
-            (nm.idRange, ceenv.env.NameEnv, item, emptyTyparInst, ItemOccurrence.Use, ceenv.env.eAccessRights)
+            ceenv.env.NameEnv
+            ceenv.env.eAccessRights
+            ceenv.deferredCustomOpSinks
+            nm
+            opName
+            (fun () -> customOpUsageText ceenv nm)
+            (mClause.MakeSynthetic())
+            methInfo
 
         if isLikeZip || isLikeJoin || isLikeGroupJoin then
             errorR (Error(FSComp.SR.tcBinaryOperatorRequiresBody (nm.idText, Option.get (customOpUsageText ceenv nm)), nm.idRange))
@@ -2704,7 +2711,9 @@ and TranslateComputationExpressionBind
 and convertSimpleReturnToExpr (ceenv: ComputationExpressionContext<'a>) comp varSpace innerComp =
     match innerComp with
     | SynExpr.YieldOrReturn((false, _), returnExpr, m, _) ->
-        let returnExpr = SynExpr.DebugPoint(DebugPointAtLeafExpr.Yes m, false, returnExpr)
+        let returnExpr =
+            SynExpr.DebugPoint(DebugPointAtLeafExpr.Yes(false, m), false, returnExpr)
+
         Some(returnExpr, None)
 
     | SynExpr.Match(spMatch, expr, clauses, m, trivia) ->
@@ -3021,6 +3030,8 @@ let TcComputationExpression (cenv: TcFileState) env (overallTy: OverallTy) tpenv
 
     let origComp = comp
 
+    let deferredCustomOpSinks = ResizeArray<DeferredCustomOpSink>()
+
     let ceenv =
         {
             cenv = cenv
@@ -3038,6 +3049,7 @@ let TcComputationExpression (cenv: TcFileState) env (overallTy: OverallTy) tpenv
             origComp = origComp
             mWhole = mWhole
             emptyVarSpace = LazyWithContext.NotLazy([], env)
+            deferredCustomOpSinks = deferredCustomOpSinks
         }
 
     /// Inside the 'query { ... }' use a modified name environment that contains fake 'CustomOperation' entries
@@ -3111,7 +3123,8 @@ let TcComputationExpression (cenv: TcFileState) env (overallTy: OverallTy) tpenv
         | _ -> env
 
     let lambdaExpr, tpenv =
-        TcExpr cenv (MustEqual(mkFunTy cenv.g builderTy overallTy)) env tpenv lambdaExpr
+        captureCustomOperationOverloads cenv.tcSink deferredCustomOpSinks (fun () ->
+            TcExpr cenv (MustEqual(mkFunTy cenv.g builderTy overallTy)) env tpenv lambdaExpr)
 
     // For queries, transfer HasBeenReferenced from compiler-generated varSpace Vals to user Vals
     if isQuery then

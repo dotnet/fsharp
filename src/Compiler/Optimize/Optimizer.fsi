@@ -51,6 +51,8 @@ type OptimizationSettings =
         reportTotalSizes: bool
 
         processingMode: OptimizationProcessingMode
+
+        alwaysInline: bool
     }
 
     member JitOptimizationsEnabled: bool

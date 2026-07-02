@@ -102,6 +102,13 @@ module internal CodeFix =
     let AddParentheses = "AddParentheses"
 
     [<Literal>]
+    let AddMissingAttributeToSignature = "AddMissingAttributeToSignature"
+
+    [<Literal>]
+    let RemoveExtraAttributeFromImplementation =
+        "RemoveExtraAttributeFromImplementation"
+
+    [<Literal>]
     let AddTypeAnnotationToObjectOfIndeterminateType =
         "AddTypeAnnotationToObjectOfIndeterminateType"
 
