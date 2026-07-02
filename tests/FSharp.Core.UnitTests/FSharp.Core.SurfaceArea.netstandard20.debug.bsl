@@ -1077,6 +1077,8 @@ Microsoft.FSharp.Core.ExtraTopLevelOperators: T PrintFormatToStringThenFail[T,TR
 Microsoft.FSharp.Core.ExtraTopLevelOperators: T PrintFormatToString[T](Microsoft.FSharp.Core.PrintfFormat`4[T,Microsoft.FSharp.Core.Unit,System.String,System.String])
 Microsoft.FSharp.Core.ExtraTopLevelOperators: T PrintFormatToTextWriter[T](System.IO.TextWriter, Microsoft.FSharp.Core.PrintfFormat`4[T,System.IO.TextWriter,Microsoft.FSharp.Core.Unit,Microsoft.FSharp.Core.Unit])
 Microsoft.FSharp.Core.ExtraTopLevelOperators: T PrintFormat[T](Microsoft.FSharp.Core.PrintfFormat`4[T,System.IO.TextWriter,Microsoft.FSharp.Core.Unit,Microsoft.FSharp.Core.Unit])
+Microsoft.FSharp.Core.ExtraTopLevelOperators: Void PrintValue[T](T)
+Microsoft.FSharp.Core.ExtraTopLevelOperators: Void PrintValueLine[T](T)
 Microsoft.FSharp.Core.ExtraTopLevelOperators: T SpliceExpression[T](Microsoft.FSharp.Quotations.FSharpExpr`1[T])
 Microsoft.FSharp.Core.ExtraTopLevelOperators: T SpliceUntypedExpression[T](Microsoft.FSharp.Quotations.FSharpExpr)
 Microsoft.FSharp.Core.ExtraTopLevelOperators: T[,] CreateArray2D[a,T](System.Collections.Generic.IEnumerable`1[a])
