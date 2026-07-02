@@ -493,7 +493,7 @@ let rec IsPartialExprVal x =
     | SizeValue (_, a) -> IsPartialExprVal a
 
 let CheckInlineValueIsComplete (v: Val) res =
-    if v.ShouldInline && IsPartialExprVal res then
+    if v.ShouldInline && not v.IsMember && IsPartialExprVal res then
         errorR(Error(FSComp.SR.optValueMarkedInlineButIncomplete(v.DisplayName), v.Range))
         //System.Diagnostics.Debug.Assert(false, sprintf "Break for incomplete inline value %s" v.DisplayName)
 
@@ -1415,40 +1415,12 @@ let AbstractOptimizationInfoToEssentials =
       
     abstractLazyModulInfo
 
-/// True if the IL field has protected (family) accessibility.
-let private isProtectedILFieldSpec cenv m (fspec: ILFieldSpec) =
-    match fspec.DeclaringTypeRef with
-    | Import.TryImportILTypeRef cenv.amap m (ILTyconRawMetadata tdef) ->
-        tdef.Fields.LookupByName fspec.Name
-        |> List.exists (fun fdef -> fdef.Access = ILMemberAccess.Family || fdef.Access = ILMemberAccess.FamilyOrAssembly)
-    | _ -> false
-
-/// True if the expression loads or stores a protected (family) IL field anywhere in its body.
-let private exprReferencesProtectedILField cenv expr =
-    let mutable found = false
-
-    let folder =
-        { ExprFolder0 with
-            exprIntercept =
-                fun _recurseF noInterceptF z e ->
-                    if not found then
-                        match e with
-                        | Expr.Op(TOp.ILAsm(instrs, _), _, _, m) ->
-                            if instrs |> List.exists (function ILFieldInstr fspec -> isProtectedILFieldSpec cenv m fspec | _ -> false) then
-                                found <- true
-                        | _ -> ()
-
-                    noInterceptF z e }
-
-    FoldExpr folder () expr |> ignore
-    found
-
 /// True if the expression references constructs that are only valid within their defining method or
 /// family, and so must not be relocated by inlining or method-splitting: a protected/base call
 /// (UsesMethodLocalConstructs) or a protected (family) IL field access (issue #19963).
 let usesMethodLocalConstructsOrProtectedField cenv (fvs: FreeVars) expr =
     fvs.UsesMethodLocalConstructs
-    || (fvs.ContainsILFieldAccess && exprReferencesProtectedILField cenv expr)
+    || (fvs.ContainsILFieldAccess && AccessibilityLogic.exprReferencesProtectedILField cenv.amap expr)
 
 /// Hide information because of a "let ... in ..." or "let rec ... in ... "
 let AbstractExprInfoByVars cenv (boundVars: Val list, boundTyVars) ivalue =
@@ -4299,6 +4271,17 @@ and OptimizeBinding cenv isRec env (TBind(vref, expr, spBind)) =
             else einfo 
         if vref.ShouldInline && IsPartialExprVal einfo.Info then 
             errorR(InternalError("the inline value '"+vref.LogicalName+"' was not inferred to have a known value", vref.Range))
+
+        if vref.ShouldInline && vref.IsMember && not g.compilingFSharpCore && canAccessFromEverywhere vref.Accessibility then
+            // A publicly-accessible inline member whose body references a value that is not
+            // accessible everywhere cannot be inlined at an external call site, so report it
+            // here (FS1113) instead of deferring a confusing FS1118 to the consumer. Only free
+            // value references are considered: a class-scope self identifier (`as self`) makes
+            // members reference a private safe-init field, but that is a field (never a free
+            // local) so it does not trip this check.
+            let fvs = freeInExpr CollectLocals exprOptimized
+            if fvs.FreeLocals |> Zset.exists (fun v -> not (canAccessFromEverywhere v.Accessibility)) then
+                errorR(Error(FSComp.SR.optValueMarkedInlineButIncomplete(vref.DisplayName), vref.Range))
         
         let env = BindInternalLocalVal cenv vref (mkValInfo einfo vref) env
 

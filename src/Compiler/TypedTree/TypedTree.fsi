@@ -119,6 +119,8 @@ type ValFlags =
 
     member IsImplied: bool
 
+    member IsParameter: bool
+
     member IsCompiledAsStaticPropertyWithoutField: bool
 
     member IsCompilerGenerated: bool
@@ -155,6 +157,8 @@ type ValFlags =
     member WithInlineInfo: inlineInfo: ValInline -> ValFlags
 
     member WithIsImplied: ValFlags
+
+    member WithIsParameter: ValFlags
 
     member WithIsCompiledAsStaticPropertyWithoutField: ValFlags
 
@@ -1382,6 +1386,10 @@ type ModuleOrNamespaceType =
 #if !NO_TYPEPROVIDERS
     /// Mutation used in hosting scenarios to hold the hosted types in this module or namespace
     member AddProvidedTypeEntity: entity: Entity -> unit
+
+    /// Interns a provided-type entity by mangled name so concurrent linking from multiple files yields one
+    /// Entity. The first caller's 'create' wins; callers must use the returned entity.
+    member GetOrInternProvidedEntity: mangledName: string * create: (unit -> Entity) -> Entity
 #endif
 
     /// Return a new module or namespace type with a value added.
@@ -2019,6 +2027,8 @@ type Val =
 
     member SetIsImplied: unit -> unit
 
+    member SetIsParameter: unit -> unit
+
     member SetIsCompiledAsStaticPropertyWithoutField: unit -> unit
 
     member SetIsCompilerGenerated: v: bool -> unit
@@ -2136,6 +2146,10 @@ type Val =
 
     /// Determines if the values is implied by another construct, e.g. a `IsA` property is implied by the union case for A
     member IsImplied: bool
+
+    /// Indicates whether this value is a function or method parameter, as opposed to a local binding.
+    /// Used to specialize diagnostics such as FS0027.
+    member IsParameter: bool
 
     /// Indicates if this is a 'base' value?
     member IsBaseVal: bool
