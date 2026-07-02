@@ -30,6 +30,12 @@ echo ---------------- Building product (real) ----------------
 powershell -NoProfile -ExecutionPolicy ByPass -Command "& '%~dp0common\build.ps1' -ci -build -configuration Release -projects '%_root%\FSharp.Product.sln' /m:1 /p:DisableLocalization=true; exit $LASTEXITCODE"
 if errorlevel 1 ( echo Error: product build failed 1>&2 & exit /b 1 )
 
+rem --- Step 4a: register strong-name verification skip for the F# public key so the delay-signed
+rem    product binaries (fsc/fsi/FSharp.Core) can run on the clean agent for testing. The real signed
+rem    build applies genuine signatures later; this mirrors the original 15.9 src\update.cmd. ---
+echo ---------------- Registering strong-name verification skip ----------------
+powershell -NoProfile -ExecutionPolicy ByPass -File "%~dp0register-sn-skip.ps1"
+
 rem --- Step 4b: smoke tests. Run the compiler that was just built (fsc/fsi) against real F# code so a
 rem    green pipeline proves the produced compiler actually compiles and executes F#, not just that the
 rem    build completed. Fast; runs on the build agent (no Helix). Heavier unit/suite tests layer on later. ---
