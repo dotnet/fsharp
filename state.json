@@ -47,7 +47,7 @@
       ]
     },
     "19979": {
-      "sha": "2b2f7315ceeb13650fadd09bf6a86cf08eab7a61",
+      "sha": "534011da98549e08ea7972a71b3b61840d812cb4",
       "cats": [
         "Affects-Build-Infra",
         "Affects-Design-Time",
@@ -85,13 +85,6 @@
         "Affects-Bootstrap",
         "Affects-Compiler-Output",
         "Affects-Test-Tooling"
-      ]
-    },
-    "19969": {
-      "sha": "02a4e4fda7140b99bb9645cf0fe6c83d29838e1b",
-      "cats": [
-        "Affects-Compiler-Output",
-        "Affects-Design-Time"
       ]
     },
     "19948": {
@@ -190,7 +183,7 @@
       "cats": []
     },
     "19758": {
-      "sha": "8967ecdc68c914d8d1df06af606c4be432388f3e",
+      "sha": "d5da31a1fb1fe75958799000bee48008e61deb1a",
       "cats": []
     }
   }
