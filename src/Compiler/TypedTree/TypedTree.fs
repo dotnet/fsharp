@@ -2024,7 +2024,7 @@ type ModuleOrNamespaceType(kind: ModuleOrNamespaceKind, vals: QueueList<Val>, en
     let mutable entities = entities 
 
 #if !NO_TYPEPROVIDERS
-    // One Entity per provided type even when linked concurrently from several files (graph-based checking).
+    // One Entity per provided type or namespace even when linked concurrently from several files (graph-based checking).
     let mutable providedEntitiesByMangledName: ConcurrentDictionary<string, Lazy<Entity>> | null = null
 #endif
 
@@ -2041,12 +2041,12 @@ type ModuleOrNamespaceType(kind: ModuleOrNamespaceKind, vals: QueueList<Val>, en
     // We should probably change to 'mutable'.
     //
     // We do not need to lock most of this mutable state since it is only ever accessed from the compiler thread.
-    // The exception is the four lookup tables invalidated by mutating 'entities' (provided-type linking can run
-    // on several graph-based-checking threads): those are read through 'cacheOptByrefByVersion' tagged with
-    // 'entitiesVersion', which stays coherent under concurrent appends without any lock.
+    // The exception is the lookup tables invalidated by mutating 'entities' (provided-type and provided-namespace
+    // linking can run on several graph-based-checking threads): those are read through 'cacheOptByrefByVersion'
+    // tagged with 'entitiesVersion', which stays coherent under concurrent appends without any lock.
     let activePatternElemRefCache: NameMap<ActivePatternElemRef> option ref = ref None
 
-    let mutable modulesByDemangledNameCache: NameMap<ModuleOrNamespace> option = None
+    let mutable modulesByDemangledNameCache: (int * NameMap<ModuleOrNamespace>) option = None
 
     let mutable exconsByDemangledNameCache: NameMap<Tycon> option = None
 
@@ -2074,20 +2074,9 @@ type ModuleOrNamespaceType(kind: ModuleOrNamespaceKind, vals: QueueList<Val>, en
     ////     "FooException" --> Tycon with exception info
     member _.AllEntities = entities
 
-    /// Mutation used during compilation of FSharp.Core.dll
-    member _.AddModuleOrNamespaceByMutation(modul: ModuleOrNamespace) =
-        entities <- QueueList.appendOne entities modul
-        modulesByDemangledNameCache <- None          
-        allEntitiesByMangledNameCache <- None       
-        System.Threading.Interlocked.Increment(&entitiesVersion) |> ignore
-
-#if !NO_TYPEPROVIDERS
-    /// Mutation used in hosting scenarios to hold the hosted types in this module or namespace
-    member _.AddProvidedTypeEntity(entity: Entity) = 
-        // Several graph-based-checking threads may link provided types into this module at once, so append
-        // atomically with a CAS loop. Bump 'entitiesVersion' last (release): a reader observing the new version
-        // is guaranteed to also see 'entity' in 'entities', so the version-stamped lookup caches recompute and
-        // never strand a table missing it. The caches need no explicit invalidation - the version bump does it.
+    /// Append 'entity', then publish 'entitiesVersion' last (release) so a reader seeing the new version also sees
+    /// 'entity' in 'entities' - the version-stamped lookup caches recompute rather than strand it.
+    member private _.AppendEntityByMutation(entity: Entity) =
         let rec append () =
             let current = entities
             let updated = QueueList.appendOne current entity
@@ -2096,17 +2085,41 @@ type ModuleOrNamespaceType(kind: ModuleOrNamespaceKind, vals: QueueList<Val>, en
         append ()
         System.Threading.Interlocked.Increment(&entitiesVersion) |> ignore
 
+    /// Mutation used during compilation of FSharp.Core.dll
+    member mtyp.AddModuleOrNamespaceByMutation(modul: ModuleOrNamespace) =
+        mtyp.AppendEntityByMutation modul
+
+#if !NO_TYPEPROVIDERS
+    /// Mutation used in hosting scenarios to hold the hosted types in this module or namespace
+    member mtyp.AddProvidedTypeEntity(entity: Entity) =
+        mtyp.AppendEntityByMutation entity
+
+    member private _.ProvidedEntityInternTable =
+        match providedEntitiesByMangledName with
+        | null ->
+            let created = ConcurrentDictionary<string, Lazy<Entity>>()
+            match System.Threading.Interlocked.CompareExchange(&providedEntitiesByMangledName, created, null) with
+            | null -> created
+            | existing -> existing
+        | existing -> existing
+
     /// Interns a provided-type entity by mangled name; callers must use the returned entity.
     member mtyp.GetOrInternProvidedEntity(mangledName: string, create: unit -> Entity) : Entity =
-        let table =
-            match providedEntitiesByMangledName with
-            | null ->
-                let created = ConcurrentDictionary<string, Lazy<Entity>>()
-                match System.Threading.Interlocked.CompareExchange(&providedEntitiesByMangledName, created, null) with
-                | null -> created
-                | existing -> existing
-            | existing -> existing
-        table.GetOrAdd(mangledName, fun _ -> lazy (let entity = create () in mtyp.AddProvidedTypeEntity entity; entity)).Value
+        mtyp.ProvidedEntityInternTable.GetOrAdd(mangledName, fun _ -> lazy (let entity = create () in mtyp.AddProvidedTypeEntity entity; entity)).Value
+
+    /// Interns a provided-namespace entity by mangled name, reusing any existing entity of that name; callers must use the returned entity.
+    member mtyp.GetOrInternNamespaceEntity(mangledName: string, create: unit -> Entity) : Entity =
+        mtyp.ProvidedEntityInternTable.GetOrAdd(
+            mangledName,
+            fun _ ->
+                lazy
+                    match (mtyp.ModulesAndNamespacesByDemangledName: NameMap<ModuleOrNamespace>).TryFind mangledName with
+                    | Some existing -> existing
+                    | None ->
+                        let entity = create ()
+                        mtyp.AddModuleOrNamespaceByMutation entity
+                        entity)
+            .Value
 #endif 
           
     /// Return a new module or namespace type with an entity added.
@@ -2226,7 +2239,8 @@ type ModuleOrNamespaceType(kind: ModuleOrNamespaceKind, vals: QueueList<Val>, en
             if entity.IsModuleOrNamespace then 
                 NameMap.add entity.DemangledModuleOrNamespaceName entity acc
             else acc
-        cacheOptByref &modulesByDemangledNameCache (fun () -> 
+        let version = System.Threading.Volatile.Read(&entitiesVersion)
+        cacheOptByrefByVersion version &modulesByDemangledNameCache (fun () -> 
             QueueList.foldBack add entities Map.empty)
 
     [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
@@ -3615,13 +3629,15 @@ type NonLocalEntityRef =
                                 path[j],
                                 (fun () -> Construct.NewProvidedTycon(resolutionEnvironment, st, ccu.ImportProvidedType, false, m)))
                         else
-                            let cpath = entity.CompilationPath.NestedCompPath entity.LogicalName (ModuleOrNamespaceKind.Namespace false)
-                            let newEntity = 
-                                Construct.NewModuleOrNamespace 
-                                    (Some cpath) 
-                                    (TAccess []) (ident(path[k], m)) XmlDoc.Empty [] 
-                                    (MaybeLazy.Strict (Construct.NewEmptyModuleOrNamespaceType (Namespace true))) 
-                            entity.ModuleOrNamespaceType.AddModuleOrNamespaceByMutation newEntity
+                            let newEntity =
+                                entity.ModuleOrNamespaceType.GetOrInternNamespaceEntity(
+                                    path[k],
+                                    (fun () ->
+                                        let cpath = entity.CompilationPath.NestedCompPath entity.LogicalName (ModuleOrNamespaceKind.Namespace false)
+                                        Construct.NewModuleOrNamespace 
+                                            (Some cpath) 
+                                            (TAccess []) (ident(path[k], m)) XmlDoc.Empty [] 
+                                            (MaybeLazy.Strict (Construct.NewEmptyModuleOrNamespaceType (Namespace true)))))
                             injectNamespacesFromIToJ newEntity (k+1)
                     let newEntity = injectNamespacesFromIToJ entity i
                                 
