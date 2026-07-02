@@ -4357,8 +4357,7 @@ and TcPseudoMemberSpec cenv newOk env synTypes tpenv synMemberSig m =
 and TcValSpec (cenv: cenv) env declKind newOk containerInfo memFlagsOpt thisTyOpt tpenv synValSig attrs =
     let g = cenv.g
     let (SynValSig(ident=SynIdent(id,_); explicitTypeParams=ValTyparDecls (synTypars, synTyparConstraints, _); synType=ty; arity=valSynInfo; range=m)) = synValSig
-    let declaredTypars, fixupTypars = TcTyparDecls cenv env synTypars
-    fixupTypars env
+    let declaredTypars = TcTyparDecls cenv env synTypars
     let (ContainerInfo(altActualParent, tcrefContainerInfo)) = containerInfo
 
     let enclosingDeclaredTypars, memberContainerInfo, thisTyOpt, declKind =
@@ -4561,11 +4560,10 @@ and TcTyparDecl (cenv: cenv) (env: TcEnv) synTyparDecl =
     let (SynTyparDecl (attributes = Attributes synAttrs; typar = synTypar)) = synTyparDecl
     let (SynTypar (ident = id)) = synTypar
 
-    // Type parameters are checked in Phase1A, before sibling entities of a recursive group are
-    // established, so a rec-scope attribute type may not resolve yet. Resolve tentatively (errors
-    // discarded); the fixup re-resolves against the final env. Framework attributes (Measure,
-    // EqualityConditionalOn, ...) are always in scope, so kind/dependency inference is reliable here.
-    let attrs, getFinalAttrs = TcAttributesCanFailReresolve cenv env AttributeTargets.GenericParameter synAttrs
+    // Type parameters can be checked before the sibling entities of a recursive group are established
+    // (Phase1A), so a rec-scoped attribute type may not resolve yet. Resolve tentatively; the fixup
+    // re-resolves against the completed environment. Framework attributes (Measure, ...) always resolve.
+    let attrs, getFinalAttrs = TcAttributesCanFail cenv env AttributeTargets.GenericParameter synAttrs
 
     let hasMeasureAttr = attribsHaveEntityFlag g WellKnownEntityAttributes.MeasureAttribute attrs
     let hasEqDepAttr = HasFSharpAttribute g g.attrib_EqualityConditionalOnAttribute attrs
@@ -4591,6 +4589,14 @@ and TcTyparDecl (cenv: cenv) (env: TcEnv) synTyparDecl =
     tp, fixupAttrs
 
 and TcTyparDecls (cenv: cenv) env synTypars =
+    let typars, fixups = synTypars |> List.map (TcTyparDecl cenv env) |> List.unzip
+    // Non-recursive callers: attribute types are already in scope, so finalize immediately.
+    fixups |> List.iter (fun fixup -> fixup env)
+    typars
+
+/// Like TcTyparDecls, but for type parameters of a recursive-group type checked in Phase1A: returns a
+/// fixup that re-resolves rec-scoped attributes once the whole group's entities are established.
+and TcTyparDeclsCanFail (cenv: cenv) env synTypars =
     let typars, fixups = synTypars |> List.map (TcTyparDecl cenv env) |> List.unzip
     typars, (fun envFinal -> fixups |> List.iter (fun fixup -> fixup envFinal))
 
@@ -11581,8 +11587,7 @@ and TcLiteral (cenv: cenv) overallTy env tpenv (attrs, synLiteralValExpr) =
     else hasLiteralAttr, None
 
 and TcBindingTyparDecls alwaysRigid cenv env tpenv (ValTyparDecls(synTypars, synTyparConstraints, infer)) =
-    let declaredTypars, fixupTypars = TcTyparDecls cenv env synTypars
-    fixupTypars env
+    let declaredTypars = TcTyparDecls cenv env synTypars
     let envinner = AddDeclaredTypars CheckForDuplicateTypars declaredTypars env
     let tpenv = TcTyparConstraints cenv NoNewTypars CheckCxs ItemOccurrence.UseInType envinner tpenv synTyparConstraints
 
@@ -11874,8 +11879,12 @@ and TcAttributesWithPossibleTargetsEx canFail (cenv: cenv) env attrTgt attrEx sy
             attribsAndTargets, didFail || didFail2
 
         with RecoverableException e ->
-            errorRecovery e synAttrib.Range
-            [], false)
+            // Under IgnoreAllErrors (the tentative pass for recursively-scoped attributes) even an
+            // unresolved attribute *type name* is tolerated: swallow the diagnostic and report failure
+            // so the caller's fixup re-resolves against the completed environment.
+            match canFail with
+            | TcCanFail.IgnoreAllErrors -> [], true
+            | _ -> errorRecovery e synAttrib.Range; [], false)
 
 and TcAttributesMaybeFailEx canFail (cenv: cenv) env attrTgt attrEx synAttribs =
     let attribsAndTargets, didFail = TcAttributesWithPossibleTargetsEx canFail cenv env attrTgt attrEx synAttribs
@@ -11896,19 +11905,6 @@ and TcAttributesWithPossibleTargetsCanFail cenv env attrTgt synAttribs =
 and TcAttributesCanFail cenv env attrTgt synAttribs =
     let attrs, reresolve = TcAttributesWithPossibleTargetsCanFail cenv env attrTgt synAttribs
     List.map snd attrs, (reresolve >> List.map snd)
-
-/// Like TcAttributesCanFail, but also tolerates attributes checked so early (e.g. type-parameter
-/// declarations in Phase1A of a recursive group) that even the attribute type *name* cannot be
-/// resolved yet and would otherwise emit a spurious error. Such diagnostics are captured during the
-/// tentative pass; when any were captured the fixup unconditionally re-resolves (reporting the real
-/// errors) against the final environment.
-and TcAttributesCanFailReresolve cenv env attrTgt synAttribs =
-    let capturing = CapturingDiagnosticsLogger("TcAttributesCanFailReresolve")
-    let attrs, reresolve =
-        use _ = UseDiagnosticsLogger capturing
-        TcAttributesCanFail cenv env attrTgt synAttribs
-    attrs, (if capturing.Diagnostics.IsEmpty then reresolve
-            else fun envFinal -> TcAttributes cenv envFinal attrTgt synAttribs)
 
 and TcAttributes cenv env attrTgt synAttribs =
     TcAttributesMaybeFail TcCanFail.ReportAllErrors cenv env attrTgt synAttribs |> fst
@@ -13359,8 +13355,7 @@ let TcAndPublishValSpec (cenv: cenv, env, containerInfo: ContainerInfo, declKind
 
     let (SynValSig (attributes=Attributes synAttrs; explicitTypeParams=explicitTypeParams; isInline=isInline; isMutable=mutableFlag; xmlDoc=xmlDoc; accessibility=vis; synExpr=literalExprOpt; range=m)) = synValSig
     let (ValTyparDecls (synTypars, _, synCanInferTypars)) = explicitTypeParams
-    let declaredTypars, fixupTypars = TcTyparDecls cenv env synTypars
-    fixupTypars env
+    let declaredTypars = TcTyparDecls cenv env synTypars
 
     GeneralizationHelpers.CheckDeclaredTyparsPermitted(memFlagsOpt, declaredTypars, m)
 

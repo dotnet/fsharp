@@ -826,10 +826,12 @@ val TcTyparConstraints:
     synConstraints: SynTypeConstraint list ->
         UnscopedTyparEnv
 
-/// Check type parameter declarations.
-/// Returns typars + fixup thunk for deferred attr resolution in rec scopes.
-/// Non-rec callers: invoke the fixup immediately with the same env.
-val TcTyparDecls: cenv: TcFileState -> env: TcEnv -> synTypars: SynTyparDecl list -> Typar list * (TcEnv -> unit)
+/// Check a collection of type parameters declarations
+val TcTyparDecls: cenv: TcFileState -> env: TcEnv -> synTypars: SynTyparDecl list -> Typar list
+
+/// Check type parameters of a recursive-group type (Phase1A). Returns the typars plus a fixup that
+/// re-resolves recursively-scoped attributes once the whole group's entities are established.
+val TcTyparDeclsCanFail: cenv: TcFileState -> env: TcEnv -> synTypars: SynTyparDecl list -> Typar list * (TcEnv -> unit)
 
 /// Check a syntactic type
 val TcType:

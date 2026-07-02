@@ -2825,7 +2825,7 @@ module EstablishTypeDefinitionCores =
     let private TcTyconDefnCore_Phase1A_BuildInitialTycon (cenv: cenv) env parent (MutRecDefnsPhase1DataForTycon(synTyconInfo, synTyconRepr, _, preEstablishedHasDefaultCtor, hasSelfReferentialCtor, _)) = 
         let g = cenv.g
         let (SynComponentInfo (_, TyparDecls synTypars, _, id, xmlDoc, preferPostfix, synVis, _)) = synTyconInfo
-        let checkedTypars, fixupTyparAttrs = TcTyparDecls cenv env synTypars
+        let checkedTypars, fixupTyparAttrs = TcTyparDeclsCanFail cenv env synTypars
         id |> List.iter (CheckNamespaceModuleOrTypeName g)
 
         match synTyconRepr with 
@@ -4377,8 +4377,7 @@ module TcDeclarations =
         
             let nReqTypars = reqTypars.Length
 
-            let declaredTypars, fixupTypars = TcTyparDecls cenv envForDecls synTypars
-            fixupTypars envForDecls
+            let declaredTypars = TcTyparDecls cenv envForDecls synTypars
             let envForTycon = AddDeclaredTypars CheckForDuplicateTypars declaredTypars envForDecls
             let _tpenv = TcTyparConstraints cenv NoNewTypars CheckCxs ItemOccurrence.UseInType envForTycon emptyUnscopedTyparEnv synTyparCxs
             declaredTypars |> List.iter (SetTyparRigid envForDecls.DisplayEnv m)
