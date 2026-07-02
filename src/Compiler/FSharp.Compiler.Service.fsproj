@@ -240,6 +240,20 @@
     <Compile Include="AbstractIL\ilwritepdb.fs" />
     <Compile Include="AbstractIL\ilwrite.fsi" />
     <Compile Include="AbstractIL\ilwrite.fs" />
+    <!-- ECMA-335 Edit-and-Continue metadata delta writer. See PR #TBD.
+         Placed after ilwrite.fs/.fsi (not immediately after ilwritepdb) because
+         IlxDeltaStreams.fs and DeltaMetadataTables.fs reuse ilwrite.fs's
+         markerForUnicodeBytes helper for #US heap encoding. -->
+    <Compile Include="AbstractIL\ILDeltaHandles.fs" />
+    <Compile Include="AbstractIL\ILMetadataHeaps.fs" />
+    <Compile Include="AbstractIL\IlxDeltaStreams.fs" />
+    <Compile Include="AbstractIL\DeltaMetadataEncoding.fs" />
+    <Compile Include="AbstractIL\DeltaMetadataTypes.fs" />
+    <Compile Include="AbstractIL\DeltaMetadataTables.fs" />
+    <Compile Include="AbstractIL\DeltaTableLayout.fs" />
+    <Compile Include="AbstractIL\DeltaIndexSizing.fs" />
+    <Compile Include="AbstractIL\DeltaMetadataSerializer.fs" />
+    <Compile Include="AbstractIL\FSharpDeltaMetadataWriter.fs" />
     <Compile Include="AbstractIL\ilreflect.fsi" />
     <Compile Include="AbstractIL\ilreflect.fs" />
     <Compile Include="SyntaxTree\PrettyNaming.fsi" />
