@@ -3889,7 +3889,11 @@ and GenAllocRecd cenv cgbuf eenv ctorInfo (tcref, argTys, args, m) sequel =
 
 and GenAllocAnonRecd cenv cgbuf eenv (anonInfo: AnonRecdTypeInfo, tyargs, args, m) sequel =
     let anonCtor, _anonMethods, anonType =
-        cgbuf.mgbuf.LookupAnonType((fun (ilThisTy, tycon) -> GenRecordToStringMethod(cenv, cgbuf.mgbuf, EnvForTycon tycon eenv, ilThisTy, mkLocalTyconRef tycon, m, "{| ", " |}")), anonInfo)
+        cgbuf.mgbuf.LookupAnonType(
+            (fun (ilThisTy, tycon) ->
+                GenRecordToStringMethod(cenv, cgbuf.mgbuf, EnvForTycon tycon eenv, ilThisTy, mkLocalTyconRef tycon, m, "{| ", " |}")),
+            anonInfo
+        )
 
     let boxity = anonType.Boxity
     GenExprs cenv cgbuf eenv args
@@ -3903,7 +3907,11 @@ and GenAllocAnonRecd cenv cgbuf eenv (anonInfo: AnonRecdTypeInfo, tyargs, args, 
 
 and GenGetAnonRecdField cenv cgbuf eenv (anonInfo: AnonRecdTypeInfo, e, tyargs, n, m) sequel =
     let _anonCtor, anonMethods, anonType =
-        cgbuf.mgbuf.LookupAnonType((fun (ilThisTy, tycon) -> GenRecordToStringMethod(cenv, cgbuf.mgbuf, EnvForTycon tycon eenv, ilThisTy, mkLocalTyconRef tycon, m, "{| ", " |}")), anonInfo)
+        cgbuf.mgbuf.LookupAnonType(
+            (fun (ilThisTy, tycon) ->
+                GenRecordToStringMethod(cenv, cgbuf.mgbuf, EnvForTycon tycon eenv, ilThisTy, mkLocalTyconRef tycon, m, "{| ", " |}")),
+            anonInfo
+        )
 
     let boxity = anonType.Boxity
     let ilTypeArgs = GenTypeArgs cenv m eenv.tyenv tyargs
@@ -10957,7 +10965,11 @@ and GenImplFile cenv (mgbuf: AssemblyBuilder) mainInfoOpt eenv (implFile: Checke
 
     // Generate all the anonymous record types mentioned anywhere in this module
     for anonInfo in anonRecdTypes.Values do
-        mgbuf.GenerateAnonType((fun (ilThisTy, tycon) -> GenRecordToStringMethod(cenv, mgbuf, EnvForTycon tycon eenv, ilThisTy, mkLocalTyconRef tycon, m, "{| ", " |}")), anonInfo)
+        mgbuf.GenerateAnonType(
+            (fun (ilThisTy, tycon) ->
+                GenRecordToStringMethod(cenv, mgbuf, EnvForTycon tycon eenv, ilThisTy, mkLocalTyconRef tycon, m, "{| ", " |}")),
+            anonInfo
+        )
 
     let withQName (loc: CompileLocation) =
         { loc with
@@ -11396,7 +11408,9 @@ and GenSprintfPrintingMethod cenv eenv methName ilThisTy m =
 and EmitToStringMethodDef (cenv: cenv, mgbuf: AssemblyBuilder, eenv: IlxGenEnv, thisv: Val, bodyExpr: Expr) =
     let g = cenv.g
     let eenvForMeth = AddStorageForLocalVals g [ (thisv, Arg 0) ] eenv
-    let ilMethodBody = CodeGenMethodForExpr cenv mgbuf ([], "ToString", eenvForMeth, 0, Some thisv, bodyExpr, Return)
+
+    let ilMethodBody =
+        CodeGenMethodForExpr cenv mgbuf ([], "ToString", eenvForMeth, 0, Some thisv, bodyExpr, Return)
 
     let mdef =
         mkILNonGenericVirtualInstanceMethod (
@@ -11413,14 +11427,17 @@ and EmitToStringMethodDef (cenv: cenv, mgbuf: AssemblyBuilder, eenv: IlxGenEnv, 
 /// unions get their reflection-free ToString from the type-augmentation phase instead (so the 'string'
 /// operator calls are optimized), but anonymous record types are synthesized too late for that, so they are
 /// generated here. Under non-reflection-free codegen, falls back to sprintf "%+A".
-and GenRecordToStringMethod (cenv: cenv, mgbuf: AssemblyBuilder, eenv: IlxGenEnv, ilThisTy: ILType, tcref: TyconRef, m: range, openBrace: string, closeBrace: string) =
+and GenRecordToStringMethod
+    (cenv: cenv, mgbuf: AssemblyBuilder, eenv: IlxGenEnv, ilThisTy: ILType, tcref: TyconRef, m: range, openBrace: string, closeBrace: string) =
     let g = cenv.g
 
     if not g.useReflectionFreeCodeGen then
         GenSprintfPrintingMethod cenv eenv "ToString" ilThisTy m
     else
-        let thisv, body = AugmentTypeDefinitions.mkRecdToString (g, tcref, tcref.Deref, openBrace, closeBrace)
-        EmitToStringMethodDef (cenv, mgbuf, eenv, thisv, body)
+        let thisv, body =
+            AugmentTypeDefinitions.mkRecdToString (g, tcref, tcref.Deref, openBrace, closeBrace)
+
+        EmitToStringMethodDef(cenv, mgbuf, eenv, thisv, body)
 
 and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) : ILTypeRef option =
     let g = cenv.g
@@ -12033,7 +12050,9 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) : ILTypeRef option 
 
                     // Reflection-free nominal unions get their ToString from the type-augmentation phase; here we
                     // only emit the sprintf "%+A" ToString for the non-reflection-free case.
-                    | TFSharpTyconRepr { fsobjmodel_kind = TFSharpUnion } when not g.useReflectionFreeCodeGen && not (tycon.HasMember g "ToString" []) ->
+                    | TFSharpTyconRepr { fsobjmodel_kind = TFSharpUnion } when
+                        not g.useReflectionFreeCodeGen && not (tycon.HasMember g "ToString" [])
+                        ->
                         yield! GenSprintfPrintingMethod cenv eenvinner "ToString" ilThisTy m
                     | _ -> ()
                 ]
