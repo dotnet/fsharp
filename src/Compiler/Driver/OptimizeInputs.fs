@@ -327,6 +327,7 @@ let ApplyAllOptimizations
             // Only do abstractBigTargets in the first phase, and only when TLR is on.
             abstractBigTargets = tcConfig.doTLR
             reportingPhase = true
+            alwaysInline = tcConfig.alwaysInline
         }
 
     // Only do these two steps in the first phase.
@@ -437,6 +438,9 @@ let ApplyAllOptimizations
     if tcConfig.extraOptimizationIterations > 0 then
         addPhase "ExtraLoop" extraLoop
 
+    let mkFileNamingScope (file: CheckedImplFile) =
+        tcGlobals.CompilerGlobalState.Value.NewFileScope(file.QualifiedNameOfFile.Range)
+
     let detuple
         ({
              File = file
@@ -444,7 +448,8 @@ let ApplyAllOptimizations
              PrevFile = _prevFile
          }: PhaseInputs)
         : PhaseRes =
-        let file = file |> Detuple.DetupleImplFile ccu tcGlobals
+        let scope = mkFileNamingScope file
+        let file = file |> Detuple.DetupleImplFile scope ccu tcGlobals
         file, prevPhase
 
     if tcConfig.doDetuple then
@@ -457,9 +462,11 @@ let ApplyAllOptimizations
              PrevFile = _prevFile
          }: PhaseInputs)
         : PhaseRes =
+        let scope = mkFileNamingScope file
+
         let file =
             file
-            |> InnerLambdasToTopLevelFuncs.MakeTopLevelRepresentationDecisions ccu tcGlobals
+            |> InnerLambdasToTopLevelFuncs.MakeTopLevelRepresentationDecisions importMap scope ccu tcGlobals
 
         file, prevPhase
 
@@ -511,7 +518,6 @@ let ApplyAllOptimizations
 
     let results, optEnvFirstLoop =
         match tcConfig.optSettings.processingMode with
-        // Parallel optimization breaks determinism - turn it off in deterministic builds.
         | Optimizer.OptimizationProcessingMode.Parallel ->
             let results, optEnvFirstPhase =
                 ParallelOptimization.optimizeFilesInParallel optEnv phases implFiles
@@ -578,6 +584,7 @@ let GenerateIlxCode
             isInteractiveItExpr = isInteractiveItExpr
             alwaysCallVirt = tcConfig.alwaysCallVirt
             parallelIlxGenEnabled = tcConfig.parallelIlxGen
+            alwaysInline = tcConfig.alwaysInline
         }
 
     ilxGenerator.GenerateCode(ilxGenOpts, optimizedImpls, topAttrs.assemblyAttrs, topAttrs.netModuleAttrs)

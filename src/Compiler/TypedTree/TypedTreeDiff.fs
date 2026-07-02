@@ -1208,52 +1208,57 @@ let private extractLambdaOccurrences
         | other -> walk parentChain other
 
     and visitLambda parentChain lambdaExpr =
-        let ordinal = nextOrdinal
-        nextOrdinal <- nextOrdinal + 1
-
-        // Stamp of the occurrence's root lambda: for a curried group this is the
-        // OUTERMOST lambda's stamp — the same expression (and stamp) IlxGen's closure
-        // call site receives when it forms the single closure for the curried chain.
-        let rootExprStamp =
-            match stripDebugPointsAndLinks lambdaExpr with
-            | Expr.Lambda(uniq, _, _, _, _, _, _) -> uniq
-            | _ -> 0L
-
         let groups, innerBody = gatherCurriedGroups [] lambdaExpr
 
-        match groups with
-        | [] -> walk parentChain innerBody
-        | _ ->
-            let parameterTypes =
-                groups
-                |> List.map (fun (valParams, _) -> valParams |> List.choose (fun (v: Val) -> tryTypeIdentity v.Type))
+        let m = lambdaExpr.Range
 
-            let returnTypeIdentity =
-                let _, lastBodyTy = List.last groups
-                tryTypeIdentity lastBodyTy
+        if m.StartLine = 1 && m.StartColumn = 0 && m.EndLine = 1 && m.EndColumn = 0 then
+            walk parentChain innerBody
+        else
+            let ordinal = nextOrdinal
+            nextOrdinal <- nextOrdinal + 1
 
-            if unsupported.IsNone then
-                match returnTypeIdentity with
-                | Some returnIdentity ->
-                    occurrences.Add
-                        {
-                            Id =
-                                {
-                                    MemberSymbol = memberSymbol
-                                    Ordinal = ordinal
-                                    ParentChain = parentChain
-                                }
-                            CurriedArity = groups.Length
-                            ParameterTypes = parameterTypes
-                            Captures = captureIdentities lambdaExpr
-                            ReturnTypeIdentity = returnIdentity
-                            BodyHash = exprDigest denv lambdaExpr
-                            RootExprStamp = rootExprStamp
-                            Range = lambdaExpr.Range
-                        }
-                | None -> ()
+            // Stamp of the occurrence's root lambda: for a curried group this is the
+            // OUTERMOST lambda's stamp — the same expression (and stamp) IlxGen's closure
+            // call site receives when it forms the single closure for the curried chain.
+            let rootExprStamp =
+                match stripDebugPointsAndLinks lambdaExpr with
+                | Expr.Lambda(uniq, _, _, _, _, _, _) -> uniq
+                | _ -> 0L
 
-            walk (ordinal :: parentChain) innerBody
+            match groups with
+            | [] -> walk parentChain innerBody
+            | _ ->
+                let parameterTypes =
+                    groups
+                    |> List.map (fun (valParams, _) -> valParams |> List.choose (fun (v: Val) -> tryTypeIdentity v.Type))
+
+                let returnTypeIdentity =
+                    let _, lastBodyTy = List.last groups
+                    tryTypeIdentity lastBodyTy
+
+                if unsupported.IsNone then
+                    match returnTypeIdentity with
+                    | Some returnIdentity ->
+                        occurrences.Add
+                            {
+                                Id =
+                                    {
+                                        MemberSymbol = memberSymbol
+                                        Ordinal = ordinal
+                                        ParentChain = parentChain
+                                    }
+                                CurriedArity = groups.Length
+                                ParameterTypes = parameterTypes
+                                Captures = captureIdentities lambdaExpr
+                                ReturnTypeIdentity = returnIdentity
+                                BodyHash = exprDigest denv lambdaExpr
+                                RootExprStamp = rootExprStamp
+                                Range = lambdaExpr.Range
+                            }
+                    | None -> ()
+
+                walk (ordinal :: parentChain) innerBody
 
     walk [] (stripMemberTopLambdas valReprInfo expr)
 
@@ -2909,24 +2914,41 @@ let private compareEntities
 
     edits |> Seq.toList, rude |> Seq.toList
 
-/// Per-member lambda occurrence sequences for an implementation file, extracted with the
-/// same occurrence model the typed-tree diff uses (consumed by baseline-time EnC
-/// CustomDebugInformation emission). Every member binding of the file is returned so
-/// callers can detect compiled-name collisions across ALL members; members whose bodies
-/// the occurrence model cannot represent (quotations, object expressions, local type
-/// functions, uncomputable type identities) yield an empty occurrence list — the baseline
-/// then carries no lambda map for them and later generations must treat their lambdas as
-/// unmappable. Results are ordered deterministically by binding key.
-let collectMemberLambdaOccurrences (g: TcGlobals) (implFile: CheckedImplFile) : (SymbolId * LambdaOccurrence list) list =
+type MemberDebugInfoInput =
+    {
+        Symbol: SymbolId
+        LambdaOccurrences: LambdaOccurrence list
+        HasResumableStateMachine: bool
+    }
+
+/// Per-member debug-info inputs for an implementation file, extracted with the same
+/// occurrence and lowered-shape model the typed-tree diff uses. Every member binding of
+/// the file is returned so callers can detect compiled-name collisions across ALL
+/// members; members whose bodies the occurrence model cannot represent (quotations,
+/// object expressions, local type functions, uncomputable type identities) yield an empty
+/// occurrence list. Results are ordered deterministically by binding key.
+let collectMemberDebugInfoInputs (g: TcGlobals) (implFile: CheckedImplFile) : MemberDebugInfoInput list =
     let denv = DisplayEnv.Empty g
     let bindings, _entities = collectSnapshots g denv implFile
 
     bindings
     |> Map.toList
     |> List.map (fun (_, snapshot) ->
-        match snapshot.LambdaOccurrenceData with
-        | LambdaOccurrenceExtraction.Extracted occurrences -> snapshot.Symbol, occurrences
-        | LambdaOccurrenceExtraction.Unsupported _ -> snapshot.Symbol, [])
+        {
+            Symbol = snapshot.Symbol
+            LambdaOccurrences =
+                match snapshot.LambdaOccurrenceData with
+                | LambdaOccurrenceExtraction.Extracted occurrences -> occurrences
+                | LambdaOccurrenceExtraction.Unsupported _ -> []
+            HasResumableStateMachine = hasLoweredShapeDigestSegmentValues "resumable" snapshot.StateMachineShapeDigest
+        })
+
+/// Per-member lambda occurrence sequences for an implementation file, extracted with the
+/// same occurrence model the typed-tree diff uses (consumed by baseline-time EnC
+/// CustomDebugInformation emission).
+let collectMemberLambdaOccurrences (g: TcGlobals) (implFile: CheckedImplFile) : (SymbolId * LambdaOccurrence list) list =
+    collectMemberDebugInfoInputs g implFile
+    |> List.map (fun input -> input.Symbol, input.LambdaOccurrences)
 
 /// Computes semantic edits between two checked implementation files, classifying additions
 /// against the runtime capabilities negotiated for the active hot reload session.

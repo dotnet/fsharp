@@ -664,9 +664,9 @@ let private collectTypeDefSimpleNames (ilModule: ILModuleDef) : Set<string> =
 ///    mid-session artifact (a flag-on recapture emitted under an active session, whose
 ///    added closures carry their first-allocation generation); its names are NOT
 ///    derivable from generation-0 identity, so no table is reconstructed at all;
-///  - per member, every derived name must exist as a baseline TypeDef simple name.
-///    This drops older replay-named baselines and members where an
-///    occurrence never lowered to a closure class, so a reconstructed table can never
+///  - per occurrence, a derived name must exist as a baseline TypeDef simple name.
+///    Occurrences that never lowered to a closure class are omitted, while surviving
+///    occurrence-derived closures stay replayable. A reconstructed table can never
 ///    claim a name the baseline does not contain.
 /// </summary>
 let deriveEncClosureNamesFromEncDebugInfos
@@ -688,21 +688,73 @@ let deriveEncClosureNamesFromEncDebugInfos
         if hasMidSessionClosureNames then
             Map.empty
         else
-            (Map.empty, encMethodDebugInfos)
-            ||> Map.fold (fun acc methodToken info ->
-                match info.Closures, Map.tryFind methodToken methodNamesByToken with
-                | [], _
-                | _, None -> acc
-                | closures, Some methName ->
-                    let nameBase = cleanUpGeneratedTypeName methName
+            let hasReplayNamedTypeDef nameBase =
+                let prefix = nameBase + "@hotreload"
 
-                    let table =
-                        closures
-                        |> List.map (fun closure ->
-                            let chain = decodeOccurrenceKey closure.SyntaxOffset
-                            chain, ClosureNameAllocator.formatGenerationSuffixedClosureName nameBase 0 chain)
+                typeDefSimpleNames
+                |> Set.exists (fun name ->
+                    name.StartsWith(prefix, StringComparison.Ordinal)
+                    && not (GeneratedNames.IsHotReloadGenerationSuffixedName name))
 
-                    if table |> List.forall (fun (_, name) -> Set.contains name typeDefSimpleNames) then
+            let derivedRows =
+                encMethodDebugInfos
+                |> Map.toList
+                |> List.choose (fun (methodToken, info) ->
+                    match info.Closures, Map.tryFind methodToken methodNamesByToken with
+                    | [], _
+                    | _, None -> None
+                    | closures, Some methName ->
+                        let nameBase = cleanUpGeneratedTypeName methName
+
+                        let table =
+                            closures
+                            |> List.choose (fun closure ->
+                                let chain = decodeOccurrenceKey closure.SyntaxOffset
+                                let name = ClosureNameAllocator.formatGenerationSuffixedClosureName nameBase 0 chain
+
+                                if Set.contains name typeDefSimpleNames then
+                                    Some(chain, name)
+                                else
+                                    None)
+
+                        Some(methodToken, nameBase, table))
+
+            let hasReplayOnlyCdiMethod =
+                derivedRows
+                |> List.exists (fun (_, nameBase, table) -> List.isEmpty table && hasReplayNamedTypeDef nameBase)
+
+            let derivedNameBases =
+                derivedRows
+                |> List.choose (fun (_, nameBase, table) -> if List.isEmpty table then None else Some nameBase)
+                |> Set.ofList
+
+            let stateMachineNameBases =
+                encMethodDebugInfos
+                |> Map.toSeq
+                |> Seq.choose (fun (methodToken, info) ->
+                    if List.isEmpty info.StateMachineStates then
+                        None
+                    else
+                        Map.tryFind methodToken methodNamesByToken
+                        |> Option.map cleanUpGeneratedTypeName)
+                |> Set.ofSeq
+
+            let hasReplayOnlyTypeDef =
+                typeDefSimpleNames
+                |> Set.exists (fun name ->
+                    let basicName = GetBasicNameOfPossibleCompilerGeneratedName name
+
+                    name.IndexOf("@hotreload", StringComparison.Ordinal) >= 0
+                    && not (GeneratedNames.IsHotReloadGenerationSuffixedName name)
+                    && not (Set.contains basicName derivedNameBases)
+                    && not (Set.contains basicName stateMachineNameBases))
+
+            if hasReplayOnlyCdiMethod || hasReplayOnlyTypeDef then
+                Map.empty
+            else
+                (Map.empty, derivedRows)
+                ||> List.fold (fun acc (methodToken, _, table) ->
+                    if not (List.isEmpty table) then
                         Map.add methodToken (Map.ofList table) acc
                     else
                         acc)
@@ -1167,16 +1219,60 @@ let computeOccurrenceKeyedClosureNamesWithScope
                 let baselineOccurrences =
                     Map.tryFind methName baselineOccurrencesByName |> Option.defaultValue []
 
+                let freshNameBase = cleanUpGeneratedTypeName methName
+
                 let allocation =
                     ClosureNameAllocator.allocateMemberClosureNames
                         baselineOccurrences
                         namesByChain
                         freshOccurrences
-                        (cleanUpGeneratedTypeName methName)
+                        freshNameBase
                         generation
 
+                let baselineTableIsComplete =
+                    baselineOccurrences
+                    |> List.forall (fun occurrence ->
+                        namesByChain
+                        |> Map.containsKey (ClosureNameAllocator.occurrenceOrdinalChain occurrence))
+
+                let baselineOccurrenceChains =
+                    baselineOccurrences
+                    |> List.map ClosureNameAllocator.occurrenceOrdinalChain
+                    |> Set.ofList
+
+                let baselineOccurrenceByChain =
+                    baselineOccurrences
+                    |> List.map (fun occurrence -> ClosureNameAllocator.occurrenceOrdinalChain occurrence, occurrence)
+                    |> Map.ofList
+
+                let replayAssignments =
+                    allocation.Assignments
+                    |> List.choose (fun (occurrence, assignment) ->
+                        let occurrenceChain = ClosureNameAllocator.occurrenceOrdinalChain occurrence
+
+                        match assignment with
+                        | ClosureNameAllocator.ClosureNameAssignment.Reused _ when baselineTableIsComplete -> Some(occurrence, assignment)
+                        | ClosureNameAllocator.ClosureNameAssignment.Reused _ ->
+                            if not (Set.contains occurrenceChain baselineOccurrenceChains) then
+                                Some(occurrence, assignment)
+                            else
+                                match Map.tryFind occurrenceChain baselineOccurrenceByChain with
+                                | Some baselineOccurrence when baselineOccurrence.BodyHash <> occurrence.BodyHash ->
+                                    Some(
+                                        occurrence,
+                                        ClosureNameAllocator.ClosureNameAssignment.Fresh(
+                                            ClosureNameAllocator.formatGenerationSuffixedClosureName
+                                                freshNameBase
+                                                generation
+                                                occurrenceChain
+                                        )
+                                    )
+                                | _ -> None
+                        | ClosureNameAllocator.ClosureNameAssignment.Fresh _ when baselineTableIsComplete -> Some(occurrence, assignment)
+                        | ClosureNameAllocator.ClosureNameAssignment.Fresh _ -> None)
+
                 let assignedNames =
-                    (assignedNames, allocation.Assignments)
+                    (assignedNames, replayAssignments)
                     ||> List.fold (fun acc (occurrence, assignment) ->
                         // Stamp 0 is the extraction's "no root lambda" sentinel and can
                         // never be a real Expr stamp; never install a name for it.
@@ -1185,7 +1281,12 @@ let computeOccurrenceKeyedClosureNamesWithScope
                         else
                             Map.add occurrence.RootExprStamp assignment.Name acc)
 
-                assignedNames, Map.add methodToken allocation.RefreshedNamesByOccurrenceChain refreshedRows
+                let refreshedNames =
+                    replayAssignments
+                    |> List.map (fun (occurrence, assignment) -> ClosureNameAllocator.occurrenceOrdinalChain occurrence, assignment.Name)
+                    |> Map.ofList
+
+                assignedNames, Map.add methodToken refreshedNames refreshedRows
             | _ -> assignedNames, refreshedRows)
 
 let computeOccurrenceKeyedClosureNames

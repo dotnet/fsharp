@@ -307,9 +307,7 @@ type internal FSharpEditAndContinueLanguageService private (getSessionStore: uni
                 // blocks the whole update, leaving the session at the previous generation.
                 let activeStatementRemap =
                     let recompiledTokens =
-                        delta.AddedOrChangedMethods
-                        |> List.map (fun info -> info.MethodToken)
-                        |> Set.ofList
+                        delta.MethodBodies |> List.map (fun body -> body.MethodToken) |> Set.ofList
 
                     ActiveStatementAnalysis.remapActiveStatements
                         session.Baseline.SequencePointSnapshots
@@ -344,7 +342,7 @@ type internal FSharpEditAndContinueLanguageService private (getSessionStore: uni
                             // The delta PDB does not carry EnC CDI rows, so this in-memory chain
                             // is what the closure mapping consumes.
                             let updatedMethodTokens =
-                                delta.AddedOrChangedMethods |> List.map (fun info -> info.MethodToken)
+                                delta.MethodBodies |> List.map (fun body -> body.MethodToken)
 
                             let chainedBaseline =
                                 chainEncMethodDebugInfos updatedBaseline request.RefreshedEncDebugInfos updatedMethodTokens

@@ -24,10 +24,15 @@ type NiceNameGenerator(getCompilerGeneratedNameMap: unit -> ICompilerGeneratedNa
     // Cache this as a delegate.
     let basicNameCountsAddDelegate = Func<struct (string * int), int ref>(fun _ -> ref 0)
 
-    let increment basicName (m: range) =
-        let key = struct (basicName, m.FileIndex)
+    let incrementBucket basicName (fileIndex: int) =
+        let key = struct (basicName, fileIndex)
         let countCell = basicNameCounts.GetOrAdd(key, basicNameCountsAddDelegate)
         Interlocked.Increment(countCell)
+
+    let increment basicName (m: range) = incrementBucket basicName m.FileIndex
+
+    let mkName basicName (m: range) count =
+        CompilerGeneratedNameSuffix basicName (string m.StartLine + (match (count - 1) with 0 -> "" | n -> "-" + string n))
 
     member _.FreshCompilerGeneratedNameOfBasicName (basicName, m: range) =
         match getCompilerGeneratedNameMap() with
@@ -35,12 +40,27 @@ type NiceNameGenerator(getCompilerGeneratedNameMap: unit -> ICompilerGeneratedNa
             map.GetOrAddName basicName
         | None ->
             let count = increment basicName m
-            CompilerGeneratedNameSuffix basicName (string m.StartLine + (match (count - 1) with 0 -> "" | n -> "-" + string n))
+            mkName basicName m count
 
     member this.FreshCompilerGeneratedName (name, m: range) =
         this.FreshCompilerGeneratedNameOfBasicName (GetBasicNameOfPossibleCompilerGeneratedName name, m)
 
     member _.IncrementOnly(name: string, m: range) = increment name m
+
+    member _.FreshCompilerGeneratedNameInScope (scopeFileIndex: int, name: string, m: range) =
+        let basicName = GetBasicNameOfPossibleCompilerGeneratedName name
+
+        // The hot reload replay map must win over per-file occurrence buckets, exactly as it
+        // does in FreshCompilerGeneratedNameOfBasicName: when a session installs the map, every
+        // allocation path replays the baseline's stable names, otherwise line-based per-file
+        // names would drift under edits. The map is only ever installed by the hot reload emit
+        // hook or the in-process compile, so the deterministic per-file bucketing from
+        // https://github.com/dotnet/fsharp/issues/19732 is untouched in normal compilation.
+        match getCompilerGeneratedNameMap() with
+        | Some map -> map.GetOrAddName basicName
+        | None ->
+            let count = incrementBucket basicName scopeFileIndex
+            mkName basicName m count
 
     new () = NiceNameGenerator(fun () -> None)
 
@@ -57,13 +77,16 @@ type NiceNameGenerator(getCompilerGeneratedNameMap: unit -> ICompilerGeneratedNa
 /// It is made concurrency-safe since a global instance of the type is allocated in tast.fs.
 type StableNiceNameGenerator(getCompilerGeneratedNameMap: unit -> ICompilerGeneratedNameMap option) =
 
-    let niceNames = ConcurrentDictionary<string * int64, string>(max Environment.ProcessorCount 1, 127)
-    let innerGenerator = new NiceNameGenerator(getCompilerGeneratedNameMap)
+    let niceNames = ConcurrentDictionary<string * int64, Lazy<string>>(max Environment.ProcessorCount 1, 127)
+    let innerGenerator = NiceNameGenerator(getCompilerGeneratedNameMap)
 
     member x.GetUniqueCompilerGeneratedName (name, m: range, uniq) =
         let basicName = GetBasicNameOfPossibleCompilerGeneratedName name
         let key = basicName, uniq
-        niceNames.GetOrAdd(key, fun (basicName, _) -> innerGenerator.FreshCompilerGeneratedNameOfBasicName(basicName, m))
+        let lazyName =
+            niceNames.GetOrAdd(key, fun (basicName, _) ->
+                lazy innerGenerator.FreshCompilerGeneratedNameOfBasicName(basicName, m))
+        lazyName.Value
 
     new () = StableNiceNameGenerator(fun () -> None)
 
@@ -72,6 +95,12 @@ type StableNiceNameGenerator(getCompilerGeneratedNameMap: unit -> ICompilerGener
     member _.ResetCompilerGeneratedNameState() =
         niceNames.Clear()
         innerGenerator.ResetCompilerGeneratedNameState()
+
+[<Sealed>]
+type PerFileNamingScope internal (nng: NiceNameGenerator, fileIndex: int) =
+
+    member _.Fresh (name: string, m: range) =
+        nng.FreshCompilerGeneratedNameInScope(fileIndex, name, m)
 
 type internal CompilerGlobalState () as this =
     /// Reader for the optional hot reload synthesized-name map attached to this
@@ -103,6 +132,9 @@ type internal CompilerGlobalState () as this =
         globalNng.ResetCompilerGeneratedNameState()
         globalStableNameGenerator.ResetCompilerGeneratedNameState()
         ilxgenGlobalNng.ResetCompilerGeneratedNameState()
+
+    member _.NewFileScope (fileRange: range) =
+        PerFileNamingScope(globalNng, fileRange.FileIndex)
 
 /// Unique name generator for stamps attached to lambdas and object expressions
 type Unique = int64

@@ -2607,6 +2607,20 @@ let private buildAddedOrChangedMethods (methodBodies: MethodBodyUpdate list) =
             CodeLength = body.CodeLength
         })
 
+let private isCompilerGeneratedMethodDeclaredOnUserType (key: MethodDefinitionKey) =
+    IsCompilerGeneratedName key.Name
+    && not (IsCompilerGeneratedName key.DeclaringType)
+
+let private filterPublicAddedOrChangedMethods
+    (methodTokenToKey: Dictionary<int, MethodDefinitionKey>)
+    (addedOrChangedMethods: HotReloadBaseline.AddedOrChangedMethodInfo list)
+    =
+    addedOrChangedMethods
+    |> List.filter (fun info ->
+        match methodTokenToKey.TryGetValue info.MethodToken with
+        | true, key -> not (isCompilerGeneratedMethodDeclaredOnUserType key)
+        | _ -> true)
+
 let private buildDeltaToUpdatedMethodTokenMap
     (methodTokenMap: Dictionary<int, int>)
     (addedOrChangedMethods: HotReloadBaseline.AddedOrChangedMethodInfo list)
@@ -2652,6 +2666,9 @@ let private finalizeDeltaArtifacts
     (addedTypeShapes: Dictionary<string, SynthesizedTypeShape>)
     =
     let addedOrChangedMethods = buildAddedOrChangedMethods streams.MethodBodies
+
+    let publicAddedOrChangedMethods =
+        filterPublicAddedOrChangedMethods methodTokenToKey addedOrChangedMethods
 
     let deltaToUpdatedMethodToken =
         buildDeltaToUpdatedMethodTokenMap methodTokenMap addedOrChangedMethods
@@ -2756,7 +2773,7 @@ let private finalizeDeltaArtifacts
             BaseGenerationId = encBaseId
             UserStringUpdates = userStringEntries
             MethodDefinitionRows = methodDefinitionRowsSnapshot
-            AddedOrChangedMethods = addedOrChangedMethods
+            AddedOrChangedMethods = publicAddedOrChangedMethods
             UpdatedBaseline = Some updatedBaseline
             SequencePointUpdates = sequencePointUpdates
             ChainedSequencePoints = chainedSequencePoints

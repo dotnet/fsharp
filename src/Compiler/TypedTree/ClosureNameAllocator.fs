@@ -177,12 +177,22 @@ let allocateMemberClosureNames
         |> List.map (fun (i, j) -> j, i)
         |> Map.ofList
 
+    let baselineOccurrenceChains =
+        baselineOccurrences |> List.map occurrenceOrdinalChain |> Set.ofList
+
     let assignments =
         news
         |> Array.mapi (fun j freshOcc ->
+            let freshChain = occurrenceOrdinalChain freshOcc
+
             let reusableBaselineName =
-                match Map.tryFind j baselineIndexByFreshIndex with
-                | Some i ->
+                match Map.tryFind j baselineIndexByFreshIndex, Map.tryFind freshChain baselineNamesByOccurrenceChain with
+                // Disk-started sessions can have CDI+TypeDef evidence for a closure whose
+                // occurrence is absent from the in-memory baseline tree. Reuse only the
+                // exact persisted chain; normal capture compatibility still gates pairs
+                // where both baseline and fresh occurrences are available.
+                | _, Some name when not (Set.contains freshChain baselineOccurrenceChains) -> Some name
+                | Some i, _ ->
                     let baselineOcc = olds[i]
 
                     // A shape-only (pass 2) pair with a different capture set is NOT
@@ -194,7 +204,7 @@ let allocateMemberClosureNames
                         Map.tryFind (occurrenceOrdinalChain baselineOcc) baselineNamesByOccurrenceChain
                     else
                         None
-                | None -> None
+                | None, _ -> None
 
             let assignment =
                 match reusableBaselineName with
@@ -232,9 +242,9 @@ let allocateMemberClosureNames
 ///  - members without a compiled name, or whose compiled name is claimed by more than
 ///    one member binding in the assembly, are dropped (a table can never describe the
 ///    wrong method);
-///  - a member is dropped entirely when ANY of its occurrences has no recorded name
-///    (closure formation diverged from extraction) — a partial table could force fresh
-///    names onto surviving closures, so the member instead stays on sequence replay.
+///  - occurrences without a recorded name are omitted (they did not lower to a closure
+///    class, or closure formation diverged from extraction), while recorded occurrences
+///    remain replayable by their exact occurrence chain.
 /// Members without lambda occurrences (including extraction-unsupported members, which
 /// report an empty occurrence list) carry no table.
 /// </summary>
@@ -263,12 +273,12 @@ let computeBaselineClosureNameRows
             | Some methName, _ :: _ when not (Set.contains methName ambiguousNames) ->
                 let entries =
                     occurrences
-                    |> List.map (fun occ ->
+                    |> List.choose (fun occ ->
                         Map.tryFind occ.RootExprStamp closureNamesByStamp
                         |> Option.map (fun name -> occurrenceOrdinalChain occ, name))
 
-                if entries |> List.forall Option.isSome then
-                    Map.add methName (entries |> List.map Option.get |> Map.ofList) acc
+                if not (List.isEmpty entries) then
+                    Map.add methName (entries |> Map.ofList) acc
                 else
                     acc
             | _ -> acc)

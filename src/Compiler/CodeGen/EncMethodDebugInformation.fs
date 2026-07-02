@@ -599,7 +599,7 @@ let computeMethodCustomDebugInfoRows
     // nested CEs lowering several machines inside one member) — a state map must never
     // describe the wrong method. The PDB writer additionally drops any name that does
     // not identify exactly one IL method row.
-    let stateMachineStatesByMethodName =
+    let recordedStateMachineStatesByMethodName =
         let simpleName (fullName: string) =
             let separatorIndex = fullName.LastIndexOfAny [| '+'; '.' |]
 
@@ -635,6 +635,61 @@ let computeMethodCustomDebugInfoRows
                 Some(methName, states)
             | _ -> None)
         |> Map.ofList
+
+    let derivedStateMachineStatesByMethodName =
+        let memberInputs = implFiles |> List.collect (collectMemberDebugInfoInputs g)
+
+        let ambiguousNames =
+            memberInputs
+            |> List.choose (fun input -> input.Symbol.CompiledName)
+            |> List.countBy id
+            |> List.filter (fun (_, count) -> count > 1)
+            |> List.map fst
+            |> Set.ofList
+
+        let tryDeriveStatesFromContinuations (occurrences: LambdaOccurrence list) =
+            let roots =
+                occurrences
+                |> List.filter (fun occurrence -> List.isEmpty occurrence.Id.ParentChain)
+
+            match roots with
+            | [ root ] ->
+                let sameEnd (occurrence: LambdaOccurrence) =
+                    occurrence.Range.EndLine = root.Range.EndLine
+                    && occurrence.Range.EndColumn = root.Range.EndColumn
+
+                let continuations =
+                    occurrences
+                    |> List.filter (fun occurrence -> not (List.isEmpty occurrence.Id.ParentChain) && sameEnd occurrence)
+
+                match continuations with
+                | [] -> None
+                | _ ->
+                    continuations
+                    |> List.mapi (fun ordinal _ ->
+                        {
+                            StateNumber = ordinal + 1
+                            SyntaxOffset = ordinal
+                        })
+                    |> Some
+            | _ -> None
+
+        (Map.empty, memberInputs)
+        ||> List.fold (fun acc input ->
+            match input.Symbol.CompiledName, input.HasResumableStateMachine with
+            | Some methName, true when not (Set.contains methName ambiguousNames) ->
+                match tryDeriveStatesFromContinuations input.LambdaOccurrences with
+                | Some states -> Map.add methName states acc
+                | None -> acc
+            | _ -> acc)
+
+    let stateMachineStatesByMethodName =
+        (recordedStateMachineStatesByMethodName, derivedStateMachineStatesByMethodName)
+        ||> Map.fold (fun acc methName states ->
+            if Map.containsKey methName acc then
+                acc
+            else
+                Map.add methName states acc)
 
     let lambdaRows =
         (Map.empty, computeMethodEncDebugInfo g implFiles)
