@@ -228,6 +228,7 @@
     <Compile Include="Conformance\TypeForwarding\NestedTests.fs" />
     <Compile Include="Conformance\TypesAndTypeConstraints\TypesAndTypeConstraints.fs" />
     <Compile Include="Conformance\MultiTargeting.fs" />
+    <Compile Include="EmittedIL\SequencePoints\SequencePointsBaseline.fs" />
     <Compile Include="EmittedIL\SequencePoints\SequencePointsTests.fs" />
     <Compile Include="EmittedIL\CompilerGeneratedAttributeOnAccessors.fs" />
     <Compile Include="EmittedIL\VeryLargeClasses.fs" />
@@ -236,6 +237,7 @@
     <Compile Include="EmittedIL\Enums.fs" />
     <Compile Include="EmittedIL\Literals.fs" />
     <Compile Include="EmittedIL\NoCompilerInlining.fs" />
+    <Compile Include="EmittedIL\DebugInlineAsCall.fs" />
     <Compile Include="EmittedIL\RealInternalSignature\ModuleVisibility.fs" />
     <Compile Include="EmittedIL\RealInternalSignature\ModuleInitialization.fs" />
     <Compile Include="EmittedIL\RealInternalSignature\ClassTypeVisibilityNamespaceRootWithFsi.fs" />
@@ -268,6 +270,7 @@
     <Compile Include="EmittedIL\InequalityComparison\InequalityComparison.fs" />
     <Compile Include="EmittedIL\Inlining\Regression_TLR_MutualInnerRec_StructuralAssertions.fs" />
     <Compile Include="EmittedIL\Inlining\Regression_TLR_RealsigPrivate.fs" />
+    <Compile Include="EmittedIL\Inlining\Regression_RealsigAugmentationClosure.fs" />
     <Compile Include="EmittedIL\Inlining\Regression_Specialize_ConstraintVerification.fs" />
     <Compile Include="EmittedIL\Inlining\Inlining.fs" />
     <Compile Include="EmittedIL\ListExpressionStepping\ListExpressionStepping.fs" />
@@ -306,6 +309,7 @@
     <Compile Include="ErrorMessages\TypeEqualsMissingTests.fs" />
     <Compile Include="ErrorMessages\AccessOfTypeAbbreviationTests.fs" />
     <Compile Include="ErrorMessages\AssignmentErrorTests.fs" />
+    <Compile Include="ErrorMessages\AssignmentToParameterErrorTests.fs" />
     <Compile Include="ErrorMessages\ClassesTests.fs" />
     <Compile Include="ErrorMessages\OperatorTests.fs" />
     <Compile Include="ErrorMessages\CommaSemicolonListTests.fs" />
@@ -320,6 +324,7 @@
     <Compile Include="ErrorMessages\ModuleTests.fs" />
     <Compile Include="ErrorMessages\DiagnosticRegressionTests.fs" />
     <Compile Include="ErrorMessages\OverloadResolutionErrorRangeTests.fs" />
+    <Compile Include="ErrorMessages\Issue9838Tests.fs" />
     <Compile Include="ErrorMessages\NameResolutionTests.fs" />
     <Compile Include="ErrorMessages\SuggestionsTests.fs" />
     <Compile Include="ErrorMessages\TypeMismatchTests.fs" />
@@ -355,6 +360,7 @@
     <Compile Include="Language\CodeQuotationTests.fs" />
     <Compile Include="Language\InterpolatedStringsTests.fs" />
     <Compile Include="Language\ComputationExpressionTests.fs" />
+    <Compile Include="Language\CE_PipelineRange19550.fs" />
     <Compile Include="Language\StateMachineTests.fs" />
     <Compile Include="Language\DynamicAssignmentOperatorTests.fs" />
     <Compile Include="Language\CastingTests.fs" />
@@ -395,6 +401,7 @@
     <Compile Include="Scripting\TypeCheckOnlyTests.fs" />
     <Compile Include="Scripting\PreferredUiLangTests.fs" />
     <Compile Include="InteractiveSession\Misc.fs" />
+    <Compile Include="InteractiveSession\AnonRecordPrinting.fs" />
     <Compile Include="TypeChecks\TypeRelations.fs" />
     <Compile Include="TypeChecks\SeqTypeCheckTests.fs" />
     <Compile Include="TypeChecks\CheckDeclarationsTests.fs" />

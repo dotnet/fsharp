@@ -85,7 +85,6 @@ echo [Test 2] PASSED: Provider test passed
 echo.
 echo === Test 3: Host with ProjectReference to Provider ===
 echo [Test 3] Packing Host with ProjectReference to Provider...
-echo [Test 3] Note: This tests experimental execution-time reference checking
 echo [Test 3] Command: dotnet pack Host\Host.fsproj -o %~dp0artifacts -c %configuration% -v minimal -bl:%~dp0artifacts\host.binlog -p:FSharpTestCompilerVersion=coreclr
      dotnet pack Host\Host.fsproj -o %~dp0artifacts -c %configuration% -v minimal -bl:%~dp0artifacts\host.binlog -p:FSharpTestCompilerVersion=coreclr
 if ERRORLEVEL 1 (
@@ -94,9 +93,17 @@ if ERRORLEVEL 1 (
     goto :failure
 )
 
-rem Note: This test may not work as expected due to MSBuild evaluation phase limitations
-rem The current implementation only checks IsFSharpDesignTimeProvider property directly
-echo [Test 3] PASSED: Host test completed (implementation limitation noted - may not check references correctly)
+rem The provider is activated only through ProjectReference IsFSharpDesignTimeProvider metadata; it must still be
+rem packaged under tools/fsharp41/ in the consumer's package. This is the case regressed by #18929 (the provider
+rem was silently dropped from the package).
+echo [Test 3] Checking that the referenced provider is packaged under tools/fsharp41...
+powershell -command "& { Add-Type -AssemblyName System.IO.Compression.FileSystem; $names = ([System.IO.Compression.ZipFile]::OpenRead('%~dp0artifacts\Host.1.0.0.nupkg')).Entries.FullName; if ($names | Where-Object { $_ -like 'tools/fsharp41/*Provider.dll' }) { exit 0 } else { Write-Host ('Contents: ' + ($names -join ', ')); exit 1 } }"
+if ERRORLEVEL 1 (
+    echo [Test 3] FAILED: Host.1.0.0.nupkg does not contain the design-time provider under tools/fsharp41/
+    echo [Test 3] The provider referenced via the ProjectReference gesture was dropped from the package.
+    goto :failure
+)
+echo [Test 3] PASSED: Host (ProjectReference gesture) test passed
 
 echo.
 echo === Test 4: Pack with --no-build (No Provider) ===
