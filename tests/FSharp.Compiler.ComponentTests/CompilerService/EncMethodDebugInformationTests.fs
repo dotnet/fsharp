@@ -1,6 +1,6 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-module internal CompilerService.EncMethodDebugInformationTests
+module CompilerService.EncMethodDebugInformationTests
 
 open System
 open System.Collections.Immutable
