@@ -1,5 +1,16 @@
 {
   "prs": {
+    "20023": {
+      "sha": "da630bc9e452bb003c86e36dda1db4574b3009cc",
+      "cats": []
+    },
+    "20021": {
+      "sha": "79863960515b0c104a42dd6833e370ce15da0d09",
+      "cats": [
+        "Affects-Compiler-Output",
+        "Affects-Design-Time"
+      ]
+    },
     "20016": {
       "sha": "88e64501a0db50d05a18a0267434fa18f254527d",
       "cats": [
@@ -20,7 +31,7 @@
       "cats": []
     },
     "20003": {
-      "sha": "27237a26cc19816e91b11bcfd26e8796d61e22b0",
+      "sha": "08b4f66c757f555f2167cbd254cf8c4457d05a5f",
       "cats": [
         "Affects-Compiler-Output"
       ]
@@ -58,7 +69,7 @@
       ]
     },
     "19974": {
-      "sha": "1a9a043092592c7b3b7396530f8e8d9532679e4b",
+      "sha": "a5ab09ff8d538feb79ea9291a779f8468948e253",
       "cats": [
         "Affects-Compiler-Output"
       ]
@@ -70,12 +81,6 @@
         "Affects-Bootstrap",
         "Affects-Compiler-Output",
         "Affects-Test-Tooling"
-      ]
-    },
-    "19948": {
-      "sha": "2917a9953fc3092f71a405e2ab78b23e80b23017",
-      "cats": [
-        "Affects-Compiler-Output"
       ]
     },
     "19947": {
@@ -95,7 +100,7 @@
       ]
     },
     "19929": {
-      "sha": "cf7f5c02ee8c7063fc32a2b7fa25a36f3dfcc220",
+      "sha": "f31818c185c7df00dc8b9b11942265fe095e71dd",
       "cats": []
     },
     "19924": {
@@ -115,11 +120,7 @@
       "cats": []
     },
     "19885": {
-      "sha": "25c04bd5ce444a7368e156d1867a39c17626b5a5",
-      "cats": []
-    },
-    "19878": {
-      "sha": "15c9f5baaf598151b9f92a96c954e9b3692e128b",
+      "sha": "b46327e462e9a5dabe50a8ae0608d529315f5639",
       "cats": []
     },
     "19868": {
@@ -157,17 +158,6 @@
     "19759": {
       "sha": "7258278430ccb5c453e737cfc75eb39fdf1d9d08",
       "cats": []
-    },
-    "19758": {
-      "sha": "8d4f7c1d43aaa215733ed514c87eb10cac772dc8",
-      "cats": []
-    },
-    "20021": {
-      "sha": "b9d2f04066370817c3dfb1d7d87032df7606529c",
-      "cats": [
-        "Affects-Compiler-Output",
-        "Affects-Design-Time"
-      ]
     }
   }
 }
