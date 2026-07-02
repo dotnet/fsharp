@@ -7,9 +7,9 @@ module GenericAttributeAbbreviations =
 
     // Repro from https://github.com/dotnet/fsharp/issues/7877.
     // A type abbreviation of a generic attribute type must not crash with
-    // FS0193 "The lists had different lengths" - it must report FS3890.
+    // FS0193 "The lists had different lengths" - it must report FS3891.
     [<Fact>]
-    let ``Type abbreviation of generic attribute reports FS3890 instead of crashing`` () =
+    let ``Type abbreviation of generic attribute reports FS3891 instead of crashing`` () =
         Fsx """
 type A<'T>() = inherit System.Attribute()
 type B = A<int>
@@ -17,7 +17,7 @@ type B = A<int>
 """
         |> compile
         |> shouldFail
-        |> withSingleDiagnostic (Error 3890, Line 4, Col 3, Line 4, Col 4, "Generic attribute types are not supported in F#. The type 'A' has type parameters and cannot be used as an attribute.")
+        |> withSingleDiagnostic (Error 3891, Line 4, Col 3, Line 4, Col 4, "Generic attribute types are not supported in F#. The type 'A' has type parameters and cannot be used as an attribute.")
         |> ignore
 
     [<Theory>]
@@ -25,7 +25,7 @@ type B = A<int>
     [<InlineData("type B = A<string>")>]
     [<InlineData("type B = A<int list>")>]
     [<InlineData("type B = A<System.Collections.Generic.List<int>>")>]
-    let ``Generic attribute abbreviation variants all report FS3890`` (abbrev: string) =
+    let ``Generic attribute abbreviation variants all report FS3891`` (abbrev: string) =
         Fsx (sprintf """
 type A<'T>() = inherit System.Attribute()
 %s
@@ -33,11 +33,11 @@ type A<'T>() = inherit System.Attribute()
 """ abbrev)
         |> compile
         |> shouldFail
-        |> withErrorCode 3890
+        |> withErrorCode 3891
         |> ignore
 
     [<Fact>]
-    let ``Two-parameter generic attribute abbreviation reports FS3890`` () =
+    let ``Two-parameter generic attribute abbreviation reports FS3891`` () =
         Fsx """
 type A2<'T, 'U>() = inherit System.Attribute()
 type B = A2<int, string>
@@ -45,11 +45,11 @@ type B = A2<int, string>
 """
         |> compile
         |> shouldFail
-        |> withErrorCode 3890
+        |> withErrorCode 3891
         |> ignore
 
     [<Fact>]
-    let ``Chained abbreviation through a generic attribute reports FS3890`` () =
+    let ``Chained abbreviation through a generic attribute reports FS3891`` () =
         Fsx """
 type A<'T>() = inherit System.Attribute()
 type B = A<int>
@@ -58,7 +58,7 @@ type C2 = B
 """
         |> compile
         |> shouldFail
-        |> withErrorCode 3890
+        |> withErrorCode 3891
         |> ignore
 
     // Non-regression: a non-generic attribute abbreviation must still compile.
