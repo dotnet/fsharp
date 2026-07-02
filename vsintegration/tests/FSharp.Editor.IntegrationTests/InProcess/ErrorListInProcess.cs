@@ -33,6 +33,23 @@ namespace Microsoft.CodeAnalysis.Testing.InProcess
             errorList.AreWarningsShown = false;
         }
 
+        // Shows EVERY entry: all sources (Build + Other/IntelliSense) and all severities. F# live diagnostics are
+        // "Other"-source, and ShowBuildErrorsAsync (used by BuildProjectTests) leaves the shared Error List
+        // filtered to Build-only + no-warnings; because the whole test collection shares one VS instance, that
+        // stale filter otherwise HIDES the F# code-action diagnostics from GetErrorItems/GetAllEntries, making the
+        // produce-signal read zero even when diagnostics were published. Call this before reading the Error List.
+        public async Task ShowAllEntriesAsync(CancellationToken cancellationToken)
+        {
+            await JoinableTaskFactory.SwitchToMainThreadAsync(cancellationToken);
+
+            var errorList = await GetRequiredGlobalServiceAsync<SVsErrorList, IErrorList>(cancellationToken);
+            errorList.AreBuildErrorSourceEntriesShown = true;
+            errorList.AreOtherErrorSourceEntriesShown = true;
+            errorList.AreErrorsShown = true;
+            errorList.AreWarningsShown = true;
+            errorList.AreMessagesShown = true;
+        }
+
         public Task<ImmutableArray<string>> GetBuildErrorsAsync(CancellationToken cancellationToken)
         {
             return GetBuildErrorsAsync(__VSERRORCATEGORY.EC_WARNING, cancellationToken);

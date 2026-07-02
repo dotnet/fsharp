@@ -112,6 +112,10 @@ internal partial class EditorInProcess
 
         await ActivateAsync(cancellationToken);
 
+        // Reset the shared Error List to show all sources + severities. BuildProjectTests leaves it filtered to
+        // Build-only/no-warnings, which hides F#'s "Other"-source live diagnostics from our produce-signal read.
+        await TestServices.ErrorList.ShowAllEntriesAsync(cancellationToken);
+
         System.Diagnostics.Trace.TraceInformation("[EditorInProcess] InvokeCodeActionListAsync: waiting for features (Workspace, SolutionCrawlerLegacy, DiagnosticService)");
 
         await AsyncOperationWaiter.WaitForFeaturesAsync(
@@ -130,28 +134,69 @@ internal partial class EditorInProcess
         }
 
         // Error List produce signal: count error+warning diagnostics. The F# fixes we read are on-demand
-        // compiler diagnostics (FS0760 warning, FS0010/FS0039 parse errors) that reliably appear in the Error
-        // List - unlike broker.HasSuggestedActions, which is a false-negative for the parse-error fix.
+        // compiler diagnostics (FS0760 warning, FS0010/FS0039 parse errors) that appear in the Error List once
+        // the shared Error List filters are reset to show all sources/severities (see ShowAllEntriesAsync above).
         async Task<int> GetDiagnosticCountAsync(CancellationToken token)
             => await TestServices.ErrorList.GetErrorCountAsync(__VSERRORCATEGORY.EC_WARNING, token);
+
+        // Second, independent produce signal: does the broker offer a CODE FIX / REFACTORING at the caret? Low-churn
+        // (creates no lightbulb session). Scoped to AllCodeFixesAndRefactorings so unrelated providers - notably the
+        // GitHub Copilot suggested-action source, which injects a "GitHubCopilot" category and would otherwise make
+        // this return true at any caret - do NOT falsely satisfy the gate.
+        async Task<bool> HasSuggestedActionsAsync(CancellationToken token)
+        {
+            try
+            {
+                return await broker.HasSuggestedActionsAsync(categoryRegistry.AllCodeFixesAndRefactorings, view, token);
+            }
+            catch
+            {
+                return false;
+            }
+        }
 
         Task TriggerReanalysisAsync(CancellationToken token)
             => TriggerDiagnosticsAsync(view, token);
 
         try
         {
-            return await LightBulbHelper.GetCodeActionsAsync(broker, view, JoinableTaskFactory, ShowLightBulbAsync, GetDiagnosticCountAsync, TriggerReanalysisAsync, cancellationToken);
+            return await LightBulbHelper.GetCodeActionsAsync(broker, view, categoryRegistry.AllCodeFixesAndRefactorings, JoinableTaskFactory, ShowLightBulbAsync, GetDiagnosticCountAsync, HasSuggestedActionsAsync, TriggerReanalysisAsync, cancellationToken);
         }
         catch (InvalidOperationException ex)
         {
             var entries = await TestServices.ErrorList.GetAllEntriesAsync(cancellationToken);
-            var probe = await ProbeAvailableActionsAsync(broker, view, categoryRegistry.Any, cancellationToken);
+            var probe = await ProbeAvailableActionsAsync(broker, view, categoryRegistry.AllCodeFixesAndRefactorings, cancellationToken);
+            var caretDiag = await DiagnoseCaretAndSourcesAsync(broker, view, categoryRegistry.AllCodeFixesAndRefactorings, cancellationToken);
             throw new InvalidOperationException(
                 $"{ex.Message}{Environment.NewLine}trackingEnabled={AsyncOperationWaiter.IsTrackingEnabled()}{Environment.NewLine}" +
                 $"probe: {probe}{Environment.NewLine}" +
+                $"caretDiag: {caretDiag}{Environment.NewLine}" +
                 $"--- Error List ({entries.Length} entries) ---{Environment.NewLine}" +
                 string.Join(Environment.NewLine, entries),
                 ex);
+        }
+    }
+
+    // Failure diagnostic: reports the caret position and the text around it, so a failure message shows whether
+    // the caret landed on the token the code fix targets.
+    private async Task<string> DiagnoseCaretAndSourcesAsync(ILightBulbBroker broker, IWpfTextView view, ISuggestedActionCategorySet requested, CancellationToken cancellationToken)
+    {
+        await JoinableTaskFactory.SwitchToMainThreadAsync(cancellationToken);
+
+        try
+        {
+            var caret = view.Caret.Position.BufferPosition;
+            var snapshot = caret.Snapshot;
+            var line = caret.GetContainingLine();
+            var ctxStart = Math.Max(line.Start.Position, caret.Position - 8);
+            var ctxEnd = Math.Min(line.End.Position, caret.Position + 8);
+            var around = snapshot.GetText(Span.FromBounds(ctxStart, ctxEnd));
+
+            return $"caretPos={caret.Position}, lineNo={line.LineNumber + 1}, around=<<<{around}>>>";
+        }
+        catch (Exception ex)
+        {
+            return $"threw {ex.GetType().Name}: {ex.Message}";
         }
     }
 
