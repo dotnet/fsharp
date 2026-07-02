@@ -3859,7 +3859,10 @@ type options =
      referenceAssemblyOnly: bool
      referenceAssemblyAttribOpt: ILAttribute option
      referenceAssemblySignatureHash : int option
-     pathMap: PathMap }
+     pathMap: PathMap
+     /// Per-method EnC CustomDebugInformation rows for the portable PDB writer, keyed by
+     /// IL method name. Empty for ordinary compiles, so flag-off output stays byte-identical.
+     methodCustomDebugInfoRows: Map<string, PdbMethodCustomDebugInfo list> }
 
 let writeBinaryAux (stream: Stream, options: options, modul, normalizeAssemblyRefs) =
 
@@ -4022,7 +4025,7 @@ let writeBinaryAux (stream: Stream, options: options, modul, normalizeAssemblyRe
             match options.pdbfile, options.portablePDB with
             | Some _, true ->
                 let pdbInfo =
-                    generatePortablePdb options.embedAllSource options.embedSourceList options.sourceLink options.checksumAlgorithm pdbData options.pathMap
+                    generatePortablePdb options.embedAllSource options.embedSourceList options.sourceLink options.checksumAlgorithm pdbData options.pathMap options.methodCustomDebugInfoRows
 
                 if options.embeddedPDB then
                     let uncompressedLength, contentId, stream, algorithmName, checkSum = pdbInfo
