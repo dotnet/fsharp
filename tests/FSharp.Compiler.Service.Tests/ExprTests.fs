@@ -917,8 +917,8 @@ let ``Test Optimized Declarations Project1`` () =
          "let testTypeOf(x) = Operators.TypeOf<'T> () @ (17,24--17,30)";
          "let mutableVar(x) = (if Operators.op_GreaterThan<Microsoft.FSharp.Core.int> (x,0) then let mutable acc: Microsoft.FSharp.Core.int = x in acc <- x else ()) @ (20,4--22,16)";
          "let mutableConst(unitVar0) = let mutable acc: Microsoft.FSharp.Core.unit = () in acc <- () @ (25,16--25,19)";
-         "let testMutableVar = let x: Microsoft.FSharp.Core.int = 1 in (if Operators.op_GreaterThan<Microsoft.FSharp.Core.int> (x,0) then let mutable acc: Microsoft.FSharp.Core.int = x in acc <- x else ()) @ (28,21--28,33)";
-         "let testMutableConst = let mutable acc: Microsoft.FSharp.Core.unit = () in acc <- () @ (29,23--29,38)"]
+         "let testMutableVar = N.mutableVar (1) @ (28,21--28,33)";
+         "let testMutableConst = N.mutableConst (()) @ (29,23--29,38)"]
 
     // printFSharpDecls "" file2.Declarations |> Seq.iter (printfn "%s")
     printfn "// optimized"

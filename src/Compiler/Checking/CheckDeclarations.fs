@@ -50,6 +50,12 @@ open FSharp.Compiler.TypeProviders
 
 type cenv = TcFileState
 
+let rec (|UndefinedNameError|_|) (e: exn) =
+    match e with
+    | UndefinedName _ -> Some ()
+    | WrappedError(inner, _) -> (|UndefinedNameError|_|) inner
+    | _ -> None
+
 //-------------------------------------------------------------------------
 // Mutually recursive shapes
 //------------------------------------------------------------------------- 
@@ -1367,14 +1373,17 @@ module MutRecBindingChecking =
                         // Phase2B: typecheck the argument to an 'inherits' call and build the new object expr for the inherit-call 
                         | Phase2AInherit (synBaseTy, arg, baseValOpt, m) ->
                             let inheritsExpr, tpenv =
-                                try
-                                   let baseTy, tpenv = TcType cenv NoNewTypars CheckCxs ItemOccurrence.Use WarnOnIWSAM.Yes envInstance tpenv synBaseTy
-                                   let baseTy = baseTy |> convertToTypeWithMetadataIfPossible g
-                                   let mTcNew = unionRanges synBaseTy.Range arg.Range
-                                   TcNewExpr cenv envInstance tpenv baseTy (Some synBaseTy.Range) true arg mTcNew
-                                with RecoverableException e ->
-                                    errorRecovery e m
+                                if cenv.inheritResolutionFailed.ContainsKey(struct (tcref.Stamp, synBaseTy.Range)) then
                                     mkUnit g m, tpenv
+                                else
+                                    try
+                                       let baseTy, tpenv = TcType cenv NoNewTypars CheckCxs ItemOccurrence.Use WarnOnIWSAM.Yes envInstance tpenv synBaseTy
+                                       let baseTy = baseTy |> convertToTypeWithMetadataIfPossible g
+                                       let mTcNew = unionRanges synBaseTy.Range arg.Range
+                                       TcNewExpr cenv envInstance tpenv baseTy (Some synBaseTy.Range) true arg mTcNew
+                                    with RecoverableException e ->
+                                        errorRecovery e m
+                                        mkUnit g m, tpenv
                             let envInstance = match baseValOpt with Some baseVal -> AddLocalVal g cenv.tcSink scopem baseVal envInstance | None -> envInstance
                             let envNonRec = match baseValOpt with Some baseVal -> AddLocalVal g cenv.tcSink scopem baseVal envNonRec | None -> envNonRec
                             let innerState = (tpenv, envInstance, envStatic, envNonRec, generalizedRecBinds, preGeneralizationRecBinds, uncheckedRecBindsTable)
@@ -3138,6 +3147,12 @@ module EstablishTypeDefinitionCores =
                 let cpath = eref.CompilationPath.NestedCompPath eref.LogicalName ModuleOrNamespaceKind.ModuleOrType
                 let access = combineAccess tycon.Accessibility (if st.PUntaint((fun st -> st.IsPublic || st.IsNestedPublic), m) then taccessPublic else taccessPrivate cpath)
 
+                // Embed the type into the module we're compiling. This is a freshly-built local module for the
+                // 'type X = ABC<...>' generated-type set (see mkLocalTyconRef above), disjoint from the referenced
+                // provided-type modules that GetOrInternProvidedEntity interns into, and each generated set is
+                // built once on a single file's checking thread. There is therefore no cross-file same-mangled-name
+                // collision here, so adding the entity directly (rather than via GetOrInternProvidedEntity) cannot
+                // diverge the intern table from the 'entities' queue.
                 let nestedTycon = Construct.NewProvidedTycon(resolutionEnvironment, st, 
                                                              Import.ImportProvidedType cenv.amap m, 
                                                              isSuppressRelocate, 
@@ -3324,7 +3339,23 @@ module EstablishTypeDefinitionCores =
                         let kind = InferTyconKind g (kind, attrs, slotsigs, fields, inSig, isConcrete, m)
 
                         let inherits = inherits |> List.map (fun (ty, m, _) -> (ty, m)) 
-                        let inheritedTys = fst (List.mapFold (mapFoldFst (TcTypeAndRecover cenv NoNewTypars checkConstraints ItemOccurrence.UseInType WarnOnIWSAM.No envinner)) tpenv inherits)
+                        let tryResolveInheritType tpenv (ty: SynType, m) =
+                            let key = struct (tcref.Stamp, ty.Range)
+                            if cenv.inheritResolutionFailed.ContainsKey key then
+                                (g.obj_ty_ambivalent, m), tpenv
+                            else
+                                try
+                                    let resolved, tpenv = TcType cenv NoNewTypars checkConstraints ItemOccurrence.UseInType WarnOnIWSAM.No envinner tpenv ty
+                                    (resolved, m), tpenv
+                                with
+                                | RecoverableException (UndefinedNameError as e) ->
+                                    errorRecovery e ty.Range
+                                    cenv.inheritResolutionFailed.TryAdd(key, ()) |> ignore
+                                    (g.obj_ty_ambivalent, m), tpenv
+                                | RecoverableException e ->
+                                    errorRecovery e ty.Range
+                                    (g.obj_ty_ambivalent, m), tpenv
+                        let inheritedTys = inherits |> List.mapFold tryResolveInheritType tpenv |> fst
                         let implementedTys, inheritedTys =   
                             match kind with 
                             | SynTypeDefnKind.Interface -> 
