@@ -84,10 +84,12 @@ internal partial class ShellInProcess
                 dbg.Go(true);
 
             if (seenRun && mode == EnvDTE.dbgDebugMode.dbgDesignMode)
-                throw new InvalidOperationException("Debug session ended before breakpoint hit.");
+                throw new InvalidOperationException(
+                    $"Debug session ended before breakpoint hit. Breakpoints={BreakpointSummary(dbg)}.");
 
             if (sw.Elapsed > timeout)
-                throw new TimeoutException($"No breakpoint hit after {timeout}. Mode={mode}; Breakpoints={BreakpointSummary(dbg)}.");
+                throw new TimeoutException(
+                    $"No breakpoint hit after {timeout}. Mode={mode}; Breakpoints={BreakpointSummary(dbg)}.");
 
             await Task.Delay(100, cancellationToken);
         }
@@ -122,7 +124,11 @@ internal partial class ShellInProcess
         {
             var children = 0;
             foreach (EnvDTE.Breakpoint _ in bp.Children) children++;
-            items.Add($"{Path.GetFileName(bp.File)}:{bp.FileLine}(children={children})");
+            // CurrentHits + Children counts together let us distinguish unbound (children=0, hits=0)
+            // from "bound but never executed" (children>0, hits=0) from "bound and hit" (hits>0).
+            // Unbound means the PDB has no IL location for this source line; the disk-source hash
+            // didn't match the PDB's recorded hash; or the loaded module doesn't have this code.
+            items.Add($"{Path.GetFileName(bp.File)}:{bp.FileLine}(children={children},hits={bp.CurrentHits})");
         }
         return items.Count == 0 ? "none" : string.Join(",", items);
     }
