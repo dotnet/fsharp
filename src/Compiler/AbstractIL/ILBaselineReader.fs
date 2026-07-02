@@ -308,7 +308,11 @@ module private TableIndices =
     let GenericParamConstraint = 44
 
 /// Parsed metadata context for reading table rows.
-type private MetadataContext =
+/// Internal (not private): tiny reader members like TypeRefCount get cross-module
+/// inlined in Release builds, and inlined code referencing a module-private type
+/// fails CLR visibility checks at runtime (observed as an access violation on
+/// RowCounts from HotReloadBaseline's state machines).
+type internal MetadataContext =
     {
         Bytes: byte[]
         HeapSizes: byte
