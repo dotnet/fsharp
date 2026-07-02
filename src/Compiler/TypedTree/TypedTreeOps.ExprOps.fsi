@@ -208,6 +208,9 @@ module internal Makers =
     val mkCallNewFormat:
         TcGlobals -> range -> TType -> TType -> TType -> TType -> TType -> formatStringExpr: Expr -> Expr
 
+    /// Build a call to the 'string' operator (Operators.ToString) at the given argument type.
+    val mkCallStringOperator: TcGlobals -> range -> argTy: TType -> Expr -> Expr
+
     val mkCallGetGenericComparer: TcGlobals -> range -> Expr
 
     val mkCallGetGenericEREqualityComparer: TcGlobals -> range -> Expr
@@ -400,9 +403,6 @@ module internal Makers =
     val mkCallSeqSingleton: TcGlobals -> range -> TType -> Expr -> Expr
 
     val mkCallSeqEmpty: TcGlobals -> range -> TType -> Expr
-
-    /// Make a call to the 'isprintf' function for string interpolation
-    val mkCall_sprintf: g: TcGlobals -> m: range -> funcTy: TType -> fmtExpr: Expr -> fillExprs: Expr list -> Expr
 
     val mkCallDeserializeQuotationFSharp20Plus: TcGlobals -> range -> Expr -> Expr -> Expr -> Expr -> Expr
 

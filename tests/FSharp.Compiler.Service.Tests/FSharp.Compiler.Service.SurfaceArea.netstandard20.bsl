@@ -8046,8 +8046,8 @@ FSharp.Compiler.Syntax.SynInterfaceImpl: Microsoft.FSharp.Core.FSharpOption`1[FS
 FSharp.Compiler.Syntax.SynInterfaceImpl: System.String ToString()
 FSharp.Compiler.Syntax.SynInterpolatedStringPart+FillExpr: FSharp.Compiler.Syntax.SynExpr fillExpr
 FSharp.Compiler.Syntax.SynInterpolatedStringPart+FillExpr: FSharp.Compiler.Syntax.SynExpr get_fillExpr()
-FSharp.Compiler.Syntax.SynInterpolatedStringPart+FillExpr: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Syntax.Ident] get_qualifiers()
-FSharp.Compiler.Syntax.SynInterpolatedStringPart+FillExpr: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Syntax.Ident] qualifiers
+FSharp.Compiler.Syntax.SynInterpolatedStringPart+FillExpr: FSharp.Compiler.Syntax.SynInterpolationFormatting formatting
+FSharp.Compiler.Syntax.SynInterpolatedStringPart+FillExpr: FSharp.Compiler.Syntax.SynInterpolationFormatting get_formatting()
 FSharp.Compiler.Syntax.SynInterpolatedStringPart+String: FSharp.Compiler.Text.Range get_range()
 FSharp.Compiler.Syntax.SynInterpolatedStringPart+String: FSharp.Compiler.Text.Range range
 FSharp.Compiler.Syntax.SynInterpolatedStringPart+String: System.String get_value()
@@ -8058,7 +8058,7 @@ FSharp.Compiler.Syntax.SynInterpolatedStringPart: Boolean IsFillExpr
 FSharp.Compiler.Syntax.SynInterpolatedStringPart: Boolean IsString
 FSharp.Compiler.Syntax.SynInterpolatedStringPart: Boolean get_IsFillExpr()
 FSharp.Compiler.Syntax.SynInterpolatedStringPart: Boolean get_IsString()
-FSharp.Compiler.Syntax.SynInterpolatedStringPart: FSharp.Compiler.Syntax.SynInterpolatedStringPart NewFillExpr(FSharp.Compiler.Syntax.SynExpr, Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Syntax.Ident])
+FSharp.Compiler.Syntax.SynInterpolatedStringPart: FSharp.Compiler.Syntax.SynInterpolatedStringPart NewFillExpr(FSharp.Compiler.Syntax.SynExpr, FSharp.Compiler.Syntax.SynInterpolationFormatting)
 FSharp.Compiler.Syntax.SynInterpolatedStringPart: FSharp.Compiler.Syntax.SynInterpolatedStringPart NewString(System.String, FSharp.Compiler.Text.Range)
 FSharp.Compiler.Syntax.SynInterpolatedStringPart: FSharp.Compiler.Syntax.SynInterpolatedStringPart+FillExpr
 FSharp.Compiler.Syntax.SynInterpolatedStringPart: FSharp.Compiler.Syntax.SynInterpolatedStringPart+String
@@ -8066,6 +8066,28 @@ FSharp.Compiler.Syntax.SynInterpolatedStringPart: FSharp.Compiler.Syntax.SynInte
 FSharp.Compiler.Syntax.SynInterpolatedStringPart: Int32 Tag
 FSharp.Compiler.Syntax.SynInterpolatedStringPart: Int32 get_Tag()
 FSharp.Compiler.Syntax.SynInterpolatedStringPart: System.String ToString()
+FSharp.Compiler.Syntax.SynInterpolationFormatting+DotNet: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Syntax.Ident] format
+FSharp.Compiler.Syntax.SynInterpolationFormatting+DotNet: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Syntax.Ident] get_format()
+FSharp.Compiler.Syntax.SynInterpolationFormatting+DotNet: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Syntax.SynExpr] alignment
+FSharp.Compiler.Syntax.SynInterpolationFormatting+DotNet: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Syntax.SynExpr] get_alignment()
+FSharp.Compiler.Syntax.SynInterpolationFormatting+Printf: FSharp.Compiler.Text.Range get_range()
+FSharp.Compiler.Syntax.SynInterpolationFormatting+Printf: FSharp.Compiler.Text.Range range
+FSharp.Compiler.Syntax.SynInterpolationFormatting+Printf: System.String get_specifier()
+FSharp.Compiler.Syntax.SynInterpolationFormatting+Printf: System.String specifier
+FSharp.Compiler.Syntax.SynInterpolationFormatting+Tags: Int32 DotNet
+FSharp.Compiler.Syntax.SynInterpolationFormatting+Tags: Int32 Printf
+FSharp.Compiler.Syntax.SynInterpolationFormatting: Boolean IsDotNet
+FSharp.Compiler.Syntax.SynInterpolationFormatting: Boolean IsPrintf
+FSharp.Compiler.Syntax.SynInterpolationFormatting: Boolean get_IsDotNet()
+FSharp.Compiler.Syntax.SynInterpolationFormatting: Boolean get_IsPrintf()
+FSharp.Compiler.Syntax.SynInterpolationFormatting: FSharp.Compiler.Syntax.SynInterpolationFormatting NewDotNet(Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Syntax.SynExpr], Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Syntax.Ident])
+FSharp.Compiler.Syntax.SynInterpolationFormatting: FSharp.Compiler.Syntax.SynInterpolationFormatting NewPrintf(System.String, FSharp.Compiler.Text.Range)
+FSharp.Compiler.Syntax.SynInterpolationFormatting: FSharp.Compiler.Syntax.SynInterpolationFormatting+DotNet
+FSharp.Compiler.Syntax.SynInterpolationFormatting: FSharp.Compiler.Syntax.SynInterpolationFormatting+Printf
+FSharp.Compiler.Syntax.SynInterpolationFormatting: FSharp.Compiler.Syntax.SynInterpolationFormatting+Tags
+FSharp.Compiler.Syntax.SynInterpolationFormatting: Int32 Tag
+FSharp.Compiler.Syntax.SynInterpolationFormatting: Int32 get_Tag()
+FSharp.Compiler.Syntax.SynInterpolationFormatting: System.String ToString()
 FSharp.Compiler.Syntax.SynLetOrUse: Boolean IsBang
 FSharp.Compiler.Syntax.SynLetOrUse: Boolean IsFromSource
 FSharp.Compiler.Syntax.SynLetOrUse: Boolean IsRecursive

@@ -1366,6 +1366,9 @@ module internal Makers =
     let mkCallNewFormat (g: TcGlobals) m aty bty cty dty ety formatStringExpr =
         mkApps g (typedExprForIntrinsic g m g.new_format_info, [ [ aty; bty; cty; dty; ety ] ], [ formatStringExpr ], m)
 
+    let mkCallStringOperator (g: TcGlobals) m argTy e =
+        mkApps g (typedExprForIntrinsic g m g.string_operator_info, [ [ argTy ] ], [ e ], m)
+
     let tryMkCallBuiltInWitness (g: TcGlobals) traitInfo argExprs m =
         let info, tinst = g.MakeBuiltInWitnessInfo traitInfo
         let vref = ValRefForIntrinsic info
@@ -1448,9 +1451,6 @@ module internal Makers =
 
     let mkCallSeqEmpty g m ty1 =
         mkApps g (typedExprForIntrinsic g m g.seq_empty_info, [ [ ty1 ] ], [], m)
-
-    let mkCall_sprintf (g: TcGlobals) m funcTy fmtExpr fillExprs =
-        mkApps g (typedExprForIntrinsic g m g.sprintf_info, [ [ funcTy ] ], fmtExpr :: fillExprs, m)
 
     let mkCallDeserializeQuotationFSharp20Plus g m e1 e2 e3 e4 =
         let args = [ e1; e2; e3; e4 ]

@@ -792,6 +792,7 @@ type TcGlobals(
 
   let v_byte_operator_info         = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "byte"                                 , None                 , Some "ToByte",    [vara],   ([[varaTy]], v_byte_ty))
   let v_sbyte_operator_info        = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "sbyte"                                , None                 , Some "ToSByte",   [vara],   ([[varaTy]], v_sbyte_ty))
+  let v_string_operator_info       = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "string"                               , None                 , Some "ToString",  [vara],   ([[varaTy]], v_string_ty))
   let v_int16_operator_info        = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "int16"                                , None                 , Some "ToInt16",   [vara],   ([[varaTy]], v_int16_ty))
   let v_uint16_operator_info       = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "uint16"                               , None                 , Some "ToUInt16",  [vara],   ([[varaTy]], v_uint16_ty))
   let v_int32_operator_info        = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "int32"                                , None                 , Some "ToInt32",   [vara],   ([[varaTy]], v_int32_ty))
@@ -1594,6 +1595,7 @@ type TcGlobals(
 
   member _.byte_operator_info       = v_byte_operator_info
   member _.sbyte_operator_info      = v_sbyte_operator_info
+  member _.string_operator_info     = v_string_operator_info
   member _.int16_operator_info      = v_int16_operator_info
   member _.uint16_operator_info     = v_uint16_operator_info
   member _.int32_operator_info      = v_int32_operator_info
@@ -1707,7 +1709,6 @@ type TcGlobals(
   member _.seq_map_info               = v_seq_map_info
   member _.seq_singleton_info         = v_seq_singleton_info
   member _.seq_empty_info             = v_seq_empty_info
-  member _.sprintf_info               = v_sprintf_info
   member _.new_format_info            = v_new_format_info
   member _.unbox_info                 = v_unbox_info
   member _.get_generic_comparer_info  = v_get_generic_comparer_info

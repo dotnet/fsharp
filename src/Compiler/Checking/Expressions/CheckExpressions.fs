@@ -6,7 +6,6 @@ module internal FSharp.Compiler.CheckExpressions
 
 open System
 open System.Collections.Generic
-open System.Text.RegularExpressions
 
 open Internal.Utilities.Collections
 open Internal.Utilities.Library
@@ -145,43 +144,6 @@ exception StandardOperatorRedefinitionWarning of string * range
 exception InvalidInternalsVisibleToAssemblyName of badName: string * fileName: string option
 
 exception InvalidAttributeTargetForLanguageElement of elementTargets: string array * allowedTargets: string array * range: range
-
-//----------------------------------------------------------------------------------------------
-// Helpers for determining if/what specifiers a string has.
-// Used to decide if interpolated string can be lowered to a concat call.
-// We don't care about single- vs multi-$ strings here, because lexer took care of that already.
-//----------------------------------------------------------------------------------------------
-[<return: Struct>]
-let (|HasFormatSpecifier|_|) (s: string) =
-    if
-        Regex.IsMatch(
-            s,
-            // Regex pattern for something like: %[flags][width][.precision][type]
-            """
-            (^|[^%])                # Start with beginning of string or any char other than '%'
-            (%%)*%                  # followed by an odd number of '%' chars
-            [+-0 ]{0,3}             # optionally followed by flags
-            (\d+)?                  # optionally followed by width
-            (\.\d+)?                # optionally followed by .precision
-            [bscdiuxXoBeEfFgGMOAat] # and then a char that determines specifier's type
-            """,
-            RegexOptions.Compiled ||| RegexOptions.IgnorePatternWhitespace)
-    then
-        ValueSome HasFormatSpecifier
-    else
-        ValueNone
-
-// Removes trailing "%s" unless it was escaped by another '%' (checks for odd sequence of '%' before final "%s")
-let (|WithTrailingStringSpecifierRemoved|) (s: string) =
-    if s.EndsWith "%s" then
-        let i = s.AsSpan(0, s.Length - 2).LastIndexOfAnyExcept '%'
-        let diff = s.Length - 2 - i
-        if diff &&& 1 <> 0 then
-            s[..s.Length - 3]
-        else
-            s
-    else
-        s
 
 /// Compute the available access rights from a particular location in code
 let ComputeAccessRights eAccessPath eInternalsVisibleCompPaths eFamilyType =
@@ -7615,6 +7577,103 @@ and TcFormatStringExpr cenv (overallTy: OverallTy) env m tpenv (fmtString: strin
             mkString g m fmtString, tpenv
         )
 
+/// Lower a string-typed interpolated string to a reflection-free System.String.Concat of its parts,
+/// type-checking each part in place.
+and TcInterpolatedStringViaConcat (cenv: cenv, overallTy: OverallTy, env: TcEnv, m: range, tpenv: UnscopedTyparEnv, parts: SynInterpolatedStringPart list) =
+    let g = cenv.g
+    let mSynth = m.MakeSynthetic()
+    let strLit (s: string) = SynExpr.Const(SynConst.String(s, SynStringKind.Regular, mSynth), mSynth)
+    let paren (e: SynExpr) = SynExpr.Paren(e, range0, None, mSynth)
+
+    // '(sprintf spec e : string)': format a printf-specifier hole (still reflection-based).
+    let sprintfOp (spec: string, e: SynExpr) =
+        let f = mkSynApp1 (mkSynLidGet mSynth [ "Microsoft"; "FSharp"; "Core"; "ExtraTopLevelOperators" ] "sprintf") (strLit spec) mSynth
+        let call = mkSynApp1 f (paren e) mSynth
+        SynExpr.Typed(call, SynType.LongIdent(SynLongIdent([ mkSynId mSynth "string" ], [], [ None ])), mSynth)
+
+    // 'String.Format(InvariantCulture, "{0,align:format}", e)': format an aligned or '{e:fmt}' hole.
+    let stringFormatOp (alignment: SynExpr option, format: Ident option, e: SynExpr) =
+        let alignText = match alignment with Some (SynExpr.Const (SynConst.Int32 n, _)) -> "," + string n | _ -> ""
+        let formatText = match format with Some n -> ":" + n.idText | None -> ""
+        let netFormat = "{0" + alignText + formatText + "}"
+        let invariant = mkSynLidGet mSynth [ "System"; "Globalization"; "CultureInfo" ] "InvariantCulture"
+        let args = paren (SynExpr.Tuple(false, [ invariant; strLit netFormat; e ], [ range0; range0 ], mSynth))
+        mkSynApp1 (mkSynLidGet mSynth [ "System"; "String" ] "Format") args mSynth
+
+    // Type-check one hole and convert it to a (string expression, may-be-null) pair.
+    let convertHole (synFill: SynExpr, formatting: SynInterpolationFormatting, tpenv: UnscopedTyparEnv) =
+        // Constrain the hole to 'constraintTy', then render it with 'string' as for a plain '{x}' hole. Used for
+        // bare specifiers (no flags/width/precision) that act only as a type annotation: the value renders the
+        // same through 'string' as through the specifier. ('%u' is not one of these: it reinterprets a signed
+        // value as unsigned, so it does not match 'string' - e.g. '%u' of -1 is "4294967295".)
+        let convertViaString constraintTy =
+            let fill, tpenv = TcExpr cenv (MustEqual constraintTy) env tpenv synFill
+            (mkCallStringOperator g m (tyOfExpr g fill) fill, false), tpenv
+        match formatting with
+        | SynInterpolationFormatting.Printf (spec, _) ->
+            match spec with
+            // A bare '%s' requires a string; pass it through (it may be null) instead of formatting via 'sprintf'.
+            | "%s" ->
+                let fill, tpenv = TcExpr cenv (MustEqual g.string_ty) env tpenv synFill
+                (fill, true), tpenv
+            | "%c" -> convertViaString g.char_ty
+            | "%d" | "%i" -> convertViaString (CheckFormatStrings.mkFlexibleIntFormatTypar g m)
+            | "%M" -> convertViaString (CheckFormatStrings.mkFlexibleDecimalFormatTypar g m)
+            | _ ->
+                let arg, tpenv = TcExpr cenv (MustEqual g.string_ty) env tpenv (sprintfOp (spec, synFill))
+                (arg, false), tpenv
+        | SynInterpolationFormatting.DotNet (alignment, format) ->
+            // Type-checking the hole here is also where a function value gets warned about.
+            let fill, tpenv = TcExprFlex2 cenv (NewInferenceType g) env false tpenv synFill
+            let fillTy = tyOfExpr g fill
+            if g.langVersion.SupportsFeature LanguageFeature.WarnWhenFunctionValueUsedAsInterpolatedStringArg && (isFunTy g fillTy || isDelegateTy g fillTy) then
+                warning (Error(FSComp.SR.tcFunctionValueUsedAsInterpolatedStringArg (), synFill.Range))
+            match alignment, format with
+            | None, None -> (if isStringTy g fillTy then (fill, true) else (mkCallStringOperator g m fillTy fill, false)), tpenv
+            | _ ->
+                // Format the already-checked hole via a synthesized 'String.Format', binding its boxed value
+                // to a temporary so the hole is not type-checked a second time. Re-checking 'synFill' would
+                // duplicate any error in it; boxing to 'obj' keeps the 'Format' overload unambiguous (so a
+                // hole that already failed to check doesn't also leak a confusing 'Format' overload error).
+                let boxedFill = mkCallBox g m fillTy fill
+                let tmpVal, _ = mkLocal mSynth "interpHole" (tyOfExpr g boxedFill)
+                let envInner = AddLocalVal g cenv.tcSink mSynth tmpVal env
+                let tmpRef = SynExpr.Ident(mkSynId mSynth tmpVal.LogicalName)
+                let arg, tpenv = TcExpr cenv (MustEqual g.string_ty) envInner tpenv (stringFormatOp (alignment, format, tmpRef))
+                (mkCompGenLet mSynth tmpVal boxedFill arg, false), tpenv
+
+    // One (string expression, may-be-null) per non-empty part; a builder (not map) since 'tpenv' threads
+    // through the holes. Literals and conversions are never null; only a raw string passthrough may be.
+    let argExprs, tpenv =
+        let ra = ResizeArray()
+        let mutable tpenvAcc = tpenv
+        for part in parts do
+            match part with
+            | SynInterpolatedStringPart.String (s, _) ->
+                if s <> "" then
+                    ra.Add((mkString g m (s.Replace("%%", "%")), false))
+            | SynInterpolatedStringPart.FillExpr (synFill, formatting) ->
+                let argExpr, tpenvAfter = convertHole (synFill, formatting, tpenvAcc)
+                ra.Add argExpr
+                tpenvAcc <- tpenvAfter
+        List.ofSeq ra, tpenvAcc
+
+    let resultExpr =
+        match argExprs with
+        | [] -> mkString g m ""
+        // A lone arg has no Concat to map its null to ""; a possibly-null one coalesces via 'string'.
+        | [ (single, mustCallStringOp) ]->
+            if mustCallStringOp then mkCallStringOperator g m g.string_ty single
+            else single
+        | [ (a, _); (b, _) ] -> mkStaticCall_String_Concat2 g m a b
+        | [ (a, _); (b, _); (c, _) ] -> mkStaticCall_String_Concat3 g m a b c
+        | [ (a, _); (b, _); (c, _); (d, _) ] -> mkStaticCall_String_Concat4 g m a b c d
+        | _ ->
+            let exprs = argExprs |> List.map fst
+            mkStaticCall_String_Concat_Array g m (mkArray (g.string_ty, exprs, m))
+
+    TcPropagatingExprLeafThenConvert cenv overallTy g.string_ty env m (fun () -> resultExpr, tpenv)
+
 /// Check an interpolated string expression
 and [<TailCall>] warnForFunctionValuesInFillExprs (g: TcGlobals) argTys synFillExprs =
     match argTys, synFillExprs with
@@ -7632,11 +7691,7 @@ and TcInterpolatedStringExpr cenv (overallTy: OverallTy) env m tpenv (parts: Syn
         parts
         |> List.choose (function
             | SynInterpolatedStringPart.String _ -> None
-            | SynInterpolatedStringPart.FillExpr (fillExpr, _)  ->
-                match fillExpr with
-                // Detect "x" part of "...{x,3}..."
-                | SynExpr.Tuple (false, [e; SynExpr.Const (SynConst.Int32 _align, _)], _, _) -> Some e
-                | e -> Some e)
+            | SynInterpolatedStringPart.FillExpr (fillExpr, _) -> Some fillExpr)
 
     let stringFragmentRanges =
         parts
@@ -7704,19 +7759,21 @@ and TcInterpolatedStringExpr cenv (overallTy: OverallTy) env m tpenv (parts: Syn
 
     let isFormattableString = (match stringKind with Choice2Of2 _ -> true | _ -> false)
 
-    // The format string used for checking in CheckFormatStrings. This replaces interpolation holes with %P
+    // The format string used for checking in CheckFormatStrings, reconstructed from the parts: each
+    // hole becomes a '%P(...)' marker, prefixed by its printf specifier or alignment.
     let printfFormatString =
         parts
         |> List.map (function
             | SynInterpolatedStringPart.String (s, _) -> s
-            | SynInterpolatedStringPart.FillExpr (fillExpr, format) ->
+            | SynInterpolatedStringPart.FillExpr (_, SynInterpolationFormatting.Printf (spec, _)) ->
+                spec + "%P()"
+            | SynInterpolatedStringPart.FillExpr (fillExpr, SynInterpolationFormatting.DotNet (alignment, format)) ->
+                match fillExpr with
+                | SynExpr.Tuple (false, _, _, _) -> errorR(Error(FSComp.SR.tcInvalidAlignmentInInterpolatedString(), m))
+                | _ -> ()
                 let alignText =
-                    match fillExpr with
-                    // Validate and detect ",3" part of "...{x,3}..."
-                    | SynExpr.Tuple (false, args, _, _) ->
-                        match args with
-                        | [_; SynExpr.Const (SynConst.Int32 align, _)] -> string align
-                        | _ -> errorR(Error(FSComp.SR.tcInvalidAlignmentInInterpolatedString(), m)); ""
+                    match alignment with
+                    | Some (SynExpr.Const (SynConst.Int32 align, _)) -> string align
                     | _ -> ""
                 let formatText = match format with None -> "()" | Some n -> "(" + n.idText + ")"
                 "%" + alignText + "P" + formatText )
@@ -7770,75 +7827,28 @@ and TcInterpolatedStringExpr cenv (overallTy: OverallTy) env m tpenv (parts: Syn
             else
                 let str = mkString g m printfFormatString
                 mkCallNewFormat g m printerTy printerArgTy printerResidueTy printerResultTy printerTupleTy str, tpenv
+        elif isString then
+            // String-typed interpolation: lower to a reflection-free System.String.Concat of the parts,
+            // type-checking each hole in place (no separate batch, no flat fill-expression list).
+            TcInterpolatedStringViaConcat (cenv, overallTy, env, m, tpenv, parts)
         else
-            // Type check the expressions filling the holes
+            // $"...{x}..." used as a PrintfFormat value: build a PrintfFormat that captures the args.
             let fillExprs, tpenv = TcExprsNoFlexes cenv env m tpenv argTys synFillExprs
 
             if g.langVersion.SupportsFeature LanguageFeature.WarnWhenFunctionValueUsedAsInterpolatedStringArg then
                 warnForFunctionValuesInFillExprs g argTys synFillExprs
 
-            // Take all interpolated string parts and typed fill expressions
-            // and convert them to typed expressions that can be used as args to System.String.Concat
-            // return an empty list if there are some format specifiers that make lowering to not applicable
-            let rec concatenable acc fillExprs parts =
-                match fillExprs, parts with
-                | [], [] ->
-                    List.rev acc
-                | [], SynInterpolatedStringPart.FillExpr _ :: _
-                | _, [] ->
-                    // This should never happen, there will always be as many typed fill expressions
-                    // as there are FillExprs in the interpolated string parts
-                    error(InternalError("Mismatch in interpolation expression count", m))
-                | _, SynInterpolatedStringPart.String (WithTrailingStringSpecifierRemoved "", _) :: parts ->
-                    // If the string is empty (after trimming %s of the end), we skip it
-                    concatenable acc fillExprs parts
+            let fillExprsBoxed = (argTys, fillExprs) ||> List.map2 (mkCallBox g m)
 
-                | _, SynInterpolatedStringPart.String (WithTrailingStringSpecifierRemoved HasFormatSpecifier, _) :: _
-                | _, SynInterpolatedStringPart.FillExpr (_, Some _) :: _
-                | _, SynInterpolatedStringPart.FillExpr (SynExpr.Tuple (isStruct = false; exprs = [_; SynExpr.Const (SynConst.Int32 _, _)]), _) :: _ ->
-                    // There was a format specifier like %20s{..} or {..,20} or {x:hh}, which means we cannot simply concat
-                    []
-
-                | _, SynInterpolatedStringPart.String (s & WithTrailingStringSpecifierRemoved trimmed, m) :: parts ->
-                    let finalStr = trimmed.Replace("%%", "%")
-                    concatenable (mkString g (shiftEnd 0 (finalStr.Length - s.Length) m) finalStr :: acc) fillExprs parts
-
-                | fillExpr :: fillExprs, SynInterpolatedStringPart.FillExpr _ :: parts ->
-                    concatenable (fillExpr :: acc) fillExprs parts
-
-            let canLower =
-                g.langVersion.SupportsFeature LanguageFeature.LowerInterpolatedStringToConcat
-                && isString
-                && argTys |> List.forall (isStringTy g)
-
-            let concatenableExprs = if canLower then concatenable [] fillExprs parts else []
-
-            match concatenableExprs with
-            | [p1; p2; p3; p4] -> TcPropagatingExprLeafThenConvert cenv overallTy g.string_ty env m (fun () -> mkStaticCall_String_Concat4 g m p1 p2 p3 p4, tpenv)
-            | [p1; p2; p3] -> TcPropagatingExprLeafThenConvert cenv overallTy g.string_ty env m (fun () -> mkStaticCall_String_Concat3 g m p1 p2 p3, tpenv)
-            | [p1; p2] -> TcPropagatingExprLeafThenConvert cenv overallTy g.string_ty env m (fun () -> mkStaticCall_String_Concat2 g m p1 p2, tpenv)
-            | [p1] -> p1, tpenv
-            | _ ->
-
-                let fillExprsBoxed = (argTys, fillExprs) ||> List.map2 (mkCallBox g m)
-
-                let argsExpr = mkArray (g.obj_ty_withNulls, fillExprsBoxed, m)
-                let percentATysExpr =
-                    if percentATys.Length = 0 then
-                        mkNull m (mkArrayType g g.system_Type_ty)
-                    else
-                        let tyExprs = percentATys |> Array.map (mkCallTypeOf g m) |> Array.toList
-                        mkArray (g.system_Type_ty, tyExprs, m)
-
-                let fmtExpr = MakeMethInfoCall cenv.amap m newFormatMethod [] [mkString g m printfFormatString; argsExpr; percentATysExpr] None
-
-                if isString then
-                    TcPropagatingExprLeafThenConvert cenv overallTy g.string_ty env (* true *) m (fun () ->
-                        // Make the call to sprintf
-                        mkCall_sprintf g m printerTy fmtExpr [], tpenv
-                    )
+            let argsExpr = mkArray (g.obj_ty_withNulls, fillExprsBoxed, m)
+            let percentATysExpr =
+                if percentATys.Length = 0 then
+                    mkNull m (mkArrayType g g.system_Type_ty)
                 else
-                    fmtExpr, tpenv
+                    let tyExprs = percentATys |> Array.map (mkCallTypeOf g m) |> Array.toList
+                    mkArray (g.system_Type_ty, tyExprs, m)
+
+            MakeMethInfoCall cenv.amap m newFormatMethod [] [mkString g m printfFormatString; argsExpr; percentATysExpr] None, tpenv
 
     // The case for $"..." used as type FormattableString or IFormattable
     | Choice2Of2 createFormattableStringMethod ->
