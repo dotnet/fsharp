@@ -1548,3 +1548,122 @@ namespace Microsoft.FSharp.Control
     module internal AsyncBuilderImpl = 
         val async : AsyncBuilder
 
+    /// <summary>Contains camelCase module-level functions for <see cref="T:Microsoft.FSharp.Control.FSharpAsync`1"/> computations.</summary>
+    ///
+    /// <category index="1">Async Programming</category>
+    [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
+    module Async =
+
+        /// <summary>Creates an asynchronous computation that returns the given value.</summary>
+        ///
+        /// <param name="value">The value to return.</param>
+        ///
+        /// <returns>An asynchronous computation that returns <c>value</c> when executed.</returns>
+        ///
+        /// <example id="async-result-1">
+        /// <code lang="fsharp">
+        /// let computation = Async.result 42
+        /// computation |> Async.RunSynchronously // evaluates to 42
+        /// </code>
+        /// </example>
+        [<CompiledName("Result")>]
+        val inline result: value: 'T -> Async<'T>
+
+        /// <summary>Creates an asynchronous computation that applies the mapping function to the result of the given computation.</summary>
+        ///
+        /// <param name="mapping">The function to apply to the result.</param>
+        /// <param name="computation">The input computation.</param>
+        ///
+        /// <returns>An asynchronous computation that applies <c>mapping</c> to the result of <c>computation</c>.</returns>
+        ///
+        /// <example id="async-map-1">
+        /// <code lang="fsharp">
+        /// let computation = Async.result 21 |> Async.map (fun x -> x * 2)
+        /// computation |> Async.RunSynchronously // evaluates to 42
+        /// </code>
+        /// </example>
+        [<CompiledName("Map")>]
+        val inline map: mapping: ('T -> 'U) -> computation: Async<'T> -> Async<'U>
+
+        /// <summary>Creates an asynchronous computation that passes the result of the given computation to the binder function.</summary>
+        ///
+        /// <param name="binder">A function that takes the result of the computation and returns a new asynchronous computation.</param>
+        /// <param name="computation">The input computation.</param>
+        ///
+        /// <returns>An asynchronous computation that performs a monadic bind on the result of <c>computation</c>.</returns>
+        ///
+        /// <example id="async-bind-1">
+        /// <code lang="fsharp">
+        /// let computation = Async.result 21 |> Async.bind (fun x -> Async.result (x * 2))
+        /// computation |> Async.RunSynchronously // evaluates to 42
+        /// </code>
+        /// </example>
+        [<CompiledName("Bind")>]
+        val inline bind: binder: ('T -> Async<'U>) -> computation: Async<'T> -> Async<'U>
+
+        /// <summary>Creates an asynchronous computation that runs the given computation and ignores its result.</summary>
+        ///
+        /// <param name="computation">The input computation.</param>
+        ///
+        /// <returns>A computation that is equivalent to the input computation, but disregards the result.</returns>
+        ///
+        /// <example id="async-ignore-1">
+        /// <code lang="fsharp">
+        /// let readFile filename numBytes =
+        ///     async {
+        ///         use file = System.IO.File.OpenRead(filename)
+        ///         do! file.AsyncRead(numBytes) |> Async.ignore&lt;int&gt;
+        ///     }
+        /// </code>
+        /// </example>
+        [<CompiledName("Ignore")>]
+        [<RequiresExplicitTypeArguments>]
+        val inline ignore<'T> : computation: Async<'T> -> Async<unit>
+
+        /// <summary>Creates an asynchronous computation that runs the given computation.
+        /// If it raises an exception, the handler function is called with the exception and its result is returned.</summary>
+        ///
+        /// <param name="handler">A function to handle exceptions, returning a recovery value.</param>
+        /// <param name="computation">The input computation.</param>
+        ///
+        /// <returns>An asynchronous computation that returns the result of <c>computation</c>, or the result of <c>handler</c> if an exception is raised.</returns>
+        ///
+        /// <example id="async-catchwith-1">
+        /// <code lang="fsharp">
+        /// let safeDiv x y =
+        ///     async { return x / y }
+        ///     |> Async.catchWith (fun _ -> 0)
+        /// safeDiv 10 0 |> Async.RunSynchronously // evaluates to 0
+        /// </code>
+        /// </example>
+        [<CompiledName("CatchWith")>]
+        val catchWith: handler: (exn -> 'T) -> computation: Async<'T> -> Async<'T>
+
+        /// <summary>Creates an asynchronous computation that runs the given computation and returns its result as <c>Ok</c>,
+        /// or returns <c>Error</c> with the exception if one is raised.</summary>
+        ///
+        /// <param name="computation">The input computation.</param>
+        ///
+        /// <returns>An asynchronous computation that returns <c>Ok</c> of the result or <c>Error</c> of the exception.</returns>
+        ///
+        /// <example id="async-catch-1">
+        /// <code lang="fsharp">
+        /// let safeDiv x y =
+        ///     async { return x / y } |> Async.catch
+        /// safeDiv 10 2 |> Async.RunSynchronously // evaluates to Ok 5
+        /// safeDiv 10 0 |> Async.RunSynchronously // evaluates to Error (DivideByZeroException ...)
+        /// </code>
+        /// </example>
+        [<CompiledName("Catch")>]
+        val catch: computation: Async<'T> -> Async<Result<'T, exn>>
+
+        /// <summary>An asynchronous computation that returns <c>unit</c>. This is equivalent to <c>async.Zero()</c>.</summary>
+        ///
+        /// <example id="async-empty-1">
+        /// <code lang="fsharp">
+        /// Async.empty |> Async.RunSynchronously // evaluates to ()
+        /// </code>
+        /// </example>
+        [<CompiledName("Empty")>]
+        val empty: Async<unit>
+

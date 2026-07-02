@@ -716,3 +716,159 @@ module LowPlusPriority =
                         this.Bind(computation, fun (result2: ^TResult2) -> this.Return struct (result1, result2))
                 )
             )
+
+namespace Microsoft.FSharp.Control
+
+open System.Threading.Tasks
+open Microsoft.FSharp.Core
+open TaskBuilder
+open Microsoft.FSharp.Control.TaskBuilderExtensions
+open Microsoft.FSharp.Control.TaskBuilderExtensions.LowPriority
+open Microsoft.FSharp.Control.TaskBuilderExtensions.HighPriority
+
+[<RequireQualifiedAccess>]
+module Task =
+
+    [<CompiledName("Result")>]
+    let inline result (value: 'T) : Task<'T> =
+        Task.FromResult value
+
+    [<CompiledName("Empty")>]
+    let empty: Task<unit> = result ()
+
+    [<CompiledName("Map")>]
+    let inline map ([<InlineIfLambda>] mapping: 'T -> 'U) (task: Task<'T>) : Task<'U> =
+        if task.Status = TaskStatus.RanToCompletion then
+            result (mapping task.Result)
+        else
+            TaskBuilder.task {
+                let! v = task
+                return mapping v
+            }
+
+    [<CompiledName("Bind")>]
+    let inline bind ([<InlineIfLambda>] binder: 'T -> Task<'U>) (task: Task<'T>) : Task<'U> =
+        if task.Status = TaskStatus.RanToCompletion then
+            binder task.Result
+        else
+            TaskBuilder.task {
+                let! v = task
+                return! binder v
+            }
+
+    [<CompiledName("Ignore")>]
+    [<RequiresExplicitTypeArguments>]
+    let inline ignore<'T> (task: Task<'T>) : Task<unit> =
+        if task.Status = TaskStatus.RanToCompletion then
+            empty
+        else
+            map ignore task
+
+    [<CompiledName("CatchWith")>]
+    let inline catchWith ([<InlineIfLambda>] handler: exn -> 'T) (task: Task<'T>) : Task<'T> =
+        if task.Status = TaskStatus.RanToCompletion then
+            task
+        else
+            TaskBuilder.task {
+                try
+                    return! task
+                with e ->
+                    return handler e
+            }
+
+    [<CompiledName("Catch")>]
+    let catch (task: Task<'T>) : Task<Result<'T, exn>> =
+        if task.Status = TaskStatus.RanToCompletion then
+            result (Ok task.Result)
+        else
+            TaskBuilder.task {
+                try
+                    let! v = task
+                    return Ok v
+                with e ->
+                    return Error e
+            }
+
+#if NETSTANDARD2_1
+    [<CompiledName("OfValueTask")>]
+    let inline ofValueTask (valueTask: ValueTask<'T>) : Task<'T> =
+        valueTask.AsTask()
+#endif
+
+#if NETSTANDARD2_1
+[<RequireQualifiedAccess>]
+module ValueTask =
+
+    [<CompiledName("Result")>]
+    let inline result (value: 'T) : ValueTask<'T> =
+        ValueTask<'T>(value)
+
+    [<CompiledName("Map")>]
+    let inline map ([<InlineIfLambda>] mapping: 'T -> 'U) (task: ValueTask<'T>) : ValueTask<'U> =
+        if task.IsCompletedSuccessfully then
+            ValueTask<'U>(mapping task.Result)
+        else
+            let t: Task<'U> =
+                TaskBuilder.task {
+                    let! v = task
+                    return mapping v
+                }
+
+            ValueTask<'U>(t)
+
+    [<CompiledName("Bind")>]
+    let inline bind ([<InlineIfLambda>] binder: 'T -> ValueTask<'U>) (task: ValueTask<'T>) : ValueTask<'U> =
+        if task.IsCompletedSuccessfully then
+            binder task.Result
+        else
+            let t: Task<'U> =
+                TaskBuilder.task {
+                    let! v = task
+                    return! binder v
+                }
+
+            ValueTask<'U>(t)
+
+    [<CompiledName("Ignore")>]
+    [<RequiresExplicitTypeArguments>]
+    let inline ignore<'T> (task: ValueTask<'T>) : ValueTask<unit> =
+        map ignore task
+
+    [<CompiledName("CatchWith")>]
+    let inline catchWith ([<InlineIfLambda>] handler: exn -> 'T) (task: ValueTask<'T>) : ValueTask<'T> =
+        if task.IsCompletedSuccessfully then
+            task
+        else
+            let t: Task<'T> =
+                TaskBuilder.task {
+                    try
+                        return! task
+                    with e ->
+                        return handler e
+                }
+
+            ValueTask<'T>(t)
+
+    [<CompiledName("Catch")>]
+    let catch (task: ValueTask<'T>) : ValueTask<Result<'T, exn>> =
+        if task.IsCompletedSuccessfully then
+            ValueTask<Result<'T, exn>>(Ok task.Result)
+        else
+            let t: Task<Result<'T, exn>> =
+                TaskBuilder.task {
+                    try
+                        let! v = task
+                        return Ok v
+                    with e ->
+                        return Error e
+                }
+
+            ValueTask<Result<'T, exn>>(t)
+
+    [<CompiledName("Empty")>]
+    let empty: ValueTask<unit> = result ()
+
+    [<CompiledName("OfTask")>]
+    let inline ofTask (task: Task<'T>) : ValueTask<'T> =
+        ValueTask<'T>(task)
+#endif
