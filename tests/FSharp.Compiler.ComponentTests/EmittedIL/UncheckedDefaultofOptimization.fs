@@ -31,10 +31,14 @@ let f (n: float32) =
         |> verifyILNotPresent [ "initobj"; "valuetype [runtime]System.Decimal" ]
 
     // https://github.com/dotnet/fsharp/issues/18128
-    // The FSharpPlus-style SRTP witness pattern from the issue. After elimination, `doWork` reduces to
-    // a direct multiplication; the `nil<PreOps>` and `nil< ^b >` witness bindings are gone.
+    // The FSharpPlus-style SRTP witness pattern from the issue. Elimination happens at the (fully
+    // instantiated) use site: `doWork` reduces to a direct multiplication with the `nil<PreOps>` and
+    // `nil< ^b >` witness bindings gone. The assertion is scoped to `doWork` rather than the whole
+    // module because the inline functions also emit a compiler-generated dynamic-invocation stub which
+    // legitimately retains an `ldnull` (see the guard below and issue #19758 - the witness bindings of
+    // an *inline* body must be preserved so cross-assembly consumers can re-inline and specialize them).
     [<Fact>]
-    let ``Unused Unchecked.defaultof SRTP witness bindings are eliminated`` () =
+    let ``Unused Unchecked.defaultof SRTP witness bindings are eliminated at the use site`` () =
         FSharp """
 module Test
 
@@ -59,7 +63,17 @@ let doWork (n: float) = double n
         |> asLibrary
         |> compile
         |> shouldSucceed
-        |> verifyILNotPresent [ "initobj"; "ldnull" ]
+        |> verifyIL [
+            """.method public static float64  doWork(float64 n) cil managed
+  {
+    
+    .maxstack  8
+    IL_0000:  ldarg.0
+    IL_0001:  ldc.r8     2.
+    IL_000a:  mul
+    IL_000b:  ret
+  }"""
+        ]
 
     // https://github.com/dotnet/fsharp/issues/18128
     // Soundness pin: eliminating an unused `Unchecked.defaultof<T>` must not introduce a new reference

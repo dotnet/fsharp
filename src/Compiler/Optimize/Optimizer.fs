@@ -1652,18 +1652,24 @@ let IlAssemblyCodeInstrHasEffect i =
 
 let IlAssemblyCodeHasEffect instrs = List.exists IlAssemblyCodeInstrHasEffect instrs
 
-/// EI_ilzero embeds tyargs into IL; eliminating the binding is only safe when
-/// the tyargs are fully ground (contain no free type variables, even after
-/// following solutions). A binding whose type still references unsolved typars
-/// is the only thing pinning those typars; removing it leaves them unsolved and
-/// trips FS0073 in IlxGen. This is common for SRTP witness/dummy arguments.
-let ILAsmWithIlzeroHasEffect instrs tyargs =
+/// EI_ilzero embeds tyargs into IL; eliminating the binding is only safe when:
+///  - We are optimizing for emission (optimizing = true). Inside an inline value's body
+///    (optimizing = false) the optimized expression is pickled as cross-assembly optimization
+///    info and re-inlined at each use site; dropping an ilzero witness/dummy binding there
+///    corrupts that info and trips FS0073 in a consumer's IlxGen (e.g. the SRTP witness/dummy
+///    arguments used pervasively by FSharpPlus). Elimination is still performed at the (fully
+///    instantiated) use site itself, where optimizing = true, so no codegen quality is lost.
+///  - The tyargs are fully ground (contain no free type variables, even after following
+///    solutions). A binding whose type still references unsolved typars is the only thing
+///    pinning those typars; removing it leaves them unsolved and also trips FS0073.
+let ILAsmWithIlzeroHasEffect optimizing instrs tyargs =
     let hasIlzero = instrs |> List.exists (function EI_ilzero _ -> true | _ -> false)
 
     if not hasIlzero then
         IlAssemblyCodeHasEffect instrs
     else
         let ilzeroIsSafe =
+            optimizing &&
             tyargs |> List.forall (fun ty -> Zset.isEmpty (freeInType CollectTypars ty).FreeTypars)
 
         let otherInstrsHaveEffect =
@@ -1671,7 +1677,7 @@ let ILAsmWithIlzeroHasEffect instrs tyargs =
 
         otherInstrsHaveEffect || not ilzeroIsSafe
 
-let rec ExprHasEffect g expr = 
+let rec ExprHasEffectImpl optimizing g expr = 
     match stripDebugPoints expr with 
     | Expr.Val (vref, _, _) -> vref.IsTypeFunction || vref.IsMutable
     | Expr.Quote _ 
@@ -1679,20 +1685,20 @@ let rec ExprHasEffect g expr =
     | Expr.TyLambda _ 
     | Expr.Const _ -> false
     // type applications do not have effects, with the exception of type functions
-    | Expr.App (f0, _, _, [], _) -> IsTyFuncValRefExpr f0 || ExprHasEffect g f0
-    | Expr.Op (op, tyargs, args, m) -> ExprsHaveEffect g args || OpHasEffect g m op tyargs
-    | Expr.LetRec (binds, body, _, _) -> BindingsHaveEffect g binds || ExprHasEffect g body
-    | Expr.Let (bind, body, _, _) -> BindingHasEffect g bind || ExprHasEffect g body
+    | Expr.App (f0, _, _, [], _) -> IsTyFuncValRefExpr f0 || ExprHasEffectImpl optimizing g f0
+    | Expr.Op (op, tyargs, args, m) -> ExprsHaveEffectImpl optimizing g args || OpHasEffectImpl optimizing g m op tyargs
+    | Expr.LetRec (binds, body, _, _) -> BindingsHaveEffectImpl optimizing g binds || ExprHasEffectImpl optimizing g body
+    | Expr.Let (bind, body, _, _) -> BindingHasEffectImpl optimizing g bind || ExprHasEffectImpl optimizing g body
     // REVIEW: could add Expr.Obj on an interface type - these are similar to records of lambda expressions 
     | _ -> true
 
-and ExprsHaveEffect g exprs = List.exists (ExprHasEffect g) exprs
+and ExprsHaveEffectImpl optimizing g exprs = List.exists (ExprHasEffectImpl optimizing g) exprs
 
-and BindingsHaveEffect g binds = List.exists (BindingHasEffect g) binds
+and BindingsHaveEffectImpl optimizing g binds = List.exists (BindingHasEffectImpl optimizing g) binds
 
-and BindingHasEffect g bind = bind.Expr |> ExprHasEffect g
+and BindingHasEffectImpl optimizing g bind = bind.Expr |> ExprHasEffectImpl optimizing g
 
-and OpHasEffect g m op tyargs =
+and OpHasEffectImpl optimizing g m op tyargs =
     match op with 
     | TOp.Tuple _ -> false
     | TOp.AnonRecd _ -> false
@@ -1706,7 +1712,7 @@ and OpHasEffect g m op tyargs =
     | TOp.UnionCaseTagGet _ -> false
     | TOp.UnionCaseProof _ -> false
     | TOp.UnionCaseFieldGet (ucref, n) -> isUnionCaseFieldMutable g ucref n 
-    | TOp.ILAsm (instrs, _) -> ILAsmWithIlzeroHasEffect instrs tyargs
+    | TOp.ILAsm (instrs, _) -> ILAsmWithIlzeroHasEffect optimizing instrs tyargs
     | TOp.TupleFieldGet _ -> false
     | TOp.ExnFieldGet (ecref, n) -> isExnFieldMutable ecref n 
     | TOp.RefAddrGet _ -> false
@@ -1732,6 +1738,11 @@ and OpHasEffect g m op tyargs =
     | TOp.ILCall _ (* conservative *)
     | TOp.LValueOp _ (* conservative *)
     | TOp.ValFieldSet _ -> true
+
+/// Check if an expression has an effect. This is the entry point used outside the optimizer
+/// (e.g. IlxGen), so it uses the emission-time semantics (optimizing = true) under which a
+/// fully-ground `Unchecked.defaultof` (ilzero) is effect-free.
+let ExprHasEffect g expr = ExprHasEffectImpl true g expr
 
 
 let TryEliminateBinding cenv _env bind e2 _m =
@@ -1762,7 +1773,7 @@ let TryEliminateBinding cenv _env bind e2 _m =
               match argsr with 
               | Expr.Val (VRefLocal vspec2, _, _) :: argsr2
                  when valEq vspec1 vspec2 && IsUniqueUse vspec2 (List.rev rargsl@argsr2) -> Some(List.rev rargsl, argsr2)
-              | argsrh :: argsrt when not (ExprHasEffect g argsrh) -> GetImmediateUseContext (argsrh :: rargsl) argsrt 
+              | argsrh :: argsrt when not (ExprHasEffectImpl cenv.optimizing g argsrh) -> GetImmediateUseContext (argsrh :: rargsl) argsrt 
               | _ -> None
 
         let (DebugPoints(e2, recreate0)) = e2
@@ -2637,7 +2648,7 @@ and OptimizeExprOp cenv env (op, tyargs, args, m) =
         newExpr,
         { TotalSize = 1
           FunctionSize = 1
-          HasEffect = OpHasEffect g m newOp tyargs
+          HasEffect = OpHasEffectImpl cenv.optimizing g m newOp tyargs
           MightMakeCriticalTailcall = false
           Info = ValueOfExpr newExpr }
 
@@ -2714,7 +2725,7 @@ and OptimizeExprOpFallback cenv env (op, tyargs, argsR, m) arginfos value_ =
     let argsFSize = AddFunctionSizes arginfos
     let argEffects = OrEffects arginfos
     let argValues = List.map (fun x -> x.Info) arginfos
-    let effect = OpHasEffect g m op tyargs
+    let effect = OpHasEffectImpl cenv.optimizing g m op tyargs
     let cost, value_ = 
       match op with
       | TOp.UnionCase c -> 2, MakeValueInfoForUnionCase c (Array.ofList argValues)
