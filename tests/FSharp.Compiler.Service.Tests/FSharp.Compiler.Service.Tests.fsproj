@@ -101,7 +101,8 @@
     <Compile Include="HotReload/DefinitionIndexTests.fs" />
     <Compile Include="HotReload/MetadataDeltaTestHelpers.fs" />
     <Compile Include="HotReload/FSharpDeltaMetadataWriterTests.fs" />
-    <Compile Include="HotReload/RoslynBaselineComparisons.fs" />
+    <!-- Parses its baseline table with System.Text.Json, which .NET Framework does not have. -->
+    <Compile Include="HotReload/RoslynBaselineComparisons.fs" Condition="'$(TargetFrameworkIdentifier)' == '.NETCoreApp'" />
     <Compile Include="HotReload/NameMapTests.fs" />
     <Compile Include="HotReload/ClosureNameAllocatorTests.fs" />
     <Compile Include="HotReload/RudeEditDiagnosticsTests.fs" />
