@@ -1,0 +1,1563 @@
+#nowarn "57"
+
+namespace FSharp.Compiler.Service.Tests.HotReload
+
+open System
+open System.Collections.Generic
+open System.Collections.Immutable
+open System.IO
+open System.Reflection
+open System.Reflection.Emit
+open System.Reflection.Metadata
+open System.Reflection.Metadata.Ecma335
+open System.Reflection.PortableExecutable
+open System.Text
+open Xunit
+
+open FSharp.Compiler.CodeAnalysis
+open FSharp.Compiler.CodeAnalysis.ProjectSnapshot
+open FSharp.Compiler.Diagnostics
+open FSharp.Compiler.EditAndContinue
+open FSharp.Compiler.HotReload
+open FSharp.Compiler.HotReloadBaseline
+open FSharp.Compiler.Text
+open FSharp.Compiler.TypedTree
+open FSharp.Test
+open FSharp.Test.Utilities
+
+open FSharp.Compiler.Service.Tests.Common
+
+/// Tests for the FSharpHotReloadSession entity (the F# DebuggingSession analogue):
+/// independent session instances, per-project committed baselines and generation chains
+/// inside one session, solution-wide commit/discard, and session-wide
+/// capabilities/active statements.
+[<Collection(nameof NotThreadSafeResourceCollection)>]
+module HotReloadSessionTests =
+
+    let private createChecker () =
+        FSharpChecker.Create(
+            keepAssemblyContents = true,
+            keepAllBackgroundResolutions = false,
+            keepAllBackgroundSymbolUses = false,
+            enableBackgroundItemKeyStoreAndSemanticClassification = false,
+            enablePartialTypeChecking = false,
+            captureIdentifiersWhenParsing = false,
+            useTransparentCompiler = CompilerAssertHelpers.UseTransparentCompiler
+        )
+
+    /// Project options with the output passed as `-o:` so the project identity
+    /// (FSharpProjectIdentifier = projectFileName * "-o:" output) carries the output path.
+    let private prepareProjectOptions
+        (checker: FSharpChecker)
+        (fsPath: string)
+        (dllPath: string)
+        (source: string)
+        (extraOptions: string list)
+        =
+        let projectOptions, _ =
+            checker.GetProjectOptionsFromScript(
+                fsPath,
+                SourceText.ofString source,
+                assumeDotNetFramework = false,
+                useSdkRefs = true,
+                useFsiAuxLib = false
+            )
+            |> Async.RunImmediate
+
+        { projectOptions with
+            SourceFiles = [| fsPath |]
+            OtherOptions =
+                projectOptions.OtherOptions
+                |> Array.append (List.toArray extraOptions)
+                |> Array.append
+                    [| "--target:library"
+                       "--langversion:preview"
+                       "--optimize-"
+                       "--debug:portable"
+                       "--deterministic"
+                       "--test:HotReloadDeltas"
+                       $"-o:{dllPath}" |] }
+
+    let private compileProject
+        (checker: FSharpChecker)
+        (projectOptions: FSharpProjectOptions)
+        (includeHotReloadCapture: bool)
+        =
+        let options =
+            if includeHotReloadCapture then
+                projectOptions.OtherOptions
+            else
+                projectOptions.OtherOptions
+                |> Array.filter (fun opt ->
+                    not (opt.StartsWith("--test:HotReloadDeltas", StringComparison.OrdinalIgnoreCase)))
+
+        let argv =
+            Array.concat [ [| "fsc.exe" |]; options; projectOptions.SourceFiles ]
+
+        let diagnostics, exOpt = checker.Compile(argv) |> Async.RunImmediate
+
+        let errors =
+            diagnostics
+            |> Array.filter (fun diagnostic -> diagnostic.Severity = FSharpDiagnosticSeverity.Error)
+
+        match errors, exOpt with
+        | [||], None -> ()
+        | errs, _ -> failwithf "Compilation failed: %A" (errs |> Array.map (fun d -> d.Message))
+
+    let private createProjectSnapshot (projectOptions: FSharpProjectOptions) =
+        FSharpProjectSnapshot.FromOptions(projectOptions, DocumentSource.FileSystem)
+        |> Async.RunImmediate
+
+    let private withProjectDir (testName: string) (action: string -> unit) =
+        let projectDir =
+            Path.Combine(Path.GetTempPath(), testName, Guid.NewGuid().ToString("N"))
+
+        Directory.CreateDirectory(projectDir) |> ignore
+
+        try
+            action projectDir
+        finally
+            try
+                Directory.Delete(projectDir, true)
+            with _ ->
+                ()
+
+    let private withProjectDirReturning (testName: string) (action: string -> 'T) =
+        let projectDir =
+            Path.Combine(Path.GetTempPath(), testName, Guid.NewGuid().ToString("N"))
+
+        Directory.CreateDirectory(projectDir) |> ignore
+
+        try
+            action projectDir
+        finally
+            try
+                Directory.Delete(projectDir, true)
+            with _ ->
+                ()
+
+    let private writeAndCompile (checker: FSharpChecker) (fsPath: string) (options: FSharpProjectOptions) (source: string) capture =
+        File.WriteAllText(fsPath, source)
+        checker.NotifyFileChanged(fsPath, options) |> Async.RunImmediate
+        compileProject checker options capture
+
+    let private withEnvVar name value action =
+        let previous = Environment.GetEnvironmentVariable name
+
+        try
+            Environment.SetEnvironmentVariable(name, value)
+            action ()
+        finally
+            Environment.SetEnvironmentVariable(name, previous)
+
+    type private G1LdstrOperand =
+        {
+            InstructionOffset: int
+            Token: int
+            Offset: int
+        }
+
+    type private G1UserStringEntry =
+        {
+            RelativeOffset: int
+            AbsoluteOffset: int
+            Value: string
+            Bytes: string
+        }
+
+    type private G1BaselineDecode =
+        {
+            UserStringHeapSize: int
+            UpdatedMethod: string
+            Ldstrs: G1LdstrOperand list
+            UserStrings: (int * string) list
+        }
+
+    type private G1DeltaDecode =
+        {
+            EncLog: (int * int) list
+            EncMap: int list
+            MethodRows: (int * string) list
+            UserStrings: G1UserStringEntry list
+            Ldstrs: G1LdstrOperand list
+            UserStringUpdates: (int * int * string) list
+        }
+
+    type private G1CaseDecode =
+        {
+            Label: string
+            UpdatedMethods: int list
+            Baseline: G1BaselineDecode
+            Delta: G1DeltaDecode
+        }
+
+    let private formatToken token = sprintf "0x%08X" token
+
+    let private opcodeOperandTypes =
+        lazy
+            let table = Dictionary<int, OperandType>()
+
+            for field in typeof<OpCodes>.GetFields(BindingFlags.Public ||| BindingFlags.Static) do
+                match field.GetValue null with
+                | :? OpCode as opCode ->
+                    let key = (int opCode.Value) &&& 0xFFFF
+                    table.[key] <- opCode.OperandType
+                | _ -> ()
+
+            table
+
+    let private findLdstrOperands (ilBytes: byte[]) =
+        let operands = ResizeArray<G1LdstrOperand>()
+        let mutable offset = 0
+
+        let advance count =
+            offset <- min ilBytes.Length (offset + count)
+
+        while offset < ilBytes.Length do
+            let instructionOffset = offset
+            let first = int ilBytes.[offset]
+            offset <- offset + 1
+
+            let opcode =
+                if first = 0xFE && offset < ilBytes.Length then
+                    let second = int ilBytes.[offset]
+                    offset <- offset + 1
+                    0xFE00 ||| second
+                else
+                    first
+
+            let operandType =
+                match opcodeOperandTypes.Value.TryGetValue opcode with
+                | true, operandType -> operandType
+                | _ -> OperandType.InlineNone
+
+            let operandOffset = offset
+
+            match operandType with
+            | OperandType.InlineNone -> ()
+            | OperandType.ShortInlineI
+            | OperandType.ShortInlineBrTarget
+            | OperandType.ShortInlineVar -> advance 1
+            | OperandType.InlineVar -> advance 2
+            | OperandType.InlineI
+            | OperandType.ShortInlineR
+            | OperandType.InlineBrTarget
+            | OperandType.InlineField
+            | OperandType.InlineMethod
+            | OperandType.InlineSig
+            | OperandType.InlineTok
+            | OperandType.InlineType -> advance 4
+            | OperandType.InlineI8
+            | OperandType.InlineR -> advance 8
+            | OperandType.InlineString ->
+                let token = BitConverter.ToInt32(ilBytes, operandOffset)
+                let offsetValue = token &&& 0x00FFFFFF
+                operands.Add(
+                    {
+                        InstructionOffset = instructionOffset
+                        Token = token
+                        Offset = offsetValue
+                    })
+
+                advance 4
+            | OperandType.InlineSwitch ->
+                if operandOffset + 4 <= ilBytes.Length then
+                    let count = BitConverter.ToInt32(ilBytes, operandOffset)
+                    advance (4 + count * 4)
+                else
+                    advance 4
+            | _ -> ()
+
+        operands |> Seq.toList
+
+    let private readCompressedUInt (bytes: byte[]) offset =
+        let b0 = int bytes.[offset]
+
+        if (b0 &&& 0x80) = 0 then
+            b0, 1
+        elif (b0 &&& 0xC0) = 0x80 then
+            ((b0 &&& 0x3F) <<< 8) ||| int bytes.[offset + 1], 2
+        else
+            ((b0 &&& 0x1F) <<< 24)
+            ||| (int bytes.[offset + 1] <<< 16)
+            ||| (int bytes.[offset + 2] <<< 8)
+            ||| int bytes.[offset + 3],
+            4
+
+    let private decodeUserStringHeapEntries baselineUserStringHeapSize (heapBytes: byte[]) =
+        let entries = ResizeArray<G1UserStringEntry>()
+        let mutable offset = 1
+
+        while offset < heapBytes.Length do
+            if heapBytes.[offset] = 0uy then
+                offset <- heapBytes.Length
+            else
+                let length, prefixLength = readCompressedUInt heapBytes offset
+                let textByteLength = max 0 (length - 1)
+                let textOffset = offset + prefixLength
+                let nextOffset = textOffset + length
+
+                if nextOffset <= heapBytes.Length then
+                    let value = Encoding.Unicode.GetString(heapBytes, textOffset, textByteLength)
+                    let encodedLength = prefixLength + length
+
+                    let encodedBytes =
+                        heapBytes.[offset .. offset + encodedLength - 1]
+                        |> Array.map (sprintf "%02X")
+                        |> String.concat " "
+
+                    entries.Add(
+                        {
+                            RelativeOffset = offset
+                            AbsoluteOffset = baselineUserStringHeapSize + offset
+                            Value = value
+                            Bytes = encodedBytes
+                        })
+
+                    offset <- offset + encodedLength
+                else
+                    offset <- heapBytes.Length
+
+        entries |> Seq.toList
+
+    let private tryGetMetadataStreamBytes streamName (metadata: byte[]) =
+        use stream = new MemoryStream(metadata, false)
+        use reader = new BinaryReader(stream, Encoding.UTF8, leaveOpen = true)
+
+        let align4 () =
+            while stream.Position % 4L <> 0L do
+                reader.ReadByte() |> ignore
+
+        let readStreamName () =
+            let bytes = ResizeArray<byte>()
+            let mutable b = reader.ReadByte()
+
+            while b <> 0uy do
+                bytes.Add b
+                b <- reader.ReadByte()
+
+            align4 ()
+            Encoding.UTF8.GetString(bytes.ToArray())
+
+        try
+            let signature = reader.ReadUInt32()
+
+            if signature <> 0x424A5342u then
+                None
+            else
+                reader.ReadUInt16() |> ignore
+                reader.ReadUInt16() |> ignore
+                reader.ReadUInt32() |> ignore
+                let versionLength = int (reader.ReadUInt32())
+                reader.ReadBytes(versionLength) |> ignore
+                align4 ()
+                reader.ReadUInt16() |> ignore
+                let streamCount = int (reader.ReadUInt16())
+                let mutable found = None
+
+                for _ = 1 to streamCount do
+                    let offset = int (reader.ReadUInt32())
+                    let size = int (reader.ReadUInt32())
+                    let name = readStreamName ()
+
+                    if name = streamName && offset >= 0 && size >= 0 && offset + size <= metadata.Length then
+                        found <- Some(Array.sub metadata offset size)
+
+                found
+        with _ ->
+            None
+
+    let private methodDisplayName (reader: MetadataReader) (handle: MethodDefinitionHandle) =
+        let methodDef = reader.GetMethodDefinition handle
+        let declaringType = reader.GetTypeDefinition(methodDef.GetDeclaringType())
+        let ns = reader.GetString declaringType.Namespace
+        let typeName = reader.GetString declaringType.Name
+        let methodName = reader.GetString methodDef.Name
+
+        if String.IsNullOrEmpty ns then
+            $"{typeName}::{methodName}"
+        else
+            $"{ns}.{typeName}::{methodName}"
+
+    let private readTypeNames (assemblyBytes: byte[]) =
+        use stream = new MemoryStream(assemblyBytes, false)
+        use peReader = new PEReader(stream)
+        let reader = peReader.GetMetadataReader()
+
+        let rec buildName (handle: TypeDefinitionHandle) =
+            let typeDef = reader.GetTypeDefinition handle
+            let name = reader.GetString typeDef.Name
+
+            let visibility = typeDef.Attributes &&& TypeAttributes.VisibilityMask
+
+            let isNested =
+                match visibility with
+                | TypeAttributes.NestedPublic
+                | TypeAttributes.NestedPrivate
+                | TypeAttributes.NestedFamily
+                | TypeAttributes.NestedAssembly
+                | TypeAttributes.NestedFamORAssem
+                | TypeAttributes.NestedFamANDAssem -> true
+                | _ -> false
+
+            if isNested then
+                $"{buildName (typeDef.GetDeclaringType())}+{name}"
+            else
+                let ns = reader.GetString typeDef.Namespace
+
+                if String.IsNullOrEmpty ns then
+                    name
+                else
+                    $"{ns}.{name}"
+
+        [ for handle in reader.TypeDefinitions -> buildName handle ]
+
+    let private assertMatchingTypeNames testLabel familyName predicate baselineTypeNames freshTypeNames =
+        let filteredBaseline: string list =
+            baselineTypeNames
+            |> List.filter predicate
+            |> List.sort
+
+        let filteredFresh: string list =
+            freshTypeNames
+            |> List.filter predicate
+            |> List.sort
+
+        let format names = names |> String.concat "; "
+
+        Assert.NotEmpty filteredBaseline
+        Assert.Equal<string list>(filteredBaseline, filteredFresh)
+        printfn "[%s] %s synthesized TypeDefs: %s" testLabel familyName (format filteredBaseline)
+
+    let private assertReplayEndpointTypeNames testLabel (typeNames: string list) =
+        let endpointNames =
+            typeNames
+            |> List.filter (fun name -> name.Contains("endpoints@hotreload", StringComparison.Ordinal))
+            |> List.sort
+
+        Assert.NotEmpty endpointNames
+
+        Assert.Contains(
+            endpointNames,
+            fun name ->
+                name.Contains("endpoints@hotreload", StringComparison.Ordinal)
+                && not (name.Contains("@hotreload#g0_o", StringComparison.Ordinal)))
+
+        printfn "[%s] replay endpoint synthesized TypeDefs: %s" testLabel (endpointNames |> String.concat "; ")
+        endpointNames
+
+    let private assertMixedEndpointTypeNames testLabel (typeNames: string list) =
+        let endpointNames =
+            typeNames
+            |> List.filter (fun name -> name.Contains("endpoints@hotreload", StringComparison.Ordinal))
+            |> List.sort
+
+        Assert.NotEmpty endpointNames
+
+        Assert.Contains(
+            endpointNames,
+            fun name -> name.Contains("@hotreload#g0_o", StringComparison.Ordinal))
+
+        Assert.Contains(
+            endpointNames,
+            fun name ->
+                name.Contains("endpoints@hotreload", StringComparison.Ordinal)
+                && not (name.Contains("@hotreload#g0_o", StringComparison.Ordinal)))
+
+        printfn "[%s] mixed endpoint synthesized TypeDefs: %s" testLabel (endpointNames |> String.concat "; ")
+        endpointNames
+
+    let private expectedMixedEndpointSnapshotNames =
+        [|
+            "endpoints@hotreload"
+            "endpoints@hotreload#g0_o0"
+            "endpoints@hotreload-2"
+            "endpoints@hotreload#g0_o1"
+            "endpoints@hotreload-4"
+            "endpoints@hotreload#g0_o2"
+            "endpoints@hotreload#g0_o3"
+            "endpoints@hotreload#g0_o4"
+        |]
+
+    let private assertMixedEndpointSnapshot testLabel (snapshot: Map<string, string[]>) =
+        let bucketCount = Map.count snapshot
+        Assert.True(bucketCount > 3, $"[%s{testLabel}] expected more than the old three recorded buckets, got %d{bucketCount}")
+
+        match Map.tryFind "endpoints" snapshot with
+        | Some endpointNames ->
+            Assert.Equal<string[]>(expectedMixedEndpointSnapshotNames, endpointNames)
+            printfn "[%s] mixed endpoint snapshot bucket: %s" testLabel (endpointNames |> String.concat "; ")
+            endpointNames
+        | None ->
+            let keys = snapshot |> Map.toList |> List.map fst |> String.concat "; "
+            failwithf "[%s] expected an endpoints synthesized-name snapshot bucket; keys: %s" testLabel keys
+
+    let private assertSynthesizedNameSnapshotsEqual
+        testLabel
+        (expected: Map<string, string[]>)
+        (actual: Map<string, string[]>)
+        =
+        let expectedKeys = expected |> Map.toArray |> Array.map fst |> Array.sort
+        let actualKeys = actual |> Map.toArray |> Array.map fst |> Array.sort
+
+        Assert.Equal<string[]>(expectedKeys, actualKeys)
+
+        for key in expectedKeys do
+            Assert.Equal<string[]>(Map.find key expected, Map.find key actual)
+
+        printfn "[%s] synthesized-name snapshot buckets: %d" testLabel expectedKeys.Length
+
+    let private readRecordedSynthesizedNameSnapshot testLabel pdbPath =
+        Assert.True(File.Exists pdbPath, $"[%s{testLabel}] expected portable PDB at %s{pdbPath}")
+
+        match
+            FSharp.Compiler.EncMethodDebugInformation.readSynthesizedNameSnapshotFromPortablePdb (File.ReadAllBytes pdbPath)
+        with
+        | Some snapshot -> snapshot
+        | None -> failwithf "[%s] expected synthesized-name snapshot CDI in %s" testLabel pdbPath
+
+    let private decodeBaselineMethod (assemblyBytes: byte[]) methodToken =
+        use stream = new MemoryStream(assemblyBytes, false)
+        use peReader = new PEReader(stream)
+        let reader = peReader.GetMetadataReader()
+        let userStringHeapSize = reader.GetHeapSize HeapIndex.UserString
+        let methodHandle = MetadataTokens.MethodDefinitionHandle(methodToken &&& 0x00FFFFFF)
+        let methodDef = reader.GetMethodDefinition methodHandle
+        let methodBody = peReader.GetMethodBody methodDef.RelativeVirtualAddress
+
+        let ldstrs =
+            methodBody.GetILBytes()
+            |> findLdstrOperands
+
+        let userStrings =
+            ldstrs
+            |> List.map (fun operand ->
+                operand.Offset,
+                reader.GetUserString(MetadataTokens.UserStringHandle operand.Offset))
+
+        {
+            UserStringHeapSize = userStringHeapSize
+            UpdatedMethod = methodDisplayName reader methodHandle
+            Ldstrs = ldstrs
+            UserStrings = userStrings
+        }
+
+    let private extractDeltaMethodIl (delta: FSharpHotReloadDelta) (methodInfo: FSharpAddedOrChangedMethodInfo) =
+        let headerOffset = methodInfo.CodeOffset
+        let first = delta.IL.[headerOffset]
+        let format = first &&& 0x03uy
+
+        if format = 0x02uy then
+            let codeSize = int (first >>> 2)
+            Array.sub delta.IL (headerOffset + 1) codeSize
+        elif format = 0x03uy then
+            let headerSize = int (delta.IL.[headerOffset + 1] >>> 4) * 4
+            let codeSize = BitConverter.ToInt32(delta.IL, headerOffset + 4)
+            Assert.Equal(methodInfo.CodeLength, codeSize)
+            Array.sub delta.IL (headerOffset + headerSize) codeSize
+        else
+            failwithf "Unsupported method body header format 0x%02X at delta IL offset %d" format headerOffset
+
+    let private decodeDelta baselineUserStringHeapSize (delta: FSharpHotReloadDelta) =
+        let methodInfo = Assert.Single(delta.AddedOrChangedMethods)
+
+        use provider =
+            MetadataReaderProvider.FromMetadataImage(ImmutableArray.CreateRange<byte> delta.Metadata)
+
+        let reader = provider.GetMetadataReader()
+
+        let encLog =
+            reader.GetEditAndContinueLogEntries()
+            |> Seq.map (fun entry -> MetadataTokens.GetToken entry.Handle, int entry.Operation)
+            |> Seq.toList
+
+        let encMap =
+            reader.GetEditAndContinueMapEntries()
+            |> Seq.map MetadataTokens.GetToken
+            |> Seq.toList
+
+        let methodRows =
+            reader.MethodDefinitions
+            |> Seq.map (fun handle -> MetadataTokens.GetToken(EntityHandle.op_Implicit handle), "<delta MethodDef row>")
+            |> Seq.toList
+
+        let userStringHeapBytes =
+            tryGetMetadataStreamBytes "#US" delta.Metadata
+            |> Option.defaultValue Array.empty
+
+        let methodIl = extractDeltaMethodIl delta methodInfo
+
+        {
+            EncLog = encLog
+            EncMap = encMap
+            MethodRows = methodRows
+            UserStrings = decodeUserStringHeapEntries baselineUserStringHeapSize userStringHeapBytes
+            Ldstrs = findLdstrOperands methodIl
+            UserStringUpdates = delta.UserStringUpdates |> List.map (fun struct (oldToken, newToken, value) -> oldToken, newToken, value)
+        }
+
+    let private formatLdstrs ldstrs =
+        ldstrs
+        |> List.map (fun operand ->
+            sprintf "il+0x%04X token=%s offset=%d" operand.InstructionOffset (formatToken operand.Token) operand.Offset)
+        |> String.concat "; "
+
+    let private printG1CaseDecode decode =
+        printfn "[g1] case=%s" decode.Label
+        printfn "[g1] updatedMethods=%s" (decode.UpdatedMethods |> List.map formatToken |> String.concat ", ")
+        printfn "[g1] baselineMethod=%s" decode.Baseline.UpdatedMethod
+        printfn "[g1] baselineUSSize=%d" decode.Baseline.UserStringHeapSize
+        printfn "[g1] baselineLdstr=%s" (formatLdstrs decode.Baseline.Ldstrs)
+
+        for offset, value in decode.Baseline.UserStrings do
+            printfn "[g1] baselineUserString offset=%d value=%A" offset value
+
+        printfn
+            "[g1] deltaEncLog=%s"
+            (decode.Delta.EncLog
+             |> List.map (fun (token, op) -> sprintf "(%s, op=%d)" (formatToken token) op)
+             |> String.concat ", ")
+
+        printfn
+            "[g1] deltaEncMap=%s"
+            (decode.Delta.EncMap |> List.map formatToken |> String.concat ", ")
+
+        for token, name in decode.Delta.MethodRows do
+            printfn "[g1] deltaMethodRow token=%s name=%s" (formatToken token) name
+
+        for entry in decode.Delta.UserStrings do
+            printfn
+                "[g1] deltaUserString relative=%d absolute=%d value=%A bytes=%s"
+                entry.RelativeOffset
+                entry.AbsoluteOffset
+                entry.Value
+                entry.Bytes
+
+        printfn "[g1] deltaLdstr=%s" (formatLdstrs decode.Delta.Ldstrs)
+
+        for oldToken, newToken, value in decode.Delta.UserStringUpdates do
+            printfn "[g1] userStringUpdate original=%s new=%s value=%A" (formatToken oldToken) (formatToken newToken) value
+
+    let private addProjectOrFail (session: FSharpHotReloadSession) snapshot =
+        match session.AddProject(snapshot) |> Async.RunImmediate with
+        | Ok() -> ()
+        | Error error -> failwithf "AddProject failed: %A" error
+
+    let private emitOrFail (session: FSharpHotReloadSession) snapshot =
+        match session.EmitDelta(snapshot) |> Async.RunImmediate with
+        | Ok delta -> delta
+        | Error error -> failwithf "EmitDelta failed: %A" error
+
+    let private runG1SessionCase (label: string) (baselineSource: string) (editedSource: string) =
+        withProjectDirReturning $"fcs-hotreload-g1-{label}" (fun projectDir ->
+            let fsPath = Path.Combine(projectDir, "Library.fs")
+            let dllPath = Path.Combine(projectDir, "Library.dll")
+            let checker = createChecker ()
+            let trimmedBaselineSource = baselineSource.TrimStart()
+            let trimmedEditedSource = editedSource.TrimStart()
+
+            File.WriteAllText(fsPath, trimmedBaselineSource)
+            let options = prepareProjectOptions checker fsPath dllPath trimmedBaselineSource []
+
+            checker.InvalidateAll()
+            compileProject checker options true
+
+            let baselineBytes = File.ReadAllBytes dllPath
+
+            use session = checker.CreateHotReloadSession()
+            addProjectOrFail session (createProjectSnapshot options)
+
+            File.WriteAllText(fsPath, trimmedEditedSource)
+            checker.NotifyFileChanged(fsPath, options) |> Async.RunImmediate
+            compileProject checker options true
+
+            let delta = emitOrFail session (createProjectSnapshot options)
+
+            Assert.Equal(1, delta.UpdatedMethods.Length)
+            let updatedMethod = Assert.Single(delta.UpdatedMethods)
+            let baseline = decodeBaselineMethod baselineBytes updatedMethod
+            let deltaDecode = decodeDelta baseline.UserStringHeapSize delta
+
+            let decode =
+                {
+                    Label = label
+                    UpdatedMethods = delta.UpdatedMethods
+                    Baseline = baseline
+                    Delta = deltaDecode
+                }
+
+            printG1CaseDecode decode
+            decode)
+
+    let private projectViewOrFail (session: FSharpHotReloadSession) snapshot =
+        match session.TryGetProjectView(snapshot) with
+        | ValueSome view -> view
+        | ValueNone -> failwith "Expected a session view for the project."
+
+    let private libSource (generation: int) =
+        $"""
+module SessionLib
+
+let libValue () = "lib generation {generation}"
+"""
+
+    let private appSource (generation: int) =
+        $"""
+module SessionApp
+
+let appValue () = "app generation {generation}"
+"""
+
+    [<Fact>]
+    let ``Two independent sessions emit deltas without interference`` () =
+        withProjectDir "fcs-hotreload-session-independent" (fun projectDir ->
+            let fsPathA = Path.Combine(projectDir, "LibraryA.fs")
+            let dllPathA = Path.Combine(projectDir, "LibraryA.dll")
+            let fsPathB = Path.Combine(projectDir, "LibraryB.fs")
+            let dllPathB = Path.Combine(projectDir, "LibraryB.dll")
+
+            File.WriteAllText(fsPathA, libSource 0)
+            File.WriteAllText(fsPathB, appSource 0)
+
+            let checker = createChecker ()
+            let optionsA = prepareProjectOptions checker fsPathA dllPathA (libSource 0) []
+            let optionsB = prepareProjectOptions checker fsPathB dllPathB (appSource 0) []
+
+            checker.InvalidateAll()
+            compileProject checker optionsA true
+            compileProject checker optionsB true
+
+            use sessionA = checker.CreateHotReloadSession()
+            use sessionB = checker.CreateHotReloadSession()
+
+            let snapshotA = createProjectSnapshot optionsA
+            let snapshotB = createProjectSnapshot optionsB
+            addProjectOrFail sessionA snapshotA
+            addProjectOrFail sessionB snapshotB
+
+            // Each session tracks exactly its own project, keyed by the snapshot identity.
+            Assert.Equal<FSharpProjectIdentifier list>([ snapshotA.Identifier ], sessionA.ProjectIdentifiers)
+            Assert.Equal<FSharpProjectIdentifier list>([ snapshotB.Identifier ], sessionB.ProjectIdentifiers)
+
+            // Edit + emit on session A.
+            writeAndCompile checker fsPathA optionsA (libSource 1) false
+            let deltaA1 = emitOrFail sessionA (createProjectSnapshot optionsA)
+            Assert.NotEmpty(deltaA1.Metadata)
+            Assert.NotEmpty(deltaA1.UpdatedMethods)
+            sessionA.Commit()
+
+            // Edit + emit on session B, unaffected by session A's activity.
+            writeAndCompile checker fsPathB optionsB (appSource 1) false
+            let deltaB1 = emitOrFail sessionB (createProjectSnapshot optionsB)
+            Assert.NotEmpty(deltaB1.Metadata)
+            Assert.NotEmpty(deltaB1.UpdatedMethods)
+            sessionB.Commit()
+
+            // Session A chains its own generations: the next delta builds on A's gen-1 id even
+            // though session B emitted in between.
+            writeAndCompile checker fsPathA optionsA (libSource 2) false
+            let deltaA2 = emitOrFail sessionA (createProjectSnapshot optionsA)
+            Assert.Equal(deltaA1.GenerationId, deltaA2.BaseGenerationId)
+            sessionA.Commit())
+
+    [<Fact>]
+    let ``Disposing a session ends it without affecting other sessions`` () =
+        withProjectDir "fcs-hotreload-session-dispose" (fun projectDir ->
+            let fsPathA = Path.Combine(projectDir, "LibraryA.fs")
+            let dllPathA = Path.Combine(projectDir, "LibraryA.dll")
+            let fsPathB = Path.Combine(projectDir, "LibraryB.fs")
+            let dllPathB = Path.Combine(projectDir, "LibraryB.dll")
+
+            File.WriteAllText(fsPathA, libSource 0)
+            File.WriteAllText(fsPathB, appSource 0)
+
+            let checker = createChecker ()
+            let optionsA = prepareProjectOptions checker fsPathA dllPathA (libSource 0) []
+            let optionsB = prepareProjectOptions checker fsPathB dllPathB (appSource 0) []
+
+            checker.InvalidateAll()
+            compileProject checker optionsA true
+            compileProject checker optionsB true
+
+            let sessionA = checker.CreateHotReloadSession()
+            use sessionB = checker.CreateHotReloadSession()
+
+            addProjectOrFail sessionA (createProjectSnapshot optionsA)
+            addProjectOrFail sessionB (createProjectSnapshot optionsB)
+
+            (sessionA :> IDisposable).Dispose()
+
+            // The disposed session refuses further work...
+            Assert.Throws<ObjectDisposedException>(fun () -> sessionA.Commit()) |> ignore
+            Assert.Throws<ObjectDisposedException>(fun () -> sessionA.ProjectIdentifiers |> ignore)
+            |> ignore
+
+            // ...while the other session keeps emitting.
+            writeAndCompile checker fsPathB optionsB (appSource 1) false
+            let deltaB = emitOrFail sessionB (createProjectSnapshot optionsB)
+            Assert.NotEmpty(deltaB.Metadata)
+            sessionB.Commit())
+
+    [<Fact>]
+    let ``EmitDelta for an untracked project returns NoActiveSession`` () =
+        withProjectDir "fcs-hotreload-session-untracked" (fun projectDir ->
+            let fsPath = Path.Combine(projectDir, "Library.fs")
+            let dllPath = Path.Combine(projectDir, "Library.dll")
+
+            File.WriteAllText(fsPath, libSource 0)
+
+            let checker = createChecker ()
+            let options = prepareProjectOptions checker fsPath dllPath (libSource 0) []
+
+            checker.InvalidateAll()
+            compileProject checker options true
+
+            use session = checker.CreateHotReloadSession()
+
+            // No AddProject: emitting is unrepresentable as anything but an error.
+            match session.EmitDelta(createProjectSnapshot options) |> Async.RunImmediate with
+            | Error FSharpHotReloadError.NoActiveSession -> ()
+            | Error other -> failwithf "Expected NoActiveSession, got %A" other
+            | Ok _ -> failwith "Expected EmitDelta to fail for a project the session does not track.")
+
+    [<Fact>]
+    let ``Multi-project session keeps independent baselines and generation chains`` () =
+        withProjectDir "fcs-hotreload-session-multiproject" (fun projectDir ->
+            let libFsPath = Path.Combine(projectDir, "SessionLib.fs")
+            let libDllPath = Path.Combine(projectDir, "SessionLib.dll")
+            let appFsPath = Path.Combine(projectDir, "SessionApp.fs")
+            let appDllPath = Path.Combine(projectDir, "SessionApp.dll")
+
+            let appReferencingSource (generation: int) =
+                $"""
+module SessionApp
+
+let appValue () = "app generation {generation}: " + SessionLib.libValue ()
+"""
+
+            File.WriteAllText(libFsPath, libSource 0)
+            File.WriteAllText(appFsPath, appReferencingSource 0)
+
+            let checker = createChecker ()
+            let libOptions = prepareProjectOptions checker libFsPath libDllPath (libSource 0) []
+
+            // The app project references the library's built output on disk.
+            let appOptions =
+                prepareProjectOptions checker appFsPath appDllPath (appReferencingSource 0) [ $"-r:{libDllPath}" ]
+
+            checker.InvalidateAll()
+            compileProject checker libOptions true
+            compileProject checker appOptions true
+
+            use session = checker.CreateHotReloadSession()
+
+            // One session, two projects (AddProject twice).
+            addProjectOrFail session (createProjectSnapshot libOptions)
+            addProjectOrFail session (createProjectSnapshot appOptions)
+            Assert.Equal(2, session.ProjectIdentifiers.Length)
+
+            // Edit each project; each delta is emitted against ITS OWN baseline.
+            writeAndCompile checker libFsPath libOptions (libSource 1) false
+            let libDelta1 = emitOrFail session (createProjectSnapshot libOptions)
+            Assert.NotEmpty(libDelta1.UpdatedMethods)
+
+            writeAndCompile checker appFsPath appOptions (appReferencingSource 1) false
+            let appDelta1 = emitOrFail session (createProjectSnapshot appOptions)
+            Assert.NotEmpty(appDelta1.UpdatedMethods)
+
+            // Distinct projects, distinct generation ids and base chains.
+            Assert.NotEqual<Guid>(libDelta1.GenerationId, appDelta1.GenerationId)
+            Assert.NotEqual<Guid>(libDelta1.GenerationId, appDelta1.BaseGenerationId)
+
+            // Solution-wide commit advances BOTH pending project updates together.
+            session.Commit()
+
+            // The library's next generation chains from the library's own gen-1 id,
+            // interleaved app edits do not perturb the lib chain (and vice versa).
+            writeAndCompile checker libFsPath libOptions (libSource 2) false
+            let libDelta2 = emitOrFail session (createProjectSnapshot libOptions)
+            Assert.Equal(libDelta1.GenerationId, libDelta2.BaseGenerationId)
+
+            writeAndCompile checker appFsPath appOptions (appReferencingSource 2) false
+            let appDelta2 = emitOrFail session (createProjectSnapshot appOptions)
+            Assert.Equal(appDelta1.GenerationId, appDelta2.BaseGenerationId)
+
+            session.Commit())
+
+    [<Fact>]
+    let ``Discard drops pending updates so the next emit re-diffs against the committed view`` () =
+        withProjectDir "fcs-hotreload-session-discard" (fun projectDir ->
+            let fsPath = Path.Combine(projectDir, "Library.fs")
+            let dllPath = Path.Combine(projectDir, "Library.dll")
+
+            File.WriteAllText(fsPath, libSource 0)
+
+            let checker = createChecker ()
+            let options = prepareProjectOptions checker fsPath dllPath (libSource 0) []
+
+            checker.InvalidateAll()
+            compileProject checker options true
+
+            use session = checker.CreateHotReloadSession()
+            addProjectOrFail session (createProjectSnapshot options)
+
+            writeAndCompile checker fsPath options (libSource 1) false
+            let delta1 = emitOrFail session (createProjectSnapshot options)
+
+            // The host did not apply the update: discard it. The next emit diffs against the
+            // unchanged committed baseline, so it builds on the same base generation.
+            session.Discard()
+
+            let delta2 = emitOrFail session (createProjectSnapshot options)
+            Assert.Equal(delta1.BaseGenerationId, delta2.BaseGenerationId)
+
+            session.Commit()
+
+            // After the commit the next edit chains from the committed generation.
+            writeAndCompile checker fsPath options (libSource 2) false
+            let delta3 = emitOrFail session (createProjectSnapshot options)
+            Assert.Equal(delta2.GenerationId, delta3.BaseGenerationId)
+
+            session.Commit())
+
+    [<Fact>]
+    let ``Capabilities and active statements are session-wide across projects`` () =
+        withProjectDir "fcs-hotreload-session-capabilities" (fun projectDir ->
+            let genericFsPath = Path.Combine(projectDir, "GenericLib.fs")
+            let genericDllPath = Path.Combine(projectDir, "GenericLib.dll")
+            let plainFsPath = Path.Combine(projectDir, "PlainLib.fs")
+            let plainDllPath = Path.Combine(projectDir, "PlainLib.dll")
+
+            let genericSource (generation: int) =
+                $"""
+module GenericLib
+
+type Calculator<'T>() =
+    member _.Describe(value: 'T) = sprintf "generation {generation}: %%A" value
+"""
+
+            File.WriteAllText(genericFsPath, genericSource 0)
+            File.WriteAllText(plainFsPath, libSource 0)
+
+            let checker = createChecker ()
+            let genericOptions = prepareProjectOptions checker genericFsPath genericDllPath (genericSource 0) []
+            let plainOptions = prepareProjectOptions checker plainFsPath plainDllPath (libSource 0) []
+
+            checker.InvalidateAll()
+            compileProject checker genericOptions true
+            compileProject checker plainOptions true
+
+            // Created without capabilities: Roslyn-conservative BaselineOnly default.
+            use session = checker.CreateHotReloadSession()
+            addProjectOrFail session (createProjectSnapshot genericOptions)
+            addProjectOrFail session (createProjectSnapshot plainOptions)
+
+            // Body-editing a member of a generic type requires the GenericUpdateMethod
+            // runtime capability; without it the edit is rude.
+            writeAndCompile checker genericFsPath genericOptions (genericSource 1) false
+
+            match session.EmitDelta(createProjectSnapshot genericOptions) |> Async.RunImmediate with
+            | Error(FSharpHotReloadError.UnsupportedEdit _) -> ()
+            | Error other -> failwithf "Expected UnsupportedEdit without GenericUpdateMethod, got %A" other
+            | Ok _ -> failwith "Expected generic method edit to be rude under BaselineOnly capabilities."
+
+            // One session-wide capability update unblocks the edit...
+            session.UpdateCapabilities [ "GenericUpdateMethod" ]
+
+            let genericDelta = emitOrFail session (createProjectSnapshot genericOptions)
+            Assert.NotEmpty(genericDelta.UpdatedMethods)
+            session.Commit()
+
+            // ...and is visible through EVERY project's session view (session-wide state).
+            let genericView =
+                match session.TryGetProjectView(createProjectSnapshot genericOptions) with
+                | ValueSome view -> view
+                | ValueNone -> failwith "Expected a session view for the generic project."
+
+            let plainView =
+                match session.TryGetProjectView(createProjectSnapshot plainOptions) with
+                | ValueSome view -> view
+                | ValueNone -> failwith "Expected a session view for the plain project."
+
+            Assert.True(genericView.Capabilities.Supports EditAndContinueCapability.GenericUpdateMethod)
+            Assert.Equal<EditAndContinueCapabilities>(genericView.Capabilities, plainView.Capabilities)
+
+            // Active statements are session-wide too: one push is visible from both projects.
+            let statement =
+                {
+                    ActiveInstruction =
+                        {
+                            Method = { Token = 0x06000001; Version = 1 }
+                            ILOffset = 0
+                        }
+                    DocumentName = None
+                    SourceSpan =
+                        {
+                            StartLine = 0
+                            StartColumn = 0
+                            EndLine = 0
+                            EndColumn = 0
+                        }
+                    Flags =
+                        {
+                            FrameKind = FSharpActiveStatementFrameKind.Leaf
+                            IsMethodUpToDate = true
+                            IsPartiallyExecuted = false
+                            IsNonUserCode = false
+                            IsStale = false
+                        }
+                }
+
+            session.SetActiveStatements [ statement ]
+
+            let genericView =
+                match session.TryGetProjectView(createProjectSnapshot genericOptions) with
+                | ValueSome view -> view
+                | ValueNone -> failwith "Expected a session view for the generic project."
+
+            let plainView =
+                match session.TryGetProjectView(createProjectSnapshot plainOptions) with
+                | ValueSome view -> view
+                | ValueNone -> failwith "Expected a session view for the plain project."
+
+            Assert.Equal(1, genericView.ActiveStatements.Length)
+            Assert.Equal(1, plainView.ActiveStatements.Length)
+
+            // Clearing replaces the whole session-wide set.
+            session.SetActiveStatements []
+
+            let clearedView =
+                match session.TryGetProjectView(createProjectSnapshot plainOptions) with
+                | ValueSome view -> view
+                | ValueNone -> failwith "Expected a session view for the plain project."
+
+            Assert.Empty(clearedView.ActiveStatements))
+
+    [<Fact>]
+    let ``G1 same-line Giraffe-shaped handler string edit decodes delta user string operand`` () =
+        let source literal =
+            $"""
+module Sample.G1
+
+type HttpFunc = string -> string
+
+let handler1 (_: HttpFunc) (ctx: string) = "{literal}"
+
+let endpointA: (HttpFunc -> string -> string) = fun (_: HttpFunc) (ctx: string) -> "Endpoint A"
+let endpointB: (HttpFunc -> string -> string) = fun (_: HttpFunc) (ctx: string) -> "Endpoint B"
+let endpointC: (HttpFunc -> string -> string) = fun (_: HttpFunc) (ctx: string) -> "Endpoint C"
+"""
+
+        let decode =
+            runG1SessionCase
+                "giraffe-handler"
+                (source "Hello World")
+                (source "Hello World EDITED")
+
+        Assert.Equal(1, decode.UpdatedMethods.Length)
+        Assert.Single(decode.Baseline.Ldstrs) |> ignore
+        Assert.Single(decode.Delta.Ldstrs) |> ignore
+        Assert.Contains(decode.Baseline.UserStrings, fun (_, value) -> value = "Hello World")
+        Assert.Contains(decode.Delta.UserStrings, fun entry -> entry.Value = "Hello World EDITED")
+
+    [<Fact>]
+    let ``G1 simple module string edit decodes working contrast delta user string operand`` () =
+        let source generation =
+            $"""
+module SessionLib
+
+let libValue () = "lib generation {generation}"
+
+let probe () = libValue ()
+"""
+
+        let decode =
+            runG1SessionCase
+                "simple-module"
+                (source 0)
+                (source 1)
+
+        Assert.Equal(1, decode.UpdatedMethods.Length)
+        Assert.Single(decode.Baseline.Ldstrs) |> ignore
+        Assert.Single(decode.Delta.Ldstrs) |> ignore
+        Assert.Contains(decode.Baseline.UserStrings, fun (_, value) -> value = "lib generation 0")
+        Assert.Contains(decode.Delta.UserStrings, fun entry -> entry.Value = "lib generation 1")
+
+    [<Fact>]
+    let ``G2 disk-built line edit above sibling lambdas replays stable closure names`` () =
+        withProjectDir "fcs-hotreload-session-g2-closure-replay" (fun projectDir ->
+            let fsPath = Path.Combine(projectDir, "Library.fs")
+            let dllPath = Path.Combine(projectDir, "Library.dll")
+
+            let source literal includeInsertedLine =
+                let insertedLine =
+                    if includeInsertedLine then
+                        "    // inserted line shifts the sibling lambdas below"
+                    else
+                        ""
+
+                let insertedTopLevelLine =
+                    if includeInsertedLine then
+                        "// inserted line shifts the pipe and endpoint closures below"
+                    else
+                        ""
+
+                $"""
+module SessionG2
+
+let makePair input =
+    let message = "{literal}"
+{insertedLine}
+    let mapperA = fun value -> value + input
+    let mapperB = fun value -> value * input
+    message, mapperA, mapperB
+
+{insertedTopLevelLine}
+let transform (input: int list) =
+    let bias = 1
+    input
+    |> List.map (fun value -> value + bias)
+    |> List.filter (fun value -> value > 1)
+    |> List.map (fun value -> value * 2)
+
+let handler input =
+    input + 1
+
+let endpoints : (int -> int) list =
+    [
+        fun value -> handler value
+        fun value -> handler (value + 1)
+        fun value -> handler (value + 2)
+    ]
+
+let probe input =
+    let transformed = transform [ input; input + 1; input + 2 ] |> List.sum
+    let endpointTotal = endpoints |> List.sumBy (fun endpoint -> endpoint input)
+    transformed + endpointTotal
+"""
+
+            let baselineSource = source "baseline" false
+            let editedSource = source "edited" true
+            let baselineSource = baselineSource.TrimStart()
+            let editedSource = editedSource.TrimStart()
+
+            File.WriteAllText(fsPath, baselineSource)
+
+            let checker = createChecker ()
+            let options = prepareProjectOptions checker fsPath dllPath baselineSource []
+
+            checker.InvalidateAll()
+            compileProject checker options true
+
+            let baselineBytes = File.ReadAllBytes dllPath
+
+            use session = checker.CreateHotReloadSession()
+            addProjectOrFail session (createProjectSnapshot options)
+
+            let baselineView = projectViewOrFail session (createProjectSnapshot options)
+            Assert.False(Map.isEmpty baselineView.Baseline.EncClosureNames, "Expected a flag-on baseline with closure-name tables.")
+
+            File.WriteAllText(fsPath, editedSource)
+            checker.NotifyFileChanged(fsPath, options) |> Async.RunImmediate
+            compileProject checker options false
+
+            let delta = emitOrFail session (createProjectSnapshot options)
+
+            let userUpdatedNames =
+                let userMethodTokenByToken =
+                    baselineView.Baseline.MethodTokens
+                    |> Map.toSeq
+                    |> Seq.choose (fun (key, token) ->
+                        if key.DeclaringType.Contains("@", StringComparison.Ordinal) then
+                            None
+                        else
+                            Some(token, $"{key.DeclaringType}::{key.Name}"))
+                    |> Map.ofSeq
+
+                delta.AddedOrChangedMethods
+                |> List.choose (fun methodInfo -> userMethodTokenByToken |> Map.tryFind methodInfo.MethodToken)
+                |> List.sort
+
+            Assert.Equal<string list>([ "SessionG2::makePair" ], userUpdatedNames)
+
+            let freshBytes = File.ReadAllBytes dllPath
+
+            let outputIsUnchanged =
+                baselineBytes.Length = freshBytes.Length
+                && Array.forall2 (=) baselineBytes freshBytes
+
+            Assert.False(outputIsUnchanged, "Expected the rebuild to refresh the output assembly.")
+
+            let baselineTypeNames = readTypeNames baselineBytes
+            let freshTypeNames = readTypeNames freshBytes
+
+            assertMatchingTypeNames
+                "G2 closure replay"
+                "pipeline"
+                (fun name -> name.Contains("transform@hotreload", StringComparison.Ordinal))
+                baselineTypeNames
+                freshTypeNames
+
+            let freshEndpointNames =
+                freshTypeNames
+                |> List.filter (fun name -> name.Contains("endpoints@", StringComparison.Ordinal))
+
+            Assert.NotEmpty freshEndpointNames)
+
+    [<Fact>]
+    let ``G2 disk-built line edit above mixed endpoint bucket preserves closure names`` () =
+        let routingLibrarySource =
+            """
+module SessionRoutingLike
+
+open System
+
+type HttpFunc = string -> string
+type HttpHandler = HttpFunc -> HttpFunc
+type ConfigureEndpoint = int -> int
+
+type HttpVerb =
+    | GET
+    | POST
+    | HEAD
+    | NotSpecified
+
+type Endpoint =
+    | SimpleEndpoint of HttpVerb * string * HttpHandler * ConfigureEndpoint
+    | TemplateEndpoint of HttpVerb * string * (string * char) list * (obj -> HttpHandler) * ConfigureEndpoint
+    | NestedEndpoint of string * Endpoint list * ConfigureEndpoint
+    | MultiEndpoint of Endpoint list
+
+let compose (handler1: HttpHandler) (handler2: HttpHandler) : HttpHandler =
+    fun (final: HttpFunc) ->
+        let func = final |> handler2 |> handler1
+        fun ctx -> func ctx
+
+let (>=>) = compose
+
+let text (str: string) : HttpHandler =
+    let bytes = str.ToCharArray()
+
+    fun (_: HttpFunc) (ctx: string) ->
+        String(bytes) + ctx
+
+let rec private applyHttpVerbToEndpoint (verb: HttpVerb) (endpoint: Endpoint) : Endpoint =
+    match endpoint with
+    | SimpleEndpoint(_, routeTemplate, requestDelegate, metadata) ->
+        SimpleEndpoint(verb, routeTemplate, requestDelegate, metadata)
+    | TemplateEndpoint(_, routeTemplate, mappings, requestDelegate, metadata) ->
+        TemplateEndpoint(verb, routeTemplate, mappings, requestDelegate, metadata)
+    | NestedEndpoint(routeTemplate, endpoints, metadata) ->
+        NestedEndpoint(routeTemplate, endpoints |> List.map (applyHttpVerbToEndpoint verb), metadata)
+    | MultiEndpoint endpoints ->
+        endpoints |> List.map (applyHttpVerbToEndpoint verb) |> MultiEndpoint
+
+let rec private applyHttpVerbToEndpoints (verb: HttpVerb) (endpoints: Endpoint list) : Endpoint =
+    endpoints
+    |> List.map (fun endpoint ->
+        match endpoint with
+        | SimpleEndpoint(_, routeTemplate, requestDelegate, metadata) ->
+            SimpleEndpoint(verb, routeTemplate, requestDelegate, metadata)
+        | TemplateEndpoint(_, routeTemplate, mappings, requestDelegate, metadata) ->
+            TemplateEndpoint(verb, routeTemplate, mappings, requestDelegate, metadata)
+        | NestedEndpoint(routeTemplate, endpoints, metadata) ->
+            NestedEndpoint(routeTemplate, endpoints |> List.map (applyHttpVerbToEndpoint verb), metadata)
+        | MultiEndpoint endpoints ->
+            applyHttpVerbToEndpoints verb endpoints)
+    |> MultiEndpoint
+
+let rec private applyHttpVerbsToEndpoints (verbs: HttpVerb list) (endpoints: Endpoint list) : Endpoint =
+    endpoints
+    |> List.map (fun endpoint ->
+        match endpoint with
+        | SimpleEndpoint(_, routeTemplate, requestDelegate, metadata) ->
+            verbs
+            |> List.map (fun verb -> SimpleEndpoint(verb, routeTemplate, requestDelegate, metadata))
+            |> MultiEndpoint
+        | TemplateEndpoint(_, routeTemplate, mappings, requestDelegate, metadata) ->
+            verbs
+            |> List.map (fun verb -> TemplateEndpoint(verb, routeTemplate, mappings, requestDelegate, metadata))
+            |> MultiEndpoint
+        | NestedEndpoint(routeTemplate, endpoints, metadata) ->
+            verbs
+            |> List.map (fun verb ->
+                NestedEndpoint(routeTemplate, endpoints |> List.map (applyHttpVerbToEndpoint verb), metadata))
+            |> MultiEndpoint
+        | MultiEndpoint endpoints ->
+            verbs
+            |> List.map (fun verb -> applyHttpVerbToEndpoints verb endpoints)
+            |> MultiEndpoint)
+    |> MultiEndpoint
+
+let GET_HEAD = applyHttpVerbsToEndpoints [ GET; HEAD ]
+let GET = applyHttpVerbToEndpoints GET
+let POST = applyHttpVerbToEndpoints POST
+
+let routeWithExtensions (configureEndpoint: ConfigureEndpoint) (path: string) (handler: HttpHandler) : Endpoint =
+    SimpleEndpoint(HttpVerb.NotSpecified, path, handler, configureEndpoint)
+
+let route (path: string) (handler: HttpHandler) : Endpoint =
+    routeWithExtensions id path handler
+
+let routefWithExtensions
+    (configureEndpoint: ConfigureEndpoint)
+    (path: PrintfFormat<_, _, _, _, 'T>)
+    (routeHandler: 'T -> HttpHandler)
+    : Endpoint =
+    let template = path.Value
+    let mappings = []
+
+    let boxedHandler (o: obj) =
+        let t = o :?> 'T
+        routeHandler t
+
+    TemplateEndpoint(HttpVerb.NotSpecified, template, mappings, boxedHandler, configureEndpoint)
+
+let routef (path: PrintfFormat<_, _, _, _, 'T>) (routeHandler: 'T -> HttpHandler) : Endpoint =
+    routefWithExtensions id path routeHandler
+
+let subRouteWithExtensions (configureEndpoint: ConfigureEndpoint) (path: string) (endpoints: Endpoint list) : Endpoint =
+    NestedEndpoint(path, endpoints, configureEndpoint)
+
+let subRoute (path: string) (endpoints: Endpoint list) : Endpoint =
+    subRouteWithExtensions id path endpoints
+"""
+
+        let source literal includeInsertedLine =
+            let insertedLine =
+                if includeInsertedLine then
+                    "    // inserted line shifts the mixed endpoint bucket below"
+                else
+                    ""
+
+            $"""
+module SessionMixedEndpoints
+
+open SessionRoutingLike
+
+let editedValue () =
+{insertedLine}
+    "{literal}"
+
+let handler1: HttpHandler =
+    fun (_: HttpFunc) (ctx: string) -> "Hello World" + ctx
+
+let handler2 (firstName: string, age: int) : HttpHandler =
+    fun (_: HttpFunc) (ctx: string) ->
+        sprintf "Hello %%s, you are %%i years old." firstName age + ctx
+
+let handler3 (a: string, b: string, c: string, d: int) : HttpHandler =
+    fun (_: HttpFunc) (ctx: string) -> sprintf "Hello %%s %%s %%s %%i" a b c d + ctx
+
+let handlerNamed (petId: int) : HttpHandler =
+    fun (_: HttpFunc) (ctx: string) -> sprintf "PetId: %%i" petId + ctx
+
+let jsonHandler: HttpHandler =
+    fun (next: HttpFunc) (ctx: string) -> next ("json:" + ctx)
+
+let endpoints =
+    [
+        subRoute "/foo" [ GET [ route "/bar" (text "Aloha!") ] ]
+        GET [
+            route "/" (text "Hello World")
+            routef "/%%s/%%i" handler2
+            routef "/%%s/%%s/%%s/%%i" handler3
+            routef "/pet/%%i:petId" handlerNamed
+        ]
+        GET_HEAD [
+            route "/foo" (text "Bar")
+            route "/x" (text "y")
+            route "/abc" (text "def")
+            route "/123" (text "456")
+        ]
+        subRoute "/sub" [ route "/test" handler1 ]
+        POST [ route "/json" jsonHandler ]
+    ]
+
+let probe () =
+    endpoints.Length + editedValue().Length
+"""
+
+        let runCase caseLabel resetBeforeAddProject =
+            withProjectDir $"fcs-hotreload-session-g2-mixed-endpoint-bucket-{caseLabel}" (fun projectDir ->
+                FSharpEditAndContinueLanguageService.Instance.ResetSessionState()
+
+                let routingPath = Path.Combine(projectDir, "SessionRoutingLike.fs")
+                let routingDllPath = Path.Combine(projectDir, "SessionRoutingLike.dll")
+                let fsPath = Path.Combine(projectDir, "Library.fs")
+                let dllPath = Path.Combine(projectDir, "Library.dll")
+                let baselineSource = (source "baseline" false).TrimStart()
+                let editedSource = (source "edited" true).TrimStart()
+                let checker = createChecker ()
+
+                File.WriteAllText(routingPath, routingLibrarySource.TrimStart())
+
+                let routingOptions = prepareProjectOptions checker routingPath routingDllPath routingLibrarySource []
+                checker.InvalidateAll()
+                compileProject checker routingOptions false
+
+                File.WriteAllText(fsPath, baselineSource)
+
+                let options =
+                    prepareProjectOptions checker fsPath dllPath baselineSource [ $"-r:{routingDllPath}" ]
+
+                checker.InvalidateAll()
+                compileProject checker options true
+
+                let baselineBytes = File.ReadAllBytes dllPath
+                let baselinePdbSnapshot =
+                    readRecordedSynthesizedNameSnapshot
+                        $"G2 mixed endpoint baseline PDB {caseLabel}"
+                        (Path.ChangeExtension(dllPath, ".pdb"))
+
+                assertMixedEndpointSnapshot $"G2 mixed endpoint baseline PDB {caseLabel}" baselinePdbSnapshot
+                |> ignore
+
+                let baselineTypeNames = readTypeNames baselineBytes
+                assertMixedEndpointTypeNames $"G2 mixed endpoint baseline {caseLabel}" baselineTypeNames
+                |> ignore
+
+                if resetBeforeAddProject then
+                    FSharpEditAndContinueLanguageService.Instance.ResetSessionState()
+
+                use session = checker.CreateHotReloadSession()
+                addProjectOrFail session (createProjectSnapshot options)
+
+                let baselineView = projectViewOrFail session (createProjectSnapshot options)
+                printfn
+                    "[G2 mixed endpoint %s] reconstructed closure-name tables=%d"
+                    caseLabel
+                    (Map.count baselineView.Baseline.EncClosureNames)
+
+                assertMixedEndpointSnapshot $"G2 mixed endpoint baseline snapshot {caseLabel}" baselineView.Baseline.SynthesizedNameSnapshot
+                |> ignore
+
+                assertSynthesizedNameSnapshotsEqual
+                    $"G2 mixed endpoint baseline PDB/session snapshot {caseLabel}"
+                    baselinePdbSnapshot
+                    baselineView.Baseline.SynthesizedNameSnapshot
+
+                File.WriteAllText(fsPath, editedSource)
+                checker.NotifyFileChanged(fsPath, options) |> Async.RunImmediate
+                compileProject checker options false
+
+                let delta = emitOrFail session (createProjectSnapshot options)
+
+                let userUpdatedNames =
+                    let userMethodTokenByToken =
+                        baselineView.Baseline.MethodTokens
+                        |> Map.toSeq
+                        |> Seq.choose (fun (key, token) ->
+                            if key.DeclaringType.Contains("@", StringComparison.Ordinal) then
+                                None
+                            else
+                                Some(token, $"{key.DeclaringType}::{key.Name}"))
+                        |> Map.ofSeq
+
+                    delta.AddedOrChangedMethods
+                    |> List.choose (fun methodInfo -> userMethodTokenByToken |> Map.tryFind methodInfo.MethodToken)
+                    |> List.sort
+
+                Assert.Equal<string list>([ "SessionMixedEndpoints::editedValue" ], userUpdatedNames)
+
+                let freshBytes = File.ReadAllBytes dllPath
+                let freshTypeNames = readTypeNames freshBytes
+                assertMixedEndpointTypeNames $"G2 mixed endpoint fresh {caseLabel}" freshTypeNames
+                |> ignore)
+
+        runCase "in-memory-capture" false
+        runCase "disk-started" true
+
+    [<Fact>]
+    let ``G2 replay endpoint bucket uses recorded snapshot and hook replay supports old baselines`` () =
+        let runCase caseLabel disableSnapshotCdi =
+            withProjectDir $"fcs-hotreload-session-g2-replay-endpoint-bucket-{caseLabel}" (fun projectDir ->
+                let fsPath = Path.Combine(projectDir, "Library.fs")
+                let dllPath = Path.Combine(projectDir, "Library.dll")
+
+                let source handlerOffset includeInsertedLine =
+                    let insertedLine =
+                        if includeInsertedLine then
+                            "    // inserted line shifts the endpoint bucket below"
+                        else
+                            ""
+
+                    $"""
+module SessionReplayEndpoints
+
+type Handler = int -> string
+
+let handler2 value =
+{insertedLine}
+    string (value + {handlerOffset})
+
+let endpoints : Handler list =
+    let local prefix value =
+        prefix + string value
+
+    [
+        fun value -> string value
+        local "foo="
+        fun value -> string (value + 1)
+        local "bar="
+    ]
+
+let probe input =
+    endpoints |> List.sumBy (fun endpoint -> endpoint input |> String.length)
+"""
+
+                let baselineSource = (source 1 false).TrimStart()
+                let editedSource = (source 2 true).TrimStart()
+
+                File.WriteAllText(fsPath, baselineSource)
+
+                let checker = createChecker ()
+                let options = prepareProjectOptions checker fsPath dllPath baselineSource []
+
+                checker.InvalidateAll()
+
+                if disableSnapshotCdi then
+                    withEnvVar "FSHARP_HOTRELOAD_DISABLE_SYNTHESIZED_NAME_SNAPSHOT_CDI" "1" (fun () ->
+                        compileProject checker options true)
+                else
+                    compileProject checker options true
+
+                let baselineBytes = File.ReadAllBytes dllPath
+                let baselineTypeNames = readTypeNames baselineBytes
+                assertReplayEndpointTypeNames $"G2 replay endpoint baseline {caseLabel}" baselineTypeNames
+                |> ignore
+
+                FSharpEditAndContinueLanguageService.Instance.ResetSessionState()
+                use session = checker.CreateHotReloadSession()
+                addProjectOrFail session (createProjectSnapshot options)
+
+                let baselineView = projectViewOrFail session (createProjectSnapshot options)
+
+                Assert.True(
+                    Map.isEmpty baselineView.Baseline.EncClosureNames,
+                    "Expected the replay endpoint bucket to have no occurrence-keyed closure-name reconstruction and rely on the synthesized-name snapshot.")
+
+                let expectedSnapshotSource =
+                    if disableSnapshotCdi then
+                        SynthesizedNameSnapshotSource.Reconstructed
+                    else
+                        SynthesizedNameSnapshotSource.Recorded
+
+                Assert.Equal(expectedSnapshotSource, baselineView.Baseline.SynthesizedNameSnapshotSource)
+
+                File.WriteAllText(fsPath, editedSource)
+                checker.NotifyFileChanged(fsPath, options) |> Async.RunImmediate
+                compileProject checker options false
+
+                let result = session.EmitDelta(createProjectSnapshot options) |> Async.RunImmediate
+
+                match result with
+                | Ok _ ->
+                    File.ReadAllBytes dllPath
+                    |> readTypeNames
+                    |> assertReplayEndpointTypeNames $"G2 replay endpoint fresh {caseLabel}"
+                    |> ignore
+                | Error error -> failwithf "Expected hook replay to emit a delta, got %A" error)
+
+        runCase "recorded" false
+        runCase "old-baseline-fallback" true

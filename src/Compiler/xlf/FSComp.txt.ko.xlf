@@ -792,6 +792,21 @@
         <target state="translated">'끝에서부터 조각화' 기능을 사용하려면 언어 버전 '미리 보기'가 필요합니다.</target>
         <note />
       </trans-unit>
+      <trans-unit id="fscHotReloadIncompatibleWithOptimization">
+        <source>Hot reload delta capture (--test:HotReloadDeltas) is incompatible with optimizations (--optimize+). Add '--optimize-' or remove '--optimize+' from the compilation options.</source>
+        <target state="new">Hot reload delta capture (--test:HotReloadDeltas) is incompatible with optimizations (--optimize+). Add '--optimize-' or remove '--optimize+' from the compilation options.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="fscHotReloadRequiresDebugInfo">
+        <source>Hot reload delta capture (--test:HotReloadDeltas) requires debug symbols (--debug+). Add '--debug+' or remove '--debug-' from the compilation options.</source>
+        <target state="new">Hot reload delta capture (--test:HotReloadDeltas) requires debug symbols (--debug+). Add '--debug+' or remove '--debug-' from the compilation options.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="fscHotReloadRequiresPortableDebugInfo">
+        <source>Hot reload delta capture (--test:HotReloadDeltas) requires portable debug symbols written beside the assembly. Use '--debug:portable' instead of '--debug:embedded'.</source>
+        <target state="new">Hot reload delta capture (--test:HotReloadDeltas) requires portable debug symbols written beside the assembly. Use '--debug:portable' instead of '--debug:embedded'.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="fsiInvalidDirective">
         <source>Invalid directive '#{0} {1}'</source>
         <target state="translated">잘못된 지시문 '#{0} {1}'</target>

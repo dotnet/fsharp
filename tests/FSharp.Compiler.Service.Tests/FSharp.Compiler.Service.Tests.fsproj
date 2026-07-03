@@ -29,8 +29,6 @@
     <Compile Include="TypeChecker\TypeCheckerRecoveryTests.fs" />
     <Compile Include="TypeChecker\Obsolete.fs" />
     <Compile Include="GeneratedCodeSymbolsTests.fs" />
-    <Compile Include="HotReload\GeneratedNamesTests.fs" />
-    <Compile Include="HotReload\NameMapTests.fs" />
     <Compile Include="BreakpointLocationTests.fs" />
     <Compile Include="AssemblyReaderShim.fs" />
     <Compile Include="ModuleReaderCancellationTests.fs" />
@@ -64,7 +62,6 @@
     <Compile Include="HashIfExpression.fs" />
     <Compile Include="ProductVersion.fs" />
     <Compile Include="EditDistance.fs" />
-    <Compile Include="HotReload\TypedTreeDiffTests.fs" />
     <Compile Include="SuggestionBuffer.fs" />
     <Compile Include="ByteMemoryTests.fs" />
     <Compile Include="BlockTests.fs" />
@@ -87,6 +84,27 @@
     <Compile Include="CapturedTypes.fs" />
     <Compile Include="WarnScopeTests.fs" />
     <Compile Include="OverloadCacheTests.fs" />
+    <Compile Include="HotReload/EditAndContinueCapabilitiesTests.fs" />
+    <Compile Include="HotReload/TypedTreeDiffTests.fs" />
+    <Compile Include="HotReload/HotReloadCheckerTests.fs" />
+    <Compile Include="HotReload/HotReloadSessionTests.fs" />
+    <Compile Include="HotReload/ActiveStatementTests.fs" />
+    <Compile Include="HotReload/GeneratedNamesTests.fs" />
+    <Compile Include="HotReload/ArchitectureGuardTests.fs" />
+    <Compile Include="HotReload/DeltaBuilderTests.fs" />
+    <Compile Include="HotReload/DefinitionIndexTests.fs" />
+    <Compile Include="HotReload/MetadataDeltaTestHelpers.fs" />
+    <Compile Include="HotReload/FSharpDeltaMetadataWriterTests.fs" />
+    <Compile Include="HotReload/RoslynBaselineComparisons.fs" />
+    <Compile Include="HotReload/NameMapTests.fs" />
+    <Compile Include="HotReload/RudeEditDiagnosticsTests.fs" />
+    <Compile Include="HotReload/ThreadSafetyTests.fs" />
+    <Compile Include="HotReload/CodedIndexTests.fs" />
+    <Compile Include="HotReload/ErrorPathTests.fs" />
+    <Compile Include="HotReload/EdgeCaseTests.fs" />
+    <Compile Include="HotReload/ILBaselineReaderTests.fs" />
+    <Compile Include="HotReload/PortablePdbReaderTests.fs" />
+    <Compile Include="HotReload/SrmParityTests.fs" />
   </ItemGroup>
 
   <ItemGroup>

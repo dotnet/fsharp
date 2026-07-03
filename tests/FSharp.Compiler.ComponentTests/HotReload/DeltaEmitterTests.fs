@@ -2225,3 +2225,650 @@ module DeltaEmitterTests =
         Assert.False(StringHandle.op_Implicit(moduleDef.Name).IsNil, "Module name handle should be present.")
 
         ()
+
+
+    [<Fact>]
+    let ``HotReloadState persists EncId sequencing`` () =
+        let service = global.FSharp.Compiler.HotReload.FSharpEditAndContinueLanguageService.Instance
+
+        service.EndSession()
+        let _, baseline = createBaseline ()
+        service.StartSession baseline |> ignore
+
+        let session0 =
+            match service.TryGetSession() with
+            | ValueSome session -> session
+            | ValueNone -> failwith "Expected hot reload session to be initialised."
+
+        Assert.Equal(1, session0.CurrentGeneration)
+        Assert.True(session0.PreviousGenerationId |> Option.isNone)
+
+        let requestGen1 : DeltaEmissionRequest =
+            { IlModule = createModule 43 |> TestHelpers.withDebuggableAttribute
+              UpdatedTypes = [ "Sample.Type" ]
+              UpdatedMethods = [ methodKey baseline "GetValue" ]
+              UpdatedAccessors = []
+              SymbolChanges = None
+              RefreshedEncDebugInfos = Map.empty
+              RefreshedClosureNameRows = Map.empty }
+
+        let delta1 =
+            match service.EmitDelta requestGen1 with
+            | Ok result -> result.Delta
+            | Error error -> failwithf "EmitDelta (generation 1) failed: %A" error
+
+        Assert.Equal(System.Guid.Empty, delta1.BaseGenerationId)
+        Assert.NotEqual(System.Guid.Empty, delta1.GenerationId)
+
+        service.OnDeltaApplied delta1.GenerationId
+
+        let session1 =
+            match service.TryGetSession() with
+            | ValueSome session -> session
+            | ValueNone -> failwith "Expected hot reload session to persist after applying delta."
+
+        Assert.Equal(2, session1.CurrentGeneration)
+        Assert.Equal<Guid option>(Some delta1.GenerationId, session1.PreviousGenerationId)
+
+        let requestGen2 : DeltaEmissionRequest =
+            { IlModule = createModule 44 |> TestHelpers.withDebuggableAttribute
+              UpdatedTypes = [ "Sample.Type" ]
+              UpdatedMethods = [ methodKey baseline "GetValue" ]
+              UpdatedAccessors = []
+              SymbolChanges = None
+              RefreshedEncDebugInfos = Map.empty
+              RefreshedClosureNameRows = Map.empty }
+
+        let delta2 =
+            match service.EmitDelta requestGen2 with
+            | Ok result -> result.Delta
+            | Error error -> failwithf "EmitDelta (generation 2) failed: %A" error
+
+        Assert.Equal(delta1.GenerationId, delta2.BaseGenerationId)
+        Assert.NotEqual(System.Guid.Empty, delta2.GenerationId)
+
+        service.EndSession()
+
+    [<Fact>]
+    let ``DiscardPendingUpdate clears staged delta without advancing session`` () =
+        let service = FSharpEditAndContinueLanguageService.Instance
+        service.EndSession()
+        let _, baseline = createBaseline ()
+        service.StartSession baseline |> ignore
+
+        let request : DeltaEmissionRequest =
+            { IlModule = createModule 85 |> TestHelpers.withDebuggableAttribute
+              UpdatedTypes = [ "Sample.Type" ]
+              UpdatedMethods = [ methodKey baseline "GetValue" ]
+              UpdatedAccessors = []
+              SymbolChanges = None
+              RefreshedEncDebugInfos = Map.empty
+              RefreshedClosureNameRows = Map.empty }
+
+        let pendingDelta =
+            match service.EmitDelta request with
+            | Ok result -> result.Delta
+            | Error error -> failwithf "EmitDelta failed: %A" error
+
+        service.DiscardPendingUpdate()
+
+        let sessionAfterDiscard =
+            match service.TryGetSession() with
+            | ValueSome session -> session
+            | ValueNone -> failwith "Expected hot reload session to remain active after discarding pending update."
+
+        Assert.Equal(1, sessionAfterDiscard.CurrentGeneration)
+        Assert.True(sessionAfterDiscard.PreviousGenerationId |> Option.isNone)
+        Assert.Equal(baseline.NextGeneration, sessionAfterDiscard.Baseline.NextGeneration)
+        Assert.Equal(baseline.EncId, sessionAfterDiscard.Baseline.EncId)
+
+        let ex =
+            Assert.Throws<InvalidOperationException>(fun () ->
+                service.CommitPendingUpdate(pendingDelta.GenerationId))
+
+        Assert.Contains("no pending hot reload update", ex.Message, StringComparison.OrdinalIgnoreCase)
+
+        service.EndSession()
+
+    [<Fact>]
+    let ``TryRestoreSession rehydrates committed snapshot and ResetSessionState clears it`` () =
+        let service = FSharpEditAndContinueLanguageService.Instance
+        service.ResetSessionState()
+
+        let _, baseline = createBaseline ()
+        service.StartSession baseline |> ignore
+        service.EndSession()
+
+        let restored =
+            match service.TryRestoreSession() with
+            | ValueSome session -> session
+            | ValueNone -> failwith "Expected committed session snapshot to be restorable."
+
+        Assert.Equal(1, restored.CurrentGeneration)
+        Assert.Equal(baseline.ModuleId, restored.Baseline.ModuleId)
+        Assert.True(service.IsSessionActive)
+
+        service.ResetSessionState()
+        Assert.False(service.IsSessionActive)
+        Assert.True(service.TryRestoreSession().IsNone)
+
+    [<Fact>]
+    let ``EditAndContinueLanguageService emits delta`` () =
+        let service = FSharpEditAndContinueLanguageService.Instance
+        service.EndSession()
+        let _, baseline = createBaseline ()
+        service.StartSession baseline |> ignore
+
+        let request : DeltaEmissionRequest =
+            { IlModule = createModule 101 |> TestHelpers.withDebuggableAttribute
+              UpdatedTypes = [ "Sample.Type" ]
+              UpdatedMethods = [ methodKey baseline "GetValue" ]
+              UpdatedAccessors = []
+              SymbolChanges = None
+              RefreshedEncDebugInfos = Map.empty
+              RefreshedClosureNameRows = Map.empty }
+
+        match service.EmitDelta request with
+        | Ok result ->
+            Assert.Equal(System.Guid.Empty, result.Delta.BaseGenerationId)
+            Assert.NotEqual(System.Guid.Empty, result.Delta.GenerationId)
+            service.CommitPendingUpdate(result.Delta.GenerationId)
+        | Error error ->
+            Assert.True(false, sprintf "EmitDelta failed: %A" error)
+
+        service.EndSession()
+
+    [<Fact>]
+    let ``IlDeltaStreamBuilder records method body payload`` () =
+        let ilBytes = [| 0x02uy; 0x28uy; 0x00uy; 0x00uy; 0x00uy; 0x0Auy; 0x2Auy |]
+        let builder = IlDeltaStreamBuilder(None)
+
+        let update =
+            builder.AddMethodBody(
+                0x06000001,
+                0x11000001,
+                ilBytes,
+                8,
+                false,
+                [||],  // Empty exception regions
+                id
+            )
+
+        Assert.Equal(0x06000001, update.MethodToken)
+        let streams = builder.Build()
+        Assert.True(streams.IL.Length >= ilBytes.Length)
+        let single = Assert.Single(streams.MethodBodies)
+        Assert.Equal(update.MethodToken, single.MethodToken)
+        Assert.Equal(update.LocalSignatureToken, single.LocalSignatureToken)
+        Assert.Equal(update.CodeLength, single.CodeLength)
+
+    [<Fact>]
+    let ``IlDeltaStreamBuilder captures standalone signatures`` () =
+        let signature = [| 0x07uy; 0x02uy |]
+        let builder = IlDeltaStreamBuilder(None)
+        let token = builder.AddStandaloneSignature(signature)
+        Assert.NotEqual(0, token)
+
+        let streams = builder.Build()
+        let standalone = Assert.Single(streams.StandaloneSignatures)
+        // StandAloneSig table index is 0x11, token = (0x11 << 24) | rowId
+        let expected = 0x11000000 ||| standalone.RowId
+        Assert.Equal(expected, token)
+        Assert.Equal<byte>(signature, standalone.Blob)
+
+    [<Fact>]
+    let ``IMetadataHeaps.GetUserStringHeapIdx writes #US entries`` () =
+        let offsets =
+            MetadataHeapOffsets.OfHeapSizes
+                { StringHeapSize = 13
+                  UserStringHeapSize = 29
+                  BlobHeapSize = 7
+                  GuidHeapSize = 3 }
+
+        let tables = DeltaMetadataTables(offsets)
+        let heaps = tables.AsMetadataHeaps()
+
+        let token1 = heaps.GetUserStringHeapIdx "hello from us"
+        let token2 = heaps.GetUserStringHeapIdx "hello from us"
+
+        Assert.Equal(token1, token2)
+        Assert.True(token1 > offsets.UserStringHeapStart, "User-string token should point into the #US heap suffix.")
+        Assert.Equal(1, tables.StringHeapBytes.Length) // only null sentinel, no #Strings additions
+        Assert.True(tables.UserStringHeapBytes.Length > 1, "#US heap should contain the encoded literal payload.")
+
+    [<Fact>]
+    let ``IL delta fat header matches method body length`` () =
+        // Baseline module with GetValue = 42, delta changes body to return 84.
+        let _, baseline = createBaseline ()
+        let updatedModule = createModule 84 |> TestHelpers.withDebuggableAttribute
+
+        let request : IlxDeltaRequest =
+            { Baseline = baseline
+              UpdatedTypes = [ "Sample.Type" ]
+              UpdatedMethods = [ methodKey baseline "GetValue" ]
+              UpdatedAccessors = []
+              Module = updatedModule
+              SymbolChanges = None
+              CurrentGeneration = 1
+              PreviousGenerationId = None
+              SynthesizedNames = None
+              EmittedArtifacts = None }
+
+        let delta = emitDelta request
+
+        let bodyInfo = Assert.Single(delta.MethodBodies)
+        let ilBytes = delta.IL
+        let offset = bodyInfo.CodeOffset
+
+        // Fat header: low 2 bits == 0x3, size byte == 0x30 (header size = 3 dwords => 12 bytes).
+        let flagsByte = ilBytes[offset]
+        let sizeByte = ilBytes[offset + 1]
+        Assert.Equal(0x3uy, flagsByte &&& 0x3uy)
+        Assert.Equal(0x30uy, sizeByte)
+
+        // Code size in header matches MethodBodyUpdate.CodeLength.
+        let codeSize =
+            BitConverter.ToInt32(ilBytes, offset + 4)
+        Assert.Equal(bodyInfo.CodeLength, codeSize)
+
+        // No EH sections expected for this simple body (no MoreSects flag).
+        Assert.Equal(0uy, flagsByte &&& e_CorILMethod_MoreSects)
+
+        // MethodDef RVA should equal the code offset.
+        use provider = MetadataReaderProvider.FromMetadataImage(ImmutableArray.CreateRange delta.Metadata)
+        let reader = provider.GetMetadataReader()
+        let methodHandle = reader.MethodDefinitions |> Seq.head
+        let methodDef = reader.GetMethodDefinition methodHandle
+        Assert.Equal(bodyInfo.CodeOffset, methodDef.RelativeVirtualAddress)
+
+    [<Fact>]
+    let ``MethodDef RVA matches emitted method body offset`` () =
+        // Baseline module with GetValue = 42
+        let _, baseline = createBaseline ()
+        // Updated module changes GetValue body to return 84
+        let updatedModule = createModule 84 |> TestHelpers.withDebuggableAttribute
+
+        let request : IlxDeltaRequest =
+            { Baseline = baseline
+              UpdatedTypes = [ "Sample.Type" ]
+              UpdatedMethods = [ methodKey baseline "GetValue" ]
+              UpdatedAccessors = []
+              Module = updatedModule
+              SymbolChanges = None
+              CurrentGeneration = 1
+              PreviousGenerationId = None
+              SynthesizedNames = None
+              EmittedArtifacts = None }
+
+        let delta = emitDelta request
+
+        let bodyInfo = Assert.Single(delta.MethodBodies)
+
+        use provider = MetadataReaderProvider.FromMetadataImage(ImmutableArray.CreateRange delta.Metadata)
+        let reader = provider.GetMetadataReader()
+
+        // Resolve MethodDef for GetValue in the delta metadata
+        // Delta string heap offsets are absolute to baseline; names may be unreadable from delta alone.
+        // This delta emits exactly one MethodDef row, so take the first handle.
+        let methodHandle =
+            reader.MethodDefinitions
+            |> Seq.head
+
+        let methodDef = reader.GetMethodDefinition methodHandle
+
+        // MethodDef.RVA should point at the emitted method body offset
+        Assert.Equal(bodyInfo.CodeOffset, methodDef.RelativeVirtualAddress)
+
+    [<Fact>]
+    let ``HotReloadUnsupportedEditException is raised for unsupported edits with context`` () =
+        // Verify that unsupported edits raise HotReloadUnsupportedEditException (not failwith)
+        // with a meaningful message. This tests the error handling pattern used in IlxDeltaEmitter.fs
+        // at lines 1775 (AsyncStateMachineAttribute resolution) and 1847 (NullableContextAttribute resolution).
+        //
+        // Note: The specific attribute resolution failures are hard to trigger in tests because
+        // they require missing runtime types. This test verifies the exception pattern is used
+        // consistently by testing the struct field addition rejection path (instance fields
+        // on classes are allowed; struct layouts stay immutable) which uses the same pattern.
+
+        let _, baseline = createFieldHolderBaseline false
+
+        let updatedModule =
+            let asStruct (typeDef: ILTypeDef) =
+                if typeDef.Name = "Sample.FieldHolder" then
+                    typeDef.With(newAdditionalFlags = ILTypeDefAdditionalFlags.ValueType)
+                else
+                    typeDef
+
+            let baseModule = createModuleWithOptionalField true |> TestHelpers.withDebuggableAttribute
+            { baseModule with
+                TypeDefs = mkILTypeDefs (baseModule.TypeDefs.AsList() |> List.map asStruct) }
+
+        let request =
+            {
+                IlxDeltaRequest.Baseline = baseline
+                UpdatedTypes = [ "Sample.FieldHolder" ]
+                UpdatedMethods = [ methodKey baseline "GetValue" ]
+                UpdatedAccessors = []
+                Module = updatedModule
+                SymbolChanges = None
+                CurrentGeneration = 1
+                PreviousGenerationId = None
+                SynthesizedNames = None
+                EmittedArtifacts = None
+            }
+
+        // Verify the exception type is HotReloadUnsupportedEditException (not a generic exception)
+        let ex = Assert.Throws<HotReloadUnsupportedEditException>(fun () -> emitDelta request |> ignore)
+
+        // Verify the message contains useful context (type and field name)
+        Assert.NotNull(ex.Message)
+        Assert.True(ex.Message.Length > 0, "Exception message should not be empty")
+        Assert.Contains("Sample.FieldHolder", ex.Message)
+        Assert.Contains("trackedField", ex.Message)
+
+    [<Fact>]
+    let ``recordDeltaApplied throws for empty GUID`` () =
+        // Ensure no session is active
+        FSharp.Compiler.HotReloadState.clearBaseline()
+
+        let ex = Assert.Throws<ArgumentException>(fun () ->
+            FSharp.Compiler.HotReloadState.recordDeltaApplied System.Guid.Empty)
+        Assert.Contains("empty GUID", ex.Message)
+
+    [<Fact>]
+    let ``recordDeltaApplied throws when no session active`` () =
+        // Ensure no session is active
+        FSharp.Compiler.HotReloadState.clearBaseline()
+
+        let ex = Assert.Throws<InvalidOperationException>(fun () ->
+            FSharp.Compiler.HotReloadState.recordDeltaApplied (System.Guid.NewGuid()))
+        Assert.Contains("no active hot reload session", ex.Message)
+
+    [<Fact>]
+    let ``multi-generation user string content is correctly encoded`` () =
+        // This test verifies that user strings are correctly encoded across multiple generations.
+        // The bug that was fixed required proper cumulative heap offset tracking - generation 2+
+        // user strings would be corrupted if heap offsets weren't correctly accumulated.
+
+        // Generation 0: Create baseline with initial string
+        let _, baseline = createStringBaseline "Version 1"
+        let key = methodKey baseline "GetMessage"
+
+        // Generation 1: Update to "Version 2"
+        let updatedModule1 = createStringModule "Version 2" |> TestHelpers.withDebuggableAttribute
+        let request1 : IlxDeltaRequest =
+            { Baseline = baseline
+              UpdatedTypes = [ key.DeclaringType ]
+              UpdatedMethods = [ key ]
+              UpdatedAccessors = []
+              Module = updatedModule1
+              SymbolChanges = None
+              CurrentGeneration = 1
+              PreviousGenerationId = None
+              SynthesizedNames = None
+              EmittedArtifacts = None }
+
+        let delta1 = emitDelta request1
+
+        // Verify generation 1 user string
+        let gen1Literal =
+            delta1.UserStringUpdates
+            |> List.tryPick (fun (_, _, text) ->
+                if text.StartsWith("Version", StringComparison.Ordinal) then Some text else None)
+
+        match gen1Literal with
+        | Some text -> Assert.Equal("Version 2", text)
+        | None -> Assert.True(false, "Expected 'Version 2' user string in generation 1 delta.")
+
+        // Get updated baseline from delta1 - this contains cumulative heap sizes with proper alignment
+        // (critical for the bug we're testing)
+        let updatedBaseline =
+            match delta1.UpdatedBaseline with
+            | Some baseline -> baseline
+            | None -> failwith "Expected UpdatedBaseline to be set after emitDelta"
+
+        // Generation 2: Update to "Version 3"
+        let updatedModule2 = createStringModule "Version 3" |> TestHelpers.withDebuggableAttribute
+        let request2 : IlxDeltaRequest =
+            { Baseline = updatedBaseline
+              UpdatedTypes = [ key.DeclaringType ]
+              UpdatedMethods = [ key ]
+              UpdatedAccessors = []
+              Module = updatedModule2
+              SymbolChanges = None
+              CurrentGeneration = 2
+              PreviousGenerationId = Some delta1.GenerationId
+              SynthesizedNames = None
+              EmittedArtifacts = None }
+
+        let delta2 = emitDelta request2
+
+        // Verify generation 2 user string - this is where the bug would manifest
+        // If heap offsets weren't correctly accumulated, the string would be corrupted
+        // (e.g., contain CJK characters instead of the expected text)
+        let gen2Literal =
+            delta2.UserStringUpdates
+            |> List.tryPick (fun (_, _, text) ->
+                if text.StartsWith("Version", StringComparison.Ordinal) then Some text else None)
+
+        match gen2Literal with
+        | Some text -> Assert.Equal("Version 3", text)
+        | None -> Assert.True(false, "Expected 'Version 3' user string in generation 2 delta.")
+
+    // -----------------------------------------------------------------------------
+    // ADDED type definitions (closure classes for lambdas added in a delta)
+    // -----------------------------------------------------------------------------
+
+    /// Sample.Multi with GetValue plus a nested generation-suffixed closure class
+    /// (the shape the closure name allocator produces for an ADDED lambda occurrence): one
+    /// capture field, a parameterless ctor, and an Invoke method.
+    let private createModuleWithAddedClosureType () =
+        let ilg = PrimaryAssemblyILGlobals
+        let parentMethod = createMethod ilg "GetValue" 1
+
+        let closureCtor = mkILNonGenericEmptyCtor (ilg.typ_Object, None, None)
+        let closureInvoke = createMethod ilg "Invoke" 7
+
+        let closureTypeDef =
+            mkILSimpleClass
+                ilg
+                (
+                    "GetValue@hotreload#g1_o0",
+                    ILTypeDefAccess.Nested ILMemberAccess.Assembly,
+                    mkILMethods [ closureCtor; closureInvoke ],
+                    mkILFields [ mkILInstanceField ("x", ilg.typ_Int32, None, ILMemberAccess.Public) ],
+                    emptyILTypeDefs,
+                    mkILProperties [],
+                    mkILEvents [],
+                    emptyILCustomAttrs,
+                    ILTypeInit.BeforeField
+                )
+
+        let typeDef =
+            mkILSimpleClass
+                ilg
+                (
+                    "Sample.Multi",
+                    ILTypeDefAccess.Public,
+                    mkILMethods [ parentMethod ],
+                    mkILFields [],
+                    mkILTypeDefs [ closureTypeDef ],
+                    mkILProperties [],
+                    mkILEvents [],
+                    emptyILCustomAttrs,
+                    ILTypeInit.BeforeField
+                )
+
+        mkILSimpleModule
+            "SampleAssembly"
+            "SampleModule"
+            true
+            (4, 0)
+            false
+            (mkILTypeDefs [ typeDef ])
+            None
+            None
+            0
+            (mkILExportedTypes [])
+            "v4.0.30319"
+
+    [<Fact>]
+    let ``emitDelta emits added closure type as new TypeDef with member pairs and NestedClass row`` () =
+        // Mirrors the C# reference delta (csharp_enc_reference: method gains its first
+        // capturing lambda -> Roslyn synthesizes a new display class): the new TypeDef row
+        // is logged as a plain Default entry BEFORE its AddField/AddMethod parent pairs,
+        // member rows are parented to the NEW row, and the NestedClass row trails the log.
+        let baselineArtifacts =
+            TestHelpers.createBaselineFromModule (createModuleWithMethods [ "GetValue", 1 ])
+        let baseline = baselineArtifacts.Baseline
+        let updatedModule = createModuleWithAddedClosureType () |> TestHelpers.withDebuggableAttribute
+
+        let request =
+            {
+                IlxDeltaRequest.Baseline = baseline
+                UpdatedTypes = [ "Sample.Multi" ]
+                UpdatedMethods = []
+                UpdatedAccessors = []
+                Module = updatedModule
+                SymbolChanges = None
+                CurrentGeneration = 1
+                PreviousGenerationId = None
+                SynthesizedNames = None
+                EmittedArtifacts = None
+            }
+
+        let delta = emitDelta request
+
+        let newTypeRowId = baseline.Metadata.TableRowCounts.[TableNames.TypeDef.Index] + 1
+        let newTypeToken = 0x02000000 ||| newTypeRowId
+        let encLog = delta.EncLog
+
+        // 1. The new TypeDef row itself is a plain Default entry.
+        let typeDefRowIndex =
+            encLog
+            |> Array.tryFindIndex (fun (table, rowId, op) ->
+                table = TableNames.TypeDef && rowId = newTypeRowId && op = EditAndContinueOperation.Default)
+
+        let typeDefRowIndex =
+            match typeDefRowIndex with
+            | Some index -> index
+            | None -> failwithf "Expected (TypeDef, %d, Default) EncLog entry; got %A" newTypeRowId encLog
+
+        // 2. AddField pair: parent is the NEW TypeDef row, immediately followed by the Field row.
+        let expectedFieldRowId = baseline.Metadata.TableRowCounts.[TableNames.Field.Index] + 1
+
+        let addFieldIndex =
+            encLog
+            |> Array.tryFindIndex (fun (table, rowId, op) ->
+                table = TableNames.TypeDef && rowId = newTypeRowId && op = EditAndContinueOperation.AddField)
+
+        match addFieldIndex with
+        | None -> failwithf "Expected (TypeDef, %d, AddField) EncLog entry; got %A" newTypeRowId encLog
+        | Some index ->
+            Assert.True(typeDefRowIndex < index, "New TypeDef row must be logged before its AddField entry.")
+            let table, rowId, op = encLog.[index + 1]
+            Assert.Equal(TableNames.Field, table)
+            Assert.Equal(expectedFieldRowId, rowId)
+            Assert.Equal(EditAndContinueOperation.Default, op)
+
+        // 3. AddMethod pairs: one per closure member (.ctor + Invoke), each immediately
+        // followed by the new Method row, all parented to the NEW TypeDef row.
+        let addMethodIndices =
+            encLog
+            |> Array.indexed
+            |> Array.choose (fun (index, (table, rowId, op)) ->
+                if table = TableNames.TypeDef && rowId = newTypeRowId && op = EditAndContinueOperation.AddMethod then
+                    Some index
+                else
+                    None)
+
+        Assert.Equal(2, addMethodIndices.Length)
+
+        let baselineMethodRowCount = baseline.Metadata.TableRowCounts.[TableNames.Method.Index]
+
+        let addedMethodRows =
+            addMethodIndices
+            |> Array.map (fun index ->
+                Assert.True(typeDefRowIndex < index, "New TypeDef row must be logged before its AddMethod entries.")
+                let table, rowId, op = encLog.[index + 1]
+                Assert.Equal(TableNames.Method, table)
+                Assert.Equal(EditAndContinueOperation.Default, op)
+                rowId)
+            |> Array.sort
+
+        Assert.Equal<int[]>([| baselineMethodRowCount + 1; baselineMethodRowCount + 2 |], addedMethodRows)
+
+        // 4. NestedClass row (the closure class is nested in Sample.Multi): a plain
+        // Default entry, present in EncMap as well.
+        Assert.Contains((TableNames.Nested, 1, EditAndContinueOperation.Default), encLog)
+        Assert.Contains((TableNames.Nested, 1), delta.EncMap)
+        Assert.Contains((TableNames.TypeDef, newTypeRowId), delta.EncMap)
+
+        // 5. The added type is reported as a changed type and chained into the
+        // next-generation baseline under its full name.
+        Assert.Contains(newTypeToken, delta.UpdatedTypeTokens)
+
+        match delta.UpdatedBaseline with
+        | None -> failwith "Expected an updated baseline after closure type addition."
+        | Some updatedBaseline ->
+            // ILTypeRef.FullName joins nesting with '.', matching baseline TypeTokens keys.
+            match updatedBaseline.TypeTokens |> Map.tryFind "Sample.Multi.GetValue@hotreload#g1_o0" with
+            | Some token -> Assert.Equal(newTypeToken, token)
+            | None ->
+                failwithf
+                    "Updated baseline missing the added closure type token; type tokens: %A"
+                    (updatedBaseline.TypeTokens |> Map.toList |> List.map fst)
+
+        // 6. The next generation must see the grown TypeDef/NestedClass tables.
+        match delta.UpdatedBaseline with
+        | Some updatedBaseline ->
+            Assert.Equal(newTypeRowId, updatedBaseline.Metadata.TableRowCounts.[TableNames.TypeDef.Index])
+            Assert.Equal(1, updatedBaseline.Metadata.TableRowCounts.[TableNames.Nested.Index])
+        | None -> ()
+
+    [<Fact>]
+    let ``emitDelta added closure type delta validates with mdv`` () =
+        let baselineArtifacts =
+            TestHelpers.createBaselineFromModule (createModuleWithMethods [ "GetValue", 1 ])
+        let updatedModule = createModuleWithAddedClosureType () |> TestHelpers.withDebuggableAttribute
+
+        let request =
+            {
+                IlxDeltaRequest.Baseline = baselineArtifacts.Baseline
+                UpdatedTypes = [ "Sample.Multi" ]
+                UpdatedMethods = []
+                UpdatedAccessors = []
+                Module = updatedModule
+                SymbolChanges = None
+                CurrentGeneration = 1
+                PreviousGenerationId = None
+                SynthesizedNames = None
+                EmittedArtifacts = None
+            }
+
+        let delta = emitDelta request
+
+        Assert.NotEmpty(delta.Metadata)
+        Assert.NotEmpty(delta.IL)
+
+        match tryRunMdv "--version" with
+        | ValueNone ->
+            printfn "metadata-tools (mdv) CLI not found; skipping validation test."
+        | ValueSome(exitCode, _, _) when exitCode <> 0 ->
+            printfn "metadata-tools (mdv) CLI reported exit code %d during version check; skipping validation test." exitCode
+        | _ ->
+            let tempMeta = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName() + ".meta")
+            let tempIl = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName() + ".il")
+            try
+                File.WriteAllBytes(tempMeta, delta.Metadata)
+                File.WriteAllBytes(tempIl, delta.IL)
+
+                let arg = $"/g:{tempMeta};{tempIl}"
+                match tryRunMdv arg with
+                | ValueSome(0, _, _) -> ()
+                | ValueSome(code, _, stderr) ->
+                    Assert.True(false, $"mdv validation failed with exit code {code}. stderr: {stderr}")
+                | ValueNone -> Assert.True(false, "mdv CLI became unavailable during validation")
+            finally
+                if File.Exists(tempMeta) then File.Delete(tempMeta)
+                if File.Exists(tempIl) then File.Delete(tempIl)

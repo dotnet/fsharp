@@ -476,6 +476,14 @@
     <Compile Include="HotReload\SymbolMatcher.fs" />
     <Compile Include="HotReload\HotReloadAccessorTypes.fs" />
     <Compile Include="CodeGen\IlxDeltaEmitter.fs" />
+    <Compile Include="HotReload\TrackedInputs.fs" />
+    <Compile Include="HotReload\HotReloadState.fs" />
+    <Compile Include="HotReload\DeltaBuilder.fs" />
+    <Compile Include="HotReload\HotReloadCapabilities.fs" />
+    <Compile Include="HotReload\RudeEditDiagnostics.fs" />
+    <Compile Include="HotReload\HotReloadContracts.fs" />
+    <Compile Include="HotReload\EditAndContinueLanguageService.fs" />
+    <Compile Include="HotReload\Adapters.fs" />
     <Compile Include="Driver\FxResolver.fsi" />
     <Compile Include="Driver\FxResolver.fs" />
     <Compile Include="DependencyManager/AssemblyResolveHandler.fsi">
@@ -498,6 +506,9 @@
     </Compile>
     <Compile Include="Driver\CompilerConfig.fsi" />
     <Compile Include="Driver\CompilerConfig.fs" />
+    <Compile Include="Driver\CompilerEmitHookState.fs" />
+    <Compile Include="Driver\HotReloadEmitHook.fs" />
+    <Compile Include="Driver\CompilerEmitHookBootstrap.fs" />
     <Compile Include="Driver\CompilerImports.fsi" />
     <Compile Include="Driver\CompilerImports.fs" />
     <Compile Include="Driver\CompilerDiagnostics.fsi" />
@@ -595,6 +606,7 @@
     <Compile Include="Service\BackgroundCompiler.fs" />
     <Compile Include="Service\TransparentCompiler.fsi" />
     <Compile Include="Service\TransparentCompiler.fs" />
+    <Compile Include="HotReload\FSharpHotReloadSession.fs" />
     <Compile Include="Service\service.fsi" />
     <Compile Include="Service\service.fs" />
     <Compile Include="Service\FSharpWorkspaceState.fs" />
