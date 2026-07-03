@@ -612,10 +612,6 @@ let main _ =
     |> compileExeAndRun
     |> shouldSucceed
 
-// Cross-assembly targets: the recognizer has no locality guard, so a delegate over an F# function imported
-// from a *referenced* assembly takes the same FSharpVal direct path (StorageForValRef resolution + method-spec
-// build across an assembly boundary) that the same-compiland baseline suite never reaches. The optimizer
-// preserves the forwarding call from cross-assembly inlining just as it does for local targets.
 let private crossAssemblyLibrary =
     FSharp """
 module DelegateLib
@@ -684,6 +680,57 @@ let main _ =
     |> compileExeAndRun
     |> shouldSucceed
 
+// An [<InlineIfLambda>] function parameter yields a direct delegate only when full inlining leaves a
+// forwarding call to a named method as the delegate body: when the inlined lambda body is arbitrary code
+// there is no method to point at, and when either inlining does not happen, the parameter is a first-class
+// function value (case 42) - both keep a closure.
+[<Fact>]
+let ``InlineIfLambda function parameter keeps a closure unless inlining exposes a forwarding call (preview)`` () =
+    FSharp """
+module InlineIfLambdaClosure
+
+open System
+
+let mutable acc = 0
+
+let inline makeAction ([<InlineIfLambda>] f: int -> int -> unit) = Action<int, int>(fun a b -> f a b)
+
+// Read through a mutable so no inlining step can turn the argument back into a lambda.
+let mutable handler : int -> int -> unit = fun a b -> acc <- acc + a * 100 + b
+
+let bump (a: int) (b: int) : unit = acc <- acc + a * 1000 + b
+
+[<EntryPoint>]
+let main _ =
+    // Lambda argument: 'makeAction' and the lambda both inline, leaving inlined code as the delegate body.
+    let k = 7
+    let d = makeAction (fun a b -> acc <- acc + a * 10 + b + k)
+    d.Invoke(1, 2)
+    if acc <> 19 then failwithf "lambda: wrong result %d" acc
+    if d.Method.Name <> "Invoke" then failwithf "lambda: expected closure 'Invoke' but got '%s'" d.Method.Name
+
+    // First-class argument: there is no lambda to inline, so 'f' is a function value.
+    acc <- 0
+    let d2 = makeAction handler
+    d2.Invoke(1, 2)
+    if acc <> 102 then failwithf "value: wrong result %d" acc
+    if d2.Method.Name <> "Invoke" then failwithf "value: expected closure 'Invoke' but got '%s'" d2.Method.Name
+
+    // Forwarding lambda argument: after both inline, the delegate body is a forwarding call to 'bump',
+    // which the recognizer binds directly.
+    acc <- 0
+    let d3 = makeAction (fun a b -> bump a b)
+    d3.Invoke(1, 2)
+    if acc <> 1002 then failwithf "forwarding: wrong result %d" acc
+    if d3.Method.Name <> "bump" then failwithf "forwarding: expected direct 'bump' but got '%s'" d3.Method.Name
+    if not (isNull d3.Target) then failwith "forwarding: Target should be null for a static target"
+    0
+        """
+    |> withLangVersionPreview
+    |> withOptions [ "--optimize+" ]
+    |> compileExeAndRun
+    |> shouldSucceed
+
 #if NETCOREAPP
 [<Fact>]
 let ``Minimal API binds a direct delegate handler by parameter name (preview)`` () =
@@ -699,7 +746,7 @@ module X =
     open Microsoft.AspNetCore.Builder
     open Microsoft.AspNetCore.Http
 
-    let add (x: int) (y: int) : int = x + y
+    let divide (first: int) (second: int) : int = first / second
 
     let run () =
         let port =
@@ -712,16 +759,16 @@ module X =
         let url = sprintf "http://127.0.0.1:%d" port
         let app = WebApplication.CreateBuilder().Build()
         
-        // Route parameters {x}/{y} bind to the handler's parameters by name, which requires delegate.Method to be the
-        // real 'add' (a direct delegate), not a synthesized closure 'Invoke'.
-        app.MapGet("/add/{x}/{y}", Func<int, int, int>(fun z w -> add z w)) |> ignore
+        // Route parameters {second}/{first} bind to the handler's parameters by name, which requires delegate.Method to be the
+        // real 'divide' (a direct delegate), not a synthesized closure 'Invoke'.
+        app.MapGet("/divide/{second}/{first}", Func<int, int, int>(fun z w -> divide z w)) |> ignore
         app.Urls.Add url
         app.StartAsync().GetAwaiter().GetResult()
 
         try
             let client = new HttpClient()
-            let body = client.GetStringAsync(url + "/add/2/3").GetAwaiter().GetResult()
-            if body.Trim() <> "5" then failwithf "minimal API returned '%s', expected '5'" body
+            let body = client.GetStringAsync(url + "/divide/2/6").GetAwaiter().GetResult()
+            if body.Trim() <> "3" then failwithf "minimal API returned '%s', expected '3'" body
         finally
             app.StopAsync().GetAwaiter().GetResult()
 

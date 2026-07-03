@@ -1723,12 +1723,10 @@ and OpHasEffect context g m op tyargs =
 let effectContextOf (cenv: cenv) =
     if cenv.optimizing then EffectContext.Emit else EffectContext.InlineBody
 
-/// When a delegate construction's Invoke body is a transparent forwarding call that the ILX generator can
-/// point the delegate directly at (see DelegateForwarding), prevent the optimizer from inlining the target
-/// into the body: inlining would dissolve the forwarding call before code generation and force the delegate
-/// back into a closure, making the emitted form depend on the target's size. Only optimizer-chosen inlining
-/// is suppressed. Cross-assembly inlining of a target from a referenced assembly's optimization
-/// data goes through this same inlining path, so it is suppressed here as well.
+/// Prevent the optimizer from inlining a recognized direct-delegate forwarding target into the delegate
+/// body: inlining would dissolve the call before IlxGen can point the delegate at it, making the emitted
+/// form depend on the target's size (locally, and through a referenced assembly's optimization data).
+/// Mandatory inlining of 'inline' values takes precedence via OptimizeVal.
 let AddDirectDelegateTargetToDontInlineSet cenv env (slotsig: SlotSig) tmvs body m =
     let g = cenv.g
 
@@ -1737,20 +1735,22 @@ let AddDirectDelegateTargetToDontInlineSet cenv env (slotsig: SlotSig) tmvs body
         && cenv.optimizing
         && cenv.settings.InlineLambdas
     then
-        // Normalize the Invoke parameters exactly as IlxGen will before it runs the recognizer.
-        let invokeParamInfos =
-            List.replicate (List.concat slotsig.FormalParams).Length ValReprInfo.unnamedTopArg1
+        let exprHasEffect = ExprHasEffect (effectContextOf cenv)
+    
+        // Normalize the elided unit parameter of a zero-parameter Invoke (e.g. System.Action) exactly as
+        // IlxGen will before it runs the recognizer
+        let tmvs, body =
+            if slotsig.FormalParams |> List.forall List.isEmpty then
+                BindUnitVars g (tmvs, [], body)
+            else
+                tmvs, body
 
-        let tmvs, body = BindUnitVars g (tmvs, invokeParamInfos, body)
-
-        match classifyForwardingTarget (ExprHasEffect (effectContextOf cenv)) g tmvs body with
+        match classifyForwardingTarget exprHasEffect g tmvs body with
         | DirectDelegateForwardingTargetCandidate.FSharpVal(vref, valUseFlags, _, leadingArgs) when
-            // Only a value compiled as a real method can be pointed at directly (mirrors IlxGen's
-            // Method-storage requirement); local function values keep their inlining. Witness information
-            // is not computable here, so 'false' is passed - over-suppressing for the rare
-            // witness-requiring target only costs a missed inline in a body that stays a closure.
+            // ValReprInfo.IsSome mirrors IlxGen's Method-storage requirement. Witnesses are not knowable
+            // here; over-suppressing a witness-requiring target only costs an inline in a closure body.
             vref.ValReprInfo.IsSome
-            && (fsharpValDirectlyBindable (ExprHasEffect (effectContextOf cenv)) g tmvs leadingArgs vref valUseFlags false)
+            && (fsharpValDirectlyBindable exprHasEffect g tmvs leadingArgs vref valUseFlags false)
                 .IsSome
             ->
             match (GetInfoForVal cenv env m vref).ValExprInfo with

@@ -7571,10 +7571,8 @@ and GenDelegateExpr cenv cgbuf eenvouter expr (TObjExprMethod(slotsig, _attribs,
 
     let tmvs, body = BindUnitVars g (tmvs, invokeParamInfos, body)
 
-    // Direct delegate construction: when the delegate body is a saturated, transparent forwarding call to a
-    // known static method, module-level function, or instance method, point the delegate straight at that
-    // method instead of generating an intermediate closure class. Anything that does not match exactly
-    // falls back to the closure path below.
+    // Point the delegate directly at a recognized transparent-forwarding target instead of generating an
+    // intermediate closure; anything unmatched falls back to the closure path below.
     let directDelegateTarget =
         if not (g.langVersion.SupportsFeature LanguageFeature.DirectDelegateConstruction) then
             None
@@ -7582,11 +7580,8 @@ and GenDelegateExpr cenv cgbuf eenvouter expr (TObjExprMethod(slotsig, _attribs,
             not cenv.options.localOptimizationsEnabled
             && (etaUnitDelegate || tmvs |> List.exists (fun v -> not v.IsCompilerGenerated))
         then
-            // Eta-expanded delegate in an unoptimized build: the Invoke parameters are the user's own lambda
-            // variables (or, for a unit-argument eta delegate, an elided unit parameter), so keep the closure
-            // to preserve the user's lambda for debugging. Non-eta delegates (whose parameters are synthesized
-            // by BuildNewDelegateExpr) are always made direct; eta-expanded ones are made direct only in
-            // optimized builds, where debuggability is not a concern and the forwarding call survives to here.
+            // Keep eta-expanded delegates as closures in unoptimized builds so the user's lambda parameter
+            // names survive for debugging; non-eta parameters are synthesized, so nothing is lost there.
             None
         else
             match classifyForwardingTarget (Optimizer.ExprHasEffect Optimizer.EffectContext.Emit) g tmvs body with
@@ -7682,13 +7677,9 @@ and GenDelegateExpr cenv cgbuf eenvouter expr (TObjExprMethod(slotsig, _attribs,
                         else
                             leadingArgs.Length
 
-                    // Unlike the F# case we cannot compare parameter/return IL types here: the target's
-                    // types come from imported metadata, whose assembly scope refs differ from the
-                    // compiler-generated delegee types (e.g. `System.Int32, System.Runtime` vs the bare
-                    // primary-assembly form), so structural equality reports false negatives for the very
-                    // primitives that always match. The forwarding match already pins the arity, and the
-                    // type checker has verified the call is well-typed, so element compatibility holds by
-                    // construction; an arity check is the sound guard (matching the generic case).
+                    // Imported metadata carries different assembly scope refs than the compiler-generated
+                    // delegee types, so structural IL type comparison reports false negatives even for
+                    // primitives; the arity check is the sound residual guard (the call is already typed).
                     if targetMspec.FormalArgTypes.Length - numBoundLeadingFormals = numDelegeeParams then
                         Some(targetMspec, receiverInfo leadingArgs isVirtual)
                     else
@@ -7702,23 +7693,21 @@ and GenDelegateExpr cenv cgbuf eenvouter expr (TObjExprMethod(slotsig, _attribs,
     | Some(targetMspec, receiverInfo) ->
         match receiverInfo with
         | None ->
-            // Static target: the delegate carries a null receiver.
+            // Static target: null Target.
             GenUnit cenv eenvouter m cgbuf
             CG.EmitInstr cgbuf (pop 0) (Push [ g.ilg.typ_IntPtr ]) (I_ldftn targetMspec)
         | Some(receiverExpr, isVirtual) ->
-            // Instance target: evaluate the receiver as the delegate's target object.
+            // Instance target: the receiver becomes the Target.
             GenExpr cenv cgbuf eenvouter receiverExpr Continue
 
             if targetMspec.DeclaringType.Boxity.IsAsValue then
-                // Value-type receiver: box a copy so it can be stored as the delegate's 'object' Target. The
-                // runtime binds the function pointer to the method's unboxing stub, which re-derives the 'this'
-                // pointer from the box on each invocation. This matches the closure form, which likewise
-                // captures the struct by value. (Struct instance methods are non-virtual, so isVirtual is
-                // false here and the ldftn path below is taken.)
+                // Box a copy as the 'object' Target; invocation reaches 'this' through the runtime's
+                // unboxing stub, matching the closure's by-value capture. (Struct instance methods are
+                // non-virtual, so the ldftn path below is taken.)
                 CG.EmitInstr cgbuf (pop 1) (Push [ g.ilg.typ_Object ]) (I_box targetMspec.DeclaringType)
 
             if isVirtual then
-                // dup the receiver and bind the function pointer to its runtime type's override.
+                // dup the receiver so ldvirtftn can bind its runtime type's override.
                 CG.EmitInstr cgbuf (pop 0) (Push [ targetMspec.DeclaringType ]) AI_dup
                 CG.EmitInstr cgbuf (pop 1) (Push [ g.ilg.typ_IntPtr ]) (I_ldvirtftn targetMspec)
             else
