@@ -4560,10 +4560,10 @@ and TcTyparDecl (cenv: cenv) (env: TcEnv) synTyparDecl =
     let (SynTyparDecl (attributes = Attributes synAttrs; typar = synTypar)) = synTyparDecl
     let (SynTypar (ident = id)) = synTypar
 
-    // Type parameters can be checked before the sibling entities of a recursive group are established
-    // (Phase1A), so a rec-scoped attribute type may not resolve yet. Resolve tentatively; the fixup
-    // re-resolves against the completed environment. Framework attributes (Measure, ...) always resolve.
-    let attrs, getFinalAttrs = TcAttributesCanFail cenv env AttributeTargets.GenericParameter synAttrs
+    // In Phase1A of a recursive group the sibling attribute types may not resolve yet, so check
+    // tentatively and let the fixup re-resolve against the completed environment. Framework attributes
+    // (Measure, ...), which drive the typar kind below, always resolve.
+    let attrs, didFail = TcAttributesMaybeFail TcCanFail.IgnoreAllErrors cenv env AttributeTargets.GenericParameter synAttrs
 
     let hasMeasureAttr = attribsHaveEntityFlag g WellKnownEntityAttributes.MeasureAttribute attrs
     let hasEqDepAttr = HasFSharpAttribute g g.attrib_EqualityConditionalOnAttribute attrs
@@ -4582,20 +4582,20 @@ and TcTyparDecl (cenv: cenv) (env: TcEnv) synTyparDecl =
     CallNameResolutionSink cenv.tcSink (id.idRange, env.NameEnv, item, emptyTyparInst, ItemOccurrence.UseInType, env.eAccessRights)
 
     let fixupAttrs envFinal =
-        getFinalAttrs envFinal
+        (if didFail then TcAttributes cenv envFinal AttributeTargets.GenericParameter synAttrs else attrs)
         |> filterOutWellKnownAttribs g WellKnownEntityAttributes.MeasureAttribute WellKnownValAttributes.None
         |> tp.SetAttribs
 
     tp, fixupAttrs
 
 and TcTyparDecls (cenv: cenv) env synTypars =
-    let typars, fixups = synTypars |> List.map (TcTyparDecl cenv env) |> List.unzip
+    let typars, fixup = TcTyparDeclsCanFail cenv env synTypars
     // Non-recursive callers: attribute types are already in scope, so finalize immediately.
-    fixups |> List.iter (fun fixup -> fixup env)
+    fixup env
     typars
 
-/// Like TcTyparDecls, but for type parameters of a recursive-group type checked in Phase1A: returns a
-/// fixup that re-resolves rec-scoped attributes once the whole group's entities are established.
+/// Like TcTyparDecls, but for the type parameters of a recursive-group type checked in Phase1A: also
+/// returns a fixup that re-resolves rec-scoped attributes once the group's entities are established.
 and TcTyparDeclsCanFail (cenv: cenv) env synTypars =
     let typars, fixups = synTypars |> List.map (TcTyparDecl cenv env) |> List.unzip
     typars, (fun envFinal -> fixups |> List.iter (fun fixup -> fixup envFinal))
@@ -11879,9 +11879,9 @@ and TcAttributesWithPossibleTargetsEx canFail (cenv: cenv) env attrTgt attrEx sy
             attribsAndTargets, didFail || didFail2
 
         with RecoverableException e ->
-            // Under IgnoreAllErrors (the tentative pass for recursively-scoped attributes) even an
-            // unresolved attribute *type name* is tolerated: swallow the diagnostic and report failure
-            // so the caller's fixup re-resolves against the completed environment.
+            // Under IgnoreAllErrors (the tentative pass for rec-scoped attributes) tolerate even an
+            // unresolved attribute *type name*: swallow the diagnostic and report failure so the
+            // caller's fixup re-resolves against the completed environment.
             match canFail with
             | TcCanFail.IgnoreAllErrors -> [], true
             | _ -> errorRecovery e synAttrib.Range; [], false)
@@ -11896,15 +11896,9 @@ and TcAttributesWithPossibleTargets canFail cenv env attrTgt synAttribs =
 and TcAttributesMaybeFail canFail cenv env attrTgt synAttribs =
     TcAttributesMaybeFailEx canFail cenv env attrTgt (enum 0) synAttribs
 
-and TcAttributesWithPossibleTargetsCanFail cenv env attrTgt synAttribs =
-    let attrs, didFail = TcAttributesWithPossibleTargetsEx TcCanFail.IgnoreAllErrors cenv env attrTgt (enum 0) synAttribs
-    attrs, (fun envFinal ->
-        if didFail then TcAttributesWithPossibleTargets TcCanFail.ReportAllErrors cenv envFinal attrTgt synAttribs |> fst
-        else attrs)
-
 and TcAttributesCanFail cenv env attrTgt synAttribs =
-    let attrs, reresolve = TcAttributesWithPossibleTargetsCanFail cenv env attrTgt synAttribs
-    List.map snd attrs, (reresolve >> List.map snd)
+    let attrs, didFail = TcAttributesMaybeFail TcCanFail.IgnoreAllErrors cenv env attrTgt synAttribs
+    attrs, (fun () -> if didFail then TcAttributes cenv env attrTgt synAttribs else attrs)
 
 and TcAttributes cenv env attrTgt synAttribs =
     TcAttributesMaybeFail TcCanFail.ReportAllErrors cenv env attrTgt synAttribs |> fst

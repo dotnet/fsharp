@@ -619,7 +619,7 @@ val TcAttributesCanFail:
     env: TcEnv ->
     attrTgt: AttributeTargets ->
     synAttribs: SynAttribute list ->
-        Attrib list * (TcEnv -> Attribs)
+        Attrib list * (unit -> Attribs)
 
 /// Check a set of attributes which can only target specific elements
 val TcAttributesWithPossibleTargets:
@@ -629,15 +629,6 @@ val TcAttributesWithPossibleTargets:
     attrTgt: AttributeTargets ->
     synAttribs: SynAttribute list ->
         (AttributeTargets * Attrib) list * bool
-
-/// Like TcAttributesWithPossibleTargets, but allows failure for rec-scope attrs.
-/// Returns prelim attrs + a fixup thunk that re-resolves with the final env.
-val TcAttributesWithPossibleTargetsCanFail:
-    cenv: TcFileState ->
-    env: TcEnv ->
-    attrTgt: AttributeTargets ->
-    synAttribs: SynAttribute list ->
-        (AttributeTargets * Attrib) list * (TcEnv -> (AttributeTargets * Attrib) list)
 
 /// Check a constant value, e.g. a literal
 val TcConst: cenv: TcFileState -> overallTy: TType -> m: range -> env: TcEnv -> synConst: SynConst -> Const
@@ -829,8 +820,7 @@ val TcTyparConstraints:
 /// Check a collection of type parameters declarations
 val TcTyparDecls: cenv: TcFileState -> env: TcEnv -> synTypars: SynTyparDecl list -> Typar list
 
-/// Check type parameters of a recursive-group type (Phase1A). Returns the typars plus a fixup that
-/// re-resolves recursively-scoped attributes once the whole group's entities are established.
+/// Like TcTyparDecls, but also returns a fixup to re-resolve rec-scoped attributes in a later phase.
 val TcTyparDeclsCanFail: cenv: TcFileState -> env: TcEnv -> synTypars: SynTyparDecl list -> Typar list * (TcEnv -> unit)
 
 /// Check a syntactic type
