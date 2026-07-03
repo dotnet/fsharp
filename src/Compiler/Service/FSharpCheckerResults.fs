@@ -676,51 +676,71 @@ type internal TypeCheckInfo
                     | None -> None)
             | _ -> [])
 
-    let GetNamedParametersAndSettableFields endOfExprPos allowObsolete =
+    let GetNamedParametersAndSettableFields endOfExprPos cursorLine (lineStr: string) allowObsolete =
         let cnrs =
             GetCapturedNameResolutions endOfExprPos ResolveOverloads.No
             |> ResizeArray.toList
             |> List.rev
 
-        let result =
-            match cnrs with
-            | CNR(Item.CtorGroup(_, (ctor :: _ as ctors)), _, denv, nenv, ad, m) :: _ ->
-                let props =
-                    ResolveCompletionsInType
-                        ncenv
-                        nenv
-                        ResolveCompletionTargets.SettablePropertiesAndFields
-                        m
-                        ad
-                        false
-                        ctor.ApparentEnclosingType
-                        allowObsolete
-
-                let parameters = CollectParameters ctors amap m
-                let items = props @ parameters
-                Some(denv, m, items)
-            | CNR(Item.MethodGroup(_, methods, _), _, denv, nenv, ad, m) :: _ ->
-                let props =
-                    methods
-                    |> List.collect (fun meth ->
-                        let retTy = meth.GetFSharpReturnType(amap, m, meth.FormalMethodInst)
-
-                        ResolveCompletionsInType
-                            ncenv
-                            nenv
-                            ResolveCompletionTargets.SettablePropertiesAndFields
-                            m
-                            ad
-                            false
-                            retTy
-                            allowObsolete)
-
-                let parameters = CollectParameters methods amap m
-                let items = props @ parameters
-                Some(denv, m, items)
+        // A ctor or method group under the cursor whose named parameters and settable fields can be
+        // offered as completions. For a ctor we surface settable props of the constructed type; for a
+        // method, of its return type(s).
+        let (|NamedArgGroup|_|) item =
+            match item with
+            | Item.CtorGroup(name, (_ :: _ as meths)) -> Some(name, meths, true)
+            | Item.MethodGroup(name, (_ :: _ as meths), _) -> Some(name, meths, false)
             | _ -> None
 
-        match result with
+        let buildGroup (meths: MethInfo list) isCtor nenv ad m =
+            let propTys =
+                if isCtor then
+                    [ (List.head meths).ApparentEnclosingType ]
+                else
+                    meths
+                    |> List.map (fun meth -> meth.GetFSharpReturnType(amap, m, meth.FormalMethodInst))
+
+            let props =
+                propTys
+                |> List.collect (fun ty ->
+                    ResolveCompletionsInType ncenv nenv ResolveCompletionTargets.SettablePropertiesAndFields m ad false ty allowObsolete)
+
+            nenv.DisplayEnv, m, props @ CollectParameters meths amap m
+
+        // Walk the whole position-filtered CNR list rather than only its head: after the first named
+        // argument, overload refinement or a trailing partial argument can push the ctor/method group
+        // off the head of the list.
+        let fromCnrs =
+            cnrs
+            |> List.tryPick (function
+                | CNR(NamedArgGroup(_, meths, isCtor), _, _, nenv, ad, m) -> Some(buildGroup meths isCtor nenv ad m)
+                | _ -> None)
+
+        // For an overloaded call with a malformed trailing argument the type-checker can abandon overload
+        // resolution before publishing any method-group CNR at endOfExprPos. Recover by re-resolving the
+        // long ident to the left of the cursor. Restricted to the cursor's own line, since lineStr only
+        // holds that line and columns on other lines of a multi-line call could match an unrelated ident.
+        let fromLineText () =
+            if
+                endOfExprPos.Line <> cursorLine
+                || endOfExprPos.Column <= 0
+                || endOfExprPos.Column > lineStr.Length
+            then
+                None
+            else
+                let plid = QuickParse.GetPartialLongNameEx(lineStr, endOfExprPos.Column - 1)
+                let lastName = plid.PartialIdent
+
+                if String.IsNullOrEmpty lastName then
+                    None
+                else
+                    let (nenv, ad), m = GetBestEnvForPos endOfExprPos
+
+                    ResolvePartialLongIdent ncenv nenv (ConstraintSolver.IsApplicableMethApprox g amap m) m ad plid.QualifyingIdents false
+                    |> List.tryPick (function
+                        | NamedArgGroup(name, meths, isCtor) when name = lastName -> Some(buildGroup meths isCtor nenv ad m)
+                        | _ -> None)
+
+        match fromCnrs |> Option.orElseWith fromLineText with
         | None -> NameResResult.Empty
         | Some(denv, m, items) ->
             let items = List.map ItemWithNoInst items
@@ -1953,7 +1973,7 @@ type internal TypeCheckInfo
             // Completion at ' SomeMethod( ... ) ' or ' [<SomeAttribute( ... )>] ' with named arguments
             | Some(CompletionContext.ParameterList(endPos, fields)) ->
                 let results =
-                    GetNamedParametersAndSettableFields endPos options.SuggestObsoleteSymbols
+                    GetNamedParametersAndSettableFields endPos line lineStr options.SuggestObsoleteSymbols
 
                 let declaredItems = getDeclaredItemsNotInRangeOpWithAllSymbols ()
 
@@ -1977,7 +1997,7 @@ type internal TypeCheckInfo
                             })
 
                     match declaredItems with
-                    | None -> Some(toCompletionItems (items, denv, m))
+                    | None -> Some(filtered, denv, m)
                     | Some(declItems, declaredDisplayEnv, declaredRange) -> Some(filtered @ declItems, declaredDisplayEnv, declaredRange)
                 | _ -> declaredItems
 
