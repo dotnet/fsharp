@@ -1009,123 +1009,103 @@ let requireBuilderMethod methodName ceenv m1 m2 =
     if not (hasBuilderMethod ceenv m1 methodName) then
         error (Error(FSComp.SR.tcRequireBuilderMethod methodName, m2))
 
-let rec private collectPatternNames (pat: SynPat) (acc: Set<string>) : Set<string> =
+/// One `let`/`use`/`let!`/`use!`/`do!` binding step, exposing whether it is a "bang" construct, its
+/// continuation body, and how to rebuild the step around a rewritten body.
+let (|CeBindingStep|_|) expr =
+    match expr with
+    | SynExpr.LetOrUse({ IsRecursive = false } as data) ->
+        Some(data.IsBang, data.Body, (fun body -> SynExpr.LetOrUse { data with Body = body }))
+    | SynExpr.Sequential(sp, isTrueSeq, (SynExpr.DoBang _ as doBang), body, mSeq, trivia) ->
+        Some(true, body, (fun body -> SynExpr.Sequential(sp, isTrueSeq, doBang, body, mSeq, trivia)))
+    | _ -> None
+
+/// A function or constructor-pattern binding (`let f x = ...`, `let (Some x) = ...`) is not a simple
+/// value binding. At this stage both take the same shape (`SynPat.LongIdent` with argument patterns or
+/// type parameters), and neither should be treated as the pattern of a `let!`.
+let private isSimpleValuePat pat =
     match pat with
-    | SynPat.Named(ident = SynIdent(id, _)) -> acc.Add(id.idText)
-    | SynPat.LongIdent(longDotId = SynLongIdent(id = [ id ]); argPats = SynArgPats.Pats []) -> acc.Add(id.idText)
-    | SynPat.Typed(pat = p)
-    | SynPat.Attrib(pat = p)
-    | SynPat.Paren(pat = p) -> collectPatternNames p acc
-    | SynPat.As(lhsPat = p1; rhsPat = p2)
-    | SynPat.Or(lhsPat = p1; rhsPat = p2) -> collectPatternNames p2 (collectPatternNames p1 acc)
-    | SynPat.Tuple(elementPats = pats)
-    | SynPat.ArrayOrList(elementPats = pats) -> pats |> List.fold (fun s p -> collectPatternNames p s) acc
-    | _ -> acc
+    | SynPat.LongIdent(argPats = SynArgPats.Pats(_ :: _))
+    | SynPat.LongIdent(argPats = SynArgPats.NamePatPairs(pats = _ :: _))
+    | SynPat.LongIdent(typarDecls = Some _) -> false
+    | _ -> true
 
-let rec private collectLiftedBindingNames (rhs: SynExpr) (acc: Set<string>) : Set<string> =
-    match rhs with
-    | (ExprAsLetBang _ | ExprAsUseBang _) & SynExpr.LetOrUse data ->
-        let acc =
-            data.Bindings
-            |> List.fold (fun s (SynBinding(headPat = pat)) -> collectPatternNames pat s) acc
+/// #19457: a plain `let p = rhs` inside a computation expression, where `rhs` contains a bang construct
+/// (`let!`/`use!`/`do!`), is rebound as `let! p = builder { rhs }`. Running the rhs as a nested
+/// computation of the same builder keeps its bindings scoped there rather than leaking past `p`.
+/// Returns None (leaving the ordinary `let` path) unless the rhs is a simple value binding whose spine
+/// reaches a bang.
+let tryRebindCeLetWithBangRhs (ceenv: ComputationExpressionContext<'a>) isRec m trivia binds innerComp : SynExpr option =
+    // A leading paren or return-type annotation belongs to the `let` binding, not to the nested
+    // computation: parens are not valid computation-expression body syntax, and the type is carried onto
+    // the `let!` pattern by mkTypedHeadPat. Strip them to get the computation the user actually wrote.
+    let rec coreOf expr =
+        match expr with
+        | SynExpr.Paren(expr = e)
+        | SynExpr.Typed(expr = e) -> coreOf e
+        | e -> e
 
-        collectLiftedBindingNames data.Body acc
-    | SynExpr.Sequential(_, _, (SynExpr.DoBang _), body, _, _) -> collectLiftedBindingNames body acc
-    | LetOrUse({ Body = body; IsRecursive = false }, false, false) -> collectLiftedBindingNames body acc
-    | _ -> acc
+    // Does the binding spine reach a bang, looking through plain lets, a leading statement, and
+    // paren/type annotations? (A `do!`-headed sequential is already a bang via CeBindingStep.)
+    let rec spineHasBang expr =
+        match expr with
+        | CeBindingStep(isBang, body, _) -> isBang || spineHasBang body
+        | SynExpr.Sequential(expr2 = e2) -> spineHasBang e2
+        | SynExpr.Paren(expr = e)
+        | SynExpr.Typed(expr = e) -> spineHasBang e
+        | _ -> false
 
-let private exprMentionsAnyOf (names: Set<string>) (expr: SynExpr) : bool =
-    if names.IsEmpty then
-        false
-    else
+    // Make the nested computation produce its final value: wrap plain value leaves in `return`, leaving
+    // constructs that already produce in the computation untouched, and pushing through lets, sequencing,
+    // `if` and `match` to reach the leaves. Loops (`while`/`for`) and the bang constructs are left as-is:
+    // they produce unit (or their own value) directly. A `try`, by contrast, is an ordinary value
+    // expression here, so it takes the leaf path and is returned as a whole (`return (try ...)`).
+    let rec returnify expr =
+        match expr with
+        | CeBindingStep(_, body, rebuild) -> rebuild (returnify body)
+        | SynExpr.Paren(expr = e) -> returnify e
+        | SynExpr.Sequential(sp, isTrueSeq, e1, e2, ms, tr) -> SynExpr.Sequential(sp, isTrueSeq, e1, returnify e2, ms, tr)
+        | SynExpr.IfThenElse(g, th, el, sp, r, mi, tr) -> SynExpr.IfThenElse(g, returnify th, Option.map returnify el, sp, r, mi, tr)
+        | SynExpr.Match(sp, e, clauses, mm, tr) ->
+            let clauses =
+                clauses
+                |> List.map (fun (SynMatchClause(p, w, res, mc, dp, ctr)) -> SynMatchClause(p, w, returnify res, mc, dp, ctr))
 
-        let rec walkBind (SynBinding(expr = e)) = walkExpr e
+            SynExpr.Match(sp, e, clauses, mm, tr)
+        | SynExpr.YieldOrReturn _
+        | SynExpr.YieldOrReturnFrom _
+        | SynExpr.DoBang _
+        | SynExpr.MatchBang _
+        | SynExpr.WhileBang _
+        | SynExpr.While _
+        | SynExpr.For _
+        | SynExpr.ForEach _ -> expr
+        | leaf -> SynExpr.YieldOrReturn((false, true), leaf, leaf.Range, SynExprYieldOrReturnTrivia.Zero)
 
-        and walkExprs es = es |> List.exists walkExpr
+    match binds with
+    | [ SynBinding(headPat = pat; isInline = false; isMutable = false; expr = rhs; debugPoint = spBind) as binding ] when
+        not (ceenv.isQuery || isRec) && isSimpleValuePat pat && spineHasBang rhs
+        ->
+        let core = coreOf rhs
+        let mCe = core.Range
+        let builder = mkSynIdGet mCe ceenv.builderValName
 
-        and walkBinds es = es |> List.exists walkBind
+        let nestedCe =
+            SynExpr.App(ExprAtomicFlag.NonAtomic, false, builder, SynExpr.ComputationExpr(false, returnify core, mCe), mCe)
 
-        and walkMatchClauses cl =
-            cl
-            |> List.exists (fun (SynMatchClause(whenExpr = we; resultExpr = e)) -> Option.exists walkExpr we || walkExpr e)
+        let letBang = mkSynLetBangBinding mCe (mkTypedHeadPat binding) nestedCe spBind m
 
-        and walkExpr e =
-            match e with
-            | SynExpr.Ident id -> names.Contains(id.idText)
-            | SynExpr.LongIdent(longDotId = SynLongIdent(id = ids)) -> ids |> List.exists (fun id -> names.Contains(id.idText))
-            | SynExpr.Paren(e, _, _, _)
-            | SynExpr.Typed(e, _, _)
-            | SynExpr.Do(e, _)
-            | SynExpr.DoBang(e, _, _)
-            | SynExpr.YieldOrReturn(_, e, _, _)
-            | SynExpr.YieldOrReturnFrom(_, e, _, _)
-            | SynExpr.Lazy(e, _)
-            | SynExpr.InferredUpcast(e, _)
-            | SynExpr.InferredDowncast(e, _)
-            | SynExpr.AddressOf(_, e, _, _)
-            | SynExpr.DotGet(e, _, _, _)
-            | SynExpr.Upcast(e, _, _)
-            | SynExpr.Downcast(e, _, _)
-            | SynExpr.ComputationExpr(_, e, _)
-            | SynExpr.ArrayOrListComputed(_, e, _)
-            | SynExpr.New(_, _, e, _)
-            | SynExpr.TypeApp(e, _, _, _, _, _, _)
-            | SynExpr.TypeTest(e, _, _)
-            | SynExpr.Fixed(e, _)
-            | SynExpr.DebugPoint(_, _, e) -> walkExpr e
-            | SynExpr.App(_, _, e1, e2, _)
-            | SynExpr.Set(e1, e2, _)
-            | SynExpr.DotSet(e1, _, e2, _)
-            | SynExpr.While(_, e1, e2, _)
-            | SynExpr.WhileBang(_, e1, e2, _)
-            | SynExpr.ForEach(_, _, _, _, _, e1, e2, _)
-            | SynExpr.NamedIndexedPropertySet(_, e1, e2, _)
-            | SynExpr.JoinIn(e1, _, e2, _) -> walkExpr e1 || walkExpr e2
-            | SynExpr.Sequential(_, _, e1, e2, _, _)
-            | SynExpr.SequentialOrImplicitYield(_, e1, e2, _, _) -> walkExpr e1 || walkExpr e2
-            | SynExpr.For(identBody = e1; toBody = e2; doBody = e3) -> walkExpr e1 || walkExpr e2 || walkExpr e3
-            | SynExpr.DotNamedIndexedPropertySet(e1, _, e2, e3, _) -> walkExpr e1 || walkExpr e2 || walkExpr e3
-            | SynExpr.ArrayOrList(_, es, _)
-            | SynExpr.Tuple(_, es, _, _) -> walkExprs es
-            | SynExpr.IfThenElse(ifExpr = e1; thenExpr = e2; elseExpr = e3opt) -> walkExpr e1 || walkExpr e2 || Option.exists walkExpr e3opt
-            | SynExpr.Match(expr = e; clauses = cl)
-            | SynExpr.MatchBang(expr = e; clauses = cl) -> walkExpr e || walkMatchClauses cl
-            | SynExpr.MatchLambda(_, _, cl, _, _) -> walkMatchClauses cl
-            | SynExpr.Lambda(body = e) -> walkExpr e
-            | SynExpr.LetOrUse({ Bindings = bs; Body = e }) -> walkBinds bs || walkExpr e
-            | SynExpr.TryWith(tryExpr = e; withCases = cl) -> walkExpr e || walkMatchClauses cl
-            | SynExpr.TryFinally(tryExpr = e1; finallyExpr = e2) -> walkExpr e1 || walkExpr e2
-            | SynExpr.ObjExpr(bindings = bs; members = ms; extraImpls = is) ->
-                let allBinds =
-                    unionBindingAndMembers bs ms
-                    @ [
-                        for SynInterfaceImpl(bindings = ibs) in is do
-                            yield! ibs
-                    ]
-
-                walkBinds allBinds
-            | SynExpr.Record(_, origExpr, fs, _) ->
-                (match origExpr with
-                 | Some(e, _) -> walkExpr e
-                 | None -> false)
-                || fs
-                   |> List.exists (fun (SynExprRecordField(expr = v)) -> Option.exists walkExpr v)
-            | SynExpr.AnonRecd(copyInfo = origExpr; recordFields = flds) ->
-                (match origExpr with
-                 | Some(e, _) -> walkExpr e
-                 | None -> false)
-                || flds |> List.exists (fun (_, _, e) -> walkExpr e)
-            | SynExpr.InterpolatedString(parts, _, _) ->
-                parts
-                |> List.exists (function
-                    | SynInterpolatedStringPart.FillExpr(x, _) -> walkExpr x
-                    | _ -> false)
-            | SynExpr.IndexFromEnd(e, _) -> walkExpr e
-            | SynExpr.DotIndexedGet(e1, indexArgs, _, _) -> walkExpr e1 || walkExpr indexArgs
-            | SynExpr.DotIndexedSet(e1, indexArgs, e2, _, _, _) -> walkExpr e1 || walkExpr indexArgs || walkExpr e2
-            | _ -> false
-
-        walkExpr expr
+        Some(
+            SynExpr.LetOrUse
+                {
+                    IsRecursive = false
+                    IsFromSource = false
+                    Bindings = [ letBang ]
+                    Body = innerComp
+                    Range = m
+                    Trivia = trivia
+                }
+        )
+    | _ -> None
 
 /// <summary>
 /// Try translate the syntax sugar
@@ -1567,24 +1547,7 @@ let rec TryTranslateComputationExpression
                     let setCondExpr = SynExpr.Set(SynExpr.Ident idCond, SynExpr.Ident idFirst, mGuard)
 
                     let binding =
-                        SynBinding(
-                            accessibility = None,
-                            kind = SynBindingKind.Normal,
-                            isInline = false,
-                            isMutable = false,
-                            attributes = [],
-                            xmlDoc = PreXmlDoc.Empty,
-                            valData = SynInfo.emptySynValData,
-                            headPat = patFirst,
-                            returnInfo = None,
-                            expr = guardExpr,
-                            range = guardExpr.Range,
-                            debugPoint = DebugPointAtBinding.NoneAtSticky,
-                            trivia =
-                                { SynBindingTrivia.Zero with
-                                    LeadingKeyword = SynLeadingKeyword.LetBang mGuard
-                                }
-                        )
+                        mkSynLetBangBinding mGuard patFirst guardExpr DebugPointAtBinding.NoneAtSticky guardExpr.Range
 
                     let bindCondExpr =
                         SynExpr.LetOrUse
@@ -1627,24 +1590,7 @@ let rec TryTranslateComputationExpression
                         }
 
                 let binding =
-                    SynBinding(
-                        accessibility = None,
-                        kind = SynBindingKind.Normal,
-                        isInline = false,
-                        isMutable = false,
-                        attributes = [],
-                        xmlDoc = PreXmlDoc.Empty,
-                        valData = SynInfo.emptySynValData,
-                        headPat = patFirst,
-                        returnInfo = None,
-                        expr = guardExpr,
-                        range = guardExpr.Range,
-                        debugPoint = DebugPointAtBinding.NoneAtSticky,
-                        trivia =
-                            { SynBindingTrivia.Zero with
-                                LeadingKeyword = SynLeadingKeyword.LetBang mGuard
-                            }
-                    )
+                    mkSynLetBangBinding mGuard patFirst guardExpr DebugPointAtBinding.NoneAtSticky guardExpr.Range
 
                 SynExpr.LetOrUse
                     {
@@ -1845,24 +1791,7 @@ let rec TryTranslateComputationExpression
                             | DebugPointAtSequential.SuppressNeither -> DebugPointAtBinding.Yes mKeyword
 
                         let binding =
-                            SynBinding(
-                                accessibility = None,
-                                kind = SynBindingKind.Normal,
-                                isInline = false,
-                                isMutable = false,
-                                attributes = [],
-                                xmlDoc = PreXmlDoc.Empty,
-                                valData = SynInfo.emptySynValData,
-                                headPat = SynPat.Const(SynConst.Unit, rhsExpr.Range),
-                                returnInfo = None,
-                                expr = rhsExpr,
-                                range = rhsExpr.Range,
-                                debugPoint = sp,
-                                trivia =
-                                    { SynBindingTrivia.Zero with
-                                        LeadingKeyword = SynLeadingKeyword.LetBang mKeyword
-                                    }
-                            )
+                            mkSynLetBangBinding mKeyword (SynPat.Const(SynConst.Unit, rhsExpr.Range)) rhsExpr sp rhsExpr.Range
 
                         Some(
                             TranslateComputationExpression
@@ -1959,55 +1888,10 @@ let rec TryTranslateComputationExpression
                    false,
                    false) ->
 
-            // https://github.com/dotnet/fsharp/issues/19457
-            // Lift CE-only constructs (let!, use!, do!) that prefix the RHS of a plain
-            // 'let p = rhs in innerComp' so the CE translator sees them in CE position.
-            let liftedRewrite =
-                if ceenv.isQuery || isRec then
-                    None
-                else
-                    match binds with
-                    | [ SynBinding(a, bk, isI, isM, attrs, xml, vd, hp, ri, rhsExpr, br, dp, bt) ] ->
-                        let rebind rhs =
-                            SynBinding(a, bk, isI, isM, attrs, xml, vd, hp, ri, rhs, br, dp, bt)
-
-                        let mkOuterLet rhs =
-                            SynExpr.LetOrUse
-                                {
-                                    IsRecursive = false
-                                    IsFromSource = isFromSource
-                                    Bindings = [ rebind rhs ]
-                                    Body = innerComp
-                                    Range = m
-                                    Trivia = trivia
-                                }
-
-                        let rec liftHead rhs =
-                            match rhs with
-                            | (ExprAsLetBang _ | ExprAsUseBang _) & SynExpr.LetOrUse data ->
-                                Some(SynExpr.LetOrUse { data with Body = lift data.Body })
-                            | SynExpr.Sequential(sp, isTrueSeq, (SynExpr.DoBang _ as doBang), body, mSeq, trivSeq) ->
-                                Some(SynExpr.Sequential(sp, isTrueSeq, doBang, lift body, mSeq, trivSeq))
-                            | LetOrUse({ Body = body; IsRecursive = false } as data, false, false) ->
-                                liftHead body
-                                |> Option.map (fun body -> SynExpr.LetOrUse { data with Body = body })
-                            | _ -> None
-
-                        and lift rhs =
-                            match liftHead rhs with
-                            | Some r -> r
-                            | None -> mkOuterLet rhs
-
-                        let liftedNames = collectLiftedBindingNames rhsExpr Set.empty
-
-                        if exprMentionsAnyOf liftedNames innerComp then
-                            None
-                        else
-                            liftHead rhsExpr
-                    | _ -> None
-
-            match liftedRewrite with
-            | Some rewritten -> Some(TranslateComputationExpression ceenv firstTry q varSpace rewritten translatedCtxt)
+            // #19457: a plain 'let' whose rhs begins with let!/use!/do! runs as a nested computation.
+            match tryRebindCeLetWithBangRhs ceenv isRec m trivia binds innerComp with
+            | Some rewritten ->
+                Some(TranslateComputationExpression ceenv CompExprTranslationPass.Initial q varSpace rewritten translatedCtxt)
             | None ->
 
                 // For 'query' check immediately
@@ -2690,24 +2574,12 @@ and ConsumeCustomOpClauses
                     let rebind =
                         if maintainsVarSpaceUsingBind then
                             let binding =
-                                SynBinding(
-                                    accessibility = None,
-                                    kind = SynBindingKind.Normal,
-                                    isInline = false,
-                                    isMutable = false,
-                                    attributes = [],
-                                    xmlDoc = PreXmlDoc.Empty,
-                                    valData = SynInfo.emptySynValData,
-                                    headPat = intoPat,
-                                    returnInfo = None,
-                                    expr = dataCompAfterOp,
-                                    range = dataCompAfterOp.Range,
-                                    debugPoint = DebugPointAtBinding.NoneAtLet,
-                                    trivia =
-                                        { SynBindingTrivia.Zero with
-                                            LeadingKeyword = SynLeadingKeyword.LetBang intoPat.Range
-                                        }
-                                )
+                                mkSynLetBangBinding
+                                    intoPat.Range
+                                    intoPat
+                                    dataCompAfterOp
+                                    DebugPointAtBinding.NoneAtLet
+                                    dataCompAfterOp.Range
 
                             SynExpr.LetOrUse
                                 {
@@ -2751,24 +2623,7 @@ and ConsumeCustomOpClauses
         let rebind =
             if lastUsesBind then
                 let binding =
-                    SynBinding(
-                        accessibility = None,
-                        kind = SynBindingKind.Normal,
-                        isInline = false,
-                        isMutable = false,
-                        attributes = [],
-                        xmlDoc = PreXmlDoc.Empty,
-                        valData = SynInfo.emptySynValData,
-                        headPat = varSpacePat,
-                        returnInfo = None,
-                        expr = dataCompPrior,
-                        range = dataCompPrior.Range,
-                        debugPoint = DebugPointAtBinding.NoneAtLet,
-                        trivia =
-                            { SynBindingTrivia.Zero with
-                                LeadingKeyword = SynLeadingKeyword.LetBang dataCompPrior.Range
-                            }
-                    )
+                    mkSynLetBangBinding dataCompPrior.Range varSpacePat dataCompPrior DebugPointAtBinding.NoneAtLet dataCompPrior.Range
 
                 SynExpr.LetOrUse
                     {
@@ -3040,24 +2895,7 @@ and TranslateComputationExpression (ceenv: ComputationExpressionContext<'a>) fir
 
                 let letBangBind =
                     let binding =
-                        SynBinding(
-                            accessibility = None,
-                            kind = SynBindingKind.Normal,
-                            isInline = false,
-                            isMutable = false,
-                            attributes = [],
-                            xmlDoc = PreXmlDoc.Empty,
-                            valData = SynInfo.emptySynValData,
-                            headPat = SynPat.Const(SynConst.Unit, mUnit),
-                            returnInfo = None,
-                            expr = rhsExpr,
-                            range = rhsExpr.Range,
-                            debugPoint = DebugPointAtBinding.NoneAtDo,
-                            trivia =
-                                { SynBindingTrivia.Zero with
-                                    LeadingKeyword = SynLeadingKeyword.LetBang m
-                                }
-                        )
+                        mkSynLetBangBinding m (SynPat.Const(SynConst.Unit, mUnit)) rhsExpr DebugPointAtBinding.NoneAtDo rhsExpr.Range
 
                     SynExpr.LetOrUse
                         {

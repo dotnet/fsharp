@@ -2400,7 +2400,9 @@ let foo() =
         |> typecheck
         |> shouldSucceed
         
-    // https://github.com/dotnet/fsharp/issues/19457
+    // https://github.com/dotnet/fsharp/issues/19457: a let!/use!/do!-headed RHS of a plain 'let'
+    // inside a CE now runs as a nested computation. The following tests pin both compilation and the
+    // runtime values (scoping in particular).
     [<Fact>]
     let ``Issue 19457 - let bang nested in plain let binding inside task CE should compile`` () =
         FSharp """
@@ -2418,7 +2420,6 @@ let y() =
         |> typecheck
         |> shouldSucceed
 
-    // https://github.com/dotnet/fsharp/issues/19457
     [<Fact>]
     let ``Issue 19457 - let bang nested in plain let returns awaited value not Task`` () =
         FSharp """
@@ -2440,7 +2441,6 @@ let main _ =
         |> compileExeAndRun
         |> shouldSucceed
 
-    // https://github.com/dotnet/fsharp/issues/19457
     [<Fact>]
     let ``Issue 19457 - do bang nested in plain let inside task CE compiles and runs`` () =
         FSharp """
@@ -2465,7 +2465,6 @@ let main _ =
         |> compileExeAndRun
         |> shouldSucceed
 
-    // https://github.com/dotnet/fsharp/issues/19457
     [<Fact>]
     let ``Issue 19457 - multiple sequential let bang nested in plain let inside task CE`` () =
         FSharp """
@@ -2488,7 +2487,6 @@ let main _ =
         |> compileExeAndRun
         |> shouldSucceed
 
-    // https://github.com/dotnet/fsharp/issues/19457
     [<Fact>]
     let ``Issue 19457 - let bang nested in plain let inside async CE`` () =
         FSharp """
@@ -2509,9 +2507,8 @@ let main _ =
         |> compileExeAndRun
         |> shouldSucceed
 
-    // https://github.com/dotnet/fsharp/issues/19457
     [<Fact>]
-    let ``Issue 19457 - let in let in let bang deep nesting inside task CE`` () =
+    let ``Issue 19457 - plain let ahead of let bang in the RHS head chain`` () =
         FSharp """
 module Test
 open System.Threading.Tasks
@@ -2532,33 +2529,10 @@ let main _ =
         |> compileExeAndRun
         |> shouldSucceed
 
-    // https://github.com/dotnet/fsharp/issues/19457
+    // Only the linear let!/use!/do! head chain is rewritten; a match! forming the whole RHS is not,
+    // so it keeps reporting FS0750.
     [<Fact>]
-    let ``Issue 19457 - outer return uses awaited inner value`` () =
-        FSharp """
-module Test
-open System.Threading.Tasks
-let test() =
-    task {
-        let a =
-            let! b = Task.FromResult(42)
-            b
-        return a + 1
-    }
-[<EntryPoint>]
-let main _ =
-    let r = test().Result
-    if r <> 43 then failwithf "expected 43, got %d" r
-    0
-        """
-        |> compileExeAndRun
-        |> shouldSucceed
-
-    // https://github.com/dotnet/fsharp/issues/19457 - regression guard:
-    // match! directly in the RHS of a plain let (at tail position) should NOT trigger
-    // the lift (which would cause infinite recursion). It should produce FS0750 instead.
-    [<Fact>]
-    let ``Issue 19457 - match bang at tail of plain let RHS does not cause infinite recursion`` () =
+    let ``Issue 19457 - match bang forming the whole plain let RHS is out of scope`` () =
         FSharp """
 module Test
 open System.Threading.Tasks
@@ -2576,10 +2550,10 @@ let test() =
         |> shouldFail
         |> withErrorCode 750
 
-    // https://github.com/dotnet/fsharp/issues/19457
-    // When lifting would shadow a variable used in innerComp, refuse the lift (FS0750).
+    // A let!-bound name in the RHS is scoped to the sub-computation, so it must not shadow the outer
+    // 'b' the continuation returns.
     [<Fact>]
-    let ``Issue 19457 - lift refused when it would shadow outer binding used in continuation`` () =
+    let ``Issue 19457 - inner let bang does not shadow outer binding used in continuation`` () =
         FSharp """
 module Test
 open System.Threading.Tasks
@@ -2591,16 +2565,73 @@ let test() =
             b
         return (a, b)
     }
+[<EntryPoint>]
+let main _ =
+    let (a, b) = test().Result
+    if a <> 42 then failwithf "expected a=42, got %d" a
+    if b <> 999 then failwithf "expected b=999, got %d" b
+    0
         """
-        |> asLibrary
-        |> typecheck
-        |> shouldFail
-        |> withErrorCode 750
+        |> compileExeAndRun
+        |> shouldSucceed
 
-    // https://github.com/dotnet/fsharp/issues/19457 - verify that lift still works
-    // when there is no shadowing conflict (the lifted name is not used in innerComp).
+    // A plain 'let' in the RHS head chain is likewise scoped to the sub-computation: the inner 'x'
+    // must not leak into the continuation, so the result is 13, not 14.
     [<Fact>]
-    let ``Issue 19457 - lift works when no shadowing conflict exists`` () =
+    let ``Issue 19457 - plain let inside RHS head chain does not leak into continuation`` () =
+        FSharp """
+module Test
+let test() =
+    async {
+        let x = 1
+        let p =
+            let x = 2
+            let! y = async { return 10 }
+            x + y
+        return p + x
+    }
+[<EntryPoint>]
+let main _ =
+    let r = Async.RunSynchronously(test())
+    if r <> 13 then failwithf "expected 13, got %d" r
+    0
+        """
+        |> compileExeAndRun
+        |> shouldSucceed
+
+    // 'use!' is disposed at the end of the sub-computation (its lexical scope): U inside, then D on
+    // disposal, then A in the outer CE.
+    [<Fact>]
+    let ``Issue 19457 - use bang in plain let RHS is disposed within the sub-computation`` () =
+        FSharp """
+module Test
+open System.Threading.Tasks
+let log = System.Text.StringBuilder()
+let mkDisp (tag: string) =
+    { new System.IDisposable with member _.Dispose() = log.Append tag |> ignore }
+let test() =
+    task {
+        let a =
+            use! h = Task.FromResult(mkDisp "D")
+            log.Append "U" |> ignore
+            99
+        log.Append "A" |> ignore
+        return a
+    }
+[<EntryPoint>]
+let main _ =
+    let r = test().Result
+    if r <> 99 then failwithf "expected 99, got %d" r
+    if log.ToString() <> "UDA" then failwithf "expected UDA, got %s" (log.ToString())
+    0
+        """
+        |> compileExeAndRun
+        |> shouldSucceed
+
+    // The sub-computation is returned exactly once: an explicit 'return' already in tail position must
+    // not be wrapped in a second 'return'.
+    [<Fact>]
+    let ``Issue 19457 - explicit return in RHS tail is not double wrapped`` () =
         FSharp """
 module Test
 open System.Threading.Tasks
@@ -2608,14 +2639,163 @@ let test() =
     task {
         let a =
             let! b = Task.FromResult 42
+            return b
+        return a
+    }
+[<EntryPoint>]
+let main _ =
+    if test().Result <> 42 then failwith "expected 42"
+    0
+        """
+        |> compileExeAndRun
+        |> shouldSucceed
+
+    // The implicit 'return' is pushed into the branches of an 'if' tail, so branches that already
+    // 'return' are left untouched.
+    [<Fact>]
+    let ``Issue 19457 - if with return branches in RHS tail compiles and runs`` () =
+        FSharp """
+module Test
+open System.Threading.Tasks
+let test() =
+    task {
+        let a =
+            let! b = Task.FromResult 42
+            if b > 0 then return b else return 0
+        return a
+    }
+[<EntryPoint>]
+let main _ =
+    if test().Result <> 42 then failwith "expected 42"
+    0
+        """
+        |> compileExeAndRun
+        |> shouldSucceed
+
+    // A return-type annotation on the plain 'let' is carried onto the 'let!' pattern.
+    [<Fact>]
+    let ``Issue 19457 - return type annotation on the plain let is honoured`` () =
+        FSharp """
+module Test
+open System.Threading.Tasks
+let test() =
+    task {
+        let a : int =
+            let! b = Task.FromResult 42
             b
         return a
     }
 [<EntryPoint>]
 let main _ =
-    let r = test().Result
-    if r <> 42 then failwithf "expected 42, got %d" r
+    if test().Result <> 42 then failwith "expected 42"
     0
         """
         |> compileExeAndRun
         |> shouldSucceed
+
+    // A parenthesized RHS is unwrapped: parentheses are not valid computation-expression body syntax.
+    [<Fact>]
+    let ``Issue 19457 - parenthesized RHS compiles and runs`` () =
+        FSharp """
+module Test
+let test() =
+    async {
+        let a = (
+            let! b = async { return 41 }
+            b + 1)
+        return a
+    }
+[<EntryPoint>]
+let main _ =
+    if Async.RunSynchronously(test()) <> 42 then failwith "expected 42"
+    0
+        """
+        |> compileExeAndRun
+        |> shouldSucceed
+
+    // A `try`/`with` (or `try`/`finally`) in tail position is an ordinary value expression, not a
+    // computation-expression control construct: it must be returned as a whole rather than having its
+    // body treated as CE code (which would silently yield unit).
+    [<Fact>]
+    let ``Issue 19457 - try with in RHS tail returns the value`` () =
+        FSharp """
+module Test
+open System.Threading.Tasks
+let test() =
+    task {
+        let x =
+            let! a = Task.FromResult 41
+            try a + 1 with _ -> 0
+        return x
+    }
+[<EntryPoint>]
+let main _ =
+    if test().Result <> 42 then failwith "expected 42"
+    0
+        """
+        |> compileExeAndRun
+        |> shouldSucceed
+
+    // A leading statement before the `let!` is carried into the nested computation and runs exactly
+    // once, in order, before the bind.
+    [<Fact>]
+    let ``Issue 19457 - leading statement before the bang is preserved`` () =
+        FSharp """
+module Test
+open System.Threading.Tasks
+let mutable count = 0
+let test() =
+    task {
+        let x =
+            count <- count + 1
+            let! b = Task.FromResult 5
+            b + 1
+        return x
+    }
+[<EntryPoint>]
+let main _ =
+    if test().Result <> 6 then failwith "expected 6"
+    if count <> 1 then failwithf "expected the statement to run once, ran %d times" count
+    0
+        """
+        |> compileExeAndRun
+        |> shouldSucceed
+
+    // A function binding is not a simple value: it keeps the ordinary 'let' translation and reports
+    // FS0750 rather than being rebound as 'let! (f x) = ...'.
+    [<Fact>]
+    let ``Issue 19457 - function binding with bang body is not lifted`` () =
+        FSharp """
+module Test
+open System.Threading.Tasks
+let test() =
+    task {
+        let f x =
+            let! b = Task.FromResult 42
+            b + x
+        return f 1
+    }
+        """
+        |> asLibrary
+        |> typecheck
+        |> shouldFail
+        |> withErrorCode 750
+
+    // A mutable binding is likewise not lifted (its mutability would otherwise be silently dropped).
+    [<Fact>]
+    let ``Issue 19457 - mutable binding with bang RHS is not lifted`` () =
+        FSharp """
+module Test
+open System.Threading.Tasks
+let test() =
+    task {
+        let mutable a =
+            let! b = Task.FromResult 42
+            b
+        return a
+    }
+        """
+        |> asLibrary
+        |> typecheck
+        |> shouldFail
+        |> withErrorCode 750
