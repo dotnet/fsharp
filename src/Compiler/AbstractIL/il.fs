@@ -3375,6 +3375,8 @@ let mkILSimpleTypar nm =
         MetadataIndex = NoMetadataIdx
     }
 
+/// Returns gp with all constraint state cleared. CustomAttrsStored is also reset because
+/// some constraints (notably IsUnmanagedAttribute) are encoded there.
 let stripILGenericParamConstraints (gp: ILGenericParameterDef) =
     { gp with
         Constraints = []
@@ -3382,6 +3384,7 @@ let stripILGenericParamConstraints (gp: ILGenericParameterDef) =
         HasNotNullableValueTypeConstraint = false
         HasDefaultConstructorConstraint = false
         HasAllowsRefStruct = false
+        CustomAttrsStored = storeILCustomAttrs emptyILCustomAttrs
     }
 
 let genericParamOfGenericActual (_ga: ILType) = mkILSimpleTypar "T"
@@ -3976,6 +3979,18 @@ let mkNormalLdsfld fspec = I_ldsfld(Nonvolatile, fspec)
 let mkNormalLdfld fspec = I_ldfld(Aligned, Nonvolatile, fspec)
 
 let mkNormalLdflda fspec = I_ldflda fspec
+
+/// Matches an IL instruction that loads or stores a field, returning the referenced field spec.
+[<return: Struct>]
+let (|ILFieldInstr|_|) instr =
+    match instr with
+    | I_ldsfld(_, fspec)
+    | I_ldfld(_, _, fspec)
+    | I_ldsflda fspec
+    | I_ldflda fspec
+    | I_stsfld(_, fspec)
+    | I_stfld(_, _, fspec) -> ValueSome fspec
+    | _ -> ValueNone
 
 let mkNormalLdobj dt = I_ldobj(Aligned, Nonvolatile, dt)
 

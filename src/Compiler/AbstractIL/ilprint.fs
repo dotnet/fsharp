@@ -333,7 +333,7 @@ and goutput_permission _env os p =
              | ILSecurityAction.DemandChoice -> "demandchoice")
 
     match p with
-    | ILSecurityDecl(sa, b) ->
+    | ILSecurityDecl.ILSecurityDecl(sa, b) ->
         output_string os " .permissionset "
         output_security_action os sa
         output_string os " = ("

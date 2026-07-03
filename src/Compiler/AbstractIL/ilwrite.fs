@@ -1506,7 +1506,7 @@ and GenCustomAttrsPass3Or4 cenv hca (attrs: ILAttributes) =
 // ILSecurityDecl --> DeclSecurity rows
 // -------------------------------------------------------------------- *)
 
-let rec GetSecurityDeclRow cenv hds (ILSecurityDecl (action, s)) =
+let rec GetSecurityDeclRow cenv hds (ILSecurityDecl.ILSecurityDecl (action, s)) =
     UnsharedRow
         [| UShort (uint16 (List.assoc action (Lazy.force ILSecurityActionMap)))
            HasDeclSecurity (fst hds, snd hds)

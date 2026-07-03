@@ -2085,8 +2085,10 @@ FSharp.Compiler.CodeAnalysis.FSharpCheckFileAnswer: Int32 GetHashCode(System.Col
 FSharp.Compiler.CodeAnalysis.FSharpCheckFileAnswer: Int32 Tag
 FSharp.Compiler.CodeAnalysis.FSharpCheckFileAnswer: Int32 get_Tag()
 FSharp.Compiler.CodeAnalysis.FSharpCheckFileAnswer: System.String ToString()
+FSharp.Compiler.CodeAnalysis.FSharpCheckFileResults: Boolean HasErrors
 FSharp.Compiler.CodeAnalysis.FSharpCheckFileResults: Boolean HasFullTypeCheckInfo
 FSharp.Compiler.CodeAnalysis.FSharpCheckFileResults: Boolean IsRelativeNameResolvableFromSymbol(FSharp.Compiler.Text.Position, Microsoft.FSharp.Collections.FSharpList`1[System.String], FSharp.Compiler.Symbols.FSharpSymbol)
+FSharp.Compiler.CodeAnalysis.FSharpCheckFileResults: Boolean get_HasErrors()
 FSharp.Compiler.CodeAnalysis.FSharpCheckFileResults: Boolean get_HasFullTypeCheckInfo()
 FSharp.Compiler.CodeAnalysis.FSharpCheckFileResults: FSharp.Compiler.CodeAnalysis.FSharpProjectContext ProjectContext
 FSharp.Compiler.CodeAnalysis.FSharpCheckFileResults: FSharp.Compiler.CodeAnalysis.FSharpProjectContext get_ProjectContext()
@@ -5620,6 +5622,7 @@ FSharp.Compiler.Symbols.FSharpMemberOrFunctionOrValue: Boolean EventIsStandard
 FSharp.Compiler.Symbols.FSharpMemberOrFunctionOrValue: Boolean HasGetterMethod
 FSharp.Compiler.Symbols.FSharpMemberOrFunctionOrValue: Boolean HasSetterMethod
 FSharp.Compiler.Symbols.FSharpMemberOrFunctionOrValue: Boolean HasSignatureFile
+FSharp.Compiler.Symbols.FSharpMemberOrFunctionOrValue: Boolean IsPropertyAccessor
 FSharp.Compiler.Symbols.FSharpMemberOrFunctionOrValue: Boolean IsActivePattern
 FSharp.Compiler.Symbols.FSharpMemberOrFunctionOrValue: Boolean IsBaseValue
 FSharp.Compiler.Symbols.FSharpMemberOrFunctionOrValue: Boolean IsCompilerGenerated
@@ -5655,6 +5658,7 @@ FSharp.Compiler.Symbols.FSharpMemberOrFunctionOrValue: Boolean get_EventIsStanda
 FSharp.Compiler.Symbols.FSharpMemberOrFunctionOrValue: Boolean get_HasGetterMethod()
 FSharp.Compiler.Symbols.FSharpMemberOrFunctionOrValue: Boolean get_HasSetterMethod()
 FSharp.Compiler.Symbols.FSharpMemberOrFunctionOrValue: Boolean get_HasSignatureFile()
+FSharp.Compiler.Symbols.FSharpMemberOrFunctionOrValue: Boolean get_IsPropertyAccessor()
 FSharp.Compiler.Symbols.FSharpMemberOrFunctionOrValue: Boolean get_IsActivePattern()
 FSharp.Compiler.Symbols.FSharpMemberOrFunctionOrValue: Boolean get_IsBaseValue()
 FSharp.Compiler.Symbols.FSharpMemberOrFunctionOrValue: Boolean get_IsCompilerGenerated()
@@ -6132,9 +6136,11 @@ FSharp.Compiler.Syntax.DebugPointAtLeafExpr: Boolean Equals(FSharp.Compiler.Synt
 FSharp.Compiler.Syntax.DebugPointAtLeafExpr: Boolean Equals(FSharp.Compiler.Syntax.DebugPointAtLeafExpr, System.Collections.IEqualityComparer)
 FSharp.Compiler.Syntax.DebugPointAtLeafExpr: Boolean Equals(System.Object)
 FSharp.Compiler.Syntax.DebugPointAtLeafExpr: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
-FSharp.Compiler.Syntax.DebugPointAtLeafExpr: FSharp.Compiler.Syntax.DebugPointAtLeafExpr NewYes(FSharp.Compiler.Text.Range)
-FSharp.Compiler.Syntax.DebugPointAtLeafExpr: FSharp.Compiler.Text.Range Item
-FSharp.Compiler.Syntax.DebugPointAtLeafExpr: FSharp.Compiler.Text.Range get_Item()
+FSharp.Compiler.Syntax.DebugPointAtLeafExpr: Boolean get_isHidden()
+FSharp.Compiler.Syntax.DebugPointAtLeafExpr: Boolean isHidden
+FSharp.Compiler.Syntax.DebugPointAtLeafExpr: FSharp.Compiler.Syntax.DebugPointAtLeafExpr NewYes(Boolean, FSharp.Compiler.Text.Range)
+FSharp.Compiler.Syntax.DebugPointAtLeafExpr: FSharp.Compiler.Text.Range get_range()
+FSharp.Compiler.Syntax.DebugPointAtLeafExpr: FSharp.Compiler.Text.Range range
 FSharp.Compiler.Syntax.DebugPointAtLeafExpr: Int32 GetHashCode()
 FSharp.Compiler.Syntax.DebugPointAtLeafExpr: Int32 GetHashCode(System.Collections.IEqualityComparer)
 FSharp.Compiler.Syntax.DebugPointAtLeafExpr: Int32 Tag
