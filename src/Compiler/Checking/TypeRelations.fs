@@ -49,19 +49,10 @@ let getTypeSubsumptionCache =
         new Caches.Cache<TTypeCacheKey, bool>(options, "typeSubsumptionCache")
     Extras.WeakMap.getOrCreate factory
 
-/// Implements a :> b without coercion based on finalized (no type variable) types
-// Note: This relation is approximate and not part of the language specification.
-//
-//  Some appropriate uses:
-//     patcompile.fs: IsDiscrimSubsumedBy (approximate warning for redundancy of 'isinst' patterns)
-//     tc.fs: TcRuntimeTypeTest (approximate warning for redundant runtime type tests)
-//     tc.fs: TcExnDefnCore (error for bad exception abbreviation)
-//     ilxgen.fs: GenCoerce (omit unnecessary castclass or isinst instruction)
-//
-let rec TypeDefinitelySubsumesTypeNoCoercion ndeep g amap m ty1 ty2 =
+let rec private subsumesNoCoercionAux allowValueTypeChain ndeep g amap m ty1 ty2 =
 
     if ndeep > 100 then
-        error(InternalError("Large class hierarchy (possibly recursive, detected in TypeDefinitelySubsumesTypeNoCoercion), ty1 = " + (DebugPrint.showType ty1), m))
+        error(InternalError("Large class hierarchy (possibly recursive, detected in subsumesNoCoercionAux), ty1 = " + (DebugPrint.showType ty1), m))
 
     if ty1 === ty2 then true
     elif typeEquiv g ty1 ty2 then true
@@ -72,16 +63,31 @@ let rec TypeDefinitelySubsumesTypeNoCoercion ndeep g amap m ty1 ty2 =
         (typeEquiv g ty1 g.obj_ty_ambivalent && isRefTy g ty2) ||
         // Follow the supertype chain
         (isAppTy g ty2 &&
-        isRefTy g ty2 &&
+        (allowValueTypeChain || isRefTy g ty2) &&
 
         ((match GetSuperTypeOfType g amap m ty2 with
             | None -> false
-            | Some ty -> TypeDefinitelySubsumesTypeNoCoercion (ndeep+1) g amap m ty1 ty) ||
+            | Some ty -> subsumesNoCoercionAux allowValueTypeChain (ndeep+1) g amap m ty1 ty) ||
 
         // Follow the interface hierarchy
         (isInterfaceTy g ty1 &&
             ty2 |> GetImmediateInterfacesOfType SkipUnrefInterfaces.Yes g amap m
-                |> List.exists (TypeDefinitelySubsumesTypeNoCoercion (ndeep+1) g amap m ty1))))
+                |> List.exists (subsumesNoCoercionAux allowValueTypeChain (ndeep+1) g amap m ty1))))
+
+/// Implements a :> b without coercion based on finalized (no type variable) types
+// Note: This relation is approximate and not part of the language specification.
+//
+//  Some appropriate uses:
+//     patcompile.fs: IsDiscrimSubsumedBy (approximate warning for redundancy of 'isinst' patterns)
+//     tc.fs: TcRuntimeTypeTest (approximate warning for redundant runtime type tests)
+//     tc.fs: TcExnDefnCore (error for bad exception abbreviation)
+//     ilxgen.fs: GenCoerce (omit unnecessary castclass or isinst instruction)
+//
+let TypeDefinitelySubsumesTypeNoCoercion ndeep g amap m ty1 ty2 =
+    subsumesNoCoercionAux false ndeep g amap m ty1 ty2
+
+let TypeSubsumesTypeForExhaustiveness ndeep g amap m ty1 ty2 =
+    subsumesNoCoercionAux true ndeep g amap m ty1 ty2
 
 let stripAll stripMeasures g ty =
     if stripMeasures then
