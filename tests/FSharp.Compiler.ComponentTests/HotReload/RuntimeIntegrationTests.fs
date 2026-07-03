@@ -5073,8 +5073,15 @@ let probe () = greetingPrefix + "|" + Greeter.Message()
             Assert.DoesNotContain("DeltaEmissionFailed", message)
         | Error other -> failwithf "[%s] expected UnsupportedEdit, got %A" testLabel other
 
+    /// Triple-quoted literals inherit the source file's line endings, so a Windows
+    /// checkout gives them CRLF while the update fixtures below splice with plain
+    /// newline needles that then silently fail to match. Normalize so the fixture
+    /// surgery is line-ending-agnostic.
+    let private normalizeNewlines (source: string) = source.Replace("\r\n", "\n")
+
     let private positionalPipeBaselineSource =
-        """
+        normalizeNewlines
+            """
 module Sample.PositionalPipes
 
 let transform (input: int list) =
@@ -5093,7 +5100,8 @@ let probe () = transform [ 1; 2; 3 ] |> List.sum
             "let transform (input: int list) =\n    // inserted line\n    let bias = 2\n    input")
 
     let private positionalEndpointBaselineSource =
-        """
+        normalizeNewlines
+            """
 module Sample.PositionalEndpoints
 
 let handler input =
@@ -5175,7 +5183,8 @@ let probe input = endpoints |> List.sumBy (fun endpoint -> endpoint input)
             (fun _ result -> assertUnsupportedEdit "value-list-count-mismatch" result)
 
     let private taskStableResumeBaselineSource =
-        """
+        normalizeNewlines
+            """
 namespace Sample
 
 open System.Threading.Tasks
@@ -5307,7 +5316,8 @@ type Type =
         // cannot align the chain and must fail closed with a precise message (never
         // silently pair shifted classes - the delta would patch the wrong rows).
         let baseline =
-            """
+            normalizeNewlines
+                """
 namespace Sample
 
 type Type =
@@ -5367,7 +5377,8 @@ type Type =
                 )
 
             let baselineSource =
-                """
+                normalizeNewlines
+                    """
 module Sample.PipeChain
 
 let transform (input: int list) =
