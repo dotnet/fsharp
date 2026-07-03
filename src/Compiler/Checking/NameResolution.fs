@@ -1017,8 +1017,11 @@ let CheckForDirectReferenceToGeneratedType (tcref: TyconRef, genOk, m) =
 let AddEntityForProvidedType (amap: Import.ImportMap, modref: ModuleOrNamespaceRef, resolutionEnvironment, st: Tainted<ProvidedType>, m) =
     let importProvidedType t = Import.ImportProvidedType amap m t
     let isSuppressRelocate = amap.g.isInteractive || st.PUntaint((fun st -> st.IsSuppressRelocate), m)
-    let tycon = Construct.NewProvidedTycon(resolutionEnvironment, st, importProvidedType, isSuppressRelocate, m)
-    modref.ModuleOrNamespaceType.AddProvidedTypeEntity tycon
+    let providedTypeName = st.PUntaint((fun st -> st.Name), m)
+    let tycon =
+        modref.ModuleOrNamespaceType.GetOrInternProvidedEntity(
+            providedTypeName,
+            (fun () -> Construct.NewProvidedTycon(resolutionEnvironment, st, importProvidedType, isSuppressRelocate, m)))
     let tcref = modref.NestedTyconRef tycon
     System.Diagnostics.Debug.Assert(modref.TryDeref.IsSome)
     tcref
@@ -2198,8 +2201,6 @@ type TcResultsSinkImpl(tcGlobals, ?sourceText: ISourceText) =
     let capturedOpenDeclarations = ResizeArray<OpenDeclaration>()
     let capturedFormatSpecifierLocations = ResizeArray<_>()
 
-    let capturedFormatSpecifierRanges = HashSet<range>()
-
     let capturedNameResolutionIdentifiers =
         HashSet<pos * string>
             { new IEqualityComparer<_> with
@@ -2304,8 +2305,7 @@ type TcResultsSinkImpl(tcGlobals, ?sourceText: ISourceText) =
                     capturedMethodGroupResolutions.Add(CapturedNameResolution(itemMethodGroup, [], occurrenceType, nenv, ad, m))
 
         member sink.NotifyFormatSpecifierLocation(m, numArgs) =
-            if capturedFormatSpecifierRanges.Add(m) then
-                capturedFormatSpecifierLocations.Add((m, numArgs))
+            capturedFormatSpecifierLocations.Add((m, numArgs))
 
         member sink.NotifyRelatedSymbolUse(m, item, kind) =
             if allowedRange m then
@@ -2337,6 +2337,61 @@ let TemporarilySuspendReportingTypecheckResultsToSink (sink: TcResultsSink) =
     sink.CurrentSink <- None
     { new System.IDisposable with member x.Dispose() = sink.CurrentSink <- old }
 
+/// A sink that records all notifications so they can later be replayed to the wrapped sink or discarded.
+/// Query members are forwarded to the wrapped sink so results computed while buffering (e.g. printf
+/// format-specifier ranges) are accurate when replayed.
+type private BufferingTypecheckResultsSink(sink: ITypecheckResultsSink) =
+    let buffered = ResizeArray<unit -> unit>()
+    member _.Replay() = for notify in buffered do notify ()
+
+    interface ITypecheckResultsSink with
+        member _.NotifyEnvWithScope(m, nenv, ad) = buffered.Add(fun () -> sink.NotifyEnvWithScope(m, nenv, ad))
+        member _.NotifyExprHasType(ty, nenv, ad, m) = buffered.Add(fun () -> sink.NotifyExprHasType(ty, nenv, ad, m))
+        member _.NotifyExprHasTypeSynthetic(ty, nenv, ad, m) = buffered.Add(fun () -> sink.NotifyExprHasTypeSynthetic(ty, nenv, ad, m))
+        member _.NotifyNameResolution(p, item, tpinst, occ, nenv, ad, m, replace) = buffered.Add(fun () -> sink.NotifyNameResolution(p, item, tpinst, occ, nenv, ad, m, replace))
+        member _.NotifyMethodGroupNameResolution(p, item, itemGroup, tpinst, occ, nenv, ad, m, replace) = buffered.Add(fun () -> sink.NotifyMethodGroupNameResolution(p, item, itemGroup, tpinst, occ, nenv, ad, m, replace))
+        member _.NotifyFormatSpecifierLocation(m, numArgs) = buffered.Add(fun () -> sink.NotifyFormatSpecifierLocation(m, numArgs))
+        member _.NotifyRelatedSymbolUse(m, item, kind) = buffered.Add(fun () -> sink.NotifyRelatedSymbolUse(m, item, kind))
+        member _.NotifyOpenDeclaration decl = buffered.Add(fun () -> sink.NotifyOpenDeclaration decl)
+        member _.CurrentSourceText = sink.CurrentSourceText
+        member _.FormatStringCheckContext = sink.FormatStringCheckContext
+
+/// Temporarily buffer reporting to the sink, returning a `replay` action that flushes the buffered
+/// notifications to the previously active sink (a no-op if there was none) and a disposable that restores it.
+let private bufferReportingToSink (sink: TcResultsSink) =
+    match sink.CurrentSink with
+    | None -> (fun () -> ()), { new System.IDisposable with member _.Dispose() = () }
+    | Some inner ->
+        let buffer = BufferingTypecheckResultsSink inner
+        sink.CurrentSink <- Some(buffer :> ITypecheckResultsSink)
+        buffer.Replay, { new System.IDisposable with member _.Dispose() = sink.CurrentSink <- Some inner }
+
+/// Run `compute` with all typecheck-results reporting buffered: its sink notifications and diagnostics are
+/// recorded rather than emitted. If `commitWhen` holds for the result they are flushed to the sink and
+/// diagnostics logger that were active before buffering began; otherwise they are dropped. Diagnostics from a
+/// `compute` that raises are always flushed so the error still surfaces. Lets a speculative pass defer
+/// reporting until its result is known to be kept. `commitWhen` runs after reporting is restored, so it must
+/// be side-effect-free. `loggerName` names the internal capturing logger for debugging.
+let RunWithBufferedReporting (sink: TcResultsSink) (loggerName: string) (compute: unit -> 'T) (commitWhen: 'T -> bool) : 'T =
+    let outerLogger = DiagnosticsThreadStatics.DiagnosticsLogger
+    let capturingLogger = CapturingDiagnosticsLogger(loggerName)
+    let replaySink, restoreSink = bufferReportingToSink sink
+
+    let result =
+        use _restoreSink = restoreSink
+        use _restoreLogger = UseDiagnosticsLogger capturingLogger
+
+        try
+            compute ()
+        with _ ->
+            capturingLogger.CommitDelayedDiagnostics outerLogger
+            reraise ()
+
+    if commitWhen result then
+        replaySink ()
+        capturingLogger.CommitDelayedDiagnostics outerLogger
+
+    result
 
 /// Report the active name resolution environment for a specific source range
 let CallEnvSink (sink: TcResultsSink) (scopem, nenv, ad) =
@@ -4105,7 +4160,7 @@ let ResolveNestedField sink (ncenv: NameResolver) nenv ad recdTy lid =
             match lid with
             | id :: rest ->
                 lookupField recdTy id
-                |?> List.map (fun x -> id, x, rest)
+                |?> List.map (fun x -> ResolutionInfo.Empty, None, id, x, rest)
             | _ -> NoResultsOrUsefulErrors
 
         let tyconSearch ad () =
@@ -4118,10 +4173,10 @@ let ResolveNestedField sink (ncenv: NameResolver) nenv ad recdTy lid =
                 if isNil tcrefs then
                     NoResultsOrUsefulErrors
                 else
-                    ResolveLongIdentInTyconRefs ResultCollectionSettings.AllResults ncenv nenv LookupKind.RecdField 1 tyconId.idRange ad fieldId rest typeNameResInfo fieldId.idRange tcrefs None
+                    ResolveLongIdentInTyconRefs ResultCollectionSettings.AllResults ncenv nenv LookupKind.RecdField 1 tyconId.idRange ad fieldId rest typeNameResInfo tyconId.idRange tcrefs None
                     |?> List.choose (fun x ->
                         match x with
-                        | _, (Item.RecdField _ as item), rest -> Some (fieldId, item, rest)
+                        | resInfo, (Item.RecdField _ as item), rest -> Some (resInfo, Some tyconId, fieldId, item, rest)
                         | _ -> None)
             | _ -> NoResultsOrUsefulErrors
 
@@ -4130,11 +4185,11 @@ let ResolveNestedField sink (ncenv: NameResolver) nenv ad recdTy lid =
             | [] -> NoResultsOrUsefulErrors
             | modOrNsId :: rest ->
                 ResolveLongIdentAsModuleOrNamespaceThen sink ResultCollectionSettings.AtMostOneResult ncenv.amap modOrNsId.idRange OpenQualified nenv ad modOrNsId rest false ShouldNotifySink.Yes (ResolveFieldInModuleOrNamespace ncenv nenv ad)
-                |?> List.map (fun (_, FieldResolution(rfinfo, _), restAfterField) ->
+                |?> List.map (fun (resInfo, FieldResolution(rfinfo, _), restAfterField) ->
                     let fieldId = rest.[ rest.Length - restAfterField.Length - 1 ]
-                    fieldId, Item.RecdField rfinfo, restAfterField)
+                    resInfo, None, fieldId, Item.RecdField rfinfo, restAfterField)
 
-        let fieldId, item, rest =
+        let resInfo, tyconIdOpt, fieldId, item, rest =
             let search =
                 if isAnonRecdTy then
                     fieldSearch ()
@@ -4144,6 +4199,12 @@ let ResolveNestedField sink (ncenv: NameResolver) nenv ad recdTy lid =
             search
             |> AtMostOneResult id.idRange
             |> ForceRaise
+
+        match tyconIdOpt with
+        | Some _ ->
+            // Report every type-qualifier occurrence before grouping collapses duplicates; UseInType matches ResolveField.
+            ResolutionInfo.SendEntityPathToSink(sink, ncenv, nenv, ItemOccurrence.UseInType, ad, resInfo, ResultTyparChecker(fun () -> true))
+        | None -> ()
 
         let idsBeforeField =
             if isAnonRecdTy then

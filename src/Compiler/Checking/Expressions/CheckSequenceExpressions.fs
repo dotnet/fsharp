@@ -431,7 +431,17 @@ let TcSequenceExpression (cenv: TcFileState) env tpenv comp (overallTy: OverallT
                 }
 
             if enableImplicitYield then
-                let hasTypeUnit, _ty, expr, tpenv = TryTcStmt cenv env tpenv comp
+                // The body is speculatively type-checked once to classify it as a statement or a yielded
+                // element. Reporting is buffered so the kept interpretation reports exactly once (else
+                // format-specifier locations and diagnostics double - #16419): a unit statement keeps the
+                // probe result and its buffered reporting is committed; a yielded element drops it and
+                // TcExprFlex re-checks with the element's target type.
+                let hasTypeUnit, _ty, expr, tpenv =
+                    RunWithBufferedReporting
+                        cenv.tcSink
+                        "SeqImplicitYieldProbe"
+                        (fun () -> TryTcStmt cenv env tpenv comp)
+                        (fun (hasTypeUnit, _, _, _) -> hasTypeUnit)
 
                 if hasTypeUnit then
                     Choice2Of2 expr, tpenv
