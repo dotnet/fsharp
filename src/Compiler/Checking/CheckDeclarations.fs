@@ -421,7 +421,6 @@ let private CheckDuplicatesAbstractMethodParamsSig (typeSpecs:  SynTypeDefnSig l
         | _ -> ()
         
 module TcRecdUnionAndEnumDeclarations =
-    /// Sequence the deferred attribute fixups produced while checking fields/cases into a single thunk.
     let private combineFixups (fixups: (unit -> unit) list) () = for fixup in fixups do fixup ()
 
     let CombineReprAccess parent vis = 
@@ -4275,22 +4274,20 @@ module EstablishTypeDefinitionCores =
         // checking the members.
         let withBaseValsAndSafeInitInfos = 
             (envMutRecPrelim, withAttrs) ||> MutRecShapes.mapTyconsWithEnv (fun envForDecls (origInfo, tyconAndAttrsOpt) -> 
-                let info, fixupReprAttrs = 
+                let info, tyconOpt, fixupFinalAttrs = 
                     match origInfo, tyconAndAttrsOpt with 
-                    | (typeDefCore, _, _), Some (tycon, (attrs, _)) -> TcTyconDefnCore_Phase1G_EstablishRepresentation cenv envForDecls tpenv inSig typeDefCore tycon attrs
-                    | _ -> (None, NoSafeInitInfo), ignore
-                let tyconOpt, fixupFinalAttrs = 
-                    match tyconAndAttrsOpt with
-                    | None -> None, fixupReprAttrs
-                    | Some (tycon, (_prelimAttrs, getFinalAttrs)) ->
+                    | (typeDefCore, _, _), Some (tycon, (attrs, getFinalAttrs)) ->
+                        let info, fixupReprAttrs = TcTyconDefnCore_Phase1G_EstablishRepresentation cenv envForDecls tpenv inSig typeDefCore tycon attrs
                         let fixupTyparAttrs =
                             match typarAttrFixups.TryGetValue tycon.Stamp with
                             | true, f -> f
                             | _ -> ignore
-                        Some tycon, (fun () ->
+                        let fixupFinalAttrs () =
                             tycon.entity_attribs <- WellKnownEntityAttribs.Create(getFinalAttrs())
                             fixupTyparAttrs envForDecls
-                            fixupReprAttrs())
+                            fixupReprAttrs()
+                        info, Some tycon, fixupFinalAttrs
+                    | _ -> (None, NoSafeInitInfo), None, ignore
 
                 (origInfo, tyconOpt, fixupFinalAttrs, info))
                 

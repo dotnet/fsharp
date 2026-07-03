@@ -4594,8 +4594,6 @@ and TcTyparDecls (cenv: cenv) env synTypars =
     fixup env
     typars
 
-/// Like TcTyparDecls, but for the type parameters of a recursive-group type checked in Phase1A: also
-/// returns a fixup that re-resolves rec-scoped attributes once the group's entities are established.
 and TcTyparDeclsCanFail (cenv: cenv) env synTypars =
     let typars, fixups = synTypars |> List.map (TcTyparDecl cenv env) |> List.unzip
     typars, (fun envFinal -> fixups |> List.iter (fun fixup -> fixup envFinal))
