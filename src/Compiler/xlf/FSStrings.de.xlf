@@ -264,7 +264,7 @@
       </trans-unit>
       <trans-unit id="IndeterminateType">
         <source>The type of this expression could not be inferred before accessing its members. Add a type annotation, e.g. (expr: SomeType), to constrain the type before this point.</source>
-        <target state="new">Lookup für ein Objekt unbestimmten Typs, der auf Informationen vor diesem Programmpunkt basiert. Möglicherweise ist vor diesem Programmpunkt eine Typanmerkung erforderlich, um den Objekttyp einzuschränken. Dadurch kann das Lookup möglicherweise aufgelöst werden.</target>
+        <target state="new">The type of this expression could not be inferred before accessing its members. Add a type annotation, e.g. (expr: SomeType), to constrain the type before this point.</target>
         <note />
       </trans-unit>
       <trans-unit id="NameClash1">
