@@ -2105,21 +2105,19 @@ type ModuleOrNamespaceType(kind: ModuleOrNamespaceKind, vals: QueueList<Val>, en
 
     /// Interns a provided-type entity by mangled name; callers must use the returned entity.
     member mtyp.GetOrInternProvidedEntity(mangledName: string, create: unit -> Entity) : Entity =
-        mtyp.ProvidedEntityInternTable.GetOrAdd(mangledName, fun _ -> lazy (let entity = create () in mtyp.AddProvidedTypeEntity entity; entity)).Value
+        mtyp.ProvidedEntityInternTable.GetOrAddLazy(mangledName, fun _ -> let entity = create () in mtyp.AddProvidedTypeEntity entity; entity)
 
     /// Interns a provided-namespace entity by mangled name, reusing any existing entity of that name; callers must use the returned entity.
     member mtyp.GetOrInternNamespaceEntity(mangledName: string, create: unit -> Entity) : Entity =
-        mtyp.ProvidedEntityInternTable.GetOrAdd(
+        mtyp.ProvidedEntityInternTable.GetOrAddLazy(
             mangledName,
             fun _ ->
-                lazy
-                    match (mtyp.ModulesAndNamespacesByDemangledName: NameMap<ModuleOrNamespace>).TryFind mangledName with
-                    | Some existing -> existing
-                    | None ->
-                        let entity = create ()
-                        mtyp.AddModuleOrNamespaceByMutation entity
-                        entity)
-            .Value
+                match (mtyp.ModulesAndNamespacesByDemangledName: NameMap<ModuleOrNamespace>).TryFind mangledName with
+                | Some existing -> existing
+                | None ->
+                    let entity = create ()
+                    mtyp.AddModuleOrNamespaceByMutation entity
+                    entity)
 #endif 
           
     /// Return a new module or namespace type with an entity added.
