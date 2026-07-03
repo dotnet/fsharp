@@ -880,7 +880,9 @@ module internal TestHelpers =
         File.WriteAllText(projPath, projContents)
 
         let psi = System.Diagnostics.ProcessStartInfo()
-        psi.FileName <- Path.Combine(__SOURCE_DIRECTORY__, "..", "..", "..", ".dotnet", "dotnet")
+        // Resolve the dotnet host like the rest of the test framework: repo-local .dotnet
+        // first, PATH fallback otherwise (the hand-rolled path misses on some CI images).
+        psi.FileName <- TestFramework.initialConfig.DotNetExe
         psi.ArgumentList.Add("build")
         psi.ArgumentList.Add(projPath)
         psi.ArgumentList.Add("-c")

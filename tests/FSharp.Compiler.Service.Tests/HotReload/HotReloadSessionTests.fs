@@ -452,7 +452,7 @@ module HotReloadSessionTests =
     let private assertReplayEndpointTypeNames testLabel (typeNames: string list) =
         let endpointNames =
             typeNames
-            |> List.filter (fun name -> name.Contains("endpoints@hotreload", StringComparison.Ordinal))
+            |> List.filter (fun name -> name.Contains("endpoints@hotreload"))
             |> List.sort
 
         Assert.NotEmpty endpointNames
@@ -460,8 +460,8 @@ module HotReloadSessionTests =
         Assert.Contains(
             endpointNames,
             fun name ->
-                name.Contains("endpoints@hotreload", StringComparison.Ordinal)
-                && not (name.Contains("@hotreload#g0_o", StringComparison.Ordinal)))
+                name.Contains("endpoints@hotreload")
+                && not (name.Contains("@hotreload#g0_o")))
 
         printfn "[%s] replay endpoint synthesized TypeDefs: %s" testLabel (endpointNames |> String.concat "; ")
         endpointNames
@@ -469,20 +469,20 @@ module HotReloadSessionTests =
     let private assertMixedEndpointTypeNames testLabel (typeNames: string list) =
         let endpointNames =
             typeNames
-            |> List.filter (fun name -> name.Contains("endpoints@hotreload", StringComparison.Ordinal))
+            |> List.filter (fun name -> name.Contains("endpoints@hotreload"))
             |> List.sort
 
         Assert.NotEmpty endpointNames
 
         Assert.Contains(
             endpointNames,
-            fun name -> name.Contains("@hotreload#g0_o", StringComparison.Ordinal))
+            fun name -> name.Contains("@hotreload#g0_o"))
 
         Assert.Contains(
             endpointNames,
             fun name ->
-                name.Contains("endpoints@hotreload", StringComparison.Ordinal)
-                && not (name.Contains("@hotreload#g0_o", StringComparison.Ordinal)))
+                name.Contains("endpoints@hotreload")
+                && not (name.Contains("@hotreload#g0_o")))
 
         printfn "[%s] mixed endpoint synthesized TypeDefs: %s" testLabel (endpointNames |> String.concat "; ")
         endpointNames
@@ -1451,7 +1451,7 @@ let probe input =
                     baselineView.Baseline.MethodTokens
                     |> Map.toSeq
                     |> Seq.choose (fun (key, token) ->
-                        if key.DeclaringType.Contains("@", StringComparison.Ordinal) then
+                        if key.DeclaringType.Contains("@") then
                             None
                         else
                             Some(token, $"{key.DeclaringType}::{key.Name}"))
@@ -1477,13 +1477,13 @@ let probe input =
             assertMatchingTypeNames
                 "G2 closure replay"
                 "pipeline"
-                (fun name -> name.Contains("transform@hotreload", StringComparison.Ordinal))
+                (fun name -> name.Contains("transform@hotreload"))
                 baselineTypeNames
                 freshTypeNames
 
             let freshEndpointNames =
                 freshTypeNames
-                |> List.filter (fun name -> name.Contains("endpoints@", StringComparison.Ordinal))
+                |> List.filter (fun name -> name.Contains("endpoints@"))
 
             Assert.NotEmpty freshEndpointNames)
 
@@ -1731,7 +1731,7 @@ let probe () =
                         baselineView.Baseline.MethodTokens
                         |> Map.toSeq
                         |> Seq.choose (fun (key, token) ->
-                            if key.DeclaringType.Contains("@", StringComparison.Ordinal) then
+                            if key.DeclaringType.Contains("@") then
                                 None
                             else
                                 Some(token, $"{key.DeclaringType}::{key.Name}"))

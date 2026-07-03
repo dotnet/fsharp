@@ -243,8 +243,8 @@ module DeltaBuilderTests =
             Assert.Contains(
                 errors,
                 fun message ->
-                    message.Contains("Unable to resolve explicit containing entity", StringComparison.Ordinal)
-                    && message.Contains("full rebuild required", StringComparison.Ordinal)
+                    message.Contains("Unable to resolve explicit containing entity")
+                    && message.Contains("full rebuild required")
             )
 
     [<Fact>]
@@ -294,7 +294,7 @@ module DeltaBuilderTests =
         match mapSymbolChangesToDelta baseline changes with
         | Ok _ -> failwith "Expected ambiguous containing type mapping to fail closed"
         | Error errors ->
-            Assert.Contains(errors, fun message -> message.Contains("Ambiguous containing type mapping", StringComparison.Ordinal))
+            Assert.Contains(errors, fun message -> message.Contains("Ambiguous containing type mapping"))
 
     [<Fact>]
     let ``mapSymbolChangesToDelta fails closed when runtime method identity is incomplete`` () =
@@ -333,7 +333,7 @@ module DeltaBuilderTests =
         match mapSymbolChangesToDelta baseline changes with
         | Ok _ -> failwith "Expected incomplete runtime method identity to fail closed"
         | Error errors ->
-            Assert.Contains(errors, fun message -> message.Contains("runtime signature identity is incomplete", StringComparison.Ordinal))
+            Assert.Contains(errors, fun message -> message.Contains("runtime signature identity is incomplete"))
 
     [<Fact>]
     let ``mapSymbolChangesToDelta fails closed when parameter identity mismatches`` () =
@@ -375,8 +375,8 @@ module DeltaBuilderTests =
             Assert.Contains(
                 errors,
                 fun message ->
-                    message.Contains("Unable to resolve changed method symbol", StringComparison.Ordinal)
-                    && message.Contains("full rebuild required", StringComparison.Ordinal)
+                    message.Contains("Unable to resolve changed method symbol")
+                    && message.Contains("full rebuild required")
             )
 
     [<Fact>]
@@ -404,7 +404,7 @@ module DeltaBuilderTests =
         match mapSymbolChangesToDelta baseline changes with
         | Ok _ -> failwith "Expected explicit accessor containing entity mismatch to fail closed"
         | Error errors ->
-            Assert.Contains(errors, fun message -> message.Contains("explicit accessor containing entity", StringComparison.Ordinal))
+            Assert.Contains(errors, fun message -> message.Contains("explicit accessor containing entity"))
 
     [<Fact>]
     let ``mapSymbolChangesToDelta fails closed when return identity mismatches`` () =
@@ -446,6 +446,6 @@ module DeltaBuilderTests =
             Assert.Contains(
                 errors,
                 fun message ->
-                    message.Contains("Unable to resolve changed method symbol", StringComparison.Ordinal)
-                    && message.Contains("full rebuild required", StringComparison.Ordinal)
+                    message.Contains("Unable to resolve changed method symbol")
+                    && message.Contains("full rebuild required")
             )
