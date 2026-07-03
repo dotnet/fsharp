@@ -51,6 +51,8 @@ type OptimizationSettings =
         reportTotalSizes: bool
 
         processingMode: OptimizationProcessingMode
+
+        alwaysInline: bool
     }
 
     member JitOptimizationsEnabled: bool
@@ -108,8 +110,16 @@ val AbstractOptimizationInfoToEssentials: (CcuOptimizationInfo -> CcuOptimizatio
 /// Combine optimization infos
 val UnionOptimizationInfos: seq<ImplFileOptimizationInfo> -> CcuOptimizationInfo
 
+/// The context an expression's effects are analyzed in: emitting IL here, or analyzing the
+/// pickled body of an `inline` value. Governs whether a fully-ground `Unchecked.defaultof`
+/// binding may be eliminated.
+[<RequireQualifiedAccess>]
+type EffectContext =
+    | Emit
+    | InlineBody
+
 /// Check if an expression has an effect
-val ExprHasEffect: TcGlobals -> Expr -> bool
+val ExprHasEffect: EffectContext -> TcGlobals -> Expr -> bool
 
 val internal u_CcuOptimizationInfo: ReaderState -> CcuOptimizationInfo
 

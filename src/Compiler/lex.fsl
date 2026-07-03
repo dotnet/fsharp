@@ -975,8 +975,20 @@ rule token (args: LexArgs) (skip: bool) = parse
 
  | ignored_op_char* ('@'|'^')                  op_char* { checkExprOp lexbuf; INFIX_AT_HAT_OP(lexeme lexbuf) }
 
+ // For '=' immediately followed (no space) by an interpolated-string opener, e.g. C(Name=$"123").
+ // Match the '=' together with the opener, but consume only the '=' and rewind so the next scan
+ // begins at the opener, letting the regular interpolated-string lexer process it (including any
+ // '{...}' holes). This covers the single ($"), extended/multi-dollar ($$"""), and verbatim
+ // ($@" / @$") interpolated-string forms. See https://github.com/dotnet/fsharp/issues/16696.
+ | '=' '$' '"'
+ | '=' ('$'+) '"' '"' '"'
+ | '=' ("$@" | "@$") '"' {
+       lexbuf.LexemeLength <- 1
+       lexbuf.EndPos <- lexbuf.StartPos.ShiftColumnBy(1)
+       EQUALS }
+
  | ignored_op_char* ('=' | "!=" | '<' | '$')  op_char* { checkExprOp lexbuf; INFIX_COMPARE_OP(lexeme lexbuf) }
- 
+
  | ignored_op_char* ('>')  op_char* { checkExprGreaterColonOp lexbuf; INFIX_COMPARE_OP(lexeme lexbuf) }
 
  | ignored_op_char* ('&')                      op_char* { checkExprOp lexbuf; INFIX_AMP_OP(lexeme lexbuf) }

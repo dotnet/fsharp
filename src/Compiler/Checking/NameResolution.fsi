@@ -621,6 +621,14 @@ val internal WithNewTypecheckResultsSink: ITypecheckResultsSink * TcResultsSink 
 /// Temporarily suspend reporting of name resolution and type checking results
 val internal TemporarilySuspendReportingTypecheckResultsToSink: TcResultsSink -> System.IDisposable
 
+/// Run `compute` with all typecheck-results reporting (sink notifications and diagnostics) buffered. If
+/// `commitWhen` holds for the result they are flushed to the sink and diagnostics logger that were active
+/// before buffering began; otherwise they are dropped. Diagnostics from a `compute` that raises are always
+/// flushed so the error still surfaces. `commitWhen` runs after reporting is restored, so it must be
+/// side-effect-free. `loggerName` names the internal capturing logger for debugging.
+val internal RunWithBufferedReporting:
+    sink: TcResultsSink -> loggerName: string -> compute: (unit -> 'T) -> commitWhen: ('T -> bool) -> 'T
+
 /// Report the active name resolution environment for a source range
 val internal CallEnvSink: TcResultsSink -> range * NameResolutionEnv * AccessorDomain -> unit
 
@@ -878,7 +886,7 @@ val internal ResolvePartialLongIdentToClassOrRecdFields:
 val internal ResolveRecordOrClassFieldsOfType: NameResolver -> range -> AccessorDomain -> TType -> bool -> Item list
 
 /// Resolve a long identifier occurring in an expression position.
-/// Also returns the terminal identifier range for error diagnostics (#14284).
+/// Returns the terminal identifier range (#14284).
 val internal ResolveLongIdentAsExprAndComputeRange:
     sink: TcResultsSink ->
     ncenv: NameResolver ->
@@ -891,7 +899,7 @@ val internal ResolveLongIdentAsExprAndComputeRange:
         ResultOrException<EnclosingTypeInst * Item * range * range * Ident list * AfterResolution>
 
 /// Resolve a long identifier occurring in an expression position, qualified by a type.
-/// Also returns the terminal identifier range for error diagnostics (#14284).
+/// Returns the terminal identifier range (#14284).
 val internal ResolveExprDotLongIdentAndComputeRange:
     sink: TcResultsSink ->
     ncenv: NameResolver ->
