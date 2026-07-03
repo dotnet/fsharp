@@ -56,6 +56,12 @@ extends:
                   targetPath: '$(Build.SourcesDirectory)/artifacts/log/$(_BuildConfig)'
                   artifactName: 'BuildLogs'
                   sbomEnabled: false
+                - output: pipelineArtifact
+                  displayName: 'Publish product drop'
+                  condition: succeeded()
+                  targetPath: '$(Build.SourcesDirectory)/release/net40/bin'
+                  artifactName: 'Product_net40'
+                  sbomEnabled: false
             steps:
               - checkout: self
                 clean: true
