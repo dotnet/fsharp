@@ -454,8 +454,13 @@ let visitSynExpr (e: SynExpr) : FileContentEntry list =
             | SynExpr.TryFinally(tryExpr = tryExpr; finallyExpr = finallyExpr) ->
                 visit tryExpr (fun tNodes -> visit finallyExpr (fun fNodes -> tNodes @ fNodes |> continuation))
             | SynExpr.Lazy(expr, _) -> visit expr continuation
-            | SynExpr.Sequential(expr1 = expr1; expr2 = expr2) ->
-                visit expr1 (fun nodes1 -> visit expr2 (fun nodes2 -> nodes1 @ nodes2 |> continuation))
+            | SynExpr.Sequential _ ->
+                let rec flattenSequential acc e =
+                    match e with
+                    | SynExpr.Sequential(expr1 = e1; expr2 = e2) -> flattenSequential (e1 :: acc) e2
+                    | other -> List.rev (other :: acc)
+
+                Continuation.concatenate (List.map visit (flattenSequential [] e)) continuation
             | SynExpr.IfThenElse(ifExpr = ifExpr; thenExpr = thenExpr; elseExpr = elseExpr) ->
                 let continuations = List.map visit (ifExpr :: thenExpr :: Option.toList elseExpr)
                 Continuation.concatenate continuations continuation
