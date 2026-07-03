@@ -300,10 +300,15 @@ let private buildCSharpScratchPdb () =
     )
 
     let psi = System.Diagnostics.ProcessStartInfo()
-    psi.FileName <- Path.Combine(__SOURCE_DIRECTORY__, "..", "..", "..", ".dotnet", "dotnet")
+    // Resolve the dotnet host like the rest of the test framework: repo-local .dotnet
+    // first, PATH fallback otherwise (the hand-rolled path misses on some CI images).
+    psi.FileName <- TestFramework.initialConfig.DotNetExe
     // ProcessStartInfo.ArgumentList does not exist on net472, so build the quoted argument
     // string by hand (projPath is the only argument that can contain spaces).
     psi.Arguments <- $"build \"{projPath}\" -c Debug -p:DebugType=portable -v m"
+    // net472 defaults UseShellExecute to true, which is incompatible with stream
+    // redirection; set it explicitly so the Desktop test legs can start the process.
+    psi.UseShellExecute <- false
     psi.RedirectStandardOutput <- true
     psi.RedirectStandardError <- true
     psi.WorkingDirectory <- workDir
