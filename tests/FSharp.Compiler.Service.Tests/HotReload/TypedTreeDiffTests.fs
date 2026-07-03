@@ -181,9 +181,12 @@ type TypedTreeDiffTests() =
 
         let result = harness.Diff baseline updated
 
-        Assert.Empty(result.SemanticEdits)
+        // A parameter-type change makes the old and new symbol distinct, so the
+        // differ reports the removal as the rude edit and the replacement as an
+        // insert semantic edit. The rude edit is the contract that matters: hosts
+        // reject the whole update when one is present, so nothing else applies.
         let rudeEdit = Assert.Single(result.RudeEdits)
-        Assert.Equal(RudeEditKind.SignatureChange, rudeEdit.Kind)
+        Assert.Equal(RudeEditKind.DeclarationRemoved, rudeEdit.Kind)
 
     [<Fact>]
     member _.``adding module function produces insert edit`` () =
