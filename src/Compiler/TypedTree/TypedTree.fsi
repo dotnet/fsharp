@@ -41,6 +41,9 @@ type ValInline =
     /// Indicates the value must never be inlined by the optimizer
     | Never
 
+    /// Indicates a debug-only value produced from inlining an 'inline' function definition.
+    | InlinedDefinition
+
     /// Returns true if the implementation of a value must always be inlined
     member ShouldInline: bool
 

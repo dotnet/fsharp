@@ -92,6 +92,24 @@ type Bag() =
         |> compile
         |> shouldSucceed
 
+    // A referenced value that is not inline must still fail with FS1113; only inline values,
+    // which expand transitively when the outer member is inlined, are excluded.
+    [<Fact>]
+    let ``Inline member referencing an internal non-inline member fails FS1113`` () =
+        FSharp """
+module Test
+
+type Bag() =
+    member internal _.Helper(x) = x + 1
+    member inline this.Wrap(x) = this.Helper(x)
+"""
+        |> asLibrary
+        |> withNoOptimize
+        |> ignoreWarnings
+        |> compile
+        |> shouldFail
+        |> withErrorCode 1113
+
     // Error tests
 
     [<Theory; FileInlineData("E_byref_two_arguments_curried.fsx")>]

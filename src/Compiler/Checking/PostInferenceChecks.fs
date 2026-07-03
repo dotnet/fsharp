@@ -223,7 +223,9 @@ type cenv =
       mutable entryPointGiven: bool
 
       /// Callback required for quotation generation
-      tcVal: ConstraintSolver.TcValF }
+      tcVal: ConstraintSolver.TcValF
+
+      inlineBindingBodies: Dictionary<Stamp, Expr> }
 
     override x.ToString() = "<cenv>"
 
@@ -519,6 +521,9 @@ let AccessInternalsVisibleToAsInternal thisCompPath internalsVisibleToPaths acce
     (access, internalsVisibleToPaths) ||> List.fold (fun access internalsVisibleToPath ->
         accessSubstPaths (thisCompPath, internalsVisibleToPath) access)
 
+let isLessAccessibleWithVisibility (cenv: cenv) itemAccess refAccess =
+    let thisCompPath = compPathOfCcu cenv.viewCcu
+    isLessAccessible (itemAccess |> AccessInternalsVisibleToAsInternal thisCompPath cenv.internalsVisibleToPaths) refAccess
 
 let CheckTypeForAccess (cenv: cenv) env objName valAcc m ty =
     if cenv.reportErrors then
@@ -529,9 +534,7 @@ let CheckTypeForAccess (cenv: cenv) env objName valAcc m ty =
             match tryTcrefOfAppTy cenv.g ty with
             | ValueNone -> ()
             | ValueSome tcref ->
-                let thisCompPath = compPathOfCcu cenv.viewCcu
-                let tyconAcc = tcref.Accessibility |> AccessInternalsVisibleToAsInternal thisCompPath cenv.internalsVisibleToPaths
-                if isLessAccessible tyconAcc valAcc then
+                if isLessAccessibleWithVisibility cenv tcref.Accessibility valAcc then
                     errorR(Error(FSComp.SR.chkTypeLessAccessibleThanType(tcref.DisplayName, objName()), m))
 
         CheckTypeDeep cenv (visitType, None, None, None, None) cenv.g env NoInfo ty
@@ -545,9 +548,7 @@ let WarnOnWrongTypeForAccess (cenv: cenv) env objName valAcc m ty =
             match tryTcrefOfAppTy cenv.g ty with
             | ValueNone -> ()
             | ValueSome tcref ->
-                let thisCompPath = compPathOfCcu cenv.viewCcu
-                let tyconAcc = tcref.Accessibility |> AccessInternalsVisibleToAsInternal thisCompPath cenv.internalsVisibleToPaths
-                if isLessAccessible tyconAcc valAcc then
+                if isLessAccessibleWithVisibility cenv tcref.Accessibility valAcc then
                     let errorText = FSComp.SR.chkTypeLessAccessibleThanType(tcref.DisplayName, objName()) |> snd
                     let warningText = errorText + Environment.NewLine + FSComp.SR.tcTypeAbbreviationsCheckedAtCompileTime()
                     warning(ObsoleteDiagnostic(false, None, Some warningText, None, m))
@@ -2081,6 +2082,29 @@ and AdjustAccess isHidden (cpath: unit -> CompilationPath) access =
     else
         access
 
+// An 'inline' value is inlined into (possibly external) callers, so any function it references must be
+// at least as accessible as the value itself (FS1113). Inline callees are followed transitively because
+// the optimizer inlines them away; only module/member bindings can escape their scope.
+and CheckInlineValueIsSufficientlyAccessible cenv env (v: Val) bindRhs =
+    if cenv.reportErrors && v.ShouldInline && not v.IsCompilerGenerated &&
+       (v.IsMemberOrModuleBinding || v.IsMember) && not v.IsIncrClassGeneratedMember then
+        let inlineAcc =
+            AdjustAccess (IsHiddenVal env.sigToImplRemapInfo v) (fun () -> v.DeclaringEntity.CompilationPath) v.Accessibility
+        let visited = HashSet<Stamp>()
+        let rec escapes expr =
+            (freeInExpr CollectLocals expr).FreeLocals |> Zset.exists (fun w ->
+                (w.IsMemberOrModuleBinding || w.IsMember) &&
+                isLessAccessibleWithVisibility cenv w.Accessibility inlineAcc &&
+                (if w.ShouldInline then
+                     visited.Add w.Stamp &&
+                     (match cenv.inlineBindingBodies.TryGetValue w.Stamp with
+                      | true, body -> escapes body
+                      | _ -> false)
+                 else
+                     true))
+        if escapes bindRhs then
+            errorR(Error(FSComp.SR.optValueMarkedInlineButIncomplete(v.DisplayName), v.Range))
+
 and CheckBinding cenv env alwaysCheckNoReraise ctxt (TBind(v, bindRhs, _) as bind) : Limit =
     let vref = mkLocalValRef v
     let g = cenv.g
@@ -2112,6 +2136,8 @@ and CheckBinding cenv env alwaysCheckNoReraise ctxt (TBind(v, bindRhs, _) as bin
     if (v.IsMemberOrModuleBinding || v.IsMember) && not v.IsIncrClassGeneratedMember then
         let access =  AdjustAccess (IsHiddenVal env.sigToImplRemapInfo v) (fun () -> v.DeclaringEntity.CompilationPath) v.Accessibility
         CheckTypeForAccess cenv env (fun () -> NicePrint.stringOfQualifiedValOrMember cenv.denv cenv.infoReader vref) access v.Range v.Type
+
+    CheckInlineValueIsSufficientlyAccessible cenv env v bindRhs
 
     if cenv.reportErrors  then
 
@@ -2781,7 +2807,20 @@ let CheckImplFileContents cenv env implFileTy implFileContents  =
     UpdatePrettyTyparNames.updateModuleOrNamespaceType implFileTy
     CheckDefnInModule cenv env implFileContents
 
+let rec private collectInlineBindingBodies (acc: Dictionary<Stamp, Expr>) mdef =
+    match mdef with
+    | TMDefRec(bindings = mbinds) ->
+        for mbind in mbinds do
+            match mbind with
+            | ModuleOrNamespaceBinding.Binding (TBind(v, e, _)) -> if v.ShouldInline then acc[v.Stamp] <- e
+            | ModuleOrNamespaceBinding.Module(_, def) -> collectInlineBindingBodies acc def
+    | TMDefLet(TBind(v, e, _), _) -> if v.ShouldInline then acc[v.Stamp] <- e
+    | TMDefDo _ | TMDefOpens _ -> ()
+    | TMDefs defs -> for def in defs do collectInlineBindingBodies acc def
+
 let CheckImplFile (g, amap, reportErrors, infoReader, internalsVisibleToPaths, viewCcu, tcValF, denv, implFileTy, implFileContents, extraAttribs, isLastCompiland: bool*bool, isInternalTestSpanStackReferring) =
+    let inlineBindingBodies = Dictionary<Stamp, Expr>(HashIdentity.Structural)
+    collectInlineBindingBodies inlineBindingBodies implFileContents
     let cenv =
         { g = g
           reportErrors = reportErrors
@@ -2799,7 +2838,8 @@ let CheckImplFile (g, amap, reportErrors, infoReader, internalsVisibleToPaths, v
           isLastCompiland = isLastCompiland
           isInternalTestSpanStackReferring = isInternalTestSpanStackReferring
           tcVal = tcValF
-          entryPointGiven = false}
+          entryPointGiven = false
+          inlineBindingBodies = inlineBindingBodies }
 
     // Certain type equality checks go faster if these TyconRefs are pre-resolved.
     // This is because pre-resolving allows tycon equality to be determined by pointer equality on the entities.

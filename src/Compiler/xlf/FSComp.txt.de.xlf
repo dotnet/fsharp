@@ -1032,6 +1032,11 @@
         <target state="translated">Drucken der abgeleiteten Schnittstellen aller Dateien an zugehörige Signaturdateien</target>
         <note />
       </trans-unit>
+      <trans-unit id="optsAlwaysInline">
+        <source>Always inline 'inline' functions</source>
+        <target state="new">Always inline 'inline' functions</target>
+        <note />
+      </trans-unit>
       <trans-unit id="optsCheckNulls">
         <source>Enable nullness declarations and checks ({0} by default)</source>
         <target state="new">Enable nullness declarations and checks ({0} by default)</target>
@@ -1904,7 +1909,7 @@
       </trans-unit>
       <trans-unit id="undefinedNameFieldConstructorOrMemberWhenTypeIsKnown">
         <source>The type '{0}' does not define a field, constructor, or member named '{1}'.</source>
-        <target state="new">The type '{0}' does not have a field, property, or member named '{1}'.</target>
+        <target state="new">The type '{0}' does not define a field, constructor, or member named '{1}'.</target>
         <note />
       </trans-unit>
       <trans-unit id="undefinedNameNamespace">
@@ -2299,7 +2304,7 @@
       </trans-unit>
       <trans-unit id="tastNamespaceAndModuleWithSameNameInAssembly">
         <source>The name '{0}' is used as both a namespace and a module in this assembly. Rename one of them to avoid the conflict.</source>
-        <target state="new">Ein Namespace und ein Modul namens "{0}" sind beide in zwei Teilen dieser Assembly vorhanden.</target>
+        <target state="new">The name '{0}' is used as both a namespace and a module in this assembly. Rename one of them to avoid the conflict.</target>
         <note />
       </trans-unit>
       <trans-unit id="tastTwoModulesWithSameNameInAssembly">
@@ -3404,12 +3409,12 @@
       </trans-unit>
       <trans-unit id="csExpectTypeWithOperatorButGivenFunction">
         <source>Expecting a type supporting the operator '{0}' but given a function type. You may be missing an argument to a function, or the operator may not be in scope. Check that you have opened the correct module or namespace.</source>
-        <target state="new">Ein unterstützender Typ für den Operator "{0}" wurde erwartet, aber ein Funktionstyp wurde empfangen. Möglicherweise fehlt ein Argument für eine Funktion.</target>
+        <target state="new">Expecting a type supporting the operator '{0}' but given a function type. You may be missing an argument to a function, or the operator may not be in scope. Check that you have opened the correct module or namespace.</target>
         <note />
       </trans-unit>
       <trans-unit id="csExpectTypeWithOperatorButGivenTuple">
         <source>Operator '{0}' cannot be applied to a tuple type. You may have an unintended extra comma creating a tuple, or the operator may not be in scope. Check that you have opened the correct module or namespace.</source>
-        <target state="new">Ein unterstützender Typ für den Operator '{0}' wurde erwartet, aber ein Tupeltyp wurde empfangen</target>
+        <target state="new">Operator '{0}' cannot be applied to a tuple type. You may have an unintended extra comma creating a tuple, or the operator may not be in scope. Check that you have opened the correct module or namespace.</target>
         <note />
       </trans-unit>
       <trans-unit id="csTypesDoNotSupportOperator">
@@ -4389,7 +4394,7 @@
       </trans-unit>
       <trans-unit id="tcNotSufficientlyGenericBecauseOfScope">
         <source>This code is not sufficiently generic. The type variable {0} could not be generalized because it would escape its scope. Consider adding a type annotation, converting the value to a function, or making the definition 'inline'.</source>
-        <target state="new">Dieser Code ist nicht generisch genug. Die Typvariable "{0}" konnte nicht generalisiert werden, weil sie sonst aus dem Bereich fallen würde.</target>
+        <target state="new">This code is not sufficiently generic. The type variable {0} could not be generalized because it would escape its scope. Consider adding a type annotation, converting the value to a function, or making the definition 'inline'.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcPropertyRequiresExplicitTypeParameters">
