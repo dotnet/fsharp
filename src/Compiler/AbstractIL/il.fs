@@ -2966,23 +2966,64 @@ type ILTypeDef
 
     override x.ToString() = "type " + x.Name
 
-and [<Sealed>] ILTypeDefs(f: unit -> ILPreTypeDef[]) =
-    inherit DelayInitArrayMap<ILPreTypeDef, string list * string, ILPreTypeDef>(f)
+// Each entry is a pre-type-def with its namespace *relative to this level*: the full namespace for a
+// flat table (all types at one level), empty for a grouped table (the tree encodes the path). Keeping
+// it here rather than on the pre-type-def lets pre-type-defs store the same thing in either shape.
+and [<Sealed>] ILTypeDefs(f: unit -> struct (string list * ILPreTypeDef)[], fNamespaces: unit -> ILPreNamespace[]) =
+    inherit DelayInitArrayMap<struct (string list * ILPreTypeDef), string list * string, ILPreTypeDef>(f)
+
+    // Realised independently of the pre-type-defs, so importing some namespaces doesn't force others.
+    let namespaces = InterruptibleLazy(fun _ -> fNamespaces ())
+
+    let namespacesByName =
+        InterruptibleLazy(fun _ ->
+            let d = Dictionary<string, ILPreNamespace>(HashIdentity.Structural)
+
+            for ns in namespaces.Value do
+                if not (d.ContainsKey ns.Name) then
+                    d[ns.Name] <- ns
+
+            d)
+
+    new(f: unit -> struct (string list * ILPreTypeDef)[]) = ILTypeDefs(f, (fun () -> Array.empty))
 
     override this.CreateDictionary(arr) =
         let t = Dictionary(arr.Length, HashIdentity.Structural)
 
-        for pre in arr do
-            let key = pre.Namespace, pre.Name
-            t[key] <- pre
+        for struct (ns, pre) in arr do
+            t[(ns, pre.Name)] <- pre
 
         ReadOnlyDictionary t
 
+    member _.AsArrayOfPreNamespaces() = namespaces.Value
+
+    member x.AllPreTypeDefs() =
+        [| for struct (_, pre) in x.GetArray() -> pre
+           for ns in namespaces.Value do
+               yield! ns.GetContents().AllPreTypeDefs() |]
+
+    member private _.TryFindPreNamespace(name: string) : ILPreNamespace option =
+        match namespacesByName.Value.TryGetValue name with
+        | true, ns -> Some ns
+        | _ -> None
+
+    /// Descends only into the namespace on the type's path, so unrelated namespaces are never forced.
+    member x.TryFindPreTypeDef(ns: string list, n: string) =
+        let rec go (level: ILTypeDefs) (remaining: string list) =
+            match level.GetDictionary().TryGetValue((remaining, n)) with
+            | true, pre -> Some pre
+            | _ ->
+                match remaining with
+                | head :: rest -> level.TryFindPreNamespace head |> Option.bind (fun ns -> go (ns.GetContents()) rest)
+                | [] -> None
+
+        go x ns
+
     member x.AsArray() =
-        [| for pre in x.GetArray() -> pre.GetTypeDef() |]
+        [| for pre in x.AllPreTypeDefs() -> pre.GetTypeDef() |]
 
     member x.AsList() =
-        [ for pre in x.GetArray() -> pre.GetTypeDef() ]
+        [ for pre in x.AllPreTypeDefs() -> pre.GetTypeDef() ]
 
     interface IEnumerable with
         member x.GetEnumerator() =
@@ -2990,41 +3031,46 @@ and [<Sealed>] ILTypeDefs(f: unit -> ILPreTypeDef[]) =
 
     interface IEnumerable<ILTypeDef> with
         member x.GetEnumerator() =
-            (seq { for pre in x.GetArray() -> pre.GetTypeDef() }).GetEnumerator()
+            (seq { for pre in x.AllPreTypeDefs() -> pre.GetTypeDef() }).GetEnumerator()
 
     member x.AsArrayOfPreTypeDefs() = x.GetArray()
 
     member x.FindByName nm =
         let ns, n = splitILTypeName nm
-        x.GetDictionary().[(ns, n)].GetTypeDef()
+
+        match x.TryFindPreTypeDef(ns, n) with
+        | Some pre -> pre.GetTypeDef()
+        | None -> raise (KeyNotFoundException())
 
     member x.ExistsByName nm =
         let ns, n = splitILTypeName nm
-        x.GetDictionary().ContainsKey((ns, n))
+        x.TryFindPreTypeDef(ns, n) |> Option.isSome
 
 and [<NoEquality; NoComparison>] ILPreTypeDef =
-    abstract Namespace: string list
     abstract Name: string
     abstract GetTypeDef: unit -> ILTypeDef
 
+/// A namespace whose contents (its type defs and child namespaces) are realised on demand, so a
+/// namespace's pre-type-defs are only created once the namespace itself is imported.
+and [<NoEquality; NoComparison>] ILPreNamespace =
+    abstract Name: string
+    abstract GetContents: unit -> ILTypeDefs
+
 /// This is a memory-critical class. Very many of these objects get allocated and held to represent the contents of .NET assemblies.
-and [<Sealed>] ILPreTypeDefImpl(nameSpace: string list, name: string, metadataIndex: int32, storage: ILTypeDefStored) =
+and [<Sealed>] ILPreTypeDefImpl(name: string, metadataIndex: int32, storage: ILTypeDefStored) =
     let stored =
         lazy
             match storage with
             | ILTypeDefStored.Given td -> td
-            | ILTypeDefStored.Computed f -> f ()
             | ILTypeDefStored.Reader f -> f metadataIndex
 
     interface ILPreTypeDef with
-        member _.Namespace = nameSpace
         member _.Name = name
         member x.GetTypeDef() = stored.Value
 
 and ILTypeDefStored =
     | Given of ILTypeDef
     | Reader of (int32 -> ILTypeDef)
-    | Computed of (unit -> ILTypeDef)
 
 let mkILTypeDefReader f = ILTypeDefStored.Reader f
 
@@ -3414,24 +3460,67 @@ let mkRefForNestedILTypeDef scope (enc: ILTypeDef list, td: ILTypeDef) =
 // --------------------------------------------------------------------
 
 let mkILPreTypeDef (td: ILTypeDef) =
+    let _, n = splitILTypeName td.Name
+    ILPreTypeDefImpl(n, NoMetadataIdx, ILTypeDefStored.Given td) :> ILPreTypeDef
+
+let mkILPreTypeDefRead (n, idx, f) =
+    ILPreTypeDefImpl(n, idx, f) :> ILPreTypeDef
+
+let mkILPreTypeDefEntry (td: ILTypeDef) : struct (string list * ILPreTypeDef) =
     let ns, n = splitILTypeName td.Name
-    ILPreTypeDefImpl(ns, n, NoMetadataIdx, ILTypeDefStored.Given td) :> ILPreTypeDef
+    struct (ns, ILPreTypeDefImpl(n, NoMetadataIdx, ILTypeDefStored.Given td) :> ILPreTypeDef)
 
-let mkILPreTypeDefComputed (ns, n, f) =
-    ILPreTypeDefImpl(ns, n, NoMetadataIdx, ILTypeDefStored.Computed f) :> ILPreTypeDef
+let mkILPreNamespaceComputed (name, f) =
+    let contents = InterruptibleLazy(fun _ -> f ())
 
-let mkILPreTypeDefRead (ns, n, idx, f) =
-    ILPreTypeDefImpl(ns, n, idx, f) :> ILPreTypeDef
+    { new ILPreNamespace with
+        member _.Name = name
+        member _.GetContents() = contents.Value }
 
 let addILTypeDef td (tdefs: ILTypeDefs) =
-    ILTypeDefs(fun () -> [| yield mkILPreTypeDef td; yield! tdefs.AsArrayOfPreTypeDefs() |])
+    ILTypeDefs(
+        (fun () -> [| yield mkILPreTypeDefEntry td; yield! tdefs.AsArrayOfPreTypeDefs() |]),
+        (fun () -> tdefs.AsArrayOfPreNamespaces())
+    )
 
 let mkILTypeDefsFromArray (l: ILTypeDef[]) =
-    ILTypeDefs(fun () -> Array.map mkILPreTypeDef l)
+    ILTypeDefs(fun () -> Array.map mkILPreTypeDefEntry l)
 
 let mkILTypeDefs l = mkILTypeDefsFromArray (Array.ofList l)
 let mkILTypeDefsComputed f = ILTypeDefs f
+let mkILTypeDefsAndNamespacesComputed f fNamespaces = ILTypeDefs(f, fNamespaces)
 let emptyILTypeDefs = mkILTypeDefsFromArray [||]
+
+/// Group namespaced entries into a lazy namespace tree. Each entry carries a namespace and the data
+/// `mk` turns into a pre-type-def; `mk` runs only once a namespace level is realised, so an un-imported
+/// namespace is never built. First-seen (metadata) order preserved; split namespaces merge into one node.
+let mkILTypeDefsGroupedComputed (f: unit -> struct (string list * 'Data)[]) (mk: 'Data -> ILPreTypeDef) =
+    let typesOf (entries: struct (string list * 'Data)[]) =
+        [| for struct (rem, data) in entries do
+               if List.isEmpty rem then
+                   yield struct ([], mk data) |]
+
+    let rec namespacesOf (entries: struct (string list * 'Data)[]) =
+        // groupBy keeps first-seen key order, so split namespaces merge into one node in metadata order.
+        entries
+        |> Array.choose (fun (struct (rem, data)) ->
+            match rem with
+            | [] -> None
+            | head :: rest -> Some(struct (head, struct (rest, data))))
+        |> Array.groupBy (fun (struct (head, _)) -> head)
+        |> Array.map (fun (head, group) ->
+            let sub = group |> Array.map (fun (struct (_, entry)) -> entry)
+            mkILPreNamespaceComputed(head, (fun () -> level sub)))
+
+    // A level's own type defs and child namespaces are still realised lazily by ILTypeDefs; the entries
+    // themselves are already in hand here (a child's are computed when its parent's namespaces realise),
+    // so no extra laziness is needed - only the child's *contents* stay deferred, via the pre-namespace.
+    and level entries =
+        mkILTypeDefsAndNamespacesComputed (fun () -> typesOf entries) (fun () -> namespacesOf entries)
+
+    // Only the top level defers the (potentially expensive) reader, running it once across both thunks.
+    let entries = InterruptibleLazy f
+    mkILTypeDefsAndNamespacesComputed (fun () -> typesOf entries.Value) (fun () -> namespacesOf entries.Value)
 
 let emptyILInterfaceImpls = InterruptibleLazy<InterfaceImpl list>.FromValue([])
 

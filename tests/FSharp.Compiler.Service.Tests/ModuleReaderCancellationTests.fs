@@ -10,6 +10,7 @@ open FSharp.Compiler
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.ILBinaryReader
 open FSharp.Compiler.CodeAnalysis
+open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.Text
 open FSharp.Test.Assert
 open Internal.Utilities.Library
@@ -124,14 +125,14 @@ type PreTypeDef(data: PreTypeDefData) =
 
     interface ILPreTypeDef with
         member x.Name = data.Name
-        member x.Namespace = data.Namespace
         member x.GetTypeDef() = getTypeDef ()
 
 
-let createPreTypeDefs typeData =
+// A flat table: each entry pairs the type's namespace with the pre-type-def (all at one level).
+let createPreTypeDefs typeData : struct (string list * ILPreTypeDef)[] =
     typeData
     |> Array.ofList
-    |> Array.map (fun data -> PreTypeDef data :> ILPreTypeDef)
+    |> Array.map (fun data -> struct (data.Namespace, PreTypeDef data :> ILPreTypeDef))
 
 let referenceReaderProject getPreTypeDefs (cancelOnModuleAccess: bool) (options: FSharpProjectOptions) =
     let reader = new ModuleReader("Reference", mkILTypeDefsComputed getPreTypeDefs, cancelOnModuleAccess)
@@ -300,3 +301,55 @@ let ``Module def 01 - assembly import`` () =
         |> shouldEqual [| "No constructors are available for the type 'T'" |]
 
     | None -> failwith "Expecting results"
+
+
+// A namespace split across the metadata (Ns1.Ns2 broken by the intervening Ns1.T2) must merge into
+// one namespace on import, and the import order must be preserved. These use the synthetic reader
+// above so the split order is under our control (Roslyn can't emit a genuinely split namespace).
+let private splitNamespaceTypes =
+    [ { Name = "T1"; Namespace = ["Ns1"; "Ns2"]; HasCtor = false; CancelOnImport = false }
+      { Name = "T2"; Namespace = ["Ns1"]; HasCtor = false; CancelOnImport = false }
+      { Name = "T3"; Namespace = ["Ns1"; "Ns2"]; HasCtor = false; CancelOnImport = false } ]
+
+[<Fact>]
+let ``Split namespace - both fragments merge and are accessible`` () =
+    // open Ns1.Ns2 must bring in both T1 and T3, even though they are split by Ns1.T2 in the metadata.
+    let source = """
+module Module
+
+open Ns1
+open Ns1.Ns2
+
+let _f1 (x: T1) = x
+let _f2 (x: T2) = x
+let _f3 (x: T3) = x
+"""
+    let getPreTypeDefs _ = createPreTypeDefs splitNamespaceTypes
+    let path, options = mkTestFileAndOptions [||]
+    let options = referenceReaderProject getPreTypeDefs false options
+
+    match parseAndCheck path source options with
+    | Some results ->
+        results.Diagnostics
+        |> Array.filter (fun d -> d.Severity = FSharpDiagnosticSeverity.Error)
+        |> Array.map _.Message
+        |> shouldEqual [||]
+    | None -> failwith "Expecting results"
+
+[<Fact>]
+let ``Split namespace - import order is preserved`` () =
+    let getPreTypeDefs _ = createPreTypeDefs splitNamespaceTypes
+    let _, options = mkTestFileAndOptions [||]
+    let options = referenceReaderProject getPreTypeDefs false options
+
+    let results = checker.ParseAndCheckProject(options) |> Async.RunSynchronously
+    let refAsm =
+        results.ProjectContext.GetReferencedAssemblies()
+        |> List.find (fun a -> a.SimpleName.StartsWith "Reference")
+
+    // Depth-first: Ns1's own type T2 first, then the merged Ns1.Ns2 with T1 before T3 (metadata order).
+    // This is the same order the pre-ILPreNamespace import produced for this shape.
+    refAsm.Contents.Entities
+    |> Seq.map (fun e -> e.DisplayName, e.AccessPath)
+    |> List.ofSeq
+    |> shouldEqual [ "T2", "Ns1"; "T1", "Ns1.Ns2"; "T3", "Ns1.Ns2" ]
