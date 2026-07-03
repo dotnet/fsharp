@@ -1941,6 +1941,7 @@ type internal FsiDynamicCompiler
                 referenceAssemblyAttribOpt = None
                 referenceAssemblySignatureHash = None
                 pathMap = tcConfig.pathMap
+                moduleCustomDebugInfoRows = []
                 methodCustomDebugInfoRows = Map.empty
             }
 

@@ -18,6 +18,7 @@ These release notes track our current efforts to document changes to the F# proj
 
 ### FSharp Compiler Service (main)
 
+* Added internal hot reload baseline reading for recorded EnC state and synthesized-name snapshot PDB data.
 * In FSharpParsingOptions, rename ConditionalCompilationDefines --> ConditionalDefines
 * Some syntax tree nodes have changed, e.g. introduction of SyntaxTree trivia
 * Resolved expressions (FSharpExpr) now reveal debug points, you must match them explicitly using `DebugPoint(dp, expr)`
