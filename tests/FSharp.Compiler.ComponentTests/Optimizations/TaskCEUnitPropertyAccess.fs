@@ -131,6 +131,35 @@ with
     [<InlineData(false)>]
     [<InlineData(true)>]
     [<Theory>]
+    let ``TaskCE_StructProjectionUnitAccess_PreservesReceiverSideEffects`` (optimize: bool) =
+        run optimize """
+#nowarn "52"
+type Inner() =
+    member _.End = ()
+
+[<Struct; NoComparison; NoEquality>]
+type Outer =
+    val Inner: Inner
+    new(i) = { Inner = i }
+    member x.GetInner = x.Inner
+
+let makeOuter () =
+    failwith "boom"
+    Outer(Inner())
+
+let theTaskAtHand () =
+    task { (makeOuter()).GetInner.End }
+
+try
+    theTaskAtHand().Wait()
+    failwith "Expected exception was not raised; the receiver side effect was dropped."
+with
+| :? System.AggregateException as ex when ex.InnerException.Message = "boom" -> ()
+"""
+
+    [<InlineData(false)>]
+    [<InlineData(true)>]
+    [<Theory>]
     let ``AsyncCE_UnitPropertyAccess_PreservesReceiverSideEffects`` (optimize: bool) =
         run optimize """
 type SomeOutputType() =
