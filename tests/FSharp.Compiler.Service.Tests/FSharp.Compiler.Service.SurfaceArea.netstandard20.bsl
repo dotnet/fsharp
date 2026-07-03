@@ -1263,9 +1263,10 @@ FSharp.Compiler.AbstractIL.IL+ILPlatform: Int32 CompareTo(System.Object, System.
 FSharp.Compiler.AbstractIL.IL+ILPlatform: Int32 GetHashCode()
 FSharp.Compiler.AbstractIL.IL+ILPlatform: Int32 GetHashCode(System.Collections.IEqualityComparer)
 FSharp.Compiler.AbstractIL.IL+ILPlatform: System.String ToString()
+FSharp.Compiler.AbstractIL.IL+ILPreNamespace: ILTypeDefs GetContents()
+FSharp.Compiler.AbstractIL.IL+ILPreNamespace: System.String Name
+FSharp.Compiler.AbstractIL.IL+ILPreNamespace: System.String get_Name()
 FSharp.Compiler.AbstractIL.IL+ILPreTypeDef: ILTypeDef GetTypeDef()
-FSharp.Compiler.AbstractIL.IL+ILPreTypeDef: Microsoft.FSharp.Collections.FSharpList`1[System.String] Namespace
-FSharp.Compiler.AbstractIL.IL+ILPreTypeDef: Microsoft.FSharp.Collections.FSharpList`1[System.String] get_Namespace()
 FSharp.Compiler.AbstractIL.IL+ILPreTypeDef: System.String Name
 FSharp.Compiler.AbstractIL.IL+ILPreTypeDef: System.String get_Name()
 FSharp.Compiler.AbstractIL.IL+ILPropertyDef: Boolean IsRTSpecialName
@@ -1652,7 +1653,7 @@ FSharp.Compiler.AbstractIL.IL+ILTypeDefLayout: Int32 GetHashCode(System.Collecti
 FSharp.Compiler.AbstractIL.IL+ILTypeDefLayout: Int32 Tag
 FSharp.Compiler.AbstractIL.IL+ILTypeDefLayout: Int32 get_Tag()
 FSharp.Compiler.AbstractIL.IL+ILTypeDefLayout: System.String ToString()
-FSharp.Compiler.AbstractIL.IL+ILTypeDefs: System.Collections.Generic.IDictionary`2[System.Tuple`2[Microsoft.FSharp.Collections.FSharpList`1[System.String],System.String],FSharp.Compiler.AbstractIL.IL+ILPreTypeDef] CreateDictionary(ILPreTypeDef[])
+FSharp.Compiler.AbstractIL.IL+ILTypeDefs: System.Collections.Generic.IDictionary`2[System.Tuple`2[Microsoft.FSharp.Collections.FSharpList`1[System.String],System.String],FSharp.Compiler.AbstractIL.IL+ILPreTypeDef] CreateDictionary(System.ValueTuple`2[Microsoft.FSharp.Collections.FSharpList`1[System.String],FSharp.Compiler.AbstractIL.IL+ILPreTypeDef][])
 FSharp.Compiler.AbstractIL.IL+ILTypeInit+Tags: Int32 BeforeField
 FSharp.Compiler.AbstractIL.IL+ILTypeInit+Tags: Int32 OnAny
 FSharp.Compiler.AbstractIL.IL+ILTypeInit: Boolean Equals(ILTypeInit)
@@ -1893,6 +1894,7 @@ FSharp.Compiler.AbstractIL.IL: FSharp.Compiler.AbstractIL.IL+ILNestedExportedTyp
 FSharp.Compiler.AbstractIL.IL: FSharp.Compiler.AbstractIL.IL+ILNestedExportedTypes
 FSharp.Compiler.AbstractIL.IL: FSharp.Compiler.AbstractIL.IL+ILParameter
 FSharp.Compiler.AbstractIL.IL: FSharp.Compiler.AbstractIL.IL+ILPlatform
+FSharp.Compiler.AbstractIL.IL: FSharp.Compiler.AbstractIL.IL+ILPreNamespace
 FSharp.Compiler.AbstractIL.IL: FSharp.Compiler.AbstractIL.IL+ILPreTypeDef
 FSharp.Compiler.AbstractIL.IL: FSharp.Compiler.AbstractIL.IL+ILPropertyDef
 FSharp.Compiler.AbstractIL.IL: FSharp.Compiler.AbstractIL.IL+ILPropertyDefs
@@ -1945,6 +1947,7 @@ FSharp.Compiler.AbstractIL.IL: ILMethodImplDefs mkILMethodImpls(Microsoft.FSharp
 FSharp.Compiler.AbstractIL.IL: ILMethodImplDefs mkILMethodImplsLazy(System.Lazy`1[Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.AbstractIL.IL+ILMethodImplDef]])
 FSharp.Compiler.AbstractIL.IL: ILModuleDef mkILSimpleModule(System.String, System.String, Boolean, System.Tuple`2[System.Int32,System.Int32], Boolean, ILTypeDefs, Microsoft.FSharp.Core.FSharpOption`1[System.Int32], Microsoft.FSharp.Core.FSharpOption`1[System.String], Int32, ILExportedTypesAndForwarders, System.String)
 FSharp.Compiler.AbstractIL.IL: ILNestedExportedTypes mkILNestedExportedTypes(Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.AbstractIL.IL+ILNestedExportedType])
+FSharp.Compiler.AbstractIL.IL: ILPreNamespace mkILPreNamespaceComputed(System.String, Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Core.Unit,FSharp.Compiler.AbstractIL.IL+ILTypeDefs])
 FSharp.Compiler.AbstractIL.IL: ILPropertyDefs emptyILProperties
 FSharp.Compiler.AbstractIL.IL: ILPropertyDefs get_emptyILProperties()
 FSharp.Compiler.AbstractIL.IL: ILPropertyDefs mkILProperties(Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.AbstractIL.IL+ILPropertyDef])
@@ -1959,7 +1962,8 @@ FSharp.Compiler.AbstractIL.IL: ILSecurityDeclsStored storeILSecurityDecls(ILSecu
 FSharp.Compiler.AbstractIL.IL: ILTypeDefs emptyILTypeDefs
 FSharp.Compiler.AbstractIL.IL: ILTypeDefs get_emptyILTypeDefs()
 FSharp.Compiler.AbstractIL.IL: ILTypeDefs mkILTypeDefs(Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.AbstractIL.IL+ILTypeDef])
-FSharp.Compiler.AbstractIL.IL: ILTypeDefs mkILTypeDefsComputed(Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Core.Unit,FSharp.Compiler.AbstractIL.IL+ILPreTypeDef[]])
+FSharp.Compiler.AbstractIL.IL: ILTypeDefs mkILTypeDefsAndNamespacesComputed(Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Core.Unit,System.ValueTuple`2[Microsoft.FSharp.Collections.FSharpList`1[System.String],FSharp.Compiler.AbstractIL.IL+ILPreTypeDef][]], Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Core.Unit,FSharp.Compiler.AbstractIL.IL+ILPreNamespace[]])
+FSharp.Compiler.AbstractIL.IL: ILTypeDefs mkILTypeDefsComputed(Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Core.Unit,System.ValueTuple`2[Microsoft.FSharp.Collections.FSharpList`1[System.String],FSharp.Compiler.AbstractIL.IL+ILPreTypeDef][]])
 FSharp.Compiler.AbstractIL.IL: ILTypeDefs mkILTypeDefsFromArray(ILTypeDef[])
 FSharp.Compiler.AbstractIL.IL: Int32 NoMetadataIdx
 FSharp.Compiler.AbstractIL.IL: Int32 get_NoMetadataIdx()

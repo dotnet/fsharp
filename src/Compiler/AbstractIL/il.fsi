@@ -1526,7 +1526,7 @@ type ILTypeDefAccess =
 /// Tables of named type definitions.
 [<NoEquality; NoComparison; Class; Sealed>]
 type ILTypeDefs =
-    inherit DelayInitArrayMap<ILPreTypeDef, string list * string, ILPreTypeDef>
+    inherit DelayInitArrayMap<struct (string list * ILPreTypeDef), string list * string, ILPreTypeDef>
 
     interface IEnumerable<ILTypeDef>
 
@@ -1534,13 +1534,21 @@ type ILTypeDefs =
 
     member internal AsList: unit -> ILTypeDef list
 
-    /// Get some information about the type defs, but do not force the read of the type defs themselves.
-    member internal AsArrayOfPreTypeDefs: unit -> ILPreTypeDef[]
+    /// The entries at this level (namespace relative to this level), without forcing the type defs or
+    /// child namespaces.
+    member internal AsArrayOfPreTypeDefs: unit -> struct (string list * ILPreTypeDef)[]
 
-    /// Calls to <c>FindByName</c> will result in all the ILPreTypeDefs being read.
+    /// The immediate child namespaces, without forcing their contents.
+    member internal AsArrayOfPreNamespaces: unit -> ILPreNamespace[]
+
+    /// Every pre-type-def in the subtree; forces it all.
+    member internal AllPreTypeDefs: unit -> ILPreTypeDef[]
+
+    /// Descends only into the type's own namespace, without forcing unrelated ones. Raises
+    /// <c>KeyNotFoundException</c> if not found.
     member internal FindByName: string -> ILTypeDef
 
-    /// Calls to <c>ExistsByName</c> will result in all the ILPreTypeDefs being read.
+    /// Descends only into the type's own namespace, without forcing unrelated ones.
     member internal ExistsByName: string -> bool
 
 [<Flags>]
@@ -1694,10 +1702,16 @@ type ILTypeDef =
 /// This information has to be "Goldilocks" - not too much, not too little, just right.
 [<NoEquality; NoComparison>]
 type ILPreTypeDef =
-    abstract Namespace: string list
     abstract Name: string
     /// Realise the actual full typedef
     abstract GetTypeDef: unit -> ILTypeDef
+
+/// Lazily realises a namespace level (its type defs plus immediate child namespaces): the pre-type-defs
+/// are only created once the namespace is imported, enabling on-demand exploration of .NET metadata.
+[<NoEquality; NoComparison>]
+type ILPreNamespace =
+    abstract Name: string
+    abstract GetContents: unit -> ILTypeDefs
 
 [<NoEquality; NoComparison; Sealed>]
 type internal ILPreTypeDefImpl =
@@ -1707,8 +1721,9 @@ type internal ILPreTypeDefImpl =
 type internal ILTypeDefStored
 
 val internal mkILPreTypeDef: ILTypeDef -> ILPreTypeDef
-val internal mkILPreTypeDefComputed: string list * string * (unit -> ILTypeDef) -> ILPreTypeDef
-val internal mkILPreTypeDefRead: string list * string * int32 * ILTypeDefStored -> ILPreTypeDef
+val internal mkILPreTypeDefEntry: ILTypeDef -> struct (string list * ILPreTypeDef)
+val internal mkILPreTypeDefRead: string * int32 * ILTypeDefStored -> ILPreTypeDef
+val mkILPreNamespaceComputed: string * (unit -> ILTypeDefs) -> ILPreNamespace
 val internal mkILTypeDefReader: (int32 -> ILTypeDef) -> ILTypeDefStored
 
 [<NoEquality; NoComparison; Sealed>]
@@ -2370,7 +2385,18 @@ val emptyILTypeDefs: ILTypeDefs
 ///
 /// Note that individual type definitions may contain further delays
 /// in their method, field and other tables.
-val mkILTypeDefsComputed: (unit -> ILPreTypeDef[]) -> ILTypeDefs
+val mkILTypeDefsComputed: (unit -> struct (string list * ILPreTypeDef)[]) -> ILTypeDefs
+
+/// Like <c>mkILTypeDefsComputed</c>, but additionally supplies the immediate child namespaces at
+/// this level. The type defs and the child namespaces are realised independently and lazily.
+val mkILTypeDefsAndNamespacesComputed:
+    (unit -> struct (string list * ILPreTypeDef)[]) -> (unit -> ILPreNamespace[]) -> ILTypeDefs
+
+/// Group namespaced entries into a lazy namespace tree. Each entry carries a namespace and the data
+/// <c>mk</c> turns into a pre-type-def, run only once that namespace level is realised. Preserves
+/// first-seen (metadata) order.
+val internal mkILTypeDefsGroupedComputed:
+    (unit -> struct (string list * 'Data)[]) -> ('Data -> ILPreTypeDef) -> ILTypeDefs
 
 val internal addILTypeDef: ILTypeDef -> ILTypeDefs -> ILTypeDefs
 

@@ -677,35 +677,6 @@ let ImportILGenericParameters amap m scoref tinst (nullableFallback:Nullness.Nul
             tp.SetConstraints constraints)
         tps
 
-/// Given a list of items each keyed by an ordered list of keys, apply 'nodef' to the each group
-/// with the same leading key. Apply 'tipf' to the elements where the keylist is empty, and return
-/// the overall results.  Used to bucket types, so System.Char and System.Collections.Generic.List
-/// both get initially bucketed under 'System'.
-let multisetDiscriminateAndMap nodef tipf (items: ('Key list * 'Value) list) =
-    // Find all the items with an empty key list and call 'tipf'
-    let tips =
-        [ for keylist, v in items do
-             match keylist with
-             | [] -> yield tipf v
-             | _ -> () ]
-
-    // Find all the items with a non-empty key list. Bucket them together by
-    // the first key. For each bucket, call 'nodef' on that head key and the bucket.
-    let nodes =
-        let buckets = Dictionary<_, _>(10)
-        for keylist, v in items do
-            match keylist with
-            | [] -> ()
-            | key :: rest ->
-                buckets[key] <-
-                    match buckets.TryGetValue key with
-                    | true, b -> (rest, v) :: b
-                    | _ -> [rest, v]
-
-        [ for KeyValue(key, items) in buckets -> nodef key items ]
-
-    tips @ nodes
-
 /// Import an IL type definition as a new F# TAST Entity node.
 let rec ImportILTypeDef amap m scoref (cpath: CompilationPath) enc nm (tdef: ILTypeDef)  =
     let lazyModuleOrNamespaceTypeForNestedTypes =
@@ -732,38 +703,62 @@ let rec ImportILTypeDef amap m scoref (cpath: CompilationPath) enc nm (tdef: ILT
         (MaybeLazy.Lazy lazyModuleOrNamespaceTypeForNestedTypes)
 
 
-/// Import a list of (possibly nested) IL types as a new ModuleOrNamespaceType node
-/// containing new entities, bucketing by namespace along the way.
-and ImportILTypeDefList amap m (cpath: CompilationPath) enc items =
-    // Split into the ones with namespaces and without. Add the ones with namespaces in buckets.
-    // That is, discriminate based in the first element of the namespace list (e.g. "System")
-    // and, for each bag, fold-in a lazy computation to add the types under that bag .
-    //
-    // nodef - called for each bucket, where 'n' is the head element of the namespace used
-    // as a key in the discrimination, tgs is the remaining descriptors.  We create an entity for 'n'.
-    //
-    // tipf - called if there are no namespace items left to discriminate on.
-    let entities =
-        items
-        |> multisetDiscriminateAndMap
-            (fun n tgs ->
-                let modty = InterruptibleLazy(fun _ -> ImportILTypeDefList amap m (cpath.NestedCompPath n (Namespace true)) enc tgs)
-                Construct.NewModuleOrNamespace (Some cpath) taccessPublic (mkSynId m n) XmlDoc.Empty [] (MaybeLazy.Lazy modty))
-            (fun (n, info: InterruptibleLazy<_>) ->
-                let (scoref2, lazyTypeDef: ILPreTypeDef) = info.Force()
-                ImportILTypeDef amap m scoref2 cpath enc n (lazyTypeDef.GetTypeDef()))
+/// Import one namespace level as a ModuleOrNamespaceType, descending lazily into child namespaces.
+/// A level has two sources, both with namespaces relative to it: `items` (a relative namespace and a
+/// thunk importing the type; a flat table's full namespaces are bucketed here by leading component)
+/// and `preNamespaces` (child namespaces realised only when imported). A head in both is merged.
+and ImportILNamespaceLevel amap m scoref (cpath: CompilationPath) enc (items: (string list * (CompilationPath -> Entity)) list) (preNamespaces: ILPreNamespace list) =
+    let typeEntities =
+        [ for rem, importEntity in items do
+            if List.isEmpty rem then
+                yield importEntity cpath ]
+
+    // Keyed by leading component; List.groupBy keeps first-seen order, so a split head merges in order.
+    let childContributions =
+        [ for rem, importEntity in items do
+            match rem with
+            | [] -> ()
+            | head :: rest -> head, Choice1Of2(rest, importEntity)
+          for preNamespace in preNamespaces do
+            preNamespace.Name, Choice2Of2 preNamespace ]
+
+    let namespaceEntities =
+        [ for head, contributions in List.groupBy fst childContributions ->
+            let childCPath = cpath.NestedCompPath head (Namespace true)
+
+            let modty =
+                InterruptibleLazy(fun _ ->
+                    let flatItems =
+                        contributions |> List.choose (fun (_, c) -> match c with Choice1Of2 item -> Some item | Choice2Of2 _ -> None)
+
+                    let structItems = ResizeArray<string list * (CompilationPath -> Entity)>()
+                    let structPreNamespaces = ResizeArray<ILPreNamespace>()
+
+                    for _, c in contributions do
+                        match c with
+                        | Choice2Of2 preNamespace ->
+                            let contents = preNamespace.GetContents()
+                            for struct (ns, pre) in contents.AsArrayOfPreTypeDefs() do
+                                structItems.Add(ns, importILPreTypeDef amap m scoref enc pre)
+                            structPreNamespaces.AddRange(contents.AsArrayOfPreNamespaces())
+                        | Choice1Of2 _ -> ()
+
+                    ImportILNamespaceLevel amap m scoref childCPath enc
+                        (flatItems @ List.ofSeq structItems) (List.ofSeq structPreNamespaces))
+
+            Construct.NewModuleOrNamespace (Some cpath) taccessPublic (mkSynId m head) XmlDoc.Empty [] (MaybeLazy.Lazy modty) ]
 
     let kind = match enc with [] -> Namespace true | _ -> ModuleOrType
-    Construct.NewModuleOrNamespaceType kind entities []
+    Construct.NewModuleOrNamespaceType kind (typeEntities @ namespaceEntities) []
 
-/// Import a table of IL types as a ModuleOrNamespaceType.
-///
+// Curried so the import is deferred until its namespace level is reached.
+and importILPreTypeDef amap m scoref enc (pre: ILPreTypeDef) (cpath: CompilationPath) =
+    ImportILTypeDef amap m scoref cpath enc pre.Name (pre.GetTypeDef())
+
 and ImportILTypeDefs amap m scoref cpath enc (tdefs: ILTypeDefs) =
-    // We be very careful not to force a read of the type defs here
-    tdefs.AsArrayOfPreTypeDefs()
-    |> Array.map (fun pre -> (pre.Namespace, (pre.Name, notlazy(scoref, pre))))
-    |> Array.toList
-    |> ImportILTypeDefList amap m cpath enc
+    let items = [ for struct (ns, pre) in tdefs.AsArrayOfPreTypeDefs() -> ns, importILPreTypeDef amap m scoref enc pre ]
+    let preNamespaces = List.ofArray (tdefs.AsArrayOfPreNamespaces())
+    ImportILNamespaceLevel amap m scoref cpath enc items preNamespaces
 
 /// Import the main type definitions in an IL assembly.
 ///
@@ -780,22 +775,18 @@ let ImportILAssemblyExportedType amap m auxModLoader (scoref: ILScopeRef) (expor
         []
     else
         let ns, n = splitILTypeName exportedType.Name
-        let info =
-            InterruptibleLazy (fun _ ->
-                match
-                    (try
-                        let modul = auxModLoader exportedType.ScopeRef
-                        let ptd = mkILPreTypeDefComputed (ns, n, (fun () -> modul.TypeDefs.FindByName exportedType.Name))
-                        Some ptd
-                     with :? KeyNotFoundException -> None)
-                with
-                | None ->
-                    error(Error(FSComp.SR.impReferenceToDllRequiredByAssembly(RichText.mkText exportedType.ScopeRef.QualifiedName, RichText.mkText scoref.QualifiedName, RichText.ofQualifiedTypeName exportedType.Name), m))
-                | Some preTypeDef ->
-                    scoref, preTypeDef
-            )
 
-        [ ImportILTypeDefList amap m (CompPath(scoref, SyntaxAccess.Unknown, [])) [] [(ns, (n, info))]  ]
+        // The type actually lives in another module, resolved lazily via auxModLoader.
+        let importEntity (cpath: CompilationPath) =
+            let tdef =
+                try
+                    let modul = auxModLoader exportedType.ScopeRef
+                    modul.TypeDefs.FindByName exportedType.Name
+                with :? KeyNotFoundException ->
+                    error(Error(FSComp.SR.impReferenceToDllRequiredByAssembly(RichText.mkText exportedType.ScopeRef.QualifiedName, RichText.mkText scoref.QualifiedName, RichText.ofQualifiedTypeName exportedType.Name), m))
+            ImportILTypeDef amap m scoref cpath [] n tdef
+
+        [ ImportILNamespaceLevel amap m scoref (CompPath(scoref, SyntaxAccess.Unknown, [])) [] [ ns, importEntity ] [] ]
 
 /// Import the "exported types" table for multi-module assemblies.
 let ImportILAssemblyExportedTypes amap m auxModLoader scoref (exportedTypes: ILExportedTypesAndForwarders) =
