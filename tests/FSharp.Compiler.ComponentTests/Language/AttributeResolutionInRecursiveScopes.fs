@@ -322,3 +322,70 @@ type R = { [<DoesNotExist>] X: int }
         |> compile
         |> shouldFail
         |> withErrorCode 39
+
+    // Signature files go through the same deferred attribute-resolution path as implementations.
+    // These guard against the fixup being skipped for signatures (which would silently swallow
+    // unresolved attribute names and drop rec-scoped attributes).
+
+    let private sigAndImpl (fsi: string) (fs: string) =
+        Fsi fsi |> withAdditionalSourceFile (FsSource fs)
+
+    [<Fact>]
+    let ``unknown attribute on record field in signature still errors with FS0039`` () =
+        sigAndImpl
+            "module rec Lib\n\ntype Foo =\n    { [<DoesNotExist>] Field: int }\n"
+            "module rec Lib\n\ntype Foo =\n    { Field: int }\n"
+        |> compile
+        |> shouldFail
+        |> withErrorCode 39
+
+    [<Fact>]
+    let ``unknown attribute on union case in signature still errors with FS0039`` () =
+        sigAndImpl
+            "module rec Lib\n\ntype U =\n    | [<DoesNotExist>] A of int\n"
+            "module rec Lib\n\ntype U =\n    | A of int\n"
+        |> compile
+        |> shouldFail
+        |> withErrorCode 39
+
+    [<Fact>]
+    let ``unknown attribute on type parameter in signature still errors with FS0039`` () =
+        sigAndImpl
+            "module rec Lib\n\n[<AbstractClass>]\ntype C<[<DoesNotExist>] 'T> =\n    abstract M: 'T -> unit\n"
+            "module rec Lib\n\n[<AbstractClass>]\ntype C<'T>() =\n    abstract M: 'T -> unit\n"
+        |> compile
+        |> shouldFail
+        |> withErrorCode 39
+
+    [<Fact>]
+    let ``unknown attribute on type in signature still errors with FS0039`` () =
+        sigAndImpl
+            "module rec Lib\n\n[<DoesNotExist>]\ntype Foo =\n    { Field: int }\n"
+            "module rec Lib\n\ntype Foo =\n    { Field: int }\n"
+        |> compile
+        |> shouldFail
+        |> withErrorCode 39
+
+    [<Fact>]
+    let ``attribute defined in same module rec resolves on record field in signature`` () =
+        sigAndImpl
+            "module rec Lib\n\ntype CustomAttribute =\n    inherit System.Attribute\n    new: unit -> CustomAttribute\n\ntype Foo =\n    { [<Custom>] Field: int }\n"
+            "module rec Lib\n\ntype CustomAttribute() =\n    inherit System.Attribute()\n\ntype Foo =\n    { [<Custom>] Field: int }\n"
+        |> compile
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``attribute defined in same module rec resolves on union case in signature`` () =
+        sigAndImpl
+            "module rec Lib\n\ntype CustomAttribute =\n    inherit System.Attribute\n    new: unit -> CustomAttribute\n\ntype U =\n    | [<Custom>] A of int\n"
+            "module rec Lib\n\ntype CustomAttribute() =\n    inherit System.Attribute()\n\ntype U =\n    | [<Custom>] A of int\n"
+        |> compile
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``attribute defined in same module rec resolves on type parameter in signature`` () =
+        sigAndImpl
+            "module rec Lib\n\ntype CustomAttribute =\n    inherit System.Attribute\n    new: unit -> CustomAttribute\n\n[<AbstractClass>]\ntype C<[<Custom>] 'T> =\n    abstract M: 'T -> unit\n"
+            "module rec Lib\n\ntype CustomAttribute() =\n    inherit System.Attribute()\n\n[<AbstractClass>]\ntype C<[<Custom>] 'T>() =\n    abstract M: 'T -> unit\n"
+        |> compile
+        |> shouldSucceed

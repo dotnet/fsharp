@@ -2468,7 +2468,7 @@ module TcExceptionDeclarations =
                 | _ -> ()
 
                 let rfield, fixupFieldAttrs = TcRecdUnionAndEnumDeclarations.TcAnonFieldDecl cenv env parent emptyUnscopedTyparEnv (mkExceptionFieldName i) fdef
-                // Exceptions aren't part of a recursive group, so finalize their field attributes now.
+                // Exception fields are finalized inline here, not via the Phase2 tycon fixup.
                 fixupFieldAttrs ()
                 rfield)
         TcRecdUnionAndEnumDeclarations.ValidateFieldNames(args, args')
@@ -4976,6 +4976,10 @@ module TcDeclarations =
                 cenv true scopem m 
 
         let mutRecDefnsAfterVals = TcMutRecSignatureDecls_Phase2 cenv scopem envMutRecPrelimWithReprs withEnvs
+
+        // Now the sibling types and their constructors are established, re-resolve any attributes
+        // that referred to them (mirrors the implementation path in TcMutRecDefns_Phase2_Bindings).
+        mutRecDefnsAfterCore |> MutRecShapes.iterTycons (fun (_, _, fixupFinalAttrs, _, _) -> fixupFinalAttrs())
 
         // Updates the types of the modules to contain the contents so far, which now includes values and members
         MutRecBindingChecking.TcMutRecDefns_UpdateModuleContents mutRecNSInfo mutRecDefnsAfterVals
