@@ -86,7 +86,8 @@
     <Compile Include="OverloadCacheTests.fs" />
     <Compile Include="HotReload/EditAndContinueCapabilitiesTests.fs" />
     <Compile Include="HotReload/TypedTreeDiffTests.fs" />
-    <Compile Include="HotReload/HotReloadCheckerTests.fs" />
+    <!-- Loads baseline assemblies through AssemblyLoadContext, which .NET Framework does not have. -->
+    <Compile Include="HotReload/HotReloadCheckerTests.fs" Condition="'$(TargetFrameworkIdentifier)' == '.NETCoreApp'" />
     <Compile Include="HotReload/HotReloadSessionTests.fs" />
     <Compile Include="HotReload/ActiveStatementTests.fs" />
     <Compile Include="HotReload/GeneratedNamesTests.fs" />
