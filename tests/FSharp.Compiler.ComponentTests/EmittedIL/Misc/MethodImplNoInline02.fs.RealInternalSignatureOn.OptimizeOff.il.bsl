@@ -68,7 +68,7 @@
   {
     
     .maxstack  8
-    IL_0000:  call       void assembly::g()
+    IL_0000:  call       void assembly::f()
     IL_0005:  nop
     IL_0006:  ret
   } 

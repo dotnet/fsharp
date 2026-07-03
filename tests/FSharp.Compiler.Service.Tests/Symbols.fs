@@ -916,6 +916,91 @@ let _ = T().Prop
                 Assert.Equal(15, loc.StartColumn)
             | _ -> failwith "Expected FSharpMemberOrFunctionOrValue"
 
+    [<Fact>]
+    let ``IsPropertyAccessor true for getter`` () =
+        let _, checkResults = getParseAndCheckResults """
+module M
+type MyClass() =
+    member _.Prop with get() = 42
+"""
+        let mfv =
+            checkResults.GetAllUsesOfAllSymbolsInFile()
+            |> Seq.choose (fun s ->
+                match s.Symbol with
+                | :? FSharpMemberOrFunctionOrValue as m when m.LogicalName = "get_Prop" -> Some m
+                | _ -> None)
+            |> Seq.head
+        Assert.True(mfv.IsPropertyAccessor)
+
+    [<Fact>]
+    let ``IsPropertyAccessor true for setter`` () =
+        let _, checkResults = getParseAndCheckResults """
+module M
+type MyClass() =
+    member val Prop = 0 with get, set
+"""
+        let setter =
+            checkResults.GetAllUsesOfAllSymbolsInFile()
+            |> Seq.tryPick (fun s ->
+                match s.Symbol with
+                | :? FSharpMemberOrFunctionOrValue as m when m.LogicalName = "set_Prop" -> Some m
+                | _ -> None)
+        match setter with
+        | Some mfv -> Assert.True(mfv.IsPropertyAccessor)
+        | None -> Assert.Fail("set_Prop not found")
+
+    [<Fact>]
+    let ``IsPropertyAccessor false for regular method`` () =
+        let _, checkResults = getParseAndCheckResults """
+module M
+type MyClass() =
+    member _.DoStuff() = 42
+"""
+        let mfv =
+            checkResults.GetAllUsesOfAllSymbolsInFile()
+            |> Seq.choose (fun s ->
+                match s.Symbol with
+                | :? FSharpMemberOrFunctionOrValue as m when m.LogicalName = "DoStuff" -> Some m
+                | _ -> None)
+            |> Seq.head
+        Assert.False(mfv.IsPropertyAccessor)
+
+    [<Fact>]
+    let ``IsPropertyAccessor false for function`` () =
+        let _, checkResults = getParseAndCheckResults """
+module M
+let myFunc x = x + 1
+"""
+        let mfv =
+            checkResults.GetAllUsesOfAllSymbolsInFile()
+            |> Seq.choose (fun s ->
+                match s.Symbol with
+                | :? FSharpMemberOrFunctionOrValue as m when m.LogicalName = "myFunc" -> Some m
+                | _ -> None)
+            |> Seq.head
+        Assert.False(mfv.IsPropertyAccessor)
+
+    [<Fact>]
+    let ``Fable query pattern: filter accessor properties`` () =
+        let _, checkResults = getParseAndCheckResults """
+module M
+type MyClass() =
+    member _.Prop with get() = 42
+    member _.Method() = 42
+"""
+        let members =
+            checkResults.GetAllUsesOfAllSymbolsInFile()
+            |> Seq.choose (fun s ->
+                match s.Symbol with
+                | :? FSharpMemberOrFunctionOrValue as m when m.IsPropertyAccessor -> Some m
+                | _ -> None)
+            |> List.ofSeq
+        Assert.True(members.Length >= 1)
+        Assert.True(
+            members
+            |> List.forall (fun m ->
+                m.LogicalName.StartsWith("get_") || m.LogicalName.StartsWith("set_")))
+
 module GetValSignatureText =
     let private assertSignature (expected:string) source (lineNumber, column, line, identifier) =
         let _, checkResults = getParseAndCheckResults source
@@ -1617,3 +1702,73 @@ let result = 1 -.- 2
         let rangeLength = range.EndColumn - range.StartColumn
 
         Assert.Equal(3, rangeLength)
+
+
+module NestedCopyAndUpdateSink =
+
+    /// Start columns of every classified use of `name` on `line` (1-based).
+    let private useCols name line source =
+        getSymbolUsesFromSource source
+        |> Seq.filter (fun s -> s.Symbol.DisplayName = name && s.Range.StartLine = line)
+        |> Seq.map (fun s -> s.Range.StartColumn)
+        |> Seq.sort
+        |> List.ofSeq
+
+    /// Start columns of every literal `token` occurrence on `line` (1-based).
+    let private tokenCols (token: string) line (source: string) =
+        let text = source.Replace("\r\n", "\n").Split('\n').[line - 1]
+        let rec go (i: int) acc =
+            match text.IndexOf(token, i) with
+            | -1 -> List.rev acc
+            | j -> go (j + 1) (j :: acc)
+        go 0 []
+
+    // Each type qualifier must be classified exactly once, at its own source column.
+    let private check name line source =
+        Assert.Equal<int list>(tokenCols name line source, useCols name line source)
+
+    [<Fact>]
+    let ``Both type qualifiers in nested update are classified`` () =
+        check "Person" 5 """
+type Info = { X: int; Y: int }
+type Person = { Info: Info }
+let p = { Info = { X = 1; Y = 2 } }
+let p2 = { p with Person.Info.X = 10; Person.Info.Y = 20 }
+"""
+
+    [<Fact>]
+    let ``Three type qualifiers in nested update all classified`` () =
+        check "Person" 5 """
+type Info = { X: int; Y: int; Z: int }
+type Person = { Info: Info }
+let p = { Info = { X = 1; Y = 2; Z = 3 } }
+let p2 = { p with Person.Info.X = 10; Person.Info.Y = 20; Person.Info.Z = 30 }
+"""
+
+    [<Fact>]
+    let ``Single type qualifier in nested update classified once`` () =
+        check "Person" 5 """
+type Info = { X: int; Y: int }
+type Person = { Info: Info }
+let p = { Info = { X = 1; Y = 2 } }
+let p2 = { p with Person.Info.X = 10 }
+"""
+
+    [<Fact>]
+    let ``Mixed qualified and unqualified in nested update`` () =
+        check "Person" 5 """
+type Info = { X: int; Y: int }
+type Person = { Name: string; Info: Info }
+let p = { Name = "test"; Info = { X = 1; Y = 2 } }
+let p2 = { p with Name = "new"; Person.Info.X = 10 }
+"""
+
+    [<Fact>]
+    let ``Qualifier repeated across sibling fields each classified`` () =
+        check "Outer" 6 """
+type Inner1 = { A: int; B: int }
+type Inner2 = { C: int }
+type Outer = { I1: Inner1; I2: Inner2 }
+let o = { I1 = { A = 1; B = 2 }; I2 = { C = 3 } }
+let o2 = { o with Outer.I1.A = 10; Outer.I1.B = 20; Outer.I2.C = 30 }
+"""

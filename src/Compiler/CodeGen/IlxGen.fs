@@ -269,6 +269,8 @@ type IlxGenOptions =
 
         /// When set to true, the IlxGen will delay generation of method bodies and generated them later in parallel (parallelized across files)
         parallelIlxGenEnabled: bool
+
+        alwaysInline: bool
     }
 
 /// Compilation environment for compiling a fragment of an assembly
@@ -4706,7 +4708,7 @@ and GenApp (cenv: cenv) cgbuf eenv (f, fty, tyargs, curriedArgs, m) sequel =
                     (eenv, laterArgs)
                     ||> List.mapFold (fun eenv laterArg ->
                         // Only save arguments that have effects
-                        if Optimizer.ExprHasEffect g laterArg then
+                        if Optimizer.ExprHasEffect Optimizer.EffectContext.Emit g laterArg then
                             let ilTy = laterArg |> tyOfExpr g |> GenType cenv m eenv.tyenv
 
                             let locName =
@@ -5840,8 +5842,13 @@ and GenTraitCall (cenv: cenv) cgbuf eenv (traitInfo: TraitConstraintInfo, argExp
 
     | None ->
 
-        // If witnesses are available, we should now always find trait witnesses in scope
-        assert not generateWitnesses
+        // When alwaysInline is true, all trait calls should be resolved via witnesses in scope.
+        // When alwaysInline is false, inline functions are kept as calls rather than inlined.
+        // Their witness arguments may contain TraitCall operations for constraints that were resolved
+        // without a witness (e.g., when the constraint is satisfied by a known concrete type).
+        // In such cases, generateWitnesses can be true (because other witnesses are in scope) but
+        // the specific trait's witness is not found. Fall through to the constraint solver to resolve it.
+        assert (not generateWitnesses || not cenv.options.alwaysInline)
 
         let exprOpt =
             CommitOperationResult(ConstraintSolver.CodegenWitnessExprForTraitConstraint cenv.tcVal g cenv.amap m traitInfo argExprs)
@@ -7290,8 +7297,19 @@ and GetIlxClosureFreeVars cenv m (thisVars: ValRef list) boxity eenv takenNames 
         let cloName =
             // Ensure that we have an g.CompilerGlobalState
             assert (g.CompilerGlobalState |> Option.isSome)
+            // The closure name counter is keyed by (basicName, fileIndex). When an expression is copied
+            // from another file (e.g. specializing an inline function body across files), its ranges
+            // still point at the original file, so its closures fall into a different counter bucket
+            // than closures minted for the current file. Since all these closures live under the same
+            // enclosing type, that can produce two closures with the same final name. Bucket the counter
+            // by the enclosing type's file while keeping expr.Range's StartLine for the displayed name.
+            let nameRange =
+                if expr.Range.FileIndex = eenv.cloc.Range.FileIndex then
+                    expr.Range
+                else
+                    Range.mkFileIndexRange eenv.cloc.Range.FileIndex expr.Range.Start expr.Range.End
 
-            g.CompilerGlobalState.Value.StableNameGenerator.GetUniqueCompilerGeneratedName(basenameSafeForUseAsTypename, expr.Range, uniq)
+            g.CompilerGlobalState.Value.StableNameGenerator.GetUniqueCompilerGeneratedName(basenameSafeForUseAsTypename, nameRange, uniq)
 
         let ilCloTypeRef = NestedTypeRefForCompLoc eenv.cloc cloName
 
@@ -7348,6 +7366,21 @@ and GetIlxClosureFreeVars cenv m (thisVars: ValRef list) boxity eenv takenNames 
             | _ -> ftyvs)
 
     let cloFreeTyvars = cloFreeTyvars.FreeTypars |> Zset.elements
+
+    // When generating witnesses, witness types may reference type variables that appear
+    // only in SRTP constraints of the captured type variables (e.g. 'b in 'a : (member M: unit -> 'b)).
+    // Include those so they are available when generating witness field types.
+    let cloFreeTyvars =
+        if ComputeGenerateWitnesses g eenv then
+            let extra =
+                GetTraitWitnessInfosOfTypars g 0 cloFreeTyvars
+                |> List.collect (fun w ->
+                    (freeInType CollectTyparsNoCaching (GenWitnessTy g w)).FreeTypars
+                    |> Zset.elements)
+
+            (cloFreeTyvars @ extra) |> List.distinctBy (fun tp -> tp.Stamp)
+        else
+            cloFreeTyvars
 
     let eenvinner = eenv |> EnvForTypars cloFreeTyvars
 
@@ -9592,25 +9625,25 @@ and GenMethodForBinding
     let m = v.Range
 
     // Closures synthesized inside a member body (inner `let rec`, `task`/`async` state
-    // machines, quotation-splice helpers) are nested in the IL type identified by
-    // eenv.cloc. Under --realsig+ a source-`private` member compiles to IL `private`
-    // (type-scoped), so a closure that calls it must nest inside the declaring type, not
-    // beside it in the module class, or the CLR raises MethodAccessException at runtime.
-    //
-    // Members declared in the type's own definition already reach here with the declaring
-    // type in eenv.cloc, but members declared in an intrinsic augmentation (`type C with
-    // member ...`) reach here with only the enclosing module in scope, because the
-    // augmentation is a separate definition group from the type. Normalize eenv.cloc to the
-    // declaring type for every non-extension member so closure placement is consistent
-    // (idempotent for members that already have it). Real extension members are compiled as
-    // static methods in their own module and must not be re-homed.
-    //
-    // This only matters under --realsig+: with the legacy --realsig- visibility a
-    // module-level sibling closure can still reach the (IL `assembly`) member, so the
-    // placement is left unchanged there to avoid perturbing existing IL.
+    // machines, quotation-splice helpers) nest in the IL type identified by eenv.cloc.
+    // Normalize eenv.cloc to the declaring type so they nest inside it rather than beside it
+    // in the module class, in two cases:
+    //   * under --realsig+, for every non-extension member: a source-`private` member compiles
+    //     to IL `private` (type-scoped), so a sibling-module closure calling it would raise
+    //     MethodAccessException;
+    //   * under --realsig-, only when the body reads a protected base field: the closure would
+    //     otherwise lose family access and raise FieldAccessException (issue #5302).
+    // Members declared in an intrinsic augmentation (`type C with member ...`) reach here with
+    // only the enclosing module in scope, so this also normalizes their placement. Real
+    // extension members compile as static methods in their own module and must not be re-homed.
     let eenv =
         match v.MemberInfo with
-        | Some _ when g.realsig && not v.IsExtensionMember ->
+        | Some _ when
+            not v.IsExtensionMember
+            && (g.realsig
+                || (g.langVersion.SupportsFeature LanguageFeature.AccessProtectedBaseFieldFromClosure
+                    && AccessibilityLogic.exprReferencesProtectedILField cenv.amap methLambdaBody))
+            ->
             let declTref = mspec.MethodRef.DeclaringTypeRef
             AddEnclosingToEnv eenv declTref.Enclosing declTref.Name None
         | _ -> eenv
