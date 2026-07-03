@@ -8,6 +8,7 @@ open Xunit
 
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.Diagnostics
+open FSharp.Compiler.EditAndContinue
 open FSharp.Compiler.Text
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeDiff
@@ -109,7 +110,7 @@ type private DiffTestHarness() =
     member _.Diff baseline updated =
         let tcGlobals, baselineImpl = baseline
         let _, updatedImpl = updated
-        diffImplementationFile tcGlobals baselineImpl updatedImpl
+        diffImplementationFile tcGlobals EditAndContinueCapabilities.All baselineImpl updatedImpl
 
     interface IDisposable with
         member _.Dispose() =

@@ -1,9 +1,8 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 /// Abstractions for metadata heap indexing.
-/// Used by full assembly emission (ilwrite.fs) and intended to also back the delta
-/// emitter tracked in F# hot-reload work (dotnet/fsharp#19941), providing a unified
-/// interface for string, blob, GUID, and user-string heap access.
+/// Used by both full assembly emission (ilwrite.fs) and delta emission (IlxDeltaEmitter.fs)
+/// to provide a unified interface for string, blob, GUID, and user-string heap access.
 module internal FSharp.Compiler.AbstractIL.ILMetadataHeaps
 
 /// Abstraction for metadata heap indexing operations.
@@ -33,22 +32,3 @@ module MetadataHeapsExtensions =
             match sopt with
             | Some s -> this.GetStringHeapIdx s
             | None -> 0
-
-/// <summary>
-/// Records the uncompressed heap sizes produced during metadata emission so that later delta passes
-/// can reason about stream growth.
-/// </summary>
-/// <remarks>
-/// This type is delta-owned: the full-assembly IL writer (ilwrite.fs) does not currently expose an
-/// equivalent snapshot type on main. Keeping the definition here (rather than growing ilwrite.fsi's
-/// public surface) lets the delta writer stay self-contained; a future PR that wires a baseline
-/// producer into this writer can either reuse this type directly or convert into it at the boundary.
-/// </remarks>
-[<NoEquality; NoComparison>]
-type MetadataHeapSizes =
-    {
-        StringHeapSize: int
-        UserStringHeapSize: int
-        BlobHeapSize: int
-        GuidHeapSize: int
-    }

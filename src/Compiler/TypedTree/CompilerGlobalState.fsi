@@ -62,6 +62,12 @@ type internal CompilerGlobalState =
     /// A global generator of stable compiler generated names
     member StableNameGenerator: StableNiceNameGenerator
 
+    /// Reset all compiler-generated-name occurrence counters on this state, so successive in-process
+    /// codegen runs over the same source produce identical generated names (a fresh-process layout).
+    /// Callers must ensure no compilation is concurrently generating names (quiescence). Needed by
+    /// Edit-and-Continue style scenarios that re-emit from a warm checker.
+    member ResetCompilerGeneratedNameState: unit -> unit
+
     /// Create a per-file naming scope for the ImplFile identified by 'fileRange'. All names allocated
     /// through the returned scope are bucketed by that file's FileIndex, guaranteeing determinism
     /// under parallel optimization. See https://github.com/dotnet/fsharp/issues/19732.

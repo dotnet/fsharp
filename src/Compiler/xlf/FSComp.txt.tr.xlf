@@ -797,6 +797,26 @@
         <target state="translated">Geçersiz yönerge '#{0} {1}'</target>
         <note />
       </trans-unit>
+      <trans-unit id="hotReloadAdditionNotSupportedByRuntime">
+        <source>Adding '{0}' requires the runtime capability '{1}', which the current runtime does not support.</source>
+        <target state="new">Adding '{0}' requires the runtime capability '{1}', which the current runtime does not support.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="hotReloadAttributeChangeNotSupportedByRuntime">
+        <source>Changing the attributes of '{0}' requires the runtime capability '{1}', which the current runtime does not support.</source>
+        <target state="new">Changing the attributes of '{0}' requires the runtime capability '{1}', which the current runtime does not support.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="hotReloadGenericUpdateNotSupportedByRuntime">
+        <source>Updating '{0}' requires the runtime capability '{1}' because the member is generic or declared in a generic type, which the current runtime does not support.</source>
+        <target state="new">Updating '{0}' requires the runtime capability '{1}' because the member is generic or declared in a generic type, which the current runtime does not support.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="hotReloadParameterRenameNotSupportedByRuntime">
+        <source>Renaming a parameter of '{0}' requires the runtime capability '{1}', which the current runtime does not support.</source>
+        <target state="new">Renaming a parameter of '{0}' requires the runtime capability '{1}', which the current runtime does not support.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="ifExpressionTuple">
         <source>The 'if' expression needs to return a tuple of length {0} of type\n    {1}    \nto satisfy context type requirements. It currently returns a tuple of length {2} of type\n    {3}    \n</source>
         <target state="translated">Bağlam türü gereksinimlerini karşılaması için 'if' ifadesinin {0} uzunluğunda türü\n    {1}    \nolan bir demet döndürmesi gerekiyor. Şu anda {2} uzunluğunda türü\n    {3}    \nolan bir demet döndürüyor</target>

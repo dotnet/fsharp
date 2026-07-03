@@ -11,6 +11,7 @@ open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.Diagnostics
 open FSharp.Compiler.AbstractIL.BinaryConstants
 open FSharp.Compiler.AbstractIL.Support
+open FSharp.Compiler.AbstractIL.ILMetadataHeaps
 open Internal.Utilities.Library
 open FSharp.Compiler.AbstractIL.StrongNameSign
 open FSharp.Compiler.AbstractIL.ILPdbWriter
@@ -162,59 +163,59 @@ module RowElementTags =
     let [<Literal>] Blob = 5
     let [<Literal>] String = 6
     let [<Literal>] SimpleIndexMin = 7
-    let SimpleIndex (t : TableName) = assert (t.Index <= 112); SimpleIndexMin + t.Index
+    let SimpleIndex (table: TableName) = assert (table.Index <= 112); SimpleIndexMin + table.Index
     let [<Literal>] SimpleIndexMax = 119
 
     let [<Literal>] TypeDefOrRefOrSpecMin = 120
-    let TypeDefOrRefOrSpec (t: TypeDefOrRefTag) = assert (t.Tag <= 2); TypeDefOrRefOrSpecMin + t.Tag (* + 111 + 1 = 0x70 + 1 = max TableName.Tndex + 1 *)
+    let TypeDefOrRefOrSpec (tag: TypeDefOrRefTag) = assert (tag.Tag <= 2); TypeDefOrRefOrSpecMin + tag.Tag (* + 111 + 1 = 0x70 + 1 = max TableName.Tndex + 1 *)
     let [<Literal>] TypeDefOrRefOrSpecMax = 122
 
     let [<Literal>] TypeOrMethodDefMin = 123
-    let TypeOrMethodDef (t: TypeOrMethodDefTag) = assert (t.Tag <= 1); TypeOrMethodDefMin + t.Tag (* + 2 + 1 = max TypeDefOrRefOrSpec.Tag + 1 *)
+    let TypeOrMethodDef (tag: TypeOrMethodDefTag) = assert (tag.Tag <= 1); TypeOrMethodDefMin + tag.Tag (* + 2 + 1 = max TypeDefOrRefOrSpec.Tag + 1 *)
     let [<Literal>] TypeOrMethodDefMax = 124
 
     let [<Literal>] HasConstantMin = 125
-    let HasConstant (t: HasConstantTag) = assert (t.Tag <= 2); HasConstantMin + t.Tag (* + 1 + 1 = max TypeOrMethodDef.Tag + 1 *)
+    let HasConstant (tag: HasConstantTag) = assert (tag.Tag <= 2); HasConstantMin + tag.Tag (* + 1 + 1 = max TypeOrMethodDef.Tag + 1 *)
     let [<Literal>] HasConstantMax = 127
 
     let [<Literal>] HasCustomAttributeMin = 128
-    let HasCustomAttribute (t: HasCustomAttributeTag) = assert (t.Tag <= 21); HasCustomAttributeMin + t.Tag (* + 2 + 1 = max HasConstant.Tag + 1 *)
+    let HasCustomAttribute (tag: HasCustomAttributeTag) = assert (tag.Tag <= 21); HasCustomAttributeMin + tag.Tag (* + 2 + 1 = max HasConstant.Tag + 1 *)
     let [<Literal>] HasCustomAttributeMax = 149
 
     let [<Literal>] HasFieldMarshalMin = 150
-    let HasFieldMarshal (t: HasFieldMarshalTag) = assert (t.Tag <= 1); HasFieldMarshalMin + t.Tag (* + 21 + 1 = max HasCustomAttribute.Tag + 1 *)
+    let HasFieldMarshal (tag: HasFieldMarshalTag) = assert (tag.Tag <= 1); HasFieldMarshalMin + tag.Tag (* + 21 + 1 = max HasCustomAttribute.Tag + 1 *)
     let [<Literal>] HasFieldMarshalMax = 151
 
     let [<Literal>] HasDeclSecurityMin = 152
-    let HasDeclSecurity (t: HasDeclSecurityTag) = assert (t.Tag <= 2); HasDeclSecurityMin + t.Tag (* + 1 + 1 = max HasFieldMarshal.Tag + 1 *)
+    let HasDeclSecurity (tag: HasDeclSecurityTag) = assert (tag.Tag <= 2); HasDeclSecurityMin + tag.Tag (* + 1 + 1 = max HasFieldMarshal.Tag + 1 *)
     let [<Literal>] HasDeclSecurityMax = 154
 
     let [<Literal>] MemberRefParentMin = 155
-    let MemberRefParent (t: MemberRefParentTag) = assert (t.Tag <= 4); MemberRefParentMin + t.Tag (* + 2 + 1 = max HasDeclSecurity.Tag + 1 *)
+    let MemberRefParent (tag: MemberRefParentTag) = assert (tag.Tag <= 4); MemberRefParentMin + tag.Tag (* + 2 + 1 = max HasDeclSecurity.Tag + 1 *)
     let [<Literal>] MemberRefParentMax = 159
 
     let [<Literal>] HasSemanticsMin = 160
-    let HasSemantics (t: HasSemanticsTag) = assert (t.Tag <= 1); HasSemanticsMin + t.Tag (* + 4 + 1 = max MemberRefParent.Tag + 1 *)
+    let HasSemantics (tag: HasSemanticsTag) = assert (tag.Tag <= 1); HasSemanticsMin + tag.Tag (* + 4 + 1 = max MemberRefParent.Tag + 1 *)
     let [<Literal>] HasSemanticsMax = 161
 
     let [<Literal>] MethodDefOrRefMin = 162
-    let MethodDefOrRef (t: MethodDefOrRefTag) = assert (t.Tag <= 2); MethodDefOrRefMin + t.Tag (* + 1 + 1 = max HasSemantics.Tag + 1 *)
+    let MethodDefOrRef (tag: MethodDefOrRefTag) = assert (tag.Tag <= 2); MethodDefOrRefMin + tag.Tag (* + 1 + 1 = max HasSemantics.Tag + 1 *)
     let [<Literal>] MethodDefOrRefMax = 164
 
     let [<Literal>] MemberForwardedMin = 165
-    let MemberForwarded (t: MemberForwardedTag) = assert (t.Tag <= 1); MemberForwardedMin + t.Tag (* + 2 + 1 = max MethodDefOrRef.Tag + 1 *)
+    let MemberForwarded (tag: MemberForwardedTag) = assert (tag.Tag <= 1); MemberForwardedMin + tag.Tag (* + 2 + 1 = max MethodDefOrRef.Tag + 1 *)
     let [<Literal>] MemberForwardedMax = 166
 
     let [<Literal>] ImplementationMin = 167
-    let Implementation (t: ImplementationTag) = assert (t.Tag <= 2); ImplementationMin + t.Tag (* + 1 + 1 = max MemberForwarded.Tag + 1 *)
+    let Implementation (tag: ImplementationTag) = assert (tag.Tag <= 2); ImplementationMin + tag.Tag (* + 1 + 1 = max MemberForwarded.Tag + 1 *)
     let [<Literal>] ImplementationMax = 169
 
     let [<Literal>] CustomAttributeTypeMin = 170
-    let CustomAttributeType (t: CustomAttributeTypeTag) = assert (t.Tag <= 3); CustomAttributeTypeMin + t.Tag (* + 2 + 1 = max Implementation.Tag + 1 *)
+    let CustomAttributeType (tag: CustomAttributeTypeTag) = assert (tag.Tag <= 3); CustomAttributeTypeMin + tag.Tag (* + 2 + 1 = max Implementation.Tag + 1 *)
     let [<Literal>] CustomAttributeTypeMax = 173
 
     let [<Literal>] ResolutionScopeMin = 174
-    let ResolutionScope (t: ResolutionScopeTag) = assert (t.Tag <= 4); ResolutionScopeMin + t.Tag (* + 3 + 1 = max CustomAttributeType.Tag + 1 *)
+    let ResolutionScope (tag: ResolutionScopeTag) = assert (tag.Tag <= 4); ResolutionScopeMin + tag.Tag (* + 3 + 1 = max CustomAttributeType.Tag + 1 *)
     let [<Literal>] ResolutionScopeMax = 178
 
 [<Struct>]
@@ -242,33 +243,33 @@ let Blob (x: int) = RowElement(RowElementTags.Blob, x)
 let StringE (x: int) = RowElement(RowElementTags.String, x)
 
 /// pos. in some table
-let SimpleIndex (t, x: int) = RowElement(RowElementTags.SimpleIndex t, x)
+let SimpleIndex (table, index: int) = RowElement(RowElementTags.SimpleIndex table, index)
 
-let TypeDefOrRefOrSpec (t, x: int) = RowElement(RowElementTags.TypeDefOrRefOrSpec t, x)
+let TypeDefOrRefOrSpec (tag, index: int) = RowElement(RowElementTags.TypeDefOrRefOrSpec tag, index)
 
-let TypeOrMethodDef (t, x: int) = RowElement(RowElementTags.TypeOrMethodDef t, x)
+let TypeOrMethodDef (tag, index: int) = RowElement(RowElementTags.TypeOrMethodDef tag, index)
 
-let HasConstant (t, x: int) = RowElement(RowElementTags.HasConstant t, x)
+let HasConstant (tag, index: int) = RowElement(RowElementTags.HasConstant tag, index)
 
-let HasCustomAttribute (t, x: int) = RowElement(RowElementTags.HasCustomAttribute t, x)
+let HasCustomAttribute (tag, index: int) = RowElement(RowElementTags.HasCustomAttribute tag, index)
 
-let HasFieldMarshal (t, x: int) = RowElement(RowElementTags.HasFieldMarshal t, x)
+let HasFieldMarshal (tag, index: int) = RowElement(RowElementTags.HasFieldMarshal tag, index)
 
-let HasDeclSecurity (t, x: int) = RowElement(RowElementTags.HasDeclSecurity t, x)
+let HasDeclSecurity (tag, index: int) = RowElement(RowElementTags.HasDeclSecurity tag, index)
 
-let MemberRefParent (t, x: int) = RowElement(RowElementTags.MemberRefParent t, x)
+let MemberRefParent (tag, index: int) = RowElement(RowElementTags.MemberRefParent tag, index)
 
-let HasSemantics (t, x: int) = RowElement(RowElementTags.HasSemantics t, x)
+let HasSemantics (tag, index: int) = RowElement(RowElementTags.HasSemantics tag, index)
 
-let MethodDefOrRef (t, x: int) = RowElement(RowElementTags.MethodDefOrRef t, x)
+let MethodDefOrRef (tag, index: int) = RowElement(RowElementTags.MethodDefOrRef tag, index)
 
-let MemberForwarded (t, x: int) = RowElement(RowElementTags.MemberForwarded t, x)
+let MemberForwarded (tag, index: int) = RowElement(RowElementTags.MemberForwarded tag, index)
 
-let Implementation (t, x: int) = RowElement(RowElementTags.Implementation t, x)
+let Implementation (tag, index: int) = RowElement(RowElementTags.Implementation tag, index)
 
-let CustomAttributeType (t, x: int) = RowElement(RowElementTags.CustomAttributeType t, x)
+let CustomAttributeType (tag, index: int) = RowElement(RowElementTags.CustomAttributeType tag, index)
 
-let ResolutionScope (t, x: int) = RowElement(RowElementTags.ResolutionScope t, x)
+let ResolutionScope (tag, index: int) = RowElement(RowElementTags.ResolutionScope tag, index)
 
 type BlobIndex = int
 
@@ -361,57 +362,55 @@ let envForOverrideSpec (ospec: ILOverridesSpec) = { EnclosingTyparCount=ospec.De
 // TABLES
 //---------------------------------------------------------------------
 
-[<NoEquality; NoComparison>]
-type MetadataTable<'T when 'T:not null> =
-    { name: string
-      dict: Dictionary<'T, int> // given a row, find its entry number
-      mutable rows: ResizeArray<'T> }
+[<Sealed>]
+type MetadataTable<'T when 'T:not null>(name: string, hashEq: IEqualityComparer<'T>) =
+    let dict = Dictionary<'T, int>(100, hashEq)
+    let rows = ResizeArray<'T>()
 
-    member x.Count = x.rows.Count
+    member _.Count = rows.Count
 
-    static member New(nm, hashEq) =
-        { name=nm
-          dict = Dictionary<_, _>(100, hashEq)
-          rows= ResizeArray<_>() }
+    member internal _.Name = name
 
-    member tbl.EntriesAsArray =
-        tbl.rows |> ResizeArray.toArray
+    static member New(nm, hashEq) = MetadataTable<'T>(nm, hashEq)
 
-    member tbl.Entries =
-        tbl.rows |> ResizeArray.toList
+    member _.EntriesAsArray = rows |> ResizeArray.toArray
 
-    member tbl.AddSharedEntry x =
-        let n = tbl.rows.Count + 1
-        tbl.dict[x] <- n
-        tbl.rows.Add x
+    member _.Entries = rows |> ResizeArray.toList
+
+    member internal _.KeyValueSeq = dict :> seq<KeyValuePair<'T, int>>
+
+    member _.AddSharedEntry x =
+        let n = rows.Count + 1
+        dict[x] <- n
+        rows.Add x
         n
 
-    member tbl.AddUnsharedEntry x =
-        let n = tbl.rows.Count + 1
-        tbl.rows.Add x
+    member _.AddUnsharedEntry x =
+        let n = rows.Count + 1
+        rows.Add x
         n
 
-    member tbl.FindOrAddSharedEntry x =
-        match tbl.dict.TryGetValue x with
+    member this.FindOrAddSharedEntry x =
+        match dict.TryGetValue x with
         | true, res -> res
-        | _ -> tbl.AddSharedEntry x
+        | _ -> this.AddSharedEntry x
 
-    member tbl.Contains x  = tbl.dict.ContainsKey x
+    member _.Contains x = dict.ContainsKey x
 
     /// This is only used in one special place - see further below.
-    member tbl.SetRowsOfTable t =
-        tbl.rows <- ResizeArray.ofArray t
-        let h = tbl.dict
-        h.Clear()
-        t |> Array.iteri (fun i x -> h[x] <- (i+1))
+    member _.SetRowsOfTable(t: 'T[]) =
+        rows.Clear()
+        dict.Clear()
+        t |> Array.iter (fun entry -> rows.Add entry)
+        t |> Array.iteri (fun i entry -> dict[entry] <- i + 1)
 
-    member tbl.AddUniqueEntry nm getter x =
-        if tbl.dict.ContainsKey x then failwith ("duplicate entry '"+getter x+"' in "+nm+" table")
-        else tbl.AddSharedEntry x
+    member this.AddUniqueEntry nm getter x =
+        if dict.ContainsKey x then failwith ("duplicate entry '" + getter x + "' in " + nm + " table")
+        else this.AddSharedEntry x
 
-    member tbl.GetTableEntry x = tbl.dict[x]
+    member _.GetTableEntry x = dict[x]
 
-    override x.ToString() = "table " + x.name
+    override _.ToString() = "table " + name
 
 //---------------------------------------------------------------------
 // Keys into some of the tables
@@ -504,11 +503,11 @@ type TypeDefTableKey = TdKey of string list (* enclosing *) * string (* type nam
 type MetadataTable =
     | Shared of MetadataTable<SharedRow>
     | Unshared of MetadataTable<UnsharedRow>
-    member t.FindOrAddSharedEntry x = match t with Shared u -> u.FindOrAddSharedEntry x | Unshared u -> failwithf "FindOrAddSharedEntry: incorrect table kind, u.name = %s" u.name
-    member t.AddSharedEntry x = match t with | Shared u -> u.AddSharedEntry x | Unshared u -> failwithf "AddSharedEntry: incorrect table kind, u.name = %s" u.name
-    member t.AddUnsharedEntry x = match t with Unshared u -> u.AddUnsharedEntry x | Shared u -> failwithf "AddUnsharedEntry: incorrect table kind, u.name = %s" u.name
+    member t.FindOrAddSharedEntry x = match t with Shared u -> u.FindOrAddSharedEntry x | Unshared u -> failwithf "FindOrAddSharedEntry: incorrect table kind, u.Name = %s" u.Name
+    member t.AddSharedEntry x = match t with | Shared u -> u.AddSharedEntry x | Unshared u -> failwithf "AddSharedEntry: incorrect table kind, u.Name = %s" u.Name
+    member t.AddUnsharedEntry x = match t with Unshared u -> u.AddUnsharedEntry x | Shared u -> failwithf "AddUnsharedEntry: incorrect table kind, u.Name = %s" u.Name
     member t.GenericRowsOfTable = match t with Unshared u -> u.EntriesAsArray |> Array.map (fun x -> x.GenericRow) | Shared u -> u.EntriesAsArray |> Array.map (fun x -> x.GenericRow)
-    member t.SetRowsOfSharedTable rows = match t with Shared u -> u.SetRowsOfTable (Array.map SharedRow rows) | Unshared u -> failwithf "SetRowsOfSharedTable: incorrect table kind, u.name = %s" u.name
+    member t.SetRowsOfSharedTable rows = match t with Shared u -> u.SetRowsOfTable (Array.map SharedRow rows) | Unshared u -> failwithf "SetRowsOfSharedTable: incorrect table kind, u.Name = %s" u.Name
     member t.Count = match t with Unshared u -> u.Count | Shared u -> u.Count
 
 
@@ -651,6 +650,21 @@ type ILTokenMappings =
       MethodDefTokenMap: ILTypeDef list * ILTypeDef -> ILMethodDef -> int32
       PropertyTokenMap: ILTypeDef list * ILTypeDef -> ILPropertyDef -> int32
       EventTokenMap: ILTypeDef list * ILTypeDef -> ILEventDef -> int32 }
+
+[<NoEquality; NoComparison>]
+/// <summary>Represents the length of each metadata heap emitted for the current module.</summary>
+type MetadataHeapSizes =
+    { StringHeapSize: int
+      UserStringHeapSize: int
+      BlobHeapSize: int
+      GuidHeapSize: int }
+
+[<NoEquality; NoComparison>]
+/// <summary>Snapshot of the metadata state (heap sizes, table row counts, GUID stream offset) used for hot reload baselines.</summary>
+type MetadataSnapshot =
+    { HeapSizes: MetadataHeapSizes
+      TableRowCounts: int[]
+      GuidHeapStart: int }
 
 let recordRequiredDataFixup (requiredDataFixups: ('T * 'U) list ref) (buf: ByteBuffer) pos lab =
     requiredDataFixups.Value <- (pos, lab) :: requiredDataFixups.Value
@@ -1115,7 +1129,7 @@ let FindMethodDefIdx cenv mdkey =
     with :? KeyNotFoundException ->
       let typeNameOfIdx i =
         match
-           (cenv.typeDefs.dict
+           (cenv.typeDefs.KeyValueSeq
              |> Seq.fold (fun sofar kvp ->
                 let tkey2 = kvp.Key
                 let tidx2 = kvp.Value
@@ -1129,7 +1143,7 @@ let FindMethodDefIdx cenv mdkey =
       let (TdKey (tenc, tname)) = typeNameOfIdx mdkey.TypeIdx
       dprintn ("The local method '"+(String.concat "." (tenc@[tname]))+"'::'"+mdkey.Name+"' was referenced but not declared")
       dprintn ("generic arity: "+string mdkey.GenericArity)
-      cenv.methodDefIdxsByKey.dict |> Seq.iter (fun (KeyValue(mdkey2, _)) ->
+      cenv.methodDefIdxsByKey.KeyValueSeq |> Seq.iter (fun (KeyValue(mdkey2, _)) ->
           if mdkey2.TypeIdx = mdkey.TypeIdx && mdkey.Name = mdkey2.Name then
               let (TdKey (tenc2, tname2)) = typeNameOfIdx mdkey2.TypeIdx
               dprintn ("A method in '"+(String.concat "." (tenc2@[tname2]))+"' had the right name but the wrong signature:")
@@ -2477,6 +2491,24 @@ let GenILMethodBody mname cenv env (il: ILMethodBody) =
 
         localToken, (requiredStringFixups', methbuf.AsMemory().ToArray()), seqpoints, scopes
 
+type EncodedMethodBody =
+    { LocalSignatureToken: int
+      RequiredStringFixupsOffset: int
+      RequiredStringFixups: (int * int) list
+      Code: byte[]
+      SequencePoints: PdbDebugPoint[]
+      RootScope: PdbMethodScope option }
+
+let EncodeMethodBody cenv env mname ilmbody =
+    let localToken, ((offset, fixups), codeBytes), seqpoints, scope = GenILMethodBody mname cenv env ilmbody
+
+    { LocalSignatureToken = localToken
+      RequiredStringFixupsOffset = offset
+      RequiredStringFixups = fixups
+      Code = codeBytes
+      SequencePoints = seqpoints
+      RootScope = if cenv.generatePdb then Some scope else None }
+
 // --------------------------------------------------------------------
 // ILFieldDef --> FieldDef Row
 // --------------------------------------------------------------------
@@ -2672,31 +2704,31 @@ let GenMethodDefAsRow cenv env midx (mdef: ILMethodDef) =
             else
                 ilmbodyLazy.Value
           let addr = cenv.nextCodeAddr
-          let localToken, code, seqpoints, rootScope = GenILMethodBody mdef.Name cenv env ilmbody
+          let encodedBody = EncodeMethodBody cenv env mdef.Name ilmbody
 
           // Now record the PDB record for this method - we write this out later.
           if cenv.generatePdb then
             cenv.pdbinfo.Add
-              { MethToken=getUncodedToken TableNames.Method midx
-                MethName=mdef.Name
-                LocalSignatureToken=localToken
-                Params= [| |] (* REVIEW *)
-                RootScope = Some rootScope
+              { MethToken = getUncodedToken TableNames.Method midx
+                MethName = mdef.Name
+                LocalSignatureToken = encodedBody.LocalSignatureToken
+                Params = [| |] (* REVIEW *)
+                RootScope = encodedBody.RootScope
                 DebugRange =
                   match ilmbody.DebugRange with
                   | Some m when cenv.generatePdb ->
                       // table indexes are 1-based, document array indexes are 0-based
                       let doc = (cenv.documents.FindOrAddSharedEntry m.Document) - 1
 
-                      Some ({ Document=doc
-                              Line=m.Line
-                              Column=m.Column },
-                            { Document=doc
-                              Line=m.EndLine
-                              Column=m.EndColumn })
+                      Some ({ Document = doc
+                              Line = m.Line
+                              Column = m.Column },
+                            { Document = doc
+                              Line = m.EndLine
+                              Column = m.EndColumn })
                   | _ -> None
-                DebugPoints=seqpoints }
-          cenv.AddCode code
+                DebugPoints = encodedBody.SequencePoints }
+          cenv.AddCode ((encodedBody.RequiredStringFixupsOffset, encodedBody.RequiredStringFixups), encodedBody.Code)
           addr
       | MethodBody.Abstract
       | MethodBody.PInvoke _ ->
@@ -3272,7 +3304,10 @@ let writeILMetadataAndCode (
     allGivenSources,
     modul,
     cilStartAddress,
-    normalizeAssemblyRefs
+    normalizeAssemblyRefs,
+    // Hot reload baseline side channel: when false (the default compilation path) no
+    // MetadataSnapshot is materialized, so flag-off compiles pay no extra allocations.
+    collectMetadataSnapshot: bool
 ) =
 
     // When we know the real RVAs of the data section we fixup the references for the FieldRVA table.
@@ -3676,7 +3711,22 @@ let writeILMetadataAndCode (
               applyFixup32 code locInCode token
     reportTime "Fixup Metadata"
 
-    entryPointToken, code, codePadding, metadata, data, resources, requiredDataFixups.Value, pdbData, mappings, guidStart
+    // Hot reload baseline side channel: only materialize the snapshot when a consumer asked
+    // for one (--test:HotReloadDeltas in-memory emission); ordinary compiles skip it entirely.
+    let metadataSnapshotOpt =
+        if collectMetadataSnapshot then
+            Some
+                { HeapSizes =
+                    { StringHeapSize = stringsStreamUnpaddedSize
+                      UserStringHeapSize = userStringsStreamUnpaddedSize
+                      BlobHeapSize = blobsStreamUnpaddedSize
+                      GuidHeapSize = guidsStreamUnpaddedSize }
+                  TableRowCounts = tables |> Seq.map (fun t -> t.Count) |> Seq.toArray
+                  GuidHeapStart = guidStart }
+        else
+            None
+
+    entryPointToken, code, codePadding, metadata, data, resources, requiredDataFixups.Value, pdbData, mappings, guidStart, metadataSnapshotOpt
 
 //---------------------------------------------------------------------
 // PHYSICAL METADATA+BLOBS --> PHYSICAL PE FORMAT
@@ -3860,14 +3910,21 @@ type options =
      referenceAssemblyAttribOpt: ILAttribute option
      referenceAssemblySignatureHash : int option
      pathMap: PathMap
-     /// Hot reload baseline side channel: module-level CustomDebugInformation rows for
-     /// F#-owned records in the portable PDB. Empty for ordinary compiles.
+     // Hot reload baseline side channel: module-level CustomDebugInformation rows for
+     // F#-owned records in the portable PDB. Empty unless a gated hot reload capture
+     // compile needs to persist extra deterministic state.
      moduleCustomDebugInfoRows: PdbModuleCustomDebugInfo list
-     /// Per-method EnC CustomDebugInformation rows for the portable PDB writer, keyed by
-     /// IL method name. Empty for ordinary compiles.
+     // Hot reload baseline side channel: per-method EnC CustomDebugInformation rows for
+     // the portable PDB writer, keyed by IL method name. Empty unless the compilation
+     // runs with --test:HotReloadDeltas (flag-off output stays byte-identical).
      methodCustomDebugInfoRows: Map<string, PdbMethodCustomDebugInfo list> }
 
-let writeBinaryAux (stream: Stream, options: options, modul, normalizeAssemblyRefs) =
+/// <summary>
+/// Core IL writer that emits the PE image and, when <paramref name="metadataSnapshotSink" /> is
+/// present, invokes it with the captured metadata snapshot once the metadata streams have been
+/// finalized. When the sink is None (ordinary compilation) no snapshot is constructed.
+/// </summary>
+let writeBinaryAuxWithSnapshotSink (stream: Stream, options: options, modul, normalizeAssemblyRefs) (metadataSnapshotSink: (MetadataSnapshot -> unit) option) =
 
     // Store the public key from the signer into the manifest. This means it will be written
     // to the binary and also acts as an indicator to leave space for delay sign
@@ -3980,22 +4037,28 @@ let writeBinaryAux (stream: Stream, options: options, modul, normalizeAssemblyRe
                     | Some v -> v
                     | None -> failwith "Expected mscorlib to have a version number"
 
-          let entryPointToken, code, codePadding, metadata, data, resources, requiredDataFixups, pdbData, mappings, guidStart =
+          let entryPointToken, code, codePadding, metadata, data, resources, requiredDataFixups, pdbData, mappings, guidStart, metadataSnapshotOpt =
               writeILMetadataAndCode (
                   options.pdbfile.IsSome,
                   desiredMetadataVersion,
                   ilg,
                   options.emitTailcalls,
-                  options.deterministic,                 
+                  options.deterministic,
                   options.referenceAssemblyOnly,
                   options.referenceAssemblyAttribOpt,
                   options.allGivenSources,
                   modul,
                   next,
-                  normalizeAssemblyRefs
+                  normalizeAssemblyRefs,
+                  metadataSnapshotSink.IsSome
               )
 
           reportTime "Generated IL and metadata"
+
+          match metadataSnapshotSink, metadataSnapshotOpt with
+          | Some sink, Some metadataSnapshot -> sink metadataSnapshot
+          | _ -> ()
+
           let _codeChunk, next = chunk code.Length next
           let _codePaddingChunk, next = chunk codePadding.Length next
 
@@ -4578,6 +4641,9 @@ let writeBinaryAux (stream: Stream, options: options, modul, normalizeAssemblyRe
     reportTime "Writing Image"
     pdbData, pdbInfoOpt, debugDirectoryChunk, debugDataChunk, debugChecksumPdbChunk, debugEmbeddedPdbChunk, debugDeterministicPdbChunk, textV2P, mappings
 
+let writeBinaryAux (stream: Stream, options: options, modul, normalizeAssemblyRefs) =
+    writeBinaryAuxWithSnapshotSink (stream, options, modul, normalizeAssemblyRefs) None
+
 let writeBinaryFiles (options: options, modul, normalizeAssemblyRefs) =
 
     let stream =
@@ -4623,12 +4689,20 @@ let writeBinaryFiles (options: options, modul, normalizeAssemblyRefs) =
 
     mappings
 
-let writeBinaryInMemory (options: options, modul, normalizeAssemblyRefs) =
+let writeBinaryInMemoryWithArtifacts (options: options, modul, normalizeAssemblyRefs) =
 
     let stream = new MemoryStream()
     let options = { options with referenceAssemblyOnly = false; referenceAssemblyAttribOpt = None; referenceAssemblySignatureHash = None }
-    let pdbData, pdbInfoOpt, debugDirectoryChunk, debugDataChunk, debugChecksumPdbChunk, debugEmbeddedPdbChunk, debugDeterministicPdbChunk, textV2P, _mappings =
-        writeBinaryAux(stream, options, modul, normalizeAssemblyRefs)
+    // Capture exactly one metadata snapshot for the emitted module so callers can persist baseline information.
+    let metadataSnapshotRef = ref None
+    let capture snapshot = metadataSnapshotRef := Some snapshot
+    let pdbData, pdbInfoOpt, debugDirectoryChunk, debugDataChunk, debugChecksumPdbChunk, debugEmbeddedPdbChunk, debugDeterministicPdbChunk, textV2P, mappings =
+        writeBinaryAuxWithSnapshotSink (stream, options, modul, normalizeAssemblyRefs) (Some capture)
+
+    let metadataSnapshot =
+        match !metadataSnapshotRef with
+        | Some snapshot -> snapshot
+        | None -> failwith "Metadata snapshot not captured"
 
     let reopenOutput () =
         stream.Seek(0, SeekOrigin.Begin) |> ignore
@@ -4654,12 +4728,15 @@ let writeBinaryInMemory (options: options, modul, normalizeAssemblyRefs) =
 
     stream.Close()
 
-    stream.ToArray(), pdbBytes
-
+    stream.ToArray(), pdbBytes, mappings, metadataSnapshot
 
 let WriteILBinaryFile (options: options, inputModule, normalizeAssemblyRefs) =
     writeBinaryFiles (options, inputModule, normalizeAssemblyRefs)
     |> ignore
 
+let WriteILBinaryInMemoryWithArtifacts (options: options, inputModule: ILModuleDef, normalizeAssemblyRefs) =
+    writeBinaryInMemoryWithArtifacts (options, inputModule, normalizeAssemblyRefs)
+
 let WriteILBinaryInMemory (options: options, inputModule: ILModuleDef, normalizeAssemblyRefs) =
-    writeBinaryInMemory (options, inputModule, normalizeAssemblyRefs)
+    let assemblyBytes, pdbBytes, _, _ = writeBinaryInMemoryWithArtifacts (options, inputModule, normalizeAssemblyRefs)
+    assemblyBytes, pdbBytes

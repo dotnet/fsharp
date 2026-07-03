@@ -8,9 +8,10 @@ open System
 open System.Collections.Concurrent
 open System.Threading
 open Internal.Utilities.Library
-open FSharp.Compiler.CompilerGeneratedNameMapState
 open FSharp.Compiler.Syntax.PrettyNaming
 open FSharp.Compiler.Text
+open FSharp.Compiler.GeneratedNames
+open FSharp.Compiler.CompilerGeneratedNameMapState
 
 /// Generates compiler-generated names. Each name generated also includes the StartLine number of the range passed in
 /// at the point of first generation.
@@ -36,7 +37,8 @@ type NiceNameGenerator(getCompilerGeneratedNameMap: unit -> ICompilerGeneratedNa
 
     member _.FreshCompilerGeneratedNameOfBasicName (basicName, m: range) =
         match getCompilerGeneratedNameMap() with
-        | Some map -> map.GetOrAddName basicName
+        | Some map ->
+            map.GetOrAddName basicName
         | None ->
             let count = increment basicName m
             mkName basicName m count
@@ -47,13 +49,12 @@ type NiceNameGenerator(getCompilerGeneratedNameMap: unit -> ICompilerGeneratedNa
     member _.FreshCompilerGeneratedNameInScope (scopeFileIndex: int, name: string, m: range) =
         let basicName = GetBasicNameOfPossibleCompilerGeneratedName name
 
-        // The replay map must win over per-file occurrence buckets, exactly as it
-        // does in FreshCompilerGeneratedNameOfBasicName. When a session installs the
-        // map, every allocation path replays the baseline's stable names. Otherwise,
-        // line-based per-file names would drift under edits. The map is only ever
-        // installed by the hot reload emit hook or by an in-process compile, so the
-        // deterministic per-file bucketing from https://github.com/dotnet/fsharp/issues/19732
-        // is untouched in normal compilation.
+        // The hot reload replay map must win over per-file occurrence buckets, exactly as it
+        // does in FreshCompilerGeneratedNameOfBasicName: when a session installs the map, every
+        // allocation path replays the baseline's stable names, otherwise line-based per-file
+        // names would drift under edits. The map is only ever installed by the hot reload emit
+        // hook or the in-process compile, so the deterministic per-file bucketing from
+        // https://github.com/dotnet/fsharp/issues/19732 is untouched in normal compilation.
         match getCompilerGeneratedNameMap() with
         | Some map -> map.GetOrAddName basicName
         | None ->
@@ -98,9 +99,10 @@ type PerFileNamingScope internal (nng: NiceNameGenerator, fileIndex: int) =
         nng.FreshCompilerGeneratedNameInScope(fileIndex, name, m)
 
 type internal CompilerGlobalState () as this =
-    /// Reader for the optional synthesized-name map attached to this instance. The
-    /// accessor resolves the side-channel slot once, so each generated name costs a
-    /// single None check, not a weak-table probe and lock, when no map is installed.
+    /// Reader for the optional hot reload synthesized-name map attached to this
+    /// instance. The accessor resolves the side-channel slot once, so each generated
+    /// name costs a single None check (not a weak-table probe and lock) when no map
+    /// is installed, i.e. on every compile without the hot reload emit hook.
     let getCompilerGeneratedNameMap = getCompilerGeneratedNameMapAccessor (this :> obj)
 
     /// A global generator of compiler generated names
@@ -117,6 +119,15 @@ type internal CompilerGlobalState () as this =
     member _.StableNameGenerator = globalStableNameGenerator
 
     member _.IlxGenNiceNameGenerator = ilxgenGlobalNng
+
+    /// Reset all compiler-generated-name occurrence counters on this state, so successive in-process
+    /// codegen runs over the same source produce identical generated names (a fresh-process layout).
+    /// Callers must ensure no compilation is concurrently generating names (quiescence). Needed by
+    /// Edit-and-Continue style scenarios that re-emit from a warm checker.
+    member _.ResetCompilerGeneratedNameState() =
+        globalNng.ResetCompilerGeneratedNameState()
+        globalStableNameGenerator.ResetCompilerGeneratedNameState()
+        ilxgenGlobalNng.ResetCompilerGeneratedNameState()
 
     member _.NewFileScope (fileRange: range) =
         PerFileNamingScope(globalNng, fileRange.FileIndex)

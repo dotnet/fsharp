@@ -797,6 +797,26 @@
         <target state="translated">無效的指示詞 '#{0} {1}'</target>
         <note />
       </trans-unit>
+      <trans-unit id="hotReloadAdditionNotSupportedByRuntime">
+        <source>Adding '{0}' requires the runtime capability '{1}', which the current runtime does not support.</source>
+        <target state="new">Adding '{0}' requires the runtime capability '{1}', which the current runtime does not support.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="hotReloadAttributeChangeNotSupportedByRuntime">
+        <source>Changing the attributes of '{0}' requires the runtime capability '{1}', which the current runtime does not support.</source>
+        <target state="new">Changing the attributes of '{0}' requires the runtime capability '{1}', which the current runtime does not support.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="hotReloadGenericUpdateNotSupportedByRuntime">
+        <source>Updating '{0}' requires the runtime capability '{1}' because the member is generic or declared in a generic type, which the current runtime does not support.</source>
+        <target state="new">Updating '{0}' requires the runtime capability '{1}' because the member is generic or declared in a generic type, which the current runtime does not support.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="hotReloadParameterRenameNotSupportedByRuntime">
+        <source>Renaming a parameter of '{0}' requires the runtime capability '{1}', which the current runtime does not support.</source>
+        <target state="new">Renaming a parameter of '{0}' requires the runtime capability '{1}', which the current runtime does not support.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="ifExpressionTuple">
         <source>The 'if' expression needs to return a tuple of length {0} of type\n    {1}    \nto satisfy context type requirements. It currently returns a tuple of length {2} of type\n    {3}    \n</source>
         <target state="translated">'if' 運算式必須傳回類型為\n    {1}    \n的元組長度{0}，才能滿足內容類型需求。目前傳回的是類型為\n    {3}    \n的元組長度 {2}</target>

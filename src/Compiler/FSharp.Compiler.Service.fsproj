@@ -115,6 +115,7 @@
     </EmbeddedResource>
     <Compile Include="Utilities\Activity.fsi" />
     <Compile Include="Utilities\Activity.fs" />
+    <Compile Include="Utilities\EnvironmentHelpers.fs" />
 	<Compile Include="Utilities\Caches.fsi" />
     <Compile Include="Utilities\Caches.fs" />
     <Compile Include="Utilities\illib.fsi" />
@@ -129,6 +130,7 @@
     <Compile Include="Utilities\HashMultiMap.fs" />
     <Compile Include="Utilities\EditDistance.fsi" />
     <Compile Include="Utilities\EditDistance.fs" />
+    <Compile Include="Utilities\EditAndContinueCapabilities.fs" />
     <Compile Include="Utilities\TaggedCollections.fsi" />
     <Compile Include="Utilities\TaggedCollections.fs" />
     <Compile Include="Utilities\Cancellable.fsi" />
@@ -234,6 +236,8 @@
     <Compile Include="AbstractIL\ilsupp.fs" />
     <Compile Include="AbstractIL\ilbinary.fsi" />
     <Compile Include="AbstractIL\ilbinary.fs" />
+    <Compile Include="AbstractIL\ILDeltaHandles.fs" />
+    <Compile Include="AbstractIL\ILMetadataHeaps.fs" />
     <Compile Include="AbstractIL\ilread.fsi" />
     <Compile Include="AbstractIL\ilread.fs" />
     <Compile Include="AbstractIL\ilwritepdb.fsi" />
@@ -242,12 +246,7 @@
     <Compile Include="AbstractIL\EncMethodDebugInformation.fs" />
     <Compile Include="AbstractIL\ilwrite.fsi" />
     <Compile Include="AbstractIL\ilwrite.fs" />
-    <!-- ECMA-335 Edit-and-Continue metadata delta writer. See PR #TBD.
-         Placed after ilwrite.fs/.fsi (not immediately after ilwritepdb) because
-         IlxDeltaStreams.fs and DeltaMetadataTables.fs reuse ilwrite.fs's
-         markerForUnicodeBytes helper for #US heap encoding. -->
-    <Compile Include="AbstractIL\ILDeltaHandles.fs" />
-    <Compile Include="AbstractIL\ILMetadataHeaps.fs" />
+    <!-- ECMA-335 Edit-and-Continue metadata delta writer. -->
     <Compile Include="AbstractIL\IlxDeltaStreams.fs" />
     <Compile Include="AbstractIL\DeltaMetadataEncoding.fs" />
     <Compile Include="AbstractIL\DeltaMetadataTypes.fs" />
@@ -324,6 +323,7 @@
     </Compile>
     <Compile Include="TypedTree\GeneratedNames.fs" />
     <Compile Include="TypedTree\CompilerGeneratedNameMapState.fs" />
+    <Compile Include="TypedTree\ClosureNameAllocationState.fs" />
     <Compile Include="$(FsYaccOutputFolder)pplex.fsi">
       <Link>SyntaxTree\FsLexOutput\pplex.fsi</Link>
     </Compile>
@@ -370,6 +370,7 @@
     <Compile Include="TypedTree\TypedTreeOps.Transforms.fsi" />
     <Compile Include="TypedTree\TypedTreeOps.Transforms.fs" />
     <Compile Include="TypedTree\TypedTreeDiff.fs" />
+    <Compile Include="TypedTree\ClosureNameAllocator.fs" />
     <Compile Include="TypedTree\TypedTreePickle.fsi" />
     <Compile Include="TypedTree\TypedTreePickle.fs" />
     <Compile Include="TypedTree\UpdatePrettyTyparNames.fsi" />
@@ -464,8 +465,25 @@
     <Compile Include="CodeGen\EraseUnions.fs" />
     <Compile Include="CodeGen\IlxGen.fsi" />
     <Compile Include="CodeGen\IlxGen.fs" />
-    <Compile Include="CodeGen\ILBaselineReader.fs" />
+    <Compile Include="AbstractIL\ILBaselineReader.fs" />
+    <Compile Include="CodeGen\EncMethodDebugInformation.fs" />
+    <Compile Include="HotReload\ActiveStatements.fs" />
     <Compile Include="CodeGen\HotReloadBaseline.fs" />
+    <Compile Include="CodeGen\HotReloadPdb.fs" />
+    <Compile Include="HotReload\DefinitionMap.fs" />
+    <Compile Include="HotReload\FSharpSymbolChanges.fs" />
+    <Compile Include="CodeGen\IlxDeltaStreams.fs" />
+    <Compile Include="CodeGen\FSharpDefinitionIndex.fs" />
+    <Compile Include="CodeGen\DeltaMetadataEncoding.fs" />
+    <Compile Include="CodeGen\DeltaMetadataTypes.fs" />
+    <Compile Include="CodeGen\DeltaMetadataTables.fs" />
+    <Compile Include="CodeGen\DeltaTableLayout.fs" />
+    <Compile Include="CodeGen\DeltaIndexSizing.fs" />
+    <Compile Include="CodeGen\DeltaMetadataSerializer.fs" />
+    <Compile Include="CodeGen\FSharpDeltaMetadataWriter.fs" />
+    <Compile Include="HotReload\SymbolMatcher.fs" />
+    <Compile Include="HotReload\HotReloadAccessorTypes.fs" />
+    <Compile Include="CodeGen\IlxDeltaEmitter.fs" />
     <Compile Include="Driver\FxResolver.fsi" />
     <Compile Include="Driver\FxResolver.fs" />
     <Compile Include="DependencyManager/AssemblyResolveHandler.fsi">
