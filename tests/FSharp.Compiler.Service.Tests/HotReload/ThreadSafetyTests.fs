@@ -53,7 +53,7 @@ module ThreadSafetyTests =
         let uniqueOrdinals = ordinals |> Array.distinct |> Array.sort
 
         Assert.Equal(iterations, uniqueOrdinals.Length)
-        Assert.Equal<int[]>([| 0 .. iterations - 1 |], uniqueOrdinals)
+        Assert.Equal<int list>([ 0 .. iterations - 1 ], List.ofArray uniqueOrdinals)
 
     [<Fact>]
     let ``concurrent GetOrAddName with multiple basic names is safe`` () =
