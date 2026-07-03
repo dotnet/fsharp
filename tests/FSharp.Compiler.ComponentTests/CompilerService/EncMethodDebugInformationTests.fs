@@ -204,7 +204,7 @@ let ``Synthesized name snapshot preserves mixed bucket allocation order`` () =
     let decoded = deserializeSynthesizedNameSnapshot blob
 
     match Map.tryFind "endpoints" decoded with
-    | Some actualNames -> Assert.Equal<string>(expectedNames, actualNames)
+    | Some actualNames -> Assert.Equal<string[]>(expectedNames, actualNames)
     | None -> failwith "expected endpoints bucket to round-trip"
 
 // -----------------------------------------------------------------------
@@ -685,7 +685,7 @@ let ``Synthetic module CustomDebugInformation row round-trips synthesized snapsh
         match Map.tryFind "endpoints" snapshot with
         | Some names ->
             let struct (_, expectedNames) = List.head expected
-            Assert.Equal<string>(expectedNames, names)
+            Assert.Equal<string[]>(expectedNames, names)
         | None -> failwith "expected endpoints bucket"
     | None -> failwith "expected recorded synthesized-name snapshot"
 
@@ -740,7 +740,7 @@ let ``Baseline reader gives recorded synthesized snapshot precedence over recons
     Assert.Equal(SynthesizedNameSnapshotSource.Recorded, baseline.SynthesizedNameSnapshotSource)
 
     match Map.tryFind "endpoints" baseline.SynthesizedNameSnapshot with
-    | Some names -> Assert.Equal<string>(recordedNames, names)
+    | Some names -> Assert.Equal<string[]>(recordedNames, names)
     | None -> failwith "expected recorded endpoints bucket"
 
 [<Fact>]
