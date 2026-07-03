@@ -108,6 +108,16 @@ module HotReloadSessionTests =
         FSharpProjectSnapshot.FromOptions(projectOptions, DocumentSource.FileSystem)
         |> Async.RunImmediate
 
+    let private prepareMultiFileProjectOptions
+        (checker: FSharpChecker)
+        (fsPaths: string array)
+        (dllPath: string)
+        (firstSource: string)
+        (extraOptions: string list)
+        =
+        let options = prepareProjectOptions checker fsPaths[0] dllPath firstSource extraOptions
+        { options with SourceFiles = fsPaths }
+
     let private withProjectDir (testName: string) (action: string -> unit) =
         let projectDir =
             Path.Combine(Path.GetTempPath(), testName, Guid.NewGuid().ToString("N"))
@@ -149,6 +159,16 @@ module HotReloadSessionTests =
             action ()
         finally
             Environment.SetEnvironmentVariable(name, previous)
+
+    let private assertPortablePdbWithMethodDebugInfo (pdbBytes: byte[] option) =
+        let bytes =
+            match pdbBytes with
+            | Some bytes -> bytes
+            | None -> failwith "Expected portable PDB delta."
+
+        use provider = MetadataReaderProvider.FromPortablePdbImage(ImmutableArray.CreateRange bytes)
+        let reader = provider.GetMetadataReader()
+        Assert.True(reader.MethodDebugInformation.Count > 0, "Expected method debug information in portable PDB delta.")
 
     type private G1LdstrOperand =
         {
@@ -638,6 +658,27 @@ module HotReloadSessionTests =
         for oldToken, newToken, value in decode.Delta.UserStringUpdates do
             printfn "[g1] userStringUpdate original=%s new=%s value=%A" (formatToken oldToken) (formatToken newToken) value
 
+    let private checkProjectOrFail (checker: FSharpChecker) (options: FSharpProjectOptions) =
+        let results =
+            checker.ParseAndCheckProject(options)
+            |> Async.RunImmediate
+
+        let errors =
+            results.Diagnostics
+            |> Array.filter (fun diagnostic -> diagnostic.Severity = FSharpDiagnosticSeverity.Error)
+
+        if results.HasCriticalErrors || errors.Length > 0 then
+            failwithf "Project check failed: %A" (errors |> Array.map (fun d -> d.Message))
+
+        results
+
+    let private compileFromCheckedProjectAndReadBytes (checker: FSharpChecker) (results: FSharpCheckProjectResults) (outfile: string) =
+        checker.CompileFromCheckedProject(results, outfile, HotReloadEmitNaming.ClearForLineBasedBaseline)
+        |> Async.RunImmediate
+        |> ignore
+
+        File.ReadAllBytes(outfile)
+
     let private addProjectOrFail (session: FSharpHotReloadSession) snapshot =
         match session.AddProject(snapshot) |> Async.RunImmediate with
         | Ok() -> ()
@@ -667,11 +708,11 @@ module HotReloadSessionTests =
             use session = checker.CreateHotReloadSession()
             addProjectOrFail session (createProjectSnapshot options)
 
-            File.WriteAllText(fsPath, trimmedEditedSource)
-            checker.NotifyFileChanged(fsPath, options) |> Async.RunImmediate
-            compileProject checker options true
-
-            let delta = emitOrFail session (createProjectSnapshot options)
+            let delta =
+                withEnvVar "FSHARP_HOTRELOAD_INPROCESS_COMPILE" "1" (fun () ->
+                    File.WriteAllText(fsPath, trimmedEditedSource)
+                    checker.NotifyFileChanged(fsPath, options) |> Async.RunImmediate
+                    emitOrFail session (createProjectSnapshot options))
 
             Assert.Equal(1, delta.UpdatedMethods.Length)
             let updatedMethod = Assert.Single(delta.UpdatedMethods)
@@ -694,6 +735,9 @@ module HotReloadSessionTests =
         | ValueSome view -> view
         | ValueNone -> failwith "Expected a session view for the project."
 
+    let private implFiles (CheckedAssemblyAfterOptimization files) =
+        files |> List.map (fun file -> file.ImplFile)
+
     let private libSource (generation: int) =
         $"""
 module SessionLib
@@ -707,6 +751,237 @@ module SessionApp
 
 let appValue () = "app generation {generation}"
 """
+
+    let private generatedIncrementalEmitSources generation =
+        [|
+            "File01_Common.fs",
+            """
+namespace IncEmit
+
+module Common =
+    [<Literal>]
+    let LiteralValue = 7
+
+    let addLiteral value = value + LiteralValue
+"""
+            "File02_AnonProducer.fs",
+            """
+namespace IncEmit
+
+module AnonProducer =
+    let makeAnon name count = {| Name = name; Count = count |}
+
+    let pipeHeavy values =
+        values
+        |> List.map (fun value -> value + Common.LiteralValue)
+        |> List.filter (fun value -> value % 2 = 0)
+        |> List.collect (fun value -> [ value; value * 2 ])
+        |> List.fold (fun state value -> state + value) 0
+"""
+            "File03_AnonConsumer.fs",
+            """
+namespace IncEmit
+
+module AnonConsumer =
+    let localAnon count = {| Name = "local"; Count = count |}
+
+    let consume () =
+        let produced = AnonProducer.makeAnon "shared" 3
+        let local = localAnon 4
+        produced.Count + local.Count + Common.addLiteral 1
+"""
+            "File04_Chain01.fs",
+            """
+namespace IncEmit
+
+module Chain01 =
+    let value () = AnonConsumer.consume ()
+"""
+            "File05_Chain02.fs",
+            """
+namespace IncEmit
+
+module Chain02 =
+    let value () = Chain01.value () + AnonProducer.pipeHeavy [ 1; 2; 3; 4 ]
+"""
+            "File06_Chain03.fs",
+            """
+namespace IncEmit
+
+module Chain03 =
+    let value () = Chain02.value () + Common.addLiteral 5
+"""
+            "File07_Chain04.fs",
+            """
+namespace IncEmit
+
+module Chain04 =
+    let choose f x = f x
+    let value () = choose (fun value -> value + 1) (Chain03.value ())
+"""
+            "File08_Chain05.fs",
+            """
+namespace IncEmit
+
+module Chain05 =
+    let value () =
+        [ 1 .. 5 ]
+        |> List.map (fun n -> n * Chain04.value ())
+        |> List.sum
+"""
+            "File09_Chain06.fs",
+            """
+namespace IncEmit
+
+module Chain06 =
+    let value () = Chain05.value () / Common.LiteralValue
+"""
+            "File10_Chain07.fs",
+            """
+namespace IncEmit
+
+module Chain07 =
+    let value () =
+        let anon = {| Name = "consumer"; Count = Chain06.value () |}
+        anon.Count + anon.Name.Length
+"""
+            "File11_Chain08.fs",
+            """
+namespace IncEmit
+
+module Chain08 =
+    let value () = Chain07.value () + Chain06.value ()
+"""
+            "File12_Entry.fs",
+            $"""
+namespace IncEmit
+
+module Entry =
+    let mutable sink = 0
+
+    let run () =
+        let value = Chain08.value ()
+        sink <- value
+        sprintf "generation {generation} value %%d" value
+"""
+        |]
+
+    let private writeIncrementalEmitSources projectDir generation =
+        generatedIncrementalEmitSources generation
+        |> Array.map (fun (name, source) ->
+            let path = Path.Combine(projectDir, name)
+            File.WriteAllText(path, source.TrimStart())
+            path)
+
+    [<Fact>]
+    let ``CompileFromCheckedProject incremental emit cache matches batch optimization bytes after one file edit`` () =
+        withProjectDir "fcs-hotreload-incremental-emit-equivalence" (fun projectDir ->
+            let checker = createChecker ()
+            let fsPaths = writeIncrementalEmitSources projectDir 0
+            let dllPath = Path.Combine(projectDir, "IncrementalEmit.dll")
+            let options = prepareMultiFileProjectOptions checker fsPaths dllPath (snd (generatedIncrementalEmitSources 0).[0]) []
+
+            checker.InvalidateAll()
+
+            let warmResults = checkProjectOrFail checker options
+
+            withEnvVar "FSHARP_HOTRELOAD_INCREMENTAL_EMIT" "1" (fun () ->
+                compileFromCheckedProjectAndReadBytes checker warmResults dllPath |> ignore)
+
+            let _, updatedEntry = (generatedIncrementalEmitSources 1).[11]
+            File.WriteAllText(fsPaths[11], updatedEntry.TrimStart())
+            checker.NotifyFileChanged(fsPaths[11], options) |> Async.RunImmediate
+
+            let editedResults = checkProjectOrFail checker options
+
+            let incrementalBytes =
+                withEnvVar "FSHARP_HOTRELOAD_INCREMENTAL_EMIT" "1" (fun () ->
+                    compileFromCheckedProjectAndReadBytes checker editedResults dllPath)
+
+            let batchBytes =
+                withEnvVar "FSHARP_HOTRELOAD_INCREMENTAL_EMIT" null (fun () ->
+                    compileFromCheckedProjectAndReadBytes checker editedResults dllPath)
+
+            Assert.Equal<byte>(batchBytes, incrementalBytes))
+
+    [<Fact>]
+    let ``EmitDelta reuses checked implementation files for unchanged earlier files`` () =
+        withProjectDir "fcs-hotreload-session-reference-equality" (fun projectDir ->
+            let fileAPath = Path.Combine(projectDir, "FileA.fs")
+            let fileBPath = Path.Combine(projectDir, "FileB.fs")
+            let fileCPath = Path.Combine(projectDir, "FileC.fs")
+            let dllPath = Path.Combine(projectDir, "ReferenceEquality.dll")
+
+            let fileASource =
+                """
+module FileA
+
+let baseValue = 41
+"""
+
+            let fileBSource =
+                """
+module FileB
+
+let derived () = FileA.baseValue + 1
+"""
+
+            let fileCSource generation =
+                $"""
+module FileC
+
+let current () = FileB.derived () + {generation}
+"""
+
+            File.WriteAllText(fileAPath, fileASource)
+            File.WriteAllText(fileBPath, fileBSource)
+            File.WriteAllText(fileCPath, fileCSource 0)
+
+            let checker = createChecker ()
+            let sourcePaths = [| fileAPath; fileBPath; fileCPath |]
+            let options = prepareMultiFileProjectOptions checker sourcePaths dllPath fileASource []
+            let snapshot = createProjectSnapshot options
+
+            checker.InvalidateAll()
+            compileProject checker options true
+
+            use session = checker.CreateHotReloadSession()
+            addProjectOrFail session snapshot
+
+            let baselineFiles =
+                (projectViewOrFail session snapshot).ImplementationFiles |> implFiles
+
+            let previousFlag =
+                Environment.GetEnvironmentVariable("FSHARP_HOTRELOAD_INPROCESS_COMPILE")
+
+            try
+                Environment.SetEnvironmentVariable("FSHARP_HOTRELOAD_INPROCESS_COMPILE", "1")
+
+                File.WriteAllText(fileCPath, fileCSource 1)
+                checker.NotifyFileChanged(fileCPath, options) |> Async.RunImmediate
+
+                let delta = emitOrFail session (createProjectSnapshot options)
+                Assert.NotEmpty(delta.UpdatedMethods)
+
+                let freshFiles =
+                    match (projectViewOrFail session snapshot).PendingUpdate with
+                    | Some pending ->
+                        match pending.ImplementationFiles with
+                        | Some implementationFiles -> implFiles implementationFiles
+                        | None -> failwith "Expected pending implementation files after EmitDelta."
+                    | None -> failwith "Expected a pending update after EmitDelta."
+
+                let equalityPairs =
+                    List.zip baselineFiles freshFiles
+                    |> List.map (fun (baselineFile, freshFile) -> obj.ReferenceEquals(baselineFile, freshFile))
+
+                let referenceEqualCount = equalityPairs |> List.filter id |> List.length
+                printfn "[fsharp-hotreload][typed-tree-reference-equality] unchanged-file hit rate: %d/%d" referenceEqualCount equalityPairs.Length
+
+                Assert.Equal<bool list>([ true; true; false ], equalityPairs)
+                session.Discard()
+            finally
+                Environment.SetEnvironmentVariable("FSHARP_HOTRELOAD_INPROCESS_COMPILE", previousFlag))
 
     [<Fact>]
     let ``Two independent sessions emit deltas without interference`` () =
@@ -1049,6 +1324,14 @@ type Calculator<'T>() =
 
             Assert.Empty(clearedView.ActiveStatements))
 
+    /// Experimental: FSHARP_HOTRELOAD_INPROCESS_COMPILE lets
+    /// EmitDelta recompile the output assembly in-process from the just-produced check results,
+    /// instead of requiring an external `dotnet build` before every delta. Covered here:
+    /// a body-only (string literal) edit under the flag; a body edit + line shift of an UNEDITED
+    /// sibling function under the flag (the shift surfaces as a sequence-point line update only
+    /// if the in-process compile wrote a FRESH sibling PDB - the stale external-build PDB still
+    /// carries the unshifted lines, so line-shift detection would stay silent); and, with the
+    /// flag off (the default), the existing stale-build-output refusal staying unaffected.
     [<Fact>]
     let ``G1 same-line Giraffe-shaped handler string edit decodes delta user string operand`` () =
         let source literal =
@@ -1100,7 +1383,7 @@ let probe () = libValue ()
         Assert.Contains(decode.Delta.UserStrings, fun entry -> entry.Value = "lib generation 1")
 
     [<Fact>]
-    let ``G2 disk-built line edit above sibling lambdas replays stable closure names`` () =
+    let ``G2 flag-on in-process line edit above sibling lambdas replays stable closure names`` () =
         withProjectDir "fcs-hotreload-session-g2-closure-replay" (fun projectDir ->
             let fsPath = Path.Combine(projectDir, "Library.fs")
             let dllPath = Path.Combine(projectDir, "Library.dll")
@@ -1173,11 +1456,11 @@ let probe input =
             let baselineView = projectViewOrFail session (createProjectSnapshot options)
             Assert.False(Map.isEmpty baselineView.Baseline.EncClosureNames, "Expected a flag-on baseline with closure-name tables.")
 
-            File.WriteAllText(fsPath, editedSource)
-            checker.NotifyFileChanged(fsPath, options) |> Async.RunImmediate
-            compileProject checker options false
-
-            let delta = emitOrFail session (createProjectSnapshot options)
+            let delta =
+                withEnvVar "FSHARP_HOTRELOAD_INPROCESS_COMPILE" "1" (fun () ->
+                    File.WriteAllText(fsPath, editedSource)
+                    checker.NotifyFileChanged(fsPath, options) |> Async.RunImmediate
+                    emitOrFail session (createProjectSnapshot options))
 
             let userUpdatedNames =
                 let userMethodTokenByToken =
@@ -1202,7 +1485,7 @@ let probe input =
                 baselineBytes.Length = freshBytes.Length
                 && Array.forall2 (=) baselineBytes freshBytes
 
-            Assert.False(outputIsUnchanged, "Expected the rebuild to refresh the output assembly.")
+            Assert.False(outputIsUnchanged, "Expected the in-process compile to refresh the output assembly.")
 
             let baselineTypeNames = readTypeNames baselineBytes
             let freshTypeNames = readTypeNames freshBytes
@@ -1221,7 +1504,7 @@ let probe input =
             Assert.NotEmpty freshEndpointNames)
 
     [<Fact>]
-    let ``G2 disk-built line edit above mixed endpoint bucket preserves closure names`` () =
+    let ``G2 flag-on in-process line edit above mixed endpoint bucket preserves closure names`` () =
         let routingLibrarySource =
             """
 module SessionRoutingLike
@@ -1453,11 +1736,11 @@ let probe () =
                     baselinePdbSnapshot
                     baselineView.Baseline.SynthesizedNameSnapshot
 
-                File.WriteAllText(fsPath, editedSource)
-                checker.NotifyFileChanged(fsPath, options) |> Async.RunImmediate
-                compileProject checker options false
-
-                let delta = emitOrFail session (createProjectSnapshot options)
+                let delta =
+                    withEnvVar "FSHARP_HOTRELOAD_INPROCESS_COMPILE" "1" (fun () ->
+                        File.WriteAllText(fsPath, editedSource)
+                        checker.NotifyFileChanged(fsPath, options) |> Async.RunImmediate
+                        emitOrFail session (createProjectSnapshot options))
 
                 let userUpdatedNames =
                     let userMethodTokenByToken =
@@ -1477,6 +1760,14 @@ let probe () =
                 Assert.Equal<string list>([ "SessionMixedEndpoints::editedValue" ], userUpdatedNames)
 
                 let freshBytes = File.ReadAllBytes dllPath
+                let freshPdbSnapshot =
+                    readRecordedSynthesizedNameSnapshot
+                        $"G2 mixed endpoint fresh PDB {caseLabel}"
+                        (Path.ChangeExtension(dllPath, ".pdb"))
+
+                assertMixedEndpointSnapshot $"G2 mixed endpoint fresh PDB {caseLabel}" freshPdbSnapshot
+                |> ignore
+
                 let freshTypeNames = readTypeNames freshBytes
                 assertMixedEndpointTypeNames $"G2 mixed endpoint fresh {caseLabel}" freshTypeNames
                 |> ignore)
@@ -1485,7 +1776,7 @@ let probe () =
         runCase "disk-started" true
 
     [<Fact>]
-    let ``G2 replay endpoint bucket uses recorded snapshot and hook replay supports old baselines`` () =
+    let ``G2 flag-on replay endpoint bucket uses recorded snapshot and old baselines fail closed`` () =
         let runCase caseLabel disableSnapshotCdi =
             withProjectDir $"fcs-hotreload-session-g2-replay-endpoint-bucket-{caseLabel}" (fun projectDir ->
                 let fsPath = Path.Combine(projectDir, "Library.fs")
@@ -1561,19 +1852,164 @@ let probe input =
 
                 Assert.Equal(expectedSnapshotSource, baselineView.Baseline.SynthesizedNameSnapshotSource)
 
-                File.WriteAllText(fsPath, editedSource)
-                checker.NotifyFileChanged(fsPath, options) |> Async.RunImmediate
-                compileProject checker options false
+                let result =
+                    withEnvVar "FSHARP_HOTRELOAD_INPROCESS_COMPILE" "1" (fun () ->
+                        File.WriteAllText(fsPath, editedSource)
+                        checker.NotifyFileChanged(fsPath, options) |> Async.RunImmediate
+                        session.EmitDelta(createProjectSnapshot options) |> Async.RunImmediate)
 
-                let result = session.EmitDelta(createProjectSnapshot options) |> Async.RunImmediate
+                if disableSnapshotCdi then
+                    match result with
+                    | Error(FSharpHotReloadError.UnsupportedEdit edits) ->
+                        let message =
+                            edits
+                            |> List.map (fun edit -> $"{edit.Id}: {edit.Message}")
+                            |> String.concat Environment.NewLine
 
-                match result with
-                | Ok _ ->
-                    File.ReadAllBytes dllPath
-                    |> readTypeNames
-                    |> assertReplayEndpointTypeNames $"G2 replay endpoint fresh {caseLabel}"
-                    |> ignore
-                | Error error -> failwithf "Expected hook replay to emit a delta, got %A" error)
+                        Assert.DoesNotContain("DeltaEmissionFailed", message)
+                    | Error other -> failwithf "Expected UnsupportedEdit, got %A" other
+                    | Ok _ -> failwith "Expected old replay-only baseline to fail closed."
+                else
+                    match result with
+                    | Ok _ ->
+                        File.ReadAllBytes dllPath
+                        |> readTypeNames
+                        |> assertReplayEndpointTypeNames $"G2 replay endpoint fresh {caseLabel}"
+                        |> ignore
+                    | Error error -> failwithf "Expected recorded replay-only baseline to emit a delta, got %A" error)
 
         runCase "recorded" false
         runCase "old-baseline-fallback" true
+
+    [<Fact>]
+    let ``EmitDelta recompiles in-process under FSHARP_HOTRELOAD_INPROCESS_COMPILE and refuses stale output once the flag is off`` () =
+        withProjectDir "fcs-hotreload-session-inprocess-compile" (fun projectDir ->
+            let fsPath = Path.Combine(projectDir, "Library.fs")
+            let dllPath = Path.Combine(projectDir, "Library.dll")
+
+            // Two functions: libValue takes the body edits; probe is never edited, so a comment
+            // line inserted above it shifts its sequence points without re-emitting its body.
+            let inprocSource (generation: int) =
+                $"""
+module SessionLib
+
+let libValue () = "lib generation {generation}"
+
+let probe () = 1
+"""
+
+            let inprocSourceShifted (generation: int) =
+                $"""
+module SessionLib
+
+let libValue () = "lib generation {generation}"
+
+// inserted line: shifts probe down relative to the committed baseline
+let probe () = 1
+"""
+
+            File.WriteAllText(fsPath, inprocSource 0)
+
+            let checker = createChecker ()
+            let options = prepareProjectOptions checker fsPath dllPath (inprocSource 0) []
+
+            checker.InvalidateAll()
+            compileProject checker options true
+
+            use session = checker.CreateHotReloadSession()
+            addProjectOrFail session (createProjectSnapshot options)
+
+            let previousFlag =
+                Environment.GetEnvironmentVariable("FSHARP_HOTRELOAD_INPROCESS_COMPILE")
+
+            try
+                Environment.SetEnvironmentVariable("FSHARP_HOTRELOAD_INPROCESS_COMPILE", "1")
+
+                // Body-only edit (string literal): notify the checker but deliberately skip the
+                // external `dotnet build`/compileProject step. The in-process compile path must
+                // produce the updated output assembly by itself.
+                File.WriteAllText(fsPath, inprocSource 1)
+                checker.NotifyFileChanged(fsPath, options) |> Async.RunImmediate
+
+                let delta = emitOrFail session (createProjectSnapshot options)
+                Assert.Equal(1, delta.UpdatedMethods.Length)
+                session.Commit()
+
+                // Body edit of libValue + line shift of the unedited probe, still without any
+                // external rebuild. The line update for probe is computed by diffing the
+                // committed sequence points against the on-disk PDB, so it only appears if the
+                // in-process compile wrote a fresh sibling PDB: the stale external-build PDB
+                // still carries probe's unshifted lines and detection would emit nothing.
+                File.WriteAllText(fsPath, inprocSourceShifted 2)
+                checker.NotifyFileChanged(fsPath, options) |> Async.RunImmediate
+
+                let shiftedDelta = emitOrFail session (createProjectSnapshot options)
+                Assert.Equal(1, shiftedDelta.UpdatedMethods.Length)
+                assertPortablePdbWithMethodDebugInfo shiftedDelta.Pdb
+
+                let updates = Assert.Single(shiftedDelta.SequencePointUpdates)
+                let lineUpdate = Assert.Single(updates.LineUpdates)
+                Assert.Equal(1, lineUpdate.NewLine - lineUpdate.OldLine)
+                session.Commit()
+            finally
+                Environment.SetEnvironmentVariable("FSHARP_HOTRELOAD_INPROCESS_COMPILE", previousFlag)
+
+            // Flag off (the default): a further body edit without an external recompile must be
+            // refused, proving flag-off behavior is unaffected by the in-process compile path.
+            File.WriteAllText(fsPath, inprocSourceShifted 3)
+            checker.NotifyFileChanged(fsPath, options) |> Async.RunImmediate
+
+            match session.EmitDelta(createProjectSnapshot options) |> Async.RunImmediate with
+            | Error(FSharpHotReloadError.DeltaEmissionFailed _) -> ()
+            | Error other -> failwithf "Expected a stale-output DeltaEmissionFailed error, got %A" other
+            | Ok _ -> failwith "Expected EmitDelta to refuse a delta from an unchanged (stale) build output.")
+
+    [<Fact>]
+    let ``EmitDelta splices successive in-process incremental emit generations`` () =
+        withProjectDir "fcs-hotreload-session-incremental-emit" (fun projectDir ->
+            let supportPath = Path.Combine(projectDir, "Support.fs")
+            let entryPath = Path.Combine(projectDir, "Entry.fs")
+            let dllPath = Path.Combine(projectDir, "IncrementalSession.dll")
+
+            let supportSource =
+                """
+module IncrementalSupport
+
+let addOne value = value + 1
+"""
+
+            let entrySource generation =
+                $"""
+module IncrementalEntry
+
+let changed () = IncrementalSupport.addOne {generation}
+"""
+
+            File.WriteAllText(supportPath, supportSource.TrimStart())
+            File.WriteAllText(entryPath, (entrySource 0).TrimStart())
+
+            let checker = createChecker ()
+            let fsPaths = [| supportPath; entryPath |]
+            let options = prepareMultiFileProjectOptions checker fsPaths dllPath supportSource []
+
+            checker.InvalidateAll()
+            compileProject checker options true
+
+            use session = checker.CreateHotReloadSession()
+            addProjectOrFail session (createProjectSnapshot options)
+
+            withEnvVar "FSHARP_HOTRELOAD_INPROCESS_COMPILE" "1" (fun () ->
+                withEnvVar "FSHARP_HOTRELOAD_INCREMENTAL_EMIT" "1" (fun () ->
+                    File.WriteAllText(entryPath, (entrySource 1).TrimStart())
+                    checker.NotifyFileChanged(entryPath, options) |> Async.RunImmediate
+
+                    let firstDelta = emitOrFail session (createProjectSnapshot options)
+                    Assert.Equal(1, firstDelta.UpdatedMethods.Length)
+                    session.Commit()
+
+                    File.WriteAllText(entryPath, (entrySource 2).TrimStart())
+                    checker.NotifyFileChanged(entryPath, options) |> Async.RunImmediate
+
+                    let secondDelta = emitOrFail session (createProjectSnapshot options)
+                    Assert.Equal(1, secondDelta.UpdatedMethods.Length)
+                    session.Commit())))

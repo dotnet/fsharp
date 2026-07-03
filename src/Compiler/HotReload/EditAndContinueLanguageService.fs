@@ -28,6 +28,10 @@ type internal FSharpEditAndContinueLanguageService private (getSessionStore: uni
 
     static let traceMethodsFlagName = "FSHARP_HOTRELOAD_TRACE_METHODS"
 
+    static let traceTimingFlagName = "FSHARP_HOTRELOAD_TRACE_TIMING"
+
+    static let traceTiming = lazy (isEnvVarTruthy traceTimingFlagName)
+
     // Keep hot reload activity tags local so Activity.fsi stays main-compatible.
     static let activityTagGeneration = "generation"
 
@@ -36,6 +40,10 @@ type internal FSharpEditAndContinueLanguageService private (getSessionStore: uni
     static let shouldTraceMetadata () = isEnvVarTruthy traceMetadataFlagName
 
     static let shouldTraceMethods () = isEnvVarTruthy traceMethodsFlagName
+
+    static let finishTiming stage (stopwatch: System.Diagnostics.Stopwatch) =
+        stopwatch.Stop()
+        printfn "[fsharp-hotreload][timing] %s=%dms" stage stopwatch.ElapsedMilliseconds
 
     static let dedupeMethodKeys (keys: MethodDefinitionKey list) =
         let seen = Collections.Generic.HashSet<MethodDefinitionKey>(HashIdentity.Structural)
@@ -293,7 +301,7 @@ type internal FSharpEditAndContinueLanguageService private (getSessionStore: uni
                         CurrentGeneration = session.CurrentGeneration
                         PreviousGenerationId = session.PreviousGenerationId
                         SynthesizedNames = Some synthesizedMap
-                        EmittedArtifacts = None
+                        EmittedArtifacts = request.EmittedArtifacts
                     }
 
                 let delta =
@@ -325,14 +333,12 @@ type internal FSharpEditAndContinueLanguageService private (getSessionStore: uni
                         eprintfn "[fsharp-hotreload][service] Failed to write trace log: %s" ex.Message
 
                 // Active statements: remap the debugger-supplied active statements against the emitted
-                // delta BEFORE any session state is staged — a rude remap (an edit that destroys
+                // delta BEFORE any session state is staged - a rude remap (an edit that destroys
                 // an active statement or changes the statement a non-leaf frame is suspended in)
                 // blocks the whole update, leaving the session at the previous generation.
                 let activeStatementRemap =
                     let recompiledTokens =
-                        delta.AddedOrChangedMethods
-                        |> List.map (fun info -> info.MethodToken)
-                        |> Set.ofList
+                        delta.MethodBodies |> List.map (fun body -> body.MethodToken) |> Set.ofList
 
                     ActiveStatementAnalysis.remapActiveStatements
                         session.Baseline.SequencePointSnapshots
@@ -367,7 +373,7 @@ type internal FSharpEditAndContinueLanguageService private (getSessionStore: uni
                             // The delta PDB does not carry EnC CDI rows, so this in-memory chain
                             // is what the closure mapping consumes.
                             let updatedMethodTokens =
-                                delta.AddedOrChangedMethods |> List.map (fun info -> info.MethodToken)
+                                delta.MethodBodies |> List.map (fun body -> body.MethodToken)
 
                             let chainedBaseline =
                                 chainEncMethodDebugInfos updatedBaseline request.RefreshedEncDebugInfos updatedMethodTokens
@@ -415,6 +421,7 @@ type internal FSharpEditAndContinueLanguageService private (getSessionStore: uni
             updatedImplementation: CheckedAssemblyAfterOptimization,
             ilModule: ILModuleDef,
             ?freshDebugPdb: byte[],
+            ?emittedArtifacts: HotReloadEmittedArtifacts,
             ?projectKey: HotReloadState.HotReloadProjectKey,
             ?deferCommit: bool
         ) : Result<DeltaEmissionResult, HotReloadError> =
@@ -422,6 +429,18 @@ type internal FSharpEditAndContinueLanguageService private (getSessionStore: uni
         // update and let the host commit/discard all projects together (Roslyn's
         // EmitSolutionUpdate/CommitSolutionUpdate split). The legacy flow commits immediately.
         let deferCommit = defaultArg deferCommit false
+        let shouldTraceTiming = traceTiming.Value
+
+        let timeSync stage work =
+            if shouldTraceTiming then
+                let stopwatch = System.Diagnostics.Stopwatch.StartNew()
+
+                try
+                    work ()
+                finally
+                    finishTiming stage stopwatch
+            else
+                work ()
 
         // Restore from the last committed snapshot before emitting if an overlapping
         // compile cleared the currently active session.
@@ -439,7 +458,8 @@ type internal FSharpEditAndContinueLanguageService private (getSessionStore: uni
                     |]
 
             let symbolChanges =
-                computeSymbolChanges tcGlobals session.Capabilities session.ImplementationFiles updatedImplementation
+                timeSync "symbolChanges" (fun () ->
+                    computeSymbolChanges tcGlobals session.Capabilities session.ImplementationFiles updatedImplementation)
 
             if not (List.isEmpty symbolChanges.RudeEdits) then
                 // Carry the per-edit structured diagnostics (Id + Severity + Message, including
@@ -454,51 +474,70 @@ type internal FSharpEditAndContinueLanguageService private (getSessionStore: uni
                         ]
                 )
             else
-                match mapSymbolChangesToDelta session.Baseline symbolChanges with
-                | Error mappingErrors -> Error(HotReloadError.UnsupportedEdit(mappingErrors |> List.map RudeEditDiagnostics.unsupported))
-                | Ok(updatedTypes, updatedMethods, accessorUpdates) ->
-                    let updatedMethods =
-                        augmentWithCompilerGeneratedCompanions session.Baseline updatedMethods
+                let buildRequestResult =
+                    timeSync "buildRequest" (fun () ->
+                        match mapSymbolChangesToDelta session.Baseline symbolChanges with
+                        | Error mappingErrors ->
+                            Error(HotReloadError.UnsupportedEdit(mappingErrors |> List.map RudeEditDiagnostics.unsupported))
+                        | Ok(updatedTypes, updatedMethods, accessorUpdates) ->
+                            let updatedMethods =
+                                augmentWithCompilerGeneratedCompanions session.Baseline updatedMethods
 
-                    // Insert-only edits (for example, adding an allowed non-virtual method) may not produce
-                    // method-body updates, but still need to flow to IlxDeltaEmitter so new MethodDef rows are emitted.
-                    let hasUpdates =
-                        not (List.isEmpty updatedTypes)
-                        || not (List.isEmpty updatedMethods)
-                        || not (List.isEmpty accessorUpdates)
-                        || not (List.isEmpty symbolChanges.Added)
+                            // Insert-only edits (for example, adding an allowed non-virtual method) may not produce
+                            // method-body updates, but still need to flow to IlxDeltaEmitter so new MethodDef rows are emitted.
+                            let hasUpdates =
+                                not (List.isEmpty updatedTypes)
+                                || not (List.isEmpty updatedMethods)
+                                || not (List.isEmpty accessorUpdates)
+                                || not (List.isEmpty symbolChanges.Added)
 
-                    // Sequence-point tracking: even when the typed-tree diff found no semantic edits (its hashes are
-                    // deliberately range-independent), the fresh compile's sequence points may have
-                    // moved — a line-shift edit (blank line/comment above a method). The emitter
-                    // detects those by diffing sequence points against the committed snapshot, so
-                    // emission proceeds and "no changes" is decided from the emitted artifacts
-                    // (Roslyn parity: line-only document changes are significant valid changes).
-                    let request: DeltaEmissionRequest =
-                        {
-                            IlModule = ilModule
-                            UpdatedTypes = updatedTypes
-                            UpdatedMethods = updatedMethods
-                            UpdatedAccessors = accessorUpdates
-                            SymbolChanges = Some symbolChanges
-                            // Recomputed occurrence data from the fresh typed tree; EmitDelta
-                            // chains it into the next-generation baseline for the updated methods.
-                            RefreshedEncDebugInfos = computeRefreshedEncMethodDebugInfos tcGlobals session.Baseline updatedImplementation
-                            // Closure mapping: the same allocator run the emit hook used
-                            // when the delta compile was lowered (deterministic over identical
-                            // session state + fresh tree), keeping the chained tables in sync
-                            // with the closure names the compile actually emitted.
-                            RefreshedClosureNameRows =
-                                computeOccurrenceKeyedClosureNames
-                                    tcGlobals
-                                    session.Baseline
-                                    session.ImplementationFiles
-                                    updatedImplementation
-                                    session.CurrentGeneration
-                                |> snd
-                        }
+                            // Sequence-point tracking: even when the typed-tree diff found no semantic edits (its hashes are
+                            // deliberately range-independent), the fresh compile's sequence points may have
+                            // moved - a line-shift edit (blank line/comment above a method). The emitter
+                            // detects those by diffing sequence points against the committed snapshot, so
+                            // emission proceeds and "no changes" is decided from the emitted artifacts
+                            // (Roslyn parity: line-only document changes are significant valid changes).
+                            let request: DeltaEmissionRequest =
+                                {
+                                    IlModule = ilModule
+                                    UpdatedTypes = updatedTypes
+                                    UpdatedMethods = updatedMethods
+                                    UpdatedAccessors = accessorUpdates
+                                    SymbolChanges = Some symbolChanges
+                                    // Recomputed occurrence data from the fresh typed tree; EmitDelta
+                                    // chains it into the next-generation baseline for the updated methods.
+                                    RefreshedEncDebugInfos =
+                                        computeRefreshedEncMethodDebugInfosWithScope
+                                            tcGlobals
+                                            session.Baseline
+                                            ImplementationFileScope.ReferenceChanged
+                                            (Some session.ImplementationFiles)
+                                            updatedImplementation
+                                    // Closure mapping: the same allocator run the emit hook used
+                                    // when the delta compile was lowered (deterministic over identical
+                                    // session state + fresh tree), keeping the chained tables in sync
+                                    // with the closure names the compile actually emitted.
+                                    RefreshedClosureNameRows =
+                                        computeOccurrenceKeyedClosureNamesWithScope
+                                            tcGlobals
+                                            session.Baseline
+                                            ImplementationFileScope.ReferenceChanged
+                                            session.ImplementationFiles
+                                            updatedImplementation
+                                            session.CurrentGeneration
+                                        |> snd
+                                    EmittedArtifacts = emittedArtifacts
+                                }
 
-                    match this.EmitDelta(request, ?freshDebugPdb = freshDebugPdb, ?projectKey = projectKey) with
+                            Ok(request, hasUpdates))
+
+                match buildRequestResult with
+                | Error error -> Error error
+                | Ok(request, hasUpdates) ->
+                    let emitCoreResult =
+                        timeSync "emitCore" (fun () -> this.EmitDelta(request, ?freshDebugPdb = freshDebugPdb, ?projectKey = projectKey))
+
+                    match emitCoreResult with
                     | Ok result ->
                         let delta = result.Delta
 
@@ -551,7 +590,7 @@ type internal FSharpEditAndContinueLanguageService private (getSessionStore: uni
     member this.CommitPendingUpdate(generationId: Guid) = this.OnDeltaApplied(generationId)
 
     /// <summary>
-    /// Commits ALL pending project updates atomically without generation-id validation —
+    /// Commits ALL pending project updates atomically without generation-id validation -
     /// the session entity's solution-wide commit (Roslyn's <c>CommitSolutionUpdate</c>).
     /// Returns the committed generation ids (empty when nothing was pending).
     /// </summary>

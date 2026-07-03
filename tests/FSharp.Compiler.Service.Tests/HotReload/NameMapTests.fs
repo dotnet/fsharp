@@ -127,7 +127,7 @@ module NameMapTests =
 
         // Replay is ordinal-positioned (slot i replays the name with ordinal i), so a
         // gapped bucket keeps every surviving name at its exact allocation slot and
-        // re-computes the missing slots' names — they are deterministic functions of
+        // re-computes the missing slots' names - they are deterministic functions of
         // the slot index, so this reproduces the original allocation byte for byte.
         let replayed = [| for _ in 0 .. 10 -> map.GetOrAddName "closure" |]
 
@@ -185,21 +185,10 @@ module NameMapTests =
         let map = FSharpSynthesizedTypeMaps()
 
         // Name doesn't start with basicName@
-        let mismatchedSnapshot = [| struct ("foo", [| "bar@DebugTypeProxy" |]) |]
+        let mismatchedSnapshot = [| struct ("foo", [| "bar@hotreload" |]) |]
         let ex = Assert.Throws<System.ArgumentException>(fun () -> map.LoadSnapshot mismatchedSnapshot)
         Assert.Contains("snapshot key 'foo'", ex.Message)
-        Assert.Contains("bar@DebugTypeProxy", ex.Message)
-
-    [<Fact>]
-    let ``LoadSnapshot accepts occurrence-keyed hot reload names in allocation buckets`` () =
-        let map = FSharpSynthesizedTypeMaps()
-
-        let snapshot = [| struct ("format", [| "describe@hotreload#g0_o0" |]) |]
-
-        map.LoadSnapshot snapshot
-        map.BeginSession()
-
-        Assert.Equal("describe@hotreload#g0_o0", map.GetOrAddName "format")
+        Assert.Contains("bar@hotreload", ex.Message)
 
     [<Fact>]
     let ``LoadSnapshot rejects name without marker`` () =

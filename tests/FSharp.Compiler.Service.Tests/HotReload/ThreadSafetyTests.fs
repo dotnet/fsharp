@@ -7,6 +7,7 @@ open Xunit
 
 open FSharp.Compiler.HotReloadState
 open FSharp.Compiler.SynthesizedTypeMaps
+open FSharp.Compiler.CompilerGeneratedNameMapState
 
 module ThreadSafetyTests =
 
@@ -208,3 +209,20 @@ module ThreadSafetyTests =
         // All snapshots should be valid
         for snapshot in snapshots do
             Assert.NotEmpty(snapshot)
+
+    [<Fact>]
+    let ``name-map accessor is safe under concurrent first use`` () =
+        // The accessor (one per CompilerGlobalState, shared by all three name generators)
+        // resolves its holder once at creation and the returned closure captures it, so
+        // the parallel IlxGen reads can never observe a torn/partial holder and NRE.
+        // With no map installed every read must return None.
+        let accessor = getCompilerGeneratedNameMapAccessor (obj ())
+        let errors = System.Collections.Concurrent.ConcurrentBag<exn>()
+
+        runConcurrently 1000 (fun _ ->
+            try
+                Assert.True((accessor ()).IsNone)
+            with ex ->
+                errors.Add(ex))
+
+        Assert.Empty(errors)

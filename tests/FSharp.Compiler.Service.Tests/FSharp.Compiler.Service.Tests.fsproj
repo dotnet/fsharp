@@ -99,6 +99,7 @@
     <!-- Parses its baseline table with System.Text.Json, which .NET Framework does not have. -->
     <Compile Include="HotReload/RoslynBaselineComparisons.fs" Condition="'$(TargetFrameworkIdentifier)' == '.NETCoreApp'" />
     <Compile Include="HotReload/NameMapTests.fs" />
+    <Compile Include="HotReload/ClosureNameAllocatorTests.fs" />
     <Compile Include="HotReload/RudeEditDiagnosticsTests.fs" />
     <Compile Include="HotReload/ThreadSafetyTests.fs" />
     <Compile Include="HotReload/CodedIndexTests.fs" />

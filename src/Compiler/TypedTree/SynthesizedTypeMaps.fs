@@ -127,14 +127,6 @@ type FSharpSynthesizedTypeMaps() =
         GetBasicNameOfPossibleCompilerGeneratedName name
         |> GeneratedNames.SynthesizedNameMapKey
 
-    let isHotReloadManagedName (name: string) =
-        match GeneratedNames.TryNormalizeHotReloadReplayName name with
-        | Some _ -> true
-        | None ->
-            match GeneratedNames.TryNormalizeHotReloadGenerationName name with
-            | Some _ -> true
-            | None -> false
-
     /// Validates that a generated name belongs to the normalized map key.
     let validateName mapKey (name: string) index =
         // Snapshots can contain legacy/basic synthesized names (for example "@_instance")
@@ -157,15 +149,10 @@ type FSharpSynthesizedTypeMaps() =
                 let mapKey = GeneratedNames.SynthesizedNameMapKey basicName
 
                 if canonicalize then
-                    // Validate legacy/basic names against the normalized key. Hot-reload
-                    // managed names can be occurrence-keyed emitted names whose final
-                    // name intentionally differs from the allocation bucket key.
-                    names
-                    |> Array.iteri (fun i name ->
-                        if isNull (box name) then
-                            invalidArg "snapshot" $"Name at index {i} in snapshot key '{mapKey}' is null"
-                        elif not (isHotReloadManagedName name) then
-                            validateName mapKey name i)
+                    // Validate each name matches the normalized key. Loading normalizes
+                    // old raw-key snapshots, so on-disk baselines captured before this
+                    // change replay through the same line-stable buckets.
+                    names |> Array.iteri (fun i name -> validateName mapKey name i)
                 else
                     // Recorded snapshots are allocation-key -> final-emitted-name slots.
                     // Occurrence-keyed closure overrides can intentionally move a final

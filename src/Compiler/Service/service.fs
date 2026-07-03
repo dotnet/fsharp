@@ -7,6 +7,7 @@ open System.Collections
 open System.Collections.Generic
 open System.Diagnostics
 open System.IO
+open System.Runtime.CompilerServices
 open System.Security.Cryptography
 open System.Threading
 open Internal.Utilities.Collections
@@ -20,14 +21,19 @@ open FSharp.Compiler.AbstractIL.ILBinaryReader
 open FSharp.Compiler.AbstractIL.ILDynamicAssemblyWriter
 open FSharp.Compiler.AbstractIL.ILPdbWriter
 open FSharp.Compiler.Caches
+open FSharp.Compiler.CheckExpressionsOps
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.CodeAnalysis.TransparentCompiler
 open FSharp.Compiler.CompilerConfig
+open FSharp.Compiler.CompilerImports
 open FSharp.Compiler.CompilerGeneratedNameMapState
 open FSharp.Compiler.CompilerOptions
+open FSharp.Compiler.CreateILModule
 open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.Driver
 open FSharp.Compiler.DiagnosticsLogger
+open FSharp.Compiler.IlxGen
+open FSharp.Compiler.OptimizeInputs
 open FSharp.Compiler.Symbols
 open FSharp.Compiler.Tokenization
 open FSharp.Compiler.Text
@@ -40,6 +46,7 @@ open FSharp.Compiler.HotReloadBaseline
 open FSharp.Compiler.HotReload.DeltaBuilder
 open FSharp.Compiler.IlxDeltaEmitter
 open FSharp.Compiler.TypedTree
+open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.GeneratedNames
 open FSharp.Compiler.SynthesizedTypeMaps
 open FSharp.Compiler.EnvironmentHelpers
@@ -106,6 +113,38 @@ module CompileHelpers =
                 ))
 
         diagnostics.ToArray(), result
+
+module private HotReloadIncrementalEmit =
+    // Keyed by input CheckedImplFile reference identity: TransparentCompiler returns
+    // reference-identical CheckedImplFile instances for unchanged files, and the INC-0
+    // spike proved that --optimize- per-file optimization from a fresh environment is
+    // byte-identical when whole-assembly IlxGen is preserved. ConditionalWeakTable
+    // keeps cached optimized trees bounded by the checker's own typed-tree cache.
+    let private optimizedImplFileCache =
+        ConditionalWeakTable<CheckedImplFile, CheckedImplFileAfterOptimization>()
+
+    let private gate = obj ()
+
+    let private tryFind (implFile: CheckedImplFile) =
+        let mutable cached = Unchecked.defaultof<CheckedImplFileAfterOptimization>
+
+        if optimizedImplFileCache.TryGetValue(implFile, &cached) then
+            Some cached
+        else
+            None
+
+    let getOrAdd implFile optimize =
+        match tryFind implFile with
+        | Some cached -> cached
+        | None ->
+            let optimized = optimize ()
+
+            lock gate (fun () ->
+                match tryFind implFile with
+                | Some cached -> cached
+                | None ->
+                    optimizedImplFileCache.Add(implFile, optimized)
+                    optimized)
 
 [<Sealed; AutoSerializable(false)>]
 // There is typically only one instance of this type in an IDE process.
@@ -252,7 +291,9 @@ type FSharpChecker
         | None ->
             match
                 otherOptions
-                |> Array.tryFindIndex (fun opt -> String.Equals(opt, "-o", StringComparison.OrdinalIgnoreCase))
+                |> Array.tryFindIndex (fun opt ->
+                    String.Equals(opt, "-o", StringComparison.OrdinalIgnoreCase)
+                    || String.Equals(opt, "--out", StringComparison.OrdinalIgnoreCase))
             with
             | Some idx when idx + 1 < otherOptions.Length -> otherOptions[idx + 1] |> resolveOutputPath |> Some
             | _ -> None
@@ -452,7 +493,7 @@ type FSharpChecker
                 baseline.SynthesizedNameSnapshotSource = SynthesizedNameSnapshotSource.Reconstructed
                 && File.Exists(pdbPath)
             then
-                match FSharp.Compiler.EncMethodDebugInformation.readSynthesizedNameSnapshotFromPortablePdb (File.ReadAllBytes pdbPath) with
+                match EncMethodDebugInformation.readSynthesizedNameSnapshotFromPortablePdb (File.ReadAllBytes pdbPath) with
                 | Some recordedSnapshot ->
                     if isEnvVarTruthy "FSHARP_HOTRELOAD_TRACE_CLOSURENAMES" then
                         printfn "[fsharp-hotreload][closure-names] synthesized-name snapshot source=recorded buckets=%d" (Map.count recordedSnapshot)
@@ -486,8 +527,8 @@ type FSharpChecker
 
                 // Closure mapping: the chain -> closure-name tables are a pure function
                 // of the occurrence keys just decoded (baseline names are occurrence-derived
-                // under the flag), so a session started from disk — typically in a different
-                // process than the fsc that built the baseline — reconstructs exactly the
+                // under the flag), so a session started from disk - typically in a different
+                // process than the fsc that built the baseline - reconstructs exactly the
                 // tables the emitting compile installed. Fail closed for replay-named and
                 // mid-session baselines (see deriveEncClosureNamesFromEncDebugInfos).
                 { baseline with
@@ -536,25 +577,15 @@ type FSharpChecker
             mapHotReloadError
         )
 
-    // We deliberately do NOT reset the process-global capture store here. Wiping it from a
-    // per-instance constructor is unsound: the store is shared by the whole process, so a host
-    // that creates a second checker (an IDE, or a test run) would silently discard the first
-    // checker's hot-reload capture state — including committed baselines owned by a still-live
-    // checker.
-    //
-    // The freshness property the wipe used to provide is preserved at capture time instead: the
-    // fsc emit hook's ambient capture path (HotReloadState.SetBaseline) REPLACEs the ambient
-    // project slot on every fresh capture, so a new owner's first capture overwrites the relevant
-    // entry without clobbering committed/other-project state belonging to another live checker.
-    // Consecutive captures with NO checker creation between still chain, because the store is
-    // never replaced. Session entities are unaffected regardless: they own private stores
-    // (createSessionStore) and reconstruct baselines from disk artifacts. Explicit teardown of the
-    // process-global store remains available via HotReloadState.clearSessionState for callers that
-    // genuinely own that lifetime.
+    // Reset the process-local capture slot the fsc emit hook publishes baseline captures into,
+    // so a freshly created checker never chains capture naming against another owner's stale
+    // ambient state. The legacy fsc ambient capture path depends on this clean slot; session
+    // entities are unaffected, owning private stores and reconstructing baselines from disk.
+    do FSharp.Compiler.HotReloadState.clearSessionState ()
 
     // Projects tracked by LIVE session entities created via CreateHotReloadSession, keyed by
     // the resolved output path each AddProject baselined (most recent first). Compile consults
-    // this to resolve the scoped emission context — which session, and which project inside
+    // this to resolve the scoped emission context - which session, and which project inside
     // it, a given in-process compile serves. Disposing a session removes its entries.
     let liveHotReloadEmissionTargets =
         ResizeArray<string * FSharp.Compiler.HotReloadState.HotReloadSessionStore * FSharp.Compiler.HotReloadState.HotReloadProjectKey>()
@@ -566,6 +597,12 @@ type FSharpChecker
             Path.GetFullPath(path)
         with _ ->
             path
+
+    let outputPathComparison =
+        if Path.DirectorySeparatorChar = '\\' then
+            StringComparison.OrdinalIgnoreCase
+        else
+            StringComparison.Ordinal
 
     let registerHotReloadEmissionTarget
         (store: FSharp.Compiler.HotReloadState.HotReloadSessionStore)
@@ -599,7 +636,7 @@ type FSharpChecker
             lock liveHotReloadEmissionTargetsGate (fun () ->
                 liveHotReloadEmissionTargets
                 |> Seq.tryPick (fun (registeredPath, store, projectKey) ->
-                    if String.Equals(registeredPath, target, StringComparison.OrdinalIgnoreCase) then
+                    if String.Equals(registeredPath, target, outputPathComparison) then
                         Some(
                             {
                                 FSharp.Compiler.HotReloadState.HotReloadEmissionContext.Store = store
@@ -704,7 +741,8 @@ type FSharpChecker
             (fun projectSnapshot opName -> this.ParseAndCheckProject(projectSnapshot, userOpName = opName)),
             tryGetOutputPathFromProjectSnapshot,
             (fun outputPath projectKey -> registerHotReloadEmissionTarget sessionStore outputPath projectKey),
-            (fun () -> unregisterHotReloadEmissionTargets sessionStore)
+            (fun () -> unregisterHotReloadEmissionTargets sessionStore),
+            Some(fun (results, outfile, naming) -> this.CompileFromCheckedProject(results, outfile, naming))
         )
 
     member _.HotReloadCapabilities =
@@ -1150,6 +1188,364 @@ type FSharpChecker
     static member Instance = globalInstance.Force()
 
     member internal _.FrameworkImportsCache = backgroundCompiler.FrameworkImportsCache
+
+    /// Compile a DLL from cached typecheck results, skipping parse/typecheck/optimization.
+    /// For dev-loop use only. Requires keepAssemblyContents=true.
+    /// Writes the assembly and portable PDB to outfile and returns the emitted module
+    /// parsed back from the written bytes.
+    member internal _.CompileFromCheckedProject(results: FSharpCheckProjectResults, outfile: string, naming: HotReloadEmitNaming) =
+        async {
+            let tcConfig, tcGlobals, tcImports, unfinalizedCcu, ccuSig, topAttrsOpt, _ilAssemRef, typedImplFilesOpt =
+                results.CompilationData
+
+            ReportTime tcConfig "CompileFromCheckedProject: Setup"
+
+            // Clear mode preserves the original emit-from-cache behavior: lay out closures with
+            // normal @<line> names and let the delta emitter bridge them. Preserve mode is used
+            // only after the session has installed the same replay tables the fsc emit hook
+            // installs in PrepareForCodeGeneration; the caller owns clearing them in a finally.
+            tcGlobals.CompilerGlobalState
+            |> Option.iter (fun cgs ->
+                match naming with
+                | HotReloadEmitNaming.ClearForLineBasedBaseline ->
+                    FSharp.Compiler.ClosureNameAllocationState.clearClosureNameState (cgs :> obj)
+                    FSharp.Compiler.CompilerGeneratedNameMapState.clearCompilerGeneratedNameMap (cgs :> obj)
+                | HotReloadEmitNaming.PreserveInstalledState _ -> ()
+
+                // Reset occurrence counters so closure names (name@line-N) match a fresh-process
+                // build instead of drifting as the reused CompilerGlobalState accumulates across edits.
+                cgs.ResetCompilerGeneratedNameState())
+
+            // The CCU from TransparentCompiler has unfinalized Contents (empty ModuleOrNamespaceType).
+            // Finalize it using ccuSig, matching what CheckClosedInputSetFinish does.
+            let ccuContents = Construct.NewCcuContents ILScopeRef.Local range0 unfinalizedCcu.AssemblyName ccuSig
+            let generatedCcu = unfinalizedCcu.CloneWithFinalizedContents(ccuContents)
+
+            let topAttrs =
+                match topAttrsOpt with
+                | Some a -> a
+                | None -> raise (InvalidOperationException "CompileFromCheckedProject: no top attributes available")
+
+            let typedImplFiles =
+                match typedImplFilesOpt with
+                | Some files -> files
+                | None -> raise (InvalidOperationException "CompileFromCheckedProject: keepAssemblyContents must be true")
+
+            // Note: We do NOT filter files with diagnostics here. FSharpCheckProjectResults.Diagnostics
+            // may include warnings promoted to errors (e.g. FS1182 from --warnaserror+:1182) that
+            // are suppressed by #nowarn in the source. These files compiled successfully in the
+            // normal fsc pipeline and must be included here for IlxGen to resolve all types.
+            // If there are genuine type-check errors, IlxGen will fail and we fall back to fsc.
+
+            // Deduplicate QualifiedNameOfFile values. TransparentCompiler processes files
+            // via dependency graph (potentially parallel), so the per-file DeduplicateParsedInputModuleName
+            // may not see all prior names. Re-deduplicate here to avoid startup code type collisions.
+            let typedImplFiles =
+                typedImplFiles
+                |> List.mapFold
+                    (fun (seen: Map<string, int>) (f: CheckedImplFile) ->
+                        let name = f.QualifiedNameOfFile.Text
+
+                        match seen.TryFind name with
+                        | None -> f, seen.Add(name, 1)
+                        | Some count ->
+                            let newCount = count + 1
+                            let newName = name + "___" + string newCount
+
+                            let newQName =
+                                FSharp.Compiler.Syntax.QualifiedNameOfFile(FSharp.Compiler.Syntax.Ident(newName, f.QualifiedNameOfFile.Range))
+
+                            let (CheckedImplFile(_, sig', contents, hasEntry, isScript, anonRecs, namedDbgPts)) = f
+                            CheckedImplFile(newQName, sig', contents, hasEntry, isScript, anonRecs, namedDbgPts), seen.Add(name, newCount))
+                    Map.empty
+                |> fst
+
+            // Save and restore CCU attribs to prevent quadratic growth on repeated compile calls.
+            let originalAttribs = generatedCcu.Contents.Attribs
+            generatedCcu.Contents.SetAttribs(originalAttribs @ topAttrs.assemblyAttrs)
+
+            use _restoreAttribs =
+                { new System.IDisposable with
+                    member _.Dispose() =
+                        generatedCcu.Contents.SetAttribs(originalAttribs)
+                }
+
+            let exportRemapping = MakeExportRemapping generatedCcu generatedCcu.Contents
+
+            ReportTime tcConfig "CompileFromCheckedProject: Encode Signature Data"
+
+            let sigDataAttributes, sigDataResources =
+                EncodeSignatureData(tcConfig, tcGlobals, exportRemapping, generatedCcu, outfile, false)
+
+            let tcVal = LightweightTcValForUsingInBuildMethodCall tcGlobals
+            let importMap = tcImports.GetImportMap()
+            let optEnv0 = GetInitialOptimizationEnv(tcImports, tcGlobals)
+
+            ReportTime tcConfig "CompileFromCheckedProject: Optimizations"
+
+            // Dev-loop optimization: use minimal passes only (no extra loops, no detuple,
+            // no TLR, no cross-assembly opt). This DLL is for local testing, not shipping.
+            // OptimizeImplFile + LowerLocalMutables + LowerCalls are mandatory for correct IlxGen.
+            let minimalSettings =
+                { tcConfig.optSettings with
+                    jitOptUser = Some false
+                    localOptUser = Some false
+                    crossAssemblyOptimizationUser = Some false
+                    lambdaInlineThreshold = 0
+                    abstractBigTargets = false
+                    reportingPhase = false
+                }
+
+            let optimizeImplFile env hidingInfo implFile =
+                let (env', file, _optInfo, hidingInfo'), optDuringCodeGen =
+                    Optimizer.OptimizeImplFile(
+                        minimalSettings,
+                        generatedCcu,
+                        tcGlobals,
+                        tcVal,
+                        importMap,
+                        env,
+                        false,
+                        tcConfig.emitTailcalls,
+                        hidingInfo,
+                        implFile
+                    )
+
+                let file = LowerLocalMutables.TransformImplFile tcGlobals importMap file
+                let file = LowerCalls.LowerImplFile tcGlobals file
+
+                {
+                    ImplFile = file
+                    OptimizeDuringCodeGen = optDuringCodeGen
+                },
+                env',
+                hidingInfo'
+
+            let optimizeWithThreadedEnvironment () =
+                typedImplFiles
+                |> List.mapFold
+                    (fun (env, hidingInfo) implFile ->
+                        let file, env', hidingInfo' = optimizeImplFile env hidingInfo implFile
+                        file, (env', hidingInfo'))
+                    (optEnv0, SignatureHidingInfo.Empty)
+                |> fst
+                |> CheckedAssemblyAfterOptimization
+
+            let optimizeWithCachedPerFileTrees () =
+                typedImplFiles
+                |> List.map (fun implFile ->
+                    HotReloadIncrementalEmit.getOrAdd implFile (fun () ->
+                        let file, _, _ = optimizeImplFile optEnv0 SignatureHidingInfo.Empty implFile
+                        file))
+                |> CheckedAssemblyAfterOptimization
+
+            let optimizedImpls, optDataResources =
+                let impls =
+                    if isEnvVarTruthy "FSHARP_HOTRELOAD_INCREMENTAL_EMIT" then
+                        try
+                            optimizeWithCachedPerFileTrees ()
+                        with _ ->
+                            optimizeWithThreadedEnvironment ()
+                    else
+                        optimizeWithThreadedEnvironment ()
+
+                impls, []
+
+            match naming with
+            | HotReloadEmitNaming.ClearForLineBasedBaseline -> ()
+            | HotReloadEmitNaming.PreserveInstalledState replay ->
+                // Mirrors HotReloadEmitHook.PrepareForCodeGeneration: compute the
+                // stamp-keyed closure-name replay over the optimized implementation that
+                // IlxGen is about to lower, then leave cleanup to the caller's finally.
+                let assignedNames, _ =
+                    HotReloadBaseline.computeOccurrenceKeyedClosureNames
+                        tcGlobals
+                        replay.Baseline
+                        replay.BaselineImplementation
+                        optimizedImpls
+                        replay.CurrentGeneration
+
+                if Environment.GetEnvironmentVariable("FSHARP_HOTRELOAD_TRACE_CLOSURENAMES") = "1" then
+                    printfn
+                        "[fsharp-hotreload][closure-names] in-process install: tables=%d gen=%d assigned=%d names=%A"
+                        (Map.count replay.Baseline.EncClosureNames)
+                        replay.CurrentGeneration
+                        (Map.count assignedNames)
+                        (assignedNames |> Map.toList)
+
+                FSharp.Compiler.ClosureNameAllocationState.setAssignedClosureNames (tcGlobals.CompilerGlobalState.Value :> obj) assignedNames
+
+            ReportTime tcConfig "CompileFromCheckedProject: TAST -> IL"
+            let ilxGenerator = CreateIlxAssemblyGenerator(tcConfig, tcImports, tcGlobals, tcVal, generatedCcu)
+
+            let codegenResults =
+                GenerateIlxCode(IlWriteBackend, false, tcConfig, topAttrs, optimizedImpls, generatedCcu.AssemblyName, ilxGenerator)
+
+            let topAssemblyAttrs = codegenResults.topAssemblyAttrs
+
+            let topAttrs =
+                { topAttrs with
+                    assemblyAttrs = topAssemblyAttrs
+                }
+
+            let secDecls = mkILSecurityDecls codegenResults.permissionSets
+
+            let metadataVersion =
+                match tcConfig.metadataVersion with
+                | Some v -> v
+                | _ -> ""
+
+            let ctok = CompilationThreadToken()
+
+            // Extract AssemblyVersionAttribute from typed assembly attributes, matching fsc's logic.
+            let assemVerFromAttrib =
+                match AttributeHelpers.TryFindStringAttribute tcGlobals "System.Reflection.AssemblyVersionAttribute" topAttrs.assemblyAttrs with
+                | Some versionString ->
+                    try
+                        Some(parseILVersion versionString)
+                    with _ ->
+                        None
+                | _ ->
+                    match tcConfig.version with
+                    | VersionNone -> Some(ILVersionInfo(0us, 0us, 0us, 0us))
+                    | _ -> Some(tcConfig.version.GetVersionInfo tcConfig.implicitIncludeDir)
+
+            let ilxMainModule =
+                let m =
+                    MainModuleBuilder.CreateMainModule(
+                        ctok,
+                        tcConfig,
+                        tcGlobals,
+                        tcImports,
+                        None,
+                        generatedCcu.AssemblyName,
+                        outfile,
+                        topAttrs,
+                        sigDataAttributes,
+                        sigDataResources,
+                        optDataResources,
+                        codegenResults,
+                        assemVerFromAttrib,
+                        metadataVersion,
+                        secDecls
+                    )
+                // Strip native resources - default.win32manifest may not exist on all platforms.
+                { m with NativeResources = [] }
+
+            let normalizeAssemblyRefs (aref: ILAssemblyRef) =
+                tcImports.NormalizeAssemblyRef(ctok, aref)
+
+            ReportTime tcConfig "CompileFromCheckedProject: Write .NET Binary"
+
+            let moduleCustomDebugInfoRows =
+                match naming with
+                | HotReloadEmitNaming.PreserveInstalledState _ when
+                    Environment.GetEnvironmentVariable("FSHARP_HOTRELOAD_DISABLE_SYNTHESIZED_NAME_SNAPSHOT_CDI")
+                    <> "1"
+                    ->
+                    match tryGetCompilerGeneratedNameMap (tcGlobals.CompilerGlobalState.Value :> obj) with
+                    | Some map ->
+                        HotReloadBaseline.collectRecordedSynthesizedNameSnapshot (tcGlobals.CompilerGlobalState.Value :> obj) map
+                        |> EncMethodDebugInformation.computeSynthesizedNameSnapshotCustomDebugInfoRows
+                    | None -> []
+                | _ -> []
+
+            // Emit the sibling portable PDB alongside the DLL (mirroring a normal
+            // --debug:portable fsc write). The hot reload emit path reads this PDB back as the
+            // fresh sequence-point source for line-shift detection and active-statement
+            // remapping; leaving the external build's stale PDB on disk would silently feed
+            // outdated lines into that analysis. Method CDI rows stay empty here; the only
+            // hot reload CDI written by this path is the F# allocation-ordered
+            // synthesized-name snapshot when preserving session naming state.
+            // Write once in memory: the bytes are persisted to disk below (the runtime and
+            // debugger read them there) AND parsed straight back for the caller, so the hot
+            // reload delta path consumes the exact read-back representation a disk parse
+            // would give, without the disk round trip.
+            let writerOptions: ILBinaryWriter.options =
+                {
+                    ilg = tcGlobals.ilg
+                    outfile = outfile
+                    pdbfile = Some(!!Path.ChangeExtension(outfile, ".pdb"))
+                    emitTailcalls = tcConfig.emitTailcalls
+                    deterministic = tcConfig.deterministic
+                    portablePDB = true
+                    embeddedPDB = false
+                    embedAllSource = false
+                    embedSourceList = []
+                    allGivenSources = []
+                    sourceLink = ""
+                    checksumAlgorithm = tcConfig.checksumAlgorithm
+                    signer = GetStrongNameSigner(ValidateKeySigningAttributes(tcConfig, tcGlobals, topAttrs))
+                    dumpDebugInfo = false
+                    referenceAssemblyOnly = false
+                    referenceAssemblyAttribOpt = None
+                    referenceAssemblySignatureHash = None
+                    pathMap = tcConfig.pathMap
+                    moduleCustomDebugInfoRows = moduleCustomDebugInfoRows
+                    methodCustomDebugInfoRows = Map.empty
+                }
+
+            let assemblyBytes, pdbBytesOpt, _writerTokenMappings, _ =
+                WriteILBinaryInMemoryWithArtifacts(writerOptions, ilxMainModule, normalizeAssemblyRefs)
+
+            // WriteILBinaryFile created the output directory; keep that contract.
+            match Path.GetDirectoryName outfile with
+            | null
+            | "" -> ()
+            | dir -> Directory.CreateDirectory dir |> ignore
+
+            File.WriteAllBytes(outfile, assemblyBytes)
+
+            let pdbPath = !!Path.ChangeExtension(outfile, ".pdb")
+
+            match pdbBytesOpt with
+            | Some pdbBytes -> File.WriteAllBytes(pdbPath, pdbBytes)
+            | None -> ()
+
+            ReportTime tcConfig "Exiting"
+
+            // Parse the just-written bytes back into the read-back representation the hot
+            // reload delta emitter and symbol matcher expect (a writer-side ILModuleDef is
+            // NOT equivalent: scope refs and body layout differ from a read module).
+            let readerOptions: ILReaderOptions =
+                {
+                    pdbDirPath = None
+                    reduceMemoryUsage = ReduceMemoryFlag.Yes
+                    metadataOnly = MetadataOnlyFlag.No
+                    tryGetMetadataSnapshot = fun _ -> None
+                }
+
+            use reader = OpenILModuleReaderFromBytes outfile assemblyBytes readerOptions
+            let emittedModule = reader.ILModuleDef
+
+            // The writer's token-mapping closures are keyed by writer-side signatures and are
+            // not directly callable with the read-back IL objects used by the delta emitter. The
+            // read-back objects carry metadata row ids from the same bytes, so these mappings
+            // expose the actual emitted tokens without a second module write.
+            let token (table: FSharp.Compiler.AbstractIL.BinaryConstants.TableName) rowId =
+                if rowId > 0 then (table.Index <<< 24) ||| rowId else 0
+
+            let tokenMappings: ILBinaryWriter.ILTokenMappings =
+                {
+                    TypeDefTokenMap = fun (_, typeDef) -> token FSharp.Compiler.AbstractIL.BinaryConstants.TableNames.TypeDef typeDef.MetadataIndex
+                    FieldDefTokenMap = fun _ fieldDef -> token FSharp.Compiler.AbstractIL.BinaryConstants.TableNames.Field fieldDef.MetadataIndex
+                    MethodDefTokenMap = fun _ methodDef -> token FSharp.Compiler.AbstractIL.BinaryConstants.TableNames.Method methodDef.MetadataIndex
+                    PropertyTokenMap =
+                        fun _ propertyDef -> token FSharp.Compiler.AbstractIL.BinaryConstants.TableNames.Property propertyDef.MetadataIndex
+                    EventTokenMap = fun _ eventDef -> token FSharp.Compiler.AbstractIL.BinaryConstants.TableNames.Event eventDef.MetadataIndex
+                }
+
+            return
+                {
+                    IlModule = emittedModule
+                    EmittedArtifacts =
+                        {
+                            AssemblyBytes = assemblyBytes
+                            PdbBytes = pdbBytesOpt
+                            TokenMappings = tokenMappings
+                        }
+                }
+        }
 
     /// Tokenize a single line, returning token information and a tokenization state represented by an integer
     member _.TokenizeLine(line: string, state: FSharpTokenizerLexState) =

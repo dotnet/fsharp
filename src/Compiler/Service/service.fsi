@@ -71,6 +71,7 @@ type public FSharpChecker =
     [<Experimental("This FCS API is experimental and subject to change.")>]
     member CreateHotReloadSession: ?capabilities: string seq -> FSharpHotReloadSession
 
+    [<Experimental("This FCS API is experimental and subject to change.")>]
     member HotReloadCapabilities: FSharpHotReloadCapabilities
 
     [<Experimental("This FCS API is experimental and subject to change.")>]
@@ -525,6 +526,14 @@ type public FSharpChecker =
 
     member internal FrameworkImportsCache: FrameworkImportsCache
     member internal ReferenceResolver: LegacyReferenceResolver
+
+    /// Compile a DLL from cached typecheck results, skipping parse/typecheck/optimization.
+    /// For dev-loop use only. Requires keepAssemblyContents=true.
+    /// Writes the assembly and portable PDB to outfile and returns the emitted module plus the
+    /// bytes and token mappings from the same write for direct in-memory consumption.
+    member internal CompileFromCheckedProject:
+        results: FSharpCheckProjectResults * outfile: string * naming: FSharp.Compiler.HotReload.HotReloadEmitNaming ->
+            Async<FSharp.Compiler.HotReload.HotReloadInProcessCompileResult>
 
     /// Tokenize a single line, returning token information and a tokenization state represented by an integer
     member TokenizeLine: line: string * state: FSharpTokenizerLexState -> FSharpTokenInfo[] * FSharpTokenizerLexState

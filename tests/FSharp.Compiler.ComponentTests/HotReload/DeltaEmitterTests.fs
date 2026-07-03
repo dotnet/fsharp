@@ -2250,7 +2250,8 @@ module DeltaEmitterTests =
               UpdatedAccessors = []
               SymbolChanges = None
               RefreshedEncDebugInfos = Map.empty
-              RefreshedClosureNameRows = Map.empty }
+              RefreshedClosureNameRows = Map.empty
+              EmittedArtifacts = None }
 
         let delta1 =
             match service.EmitDelta requestGen1 with
@@ -2277,7 +2278,8 @@ module DeltaEmitterTests =
               UpdatedAccessors = []
               SymbolChanges = None
               RefreshedEncDebugInfos = Map.empty
-              RefreshedClosureNameRows = Map.empty }
+              RefreshedClosureNameRows = Map.empty
+              EmittedArtifacts = None }
 
         let delta2 =
             match service.EmitDelta requestGen2 with
@@ -2303,7 +2305,8 @@ module DeltaEmitterTests =
               UpdatedAccessors = []
               SymbolChanges = None
               RefreshedEncDebugInfos = Map.empty
-              RefreshedClosureNameRows = Map.empty }
+              RefreshedClosureNameRows = Map.empty
+              EmittedArtifacts = None }
 
         let pendingDelta =
             match service.EmitDelta request with
@@ -2366,7 +2369,8 @@ module DeltaEmitterTests =
               UpdatedAccessors = []
               SymbolChanges = None
               RefreshedEncDebugInfos = Map.empty
-              RefreshedClosureNameRows = Map.empty }
+              RefreshedClosureNameRows = Map.empty
+              EmittedArtifacts = None }
 
         match service.EmitDelta request with
         | Ok result ->
