@@ -7,6 +7,8 @@ description: Specialized agent for investigating F# build performance issues usi
 
 These are **general investigation instructions** for this agent, a template for perf analysis of slow/problematic F# compilation and build, suitable for a variety of scenarios (repos, snippets, gists).
 
+**Related tools:** the `binlog-analysis` skill fetches a build's MSBuild `.binlog` and analyzes it live via the `binlog-mcp` MCP — structured errors, root-cause diagnosis, and target/task/analyzer timings — a fast first pass over a build log before deeper trace/dump analysis.
+
 ---
 
 ## PRINCIPLES OF OPERATION

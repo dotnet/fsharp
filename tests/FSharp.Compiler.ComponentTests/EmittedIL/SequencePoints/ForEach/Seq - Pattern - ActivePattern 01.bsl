@@ -26,7 +26,7 @@ Module::f
     IL_000c:  callvirt get_Current
     IL_0011:  stloc.2
     IL_0012:  ldloc.2
-    IL_0013:  call |Id|
+    IL_0013:  call Module::|Id|
     IL_0018:  stloc.3
     IL_0019:  ldloc.3
     IL_001a:  stloc.s 4
@@ -36,20 +36,18 @@ Module::f
 
   (6,14-6,16)  in
     IL_001d:  ldloc.1
-    IL_001e:  callvirt MoveNext
+    IL_001e:  callvirt IEnumerator::MoveNext
     IL_0023:  brtrue.s IL_000b
     IL_0025:  leave.s IL_003c
     IL_0027:  ldloc.1
     IL_0028:  isinst IDisposable
     IL_002d:  stloc.s 5
-
-  <hidden>
     IL_002f:  ldloc.s 5
     IL_0031:  brfalse.s IL_003b
 
   <hidden>
     IL_0033:  ldloc.s 5
-    IL_0035:  callvirt Dispose
+    IL_0035:  callvirt IDisposable::Dispose
     IL_003a:  endfinally
 
   <hidden>

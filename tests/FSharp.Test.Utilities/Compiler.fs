@@ -58,6 +58,7 @@ $ code --diff {outFile} {expectedFile}
             if FileSystem.FileExistsShim outFile then
                 FileSystem.FileDeleteShim outFile
         | Some diff ->
+            Directory.CreateDirectory(Path.GetDirectoryName expectedFile) |> ignore
             if shouldUpdateBaselines then
                 if FileSystem.FileExistsShim outFile then
                     FileSystem.FileDeleteShim outFile
@@ -643,6 +644,9 @@ $ code --diff {outFile} {expectedFile}
 
     let withLangVersion10 (cUnit: CompilationUnit) : CompilationUnit =
         withOptionsHelper [ "--langversion:10.0" ] "withLangVersion10 is only supported on F#" cUnit
+        
+    let withLangVersion11 (cUnit: CompilationUnit) : CompilationUnit =
+        withOptionsHelper [ "--langversion:11.0" ] "withLangVersion11 is only supported on F#" cUnit
 
     let withLangVersionPreview (cUnit: CompilationUnit) : CompilationUnit =
         withOptionsHelper [ "--langversion:preview" ] "withLangVersionPreview is only supported on F#" cUnit
@@ -1763,13 +1767,31 @@ $ code --diff {outFile} {expectedFile}
                        | :? OpCode as op -> yield (int op.Value &&& 0xffff), op
                        | _ -> () ]
 
+        // The simple name of a type handle (TypeDef/TypeRef); "" for anything else (e.g. TypeSpec).
+        let private declaringTypeName (mdReader: MetadataReader) (handle: EntityHandle) =
+            if handle.IsNil then ""
+            else
+                let row = MetadataTokens.GetRowNumber handle
+                match handle.Kind with
+                | HandleKind.TypeDefinition -> mdReader.GetString (mdReader.GetTypeDefinition(MetadataTokens.TypeDefinitionHandle row)).Name
+                | HandleKind.TypeReference -> mdReader.GetString (mdReader.GetTypeReference(MetadataTokens.TypeReferenceHandle row)).Name
+                | _ -> ""
+
         let rec private tokenName (mdReader: MetadataReader) (token: int) =
             let handle = MetadataTokens.EntityHandle token
             let row = MetadataTokens.GetRowNumber handle
+            // Qualify members with their declaring type so closure/continuation creation is visible.
+            let qualify ty nm = if ty = "" then nm else ty + "::" + nm
             match handle.Kind with
-            | HandleKind.MethodDefinition -> mdReader.GetString (mdReader.GetMethodDefinition(MetadataTokens.MethodDefinitionHandle row)).Name
-            | HandleKind.MemberReference -> mdReader.GetString (mdReader.GetMemberReference(MetadataTokens.MemberReferenceHandle row)).Name
-            | HandleKind.FieldDefinition -> mdReader.GetString (mdReader.GetFieldDefinition(MetadataTokens.FieldDefinitionHandle row)).Name
+            | HandleKind.MethodDefinition ->
+                let md = mdReader.GetMethodDefinition(MetadataTokens.MethodDefinitionHandle row)
+                qualify (declaringTypeName mdReader (TypeDefinitionHandle.op_Implicit (md.GetDeclaringType()))) (mdReader.GetString md.Name)
+            | HandleKind.MemberReference ->
+                let mr = mdReader.GetMemberReference(MetadataTokens.MemberReferenceHandle row)
+                qualify (declaringTypeName mdReader mr.Parent) (mdReader.GetString mr.Name)
+            | HandleKind.FieldDefinition ->
+                let fd = mdReader.GetFieldDefinition(MetadataTokens.FieldDefinitionHandle row)
+                qualify (declaringTypeName mdReader (TypeDefinitionHandle.op_Implicit (fd.GetDeclaringType()))) (mdReader.GetString fd.Name)
             | HandleKind.TypeReference -> mdReader.GetString (mdReader.GetTypeReference(MetadataTokens.TypeReferenceHandle row)).Name
             | HandleKind.TypeDefinition -> mdReader.GetString (mdReader.GetTypeDefinition(MetadataTokens.TypeDefinitionHandle row)).Name
             | HandleKind.MethodSpecification -> tokenName mdReader (MetadataTokens.GetToken (mdReader.GetMethodSpecification(MetadataTokens.MethodSpecificationHandle row)).Method)
