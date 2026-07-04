@@ -283,6 +283,9 @@ type TcFileState =
         /// we're always dealing with the same instance and the updates don't get lost
         argInfoCache: ConcurrentDictionary<string * range, ArgReprInfo>
 
+        /// Inherit clauses whose type already failed UndefinedName; skip re-resolution to avoid duplicate FS0039.
+        inheritResolutionFailed: ConcurrentDictionary<struct (Stamp * range), unit>
+
         // forward call
         TcPat:
             WarnOnUpperFlag
