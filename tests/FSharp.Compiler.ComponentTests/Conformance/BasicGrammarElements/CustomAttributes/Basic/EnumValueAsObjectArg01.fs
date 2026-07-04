@@ -17,15 +17,20 @@ type MyEnum =
     | B = 2
 
 // An enum with a non-int32 underlying type, to exercise the encoded value width.
+// 'Big' exceeds Int32.MaxValue so a truncating decode would corrupt the value.
 type LongEnum =
     | P = 1L
     | Q = 2L
+    | Big = 5_000_000_000L
 
 [<My(Prop = MyEnum.B)>]
 type MyClass = class end
 
 [<My(Prop = LongEnum.Q)>]
 type MyClassLong = class end
+
+[<My(Prop = LongEnum.Big)>]
+type MyClassBig = class end
 
 let propOf<'T> () = (typeof<'T>.GetCustomAttributes(false)[0] :?> MyAttribute).Prop
 
@@ -36,3 +41,7 @@ if Convert.ToString(intProp, Globalization.CultureInfo.InvariantCulture) <> "B" 
 let longProp = propOf<MyClassLong> ()
 if longProp.GetType() <> typeof<LongEnum> then failwith "LongEnum type was lost"
 if Convert.ToString(longProp, Globalization.CultureInfo.InvariantCulture) <> "Q" then failwith "expected \"Q\""
+
+let bigProp = propOf<MyClassBig> ()
+if bigProp.GetType() <> typeof<LongEnum> then failwith "LongEnum type was lost"
+if Convert.ToInt64(bigProp, Globalization.CultureInfo.InvariantCulture) <> 5_000_000_000L then failwith "expected 5_000_000_000L"
