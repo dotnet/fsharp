@@ -2445,10 +2445,8 @@ type AnonTypeGenerationTable() =
         let isStruct = evalAnonInfoIsStruct anonInfo
         let key = anonInfo.Stamp
 
-        let at =
-            dict.GetOrAdd(key, lazy (generateAnonType cenv mgbuf genToStringMethod (isStruct, anonInfo.ILTypeRef, anonInfo.SortedNames)))
-
-        at.Force() |> ignore
+        dict.GetOrAddLazy(key, fun _ -> generateAnonType cenv mgbuf genToStringMethod (isStruct, anonInfo.ILTypeRef, anonInfo.SortedNames))
+        |> ignore
 
     member this.LookupAnonType(cenv, mgbuf, genToStringMethod, anonInfo: AnonRecdTypeInfo) =
         match dict.TryGetValue anonInfo.Stamp with
