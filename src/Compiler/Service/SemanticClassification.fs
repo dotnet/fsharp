@@ -359,7 +359,9 @@ module TcResolutionsExtensions =
                         | Item.Types(_, ty :: _), LegitTypeOccurrence, m ->
                             let ty = stripTyEqns g ty
 
-                            if isDisposableTy g amap ty then
+                            if isInterfaceTy g ty then
+                                add m SemanticClassificationType.Interface
+                            elif isDisposableTy g amap ty then
                                 add m SemanticClassificationType.DisposableType
                             else
                                 match tryTcrefOfAppTy g ty with
