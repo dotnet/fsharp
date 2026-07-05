@@ -7,14 +7,14 @@
     <DebugType>portable</DebugType>
   </PropertyGroup>
 
-  <!-- Suppress NuGet audit advisories for old transitive test-only dependencies. These reference
-       packages (System.Net.Http 4.3.0, System.Text.RegularExpressions 4.3.0) are pulled in
-       transitively by test tooling; the actual implementations ship in the shared framework, so
-       the advisories are not exploitable here. -->
-  <ItemGroup>
-    <NuGetAuditSuppress Include="https://github.com/advisories/GHSA-7jgj-8wvc-jh57" />
-    <NuGetAuditSuppress Include="https://github.com/advisories/GHSA-cmhx-cq75-c4mj" />
-  </ItemGroup>
+  <!-- The codeflow update enabled a NuGet audit source, which surfaces advisories for old
+       transitive test-only dependencies (e.g. System.Net.Http, System.Text.RegularExpressions,
+       MessagePack). Their implementations ship in the shared framework and none are referenced
+       directly here, so restrict auditing to direct dependencies for test projects rather than
+       chasing individual transitive advisories. -->
+  <PropertyGroup>
+    <NuGetAuditMode>direct</NuGetAuditMode>
+  </PropertyGroup>
 
   <!-- xUnit3 packages for all test projects (except Test.Utilities which is a library) -->
   <ItemGroup Condition="($(MSBuildProjectName.EndsWith('.Tests')) OR $(MSBuildProjectName.EndsWith('.ComponentTests')) OR $(MSBuildProjectName.EndsWith('.UnitTests'))) AND '$(ExcludeFromTestPackageReferences)' != 'true'">
