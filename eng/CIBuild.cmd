@@ -71,6 +71,12 @@ rem    packages folder and the Exists()-gated VSSDK.BuildTools import in vsinteg
 rem    (which defines the VSCTCompile target) is skipped -> "target VSCTCompile does not exist". build.ps1
 rem    only sets NUGET_PACKAGES when unset, so it inherits this and stays consistent. ---
 set "NUGET_PACKAGES=%_root%\.packages\"
+rem    The VSIX output group (declared by FSharp.Compiler.Private) ships net40\bin\System.ValueTuple.dll,
+rem    but that reference resolves from a netstandard1.0 lib which modern RAR refuses to copy into a net40
+rem    output, so the DLL is absent from net40\bin (product/tests never needed it; only VSIX packaging does).
+rem    Stage the net40-compatible variant from the restored package so the VSIX can embed it. ---
+set "_vtSrc=%_root%\packages\System.ValueTuple.4.3.0\lib\portable-net40+sl4+win8+wp8\System.ValueTuple.dll"
+if not exist "%_root%\Release\net40\bin\System.ValueTuple.dll" if exist "%_vtSrc%" ( echo Staging System.ValueTuple.dll into net40\bin & copy /Y "%_vtSrc%" "%_root%\Release\net40\bin\" >nul )
 rem    Restore feeds = every approved feed from the committed NuGet.Config PLUS the devdiv 'VS' feed, all
 rem    passed as --source flags. A --source list overrides the config's feeds, so we must enumerate them
 rem    all (done at runtime to avoid drift); crucially nothing is written into any committed config, so CFS
