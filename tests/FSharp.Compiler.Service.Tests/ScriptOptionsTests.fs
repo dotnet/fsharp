@@ -60,3 +60,49 @@ let pi = Math.PI
     let expectedReferenceText = match [| flag |] |> Array.tryFind(fun f -> f = "--targetprofile:mscorlib") with | Some _ -> "net45" | _ -> "netstandard2.0"
     let found = options.OtherOptions |> Array.exists (fun s -> s.Contains(expectedReferenceText) && s.Contains("FSharp.Data.dll"))
     Assert.True(found)
+
+/// `SourceFiles` is exactly the single script; the fsi default-reference injection for a missing `#load`
+/// is a host-layout detail (not product behaviour) and is intentionally not asserted.
+[<Fact>]
+let ``Fsx.ScriptClosure.SurfaceOrderOfHashes`` () =
+    let scriptSource =
+        String.concat "\n"
+            [ "#r \"System.Runtime.Remoting\""
+              "#r \"System.Transactions\""
+              "#load \"Load1.fs\""
+              "#load \"Load2.fsx\"" ]
+    let tempFile = Path.Combine(Path.GetTempPath(), getTemporaryFileName () + ".fsx")
+    let options, _errors =
+        checker.GetProjectOptionsFromScript(tempFile, SourceText.ofString scriptSource)
+        |> Async.RunImmediate
+    let containsPartial (needle: string) = options.OtherOptions |> Array.exists (fun o -> o.Contains needle)
+    Assert.True(containsPartial "--noframework", "OtherOptions should contain --noframework")
+    Assert.True(containsPartial "System.Runtime.Remoting.dll", "OtherOptions should resolve System.Runtime.Remoting.dll")
+    Assert.True(containsPartial "System.Transactions.dll", "OtherOptions should resolve System.Transactions.dll")
+    Assert.Equal(1, options.SourceFiles.Length)
+    Assert.Equal(tempFile, options.SourceFiles.[0])
+
+/// A no-crash test: the invalid meta-command filenames must be processed WITHOUT crashing the script
+/// options (a single source file, the `--noframework` closure flag) without throwing — the invalid
+/// references surface as non-fatal resolution diagnostics, never an assert.
+[<Fact>]
+let ``Fsx.InvalidMetaCommandFilenames`` () =
+    let scriptSource =
+        String.concat "\n"
+            [ "#r @\"\""
+              "#load @\"\""
+              "#I @\"\""
+              "#r @\"*\""
+              "#load @\"*\""
+              "#I @\"*\""
+              "#r @\"?\""
+              "#load @\"?\""
+              "#I @\"?\""
+              "#r @\"C:\\path\\does\\not\\exist.dll\"  " ]
+    let tempFile = Path.Combine(Path.GetTempPath(), getTemporaryFileName () + ".fsx")
+    let options, _errors =
+        checker.GetProjectOptionsFromScript(tempFile, SourceText.ofString scriptSource)
+        |> Async.RunImmediate
+    Assert.Equal(1, options.SourceFiles.Length)
+    Assert.Equal(tempFile, options.SourceFiles.[0])
+    Assert.Contains("--noframework", options.OtherOptions)

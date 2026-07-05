@@ -7,6 +7,7 @@ open System.IO
 open System.Collections.Generic
 open System.Threading.Tasks
 open FSharp.Compiler.CodeAnalysis
+open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.IO
 open FSharp.Compiler.Symbols
 open FSharp.Compiler.Syntax
@@ -376,15 +377,22 @@ let getParseAndCheckResults80 (source: string) =
     parseAndCheckScript80("Test.fsx", source)
 
 
-let inline dumpDiagnostics (results: FSharpCheckFileResults) =
+let normalizeDiagnosticMessage (d: FSharpDiagnostic) =
+    d.Message.Split('\n')
+    |> Array.map _.Trim()
+    |> Array.filter (fun s -> s.Length > 0)
+    |> String.concat " "
+
+let formatDiagnostic (d: FSharpDiagnostic) =
+    sprintf "%s: %s" (d.Range.ToString()) (normalizeDiagnosticMessage d)
+
+let dumpDiagnostics (results: FSharpCheckFileResults) =
+    results.Diagnostics |> Array.map formatDiagnostic |> List.ofArray
+
+let dumpDiagnosticsOfSeverity (severity: FSharpDiagnosticSeverity) (results: FSharpCheckFileResults) =
     results.Diagnostics
-    |> Array.map (fun e ->
-        let message =
-            e.Message.Split('\n')
-            |> Array.map _.Trim()
-            |> Array.filter (fun s -> s.Length > 0)
-            |> String.concat " "
-        sprintf "%s: %s" (e.Range.ToString()) message)
+    |> Array.filter (fun d -> d.Severity = severity)
+    |> Array.map formatDiagnostic
     |> List.ofArray
 
 let inline dumpDiagnosticNumbers (results: FSharpCheckFileResults) =
