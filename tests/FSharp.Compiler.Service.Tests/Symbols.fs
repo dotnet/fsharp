@@ -1630,3 +1630,73 @@ let result = 1 -.- 2
         let rangeLength = range.EndColumn - range.StartColumn
 
         Assert.Equal(3, rangeLength)
+
+
+module NestedCopyAndUpdateSink =
+
+    /// Start columns of every classified use of `name` on `line` (1-based).
+    let private useCols name line source =
+        getSymbolUsesFromSource source
+        |> Seq.filter (fun s -> s.Symbol.DisplayName = name && s.Range.StartLine = line)
+        |> Seq.map (fun s -> s.Range.StartColumn)
+        |> Seq.sort
+        |> List.ofSeq
+
+    /// Start columns of every literal `token` occurrence on `line` (1-based).
+    let private tokenCols (token: string) line (source: string) =
+        let text = source.Replace("\r\n", "\n").Split('\n').[line - 1]
+        let rec go (i: int) acc =
+            match text.IndexOf(token, i) with
+            | -1 -> List.rev acc
+            | j -> go (j + 1) (j :: acc)
+        go 0 []
+
+    // Each type qualifier must be classified exactly once, at its own source column.
+    let private check name line source =
+        Assert.Equal<int list>(tokenCols name line source, useCols name line source)
+
+    [<Fact>]
+    let ``Both type qualifiers in nested update are classified`` () =
+        check "Person" 5 """
+type Info = { X: int; Y: int }
+type Person = { Info: Info }
+let p = { Info = { X = 1; Y = 2 } }
+let p2 = { p with Person.Info.X = 10; Person.Info.Y = 20 }
+"""
+
+    [<Fact>]
+    let ``Three type qualifiers in nested update all classified`` () =
+        check "Person" 5 """
+type Info = { X: int; Y: int; Z: int }
+type Person = { Info: Info }
+let p = { Info = { X = 1; Y = 2; Z = 3 } }
+let p2 = { p with Person.Info.X = 10; Person.Info.Y = 20; Person.Info.Z = 30 }
+"""
+
+    [<Fact>]
+    let ``Single type qualifier in nested update classified once`` () =
+        check "Person" 5 """
+type Info = { X: int; Y: int }
+type Person = { Info: Info }
+let p = { Info = { X = 1; Y = 2 } }
+let p2 = { p with Person.Info.X = 10 }
+"""
+
+    [<Fact>]
+    let ``Mixed qualified and unqualified in nested update`` () =
+        check "Person" 5 """
+type Info = { X: int; Y: int }
+type Person = { Name: string; Info: Info }
+let p = { Name = "test"; Info = { X = 1; Y = 2 } }
+let p2 = { p with Name = "new"; Person.Info.X = 10 }
+"""
+
+    [<Fact>]
+    let ``Qualifier repeated across sibling fields each classified`` () =
+        check "Outer" 6 """
+type Inner1 = { A: int; B: int }
+type Inner2 = { C: int }
+type Outer = { I1: Inner1; I2: Inner2 }
+let o = { I1 = { A = 1; B = 2 }; I2 = { C = 3 } }
+let o2 = { o with Outer.I1.A = 10; Outer.I1.B = 20; Outer.I2.C = 30 }
+"""

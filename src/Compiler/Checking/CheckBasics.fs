@@ -320,6 +320,11 @@ type TcFileState =
 
       argInfoCache: ConcurrentDictionary<string * range, ArgReprInfo>
 
+      /// `inherit` clauses are intentionally typechecked in multiple required passes/envs
+      /// for mutual-recursion setup, settled abbreviations, and ctor-instance checking.
+      /// Dedup failed base lookups so the same FS0039 from those passes is reported once.
+      inheritResolutionFailed: ConcurrentDictionary<struct (Stamp * range), unit>
+
       // forward call
       TcPat: WarnOnUpperFlag -> TcFileState -> TcEnv -> PrelimValReprInfo option -> TcPatValFlags -> TcPatLinearEnv -> TType -> SynPat -> (TcPatPhase2Input -> Pattern) * TcPatLinearEnv
 
@@ -370,6 +375,7 @@ type TcFileState =
           isInternalTestSpanStackReferring = isInternalTestSpanStackReferring
           diagnosticOptions = diagnosticOptions
           argInfoCache = ConcurrentDictionary()
+          inheritResolutionFailed = ConcurrentDictionary()
           TcPat = tcPat
           TcSimplePats = tcSimplePats
           TcSequenceExpressionEntry = tcSequenceExpressionEntry
