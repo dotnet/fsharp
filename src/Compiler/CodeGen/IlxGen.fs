@@ -2000,11 +2000,9 @@ type CodegenFileScope private () =
     [<DefaultValue; System.ThreadStatic>]
     static val mutable private currentFileIdx: int
 
-    static member OrderKey(localCounter: byref<int>) : struct (int * int) =
+    static member OrderKey(localIdx: int) : struct (int * int) =
         System.Diagnostics.Debug.Assert(CodegenFileScope.currentFileIdx > 0, "OrderKey called outside CodegenFileScope.With")
-        let k = localCounter
-        localCounter <- k + 1
-        struct (CodegenFileScope.currentFileIdx, k)
+        struct (CodegenFileScope.currentFileIdx, localIdx)
 
     static member With(fileIdx: int, action: unit -> 'T) : 'T =
         let prev = CodegenFileScope.currentFileIdx
@@ -2021,21 +2019,17 @@ type CodegenFileScope private () =
 
 /// Information collected imperatively for each type definition
 type TypeDefBuilder(tdef: ILTypeDef, tdefDiscards) =
-    let mutable methodIdx = 0
-    let mutable fieldIdx = 0
-    let mutable eventIdx = 0
-
-    let keyed (initial: 'T list) (counter: byref<int>) =
+    let keyed (initial: 'T list) =
         let xs = ResizeArray<struct (int * int) * 'T>(initial.Length)
 
         for x in initial do
-            xs.Add(CodegenFileScope.OrderKey(&counter), x)
+            xs.Add(CodegenFileScope.OrderKey xs.Count, x)
 
         xs
 
-    let gmethods = keyed (tdef.Methods.AsList()) &methodIdx
-    let gfields = keyed (tdef.Fields.AsList()) &fieldIdx
-    let gevents = keyed (tdef.Events.AsList()) &eventIdx
+    let gmethods = keyed (tdef.Methods.AsList())
+    let gfields = keyed (tdef.Fields.AsList())
+    let gevents = keyed (tdef.Events.AsList())
 
     let gproperties: Dictionary<PropKey, int * ILPropertyDef> =
         Dictionary<_, _>(3, HashIdentity.Structural)
@@ -2072,10 +2066,10 @@ type TypeDefBuilder(tdef: ILTypeDef, tdefDiscards) =
         )
 
     member _.AddEventDef(edef: ILEventDef) =
-        gevents.Add(CodegenFileScope.OrderKey(&eventIdx), edef)
+        gevents.Add(CodegenFileScope.OrderKey gevents.Count, edef)
 
     member _.AddFieldDef(ilFieldDef: ILFieldDef) =
-        gfields.Add(CodegenFileScope.OrderKey(&fieldIdx), ilFieldDef)
+        gfields.Add(CodegenFileScope.OrderKey gfields.Count, ilFieldDef)
 
     member _.AddMethodDef(ilMethodDef: ILMethodDef) =
         let discard =
@@ -2084,7 +2078,7 @@ type TypeDefBuilder(tdef: ILTypeDef, tdefDiscards) =
             | None -> false
 
         if not discard then
-            gmethods.Add(CodegenFileScope.OrderKey(&methodIdx), ilMethodDef)
+            gmethods.Add(CodegenFileScope.OrderKey gmethods.Count, ilMethodDef)
 
     member _.NestedTypeDefs = gnested
 
@@ -2111,7 +2105,7 @@ type TypeDefBuilder(tdef: ILTypeDef, tdefDiscards) =
                 mkMethodBody (false, [], 1, nonBranchingInstrsToCode instrs, tag, imports)
 
             let cctor = mkILClassCtor body
-            gmethods.Add(CodegenFileScope.OrderKey(&methodIdx), cctor)
+            gmethods.Add(CodegenFileScope.OrderKey gmethods.Count, cctor)
 
     member this.AppendInstructionsToSpecificMethodDef(cond, instrs, tag, imports) =
         this.UpdateOrAddCctor(cond, instrs, tag, imports, appendInstrsToMethod)

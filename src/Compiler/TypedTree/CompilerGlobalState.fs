@@ -39,8 +39,6 @@ type NiceNameGenerator() =
     member this.FreshCompilerGeneratedName (name, m: range) =
         this.FreshCompilerGeneratedNameOfBasicName (GetBasicNameOfPossibleCompilerGeneratedName name, m)
 
-    member _.IncrementOnly(name: string, m: range) = increment name m
-
     member _.FreshCompilerGeneratedNameInScope (scopeFileIndex: int, name: string, m: range) =
         let basicName = GetBasicNameOfPossibleCompilerGeneratedName name
         let count = incrementBucket basicName scopeFileIndex
