@@ -7,6 +7,15 @@
     <DebugType>portable</DebugType>
   </PropertyGroup>
 
+  <!-- Suppress NuGet audit advisories for old transitive test-only dependencies. These reference
+       packages (System.Net.Http 4.3.0, System.Text.RegularExpressions 4.3.0) are pulled in
+       transitively by test tooling; the actual implementations ship in the shared framework, so
+       the advisories are not exploitable here. -->
+  <ItemGroup>
+    <NuGetAuditSuppress Include="https://github.com/advisories/GHSA-7jgj-8wvc-jh57" />
+    <NuGetAuditSuppress Include="https://github.com/advisories/GHSA-cmhx-cq75-c4mj" />
+  </ItemGroup>
+
   <!-- xUnit3 packages for all test projects (except Test.Utilities which is a library) -->
   <ItemGroup Condition="($(MSBuildProjectName.EndsWith('.Tests')) OR $(MSBuildProjectName.EndsWith('.ComponentTests')) OR $(MSBuildProjectName.EndsWith('.UnitTests'))) AND '$(ExcludeFromTestPackageReferences)' != 'true'">
     <PackageReference Include="xunit.v3.mtp-v2" Version="$(XunitVersion)" />
