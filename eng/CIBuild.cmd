@@ -50,16 +50,19 @@ echo ---------------- Running unit tests ----------------
 powershell -NoProfile -ExecutionPolicy ByPass -File "%~dp0run-tests.ps1" -Configuration Release
 if errorlevel 1 ( echo Error: unit tests failed 1>&2 & exit /b 1 )
 
-rem --- Step 5 (opt-in): vsintegration IDE + VS insertion VSIX. EPIC-V compile blockers are resolved;
-rem    it builds locally green. Gated on BUILD_INSERTION because FSharp.Insertion.sln pulls the serviced
-rem    Roslyn 2.10 from the cross-org devdiv VS-CoreXtFeeds, which needs a feed credential on this dnceng
-rem    pipeline (operator step). Restore is done separately (the netfx credential provider is broken) then
-rem    build without -restore. Until the credential is provisioned, product CI stays green by default. ---
-if not defined BUILD_INSERTION ( echo vsintegration/insertion skipped ^(set BUILD_INSERTION=1 once devdiv feed cred is on the pipeline^) & exit /b 0 )
+rem --- Step 5 (opt-in): vsintegration IDE + VS insertion VSIX. The serviced VS-2017 editor Roslyn
+rem    (2.10.0-beta2-72429-17) is devdiv-only, so it is restored from the devdiv VS-CoreXtFeeds passed as a
+rem    build-time --source (authenticated by the 'DevDiv - VS package feed' service connection via
+rem    NuGetAuthenticate). The committed NuGet.Config stays clean (approved feeds only); devdiv is never
+rem    written into a repo config. Gated on BUILD_INSERTION so product CI stays green if this is turned off. ---
+if not defined BUILD_INSERTION ( echo vsintegration/insertion skipped ^(set BUILD_INSERTION=1 to build the signed VSIX^) & exit /b 0 )
+set "_devdivFeed=https://pkgs.dev.azure.com/devdiv/_packaging/VS-CoreXtFeeds/nuget/v3/index.json"
 echo ---------------- Restoring + building vsintegration insertion ----------------
-dotnet restore "%_root%\FSharp.Insertion.sln" --configfile "%_root%\NuGet.Config"
+dotnet restore "%_root%\FSharp.Insertion.sln" --configfile "%_root%\NuGet.Config" --source "%_devdivFeed%"
 if errorlevel 1 ( echo Error: insertion restore failed 1>&2 & exit /b 1 )
 powershell -NoProfile -ExecutionPolicy ByPass -Command "& '%~dp0common\build.ps1' -ci -build -configuration Release -projects '%_root%\FSharp.Insertion.sln' /m:1 /p:DisableLocalization=true /p:GeneratePkgDefFile=false; exit $LASTEXITCODE"
 if errorlevel 1 ( echo Error: vsintegration build failed 1>&2 & exit /b 1 )
+dotnet restore "%_root%\vsintegration\Vsix\VisualFSharpFull\VisualFSharpFull.csproj" --configfile "%_root%\NuGet.Config" --source "%_devdivFeed%"
+if errorlevel 1 ( echo Error: VSIX restore failed 1>&2 & exit /b 1 )
 powershell -NoProfile -ExecutionPolicy ByPass -Command "& '%~dp0common\build.ps1' -ci -build -configuration Release -projects '%_root%\vsintegration\Vsix\VisualFSharpFull\VisualFSharpFull.csproj' /m:1 /p:DisableLocalization=true /p:GeneratePkgDefFile=false; exit $LASTEXITCODE"
 exit /b %ERRORLEVEL%

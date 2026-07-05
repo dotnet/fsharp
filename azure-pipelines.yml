@@ -62,21 +62,28 @@ extends:
                   targetPath: '$(Build.SourcesDirectory)/release/net40/bin'
                   artifactName: 'Product_net40'
                   sbomEnabled: false
+                - output: pipelineArtifact
+                  displayName: 'Publish insertion VSIX'
+                  condition: succeeded()
+                  targetPath: '$(Build.SourcesDirectory)/vsintegration/Vsix/VisualFSharpFull/bin/Release'
+                  artifactName: 'VSIX'
+                  sbomEnabled: false
             steps:
               - checkout: self
                 clean: true
                 fetchDepth: 1
-              # STAGED insertion build: the "DevDiv - VS package feed" service connection is now authorized
-              # for this pipeline, but CFS still rejects a direct devdiv feed in NuGet.Config. To enable the
-              # insertion build, point NuGet.Config at a dnceng Azure Artifacts feed that UPSTREAMS devdiv
-              # VS-CoreXtFeeds (CFS requires a single feed via upstreams), then add to this step:
-              #   inputs: { nuGetServiceConnections: 'DevDiv - VS package feed' }   and   env BUILD_INSERTION: 1
+              # Authenticate the devdiv 'DevDiv - VS package feed' service connection so the insertion build
+              # can restore the serviced VS-2017 Roslyn from devdiv VS-CoreXtFeeds via a build-time --source
+              # (the committed NuGet.Config stays clean). CIBuild.cmd Step 5 does the devdiv restore.
               - task: NuGetAuthenticate@1
-                displayName: 'Authenticate NuGet feeds'
+                displayName: 'Authenticate NuGet feeds (incl. devdiv VS package feed)'
+                inputs:
+                  nuGetServiceConnections: 'DevDiv - VS package feed'
               - script: eng\CIBuild.cmd -configuration $(_BuildConfig)
-                displayName: 'Build (product) + tests'
+                displayName: 'Build (product) + tests + insertion VSIX'
                 env:
                   DisableLocalization: true
+                  BUILD_INSERTION: 1
               - task: PublishTestResults@2
                 displayName: 'Publish test results'
                 condition: always()
