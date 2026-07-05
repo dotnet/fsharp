@@ -57,12 +57,25 @@ rem    NuGetAuthenticate). The committed NuGet.Config stays clean (approved feed
 rem    written into a repo config. Gated on BUILD_INSERTION so product CI stays green if this is turned off. ---
 if not defined BUILD_INSERTION ( echo vsintegration/insertion skipped ^(set BUILD_INSERTION=1 to build the signed VSIX^) & exit /b 0 )
 set "_devdivFeed=https://pkgs.dev.azure.com/devdiv/_packaging/VS-CoreXtFeeds/nuget/v3/index.json"
-echo ---------------- Restoring + building vsintegration insertion ----------------
-dotnet restore "%_root%\FSharp.Insertion.sln" --configfile "%_root%\NuGet.Config" --source "%_devdivFeed%"
+rem    Use the Arcade-provisioned .NET SDK (matches global.json), NOT the agent's system dotnet on PATH
+rem    (which is older than global.json and makes 'dotnet restore' fail with "A compatible .NET SDK was
+rem    not found"). DOTNET_MULTILEVEL_LOOKUP=0 keeps the muxer from falling back to the system install.
+set "_dotnet=%_root%\.dotnet\dotnet.exe"
+if not exist "%_dotnet%" set "_dotnet=dotnet"
+set "DOTNET_ROOT=%_root%\.dotnet"
+set "DOTNET_MULTILEVEL_LOOKUP=0"
+rem    Restore feeds = every approved feed from the committed NuGet.Config PLUS the devdiv VS-CoreXtFeeds,
+rem    all passed as --source flags. A --source list overrides the config's feeds, so we must enumerate them
+rem    all (done at runtime to avoid drift); crucially nothing is written into any committed config, so CFS
+rem    (which scans committed NuGet.config files) stays green - proven on build 3014957. ---
+set "_srcArgs=--source "%_devdivFeed%""
+for /f "usebackq delims=" %%U in (`powershell -NoProfile -ExecutionPolicy Bypass -Command "([xml](Get-Content -Raw '%_root%\NuGet.Config')).configuration.packageSources.add | Where-Object { $_.value } | ForEach-Object { $_.value }"`) do set "_srcArgs=!_srcArgs! --source "%%U""
+echo ---------------- Restoring + building vsintegration insertion (using %_dotnet%) ----------------
+"%_dotnet%" restore "%_root%\FSharp.Insertion.sln" --configfile "%_root%\NuGet.Config" !_srcArgs!
 if errorlevel 1 ( echo Error: insertion restore failed 1>&2 & exit /b 1 )
 powershell -NoProfile -ExecutionPolicy ByPass -Command "& '%~dp0common\build.ps1' -ci -build -configuration Release -projects '%_root%\FSharp.Insertion.sln' /m:1 /p:DisableLocalization=true /p:GeneratePkgDefFile=false; exit $LASTEXITCODE"
 if errorlevel 1 ( echo Error: vsintegration build failed 1>&2 & exit /b 1 )
-dotnet restore "%_root%\vsintegration\Vsix\VisualFSharpFull\VisualFSharpFull.csproj" --configfile "%_root%\NuGet.Config" --source "%_devdivFeed%"
+"%_dotnet%" restore "%_root%\vsintegration\Vsix\VisualFSharpFull\VisualFSharpFull.csproj" --configfile "%_root%\NuGet.Config" !_srcArgs!
 if errorlevel 1 ( echo Error: VSIX restore failed 1>&2 & exit /b 1 )
 powershell -NoProfile -ExecutionPolicy ByPass -Command "& '%~dp0common\build.ps1' -ci -build -configuration Release -projects '%_root%\vsintegration\Vsix\VisualFSharpFull\VisualFSharpFull.csproj' /m:1 /p:DisableLocalization=true /p:GeneratePkgDefFile=false; exit $LASTEXITCODE"
 exit /b %ERRORLEVEL%
