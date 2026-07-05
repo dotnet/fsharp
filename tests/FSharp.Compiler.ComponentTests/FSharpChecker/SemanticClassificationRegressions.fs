@@ -272,6 +272,92 @@ type MyDelegate = delegate of int -> string
                 text = "BeginInvoke" || text = "EndInvoke"))
     Assert.Empty(asyncInvokeMethods)
 
+/// (#16268) IDisposable appearing in `interface IDisposable with` should be
+/// classified as Interface, not DisposableType.
+[<Fact>]
+let ``IDisposable in interface impl classified as interface`` () =
+    let source = """
+open System
+type MyClass() =
+    interface IDisposable with
+        member _.Dispose() = ()
+"""
+    let classifications = getClassifications source
+    let idisposableOnLine4 =
+        classifications
+        |> Array.filter (fun c ->
+            c.Range.StartLine = 4 && substringOfRange source c.Range = "IDisposable")
+    Assert.True(idisposableOnLine4.Length > 0, "Expected at least one classification covering IDisposable on line 4")
+    Assert.True(
+        idisposableOnLine4
+        |> Array.forall (fun c -> c.Type = SemanticClassificationType.Interface),
+        sprintf "Expected IDisposable to be classified as Interface, got: %A"
+            (idisposableOnLine4 |> Array.map (fun c -> c.Type)))
+
+/// (#16268) Negative: a concrete disposable class (MemoryStream) in a type-occurrence
+/// position must still be classified as DisposableType - the reorder of isInterfaceTy
+/// before isDisposableTy must not regress non-interface disposables.
+/// A type annotation is used (not `new MemoryStream()`, which is Item.CtorGroup) so the
+/// occurrence actually flows through the modified Item.Types/LegitTypeOccurrence arm.
+[<Fact>]
+let ``Concrete disposable class classified as disposable type`` () =
+    let source = """
+open System.IO
+let length (s: MemoryStream) = s.Length
+"""
+    let classifications = getClassifications source
+    let memStream =
+        classifications
+        |> Array.filter (fun c ->
+            substringOfRange source c.Range = "MemoryStream" && c.Range.StartLine = 3)
+    Assert.True(memStream.Length > 0, "Expected at least one classification covering MemoryStream")
+    Assert.True(
+        memStream
+        |> Array.forall (fun c -> c.Type = SemanticClassificationType.DisposableType),
+        sprintf "MemoryStream type occurrence must be classified as DisposableType, got: %A"
+            (memStream |> Array.map (fun c -> c.Type)))
+
+/// (#16268) IDisposable used as a type constraint should be Interface.
+[<Fact>]
+let ``IDisposable as type constraint classified as interface`` () =
+    let source = """
+open System
+let dispose (x: #IDisposable) = x.Dispose()
+"""
+    let classifications = getClassifications source
+    let idisposable =
+        classifications
+        |> Array.filter (fun c -> substringOfRange source c.Range = "IDisposable")
+    Assert.True(idisposable.Length > 0, "Expected at least one classification covering IDisposable")
+    Assert.True(
+        idisposable
+        |> Array.forall (fun c -> c.Type = SemanticClassificationType.Interface),
+        sprintf "Expected IDisposable type-constraint occurrence to be Interface, got: %A"
+            (idisposable |> Array.map (fun c -> c.Type)))
+
+/// (#16268) Non-IDisposable interface in `interface ... with` position stays Interface.
+/// This guards against accidentally narrowing the fix to IDisposable only.
+[<Fact>]
+let ``Non-IDisposable interface classified as interface`` () =
+    let source = """
+type IMyInterface =
+    abstract member DoStuff: unit -> unit
+type MyClass() =
+    interface IMyInterface with
+        member _.DoStuff() = ()
+"""
+    let classifications = getClassifications source
+    let iface =
+        classifications
+        |> Array.filter (fun c ->
+            substringOfRange source c.Range = "IMyInterface" && c.Range.StartLine = 5)
+    Assert.True(iface.Length > 0, "Expected at least one IMyInterface classification on line 5")
+    Assert.True(
+        iface
+        |> Array.forall (fun c -> c.Type = SemanticClassificationType.Interface),
+        sprintf "Expected IMyInterface on line 5 to be Interface, got: %A"
+            (iface |> Array.map (fun c -> c.Type)))
+
 [<Fact>]
 let ``Issue 19905 item 1 - tupled delegate decl has no Method classification`` () =
     let source = """
