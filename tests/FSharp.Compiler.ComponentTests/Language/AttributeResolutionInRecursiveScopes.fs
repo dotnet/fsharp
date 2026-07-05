@@ -246,6 +246,25 @@ type A = | [<Custom; Obsolete("test")>] A
         |> shouldSucceed
 
     [<Fact>]
+    let ``opt-in AttributeTargets warning fires for rec-scope attribute on union case with fields`` () =
+        // Parity with the non-rec case: FS3878 must still fire when the attribute type is defined in
+        // the same recursive group, whose target is only known after the deferred fixup re-resolves it.
+        Fsx """
+module rec M
+
+open System
+
+[<AttributeUsage(AttributeTargets.Field)>]
+type CustomAttribute() = inherit System.Attribute()
+
+type A = | [<Custom>] Case of int
+"""
+        |> withWarnOn 3878
+        |> compile
+        |> shouldFail
+        |> withDiagnosticMessageMatches "This attribute is not valid for use on union cases with fields"
+
+    [<Fact>]
     let ``rec-scope attribute shadows outer-scope attribute on union case in nested rec module`` () =
         Fsx """
 module Root
