@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All Rights Reserved. See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation. All Rights Reserved. See License.txt in the project root for license information.
 
 module internal FSharp.Compiler.CheckDeclarations
 
@@ -2624,6 +2624,8 @@ module EstablishTypeDefinitionCores =
         let g = cenv.g
         let env = AddDeclaredTypars CheckForDuplicateTypars (tycon.Typars) env
         let env = MakeInnerEnvForTyconRef env thisTyconRef false 
+        let ad = env.AccessRights
+        let spreadSrcTys = ResizeArray ()
         [ match synTyconRepr with 
           | SynTypeDefnSimpleRepr.None _ -> ()
           | SynTypeDefnSimpleRepr.Union (_, unionCases, _) -> 
@@ -2667,13 +2669,31 @@ module EstablishTypeDefinitionCores =
                           errorR(Error(FSComp.SR.tcStructsMustDeclareTypesOfImplicitCtorArgsExplicitly(), m))   
                       yield (ty, m)
 
-          | SynTypeDefnSimpleRepr.Record (_, fields, _) -> 
-              for SynField(fieldType = ty; range = m) in fields do 
+          | SynTypeDefnSimpleRepr.Record (_, fieldsAndSpreads, _) ->
+              let tcField (SynField (fieldType = ty; range = m)) =
                   let tyR, _ = TcTypeAndRecover cenv NoNewTypars NoCheckCxs ItemOccurrence.UseInType WarnOnIWSAM.Yes env tpenv ty
-                  yield (tyR, m)
+                  (tyR, m), ignore
+  
+              let tcSpread (SynTypeSpread (ty = ty; range = m)) =
+                  let spreadSrcTy, _ = TcTypeAndRecover cenv NoNewTypars NoCheckCxs ItemOccurrence.UseInType WarnOnIWSAM.Yes env tpenv ty
+  
+                  if isRecdTy g spreadSrcTy then
+                      spreadSrcTys.Add spreadSrcTy
+                      ResolveRecordOrClassFieldsOfType cenv.nameResolver m ad spreadSrcTy false
+                      |> List.choose (function
+                          | Item.RecdField field -> Some (field.RecdField.Id.idText, (field.FieldType, m), ignore)
+                          | _ -> None)
+                  else
+                      match tryDestAnonRecdTy g spreadSrcTy with
+                      | ValueSome (anonInfo, tys) -> tys |> List.mapi (fun i ty -> (anonInfo.SortedNames[i], (ty, m), ignore))
+                      | ValueNone -> []
+  
+              // We must apply the spread shadowing logic here
+              // to get the correct set of field types.
+              yield! fieldsAndSpreads |> Spreads.Types.Records.check ignore tcField tcSpread
 
           | _ ->
-              () ]
+              () ], spreadSrcTys
 
     let ComputeModuleOrNamespaceKind g isModule typeNames attribs nm = 
         if not isModule then (Namespace true)
@@ -3578,22 +3598,22 @@ module EstablishTypeDefinitionCores =
                     let item = Item.UnionCase(info, false)
                     CallNameResolutionSink cenv.tcSink (unionCase.Range, nenv, item, emptyTyparInst, ItemOccurrence.Binding, ad)
             
-            let typeRepr, baseValOpt, safeInitInfo = 
+            let (typeRepr, baseValOpt, safeInitInfo), recheck = 
                 match synTyconRepr with 
 
                 | SynTypeDefnSimpleRepr.Exception synExnDefnRepr -> 
                     let parent = Parent (mkLocalTyconRef tycon)
                     TcExceptionDeclarations.TcExnDefnCore_Phase1G_EstablishRepresentation cenv envinner parent tycon synExnDefnRepr |> ignore
-                    TNoRepr, None, NoSafeInitInfo
+                    (TNoRepr, None, NoSafeInitInfo), ignore
 
                 | SynTypeDefnSimpleRepr.None _ -> 
                     hiddenReprChecks false
                     noAllowNullLiteralAttributeCheck()
                     if hasMeasureAttr then 
                         let repr = TFSharpTyconRepr (Construct.NewEmptyFSharpTyconData TFSharpClass)
-                        repr, None, NoSafeInitInfo
+                        (repr, None, NoSafeInitInfo), ignore
                     else 
-                        TNoRepr, None, NoSafeInitInfo
+                        (TNoRepr, None, NoSafeInitInfo), ignore
 
                 // This unfortunate case deals with "type x = A" 
                 // In F# this only defines a new type if A is not in scope 
@@ -3608,10 +3628,10 @@ module EstablishTypeDefinitionCores =
                     TcRecdUnionAndEnumDeclarations.CheckUnionCaseName cenv unionCaseName hasRQAAttribute
                     let unionCase = Construct.NewUnionCase unionCaseName [] thisTy [] XmlDoc.Empty tycon.Accessibility
                     writeFakeUnionCtorsToSink [ unionCase ]
-                    Construct.MakeUnionRepr [ unionCase ], None, NoSafeInitInfo
+                    (Construct.MakeUnionRepr [ unionCase ], None, NoSafeInitInfo), ignore
 
                 | SynTypeDefnSimpleRepr.TypeAbbrev(ParserDetail.ErrorRecovery, _rhsType, _) ->
-                    TNoRepr, None, NoSafeInitInfo
+                    (TNoRepr, None, NoSafeInitInfo), ignore
 
                 | SynTypeDefnSimpleRepr.TypeAbbrev(ParserDetail.Ok, rhsType, _) ->
                     if hasSealedAttr = Some true then 
@@ -3622,12 +3642,12 @@ module EstablishTypeDefinitionCores =
                         let kind = if hasMeasureAttr then TyparKind.Measure else TyparKind.Type
                         let theTypeAbbrev, _ = TcTypeOrMeasureAndRecover (Some kind) cenv NoNewTypars CheckCxs ItemOccurrence.UseInType WarnOnIWSAM.No envinner tpenv rhsType
 
-                        TMeasureableRepr theTypeAbbrev, None, NoSafeInitInfo
+                        (TMeasureableRepr theTypeAbbrev, None, NoSafeInitInfo), ignore
                     // If we already computed a representation, e.g. for a generative type definition, then don't change it here.
                     elif (match tycon.TypeReprInfo with TNoRepr -> false | _ -> true) then 
-                        tycon.TypeReprInfo, None, NoSafeInitInfo
+                        (tycon.TypeReprInfo, None, NoSafeInitInfo), ignore
                     else 
-                        TNoRepr, None, NoSafeInitInfo
+                        (TNoRepr, None, NoSafeInitInfo), ignore
 
                 | SynTypeDefnSimpleRepr.Union (_, unionCases, mRepr) -> 
                     noMeasureAttributeCheck()
@@ -3643,29 +3663,148 @@ module EstablishTypeDefinitionCores =
                     writeFakeUnionCtorsToSink unionCases
                     CallEnvSink cenv.tcSink (mRepr, envinner.NameEnv, ad)
                     let repr = Construct.MakeUnionRepr unionCases
-                    repr, None, NoSafeInitInfo
+                    (repr, None, NoSafeInitInfo), ignore
 
-                | SynTypeDefnSimpleRepr.Record (_, fields, mRepr) -> 
+                | SynTypeDefnSimpleRepr.Record (_accessibility, fieldsAndSpreads, mRepr) -> 
                     noMeasureAttributeCheck()
                     noSealedAttributeCheck FSComp.SR.tcTypesAreAlwaysSealedRecord
                     noAbstractClassAttributeCheck()
                     noAllowNullLiteralAttributeCheck()
                     structLayoutAttributeCheck true  // these are allowed for records
-                    let recdFields = TcRecdUnionAndEnumDeclarations.TcNamedFieldDecls cenv envinner innerParent false tpenv fields
-                    recdFields |> CheckDuplicates (fun f -> f.Id) "field" |> ignore
-                    writeFakeRecordFieldsToSink recdFields
-                    CallEnvSink cenv.tcSink (mRepr, envinner.NameEnv, ad)
 
-                    let data =
-                        {
-                            fsobjmodel_cases = Construct.MakeUnionCases []
-                            fsobjmodel_kind = TFSharpRecord
-                            fsobjmodel_vslots = []
-                            fsobjmodel_rfields = Construct.MakeRecdFieldsTable recdFields
-                        }
+                    let check pass =
+                        let firstPass = pass = FirstPass
+                        let recdFields =
+                            let tcField synField =
+                                let field = TcRecdUnionAndEnumDeclarations.TcNamedFieldDecl cenv envinner innerParent false tpenv synField |> Option.get
+                                let errorAmbiguousShadowing () = if firstPass then errorR (Duplicate ("field", field.Id.idText, field.Id.idRange))
+                                field, errorAmbiguousShadowing
 
-                    let repr = TFSharpTyconRepr data
-                    repr, None, NoSafeInitInfo
+                            let tcSpread (SynTypeSpread (ty = ty; range = m)) =
+                                let mTy = ty.Range
+                                let (spreadSrcTy, _tpenv), error =
+                                    try TcType cenv NoNewTypars CheckCxs ItemOccurrence.UseInType WarnOnIWSAM.Yes envinner tpenv ty, false with
+                                    | RecoverableException e ->
+                                        if firstPass then
+                                            errorRecovery e ty.Range
+                                        (g.obj_ty_ambivalent, tpenv), true
+
+                                let spreadSrcTyIsNullable = g.checkNullness && (nullnessOfTy g spreadSrcTy).Evaluate() = NullnessInfo.WithNull
+                                let spreadSrcTyIsRecd = error || isRecdTy g spreadSrcTy || isAnonRecdTy g spreadSrcTy
+
+                                let isValidSpreadSrcTy = not spreadSrcTyIsNullable && spreadSrcTyIsRecd
+
+                                if isValidSpreadSrcTy then
+                                    let spreadSrcTy =
+                                        tryAppTy g spreadSrcTy
+                                        |> ValueOption.map (fun (tcref, tinst) ->
+                                            let _, _, newTinst = FreshenTypeInst g m tcref.Typars
+                                            SolveTyparsEqualTypes g cenv.css m newTinst tinst
+                                            TType_app (tcref, newTinst, g.knownWithoutNull))
+                                        |> ValueOption.defaultValue spreadSrcTy
+
+                                    let recordFieldsFromSpread =
+                                        if isRecdTy g spreadSrcTy then
+                                            ResolveRecordOrClassFieldsOfType cenv.nameResolver m ad spreadSrcTy false
+                                        else
+                                            tryDestAnonRecdTy g spreadSrcTy
+                                            |> ValueOption.map (fun (anonInfo, tys) ->
+                                                anonInfo.SortedIds
+                                                |> List.ofArray
+                                                |> List.mapi (fun i id -> Item.AnonRecdField (anonInfo, tys, i, id.idRange)))
+                                            |> ValueOption.defaultValue []
+
+                                    recordFieldsFromSpread
+                                    |> List.choose (fun field ->
+                                        match field with
+                                        | Item.RecdField fieldInfo ->
+                                            // Update the field ID's range to be that of the spread.
+                                            let syntheticId = ident (fieldInfo.RecdField.Id.idText, mTy)
+                                            let fieldTy = fieldInfo.FieldType
+                                            let vis =
+                                                let vis, _ = ComputeAccessAndCompPath g envinner None mTy None None innerParent
+                                                combineAccess vis thisTyconRef.TypeReprAccessibility
+
+                                            let recdField =
+                                                { fieldInfo.RecdField with
+                                                    rfield_id = syntheticId
+                                                    rfield_type = fieldTy
+                                                    rfield_access = vis }
+
+                                            let warnAmbiguousShadowing () =
+                                                let fmtedSpreadField = NicePrint.stringOfRecdField envinner.DisplayEnv cenv.infoReader fieldInfo.TyconRef recdField
+                                                let fmtedSpreadSrcTy = NicePrint.stringOfTy envinner.DisplayEnv spreadSrcTy
+                                                warning (Error (FSComp.SR.tcRecordTypeDefinitionSpreadFieldShadowsExplicitField (fmtedSpreadField, fmtedSpreadSrcTy), m))
+
+                                            Some (fieldInfo.RecdField.Id.idText, recdField, warnAmbiguousShadowing)
+
+                                        | Item.AnonRecdField (anonInfo, tys, fieldIndex, _) ->
+                                            let fieldId =
+                                                let orig = anonInfo.SortedIds[fieldIndex]
+                                                ident (orig.idText, m)
+
+                                            let ty = tys[fieldIndex]
+
+                                            let field =
+                                                let stat = false
+                                                let konst = None
+                                                let generated = false
+                                                let mut = false
+                                                let volatile = false
+                                                let pattribs = []
+                                                let fattribs = []
+                                                let vis = None
+                                                TcRecdUnionAndEnumDeclarations.MakeRecdFieldSpec g envinner innerParent (stat, konst, ty, pattribs, fattribs, fieldId, generated, mut, volatile, XmlDoc.Empty, vis, mTy)
+
+                                            let warnAmbiguousShadowing () =
+                                                let typars = tryAppTy g ty |> ValueOption.map (snd >> List.choose (tryDestTyparTy g >> ValueOption.toOption)) |> ValueOption.defaultValue []
+                                                let fmtedSpreadField = LayoutRender.showL (NicePrint.prettyLayoutOfMemberSig envinner.DisplayEnv ([], fieldId.idText, typars, [], ty))
+                                                let fmtedSpreadSrcTy = NicePrint.stringOfTy envinner.DisplayEnv spreadSrcTy
+                                                warning (Error (FSComp.SR.tcRecordTypeDefinitionSpreadFieldShadowsExplicitField (fmtedSpreadField, fmtedSpreadSrcTy), m))
+
+                                            Some (fieldId.idText, field, warnAmbiguousShadowing)
+
+                                        | _ -> None)
+                                elif not firstPass then
+                                    []
+                                else
+                                    if not ty.IsFromParseError then
+                                        if not spreadSrcTyIsRecd then
+                                            errorR (Error (FSComp.SR.tcRecordTypeDefinitionSpreadSourceMustBeRecord (), m))
+                                        elif spreadSrcTyIsNullable then
+                                            errorR (Error (FSComp.SR.tcRecordTypeDefinitionSpreadSourceCannotBeNullable (), m))
+                                    []
+
+                            let checkSpreadsLanguageFeature m =
+                                if firstPass then
+                                    checkLanguageFeatureAndRecover g.langVersion LanguageFeature.RecordSpreads m
+
+                            fieldsAndSpreads |> Spreads.Types.Records.check checkSpreadsLanguageFeature tcField tcSpread
+
+                        writeFakeRecordFieldsToSink recdFields
+                        CallEnvSink cenv.tcSink (mRepr, envinner.NameEnv, ad)
+
+                        let data =
+                            {
+                                fsobjmodel_cases = Construct.MakeUnionCases []
+                                fsobjmodel_kind = TFSharpRecord
+                                fsobjmodel_vslots = []
+                                fsobjmodel_rfields = Construct.MakeRecdFieldsTable recdFields
+                            }
+
+                        let repr = TFSharpTyconRepr data
+                        repr, None, NoSafeInitInfo
+
+                    let recheck =
+                        if fieldsAndSpreads |> List.exists (function SynFieldOrSpread.Spread _ -> true | SynFieldOrSpread.Field _ -> false) then
+                            fun () ->
+                                let repr, _, _ = check SecondPass
+                                tycon.entity_tycon_repr <- repr
+                        else
+                            ignore
+
+
+                    check FirstPass, recheck
 
                 | SynTypeDefnSimpleRepr.LibraryOnlyILAssembly (s, _) -> 
                     let s = (s :?> ILType)
@@ -3674,7 +3813,7 @@ module EstablishTypeDefinitionCores =
                     noAllowNullLiteralAttributeCheck()
                     structLayoutAttributeCheck false
                     noAbstractClassAttributeCheck()
-                    TAsmRepr s, None, NoSafeInitInfo
+                    (TAsmRepr s, None, NoSafeInitInfo), ignore
 
                 | SynTypeDefnSimpleRepr.General (kind, inherits, slotsigs, fields, isConcrete, isIncrClass, implicitCtorSynPats, _) ->
                     let userFields = TcRecdUnionAndEnumDeclarations.TcNamedFieldDecls cenv envinner innerParent isIncrClass tpenv fields
@@ -3705,7 +3844,7 @@ module EstablishTypeDefinitionCores =
                     | SynTypeDefnKind.Opaque -> 
                         hiddenReprChecks true
                         noAllowNullLiteralAttributeCheck()
-                        TNoRepr, None, NoSafeInitInfo
+                        (TNoRepr, None, NoSafeInitInfo), ignore
                     | _ ->
 
                         // Note: for a mutually recursive set we can't check this condition 
@@ -3828,7 +3967,7 @@ module EstablishTypeDefinitionCores =
                                 fsobjmodel_rfields = Construct.MakeRecdFieldsTable (userFields @ implicitStructFields @ safeInitFields)
                             } 
                         let repr = TFSharpTyconRepr data
-                        repr, baseValOpt, safeInitInfo
+                        (repr, baseValOpt, safeInitInfo), ignore
 
                 | SynTypeDefnSimpleRepr.Enum (decls, m) -> 
                     let fieldTy, fields' = TcRecdUnionAndEnumDeclarations.TcEnumDecls cenv envinner tpenv innerParent thisTy decls
@@ -3852,7 +3991,7 @@ module EstablishTypeDefinitionCores =
                             fsobjmodel_rfields = Construct.MakeRecdFieldsTable (vfld :: fields')
                         }
                     let repr = TFSharpTyconRepr data
-                    repr, None, NoSafeInitInfo
+                    (repr, None, NoSafeInitInfo), ignore
             
             tycon.entity_tycon_repr <- typeRepr
             // We check this just after establishing the representation
@@ -3866,10 +4005,10 @@ module EstablishTypeDefinitionCores =
                     errorR(Error(FSComp.SR.tcConditionalAttributeUsage(), m))
             | _ -> ()         
                    
-            (baseValOpt, safeInitInfo)
+            baseValOpt, safeInitInfo, recheck
         with RecoverableException exn -> 
-            errorRecovery exn m 
-            None, NoSafeInitInfo
+            errorRecovery exn m
+            None, NoSafeInitInfo, ignore
 
     /// Check that a set of type definitions is free of cycles in abbreviations
     let private TcTyconDefnCore_CheckForCyclicAbbreviations tycons = 
@@ -4193,14 +4332,49 @@ module EstablishTypeDefinitionCores =
         // be satisfied, so we have to do this prior to checking any constraints.
         //
         // First find all the field types in all the structural types
-        let tyconsWithStructuralTypes = 
-            (envMutRecPrelim, withEnvs) 
-            ||> MutRecShapes.mapTyconsWithEnv (fun envForDecls (origInfo, tyconOpt) -> 
-                   match origInfo, tyconOpt with 
+        let tyconsWithStructuralTypesAndSpreadSources =
+            (envMutRecPrelim, withEnvs)
+            ||> MutRecShapes.mapTyconsWithEnv (fun envForDecls (origInfo, tyconOpt) ->
+                   match origInfo, tyconOpt with
                    | (typeDefCore, _, _), Some tycon -> Some (tycon, GetStructuralElementsOfTyconDefn cenv envForDecls tpenv typeDefCore tycon)
-                   | _ -> None) 
-            |> MutRecShapes.collectTycons 
+                   | _ -> None)
+            |> MutRecShapes.collectTycons
             |> List.choose id
+
+        let tyconsWithStructuralTypes =
+            [
+                for tycon, (tys, _) in tyconsWithStructuralTypesAndSpreadSources ->
+                    tycon, tys
+            ]
+
+        // Check for cyclic spreads.
+        do
+            if cenv.g.langVersion.SupportsFeature LanguageFeature.RecordSpreads then
+                let (|PotentiallyRecursiveTycon|_|) ty =
+                    tryTcrefOfAppTy cenv.g ty
+                    |> ValueOption.bind _.TryDeref
+
+                let edges =
+                    [
+                        for dst, (_, spreadSrcs) in tyconsWithStructuralTypesAndSpreadSources do
+                            for src in spreadSrcs do
+                                match src with
+                                | PotentiallyRecursiveTycon src -> dst, src
+                                | _ -> ()
+                    ]
+
+                let tycons =
+                    let seen = HashSet ()
+                    [
+                        for dst, src in edges do
+                            if seen.Add dst.Stamp then
+                                yield dst
+                            if seen.Add src.Stamp then
+                                yield src
+                    ]
+
+                let graph = Graph<Tycon, Stamp> (_.Stamp, tycons, edges)
+                graph.IterateCycles (fun path -> errorR (Error (FSComp.SR.tcTypeDefinitionIsCyclicThroughSpreads (), (List.head path).Range)))
         
         let scSet = TyconConstraintInference.InferSetOfTyconsSupportingComparable cenv envMutRecPrelim.DisplayEnv tyconsWithStructuralTypes
         let seSet = TyconConstraintInference.InferSetOfTyconsSupportingEquatable cenv envMutRecPrelim.DisplayEnv tyconsWithStructuralTypes
@@ -4240,18 +4414,62 @@ module EstablishTypeDefinitionCores =
         // Now do the representations. Each baseValOpt is a residue from the representation which is potentially available when
         // checking the members.
         let withBaseValsAndSafeInitInfos = 
-            (envMutRecPrelim, withAttrs) ||> MutRecShapes.mapTyconsWithEnv (fun envForDecls (origInfo, tyconAndAttrsOpt) -> 
-                let info = 
-                    match origInfo, tyconAndAttrsOpt with 
-                    | (typeDefCore, _, _), Some (tycon, (attrs, _)) -> TcTyconDefnCore_Phase1G_EstablishRepresentation cenv envForDecls tpenv inSig typeDefCore tycon attrs
-                    | _ -> None, NoSafeInitInfo 
-                let tyconOpt, fixupFinalAttrs = 
-                    match tyconAndAttrsOpt with
-                    | None -> None, (fun () -> ())
-                    | Some (tycon, (_prelimAttrs, getFinalAttrs)) -> Some tycon, (fun () -> tycon.entity_attribs <- WellKnownEntityAttribs.Create(getFinalAttrs()))
+            let passOne =
+                (envMutRecPrelim, withAttrs) ||> MutRecShapes.mapTyconsWithEnv (fun envForDecls (origInfo, tyconAndAttrsOpt) ->
+                    let info =
+                        match origInfo, tyconAndAttrsOpt with
+                        | (typeDefCore, _, _), Some (tycon, (attrs, _)) -> TcTyconDefnCore_Phase1G_EstablishRepresentation cenv envForDecls tpenv inSig typeDefCore tycon attrs
+                        | _ -> None, NoSafeInitInfo, ignore
 
-                (origInfo, tyconOpt, fixupFinalAttrs, info))
-                
+                    let tyconOpt, fixupFinalAttrs =
+                        match tyconAndAttrsOpt with
+                        | None -> None, (fun () -> ())
+                        | Some (tycon, (_prelimAttrs, getFinalAttrs)) -> Some tycon, (fun () -> tycon.entity_attribs <- WellKnownEntityAttribs.Create(getFinalAttrs()))
+
+                    (origInfo, tyconOpt, fixupFinalAttrs, info))
+
+            let rechecks =
+                [
+                    for _, tyconOpt, _, (_, _, recheck) in passOne |> MutRecShapes.collectTycons do
+                        match tyconOpt with
+                        | Some tycon -> tycon.Stamp, recheck
+                        | None -> ()
+                ]
+
+            let spreadDependencies =
+                Map.ofList [
+                    for tycon, (_, spreadSrcTys) in tyconsWithStructuralTypesAndSpreadSources ->
+                        tycon.Stamp, [
+                            for ty in spreadSrcTys do
+                                match tryTcrefOfAppTy cenv.g ty |> ValueOption.bind _.TryDeref with
+                                | ValueSome tycon -> tycon.Stamp
+                                | ValueNone -> ()
+                        ]
+                ]
+
+            let recheckMap = Map.ofList rechecks
+            let seen = HashSet ()
+
+            let rec recheck tyconStamp =
+                if seen.Add tyconStamp then
+                    match spreadDependencies |> Map.tryFind tyconStamp with
+                    | Some spreadSrcStamps ->
+                        for spreadSrcStamp in spreadSrcStamps do
+                            if recheckMap |> Map.containsKey spreadSrcStamp then
+                                recheck spreadSrcStamp
+                    | None -> ()
+
+                    match recheckMap |> Map.tryFind tyconStamp with
+                    | Some recheck -> recheck ()
+                    | None -> ()
+
+            // Spreads require a second pass once all fields in the group are known.
+            for tyconStamp, _ in rechecks do
+                recheck tyconStamp
+
+            passOne |> MutRecShapes.mapTycons (fun (origInfo, tyconOpt, fixupFinalAttrs, (v, safeInit, _)) ->
+                (origInfo, tyconOpt, fixupFinalAttrs, (v, safeInit)))
+
         // Now check for cyclic structs and inheritance. It's possible these should be checked as separate conditions. 
         // REVIEW: checking for cyclic inheritance is happening too late. See note above.
         TcTyconDefnCore_CheckForCyclicStructsAndInheritance cenv tycons

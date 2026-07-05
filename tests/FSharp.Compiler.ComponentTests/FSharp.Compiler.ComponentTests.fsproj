@@ -170,6 +170,7 @@
     <Compile Include="Conformance\PatternMatching\Decimal\Decimal.fs" />
     <Compile Include="Conformance\Printing\Printing.fs" />
     <Compile Include="Conformance\PseudoCustomAttributes\PseudoCustomAttributes.fs" />
+    <Compile Include="Conformance\Spreads\RecordSpreadsTests.fs" />
     <Compile Include="Conformance\Types\RecordTypes\AnonymousRecords.fs" />
     <Compile Include="Conformance\Types\RecordTypes\RecordTypes.fs" />
     <Compile Include="Conformance\Types\StructTypes\StructTypes.fs" />
@@ -287,6 +288,9 @@
     <Compile Include="EmittedIL\SerializableAttribute\SerializableAttribute.fs" />
     <Compile Include="EmittedIL\SeqExpressionStepping\SeqExpressionStepping.fs" />
     <Compile Include="EmittedIL\SeqExpressionTailCalls\SeqExpressionTailCalls.fs" />
+    <Compile Include="EmittedIL\Spreads\RecordTypeSpreads.fs" />
+    <Compile Include="EmittedIL\Spreads\NominalRecordExpressionSpreads.fs" />
+    <Compile Include="EmittedIL\Spreads\AnonymousRecordExpressionSpreads.fs" />
     <Compile Include="EmittedIL\StaticInit\StaticInit.fs" />
     <Compile Include="EmittedIL\StaticOptimizations\StaticOptimizations.fs" />
     <Compile Include="EmittedIL\SteppingMatch\SteppingMatch.fs" />
@@ -386,6 +390,7 @@
     <Compile Include="Language\Nullness\EventNullnessTests.fs" />
     <Compile Include="Language\IndexedSetTests.fs" />
     <Compile Include="Language\UseBindingDisposalTests.fs" />
+    <Compile Include="Language\RecordSpreadsTests.fs" />
     <Compile Include="Import\ImportTests.fs" />
     <Compile Include="ConstraintSolver\PrimitiveConstraints.fs" />
     <Compile Include="ConstraintSolver\MemberConstraints.fs" />

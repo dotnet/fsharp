@@ -112,6 +112,7 @@ type LanguageFeature =
     | ErrorOnMissingSignatureAttribute
     | AccessProtectedBaseFieldFromClosure
     | ImprovedImpliedArgumentNamesPartTwo
+    | RecordSpreads
 
 /// LanguageVersion management
 type LanguageVersion(versionText, ?disabledFeaturesArray: LanguageFeature array) =
@@ -267,6 +268,7 @@ type LanguageVersion(versionText, ?disabledFeaturesArray: LanguageFeature array)
                 LanguageFeature.ImplicitDIMCoverage, languageVersion110
                 LanguageFeature.ErrorOnMissingSignatureAttribute, previewVersion // Opt-in: turn FS3888 from warning into error
                 LanguageFeature.AccessProtectedBaseFieldFromClosure, previewVersion // #5302: read a protected base field from a closure
+                LanguageFeature.RecordSpreads, previewVersion
             ]
 
     static let defaultLanguageVersion = LanguageVersion("default")
@@ -465,6 +467,7 @@ type LanguageVersion(versionText, ?disabledFeaturesArray: LanguageFeature array)
         | LanguageFeature.ErrorOnMissingSignatureAttribute -> FSComp.SR.featureErrorOnMissingSignatureAttribute ()
         | LanguageFeature.AccessProtectedBaseFieldFromClosure -> FSComp.SR.featureAccessProtectedBaseFieldFromClosure ()
         | LanguageFeature.ImprovedImpliedArgumentNamesPartTwo -> FSComp.SR.featureImprovedImpliedArgumentNamesPartTwo ()
+        | LanguageFeature.RecordSpreads -> FSComp.SR.featureRecordSpreads ()
 
     /// Get a version string associated with the given feature.
     static member GetFeatureVersionString feature =
