@@ -1,6 +1,6 @@
 {
-  "timestamp": "2026-06-30T06:22:31Z",
+  "timestamp": "2026-07-05T09:47:08Z",
   "result": "no_eligible_prs",
   "prs_processed": 0,
-  "notes": "No open PRs with AI-Issue-Regression-PR label found."
+  "notes": "No open PRs with AI-Issue-Regression-PR label found. Initial GitHub search returned total_count=0. MCP server crashed on subsequent calls but first result was conclusive."
 }
