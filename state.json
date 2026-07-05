@@ -8,13 +8,6 @@
       "sha": "da630bc9e452bb003c86e36dda1db4574b3009cc",
       "cats": []
     },
-    "20021": {
-      "sha": "4cd37fb6c151fcc5dd3340a370f6f8c25d71a523",
-      "cats": [
-        "Affects-Compiler-Output",
-        "Affects-Design-Time"
-      ]
-    },
     "20016": {
       "sha": "88e64501a0db50d05a18a0267434fa18f254527d",
       "cats": [
@@ -54,12 +47,6 @@
     },
     "19976": {
       "sha": "770601f5372d24bc6fd4f7c4374248cc735ef80a",
-      "cats": [
-        "Affects-Compiler-Output"
-      ]
-    },
-    "19975": {
-      "sha": "b02c0c5c403305b68d7a90a6fffa67babad9f855",
       "cats": [
         "Affects-Compiler-Output"
       ]
@@ -108,7 +95,7 @@
       "cats": []
     },
     "19885": {
-      "sha": "9591fb3c164d2246d802b567bc38cc9a1267b795",
+      "sha": "12ab9204ee62295713df290e886e2b37f4c69437",
       "cats": []
     },
     "19868": {
@@ -140,7 +127,7 @@
       "cats": []
     },
     "19759": {
-      "sha": "adeac59519b2e3b3809b367ae11638ccf10375d8",
+      "sha": "ed0900231dce5cff24cc5331d043ee83055d172f",
       "cats": []
     }
   }
