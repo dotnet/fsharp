@@ -109,7 +109,7 @@ module AccessibilityAnnotations_Basic =
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
-            (Error 1096, Line 11, Col 9, Line 11, Col 24, "The record, struct or class field 'foo' is not accessible from this code location")
+            (Error 1096, Line 11, Col 21, Line 11, Col 24, "The record, struct or class field 'foo' is not accessible from this code location")
         ]
 
     //SOURCE=E_PrivateImplicitCtor01.fs SCFLAGS="--test:ErrorRanges"                  # E_PrivateImplicitCtor01.fs
