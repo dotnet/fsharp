@@ -65,8 +65,14 @@ set "_dotnet=%_root%\.dotnet\dotnet.exe"
 if not exist "%_dotnet%" set "_dotnet=dotnet"
 set "DOTNET_ROOT=%_root%\.dotnet"
 set "DOTNET_MULTILEVEL_LOOKUP=0"
-rem    Restore feeds = every approved feed from the committed NuGet.Config PLUS the devdiv VS-CoreXtFeeds,
-rem    all passed as --source flags. A --source list overrides the config's feeds, so we must enumerate them
+rem    Restore into Arcade's repo-local .packages folder (the product build's $(NuGetPackageRoot), which is
+rem    $(NUGET_PACKAGES) per FSharpBuild.Directory.Build.props). Otherwise the restore lands in the global
+rem    packages folder and the Exists()-gated VSSDK.BuildTools import in vsintegration/Directory.Build.targets
+rem    (which defines the VSCTCompile target) is skipped -> "target VSCTCompile does not exist". build.ps1
+rem    only sets NUGET_PACKAGES when unset, so it inherits this and stays consistent. ---
+set "NUGET_PACKAGES=%_root%\.packages\"
+rem    Restore feeds = every approved feed from the committed NuGet.Config PLUS the devdiv 'VS' feed, all
+rem    passed as --source flags. A --source list overrides the config's feeds, so we must enumerate them
 rem    all (done at runtime to avoid drift); crucially nothing is written into any committed config, so CFS
 rem    (which scans committed NuGet.config files) stays green - proven on build 3014957. ---
 set "_srcArgs=--source "%_devdivFeed%""
