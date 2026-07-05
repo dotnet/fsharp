@@ -51,12 +51,13 @@ powershell -NoProfile -ExecutionPolicy ByPass -File "%~dp0run-tests.ps1" -Config
 if errorlevel 1 ( echo Error: unit tests failed 1>&2 & exit /b 1 )
 
 rem --- Step 5 (opt-in): vsintegration IDE + VS insertion VSIX. The serviced VS-2017 editor Roslyn
-rem    (2.10.0-beta2-72429-17) is devdiv-only, so it is restored from the devdiv VS-CoreXtFeeds passed as a
-rem    build-time --source (authenticated by the 'DevDiv - VS package feed' service connection via
-rem    NuGetAuthenticate). The committed NuGet.Config stays clean (approved feeds only); devdiv is never
-rem    written into a repo config. Gated on BUILD_INSERTION so product CI stays green if this is turned off. ---
+rem    (2.10.0-beta2-72429-17) is not on any approved feed, so it is restored from the devdiv 'VS' feed -
+rem    the exact endpoint the 'DevDiv - VS package feed' service connection authenticates (verified to serve
+rem    the 2.10 Roslyn packages). NuGetAuthenticate wires the credential provider for that exact URL; using a
+rem    different devdiv host/feed alias 401s. The committed NuGet.Config stays clean (approved feeds only);
+rem    devdiv is never written into a repo config. Gated on BUILD_INSERTION so product CI stays green if off. ---
 if not defined BUILD_INSERTION ( echo vsintegration/insertion skipped ^(set BUILD_INSERTION=1 to build the signed VSIX^) & exit /b 0 )
-set "_devdivFeed=https://pkgs.dev.azure.com/devdiv/_packaging/VS-CoreXtFeeds/nuget/v3/index.json"
+set "_devdivFeed=https://devdiv.pkgs.visualstudio.com/_packaging/VS/nuget/v3/index.json"
 rem    Use the Arcade-provisioned .NET SDK (matches global.json), NOT the agent's system dotnet on PATH
 rem    (which is older than global.json and makes 'dotnet restore' fail with "A compatible .NET SDK was
 rem    not found"). DOTNET_MULTILEVEL_LOOKUP=0 keeps the muxer from falling back to the system install.
