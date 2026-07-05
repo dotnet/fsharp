@@ -702,6 +702,18 @@
       <SpecificVersion>false</SpecificVersion>
       <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.Build.Tasks.Core.15.8.166\lib\net46\Microsoft.Build.Tasks.Core.dll</HintPath>
     </Reference>
+    <!-- Payload-only refs so these legacy MSBuild redists land in net40\bin for the VSIX/setup output group
+         (FSharp.Compiler.Private declares them in BuiltProjectOutputGroupKeyOutput). Not used by compiler
+         code, so FSharp.Compiler.Private.dll is unchanged. Completes the Block 9g repoint off the
+         nuget.org-only Microsoft.VisualFSharp.Msbuild.15.0 package. -->
+    <Reference Include="Microsoft.Build.Conversion.Core, Version=$(VisualStudioVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+      <SpecificVersion>false</SpecificVersion>
+      <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.Build.Conversion.Core.15.8.166\lib\net46\Microsoft.Build.Conversion.Core.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.Build.Engine, Version=$(VisualStudioVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+      <SpecificVersion>false</SpecificVersion>
+      <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.Build.Engine.15.8.166\lib\net46\Microsoft.Build.Engine.dll</HintPath>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Core\FSharp.Core.fsproj">
