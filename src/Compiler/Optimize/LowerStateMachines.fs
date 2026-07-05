@@ -184,7 +184,7 @@ type LowerStateMachine(g: TcGlobals, outerResumableCodeDefns: ValMap<Expr>) =
             let envR = { env with ResumableCodeDefns = env.ResumableCodeDefns.Add defn.Var defn.Expr }
             let envR2, bodyR = BindResumableCodeDefinitions envR finalizing bodyExpr
             // A dropped member-access receiver temp loses its side effect when unused (#13099).
-            if finalizing && defn.Var.IsMemberThisVal && Optimizer.ExprHasEffect g defn.Expr &&
+            if finalizing && defn.Var.IsMemberThisVal && Optimizer.ExprHasEffect Optimizer.EffectContext.Emit g defn.Expr &&
                not (Zset.contains defn.Var (freeInExpr CollectLocals bodyExpr).FreeLocals) then
                 envR2, mkSequential m defn.Expr bodyR
             else
