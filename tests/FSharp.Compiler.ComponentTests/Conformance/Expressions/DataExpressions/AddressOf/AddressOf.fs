@@ -131,19 +131,32 @@ let test () =
         |> shouldSucceed
 
     [<Fact>]
-    let ``Issue 18841 - plain let discard with no address-of still compiles`` () =
+    let ``Issue 19608 - address of untyped ValueNone compiles`` () =
         Fsx """
 module Test
 
-type S =
-    struct
-        val Field: int
-    end
+let x (y: inref<ValueOption<int>>) = ()
 
 let test () =
-    let s = S()
-    let _ = s
+    let ffff = ValueNone
+    x &ffff
+        """
+        |> asLibrary
+        |> compile
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Issue 19608 - native address of untyped ValueNone binding fails`` () =
+        Fsx """
+#nowarn "51"
+
+module Test
+
+let test () =
+    let ffff = ValueNone
+    let _ = &&ffff
     ()
         """
         |> typecheck
-        |> shouldSucceed
+        |> shouldFail
+        |> withErrorCode 256

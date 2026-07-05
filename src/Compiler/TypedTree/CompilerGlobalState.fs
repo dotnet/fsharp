@@ -7,6 +7,7 @@ module FSharp.Compiler.CompilerGlobalState
 open System
 open System.Collections.Concurrent
 open System.Threading
+open Internal.Utilities.Library
 open FSharp.Compiler.Syntax.PrettyNaming
 open FSharp.Compiler.Text
 
@@ -58,10 +59,7 @@ type StableNiceNameGenerator() =
     member x.GetUniqueCompilerGeneratedName (name, m: range, uniq) =
         let basicName = GetBasicNameOfPossibleCompilerGeneratedName name
         let key = basicName, uniq
-        let lazyName =
-            niceNames.GetOrAdd(key, fun (basicName, _) ->
-                lazy innerGenerator.FreshCompilerGeneratedNameOfBasicName(basicName, m))
-        lazyName.Value
+        niceNames.GetOrAddLazy(key, fun (basicName, _) -> innerGenerator.FreshCompilerGeneratedNameOfBasicName(basicName, m))
 
 [<Sealed>]
 type PerFileNamingScope internal (nng: NiceNameGenerator, fileIndex: int) =
