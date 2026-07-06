@@ -6,27 +6,27 @@ This file should be imported by eng/Versions.props
 <Project>
   <PropertyGroup>
     <!-- dotnet-arcade dependencies -->
-    <MicrosoftDotNetArcadeSdkPackageVersion>10.0.0-beta.26304.4</MicrosoftDotNetArcadeSdkPackageVersion>
+    <MicrosoftDotNetArcadeSdkPackageVersion>10.0.0-beta.26324.4</MicrosoftDotNetArcadeSdkPackageVersion>
     <!-- dotnet-msbuild dependencies -->
-    <MicrosoftBuildPackageVersion>18.9.0-preview-26317-11</MicrosoftBuildPackageVersion>
-    <MicrosoftBuildFrameworkPackageVersion>18.9.0-preview-26317-11</MicrosoftBuildFrameworkPackageVersion>
-    <MicrosoftBuildTasksCorePackageVersion>18.9.0-preview-26317-11</MicrosoftBuildTasksCorePackageVersion>
-    <MicrosoftBuildUtilitiesCorePackageVersion>18.9.0-preview-26317-11</MicrosoftBuildUtilitiesCorePackageVersion>
+    <MicrosoftBuildPackageVersion>18.10.0-preview-26353-05</MicrosoftBuildPackageVersion>
+    <MicrosoftBuildFrameworkPackageVersion>18.10.0-preview-26353-05</MicrosoftBuildFrameworkPackageVersion>
+    <MicrosoftBuildTasksCorePackageVersion>18.10.0-preview-26353-05</MicrosoftBuildTasksCorePackageVersion>
+    <MicrosoftBuildUtilitiesCorePackageVersion>18.10.0-preview-26353-05</MicrosoftBuildUtilitiesCorePackageVersion>
     <!-- dotnet-optimization dependencies -->
-    <optimizationlinuxarm64MIBCRuntimePackageVersion>1.0.0-prerelease.26317.1</optimizationlinuxarm64MIBCRuntimePackageVersion>
-    <optimizationlinuxx64MIBCRuntimePackageVersion>1.0.0-prerelease.26317.1</optimizationlinuxx64MIBCRuntimePackageVersion>
-    <optimizationwindows_ntarm64MIBCRuntimePackageVersion>1.0.0-prerelease.26317.1</optimizationwindows_ntarm64MIBCRuntimePackageVersion>
-    <optimizationwindows_ntx64MIBCRuntimePackageVersion>1.0.0-prerelease.26317.1</optimizationwindows_ntx64MIBCRuntimePackageVersion>
-    <optimizationwindows_ntx86MIBCRuntimePackageVersion>1.0.0-prerelease.26317.1</optimizationwindows_ntx86MIBCRuntimePackageVersion>
+    <optimizationlinuxarm64MIBCRuntimePackageVersion>1.0.0-prerelease.26318.1</optimizationlinuxarm64MIBCRuntimePackageVersion>
+    <optimizationlinuxx64MIBCRuntimePackageVersion>1.0.0-prerelease.26318.1</optimizationlinuxx64MIBCRuntimePackageVersion>
+    <optimizationwindows_ntarm64MIBCRuntimePackageVersion>1.0.0-prerelease.26318.1</optimizationwindows_ntarm64MIBCRuntimePackageVersion>
+    <optimizationwindows_ntx64MIBCRuntimePackageVersion>1.0.0-prerelease.26318.1</optimizationwindows_ntx64MIBCRuntimePackageVersion>
+    <optimizationwindows_ntx86MIBCRuntimePackageVersion>1.0.0-prerelease.26318.1</optimizationwindows_ntx86MIBCRuntimePackageVersion>
     <!-- dotnet-roslyn dependencies -->
-    <MicrosoftCodeAnalysisPackageVersion>5.9.0-1.26317.6</MicrosoftCodeAnalysisPackageVersion>
-    <MicrosoftCodeAnalysisCompilersPackageVersion>5.9.0-1.26317.6</MicrosoftCodeAnalysisCompilersPackageVersion>
-    <MicrosoftCodeAnalysisCSharpPackageVersion>5.9.0-1.26317.6</MicrosoftCodeAnalysisCSharpPackageVersion>
-    <MicrosoftCodeAnalysisEditorFeaturesPackageVersion>5.9.0-1.26317.6</MicrosoftCodeAnalysisEditorFeaturesPackageVersion>
-    <MicrosoftCodeAnalysisEditorFeaturesTextPackageVersion>5.9.0-1.26317.6</MicrosoftCodeAnalysisEditorFeaturesTextPackageVersion>
-    <MicrosoftCodeAnalysisExternalAccessFSharpPackageVersion>5.9.0-1.26317.6</MicrosoftCodeAnalysisExternalAccessFSharpPackageVersion>
-    <MicrosoftCodeAnalysisFeaturesPackageVersion>5.9.0-1.26317.6</MicrosoftCodeAnalysisFeaturesPackageVersion>
-    <MicrosoftVisualStudioLanguageServicesPackageVersion>5.9.0-1.26317.6</MicrosoftVisualStudioLanguageServicesPackageVersion>
+    <MicrosoftCodeAnalysisPackageVersion>5.10.0-1.26352.10</MicrosoftCodeAnalysisPackageVersion>
+    <MicrosoftCodeAnalysisCompilersPackageVersion>5.10.0-1.26352.10</MicrosoftCodeAnalysisCompilersPackageVersion>
+    <MicrosoftCodeAnalysisCSharpPackageVersion>5.10.0-1.26352.10</MicrosoftCodeAnalysisCSharpPackageVersion>
+    <MicrosoftCodeAnalysisEditorFeaturesPackageVersion>5.10.0-1.26352.10</MicrosoftCodeAnalysisEditorFeaturesPackageVersion>
+    <MicrosoftCodeAnalysisEditorFeaturesTextPackageVersion>5.10.0-1.26352.10</MicrosoftCodeAnalysisEditorFeaturesTextPackageVersion>
+    <MicrosoftCodeAnalysisExternalAccessFSharpPackageVersion>5.10.0-1.26352.10</MicrosoftCodeAnalysisExternalAccessFSharpPackageVersion>
+    <MicrosoftCodeAnalysisFeaturesPackageVersion>5.10.0-1.26352.10</MicrosoftCodeAnalysisFeaturesPackageVersion>
+    <MicrosoftVisualStudioLanguageServicesPackageVersion>5.10.0-1.26352.10</MicrosoftVisualStudioLanguageServicesPackageVersion>
     <!-- dotnet-runtime dependencies -->
     <SystemCollectionsImmutablePackageVersion>10.0.2</SystemCollectionsImmutablePackageVersion>
     <SystemCompositionPackageVersion>10.0.2</SystemCompositionPackageVersion>

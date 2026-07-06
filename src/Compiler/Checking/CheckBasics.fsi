@@ -130,6 +130,10 @@ type TcEnv =
 
         eIsControlFlow: bool
 
+        /// Are we checking the body of an object expression? Such a body has family access to the
+        /// implemented type, but its closures are not nested under that type, so they cannot keep it (#5302).
+        eInObjectExpr: bool
+
         // In order to avoid checking implicit-yield expressions multiple times, we cache the resulting checked expressions.
         // This avoids exponential behavior in the type checker when nesting implicit-yield expressions.
         eCachedImplicitYieldExpressions: HashMultiMap<range, SynExpr * TType * Expr>
@@ -278,6 +282,9 @@ type TcFileState =
         /// Since they need to be later mutated with updates from signature files this should make sure
         /// we're always dealing with the same instance and the updates don't get lost
         argInfoCache: ConcurrentDictionary<string * range, ArgReprInfo>
+
+        /// Inherit clauses whose type already failed UndefinedName; skip re-resolution to avoid duplicate FS0039.
+        inheritResolutionFailed: ConcurrentDictionary<struct (Stamp * range), unit>
 
         // forward call
         TcPat:

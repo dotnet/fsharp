@@ -301,14 +301,14 @@ module internal PrintUtilities =
 
     let layoutXmlDocOfEventInfo (denv: DisplayEnv) (infoReader: InfoReader) (einfo: EventInfo) restL =
         if denv.showDocumentation then
-            GetXmlDocSigOfEvent infoReader Range.range0 einfo
+            GetXmlDocSigOfEvent infoReader einfo
             |> layoutXmlDocFromSig denv infoReader true einfo.XmlDoc restL             
         else
             restL
 
     let layoutXmlDocOfILFieldInfo (denv: DisplayEnv) (infoReader: InfoReader) (finfo: ILFieldInfo) restL =
         if denv.showDocumentation then
-            GetXmlDocSigOfILFieldInfo infoReader Range.range0 finfo
+            GetXmlDocSigOfILFieldInfo infoReader finfo
             |> layoutXmlDocFromSig denv infoReader true XmlDoc.Empty restL
         else
             restL
@@ -329,7 +329,7 @@ module internal PrintUtilities =
 
     let layoutXmlDocOfEntity (denv: DisplayEnv) (infoReader: InfoReader) (eref: EntityRef) restL =
         if denv.showDocumentation then
-            GetXmlDocSigOfEntityRef infoReader Range.range0 eref
+            GetXmlDocSigOfEntityRef infoReader eref
             |> layoutXmlDocFromSig denv infoReader true eref.XmlDoc restL             
         else
             restL
@@ -647,6 +647,7 @@ module PrintTypes =
         | ILAttribElem.TypeRef (Some ty) -> 
             LeftL.keywordTypedefof ^^ SepL.leftAngle ^^ PrintIL.layoutILTypeRef denv ty ^^ RightL.rightAngle
         | ILAttribElem.TypeRef None -> emptyL
+        | ILAttribElem.Enum (_, value) -> layoutILAttribElement denv value
 
     and layoutILAttrib denv (ty, args) = 
         let argsL = bracketL (sepListL RightL.comma (List.map (layoutILAttribElement denv) args))
@@ -1356,7 +1357,7 @@ module PrintTastMemberOrVals =
 
         let memberHasSameTyparNameAsParentTypeTypars =
             let parentTyparNames =
-                vref.DeclaringEntity.TyparsNoRange
+                vref.DeclaringEntity.Typars
                 |> Seq.choose (fun tp -> if tp.typar_id.idText = unassignedTyparName then None else Some tp.typar_id.idText)
                 |> set
             niceMethodTypars
@@ -1609,6 +1610,18 @@ let prettyLayoutsOfUnresolvedOverloading denv argInfos retTy genericParameters =
 /// Printing info objects
 module InfoMemberPrinting = 
 
+    /// Controls how the enclosing type of a C#-style ([<Extension>]) extension method is
+    /// rendered in "free style" method layouts (e.g. the "Available overloads" list in
+    /// overload-resolution error messages).
+    [<RequireQualifiedAccess>]
+    type CSharpExtensionTypeDisplay =
+        /// Render the apparent/receiver type, e.g. `Foo` in `foo.CopyTo(...)`. This is the
+        /// default everywhere except overload-resolution error messages.
+        | ReceiverType
+        /// Render the extension's declaring type, e.g. `MemoryExtensions`, so the message is
+        /// not misleading (issue dotnet/fsharp#9838).
+        | DeclaringType
+
     /// Format the arguments of a method
     let layoutParamData denv (ParamData(isParamArray, _isInArg, _isOutArg, optArgInfo, _callerInfo, nmOpt, _reflArgInfo, pty)) =
         let isOptArg = optArgInfo.IsOptional
@@ -1698,7 +1711,7 @@ module InfoMemberPrinting =
     // That is, this style:
     //          Container(argName1: argType1, ..., argNameN: argTypeN) : retType
     //          Container.Method(argName1: argType1, ..., argNameN: argTypeN) : retType
-    let layoutMethInfoCSharpStyle amap m denv (minfo: MethInfo) minst =
+    let layoutMethInfoCSharpStyle (extTypeDisplay: CSharpExtensionTypeDisplay) amap m denv (minfo: MethInfo) minst =
         let retTy = if minfo.IsConstructor then minfo.ApparentEnclosingType else minfo.GetFSharpReturnType(amap, m, minst) 
         let layout = 
             if minfo.IsExtensionMember then
@@ -1707,7 +1720,12 @@ module InfoMemberPrinting =
         let layout = 
             layout ^^
                 if isAppTy minfo.TcGlobals minfo.ApparentEnclosingAppType then
-                    let tcref = minfo.ApparentEnclosingTyconRef 
+                    let tcref =
+                        match extTypeDisplay with
+                        | CSharpExtensionTypeDisplay.DeclaringType when minfo.IsCSharpStyleExtensionMember ->
+                            minfo.DeclaringTyconRef
+                        | _ ->
+                            minfo.ApparentEnclosingTyconRef
                     PrintTypes.layoutTyconRef denv tcref
                 else
                     emptyL
@@ -1781,7 +1799,7 @@ module InfoMemberPrinting =
     //
     // For C# extension members:
     //          ApparentContainer.Method(argName1: argType1, ..., argNameN: argTypeN) : retType
-    let rec prettyLayoutOfMethInfoFreeStyle (infoReader: InfoReader) m denv typarInst methInfo =
+    let rec prettyLayoutOfMethInfoFreeStyle (extTypeDisplay: CSharpExtensionTypeDisplay) (infoReader: InfoReader) m denv typarInst methInfo =
         let amap = infoReader.amap
 
         match methInfo with 
@@ -1795,17 +1813,17 @@ module InfoMemberPrinting =
         | MethInfoWithModifiedReturnType(ILMeth(_, ilminfo, _) as wrappedInfo,retTy) -> 
             let prettyTyparInst, prettyMethInfo, minst = prettifyILMethInfo amap m wrappedInfo typarInst ilminfo
             let prettyMethInfo = MethInfoWithModifiedReturnType(prettyMethInfo,retTy)
-            let resL = layoutMethInfoCSharpStyle amap m denv prettyMethInfo minst
+            let resL = layoutMethInfoCSharpStyle extTypeDisplay amap m denv prettyMethInfo minst
             prettyTyparInst, resL
-        | MethInfoWithModifiedReturnType(mi,_) -> prettyLayoutOfMethInfoFreeStyle infoReader m denv typarInst mi
+        | MethInfoWithModifiedReturnType(mi,_) -> prettyLayoutOfMethInfoFreeStyle extTypeDisplay infoReader m denv typarInst mi
         | ILMeth(_, ilminfo, _) -> 
             let prettyTyparInst, prettyMethInfo, minst = prettifyILMethInfo amap m methInfo typarInst ilminfo
-            let resL = layoutMethInfoCSharpStyle amap m denv prettyMethInfo minst
+            let resL = layoutMethInfoCSharpStyle extTypeDisplay amap m denv prettyMethInfo minst
             prettyTyparInst, resL
 #if !NO_TYPEPROVIDERS
         | ProvidedMeth _ -> 
             let prettyTyparInst, _ = PrettyTypes.PrettifyInst amap.g typarInst 
-            prettyTyparInst, layoutMethInfoCSharpStyle amap m denv methInfo methInfo.FormalMethodInst
+            prettyTyparInst, layoutMethInfoCSharpStyle extTypeDisplay amap m denv methInfo methInfo.FormalMethodInst
     #endif
 
     let prettyLayoutOfPropInfoFreeStyle g amap m denv (pinfo: PropInfo) =
@@ -1841,8 +1859,8 @@ module InfoMemberPrinting =
         let resL = prettyLayoutOfPropInfoFreeStyle g amap m denv pinfo 
         resL |> bufferL os
 
-    let formatMethInfoToBufferFreeStyle amap m denv os (minfo: MethInfo) = 
-        let _, resL = prettyLayoutOfMethInfoFreeStyle amap m denv emptyTyparInst minfo 
+    let formatMethInfoToBufferFreeStyle (extTypeDisplay: CSharpExtensionTypeDisplay) amap m denv os (minfo: MethInfo) = 
+        let _, resL = prettyLayoutOfMethInfoFreeStyle extTypeDisplay amap m denv emptyTyparInst minfo 
         resL |> bufferL os
 
     /// Format a method to a layout (actually just containing a string) using "free style" (aka "standalone"). 
@@ -2081,7 +2099,7 @@ module TastDefinitionPrinting =
         let nameL = ConvertLogicalNameToDisplayLayout (tagger >> mkNav tycon.DefinitionRange >> wordL) tycon.DisplayNameCore
 
         let lhsL =
-            let tps = tycon.TyparsNoRange
+            let tps = tycon.Typars
             let tpsL = layoutTyparDecls denv nameL tycon.IsPrefixDisplay tps
             let tpsL = layoutAccessibility denv tycon.Accessibility tpsL
             typewordL ^^ tpsL
@@ -2866,10 +2884,10 @@ let stringOfQualifiedValOrMember denv infoReader vref =
 
 /// Convert a MethInfo to a string
 let formatMethInfoToBufferFreeStyle infoReader m denv buf d =
-    InfoMemberPrinting.formatMethInfoToBufferFreeStyle infoReader m denv buf d
+    InfoMemberPrinting.formatMethInfoToBufferFreeStyle InfoMemberPrinting.CSharpExtensionTypeDisplay.ReceiverType infoReader m denv buf d
 
 let prettyLayoutOfMethInfoFreeStyle infoReader m denv typarInst minfo =
-    InfoMemberPrinting.prettyLayoutOfMethInfoFreeStyle infoReader m denv typarInst minfo
+    InfoMemberPrinting.prettyLayoutOfMethInfoFreeStyle InfoMemberPrinting.CSharpExtensionTypeDisplay.ReceiverType infoReader m denv typarInst minfo
 
 /// Convert a PropInfo to a string
 let prettyLayoutOfPropInfoFreeStyle g amap m denv d =
@@ -2877,7 +2895,14 @@ let prettyLayoutOfPropInfoFreeStyle g amap m denv d =
 
 /// Convert a MethInfo to a string
 let stringOfMethInfo infoReader m denv minfo =
-    buildString (fun buf -> InfoMemberPrinting.formatMethInfoToBufferFreeStyle infoReader m denv buf minfo)
+    buildString (fun buf -> InfoMemberPrinting.formatMethInfoToBufferFreeStyle InfoMemberPrinting.CSharpExtensionTypeDisplay.ReceiverType infoReader m denv buf minfo)
+
+/// Convert a MethInfo to a string, suitable for the "Available overloads" list
+/// in overload-resolution error messages. For C#-style extension methods, the
+/// rendering uses the extension's declaring type rather than the receiver type,
+/// so the message is not misleading (issue dotnet/fsharp#9838).
+let stringOfMethInfoForOverloadError infoReader m denv minfo =
+    buildString (fun buf -> InfoMemberPrinting.formatMethInfoToBufferFreeStyle InfoMemberPrinting.CSharpExtensionTypeDisplay.DeclaringType infoReader m denv buf minfo)
 
 let stringOfMethInfoFSharpStyle infoReader m denv minfo =
     InfoMemberPrinting.layoutMethInfoFSharpStyle infoReader m denv minfo

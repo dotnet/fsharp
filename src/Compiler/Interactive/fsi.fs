@@ -1225,7 +1225,20 @@ type internal FsiCommandLineOptions(fsi: FsiEvaluationSessionHostConfig, argv: s
                 @ fsiUsageSuffix tcConfigB
 
             let abbrevArgs = GetAbbrevFlagSet tcConfigB false
-            ParseCompilerOptions(collect, fsiCompilerOptions, List.tail (PostProcessCompilerArgs abbrevArgs argv))
+            // PostProcessCompilerArgs rewrites abbreviated flags like `-d 5` to `-d:5`.
+            // We must NOT apply that rewrite to user-script arguments that follow `--`,
+            // otherwise fsi.CommandLineArgs leaks the rewrite to scripts (see #10819).
+            // Split argv at the first `--`, post-process only the compiler-args prefix,
+            // and pass the suffix (including the `--` separator itself) through unmodified.
+            let processedArgs =
+                match Array.tryFindIndex (fun (a: string) -> a = "--") argv with
+                | Some idx ->
+                    let prefix = argv[0 .. idx - 1]
+                    let suffix = argv[idx..]
+                    PostProcessCompilerArgs abbrevArgs prefix @ List.ofArray suffix
+                | None -> PostProcessCompilerArgs abbrevArgs argv
+
+            ParseCompilerOptions(collect, fsiCompilerOptions, List.tail processedArgs)
         with e ->
             stopProcessingRecovery e range0
             failwithf "Error creating evaluation session: %A" e
@@ -1876,9 +1889,18 @@ type internal FsiDynamicCompiler
         let manifest =
             let manifest = ilxMainModule.Manifest.Value
 
+            let hasUserDebuggableAttr =
+                manifest.CustomAttrs.AsList()
+                |> List.exists (fun a -> a.Method.DeclaringType.TypeRef.FullName = "System.Diagnostics.DebuggableAttribute")
+
+            // Mirror the single-emit path (ilreflect.fs's mkDynamicAssemblyAndModule): attach
+            // DebuggableAttribute(DisableOptimizations|Default) to the submission's manifest exactly
+            // when local optimizations are disabled, so the JIT keeps locals around for debugging.
             let attrs =
                 [
                     tcGlobals.MakeInternalsVisibleToAttribute(dynamicCcuName tcConfigB.fsiMultiAssemblyEmit)
+                    if not tcConfigB.optSettings.LocalOptimizationsEnabled && not hasUserDebuggableAttr then
+                        tcGlobals.mkDebuggableAttributeV2 (tcConfigB.jitTracking, true)
                     yield! manifest.CustomAttrs.AsList()
                 ]
 

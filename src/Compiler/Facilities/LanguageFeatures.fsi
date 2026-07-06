@@ -101,6 +101,8 @@ type LanguageFeature =
     | PreprocessorElif
     | ExceptionFieldSerializationSupport
     | ErrorOnMissingSignatureAttribute
+    | AccessProtectedBaseFieldFromClosure
+    | ImprovedImpliedArgumentNamesPartTwo
     | SupportCallerArgumentExpression
 
 /// LanguageVersion management

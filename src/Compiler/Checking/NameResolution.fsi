@@ -621,6 +621,14 @@ val internal WithNewTypecheckResultsSink: ITypecheckResultsSink * TcResultsSink 
 /// Temporarily suspend reporting of name resolution and type checking results
 val internal TemporarilySuspendReportingTypecheckResultsToSink: TcResultsSink -> System.IDisposable
 
+/// Run `compute` with all typecheck-results reporting (sink notifications and diagnostics) buffered. If
+/// `commitWhen` holds for the result they are flushed to the sink and diagnostics logger that were active
+/// before buffering began; otherwise they are dropped. Diagnostics from a `compute` that raises are always
+/// flushed so the error still surfaces. `commitWhen` runs after reporting is restored, so it must be
+/// side-effect-free. `loggerName` names the internal capturing logger for debugging.
+val internal RunWithBufferedReporting:
+    sink: TcResultsSink -> loggerName: string -> compute: (unit -> 'T) -> commitWhen: ('T -> bool) -> 'T
+
 /// Report the active name resolution environment for a source range
 val internal CallEnvSink: TcResultsSink -> range * NameResolutionEnv * AccessorDomain -> unit
 

@@ -740,6 +740,9 @@ let ParseInputFilesInParallel (tcConfig: TcConfig, lexResourceManager, sourceFil
     for fileName in sourceFiles do
         checkInputFile tcConfig fileName
 
+    for fileName in sourceFiles do
+        FileIndex.fileIndexOfFile fileName |> ignore
+
     let sourceFiles = List.zip sourceFiles isLastCompiland
 
     UseMultipleDiagnosticLoggers (sourceFiles, delayLogger, None) (fun sourceFilesWithDelayLoggers ->
