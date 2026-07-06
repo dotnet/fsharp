@@ -12643,6 +12643,20 @@ and AnalyzeAndMakeAndPublishRecursiveValue
     // NOTE: top arity, type and typars get fixed-up after inference
     let prelimTyscheme = GeneralizedType(enclosingDeclaredTypars@declaredTypars, ty)
     let prelimValReprInfo = TranslateSynValInfo cenv mBinding (TcAttributes cenv envinner) valSynInfo
+
+    // If the binding is an instance member whose first parameter has no name, then set the the `thisId` to first parameter.
+    // This is used to generate the correct `thisArg` name for an F# instance extension method to enable 
+    // the `[<CallerArgumentExpression "this">]` feature for F# instance extension method.
+    //
+    // Example:
+    //    type System.Object with
+    //        member this.A([<CallerArgumentExpression "this">] ?arg: string) = arg
+    //               ^^^^                               ^^^^
+    match declPattern, prelimValReprInfo with
+    | SynPat.InstanceMember(thisId, _, _, _, _), PrelimValReprInfo(curriedArgInfos = [thisArg] :: _) when thisArg.Name.IsNone -> 
+        thisArg.Name <- Some thisId
+    | _ -> ()
+
     let valReprInfo, valReprInfoForDisplay = UseSyntacticValReprInfo declKind prelimTyscheme prelimValReprInfo
     let hasDeclaredTypars = not (List.isEmpty declaredTypars)
     let prelimValScheme = ValScheme(bindingId, prelimTyscheme, valReprInfo, valReprInfoForDisplay, memberInfoOpt, false, inlineFlag, NormalVal, vis, false, false, false, hasDeclaredTypars)
