@@ -133,6 +133,13 @@
     "19759": {
       "sha": "ed0900231dce5cff24cc5331d043ee83055d172f",
       "cats": []
+    },
+    "20036": {
+      "sha": "e55a3e7f6b68ddcc14ee79f1d5ce7e8da9a9da36",
+      "cats": [
+        "Affects-Build-Infra",
+        "Affects-Restore"
+      ]
     }
   }
 }
