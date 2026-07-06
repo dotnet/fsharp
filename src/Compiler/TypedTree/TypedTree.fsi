@@ -41,6 +41,9 @@ type ValInline =
     /// Indicates the value must never be inlined by the optimizer
     | Never
 
+    /// Indicates a debug-only value produced from inlining an 'inline' function definition.
+    | InlinedDefinition
+
     /// Returns true if the implementation of a value must always be inlined
     member ShouldInline: bool
 
@@ -119,6 +122,8 @@ type ValFlags =
 
     member IsImplied: bool
 
+    member IsParameter: bool
+
     member IsCompiledAsStaticPropertyWithoutField: bool
 
     member IsCompilerGenerated: bool
@@ -152,7 +157,11 @@ type ValFlags =
 
     member WithInlineIfLambda: ValFlags
 
+    member WithInlineInfo: inlineInfo: ValInline -> ValFlags
+
     member WithIsImplied: ValFlags
+
+    member WithIsParameter: ValFlags
 
     member WithIsCompiledAsStaticPropertyWithoutField: ValFlags
 
@@ -1380,6 +1389,14 @@ type ModuleOrNamespaceType =
 #if !NO_TYPEPROVIDERS
     /// Mutation used in hosting scenarios to hold the hosted types in this module or namespace
     member AddProvidedTypeEntity: entity: Entity -> unit
+
+    /// Interns a provided-type entity by mangled name so concurrent linking from multiple files yields one
+    /// Entity. The first caller's 'create' wins; callers must use the returned entity.
+    member GetOrInternProvidedEntity: mangledName: string * create: (unit -> Entity) -> Entity
+
+    /// Interns a provided-namespace entity by mangled name, reusing any existing entity of that name so concurrent
+    /// linking yields one Entity. Callers must use the returned entity.
+    member GetOrInternNamespaceEntity: mangledName: string * create: (unit -> Entity) -> Entity
 #endif
 
     /// Return a new module or namespace type with a value added.
@@ -2010,7 +2027,14 @@ type Val =
 
     member SetInlineIfLambda: unit -> unit
 
+    /// Sets the inline information for this value. Used by the type checker
+    /// to downgrade an erroneously-recursive inline binding to non-inline
+    /// so that the optimizer does not cascade further diagnostics.
+    member SetInlineInfo: inlineInfo: ValInline -> unit
+
     member SetIsImplied: unit -> unit
+
+    member SetIsParameter: unit -> unit
 
     member SetIsCompiledAsStaticPropertyWithoutField: unit -> unit
 
@@ -2129,6 +2153,10 @@ type Val =
 
     /// Determines if the values is implied by another construct, e.g. a `IsA` property is implied by the union case for A
     member IsImplied: bool
+
+    /// Indicates whether this value is a function or method parameter, as opposed to a local binding.
+    /// Used to specialize diagnostics such as FS0027.
+    member IsParameter: bool
 
     /// Indicates if this is a 'base' value?
     member IsBaseVal: bool

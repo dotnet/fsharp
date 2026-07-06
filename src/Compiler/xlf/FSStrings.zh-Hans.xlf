@@ -264,7 +264,7 @@
       </trans-unit>
       <trans-unit id="IndeterminateType">
         <source>The type of this expression could not be inferred before accessing its members. Add a type annotation, e.g. (expr: SomeType), to constrain the type before this point.</source>
-        <target state="new">查找基于此程序点之前的信息的不确定类型的对象。在此程序点之前可能需要类型批注来约束对象的类型。这可能允许解析查找。</target>
+        <target state="new">The type of this expression could not be inferred before accessing its members. Add a type annotation, e.g. (expr: SomeType), to constrain the type before this point.</target>
         <note />
       </trans-unit>
       <trans-unit id="NameClash1">
@@ -300,6 +300,11 @@
       <trans-unit id="FieldsFromDifferentTypes">
         <source>The fields '{0}' and '{1}' are from different types</source>
         <target state="translated">字段“{0}”和“{1}”来自不同的类型</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ValNotMutableParameter">
+        <source>The parameter '{0}' is not mutable. Consider shadowing it with a new binding, e.g. 'let {1} = ...'. Use 'let mutable {1} = ...' only if you need to reassign it multiple times.</source>
+        <target state="new">The parameter '{0}' is not mutable. Consider shadowing it with a new binding, e.g. 'let {1} = ...'. Use 'let mutable {1} = ...' only if you need to reassign it multiple times.</target>
         <note />
       </trans-unit>
       <trans-unit id="ValueRestriction">

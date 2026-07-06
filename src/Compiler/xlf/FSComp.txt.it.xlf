@@ -272,6 +272,11 @@
         <target state="new">{0} for F# {1}</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureAccessProtectedBaseFieldFromClosure">
+        <source>Access a protected base-class field from a closure inside a member</source>
+        <target state="new">Access a protected base-class field from a closure inside a member</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureAccessorFunctionShorthand">
         <source>underscore dot shorthand for accessor only function</source>
         <target state="translated">sintassi abbreviata del punto di sottolineatura solo per la funzione di accesso</target>
@@ -455,6 +460,11 @@
       <trans-unit id="featureImprovedImpliedArgumentNames">
         <source>Improved implied argument names</source>
         <target state="translated">Nomi di argomenti impliciti migliorati</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureImprovedImpliedArgumentNamesPartTwo">
+        <source>Improved implied argument names with partial application</source>
+        <target state="new">Improved implied argument names with partial application</target>
         <note />
       </trans-unit>
       <trans-unit id="featureIndexerNotationWithoutDot">
@@ -1020,6 +1030,11 @@
       <trans-unit id="optsAllSigs">
         <source>Print the inferred interfaces of all compilation files to associated signature files</source>
         <target state="translated">Stampare le interfacce derivate di tutti i file di compilazione nei file di firma associati</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="optsAlwaysInline">
+        <source>Always inline 'inline' functions</source>
+        <target state="new">Always inline 'inline' functions</target>
         <note />
       </trans-unit>
       <trans-unit id="optsCheckNulls">
@@ -1747,6 +1762,11 @@
         <target state="new">You can remove this `nonNull` assertion.</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcRecursiveInlineNotAllowed">
+        <source>The value or member '{0}' has been marked 'inline' but is part of a recursive binding group. F# does not support recursive 'inline' values. Either remove the 'inline' modifier or refactor the recursion.</source>
+        <target state="new">The value or member '{0}' has been marked 'inline' but is part of a recursive binding group. F# does not support recursive 'inline' values. Either remove the 'inline' modifier or refactor the recursion.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcRequireMergeSourcesOrBindN">
         <source>The 'let! ... and! ...' construct may only be used if the computation expression builder defines either a '{0}' method or appropriate 'MergeSources' and 'Bind' methods</source>
         <target state="translated">È possibile usare il costrutto "let! ... and! ..." solo se il generatore di espressioni di calcolo definisce un metodo "{0}" o metodi "MergeSource" e "Bind" appropriati</target>
@@ -1889,7 +1909,7 @@
       </trans-unit>
       <trans-unit id="undefinedNameFieldConstructorOrMemberWhenTypeIsKnown">
         <source>The type '{0}' does not define a field, constructor, or member named '{1}'.</source>
-        <target state="new">The type '{0}' does not have a field, property, or member named '{1}'.</target>
+        <target state="new">The type '{0}' does not define a field, constructor, or member named '{1}'.</target>
         <note />
       </trans-unit>
       <trans-unit id="undefinedNameNamespace">
@@ -2284,7 +2304,7 @@
       </trans-unit>
       <trans-unit id="tastNamespaceAndModuleWithSameNameInAssembly">
         <source>The name '{0}' is used as both a namespace and a module in this assembly. Rename one of them to avoid the conflict.</source>
-        <target state="new">In due parti di questo assembly sono presenti uno spazio dei nomi e un modulo entrambi denominati '{0}'</target>
+        <target state="new">The name '{0}' is used as both a namespace and a module in this assembly. Rename one of them to avoid the conflict.</target>
         <note />
       </trans-unit>
       <trans-unit id="tastTwoModulesWithSameNameInAssembly">
@@ -3389,12 +3409,12 @@
       </trans-unit>
       <trans-unit id="csExpectTypeWithOperatorButGivenFunction">
         <source>Expecting a type supporting the operator '{0}' but given a function type. You may be missing an argument to a function, or the operator may not be in scope. Check that you have opened the correct module or namespace.</source>
-        <target state="new">È previsto un tipo che supporti l'operatore '{0}', tuttavia è specificato un tipo di funzione. Probabilmente manca un argomento in una funzione.</target>
+        <target state="new">Expecting a type supporting the operator '{0}' but given a function type. You may be missing an argument to a function, or the operator may not be in scope. Check that you have opened the correct module or namespace.</target>
         <note />
       </trans-unit>
       <trans-unit id="csExpectTypeWithOperatorButGivenTuple">
         <source>Operator '{0}' cannot be applied to a tuple type. You may have an unintended extra comma creating a tuple, or the operator may not be in scope. Check that you have opened the correct module or namespace.</source>
-        <target state="new">È previsto un tipo che supporti l'operatore '{0}', tuttavia è specificato un tipo di tuple</target>
+        <target state="new">Operator '{0}' cannot be applied to a tuple type. You may have an unintended extra comma creating a tuple, or the operator may not be in scope. Check that you have opened the correct module or namespace.</target>
         <note />
       </trans-unit>
       <trans-unit id="csTypesDoNotSupportOperator">
@@ -4374,7 +4394,7 @@
       </trans-unit>
       <trans-unit id="tcNotSufficientlyGenericBecauseOfScope">
         <source>This code is not sufficiently generic. The type variable {0} could not be generalized because it would escape its scope. Consider adding a type annotation, converting the value to a function, or making the definition 'inline'.</source>
-        <target state="new">Questo codice non è sufficientemente generico. Non è stato possibile generalizzare la variabile di tipo {0} perché non sarebbe compresa nel relativo ambito.</target>
+        <target state="new">This code is not sufficiently generic. The type variable {0} could not be generalized because it would escape its scope. Consider adding a type annotation, converting the value to a function, or making the definition 'inline'.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcPropertyRequiresExplicitTypeParameters">

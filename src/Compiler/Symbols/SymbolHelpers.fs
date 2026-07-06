@@ -55,14 +55,18 @@ module internal SymbolHelpers =
     let rangeOfPropInfo preferFlag (pinfo: PropInfo) =
         match pinfo with
 #if !NO_TYPEPROVIDERS
-        |   ProvidedProp(_, pi, _) -> Construct.ComputeDefinitionLocationOfProvidedItem pi
+        |   ProvidedProp(_, pi, _) ->
+                Construct.ComputeDefinitionLocationOfProvidedItem pi
+                |> Option.orElseWith (fun () -> Some(rangeOfEntityRef preferFlag pinfo.DeclaringTyconRef))
 #endif
         |   _ -> pinfo.ArbitraryValRef |> Option.map (rangeOfValRef preferFlag)
 
     let rangeOfMethInfo (g: TcGlobals) preferFlag (minfo: MethInfo) =
         match minfo with
 #if !NO_TYPEPROVIDERS
-        |   ProvidedMeth(_, mi, _, _) -> Construct.ComputeDefinitionLocationOfProvidedItem mi
+        |   ProvidedMeth(_, mi, _, _) ->
+                Construct.ComputeDefinitionLocationOfProvidedItem mi
+                |> Option.orElseWith (fun () -> Some(rangeOfEntityRef preferFlag minfo.DeclaringTyconRef))
 #endif
         |   DefaultStructCtor(_, AppTy g (tcref, _)) -> Some(rangeOfEntityRef preferFlag tcref)
         |   _ -> minfo.ArbitraryValRef |> Option.map (rangeOfValRef preferFlag)
@@ -70,7 +74,9 @@ module internal SymbolHelpers =
     let rangeOfEventInfo preferFlag (einfo: EventInfo) =
         match einfo with
 #if !NO_TYPEPROVIDERS
-        | ProvidedEvent (_, ei, _) -> Construct.ComputeDefinitionLocationOfProvidedItem ei
+        | ProvidedEvent(_, ei, _) ->
+            Construct.ComputeDefinitionLocationOfProvidedItem ei
+            |> Option.orElseWith (fun () -> Some(rangeOfEntityRef preferFlag einfo.DeclaringTyconRef))
 #endif
         | _ -> einfo.ArbitraryValRef |> Option.map (rangeOfValRef preferFlag)
 
