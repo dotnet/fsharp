@@ -63,6 +63,9 @@ let pi = Math.PI
 
 /// `SourceFiles` is exactly the single script; the fsi default-reference injection for a missing `#load`
 /// is a host-layout detail (not product behaviour) and is intentionally not asserted.
+/// Desktop-only: it asserts .NET Framework GAC assemblies (`System.Runtime.Remoting`/`System.Transactions`)
+/// resolve, which is not possible on a .NET-Core-only host.
+#if !NETCOREAPP
 [<Fact>]
 let ``Fsx.ScriptClosure.SurfaceOrderOfHashes`` () =
     let scriptSource =
@@ -81,6 +84,7 @@ let ``Fsx.ScriptClosure.SurfaceOrderOfHashes`` () =
     Assert.True(containsPartial "System.Transactions.dll", "OtherOptions should resolve System.Transactions.dll")
     Assert.Equal(1, options.SourceFiles.Length)
     Assert.Equal(tempFile, options.SourceFiles.[0])
+#endif
 
 /// A no-crash test: the invalid meta-command filenames must be processed WITHOUT crashing the script
 /// options (a single source file, the `--noframework` closure flag) without throwing — the invalid

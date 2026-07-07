@@ -16,7 +16,12 @@ let private closure (files: (string * string) list) (active: string) : FSharpDia
             File.WriteAllText(Path.Combine(dir, name), content)
         let activePath = Path.Combine(dir, active)
         let source = File.ReadAllText activePath
-        let options, _ = checker.GetProjectOptionsFromScript(activePath, SourceText.ofString source) |> Async.RunImmediate
+        let options, _ =
+#if NETCOREAPP
+            checker.GetProjectOptionsFromScript(activePath, SourceText.ofString source, assumeDotNetFramework = false, useSdkRefs = true) |> Async.RunImmediate
+#else
+            checker.GetProjectOptionsFromScript(activePath, SourceText.ofString source) |> Async.RunImmediate
+#endif
         let results = checker.ParseAndCheckProject(options) |> Async.RunImmediate
         results.Diagnostics
     finally
