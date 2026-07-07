@@ -55,14 +55,18 @@ module internal SymbolHelpers =
     let rangeOfPropInfo preferFlag (pinfo: PropInfo) =
         match pinfo with
 #if !NO_TYPEPROVIDERS
-        |   ProvidedProp(_, pi, _) -> Construct.ComputeDefinitionLocationOfProvidedItem pi
+        |   ProvidedProp(_, pi, _) ->
+                Construct.ComputeDefinitionLocationOfProvidedItem pi
+                |> Option.orElseWith (fun () -> Some(rangeOfEntityRef preferFlag pinfo.DeclaringTyconRef))
 #endif
         |   _ -> pinfo.ArbitraryValRef |> Option.map (rangeOfValRef preferFlag)
 
     let rangeOfMethInfo (g: TcGlobals) preferFlag (minfo: MethInfo) =
         match minfo with
 #if !NO_TYPEPROVIDERS
-        |   ProvidedMeth(_, mi, _, _) -> Construct.ComputeDefinitionLocationOfProvidedItem mi
+        |   ProvidedMeth(_, mi, _, _) ->
+                Construct.ComputeDefinitionLocationOfProvidedItem mi
+                |> Option.orElseWith (fun () -> Some(rangeOfEntityRef preferFlag minfo.DeclaringTyconRef))
 #endif
         |   DefaultStructCtor(_, AppTy g (tcref, _)) -> Some(rangeOfEntityRef preferFlag tcref)
         |   _ -> minfo.ArbitraryValRef |> Option.map (rangeOfValRef preferFlag)
@@ -70,7 +74,9 @@ module internal SymbolHelpers =
     let rangeOfEventInfo preferFlag (einfo: EventInfo) =
         match einfo with
 #if !NO_TYPEPROVIDERS
-        | ProvidedEvent (_, ei, _) -> Construct.ComputeDefinitionLocationOfProvidedItem ei
+        | ProvidedEvent(_, ei, _) ->
+            Construct.ComputeDefinitionLocationOfProvidedItem ei
+            |> Option.orElseWith (fun () -> Some(rangeOfEntityRef preferFlag einfo.DeclaringTyconRef))
 #endif
         | _ -> einfo.ArbitraryValRef |> Option.map (rangeOfValRef preferFlag)
 
@@ -271,7 +277,7 @@ module internal SymbolHelpers =
 
         | Item.UnqualifiedType (tcref :: _)
         | Item.ExnCase tcref ->
-            mkXmlComment (GetXmlDocSigOfEntityRef infoReader m tcref)
+            mkXmlComment (GetXmlDocSigOfEntityRef infoReader tcref)
 
         | Item.RecdField rfinfo ->
             mkXmlComment (GetXmlDocSigOfRecdFieldRef rfinfo.RecdFieldRef)
@@ -279,13 +285,13 @@ module internal SymbolHelpers =
         | Item.NewDef _ -> FSharpXmlDoc.None
 
         | Item.ILField finfo ->
-            mkXmlComment (GetXmlDocSigOfILFieldInfo infoReader m finfo)
+            mkXmlComment (GetXmlDocSigOfILFieldInfo infoReader finfo)
 
         | Item.DelegateCtor ty
         | Item.Types(_, ty :: _) ->
             match ty with
             | AbbrevOrAppTy(tcref, _) ->
-                mkXmlComment (GetXmlDocSigOfEntityRef infoReader m tcref)
+                mkXmlComment (GetXmlDocSigOfEntityRef infoReader tcref)
             | _ -> FSharpXmlDoc.None
 
         | Item.CustomOperation (_, _, Some minfo) ->
@@ -296,13 +302,13 @@ module internal SymbolHelpers =
         | Item.TypeVar _  -> FSharpXmlDoc.None
 
         | Item.ModuleOrNamespaces(modref :: _) ->
-            mkXmlComment (GetXmlDocSigOfEntityRef infoReader m modref)
+            mkXmlComment (GetXmlDocSigOfEntityRef infoReader modref)
 
         | Item.Property(info = pinfo :: _) ->
             mkXmlComment (GetXmlDocSigOfProp infoReader m pinfo)
 
         | Item.Event einfo ->
-            mkXmlComment (GetXmlDocSigOfEvent infoReader m einfo)
+            mkXmlComment (GetXmlDocSigOfEvent infoReader einfo)
 
         | Item.MethodGroup(_, minfo :: _, _) ->
             mkXmlComment (GetXmlDocSigOfMethInfo infoReader  m minfo)
@@ -313,7 +319,7 @@ module internal SymbolHelpers =
         | Item.OtherName(container = Some argContainer) ->
             match argContainer with
             | ArgumentContainer.Method minfo -> mkXmlComment (GetXmlDocSigOfMethInfo infoReader m minfo)
-            | ArgumentContainer.Type tcref -> mkXmlComment (GetXmlDocSigOfEntityRef infoReader m tcref)
+            | ArgumentContainer.Type tcref -> mkXmlComment (GetXmlDocSigOfEntityRef infoReader tcref)
 
         | Item.UnionCaseField (ucinfo, _) ->
             mkXmlComment (GetXmlDocSigOfUnionCaseRef ucinfo.UnionCaseRef)

@@ -61,21 +61,23 @@
     IL_0005:  ret
   } 
 
+  .method private specialname rtspecialname static void  .cctor() cil managed
+  {
+    
+    .maxstack  8
+    IL_0000:  ldc.i4.0
+    IL_0001:  stsfld     int32 '<StartupCode$assembly>'.$assembly::init@
+    IL_0006:  ldsfld     int32 '<StartupCode$assembly>'.$assembly::init@
+    IL_000b:  pop
+    IL_000c:  ret
+  } 
+
   .method assembly specialname static class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> get_current@9() cil managed
   {
     
     .maxstack  8
     IL_0000:  ldsfld     class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> assembly::current@9
     IL_0005:  ret
-  } 
-
-  .method assembly specialname static void set_current@9(class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> 'value') cil managed
-  {
-    
-    .maxstack  8
-    IL_0000:  ldarg.0
-    IL_0001:  stsfld     class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> assembly::current@9
-    IL_0006:  ret
   } 
 
   .method assembly specialname static int32 get_e1@1() cil managed
@@ -102,6 +104,15 @@
     IL_0005:  ret
   } 
 
+  .method assembly specialname static void set_current@9(class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> 'value') cil managed
+  {
+    
+    .maxstack  8
+    IL_0000:  ldarg.0
+    IL_0001:  stsfld     class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> assembly::current@9
+    IL_0006:  ret
+  } 
+
   .method assembly specialname static void set_next@9(class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> 'value') cil managed
   {
     
@@ -109,17 +120,6 @@
     IL_0000:  ldarg.0
     IL_0001:  stsfld     class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> assembly::next@9
     IL_0006:  ret
-  } 
-
-  .method private specialname rtspecialname static void  .cctor() cil managed
-  {
-    
-    .maxstack  8
-    IL_0000:  ldc.i4.0
-    IL_0001:  stsfld     int32 '<StartupCode$assembly>'.$assembly::init@
-    IL_0006:  ldsfld     int32 '<StartupCode$assembly>'.$assembly::init@
-    IL_000b:  pop
-    IL_000c:  ret
   } 
 
   .method assembly static void  staticInitialization@() cil managed
@@ -234,22 +234,21 @@
     IL_00dc:  brtrue.s   IL_009d
 
     IL_00de:  nop
-    IL_00df:  nop
-    IL_00e0:  call       int32[] assembly::get_r()
-    IL_00e5:  ldc.i4.0
-    IL_00e6:  ldelem.i4
-    IL_00e7:  ldc.i4.3
-    IL_00e8:  bne.un.s   IL_00ee
+    IL_00df:  call       int32[] assembly::get_r()
+    IL_00e4:  ldc.i4.0
+    IL_00e5:  ldelem.i4
+    IL_00e6:  ldc.i4.3
+    IL_00e7:  bne.un.s   IL_00ed
 
-    IL_00ea:  ldc.i4.0
-    IL_00eb:  nop
-    IL_00ec:  br.s       IL_00f0
+    IL_00e9:  ldc.i4.0
+    IL_00ea:  nop
+    IL_00eb:  br.s       IL_00ef
 
-    IL_00ee:  ldc.i4.1
-    IL_00ef:  nop
-    IL_00f0:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.Operators::Exit<class [FSharp.Core]Microsoft.FSharp.Core.Unit>(int32)
-    IL_00f5:  pop
-    IL_00f6:  ret
+    IL_00ed:  ldc.i4.1
+    IL_00ee:  nop
+    IL_00ef:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.Operators::Exit<class [FSharp.Core]Microsoft.FSharp.Core.Unit>(int32)
+    IL_00f4:  pop
+    IL_00f5:  ret
   } 
 
   .property int32[] r()

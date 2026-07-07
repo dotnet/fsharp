@@ -176,3 +176,48 @@ let test1 = System.Action<_, _>(add)
                                                  int32)
   IL_0009:  ret
 } """ ]
+
+    [<Fact>]
+    let ``Implied argument names are taken from delegate Invoke for a partial application``() =
+        FSharp """
+module ArgumentNames
+
+type Combine = delegate of first: int * second: int * third: int * fourth: int -> int
+
+[<System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)>]
+let f a b c d e g = a + b + c + d + e + g
+
+let test1 = Combine(f 1 2)
+        """
+        |> withLangVersion11
+        |> compile
+        |> shouldSucceed
+        |> verifyIL ["
+.method assembly static int32  Invoke(int32 first,
+                                      int32 second,
+                                      int32 third,
+                                      int32 fourth) cil managed" ]
+
+    [<Fact>]
+    let ``Implied argument names are taken from delegate Invoke for a function composition``() =
+        FSharp """
+module ArgumentNames
+
+let test1 = System.Func<int, int>(((+) 1) >> ((*) 2))
+        """
+        |> withLangVersion11
+        |> compile
+        |> shouldSucceed
+        |> verifyIL ["Invoke(int32 arg) cil managed" ]
+
+    [<Fact>]
+    let ``Partial application delegate falls back to synthetic name before the feature``() =
+        FSharp """
+module ArgumentNames
+
+let test1 = System.Func<int, int>((+) 1)
+        """
+        |> withLangVersion10
+        |> compile
+        |> shouldSucceed
+        |> verifyIL ["Invoke(int32 delegateArg0) cil managed" ]

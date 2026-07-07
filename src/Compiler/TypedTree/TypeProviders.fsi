@@ -485,7 +485,7 @@ type ProvidedAssemblyStaticLinkingMap =
     {
         /// The table of remappings from type names in the provided assembly to type
         /// names in the statically linked, embedded assembly.
-        ILTypeMap: Dictionary<ILTypeRef, ILTypeRef>
+        ILTypeMap: ConcurrentDictionary<ILTypeRef, ILTypeRef>
     }
 
     /// Create a new static linking map, ready to populate with data.

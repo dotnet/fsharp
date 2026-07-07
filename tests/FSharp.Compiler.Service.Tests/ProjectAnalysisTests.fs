@@ -3789,6 +3789,84 @@ let ``Test Project25 symbol uses of type-provided members`` () =
            ("file1", ((10, 8), (10, 26))) |] // line 10: MyType().DoNothing
 
 [<Fact; RunTestCasesInSequence>]
+let ``GetDeclarationLocation on a provided-ctor without DefinitionLocationAttribute returns DeclFound (regression #5538)`` () =
+    let wholeProjectResults =
+        Project25.checker.ParseAndCheckProject(Project25.options.Value)
+        |> Async.RunImmediate
+
+    wholeProjectResults.Diagnostics.Length |> shouldEqual 0
+
+    let parseResults, checkAnswer =
+        Project25.checker.ParseAndCheckFileInProject(
+            Project25.fileName1,
+            0,
+            SourceText.ofString (FileSystem.OpenFileForReadShim(Project25.fileName1).ReadAllText()),
+            Project25.options.Value)
+        |> Async.RunImmediate
+
+    let checkResults =
+        match checkAnswer with
+        | FSharpCheckFileAnswer.Succeeded r -> r
+        | _ -> failwith "type-check did not finish"
+
+    ignore parseResults
+
+    // line 5: `let _ = T().DoNothing()`
+    //   col-index 8 is `T`, end of identifier is col 9.
+    // `T` at this position resolves to Item.CtorGroup(ProvidedMeth :: _),
+    // which is the broken case in issue #5538.
+    let declLocation =
+        checkResults.GetDeclarationLocation(
+            line = 5,
+            colAtEndOfNames = 9,
+            lineText = "let _ = T().DoNothing()",
+            names = [ "T" ])
+
+    match declLocation with
+    | FindDeclResult.DeclFound _ -> ()
+    | FindDeclResult.DeclNotFound reason ->
+        failwithf "expected DeclFound for provided-ctor `T()`, got DeclNotFound %A" reason
+    | FindDeclResult.ExternalDecl _ ->
+        failwith "expected DeclFound for provided-ctor `T()`, got ExternalDecl"
+
+[<Fact; RunTestCasesInSequence>]
+let ``GetDeclarationLocation on a provided-ctor invoked through the original provided name returns DeclFound (regression #5538)`` () =
+    let wholeProjectResults =
+        Project25.checker.ParseAndCheckProject(Project25.options.Value)
+        |> Async.RunImmediate
+
+    wholeProjectResults.Diagnostics.Length |> shouldEqual 0
+
+    let _, checkAnswer =
+        Project25.checker.ParseAndCheckFileInProject(
+            Project25.fileName1,
+            0,
+            SourceText.ofString (FileSystem.OpenFileForReadShim(Project25.fileName1).ReadAllText()),
+            Project25.options.Value)
+        |> Async.RunImmediate
+
+    let checkResults =
+        match checkAnswer with
+        | FSharpCheckFileAnswer.Succeeded r -> r
+        | _ -> failwith "type-check did not finish"
+
+    // line 10: `let _ = MyType().DoNothing()`
+    //   col-index 8 is `M`, end of identifier `MyType` is col 14.
+    let declLocation =
+        checkResults.GetDeclarationLocation(
+            line = 10,
+            colAtEndOfNames = 14,
+            lineText = "let _ = MyType().DoNothing()",
+            names = [ "MyType" ])
+
+    match declLocation with
+    | FindDeclResult.DeclFound _ -> ()
+    | FindDeclResult.DeclNotFound reason ->
+        failwithf "expected DeclFound for provided-ctor `MyType()`, got DeclNotFound %A" reason
+    | FindDeclResult.ExternalDecl _ ->
+        failwith "expected DeclFound for provided-ctor `MyType()`, got ExternalDecl"
+
+[<Fact; RunTestCasesInSequence>]
 let ``Test Project25 symbol uses of type-provided types`` () =
     let wholeProjectResults = Project25.checker.ParseAndCheckProject(Project25.options.Value) |> Async.RunImmediate
 

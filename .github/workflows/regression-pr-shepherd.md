@@ -19,6 +19,9 @@ network:
   - dotnet
 
 safe-outputs:
+  # Transient engine/infra crashes must not open tracking issues — real progress
+  # and blockers surface as PR comments/labels on the shepherded PR.
+  report-failure-as-issue: false
   noop:
     report-as-issue: false
   add-comment:
