@@ -849,6 +849,11 @@ type ILAttribElem =
     | Type of ILType option
     | TypeRef of ILTypeRef option
     | Array of ILType * ILAttribElem list
+    /// Represents an enum value together with its enum type. Used when an enum is stored in a
+    /// custom-attribute argument of type 'object', so the enum type is preserved in the encoded
+    /// blob (ECMA-335 II.23.3) instead of being collapsed to its underlying integer. The second
+    /// element is the underlying integer value (e.g. ILAttribElem.Int32).
+    | Enum of enumType: ILType * value: ILAttribElem
 
 /// Named args: values and flags indicating if they are fields or properties.
 type ILAttributeNamedArg = string * ILType * bool * ILAttribElem
@@ -2144,6 +2149,11 @@ val internal mkNormalStsfld: ILFieldSpec -> ILInstr
 val internal mkNormalLdsfld: ILFieldSpec -> ILInstr
 val internal mkNormalLdfld: ILFieldSpec -> ILInstr
 val internal mkNormalLdflda: ILFieldSpec -> ILInstr
+
+/// Matches an IL instruction that loads or stores a field, returning the referenced field spec.
+[<return: Struct>]
+val internal (|ILFieldInstr|_|): instr: ILInstr -> ILFieldSpec voption
+
 val internal mkNormalLdobj: ILType -> ILInstr
 val internal mkNormalStobj: ILType -> ILInstr
 val internal mkLdcInt32: int32 -> ILInstr

@@ -17,7 +17,6 @@ type NiceNameGenerator =
 
     new: unit -> NiceNameGenerator
     member FreshCompilerGeneratedName: name: string * m: range -> string
-    member IncrementOnly: name: string * m: range -> int
 
 /// Generates compiler-generated names marked up with a source code location, but if given the same unique value then
 /// return precisely the same name. Each name generated also includes the StartLine number of the range passed in
@@ -29,6 +28,17 @@ type StableNiceNameGenerator =
 
     new: unit -> StableNiceNameGenerator
     member GetUniqueCompilerGeneratedName: name: string * m: range * uniq: int64 -> string
+
+/// A compiler-generated-name allocation scope bound to a single ImplFile being optimized.
+/// Instances can only be obtained from CompilerGlobalState.NewFileScope so a call site can't
+/// accidentally bucket names by the wrong (e.g. inlined-source) file and reintroduce the
+/// non-determinism fixed by https://github.com/dotnet/fsharp/issues/19732.
+[<Sealed>]
+type PerFileNamingScope =
+
+    /// Allocate a fresh compiler-generated name within this file's scope. 'm' contributes only the
+    /// source-location marker baked into the generated name; the uniqueness bucket is this scope's file.
+    member Fresh: name: string * m: range -> string
 
 type internal CompilerGlobalState =
 
@@ -42,6 +52,11 @@ type internal CompilerGlobalState =
 
     /// A global generator of stable compiler generated names
     member StableNameGenerator: StableNiceNameGenerator
+
+    /// Create a per-file naming scope for the ImplFile identified by 'fileRange'. All names allocated
+    /// through the returned scope are bucketed by that file's FileIndex, guaranteeing determinism
+    /// under parallel optimization. See https://github.com/dotnet/fsharp/issues/19732.
+    member NewFileScope: fileRange: range -> PerFileNamingScope
 
 type Unique = int64
 

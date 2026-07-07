@@ -147,3 +147,34 @@ let test () =
         """
         |> typecheck
         |> shouldSucceed
+
+    [<Fact>]
+    let ``Issue 19608 - address of untyped ValueNone compiles`` () =
+        Fsx """
+module Test
+
+let x (y: inref<ValueOption<int>>) = ()
+
+let test () =
+    let ffff = ValueNone
+    x &ffff
+        """
+        |> asLibrary
+        |> compile
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Issue 19608 - native address of untyped ValueNone binding fails`` () =
+        Fsx """
+#nowarn "51"
+
+module Test
+
+let test () =
+    let ffff = ValueNone
+    let _ = &&ffff
+    ()
+        """
+        |> typecheck
+        |> shouldFail
+        |> withErrorCode 256
