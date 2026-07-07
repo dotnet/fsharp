@@ -1535,6 +1535,25 @@ let MakeAndPublishVal (cenv: cenv) env (altActualParent, inSig, declKind, valRec
     vspec
 
 let MakeAndPublishVals (cenv: cenv) env (altActualParent, inSig, declKind, valRecInfo, valSchemes, attrs, xmlDoc, literalValue) =
+    let g = cenv.g
+
+    // [<CompiledName>] on a binding that publishes more than one val (e.g. tuple,
+    // record, list, cons, `let x as y = ...` destructures, multi-case active patterns)
+    // would silently propagate the same compiled name to every introduced value and
+    // produce duplicate IL entries (FS0192/FS2014) during codegen. Catch it here where
+    // the post-generalization val count is authoritative. See dotnet/fsharp#6131.
+    if Map.count valSchemes > 1 then
+        match attrs with
+        | ValAttribString g WellKnownValAttributes.CompiledNameAttribute _ ->
+            let m =
+                match Map.toList valSchemes with
+                | [] -> range0
+                | (_, ValScheme(id = id)) :: rest ->
+                    (id.idRange, rest)
+                    ||> List.fold (fun acc (_, ValScheme(id = id)) -> unionRanges acc id.idRange)
+            errorR(Error(FSComp.SR.tcCompiledNameAttributeMisused(), m))
+        | _ -> ()
+
     Map.foldBack
         (fun name (valscheme: ValScheme) values ->
           Map.add name (MakeAndPublishVal cenv env (altActualParent, inSig, declKind, valRecInfo, valscheme, attrs, xmlDoc, literalValue, false), valscheme.GeneralizedType) values)
