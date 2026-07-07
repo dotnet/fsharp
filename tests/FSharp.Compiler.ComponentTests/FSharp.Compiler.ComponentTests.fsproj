@@ -517,6 +517,7 @@
     <Compile Include="FSharpChecker\FindReferences.fs" />
     <Compile Include="FSharpChecker\SemanticClassificationRegressions.fs" />
     <Compile Include="Attributes\AttributeCtorSetPropAccess.fs" />
+    <Compile Include="Attributes\CompiledNameMultipleValues.fs" />
   </ItemGroup>
 
   <ItemGroup>
