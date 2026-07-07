@@ -100,6 +100,11 @@ rem    SignType=Test uses test certs (proves the mechanism, no authorization nee
 rem    unset, so product-only CI is unaffected. ---
 if not defined SignType ( echo signing skipped ^(set SignType=Test^|Real to sign the VSIX^) & exit /b 0 )
 echo ---------------- Signing insertion VSIX ^(SignType=%SignType%^) ----------------
-powershell -NoProfile -ExecutionPolicy ByPass -Command "& '%~dp0common\build.ps1' -ci -sign -configuration Release /p:DotNetSignType=%SignType% /p:MicroBuild_SigningEnabled=true /p:TeamName=FSharp; exit $LASTEXITCODE"
+rem    -warnAsError:$false: the Arcade SignTool emits SIGN001 (a warning) for the F# IDE assemblies
+rem    (FSharp.Editor/LanguageService/ProjectSystem/...) because their assembly copyright attribute is empty,
+rem    so its heuristic can't confirm they are Microsoft-owned; it still signs them with the Microsoft cert,
+rem    exactly as the original 15.9 AssemblySignToolData.json intended. -ci would otherwise promote that
+rem    warning to an error. This pass does no compilation, so nothing else needs warn-as-error.
+powershell -NoProfile -ExecutionPolicy ByPass -Command "& '%~dp0common\build.ps1' -ci -sign -warnAsError:$false -configuration Release /p:DotNetSignType=%SignType% /p:MicroBuild_SigningEnabled=true /p:TeamName=FSharp; exit $LASTEXITCODE"
 if errorlevel 1 ( echo Error: signing failed 1>&2 & exit /b 1 )
 exit /b 0
