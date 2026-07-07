@@ -16,6 +16,12 @@ let shouldNeverTimeout = 200_000
 
 let defaultStructural() = CacheOptions.getDefault HashIdentity.Structural
 
+// Metrics assertions below read absolute per-name totals via CacheMetrics.getTotalsByName. Those totals
+// are aggregated process-globally while a CacheMetrics.ListenToAll() listener is running. This works
+// because each test uses a unique cache name and this module is the only ListenToAll caller in the
+// assembly, so nothing else increments those names. A second concurrently-active listener would
+// double-count every measurement, so keep it that way.
+
 [<Fact>]
 let ``Create and dispose many`` () =
     let caches = 
