@@ -1,5 +1,10 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
+// These tests are serialized (NotThreadSafeResourceCollection) because they read process-global state:
+// the shared language-service `checker`, and the process-global cache metrics that
+// `CacheMetrics.ListenToAll` aggregates by name (see the `use _ = CacheMetrics.ListenToAll()` in each
+// test). Running them in parallel with each other, or alongside anything else that drives caches while
+// a listener is attached, would let counts from unrelated work bleed into the before/after deltas.
 [<Xunit.Collection(nameof FSharp.Test.NotThreadSafeResourceCollection)>]
 module FSharp.Compiler.Service.Tests.OverloadCacheTests
 
