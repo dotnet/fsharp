@@ -122,6 +122,37 @@ module B = C
     | [ TopLevelNamespace "" [ PrefixedIdentifier "C" ] ] -> ()
     | content -> Assert.Fail($"Unexpected content: {content}")
 
+[<Fact>]
+let ``Long sequential chain captures all identifiers in order`` () =
+    // Regression test for https://github.com/dotnet/fsharp/issues/19988: a long statement
+    // sequence parses into a deeply nested SynExpr.Sequential chain, which is now flattened
+    // before traversal. Verifies the flattening preserves order and captures every entry.
+    let count = 10000
+
+    let statements =
+        [ for i in 0 .. count - 1 -> $"    Ns{i}.f ()" ] |> String.concat "\n"
+
+    let content =
+        getContent
+            false
+            $"""
+module X.Y.Z
+
+let fn () =
+{statements}
+"""
+
+    match content with
+    | [ TopLevelNamespace "X.Y" entries ] ->
+        let identifiers =
+            entries
+            |> List.map (function
+                | FileContentEntry.PrefixedIdentifier path -> String.concat "." path
+                | other -> failwith $"Unexpected entry: {other}")
+
+        Assert.Equal<string list>([ for i in 0 .. count - 1 -> $"Ns{i}" ], identifiers)
+    | content -> Assert.Fail($"Unexpected content: {content}")
+
 
 module InvalidSyntax =
 
