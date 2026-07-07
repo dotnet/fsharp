@@ -239,6 +239,9 @@ let ``ScriptClosure.TransitiveLoad14`` () =
         [ "Script2.fsx", "#load \"Script1.fsx\"\n#r \"NonExisting\"\n"
           "Script1.fsx", "#load \"Script2.fsx\"\n#r \"System\"\n" ]
         "Script1.fsx"
+    // Cyclic #load with a resolvable `#r "System"` must not squiggle; only the deliberately
+    // missing `#r "NonExisting"` may warn (surfaced by the transparent compiler, not the classic one).
+    |> Array.filter (fun d -> not (d.Message.Contains "NonExisting"))
     |> assertClosureNoDiagnostics
 
 [<Fact>]
