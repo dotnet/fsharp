@@ -50,22 +50,6 @@
 
   } 
 
-  .method assembly specialname static int32 get_outArg@8() cil managed
-  {
-    
-    .maxstack  8
-    IL_0000:  ldsfld     int32 '<StartupCode$assembly>'.$OutOptionalTests::outArg@8
-    IL_0005:  ret
-  } 
-
-  .method assembly specialname static int32 'get_outArg@9-1'() cil managed
-  {
-    
-    .maxstack  8
-    IL_0000:  ldsfld     int32 '<StartupCode$assembly>'.$OutOptionalTests::'outArg@9-1'
-    IL_0005:  ret
-  } 
-
   .method assembly specialname static class [runtime]System.Tuple`2<bool,int32> get_patternInput@8() cil managed
   {
     
@@ -74,11 +58,11 @@
     IL_0005:  ret
   } 
 
-  .method assembly specialname static class [runtime]System.Tuple`2<bool,int32> 'get_patternInput@9-1'() cil managed
+  .method assembly specialname static int32 get_outArg@8() cil managed
   {
     
     .maxstack  8
-    IL_0000:  ldsfld     class [runtime]System.Tuple`2<bool,int32> '<StartupCode$assembly>'.$OutOptionalTests::'patternInput@9-1'
+    IL_0000:  ldsfld     int32 '<StartupCode$assembly>'.$OutOptionalTests::outArg@8
     IL_0005:  ret
   } 
 
@@ -89,6 +73,22 @@
     IL_0000:  ldarg.0
     IL_0001:  stsfld     int32 '<StartupCode$assembly>'.$OutOptionalTests::outArg@8
     IL_0006:  ret
+  } 
+
+  .method assembly specialname static class [runtime]System.Tuple`2<bool,int32> 'get_patternInput@9-1'() cil managed
+  {
+    
+    .maxstack  8
+    IL_0000:  ldsfld     class [runtime]System.Tuple`2<bool,int32> '<StartupCode$assembly>'.$OutOptionalTests::'patternInput@9-1'
+    IL_0005:  ret
+  } 
+
+  .method assembly specialname static int32 'get_outArg@9-1'() cil managed
+  {
+    
+    .maxstack  8
+    IL_0000:  ldsfld     int32 '<StartupCode$assembly>'.$OutOptionalTests::'outArg@9-1'
+    IL_0005:  ret
   } 
 
   .method assembly specialname static void 'set_outArg@9-1'(int32 'value') cil managed
