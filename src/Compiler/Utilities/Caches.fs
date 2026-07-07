@@ -400,5 +400,6 @@ type Cache<'Key, 'Value when 'Key: not null> internal (options: CacheOptions<'Ke
 #if DEBUG
     // Shows the totals aggregated for this cache's name. Populated only while a metrics listener
     // (CacheMetrics.ListenToAll, e.g. under --times or the editor's metrics view) is running.
-    member _.DebugDisplay() = (CacheMetrics.getStatsByName name).ToString()
+    member _.DebugDisplay() =
+        (CacheMetrics.getStatsByName name).ToString()
 #endif
