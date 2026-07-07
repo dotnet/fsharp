@@ -252,6 +252,7 @@
     <!--<Compile Include="EmittedIL\StructGettersReadOnly.fs" />-->
     <Compile Include="EmittedIL\TailCalls.fs" />
     <Compile Include="EmittedIL\TupleElimination.fs" />
+    <Compile Include="EmittedIL\UncheckedDefaultofOptimization.fs" />
     <Compile Include="EmittedIL\TypeTestsInPatternMatching.fs" />
     <Compile Include="EmittedIL\WhileLoops.fs" />
     <Compile Include="EmittedIL\ArgumentNames.fs" />
@@ -515,6 +516,7 @@
     <Compile Include="FSharpChecker\FindReferences.fs" />
     <Compile Include="FSharpChecker\SemanticClassificationRegressions.fs" />
     <Compile Include="Attributes\AttributeCtorSetPropAccess.fs" />
+    <Compile Include="Attributes\CompiledNameMultipleValues.fs" />
   </ItemGroup>
 
   <ItemGroup>
