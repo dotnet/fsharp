@@ -704,7 +704,7 @@ let determineTransforms (scope: PerFileNamingScope) g (z: Results) =
 
     let vtransforms =
         Zmap.toList z.Uses
-        |> List.sortWith (fun (v1, _) (v2, _) -> compare (valSourceOrderKey v1) (valSourceOrderKey v2))
+        |> List.sortBy (fst >> valSourceOrderKey)
         |> List.choose (fun (f, sites) -> selectTransform f sites)
     let vtransforms = Zmap.ofList valOrder vtransforms
     vtransforms
