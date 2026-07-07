@@ -4555,24 +4555,20 @@ and TcTypeOrMeasureParameter kindOpt cenv (env: TcEnv) newOk tpenv (SynTypar(id,
 and TcTypar (cenv: cenv) env newOk tpenv tp : Typar * UnscopedTyparEnv =
     TcTypeOrMeasureParameter (Some TyparKind.Type) cenv env newOk tpenv tp
 
-and TcTyparDecl (cenv: cenv) (env: TcEnv) synTyparDecl =
+and TcTyparDecl (cenv: cenv) env synTyparDecl =
     let g = cenv.g
     let (SynTyparDecl (attributes = Attributes synAttrs; typar = synTypar)) = synTyparDecl
     let (SynTypar (ident = id)) = synTypar
 
-    // In Phase1A of a recursive group the sibling attribute types may not resolve yet, so check
-    // tentatively and let the fixup re-resolve against the completed environment. Framework attributes
-    // (Measure, ...), which drive the typar kind below, always resolve.
-    let attrs, didFail = TcAttributesMaybeFail TcCanFail.IgnoreAllErrors cenv env AttributeTargets.GenericParameter synAttrs
-
-    let hasMeasureAttr = attribsHaveEntityFlag g WellKnownEntityAttributes.MeasureAttribute attrs
+    let attrs = TcAttributes cenv env AttributeTargets.GenericParameter synAttrs
+    let hasMeasureAttr = HasFSharpAttribute g g.attrib_MeasureAttribute attrs
     let hasEqDepAttr = HasFSharpAttribute g g.attrib_EqualityConditionalOnAttribute attrs
     let hasCompDepAttr = HasFSharpAttribute g g.attrib_ComparisonConditionalOnAttribute attrs
-    let attrsForTypar = attrs |> filterOutWellKnownAttribs g WellKnownEntityAttributes.MeasureAttribute WellKnownValAttributes.None
+    let attrs = attrs |> filterOutWellKnownAttribs g WellKnownEntityAttributes.MeasureAttribute WellKnownValAttributes.None
     let kind = if hasMeasureAttr then TyparKind.Measure else TyparKind.Type
-    let tp = Construct.NewTypar (kind, TyparRigidity.WarnIfNotRigid, synTypar, false, TyparDynamicReq.Yes, attrsForTypar, hasEqDepAttr, hasCompDepAttr)
+    let tp = Construct.NewTypar (kind, TyparRigidity.WarnIfNotRigid, synTypar, false, TyparDynamicReq.Yes, attrs, hasEqDepAttr, hasCompDepAttr)
 
-    match attrsForTypar with
+    match attrs with
     | ValAttribString g WellKnownValAttributes.CompiledNameAttribute compiledName ->
         tp.SetILName (Some compiledName)
     | _ ->
@@ -4581,22 +4577,10 @@ and TcTyparDecl (cenv: cenv) (env: TcEnv) synTyparDecl =
 
     CallNameResolutionSink cenv.tcSink (id.idRange, env.NameEnv, item, emptyTyparInst, ItemOccurrence.UseInType, env.eAccessRights)
 
-    let fixupAttrs envFinal =
-        (if didFail then TcAttributes cenv envFinal AttributeTargets.GenericParameter synAttrs else attrs)
-        |> filterOutWellKnownAttribs g WellKnownEntityAttributes.MeasureAttribute WellKnownValAttributes.None
-        |> tp.SetAttribs
-
-    tp, fixupAttrs
+    tp
 
 and TcTyparDecls (cenv: cenv) env synTypars =
-    let typars, fixup = TcTyparDeclsCanFail cenv env synTypars
-    // Non-recursive callers: attribute types are already in scope, so finalize immediately.
-    fixup env
-    typars
-
-and TcTyparDeclsCanFail (cenv: cenv) env synTypars =
-    let typars, fixups = synTypars |> List.map (TcTyparDecl cenv env) |> List.unzip
-    typars, (fun envFinal -> fixups |> List.iter (fun fixup -> fixup envFinal))
+    List.map (TcTyparDecl cenv env) synTypars
 
 /// Check and elaborate a syntactic type or unit-of-measure
 ///
@@ -11877,12 +11861,8 @@ and TcAttributesWithPossibleTargetsEx canFail (cenv: cenv) env attrTgt attrEx sy
             attribsAndTargets, didFail || didFail2
 
         with RecoverableException e ->
-            // Under IgnoreAllErrors (the tentative pass for rec-scoped attributes) tolerate even an
-            // unresolved attribute *type name*: swallow the diagnostic and report failure so the
-            // caller's fixup re-resolves against the completed environment.
-            match canFail with
-            | TcCanFail.IgnoreAllErrors -> [], true
-            | _ -> errorRecovery e synAttrib.Range; [], false)
+            errorRecovery e synAttrib.Range
+            [], false)
 
 and TcAttributesMaybeFailEx canFail (cenv: cenv) env attrTgt attrEx synAttribs =
     let attribsAndTargets, didFail = TcAttributesWithPossibleTargetsEx canFail cenv env attrTgt attrEx synAttribs

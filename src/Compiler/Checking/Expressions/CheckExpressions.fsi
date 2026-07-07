@@ -820,9 +820,6 @@ val TcTyparConstraints:
 /// Check a collection of type parameters declarations
 val TcTyparDecls: cenv: TcFileState -> env: TcEnv -> synTypars: SynTyparDecl list -> Typar list
 
-/// Like TcTyparDecls, but also returns a fixup to re-resolve rec-scoped attributes in a later phase.
-val TcTyparDeclsCanFail: cenv: TcFileState -> env: TcEnv -> synTypars: SynTyparDecl list -> Typar list * (TcEnv -> unit)
-
 /// Check a syntactic type
 val TcType:
     cenv: TcFileState ->
