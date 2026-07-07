@@ -1754,47 +1754,36 @@ and [<Sealed>] TcImports
         match remainingNamespace with
         | next :: rest ->
             // Inject the namespace entity
-            match entity.ModuleOrNamespaceType.ModulesAndNamespacesByDemangledName.TryFind next with
-            | Some childEntity ->
-                tcImports.InjectProvidedNamespaceOrTypeIntoEntity(
-                    typeProviderEnvironment,
-                    tcConfig,
-                    m,
-                    childEntity,
-                    next :: injectedNamespace,
-                    rest,
-                    provider,
-                    st
+            let childEntity =
+                entity.ModuleOrNamespaceType.GetOrInternNamespaceEntity(
+                    next,
+                    (fun () ->
+                        // Build up the artificial namespace if there is not a real one.
+                        let cpath =
+                            CompPath(
+                                ILScopeRef.Local,
+                                SyntaxAccess.Unknown,
+                                injectedNamespace
+                                |> List.rev
+                                |> List.map (fun n -> (n, ModuleOrNamespaceKind.Namespace true))
+                            )
+
+                        let mid = ident (next, rangeStartup)
+                        let mty = Construct.NewEmptyModuleOrNamespaceType(Namespace true)
+
+                        Construct.NewModuleOrNamespace (Some cpath) taccessPublic mid XmlDoc.Empty [] (MaybeLazy.Strict mty))
                 )
-            | None ->
-                // Build up the artificial namespace if there is not a real one.
-                let cpath =
-                    CompPath(
-                        ILScopeRef.Local,
-                        SyntaxAccess.Unknown,
-                        injectedNamespace
-                        |> List.rev
-                        |> List.map (fun n -> (n, ModuleOrNamespaceKind.Namespace true))
-                    )
 
-                let mid = ident (next, rangeStartup)
-                let mty = Construct.NewEmptyModuleOrNamespaceType(Namespace true)
-
-                let newNamespace =
-                    Construct.NewModuleOrNamespace (Some cpath) taccessPublic mid XmlDoc.Empty [] (MaybeLazy.Strict mty)
-
-                entity.ModuleOrNamespaceType.AddModuleOrNamespaceByMutation newNamespace
-
-                tcImports.InjectProvidedNamespaceOrTypeIntoEntity(
-                    typeProviderEnvironment,
-                    tcConfig,
-                    m,
-                    newNamespace,
-                    next :: injectedNamespace,
-                    rest,
-                    provider,
-                    st
-                )
+            tcImports.InjectProvidedNamespaceOrTypeIntoEntity(
+                typeProviderEnvironment,
+                tcConfig,
+                m,
+                childEntity,
+                next :: injectedNamespace,
+                rest,
+                provider,
+                st
+            )
         | [] ->
             match st with
             | Some st ->

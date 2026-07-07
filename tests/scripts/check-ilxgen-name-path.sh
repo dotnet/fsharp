@@ -21,21 +21,21 @@ if ! rg -q "let private freshCoreName" "${TARGET}"; then
   exit 1
 fi
 
-if ! rg -q "let private nextIlxOrdinal" "${TARGET}"; then
-  echo "error: expected helper nextIlxOrdinal in IlxGen.fs" >&2
+if rg -q "IncrementOnly" "${TARGET}"; then
+  echo "error: IlxGen.fs should not use the removed IncrementOnly raw ordinal path." >&2
   exit 1
 fi
 
-matches="$(rg -n "CompilerGlobalState\\.Value\\.(IlxGenNiceNameGenerator|NiceNameGenerator)\\.(FreshCompilerGeneratedName|IncrementOnly)" "${TARGET}" || true)"
+matches="$(rg -n "CompilerGlobalState\\.Value\\.(IlxGenNiceNameGenerator|NiceNameGenerator)\\.FreshCompilerGeneratedName" "${TARGET}" || true)"
 
 match_count=0
 if [[ -n "${matches}" ]]; then
   match_count="$(printf '%s\n' "${matches}" | wc -l | tr -d '[:space:]')"
 fi
 
-if [[ "${match_count}" -ne 3 ]]; then
+if [[ "${match_count}" -ne 2 ]]; then
   echo "error: IlxGen.fs must centralize compiler-generated-name map access through helper wrappers." >&2
-  echo "expected 3 direct generator calls (helper bodies), found ${match_count}." >&2
+  echo "expected 2 direct generator calls (helper bodies), found ${match_count}." >&2
   if [[ -n "${matches}" ]]; then
     echo "matched lines:" >&2
     printf '%s\n' "${matches}" >&2

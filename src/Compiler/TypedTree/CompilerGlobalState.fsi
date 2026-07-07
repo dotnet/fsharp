@@ -17,7 +17,6 @@ type NiceNameGenerator =
 
     new: unit -> NiceNameGenerator
     member FreshCompilerGeneratedName: name: string * m: range -> string
-    member IncrementOnly: name: string * m: range -> int
 
     /// Reset the per-(basicName, file) occurrence counters so a subsequent codegen run assigns the
     /// same compiler-generated occurrence names a fresh process would. Callers must ensure no

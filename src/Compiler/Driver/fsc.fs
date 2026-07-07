@@ -432,13 +432,11 @@ let getParallelReferenceResolutionFromEnvironment () =
 /// is built against the wrong tokens. Pin the determinism knobs for any compile that installs
 /// the emit hook (tcConfigB.compilerEmitHook = Some), leaving the normal path (None) untouched:
 ///  - deterministic: stable MVID/timestamp and deterministic PE emission;
-///  - parallelIlxGen off: parallel IlxGen name-set merge ordering can permute synthesized
-///    closure/type rows between runs (dotnet/fsharp #19732, #19928), and the replay's
-///    GetOrAddName hands names out in call order, so parallel IlxGen would permute the replayed
-///    names relative to the sequential baseline and point the delta at the wrong tokens — a
-///    silent, crash-free wrong delta;
-///  - optimization processing mode Sequential: parallel optimization can reorder optimized
-///    method bodies feeding codegen.
+///  - parallelIlxGen off: #19929 makes normal parallel/sequential codegen deterministic, but
+///    the hot reload replay map hands names out in codegen call order. Keep that order aligned
+///    with the captured baseline until replay is proven independent of parallel emission order;
+///  - optimization processing mode Sequential: keep optimized method bodies feeding codegen in
+///    the same order as the captured baseline.
 /// msbuild cannot reliably switch parallelism off itself (dotnet/fsharp #19935), so the pin
 /// lives in the compiler, not in build logic, and is not a user-facing error. Graph
 /// type-checking is deliberately left as configured: lambda occurrence keys and typed-tree

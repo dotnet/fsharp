@@ -124,19 +124,20 @@ another process (the dotnet-watch topology) has to reproduce the exact row/heap 
 running process baselined, or every chained delta resolves against the wrong tokens. The
 per-compile hot reload machinery is deterministic by construction — occurrence keys are
 syntactic, emission walks list-ordered typed trees, and the delta emitter hardcodes
-deterministic output — so the one real exposure is the BASELINE compile itself, where the
-compiler's default parallelism can permute output between runs.
+deterministic output. Normal parallel/sequential codegen determinism is fixed by
+dotnet/fsharp #19929, but hot reload has a stricter baseline/replay contract: the replay map
+must consume generated names in the same order as the captured baseline, or a delta can target
+the wrong metadata rows even when the final non-hot-reload PE would be deterministic.
 
 `--test:HotReloadDeltas` therefore silently pins, at config finalization in
 `Driver/fsc.fs` (`main1`, after all flags are processed):
 
 - `deterministic <- true` — stable MVID/timestamp, deterministic PE emission (upstream MVID
   determinism, dotnet/fsharp #19801, is already in the base);
-- `parallelIlxGen <- false` — parallel IlxGen's name-set merge ordering can permute
-  synthesized closure/type rows between identical compiles (same family as dotnet/fsharp
-  #19732 and #19928);
-- `optSettings.processingMode <- Sequential` — parallel optimization can reorder the
-  optimized method bodies feeding codegen.
+- `parallelIlxGen <- false` — keep hot reload replay-name consumption in the same codegen
+  call order as the captured baseline;
+- `optSettings.processingMode <- Sequential` — keep optimized method bodies feeding codegen
+  in the same order as the captured baseline.
 
 These are silent flag-implies-flag pins, not user-facing errors: msbuild cannot reliably
 switch parallelism off itself (dotnet/fsharp #19935), so the user has no meaningful way to
