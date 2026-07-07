@@ -105,6 +105,10 @@ rem    (FSharp.Editor/LanguageService/ProjectSystem/...) because their assembly 
 rem    so its heuristic can't confirm they are Microsoft-owned; it still signs them with the Microsoft cert,
 rem    exactly as the original 15.9 AssemblySignToolData.json intended. -ci would otherwise promote that
 rem    warning to an error. This pass does no compilation, so nothing else needs warn-as-error.
-powershell -NoProfile -ExecutionPolicy ByPass -Command "& '%~dp0common\build.ps1' -ci -sign -warnAsError:$false -configuration Release /p:DotNetSignType=%SignType% /p:MicroBuild_SigningEnabled=true /p:TeamName=FSharp; exit $LASTEXITCODE"
+rem    OfficialBuildId (from the pipeline's Build.BuildNumber) makes Arcade apply real signatures instead of
+rem    dry-running, matching dotnet/fsharp main's official signed build.
+set "_officialArg="
+if defined OfficialBuildId set "_officialArg=/p:OfficialBuildId=%OfficialBuildId%"
+powershell -NoProfile -ExecutionPolicy ByPass -Command "& '%~dp0common\build.ps1' -ci -sign -warnAsError:$false -configuration Release /p:DotNetSignType=%SignType% %_officialArg% /p:MicroBuild_SigningEnabled=true /p:TeamName=FSharp; exit $LASTEXITCODE"
 if errorlevel 1 ( echo Error: signing failed 1>&2 & exit /b 1 )
 exit /b 0

@@ -17,11 +17,11 @@ variables:
     value: Release
   - name: Codeql.Enabled
     value: 'false'
-  # Signing: Test proves the sign mechanism with no authorization needed. The operator flips this to Real
-  # (and sets signWithProd: true + adds the DotNet-DevDiv-Insertion-Workflow-Variables ESRP group below)
-  # once the signing service is authorized for this pipeline, to produce a real-signed insertion VSIX.
+  # Signing replicates dotnet/fsharp main's official signed build: real ESRP signing via the 1ES mb.signing
+  # block + the DotNet-DevDiv-Insertion-Workflow-Variables group (already authorized for this repo) +
+  # OfficialBuildId (so Arcade applies real signatures instead of dry-running).
   - name: _SignType
-    value: Test
+    value: Real
 
 resources:
   repositories:
@@ -49,6 +49,8 @@ extends:
           - job: BuildWindows
             displayName: 'Build Windows Release'
             timeoutInMinutes: 120
+            variables:
+              - group: DotNet-DevDiv-Insertion-Workflow-Variables
             pool:
               name: NetCore1ESPool-Svc-Internal
               image: windows.vs2022.amd64
@@ -57,7 +59,7 @@ extends:
               mb:
                 signing:
                   enabled: true
-                  signWithProd: false
+                  signWithProd: true
                   feedSource: https://dnceng.pkgs.visualstudio.com/_packaging/MicroBuildToolset/nuget/v3/index.json
                   signType: $(_SignType)
                   zipSources: false
@@ -97,6 +99,7 @@ extends:
                   DisableLocalization: true
                   BUILD_INSERTION: 1
                   SignType: $(_SignType)
+                  OfficialBuildId: $(Build.BuildNumber)
               - task: PublishTestResults@2
                 displayName: 'Publish test results'
                 condition: always()
