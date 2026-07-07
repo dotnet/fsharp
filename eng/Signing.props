@@ -1,0 +1,37 @@
+<Project>
+
+  <!-- F# 15.9 signing configuration for the Arcade SignTool, translated from the original
+       build/config/AssemblySignToolData.json:
+         * F# assemblies (FSharp.Core, FSharp.Compiler.Private, fsc/fsi, FSharp.Editor, ...) are delay-signed
+           with the Microsoft ECMA key (b03f5f7f11d50a3a); SignTool completes the strong name + Authenticode
+           with the Microsoft certificate by default (UseDotNetCertificate), so they need no explicit entry.
+         * .vsix containers are signed VsixSHA2 (Arcade's default FileExtensionSignInfo for .vsix).
+         * 3rd-party / VS-owned / MSBuild redist assemblies are already signed and must NOT be re-signed
+           (the JSON 'exclude' list) -> CertificateName="None". -->
+
+  <PropertyGroup>
+    <UseDotNetCertificate>true</UseDotNetCertificate>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- The insertion deliverable. SignTool recurses into the .vsix, signs the contained F# assemblies
+         (Microsoft cert + strong name), repacks, and signs the .vsix (VsixSHA2). -->
+    <ItemsToSign Include="$(RepoRoot)vsintegration\Vsix\VisualFSharpFull\bin\Release\VisualFSharpFull.vsix" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Already-signed / redistributed assemblies bundled in the VSIX: do not re-sign. -->
+    <FileSignInfo Include="Newtonsoft.Json.dll" CertificateName="None" />
+    <FileSignInfo Include="FSharp.Data.TypeProviders.dll" CertificateName="None" />
+    <FileSignInfo Include="Microsoft.Build.dll" CertificateName="None" />
+    <FileSignInfo Include="Microsoft.Build.Conversion.Core.dll" CertificateName="None" />
+    <FileSignInfo Include="Microsoft.Build.Engine.dll" CertificateName="None" />
+    <FileSignInfo Include="Microsoft.Build.Framework.dll" CertificateName="None" />
+    <FileSignInfo Include="Microsoft.Build.Tasks.Core.dll" CertificateName="None" />
+    <FileSignInfo Include="Microsoft.Build.Utilities.Core.dll" CertificateName="None" />
+    <FileSignInfo Include="System.Collections.Immutable.dll" CertificateName="None" />
+    <FileSignInfo Include="System.Reflection.Metadata.dll" CertificateName="None" />
+    <FileSignInfo Include="System.ValueTuple.dll" CertificateName="None" />
+  </ItemGroup>
+
+</Project>

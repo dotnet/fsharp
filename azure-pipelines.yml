@@ -17,6 +17,11 @@ variables:
     value: Release
   - name: Codeql.Enabled
     value: 'false'
+  # Signing: Test proves the sign mechanism with no authorization needed. The operator flips this to Real
+  # (and sets signWithProd: true + adds the DotNet-DevDiv-Insertion-Workflow-Variables ESRP group below)
+  # once the signing service is authorized for this pipeline, to produce a real-signed insertion VSIX.
+  - name: _SignType
+    value: Test
 
 resources:
   repositories:
@@ -49,6 +54,13 @@ extends:
               image: windows.vs2022.amd64
               os: windows
             templateContext:
+              mb:
+                signing:
+                  enabled: true
+                  signWithProd: false
+                  feedSource: https://dnceng.pkgs.visualstudio.com/_packaging/MicroBuildToolset/nuget/v3/index.json
+                  signType: $(_SignType)
+                  zipSources: false
               outputs:
                 - output: pipelineArtifact
                   displayName: 'Publish binary log'
@@ -80,10 +92,11 @@ extends:
                 inputs:
                   nuGetServiceConnections: 'DevDiv - VS package feed'
               - script: eng\CIBuild.cmd -configuration $(_BuildConfig)
-                displayName: 'Build (product) + tests + insertion VSIX'
+                displayName: 'Build (product) + tests + insertion VSIX + sign'
                 env:
                   DisableLocalization: true
                   BUILD_INSERTION: 1
+                  SignType: $(_SignType)
               - task: PublishTestResults@2
                 displayName: 'Publish test results'
                 condition: always()

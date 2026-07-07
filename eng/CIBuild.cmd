@@ -91,4 +91,15 @@ if errorlevel 1 ( echo Error: vsintegration build failed 1>&2 & exit /b 1 )
 "%_dotnet%" restore "%_root%\vsintegration\Vsix\VisualFSharpFull\VisualFSharpFull.csproj" --configfile "%_root%\NuGet.Config" !_srcArgs!
 if errorlevel 1 ( echo Error: VSIX restore failed 1>&2 & exit /b 1 )
 powershell -NoProfile -ExecutionPolicy ByPass -Command "& '%~dp0common\build.ps1' -ci -build -configuration Release -projects '%_root%\vsintegration\Vsix\VisualFSharpFull\VisualFSharpFull.csproj' /m:1 /p:DisableLocalization=true /p:GeneratePkgDefFile=false; exit $LASTEXITCODE"
-exit /b %ERRORLEVEL%
+if errorlevel 1 ( echo Error: VSIX build failed 1>&2 & exit /b 1 )
+
+rem --- Step 6 (with Step 5): sign the insertion VSIX and the F# assemblies inside it via the Arcade SignTool,
+rem    driven by eng\Signing.props. The 1ES template's mb.signing block installs the MicroBuild signing plugin;
+rem    SignType=Real does production signing (needs the signing service authorized for the pipeline),
+rem    SignType=Test uses test certs (proves the mechanism, no authorization needed). Skipped when SignType is
+rem    unset, so product-only CI is unaffected. ---
+if not defined SignType ( echo signing skipped ^(set SignType=Test^|Real to sign the VSIX^) & exit /b 0 )
+echo ---------------- Signing insertion VSIX ^(SignType=%SignType%^) ----------------
+powershell -NoProfile -ExecutionPolicy ByPass -Command "& '%~dp0common\build.ps1' -ci -sign -configuration Release /p:DotNetSignType=%SignType% /p:MicroBuild_SigningEnabled=true /p:TeamName=FSharp; exit $LASTEXITCODE"
+if errorlevel 1 ( echo Error: signing failed 1>&2 & exit /b 1 )
+exit /b 0
