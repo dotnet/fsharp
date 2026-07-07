@@ -146,6 +146,18 @@
       IL_000c:  ret
     } 
 
+    .method assembly static void  staticInitialization@() cil managed
+    {
+      
+      .maxstack  8
+      IL_0000:  ldc.i4.0
+      IL_0001:  stsfld     int32 Sample/C::backing
+      IL_0006:  ldc.i4.1
+      IL_0007:  volatile.
+      IL_0009:  stsfld     int32 Sample/C::init@2
+      IL_000e:  ret
+    } 
+
     .method public hidebysig instance int32 Run() cil managed
     {
       
@@ -158,18 +170,6 @@
       IL_0008:  tail.
       IL_000a:  callvirt   instance !1 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,int32>::Invoke(!0)
       IL_000f:  ret
-    } 
-
-    .method assembly static void  staticInitialization@() cil managed
-    {
-      
-      .maxstack  8
-      IL_0000:  ldc.i4.0
-      IL_0001:  stsfld     int32 Sample/C::backing
-      IL_0006:  ldc.i4.1
-      IL_0007:  volatile.
-      IL_0009:  stsfld     int32 Sample/C::init@2
-      IL_000e:  ret
     } 
 
   } 

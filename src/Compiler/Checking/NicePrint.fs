@@ -463,7 +463,8 @@ module PrintIL =
                       let s = d.ToString ("g12", CultureInfo.InvariantCulture)
                       let s = ensureFloat s
                       s |> (tagNumericLiteral >> Some)
-                | _ -> None
+                | ILFieldInit.String s -> ("\"" + s + "\"") |> (tagStringLiteral >> Some)
+                | ILFieldInit.Null -> "null" |> (tagKeyword >> Some)
             | None -> None
         match textOpt with
         | None -> WordL.equals ^^ (comment "value unavailable")
@@ -1972,6 +1973,11 @@ module TastDefinitionPrinting =
         let nameL = ConvertLogicalNameToDisplayLayout (tagField >> wordL) finfo.FieldName
         let typL = layoutType denv (finfo.FieldType(infoReader.amap, m))
         let fieldL = staticL ^^ WordL.keywordVal ^^ (nameL |> addColonL) ^^ typL
+        let isLiteral = finfo.LiteralValue.IsSome
+        let fieldL =
+            if isLiteral then fieldL ^^ PrintIL.layoutILFieldInit finfo.LiteralValue
+            else fieldL
+        let fieldL = fieldL |> PrintTypes.layoutAttribs denv None isLiteral TyparKind.Type []
         layoutXmlDocOfILFieldInfo denv infoReader finfo fieldL
 
     let layoutEventInfo denv (infoReader: InfoReader) m (einfo: EventInfo) =
