@@ -1,15 +1,11 @@
 {
   "prs": {
     "20034": {
-      "sha": "5b453ecc9a0731b282618f7cf1dee8d371ba24a6",
-      "cats": []
-    },
-    "20028": {
-      "sha": "9f004b62559ca8070b1b63f4ba876befb9b2011f",
+      "sha": "8a1081eac6bf",
       "cats": []
     },
     "20023": {
-      "sha": "da630bc9e452bb003c86e36dda1db4574b3009cc",
+      "sha": "80838bca11d2",
       "cats": []
     },
     "20016": {
@@ -19,10 +15,6 @@
         "Affects-Restore"
       ]
     },
-    "20014": {
-      "sha": "633eb095473103f51748dcc365ff90ced5e2f799",
-      "cats": []
-    },
     "20003": {
       "sha": "c00ad17d911e89e24336ee26bdae2b8a71b22f60",
       "cats": [
@@ -30,7 +22,7 @@
       ]
     },
     "19995": {
-      "sha": "1c1f7a9f7a222f823f1659234bfa49921d81427d",
+      "sha": "239b6ee3c36e5dec58ed2bf00ff78611abff1087",
       "cats": []
     },
     "19994": {
@@ -82,16 +74,12 @@
         "Affects-Test-Tooling"
       ]
     },
-    "19929": {
-      "sha": "50b13b85e4f5a1dbc26c9d3946727933b6a81a6c",
-      "cats": []
-    },
     "19915": {
       "sha": "60fbac634f620ecdec670453bc2cb715a9c41a53",
       "cats": []
     },
     "19885": {
-      "sha": "ec2a1ecd3eb15eea5b4b8207334972fa2cbfd194",
+      "sha": "c53e41a34a71",
       "cats": []
     },
     "19868": {
@@ -122,15 +110,8 @@
       "sha": "ed0900231dce5cff24cc5331d043ee83055d172f",
       "cats": []
     },
-    "20036": {
-      "sha": "e55a3e7f6b68ddcc14ee79f1d5ce7e8da9a9da36",
-      "cats": [
-        "Affects-Build-Infra",
-        "Affects-Restore"
-      ]
-    },
-    "20037": {
-      "sha": "5da3b98f039a4ff9d7aa3b165c96280458c9d712",
+    "19744": {
+      "sha": "82e6a11e6487",
       "cats": []
     }
   }
