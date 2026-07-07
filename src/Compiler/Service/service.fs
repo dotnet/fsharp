@@ -521,14 +521,13 @@ type FSharpChecker
             if Map.isEmpty baseline.EncMethodDebugInfos && File.Exists(pdbPath) then
                 let baseline =
                     { baseline with
-                        EncMethodDebugInfos =
-                            FSharp.Compiler.EncMethodDebugInformation.readEncMethodDebugInfoFromPortablePdb (File.ReadAllBytes(pdbPath))
+                        EncMethodDebugInfos = EncMethodDebugInformation.readEncMethodDebugInfoFromPortablePdb (File.ReadAllBytes(pdbPath))
                     }
 
                 // Closure mapping: the chain -> closure-name tables are a pure function
                 // of the occurrence keys just decoded (baseline names are occurrence-derived
-                // under the flag), so a session started from disk - typically in a different
-                // process than the fsc that built the baseline - reconstructs exactly the
+                // under the flag), so a session started from disk — typically in a different
+                // process than the fsc that built the baseline — reconstructs exactly the
                 // tables the emitting compile installed. Fail closed for replay-named and
                 // mid-session baselines (see deriveEncClosureNamesFromEncDebugInfos).
                 { baseline with
@@ -585,7 +584,7 @@ type FSharpChecker
 
     // Projects tracked by LIVE session entities created via CreateHotReloadSession, keyed by
     // the resolved output path each AddProject baselined (most recent first). Compile consults
-    // this to resolve the scoped emission context - which session, and which project inside
+    // this to resolve the scoped emission context — which session, and which project inside
     // it, a given in-process compile serves. Disposing a session removes its entries.
     let liveHotReloadEmissionTargets =
         ResizeArray<string * FSharp.Compiler.HotReloadState.HotReloadSessionStore * FSharp.Compiler.HotReloadState.HotReloadProjectKey>()
@@ -1429,7 +1428,7 @@ type FSharpChecker
                         metadataVersion,
                         secDecls
                     )
-                // Strip native resources - default.win32manifest may not exist on all platforms.
+                // Strip native resources — default.win32manifest may not exist on all platforms.
                 { m with NativeResources = [] }
 
             let normalizeAssemblyRefs (aref: ILAssemblyRef) =

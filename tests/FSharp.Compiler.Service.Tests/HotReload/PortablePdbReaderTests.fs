@@ -293,3 +293,4 @@ module PortablePdbReaderTests =
             for result in results do
                 let r = result.Value
                 Assert.Equal(first.TableRowCounts.Length, r.TableRowCounts.Length)
+

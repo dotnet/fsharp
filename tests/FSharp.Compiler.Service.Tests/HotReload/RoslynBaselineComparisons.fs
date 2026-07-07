@@ -47,9 +47,6 @@ module RoslynBaselineComparisons =
     type RoslynBaselines = Map<string, Map<string, int>>
 
     let private loadRoslynTables () : RoslynBaselines =
-        // Three levels up from tests/FSharp.Compiler.Service.Tests/HotReload is the repo root.
-        // A fourth ".." escapes the repository and only works when a sibling checkout happens
-        // to carry the file, which is what CI images do not have.
         let path = Path.Combine(__SOURCE_DIRECTORY__, "../../../tools/baselines/roslyn_tables.json") |> Path.GetFullPath
         if not (File.Exists path) then
             failwithf "Roslyn baseline table snapshot not found: %s" path

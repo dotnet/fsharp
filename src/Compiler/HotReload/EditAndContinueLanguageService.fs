@@ -333,7 +333,7 @@ type internal FSharpEditAndContinueLanguageService private (getSessionStore: uni
                         eprintfn "[fsharp-hotreload][service] Failed to write trace log: %s" ex.Message
 
                 // Active statements: remap the debugger-supplied active statements against the emitted
-                // delta BEFORE any session state is staged - a rude remap (an edit that destroys
+                // delta BEFORE any session state is staged — a rude remap (an edit that destroys
                 // an active statement or changes the statement a non-leaf frame is suspended in)
                 // blocks the whole update, leaving the session at the previous generation.
                 let activeStatementRemap =
@@ -493,7 +493,7 @@ type internal FSharpEditAndContinueLanguageService private (getSessionStore: uni
 
                             // Sequence-point tracking: even when the typed-tree diff found no semantic edits (its hashes are
                             // deliberately range-independent), the fresh compile's sequence points may have
-                            // moved - a line-shift edit (blank line/comment above a method). The emitter
+                            // moved — a line-shift edit (blank line/comment above a method). The emitter
                             // detects those by diffing sequence points against the committed snapshot, so
                             // emission proceeds and "no changes" is decided from the emitted artifacts
                             // (Roslyn parity: line-only document changes are significant valid changes).
@@ -590,7 +590,7 @@ type internal FSharpEditAndContinueLanguageService private (getSessionStore: uni
     member this.CommitPendingUpdate(generationId: Guid) = this.OnDeltaApplied(generationId)
 
     /// <summary>
-    /// Commits ALL pending project updates atomically without generation-id validation -
+    /// Commits ALL pending project updates atomically without generation-id validation —
     /// the session entity's solution-wide commit (Roslyn's <c>CommitSolutionUpdate</c>).
     /// Returns the committed generation ids (empty when nothing was pending).
     /// </summary>

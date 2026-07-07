@@ -1324,7 +1324,7 @@ type Calculator<'T>() =
 
             Assert.Empty(clearedView.ActiveStatements))
 
-    /// Experimental: FSHARP_HOTRELOAD_INPROCESS_COMPILE lets
+    /// Experimental (dotnet/fsharp#19941 dev-loop track): FSHARP_HOTRELOAD_INPROCESS_COMPILE lets
     /// EmitDelta recompile the output assembly in-process from the just-produced check results,
     /// instead of requiring an external `dotnet build` before every delta. Covered here:
     /// a body-only (string literal) edit under the flag; a body edit + line shift of an UNEDITED

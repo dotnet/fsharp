@@ -110,7 +110,7 @@ module ClosureNameAllocatorTests =
         let baselineNames = Map.ofList [ [ 0 ], "f@hotreload"; [ 1 ], "f@hotreload-1" ]
 
         // A new lambda (capturing z) is inserted between the two surviving ones, so the
-        // second survivor's ordinal shifts from 1 to 2 - the alignment must still match
+        // second survivor's ordinal shifts from 1 to 2 — the alignment must still match
         // it (occurrence identity is structural, not ordinal-positional).
         let fresh =
             [ mkOccurrence 0 [] [ "x", intTy ] 100
@@ -188,7 +188,7 @@ module ClosureNameAllocatorTests =
     let ``capture-incompatible matched occurrence allocates a fresh name`` () =
         // Same shape, but the captured value changed type: pass 2 pairs them and the
         // pair is capture-incompatible, so per Roslyn semantics the baseline closure is
-        // not reusable - the allocator must synthesize a fresh identity.
+        // not reusable — the allocator must synthesize a fresh identity.
         let baseline = [ mkOccurrence 0 [] [ "x", intTy ] 100 ]
         let baselineNames = Map.ofList [ [ 0 ], "f@hotreload" ]
         let fresh = [ mkOccurrence 0 [] [ "x", stringTy ] 100 ]
@@ -243,7 +243,7 @@ module ClosureNameAllocatorTests =
             assignmentNames gen2Allocation
         )
 
-        // Generation 3: pure body edits - every name, including the generation-2
+        // Generation 3: pure body edits — every name, including the generation-2
         // fresh one, must be reused verbatim from the chained table.
         let gen3Occurrences =
             [ mkOccurrence 0 [] [ "x", intTy ] 101
@@ -265,7 +265,7 @@ module ClosureNameAllocatorTests =
             assignmentNames gen3Allocation
         )
 
-        // Generation 4: another addition - survivors (baseline-named AND g2-named)
+        // Generation 4: another addition — survivors (baseline-named AND g2-named)
         // keep their names; only the new occurrence gets a g4-suffixed name.
         let gen4Occurrences =
             [ mkOccurrence 0 [] [ "x", intTy ] 101
@@ -293,7 +293,7 @@ module ClosureNameAllocatorTests =
     // Allocator over REAL occurrence extraction: the occurrences below come from actual
     // checker compiles (DiffTestHarness), so ordinals, parent chains, parameter/
     // return identities and capture sets are produced by the real extraction the
-    // delta path uses - not hand-built fixtures.
+    // delta path uses — not hand-built fixtures.
     // -----------------------------------------------------------------------
 
     let private boolTy = RuntimeTypeIdentity.NamedType("System.Boolean", [])
@@ -361,8 +361,8 @@ let transform (input: int list) =
         | ClosureNameAssignment.Reused name ->
             failwith $"Added lambda must not reuse a baseline name, got '{name}'."
 
-        // Generation 3: pure body edit of the surviving map lambda. Every name -
-        // including the generation-2 fresh one - must be reused from the chain.
+        // Generation 3: pure body edit of the surviving map lambda. Every name —
+        // including the generation-2 fresh one — must be reused from the chain.
         harness.Rewrite twoLambdaEditedSource
         let gen3Occurrences = extractOccurrences (harness.Compile()) "transform"
         Assert.Equal(2, List.length gen3Occurrences)

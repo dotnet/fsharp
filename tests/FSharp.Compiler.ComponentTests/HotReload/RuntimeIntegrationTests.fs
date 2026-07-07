@@ -1128,108 +1128,26 @@ type Type =
             baselineExpected
             updatedExpected
 
-    /// Runs baseline -> session -> edit -> EmitDelta with class-form resumable state machines
-    /// enabled and asserts that shape-changing edits fail closed for this slice.
-    let private assertClassStateMachineShapeRejected (testLabel: string) (baselineSource: string) (updatedSource: string) =
-        let checker =
-            FSharpChecker.Create(
-                keepAssemblyContents = true,
-                keepAllBackgroundResolutions = false,
-                keepAllBackgroundSymbolUses = false,
-                enableBackgroundItemKeyStoreAndSemanticClassification = false,
-                enablePartialTypeChecking = false,
-                captureIdentifiersWhenParsing = false
-            )
-
-        let projectDir =
-            Path.Combine(Path.GetTempPath(), "fsharp-hotreload-class-sm-reject", System.Guid.NewGuid().ToString("N"))
-
-        Directory.CreateDirectory(projectDir) |> ignore
-
-        let fsPath = Path.Combine(projectDir, "Library.fs")
-        let dllPath = Path.Combine(projectDir, "Library.dll")
-
-        let compile label (projectOptions: FSharpProjectOptions) =
-            let diagnostics, _ =
-                checker.Compile(Array.concat [ [| "fsc.exe" |]; projectOptions.OtherOptions; projectOptions.SourceFiles ])
-                |> Async.RunImmediate
-
-            let errors =
-                diagnostics
-                |> Array.filter (fun d -> d.Severity = FSharpDiagnosticSeverity.Error)
-
-            if errors.Length > 0 then
-                failwithf "[%s] %s compilation failed: %A" testLabel label (errors |> Array.map (fun d -> d.Message))
-
-        try
-            File.WriteAllText(fsPath, baselineSource)
-
-            let projectOptions, _ =
-                checker.GetProjectOptionsFromScript(
-                    fsPath,
-                    SourceText.ofString baselineSource,
-                    assumeDotNetFramework = false,
-                    useSdkRefs = true,
-                    useFsiAuxLib = false
-                )
-                |> Async.RunImmediate
-
-            let projectOptions =
-                { projectOptions with
-                    SourceFiles = [| fsPath |]
-                    OtherOptions =
-                        projectOptions.OtherOptions
-                        |> Array.append
-                            [| "--target:library"
-                               "--langversion:preview"
-                               "--optimize-"
-                               "--debug:portable"
-                               "--deterministic"
-                               "--test:HotReloadDeltas"
-                               "--test:HotReloadClassStateMachines"
-                               $"--out:{dllPath}" |] }
-
-            checker.InvalidateAll()
-            compile "baseline" projectOptions
-
-            let capabilities =
+    /// Runs an apply-update assertion with class-form resumable state machines enabled via the
+    /// --test:HotReloadClassStateMachines compile flag (threaded through TcGlobals so the
+    /// baseline and delta compiles agree on the state machine shape), so that adding/removing a
+    /// let!/do! is an AddInstanceFieldToExistingType + method update rather than a struct re-layout.
+    let private applyClassStateMachineUpdateAndAssertRuntimeResult testLabel baselineSource updatedSource baselineExpected updatedExpected =
+        // The exact capabilities the class-state-machine shape edit requires (TypedTreeDiff's
+        // requiredCapabilities for that path): an added hoisted field, plus the new/updated
+        // methods. Kept in step with the classifier rather than padded to the full runtime set.
+        applySingleStringUpdateWithCapabilitiesAndAssertRuntimeResult
+            (Some
                 [ "Baseline"
                   "AddInstanceFieldToExistingType"
                   "NewTypeDefinition"
-                  "AddMethodToExistingType" ]
-
-            use session = checker.CreateHotReloadSession(capabilities = capabilities)
-
-            match session.AddProject(snapshotOf projectOptions) |> Async.RunImmediate with
-            | Error error -> failwithf "[%s] failed to start hot reload session: %A" testLabel error
-            | Ok () -> ()
-
-            File.WriteAllText(fsPath, updatedSource)
-            checker.NotifyFileChanged(fsPath, projectOptions) |> Async.RunImmediate
-
-            let updatedOptions =
-                { projectOptions with
-                    OtherOptions =
-                        projectOptions.OtherOptions
-                        |> Array.filter (fun opt ->
-                            not (opt.StartsWith("--test:HotReloadDeltas", StringComparison.OrdinalIgnoreCase))) }
-
-            compile "updated" updatedOptions
-
-            match session.EmitDelta(snapshotOf projectOptions) |> Async.RunImmediate with
-            | Ok _ -> failwithf "[%s] expected the state-machine shape edit to be rejected, but a delta was emitted." testLabel
-            | Error(FSharpHotReloadError.UnsupportedEdit edits) ->
-                let message =
-                    edits
-                    |> List.map (fun edit -> $"{edit.Id}: {edit.Message}")
-                    |> String.concat Environment.NewLine
-
-                Assert.Contains("FSHRDL013", message)
-                Assert.Contains("state-machine", message)
-            | Error other -> failwithf "[%s] expected UnsupportedEdit, got %A" testLabel other
-        finally
-            try checker.InvalidateAll() with _ -> ()
-            try Directory.Delete(projectDir, true) with _ -> ()
+                  "AddMethodToExistingType" ])
+            [ "--test:HotReloadClassStateMachines" ]
+            testLabel
+            baselineSource
+            updatedSource
+            baselineExpected
+            updatedExpected
 
     let private taskClassSmBaselineSource =
         """
@@ -1257,18 +1175,29 @@ type Type =
 """
 
     [<Fact>]
-    let ``EmitDelta rejects task let-bang addition under class state machines`` () =
-        assertClassStateMachineShapeRejected
+    let ``ApplyUpdate succeeds for task let-bang addition under class state machines`` () =
+        // Roslyn parity: adding an await/let! to an existing state machine away from an
+        // active statement is an allowed Update (AddInstanceFieldToExistingType). With F#
+        // class-form resumable state machines this becomes feasible (struct SMs cannot
+        // re-layout). Requires DOTNET_MODIFIABLE_ASSEMBLIES=debug COMPlus_ForceEnc=1.
+        applyClassStateMachineUpdateAndAssertRuntimeResult
             "task let-bang addition under class state machines"
             taskClassSmBaselineSource
             taskClassSmAddBindSource
+            "Hello, watch"
+            "Hello, watch!"
 
     [<Fact>]
-    let ``EmitDelta rejects task let-bang removal under class state machines`` () =
-        assertClassStateMachineShapeRejected
+    let ``ApplyUpdate succeeds for task let-bang removal under class state machines`` () =
+        // Roslyn parity: removing an await/let! away from an active statement is an allowed
+        // Update (Yield_Delete). The baseline hoisted field simply becomes unused on the
+        // class state machine (reference types keep removed fields, like C#).
+        applyClassStateMachineUpdateAndAssertRuntimeResult
             "task let-bang removal under class state machines"
             taskClassSmAddBindSource
             taskClassSmBaselineSource
+            "Hello, watch!"
+            "Hello, watch"
 
     let private taskClassSmLoopBaselineSource =
         """
@@ -1304,11 +1233,15 @@ type Type =
 """
 
     [<Fact>]
-    let ``EmitDelta rejects task let-bang addition inside a loop under class state machines`` () =
-        assertClassStateMachineShapeRejected
+    let ``ApplyUpdate succeeds for task let-bang addition inside a loop under class state machines`` () =
+        // Roslyn parity: inserting an await inside control flow (a loop body) adds hoisted
+        // state plus a resume point; allowed for class state machines.
+        applyClassStateMachineUpdateAndAssertRuntimeResult
             "task let-bang addition inside a loop under class state machines"
             taskClassSmLoopBaselineSource
             taskClassSmLoopAddBindSource
+            "Hello, watch:xx"
+            "Hello, watch:yy"
 
     let private backgroundTaskClassSmBaselineSource =
         """
@@ -1336,15 +1269,22 @@ type Type =
 """
 
     [<Fact>]
-    let ``EmitDelta rejects backgroundTask let-bang addition under class state machines`` () =
-        assertClassStateMachineShapeRejected
+    let ``ApplyUpdate succeeds for backgroundTask let-bang addition under class state machines`` () =
+        // Generality: backgroundTask is a second resumable computation expression that lowers
+        // through the same GenStructStateMachine path as task, so the class-state-machine
+        // codegen + classifier + emitter apply uniformly. taskSeq and user-defined resumable
+        // CEs inherit the same behavior via the same lowering (the gate lives in the shared
+        // GenStructStateMachine / TcGlobals flag, not in any per-builder code).
+        applyClassStateMachineUpdateAndAssertRuntimeResult
             "backgroundTask let-bang addition under class state machines"
             backgroundTaskClassSmBaselineSource
             backgroundTaskClassSmAddBindSource
+            "Hello, watch"
+            "Hello, watch!"
 
     [<Fact>]
-    let ``EmitDelta rejects task do-bang addition under class state machines`` () =
-        assertClassStateMachineShapeRejected
+    let ``ApplyUpdate succeeds for task do-bang addition under class state machines`` () =
+        applyClassStateMachineUpdateAndAssertRuntimeResult
             "task-do-bang-addition"
             """
 namespace Sample
@@ -1371,6 +1311,8 @@ type Type =
             return "two"
         }).GetAwaiter().GetResult()
 """
+            "one"
+            "two"
 
     [<Fact>]
     let ``ApplyUpdate succeeds for a method-body edit around an unchanged task state machine`` () =
@@ -5316,8 +5258,7 @@ type Type =
         // cannot align the chain and must fail closed with a precise message (never
         // silently pair shifted classes - the delta would patch the wrong rows).
         let baseline =
-            normalizeNewlines
-                """
+            """
 namespace Sample
 
 type Type =

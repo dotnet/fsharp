@@ -56,54 +56,6 @@ module SrmParityTests =
         Assert.Equal(delta.HeapSizes.BlobHeapSize, reader.GetHeapSize HeapIndex.Blob)
         Assert.Equal(delta.HeapSizes.GuidHeapSize, reader.GetHeapSize HeapIndex.Guid)
 
-    /// Helper to serialize a MetadataBuilder to bytes using SRM's serialization
-    let private serializeWithMetadataBuilder (metadataBuilder: MetadataBuilder) =
-        let metadataRoot = MetadataRootBuilder(metadataBuilder)
-        let blob = BlobBuilder()
-        metadataRoot.Serialize(blob, methodBodyStreamRva = 0, mappedFieldDataStreamRva = 0)
-        blob.ToArray()
-
-    /// Compare two byte arrays and report the first difference
-    let private compareBytes (label: string) (expected: byte[]) (actual: byte[]) =
-        if expected.Length <> actual.Length then
-            failwithf "%s: Length mismatch - SRM=%d, AbstractIL=%d" label expected.Length actual.Length
-
-        for i in 0 .. expected.Length - 1 do
-            if expected.[i] <> actual.[i] then
-                let contextStart = max 0 (i - 8)
-                let contextEnd = min (expected.Length - 1) (i + 8)
-                let expectedContext = expected.[contextStart..contextEnd] |> Array.map (sprintf "%02X") |> String.concat " "
-                let actualContext = actual.[contextStart..contextEnd] |> Array.map (sprintf "%02X") |> String.concat " "
-                failwithf "%s: Byte mismatch at offset 0x%04X (%d)\n  SRM:       %s\n  AbstractIL: %s\n  Expected: 0x%02X, Actual: 0x%02X"
-                    label i i expectedContext actualContext expected.[i] actual.[i]
-
-    /// Validates that the MetadataBuilder row counts match our delta table row counts
-    let private validateRowCounts (metadataBuilder: MetadataBuilder) (delta: DeltaWriter.MetadataDelta) =
-        let tables = [
-            TableIndex.Module, "Module"
-            TableIndex.TypeRef, "TypeRef"
-            TableIndex.TypeDef, "TypeDef"
-            TableIndex.MethodDef, "MethodDef"
-            TableIndex.Param, "Param"
-            TableIndex.MemberRef, "MemberRef"
-            TableIndex.CustomAttribute, "CustomAttribute"
-            TableIndex.StandAloneSig, "StandAloneSig"
-            TableIndex.Property, "Property"
-            TableIndex.Event, "Event"
-            TableIndex.PropertyMap, "PropertyMap"
-            TableIndex.EventMap, "EventMap"
-            TableIndex.MethodSemantics, "MethodSemantics"
-            TableIndex.AssemblyRef, "AssemblyRef"
-            TableIndex.EncLog, "EncLog"
-            TableIndex.EncMap, "EncMap"
-        ]
-
-        for (tableIndex, name) in tables do
-            let srmCount = metadataBuilder.GetRowCount(tableIndex)
-            let abstractILCount = delta.TableRowCounts.[int tableIndex]
-            if srmCount <> abstractILCount then
-                failwithf "Row count mismatch for %s: SRM=%d, AbstractIL=%d" name srmCount abstractILCount
-
     module PropertyDeltaTests =
 
         /// Test property delta artifacts have matching row counts in SRM and AbstractIL

@@ -130,7 +130,6 @@
     <Compile Include="Utilities\HashMultiMap.fs" />
     <Compile Include="Utilities\EditDistance.fsi" />
     <Compile Include="Utilities\EditDistance.fs" />
-    <Compile Include="Utilities\EditAndContinueCapabilities.fs" />
     <Compile Include="Utilities\TaggedCollections.fsi" />
     <Compile Include="Utilities\TaggedCollections.fs" />
     <Compile Include="Utilities\Cancellable.fsi" />
@@ -163,6 +162,7 @@
     <Compile Include="Utilities\RidHelpers.fs" />
     <Compile Include="Utilities\range.fsi" />
     <Compile Include="Utilities\range.fs" />
+    <Compile Include="Utilities\EditAndContinueCapabilities.fs" />
     <EmbeddedText Include="Facilities\UtilsStrings.txt" />
     <Compile Include="Facilities\LanguageFeatures.fsi" />
     <Compile Include="Facilities\LanguageFeatures.fs" />
@@ -371,6 +371,7 @@
     <Compile Include="TypedTree\TypedTreeOps.Transforms.fs" />
     <Compile Include="TypedTree\TypedTreeDiff.fs" />
     <Compile Include="TypedTree\ClosureNameAllocator.fs" />
+    <Compile Include="HotReload\DefinitionMap.fs" />
     <Compile Include="TypedTree\TypedTreePickle.fsi" />
     <Compile Include="TypedTree\TypedTreePickle.fs" />
     <Compile Include="TypedTree\UpdatePrettyTyparNames.fsi" />
@@ -470,7 +471,6 @@
     <Compile Include="HotReload\ActiveStatements.fs" />
     <Compile Include="CodeGen\HotReloadBaseline.fs" />
     <Compile Include="CodeGen\HotReloadPdb.fs" />
-    <Compile Include="HotReload\DefinitionMap.fs" />
     <Compile Include="HotReload\FSharpSymbolChanges.fs" />
     <Compile Include="CodeGen\FSharpDefinitionIndex.fs" />
     <Compile Include="HotReload\SymbolMatcher.fs" />

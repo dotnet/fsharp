@@ -904,7 +904,9 @@ type internal TcGlobals =
 
     member realsig: bool
 
-    /// Hot reload: emit resumable state machines as reference types.
+    /// Hot reload: emit resumable (task/taskSeq/user CE) state machines as reference types
+    /// (classes), so adding/removing a let!/do!/yield is an AddInstanceFieldToExistingType +
+    /// method update rather than a forbidden struct re-layout.
     member emitHotReloadClassStateMachines: bool
 
     member ref_tuple1_tcr: TypedTree.EntityRef

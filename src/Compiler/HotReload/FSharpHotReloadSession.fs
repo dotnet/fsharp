@@ -254,12 +254,12 @@ type internal FSharpHotReloadService
                             // Closure mapping: the per-method occurrence-chain -> closure-name
                             // tables were reconstructed from the on-disk CDI occurrence keys by
                             // createBaseline (baseline closure names are occurrence-derived under the
-                            // flag), so no in-process carry-over is needed - this is exactly what a
+                            // flag), so no in-process carry-over is needed — this is exactly what a
                             // session started in a fresh process computes. The previous MVID-matched
                             // carry-over is demoted to a consistency check: when the session being
                             // replaced was captured in-process for the SAME output assembly at
                             // generation 0, its tables must match the reconstruction. (A mid-chain
-                            // session legitimately differs - its tables carry later-generation names
+                            // session legitimately differs — its tables carry later-generation names
                             // for closures added by deltas, while a restart from the gen-0 disk
                             // baseline correctly resets to the generation-0 tables.)
                             (match editAndContinueService.TryGetSession() with
@@ -335,7 +335,7 @@ type internal FSharpHotReloadService
         // not surface as a symbol edit, but it still requires a rebuilt output assembly before
         // a delta can be emitted.
         (trackedInputsChanged: bool)
-        // Experimental: when
+        // Experimental (dotnet/fsharp#19941 dev-loop track): when
         // FSHARP_HOTRELOAD_INPROCESS_COMPILE is truthy, this recompiles the output assembly
         // in-process from the just-produced check results instead of requiring an external
         // `dotnet build` before the delta can be emitted. Consumer-facing contract is
@@ -417,7 +417,7 @@ type internal FSharpHotReloadService
                             return Result.Error FSharpHotReloadError.NoActiveSession
                         else
 
-                            // Experimental: recompile the output
+                            // Experimental (dotnet/fsharp#19941 dev-loop track): recompile the output
                             // assembly in-process for this session-tracked project. Runs after session
                             // validation (untracked projects never reach here) and before the
                             // File.Exists/stable-file/fingerprint pipeline, which must observe the
@@ -687,7 +687,7 @@ type internal FSharpHotReloadService
         editAndContinueService.TryGetSession(projectKey)
 
 /// <summary>
-/// A hot reload (Edit and Continue) session - the F# analogue of Roslyn's
+/// A hot reload (Edit and Continue) session — the F# analogue of Roslyn's
 /// <c>DebuggingSession</c>. One instance per host session (a <c>dotnet watch</c> run, a debug
 /// session), created via <c>FSharpChecker.CreateHotReloadSession</c>. The session owns
 /// per-project committed state (snapshot view, emit baseline, generation chain) keyed by
@@ -709,7 +709,7 @@ type FSharpHotReloadSession
         onProjectBaselined: string -> FSharp.Compiler.HotReloadState.HotReloadProjectKey -> unit,
         // Removes this session's entries from that registry when the session ends.
         onDispose: unit -> unit,
-        // Experimental: recompiles the output assembly
+        // Experimental (dotnet/fsharp#19941 dev-loop track): recompiles the output assembly
         // in-process from cached check results, bypassing an external `dotnet build`. Only
         // consulted by EmitDelta when FSHARP_HOTRELOAD_INPROCESS_COMPILE is truthy; None (or
         // the flag being unset) leaves the existing external-build contract untouched.
@@ -871,7 +871,7 @@ type FSharpHotReloadSession
         }
 
     /// <summary>
-    /// Commits ALL pending project updates atomically - the runtime applied them, so the
+    /// Commits ALL pending project updates atomically — the runtime applied them, so the
     /// committed per-project baselines, diff inputs and generation counters advance together
     /// (Roslyn's <c>CommitSolutionUpdate</c>). No-op when nothing is pending.
     /// </summary>
@@ -887,7 +887,7 @@ type FSharpHotReloadSession
         hotReloadService.CommitSession()
 
     /// <summary>
-    /// Discards ALL pending project updates - the host did not apply them, so the next emit
+    /// Discards ALL pending project updates — the host did not apply them, so the next emit
     /// diffs against the unchanged committed view (Roslyn's <c>DiscardSolutionUpdate</c>).
     /// </summary>
     member _.Discard() =

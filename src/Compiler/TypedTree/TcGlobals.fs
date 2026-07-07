@@ -1162,7 +1162,9 @@ type TcGlobals(
 
   member _.realsig = realsig
 
-  /// Hot reload: emit resumable state machines as reference types.
+  /// Hot reload: emit resumable (task/taskSeq/user CE) state machines as reference types
+  /// (classes) so adding/removing a let!/do!/yield is an AddInstanceFieldToExistingType +
+  /// method update rather than a forbidden struct re-layout. Set by --test:HotReloadClassStateMachines.
   member _.emitHotReloadClassStateMachines = emitHotReloadClassStateMachines
 
   member _.unionCaseRefEq x y = primUnionCaseRefEq compilingFSharpCore fslibCcu x y

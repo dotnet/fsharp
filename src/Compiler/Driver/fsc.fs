@@ -425,9 +425,23 @@ let getParallelReferenceResolutionFromEnvironment () =
                 Some ParallelReferenceResolution.Off
         | false, _ -> None)
 
-/// Hot reload determinism pins. Both baseline capture (--test:HotReloadDeltas) and replay
-/// (--test:HotReloadHook) install the emit hook, and both must lay out metadata, heaps and
-/// synthesized names the same way when recompiling identical source.
+/// Hot reload determinism pins. Both the baseline capture (--test:HotReloadDeltas) and
+/// the replay (--test:HotReloadHook) compiles install the emit hook, and BOTH must produce
+/// byte-reproducible codegen: a recapture or replay of identical source must lay out metadata
+/// rows, heaps and closure ordinals exactly like the running baseline, or every chained delta
+/// is built against the wrong tokens. Pin the determinism knobs for any compile that installs
+/// the emit hook (tcConfigB.compilerEmitHook = Some), leaving the normal path (None) untouched:
+///  - deterministic: stable MVID/timestamp and deterministic PE emission;
+///  - parallelIlxGen off: #19929 makes normal parallel/sequential codegen deterministic, but
+///    the hot reload replay map hands names out in codegen call order. Keep that order aligned
+///    with the captured baseline until replay is proven independent of parallel emission order;
+///  - optimization processing mode Sequential: keep optimized method bodies feeding codegen in
+///    the same order as the captured baseline.
+/// msbuild cannot reliably switch parallelism off itself (dotnet/fsharp #19935), so the pin
+/// lives in the compiler, not in build logic, and is not a user-facing error. Graph
+/// type-checking is deliberately left as configured: lambda occurrence keys and typed-tree
+/// emission order depend on the file order of the compilation, not on the order files are
+/// CHECKED in, so TypeCheckingMode.Graph cannot perturb captured output.
 let internal applyHotReloadDeterminismPins (tcConfigB: TcConfigBuilder) =
     if tcConfigB.compilerEmitHook.IsSome then
         tcConfigB.deterministic <- true
@@ -536,6 +550,9 @@ let main1
     | Some parallelReferenceResolution -> tcConfigB.parallelReferenceResolution <- parallelReferenceResolution
     | None -> ()
 
+    // Pin determinism for hot reload capture and replay compiles, after all flags are
+    // processed (a flag-implies-flag rule, like other config finalization above). See
+    // applyHotReloadDeterminismPins for why BOTH capture and replay must be pinned.
     applyHotReloadDeterminismPins tcConfigB
 
     if tcConfigB.utf8output && Console.OutputEncoding <> Encoding.UTF8 then

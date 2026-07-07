@@ -127,7 +127,7 @@ module NameMapTests =
 
         // Replay is ordinal-positioned (slot i replays the name with ordinal i), so a
         // gapped bucket keeps every surviving name at its exact allocation slot and
-        // re-computes the missing slots' names - they are deterministic functions of
+        // re-computes the missing slots' names — they are deterministic functions of
         // the slot index, so this reproduces the original allocation byte for byte.
         let replayed = [| for _ in 0 .. 10 -> map.GetOrAddName "closure" |]
 
