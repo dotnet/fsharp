@@ -62,17 +62,16 @@ function CheckTrim($root, $tfm, $outputfile, $expected_len, $callerLineNumber) {
 
 $allErrors = @()
 
-# Check net9.0 trimmed assemblies
+# Check net9.0 trimmed assemblies.
 $allErrors += CheckTrim -root "SelfContained_Trimming_Test" -tfm "net9.0" -outputfile "FSharp.Core.dll" -expected_len 311296 -callerLineNumber 66
 
 # Check net9.0 trimmed assemblies with static linked FSharpCore.
-# Placeholder (-1): this app statically links FSharp.Compiler.Service, whose size still
-# varies with the parallel-optimizer closure-name residual (#19928, fixed by #19929) and
-# the local-vs-CI trimmer toolchain. Pin a real size once #19929 lands.
-$allErrors += CheckTrim -root "StaticLinkedFSharpCore_Trimming_Test" -tfm "net9.0" -outputfile "StaticLinkedFSharpCore_Trimming_Test.dll" -expected_len -1 -callerLineNumber 69
+# Statically links FSharp.Compiler.Service; the size is stable now that its codegen is
+# deterministic (#19928/#19929). Update if compiler/trimming output intentionally changes.
+$allErrors += CheckTrim -root "StaticLinkedFSharpCore_Trimming_Test" -tfm "net9.0" -outputfile "StaticLinkedFSharpCore_Trimming_Test.dll" -expected_len 9173504 -callerLineNumber 71
 
 # Check net9.0 trimmed assemblies with F# metadata resources removed
-$allErrors += CheckTrim -root "FSharpMetadataResource_Trimming_Test" -tfm "net9.0" -outputfile "FSharpMetadataResource_Trimming_Test.dll" -expected_len 7612928 -callerLineNumber 72
+$allErrors += CheckTrim -root "FSharpMetadataResource_Trimming_Test" -tfm "net9.0" -outputfile "FSharpMetadataResource_Trimming_Test.dll" -expected_len 7612928 -callerLineNumber 74
 
 # Report all errors and exit with failure if any occurred
 if ($allErrors.Count -gt 0) {
