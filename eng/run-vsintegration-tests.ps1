@@ -45,10 +45,13 @@ Write-Host "==================== Restoring VisualFSharp.UnitTests ==============
 if ($LASTEXITCODE -ne 0) { Write-Host "VS IDE tests: restore FAILED"; exit 1 }
 
 Write-Host "==================== Building VisualFSharp.UnitTests ===================="
-# -build (no -restore): reuse the restore above and the vsint projects Step 5 already built. The
-# vsintegration Directory.Build wiring points F# compilation at the proto fsc, so no explicit FscToolPath.
-& "$PSScriptRoot\common\build.ps1" -ci -build -configuration $Configuration -warnAsError:$false `
-    -projects $proj /m:1 /p:DisableLocalization=true
+# Use `dotnet build` directly (NOT build.ps1 -ci, which self-reports failure to the pipeline). The test's
+# ProjectReferences rebuild the vsint assemblies, so pass /p:GeneratePkgDefFile=false to skip CreatePkgDef
+# (matches the VSIX build; CreatePkgDef fails with ReflectionTypeLoadException on FSharp.Editor here) and
+# supply the RID the VS-SDK RID check wants. -warnaserror off so vsint build warnings don't fail the build.
+& $dotnet build $proj -c $Configuration -m:1 `
+    /p:GeneratePkgDefFile=false /p:DisableLocalization=true /p:TreatWarningsAsErrors=false `
+    /p:RuntimeIdentifiers=win
 if ($LASTEXITCODE -ne 0) { Write-Host "VS IDE tests: build FAILED"; exit 1 }
 
 $dll = Get-ChildItem (Join-Path $RepoRoot "artifacts\bin\VisualFSharp.UnitTests\$Configuration") -Recurse -Filter 'VisualFSharp.UnitTests.dll' -ErrorAction SilentlyContinue | Select-Object -First 1
