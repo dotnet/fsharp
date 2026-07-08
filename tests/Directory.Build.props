@@ -24,15 +24,14 @@
     <UseMicrosoftTestingPlatformRunner>true</UseMicrosoftTestingPlatformRunner>
   </PropertyGroup>
 
-  <!-- Suppress NuGet audit advisories for vulnerable transitive packages that only appear in the
-       test dependency graph (e.g. via test/runner packages). These are not shipped and are provided
-       by the runtime on modern target frameworks, so the advisories are not exploitable here. -->
-  <ItemGroup>
-    <!-- System.Net.Http 4.3.0 -->
-    <NuGetAuditSuppress Include="https://github.com/advisories/GHSA-7jgj-8wvc-jh57" />
-    <!-- System.Text.RegularExpressions 4.3.0 -->
-    <NuGetAuditSuppress Include="https://github.com/advisories/GHSA-cmhx-cq75-c4mj" />
-  </ItemGroup>
+  <!-- The backflowed NuGet.config enables NuGet vulnerability auditing (via <auditSources>).
+       Several test-only transitive packages (e.g. System.Net.Http, System.Text.RegularExpressions,
+       MessagePack pulled in by test/runner dependencies) carry advisories. These test projects are
+       never shipped and the assemblies are runtime-provided on modern target frameworks, so surface
+       the audit findings as warnings instead of failing the build via TreatWarningsAsErrors. -->
+  <PropertyGroup>
+    <WarningsNotAsErrors>$(WarningsNotAsErrors);NU1901;NU1902;NU1903;NU1904</WarningsNotAsErrors>
+  </PropertyGroup>
 
   <PropertyGroup>
     <NoOptimizationData>false</NoOptimizationData>
