@@ -52,7 +52,13 @@
   <ItemGroup>
     <PackageReference Include="EnvDTE80" Version="$(EnvDTE80PackageVersion)" />
     <PackageReference Include="Microsoft.CodeAnalysis.Workspaces.Common" Version="$(MicrosoftCodeAnalysisWorkspacesCommonPackageVersion)" />
-    <PackageReference Include="Microsoft.VisualFSharp.Msbuild.15.0" Version="$(MicrosoftVisualFSharpMSBuild150PackageVersion)" />
+    <!-- Individual Microsoft.Build.* packages (dotnet-public) instead of the nuget.org-only
+         Microsoft.VisualFSharp.Msbuild.15.0 redist, matching the product + VisualFSharp.UnitTests. Salsa uses
+         Microsoft.Build.Framework/Evaluation/Execution/Logging, all provided by these. -->
+    <PackageReference Include="Microsoft.Build" Version="$(MicrosoftBuildPackageVersion)" />
+    <PackageReference Include="Microsoft.Build.Framework" Version="$(MicrosoftBuildFrameworkPackageVersion)" />
+    <PackageReference Include="Microsoft.Build.Utilities.Core" Version="$(MicrosoftBuildUtilitiesCorePackageVersion)" />
+    <PackageReference Include="Microsoft.Build.Tasks.Core" Version="$(MicrosoftBuildTasksCorePackageVersion)" />
     <PackageReference Include="Microsoft.VisualStudio.Designer.Interfaces" Version="$(MicrosoftVisualStudioDesignerInterfacesPackageVersion)" />
     <PackageReference Include="Microsoft.VisualStudio.ProjectAggregator" Version="$(MicrosoftVisualStudioProjectAggregatorPackageVersion)" />
     <PackageReference Include="Microsoft.VisualStudio.Shell.15.0" Version="$(MicrosoftVisualStudioShell150PackageVersion)" />
