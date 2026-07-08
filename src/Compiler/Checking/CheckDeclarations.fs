@@ -435,7 +435,7 @@ module TcRecdUnionAndEnumDeclarations =
         let g = cenv.g
         let m = id.idRange
         // Attribute types from the same recursive group may not resolve yet; the fixup re-resolves later.
-        let attrs, didFail = TcAttributesWithPossibleTargets TcCanFail.IgnoreAllErrors cenv env AttributeTargets.FieldDecl synAttrs
+        let attrs, hasUnresolvedAttrs = TcAttributesWithPossibleTargets TcCanFail.IgnoreAllErrors cenv env AttributeTargets.FieldDecl synAttrs
 
         let splitAttrs (attrsWithTargets: (AttributeTargets * Attrib) list) =
             let propAttribs, fieldAttribs = attrsWithTargets |> List.partition (fun (attrTargets, _) -> (attrTargets &&& AttributeTargets.Property) <> enum 0)
@@ -467,7 +467,7 @@ module TcRecdUnionAndEnumDeclarations =
         | _ -> ()
 
         let fixupAttrs () =
-            let finalAttrs = if didFail then TcAttributesWithPossibleTargets TcCanFail.ReportAllErrors cenv env AttributeTargets.FieldDecl synAttrs |> fst else attrs
+            let finalAttrs = if hasUnresolvedAttrs then TcAttributesWithPossibleTargets TcCanFail.ReportAllErrors cenv env AttributeTargets.FieldDecl synAttrs |> fst else attrs
             let propAttribs', fieldAttribs' = splitAttrs finalAttrs
             rfspec.rfield_pattribs <- propAttribs'
             rfspec.rfield_fattribs <- fieldAttribs'
