@@ -28,11 +28,14 @@
        Several test-only transitive packages (e.g. System.Net.Http, System.Text.RegularExpressions,
        MessagePack pulled in by test/runner dependencies) carry advisories that would otherwise fail
        the build via TreatWarningsAsErrors. These test projects are never shipped and the assemblies
-       are runtime-provided on modern target frameworks. NuGet restore reliably honors NoWarn (unlike
-       WarningsNotAsErrors, which it ignores for restore audit warnings), so suppress the audit codes
-       here. Scoped to test projects only; product projects keep audit-as-error. -->
+       are runtime-provided on modern target frameworks. NoWarn can't be used here because individual
+       test projects redefine <NoWarn> without preserving $(NoWarn), clobbering the inherited value;
+       restore also ignores WarningsNotAsErrors. Restricting the audit to direct dependencies keeps
+       auditing active for anything a test project references directly while ignoring the vulnerable
+       runtime-provided transitive packages. Scoped to test projects only; product projects keep the
+       default (all) audit mode with audit-as-error. -->
   <PropertyGroup>
-    <NoWarn>$(NoWarn);NU1901;NU1902;NU1903;NU1904</NoWarn>
+    <NuGetAuditMode>direct</NuGetAuditMode>
   </PropertyGroup>
 
   <PropertyGroup>
