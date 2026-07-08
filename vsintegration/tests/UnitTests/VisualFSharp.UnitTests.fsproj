@@ -184,16 +184,15 @@
   </ItemGroup>
 
   <ItemGroup>
-    <!-- S5.6 dedup: removed 18 duplicate PackageReferences (lines 187-210 had simple entries that were
-         duplicated below at lines 211-239 with PrivateAssets metadata). Kept only entries unique to
-         the simple set: Microsoft.Build family + Composition + VisualFSharp.Msbuild.15.0 — those have
-         no PrivateAssets variant below. -->
-    <PackageReference Include="Microsoft.Build" Version="$(MicrosoftBuildPackageVersion)" ExcludeAssets="all" />
-    <PackageReference Include="Microsoft.Build.Framework" Version="$(MicrosoftBuildFrameworkPackageVersion)" ExcludeAssets="all" />
-    <PackageReference Include="Microsoft.Build.Tasks.Core" Version="$(MicrosoftBuildTasksCorePackageVersion)" ExcludeAssets="all" />
-    <PackageReference Include="Microsoft.Build.Utilities.Core" Version="$(MicrosoftBuildUtilitiesCorePackageVersion)" ExcludeAssets="all" />
+    <!-- MSBuild refs: use the individual Microsoft.Build.* packages (dotnet-public), matching the product's
+         Block 9g repoint and dotnet/fsharp main, instead of the nuget.org-only Microsoft.VisualFSharp.Msbuild.15.0
+         redist the network-isolated CI can't restore. These provide the Microsoft.Build.Framework/Utilities/
+         Execution/Evaluation types the tests use (compile + runtime, since the tests execute MSBuild in-proc). -->
+    <PackageReference Include="Microsoft.Build" Version="$(MicrosoftBuildPackageVersion)" />
+    <PackageReference Include="Microsoft.Build.Framework" Version="$(MicrosoftBuildFrameworkPackageVersion)" />
+    <PackageReference Include="Microsoft.Build.Tasks.Core" Version="$(MicrosoftBuildTasksCorePackageVersion)" />
+    <PackageReference Include="Microsoft.Build.Utilities.Core" Version="$(MicrosoftBuildUtilitiesCorePackageVersion)" />
     <PackageReference Include="Microsoft.Composition" Version="$(MicrosoftCompositionPackageVersion)" />
-    <PackageReference Include="Microsoft.VisualFSharp.Msbuild.15.0" Version="$(MicrosoftVisualFSharpMSBuild150PackageVersion)" />
     <PackageReference Include="EnvDTE80" Version="$(EnvDTE80PackageVersion)" PrivateAssets="all" ExcludeAssets="contentFiles;build;analyzers;native" />
     <PackageReference Include="Microsoft.CodeAnalysis.Workspaces.Common" Version="$(MicrosoftCodeAnalysisWorkspacesCommonPackageVersion)" PrivateAssets="all" ExcludeAssets="contentFiles;analyzers;native" />
     <PackageReference Include="Microsoft.CodeAnalysis.EditorFeatures" Version="$(MicrosoftCodeAnalysisEditorFeaturesPackageVersion)" PrivateAssets="all" ExcludeAssets="contentFiles;analyzers;native" />
