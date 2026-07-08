@@ -881,7 +881,7 @@ let CreateNewValuesForTLR (scope: PerFileNamingScope) g tlrS arityM fclassM envP
 
     let fs =
         Zset.elements tlrS
-        |> List.sortWith (fun v1 v2 -> compare (valSourceOrderKey v1) (valSourceOrderKey v2))
+        |> List.sortBy valSourceOrderKey
     let ffHats = List.map (fun f -> f, createFHat f) fs
     let fHatM = Zmap.ofList valOrder ffHats
     fHatM

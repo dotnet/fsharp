@@ -1530,6 +1530,78 @@ let test = System.DateTimeKind.Utc
                 failwith "Expected metadata text, got None"
         | _ -> failwith "Expected FSharpEntity symbol"
 
+module MetadataAsTextILField =
+
+    let private getMetadataTextForEntity (entityName: string) (source: string) : string =
+        let _, checkResults = getParseAndCheckResults source
+        let symbolUse = checkResults |> findSymbolUseByName entityName
+        match symbolUse.Symbol with
+        | :? FSharpEntity as entity ->
+            match entity.TryGetMetadataText() with
+            | Some text -> text.ToString()
+            | None -> failwithf "Expected metadata text for %s, got None" entityName
+        | other -> failwithf "Expected FSharpEntity for %s, got %A" entityName other
+
+    [<Theory>]
+    [<InlineData("System.Int32", "MaxValue", "2147483647")>]
+    [<InlineData("System.Int32", "MinValue", "-2147483648")>]
+    [<InlineData("System.Int64", "MaxValue", "9223372036854775807L")>]
+    [<InlineData("System.Byte",  "MaxValue", "255uy")>]
+    [<InlineData("System.SByte", "MinValue", "-128y")>]
+    let ``IL literal static field renders with [<Literal>] attribute and value``
+        (typeName: string, fieldName: string, expectedValueText: string) =
+        let source = $"let _ = typeof<{typeName}>"
+        let shortName = typeName.Substring(typeName.LastIndexOf('.') + 1)
+        let metadataText = getMetadataTextForEntity shortName source
+
+        Assert.Contains(fieldName, metadataText)
+
+        let line =
+            metadataText.Split('\n')
+            |> Array.tryFind (fun l -> l.Contains("val " + fieldName + ":"))
+            |> Option.defaultWith (fun () -> failwithf "field declaration for %s not found in metadata text:\n%s" fieldName metadataText)
+
+        Assert.Contains("[<Literal>]", metadataText)
+        Assert.Contains("= " + expectedValueText, line)
+
+    [<Fact>]
+    let ``System.Char.MaxValue renders as a literal field`` () =
+        let metadataText = getMetadataTextForEntity "Char" "let _ = typeof<System.Char>"
+
+        Assert.Contains("[<Literal>]", metadataText)
+        let line =
+            metadataText.Split('\n')
+            |> Array.tryFind (fun l -> l.Contains("val MaxValue:"))
+            |> Option.defaultWith (fun () -> failwithf "MaxValue declaration not found:\n%s" metadataText)
+        Assert.Contains("=", line)
+        Assert.False(line.TrimEnd().EndsWith(": char"),
+                    sprintf "MaxValue line is missing its literal value: %s" line)
+
+    [<Fact>]
+    let ``IL const string field renders with [<Literal>] and the quoted string value`` () =
+        let metadataText =
+            getMetadataTextForEntity "RuntimeFeature" "let _ = typeof<System.Runtime.CompilerServices.RuntimeFeature>"
+
+        Assert.Contains("[<Literal>]", metadataText)
+        let line =
+            metadataText.Split('\n')
+            |> Array.tryFind (fun l -> l.Contains("val PortablePdb:"))
+            |> Option.defaultWith (fun () -> failwithf "PortablePdb declaration not found:\n%s" metadataText)
+        Assert.Contains("= \"PortablePdb\"", line)
+        Assert.DoesNotContain("value unavailable", line)
+
+    [<Fact>]
+    let ``System.String.Empty (initonly, non-literal) renders without [<Literal>] and without value`` () =
+        let metadataText = getMetadataTextForEntity "String" "let _ = typeof<System.String>"
+
+        let line =
+            metadataText.Split('\n')
+            |> Array.tryFind (fun l -> l.Contains("val Empty:"))
+            |> Option.defaultWith (fun () -> failwithf "Empty not found:\n%s" metadataText)
+
+        Assert.Contains("static val", line)
+        Assert.DoesNotContain("=", line)
+
 module IsByRef =
     // https://github.com/dotnet/fsharp/issues/3532
     [<Fact>]
