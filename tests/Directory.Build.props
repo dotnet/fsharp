@@ -24,6 +24,16 @@
     <UseMicrosoftTestingPlatformRunner>true</UseMicrosoftTestingPlatformRunner>
   </PropertyGroup>
 
+  <!-- Suppress NuGet audit advisories for vulnerable transitive packages that only appear in the
+       test dependency graph (e.g. via test/runner packages). These are not shipped and are provided
+       by the runtime on modern target frameworks, so the advisories are not exploitable here. -->
+  <ItemGroup>
+    <!-- System.Net.Http 4.3.0 -->
+    <NuGetAuditSuppress Include="https://github.com/advisories/GHSA-7jgj-8wvc-jh57" />
+    <!-- System.Text.RegularExpressions 4.3.0 -->
+    <NuGetAuditSuppress Include="https://github.com/advisories/GHSA-cmhx-cq75-c4mj" />
+  </ItemGroup>
+
   <PropertyGroup>
     <NoOptimizationData>false</NoOptimizationData>
     <NoInterfaceData>false</NoInterfaceData>
