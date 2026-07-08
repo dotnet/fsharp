@@ -166,6 +166,14 @@
     IL_0005:  ret
   } 
 
+  .method assembly specialname static class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>,class [FSharp.Core]Microsoft.FSharp.Core.Unit>,class [runtime]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit> get_format@1() cil managed
+  {
+    
+    .maxstack  8
+    IL_0000:  ldsfld     class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>,class [FSharp.Core]Microsoft.FSharp.Core.Unit>,class [runtime]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit> '<StartupCode$assembly>'.$assembly::format@1
+    IL_0005:  ret
+  } 
+
   .method public specialname static class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> get_functionResult() cil managed
   {
     
@@ -174,46 +182,12 @@
     IL_0005:  ret
   } 
 
-  .method assembly static class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> 'f@26-1'(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,bool> condition, class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> _arg1) cil managed
+  .method assembly specialname static class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>,class [FSharp.Core]Microsoft.FSharp.Core.Unit>,class [runtime]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit> 'get_format@1-1'() cil managed
   {
     
-    .maxstack  4
-    .locals init (class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> V_0,
-             class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> V_1,
-             int32 V_2)
-    IL_0000:  ldarg.1
-    IL_0001:  call       instance class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::get_TailOrNull()
-    IL_0006:  brfalse.s  IL_000a
-
-    IL_0008:  br.s       IL_0010
-
-    IL_000a:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::get_Empty()
-    IL_000f:  ret
-
-    IL_0010:  ldarg.1
-    IL_0011:  stloc.0
-    IL_0012:  ldloc.0
-    IL_0013:  call       instance class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::get_TailOrNull()
-    IL_0018:  stloc.1
-    IL_0019:  ldloc.0
-    IL_001a:  call       instance !0 class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::get_HeadOrDefault()
-    IL_001f:  stloc.2
-    IL_0020:  ldarg.0
-    IL_0021:  ldloc.2
-    IL_0022:  callvirt   instance !1 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,bool>::Invoke(!0)
-    IL_0027:  brfalse.s  IL_0031
-
-    IL_0029:  ldarg.0
-    IL_002a:  ldloc.1
-    IL_002b:  starg.s    _arg1
-    IL_002d:  starg.s    condition
-    IL_002f:  br.s       IL_0000
-
-    IL_0031:  ldloc.2
-    IL_0032:  ldloc.1
-    IL_0033:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::Cons(!0,
-                                                                                                                                                                    class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0>)
-    IL_0038:  ret
+    .maxstack  8
+    IL_0000:  ldsfld     class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>,class [FSharp.Core]Microsoft.FSharp.Core.Unit>,class [runtime]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit> '<StartupCode$assembly>'.$assembly::'format@1-1'
+    IL_0005:  ret
   } 
 
   .method assembly static class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> f@7(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,bool> condition, class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> l) cil managed
@@ -258,20 +232,46 @@
     IL_0038:  ret
   } 
 
-  .method assembly specialname static class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>,class [FSharp.Core]Microsoft.FSharp.Core.Unit>,class [runtime]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit> get_format@1() cil managed
+  .method assembly static class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> 'f@26-1'(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,bool> condition, class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> _arg1) cil managed
   {
     
-    .maxstack  8
-    IL_0000:  ldsfld     class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>,class [FSharp.Core]Microsoft.FSharp.Core.Unit>,class [runtime]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit> '<StartupCode$assembly>'.$assembly::format@1
-    IL_0005:  ret
-  } 
+    .maxstack  4
+    .locals init (class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> V_0,
+             class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> V_1,
+             int32 V_2)
+    IL_0000:  ldarg.1
+    IL_0001:  call       instance class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::get_TailOrNull()
+    IL_0006:  brfalse.s  IL_000a
 
-  .method assembly specialname static class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>,class [FSharp.Core]Microsoft.FSharp.Core.Unit>,class [runtime]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit> 'get_format@1-1'() cil managed
-  {
-    
-    .maxstack  8
-    IL_0000:  ldsfld     class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>,class [FSharp.Core]Microsoft.FSharp.Core.Unit>,class [runtime]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit> '<StartupCode$assembly>'.$assembly::'format@1-1'
-    IL_0005:  ret
+    IL_0008:  br.s       IL_0010
+
+    IL_000a:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::get_Empty()
+    IL_000f:  ret
+
+    IL_0010:  ldarg.1
+    IL_0011:  stloc.0
+    IL_0012:  ldloc.0
+    IL_0013:  call       instance class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::get_TailOrNull()
+    IL_0018:  stloc.1
+    IL_0019:  ldloc.0
+    IL_001a:  call       instance !0 class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::get_HeadOrDefault()
+    IL_001f:  stloc.2
+    IL_0020:  ldarg.0
+    IL_0021:  ldloc.2
+    IL_0022:  callvirt   instance !1 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,bool>::Invoke(!0)
+    IL_0027:  brfalse.s  IL_0031
+
+    IL_0029:  ldarg.0
+    IL_002a:  ldloc.1
+    IL_002b:  starg.s    _arg1
+    IL_002d:  starg.s    condition
+    IL_002f:  br.s       IL_0000
+
+    IL_0031:  ldloc.2
+    IL_0032:  ldloc.1
+    IL_0033:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::Cons(!0,
+                                                                                                                                                                    class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0>)
+    IL_0038:  ret
   } 
 
   .property class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>

@@ -327,38 +327,11 @@
     IL_0005:  ret
   } 
 
-  .method private specialname rtspecialname static void  .cctor() cil managed
-  {
-    
-    .maxstack  8
-    IL_0000:  ldc.i4.0
-    IL_0001:  stsfld     int32 '<StartupCode$assembly>'.$assembly::init@
-    IL_0006:  ldsfld     int32 '<StartupCode$assembly>'.$assembly::init@
-    IL_000b:  pop
-    IL_000c:  ret
-  } 
-
   .method assembly specialname static int32 get_arg_0@30() cil managed
   {
     
     .maxstack  8
     IL_0000:  ldsfld     int32 assembly::arg_0@30
-    IL_0005:  ret
-  } 
-
-  .method assembly specialname static int32 'get_arg_0@34-1'() cil managed
-  {
-    
-    .maxstack  8
-    IL_0000:  ldsfld     int32 assembly::'arg_0@34-1'
-    IL_0005:  ret
-  } 
-
-  .method assembly specialname static int32 'get_arg_0@38-2'() cil managed
-  {
-    
-    .maxstack  8
-    IL_0000:  ldsfld     int32 assembly::'arg_0@38-2'
     IL_0005:  ret
   } 
 
@@ -370,43 +343,11 @@
     IL_0005:  ret
   } 
 
-  .method assembly specialname static int32 'get_arg_1@34-1'() cil managed
-  {
-    
-    .maxstack  8
-    IL_0000:  ldsfld     int32 assembly::'arg_1@34-1'
-    IL_0005:  ret
-  } 
-
-  .method assembly specialname static int32 'get_arg_1@38-2'() cil managed
-  {
-    
-    .maxstack  8
-    IL_0000:  ldsfld     int32 assembly::'arg_1@38-2'
-    IL_0005:  ret
-  } 
-
   .method assembly specialname static int32 get_arg_2@30() cil managed
   {
     
     .maxstack  8
     IL_0000:  ldsfld     int32 assembly::arg_2@30
-    IL_0005:  ret
-  } 
-
-  .method assembly specialname static int32 'get_arg_2@34-1'() cil managed
-  {
-    
-    .maxstack  8
-    IL_0000:  ldsfld     int32 assembly::'arg_2@34-1'
-    IL_0005:  ret
-  } 
-
-  .method assembly specialname static int32 'get_arg_2@38-2'() cil managed
-  {
-    
-    .maxstack  8
-    IL_0000:  ldsfld     int32 assembly::'arg_2@38-2'
     IL_0005:  ret
   } 
 
@@ -418,12 +359,71 @@
     IL_0005:  ret
   } 
 
+  .method assembly specialname static int32 'get_arg_0@34-1'() cil managed
+  {
+    
+    .maxstack  8
+    IL_0000:  ldsfld     int32 assembly::'arg_0@34-1'
+    IL_0005:  ret
+  } 
+
+  .method assembly specialname static int32 'get_arg_1@34-1'() cil managed
+  {
+    
+    .maxstack  8
+    IL_0000:  ldsfld     int32 assembly::'arg_1@34-1'
+    IL_0005:  ret
+  } 
+
+  .method assembly specialname static int32 'get_arg_2@34-1'() cil managed
+  {
+    
+    .maxstack  8
+    IL_0000:  ldsfld     int32 assembly::'arg_2@34-1'
+    IL_0005:  ret
+  } 
+
+  .method assembly specialname static int32 'get_arg_0@38-2'() cil managed
+  {
+    
+    .maxstack  8
+    IL_0000:  ldsfld     int32 assembly::'arg_0@38-2'
+    IL_0005:  ret
+  } 
+
+  .method assembly specialname static int32 'get_arg_1@38-2'() cil managed
+  {
+    
+    .maxstack  8
+    IL_0000:  ldsfld     int32 assembly::'arg_1@38-2'
+    IL_0005:  ret
+  } 
+
+  .method assembly specialname static int32 'get_arg_2@38-2'() cil managed
+  {
+    
+    .maxstack  8
+    IL_0000:  ldsfld     int32 assembly::'arg_2@38-2'
+    IL_0005:  ret
+  } 
+
   .method assembly specialname static int32 'get_arg_3@38-1'() cil managed
   {
     
     .maxstack  8
     IL_0000:  ldsfld     int32 assembly::'arg_3@38-1'
     IL_0005:  ret
+  } 
+
+  .method private specialname rtspecialname static void  .cctor() cil managed
+  {
+    
+    .maxstack  8
+    IL_0000:  ldc.i4.0
+    IL_0001:  stsfld     int32 '<StartupCode$assembly>'.$assembly::init@
+    IL_0006:  ldsfld     int32 '<StartupCode$assembly>'.$assembly::init@
+    IL_000b:  pop
+    IL_000c:  ret
   } 
 
   .method assembly static void  staticInitialization@() cil managed
