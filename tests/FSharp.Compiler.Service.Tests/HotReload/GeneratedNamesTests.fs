@@ -125,21 +125,23 @@ module GeneratedNamesTests =
         Assert.Equal("closure@42", fallback)
 
     [<Fact>]
-    let ``IncrementOnly remains one-based and file-index scoped`` () =
+    let ``Per-file naming scope remains one-based and file-index scoped`` () =
         let compilerState = CompilerGlobalState()
         clearCompilerGeneratedNameMap (compilerState :> obj)
-        let generator = compilerState.NiceNameGenerator
         let start = Position.mkPos 7 0
-        let fileOneRange = Range.mkRange "/tmp/increment-only-one.fs" start start
-        let fileTwoRange = Range.mkRange "/tmp/increment-only-two.fs" start start
+        let fileOneRange = Range.mkRange "/tmp/per-file-scope-one.fs" start start
+        let fileTwoRange = Range.mkRange "/tmp/per-file-scope-two.fs" start start
 
-        let first = generator.IncrementOnly("@T", fileOneRange)
-        let second = generator.IncrementOnly("@T", fileOneRange)
-        let third = generator.IncrementOnly("@T", fileTwoRange)
+        let fileOneScope = compilerState.NewFileScope(fileOneRange)
+        let fileTwoScope = compilerState.NewFileScope(fileTwoRange)
 
-        Assert.Equal(1, first)
-        Assert.Equal(2, second)
-        Assert.Equal(1, third)
+        let first = fileOneScope.Fresh("closure", fileOneRange)
+        let second = fileOneScope.Fresh("closure", fileTwoRange)
+        let third = fileTwoScope.Fresh("closure", fileOneRange)
+
+        Assert.Equal("closure@7", first)
+        Assert.Equal("closure@7-1", second)
+        Assert.Equal("closure@7", third)
 
     [<Fact>]
     let ``positional synthesized name normalization recognizes pipe and ordinal labels`` () =
