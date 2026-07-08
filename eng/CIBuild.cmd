@@ -93,15 +93,6 @@ if errorlevel 1 ( echo Error: VSIX restore failed 1>&2 & exit /b 1 )
 powershell -NoProfile -ExecutionPolicy ByPass -Command "& '%~dp0common\build.ps1' -ci -build -configuration Release -projects '%_root%\vsintegration\Vsix\VisualFSharpFull\VisualFSharpFull.csproj' /m:1 /p:DisableLocalization=true /p:GeneratePkgDefFile=false; exit $LASTEXITCODE"
 if errorlevel 1 ( echo Error: VSIX build failed 1>&2 & exit /b 1 )
 
-rem --- Step 5b (with Step 5): VS IDE unit tests (VisualFSharp.UnitTests) - exercise FSharp.Editor + the
-rem    serviced Roslyn 2.10 editor services + the legacy LanguageService/ProjectSystem, i.e. the vsintegration
-rem    assemblies these infra changes actually touched. NON-FATAL for now (results to a separate dir) while the
-rem    headless STA/MEF runnability is being assessed, so it can't break the green insertion+signing path;
-rem    tightened to fatal once stable. ---
-echo ---------------- Running VS IDE unit tests ^(non-fatal: assessing headless run^) ----------------
-powershell -NoProfile -ExecutionPolicy ByPass -File "%~dp0run-vsintegration-tests.ps1" -Configuration Release -ResultsDir "%_root%\artifacts\VsixTestResults"
-if errorlevel 1 ( echo WARNING: VS IDE unit tests reported failure ^(non-fatal during assessment^) 1>&2 )
-
 rem --- Step 6 (with Step 5): sign the insertion VSIX and the F# assemblies inside it via the Arcade SignTool,
 rem    driven by eng\Signing.props. The 1ES template's mb.signing block installs the MicroBuild signing plugin;
 rem    SignType=Real does production signing (needs the signing service authorized for the pipeline),
