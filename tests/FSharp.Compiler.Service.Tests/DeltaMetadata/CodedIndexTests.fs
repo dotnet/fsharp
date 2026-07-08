@@ -305,4 +305,3 @@ module CodedIndexTests =
         let ``MemberRefParent TypeSpec tag value is MemberRefParentMin plus 4`` () =
             let typeSpecTag = Encoding.RowElementTags.MemberRefParentMin + 4
             Assert.Equal(159, typeSpecTag)
-
