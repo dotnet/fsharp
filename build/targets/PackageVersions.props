@@ -46,6 +46,18 @@
     <MicrosoftVisualStudioProjectSystemManagedVersion>2.3.6152103</MicrosoftVisualStudioProjectSystemManagedVersion>
     <MicrosoftVisualStudioShell140PackageVersion>14.3.25407</MicrosoftVisualStudioShell140PackageVersion>
     <MicrosoftVisualStudioShell150PackageVersion>15.0.26201</MicrosoftVisualStudioShell150PackageVersion>
+    <!-- VS SDK versions consumed only by VisualFSharp.UnitTests. Values taken from the serviced 15.9
+         FSharp.Editor restored closure (authoritative), so the tests bind the same VS SDK as the product. -->
+    <MicrosoftVisualStudioCoreUtilityPackageVersion>15.6.27740</MicrosoftVisualStudioCoreUtilityPackageVersion>
+    <MicrosoftVisualStudioImagingPackageVersion>15.0.26201</MicrosoftVisualStudioImagingPackageVersion>
+    <MicrosoftVisualStudioOLEInteropPackageVersion>7.10.6071</MicrosoftVisualStudioOLEInteropPackageVersion>
+    <MicrosoftVisualStudioShellFrameworkPackageVersion>15.0.26201</MicrosoftVisualStudioShellFrameworkPackageVersion>
+    <MicrosoftVisualStudioShellInteropPackageVersion>7.10.6072</MicrosoftVisualStudioShellInteropPackageVersion>
+    <MicrosoftVisualStudioShellInterop80PackageVersion>8.0.50727</MicrosoftVisualStudioShellInterop80PackageVersion>
+    <MicrosoftVisualStudioShellInterop90PackageVersion>9.0.30729</MicrosoftVisualStudioShellInterop90PackageVersion>
+    <MicrosoftVisualStudioThreadingPackageVersion>15.3.23</MicrosoftVisualStudioThreadingPackageVersion>
+    <MicrosoftVisualStudioUtilitiesPackageVersion>15.0.26201</MicrosoftVisualStudioUtilitiesPackageVersion>
+    <MicrosoftVisualStudioValidationPackageVersion>15.3.15</MicrosoftVisualStudioValidationPackageVersion>
     <MicrosoftVisualStudioShellDesignPackageVersion>15.0.26201</MicrosoftVisualStudioShellDesignPackageVersion>
     <MicrosoftVisualStudioShellImmutable100PackageVersion>10.0.30319</MicrosoftVisualStudioShellImmutable100PackageVersion>
     <MicrosoftVisualStudioShellImmutable110PackageVersion>11.0.50727</MicrosoftVisualStudioShellImmutable110PackageVersion>
