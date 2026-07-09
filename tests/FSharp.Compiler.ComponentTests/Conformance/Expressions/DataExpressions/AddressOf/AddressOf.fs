@@ -131,6 +131,24 @@ let test () =
         |> shouldSucceed
 
     [<Fact>]
+    let ``Issue 18841 - plain let discard with no address-of still compiles`` () =
+        Fsx """
+module Test
+
+type S =
+    struct
+        val Field: int
+    end
+
+let test () =
+    let s = S()
+    let _ = s
+    ()
+        """
+        |> typecheck
+        |> shouldSucceed
+
+    [<Fact>]
     let ``Issue 19608 - address of untyped ValueNone compiles`` () =
         Fsx """
 module Test

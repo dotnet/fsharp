@@ -50,6 +50,7 @@
       <Uri>https://github.com/dotnet/roslyn</Uri>
       <Sha>83ca1a6465bb861e28a51cdbb4b56074b69cb5eb</Sha>
     </Dependency>
+    </Dependency>
     <!-- Necessary for source-build. This allows the live version of the package to be used by source-build. -->
     <Dependency Name="System.Collections.Immutable" Version="10.0.2">
       <Uri>https://github.com/dotnet/runtime</Uri>
@@ -82,9 +83,9 @@
     </Dependency>
   </ProductDependencies>
   <ToolsetDependencies>
-    <Dependency Name="Microsoft.DotNet.Arcade.Sdk" Version="11.0.0-beta.26325.1">
+    <Dependency Name="Microsoft.DotNet.Arcade.Sdk" Version="11.0.0-beta.26330.1">
       <Uri>https://github.com/dotnet/arcade</Uri>
-      <Sha>b076228a542025c4f879f254d38adb5cf34a2475</Sha>
+      <Sha>f87bce1e0d389d515282c5f74466d629ef653026</Sha>
     </Dependency>
     <Dependency Name="optimization.windows_nt-x64.MIBC.Runtime" Version="1.0.0-prerelease.26309.1">
       <Uri>https://dev.azure.com/dnceng/internal/_git/dotnet-optimization</Uri>
