@@ -65,14 +65,6 @@ set "_dotnet=%_root%\.dotnet\dotnet.exe"
 if not exist "%_dotnet%" set "_dotnet=dotnet"
 set "DOTNET_ROOT=%_root%\.dotnet"
 set "DOTNET_MULTILEVEL_LOOKUP=0"
-rem    Probe (non-fatal): the full insertion's Compiler component ships FSharp.Data.TypeProviders.dll from the
-rem    nuget.org-only Microsoft.VisualFSharp.Type.Providers.Redist (not on any approved feed, and dotnet-public
-rem    does not upstream it). Try to fetch it from nuget.org via a command-line -Source (committed config stays
-rem    clean -> CFS unaffected); NuGet.exe's legacy layout lands it in packages\ exactly where the SWIX expects.
-rem    Logs NUGETORG_OK / NUGETORG_UNREACHABLE so we know whether the isolated agent can reach nuget.org. ---
-echo ---------------- Probing nuget.org for the TypeProviders redist ----------------
-"%~dp0..\.nuget\NuGet.exe" install Microsoft.VisualFSharp.Type.Providers.Redist -Version 1.0.0 -OutputDirectory "%_root%\packages" -Source https://api.nuget.org/v3/index.json -NonInteractive -Verbosity quiet
-if errorlevel 1 ( echo NUGETORG_UNREACHABLE - TypeProviders redist could not be fetched from nuget.org on the agent 1>&2 ) else ( echo NUGETORG_OK - TypeProviders redist fetched from nuget.org into packages\ )
 rem    Restore into Arcade's repo-local .packages folder (the product build's $(NuGetPackageRoot), which is
 rem    $(NUGET_PACKAGES) per FSharpBuild.Directory.Build.props). Otherwise the restore lands in the global
 rem    packages folder and the Exists()-gated VSSDK.BuildTools import in vsintegration/Directory.Build.targets
