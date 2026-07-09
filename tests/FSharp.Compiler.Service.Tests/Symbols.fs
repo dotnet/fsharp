@@ -256,6 +256,43 @@ let x = 123
         |> Option.map (fun su -> su.Symbol :?> FSharpMemberOrFunctionOrValue)
         |> Option.iter (fun symbol -> symbol.Attributes.Count |> shouldEqual 1)
 
+    [<Fact>]
+    let ``FCS - [<X>] surfaces on the method's Attributes only`` () =
+        let source = """
+open System.ComponentModel
+type Calculator() =
+    [<Description "method">]
+    member _.Compu{caret}te () = 1
+"""
+        let mfv = (Checker.getSymbolUse source).Symbol :?> FSharpMemberOrFunctionOrValue
+        mfv.HasAttribute<System.ComponentModel.DescriptionAttribute>() |> shouldEqual true
+        mfv.ReturnParameter.HasAttribute<System.ComponentModel.DescriptionAttribute>() |> shouldEqual false
+
+    [<Fact>]
+    let ``FCS - [<return: X>] surfaces on ReturnParameter.Attributes only`` () =
+        let source = """
+open System.ComponentModel
+type Calculator() =
+    [<return: Description "return">]
+    member _.Compu{caret}te () = 1
+"""
+        let mfv = (Checker.getSymbolUse source).Symbol :?> FSharpMemberOrFunctionOrValue
+        mfv.HasAttribute<System.ComponentModel.DescriptionAttribute>() |> shouldEqual false
+        mfv.ReturnParameter.HasAttribute<System.ComponentModel.DescriptionAttribute>() |> shouldEqual true
+
+    [<Fact>]
+    let ``FCS - [<X>] and [<return: X>] surface independently on the same member`` () =
+        let source = """
+open System.ComponentModel
+type Calculator() =
+    [<Description "method">]
+    [<return: Description "return">]
+    member _.Compu{caret}te () = 1
+"""
+        let mfv = (Checker.getSymbolUse source).Symbol :?> FSharpMemberOrFunctionOrValue
+        mfv.HasAttribute<System.ComponentModel.DescriptionAttribute>() |> shouldEqual true
+        mfv.ReturnParameter.HasAttribute<System.ComponentModel.DescriptionAttribute>() |> shouldEqual true
+
 module Types =
     [<Fact>]
     let ``FSharpType.Print parent namespace qualifiers`` () =
@@ -879,6 +916,91 @@ let _ = T().Prop
                 Assert.Equal(15, loc.StartColumn)
             | _ -> failwith "Expected FSharpMemberOrFunctionOrValue"
 
+    [<Fact>]
+    let ``IsPropertyAccessor true for getter`` () =
+        let _, checkResults = getParseAndCheckResults """
+module M
+type MyClass() =
+    member _.Prop with get() = 42
+"""
+        let mfv =
+            checkResults.GetAllUsesOfAllSymbolsInFile()
+            |> Seq.choose (fun s ->
+                match s.Symbol with
+                | :? FSharpMemberOrFunctionOrValue as m when m.LogicalName = "get_Prop" -> Some m
+                | _ -> None)
+            |> Seq.head
+        Assert.True(mfv.IsPropertyAccessor)
+
+    [<Fact>]
+    let ``IsPropertyAccessor true for setter`` () =
+        let _, checkResults = getParseAndCheckResults """
+module M
+type MyClass() =
+    member val Prop = 0 with get, set
+"""
+        let setter =
+            checkResults.GetAllUsesOfAllSymbolsInFile()
+            |> Seq.tryPick (fun s ->
+                match s.Symbol with
+                | :? FSharpMemberOrFunctionOrValue as m when m.LogicalName = "set_Prop" -> Some m
+                | _ -> None)
+        match setter with
+        | Some mfv -> Assert.True(mfv.IsPropertyAccessor)
+        | None -> Assert.Fail("set_Prop not found")
+
+    [<Fact>]
+    let ``IsPropertyAccessor false for regular method`` () =
+        let _, checkResults = getParseAndCheckResults """
+module M
+type MyClass() =
+    member _.DoStuff() = 42
+"""
+        let mfv =
+            checkResults.GetAllUsesOfAllSymbolsInFile()
+            |> Seq.choose (fun s ->
+                match s.Symbol with
+                | :? FSharpMemberOrFunctionOrValue as m when m.LogicalName = "DoStuff" -> Some m
+                | _ -> None)
+            |> Seq.head
+        Assert.False(mfv.IsPropertyAccessor)
+
+    [<Fact>]
+    let ``IsPropertyAccessor false for function`` () =
+        let _, checkResults = getParseAndCheckResults """
+module M
+let myFunc x = x + 1
+"""
+        let mfv =
+            checkResults.GetAllUsesOfAllSymbolsInFile()
+            |> Seq.choose (fun s ->
+                match s.Symbol with
+                | :? FSharpMemberOrFunctionOrValue as m when m.LogicalName = "myFunc" -> Some m
+                | _ -> None)
+            |> Seq.head
+        Assert.False(mfv.IsPropertyAccessor)
+
+    [<Fact>]
+    let ``Fable query pattern: filter accessor properties`` () =
+        let _, checkResults = getParseAndCheckResults """
+module M
+type MyClass() =
+    member _.Prop with get() = 42
+    member _.Method() = 42
+"""
+        let members =
+            checkResults.GetAllUsesOfAllSymbolsInFile()
+            |> Seq.choose (fun s ->
+                match s.Symbol with
+                | :? FSharpMemberOrFunctionOrValue as m when m.IsPropertyAccessor -> Some m
+                | _ -> None)
+            |> List.ofSeq
+        Assert.True(members.Length >= 1)
+        Assert.True(
+            members
+            |> List.forall (fun m ->
+                m.LogicalName.StartsWith("get_") || m.LogicalName.StartsWith("set_")))
+
 module GetValSignatureText =
     let private assertSignature (expected:string) source (lineNumber, column, line, identifier) =
         let _, checkResults = getParseAndCheckResults source
@@ -1408,6 +1530,78 @@ let test = System.DateTimeKind.Utc
                 failwith "Expected metadata text, got None"
         | _ -> failwith "Expected FSharpEntity symbol"
 
+module MetadataAsTextILField =
+
+    let private getMetadataTextForEntity (entityName: string) (source: string) : string =
+        let _, checkResults = getParseAndCheckResults source
+        let symbolUse = checkResults |> findSymbolUseByName entityName
+        match symbolUse.Symbol with
+        | :? FSharpEntity as entity ->
+            match entity.TryGetMetadataText() with
+            | Some text -> text.ToString()
+            | None -> failwithf "Expected metadata text for %s, got None" entityName
+        | other -> failwithf "Expected FSharpEntity for %s, got %A" entityName other
+
+    [<Theory>]
+    [<InlineData("System.Int32", "MaxValue", "2147483647")>]
+    [<InlineData("System.Int32", "MinValue", "-2147483648")>]
+    [<InlineData("System.Int64", "MaxValue", "9223372036854775807L")>]
+    [<InlineData("System.Byte",  "MaxValue", "255uy")>]
+    [<InlineData("System.SByte", "MinValue", "-128y")>]
+    let ``IL literal static field renders with [<Literal>] attribute and value``
+        (typeName: string, fieldName: string, expectedValueText: string) =
+        let source = $"let _ = typeof<{typeName}>"
+        let shortName = typeName.Substring(typeName.LastIndexOf('.') + 1)
+        let metadataText = getMetadataTextForEntity shortName source
+
+        Assert.Contains(fieldName, metadataText)
+
+        let line =
+            metadataText.Split('\n')
+            |> Array.tryFind (fun l -> l.Contains("val " + fieldName + ":"))
+            |> Option.defaultWith (fun () -> failwithf "field declaration for %s not found in metadata text:\n%s" fieldName metadataText)
+
+        Assert.Contains("[<Literal>]", metadataText)
+        Assert.Contains("= " + expectedValueText, line)
+
+    [<Fact>]
+    let ``System.Char.MaxValue renders as a literal field`` () =
+        let metadataText = getMetadataTextForEntity "Char" "let _ = typeof<System.Char>"
+
+        Assert.Contains("[<Literal>]", metadataText)
+        let line =
+            metadataText.Split('\n')
+            |> Array.tryFind (fun l -> l.Contains("val MaxValue:"))
+            |> Option.defaultWith (fun () -> failwithf "MaxValue declaration not found:\n%s" metadataText)
+        Assert.Contains("=", line)
+        Assert.False(line.TrimEnd().EndsWith(": char"),
+                    sprintf "MaxValue line is missing its literal value: %s" line)
+
+    [<Fact>]
+    let ``IL const string field renders with [<Literal>] and the quoted string value`` () =
+        let metadataText =
+            getMetadataTextForEntity "RuntimeFeature" "let _ = typeof<System.Runtime.CompilerServices.RuntimeFeature>"
+
+        Assert.Contains("[<Literal>]", metadataText)
+        let line =
+            metadataText.Split('\n')
+            |> Array.tryFind (fun l -> l.Contains("val PortablePdb:"))
+            |> Option.defaultWith (fun () -> failwithf "PortablePdb declaration not found:\n%s" metadataText)
+        Assert.Contains("= \"PortablePdb\"", line)
+        Assert.DoesNotContain("value unavailable", line)
+
+    [<Fact>]
+    let ``System.String.Empty (initonly, non-literal) renders without [<Literal>] and without value`` () =
+        let metadataText = getMetadataTextForEntity "String" "let _ = typeof<System.String>"
+
+        let line =
+            metadataText.Split('\n')
+            |> Array.tryFind (fun l -> l.Contains("val Empty:"))
+            |> Option.defaultWith (fun () -> failwithf "Empty not found:\n%s" metadataText)
+
+        Assert.Contains("static val", line)
+        Assert.DoesNotContain("=", line)
+
 module IsByRef =
     // https://github.com/dotnet/fsharp/issues/3532
     [<Fact>]
@@ -1508,3 +1702,73 @@ let result = 1 -.- 2
         let rangeLength = range.EndColumn - range.StartColumn
 
         Assert.Equal(3, rangeLength)
+
+
+module NestedCopyAndUpdateSink =
+
+    /// Start columns of every classified use of `name` on `line` (1-based).
+    let private useCols name line source =
+        getSymbolUsesFromSource source
+        |> Seq.filter (fun s -> s.Symbol.DisplayName = name && s.Range.StartLine = line)
+        |> Seq.map (fun s -> s.Range.StartColumn)
+        |> Seq.sort
+        |> List.ofSeq
+
+    /// Start columns of every literal `token` occurrence on `line` (1-based).
+    let private tokenCols (token: string) line (source: string) =
+        let text = source.Replace("\r\n", "\n").Split('\n').[line - 1]
+        let rec go (i: int) acc =
+            match text.IndexOf(token, i) with
+            | -1 -> List.rev acc
+            | j -> go (j + 1) (j :: acc)
+        go 0 []
+
+    // Each type qualifier must be classified exactly once, at its own source column.
+    let private check name line source =
+        Assert.Equal<int list>(tokenCols name line source, useCols name line source)
+
+    [<Fact>]
+    let ``Both type qualifiers in nested update are classified`` () =
+        check "Person" 5 """
+type Info = { X: int; Y: int }
+type Person = { Info: Info }
+let p = { Info = { X = 1; Y = 2 } }
+let p2 = { p with Person.Info.X = 10; Person.Info.Y = 20 }
+"""
+
+    [<Fact>]
+    let ``Three type qualifiers in nested update all classified`` () =
+        check "Person" 5 """
+type Info = { X: int; Y: int; Z: int }
+type Person = { Info: Info }
+let p = { Info = { X = 1; Y = 2; Z = 3 } }
+let p2 = { p with Person.Info.X = 10; Person.Info.Y = 20; Person.Info.Z = 30 }
+"""
+
+    [<Fact>]
+    let ``Single type qualifier in nested update classified once`` () =
+        check "Person" 5 """
+type Info = { X: int; Y: int }
+type Person = { Info: Info }
+let p = { Info = { X = 1; Y = 2 } }
+let p2 = { p with Person.Info.X = 10 }
+"""
+
+    [<Fact>]
+    let ``Mixed qualified and unqualified in nested update`` () =
+        check "Person" 5 """
+type Info = { X: int; Y: int }
+type Person = { Name: string; Info: Info }
+let p = { Name = "test"; Info = { X = 1; Y = 2 } }
+let p2 = { p with Name = "new"; Person.Info.X = 10 }
+"""
+
+    [<Fact>]
+    let ``Qualifier repeated across sibling fields each classified`` () =
+        check "Outer" 6 """
+type Inner1 = { A: int; B: int }
+type Inner2 = { C: int }
+type Outer = { I1: Inner1; I2: Inner2 }
+let o = { I1 = { A = 1; B = 2 }; I2 = { C = 3 } }
+let o2 = { o with Outer.I1.A = 10; Outer.I1.B = 20; Outer.I2.C = 30 }
+"""

@@ -558,6 +558,7 @@ type TcGlobals(
   let fslib_MFOperatorsUnchecked_nleref        = mkNestedNonLocalEntityRef fslib_MFOperators_nleref "Unchecked"
   let fslib_MFOperatorsChecked_nleref        = mkNestedNonLocalEntityRef fslib_MFOperators_nleref "Checked"
   let fslib_MFExtraTopLevelOperators_nleref    = mkNestedNonLocalEntityRef fslib_MFCore_nleref "ExtraTopLevelOperators"
+  let fslib_MFAsyncBuilder_nleref              = mkNestedNonLocalEntityRef fslib_MFControl_nleref "AsyncBuilder"
   let fslib_MFNullableOperators_nleref         = mkNestedNonLocalEntityRef fslib_MFLinq_nleref "NullableOperators"
   let fslib_MFQueryRunExtensions_nleref              = mkNestedNonLocalEntityRef fslib_MFLinq_nleref "QueryRunExtensions"
   let fslib_MFQueryRunExtensionsLowPriority_nleref   = mkNestedNonLocalEntityRef fslib_MFQueryRunExtensions_nleref "LowPriority"
@@ -643,6 +644,19 @@ type TcGlobals(
                             fslib_MFOptionModule_nleref   
                             fslib_MFStateMachineHelpers_nleref 
                             fslib_MFRuntimeHelpers_nleref ] do
+
+                    yield nleref.LastItemMangledName, ERefNonLocal nleref  ]
+
+  let v_FSharpCoreForceInlineModules =
+     dict [ for nleref in [ fslib_MFIntrinsicFunctions_nleref
+                            fslib_MFIntrinsicOperators_nleref
+                            fslib_MFLanguagePrimitives_nleref
+                            fslib_MFOperators_nleref
+                            fslib_MFOperatorIntrinsics_nleref
+                            fslib_MFOperatorsChecked_nleref
+                            fslib_MFOperatorsUnchecked_nleref
+                            fslib_MFNativePtrModule_nleref
+                            fslib_MFAsyncBuilder_nleref  ] do
 
                     yield nleref.LastItemMangledName, ERefNonLocal nleref  ]
 
@@ -1132,6 +1146,8 @@ type TcGlobals(
   // A table of known modules in FSharp.Core. Not all modules are necessarily listed, but the more we list the
   // better the job we do of mapping from provided expressions back to FSharp.Core F# functions and values.
   member _.knownFSharpCoreModules = v_knownFSharpCoreModules
+
+  member _.fslibForceInlineModules = v_FSharpCoreForceInlineModules
 
   member _.compilingFSharpCore = compilingFSharpCore
 
@@ -1930,7 +1946,7 @@ type TcGlobals(
         Some (g.array_get_info, [retTy], argExprs)
     | "set_Item", [arrTy; _; elemTy], _, [_; _; _] when isArrayTy g arrTy ->
         Some (g.array_set_info, [elemTy], argExprs)
-    | "get_Item", [stringTy; _; _], _, [_; _] when isStringTy g stringTy ->
+    | "get_Item", [stringTy; _], _, [_; _] when isStringTy g stringTy ->
         Some (g.getstring_info, [], argExprs)
     | "op_UnaryPlus", [aty], _, [_] ->
         // Call Operators.id

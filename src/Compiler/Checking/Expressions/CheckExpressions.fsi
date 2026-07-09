@@ -482,6 +482,10 @@ val FixupLetrecBind:
     bind: PostSpecialValsRecursiveBinding ->
         PreInitializationGraphEliminationBinding
 
+/// Detect recursive 'inline' bindings within a recursive binding group and
+/// emit FS3890. Mutates inline info to suppress downstream cascades.
+val CheckRecursiveInlineGroup: bindings: PreInitializationGraphEliminationBinding list -> unit
+
 /// Produce a fresh view of an object type, e.g. 'List<T>' becomes 'List<?>' for new
 /// inference variables with the given rigidity.
 val FreshenObjectArgType:
@@ -720,6 +724,11 @@ val TcMatchPattern:
     synWhenExprOpt: SynExpr option ->
     tcTrueMatchClause: TcTrueMatchClause ->
         Pattern * Expr option * Val list * TcEnv * UnscopedTyparEnv
+
+/// Given the current 'inputTy' of a match clause, the elaborated pattern, and the optional 'when' clause,
+/// returns the (possibly narrowed) inputTy to use for subsequent clauses.
+/// E.g. `match x with | null -> ... | y -> ...` narrows `inputTy` of the y-clause to non-null.
+val EliminateNullnessFromInputType: g: TcGlobals -> inputTy: TType -> pat: Pattern -> whenExprOpt: Expr option -> TType
 
 [<return: Struct>]
 val (|BinOpExpr|_|): SynExpr -> (Ident * SynExpr * SynExpr) voption

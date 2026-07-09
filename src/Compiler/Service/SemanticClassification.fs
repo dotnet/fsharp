@@ -91,8 +91,12 @@ module TcResolutionsExtensions =
 
     let isValRefMutable g (vref: ValRef) =
         // Mutable values, ref cells, and non-inref byrefs are mutable.
+        // Exclude CtorThisVal: the compiler wraps recursive object self-references
+        // (`as this`, `let rec` self-refs) in a ref cell for initialization, but the
+        // user-visible binding is immutable. Mirrors FSharpMemberOrFunctionOrValue.IsMutable
+        // in src/Compiler/Symbols/Symbols.fs.
         vref.IsMutable
-        || isRefCellTy g vref.Type
+        || (not vref.IsCtorThisVal && isRefCellTy g vref.Type)
         || (isByrefTy g vref.Type && not (isInByrefTy g vref.Type))
 
     let isRecdFieldMutable g (rfinfo: RecdFieldInfo) =
@@ -151,6 +155,7 @@ module TcResolutionsExtensions =
                         | ItemOccurrence.UseInType
                         | ItemOccurrence.UseInAttribute
                         | ItemOccurrence.Use
+                        | ItemOccurrence.InvalidUse
                         | ItemOccurrence.Binding
                         | ItemOccurrence.Pattern
                         | ItemOccurrence.Open -> Some()
@@ -184,22 +189,36 @@ module TcResolutionsExtensions =
 
                         if cnrs.Length = 1 then
                             cnrs
-                        elif cnrs.Length = 2 then
-                            match cnrs[0].Item, cnrs[1].Item with
-                            | Item.Value _, Item.CustomBuilder _ -> [| cnrs[1] |]
-                            | Item.CustomBuilder _, Item.Value _ -> [| cnrs[0] |]
-                            | _ -> cnrs
                         else
-                            cnrs
+                            let isCE (cnr: CapturedNameResolution) =
+                                match cnr.Item with
+                                | Item.CustomBuilder _
+                                | Item.CustomOperation _ -> true
+                                | _ -> false
+
+                            let isPlainValue (cnr: CapturedNameResolution) =
+                                match cnr.Item with
+                                | Item.Value _ -> true
+                                | _ -> false
+
+                            let ceCnrs = cnrs |> Array.filter isCE
+
+                            if ceCnrs.Length > 0 && cnrs |> Array.forall (fun c -> isCE c || isPlainValue c) then
+                                ceCnrs
+                            else
+                                cnrs
 
                     let resolutions =
-                        match range with
-                        | Some range ->
-                            sResolutions.CapturedNameResolutions.ToArray()
-                            |> Array.filter (fun cnr -> rangeContainsPos range cnr.Range.Start || rangeContainsPos range cnr.Range.End)
-                            |> Array.groupBy (fun cnr -> cnr.Range)
-                            |> Array.collect (fun (_, cnrs) -> takeCustomBuilder cnrs)
-                        | None -> sResolutions.CapturedNameResolutions.ToArray()
+                        let baseCnrs =
+                            match range with
+                            | Some range ->
+                                sResolutions.CapturedNameResolutions.ToArray()
+                                |> Array.filter (fun cnr -> rangeContainsPos range cnr.Range.Start || rangeContainsPos range cnr.Range.End)
+                            | None -> sResolutions.CapturedNameResolutions.ToArray()
+
+                        baseCnrs
+                        |> Array.groupBy (fun cnr -> cnr.Range)
+                        |> Array.collect (fun (_, cnrs) -> takeCustomBuilder cnrs)
 
                     let duplicates = HashSet<range>(comparer)
 
@@ -208,6 +227,9 @@ module TcResolutionsExtensions =
                     let inline add m (typ: SemanticClassificationType) =
                         if duplicates.Add m then
                             results.Add(SemanticClassificationItem((m, typ)))
+
+                    let isDelegateInvokeMemberName name =
+                        name = "Invoke" || name = "BeginInvoke" || name = "EndInvoke"
 
                     resolutions
                     |> Array.iter (fun cnr ->
@@ -227,7 +249,13 @@ module TcResolutionsExtensions =
                             elif vref.IsPropertyGetterMethod || vref.IsPropertySetterMethod then
                                 add m SemanticClassificationType.Property
                             elif vref.IsMember then
-                                add m SemanticClassificationType.Method
+                                let isSynthesizedDelegateMember =
+                                    isDelegateInvokeMemberName vref.DisplayName
+                                    && vref.HasDeclaringEntity
+                                    && vref.DeclaringEntity.IsFSharpDelegateTycon
+
+                                if not isSynthesizedDelegateMember then
+                                    add m SemanticClassificationType.Method
                             elif IsOperatorDisplayName vref.DisplayName then
                                 add m SemanticClassificationType.Operator
                             else
@@ -292,7 +320,29 @@ module TcResolutionsExtensions =
                             match minfos with
                             | [] -> add m SemanticClassificationType.Method
                             | _ ->
-                                if
+                                let isSynthesizedDelegateMemberInDecl =
+                                    minfos
+                                    |> List.forall (fun minfo ->
+                                        isDelegateInvokeMemberName minfo.LogicalName
+                                        && minfo.ApparentEnclosingTyconRef.IsFSharpDelegateTycon
+                                        && rangeContainsRange minfo.ApparentEnclosingTyconRef.Range m)
+
+                                if isSynthesizedDelegateMemberInDecl then
+                                    ()
+                                elif
+                                    // The synthesized indexer `xs[a..]` is desugared to a `GetSlice`/`SetSlice`
+                                    // call whose `Item.MethodGroup` resolution range spans the whole indexing
+                                    // expression. There is no source text spelling the member name, so this pass
+                                    // (which has only resolutions, not source) cannot distinguish it from an
+                                    // explicit `xs.GetSlice(..)` call, whose resolution range likewise covers the
+                                    // receiver. Both forms are suppressed; explicit GetSlice/SetSlice invocations
+                                    // are exceedingly rare, and the alternative (coloring the whole `xs[a..]`
+                                    // expression as a Method) is the more visible bug.
+                                    minfos
+                                    |> List.forall (fun minfo -> minfo.LogicalName = "GetSlice" || minfo.LogicalName = "SetSlice")
+                                then
+                                    ()
+                                elif
                                     minfos
                                     |> List.forall (fun minfo -> minfo.IsExtensionMember || minfo.IsCSharpStyleExtensionMember)
                                 then
@@ -309,7 +359,9 @@ module TcResolutionsExtensions =
                         | Item.Types(_, ty :: _), LegitTypeOccurrence, m ->
                             let ty = stripTyEqns g ty
 
-                            if isDisposableTy g amap ty then
+                            if isInterfaceTy g ty then
+                                add m SemanticClassificationType.Interface
+                            elif isDisposableTy g amap ty then
                                 add m SemanticClassificationType.DisposableType
                             else
                                 match tryTcrefOfAppTy g ty with

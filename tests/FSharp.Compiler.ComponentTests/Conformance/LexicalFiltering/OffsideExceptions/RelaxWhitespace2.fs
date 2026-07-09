@@ -237,7 +237,7 @@ module ActivePatterns =
     |) _ = (|
         A
     |)
-    let (|C|) =
+    let (|C|) _ =
         if true then ignore (|
             A
         |)
@@ -255,7 +255,7 @@ module ActivePatterns =
         F
         |
         _
-    |) as f = Some (|
+    |) _ = Some (|
         C
     |)
     let (|
@@ -1265,7 +1265,7 @@ type ActivePatterns() =
     |) = (|
         A
     |)
-    let (|C|) =
+    let (|C|) _ =
         if true then ignore (|
             A
         |)
@@ -1283,7 +1283,7 @@ type ActivePatterns() =
         F
         |
         _
-    |) as f = Some (|
+    |) _ = Some (|
         C
     |)
     let (|
@@ -1305,7 +1305,7 @@ type ActivePatterns() =
     |) = (|
         A_
     |)
-    static let (|C_|) =
+    static let (|C_|) _ =
         if true then ignore (|
             A_
         |)
@@ -1323,7 +1323,7 @@ type ActivePatterns() =
         F_
         |
         _
-    |) as f_ = Some (|
+    |) _ = Some (|
         C_
     |)
     static let (|
@@ -2593,7 +2593,7 @@ let ActivePatterns<'a> =
     |) _ = (|
         A
     |)
-    let (|C|) =
+    let (|C|) _ =
         if true then ignore (|
             A
         |)
@@ -2611,7 +2611,7 @@ let ActivePatterns<'a> =
         F
         |
         _
-    |) as f = Some (|
+    |) _ = Some (|
         C
     |)
     let (|

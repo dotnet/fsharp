@@ -344,7 +344,7 @@ type GenericType<'X> with
 
     one |> withAdditionalSourceFiles [ two; three ]
     |> compile
-    |> verifyILContains [ ".Print<ActualType>" ]
+    |> verifyILPresent [ ".Print<ActualType>" ]
 
 // https://github.com/dotnet/fsharp/issues/14310
 [<Fact>]
@@ -762,10 +762,90 @@ let (|A|B|) (x: int) = if x > 0 then A else B
 """
 
 // Sweep: overloaded member with unit parameter (FS0193) — #19596
-// Roundtrip fails: member M(()) generates sig 'member M: unit -> unit' but
-// conformance checker can't match it when M is overloaded. The sig syntax
-// is correct but the conformance check for unit-parameter overloads is broken.
-[<Fact(Skip = "Sig conformance: member M(()) vs member M: unit -> unit fails when overloaded - FS0193")>]
+// Testing both directions and consumer access to understand conformance boundaries.
+
+// Direction 1: handwritten sig says "member M: unit -> unit", impl has "member M(()) = ()"
+[<Fact>]
+let ``Unit param overload - sig with consumer compiles`` () =
+    let sigSource = """
+module Lib
+
+type R1 =
+  { f1: int }
+
+type D =
+  new: unit -> D
+  member M: unit -> unit
+  member M: y: R1 -> unit
+  member N: unit
+"""
+    let implSource = """
+module Lib
+type R1 = { f1 : int }
+type D() =
+    member x.N = x.M { f1 = 3 }
+    member x.M((y: R1)) = ()
+    member x.M(()) = ()
+"""
+    let consumerSource = """
+module Consumer
+open Lib
+let test() =
+    let d = D()
+    d.M(())
+    d.M { f1 = 42 }
+    d.N
+"""
+    Fsi sigSource
+    |> withAdditionalSourceFile (FsSourceWithFileName "Lib.fs" implSource)
+    |> withAdditionalSourceFile (FsSourceWithFileName "Consumer.fs" consumerSource)
+    |> ignoreWarnings
+    |> compile
+    |> shouldSucceed
+    |> ignore
+
+// Direction 2: impl without explicit unit parens "member x.M() = ()"
+[<Fact>]
+let ``Unit param overload - non-paren impl with sig and consumer`` () =
+    let sigSource = """
+module Lib
+
+type R1 =
+  { f1: int }
+
+type D =
+  new: unit -> D
+  member M: unit -> unit
+  member M: y: R1 -> unit
+  member N: unit
+"""
+    let implSource = """
+module Lib
+type R1 = { f1 : int }
+type D() =
+    member x.N = x.M { f1 = 3 }
+    member x.M((y: R1)) = ()
+    member x.M() = ()
+"""
+    let consumerSource = """
+module Consumer
+open Lib
+let test() =
+    let d = D()
+    d.M()
+    d.M { f1 = 42 }
+    d.N
+"""
+    Fsi sigSource
+    |> withAdditionalSourceFile (FsSourceWithFileName "Lib.fs" implSource)
+    |> withAdditionalSourceFile (FsSourceWithFileName "Consumer.fs" consumerSource)
+    |> ignoreWarnings
+    |> compile
+    |> shouldSucceed
+    |> ignore
+
+// Roundtrip: generated sig from impl, then compile sig+impl+consumer
+[<Fact>]
 let ``Sweep - overloaded member with unit param roundtrips`` () =
     assertSignatureRoundtrip """
 module Repro
@@ -775,3 +855,153 @@ type D() =
     member x.M((y: R1)) = ()
     member x.M(()) = ()
 """
+
+// Inverse direction 1: impl M(()) but consumer calls d.M() (no parens) — must fail with FS0503
+[<Fact>]
+let ``Unit param overload - consumer cannot call M() when impl is M(()) with overloads`` () =
+    let sigSource = """
+module Lib
+
+type R1 =
+  { f1: int }
+
+type D =
+  new: unit -> D
+  member M: unit -> unit
+  member M: y: R1 -> unit
+  member N: unit
+"""
+    let implSource = """
+module Lib
+type R1 = { f1 : int }
+type D() =
+    member x.N = x.M { f1 = 3 }
+    member x.M((y: R1)) = ()
+    member x.M(()) = ()
+"""
+    let consumerSource = """
+module Consumer
+open Lib
+let test() =
+    let d = D()
+    d.M()
+    d.M { f1 = 42 }
+    d.N
+"""
+    Fsi sigSource
+    |> withAdditionalSourceFile (FsSourceWithFileName "Lib.fs" implSource)
+    |> withAdditionalSourceFile (FsSourceWithFileName "Consumer.fs" consumerSource)
+    |> ignoreWarnings
+    |> compile
+    |> shouldFail
+    |> withErrorCode 503
+    |> ignore
+
+// Inverse direction 2: impl M() (no explicit unit), sig M: unit -> unit, consumer calls d.M()
+[<Fact>]
+let ``Unit param overload - consumer calls M() with normal impl and sig`` () =
+    let sigSource = """
+module Lib
+
+type R1 =
+  { f1: int }
+
+type D =
+  new: unit -> D
+  member M: unit -> unit
+  member M: y: R1 -> unit
+  member N: unit
+"""
+    let implSource = """
+module Lib
+type R1 = { f1 : int }
+type D() =
+    member x.N = x.M { f1 = 3 }
+    member x.M((y: R1)) = ()
+    member x.M() = ()
+"""
+    let consumerSource = """
+module Consumer
+open Lib
+let test() =
+    let d = D()
+    d.M()
+    d.M { f1 = 42 }
+    d.N
+"""
+    Fsi sigSource
+    |> withAdditionalSourceFile (FsSourceWithFileName "Lib.fs" implSource)
+    |> withAdditionalSourceFile (FsSourceWithFileName "Consumer.fs" consumerSource)
+    |> ignoreWarnings
+    |> compile
+    |> shouldSucceed
+    |> ignore
+
+// Non-overloaded: member M(()) with sig member M: unit -> unit (no other overloads)
+[<Fact>]
+let ``Unit param - non-overloaded member M(()) conforms to sig member M: unit -> unit`` () =
+    let sigSource = """
+module Lib
+
+type D =
+    new: unit -> D
+    member M: unit -> unit
+"""
+    let implSource = """
+module Lib
+type D() =
+    member _.M(()) = ()
+"""
+    Fsi sigSource
+    |> withAdditionalSourceFile (FsSourceWithFileName "Lib.fs" implSource)
+    |> ignoreWarnings
+    |> compile
+    |> shouldSucceed
+    |> ignore
+
+// Non-overloaded: member M(()) with sig member M: unit -> unit, consumer calls d.M()
+// Verifies that synthesized ArgReprInfo from sig allows consumer access
+[<Fact>]
+let ``Unit param - non-overloaded member M(()) consumer can call M()`` () =
+    let sigSource = """
+module Lib
+
+type D =
+    new: unit -> D
+    member M: unit -> unit
+"""
+    let implSource = """
+module Lib
+type D() =
+    member _.M(()) = ()
+"""
+    let consumerSource = """
+module Consumer
+open Lib
+let test() =
+    let d = D()
+    d.M()
+"""
+    Fsi sigSource
+    |> withAdditionalSourceFile (FsSourceWithFileName "Lib.fs" implSource)
+    |> withAdditionalSourceFile (FsSourceWithFileName "Consumer.fs" consumerSource)
+    |> ignoreWarnings
+    |> compile
+    |> shouldSucceed
+    |> ignore
+
+// Regression for #19615: M(()) emits explicit Unit argument, distinct from a no-arg M().
+[<Fact>]
+let ``Unit param - M(()) emits Unit argument distinct from M(int)`` () =
+    FSharp """
+module Test
+type D() =
+    member x.M(()) = 1
+    member x.M(y: int) = y
+"""
+    |> compile
+    |> shouldSucceed
+    |> verifyILPresent [
+        ".method public hidebysig instance int32 M(class [FSharp.Core]Microsoft.FSharp.Core.Unit _arg1) cil managed"
+        ".method public hidebysig instance int32 M(int32 y) cil managed"
+    ]

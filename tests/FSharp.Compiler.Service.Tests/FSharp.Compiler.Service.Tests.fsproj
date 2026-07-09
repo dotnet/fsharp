@@ -27,6 +27,7 @@
     <Compile Include="Common.fs" />
     <Compile Include="Checker.fs" />
     <Compile Include="TypeChecker\TypeCheckerRecoveryTests.fs" />
+    <Compile Include="TypeChecker\Obsolete.fs" />
     <Compile Include="GeneratedCodeSymbolsTests.fs" />
     <Compile Include="BreakpointLocationTests.fs" />
     <Compile Include="AssemblyReaderShim.fs" />
@@ -73,6 +74,7 @@
     <Compile Include="AssemblyContentProviderTests.fs" />
     <Compile Include="TreeVisitorTests.fs" />
     <Compile Include="ParsedInputModuleTests.fs" />
+    <Compile Include="OpenDeclarationInsertionTests.fs" />
     <Compile Include="ParsedInputModuleTests.VeryBigArrayExprTest.fs" />
     <Compile Include="FSharpExprPatternsTests.fs" />
     <Compile Include="SourceTextTests.fs" />

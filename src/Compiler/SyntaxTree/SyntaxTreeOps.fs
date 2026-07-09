@@ -299,6 +299,22 @@ let (|SynExprParen|_|) (e: SynExpr) =
     | SynExpr.Paren(SynExprErrorSkip e, a, b, c) -> ValueSome(e, a, b, c)
     | _ -> ValueNone
 
+/// Collects the ordered sub-expressions of nested `SynExpr.Sequential`, avoiding deep recursion (empty if not a Sequential).
+let flattenSequentials expr =
+    let rec collect expr acc =
+        match expr with
+        | SynExpr.Sequential(expr1 = e1; expr2 = SynExpr.Sequential _ as e2) -> collect e2 (e1 :: acc)
+        | SynExpr.Sequential(expr1 = e1; expr2 = e2) -> e2 :: e1 :: acc
+        | _ -> acc
+
+    List.rev (collect expr [])
+
+/// A pattern that collects all sequential expressions to avoid StackOverflowException
+let (|Sequentials|_|) expr =
+    match flattenSequentials expr with
+    | [] -> None
+    | exprs -> Some exprs
+
 let (|SynPatErrorSkip|) (p: SynPat) =
     match p with
     | SynPat.FromParseError(p, _) -> p
@@ -740,6 +756,48 @@ module SynInfo =
             let argInfos = infosForObjArgs @ infosForArgs
             SynValData(Some memFlags, SynValInfo(argInfos, retInfo), None)
 
+    let private isReturnTargetedAttribute (a: SynAttribute) =
+        match a.Target with
+        | Some id -> id.idText = "return"
+        | None -> false
+
+    /// Rotate any `[<return: X>]` attributes from a binding's prefix attribute list into the
+    /// arity-info return position (`SynValInfo.retInfo`). Without this, downstream code that
+    /// reads `Val.Attribs` would incorrectly see them alongside method-targeted attributes
+    /// (see issues #17904 and #19020).
+    let RotateReturnAttributes (attrs: SynAttributes) (valSynData: SynValData) : SynAttributes * SynValData =
+        // Fast path: avoid all allocation when there's nothing to rotate (the common case).
+        let hasReturn =
+            attrs
+            |> List.exists (fun lst -> lst.Attributes |> List.exists isReturnTargetedAttribute)
+
+        if not hasReturn then
+            attrs, valSynData
+        else
+            let mutable returnTargeted = []
+
+            let newAttrs =
+                attrs
+                |> List.choose (fun lst ->
+                    let ret, kept = lst.Attributes |> List.partition isReturnTargetedAttribute
+                    returnTargeted <- returnTargeted @ ret
+
+                    if List.isEmpty kept then
+                        None
+                    else
+                        Some { lst with Attributes = kept })
+
+            let (SynValData(memFlags, SynValInfo(args, SynArgInfo(retAttrs, opt, retId)), thisIdOpt)) =
+                valSynData
+
+            let retList: SynAttributeList =
+                {
+                    Attributes = returnTargeted
+                    Range = (List.head returnTargeted).Range
+                }
+
+            newAttrs, SynValData(memFlags, SynValInfo(args, SynArgInfo(retList :: retAttrs, opt, retId)), thisIdOpt)
+
 let mkSynBindingRhs staticOptimizations rhsExpr mRhs retInfo =
     let rhsExpr =
         List.foldBack (fun (c, e1) e2 -> SynExpr.LibraryOnlyStaticOptimization(c, e1, e2, mRhs)) staticOptimizations rhsExpr
@@ -758,6 +816,8 @@ let mkSynBinding
     =
     let info =
         SynInfo.InferSynValData(memberFlagsOpt, Some headPat, Option.map snd retInfo, origRhsExpr)
+
+    let attrs, info = SynInfo.RotateReturnAttributes attrs info
 
     let rhsExpr, retTyOpt = mkSynBindingRhs staticOptimizations origRhsExpr mRhs retInfo
     let mBind = unionRangeWithXmlDoc xmlDoc mBind
@@ -1105,6 +1165,21 @@ let rec desugarGetSetMembers (memberDefns: SynMemberDefns) =
                                          GetKeyword = Some mGet
                                          SetKeyword = Some mSet
                                      }) ->
+            // Each accessor's xmlDoc must validate against the union of both accessors'
+            // parameter names; otherwise documenting the full property triggers spurious
+            // 'unknown parameter' / 'no documentation for parameter' warnings on the
+            // accessor that does not own that name. See issue #13684.
+            let argNamesOf (SynBinding(valData = SynValData(valInfo = info))) = info.ArgNames
+            let getArgs = argNamesOf getBinding
+            let setArgs = argNamesOf setBinding
+
+            let rewrap extra (SynBinding(a, k, isInline, isMutable, attrs, xmlDoc, vd, hp, ri, e, mB, sp, t)) =
+                let xmlDoc' = PreXmlDoc.WithExtraParamsForCheck(xmlDoc, extra)
+                SynBinding(a, k, isInline, isMutable, attrs, xmlDoc', vd, hp, ri, e, mB, sp, t)
+
+            let getBinding = rewrap setArgs getBinding
+            let setBinding = rewrap getArgs setBinding
+
             if Position.posLt mGet.Start mSet.Start then
                 [ SynMemberDefn.Member(getBinding, m); SynMemberDefn.Member(setBinding, m) ]
             else

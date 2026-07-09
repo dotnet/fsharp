@@ -135,6 +135,12 @@
   <data name="ConstraintSolverNullnessWarningWithTypes" xml:space="preserve">
     <value>Nullness warning: The types '{0}' and '{1}' do not have compatible nullability.</value>
   </data>
+  <data name="ConstraintSolverNullnessWarningOnDotAccess" xml:space="preserve">
+    <value>Nullness warning: Possible dereference of a null value when accessing member '{0}' on a nullable expression of type '{1}'</value>
+  </data>
+  <data name="ConstraintSolverNullnessWarningOnDotAccessWithBinding" xml:space="preserve">
+    <value>Nullness warning: Possible dereference of a null value when accessing member '{0}' on the nullable value '{1}' of type '{2}'</value>
+  </data>
   <data name="ConstraintSolverNullnessWarningWithType" xml:space="preserve">
     <value>Nullness warning: The type '{0}' does not support 'null'.</value>
   </data>
@@ -789,6 +795,12 @@
   <data name="NONTERM.classMemberSpfn" xml:space="preserve">
     <value> in member signature</value>
   </data>
+    <data name="NONTERM.classMemberSpfnGetSetElements" xml:space="preserve">
+    <value> in property definition</value>
+  </data>
+  <data name="NONTERM.autoPropsDefnDecl" xml:space="preserve">
+    <value> in auto property definition</value>
+  </data>
   <data name="NONTERM.valSpfn" xml:space="preserve">
     <value> in value signature</value>
   </data>
@@ -1034,6 +1046,9 @@
   </data>
   <data name="ValNotMutable" xml:space="preserve">
     <value>This value is not mutable. Consider using the mutable keyword, e.g. 'let mutable {0} = expression'.</value>
+  </data>
+  <data name="ValNotMutableParameter" xml:space="preserve">
+    <value>The parameter '{0}' is not mutable. Consider shadowing it with a new binding, e.g. 'let {1} = ...'. Use 'let mutable {1} = ...' only if you need to reassign it multiple times.</value>
   </data>
   <data name="ValNotLocal" xml:space="preserve">
     <value>This value is not local</value>

@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
   <file datatype="xml" source-language="en" target-language="cs" original="../FSStrings.resx">
     <body>
@@ -30,6 +30,16 @@
       <trans-unit id="ConstraintSolverNullnessWarningWithTypes">
         <source>Nullness warning: The types '{0}' and '{1}' do not have compatible nullability.</source>
         <target state="new">Nullness warning: The types '{0}' and '{1}' do not have compatible nullability.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ConstraintSolverNullnessWarningOnDotAccess">
+        <source>Nullness warning: Possible dereference of a null value when accessing member '{0}' on a nullable expression of type '{1}'</source>
+        <target state="new">Nullness warning: Possible dereference of a null value when accessing member '{0}' on a nullable expression of type '{1}'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ConstraintSolverNullnessWarningOnDotAccessWithBinding">
+        <source>Nullness warning: Possible dereference of a null value when accessing member '{0}' on the nullable value '{1}' of type '{2}'</source>
+        <target state="new">Nullness warning: Possible dereference of a null value when accessing member '{0}' on the nullable value '{1}' of type '{2}'</target>
         <note />
       </trans-unit>
       <trans-unit id="ErrorFromAddingTypeEquationTuples">
@@ -65,6 +75,16 @@
       <trans-unit id="InvalidAttributeTargetForLanguageElement2">
         <source>This attribute is not valid for use on this language element</source>
         <target state="new">This attribute is not valid for use on this language element</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="NONTERM.autoPropsDefnDecl">
+        <source> in auto property definition</source>
+        <target state="new"> in auto property definition</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="NONTERM.classMemberSpfnGetSetElements">
+        <source> in property definition</source>
+        <target state="new"> in property definition</target>
         <note />
       </trans-unit>
       <trans-unit id="NoConstructorsAvailableForType">
@@ -244,7 +264,7 @@
       </trans-unit>
       <trans-unit id="IndeterminateType">
         <source>The type of this expression could not be inferred before accessing its members. Add a type annotation, e.g. (expr: SomeType), to constrain the type before this point.</source>
-        <target state="new">Definovali jste vyhledávání u objektu neurčitého typu založeného na informacích před tímto místem v programu. Aby se typ objektu omezil, bude možná potřeba přidat před tímto místem v programu poznámku typu. Tím se problém s vyhledáváním pravděpodobně vyřeší.</target>
+        <target state="new">The type of this expression could not be inferred before accessing its members. Add a type annotation, e.g. (expr: SomeType), to constrain the type before this point.</target>
         <note />
       </trans-unit>
       <trans-unit id="NameClash1">
@@ -280,6 +300,11 @@
       <trans-unit id="FieldsFromDifferentTypes">
         <source>The fields '{0}' and '{1}' are from different types</source>
         <target state="translated">Pole {0} a {1} jsou odlišného typu.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ValNotMutableParameter">
+        <source>The parameter '{0}' is not mutable. Consider shadowing it with a new binding, e.g. 'let {1} = ...'. Use 'let mutable {1} = ...' only if you need to reassign it multiple times.</source>
+        <target state="new">The parameter '{0}' is not mutable. Consider shadowing it with a new binding, e.g. 'let {1} = ...'. Use 'let mutable {1} = ...' only if you need to reassign it multiple times.</target>
         <note />
       </trans-unit>
       <trans-unit id="ValueRestriction">
