@@ -28,10 +28,10 @@ This file should be imported by eng/Versions.props
     <MicrosoftCodeAnalysisFeaturesPackageVersion>5.10.0-1.26359.4</MicrosoftCodeAnalysisFeaturesPackageVersion>
     <MicrosoftVisualStudioLanguageServicesPackageVersion>5.10.0-1.26359.4</MicrosoftVisualStudioLanguageServicesPackageVersion>
     <!-- dotnet-runtime dependencies -->
-    <SystemCollectionsImmutablePackageVersion>10.0.2</SystemCollectionsImmutablePackageVersion>
-    <SystemCompositionPackageVersion>10.0.2</SystemCompositionPackageVersion>
+    <SystemCollectionsImmutablePackageVersion>10.0.8</SystemCollectionsImmutablePackageVersion>
+    <SystemCompositionPackageVersion>10.0.8</SystemCompositionPackageVersion>
     <SystemDiagnosticsDiagnosticSourcePackageVersion>10.0.2</SystemDiagnosticsDiagnosticSourcePackageVersion>
-    <SystemReflectionMetadataPackageVersion>10.0.2</SystemReflectionMetadataPackageVersion>
+    <SystemReflectionMetadataPackageVersion>10.0.8</SystemReflectionMetadataPackageVersion>
     <SystemSecurityCryptographyXmlPackageVersion>10.0.8</SystemSecurityCryptographyXmlPackageVersion>
   </PropertyGroup>
   <!--Property group for alternate package version names-->

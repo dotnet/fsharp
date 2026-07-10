@@ -103,16 +103,17 @@
     <MicrosoftVisualStudioShellPackagesVersion>18.0.2188-preview.1</MicrosoftVisualStudioShellPackagesVersion>
     <VisualStudioProjectSystemPackagesVersion>18.0.1237-pre</VisualStudioProjectSystemPackagesVersion>
     <VisualStudioShellProjectsPackages>18.0.2077-preview.1</VisualStudioShellProjectsPackages>
-    <MicrosoftVisualStudioThreadingPackagesVersion>18.0.5</MicrosoftVisualStudioThreadingPackagesVersion>
+    <MicrosoftVisualStudioThreadingPackagesVersion>18.7.19</MicrosoftVisualStudioThreadingPackagesVersion>
   
     <!-- Roslyn packages. Rest is managed by maestro bot and is in the imported .Details.props file -->
     <MicrosoftCodeAnalysisTestResourcesProprietaryVersion>2.0.28</MicrosoftCodeAnalysisTestResourcesProprietaryVersion>
     <!-- Visual Studio Shell packages -->
     <MicrosoftVisualStudioInteropVersion>$(MicrosoftVisualStudioShellPackagesVersion)</MicrosoftVisualStudioInteropVersion>
     <MicrosoftVisualStudioImagingInterop140DesignTimeVersion>$(VisualStudioShellProjectsPackages)</MicrosoftVisualStudioImagingInterop140DesignTimeVersion>
-    <MicrosoftVisualStudioShellInteropVersion>$(MicrosoftVisualStudioShellPackagesVersion)</MicrosoftVisualStudioShellInteropVersion>
-    <MicrosoftVisualStudioTextManagerInteropVersion>$(MicrosoftVisualStudioShellPackagesVersion)</MicrosoftVisualStudioTextManagerInteropVersion>
-    <MicrosoftVisualStudioOLEInteropVersion>$(MicrosoftVisualStudioShellPackagesVersion)</MicrosoftVisualStudioOLEInteropVersion>
+    <!-- Interop packages are pinned to the version required by Microsoft.VisualStudio.SDK (pulled transitively via Microsoft.CodeAnalysis.ExternalAccess.FSharp), which is newer than the other shell packages. -->
+    <MicrosoftVisualStudioShellInteropVersion>18.9.438</MicrosoftVisualStudioShellInteropVersion>
+    <MicrosoftVisualStudioTextManagerInteropVersion>18.9.438</MicrosoftVisualStudioTextManagerInteropVersion>
+    <MicrosoftVisualStudioOLEInteropVersion>18.9.438</MicrosoftVisualStudioOLEInteropVersion>
     <MicrosoftVisualStudioShellDesignVersion>$(MicrosoftVisualStudioShellPackagesVersion)</MicrosoftVisualStudioShellDesignVersion>
     <MicrosoftInternalVisualStudioShellFrameworkVersion>$(MicrosoftVisualStudioShellPackagesVersion)</MicrosoftInternalVisualStudioShellFrameworkVersion>
     <MicrosoftVisualStudioPackageLanguageService150Version>$(MicrosoftVisualStudioShellPackagesVersion)</MicrosoftVisualStudioPackageLanguageService150Version>
