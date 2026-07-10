@@ -14,6 +14,7 @@ module Parser =
 
     open System.Xml
     open System.Collections.Concurrent
+    open Internal.Utilities.Library
 
     type Help =
         {
@@ -82,16 +83,15 @@ module Parser =
     let xmlDocCache = ConcurrentDictionary<string, Lazy<XmlDocument>>()
 
     let tryGetXmlDocument xmlPath =
-        let valueFactory xmlPath =
-            lazy
-                use stream = FileSystem.OpenFileForReadShim(xmlPath)
-                let rawXml = stream.ReadAllText()
-                let xmlDocument = XmlDocument()
-                xmlDocument.LoadXml(rawXml)
-                xmlDocument
+        let load xmlPath =
+            use stream = FileSystem.OpenFileForReadShim(xmlPath)
+            let rawXml = stream.ReadAllText()
+            let xmlDocument = XmlDocument()
+            xmlDocument.LoadXml(rawXml)
+            xmlDocument
 
         try
-            Some(xmlDocCache.GetOrAdd(xmlPath, valueFactory).Value)
+            Some(xmlDocCache.GetOrAddLazy(xmlPath, load))
         with _ ->
             None
 
