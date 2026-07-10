@@ -30,7 +30,7 @@ This file should be imported by eng/Versions.props
     <!-- dotnet-runtime dependencies -->
     <SystemCollectionsImmutablePackageVersion>10.0.8</SystemCollectionsImmutablePackageVersion>
     <SystemCompositionPackageVersion>10.0.8</SystemCompositionPackageVersion>
-    <SystemDiagnosticsDiagnosticSourcePackageVersion>10.0.2</SystemDiagnosticsDiagnosticSourcePackageVersion>
+    <SystemDiagnosticsDiagnosticSourcePackageVersion>10.0.8</SystemDiagnosticsDiagnosticSourcePackageVersion>
     <SystemReflectionMetadataPackageVersion>10.0.8</SystemReflectionMetadataPackageVersion>
     <SystemSecurityCryptographyXmlPackageVersion>10.0.8</SystemSecurityCryptographyXmlPackageVersion>
   </PropertyGroup>

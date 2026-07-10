@@ -137,6 +137,14 @@
     <!-- Visual Studio Threading packages -->
     <MicrosoftVisualStudioThreadingVersion>$(MicrosoftVisualStudioThreadingPackagesVersion)</MicrosoftVisualStudioThreadingVersion>
 
+    <!-- Transitive packages pinned to the versions required by Microsoft.CodeAnalysis.ExternalAccess.FSharp
+         (via Microsoft.VisualStudio.SDK 18.9.496), which are newer than the versions the Shell packages pull in.
+         Pinning them avoids MSB3277 assembly version conflicts across the vsintegration projects. -->
+    <MicrosoftVisualStudioValidationVersion>18.7.1</MicrosoftVisualStudioValidationVersion>
+    <MicrosoftVisualStudioRpcContractsVersion>18.9.453</MicrosoftVisualStudioRpcContractsVersion>
+    <MicrosoftServiceHubFrameworkVersion>4.10.128</MicrosoftServiceHubFrameworkVersion>
+    <StreamJsonRpcVersion>2.26.5</StreamJsonRpcVersion>
+
     <!-- Visual Studio Project System packages-->
     <MicrosoftVisualStudioProjectSystemVersion>$(VisualStudioProjectSystemPackagesVersion)</MicrosoftVisualStudioProjectSystemVersion>
     <MicrosoftVisualStudioProjectSystemManagedVersion>2.3.6152103</MicrosoftVisualStudioProjectSystemManagedVersion>
