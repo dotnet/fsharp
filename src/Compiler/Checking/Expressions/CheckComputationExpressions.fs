@@ -1085,6 +1085,9 @@ let tryRebindCeLetWithBangRhs (ceenv: ComputationExpressionContext<'a>) isRec m 
         | SynExpr.ForEach _ -> expr
         | leaf -> SynExpr.YieldOrReturn((false, true), leaf, leaf.Range, SynExprYieldOrReturnTrivia.Zero)
 
+    // Only a single, non-inline, non-mutable, non-recursive plain 'let' binding to a simple value pattern
+    // whose linear head chain reaches a bang is rewritten. A 'use', a bang buried inside a 'try', and a
+    // 'match!'/bang not on that spine are deliberately out of scope and keep reporting FS0750.
     match binds with
     | [ SynBinding(headPat = pat; isInline = false; isMutable = false; expr = rhs; debugPoint = spBind) as binding ] when
         not (ceenv.isQuery || isRec) && isSimpleValuePat pat && spineHasBang rhs

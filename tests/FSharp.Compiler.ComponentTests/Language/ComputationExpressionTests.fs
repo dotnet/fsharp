@@ -2799,3 +2799,69 @@ let test() =
         |> typecheck
         |> shouldFail
         |> withErrorCode 750
+
+    // Only a plain 'let' is rewritten; a 'use' whose RHS is a bang head-chain is left to the 'use' arm
+    // and keeps reporting FS0750. Pinning the boundary so it can't drift into a silent rewrite.
+    [<Fact>]
+    let ``Issue 19457 - use binding with bang RHS is out of scope`` () =
+        FSharp """
+module Test
+open System.Threading.Tasks
+let test() =
+    task {
+        use a =
+            let! b = Task.FromResult 42
+            b
+        return a
+    }
+        """
+        |> asLibrary
+        |> typecheck
+        |> shouldFail
+        |> withErrorCode 750
+
+    // The rewrite only looks through the linear let/let!/use!/do! head chain, not into a 'try', so a bang
+    // buried inside a 'try' in the RHS is not lifted and keeps reporting FS0750.
+    [<Fact>]
+    let ``Issue 19457 - bang inside a try in the RHS is out of scope`` () =
+        FSharp """
+module Test
+open System.Threading.Tasks
+let test() =
+    task {
+        let a =
+            try
+                let! b = Task.FromResult 42
+                b
+            with _ -> 0
+        return a
+    }
+        """
+        |> asLibrary
+        |> typecheck
+        |> shouldFail
+        |> withErrorCode 750
+
+    // Running the RHS as a nested computation means the builder must supply the members that computation
+    // needs. A builder with 'Bind' but no 'Return' now reports the missing member (FS0708) rather than
+    // FS0750; the diagnostic still names exactly what to add.
+    [<Fact>]
+    let ``Issue 19457 - minimal builder without Return reports the missing member`` () =
+        FSharp """
+module Test
+type MinBuilder() =
+    member _.Bind(x, f) = f x
+let mb = MinBuilder()
+let test() =
+    mb {
+        let a =
+            let! b = 41
+            b
+        return a
+    }
+        """
+        |> asLibrary
+        |> typecheck
+        |> shouldFail
+        |> withErrorCode 708
+        |> withDiagnosticMessageMatches "'Return'"
