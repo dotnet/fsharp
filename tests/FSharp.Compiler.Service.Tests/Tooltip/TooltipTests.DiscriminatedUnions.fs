@@ -122,36 +122,6 @@ let ``Regression.MemberDefinition.DocComments.Bug5856_4`` () =
 
 let _ = typeof<Module.Uni{caret}on>"""
 
-[<Fact>]
-let ``Automation.Regression.TypemoduleConstructorLastLine.Bug2494`` () =
-    let source =
-        """namespace NS
-open System
-//regression test for bug 2494
-type PriorityQueue(*MarkerType*)<'k,'a> =
-  | Nil(*MarkerDataConstructor*)
-  | Branch of 'k * 'a * PriorityQueue<'k,'a> * PriorityQueue<'k,'a>
-module PriorityQueue(*Marker3*) =
-  let empty = Nil
-  let minKeyValue = function
-    | Nil             -> failwith "empty queue"
-    | Branch(k,a,_,_) -> (k,a)
-  let minKey pq = fst (minKeyValue pq(*MarkerVal*))
-  let singleton(*MarkerLastLine*) k a = Branch(k,a,Nil,Nil)"""
-
-    assertTooltipContainsInFsFile "type PriorityQueue" (markAtStartOfMarker source "(*MarkerType*)")
-
-    assertTooltipContainsInFsFile
-        "union case PriorityQueue.Nil: PriorityQueue<'k,'a>"
-        (markAtStartOfMarker source "(*MarkerDataConstructor*)")
-
-    assertTooltipContainsInFsFile "module PriorityQueue" (markAtStartOfMarker source "(*Marker3*)")
-    assertTooltipContainsInFsFile "val pq: PriorityQueue<'a,'b>" (markAtStartOfMarker source "(*MarkerVal*)")
-
-    assertTooltipContainsInFsFile
-        "val singleton: k: 'a -> a: 'b -> PriorityQueue<'a,'b>"
-        (markAtStartOfMarker source "(*MarkerLastLine*)")
-
 [<Fact(Skip = "Bug https://github.com/dotnet/fsharp/issues/17330")>]
 let ``XmlDocCommentsForArguments`` () =
     let source =

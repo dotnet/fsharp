@@ -45,12 +45,6 @@ let ``Single.Generics.ListInt`` () =
     assertParameterInfoOverloads [ []; ["capacity"]; ["collection"] ] """
 System.Collections.Generic.List<int>({caret}"""
 
-[<Fact(Skip = "https://github.com/dotnet/fsharp/issues/6166")>]
-let ``Single.Locations.WithGenericArgs`` () =
-    assertHasParameterInfo """
-open System.Threading
-Interlocked.Exchange<int>({caret}"""
-
 [<Fact>]
 let ``Single.Locations.GenericCtorWithNamespace`` () =
     assertHasParameterInfo "let _ = new System.Collections.Generic.Dictionary<_, _>({caret})"

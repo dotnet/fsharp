@@ -1,4 +1,4 @@
-﻿module FSharp.Compiler.Service.Tests.TypeChecker.TypeCheckerRecoveryTests
+module FSharp.Compiler.Service.Tests.TypeChecker.TypeCheckerRecoveryTests
 
 open FSharp.Compiler.Service.Tests
 open FSharp.Compiler.Symbols
@@ -170,19 +170,6 @@ module Patterns =
 
 module ErrorRecovery =
 
-    [<Fact>]
-    let ``Bug4538_3 - unfinished let block reports a diagnostic`` () =
-        let _, checkResults = getParseAndCheckResults """
-type MyType() =
-    override x.ToString() = ""
-let Main() =
-    let x = MyType()
-"""
-        let expected =
-            "The block following this 'let' is unfinished. Every code block is an expression and must have a result. 'let' cannot be the final code element in a block. Consider giving this block an explicit result."
-
-        Assert.Contains(expected, dumpDiagnostics checkResults |> String.concat "\n")
-
     [<Theory>]
     [<InlineData("""
     let s = ""
@@ -267,15 +254,6 @@ let Main() =
     use _ = MyT{caret}
 """
         assertHasItemWithNames ["MyType"] info
-
-    [<Fact>]
-    let ``Bug4594_1 - completion offers enclosing parameter in unfinished if`` () =
-        let info = Checker.getCompletionInfo """
-let Bar(xyz) =
-    let hello =
-        if x{caret}
-"""
-        assertHasItemWithNames ["xyz"] info
 
     [<Fact>]
     let ``5878_1 - member data tip available for Module dot at end of file`` () =

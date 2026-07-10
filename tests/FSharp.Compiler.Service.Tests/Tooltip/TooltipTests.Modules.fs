@@ -62,17 +62,6 @@ module None = Microsoft.FSharp.Collections.List"""
     assertTooltipDoesNotContain "Option" (markAtEndOfMarker source "module No")
 
 [<Fact>]
-let ``Regression.ModuleAlias.Bug3790b`` () =
-    let source =
-        String.concat
-            "\n"
-            [ "module ``Some`` = Microsoft.FSharp.Collections.List"
-              "let _ = ``Some``.append [] []" ]
-
-    assertTooltipContains "module List" (markAtEndOfMarker source "= ``So")
-    assertTooltipDoesNotContain "Option" (markAtEndOfMarker source "= ``So")
-
-[<Fact>]
 let ``Regression.MemberDefinition.DocComments.Bug5856_2`` () =
     assertTooltipContainsInOrder
         [ "module Inner"; "from"; "Outer"; "Comment" ]

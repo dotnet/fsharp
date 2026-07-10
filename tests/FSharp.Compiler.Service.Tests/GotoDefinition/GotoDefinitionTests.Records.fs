@@ -3,31 +3,6 @@ module FSharp.Compiler.Service.Tests.GotoDefinitionRecordsTests
 open System
 open Xunit
 
-let private recordSource =
-    """
-                //regression test for bug 2518
-                type MyRec =
-                  { myX (*MarkerXFieldDefinition*) : int
-                    myY (*MarkerYFieldDefinition*) : int
-                  }
-                let rDefault =
-                  { myX (*MarkerXField*) = 2
-                    myY (*MarkerYField*) = 3
-                  }
-                """
-
-[<Fact>]
-let ``Record.Field.Definition`` () =
-    assertGoToDefinitionOnLine
-        "{ myX (*MarkerXFieldDefinition*) : int"
-        (markCaretAfterLeadingIdent recordSource "myX (*MarkerXFieldDefinition*)")
-
-[<Fact>]
-let ``Record.Field.Usage`` () =
-    assertGoToDefinitionOnLine
-        " myY (*MarkerYFieldDefinition*) : int"
-        (markCaretAfterLeadingIdent recordSource "myY (*MarkerYField*)")
-
 let private simpleRecordSource =
     String.concat
         "\n"

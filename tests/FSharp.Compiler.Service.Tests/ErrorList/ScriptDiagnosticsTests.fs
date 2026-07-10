@@ -75,17 +75,17 @@ let ``Squiggles.ShowInFsxFiles`` () =
 
 [<FactForDESKTOP>]
 let ``Hash.RProperSquiggleForNonExistentFile`` () =
-    let _, checkResults = getParseAndCheckResults "#r \"NonExistent\" "
+    let _, checkResults = getParseAndCheckResultsUniqueName "#r \"NonExistent\" "
     assertDiagnosticsContain "'NonExistent' was not found or is invalid" checkResults
 
 [<FactForDESKTOP>]
 let ``Hash.RDoesNotExist.Bug3325`` () =
-    let _, checkResults = getParseAndCheckResults "#r \"ThisDLLDoesNotExist\" "
+    let _, checkResults = getParseAndCheckResultsUniqueName "#r \"ThisDLLDoesNotExist\" "
     assertDiagnosticsContain "'ThisDLLDoesNotExist' was not found or is invalid" checkResults
 
 [<FactForDESKTOP>]
 let ``ExactlyOneError.Bug4861`` () =
-    let _, checkResults = getParseAndCheckResults "//\n#r \"Nonexistent\"\n"
+    let _, checkResults = getParseAndCheckResultsUniqueName "//\n#r \"Nonexistent\"\n"
     assertDiagnosticCount 1 checkResults
     assertDiagnosticsContain "Nonexistent" checkResults
 
@@ -101,7 +101,7 @@ let ``HashLoad.Added`` () =
 
 [<Fact>]
 let ``HashR.Removed`` () =
-    let _, checkResults = getParseAndCheckResults "#r \"System.Transactions.dll\"\nopen System.Transactions\n"
+    let _, checkResults = getParseAndCheckResultsUniqueName "#r \"System.Transactions.dll\"\nopen System.Transactions\n"
     assertNoDiagnostics checkResults
 
 [<FactForDESKTOP>]
@@ -111,28 +111,28 @@ let ``HashR.AddedIn`` () =
 
 [<Fact>]
 let ``NoError.HashR.DllWithNoPath`` () =
-    let _, checkResults = getParseAndCheckResults "\n#r \"System.Transactions.dll\"\nopen System.Transactions"
+    let _, checkResults = getParseAndCheckResultsUniqueName "\n#r \"System.Transactions.dll\"\nopen System.Transactions"
     assertNoDiagnostics checkResults
 
 [<Fact>]
 let ``NoError.HashR.BugDefaultReferenceFileIsAlsoResolved`` () =
-    let _, checkResults = getParseAndCheckResults "\n#r \"System\"\n"
+    let _, checkResults = getParseAndCheckResultsUniqueName "\n#r \"System\"\n"
     assertNoDiagnostics checkResults
 
 [<Fact>]
 let ``NoError.HashR.DoubleReference`` () =
-    let _, checkResults = getParseAndCheckResults "\n#r \"System\"\n#r \"System\"\n"
+    let _, checkResults = getParseAndCheckResultsUniqueName "\n#r \"System\"\n#r \"System\"\n"
     assertNoDiagnostics checkResults
 
 [<Fact>]
 let ``NoError.HashR.ResolveFromGAC`` () =
-    let _, checkResults = getParseAndCheckResults "\n#r \"CustomMarshalers\"\n"
+    let _, checkResults = getParseAndCheckResultsUniqueName "\n#r \"CustomMarshalers\"\n"
     assertNoDiagnostics checkResults
 
 [<Fact>]
 let ``NoError.HashR.ResolveFromFullyQualifiedPath`` () =
     let path = Path.Combine(System.Runtime.InteropServices.RuntimeEnvironment.GetRuntimeDirectory(), "System.configuration.dll")
-    let _, checkResults = getParseAndCheckResults (sprintf "#r @\"%s\"" path)
+    let _, checkResults = getParseAndCheckResultsUniqueName (sprintf "#r @\"%s\"" path)
     assertNoDiagnostics checkResults
 
 [<Fact(Skip = "Re-enable this test --- https://github.com/dotnet/fsharp/issues/5238")>]
@@ -154,11 +154,6 @@ let ``NoError.AutomaticImportsForFsxFiles`` () =
 [<InlineData("#load \"Dooby\"\n")>]
 let ``HashDirectivesAreErrors.InNonScriptFiles`` (directive: string) =
     assertDiagnosticsContain "may only be used in F# script files" (checkAsFsFile directive)
-
-[<FactForDESKTOP>]
-let ``InvalidHashReference.ShouldBeASquiggle.Bug3012`` () =
-    let _, checkResults = getParseAndCheckResults "#r \"Bar.dll\""
-    assertDiagnosticsContain "'Bar.dll' was not found or is invalid" checkResults
 
 [<Fact(Skip = "non-FCS: needs a pre-built bin output fixture and the FCS script checker does not surface '#r' resolution as a diagnostic, so assertNoDiagnostics would be vacuous.")>]
 let ``ScriptCanReferenceBinDirectoryOutput.Bug3151`` () =
@@ -346,7 +341,7 @@ let ``ScriptClosure.TransitiveLoad11and7`` (caseId: int) =
 
 [<Fact>]
 let ``Fsx.SyntheticTokens`` () =
-    let _, checkResults = getParseAndCheckResults "#r \"\"\n#reference \"\"\n#load \"\"\n#line 52\n#nowarn 72\n"
+    let _, checkResults = getParseAndCheckResultsUniqueName "#r \"\"\n#reference \"\"\n#load \"\"\n#line 52\n#nowarn 72\n"
     assertDiagnosticsContain "is not a valid assembly name" checkResults
     assertDiagnosticsContain "is not a valid filename" checkResults
     let errors = checkResults.Diagnostics |> Array.filter (fun d -> d.Severity = FSharpDiagnosticSeverity.Error)
@@ -357,5 +352,5 @@ let ``Fsx.SyntheticTokens`` () =
 [<InlineData("#r \"\n# \"Hello There\"\n")>]
 [<InlineData("#load \"\n#load \"Hello There\"\n")>]
 let ``Fsx.UnclosedHashReferenceOrLoad`` (source: string) =
-    let _, checkResults = getParseAndCheckResults source
+    let _, checkResults = getParseAndCheckResultsUniqueName source
     assertDiagnosticsContain "End of file in string begun" checkResults

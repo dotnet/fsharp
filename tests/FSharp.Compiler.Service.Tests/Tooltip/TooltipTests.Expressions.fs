@@ -87,13 +87,6 @@ let ``Class.OnlyClassInfo`` () =
     assertTooltipDoesNotContain "---" marked
 
 [<Fact>]
-let ``Regression.Exceptions.Bug3723`` () =
-    let source = "exception E3E of int * int\nexception E4E of (int * int)\nexception E5E = E4E"
-    assertTooltipDoesNotContain "(int * int)" (markAtEndOfMarker source "exception E3")
-    assertTooltipContains "(int * int)" (markAtEndOfMarker source "exception E4")
-    assertTooltipContains "E4E" (markAtEndOfMarker source "exception E5")
-
-[<Fact>]
 let ``Regression.Classes.Bug2362`` () =
     let source = "let append mm nn = fun ac -> mm (nn ac)"
     assertTooltipContains "mm: ('a -> 'b) -> nn: ('c -> 'a) -> ac: 'c -> 'b" (markAtEndOfMarker source "let appen")

@@ -116,7 +116,7 @@ module XmlComment =
 
 let private referenceTooltipAtCaret (markedSource: string) =
     let context = SourceContext.fromMarkedSource markedSource
-    let _, checkResults = getParseAndCheckResults context.Source
+    let _, checkResults = getParseAndCheckResultsUniqueName context.Source
     checkResults.GetToolTip(context.CaretPos.Line, context.CaretPos.Column, context.LineText, ([]: string list), FSharpTokenTag.String)
     |> foldToolTip
 

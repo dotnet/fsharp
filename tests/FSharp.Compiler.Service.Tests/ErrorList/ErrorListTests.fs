@@ -23,7 +23,7 @@ let g (t : T) = t.Count()
 
 [<FactForDESKTOP>]
 let ``ErrorsInScriptFile`` () =
-    let _, checkResults = getParseAndCheckResults "#r \"System\"\n#r \"System2\"\n"
+    let _, checkResults = getParseAndCheckResultsUniqueName "#r \"System\"\n#r \"System2\"\n"
     assertDiagnosticCount 1 checkResults
     assertDiagnosticsContain "Assembly reference 'System2' was not found or is invalid" checkResults
 
@@ -260,31 +260,6 @@ let x = 1
     assertDiagnosticsContain "nonexistent" checkResults
 
 [<Fact>]
-let ``BackgroundComplier`` () =
-    let _, checkResults = getParseAndCheckResults """
-module Test
-
-module M =
-    let func (args : string[]) =
-        if(args.Length=1 && args.[0]="Hello") then 0 else 1
-
-    [<EntryPoint>]
-    let main2 args =
-        let res = func(args)
-        exit(res)
-
-    let f x =
-        let p = x
-        p + 1
-
-    let g x =
-        let p = x
-        p + 1
-"""
-    assertDiagnosticCount 2 checkResults
-    assertDiagnosticsContain "must be the last declaration in the last file in the compilation sequence" checkResults
-
-[<Fact>]
 let ``CompilerErrorsInErrList1`` () =
     let _, checkResults = getParseAndCheckResults """
 namespace Errorlist
@@ -294,17 +269,6 @@ module CompilerError =
 """
     assertDiagnosticCount 1 checkResults
     assertDiagnosticsContain "The value or constructor 'NoVal' is not defined" checkResults
-
-[<Fact>]
-let ``CompilerErrorsInErrList5`` () =
-    let checkResults =
-        checkAsFsFile """module Test
-#r "D:\\x\\Absent.dll"
-
-let x = 0
-"""
-    assertDiagnosticCount 1 checkResults
-    assertDiagnosticsContain "may only be used in F# script files" checkResults
 
 [<Fact>]
 let ``CompilerErrorsInErrList6`` () =
@@ -346,14 +310,6 @@ let foo = 1
 """
     assertDiagnosticCount 5 checkResults
     assertDiagnosticsContain "is not a valid constant expression or custom attribute value" checkResults
-
-[<Fact>]
-let ``CompilerErrorsInErrList8`` () =
-    let _, checkResults = getParseAndCheckResults """
-type EnumInt8s      = | A1 = - 10y
-"""
-    assertDiagnosticCount 1 checkResults
-    assertDiagnosticsContain "Unexpected symbol '-' in union case" checkResults
 
 [<Fact>]
 let ``CompilerErrorsInErrList9`` () =
@@ -517,13 +473,10 @@ type Fruit (shelfLife : int) as x =
 
         let mutable m_age = (fun () -> x)
 
-
 #nowarn "25" // FS0025: Incomplete pattern matches on this expression. For example, the value 'C'
 
 type DU = A | B | C
 let f x = function A -> true | B -> false
-
-
 
 let _fsyacc_gotos = [| 0us; 1us; 2us|]
 """

@@ -364,6 +364,12 @@ let getParseResultsOfSignatureFile (source: string) =
 let getParseAndCheckResults (source: string) =
     parseAndCheckScript("Test.fsx", source)
 
+/// Reference/#load script tests must not share the checker's filename-keyed script-closure
+/// cache: a shared "Test.fsx" lets one test's closure (its resolved/failed #r references and
+/// their diagnostics) leak into the next. Give each such test a unique script identity.
+let getParseAndCheckResultsUniqueName (source: string) =
+    parseAndCheckScript(Guid.NewGuid().ToString("N") + ".fsx", source)
+
 let getParseAndCheckResultsWithOptions options source =
     parseAndCheckScriptWithOptions ("Test.fsx", source, options)
 

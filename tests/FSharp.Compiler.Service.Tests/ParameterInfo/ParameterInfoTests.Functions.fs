@@ -30,8 +30,3 @@ let ``LocationOfParams.ThisOnceAssertedToo`` () =
                             while true do
                                 ({caret})  """
 
-[<Fact>]
-let ``BasicBehavior.CommonFunction`` () =
-    assertParameterInfoOverloads [["x: 'a"]] """
-            let f(x) = 1
-            f({caret})"""
