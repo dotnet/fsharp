@@ -1,5 +1,6 @@
 namespace FSharp.Compiler.Service.Tests.HotReload
 
+open System.Collections.Generic
 open Xunit
 
 open FSharp.Compiler.CompilerGlobalState
@@ -170,3 +171,38 @@ module GeneratedNamesTests =
         expectMismatch "interface set" { baselineShape with InterfaceTypes = [] }
         expectMismatch "field type multiset" { baselineShape with FieldTypeNames = [ "class System.String" ] }
         expectMismatch "method set" { baselineShape with MethodNameAndArities = [ ".ctor", 0 ] }
+
+    [<Fact>]
+    let ``synthesized baseline aliases exclude tokens paired with another fresh type`` () =
+        let pairings = Dictionary<string, string>()
+        pairings["Template.pipe@hotreload"] <- "Template.pipe@hotreload-21"
+
+        let candidates =
+            [|
+                "Template.pipe@hotreload", 0x02000001
+                "Template.pipe@hotreload-1", 0x02000002
+            |]
+
+        let availableForAnotherType =
+            filterAvailableBaselineTypeMatches pairings "Template.pipe@hotreload-23" candidates
+
+        let availableForSameType =
+            filterAvailableBaselineTypeMatches pairings "Template.pipe@hotreload-21" candidates
+
+        Assert.Equal<(string * int)[]>([| "Template.pipe@hotreload-1", 0x02000002 |], availableForAnotherType)
+        Assert.Equal<(string * int)[]>(candidates, availableForSameType)
+
+    [<Theory>]
+    [<InlineData(false, false, false)>]
+    [<InlineData(false, true, false)>]
+    [<InlineData(true, false, false)>]
+    [<InlineData(true, true, true)>]
+    let ``synthesized alias recovery requires recorded snapshot and in-process artifacts``
+        usesRecordedSnapshot
+        hasWholeModuleArtifacts
+        expected
+        =
+        Assert.Equal(
+            expected,
+            shouldFilterSynthesizedBaselineAliases usesRecordedSnapshot hasWholeModuleArtifacts
+        )

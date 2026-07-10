@@ -1488,6 +1488,122 @@ let probe input =
             Assert.NotEmpty freshEndpointNames)
 
     [<Fact>]
+    let ``In-process edit applies with unrelated inline computation-expression helpers`` () =
+        withProjectDir "fcs-hotreload-session-inprocess-unrelated-helpers" (fun projectDir ->
+            let markupPath = Path.Combine(projectDir, "Markup.fs")
+            let layoutPath = Path.Combine(projectDir, "Layout.fs")
+            let dllPath = Path.Combine(projectDir, "UnrelatedHelpers.dll")
+
+            // A full in-process emit regenerates helpers from every file, including this
+            // unchanged computation expression. Its synthesized-name aliases must remain a
+            // one-to-one mapping even though the semantic edit is in the following file.
+            let markupSource =
+                """
+namespace DslIsolation
+
+module Markup =
+    open System.Runtime.CompilerServices
+
+    type FragmentBuilder() =
+        member _.Add(_text: string) = ()
+
+        member inline _.Combine
+            ([<InlineIfLambda>] first: FragmentBuilder -> unit,
+             [<InlineIfLambda>] second: FragmentBuilder -> unit)
+            : FragmentBuilder -> unit =
+            fun builder ->
+                first builder
+                second builder
+
+        member inline _.Zero() : FragmentBuilder -> unit = ignore
+
+        member inline _.Delay([<InlineIfLambda>] delay: unit -> FragmentBuilder -> unit) : FragmentBuilder -> unit =
+            delay()
+
+        member inline this.Yield(text: string) : FragmentBuilder -> unit = fun _ -> this.Add text
+
+        member inline this.Run([<InlineIfLambda>] runExpr: FragmentBuilder -> unit) =
+            runExpr this
+            this
+
+    let render value =
+        let id = value |> string
+
+        FragmentBuilder() {
+            "Value: " + (value |> string)
+            [ value; value + 1 ] |> List.map string |> String.concat ","
+        }
+
+        |> ignore
+
+        id
+
+    let renderDetails value =
+        FragmentBuilder() {
+            "Details: " + (value |> string)
+            [ value; value + 1; value + 2 ]
+            |> List.filter (fun item -> item > 0)
+            |> List.map string
+            |> String.concat ","
+        }
+        |> ignore
+
+        value |> string
+
+    let handlers : (int -> string) list =
+        [
+            fun value -> render value
+            fun value -> renderDetails (value + 1)
+        ]
+"""
+
+            let layoutSource heading =
+                $"""
+namespace DslIsolation
+
+module Layout =
+    let heading () = "{heading}"
+"""
+
+            let baselineLayout = layoutSource "original"
+            let editedLayout = layoutSource "updated"
+
+            File.WriteAllText(markupPath, markupSource.TrimStart())
+            File.WriteAllText(layoutPath, baselineLayout.TrimStart())
+
+            let checker = createChecker ()
+
+            let options =
+                prepareMultiFileProjectOptions
+                    checker
+                    [| markupPath; layoutPath |]
+                    dllPath
+                    markupSource
+                    []
+
+            checker.InvalidateAll()
+            compileProject checker options true
+
+            use session = checker.CreateHotReloadSession()
+            addProjectOrFail session (createProjectSnapshot options)
+
+            let headingToken =
+                let baselineView = projectViewOrFail session (createProjectSnapshot options)
+
+                baselineView.Baseline.MethodTokens
+                |> Map.toSeq
+                |> Seq.pick (fun (methodKey, token) ->
+                    if methodKey.Name = "heading" then Some token else None)
+
+            let delta =
+                withEnvVar "FSHARP_HOTRELOAD_INPROCESS_COMPILE" "1" (fun () ->
+                    File.WriteAllText(layoutPath, editedLayout.TrimStart())
+                    checker.NotifyFileChanged(layoutPath, options) |> Async.RunImmediate
+                    emitOrFail session (createProjectSnapshot options))
+
+            Assert.Contains(headingToken, delta.UpdatedMethods))
+
+    [<Fact>]
     let ``G2 flag-on in-process line edit above mixed endpoint bucket preserves closure names`` () =
         let routingLibrarySource =
             """

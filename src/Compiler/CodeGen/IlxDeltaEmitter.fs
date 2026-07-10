@@ -191,6 +191,25 @@ let internal classifyEntityTokenRemapKind (token: int) : EntityTokenRemapKind =
             )
         )
 
+/// Keeps synthesized baseline aliases that are either unpaired or already paired with the
+/// current fresh type. This makes the fresh-to-baseline TypeDef relation injective while still
+/// allowing a repeated lookup of the same pairing during the emitter's recursive walks.
+let internal filterAvailableBaselineTypeMatches
+    (newTypeNameByBaseline: Dictionary<string, string>)
+    (newFullName: string)
+    (matches: (string * 'Token)[])
+    =
+    matches
+    |> Array.filter (fun (matchedName, _) ->
+        match newTypeNameByBaseline.TryGetValue matchedName with
+        | true, existingNewName -> String.Equals(existingNewName, newFullName, StringComparison.Ordinal)
+        | false, _ -> true)
+
+/// Enables baseline-alias recovery only when a complete recorded name snapshot accompanies a
+/// whole-module in-process emit. Other emit paths keep their established fail-closed mapping.
+let internal shouldFilterSynthesizedBaselineAliases usesRecordedSnapshot hasWholeModuleArtifacts =
+    usesRecordedSnapshot && hasWholeModuleArtifacts
+
 /// Helper that produces an empty delta payload.
 let private emptyDelta: IlxDelta =
     {
@@ -3860,6 +3879,19 @@ let emitDeltaWithDebugData (freshDebugPdb: byte[] option) (request: IlxDeltaRequ
             | true, positionalMatch -> Some positionalMatch
             | _ -> None
 
+        // Full in-process emits regenerate helpers outside the edited file. Several of those
+        // helpers can receive the same synthesized-name aliases, but one baseline TypeDef token
+        // may still be paired with only one fresh type. Recorded snapshots provide the complete
+        // allocation order needed to choose the next alias. Restrict this recovery to the
+        // whole-module in-process artifact path: external compiles retain their established
+        // mapping behavior, including state-machine shape edits. Reconstructed legacy snapshots
+        // keep the original fail-closed behavior as well.
+        let availableBaselineMatches =
+            if shouldFilterSynthesizedBaselineAliases usesRecordedSynthesizedSnapshot request.EmittedArtifacts.IsSome then
+                filterAvailableBaselineTypeMatches newTypeNameByBaseline newFullName baselineMatches
+            else
+                baselineMatches
+
         let tryGetShapeCompatibleAliasMatch (matches: (string * int)[]) =
             let freshShape =
                 shapeOfSynthesizedTypeDef typeDef
@@ -3906,7 +3938,7 @@ let emitDeltaWithDebugData (freshDebugPdb: byte[] option) (request: IlxDeltaRequ
             None
 
         let baselineNameOpt =
-            match baselineMatches with
+            match availableBaselineMatches with
             | [||] -> tryGetPositionalBaselineMatch ()
             | [| single |] ->
                 if shouldAddShapeChangedResumableHelper (fst single) then
