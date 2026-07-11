@@ -365,8 +365,7 @@ let ``Test ManyProjectsStressTest all symbols`` () =
   let checker = ManyProjectsStressTest.MakeCheckerForStressTest true
   for i in 1 .. 10 do
     printfn "stress test iteration %d (first may be slow, rest fast)" i
-    let projectsResults = [ for p in manyProjectsStressTest.Projects -> p, checker.ParseAndCheckProject(p.Options) |> Async.
-                                                                                                                          RunSynchronouslyImmediate ]
+    let projectsResults = [ for p in manyProjectsStressTest.Projects -> p, checker.ParseAndCheckProject(p.Options) |> Async.RunSynchronouslyImmediate ]
     let jointProjectResults = checker.ParseAndCheckProject(manyProjectsStressTest.JointProject.Options) |> Async.RunSynchronouslyImmediate
 
     let vsFromJointProject =
@@ -933,8 +932,7 @@ module GenerativeTypeProviderFallbackTest =
             let options = optionsTestProject2 testProjectNotCompiledSimulatedOutput
             let fileName = __SOURCE_DIRECTORY__ ++ @"../service/data/TestProject2/TestProject2.fs"
             let fileSource = FileSystem.OpenFileForReadShim(fileName).ReadAllText()
-            let fileParseResults, fileCheckAnswer = checker.ParseAndCheckFileInProject(fileName, 0, SourceText.ofString fileSource, options) |> Async.
-                                                                                                                                                    RunSynchronouslyImmediate
+            let fileParseResults, fileCheckAnswer = checker.ParseAndCheckFileInProject(fileName, 0, SourceText.ofString fileSource, options) |> Async.RunSynchronouslyImmediate
 
             let fileCheckResults =
                 match fileCheckAnswer with
@@ -960,8 +958,7 @@ module GenerativeTypeProviderFallbackTest =
             let options = optionsTestProject2 testProjectCompiledOutput
             let fileName = __SOURCE_DIRECTORY__ ++ @"../service/data/TestProject2/TestProject2.fs"
             let fileSource = FileSystem.OpenFileForReadShim(fileName).ReadAllText()
-            let fileParseResults, fileCheckAnswer = checker.ParseAndCheckFileInProject(fileName, 0, SourceText.ofString fileSource, options) |> Async.
-                                                                                                                                                    RunSynchronouslyImmediate
+            let fileParseResults, fileCheckAnswer = checker.ParseAndCheckFileInProject(fileName, 0, SourceText.ofString fileSource, options) |> Async.RunSynchronouslyImmediate
 
             let fileCheckResults =
                 match fileCheckAnswer with

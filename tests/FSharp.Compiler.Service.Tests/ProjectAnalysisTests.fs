@@ -117,8 +117,7 @@ module ClearLanguageServiceRootCachesTest =
         let checker = FSharpChecker.Create()
     
         let test () =
-            let _, checkFileAnswer = checker.ParseAndCheckFileInProject(Project1.fileName1, 0, Project1.fileSource1, Project1.options) |> Async.
-                                                                                                                                              RunSynchronouslyImmediate
+            let _, checkFileAnswer = checker.ParseAndCheckFileInProject(Project1.fileName1, 0, Project1.fileSource1, Project1.options) |> Async.RunSynchronouslyImmediate
 
             match checkFileAnswer with
             | FSharpCheckFileAnswer.Aborted -> failwith "should not be aborted"
@@ -574,11 +573,9 @@ let ``Test file explicit parse symbols`` () =
 
 
     let wholeProjectResults = checker.ParseAndCheckProject(Project1.options) |> Async.RunSynchronouslyImmediate
-    let parseResults1 = checker.ParseFile(Project1.fileName1, Project1.fileSource1, Project1.parsingOptions)  |> Async.
-                                                                                                                     RunSynchronouslyImmediate
+    let parseResults1 = checker.ParseFile(Project1.fileName1, Project1.fileSource1, Project1.parsingOptions)  |> Async.RunSynchronouslyImmediate
 
-    let parseResults2 = checker.ParseFile(Project1.fileName2, Project1.fileSource2, Project1.parsingOptions)  |> Async.
-                                                                                                                     RunSynchronouslyImmediate
+    let parseResults2 = checker.ParseFile(Project1.fileName2, Project1.fileSource2, Project1.parsingOptions)  |> Async.RunSynchronouslyImmediate
 
     let checkResults1 =
         checker.CheckFileInProject(parseResults1, Project1.fileName1, 0, Project1.fileSource1, Project1.options)
@@ -623,11 +620,9 @@ let ``Test file explicit parse all symbols`` () =
 
 
     let wholeProjectResults = checker.ParseAndCheckProject(Project1.options) |> Async.RunSynchronouslyImmediate
-    let parseResults1 = checker.ParseFile(Project1.fileName1, Project1.fileSource1, Project1.parsingOptions) |> Async.
-                                                                                                                    RunSynchronouslyImmediate
+    let parseResults1 = checker.ParseFile(Project1.fileName1, Project1.fileSource1, Project1.parsingOptions) |> Async.RunSynchronouslyImmediate
 
-    let parseResults2 = checker.ParseFile(Project1.fileName2, Project1.fileSource2, Project1.parsingOptions) |> Async.
-                                                                                                                    RunSynchronouslyImmediate
+    let parseResults2 = checker.ParseFile(Project1.fileName2, Project1.fileSource2, Project1.parsingOptions) |> Async.RunSynchronouslyImmediate
 
     let checkResults1 =
         checker.CheckFileInProject(parseResults1, Project1.fileName1, 0, Project1.fileSource1, Project1.options)
@@ -2618,15 +2613,13 @@ let ``Test Project16 all symbols`` () =
 let ``Test Project16 sig symbols are equal to impl symbols`` () =
 
     let checkResultsSig =
-        checker.ParseAndCheckFileInProject(Project16.sigFileName1, 0, Project16.sigFileSource1, Project16.options)  |> Async.
-                                                                                                                           RunSynchronouslyImmediate
+        checker.ParseAndCheckFileInProject(Project16.sigFileName1, 0, Project16.sigFileSource1, Project16.options)  |> Async.RunSynchronouslyImmediate
         |> function
             | _, FSharpCheckFileAnswer.Succeeded(res) -> res
             | _ -> failwithf "Parsing aborted unexpectedly..."
 
     let checkResultsImpl =
-        checker.ParseAndCheckFileInProject(Project16.fileName1, 0, Project16.fileSource1, Project16.options)  |> Async.
-                                                                                                                     RunSynchronouslyImmediate
+        checker.ParseAndCheckFileInProject(Project16.fileName1, 0, Project16.fileSource1, Project16.options)  |> Async.RunSynchronouslyImmediate
         |> function
             | _, FSharpCheckFileAnswer.Succeeded(res) -> res
             | _ -> failwithf "Parsing aborted unexpectedly..."
@@ -4702,8 +4695,7 @@ module internal Project35b =
 [<Fact(Skip = "Flaky, reenable when stable")>]
 let ``Test project35b Dependency files for ParseAndCheckFileInProject`` () =
     let checkFileResults =
-        checker.ParseAndCheckFileInProject(Project35b.fileName1, 0, Project35b.fileSource1, Project35b.options) |> Async.
-                                                                                                                       RunSynchronouslyImmediate
+        checker.ParseAndCheckFileInProject(Project35b.fileName1, 0, Project35b.fileSource1, Project35b.options) |> Async.RunSynchronouslyImmediate
         |> function
             | _, FSharpCheckFileAnswer.Succeeded(res) -> res
             | _ -> failwithf "Parsing aborted unexpectedly..."
@@ -4720,8 +4712,7 @@ let ``Test project35b Dependency files for ParseAndCheckFileInProject`` () =
 
 [<Fact(Skip = "Flaky, reenable when stable")>]
 let ``Test project35b Dependency files for GetBackgroundCheckResultsForFileInProject`` () =
-    let _,checkFileResults = checker.GetBackgroundCheckResultsForFileInProject(Project35b.fileName1, Project35b.options) |> Async.
-                                                                                                                                RunSynchronouslyImmediate
+    let _,checkFileResults = checker.GetBackgroundCheckResultsForFileInProject(Project35b.fileName1, Project35b.options) |> Async.RunSynchronouslyImmediate
 
     for d in checkFileResults.DependencyFiles do
         printfn "GetBackgroundCheckResultsForFileInProject dependency: %s" d
@@ -5362,16 +5353,14 @@ let test2() = test()
 [<Fact>]
 let ``Test project42 to ensure cached checked results are invalidated`` () =
     let text2 = SourceText.ofString(FileSystem.OpenFileForReadShim(Project42.fileName2).ReadAllText())
-    let checkedFile2 = checker.ParseAndCheckFileInProject(Project42.fileName2, text2.GetHashCode(), text2, Project42.options) |> Async.
-                                                                                                                                     RunSynchronouslyImmediate
+    let checkedFile2 = checker.ParseAndCheckFileInProject(Project42.fileName2, text2.GetHashCode(), text2, Project42.options) |> Async.RunSynchronouslyImmediate
 
     match checkedFile2 with
     | _, FSharpCheckFileAnswer.Succeeded(checkedFile2Results) ->
         Assert.Empty(checkedFile2Results.Diagnostics)
         FileSystem.OpenFileForWriteShim(Project42.fileName1).Write("""module File1""")
         try
-            let checkedFile2Again = checker.ParseAndCheckFileInProject(Project42.fileName2, text2.GetHashCode(), text2, Project42.options) |> Async.
-                                                                                                                                                  RunSynchronouslyImmediate
+            let checkedFile2Again = checker.ParseAndCheckFileInProject(Project42.fileName2, text2.GetHashCode(), text2, Project42.options) |> Async.RunSynchronouslyImmediate
 
             match checkedFile2Again with
             | _, FSharpCheckFileAnswer.Succeeded(checkedFile2AgainResults) ->
