@@ -16,7 +16,7 @@ open FSharp.Test.Assert
 open Xunit
 open FSharp.Test.Utilities
 
-#if !FSHARPCORE_USE_PACKAGE // TODO For 11.x, remove shimming to rely fully on shipped FSharp.Core variant
+#if FSHARPCORE_USE_PACKAGE // TODO when FSharp.Core package dep moves to a 11.x that includes RunSynchronouslyImmediate, remove shimming
 type Async with
     static member RunSynchronouslyImmediate (computation: Async<'T>, ?cancellationToken ) =
         let tcs = TaskCompletionSource<'T>()
