@@ -457,7 +457,7 @@ type AsyncModule() =
     [<Fact>]
     member _.``RunSynchronouslyImmediate propagates exception``() =
         Assert.Throws<InvalidOperationException>(fun () ->
-            async { return invalidOp "test" }
+            async { invalidOp "test" }
             |> Async.RunSynchronouslyImmediate
             |> ignore
         ) |> ignore
@@ -466,11 +466,8 @@ type AsyncModule() =
     member _.``RunSynchronouslyImmediate respects pre-cancelled token``() =
         use cts = new CancellationTokenSource()
         cts.Cancel()
-        // NOTE TaskCanceledException vs OperationCanceledException from RunSynchronously
-        Assert.Throws<TaskCanceledException>(fun () ->
-            Async.RunSynchronouslyImmediate(async { return 1 }, cancellationToken = cts.Token)
-            |> ignore
-        ) |> ignore
+        let oce = Assert.Throws<OperationCanceledException>(Action(fun () -> Async.RunSynchronouslyImmediate(async { () }, cancellationToken = cts.Token)))
+        Assert.Equal(cts.Token, oce.CancellationToken)
 
     [<Fact>]
     member _.``RunSynchronouslyImmediate works with Sleep``() =
