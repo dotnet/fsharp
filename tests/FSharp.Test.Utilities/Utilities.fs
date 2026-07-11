@@ -71,7 +71,7 @@ type FactForNETCOREAPPSkipOnSignedBuildAttribute() as this =
 // This file mimics how Roslyn handles their compilation references for compilation testing
 module Utilities =
 
-#if FSHARPCORE_USE_PACKAGE // TODO when FSharp.Core package dep moves to a 11.x that includes RunSynchronouslyImmediate, remove shimming
+#if !FSHARPCORE_USE_PACKAGE // TODO when FSharp.Core package dep moves to a 11.x that includes RunSynchronouslyImmediate, remove shimming
     type Async with
         static member RunSynchronouslyImmediate (computation: Async<'T>, ?cancellationToken) =
             let tcs = TaskCompletionSource<'T>()
