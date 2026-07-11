@@ -20,7 +20,7 @@ open FSharp.Test.Utilities
 type Async with
     static member RunSynchronouslyImmediate (computation: Async<'T>, ?cancellationToken ) =
         let tcs = TaskCompletionSource<'T>()
-        Async.StartWithContinuations(computation, tcs.SetResult, tcs.SetException, (fun _ -> tcs.SetCanceled()), ?cancellationToken = cancellationToken)
+        Async.StartWithContinuations(computation, tcs.SetResult, tcs.SetException, tcs.SetException, ?cancellationToken = cancellationToken)
         // Synchronously block waiting for the result (i.e. even if continuations run on another thread, caller thread will be blocked)
         tcs.Task.GetAwaiter().GetResult() // GetResult() unpacks the AggregateException that .Result would present
 #endif

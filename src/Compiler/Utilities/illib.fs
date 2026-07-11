@@ -143,7 +143,7 @@ module internal PervasiveAutoOpens =
                 computation,
                 tcs.SetResult,
                 tcs.SetException,
-                (fun _ -> tcs.SetCanceled()),
+                tcs.SetException,
                 ?cancellationToken = cancellationToken
             )
             // Synchronously block waiting for the result (i.e. even if continuations run on another thread, caller thread will be blocked)
