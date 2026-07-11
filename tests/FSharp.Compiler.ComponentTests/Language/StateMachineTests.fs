@@ -8,17 +8,9 @@ open FSharp.Test.Compiler
 
 module StateMachineTests =
 
-    let verify3511AndRun code = 
+    let verifyOptimizedAndRun code =
         Fsx code
-        |> withNoOptimize
-        |> compile
-        |> shouldFail
-        |> withWarningCode 3511
-        |> ignore
-
-        Fsx code
-        |> withNoOptimize
-        |> withOptions ["--nowarn:3511"]
+        |> withOptimize
         |> compileExeAndRun
 
     // Inlined helper containing a "if __useResumableCode ..." construct failed to expand correctly,
@@ -76,7 +68,7 @@ task {
 }
 |> fun f -> f.Wait()
 """
-        |> verify3511AndRun
+        |> verifyOptimizedAndRun
         |> shouldSucceed
 
     [<Fact>] // https://github.com/dotnet/fsharp/issues/14806
@@ -100,7 +92,7 @@ let run() =
 run()
 |> fun f -> f.Wait()
 """
-        |> verify3511AndRun
+        |> verifyOptimizedAndRun
         |> shouldSucceed
         
 
@@ -122,7 +114,7 @@ let foo() = task {
 foo()
 |> fun f -> f.Wait()
 """
-        |> verify3511AndRun
+        |> verifyOptimizedAndRun
         |> shouldSucceed
 
     [<FSharp.Test.FactForNETCOREAPP>] // https://github.com/dotnet/fsharp/issues/13386

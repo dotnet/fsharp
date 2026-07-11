@@ -17,7 +17,9 @@ open System.IO
 open System.Text
 open System.Text.RegularExpressions
 open System.Reflection
+open System.Reflection.Emit
 open System.Reflection.Metadata
+open System.Reflection.Metadata.Ecma335
 open System.Reflection.PortableExecutable
 
 open FSharp.Test.CompilerAssertHelpers
@@ -56,6 +58,7 @@ $ code --diff {outFile} {expectedFile}
             if FileSystem.FileExistsShim outFile then
                 FileSystem.FileDeleteShim outFile
         | Some diff ->
+            Directory.CreateDirectory(Path.GetDirectoryName expectedFile) |> ignore
             if shouldUpdateBaselines then
                 if FileSystem.FileExistsShim outFile then
                     FileSystem.FileDeleteShim outFile
@@ -641,6 +644,9 @@ $ code --diff {outFile} {expectedFile}
 
     let withLangVersion10 (cUnit: CompilationUnit) : CompilationUnit =
         withOptionsHelper [ "--langversion:10.0" ] "withLangVersion10 is only supported on F#" cUnit
+        
+    let withLangVersion11 (cUnit: CompilationUnit) : CompilationUnit =
+        withOptionsHelper [ "--langversion:11.0" ] "withLangVersion11 is only supported on F#" cUnit
 
     let withLangVersionPreview (cUnit: CompilationUnit) : CompilationUnit =
         withOptionsHelper [ "--langversion:preview" ] "withLangVersionPreview is only supported on F#" cUnit
@@ -1340,14 +1346,15 @@ $ code --diff {outFile} {expectedFile}
             | Some p ->
                 match ILChecker.verifyILAndReturnActual [] p expected with
                 | true, _, _ -> result
-                | false, errorMsg, _actualIL ->
-                    CompilationResult.Failure( {s with Output = Some (ExecutionOutput {Outcome = NoExitCode; StdOut = errorMsg; StdErr = ""})} )
+                | false, errorMsg, _actualIL -> failwith $"IL verification failed:\n{errorMsg}"
         | CompilationResult.Failure f ->
             printfn "Failure:"
             printfn $"{f}"
             failwith $"Result should be \"Success\" in order to get IL."
 
     let verifyIL = doILCheck ILChecker.checkIL
+
+    let verifyILPresent = doILCheck ILChecker.checkILPresent
 
     let verifyILNotPresent = doILCheck ILChecker.checkILNotPresent
 
@@ -1535,27 +1542,29 @@ $ code --diff {outFile} {expectedFile}
             if expectedScope <> imports then
                 failwith $"Expected imports are different from PDB.\nExpected:\n%A{expectedScope}\nActual:%A{imports}"
 
+    let private getMethodDebugInfos (assemblyReader: MetadataReader) (pdbReader: MetadataReader) =
+        [ for typeDefHandle in assemblyReader.TypeDefinitions do
+            let td = assemblyReader.GetTypeDefinition typeDefHandle
+            let typeName = assemblyReader.GetString td.Name
+            for methodHandle in td.GetMethods() do
+                let md = assemblyReader.GetMethodDefinition methodHandle
+                let methodName = assemblyReader.GetString md.Name
+                let rowNumber = System.Reflection.Metadata.Ecma335.MetadataTokens.GetRowNumber methodHandle
+                let debugInfoHandle = System.Reflection.Metadata.Ecma335.MetadataTokens.MethodDebugInformationHandle rowNumber
+                let debugInfo = pdbReader.GetMethodDebugInformation debugInfoHandle
+                yield typeName, methodName, methodHandle, debugInfo ]
+
     let private getMethodSequencePoints (assemblyPath: string) (pdbReader: MetadataReader) (methodName: string) =
         use peStream = File.OpenRead(assemblyPath)
         use peReader = new PEReader(peStream)
-        let assemblyReader = peReader.GetMetadataReader()
+        let methods =
+            getMethodDebugInfos (peReader.GetMetadataReader()) pdbReader
+            |> List.filter (fun (_, name, _, _) -> name = methodName)
 
-        let methodHandles =
-            [ for typeDef in assemblyReader.TypeDefinitions do
-                let td = assemblyReader.GetTypeDefinition(typeDef)
-                for methodHandle in td.GetMethods() do
-                    let md = assemblyReader.GetMethodDefinition(methodHandle)
-                    let name = assemblyReader.GetString(md.Name)
-                    if name = methodName then
-                        yield methodHandle ]
-
-        if methodHandles.IsEmpty then
+        if methods.IsEmpty then
             failwith (sprintf "Method '%s' not found in assembly '%s'" methodName assemblyPath)
 
-        [ for methodHandle in methodHandles do
-            let rowNumber = System.Reflection.Metadata.Ecma335.MetadataTokens.GetRowNumber(methodHandle)
-            let debugInfoHandle = System.Reflection.Metadata.Ecma335.MetadataTokens.MethodDebugInformationHandle(rowNumber)
-            let debugInfo = pdbReader.GetMethodDebugInformation(debugInfoHandle)
+        [ for _, _, _, debugInfo in methods do
             yield!
                 debugInfo.GetSequencePoints()
                 |> Seq.filter (fun sp -> not sp.IsHidden)
@@ -1749,6 +1758,126 @@ $ code --diff {outFile} {expectedFile}
             | VerifyNoDebuggerHiddenOnMethodWithLine line ->
                 verifyNoDebuggerHiddenOnMethodWithLine (optOutputPath |> Option.defaultValue "") reader line
             | _ -> failwith $"Unknown verification option: {option.ToString()}"
+
+    module private Il =
+        // Keyed by the encoded opcode value: one-byte ops as 0x00-0xFF, two-byte (0xFE-prefixed) as 0xFExx.
+        let private opsByValue =
+            dict [ for f in typeof<OpCodes>.GetFields(BindingFlags.Public ||| BindingFlags.Static) do
+                       match f.GetValue null with
+                       | :? OpCode as op -> yield (int op.Value &&& 0xffff), op
+                       | _ -> () ]
+
+        // The simple name of a type handle (TypeDef/TypeRef); "" for anything else (e.g. TypeSpec).
+        let private declaringTypeName (mdReader: MetadataReader) (handle: EntityHandle) =
+            if handle.IsNil then ""
+            else
+                let row = MetadataTokens.GetRowNumber handle
+                match handle.Kind with
+                | HandleKind.TypeDefinition -> mdReader.GetString (mdReader.GetTypeDefinition(MetadataTokens.TypeDefinitionHandle row)).Name
+                | HandleKind.TypeReference -> mdReader.GetString (mdReader.GetTypeReference(MetadataTokens.TypeReferenceHandle row)).Name
+                | _ -> ""
+
+        let rec private tokenName (mdReader: MetadataReader) (token: int) =
+            let handle = MetadataTokens.EntityHandle token
+            let row = MetadataTokens.GetRowNumber handle
+            // Qualify members with their declaring type so closure/continuation creation is visible.
+            let qualify ty nm = if ty = "" then nm else ty + "::" + nm
+            match handle.Kind with
+            | HandleKind.MethodDefinition ->
+                let md = mdReader.GetMethodDefinition(MetadataTokens.MethodDefinitionHandle row)
+                qualify (declaringTypeName mdReader (TypeDefinitionHandle.op_Implicit (md.GetDeclaringType()))) (mdReader.GetString md.Name)
+            | HandleKind.MemberReference ->
+                let mr = mdReader.GetMemberReference(MetadataTokens.MemberReferenceHandle row)
+                qualify (declaringTypeName mdReader mr.Parent) (mdReader.GetString mr.Name)
+            | HandleKind.FieldDefinition ->
+                let fd = mdReader.GetFieldDefinition(MetadataTokens.FieldDefinitionHandle row)
+                qualify (declaringTypeName mdReader (TypeDefinitionHandle.op_Implicit (fd.GetDeclaringType()))) (mdReader.GetString fd.Name)
+            | HandleKind.TypeReference -> mdReader.GetString (mdReader.GetTypeReference(MetadataTokens.TypeReferenceHandle row)).Name
+            | HandleKind.TypeDefinition -> mdReader.GetString (mdReader.GetTypeDefinition(MetadataTokens.TypeDefinitionHandle row)).Name
+            | HandleKind.MethodSpecification -> tokenName mdReader (MetadataTokens.GetToken (mdReader.GetMethodSpecification(MetadataTokens.MethodSpecificationHandle row)).Method)
+            | _ -> sprintf "0x%08x" token
+
+        let decodeMethodIL (mdReader: MetadataReader) (bytes: byte[]) =
+            [ let mutable pos = 0
+              while pos < bytes.Length do
+                  let offset = pos
+                  let b0 = int bytes.[pos]
+                  pos <- pos + 1
+                  let key = if b0 = 0xFE then (let b1 = int bytes.[pos] in pos <- pos + 1; 0xFE00 ||| b1) else b0
+                  let op = opsByValue.[key]
+                  let operand = pos
+                  let next size = pos <- operand + size
+                  let text =
+                      match op.OperandType with
+                      | OperandType.InlineNone -> next 0; ""
+                      | OperandType.ShortInlineBrTarget -> next 1; sprintf " IL_%04x" (operand + 1 + int (sbyte bytes.[operand]))
+                      | OperandType.InlineBrTarget -> next 4; sprintf " IL_%04x" (operand + 4 + BitConverter.ToInt32(bytes, operand))
+                      | OperandType.ShortInlineI -> next 1; sprintf " %d" (sbyte bytes.[operand])
+                      | OperandType.InlineI -> next 4; sprintf " %d" (BitConverter.ToInt32(bytes, operand))
+                      | OperandType.InlineI8 -> next 8; sprintf " %d" (BitConverter.ToInt64(bytes, operand))
+                      | OperandType.ShortInlineR -> next 4; sprintf " %f" (BitConverter.ToSingle(bytes, operand))
+                      | OperandType.InlineR -> next 8; sprintf " %f" (BitConverter.ToDouble(bytes, operand))
+                      | OperandType.ShortInlineVar -> next 1; sprintf " %d" (int bytes.[operand])
+                      | OperandType.InlineVar -> next 2; sprintf " %d" (int (BitConverter.ToUInt16(bytes, operand)))
+                      | OperandType.InlineString -> next 4; sprintf " \"%s\"" (mdReader.GetUserString(MetadataTokens.UserStringHandle(BitConverter.ToInt32(bytes, operand))))
+                      | OperandType.InlineSwitch -> next (4 + 4 * BitConverter.ToInt32(bytes, operand)); sprintf " (%d targets)" (BitConverter.ToInt32(bytes, operand))
+                      | _ -> next 4; " " + tokenName mdReader (BitConverter.ToInt32(bytes, operand))
+                  yield offset, op.Name + text ]
+
+    let private formatSequencePoints (source: string) (assemblyPath: string) (pdbReader: MetadataReader) =
+        let normalizedSource = source.Replace("\r\n", "\n").Replace("\r", "\n")
+        let lines = normalizedSource.Split('\n')
+
+        let textOf (sp: SequencePoint) =
+            let sb = StringBuilder()
+            for lineNo in sp.StartLine .. sp.EndLine do
+                if lineNo >= 1 && lineNo <= lines.Length then
+                    let line = lines.[lineNo - 1]
+                    let startCol = if lineNo = sp.StartLine then sp.StartColumn - 1 else 0
+                    let endCol = if lineNo = sp.EndLine then sp.EndColumn - 1 else line.Length
+                    let startCol = max 0 (min startCol line.Length)
+                    let endCol = max startCol (min endCol line.Length)
+                    sb.Append(line.Substring(startCol, endCol - startCol)).Append(' ') |> ignore
+            Regex.Replace(sb.ToString().Trim(), @"\s+", " ")
+
+        use peStream = File.OpenRead assemblyPath
+        use peReader = new PEReader(peStream)
+        let mdReader = peReader.GetMetadataReader()
+
+        let sb = StringBuilder()
+        for typeName, methodName, methodHandle, debugInfo in getMethodDebugInfos mdReader pdbReader do
+            let points = debugInfo.GetSequencePoints() |> Seq.sortBy (fun sp -> sp.Offset) |> Seq.toList
+            if not points.IsEmpty then
+                let md = mdReader.GetMethodDefinition methodHandle
+                let instructions =
+                    if md.RelativeVirtualAddress = 0 then []
+                    else Il.decodeMethodIL mdReader ((peReader.GetMethodBody md.RelativeVirtualAddress).GetILBytes())
+
+                sb.AppendLine($"{typeName}::{methodName}") |> ignore
+                points |> List.iteri (fun i sp ->
+                    let nextOffset = if i + 1 < points.Length then points.[i + 1].Offset else Int32.MaxValue
+                    if sp.IsHidden then
+                        sb.AppendLine("  <hidden>") |> ignore
+                    else
+                        sb.AppendLine(sprintf "  (%d,%d-%d,%d)  %s" sp.StartLine sp.StartColumn sp.EndLine sp.EndColumn (textOf sp)) |> ignore
+                    for offset, text in instructions do
+                        if offset >= sp.Offset && offset < nextOffset then
+                            sb.AppendLine(sprintf "    IL_%04x:  %s" offset text) |> ignore
+                    sb.AppendLine() |> ignore)
+
+        normalizedSource.Trim() + "\n" + String.replicate 80 "-" + "\n\n" + sb.ToString().Trim() + "\n"
+
+    let verifySequencePointsBaseline (source: string) (baselineFilePath: string) (result: CompilationResult) : CompilationResult =
+        match result with
+        | CompilationResult.Success r ->
+            match r.OutputPath with
+            | Some assemblyPath ->
+                use fileStream = File.OpenRead(Path.ChangeExtension(assemblyPath, ".pdb"))
+                use provider = MetadataReaderProvider.FromPortablePdbStream fileStream
+                checkBaseline (formatSequencePoints source assemblyPath (provider.GetMetadataReader())) baselineFilePath
+                result
+            | None -> failwith "Operation didn't produce any output!"
+        | CompilationResult.Failure f -> failwith $"Compilation failed: {f}"
 
     let private verifyPortablePdb (result: CompilationOutput) options : unit =
         match result.OutputPath with

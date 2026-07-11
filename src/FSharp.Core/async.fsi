@@ -1113,6 +1113,7 @@ namespace Microsoft.FSharp.Control
     /// <summary>The F# compiler emits references to this type to implement F# async expressions.</summary>
     ///
     /// <category index="5">Async Internals</category>
+    [<NoEquality; NoComparison>]
     type AsyncReturn
 
     /// <summary>The F# compiler emits references to this type to implement F# async expressions.</summary>

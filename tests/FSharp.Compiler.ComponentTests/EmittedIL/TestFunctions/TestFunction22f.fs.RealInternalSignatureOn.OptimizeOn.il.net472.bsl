@@ -53,20 +53,19 @@
   {
     
     .maxstack  8
-    IL_0000:  nop
-    IL_0001:  ldstr      "A"
-    IL_0006:  ldstr      "A"
-    IL_000b:  call       bool [netstandard]System.String::Equals(string,
+    IL_0000:  ldstr      "A"
+    IL_0005:  ldstr      "A"
+    IL_000a:  call       bool [netstandard]System.String::Equals(string,
                                                                  string)
-    IL_0010:  brfalse.s  IL_001a
+    IL_000f:  brfalse.s  IL_0019
 
-    IL_0012:  call       void [runtime]System.Console::WriteLine()
-    IL_0017:  nop
-    IL_0018:  br.s       IL_0020
+    IL_0011:  call       void [runtime]System.Console::WriteLine()
+    IL_0016:  nop
+    IL_0017:  br.s       IL_001f
 
-    IL_001a:  call       void [runtime]System.Console::WriteLine()
-    IL_001f:  nop
-    IL_0020:  ret
+    IL_0019:  call       void [runtime]System.Console::WriteLine()
+    IL_001e:  nop
+    IL_001f:  ret
   } 
 
 } 

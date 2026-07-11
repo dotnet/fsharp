@@ -44,6 +44,8 @@ let rec private evalILAttribElem elem =
     | ILAttribElem.Double x -> box x
     | ILAttribElem.Null -> null
     | ILAttribElem.Array (_, a) -> box [| for i in a -> evalILAttribElem i |]
+    // An enum value: evaluate to its underlying integer value (the enum type itself is not materialized here).
+    | ILAttribElem.Enum (_, value) -> evalILAttribElem value
     // TODO: typeof<..> in attribute values
     | ILAttribElem.Type (Some _t) -> fail() 
     | ILAttribElem.Type None -> null

@@ -100,7 +100,7 @@ stages:
         helixRepo: dotnet/fsharp
         jobs:
           # Determinism, we want to run it only in PR builds
-        - job: Determinism_Debug
+        - job: Determinism_Release
           condition: eq(variables['Build.Reason'], 'PullRequest')
           variables:
           - name: _SignType
@@ -109,13 +109,6 @@ stages:
             name: $(DncEngPublicBuildPool)
             demands: ImageOverride -equals $(_WindowsMachineQueueName)
           timeoutInMinutes: 90
-          strategy:
-            maxParallel: 2
-            matrix:
-              regular:
-                _experimental_flag: ''
-              experimental_features:
-                _experimental_flag: ''
           steps:
           - checkout: self
             clean: true
@@ -129,15 +122,15 @@ stages:
               workingDirectory: $(Build.SourcesDirectory)
               installationPath: $(Build.SourcesDirectory)/.dotnet
           - script: .\eng\common\dotnet.cmd
-          - script: .\eng\test-determinism.cmd -configuration Debug
-            env:
-              FSHARP_EXPERIMENTAL_FEATURES: $(_experimental_flag)
-            displayName: Determinism tests with Debug configuration
+          - script: .\eng\test-determinism.cmd -configuration Release
+            displayName: Determinism tests (race detector — same flags both builds)
+          - script: .\eng\test-determinism.cmd -configuration Release -mode seq-vs-par
+            displayName: Determinism tests (1-shot diff — sequential vs parallel)
           - task: PublishPipelineArtifact@1
             displayName: Publish Determinism Logs
             inputs:
-              targetPath: '$(Build.SourcesDirectory)/artifacts/log/Debug'
-              artifactName: 'Determinism_Debug Attempt $(System.JobAttempt) Logs'
+              targetPath: '$(Build.SourcesDirectory)/artifacts/log/Release'
+              artifactName: 'Determinism_Release Attempt $(System.JobAttempt) Logs'
             continueOnError: true
             condition: not(succeeded())
 
@@ -796,6 +789,7 @@ stages:
             continueOnError: true
             condition: always()
         - job: ILVerify
+          timeoutInMinutes: 120
           pool:
             name: $(DncEngPublicBuildPool)
             demands: ImageOverride -equals $(_WindowsMachineQueueName)
@@ -895,6 +889,16 @@ stages:
           buildScript: dotnet build Prime.sln --configuration Release
           displayName: Prime_Build
         - repo: bryanedds/Nu
-          commit: b321cb41a0bea0dab6b4509f895e6cd4d024e9e5
+          commit: e81e00a464b9d35d272f61708a1a0bfbf487b6d5
           buildScript: dotnet build Nu.sln --configuration Release
           displayName: Nu_Build
+        # Design-time provider packaging oracle. Pin d8aba70 (pre-workaround base of FSharp.Data.GraphQL#583):
+        # it uses the bare IsFSharpDesignTimeProvider gesture, so the client pack drops the provider without this fix.
+        # Linux-only: the $PWD local feed and the grep content assertion need bash. (nupkg entry names are stored
+        # uncompressed in the zip, so grep -aF on the package finds the provider path without extra tools.)
+        - repo: fsprojects/FSharp.Data.GraphQL
+          commit: d8aba70757792f2d76a66cb8171086ca4c7c1e8e
+          buildScript: dotnet pack src/FSharp.Data.GraphQL.Shared/FSharp.Data.GraphQL.Shared.fsproj -c Release -p:TreatWarningsAsErrors=false -o "$PWD/__gqlfeed__" ;; dotnet pack src/FSharp.Data.GraphQL.Client/FSharp.Data.GraphQL.Client.fsproj -c Release -p:IsNuGet=true -p:TreatWarningsAsErrors=false --source https://api.nuget.org/v3/index.json --source "$PWD/__gqlfeed__" -o "$PWD/__gqlfeed__" && grep -qaF typeproviders/fsharp41/netstandard2.0/FSharp.Data.GraphQL.Client.DesignTime.dll "$PWD/__gqlfeed__"/FSharp.Data.GraphQL.Client.*.nupkg
+          displayName: FSharpDataGraphQL_DesignTimeProvider_Packaging
+          useVmImage: $(LinuxMachineQueueName)
+          usePool: $(DncEngPublicBuildPool)
