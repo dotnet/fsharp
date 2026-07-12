@@ -130,6 +130,8 @@
     <MicrosoftVisualStudioPlatformVSEditorVersion>$(VisualStudioEditorPackagesVersion)</MicrosoftVisualStudioPlatformVSEditorVersion>
     <MicrosoftVisualStudioTextUIWpfVersion>$(VisualStudioEditorPackagesVersion)</MicrosoftVisualStudioTextUIWpfVersion>
     <NuGetVisualStudioVersion>17.14.0</NuGetVisualStudioVersion>
+    <MicrosoftTestApexVisualStudioVersion>18.10.0-preview-1-12005-078</MicrosoftTestApexVisualStudioVersion>
+    <MSTestVersion>3.6.4</MSTestVersion>
     <MicrosoftVisualStudioExtensibilityTestingVersion>0.1.800-beta</MicrosoftVisualStudioExtensibilityTestingVersion>
     <MicrosoftVisualStudioExtensibilityTestingSourceGeneratorVersion>$(MicrosoftVisualStudioExtensibilityTestingVersion)</MicrosoftVisualStudioExtensibilityTestingSourceGeneratorVersion>
 
