@@ -2290,8 +2290,8 @@ module AsyncTaskLikeExtensions =
                     with e ->
                         econt e
                 else
-                    (awaiter :> ICriticalNotifyCompletion)
-                        .UnsafeOnCompleted(fun () ->
+                    (awaiter :> INotifyCompletion)
+                        .OnCompleted(fun () ->
                             try
                                 cont ((^Awaiter: (member GetResult: unit -> 'T) awaiter))
                             with e ->
