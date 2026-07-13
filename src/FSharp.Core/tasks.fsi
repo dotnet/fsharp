@@ -467,6 +467,7 @@ open Microsoft.FSharp.Core
 ///
 /// <category index="1">Async Programming</category>
 [<RequireQualifiedAccess>]
+[<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module Task =
 
     /// <summary>Creates a task that returns the given value.</summary>
@@ -601,6 +602,7 @@ module Task =
 ///
 /// <category index="1">Async Programming</category>
 [<RequireQualifiedAccess>]
+[<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module ValueTask =
 
     /// <summary>Creates a value task that returns the given value.</summary>

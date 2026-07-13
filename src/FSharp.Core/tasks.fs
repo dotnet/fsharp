@@ -727,6 +727,7 @@ open Microsoft.FSharp.Control.TaskBuilderExtensions.LowPriority
 open Microsoft.FSharp.Control.TaskBuilderExtensions.HighPriority
 
 [<RequireQualifiedAccess>]
+[<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module Task =
 
     [<CompiledName("Result")>]
@@ -797,6 +798,7 @@ module Task =
 
 #if NETSTANDARD2_1
 [<RequireQualifiedAccess>]
+[<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module ValueTask =
 
     [<CompiledName("Result")>]
