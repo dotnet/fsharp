@@ -653,7 +653,7 @@ type AsyncType() =
         let ok = Async.RunSynchronously a
         Assert.True ok
 
-#if NETSTANDARD2_1
+#if !NETFRAMEWORK
     (* Await(ValueTask and ValueTask<'T>) overloads coverage of mainline behaviors *)
 
     [<Fact>]
@@ -843,7 +843,7 @@ module AsyncAwaitStackTraceTests =
         checkTrace 3 e
         // Same behavior as the Task<'T> overload — see comment there.
 
-#if NETSTANDARD2_1
+#if !NETFRAMEWORK
     [<Fact>]
     let ``Await ValueTask-of-T: all three levels visible in stack trace`` () =
         // For a faulted ValueTask<unit>, IsCompletedSuccessfully is false; the overload falls
