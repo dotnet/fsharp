@@ -743,6 +743,31 @@ module AsyncTaskLikeAwaitTests =
         Assert.Equal(7, t.Result)
 
     [<Fact>]
+    let ``Await(task-like) deferred completion preserves AsyncLocal ExecutionContext``() =
+        let asyncLocal = AsyncLocal<string>()
+        let tcs = TaskCompletionSource<unit>()
+
+        let t =
+            Async.StartImmediateAsTask(async {
+                asyncLocal.Value <- "trace-id"
+                do! Async.Await(MyUnitTask(tcs.Task))
+                return asyncLocal.Value // should yield trace-id, *unless ExecutionContext did not propagate*
+            })
+        Assert.False(t.IsCompleted, "Should not be done before TCS is set")
+
+        // This should not pollute the continuation observed
+        asyncLocal.Value <- "root-context"
+        let completion =
+            Task.Run(fun () ->
+                asyncLocal.Value <- "completing-context" // if ExecutionContext is not propagated correctly to the continuation, it will see this
+                tcs.SetResult())
+
+        Assert.True(completion.Wait(TimeSpan.FromSeconds 5L), "Completion task did not finish in time.")
+        Assert.True(t.Wait(TimeSpan.FromSeconds 5L), "Awaited task did not finish in time.")
+        Assert.Equal("trace-id", t.Result) // Validate the chaining worked correctly
+        Assert.Equal("root-context", asyncLocal.Value) // Root level context should be preserved
+
+    [<Fact>]
     let ``Await(task-like) exception propagation``() =
         let tcs = TaskCompletionSource<int>()
         let a =
