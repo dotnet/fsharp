@@ -1254,6 +1254,9 @@ namespace Microsoft.FSharp.Control
             /// returning an awaiter implementing <see cref="T:System.Runtime.CompilerServices.ICriticalNotifyCompletion"/>
             /// with <c>IsCompleted</c> and <c>GetResult()</c> members.</p>
             /// <p>Exceptions thrown by <c>GetResult()</c> are propagated directly. Unlike the <see cref="T:System.Threading.Tasks.Task"/>
+#if NETSTANDARD2_1
+            /// and <see cref="T:System.Threading.Tasks.ValueTask"/>
+#endif
             /// overloads, an <see cref="T:System.AggregateException"/> carrying multiple inner exceptions is not preserved:
             /// the first inner exception surfaces (standard <c>GetResult()</c> semantics).</p>
             /// <p>This overload uses statically resolved type parameters (SRTP) so it can accept any task-like type.
