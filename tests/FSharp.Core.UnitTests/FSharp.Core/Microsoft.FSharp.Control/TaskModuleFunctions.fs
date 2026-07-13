@@ -190,7 +190,10 @@ module ValueTaskModuleFunctionsTests =
 
     [<Fact>]
     let ``ValueTask.map transforms value (async)`` () =
-        let vt = ValueTask<int>(Task.FromResult 21) |> ValueTask.map (fun x -> x * 2)
+        let tcs = TaskCompletionSource<int>()
+        let vt = ValueTask<int>(tcs.Task) |> ValueTask.map (fun x -> x * 2)
+        Assert.False vt.IsCompletedSuccessfully
+        tcs.SetResult 21
         Assert.Equal(42, vt.Result)
 
     [<Fact>]
@@ -200,18 +203,24 @@ module ValueTaskModuleFunctionsTests =
 
     [<Fact>]
     let ``ValueTask.bind threads value (async)`` () =
-        let vt = ValueTask<int>(Task.FromResult 21) |> ValueTask.bind (fun x -> ValueTask.result (x * 2))
+        let tcs = TaskCompletionSource<int>()
+        let vt = ValueTask<int>(tcs.Task) |> ValueTask.map (fun x -> ValueTask.result (x * 2))
+        Assert.False vt.IsCompletedSuccessfully
+        tcs.SetResult 21
         Assert.Equal(42, vt.Result)
 
     [<Fact>]
     let ``ValueTask.ignore discards result (sync)`` () : unit =
         let vt = ValueTask.result 42 |> ValueTask.ignore<int>
-        Assert.True(vt.IsCompletedSuccessfully)
+        Assert.True vt.IsCompletedSuccessfully
         vt.Result
 
     [<Fact>]
     let ``ValueTask.ignore discards result (async)`` () : unit =
-        let vt = ValueTask<int>(Task.FromResult 42) |> ValueTask.ignore<int>
+        let tcs = TaskCompletionSource<int>()
+        let vt = ValueTask<int>(tcs.Task) |> ValueTask.ignore<int>
+        Assert.False vt.IsCompletedSuccessfully
+        tcs.SetResult 42
         vt.Result
 
     [<Fact>]

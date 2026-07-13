@@ -970,7 +970,7 @@ namespace Microsoft.FSharp.Control
         ///         use file = System.IO.File.OpenRead(filename)
         ///         printfn "Reading from file %s." filename
         ///         // Throw away the data being read.
-        ///         do! file.AsyncRead(numBytes) |> Async.Ignore
+        ///         do! file.AsyncRead(numBytes) |> Async.ignore&lt;byte[]&gt;
         ///     }
         /// readFile "example.txt" 42 |> Async.Start
         /// </code>
@@ -1612,7 +1612,7 @@ namespace Microsoft.FSharp.Control
         /// let readFile filename numBytes =
         ///     async {
         ///         use file = System.IO.File.OpenRead(filename)
-        ///         do! file.AsyncRead(numBytes) |> Async.ignore&lt;int&gt;
+        ///         do! file.AsyncRead(numBytes) |> Async.ignore&lt;byte[]&gt;
         ///     }
         /// </code>
         /// </example>
