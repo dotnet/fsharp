@@ -1226,15 +1226,16 @@ namespace Microsoft.FSharp.Control
             /// <summary>Creates an asynchronous computation that will wait for the given task-like value to complete and return
             /// its result.</summary>
             /// <param name="task">The task-like value to await.</param>
-            /// <remarks>The value must satisfy the GetAwaiter pattern: it must have a <c>GetAwaiter()</c> method
+            /// <remarks><p>The value must satisfy the GetAwaiter pattern: it must have a <c>GetAwaiter()</c> method
             /// returning an awaiter implementing <see cref="T:System.Runtime.CompilerServices.ICriticalNotifyCompletion"/>
-            /// with <c>IsCompleted</c> and <c>GetResult()</c> members. Exceptions thrown by <c>GetResult()</c> are
-            /// propagated directly.
-            ///
-            /// This overload uses statically resolved type parameters (SRTP) so it can accept any task-like type.
+            /// with <c>IsCompleted</c> and <c>GetResult()</c> members.</p>
+            /// <p>Exceptions thrown by <c>GetResult()</c> are propagated directly. Unlike the <see cref="T:System.Threading.Tasks.Task"/>
+            /// overloads, an <see cref="T:System.AggregateException"/> carrying multiple inner exceptions is not preserved:
+            /// the first inner exception surfaces (standard <c>GetResult()</c> semantics).</p>
+            /// <p>This overload uses statically resolved type parameters (SRTP) so it can accept any task-like type.
             /// The specific overloads for <see cref="T:System.Threading.Tasks.Task`1"/>, <see cref="T:System.Threading.Tasks.Task"/>,
             /// <see cref="T:System.Threading.Tasks.ValueTask`1"/> and <see cref="T:System.Threading.Tasks.ValueTask"/>
-            /// are preferred when the argument type is known.
+            /// are preferred when the argument type is known.</p>
             /// </remarks>
             /// <category index="2">Awaiting Results</category>
             /// <example id="await-tasklike-1">
