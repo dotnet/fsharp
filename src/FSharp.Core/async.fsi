@@ -1280,6 +1280,8 @@ namespace Microsoft.FSharp.Control
             /// </code>
             /// Prints <c>Result: 42</c>.
             /// </example>
+            // NOTE Aside from being a catch-all to cover the GetAwaiter pattern,
+            // On netstandard2.0, this overload also covers ValueTask and ValueTask<'T>.
             [<NoEagerConstraintApplication>]
             static member inline Await< ^TaskLike, ^Awaiter, 'T> :
                 task: ^TaskLike -> Async<'T>
