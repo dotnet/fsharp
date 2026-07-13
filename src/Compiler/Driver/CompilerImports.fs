@@ -1572,7 +1572,11 @@ and [<Sealed>] TcImports
     member _.ProviderGeneratedTypeRoots =
         tciLock.AcquireLock(fun tcitok ->
             RequireTcImportsLock(tcitok, generatedTypeRoots)
-            generatedTypeRoots.Values |> Seq.sortBy fst |> Seq.map snd |> Seq.toList)
+            // Sort by qualified name so the emitted set is deterministic regardless of parallel insertion order.
+            generatedTypeRoots.Values
+            |> Seq.map snd
+            |> Seq.sortBy (fun (ProviderGeneratedType(_, ilTyRef, _)) -> ilTyRef.QualifiedName)
+            |> Seq.toList)
 #endif
 
     member private tcImports.AttachDisposeAction action =
@@ -1742,47 +1746,36 @@ and [<Sealed>] TcImports
         match remainingNamespace with
         | next :: rest ->
             // Inject the namespace entity
-            match entity.ModuleOrNamespaceType.ModulesAndNamespacesByDemangledName.TryFind next with
-            | Some childEntity ->
-                tcImports.InjectProvidedNamespaceOrTypeIntoEntity(
-                    typeProviderEnvironment,
-                    tcConfig,
-                    m,
-                    childEntity,
-                    next :: injectedNamespace,
-                    rest,
-                    provider,
-                    st
+            let childEntity =
+                entity.ModuleOrNamespaceType.GetOrInternNamespaceEntity(
+                    next,
+                    (fun () ->
+                        // Build up the artificial namespace if there is not a real one.
+                        let cpath =
+                            CompPath(
+                                ILScopeRef.Local,
+                                SyntaxAccess.Unknown,
+                                injectedNamespace
+                                |> List.rev
+                                |> List.map (fun n -> (n, ModuleOrNamespaceKind.Namespace true))
+                            )
+
+                        let mid = ident (next, rangeStartup)
+                        let mty = Construct.NewEmptyModuleOrNamespaceType(Namespace true)
+
+                        Construct.NewModuleOrNamespace (Some cpath) taccessPublic mid XmlDoc.Empty [] (MaybeLazy.Strict mty))
                 )
-            | None ->
-                // Build up the artificial namespace if there is not a real one.
-                let cpath =
-                    CompPath(
-                        ILScopeRef.Local,
-                        SyntaxAccess.Unknown,
-                        injectedNamespace
-                        |> List.rev
-                        |> List.map (fun n -> (n, ModuleOrNamespaceKind.Namespace true))
-                    )
 
-                let mid = ident (next, rangeStartup)
-                let mty = Construct.NewEmptyModuleOrNamespaceType(Namespace true)
-
-                let newNamespace =
-                    Construct.NewModuleOrNamespace (Some cpath) taccessPublic mid XmlDoc.Empty [] (MaybeLazy.Strict mty)
-
-                entity.ModuleOrNamespaceType.AddModuleOrNamespaceByMutation newNamespace
-
-                tcImports.InjectProvidedNamespaceOrTypeIntoEntity(
-                    typeProviderEnvironment,
-                    tcConfig,
-                    m,
-                    newNamespace,
-                    next :: injectedNamespace,
-                    rest,
-                    provider,
-                    st
-                )
+            tcImports.InjectProvidedNamespaceOrTypeIntoEntity(
+                typeProviderEnvironment,
+                tcConfig,
+                m,
+                childEntity,
+                next :: injectedNamespace,
+                rest,
+                provider,
+                st
+            )
         | [] ->
             match st with
             | Some st ->
@@ -1796,10 +1789,13 @@ and [<Sealed>] TcImports
                 let isSuppressRelocate =
                     tcConfig.isInteractive || st.PUntaint((fun st -> st.IsSuppressRelocate), m)
 
-                let newEntity =
-                    Construct.NewProvidedTycon(typeProviderEnvironment, st, importProvidedType, isSuppressRelocate, m)
+                let providedTypeName = st.PUntaint((fun st -> st.Name), m)
 
-                entity.ModuleOrNamespaceType.AddProvidedTypeEntity newEntity
+                entity.ModuleOrNamespaceType.GetOrInternProvidedEntity(
+                    providedTypeName,
+                    (fun () -> Construct.NewProvidedTycon(typeProviderEnvironment, st, importProvidedType, isSuppressRelocate, m))
+                )
+                |> ignore
             | None -> ()
 
             entity.entity_tycon_repr <-
@@ -1860,14 +1856,17 @@ and [<Sealed>] TcImports
                 let name = AssemblyName.GetAssemblyName(resolution.resolvedPath)
                 !!name.Version
 
-            // Note, this only captures systemRuntimeContainsTypeRef (which captures tcImportsWeak, using name tcImports)
             let systemRuntimeContainsType =
                 let tcImports = tcImportsWeak
 
-                // The name of this captured value must not change, see comments on TcImportsWeakFacade above
-                assert (nameof tcImports = "tcImports")
-
-                let mutable systemRuntimeContainsTypeRef = tcImports.SystemRuntimeContainsType
+                // The TypeProvider SDK reflects over this closure and requires a captured field literally
+                // named `tcImports` (see comments on TcImportsWeakFacade above). Capture it through an
+                // explicit lambda rather than passing the method group `tcImports.SystemRuntimeContainsType`:
+                // a method-group value names its captured receiver an optimization-dependent synthesized
+                // name (e.g. `objectArg` under Debug/--optimize-), which breaks the SDK. An explicit lambda
+                // captures the local under its own name `tcImports` in every configuration.
+                let mutable systemRuntimeContainsTypeRef =
+                    fun typeName -> tcImports.SystemRuntimeContainsType typeName
 
                 // When the tcImports is disposed the systemRuntimeContainsTypeRef thunk is replaced
                 // with one raising an exception.

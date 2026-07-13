@@ -100,3 +100,22 @@ match "A" with
    Result")
         (Error 3868, Line 13, Col 3, Line 13, Col 30, "This active pattern does not expect any arguments, i.e., it should be used like 'IsA' instead of 'IsA x'.")
     ]
+
+[<Fact>]
+let ``Language version check`` () =
+    FSharp """
+let (|LessThan|_|) (other: int) x = x <= other
+
+match 1 with
+| LessThan "" -> UnresolvedName
+| _ -> ()
+"""
+    |> withLangVersion80
+    |> typecheck
+    |> shouldFail
+    |> withDiagnostics [
+        Error 3350, Line 2, Col 6, Line 2, Col 18, "Feature 'Boolean-returning and return-type-directed partial active patterns' is not available in F# 8.0. Please use language version 9.0 or greater."
+        Error 3350, Line 5, Col 3, Line 5, Col 14, "Feature 'Boolean-returning and return-type-directed partial active patterns' is not available in F# 8.0. Please use language version 9.0 or greater."
+        Error 1, Line 5, Col 12, Line 5, Col 14, "This expression was expected to have type\n        'int' \n        but here has type\n        'string' "
+        Error 39, Line 5, Col 18, Line 5, Col 32, "The value or constructor 'UnresolvedName' is not defined."
+    ]

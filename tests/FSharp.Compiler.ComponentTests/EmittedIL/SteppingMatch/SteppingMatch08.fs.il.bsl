@@ -38,20 +38,19 @@
     
     .maxstack  3
     .locals init (int32 V_0)
-    IL_0000:  nop
-    IL_0001:  ldarg.0
-    IL_0002:  switch     ( 
-                          IL_000d)
-    IL_000b:  br.s       IL_0011
+    IL_0000:  ldarg.0
+    IL_0001:  switch     ( 
+                          IL_000c)
+    IL_000a:  br.s       IL_0010
 
-    IL_000d:  ldc.i4.2
-    IL_000e:  nop
-    IL_000f:  br.s       IL_0013
+    IL_000c:  ldc.i4.2
+    IL_000d:  nop
+    IL_000e:  br.s       IL_0012
 
-    IL_0011:  ldc.i4.0
-    IL_0012:  nop
-    IL_0013:  stloc.0
-    IL_0014:  ret
+    IL_0010:  ldc.i4.0
+    IL_0011:  nop
+    IL_0012:  stloc.0
+    IL_0013:  ret
   } 
 
 } 
@@ -68,7 +67,6 @@
   } 
 
 } 
-
 
 
 

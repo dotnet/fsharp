@@ -245,9 +245,9 @@ let ListExpressionSteppingTest5 () =
     IL_0004:  stloc.2
     IL_0005:  br.s       IL_0033
 
-    IL_0007:  ldloca.s   V_0
-    IL_0009:  ldloc.2
-    IL_000a:  stloc.3
+    IL_0007:  ldloc.2
+    IL_0008:  stloc.3
+    IL_0009:  ldloca.s   V_0
     IL_000b:  stloc.s    V_4
     IL_000d:  ldloc.s    V_4
     IL_000f:  ldstr      "hello"

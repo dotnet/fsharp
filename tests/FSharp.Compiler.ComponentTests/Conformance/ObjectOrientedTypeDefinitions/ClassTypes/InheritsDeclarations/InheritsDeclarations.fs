@@ -56,3 +56,55 @@ module InheritsDeclarations =
         |> ignoreWarnings
         |> compile
         |> shouldSucceed
+
+    [<Fact>]
+    let ``Inherit from undefined non-generic type reports single FS0039`` () =
+        FSharp "type MyClass() =\n    inherit NonExistentBase()\n"
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 39, Line 2, Col 13, Line 2, Col 28, "The type 'NonExistentBase' is not defined.")
+        ]
+
+    [<Fact>]
+    let ``Inherit from undefined generic type reports single FS0039`` () =
+        FSharp "type MyClass() =\n    inherit MissingGeneric<int>()\n"
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 39, Line 2, Col 13, Line 2, Col 27, "The type 'MissingGeneric' is not defined.")
+        ]
+
+    [<Fact>]
+    let ``Interface inheriting undefined interface reports single FS0039`` () =
+        FSharp "type IMyInterface =\n    inherit INonExistent\n"
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 39, Line 2, Col 13, Line 2, Col 25, "The type 'INonExistent' is not defined.")
+            (Error 887, Line 2, Col 5, Line 2, Col 25, "The type 'obj' is not an interface type")
+        ]
+
+    [<Fact>]
+    let ``Undefined inherit and undefined value report independently`` () =
+        FSharp """
+type MyClass() =
+    inherit NonExistentBase()
+    member _.X = undefinedValue
+"""
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 39, Line 3, Col 13, Line 3, Col 28, "The type 'NonExistentBase' is not defined.")
+            (Error 39, Line 4, Col 18, Line 4, Col 32, "The value or constructor 'undefinedValue' is not defined.")
+        ]
+
+    [<Fact>]
+    let ``Valid inherit produces no diagnostics`` () =
+        FSharp """
+open System
+type MyClass() =
+    inherit Exception("test")
+"""
+        |> typecheck
+        |> shouldSucceed
