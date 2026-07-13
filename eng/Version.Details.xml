@@ -50,7 +50,6 @@
       <Uri>https://github.com/dotnet/roslyn</Uri>
       <Sha>35967bab3447f7edd6162baee7048f801f18fffe</Sha>
     </Dependency>
-    </Dependency>
     <!-- Necessary for source-build. This allows the live version of the package to be used by source-build. -->
     <Dependency Name="System.Collections.Immutable" Version="10.0.2">
       <Uri>https://github.com/dotnet/runtime</Uri>
