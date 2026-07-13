@@ -808,12 +808,18 @@ namespace Microsoft.FSharp.Control
         ///
         /// <param name="task">The task to await.</param>
         ///
-        /// <remarks>Exceptions are surfaced directly: a task faulted with a single exception raises that
+        /// <remarks>
+        /// <p>Exceptions are surfaced directly: a task faulted with a single exception raises that
         /// exception; only <see cref="T:System.AggregateException"/>s carrying multiple inner exceptions are
         /// re-raised as-is. For the legacy behavior of uniformly presenting the raw underlying
-        /// <see cref="T:System.AggregateException"/>, use <c>Async.AwaitTask</c>.
-        ///
-        /// If the task is canceled then <see cref="T:System.Threading.Tasks.TaskCanceledException"/> is raised.
+        /// <see cref="T:System.AggregateException"/>, use <c>Async.AwaitTask</c>.</p>
+        /// 
+        /// <p>If the task is canceled then <see cref="T:System.Threading.Tasks.TaskCanceledException"/> is raised.</p>
+        /// 
+        /// <p>Note the task may be governed by a different cancellation token than the overall async computation;
+        /// typically tasks should be wired to the ambient cancellation token obtained via
+        /// <c>let! ct = Async.CancellationToken</c>, catching <see cref="T:System.Threading.Tasks.TaskCanceledException"/>
+        /// where the overall async is started.</p>
         /// </remarks>
         ///
         /// <category index="2">Awaiting Results</category>
@@ -839,12 +845,18 @@ namespace Microsoft.FSharp.Control
 
         /// <summary>Creates an asynchronous computation that will wait for the given task to complete.</summary>
         /// <param name="task">The task to await.</param>
-        /// <remarks>Exceptions are surfaced directly: a task faulted with a single exception raises that
+        /// <remarks>
+        /// <p>Exceptions are surfaced directly: a task faulted with a single exception raises that
         /// exception; only <see cref="T:System.AggregateException"/>s carrying multiple inner exceptions are
         /// re-raised as-is. For the legacy behavior of uniformly presenting the raw underlying
-        /// <see cref="T:System.AggregateException"/>, use <c>Async.AwaitTask</c>.
-        ///
-        /// If the task is canceled then <see cref="T:System.Threading.Tasks.TaskCanceledException"/> is raised.
+        /// <see cref="T:System.AggregateException"/>, use <c>Async.AwaitTask</c>.</p>
+        /// 
+        /// <p>If the task is canceled then <see cref="T:System.Threading.Tasks.TaskCanceledException"/> is raised.</p>
+        /// 
+        /// <p>Note the task may be governed by a different cancellation token than the overall async computation;
+        /// typically tasks should be wired to the ambient cancellation token obtained via
+        /// <c>let! ct = Async.CancellationToken</c>, catching <see cref="T:System.Threading.Tasks.TaskCanceledException"/>
+        /// where the overall async is started.</p>
         /// </remarks>
         /// <category index="2">Awaiting Results</category>
         /// <example id="await-task-2">
@@ -869,12 +881,18 @@ namespace Microsoft.FSharp.Control
         /// <summary>Creates an asynchronous computation that will wait for the given <c>ValueTask</c> to complete and return
         /// its result.</summary>
         /// <param name="task">The <c>ValueTask</c> to await.</param>
-        /// <remarks>Exceptions are surfaced directly: a task faulted with a single exception raises that
+        /// <remarks>
+        /// <p>Exceptions are surfaced directly: a task faulted with a single exception raises that
         /// exception; only <see cref="T:System.AggregateException"/>s carrying multiple inner exceptions are
         /// re-raised as-is. For the legacy behavior of uniformly presenting the raw underlying
-        /// <see cref="T:System.AggregateException"/>, use <c>Async.AwaitTask</c>.
-        ///
-        /// If the task is canceled then <see cref="T:System.Threading.Tasks.TaskCanceledException"/> is raised.
+        /// <see cref="T:System.AggregateException"/>, use <c>Async.AwaitTask</c>.</p>
+        /// 
+        /// <p>If the task is canceled then <see cref="T:System.Threading.Tasks.TaskCanceledException"/> is raised.</p>
+        /// 
+        /// <p>Note the task may be governed by a different cancellation token than the overall async computation;
+        /// typically tasks should be wired to the ambient cancellation token obtained via
+        /// <c>let! ct = Async.CancellationToken</c>, catching <see cref="T:System.Threading.Tasks.TaskCanceledException"/>
+        /// where the overall async is started.</p>
         /// </remarks>
         /// <category index="2">Awaiting Results</category>
         /// <example id="await-valuetask-1">
@@ -897,12 +915,18 @@ namespace Microsoft.FSharp.Control
 
         /// <summary>Creates an asynchronous computation that will wait for the given <c>ValueTask</c> to complete.</summary>
         /// <param name="task">The <c>ValueTask</c> to await.</param>
-        /// <remarks>Exceptions are surfaced directly: a task faulted with a single exception raises that
+        /// <remarks>
+        /// <p>Exceptions are surfaced directly: a task faulted with a single exception raises that
         /// exception; only <see cref="T:System.AggregateException"/>s carrying multiple inner exceptions are
         /// re-raised as-is. For the legacy behavior of uniformly presenting the raw underlying
-        /// <see cref="T:System.AggregateException"/>, use <c>Async.AwaitTask</c>.
-        ///
-        /// If the task is canceled then <see cref="T:System.Threading.Tasks.TaskCanceledException"/> is raised.
+        /// <see cref="T:System.AggregateException"/>, use <c>Async.AwaitTask</c>.</p>
+        /// 
+        /// <p>If the task is canceled then <see cref="T:System.Threading.Tasks.TaskCanceledException"/> is raised.</p>
+        /// 
+        /// <p>Note the task may be governed by a different cancellation token than the overall async computation;
+        /// typically tasks should be wired to the ambient cancellation token obtained via
+        /// <c>let! ct = Async.CancellationToken</c>, catching <see cref="T:System.Threading.Tasks.TaskCanceledException"/>
+        /// where the overall async is started.</p>
         /// </remarks>
         /// <category index="2">Awaiting Results</category>
         /// <example id="await-valuetask-2">
