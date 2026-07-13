@@ -270,19 +270,6 @@ module Entity =
 
 module ParsedInput =
 
-    /// A pattern that collects all sequential expressions to avoid StackOverflowException
-    let internal (|Sequentials|_|) expr =
-
-        let rec collect expr acc =
-            match expr with
-            | SynExpr.Sequential(expr1 = e1; expr2 = SynExpr.Sequential _ as e2) -> collect e2 (e1 :: acc)
-            | SynExpr.Sequential(expr1 = e1; expr2 = e2) -> e2 :: e1 :: acc
-            | _ -> acc
-
-        match collect expr [] with
-        | [] -> None
-        | exprs -> Some(List.rev exprs)
-
     let emptyStringSet = HashSet<string>()
 
     let GetRangeOfExprLeftOfDot (pos: pos, parsedInput) =
@@ -2608,11 +2595,53 @@ module ParsedInput =
         (entity: ShortIdents)
         (insertionPoint: OpenStatementInsertionPoint)
         =
-        match tryFindNearestPointAndModules currentLine parsedInput insertionPoint with
-        | Some(scope, _, point), modules -> findBestPositionToInsertOpenDeclaration modules scope point entity
-        | _ ->
-            // we failed to find insertion point because ast is empty for some reason, return top left point in this case
-            {
-                ScopeKind = ScopeKind.TopModule
-                Pos = mkPos 1 0
-            }
+        let ctx =
+            match tryFindNearestPointAndModules currentLine parsedInput insertionPoint with
+            | Some(scope, _, point), modules -> findBestPositionToInsertOpenDeclaration modules scope point entity
+            | _ ->
+                // we failed to find insertion point because ast is empty for some reason, return top left point in this case
+                {
+                    ScopeKind = ScopeKind.TopModule
+                    Pos = mkPos 1 0
+                }
+
+        // In scripts, leading `#r`/`#reference`/`#load` directives must precede any `open`.
+        match parsedInput with
+        | ParsedInput.ImplFile impl when impl.IsScript ->
+            let isReferenceOrLoad =
+                function
+                | "r"
+                | "reference"
+                | "load" -> true
+                | _ -> false
+
+            let lastReferenceLine =
+                match impl.Contents with
+                | SynModuleOrNamespace(decls = decls) :: _ ->
+                    decls
+                    |> List.takeWhile (function
+                        | SynModuleDecl.HashDirective _ -> true
+                        | _ -> false)
+                    |> List.choose (function
+                        | SynModuleDecl.HashDirective(ParsedHashDirective(ident, _, _), range) when isReferenceOrLoad ident ->
+                            Some range.EndLine
+                        | _ -> None)
+                    |> List.fold max 0
+                | _ -> 0
+
+            if lastReferenceLine > 0 then
+                // `AdjustInsertionPoint` snaps a `TopModule` position up to line 1, above the directives;
+                // remap it to `HashDirective`, which (like the other scopes) it passes through unchanged.
+                let scopeKind =
+                    if ctx.ScopeKind = ScopeKind.TopModule then
+                        ScopeKind.HashDirective
+                    else
+                        ctx.ScopeKind
+
+                {
+                    ScopeKind = scopeKind
+                    Pos = mkPos (max (lastReferenceLine + 1) ctx.Pos.Line) ctx.Pos.Column
+                }
+            else
+                ctx
+        | _ -> ctx

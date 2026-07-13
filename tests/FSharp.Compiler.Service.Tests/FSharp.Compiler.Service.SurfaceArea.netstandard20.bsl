@@ -144,6 +144,10 @@ FSharp.Compiler.AbstractIL.IL+ILAttribElem+Char: Char Item
 FSharp.Compiler.AbstractIL.IL+ILAttribElem+Char: Char get_Item()
 FSharp.Compiler.AbstractIL.IL+ILAttribElem+Double: Double Item
 FSharp.Compiler.AbstractIL.IL+ILAttribElem+Double: Double get_Item()
+FSharp.Compiler.AbstractIL.IL+ILAttribElem+Enum: ILAttribElem get_value()
+FSharp.Compiler.AbstractIL.IL+ILAttribElem+Enum: ILAttribElem value
+FSharp.Compiler.AbstractIL.IL+ILAttribElem+Enum: ILType enumType
+FSharp.Compiler.AbstractIL.IL+ILAttribElem+Enum: ILType get_enumType()
 FSharp.Compiler.AbstractIL.IL+ILAttribElem+Int16: Int16 Item
 FSharp.Compiler.AbstractIL.IL+ILAttribElem+Int16: Int16 get_Item()
 FSharp.Compiler.AbstractIL.IL+ILAttribElem+Int32: Int32 Item
@@ -161,6 +165,7 @@ FSharp.Compiler.AbstractIL.IL+ILAttribElem+Tags: Int32 Bool
 FSharp.Compiler.AbstractIL.IL+ILAttribElem+Tags: Int32 Byte
 FSharp.Compiler.AbstractIL.IL+ILAttribElem+Tags: Int32 Char
 FSharp.Compiler.AbstractIL.IL+ILAttribElem+Tags: Int32 Double
+FSharp.Compiler.AbstractIL.IL+ILAttribElem+Tags: Int32 Enum
 FSharp.Compiler.AbstractIL.IL+ILAttribElem+Tags: Int32 Int16
 FSharp.Compiler.AbstractIL.IL+ILAttribElem+Tags: Int32 Int32
 FSharp.Compiler.AbstractIL.IL+ILAttribElem+Tags: Int32 Int64
@@ -192,6 +197,7 @@ FSharp.Compiler.AbstractIL.IL+ILAttribElem: Boolean IsBool
 FSharp.Compiler.AbstractIL.IL+ILAttribElem: Boolean IsByte
 FSharp.Compiler.AbstractIL.IL+ILAttribElem: Boolean IsChar
 FSharp.Compiler.AbstractIL.IL+ILAttribElem: Boolean IsDouble
+FSharp.Compiler.AbstractIL.IL+ILAttribElem: Boolean IsEnum
 FSharp.Compiler.AbstractIL.IL+ILAttribElem: Boolean IsInt16
 FSharp.Compiler.AbstractIL.IL+ILAttribElem: Boolean IsInt32
 FSharp.Compiler.AbstractIL.IL+ILAttribElem: Boolean IsInt64
@@ -209,6 +215,7 @@ FSharp.Compiler.AbstractIL.IL+ILAttribElem: Boolean get_IsBool()
 FSharp.Compiler.AbstractIL.IL+ILAttribElem: Boolean get_IsByte()
 FSharp.Compiler.AbstractIL.IL+ILAttribElem: Boolean get_IsChar()
 FSharp.Compiler.AbstractIL.IL+ILAttribElem: Boolean get_IsDouble()
+FSharp.Compiler.AbstractIL.IL+ILAttribElem: Boolean get_IsEnum()
 FSharp.Compiler.AbstractIL.IL+ILAttribElem: Boolean get_IsInt16()
 FSharp.Compiler.AbstractIL.IL+ILAttribElem: Boolean get_IsInt32()
 FSharp.Compiler.AbstractIL.IL+ILAttribElem: Boolean get_IsInt64()
@@ -226,6 +233,7 @@ FSharp.Compiler.AbstractIL.IL+ILAttribElem: FSharp.Compiler.AbstractIL.IL+ILAttr
 FSharp.Compiler.AbstractIL.IL+ILAttribElem: FSharp.Compiler.AbstractIL.IL+ILAttribElem+Byte
 FSharp.Compiler.AbstractIL.IL+ILAttribElem: FSharp.Compiler.AbstractIL.IL+ILAttribElem+Char
 FSharp.Compiler.AbstractIL.IL+ILAttribElem: FSharp.Compiler.AbstractIL.IL+ILAttribElem+Double
+FSharp.Compiler.AbstractIL.IL+ILAttribElem: FSharp.Compiler.AbstractIL.IL+ILAttribElem+Enum
 FSharp.Compiler.AbstractIL.IL+ILAttribElem: FSharp.Compiler.AbstractIL.IL+ILAttribElem+Int16
 FSharp.Compiler.AbstractIL.IL+ILAttribElem: FSharp.Compiler.AbstractIL.IL+ILAttribElem+Int32
 FSharp.Compiler.AbstractIL.IL+ILAttribElem: FSharp.Compiler.AbstractIL.IL+ILAttribElem+Int64
@@ -243,6 +251,7 @@ FSharp.Compiler.AbstractIL.IL+ILAttribElem: ILAttribElem NewBool(Boolean)
 FSharp.Compiler.AbstractIL.IL+ILAttribElem: ILAttribElem NewByte(Byte)
 FSharp.Compiler.AbstractIL.IL+ILAttribElem: ILAttribElem NewChar(Char)
 FSharp.Compiler.AbstractIL.IL+ILAttribElem: ILAttribElem NewDouble(Double)
+FSharp.Compiler.AbstractIL.IL+ILAttribElem: ILAttribElem NewEnum(ILType, ILAttribElem)
 FSharp.Compiler.AbstractIL.IL+ILAttribElem: ILAttribElem NewInt16(Int16)
 FSharp.Compiler.AbstractIL.IL+ILAttribElem: ILAttribElem NewInt32(Int32)
 FSharp.Compiler.AbstractIL.IL+ILAttribElem: ILAttribElem NewInt64(Int64)
@@ -2026,16 +2035,6 @@ FSharp.Compiler.AbstractIL.ILBinaryReader: FSharp.Compiler.AbstractIL.ILBinaryRe
 FSharp.Compiler.AbstractIL.ILBinaryReader: FSharp.Compiler.AbstractIL.ILBinaryReader+MetadataOnlyFlag
 FSharp.Compiler.AbstractIL.ILBinaryReader: FSharp.Compiler.AbstractIL.ILBinaryReader+ReduceMemoryFlag
 FSharp.Compiler.AbstractIL.ILBinaryReader: FSharp.Compiler.AbstractIL.ILBinaryReader+Shim
-FSharp.Compiler.Caches.CacheMetrics+CacheMetricsListener: Double Ratio
-FSharp.Compiler.Caches.CacheMetrics+CacheMetricsListener: Double get_Ratio()
-FSharp.Compiler.Caches.CacheMetrics+CacheMetricsListener: Int64 Hits
-FSharp.Compiler.Caches.CacheMetrics+CacheMetricsListener: Int64 Misses
-FSharp.Compiler.Caches.CacheMetrics+CacheMetricsListener: Int64 get_Hits()
-FSharp.Compiler.Caches.CacheMetrics+CacheMetricsListener: Int64 get_Misses()
-FSharp.Compiler.Caches.CacheMetrics+CacheMetricsListener: Microsoft.FSharp.Collections.FSharpMap`2[System.String,System.Int64] GetTotals()
-FSharp.Compiler.Caches.CacheMetrics+CacheMetricsListener: System.String ToString()
-FSharp.Compiler.Caches.CacheMetrics+CacheMetricsListener: Void .ctor(System.String)
-FSharp.Compiler.Caches.CacheMetrics: FSharp.Compiler.Caches.CacheMetrics+CacheMetricsListener
 FSharp.Compiler.Caches.CacheMetrics: System.Diagnostics.Metrics.Meter Meter
 FSharp.Compiler.Caches.CacheMetrics: System.Diagnostics.Metrics.Meter get_Meter()
 FSharp.Compiler.Cancellable: Boolean HasCancellationToken
@@ -2085,8 +2084,10 @@ FSharp.Compiler.CodeAnalysis.FSharpCheckFileAnswer: Int32 GetHashCode(System.Col
 FSharp.Compiler.CodeAnalysis.FSharpCheckFileAnswer: Int32 Tag
 FSharp.Compiler.CodeAnalysis.FSharpCheckFileAnswer: Int32 get_Tag()
 FSharp.Compiler.CodeAnalysis.FSharpCheckFileAnswer: System.String ToString()
+FSharp.Compiler.CodeAnalysis.FSharpCheckFileResults: Boolean HasErrors
 FSharp.Compiler.CodeAnalysis.FSharpCheckFileResults: Boolean HasFullTypeCheckInfo
 FSharp.Compiler.CodeAnalysis.FSharpCheckFileResults: Boolean IsRelativeNameResolvableFromSymbol(FSharp.Compiler.Text.Position, Microsoft.FSharp.Collections.FSharpList`1[System.String], FSharp.Compiler.Symbols.FSharpSymbol)
+FSharp.Compiler.CodeAnalysis.FSharpCheckFileResults: Boolean get_HasErrors()
 FSharp.Compiler.CodeAnalysis.FSharpCheckFileResults: Boolean get_HasFullTypeCheckInfo()
 FSharp.Compiler.CodeAnalysis.FSharpCheckFileResults: FSharp.Compiler.CodeAnalysis.FSharpProjectContext ProjectContext
 FSharp.Compiler.CodeAnalysis.FSharpCheckFileResults: FSharp.Compiler.CodeAnalysis.FSharpProjectContext get_ProjectContext()
@@ -5620,6 +5621,7 @@ FSharp.Compiler.Symbols.FSharpMemberOrFunctionOrValue: Boolean EventIsStandard
 FSharp.Compiler.Symbols.FSharpMemberOrFunctionOrValue: Boolean HasGetterMethod
 FSharp.Compiler.Symbols.FSharpMemberOrFunctionOrValue: Boolean HasSetterMethod
 FSharp.Compiler.Symbols.FSharpMemberOrFunctionOrValue: Boolean HasSignatureFile
+FSharp.Compiler.Symbols.FSharpMemberOrFunctionOrValue: Boolean IsPropertyAccessor
 FSharp.Compiler.Symbols.FSharpMemberOrFunctionOrValue: Boolean IsActivePattern
 FSharp.Compiler.Symbols.FSharpMemberOrFunctionOrValue: Boolean IsBaseValue
 FSharp.Compiler.Symbols.FSharpMemberOrFunctionOrValue: Boolean IsCompilerGenerated
@@ -5655,6 +5657,7 @@ FSharp.Compiler.Symbols.FSharpMemberOrFunctionOrValue: Boolean get_EventIsStanda
 FSharp.Compiler.Symbols.FSharpMemberOrFunctionOrValue: Boolean get_HasGetterMethod()
 FSharp.Compiler.Symbols.FSharpMemberOrFunctionOrValue: Boolean get_HasSetterMethod()
 FSharp.Compiler.Symbols.FSharpMemberOrFunctionOrValue: Boolean get_HasSignatureFile()
+FSharp.Compiler.Symbols.FSharpMemberOrFunctionOrValue: Boolean get_IsPropertyAccessor()
 FSharp.Compiler.Symbols.FSharpMemberOrFunctionOrValue: Boolean get_IsActivePattern()
 FSharp.Compiler.Symbols.FSharpMemberOrFunctionOrValue: Boolean get_IsBaseValue()
 FSharp.Compiler.Symbols.FSharpMemberOrFunctionOrValue: Boolean get_IsCompilerGenerated()
@@ -6132,9 +6135,11 @@ FSharp.Compiler.Syntax.DebugPointAtLeafExpr: Boolean Equals(FSharp.Compiler.Synt
 FSharp.Compiler.Syntax.DebugPointAtLeafExpr: Boolean Equals(FSharp.Compiler.Syntax.DebugPointAtLeafExpr, System.Collections.IEqualityComparer)
 FSharp.Compiler.Syntax.DebugPointAtLeafExpr: Boolean Equals(System.Object)
 FSharp.Compiler.Syntax.DebugPointAtLeafExpr: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
-FSharp.Compiler.Syntax.DebugPointAtLeafExpr: FSharp.Compiler.Syntax.DebugPointAtLeafExpr NewYes(FSharp.Compiler.Text.Range)
-FSharp.Compiler.Syntax.DebugPointAtLeafExpr: FSharp.Compiler.Text.Range Item
-FSharp.Compiler.Syntax.DebugPointAtLeafExpr: FSharp.Compiler.Text.Range get_Item()
+FSharp.Compiler.Syntax.DebugPointAtLeafExpr: Boolean get_isHidden()
+FSharp.Compiler.Syntax.DebugPointAtLeafExpr: Boolean isHidden
+FSharp.Compiler.Syntax.DebugPointAtLeafExpr: FSharp.Compiler.Syntax.DebugPointAtLeafExpr NewYes(Boolean, FSharp.Compiler.Text.Range)
+FSharp.Compiler.Syntax.DebugPointAtLeafExpr: FSharp.Compiler.Text.Range get_range()
+FSharp.Compiler.Syntax.DebugPointAtLeafExpr: FSharp.Compiler.Text.Range range
 FSharp.Compiler.Syntax.DebugPointAtLeafExpr: Int32 GetHashCode()
 FSharp.Compiler.Syntax.DebugPointAtLeafExpr: Int32 GetHashCode(System.Collections.IEqualityComparer)
 FSharp.Compiler.Syntax.DebugPointAtLeafExpr: Int32 Tag

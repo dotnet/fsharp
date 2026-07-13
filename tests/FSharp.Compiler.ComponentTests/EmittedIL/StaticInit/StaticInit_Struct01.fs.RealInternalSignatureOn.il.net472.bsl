@@ -8,7 +8,7 @@
 .assembly extern netstandard
 {
   .publickeytoken = (CC 7B 13 FF CD 2D DD 51 )                         
-  .ver 2:0:0:0
+  .ver 2:1:0:0
 }
 .assembly assembly
 {
@@ -21,16 +21,6 @@
 
   .hash algorithm 0x00008004
   .ver 0:0:0:0
-}
-.mresource public FSharpSignatureCompressedData.assembly
-{
-  
-  
-}
-.mresource public FSharpOptimizationCompressedData.assembly
-{
-  
-  
 }
 .module assembly.exe
 
@@ -92,9 +82,7 @@
       IL_000c:  ret
     } 
 
-    .method public hidebysig virtual final 
-            instance int32  CompareTo(object obj,
-                                      class [runtime]System.Collections.IComparer comp) cil managed
+    .method public hidebysig virtual final instance int32  CompareTo(object obj, class [runtime]System.Collections.IComparer comp) cil managed
     {
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       
@@ -157,9 +145,7 @@
       IL_000b:  ret
     } 
 
-    .method public hidebysig instance bool 
-            Equals(valuetype assembly/C obj,
-                   class [runtime]System.Collections.IEqualityComparer comp) cil managed
+    .method public hidebysig instance bool Equals(valuetype assembly/C obj, class [runtime]System.Collections.IEqualityComparer comp) cil managed
     {
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       
@@ -179,9 +165,7 @@
       IL_0016:  ret
     } 
 
-    .method public hidebysig virtual final 
-            instance bool  Equals(object obj,
-                                  class [runtime]System.Collections.IEqualityComparer comp) cil managed
+    .method public hidebysig virtual final instance bool  Equals(object obj, class [runtime]System.Collections.IEqualityComparer comp) cil managed
     {
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       
@@ -225,23 +209,22 @@
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       
       .maxstack  8
-      IL_0000:  nop
-      IL_0001:  volatile.
-      IL_0003:  ldsfld     int32 assembly/C::init@4
-      IL_0008:  ldc.i4.1
-      IL_0009:  bge.s      IL_0014
+      IL_0000:  volatile.
+      IL_0002:  ldsfld     int32 assembly/C::init@4
+      IL_0007:  ldc.i4.1
+      IL_0008:  bge.s      IL_0013
 
-      IL_000b:  call       void [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/IntrinsicFunctions::FailStaticInit()
+      IL_000a:  call       void [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/IntrinsicFunctions::FailStaticInit()
+      IL_000f:  nop
       IL_0010:  nop
-      IL_0011:  nop
-      IL_0012:  br.s       IL_0015
+      IL_0011:  br.s       IL_0014
 
-      IL_0014:  nop
-      IL_0015:  ldsfld     int32 assembly/C::x
-      IL_001a:  ldstr      "2"
-      IL_001f:  callvirt   instance int32 [runtime]System.String::get_Length()
-      IL_0024:  add
-      IL_0025:  ret
+      IL_0013:  nop
+      IL_0014:  ldsfld     int32 assembly/C::x
+      IL_0019:  ldstr      "2"
+      IL_001e:  callvirt   instance int32 [runtime]System.String::get_Length()
+      IL_0023:  add
+      IL_0024:  ret
     } 
 
     .method public hidebysig virtual final instance bool  Equals(valuetype assembly/C obj) cil managed
