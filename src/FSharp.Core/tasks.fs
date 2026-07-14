@@ -739,6 +739,10 @@ module Task =
 
     [<CompiledName("Map")>]
     let inline map ([<InlineIfLambda>] mapping: 'T -> 'U) (task: Task<'T>) : Task<'U> =
+        // if task.IsCompleted then // includes Canceled or Faulted states
+        //     try result (task.GetAwaiter().GetResult() |> mapping) // Result would surface AggregateException
+        //     with e -> Task.FromException<'U>(e)
+        // else
         if task.Status = TaskStatus.RanToCompletion then
             result (mapping task.Result)
         else
@@ -773,8 +777,9 @@ module Task =
             TaskBuilder.task {
                 try
                     return! task
-                with e ->
-                    return handler e
+                with
+                | :? System.OperationCanceledException as e -> return! raise e
+                | e -> return handler e
             }
 
     [<CompiledName("Catch")>]
@@ -786,8 +791,9 @@ module Task =
                 try
                     let! v = task
                     return Ok v
-                with e ->
-                    return Error e
+                with
+                | :? System.OperationCanceledException as e -> return! raise e
+                | e -> return Error e
             }
 
 #if NETSTANDARD2_1
