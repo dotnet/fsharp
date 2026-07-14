@@ -11,7 +11,15 @@ open Xunit
 module TaskModuleFunctionsTests =
 
 #if NETFRAMEWORK // Polyfill for netstandard2.0 
-    type Task<'T> with member x.IsCompletedSuccessfully = x.Status = TaskStatus.RanToCompletion 
+    type Task<'T> with member x.IsCompletedSuccessfully = x.Status = TaskStatus.RanToCompletion
+    let cancelWithToken (tcs: TaskCompletionSource<'T>) =
+        tcs.SetCanceled() // No CT overload available
+        CaCancellationToken.None // so exception won't reference one
+#else    
+    let cancelWithToken (tcs: TaskCompletionSource<'T>) =
+        let ct = CancellationToken true
+        tcs.SetCanceled ct
+        ct
 #endif
 
     [<Fact>]
@@ -58,15 +66,16 @@ module TaskModuleFunctionsTests =
         let t = Task.FromCanceled<int>(ct) |> Task.map (fun x -> x * 2)
         let e = Assert.ThrowsAsync<TaskCanceledException>(fun () -> t).Result
         Assert.Equal(ct, e.CancellationToken)
+        Assert.True t.IsCanceled
 
     [<Fact>]
     let ``Task.map propagates Cancellation (async)`` () =
         let tcs = TaskCompletionSource<int>()
         let t = tcs.Task |> Task.map (fun x -> x * 2)
-        let ct = CancellationToken true
-        tcs.SetCanceled ct
+        let ct = cancelWithToken tcs
         let e = Assert.ThrowsAsync<TaskCanceledException>(fun () -> t).Result
         Assert.Equal(ct, e.CancellationToken)
+        Assert.True t.IsCanceled
 
 
     [<Fact>]
@@ -107,15 +116,16 @@ module TaskModuleFunctionsTests =
         let t = Task.FromCanceled<int>(ct) |> Task.bind (fun x -> Task.result (x * 2))
         let e = Assert.ThrowsAsync<TaskCanceledException>(fun () -> t).Result
         Assert.Equal(ct, e.CancellationToken)
+        Assert.True t.IsCanceled
 
     [<Fact>]
     let ``Task.bind propagates Cancellation (async)`` () =
         let tcs = TaskCompletionSource<int>()
         let t = tcs.Task |> Task.bind (fun x -> Task.result (x * 2))
-        let ct = CancellationToken true
-        tcs.SetCanceled ct
+        let ct = cancelWithToken tcs
         let e = Assert.ThrowsAsync<TaskCanceledException>(fun () -> t).Result
         Assert.Equal(ct, e.CancellationToken)
+        Assert.True t.IsCanceled
 
     
     [<Fact>]
@@ -155,15 +165,16 @@ module TaskModuleFunctionsTests =
         let t = Task.FromCanceled<int>(ct) |> Task.ignore<int>
         let e = Assert.ThrowsAsync<TaskCanceledException>(fun () -> t).Result
         Assert.Equal(ct, e.CancellationToken)
+        Assert.True t.IsCanceled
 
     [<Fact>]
     let ``Task.ignore propagates Cancellation (async)`` () =
         let tcs = TaskCompletionSource<int>()
         let t = tcs.Task |> Task.ignore<int>
-        let ct = CancellationToken true
-        tcs.SetCanceled ct
+        let ct = cancelWithToken tcs
         let e = Assert.ThrowsAsync<TaskCanceledException>(fun () -> t).Result
         Assert.Equal(ct, e.CancellationToken)
+        Assert.True t.IsCanceled
 
     
     [<Fact>]
@@ -205,15 +216,16 @@ module TaskModuleFunctionsTests =
         let t = Task.FromCanceled<int>(ct) |> Task.catchWith (fun _ -> -1)
         let e = Assert.ThrowsAsync<TaskCanceledException>(fun () -> t).Result
         Assert.Equal(ct, e.CancellationToken)
+        Assert.True t.IsCanceled
 
     [<Fact>]
     let ``Task.catchWith propagates Cancellation (async)`` () =
         let tcs = TaskCompletionSource<int>()
         let t = tcs.Task |> Task.catchWith (fun _ -> -1)
-        let ct = CancellationToken true
-        tcs.SetCanceled ct
+        let ct = cancelWithToken tcs
         let e = Assert.ThrowsAsync<TaskCanceledException>(fun () -> t).Result
         Assert.Equal(ct, e.CancellationToken)
+        Assert.True t.IsCanceled
 
     [<Fact>]
     let ``Task.catch returns Ok on success (sync)`` () : unit=
@@ -249,15 +261,17 @@ module TaskModuleFunctionsTests =
         let t = Task.FromCanceled<int>(ct) |> Task.catch
         let e = Assert.ThrowsAsync<TaskCanceledException>(fun () -> t).Result
         Assert.Equal(ct, e.CancellationToken)
+        Assert.True t.IsCanceled
 
     [<Fact>]
     let ``Task.catch propagates cancellation (async)`` () =
         let tcs = TaskCompletionSource<int>()
         let t = tcs.Task |> Task.catch
         let ct = CancellationToken true
-        tcs.SetCanceled ct
+        let ct = cancelWithToken tcs
         let e = Assert.ThrowsAsync<TaskCanceledException>(fun () -> t).Result
         Assert.Equal(ct, e.CancellationToken)
+        Assert.True t.IsCanceled
 
 
     [<Fact>]
