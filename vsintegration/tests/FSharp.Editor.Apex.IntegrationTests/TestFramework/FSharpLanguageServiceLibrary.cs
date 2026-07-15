@@ -2,6 +2,8 @@
 // Copyright (c) Microsoft Corporation.  All rights reserved.
 //-----------------------------------------------------------------------------
 
+using System;
+using System.Linq;
 using Microsoft.Test.Apex;
 using Microsoft.Test.Apex.Services;
 using Microsoft.Test.Apex.VisualStudio;
@@ -44,7 +46,37 @@ namespace FSharp.Editor.Apex.IntegrationTests.TestFramework
         public TextDocumentView OpenDocument(ProjectItemTestExtension documentItem)
         {
             var window = documentItem.Open<TextEditorDocumentWindowTestExtension>();
-            return new TextDocumentView(window.Editor);
+            return new TextDocumentView(window);
         }
+
+        /// <summary>
+        /// Finds <paramref name="fileName"/> under <paramref name="project"/>, opens it in the text
+        /// editor and returns a view over it. The project's item tree is populated lazily, so the lookup
+        /// is polled (TryFindChild is single-shot); on timeout it throws listing the project's actual
+        /// top-level item names, which makes a template-filename surprise obvious.
+        /// </summary>
+        public TextDocumentView OpenProjectFile(ProjectTestExtension project, string fileName)
+        {
+            ProjectItemTestExtension item = null;
+            this.Synchronization.TryWaitForCondition(
+                () => (item = project.TryFindChild<ProjectItemTestExtension>(fileName, true)) != null);
+
+            if (item == null)
+            {
+                var actualNames = string.Join(", ", project.ProjectItems.Select(child => $"'{child.Name}'"));
+                throw new InvalidOperationException(
+                    $"Project item '{fileName}' was not found in project '{project.Name}'. Items present: {actualNames}.");
+            }
+
+            return this.OpenDocument(item);
+        }
+
+        /// <summary>The short caption (file name) of the active document window, or null if none is active.</summary>
+        public string ActiveDocumentCaption
+            => this.VisualStudio.ObjectModel.WindowManager.ActiveDocumentWindow?.Caption;
+
+        /// <summary>The text of the caret's current line in the active document editor, or null if none is active.</summary>
+        public string ActiveDocumentCurrentLineText
+            => this.Editor?.Caret.GetCurrentLineText();
     }
 }

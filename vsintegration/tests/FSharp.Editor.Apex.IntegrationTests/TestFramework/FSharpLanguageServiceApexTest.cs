@@ -197,6 +197,77 @@ namespace FSharp.Editor.Apex.IntegrationTests.TestFramework
         }
 
         /// <summary>
+        /// Builds the current solution and returns whether it succeeded.
+        /// </summary>
+        protected bool BuildSolutionSucceeded()
+        {
+            this.BuildSolution();
+            return this.Library.VisualStudio.ObjectModel.Solution.BuildManager.Succeeded;
+        }
+
+        /// <summary>
+        /// Places the caret on <paramref name="expression"/>, focuses the editor and invokes Go To
+        /// Definition, then waits for navigation to settle. The result is read from the active document
+        /// afterwards (which may be the same or a different file).
+        /// </summary>
+        protected void GoToDefinition(TextDocumentView document, string expression)
+        {
+            document.MoveToExpression(expression);
+            document.Focus();
+            document.GoToDefinition();
+            this.Library.Synchronization.WaitForSolutionCrawler();
+        }
+
+        /// <summary>
+        /// Invokes Go To Definition on <paramref name="expression"/> and polls until the active document
+        /// settles on a line matching <paramref name="lineMatches"/> and, when given, a window caption
+        /// equal to <paramref name="expectedCaption"/>. Go To Definition navigates asynchronously (it may
+        /// open/activate another document and only then move the caret), so — exactly like the light-bulb
+        /// helper waits for its actions — we poll for the end state instead of reading it immediately.
+        /// Reading it immediately is the fire-and-assert race that makes the ported navigation tests flaky.
+        /// </summary>
+        protected void GoToDefinitionAndWait(
+            TextDocumentView document,
+            string expression,
+            Func<string, bool> lineMatches,
+            string expectedCaption = null)
+        {
+            this.GoToDefinition(document, expression);
+
+            string lastLine = null;
+            string lastCaption = null;
+            bool landed = this.Library.Synchronization.TryWaitForCondition(
+                () =>
+                {
+                    lastLine = this.Library.ActiveDocumentCurrentLineText;
+                    lastCaption = this.Library.ActiveDocumentCaption;
+                    return lastLine != null
+                        && lineMatches(lastLine)
+                        && (expectedCaption == null || string.Equals(lastCaption, expectedCaption, StringComparison.Ordinal));
+                },
+                TimeSpan.FromSeconds(30));
+
+            Assert.IsTrue(
+                landed,
+                $"Go To Definition on '{expression}' did not settle on the expected location. "
+                + (expectedCaption != null ? $"Expected caption '{expectedCaption}', actual '{lastCaption}'. " : string.Empty)
+                + $"Actual current line: '{lastLine}'.");
+        }
+
+        /// <summary>
+        /// Asserts two pieces of F# source are equal, ignoring line-ending style and any trailing
+        /// newline. Template output and editor buffers differ in those incidental ways across SDKs, so
+        /// normalizing avoids brittle failures while still comparing the meaningful content exactly.
+        /// </summary>
+        protected static void AssertSourceEquals(string expected, string actual)
+        {
+            static string Normalize(string source)
+                => (source ?? string.Empty).Replace("\r\n", "\n").Replace("\r", "\n").TrimEnd('\n');
+
+            Assert.AreEqual(Normalize(expected), Normalize(actual));
+        }
+
+        /// <summary>
         /// Verifies that placing the caret on <paramref name="caretExpression"/> in the given F# source
         /// offers exactly one light-bulb action whose text contains <paramref name="expectedActionText"/>.
         /// Mirrors the display-text assertions in FSharp.Editor.IntegrationTests CodeActionTests (the Apex
