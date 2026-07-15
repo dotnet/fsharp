@@ -129,6 +129,12 @@
     "19744": {
       "sha": "0ba43016caf187b2ad1e240f458e3c8a4625ba2d",
       "cats": []
+    },
+    "20065": {
+      "sha": "fa190796c8733d15a5500f117f462169f513694e",
+      "cats": [
+        "Affects-Build-Infra"
+      ]
     }
   }
 }
