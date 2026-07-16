@@ -1806,3 +1806,4 @@ featureTypeArgumentDependencyOrdering,"ordering explicit type arguments by their
 3924,chkNativePtrStackallocInHandler,"'NativePtr.stackalloc' cannot be used inside the 'with' handler, filter or 'finally' block of a 'try' expression. The 'localloc' IL instruction this emits is rejected inside an exception-handling region, producing a 'System.InvalidProgramException' when the method is loaded."
 3925,optInlineMemberCannotUseBase,"An inline member cannot use 'base' or protected members unless those uses can be eliminated before the member itself is inlined."
 featureReraiseInComputationExpressions,"calls to 'reraise' in a computation expression handler"
+4000,tcAnonUnionCaseOverlap,"The type '%s' is a subtype of '%s' and will be ignored"

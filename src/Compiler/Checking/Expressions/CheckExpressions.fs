@@ -4978,6 +4978,11 @@ and TcAnonUnionTypeOr (cenv: cenv) env (tpenv: UnscopedTyparEnv) synCases m =
     let rec addToCases (pt: TType) (list: ResizeArray<TType>) =
         if not (Seq.exists (isObjTyAnyNullness g) list) then
             if isObjTyAnyNullness g pt then
+                // Warning: all existing types are subtypes of obj|null and will be ignored
+                for t in list do
+                    warning(Error(FSComp.SR.tcAnonUnionCaseOverlap(
+                        NicePrint.stringOfTy env.DisplayEnv t,
+                        NicePrint.stringOfTy env.DisplayEnv pt), m))
                 list.Clear()
                 list.Add(pt)
             elif isAnonUnionTy g pt then
@@ -4990,12 +4995,25 @@ and TcAnonUnionTypeOr (cenv: cenv) env (tpenv: UnscopedTyparEnv) synCases m =
                 while i < list.Count && shouldAdd do
                     let t = list.[i]
                     if isSubTypeOf cenv.g cenv.amap m pt t then
+                        // Warning: new type pt is a subtype of existing type t and will be ignored
+                        warning(Error(FSComp.SR.tcAnonUnionCaseOverlap(
+                            NicePrint.stringOfTy env.DisplayEnv pt,
+                            NicePrint.stringOfTy env.DisplayEnv t), m))
                         shouldAdd <- false
                     elif isSuperTypeOf cenv.g cenv.amap m pt t then
+                        // Warning: existing type t is a subtype of new type pt and will be removed
+                        warning(Error(FSComp.SR.tcAnonUnionCaseOverlap(
+                            NicePrint.stringOfTy env.DisplayEnv t,
+                            NicePrint.stringOfTy env.DisplayEnv pt), m))
                         list.RemoveAt(i)
                         i <- i - 1 // redo this index
                     i <- i + 1
                 if shouldAdd then list.Add pt
+        else
+            // Warning: new type pt is a subtype of obj and will be ignored
+            warning(Error(FSComp.SR.tcAnonUnionCaseOverlap(
+                NicePrint.stringOfTy env.DisplayEnv pt,
+                NicePrint.stringOfTy env.DisplayEnv cenv.g.system_Object_ty), m))
 
     let createDisjointTypes synAnonUnionCases =
         let unionTypeCases = ResizeArray()

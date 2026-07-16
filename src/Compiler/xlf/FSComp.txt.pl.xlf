@@ -1317,6 +1317,11 @@
         <target state="new">The source expression of a spread into an anonymous record expression must have a nominal or anonymous record type.</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcAnonUnionCaseOverlap">
+        <source>The type '{0}' is a subtype of '{1}' and will be ignored</source>
+        <target state="new">The type '{0}' is a subtype of '{1}' and will be ignored</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcAttributeIsNotValidForUnionCaseWithFields">
         <source>This attribute is not valid for use on union cases with fields.</source>
         <target state="new">This attribute is not valid for use on union cases with fields.</target>
