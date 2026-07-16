@@ -863,11 +863,12 @@ module SyntaxTraversal =
                 | SynType.Paren(innerType = t)
                 | SynType.SignatureParameter(usedType = t) -> traverseSynType path t
                 | SynType.Intersection(types = types) -> List.tryPick (traverseSynType path) types
+                | SynType.AnonUnion(cases, _) ->
+                    cases
+                    |> List.tryPick (fun (SynAnonUnionCase(typ, _, _)) -> traverseSynType path typ)
                 | SynType.StaticConstantNull _
                 | SynType.Anon _
                 | SynType.AnonRecd _
-                // TODO: Anonymous union
-                | SynType.AnonUnion _
                 | SynType.LongIdent _
                 | SynType.Var _
                 | SynType.StaticConstant _
