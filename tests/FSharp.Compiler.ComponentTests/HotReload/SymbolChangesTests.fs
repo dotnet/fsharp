@@ -23,6 +23,7 @@ module SymbolChangesTests =
     let private diff edits rude =
         { TypedTreeDiffResult.SemanticEdits = edits
           RudeEdits = rude
+          RequiredCapabilities = []
           LambdaEdits = [] }
 
     [<Fact>]

@@ -22,6 +22,7 @@ module DefinitionMapTests =
     let private diffResult edits rude =
         { TypedTreeDiffResult.SemanticEdits = edits
           RudeEdits = rude
+          RequiredCapabilities = []
           LambdaEdits = [] }
 
     [<Fact>]
