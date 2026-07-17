@@ -14,33 +14,6 @@ open System.Text.RegularExpressions
 [<Literal>]
 let HotReloadGenerationSuffixedNameInfix = "@hotreload#g"
 
-/// Recognizes occurrence-keyed generation-suffixed closure class names:
-/// `{base}@hotreload#g{N}_o{chain}`, any generation.
-let IsHotReloadGenerationSuffixedName (name: string) =
-    not (String.IsNullOrEmpty name)
-    && name.IndexOf(HotReloadGenerationSuffixedNameInfix, StringComparison.Ordinal)
-       >= 0
-
-/// Parses the generation of an occurrence-keyed closure class name:
-/// `f@hotreload#g2_o3` -> Some 2. None when the name is not generation-suffixed
-/// or malformed.
-let TryGetHotReloadNameGeneration (name: string) : int option =
-    if String.IsNullOrEmpty name then
-        None
-    else
-        match name.IndexOf(HotReloadGenerationSuffixedNameInfix, StringComparison.Ordinal) with
-        | -1 -> None
-        | markerIndex ->
-            let digitsStart = markerIndex + HotReloadGenerationSuffixedNameInfix.Length
-            let digitsEnd = name.IndexOf("_o", digitsStart, StringComparison.Ordinal)
-
-            if digitsEnd <= digitsStart then
-                None
-            else
-                match Int32.TryParse(name.Substring(digitsStart, digitsEnd - digitsStart)) with
-                | true, generation when generation >= 0 -> Some generation
-                | _ -> None
-
 type SynthesizedPositionalName =
     {
         NormalizedBasicName: string
@@ -89,14 +62,16 @@ let private tryNormalizeDebugPipeBasicName (name: string) =
     let matchResult = debugPipeNameRegex.Value.Match name
 
     if matchResult.Success then
-        let line = Int32.Parse matchResult.Groups[1].Value
-        let marker = " at line "
-        let markerIndex = name.LastIndexOf(marker, StringComparison.Ordinal)
+        match tryParsePositiveInt matchResult.Groups[1].Value with
+        | Some line ->
+            let marker = " at line "
+            let markerIndex = name.LastIndexOf(marker, StringComparison.Ordinal)
 
-        if markerIndex > 0 then
-            Some(name.Substring(0, markerIndex), line)
-        else
-            None
+            if markerIndex > 0 then
+                Some(name.Substring(0, markerIndex), line)
+            else
+                None
+        | None -> None
     else
         None
 
@@ -165,6 +140,22 @@ let TryNormalizeHotReloadGenerationName (name: string) =
                         OccurrenceOrdinal = occurrenceOrdinal
                     }
             | _ -> None
+
+/// Recognizes well-formed occurrence-keyed generation-suffixed closure class names:
+/// `{base}@hotreload#g{N}_o{chain}`, any generation.
+let IsHotReloadGenerationSuffixedName (name: string) =
+    not (String.IsNullOrEmpty name)
+    && (TryNormalizeHotReloadGenerationName name |> Option.isSome)
+
+/// Parses the generation of a well-formed occurrence-keyed closure class name:
+/// `f@hotreload#g2_o3` -> Some 2. None when the name is not generation-suffixed
+/// or any part of the name is malformed.
+let TryGetHotReloadNameGeneration (name: string) : int option =
+    if String.IsNullOrEmpty name then
+        None
+    else
+        TryNormalizeHotReloadGenerationName name
+        |> Option.map _.Generation
 
 let TryNormalizeHotReloadReplayName (name: string) =
     let marker = "@hotreload"

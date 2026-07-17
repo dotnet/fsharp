@@ -6,9 +6,18 @@ open System.Runtime.CompilerServices
 /// Implementations can be hot-reload aware without coupling core compiler paths
 /// to a concrete synthesized-name map type.
 type ICompilerGeneratedNameMap =
+    /// Resets allocation cursors so the next serialized code-generation pass replays the snapshot from its first slot.
     abstract BeginSession: unit -> unit
+
+    /// Returns the next name in deterministic encounter order for this basic name.
+    /// Consumers must serialize code generation while a map is installed: synchronization prevents data races,
+    /// but concurrent callers cannot make encounter order independent of thread scheduling.
     abstract GetOrAddName: basicName: string -> string
+
+    /// Captures the names in allocation order, grouped by normalized basic name.
     abstract Snapshot: seq<struct (string * string[])>
+
+    /// Replaces the current replay state with a previously captured allocation-order snapshot.
     abstract LoadSnapshot: snapshot: seq<struct (string * string[])> -> unit
 
 // Keep optional name-map state external to CompilerGlobalState so core signatures can remain stable.
