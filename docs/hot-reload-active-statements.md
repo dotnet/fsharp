@@ -22,7 +22,7 @@ field-for-field where semantics match:
 | F# type | Roslyn contract type | Notes |
 |---|---|---|
 | `FSharpSourceSpan` | `SourceSpan` | Zero-based lines AND columns (one less than the 1-based Portable-PDB sequence-point coordinates). F# PDBs always carry columns, so the `-1 = missing column` convention is not modeled. |
-| `FSharpManagedModuleMethodId` | `ManagedModuleMethodId` | Token + 1-based version. Roslyn's `ManagedMethodId` adds the module MVID; an F# session is single-module, so module identity is implicit (documented deviation). |
+| `FSharpManagedModuleMethodId` | `ManagedModuleMethodId` + enclosing `ManagedMethodId` | Module MVID + token + 1-based version. Keeping the MVID in the F# record makes MethodDef-token collisions unambiguous across a multi-project session. |
 | `FSharpManagedInstructionId` | `ManagedInstructionId` | Method id + IL offset. |
 | `FSharpActiveStatementFlags` + `FSharpActiveStatementFrameKind` | `ActiveStatementFlags` | The `LeafFrame`/`NonLeafFrame` bits become a closed union (`Leaf \| NonLeaf \| LeafAndNonLeaf`) so "neither leaf nor non-leaf" is unrepresentable; `MethodUpToDate`, `PartiallyExecuted`, `NonUserCode`, `Stale` map to independent booleans (they are genuinely independent). |
 | `FSharpManagedActiveStatementDebugInfo` | `ManagedActiveStatementDebugInfo` | Instruction + PDB document name (option) + span + flags. |
@@ -41,16 +41,16 @@ Delta surface (`FSharpHotReloadDelta`, service.fsi):
 
 ## Supplying active statements (API shape)
 
-`FSharpChecker.SetHotReloadActiveStatements: FSharpManagedActiveStatementDebugInfo seq -> bool`
-(session-scoped setter; REPLACES the whole set; empty clears; false when no session).
+`FSharpHotReloadSession.SetActiveStatements: FSharpManagedActiveStatementDebugInfo seq -> unit`
+(session-scoped setter; REPLACES the whole set; empty clears).
 
 Rationale: Roslyn's `EmitSolutionUpdate(solution, activeStatementSpanProvider)` PULLS the debugger's
 break state per edit session (`DebuggingSession` queries
 `IManagedHotReloadService.GetActiveStatementsAsync` lazily). FCS has no callback seam into the
 host, so the fetch inverts to a push: the host reports the break state whenever the debugger stops,
-and the next `EmitHotReloadDelta` consumes it. A session setter (rather than an
-`EmitHotReloadDelta` overload parameter) keeps the two `EmitHotReloadDelta` overloads stable and
-matches the session-scoped lifetime of the break state.
+and the next `FSharpHotReloadSession.EmitDelta` consumes it. A session setter (rather than an
+`EmitDelta` parameter) matches the session-scoped lifetime of the break state. The session stores
+the debugger batch once and filters it by module MVID for each project emit.
 
 ## Sequence-point updates (line shifts)
 
@@ -68,7 +68,7 @@ Pipeline (all inside `IlxDeltaEmitter.emitDeltaWithDebugData` + `ActiveStatement
    `CommittedSolution`: each generation's updates are relative to what the debugger last applied,
    and they compose across generations.
 2. **Fresh view** — decoded from the fresh compile's on-disk PDB (passed down from
-   `EmitHotReloadDelta` through `EmitDeltaForCompilation`/`EmitDelta`), falling back to the
+   `FSharpHotReloadSession.EmitDelta` through `EmitDeltaForCompilation`/`EmitDelta`), falling back to the
    emitter's in-memory PDB for callers that construct modules with debug points. The same bytes
    feed the emitted PDB delta, which therefore carries real sequence points in the checker flow.
 3. **Per-method classification** (`compareMethodSequencePoints`, every baseline-matched method not
@@ -95,9 +95,9 @@ Now `EmitDeltaForCompilation` always runs the emitter and decides from the artif
 
 - semantic/trivia changes -> normal delta (line updates ride along for the methods that only moved);
 - ONLY line shifts -> a delta carrying ONLY `SequencePointUpdates`: `Metadata`/`IL` empty,
-  `UpdatedMethods` empty, `GenerationId = Guid.Empty`, NO generation consumed. The committed
-  sequence-point view and the session's implementation files advance
-  (`HotReloadSessionStore.UpdateCommittedSequencePoints`).
+  `UpdatedMethods` empty, `GenerationId = Guid.Empty`, NO generation consumed. The updated
+  sequence-point view and implementation files are staged as one pending line-only update;
+  `Commit` advances them and `Discard` leaves the committed view unchanged.
 - nothing at all -> `NoChanges`, as before.
 
 **Documented deviation**: Roslyn emits a Module-row-only EnC generation for line-only updates (its
@@ -158,14 +158,14 @@ tree — see "Deferred".
 - `src/Compiler/HotReload/HotReloadState.fs` — session `ActiveStatements`,
   `UpdateActiveStatements`, `UpdateCommittedSequencePoints`.
 - `src/Compiler/Service/service.fs(i)` — `FSharpHotReloadDelta.SequencePointUpdates` /
-  `ActiveStatementUpdates`, `FSharpChecker.SetHotReloadActiveStatements`, on-disk PDB plumbing.
+  `ActiveStatementUpdates`, `FSharpHotReloadSession.SetActiveStatements`, on-disk PDB plumbing.
 - `tests/FSharp.Compiler.Service.Tests/HotReload/ActiveStatementTests.fs` — line-shift (incl.
   disk-restarted session), remap-to-new-span cross-checked against the delta PDB's sequence-point
   table, MethodUpToDate, delete-statement rude, non-leaf-edit rude.
 
 ## Host integration notes (future watch/debugger wiring)
 
-- **dotnet-watch (no debugger)**: never call `SetHotReloadActiveStatements`; consume
+- **dotnet-watch (no debugger)**: leave the session's active-statement set empty; consume
   `SequencePointUpdates` to decide that a line-only change needs NO restart and NO `ApplyUpdate`
   (`Metadata` empty). Watch's `HotReloadService` forwards the updates to the agent unchanged.
 - **Debugger host**: on break, translate the debugger's active statement info

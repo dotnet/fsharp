@@ -48,16 +48,15 @@ updates are never gated behind a missing `Baseline` word.
 
 ## Session plumbing
 
-- `FSharpChecker.StartHotReloadSession(projectOptions | projectSnapshot, ?userOpName,
-  ?capabilities: string seq)` (`src/Compiler/Service/service.fs[i]`) — string-based at the
-  public boundary, like Roslyn's `WatchHotReloadService(Solution, ImmutableArray<string>)`.
-  When omitted the session defaults to `EditAndContinueCapabilities.BaselineOnly`
-  (Roslyn-conservative: assume the runtime can only update method bodies).
-- The parsed capabilities are stored on the session
-  (`HotReloadSession.Capabilities` in `src/Compiler/HotReload/HotReloadState.fs`) by
-  `FSharpEditAndContinueLanguageService.StartSession(..., ?capabilities)`.
-- `EmitDeltaForCompilation`/`EmitHotReloadDelta` pass `session.Capabilities` into
-  `computeSymbolChanges` → `TypedTreeDiff.diffImplementationFile`.
+- `FSharpChecker.CreateHotReloadSession(?capabilities: string seq)` creates the independent
+  session entity. When omitted, the session defaults to
+  `EditAndContinueCapabilities.BaselineOnly` (Roslyn-conservative: assume the runtime can only
+  update method bodies).
+- `FSharpHotReloadSession.UpdateCapabilities(capabilities)` reparses and replaces the
+  session-wide set when the target process reports a new runtime topology. Every project added
+  through `AddProject` observes that same set.
+- `EmitDeltaForCompilation` and `FSharpHotReloadSession.EmitDelta` pass the project's session view
+  capabilities into `computeSymbolChanges` → `TypedTreeDiff.diffImplementationFile`.
 
 The `fsc --test:HotReloadDeltas` emit hook (`Driver/HotReloadEmitHook.fs`) does not
 negotiate capabilities and therefore runs baseline-only.

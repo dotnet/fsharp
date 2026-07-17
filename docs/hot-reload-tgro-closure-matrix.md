@@ -135,6 +135,6 @@ Track each major review concern with objective status and evidence so follow-up 
 ## Validation performed for this update
 
 - `./.dotnet/dotnet build FSharp.sln -c Debug -v minimal`
-- `./.dotnet/dotnet test tests/FSharp.Compiler.Service.Tests/FSharp.Compiler.Service.Tests.fsproj -c Debug --no-build --filter FullyQualifiedName~HotReload -v minimal` (`328` passed)
-- `./.dotnet/dotnet test tests/FSharp.Compiler.ComponentTests/FSharp.Compiler.ComponentTests.fsproj -c Debug --no-build --filter FullyQualifiedName~HotReload -v minimal` (`110` passed)
+- `DOTNET_MODIFIABLE_ASSEMBLIES=debug COMPlus_ForceEnc=1 ./.dotnet/dotnet test --project tests/FSharp.Compiler.Service.Tests/FSharp.Compiler.Service.Tests.fsproj -c Debug --no-build -v minimal -- --filter-class "*HotReload*"` (`328` passed)
+- `DOTNET_MODIFIABLE_ASSEMBLIES=debug COMPlus_ForceEnc=1 ./.dotnet/dotnet test --project tests/FSharp.Compiler.ComponentTests/FSharp.Compiler.ComponentTests.fsproj -c Debug --no-build -v minimal -- --filter-class "*HotReload*"` (`110` passed)
 - `./tests/scripts/check-hotreload-metadata-parity.sh`

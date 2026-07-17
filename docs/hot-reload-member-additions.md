@@ -489,13 +489,12 @@ fail-closed gate there is lifted.
 
 ### Session wiring (watch flow)
 
-`checker.StartHotReloadSession` rebuilds the baseline from the on-disk
-assembly, which cannot carry the closure-name tables (the EnC CDI blob
-format has no name slots). The session-start path now carries
-`EncClosureNames` over from the in-process capture session it replaces when
-the module identity (MVID) matches — without this, every watch-flow delta
-compile fell back to sequence-replay naming and added lambdas were
-unmappable.
+`FSharpHotReloadSession.AddProject` rebuilds the baseline from the on-disk
+assembly. The EnC CDI carries occurrence identities rather than name slots,
+so baseline capture derives `EncClosureNames` from those identities and the
+MethodDef names. An MVID-matched in-process capture is a consistency check,
+not the source of truth; disk-started watch sessions therefore reconstruct
+the same closure-name tables without process-local carry-over.
 
 Known divergences from the C# reference (deliberate this slice):
 

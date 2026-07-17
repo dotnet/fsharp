@@ -198,7 +198,7 @@ lacks tokens). Details:
   EnC CDI rows start sessions fine with no per-method data), and a method whose blobs do not
   decode is omitted entirely.
 - **Sources**: the fsc emit hook decodes the exact emitted PDB bytes
-  (`PortablePdbSnapshot.Bytes`). The checker path (`FSharpChecker.StartHotReloadSession`)
+  (`PortablePdbSnapshot.Bytes`). The session `AddProject` path
   rewrites the baseline in memory *without* the CDI side channel, so it additionally reads the
   on-disk PDB as a sibling input when the snapshot carried no EnC rows (`service.fs`,
   `createBaseline`).
@@ -333,7 +333,7 @@ implemented:
   chains into the next-generation baseline `TypeTokens`, so later generations body-edit the
   added closure's methods in place (validated by the multi-generation runtime test
   `ApplyUpdate succeeds for added lambda creating a new closure class`). Two wiring
-  consequences: `checker.StartHotReloadSession` carries `EncClosureNames` over from the
+  consequences: baseline capture carries `EncClosureNames` over from the
   in-process capture session it replaces (same MVID) because disk artifacts cannot encode
   the tables, and MemberRef/TypeSpec token passthrough became content-validated (an added
   lambda shifts the fresh compile's reference-row order; see the member-additions doc).
@@ -342,7 +342,7 @@ implemented:
   extends a brand-new `FSharpFunc<A,B>` emits and applies (see the member-additions doc).
   Still rude: capture-set changes of matched occurrences (capture-field mapping is a later
   slice) and generic closure classes (GenericParam emission). The MVID-matched
-  `EncClosureNames` carry-over in `checker.StartHotReloadSession` is superseded by the
+  `EncClosureNames` carry-over during baseline capture is superseded by the
   occurrence-derived reconstruction (below) and demoted to a consistency check.
 
 ### Occurrence-derived baseline naming and cross-process reconstruction
@@ -383,7 +383,7 @@ closes this the Roslyn way: **names are functions of identity and are never pers
   only for recapture compiles emitted under an active session (their names legitimately
   carry later generations); for plain baseline captures it is a validation — derived ==
   recorded wherever both produced a table (trace + debug assertion on mismatch). The
-  MVID-matched carry-over in `StartHotReloadSession` became a consistency check (a gen-0
+  MVID-matched carry-over during baseline capture became a consistency check (a gen-0
   in-process session disagreeing with a non-empty reconstruction asserts; an EMPTY
   reconstruction against a recapture session is the designed fail-closed outcome).
 - **Replay-bucket canonicalization**: generation-suffixed names are allocator-managed and
@@ -444,7 +444,7 @@ The underlying design rationale:
 
 The dotnet-watch host force-rebuilds the project output (`dotnet build`, a separate fsc
 process) between edits, and the FCS session consumes that on-disk dll as each
-generation's FRESH module (`EmitHotReloadDelta` reads the output path; the typed trees
+generation's FRESH module (`FSharpHotReloadSession.EmitDelta` reads the output path; the typed trees
 come from the session's own check). Two semantics were pinned down while fixing the
 generation-2 crash this topology exposed (`InvalidProgramException` in a
 generation-1-added closure's `.cctor`):
@@ -469,7 +469,7 @@ generation-1-added closure's `.cctor`):
   artifact for any session (re)started from it. The `#g{N>=1}` fail-closed guard targets
   mid-session RECAPTURE artifacts only. The LIVE session is unaffected by on-disk
   rebuilds because its baseline (assembly bytes, metadata snapshot, handle caches,
-  token maps) is captured once at `StartHotReloadSession` and never re-read; the rebuilt
+  token maps) is captured once by `FSharpHotReloadSession.AddProject` and never re-read; the rebuilt
   dll enters delta emission only as the fresh compile.
 
 The generation-2 crash itself was a fresh-vs-baseline ROW COORDINATE bug in the delta
