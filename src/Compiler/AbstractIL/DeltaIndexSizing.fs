@@ -7,11 +7,11 @@
 ///
 /// Uses TableNames from BinaryConstants.fs for ECMA-335 metadata table indices,
 /// following the same pattern as the baseline IL writer (ilwrite.fs).
-module internal FSharp.Compiler.CodeGen.DeltaIndexSizing
+module internal FSharp.Compiler.AbstractIL.DeltaIndexSizing
 
 open FSharp.Compiler.AbstractIL.BinaryConstants
 open FSharp.Compiler.AbstractIL.ILDeltaHandles
-open FSharp.Compiler.CodeGen.DeltaMetadataEncoding
+open FSharp.Compiler.AbstractIL.DeltaMetadataEncoding
 
 type MetadataHeapSizes = FSharp.Compiler.AbstractIL.ILBinaryWriter.MetadataHeapSizes
 

@@ -13,7 +13,7 @@ open FSharp.Compiler.AbstractIL.ILBinaryWriter
 open FSharp.Compiler.AbstractIL.BinaryConstants
 open FSharp.Compiler.HotReloadBaseline
 open FSharp.Compiler.IlxDeltaEmitter
-open FSharp.Compiler.IlxDeltaStreams
+open FSharp.Compiler.AbstractIL.IlxDeltaStreams
 open FSharp.Compiler.ComponentTests.HotReload.TestHelpers
 open FSharp.Compiler.TypedTreeDiff
 open FSharp.Test

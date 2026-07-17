@@ -1,4 +1,4 @@
-module internal FSharp.Compiler.CodeGen.DeltaMetadataSerializer
+module internal FSharp.Compiler.AbstractIL.DeltaMetadataSerializer
 
 open System
 open System.Collections.Generic
@@ -7,11 +7,11 @@ open System.Text
 open FSharp.Compiler.AbstractIL.ILBinaryWriter
 open FSharp.Compiler.AbstractIL.BinaryConstants
 open FSharp.Compiler.AbstractIL.ILDeltaHandles
-open FSharp.Compiler.CodeGen.DeltaMetadataTables
-open FSharp.Compiler.CodeGen.DeltaMetadataTypes
-open FSharp.Compiler.CodeGen.DeltaTableLayout
+open FSharp.Compiler.AbstractIL.DeltaMetadataTables
+open FSharp.Compiler.AbstractIL.DeltaMetadataTypes
+open FSharp.Compiler.AbstractIL.DeltaTableLayout
 
-module Encoding = FSharp.Compiler.CodeGen.DeltaMetadataEncoding
+module Encoding = FSharp.Compiler.AbstractIL.DeltaMetadataEncoding
 
 let private padTo4 (bytes: byte[]) =
     if bytes.Length % 4 = 0 then

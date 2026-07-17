@@ -8,7 +8,7 @@
 ///
 /// Uses TableNames from BinaryConstants.fs for ECMA-335 metadata tables,
 /// and DeltaTokens for Portable PDB tables (which aren't in TableNames).
-module internal FSharp.Compiler.CodeGen.DeltaTableLayout
+module internal FSharp.Compiler.AbstractIL.DeltaTableLayout
 
 open FSharp.Compiler.AbstractIL.BinaryConstants
 open FSharp.Compiler.AbstractIL.ILDeltaHandles

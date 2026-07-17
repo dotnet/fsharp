@@ -13,9 +13,9 @@ open FSharp.Compiler.AbstractIL.ILBinaryWriter
 open FSharp.Compiler.AbstractIL.ILPdbWriter
 open FSharp.Compiler.AbstractIL.BinaryConstants
 open FSharp.Compiler.AbstractIL.ILDeltaHandles
-open FSharp.Compiler.IlxDeltaStreams
+open FSharp.Compiler.AbstractIL.IlxDeltaStreams
 open FSharp.Compiler.AbstractIL.BinaryConstants
-open FSharp.Compiler.CodeGen.DeltaMetadataTables
+open FSharp.Compiler.AbstractIL.DeltaMetadataTables
 open System.Diagnostics
 open System.IO
 open System.Reflection.Metadata
@@ -846,7 +846,7 @@ module DeltaEmitterTests =
     let ``emitDelta fails closed on unresolved user methods`` () =
         let _, baseline = createBaseline ()
         let updatedModule = createModule 43 |> TestHelpers.withDebuggableAttribute
-        let unknownMethod =
+        let unknownMethod: MethodDefinitionKey =
             {
                 DeclaringType = "Sample.Type"
                 Name = "Missing"
@@ -1167,7 +1167,7 @@ module DeltaEmitterTests =
 
         match delta.UpdatedBaseline with
         | Some updatedBaseline ->
-            let addedKey =
+            let addedKey: MethodDefinitionKey =
                 { MethodDefinitionKey.DeclaringType = "Sample.Multi"
                   Name = "GetExtra"
                   GenericArity = 0
@@ -1359,7 +1359,7 @@ module DeltaEmitterTests =
 
         match delta.UpdatedBaseline with
         | Some updatedBaseline ->
-            let propertyKey =
+            let propertyKey: PropertyDefinitionKey =
                 { PropertyDefinitionKey.DeclaringType = "Sample.PropertyDemo"
                   Name = "Message"
                   PropertyType = PrimaryAssemblyILGlobals.typ_String
@@ -1427,7 +1427,7 @@ module DeltaEmitterTests =
 
         match delta.UpdatedBaseline with
         | Some updatedBaseline ->
-            let eventKey =
+            let eventKey: EventDefinitionKey =
                 { EventDefinitionKey.DeclaringType = "Sample.EventDemo"
                   Name = "OnChanged"
                   EventType = Some PrimaryAssemblyILGlobals.typ_Object }

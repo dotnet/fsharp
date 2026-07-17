@@ -8,6 +8,7 @@ open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.ILBinaryWriter
 open FSharp.Compiler.AbstractIL.BinaryConstants
 open FSharp.Compiler.AbstractIL.ILDeltaHandles
+open FSharp.Compiler.AbstractIL.DeltaMetadataTypes
 open FSharp.Compiler.EncMethodDebugInformation
 open FSharp.Compiler.GeneratedNames
 open FSharp.Compiler.IlxGen
@@ -43,48 +44,20 @@ type AddedOrChangedMethodInfo =
         CodeLength: int
     }
 
-/// <summary>Stable identifier for a method definition used when correlating baseline tokens.</summary>
-type MethodDefinitionKey =
-    {
-        DeclaringType: string
-        Name: string
-        GenericArity: int
-        ParameterTypes: ILType list
-        ReturnType: ILType
-    }
+type MethodDefinitionKey = FSharp.Compiler.AbstractIL.DeltaMetadataTypes.MethodDefinitionKey
 
 /// Baseline metadata handles reused to keep heap offsets stable across deltas.
 /// <summary>Stable identifier for a method parameter (sequence number within a method).</summary>
-type ParameterDefinitionKey =
-    {
-        Method: MethodDefinitionKey
-        SequenceNumber: int
-    }
+type ParameterDefinitionKey = FSharp.Compiler.AbstractIL.DeltaMetadataTypes.ParameterDefinitionKey
 
 /// <summary>Stable identifier for a field definition in the baseline assembly.</summary>
-type FieldDefinitionKey =
-    {
-        DeclaringType: string
-        Name: string
-        FieldType: ILType
-    }
+type FieldDefinitionKey = FSharp.Compiler.AbstractIL.DeltaMetadataTypes.FieldDefinitionKey
 
 /// <summary>Stable identifier for a property definition (including indexer parameter shapes).</summary>
-type PropertyDefinitionKey =
-    {
-        DeclaringType: string
-        Name: string
-        PropertyType: ILType
-        IndexParameterTypes: ILType list
-    }
+type PropertyDefinitionKey = FSharp.Compiler.AbstractIL.DeltaMetadataTypes.PropertyDefinitionKey
 
 /// <summary>Stable identifier for an event definition in the baseline assembly.</summary>
-type EventDefinitionKey =
-    {
-        DeclaringType: string
-        Name: string
-        EventType: ILType option
-    }
+type EventDefinitionKey = FSharp.Compiler.AbstractIL.DeltaMetadataTypes.EventDefinitionKey
 
 type MethodDefinitionMetadataHandles =
     {
@@ -179,9 +152,7 @@ type BaselineHandleCache =
             EventHandles = Map.empty
         }
 
-type MethodSemanticsAssociation =
-    | PropertyAssociation of PropertyDefinitionKey * rowId: int
-    | EventAssociation of EventDefinitionKey * rowId: int
+type MethodSemanticsAssociation = FSharp.Compiler.AbstractIL.DeltaMetadataTypes.MethodSemanticsAssociation
 
 type MethodSemanticsEntry =
     {

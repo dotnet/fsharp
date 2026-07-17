@@ -1,4 +1,4 @@
-module internal FSharp.Compiler.IlxDeltaStreams
+module internal FSharp.Compiler.AbstractIL.IlxDeltaStreams
 
 open System
 open System.Collections.Generic

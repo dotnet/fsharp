@@ -19,7 +19,7 @@ open FSharp.Compiler.HotReload.SymbolChanges
 open FSharp.Compiler.HotReload.SymbolMatcher
 open FSharp.Compiler.HotReloadBaseline
 open FSharp.Compiler.HotReloadPdb
-open FSharp.Compiler.IlxDeltaStreams
+open FSharp.Compiler.AbstractIL.IlxDeltaStreams
 open FSharp.Compiler.CodeGen.FSharpDefinitionIndex
 open FSharp.Compiler.GeneratedNames
 open FSharp.Compiler.SynthesizedTypeMaps
@@ -28,11 +28,11 @@ open FSharp.Compiler.TypedTreeDiff
 open Internal.Utilities
 open FSharp.Compiler.EnvironmentHelpers
 
-module MetadataWriter = FSharp.Compiler.CodeGen.FSharpDeltaMetadataWriter
+module MetadataWriter = FSharp.Compiler.AbstractIL.FSharpDeltaMetadataWriter
 
 open MetadataWriter
-open FSharp.Compiler.CodeGen.DeltaMetadataTables
-open FSharp.Compiler.CodeGen.DeltaMetadataTypes
+open FSharp.Compiler.AbstractIL.DeltaMetadataTables
+open FSharp.Compiler.AbstractIL.DeltaMetadataTypes
 
 exception HotReloadUnsupportedEditException of string
 

@@ -10,8 +10,8 @@ open System.Reflection.Metadata.Ecma335
 open System.Reflection.PortableExecutable
 open System.Collections.Immutable
 open System.Text
-open System.Text
 open Xunit
+open FSharp.Compiler.AbstractIL
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.ILBinaryWriter
 open FSharp.Compiler.AbstractIL.ILPdbWriter
@@ -20,19 +20,19 @@ open FSharp.Compiler.AbstractIL.ILDeltaHandles
 open Internal.Utilities
 open Internal.Utilities.Library
 open FSharp.Compiler.HotReloadBaseline
-open FSharp.Compiler.IlxDeltaStreams
+open FSharp.Compiler.AbstractIL.IlxDeltaStreams
 open FSharp.Compiler.CodeGen
-open FSharp.Compiler.CodeGen.DeltaMetadataTypes
-open FSharp.Compiler.CodeGen.DeltaMetadataTables
-open FSharp.Compiler.CodeGen.DeltaMetadataSerializer
-open FSharp.Compiler.CodeGen.DeltaTableLayout
+open FSharp.Compiler.AbstractIL.DeltaMetadataTypes
+open FSharp.Compiler.AbstractIL.DeltaMetadataTables
+open FSharp.Compiler.AbstractIL.DeltaMetadataSerializer
+open FSharp.Compiler.AbstractIL.DeltaTableLayout
 open FSharp.Compiler.Service.Tests.HotReload.MetadataDeltaTestHelpers
 
-module DeltaWriter = FSharp.Compiler.CodeGen.FSharpDeltaMetadataWriter
+module DeltaWriter = FSharp.Compiler.AbstractIL.FSharpDeltaMetadataWriter
 
 module FSharpDeltaMetadataWriterTests =
 
-    module Encoding = FSharp.Compiler.CodeGen.DeltaMetadataEncoding
+    module Encoding = FSharp.Compiler.AbstractIL.DeltaMetadataEncoding
 
     // String heap delta includes method names like "get_Message", property names, etc.
     // SRM's StringHeap.TrimEnd removes trailing padding zeros, so GetHeapSize returns unpadded size.

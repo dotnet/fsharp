@@ -3,6 +3,7 @@ module internal FSharp.Compiler.HotReload.SymbolMatcher
 open System
 open System.Collections.Generic
 open FSharp.Compiler.AbstractIL.IL
+open FSharp.Compiler.AbstractIL.DeltaMetadataTypes
 open FSharp.Compiler.GeneratedNames
 open FSharp.Compiler.HotReloadBaseline
 open FSharp.Compiler.Syntax.PrettyNaming

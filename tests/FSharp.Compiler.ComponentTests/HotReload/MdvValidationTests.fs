@@ -37,7 +37,7 @@ open Internal.Utilities
 open FSharp.Compiler.ComponentTests.HotReload.TestHelpers
 
 module ILWriter = FSharp.Compiler.AbstractIL.ILBinaryWriter
-module DeltaWriter = FSharp.Compiler.CodeGen.FSharpDeltaMetadataWriter
+module DeltaWriter = FSharp.Compiler.AbstractIL.FSharpDeltaMetadataWriter
 
 [<Collection(nameof NotThreadSafeResourceCollection)>]
 module MdvValidationTests =

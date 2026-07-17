@@ -7,10 +7,10 @@ open System.Reflection.Metadata
 open System.Reflection.Metadata.Ecma335
 open System.Reflection.PortableExecutable
 open Xunit
-open FSharp.Compiler.CodeGen.FSharpDeltaMetadataWriter
-open FSharp.Compiler.CodeGen.DeltaMetadataTypes
-open FSharp.Compiler.CodeGen.DeltaMetadataTables
-open FSharp.Compiler.IlxDeltaStreams
+open FSharp.Compiler.AbstractIL.FSharpDeltaMetadataWriter
+open FSharp.Compiler.AbstractIL.DeltaMetadataTypes
+open FSharp.Compiler.AbstractIL.DeltaMetadataTables
+open FSharp.Compiler.AbstractIL.IlxDeltaStreams
 open FSharp.Compiler.AbstractIL.ILBinaryWriter
 open FSharp.Compiler.Service.Tests.HotReload.MetadataDeltaTestHelpers
 
@@ -22,7 +22,7 @@ open FSharp.Compiler.Service.Tests.HotReload.MetadataDeltaTestHelpers
 /// This is critical for validating correctness before removing SRM dependencies.
 module SrmParityTests =
 
-    module DeltaWriter = FSharp.Compiler.CodeGen.FSharpDeltaMetadataWriter
+    module DeltaWriter = FSharp.Compiler.AbstractIL.FSharpDeltaMetadataWriter
 
     let private assertReaderParity (delta: DeltaWriter.MetadataDelta) =
         use provider = MetadataReaderProvider.FromMetadataImage(ImmutableArray.CreateRange<byte>(delta.Metadata))

@@ -1,4 +1,4 @@
-module internal FSharp.Compiler.CodeGen.DeltaMetadataEncoding
+module internal FSharp.Compiler.AbstractIL.DeltaMetadataEncoding
 
 open FSharp.Compiler.AbstractIL.BinaryConstants
 

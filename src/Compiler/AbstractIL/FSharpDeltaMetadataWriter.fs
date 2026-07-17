@@ -1,4 +1,4 @@
-module internal FSharp.Compiler.CodeGen.FSharpDeltaMetadataWriter
+module internal FSharp.Compiler.AbstractIL.FSharpDeltaMetadataWriter
 
 open System
 open System.Collections.Generic
@@ -7,12 +7,11 @@ open Microsoft.FSharp.Collections
 open FSharp.Compiler.AbstractIL.ILBinaryWriter
 open FSharp.Compiler.AbstractIL.BinaryConstants
 open FSharp.Compiler.AbstractIL.ILDeltaHandles
-open FSharp.Compiler.IlxDeltaStreams
-open FSharp.Compiler.HotReloadBaseline
-open FSharp.Compiler.CodeGen.DeltaMetadataTables
-open FSharp.Compiler.CodeGen.DeltaMetadataTypes
-open FSharp.Compiler.CodeGen.DeltaTableLayout
-open FSharp.Compiler.CodeGen.DeltaMetadataSerializer
+open FSharp.Compiler.AbstractIL.IlxDeltaStreams
+open FSharp.Compiler.AbstractIL.DeltaMetadataTables
+open FSharp.Compiler.AbstractIL.DeltaMetadataTypes
+open FSharp.Compiler.AbstractIL.DeltaTableLayout
+open FSharp.Compiler.AbstractIL.DeltaMetadataSerializer
 
 [<Literal>]
 let private TraceMetadataFlagName = "FSHARP_HOTRELOAD_TRACE_METADATA"
@@ -84,7 +83,7 @@ type PropertyMapRowInfo = DeltaMetadataTypes.PropertyMapRowInfo
 type EventMapRowInfo = DeltaMetadataTypes.EventMapRowInfo
 
 type MethodSemanticsMetadataUpdate = DeltaMetadataTypes.MethodSemanticsMetadataUpdate
-type StandaloneSignatureUpdate = FSharp.Compiler.IlxDeltaStreams.StandaloneSignatureUpdate
+type StandaloneSignatureUpdate = FSharp.Compiler.AbstractIL.IlxDeltaStreams.StandaloneSignatureUpdate
 
 /// Result of delta metadata emission.
 /// Contains serialized metadata bytes and all supporting data structures.

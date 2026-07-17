@@ -1,4 +1,4 @@
-module internal FSharp.Compiler.CodeGen.DeltaMetadataTables
+module internal FSharp.Compiler.AbstractIL.DeltaMetadataTables
 
 open System
 open System.Collections.Generic
@@ -9,11 +9,10 @@ open FSharp.Compiler.AbstractIL.ILBinaryWriter
 open FSharp.Compiler.AbstractIL.BinaryConstants
 open FSharp.Compiler.AbstractIL.ILDeltaHandles
 open FSharp.Compiler.AbstractIL.ILMetadataHeaps
-open FSharp.Compiler.HotReloadBaseline
-open FSharp.Compiler.IlxDeltaStreams
-open FSharp.Compiler.CodeGen.DeltaMetadataTypes
+open FSharp.Compiler.AbstractIL.IlxDeltaStreams
+open FSharp.Compiler.AbstractIL.DeltaMetadataTypes
 
-module Encoding = FSharp.Compiler.CodeGen.DeltaMetadataEncoding
+module Encoding = FSharp.Compiler.AbstractIL.DeltaMetadataEncoding
 
 let private traceHeapOffsets =
     lazy

@@ -3,7 +3,7 @@ namespace FSharp.Compiler.Service.Tests.HotReload
 open System.Reflection.Metadata.Ecma335
 open Xunit
 
-open FSharp.Compiler.CodeGen.DeltaIndexSizing
+open FSharp.Compiler.AbstractIL.DeltaIndexSizing
 open FSharp.Compiler.AbstractIL.ILBinaryWriter
 
 /// Tests for edge cases in hot reload infrastructure.

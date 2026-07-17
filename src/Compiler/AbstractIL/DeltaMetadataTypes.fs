@@ -1,10 +1,53 @@
-module internal FSharp.Compiler.CodeGen.DeltaMetadataTypes
+module internal FSharp.Compiler.AbstractIL.DeltaMetadataTypes
 
 open System
 open System.Reflection
+open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.BinaryConstants
 open FSharp.Compiler.AbstractIL.ILDeltaHandles
-open FSharp.Compiler.HotReloadBaseline
+
+// Stable structural definition keys are shared by baseline capture and the writer.
+// Keeping them here prevents the metadata layer from depending on session state.
+type MethodDefinitionKey =
+    {
+        DeclaringType: string
+        Name: string
+        GenericArity: int
+        ParameterTypes: ILType list
+        ReturnType: ILType
+    }
+
+type ParameterDefinitionKey =
+    {
+        Method: MethodDefinitionKey
+        SequenceNumber: int
+    }
+
+type FieldDefinitionKey =
+    {
+        DeclaringType: string
+        Name: string
+        FieldType: ILType
+    }
+
+type PropertyDefinitionKey =
+    {
+        DeclaringType: string
+        Name: string
+        PropertyType: ILType
+        IndexParameterTypes: ILType list
+    }
+
+type EventDefinitionKey =
+    {
+        DeclaringType: string
+        Name: string
+        EventType: ILType option
+    }
+
+type MethodSemanticsAssociation =
+    | PropertyAssociation of PropertyDefinitionKey * rowId: int
+    | EventAssociation of EventDefinitionKey * rowId: int
 
 /// Minimal shared types for hot-reload metadata tables.
 type RowElementData =

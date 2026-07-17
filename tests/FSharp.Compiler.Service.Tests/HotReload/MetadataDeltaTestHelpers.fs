@@ -17,17 +17,17 @@ open FSharp.Compiler.AbstractIL.ILPdbWriter
 open Internal.Utilities
 open Internal.Utilities.Library
 open FSharp.Compiler.HotReloadBaseline
-open FSharp.Compiler.IlxDeltaStreams
+open FSharp.Compiler.AbstractIL.IlxDeltaStreams
 open FSharp.Compiler.CodeGen
-open FSharp.Compiler.CodeGen.DeltaMetadataTables
-open FSharp.Compiler.CodeGen.DeltaMetadataTypes
+open FSharp.Compiler.AbstractIL.DeltaMetadataTables
+open FSharp.Compiler.AbstractIL.DeltaMetadataTypes
 open FSharp.Compiler.AbstractIL.BinaryConstants
 open FSharp.Compiler.AbstractIL.ILDeltaHandles
 
 module internal MetadataDeltaTestHelpers =
     module ILWriter = FSharp.Compiler.AbstractIL.ILBinaryWriter
     module ILPdbWriter = FSharp.Compiler.AbstractIL.ILPdbWriter
-    module DeltaWriter = FSharp.Compiler.CodeGen.FSharpDeltaMetadataWriter
+    module DeltaWriter = FSharp.Compiler.AbstractIL.FSharpDeltaMetadataWriter
 
     let private shouldTraceMetadata () =
         match Environment.GetEnvironmentVariable("FSHARP_HOTRELOAD_TRACE_METADATA") with

@@ -9,7 +9,7 @@ open System.Reflection.Metadata.Ecma335
 open System.Text.Json
 open Xunit
 open FSharp.Compiler.Service.Tests.HotReload
-module DeltaWriter = FSharp.Compiler.CodeGen.FSharpDeltaMetadataWriter
+module DeltaWriter = FSharp.Compiler.AbstractIL.FSharpDeltaMetadataWriter
 
 module private MetadataHelpers =
     let countRows (delta: DeltaWriter.MetadataDelta) (table: TableIndex) =
