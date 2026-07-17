@@ -380,6 +380,7 @@ type FSharpChecker
             Pdb = delta.Pdb |> Option.map Array.copy
             UpdatedTypes = delta.UpdatedTypeTokens
             UpdatedMethods = delta.UpdatedMethodTokens
+            RequiredCapabilities = delta.RequiredCapabilities
             AddedOrChangedMethods =
                 delta.AddedOrChangedMethods
                 |> List.map (fun info ->

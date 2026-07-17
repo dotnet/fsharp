@@ -106,7 +106,8 @@ module DeltaBuilderTests =
                     ContainingEntity = None } ]
               Deleted = []
               Synthesized = []
-              RudeEdits = [] }
+              RudeEdits = []
+              RequiredCapabilities = [] }
 
         let updatedTypes, updatedMethods, accessorUpdates =
             match mapSymbolChangesToDelta baseline changes with
@@ -149,7 +150,8 @@ module DeltaBuilderTests =
                     ContainingEntity = None } ]
               Deleted = []
               Synthesized = []
-              RudeEdits = [] }
+              RudeEdits = []
+              RequiredCapabilities = [] }
 
         let updatedTypes, updatedMethods, accessorUpdates =
             match mapSymbolChangesToDelta baseline changes with
@@ -192,7 +194,8 @@ module DeltaBuilderTests =
                     ContainingEntity = Some "Sample.Container.Nested" } ]
               Deleted = []
               Synthesized = []
-              RudeEdits = [] }
+              RudeEdits = []
+              RequiredCapabilities = [] }
 
         let updatedTypes, updatedMethods, accessorUpdates =
             match mapSymbolChangesToDelta baseline changes with
@@ -235,7 +238,8 @@ module DeltaBuilderTests =
                     ContainingEntity = Some "Sample.Unrelated.Type" } ]
               Deleted = []
               Synthesized = []
-              RudeEdits = [] }
+              RudeEdits = []
+              RequiredCapabilities = [] }
 
         match mapSymbolChangesToDelta baseline changes with
         | Ok _ -> failwith "Expected explicit containing-entity mismatch to fail closed"
@@ -289,7 +293,8 @@ module DeltaBuilderTests =
                     ContainingEntity = None } ]
               Deleted = []
               Synthesized = []
-              RudeEdits = [] }
+              RudeEdits = []
+              RequiredCapabilities = [] }
 
         match mapSymbolChangesToDelta baseline changes with
         | Ok _ -> failwith "Expected ambiguous containing type mapping to fail closed"
@@ -328,7 +333,8 @@ module DeltaBuilderTests =
                     ContainingEntity = None } ]
               Deleted = []
               Synthesized = []
-              RudeEdits = [] }
+              RudeEdits = []
+              RequiredCapabilities = [] }
 
         match mapSymbolChangesToDelta baseline changes with
         | Ok _ -> failwith "Expected incomplete runtime method identity to fail closed"
@@ -367,7 +373,8 @@ module DeltaBuilderTests =
                     ContainingEntity = None } ]
               Deleted = []
               Synthesized = []
-              RudeEdits = [] }
+              RudeEdits = []
+              RequiredCapabilities = [] }
 
         match mapSymbolChangesToDelta baseline changes with
         | Ok _ -> failwith "Expected parameter mismatch to fail closed"
@@ -397,7 +404,8 @@ module DeltaBuilderTests =
                     ContainingEntity = Some "Sample.Missing" } ]
               Deleted = []
               Synthesized = []
-              RudeEdits = [] }
+              RudeEdits = []
+              RequiredCapabilities = [] }
 
         let baseline = createBaseline Map.empty Map.empty
 
@@ -424,7 +432,8 @@ module DeltaBuilderTests =
                     ContainingEntity = None } ]
               Deleted = []
               Synthesized = []
-              RudeEdits = [] }
+              RudeEdits = []
+              RequiredCapabilities = [] }
 
         match mapSymbolChangesToDelta (createBaseline Map.empty Map.empty) changes with
         | Ok _ -> failwith "Expected inferred accessor containing type mismatch to fail closed"
@@ -463,7 +472,8 @@ module DeltaBuilderTests =
                     ContainingEntity = None } ]
               Deleted = []
               Synthesized = []
-              RudeEdits = [] }
+              RudeEdits = []
+              RequiredCapabilities = [] }
 
         match mapSymbolChangesToDelta baseline changes with
         | Ok _ -> failwith "Expected return-type mismatch to fail closed"

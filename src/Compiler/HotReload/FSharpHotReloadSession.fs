@@ -98,6 +98,8 @@ type FSharpHotReloadDelta =
         Pdb: byte[] option
         UpdatedTypes: int list
         UpdatedMethods: int list
+        /// Runtime capabilities the host must verify before applying this delta.
+        RequiredCapabilities: string list
         AddedOrChangedMethods: FSharpAddedOrChangedMethodInfo list
         UserStringUpdates: struct (int * int * string) list
         GenerationId: Guid

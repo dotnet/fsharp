@@ -24,12 +24,20 @@ let private buildLookup (files: seq<CheckedImplFile>) =
     files |> Seq.map (fun file -> fileKey file, file) |> Map.ofSeq
 
 let private emptyDefinitionMap: FSharpDefinitionMap =
-    { Changes = []; RudeEdits = [] }
+    {
+        Changes = []
+        RudeEdits = []
+        RequiredCapabilities = []
+    }
 
 let private mergeDefinitionMaps (left: FSharpDefinitionMap) (right: FSharpDefinitionMap) : FSharpDefinitionMap =
     {
         Changes = left.Changes @ right.Changes
         RudeEdits = left.RudeEdits @ right.RudeEdits
+        RequiredCapabilities =
+            left.RequiredCapabilities @ right.RequiredCapabilities
+            |> Set.ofList
+            |> Set.toList
     }
 
 let computeSymbolChanges

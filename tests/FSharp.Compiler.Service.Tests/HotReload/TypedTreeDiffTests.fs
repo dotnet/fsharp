@@ -131,7 +131,7 @@ module private Sources =
 
 module TypedTreeDiffTests =
 
-    let assertRequiredCapabilities expected (result: TypedTreeDiffResult) =
+    let private assertRequiredCapabilities expected (result: TypedTreeDiffResult) =
         let actual = result.RequiredCapabilities |> List.map (fun capability -> capability.Name)
         Assert.Equal<string list>(expected, actual)
 
@@ -2361,7 +2361,7 @@ let compute (x: int) =
         )
 
         let updated = harness.Compile()
-        let result = harness.Diff baseline updated
+        let result = harness.DiffWith allCapabilities baseline updated
 
         Assert.Empty(result.RudeEdits)
         Assert.Single(result.SemanticEdits) |> ignore

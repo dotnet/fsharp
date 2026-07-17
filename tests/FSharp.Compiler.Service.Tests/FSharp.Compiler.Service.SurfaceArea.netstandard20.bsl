@@ -2355,6 +2355,8 @@ FSharp.Compiler.CodeAnalysis.FSharpHotReloadDelta: Microsoft.FSharp.Collections.
 FSharp.Compiler.CodeAnalysis.FSharpHotReloadDelta: Microsoft.FSharp.Collections.FSharpList`1[System.Int32] UpdatedTypes
 FSharp.Compiler.CodeAnalysis.FSharpHotReloadDelta: Microsoft.FSharp.Collections.FSharpList`1[System.Int32] get_UpdatedMethods()
 FSharp.Compiler.CodeAnalysis.FSharpHotReloadDelta: Microsoft.FSharp.Collections.FSharpList`1[System.Int32] get_UpdatedTypes()
+FSharp.Compiler.CodeAnalysis.FSharpHotReloadDelta: Microsoft.FSharp.Collections.FSharpList`1[System.String] RequiredCapabilities
+FSharp.Compiler.CodeAnalysis.FSharpHotReloadDelta: Microsoft.FSharp.Collections.FSharpList`1[System.String] get_RequiredCapabilities()
 FSharp.Compiler.CodeAnalysis.FSharpHotReloadDelta: Microsoft.FSharp.Collections.FSharpList`1[System.ValueTuple`3[System.Int32,System.Int32,System.String]] UserStringUpdates
 FSharp.Compiler.CodeAnalysis.FSharpHotReloadDelta: Microsoft.FSharp.Collections.FSharpList`1[System.ValueTuple`3[System.Int32,System.Int32,System.String]] get_UserStringUpdates()
 FSharp.Compiler.CodeAnalysis.FSharpHotReloadDelta: Microsoft.FSharp.Core.FSharpOption`1[System.Byte[]] Pdb
@@ -2364,7 +2366,7 @@ FSharp.Compiler.CodeAnalysis.FSharpHotReloadDelta: System.Guid GenerationId
 FSharp.Compiler.CodeAnalysis.FSharpHotReloadDelta: System.Guid get_BaseGenerationId()
 FSharp.Compiler.CodeAnalysis.FSharpHotReloadDelta: System.Guid get_GenerationId()
 FSharp.Compiler.CodeAnalysis.FSharpHotReloadDelta: System.String ToString()
-FSharp.Compiler.CodeAnalysis.FSharpHotReloadDelta: Void .ctor(Byte[], Byte[], Microsoft.FSharp.Core.FSharpOption`1[System.Byte[]], Microsoft.FSharp.Collections.FSharpList`1[System.Int32], Microsoft.FSharp.Collections.FSharpList`1[System.Int32], Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.CodeAnalysis.FSharpAddedOrChangedMethodInfo], Microsoft.FSharp.Collections.FSharpList`1[System.ValueTuple`3[System.Int32,System.Int32,System.String]], System.Guid, System.Guid, Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.CodeAnalysis.FSharpSequencePointUpdates], Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.CodeAnalysis.FSharpActiveStatementRemapResult])
+FSharp.Compiler.CodeAnalysis.FSharpHotReloadDelta: Void .ctor(Byte[], Byte[], Microsoft.FSharp.Core.FSharpOption`1[System.Byte[]], Microsoft.FSharp.Collections.FSharpList`1[System.Int32], Microsoft.FSharp.Collections.FSharpList`1[System.Int32], Microsoft.FSharp.Collections.FSharpList`1[System.String], Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.CodeAnalysis.FSharpAddedOrChangedMethodInfo], Microsoft.FSharp.Collections.FSharpList`1[System.ValueTuple`3[System.Int32,System.Int32,System.String]], System.Guid, System.Guid, Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.CodeAnalysis.FSharpSequencePointUpdates], Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.CodeAnalysis.FSharpActiveStatementRemapResult])
 FSharp.Compiler.CodeAnalysis.FSharpHotReloadError+CompilationFailed: FSharp.Compiler.Diagnostics.FSharpDiagnostic[] Item
 FSharp.Compiler.CodeAnalysis.FSharpHotReloadError+CompilationFailed: FSharp.Compiler.Diagnostics.FSharpDiagnostic[] get_Item()
 FSharp.Compiler.CodeAnalysis.FSharpHotReloadError+DeltaEmissionFailed: System.String Item

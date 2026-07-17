@@ -673,6 +673,7 @@ module HotReloadSessionTests =
 
             let delta = emitOrFail session (createProjectSnapshot options)
 
+            Assert.Equal<string list>([ "Baseline" ], delta.RequiredCapabilities)
             Assert.Equal(1, delta.UpdatedMethods.Length)
             let updatedMethod = Assert.Single(delta.UpdatedMethods)
             let baseline = decodeBaselineMethod baselineBytes updatedMethod
@@ -977,6 +978,7 @@ type Calculator<'T>() =
 
             let genericDelta = emitOrFail session (createProjectSnapshot genericOptions)
             Assert.NotEmpty(genericDelta.UpdatedMethods)
+            Assert.Equal<string list>([ "Baseline"; "GenericUpdateMethod" ], genericDelta.RequiredCapabilities)
             session.Commit()
 
             // ...and is visible through EVERY project's session view (session-wide state).
