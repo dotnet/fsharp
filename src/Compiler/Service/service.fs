@@ -1458,7 +1458,7 @@ type FSharpChecker
                     match tryGetCompilerGeneratedNameMap (tcGlobals.CompilerGlobalState.Value :> obj) with
                     | Some map ->
                         HotReloadBaseline.collectRecordedSynthesizedNameSnapshot (tcGlobals.CompilerGlobalState.Value :> obj) map
-                        |> EncMethodDebugInformation.computeSynthesizedNameSnapshotCustomDebugInfoRows
+                        |> FSharp.Compiler.EncMethodDebugInformation.computeSynthesizedNameSnapshotCustomDebugInfoRows
                     | None -> []
                 | _ -> []
 
