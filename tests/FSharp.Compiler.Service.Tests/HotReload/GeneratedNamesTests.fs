@@ -146,6 +146,7 @@ module GeneratedNamesTests =
         expectNoPositionalName "not generated"
         expectNoPositionalName "Pipe #1 stage #2 line 28@28"
         expectNoPositionalName "Pipe #1 stage #2 at line 28@29"
+        expectNoPositionalName "Pipe #1 input at line 2147483648"
         expectNoPositionalName "endpoints@hotreload#g0_o0"
 
     [<Fact>]
@@ -171,6 +172,16 @@ module GeneratedNamesTests =
         expectMismatch "interface set" { baselineShape with InterfaceTypes = [] }
         expectMismatch "field type multiset" { baselineShape with FieldTypeNames = [ "class System.String" ] }
         expectMismatch "method set" { baselineShape with MethodNameAndArities = [ ".ctor", 0 ] }
+
+    [<Fact>]
+    let ``generation-suffixed name parsing rejects malformed names`` () =
+        Assert.Equal(None, TryGetHotReloadNameGeneration "")
+        Assert.Equal(None, TryGetHotReloadNameGeneration "f@hotreload#g_o3")
+        Assert.False(IsHotReloadGenerationSuffixedName "f@hotreload#g2_oBAD")
+        Assert.Equal(None, TryGetHotReloadNameGeneration "f@hotreload#g2_oBAD")
+        Assert.Equal(None, TryGetHotReloadNameGeneration "@hotreload#g2_o0")
+        Assert.Equal(None, TryNormalizeHotReloadGenerationName "f@hotreload#g1_o")
+        Assert.Equal(None, TryNormalizeHotReloadGenerationName "f@bad@hotreload#g1_o0")
 
     [<Fact>]
     let ``synthesized baseline aliases exclude tokens paired with another fresh type`` () =
