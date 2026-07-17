@@ -5,7 +5,9 @@ open System.Collections.Immutable
 open System.Reflection
 open Xunit
 open FSharp.Compiler.IlxDeltaEmitter
+open FSharp.Compiler.EditAndContinue
 open FSharp.Compiler.HotReload
+open FSharp.Compiler.HotReload.SymbolChanges
 open FSharp.Compiler.HotReloadBaseline
 open Internal.Utilities
 open FSharp.Compiler.AbstractIL.IL
@@ -835,13 +837,25 @@ module DeltaEmitterTests =
         let _, baseline = createStringBaseline "Message version 1 (invocation #%d)"
         let updatedModule = createStringModule "Message version 2 (invocation #%d)" |> TestHelpers.withDebuggableAttribute
         let key = methodKey baseline "GetMessage"
+        let symbolChanges: FSharpSymbolChanges =
+            { Added = []
+              Updated = []
+              Deleted = []
+              Synthesized = []
+              RudeEdits = []
+              RequiredCapabilities =
+                [
+                    EditAndContinueCapability.Baseline
+                    EditAndContinueCapability.ChangeCustomAttributes
+                ] }
+
         let request : IlxDeltaRequest =
             { Baseline = baseline
               UpdatedTypes = [ key.DeclaringType ]
               UpdatedMethods = [ key ]
               UpdatedAccessors = []
               Module = updatedModule
-              SymbolChanges = None
+              SymbolChanges = Some symbolChanges
               CurrentGeneration = 1
               PreviousGenerationId = None
               SynthesizedNames = None
@@ -850,6 +864,7 @@ module DeltaEmitterTests =
         let delta = emitDelta request
 
         Assert.NotEmpty(delta.UserStringUpdates)
+        Assert.Equal<string list>([ "Baseline"; "ChangeCustomAttributes" ], delta.RequiredCapabilities)
         let baselineUserStringStart = baseline.Metadata.HeapSizes.UserStringHeapSize
 
         let updatedLiteral =

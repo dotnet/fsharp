@@ -14,6 +14,7 @@ open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.BinaryConstants
 open FSharp.Compiler.AbstractIL.ILDeltaHandles
 open FSharp.Compiler.AbstractIL.ILPdbWriter
+open FSharp.Compiler.EditAndContinue
 open FSharp.Compiler.HotReload
 open FSharp.Compiler.HotReload.SymbolChanges
 open FSharp.Compiler.HotReload.SymbolMatcher
@@ -99,6 +100,8 @@ type IlxDelta =
         EncMap: (TableName * int) array
         UpdatedTypeTokens: int list
         UpdatedMethodTokens: int list
+        /// Runtime capabilities the host must verify before applying this delta.
+        RequiredCapabilities: string list
         AddedOrChangedMethods: HotReloadBaseline.AddedOrChangedMethodInfo list
         MethodBodies: MethodBodyUpdate list
         StandaloneSignatures: StandaloneSignatureUpdate list
@@ -220,6 +223,7 @@ let private emptyDelta: IlxDelta =
         EncMap = Array.empty
         UpdatedTypeTokens = []
         UpdatedMethodTokens = []
+        RequiredCapabilities = []
         AddedOrChangedMethods = []
         MethodBodies = []
         StandaloneSignatures = []
@@ -2851,6 +2855,14 @@ let private finalizeDeltaArtifacts
             IL = streams.IL
             UpdatedTypeTokens = updatedTypeTokens
             UpdatedMethodTokens = updatedMethodTokenList
+            RequiredCapabilities =
+                request.SymbolChanges
+                |> Option.map (fun changes -> changes.RequiredCapabilities)
+                |> Option.defaultValue []
+                |> List.append [ EditAndContinueCapability.Baseline ]
+                |> Set.ofList
+                |> Set.toList
+                |> List.map (fun capability -> capability.Name)
             EncLog = metadataDelta.EncLog
             EncMap = metadataDelta.EncMap
             MethodBodies = streams.MethodBodies

@@ -131,6 +131,10 @@ module private Sources =
 
 module TypedTreeDiffTests =
 
+    let assertRequiredCapabilities expected (result: TypedTreeDiffResult) =
+        let actual = result.RequiredCapabilities |> List.map (fun capability -> capability.Name)
+        Assert.Equal<string list>(expected, actual)
+
     [<Fact>]
     let ``unchanged file produces no edits`` () =
         use harness = new DiffTestHarness()
@@ -143,6 +147,7 @@ module TypedTreeDiffTests =
 
         Assert.Empty(result.SemanticEdits)
         Assert.Empty(result.RudeEdits)
+        assertRequiredCapabilities [] result
 
     [<Fact>]
     let ``rude-edit symbol name is not module-prefix-doubled`` () =
@@ -175,7 +180,10 @@ module TypedTreeDiffTests =
 
         Assert.Single(result.SemanticEdits) |> ignore
         Assert.Empty(result.RudeEdits)
-        Assert.Equal(SemanticEditKind.MethodBody, result.SemanticEdits[0].Kind)
+        let edit = result.SemanticEdits[0]
+        Assert.Equal(SemanticEditKind.MethodBody, edit.Kind)
+        Assert.Equal("value", edit.Symbol.LogicalName)
+        assertRequiredCapabilities [ "Baseline" ] result
 
     [<Fact>]
     let ``match decision-tree change produces method body edit`` () =
@@ -274,6 +282,7 @@ module TypedTreeDiffTests =
         Assert.Empty(result.RudeEdits)
         let edit = Assert.Single(result.SemanticEdits |> List.filter (fun edit -> edit.Symbol.LogicalName = "M"))
         Assert.Equal(Some 1, edit.Symbol.GenericArity)
+        assertRequiredCapabilities [ "Baseline"; "GenericUpdateMethod" ] result
 
     [<Fact>]
     let ``inline annotation change triggers rude edit`` () =
@@ -1275,6 +1284,13 @@ let mutable newCounter = 0
         Assert.Empty(result.RudeEdits)
         let edit = Assert.Single(result.SemanticEdits |> List.filter (fun e -> e.Symbol.LogicalName = "newCounter"))
         Assert.Equal(SemanticEditKind.Insert, edit.Kind)
+        assertRequiredCapabilities
+            [
+                "Baseline"
+                "AddMethodToExistingType"
+                "AddStaticFieldToExistingType"
+            ]
+            result
 
     [<Fact>]
     let ``adding mutable module value without static field capability names the missing capability`` () =
@@ -2323,3 +2339,31 @@ let compute (x: int) =
         // shape change.
         Assert.DoesNotContain(result.RudeEdits, fun rude -> rude.Kind = RudeEditKind.StateMachineShapeChange)
         Assert.Empty(result.RudeEdits)
+
+    [<Fact>]
+    let ``attribute and parameter updates report their runtime capabilities`` () =
+        use harness = new DiffTestHarness()
+
+        harness.Rewrite(
+            "module Library\n[<System.Obsolete(\"old\")>]\nlet value (oldName: int) = oldName + 1\n"
+        )
+
+        let baseline = harness.Compile()
+
+        harness.Rewrite(
+            "module Library\n[<System.Obsolete(\"new\")>]\nlet value (newName: int) = newName + 1\n"
+        )
+
+        let updated = harness.Compile()
+        let result = harness.Diff baseline updated
+
+        Assert.Empty(result.RudeEdits)
+        Assert.Single(result.SemanticEdits) |> ignore
+
+        assertRequiredCapabilities
+            [
+                "Baseline"
+                "ChangeCustomAttributes"
+                "UpdateParameters"
+            ]
+            result
