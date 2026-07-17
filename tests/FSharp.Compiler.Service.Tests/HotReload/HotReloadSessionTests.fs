@@ -792,6 +792,10 @@ let appValue () = "app generation {generation}"
             Assert.Throws<ObjectDisposedException>(fun () -> sessionA.ProjectIdentifiers |> ignore)
             |> ignore
 
+            Assert.Throws<ObjectDisposedException>(fun () ->
+                sessionA.AddProject(createProjectSnapshot optionsA) |> Async.RunSynchronously |> ignore)
+            |> ignore
+
             // ...while the other session keeps emitting.
             writeAndCompile checker fsPathB optionsB (appSource 1) false
             let deltaB = emitOrFail sessionB (createProjectSnapshot optionsB)
@@ -904,6 +908,13 @@ let appValue () = "app generation {generation}: " + SessionLib.libValue ()
             writeAndCompile checker fsPath options (libSource 1) false
             let delta1 = emitOrFail session (createProjectSnapshot options)
 
+            // A second emit cannot overwrite the first update while the host still owns it.
+            match session.EmitDelta(createProjectSnapshot options) |> Async.RunImmediate with
+            | Error(FSharpHotReloadError.UnsupportedEdit diagnostics) ->
+                Assert.Contains(diagnostics, fun diagnostic -> diagnostic.Message.Contains("already pending"))
+            | Error other -> failwithf "Expected UnsupportedEdit for a second pending emit, got %A" other
+            | Ok _ -> failwith "Expected a second emit to be rejected while the first update is pending."
+
             // The host did not apply the update: discard it. The next emit diffs against the
             // unchanged committed baseline, so it builds on the same base generation.
             session.Discard()
@@ -982,12 +993,13 @@ type Calculator<'T>() =
             Assert.True(genericView.Capabilities.Supports EditAndContinueCapability.GenericUpdateMethod)
             Assert.Equal<EditAndContinueCapabilities>(genericView.Capabilities, plainView.Capabilities)
 
-            // Active statements are session-wide too: one push is visible from both projects.
-            let statement =
+            // The host pushes one session-wide batch, but each project view receives only
+            // statements owned by that module MVID. MethodDef tokens collide across modules.
+            let statement moduleId =
                 {
                     ActiveInstruction =
                         {
-                            Method = { Token = 0x06000001; Version = 1 }
+                            Method = { ModuleId = moduleId; Token = 0x06000001; Version = 1 }
                             ILOffset = 0
                         }
                     DocumentName = None
@@ -1008,7 +1020,9 @@ type Calculator<'T>() =
                         }
                 }
 
-            session.SetActiveStatements [ statement ]
+            session.SetActiveStatements
+                [ statement genericView.Baseline.ModuleId
+                  statement plainView.Baseline.ModuleId ]
 
             let genericView =
                 match session.TryGetProjectView(createProjectSnapshot genericOptions) with
@@ -1022,6 +1036,8 @@ type Calculator<'T>() =
 
             Assert.Equal(1, genericView.ActiveStatements.Length)
             Assert.Equal(1, plainView.ActiveStatements.Length)
+            Assert.Equal(genericView.Baseline.ModuleId, genericView.ActiveStatements.Head.ActiveInstruction.Method.ModuleId)
+            Assert.Equal(plainView.Baseline.ModuleId, plainView.ActiveStatements.Head.ActiveInstruction.Method.ModuleId)
 
             // Clearing replaces the whole session-wide set.
             session.SetActiveStatements []

@@ -954,6 +954,10 @@ type Type =
         File.WriteAllText(fsPath, updatedSource)
         checker.NotifyFileChanged(fsPath, projectOptions) |> Async.RunImmediate
 
+        // A timestamp-only touch is not proof that the edited source was rebuilt. The output
+        // bytes are unchanged, so stale-output detection must still reject the update.
+        File.SetLastWriteTimeUtc(dllPath, File.GetLastWriteTimeUtc(dllPath).AddSeconds(3.0))
+
         // Intentionally skip recompilation so the output assembly stays stale.
         match session.EmitDelta(createProjectSnapshot projectOptions) |> Async.RunImmediate with
         | Error (FSharpHotReloadError.DeltaEmissionFailed message) ->

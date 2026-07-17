@@ -35,6 +35,10 @@ type HotReloadProjectState =
     }
 
 and PendingHotReloadUpdate =
+    | Delta of PendingDeltaHotReloadUpdate
+    | LineOnly of PendingLineHotReloadUpdate
+
+and PendingDeltaHotReloadUpdate =
     {
         GenerationId: Guid
         Baseline: FSharpEmitBaseline
@@ -42,6 +46,12 @@ and PendingHotReloadUpdate =
         /// mirroring Roslyn's EmitSolutionUpdate/CommitSolutionUpdate split). None in the
         /// legacy auto-commit flow, where the language service updates them directly.
         ImplementationFiles: CheckedAssemblyAfterOptimization option
+    }
+
+and PendingLineHotReloadUpdate =
+    {
+        SequencePointSnapshots: Map<int, FSharp.Compiler.HotReload.ActiveStatementAnalysis.MethodSequencePoints>
+        ImplementationFiles: CheckedAssemblyAfterOptimization
     }
 
 /// <summary>
@@ -125,7 +135,10 @@ type internal HotReloadSessionStore() =
             PreviousGenerationId = state.PreviousGenerationId
             PendingUpdate = state.PendingUpdate
             Capabilities = sessionCapabilities
-            ActiveStatements = sessionActiveStatements
+            ActiveStatements =
+                sessionActiveStatements
+                |> List.filter (fun statement ->
+                    statement.ActiveInstruction.Method.ModuleId = state.Baseline.ModuleId)
         }
 
     let updateProject key (update: HotReloadProjectState -> HotReloadProjectState) (commit: bool) =
@@ -294,15 +307,49 @@ type internal HotReloadSessionStore() =
             updateProject
                 (resolveKey key)
                 (fun state ->
-                    { state with
-                        PendingUpdate =
-                            Some
-                                {
-                                    GenerationId = baseline.EncId
-                                    Baseline = baseline
-                                    ImplementationFiles = None
-                                }
-                    })
+                    match state.PendingUpdate with
+                    | Some _ ->
+                        invalidOp "Cannot emit another hot reload update before the pending update is committed or discarded."
+                    | None ->
+                        { state with
+                            PendingUpdate =
+                                Some(
+                                    Delta
+                                        {
+                                            GenerationId = baseline.EncId
+                                            Baseline = baseline
+                                            ImplementationFiles = None
+                                        }
+                                )
+                        })
+                false)
+
+    /// Stages a debugger line-rebind update without consuming a metadata generation.
+    member _.StageLineOnlyUpdate
+        (
+            snapshots: Map<int, FSharp.Compiler.HotReload.ActiveStatementAnalysis.MethodSequencePoints>,
+            implementationFiles: CheckedAssemblyAfterOptimization,
+            ?key: HotReloadProjectKey
+        )
+        =
+        lock sessionLock (fun () ->
+            updateProject
+                (resolveKey key)
+                (fun state ->
+                    match state.PendingUpdate with
+                    | Some _ ->
+                        invalidOp "Cannot emit another hot reload update before the pending update is committed or discarded."
+                    | None ->
+                        { state with
+                            PendingUpdate =
+                                Some(
+                                    LineOnly
+                                        {
+                                            SequencePointSnapshots = snapshots
+                                            ImplementationFiles = implementationFiles
+                                        }
+                                )
+                        })
                 false)
 
     /// <summary>
@@ -316,27 +363,41 @@ type internal HotReloadSessionStore() =
                 (resolveKey key)
                 (fun state ->
                     match state.PendingUpdate with
-                    | Some pending ->
+                    | Some(Delta pending) ->
                         { state with
                             PendingUpdate =
-                                Some
-                                    { pending with
-                                        ImplementationFiles = Some implementationFiles
-                                    }
+                                Some(
+                                    Delta
+                                        { pending with
+                                            ImplementationFiles = Some implementationFiles
+                                        }
+                                )
                         }
+                    | Some(LineOnly _)
                     | None -> state)
                 false)
 
     member private _.CommitPendingLocked(pendings: (HotReloadProjectKey * HotReloadProjectState * PendingHotReloadUpdate) list) =
         for key, state, pending in pendings do
             let updated =
-                { state with
-                    Baseline = pending.Baseline
-                    ImplementationFiles = defaultArg pending.ImplementationFiles state.ImplementationFiles
-                    CurrentGeneration = state.CurrentGeneration + 1
-                    PreviousGenerationId = Some pending.GenerationId
-                    PendingUpdate = None
-                }
+                match pending with
+                | Delta delta ->
+                    { state with
+                        Baseline = delta.Baseline
+                        ImplementationFiles = defaultArg delta.ImplementationFiles state.ImplementationFiles
+                        CurrentGeneration = state.CurrentGeneration + 1
+                        PreviousGenerationId = Some delta.GenerationId
+                        PendingUpdate = None
+                    }
+                | LineOnly lineUpdate ->
+                    { state with
+                        Baseline =
+                            { state.Baseline with
+                                SequencePointSnapshots = lineUpdate.SequencePointSnapshots
+                            }
+                        ImplementationFiles = lineUpdate.ImplementationFiles
+                        PendingUpdate = None
+                    }
 
             projects <- Map.add key updated projects
             committedProjects <- Map.add key (toCommittedSnapshot updated) committedProjects
@@ -364,7 +425,10 @@ type internal HotReloadSessionStore() =
 
             let matchesPending =
                 pendings
-                |> List.exists (fun (_, _, pending) -> pending.GenerationId = generationId)
+                |> List.exists (fun (_, _, pending) ->
+                    match pending with
+                    | Delta delta -> delta.GenerationId = generationId
+                    | LineOnly _ -> false)
 
             if not matchesPending then
                 invalidArg (nameof generationId) "Generation ID does not match the currently pending hot reload update."
@@ -384,7 +448,11 @@ type internal HotReloadSessionStore() =
                 |> List.choose (fun (key, state) -> state.PendingUpdate |> Option.map (fun pending -> key, state, pending))
 
             this.CommitPendingLocked pendings
-            pendings |> List.map (fun (_, _, pending) -> pending.GenerationId))
+            pendings
+            |> List.choose (fun (_, _, pending) ->
+                match pending with
+                | Delta delta -> Some delta.GenerationId
+                | LineOnly _ -> None))
 
     /// Discards ALL pending project updates (Roslyn's <c>DiscardSolutionUpdate</c>).
     member _.DiscardPendingUpdate() =
@@ -403,24 +471,16 @@ type HotReloadEmissionContext =
         ProjectKey: HotReloadProjectKey
     }
 
-let private emissionContextLock = obj ()
-
-// INVARIANT: a single process-wide slot, written only by FSharpChecker.Compile (which brackets
-// set/finally-clear around one in-process compile) and read only by the fsc emit hook's driver
-// phases; the primary EmitDelta path never consults it. This is safe today because no host calls
-// FSharpChecker.Compile concurrently for two projects of one session — fsc.exe is one project per
-// process and FCS hosts serialize these compiles. If a concurrent same-session compiler host is
-// ever introduced, scope this per-compile (thread it through tcConfig.compilerEmitHook) rather
-// than via AsyncLocal: F# async does not flow ExecutionContext like C# await, so an AsyncLocal
-// approach would need a concurrent-compile test to confirm it before being relied on.
-let mutable private currentEmissionContext: HotReloadEmissionContext option = None
+// The compiler service can compile projects concurrently. AsyncLocal scopes the emit-hook route
+// to one logical compile while still flowing across the thread hops made by F# async.
+let private currentEmissionContext = Threading.AsyncLocal<HotReloadEmissionContext option>()
 
 /// Sets (or clears, with None) the scoped emission context consulted by the fsc emit hook.
 let setCurrentEmissionContext (context: HotReloadEmissionContext option) =
-    lock emissionContextLock (fun () -> currentEmissionContext <- context)
+    currentEmissionContext.Value <- context
 
 let tryGetCurrentEmissionContext () =
-    lock emissionContextLock (fun () -> currentEmissionContext)
+    currentEmissionContext.Value
 
 let private activeSessionStore = HotReloadSessionStore()
 

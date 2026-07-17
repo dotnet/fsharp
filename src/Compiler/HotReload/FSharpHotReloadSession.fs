@@ -434,9 +434,8 @@ type internal FSharpHotReloadService
                                     )
                                 with
                                 | Ok result ->
-                                    match result.Delta.UpdatedBaseline with
-                                    | Some _ -> lock hotReloadGate (fun () -> pendingOutputFingerprints[projectKey] <- outputFingerprint)
-                                    | None -> ()
+                                    if result.Delta.UpdatedBaseline.IsSome || not (List.isEmpty result.Delta.SequencePointUpdates) then
+                                        lock hotReloadGate (fun () -> pendingOutputFingerprints[projectKey] <- outputFingerprint)
 
                                     return Result.Ok(toPublicDelta result.Delta)
                                 | Error error -> return Result.Error(mapHotReloadError error)
@@ -508,6 +507,7 @@ type FSharpHotReloadSession
     ) =
 
     let mutable disposed = 0
+    let lifecycleGate = obj ()
 
     // Output paths explicitly supplied to AddProject, consulted before deriving the path from
     // the snapshot's command-line options (hosts whose snapshots carry no -o option).
@@ -548,7 +548,7 @@ type FSharpHotReloadSession
         | None -> tryGetOutputPath projectSnapshot
 
     let ensureNotDisposed () =
-        if disposed = 1 then
+        if Volatile.Read(&disposed) = 1 then
             raise (ObjectDisposedException(nameof FSharpHotReloadSession))
 
     /// <summary>
@@ -592,11 +592,16 @@ type FSharpHotReloadSession
 
             match result, resolvedOutputPath with
             | Ok(), Some path ->
-                lock trackedInputsGate (fun () ->
-                    committedTrackedInputs[projectKey] <- trackedInputs
-                    pendingTrackedInputs.Remove projectKey |> ignore)
+                // AddProject completes asynchronously. Serialize its final registration with
+                // Dispose so an in-flight capture cannot resurrect a disposed session.
+                lock lifecycleGate (fun () ->
+                    ensureNotDisposed ()
 
-                onProjectBaselined path projectKey
+                    lock trackedInputsGate (fun () ->
+                        committedTrackedInputs[projectKey] <- trackedInputs
+                        pendingTrackedInputs.Remove projectKey |> ignore)
+
+                    onProjectBaselined path projectKey)
             | _ -> ()
 
             return result
@@ -719,5 +724,6 @@ type FSharpHotReloadSession
     interface IDisposable with
         member _.Dispose() =
             if Interlocked.Exchange(&disposed, 1) = 0 then
-                onDispose ()
-                hotReloadService.EndSession()
+                lock lifecycleGate (fun () ->
+                    onDispose ()
+                    hotReloadService.EndSession())

@@ -5,9 +5,40 @@ open System.Threading
 open System.Threading.Tasks
 open Xunit
 
+open FSharp.Compiler.HotReloadState
 open FSharp.Compiler.SynthesizedTypeMaps
 
 module ThreadSafetyTests =
+
+    [<Fact>]
+    let ``concurrent emission contexts stay scoped to their logical compile`` () =
+        use barrier = new Barrier(2)
+
+        let run projectKey =
+            Async.StartAsTask(
+                async {
+                    let context =
+                        { HotReloadEmissionContext.Store = createSessionStore ()
+                          ProjectKey = projectKey }
+
+                    setCurrentEmissionContext (Some context)
+
+                    try
+                        barrier.SignalAndWait() |> ignore
+                        do! Async.Sleep 10
+
+                        match tryGetCurrentEmissionContext () with
+                        | Some current -> Assert.Equal(projectKey, current.ProjectKey)
+                        | None -> failwith "Expected the logical compile's emission context."
+                    finally
+                        setCurrentEmissionContext None
+                }
+            )
+
+        let firstKey = HotReloadProjectKey.Project("first.fsproj", "first.dll")
+        let secondKey = HotReloadProjectKey.Project("second.fsproj", "second.dll")
+        let tasks = [| run firstKey :> Task; run secondKey :> Task |]
+        Task.WaitAll tasks
 
     /// Helper to run actions concurrently and wait for all to complete
     let runConcurrently (count: int) (action: int -> unit) =
