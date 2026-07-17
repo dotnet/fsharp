@@ -407,6 +407,31 @@ module DeltaBuilderTests =
             Assert.Contains(errors, fun message -> message.Contains("explicit accessor containing entity"))
 
     [<Fact>]
+    let ``mapSymbolChangesToDelta fails closed when inferred accessor containing type cannot resolve`` () =
+        let accessorSymbol =
+            { mkSymbol [ "Sample"; "Missing" ] "get_Value" 100L SymbolKind.Value (Some(SymbolMemberKind.PropertyGet "Value")) with
+                CompiledName = Some "get_Value"
+                TotalArgCount = Some 0
+                GenericArity = Some 0
+                ParameterTypeIdentities = Some []
+                ReturnTypeIdentity = Some(RuntimeTypeIdentity.NamedType("System.Int32", [])) }
+
+        let changes: FSharpSymbolChanges =
+            { Added = []
+              Updated =
+                [ { UpdatedSymbolChange.Symbol = accessorSymbol
+                    Kind = SemanticEditKind.MethodBody
+                    ContainingEntity = None } ]
+              Deleted = []
+              Synthesized = []
+              RudeEdits = [] }
+
+        match mapSymbolChangesToDelta (createBaseline Map.empty Map.empty) changes with
+        | Ok _ -> failwith "Expected inferred accessor containing type mismatch to fail closed"
+        | Error errors ->
+            Assert.Contains(errors, fun message -> message.Contains("accessor containing type"))
+
+    [<Fact>]
     let ``mapSymbolChangesToDelta fails closed when return identity mismatches`` () =
         let baselineTypeName = "Sample.Container+Nested"
 

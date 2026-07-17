@@ -19,9 +19,9 @@
 /// Documented deviations from the Roslyn contract shapes (F#-shaped, illegal states unrepresentable):
 ///
 /// <list type="bullet">
-///   <item>Roslyn's <c>ManagedMethodId</c> carries a module version id (MVID); an F# hot reload session is
-///   single-module, so the module identity is implicit in the session and only the token/version pair is
-///   modeled (<c>FSharpManagedModuleMethodId</c>).</item>
+///   <item>Roslyn separates the module version id (MVID) into an enclosing <c>ManagedMethodId</c>;
+///   F# keeps the MVID, token and version together in <c>FSharpManagedModuleMethodId</c> so active
+///   statements remain unambiguous in a multi-project session.</item>
 ///   <item>Roslyn's <c>ActiveStatementFlags</c> is a [Flags] enum that can express contradictory states
 ///   (e.g. a frame that is neither leaf nor non-leaf). F# models the frame position as a closed union
 ///   (<c>FSharpActiveStatementFrameKind</c>) plus independent booleans for the genuinely independent bits.</item>
@@ -31,6 +31,8 @@
 /// </list>
 /// </summary>
 namespace FSharp.Compiler.CodeAnalysis
+
+open System
 
 /// <summary>
 /// The start/end line/column range for a contiguous span of source text.
@@ -51,13 +53,15 @@ type FSharpSourceSpan =
     }
 
 /// <summary>
-/// Token/version pair uniquely identifying a method version within the session's module.
+/// Module/token/version identity for a method version within a multi-project session.
 /// Mirrors <c>Microsoft.CodeAnalysis.Contracts.EditAndContinue.ManagedModuleMethodId</c>
-/// (the module MVID of Roslyn's <c>ManagedMethodId</c> is implicit in the single-module session).
+/// together with the MVID carried by Roslyn's enclosing <c>ManagedMethodId</c>.
 /// </summary>
 [<Experimental("This FCS API is experimental and subject to change.")>]
 type FSharpManagedModuleMethodId =
     {
+        /// <summary>MVID of the module containing the method.</summary>
+        ModuleId: Guid
         /// <summary>MethodDef metadata token (0x06xxxxxx) of the method that contains the statement.</summary>
         Token: int
         /// <summary>

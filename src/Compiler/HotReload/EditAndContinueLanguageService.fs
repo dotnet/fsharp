@@ -264,6 +264,14 @@ type internal FSharpEditAndContinueLanguageService private (getSessionStore: uni
 
         match sessionStore().TryGetSession(?key = projectKey) with
         | ValueNone -> Error HotReloadError.NoActiveSession
+        | ValueSome session when session.PendingUpdate.IsSome ->
+            Error(
+                HotReloadError.UnsupportedEdit
+                    [
+                        RudeEditDiagnostics.unsupported
+                            "A hot reload update is already pending. Commit or discard it before emitting another update."
+                    ]
+            )
         | ValueSome session ->
             use _ =
                 Activity.start
@@ -298,6 +306,21 @@ type internal FSharpEditAndContinueLanguageService private (getSessionStore: uni
 
                 let delta =
                     FSharp.Compiler.IlxDeltaEmitter.emitDeltaWithDebugData freshDebugPdb deltaRequest
+
+                // A semantic emit must materialize at least one row besides the mandatory
+                // Module row. Do not stage an advanced baseline for an empty generation.
+                let hasMaterializedGeneration =
+                    delta.EncMap
+                    |> Array.exists (fun (table, _) ->
+                        table <> FSharp.Compiler.AbstractIL.BinaryConstants.TableNames.Module)
+
+                let delta =
+                    if hasMaterializedGeneration then
+                        delta
+                    else
+                        { delta with
+                            UpdatedBaseline = None
+                        }
 
                 if trace then
                     let line = $"[fsharp-hotreload][service] EmitDelta produced encLog={delta.EncLog}\n"
@@ -530,20 +553,35 @@ type internal FSharpEditAndContinueLanguageService private (getSessionStore: uni
                             Ok result
                         elif not (List.isEmpty delta.SequencePointUpdates) then
                             // Line-shift-only update: no metadata/IL, no generation consumed.
-                            // Commit the rebound sequence-point view so the next emit diffs
-                            // against the lines the host just applied to the debugger.
-                            // (Committed immediately in both modes: there is no generation to
-                            // stage and nothing to pass to MetadataUpdater.ApplyUpdate.)
-                            delta.ChainedSequencePoints
-                            |> Option.iter (fun snapshots -> sessionStore().UpdateCommittedSequencePoints(snapshots, ?key = projectKey))
+                            // The debugger still owns the update, so deferred hosts must be able
+                            // to commit or discard the rebound source view just like a metadata delta.
+                            match delta.ChainedSequencePoints with
+                            | Some snapshots ->
+                                if deferCommit then
+                                    sessionStore().StageLineOnlyUpdate(snapshots, updatedImplementation, ?key = projectKey)
+                                else
+                                    sessionStore().UpdateCommittedSequencePoints(snapshots, ?key = projectKey)
+                                    sessionStore().UpdateImplementationFiles(updatedImplementation, ?key = projectKey)
 
-                            sessionStore().UpdateImplementationFiles(updatedImplementation, ?key = projectKey)
-                            Ok result
+                                Ok result
+                            | None ->
+                                Error(
+                                    HotReloadError.UnsupportedEdit
+                                        [
+                                            RudeEditDiagnostics.unsupported
+                                                "The line-only update did not produce a chained sequence-point snapshot; full rebuild required."
+                                        ]
+                                )
                         elif hasUpdates then
-                            // Semantic edits that materialized into no emitted rows keep the
-                            // legacy behavior: surface the (empty) delta to the caller.
-                            sessionStore().UpdateImplementationFiles(updatedImplementation, ?key = projectKey)
-                            Ok result
+                            // Never consume fresh diff inputs for a semantic edit that the emitter
+                            // failed to materialize. Treating it as success would silently lose the edit.
+                            Error(
+                                HotReloadError.UnsupportedEdit
+                                    [
+                                        RudeEditDiagnostics.unsupported
+                                            "Semantic edits did not materialize into a hot reload delta; full rebuild required."
+                                    ]
+                            )
                         else
                             Error HotReloadError.NoChanges
                     | Error error -> Error error

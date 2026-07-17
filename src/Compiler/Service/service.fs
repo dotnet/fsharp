@@ -375,24 +375,27 @@ type FSharpChecker
             None
 
     let hasOutputFingerprintChanged path previous current =
-        let hashesEqual left right =
-            match left, right with
-            | Some x, Some y -> StructuralComparisons.StructuralEqualityComparer.Equals(x, y)
-            | None, None -> true
-            | _ -> false
-
         match previous, current with
         | Some(previousTimestamp, previousHash), Some(currentTimestamp, currentHash) ->
             let timestampChanged = previousTimestamp <> currentTimestamp
-            let hashChanged = not (hashesEqual previousHash currentHash)
+
+            // Prefer content identity whenever both reads produced hashes. Rebuilding or merely
+            // touching an unchanged output must not make a stale semantic edit look current.
+            let hashChanged =
+                match previousHash, currentHash with
+                | Some previousBytes, Some currentBytes ->
+                    Some(not (StructuralComparisons.StructuralEqualityComparer.Equals(previousBytes, currentBytes)))
+                | _ -> None
+
+            let changed = defaultArg hashChanged timestampChanged
 
             if traceOutputFingerprint && timestampChanged then
                 printfn $"[fsharp-hotreload][trace] detected write timestamp change for {path} (prev={previousTimestamp:O}, new={currentTimestamp:O})"
 
-            if traceOutputFingerprint && hashChanged then
+            if traceOutputFingerprint && hashChanged = Some true then
                 printfn $"[fsharp-hotreload][trace] detected content hash change for {path}"
 
-            timestampChanged || hashChanged
+            changed
         | None, Some _ -> true
         | Some _, None -> true
         | None, None -> false
@@ -882,12 +885,15 @@ type FSharpChecker
 
             match emissionContext with
             | Some context ->
+                let previousContext =
+                    FSharp.Compiler.HotReloadState.tryGetCurrentEmissionContext ()
+
                 FSharp.Compiler.HotReloadState.setCurrentEmissionContext (Some context)
 
                 try
                     return CompileHelpers.compileFromArgs (ctok, argv, legacyReferenceResolver, None, None)
                 finally
-                    FSharp.Compiler.HotReloadState.setCurrentEmissionContext None
+                    FSharp.Compiler.HotReloadState.setCurrentEmissionContext previousContext
             | None -> return CompileHelpers.compileFromArgs (ctok, argv, legacyReferenceResolver, None, None)
         }
 

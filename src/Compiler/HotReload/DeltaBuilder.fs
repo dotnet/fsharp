@@ -672,9 +672,9 @@ let mapSymbolChangesToDelta
                 )
         | None ->
             if List.isEmpty normalizedCandidates then
-                // Preserve historical behavior for synthesized accessors whose containing
-                // type cannot be resolved from typed-tree symbol path information.
-                Ok []
+                Error(
+                    $"Unable to resolve accessor containing type for symbol '{formatSymbolIdentity symbol}' (candidates={rawCandidates}); full rebuild required."
+                )
             elif normalizedCandidates.Length > 1 then
                 Error(
                     $"Ambiguous accessor containing type mapping for symbol '{formatSymbolIdentity symbol}' (candidates={rawCandidates}, matches={normalizedCandidates}); full rebuild required."

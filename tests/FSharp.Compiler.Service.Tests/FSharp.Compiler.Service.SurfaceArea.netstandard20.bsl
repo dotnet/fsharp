@@ -2502,8 +2502,10 @@ FSharp.Compiler.CodeAnalysis.FSharpManagedModuleMethodId: Int32 Token
 FSharp.Compiler.CodeAnalysis.FSharpManagedModuleMethodId: Int32 Version
 FSharp.Compiler.CodeAnalysis.FSharpManagedModuleMethodId: Int32 get_Token()
 FSharp.Compiler.CodeAnalysis.FSharpManagedModuleMethodId: Int32 get_Version()
+FSharp.Compiler.CodeAnalysis.FSharpManagedModuleMethodId: System.Guid ModuleId
+FSharp.Compiler.CodeAnalysis.FSharpManagedModuleMethodId: System.Guid get_ModuleId()
 FSharp.Compiler.CodeAnalysis.FSharpManagedModuleMethodId: System.String ToString()
-FSharp.Compiler.CodeAnalysis.FSharpManagedModuleMethodId: Void .ctor(Int32, Int32)
+FSharp.Compiler.CodeAnalysis.FSharpManagedModuleMethodId: Void .ctor(System.Guid, Int32, Int32)
 FSharp.Compiler.CodeAnalysis.FSharpParseFileResults: Boolean IsBindingALambdaAtPosition(FSharp.Compiler.Text.Position)
 FSharp.Compiler.CodeAnalysis.FSharpParseFileResults: Boolean IsPosContainedInApplication(FSharp.Compiler.Text.Position)
 FSharp.Compiler.CodeAnalysis.FSharpParseFileResults: Boolean IsPositionContainedInACurriedParameter(FSharp.Compiler.Text.Position)

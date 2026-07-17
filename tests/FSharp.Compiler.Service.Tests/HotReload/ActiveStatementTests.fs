@@ -119,6 +119,11 @@ module ActiveStatementTests =
                 None)
         |> Option.defaultWith (fun () -> failwithf "Method %s::%s not found in %s" declaringType methodName dllPath)
 
+    let private getModuleId (dllPath: string) =
+        use peReader = new PEReader(File.OpenRead(dllPath))
+        let metadataReader = peReader.GetMetadataReader()
+        metadataReader.GetGuid(metadataReader.GetModuleDefinition().Mvid)
+
     /// Independent decode of a portable PDB's visible sequence points (offset plus zero-based
     /// span, Roslyn SourceSpan convention), keyed by MethodDebugInformation row id.
     let private decodeVisibleSequencePoints (pdbBytes: byte[]) =
@@ -149,9 +154,14 @@ module ActiveStatementTests =
                       yield rowId, points ]
         |> Map.ofList
 
-    let private mkActiveStatement (methodToken: int) (ilOffset: int) (frameKind: FSharpActiveStatementFrameKind) =
+    let private mkActiveStatement
+        (moduleId: Guid)
+        (methodToken: int)
+        (ilOffset: int)
+        (frameKind: FSharpActiveStatementFrameKind)
+        =
         { ActiveInstruction =
-            { Method = { Token = methodToken; Version = 1 }
+            { Method = { ModuleId = moduleId; Token = methodToken; Version = 1 }
               ILOffset = ilOffset }
           DocumentName = None
           SourceSpan =
@@ -244,7 +254,22 @@ let target () = 41
 
                 // The update starts at 'target''s old (zero-based) start line: 'let target () = 41'
                 // is the fifth line (index 4) of the baseline source.
-                Assert.Equal(4, lineUpdate.OldLine))
+                Assert.Equal(4, lineUpdate.OldLine)
+
+                // Line-only updates are pending debugger work too. Discard must leave the old
+                // sequence-point view intact so the same source edit is offered again.
+                session.Discard()
+
+                match session.EmitDelta(snapshotOf projectOptions) |> Async.RunImmediate with
+                | Error error -> failwithf "Expected discarded line update to be offered again, got: %A" error
+                | Ok discardedDelta -> Assert.Single(discardedDelta.SequencePointUpdates) |> ignore
+
+                session.Commit()
+
+                match session.EmitDelta(snapshotOf projectOptions) |> Async.RunImmediate with
+                | Error FSharpHotReloadError.NoChanges -> ()
+                | Error error -> failwithf "Expected NoChanges after committing line update, got: %A" error
+                | Ok _ -> failwith "Committed line update was emitted a second time.")
 
     [<Fact>]
     let ``Line-shift edit produces sequence point updates in a disk-started session`` () =
@@ -317,6 +342,7 @@ type Type =
 
             let getValueToken = getMethodToken dllPath "Type" "GetValue"
             let otherToken = getMethodToken dllPath "Type" "Other"
+            let moduleId = getModuleId dllPath
 
             use session = checker.CreateHotReloadSession()
 
@@ -327,8 +353,8 @@ type Type =
             // The debugger reports a break: a LEAF frame in GetValue at IL offset 0, and a
             // statement in the untouched Other method.
             session.SetActiveStatements(
-                    [ mkActiveStatement getValueToken 0 FSharpActiveStatementFrameKind.Leaf
-                      mkActiveStatement otherToken 0 FSharpActiveStatementFrameKind.Leaf ]
+                    [ mkActiveStatement moduleId getValueToken 0 FSharpActiveStatementFrameKind.Leaf
+                      mkActiveStatement moduleId otherToken 0 FSharpActiveStatementFrameKind.Leaf ]
                 )
 
             File.WriteAllText(fsPath, remapUpdatedSource)
@@ -411,6 +437,7 @@ type Type =
                 decodeVisibleSequencePoints (File.ReadAllBytes(Path.ChangeExtension(dllPath, ".pdb")))
 
             let runRow = runToken &&& 0x00FFFFFF
+            let moduleId = getModuleId dllPath
 
             let midOffset =
                 match Map.tryFind runRow baselinePoints with
@@ -424,7 +451,7 @@ type Type =
             | Ok() -> ()
 
             session.SetActiveStatements(
-                    [ mkActiveStatement runToken midOffset FSharpActiveStatementFrameKind.Leaf ]
+                    [ mkActiveStatement moduleId runToken midOffset FSharpActiveStatementFrameKind.Leaf ]
                 )
 
             File.WriteAllText(fsPath, deleteUpdatedSource)
@@ -458,6 +485,7 @@ type Type =
             compileBaseline checker projectOptions
 
             let getValueToken = getMethodToken dllPath "Type" "GetValue"
+            let moduleId = getModuleId dllPath
 
             use session = checker.CreateHotReloadSession()
 
@@ -468,7 +496,7 @@ type Type =
             // A NON-LEAF frame is suspended in the statement that the edit changes ('= 1' to
             // '= 100' changes the statement's span): the frame cannot be remapped.
             session.SetActiveStatements(
-                    [ mkActiveStatement getValueToken 0 FSharpActiveStatementFrameKind.NonLeaf ]
+                    [ mkActiveStatement moduleId getValueToken 0 FSharpActiveStatementFrameKind.NonLeaf ]
                 )
 
             File.WriteAllText(fsPath, remapUpdatedSource)
