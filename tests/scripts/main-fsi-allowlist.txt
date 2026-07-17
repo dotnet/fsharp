@@ -10,3 +10,4 @@ src/Compiler/Driver/CompilerConfig.fsi
 src/Compiler/Optimize/LowerStateMachines.fsi
 src/Compiler/Service/FSharpCheckerResults.fsi
 src/Compiler/Service/service.fsi
+src/Compiler/TypedTree/TcGlobals.fsi
