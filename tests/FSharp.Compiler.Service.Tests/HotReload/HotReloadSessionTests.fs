@@ -2113,6 +2113,52 @@ let added () = 2
                 session.Commit()))
 
     [<Fact>]
+    let ``overlapping in-process emits serialize and preserve the first pending update`` () =
+        withProjectDir "fcs-hotreload-inprocess-overlap" (fun projectDir ->
+            let fsPath = Path.Combine(projectDir, "Library.fs")
+            let dllPath = Path.Combine(projectDir, "Library.dll")
+
+            let source generation =
+                $"""
+module Library
+
+let value () = {generation}
+"""
+
+            File.WriteAllText(fsPath, source 0)
+            let checker = createChecker ()
+            let options = prepareProjectOptions checker fsPath dllPath (source 0) []
+
+            checker.InvalidateAll()
+            compileProject checker options true
+
+            use session = checker.CreateHotReloadSession()
+            addProjectOrFail session (createProjectSnapshot options)
+
+            withEnvVar "FSHARP_HOTRELOAD_INPROCESS_COMPILE" "1" (fun () ->
+                File.WriteAllText(fsPath, source 1)
+                checker.NotifyFileChanged(fsPath, options) |> Async.RunImmediate
+                let snapshot = createProjectSnapshot options
+
+                let results =
+                    [| session.EmitDelta(snapshot)
+                       session.EmitDelta(snapshot) |]
+                    |> Async.Parallel
+                    |> Async.RunImmediate
+
+                Assert.Equal(1, results |> Array.filter Result.isOk |> Array.length)
+
+                let rejected =
+                    results
+                    |> Array.choose (function
+                        | Error(FSharpHotReloadError.UnsupportedEdit diagnostics) -> Some diagnostics
+                        | _ -> None)
+                    |> Assert.Single
+
+                Assert.Contains(rejected, fun diagnostic -> diagnostic.Message.Contains("already pending"))
+                session.Discard()))
+
+    [<Fact>]
     let ``EmitDelta recompiles in-process under FSHARP_HOTRELOAD_INPROCESS_COMPILE and refuses stale output once the flag is off`` () =
         withProjectDir "fcs-hotreload-session-inprocess-compile" (fun projectDir ->
             let fsPath = Path.Combine(projectDir, "Library.fs")
