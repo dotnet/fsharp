@@ -57,8 +57,3 @@ val CompileFromCommandLineArguments:
 
 /// Read the parallelReferenceResolution flag from environment variables
 val internal getParallelReferenceResolutionFromEnvironment: unit -> ParallelReferenceResolution option
-
-/// Pin the determinism knobs (deterministic, parallelIlxGen off, sequential optimization)
-/// for hot reload capture and replay compiles — any compile that installs the emit hook.
-/// Exposed for the determinism guard test.
-val internal applyHotReloadDeterminismPins: tcConfigB: TcConfigBuilder -> unit

@@ -555,17 +555,8 @@ let CreateIlxAssemblyGenerator (_tcConfig: TcConfig, tcImports: TcImports, tcGlo
     ilxGenerator.AddExternalCcus ccus
     ilxGenerator
 
-let private generateIlxCode
-    (
-        ilxBackend,
-        isInteractiveItExpr,
-        parallelIlxGenEnabled,
-        tcConfig: TcConfig,
-        topAttrs: TopAttribs,
-        optimizedImpls,
-        fragName,
-        ilxGenerator: IlxAssemblyGenerator
-    ) =
+let GenerateIlxCode
+    (ilxBackend, isInteractiveItExpr, tcConfig: TcConfig, topAttrs: TopAttribs, optimizedImpls, fragName, ilxGenerator: IlxAssemblyGenerator) =
 
     let mainMethodInfo =
         if
@@ -592,30 +583,13 @@ let private generateIlxCode
             isInteractive = tcConfig.isInteractive
             isInteractiveItExpr = isInteractiveItExpr
             alwaysCallVirt = tcConfig.alwaysCallVirt
-            parallelIlxGenEnabled = parallelIlxGenEnabled
+            // Hot reload capture/replay installs a compiler emit hook. Keep IlxGen sequential
+            // even when an immutable FCS TcConfig was created before fsc applied its builder pins.
+            parallelIlxGenEnabled = tcConfig.parallelIlxGen && tcConfig.compilerEmitHook.IsNone
             alwaysInline = tcConfig.alwaysInline
         }
 
     ilxGenerator.GenerateCode(ilxGenOpts, optimizedImpls, topAttrs.assemblyAttrs, topAttrs.netModuleAttrs)
-
-let GenerateIlxCode
-    (ilxBackend, isInteractiveItExpr, tcConfig: TcConfig, topAttrs: TopAttribs, optimizedImpls, fragName, ilxGenerator: IlxAssemblyGenerator) =
-    generateIlxCode (
-        ilxBackend,
-        isInteractiveItExpr,
-        tcConfig.parallelIlxGen,
-        tcConfig,
-        topAttrs,
-        optimizedImpls,
-        fragName,
-        ilxGenerator
-    )
-
-/// Generates ILX sequentially even when the immutable type-check configuration enabled parallel
-/// code generation. Hot reload replay uses this to preserve baseline metadata and naming order.
-let GenerateIlxCodeSequential
-    (ilxBackend, isInteractiveItExpr, tcConfig: TcConfig, topAttrs: TopAttribs, optimizedImpls, fragName, ilxGenerator: IlxAssemblyGenerator) =
-    generateIlxCode (ilxBackend, isInteractiveItExpr, false, tcConfig, topAttrs, optimizedImpls, fragName, ilxGenerator)
 
 //----------------------------------------------------------------------------
 // Assembly ref normalization: make sure all assemblies are referred to

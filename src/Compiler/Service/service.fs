@@ -1388,18 +1388,7 @@ type FSharpChecker
             let ilxGenerator = CreateIlxAssemblyGenerator(tcConfig, tcImports, tcGlobals, tcVal, generatedCcu)
 
             let codegenResults =
-                // The cached TcConfig is immutable and may still advertise parallel IlxGen even
-                // though fsc pins hot reload compiles to sequential codegen. Replay must preserve
-                // baseline metadata and generated-name order, so force the same pin here.
-                GenerateIlxCodeSequential(
-                    IlWriteBackend,
-                    false,
-                    tcConfig,
-                    topAttrs,
-                    optimizedImpls,
-                    generatedCcu.AssemblyName,
-                    ilxGenerator
-                )
+                GenerateIlxCode(IlWriteBackend, false, tcConfig, topAttrs, optimizedImpls, generatedCcu.AssemblyName, ilxGenerator)
 
             let topAssemblyAttrs = codegenResults.topAssemblyAttrs
 
@@ -1453,7 +1442,12 @@ type FSharpChecker
                 { m with NativeResources = [] }
 
             let normalizeAssemblyRefs (aref: ILAssemblyRef) =
-                tcImports.NormalizeAssemblyRef(ctok, aref)
+                match tcImports.TryFindDllInfo(ctok, rangeStartup, aref.Name, lookupOnly = false) with
+                | Some dllInfo ->
+                    match dllInfo.ILScopeRef with
+                    | ILScopeRef.Assembly normalized -> normalized
+                    | _ -> aref
+                | None -> aref
 
             ReportTime tcConfig "CompileFromCheckedProject: Write .NET Binary"
 

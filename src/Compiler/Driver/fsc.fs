@@ -442,7 +442,7 @@ let getParallelReferenceResolutionFromEnvironment () =
 /// type-checking is deliberately left as configured: lambda occurrence keys and typed-tree
 /// emission order depend on the file order of the compilation, not on the order files are
 /// CHECKED in, so TypeCheckingMode.Graph cannot perturb captured output.
-let internal applyHotReloadDeterminismPins (tcConfigB: TcConfigBuilder) =
+let private applyHotReloadDeterminismPins (tcConfigB: TcConfigBuilder) =
     if tcConfigB.compilerEmitHook.IsSome then
         tcConfigB.deterministic <- true
         tcConfigB.parallelIlxGen <- false
