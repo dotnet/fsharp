@@ -1573,9 +1573,7 @@ let private toPortablePdbSnapshot (expectedContentId: byte[]) (pdbBytes: byte[])
 
 let tryReadFromAssemblyAndPdbBytes (assemblyBytes: byte[]) (portablePdbBytes: byte[] option) =
     match
-        metadataSnapshotFromBytes assemblyBytes,
-        ILBaselineReader.BaselineMetadataReader.Create assemblyBytes,
-        readModuleMvid assemblyBytes
+        metadataSnapshotFromBytes assemblyBytes, ILBaselineReader.BaselineMetadataReader.Create assemblyBytes, readModuleMvid assemblyBytes
     with
     | Some metadataSnapshot, Some reader, Some moduleId when moduleId <> Guid.Empty ->
         let tokenMaps = buildBaselineTokenMapsFromBytes reader
