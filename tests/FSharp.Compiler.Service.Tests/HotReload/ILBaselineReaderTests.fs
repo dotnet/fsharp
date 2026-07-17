@@ -9,6 +9,7 @@ open Xunit
 open FSharp.Compiler.AbstractIL.ILBinaryWriter
 open FSharp.Compiler.AbstractIL.ILBaselineReader
 open FSharp.Compiler.HotReloadBaseline
+open FSharp.Compiler.HotReloadPdb
 
 /// Tests for ILBaselineReader - verifies byte-based metadata parsing
 /// matches SRM MetadataReader results.
@@ -23,6 +24,78 @@ module ILBaselineReaderTests =
         let assembly = typeof<TestMarker>.Assembly
         let assemblyPath = assembly.Location
         File.ReadAllBytes(assemblyPath)
+
+    type private StreamHeader =
+        {
+            HeaderOffset: int
+            DataOffset: int
+            Name: string
+        }
+
+    let private readInt32 (bytes: byte[]) offset =
+        int bytes[offset]
+        ||| (int bytes[offset + 1] <<< 8)
+        ||| (int bytes[offset + 2] <<< 16)
+        ||| (int bytes[offset + 3] <<< 24)
+
+    let private writeInt32 (bytes: byte[]) offset value =
+        bytes[offset] <- byte value
+        bytes[offset + 1] <- byte (value >>> 8)
+        bytes[offset + 2] <- byte (value >>> 16)
+        bytes[offset + 3] <- byte (value >>> 24)
+
+    let private metadataStreamHeaders (assemblyBytes: byte[]) =
+        use peReader = new PEReader(System.Collections.Immutable.ImmutableArray.CreateRange assemblyBytes)
+        let metadataRoot = peReader.PEHeaders.MetadataStartOffset
+        let versionLength = readInt32 assemblyBytes (metadataRoot + 12)
+        let streamsOffset = metadataRoot + 16 + ((versionLength + 3) &&& ~~~3)
+        let streamCount = int assemblyBytes[streamsOffset + 2] ||| (int assemblyBytes[streamsOffset + 3] <<< 8)
+        let headers = ResizeArray<StreamHeader>()
+        let mutable headerOffset = streamsOffset + 4
+
+        for _ in 1..streamCount do
+            let relativeOffset = readInt32 assemblyBytes headerOffset
+            let mutable nameEnd = headerOffset + 8
+
+            while assemblyBytes[nameEnd] <> 0uy do
+                nameEnd <- nameEnd + 1
+
+            let name = Text.Encoding.ASCII.GetString(assemblyBytes, headerOffset + 8, nameEnd - headerOffset - 8)
+            let paddedNameLength = ((nameEnd - headerOffset - 8 + 1) + 3) &&& ~~~3
+
+            headers.Add
+                {
+                    HeaderOffset = headerOffset
+                    DataOffset = metadataRoot + relativeOffset
+                    Name = name
+                }
+
+            headerOffset <- headerOffset + 8 + paddedNameLength
+
+        headers |> Seq.toList
+
+    let private mutateStream name mutation (assemblyBytes: byte[]) =
+        let copy = Array.copy assemblyBytes
+        let stream = metadataStreamHeaders copy |> List.find (fun stream -> stream.Name = name)
+        mutation copy stream
+        copy
+
+    let private truncateGuidStream assemblyBytes =
+        mutateStream "#GUID" (fun bytes stream -> writeInt32 bytes (stream.HeaderOffset + 4) 0) assemblyBytes
+
+    let private addUnsupportedFieldPointerTable assemblyBytes =
+        mutateStream "#~" (fun bytes stream ->
+            bytes[stream.HeaderOffset + 8] <- byte '#'
+            bytes[stream.HeaderOffset + 9] <- byte '-'
+            let validLow = readInt32 bytes (stream.DataOffset + 8)
+            writeInt32 bytes (stream.DataOffset + 8) (validLow ||| (1 <<< 3))) assemblyBytes
+
+    let private makeFirstTableRowCountNegative assemblyBytes =
+        mutateStream "#~" (fun bytes stream -> writeInt32 bytes (stream.DataOffset + 24) -1) assemblyBytes
+
+    let private findSubArray (needle: byte[]) (haystack: byte[]) =
+        seq { 0 .. haystack.Length - needle.Length }
+        |> Seq.tryFind (fun offset -> haystack.AsSpan(offset, needle.Length).SequenceEqual needle)
 
     /// Helper to get SRM heap sizes for comparison
     let private getSrmHeapSizes (metadataReader: MetadataReader) =
@@ -107,6 +180,39 @@ module ILBaselineReaderTests =
         let result = readModuleMvidFromBytes bytes
         Assert.True(result.IsSome, "Should successfully read MVID")
         Assert.NotEqual(System.Guid.Empty, result.Value)
+
+    [<Fact>]
+    let ``readModuleMvidFromBytes bounds the MVID read to the GUID stream`` () =
+        let bytes = getTestAssemblyBytes () |> truncateGuidStream
+        Assert.True((readModuleMvidFromBytes bytes).IsNone)
+
+    [<Fact>]
+    let ``BaselineMetadataReader rejects pointer-table indirection in an uncompressed stream`` () =
+        let bytes = getTestAssemblyBytes () |> addUnsupportedFieldPointerTable
+        Assert.True((BaselineMetadataReader.Create bytes).IsNone)
+
+    [<Fact>]
+    let ``metadataSnapshotFromBytes rejects negative table row counts`` () =
+        let bytes = getTestAssemblyBytes () |> makeFirstTableRowCountNegative
+        Assert.Throws<ArgumentException>(fun () -> metadataSnapshotFromBytes bytes |> ignore)
+        |> ignore
+
+    [<Fact>]
+    let ``portable PDB content id must match its assembly`` () =
+        let assemblyPath = typeof<TestMarker>.Assembly.Location
+        let pdbPath = Path.ChangeExtension(assemblyPath, ".pdb")
+        Assert.True(File.Exists pdbPath, $"expected portable PDB at {pdbPath}")
+
+        let assemblyBytes = File.ReadAllBytes assemblyPath
+        let pdbBytes = File.ReadAllBytes pdbPath
+        Assert.True(matchesAssembly assemblyBytes pdbBytes)
+
+        let metadata = readPortablePdbMetadata pdbBytes |> Option.get
+        let contentIdOffset = findSubArray metadata.ContentId pdbBytes |> Option.get
+        let mismatchedPdb = Array.copy pdbBytes
+        mismatchedPdb[contentIdOffset] <- mismatchedPdb[contentIdOffset] ^^^ 0xFFuy
+
+        Assert.False(matchesAssembly assemblyBytes mismatchedPdb)
 
     [<Fact>]
     let ``readModuleMvidFromBytes matches MetadataReader`` () =

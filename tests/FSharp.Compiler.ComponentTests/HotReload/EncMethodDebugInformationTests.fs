@@ -203,6 +203,23 @@ module EncMethodDebugInformationTests =
         | Some actualNames -> Assert.Equal<string[]>(expectedNames, actualNames)
         | None -> failwith "expected endpoints bucket to round-trip"
 
+    [<Fact>]
+    let ``Synthesized name snapshot rejects a present but empty payload`` () =
+        // Canonical empty snapshots are represented by an absent CDI row. Accepting this
+        // non-canonical payload would suppress reconstruction from the assembly token maps.
+        let blob = [| 1uy; 0uy |]
+
+        Assert.Throws<InvalidDataException>(fun () -> deserializeSynthesizedNameSnapshot blob |> ignore)
+        |> ignore
+
+    [<Fact>]
+    let ``Synthesized name snapshot bounds name allocation by remaining payload`` () =
+        // version=1, buckets=1, key="k", names=0x1fffffff, with no name payload.
+        let blob = [| 1uy; 1uy; 1uy; byte 'k'; 0xDFuy; 0xFFuy; 0xFFuy; 0xFFuy |]
+
+        Assert.Throws<InvalidDataException>(fun () -> deserializeSynthesizedNameSnapshot blob |> ignore)
+        |> ignore
+
     // -----------------------------------------------------------------------
     // Occurrence-key packing
     // -----------------------------------------------------------------------
@@ -243,6 +260,8 @@ module EncMethodDebugInformationTests =
         Assert.Equal(None, tryEncodeOccurrenceKey [ 0x1FFF; 0 ])
         // Packed key past the budget even though both segments are individually valid.
         Assert.Equal(None, tryEncodeOccurrenceKey [ 0x1FFE; 0xFFFF ])
+        // A large parent must not wrap the packed int negative and slip through the bound.
+        Assert.Equal(None, tryEncodeOccurrenceKey [ 0xFFFE; 0 ])
         // Negative ordinals.
         Assert.Equal(None, tryEncodeOccurrenceKey [ -1 ])
         Assert.Equal(None, tryEncodeOccurrenceKey [ -1; 0 ])

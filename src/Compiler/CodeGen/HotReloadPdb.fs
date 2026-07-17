@@ -5,7 +5,6 @@ module internal FSharp.Compiler.HotReloadPdb
 open System
 open System.Collections.Immutable
 open System.Collections.Generic
-open System.Collections.Immutable
 open System.Reflection.Metadata
 open System.Reflection.Metadata.Ecma335
 open System.Security.Cryptography
@@ -62,6 +61,23 @@ let createSnapshot (pdbBytes: byte[]) : PortablePdbSnapshot =
             TableRowCounts = ImmutableArray.CreateRange counts
             EntryPointToken = pdbMeta.EntryPointToken
         }
+
+/// Verifies that a portable PDB is the one named by the assembly's CodeView entry.
+/// A mismatched sibling PDB must never seed EnC state for another module generation.
+let matchesAssembly (assemblyBytes: byte[]) (pdbBytes: byte[]) =
+    match
+        ILBaselineReader.readCodeViewContentIdFromBytes assemblyBytes,
+        ILBaselineReader.readPortablePdbMetadata pdbBytes
+    with
+    | Some expected, Some metadata -> metadata.ContentId.AsSpan().SequenceEqual(expected)
+    | _ -> false
+
+/// Creates a portable PDB snapshot only when its content ID matches the assembly.
+let tryCreateSnapshotForAssembly (assemblyBytes: byte[]) (pdbBytes: byte[]) =
+    if matchesAssembly assemblyBytes pdbBytes then
+        Some(createSnapshot pdbBytes)
+    else
+        None
 
 /// Emit a PDB delta for the given hot reload generation.
 /// Takes the metadata EncLog and EncMap (using TableName for type safety)

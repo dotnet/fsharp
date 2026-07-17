@@ -474,8 +474,19 @@ type FSharpChecker
         let _, pdbBytesOpt, tokenMappings, _ =
             ILBinaryWriter.WriteILBinaryInMemoryWithArtifacts(writerOptions, ilModule, id)
 
-        let portablePdbSnapshot = pdbBytesOpt |> Option.map HotReloadPdb.createSnapshot
         let assemblyBytes = File.ReadAllBytes(outputPath)
+
+        let siblingPdbBytes =
+            if File.Exists(pdbPath) then
+                let bytes = File.ReadAllBytes(pdbPath)
+                if HotReloadPdb.matchesAssembly assemblyBytes bytes then Some bytes else None
+            else
+                None
+
+        let portablePdbSnapshot =
+            pdbBytesOpt
+            |> Option.bind (HotReloadPdb.tryCreateSnapshotForAssembly assemblyBytes)
+            |> Option.orElseWith (fun () -> siblingPdbBytes |> Option.map HotReloadPdb.createSnapshot)
 
         let baseline =
             HotReloadBaseline.createFromEmittedArtifacts ilModule tokenMappings assemblyBytes portablePdbSnapshot None
@@ -488,9 +499,9 @@ type FSharpChecker
         let baseline =
             if
                 baseline.SynthesizedNameSnapshotSource = SynthesizedNameSnapshotSource.Reconstructed
-                && File.Exists(pdbPath)
+                && siblingPdbBytes.IsSome
             then
-                match EncMethodDebugInformation.readSynthesizedNameSnapshotFromPortablePdb (File.ReadAllBytes pdbPath) with
+                match EncMethodDebugInformation.readSynthesizedNameSnapshotFromPortablePdb siblingPdbBytes.Value with
                 | Some recordedSnapshot ->
                     if isEnvVarTruthy "FSHARP_HOTRELOAD_TRACE_CLOSURENAMES" then
                         printfn "[fsharp-hotreload][closure-names] synthesized-name snapshot source=recorded buckets=%d" (Map.count recordedSnapshot)
@@ -515,10 +526,11 @@ type FSharpChecker
         // sibling input when the rewrite yielded none (flag-off PDBs and PDBs without EnC rows still decode to the
         // empty map, and the session starts fine either way).
         let baseline =
-            if Map.isEmpty baseline.EncMethodDebugInfos && File.Exists(pdbPath) then
+            if Map.isEmpty baseline.EncMethodDebugInfos && siblingPdbBytes.IsSome then
                 let baseline =
                     { baseline with
-                        EncMethodDebugInfos = EncMethodDebugInformation.readEncMethodDebugInfoFromPortablePdb (File.ReadAllBytes(pdbPath))
+                        EncMethodDebugInfos =
+                            EncMethodDebugInformation.readEncMethodDebugInfoFromPortablePdb siblingPdbBytes.Value
                     }
 
                 // Closure mapping: the chain -> closure-name tables are a pure function
@@ -537,9 +549,10 @@ type FSharpChecker
         // the in-memory rewrite's PDB decodes to an empty sequence-point view. The on-disk PDB
         // written by the build is the real source of the committed lines that line-shift
         // detection and active-statement remapping diff against.
-        if Map.isEmpty baseline.SequencePointSnapshots && File.Exists(pdbPath) then
+        if Map.isEmpty baseline.SequencePointSnapshots && siblingPdbBytes.IsSome then
             { baseline with
-                SequencePointSnapshots = FSharp.Compiler.HotReload.ActiveStatementAnalysis.decodeMethodSequencePoints (File.ReadAllBytes(pdbPath))
+                SequencePointSnapshots =
+                    FSharp.Compiler.HotReload.ActiveStatementAnalysis.decodeMethodSequencePoints siblingPdbBytes.Value
             }
         else
             baseline
