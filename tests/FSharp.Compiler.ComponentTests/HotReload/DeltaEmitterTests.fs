@@ -2381,7 +2381,7 @@ module DeltaEmitterTests =
     [<Fact>]
     let ``IlDeltaStreamBuilder records method body payload`` () =
         let ilBytes = [| 0x02uy; 0x28uy; 0x00uy; 0x00uy; 0x00uy; 0x0Auy; 0x2Auy |]
-        let builder = IlDeltaStreamBuilder(None)
+        let builder = IlDeltaStreamBuilder()
 
         let update =
             builder.AddMethodBody(
@@ -2405,7 +2405,7 @@ module DeltaEmitterTests =
     [<Fact>]
     let ``IlDeltaStreamBuilder captures standalone signatures`` () =
         let signature = [| 0x07uy; 0x02uy |]
-        let builder = IlDeltaStreamBuilder(None)
+        let builder = IlDeltaStreamBuilder()
         let token = builder.AddStandaloneSignature(signature)
         Assert.NotEqual(0, token)
 
@@ -2423,7 +2423,7 @@ module DeltaEmitterTests =
                 { StringHeapSize = 13
                   UserStringHeapSize = 29
                   BlobHeapSize = 7
-                  GuidHeapSize = 3 }
+                  GuidHeapSize = 16 }
 
         let tables = DeltaMetadataTables(offsets)
         let heaps = tables.AsMetadataHeaps()

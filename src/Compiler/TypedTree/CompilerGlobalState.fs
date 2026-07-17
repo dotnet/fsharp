@@ -123,6 +123,14 @@ type internal CompilerGlobalState () as this =
     member _.NewFileScope (fileRange: range) =
         PerFileNamingScope(globalNng, fileRange.FileIndex)
 
+    /// Reset every compiler-generated-name allocator owned by this compiler state so repeated
+    /// codegen runs over the same source reproduce a fresh-process layout. The caller must ensure
+    /// no compilation is concurrently generating names.
+    member _.ResetCompilerGeneratedNameState() =
+        globalNng.ResetCompilerGeneratedNameState()
+        globalStableNameGenerator.ResetCompilerGeneratedNameState()
+        ilxgenGlobalNng.ResetCompilerGeneratedNameState()
+
 /// Unique name generator for stamps attached to lambdas and object expressions
 type Unique = int64
 

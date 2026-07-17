@@ -2263,7 +2263,8 @@ let value (x: A.C) = x
         harness.Rewrite("module Library\ntype C<'T>() = member _.M<'U>(x: 'U) = 2\n")
         let updated = harness.Compile()
 
-        let result = harness.Diff baseline updated
+        let capabilities = EditAndContinueCapabilities.Parse [ "GenericUpdateMethod" ]
+        let result = harness.DiffWith capabilities baseline updated
 
         Assert.Empty(result.RudeEdits)
         let edit = Assert.Single(result.SemanticEdits |> List.filter (fun edit -> edit.Symbol.LogicalName = "M"))

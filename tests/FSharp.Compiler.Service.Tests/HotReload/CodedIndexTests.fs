@@ -9,7 +9,7 @@ open Xunit
 /// to prevent metadata corruption bugs like the MemberRefParent issue fixed in Session 5.
 module CodedIndexTests =
 
-    module Encoding = FSharp.Compiler.CodeGen.DeltaMetadataEncoding
+    module Encoding = FSharp.Compiler.AbstractIL.DeltaMetadataEncoding
 
     // ECMA-335 II.24.2.6 Table Order Reference:
     // MemberRefParent: TypeDef(0), TypeRef(1), ModuleRef(2), MethodDef(3), TypeSpec(4)

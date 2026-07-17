@@ -199,21 +199,21 @@ module BaselineTests =
         let baseline = emitBaseline ()
         let ilg = PrimaryAssemblyILGlobals
 
-        let propertyGetterKey =
+        let propertyGetterKey: MethodDefinitionKey =
             { MethodDefinitionKey.DeclaringType = "Sample.Container"
               Name = "get_Data"
               GenericArity = 0
               ParameterTypes = []
               ReturnType = ilg.typ_Int32 }
 
-        let propertySetterKey =
+        let propertySetterKey: MethodDefinitionKey =
             { MethodDefinitionKey.DeclaringType = "Sample.Container"
               Name = "set_Data"
               GenericArity = 0
               ParameterTypes = [ ilg.typ_Int32 ]
               ReturnType = ILType.Void }
 
-        let eventAdderKey =
+        let eventAdderKey: MethodDefinitionKey =
             { MethodDefinitionKey.DeclaringType = "Sample.Container"
               Name = "add_OnChanged"
               GenericArity = 0
@@ -294,7 +294,7 @@ module BaselineTests =
 
         Assert.True(Map.containsKey "Sample.Container" baseline.TypeTokens)
 
-        let methodKey =
+        let methodKey: MethodDefinitionKey =
             { DeclaringType = "Sample.Container"
               Name = "GetValue"
               GenericArity = 0
@@ -303,14 +303,14 @@ module BaselineTests =
 
         Assert.True(Map.containsKey methodKey baseline.MethodTokens)
 
-        let fieldKey =
+        let fieldKey: FieldDefinitionKey =
             { DeclaringType = "Sample.Container"
               Name = "valueBackingField"
               FieldType = ilg.typ_Int32 }
 
         Assert.True(Map.containsKey fieldKey baseline.FieldTokens)
 
-        let propertyKey =
+        let propertyKey: PropertyDefinitionKey =
             { DeclaringType = "Sample.Container"
               Name = "Data"
               PropertyType = ilg.typ_Int32
@@ -318,7 +318,7 @@ module BaselineTests =
 
         Assert.True(Map.containsKey propertyKey baseline.PropertyTokens)
 
-        let eventKey =
+        let eventKey: EventDefinitionKey =
             { DeclaringType = "Sample.Container"
               Name = "OnChanged"
               EventType = Some ilg.typ_Object }

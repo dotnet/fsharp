@@ -10,6 +10,8 @@ open FSharp.Compiler.AbstractIL.ILBinaryWriter
 open FSharp.Compiler.AbstractIL.ILBaselineReader
 open FSharp.Compiler.HotReloadBaseline
 
+module MetadataDeltaTestHelpers = FSharp.Compiler.Service.Tests.DeltaMetadata.MetadataDeltaTestHelpers
+
 /// Tests for ILBaselineReader - verifies byte-based metadata parsing
 /// matches SRM MetadataReader results.
 module ILBaselineReaderTests =
