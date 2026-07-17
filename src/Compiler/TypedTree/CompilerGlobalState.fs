@@ -85,7 +85,6 @@ type StableNiceNameGenerator(getCompilerGeneratedNameMap: unit -> ICompilerGener
         niceNames.GetOrAddLazy(key, fun (basicName, _) -> innerGenerator.FreshCompilerGeneratedNameOfBasicName(basicName, m))
 
     new () = StableNiceNameGenerator(fun () -> None)
-
     /// Reset the stable-name cache and inner occurrence counters, so both the cached stable names and
     /// the underlying occurrence counters are cleared. See NiceNameGenerator.ResetCompilerGeneratedNameState.
     member _.ResetCompilerGeneratedNameState() =
@@ -120,6 +119,9 @@ type internal CompilerGlobalState () as this =
 
     member _.IlxGenNiceNameGenerator = ilxgenGlobalNng
 
+    member _.NewFileScope (fileRange: range) =
+        PerFileNamingScope(globalNng, fileRange.FileIndex)
+
     /// Reset all compiler-generated-name occurrence counters on this state, so successive in-process
     /// codegen runs over the same source produce identical generated names (a fresh-process layout).
     /// Callers must ensure no compilation is concurrently generating names (quiescence). Needed by
@@ -128,9 +130,6 @@ type internal CompilerGlobalState () as this =
         globalNng.ResetCompilerGeneratedNameState()
         globalStableNameGenerator.ResetCompilerGeneratedNameState()
         ilxgenGlobalNng.ResetCompilerGeneratedNameState()
-
-    member _.NewFileScope (fileRange: range) =
-        PerFileNamingScope(globalNng, fileRange.FileIndex)
 
 /// Unique name generator for stamps attached to lambdas and object expressions
 type Unique = int64

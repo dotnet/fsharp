@@ -1180,9 +1180,6 @@ type FSharpChecker
 
     static member Instance = globalInstance.Force()
 
-    static member internal CreateOverloadCacheMetricsListener() =
-        new CacheMetrics.CacheMetricsListener("overloadResolutionCache")
-
     member internal _.FrameworkImportsCache = backgroundCompiler.FrameworkImportsCache
 
     /// Compile a DLL from cached typecheck results, skipping parse/typecheck/optimization.
