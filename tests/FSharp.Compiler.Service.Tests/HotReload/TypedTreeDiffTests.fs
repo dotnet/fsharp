@@ -178,6 +178,104 @@ module TypedTreeDiffTests =
         Assert.Equal(SemanticEditKind.MethodBody, result.SemanticEdits[0].Kind)
 
     [<Fact>]
+    let ``match decision-tree change produces method body edit`` () =
+        use harness = new DiffTestHarness()
+        harness.Rewrite("module Library\nlet value x = match x with | 0 -> 1 | _ -> 2\n")
+        let baseline = harness.Compile()
+        harness.Rewrite("module Library\nlet value x = match x with | 1 -> 1 | _ -> 2\n")
+        let updated = harness.Compile()
+
+        let result = harness.Diff baseline updated
+
+        Assert.Empty(result.RudeEdits)
+        Assert.Contains(result.SemanticEdits, fun edit -> edit.Kind = SemanticEditKind.MethodBody)
+
+    [<Fact>]
+    let ``body identity does not trust colliding diagnostic hashes`` () =
+        use harness = new DiffTestHarness()
+        harness.Rewrite(Sources.functionReturning "\"mvaxuhep\"")
+        let baseline = harness.Compile()
+        harness.Rewrite(Sources.functionReturning "\"erytcfml\"")
+        let updated = harness.Compile()
+
+        let result = harness.Diff baseline updated
+
+        Assert.Empty(result.RudeEdits)
+        Assert.Contains(result.SemanticEdits, fun edit -> edit.Kind = SemanticEditKind.MethodBody)
+
+    [<Fact>]
+    let ``member accessibility change fails closed`` () =
+        use harness = new DiffTestHarness()
+        harness.Rewrite("module Library\ntype C() = member private _.M() = 1\n")
+        let baseline = harness.Compile()
+        harness.Rewrite("module Library\ntype C() = member _.M() = 1\n")
+        let updated = harness.Compile()
+
+        let result = harness.Diff baseline updated
+
+        Assert.Empty(result.SemanticEdits)
+        Assert.Contains(result.RudeEdits, fun edit -> edit.Kind = RudeEditKind.SignatureChange)
+
+    [<Fact>]
+    let ``attribute payload change fails closed`` () =
+        use harness = new DiffTestHarness()
+        harness.Rewrite("module Library\n[<System.Obsolete(\"before\")>]\nlet value () = 1\n")
+        let baseline = harness.Compile()
+        harness.Rewrite("module Library\n[<System.Obsolete(\"after\")>]\nlet value () = 1\n")
+        let updated = harness.Compile()
+
+        let result = harness.Diff baseline updated
+
+        Assert.Empty(result.SemanticEdits)
+        Assert.Contains(result.RudeEdits, fun edit -> edit.Kind = RudeEditKind.NotSupportedByRuntime)
+
+    [<Fact>]
+    let ``type parameter constraint change fails closed`` () =
+        use harness = new DiffTestHarness()
+        harness.Rewrite("module Library\ntype I<'T when 'T :> System.IDisposable> = interface end\n")
+        let baseline = harness.Compile()
+        harness.Rewrite("module Library\ntype I<'T when 'T :> System.IComparable> = interface end\n")
+        let updated = harness.Compile()
+
+        let result = harness.Diff baseline updated
+
+        Assert.Empty(result.SemanticEdits)
+        Assert.Contains(result.RudeEdits, fun edit -> edit.Kind = RudeEditKind.TypeLayoutChange)
+
+    [<Fact>]
+    let ``adding a constructor fails closed`` () =
+        use harness = new DiffTestHarness()
+        harness.Rewrite("module Library\ntype C() = class end\n")
+        let baseline = harness.Compile()
+        harness.Rewrite("module Library\ntype C() = new (_x: int) = C()\n")
+        let updated = harness.Compile()
+
+        let result = harness.Diff baseline updated
+
+        Assert.Empty(result.SemanticEdits)
+        Assert.Contains(
+            result.RudeEdits,
+            fun edit ->
+                edit.Kind = RudeEditKind.InsertConstructor
+                && (edit.Symbol |> Option.exists (fun symbol -> symbol.LogicalName = ".ctor"))
+        )
+
+    [<Fact>]
+    let ``method generic arity excludes enclosing type parameters`` () =
+        use harness = new DiffTestHarness()
+        harness.Rewrite("module Library\ntype C<'T>() = member _.M<'U>(x: 'U) = 1\n")
+        let baseline = harness.Compile()
+        harness.Rewrite("module Library\ntype C<'T>() = member _.M<'U>(x: 'U) = 2\n")
+        let updated = harness.Compile()
+
+        let capabilities = EditAndContinueCapabilities.Parse [ "GenericUpdateMethod" ]
+        let result = harness.DiffWith capabilities baseline updated
+
+        Assert.Empty(result.RudeEdits)
+        let edit = Assert.Single(result.SemanticEdits |> List.filter (fun edit -> edit.Symbol.LogicalName = "M"))
+        Assert.Equal(Some 1, edit.Symbol.GenericArity)
+
+    [<Fact>]
     let ``inline annotation change triggers rude edit`` () =
         use harness = new DiffTestHarness()
         harness.Rewrite(Sources.inlineFunction "inline ")

@@ -23,22 +23,6 @@ type ICompilerGeneratedNameMap =
 [<Literal>]
 let HotReloadGenerationSuffixedNameInfix = "@hotreload#g"
 
-/// Recognizes well-formed occurrence-keyed generation-suffixed closure class names:
-/// `{base}@hotreload#g{N}_o{chain}`, any generation.
-let IsHotReloadGenerationSuffixedName (name: string) =
-    not (String.IsNullOrEmpty name)
-    && (TryNormalizeHotReloadGenerationName name |> Option.isSome)
-
-/// Parses the generation of a well-formed occurrence-keyed closure class name:
-/// `f@hotreload#g2_o3` -> Some 2. None when the name is not generation-suffixed
-/// or any part of the name is malformed.
-let TryGetHotReloadNameGeneration (name: string) : int option =
-    if String.IsNullOrEmpty name then
-        None
-    else
-        TryNormalizeHotReloadGenerationName name
-        |> Option.map _.Generation
-
 type SynthesizedPositionalName =
     {
         NormalizedBasicName: string
