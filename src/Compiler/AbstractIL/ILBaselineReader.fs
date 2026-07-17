@@ -11,6 +11,9 @@
 module internal FSharp.Compiler.AbstractIL.ILBaselineReader
 
 open System
+open System.Collections.Immutable
+open System.IO
+open System.Reflection.PortableExecutable
 open FSharp.Compiler.AbstractIL.ILBinaryWriter
 
 /// Read a little-endian 16-bit integer from bytes at offset.
@@ -176,7 +179,12 @@ let private parseTablesStream (bytes: byte[]) (tablesStream: StreamHeader) : byt
 
     for i in 0..63 do
         if (valid &&& (1L <<< i)) <> 0L then
-            rowCounts.[i] <- readInt32 bytes rowCountOffset
+            let rowCount = readInt32 bytes rowCountOffset
+
+            if rowCount < 0 then
+                invalidArg (nameof bytes) "metadata table row counts must be non-negative"
+
+            rowCounts.[i] <- rowCount
             rowCountOffset <- rowCountOffset + 4
 
     heapSizes, rowCounts, offset
@@ -259,12 +267,38 @@ let readGuidFromBytes (bytes: byte[]) (guidIndex: int) : Guid option =
             | Some guidStream ->
                 // GUID indices are 1-based; each GUID is 16 bytes
                 let offset = guidStream.Offset + (guidIndex - 1) * 16
+                let streamEnd = int64 guidStream.Offset + int64 guidStream.Size
+                let guidEnd = int64 offset + 16L
 
-                if offset + 16 > bytes.Length then
+                if
+                    guidStream.Offset < 0
+                    || guidStream.Size < 0
+                    || streamEnd > int64 bytes.Length
+                    || offset < guidStream.Offset
+                    || guidEnd > streamEnd
+                then
                     None
                 else
                     let guidBytes = bytes.[offset .. offset + 15]
                     Some(System.Guid(guidBytes))
+
+/// Reads the portable CodeView content ID embedded in a PE debug directory.
+let readCodeViewContentIdFromBytes (bytes: byte[]) : byte[] option =
+    try
+        use peReader = new PEReader(ImmutableArray.CreateRange bytes)
+
+        peReader.ReadDebugDirectory()
+        |> Seq.tryFind (fun entry -> entry.IsPortableCodeView)
+        |> Option.map (fun entry ->
+            let data = peReader.ReadCodeViewDebugDirectoryData entry
+            let contentId = Array.zeroCreate<byte> 20
+            data.Guid.ToByteArray().CopyTo(contentId, 0)
+            BitConverter.GetBytes(entry.Stamp).CopyTo(contentId, 16)
+            contentId)
+    with
+    | :? BadImageFormatException
+    | :? IOException
+    | :? InvalidOperationException -> None
 
 // ============================================================================
 // Table row reading infrastructure
@@ -275,8 +309,11 @@ module private TableIndices =
     let Module = 0
     let TypeRef = 1
     let TypeDef = 2
+    let FieldPtr = 3
     let Field = 4
+    let MethodPtr = 5
     let MethodDef = 6
+    let ParamPtr = 7
     let Param = 8
     let InterfaceImpl = 9
     let MemberRef = 10
@@ -288,8 +325,10 @@ module private TableIndices =
     let FieldLayout = 16
     let StandAloneSig = 17
     let EventMap = 18
+    let EventPtr = 19
     let Event = 20
     let PropertyMap = 21
+    let PropertyPtr = 22
     let Property = 23
     let MethodSemantics = 24
     let MethodImpl = 25
@@ -591,44 +630,52 @@ let private createMetadataContext (bytes: byte[]) : MetadataContext option =
         | None -> None
         | Some tablesStream ->
             let heapSizes, rowCounts, tablesOffset = parseTablesStream bytes tablesStream
+            let pointerTables =
+                [| TableIndices.FieldPtr; TableIndices.MethodPtr; TableIndices.ParamPtr; TableIndices.EventPtr; TableIndices.PropertyPtr |]
 
-            let stringsBig = (heapSizes &&& 0x01uy) <> 0uy
-            let guidsBig = (heapSizes &&& 0x02uy) <> 0uy
-            let blobsBig = (heapSizes &&& 0x04uy) <> 0uy
+            // The #- stream permits pointer-table indirection. This reader consumes the
+            // definition tables directly, so accepting a non-empty pointer table would
+            // associate members with the wrong declaring type.
+            if tablesStream.Name = "#-" && pointerTables |> Array.exists (fun table -> rowCounts.[table] <> 0) then
+                None
+            else
+                let stringsBig = (heapSizes &&& 0x01uy) <> 0uy
+                let guidsBig = (heapSizes &&& 0x02uy) <> 0uy
+                let blobsBig = (heapSizes &&& 0x04uy) <> 0uy
 
-            // Calculate where row data starts (after row count array)
-            let mutable rowCountSize = 0
+                // Calculate where row data starts (after row count array)
+                let mutable rowCountSize = 0
 
-            for i in 0..63 do
-                if rowCounts.[i] > 0 then
-                    rowCountSize <- rowCountSize + 4
+                for i in 0..63 do
+                    if rowCounts.[i] > 0 then
+                        rowCountSize <- rowCountSize + 4
 
-            let tablesStart = tablesOffset + 24 + rowCountSize
+                let tablesStart = tablesOffset + 24 + rowCountSize
 
-            let stringsOffset =
-                streamHeaders
-                |> List.tryFind (fun h -> h.Name = "#Strings")
-                |> Option.map (fun h -> h.Offset)
-                |> Option.defaultValue 0
+                let stringsOffset =
+                    streamHeaders
+                    |> List.tryFind (fun h -> h.Name = "#Strings")
+                    |> Option.map (fun h -> h.Offset)
+                    |> Option.defaultValue 0
 
-            let blobOffset =
-                streamHeaders
-                |> List.tryFind (fun h -> h.Name = "#Blob")
-                |> Option.map (fun h -> h.Offset)
-                |> Option.defaultValue 0
+                let blobOffset =
+                    streamHeaders
+                    |> List.tryFind (fun h -> h.Name = "#Blob")
+                    |> Option.map (fun h -> h.Offset)
+                    |> Option.defaultValue 0
 
-            Some
-                {
-                    Bytes = bytes
-                    HeapSizes = heapSizes
-                    RowCounts = rowCounts
-                    TablesStart = tablesStart
-                    StringIndexSize = if stringsBig then 4 else 2
-                    GuidIndexSize = if guidsBig then 4 else 2
-                    BlobIndexSize = if blobsBig then 4 else 2
-                    StringsStreamOffset = stringsOffset
-                    BlobStreamOffset = blobOffset
-                }
+                Some
+                    {
+                        Bytes = bytes
+                        HeapSizes = heapSizes
+                        RowCounts = rowCounts
+                        TablesStart = tablesStart
+                        StringIndexSize = if stringsBig then 4 else 2
+                        GuidIndexSize = if guidsBig then 4 else 2
+                        BlobIndexSize = if blobsBig then 4 else 2
+                        StringsStreamOffset = stringsOffset
+                        BlobStreamOffset = blobOffset
+                    }
 
 /// Read a null-terminated string from the #Strings heap.
 let private readStringFromHeap (ctx: MetadataContext) (offset: int) : string =
@@ -1317,6 +1364,8 @@ module private PdbTableIndices =
 /// Contains table row counts and entry point info for hot reload baseline.
 type PortablePdbMetadata =
     {
+        /// Content ID stored in the #Pdb stream.
+        ContentId: byte[]
         /// Row counts for PDB tables (indexed by PDB table index - 0x30)
         /// Index 0 = Document, 1 = MethodDebugInformation, etc.
         TableRowCounts: int[]
@@ -1383,17 +1432,18 @@ let readPortablePdbMetadata (pdbBytes: byte[]) : PortablePdbMetadata option =
 
                 let pdbStreamOpt = findStream streamHeaders "#Pdb"
 
-                match tablesStreamOpt with
-                | None -> None
-                | Some tablesStream ->
+                match tablesStreamOpt, pdbStreamOpt with
+                | Some tablesStream, Some pdbStream when pdbStream.Size >= 24 ->
                     let rowCounts = parsePdbTablesStream pdbBytes tablesStream
-                    let entryPoint = pdbStreamOpt |> Option.bind (fun s -> parsePdbStream pdbBytes s)
+                    let entryPoint = parsePdbStream pdbBytes pdbStream
 
                     Some
                         {
+                            ContentId = pdbBytes.[pdbStream.Offset .. pdbStream.Offset + 19]
                             TableRowCounts = rowCounts
                             EntryPointToken = entryPoint
                         }
+                | _ -> None
         with
         | :? System.IndexOutOfRangeException -> None
         | :? System.ArgumentOutOfRangeException -> None
