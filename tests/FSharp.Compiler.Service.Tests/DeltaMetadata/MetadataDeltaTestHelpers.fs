@@ -284,7 +284,7 @@ module internal MetadataDeltaTestHelpers =
     let assertTableStreamMatches (metadataDelta: DeltaWriter.MetadataDelta) =
         match tryExtractTablesStream metadataDelta.Metadata with
         | Some(size, padded) ->
-            Xunit.Assert.Equal(size, metadataDelta.TableStream.UnpaddedSize)
+            Xunit.Assert.Equal(size, metadataDelta.TableStream.PaddedSize)
             Xunit.Assert.Equal<byte>(padded, metadataDelta.TableStream.Bytes)
         | None ->
             ()

@@ -213,9 +213,8 @@ let private writeRowElement
 
         writeHeapIndex writer indexSizes.BlobsBig offset
     elif tag = Encoding.RowElementTags.Guid then
-        // Encode GUID columns as byte offsets into the *combined* Guid heap
-        // (baseline length + delta entries). Each Guid entry is 16 bytes.
-        // Absolute handles are already full offsets and are written verbatim.
+        // Encode GUID columns as 1-based indexes into the cumulative GUID heap.
+        // Absolute handles are already cumulative indexes and are written verbatim.
         let adjusted =
             if element.IsAbsolute then
                 value
@@ -415,7 +414,7 @@ let serializeMetadataRoot (input: DeltaTableSerializerInput) (heaps: DeltaHeapSt
 
     let baseStreams =
         [
-            "#-", tableStream.UnpaddedSize, tableStream.Bytes
+            "#-", tableStream.PaddedSize, tableStream.Bytes
             "#Strings", heaps.StringsLength, heaps.Strings
             "#US", heaps.UserStringsLength, heaps.UserStrings
             "#GUID", heaps.GuidsLength, heaps.Guids
