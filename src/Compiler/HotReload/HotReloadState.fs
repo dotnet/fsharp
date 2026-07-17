@@ -137,8 +137,7 @@ type internal HotReloadSessionStore() =
             Capabilities = sessionCapabilities
             ActiveStatements =
                 sessionActiveStatements
-                |> List.filter (fun statement ->
-                    statement.ActiveInstruction.Method.ModuleId = state.Baseline.ModuleId)
+                |> List.filter (fun statement -> statement.ActiveInstruction.Method.ModuleId = state.Baseline.ModuleId)
         }
 
     let updateProject key (update: HotReloadProjectState -> HotReloadProjectState) (commit: bool) =
@@ -308,8 +307,7 @@ type internal HotReloadSessionStore() =
                 (resolveKey key)
                 (fun state ->
                     match state.PendingUpdate with
-                    | Some _ ->
-                        invalidOp "Cannot emit another hot reload update before the pending update is committed or discarded."
+                    | Some _ -> invalidOp "Cannot emit another hot reload update before the pending update is committed or discarded."
                     | None ->
                         { state with
                             PendingUpdate =
@@ -330,15 +328,13 @@ type internal HotReloadSessionStore() =
             snapshots: Map<int, FSharp.Compiler.HotReload.ActiveStatementAnalysis.MethodSequencePoints>,
             implementationFiles: CheckedAssemblyAfterOptimization,
             ?key: HotReloadProjectKey
-        )
-        =
+        ) =
         lock sessionLock (fun () ->
             updateProject
                 (resolveKey key)
                 (fun state ->
                     match state.PendingUpdate with
-                    | Some _ ->
-                        invalidOp "Cannot emit another hot reload update before the pending update is committed or discarded."
+                    | Some _ -> invalidOp "Cannot emit another hot reload update before the pending update is committed or discarded."
                     | None ->
                         { state with
                             PendingUpdate =
@@ -448,6 +444,7 @@ type internal HotReloadSessionStore() =
                 |> List.choose (fun (key, state) -> state.PendingUpdate |> Option.map (fun pending -> key, state, pending))
 
             this.CommitPendingLocked pendings
+
             pendings
             |> List.choose (fun (_, _, pending) ->
                 match pending with
@@ -473,14 +470,13 @@ type HotReloadEmissionContext =
 
 // The compiler service can compile projects concurrently. AsyncLocal scopes the emit-hook route
 // to one logical compile while still flowing across the thread hops made by F# async.
-let private currentEmissionContext = Threading.AsyncLocal<HotReloadEmissionContext option>()
+let private currentEmissionContext =
+    Threading.AsyncLocal<HotReloadEmissionContext option>()
 
 /// Sets (or clears, with None) the scoped emission context consulted by the fsc emit hook.
-let setCurrentEmissionContext (context: HotReloadEmissionContext option) =
-    currentEmissionContext.Value <- context
+let setCurrentEmissionContext (context: HotReloadEmissionContext option) = currentEmissionContext.Value <- context
 
-let tryGetCurrentEmissionContext () =
-    currentEmissionContext.Value
+let tryGetCurrentEmissionContext () = currentEmissionContext.Value
 
 let private activeSessionStore = HotReloadSessionStore()
 

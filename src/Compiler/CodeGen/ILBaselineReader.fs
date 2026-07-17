@@ -539,13 +539,23 @@ let private createMetadataContext (bytes: byte[]) =
         | None -> None
         | Some stream ->
             let heapSizes, rowCounts, tablesOffset = parseTablesStream bytes stream
+
             let pointerTables =
-                [| TableIndices.FieldPtr; TableIndices.MethodPtr; TableIndices.ParamPtr; TableIndices.EventPtr; TableIndices.PropertyPtr |]
+                [|
+                    TableIndices.FieldPtr
+                    TableIndices.MethodPtr
+                    TableIndices.ParamPtr
+                    TableIndices.EventPtr
+                    TableIndices.PropertyPtr
+                |]
 
             // The #- stream permits pointer-table indirection. This reader consumes the
             // definition tables directly, so accepting a non-empty pointer table would
             // associate members with the wrong declaring type.
-            if stream.Name = "#-" && pointerTables |> Array.exists (fun table -> rowCounts[table] <> 0) then
+            if
+                stream.Name = "#-"
+                && pointerTables |> Array.exists (fun table -> rowCounts[table] <> 0)
+            then
                 None
             else
                 let stringsBig = (heapSizes &&& 0x01uy) <> 0uy

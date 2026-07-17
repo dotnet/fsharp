@@ -303,16 +303,13 @@ type internal FSharpEditAndContinueLanguageService private (getSessionStore: uni
                 // Module row. Do not stage an advanced baseline for an empty generation.
                 let hasMaterializedGeneration =
                     delta.EncMap
-                    |> Array.exists (fun (table, _) ->
-                        table <> FSharp.Compiler.AbstractIL.BinaryConstants.TableNames.Module)
+                    |> Array.exists (fun (table, _) -> table <> FSharp.Compiler.AbstractIL.BinaryConstants.TableNames.Module)
 
                 let delta =
                     if hasMaterializedGeneration then
                         delta
                     else
-                        { delta with
-                            UpdatedBaseline = None
-                        }
+                        { delta with UpdatedBaseline = None }
 
                 if trace then
                     let line = $"[fsharp-hotreload][service] EmitDelta produced encLog={delta.EncLog}\n"

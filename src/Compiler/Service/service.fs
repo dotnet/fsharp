@@ -836,8 +836,7 @@ type FSharpChecker
 
             match emissionContext with
             | Some context ->
-                let previousContext =
-                    FSharp.Compiler.HotReloadState.tryGetCurrentEmissionContext ()
+                let previousContext = FSharp.Compiler.HotReloadState.tryGetCurrentEmissionContext ()
 
                 FSharp.Compiler.HotReloadState.setCurrentEmissionContext (Some context)
 

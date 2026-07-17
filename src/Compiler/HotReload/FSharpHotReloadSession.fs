@@ -436,7 +436,10 @@ type internal FSharpHotReloadService
                                     )
                                 with
                                 | Ok result ->
-                                    if result.Delta.UpdatedBaseline.IsSome || not (List.isEmpty result.Delta.SequencePointUpdates) then
+                                    if
+                                        result.Delta.UpdatedBaseline.IsSome
+                                        || not (List.isEmpty result.Delta.SequencePointUpdates)
+                                    then
                                         lock hotReloadGate (fun () -> pendingOutputFingerprints[projectKey] <- outputFingerprint)
 
                                     return Result.Ok(toPublicDelta result.Delta)

@@ -2958,6 +2958,7 @@ let private createMetadataReferenceRemapper (context: MetadataReferenceRemapCont
         | _ ->
             let handle = MetadataTokens.AssemblyReferenceHandle token
             let row = metadataReader.GetAssemblyReference handle
+
             let name =
                 if row.Name.IsNil then
                     ""
@@ -4851,7 +4852,10 @@ let emitDeltaWithDebugData (freshDebugPdb: byte[] option) (request: IlxDeltaRequ
     let typeRefTokenMap = Dictionary<int, int>()
     let assemblyRefTokenMap = Dictionary<int, int>()
     let memberRefTokenMap = Dictionary<int, int>()
-    let addedTypeReferenceTokens = Dictionary<TypeReferenceKey, int>(HashIdentity.Structural)
+
+    let addedTypeReferenceTokens =
+        Dictionary<TypeReferenceKey, int>(HashIdentity.Structural)
+
     let addedAssemblyReferenceTokens = Dictionary<string, int>(StringComparer.Ordinal)
 
     let methodDefinitionIndex =
@@ -5225,7 +5229,8 @@ let emitDeltaWithDebugData (freshDebugPdb: byte[] option) (request: IlxDeltaRequ
             let parameter = metadataReader.GetParameter parameterHandle
 
             if methodDefinitionIndex.IsAdded key then
-                let display = $"{key.DeclaringType}::{key.Name} parameter {parameter.SequenceNumber}"
+                let display =
+                    $"{key.DeclaringType}::{key.Name} parameter {parameter.SequenceNumber}"
 
                 if parameter.GetCustomAttributes().Count > 0 then
                     raise (
