@@ -521,10 +521,7 @@ type DeltaMetadataTables(?heapOffsets: MetadataHeapOffsets) =
                 else
                     "<invalid>"
 
-            printfn
-                "[delta-guid-heap] priorEntries=%d addedEntries=%d"
-                priorGuidEntryCount
-                guids.Entries.Length
+            printfn "[delta-guid-heap] priorEntries=%d addedEntries=%d" priorGuidEntryCount guids.Entries.Length
 
             guids.Entries
             |> Seq.mapi (fun idx b -> idx + 1, dumpGuid b)
