@@ -44,6 +44,7 @@ type AddedOrChangedMethodInfo =
         CodeLength: int
     }
 
+/// <summary>Stable identifier for a method definition used when correlating baseline tokens.</summary>
 type MethodDefinitionKey = FSharp.Compiler.AbstractIL.DeltaMetadataTypes.MethodDefinitionKey
 
 /// Baseline metadata handles reused to keep heap offsets stable across deltas.
@@ -884,6 +885,12 @@ let internal applyDelta
     let updatedMetadataSnapshot =
         // Per Roslyn DeltaMetadataWriter.cs: Blob and UserString streams are concatenated
         // aligned to 4-byte boundaries; String stream is concatenated unaligned.
+        // Each delta #GUID stream already contains the zero-filled cumulative prefix from
+        // prior generations. Replace that prior delta contribution with the newest full
+        // stream instead of adding it again, while retaining the original PE GUID heap.
+        let originalGuidHeapSize =
+            baseline.Metadata.HeapSizes.GuidHeapSize - baseline.GuidStreamLengthAdded
+
         let updatedHeapSizes =
             {
                 StringHeapSize = baseline.Metadata.HeapSizes.StringHeapSize + deltaHeapSizes.StringHeapSize
@@ -891,7 +898,7 @@ let internal applyDelta
                     baseline.Metadata.HeapSizes.UserStringHeapSize
                     + align4 deltaHeapSizes.UserStringHeapSize
                 BlobHeapSize = baseline.Metadata.HeapSizes.BlobHeapSize + align4 deltaHeapSizes.BlobHeapSize
-                GuidHeapSize = baseline.Metadata.HeapSizes.GuidHeapSize + deltaHeapSizes.GuidHeapSize
+                GuidHeapSize = originalGuidHeapSize + deltaHeapSizes.GuidHeapSize
             }
 
         if traceHeapOffsets.Value then
@@ -925,7 +932,7 @@ let internal applyDelta
         StringStreamLengthAdded = baseline.StringStreamLengthAdded + deltaHeapSizes.StringHeapSize
         UserStringStreamLengthAdded = baseline.UserStringStreamLengthAdded + align4 deltaHeapSizes.UserStringHeapSize
         BlobStreamLengthAdded = baseline.BlobStreamLengthAdded + align4 deltaHeapSizes.BlobHeapSize
-        GuidStreamLengthAdded = baseline.GuidStreamLengthAdded + deltaHeapSizes.GuidHeapSize
+        GuidStreamLengthAdded = deltaHeapSizes.GuidHeapSize
         Metadata = updatedMetadataSnapshot
         SynthesizedNameSnapshot =
             match synthesizedSnapshot with
