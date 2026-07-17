@@ -2,23 +2,6 @@ module FSharp.Compiler.Service.Tests.HotReload.ArchitectureGuardTests
 
 open System.IO
 open Xunit
-open FSharp.Compiler.CompilerOptions
-open FSharp.Compiler.Driver
-open FSharp.Compiler.Service.Tests.TestDoubles
-
-[<Fact>]
-let ``hot reload replay compile pins sequential codegen`` () =
-    // The replay/hook compile (--test:HotReloadHook) installs the emit hook and runs
-    // IlxGen, so it must be pinned to sequential codegen exactly like the capture compile
-    // (--test:HotReloadDeltas) — otherwise parallel IlxGen permutes the replayed
-    // synthesized names relative to the sequential baseline and the delta points at the
-    // wrong tokens. applyHotReloadDeterminismPins keys off compilerEmitHook (Some for both
-    // capture and replay), not emitCaptureArtifacts (Some for capture only).
-    let b = getArbitraryTcConfigBuilder ()
-    ParseCompilerOptions(ignore, GetCoreFscCompilerOptions b, [ "--test:HotReloadHook" ])
-    applyHotReloadDeterminismPins b
-    Assert.False(b.parallelIlxGen)
-    Assert.Equal(FSharp.Compiler.Optimizer.OptimizationProcessingMode.Sequential, b.optSettings.processingMode)
 
 let private repoRoot =
     Path.Combine(__SOURCE_DIRECTORY__, "../../..") |> Path.GetFullPath
@@ -26,6 +9,17 @@ let private repoRoot =
 let private readCompilerFile relativePath =
     // Normalize CRLF to LF so the '\n'-anchored substring assertions below match on Windows checkouts.
     (Path.Combine(repoRoot, relativePath) |> File.ReadAllText).Replace("\r\n", "\n")
+
+[<Fact>]
+let ``hot reload replay compile pins deterministic sequential codegen`` () =
+    // Keep the pin private to the driver while guarding the three required mutations and the
+    // emit-hook predicate that covers both capture and replay compiles.
+    let source = readCompilerFile "src/Compiler/Driver/fsc.fs"
+
+    Assert.Contains("if tcConfigB.compilerEmitHook.IsSome then", source)
+    Assert.Contains("tcConfigB.deterministic <- true", source)
+    Assert.Contains("tcConfigB.parallelIlxGen <- false", source)
+    Assert.Contains("processingMode = Optimizer.OptimizationProcessingMode.Sequential", source)
 
 [<Fact>]
 let ``fsc does not directly depend on hot reload implementation modules`` () =

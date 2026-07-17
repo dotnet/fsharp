@@ -45,18 +45,6 @@ val GenerateIlxCode:
     ilxGenerator: IlxAssemblyGenerator ->
         IlxGenResults
 
-/// Generates ILX sequentially even when the immutable type-check configuration enabled parallel
-/// code generation. Hot reload replay uses this to preserve baseline metadata and naming order.
-val GenerateIlxCodeSequential:
-    ilxBackend: IlxGenBackend *
-    isInteractiveItExpr: bool *
-    tcConfig: TcConfig *
-    topAttrs: TopAttribs *
-    optimizedImpls: CheckedAssemblyAfterOptimization *
-    fragName: string *
-    ilxGenerator: IlxAssemblyGenerator ->
-        IlxGenResults
-
 // Used during static linking
 val NormalizeAssemblyRefs: CompilationThreadToken * ILGlobals * TcImports -> (ILScopeRef -> ILScopeRef)
 
