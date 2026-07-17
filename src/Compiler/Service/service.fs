@@ -493,7 +493,11 @@ type FSharpChecker
                 baseline.SynthesizedNameSnapshotSource = SynthesizedNameSnapshotSource.Reconstructed
                 && File.Exists(pdbPath)
             then
-                match EncMethodDebugInformation.readSynthesizedNameSnapshotFromPortablePdb (File.ReadAllBytes pdbPath) with
+                match
+                    FSharp.Compiler.EncMethodDebugInformation.readSynthesizedNameSnapshotFromPortablePdb (
+                        File.ReadAllBytes pdbPath
+                    )
+                with
                 | Some recordedSnapshot ->
                     if isEnvVarTruthy "FSHARP_HOTRELOAD_TRACE_CLOSURENAMES" then
                         printfn "[fsharp-hotreload][closure-names] synthesized-name snapshot source=recorded buckets=%d" (Map.count recordedSnapshot)
@@ -521,7 +525,10 @@ type FSharpChecker
             if Map.isEmpty baseline.EncMethodDebugInfos && File.Exists(pdbPath) then
                 let baseline =
                     { baseline with
-                        EncMethodDebugInfos = EncMethodDebugInformation.readEncMethodDebugInfoFromPortablePdb (File.ReadAllBytes(pdbPath))
+                        EncMethodDebugInfos =
+                            FSharp.Compiler.EncMethodDebugInformation.readEncMethodDebugInfoFromPortablePdb (
+                                File.ReadAllBytes(pdbPath)
+                            )
                     }
 
                 // Closure mapping: the chain -> closure-name tables are a pure function
@@ -1445,7 +1452,7 @@ type FSharpChecker
                     match tryGetCompilerGeneratedNameMap (tcGlobals.CompilerGlobalState.Value :> obj) with
                     | Some map ->
                         HotReloadBaseline.collectRecordedSynthesizedNameSnapshot (tcGlobals.CompilerGlobalState.Value :> obj) map
-                        |> EncMethodDebugInformation.computeSynthesizedNameSnapshotCustomDebugInfoRows
+                        |> FSharp.Compiler.EncMethodDebugInformation.computeSynthesizedNameSnapshotCustomDebugInfoRows
                     | None -> []
                 | _ -> []
 

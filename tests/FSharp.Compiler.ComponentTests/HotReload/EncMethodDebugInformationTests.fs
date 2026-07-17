@@ -243,6 +243,8 @@ module EncMethodDebugInformationTests =
         Assert.Equal(None, tryEncodeOccurrenceKey [ 0x1FFF; 0 ])
         // Packed key past the budget even though both segments are individually valid.
         Assert.Equal(None, tryEncodeOccurrenceKey [ 0x1FFE; 0xFFFF ])
+        // A large parent must not wrap the packed int negative and slip through the bound.
+        Assert.Equal(None, tryEncodeOccurrenceKey [ 0xFFFE; 0 ])
         // Negative ordinals.
         Assert.Equal(None, tryEncodeOccurrenceKey [ -1 ])
         Assert.Equal(None, tryEncodeOccurrenceKey [ -1; 0 ])

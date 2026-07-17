@@ -20,6 +20,7 @@ open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.EditAndContinue
 open FSharp.Compiler.HotReload
 open FSharp.Compiler.HotReloadBaseline
+open FSharp.Compiler.HotReloadState
 open FSharp.Compiler.Text
 open FSharp.Compiler.TypedTree
 open FSharp.Test
@@ -965,10 +966,12 @@ let current () = FileB.derived () + {generation}
 
                 let freshFiles =
                     match (projectViewOrFail session snapshot).PendingUpdate with
-                    | Some pending ->
+                    | Some(PendingHotReloadUpdate.Delta pending) ->
                         match pending.ImplementationFiles with
                         | Some implementationFiles -> implFiles implementationFiles
                         | None -> failwith "Expected pending implementation files after EmitDelta."
+                    | Some(PendingHotReloadUpdate.LineOnly _) ->
+                        failwith "Expected a metadata delta after the semantic source edit."
                     | None -> failwith "Expected a pending update after EmitDelta."
 
                 let equalityPairs =

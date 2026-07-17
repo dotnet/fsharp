@@ -193,8 +193,14 @@ let tryEncodeOccurrenceKey (ordinalChain: int list) : int option =
         && ordinal <= MaxOccurrenceSegment
         && parent < MaxOccurrenceSegment
         ->
-        let key = ((parent + 1) <<< 16) ||| ordinal
-        if key <= MaxOccurrenceKey then Some key else None
+        // Pack in int64: a large parent would wrap negative in int32 and otherwise pass
+        // the upper-bound check, turning an unrepresentable occurrence into a corrupt key.
+        let key = ((int64 parent + 1L) <<< 16) ||| int64 ordinal
+
+        if key <= int64 MaxOccurrenceKey then
+            Some(int key)
+        else
+            None
     | _ -> None
 
 /// Unpacks an occurrence key produced by tryEncodeOccurrenceKey back into its
@@ -301,7 +307,7 @@ let deserializeSynthesizedNameSnapshot (blob: byte[]) : Map<string, string[]> =
 
                 let bucketCount = reader.ReadCompressedInteger()
 
-                if bucketCount < 0 then
+                if bucketCount <= 0 || bucketCount > reader.RemainingBytes / 2 then
                     invalidData "synthesized name snapshot" reader.Offset
 
                 let buckets = ResizeArray<string * string[]>()
@@ -310,7 +316,9 @@ let deserializeSynthesizedNameSnapshot (blob: byte[]) : Map<string, string[]> =
                     let key = readUtf8String "synthesized name snapshot" &reader
                     let nameCount = reader.ReadCompressedInteger()
 
-                    if nameCount < 0 then
+                    // Every serialized name consumes at least one byte for its UTF-8 length,
+                    // so bound allocation by the remaining payload before creating the array.
+                    if nameCount < 0 || nameCount > reader.RemainingBytes then
                         invalidData "synthesized name snapshot" reader.Offset
 
                     let names = Array.zeroCreate nameCount

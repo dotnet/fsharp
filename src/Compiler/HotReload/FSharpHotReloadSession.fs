@@ -600,11 +600,12 @@ type internal FSharpHotReloadService
 
                                             match emitDeltaResult with
                                             | Ok result ->
-                                                match result.Delta.UpdatedBaseline with
-                                                | Some _ ->
+                                                if
+                                                    result.Delta.UpdatedBaseline.IsSome
+                                                    || not (List.isEmpty result.Delta.SequencePointUpdates)
+                                                then
                                                     lock hotReloadGate (fun () ->
                                                         pendingOutputFingerprints[projectKey] <- outputFingerprint)
-                                                | None -> ()
 
                                                 let publicDelta = toPublicDelta result.Delta
 
