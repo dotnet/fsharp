@@ -29,6 +29,30 @@ let private shouldTraceHeaps () = isEnvVarTruthy TraceHeapsFlagName
 
 let private shouldTraceMethodRows () = isEnvVarTruthy TraceMethodsFlagName
 
+let private sortRowsByRowId tableName getRowId rows =
+    let sorted = rows |> List.sortBy getRowId
+
+    sorted
+    |> List.pairwise
+    |> List.iter (fun (previous, current) ->
+        let rowId = getRowId current
+
+        if getRowId previous = rowId then
+            invalidArg "rows" $"Duplicate {tableName} row id {rowId}.")
+
+    sorted
+
+let private validatePrimaryKeyOrder tableName getPrimaryKey rows =
+    rows
+    |> List.pairwise
+    |> List.iter (fun (previous, current) ->
+        if getPrimaryKey previous > getPrimaryKey current then
+            invalidArg
+                "rows"
+                $"{tableName} row ids are not allocated in the table's required primary-key order.")
+
+    rows
+
 type MethodDefinitionRowInfo = DeltaMetadataTypes.MethodDefinitionRowInfo
 
 type ParameterDefinitionRowInfo = DeltaMetadataTypes.ParameterDefinitionRowInfo
@@ -121,6 +145,9 @@ let emitWithTypeDefinitions
     (heapOffsets: MetadataHeapOffsets)
     (externalRowCounts: int[])
     : MetadataDelta =
+    let methodDefinitionRows =
+        methodDefinitionRows |> sortRowsByRowId "MethodDef" (fun row -> row.RowId)
+
     if shouldTraceMetadata () then
         printfn "[fsharp-hotreload][metadata-writer] emit invoked updates=%d" (List.length updates)
 
@@ -207,11 +234,32 @@ let emitWithTypeDefinitions
         let tableMirror = DeltaMetadataTables(heapOffsets)
         tableMirror.AddModuleRow(moduleName, moduleNameOffset, generation, moduleId, encId, encBaseId)
 
-        let updatesByKey =
-            Dictionary<MethodDefinitionKey, MethodMetadataUpdate>(HashIdentity.Structural)
+        let updatesByKey = Dictionary<MethodDefinitionKey, MethodMetadataUpdate>(HashIdentity.Structural)
 
         for update in updates do
-            updatesByKey[update.MethodKey] <- update
+            if updatesByKey.ContainsKey update.MethodKey then
+                invalidArg
+                    (nameof updates)
+                    $"Duplicate method update for '{update.MethodKey.DeclaringType}::{update.MethodKey.Name}'."
+
+            updatesByKey.Add(update.MethodKey, update)
+
+        let methodRowKeys = HashSet<MethodDefinitionKey>(HashIdentity.Structural)
+
+        for row in methodDefinitionRows do
+            if not (methodRowKeys.Add row.Key) then
+                invalidArg
+                    (nameof methodDefinitionRows)
+                    $"Duplicate method row for '{row.Key.DeclaringType}::{row.Key.Name}'."
+
+            if not (updatesByKey.ContainsKey row.Key) then
+                invalidOp $"Method row '{row.Key.DeclaringType}::{row.Key.Name}' has no matching update payload."
+
+        for update in updates do
+            if not (methodRowKeys.Contains update.MethodKey) then
+                invalidArg
+                    (nameof updates)
+                    $"Method update for '{update.MethodKey.DeclaringType}::{update.MethodKey.Name}' has no matching method row."
 
         // Build EncLog and EncMap entries using TableName for type safety.
         // EncLog records each modification; EncMap provides sorted token listing.
@@ -252,7 +300,9 @@ let emitWithTypeDefinitions
         let typeDefEncLogEntries =
             ResizeArray<struct (TableName * int * EditAndContinueOperation)>()
 
-        for row in typeDefinitionRows |> List.sortBy (fun row -> row.RowId) do
+        let typeDefinitionRows = typeDefinitionRows |> sortRowsByRowId "TypeDef" (fun row -> row.RowId)
+
+        for row in typeDefinitionRows do
             tableMirror.AddTypeDefinitionRow row
             typeDefEncLogEntries.Add(struct (TableNames.TypeDef, row.RowId, EditAndContinueOperation.Default))
             encMap.Add(struct (TableNames.TypeDef, row.RowId))
@@ -260,7 +310,12 @@ let emitWithTypeDefinitions
         let nestedClassEncLogEntries =
             ResizeArray<struct (TableName * int * EditAndContinueOperation)>()
 
-        for row in nestedClassRows |> List.sortBy (fun row -> row.RowId) do
+        let nestedClassRows =
+            nestedClassRows
+            |> sortRowsByRowId "NestedClass" (fun row -> row.RowId)
+            |> validatePrimaryKeyOrder "NestedClass" (fun row -> row.NestedTypeDefRowId)
+
+        for row in nestedClassRows do
             tableMirror.AddNestedClassRow row
             nestedClassEncLogEntries.Add(struct (TableNames.Nested, row.RowId, EditAndContinueOperation.Default))
             encMap.Add(struct (TableNames.Nested, row.RowId))
@@ -272,7 +327,12 @@ let emitWithTypeDefinitions
         let interfaceImplEncLogEntries =
             ResizeArray<struct (TableName * int * EditAndContinueOperation)>()
 
-        for row in interfaceImplRows |> List.sortBy (fun row -> row.RowId) do
+        let interfaceImplRows =
+            interfaceImplRows
+            |> sortRowsByRowId "InterfaceImpl" (fun row -> row.RowId)
+            |> validatePrimaryKeyOrder "InterfaceImpl" (fun row -> row.ClassTypeDefRowId)
+
+        for row in interfaceImplRows do
             tableMirror.AddInterfaceImplRow row
             interfaceImplEncLogEntries.Add(struct (TableNames.InterfaceImpl, row.RowId, EditAndContinueOperation.Default))
             encMap.Add(struct (TableNames.InterfaceImpl, row.RowId))
@@ -280,7 +340,12 @@ let emitWithTypeDefinitions
         let methodImplEncLogEntries =
             ResizeArray<struct (TableName * int * EditAndContinueOperation)>()
 
-        for row in methodImplRows |> List.sortBy (fun row -> row.RowId) do
+        let methodImplRows =
+            methodImplRows
+            |> sortRowsByRowId "MethodImpl" (fun row -> row.RowId)
+            |> validatePrimaryKeyOrder "MethodImpl" (fun row -> row.ClassTypeDefRowId)
+
+        for row in methodImplRows do
             tableMirror.AddMethodImplRow row
             methodImplEncLogEntries.Add(struct (TableNames.MethodImpl, row.RowId, EditAndContinueOperation.Default))
             encMap.Add(struct (TableNames.MethodImpl, row.RowId))
@@ -291,7 +356,21 @@ let emitWithTypeDefinitions
         let constantEncLogEntries =
             ResizeArray<struct (TableName * int * EditAndContinueOperation)>()
 
-        for row in constantRows |> List.sortBy (fun row -> row.RowId) do
+        let hasConstantKey (parent: HasConstant) =
+            let tag =
+                match parent with
+                | HC_Field _ -> 0
+                | HC_Param _ -> 1
+                | HC_Property _ -> 2
+
+            (parent.RowId <<< 2) ||| tag
+
+        let constantRows =
+            constantRows
+            |> sortRowsByRowId "Constant" (fun row -> row.RowId)
+            |> validatePrimaryKeyOrder "Constant" (fun row -> hasConstantKey row.Parent)
+
+        for row in constantRows do
             tableMirror.AddConstantRow row
             constantEncLogEntries.Add(struct (TableNames.Constant, row.RowId, EditAndContinueOperation.Default))
             encMap.Add(struct (TableNames.Constant, row.RowId))
@@ -321,11 +400,14 @@ let emitWithTypeDefinitions
                 methodEncLogEntries.Add(struct (TableNames.Method, row.RowId, EditAndContinueOperation.Default))
                 encMap.Add(struct (TableNames.Method, row.RowId))
             | _ ->
-                if shouldTraceMetadata () then
-                    printfn "[fsharp-hotreload][metadata-writer] missing update payload for %A" row.Key
+                // The one-to-one validation above makes this branch unreachable.
+                invalidOp $"Method row '{row.Key.DeclaringType}::{row.Key.Name}' has no matching update payload."
 
         let parameterEncLogEntries =
             ResizeArray<struct (TableName * int * EditAndContinueOperation)>()
+
+        let parameterDefinitionRows =
+            parameterDefinitionRows |> sortRowsByRowId "Param" (fun row -> row.RowId)
 
         for row in parameterDefinitionRows do
             tableMirror.AddParameterRow row
@@ -340,6 +422,9 @@ let emitWithTypeDefinitions
 
             parameterEncLogEntries.Add(struct (TableNames.Param, row.RowId, EditAndContinueOperation.Default))
             encMap.Add(struct (TableNames.Param, row.RowId))
+
+        let fieldDefinitionRows =
+            fieldDefinitionRows |> sortRowsByRowId "Field" (fun row -> row.RowId)
 
         for row in fieldDefinitionRows do
             if row.IsAdded then
@@ -356,17 +441,24 @@ let emitWithTypeDefinitions
                     struct (TableNames.Field, row.RowId, EditAndContinueOperation.Default)
                 ])
 
+        let typeReferenceRows = typeReferenceRows |> sortRowsByRowId "TypeRef" (fun row -> row.RowId)
+
         for row in typeReferenceRows do
             tableMirror.AddTypeReferenceRow row
 
             encLog.Add(struct (TableNames.TypeRef, row.RowId, EditAndContinueOperation.Default))
             encMap.Add(struct (TableNames.TypeRef, row.RowId))
 
+        let memberReferenceRows = memberReferenceRows |> sortRowsByRowId "MemberRef" (fun row -> row.RowId)
+
         for row in memberReferenceRows do
             tableMirror.AddMemberReferenceRow row
 
             encLog.Add(struct (TableNames.MemberRef, row.RowId, EditAndContinueOperation.Default))
             encMap.Add(struct (TableNames.MemberRef, row.RowId))
+
+        let methodSpecificationRows =
+            methodSpecificationRows |> sortRowsByRowId "MethodSpec" (fun row -> row.RowId)
 
         for row in methodSpecificationRows do
             tableMirror.AddMethodSpecificationRow row
@@ -377,6 +469,9 @@ let emitWithTypeDefinitions
         // Appended TypeSpec rows (new generic instantiations) are plain Default adds
         // applied via ApplyTableDelta, exactly like the C# reference template's
         // "TypeSpec 0x1b00xxxx Default" entry for an added-lambda delta.
+        let typeSpecificationRows =
+            typeSpecificationRows |> sortRowsByRowId "TypeSpec" (fun row -> row.RowId)
+
         for row in typeSpecificationRows do
             tableMirror.AddTypeSpecificationRow row
 
@@ -391,7 +486,15 @@ let emitWithTypeDefinitions
         let genericParamEncLogEntries =
             ResizeArray<struct (TableName * int * EditAndContinueOperation)>()
 
-        for row in genericParamRows |> List.sortBy (fun row -> row.RowId) do
+        let typeOrMethodDefKey (owner: TypeOrMethodDef) =
+            (owner.RowId <<< 1) ||| owner.CodedTag
+
+        let genericParamRows =
+            genericParamRows
+            |> sortRowsByRowId "GenericParam" (fun row -> row.RowId)
+            |> validatePrimaryKeyOrder "GenericParam" (fun row -> typeOrMethodDefKey row.Owner, row.Number)
+
+        for row in genericParamRows do
             tableMirror.AddGenericParamRow row
             genericParamEncLogEntries.Add(struct (TableNames.GenericParam, row.RowId, EditAndContinueOperation.Default))
             encMap.Add(struct (TableNames.GenericParam, row.RowId))
@@ -400,16 +503,27 @@ let emitWithTypeDefinitions
         // adds trailing the GenericParam entries (C# reference template
         // 'generic_constraint_add': GenericParamConstraint 0x2c000001 Default follows
         // GenericParam 0x2a000001 Default; both EncMap adds).
-        for row in genericParamConstraintRows |> List.sortBy (fun row -> row.RowId) do
+        let genericParamConstraintRows =
+            genericParamConstraintRows
+            |> sortRowsByRowId "GenericParamConstraint" (fun row -> row.RowId)
+            |> validatePrimaryKeyOrder "GenericParamConstraint" (fun row -> row.OwnerGenericParamRowId)
+
+        for row in genericParamConstraintRows do
             tableMirror.AddGenericParamConstraintRow row
             genericParamEncLogEntries.Add(struct (TableNames.GenericParamConstraint, row.RowId, EditAndContinueOperation.Default))
             encMap.Add(struct (TableNames.GenericParamConstraint, row.RowId))
+
+        let assemblyReferenceRows =
+            assemblyReferenceRows |> sortRowsByRowId "AssemblyRef" (fun row -> row.RowId)
 
         for row in assemblyReferenceRows do
             tableMirror.AddAssemblyReferenceRow row
 
             encLog.Add(struct (TableNames.AssemblyRef, row.RowId, EditAndContinueOperation.Default))
             encMap.Add(struct (TableNames.AssemblyRef, row.RowId))
+
+        let standaloneSignatureRows =
+            standaloneSignatureRows |> sortRowsByRowId "StandAloneSig" (fun row -> row.RowId)
 
         for signature in standaloneSignatureRows do
             let rowId = signature.RowId
@@ -418,6 +532,9 @@ let emitWithTypeDefinitions
             let operation = EditAndContinueOperation.Default
             encLog.Add(struct (TableNames.StandAloneSig, rowId, operation))
             encMap.Add(struct (TableNames.StandAloneSig, rowId))
+
+        let customAttributeRows =
+            customAttributeRows |> sortRowsByRowId "CustomAttribute" (fun row -> row.RowId)
 
         for row in customAttributeRows do
             tableMirror.AddCustomAttributeRow row
@@ -433,6 +550,8 @@ let emitWithTypeDefinitions
 
         let propertyMapRowIdByType = Dictionary<string, int>(StringComparer.Ordinal)
 
+        let propertyMapRows = propertyMapRows |> sortRowsByRowId "PropertyMap" (fun row -> row.RowId)
+
         for row in propertyMapRows do
             if row.IsAdded then
                 tableMirror.AddPropertyMapRow row
@@ -446,6 +565,8 @@ let emitWithTypeDefinitions
 
         let eventMapRowIdByType = Dictionary<string, int>(StringComparer.Ordinal)
 
+        let eventMapRows = eventMapRows |> sortRowsByRowId "EventMap" (fun row -> row.RowId)
+
         for row in eventMapRows do
             if row.IsAdded then
                 tableMirror.AddEventMapRow row
@@ -456,6 +577,9 @@ let emitWithTypeDefinitions
 
         let propertyEncLogEntries =
             ResizeArray<struct (TableName * int * EditAndContinueOperation)>()
+
+        let propertyDefinitionRows =
+            propertyDefinitionRows |> sortRowsByRowId "Property" (fun row -> row.RowId)
 
         for row in propertyDefinitionRows do
             if row.IsAdded then
@@ -477,6 +601,8 @@ let emitWithTypeDefinitions
 
         let eventEncLogEntries =
             ResizeArray<struct (TableName * int * EditAndContinueOperation)>()
+
+        let eventDefinitionRows = eventDefinitionRows |> sortRowsByRowId "Event" (fun row -> row.RowId)
 
         for row in eventDefinitionRows do
             if row.IsAdded then
@@ -501,6 +627,16 @@ let emitWithTypeDefinitions
         let methodSemanticsEncLogEntries =
             ResizeArray<struct (TableName * int * EditAndContinueOperation)>()
 
+        let hasSemanticsKey row =
+            match row.AssociationInfo with
+            | MethodSemanticsAssociation.EventAssociation(_, rowId) -> rowId <<< 1
+            | MethodSemanticsAssociation.PropertyAssociation(_, rowId) -> (rowId <<< 1) ||| 1
+
+        let methodSemanticsRows =
+            methodSemanticsRows
+            |> sortRowsByRowId "MethodSemantics" (fun row -> row.RowId)
+            |> validatePrimaryKeyOrder "MethodSemantics" hasSemanticsKey
+
         for row in methodSemanticsRows do
             if row.IsAdded then
                 tableMirror.AddMethodSemanticsRow row
@@ -508,7 +644,7 @@ let emitWithTypeDefinitions
                 methodSemanticsEncLogEntries.Add(struct (TableNames.MethodSemantics, row.RowId, EditAndContinueOperation.Default))
                 encMap.Add(struct (TableNames.MethodSemantics, row.RowId))
 
-        for _, newToken, literal in userStringUpdates do
+        for _, newToken, literal in userStringUpdates |> List.sortBy (fun (_, newToken, _) -> newToken) do
             let offset = newToken &&& 0x00FFFFFF
             tableMirror.AddUserStringLiteral(offset, literal)
 
