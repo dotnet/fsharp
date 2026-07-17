@@ -589,12 +589,6 @@ type FSharpChecker
             mapHotReloadError
         )
 
-    // Reset the process-local capture slot the fsc emit hook publishes baseline captures into,
-    // so a freshly created checker never chains capture naming against another owner's stale
-    // ambient state. The legacy fsc ambient capture path depends on this clean slot; session
-    // entities are unaffected, owning private stores and reconstructing baselines from disk.
-    do FSharp.Compiler.HotReloadState.clearSessionState ()
-
     // Projects tracked by LIVE session entities created via CreateHotReloadSession, keyed by
     // the resolved output path each AddProject baselined (most recent first). Compile consults
     // this to resolve the scoped emission context — which session, and which project inside
@@ -1210,6 +1204,15 @@ type FSharpChecker
             let tcConfig, tcGlobals, tcImports, unfinalizedCcu, ccuSig, topAttrsOpt, _ilAssemRef, typedImplFilesOpt =
                 results.CompilationData
 
+            // This fast path writes only the implementation assembly. Projects that request a
+            // reference assembly must use the normal compiler pipeline so dependents never see a
+            // stale reference surface after a successful hot reload update.
+            match tcConfig.emitMetadataAssembly with
+            | MetadataAssemblyGeneration.None -> ()
+            | MetadataAssemblyGeneration.ReferenceOnly
+            | MetadataAssemblyGeneration.ReferenceOut _ ->
+                invalidOp "In-process hot reload compilation does not support reference-assembly outputs; use the external compiler pipeline."
+
             ReportTime tcConfig "CompileFromCheckedProject: Setup"
 
             // Clear mode preserves the original emit-from-cache behavior: lay out closures with
@@ -1391,7 +1394,18 @@ type FSharpChecker
             let ilxGenerator = CreateIlxAssemblyGenerator(tcConfig, tcImports, tcGlobals, tcVal, generatedCcu)
 
             let codegenResults =
-                GenerateIlxCode(IlWriteBackend, false, tcConfig, topAttrs, optimizedImpls, generatedCcu.AssemblyName, ilxGenerator)
+                // The cached TcConfig is immutable and may still advertise parallel IlxGen even
+                // though fsc pins hot reload compiles to sequential codegen. Replay must preserve
+                // baseline metadata and generated-name order, so force the same pin here.
+                GenerateIlxCodeSequential(
+                    IlWriteBackend,
+                    false,
+                    tcConfig,
+                    topAttrs,
+                    optimizedImpls,
+                    generatedCcu.AssemblyName,
+                    ilxGenerator
+                )
 
             let topAssemblyAttrs = codegenResults.topAssemblyAttrs
 
@@ -1479,7 +1493,9 @@ type FSharpChecker
                     outfile = outfile
                     pdbfile = Some(!!Path.ChangeExtension(outfile, ".pdb"))
                     emitTailcalls = tcConfig.emitTailcalls
-                    deterministic = tcConfig.deterministic
+                    // The in-process path bypasses fsc's TcConfigBuilder determinism pins.
+                    // Force deterministic PE/PDB emission without mutating the cached TcConfig.
+                    deterministic = true
                     portablePDB = true
                     embeddedPDB = false
                     embedAllSource = false

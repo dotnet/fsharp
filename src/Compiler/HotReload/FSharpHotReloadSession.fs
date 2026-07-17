@@ -430,6 +430,9 @@ type internal FSharpHotReloadService
                                         match inProcessCompile with
                                         | None -> return Result.Ok None
                                         | Some compile ->
+                                            let outputFingerprintBeforeCompile =
+                                                tryGetOutputFingerprint outputPath
+
                                             try
                                                 // The compile returns the emitted module (refs normalized as
                                                 // written) so the delta path can consume it directly instead of
@@ -448,10 +451,30 @@ type internal FSharpHotReloadService
 
                                                 return Result.Ok(Some freshModule)
                                             with ex ->
-                                                return
-                                                    Result.Error(
-                                                        FSharpHotReloadError.DeltaEmissionFailed($"In-process compile failed: {ex.Message}")
-                                                    )
+                                                let outputFingerprintAfterCompile =
+                                                    tryGetOutputFingerprint outputPath
+
+                                                if
+                                                    hasOutputFingerprintChanged
+                                                        outputPath
+                                                        outputFingerprintBeforeCompile
+                                                        outputFingerprintAfterCompile
+                                                then
+                                                    // The fast path may have modified the output before failing. Do
+                                                    // not trust a potentially partial artifact as an external-build
+                                                    // fallback input.
+                                                    return
+                                                        Result.Error(
+                                                            FSharpHotReloadError.DeltaEmissionFailed(
+                                                                $"In-process compile modified the output before failing: {ex.Message}"
+                                                            )
+                                                        )
+                                                else
+                                                    // Generation failed before the implementation output changed.
+                                                    // Continue through the external-artifact path: its existing
+                                                    // content fingerprint guard will accept a fresh external build
+                                                    // and reject a stale one.
+                                                    return Result.Ok None
                                     }
 
                             match inProcessCompileResult with
@@ -719,6 +742,7 @@ type FSharpHotReloadSession
 
     let mutable disposed = 0
     let lifecycleGate = obj ()
+    let operationGate = new SemaphoreSlim(1, 1)
 
     // Output paths explicitly supplied to AddProject, consulted before deriving the path from
     // the snapshot's command-line options (hosts whose snapshots carry no -o option).
@@ -762,6 +786,33 @@ type FSharpHotReloadSession
         if Volatile.Read(&disposed) = 1 then
             raise (ObjectDisposedException(nameof FSharpHotReloadSession))
 
+    // A session owns replay naming state and output files that cannot be updated concurrently.
+    // Serialize lifecycle and update operations so overlapping emits cannot interleave compiler-
+    // global state or race the DLL/PDB write pair.
+    let runSerializedAsync (operation: unit -> Async<'T>) : Async<'T> =
+        async {
+            ensureNotDisposed ()
+            do! operationGate.WaitAsync() |> Async.AwaitTask
+
+            try
+                ensureNotDisposed ()
+                let! result = operation ()
+                ensureNotDisposed ()
+                return result
+            finally
+                operationGate.Release() |> ignore
+        }
+
+    let runSerialized (operation: unit -> 'T) : 'T =
+        ensureNotDisposed ()
+        operationGate.Wait()
+
+        try
+            ensureNotDisposed ()
+            operation ()
+        finally
+            operationGate.Release() |> ignore
+
     /// <summary>
     /// Captures the baseline of one more project into the session (Roslyn analog: capturing the
     /// per-module <c>EmitBaseline</c> when a module of the debugged process loads). The project's
@@ -774,8 +825,7 @@ type FSharpHotReloadSession
     /// command-line options; required when the snapshot carries no output option.</param>
     /// <param name="userOpName">An optional string used for tracing compiler operations associated with this request.</param>
     member _.AddProject(projectSnapshot: FSharpProjectSnapshot, ?outputPath: string, ?userOpName: string) =
-        async {
-            ensureNotDisposed ()
+        let operation () = async {
             let opName = defaultArg userOpName "Unknown"
 
             use _ =
@@ -818,6 +868,8 @@ type FSharpHotReloadSession
             return result
         }
 
+        runSerializedAsync operation
+
     /// <summary>
     /// Emits a metadata/IL/PDB delta for the given project by diffing the snapshot's typed trees
     /// and rebuilt output against the project's COMMITTED baseline. The emitted update is staged
@@ -830,8 +882,7 @@ type FSharpHotReloadSession
     /// <param name="projectSnapshot">The snapshot describing the edited project.</param>
     /// <param name="userOpName">An optional string used for tracing compiler operations associated with this request.</param>
     member _.EmitDelta(projectSnapshot: FSharpProjectSnapshot, ?userOpName: string) =
-        async {
-            ensureNotDisposed ()
+        let operation () = async {
             let opName = defaultArg userOpName "Unknown"
 
             use _ =
@@ -871,30 +922,31 @@ type FSharpHotReloadSession
             return result
         }
 
+        runSerializedAsync operation
+
     /// <summary>
     /// Commits ALL pending project updates atomically — the runtime applied them, so the
     /// committed per-project baselines, diff inputs and generation counters advance together
     /// (Roslyn's <c>CommitSolutionUpdate</c>). No-op when nothing is pending.
     /// </summary>
     member _.Commit() =
-        ensureNotDisposed ()
+        runSerialized (fun () ->
+            lock trackedInputsGate (fun () ->
+                for entry in List.ofSeq pendingTrackedInputs do
+                    committedTrackedInputs[entry.Key] <- entry.Value
 
-        lock trackedInputsGate (fun () ->
-            for entry in List.ofSeq pendingTrackedInputs do
-                committedTrackedInputs[entry.Key] <- entry.Value
+                pendingTrackedInputs.Clear())
 
-            pendingTrackedInputs.Clear())
-
-        hotReloadService.CommitSession()
+            hotReloadService.CommitSession())
 
     /// <summary>
     /// Discards ALL pending project updates — the host did not apply them, so the next emit
     /// diffs against the unchanged committed view (Roslyn's <c>DiscardSolutionUpdate</c>).
     /// </summary>
     member _.Discard() =
-        ensureNotDisposed ()
-        lock trackedInputsGate (fun () -> pendingTrackedInputs.Clear())
-        hotReloadService.DiscardSession()
+        runSerialized (fun () ->
+            lock trackedInputsGate (fun () -> pendingTrackedInputs.Clear())
+            hotReloadService.DiscardSession())
 
     /// <summary>
     /// Replaces the session-wide runtime capability set consulted by edit classification (for
@@ -903,8 +955,8 @@ type FSharpHotReloadSession
     /// </summary>
     /// <param name="capabilities">Runtime capability names (for example <c>AddMethodToExistingType</c>); unknown names are ignored.</param>
     member _.UpdateCapabilities(capabilities: string seq) =
-        ensureNotDisposed ()
-        hotReloadService.SetSessionCapabilities(EditAndContinueCapabilities.Parse capabilities)
+        runSerialized (fun () ->
+            hotReloadService.SetSessionCapabilities(EditAndContinueCapabilities.Parse capabilities))
 
     /// <summary>
     /// Replaces the session-wide debugger-supplied active statements consulted by the next emit
@@ -913,8 +965,7 @@ type FSharpHotReloadSession
     /// push: the host reports the break state before emitting.
     /// </summary>
     member _.SetActiveStatements(activeStatements: FSharpManagedActiveStatementDebugInfo seq) =
-        ensureNotDisposed ()
-        hotReloadService.SetSessionActiveStatements(activeStatements)
+        runSerialized (fun () -> hotReloadService.SetSessionActiveStatements(activeStatements))
 
     /// <summary>Identifiers of the projects the session currently tracks.</summary>
     member _.ProjectIdentifiers =
@@ -936,6 +987,12 @@ type FSharpHotReloadSession
     interface IDisposable with
         member _.Dispose() =
             if Interlocked.Exchange(&disposed, 1) = 0 then
-                lock lifecycleGate (fun () ->
-                    onDispose ()
-                    hotReloadService.EndSession())
+                operationGate.Wait()
+
+                try
+                    lock lifecycleGate (fun () ->
+                        onDispose ()
+                        hotReloadService.EndSession())
+                finally
+                    operationGate.Release() |> ignore
+                    operationGate.Dispose()

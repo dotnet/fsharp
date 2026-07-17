@@ -905,6 +905,56 @@ module Entry =
             Assert.Equal<byte>(batchBytes, incrementalBytes))
 
     [<Fact>]
+    let ``CompileFromCheckedProject pins deterministic sequential codegen for cached FCS configuration`` () =
+        withProjectDir "fcs-hotreload-inprocess-determinism" (fun projectDir ->
+            let firstPath = Path.Combine(projectDir, "First.fs")
+            let secondPath = Path.Combine(projectDir, "Second.fs")
+            let dllPath = Path.Combine(projectDir, "Deterministic.dll")
+
+            let firstSource =
+                """
+module First
+
+let map values = values |> List.map (fun value -> value + 1)
+"""
+
+            let secondSource =
+                """
+module Second
+
+let map values = values |> List.map (fun value -> value + 2)
+"""
+
+            File.WriteAllText(firstPath, firstSource.TrimStart())
+            File.WriteAllText(secondPath, secondSource.TrimStart())
+
+            let checker = createChecker ()
+
+            let options =
+                prepareMultiFileProjectOptions checker [| firstPath; secondPath |] dllPath firstSource []
+
+            // FCS materializes its immutable TcConfig before fsc's hot reload pin runs. Keep
+            // that real configuration here so this test exercises the in-process override.
+            let options =
+                { options with
+                    OtherOptions =
+                        options.OtherOptions
+                        |> Array.filter (fun option -> option <> "--deterministic")
+                }
+
+            let results = checkProjectOrFail checker options
+            let tcConfig, _, _, _, _, _, _, _ = results.CompilationData
+            Assert.True(tcConfig.parallelIlxGen, "Expected the cached FCS configuration to retain parallel IlxGen.")
+
+            let firstAssembly = compileFromCheckedProjectAndReadBytes checker results dllPath
+            let firstPdb = File.ReadAllBytes(Path.ChangeExtension(dllPath, ".pdb"))
+            let secondAssembly = compileFromCheckedProjectAndReadBytes checker results dllPath
+            let secondPdb = File.ReadAllBytes(Path.ChangeExtension(dllPath, ".pdb"))
+
+            Assert.Equal<byte>(firstAssembly, secondAssembly)
+            Assert.Equal<byte>(firstPdb, secondPdb))
+
+    [<Fact>]
     let ``EmitDelta reuses checked implementation files for unchanged earlier files`` () =
         withProjectDir "fcs-hotreload-session-reference-equality" (fun projectDir ->
             let fileAPath = Path.Combine(projectDir, "FileA.fs")
@@ -1998,6 +2048,68 @@ let probe input =
 
         runCase "recorded" false
         runCase "old-baseline-fallback" true
+
+    [<Fact>]
+    let ``in-process compilation falls back to fresh external outputs when a reference assembly is required`` () =
+        withProjectDir "fcs-hotreload-inprocess-refout-fallback" (fun projectDir ->
+            let fsPath = Path.Combine(projectDir, "Library.fs")
+            let dllPath = Path.Combine(projectDir, "Library.dll")
+            let refPath = Path.Combine(projectDir, "ref", "Library.dll")
+
+            let baselineSource =
+                """
+module Library
+
+let existing () = 1
+"""
+
+            let updatedSource =
+                """
+module Library
+
+let existing () = 1
+let added () = 2
+"""
+
+            File.WriteAllText(fsPath, baselineSource.TrimStart())
+            let checker = createChecker ()
+
+            let options =
+                prepareProjectOptions checker fsPath dllPath baselineSource [ $"--refout:{refPath}" ]
+
+            checker.InvalidateAll()
+            compileProject checker options true
+            let baselineReferenceBytes = File.ReadAllBytes(refPath)
+
+            use session = checker.CreateHotReloadSession()
+
+            session.UpdateCapabilities
+                [ "AddMethodToExistingType"
+                  "AddStaticFieldToExistingType" ]
+
+            addProjectOrFail session (createProjectSnapshot options)
+
+            withEnvVar "FSHARP_HOTRELOAD_INPROCESS_COMPILE" "1" (fun () ->
+                File.WriteAllText(fsPath, updatedSource.TrimStart())
+                checker.NotifyFileChanged(fsPath, options) |> Async.RunImmediate
+
+                // The fast path must refuse to write only the implementation assembly. With no
+                // external build available, the normal stale-output guard rejects the fallback.
+                match session.EmitDelta(createProjectSnapshot options) |> Async.RunImmediate with
+                | Error(FSharpHotReloadError.DeltaEmissionFailed _) -> ()
+                | Error other -> failwithf "Expected stale-output failure, got %A" other
+                | Ok _ -> failwith "Expected the refout project to require a fresh external build."
+
+                Assert.Equal<byte>(baselineReferenceBytes, File.ReadAllBytes(refPath))
+
+                // Once the regular compiler has refreshed both outputs, the failed fast path
+                // safely falls back to those artifacts and emits the supported member addition.
+                compileProject checker options false
+                Assert.NotEqual<byte>(baselineReferenceBytes, File.ReadAllBytes(refPath))
+
+                let delta = emitOrFail session (createProjectSnapshot options)
+                Assert.NotEmpty(delta.UpdatedMethods)
+                session.Commit()))
 
     [<Fact>]
     let ``EmitDelta recompiles in-process under FSHARP_HOTRELOAD_INPROCESS_COMPILE and refuses stale output once the flag is off`` () =
