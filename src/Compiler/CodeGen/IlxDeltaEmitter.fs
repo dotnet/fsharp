@@ -3494,11 +3494,7 @@ let emitDeltaWithDebugData (freshDebugPdb: byte[] option) (request: IlxDeltaRequ
         else
             false
 
-    let builder =
-        IlDeltaStreamBuilder(
-            request.Baseline.Metadata.HeapSizes.UserStringHeapSize,
-            request.Baseline.Metadata.TableRowCounts.[TableNames.StandAloneSig.Index]
-        )
+    let builder = IlDeltaStreamBuilder(Some request.Baseline.Metadata)
 
     if traceHeapOffsets.Value then
         let heaps = request.Baseline.Metadata.HeapSizes

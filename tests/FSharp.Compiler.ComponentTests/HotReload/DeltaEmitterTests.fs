@@ -2397,7 +2397,7 @@ module DeltaEmitterTests =
                 { StringHeapSize = 13
                   UserStringHeapSize = 29
                   BlobHeapSize = 7
-                  GuidHeapSize = 3 }
+                  GuidHeapSize = 16 }
 
         let tables = DeltaMetadataTables(offsets)
         let heaps = tables.AsMetadataHeaps()
