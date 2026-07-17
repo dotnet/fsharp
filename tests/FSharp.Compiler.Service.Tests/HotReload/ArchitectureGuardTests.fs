@@ -73,6 +73,8 @@ let ``hot reload service no longer mutates ambient emit-hook state`` () =
     Assert.DoesNotContain("createHotReloadCompilerEmitHook", source)
     Assert.DoesNotContain("setAmbientCompilerEmitHook", source)
     Assert.DoesNotContain("clearAmbientCompilerEmitHook", source)
+    // Constructing one checker must not erase another checker's process-visible legacy state.
+    Assert.DoesNotContain("HotReloadState.clearSessionState ()", source)
 
 [<Fact>]
 let ``checker compile injects explicit hook-only argument for active hot reload sessions`` () =
