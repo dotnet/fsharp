@@ -113,16 +113,6 @@ let private stableHash (text: string) =
 
         int hash
 
-let private hashCombine (seed: int) (value: int) = (seed * 16777619) ^^^ value
-
-let private hashList (items: seq<int>) =
-    let mutable acc = 1
-
-    for item in items do
-        acc <- hashCombine acc item
-
-    acc
-
 let private propertyDisplayName (vref: ValRef) =
     let name = vref.PropertyName
 
@@ -224,7 +214,42 @@ let private normalizeTypeString (text: string) =
 
     sb.ToString().Replace("  ", " ").Trim()
 
-let private tyToString (_: DisplayEnv) (ty: TType) = normalizeTypeString (ty.ToString())
+let private compiledTyconName (tcref: TyconRef) =
+    try
+        tcref.CompiledRepresentationForNamedType.FullName
+    with _ ->
+        tcref.CompiledName
+
+/// Renders types with their compiled identities so equal display names from different
+/// namespaces or enclosing types cannot collapse to the same hot reload signature.
+let private tyToString (_: DisplayEnv) (ty: TType) =
+    let rec render ty =
+        let renderArgs tys = tys |> List.map render |> String.concat ","
+
+        match ty with
+        | TType_forall(typars, bodyTy) ->
+            let names = typars |> List.map (fun typar -> typar.DisplayName) |> String.concat ","
+            $"forall<{names}>.{render bodyTy}"
+        | TType_app(tcref, typeArgs, _) ->
+            let name = compiledTyconName tcref
+            if List.isEmpty typeArgs then name else $"{name}<{renderArgs typeArgs}>"
+        | TType_anon(anonInfo, typeArgs) ->
+            let name = anonInfo.ILTypeRef.FullName
+            if List.isEmpty typeArgs then name else $"{name}<{renderArgs typeArgs}>"
+        | TType_tuple(tupleInfo, typeArgs) ->
+            let kind = if evalTupInfoIsStruct tupleInfo then "struct" else "ref"
+            $"tuple:{kind}<{renderArgs typeArgs}>"
+        | TType_fun(domainTy, rangeTy, _) -> $"func<{render domainTy},{render rangeTy}>"
+        | TType_ucase(caseRef, typeArgs) ->
+            $"ucase:{compiledTyconName caseRef.TyconRef}.{caseRef.CaseName}<{renderArgs typeArgs}>"
+        | TType_var(typar, _) ->
+            match typar.Solution with
+            | Some solution -> render solution
+            | None when typar.IsCompilerGenerated -> "inference-variable"
+            | None -> $"typar:{typar.DisplayName}"
+        | TType_measure _ -> normalizeTypeString (ty.ToString())
+
+    render ty
 
 let private constraintDigest (denv: DisplayEnv) (constraint_: TyparConstraint) =
     match constraint_ with
@@ -273,91 +298,261 @@ let private constDigest (c: Const) =
     | Const.Unit -> "()"
     | Const.Zero -> "zero"
 
-let private opDigest (op: TOp) = op.ToString()
+let private identityNode (tag: string) (fields: string seq) =
+    let builder = StringBuilder(tag)
 
-let rec private exprDigest (denv: DisplayEnv) (expr: Expr) =
-    let recurse = exprDigest denv
+    for field in fields do
+        builder.Append('|').Append(field.Length).Append(':').Append(field) |> ignore
+
+    builder.ToString()
+
+let private valIdentity denv (vref: ValRef) =
+    let stableName =
+        tryStableValReferenceIdentity vref
+        |> Option.defaultValue $"local:{vref.LogicalName}"
+
+    identityNode "val" [ stableName; tyToString denv vref.Type ]
+
+let private traitIdentity denv (traitInfo: TraitConstraintInfo) =
+    identityNode
+        "trait"
+        [ traitInfo.MemberLogicalName
+          string traitInfo.MemberFlags.IsInstance
+          string traitInfo.MemberFlags.IsDispatchSlot
+          string traitInfo.MemberFlags.IsOverrideOrExplicitImpl
+          string traitInfo.MemberFlags.IsFinal
+          string traitInfo.MemberFlags.MemberKind
+          traitInfo.SupportTypes |> List.map (tyToString denv) |> String.concat ","
+          traitInfo.CompiledObjectAndArgumentTypes |> List.map (tyToString denv) |> String.concat ","
+          traitInfo.CompiledReturnType |> Option.map (tyToString denv) |> Option.defaultValue "void" ]
+
+/// Produces an exhaustive, payload-sensitive identity for every TOp case. Debug-point
+/// payloads are intentionally excluded because they do not alter emitted instructions.
+let private opIdentity denv (op: TOp) =
+    let tyconName = compiledTyconName
+    let caseName (caseRef: UnionCaseRef) = $"{tyconName caseRef.TyconRef}.{caseRef.CaseName}"
+    let types tys = tys |> List.map (tyToString denv) |> String.concat ","
+
+    match op with
+    | TOp.UnionCase caseRef -> identityNode "union-case" [ caseName caseRef ]
+    | TOp.ExnConstr typeRef -> identityNode "exn" [ tyconName typeRef ]
+    | TOp.Tuple tupleInfo -> identityNode "tuple" [ string (evalTupInfoIsStruct tupleInfo) ]
+    | TOp.AnonRecd info -> identityNode "anon-record" [ info.ILTypeRef.FullName; String.concat "," info.SortedNames ]
+    | TOp.AnonRecdGet(info, index) ->
+        identityNode "anon-record-get" [ info.ILTypeRef.FullName; String.concat "," info.SortedNames; string index ]
+    | TOp.Array -> "array"
+    | TOp.Bytes bytes -> identityNode "bytes" [ BitConverter.ToString bytes ]
+    | TOp.UInt16s values -> identityNode "uint16s" [ values |> Array.map string |> String.concat "," ]
+    | TOp.While(_, marker) -> identityNode "while" [ string marker ]
+    | TOp.IntegerForLoop(_, _, style) -> identityNode "for" [ string style ]
+    | TOp.TryWith _ -> "try-with"
+    | TOp.TryFinally _ -> "try-finally"
+    | TOp.Recd(info, typeRef) -> identityNode "record" [ string info; tyconName typeRef ]
+    | TOp.ValFieldSet fieldRef -> identityNode "field-set" [ tyconName fieldRef.TyconRef; fieldRef.FieldName ]
+    | TOp.ValFieldGet fieldRef -> identityNode "field-get" [ tyconName fieldRef.TyconRef; fieldRef.FieldName ]
+    | TOp.ValFieldGetAddr(fieldRef, isReadonly) ->
+        identityNode "field-address" [ tyconName fieldRef.TyconRef; fieldRef.FieldName; string isReadonly ]
+    | TOp.UnionCaseTagGet typeRef -> identityNode "union-tag" [ tyconName typeRef ]
+    | TOp.UnionCaseProof caseRef -> identityNode "union-proof" [ caseName caseRef ]
+    | TOp.UnionCaseFieldGet(caseRef, index) -> identityNode "union-field-get" [ caseName caseRef; string index ]
+    | TOp.UnionCaseFieldGetAddr(caseRef, index, isReadonly) ->
+        identityNode "union-field-address" [ caseName caseRef; string index; string isReadonly ]
+    | TOp.UnionCaseFieldSet(caseRef, index) -> identityNode "union-field-set" [ caseName caseRef; string index ]
+    | TOp.ExnFieldGet(typeRef, index) -> identityNode "exn-field-get" [ tyconName typeRef; string index ]
+    | TOp.ExnFieldSet(typeRef, index) -> identityNode "exn-field-set" [ tyconName typeRef; string index ]
+    | TOp.TupleFieldGet(tupleInfo, index) ->
+        identityNode "tuple-field-get" [ string (evalTupInfoIsStruct tupleInfo); string index ]
+    | TOp.ILAsm(instructions, returnTypes) ->
+        identityNode "il" [ instructions |> List.map string |> String.concat ";"; types returnTypes ]
+    | TOp.RefAddrGet isReadonly -> identityNode "ref-address" [ string isReadonly ]
+    | TOp.Coerce -> "coerce"
+    | TOp.Reraise -> "reraise"
+    | TOp.Return -> "return"
+    | TOp.Goto label -> identityNode "goto" [ string label ]
+    | TOp.Label label -> identityNode "label" [ string label ]
+    | TOp.TraitCall traitInfo -> traitIdentity denv traitInfo
+    | TOp.LValueOp(operation, vref) -> identityNode "lvalue" [ string operation; valIdentity denv vref ]
+    | TOp.ILCall(isVirtual, isProtected, isStruct, isCtor, valUseFlag, isProperty, noTailCall, methodRef, enclosingTypeArgs, methodTypeArgs, returnTypes) ->
+        identityNode
+            "il-call"
+            [ string isVirtual
+              string isProtected
+              string isStruct
+              string isCtor
+              string valUseFlag
+              string isProperty
+              string noTailCall
+              sprintf "%A" methodRef
+              types enclosingTypeArgs
+              types methodTypeArgs
+              types returnTypes ]
+
+let rec private exprIdentity (denv: DisplayEnv) (expr: Expr) =
+    let recurse = exprIdentity denv
+    let expressions values = values |> Seq.map recurse |> identityNode "exprs"
+    let types values = values |> Seq.map (tyToString denv) |> identityNode "types"
 
     match expr with
-    | Expr.Const(c, _, ty) -> [ 1; stableHash (constDigest c); stableHash (tyToString denv ty) ] |> hashList
-    | Expr.Val(vref, _, _) ->
-        let referenceHash =
-            match tryStableValReferenceIdentity vref with
-            | Some identity -> stableHash identity
-            | None -> stableHash $"local:{vref.LogicalName}|ty={tyToString denv vref.Type}"
+    | Expr.Const(value, _, ty) -> identityNode "const" [ constDigest value; tyToString denv ty ]
+    | Expr.Val(vref, _, _) -> valIdentity denv vref
+    | Expr.App(functionExpr, _, typeArgs, args, _) ->
+        identityNode "app" [ recurse functionExpr; types typeArgs; expressions args ]
+    | Expr.Sequential(first, second, kind, _) -> identityNode "sequential" [ string kind; recurse first; recurse second ]
+    | Expr.Lambda(_, _, _, parameters, body, _, _) ->
+        let parameterIdentity =
+            parameters
+            |> List.map (fun parameter -> identityNode "parameter" [ parameter.LogicalName; tyToString denv parameter.Type ])
+            |> identityNode "parameters"
 
-        hashCombine 2 referenceHash
-    | Expr.App(funcExpr, _, typeArgs, args, _) ->
-        let funcHash = recurse funcExpr
-        let argHash = args |> Seq.map recurse |> hashList
-        let typeHash = typeArgs |> Seq.map (tyToString denv >> stableHash) |> hashList
-        [ 3; funcHash; argHash; typeHash ] |> hashList
-    | Expr.Sequential(expr1, expr2, _, _) -> hashCombine (hashCombine 4 (recurse expr1)) (recurse expr2)
-    | Expr.Lambda(_, _, _, valParams, bodyExpr, _, _) ->
-        let paramsHash =
-            valParams
-            |> Seq.map (fun v -> stableHash $"{v.LogicalName}:{tyToString denv v.Type}")
-            |> hashList
-
-        hashCombine (hashCombine 5 paramsHash) (recurse bodyExpr)
-    | Expr.TyLambda(_, typars, bodyExpr, _, _) ->
-        let typarHash = typars |> Seq.map (fun tp -> stableHash tp.DisplayName) |> hashList
-        hashCombine (hashCombine 6 typarHash) (recurse bodyExpr)
-    | Expr.Let(binding, bodyExpr, _, _) -> hashCombine (hashCombine 7 (bindingDigest denv binding)) (recurse bodyExpr)
-    | Expr.LetRec(bindings, bodyExpr, _, _) ->
-        let bindsHash = bindings |> Seq.map (bindingDigest denv) |> hashList
-        hashCombine (hashCombine 8 bindsHash) (recurse bodyExpr)
-    | Expr.Match(_, _, _, targets, _, _) ->
-        let targetHash =
+        identityNode "lambda" [ parameterIdentity; recurse body ]
+    | Expr.TyLambda(_, typeParameters, body, _, _) ->
+        identityNode "type-lambda" [ typeParameters |> List.map (fun parameter -> parameter.DisplayName) |> identityNode "type-parameters"; recurse body ]
+    | Expr.Let(binding, body, _, _) -> identityNode "let" [ bindingIdentity denv binding; recurse body ]
+    | Expr.LetRec(bindings, body, _, _) ->
+        identityNode "let-rec" [ bindings |> List.map (bindingIdentity denv) |> identityNode "bindings"; recurse body ]
+    | Expr.Match(_, _, decision, targets, _, exprType) ->
+        let targetIdentity =
             targets
-            |> Array.map (fun (TTarget(boundVals, targetExpr, _)) ->
-                let valsHash = boundVals |> Seq.map (fun v -> stableHash v.LogicalName) |> hashList
-                hashCombine valsHash (recurse targetExpr))
-            |> hashList
+            |> Array.map (fun (TTarget(boundValues, targetExpr, stateFlags)) ->
+                identityNode
+                    "target"
+                    [ boundValues
+                      |> List.map (fun value -> identityNode "bound" [ value.LogicalName; tyToString denv value.Type ])
+                      |> identityNode "values"
+                      stateFlags |> Option.map (List.map string >> identityNode "state-flags") |> Option.defaultValue "none"
+                      recurse targetExpr ])
+            |> identityNode "targets"
 
-        hashCombine 9 targetHash
-    | Expr.Op(op, typeArgs, args, _) ->
-        [
-            10
-            stableHash (opDigest op)
-            args |> Seq.map recurse |> hashList
-            typeArgs |> Seq.map (tyToString denv >> stableHash) |> hashList
-        ]
-        |> hashList
-    | Expr.Obj(_, objTy, _, ctorCall, overrides, interfaceImpls, _) ->
-        let overridesHash =
-            overrides
-            |> Seq.map (fun (TObjExprMethod(_, _, _, _, body, _)) -> recurse body)
-            |> hashList
+        identityNode "match" [ decisionTreeIdentity denv decision; targetIdentity; tyToString denv exprType ]
+    | Expr.Op(op, typeArgs, args, _) -> identityNode "op" [ opIdentity denv op; types typeArgs; expressions args ]
+    | Expr.Obj(_, objectType, baseValue, ctorCall, overrides, interfaceImpls, _) ->
+        let methodIdentity (TObjExprMethod(slotSignature, attributes, typeParameters, parameters, body, _)) =
+            identityNode
+                "object-method"
+                [ slotSignatureIdentity denv slotSignature
+                  attributes |> List.map (attribIdentity denv) |> identityNode "attributes"
+                  typeParameters |> List.map (fun parameter -> parameter.DisplayName) |> identityNode "type-parameters"
+                  parameters
+                  |> List.concat
+                  |> List.map (fun parameter -> identityNode "parameter" [ parameter.LogicalName; tyToString denv parameter.Type ])
+                  |> identityNode "parameters"
+                  recurse body ]
 
-        let interfaceHash =
-            interfaceImpls
-            |> Seq.map (fun (_, methods) ->
-                methods
-                |> Seq.map (fun (TObjExprMethod(_, _, _, _, body, _)) -> recurse body)
-                |> hashList)
-            |> hashList
-
-        [
-            11
-            stableHash (tyToString denv objTy)
-            recurse ctorCall
-            overridesHash
-            interfaceHash
-        ]
-        |> hashList
-    | Expr.Quote(quotedExpr, _, _, _, _) -> hashCombine 12 (recurse quotedExpr)
+        identityNode
+            "object"
+            [ tyToString denv objectType
+              baseValue |> Option.map (mkLocalValRef >> valIdentity denv) |> Option.defaultValue "none"
+              recurse ctorCall
+              overrides |> List.map methodIdentity |> identityNode "overrides"
+              interfaceImpls
+              |> List.map (fun (interfaceType, methods) ->
+                  identityNode "interface" [ tyToString denv interfaceType; methods |> List.map methodIdentity |> identityNode "methods" ])
+              |> identityNode "interfaces" ]
+    | Expr.Quote(quotedExpr, _, isFromQueryExpression, _, quotedType) ->
+        identityNode "quote" [ string isFromQueryExpression; recurse quotedExpr; tyToString denv quotedType ]
     | Expr.DebugPoint(_, body) -> recurse body
-    | Expr.Link eref -> recurse eref.Value
-    | Expr.TyChoose(typars, bodyExpr, _) ->
-        let typarHash = typars |> Seq.map (fun tp -> stableHash tp.DisplayName) |> hashList
-        hashCombine (hashCombine 13 typarHash) (recurse bodyExpr)
-    | Expr.WitnessArg(traitInfo, _) -> hashCombine 14 (stableHash traitInfo.MemberLogicalName)
-    | Expr.StaticOptimization(_, onExpr, elseExpr, _) -> hashCombine (hashCombine 15 (recurse onExpr)) (recurse elseExpr)
+    | Expr.Link expressionRef -> recurse expressionRef.Value
+    | Expr.TyChoose(typeParameters, body, _) ->
+        identityNode "type-choose" [ typeParameters |> List.map (fun parameter -> parameter.DisplayName) |> identityNode "type-parameters"; recurse body ]
+    | Expr.WitnessArg(traitInfo, _) -> traitIdentity denv traitInfo
+    | Expr.StaticOptimization(conditions, whenTrue, whenFalse, _) ->
+        let conditionIdentity =
+            conditions
+            |> List.map (function
+                | TTyconEqualsTycon(first, second) -> identityNode "type-equals" [ tyToString denv first; tyToString denv second ]
+                | TTyconIsStruct ty -> identityNode "type-is-struct" [ tyToString denv ty ])
+            |> identityNode "conditions"
 
-and private bindingDigest denv (TBind(var, body, _)) =
-    let sigHash = tyToString denv var.Type |> stableHash
-    hashCombine sigHash (exprDigest denv body)
+        identityNode "static-optimization" [ conditionIdentity; recurse whenTrue; recurse whenFalse ]
+
+and private bindingIdentity denv (TBind(var, body, _)) =
+    identityNode "binding" [ var.LogicalName; tyToString denv var.Type; exprIdentity denv body ]
+
+and private decisionTreeIdentity denv decision =
+    match decision with
+    | TDSwitch(input, cases, defaultCase, _) ->
+        identityNode
+            "switch"
+            [ exprIdentity denv input
+              cases
+              |> List.map (fun (TCase(test, caseTree)) -> identityNode "case" [ decisionTestIdentity denv test; decisionTreeIdentity denv caseTree ])
+              |> identityNode "cases"
+              defaultCase |> Option.map (decisionTreeIdentity denv) |> Option.defaultValue "none" ]
+    | TDSuccess(results, targetNumber) -> identityNode "success" [ string targetNumber; results |> List.map (exprIdentity denv) |> identityNode "results" ]
+    | TDBind(binding, body) -> identityNode "decision-bind" [ bindingIdentity denv binding; decisionTreeIdentity denv body ]
+
+and private decisionTestIdentity denv test =
+    match test with
+    | DecisionTreeTest.UnionCase(caseRef, typeArgs) ->
+        identityNode "test-union" [ $"{compiledTyconName caseRef.TyconRef}.{caseRef.CaseName}"; typeArgs |> List.map (tyToString denv) |> identityNode "types" ]
+    | DecisionTreeTest.ArrayLength(length, ty) -> identityNode "test-array-length" [ string length; tyToString denv ty ]
+    | DecisionTreeTest.Const value -> identityNode "test-const" [ constDigest value ]
+    | DecisionTreeTest.IsNull -> "test-null"
+    | DecisionTreeTest.IsInst(sourceType, targetType) ->
+        identityNode "test-type" [ tyToString denv sourceType; tyToString denv targetType ]
+    | DecisionTreeTest.ActivePatternCase(activePatternExpr, resultTypes, returnKind, activePatternIdentity, index, info) ->
+        identityNode
+            "test-active-pattern"
+            [ exprIdentity denv activePatternExpr
+              resultTypes |> List.map (tyToString denv) |> identityNode "result-types"
+              string returnKind
+              activePatternIdentity
+              |> Option.map (fun (vref, typeArgs) -> identityNode "active-pattern-value" [ valIdentity denv vref; typeArgs |> List.map (tyToString denv) |> identityNode "types" ])
+              |> Option.defaultValue "none"
+              string index
+              info.LogicalName ]
+    | DecisionTreeTest.Error _ -> "test-error"
+
+and private slotSignatureIdentity denv (TSlotSig(name, declaringType, classTypeParameters, methodTypeParameters, parameterGroups, returnType)) =
+    let typeParameters (values: Typar list) =
+        values
+        |> List.map (fun parameter -> identityNode "type-parameter" [ parameter.DisplayName; typarConstraintsDigest denv [ parameter ] ])
+        |> identityNode "type-parameters"
+
+    let parameters =
+        parameterGroups
+        |> List.map (fun group ->
+            group
+            |> List.map (fun (TSlotParam(name, ty, isIn, isOut, isOptional, attributes)) ->
+                identityNode
+                    "slot-parameter"
+                    [ name |> Option.defaultValue ""
+                      tyToString denv ty
+                      string isIn
+                      string isOut
+                      string isOptional
+                      attributes |> List.map (attribIdentity denv) |> identityNode "attributes" ])
+            |> identityNode "parameter-group")
+        |> identityNode "parameters"
+
+    identityNode
+        "slot"
+        [ name
+          tyToString denv declaringType
+          typeParameters classTypeParameters
+          typeParameters methodTypeParameters
+          parameters
+          returnType |> Option.map (tyToString denv) |> Option.defaultValue "void" ]
+
+and private attribIdentity denv (Attrib(typeRef, kind, unnamedArgs, namedArgs, appliedToAccessor, targets, _)) =
+    let expressionIdentity (AttribExpr(_, evaluated)) = exprIdentity denv evaluated
+
+    let kindIdentity =
+        match kind with
+        | AttribKind.ILAttrib methodRef -> identityNode "il-attribute" [ sprintf "%A" methodRef ]
+        | AttribKind.FSAttrib valueRef -> identityNode "fs-attribute" [ valIdentity denv valueRef ]
+
+    let namedArgIdentity (AttribNamedArg(name, ty, isField, value)) =
+        identityNode "named-argument" [ name; tyToString denv ty; string isField; expressionIdentity value ]
+
+    identityNode
+        "attribute"
+        [ compiledTyconName typeRef
+          kindIdentity
+          unnamedArgs |> List.map expressionIdentity |> identityNode "arguments"
+          namedArgs |> List.map namedArgIdentity |> identityNode "named-arguments"
+          string appliedToAccessor
+          targets |> Option.map string |> Option.defaultValue "none" ]
 
 type private BindingSnapshot =
     {
@@ -365,6 +560,8 @@ type private BindingSnapshot =
         InlineInfo: ValInline
         SignatureText: string
         ConstraintsText: string
+        MetadataText: string
+        BodyIdentity: string
         BodyHash: int
         IsSynthesized: bool
         ContainingEntity: string option
@@ -399,15 +596,54 @@ let private bindingKey (snapshot: BindingSnapshot) =
 
     let compiledName = snapshot.Symbol.CompiledName |> Option.defaultValue ""
 
-    let totalArgCount =
-        snapshot.Symbol.TotalArgCount |> Option.map string |> Option.defaultValue ""
-
-    let genericArity =
-        snapshot.Symbol.GenericArity |> Option.map string |> Option.defaultValue ""
-
-    $"{snapshot.Symbol.QualifiedName}|entity={entityKey}|kind={memberKind}|compiled={compiledName}|args={totalArgCount}|gen={genericArity}"
+    // Signature and generic arity participate in deterministic list pairing below. Keeping
+    // them out of the primary key means a changed signature is classified as rude instead
+    // of looking like an unrelated remove/add pair.
+    $"{snapshot.Symbol.QualifiedName}|entity={entityKey}|kind={memberKind}|compiled={compiledName}"
 
 let private entityKey (snapshot: EntitySnapshot) = snapshot.Symbol.QualifiedName
+
+let private tryGetMethodGenericArity (var: Val) =
+    match var.ValReprInfo with
+    | None -> None
+    | Some valReprInfo ->
+        let numEnclosingTypars = CountEnclosingTyparsOfActualParentOfVal var
+
+        if var.Typars.Length = valReprInfo.NumTypars && numEnclosingTypars <= var.Typars.Length then
+            var.Typars
+            |> List.skip numEnclosingTypars
+            |> List.filter (fun typeParameter -> not typeParameter.IsErased)
+            |> List.length
+            |> Some
+        else
+            Some(max 0 (valReprInfo.NumTypars - numEnclosingTypars))
+
+let private bindingMetadataIdentity denv (var: Val) =
+    let memberFlags =
+        match var.MemberInfo with
+        | None -> "none"
+        | Some memberInfo ->
+            let flags = memberInfo.MemberFlags
+
+            identityNode
+                "member"
+                [ string flags.IsInstance
+                  string flags.IsDispatchSlot
+                  string flags.IsOverrideOrExplicitImpl
+                  string flags.IsFinal
+                  string flags.GetterOrSetterIsCompilerGenerated
+                  string flags.MemberKind
+                  string memberInfo.IsImplemented ]
+
+    identityNode
+        "metadata"
+        [ string (var.Accessibility.AsILMemberAccess())
+          memberFlags
+          string var.IsMutable
+          string var.IsExtensionMember
+          string var.IsCompiledAsTopLevel
+          var.LiteralValue |> Option.map constDigest |> Option.defaultValue "none"
+          var.Attribs |> List.map (attribIdentity denv) |> identityNode "attributes" ]
 
 let rec private snapshotModuleBinding g denv (path: string list) (bindings, entities) binding =
     match binding with
@@ -469,7 +705,8 @@ and private snapshotBinding _g denv path (TBind(var, expr, _)) =
             else
                 info.TotalArgCount)
 
-    let genericArity = var.ValReprInfo |> Option.map (fun info -> info.NumTypars)
+    let genericArity = tryGetMethodGenericArity var
+    let bodyIdentity = exprIdentity denv expr
 
     {
         Symbol =
@@ -486,7 +723,9 @@ and private snapshotBinding _g denv path (TBind(var, expr, _)) =
         InlineInfo = var.InlineInfo
         SignatureText = signature
         ConstraintsText = constraints
-        BodyHash = exprDigest denv expr
+        MetadataText = bindingMetadataIdentity denv var
+        BodyIdentity = bodyIdentity
+        BodyHash = stableHash bodyIdentity
         IsSynthesized = var.IsCompilerGenerated
         ContainingEntity = containingEntity
     }
@@ -495,6 +734,11 @@ and private snapshotTycon denv path (tycon: Tycon) =
     let reprText =
         let sb = StringBuilder()
         sb.Append("kind:").Append(tycon.TypeOrMeasureKind.ToString()) |> ignore
+        sb.Append("|access:").Append(tycon.Accessibility.AsILTypeDefAccess().ToString()) |> ignore
+        sb.Append("|repr-access:").Append(tycon.TypeReprAccessibility.AsILTypeDefAccess().ToString()) |> ignore
+        sb.Append("|constraints:").Append(typarConstraintsDigest denv tycon.Typars) |> ignore
+        sb.Append("|attributes:").Append(tycon.Attribs |> List.map (attribIdentity denv) |> identityNode "attributes")
+        |> ignore
 
         match tycon.TypeReprInfo with
         | TFSharpTyconRepr data ->
@@ -504,11 +748,17 @@ and private snapshotTycon denv path (tycon: Tycon) =
             | FSharpTyconKind.TFSharpUnion ->
                 data.fsobjmodel_cases.UnionCasesAsList
                 |> List.iter (fun case ->
-                    sb.Append("|case:").Append(case.LogicalName) |> ignore
+                    sb.Append("|case:").Append(case.LogicalName).Append("[").Append(case.Accessibility.AsILMemberAccess().ToString()).Append("]")
+                    |> ignore
 
                     case.FieldTable.FieldsByIndex
                     |> Array.iter (fun field ->
-                        sb.Append(":").Append(field.LogicalName).Append("=").Append(tyToString denv field.FormalType)
+                        sb.Append(":").Append(field.LogicalName)
+                            .Append("[").Append(field.Accessibility.AsILMemberAccess().ToString())
+                            .Append(",static=").Append(field.IsStatic)
+                            .Append(",mutable=").Append(field.IsMutable)
+                            .Append(",volatile=").Append(field.IsVolatile)
+                            .Append("]=").Append(tyToString denv field.FormalType)
                         |> ignore))
             | FSharpTyconKind.TFSharpRecord
             | FSharpTyconKind.TFSharpStruct
@@ -517,16 +767,20 @@ and private snapshotTycon denv path (tycon: Tycon) =
             | FSharpTyconKind.TFSharpEnum ->
                 data.fsobjmodel_rfields.FieldsByIndex
                 |> Array.iter (fun field ->
-                    sb.Append("|field:").Append(field.LogicalName) |> ignore
-
-                    if field.IsMutable then
-                        sb.Append("[mutable]") |> ignore
+                    sb.Append("|field:").Append(field.LogicalName)
+                        .Append("[").Append(field.Accessibility.AsILMemberAccess().ToString())
+                        .Append(",static=").Append(field.IsStatic)
+                        .Append(",mutable=").Append(field.IsMutable)
+                        .Append(",volatile=").Append(field.IsVolatile)
+                        .Append("]")
+                    |> ignore
 
                     sb.Append("=").Append(tyToString denv field.FormalType) |> ignore
 
                     field.LiteralValue
                     |> Option.iter (fun value -> sb.Append("[literal:").Append(constDigest value).Append("]") |> ignore))
-            | FSharpTyconKind.TFSharpDelegate slotSig -> sb.Append("|delegate:").Append(slotSig.Name) |> ignore
+            | FSharpTyconKind.TFSharpDelegate slotSig ->
+                sb.Append("|delegate:").Append(slotSignatureIdentity denv slotSig) |> ignore
         | TILObjectRepr(TILObjectReprData(_, _, definition)) -> sb.Append("|til:").Append(definition.Name) |> ignore
         | TAsmRepr ilTy -> sb.Append("|asm:").Append(ilTy.ToString()) |> ignore
         | TMeasureableRepr ty -> sb.Append("|measure:").Append(tyToString denv ty) |> ignore
@@ -599,6 +853,13 @@ let private compareMatchedBinding (baseline: BindingSnapshot) (updated: BindingS
                 Kind = RudeEditKind.SignatureChange
                 Message = $"Type parameter constraints changed from '{baseline.ConstraintsText}' to '{updated.ConstraintsText}'."
             }
+    elif baseline.MetadataText <> updated.MetadataText then
+        Choice2Of2
+            {
+                Symbol = Some baseline.Symbol
+                Kind = RudeEditKind.SignatureChange
+                Message = "Metadata-affecting declaration flags changed."
+            }
     elif baseline.InlineInfo <> updated.InlineInfo then
         Choice2Of2
             {
@@ -606,7 +867,7 @@ let private compareMatchedBinding (baseline: BindingSnapshot) (updated: BindingS
                 Kind = RudeEditKind.InlineChange
                 Message = "Inline annotation changed."
             }
-    elif baseline.BodyHash <> updated.BodyHash then
+    elif baseline.BodyIdentity <> updated.BodyIdentity then
         Choice1Of2(Some(semanticEdit baseline SemanticEditKind.MethodBody (Some baseline.BodyHash) (Some updated.BodyHash)))
     else
         Choice1Of2 None
@@ -642,7 +903,13 @@ let private compareBindingLists (baseline: BindingSnapshot list) (updated: Bindi
 
     updated
     |> List.skip pairedCount
-    |> List.iter (fun added -> edits.Add(semanticEdit added SemanticEditKind.Insert None (Some added.BodyHash)))
+    |> List.iter (fun added ->
+        rude.Add
+            {
+                Symbol = Some added.Symbol
+                Kind = RudeEditKind.DeclarationAdded
+                Message = "Declaration addition is not classified by this foundational diff slice."
+            })
 
     List.ofSeq edits, List.ofSeq rude
 
@@ -671,7 +938,13 @@ let private compareBindings (baseline: Map<string, BindingSnapshot list>) (updat
     for KeyValue(key, updatedList) in updated do
         if not (matchedUpdatedKeys.Contains key) then
             updatedList
-            |> List.iter (fun added -> edits.Add(semanticEdit added SemanticEditKind.Insert None (Some added.BodyHash)))
+            |> List.iter (fun added ->
+                rude.Add
+                    {
+                        Symbol = Some added.Symbol
+                        Kind = RudeEditKind.DeclarationAdded
+                        Message = "Declaration addition is not classified by this foundational diff slice."
+                    })
 
     List.ofSeq edits, List.ofSeq rude
 
@@ -700,14 +973,11 @@ let private compareEntities (baseline: Map<string, EntitySnapshot>) (updated: Ma
 
     for KeyValue(key, updatedEntity) in updated do
         if not (Map.containsKey key baseline) then
-            edits.Add
+            rude.Add
                 {
-                    Symbol = updatedEntity.Symbol
-                    Kind = SemanticEditKind.Insert
-                    BaselineHash = None
-                    UpdatedHash = Some updatedEntity.RepresentationHash
-                    IsSynthesized = updatedEntity.Symbol.IsSynthesized
-                    ContainingEntity = updatedEntity.CompiledFullName
+                    Symbol = Some updatedEntity.Symbol
+                    Kind = RudeEditKind.DeclarationAdded
+                    Message = "Type addition is not classified by this foundational diff slice."
                 }
 
     List.ofSeq edits, List.ofSeq rude
