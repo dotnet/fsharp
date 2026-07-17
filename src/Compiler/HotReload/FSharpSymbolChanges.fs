@@ -1,6 +1,7 @@
 module internal FSharp.Compiler.HotReload.SymbolChanges
 
 open FSharp.Compiler.HotReload.DefinitionMap
+open FSharp.Compiler.EditAndContinue
 open FSharp.Compiler.TypedTreeDiff
 
 /// Represents a single synthesized member edit along with hash metadata.
@@ -28,6 +29,8 @@ type FSharpSymbolChanges =
         Deleted: SymbolId list
         Synthesized: SynthesizedMemberChange list
         RudeEdits: RudeEdit list
+        /// Runtime capabilities required to apply the complete update.
+        RequiredCapabilities: EditAndContinueCapability list
     }
 
 module FSharpSymbolChanges =
@@ -61,6 +64,7 @@ module FSharpSymbolChanges =
             Deleted = FSharpDefinitionMap.deleted definitionMap
             Synthesized = synthesized
             RudeEdits = definitionMap.RudeEdits
+            RequiredCapabilities = definitionMap.RequiredCapabilities
         }
 
     /// Collects entity symbols (types/modules) impacted by adds/updates/deletes, including synthesized members promoted to entities.

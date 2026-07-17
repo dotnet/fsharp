@@ -1,6 +1,7 @@
 module internal FSharp.Compiler.HotReload.DefinitionMap
 
 open FSharp.Compiler.TypedTreeDiff
+open FSharp.Compiler.EditAndContinue
 
 [<RequireQualifiedAccess>]
 /// Classifies how a symbol changed between the baseline and the updated compilation.
@@ -27,6 +28,8 @@ type FSharpDefinitionMap =
     {
         Changes: SymbolChange list
         RudeEdits: RudeEdit list
+        /// Runtime capabilities required by the accepted changes in this map.
+        RequiredCapabilities: EditAndContinueCapability list
     }
 
 module FSharpDefinitionMap =
@@ -54,6 +57,7 @@ module FSharpDefinitionMap =
         {
             Changes = changes
             RudeEdits = diff.RudeEdits
+            RequiredCapabilities = diff.RequiredCapabilities
         }
 
     /// Retrieves all symbols newly added in the updated compilation.

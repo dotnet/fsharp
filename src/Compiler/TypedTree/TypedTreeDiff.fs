@@ -281,6 +281,9 @@ type TypedTreeDiffResult =
     {
         SemanticEdits: SemanticEdit list
         RudeEdits: RudeEdit list
+        /// Runtime capabilities required to apply every accepted semantic edit in this
+        /// result. Baseline is present whenever at least one semantic edit is emitted.
+        RequiredCapabilities: EditAndContinueCapability list
         /// Structured lambda occurrence edits for members whose lambda sets were analyzed,
         /// including members that produced rude edits (the payload names exactly which
         /// occurrences were added/removed/capture-incompatible).
@@ -2496,10 +2499,14 @@ let private compareBindings
     let edits = ResizeArray()
     let rude = ResizeArray()
     let memberLambdaEdits = ResizeArray()
+    let requiredCapabilities = ResizeArray<EditAndContinueCapability>()
     let matchedUpdatedKeys = HashSet()
 
-    let handleEdit (snapshot: BindingSnapshot) kind baselineHash updatedHash =
+    let handleEdit (snapshot: BindingSnapshot) kind baselineHash updatedHash editCapabilities =
         let symbol = snapshot.Symbol
+
+        requiredCapabilities.Add EditAndContinueCapability.Baseline
+        requiredCapabilities.AddRange editCapabilities
 
         edits.Add(
             {
@@ -2679,6 +2686,8 @@ let private compareBindings
                 hasLoweredShapeDigestSegmentValues "resumable" baselineBinding.StateMachineShapeDigest
                 || hasLoweredShapeDigestSegmentValues "resumable" updatedBinding.StateMachineShapeDigest
 
+            let acceptedEditCapabilities = ResizeArray<EditAndContinueCapability>()
+
             let lambdaRudeEdit =
                 match baselineBinding.LambdaOccurrenceData, updatedBinding.LambdaOccurrenceData with
                 | LambdaOccurrenceExtraction.Extracted baselineOccs, LambdaOccurrenceExtraction.Extracted updatedOccs ->
@@ -2732,7 +2741,9 @@ let private compareBindings
                             ]
 
                         match requiredCapabilities |> List.tryFind (capabilities.Supports >> not) with
-                        | None -> None
+                        | None ->
+                            acceptedEditCapabilities.AddRange requiredCapabilities
+                            None
                         | Some missing ->
                             Some(
                                 RudeEditKind.NotSupportedByRuntime,
@@ -2770,7 +2781,9 @@ let private compareBindings
                             ]
 
                         match requiredCapabilities |> List.tryFind (capabilities.Supports >> not) with
-                        | None -> None
+                        | None ->
+                            acceptedEditCapabilities.AddRange requiredCapabilities
+                            None
                         | Some missing ->
                             Some(
                                 RudeEditKind.NotSupportedByRuntime,
@@ -2822,6 +2835,15 @@ let private compareBindings
                 let parameterNamesChanged =
                     baselineBinding.ParameterNames <> updatedBinding.ParameterNames
 
+                if attributesChanged then
+                    acceptedEditCapabilities.Add EditAndContinueCapability.ChangeCustomAttributes
+
+                if parameterNamesChanged then
+                    acceptedEditCapabilities.Add EditAndContinueCapability.UpdateParameters
+
+                if baselineBinding.InGenericContext || updatedBinding.InGenericContext then
+                    acceptedEditCapabilities.Add EditAndContinueCapability.GenericUpdateMethod
+
                 if
                     baselineBinding.BodyIdentity <> updatedBinding.BodyIdentity
                     || attributesChanged
@@ -2863,6 +2885,7 @@ let private compareBindings
                             SemanticEditKind.MethodBody
                             (Some baselineBinding.BodyHash)
                             (Some updatedBinding.BodyHash)
+                            (List.ofSeq acceptedEditCapabilities)
 
     let addRemovedDeclarationRudeEdit (baselineBinding: BindingSnapshot) =
         match tryClassifySynthesizedLoweredShapeChurn baselineBinding with
@@ -2942,7 +2965,13 @@ let private compareBindings
                 // missing capability.
                 let insertOrRude (requiredCapabilities: EditAndContinueCapability list) =
                     match requiredCapabilities |> List.tryFind (capabilities.Supports >> not) with
-                    | None -> handleEdit updatedBinding SemanticEditKind.Insert None (Some updatedBinding.BodyHash)
+                    | None ->
+                        handleEdit
+                            updatedBinding
+                            SemanticEditKind.Insert
+                            None
+                            (Some updatedBinding.BodyHash)
+                            requiredCapabilities
                     | Some missing ->
                         rude.Add(
                             {
@@ -3093,7 +3122,10 @@ let private compareBindings
         if not (matchedUpdatedKeys.Contains key) && not (Map.containsKey key baseline) then
             addAddedDeclarationOrInsertEdit updatedBinding
 
-    edits |> Seq.toList, rude |> Seq.toList, memberLambdaEdits |> Seq.toList
+    edits |> Seq.toList,
+    rude |> Seq.toList,
+    memberLambdaEdits |> Seq.toList,
+    requiredCapabilities |> Set.ofSeq |> Set.toList
 
 let private compareEntities
     (capabilities: EditAndContinueCapabilities)
@@ -3102,6 +3134,7 @@ let private compareEntities
     =
     let edits = ResizeArray()
     let rude = ResizeArray()
+    let acceptedCapabilities = ResizeArray<EditAndContinueCapability>()
 
     for KeyValue(key, baselineEntity) in baseline do
         match Map.tryFind key updated with
@@ -3200,6 +3233,9 @@ let private compareEntities
                                     ContainingEntity = None
                                 }
                             )
+
+                            acceptedCapabilities.Add EditAndContinueCapability.Baseline
+                            acceptedCapabilities.AddRange requiredCapabilities
         | None ->
             rude.Add(
                 {
@@ -3279,7 +3315,10 @@ let private compareEntities
                         }
                     )
 
-    edits |> Seq.toList, rude |> Seq.toList
+                    acceptedCapabilities.Add EditAndContinueCapability.Baseline
+                    acceptedCapabilities.Add EditAndContinueCapability.NewTypeDefinition
+
+    edits |> Seq.toList, rude |> Seq.toList, acceptedCapabilities |> Set.ofSeq |> Set.toList
 
 type MemberDebugInfoInput =
     {
@@ -3338,14 +3377,18 @@ let diffImplementationFile (g: TcGlobals) (capabilities: EditAndContinueCapabili
                 entity.CompiledFullName)
         |> Set.ofSeq
 
-    let semanticEdits, bindingRudeEdits, lambdaEdits =
+    let semanticEdits, bindingRudeEdits, lambdaEdits, bindingRequiredCapabilities =
         compareBindings g capabilities addedEntityCompiledNames baselineBindings updatedBindings
 
-    let entityEdits, entityRudeEdits =
+    let entityEdits, entityRudeEdits, entityRequiredCapabilities =
         compareEntities capabilities baselineEntities updatedEntities
 
     {
         SemanticEdits = semanticEdits @ entityEdits
         RudeEdits = bindingRudeEdits @ entityRudeEdits
+        RequiredCapabilities =
+            bindingRequiredCapabilities @ entityRequiredCapabilities
+            |> Set.ofList
+            |> Set.toList
         LambdaEdits = lambdaEdits
     }

@@ -132,6 +132,10 @@ module private Sources =
 
 type TypedTreeDiffTests() =
 
+    let assertRequiredCapabilities expected (result: TypedTreeDiffResult) =
+        let actual = result.RequiredCapabilities |> List.map (fun capability -> capability.Name)
+        Assert.Equal<string list>(expected, actual)
+
     [<Fact>]
     member _.``unchanged file produces no edits`` () =
         use harness = new DiffTestHarness()
@@ -144,6 +148,7 @@ type TypedTreeDiffTests() =
 
         Assert.Empty(result.SemanticEdits)
         Assert.Empty(result.RudeEdits)
+        assertRequiredCapabilities [] result
 
     [<Fact>]
     member _.``reference-equal implementation file uses fast path`` () =
@@ -170,6 +175,7 @@ type TypedTreeDiffTests() =
         Assert.Empty(result.RudeEdits)
         Assert.Equal(SemanticEditKind.MethodBody, edit.Kind)
         Assert.Equal("value", edit.Symbol.LogicalName)
+        assertRequiredCapabilities [ "Baseline" ] result
 
     [<Fact>]
     member _.``signature change produces rude edit`` () =
@@ -198,6 +204,13 @@ type TypedTreeDiffTests() =
         Assert.Empty(result.RudeEdits)
         let edit = Assert.Single(result.SemanticEdits |> List.filter (fun edit -> edit.Symbol.LogicalName = "added"))
         Assert.Equal(SemanticEditKind.Insert, edit.Kind)
+        assertRequiredCapabilities
+            [
+                "Baseline"
+                "AddMethodToExistingType"
+                "AddStaticFieldToExistingType"
+            ]
+            result
 
     [<Fact>]
     member _.``deleting module function produces declaration-removed rude edit`` () =
@@ -370,3 +383,32 @@ let value (x: A.C) = x
         Assert.Empty(result.RudeEdits)
         let edit = Assert.Single(result.SemanticEdits |> List.filter (fun edit -> edit.Symbol.LogicalName = "M"))
         Assert.Equal(Some 1, edit.Symbol.GenericArity)
+        assertRequiredCapabilities [ "Baseline"; "GenericUpdateMethod" ] result
+
+    [<Fact>]
+    member _.``attribute and parameter updates report their runtime capabilities`` () =
+        use harness = new DiffTestHarness()
+
+        harness.Rewrite(
+            "module Library\n[<System.Obsolete(\"old\")>]\nlet value (oldName: int) = oldName + 1\n"
+        )
+
+        let baseline = harness.Compile()
+
+        harness.Rewrite(
+            "module Library\n[<System.Obsolete(\"new\")>]\nlet value (newName: int) = newName + 1\n"
+        )
+
+        let updated = harness.Compile()
+        let result = harness.Diff baseline updated
+
+        Assert.Empty(result.RudeEdits)
+        Assert.Single(result.SemanticEdits) |> ignore
+
+        assertRequiredCapabilities
+            [
+                "Baseline"
+                "ChangeCustomAttributes"
+                "UpdateParameters"
+            ]
+            result
