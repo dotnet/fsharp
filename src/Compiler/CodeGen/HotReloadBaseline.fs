@@ -381,8 +381,9 @@ let deriveEncClosureNamesFromEncDebugInfos
                     | _ -> Some(methodToken, Map.ofList rows))
                 |> Map.ofList
 
-let private toPortablePdbSnapshot (pdbBytes: byte[]) =
+let private toPortablePdbSnapshot (expectedContentId: byte[]) (pdbBytes: byte[]) =
     ILBaselineReader.readPortablePdbMetadata pdbBytes
+    |> Option.filter (fun metadata -> metadata.ContentId.AsSpan().SequenceEqual(expectedContentId))
     |> Option.map (fun metadata ->
         {
             Bytes = Array.copy pdbBytes
@@ -423,13 +424,17 @@ let private createCore moduleId metadata portablePdb tokenMaps =
     }
 
 let tryReadFromAssemblyAndPdbBytes (assemblyBytes: byte[]) (portablePdbBytes: byte[] option) =
-    match ILBaselineReader.metadataSnapshotFromBytes assemblyBytes, ILBaselineReader.BaselineMetadataReader.Create assemblyBytes with
-    | Some metadata, Some reader ->
-        let moduleId =
-            ILBaselineReader.readModuleMvidFromBytes assemblyBytes
-            |> Option.defaultValue Guid.Empty
+    match
+        ILBaselineReader.metadataSnapshotFromBytes assemblyBytes,
+        ILBaselineReader.BaselineMetadataReader.Create assemblyBytes,
+        ILBaselineReader.readModuleMvidFromBytes assemblyBytes
+    with
+    | Some metadata, Some reader, Some moduleId when moduleId <> Guid.Empty ->
+        let portablePdb =
+            match ILBaselineReader.readCodeViewContentIdFromBytes assemblyBytes with
+            | Some expectedContentId -> portablePdbBytes |> Option.bind (toPortablePdbSnapshot expectedContentId)
+            | None -> None
 
-        let portablePdb = portablePdbBytes |> Option.bind toPortablePdbSnapshot
         Some(createCore moduleId metadata portablePdb (buildTokenMaps reader))
     | _ -> None
 
