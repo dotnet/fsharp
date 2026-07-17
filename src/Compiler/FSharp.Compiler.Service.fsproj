@@ -472,15 +472,7 @@
     <Compile Include="CodeGen\HotReloadPdb.fs" />
     <Compile Include="HotReload\DefinitionMap.fs" />
     <Compile Include="HotReload\FSharpSymbolChanges.fs" />
-    <Compile Include="CodeGen\IlxDeltaStreams.fs" />
     <Compile Include="CodeGen\FSharpDefinitionIndex.fs" />
-    <Compile Include="CodeGen\DeltaMetadataEncoding.fs" />
-    <Compile Include="CodeGen\DeltaMetadataTypes.fs" />
-    <Compile Include="CodeGen\DeltaMetadataTables.fs" />
-    <Compile Include="CodeGen\DeltaTableLayout.fs" />
-    <Compile Include="CodeGen\DeltaIndexSizing.fs" />
-    <Compile Include="CodeGen\DeltaMetadataSerializer.fs" />
-    <Compile Include="CodeGen\FSharpDeltaMetadataWriter.fs" />
     <Compile Include="HotReload\SymbolMatcher.fs" />
     <Compile Include="HotReload\HotReloadAccessorTypes.fs" />
     <Compile Include="CodeGen\IlxDeltaEmitter.fs" />

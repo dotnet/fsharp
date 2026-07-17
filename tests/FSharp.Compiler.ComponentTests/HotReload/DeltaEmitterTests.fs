@@ -13,9 +13,9 @@ open FSharp.Compiler.AbstractIL.ILBinaryWriter
 open FSharp.Compiler.AbstractIL.ILPdbWriter
 open FSharp.Compiler.AbstractIL.BinaryConstants
 open FSharp.Compiler.AbstractIL.ILDeltaHandles
-open FSharp.Compiler.IlxDeltaStreams
+open FSharp.Compiler.AbstractIL.IlxDeltaStreams
 open FSharp.Compiler.AbstractIL.BinaryConstants
-open FSharp.Compiler.CodeGen.DeltaMetadataTables
+open FSharp.Compiler.AbstractIL.DeltaMetadataTables
 open System.Diagnostics
 open System.IO
 open System.Reflection.Metadata
@@ -247,6 +247,63 @@ module DeltaEmitterTests =
             (mkILExportedTypes [])
             "v4.0.30319"
 
+    let private createModuleWithOptionalExternalCall includeExternalCall =
+        let ilg = PrimaryAssemblyILGlobals
+
+        let bodyInstrs =
+            if includeExternalCall then
+                let externalAssembly =
+                    ILAssemblyRef.Create("External.Library", None, None, false, Some(ILVersionInfo(1us, 0us, 0us, 0us)), None)
+
+                let externalTypeRef =
+                    mkILTyRef(ILScopeRef.Assembly externalAssembly, "External.Widget")
+
+                let externalType = mkILNamedTy ILBoxity.AsObject externalTypeRef []
+
+                let methodSpec =
+                    mkILNonGenericMethSpecInTy(externalType, ILCallingConv.Static, "GetValue", [], ilg.typ_Int32)
+
+                nonBranchingInstrsToCode [ mkNormalCall methodSpec; I_ret ]
+            else
+                nonBranchingInstrsToCode [ AI_ldc(DT_I4, ILConst.I4 1); I_ret ]
+
+        let methodDef =
+            mkILNonGenericStaticMethod(
+                "ReadExternal",
+                ILMemberAccess.Public,
+                [],
+                mkILReturn ilg.typ_Int32,
+                mkMethodBody(false, [], 1, bodyInstrs, None, None)
+            )
+
+        let typeDef =
+            mkILSimpleClass
+                ilg
+                (
+                    "Sample.ExternalDemo",
+                    ILTypeDefAccess.Public,
+                    mkILMethods [ methodDef ],
+                    mkILFields [],
+                    emptyILTypeDefs,
+                    mkILProperties [],
+                    mkILEvents [],
+                    emptyILCustomAttrs,
+                    ILTypeInit.BeforeField
+                )
+
+        mkILSimpleModule
+            "SampleAssembly"
+            "SampleModule"
+            true
+            (4, 0)
+            false
+            (mkILTypeDefs [ typeDef ])
+            None
+            None
+            0
+            (mkILExportedTypes [])
+            "v4.0.30319"
+
     let private readCallOperand (bytes: ReadOnlySpan<byte>) =
         let mutable offset = 0
         let mutable found = ValueNone
@@ -267,16 +324,104 @@ module DeltaEmitterTests =
         | ValueSome token -> token
         | ValueNone -> failwith "No call opcode found in method body"
 
-    let private createModuleWithParameterizedMethod () =
+    let private createModuleWithOptionalCalli useCalli =
+        let ilg = PrimaryAssemblyILGlobals
+
+        let body =
+            if useCalli then
+                let signature =
+                    {
+                        ILCallingSignature.CallingConv = ILCallingConv.Static
+                        ArgTypes = []
+                        ReturnType = ilg.typ_Int32
+                    }
+
+                mkMethodBody(
+                    false,
+                    [],
+                    2,
+                    nonBranchingInstrsToCode [ AI_ldnull; I_calli(Normalcall, signature, None); I_ret ],
+                    None,
+                    None
+                )
+            else
+                mkMethodBody(
+                    false,
+                    [],
+                    1,
+                    nonBranchingInstrsToCode [ AI_ldc(DT_I4, ILConst.I4 1); I_ret ],
+                    None,
+                    None
+                )
+
+        let methodDef =
+            mkILNonGenericStaticMethod(
+                "InvokePointer",
+                ILMemberAccess.Public,
+                [],
+                mkILReturn ilg.typ_Int32,
+                body
+            )
+
+        let typeDef =
+            mkILSimpleClass
+                ilg
+                (
+                    "Sample.CalliDemo",
+                    ILTypeDefAccess.Public,
+                    mkILMethods [ methodDef ],
+                    mkILFields [],
+                    emptyILTypeDefs,
+                    mkILProperties [],
+                    mkILEvents [],
+                    emptyILCustomAttrs,
+                    ILTypeInit.BeforeField
+                )
+
+        mkILSimpleModule
+            "SampleAssembly"
+            "SampleModule"
+            true
+            (4, 0)
+            false
+            (mkILTypeDefs [ typeDef ])
+            None
+            None
+            0
+            (mkILExportedTypes [])
+            "v4.0.30319"
+
+    let private createModuleWithParameterizedMethod resultOffset includeParameterAttribute =
         let ilg = PrimaryAssemblyILGlobals
         let baseMethod = createMethod ilg "GetValue" 1
+
+        let leftParameter =
+            let parameter = mkILParamNamed("left", ilg.typ_Int32)
+
+            if includeParameterAttribute then
+                let obsoleteAttributeRef =
+                    mkILTyRef(ILScopeRef.Assembly mscorlibRef, "System.ObsoleteAttribute")
+
+                let attribute = mkILCustomAttribute(obsoleteAttributeRef, [], [], [])
+
+                { parameter with
+                    CustomAttrsStored = storeILCustomAttrs (mkILCustomAttrs [ attribute ])
+                }
+            else
+                parameter
 
         let paramBody =
             mkMethodBody (
                 false,
                 [],
                 2,
-                nonBranchingInstrsToCode [ I_ldarg 0us; I_ldarg 1us; AI_add; I_ret ],
+                nonBranchingInstrsToCode
+                    [ I_ldarg 0us
+                      I_ldarg 1us
+                      AI_add
+                      AI_ldc(DT_I4, ILConst.I4 resultOffset)
+                      AI_add
+                      I_ret ],
                 None,
                 None)
 
@@ -284,7 +429,7 @@ module DeltaEmitterTests =
             mkILNonGenericStaticMethod(
                 "SumValues",
                 ILMemberAccess.Public,
-                [ mkILParamNamed("left", ilg.typ_Int32); mkILParamNamed("right", ilg.typ_Int32) ],
+                [ leftParameter; mkILParamNamed("right", ilg.typ_Int32) ],
                 mkILReturn ilg.typ_Int32,
                 paramBody)
 
@@ -820,10 +965,22 @@ module DeltaEmitterTests =
         Assert.NotEqual(System.Guid.Empty, delta1.GenerationId)
         Assert.Equal(System.Guid.Empty, delta1.BaseGenerationId)
 
+        let guidHeapSize (delta: IlxDelta) =
+            use provider =
+                MetadataReaderProvider.FromMetadataImage(ImmutableArray.CreateRange delta.Metadata)
+
+            provider.GetMetadataReader().GetHeapSize HeapIndex.Guid
+
+        let originalGuidHeapSize = baseline.Metadata.HeapSizes.GuidHeapSize
+        let generation1GuidHeapSize = guidHeapSize delta1
+
         let baseline2 =
             match delta1.UpdatedBaseline with
             | Some b -> b
             | None -> failwith "Generation 1 delta did not return an updated baseline."
+
+        Assert.Equal(generation1GuidHeapSize, baseline2.GuidStreamLengthAdded)
+        Assert.Equal(originalGuidHeapSize + generation1GuidHeapSize, baseline2.Metadata.HeapSizes.GuidHeapSize)
 
         let requestGen2 =
             { IlxDeltaRequest.Baseline = baseline2
@@ -842,11 +999,16 @@ module DeltaEmitterTests =
         Assert.NotEqual(System.Guid.Empty, delta2.GenerationId)
         Assert.Equal(delta1.GenerationId, delta2.BaseGenerationId)
 
+        let generation2GuidHeapSize = guidHeapSize delta2
+        let baseline3 = delta2.UpdatedBaseline |> Option.get
+        Assert.Equal(generation2GuidHeapSize, baseline3.GuidStreamLengthAdded)
+        Assert.Equal(originalGuidHeapSize + generation2GuidHeapSize, baseline3.Metadata.HeapSizes.GuidHeapSize)
+
     [<Fact>]
     let ``emitDelta fails closed on unresolved user methods`` () =
         let _, baseline = createBaseline ()
         let updatedModule = createModule 43 |> TestHelpers.withDebuggableAttribute
-        let unknownMethod =
+        let unknownMethod: MethodDefinitionKey =
             {
                 DeclaringType = "Sample.Type"
                 Name = "Missing"
@@ -875,6 +1037,32 @@ module DeltaEmitterTests =
         // specific, are tolerated instead - see the unresolved-method handling in IlxDeltaEmitter.)
         let ex = Assert.Throws<HotReloadUnsupportedEditException>(fun () -> emitDelta request |> ignore)
         Assert.Contains("Sample.Type::Missing", ex.Message)
+
+    [<Fact>]
+    let ``emitDelta fails closed on calli signatures instead of passing through fresh tokens`` () =
+        let baselineArtifacts =
+            TestHelpers.createBaselineFromModule (createModuleWithOptionalCalli false)
+
+        let updatedMethod = methodKey baselineArtifacts.Baseline "InvokePointer"
+
+        let request =
+            {
+                IlxDeltaRequest.Baseline = baselineArtifacts.Baseline
+                UpdatedTypes = []
+                UpdatedMethods = [ updatedMethod ]
+                UpdatedAccessors = []
+                Module = createModuleWithOptionalCalli true |> TestHelpers.withDebuggableAttribute
+                SymbolChanges = None
+                CurrentGeneration = 1
+                PreviousGenerationId = None
+                SynthesizedNames = None
+                EmittedArtifacts = None
+            }
+
+        let error =
+            Assert.Throws<HotReloadUnsupportedEditException>(fun () -> emitDelta request |> ignore)
+
+        Assert.Contains("calli signature", error.Message)
 
     [<Fact>]
     let ``emitDelta emits added instance fields`` () =
@@ -1167,7 +1355,7 @@ module DeltaEmitterTests =
 
         match delta.UpdatedBaseline with
         | Some updatedBaseline ->
-            let addedKey =
+            let addedKey: MethodDefinitionKey =
                 { MethodDefinitionKey.DeclaringType = "Sample.Multi"
                   Name = "GetExtra"
                   GenericArity = 0
@@ -1183,7 +1371,7 @@ module DeltaEmitterTests =
     let ``emitDelta adds parameter metadata rows for new method`` () =
         let baselineArtifacts =
             TestHelpers.createBaselineFromModule (createModuleWithMethods [ "GetValue", 1 ])
-        let updatedModule = createModuleWithParameterizedMethod () |> TestHelpers.withDebuggableAttribute
+        let updatedModule = createModuleWithParameterizedMethod 0 false |> TestHelpers.withDebuggableAttribute
 
         let request =
             {
@@ -1233,6 +1421,101 @@ module DeltaEmitterTests =
                 table = TableNames.Method && op = EditAndContinueOperation.AddParameter)
 
         Assert.Equal(2, addParameterParents.Length)
+
+    [<Fact>]
+    let ``emitDelta chains added method parameter rows into generation 2`` () =
+        let baselineArtifacts =
+            TestHelpers.createBaselineFromModule (createModuleWithMethods [ "GetValue", 1 ])
+
+        let generation1 =
+            emitDelta
+                {
+                    IlxDeltaRequest.Baseline = baselineArtifacts.Baseline
+                    UpdatedTypes = [ "Sample.Multi" ]
+                    UpdatedMethods = []
+                    UpdatedAccessors = []
+                    Module = createModuleWithParameterizedMethod 0 false |> TestHelpers.withDebuggableAttribute
+                    SymbolChanges = None
+                    CurrentGeneration = 1
+                    PreviousGenerationId = None
+                    SynthesizedNames = None
+                    EmittedArtifacts = None
+                }
+
+        let baseline2 = generation1.UpdatedBaseline |> Option.get
+        let addedMethodKey =
+            baseline2.MethodTokens
+            |> Map.toSeq
+            |> Seq.map fst
+            |> Seq.find (fun key -> key.Name = "SumValues")
+
+        let addedParameterRows =
+            baseline2.MetadataHandles.ParameterHandles
+            |> Map.toSeq
+            |> Seq.filter (fun (key, _) -> key.Method = addedMethodKey)
+            |> Seq.map (fun (key, handles) -> key.SequenceNumber, handles.RowId)
+            |> Seq.sortBy fst
+            |> Seq.toList
+
+        let baselineParamCount =
+            baselineArtifacts.Baseline.Metadata.TableRowCounts.[TableNames.Param.Index]
+
+        Assert.Equal<(int * int option) list>(
+            [ 1, Some(baselineParamCount + 1); 2, Some(baselineParamCount + 2) ],
+            addedParameterRows
+        )
+
+        let generation2 =
+            emitDelta
+                {
+                    IlxDeltaRequest.Baseline = baseline2
+                    UpdatedTypes = []
+                    UpdatedMethods = [ addedMethodKey ]
+                    UpdatedAccessors = []
+                    Module = createModuleWithParameterizedMethod 1 false |> TestHelpers.withDebuggableAttribute
+                    SymbolChanges = None
+                    CurrentGeneration = 2
+                    PreviousGenerationId = Some generation1.GenerationId
+                    SynthesizedNames = None
+                    EmittedArtifacts = None
+                }
+
+        Assert.DoesNotContain(generation2.EncMap, fun (table, _) -> table = TableNames.Param)
+
+        let baseline3 = generation2.UpdatedBaseline |> Option.get
+        let chainedParameterRows =
+            baseline3.MetadataHandles.ParameterHandles
+            |> Map.toSeq
+            |> Seq.filter (fun (key, _) -> key.Method = addedMethodKey)
+            |> Seq.map (fun (key, handles) -> key.SequenceNumber, handles.RowId)
+            |> Seq.sortBy fst
+            |> Seq.toList
+
+        Assert.Equal<(int * int option) list>(addedParameterRows, chainedParameterRows)
+
+    [<Fact>]
+    let ``emitDelta fails closed when an added parameter needs unsupported metadata rows`` () =
+        let baselineArtifacts =
+            TestHelpers.createBaselineFromModule (createModuleWithMethods [ "GetValue", 1 ])
+
+        let request =
+            {
+                IlxDeltaRequest.Baseline = baselineArtifacts.Baseline
+                UpdatedTypes = [ "Sample.Multi" ]
+                UpdatedMethods = []
+                UpdatedAccessors = []
+                Module = createModuleWithParameterizedMethod 0 true |> TestHelpers.withDebuggableAttribute
+                SymbolChanges = None
+                CurrentGeneration = 1
+                PreviousGenerationId = None
+                SynthesizedNames = None
+                EmittedArtifacts = None
+            }
+
+        let error =
+            Assert.Throws<HotReloadUnsupportedEditException>(fun () -> emitDelta request |> ignore)
+
+        Assert.Contains("parameter 1 has custom attributes", error.Message)
 
     /// Updated methods do NOT synthesize Param rows - baseline already has them (matches Roslyn)
     [<Fact>]
@@ -1359,7 +1642,7 @@ module DeltaEmitterTests =
 
         match delta.UpdatedBaseline with
         | Some updatedBaseline ->
-            let propertyKey =
+            let propertyKey: PropertyDefinitionKey =
                 { PropertyDefinitionKey.DeclaringType = "Sample.PropertyDemo"
                   Name = "Message"
                   PropertyType = PrimaryAssemblyILGlobals.typ_String
@@ -1427,7 +1710,7 @@ module DeltaEmitterTests =
 
         match delta.UpdatedBaseline with
         | Some updatedBaseline ->
-            let eventKey =
+            let eventKey: EventDefinitionKey =
                 { EventDefinitionKey.DeclaringType = "Sample.EventDemo"
                   Name = "OnChanged"
                   EventType = Some PrimaryAssemblyILGlobals.typ_Object }
@@ -1691,6 +1974,71 @@ module DeltaEmitterTests =
             printfn "[memberref-reuse-debug] mdv command:"
             printfn "  cd metadata-tools && ../fsharp/.dotnet/dotnet run --project src/mdv/mdv.csproj --framework net10.0 -- %s \"/g:%s;%s\" /stats+ /md+ /il+" baselineArtifacts.AssemblyPath mdPath ilPath
         Assert.Equal(baselineCallToken, deltaCallToken)
+
+    [<Fact>]
+    let ``emitDelta chains added AssemblyRef and TypeRef tokens across generations`` () =
+        let baselineArtifacts =
+            TestHelpers.createBaselineFromModule (createModuleWithOptionalExternalCall false)
+
+        let updatedMethod =
+            TestHelpers.methodKeyByName baselineArtifacts.Baseline "Sample.ExternalDemo" "ReadExternal"
+
+        let generation1 =
+            emitDelta
+                {
+                    IlxDeltaRequest.Baseline = baselineArtifacts.Baseline
+                    UpdatedTypes = []
+                    UpdatedMethods = [ updatedMethod ]
+                    UpdatedAccessors = []
+                    Module = createModuleWithOptionalExternalCall true |> TestHelpers.withDebuggableAttribute
+                    SymbolChanges = None
+                    CurrentGeneration = 1
+                    PreviousGenerationId = None
+                    SynthesizedNames = None
+                    EmittedArtifacts = None
+                }
+
+        use generation1Provider =
+            MetadataReaderProvider.FromMetadataImage(ImmutableArray.CreateRange generation1.Metadata)
+
+        let generation1Reader = generation1Provider.GetMetadataReader()
+        Assert.Equal(1, generation1Reader.GetTableRowCount(toTableIndex TableNames.AssemblyRef))
+        Assert.Equal(1, generation1Reader.GetTableRowCount(toTableIndex TableNames.TypeRef))
+
+        let baseline2 = generation1.UpdatedBaseline |> Option.get
+        Assert.True(baseline2.AssemblyReferenceTokens.ContainsKey "External.Library")
+
+        let externalTypeKey =
+            {
+                TypeReferenceKey.Scope = TypeReferenceScope.Assembly "External.Library"
+                Namespace = "External"
+                Name = "Widget"
+            }
+
+        Assert.True(baseline2.TypeReferenceTokens.ContainsKey externalTypeKey)
+
+        let generation2 =
+            emitDelta
+                {
+                    IlxDeltaRequest.Baseline = baseline2
+                    UpdatedTypes = []
+                    UpdatedMethods = [ updatedMethod ]
+                    UpdatedAccessors = []
+                    Module = createModuleWithOptionalExternalCall true |> TestHelpers.withDebuggableAttribute
+                    SymbolChanges = None
+                    CurrentGeneration = 2
+                    PreviousGenerationId = Some generation1.GenerationId
+                    SynthesizedNames = None
+                    EmittedArtifacts = None
+                }
+
+        use generation2Provider =
+            MetadataReaderProvider.FromMetadataImage(ImmutableArray.CreateRange generation2.Metadata)
+
+        let generation2Reader = generation2Provider.GetMetadataReader()
+        Assert.Equal(0, generation2Reader.GetTableRowCount(toTableIndex TableNames.AssemblyRef))
+        Assert.Equal(0, generation2Reader.GetTableRowCount(toTableIndex TableNames.TypeRef))
+        Assert.Equal(0, generation2Reader.GetTableRowCount(toTableIndex TableNames.MemberRef))
 
     [<Fact>]
     let ``emitDelta reuses StandAloneSig token when locals unchanged`` () =

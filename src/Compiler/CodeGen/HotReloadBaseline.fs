@@ -8,6 +8,7 @@ open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.ILBinaryWriter
 open FSharp.Compiler.AbstractIL.BinaryConstants
 open FSharp.Compiler.AbstractIL.ILDeltaHandles
+open FSharp.Compiler.AbstractIL.DeltaMetadataTypes
 open FSharp.Compiler.EncMethodDebugInformation
 open FSharp.Compiler.GeneratedNames
 open FSharp.Compiler.IlxGen
@@ -44,47 +45,20 @@ type AddedOrChangedMethodInfo =
     }
 
 /// <summary>Stable identifier for a method definition used when correlating baseline tokens.</summary>
-type MethodDefinitionKey =
-    {
-        DeclaringType: string
-        Name: string
-        GenericArity: int
-        ParameterTypes: ILType list
-        ReturnType: ILType
-    }
+type MethodDefinitionKey = FSharp.Compiler.AbstractIL.DeltaMetadataTypes.MethodDefinitionKey
 
 /// Baseline metadata handles reused to keep heap offsets stable across deltas.
 /// <summary>Stable identifier for a method parameter (sequence number within a method).</summary>
-type ParameterDefinitionKey =
-    {
-        Method: MethodDefinitionKey
-        SequenceNumber: int
-    }
+type ParameterDefinitionKey = FSharp.Compiler.AbstractIL.DeltaMetadataTypes.ParameterDefinitionKey
 
 /// <summary>Stable identifier for a field definition in the baseline assembly.</summary>
-type FieldDefinitionKey =
-    {
-        DeclaringType: string
-        Name: string
-        FieldType: ILType
-    }
+type FieldDefinitionKey = FSharp.Compiler.AbstractIL.DeltaMetadataTypes.FieldDefinitionKey
 
 /// <summary>Stable identifier for a property definition (including indexer parameter shapes).</summary>
-type PropertyDefinitionKey =
-    {
-        DeclaringType: string
-        Name: string
-        PropertyType: ILType
-        IndexParameterTypes: ILType list
-    }
+type PropertyDefinitionKey = FSharp.Compiler.AbstractIL.DeltaMetadataTypes.PropertyDefinitionKey
 
 /// <summary>Stable identifier for an event definition in the baseline assembly.</summary>
-type EventDefinitionKey =
-    {
-        DeclaringType: string
-        Name: string
-        EventType: ILType option
-    }
+type EventDefinitionKey = FSharp.Compiler.AbstractIL.DeltaMetadataTypes.EventDefinitionKey
 
 type BaselineTypeDefinitionKey =
     {
@@ -199,9 +173,7 @@ type BaselineHandleCache =
             EventHandles = Map.empty
         }
 
-type MethodSemanticsAssociation =
-    | PropertyAssociation of PropertyDefinitionKey * rowId: int
-    | EventAssociation of EventDefinitionKey * rowId: int
+type MethodSemanticsAssociation = FSharp.Compiler.AbstractIL.DeltaMetadataTypes.MethodSemanticsAssociation
 
 type MethodSemanticsEntry =
     {
@@ -987,6 +959,12 @@ let internal applyDelta
     let updatedMetadataSnapshot =
         // Per Roslyn DeltaMetadataWriter.cs: Blob and UserString streams are concatenated
         // aligned to 4-byte boundaries; String stream is concatenated unaligned.
+        // Each delta #GUID stream already contains the zero-filled cumulative prefix from
+        // prior generations. Replace that prior delta contribution with the newest full
+        // stream instead of adding it again, while retaining the original PE GUID heap.
+        let originalGuidHeapSize =
+            baseline.Metadata.HeapSizes.GuidHeapSize - baseline.GuidStreamLengthAdded
+
         let updatedHeapSizes =
             {
                 StringHeapSize = baseline.Metadata.HeapSizes.StringHeapSize + deltaHeapSizes.StringHeapSize
@@ -994,7 +972,7 @@ let internal applyDelta
                     baseline.Metadata.HeapSizes.UserStringHeapSize
                     + align4 deltaHeapSizes.UserStringHeapSize
                 BlobHeapSize = baseline.Metadata.HeapSizes.BlobHeapSize + align4 deltaHeapSizes.BlobHeapSize
-                GuidHeapSize = baseline.Metadata.HeapSizes.GuidHeapSize + deltaHeapSizes.GuidHeapSize
+                GuidHeapSize = originalGuidHeapSize + deltaHeapSizes.GuidHeapSize
             }
 
         if traceHeapOffsets.Value then
@@ -1028,7 +1006,7 @@ let internal applyDelta
         StringStreamLengthAdded = baseline.StringStreamLengthAdded + deltaHeapSizes.StringHeapSize
         UserStringStreamLengthAdded = baseline.UserStringStreamLengthAdded + align4 deltaHeapSizes.UserStringHeapSize
         BlobStreamLengthAdded = baseline.BlobStreamLengthAdded + align4 deltaHeapSizes.BlobHeapSize
-        GuidStreamLengthAdded = baseline.GuidStreamLengthAdded + deltaHeapSizes.GuidHeapSize
+        GuidStreamLengthAdded = deltaHeapSizes.GuidHeapSize
         Metadata = updatedMetadataSnapshot
         SynthesizedNameSnapshot =
             match synthesizedSnapshot with
