@@ -299,6 +299,14 @@ type private UserStringHeapBuilder() =
 
 type DeltaMetadataTables(?heapOffsets: MetadataHeapOffsets) =
     let heapOffsets = defaultArg heapOffsets MetadataHeapOffsets.Zero
+
+    do
+        if heapOffsets.GuidHeapStart < 0 || heapOffsets.GuidHeapStart % 16 <> 0 then
+            invalidArg
+                (nameof heapOffsets)
+                $"GUID heap start must be a non-negative multiple of 16 bytes, but was {heapOffsets.GuidHeapStart}."
+
+    let priorGuidEntryCount = heapOffsets.GuidHeapStart / 16
     let strings = StringHeapBuilder()
     let blobs = ByteArrayHeapBuilder()
     let guids = ByteArrayHeapBuilder()
@@ -463,10 +471,10 @@ type DeltaMetadataTables(?heapOffsets: MetadataHeapOffsets) =
             let idx = addBlobBytes value
             idx, false
 
-    /// Force-add a GUID to the heap, even if it's the nil GUID.
-    /// Returns the 1-based index in the delta's GUID heap.
+    /// Force-adds a GUID to this generation and returns its 1-based index in the
+    /// cumulative GUID heap address space used by metadata handles.
     let forceAddGuidValue (value: Guid) =
-        guids.AddSharedEntry(value.ToByteArray())
+        priorGuidEntryCount + guids.AddSharedEntry(value.ToByteArray())
 
     let stringElement (token, isAbsolute) =
         if isAbsolute then
@@ -493,7 +501,13 @@ type DeltaMetadataTables(?heapOffsets: MetadataHeapOffsets) =
     let buildGuidHeapBytes () =
         use ms = new MemoryStream()
         use writer = new BinaryWriter(ms, Encoding.UTF8, leaveOpen = true)
-        // Guid heap is a packed list of 16-byte entries; no sentinel is emitted.
+
+        // Roslyn zero-fills each delta #GUID stream through the prior cumulative heap
+        // size, then appends this generation's entries. Module handles are cumulative,
+        // so the zero prefix keeps handle N at byte offset (N - 1) * 16 in the stream.
+        if heapOffsets.GuidHeapStart > 0 then
+            writer.Write(Array.zeroCreate<byte> heapOffsets.GuidHeapStart)
+
         for entry in guids.Entries do
             if entry.Length = 16 then
                 writer.Write(entry)
@@ -507,7 +521,10 @@ type DeltaMetadataTables(?heapOffsets: MetadataHeapOffsets) =
                 else
                     "<invalid>"
 
-            printfn "[delta-guid-heap] entries=%d" guids.Entries.Length
+            printfn
+                "[delta-guid-heap] priorEntries=%d addedEntries=%d"
+                priorGuidEntryCount
+                guids.Entries.Length
 
             guids.Entries
             |> Seq.mapi (fun idx b -> idx + 1, dumpGuid b)
@@ -524,20 +541,17 @@ type DeltaMetadataTables(?heapOffsets: MetadataHeapOffsets) =
                 match nameOffsetOpt with
                 | Some(StringOffset offset) -> offset, true
                 | None -> addStringValue name, false
-            // For EnC deltas:
-            // - Delta GUID heap contains: nil at 1, MVID at 2, EncId at 3
-            // - Module row stores raw delta-local indices using rowElementGuidAbsolute
-            // - The runtime interprets these as-is (no baseline offset adjustment needed)
-            // Force-add GUIDs in order to get predictable indices:
-            let _nilGuidIndex = forceAddGuidValue System.Guid.Empty // Index 1 (nil placeholder)
-            let mvidIndex = forceAddGuidValue moduleId // Index 2
-            let encIdIndex = forceAddGuidValue encId // Index 3
-            // EncBaseId is 0 (nil) for generation 1, otherwise reference previous EncId
+            // EnC Module rows use cumulative GUID handles. The delta stream is zero-padded
+            // through prior generations, and these entries follow that prefix in stable order.
+            let mvidIndex = forceAddGuidValue moduleId
+            let encIdIndex = forceAddGuidValue encId
+
+            // EncBaseId is handle 0 for generation 1; later generations append the previous EncId.
             let encBaseIdIndex =
                 if encBaseId = System.Guid.Empty then
                     0
                 else
-                    forceAddGuidValue encBaseId // Index 4 if not nil
+                    forceAddGuidValue encBaseId
 
             if traceHeapOffsets.Value then
                 printfn
@@ -551,9 +565,9 @@ type DeltaMetadataTables(?heapOffsets: MetadataHeapOffsets) =
                 [|
                     rowElementUShort (uint16 generation)
                     stringElement nameToken
-                    rowElementGuidAbsolute mvidIndex // MVID - delta-local absolute index
-                    rowElementGuidAbsolute encIdIndex // EncId - delta-local absolute index
-                    rowElementGuidAbsolute encBaseIdIndex // EncBaseId - 0 or delta-local index
+                    rowElementGuidAbsolute mvidIndex
+                    rowElementGuidAbsolute encIdIndex
+                    rowElementGuidAbsolute encBaseIdIndex
                 |]
 
     /// Add a TypeDef table row per ECMA-335 II.22.37: Flags (4 bytes), TypeName,

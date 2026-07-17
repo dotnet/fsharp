@@ -205,8 +205,8 @@ module FSharpDeltaMetadataWriterTests =
     let private getHeapSize (metadata: byte[]) (heap: HeapIndex) : int =
         withMetadataReader metadata (fun reader -> reader.GetHeapSize heap)
 
-    /// Read the raw #Strings stream header Size from metadata bytes
-    let private getRawStringStreamSize (metadata: byte[]) : int =
+    /// Read a raw metadata stream header Size from metadata bytes.
+    let private getRawStreamSize (streamName: string) (metadata: byte[]) : int =
         use ms = new MemoryStream(metadata, false)
         use reader = new BinaryReader(ms, Encoding.UTF8, leaveOpen = true)
         reader.ReadUInt32() |> ignore // signature
@@ -231,8 +231,11 @@ module FSharpDeltaMetadataWriterTests =
             let _offset = reader.ReadUInt32()
             let size = reader.ReadUInt32()
             let name = readName()
-            if name = "#Strings" then result <- int size
+            if name = streamName then result <- int size
         result
+
+    let private getRawStringStreamSize metadata =
+        getRawStreamSize "#Strings" metadata
 
     let private getDeltaHeapSize (delta: DeltaWriter.MetadataDelta) (heap: HeapIndex) : int =
         match heap with
@@ -524,6 +527,110 @@ module FSharpDeltaMetadataWriterTests =
         let rowBytes = tableStream |> Array.skip moduleStart |> Array.truncate moduleRowSize
 
         struct (gen, nameIdx, mvidIdx, encIdIdx, encBaseIdx, rowCounts[TableNames.Module.Index], moduleStart, moduleRowSize, heapSizes, rowBytes)
+
+    let private syntheticMethodRow rowId name nameOffset : DeltaWriter.MethodDefinitionRowInfo =
+        {
+            Key = methodKey "Sample.MethodHost" name ilGlobals.typ_Int32
+            RowId = rowId
+            IsAdded = false
+            ParentTypeDefRowId = None
+            Attributes = MethodAttributes.Public ||| MethodAttributes.Static
+            ImplAttributes = MethodImplAttributes.IL
+            Name = name
+            NameOffset = Some(StringOffset nameOffset)
+            Signature = [| 0x00uy; 0x00uy; 0x08uy |]
+            SignatureOffset = None
+            FirstParameterRowId = None
+            CodeRva = None
+        }
+
+    let private syntheticMethodUpdate (row: DeltaWriter.MethodDefinitionRowInfo) : DeltaWriter.MethodMetadataUpdate =
+        {
+            MethodKey = row.Key
+            MethodToken = 0x06000000 ||| row.RowId
+            MethodHandle = MethodDefHandle row.RowId
+            Body =
+                {
+                    MethodToken = 0x06000000 ||| row.RowId
+                    LocalSignatureToken = 0
+                    CodeOffset = row.RowId
+                    CodeLength = 1
+                }
+        }
+
+    let private emitSyntheticMethodDelta methodRows updates =
+        DeltaWriter.emit
+            "Synthetic.dll"
+            None
+            1
+            (Guid.NewGuid())
+            Guid.Empty
+            (Guid.NewGuid())
+            methodRows
+            []
+            []
+            []
+            []
+            []
+            []
+            []
+            []
+            updates
+            MetadataHeapOffsets.Zero
+            (Array.zeroCreate MetadataTokens.TableCount)
+
+    [<Fact>]
+    let ``metadata writer rejects a method row without an update payload`` () =
+        let row = syntheticMethodRow 1 "M" 11
+
+        let ex =
+            Assert.Throws<InvalidOperationException>(fun () ->
+                emitSyntheticMethodDelta [ row ] [] |> ignore)
+
+        Assert.Contains("has no matching update payload", ex.Message)
+
+    [<Fact>]
+    let ``metadata writer rejects duplicate and orphan method updates`` () =
+        let row = syntheticMethodRow 1 "M" 11
+        let update = syntheticMethodUpdate row
+
+        let duplicate =
+            Assert.Throws<ArgumentException>(fun () ->
+                emitSyntheticMethodDelta [ row ] [ update; update ] |> ignore)
+
+        Assert.Contains("Duplicate method update", duplicate.Message)
+
+        let orphanRow = syntheticMethodRow 2 "Orphan" 22
+        let orphanUpdate = syntheticMethodUpdate orphanRow
+
+        let orphan =
+            Assert.Throws<ArgumentException>(fun () ->
+                emitSyntheticMethodDelta [ row ] [ update; orphanUpdate ] |> ignore)
+
+        Assert.Contains("has no matching method row", orphan.Message)
+
+    [<Fact>]
+    let ``metadata writer orders physical method rows by logical token`` () =
+        let first = syntheticMethodRow 1 "First" 11
+        let second = syntheticMethodRow 2 "Second" 22
+
+        let delta =
+            emitSyntheticMethodDelta
+                [ second; first ]
+                [ syntheticMethodUpdate second; syntheticMethodUpdate first ]
+
+        Assert.Equal(2, delta.Tables.MethodDef.Length)
+        Assert.Equal(11, delta.Tables.MethodDef.[0].[3].Value)
+        Assert.Equal(22, delta.Tables.MethodDef.[1].[3].Value)
+
+    [<Fact>]
+    let ``metadata root advertises the padded table stream size`` () =
+        let row = syntheticMethodRow 1 "M" 11
+        let delta = emitSyntheticMethodDelta [ row ] [ syntheticMethodUpdate row ]
+
+        Assert.NotEqual(delta.TableStream.UnpaddedSize, delta.TableStream.PaddedSize)
+        Assert.Equal(delta.TableStream.PaddedSize, getRawStreamSize "#-" delta.Metadata)
+        Assert.Equal(delta.TableStream.Bytes.Length, getRawStreamSize "#-" delta.Metadata)
 
     [<Fact>]
     let ``metadata writer emits property rows`` () =
@@ -2071,36 +2178,56 @@ module FSharpDeltaMetadataWriterTests =
             gen2HeapFlags
             (BitConverter.ToString(gen2RowBytes))
 
-        // With rowElementGuidAbsolute, the module row stores delta-local indices directly.
-        // Delta GUID heap layout with nil sentinel:
-        //   Index 1 = nil (bytes 0-15)
-        //   Index 2 = MVID (bytes 16-31)
-        //   Index 3 = EncId (bytes 32-47)
-        //   Index 4 = EncBaseId [gen2 only] (bytes 48-63)
-        let expectedMvidIndex1 = 2    // Delta-local index for MVID
-        let expectedEncIdIndex1 = 3   // Delta-local index for EncId
-        let expectedMvidIndex2 = 2    // Same for gen2
-        let expectedEncIdIndex2 = 3   // Same for gen2
-        let expectedEncBaseIndex2 = 4 // EncBaseId points to gen1's EncId GUID stored in gen2's heap
+        // Roslyn emits GUID handles in the cumulative heap index space. Each delta's #GUID stream
+        // is zero-filled through the prior cumulative size before appending this generation's
+        // MVID, EncId, and optional EncBaseId. Baseline has one GUID entry; generation 1 therefore
+        // uses handles 2/3. Its 48-byte stream advances the next start to entry 5, so generation 2
+        // uses handles 5/6/7 and emits 64 bytes of zero prefix plus three GUIDs.
+        let expectedMvidIndex1 = 2
+        let expectedEncIdIndex1 = 3
+        let expectedMvidIndex2 = 5
+        let expectedEncIdIndex2 = 6
+        let expectedEncBaseIndex2 = 7
 
-        // Row values should match the delta-local GUID heap indices.
+        // Row values should match the cumulative GUID heap indices.
         Assert.Equal(expectedMvidIndex1, gen1RowMvidIdx)
         Assert.Equal(expectedEncIdIndex1, gen1RowEncIdx)
         Assert.Equal(expectedMvidIndex2, gen2RowMvidIdx)
         Assert.Equal(expectedEncIdIndex2, gen2RowEncIdx)
         Assert.Equal(expectedEncBaseIndex2, gen2RowBaseIdx)
 
-        // Heap sizes (with nil sentinel): gen1 = nil+MVID+EncId, gen2 = nil+MVID+EncId+EncBaseId.
-        Assert.True(guidBytes1 >= 48, "Gen1 Guid heap should contain nil + MVID + EncId (48 bytes)")
-        Assert.True(guidBytes2 >= 64, "Gen2 Guid heap should contain nil + MVID + EncId + EncBaseId (64 bytes)")
+        use baselinePeReader = new PEReader(new MemoryStream(artifacts.BaselineBytes, false))
+        use generation1Provider = MetadataReaderProvider.FromMetadataImage(ImmutableArray.CreateRange artifacts.Generation1.Metadata)
+        use generation2Provider = MetadataReaderProvider.FromMetadataImage(ImmutableArray.CreateRange artifacts.Generation2.Metadata)
+        let generation1Reader = generation1Provider.GetMetadataReader()
+        let generation2Reader = generation2Provider.GetMetadataReader()
 
-        // Decode GUIDs directly from the delta heaps using delta-local indices.
-        // Index is 1-based, so byte offset = (index - 1) * 16
+        let aggregator =
+            MetadataAggregator(
+                baselinePeReader.GetMetadataReader(),
+                [| generation1Reader; generation2Reader |]
+            )
+
+        let mutable owningGeneration = -1
+        let generation2IdHandle: Handle = generation2Reader.GetModuleDefinition().GenerationId
+        aggregator.GetGenerationHandle(generation2IdHandle, &owningGeneration) |> ignore
+        Assert.Equal(2, owningGeneration)
+
+        Assert.Equal(48, guidBytes1)
+        Assert.Equal(112, guidBytes2)
+
+        Assert.True(
+            guidHeapBytes2[0..63] |> Array.forall ((=) 0uy),
+            "Generation 2 GUID heap should be zero-filled through the prior cumulative heap size"
+        )
+
+        // Decode GUIDs directly from the zero-prefixed delta heaps using cumulative indices.
+        // Index is 1-based, so byte offset = (index - 1) * 16.
         let gen1MvidLocal = (expectedMvidIndex1 - 1) * 16      // Index 2 -> offset 16
         let gen1EncIdLocal = (expectedEncIdIndex1 - 1) * 16    // Index 3 -> offset 32
-        let gen2MvidLocal = (expectedMvidIndex2 - 1) * 16      // Index 2 -> offset 16
-        let gen2EncIdLocal = (expectedEncIdIndex2 - 1) * 16    // Index 3 -> offset 32
-        let gen2EncBaseLocal = (expectedEncBaseIndex2 - 1) * 16 // Index 4 -> offset 48
+        let gen2MvidLocal = (expectedMvidIndex2 - 1) * 16      // Index 5 -> offset 64
+        let gen2EncIdLocal = (expectedEncIdIndex2 - 1) * 16    // Index 6 -> offset 80
+        let gen2EncBaseLocal = (expectedEncBaseIndex2 - 1) * 16 // Index 7 -> offset 96
 
         let gen1MvidGuidValue = readGuidAtOffset guidHeapBytes1 gen1MvidLocal
         let encIdGuid1Value = readGuidAtOffset guidHeapBytes1 gen1EncIdLocal
@@ -2118,7 +2245,7 @@ module FSharpDeltaMetadataWriterTests =
         match name1 with
         | Some n -> Assert.Equal(baseName, name1)
         | None -> ()
-        // GUID column values should match the delta-local heap indices
+        // GUID column values should match the cumulative heap indices.
         Assert.Equal(expectedMvidIndex1, gen1RowMvidIdx)
         Assert.Equal(0, gen1RowBaseIdx)  // EncBaseId should be 0 for gen1
         Assert.Equal(expectedEncIdIndex1, gen1RowEncIdx)
