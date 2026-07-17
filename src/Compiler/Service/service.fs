@@ -483,7 +483,11 @@ type FSharpChecker
         let siblingPdbBytes =
             if File.Exists(pdbPath) then
                 let bytes = File.ReadAllBytes(pdbPath)
-                if HotReloadPdb.matchesAssembly assemblyBytes bytes then Some bytes else None
+
+                if HotReloadPdb.matchesAssembly assemblyBytes bytes then
+                    Some bytes
+                else
+                    None
             else
                 None
 
@@ -533,8 +537,7 @@ type FSharpChecker
             if Map.isEmpty baseline.EncMethodDebugInfos && siblingPdbBytes.IsSome then
                 let baseline =
                     { baseline with
-                        EncMethodDebugInfos =
-                            EncMethodDebugInformation.readEncMethodDebugInfoFromPortablePdb siblingPdbBytes.Value
+                        EncMethodDebugInfos = EncMethodDebugInformation.readEncMethodDebugInfoFromPortablePdb siblingPdbBytes.Value
                     }
 
                 // Closure mapping: the chain -> closure-name tables are a pure function
@@ -555,8 +558,7 @@ type FSharpChecker
         // detection and active-statement remapping diff against.
         if Map.isEmpty baseline.SequencePointSnapshots && siblingPdbBytes.IsSome then
             { baseline with
-                SequencePointSnapshots =
-                    FSharp.Compiler.HotReload.ActiveStatementAnalysis.decodeMethodSequencePoints siblingPdbBytes.Value
+                SequencePointSnapshots = FSharp.Compiler.HotReload.ActiveStatementAnalysis.decodeMethodSequencePoints siblingPdbBytes.Value
             }
         else
             baseline
@@ -880,8 +882,7 @@ type FSharpChecker
 
             match emissionContext with
             | Some context ->
-                let previousContext =
-                    FSharp.Compiler.HotReloadState.tryGetCurrentEmissionContext ()
+                let previousContext = FSharp.Compiler.HotReloadState.tryGetCurrentEmissionContext ()
 
                 FSharp.Compiler.HotReloadState.setCurrentEmissionContext (Some context)
 

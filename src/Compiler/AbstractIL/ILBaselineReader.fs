@@ -630,6 +630,7 @@ let private createMetadataContext (bytes: byte[]) : MetadataContext option =
         | None -> None
         | Some tablesStream ->
             let heapSizes, rowCounts, tablesOffset = parseTablesStream bytes tablesStream
+
             let pointerTables =
                 [|
                     TableIndices.FieldPtr
@@ -642,7 +643,10 @@ let private createMetadataContext (bytes: byte[]) : MetadataContext option =
             // The #- stream permits pointer-table indirection. This reader consumes the
             // definition tables directly, so accepting a non-empty pointer table would
             // associate members with the wrong declaring type.
-            if tablesStream.Name = "#-" && pointerTables |> Array.exists (fun table -> rowCounts.[table] <> 0) then
+            if
+                tablesStream.Name = "#-"
+                && pointerTables |> Array.exists (fun table -> rowCounts.[table] <> 0)
+            then
                 None
             else
                 let stringsBig = (heapSizes &&& 0x01uy) <> 0uy

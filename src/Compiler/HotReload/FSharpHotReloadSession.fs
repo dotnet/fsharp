@@ -432,8 +432,7 @@ type internal FSharpHotReloadService
                                         match inProcessCompile with
                                         | None -> return Result.Ok None
                                         | Some compile ->
-                                            let outputFingerprintBeforeCompile =
-                                                tryGetOutputFingerprint outputPath
+                                            let outputFingerprintBeforeCompile = tryGetOutputFingerprint outputPath
 
                                             try
                                                 // The compile returns the emitted module (refs normalized as
@@ -453,8 +452,7 @@ type internal FSharpHotReloadService
 
                                                 return Result.Ok(Some freshModule)
                                             with ex ->
-                                                let outputFingerprintAfterCompile =
-                                                    tryGetOutputFingerprint outputPath
+                                                let outputFingerprintAfterCompile = tryGetOutputFingerprint outputPath
 
                                                 if
                                                     hasOutputFingerprintChanged
@@ -827,48 +825,52 @@ type FSharpHotReloadSession
     /// command-line options; required when the snapshot carries no output option.</param>
     /// <param name="userOpName">An optional string used for tracing compiler operations associated with this request.</param>
     member _.AddProject(projectSnapshot: FSharpProjectSnapshot, ?outputPath: string, ?userOpName: string) =
-        let operation () = async {
-            let opName = defaultArg userOpName "Unknown"
+        let operation () =
+            async {
+                let opName = defaultArg userOpName "Unknown"
 
-            use _ =
-                Activity.start
-                    "FSharpHotReloadSession.AddProject"
-                    [|
-                        Activity.Tags.userOpName, opName
-                        Activity.Tags.project, projectSnapshot.ProjectFileName
-                    |]
+                use _ =
+                    Activity.start
+                        "FSharpHotReloadSession.AddProject"
+                        [|
+                            Activity.Tags.userOpName, opName
+                            Activity.Tags.project, projectSnapshot.ProjectFileName
+                        |]
 
-            let projectKey = projectKeyOfSnapshot projectSnapshot
+                let projectKey = projectKeyOfSnapshot projectSnapshot
 
-            match outputPath with
-            | Some path -> lock outputPathGate (fun () -> outputPathOverrides[projectKey] <- path)
-            | None -> ()
+                match outputPath with
+                | Some path -> lock outputPathGate (fun () -> outputPathOverrides[projectKey] <- path)
+                | None -> ()
 
-            let resolvedOutputPath = resolveOutputPath projectKey projectSnapshot
+                let resolvedOutputPath = resolveOutputPath projectKey projectSnapshot
 
-            // Observe tracked inputs before the baseline capture so an input edited while the
-            // capture runs is seen as changed by the next emit rather than silently absorbed.
-            let trackedInputs = computeTrackedInputs projectSnapshot
+                // Observe tracked inputs before the baseline capture so an input edited while the
+                // capture runs is seen as changed by the next emit rather than silently absorbed.
+                let trackedInputs = computeTrackedInputs projectSnapshot
 
-            let! result =
-                hotReloadService.AddHotReloadProject projectKey (fun () -> parseAndCheckSnapshot projectSnapshot opName) resolvedOutputPath
+                let! result =
+                    hotReloadService.AddHotReloadProject
+                        projectKey
+                        (fun () -> parseAndCheckSnapshot projectSnapshot opName)
+                        resolvedOutputPath
 
-            match result, resolvedOutputPath with
-            | Ok(), Some path ->
-                // AddProject completes asynchronously. Serialize its final registration with
-                // Dispose so an in-flight capture cannot resurrect a disposed session.
-                lock lifecycleGate (fun () ->
-                    ensureNotDisposed ()
+                match result, resolvedOutputPath with
+                | Ok(), Some path ->
+                    // AddProject completes asynchronously. Serialize its final registration with
+                    // Dispose so an in-flight capture cannot resurrect a disposed session.
+                    lock lifecycleGate (fun () ->
+                        ensureNotDisposed ()
 
-                    lock trackedInputsGate (fun () ->
-                        committedTrackedInputs[projectKey] <- trackedInputs
-                        pendingTrackedInputs.Remove projectKey |> ignore)
+                        lock trackedInputsGate (fun () ->
+                            committedTrackedInputs[projectKey] <- trackedInputs
+                            pendingTrackedInputs.Remove projectKey |> ignore)
 
-                    onProjectBaselined path projectKey)
-            | _ -> ()
+                        onProjectBaselined path projectKey)
+                | _ -> ()
 
-            return result
-        }
+                return result
+            }
 
         runSerializedAsync operation
 
@@ -884,45 +886,46 @@ type FSharpHotReloadSession
     /// <param name="projectSnapshot">The snapshot describing the edited project.</param>
     /// <param name="userOpName">An optional string used for tracing compiler operations associated with this request.</param>
     member _.EmitDelta(projectSnapshot: FSharpProjectSnapshot, ?userOpName: string) =
-        let operation () = async {
-            let opName = defaultArg userOpName "Unknown"
+        let operation () =
+            async {
+                let opName = defaultArg userOpName "Unknown"
 
-            use _ =
-                Activity.start
-                    "FSharpHotReloadSession.EmitDelta"
-                    [|
-                        Activity.Tags.userOpName, opName
-                        Activity.Tags.project, projectSnapshot.ProjectFileName
-                    |]
+                use _ =
+                    Activity.start
+                        "FSharpHotReloadSession.EmitDelta"
+                        [|
+                            Activity.Tags.userOpName, opName
+                            Activity.Tags.project, projectSnapshot.ProjectFileName
+                        |]
 
-            let projectKey = projectKeyOfSnapshot projectSnapshot
+                let projectKey = projectKeyOfSnapshot projectSnapshot
 
-            let currentTrackedInputs = computeTrackedInputs projectSnapshot
+                let currentTrackedInputs = computeTrackedInputs projectSnapshot
 
-            let trackedInputsChanged =
-                lock trackedInputsGate (fun () ->
-                    match committedTrackedInputs.TryGetValue projectKey with
-                    | true, committed -> committed <> currentTrackedInputs
-                    | false, _ -> false)
+                let trackedInputsChanged =
+                    lock trackedInputsGate (fun () ->
+                        match committedTrackedInputs.TryGetValue projectKey with
+                        | true, committed -> committed <> currentTrackedInputs
+                        | false, _ -> false)
 
-            let! result =
-                hotReloadService.EmitHotReloadDelta
-                    projectKey
-                    (fun () -> parseAndCheckSnapshot projectSnapshot opName)
-                    (resolveOutputPath projectKey projectSnapshot)
-                    trackedInputsChanged
-                    inProcessCompile
+                let! result =
+                    hotReloadService.EmitHotReloadDelta
+                        projectKey
+                        (fun () -> parseAndCheckSnapshot projectSnapshot opName)
+                        (resolveOutputPath projectKey projectSnapshot)
+                        trackedInputsChanged
+                        inProcessCompile
 
-            match result with
-            | Ok _ ->
-                // Stage the observed tracked-input state with the emitted update; Commit
-                // promotes it alongside the pending baseline, Discard drops it so the next
-                // emit re-compares against the unchanged committed view.
-                lock trackedInputsGate (fun () -> pendingTrackedInputs[projectKey] <- currentTrackedInputs)
-            | Error _ -> ()
+                match result with
+                | Ok _ ->
+                    // Stage the observed tracked-input state with the emitted update; Commit
+                    // promotes it alongside the pending baseline, Discard drops it so the next
+                    // emit re-compares against the unchanged committed view.
+                    lock trackedInputsGate (fun () -> pendingTrackedInputs[projectKey] <- currentTrackedInputs)
+                | Error _ -> ()
 
-            return result
-        }
+                return result
+            }
 
         runSerializedAsync operation
 
@@ -957,8 +960,7 @@ type FSharpHotReloadSession
     /// </summary>
     /// <param name="capabilities">Runtime capability names (for example <c>AddMethodToExistingType</c>); unknown names are ignored.</param>
     member _.UpdateCapabilities(capabilities: string seq) =
-        runSerialized (fun () ->
-            hotReloadService.SetSessionCapabilities(EditAndContinueCapabilities.Parse capabilities))
+        runSerialized (fun () -> hotReloadService.SetSessionCapabilities(EditAndContinueCapabilities.Parse capabilities))
 
     /// <summary>
     /// Replaces the session-wide debugger-supplied active statements consulted by the next emit

@@ -65,10 +65,7 @@ let createSnapshot (pdbBytes: byte[]) : PortablePdbSnapshot =
 /// Verifies that a portable PDB is the one named by the assembly's CodeView entry.
 /// A mismatched sibling PDB must never seed EnC state for another module generation.
 let matchesAssembly (assemblyBytes: byte[]) (pdbBytes: byte[]) =
-    match
-        ILBaselineReader.readCodeViewContentIdFromBytes assemblyBytes,
-        ILBaselineReader.readPortablePdbMetadata pdbBytes
-    with
+    match ILBaselineReader.readCodeViewContentIdFromBytes assemblyBytes, ILBaselineReader.readPortablePdbMetadata pdbBytes with
     | Some expected, Some metadata -> metadata.ContentId.AsSpan().SequenceEqual(expected)
     | _ -> false
 

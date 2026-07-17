@@ -163,8 +163,7 @@ let TryGetHotReloadNameGeneration (name: string) : int option =
     if String.IsNullOrEmpty name then
         None
     else
-        TryNormalizeHotReloadGenerationName name
-        |> Option.map _.Generation
+        TryNormalizeHotReloadGenerationName name |> Option.map _.Generation
 
 let TryNormalizeHotReloadReplayName (name: string) =
     let marker = "@hotreload"
