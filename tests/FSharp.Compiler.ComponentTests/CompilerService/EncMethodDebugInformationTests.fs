@@ -207,6 +207,21 @@ let ``Synthesized name snapshot preserves mixed bucket allocation order`` () =
     | Some actualNames -> Assert.Equal<string[]>(expectedNames, actualNames)
     | None -> failwith "expected endpoints bucket to round-trip"
 
+[<Fact>]
+let ``Synthesized name snapshot rejects a present but empty payload`` () =
+    // Canonical empty snapshots are represented by an absent CDI row. Accepting this
+    // non-canonical payload would suppress reconstruction from the assembly token maps.
+    let blob = [| 1uy; 0uy |]
+    Assert.Throws<InvalidDataException>(fun () -> deserializeSynthesizedNameSnapshot blob |> ignore)
+    |> ignore
+
+[<Fact>]
+let ``Synthesized name snapshot bounds name allocation by remaining payload`` () =
+    // version=1, buckets=1, key="k", names=0x1fffffff, with no name payload.
+    let blob = [| 1uy; 1uy; 1uy; byte 'k'; 0xDFuy; 0xFFuy; 0xFFuy; 0xFFuy |]
+    Assert.Throws<InvalidDataException>(fun () -> deserializeSynthesizedNameSnapshot blob |> ignore)
+    |> ignore
+
 // -----------------------------------------------------------------------
 // Occurrence-key packing
 // -----------------------------------------------------------------------
@@ -598,6 +613,82 @@ module private Plumbing =
                       Blob = pdbMdReader.GetBlobBytes cdi.Value
                   } ]
 
+    type private StreamHeader =
+        {
+            HeaderOffset: int
+            DataOffset: int
+            Size: int
+            Name: string
+        }
+
+    let private readInt32 (bytes: byte[]) offset =
+        int bytes[offset]
+        ||| (int bytes[offset + 1] <<< 8)
+        ||| (int bytes[offset + 2] <<< 16)
+        ||| (int bytes[offset + 3] <<< 24)
+
+    let private writeInt32 (bytes: byte[]) offset value =
+        bytes[offset] <- byte value
+        bytes[offset + 1] <- byte (value >>> 8)
+        bytes[offset + 2] <- byte (value >>> 16)
+        bytes[offset + 3] <- byte (value >>> 24)
+
+    let private metadataStreamHeaders (assemblyBytes: byte[]) =
+        use peReader = new PEReader(ImmutableArray.CreateRange assemblyBytes)
+        let metadataRoot = peReader.PEHeaders.MetadataStartOffset
+        let versionLength = readInt32 assemblyBytes (metadataRoot + 12)
+        let streamsOffset = metadataRoot + 16 + ((versionLength + 3) &&& ~~~3)
+        let streamCount = int assemblyBytes[streamsOffset + 2] ||| (int assemblyBytes[streamsOffset + 3] <<< 8)
+        let headers = ResizeArray<StreamHeader>()
+        let mutable headerOffset = streamsOffset + 4
+
+        for _ in 1..streamCount do
+            let relativeOffset = readInt32 assemblyBytes headerOffset
+            let size = readInt32 assemblyBytes (headerOffset + 4)
+            let mutable nameEnd = headerOffset + 8
+
+            while assemblyBytes[nameEnd] <> 0uy do
+                nameEnd <- nameEnd + 1
+
+            let name = Text.Encoding.ASCII.GetString(assemblyBytes, headerOffset + 8, nameEnd - headerOffset - 8)
+            let paddedNameLength = ((nameEnd - headerOffset - 8 + 1) + 3) &&& ~~~3
+
+            headers.Add
+                {
+                    HeaderOffset = headerOffset
+                    DataOffset = metadataRoot + relativeOffset
+                    Size = size
+                    Name = name
+                }
+
+            headerOffset <- headerOffset + 8 + paddedNameLength
+
+        headers |> Seq.toList
+
+    let private mutateStream name mutation (assemblyBytes: byte[]) =
+        let copy = Array.copy assemblyBytes
+
+        let stream =
+            metadataStreamHeaders copy
+            |> List.find (fun stream -> stream.Name = name)
+
+        mutation copy stream
+        copy
+
+    let zeroMvidGuid assemblyBytes =
+        mutateStream "#GUID" (fun bytes stream -> Array.Clear(bytes, stream.DataOffset, 16)) assemblyBytes
+
+    let truncateGuidStream assemblyBytes =
+        mutateStream "#GUID" (fun bytes stream -> writeInt32 bytes (stream.HeaderOffset + 4) 0) assemblyBytes
+
+    let addUnsupportedFieldPointerTable assemblyBytes =
+        mutateStream "#~" (fun bytes stream ->
+            bytes[stream.HeaderOffset + 8] <- byte '#'
+            bytes[stream.HeaderOffset + 9] <- byte '-'
+
+            let validLow = readInt32 bytes (stream.DataOffset + 8)
+            writeInt32 bytes (stream.DataOffset + 8) (validLow ||| (1 <<< 3))) assemblyBytes
+
 [<Fact>]
 let ``Synthetic CustomDebugInformation row attaches to the right MethodDef`` () =
     let modul = Plumbing.buildModule [ "Foo"; "Bar" ]
@@ -719,6 +810,43 @@ let ``Baseline reader populates token maps and uses reconstructed synthesized sn
     match Map.tryFind "endpoints" baseline.SynthesizedNameSnapshot with
     | Some names -> Assert.Contains("endpoints@hotreload#g0_o0", names)
     | None -> failwith "expected reconstructed endpoints bucket"
+
+[<Fact>]
+let ``Baseline reader does not trust a portable PDB from another assembly`` () =
+    let assemblyBytes, _ =
+        Plumbing.writeInMemory (Plumbing.buildModule [ "First" ]) (Map.empty<string, PdbMethodCustomDebugInfo list>)
+
+    let _, unrelatedPdbBytes =
+        Plumbing.writeInMemory (Plumbing.buildModule [ "Second"; "Third" ]) (Map.empty<string, PdbMethodCustomDebugInfo list>)
+
+    let baseline = readFromAssemblyAndPdbBytes assemblyBytes (Some unrelatedPdbBytes)
+
+    Assert.True(baseline.PortablePdb.IsNone, "a mismatched PDB must not contribute baseline state")
+    Assert.Equal(SynthesizedNameSnapshotSource.Reconstructed, baseline.SynthesizedNameSnapshotSource)
+
+[<Fact>]
+let ``Baseline reader rejects an empty MVID`` () =
+    let assemblyBytes, pdbBytes =
+        Plumbing.writeInMemory (Plumbing.buildModule [ "Compute" ]) (Map.empty<string, PdbMethodCustomDebugInfo list>)
+
+    let assemblyBytes = Plumbing.zeroMvidGuid assemblyBytes
+    Assert.True((tryReadFromAssemblyAndPdbBytes assemblyBytes (Some pdbBytes)).IsNone)
+
+[<Fact>]
+let ``Baseline reader bounds the MVID read to the GUID stream`` () =
+    let assemblyBytes, pdbBytes =
+        Plumbing.writeInMemory (Plumbing.buildModule [ "Compute" ]) (Map.empty<string, PdbMethodCustomDebugInfo list>)
+
+    let assemblyBytes = Plumbing.truncateGuidStream assemblyBytes
+    Assert.True((tryReadFromAssemblyAndPdbBytes assemblyBytes (Some pdbBytes)).IsNone)
+
+[<Fact>]
+let ``Baseline reader rejects pointer-table indirection in an uncompressed stream`` () =
+    let assemblyBytes, pdbBytes =
+        Plumbing.writeInMemory (Plumbing.buildModule [ "Compute" ]) (Map.empty<string, PdbMethodCustomDebugInfo list>)
+
+    let assemblyBytes = Plumbing.addUnsupportedFieldPointerTable assemblyBytes
+    Assert.True((tryReadFromAssemblyAndPdbBytes assemblyBytes (Some pdbBytes)).IsNone)
 
 [<Fact>]
 let ``Baseline reader gives recorded synthesized snapshot precedence over reconstruction`` () =

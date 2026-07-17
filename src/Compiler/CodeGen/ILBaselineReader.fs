@@ -2,6 +2,9 @@
 module internal FSharp.Compiler.CodeGen.ILBaselineReader
 
 open System
+open System.Collections.Immutable
+open System.IO
+open System.Reflection.PortableExecutable
 open System.Text
 
 type MetadataHeapSizes =
@@ -21,6 +24,7 @@ type MetadataSnapshot =
 
 type PortablePdbMetadata =
     {
+        ContentId: byte[]
         TableRowCounts: int[]
         EntryPointToken: int option
     }
@@ -45,8 +49,11 @@ module private TableIndices =
     let Module = 0
     let TypeRef = 1
     let TypeDef = 2
+    let FieldPtr = 3
     let Field = 4
+    let MethodPtr = 5
     let MethodDef = 6
+    let ParamPtr = 7
     let Param = 8
     let InterfaceImpl = 9
     let MemberRef = 10
@@ -57,8 +64,10 @@ module private TableIndices =
     let FieldLayout = 16
     let StandAloneSig = 17
     let EventMap = 18
+    let EventPtr = 19
     let Event = 20
     let PropertyMap = 21
+    let PropertyPtr = 22
     let Property = 23
     let MethodSemantics = 24
     let MethodImpl = 25
@@ -206,7 +215,12 @@ let private parseTablesStream (bytes: byte[]) (tablesStream: StreamHeader) =
 
     for i in 0..63 do
         if (valid &&& (1L <<< i)) <> 0L then
-            rowCounts[i] <- readInt32 bytes rowCountOffset
+            let rowCount = readInt32 bytes rowCountOffset
+
+            if rowCount < 0 then
+                invalidArg (nameof bytes) "metadata table row counts must be non-negative"
+
+            rowCounts[i] <- rowCount
             rowCountOffset <- rowCountOffset + 4
 
     heapSizes, rowCounts, offset
@@ -279,11 +293,37 @@ let private readGuidFromBytes (bytes: byte[]) (guidIndex: int) =
             | None -> None
             | Some guidStream ->
                 let offset = guidStream.Offset + (guidIndex - 1) * 16
+                let streamEnd = int64 guidStream.Offset + int64 guidStream.Size
+                let guidEnd = int64 offset + 16L
 
-                if offset + 16 > bytes.Length then
+                if
+                    guidStream.Offset < 0
+                    || guidStream.Size < 0
+                    || streamEnd > int64 bytes.Length
+                    || offset < guidStream.Offset
+                    || guidEnd > streamEnd
+                then
                     None
                 else
                     Some(Guid(bytes[offset .. offset + 15]))
+
+/// Reads the portable CodeView content ID embedded in a PE debug directory.
+let readCodeViewContentIdFromBytes (bytes: byte[]) : byte[] option =
+    try
+        use peReader = new PEReader(ImmutableArray.CreateRange bytes)
+
+        peReader.ReadDebugDirectory()
+        |> Seq.tryFind (fun entry -> entry.IsPortableCodeView)
+        |> Option.map (fun entry ->
+            let data = peReader.ReadCodeViewDebugDirectoryData entry
+            let contentId = Array.zeroCreate<byte> 20
+            data.Guid.ToByteArray().CopyTo(contentId, 0)
+            BitConverter.GetBytes(entry.Stamp).CopyTo(contentId, 16)
+            contentId)
+    with
+    | :? BadImageFormatException
+    | :? IOException
+    | :? InvalidOperationException -> None
 
 /// Parsed metadata context for reading table rows.
 /// Internal (not private): tiny reader members can get cross-module inlined in Release
@@ -499,35 +539,44 @@ let private createMetadataContext (bytes: byte[]) =
         | None -> None
         | Some stream ->
             let heapSizes, rowCounts, tablesOffset = parseTablesStream bytes stream
-            let stringsBig = (heapSizes &&& 0x01uy) <> 0uy
-            let guidsBig = (heapSizes &&& 0x02uy) <> 0uy
-            let blobsBig = (heapSizes &&& 0x04uy) <> 0uy
-            let mutable rowCountSize = 0
+            let pointerTables =
+                [| TableIndices.FieldPtr; TableIndices.MethodPtr; TableIndices.ParamPtr; TableIndices.EventPtr; TableIndices.PropertyPtr |]
 
-            for i in 0..63 do
-                if rowCounts[i] > 0 then
-                    rowCountSize <- rowCountSize + 4
+            // The #- stream permits pointer-table indirection. This reader consumes the
+            // definition tables directly, so accepting a non-empty pointer table would
+            // associate members with the wrong declaring type.
+            if stream.Name = "#-" && pointerTables |> Array.exists (fun table -> rowCounts[table] <> 0) then
+                None
+            else
+                let stringsBig = (heapSizes &&& 0x01uy) <> 0uy
+                let guidsBig = (heapSizes &&& 0x02uy) <> 0uy
+                let blobsBig = (heapSizes &&& 0x04uy) <> 0uy
+                let mutable rowCountSize = 0
 
-            Some
-                {
-                    Bytes = bytes
-                    HeapSizes = heapSizes
-                    RowCounts = rowCounts
-                    TablesStart = tablesOffset + 24 + rowCountSize
-                    StringIndexSize = if stringsBig then 4 else 2
-                    GuidIndexSize = if guidsBig then 4 else 2
-                    BlobIndexSize = if blobsBig then 4 else 2
-                    StringsStreamOffset =
-                        streamHeaders
-                        |> List.tryFind (fun h -> h.Name = "#Strings")
-                        |> Option.map (fun h -> h.Offset)
-                        |> Option.defaultValue 0
-                    BlobStreamOffset =
-                        streamHeaders
-                        |> List.tryFind (fun h -> h.Name = "#Blob")
-                        |> Option.map (fun h -> h.Offset)
-                        |> Option.defaultValue 0
-                }
+                for i in 0..63 do
+                    if rowCounts[i] > 0 then
+                        rowCountSize <- rowCountSize + 4
+
+                Some
+                    {
+                        Bytes = bytes
+                        HeapSizes = heapSizes
+                        RowCounts = rowCounts
+                        TablesStart = tablesOffset + 24 + rowCountSize
+                        StringIndexSize = if stringsBig then 4 else 2
+                        GuidIndexSize = if guidsBig then 4 else 2
+                        BlobIndexSize = if blobsBig then 4 else 2
+                        StringsStreamOffset =
+                            streamHeaders
+                            |> List.tryFind (fun h -> h.Name = "#Strings")
+                            |> Option.map (fun h -> h.Offset)
+                            |> Option.defaultValue 0
+                        BlobStreamOffset =
+                            streamHeaders
+                            |> List.tryFind (fun h -> h.Name = "#Blob")
+                            |> Option.map (fun h -> h.Offset)
+                            |> Option.defaultValue 0
+                    }
 
 let private readStringFromHeap (ctx: MetadataContext) offset =
     if offset = 0 then
@@ -910,12 +959,15 @@ let readPortablePdbMetadata (pdbBytes: byte[]) =
 
                 let pdbStream = findStream streamHeaders "#Pdb"
 
-                tablesStream
-                |> Option.map (fun stream ->
-                    {
-                        TableRowCounts = parsePdbTablesStream pdbBytes stream
-                        EntryPointToken = pdbStream |> Option.bind (parsePdbStream pdbBytes)
-                    })
+                Option.map2
+                    (fun stream pdb ->
+                        {
+                            ContentId = pdbBytes[pdb.Offset .. pdb.Offset + 19]
+                            TableRowCounts = parsePdbTablesStream pdbBytes stream
+                            EntryPointToken = parsePdbStream pdbBytes pdb
+                        })
+                    tablesStream
+                    (pdbStream |> Option.filter (fun stream -> stream.Size >= 24))
         with
         | :? IndexOutOfRangeException
         | :? ArgumentOutOfRangeException -> None

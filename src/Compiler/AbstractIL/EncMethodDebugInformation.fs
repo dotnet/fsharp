@@ -299,7 +299,7 @@ let deserializeSynthesizedNameSnapshot (blob: byte[]) : Map<string, string[]> =
 
                 let bucketCount = reader.ReadCompressedInteger()
 
-                if bucketCount < 0 then
+                if bucketCount <= 0 || bucketCount > reader.RemainingBytes / 2 then
                     invalidData "synthesized name snapshot" reader.Offset
 
                 let buckets = ResizeArray<string * string[]>()
@@ -308,7 +308,9 @@ let deserializeSynthesizedNameSnapshot (blob: byte[]) : Map<string, string[]> =
                     let key = readUtf8String "synthesized name snapshot" &reader
                     let nameCount = reader.ReadCompressedInteger()
 
-                    if nameCount < 0 then
+                    // Every serialized name consumes at least one byte for its UTF-8
+                    // length, so this check bounds allocation before Array.zeroCreate.
+                    if nameCount < 0 || nameCount > reader.RemainingBytes then
                         invalidData "synthesized name snapshot" reader.Offset
 
                     let names = Array.zeroCreate nameCount

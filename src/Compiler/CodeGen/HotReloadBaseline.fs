@@ -1583,8 +1583,9 @@ let private baselineMethodNamesByToken (tokenMaps: BaselineTokenMaps) =
     |> Seq.map (fun (key, token) -> token, key.Name)
     |> Map.ofSeq
 
-let private toPortablePdbSnapshot (pdbBytes: byte[]) =
+let private toPortablePdbSnapshot (expectedContentId: byte[]) (pdbBytes: byte[]) =
     ILBaselineReader.readPortablePdbMetadata pdbBytes
+    |> Option.filter (fun metadata -> metadata.ContentId.AsSpan().SequenceEqual(expectedContentId))
     |> Option.map (fun metadata ->
         {
             Bytes = Array.copy pdbBytes
@@ -1593,10 +1594,18 @@ let private toPortablePdbSnapshot (pdbBytes: byte[]) =
         })
 
 let tryReadFromAssemblyAndPdbBytes (assemblyBytes: byte[]) (portablePdbBytes: byte[] option) =
-    match metadataSnapshotFromBytes assemblyBytes, ILBaselineReader.BaselineMetadataReader.Create assemblyBytes with
-    | Some metadataSnapshot, Some reader ->
+    match
+        metadataSnapshotFromBytes assemblyBytes,
+        ILBaselineReader.BaselineMetadataReader.Create assemblyBytes,
+        readModuleMvid assemblyBytes
+    with
+    | Some metadataSnapshot, Some reader, Some moduleId when moduleId <> Guid.Empty ->
         let tokenMaps = buildBaselineTokenMapsFromBytes reader
-        let portablePdbSnapshot = portablePdbBytes |> Option.bind toPortablePdbSnapshot
+
+        let portablePdbSnapshot =
+            match ILBaselineReader.readCodeViewContentIdFromBytes assemblyBytes with
+            | Some expectedContentId -> portablePdbBytes |> Option.bind (toPortablePdbSnapshot expectedContentId)
+            | None -> None
 
         let synthesizedNames, synthesizedNameSnapshotSource =
             match
@@ -1643,7 +1652,7 @@ let tryReadFromAssemblyAndPdbBytes (assemblyBytes: byte[]) (portablePdbBytes: by
 
         Some
             {
-                ModuleId = readModuleMvid assemblyBytes |> Option.defaultValue Guid.Empty
+                ModuleId = moduleId
                 EncId = Guid.Empty
                 EncBaseId = Guid.Empty
                 NextGeneration = 1
