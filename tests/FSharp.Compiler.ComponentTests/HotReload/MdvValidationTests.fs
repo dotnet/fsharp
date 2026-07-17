@@ -2923,5 +2923,3 @@ module Demo =
             try checker.InvalidateAll() with _ -> ()
             try Directory.Delete(deltaDir, true) with _ -> ()
             try Directory.Delete(projectDir, true) with _ -> ()
-
-    
