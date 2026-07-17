@@ -5351,7 +5351,8 @@ let emitDeltaWithDebugData (freshDebugPdb: byte[] option) (request: IlxDeltaRequ
                 // reader with it reads a DISPLACED row once an earlier generation added
                 // Property rows ahead of this one in the fresh layout.
                 registerPropertyDefinition key propertyHandle
-            | _ -> ()
+                true
+            | _ -> false
         | _ ->
             if traceMethodUpdates.Value then
                 printfn
@@ -5369,16 +5370,22 @@ let emitDeltaWithDebugData (freshDebugPdb: byte[] option) (request: IlxDeltaRequ
                 | true, key ->
                     // Fresh handle for the same reason as the property branch above.
                     registerEventDefinition key eventHandle
-                | _ -> ()
-            | _ -> ()
+                    true
+                | _ -> false
+            | _ -> false
 
     for accessor in request.UpdatedAccessors do
-        match accessor.Method with
-        | Some methodKey ->
-            match tryGetMethodToken methodKey with
-            | Some methodToken -> tryResolveAccessor methodToken
-            | None -> ()
-        | None -> ()
+        let resolved =
+            accessor.Method
+            |> Option.bind tryGetMethodToken
+            |> Option.exists tryResolveAccessor
+
+        if not resolved then
+            raise (
+                HotReloadUnsupportedEditException(
+                    $"Unable to resolve updated accessor '{accessor.Symbol.QualifiedName}' on '{accessor.ContainingType}' to emitted property or event metadata; please rebuild."
+                )
+            )
 
     let updatedTypeTokens =
         let baselineTokens =

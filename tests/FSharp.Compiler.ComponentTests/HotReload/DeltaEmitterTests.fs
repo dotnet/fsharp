@@ -1588,6 +1588,36 @@ module DeltaEmitterTests =
         Assert.Equal(0, paramTableCount)
 
     [<Fact>]
+    let ``emitDelta fails closed when an accessor has no property or event association`` () =
+        let baselineArtifacts =
+            TestHelpers.createBaselineFromModule (TestHelpers.createPropertyHostBaselineModule ())
+
+        let methodKey =
+            TestHelpers.methodKey "Sample.PropertyDemo" "GetBaseline" [] PrimaryAssemblyILGlobals.typ_String
+
+        let accessorUpdate =
+            TestHelpers.mkAccessorUpdate "Sample.PropertyDemo" (SymbolMemberKind.PropertyGet "Message") methodKey
+
+        let request =
+            {
+                IlxDeltaRequest.Baseline = baselineArtifacts.Baseline
+                UpdatedTypes = [ "Sample.PropertyDemo" ]
+                UpdatedMethods = []
+                UpdatedAccessors = [ accessorUpdate ]
+                Module = TestHelpers.createPropertyHostBaselineModule () |> TestHelpers.withDebuggableAttribute
+                SymbolChanges = None
+                CurrentGeneration = 1
+                PreviousGenerationId = None
+                SynthesizedNames = None
+                EmittedArtifacts = None
+            }
+
+        let error =
+            Assert.Throws<HotReloadUnsupportedEditException>(fun () -> emitDelta request |> ignore)
+
+        Assert.Contains("Unable to resolve updated accessor", error.Message)
+
+    [<Fact>]
     let ``emitDelta adds property metadata rows for new property`` () =
         let baselineArtifacts =
             TestHelpers.createBaselineFromModule (TestHelpers.createPropertyHostBaselineModule ())
