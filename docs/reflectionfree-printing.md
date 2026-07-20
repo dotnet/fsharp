@@ -40,12 +40,11 @@ The following differences between `string` and `sprintf "%+A"` carry over direct
 
 | F# value | simple (`string`) | reflection (`sprintf "%A"`) |
 |---|---|---|
-| char field | `'a'` | `a` |
+| string field `"hi"` | `hi` | `"hi"` |
+| char field `'a'` | `a` | `'a'` |
 | float `5.0` | `5` | `5.0` |
 | `250uy` / `42n` / `1.5M` | `250` / `42` / `1.5` | `250uy` / `42n` / `1.5M` |
 | option field `None` | `null` | `None` |
-| option field `Some 2` | `Some(2)` | `Some 2` |
-| voption field `ValueSome 2` | `2` | `ValueSome 2` |
 | array field `[\|1;2;3\|]` | `System.Int32[]` | `[\|1; 2; 3\|]` |
 | unit field `()` | `null` | `()` |
 
@@ -55,14 +54,19 @@ The overall differences here are:
 
 ### Other differences
 
-- `StructuredFormatDisplay` is ignored in simple printing.
-- A DU case with a single field sometimes renders without brackets in reflection printing, but always has brackets in simple printing.
-- Reflection printing often uses indents and line breaks in reflection printing, but has no line breaks in simple printing (unless field printing involves line breaks).
+These differences are in the printing of the record or DU itself rather than of its fields:
 
 | F# value | simple (`string`) | reflection (`sprintf "%+A"`) |
 |---|---|---|
-| Single simple field DU | `B 5` | `B(5)` |
-| `[<StructuredFormatDisplay("Custom<{X}>")>]` | `{ X = 5 }` (attribute ignored) | `Custom<5>` |
+| `B 5` (single field) | `B(5)` | `B 5` |
+| `C (3, "hi")` (two fields) | `C(3, hi)` | `C (3, "hi")` |
+| record `{ X = 1; Y = 2 }` | `{ X = 1; Y = 2 }` | `{ X = 1`⏎`  Y = 2 }` |
+| `[<StructuredFormatDisplay("Custom<{X}>")>]` | `{ X = 5 }` | `Custom<5>` |
+
+The overall differences here are:
+- Simple printing always brackets a case's fields and never pads, while reflection printing omits brackets for a single non-tuple field and inserts a space before them otherwise.
+- Simple printing uses a single line (unless a field's own rendering contains breaks), while reflection printing breaks records and nested values across lines with indentation.
+- `StructuredFormatDisplay` is ignored in simple printing and honoured in reflection printing.
 
 ## Recursion and depth
 
