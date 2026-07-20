@@ -1712,6 +1712,30 @@ let MakeBindingsForUnionAugmentation g (tycon: Tycon) (vals: ValRef list) =
 // specialised - e.g. an int field renders via a direct, allocation-free ToString rather than a boxed call).
 //-------------------------------------------------------------------------
 
+// Guard deep recursion with a catchable exception, as C# records' PrintMembers do, when the runtime provides
+// it. A type whose fields are all primitive cannot nest, so it skips the guard.
+let mkToStringRecursionGuard (g: TcGlobals, m: Text.range, fieldTys: TType list, body: Expr) =
+    let isPrimitive (ty: TType) =
+        isIntegerTy g ty
+        || isFpTy g ty
+        || isDecimalTy g ty
+        || isStringTy g ty
+        || typeEquiv g g.char_ty ty
+        || isBoolTy g ty
+        || isUnitTy g ty
+        || isEnumTy g ty
+
+    if fieldTys |> List.forall isPrimitive then
+        body
+    else
+        match g.TryFindSysILTypeRef "System.Runtime.CompilerServices.RuntimeHelpers" with
+        | Some tref ->
+            let mspec =
+                mkILNonGenericStaticMethSpecInTy (mkILNonGenericBoxedTy tref, "EnsureSufficientExecutionStack", [], ILType.Void)
+
+            mkSequential m (mkAsmExpr ([ mkNormalCall mspec ], [], [], [], m)) body
+        | None -> body
+
 // Render one field value as a string the way option/list do (LanguagePrimitives.anyToStringShowingNull):
 // a null reference renders as "null", everything else via the 'string' operator. A value-type field can
 // never be null, so it skips the box+null-guard and renders directly.
@@ -1741,7 +1765,8 @@ let mkRecdToString (g: TcGlobals, tcref: TyconRef, tycon: Tycon, openBrace: stri
         |> List.concat
 
     let parts = mkString g m openBrace :: fieldParts @ [ mkString g m closeBrace ]
-    thisv, mkStringConcat (g, m, parts)
+    let fieldTys = tcref.AllInstanceFieldsAsList |> List.map (fun fspec -> fspec.FormalType)
+    thisv, mkToStringRecursionGuard (g, m, fieldTys, mkStringConcat (g, m, parts))
 
 // A union's ToString as a match over the cases building "CaseName(f0, f1, ...)" (or just "CaseName" for a
 // nullary case).
@@ -1786,7 +1811,11 @@ let mkUnionToString (g: TcGlobals, tcref: TyconRef, tycon: Tycon) =
             mkCase (DecisionTreeTest.UnionCase(cref, tinst), mbuilder.AddResultTarget(mkResult ucase)))
 
     let dtree = TDSwitch(thise, cases, None, m)
-    thisv, mbuilder.Close(dtree, m, g.string_ty)
+
+    let fieldTys =
+        tcref.UnionCasesAsList |> List.collect (fun uc -> uc.RecdFields) |> List.map (fun rf -> rf.FormalType)
+
+    thisv, mkToStringRecursionGuard (g, m, fieldTys, mbuilder.Close(dtree, m, g.string_ty))
 
 let TyconIsCandidateForAugmentationWithToString (g: TcGlobals, tycon: Tycon) =
     g.useReflectionFreeCodeGen && (tycon.IsUnionTycon || tycon.IsRecordTycon)
@@ -1807,36 +1836,6 @@ let MakeBindingsForToStringAugmentation (g: TcGlobals, tycon: Tycon, toStringVal
             mkUnionToString (g, tcref, tycon)
         else
             mkRecdToString (g, tcref, tycon, "{ ", " }")
-
-    let mightRecurse =
-        let isPrimitive (ty: TType) =
-            isIntegerTy g ty
-            || isFpTy g ty
-            || isDecimalTy g ty
-            || isStringTy g ty
-            || typeEquiv g g.char_ty ty
-            || isBoolTy g ty
-            || isUnitTy g ty
-            || isEnumTy g ty
-
-        let fieldTys =
-            if tycon.IsUnionTycon then
-                tycon.UnionCasesAsList |> List.collect (fun uc -> uc.RecdFields) |> List.map (fun rf -> rf.FormalType)
-            else
-                tycon.AllInstanceFieldsAsList |> List.map (fun rf -> rf.FormalType)
-
-        fieldTys |> List.exists (isPrimitive >> not)
-
-    // Guard deep recursion with a catchable exception, as C# records' PrintMembers do, when the runtime provides it.
-    let body =
-        if mightRecurse then
-            match g.TryFindSysILTypeRef "System.Runtime.CompilerServices.RuntimeHelpers" with
-            | Some tref ->
-                let mspec = mkILNonGenericStaticMethSpecInTy (mkILNonGenericBoxedTy tref, "EnsureSufficientExecutionStack", [], ILType.Void)
-                mkSequential m (mkAsmExpr ([ mkNormalCall mspec ], [], [], [], m)) body
-            | None -> body
-        else
-            body
 
     let unitv, _ = mkCompGenLocal m "unitArg" g.unit_ty
     let expr = mkLambdas g m tps [ thisv; unitv ] (body, g.string_ty)

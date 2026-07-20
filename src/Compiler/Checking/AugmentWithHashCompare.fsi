@@ -52,7 +52,7 @@ val MakeValsForUnionAugmentation: TcGlobals -> TyconRef -> Val list
 
 val MakeBindingsForUnionAugmentation: TcGlobals -> Tycon -> ValRef list -> Binding list
 
-/// Build a record's single-line reflection-free ToString body; returns the 'this' value and the body expression.
+/// Build a record's single-line reflection-free ToString body, recursion guard included; returns the 'this' value and the body expression.
 val mkRecdToString: g: TcGlobals * tcref: TyconRef * tycon: Tycon * openBrace: string * closeBrace: string -> Val * Expr
 
 /// Whether a reflection-free structural ToString should be generated for this type.
