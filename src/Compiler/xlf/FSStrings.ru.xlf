@@ -264,7 +264,7 @@
       </trans-unit>
       <trans-unit id="IndeterminateType">
         <source>The type of this expression could not be inferred before accessing its members. Add a type annotation, e.g. (expr: SomeType), to constrain the type before this point.</source>
-        <target state="new">Поиск объекта неопределенного типа, основанного на информации до данной точки программы. Возможно, перед данной точкой программы потребуется аннотация типа, с целью ограничения типа объекта. Возможно, это позволит разрешить поиск.</target>
+        <target state="new">The type of this expression could not be inferred before accessing its members. Add a type annotation, e.g. (expr: SomeType), to constrain the type before this point.</target>
         <note />
       </trans-unit>
       <trans-unit id="NameClash1">

@@ -506,9 +506,6 @@ type public FSharpChecker =
     [<Obsolete("Please create an instance of FSharpChecker using FSharpChecker.Create")>]
     static member Instance: FSharpChecker
 
-    /// Creates a listener for overload resolution cache metrics, aggregating across all compilations.
-    static member internal CreateOverloadCacheMetricsListener: unit -> CacheMetrics.CacheMetricsListener
-
     member internal FrameworkImportsCache: FrameworkImportsCache
     member internal ReferenceResolver: LegacyReferenceResolver
 
