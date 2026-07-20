@@ -189,6 +189,26 @@ let main _ =
     |> withStdOutContains "WithoutNames(1, a)"
 
 [<Fact>]
+let ``Backtick-quoted names render without their backticks`` () =
+    FSharp """
+module Test
+type Quoted = | ``My Case`` of int
+type QuotedField = { ``My Field``: int }
+
+[<EntryPoint>]
+let main _ =
+    ``My Case`` 5 |> string |> System.Console.WriteLine
+    { ``My Field`` = 5 } |> string |> System.Console.WriteLine
+    0
+    """
+    |> asExe
+    |> withOptions [ "--reflectionfree" ]
+    |> compileExeAndRun
+    |> shouldSucceed
+    |> withStdOutContains "My Case(5)"
+    |> withStdOutContains "{ My Field = 5 }"
+
+[<Fact>]
 let ``Struct unions and struct records get a generated ToString`` () =
     FSharp """
 module Test
@@ -257,6 +277,28 @@ let main _ =
     for i in 1 .. 1_000_000 do c <- Link(i, c)
     try
         c.ToString() |> ignore
+        System.Console.WriteLine "rendered"
+    with :? System.InsufficientExecutionStackException ->
+        System.Console.WriteLine "caught"
+    0
+    """
+    |> asExe
+    |> withOptions [ "--reflectionfree" ]
+    |> compileExeAndRun
+    |> shouldSucceed
+    |> withStdOutContains "caught"
+
+[<Fact>]
+let ``Deeply nested anonymous records fail the generated ToString with a catchable exception, not a hard overflow`` () =
+    FSharp """
+module Test
+
+[<EntryPoint>]
+let main _ =
+    let mutable o: obj = box 0
+    for _ in 1 .. 1_000_000 do o <- box {| Next = o |}
+    try
+        o.ToString() |> ignore
         System.Console.WriteLine "rendered"
     with :? System.InsufficientExecutionStackException ->
         System.Console.WriteLine "caught"
