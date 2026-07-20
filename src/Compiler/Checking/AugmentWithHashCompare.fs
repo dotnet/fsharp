@@ -1736,7 +1736,7 @@ let mkRecdToString (g: TcGlobals, tcref: TyconRef, tycon: Tycon, openBrace: stri
         |> List.mapi (fun i fspec ->
             let fref = tcref.MakeNestedRecdFieldRef fspec
             let value = mkFieldToString (g, m, mkRecdFieldGetViaExprAddr (thise, fref, tinst, m))
-            let nameEq = mkString g m (fspec.DisplayName + " = ")
+            let nameEq = mkString g m (fspec.DisplayNameCore + " = ")
             if i = 0 then [ nameEq; value ] else [ mkString g m "; "; nameEq; value ])
         |> List.concat
 
@@ -1756,7 +1756,7 @@ let mkUnionToString (g: TcGlobals, tcref: TyconRef, tycon: Tycon) =
         let rfields = ucase.RecdFields
 
         if isNil rfields then
-            mkString g m ucase.DisplayName
+            mkString g m ucase.DisplayNameCore
         else
             // provene is an expression proven to be of this case (the value itself for struct unions,
             // otherwise a 'UnionCaseProof'), from which fields can be read.
@@ -1770,7 +1770,7 @@ let mkUnionToString (g: TcGlobals, tcref: TyconRef, tycon: Tycon) =
                 let fieldsWithSeps =
                     fieldStrs |> List.mapi (fun i fe -> if i = 0 then [ fe ] else [ sep; fe ]) |> List.concat
 
-                let parts = mkString g m (ucase.DisplayName + "(") :: fieldsWithSeps @ [ mkString g m ")" ]
+                let parts = mkString g m (ucase.DisplayNameCore + "(") :: fieldsWithSeps @ [ mkString g m ")" ]
                 mkStringConcat (g, m, parts)
 
             if cref.Tycon.IsStructOrEnumTycon then
