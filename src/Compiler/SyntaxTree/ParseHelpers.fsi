@@ -298,3 +298,20 @@ val mkAbstractMember:
         typeWithConstraints: SynType * SynValInfo ->
             accessors: range option * (SynMemberKind * GetSetKeywords option * SynAccess option * SynAccess option) ->
                 SynMemberDefn list
+
+val mkMatchClauses:
+    patternAndGuard: SynPat * SynExpr option ->
+    patternResult: range option * SynExpr ->
+    mNextBar: range option ->
+    nextClauses: (range option -> SynMatchClause list * range) option ->
+    mLastOuter: range option ->
+        (range option -> SynMatchClause list * range)
+
+val mkMatchClausesRecoverMissingResult:
+    patternAndGuard: SynPat * SynExpr option ->
+    exprDebugString: string ->
+    mExpr: range option ->
+    mNextBar: range option ->
+    nextClauses: (range option -> SynMatchClause list * range) option ->
+    mLastOuter: range option ->
+        (range option -> SynMatchClause list * range)
