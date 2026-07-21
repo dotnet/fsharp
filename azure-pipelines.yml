@@ -22,6 +22,13 @@ variables:
   # OfficialBuildId (so Arcade applies real signatures instead of dry-running).
   - name: _SignType
     value: Real
+  # The insertion + signed VSIX require access to the devdiv 'VS' feed (serviced VS-2017 Roslyn 2.10) through a
+  # service connection. The original 'DevDiv - VS package feed' connection was removed by the org PAT-disable
+  # policy migration (cf. PR #20036), which invalidated this pipeline's YAML. Set this variable to the
+  # replacement connection name to re-enable the insertion + signing; left empty, the pipeline builds product +
+  # tests only, which keeps the YAML valid and the build green.
+  - name: _DevDivServiceConnection
+    value: ''
 
 resources:
   repositories:
@@ -50,19 +57,21 @@ extends:
             displayName: 'Build Windows Release'
             timeoutInMinutes: 120
             variables:
-              - group: DotNet-DevDiv-Insertion-Workflow-Variables
+              - ${{ if ne(variables._DevDivServiceConnection, '') }}:
+                - group: DotNet-DevDiv-Insertion-Workflow-Variables
             pool:
               name: NetCore1ESPool-Svc-Internal
               image: windows.vs2022.amd64
               os: windows
             templateContext:
-              mb:
-                signing:
-                  enabled: true
-                  signWithProd: true
-                  feedSource: https://dnceng.pkgs.visualstudio.com/_packaging/MicroBuildToolset/nuget/v3/index.json
-                  signType: $(_SignType)
-                  zipSources: false
+              ${{ if ne(variables._DevDivServiceConnection, '') }}:
+                mb:
+                  signing:
+                    enabled: true
+                    signWithProd: true
+                    feedSource: https://dnceng.pkgs.visualstudio.com/_packaging/MicroBuildToolset/nuget/v3/index.json
+                    signType: $(_SignType)
+                    zipSources: false
               outputs:
                 - output: pipelineArtifact
                   displayName: 'Publish binary log'
@@ -76,30 +85,34 @@ extends:
                   targetPath: '$(Build.SourcesDirectory)/release/net40/bin'
                   artifactName: 'Product_net40'
                   sbomEnabled: false
-                - output: pipelineArtifact
-                  displayName: 'Publish insertion VSIX'
-                  condition: succeeded()
-                  targetPath: '$(Build.SourcesDirectory)/vsintegration/Vsix/VisualFSharpFull/bin/Release'
-                  artifactName: 'VSIX'
-                  sbomEnabled: false
+                - ${{ if ne(variables._DevDivServiceConnection, '') }}:
+                  - output: pipelineArtifact
+                    displayName: 'Publish insertion VSIX'
+                    condition: succeeded()
+                    targetPath: '$(Build.SourcesDirectory)/vsintegration/Vsix/VisualFSharpFull/bin/Release'
+                    artifactName: 'VSIX'
+                    sbomEnabled: false
             steps:
               - checkout: self
                 clean: true
                 fetchDepth: 1
-              # Authenticate the devdiv 'DevDiv - VS package feed' service connection so the insertion build
-              # can restore the serviced VS-2017 Roslyn from devdiv VS-CoreXtFeeds via a build-time --source
-              # (the committed NuGet.Config stays clean). CIBuild.cmd Step 5 does the devdiv restore.
-              - task: NuGetAuthenticate@1
-                displayName: 'Authenticate NuGet feeds (incl. devdiv VS package feed)'
-                inputs:
-                  nuGetServiceConnections: 'DevDiv - VS package feed'
+              # Authenticate the devdiv 'VS' feed service connection (name in _DevDivServiceConnection) so the
+              # insertion build can restore the serviced VS-2017 Roslyn 2.10. Only emitted when the variable is
+              # set - otherwise this pipeline builds product + tests only. NOTE: if the replacement connection is
+              # a WIF connection, switch this to `azureDevOpsServiceConnection: <name>` + `feedUrl:` (cf. PR #20036).
+              - ${{ if ne(variables._DevDivServiceConnection, '') }}:
+                - task: NuGetAuthenticate@1
+                  displayName: 'Authenticate NuGet feeds (incl. devdiv VS feed)'
+                  inputs:
+                    nuGetServiceConnections: ${{ variables._DevDivServiceConnection }}
               - script: eng\CIBuild.cmd -configuration $(_BuildConfig)
-                displayName: 'Build (product) + tests + insertion VSIX + sign'
+                displayName: 'Build (product) + tests (+ insertion VSIX + sign when devdiv SC set)'
                 env:
                   DisableLocalization: true
-                  BUILD_INSERTION: 1
-                  SignType: $(_SignType)
-                  OfficialBuildId: $(Build.BuildNumber)
+                  ${{ if ne(variables._DevDivServiceConnection, '') }}:
+                    BUILD_INSERTION: 1
+                    SignType: $(_SignType)
+                    OfficialBuildId: $(Build.BuildNumber)
               - task: PublishTestResults@2
                 displayName: 'Publish test results'
                 condition: always()
