@@ -2058,27 +2058,33 @@ classDefnMember:
        [ SynMemberDefn.Interface(ty, None, None, rhs2 parseState 1 3) ] }
 
   | opt_attributes opt_access abstractMemberFlags opt_access opt_inline nameop opt_explicitValTyparDecls COLON topTypeWithTypeConstraints classMemberSpfnGetSet opt_ODECLEND
-     { if Option.isSome $2 then errorR(Error(FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier(), rhs parseState 2))
-       let ty, arity = $9
-       let isInline, doc, id, explicitValTyparDecls = (Option.isSome $5), grabXmlDoc(parseState, $1, 1), $6, $7
-       let mWith, (getSet, getSetRangeOpt, getterAccess, setterAccess) = $10
-       let getSetAdjuster arity = match arity, getSet with SynValInfo([], _), SynMemberKind.Member -> SynMemberKind.PropertyGet | _ -> getSet
-       let mWhole =
-           let m = rhs parseState 1
-           match getSetRangeOpt with
-           | None -> unionRanges m ty.Range
-           | Some gs -> unionRanges m gs.Range
-           |> unionRangeWithXmlDoc doc
+     { mkAbstractMember parseState $1 $2 $3 $4 $5 $6 $7 $9 $10 }
 
-       [ $2; $4; getterAccess; setterAccess ]
-       |> List.iter (function None -> () | Some access -> errorR(Error(FSComp.SR.parsAccessibilityModsIllegalForAbstract(), access.Range)))
+  | opt_attributes opt_access abstractMemberFlags opt_access opt_inline nameop opt_explicitValTyparDecls COLON recover opt_ODECLEND
+     { let id = $6
+       let typeWithConstraints = SynType.FromParseError(id.Range.EndRange), SynValInfo([], SynInfo.unnamedRetVal)
+       let accessors = None, (SynMemberKind.Member, None, None, None)
+       mkAbstractMember parseState $1 $2 $3 $4 $5 id $7 typeWithConstraints accessors }
 
-       let mkFlags, leadingKeyword = $3
-       let trivia = { LeadingKeyword = leadingKeyword; InlineKeyword = $5; WithKeyword = mWith; EqualsRange = None }
-       let vis2 = SynValSigAccess.Single(None)
-       let valSpfn = SynValSig($1, id, explicitValTyparDecls, ty, arity, isInline, false, doc, vis2, None, mWhole, trivia)
-       let trivia: SynMemberDefnAbstractSlotTrivia = { GetSetKeywords = getSetRangeOpt }
-       [ SynMemberDefn.AbstractSlot(valSpfn, mkFlags (getSetAdjuster arity), mWhole, trivia) ] }
+  | opt_attributes opt_access abstractMemberFlags opt_access opt_inline nameop opt_explicitValTyparDecls recover opt_ODECLEND
+     { let id = $6
+       let typeWithConstraints = SynType.FromParseError(id.Range.EndRange), SynValInfo([], SynInfo.unnamedRetVal)
+       let accessors = None, (SynMemberKind.Member, None, None, None)
+       mkAbstractMember parseState $1 $2 $3 $4 $5 id $7 typeWithConstraints accessors }
+
+  | opt_attributes opt_access abstractMemberFlags opt_access opt_inline recover opt_ODECLEND
+     { let mBeforeId =
+           match $2 with
+           | Some access -> access.Range
+           | _ ->
+               let _, leadingKeyword = $3
+               leadingKeyword.Range
+
+       let id = SynIdent(mkSynId mBeforeId.EndRange "", None)
+       let typeParams = SynValTyparDecls(None, true)
+       let typeWithConstraints = SynType.FromParseError(id.Range.EndRange), SynValInfo([], SynInfo.unnamedRetVal)
+       let accessors = None, (SynMemberKind.Member, None, None, None)
+       mkAbstractMember parseState $1 $2 $3 $4 $5 id typeParams typeWithConstraints accessors }
 
   | opt_attributes opt_access inheritsDefn
      { if not (isNil $1) then errorR(Error(FSComp.SR.parsAttributesIllegalOnInherit(), rhs parseState 1))
