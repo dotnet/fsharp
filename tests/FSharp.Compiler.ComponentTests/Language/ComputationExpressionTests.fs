@@ -2865,3 +2865,83 @@ let test() =
         |> shouldFail
         |> withErrorCode 708
         |> withDiagnosticMessageMatches "'Return'"
+
+    // The gate that decides whether to rewrite descends into 'if'/'match' branches just like the rewrite
+    // does, so a bang reached only through a branch is handled the same whether or not an unrelated bang
+    // also leads the spine.
+    [<Fact>]
+    let ``Issue 19457 - bang only inside an if branch compiles and runs`` () =
+        FSharp """
+module Test
+open System.Threading.Tasks
+let cond = true
+let test() =
+    task {
+        let p = if cond then (let! y = Task.FromResult 10 in y) else 0
+        return p
+    }
+[<EntryPoint>]
+let main _ =
+    if test().Result <> 10 then failwith "expected 10"
+    0
+        """
+        |> compileExeAndRun
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Issue 19457 - bang only inside a match branch compiles and runs`` () =
+        FSharp """
+module Test
+open System.Threading.Tasks
+let test n =
+    task {
+        let p = match n with 0 -> (let! y = Task.FromResult 10 in y) | _ -> 0
+        return p
+    }
+[<EntryPoint>]
+let main _ =
+    if test(0).Result <> 10 then failwith "expected 10"
+    0
+        """
+        |> compileExeAndRun
+        |> shouldSucceed
+
+    // A one-armed 'if' whose branch produces unit leans on the builder's implicit 'Zero' for the missing
+    // else, and still runs as a nested computation.
+    [<Fact>]
+    let ``Issue 19457 - bang inside a one-armed if uses implicit Zero`` () =
+        FSharp """
+module Test
+open System.Threading.Tasks
+let cond = true
+let test() =
+    task {
+        let p = if cond then (let! _ = Task.FromResult 10 in ())
+        return p
+    }
+[<EntryPoint>]
+let main _ =
+    test().Result
+    0
+        """
+        |> compileExeAndRun
+        |> shouldSucceed
+
+    // The 'if'/'match' descent stops at a 'try', matching the rewrite, so a bang buried in a 'try' within a
+    // branch stays out of scope.
+    [<Fact>]
+    let ``Issue 19457 - bang inside a try within an if branch is out of scope`` () =
+        FSharp """
+module Test
+open System.Threading.Tasks
+let cond = true
+let test() =
+    task {
+        let p = if cond then (try (let! y = Task.FromResult 10 in y) with _ -> 0) else 0
+        return p
+    }
+        """
+        |> asLibrary
+        |> typecheck
+        |> shouldFail
+        |> withErrorCode 750

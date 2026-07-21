@@ -1048,14 +1048,18 @@ let tryRebindCeLetWithBangRhs (ceenv: ComputationExpressionContext<'a>) isRec m 
         | SynExpr.Typed(expr = e) -> coreOf e
         | e -> e
 
-    // Does the binding spine reach a bang, looking through plain lets, a leading statement, and
-    // paren/type annotations? (A `do!`-headed sequential is already a bang via CeBindingStep.)
+    // Does the binding spine reach a bang? This must mirror where `returnify` descends, so the gate and
+    // the transformation agree: plain lets, a leading statement, paren/type annotations, and the branches
+    // of an `if`/`match`. `try` (and `match!`) stay out — `returnify` treats a `try` as a value leaf, so a
+    // bang only inside a `try` is deliberately left reporting FS0750.
     let rec spineHasBang expr =
         match expr with
         | CeBindingStep(isBang, body, _) -> isBang || spineHasBang body
         | SynExpr.Sequential(expr2 = e2) -> spineHasBang e2
         | SynExpr.Paren(expr = e)
         | SynExpr.Typed(expr = e) -> spineHasBang e
+        | SynExpr.IfThenElse(thenExpr = th; elseExpr = el) -> spineHasBang th || Option.exists spineHasBang el
+        | SynExpr.Match(clauses = cs) -> cs |> List.exists (fun (SynMatchClause(resultExpr = r)) -> spineHasBang r)
         | _ -> false
 
     // Make the nested computation produce its final value: wrap plain value leaves in `return`, leaving
@@ -1086,8 +1090,9 @@ let tryRebindCeLetWithBangRhs (ceenv: ComputationExpressionContext<'a>) isRec m 
         | leaf -> SynExpr.YieldOrReturn((false, true), leaf, leaf.Range, SynExprYieldOrReturnTrivia.Zero)
 
     // Only a single, non-inline, non-mutable, non-recursive plain 'let' binding to a simple value pattern
-    // whose linear head chain reaches a bang is rewritten. A 'use', a bang buried inside a 'try', and a
-    // 'match!'/bang not on that spine are deliberately out of scope and keep reporting FS0750.
+    // whose spine reaches a bang is rewritten. A 'use', a bang buried inside a 'try', and a 'match!' are
+    // deliberately out of scope and keep reporting FS0750. `spineHasBang` and `returnify` walk the same
+    // spine (lets, sequencing, and if/match branches) so the gate and the rewrite agree.
     match binds with
     | [ SynBinding(headPat = pat; isInline = false; isMutable = false; expr = rhs; debugPoint = spBind) as binding ] when
         not (ceenv.isQuery || isRec) && isSimpleValuePat pat && spineHasBang rhs
