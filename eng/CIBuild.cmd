@@ -77,6 +77,11 @@ rem    output, so the DLL is absent from net40\bin (product/tests never needed i
 rem    Stage the net40-compatible variant from the restored package so the VSIX can embed it. ---
 set "_vtSrc=%_root%\packages\System.ValueTuple.4.3.0\lib\portable-net40+sl4+win8+wp8\System.ValueTuple.dll"
 if not exist "%_root%\Release\net40\bin\System.ValueTuple.dll" if exist "%_vtSrc%" ( echo Staging System.ValueTuple.dll into net40\bin & copy /Y "%_vtSrc%" "%_root%\Release\net40\bin\" >nul )
+rem    Stage the vendored FSharp.Data.TypeProviders.dll into net40\bin. It is the nuget.org-only legacy type-
+rem    providers redist (not on any approved feed, agent is firewalled off nuget.org), so it is vendored in the
+rem    repo (setup\dependencies\TypeProviders) and staged here for the insertion Compiler component to package. ---
+set "_tpSrc=%_root%\setup\dependencies\TypeProviders\FSharp.Data.TypeProviders.dll"
+if not exist "%_root%\Release\net40\bin\FSharp.Data.TypeProviders.dll" if exist "%_tpSrc%" ( echo Staging FSharp.Data.TypeProviders.dll into net40\bin & copy /Y "%_tpSrc%" "%_root%\Release\net40\bin\" >nul )
 rem    Restore feeds = every approved feed from the committed NuGet.Config PLUS the devdiv 'VS' feed, all
 rem    passed as --source flags. A --source list overrides the config's feeds, so we must enumerate them
 rem    all (done at runtime to avoid drift); crucially nothing is written into any committed config, so CFS

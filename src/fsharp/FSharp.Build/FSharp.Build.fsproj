@@ -64,7 +64,10 @@
       <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.Build.Tasks.Core.15.8.166\lib\net46\Microsoft.Build.Tasks.Core.dll</HintPath>
     </Reference>
     <Reference Include="FSharp.Data.TypeProviders.dll, Version=4.3.0.0">
-      <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.VisualFSharp.Type.Providers.Redist.$(MicrosoftVisualFSharpTypeProvidersRedistPackageVersion)\content\4.3.0.0\FSharp.Data.TypeProviders.dll</HintPath>
+      <!-- Vendored, nuget.org-only redist (see setup/dependencies/TypeProviders/README.md). Compile-time
+           reference only (Private=false); the insertion drop gets its copy via net40\bin staging. -->
+      <HintPath>$(FSharpSourcesRoot)\..\setup\dependencies\TypeProviders\FSharp.Data.TypeProviders.dll</HintPath>
+      <Private>false</Private>
     </Reference>
   </ItemGroup>
   <ItemGroup Condition=" '$(TargetDotnetProfile)' != 'coreclr' AND '$(MonoPackaging)' == 'true' ">
