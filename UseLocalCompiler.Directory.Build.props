@@ -20,6 +20,13 @@
     <DotnetFscCompilerPath>$(LocalFSharpCompilerPath)/artifacts/bin/fsc/$(LocalFSharpCompilerConfiguration)/$(FSharpNetCoreProductTargetFramework)/fsc.dll</DotnetFscCompilerPath>
     <Fsc_DotNET_DotnetFscCompilerPath>$(LocalFSharpCompilerPath)/artifacts/bin/fsc/$(LocalFSharpCompilerConfiguration)/$(FSharpNetCoreProductTargetFramework)/fsc.dll</Fsc_DotNET_DotnetFscCompilerPath>
 
+    <LocalFSharpCoreTargetFramework>netstandard2.1</LocalFSharpCoreTargetFramework>
+    <UseNetStandard20LocalFSharpCore>false</UseNetStandard20LocalFSharpCore>
+    <UseNetStandard20LocalFSharpCore Condition="'$(TargetFrameworkIdentifier)' == '.NETFramework'">true</UseNetStandard20LocalFSharpCore>
+    <UseNetStandard20LocalFSharpCore Condition="'$(TargetFrameworkIdentifier)' == '.NETStandard' and '$(_TargetFrameworkVersionWithoutV)' != '' and $([System.Version]::Parse('$(_TargetFrameworkVersionWithoutV)')) &lt; $([System.Version]::Parse('2.1'))">true</UseNetStandard20LocalFSharpCore>
+    <UseNetStandard20LocalFSharpCore Condition="'$(TargetFrameworkIdentifier)' == '.NETCoreApp' and '$(_TargetFrameworkVersionWithoutV)' != '' and $([System.Version]::Parse('$(_TargetFrameworkVersionWithoutV)')) &lt; $([System.Version]::Parse('3.0'))">true</UseNetStandard20LocalFSharpCore>
+    <LocalFSharpCoreTargetFramework Condition="'$(UseNetStandard20LocalFSharpCore)' == 'true'">netstandard2.0</LocalFSharpCoreTargetFramework>
+
     <FSharpPreferNetFrameworkTools>False</FSharpPreferNetFrameworkTools>
     <FSharpPrefer64BitTools>True</FSharpPrefer64BitTools>
   </PropertyGroup>
@@ -39,7 +46,11 @@
     <FSharpOverridesTargetsShim>$(LocalFSharpBuildBinPath)/Microsoft.FSharp.Overrides.NetSdk.targets</FSharpOverridesTargetsShim>
   </PropertyGroup>
 
+  <PropertyGroup>
+    <LocalFSharpCoreAssemblyPath>$(LocalFSharpCompilerPath)/artifacts/bin/FSharp.Core/$(LocalFSharpCompilerConfiguration)/$(LocalFSharpCoreTargetFramework)/FSharp.Core.dll</LocalFSharpCoreAssemblyPath>
+  </PropertyGroup>
+
   <ItemGroup>
-    <Reference Include="$(LocalFSharpCompilerPath)/artifacts/bin/FSharp.Core/$(LocalFSharpCompilerConfiguration)/netstandard2.0/FSharp.Core.dll" />
+    <Reference Include="$(LocalFSharpCoreAssemblyPath)" />
   </ItemGroup>
 </Project>
