@@ -18,7 +18,6 @@
       <Uri>https://github.com/dotnet/msbuild</Uri>
       <Sha>746aeb090c9e2bcedc398751370da862014ebf7a</Sha>
     </Dependency>
-    </Dependency>
     <Dependency Name="Microsoft.CodeAnalysis" Version="5.10.0-1.26365.3">
       <Uri>https://github.com/dotnet/roslyn</Uri>
       <Sha>3d32d464e2949f054086fbb5346e4beea0c6df56</Sha>
