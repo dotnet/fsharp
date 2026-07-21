@@ -291,10 +291,10 @@ val mkAbstractMember:
     attrs: SynAttributeList list ->
     accessBeforeKeyword: SynAccess option ->
     abstractMemberFlags: (SynMemberKind -> SynMemberFlags) * SynLeadingKeyword ->
-    accessBeforeId: SynAccess option ->
-    mInline: range option ->
-    id: SynIdent ->
-    typeParams: SynValTyparDecls ->
-    typeWithConstraints: SynType * SynValInfo ->
-    accessors: range option * (SynMemberKind * GetSetKeywords option * SynAccess option * SynAccess option) ->
-        SynMemberDefn list
+        accessBeforeId: SynAccess option ->
+        mInline: range option ->
+        id: SynIdent ->
+        typeParams: SynValTyparDecls ->
+        typeWithConstraints: SynType * SynValInfo ->
+            accessors: range option * (SynMemberKind * GetSetKeywords option * SynAccess option * SynAccess option) ->
+                SynMemberDefn list
