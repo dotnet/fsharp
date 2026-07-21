@@ -408,3 +408,33 @@ type R = { [<DoesNotExist>] X: int }
             "module rec Lib\n\ntype CustomAttribute() =\n    inherit System.Attribute()\n\n[<AbstractClass>]\ntype C<[<Custom>] 'T>() =\n    abstract M: 'T -> unit\n"
         |> compile
         |> shouldSucceed
+
+    [<Fact>]
+    let ``attribute defined in same module rec resolves on explicit val mutable field`` () =
+        Fsx """
+module rec M
+
+type C() =
+    [<DefaultValue; Custom>]
+    val mutable x : int
+
+type CustomAttribute() = inherit System.Attribute()
+"""
+        |> compile
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``property-only attribute in same module rec still warns on explicit val mutable field`` () =
+        Fsx """
+module rec M
+
+type C() =
+    [<DefaultValue; Custom>]
+    val mutable x : int
+
+[<System.AttributeUsage(System.AttributeTargets.Property)>]
+type CustomAttribute() = inherit System.Attribute()
+"""
+        |> compile
+        |> shouldFail
+        |> withDiagnosticMessageMatches "This attribute cannot be applied to field. Valid targets are: property"

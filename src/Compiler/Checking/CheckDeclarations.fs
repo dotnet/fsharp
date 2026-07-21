@@ -460,14 +460,22 @@ module TcRecdUnionAndEnumDeclarations =
         if isStatic && (not zeroInit || not isMutable || not isPrivate) then errorR(Error(FSComp.SR.tcStaticValFieldsMustBeMutableAndPrivate(), m))
         let konst = if zeroInit then Some Const.Zero else None
         let rfspec = MakeRecdFieldSpec g env parent (isStatic, konst, tyR, attrsForProperty, attrsForField, id, nameGenerated, isMutable, isVolatile, xmldoc, vis, m)
-        match parent with
-        | Parent tcref when useGenuineField tcref.Deref rfspec ->
-            // Recheck the attributes for errors if the definition only generates a field
-            TcAttributesWithPossibleTargets TcCanFail.ReportAllErrors cenv env AttributeTargets.FieldDeclRestricted synAttrs |> ignore
-        | _ -> ()
+        let isGenuineField = match parent with Parent tcref -> useGenuineField tcref.Deref rfspec | _ -> false
+
+        // Recheck the attributes for errors if the definition only generates a field. When the attribute type
+        // is from the same recursive group its constructor is not yet established, so defer to the fixup below.
+        let recheckGenuineField () =
+            if isGenuineField then
+                TcAttributesWithPossibleTargets TcCanFail.ReportAllErrors cenv env AttributeTargets.FieldDeclRestricted synAttrs |> ignore
+        if not hasUnresolvedAttrs then recheckGenuineField ()
 
         let fixupAttrs () =
-            let finalAttrs = if hasUnresolvedAttrs then TcAttributesWithPossibleTargets TcCanFail.ReportAllErrors cenv env AttributeTargets.FieldDecl synAttrs |> fst else attrs
+            let finalAttrs =
+                if hasUnresolvedAttrs then
+                    let reresolved = TcAttributesWithPossibleTargets TcCanFail.ReportAllErrors cenv env AttributeTargets.FieldDecl synAttrs |> fst
+                    recheckGenuineField ()
+                    reresolved
+                else attrs
             let propAttribs', fieldAttribs' = splitAttrs finalAttrs
             rfspec.rfield_pattribs <- propAttribs'
             rfspec.rfield_fattribs <- fieldAttribs'
