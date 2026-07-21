@@ -96,6 +96,9 @@
   <ItemGroup Condition="'$(TargetFramework)' != '$(FSharpNetCoreProductTargetFramework)'">
     <PackageReference Include="System.Reflection.Metadata" Version="$(SystemReflectionMetadataVersion)" />
     <PackageReference Include="System.Diagnostics.DiagnosticSource" Version="$(SystemDiagnosticsDiagnosticSourceVersion)" />
+    <!-- Override vulnerable 4.3.0 facades brought in transitively via Microsoft.CodeAnalysis.Test.Resources.Proprietary -> NETStandard.Library 1.6.1 (NU1903). -->
+    <PackageReference Include="System.Net.Http" Version="$(SystemNetHttpVersion)" />
+    <PackageReference Include="System.Text.RegularExpressions" Version="$(SystemTextRegularExpressionsVersion)" />
   </ItemGroup>
 <PropertyGroup>
  <NoWarn>$(NoWarn);NU1510;44</NoWarn> <!-- NU1510: Project is explicitly referencing the runtime assembly 'System.Collections.Immutable', however, if we remove it, it tries to find it on the wrong path. Also, local NoWarn does not help - This is just me trying to enforce it -->

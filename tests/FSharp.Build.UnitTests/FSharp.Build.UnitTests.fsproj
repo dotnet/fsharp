@@ -34,4 +34,9 @@
     <PackageReference Include="Microsoft.Build.Utilities.Core" Version="$(MicrosoftBuildUtilitiesCoreVersion)" />
   </ItemGroup>
 
+  <!-- Override vulnerable System.Security.Cryptography.Xml pulled in transitively by Microsoft.Build.Tasks.Core on .NET (NU1903). net472 is excluded because it has no such transitive and the override's dependencies conflict with System.ValueTuple there. -->
+  <ItemGroup Condition="'$(TargetFramework)' == '$(FSharpNetCoreProductTargetFramework)'">
+    <PackageReference Include="System.Security.Cryptography.Xml" Version="$(SystemSecurityCryptographyXmlVersion)" />
+  </ItemGroup>
+
 </Project>
