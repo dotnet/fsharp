@@ -3723,17 +3723,16 @@ module EstablishTypeDefinitionCores =
 
                         let abstractSlots = 
                             [ for synValSig, memberFlags in slotsigs do 
-
-                                  let (SynValSig(range=m)) = synValSig
-
-                                  CheckMemberFlags None NewSlotsOK OverridesOK memberFlags m
-                                  
-                                  let slots = fst (TcAndPublishValSpec (cenv, envinner, containerInfo, ModuleOrMemberBinding, Some memberFlags, tpenv, synValSig))
-                                  // Multiple slots may be returned, e.g. for 
-                                  //    abstract P: int with get, set
-                                  
-                                  for slot in slots do 
-                                      yield mkLocalValRef slot ]
+                                  let (SynValSig(ident = (SynIdent(id, _)); range = m)) = synValSig
+                                  if id.idText <> "" then
+                                      CheckMemberFlags None NewSlotsOK OverridesOK memberFlags m
+                                      
+                                      let slots = fst (TcAndPublishValSpec (cenv, envinner, containerInfo, ModuleOrMemberBinding, Some memberFlags, tpenv, synValSig))
+                                      // Multiple slots may be returned, e.g. for 
+                                      //    abstract P: int with get, set
+                                      
+                                      for slot in slots do 
+                                          yield mkLocalValRef slot ]
 
                         let kind = 
                             match kind with 
