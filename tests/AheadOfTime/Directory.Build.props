@@ -4,6 +4,11 @@
   <Import Project="$(MSBuildThisFileDirectory)../../eng/TargetFrameworks.props" />
   
   <PropertyGroup>
+    <!-- Auxiliary/consumer-style projects keep their own inline package versions (not under repo CPM). -->
+    <ImportDirectoryPackagesProps>false</ImportDirectoryPackagesProps>
+  </PropertyGroup>
+
+  <PropertyGroup>
     <LocalFSharpBuildBinPath>$(MSBuildThisFileDirectory)/../../artifacts/bin/fsc/Release/$(FSharpNetCoreProductTargetFramework)</LocalFSharpBuildBinPath>    
   </PropertyGroup>
 

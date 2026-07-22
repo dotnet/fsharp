@@ -1,6 +1,8 @@
 <Project>
 
   <PropertyGroup>
+    <!-- Auxiliary/consumer-style projects keep their own inline package versions (not under repo CPM). -->
+    <ImportDirectoryPackagesProps>false</ImportDirectoryPackagesProps>
     <FSharpTestCompilerVersion Condition = " '$(FSharpTestCompilerVersion)' == '' ">net40</FSharpTestCompilerVersion>
     <RollForward>LatestMajor</RollForward>
     <!-- xUnit3 package versions for EndToEndBuildTests - these must be defined before importing parent props -->

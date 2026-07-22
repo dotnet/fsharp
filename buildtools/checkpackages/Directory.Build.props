@@ -3,6 +3,8 @@
     <Import Project="$(MSBuildThisFileDirectory)..\..\eng\TargetFrameworks.props" />
 
     <PropertyGroup>
+        <!-- Auxiliary/consumer-style projects keep their own inline package versions (not under repo CPM). -->
+        <ImportDirectoryPackagesProps>false</ImportDirectoryPackagesProps>
         <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
         <CachePath>$(MSBuildProjectDirectory)\..\..\artifacts\tmp\$([System.Guid]::NewGuid())</CachePath>
         <BaseIntermediateOutputPath>$(CachePath)\obj\</BaseIntermediateOutputPath>
