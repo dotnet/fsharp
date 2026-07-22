@@ -38,9 +38,10 @@ let private readInt32 (bytes: byte[]) (offset: int) =
     ||| (int bytes[offset + 2] <<< 16)
     ||| (int bytes[offset + 3] <<< 24)
 
-let private readInt64 (bytes: byte[]) (offset: int) =
-    int64 (uint32 (readInt32 bytes offset))
-    ||| (int64 (uint32 (readInt32 bytes (offset + 4))) <<< 32)
+/// Reads an unsigned 64-bit little-endian value without sign-extending either half.
+let internal readUInt64 (bytes: byte[]) (offset: int) =
+    uint64 (uint32 (readInt32 bytes offset))
+    ||| (uint64 (uint32 (readInt32 bytes (offset + 4))) <<< 32)
 
 [<Literal>]
 let private tableCount = 64
@@ -209,12 +210,12 @@ let private findStream (headers: StreamHeader list) (name: string) =
 let private parseTablesStream (bytes: byte[]) (tablesStream: StreamHeader) =
     let offset = tablesStream.Offset
     let heapSizes = bytes[offset + 6]
-    let valid = readInt64 bytes (offset + 8)
+    let valid = readUInt64 bytes (offset + 8)
     let rowCounts = Array.zeroCreate tableCount
     let mutable rowCountOffset = offset + 24
 
     for i in 0..63 do
-        if (valid &&& (1L <<< i)) <> 0L then
+        if (valid &&& (1UL <<< i)) <> 0UL then
             let rowCount = readInt32 bytes rowCountOffset
 
             if rowCount < 0 then
@@ -223,7 +224,18 @@ let private parseTablesStream (bytes: byte[]) (tablesStream: StreamHeader) =
             rowCounts[i] <- rowCount
             rowCountOffset <- rowCountOffset + 4
 
-    heapSizes, rowCounts, offset
+    heapSizes, rowCounts, offset, valid
+
+/// Computes the first table-row offset from the table header's valid-table mask.
+let internal tableDataStart tablesOffset (valid: uint64) =
+    let mutable remaining = valid
+    let mutable presentTableCount = 0
+
+    while remaining <> 0UL do
+        presentTableCount <- presentTableCount + 1
+        remaining <- remaining &&& (remaining - 1UL)
+
+    tablesOffset + 24 + (presentTableCount * 4)
 
 let metadataSnapshotFromBytes (bytes: byte[]) : MetadataSnapshot option =
     try
@@ -242,7 +254,7 @@ let metadataSnapshotFromBytes (bytes: byte[]) : MetadataSnapshot option =
             match tablesStream with
             | None -> None
             | Some tables ->
-                let _, rowCounts, _ = parseTablesStream bytes tables
+                let _, rowCounts, _, _ = parseTablesStream bytes tables
 
                 let trimmedStringHeapSize =
                     match stringsStream with
@@ -538,7 +550,7 @@ let private createMetadataContext (bytes: byte[]) =
         match tablesStream with
         | None -> None
         | Some stream ->
-            let heapSizes, rowCounts, tablesOffset = parseTablesStream bytes stream
+            let heapSizes, rowCounts, tablesOffset, valid = parseTablesStream bytes stream
 
             let pointerTables =
                 [|
@@ -561,18 +573,13 @@ let private createMetadataContext (bytes: byte[]) =
                 let stringsBig = (heapSizes &&& 0x01uy) <> 0uy
                 let guidsBig = (heapSizes &&& 0x02uy) <> 0uy
                 let blobsBig = (heapSizes &&& 0x04uy) <> 0uy
-                let mutable rowCountSize = 0
-
-                for i in 0..63 do
-                    if rowCounts[i] > 0 then
-                        rowCountSize <- rowCountSize + 4
 
                 Some
                     {
                         Bytes = bytes
                         HeapSizes = heapSizes
                         RowCounts = rowCounts
-                        TablesStart = tablesOffset + 24 + rowCountSize
+                        TablesStart = tableDataStart tablesOffset valid
                         StringIndexSize = if stringsBig then 4 else 2
                         GuidIndexSize = if guidsBig then 4 else 2
                         BlobIndexSize = if blobsBig then 4 else 2
@@ -939,12 +946,12 @@ let private parsePdbStream (bytes: byte[]) (pdbStream: StreamHeader) =
 
 let private parsePdbTablesStream (bytes: byte[]) (tablesStream: StreamHeader) =
     let offset = tablesStream.Offset
-    let valid = readInt64 bytes (offset + 8)
+    let valid = readUInt64 bytes (offset + 8)
     let pdbRowCounts = Array.zeroCreate 8
     let mutable rowCountOffset = offset + 24
 
     for i in 0..63 do
-        if (valid &&& (1L <<< i)) <> 0L then
+        if (valid &&& (1UL <<< i)) <> 0UL then
             let count = readInt32 bytes rowCountOffset
 
             if i >= 0x30 && i <= 0x37 then
