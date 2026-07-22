@@ -450,14 +450,11 @@ module private Plumbing =
     let private ilg =
         mkILGlobals (ILScopeRef.Assembly primaryAssemblyRef, [], ILScopeRef.Assembly primaryAssemblyRef)
 
-    let private mkAbstractMethod (name: string) : ILMethodDef =
-        // MethodBody.Abstract is the smallest body shape the IL writer accepts: it still
-        // gets a full PdbMethodData row (token, name), but skips code/IL-body generation
-        // entirely, which is all this test needs.
-        mkILNonGenericStaticMethod (name, ILMemberAccess.Public, [], mkILReturn ILType.Void, MethodBody.Abstract)
+    let private mkMethod (name: string) (body: MethodBody) : ILMethodDef =
+        mkILNonGenericStaticMethod (name, ILMemberAccess.Public, [], mkILReturn ILType.Void, body)
 
-    let private mkType (typeName: string) (methodNames: string list) : ILTypeDef =
-        let methods = methodNames |> List.map mkAbstractMethod |> mkILMethods
+    let private mkType (typeName: string) (methods: (string * MethodBody) list) : ILTypeDef =
+        let methods = methods |> List.map (fun (name, body) -> mkMethod name body) |> mkILMethods
 
         ILTypeDef(
             typeName,
@@ -481,8 +478,8 @@ module private Plumbing =
     /// method table forbids two same-named methods of the same arity *within one type*
     /// (unrelated to CDI), but the CDI name-keying this test exercises is per-assembly,
     /// so cross-type name clashes are exactly the ambiguous case to cover.
-    let buildModuleOfTypes (types: (string * string list) list) : ILModuleDef =
-        let typeDefs = types |> List.map (fun (typeName, methodNames) -> mkType typeName methodNames)
+    let buildModuleOfMethodBodies (types: (string * (string * MethodBody) list) list) : ILModuleDef =
+        let typeDefs = types |> List.map (fun (typeName, methods) -> mkType typeName methods)
 
         let assemblyName = "EncCdiPlumbing_" + Guid.NewGuid().ToString("N")
 
@@ -498,6 +495,12 @@ module private Plumbing =
             0
             (mkILExportedTypes [])
             "v4.0.30319" // Non-empty: pins the metadata version explicitly rather than relying on primaryAssemblyRef's.
+
+    let buildModuleOfTypes (types: (string * string list) list) : ILModuleDef =
+        types
+        |> List.map (fun (typeName, methodNames) ->
+            typeName, methodNames |> List.map (fun name -> name, MethodBody.Abstract))
+        |> buildModuleOfMethodBodies
 
     /// Builds a minimal in-memory module with one type "T" declaring 'methodNames'.
     let buildModule (methodNames: string list) : ILModuleDef = buildModuleOfTypes [ "T", methodNames ]
@@ -625,6 +628,24 @@ let ``An ambiguous method name attaches to neither method`` () =
     // unrelated IL writer invariant that forbids two same-named/same-arity methods
     // within a single type.
     let modul = Plumbing.buildModuleOfTypes [ "T1", [ "Dup" ]; "T2", [ "Dup" ] ]
+
+    let blob =
+        serializeStateMachineStates
+            { EncMethodDebugInformation.Empty with
+                StateMachineStates = [ { StateNumber = 0; SyntaxOffset = 1 } ] }
+
+    let rows =
+        Map.ofList [ "Dup", [ { KindGuid = PortableCustomDebugInfoKinds.encStateMachineStateMap; Blob = blob } ] ]
+
+    let assemblyBytes, pdbBytes = Plumbing.writeInMemory modul rows
+    Assert.Empty(Plumbing.readAllCdiRows assemblyBytes pdbBytes)
+
+[<Fact>]
+let ``A method name shared with unavailable metadata attaches to neither method`` () =
+    let modul =
+        Plumbing.buildModuleOfMethodBodies
+            [ "T1", [ "Dup", MethodBody.Abstract ]
+              "T2", [ "Dup", MethodBody.NotAvailable ] ]
 
     let blob =
         serializeStateMachineStates
