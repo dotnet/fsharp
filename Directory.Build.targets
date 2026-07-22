@@ -3,6 +3,13 @@
   <Import Project="FSharpTests.Directory.Build.targets" Condition = " '$(FSharpTestCompilerVersion)' != '' "/>
   <Import Project="CoordinateXliff.targets" Condition = " '$(FSharpBuildAssemblyFile)' != '' and '$(XliffTasksAssembly)' != '' "/>
 
+  <!-- The repo restores from many NuGet sources (Maestro does not support package source mapping),
+       which triggers NU1507 under Central Package Management. Suppress it here, after the project
+       bodies (some of which reset NoWarn), so it is applied consistently across every CPM project. -->
+  <PropertyGroup Condition="'$(ManagePackageVersionsCentrally)' == 'true'">
+    <NoWarn>$(NoWarn);NU1507</NoWarn>
+  </PropertyGroup>
+
   <!-- Disable R2R when building source-only and not targeting the current SDK bundled TFM. -->
   <PropertyGroup>
     <PublishReadyToRun Condition="'$(DotNetBuildSourceOnly)' == 'true' and
