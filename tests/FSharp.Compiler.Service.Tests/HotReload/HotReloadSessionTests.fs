@@ -12,6 +12,8 @@ open System.Reflection.Metadata
 open System.Reflection.Metadata.Ecma335
 open System.Reflection.PortableExecutable
 open System.Text
+open System.Threading
+open System.Threading.Tasks
 open Xunit
 
 open FSharp.Compiler.CodeAnalysis
@@ -20,6 +22,7 @@ open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.EditAndContinue
 open FSharp.Compiler.HotReload
 open FSharp.Compiler.HotReloadBaseline
+open FSharp.Compiler.HotReloadEmitHook
 open FSharp.Compiler.HotReloadState
 open FSharp.Compiler.Text
 open FSharp.Compiler.TypedTree
@@ -34,6 +37,56 @@ open FSharp.Compiler.Service.Tests.Common
 /// capabilities/active statements.
 [<Collection(nameof NotThreadSafeResourceCollection)>]
 module HotReloadSessionTests =
+
+    [<Fact>]
+    let ``Closure-name capture rejects a disagreement with emitted names`` () =
+        let derived = Map.ofList [ 0x06000001, Map.ofList [ [ 0 ], "DerivedClosure" ] ]
+        let recorded = Map.ofList [ 0x06000001, Map.ofList [ [ 0 ], "RecordedClosure" ] ]
+
+        Assert.Throws<InvalidOperationException>(fun () -> validateClosureNameRows derived recorded)
+        |> ignore
+
+        validateClosureNameRows derived derived
+
+    [<Fact>]
+    let ``Stable-file wait does not treat a missing output as stable`` () =
+        let projectDir =
+            Path.Combine(Path.GetTempPath(), "fcs-hotreload-stable-file-appearance", Guid.NewGuid().ToString("N"))
+
+        Directory.CreateDirectory projectDir |> ignore
+
+        try
+            let outputPath = Path.Combine(projectDir, "Delayed.dll")
+            let waitTask = Task.Run(fun () -> FSharpHotReloadFileSystem.waitForStableFile outputPath)
+
+            Thread.Sleep 150
+            Assert.False(waitTask.IsCompleted, "A missing file must not satisfy the stability threshold.")
+
+            File.WriteAllBytes(outputPath, [| 1uy; 2uy; 3uy |])
+            Assert.True(waitTask.Wait(TimeSpan.FromSeconds 2.0), "The wait did not observe the materialized stable file.")
+        finally
+            Directory.Delete(projectDir, true)
+
+    [<Fact>]
+    let ``Optional debug-data read degrades only for ordinary unreadable-file failures`` () =
+        let unreadableFailures: exn list =
+            [ IOException "I/O failure"
+              UnauthorizedAccessException "denied"
+              System.Security.SecurityException "security policy"
+              NotSupportedException "unsupported path" ]
+
+        for failure in unreadableFailures do
+            let result =
+                FSharpHotReloadFileSystem.tryReadAllBytes (fun _ -> raise failure) "restricted.pdb"
+
+            Assert.True(result.IsNone)
+
+        Assert.Throws<OperationCanceledException>(fun () ->
+            FSharpHotReloadFileSystem.tryReadAllBytes
+                (fun _ -> raise (OperationCanceledException "cancelled"))
+                "restricted.pdb"
+            |> ignore)
+        |> ignore
 
     let private createChecker () =
         FSharpChecker.Create(

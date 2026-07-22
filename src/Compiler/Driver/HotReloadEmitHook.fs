@@ -17,6 +17,33 @@ open FSharp.Compiler.HotReloadPdb
 open FSharp.Compiler.SynthesizedTypeMaps
 open FSharp.Compiler.Text.Range
 
+/// Rejects an emitted closure-name recording that disagrees with CDI reconstruction.
+let internal validateClosureNameRows (derivedRows: Map<int, Map<int list, string>>) (recordedRows: Map<int, Map<int list, string>>) =
+    let mismatches =
+        derivedRows
+        |> Map.toList
+        |> List.choose (fun (methodToken, derivedTable) ->
+            match Map.tryFind methodToken recordedRows with
+            | Some recordedTable when recordedTable <> derivedTable -> Some(methodToken, derivedTable, recordedTable)
+            | _ -> None)
+
+    if not mismatches.IsEmpty then
+        if Environment.GetEnvironmentVariable("FSHARP_HOTRELOAD_TRACE_CLOSURENAMES") = "1" then
+            printfn
+                "[fsharp-hotreload][closure-names] capture validation FAILED: derived tables disagree with the emit-time recording: %A"
+                mismatches
+
+        let methodTokens =
+            mismatches |> List.map (fun (methodToken, _, _) -> $"0x{methodToken:X8}")
+
+        let tokenList = String.concat ", " methodTokens
+
+        raise (
+            InvalidOperationException(
+                $"Hot reload closure-name reconstruction disagrees with the emit-time recording for MethodDef tokens {tokenList}."
+            )
+        )
+
 /// Hot reload emit hook implementation used when --test:HotReloadDeltas is active.
 type internal DefaultHotReloadEmitHook(editAndContinueService: FSharpEditAndContinueLanguageService) =
 
@@ -76,25 +103,7 @@ type internal DefaultHotReloadEmitHook(editAndContinueService: FSharpEditAndCont
                     EncClosureNames = recordedRows
                 }
             | _ ->
-                let mismatches =
-                    baseline.EncClosureNames
-                    |> Map.toList
-                    |> List.choose (fun (methodToken, derivedTable) ->
-                        match Map.tryFind methodToken recordedRows with
-                        | Some recordedTable when recordedTable <> derivedTable -> Some(methodToken, derivedTable, recordedTable)
-                        | _ -> None)
-
-                if not mismatches.IsEmpty then
-                    if Environment.GetEnvironmentVariable("FSHARP_HOTRELOAD_TRACE_CLOSURENAMES") = "1" then
-                        printfn
-                            "[fsharp-hotreload][closure-names] capture validation FAILED: derived tables disagree with the emit-time recording: %A"
-                            mismatches
-
-                    System.Diagnostics.Debug.Assert(
-                        false,
-                        "Hot reload closure-name reconstruction disagrees with the emit-time stamp -> name recording."
-                    )
-
+                validateClosureNameRows baseline.EncClosureNames recordedRows
                 baseline
 
         editAndContinueService.StartSession(baseline, artifacts.OptimizedImpls)
