@@ -62,9 +62,11 @@
         <HintPath>$(LocalFSharpCoreAssemblyPath)</HintPath>
         <Private>true</Private>
       </Reference>
+      <ReferencePath Remove="@(ReferencePath)" Condition="'%(ReferencePath.Identity)' == '$(LocalFSharpCoreAssemblyPath)'" />
       <ReferencePath Include="$(LocalFSharpCoreAssemblyPath)">
         <Private>true</Private>
       </ReferencePath>
+      <ReferenceCopyLocalPaths Remove="@(ReferenceCopyLocalPaths)" Condition="'%(ReferenceCopyLocalPaths.Identity)' == '$(LocalFSharpCoreAssemblyPath)'" />
       <ReferenceCopyLocalPaths Include="$(LocalFSharpCoreAssemblyPath)" />
     </ItemGroup>
   </Target>
