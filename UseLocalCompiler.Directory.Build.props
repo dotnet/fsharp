@@ -21,15 +21,47 @@
     <Fsc_DotNET_DotnetFscCompilerPath>$(LocalFSharpCompilerPath)/artifacts/bin/fsc/$(LocalFSharpCompilerConfiguration)/$(FSharpNetCoreProductTargetFramework)/fsc.dll</Fsc_DotNET_DotnetFscCompilerPath>
 
     <LocalFSharpCoreTargetFramework>netstandard2.1</LocalFSharpCoreTargetFramework>
-    <UseNetStandard20LocalFSharpCore>false</UseNetStandard20LocalFSharpCore>
-    <UseNetStandard20LocalFSharpCore Condition="'$(TargetFrameworkIdentifier)' == '.NETFramework'">true</UseNetStandard20LocalFSharpCore>
-    <UseNetStandard20LocalFSharpCore Condition="'$(TargetFrameworkIdentifier)' == '.NETStandard' and '$(_TargetFrameworkVersionWithoutV)' != '' and $([System.Version]::Parse('$(_TargetFrameworkVersionWithoutV)')) &lt; $([System.Version]::Parse('2.1'))">true</UseNetStandard20LocalFSharpCore>
-    <UseNetStandard20LocalFSharpCore Condition="'$(TargetFrameworkIdentifier)' == '.NETCoreApp' and '$(_TargetFrameworkVersionWithoutV)' != '' and $([System.Version]::Parse('$(_TargetFrameworkVersionWithoutV)')) &lt; $([System.Version]::Parse('3.0'))">true</UseNetStandard20LocalFSharpCore>
-    <LocalFSharpCoreTargetFramework Condition="'$(UseNetStandard20LocalFSharpCore)' == 'true'">netstandard2.0</LocalFSharpCoreTargetFramework>
+    <LocalFSharpCoreAssemblyPath Condition="'$(LocalFSharpCoreAssemblyPath)' == ''">$(LocalFSharpCompilerPath)/artifacts/bin/FSharp.Core/$(LocalFSharpCompilerConfiguration)/$(LocalFSharpCoreTargetFramework)/FSharp.Core.dll</LocalFSharpCoreAssemblyPath>
 
     <FSharpPreferNetFrameworkTools>False</FSharpPreferNetFrameworkTools>
     <FSharpPrefer64BitTools>True</FSharpPrefer64BitTools>
   </PropertyGroup>
+
+  <Target Name="SetLocalFSharpCoreTargetFramework" BeforeTargets="CoreCompile">
+    <PropertyGroup>
+      <_TargetFrameworkValue>$(TargetFramework)</_TargetFrameworkValue>
+      <_TargetFrameworkValue Condition="'$(_TargetFrameworkValue)' == '' and '$(TargetFrameworks)' != ''">$([System.String]::Copy('$(TargetFrameworks)').Split(';')[0])</_TargetFrameworkValue>
+
+      <_TargetFrameworkIdentifier>$(TargetFrameworkIdentifier)</_TargetFrameworkIdentifier>
+      <_TargetFrameworkIdentifier Condition="'$(_TargetFrameworkIdentifier)' == '' and '$(_TargetFrameworkValue)' != '' and $([System.String]::Copy('$(_TargetFrameworkValue)').StartsWith('net4'))">.NETFramework</_TargetFrameworkIdentifier>
+      <_TargetFrameworkIdentifier Condition="'$(_TargetFrameworkIdentifier)' == '' and '$(_TargetFrameworkValue)' != '' and $([System.String]::Copy('$(_TargetFrameworkValue)').StartsWith('netstandard'))">.NETStandard</_TargetFrameworkIdentifier>
+      <_TargetFrameworkIdentifier Condition="'$(_TargetFrameworkIdentifier)' == '' and '$(_TargetFrameworkValue)' != '' and $([System.String]::Copy('$(_TargetFrameworkValue)').StartsWith('netcoreapp'))">.NETCoreApp</_TargetFrameworkIdentifier>
+      <_TargetFrameworkIdentifier Condition="'$(_TargetFrameworkIdentifier)' == '' and '$(_TargetFrameworkValue)' != ''">.NETCoreApp</_TargetFrameworkIdentifier>
+
+      <_TargetFrameworkVersionWithoutV>$(TargetFrameworkVersion)</_TargetFrameworkVersionWithoutV>
+      <_TargetFrameworkVersionWithoutV Condition="'$(_TargetFrameworkVersionWithoutV)' != '' and $([System.String]::Copy('$(_TargetFrameworkVersionWithoutV)').StartsWith('v'))">$([System.String]::Copy('$(_TargetFrameworkVersionWithoutV)').Substring(1))</_TargetFrameworkVersionWithoutV>
+      <_TargetFrameworkVersionWithoutV Condition="'$(_TargetFrameworkVersionWithoutV)' == '' and '$(_TargetFrameworkValue)' != '' and '$(_TargetFrameworkIdentifier)' == '.NETStandard'">$([System.String]::Copy('$(_TargetFrameworkValue)').Substring(11))</_TargetFrameworkVersionWithoutV>
+
+      <_UseNetStandard20LocalFSharpCore>false</_UseNetStandard20LocalFSharpCore>
+      <_UseNetStandard20LocalFSharpCore Condition="'$(_TargetFrameworkIdentifier)' == '.NETFramework'">true</_UseNetStandard20LocalFSharpCore>
+      <_UseNetStandard20LocalFSharpCore Condition="'$(_TargetFrameworkIdentifier)' == '.NETStandard' and '$(_TargetFrameworkVersionWithoutV)' != '' and $([System.Version]::Parse('$(_TargetFrameworkVersionWithoutV)')) &lt; $([System.Version]::Parse('2.1'))">true</_UseNetStandard20LocalFSharpCore>
+      <_UseNetStandard20LocalFSharpCore Condition="'$(_TargetFrameworkIdentifier)' == '.NETCoreApp' and '$(_TargetFrameworkVersionWithoutV)' != '' and $([System.Version]::Parse('$(_TargetFrameworkVersionWithoutV)')) &lt; $([System.Version]::Parse('3.0'))">true</_UseNetStandard20LocalFSharpCore>
+
+      <LocalFSharpCoreTargetFramework Condition="'$(_UseNetStandard20LocalFSharpCore)' == 'true'">netstandard2.0</LocalFSharpCoreTargetFramework>
+      <LocalFSharpCoreAssemblyPath>$(LocalFSharpCompilerPath)/artifacts/bin/FSharp.Core/$(LocalFSharpCompilerConfiguration)/$(LocalFSharpCoreTargetFramework)/FSharp.Core.dll</LocalFSharpCoreAssemblyPath>
+    </PropertyGroup>
+  </Target>
+
+  <Target Name="UseLocalFSharpCoreReference" BeforeTargets="CoreCompile">
+    <ItemGroup>
+      <ReferencePath Remove="@(ReferencePath)" Condition="'%(ReferencePath.Filename)' == 'FSharp.Core' and '%(ReferencePath.Extension)' == '.dll'" />
+      <ReferenceCopyLocalPaths Remove="@(ReferenceCopyLocalPaths)" Condition="'%(ReferenceCopyLocalPaths.Filename)' == 'FSharp.Core' and '%(ReferenceCopyLocalPaths.Extension)' == '.dll'" />
+      <ReferencePath Include="$(LocalFSharpCoreAssemblyPath)">
+        <Private>true</Private>
+      </ReferencePath>
+      <ReferenceCopyLocalPaths Include="$(LocalFSharpCoreAssemblyPath)" />
+    </ItemGroup>
+  </Target>
 
   <!-- 
     Use FSharpTargetsShim to redirect the SDK to use the locally built F# targets.
@@ -46,11 +78,4 @@
     <FSharpOverridesTargetsShim>$(LocalFSharpBuildBinPath)/Microsoft.FSharp.Overrides.NetSdk.targets</FSharpOverridesTargetsShim>
   </PropertyGroup>
 
-  <PropertyGroup>
-    <LocalFSharpCoreAssemblyPath>$(LocalFSharpCompilerPath)/artifacts/bin/FSharp.Core/$(LocalFSharpCompilerConfiguration)/$(LocalFSharpCoreTargetFramework)/FSharp.Core.dll</LocalFSharpCoreAssemblyPath>
-  </PropertyGroup>
-
-  <ItemGroup>
-    <Reference Include="$(LocalFSharpCoreAssemblyPath)" />
-  </ItemGroup>
 </Project>
