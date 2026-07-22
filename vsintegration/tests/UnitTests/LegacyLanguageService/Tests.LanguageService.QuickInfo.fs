@@ -268,6 +268,7 @@ type UsingMSBuild() =
         let expectedTooltip = """
 type Async =
   static member AsBeginEnd: computation: ('Arg -> Async<'T>) -> ('Arg * AsyncCallback * objnull -> IAsyncResult) * (IAsyncResult -> 'T) * (IAsyncResult -> unit)
+  static member Await: task: Task<'T> -> Async<'T> + 3 overloads
   static member AwaitEvent: event: IEvent<'Del,'T> * ?cancelAction: (unit -> unit) -> Async<'T> (requires delegate and 'Del :> Delegate and 'Del: not null)
   static member AwaitIAsyncResult: iar: IAsyncResult * ?millisecondsTimeout: int -> Async<bool>
   static member AwaitTask: task: Task<'T> -> Async<'T> + 1 overload
@@ -276,10 +277,13 @@ type Async =
   static member Catch: computation: Async<'T> -> Async<Choice<'T,exn>>
   static member Choice: computations: Async<'T option> seq -> Async<'T option>
   static member FromBeginEnd: beginAction: (AsyncCallback * objnull -> IAsyncResult) * endAction: (IAsyncResult -> 'T) * ?cancelAction: (unit -> unit) -> Async<'T> + 3 overloads
-  static member FromContinuations: callback: (('T -> unit) * (exn -> unit) * (OperationCanceledException -> unit) -> unit) -> Async<'T>
   ...
 Full name: Microsoft.FSharp.Control.Async""".TrimStart().Replace("\r\n", "\n")
-
+        // Hack to deal with fact that FSharp.Core's Async.Await will have 2 overloads in netstandard2.0 but 4 in netstandard2.1
+        let checkTooltip expected ((tooltip: string, span : TextSpan), (row, col)) =
+            let tooltip = tooltip.Replace("static member Await: task: Task<'T> -> Async<'T> + 1 overload",
+                                          "static member Await: task: Task<'T> -> Async<'T> + 3 overloads")
+            checkTooltip expected ((tooltip, span), (row, col))
         this.CheckTooltip(source, "Asyn", false, checkTooltip expectedTooltip)
 
     [<Fact(Skip = "Bug https://github.com/dotnet/fsharp/issues/17330")>]

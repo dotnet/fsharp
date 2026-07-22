@@ -13,6 +13,7 @@ open System.Runtime.ExceptionServices
 open System.Threading
 open System.Threading.Tasks
 open Microsoft.FSharp.Core
+open Microsoft.FSharp.Core.CompilerServices
 open Microsoft.FSharp.Core.LanguagePrimitives.IntrinsicOperators
 open Microsoft.FSharp.Control
 open Microsoft.FSharp.Collections
@@ -1210,16 +1211,30 @@ module AsyncPrimitives =
 
         task
 
+    // Used by Async.Await path to elide egregious AggregateException wrapping
+    [<DebuggerHidden>]
+    let UnwrapExn (exn: AggregateException) =
+        if exn.InnerExceptions.Count = 1 then
+            exn.InnerExceptions[0]
+        else
+            exn
+
     // Call the appropriate continuation on completion of a task
     [<DebuggerHidden>]
-    let OnTaskCompleted (completedTask: Task<'T>) (ctxt: AsyncActivation<'T>) =
+    let OnTaskCompleted unwrap (completedTask: Task<'T>) (ctxt: AsyncActivation<'T>) =
         assert completedTask.IsCompleted
 
         if completedTask.IsCanceled then
             let edi = ExceptionDispatchInfo.Capture(TaskCanceledException completedTask)
             ctxt.econt edi
         elif completedTask.IsFaulted then
-            let edi = ExceptionDispatchInfo.RestoreOrCapture completedTask.Exception
+            let e =
+                if unwrap then
+                    UnwrapExn completedTask.Exception
+                else
+                    completedTask.Exception
+
+            let edi = ExceptionDispatchInfo.RestoreOrCapture e
             ctxt.econt edi
         else
             ctxt.cont completedTask.Result
@@ -1229,14 +1244,20 @@ module AsyncPrimitives =
     // the overall async (they may be governed by different cancellation tokens, or
     // the task may not have a cancellation token at all).
     [<DebuggerHidden>]
-    let OnUnitTaskCompleted (completedTask: Task) (ctxt: AsyncActivation<unit>) =
+    let OnUnitTaskCompleted unwrap (completedTask: Task) (ctxt: AsyncActivation<unit>) =
         assert completedTask.IsCompleted
 
         if completedTask.IsCanceled then
             let edi = ExceptionDispatchInfo.Capture(TaskCanceledException(completedTask))
             ctxt.econt edi
         elif completedTask.IsFaulted then
-            let edi = ExceptionDispatchInfo.RestoreOrCapture completedTask.Exception
+            let e =
+                if unwrap then
+                    UnwrapExn completedTask.Exception
+                else
+                    completedTask.Exception
+
+            let edi = ExceptionDispatchInfo.RestoreOrCapture e
             ctxt.econt edi
         else
             ctxt.cont ()
@@ -1246,10 +1267,10 @@ module AsyncPrimitives =
     // completing the task. This will install a new trampoline on that thread and continue the
     // execution of the async there.
     [<DebuggerHidden>]
-    let AttachContinuationToTask (task: Task<'T>) (ctxt: AsyncActivation<'T>) =
+    let AttachContinuationToTask unwrap (task: Task<'T>) (ctxt: AsyncActivation<'T>) =
         task.ContinueWith(
             Action<Task<'T>>(fun completedTask ->
-                ctxt.trampolineHolder.ExecuteWithTrampoline(fun () -> OnTaskCompleted completedTask ctxt)
+                ctxt.trampolineHolder.ExecuteWithTrampoline(fun () -> OnTaskCompleted unwrap completedTask ctxt)
                 |> unfake),
             TaskContinuationOptions.ExecuteSynchronously
         )
@@ -1261,15 +1282,35 @@ module AsyncPrimitives =
     // completing the task. This will install a new trampoline on that thread and continue the
     // execution of the async there.
     [<DebuggerHidden>]
-    let AttachContinuationToUnitTask (task: Task) (ctxt: AsyncActivation<unit>) =
+    let AttachContinuationToUnitTask unwrap (task: Task) (ctxt: AsyncActivation<unit>) =
         task.ContinueWith(
             Action<Task>(fun completedTask ->
-                ctxt.trampolineHolder.ExecuteWithTrampoline(fun () -> OnUnitTaskCompleted completedTask ctxt)
+                ctxt.trampolineHolder.ExecuteWithTrampoline(fun () -> OnUnitTaskCompleted unwrap completedTask ctxt)
                 |> unfake),
             TaskContinuationOptions.ExecuteSynchronously
         )
         |> ignore
         |> fake
+
+    let AwaitTask unwrap (task: Task<'T>) =
+        MakeAsyncWithCancelCheck(fun ctxt ->
+            if task.IsCompleted then
+                // Run synchronously without installing new trampoline
+                OnTaskCompleted unwrap task ctxt
+            else
+                // Continue asynchronously, via syncContext if necessary, installing new trampoline
+                let ctxt = DelimitSyncContext ctxt
+                ctxt.ProtectCode(fun () -> AttachContinuationToTask unwrap task ctxt))
+
+    let AwaitUnitTask unwrap (task: Task) =
+        MakeAsyncWithCancelCheck(fun ctxt ->
+            if task.IsCompleted then
+                // Continue synchronously without installing new trampoline
+                OnUnitTaskCompleted unwrap task ctxt
+            else
+                // Continue asynchronously, via syncContext if necessary, installing new trampoline
+                let ctxt = DelimitSyncContext ctxt
+                ctxt.ProtectCode(fun () -> AttachContinuationToUnitTask unwrap task ctxt))
 
     /// Removes a registration places on a cancellation token
     let DisposeCancellationRegistration (registration: byref<CancellationTokenRegistration option>) =
@@ -2203,24 +2244,58 @@ type Async =
         CreateWhenCancelledAsync compensation computation
 
     static member AwaitTask(task: Task<'T>) : Async<'T> =
-        MakeAsyncWithCancelCheck(fun ctxt ->
-            if task.IsCompleted then
-                // Run synchronously without installing new trampoline
-                OnTaskCompleted task ctxt
-            else
-                // Continue asynchronously, via syncContext if necessary, installing new trampoline
-                let ctxt = DelimitSyncContext ctxt
-                ctxt.ProtectCode(fun () -> AttachContinuationToTask task ctxt))
+        AwaitTask false task
 
     static member AwaitTask(task: Task) : Async<unit> =
-        MakeAsyncWithCancelCheck(fun ctxt ->
-            if task.IsCompleted then
-                // Continue synchronously without installing new trampoline
-                OnUnitTaskCompleted task ctxt
-            else
-                // Continue asynchronously, via syncContext if necessary, installing new trampoline
-                let ctxt = DelimitSyncContext ctxt
-                ctxt.ProtectCode(fun () -> AttachContinuationToUnitTask task ctxt))
+        AwaitUnitTask false task
+
+    static member Await(task: Task<'T>) : Async<'T> =
+        AwaitTask true task
+
+    static member Await(task: Task) : Async<unit> =
+        AwaitUnitTask true task
+
+#if NETSTANDARD2_1
+    static member Await(task: ValueTask<'T>) : Async<'T> =
+        if task.IsCompletedSuccessfully then
+            CreateReturnAsync(task.GetAwaiter().GetResult())
+        else
+            AwaitTask true (task.AsTask())
+
+    static member Await(task: ValueTask) : Async<unit> =
+        if task.IsCompletedSuccessfully then
+            CreateReturnAsync(task.GetAwaiter().GetResult())
+        else
+            AwaitUnitTask true (task.AsTask())
+#endif
+
+module AsyncTaskLikeExtensions =
+
+    type Async with
+
+        [<NoEagerConstraintApplication>]
+        static member inline Await< ^TaskLike, ^Awaiter, 'T
+            when ^TaskLike: (member GetAwaiter: unit -> ^Awaiter)
+            and ^Awaiter :> ICriticalNotifyCompletion
+            and ^Awaiter: (member get_IsCompleted: unit -> bool)
+            and ^Awaiter: (member GetResult: unit -> 'T)>
+            (task: ^TaskLike)
+            : Async<'T> =
+            Async.FromContinuations(fun (cont, econt, _ccont) ->
+                let mutable awaiter = (^TaskLike: (member GetAwaiter: unit -> ^Awaiter) task)
+
+                if (^Awaiter: (member get_IsCompleted: unit -> bool) awaiter) then
+                    try
+                        cont ((^Awaiter: (member GetResult: unit -> 'T) awaiter))
+                    with e ->
+                        econt e
+                else
+                    (awaiter :> ICriticalNotifyCompletion)
+                        .OnCompleted(fun () ->
+                            try
+                                cont ((^Awaiter: (member GetResult: unit -> 'T) awaiter))
+                            with e ->
+                                econt e))
 
 module CommonExtensions =
 
