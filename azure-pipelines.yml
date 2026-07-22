@@ -22,13 +22,14 @@ variables:
   # OfficialBuildId (so Arcade applies real signatures instead of dry-running).
   - name: _SignType
     value: Real
-  # The insertion + signed VSIX require access to the devdiv 'VS' feed (serviced VS-2017 Roslyn 2.10) through a
-  # service connection. The original 'DevDiv - VS package feed' connection was removed by the org PAT-disable
-  # policy migration (cf. PR #20036), which invalidated this pipeline's YAML. Set this variable to the
-  # replacement connection name to re-enable the insertion + signing; left empty, the pipeline builds product +
-  # tests only, which keeps the YAML valid and the build green.
+  # The insertion + signed VSIX restore the serviced VS-2017 Roslyn 2.10 from the devdiv 'VS' feed. The old
+  # classic PAT connection 'DevDiv - VS package feed' was removed by the org PAT-disable migration; the org-standard
+  # WIF replacement is 'dnceng-devdiv-vs-feed-push' (the same connection dotnet/roslyn azure-pipelines-official.yml
+  # and dotnet/deployment-tools use to auth the devdiv VS feed from a dnceng pipeline). Set this to '' to build
+  # product + tests only (skips devdiv auth, insertion and signing) - keeps the pipeline green if the connection
+  # is ever unavailable.
   - name: _DevDivServiceConnection
-    value: ''
+    value: 'dnceng-devdiv-vs-feed-push'
 
 resources:
   repositories:
@@ -96,15 +97,16 @@ extends:
               - checkout: self
                 clean: true
                 fetchDepth: 1
-              # Authenticate the devdiv 'VS' feed service connection (name in _DevDivServiceConnection) so the
-              # insertion build can restore the serviced VS-2017 Roslyn 2.10. Only emitted when the variable is
-              # set - otherwise this pipeline builds product + tests only. NOTE: if the replacement connection is
-              # a WIF connection, switch this to `azureDevOpsServiceConnection: <name>` + `feedUrl:` (cf. PR #20036).
+              # Authenticate the devdiv 'VS' feed (serviced VS-2017 Roslyn 2.10) via the org-standard WIF
+              # connection dnceng-devdiv-vs-feed-push - the exact connection dotnet/roslyn and dotnet/deployment-tools
+              # use to reach devdiv.pkgs.visualstudio.com/_packaging/VS from a dnceng pipeline (post PAT-disable
+              # migration). Only emitted when _DevDivServiceConnection is set; otherwise product + tests only.
               - ${{ if ne(variables._DevDivServiceConnection, '') }}:
                 - task: NuGetAuthenticate@1
-                  displayName: 'Authenticate NuGet feeds (incl. devdiv VS feed)'
+                  displayName: 'Authenticate the devdiv VS feed (WIF)'
                   inputs:
-                    nuGetServiceConnections: ${{ variables._DevDivServiceConnection }}
+                    azureDevOpsServiceConnection: ${{ variables._DevDivServiceConnection }}
+                    feedUrl: 'https://devdiv.pkgs.visualstudio.com/_packaging/VS/nuget/v3/index.json'
               - script: eng\CIBuild.cmd -configuration $(_BuildConfig)
                 displayName: 'Build (product) + tests (+ insertion VSIX + sign when devdiv SC set)'
                 env:
