@@ -7,4 +7,26 @@
   </PropertyGroup>
 
   <UsingTask TaskName="Fsc" AssemblyFile="$(LocalFSharpBuildTaskAssembly)" Override="true" Condition="'$(LoadLocalFSharpBuild)' == 'True'" />
+
+  <Target Name="UseLocalFSharpCoreReference" BeforeTargets="ResolveAssemblyReferences" Condition="'$(LoadLocalFSharpBuild)' == 'True' and '$(MSBuildProjectExtension)' == '.fsproj'">
+    <PropertyGroup>
+      <_LocalFSharpCoreTargetFramework>netstandard2.1</_LocalFSharpCoreTargetFramework>
+      <_TargetFrameworkVersionWithoutV>$(TargetFrameworkVersion)</_TargetFrameworkVersionWithoutV>
+      <_TargetFrameworkVersionWithoutV Condition="'$(_TargetFrameworkVersionWithoutV)' != '' and $([System.String]::Copy('$(_TargetFrameworkVersionWithoutV)').StartsWith('v'))">$([System.String]::Copy('$(_TargetFrameworkVersionWithoutV)').Substring(1))</_TargetFrameworkVersionWithoutV>
+      <_LocalFSharpCoreTargetFramework Condition="'$(TargetFrameworkIdentifier)' == '.NETFramework'">netstandard2.0</_LocalFSharpCoreTargetFramework>
+      <_LocalFSharpCoreTargetFramework Condition="'$(TargetFrameworkIdentifier)' == '.NETStandard' and '$(_TargetFrameworkVersionWithoutV)' != '' and $([System.Version]::Parse('$(_TargetFrameworkVersionWithoutV)')) &lt; $([System.Version]::Parse('2.1'))">netstandard2.0</_LocalFSharpCoreTargetFramework>
+      <_LocalFSharpCoreTargetFramework Condition="'$(TargetFrameworkIdentifier)' == '.NETCoreApp' and '$(_TargetFrameworkVersionWithoutV)' != '' and $([System.Version]::Parse('$(_TargetFrameworkVersionWithoutV)')) &lt; $([System.Version]::Parse('3.0'))">netstandard2.0</_LocalFSharpCoreTargetFramework>
+      <LocalFSharpCoreAssemblyPath>$([System.IO.Path]::Combine('$(LocalFSharpCompilerPath)', 'artifacts', 'bin', 'FSharp.Core', '$(LocalFSharpCompilerConfiguration)', '$(_LocalFSharpCoreTargetFramework)', 'FSharp.Core.dll'))</LocalFSharpCoreAssemblyPath>
+    </PropertyGroup>
+
+    <Error Condition="!Exists('$(LocalFSharpCoreAssemblyPath)')" Text="The local FSharp.Core override could not be found at '$(LocalFSharpCoreAssemblyPath)'." />
+
+    <ItemGroup>
+      <Reference Remove="@(Reference)" Condition="'%(Reference.Identity)' == 'FSharp.Core' or '%(Reference.FileName)' == 'FSharp.Core' or '%(Reference.NuGetPackageId)' == 'FSharp.Core'" />
+      <Reference Include="FSharp.Core">
+        <HintPath>$(LocalFSharpCoreAssemblyPath)</HintPath>
+        <Private>true</Private>
+      </Reference>
+    </ItemGroup>
+  </Target>
 </Project>
