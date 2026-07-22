@@ -213,6 +213,17 @@ module HotReloadSessionTests =
         finally
             Environment.SetEnvironmentVariable(name, previous)
 
+    let private captureConsoleOutput action =
+        let previous = Console.Out
+        use writer = new StringWriter()
+
+        try
+            Console.SetOut writer
+            let result = action ()
+            result, writer.ToString()
+        finally
+            Console.SetOut previous
+
     let private assertPortablePdbWithMethodDebugInfo (pdbBytes: byte[] option) =
         let bytes =
             match pdbBytes with
@@ -948,15 +959,125 @@ module Entry =
 
             let editedResults = checkProjectOrFail checker options
 
-            let incrementalBytes =
+            let incrementalBytes, incrementalTrace =
                 withEnvVar "FSHARP_HOTRELOAD_INCREMENTAL_EMIT" "1" (fun () ->
-                    compileFromCheckedProjectAndReadBytes checker editedResults dllPath)
+                    withEnvVar "FSHARP_HOTRELOAD_TRACE_TIMING" "1" (fun () ->
+                        captureConsoleOutput (fun () -> compileFromCheckedProjectAndReadBytes checker editedResults dllPath)))
 
             let batchBytes =
                 withEnvVar "FSHARP_HOTRELOAD_INCREMENTAL_EMIT" null (fun () ->
                     compileFromCheckedProjectAndReadBytes checker editedResults dllPath)
 
+            Assert.Contains("[fsharp-hotreload][incremental-emit] reused-prefix=11 total=12", incrementalTrace)
             Assert.Equal<byte>(batchBytes, incrementalBytes))
+
+    [<Fact>]
+    let ``CompileFromCheckedProject incremental emit preserves threaded optimizer state after an early file edit`` () =
+        withProjectDir "fcs-hotreload-incremental-emit-threaded-state" (fun projectDir ->
+            let signaturePath = Path.Combine(projectDir, "Contract.fsi")
+            let implementationPath = Path.Combine(projectDir, "Contract.fs")
+            let consumerPath = Path.Combine(projectDir, "Consumer.fs")
+            let dllPath = Path.Combine(projectDir, "IncrementalState.dll")
+
+            let signatureSource =
+                """
+namespace IncrementalState
+
+module Contract =
+    val inline adjust: value: int -> int
+    val publicValue: value: int -> int
+"""
+
+            let implementationSource adjustment multiplier =
+                $"""
+namespace IncrementalState
+
+module Contract =
+    let inline adjust value = value + {adjustment}
+    let private hidden value = value * {multiplier}
+    let publicValue value = hidden (adjust value)
+"""
+
+            let consumerSource =
+                """
+namespace IncrementalState
+
+module Consumer =
+    let run value = Contract.publicValue value + Contract.adjust value
+"""
+
+            File.WriteAllText(signaturePath, signatureSource.TrimStart())
+            File.WriteAllText(implementationPath, (implementationSource 1 2).TrimStart())
+            File.WriteAllText(consumerPath, consumerSource.TrimStart())
+
+            let checker = createChecker ()
+
+            let options =
+                prepareMultiFileProjectOptions
+                    checker
+                    [| signaturePath; implementationPath; consumerPath |]
+                    dllPath
+                    signatureSource
+                    []
+
+            checker.InvalidateAll()
+
+            let warmResults = checkProjectOrFail checker options
+
+            withEnvVar "FSHARP_HOTRELOAD_INCREMENTAL_EMIT" "1" (fun () ->
+                compileFromCheckedProjectAndReadBytes checker warmResults dllPath |> ignore)
+
+            File.WriteAllText(implementationPath, (implementationSource 2 3).TrimStart())
+            checker.NotifyFileChanged(implementationPath, options) |> Async.RunImmediate
+
+            let editedResults = checkProjectOrFail checker options
+
+            let incrementalAssembly, incrementalPdb =
+                withEnvVar "FSHARP_HOTRELOAD_INCREMENTAL_EMIT" "1" (fun () ->
+                    let assembly = compileFromCheckedProjectAndReadBytes checker editedResults dllPath
+                    let pdb = File.ReadAllBytes(Path.ChangeExtension(dllPath, ".pdb"))
+                    assembly, pdb)
+
+            let batchAssembly, batchPdb =
+                withEnvVar "FSHARP_HOTRELOAD_INCREMENTAL_EMIT" null (fun () ->
+                    let assembly = compileFromCheckedProjectAndReadBytes checker editedResults dllPath
+                    let pdb = File.ReadAllBytes(Path.ChangeExtension(dllPath, ".pdb"))
+                    assembly, pdb)
+
+            Assert.Equal<byte>(batchAssembly, incrementalAssembly)
+            Assert.Equal<byte>(batchPdb, incrementalPdb))
+
+    [<Fact>]
+    let ``Incremental optimizer fallback propagates cancellation`` () =
+        Assert.Throws<OperationCanceledException>(fun () ->
+            HotReloadIncrementalEmit.runWithFallback
+                (fun () -> raise (OperationCanceledException "cancelled"))
+                (fun () -> 42)
+            |> ignore)
+        |> ignore
+
+    [<Fact>]
+    let ``Incremental optimizer fallback propagates out of memory`` () =
+        Assert.Throws<OutOfMemoryException>(fun () ->
+            HotReloadIncrementalEmit.runWithFallback
+                (fun () -> raise (OutOfMemoryException "fatal"))
+                (fun () -> 42)
+            |> ignore)
+        |> ignore
+
+    [<Fact>]
+    let ``Incremental optimizer fallback retries an ordinary cache failure`` () =
+        let mutable fallbackCalled = false
+
+        let result =
+            HotReloadIncrementalEmit.runWithFallback
+                (fun () -> raise (InvalidOperationException "cache failure"))
+                (fun () ->
+                    fallbackCalled <- true
+                    42)
+
+        Assert.True(fallbackCalled)
+        Assert.Equal(42, result)
 
     [<Fact>]
     let ``CompileFromCheckedProject pins deterministic sequential codegen for cached FCS configuration`` () =

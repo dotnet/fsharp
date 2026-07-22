@@ -512,7 +512,12 @@ type internal FSharpHotReloadService
                                                         })
 
                                                 return Result.Ok(Some freshModule)
-                                            with ex ->
+                                            with
+                                            | :? OperationCanceledException as ex -> return raise ex
+                                            | :? OutOfMemoryException as ex -> return raise ex
+                                            | :? StackOverflowException as ex -> return raise ex
+                                            | :? AccessViolationException as ex -> return raise ex
+                                            | ex ->
                                                 let outputFingerprintAfterCompile = tryGetOutputFingerprint outputPath
 
                                                 if
