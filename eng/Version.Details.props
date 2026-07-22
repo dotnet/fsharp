@@ -7,11 +7,12 @@ This file should be imported by eng/Versions.props
   <PropertyGroup>
     <!-- dotnet-arcade dependencies -->
     <MicrosoftDotNetArcadeSdkPackageVersion>10.0.0-beta.26324.4</MicrosoftDotNetArcadeSdkPackageVersion>
-    <!-- dotnet-msbuild dependencies -->
-    <MicrosoftBuildPackageVersion>18.10.0-1.26371.8</MicrosoftBuildPackageVersion>
-    <MicrosoftBuildFrameworkPackageVersion>18.10.0-1.26371.8</MicrosoftBuildFrameworkPackageVersion>
-    <MicrosoftBuildTasksCorePackageVersion>18.10.0-1.26371.8</MicrosoftBuildTasksCorePackageVersion>
-    <MicrosoftBuildUtilitiesCorePackageVersion>18.10.0-1.26371.8</MicrosoftBuildUtilitiesCorePackageVersion>
+    <!-- dotnet-msbuild dependencies. Pinned at 18.10.0-1.26370.18 (see eng/Version.Details.xml):
+         later 18.10.0-1.26371.x builds dropped net10.0 assets and are incompatible with our net10.0 target. -->
+    <MicrosoftBuildPackageVersion>18.10.0-1.26370.18</MicrosoftBuildPackageVersion>
+    <MicrosoftBuildFrameworkPackageVersion>18.10.0-1.26370.18</MicrosoftBuildFrameworkPackageVersion>
+    <MicrosoftBuildTasksCorePackageVersion>18.10.0-1.26370.18</MicrosoftBuildTasksCorePackageVersion>
+    <MicrosoftBuildUtilitiesCorePackageVersion>18.10.0-1.26370.18</MicrosoftBuildUtilitiesCorePackageVersion>
     <!-- dotnet-optimization dependencies -->
     <optimizationlinuxarm64MIBCRuntimePackageVersion>1.0.0-prerelease.26318.1</optimizationlinuxarm64MIBCRuntimePackageVersion>
     <optimizationlinuxx64MIBCRuntimePackageVersion>1.0.0-prerelease.26318.1</optimizationlinuxx64MIBCRuntimePackageVersion>
