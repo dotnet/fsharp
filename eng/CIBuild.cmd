@@ -51,13 +51,11 @@ powershell -NoProfile -ExecutionPolicy ByPass -File "%~dp0run-tests.ps1" -Config
 if errorlevel 1 ( echo Error: unit tests failed 1>&2 & exit /b 1 )
 
 rem --- Step 5 (opt-in): vsintegration IDE + VS insertion VSIX. The serviced VS-2017 editor Roslyn
-rem    (2.10.0-beta2-72429-17) is not on any approved feed, so it is restored from the devdiv 'VS' feed -
-rem    the exact endpoint the 'DevDiv - VS package feed' service connection authenticates (verified to serve
-rem    the 2.10 Roslyn packages). NuGetAuthenticate wires the credential provider for that exact URL; using a
-rem    different devdiv host/feed alias 401s. The committed NuGet.Config stays clean (approved feeds only);
-rem    devdiv is never written into a repo config. Gated on BUILD_INSERTION so product CI stays green if off. ---
+rem    (2.10.0-beta2-72429-17) is not on any public/approved feed, so it is vendored as a committed local
+rem    NuGet feed (setup\dependencies\RoslynServiced, wired into NuGet.Config). Restore therefore uses only
+rem    the committed config feeds - no devdiv feed, no cross-org service connection. Gated on BUILD_INSERTION
+rem    so product CI stays green if off. ---
 if not defined BUILD_INSERTION ( echo vsintegration/insertion skipped ^(set BUILD_INSERTION=1 to build the signed VSIX^) & exit /b 0 )
-set "_devdivFeed=https://devdiv.pkgs.visualstudio.com/_packaging/VS/nuget/v3/index.json"
 rem    Use the Arcade-provisioned .NET SDK (matches global.json), NOT the agent's system dotnet on PATH
 rem    (which is older than global.json and makes 'dotnet restore' fail with "A compatible .NET SDK was
 rem    not found"). DOTNET_MULTILEVEL_LOOKUP=0 keeps the muxer from falling back to the system install.
@@ -82,18 +80,14 @@ rem    providers redist (not on any approved feed, agent is firewalled off nuget
 rem    repo (setup\dependencies\TypeProviders) and staged here for the insertion Compiler component to package. ---
 set "_tpSrc=%_root%\setup\dependencies\TypeProviders\FSharp.Data.TypeProviders.dll"
 if not exist "%_root%\Release\net40\bin\FSharp.Data.TypeProviders.dll" if exist "%_tpSrc%" ( echo Staging FSharp.Data.TypeProviders.dll into net40\bin & copy /Y "%_tpSrc%" "%_root%\Release\net40\bin\" >nul )
-rem    Restore feeds = every approved feed from the committed NuGet.Config PLUS the devdiv 'VS' feed, all
-rem    passed as --source flags. A --source list overrides the config's feeds, so we must enumerate them
-rem    all (done at runtime to avoid drift); crucially nothing is written into any committed config, so CFS
-rem    (which scans committed NuGet.config files) stays green - proven on build 3014957. ---
-set "_srcArgs=--source "%_devdivFeed%""
-for /f "usebackq delims=" %%U in (`powershell -NoProfile -ExecutionPolicy Bypass -Command "([xml](Get-Content -Raw '%_root%\NuGet.Config')).configuration.packageSources.add | Where-Object { $_.value } | ForEach-Object { $_.value }"`) do set "_srcArgs=!_srcArgs! --source "%%U""
+rem    Restore uses the committed NuGet.Config feeds only (which now include the vendored serviced Roslyn
+rem    local feed at setup\dependencies\RoslynServiced). No --source override / devdiv feed is needed. ---
 echo ---------------- Restoring + building vsintegration insertion (using %_dotnet%) ----------------
-"%_dotnet%" restore "%_root%\FSharp.Insertion.sln" --configfile "%_root%\NuGet.Config" !_srcArgs!
+"%_dotnet%" restore "%_root%\FSharp.Insertion.sln" --configfile "%_root%\NuGet.Config"
 if errorlevel 1 ( echo Error: insertion restore failed 1>&2 & exit /b 1 )
 powershell -NoProfile -ExecutionPolicy ByPass -Command "& '%~dp0common\build.ps1' -ci -build -configuration Release -projects '%_root%\FSharp.Insertion.sln' /m:1 /p:DisableLocalization=true /p:GeneratePkgDefFile=false; exit $LASTEXITCODE"
 if errorlevel 1 ( echo Error: vsintegration build failed 1>&2 & exit /b 1 )
-"%_dotnet%" restore "%_root%\vsintegration\Vsix\VisualFSharpFull\VisualFSharpFull.csproj" --configfile "%_root%\NuGet.Config" !_srcArgs!
+"%_dotnet%" restore "%_root%\vsintegration\Vsix\VisualFSharpFull\VisualFSharpFull.csproj" --configfile "%_root%\NuGet.Config"
 if errorlevel 1 ( echo Error: VSIX restore failed 1>&2 & exit /b 1 )
 powershell -NoProfile -ExecutionPolicy ByPass -Command "& '%~dp0common\build.ps1' -ci -build -configuration Release -projects '%_root%\vsintegration\Vsix\VisualFSharpFull\VisualFSharpFull.csproj' /m:1 /p:DisableLocalization=true /p:GeneratePkgDefFile=false; exit $LASTEXITCODE"
 if errorlevel 1 ( echo Error: VSIX build failed 1>&2 & exit /b 1 )

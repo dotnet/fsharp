@@ -22,14 +22,6 @@ variables:
   # OfficialBuildId (so Arcade applies real signatures instead of dry-running).
   - name: _SignType
     value: Real
-  # The insertion + signed VSIX restore the serviced VS-2017 Roslyn 2.10 from the devdiv 'VS' feed. The old
-  # classic PAT connection 'DevDiv - VS package feed' was removed by the org PAT-disable migration; the org-standard
-  # WIF replacement is 'dnceng-devdiv-vs-feed-push' (the same connection dotnet/roslyn azure-pipelines-official.yml
-  # and dotnet/deployment-tools use to auth the devdiv VS feed from a dnceng pipeline). Set this to '' to build
-  # product + tests only (skips devdiv auth, insertion and signing) - keeps the pipeline green if the connection
-  # is ever unavailable.
-  - name: _DevDivServiceConnection
-    value: 'dnceng-devdiv-vs-feed-push'
 
 resources:
   repositories:
@@ -58,21 +50,19 @@ extends:
             displayName: 'Build Windows Release'
             timeoutInMinutes: 120
             variables:
-              - ${{ if ne(variables._DevDivServiceConnection, '') }}:
-                - group: DotNet-DevDiv-Insertion-Workflow-Variables
+              - group: DotNet-DevDiv-Insertion-Workflow-Variables
             pool:
               name: NetCore1ESPool-Svc-Internal
               image: windows.vs2022.amd64
               os: windows
             templateContext:
-              ${{ if ne(variables._DevDivServiceConnection, '') }}:
-                mb:
-                  signing:
-                    enabled: true
-                    signWithProd: true
-                    feedSource: https://dnceng.pkgs.visualstudio.com/_packaging/MicroBuildToolset/nuget/v3/index.json
-                    signType: $(_SignType)
-                    zipSources: false
+              mb:
+                signing:
+                  enabled: true
+                  signWithProd: true
+                  feedSource: https://dnceng.pkgs.visualstudio.com/_packaging/MicroBuildToolset/nuget/v3/index.json
+                  signType: $(_SignType)
+                  zipSources: false
               outputs:
                 - output: pipelineArtifact
                   displayName: 'Publish binary log'
@@ -86,35 +76,23 @@ extends:
                   targetPath: '$(Build.SourcesDirectory)/release/net40/bin'
                   artifactName: 'Product_net40'
                   sbomEnabled: false
-                - ${{ if ne(variables._DevDivServiceConnection, '') }}:
-                  - output: pipelineArtifact
-                    displayName: 'Publish insertion VSIX'
-                    condition: succeeded()
-                    targetPath: '$(Build.SourcesDirectory)/vsintegration/Vsix/VisualFSharpFull/bin/Release'
-                    artifactName: 'VSIX'
-                    sbomEnabled: false
+                - output: pipelineArtifact
+                  displayName: 'Publish insertion VSIX'
+                  condition: succeeded()
+                  targetPath: '$(Build.SourcesDirectory)/vsintegration/Vsix/VisualFSharpFull/bin/Release'
+                  artifactName: 'VSIX'
+                  sbomEnabled: false
             steps:
               - checkout: self
                 clean: true
                 fetchDepth: 1
-              # Authenticate the devdiv 'VS' feed (serviced VS-2017 Roslyn 2.10) via the org-standard WIF
-              # connection dnceng-devdiv-vs-feed-push - the exact connection dotnet/roslyn and dotnet/deployment-tools
-              # use to reach devdiv.pkgs.visualstudio.com/_packaging/VS from a dnceng pipeline (post PAT-disable
-              # migration). Only emitted when _DevDivServiceConnection is set; otherwise product + tests only.
-              - ${{ if ne(variables._DevDivServiceConnection, '') }}:
-                - task: NuGetAuthenticate@1
-                  displayName: 'Authenticate the devdiv VS feed (WIF)'
-                  inputs:
-                    azureDevOpsServiceConnection: ${{ variables._DevDivServiceConnection }}
-                    feedUrl: 'https://devdiv.pkgs.visualstudio.com/_packaging/VS/nuget/v3/index.json'
               - script: eng\CIBuild.cmd -configuration $(_BuildConfig)
-                displayName: 'Build (product) + tests (+ insertion VSIX + sign when devdiv SC set)'
+                displayName: 'Build (product) + tests + insertion VSIX + sign'
                 env:
                   DisableLocalization: true
-                  ${{ if ne(variables._DevDivServiceConnection, '') }}:
-                    BUILD_INSERTION: 1
-                    SignType: $(_SignType)
-                    OfficialBuildId: $(Build.BuildNumber)
+                  BUILD_INSERTION: 1
+                  SignType: $(_SignType)
+                  OfficialBuildId: $(Build.BuildNumber)
               - task: PublishTestResults@2
                 displayName: 'Publish test results'
                 condition: always()
