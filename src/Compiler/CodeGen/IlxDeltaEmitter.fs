@@ -52,6 +52,17 @@ let internal tryGetUniqueSynthesizedTypeMatch (matches: 'T array) =
     | [| single |] -> Some single
     | _ -> None
 
+/// Chooses by deterministic recorded allocation-slot order only when a complete recorded
+/// snapshot accompanies the same whole-module read-back artifact. The caller first removes
+/// aliases already claimed by a different fresh type, so the resulting choice remains
+/// injective. This is recorded-slot recovery, not an arbitrary shape fallback; all other
+/// paths retain the general unique-and-structural fail-closed rule.
+let internal tryGetRecordedOrUniqueSynthesizedTypeMatch canUseRecordedOrder (matches: 'T array) =
+    if canUseRecordedOrder then
+        Array.tryHead matches
+    else
+        tryGetUniqueSynthesizedTypeMatch matches
+
 /// Converts an SRM EntityHandle to our TypeDefOrRef type for EventType fields
 let private entityHandleToTypeDefOrRef (handle: EntityHandle) : TypeDefOrRef =
     let rowId = MetadataTokens.GetRowNumber handle
@@ -3497,6 +3508,9 @@ let emitDeltaWithDebugData (freshDebugPdb: byte[] option) (request: IlxDeltaRequ
     let usesRecordedSynthesizedSnapshot =
         request.SynthesizedNames |> Option.exists (fun map -> map.UsesRecordedSnapshot)
 
+    let canDisambiguateSynthesizedAliases =
+        shouldFilterSynthesizedBaselineAliases usesRecordedSynthesizedSnapshot request.EmittedArtifacts.IsSome
+
     let synthesizedBuckets =
         request.SynthesizedNames
         |> Option.map (fun map -> map.Snapshot |> Seq.map (fun struct (basic, names) -> basic, names) |> dict)
@@ -4037,7 +4051,7 @@ let emitDeltaWithDebugData (freshDebugPdb: byte[] option) (request: IlxDeltaRequ
         // mapping behavior, including state-machine shape edits. Reconstructed legacy snapshots
         // keep the original fail-closed behavior as well.
         let availableBaselineMatches =
-            if shouldFilterSynthesizedBaselineAliases usesRecordedSynthesizedSnapshot request.EmittedArtifacts.IsSome then
+            if canDisambiguateSynthesizedAliases then
                 filterAvailableBaselineTypeMatches newTypeNameByBaseline newFullName baselineMatches
             else
                 baselineMatches
@@ -4064,7 +4078,18 @@ let emitDeltaWithDebugData (freshDebugPdb: byte[] option) (request: IlxDeltaRequ
                         (tryFindSynthesizedTypeShapeMismatch baselineShape freshShape).IsNone
                     | None -> false)
 
-            tryGetUniqueSynthesizedTypeMatch shapeMatches
+            let orderedMatches =
+                if canDisambiguateSynthesizedAliases && Array.isEmpty shapeMatches then
+                    // The complete recorded allocation slots are authoritative for this same
+                    // whole-module read-back artifact even when its TypeDef shape contains
+                    // transient helper differences. Injective filtering above has already
+                    // removed aliases owned by another fresh type, so this is deterministic
+                    // recorded-slot recovery rather than an arbitrary shape fallback.
+                    availableMatches
+                else
+                    shapeMatches
+
+            tryGetRecordedOrUniqueSynthesizedTypeMatch canDisambiguateSynthesizedAliases orderedMatches
 
         let shouldAddShapeChangedResumableHelper (matchedName: string) =
             isUpdatedMethodResumableCodeHelper typeDef
