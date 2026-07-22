@@ -7,7 +7,6 @@ open System.Collections
 open System.Collections.Generic
 open System.Diagnostics
 open System.IO
-open System.Runtime.CompilerServices
 open System.Security.Cryptography
 open System.Threading
 open Internal.Utilities.Collections
@@ -114,37 +113,122 @@ module CompileHelpers =
 
         diagnostics.ToArray(), result
 
-module private HotReloadIncrementalEmit =
-    // Keyed by input CheckedImplFile reference identity: TransparentCompiler returns
-    // reference-identical CheckedImplFile instances for unchanged files, and the INC-0
-    // spike proved that --optimize- per-file optimization from a fresh environment is
-    // byte-identical when whole-assembly IlxGen is preserved. ConditionalWeakTable
-    // keeps cached optimized trees bounded by the checker's own typed-tree cache.
-    let private optimizedImplFileCache =
-        ConditionalWeakTable<CheckedImplFile, CheckedImplFileAfterOptimization>()
+module internal HotReloadIncrementalEmit =
+    /// Stable inputs that must match before an optimized prefix can be reused.
+    [<NoEquality; NoComparison>]
+    type OptimizationContext =
+        {
+            TcGlobals: obj
+            TcImports: obj
+            Settings: Optimizer.OptimizationSettings
+            EmitTailcalls: bool
+        }
 
-    let private gate = obj ()
+    [<NoEquality; NoComparison>]
+    type private CachedStep =
+        {
+            Input: CheckedImplFile
+            Output: CheckedImplFileAfterOptimization
+            Environment: Optimizer.IncrementalOptimizationEnv
+            HidingInfo: SignatureHidingInfo
+        }
 
-    let private tryFind (implFile: CheckedImplFile) =
-        let mutable cached = Unchecked.defaultof<CheckedImplFileAfterOptimization>
+    [<NoEquality; NoComparison>]
+    type private CacheEntry =
+        {
+            Context: OptimizationContext
+            Steps: CachedStep array
+        }
 
-        if optimizedImplFileCache.TryGetValue(implFile, &cached) then
-            Some cached
-        else
-            None
+    let private sameContext left right =
+        // The CcuSignature is deliberately not part of this context: an unchanged prefix cannot
+        // depend on a changed later file, and a changed prefix file already stops reuse by identity.
+        obj.ReferenceEquals(left.TcGlobals, right.TcGlobals)
+        && obj.ReferenceEquals(left.TcImports, right.TcImports)
+        && left.Settings = right.Settings
+        && left.EmitTailcalls = right.EmitTailcalls
 
-    let getOrAdd implFile optimize =
-        match tryFind implFile with
-        | Some cached -> cached
-        | None ->
-            let optimized = optimize ()
+    /// Caches a sequential optimizer prefix for each output path. Reuse stops at the first
+    /// changed CheckedImplFile, then the changed file and complete tail are recomputed while
+    /// threading the real optimizer environment and signature-hiding state.
+    type Cache() =
+        let gate = obj ()
 
+        let pathComparer =
+            if Path.DirectorySeparatorChar = '\\' then
+                StringComparer.OrdinalIgnoreCase
+            else
+                StringComparer.Ordinal
+
+        let entries = Dictionary<string, CacheEntry>(pathComparer)
+
+        /// Reuses the longest unchanged prefix and recomputes the remaining files sequentially.
+        member _.Optimize(outputPath, context, initialEnvironment, inputs, optimize) =
             lock gate (fun () ->
-                match tryFind implFile with
-                | Some cached -> cached
-                | None ->
-                    optimizedImplFileCache.Add(implFile, optimized)
-                    optimized)
+                let inputs = List.toArray inputs
+
+                let reusablePrefixLength, cachedSteps =
+                    match entries.TryGetValue outputPath with
+                    | true, cached when sameContext cached.Context context ->
+                        let maxPrefixLength = min inputs.Length cached.Steps.Length
+                        let mutable prefixLength = 0
+
+                        while prefixLength < maxPrefixLength
+                              && obj.ReferenceEquals(inputs[prefixLength], cached.Steps[prefixLength].Input) do
+                            prefixLength <- prefixLength + 1
+
+                        prefixLength, cached.Steps
+                    | _ -> 0, Array.empty
+
+                let updatedSteps = Array.zeroCreate<CachedStep> inputs.Length
+
+                if reusablePrefixLength > 0 then
+                    Array.Copy(cachedSteps, updatedSteps, reusablePrefixLength)
+
+                let mutable environment, hidingInfo =
+                    if reusablePrefixLength = 0 then
+                        initialEnvironment, SignatureHidingInfo.Empty
+                    else
+                        let lastReusedStep = cachedSteps[reusablePrefixLength - 1]
+                        lastReusedStep.Environment, lastReusedStep.HidingInfo
+
+                for index in reusablePrefixLength .. inputs.Length - 1 do
+                    let output, nextEnvironment, nextHidingInfo = optimize environment hidingInfo inputs[index]
+
+                    updatedSteps[index] <-
+                        {
+                            Input = inputs[index]
+                            Output = output
+                            Environment = nextEnvironment
+                            HidingInfo = nextHidingInfo
+                        }
+
+                    environment <- nextEnvironment
+                    hidingInfo <- nextHidingInfo
+
+                // Publish only after the whole tail succeeds. A failed incremental attempt leaves
+                // the last known-good prefix available and the caller can safely retry in full.
+                entries[outputPath] <-
+                    {
+                        Context = context
+                        Steps = updatedSteps
+                    }
+
+                if Environment.GetEnvironmentVariable("FSHARP_HOTRELOAD_TRACE_TIMING") = "1" then
+                    printfn "[fsharp-hotreload][incremental-emit] reused-prefix=%d total=%d" reusablePrefixLength inputs.Length
+
+                updatedSteps |> Array.map _.Output |> Array.toList)
+
+    /// Runs the incremental path and falls back to the full threaded optimizer if it fails.
+    let runWithFallback incremental fallback =
+        try
+            incremental ()
+        with
+        | :? OperationCanceledException
+        | :? OutOfMemoryException
+        | :? StackOverflowException
+        | :? AccessViolationException -> reraise ()
+        | _ -> fallback ()
 
 [<Sealed; AutoSerializable(false)>]
 // There is typically only one instance of this type in an IDE process.
@@ -186,6 +270,7 @@ type FSharpChecker
                 ?cacheSizes = transparentCompilerCacheSizes
             )
             :> IBackgroundCompiler
+
         else
             BackgroundCompiler(
                 legacyReferenceResolver,
@@ -203,6 +288,8 @@ type FSharpChecker
                 useChangeNotifications
             )
             :> IBackgroundCompiler
+
+    let hotReloadIncrementalEmitCache = lazy HotReloadIncrementalEmit.Cache()
 
     static let globalInstance = lazy FSharpChecker.Create()
 
@@ -1335,20 +1422,21 @@ type FSharpChecker
                 |> CheckedAssemblyAfterOptimization
 
             let optimizeWithCachedPerFileTrees () =
-                typedImplFiles
-                |> List.map (fun implFile ->
-                    HotReloadIncrementalEmit.getOrAdd implFile (fun () ->
-                        let file, _, _ = optimizeImplFile optEnv0 SignatureHidingInfo.Empty implFile
-                        file))
+                let context: HotReloadIncrementalEmit.OptimizationContext =
+                    {
+                        TcGlobals = tcGlobals
+                        TcImports = tcImports
+                        Settings = minimalSettings
+                        EmitTailcalls = tcConfig.emitTailcalls
+                    }
+
+                hotReloadIncrementalEmitCache.Value.Optimize(outfile, context, optEnv0, typedImplFiles, optimizeImplFile)
                 |> CheckedAssemblyAfterOptimization
 
             let optimizedImpls, optDataResources =
                 let impls =
                     if isEnvVarTruthy "FSHARP_HOTRELOAD_INCREMENTAL_EMIT" then
-                        try
-                            optimizeWithCachedPerFileTrees ()
-                        with _ ->
-                            optimizeWithThreadedEnvironment ()
+                        HotReloadIncrementalEmit.runWithFallback optimizeWithCachedPerFileTrees optimizeWithThreadedEnvironment
                     else
                         optimizeWithThreadedEnvironment ()
 

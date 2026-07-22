@@ -15,6 +15,10 @@ open FSharp.Compiler.Symbols
 open FSharp.Compiler.Text
 open FSharp.Compiler.Tokenization
 
+module internal HotReloadIncrementalEmit =
+    /// Runs the incremental path and falls back to the full threaded optimizer if it fails.
+    val runWithFallback: incremental: (unit -> 'T) -> fallback: (unit -> 'T) -> 'T
+
 /// Used to parse and check F# source code.
 [<Sealed; AutoSerializable(false)>]
 type public FSharpChecker =
