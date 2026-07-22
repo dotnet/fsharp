@@ -8,7 +8,7 @@
 	</PropertyGroup>
 
 	<ItemGroup Label="Package References">
-		<PackageReference Include="Microsoft.Extensions.DependencyInjection" />
+		<PackageReference Include="Microsoft.Extensions.DependencyInjection" VersionOverride="8.0.0" />
 		<PackageReference Include="Microsoft.VisualStudio.LanguageServer.Protocol" />
 		<!-- Pinned below the central versions: this LSP host targets the VS 17.x servicing baseline. -->
 		<PackageReference Include="Microsoft.VisualStudio.Threading" VersionOverride="17.12.21" />
