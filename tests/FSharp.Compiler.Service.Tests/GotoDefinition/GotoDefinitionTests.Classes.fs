@@ -19,22 +19,15 @@ let ``GotoDefinition.InsideClass.Bug3176`` () =
 let private classSource =
     String.concat
         "\n"
-        [ "type Class () = (*loc-62*)"
+        [ "type Class{caret1} () = (*loc-62*)"
           "  member c.Method () = () (*loc-63*)"
           "  static member Foo () = () (*loc-64*)"
           "let _ ="
-          "  let c = Class () (*loc-65*)"
+          "  let c = Class{caret2} () (*loc-65*)"
           "  c.Method () (*loc-66*)"
           "  Class.Foo () (*loc-67*)" ]
 
 [<Fact>]
-let ``GotoDefinition.ObjectOriented.ClassNameDef`` () =
-    assertGoToDefinitionOnLine
-        "type Class () = (*loc-62*)"
-        (markCaretAfterLeadingIdent classSource " () = (*loc-62*)")
-
-[<Fact>]
-let ``GotoDefinition.ObjectOriented.ConstructorUse`` () =
-    assertGoToDefinitionOnLine
-        "type Class () = (*loc-62*)"
-        (markCaretAfterLeadingIdent classSource " () (*loc-65*)")
+let ``GotoDefinition.ObjectOriented.ClassNameDefAndConstructorUse`` () =
+    classSource
+    |> assertGoToDefinitionOnLines (List.replicate 2 "type Class () = (*loc-62*)")

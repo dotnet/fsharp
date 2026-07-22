@@ -19,25 +19,21 @@ let ``ModuleDefinition`` () =
 let private moduleSource =
     String.concat
         "\n"
-        [ "module Too = (*loc-55*)"
-          "  let foo = 0 (*loc-56*)"
+        [ "module Too{caret1} = (*loc-55*)"
+          "  let foo{caret2} = 0 (*loc-56*)"
           "module Bar ="
-          "  open Too (*loc-57*)"
-          "let _ = Too.foo (*loc-58*)" ]
-
-[<Theory>]
-[<InlineData("module Too = (*loc-55*)", "Too = (*loc-55*)")>]
-[<InlineData("let foo = 0 (*loc-56*)", "foo = 0 (*loc-56*)")>]
-[<InlineData("module Too = (*loc-55*)", "Too.foo (*loc-58*)")>]
-[<InlineData("let foo = 0 (*loc-56*)", "foo (*loc-58*)")>]
-let ``GotoDefinition.Simple.Module`` (definitionLine: string) (marker: string) =
-    assertGoToDefinitionOnLine definitionLine (markCaretAfterLeadingIdent moduleSource marker)
+          "  open Too{caret5} (*loc-57*)"
+          "let _ = Too{caret3}.foo{caret4} (*loc-58*)" ]
 
 [<Fact>]
-let ``GotoDefinition.Simple.Module.Open`` () =
-    assertGoToDefinitionOnLine
-        "module Too = (*loc-55*)"
-        (markCaretAfterLeadingIdent moduleSource "Too (*loc-57*)")
+let ``GotoDefinition.Simple.Module`` () =
+    moduleSource
+    |> assertGoToDefinitionOnLines
+        [ "module Too = (*loc-55*)"
+          "let foo = 0 (*loc-56*)"
+          "module Too = (*loc-55*)"
+          "let foo = 0 (*loc-56*)"
+          "module Too = (*loc-55*)" ]
 
 [<Fact>]
 let ``ModuleName.OnDefinitionSite.Bug2517`` () =

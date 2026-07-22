@@ -13,9 +13,6 @@ open TestFramework
 
 [<AutoOpen>]
 module EditorServiceAsserts =
-    let isIdentChar c =
-        Char.IsLetterOrDigit c || c = '_' || c = '\''
-
     let private markAtOffset (offsetInMarker: string -> int) (source: string) (marker: string) =
         match source.IndexOf(marker, StringComparison.Ordinal) with
         | -1 -> failwithf "Marker %A not found in source" marker
@@ -24,8 +21,6 @@ module EditorServiceAsserts =
     let markAtStartOfMarker = markAtOffset (fun _ -> 0)
 
     let markAtEndOfMarker = markAtOffset (fun marker -> marker.Length)
-
-    let markCaretAfterLeadingIdent = markAtOffset (fun marker -> marker |> Seq.takeWhile isIdentChar |> Seq.length)
 
     let findCompletionItem (name: string) (completionInfo: DeclarationListInfo) =
         let norm = normalizeNewLines name
@@ -118,6 +113,15 @@ module EditorServiceAsserts =
         let sourceLines = context.Source.Replace("\r\n", "\n").Split('\n')
         let expectedLine = expectedLineOf definitionLine sourceLines
         assertLandedOnLine "Goto-def" definitionLine sourceLines expectedLine result
+
+    /// Goto-def on a source carrying several ordered carets ({caret1}, {caret2}, ...),
+    /// pairing each caret (in order) with its expected definition line.
+    let assertGoToDefinitionOnLines (definitionLines: string list) (orderedMarkedSource: string) =
+        let markedSources = SourceContext.extractOrderedMarkedSources orderedMarkedSource
+        if List.length definitionLines <> List.length markedSources then
+            failwithf "Expected %d definition line(s) but the source has %d caret(s)"
+                (List.length definitionLines) (List.length markedSources)
+        List.iter2 assertGoToDefinitionOnLine definitionLines markedSources
 
     let assertGoToDefinitionFails (markedSource: string) =
         match Checker.getDeclarationLocation markedSource with

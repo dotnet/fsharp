@@ -8,22 +8,17 @@ let private overlapSource =
         "\n"
         [ "module Overlap ="
           "  type Parity = Even | Odd"
-          "  let (|Even|Odd|) x = (*loc-59*)"
+          "  let (|Even{caret1}|Odd|) x = (*loc-59*)"
           "    if x % 0 = 0"
-          "       then Even (*loc-60*)"
+          "       then Even{caret2} (*loc-60*)"
           "       else Odd"
           "  let foo (x : int) ="
           "    match x with"
-          "    | Even -> 1 (*loc-61*)"
+          "    | Even{caret3} -> 1 (*loc-61*)"
           "    | Odd  -> 0"
-          "  let patval = (|Even|Odd|) (*loc-61b*)" ]
+          "  let patval = (|Even{caret4}|Odd|) (*loc-61b*)" ]
 
-[<Theory>]
-[<InlineData("Even|Odd|) x = (*loc-59*)")>]
-[<InlineData("Even (*loc-60*)")>]
-[<InlineData("Even -> 1 (*loc-61*)")>]
-[<InlineData("en|Odd|) (*loc-61b*)")>]
-let ``GotoDefinition.Simple.ActivePat`` (marker: string) =
-    assertGoToDefinitionOnLine
-        "let (|Even|Odd|) x = (*loc-59*)"
-        (markCaretAfterLeadingIdent overlapSource marker)
+[<Fact>]
+let ``GotoDefinition.Simple.ActivePat`` () =
+    overlapSource
+    |> assertGoToDefinitionOnLines (List.replicate 4 "let (|Even|Odd|) x = (*loc-59*)")

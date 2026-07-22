@@ -26,35 +26,29 @@ let private trivialLetSource =
     String.concat
         "\n"
         [ "let _ ="
-          "  let x = () (*loc-2*)"
-          "  x (*loc-1*)" ]
+          "  let x{caret2} = () (*loc-2*)"
+          "  x{caret1} (*loc-1*)" ]
 
 [<Fact>]
-let ``GotoDefinition.Simple.Binding.TrivialLetRHSToRight`` () =
-    assertGoToDefinitionOnLine
-        "let x = () (*loc-2*)"
-        (markCaretAfterLeadingIdent trivialLetSource " (*loc-1*)")
-
-[<Fact>]
-let ``GotoDefinition.Simple.Binding.TrivialLetLHS`` () =
-    assertGoToDefinitionOnLine
-        "let x = () (*loc-2*)"
-        (markCaretAfterLeadingIdent trivialLetSource "x = () (*loc-2*)")
+let ``GotoDefinition.Simple.Binding.TrivialLet`` () =
+    trivialLetSource
+    |> assertGoToDefinitionOnLines (List.replicate 2 "let x = () (*loc-2*)")
 
 let private nestedSameNameSource =
     String.concat
         "\n"
         [ "let _ ="
-          "  let x = () (*loc-5*)"
-          "  let x = () (*loc-3*)"
-          "  x (*loc-4*)" ]
+          "  let x{caret3} = () (*loc-5*)"
+          "  let x{caret2} = () (*loc-3*)"
+          "  x{caret1} (*loc-4*)" ]
 
-[<Theory>]
-[<InlineData("let x = () (*loc-3*)", "x (*loc-4*)")>]
-[<InlineData("let x = () (*loc-3*)", "x = () (*loc-3*)")>]
-[<InlineData("let x = () (*loc-5*)", "x = () (*loc-5*)")>]
-let ``GotoDefinition.Simple.Binding.NestedLetWithSameName`` (definitionLine: string) (marker: string) =
-    assertGoToDefinitionOnLine definitionLine (markCaretAfterLeadingIdent nestedSameNameSource marker)
+[<Fact>]
+let ``GotoDefinition.Simple.Binding.NestedLetWithSameName`` () =
+    nestedSameNameSource
+    |> assertGoToDefinitionOnLines
+        [ "let x = () (*loc-3*)"
+          "let x = () (*loc-3*)"
+          "let x = () (*loc-5*)" ]
 
 let private nestedXIsXSource =
     String.concat

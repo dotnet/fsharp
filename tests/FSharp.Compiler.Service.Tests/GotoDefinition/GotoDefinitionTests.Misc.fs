@@ -24,21 +24,14 @@ let private asPatternSource =
         "\n"
         [ "let _ ="
           "  let foo          = ()"
-          "  let f (_ as foo) = (*loc-35*)"
-          "    foo (*loc-36*)"
+          "  let f (_ as foo{caret1}) = (*loc-35*)"
+          "    foo{caret2} (*loc-36*)"
           "  ()" ]
 
 [<Fact>]
-let ``GotoDefinition.Simple.Tricky.AsPatLHS`` () =
-    assertGoToDefinitionOnLine
-        "let f (_ as foo) = (*loc-35*)"
-        (markCaretAfterLeadingIdent asPatternSource "foo) = (*loc-35*)")
-
-[<Fact>]
-let ``GotoDefinition.Simple.Tricky.AsPatRHS`` () =
-    assertGoToDefinitionOnLine
-        "let f (_ as foo) = (*loc-35*)"
-        (markCaretAfterLeadingIdent asPatternSource "foo (*loc-36*)")
+let ``GotoDefinition.Simple.Tricky.AsPat`` () =
+    asPatternSource
+    |> assertGoToDefinitionOnLines (List.replicate 2 "let f (_ as foo) = (*loc-35*)")
 
 let private lambdaMultiBindSource =
     String.concat
@@ -78,38 +71,23 @@ let private structConstructorSource =
           "  val mutable a : int"
           "  new(a) = Astruct(a, a)"
           "type AS = Astruct"
-          "let a1 = Astruct(0)"
-          "let b1 = Astruct(0, 1)"
-          "let c1 = Astruct()"
-          "let a2 = AS(0)"
-          "let b2 = AS(0, 1)"
-          "let c2 = AS()" ]
+          "let a1 = Astruct{caret1}(0)"
+          "let b1 = Astruct{caret2}(0, 1)"
+          "let c1 = Astruct{caret3}()"
+          "let a2 = AS{caret4}(0)"
+          "let b2 = AS{caret5}(0, 1)"
+          "let c2 = AS{caret6}()" ]
 
 [<Fact>]
 let ``GotoDefinition.ObjectOriented.StructConstructor`` () =
-    assertGoToDefinitionOnLine
-        "new(a) = Astruct(a, a)"
-        (markCaretAfterLeadingIdent structConstructorSource "Astruct(0)")
-
-    assertGoToDefinitionOnLine
-        "type Astruct(x:int, y:int) ="
-        (markCaretAfterLeadingIdent structConstructorSource "Astruct(0, 1)")
-
-    assertGoToDefinitionOnLine
-        "type Astruct(x:int, y:int) ="
-        (markCaretAfterLeadingIdent structConstructorSource "Astruct()")
-
-    assertGoToDefinitionOnLine
-        "new(a) = Astruct(a, a)"
-        (markCaretAfterLeadingIdent structConstructorSource "AS(0)")
-
-    assertGoToDefinitionOnLine
-        "type Astruct(x:int, y:int) ="
-        (markCaretAfterLeadingIdent structConstructorSource "AS(0, 1)")
-
-    assertGoToDefinitionOnLine
-        "type Astruct(x:int, y:int) ="
-        (markCaretAfterLeadingIdent structConstructorSource "AS()")
+    structConstructorSource
+    |> assertGoToDefinitionOnLines
+        [ "new(a) = Astruct(a, a)"
+          "type Astruct(x:int, y:int) ="
+          "type Astruct(x:int, y:int) ="
+          "new(a) = Astruct(a, a)"
+          "type Astruct(x:int, y:int) ="
+          "type Astruct(x:int, y:int) =" ]
 
 [<Fact>]
 let ``GotoDefinition.Abbreviation.Bug193064`` () =

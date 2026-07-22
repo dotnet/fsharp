@@ -18,22 +18,15 @@ let private orPatSource =
           "let _ ="
           "  let f x ="
           "    match x with"
-          "    | Suc x (*loc-44*)"
-          "    | x (*loc-45*) -> "
+          "    | Suc x{caret1} (*loc-44*)"
+          "    | x{caret2} (*loc-45*) -> "
           "        x"
           "  ()" ]
 
 [<Fact>]
-let ``GotoDefinition.Simple.Tricky.OrPatLeft`` () =
-    assertGoToDefinitionOnLine
-        "| Suc x (*loc-44*)"
-        (markCaretAfterLeadingIdent orPatSource "x (*loc-44*)")
-
-[<Fact>]
-let ``GotoDefinition.Simple.Tricky.OrPatRight`` () =
-    assertGoToDefinitionOnLine
-        "| Suc x (*loc-44*)"
-        (markCaretAfterLeadingIdent orPatSource "x (*loc-45*)")
+let ``GotoDefinition.Simple.Tricky.OrPat`` () =
+    orPatSource
+    |> assertGoToDefinitionOnLines (List.replicate 2 "| Suc x (*loc-44*)")
 
 let private consPatSource =
     String.concat
@@ -43,20 +36,13 @@ let private consPatSource =
           "    match xs with"
           "    | x :: xs (*loc-54*)"
           "      when xs <> [] -> (*loc-52*)"
-          "        x :: xs (*loc-53*)"
+          "        x{caret1} :: xs{caret2} (*loc-53*)"
           "  ()" ]
 
 [<Fact>]
-let ``GotoDefinition.Simple.Tricky.ConsPatWhenClauseInWhenRhsX`` () =
-    assertGoToDefinitionOnLine
-        "| x :: xs (*loc-54*)"
-        (markCaretAfterLeadingIdent consPatSource "x :: xs (*loc-53*)")
-
-[<Fact>]
-let ``GotoDefinition.Simple.Tricky.ConsPatWhenClauseInWhenRhsXs`` () =
-    assertGoToDefinitionOnLine
-        "| x :: xs (*loc-54*)"
-        (markCaretAfterLeadingIdent consPatSource "xs (*loc-53*)")
+let ``GotoDefinition.Simple.Tricky.ConsPatWhenClauseInWhenRhs`` () =
+    consPatSource
+    |> assertGoToDefinitionOnLines (List.replicate 2 "| x :: xs (*loc-54*)")
 
 let private inStringSource =
     String.concat
@@ -92,21 +78,22 @@ let private ooClassSource =
     String.concat
         "\n"
         [ "type Class () = (*loc-62*)"
-          "  member c.Method () = () (*loc-63*)"
-          "  static member Foo () = () (*loc-64*)"
+          "  member c{caret2}.Method{caret1} () = () (*loc-63*)"
+          "  static member Foo{caret3} () = () (*loc-64*)"
           "let _ ="
           "  let c = Class () (*loc-65*)"
-          "  c.Method () (*loc-66*)"
-          "  Class.Foo () (*loc-67*)" ]
+          "  c.Method{caret4} () (*loc-66*)"
+          "  Class.Foo{caret5} () (*loc-67*)" ]
 
-[<Theory>]
-[<InlineData("member c.Method () = () (*loc-63*)", " () = () (*loc-63*)")>]
-[<InlineData("member c.Method () = () (*loc-63*)", ".Method () = () (*loc-63*)")>]
-[<InlineData("static member Foo () = () (*loc-64*)", " () = () (*loc-64*)")>]
-[<InlineData("member c.Method () = () (*loc-63*)", " () (*loc-66*)")>]
-[<InlineData("static member Foo () = () (*loc-64*)", " () (*loc-67*)")>]
-let ``GotoDefinition.ObjectOriented`` (definitionLine: string) (marker: string) =
-    assertGoToDefinitionOnLine definitionLine (markCaretAfterLeadingIdent ooClassSource marker)
+[<Fact>]
+let ``GotoDefinition.ObjectOriented`` () =
+    ooClassSource
+    |> assertGoToDefinitionOnLines
+        [ "member c.Method () = () (*loc-63*)"
+          "member c.Method () = () (*loc-63*)"
+          "static member Foo () = () (*loc-64*)"
+          "member c.Method () = () (*loc-63*)"
+          "static member Foo () = () (*loc-64*)" ]
 
 let private ooClassPrimeSource =
     String.concat
@@ -115,20 +102,21 @@ let private ooClassPrimeSource =
           "  member c.Method () = () (*loc-63*)"
           "  static member Foo () = () (*loc-64*)"
           "type Class' () ="
-          "  member c.Method  () = c.Method () (*loc-68*)"
-          "  member c.Method1 () = c.Method2 () (*loc-69*)"
+          "  member c.Method  () = c.Method{caret1} () (*loc-68*)"
+          "  member c.Method1 () = c.Method2{caret2} () (*loc-69*)"
           "  member c.Method2 () = c.Method1 () (*loc-70*)"
           "  member c.Method3  () ="
           "    let c = Class ()"
-          "    c.Method () (*loc-71*)" ]
+          "    c{caret3}.Method{caret4} () (*loc-71*)" ]
 
-[<Theory>]
-[<InlineData("member c.Method  () = c.Method () (*loc-68*)", " () (*loc-68*)")>]
-[<InlineData("member c.Method2 () = c.Method1 () (*loc-70*)", " () (*loc-69*)")>]
-[<InlineData("let c = Class ()", ".Method () (*loc-71*)")>]
-[<InlineData("member c.Method () = () (*loc-63*)", " () (*loc-71*)")>]
-let ``GotoDefinition.ObjectOriented.Prime`` (definitionLine: string) (marker: string) =
-    assertGoToDefinitionOnLine definitionLine (markCaretAfterLeadingIdent ooClassPrimeSource marker)
+[<Fact>]
+let ``GotoDefinition.ObjectOriented.Prime`` () =
+    ooClassPrimeSource
+    |> assertGoToDefinitionOnLines
+        [ "member c.Method  () = c.Method () (*loc-68*)"
+          "member c.Method2 () = c.Method1 () (*loc-70*)"
+          "let c = Class ()"
+          "member c.Method () = () (*loc-63*)" ]
 
 let private overloadedPropertiesSource =
     String.concat
@@ -142,28 +130,19 @@ let private overloadedPropertiesSource =
           "    with get (s:string) = 1"
           "    and  set (s:string) v = ()"
           ""
-          "D().Foo 1 (*loc-u1*)"
-          "D().Foo 1 <- 2 (*loc-u2*)"
-          "D().Foo \"abc\" (*loc-u3*)"
-          "D().Foo \"abc\" <- 2 (*loc-u4*)" ]
+          "D().Foo{caret1} 1 (*loc-u1*)"
+          "D().Foo{caret2} 1 <- 2 (*loc-u2*)"
+          "D().Foo{caret3} \"abc\" (*loc-u3*)"
+          "D().Foo{caret4} \"abc\" <- 2 (*loc-u4*)" ]
 
 [<Fact>]
 let ``GotoDefinition.OverloadResolutionForProperties`` () =
-    assertGoToDefinitionOnLine
-        "member this.Foo (*loc-d1*)"
-        (markCaretAfterLeadingIdent overloadedPropertiesSource "Foo 1 (*loc-u1*)")
-
-    assertGoToDefinitionOnLine
-        "member this.Foo (*loc-d1*)"
-        (markCaretAfterLeadingIdent overloadedPropertiesSource "Foo 1 <- 2 (*loc-u2*)")
-
-    assertGoToDefinitionOnLine
-        "member this.Foo (*loc-d3*)"
-        (markCaretAfterLeadingIdent overloadedPropertiesSource "Foo \"abc\" (*loc-u3*)")
-
-    assertGoToDefinitionOnLine
-        "member this.Foo (*loc-d3*)"
-        (markCaretAfterLeadingIdent overloadedPropertiesSource "Foo \"abc\" <- 2 (*loc-u4*)")
+    overloadedPropertiesSource
+    |> assertGoToDefinitionOnLines
+        [ "member this.Foo (*loc-d1*)"
+          "member this.Foo (*loc-d1*)"
+          "member this.Foo (*loc-d3*)"
+          "member this.Foo (*loc-d3*)" ]
 
 let private overloadedMethodsSource =
     String.concat
@@ -179,18 +158,15 @@ let private overloadedMethodsSource =
           "   override this.Method (i:int) = () (*loc-d1*)"
           ""
           "let d = new Derived()"
-          "d.Method 12 (*loc-u1*)"
-          "d.Method() (*loc-u2*)" ]
+          "d.Method{caret1} 12 (*loc-u1*)"
+          "d.Method{caret2}() (*loc-u2*)" ]
 
 [<Fact>]
 let ``GotoDefinition.OverloadResolutionWithOverrides`` () =
-    assertGoToDefinitionOnLine
-        "override this.Method (i:int) = () (*loc-d1*)"
-        (markCaretAfterLeadingIdent overloadedMethodsSource "Method 12 (*loc-u1*)")
-
-    assertGoToDefinitionOnLine
-        "member this.Method() = () (*loc-d2*)"
-        (markCaretAfterLeadingIdent overloadedMethodsSource "Method() (*loc-u2*)")
+    overloadedMethodsSource
+    |> assertGoToDefinitionOnLines
+        [ "override this.Method (i:int) = () (*loc-d1*)"
+          "member this.Method() = () (*loc-d2*)" ]
 
 let private inheritedMembersSource =
     String.concat
@@ -204,15 +180,12 @@ let private inheritedMembersSource =
           "   override this.Method () = ()"
           "   override this.Property = 1"
           "let b = Bar()"
-          "b.Method(*loc-1*)()"
-          "b.Property(*loc-2*)" ]
+          "b.Method{caret1}(*loc-1*)()"
+          "b.Property{caret2}(*loc-2*)" ]
 
 [<Fact>]
 let ``GotoDefinition.InheritedMembers`` () =
-    assertGoToDefinitionOnLine
-        "override this.Method () = ()"
-        (markCaretAfterLeadingIdent inheritedMembersSource "Method(*loc-1*)")
-
-    assertGoToDefinitionOnLine
-        "override this.Property = 1"
-        (markCaretAfterLeadingIdent inheritedMembersSource "Property(*loc-2*)")
+    inheritedMembersSource
+    |> assertGoToDefinitionOnLines
+        [ "override this.Method () = ()"
+          "override this.Property = 1" ]

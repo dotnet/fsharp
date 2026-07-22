@@ -24,20 +24,13 @@ let private lambdaMultiBindSource =
         "\n"
         [ "let _ ="
           "  fun x (*loc-37*)"
-          "      x -> (*loc-38*)"
-          "    x (*loc-39*)" ]
+          "      x{caret1} -> (*loc-38*)"
+          "    x{caret2} (*loc-39*)" ]
 
 [<Fact>]
-let ``GotoDefinition.Simple.Tricky.LambdaMultBind2`` () =
-    assertGoToDefinitionOnLine
-        "x -> (*loc-38*)"
-        (markCaretAfterLeadingIdent lambdaMultiBindSource "x -> (*loc-38*)")
-
-[<Fact>]
-let ``GotoDefinition.Simple.Tricky.LambdaMultBindBody`` () =
-    assertGoToDefinitionOnLine
-        "x -> (*loc-38*)"
-        (markCaretAfterLeadingIdent lambdaMultiBindSource "x (*loc-39*)")
+let ``GotoDefinition.Simple.Tricky.LambdaMultBind`` () =
+    lambdaMultiBindSource
+    |> assertGoToDefinitionOnLines (List.replicate 2 "x -> (*loc-38*)")
 
 let private functionPatternSource =
     String.concat
@@ -45,21 +38,14 @@ let private functionPatternSource =
         [ "let _ ="
           "  let f = () (*loc-40*)"
           "  let f = (*loc-41*)"
-          "    function f -> (*loc-42*)"
-          "      f (*loc-43*)"
+          "    function f{caret1} -> (*loc-42*)"
+          "      f{caret2} (*loc-43*)"
           "  ()" ]
 
 [<Fact>]
 let ``GotoDefinition.Simple.Tricky.LotsOfFsPat`` () =
-    assertGoToDefinitionOnLine
-        "function f -> (*loc-42*)"
-        (markCaretAfterLeadingIdent functionPatternSource "f -> (*loc-42*)")
-
-[<Fact>]
-let ``GotoDefinition.Simple.Tricky.LotsOfFsUse`` () =
-    assertGoToDefinitionOnLine
-        "function f -> (*loc-42*)"
-        (markCaretAfterLeadingIdent functionPatternSource "f (*loc-43*)")
+    functionPatternSource
+    |> assertGoToDefinitionOnLines (List.replicate 2 "function f -> (*loc-42*)")
 
 let private andPatternSource =
     String.concat

@@ -6,21 +6,14 @@ open Xunit
 let private bug2516SpacedSource =
     """
                 //regression test for bug 2516
-                type One (*Marker1*) = One
-                let f (x : One (*Marker2*)) = 2
+                type One{caret1} (*Marker1*) = One
+                let f (x : One{caret2} (*Marker2*)) = 2
                 """
 
 [<Fact>]
-let ``OnTypeDefinition`` () =
-    assertGoToDefinitionOnLine
-        "type One (*Marker1*) = One"
-        (markCaretAfterLeadingIdent bug2516SpacedSource "One (*Marker1*)")
-
-[<Fact>]
-let ``Parameter`` () =
-    assertGoToDefinitionOnLine
-        "type One (*Marker1*) = One"
-        (markCaretAfterLeadingIdent bug2516SpacedSource "One (*Marker2*)")
+let ``OnTypeDefinitionAndParameter`` () =
+    bug2516SpacedSource
+    |> assertGoToDefinitionOnLines (List.replicate 2 "type One (*Marker1*) = One")
 
 let private overloadResolutionSource =
     String.concat
@@ -33,28 +26,19 @@ let private overloadResolutionSource =
           "   member this.Foo(x) (*#2#*) = ()"
           ""
           "let d = new D()"
-          "d.Foo() (*$1$*)"
-          "d.Foo(1) (*$2$*)"
-          "d.ToString() (*$3$*)"
-          "d.ToString(\"aaa\") (*$4$*)" ]
+          "d.Foo{caret1}() (*$1$*)"
+          "d.Foo{caret2}(1) (*$2$*)"
+          "d.ToString{caret3}() (*$3$*)"
+          "d.ToString{caret4}(\"aaa\") (*$4$*)" ]
 
 [<Fact>]
 let ``GotoDefinition.OverloadResolution`` () =
-    assertGoToDefinitionOnLine
-        "member this.Foo() (*#1#*) = ()"
-        (markCaretAfterLeadingIdent overloadResolutionSource "Foo() (*$1$*)")
-
-    assertGoToDefinitionOnLine
-        "member this.Foo(x) (*#2#*) = ()"
-        (markCaretAfterLeadingIdent overloadResolutionSource "Foo(1) (*$2$*)")
-
-    assertGoToDefinitionOnLine
-        "override this.ToString() (*#3#*) = System.String.Empty"
-        (markCaretAfterLeadingIdent overloadResolutionSource "ToString() (*$3$*)")
-
-    assertGoToDefinitionOnLine
-        "member this.ToString(s : string) (*#4#*) = ()"
-        (markCaretAfterLeadingIdent overloadResolutionSource "ToString(\"aaa\") (*$4$*)")
+    overloadResolutionSource
+    |> assertGoToDefinitionOnLines
+        [ "member this.Foo() (*#1#*) = ()"
+          "member this.Foo(x) (*#2#*) = ()"
+          "override this.ToString() (*#3#*) = System.String.Empty"
+          "member this.ToString(s : string) (*#4#*) = ()" ]
 
 let private overloadStaticsSource =
     String.concat
@@ -63,18 +47,15 @@ let private overloadStaticsSource =
           "   static member Foo(i : int) (*#1#*) = ()"
           "   static member Foo(s : string) (*#2#*) = ()"
           ""
-          "T.Foo 1 (*$1$*)"
-          "T.Foo \"abc\" (*$2$*)" ]
+          "T.Foo{caret1} 1 (*$1$*)"
+          "T.Foo{caret2} \"abc\" (*$2$*)" ]
 
 [<Fact>]
 let ``GotoDefinition.OverloadResolutionStatics`` () =
-    assertGoToDefinitionOnLine
-        "static member Foo(i : int) (*#1#*) = ()"
-        (markCaretAfterLeadingIdent overloadStaticsSource "Foo 1 (*$1$*)")
-
-    assertGoToDefinitionOnLine
-        "static member Foo(s : string) (*#2#*) = ()"
-        (markCaretAfterLeadingIdent overloadStaticsSource "Foo \"abc\" (*$2$*)")
+    overloadStaticsSource
+    |> assertGoToDefinitionOnLines
+        [ "static member Foo(i : int) (*#1#*) = ()"
+          "static member Foo(s : string) (*#2#*) = ()" ]
 
 let private constructorsSource =
     String.concat
@@ -87,102 +68,64 @@ let private constructorsSource =
           "B(1)"
           "B(\"abc\")"
           ""
-          "new B() (*$1b$*)"
-          "new B(1) (*$2b$*)"
-          "new B(\"abc\") (*$3b$*)"
+          "new B{caret1}() (*$1b$*)"
+          "new B{caret2}(1) (*$2b$*)"
+          "new B{caret3}(\"abc\") (*$3b$*)"
           ""
           "type D1() ="
-          "    inherit B() (*$1c$*)"
+          "    inherit B{caret4}() (*$1c$*)"
           ""
           "type D2() ="
-          "    inherit B(1) (*$2c$*)"
+          "    inherit B{caret5}(1) (*$2c$*)"
           ""
           "type D3() ="
-          "    inherit B(\"abc\") (*$3c$*)"
+          "    inherit B{caret6}(\"abc\") (*$3c$*)"
           ""
-          "let o1 = { new B() (*$1d$*) with"
+          "let o1 = { new B{caret7}() (*$1d$*) with"
           "             override this.ToString() = \"\""
           "         }"
-          "let o2 = { new B(1) (*$2d$*) with"
+          "let o2 = { new B{caret8}(1) (*$2d$*) with"
           "             override this.ToString() = \"\""
           "         }"
-          "let o3 = { new B(\"aaa\") (*$3d$*) with"
+          "let o3 = { new B{caret9}(\"aaa\") (*$3d$*) with"
           "             override this.ToString() = \"\""
           "         }" ]
 
 [<Fact>]
 let ``GotoDefinition.Constructors`` () =
-    assertGoToDefinitionOnLine
-        "type B() (*#1#*) ="
-        (markCaretAfterLeadingIdent constructorsSource "B() (*$1b$*)")
-
-    assertGoToDefinitionOnLine
-        "new(i : int) (*#2#*) = B()"
-        (markCaretAfterLeadingIdent constructorsSource "B(1) (*$2b$*)")
-
-    assertGoToDefinitionOnLine
-        "new(s : string) (*#3#*) = B()"
-        (markCaretAfterLeadingIdent constructorsSource "B(\"abc\") (*$3b$*)")
-
-    assertGoToDefinitionOnLine
-        "type B() (*#1#*) ="
-        (markCaretAfterLeadingIdent constructorsSource "B() (*$1c$*)")
-
-    assertGoToDefinitionOnLine
-        "new(i : int) (*#2#*) = B()"
-        (markCaretAfterLeadingIdent constructorsSource "B(1) (*$2c$*)")
-
-    assertGoToDefinitionOnLine
-        "new(s : string) (*#3#*) = B()"
-        (markCaretAfterLeadingIdent constructorsSource "B(\"abc\") (*$3c$*)")
-
-    assertGoToDefinitionOnLine
-        "type B() (*#1#*) ="
-        (markCaretAfterLeadingIdent constructorsSource "B() (*$1d$*)")
-
-    assertGoToDefinitionOnLine
-        "new(i : int) (*#2#*) = B()"
-        (markCaretAfterLeadingIdent constructorsSource "B(1) (*$2d$*)")
-
-    assertGoToDefinitionOnLine
-        "new(s : string) (*#3#*) = B()"
-        (markCaretAfterLeadingIdent constructorsSource "B(\"aaa\") (*$3d$*)")
+    constructorsSource
+    |> assertGoToDefinitionOnLines
+        [ "type B() (*#1#*) ="
+          "new(i : int) (*#2#*) = B()"
+          "new(s : string) (*#3#*) = B()"
+          "type B() (*#1#*) ="
+          "new(i : int) (*#2#*) = B()"
+          "new(s : string) (*#3#*) = B()"
+          "type B() (*#1#*) ="
+          "new(i : int) (*#2#*) = B()"
+          "new(s : string) (*#3#*) = B()" ]
 
 let private simplePolymorphSource =
     String.concat
         "\n"
         [ "let _ ="
           "  let a = 2"
-          "  let id (x : 'a) (*loc-33*)"
-          "    : 'a = x (*loc-34*)"
+          "  let id (x : 'a{caret1}) (*loc-33*)"
+          "    : 'a{caret2} = x (*loc-34*)"
           "  ()" ]
 
 [<Fact>]
-let ``GotoDefinition.Simple.Polymorph.Leftmost`` () =
-    assertGoToDefinitionOnLine
-        "let id (x : 'a) (*loc-33*)"
-        (markCaretAfterLeadingIdent simplePolymorphSource "a) (*loc-33*)")
-
-[<Fact>]
-let ``GotoDefinition.Simple.Polymorph.NotLeftmost`` () =
-    assertGoToDefinitionOnLine
-        "let id (x : 'a) (*loc-33*)"
-        (markCaretAfterLeadingIdent simplePolymorphSource "a = x (*loc-34*)")
+let ``GotoDefinition.Simple.Polymorph`` () =
+    simplePolymorphSource
+    |> assertGoToDefinitionOnLines (List.replicate 2 "let id (x : 'a) (*loc-33*)")
 
 let private bug2516ModuleSource =
     """
             module GotoDefinition
-            type One(*Mark1*) = One
-            let f (x : One(*Mark2*)) = 2"""
+            type One{caret1}(*Mark1*) = One
+            let f (x : One{caret2}(*Mark2*)) = 2"""
 
 [<Fact>]
-let ``Identifier.IsConstructor.Bug2516`` () =
-    assertGoToDefinitionOnLine
-        "type One(*Mark1*) = One"
-        (markCaretAfterLeadingIdent bug2516ModuleSource "One(*Mark1*)")
-
-[<Fact>]
-let ``Identifier.IsTypeName.Bug2516`` () =
-    assertGoToDefinitionOnLine
-        "type One(*Mark1*) = One"
-        (markCaretAfterLeadingIdent bug2516ModuleSource "One(*Mark2*)")
+let ``Identifier.Bug2516`` () =
+    bug2516ModuleSource
+    |> assertGoToDefinitionOnLines (List.replicate 2 "type One(*Mark1*) = One")
