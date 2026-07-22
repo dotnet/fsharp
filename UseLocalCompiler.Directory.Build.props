@@ -1,89 +1,10 @@
 <Project>
-  <!-- Import target frameworks from single source of truth.
-       For regression tests: TargetFrameworks.props is co-located with this props file.
-       For local usage: use eng/TargetFrameworks.props relative to this file's directory. -->
-  <Import Project="$(MSBuildThisFileDirectory)TargetFrameworks.props" Condition="Exists('$(MSBuildThisFileDirectory)TargetFrameworks.props')" />
-  <Import Project="$(MSBuildThisFileDirectory)eng/TargetFrameworks.props" Condition="!Exists('$(MSBuildThisFileDirectory)TargetFrameworks.props')" />
-
   <PropertyGroup>
     <LoadLocalFSharpBuild Condition="'$(LoadLocalFSharpBuild)' == ''">False</LoadLocalFSharpBuild>
-    
     <LocalFSharpCompilerConfiguration Condition="'$(LocalFSharpCompilerConfiguration)' == ''">Release</LocalFSharpCompilerConfiguration>
-
-    <LocalFSharpCompilerPath Condition=" '$(LocalFSharpCompilerPath)' == '' ">$(MSBuildThisFileDirectory)</LocalFSharpCompilerPath>
-
-    <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
-    <DisableAutoSetFscCompilerPath>true</DisableAutoSetFscCompilerPath>
-    <FscToolPath Condition="'$(FscToolPath)' == ''">$([System.IO.Path]::GetDirectoryName($(DOTNET_HOST_PATH)))</FscToolPath>
-    <FscToolExe Condition="'$(FscToolExe)' == ''">$([System.IO.Path]::GetFileName($(DOTNET_HOST_PATH)))</FscToolExe>
-
-    <DotnetFscCompilerPath>$(LocalFSharpCompilerPath)/artifacts/bin/fsc/$(LocalFSharpCompilerConfiguration)/$(FSharpNetCoreProductTargetFramework)/fsc.dll</DotnetFscCompilerPath>
-    <Fsc_DotNET_DotnetFscCompilerPath>$(LocalFSharpCompilerPath)/artifacts/bin/fsc/$(LocalFSharpCompilerConfiguration)/$(FSharpNetCoreProductTargetFramework)/fsc.dll</Fsc_DotNET_DotnetFscCompilerPath>
-
-    <LocalFSharpCoreTargetFramework>netstandard2.1</LocalFSharpCoreTargetFramework>
-    <LocalFSharpCoreAssemblyPath Condition="'$(LocalFSharpCoreAssemblyPath)' == ''">$(LocalFSharpCompilerPath)/artifacts/bin/FSharp.Core/$(LocalFSharpCompilerConfiguration)/$(LocalFSharpCoreTargetFramework)/FSharp.Core.dll</LocalFSharpCoreAssemblyPath>
-
-    <FSharpPreferNetFrameworkTools>False</FSharpPreferNetFrameworkTools>
-    <FSharpPrefer64BitTools>True</FSharpPrefer64BitTools>
+    <LocalFSharpCompilerPath Condition="'$(LocalFSharpCompilerPath)' == ''">$(MSBuildThisFileDirectory)</LocalFSharpCompilerPath>
+    <LocalFSharpBuildTaskAssembly Condition="'$(LocalFSharpBuildTaskAssembly)' == ''">$([System.IO.Path]::Combine('$(LocalFSharpCompilerPath)', 'artifacts', 'bin', 'UseLocalCompiler.FSharp.Build.Tasks', '$(LocalFSharpCompilerConfiguration)', 'netstandard2.0', 'UseLocalCompiler.FSharp.Build.Tasks.dll'))</LocalFSharpBuildTaskAssembly>
   </PropertyGroup>
 
-  <Target Name="SetLocalFSharpCoreTargetFramework" BeforeTargets="CoreCompile">
-    <PropertyGroup>
-      <_TargetFrameworkValue>$(TargetFramework)</_TargetFrameworkValue>
-      <_TargetFrameworkValue Condition="'$(_TargetFrameworkValue)' == '' and '$(TargetFrameworks)' != ''">$([System.String]::Copy('$(TargetFrameworks)').Split(';')[0])</_TargetFrameworkValue>
-
-      <_TargetFrameworkIdentifier>$(TargetFrameworkIdentifier)</_TargetFrameworkIdentifier>
-      <_TargetFrameworkIdentifier Condition="'$(_TargetFrameworkIdentifier)' == '' and '$(_TargetFrameworkValue)' != '' and $([System.String]::Copy('$(_TargetFrameworkValue)').StartsWith('net4'))">.NETFramework</_TargetFrameworkIdentifier>
-      <_TargetFrameworkIdentifier Condition="'$(_TargetFrameworkIdentifier)' == '' and '$(_TargetFrameworkValue)' != '' and $([System.String]::Copy('$(_TargetFrameworkValue)').StartsWith('netstandard'))">.NETStandard</_TargetFrameworkIdentifier>
-      <_TargetFrameworkIdentifier Condition="'$(_TargetFrameworkIdentifier)' == '' and '$(_TargetFrameworkValue)' != '' and $([System.String]::Copy('$(_TargetFrameworkValue)').StartsWith('netcoreapp'))">.NETCoreApp</_TargetFrameworkIdentifier>
-      <_TargetFrameworkIdentifier Condition="'$(_TargetFrameworkIdentifier)' == '' and '$(_TargetFrameworkValue)' != ''">.NETCoreApp</_TargetFrameworkIdentifier>
-
-      <_TargetFrameworkVersionWithoutV>$(TargetFrameworkVersion)</_TargetFrameworkVersionWithoutV>
-      <_TargetFrameworkVersionWithoutV Condition="'$(_TargetFrameworkVersionWithoutV)' != '' and $([System.String]::Copy('$(_TargetFrameworkVersionWithoutV)').StartsWith('v'))">$([System.String]::Copy('$(_TargetFrameworkVersionWithoutV)').Substring(1))</_TargetFrameworkVersionWithoutV>
-      <_TargetFrameworkVersionWithoutV Condition="'$(_TargetFrameworkVersionWithoutV)' == '' and '$(_TargetFrameworkValue)' != '' and '$(_TargetFrameworkIdentifier)' == '.NETStandard'">$([System.String]::Copy('$(_TargetFrameworkValue)').Substring(11))</_TargetFrameworkVersionWithoutV>
-
-      <_UseNetStandard20LocalFSharpCore>false</_UseNetStandard20LocalFSharpCore>
-      <_UseNetStandard20LocalFSharpCore Condition="'$(_TargetFrameworkIdentifier)' == '.NETFramework'">true</_UseNetStandard20LocalFSharpCore>
-      <_UseNetStandard20LocalFSharpCore Condition="'$(_TargetFrameworkIdentifier)' == '.NETStandard' and '$(_TargetFrameworkVersionWithoutV)' != '' and $([System.Version]::Parse('$(_TargetFrameworkVersionWithoutV)')) &lt; $([System.Version]::Parse('2.1'))">true</_UseNetStandard20LocalFSharpCore>
-      <_UseNetStandard20LocalFSharpCore Condition="'$(_TargetFrameworkIdentifier)' == '.NETCoreApp' and '$(_TargetFrameworkVersionWithoutV)' != '' and $([System.Version]::Parse('$(_TargetFrameworkVersionWithoutV)')) &lt; $([System.Version]::Parse('3.0'))">true</_UseNetStandard20LocalFSharpCore>
-
-      <LocalFSharpCoreTargetFramework Condition="'$(_UseNetStandard20LocalFSharpCore)' == 'true'">netstandard2.0</LocalFSharpCoreTargetFramework>
-      <LocalFSharpCoreAssemblyPath>$(LocalFSharpCompilerPath)/artifacts/bin/FSharp.Core/$(LocalFSharpCompilerConfiguration)/$(LocalFSharpCoreTargetFramework)/FSharp.Core.dll</LocalFSharpCoreAssemblyPath>
-    </PropertyGroup>
-  </Target>
-
-  <Target Name="UseLocalFSharpCoreReference" BeforeTargets="ResolveAssemblyReferences" DependsOnTargets="SetLocalFSharpCoreTargetFramework">
-    <Error Condition="!Exists('$(LocalFSharpCoreAssemblyPath)')" Text="The local FSharp.Core override could not be found at '$(LocalFSharpCoreAssemblyPath)'." />
-    <ItemGroup>
-      <Reference Remove="@(Reference)" Condition="'%(Reference.Identity)' == 'FSharp.Core' or '%(Reference.FileName)' == 'FSharp.Core' or '%(Reference.NuGetPackageId)' == 'FSharp.Core'" />
-      <ReferencePath Remove="@(ReferencePath)" Condition="'%(ReferencePath.Filename)' == 'FSharp.Core' and '%(ReferencePath.Extension)' == '.dll'" />
-      <ReferenceCopyLocalPaths Remove="@(ReferenceCopyLocalPaths)" Condition="'%(ReferenceCopyLocalPaths.Filename)' == 'FSharp.Core' and '%(ReferenceCopyLocalPaths.Extension)' == '.dll'" />
-      <Reference Include="FSharp.Core">
-        <HintPath>$(LocalFSharpCoreAssemblyPath)</HintPath>
-        <Private>true</Private>
-      </Reference>
-      <ReferencePath Remove="@(ReferencePath)" Condition="'%(ReferencePath.Identity)' == '$(LocalFSharpCoreAssemblyPath)'" />
-      <ReferencePath Include="$(LocalFSharpCoreAssemblyPath)">
-        <Private>true</Private>
-      </ReferencePath>
-      <ReferenceCopyLocalPaths Remove="@(ReferenceCopyLocalPaths)" Condition="'%(ReferenceCopyLocalPaths.Identity)' == '$(LocalFSharpCoreAssemblyPath)'" />
-      <ReferenceCopyLocalPaths Include="$(LocalFSharpCoreAssemblyPath)" />
-    </ItemGroup>
-  </Target>
-
-  <!-- 
-    Use FSharpTargetsShim to redirect the SDK to use the locally built F# targets.
-    This replaces all the individual UsingTask overrides since Microsoft.FSharp.NetSdk.targets
-    imports Microsoft.FSharp.Targets which registers all the F# build tasks.
-    See: https://github.com/dotnet/sdk/blob/main/src/Tasks/Microsoft.NET.Build.Tasks/targets/Microsoft.NET.Sdk.FSharpTargetsShim.targets
-  -->
-  <PropertyGroup Condition="'$(LoadLocalFSharpBuild)' == 'True'">
-    <LocalFSharpBuildBinPath>$(LocalFSharpCompilerPath)/artifacts/bin/fsc/$(LocalFSharpCompilerConfiguration)/$(FSharpNetCoreProductTargetFramework)</LocalFSharpBuildBinPath>
-    <FSharpBuildAssemblyFile>$(LocalFSharpBuildBinPath)/FSharp.Build.dll</FSharpBuildAssemblyFile>
-    <FSharpTargetsPath>$(LocalFSharpBuildBinPath)/Microsoft.FSharp.Targets</FSharpTargetsPath>
-    <FSharpPropsShim>$(LocalFSharpBuildBinPath)/Microsoft.FSharp.NetSdk.props</FSharpPropsShim>
-    <FSharpTargetsShim>$(LocalFSharpBuildBinPath)/Microsoft.FSharp.NetSdk.targets</FSharpTargetsShim>
-    <FSharpOverridesTargetsShim>$(LocalFSharpBuildBinPath)/Microsoft.FSharp.Overrides.NetSdk.targets</FSharpOverridesTargetsShim>
-  </PropertyGroup>
-
+  <UsingTask TaskName="Fsc" AssemblyFile="$(LocalFSharpBuildTaskAssembly)" Override="true" Condition="'$(LoadLocalFSharpBuild)' == 'True'" />
 </Project>

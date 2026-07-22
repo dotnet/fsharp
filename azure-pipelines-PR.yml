@@ -656,18 +656,26 @@ stages:
               publishLocation: pipeline
             condition: succeeded()
 
+          - task: PublishPipelineArtifact@1
+            displayName: Publish UseLocalCompiler task artifacts for Regression Tests
+            inputs:
+              targetPath: '$(Build.SourcesDirectory)/artifacts/bin/UseLocalCompiler.FSharp.Build.Tasks'
+              artifactName: 'UseLocalCompilerTaskArtifacts'
+              publishLocation: pipeline
+            condition: succeeded()
+
           - pwsh: |
-              # Stage UseLocalCompiler props and TargetFrameworks.props together
+              # Stage the local test props file and TargetFrameworks.props together
               $stagingDir = "$(Build.SourcesDirectory)/UseLocalCompilerPropsStaging"
               New-Item -ItemType Directory -Force -Path $stagingDir | Out-Null
               Copy-Item "$(Build.SourcesDirectory)/UseLocalCompiler.Directory.Build.props" -Destination $stagingDir
               Copy-Item "$(Build.SourcesDirectory)/eng/TargetFrameworks.props" -Destination $stagingDir
               Write-Host "Staged files for UseLocalCompilerProps artifact:"
               Get-ChildItem $stagingDir -Name
-            displayName: Stage UseLocalCompiler props files
+            displayName: Stage local test props files
 
           - task: PublishPipelineArtifact@1
-            displayName: Publish UseLocalCompiler props file for Regression Tests
+            displayName: Publish local test props file for Regression Tests
             inputs:
               targetPath: '$(Build.SourcesDirectory)/UseLocalCompilerPropsStaging'
               artifactName: 'UseLocalCompilerProps'
