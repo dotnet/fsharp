@@ -189,7 +189,7 @@ type internal FSharpSettingsFactory
 [<ProvideEditorExtension(typeof<FSharpEditorFactory>, ".fsx", 64)>]
 [<ProvideEditorExtension(typeof<FSharpEditorFactory>, ".ml", 64)>]
 [<ProvideEditorExtension(typeof<FSharpEditorFactory>, ".mli", 64)>]
-[<ProvideEditorFactory(typeof<FSharpEditorFactory>, 101s, CommonPhysicalViewAttributes = Constants.FSharpEditorFactoryPhysicalViewAttributes)>]
+[<ProvideEditorFactory(typeof<FSharpEditorFactory>, 101s, false, CommonPhysicalViewAttributes = Constants.FSharpEditorFactoryPhysicalViewAttributes)>]
 [<ProvideLanguageExtension(typeof<FSharpLanguageService>, ".fs")>]
 [<ProvideLanguageExtension(typeof<FSharpLanguageService>, ".fsi")>]
 [<ProvideLanguageExtension(typeof<FSharpLanguageService>, ".fsx")>]
