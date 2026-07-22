@@ -105,7 +105,10 @@
     <SystemReflectionEmitVersion>4.7.0</SystemReflectionEmitVersion>
     <MicrosoftDiaSymReaderPortablePdbVersion>1.6.0</MicrosoftDiaSymReaderPortablePdbVersion>
     <!-- Versions for package groups -->
-    <VisualStudioEditorPackagesVersion>18.0.404-preview</VisualStudioEditorPackagesVersion>
+    <!-- Editor packages resolve to 18.9.123 transitively via Microsoft.VisualStudio.SDK 18.9.496 (pulled by
+         Microsoft.CodeAnalysis.ExternalAccess.FSharp). Under CPM transitive pinning the central pin must match
+         that resolved version, otherwise NU1109 downgrades every vsintegration project. -->
+    <VisualStudioEditorPackagesVersion>18.9.123</VisualStudioEditorPackagesVersion>
     <MicrosoftVisualStudioShellPackagesVersion>18.0.2188-preview.1</MicrosoftVisualStudioShellPackagesVersion>
     <VisualStudioProjectSystemPackagesVersion>18.0.1237-pre</VisualStudioProjectSystemPackagesVersion>
     <VisualStudioShellProjectsPackages>18.0.2077-preview.1</VisualStudioShellProjectsPackages>
@@ -120,11 +123,14 @@
     <MicrosoftVisualStudioShellInteropVersion>18.9.438</MicrosoftVisualStudioShellInteropVersion>
     <MicrosoftVisualStudioTextManagerInteropVersion>18.9.438</MicrosoftVisualStudioTextManagerInteropVersion>
     <MicrosoftVisualStudioOLEInteropVersion>18.9.438</MicrosoftVisualStudioOLEInteropVersion>
-    <MicrosoftVisualStudioShellDesignVersion>$(MicrosoftVisualStudioShellPackagesVersion)</MicrosoftVisualStudioShellDesignVersion>
+    <!-- These shell packages are pulled higher transitively by Microsoft.VisualStudio.SDK 18.9.496 (via
+         Microsoft.CodeAnalysis.ExternalAccess.FSharp), so under CPM transitive pinning they must be pinned to
+         the required 18.9.x versions rather than the shell package group; otherwise NU1109. -->
+    <MicrosoftVisualStudioShellDesignVersion>18.9.493</MicrosoftVisualStudioShellDesignVersion>
     <MicrosoftInternalVisualStudioShellFrameworkVersion>$(MicrosoftVisualStudioShellPackagesVersion)</MicrosoftInternalVisualStudioShellFrameworkVersion>
-    <MicrosoftVisualStudioPackageLanguageService150Version>$(MicrosoftVisualStudioShellPackagesVersion)</MicrosoftVisualStudioPackageLanguageService150Version>
+    <MicrosoftVisualStudioPackageLanguageService150Version>18.9.493</MicrosoftVisualStudioPackageLanguageService150Version>
     <MicrosoftVisualStudioManagedInterfacesVersion>$(VisualStudioShellProjectsPackages)</MicrosoftVisualStudioManagedInterfacesVersion>
-    <MicrosoftVisualStudioDesignerInterfacesVersion>$(MicrosoftVisualStudioShellPackagesVersion)</MicrosoftVisualStudioDesignerInterfacesVersion>
+    <MicrosoftVisualStudioDesignerInterfacesVersion>18.9.438</MicrosoftVisualStudioDesignerInterfacesVersion>
     <MicrosoftVisualStudioShellImmutable100Version>10.0.30319</MicrosoftVisualStudioShellImmutable100Version>
     <MicrosoftVisualStudioShellImmutable110Version>11.0.50727</MicrosoftVisualStudioShellImmutable110Version>
     <MicrosoftVisualStudioShellImmutable150Version>15.0.25123-Dev15Preview</MicrosoftVisualStudioShellImmutable150Version>

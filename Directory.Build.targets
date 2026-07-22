@@ -32,12 +32,17 @@
        eng/Packages.props. @(MIBCPackage) carries Version metadata (needed by CopyMIBC to locate the
        restored .mibc under the package cache), which must not appear on a PackageReference under
        Central Package Management (NU1008). Guarded by the same IgnoreMIBC switch as the item list. -->
-  <ItemGroup Condition="'$(IgnoreMIBC)' != 'true'">
+  <ItemGroup Condition="'$(IgnoreMIBC)' != 'true' and '$(ManagePackageVersionsCentrally)' == 'true'">
     <PackageReference Include="optimization.windows_nt-x86.mibc.runtime" />
     <PackageReference Include="optimization.windows_nt-x64.mibc.runtime" />
     <PackageReference Include="optimization.windows_nt-arm64.mibc.runtime" />
     <PackageReference Include="optimization.linux-x64.mibc.runtime" />
     <PackageReference Include="optimization.linux-arm64.mibc.runtime" />
+  </ItemGroup>
+  <!-- Opt-out subtrees (ImportDirectoryPackagesProps=false) are not under CPM, so their MIBC references
+       must carry the Version metadata from @(MIBCPackage) directly (otherwise NU1015). -->
+  <ItemGroup Condition="'$(IgnoreMIBC)' != 'true' and '$(ManagePackageVersionsCentrally)' != 'true'">
+    <PackageReference Include="@(MIBCPackage)" />
   </ItemGroup>
 
   <Target Name="CopyMIBCWrapper" AfterTargets="Restore" BeforeTargets="Build;Pack">
