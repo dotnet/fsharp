@@ -1,11 +1,13 @@
 namespace FSharp.Compiler.Service.Tests
 
 open System
+open System.Text.RegularExpressions
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.EditorServices
 open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Range
 open FSharp.Compiler.Tokenization
+open FSharp.Test.Assert
 
 type SourceContext =
     { Source: string
@@ -32,82 +34,148 @@ type CodeCompletionContext =
 
 [<RequireQualifiedAccess>]
 module SourceContext =
-    let private markers = ["{caret}"; "{selstart}"; "{selend}"]
+    type private Marker =
+        { Text: string
+          Position: pos }
+
+    type private SourceMarkers =
+        { Caret: Marker option
+          SelectionStart: Marker option
+          SelectionEnd: Marker option
+          Id: int option }
+
+    let private markers = ["caret"; "selstart"; "selend"]
 
     let getLines (source: string) =
         source.Split([|"\r\n"; "\n"|], StringSplitOptions.None)
 
-    let rec private extractMarkersOnLine markersAcc (line, lineText: string) =
+    let private stripMarkers (markedSource: string) =
+        let names = String.concat "|" markers
+        Regex.Replace(markedSource, $@"\{{({names})\d*\}}", "")
+
+    let rec private extractMarkersOnLine (markersAcc: (int option * Marker) list) (line, lineText: string) =
         let markersOnLine =
             markers
             |> List.choose (fun (marker: string) ->
-                match lineText.IndexOf(marker) with
-                | -1 -> None
-                | column -> Some(marker, column)
+                let regexMatch = Regex.Match(lineText, $@"\{{{marker}(\d*)\}}")
+                if regexMatch.Success then Some(marker, regexMatch) else None
             )
 
         if markersOnLine.IsEmpty then
             markersAcc
         else
-            let marker, column = List.minBy snd markersOnLine
+            let marker, regexMatch = markersOnLine |> List.minBy (fun (_, m) -> m.Index)
 
-            let markerPos =
-                let column =
-                    match marker with
-                    | "{caret}" -> column - 1
-                    | _ -> column
+            let column =
+                match marker with
+                | "caret" -> regexMatch.Index - 1
+                | _ -> regexMatch.Index
 
-                Position.mkPos (line + 1) column
+            let markerPos = Position.mkPos (line + 1) column
 
-            if markersAcc |> List.map fst |> List.contains marker then
-                failwith $"Duplicate marker: {marker}"
+            let id =
+                match regexMatch.Groups.[1].Value with
+                | "" -> None
+                | value -> Some(int value)
 
-            let markersAcc = (marker, markerPos) :: markersAcc
-            let lineText = lineText.Replace(marker, "")
+            if markersAcc |> List.exists (fun (markerId, m) -> m.Text = marker && markerId = id) then
+                failwith $"Duplicate marker: {regexMatch.Value}"
+
+            let markersAcc = (id, { Text = marker; Position = markerPos }) :: markersAcc
+            let lineText = lineText.Replace(regexMatch.Value, "")
 
             extractMarkersOnLine markersAcc (line, lineText)
 
-    let fromMarkedSource (markedSource: string) : SourceContext =
-        let markerPositions =
+    let private extractSourceMarkers (markedSource: string) : string * SourceMarkers list =
+        let sourceMarkers =
             getLines markedSource
             |> Seq.indexed
             |> Seq.fold extractMarkersOnLine []
+            |> List.groupBy fst
+            |> List.map (fun (id, group) ->
+                let markers = group |> List.map snd
+                let tryFind text = markers |> List.tryFind (fun m -> m.Text = text)
 
-        let source =
-            markerPositions
-            |> List.map fst
-            |> List.fold (fun (source: string) marker -> source.Replace(marker, "")) markedSource
+                { Id = id
+                  Caret = tryFind "caret"
+                  SelectionStart = tryFind "selstart"
+                  SelectionEnd = tryFind "selend" })
 
-        let markerPositions = markerPositions |> dict
+        stripMarkers markedSource, sourceMarkers
 
-        let tryGetPos marker =
-            match markerPositions.TryGetValue(marker) with
-            | true, pos -> Some pos
-            | _ -> None
+    let private toSourceContext (source: string) (sourceMarkers: SourceMarkers) : SourceContext =
+        let reportError message =
+            let prefix =
+                match sourceMarkers with
+                | { Id = Some id } -> $"{id}: "
+                | _ -> ""
+
+            failwith (prefix + message)
 
         let caretPos, selectedRange =
-            match tryGetPos "{caret}", tryGetPos "{selstart}", tryGetPos "{selend}" with
-            | Some caretPos, None, None ->
-                caretPos, None
+            match sourceMarkers.Caret, sourceMarkers.SelectionStart, sourceMarkers.SelectionEnd with
+            | Some caret, None, None ->
+                caret.Position, None
 
-            | Some caretPos, Some startPos, Some endPos ->
-                let selectedRange = mkRange "Test.fsx" startPos endPos
+            | Some caret, Some selStart, Some selEnd ->
+                let selectedRange = mkRange "Test.fsx" selStart.Position selEnd.Position
+                caret.Position, Some selectedRange
+
+            | None, Some selStart, Some selEnd ->
+                let selectedRange = mkRange "Test.fsx" selStart.Position selEnd.Position
+                let caretPos = Position.mkPos selEnd.Position.Line (selEnd.Position.Column - 1)
                 caretPos, Some selectedRange
 
-            | None, Some startPos, Some endPos ->
-                let selectedRange = mkRange "Test.fsx" startPos endPos
-                let caretPos = Position.mkPos endPos.Line (endPos.Column - 1)
-                caretPos, Some selectedRange
-
-            | _, None, Some _ -> failwith "Missing selected range start"
-            | _, Some _, None -> failwith "Missing selected range end"
-
-            | None, None, None -> failwith "Missing caret marker"
+            | _, None, Some _ -> reportError "Missing selected range start"
+            | _, Some _, None -> reportError "Missing selected range end"
+            | None, None, None -> reportError "Missing caret marker"
 
         let lines = getLines source
         let lineText = Array.get lines (caretPos.Line - 1)
 
         { Source = source; CaretPos = caretPos; LineText = lineText; SelectedRange = selectedRange }
+
+    let fromMarkedSource (markedSource: string) : SourceContext =
+        let source, sourceMarkers = extractSourceMarkers markedSource
+        let sourceMarkers = sourceMarkers |> List.exactlyOne
+        sourceMarkers.Id |> shouldBe None
+
+        toSourceContext source sourceMarkers
+
+    let fromOrderedMarkedSource (orderedMarkedSource: string) : SourceContext list =
+        let source, sourceMarkers = extractSourceMarkers orderedMarkedSource
+        sourceMarkers |> List.iter (fun markers -> markers.Id.IsSome |> shouldBeTrue)
+
+        sourceMarkers
+        |> List.sortBy _.Id
+        |> List.map (toSourceContext source)
+
+    let toMarkedSource (context: SourceContext) : string =
+        let skipCaretMarker =
+            match context.SelectedRange with
+            | Some range -> context.CaretPos.Line = range.End.Line && context.CaretPos.Column = range.End.Column - 1
+            | None -> false
+
+        let insertions =
+            [ if not skipCaretMarker then
+                  context.CaretPos.Line, context.CaretPos.Column + 1, "{caret}"
+
+              match context.SelectedRange with
+              | Some range ->
+                  range.Start.Line, range.Start.Column, "{selstart}"
+                  range.End.Line, range.End.Column, "{selend}"
+              | None -> () ]
+
+        let lines = getLines context.Source
+
+        for line, column, marker in insertions |> List.sortByDescending (fun (line, column, _) -> line, column) do
+            lines[line - 1] <- lines[line - 1].Insert(column, marker)
+
+        String.concat "\n" lines
+
+    let extractOrderedMarkedSources (markedSource: string) : string list =
+        fromOrderedMarkedSource markedSource
+        |> List.map toMarkedSource
 
 
 [<AutoOpen>]
