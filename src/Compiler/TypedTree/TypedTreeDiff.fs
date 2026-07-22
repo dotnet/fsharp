@@ -1080,14 +1080,11 @@ let private ilScopeReferenceIdentity scope =
             ]
     | ILScopeRef.Assembly assemblyRef -> identityNode "assembly" [ assemblyRef.QualifiedName ]
 
+let private ilTypeReferenceIdentityWithScope scopeIdentity (typeRef: ILTypeRef) =
+    identityNode "type-reference" [ scopeIdentity; typeRef.Enclosing |> identityNode "enclosing"; typeRef.Name ]
+
 let private ilTypeReferenceIdentity (typeRef: ILTypeRef) =
-    identityNode
-        "type-reference"
-        [
-            ilScopeReferenceIdentity typeRef.Scope
-            typeRef.Enclosing |> identityNode "enclosing"
-            typeRef.Name
-        ]
+    ilTypeReferenceIdentityWithScope (ilScopeReferenceIdentity typeRef.Scope) typeRef
 
 let rec private ilTypeIdentity ilType =
     let typeSpecificationIdentity (typeSpec: ILTypeSpec) =
@@ -1134,17 +1131,45 @@ let rec private ilTypeIdentity ilType =
                 ilTypeIdentity underlyingType
             ]
 
-let private ilMethodReferenceIdentity (methodRef: ILMethodRef) =
+let private ilMethodReferenceIdentityCore declaringTypeScopeIdentity (methodRef: ILMethodRef) =
+    let declaringTypeIdentity =
+        match declaringTypeScopeIdentity with
+        | Some scopeIdentity -> ilTypeReferenceIdentityWithScope scopeIdentity methodRef.DeclaringTypeRef
+        | None -> ilTypeReferenceIdentity methodRef.DeclaringTypeRef
+
     identityNode
         "method-reference"
         [
-            ilTypeReferenceIdentity methodRef.DeclaringTypeRef
+            declaringTypeIdentity
             ilCallingConventionIdentity methodRef.CallingConv
             string methodRef.GenericArity
             methodRef.Name
             methodRef.ArgTypes |> List.map ilTypeIdentity |> identityNode "arguments"
             ilTypeIdentity methodRef.ReturnType
         ]
+
+let private ilMethodReferenceIdentity methodRef =
+    ilMethodReferenceIdentityCore None methodRef
+
+let rec private containsProvidedGeneratedType ty =
+#if !NO_TYPEPROVIDERS
+    match ty with
+    | TType_forall(_, bodyType) -> containsProvidedGeneratedType bodyType
+    | TType_app(typeRef, typeArguments, _) ->
+        typeRef.IsProvidedGeneratedTycon
+        || List.exists containsProvidedGeneratedType typeArguments
+    | TType_anon(_, typeArguments)
+    | TType_tuple(_, typeArguments) -> List.exists containsProvidedGeneratedType typeArguments
+    | TType_fun(domainType, rangeType, _) ->
+        containsProvidedGeneratedType domainType
+        || containsProvidedGeneratedType rangeType
+    | TType_ucase(_, typeArguments) -> List.exists containsProvidedGeneratedType typeArguments
+    | TType_var(typeParameter, _) -> typeParameter.Solution |> Option.exists containsProvidedGeneratedType
+    | TType_measure _ -> false
+#else
+    ignore ty
+    false
+#endif
 
 /// Produces an exhaustive, payload-sensitive identity for every TOp case. Debug-point
 /// payloads are intentionally excluded because they do not alter emitted instructions.
@@ -1203,6 +1228,16 @@ let private opIdentity denv (op: TOp) =
                  enclosingTypeArgs,
                  methodTypeArgs,
                  returnTypes) ->
+        // Generative type-provider assemblies are statically linked into the user output.
+        // Their temporary pre-link AssemblyRef name changes on every provider invocation,
+        // so it is not part of the emitted constructor identity. Keep every method and
+        // signature discriminator, but compare that declaring scope as local.
+        let methodIdentity =
+            if isCtor && List.exists containsProvidedGeneratedType returnTypes then
+                ilMethodReferenceIdentityCore (Some "local") methodRef
+            else
+                ilMethodReferenceIdentity methodRef
+
         identityNode
             "il-call"
             [
@@ -1213,7 +1248,7 @@ let private opIdentity denv (op: TOp) =
                 string valUseFlag
                 string isProperty
                 string noTailCall
-                ilMethodReferenceIdentity methodRef
+                methodIdentity
                 types enclosingTypeArgs
                 types methodTypeArgs
                 types returnTypes
