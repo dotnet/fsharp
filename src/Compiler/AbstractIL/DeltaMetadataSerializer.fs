@@ -225,7 +225,7 @@ let private writeRowElement
                 let baselineEntries = input.HeapOffsets.GuidHeapStart / 16
                 baselineEntries + value
 
-        if Environment.GetEnvironmentVariable("FSHARP_HOTRELOAD_TRACE_HEAP_OFFSETS") = "1" then
+        if traceHeapOffsets.Value then
             printfn
                 "[fsharp-hotreload][guid-serialize] isAbsolute=%b value=%d adjusted=%d guidsBig=%b"
                 element.IsAbsolute
