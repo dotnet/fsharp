@@ -14,7 +14,7 @@ open FSharp.Compiler.AbstractIL.DeltaMetadataTypes
 
 module Encoding = FSharp.Compiler.AbstractIL.DeltaMetadataEncoding
 
-let private traceHeapOffsets =
+let traceHeapOffsets =
     lazy
         (match Environment.GetEnvironmentVariable("FSHARP_HOTRELOAD_TRACE_HEAP_OFFSETS") with
          | null
@@ -222,26 +222,6 @@ type private UserStringHeapBuilder() =
     let mutable buffer: byte[] option = None
     let mutable maxLength = 1
     let mutable bytesCache: byte[] option = None
-
-    /// Encodes a user string per ECMA-335 II.24.2.4:
-    /// - Compressed unsigned length prefix (byte count including trailing flag)
-    /// - UTF-16LE encoded string bytes
-    /// - Trailing flag byte (computed via markerForUnicodeBytes from ILBinaryWriter)
-    let encodeUserString (value: string) =
-        let utf16Bytes = Text.Encoding.Unicode.GetBytes(value)
-        let byteCount = utf16Bytes.Length + 1 // +1 for trailing flag
-
-        // Use existing markerForUnicodeBytes from ilwrite.fs for trailing flag
-        let trailingFlag = byte (markerForUnicodeBytes utf16Bytes)
-
-        // Encode compressed length prefix
-        use ms = new MemoryStream()
-        use writer = new BinaryWriter(ms, Text.Encoding.UTF8, leaveOpen = true)
-        writeCompressedUnsigned writer byteCount
-        writer.Write(utf16Bytes)
-        writer.Write(trailingFlag)
-        writer.Flush()
-        ms.ToArray()
 
     let ensureBuffer lengthNeeded =
         let requiredLength = max lengthNeeded 1

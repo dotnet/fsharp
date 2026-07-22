@@ -12,6 +12,39 @@ open FSharp.Compiler.IO
 // Pure F# Token Calculators (replaces SRM MetadataBuilder for token arithmetic)
 // ============================================================================
 
+/// Encode a user string per ECMA-335 II.24.2.4 so token sizing and heap emission
+/// cannot drift between the delta stream builder and metadata table writer.
+let encodeUserString (value: string) : byte[] =
+    let utf16Bytes = Encoding.Unicode.GetBytes(value)
+    let blobLength = utf16Bytes.Length + 1 // +1 for terminal byte
+
+    let lengthBytes =
+        if blobLength <= 0x7F then 1
+        elif blobLength <= 0x3FFF then 2
+        else 4
+
+    let result = Array.zeroCreate<byte> (lengthBytes + utf16Bytes.Length + 1)
+    let mutable pos = 0
+
+    if blobLength <= 0x7F then
+        result[pos] <- byte blobLength
+        pos <- pos + 1
+    elif blobLength <= 0x3FFF then
+        result[pos] <- byte (0x80 ||| (blobLength >>> 8))
+        result[pos + 1] <- byte blobLength
+        pos <- pos + 2
+    else
+        result[pos] <- byte (0xC0 ||| (blobLength >>> 24))
+        result[pos + 1] <- byte (blobLength >>> 16)
+        result[pos + 2] <- byte (blobLength >>> 8)
+        result[pos + 3] <- byte blobLength
+        pos <- pos + 4
+
+    Buffer.BlockCopy(utf16Bytes, 0, result, pos, utf16Bytes.Length)
+    pos <- pos + utf16Bytes.Length
+    result[pos] <- byte (markerForUnicodeBytes utf16Bytes)
+    result
+
 /// User string heap token calculator.
 /// Tracks user strings added during delta emission and computes tokens.
 /// Token format: 0x70000000 | heap_offset
@@ -20,47 +53,6 @@ type UserStringTokenCalculator(heapStartOffset: int) =
     // #US heaps reserve offset 0 for the null/empty entry.
     // First emitted delta literal must start at relative offset 1.
     let mutable currentOffset = 1
-
-    /// Encode a user string per ECMA-335 II.24.2.4:
-    /// - Compressed length prefix (1-4 bytes)
-    /// - UTF-16LE encoded characters
-    /// - Terminal byte computed via markerForUnicodeBytes (shared with ilwrite.fs)
-    let encodeUserString (value: string) : byte[] =
-        let utf16Bytes = Encoding.Unicode.GetBytes(value)
-        let blobLength = utf16Bytes.Length + 1 // +1 for terminal byte
-
-        // Compute compressed length encoding size
-        let lengthBytes =
-            if blobLength <= 0x7F then 1
-            elif blobLength <= 0x3FFF then 2
-            else 4
-
-        let result = Array.zeroCreate<byte> (lengthBytes + utf16Bytes.Length + 1)
-        let mutable pos = 0
-
-        // Write compressed length
-        if blobLength <= 0x7F then
-            result.[pos] <- byte blobLength
-            pos <- pos + 1
-        elif blobLength <= 0x3FFF then
-            result.[pos] <- byte (0x80 ||| (blobLength >>> 8))
-            result.[pos + 1] <- byte blobLength
-            pos <- pos + 2
-        else
-            result.[pos] <- byte (0xC0 ||| (blobLength >>> 24))
-            result.[pos + 1] <- byte (blobLength >>> 16)
-            result.[pos + 2] <- byte (blobLength >>> 8)
-            result.[pos + 3] <- byte blobLength
-            pos <- pos + 4
-
-        // Write UTF-16LE bytes
-        Buffer.BlockCopy(utf16Bytes, 0, result, pos, utf16Bytes.Length)
-        pos <- pos + utf16Bytes.Length
-
-        // Write terminal byte - use shared markerForUnicodeBytes from ILBinaryWriter
-        result.[pos] <- byte (markerForUnicodeBytes utf16Bytes)
-
-        result
 
     /// Get or add a user string, returning the absolute token.
     member _.GetOrAddUserString(value: string) : int =
