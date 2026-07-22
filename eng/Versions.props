@@ -90,12 +90,22 @@
     <SystemMemoryVersion>4.6.3</SystemMemoryVersion>
     <SystemRuntimeCompilerServicesUnsafeVersion>6.1.2</SystemRuntimeCompilerServicesUnsafeVersion>
     <!-- System.* packages from dotnet/runtime are managed in Version.Details.xml / Version.Details.props for source-build. -->
-    <!-- Product/PR builds consume MSBuild 18.10, which pulls these dotnet/runtime packages >= 10.0.9
-         transitively. Raise the central pins to that floor so CPM transitive pinning doesn't report a
-         downgrade (NU1109). Source-build keeps the live runtime versions flowed via Version.Details. -->
-    <SystemSecurityCryptographyXmlVersion Condition="'$(DotNetBuildSourceOnly)' != 'true'">10.0.9</SystemSecurityCryptographyXmlVersion>
-    <SystemCollectionsImmutableVersion Condition="'$(DotNetBuildSourceOnly)' != 'true'">10.0.9</SystemCollectionsImmutableVersion>
-    <SystemReflectionMetadataVersion Condition="'$(DotNetBuildSourceOnly)' != 'true'">10.0.9</SystemReflectionMetadataVersion>
+    <!-- Product/PR builds consume MSBuild 18.10 (via fsc/fsi and FSharp.Build.UnitTests), which pulls these
+         dotnet/runtime packages transitively at >= 10.0.9. CPM transitive pinning needs the *central* pin to
+         meet that floor, so define dedicated ...CentralVersion properties for eng/Packages.props. These do NOT
+         touch the darc-flowed $(System*Version) properties, which stay authoritative for source-build live
+         versions and for FSharp.Compiler.Service's shipped nuspec dependency metadata (FCS itself does not pull
+         MSBuild, so it must keep the darc version). The floor only raises when darc is below it; once darc flows
+         >= 10.0.9 the darc version wins, so this never freezes or downgrades the flow. -->
+    <SystemSecurityCryptographyXmlCentralVersion>$(SystemSecurityCryptographyXmlVersion)</SystemSecurityCryptographyXmlCentralVersion>
+    <SystemCollectionsImmutableCentralVersion>$(SystemCollectionsImmutableVersion)</SystemCollectionsImmutableCentralVersion>
+    <SystemReflectionMetadataCentralVersion>$(SystemReflectionMetadataVersion)</SystemReflectionMetadataCentralVersion>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(DotNetBuildSourceOnly)' != 'true'">
+    <SystemSecurityCryptographyXmlCentralVersion Condition="$([MSBuild]::VersionLessThan('$(SystemSecurityCryptographyXmlVersion)', '10.0.9'))">10.0.9</SystemSecurityCryptographyXmlCentralVersion>
+    <SystemCollectionsImmutableCentralVersion Condition="$([MSBuild]::VersionLessThan('$(SystemCollectionsImmutableVersion)', '10.0.9'))">10.0.9</SystemCollectionsImmutableCentralVersion>
+    <SystemReflectionMetadataCentralVersion Condition="$([MSBuild]::VersionLessThan('$(SystemReflectionMetadataVersion)', '10.0.9'))">10.0.9</SystemReflectionMetadataCentralVersion>
   </PropertyGroup>
 
   <PropertyGroup>

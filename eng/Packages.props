@@ -75,14 +75,14 @@
     <PackageVersion Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.15.3" />
     <PackageVersion Include="StreamJsonRpc" Version="$(StreamJsonRpcVersion)" />
     <PackageVersion Include="System.Buffers" Version="$(SystemBuffersVersion)" />
-    <PackageVersion Include="System.Collections.Immutable" Version="$(SystemCollectionsImmutableVersion)" />
+    <PackageVersion Include="System.Collections.Immutable" Version="$(SystemCollectionsImmutableCentralVersion)" />
     <PackageVersion Include="System.Composition" Version="$(SystemCompositionVersion)" />
     <PackageVersion Include="System.Diagnostics.DiagnosticSource" Version="$(SystemDiagnosticsDiagnosticSourceVersion)" />
     <PackageVersion Include="System.Memory" Version="$(SystemMemoryVersion)" />
     <PackageVersion Include="System.Reflection.Emit" Version="$(SystemReflectionEmitVersion)" />
-    <PackageVersion Include="System.Reflection.Metadata" Version="$(SystemReflectionMetadataVersion)" />
+    <PackageVersion Include="System.Reflection.Metadata" Version="$(SystemReflectionMetadataCentralVersion)" />
     <PackageVersion Include="System.Runtime.CompilerServices.Unsafe" Version="$(SystemRuntimeCompilerServicesUnsafeVersion)" />
-    <PackageVersion Include="System.Security.Cryptography.Xml" Version="$(SystemSecurityCryptographyXmlVersion)" />
+    <PackageVersion Include="System.Security.Cryptography.Xml" Version="$(SystemSecurityCryptographyXmlCentralVersion)" />
     <PackageVersion Include="xunit.v3.assert" Version="$(XunitVersion)" />
     <PackageVersion Include="xunit.v3.common" Version="$(XunitVersion)" />
     <PackageVersion Include="xunit.v3.extensibility.core" Version="$(XunitVersion)" />
