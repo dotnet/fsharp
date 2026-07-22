@@ -45,6 +45,13 @@ let private normalizeGeneratedFieldName (name: string) =
     | idx when idx > 0 -> name.Substring(0, idx)
     | _ -> name
 
+/// Returns a synthesized-type match only when structural matching produced one
+/// unambiguous candidate; recorded snapshots never justify choosing an arbitrary row.
+let internal tryGetUniqueSynthesizedTypeMatch (matches: 'T array) =
+    match matches with
+    | [| single |] -> Some single
+    | _ -> None
+
 /// Converts an SRM EntityHandle to our TypeDefOrRef type for EventType fields
 let private entityHandleToTypeDefOrRef (handle: EntityHandle) : TypeDefOrRef =
     let rowId = MetadataTokens.GetRowNumber handle
@@ -729,7 +736,7 @@ let private buildUpdatedBaseline
     (addedTypeDeltaTokens: Dictionary<string, int>)
     (addedTypeShapes: Dictionary<string, SynthesizedTypeShape>)
     (addedTypeReferenceTokens: Dictionary<TypeReferenceKey, int>)
-    (addedAssemblyReferenceTokens: Dictionary<string, int>)
+    (addedAssemblyReferenceTokens: Dictionary<AssemblyReferenceKey, int>)
     =
     let addPropertyMapEntry (entries: Map<string, int>) (row: PropertyMapRowInfo) =
         if row.IsAdded then
@@ -828,7 +835,7 @@ let private buildUpdatedBaseline
 
     let updatedAssemblyReferenceTokens =
         addedAssemblyReferenceTokens
-        |> Seq.fold (fun acc (KeyValue(name, token)) -> acc |> Map.add name token) updatedBaselineCore.AssemblyReferenceTokens
+        |> Seq.fold (fun acc (KeyValue(key, token)) -> acc |> Map.add key token) updatedBaselineCore.AssemblyReferenceTokens
 
     // Chain delta-appended MemberRef rows (already in baseline coordinates) so the next
     // generation's content-validated passthrough can recognize and reuse them.
@@ -1840,6 +1847,32 @@ type private AddedMemberAttributeSources =
         AddedTypeDeltaTokens: Dictionary<string, int>
     }
 
+let private assemblyReferenceKey (metadataReader: MetadataReader) (row: System.Reflection.Metadata.AssemblyReference) =
+    let getBlob (handle: BlobHandle) =
+        if handle.IsNil then
+            []
+        else
+            metadataReader.GetBlobBytes handle |> Array.toList
+
+    {
+        AssemblyReferenceKey.Name =
+            if row.Name.IsNil then
+                ""
+            else
+                metadataReader.GetString row.Name
+        MajorVersion = row.Version.Major
+        MinorVersion = row.Version.Minor
+        BuildNumber = row.Version.Build
+        RevisionNumber = row.Version.Revision
+        Culture =
+            if row.Culture.IsNil then
+                ""
+            else
+                metadataReader.GetString row.Culture
+        PublicKeyOrToken = getBlob row.PublicKeyOrToken
+        Flags = int row.Flags
+    }
+
 let private buildCustomAttributeRows
     (traceMetadata: bool)
     (metadataReader: MetadataReader)
@@ -1853,8 +1886,10 @@ let private buildCustomAttributeRows
     (remapEntityToken: int -> int)
     (remapAssemblyRefToken: int -> int)
     (baselineTypeReferenceTokens: Map<TypeReferenceKey, int>)
-    (initialTypeRefRowId: int)
-    (initialMemberRefRowId: int)
+    (getNextTypeRefRowId: unit -> int)
+    (setNextTypeRefRowId: int -> unit)
+    (getNextMemberRefRowId: unit -> int)
+    (setNextMemberRefRowId: int -> unit)
     (typeReferenceRows: ResizeArray<TypeReferenceRowInfo>)
     (memberReferenceRows: ResizeArray<MemberReferenceRowInfo>)
     =
@@ -1862,8 +1897,16 @@ let private buildCustomAttributeRows
     // renumbered past the chained baseline row count at the end.
     let updatedRows = ResizeArray<CustomAttributeRowInfo>()
     let rows = ResizeArray<CustomAttributeRowInfo>()
-    let mutable nextTypeRefRowId = initialTypeRefRowId
-    let mutable nextMemberRefRowId = initialMemberRefRowId
+
+    let allocateTypeRefRow () =
+        let rowId = getNextTypeRefRowId () + 1
+        setNextTypeRefRowId rowId
+        rowId
+
+    let allocateMemberRefRow () =
+        let rowId = getNextMemberRefRowId () + 1
+        setNextMemberRefRowId rowId
+        rowId
 
     // Baselines without byte-derived CA snapshots (legacy construction paths) keep the
     // historic append-only behavior; F# baselines always carry assembly-level attribute
@@ -1971,19 +2014,24 @@ let private buildCustomAttributeRows
                 |> ValueOption.orElseWith (fun () -> matches |> Array.tryHead |> ValueOption.ofOption)
                 |> ValueOption.map snd
 
-    let findAssemblyReferenceRow scopeName =
+    let tryFindAssemblyReference scopeName =
         metadataReader.AssemblyReferences
         |> Seq.tryPick (fun handle ->
             let reference = metadataReader.GetAssemblyReference handle
             let name = metadataReader.GetString reference.Name
 
             if String.Equals(name, scopeName, StringComparison.OrdinalIgnoreCase) then
-                let token = MetadataTokens.GetToken(EntityHandle.op_Implicit handle)
-                let remapped = remapAssemblyRefToken token
-                let rowId = remapped &&& 0x00FFFFFF
-                Some(RS_AssemblyRef(AssemblyRefHandle rowId))
+                Some(handle, reference, assemblyReferenceKey metadataReader reference)
             else
                 None)
+
+    let findAssemblyReferenceRow scopeName =
+        tryFindAssemblyReference scopeName
+        |> Option.map (fun (handle, _, _) ->
+            let token = MetadataTokens.GetToken(EntityHandle.op_Implicit handle)
+            let remapped = remapAssemblyRefToken token
+            let rowId = remapped &&& 0x00FFFFFF
+            RS_AssemblyRef(AssemblyRefHandle rowId))
 
     let tryGetAssemblyScope () =
         match findAssemblyReferenceRow "System.Runtime" with
@@ -2011,41 +2059,47 @@ let private buildCustomAttributeRows
                 None)
 
     let tryReuseBaselineTypeRef scopeName namespaceName typeName =
-        let key =
-            {
-                TypeReferenceKey.Scope = TypeReferenceScope.Assembly scopeName
-                Namespace = namespaceName
-                Name = typeName
-            }
+        tryFindAssemblyReference scopeName
+        |> Option.bind (fun (_, _, assemblyKey) ->
+            let key =
+                {
+                    TypeReferenceKey.Scope = TypeReferenceScope.Assembly assemblyKey
+                    Namespace = namespaceName
+                    Name = typeName
+                }
 
-        baselineTypeReferenceTokens |> Map.tryFind key
+            baselineTypeReferenceTokens |> Map.tryFind key)
 
     let tryFindExistingTypeRef scopeName namespaceName typeName =
-        metadataReader.TypeReferences
-        |> Seq.tryPick (fun handle ->
-            let typeRef = metadataReader.GetTypeReference handle
-            let name = metadataReader.GetString typeRef.Name
+        tryFindAssemblyReference scopeName
+        |> Option.bind (fun (_, _, expectedAssemblyKey) ->
+            metadataReader.TypeReferences
+            |> Seq.tryPick (fun handle ->
+                let typeRef = metadataReader.GetTypeReference handle
+                let name = metadataReader.GetString typeRef.Name
 
-            if name = typeName then
-                let ns =
-                    if typeRef.Namespace.IsNil then
-                        ""
+                if name = typeName then
+                    let ns =
+                        if typeRef.Namespace.IsNil then
+                            ""
+                        else
+                            metadataReader.GetString typeRef.Namespace
+
+                    if ns = namespaceName then
+                        match typeRef.ResolutionScope.Kind with
+                        | HandleKind.AssemblyReference ->
+                            let asm =
+                                metadataReader.GetAssemblyReference(AssemblyReferenceHandle.op_Explicit typeRef.ResolutionScope)
+
+                            if assemblyReferenceKey metadataReader asm = expectedAssemblyKey then
+                                Some handle
+                            else
+                                None
+                        | _ -> None
                     else
-                        metadataReader.GetString typeRef.Namespace
-
-                if ns = namespaceName then
-                    match typeRef.ResolutionScope.Kind with
-                    | HandleKind.AssemblyReference ->
-                        let asm =
-                            metadataReader.GetAssemblyReference(AssemblyReferenceHandle.op_Explicit typeRef.ResolutionScope)
-
-                        let asmName = metadataReader.GetString asm.Name
-                        if asmName = scopeName then Some handle else None
-                    | _ -> None
+                        None
                 else
-                    None
-            else
-                None)
+                    None))
 
     let mutable systemObjectTypeRefToken: int option = None
     let mutable asyncAttributeTypeRefToken: int option = None
@@ -2062,8 +2116,7 @@ let private buildCustomAttributeRows
                 | Some value -> value
                 | None -> RS_Module(ModuleHandle 1)
 
-            let nextRowId = nextTypeRefRowId + 1
-            nextTypeRefRowId <- nextRowId
+            let nextRowId = allocateTypeRefRow ()
 
             typeReferenceRows.Add(
                 {
@@ -2089,8 +2142,7 @@ let private buildCustomAttributeRows
                 | Some value -> value
                 | None -> RS_Module(ModuleHandle 1)
 
-            let nextRowId = nextTypeRefRowId + 1
-            nextTypeRefRowId <- nextRowId
+            let nextRowId = allocateTypeRefRow ()
 
             typeReferenceRows.Add(
                 {
@@ -2118,8 +2170,7 @@ let private buildCustomAttributeRows
                             "Unable to locate System.Runtime/mscorlib assembly reference for AsyncStateMachineAttribute. Please rebuild."
                     )
 
-            let nextRowId = nextTypeRefRowId + 1
-            nextTypeRefRowId <- nextRowId
+            let nextRowId = allocateTypeRefRow ()
 
             typeReferenceRows.Add(
                 {
@@ -2163,8 +2214,7 @@ let private buildCustomAttributeRows
                 blob.ToArray()
 
             let parentRowId = attrTypeToken &&& 0x00FFFFFF
-            let nextRowId = nextMemberRefRowId + 1
-            nextMemberRefRowId <- nextRowId
+            let nextRowId = allocateMemberRefRow ()
 
             memberReferenceRows.Add(
                 {
@@ -2209,8 +2259,7 @@ let private buildCustomAttributeRows
                                 "Unable to locate System.Runtime/mscorlib assembly reference for NullableContextAttribute. Please rebuild."
                         )
 
-                let nextRowId = nextTypeRefRowId + 1
-                nextTypeRefRowId <- nextRowId
+                let nextRowId = allocateTypeRefRow ()
 
                 typeReferenceRows.Add(
                     {
@@ -2248,8 +2297,7 @@ let private buildCustomAttributeRows
                 blob.ToArray()
 
             let parentRowId = attrTypeToken &&& 0x00FFFFFF
-            let nextRowId = nextMemberRefRowId + 1
-            nextMemberRefRowId <- nextRowId
+            let nextRowId = allocateMemberRefRow ()
 
             memberReferenceRows.Add(
                 {
@@ -2583,7 +2631,7 @@ let private buildCustomAttributeRows
             updatedRows.Count
             addedRowList.Length
 
-    rowList, nextTypeRefRowId, nextMemberRefRowId
+    rowList
 
 let private buildMethodAndParameterRows
     (orderedMethodInputs: struct (MethodDefinitionKey * int * MethodDefinitionHandle * MethodDefinition * MethodBodyBlock) list)
@@ -2751,7 +2799,7 @@ let private finalizeDeltaArtifacts
     (addedTypeDeltaTokens: Dictionary<string, int>)
     (addedTypeShapes: Dictionary<string, SynthesizedTypeShape>)
     (addedTypeReferenceTokens: Dictionary<TypeReferenceKey, int>)
-    (addedAssemblyReferenceTokens: Dictionary<string, int>)
+    (addedAssemblyReferenceTokens: Dictionary<AssemblyReferenceKey, int>)
     =
     let addedOrChangedMethods = buildAddedOrChangedMethods streams.MethodBodies
 
@@ -2943,13 +2991,13 @@ type private MetadataReferenceRemapContext =
         TypeSpecTokenMap: Dictionary<int, int>
         TypeSpecificationRows: ResizeArray<TypeSpecificationRowInfo>
         TryReuseBaselineTypeRef: TypeReferenceKey -> int option
-        TryReuseBaselineAssemblyRef: string -> int option
+        TryReuseBaselineAssemblyRef: AssemblyReferenceKey -> int option
         RemapDefinitionToken: int -> int
         TypeReferenceRows: ResizeArray<TypeReferenceRowInfo>
         MemberReferenceRows: ResizeArray<MemberReferenceRowInfo>
         AssemblyReferenceRows: ResizeArray<AssemblyReferenceRowInfo>
         AddedTypeReferenceTokens: Dictionary<TypeReferenceKey, int>
-        AddedAssemblyReferenceTokens: Dictionary<string, int>
+        AddedAssemblyReferenceTokens: Dictionary<AssemblyReferenceKey, int>
         TypeRefTokenMap: Dictionary<int, int>
         AssemblyRefTokenMap: Dictionary<int, int>
         MemberRefTokenMap: Dictionary<int, int>
@@ -2984,7 +3032,9 @@ let private createMetadataReferenceRemapper (context: MetadataReferenceRemapCont
                 else
                     metadataReader.GetString row.Name
 
-            match context.TryReuseBaselineAssemblyRef name with
+            let key = assemblyReferenceKey metadataReader row
+
+            match context.TryReuseBaselineAssemblyRef key with
             | Some reused ->
                 context.AssemblyRefTokenMap[token] <- reused
                 reused
@@ -3020,7 +3070,7 @@ let private createMetadataReferenceRemapper (context: MetadataReferenceRemapCont
                 context.AssemblyReferenceRows.Add info
                 let deltaToken = 0x23000000 ||| nextRowId
                 context.AssemblyRefTokenMap[token] <- deltaToken
-                context.AddedAssemblyReferenceTokens[name] <- deltaToken
+                context.AddedAssemblyReferenceTokens[key] <- deltaToken
                 deltaToken
 
     and tryTypeRefKey (handle: TypeReferenceHandle) (depth: int) : TypeReferenceKey option =
@@ -3049,7 +3099,7 @@ let private createMetadataReferenceRemapper (context: MetadataReferenceRemapCont
                 | HandleKind.AssemblyReference ->
                     let assemblyHandle = AssemblyReferenceHandle.op_Explicit row.ResolutionScope
                     let assemblyRef = metadataReader.GetAssemblyReference assemblyHandle
-                    Some(TypeReferenceScope.Assembly(metadataReader.GetString assemblyRef.Name))
+                    Some(TypeReferenceScope.Assembly(assemblyReferenceKey metadataReader assemblyRef))
                 | HandleKind.TypeReference ->
                     tryTypeRefKey (TypeReferenceHandle.op_Explicit row.ResolutionScope) (depth + 1)
                     |> Option.map TypeReferenceScope.Nested
@@ -4010,11 +4060,7 @@ let emitDeltaWithDebugData (freshDebugPdb: byte[] option) (request: IlxDeltaRequ
                         (tryFindSynthesizedTypeShapeMismatch baselineShape freshShape).IsNone
                     | None -> false)
 
-            match shapeMatches with
-            | [| single |] -> Some single
-            | matches when usesRecordedSynthesizedSnapshot && matches.Length > 0 -> Some matches[0]
-            | [||] when usesRecordedSynthesizedSnapshot && availableMatches.Length > 0 -> Some availableMatches[0]
-            | _ -> None
+            tryGetUniqueSynthesizedTypeMatch shapeMatches
 
         let shouldAddShapeChangedResumableHelper (matchedName: string) =
             isUpdatedMethodResumableCodeHelper typeDef
@@ -4623,6 +4669,20 @@ let emitDeltaWithDebugData (freshDebugPdb: byte[] option) (request: IlxDeltaRequ
         propertyHandleLookup.Clear()
         eventHandleLookup.Clear()
 
+        // Added TypeDefs are discovered before the semantic edit surface is known. A
+        // no-edit emit must discard every associated registry and token remap together,
+        // otherwise regeneration noise can survive as a real TypeDef delta.
+        for newTypeToken in addedTypeNewTokens.Values do
+            typeTokenMap.Remove newTypeToken |> ignore
+
+        addedTypeNewTokens.Clear()
+        addedTypeDeltaTokens.Clear()
+        addedTypeDefs.Clear()
+        addedTypeShapes.Clear()
+        addedTypeKeyByFreshFullName.Clear()
+        freshFullNameByAddedTypeKey.Clear()
+        addedTypeMetadataNameByKey.Clear()
+
     let addedMethodKeys =
         addedMethodTokens |> Seq.map (fun kvp -> kvp.Key) |> Seq.toList
 
@@ -4874,8 +4934,8 @@ let emitDeltaWithDebugData (freshDebugPdb: byte[] option) (request: IlxDeltaRequ
     let tryReuseBaselineTypeRef (key: TypeReferenceKey) =
         baselineTypeReferenceTokens |> Map.tryFind key
 
-    let tryReuseBaselineAssemblyRef name =
-        baselineAssemblyReferenceTokens |> Map.tryFind name
+    let tryReuseBaselineAssemblyRef key =
+        baselineAssemblyReferenceTokens |> Map.tryFind key
 
     let typeRefTokenMap = Dictionary<int, int>()
     let assemblyRefTokenMap = Dictionary<int, int>()
@@ -4884,7 +4944,8 @@ let emitDeltaWithDebugData (freshDebugPdb: byte[] option) (request: IlxDeltaRequ
     let addedTypeReferenceTokens =
         Dictionary<TypeReferenceKey, int>(HashIdentity.Structural)
 
-    let addedAssemblyReferenceTokens = Dictionary<string, int>(StringComparer.Ordinal)
+    let addedAssemblyReferenceTokens =
+        Dictionary<AssemblyReferenceKey, int>(HashIdentity.Structural)
 
     let methodDefinitionIndex =
         DefinitionIndex<MethodDefinitionKey>(methodRowLookup, lastMethodRowId)
@@ -6024,7 +6085,7 @@ let emitDeltaWithDebugData (freshDebugPdb: byte[] option) (request: IlxDeltaRequ
 
         let userStringEntries = userStringUpdates |> Seq.toList
 
-        let customAttributeRowList, nextTypeRefRowIdAfterAttributes, nextMemberRefRowIdAfterAttributes =
+        let customAttributeRowList =
             buildCustomAttributeRows
                 traceMetadata.Value
                 metadataReader
@@ -6047,13 +6108,12 @@ let emitDeltaWithDebugData (freshDebugPdb: byte[] option) (request: IlxDeltaRequ
                 remapEntityToken
                 remapAssemblyRefToken
                 baselineTypeReferenceTokens
-                nextTypeRefRowId
-                nextMemberRefRowId
+                (fun () -> nextTypeRefRowId)
+                (fun value -> nextTypeRefRowId <- value)
+                (fun () -> nextMemberRefRowId)
+                (fun value -> nextMemberRefRowId <- value)
                 typeReferenceRows
                 memberReferenceRows
-
-        nextTypeRefRowId <- nextTypeRefRowIdAfterAttributes
-        nextMemberRefRowId <- nextMemberRefRowIdAfterAttributes
 
         let typeReferenceRowList, memberReferenceRowList, assemblyReferenceRowList, typeSpecificationRowList =
             buildReferenceRows
