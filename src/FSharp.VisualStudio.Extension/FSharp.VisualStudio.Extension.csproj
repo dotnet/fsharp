@@ -16,7 +16,8 @@
 		<PackageReference Include="Microsoft.VisualStudio.Extensibility.Build" />
 		<PackageReference Include="Microsoft.VisualStudio.LanguageServer.Protocol.Internal" />
 		<PackageReference Include="Microsoft.VisualStudio.ProjectSystem.Query" />
-		<PackageReference Include="Microsoft.VisualStudio.Threading" />
+		<!-- Pinned below the central version to match this VS extension's 17.13 tooling baseline. -->
+		<PackageReference Include="Microsoft.VisualStudio.Threading" VersionOverride="17.13.2" />
 		<!--<PackageReference Include="Microsoft.VisualStudio.OpenTelemetry.ClientExtensions" />
 		<PackageReference Include="Microsoft.VisualStudio.OpenTelemetry.Collector" />
 		<PackageReference Include="OpenTelemetry" />

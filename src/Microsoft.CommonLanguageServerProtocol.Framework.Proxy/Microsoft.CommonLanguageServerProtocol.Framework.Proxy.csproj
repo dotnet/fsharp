@@ -8,7 +8,8 @@
 
 	<ItemGroup>
 		<PackageReference Include="Microsoft.CommonLanguageServerProtocol.Framework" PrivateAssets="all" />
-		<PackageReference Include="Microsoft.VisualStudio.Threading" />
+		<!-- Pinned below the central version to match the LSP framework's VS 17.x baseline. -->
+		<PackageReference Include="Microsoft.VisualStudio.Threading" VersionOverride="17.12.21" />
 	</ItemGroup>
 
 	<ItemGroup>
