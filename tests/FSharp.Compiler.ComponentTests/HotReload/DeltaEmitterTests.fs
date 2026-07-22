@@ -101,6 +101,29 @@ module DeltaEmitterTests =
             (mkILExportedTypes [])
             "v4.0.30319"
 
+    let private createModuleWithSpuriousAddedType returnValue =
+        let moduleDef = createModule returnValue
+        let ilg = PrimaryAssemblyILGlobals
+
+        let spuriousType =
+            mkILSimpleClass
+                ilg
+                (
+                    "Noise@hotreload#g1_o0",
+                    ILTypeDefAccess.Private,
+                    mkILMethods [],
+                    mkILFields [],
+                    emptyILTypeDefs,
+                    mkILProperties [],
+                    mkILEvents [],
+                    emptyILCustomAttrs,
+                    ILTypeInit.BeforeField
+                )
+
+        { moduleDef with
+            TypeDefs = mkILTypeDefs(moduleDef.TypeDefs.AsList() @ [ spuriousType ])
+        }
+
     let private createModuleWithMethods (methods: (string * int) list) =
         let ilg = PrimaryAssemblyILGlobals
         let ilMethods = methods |> List.map (fun (name, value) -> createMethod ilg name value)
@@ -285,6 +308,63 @@ module DeltaEmitterTests =
                     "Sample.ExternalDemo",
                     ILTypeDefAccess.Public,
                     mkILMethods [ methodDef ],
+                    mkILFields [],
+                    emptyILTypeDefs,
+                    mkILProperties [],
+                    mkILEvents [],
+                    emptyILCustomAttrs,
+                    ILTypeInit.BeforeField
+                )
+
+        mkILSimpleModule
+            "SampleAssembly"
+            "SampleModule"
+            true
+            (4, 0)
+            false
+            (mkILTypeDefs [ typeDef ])
+            None
+            None
+            0
+            (mkILExportedTypes [])
+            "v4.0.30319"
+
+    let private createModuleWithDuplicateNamedAssemblyRefs () =
+        let ilg = PrimaryAssemblyILGlobals
+
+        let createExternalMethod name majorVersion =
+            let externalAssembly =
+                ILAssemblyRef.Create(
+                    "External.Library",
+                    None,
+                    None,
+                    false,
+                    Some(ILVersionInfo(majorVersion, 0us, 0us, 0us)),
+                    None
+                )
+
+            let externalTypeRef =
+                mkILTyRef(ILScopeRef.Assembly externalAssembly, $"External.WidgetV{majorVersion}")
+
+            let externalType = mkILNamedTy ILBoxity.AsObject externalTypeRef []
+            let methodSpec =
+                mkILNonGenericMethSpecInTy(externalType, ILCallingConv.Static, "GetValue", [], ilg.typ_Int32)
+
+            mkILNonGenericStaticMethod(
+                name,
+                ILMemberAccess.Public,
+                [],
+                mkILReturn ilg.typ_Int32,
+                mkMethodBody(false, [], 1, nonBranchingInstrsToCode [ mkNormalCall methodSpec; I_ret ], None, None)
+            )
+
+        let typeDef =
+            mkILSimpleClass
+                ilg
+                (
+                    "Sample.DuplicateAssemblyRefs",
+                    ILTypeDefAccess.Public,
+                    mkILMethods [ createExternalMethod "ReadV1" 1us; createExternalMethod "ReadV2" 2us ],
                     mkILFields [],
                     emptyILTypeDefs,
                     mkILProperties [],
@@ -831,6 +911,35 @@ module DeltaEmitterTests =
         match FSharpSymbolMatcher.tryGetMethodDef matcher key with
         | Some(_, _, methodDef) -> Assert.Equal("GetValue", methodDef.Name)
         | None -> Assert.True(false, "Expected method to be located by symbol matcher.")
+
+    [<Fact>]
+    let ``synthesized type matching rejects ambiguous recorded candidates`` () =
+        Assert.Equal(Some("only", 1), tryGetUniqueSynthesizedTypeMatch [| ("only", 1) |])
+        Assert.True((tryGetUniqueSynthesizedTypeMatch [| ("first", 1); ("second", 2) |]).IsNone)
+
+    [<Fact>]
+    let ``no-edit emit discards unmatched synthesized type registrations`` () =
+        let baselineArtifacts = TestHelpers.createBaselineFromModule (createModule 1)
+
+        let delta =
+            emitDelta
+                {
+                    IlxDeltaRequest.Baseline = baselineArtifacts.Baseline
+                    UpdatedTypes = []
+                    UpdatedMethods = []
+                    UpdatedAccessors = []
+                    Module = createModuleWithSpuriousAddedType 1 |> TestHelpers.withDebuggableAttribute
+                    SymbolChanges = None
+                    CurrentGeneration = 1
+                    PreviousGenerationId = None
+                    SynthesizedNames = None
+                    EmittedArtifacts = None
+                }
+
+        Assert.Empty delta.Metadata
+        Assert.Empty delta.IL
+        Assert.Empty delta.UpdatedTypeTokens
+        Assert.True(delta.UpdatedBaseline.IsNone)
 
     [<Fact>]
     let ``emitDelta records updated user strings`` () =
@@ -2051,11 +2160,17 @@ module DeltaEmitterTests =
         Assert.Equal(1, generation1Reader.GetTableRowCount(toTableIndex TableNames.TypeRef))
 
         let baseline2 = generation1.UpdatedBaseline |> Option.get
-        Assert.True(baseline2.AssemblyReferenceTokens.ContainsKey "External.Library")
+        let externalAssemblyKey =
+            baseline2.AssemblyReferenceTokens
+            |> Map.toSeq
+            |> Seq.map fst
+            |> Seq.find (fun key -> key.Name = "External.Library")
+
+        Assert.True(baseline2.AssemblyReferenceTokens.ContainsKey externalAssemblyKey)
 
         let externalTypeKey =
             {
-                TypeReferenceKey.Scope = TypeReferenceScope.Assembly "External.Library"
+                TypeReferenceKey.Scope = TypeReferenceScope.Assembly externalAssemblyKey
                 Namespace = "External"
                 Name = "Widget"
             }
@@ -2084,6 +2199,21 @@ module DeltaEmitterTests =
         Assert.Equal(0, generation2Reader.GetTableRowCount(toTableIndex TableNames.AssemblyRef))
         Assert.Equal(0, generation2Reader.GetTableRowCount(toTableIndex TableNames.TypeRef))
         Assert.Equal(0, generation2Reader.GetTableRowCount(toTableIndex TableNames.MemberRef))
+
+    [<Fact>]
+    let ``baseline keeps duplicate simple assembly names with distinct identities`` () =
+        let baselineArtifacts =
+            TestHelpers.createBaselineFromModule (createModuleWithDuplicateNamedAssemblyRefs ())
+
+        let matchingKeys =
+            baselineArtifacts.Baseline.AssemblyReferenceTokens
+            |> Map.toSeq
+            |> Seq.map fst
+            |> Seq.filter (fun key -> key.Name = "External.Library")
+            |> Seq.toArray
+
+        Assert.Equal(2, matchingKeys.Length)
+        Assert.Equal<int list>([ 1; 2 ], matchingKeys |> Array.map (fun key -> key.MajorVersion) |> Array.sort |> Array.toList)
 
     [<Fact>]
     let ``emitDelta reuses StandAloneSig token when locals unchanged`` () =
