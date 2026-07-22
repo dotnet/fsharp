@@ -129,6 +129,53 @@ module private Sources =
     let unionWithFields fieldText =
         $"{moduleHeader}type DU = | Case of {fieldText}\n"
 
+    let deeplySequentialFunction statementCount terminalValue =
+        [
+            yield moduleHeader + "let value () ="
+
+            for index in 1..statementCount do
+                yield $"    ignore {index}"
+
+            yield $"    {terminalValue}"
+        ]
+        |> String.concat "\n"
+
+    let replaceBindingBodies replacement (CheckedImplFile(qualifiedName, signature, contents, hasEntryPoint, isScript, anonRecords, namedDebugPoints)) =
+        let rec replaceBinding binding =
+            match binding with
+            | ModuleOrNamespaceBinding.Binding(TBind(var, _, debugPoint)) ->
+                ModuleOrNamespaceBinding.Binding(TBind(var, replacement, debugPoint))
+            | ModuleOrNamespaceBinding.Module(entity, contents) ->
+                ModuleOrNamespaceBinding.Module(entity, replaceContents contents)
+
+        and replaceContents contents =
+            match contents with
+            | ModuleOrNamespaceContents.TMDefs definitions ->
+                definitions
+                |> List.map replaceContents
+                |> ModuleOrNamespaceContents.TMDefs
+            | ModuleOrNamespaceContents.TMDefLet(TBind(var, _, debugPoint), bindingRange) ->
+                ModuleOrNamespaceContents.TMDefLet(TBind(var, replacement, debugPoint), bindingRange)
+            | ModuleOrNamespaceContents.TMDefRec(isRec, opens, tycons, bindings, definitionRange) ->
+                ModuleOrNamespaceContents.TMDefRec(
+                    isRec,
+                    opens,
+                    tycons,
+                    bindings |> List.map replaceBinding,
+                    definitionRange
+                )
+            | other -> other
+
+        CheckedImplFile(
+            qualifiedName,
+            signature,
+            replaceContents contents,
+            hasEntryPoint,
+            isScript,
+            anonRecords,
+            namedDebugPoints
+        )
+
 module TypedTreeDiffTests =
 
     let private assertRequiredCapabilities expected (result: TypedTreeDiffResult) =
@@ -169,6 +216,36 @@ module TypedTreeDiffTests =
         Assert.Contains("Library.Sub.State", names)
 
     [<Fact>]
+    let ``deep expression identity fails closed before exhausting the process stack`` () =
+        use harness = new DiffTestHarness()
+        harness.Rewrite(Sources.deeplySequentialFunction 600 1)
+        let baseline = harness.Compile()
+        harness.Rewrite(Sources.deeplySequentialFunction 600 2)
+        let updated = harness.Compile()
+
+        let result = harness.Diff baseline updated
+
+        Assert.Empty(result.SemanticEdits)
+        let rudeEdit = Assert.Single(result.RudeEdits)
+        Assert.Equal(RudeEditKind.Unsupported, rudeEdit.Kind)
+
+    [<Fact>]
+    let ``cyclic expression link fails closed`` () =
+        use harness = new DiffTestHarness()
+        harness.Rewrite(Sources.functionReturning "1")
+        let tcGlobals, baselineImpl = harness.Compile()
+        let expressionRef: Expr ref = ref Unchecked.defaultof<Expr>
+        let cyclicExpression = Expr.Link expressionRef
+        expressionRef.Value <- cyclicExpression
+        let updatedImpl = Sources.replaceBindingBodies cyclicExpression baselineImpl
+
+        let result = harness.Diff (tcGlobals, baselineImpl) (tcGlobals, updatedImpl)
+
+        Assert.Empty(result.SemanticEdits)
+        let rudeEdit = Assert.Single(result.RudeEdits)
+        Assert.Equal(RudeEditKind.Unsupported, rudeEdit.Kind)
+
+    [<Fact>]
     let ``method body update produces semantic edit`` () =
         use harness = new DiffTestHarness()
         harness.Rewrite(Sources.functionReturning "1")
@@ -184,6 +261,21 @@ module TypedTreeDiffTests =
         Assert.Equal(SemanticEditKind.MethodBody, edit.Kind)
         Assert.Equal("value", edit.Symbol.LogicalName)
         assertRequiredCapabilities [ "Baseline" ] result
+
+    [<Fact>]
+    let ``field-backed module value initializer update fails closed`` () =
+        use harness = new DiffTestHarness()
+        harness.Rewrite("module Library\nlet existingValue = 1\n")
+        let baseline = harness.Compile()
+        harness.Rewrite("module Library\nlet existingValue = 2\n")
+        let updated = harness.Compile()
+
+        let result = harness.Diff baseline updated
+
+        Assert.Empty(result.SemanticEdits)
+        let rudeEdit = Assert.Single(result.RudeEdits)
+        Assert.Equal(RudeEditKind.Unsupported, rudeEdit.Kind)
+        Assert.Equal(Some "existingValue", rudeEdit.Symbol |> Option.map (fun symbol -> symbol.LogicalName))
 
     [<Fact>]
     let ``inline annotation change triggers rude edit`` () =
@@ -1349,6 +1441,37 @@ type MyClass() =
         let rudeEdit = Assert.Single(result.RudeEdits)
         Assert.Equal(RudeEditKind.NotSupportedByRuntime, rudeEdit.Kind)
         Assert.Contains("AddInstanceFieldToExistingType", rudeEdit.Message)
+
+    [<Fact>]
+    let ``removing a middle overload reports only the removed declaration`` () =
+        use harness = new DiffTestHarness()
+
+        let baselineSource =
+            """module Library
+type C() =
+    member _.M(value: bool) = if value then 1 else 0
+    member _.M(value: int) = value
+    member _.M(value: string) = value.Length
+"""
+
+        let updatedSource =
+            """module Library
+type C() =
+    member _.M(value: bool) = if value then 1 else 0
+    member _.M(value: string) = value.Length
+"""
+
+        harness.Rewrite(baselineSource)
+        let baseline = harness.Compile()
+        harness.Rewrite(updatedSource)
+        let updated = harness.Compile()
+
+        let result = harness.Diff baseline updated
+
+        Assert.Empty(result.SemanticEdits)
+        let rudeEdit = Assert.Single(result.RudeEdits)
+        Assert.Equal(RudeEditKind.DeclarationRemoved, rudeEdit.Kind)
+        Assert.Equal(Some "M", rudeEdit.Symbol |> Option.map (fun symbol -> symbol.LogicalName))
 
     [<Fact>]
     let ``adding let-bound instance field to class with capability pairs constructor update`` () =
