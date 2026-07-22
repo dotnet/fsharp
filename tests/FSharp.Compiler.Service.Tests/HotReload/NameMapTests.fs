@@ -61,6 +61,20 @@ module NameMapTests =
         Assert.Equal<string>(second, replaySecond)
 
     [<Fact>]
+    let ``snapshot orders buckets by ordinal key`` () =
+        let map = FSharpSynthesizedTypeMaps()
+        map.BeginSession()
+
+        for key in [ "zeta"; "alpha"; "mu"; "beta"; "omega"; "aardvark"; "zzzz" ] do
+            map.GetOrAddName key |> ignore
+
+        let actualKeys = map.Snapshot |> Seq.map (fun struct (key, _) -> key) |> Seq.toArray
+        let expectedKeys =
+            actualKeys |> Array.sortWith (fun left right -> StringComparer.Ordinal.Compare(left, right))
+
+        Assert.Equal<string[]>(expectedKeys, actualKeys)
+
+    [<Fact>]
     let ``line-normalized replay preserves generation-zero pipe name`` () =
         let map = FSharpSynthesizedTypeMaps()
         map.BeginSession()
