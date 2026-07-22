@@ -42,7 +42,14 @@ printfn ""Hello %d"" (rng.Next(5))";
             this.InvokeCodeFix(document, "rng.Next");
             this.Library.Synchronization.WaitForSolutionCrawler();
 
-            this.Library.Synchronization.WaitFor(() => expectedCode == document.Contents, TimeSpan.FromSeconds(15));
+            // Poll until the fix rewrites the buffer, then assert it actually applied. Without the
+            // assertion a fix that never fires would leave the original source and the test would still
+            // pass. Compare on normalized source so incidental line-ending differences do not race the poll.
+            this.Library.Synchronization.TryWaitForCondition(
+                () => NormalizeSource(document.Contents) == NormalizeSource(expectedCode),
+                TimeSpan.FromSeconds(15));
+
+            AssertSourceEquals(expectedCode, document.Contents);
         }
 
         #region Helps

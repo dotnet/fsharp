@@ -50,9 +50,16 @@ namespace FSharp.Editor.Apex.IntegrationTests.TestFramework
         /// <summary>
         /// The product milestone of the installed Visual Studio to launch, as reported by vswhere's
         /// catalog.productMilestone. Defaults to "Canary" (the IntCanary channel), which selects the
-        /// Canary install rather than Insiders when both are present.
+        /// Canary install rather than Insiders when both are present locally. On CI the installed VS is
+        /// a different channel (e.g. "Preview"), so this can be overridden with the
+        /// FSHARP_APEX_VS_MILESTONE environment variable; setting VisualStudio.InstallationUnderTest.Path
+        /// directly takes precedence over milestone resolution entirely.
         /// </summary>
-        protected virtual string TargetProductMilestone => "Canary";
+        protected virtual string TargetProductMilestone
+            => Environment.GetEnvironmentVariable("FSHARP_APEX_VS_MILESTONE") is string milestone
+               && !string.IsNullOrEmpty(milestone)
+                ? milestone
+                : "Canary";
 
         protected override VisualStudioHostConfiguration GetVisualStudioHostConfiguration()
         {
@@ -261,11 +268,15 @@ namespace FSharp.Editor.Apex.IntegrationTests.TestFramework
         /// </summary>
         protected static void AssertSourceEquals(string expected, string actual)
         {
-            static string Normalize(string source)
-                => (source ?? string.Empty).Replace("\r\n", "\n").Replace("\r", "\n").TrimEnd('\n');
-
-            Assert.AreEqual(Normalize(expected), Normalize(actual));
+            Assert.AreEqual(NormalizeSource(expected), NormalizeSource(actual));
         }
+
+        /// <summary>
+        /// Normalizes F# source for comparison by unifying line-ending style and trimming any trailing
+        /// newline, so comparisons ignore those incidental differences.
+        /// </summary>
+        protected static string NormalizeSource(string source)
+            => (source ?? string.Empty).Replace("\r\n", "\n").Replace("\r", "\n").TrimEnd('\n');
 
         /// <summary>
         /// Verifies that placing the caret on <paramref name="caretExpression"/> in the given F# source

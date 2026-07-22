@@ -60,6 +60,7 @@ param (
     [switch]$testIntegration,
     [switch]$testScripting,
     [switch]$testVs,
+    [switch]$testApex,
     [switch]$testAll,
     [switch]$testAllButIntegration,
     [switch]$testAllButIntegrationAndAot,
@@ -128,6 +129,7 @@ function Print-Usage() {
     Write-Host "  -testIntegration              Run F# integration tests"
     Write-Host "  -testScripting                Run Scripting tests"
     Write-Host "  -testVs                       Run F# editor unit tests"
+    Write-Host "  -testApex                     Run F# Apex VS integration tests (requires -deployExtensions)"
     Write-Host "  -testpack                     Verify built packages"
     Write-Host "  -testAOT                      Run AOT/Trimming tests"
     Write-Host "  -testEditor                   Run VS Editor tests"
@@ -402,6 +404,63 @@ function TestUsingMSBuild([string] $testProject, [string] $targetFramework, [str
     Exec-Console $dotnetExe $test_args
 }
 
+# Runs the Apex VS integration tests. These are a classic MSTest (VSTest) project, NOT part of the
+# repo's Microsoft.Testing.Platform 'dotnet test' path, and they drive a real VS instance via the Apex
+# UI-automation framework — so they are launched with vstest.console.exe (from the installed VS) against
+# the already-built test assembly. The F# VSIX must be deployed into the RoslynDev hive first
+# (build with -deployExtensions); Apex launches devenv /rootsuffix RoslynDev.
+function TestApexUsingVSTest([string] $targetFramework) {
+    $projectName = "FSharp.Editor.Apex.IntegrationTests"
+    $testAssembly = Join-Path $ArtifactsDir "bin\$projectName\$configuration\$targetFramework\$projectName.dll"
+    if (-not (Test-Path $testAssembly)) {
+        throw "Apex test assembly not found at '$testAssembly'. Build the VS solution first."
+    }
+
+    $vsInfo = LocateVisualStudio
+    if ($null -eq $vsInfo) {
+        throw "Unable to locate a Visual Studio installation to run the Apex tests."
+    }
+    $vsDir = $vsInfo.installationPath.TrimEnd("\")
+    $vstestConsole = @(
+        (Join-Path $vsDir "Common7\IDE\CommonExtensions\Microsoft\TestWindow\vstest.console.exe"),
+        (Join-Path $vsDir "Common7\IDE\Extensions\TestPlatform\vstest.console.exe")
+    ) | Where-Object { Test-Path $_ } | Select-Object -First 1
+    if (-not $vstestConsole) {
+        throw "vstest.console.exe not found under '$vsDir' (looked in CommonExtensions\Microsoft\TestWindow and Extensions\TestPlatform)."
+    }
+
+    # Point Apex at this VS install so it does not rely on the local-only 'Canary' milestone lookup.
+    # This process env var propagates to the child vstest.console -> testhost processes.
+    if (-not ${env:VisualStudio.InstallationUnderTest.Path}) {
+        ${env:VisualStudio.InstallationUnderTest.Path} = Join-Path $vsDir "Common7\IDE\devenv.exe"
+    }
+
+    $testResultsDir = "$ArtifactsDir\TestResults\$configuration"
+    Create-Directory $testResultsDir
+    $jobName = if ($env:SYSTEM_JOBNAME) { $env:SYSTEM_JOBNAME } else { "local" }
+    $trxFileName = "$projectName.$targetFramework.$jobName.trx"
+
+    $vstestArgs = @(
+        $testAssembly,
+        "/Platform:x64",
+        "/Framework:.NETFramework,Version=v4.7.2",
+        "/logger:trx;LogFileName=$trxFileName",
+        "/ResultsDirectory:$testResultsDir"
+    )
+
+    Write-Host "$vstestConsole $($vstestArgs -join ' ')"
+    & $vstestConsole @vstestArgs
+    $vstestExitCode = $LASTEXITCODE
+
+    # This leg is non-gating (signal only): a test failure must NOT fail the build. Surface it as a
+    # warning and let the published TRX / Tests tab carry the signal. Genuine infra errors (missing
+    # assembly / vstest.console) already threw above and remain hard failures.
+    if ($vstestExitCode -ne 0) {
+        Write-Host "##vso[task.logissue type=warning]Apex integration tests reported failures (vstest.console exit code $vstestExitCode). This leg is non-gating; see the published TRX and the Tests tab."
+        Write-Host "Apex tests exit code $vstestExitCode (non-gating; not failing the build)."
+    }
+}
+
 function Prepare-TempDir() {
     Copy-Item (Join-Path $RepoRoot "tests\Resources\Directory.Build.props") $TempDir
     Copy-Item (Join-Path $RepoRoot "tests\Resources\Directory.Build.targets") $TempDir
@@ -667,6 +726,10 @@ try {
 
     if ($testIntegration) {
         TestUsingMSBuild -testProject "$RepoRoot\vsintegration\tests\FSharp.Editor.IntegrationTests\FSharp.Editor.IntegrationTests.csproj" -targetFramework $script:desktopTargetFramework
+    }
+
+    if ($testApex) {
+        TestApexUsingVSTest -targetFramework $script:desktopTargetFramework
     }
 
     if ($testAOT) {

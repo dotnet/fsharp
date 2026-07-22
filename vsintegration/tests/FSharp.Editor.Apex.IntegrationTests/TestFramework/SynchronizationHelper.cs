@@ -44,12 +44,6 @@ namespace FSharp.Editor.Apex.IntegrationTests.TestFramework
         public void WaitForLightBulb() => this.Settle();
 
         /// <summary>
-        /// Blocks until <paramref name="condition"/> returns true or the timeout elapses.
-        /// </summary>
-        public void WaitFor(Func<bool> condition, TimeSpan timeout)
-            => this.TryWaitForCondition(condition, timeout);
-
-        /// <summary>
         /// Polls <paramref name="condition"/> until it returns true or the timeout elapses.
         /// </summary>
         /// <returns>True if the condition became true within the timeout; otherwise false.</returns>

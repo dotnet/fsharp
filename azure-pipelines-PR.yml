@@ -509,6 +509,64 @@ stages:
             continueOnError: true
             condition: failed()
 
+        # Windows Apex VS integration tests (non-gating — published for signal only)
+        - job: WindowsApexIntegration
+          variables:
+          - name: _configuration
+            value: Release
+          - name: __VSNeverShowWhatsNew
+            value: 1
+          pool:
+            name: $(DncEngPublicBuildPool)
+            demands: ImageOverride -equals $(_WindowsMachineQueueName)
+          timeoutInMinutes: 90
+          steps:
+          - checkout: self
+            clean: true
+
+          - powershell: eng\SetupVSHive.ps1
+            displayName: Setup VS Hive
+
+          # Build + deploy the F# VSIX into the RoslynDev hive, then run the Apex tests. The Apex host
+          # resolves the installed VS via LocateVisualStudio (set as VisualStudio.InstallationUnderTest.Path
+          # by the -testApex path), so it does not depend on the local-only 'Canary' milestone.
+          # continueOnError keeps this leg non-gating: failures surface as signal but do not fail the PR.
+          - script: eng\CIBuildNoPublish.cmd -configuration $(_configuration) -deployExtensions -testApex
+            env:
+              NativeToolsOnMachine: true
+            displayName: Build, deploy extension and run Apex integration tests
+            continueOnError: true
+
+          - task: PublishTestResults@2
+            displayName: Publish Apex Test Results
+            inputs:
+              testResultsFormat: 'VSTest'
+              testRunTitle: WindowsApexIntegration
+              mergeTestResults: true
+              testResultsFiles: '*.trx'
+              searchFolder: '$(Build.SourcesDirectory)/artifacts/TestResults/$(_configuration)'
+            continueOnError: true
+            condition: succeededOrFailed()
+
+          - task: PublishBuildArtifacts@1
+            displayName: Publish Apex Test Logs
+            inputs:
+              PathtoPublish: '$(Build.SourcesDirectory)\artifacts\TestResults\$(_configuration)'
+              ArtifactName: Windows $(_configuration) Apex test logs
+              publishLocation: Container
+            continueOnError: true
+            condition: always()
+
+          - task: PublishBuildArtifacts@1
+            displayName: Publish Apex Build Logs
+            condition: always()
+            continueOnError: true
+            inputs:
+                PathToPublish: '$(Build.SourcesDirectory)\artifacts\log\$(_configuration)'
+                ArtifactName: Windows $(_configuration) Apex build logs
+                ArtifactType: Container
+                parallel: true
+
           # Windows With Compressed Metadata Desktop (split into 3 batches)
         - job: WindowsCompressedMetadata_Desktop
           strategy:

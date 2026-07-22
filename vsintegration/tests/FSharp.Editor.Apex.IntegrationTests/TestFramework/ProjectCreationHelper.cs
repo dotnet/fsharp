@@ -5,6 +5,7 @@
 using System;
 using System.Diagnostics;
 using System.IO;
+using System.Threading.Tasks;
 using Microsoft.Test.Apex.VisualStudio;
 using Microsoft.Test.Apex.VisualStudio.Solution;
 
@@ -96,9 +97,15 @@ namespace FSharp.Editor.Apex.IntegrationTests.TestFramework
                 RedirectStandardError = true,
             };
 
-            using var process = Process.Start(startInfo);
-            string standardError = process.StandardError.ReadToEnd();
+            using var process = Process.Start(startInfo)
+                ?? throw new InvalidOperationException($"Failed to start 'dotnet {arguments}'.");
+
+            // Drain both redirected streams concurrently. Reading one to completion before the other can
+            // deadlock: if the child fills the stdout pipe buffer while we block on stderr's EOF (which
+            // only arrives at process exit), neither side can make progress.
+            Task<string> standardErrorTask = process.StandardError.ReadToEndAsync();
             process.StandardOutput.ReadToEnd();
+            string standardError = standardErrorTask.GetAwaiter().GetResult();
             process.WaitForExit();
 
             if (process.ExitCode != 0)
