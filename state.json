@@ -186,12 +186,9 @@
       "sha": "afcda9929de6",
       "cats": []
     },
-    "20078": {
-      "sha": "5289759f10c2",
-      "cats": [
-        "Affects-Build-Infra",
-        "Affects-Restore"
-      ]
+    "20080": {
+      "sha": "1a8d8bbeb635c252fa3ce0b890c78a3205ff44ab",
+      "cats": []
     }
   }
 }
