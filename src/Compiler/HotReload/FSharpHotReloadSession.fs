@@ -55,6 +55,67 @@ module internal FSharpHotReloadRudeEditMapping =
 
     let ofDiagnostics (diagnostics: RudeEditDiagnostic list) = diagnostics |> List.map ofDiagnostic
 
+/// File-system operations whose failure behavior is part of the hot reload session contract.
+module internal FSharpHotReloadFileSystem =
+
+    [<Literal>]
+    let private StableFileMaxTotalWaitMs = 5000
+
+    [<Literal>]
+    let private StableFileInitialDelayMs = 25
+
+    [<Literal>]
+    let private StableFileMaxBackoffMs = 200
+
+    [<Literal>]
+    let private StableFileRequiredStableReads = 2
+
+    /// Waits until an output file has the same timestamp and size on consecutive reads.
+    let waitForStableFile path =
+        // Use exponential backoff: 25ms, 50ms, 100ms, 200ms, 200ms, ...
+        // Total max wait ~5 seconds for slow I/O scenarios.
+        let mutable totalWaited = 0
+        let mutable sleepMillis = StableFileInitialDelayMs
+        let mutable stableCount = 0
+        let mutable lastWrite = DateTime.MinValue
+        let mutable lastSize = -1L
+
+        while totalWaited < StableFileMaxTotalWaitMs
+              && stableCount < StableFileRequiredStableReads do
+            let exists = File.Exists path
+
+            let currentWrite =
+                if exists then
+                    File.GetLastWriteTimeUtc path
+                else
+                    DateTime.MinValue
+
+            let currentSize = if exists then FileInfo(path).Length else -1L
+
+            // A missing path uses the sentinel timestamp/size too, so existence must be
+            // part of the invariant or a file that has not materialized looks stable.
+            if exists && currentWrite = lastWrite && currentSize = lastSize then
+                stableCount <- stableCount + 1
+            else
+                stableCount <- 0
+                lastWrite <- currentWrite
+                lastSize <- currentSize
+
+            if stableCount < StableFileRequiredStableReads then
+                Thread.Sleep sleepMillis
+                totalWaited <- totalWaited + sleepMillis
+                sleepMillis <- min StableFileMaxBackoffMs (sleepMillis * 2)
+
+    /// Reads optional debug data, returning None for an ordinary unreadable-file failure.
+    let tryReadAllBytes (readAllBytes: string -> byte[]) path =
+        try
+            Some(readAllBytes path)
+        with
+        | :? IOException
+        | :? UnauthorizedAccessException
+        | :? System.Security.SecurityException
+        | :? NotSupportedException -> None
+
 [<System.Flags>]
 [<Experimental("This FCS API is experimental and subject to change.")>]
 type FSharpHotReloadCapability =
@@ -599,10 +660,7 @@ type internal FSharpHotReloadService
                                                         |> Option.defaultValue (outputPath + ".pdb")
 
                                                     if File.Exists(pdbPath) then
-                                                        try
-                                                            Some(File.ReadAllBytes(pdbPath))
-                                                        with :? IOException ->
-                                                            None
+                                                        FSharpHotReloadFileSystem.tryReadAllBytes File.ReadAllBytes pdbPath
                                                     else
                                                         None
 

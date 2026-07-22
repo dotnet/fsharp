@@ -304,56 +304,13 @@ type FSharpChecker
     [<Literal>]
     let HotReloadTraceOutputFlagName = "FSHARP_HOTRELOAD_TRACE_OUTPUT"
 
-    [<Literal>]
-    let StableFileMaxTotalWaitMs = 5000
-
-    [<Literal>]
-    let StableFileInitialDelayMs = 25
-
-    [<Literal>]
-    let StableFileMaxBackoffMs = 200
-
-    [<Literal>]
-    let StableFileRequiredStableReads = 2
-
     let traceOutputFingerprint = isEnvVarTruthy HotReloadTraceOutputFlagName
 
     let getErrorDiagnostics (diagnostics: FSharpDiagnostic[]) =
         diagnostics
         |> Array.filter (fun diagnostic -> diagnostic.Severity = FSharpDiagnosticSeverity.Error)
 
-    let waitForStableFile path =
-        // Use exponential backoff: 25ms, 50ms, 100ms, 200ms, 200ms, ...
-        // Total max wait ~5 seconds (vs 500ms before) for slow I/O scenarios.
-        let mutable totalWaited = 0
-        let mutable sleepMillis = StableFileInitialDelayMs
-        let mutable stableCount = 0
-        let mutable lastWrite = DateTime.MinValue
-        let mutable lastSize = -1L
-
-        while totalWaited < StableFileMaxTotalWaitMs
-              && stableCount < StableFileRequiredStableReads do
-            let exists = File.Exists path
-
-            let currentWrite =
-                if exists then
-                    File.GetLastWriteTimeUtc path
-                else
-                    DateTime.MinValue
-
-            let currentSize = if exists then FileInfo(path).Length else -1L
-
-            if currentWrite = lastWrite && currentSize = lastSize then
-                stableCount <- stableCount + 1
-            else
-                stableCount <- 0
-                lastWrite <- currentWrite
-                lastSize <- currentSize
-
-            if stableCount < StableFileRequiredStableReads then
-                Thread.Sleep sleepMillis
-                totalWaited <- totalWaited + sleepMillis
-                sleepMillis <- min StableFileMaxBackoffMs (sleepMillis * 2) // Exponential backoff, capped at 200ms
+    let waitForStableFile = FSharpHotReloadFileSystem.waitForStableFile
 
     let computeFileHash (path: string) : byte[] option =
         if File.Exists path then
