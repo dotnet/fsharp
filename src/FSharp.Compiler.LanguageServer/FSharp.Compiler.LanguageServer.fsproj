@@ -8,6 +8,7 @@
 	</PropertyGroup>
 
 	<ItemGroup Label="Package References">
+		<!-- net8.0 host keeps DI 8.0.0; the central 10.0.0 is only needed by consumers that pull DI >= 10 transitively. -->
 		<PackageReference Include="Microsoft.Extensions.DependencyInjection" VersionOverride="8.0.0" />
 		<PackageReference Include="Microsoft.VisualStudio.LanguageServer.Protocol" />
 		<!-- Pinned below the central versions: this LSP host targets the VS 17.x servicing baseline. -->

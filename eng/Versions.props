@@ -129,6 +129,8 @@
     <!-- Visual Studio Shell packages -->
     <MicrosoftVisualStudioInteropVersion>$(MicrosoftVisualStudioShellPackagesVersion)</MicrosoftVisualStudioInteropVersion>
     <MicrosoftVisualStudioImagingInterop140DesignTimeVersion>$(VisualStudioShellProjectsPackages)</MicrosoftVisualStudioImagingInterop140DesignTimeVersion>
+    <MicrosoftInternalVisualStudioShellFrameworkVersion>$(MicrosoftVisualStudioShellPackagesVersion)</MicrosoftInternalVisualStudioShellFrameworkVersion>
+    <MicrosoftVisualStudioManagedInterfacesVersion>$(VisualStudioShellProjectsPackages)</MicrosoftVisualStudioManagedInterfacesVersion>
     <!-- Interop packages are pinned to the version required by Microsoft.VisualStudio.SDK (pulled transitively via Microsoft.CodeAnalysis.ExternalAccess.FSharp), which is newer than the other shell packages. -->
     <MicrosoftVisualStudioShellInteropVersion>18.9.438</MicrosoftVisualStudioShellInteropVersion>
     <MicrosoftVisualStudioTextManagerInteropVersion>18.9.438</MicrosoftVisualStudioTextManagerInteropVersion>
@@ -137,9 +139,7 @@
          Microsoft.CodeAnalysis.ExternalAccess.FSharp), so under CPM transitive pinning they must be pinned to
          the required 18.9.x versions rather than the shell package group; otherwise NU1109. -->
     <MicrosoftVisualStudioShellDesignVersion>18.9.493</MicrosoftVisualStudioShellDesignVersion>
-    <MicrosoftInternalVisualStudioShellFrameworkVersion>$(MicrosoftVisualStudioShellPackagesVersion)</MicrosoftInternalVisualStudioShellFrameworkVersion>
     <MicrosoftVisualStudioPackageLanguageService150Version>18.9.493</MicrosoftVisualStudioPackageLanguageService150Version>
-    <MicrosoftVisualStudioManagedInterfacesVersion>$(VisualStudioShellProjectsPackages)</MicrosoftVisualStudioManagedInterfacesVersion>
     <MicrosoftVisualStudioDesignerInterfacesVersion>18.9.438</MicrosoftVisualStudioDesignerInterfacesVersion>
     <MicrosoftVisualStudioShellImmutable100Version>10.0.30319</MicrosoftVisualStudioShellImmutable100Version>
     <MicrosoftVisualStudioShellImmutable110Version>11.0.50727</MicrosoftVisualStudioShellImmutable110Version>
