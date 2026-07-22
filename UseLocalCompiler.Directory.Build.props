@@ -52,7 +52,7 @@
     </PropertyGroup>
   </Target>
 
-  <Target Name="UseLocalFSharpCoreReference" BeforeTargets="ResolveAssemblyReferences">
+  <Target Name="UseLocalFSharpCoreReference" BeforeTargets="ResolveAssemblyReferences" DependsOnTargets="SetLocalFSharpCoreTargetFramework">
     <Error Condition="!Exists('$(LocalFSharpCoreAssemblyPath)')" Text="The local FSharp.Core override could not be found at '$(LocalFSharpCoreAssemblyPath)'." />
     <ItemGroup>
       <Reference Remove="@(Reference)" Condition="'%(Reference.Identity)' == 'FSharp.Core' or '%(Reference.FileName)' == 'FSharp.Core' or '%(Reference.NuGetPackageId)' == 'FSharp.Core'" />
