@@ -2699,8 +2699,11 @@ let GenMethodDefAsRow cenv env midx (mdef: ILMethodDef) =
           cenv.AddCode code
           addr
       | MethodBody.Abstract
-      | MethodBody.PInvoke _ ->
+      | MethodBody.PInvoke _
+      | MethodBody.NotAvailable ->
           // Now record the PDB record for this method - we write this out later.
+          // Metadata-only methods still participate in name ambiguity checks and occupy
+          // MethodDebugInformation rows even though they have no sequence points.
           if cenv.generatePdb then
             cenv.pdbinfo.Add
               { MethToken = getUncodedToken TableNames.Method midx
@@ -2713,7 +2716,7 @@ let GenMethodDefAsRow cenv env midx (mdef: ILMethodDef) =
           0x0000
       | MethodBody.Native ->
           failwith "cannot write body of native method - Abstract IL cannot roundtrip mixed native/managed binaries"
-      | _ -> 0x0000)
+      )
 
     UnsharedRow
        [| ULong codeAddr
