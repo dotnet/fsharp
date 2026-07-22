@@ -28,8 +28,16 @@
 
   <!-- We want to restore ALL the MIBCs when we build anything, since in the future it will contain different profiles, not only the FSC one we got from building Giraffe -->
   <Import Project="$(MSBuildThisFileDirectory)\eng\restore\optimizationData.targets"/>
-  <ItemGroup>
-    <PackageReference Include="@(MIBCPackage)" />
+  <!-- CPM: reference the MIBC optimization packages by identity only; their versions come from
+       eng/Packages.props. @(MIBCPackage) carries Version metadata (needed by CopyMIBC to locate the
+       restored .mibc under the package cache), which must not appear on a PackageReference under
+       Central Package Management (NU1008). Guarded by the same IgnoreMIBC switch as the item list. -->
+  <ItemGroup Condition="'$(IgnoreMIBC)' != 'true'">
+    <PackageReference Include="optimization.windows_nt-x86.mibc.runtime" />
+    <PackageReference Include="optimization.windows_nt-x64.mibc.runtime" />
+    <PackageReference Include="optimization.windows_nt-arm64.mibc.runtime" />
+    <PackageReference Include="optimization.linux-x64.mibc.runtime" />
+    <PackageReference Include="optimization.linux-arm64.mibc.runtime" />
   </ItemGroup>
 
   <Target Name="CopyMIBCWrapper" AfterTargets="Restore" BeforeTargets="Build;Pack">
