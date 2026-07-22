@@ -424,19 +424,27 @@ let private createCore moduleId metadata portablePdb tokenMaps =
     }
 
 let tryReadFromAssemblyAndPdbBytes (assemblyBytes: byte[]) (portablePdbBytes: byte[] option) =
-    match
-        ILBaselineReader.metadataSnapshotFromBytes assemblyBytes,
-        ILBaselineReader.BaselineMetadataReader.Create assemblyBytes,
-        ILBaselineReader.readModuleMvidFromBytes assemblyBytes
-    with
-    | Some metadata, Some reader, Some moduleId when moduleId <> Guid.Empty ->
-        let portablePdb =
-            match ILBaselineReader.readCodeViewContentIdFromBytes assemblyBytes with
-            | Some expectedContentId -> portablePdbBytes |> Option.bind (toPortablePdbSnapshot expectedContentId)
-            | None -> None
+    try
+        match
+            ILBaselineReader.metadataSnapshotFromBytes assemblyBytes,
+            ILBaselineReader.BaselineMetadataReader.Create assemblyBytes,
+            ILBaselineReader.readModuleMvidFromBytes assemblyBytes
+        with
+        | Some metadata, Some reader, Some moduleId when moduleId <> Guid.Empty ->
+            let portablePdb =
+                match ILBaselineReader.readCodeViewContentIdFromBytes assemblyBytes with
+                | Some expectedContentId -> portablePdbBytes |> Option.bind (toPortablePdbSnapshot expectedContentId)
+                | None -> None
 
-        Some(createCore moduleId metadata portablePdb (buildTokenMaps reader))
-    | _ -> None
+            Some(createCore moduleId metadata portablePdb (buildTokenMaps reader))
+        | _ -> None
+    with
+    | :? BadImageFormatException
+    | :? IO.IOException
+    | :? ArgumentException
+    | :? IndexOutOfRangeException
+    | :? InvalidOperationException
+    | :? OverflowException -> None
 
 let readFromAssemblyAndPdbBytes (assemblyBytes: byte[]) (portablePdbBytes: byte[] option) =
     match tryReadFromAssemblyAndPdbBytes assemblyBytes portablePdbBytes with

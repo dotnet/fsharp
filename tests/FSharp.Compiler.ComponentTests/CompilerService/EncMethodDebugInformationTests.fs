@@ -689,6 +689,19 @@ module private Plumbing =
             let validLow = readInt32 bytes (stream.DataOffset + 8)
             writeInt32 bytes (stream.DataOffset + 8) (validLow ||| (1 <<< 3))) assemblyBytes
 
+    let redirectBlobHeapPastEnd assemblyBytes =
+        let copy = Array.copy assemblyBytes
+
+        use peReader = new PEReader(ImmutableArray.CreateRange copy)
+        let metadataRoot = peReader.PEHeaders.MetadataStartOffset
+
+        let blobStream =
+            metadataStreamHeaders copy
+            |> List.find (fun stream -> stream.Name = "#Blob")
+
+        writeInt32 copy blobStream.HeaderOffset (copy.Length - metadataRoot + 16)
+        copy
+
 [<Fact>]
 let ``Synthetic CustomDebugInformation row attaches to the right MethodDef`` () =
     let modul = Plumbing.buildModule [ "Foo"; "Bar" ]
@@ -846,6 +859,27 @@ let ``Baseline reader rejects pointer-table indirection in an uncompressed strea
         Plumbing.writeInMemory (Plumbing.buildModule [ "Compute" ]) (Map.empty<string, PdbMethodCustomDebugInfo list>)
 
     let assemblyBytes = Plumbing.addUnsupportedFieldPointerTable assemblyBytes
+    Assert.True((tryReadFromAssemblyAndPdbBytes assemblyBytes (Some pdbBytes)).IsNone)
+
+[<Fact>]
+let ``Baseline table data starts after valid tables even when their row count is zero`` () =
+    let valid = 1UL <<< 3
+
+    Assert.Equal(128, FSharp.Compiler.CodeGen.ILBaselineReader.tableDataStart 100 valid)
+
+[<Fact>]
+let ``Baseline valid-mask reader preserves the unsigned high bit`` () =
+    let bytes = [| 0uy; 0uy; 0uy; 0uy; 0uy; 0uy; 0uy; 0x80uy |]
+
+    Assert.Equal(0x8000000000000000UL, FSharp.Compiler.CodeGen.ILBaselineReader.readUInt64 bytes 0)
+
+[<Fact>]
+let ``Baseline reader rejects a malformed signature blob without throwing`` () =
+    let assemblyBytes, pdbBytes =
+        Plumbing.writeInMemory (Plumbing.buildModule [ "Compute" ]) (Map.empty<string, PdbMethodCustomDebugInfo list>)
+
+    let assemblyBytes = Plumbing.redirectBlobHeapPastEnd assemblyBytes
+
     Assert.True((tryReadFromAssemblyAndPdbBytes assemblyBytes (Some pdbBytes)).IsNone)
 
 [<Fact>]
