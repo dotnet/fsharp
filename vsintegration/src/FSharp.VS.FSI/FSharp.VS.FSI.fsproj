@@ -59,7 +59,6 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.VisualStudio.Editor" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
     <PackageReference Include="Microsoft.VisualStudio.Package.LanguageService.15.0" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
-    <PackageReference Update="Microsoft.VSSDK.BuildTools" />
     <Reference Include="System.ComponentModel.Composition" />
   </ItemGroup>
 

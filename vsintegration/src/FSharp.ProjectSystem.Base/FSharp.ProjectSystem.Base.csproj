@@ -44,7 +44,6 @@
     <PackageReference Include="Microsoft.VisualStudio.Shell.Design" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
     <PackageReference Include="Microsoft.VisualStudio.Shell.Immutable.10.0" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
     <PackageReference Include="Microsoft.VisualStudio.Shell.Immutable.11.0" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
-    <PackageReference Update="Microsoft.VSSDK.BuildTools" />
   </ItemGroup>
 
   <ItemGroup>

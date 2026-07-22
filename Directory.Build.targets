@@ -25,20 +25,17 @@
     <FsYaccPath>$(ArtifactsDir)/bin/fsyacc/$(Configuration)/$(FSharpNetCoreProductTargetFramework)/$(NETCoreSdkPortableRuntimeIdentifier)/fsyacc.dll</FsYaccPath>
   </PropertyGroup>
 
-  <ItemGroup Condition="'$(DesignTimeBuild)' == 'true'">
-    <PackageReference Update="Microsoft.VSSDK.BuildTools" />
-  </ItemGroup>
-
   <ItemGroup Condition="'$(UnitTestType)' == 'xunit'">
     <PackageReference Include="xunit.v3.mtp-v2" />
   </ItemGroup>
 
   <!-- We want to restore ALL the MIBCs when we build anything, since in the future it will contain different profiles, not only the FSC one we got from building Giraffe -->
   <Import Project="$(MSBuildThisFileDirectory)\eng\restore\optimizationData.targets"/>
-  <!-- CPM: reference the MIBC optimization packages by identity only; their versions come from
-       eng/Packages.props. @(MIBCPackage) carries Version metadata (needed by CopyMIBC to locate the
-       restored .mibc under the package cache), which must not appear on a PackageReference under
-       Central Package Management (NU1008). Guarded by the same IgnoreMIBC switch as the item list. -->
+  <!-- @(MIBCPackage) carries Version item metadata (CopyMIBC needs it to locate the restored .mibc under
+       the package cache). Under CPM that Version must not sit on a PackageReference (NU1008), and neither
+       RemoveMetadata nor an identity transform strips it in an evaluation-phase ItemGroup, so list the
+       identities literally here; the central versions in eng/Packages.props apply. Opt-out subtrees
+       (ImportDirectoryPackagesProps=false) are not under CPM and keep the inline Version from @(MIBCPackage). -->
   <ItemGroup Condition="'$(IgnoreMIBC)' != 'true' and '$(ManagePackageVersionsCentrally)' == 'true'">
     <PackageReference Include="optimization.windows_nt-x86.mibc.runtime" />
     <PackageReference Include="optimization.windows_nt-x64.mibc.runtime" />
@@ -46,8 +43,6 @@
     <PackageReference Include="optimization.linux-x64.mibc.runtime" />
     <PackageReference Include="optimization.linux-arm64.mibc.runtime" />
   </ItemGroup>
-  <!-- Opt-out subtrees (ImportDirectoryPackagesProps=false) are not under CPM, so their MIBC references
-       must carry the Version metadata from @(MIBCPackage) directly (otherwise NU1015). -->
   <ItemGroup Condition="'$(IgnoreMIBC)' != 'true' and '$(ManagePackageVersionsCentrally)' != 'true'">
     <PackageReference Include="@(MIBCPackage)" />
   </ItemGroup>

@@ -46,6 +46,8 @@
     <PackageVersion Include="Microsoft.VisualStudio.Extensibility.Testing.Xunit" Version="$(MicrosoftVisualStudioExtensibilityTestingSourceGeneratorVersion)" />
     <PackageVersion Include="Microsoft.VisualStudio.Language.Intellisense" Version="$(MicrosoftVisualStudioLanguageIntellisenseVersion)" />
     <PackageVersion Include="Microsoft.VisualStudio.Language.StandardClassification" Version="$(MicrosoftVisualStudioLanguageStandardClassificationVersion)" />
+    <!-- Pinned to 17.13.9 (not the projects' 17.13.6-preview floor) because Protocol.Internal 17.13.9,
+         referenced by FSharp.VisualStudio.Extension, transitively requires Protocol >= 17.13.9. -->
     <PackageVersion Include="Microsoft.VisualStudio.LanguageServer.Protocol" Version="17.13.9" />
     <PackageVersion Include="Microsoft.VisualStudio.LanguageServer.Protocol.Internal" Version="17.13.9" />
     <PackageVersion Include="Microsoft.VisualStudio.LanguageServices" Version="$(MicrosoftVisualStudioLanguageServicesVersion)" />
