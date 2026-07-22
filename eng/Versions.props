@@ -90,10 +90,12 @@
     <SystemMemoryVersion>4.6.3</SystemMemoryVersion>
     <SystemRuntimeCompilerServicesUnsafeVersion>6.1.2</SystemRuntimeCompilerServicesUnsafeVersion>
     <!-- System.* packages from dotnet/runtime are managed in Version.Details.xml / Version.Details.props for source-build. -->
-    <!-- Product/PR builds consume MSBuild 18.10, which pulls System.Security.Cryptography.Xml >= 10.0.9
-         transitively. Raise the central pin to that floor so CPM transitive pinning doesn't report a
-         downgrade (NU1109). Source-build keeps the live runtime version flowed via Version.Details. -->
+    <!-- Product/PR builds consume MSBuild 18.10, which pulls these dotnet/runtime packages >= 10.0.9
+         transitively. Raise the central pins to that floor so CPM transitive pinning doesn't report a
+         downgrade (NU1109). Source-build keeps the live runtime versions flowed via Version.Details. -->
     <SystemSecurityCryptographyXmlVersion Condition="'$(DotNetBuildSourceOnly)' != 'true'">10.0.9</SystemSecurityCryptographyXmlVersion>
+    <SystemCollectionsImmutableVersion Condition="'$(DotNetBuildSourceOnly)' != 'true'">10.0.9</SystemCollectionsImmutableVersion>
+    <SystemReflectionMetadataVersion Condition="'$(DotNetBuildSourceOnly)' != 'true'">10.0.9</SystemReflectionMetadataVersion>
   </PropertyGroup>
 
   <PropertyGroup>
