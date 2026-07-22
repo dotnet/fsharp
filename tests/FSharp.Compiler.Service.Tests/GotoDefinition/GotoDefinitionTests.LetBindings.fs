@@ -8,19 +8,19 @@ let ``PrimitiveType`` () =
     let source =
         """
                 // Can't goto def on an int literal
-                let bi = 123456I"""
+                let bi = 123456I{caret}"""
 
-    assertGoToDefinitionFails (markCaretAfterLeadingIdent source "123456I")
+    assertGoToDefinitionFails source
 
 [<Fact>]
 let ``GotoDefinition.NoIdentifierAtLocation`` () =
-    let useCases =
-        [ "let x = 1", "1"
-          "let x = 1.2", ".2"
-          "let x = \"123\"", "2" ]
+    let markedSources =
+        [ "let x = 1{caret}"
+          "let x = 1{caret}.2"
+          "let x = \"12{caret}3\"" ]
 
-    for source, marker in useCases do
-        assertGoToDefinitionFails (markCaretAfterLeadingIdent source marker)
+    for markedSource in markedSources do
+        assertGoToDefinitionFails markedSource
 
 let private trivialLetSource =
     String.concat
@@ -62,21 +62,21 @@ let private nestedXIsXSource =
         [ "let _ ="
           "  let x = () (*loc-7*)"
           "  let x ="
-          "    x (*loc-6*)"
+          "    x{caret} (*loc-6*)"
           "  ()" ]
 
 [<Fact>]
 let ``GotoDefinition.Simple.Binding.NestedLetWithXIsX`` () =
     assertGoToDefinitionOnLine
         "let x = () (*loc-7*)"
-        (markCaretAfterLeadingIdent nestedXIsXSource "x (*loc-6*)")
+        nestedXIsXSource
 
 let private lotsOfFsFuncSource =
     String.concat
         "\n"
         [ "let _ ="
           "  let f = () (*loc-40*)"
-          "  let f = (*loc-41*)"
+          "  let f{caret} = (*loc-41*)"
           "    function f -> (*loc-42*)"
           "      f (*loc-43*)"
           "  ()" ]
@@ -85,4 +85,4 @@ let private lotsOfFsFuncSource =
 let ``GotoDefinition.Simple.Tricky.LotsOfFsFunc`` () =
     assertGoToDefinitionOnLine
         "let f = (*loc-41*)"
-        (markCaretAfterLeadingIdent lotsOfFsFuncSource "f = (*loc-41*)")
+        lotsOfFsFuncSource

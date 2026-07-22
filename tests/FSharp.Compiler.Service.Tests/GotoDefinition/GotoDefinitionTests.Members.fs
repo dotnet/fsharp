@@ -5,9 +5,9 @@ open Xunit
 
 [<Fact>]
 let ``GotoDefinition.NoSourceCodeAvailable`` () =
-    let source = """System.String.Format("")"""
+    let source = """System.String.Format{caret}("")"""
 
-    assertGoToDefinitionIsExternal (markCaretAfterLeadingIdent source "ormat")
+    assertGoToDefinitionIsExternal source
 
 let private orPatSource =
     String.concat
@@ -63,11 +63,11 @@ let private inStringSource =
         "\n"
         [ "let _ ="
           "  let x = 2"
-          "  \"x(*loc-72*)\"" ]
+          "  \"x{caret}(*loc-72*)\"" ]
 
 [<Fact(Skip = "non-FCS: goto-def suppression inside a string literal is an IDE editor-layer (tokenizer) decision; FCS GetDeclarationLocation is string-unaware and navigates the supplied island regardless.")>]
 let ``GotoDefinition.Simple.Tricky.InStringFails`` () =
-    assertGoToDefinitionFails (markCaretAfterLeadingIdent inStringSource "x(*loc-72*)")
+    assertGoToDefinitionFails inStringSource
 
 let private inMultiLineStringSource =
     String.concat
@@ -75,18 +75,18 @@ let private inMultiLineStringSource =
         [ "let _ ="
           "  let x = 2"
           "  \"this is a string"
-          "    x(*loc-73*)"
+          "    x{caret}(*loc-73*)"
           "  \"" ]
 
 [<Fact(Skip = "non-FCS: goto-def suppression inside a string literal is an IDE editor-layer (tokenizer) decision; FCS GetDeclarationLocation is string-unaware and navigates the supplied island regardless.")>]
 let ``GotoDefinition.Simple.Tricky.InMultiLineStringFails`` () =
-    assertGoToDefinitionFails (markCaretAfterLeadingIdent inMultiLineStringSource "x(*loc-73*)")
+    assertGoToDefinitionFails inMultiLineStringSource
 
 [<Fact(Skip = "This is currently broken for dev enlistments.")>]
 let ``GotoDefinition.Library.InitialTest`` () =
-    let source = "let _ = List.map (*loc-1*)"
+    let source = "let _ = List.map{caret} (*loc-1*)"
 
-    assertGoToDefinitionToExternalLine "map" (markCaretAfterLeadingIdent source "map (*loc-1*)")
+    assertGoToDefinitionToExternalLine "map" source
 
 let private ooClassSource =
     String.concat

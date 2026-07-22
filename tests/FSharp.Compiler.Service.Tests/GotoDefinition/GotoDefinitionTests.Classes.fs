@@ -8,13 +8,13 @@ let private classFieldSource =
         "\n"
         [ "let id77 = 0"
           "type C ="
-          "  val id77 (*loc-77*) : int" ]
+          "  val id77{caret} (*loc-77*) : int" ]
 
 [<Fact>]
 let ``GotoDefinition.InsideClass.Bug3176`` () =
     assertGoToDefinitionOnLine
         "val id77 (*loc-77*) : int"
-        (markCaretAfterLeadingIdent classFieldSource "id77 (*loc-77*)")
+        classFieldSource
 
 let private classSource =
     String.concat

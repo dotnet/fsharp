@@ -193,6 +193,10 @@ module Checker =
         let symbolUses = getSymbolUses markedSource
         symbolUses |> List.exactlyOne
 
+    let getDeclarationLocation (markedSource: string) =
+        let context, checkResults = getCheckedResolveContext markedSource
+        checkResults.GetDeclarationLocation(context)
+
     let getTooltipWithOptions (options: string array) (markedSource: string) =
         let context = getResolveContext markedSource
         let _, checkResults = getParseAndCheckResultsWithOptions options context.Source

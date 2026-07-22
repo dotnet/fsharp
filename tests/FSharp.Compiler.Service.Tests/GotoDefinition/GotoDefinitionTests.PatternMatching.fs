@@ -10,14 +10,14 @@ let private nestedLetSource =
           "  let     x = ()"
           "  let rec x = (*loc-9*)"
           "    fun y -> (*loc-10*)"
-          "      x y (*loc-8*)"
+          "      x y{caret} (*loc-8*)"
           "  ()" ]
 
 [<Fact>]
 let ``GotoDefinition.Simple.Binding.NestedLetWithXRecParam`` () =
     assertGoToDefinitionOnLine
         "fun y -> (*loc-10*)"
-        (markCaretAfterLeadingIdent nestedLetSource "y (*loc-8*)")
+        nestedLetSource
 
 let private lambdaMultiBindSource =
     String.concat
@@ -69,14 +69,14 @@ let private andPatternSource =
           "  let f x ="
           "    match x with"
           "    | Suc y & z -> (*loc-47*)"
-          "        y (*loc-46*)"
+          "        y{caret} (*loc-46*)"
           "  ()" ]
 
 [<Fact>]
 let ``GotoDefinition.Simple.Tricky.AndPat`` () =
     assertGoToDefinitionOnLine
         "| Suc y & z -> (*loc-47*)"
-        (markCaretAfterLeadingIdent andPatternSource "y (*loc-46*)")
+        andPatternSource
 
 let private consPatternSource =
     String.concat
@@ -85,7 +85,7 @@ let private consPatternSource =
           "  let f xs ="
           "    match xs with"
           "    | x :: xs -> (*loc-49*)"
-          "        x (*loc-48*)"
+          "        x{caret} (*loc-48*)"
           "    | _       -> []"
           "  ()" ]
 
@@ -93,7 +93,7 @@ let private consPatternSource =
 let ``GotoDefinition.Simple.Tricky.ConsPat`` () =
     assertGoToDefinitionOnLine
         "| x :: xs -> (*loc-49*)"
-        (markCaretAfterLeadingIdent consPatternSource "x (*loc-48*)")
+        consPatternSource
 
 let private pairPatternSource =
     String.concat
@@ -102,14 +102,14 @@ let private pairPatternSource =
           "  let f x ="
           "    match x with"
           "    | (y : int, z) -> (*loc-51*)"
-          "         y (*loc-50*)"
+          "         y{caret} (*loc-50*)"
           "  ()" ]
 
 [<Fact>]
 let ``GotoDefinition.Simple.Tricky.PairPat`` () =
     assertGoToDefinitionOnLine
         "| (y : int, z) -> (*loc-51*)"
-        (markCaretAfterLeadingIdent pairPatternSource "y (*loc-50*)")
+        pairPatternSource
 
 let private consWhenSource =
     String.concat
@@ -118,7 +118,7 @@ let private consWhenSource =
           "  let f xs ="
           "    match xs with"
           "    | x :: xs (*loc-54*)"
-          "      when xs <> [] -> (*loc-52*)"
+          "      when xs{caret} <> [] -> (*loc-52*)"
           "        x :: xs (*loc-53*)"
           "  ()" ]
 
@@ -126,4 +126,4 @@ let private consWhenSource =
 let ``GotoDefinition.Simple.Tricky.ConsPatWhenClauseInWhen`` () =
     assertGoToDefinitionOnLine
         "| x :: xs (*loc-54*)"
-        (markCaretAfterLeadingIdent consWhenSource "xs <> [] -> (*loc-52*)")
+        consWhenSource

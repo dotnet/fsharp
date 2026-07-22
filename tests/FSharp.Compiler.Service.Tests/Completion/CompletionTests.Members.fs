@@ -219,7 +219,7 @@ let ``ThirdLevelOfDotting`` () =
     for item in info.Items do
         match item.NameInCode with
         | "BackgroundColor" -> Assert.Equal(CompletionItemKind.Property, item.Kind)
-        | "CancelKeyEvent" -> Assert.Equal(CompletionItemKind.Event, item.Kind)
+        | "CancelKeyPress" -> Assert.Equal(CompletionItemKind.Event, item.Kind)
         | _ -> ()
 
 [<Fact>]

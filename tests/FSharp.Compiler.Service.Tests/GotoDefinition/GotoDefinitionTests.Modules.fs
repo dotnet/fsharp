@@ -6,7 +6,7 @@ open Xunit
 let private moduleDefSource =
     """
                 //regression test for bug 2517
-                module Foo (*MarkerModuleDefinition*) =
+                module Foo{caret} (*MarkerModuleDefinition*) =
                   let x = ()
                 """
 
@@ -14,7 +14,7 @@ let private moduleDefSource =
 let ``ModuleDefinition`` () =
     assertGoToDefinitionOnLine
         "module Foo (*MarkerModuleDefinition*) ="
-        (markCaretAfterLeadingIdent moduleDefSource "Foo (*MarkerModuleDefinition*)")
+        moduleDefSource
 
 let private moduleSource =
     String.concat
@@ -44,7 +44,7 @@ let ``ModuleName.OnDefinitionSite.Bug2517`` () =
     let source =
         """
             namespace GotoDefinition
-            module Foo(*Mark*) =
+            module Foo{caret}(*Mark*) =
             let x = ()"""
 
-    assertGoToDefinitionOnLine "module Foo(*Mark*) =" (markCaretAfterLeadingIdent source "(*Mark*)")
+    assertGoToDefinitionOnLine "module Foo(*Mark*) =" source

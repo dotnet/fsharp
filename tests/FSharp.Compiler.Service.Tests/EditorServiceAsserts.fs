@@ -120,21 +120,13 @@ module EditorServiceAsserts =
         assertLandedOnLine "Goto-def" definitionLine sourceLines expectedLine result
 
     let assertGoToDefinitionFails (markedSource: string) =
-        let context, checkResults = Checker.getCheckedResolveContext markedSource
-        let result =
-            checkResults.GetDeclarationLocation(context)
-
-        match result with
+        match Checker.getDeclarationLocation markedSource with
         | FindDeclResult.DeclFound range ->
             failwithf "Expected goto-def to fail (not DeclFound), but it found a definition at %A" range
         | _ -> ()
 
     let assertGoToDefinitionIsExternal (markedSource: string) =
-        let context, checkResults = Checker.getCheckedResolveContext markedSource
-        let result =
-            checkResults.GetDeclarationLocation(context)
-
-        match result with
+        match Checker.getDeclarationLocation markedSource with
         | FindDeclResult.ExternalDecl _ -> ()
         | other ->
             failwithf "Expected FindDeclResult.ExternalDecl (resolved-but-external), but got %A" other
@@ -149,11 +141,7 @@ module EditorServiceAsserts =
         assertLandedOnLine "Operator goto-def" definitionLine sourceLines expectedLine result
 
     let assertGoToDefinitionToExternalLine (definitionLine: string) (markedSource: string) =
-        let context, checkResults = Checker.getCheckedResolveContext markedSource
-        let result =
-            checkResults.GetDeclarationLocation(context)
-
-        match result with
+        match Checker.getDeclarationLocation markedSource with
         | FindDeclResult.DeclFound range when File.Exists range.FileName ->
             let landedLines =
                 File.ReadAllText(range.FileName).Replace("\r\n", "\n").Split('\n')

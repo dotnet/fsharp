@@ -358,7 +358,7 @@ let pp= plot(Area(xs,ys))
 
     [<Fact>]
     let ``Bug2283 - missing reference and nested generic classes`` () =
-        let _, checkResults = getParseAndCheckResults """
+        let _, checkResults = getParseAndCheckResultsUniqueName """
 #r "NestedClasses.dll"
 //753 atomType -> atomType DOT path typeArgs
 let specificIdent (x : RootNamespace.ClassOfT<int>.NestedClassOfU<string>) = x

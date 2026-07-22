@@ -10,14 +10,14 @@ let private nestedLetRecSource =
           "  let     x = ()"
           "  let rec x = (*loc-9*)"
           "    fun y -> (*loc-10*)"
-          "      x y (*loc-8*)"
+          "      x{caret} y (*loc-8*)"
           "  ()" ]
 
 [<Fact>]
 let ``GotoDefinition.Simple.Binding.NestedLetWithXRec`` () =
     assertGoToDefinitionOnLine
         "let rec x = (*loc-9*)"
-        (markCaretAfterLeadingIdent nestedLetRecSource "x y (*loc-8*)")
+        nestedLetRecSource
 
 let private asPatternSource =
     String.concat
@@ -44,7 +44,7 @@ let private lambdaMultiBindSource =
     String.concat
         "\n"
         [ "let _ ="
-          "  fun x (*loc-37*)"
+          "  fun x{caret} (*loc-37*)"
           "      x -> (*loc-38*)"
           "    x (*loc-39*)" ]
 
@@ -52,13 +52,13 @@ let private lambdaMultiBindSource =
 let ``GotoDefinition.Simple.Tricky.LambdaMultBind1`` () =
     assertGoToDefinitionOnLine
         "fun x (*loc-37*)"
-        (markCaretAfterLeadingIdent lambdaMultiBindSource "x (*loc-37*)")
+        lambdaMultiBindSource
 
 let private quotedKeywordSource =
     String.concat
         "\n"
         [ "let _ ="
-          "  let rec ``let`` = (*loc-74*)"
+          "  let rec ``let{caret}`` = (*loc-74*)"
           "    function 0 -> 1"
           "           | n -> n * ``let`` (n - 1) (*loc-75*)" ]
 
@@ -66,7 +66,7 @@ let private quotedKeywordSource =
 let ``GotoDefinition.Simple.Tricky.QuotedKeyword`` () =
     assertGoToDefinitionOnLine
         "let rec ``let`` = (*loc-74*)"
-        (markCaretAfterLeadingIdent quotedKeywordSource "let`` = (*loc-74*)")
+        quotedKeywordSource
 
 let private structConstructorSource =
     String.concat
@@ -116,15 +116,15 @@ let ``GotoDefinition.Abbreviation.Bug193064`` () =
     let source =
         """
             type X = int
-            let f (x:X) = x(*Marker*) """
+            let f (x:X) = x{caret}(*Marker*) """
 
-    assertGoToDefinitionOnLine "let f (x:X) = x(*Marker*)" (markCaretAfterLeadingIdent source "x(*Marker*)")
+    assertGoToDefinitionOnLine "let f (x:X) = x(*Marker*)" source
 
 [<Fact>]
 let ``GotoDefinition.UnitOfMeasure.Bug193064`` () =
     let source =
         """
             open Microsoft.FSharp.Data.UnitSystems.SI
-            UnitSymbols.A(*Marker*)"""
+            UnitSymbols.A{caret}(*Marker*)"""
 
-    assertGoToDefinitionToExternalLine "type A = ampere" (markCaretAfterLeadingIdent source "A(*Marker*)")
+    assertGoToDefinitionToExternalLine "type A = ampere" source
