@@ -12,20 +12,20 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-		<PackageReference Include="Microsoft.VisualStudio.Extensibility.Sdk" Version="17.13.39620" />
-		<PackageReference Include="Microsoft.VisualStudio.Extensibility.Build" Version="17.13.39620" />
-		<PackageReference Include="Microsoft.VisualStudio.LanguageServer.Protocol.Internal" Version="17.13.9" />
-		<PackageReference Include="Microsoft.VisualStudio.ProjectSystem.Query" Version="17.13.66" />
-		<PackageReference Include="Microsoft.VisualStudio.Threading" Version="17.13.2" />
-		<!--<PackageReference Include="Microsoft.VisualStudio.OpenTelemetry.ClientExtensions" Version="0.1.718-beta" />
-		<PackageReference Include="Microsoft.VisualStudio.OpenTelemetry.Collector" Version="0.1.718-beta" />
-		<PackageReference Include="OpenTelemetry" Version="1.11.2" />
-		<PackageReference Include="OpenTelemetry.Api" Version="1.11.2" />
-		<PackageReference Include="OpenTelemetry.Api.ProviderBuilderExtensions" Version="1.11.2" />
-		<PackageReference Include="OpenTelemetry.Exporter.Console" Version="1.11.2" />
-		<PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.11.2" />
-		<PackageReference Include="OpenTelemetry.Extensions.Hosting" Version="1.11.2" />
-		<PackageReference Include="System.Diagnostics.DiagnosticSource" Version="9.0.0" />-->
+		<PackageReference Include="Microsoft.VisualStudio.Extensibility.Sdk" />
+		<PackageReference Include="Microsoft.VisualStudio.Extensibility.Build" />
+		<PackageReference Include="Microsoft.VisualStudio.LanguageServer.Protocol.Internal" />
+		<PackageReference Include="Microsoft.VisualStudio.ProjectSystem.Query" />
+		<PackageReference Include="Microsoft.VisualStudio.Threading" />
+		<!--<PackageReference Include="Microsoft.VisualStudio.OpenTelemetry.ClientExtensions" />
+		<PackageReference Include="Microsoft.VisualStudio.OpenTelemetry.Collector" />
+		<PackageReference Include="OpenTelemetry" />
+		<PackageReference Include="OpenTelemetry.Api" />
+		<PackageReference Include="OpenTelemetry.Api.ProviderBuilderExtensions" />
+		<PackageReference Include="OpenTelemetry.Exporter.Console" />
+		<PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" />
+		<PackageReference Include="OpenTelemetry.Extensions.Hosting" />
+		<PackageReference Include="System.Diagnostics.DiagnosticSource" />-->
 	</ItemGroup>
 
 	<ItemGroup>

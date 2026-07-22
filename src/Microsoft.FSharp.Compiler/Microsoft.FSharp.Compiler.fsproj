@@ -12,7 +12,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.DotNet.NuGetRepack.Tasks" Version="$(MicrosoftDotNetNuGetRepackTasksVersion)" />
+    <PackageReference Include="Microsoft.DotNet.NuGetRepack.Tasks" />
   </ItemGroup>
   <!-- TODO: Remove UsingTask when upgrading to Arcade 11: https://github.com/dotnet/fsharp/issues/19557 -->
   <PropertyGroup>

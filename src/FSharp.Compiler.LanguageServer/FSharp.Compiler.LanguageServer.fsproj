@@ -8,10 +8,10 @@
 	</PropertyGroup>
 
 	<ItemGroup Label="Package References">
-		<PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="8.0.0" />
-		<PackageReference Include="Microsoft.VisualStudio.LanguageServer.Protocol" Version="17.13.6-preview" />
-		<PackageReference Include="Microsoft.VisualStudio.Threading" Version="17.12.21" />
-		<PackageReference Include="StreamJsonRpc" Version="2.25.29" />
+		<PackageReference Include="Microsoft.Extensions.DependencyInjection" />
+		<PackageReference Include="Microsoft.VisualStudio.LanguageServer.Protocol" />
+		<PackageReference Include="Microsoft.VisualStudio.Threading" />
+		<PackageReference Include="StreamJsonRpc" />
 	</ItemGroup>
 
 	<ItemGroup>
@@ -28,7 +28,7 @@
 	</ItemGroup>
 
 	<ItemGroup Condition="'$(FSHARPCORE_USE_PACKAGE)' == 'true'">
-		<PackageReference Include="FSharp.Core" Version="$(FSharpCoreShippedPackageVersionValue)" />
+		<PackageReference Include="FSharp.Core" />
 	</ItemGroup>
 
 	<ItemGroup>

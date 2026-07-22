@@ -9,14 +9,14 @@
 
   <!-- xUnit3 packages for all test projects (except Test.Utilities which is a library) -->
   <ItemGroup Condition="($(MSBuildProjectName.EndsWith('.Tests')) OR $(MSBuildProjectName.EndsWith('.ComponentTests')) OR $(MSBuildProjectName.EndsWith('.UnitTests'))) AND '$(ExcludeFromTestPackageReferences)' != 'true'">
-    <PackageReference Include="xunit.v3.mtp-v2" Version="$(XunitVersion)" />
-    <PackageReference Include="xunit.v3.runner.console" Version="$(XunitRunnerConsoleVersion)" />
+    <PackageReference Include="xunit.v3.mtp-v2" />
+    <PackageReference Include="xunit.v3.runner.console" />
     <!-- MTP HangDump extension for hang detection (replaces VSTest blame-hang-timeout) -->
-    <PackageReference Include="Microsoft.Testing.Extensions.HangDump" Version="$(MicrosoftTestingExtensionsHangDumpVersion)" />
+    <PackageReference Include="Microsoft.Testing.Extensions.HangDump" />
     <!-- Xunit XML test logger for CI-friendly xunit v2 format output -->
-    <PackageReference Include="XunitXml.TestLogger" Version="$(XunitXmlTestLoggerVersion)" />
+    <PackageReference Include="XunitXml.TestLogger" />
     <!-- ObjectModel is required at runtime by XunitXml.TestLogger but not declared as a transitive dependency -->
-    <PackageReference Include="Microsoft.TestPlatform.ObjectModel" Version="$(MicrosoftTestPlatformVersion)" />
+    <PackageReference Include="Microsoft.TestPlatform.ObjectModel" />
   </ItemGroup>
 
   <!-- Enable Microsoft.Testing.Platform runner for all test projects -->
