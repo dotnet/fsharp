@@ -26,6 +26,7 @@
     </Compile>
     <Compile Include="Common.fs" />
     <Compile Include="Checker.fs" />
+    <Compile Include="CheckerExtensionsTests.fs" />
     <Compile Include="TypeChecker\Obsolete.fs" />
     <Compile Include="GeneratedCodeSymbolsTests.fs" />
     <Compile Include="BreakpointLocationTests.fs" />
