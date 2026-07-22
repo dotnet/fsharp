@@ -55,8 +55,13 @@
   <Target Name="UseLocalFSharpCoreReference" BeforeTargets="ResolveAssemblyReferences">
     <Error Condition="!Exists('$(LocalFSharpCoreAssemblyPath)')" Text="The local FSharp.Core override could not be found at '$(LocalFSharpCoreAssemblyPath)'." />
     <ItemGroup>
+      <Reference Remove="@(Reference)" Condition="'%(Reference.Identity)' == 'FSharp.Core' or '%(Reference.FileName)' == 'FSharp.Core' or '%(Reference.NuGetPackageId)' == 'FSharp.Core'" />
       <ReferencePath Remove="@(ReferencePath)" Condition="'%(ReferencePath.Filename)' == 'FSharp.Core' and '%(ReferencePath.Extension)' == '.dll'" />
       <ReferenceCopyLocalPaths Remove="@(ReferenceCopyLocalPaths)" Condition="'%(ReferenceCopyLocalPaths.Filename)' == 'FSharp.Core' and '%(ReferenceCopyLocalPaths.Extension)' == '.dll'" />
+      <Reference Include="FSharp.Core">
+        <HintPath>$(LocalFSharpCoreAssemblyPath)</HintPath>
+        <Private>true</Private>
+      </Reference>
       <ReferencePath Include="$(LocalFSharpCoreAssemblyPath)">
         <Private>true</Private>
       </ReferencePath>
