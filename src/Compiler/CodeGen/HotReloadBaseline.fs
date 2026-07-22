@@ -97,10 +97,23 @@ type MethodDefinitionMetadataHandles =
 /// enclosing TypeRef row, so a TypeRef can only be matched by its full scope chain - never by
 /// name alone.
 /// </summary>
+[<StructuralEquality; StructuralComparison>]
+type AssemblyReferenceKey =
+    {
+        Name: string
+        MajorVersion: int
+        MinorVersion: int
+        BuildNumber: int
+        RevisionNumber: int
+        Culture: string
+        PublicKeyOrToken: byte list
+        Flags: int
+    }
+
 [<RequireQualifiedAccess>]
 type TypeReferenceScope =
-    /// TypeRef resolved against an AssemblyRef row, identified by the referenced assembly's simple name.
-    | Assembly of assemblyName: string
+    /// TypeRef resolved against an AssemblyRef row, identified by its complete metadata identity.
+    | Assembly of assembly: AssemblyReferenceKey
     /// Nested TypeRef whose resolution scope is its enclosing TypeRef.
     | Nested of enclosing: TypeReferenceKey
 
@@ -278,7 +291,7 @@ type FSharpEmitBaseline =
         SynthesizedTypeShapes: Map<string, SynthesizedTypeShape>
         MetadataHandles: BaselineHandleCache
         TypeReferenceTokens: Map<TypeReferenceKey, int>
-        AssemblyReferenceTokens: Map<string, int>
+        AssemblyReferenceTokens: Map<AssemblyReferenceKey, int>
         /// Baseline MemberRef row contents keyed by row id, for content-validated token
         /// passthrough in delta emission (extended with delta-added rows on chaining).
         /// Empty for baselines whose bytes were unavailable — passthrough then stays
@@ -1817,21 +1830,41 @@ let private buildEventHandlesFromBytes
     |> Map.ofSeq
 
 /// Build assembly reference tokens from baseline using ILBaselineReader.
-let private buildAssemblyReferenceTokensFromBytes (reader: ILBaselineReader.BaselineMetadataReader) : Map<string, int> =
+let private assemblyReferenceKeyFromBytes
+    (reader: ILBaselineReader.BaselineMetadataReader)
+    (assemblyRef: ILBaselineReader.AssemblyRefRowData)
+    =
+    {
+        AssemblyReferenceKey.Name = reader.GetString(assemblyRef.NameOffset)
+        MajorVersion = assemblyRef.MajorVersion
+        MinorVersion = assemblyRef.MinorVersion
+        BuildNumber = assemblyRef.BuildNumber
+        RevisionNumber = assemblyRef.RevisionNumber
+        Culture =
+            if assemblyRef.Culture = 0 then
+                ""
+            else
+                reader.GetString assemblyRef.Culture
+        PublicKeyOrToken = reader.GetBlob assemblyRef.PublicKeyOrToken |> Array.toList
+        Flags = assemblyRef.Flags
+    }
+
+/// Build assembly reference tokens from baseline using the complete AssemblyRef row identity.
+let private buildAssemblyReferenceTokensFromBytes (reader: ILBaselineReader.BaselineMetadataReader) : Map<AssemblyReferenceKey, int> =
     seq {
         for rowId in 1 .. reader.AssemblyRefCount do
             match reader.GetAssemblyRef(rowId) with
             | Some assemblyRef ->
-                let name = reader.GetString(assemblyRef.NameOffset)
+                let key = assemblyReferenceKeyFromBytes reader assemblyRef
                 // AssemblyRef table index is 0x23, token = (0x23 << 24) | rowId
                 let token = (0x23 <<< 24) ||| rowId
-                yield name, token
+                yield key, token
             | None -> ()
     }
     |> Map.ofSeq
 
 /// Build type reference tokens from baseline using ILBaselineReader.
-/// Keys carry the full typed scope chain (AssemblyRef name, or the enclosing TypeRef key for
+/// Keys carry the full typed scope chain (AssemblyRef identity, or the enclosing TypeRef key for
 /// nested TypeRefs) so rows with duplicate names under different scopes stay distinguishable.
 let private buildTypeReferenceTokensFromBytes (reader: ILBaselineReader.BaselineMetadataReader) : Map<TypeReferenceKey, int> =
     let keyCache = Dictionary<int, TypeReferenceKey option>()
@@ -1854,7 +1887,7 @@ let private buildTypeReferenceTokensFromBytes (reader: ILBaselineReader.Baseline
                             // AssemblyRef scope (table 0x23 = 35)
                             if tableIndex = 35 then
                                 reader.GetAssemblyRef(scopeRowId)
-                                |> Option.map (fun assemblyRef -> TypeReferenceScope.Assembly(reader.GetString(assemblyRef.NameOffset)))
+                                |> Option.map (assemblyReferenceKeyFromBytes reader >> TypeReferenceScope.Assembly)
                             // Nested TypeRef scope (table 0x01 = 1)
                             elif tableIndex = 1 && scopeRowId <> rowId then
                                 tryKeyForRow scopeRowId (depth + 1) |> Option.map TypeReferenceScope.Nested
