@@ -1,7 +1,6 @@
 module internal FSharp.Compiler.SynthesizedTypeMaps
 
 open System
-open System.Collections.Concurrent
 open System.Collections.Generic
 
 open FSharp.Compiler.GeneratedNames
@@ -17,8 +16,9 @@ open FSharp.Compiler.Syntax.PrettyNaming
 /// </summary>
 type FSharpSynthesizedTypeMaps() =
     let syncLock = obj ()
-    let buckets = ConcurrentDictionary<string, ResizeArray<string>>()
-    let ordinals = ConcurrentDictionary<string, int>()
+    // Every access is protected by syncLock so allocation order and bucket updates stay atomic.
+    let buckets = Dictionary<string, ResizeArray<string>>(StringComparer.Ordinal)
+    let ordinals = Dictionary<string, int>(StringComparer.Ordinal)
     let mutable usesRecordedSnapshot = false
 
     let makeHotReloadName (baseName: string) ordinal =
@@ -35,6 +35,14 @@ type FSharpSynthesizedTypeMaps() =
         bucket
 
     let computeName basicName index = makeHotReloadName basicName index
+
+    let getOrAddBucket mapKey =
+        match buckets.TryGetValue mapKey with
+        | true, bucket -> bucket
+        | _ ->
+            let bucket = ResizeArray<string>()
+            buckets.Add(mapKey, bucket)
+            bucket
 
     let tryGetHotReloadOrdinal (mapKey: string) (name: string) =
         match GeneratedNames.TryNormalizeHotReloadReplayName name with
@@ -207,7 +215,7 @@ type FSharpSynthesizedTypeMaps() =
     member _.GetOrAddName(basicName: string) =
         lock syncLock (fun () ->
             let mapKey = GeneratedNames.SynthesizedNameMapKey basicName
-            let bucket = buckets.GetOrAdd(mapKey, fun _ -> ResizeArray())
+            let bucket = getOrAddBucket mapKey
 
             // Keep ordinal reservation and bucket mutation in one critical section so
             // concurrent callers cannot observe or produce out-of-order allocations.
@@ -240,11 +248,11 @@ type FSharpSynthesizedTypeMaps() =
     /// <summary>Captures the current stable names grouped by compiler-generated base name.</summary>
     member _.Snapshot: seq<struct (string * string[])> =
         lock syncLock (fun () ->
-            // Materialize the snapshot under the lock to avoid race conditions
-            [|
-                for KeyValue(key, bucket) in buckets do
-                    yield struct (key, bucket.ToArray())
-            |]
+            // Copy and order the complete snapshot while holding the allocation lock.
+            buckets
+            |> Seq.map (fun (KeyValue(key, bucket)) -> struct (key, bucket.ToArray()))
+            |> Seq.sortWith (fun struct (left, _) struct (right, _) -> StringComparer.Ordinal.Compare(left, right))
+            |> Seq.toArray
             :> seq<struct (string * string[])>)
 
     member _.UsesRecordedSnapshot = lock syncLock (fun () -> usesRecordedSnapshot)
