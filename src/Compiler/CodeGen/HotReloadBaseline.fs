@@ -1916,8 +1916,7 @@ let private buildTypeReferenceTokensFromBytes (reader: ILBaselineReader.Baseline
     }
     |> Map.ofSeq
 
-/// Attach metadata handles from PE bytes without using SRM MetadataReader.
-let attachMetadataHandlesFromBytes (bytes: byte[]) (baseline: FSharpEmitBaseline) : FSharpEmitBaseline =
+let private attachMetadataHandlesFromBytesCore (bytes: byte[]) (baseline: FSharpEmitBaseline) : FSharpEmitBaseline =
     match ILBaselineReader.BaselineMetadataReader.Create(bytes) with
     | None -> baseline // Return unchanged if we can't read the metadata
     | Some reader ->
@@ -1991,6 +1990,18 @@ let attachMetadataHandlesFromBytes (bytes: byte[]) (baseline: FSharpEmitBaseline
             TypeSpecSignatures = typeSpecSignatures
             CustomAttributeRows = customAttributeRows
         }
+
+/// Attach metadata handles from PE bytes without using SRM MetadataReader.
+let attachMetadataHandlesFromBytes (bytes: byte[]) (baseline: FSharpEmitBaseline) : FSharpEmitBaseline =
+    try
+        attachMetadataHandlesFromBytesCore bytes baseline
+    with
+    | :? BadImageFormatException
+    | :? IO.IOException
+    | :? ArgumentException
+    | :? IndexOutOfRangeException
+    | :? InvalidOperationException
+    | :? OverflowException -> baseline
 
 /// <summary>
 /// Create a baseline directly from emitted assembly artifacts.
