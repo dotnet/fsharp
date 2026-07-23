@@ -93,6 +93,14 @@ module ILBaselineReaderTests =
     let private makeFirstTableRowCountNegative assemblyBytes =
         mutateStream "#~" (fun bytes stream -> writeInt32 bytes (stream.DataOffset + 24) -1) assemblyBytes
 
+    let private withStringsStreamSize size assemblyBytes =
+        mutateStream "#Strings" (fun bytes stream -> writeInt32 bytes (stream.HeaderOffset + 4) size) assemblyBytes
+
+    let private getModuleNameOffsetAndValue (reader: BaselineMetadataReader) =
+        match reader.GetModule() with
+        | Some row when row.NameOffset > 0 -> row.NameOffset, reader.GetString row.NameOffset
+        | _ -> failwith "The test assembly does not contain a named module row."
+
     let private findSubArray (needle: byte[]) (haystack: byte[]) =
         seq { 0 .. haystack.Length - needle.Length }
         |> Seq.tryFind (fun offset -> haystack.AsSpan(offset, needle.Length).SequenceEqual needle)
@@ -347,6 +355,27 @@ module ILBaselineReaderTests =
 
         let m = moduleDef.Value
         Assert.True(m.MvidIndex > 0, "MVID index should be positive")
+
+    [<Fact>]
+    let ``BaselineMetadataReader rejects a string offset outside the strings stream`` () =
+        let bytes = getTestAssemblyBytes ()
+        let reader = BaselineMetadataReader.Create(bytes) |> Option.get
+        let nameOffset, _ = getModuleNameOffsetAndValue reader
+        let malformedBytes = withStringsStreamSize 1 bytes
+        let malformedReader = BaselineMetadataReader.Create(malformedBytes) |> Option.get
+
+        Assert.Throws<BadImageFormatException>(fun () -> malformedReader.GetString(nameOffset) |> ignore)
+
+    [<Fact>]
+    let ``BaselineMetadataReader rejects a string without a terminator inside the strings stream`` () =
+        let bytes = getTestAssemblyBytes ()
+        let reader = BaselineMetadataReader.Create(bytes) |> Option.get
+        let nameOffset, name = getModuleNameOffsetAndValue reader
+        let malformedSize = nameOffset + System.Text.Encoding.UTF8.GetByteCount(name)
+        let malformedBytes = withStringsStreamSize malformedSize bytes
+        let malformedReader = BaselineMetadataReader.Create(malformedBytes) |> Option.get
+
+        Assert.Throws<BadImageFormatException>(fun () -> malformedReader.GetString(nameOffset) |> ignore)
 
     [<Fact>]
     let ``BaselineMetadataReader.GetTypeRef returns valid data for existing rows`` () =
