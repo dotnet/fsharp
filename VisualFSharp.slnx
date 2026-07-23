@@ -176,9 +176,6 @@
     <Project Path="vsintegration/tests/FSharp.Editor.IntegrationTests/FSharp.Editor.IntegrationTests.csproj">
       <BuildType Solution="Proto|*" Project="Debug" />
     </Project>
-    <Project Path="vsintegration/tests/FSharp.Editor.Apex.IntegrationTests/FSharp.Editor.Apex.IntegrationTests.csproj">
-      <BuildType Solution="Proto|*" Project="Debug" />
-    </Project>
     <Project Path="vsintegration/tests/FSharp.Editor.Tests/FSharp.Editor.Tests.fsproj">
       <BuildType Solution="Proto|*" Project="Debug" />
     </Project>
