@@ -177,11 +177,9 @@ let private receiverShapeOk (leadingArgs: Expr list) takesInstanceArg =
         | [ _ ] -> true
         | _ -> false
 
-/// The closed-delegate thunk passes the Target into a static target's first parameter with no unboxing,
-/// so a value-type leading argument has no closed form (unlike an instance receiver's unboxing stub).
 let private staticLeadingArgIsRefType g takesInstanceArg (leadingArgs: Expr list) =
     match leadingArgs with
-    | [ recv ] when not takesInstanceArg -> not (isStructTy g (tyOfExpr g recv))
+    | [ recv ] when not takesInstanceArg -> isRefTy g (tyOfExpr g recv)
     | _ -> true
 
 /// Boxing the receiver needs it as a value: '&localVar' is recovered by the recognizer, but any other
@@ -189,6 +187,11 @@ let private staticLeadingArgIsRefType g takesInstanceArg (leadingArgs: Expr list
 let private receiverNotByref g (leadingArgs: Expr list) =
     match leadingArgs with
     | [ recv ] -> not (isByrefTy g (tyOfExpr g recv))
+    | _ -> true
+
+let private receiverNotTypar g (leadingArgs: Expr list) =
+    match leadingArgs with
+    | [ recv ] -> not (isTyparTy g (tyOfExpr g recv))
     | _ -> true
 
 /// The receiver is evaluated once at the construction site rather than on every Invoke, which is only
@@ -227,6 +230,7 @@ let fsharpValDirectlyBindable
         && receiverBindable exprHasEffect g invokeParams leadingArgs
         && staticLeadingArgIsRefType g takesInstanceArg leadingArgs
         && receiverNotByref g leadingArgs
+        && receiverNotTypar g leadingArgs
     then
         ValueSome(virtualCall, takesInstanceArg)
     else
@@ -250,6 +254,7 @@ let ilMethodDirectlyBindable
     && receiverBindable exprHasEffect g invokeParams leadingArgs
     && staticLeadingArgIsRefType g takesInstanceArg leadingArgs
     && receiverNotByref g leadingArgs
+    && receiverNotTypar g leadingArgs
 
 /// Residual IL compatibility check; the type checker verified the call and the forwarding match pinned
 /// the shape. Parameter types are deliberately not compared - value types are exact by construction and
@@ -276,7 +281,7 @@ let signatureMatches
 
     arityMatches && returnMatches
 
-let receiverInfo (leadingArgs: Expr list) virtualCall =
+let receiverInfo (leadingArgs: Expr list) virtualCall isInstanceReceiver =
     match leadingArgs with
-    | [ recv ] -> Some(recv, virtualCall)
+    | [ recv ] -> Some(recv, virtualCall, isInstanceReceiver)
     | _ -> None

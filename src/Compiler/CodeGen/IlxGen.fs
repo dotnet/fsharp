@@ -7621,7 +7621,7 @@ and GenDelegateExpr cenv cgbuf eenvouter expr (TObjExprMethod(slotsig, _attribs,
                                         ilMethArgTys
                                         targetMspec
                                 then
-                                    Some(targetMspec, receiverInfo leadingArgs virtualCall)
+                                    Some(targetMspec, receiverInfo leadingArgs virtualCall takesInstanceArg)
                                 else
                                     None
                     | ValueNone -> None
@@ -7660,7 +7660,7 @@ and GenDelegateExpr cenv cgbuf eenvouter expr (TObjExprMethod(slotsig, _attribs,
                     // delegee types, so structural IL type comparison reports false negatives even for
                     // primitives; the arity check is the sound residual guard (the call is already typed).
                     if targetMspec.FormalArgTypes.Length - numBoundLeadingFormals = numDelegeeParams then
-                        Some(targetMspec, receiverInfo leadingArgs isVirtual)
+                        Some(targetMspec, receiverInfo leadingArgs isVirtual ilMethRef.CallingConv.IsInstance)
                     else
                         None
                 else
@@ -7675,14 +7675,14 @@ and GenDelegateExpr cenv cgbuf eenvouter expr (TObjExprMethod(slotsig, _attribs,
             // Static target: null Target.
             GenUnit cenv eenvouter m cgbuf
             CG.EmitInstr cgbuf (pop 0) (Push [ g.ilg.typ_IntPtr ]) (I_ldftn targetMspec)
-        | Some(receiverExpr, isVirtual) ->
-            // Instance target: the receiver becomes the Target.
+        | Some(receiverExpr, isVirtual, isInstanceReceiver) ->
+            // The leading argument becomes the Target: an instance receiver, or a static method's closed-over first argument.
             GenExpr cenv cgbuf eenvouter receiverExpr Continue
 
-            if targetMspec.DeclaringType.Boxity.IsAsValue then
-                // Box a copy as the 'object' Target; invocation reaches 'this' through the runtime's
-                // unboxing stub, matching the closure's by-value capture. (Struct instance methods are
-                // non-virtual, so the ldftn path below is taken.)
+            if isInstanceReceiver && targetMspec.DeclaringType.Boxity.IsAsValue then
+                // Box a copy of a value-type instance receiver as the 'object' Target; invocation reaches 'this'
+                // through the runtime's unboxing stub, matching the closure's by-value capture. Only an instance
+                // receiver is boxed - a static closed-over first argument is already a reference.
                 CG.EmitInstr cgbuf (pop 1) (Push [ g.ilg.typ_Object ]) (I_box targetMspec.DeclaringType)
 
             if isVirtual then

@@ -543,6 +543,40 @@ let main _ =
     |> compileExeAndRun
     |> shouldSucceed
 
+// A static method on a value type whose first argument is a reference type: that argument becomes the CLR's
+// closed-over Target (a reference), not a value-type instance receiver, so it must be passed as-is and must
+// NOT be boxed as the declaring struct.
+[<Fact>]
+let ``Static method on a value type with a reference first argument is not boxed (preview)`` () =
+    FSharp """
+module StaticValueTypeFirstArg
+
+open System
+
+[<Struct>]
+type V =
+    static member Pick (s: string, n: int) : int = s.Length + n
+
+[<EntryPoint>]
+let main _ =
+    // F# static member on a struct: the leading arg "abc" is a reference, closed over as the Target.
+    let d = Func<int, int>(fun n -> V.Pick("abc", n))
+    if d.Invoke 10 <> 13 then failwithf "fsharp: expected 13 but got %d" (d.Invoke 10)
+    if d.Method.Name <> "Pick" then failwithf "fsharp: expected direct 'Pick' but got '%s'" d.Method.Name
+    if not (d.Target :? string) then failwith "fsharp: Target should be the reference first argument, not a boxed struct"
+
+    // BCL static method on a struct (System.Int32): the leading arg "41" is a reference, closed over as the Target.
+    let b = Func<int>(fun () -> Int32.Parse "41")
+    if b.Invoke() <> 41 then failwithf "il: expected 41 but got %d" (b.Invoke())
+    if b.Method.Name <> "Parse" then failwithf "il: expected direct 'Parse' but got '%s'" b.Method.Name
+    if not (b.Target :? string) then failwith "il: Target should be the reference first argument, not a boxed struct"
+    0
+        """
+    |> withLangVersionPreview
+    |> withOptions [ "--optimize+" ]
+    |> compileExeAndRun
+    |> shouldSucceed
+
 // Case 53: a byref Invoke parameter with a mutating body is not a transparent forwarding call, so it stays
 // a closure and mutates through the byref correctly.
 [<Fact>]
@@ -724,6 +758,139 @@ let main _ =
     if acc <> 1002 then failwithf "forwarding: wrong result %d" acc
     if d3.Method.Name <> "bump" then failwithf "forwarding: expected direct 'bump' but got '%s'" d3.Method.Name
     if not (isNull d3.Target) then failwith "forwarding: Target should be null for a static target"
+    0
+        """
+    |> withLangVersionPreview
+    |> withOptions [ "--optimize+" ]
+    |> compileExeAndRun
+    |> shouldSucceed
+
+// A static method's closed-over first argument must be a *known* reference type: the CLR stores it as the
+// delegate's 'object' Target and passes it unboxed into the method's first by-value parameter, so a value type
+// has no closed form. A type parameter is not known to be a reference type (it could be instantiated with a
+// value type), so closing over a type-parameter-typed first argument stays a closure - a direct delegate would
+// push an unboxed !!T where an object Target is expected (invalid IL, InvalidProgramException at runtime).
+[<Fact>]
+let ``Static method with a type-parameter first argument stays a closure (preview)`` () =
+    FSharp """
+module GenericStaticFirstArgClosure
+
+open System
+
+let pick<'T> (tag: 'T) (n: int) : int = n + 1
+
+let make<'T> (v: 'T) = Func<int, int>(fun n -> pick v n)
+
+[<EntryPoint>]
+let main _ =
+    // 'T = int (value type): must be a closure, not a direct delegate closing over an unboxed int.
+    let di = make 100
+    if di.Invoke 5 <> 6 then failwithf "int: wrong result %d" (di.Invoke 5)
+    if di.Method.Name <> "Invoke" then failwithf "int: expected closure 'Invoke' but got '%s'" di.Method.Name
+
+    // 'T = string (reference type): also a closure, since the recognizer cannot know 'T is a reference type.
+    let ds = make "abc"
+    if ds.Invoke 5 <> 6 then failwithf "string: wrong result %d" (ds.Invoke 5)
+    if ds.Method.Name <> "Invoke" then failwithf "string: expected closure 'Invoke' but got '%s'" ds.Method.Name
+    0
+        """
+    |> withLangVersionPreview
+    |> withOptions [ "--optimize+" ]
+    |> compileExeAndRun
+    |> shouldSucceed
+
+// An instance receiver typed as a bare type parameter has no direct form either: generic code shares one body
+// across reference instantiations but specializes value ones, so pushing an unboxed !!T as the 'object' Target
+// is invalid IL for a value-type instantiation (and unverifiable even for a reference one). Both a struct and a
+// class instantiation must therefore stay a closure.
+[<Fact>]
+let ``Type-parameter instance receiver stays a closure (preview)`` () =
+    FSharp """
+module TyparInstanceReceiverClosure
+
+open System
+
+type IFoo =
+    abstract M : int -> int
+
+[<Struct>]
+type SFoo =
+    interface IFoo with
+        member _.M x = x + 1
+
+type CFoo() =
+    interface IFoo with
+        member _.M x = x + 1
+
+let make<'T when 'T :> IFoo> (x: 'T) = Func<int, int>(x.M)
+
+[<EntryPoint>]
+let main _ =
+    // 'T = struct implementing IFoo: a direct delegate would emit invalid IL, so a closure is kept.
+    let ds = make (SFoo())
+    if ds.Invoke 5 <> 6 then failwithf "struct: wrong result %d" (ds.Invoke 5)
+    if ds.Method.Name <> "Invoke" then failwithf "struct: expected closure 'Invoke' but got '%s'" ds.Method.Name
+
+    // 'T = class implementing IFoo: also a closure, since the receiver type is a bare type parameter.
+    let dc = make (CFoo())
+    if dc.Invoke 5 <> 6 then failwithf "class: wrong result %d" (dc.Invoke 5)
+    if dc.Method.Name <> "Invoke" then failwithf "class: expected closure 'Invoke' but got '%s'" dc.Method.Name
+    0
+        """
+    |> withLangVersionPreview
+    |> withOptions [ "--optimize+" ]
+    |> compileExeAndRun
+    |> shouldSucceed
+
+// A BCL instance method on a value type is reached via the ILCall path and boxes the receiver as the Target
+// (the same box logic as an F# struct instance receiver, exercised through imported metadata).
+[<Fact>]
+let ``BCL value-type instance method targets the real method (preview)`` () =
+    FSharp """
+module BclStructInstanceDirect
+
+open System
+
+[<EntryPoint>]
+let main _ =
+    // Int32.CompareTo(int) is an instance method on a value type.
+    let d = Func<int, int>(fun x -> (42).CompareTo(x))
+    if d.Invoke 42 <> 0 then failwithf "compare-eq: %d" (d.Invoke 42)
+    if d.Invoke 100 >= 0 then failwithf "compare-lt: %d" (d.Invoke 100)
+    if d.Invoke 1 <= 0 then failwithf "compare-gt: %d" (d.Invoke 1)
+    if d.Method.Name <> "CompareTo" then failwithf "expected direct 'CompareTo' but got '%s'" d.Method.Name
+    if isNull d.Target then failwith "Target should be the boxed receiver"
+    0
+        """
+    |> withLangVersionPreview
+    |> withOptions [ "--optimize+" ]
+    |> compileExeAndRun
+    |> shouldSucceed
+
+// Property accessors compile to get_/set_ methods and are direct instance targets like any other member; the
+// setter additionally exercises a void-returning instance target.
+[<Fact>]
+let ``Property getter and setter are emitted directly (preview)`` () =
+    FSharp """
+module PropertyAccessorDirect
+
+open System
+
+type C() =
+    let mutable v = 7
+    member _.Value with get () = v and set x = v <- x
+
+[<EntryPoint>]
+let main _ =
+    let c = C()
+    let g = Func<int>(fun () -> c.Value)
+    if g.Invoke() <> 7 then failwithf "getter: %d" (g.Invoke())
+    if g.Method.Name <> "get_Value" then failwithf "getter: expected 'get_Value' but got '%s'" g.Method.Name
+
+    let s = Action<int>(fun x -> c.Value <- x)
+    s.Invoke 99
+    if c.Value <> 99 then failwithf "setter did not run: %d" c.Value
+    if s.Method.Name <> "set_Value" then failwithf "setter: expected 'set_Value' but got '%s'" s.Method.Name
     0
         """
     |> withLangVersionPreview
