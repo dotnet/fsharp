@@ -28,7 +28,6 @@
     <!-- FSharp.Core version -->
     <!-- For FSMajorVersion 10, use MinorVersion 1 to indicate breaking changes in FSharp.Core -->
     <FSMinorVersion Condition="'$(FSMajorVersion)' == '10'">1</FSMinorVersion>
-    <FSCoreProductVersion>$(FSMajorVersion).$(FSMinorVersion)</FSCoreProductVersion>
     <FSCorePackageVersionValue>$(FSMajorVersion).$(FSMinorVersion).$(FSBuildVersion)</FSCorePackageVersionValue>
     <FSCoreVersionPrefix>$(FSMajorVersion).$(FSMinorVersion).$(FSBuildVersion)</FSCoreVersionPrefix>
     <FSCoreVersion>$(FSMajorVersion).$(FSMinorVersion).0.0</FSCoreVersion>
@@ -127,8 +126,6 @@
     <!-- Roslyn packages. Rest is managed by maestro bot and is in the imported .Details.props file -->
     <MicrosoftCodeAnalysisTestResourcesProprietaryVersion>2.0.28</MicrosoftCodeAnalysisTestResourcesProprietaryVersion>
     <!-- Visual Studio Shell packages -->
-    <MicrosoftVisualStudioInteropVersion>$(MicrosoftVisualStudioShellPackagesVersion)</MicrosoftVisualStudioInteropVersion>
-    <MicrosoftVisualStudioImagingInterop140DesignTimeVersion>$(VisualStudioShellProjectsPackages)</MicrosoftVisualStudioImagingInterop140DesignTimeVersion>
     <MicrosoftInternalVisualStudioShellFrameworkVersion>$(MicrosoftVisualStudioShellPackagesVersion)</MicrosoftInternalVisualStudioShellFrameworkVersion>
     <MicrosoftVisualStudioManagedInterfacesVersion>$(VisualStudioShellProjectsPackages)</MicrosoftVisualStudioManagedInterfacesVersion>
     <!-- Interop packages are pinned to the version required by Microsoft.VisualStudio.SDK (pulled transitively via Microsoft.CodeAnalysis.ExternalAccess.FSharp), which is newer than the other shell packages. -->
@@ -185,11 +182,6 @@
     <!-- Misc. Visual Studio packages -->
     <MicrosoftVSSDKBuildToolsVersion>17.14.2120</MicrosoftVSSDKBuildToolsVersion>
     <MicrosoftVisualFSharpMicrosoftVisualStudioShellUIInternalVersion>17.0.0</MicrosoftVisualFSharpMicrosoftVisualStudioShellUIInternalVersion>
-    <!-- -->
-    <!-- setup packages -->
-    <MicroBuildCoreVersion>0.2.0</MicroBuildCoreVersion>
-    <MicroBuildCoreSentinelVersion>1.0.0</MicroBuildCoreSentinelVersion>
-    <MicroBuildPluginsSwixBuildVersion>1.1.87</MicroBuildPluginsSwixBuildVersion>
     <!-- -->
     <!-- other packages -->
     <BenchmarkDotNetVersion>0.13.10</BenchmarkDotNetVersion>
