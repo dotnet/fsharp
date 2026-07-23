@@ -120,4 +120,23 @@ set "_officialArg="
 if defined OfficialBuildId set "_officialArg=/p:OfficialBuildId=%OfficialBuildId%"
 powershell -NoProfile -ExecutionPolicy ByPass -Command "& '%~dp0common\build.ps1' -ci -sign -warnAsError:$false -configuration Release /p:DotNetSignType=%SignType% %_officialArg% /p:MicroBuild_SigningEnabled=true /p:TeamName=FSharp; exit $LASTEXITCODE"
 if errorlevel 1 ( echo Error: signing failed 1>&2 & exit /b 1 )
+
+rem --- Step 7 (opt-in via BUILD_VSMAN): lean VS insertion .vsman drop. Produces a Visual Studio setup manifest
+rem    (Microsoft.FSharp.vsman + payload) describing ONLY the signed VisualFSharpFull.vsix (compiler + IDE -
+rem    where the sqlite CVE lives), via the MicroBuild SWIX FinalizeManifest. The SwixBuild plugin is provided
+rem    by the MicroBuildSwixPlugin pipeline task (MicroBuildPluginDirectory); MicroBuild.Core is already in
+rem    .\packages from Step 1. Uses DESKTOP MSBuild (the swix/vsman projects are legacy ToolsVersion 15.0).
+rem    Gated so a drop-authoring failure never affects the proven product/tests/signed-VSIX path. ---
+if not defined BUILD_VSMAN ( echo vsman drop skipped ^(set BUILD_VSMAN=1 to build the lean .vsman insertion drop^) & exit /b 0 )
+echo ---------------- Building lean VS insertion .vsman drop ----------------
+set "_vswhere=%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\vswhere.exe"
+set "_msbuild="
+for /f "usebackq tokens=*" %%M in (`"%_vswhere%" -latest -products * -requires Microsoft.Component.MSBuild -find MSBuild\**\Bin\MSBuild.exe`) do set "_msbuild=%%M"
+if not defined _msbuild ( echo Error: desktop MSBuild not found via vswhere 1>&2 & exit /b 1 )
+echo Using desktop MSBuild: %_msbuild%
+echo MicroBuildPluginDirectory=%MicroBuildPluginDirectory%
+"%_msbuild%" "%_root%\setup\Swix\Microsoft.FSharp.Lean.vsmanproj" /p:Configuration=Release /p:BUILD_BUILDNUMBER=%OfficialBuildId% /bl:"%_root%\artifacts\log\Release\vsman.binlog"
+if errorlevel 1 ( echo Error: .vsman drop build failed 1>&2 & exit /b 1 )
+echo ---------------- Lean .vsman insertion drop built ----------------
+if exist "%_root%\Release\insertion" ( dir "%_root%\Release\insertion" ) else ( echo Error: Release\insertion not produced 1>&2 & exit /b 1 )
 exit /b 0

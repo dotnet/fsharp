@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Lean VS insertion manifest: produces a .vsman describing ONLY the signed VisualFSharpFull.vsix
+     (compiler + IDE - where the sqlite CVE lives). Deliberately excludes the legacy SDK targeting
+     component and the loose-file Compiler/Dependencies/IDE components (which would package unsigned
+     net40\bin files). Everything referenced here is already Microsoft-signed inside the VSIX. -->
+<Project ToolsVersion="15.0" DefaultTargets="Build" InitialTargets="IncludeFSharpManifests" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+
+    <Import Project="..\FSharp.Setup.props" />
+
+    <PropertyGroup>
+        <FSharpSourcesRoot>..\..\src</FSharpSourcesRoot>
+        <FinalizeManifest>true</FinalizeManifest>
+        <FinalizeSkipLayout>true</FinalizeSkipLayout>
+        <IsPackage>true</IsPackage>
+        <OutputPath>$(FSharpSourcesRoot)\..\$(Configuration)\insertion</OutputPath>
+        <InsertionDir>$(OutputPath)</InsertionDir>
+        <!-- The signed VSIX + its component json are emitted by the VisualFSharpFull build here (bin\$(Configuration)),
+             which is exactly what eng\Signing.props signs. Override the net40\bin default from FSharp.Setup.props. -->
+        <VsixBuildLocation Condition="'$(VsixBuildLocation)' == '' or !Exists('$(VsixBuildLocation)\VisualFSharpFull.vsix')">$(FSharpSourcesRoot)\..\vsintegration\Vsix\VisualFSharpFull\bin\$(Configuration)</VsixBuildLocation>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <InsertionItems Include="$(VsixBuildLocation)\VisualFSharpFull.vsix" />
+        <InsertionItems Include="$(VsixBuildLocation)\Microsoft.FSharp.VSIX.Full.Core.json" />
+    </ItemGroup>
+
+    <Import Project="$(FSharpSourcesRoot)\Microbuild.Settings.targets" />
+
+    <Target Name="CopyInsertionItems">
+        <MakeDir Directories="$(InsertionDir)" />
+        <Copy SourceFiles="@(InsertionItems)" DestinationFolder="$(InsertionDir)" />
+    </Target>
+
+    <Target Name="IncludeFSharpManifests" DependsOnTargets="CopyInsertionItems">
+        <ItemGroup>
+            <MergeManifest Include="$(OutputPath)\Microsoft.FSharp.VSIX.Full.Core.json" />
+        </ItemGroup>
+    </Target>
+</Project>
