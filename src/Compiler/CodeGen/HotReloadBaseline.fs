@@ -1584,7 +1584,7 @@ let private toPortablePdbSnapshot (expectedContentId: byte[]) (pdbBytes: byte[])
             EntryPointToken = metadata.EntryPointToken
         })
 
-let tryReadFromAssemblyAndPdbBytes (assemblyBytes: byte[]) (portablePdbBytes: byte[] option) =
+let private tryReadFromAssemblyAndPdbBytesCore (assemblyBytes: byte[]) (portablePdbBytes: byte[] option) =
     match
         metadataSnapshotFromBytes assemblyBytes, ILBaselineReader.BaselineMetadataReader.Create assemblyBytes, readModuleMvid assemblyBytes
     with
@@ -1682,6 +1682,19 @@ let tryReadFromAssemblyAndPdbBytes (assemblyBytes: byte[]) (portablePdbBytes: by
                 SequencePointSnapshots = sequencePointSnapshots
             }
     | _ -> None
+
+let tryReadFromAssemblyAndPdbBytes (assemblyBytes: byte[]) (portablePdbBytes: byte[] option) =
+    try
+        tryReadFromAssemblyAndPdbBytesCore assemblyBytes portablePdbBytes
+    with
+    // Treat malformed metadata as an unreadable baseline so a watch host can rebuild
+    // instead of letting an invalid heap terminate the hot reload session.
+    | :? BadImageFormatException
+    | :? System.IO.IOException
+    | :? ArgumentException
+    | :? IndexOutOfRangeException
+    | :? InvalidOperationException
+    | :? OverflowException -> None
 
 let readFromAssemblyAndPdbBytes (assemblyBytes: byte[]) (portablePdbBytes: byte[] option) =
     match tryReadFromAssemblyAndPdbBytes assemblyBytes portablePdbBytes with

@@ -681,6 +681,34 @@ module private Plumbing =
     let truncateGuidStream assemblyBytes =
         mutateStream "#GUID" (fun bytes stream -> writeInt32 bytes (stream.HeaderOffset + 4) 0) assemblyBytes
 
+    let truncateStringsStreamBeforeReferencedStrings assemblyBytes =
+        // Keep only the reserved empty string so every non-zero table index points
+        // outside the declared heap, while the following metadata bytes remain present.
+        mutateStream "#Strings" (fun bytes stream -> writeInt32 bytes (stream.HeaderOffset + 4) 1) assemblyBytes
+
+    let truncateStringsStreamBeforeMethodNameTerminator methodName assemblyBytes =
+        let copy = Array.copy assemblyBytes
+
+        let methodNameOffset =
+            use peReader = new PEReader(ImmutableArray.CreateRange copy)
+            let metadataReader = peReader.GetMetadataReader()
+
+            metadataReader.MethodDefinitions
+            |> Seq.map metadataReader.GetMethodDefinition
+            |> Seq.find (fun methodDef -> metadataReader.GetString(methodDef.Name) = methodName)
+            |> fun methodDef -> MetadataTokens.GetHeapOffset(methodDef.Name)
+
+        let stringsStream =
+            metadataStreamHeaders copy
+            |> List.find (fun stream -> stream.Name = "#Strings")
+
+        let terminatorOffset = methodNameOffset + Text.Encoding.UTF8.GetByteCount(methodName)
+
+        // The name bytes remain inside #Strings, but its terminating zero is now the
+        // first byte outside the declared stream.
+        writeInt32 copy (stringsStream.HeaderOffset + 4) terminatorOffset
+        copy
+
     let addUnsupportedFieldPointerTable assemblyBytes =
         mutateStream "#~" (fun bytes stream ->
             bytes[stream.HeaderOffset + 8] <- byte '#'
@@ -846,6 +874,24 @@ let ``Baseline reader rejects pointer-table indirection in an uncompressed strea
         Plumbing.writeInMemory (Plumbing.buildModule [ "Compute" ]) (Map.empty<string, PdbMethodCustomDebugInfo list>)
 
     let assemblyBytes = Plumbing.addUnsupportedFieldPointerTable assemblyBytes
+    Assert.True((tryReadFromAssemblyAndPdbBytes assemblyBytes (Some pdbBytes)).IsNone)
+
+[<Fact>]
+let ``Baseline reader rejects a string offset outside the strings stream`` () =
+    let assemblyBytes, pdbBytes =
+        Plumbing.writeInMemory (Plumbing.buildModule [ "Compute" ]) (Map.empty<string, PdbMethodCustomDebugInfo list>)
+
+    let assemblyBytes = Plumbing.truncateStringsStreamBeforeReferencedStrings assemblyBytes
+
+    Assert.True((tryReadFromAssemblyAndPdbBytes assemblyBytes (Some pdbBytes)).IsNone)
+
+[<Fact>]
+let ``Baseline reader rejects a string without a terminator inside the strings stream`` () =
+    let assemblyBytes, pdbBytes =
+        Plumbing.writeInMemory (Plumbing.buildModule [ "Compute" ]) (Map.empty<string, PdbMethodCustomDebugInfo list>)
+
+    let assemblyBytes = Plumbing.truncateStringsStreamBeforeMethodNameTerminator "Compute" assemblyBytes
+
     Assert.True((tryReadFromAssemblyAndPdbBytes assemblyBytes (Some pdbBytes)).IsNone)
 
 [<Fact>]
