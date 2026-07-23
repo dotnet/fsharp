@@ -663,7 +663,8 @@ let private createMetadataContext (bytes: byte[]) : MetadataContext option =
 
                 let tablesStart = tablesOffset + 24 + rowCountSize
 
-                let stringsStream = streamHeaders |> List.tryFind (fun header -> header.Name = "#Strings")
+                let stringsStream =
+                    streamHeaders |> List.tryFind (fun header -> header.Name = "#Strings")
 
                 let blobOffset =
                     streamHeaders
@@ -680,7 +681,10 @@ let private createMetadataContext (bytes: byte[]) : MetadataContext option =
                         StringIndexSize = if stringsBig then 4 else 2
                         GuidIndexSize = if guidsBig then 4 else 2
                         BlobIndexSize = if blobsBig then 4 else 2
-                        StringsStreamOffset = stringsStream |> Option.map (fun header -> header.Offset) |> Option.defaultValue 0
+                        StringsStreamOffset =
+                            stringsStream
+                            |> Option.map (fun header -> header.Offset)
+                            |> Option.defaultValue 0
                         StringsStreamSize = stringsStream |> Option.map (fun header -> header.Size) |> Option.defaultValue 0
                         BlobStreamOffset = blobOffset
                     }
