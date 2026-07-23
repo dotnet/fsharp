@@ -26,6 +26,55 @@ module ILBaselineReaderTests =
         let assemblyPath = assembly.Location
         File.ReadAllBytes(assemblyPath)
 
+    let private readInt32 (bytes: byte[]) offset =
+        int bytes[offset]
+        ||| (int bytes[offset + 1] <<< 8)
+        ||| (int bytes[offset + 2] <<< 16)
+        ||| (int bytes[offset + 3] <<< 24)
+
+    let private writeInt32 (bytes: byte[]) offset value =
+        bytes[offset] <- byte value
+        bytes[offset + 1] <- byte (value >>> 8)
+        bytes[offset + 2] <- byte (value >>> 16)
+        bytes[offset + 3] <- byte (value >>> 24)
+
+    let private withStringsStreamSize size (assemblyBytes: byte[]) =
+        let copy = Array.copy assemblyBytes
+
+        use stream = new MemoryStream(copy)
+        use peReader = new PEReader(stream)
+        let metadataRoot = peReader.PEHeaders.MetadataStartOffset
+        let versionLength = readInt32 copy (metadataRoot + 12)
+        let streamsOffset = metadataRoot + 16 + ((versionLength + 3) &&& ~~~3)
+        let streamCount = int copy[streamsOffset + 2] ||| (int copy[streamsOffset + 3] <<< 8)
+        let mutable headerOffset = streamsOffset + 4
+        let mutable stringsHeaderOffset = None
+
+        for _ in 1..streamCount do
+            let mutable nameEnd = headerOffset + 8
+
+            while copy[nameEnd] <> 0uy do
+                nameEnd <- nameEnd + 1
+
+            let name = System.Text.Encoding.ASCII.GetString(copy, headerOffset + 8, nameEnd - headerOffset - 8)
+
+            if name = "#Strings" then
+                stringsHeaderOffset <- Some headerOffset
+
+            let paddedNameLength = ((nameEnd - headerOffset - 8 + 1) + 3) &&& ~~~3
+            headerOffset <- headerOffset + 8 + paddedNameLength
+
+        match stringsHeaderOffset with
+        | Some offset ->
+            writeInt32 copy (offset + 4) size
+            copy
+        | None -> failwith "The test assembly does not contain a #Strings stream."
+
+    let private getModuleNameOffsetAndValue (reader: BaselineMetadataReader) =
+        match reader.GetModule() with
+        | Some row when row.NameOffset > 0 -> row.NameOffset, reader.GetString row.NameOffset
+        | _ -> failwith "The test assembly does not contain a named module row."
+
     /// Helper to get SRM heap sizes for comparison
     let private getSrmHeapSizes (metadataReader: MetadataReader) =
         { StringHeapSize = metadataReader.GetHeapSize(HeapIndex.String)
@@ -243,6 +292,27 @@ module ILBaselineReaderTests =
 
         let m = moduleDef.Value
         Assert.True(m.MvidIndex > 0, "MVID index should be positive")
+
+    [<Fact>]
+    let ``BaselineMetadataReader rejects a string offset outside the strings stream`` () =
+        let bytes = getTestAssemblyBytes ()
+        let reader = BaselineMetadataReader.Create(bytes) |> Option.get
+        let nameOffset, _ = getModuleNameOffsetAndValue reader
+        let malformedBytes = withStringsStreamSize 1 bytes
+        let malformedReader = BaselineMetadataReader.Create(malformedBytes) |> Option.get
+
+        Assert.Throws<BadImageFormatException>(fun () -> malformedReader.GetString(nameOffset) |> ignore)
+
+    [<Fact>]
+    let ``BaselineMetadataReader rejects a string without a terminator inside the strings stream`` () =
+        let bytes = getTestAssemblyBytes ()
+        let reader = BaselineMetadataReader.Create(bytes) |> Option.get
+        let nameOffset, name = getModuleNameOffsetAndValue reader
+        let malformedSize = nameOffset + System.Text.Encoding.UTF8.GetByteCount(name)
+        let malformedBytes = withStringsStreamSize malformedSize bytes
+        let malformedReader = BaselineMetadataReader.Create(malformedBytes) |> Option.get
+
+        Assert.Throws<BadImageFormatException>(fun () -> malformedReader.GetString(nameOffset) |> ignore)
 
     [<Fact>]
     let ``BaselineMetadataReader.GetTypeRef returns valid data for existing rows`` () =
