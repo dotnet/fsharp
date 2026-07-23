@@ -347,9 +347,12 @@ type internal FSharpHotReloadService
                                          (Map.count existing.Baseline.EncClosureNames)
                                          outputPath
 
-                                 System.Diagnostics.Debug.Assert(
-                                     false,
-                                     "Hot reload closure-name reconstruction from disk disagrees with the in-process capture session being replaced."
+                                 // A conflicting reconstruction would install names that do not
+                                 // describe the running generation, so fail closed in Release too.
+                                 raise (
+                                     InvalidOperationException(
+                                         "Hot reload closure-name reconstruction from disk disagrees with the in-process capture session being replaced."
+                                     )
                                  )
                              | _ -> ())
 
