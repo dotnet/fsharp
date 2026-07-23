@@ -54,10 +54,4 @@
     <PackageReference Include="FSharp.Core" />
   </ItemGroup>
 
-  <ItemGroup>
-    <PackageReference Include="System.Reflection.Emit" />
-    <PackageReference Include="System.Reflection.Metadata" />
-    <PackageReference Include="System.Runtime.CompilerServices.Unsafe" />
-  </ItemGroup>
-
 </Project>
