@@ -126,6 +126,26 @@ module private Sources =
     let inlineFunction inlineKeyword =
         $"{moduleHeader}let {inlineKeyword}value x = x\n"
 
+    let matchingFunction =
+        moduleHeader
+        + "let value input =\n"
+        + "    match input with\n"
+        + "    | 0 -> 1\n"
+        + "    | _ -> 2\n"
+
+    let rec tryFindMatchExpression expression =
+        match expression with
+        | Expr.Match _ -> Some expression
+        | Expr.Lambda(bodyExpr = body)
+        | Expr.TyLambda(bodyExpr = body) -> tryFindMatchExpression body
+        | Expr.Let(binding = TBind(expr = bindingExpr); bodyExpr = body) ->
+            tryFindMatchExpression bindingExpr |> Option.orElseWith (fun () -> tryFindMatchExpression body)
+        | Expr.LetRec(bindings = bindings; bodyExpr = body) ->
+            bindings
+            |> List.tryPick (fun (TBind(expr = bindingExpr)) -> tryFindMatchExpression bindingExpr)
+            |> Option.orElseWith (fun () -> tryFindMatchExpression body)
+        | _ -> None
+
     let unionWithFields fieldText =
         $"{moduleHeader}type DU = | Case of {fieldText}\n"
 
@@ -224,6 +244,53 @@ module TypedTreeDiffTests =
         let updated = harness.Compile()
 
         let result = harness.Diff baseline updated
+
+        Assert.Empty(result.SemanticEdits)
+        let rudeEdit = Assert.Single(result.RudeEdits)
+        Assert.Equal(RudeEditKind.Unsupported, rudeEdit.Kind)
+
+    [<Fact>]
+    let ``deep decision tree identity fails closed before exhausting the process stack`` () =
+        use harness = new DiffTestHarness()
+        harness.Rewrite(Sources.matchingFunction)
+        let tcGlobals, baselineImpl = harness.Compile()
+
+        let matchExpression =
+            let rec tryFindInContents contents =
+                match contents with
+                | ModuleOrNamespaceContents.TMDefs definitions -> definitions |> List.tryPick tryFindInContents
+                | ModuleOrNamespaceContents.TMDefLet(TBind(expr = body), _) -> Sources.tryFindMatchExpression body
+                | ModuleOrNamespaceContents.TMDefRec(bindings = bindings) ->
+                    bindings
+                    |> List.tryPick (function
+                        | ModuleOrNamespaceBinding.Binding(TBind(expr = body)) -> Sources.tryFindMatchExpression body
+                        | ModuleOrNamespaceBinding.Module(_, nested) -> tryFindInContents nested)
+                | _ -> None
+
+            let (CheckedImplFile(contents = contents)) = baselineImpl
+
+            match tryFindInContents contents with
+            | Some expression -> expression
+            | None -> failwith "Could not locate the match expression in the compiled test input."
+
+        let deepMatchExpression =
+            match matchExpression with
+            | Expr.Match(debugPoint, inputRange, decision, targets, fullRange, exprType) ->
+                let switchInput, switchRange =
+                    match decision with
+                    | TDSwitch(input, _, _, range) -> input, range
+                    | _ -> failwith "Expected the compiled match expression to contain a decision-tree switch."
+
+                let mutable deepDecision = decision
+
+                for _ in 1..600 do
+                    deepDecision <- TDSwitch(switchInput, [], Some deepDecision, switchRange)
+
+                Expr.Match(debugPoint, inputRange, deepDecision, targets, fullRange, exprType)
+            | _ -> failwith "Expected a match expression."
+
+        let updatedImpl = Sources.replaceBindingBodies deepMatchExpression baselineImpl
+        let result = harness.Diff (tcGlobals, baselineImpl) (tcGlobals, updatedImpl)
 
         Assert.Empty(result.SemanticEdits)
         let rudeEdit = Assert.Single(result.RudeEdits)

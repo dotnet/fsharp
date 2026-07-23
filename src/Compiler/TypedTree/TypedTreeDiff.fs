@@ -1260,15 +1260,15 @@ type private ExpressionIdentityTraversal() =
     let activeLinks = HashSet<Expr ref>(HashIdentity.Reference)
     let mutable depth = 0
 
-    member _.EnterExpression() =
-        // The typed tree is normally shallow enough that this protects malformed or
-        // unexpectedly expanded trees without constraining ordinary method bodies.
+    member _.EnterNode() =
+        // Expressions and decision trees share one budget because their mutually
+        // recursive traversal must fail closed before either shape exhausts the stack.
         if depth >= 256 then
             raise (ExpressionIdentityTraversalFailed "Expression identity exceeded the supported nesting depth.")
 
         depth <- depth + 1
 
-    member _.ExitExpression() = depth <- depth - 1
+    member _.ExitNode() = depth <- depth - 1
 
     member _.EnterLink(expressionRef: Expr ref) =
         if not (activeLinks.Add expressionRef) then
@@ -1278,7 +1278,7 @@ type private ExpressionIdentityTraversal() =
         activeLinks.Remove expressionRef |> ignore
 
 let rec private exprIdentityCore (denv: DisplayEnv) (traversal: ExpressionIdentityTraversal) (expr: Expr) =
-    traversal.EnterExpression()
+    traversal.EnterNode()
 
     try
         let recurse = exprIdentityCore denv traversal
@@ -1412,7 +1412,7 @@ let rec private exprIdentityCore (denv: DisplayEnv) (traversal: ExpressionIdenti
 
             identityNode "static-optimization" [ conditionIdentity; recurse whenTrue; recurse whenFalse ]
     finally
-        traversal.ExitExpression()
+        traversal.ExitNode()
 
 and private bindingIdentityCore denv traversal (TBind(var, body, _)) =
     identityNode
@@ -1424,39 +1424,44 @@ and private bindingIdentityCore denv traversal (TBind(var, body, _)) =
         ]
 
 and private decisionTreeIdentityCore denv traversal decision =
-    match decision with
-    | TDSwitch(input, cases, defaultCase, _) ->
-        structuralNode
-            "switch"
-            [
-                exprIdentityCore denv traversal input
-                cases
-                |> List.map (fun (TCase(test, caseTree)) ->
-                    identityNode
-                        "case"
-                        [
-                            decisionTestIdentityCore denv traversal test
-                            decisionTreeIdentityCore denv traversal caseTree
-                        ])
-                |> identityNode "cases"
-                defaultCase
-                |> Option.map (decisionTreeIdentityCore denv traversal)
-                |> Option.defaultValue "none"
-            ]
-    | TDSuccess(results, targetNumber) ->
-        structuralNode
-            "success"
-            [
-                string targetNumber
-                results |> List.map (exprIdentityCore denv traversal) |> identityNode "results"
-            ]
-    | TDBind(binding, body) ->
-        identityNode
-            "decision-bind"
-            [
-                bindingIdentityCore denv traversal binding
-                decisionTreeIdentityCore denv traversal body
-            ]
+    traversal.EnterNode()
+
+    try
+        match decision with
+        | TDSwitch(input, cases, defaultCase, _) ->
+            structuralNode
+                "switch"
+                [
+                    exprIdentityCore denv traversal input
+                    cases
+                    |> List.map (fun (TCase(test, caseTree)) ->
+                        identityNode
+                            "case"
+                            [
+                                decisionTestIdentityCore denv traversal test
+                                decisionTreeIdentityCore denv traversal caseTree
+                            ])
+                    |> identityNode "cases"
+                    defaultCase
+                    |> Option.map (decisionTreeIdentityCore denv traversal)
+                    |> Option.defaultValue "none"
+                ]
+        | TDSuccess(results, targetNumber) ->
+            structuralNode
+                "success"
+                [
+                    string targetNumber
+                    results |> List.map (exprIdentityCore denv traversal) |> identityNode "results"
+                ]
+        | TDBind(binding, body) ->
+            identityNode
+                "decision-bind"
+                [
+                    bindingIdentityCore denv traversal binding
+                    decisionTreeIdentityCore denv traversal body
+                ]
+    finally
+        traversal.ExitNode()
 
 and private decisionTestIdentityCore denv traversal test =
     match test with
