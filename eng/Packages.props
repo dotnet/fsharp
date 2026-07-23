@@ -1,6 +1,7 @@
 <!-- Central Package Management version list. See Directory.Packages.props.
-     Versions flow via eng/Versions.props / eng/Version.Details.props (darc/Maestro).
-     Reference those $(...) properties here; use literals only for external one-offs. -->
+     Darc/Maestro-flowed and repo-shared versions are referenced as $(...) properties from
+     eng/Versions.props / eng/Version.Details.props. Manually-pinned, single-use packages carry
+     their literal version here directly (no indirection through eng/Versions.props). -->
 <Project>
   <ItemGroup>
     <!-- Optimization data (MIBC) — referenced via @(MIBCPackage) in Directory.Build.targets -->
@@ -10,8 +11,7 @@
     <PackageVersion Include="optimization.linux-x64.mibc.runtime" Version="$(optimizationlinuxx64MIBCRuntimeVersion)" />
     <PackageVersion Include="optimization.linux-arm64.mibc.runtime" Version="$(optimizationlinuxarm64MIBCRuntimeVersion)" />
 
-    <PackageVersion Include="Dotnet.ProjInfo" Version="0.37.0" />
-    <PackageVersion Include="FsCheck" Version="$(FsCheckVersion)" />
+    <PackageVersion Include="FsCheck" Version="2.16.6" />
     <PackageVersion Include="FSharp.Core" Version="$(FSharpCoreShippedPackageVersionValue)" />
     <PackageVersion Include="Microsoft.Build" Version="$(MicrosoftBuildVersion)" />
     <PackageVersion Include="Microsoft.Build.Framework" Version="$(MicrosoftBuildFrameworkVersion)" />
@@ -21,61 +21,71 @@
     <PackageVersion Include="Microsoft.CodeAnalysis.EditorFeatures" Version="$(MicrosoftCodeAnalysisEditorFeaturesTextVersion)" />
     <PackageVersion Include="Microsoft.CodeAnalysis.EditorFeatures.Text" Version="$(MicrosoftCodeAnalysisEditorFeaturesTextVersion)" />
     <PackageVersion Include="Microsoft.CodeAnalysis.ExternalAccess.FSharp" Version="$(MicrosoftCodeAnalysisExternalAccessFSharpVersion)" />
-    <PackageVersion Include="Microsoft.CodeAnalysis.Test.Resources.Proprietary" Version="$(MicrosoftCodeAnalysisTestResourcesProprietaryVersion)" />
+    <PackageVersion Include="Microsoft.CodeAnalysis.Test.Resources.Proprietary" Version="2.0.28" />
     <PackageVersion Include="Microsoft.CodeAnalysis.Workspaces.Common" Version="$(MicrosoftCodeAnalysisCSharpVersion)" />
     <PackageVersion Include="Microsoft.CommonLanguageServerProtocol.Framework" Version="4.13.0-3.24579.1" />
-    <PackageVersion Include="Microsoft.DiaSymReader.PortablePdb" Version="$(MicrosoftDiaSymReaderPortablePdbVersion)" />
+    <PackageVersion Include="Microsoft.DiaSymReader.PortablePdb" Version="1.6.0" />
     <PackageVersion Include="Microsoft.DotNet.NuGetRepack.Tasks" Version="$(MicrosoftDotNetNuGetRepackTasksVersion)" />
     <!-- Raised from 8.0.0 to 10.0.0: OpenTelemetry (in test/VS projects) pulls Microsoft.Extensions.Logging 10.0.0,
          which requires Microsoft.Extensions.DependencyInjection >= 10.0.0. FSharp.Compiler.LanguageServer (net8)
          keeps 8.0.0 via a VersionOverride. -->
     <PackageVersion Include="Microsoft.Extensions.DependencyInjection" Version="10.0.0" />
-    <PackageVersion Include="Microsoft.Internal.VisualStudio.Shell.Framework" Version="$(MicrosoftInternalVisualStudioShellFrameworkVersion)" />
-    <PackageVersion Include="Microsoft.Net.Compilers" Version="$(MicrosoftNetCompilersVersion)" />
-    <PackageVersion Include="Microsoft.NETCore.ILAsm" Version="$(MicrosoftNETCoreILAsmVersion)" />
-    <PackageVersion Include="Microsoft.NETCore.ILDAsm" Version="$(MicrosoftNETCoreILDAsmVersion)" />
-    <PackageVersion Include="Microsoft.ServiceHub.Framework" Version="$(MicrosoftServiceHubFrameworkVersion)" />
+    <PackageVersion Include="Microsoft.Internal.VisualStudio.Shell.Framework" Version="18.0.2188-preview.1" />
+    <PackageVersion Include="Microsoft.Net.Compilers" Version="4.3.0-1.22220.8" />
+    <PackageVersion Include="Microsoft.NETCore.ILAsm" Version="5.0.0-preview.7.20364.11" />
+    <PackageVersion Include="Microsoft.NETCore.ILDAsm" Version="5.0.0-preview.7.20364.11" />
+    <PackageVersion Include="Microsoft.ServiceHub.Framework" Version="4.10.128" />
     <PackageVersion Include="Microsoft.Testing.Extensions.HangDump" Version="$(MicrosoftTestingExtensionsHangDumpVersion)" />
     <PackageVersion Include="Microsoft.TestPlatform.ObjectModel" Version="$(MicrosoftTestPlatformVersion)" />
-    <PackageVersion Include="Microsoft.VisualFSharp.Microsoft.VisualStudio.Shell.UI.Internal" Version="$(MicrosoftVisualFSharpMicrosoftVisualStudioShellUIInternalVersion)" />
-    <PackageVersion Include="Microsoft.VisualStudio.Designer.Interfaces" Version="$(MicrosoftVisualStudioDesignerInterfacesVersion)" />
-    <PackageVersion Include="Microsoft.VisualStudio.Editor" Version="$(MicrosoftVisualStudioEditorVersion)" />
+    <PackageVersion Include="Microsoft.VisualFSharp.Microsoft.VisualStudio.Shell.UI.Internal" Version="17.0.0" />
+    <!-- The 18.9.x Visual Studio SDK packages below (Interop/Shell/Editor) are pinned to the versions pulled
+         transitively by Microsoft.VisualStudio.SDK 18.9.496 (via Microsoft.CodeAnalysis.ExternalAccess.FSharp).
+         Under CPM transitive pinning the central pin must match that resolved version, otherwise NU1109 downgrades
+         and MSB3277 assembly-version conflicts break every vsintegration project. -->
+    <PackageVersion Include="Microsoft.VisualStudio.Designer.Interfaces" Version="18.9.438" />
+    <PackageVersion Include="Microsoft.VisualStudio.Editor" Version="$(VisualStudioEditorPackagesVersion)" />
     <PackageVersion Include="Microsoft.VisualStudio.Extensibility.Build" Version="17.13.39620" />
     <PackageVersion Include="Microsoft.VisualStudio.Extensibility.Sdk" Version="17.13.39620" />
-    <PackageVersion Include="Microsoft.VisualStudio.Extensibility.Testing.SourceGenerator" Version="$(MicrosoftVisualStudioExtensibilityTestingSourceGeneratorVersion)" />
-    <PackageVersion Include="Microsoft.VisualStudio.Extensibility.Testing.Xunit" Version="$(MicrosoftVisualStudioExtensibilityTestingSourceGeneratorVersion)" />
-    <PackageVersion Include="Microsoft.VisualStudio.Language.Intellisense" Version="$(MicrosoftVisualStudioLanguageIntellisenseVersion)" />
-    <PackageVersion Include="Microsoft.VisualStudio.Language.StandardClassification" Version="$(MicrosoftVisualStudioLanguageStandardClassificationVersion)" />
+    <PackageVersion Include="Microsoft.VisualStudio.Extensibility.Testing.SourceGenerator" Version="$(MicrosoftVisualStudioExtensibilityTestingVersion)" />
+    <PackageVersion Include="Microsoft.VisualStudio.Extensibility.Testing.Xunit" Version="$(MicrosoftVisualStudioExtensibilityTestingVersion)" />
+    <PackageVersion Include="Microsoft.VisualStudio.Language.Intellisense" Version="$(VisualStudioEditorPackagesVersion)" />
+    <PackageVersion Include="Microsoft.VisualStudio.Language.StandardClassification" Version="$(VisualStudioEditorPackagesVersion)" />
     <!-- Pinned to 17.13.9 (not the projects' 17.13.6-preview floor) because Protocol.Internal 17.13.9,
          referenced by FSharp.VisualStudio.Extension, transitively requires Protocol >= 17.13.9. -->
     <PackageVersion Include="Microsoft.VisualStudio.LanguageServer.Protocol" Version="17.13.9" />
     <PackageVersion Include="Microsoft.VisualStudio.LanguageServer.Protocol.Internal" Version="17.13.9" />
     <PackageVersion Include="Microsoft.VisualStudio.LanguageServices" Version="$(MicrosoftVisualStudioLanguageServicesVersion)" />
-    <PackageVersion Include="Microsoft.VisualStudio.ManagedInterfaces" Version="$(MicrosoftVisualStudioManagedInterfacesVersion)" />
-    <PackageVersion Include="Microsoft.VisualStudio.OLE.Interop" Version="$(MicrosoftVisualStudioOLEInteropVersion)" />
-    <PackageVersion Include="Microsoft.VisualStudio.Package.LanguageService.15.0" Version="$(MicrosoftVisualStudioPackageLanguageService150Version)" />
-    <PackageVersion Include="Microsoft.VisualStudio.Platform.VSEditor" Version="$(MicrosoftVisualStudioPlatformVSEditorVersion)" />
-    <PackageVersion Include="Microsoft.VisualStudio.ProjectSystem" Version="$(MicrosoftVisualStudioProjectSystemVersion)" />
-    <PackageVersion Include="Microsoft.VisualStudio.ProjectSystem.Managed" Version="$(MicrosoftVisualStudioProjectSystemManagedVersion)" />
+    <PackageVersion Include="Microsoft.VisualStudio.ManagedInterfaces" Version="18.0.2077-preview.1" />
+    <PackageVersion Include="Microsoft.VisualStudio.OLE.Interop" Version="18.9.438" />
+    <PackageVersion Include="Microsoft.VisualStudio.Package.LanguageService.15.0" Version="18.9.493" />
+    <!-- Microsoft.VisualStudio.Platform.VSEditor is the runtime editor implementation. Unlike the other editor
+         packages it is not pulled transitively, so it is pinned explicitly to match the 18.9.123 Text.* interfaces;
+         otherwise the VsMocks MEF catalog throws ReflectionTypeLoadException and every legacy VS unit test fails. -->
+    <PackageVersion Include="Microsoft.VisualStudio.Platform.VSEditor" Version="18.9.123" />
+    <PackageVersion Include="Microsoft.VisualStudio.ProjectSystem" Version="18.0.1237-pre" />
+    <PackageVersion Include="Microsoft.VisualStudio.ProjectSystem.Managed" Version="2.3.6152103" />
     <PackageVersion Include="Microsoft.VisualStudio.ProjectSystem.Query" Version="17.13.66" />
-    <PackageVersion Include="Microsoft.VisualStudio.RpcContracts" Version="$(MicrosoftVisualStudioRpcContractsVersion)" />
-    <PackageVersion Include="Microsoft.VisualStudio.Shell.Design" Version="$(MicrosoftVisualStudioShellDesignVersion)" />
-    <PackageVersion Include="Microsoft.VisualStudio.Shell.Immutable.10.0" Version="$(MicrosoftVisualStudioShellImmutable100Version)" />
-    <PackageVersion Include="Microsoft.VisualStudio.Shell.Immutable.11.0" Version="$(MicrosoftVisualStudioShellImmutable110Version)" />
-    <PackageVersion Include="Microsoft.VisualStudio.Shell.Immutable.15.0" Version="$(MicrosoftVisualStudioShellImmutable150Version)" />
-    <PackageVersion Include="Microsoft.VisualStudio.Shell.Interop" Version="$(MicrosoftVisualStudioShellInteropVersion)" />
-    <PackageVersion Include="Microsoft.VisualStudio.SolutionPersistence" Version="$(MicrosoftVisualStudioSolutionPersistenceVersion)" />
-    <PackageVersion Include="Microsoft.VisualStudio.Text.UI.Wpf" Version="$(MicrosoftVisualStudioTextUIWpfVersion)" />
-    <PackageVersion Include="Microsoft.VisualStudio.TextManager.Interop" Version="$(MicrosoftVisualStudioTextManagerInteropVersion)" />
-    <PackageVersion Include="Microsoft.VisualStudio.Threading" Version="$(MicrosoftVisualStudioThreadingVersion)" />
-    <PackageVersion Include="Microsoft.VisualStudio.Validation" Version="$(MicrosoftVisualStudioValidationVersion)" />
+    <PackageVersion Include="Microsoft.VisualStudio.RpcContracts" Version="18.9.453" />
+    <PackageVersion Include="Microsoft.VisualStudio.Shell.Design" Version="18.9.493" />
+    <PackageVersion Include="Microsoft.VisualStudio.Shell.Immutable.10.0" Version="10.0.30319" />
+    <PackageVersion Include="Microsoft.VisualStudio.Shell.Immutable.11.0" Version="11.0.50727" />
+    <PackageVersion Include="Microsoft.VisualStudio.Shell.Immutable.15.0" Version="15.0.25123-Dev15Preview" />
+    <PackageVersion Include="Microsoft.VisualStudio.Shell.Interop" Version="18.9.438" />
+    <!-- Shell.15.0 references SolutionPersistence at runtime without declaring the NuGet dependency (it is expected
+         from the VS install). The standalone VS unit-test host loads Shell.15.0 into a MEF catalog, so the assembly
+         must be deployed next to it or Assembly.GetTypes throws and every legacy VS unit test fails. -->
+    <PackageVersion Include="Microsoft.VisualStudio.SolutionPersistence" Version="1.0.52" />
+    <PackageVersion Include="Microsoft.VisualStudio.Text.UI.Wpf" Version="$(VisualStudioEditorPackagesVersion)" />
+    <PackageVersion Include="Microsoft.VisualStudio.TextManager.Interop" Version="18.9.438" />
+    <PackageVersion Include="Microsoft.VisualStudio.Threading" Version="18.7.19" />
+    <PackageVersion Include="Microsoft.VisualStudio.Validation" Version="18.7.1" />
     <PackageVersion Include="Microsoft.VSSDK.BuildTools" Version="$(MicrosoftVSSDKBuildToolsVersion)" />
-    <PackageVersion Include="Newtonsoft.Json" Version="$(NewtonsoftJsonVersion)" />
-    <PackageVersion Include="NuGet.VisualStudio" Version="$(NuGetVisualStudioVersion)" />
+    <PackageVersion Include="Newtonsoft.Json" Version="13.0.4" />
+    <PackageVersion Include="NuGet.VisualStudio" Version="17.14.0" />
     <!-- Raised from 1.3.0: Microsoft.VisualStudio.ComponentModelHost 18.9.453 (transitive via the VS SDK) requires >= 1.3.1. -->
     <PackageVersion Include="Nullable" Version="1.3.1" />
     <PackageVersion Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.15.3" />
-    <PackageVersion Include="StreamJsonRpc" Version="$(StreamJsonRpcVersion)" />
+    <PackageVersion Include="StreamJsonRpc" Version="2.26.5" />
     <PackageVersion Include="System.Buffers" Version="$(SystemBuffersVersion)" />
     <PackageVersion Include="System.Collections.Immutable" Version="$(SystemCollectionsImmutableCentralVersion)" />
     <PackageVersion Include="System.Composition" Version="$(SystemCompositionVersion)" />

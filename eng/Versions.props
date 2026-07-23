@@ -112,91 +112,27 @@
     <!-- If a System.* package is stuck on version 4.3.x, targets .NET Standard 1.x and hasn't been
     updated in years, you most likely DON'T need it, please exercise caution when adding it to the list. -->
     <SystemReflectionEmitVersion>4.7.0</SystemReflectionEmitVersion>
-    <MicrosoftDiaSymReaderPortablePdbVersion>1.6.0</MicrosoftDiaSymReaderPortablePdbVersion>
-    <!-- Versions for package groups -->
+
+    <!-- Shared version groups referenced by multiple PackageVersion entries in eng/Packages.props.
+         (Single-use package versions are pinned inline there; only genuinely shared or Arcade-read
+         versions live here.) -->
     <!-- Editor packages resolve to 18.9.123 transitively via Microsoft.VisualStudio.SDK 18.9.496 (pulled by
          Microsoft.CodeAnalysis.ExternalAccess.FSharp). Under CPM transitive pinning the central pin must match
          that resolved version, otherwise NU1109 downgrades every vsintegration project. -->
     <VisualStudioEditorPackagesVersion>18.9.123</VisualStudioEditorPackagesVersion>
-    <MicrosoftVisualStudioShellPackagesVersion>18.0.2188-preview.1</MicrosoftVisualStudioShellPackagesVersion>
-    <VisualStudioProjectSystemPackagesVersion>18.0.1237-pre</VisualStudioProjectSystemPackagesVersion>
-    <VisualStudioShellProjectsPackages>18.0.2077-preview.1</VisualStudioShellProjectsPackages>
-    <MicrosoftVisualStudioThreadingPackagesVersion>18.7.19</MicrosoftVisualStudioThreadingPackagesVersion>
-  
-    <!-- Roslyn packages. Rest is managed by maestro bot and is in the imported .Details.props file -->
-    <MicrosoftCodeAnalysisTestResourcesProprietaryVersion>2.0.28</MicrosoftCodeAnalysisTestResourcesProprietaryVersion>
-    <!-- Visual Studio Shell packages -->
-    <MicrosoftInternalVisualStudioShellFrameworkVersion>$(MicrosoftVisualStudioShellPackagesVersion)</MicrosoftInternalVisualStudioShellFrameworkVersion>
-    <MicrosoftVisualStudioManagedInterfacesVersion>$(VisualStudioShellProjectsPackages)</MicrosoftVisualStudioManagedInterfacesVersion>
-    <!-- Interop packages are pinned to the version required by Microsoft.VisualStudio.SDK (pulled transitively via Microsoft.CodeAnalysis.ExternalAccess.FSharp), which is newer than the other shell packages. -->
-    <MicrosoftVisualStudioShellInteropVersion>18.9.438</MicrosoftVisualStudioShellInteropVersion>
-    <MicrosoftVisualStudioTextManagerInteropVersion>18.9.438</MicrosoftVisualStudioTextManagerInteropVersion>
-    <MicrosoftVisualStudioOLEInteropVersion>18.9.438</MicrosoftVisualStudioOLEInteropVersion>
-    <!-- These shell packages are pulled higher transitively by Microsoft.VisualStudio.SDK 18.9.496 (via
-         Microsoft.CodeAnalysis.ExternalAccess.FSharp), so under CPM transitive pinning they must be pinned to
-         the required 18.9.x versions rather than the shell package group; otherwise NU1109. -->
-    <MicrosoftVisualStudioShellDesignVersion>18.9.493</MicrosoftVisualStudioShellDesignVersion>
-    <MicrosoftVisualStudioPackageLanguageService150Version>18.9.493</MicrosoftVisualStudioPackageLanguageService150Version>
-    <MicrosoftVisualStudioDesignerInterfacesVersion>18.9.438</MicrosoftVisualStudioDesignerInterfacesVersion>
-    <MicrosoftVisualStudioShellImmutable100Version>10.0.30319</MicrosoftVisualStudioShellImmutable100Version>
-    <MicrosoftVisualStudioShellImmutable110Version>11.0.50727</MicrosoftVisualStudioShellImmutable110Version>
-    <MicrosoftVisualStudioShellImmutable150Version>15.0.25123-Dev15Preview</MicrosoftVisualStudioShellImmutable150Version>
-
-    <!-- -->
-    <!-- Visual Studio Editor packages -->
-    <MicrosoftVisualStudioEditorVersion>$(VisualStudioEditorPackagesVersion)</MicrosoftVisualStudioEditorVersion>
-    <MicrosoftVisualStudioLanguageStandardClassificationVersion>$(VisualStudioEditorPackagesVersion)</MicrosoftVisualStudioLanguageStandardClassificationVersion>
-    <MicrosoftVisualStudioLanguageIntellisenseVersion>$(VisualStudioEditorPackagesVersion)</MicrosoftVisualStudioLanguageIntellisenseVersion>
-    <!-- Microsoft.VisualStudio.Platform.VSEditor is the runtime implementation of the editor. Unlike the other editor
-         packages it is not pulled transitively by Microsoft.CodeAnalysis.ExternalAccess.FSharp, so it stays at the
-         explicit pin while Microsoft.VisualStudio.Text.* / .Editor get bumped to 18.9.123 transitively. Pin VSEditor to
-         the matching 18.9.123 so its implementation types load against the newer Text.Internal interfaces; otherwise the
-         VsMocks MEF catalog throws ReflectionTypeLoadException and every legacy VS unit test fails. -->
-    <MicrosoftVisualStudioPlatformVSEditorVersion>18.9.123</MicrosoftVisualStudioPlatformVSEditorVersion>
-    <MicrosoftVisualStudioTextUIWpfVersion>$(VisualStudioEditorPackagesVersion)</MicrosoftVisualStudioTextUIWpfVersion>
-    <NuGetVisualStudioVersion>17.14.0</NuGetVisualStudioVersion>
     <MicrosoftVisualStudioExtensibilityTestingVersion>0.1.800-beta</MicrosoftVisualStudioExtensibilityTestingVersion>
-    <MicrosoftVisualStudioExtensibilityTestingSourceGeneratorVersion>$(MicrosoftVisualStudioExtensibilityTestingVersion)</MicrosoftVisualStudioExtensibilityTestingSourceGeneratorVersion>
 
-    <!-- Visual Studio Threading packages -->
-    <MicrosoftVisualStudioThreadingVersion>$(MicrosoftVisualStudioThreadingPackagesVersion)</MicrosoftVisualStudioThreadingVersion>
-
-    <!-- Transitive packages pinned to the versions required by Microsoft.CodeAnalysis.ExternalAccess.FSharp
-         (via Microsoft.VisualStudio.SDK 18.9.496), which are newer than the versions the Shell packages pull in.
-         Pinning them avoids MSB3277 assembly version conflicts across the vsintegration projects. -->
-    <MicrosoftVisualStudioValidationVersion>18.7.1</MicrosoftVisualStudioValidationVersion>
-    <MicrosoftVisualStudioRpcContractsVersion>18.9.453</MicrosoftVisualStudioRpcContractsVersion>
-    <MicrosoftServiceHubFrameworkVersion>4.10.128</MicrosoftServiceHubFrameworkVersion>
-    <StreamJsonRpcVersion>2.26.5</StreamJsonRpcVersion>
-
-    <!-- Microsoft.VisualStudio.Shell.15.0 18.9.x references Microsoft.VisualStudio.SolutionPersistence at runtime but
-         does not declare it as a NuGet dependency (it is expected to come from the VS install). The standalone VS unit
-         test host loads Shell.15.0 into a MEF catalog, so the assembly must be deployed next to it or Assembly.GetTypes
-         throws and every legacy VS unit test fails. -->
-    <MicrosoftVisualStudioSolutionPersistenceVersion>1.0.52</MicrosoftVisualStudioSolutionPersistenceVersion>
-
-    <!-- Visual Studio Project System packages-->
-    <MicrosoftVisualStudioProjectSystemVersion>$(VisualStudioProjectSystemPackagesVersion)</MicrosoftVisualStudioProjectSystemVersion>
-    <MicrosoftVisualStudioProjectSystemManagedVersion>2.3.6152103</MicrosoftVisualStudioProjectSystemManagedVersion>
-
-    <!-- Misc. Visual Studio packages -->
+    <!-- Read by name by the Arcade SDK (tools/VisualStudio.targets injects it into VSIX projects), so it must
+         stay a property rather than being inlined into eng/Packages.props. -->
     <MicrosoftVSSDKBuildToolsVersion>17.14.2120</MicrosoftVSSDKBuildToolsVersion>
-    <MicrosoftVisualFSharpMicrosoftVisualStudioShellUIInternalVersion>17.0.0</MicrosoftVisualFSharpMicrosoftVisualStudioShellUIInternalVersion>
-    <!-- -->
+
     <!-- other packages -->
     <BenchmarkDotNetVersion>0.13.10</BenchmarkDotNetVersion>
-    <FsCheckVersion>2.16.6</FsCheckVersion>
-    <MicrosoftNetCompilersVersion>4.3.0-1.22220.8</MicrosoftNetCompilersVersion>
-     <!-- Making diff way too large, update separately later. e.g. to 6.0.0-rtm.21518.12 and 9.0.0-rc.2.24462.10 or via darc -->
-    <MicrosoftNETCoreILDAsmVersion>5.0.0-preview.7.20364.11</MicrosoftNETCoreILDAsmVersion>
-    <MicrosoftNETCoreILAsmVersion>5.0.0-preview.7.20364.11</MicrosoftNETCoreILAsmVersion>
     <MicrosoftTestPlatformVersion>17.14.1</MicrosoftTestPlatformVersion>
     <MicrosoftTestingExtensionsHangDumpVersion>2.0.2</MicrosoftTestingExtensionsHangDumpVersion>
-    <NewtonsoftJsonVersion>13.0.4</NewtonsoftJsonVersion>
     <XunitVersion>3.2.2</XunitVersion>
     <XunitRunnerConsoleVersion>3.2.2</XunitRunnerConsoleVersion>
     <XunitXmlTestLoggerVersion>8.0.0</XunitXmlTestLoggerVersion>
-    <!-- -->
   </PropertyGroup>
 
 </Project>
