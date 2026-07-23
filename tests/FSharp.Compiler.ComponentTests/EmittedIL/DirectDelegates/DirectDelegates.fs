@@ -864,6 +864,7 @@ let main _ =
         """
     |> withLangVersionPreview
     |> withOptions [ "--optimize+" ]
+    |> withNoWarn 52 // calling an instance method on the '42' literal defensively copies the value type
     |> compileExeAndRun
     |> shouldSucceed
 
