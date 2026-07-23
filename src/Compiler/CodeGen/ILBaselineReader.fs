@@ -574,7 +574,9 @@ let private createMetadataContext (bytes: byte[]) =
                 let stringsBig = (heapSizes &&& 0x01uy) <> 0uy
                 let guidsBig = (heapSizes &&& 0x02uy) <> 0uy
                 let blobsBig = (heapSizes &&& 0x04uy) <> 0uy
-                let stringsStream = streamHeaders |> List.tryFind (fun header -> header.Name = "#Strings")
+
+                let stringsStream =
+                    streamHeaders |> List.tryFind (fun header -> header.Name = "#Strings")
 
                 Some
                     {
@@ -585,7 +587,10 @@ let private createMetadataContext (bytes: byte[]) =
                         StringIndexSize = if stringsBig then 4 else 2
                         GuidIndexSize = if guidsBig then 4 else 2
                         BlobIndexSize = if blobsBig then 4 else 2
-                        StringsStreamOffset = stringsStream |> Option.map (fun header -> header.Offset) |> Option.defaultValue 0
+                        StringsStreamOffset =
+                            stringsStream
+                            |> Option.map (fun header -> header.Offset)
+                            |> Option.defaultValue 0
                         StringsStreamSize = stringsStream |> Option.map (fun header -> header.Size) |> Option.defaultValue 0
                         BlobStreamOffset =
                             streamHeaders
