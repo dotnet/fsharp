@@ -102,9 +102,11 @@
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(DotNetBuildSourceOnly)' != 'true'">
-    <SystemSecurityCryptographyXmlCentralVersion Condition="$([MSBuild]::VersionLessThan('$(SystemSecurityCryptographyXmlVersion)', '10.0.9'))">10.0.9</SystemSecurityCryptographyXmlCentralVersion>
-    <SystemCollectionsImmutableCentralVersion Condition="$([MSBuild]::VersionLessThan('$(SystemCollectionsImmutableVersion)', '10.0.9'))">10.0.9</SystemCollectionsImmutableCentralVersion>
-    <SystemReflectionMetadataCentralVersion Condition="$([MSBuild]::VersionLessThan('$(SystemReflectionMetadataVersion)', '10.0.9'))">10.0.9</SystemReflectionMetadataCentralVersion>
+    <!-- Minimum central version the MSBuild-pulled dotnet/runtime packages must meet (see comment above). -->
+    <SystemRuntimeCentralFloorVersion>10.0.9</SystemRuntimeCentralFloorVersion>
+    <SystemSecurityCryptographyXmlCentralVersion Condition="$([MSBuild]::VersionLessThan('$(SystemSecurityCryptographyXmlVersion)', '$(SystemRuntimeCentralFloorVersion)'))">$(SystemRuntimeCentralFloorVersion)</SystemSecurityCryptographyXmlCentralVersion>
+    <SystemCollectionsImmutableCentralVersion Condition="$([MSBuild]::VersionLessThan('$(SystemCollectionsImmutableVersion)', '$(SystemRuntimeCentralFloorVersion)'))">$(SystemRuntimeCentralFloorVersion)</SystemCollectionsImmutableCentralVersion>
+    <SystemReflectionMetadataCentralVersion Condition="$([MSBuild]::VersionLessThan('$(SystemReflectionMetadataVersion)', '$(SystemRuntimeCentralFloorVersion)'))">$(SystemRuntimeCentralFloorVersion)</SystemReflectionMetadataCentralVersion>
   </PropertyGroup>
 
   <PropertyGroup>
@@ -116,9 +118,8 @@
     <!-- Shared version groups referenced by multiple PackageVersion entries in eng/Packages.props.
          (Single-use package versions are pinned inline there; only genuinely shared or Arcade-read
          versions live here.) -->
-    <!-- Editor packages resolve to 18.9.123 transitively via Microsoft.VisualStudio.SDK 18.9.496 (pulled by
-         Microsoft.CodeAnalysis.ExternalAccess.FSharp). Under CPM transitive pinning the central pin must match
-         that resolved version, otherwise NU1109 downgrades every vsintegration project. -->
+    <!-- Shared pin for the editor packages in eng/Packages.props; must match 18.9.123 (resolved transitively
+         via Microsoft.VisualStudio.SDK 18.9.496). Full NU1109 rationale lives there, next to the 18.9.x pins. -->
     <VisualStudioEditorPackagesVersion>18.9.123</VisualStudioEditorPackagesVersion>
     <MicrosoftVisualStudioExtensibilityTestingVersion>0.1.800-beta</MicrosoftVisualStudioExtensibilityTestingVersion>
 

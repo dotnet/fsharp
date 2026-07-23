@@ -59,9 +59,9 @@
     <PackageVersion Include="Microsoft.VisualStudio.OLE.Interop" Version="18.9.438" />
     <PackageVersion Include="Microsoft.VisualStudio.Package.LanguageService.15.0" Version="18.9.493" />
     <!-- Microsoft.VisualStudio.Platform.VSEditor is the runtime editor implementation. Unlike the other editor
-         packages it is not pulled transitively, so it is pinned explicitly to match the 18.9.123 Text.* interfaces;
-         otherwise the VsMocks MEF catalog throws ReflectionTypeLoadException and every legacy VS unit test fails. -->
-    <PackageVersion Include="Microsoft.VisualStudio.Platform.VSEditor" Version="18.9.123" />
+         packages it is not pulled transitively, so it is pinned explicitly to match the editor interfaces via the
+         shared property; otherwise the VsMocks MEF catalog throws ReflectionTypeLoadException and every legacy VS unit test fails. -->
+    <PackageVersion Include="Microsoft.VisualStudio.Platform.VSEditor" Version="$(VisualStudioEditorPackagesVersion)" />
     <PackageVersion Include="Microsoft.VisualStudio.ProjectSystem" Version="18.0.1237-pre" />
     <PackageVersion Include="Microsoft.VisualStudio.ProjectSystem.Managed" Version="2.3.6152103" />
     <PackageVersion Include="Microsoft.VisualStudio.ProjectSystem.Query" Version="17.13.66" />
