@@ -6,53 +6,49 @@ on:
         - 'main'
         - 'release/*'
 permissions:
+  contents: read
   issues: write
-  pull-requests: write
+  pull-requests: read
 jobs:
   check_release_notes:
     permissions:
-       issues: write
-       pull-requests: write
+      contents: read
+      issues: write
+      pull-requests: read
     env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      GH_TOKEN: ${{ github.token }}
+      PR_AUTHOR: ${{ github.event.pull_request.user.login }}
+      PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+      PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+      PR_LABELS: ${{ toJSON(github.event.pull_request.labels) }}
+      PR_NUMBER: ${{ github.event.pull_request.number }}
+      OPT_OUT_RELEASE_NOTES: ${{ contains(github.event.pull_request.labels.*.name, 'NO_RELEASE_NOTES') }}
+      VNEXT: ${{ vars.VNEXT }}
     runs-on: ubuntu-latest
     steps:
-    - name: Get github ref
-      uses: actions/github-script@v3
-      id: get-pr
-      with:
-        script: |
-          const result = await github.pulls.get({
-            pull_number: context.issue.number,
-            owner: context.repo.owner,
-            repo: context.repo.repo,
-          });
-          return { "pr_number": context.issue.number, "ref": result.data.head.ref, "repository": result.data.head.repo.full_name};
-    - name: Checkout repo
-      uses: actions/checkout@v2
-      with:
-        repository: ${{ fromJson(steps.get-pr.outputs.result).repository }}
-        ref: ${{ fromJson(steps.get-pr.outputs.result).ref }}
-        fetch-depth: 0
     - name: Check for release notes changes
       id: release_notes_changes
       run: |
-        set -e
+        set -euo pipefail
         EOF=$(dd if=/dev/urandom bs=15 count=1 status=none | base64)
         FSHARP_REPO_URL="https://github.com/${GITHUB_REPOSITORY}"
-        PR_AUTHOR="${{ github.event.pull_request.user.login }}"
-        PR_NUMBER=${{ github.event.number }}
         PR_URL="${FSHARP_REPO_URL}/pull/${PR_NUMBER}"
 
-        echo "PR Tags: ${{ toJson(github.event.pull_request.labels) }}"
+        [[ "$PR_BASE_SHA" =~ ^[0-9a-f]{40}$ ]]
+        [[ "$PR_HEAD_SHA" =~ ^[0-9a-f]{40}$ ]]
 
-        OPT_OUT_RELEASE_NOTES=${{ contains(github.event.pull_request.labels.*.name, 'NO_RELEASE_NOTES') }}
-
+        echo "PR Tags: $PR_LABELS"
         echo "Opt out of release notes: $OPT_OUT_RELEASE_NOTES"
+
+        _current_head_sha=$(gh api "repos/${GITHUB_REPOSITORY}/pulls/${PR_NUMBER}" --jq '.head.sha')
+
+        if [[ "$_current_head_sha" != "$PR_HEAD_SHA" ]]; then
+          echo "::notice::Skipping stale release-note run for ${PR_HEAD_SHA}; current head is ${_current_head_sha}."
+          exit 0
+        fi
 
         # VNEXT is a GitHub repository variable set via admin settings
         # It controls the expected release notes version for FSharp.Core and FCS
-        VNEXT="${{ vars.VNEXT }}"
         if [[ -z "$VNEXT" ]]; then
           echo "Error: VNEXT repository variable is not set. Please configure it in GitHub repository settings."
           exit 1
@@ -60,10 +56,17 @@ jobs:
 
         # Parse VS major version from eng/Versions.props for the vNext pattern
         # <VSMajorVersion>18</VSMajorVersion>
-        _vs_major_version=$(grep -oPm1 "(?<=<VSMajorVersion>)[^<]+" eng/Versions.props)
+        _versions_props=$(
+          gh api \
+            -H 'Accept: application/vnd.github.raw+json' \
+            "repos/${GITHUB_REPOSITORY}/contents/eng/Versions.props?ref=${PR_BASE_SHA}"
+        )
+        _vs_major_version=$(
+          sed -n 's:.*<VSMajorVersion>\([^<]*\)</VSMajorVersion>.*:\1:p' <<< "$_versions_props" \
+            | head -n 1
+        )
 
         FSHARP_CORE_VERSION="$VNEXT"
-        FCS_VERSION="$VNEXT"
         VISUAL_STUDIO_VERSION="$_vs_major_version.vNext"
 
         echo "Using VNEXT for release notes: ${VNEXT}"
@@ -89,52 +92,101 @@ jobs:
         RELEASE_NOTES_MESSAGE=""
         RELEASE_NOTES_MESSAGE_DETAILS=""
         RELEASE_NOTES_FOUND=""
-        RELEASE_NOTES_CHANGES_SUMMARY=""
         RELEASE_NOTES_NOT_FOUND=""
         PULL_REQUEST_FOUND=true
 
-        gh repo set-default ${GITHUB_REPOSITORY}
+        _modified_files=$(
+          gh api \
+            --method GET \
+            --paginate \
+            --slurp \
+            "repos/${GITHUB_REPOSITORY}/pulls/${PR_NUMBER}/files" \
+            -f per_page=100
+        )
+        _modified_count=$(jq '[.[][]] | length' <<< "$_modified_files")
 
-        _modified_paths=`gh pr view ${PR_NUMBER} --json files --jq '.files.[].path'`
+        # GitHub caps this endpoint at 3,000 files. At the cap the response may be
+        # incomplete, so fail closed instead of silently missing a protected path.
+        if (( _modified_count >= 3000 )); then
+          echo "::error::Cannot safely validate a PR with 3,000 or more changed files."
+          exit 1
+        fi
 
-        for fields in ${paths[@]}
-        do
+        path_changed() {
+          jq -e --arg path "$1" \
+            'any(.[][]; .filename == $path or (.filename | startswith($path + "/")))' \
+            <<< "$_modified_files" >/dev/null
+        }
+
+        release_note_url() {
+          jq -r --arg file "$1" \
+            'first(.[][] | select(.filename == $file and .status != "removed") | .contents_url) // empty' \
+            <<< "$_modified_files"
+        }
+
+        record_missing_release_note() {
+          local path="$1"
+          local release_notes="$2"
+          local description="**No release notes found or release notes format is not correct**"
+          RELEASE_NOTES_NOT_FOUND+="| \\\`$path\\\` | [$release_notes](${FSHARP_REPO_URL}/tree/main/$release_notes) | ${description} |"
+          RELEASE_NOTES_NOT_FOUND+=$'\n'
+        }
+
+        for fields in "${paths[@]}"; do
             IFS=$'|' read -r path release_notes <<< "$fields"
             echo "Checking for changed files in: $path"
 
             # Check if path is in modified files:
-            if [[ "${_modified_paths[@]}" =~ "${path}" ]]; then
+            if path_changed "$path"; then
                 echo "  Found $path in modified files"
                 echo "      Checking if release notes modified in: $release_notes"
-                if [[ "${_modified_paths[@]}" =~ "${release_notes}" ]]; then
+                if path_changed "$release_notes"; then
                     echo "          Found $release_notes in modified files"
                     echo "              Checking for pull request URL in $release_notes"
 
-                    if [[ ! -f $release_notes ]]; then
-                        echo "              $release_notes does not exist, please, create it."
-                        #exit 1;
-                    fi
+                    _release_note_url=$(release_note_url "$release_notes")
 
-                    _pr_link_occurences=`grep -c "${PR_URL}" $release_notes || true`
+                    if [[ -n "$_release_note_url" ]]; then
+                        if [[ "$_release_note_url" != "https://api.github.com/repos/${GITHUB_REPOSITORY}/contents/"* ]] \
+                          || [[ "$_release_note_url" != *"?ref=${PR_HEAD_SHA}" ]]; then
+                          echo "::error::Release-note content URL does not target the expected repository and PR head."
+                          exit 1
+                        fi
 
-                    echo "              Found $_pr_link_occurences occurences of $PR_URL in $release_notes"
+                        _release_note_file=$(mktemp)
 
-                    if [[ ${_pr_link_occurences} -eq 1 ]]; then
-                        echo "                  Found pull request URL in $release_notes once"
-                        RELEASE_NOTES_FOUND+="> | \\\`$path\\\` | [$release_notes](${FSHARP_REPO_URL}/tree/main/$release_notes) | |"
-                        RELEASE_NOTES_FOUND+=$'\n'
-                    elif [[ ${_pr_link_occurences} -eq 0 ]]; then
-                        echo "                  Did not find pull request URL in $release_notes"
-                        DESCRIPTION="**No current pull request URL (${PR_URL}) found, please consider adding it**"
-                        RELEASE_NOTES_FOUND+="> | \\\`$path\\\` | [$release_notes](${FSHARP_REPO_URL}/tree/main/$release_notes) | ${DESCRIPTION} |"
-                        RELEASE_NOTES_FOUND+=$'\n'
-                        PULL_REQUEST_FOUND=false
+                        if ! gh api \
+                          -H 'Accept: application/vnd.github.raw+json' \
+                          "$_release_note_url" > "$_release_note_file"
+                        then
+                          rm -f "$_release_note_file"
+                          echo "::error::Unable to read $release_notes at PR head $PR_HEAD_SHA."
+                          exit 1
+                        fi
+
+                        _pr_link_occurrences=$(grep -Fc -- "$PR_URL" "$_release_note_file" || true)
+                        rm -f "$_release_note_file"
+
+                        echo "              Found $_pr_link_occurrences occurrences of $PR_URL in $release_notes"
+
+                        if [[ ${_pr_link_occurrences} -eq 1 ]]; then
+                            echo "                  Found pull request URL in $release_notes once"
+                            RELEASE_NOTES_FOUND+="> | \\\`$path\\\` | [$release_notes](${FSHARP_REPO_URL}/tree/main/$release_notes) | |"
+                            RELEASE_NOTES_FOUND+=$'\n'
+                        elif [[ ${_pr_link_occurrences} -eq 0 ]]; then
+                            echo "                  Did not find pull request URL in $release_notes"
+                            DESCRIPTION="**No current pull request URL (${PR_URL}) found, please consider adding it**"
+                            RELEASE_NOTES_FOUND+="> | \\\`$path\\\` | [$release_notes](${FSHARP_REPO_URL}/tree/main/$release_notes) | ${DESCRIPTION} |"
+                            RELEASE_NOTES_FOUND+=$'\n'
+                            PULL_REQUEST_FOUND=false
+                        fi
+                    else
+                        echo "              $release_notes was removed or cannot be read at the PR head."
+                        record_missing_release_note "$path" "$release_notes"
                     fi
                 else
                     echo "          Did not find $release_notes in modified files"
-                    DESCRIPTION="**No release notes found or release notes format is not correct**"
-                    RELEASE_NOTES_NOT_FOUND+="| \\\`$path\\\` | [$release_notes](${FSHARP_REPO_URL}/tree/main/$release_notes) | ${DESCRIPTION} |"
-                    RELEASE_NOTES_NOT_FOUND+=$'\n'
+                    record_missing_release_note "$path" "$release_notes"
                 fi
             else
                 echo "      Nothing found, no release notes required"
@@ -220,60 +272,68 @@ jobs:
             RELEASE_NOTES_MESSAGE+=$RELEASE_NOTES_MESSAGE_DETAILS
         fi
 
-        echo "release-notes-check-message<<$EOF" >>$GITHUB_OUTPUT
+        _current_head_sha=$(gh api "repos/${GITHUB_REPOSITORY}/pulls/${PR_NUMBER}" --jq '.head.sha')
 
-        if [[ "$OPT_OUT_RELEASE_NOTES" = true ]]; then
-            echo "<!-- DO_NOT_REMOVE: release_notes_check -->" >>$GITHUB_OUTPUT
-            echo "" >>$GITHUB_OUTPUT
-            echo "## :warning: Release notes required, but author opted out" >>$GITHUB_OUTPUT
-            echo "" >>$GITHUB_OUTPUT
-            echo "" >>$GITHUB_OUTPUT
-            echo "> [!WARNING]" >>$GITHUB_OUTPUT
-            echo "> **Author opted out of release notes, check is disabled for this pull request.**" >>$GITHUB_OUTPUT
-            echo "> cc @dotnet/fsharp-team-msft" >>$GITHUB_OUTPUT
-        else
-            echo "${RELEASE_NOTES_MESSAGE}" >>$GITHUB_OUTPUT
+        if [[ "$_current_head_sha" != "$PR_HEAD_SHA" ]]; then
+          echo "::notice::Discarding stale release-note result for ${PR_HEAD_SHA}; current head is ${_current_head_sha}."
+          exit 0
         fi
 
-        echo "$EOF" >>$GITHUB_OUTPUT
+        {
+            echo "release-notes-check-message<<$EOF"
+
+            if [[ "$OPT_OUT_RELEASE_NOTES" = true ]]; then
+                echo "<!-- DO_NOT_REMOVE: release_notes_check -->"
+                echo ""
+                echo "## :warning: Release notes required, but author opted out"
+                echo ""
+                echo ""
+                echo "> [!WARNING]"
+                echo "> **Author opted out of release notes, check is disabled for this pull request.**"
+                echo "> cc @dotnet/fsharp-team-msft"
+            else
+                echo "${RELEASE_NOTES_MESSAGE}"
+            fi
+
+            echo "$EOF"
+        } >> "$GITHUB_OUTPUT"
 
         if [[ $RELEASE_NOTES_NOT_FOUND != "" && ${OPT_OUT_RELEASE_NOTES} != true ]]; then
             exit 1
         fi
-    # Did bot already commented the PR?
-    - name: Find Comment
-      if: success() || failure()
-      uses: peter-evans/find-comment@v2.4.0
-      id: fc
-      with:
-        issue-number: ${{github.event.pull_request.number}}
-        comment-author: 'github-actions[bot]'
-        body-includes: '<!-- DO_NOT_REMOVE: release_notes_check -->'
-    # If not, create a new comment
-    - name: Create comment
-      if: steps.fc.outputs.comment-id == '' && (success() || failure())
-      uses: actions/github-script@v6
+    # Keep one bot comment current without evaluating pull request content as JavaScript.
+    - name: Create or update comment
+      if: ${{ (success() || failure()) && steps.release_notes_changes.outputs.release-notes-check-message != '' }}
+      uses: actions/github-script@v9
+      env:
+        COMMENT_BODY: ${{ steps.release_notes_changes.outputs.release-notes-check-message }}
       with:
         github-token: ${{ github.token }}
         script: |
+            const marker = '<!-- DO_NOT_REMOVE: release_notes_check -->';
+            const comments = await github.paginate(github.rest.issues.listComments, {
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                per_page: 100
+            });
+            const existing = comments.find(comment =>
+                comment.user?.login === 'github-actions[bot]' && comment.body?.includes(marker));
+
+            if (existing) {
+                const comment = await github.rest.issues.updateComment({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    comment_id: existing.id,
+                    body: process.env.COMMENT_BODY
+                });
+                return comment.data.id;
+            }
+
             const comment = await github.rest.issues.createComment({
                 issue_number: context.issue.number,
                 owner: context.repo.owner,
                 repo: context.repo.repo,
-                body: `${{steps.release_notes_changes.outputs.release-notes-check-message}}`
-            });
-            return comment.data.id;
-    # If yes, update the comment
-    - name: Update comment
-      if: steps.fc.outputs.comment-id != '' && (success() || failure())
-      uses: actions/github-script@v6
-      with:
-        github-token: ${{ github.token }}
-        script: |
-            const comment = await github.rest.issues.updateComment({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                comment_id: ${{steps.fc.outputs.comment-id}},
-                body: `${{steps.release_notes_changes.outputs.release-notes-check-message}}`
+                body: process.env.COMMENT_BODY
             });
             return comment.data.id;
