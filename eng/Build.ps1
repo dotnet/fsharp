@@ -416,6 +416,11 @@ function TestApexUsingVSTest([string] $targetFramework) {
     $projectName = "FSharp.Editor.Apex.IntegrationTests"
     $apexProject = Join-Path $RepoRoot "vsintegration\tests\$projectName\$projectName.csproj"
 
+    # Create the results directory up-front so the CI 'publish test logs' step never fails on a missing
+    # path, even when the run is skipped below (a marker file records the skip reason).
+    $testResultsDir = "$ArtifactsDir\TestResults\$configuration"
+    Create-Directory $testResultsDir
+
     # The Apex package (MicrosoftTestApexVisualStudioVersion) targets this VS major.minor. Keep in sync;
     # override with FSHARP_APEX_VS_VERSION when a machine's matching VS has a different minor.
     $expectedVsVersion = if (${env:FSHARP_APEX_VS_VERSION}) { ${env:FSHARP_APEX_VS_VERSION} } else { "18.9" }
@@ -437,11 +442,25 @@ function TestApexUsingVSTest([string] $targetFramework) {
         # would make every version comparison fail. Build.ps1 runs under Windows PowerShell 5.1.
         $versions = @()
         $paths = @()
+        $names = @()
         if (Test-Path $vswhere) {
             $versions = @(& $vswhere -all -prerelease -products * -property installationVersion)
             $paths    = @(& $vswhere -all -prerelease -products * -property installationPath)
+            $names    = @(& $vswhere -all -prerelease -products * -property displayName)
         }
         $found = $versions -join ', '
+
+        # Print the full VS inventory for diagnostics (helps explain a skip on CI). Always logged.
+        Write-Host "Visual Studio instances found by vswhere ($($versions.Count)) [vswhere: $vswhere]:"
+        if ($versions.Count -eq 0) {
+            Write-Host "  (none)"
+        }
+        for ($k = 0; $k -lt $versions.Count; $k++) {
+            $mm = ($versions[$k] -split '\.')[0..1] -join '.'
+            $hasIde = Test-Path (Join-Path $paths[$k] "Common7\IDE\devenv.exe")
+            $name = if ($k -lt $names.Count) { $names[$k] } else { "" }
+            Write-Host ("  [{0}] version={1} (major.minor {2}) devenv={3} name='{4}' path={5}" -f $k, $versions[$k], $mm, $hasIde, $name, $paths[$k])
+        }
 
         # Among installs whose major.minor matches the Apex target, pick the first that actually has an
         # IDE (devenv.exe) — excludes Build Tools and catches an incomplete/mid-update install.
@@ -469,6 +488,7 @@ function TestApexUsingVSTest([string] $targetFramework) {
                 Write-Host "##vso[task.logissue type=warning]No installed VS matches the Apex target $expectedVsVersion (found: $found); skipping Apex integration tests (non-gating)."
                 Write-Host "Skipping Apex tests: no VS $expectedVsVersion found among installs [$found]. Set FSHARP_APEX_VS_VERSION or VisualStudio.InstallationUnderTest.Path to run against a different install."
             }
+            Set-Content -Path (Join-Path $testResultsDir "apex-tests-skipped.txt") -Value "Apex integration tests skipped: no usable VS matching target $expectedVsVersion (installed: $found)."
             return
         }
         Write-Host "Selected VS $selectedVersion at '$vsDir' for the Apex tests (target $expectedVsVersion)."
@@ -495,8 +515,6 @@ function TestApexUsingVSTest([string] $targetFramework) {
         throw "Apex test assembly not found at '$testAssembly' after build."
     }
 
-    $testResultsDir = "$ArtifactsDir\TestResults\$configuration"
-    Create-Directory $testResultsDir
     $jobName = if ($env:SYSTEM_JOBNAME) { $env:SYSTEM_JOBNAME } else { "local" }
     $trxFileName = "$projectName.$targetFramework.$jobName.trx"
 
