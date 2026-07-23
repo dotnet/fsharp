@@ -55,6 +55,43 @@ module internal FSharpHotReloadRudeEditMapping =
 
     let ofDiagnostics (diagnostics: RudeEditDiagnostic list) = diagnostics |> List.map ofDiagnostic
 
+/// Enforces the generation-zero closure-name reconstruction invariant when a project is recaptured.
+module internal FSharpHotReloadClosureNameRecapture =
+
+    /// Rejects a non-empty on-disk reconstruction that conflicts with the matching in-process capture.
+    let validate
+        (traceSessionTransitions: bool)
+        (outputPath: string)
+        (currentGeneration: int)
+        (existing: FSharpEmitBaseline)
+        (reconstructed: FSharpEmitBaseline)
+        =
+        if
+            existing.ModuleId = reconstructed.ModuleId
+            // CurrentGeneration is the generation the NEXT delta will produce; 1 means
+            // the session still holds the unmodified generation-zero capture.
+            && currentGeneration = 1
+            && not (Map.isEmpty existing.EncClosureNames)
+            // An empty reconstruction is a designed fail-closed outcome for a recaptured
+            // mid-session DLL. Only conflicting non-empty rows are inconsistent.
+            && not (Map.isEmpty reconstructed.EncClosureNames)
+            && existing.EncClosureNames <> reconstructed.EncClosureNames
+        then
+            if traceSessionTransitions then
+                printfn
+                    "[fsharp-hotreload][session] WARNING: CDI-reconstructed closure-name tables (%d methods) disagree with the in-process capture session's tables (%d methods) for %s"
+                    (Map.count reconstructed.EncClosureNames)
+                    (Map.count existing.EncClosureNames)
+                    outputPath
+
+            // A conflicting reconstruction would install names that do not describe the
+            // running generation, so this must fail closed in both Debug and Release.
+            raise (
+                InvalidOperationException(
+                    "Hot reload closure-name reconstruction from disk disagrees with the in-process capture session being replaced."
+                )
+            )
+
 /// File-system operations whose failure behavior is part of the hot reload session contract.
 module internal FSharpHotReloadFileSystem =
 
@@ -284,34 +321,13 @@ type internal FSharpHotReloadService
                             // for closures added by deltas, while a restart from the gen-0 disk
                             // baseline correctly resets to the generation-0 tables.)
                             (match editAndContinueService.TryGetSession() with
-                             | ValueSome existing when
-                                 existing.Baseline.ModuleId = baseline.ModuleId
-                                 // CurrentGeneration is the generation the NEXT delta will
-                                 // produce; 1 means no delta has been applied yet, i.e. the
-                                 // session still holds the unmodified gen-0 capture.
-                                 && existing.CurrentGeneration = 1
-                                 && not (Map.isEmpty existing.Baseline.EncClosureNames)
-                                 // An EMPTY reconstruction is a designed fail-closed outcome
-                                 // (recapture DLLs carry mid-session generation-suffixed names
-                                 // that are not derivable from gen-0 identity); only a
-                                 // CONFLICTING non-empty reconstruction is an inconsistency.
-                                 && not (Map.isEmpty baseline.EncClosureNames)
-                                 && existing.Baseline.EncClosureNames <> baseline.EncClosureNames
-                                 ->
-                                 if traceSessionTransitions then
-                                     printfn
-                                         "[fsharp-hotreload][session] WARNING: CDI-reconstructed closure-name tables (%d methods) disagree with the in-process capture session's tables (%d methods) for %s"
-                                         (Map.count baseline.EncClosureNames)
-                                         (Map.count existing.Baseline.EncClosureNames)
-                                         outputPath
-
-                                 // A conflicting reconstruction would install names that do not
-                                 // describe the running generation, so fail closed in Release too.
-                                 raise (
-                                     InvalidOperationException(
-                                         "Hot reload closure-name reconstruction from disk disagrees with the in-process capture session being replaced."
-                                     )
-                                 )
+                             | ValueSome existing ->
+                                 FSharpHotReloadClosureNameRecapture.validate
+                                     traceSessionTransitions
+                                     outputPath
+                                     existing.CurrentGeneration
+                                     existing.Baseline
+                                     baseline
                              | _ -> ())
 
                             let compilerState = tcGlobals.CompilerGlobalState.Value
