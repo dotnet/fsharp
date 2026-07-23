@@ -78,30 +78,19 @@ extends:
                   sbomEnabled: false
                 - output: pipelineArtifact
                   displayName: 'Publish insertion VSIX'
-                  condition: succeededOrFailed()
+                  condition: succeeded()
                   targetPath: '$(Build.SourcesDirectory)/vsintegration/Vsix/VisualFSharpFull/bin/Release'
                   artifactName: 'VSIX'
-                  sbomEnabled: false
-                - output: pipelineArtifact
-                  displayName: 'Publish lean insertion drop (.vsman)'
-                  condition: succeededOrFailed()
-                  targetPath: '$(Build.SourcesDirectory)/release/insertion'
-                  artifactName: 'InsertionDrop'
                   sbomEnabled: false
             steps:
               - checkout: self
                 clean: true
                 fetchDepth: 1
-              # Install the MicroBuild SWIX plugin so the lean .vsman drop (CIBuild Step 7) can run the
-              # FinalizeManifest target. Sets MicroBuildPluginDirectory, which MicroBuild.Core.targets imports.
-              - task: MicroBuildSwixPlugin@4
-                displayName: 'Install MicroBuild Swix plugin'
               - script: eng\CIBuild.cmd -configuration $(_BuildConfig)
-                displayName: 'Build (product) + tests + insertion VSIX + sign + lean .vsman'
+                displayName: 'Build (product) + tests + insertion VSIX + sign'
                 env:
                   DisableLocalization: true
                   BUILD_INSERTION: 1
-                  BUILD_VSMAN: 1
                   SignType: $(_SignType)
                   OfficialBuildId: $(Build.BuildNumber)
               - task: PublishTestResults@2
