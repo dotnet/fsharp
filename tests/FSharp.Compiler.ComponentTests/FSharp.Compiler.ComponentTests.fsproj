@@ -280,6 +280,7 @@
     <Compile Include="EmittedIL\ByRefTests.fs" />
     <Compile Include="EmittedIL\Misc\Misc.fs" />
     <Compile Include="Misc.fs" />
+    <Compile Include="Optimizations\TaskCEUnitPropertyAccess.fs" />
     <Compile Include="EmittedIL\operators\Operators.fs" />
     <Compile Include="EmittedIL\Platform\Platform.fs" />
     <Compile Include="EmittedIL\QueryExpressionStepping\QueryExpressionStepping.fs" />
@@ -517,6 +518,7 @@
     <Compile Include="FSharpChecker\FindReferences.fs" />
     <Compile Include="FSharpChecker\SemanticClassificationRegressions.fs" />
     <Compile Include="Attributes\AttributeCtorSetPropAccess.fs" />
+    <Compile Include="Attributes\CompiledNameMultipleValues.fs" />
   </ItemGroup>
 
   <ItemGroup>

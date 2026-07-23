@@ -63,22 +63,22 @@ Test::main
     IL_0015:  ldc.i4.1
     IL_0016:  ret
 
-Test::<sum>__debug@13
+Test::<sum>__debug@9-1
   (6,36-6,69)  (T $ Unchecked.defaultof<'r>) i x
     IL_0000:  call T::get_T
-    IL_0005:  ldnull
-    IL_0006:  call Test::<op_Dollar>__debug@6
+    IL_0005:  ldc.i4.0
+    IL_0006:  call T::op_Dollar
     IL_000b:  ldarg.0
     IL_000c:  ldarg.1
     IL_000d:  tail.
     IL_000f:  call InvokeFast
     IL_0014:  ret
 
-Test::<sum>__debug@9-1
+Test::<sum>__debug@13
   (6,36-6,69)  (T $ Unchecked.defaultof<'r>) i x
     IL_0000:  call T::get_T
-    IL_0005:  ldc.i4.0
-    IL_0006:  call T::op_Dollar
+    IL_0005:  ldnull
+    IL_0006:  call Test::<op_Dollar>__debug@6
     IL_000b:  ldarg.0
     IL_000c:  ldarg.1
     IL_000d:  tail.

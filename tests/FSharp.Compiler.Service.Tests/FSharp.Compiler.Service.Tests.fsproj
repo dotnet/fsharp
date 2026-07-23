@@ -26,6 +26,7 @@
     </Compile>
     <Compile Include="Common.fs" />
     <Compile Include="Checker.fs" />
+    <Compile Include="CheckerExtensionsTests.fs" />
     <Compile Include="TypeChecker\TypeCheckerRecoveryTests.fs" />
     <Compile Include="TypeChecker\Obsolete.fs" />
     <Compile Include="GeneratedCodeSymbolsTests.fs" />
@@ -53,6 +54,7 @@
     <Compile Include="XmlDocTests.fs" />
     <Compile Include="XmlDocTests - Units of Measure.fs" />
     <Compile Include="RangeTests.fs" />
+    <Compile Include="CompilerGlobalStateTests.fs" />
     <Compile Include="TooltipTests.fs" />
     <Compile Include="TokenizerTests.fs" />
     <Compile Include="QuickParseTests.fs" />

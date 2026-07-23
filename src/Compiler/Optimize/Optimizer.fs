@@ -4735,26 +4735,34 @@ and p_ValInfo (v: ValInfo) st =
     p_ExprValueInfo v.ValExprInfo st
     p_bool v.ValMakesNoCriticalTailcalls st
 
-and p_ModuleInfo x st = 
+and p_ModuleInfo x st =
+    // Stamp tiebreaker is safe: every Val reaching ValInfos.Entries has its stamp
+    // assigned during single-threaded type-checking.
+    let stableValKey (vref: ValRef) =
+        let k = vref.Deref.GetLinkageFullKey()
+
+        struct (
+            vref.LogicalName,
+            k.PartialKey.MemberParentMangledName,
+            k.PartialKey.TotalArgCount,
+            k.PartialKey.MemberIsOverride,
+            vref.Deref.Stamp
+        )
+
+    let mergeRacedFlags (vref: ValRef, vinfo: ValInfo) =
+        let merged = vinfo.ValMakesNoCriticalTailcalls || vref.Deref.MakesNoCriticalTailcalls
+
+        if merged = vinfo.ValMakesNoCriticalTailcalls then
+            vref, vinfo
+        else
+            vref, { vinfo with ValMakesNoCriticalTailcalls = merged }
+
     let entries =
         x.ValInfos.Entries
         |> Seq.toArray
-        |> Array.sortBy (fun (vref: ValRef, _) ->
-            let k = vref.Deref.GetLinkageFullKey()
+        |> Array.sortBy (fst >> stableValKey)
+        |> Array.map mergeRacedFlags
 
-            struct (
-                vref.LogicalName,
-                k.PartialKey.MemberParentMangledName,
-                k.PartialKey.TotalArgCount,
-                k.PartialKey.MemberIsOverride,
-                vref.Deref.Stamp
-            ))
-        |> Array.map (fun (vref, vinfo) ->
-            let merged = vinfo.ValMakesNoCriticalTailcalls || vref.Deref.MakesNoCriticalTailcalls
-            if merged = vinfo.ValMakesNoCriticalTailcalls then
-                vref, vinfo
-            else
-                vref, { vinfo with ValMakesNoCriticalTailcalls = merged })
     p_array (p_tup2 (p_vref "opttab") p_ValInfo) entries st
     p_namemap p_LazyModuleInfo x.ModuleOrNamespaceInfos st
 
