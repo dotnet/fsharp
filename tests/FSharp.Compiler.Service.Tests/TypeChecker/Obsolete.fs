@@ -1,7 +1,6 @@
 ﻿module FSharp.Compiler.Service.Tests.TypeChecker.Obsolete
 
 open FSharp.Compiler.Service.Tests
-open FSharp.Compiler.Symbols
 open FSharp.Test.Assert
 open Xunit
 

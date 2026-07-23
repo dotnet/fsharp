@@ -3,11 +3,14 @@ namespace FSharp.Compiler.Service.Tests
 open System
 open System.Text.RegularExpressions
 open FSharp.Compiler.CodeAnalysis
+open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.EditorServices
 open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Range
 open FSharp.Compiler.Tokenization
 open FSharp.Test.Assert
+open FSharp.Test.Compiler.Assertions.TextBasedDiagnosticAsserts
+open Xunit
 
 type SourceContext =
     { Source: string
@@ -193,6 +196,9 @@ module CheckResultsExtensions =
         member this.GetTooltip(context: ResolveContext, width) =
             this.GetToolTip(context.Pos.Line, context.Pos.Column, context.LineText, context.Names, FSharpTokenTag.Identifier, width)
 
+        member this.GetDeclarationLocation(context: ResolveContext) =
+            this.GetDeclarationLocation(context.Pos.Line, context.Pos.Column, context.LineText, context.Names)
+
         member this.GetCodeCompletionSuggestions(context: CodeCompletionContext, parseResults: FSharpParseFileResults, options: FSharpCodeCompletionOptions) =
             this.GetDeclarationListInfo(Some parseResults, context.Pos.Line, context.LineText, context.PartialIdentifier, options = options)
 
@@ -241,6 +247,11 @@ module Checker =
     let getCompletionInfo markedSource =
         getCompletionInfoWithOptions FSharpCodeCompletionOptions.Default markedSource
 
+    let getCompletionInfoOfSignatureFile markedSource =
+        let context = getCompletionContext markedSource
+        let parseResults, checkResults = getParseAndCheckResultsOfSignatureFile context.Source
+        checkResults.GetCodeCompletionSuggestions(context, parseResults, FSharpCodeCompletionOptions.Default)
+
     let getSymbolUses (markedSource: string) =
         let context, checkResults = getCheckedResolveContext markedSource
         checkResults.GetSymbolUses(context)
@@ -249,10 +260,14 @@ module Checker =
         let symbolUses = getSymbolUses markedSource
         symbolUses |> List.exactlyOne
 
+    let getDeclarationLocation (markedSource: string) =
+        let context, checkResults = getCheckedResolveContext markedSource
+        checkResults.GetDeclarationLocation(context)
+
     let getTooltipWithOptions (options: string array) (markedSource: string) =
         let context = getResolveContext markedSource
         let _, checkResults = getParseAndCheckResultsWithOptions options context.Source
-        checkResults.GetToolTip(context.Pos.Line, context.Pos.Column, context.LineText, context.Names, FSharpTokenTag.Identifier)
+        checkResults.GetTooltip(context)
 
     let getTooltip (markedSource: string) =
         getTooltipWithOptions [||] markedSource
@@ -260,3 +275,36 @@ module Checker =
     let getMethodOverloads names (markedSource: string) =
         let context, checkResults = getCheckedResolveContext markedSource
         checkResults.GetMethodOverloads(context, names)
+
+/// Shared assertion helpers reused by the completion, editor, tooltip and type-checker-recovery
+/// test files. Defined here (an early-compiled file) so every consuming file sees a single
+/// definition instead of redefining its own copy.
+[<AutoOpen>]
+module AssertHelpers =
+    let assertItemsWithNames contains names (completionInfo: DeclarationListInfo) =
+        let itemNames =
+            completionInfo.Items
+            |> Array.map _.NameInCode
+            |> Array.map normalizeNewLines
+            |> set
+
+        for name in names do
+            let name = normalizeNewLines name
+            Set.contains name itemNames |> shouldEqual contains
+
+    let assertHasItemWithNames names (completionInfo: DeclarationListInfo) =
+        assertItemsWithNames true names completionInfo
+
+    let assertHasNoItemsWithNames names (completionInfo: DeclarationListInfo) =
+        assertItemsWithNames false names completionInfo
+
+    let assertAndExtractTooltip (ToolTipText(items)) =
+        Assert.Equal(1, items.Length)
+        match items[0] with
+        | ToolTipElement.Group [ singleElement ] ->
+            let toolTipText =
+                singleElement.MainDescription
+                |> taggedTextToString
+            toolTipText, singleElement.XmlDoc, singleElement.Remarks |> Option.map taggedTextToString
+        | _ -> failwith $"Expected group, got {items[0]}"
+
