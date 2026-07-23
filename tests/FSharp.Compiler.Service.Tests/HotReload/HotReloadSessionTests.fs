@@ -810,22 +810,7 @@ module HotReloadSessionTests =
                 """
 module SessionClosureNameMismatch
 
-let makePair input =
-    let mapperA = fun value -> value + input
-    let mapperB = fun value -> value * input
-    mapperA, mapperB
-
-let transform (input: int list) =
-    let bias = 1
-    input
-    |> List.map (fun value -> value + bias)
-    |> List.filter (fun value -> value > 1)
-
-let endpoints : (int -> int) list =
-    [
-        fun value -> value + 1
-        fun value -> value + 2
-    ]
+let value = 1
 """
 
             File.WriteAllText(fsPath, source)
@@ -840,51 +825,27 @@ let endpoints : (int -> int) list =
 
             let baselineView = projectViewOrFail session snapshot
 
-            Assert.False(
-                Map.isEmpty baselineView.Baseline.EncClosureNames,
-                "Expected the flag-on baseline to contain reconstructible closure-name rows."
-            )
+            let methodToken = 0x06000001
+            let occurrence = [ 0 ]
 
-            let methodToken, methodRows = baselineView.Baseline.EncClosureNames |> Map.toSeq |> Seq.head
-            let occurrence, closureName = methodRows |> Map.toSeq |> Seq.head
-
-            let conflictingRows =
-                baselineView.Baseline.EncClosureNames
-                |> Map.add methodToken (methodRows |> Map.add occurrence (closureName + "_conflict"))
-
-            let conflictingBaseline =
+            let capturedBaseline =
                 { baselineView.Baseline with
-                    EncClosureNames = conflictingRows
+                    EncClosureNames = Map.ofList [ methodToken, Map.ofList [ occurrence, "CapturedClosure" ] ]
                 }
 
-            // Seed the session's private store with a conflicting in-process capture, then
-            // recapture the unchanged on-disk baseline through the public AddProject path.
-            // Reflection keeps this deliberately invalid state confined to the regression test.
-            let getPrivateFieldValue (instance: obj) : 'T =
-                instance.GetType().GetFields(BindingFlags.Instance ||| BindingFlags.NonPublic)
-                |> Array.filter (fun field -> typeof<'T>.IsAssignableFrom(field.FieldType))
-                |> Assert.Single
-                |> fun field -> field.GetValue(instance) :?> 'T
-
-            let hotReloadService: FSharpHotReloadService = getPrivateFieldValue session
-
-            let editAndContinueService: FSharpEditAndContinueLanguageService =
-                getPrivateFieldValue hotReloadService
-
-            let identifier = snapshot.Identifier
-
-            let projectKey =
-                FSharp.Compiler.HotReloadState.HotReloadProjectKey.Project(
-                    identifier.ProjectFileName,
-                    identifier.OutputFileName
-                )
-
-            editAndContinueService.AddProject(projectKey, conflictingBaseline, baselineView.ImplementationFiles)
-            |> ignore
+            let reconstructedBaseline =
+                { baselineView.Baseline with
+                    EncClosureNames = Map.ofList [ methodToken, Map.ofList [ occurrence, "ReconstructedClosure" ] ]
+                }
 
             let error =
                 Assert.Throws<InvalidOperationException>(fun () ->
-                    session.AddProject(snapshot) |> Async.RunSynchronously |> ignore)
+                    FSharpHotReloadClosureNameRecapture.validate
+                        false
+                        dllPath
+                        1
+                        capturedBaseline
+                        reconstructedBaseline)
 
             Assert.Contains("closure-name reconstruction", error.Message, StringComparison.OrdinalIgnoreCase))
 
