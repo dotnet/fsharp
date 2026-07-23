@@ -115,9 +115,7 @@
     updated in years, you most likely DON'T need it, please exercise caution when adding it to the list. -->
     <SystemReflectionEmitVersion>4.7.0</SystemReflectionEmitVersion>
 
-    <!-- Shared version groups referenced by multiple PackageVersion entries in eng/Packages.props.
-         (Single-use package versions are pinned inline there; only genuinely shared or Arcade-read
-         versions live here.) -->
+    <!-- Shared version groups referenced by multiple PackageVersion entries in eng/Packages.props. -->
     <!-- Shared pin for the editor packages in eng/Packages.props; must match 18.9.123 (resolved transitively
          via Microsoft.VisualStudio.SDK 18.9.496). Full NU1109 rationale lives there, next to the 18.9.x pins. -->
     <VisualStudioEditorPackagesVersion>18.9.123</VisualStudioEditorPackagesVersion>
