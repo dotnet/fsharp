@@ -351,6 +351,7 @@ type internal MetadataContext =
         GuidIndexSize: int
         BlobIndexSize: int
         StringsStreamOffset: int
+        StringsStreamSize: int
         BlobStreamOffset: int
     }
 
@@ -573,6 +574,7 @@ let private createMetadataContext (bytes: byte[]) =
                 let stringsBig = (heapSizes &&& 0x01uy) <> 0uy
                 let guidsBig = (heapSizes &&& 0x02uy) <> 0uy
                 let blobsBig = (heapSizes &&& 0x04uy) <> 0uy
+                let stringsStream = streamHeaders |> List.tryFind (fun header -> header.Name = "#Strings")
 
                 Some
                     {
@@ -583,11 +585,8 @@ let private createMetadataContext (bytes: byte[]) =
                         StringIndexSize = if stringsBig then 4 else 2
                         GuidIndexSize = if guidsBig then 4 else 2
                         BlobIndexSize = if blobsBig then 4 else 2
-                        StringsStreamOffset =
-                            streamHeaders
-                            |> List.tryFind (fun h -> h.Name = "#Strings")
-                            |> Option.map (fun h -> h.Offset)
-                            |> Option.defaultValue 0
+                        StringsStreamOffset = stringsStream |> Option.map (fun header -> header.Offset) |> Option.defaultValue 0
+                        StringsStreamSize = stringsStream |> Option.map (fun header -> header.Size) |> Option.defaultValue 0
                         BlobStreamOffset =
                             streamHeaders
                             |> List.tryFind (fun h -> h.Name = "#Blob")
@@ -599,11 +598,32 @@ let private readStringFromHeap (ctx: MetadataContext) offset =
     if offset = 0 then
         ""
     else
-        let start = ctx.StringsStreamOffset + offset
+        let streamStart = int64 ctx.StringsStreamOffset
+        let streamSize = int64 ctx.StringsStreamSize
+        let streamEnd = streamStart + streamSize
+        let stringStart = streamStart + int64 offset
+
+        // Metadata indices are scoped to #Strings, not to the containing PE image.
+        // Failing before decoding prevents malformed offsets from reading an adjacent heap.
+        if
+            offset < 0
+            || streamStart < 0L
+            || streamSize < 0L
+            || streamEnd > int64 ctx.Bytes.Length
+            || stringStart < streamStart
+            || stringStart >= streamEnd
+        then
+            raise (BadImageFormatException("String heap index is outside the #Strings stream."))
+
+        let start = int stringStart
+        let streamEnd = int streamEnd
         let mutable endPos = start
 
-        while endPos < ctx.Bytes.Length && ctx.Bytes[endPos] <> 0uy do
+        while endPos < streamEnd && ctx.Bytes[endPos] <> 0uy do
             endPos <- endPos + 1
+
+        if endPos = streamEnd then
+            raise (BadImageFormatException("String heap value is not terminated inside the #Strings stream."))
 
         Encoding.UTF8.GetString(ctx.Bytes, start, endPos - start)
 
