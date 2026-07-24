@@ -90,6 +90,7 @@ if result <> "{concreteDesc}" then
 
     [<Fact>]
     let ``Example 6 - Incomparable Concreteness - Result int e vs Result t string - ambiguous with helpful message`` () =
+        // Preview is required: the "strictly more concrete" detail is gated behind MoreConcreteTiebreaker (H3).
         FSharp """
 module Test
 
@@ -99,11 +100,33 @@ type Example =
 
 let result = Example.Compare(Ok 42 : Result<int, string>)
         """
+        |> withLangVersionPreview
         |> typecheck
         |> shouldFail
         |> withErrorCode 41 // FS0041: A unique overload could not be determined
         |> withDiagnosticMessageMatches "Neither candidate is strictly more concrete"
         |> withDiagnosticMessageMatches "Compare is more concrete at position 1"
+        |> ignore
+
+    [<Fact>]
+    let ``Incomparable Concreteness detail is absent under non-preview langversion`` () =
+        // H3 pair with Example 6: same source and harness (typecheck), only the langversion differs.
+        // With MoreConcreteTiebreaker off the call is still ambiguous (FS0041) but the plain message
+        // must not carry the "strictly more concrete" detail.
+        FSharp """
+module Test
+
+type Example =
+    static member Compare(value: Result<int, 'error>) = "int ok"
+    static member Compare(value: Result<'ok, string>) = "string error"
+
+let result = Example.Compare(Ok 42 : Result<int, string>)
+        """
+        |> withLangVersion "9.0"
+        |> typecheck
+        |> shouldFail
+        |> withErrorCode 41
+        |> withDiagnosticMessageDoesntMatch "strictly more concrete"
         |> ignore
 
     [<Fact>]

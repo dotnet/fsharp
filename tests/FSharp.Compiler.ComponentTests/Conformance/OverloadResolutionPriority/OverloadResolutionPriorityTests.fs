@@ -92,6 +92,33 @@ type Derived() =
         |> ignore
 
     [<FactForNETCOREAPP>]
+    let ``OverloadResolutionPriority - override attribute is silent under non-preview langversion`` () =
+        // H3: the ORPA-on-override error (FS3586) is an ORPA-feature diagnostic, so it must not fire
+        // when the feature is off. Same source as the preview guard above, compiled under 9.0.
+        Fs """
+module TestORPOnOverride
+
+open System.Runtime.CompilerServices
+
+type Base() =
+    abstract member DoWork: int -> string
+    default _.DoWork(x: int) = "base"
+
+    abstract member DoWork: string -> string
+    default _.DoWork(s: string) = "base-string"
+
+type Derived() =
+    inherit Base()
+
+    [<OverloadResolutionPriority(1)>]
+    override _.DoWork(x: int) = "derived"
+"""
+        |> withLangVersion "9.0"
+        |> compile
+        |> shouldSucceed
+        |> ignore
+
+    [<FactForNETCOREAPP>]
     let ``OverloadResolutionPriority - allowed on non-override F# member`` () =
         Fs """
 module TestORPOnNonOverride

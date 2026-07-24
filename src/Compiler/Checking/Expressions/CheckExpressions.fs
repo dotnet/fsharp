@@ -1451,9 +1451,11 @@ let MakeAndPublishVal (cenv: cenv) env (altActualParent, inSig, declKind, valRec
             | ParentNone -> errorR(Error(FSComp.SR.tcCompiledNameAttributeMisused(), m))
             | _ -> ()
 
-    // OverloadResolutionPriority not allowed on override members
+    // OverloadResolutionPriority not allowed on override members (only diagnosed when the feature is on)
     match memberInfoOpt with
-    | Some (PrelimMemberInfo(memberInfo, _, _)) when memberInfo.MemberFlags.IsOverrideOrExplicitImpl ->
+    | Some (PrelimMemberInfo(memberInfo, _, _)) when
+            memberInfo.MemberFlags.IsOverrideOrExplicitImpl
+            && g.langVersion.SupportsFeature LanguageFeature.OverloadResolutionPriority ->
         if Option.isSome (TryFindFSharpAttributeOpt g g.attrib_OverloadResolutionPriorityAttribute attrs) then
             errorR(Error(FSComp.SR.tcOverloadResolutionPriorityOnOverride(), m))
     | _ -> ()

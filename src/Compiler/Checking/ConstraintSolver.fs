@@ -3926,12 +3926,14 @@ and GetMostApplicableOverload csenv ndeep candidates applicableMeths calledMethG
         let methods = List.concat methods
 
         let incomparableConcretenessInfo =
-            applicableMeths
-            |> List.tryPick (fun (meth1, _, _, _) ->
+            if not moreConcretEnabled then None
+            else
                 applicableMeths
-                |> List.tryPick (fun (meth2, _, _, _) ->
-                    if System.Object.ReferenceEquals(meth1, meth2) then None
-                    else explainIncomparableMethodConcreteness ctx meth1 meth2))
+                |> List.tryPick (fun (meth1, _, _, _) ->
+                    applicableMeths
+                    |> List.tryPick (fun (meth2, _, _, _) ->
+                        if System.Object.ReferenceEquals(meth1, meth2) then None
+                        else explainIncomparableMethodConcreteness ctx meth1 meth2))
 
         let err = FailOverloading csenv calledMethGroup reqdRetTyOpt isOpConversion callerArgs (PossibleCandidates(methodName, methods, cx, incomparableConcretenessInfo)) m
         None, ErrorD err, NoTrace
