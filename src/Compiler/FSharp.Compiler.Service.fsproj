@@ -251,8 +251,6 @@
          Placed after ilwrite.fs/.fsi (not immediately after ilwritepdb) because
          IlxDeltaStreams.fs and DeltaMetadataTables.fs reuse ilwrite.fs's
          markerForUnicodeBytes helper for #US heap encoding. -->
-    <Compile Include="AbstractIL\ILDeltaHandles.fs" />
-    <Compile Include="AbstractIL\ILMetadataHeaps.fs" />
     <Compile Include="AbstractIL\IlxDeltaStreams.fs" />
     <Compile Include="AbstractIL\DeltaMetadataEncoding.fs" />
     <Compile Include="AbstractIL\DeltaMetadataTypes.fs" />
