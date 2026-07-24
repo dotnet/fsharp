@@ -3,14 +3,27 @@
 namespace FSharp.Compiler.CodeAnalysis
 
 open System
+open System.Collections
+open System.Collections.Generic
+open System.Diagnostics
+open System.IO
+open System.Security.Cryptography
+open System.Threading
 open Internal.Utilities.Collections
+open Internal.Utilities
 open Internal.Utilities.Library
 open FSharp.Compiler
+open FSharp.Compiler.AbstractIL
+open FSharp.Compiler.AbstractIL.IL
+open FSharp.Compiler.AbstractIL.ILBinaryWriter
 open FSharp.Compiler.AbstractIL.ILBinaryReader
+open FSharp.Compiler.AbstractIL.ILDynamicAssemblyWriter
+open FSharp.Compiler.AbstractIL.ILPdbWriter
 open FSharp.Compiler.Caches
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.CodeAnalysis.TransparentCompiler
 open FSharp.Compiler.CompilerConfig
+open FSharp.Compiler.CompilerGeneratedNameMapState
 open FSharp.Compiler.CompilerOptions
 open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.Driver
@@ -19,6 +32,17 @@ open FSharp.Compiler.Symbols
 open FSharp.Compiler.Tokenization
 open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Range
+open FSharp.Compiler.TcGlobals
+open FSharp.Compiler.BuildGraph
+open FSharp.Compiler.EditAndContinue
+open FSharp.Compiler.HotReload
+open FSharp.Compiler.HotReloadBaseline
+open FSharp.Compiler.HotReload.DeltaBuilder
+open FSharp.Compiler.IlxDeltaEmitter
+open FSharp.Compiler.TypedTree
+open FSharp.Compiler.GeneratedNames
+open FSharp.Compiler.SynthesizedTypeMaps
+open FSharp.Compiler.EnvironmentHelpers
 
 /// Callback that indicates whether a requested result has become obsolete.
 [<NoComparison; NoEquality>]
@@ -165,6 +189,384 @@ type FSharpChecker
 
         withEnvOverride
 
+    let ensureKeepAssemblyContents () =
+        if not keepAssemblyContents then
+            invalidOp
+                "Hot reload APIs require the checker to be created with keepAssemblyContents=true. Pass keepAssemblyContents=true when calling FSharpChecker.Create."
+
+    let trimQuotes (text: string) = text.Trim().Trim('"')
+
+    let tryGetOutputPathFromCommandLineOptions (projectFileName: string) (otherOptions: string array) =
+        let projectDirectory =
+            let resolveDirectory (path: string) =
+                if String.IsNullOrWhiteSpace(path) then
+                    Directory.GetCurrentDirectory()
+                else
+                    let absolute =
+                        if Path.IsPathRooted(path) then
+                            path
+                        else
+                            Path.GetFullPath(path)
+
+                    match Path.GetDirectoryName(absolute) with
+                    | null
+                    | "" -> Directory.GetCurrentDirectory()
+                    | value -> value
+
+            match projectFileName with
+            | "" -> Directory.GetCurrentDirectory()
+            | fileName -> resolveDirectory fileName
+
+        let resolveOutputPath (path: string) =
+            let trimmed = trimQuotes path
+
+            if Path.IsPathRooted(trimmed) then
+                Path.GetFullPath(trimmed)
+            else
+                let baseDirectory =
+                    if String.IsNullOrWhiteSpace(projectDirectory) then
+                        Directory.GetCurrentDirectory()
+                    else
+                        projectDirectory
+
+                let combined =
+                    if String.IsNullOrWhiteSpace(trimmed) then
+                        baseDirectory
+                    else
+                        Path.Combine(baseDirectory, trimmed)
+
+                Path.GetFullPath(combined)
+
+        let tryFromInlineForm =
+            otherOptions
+            |> Array.tryPick (fun opt ->
+                if opt.StartsWith("--out:", StringComparison.OrdinalIgnoreCase) then
+                    opt.Substring("--out:".Length) |> resolveOutputPath |> Some
+                elif opt.StartsWith("-o:", StringComparison.OrdinalIgnoreCase) then
+                    opt.Substring("-o:".Length) |> resolveOutputPath |> Some
+                else
+                    None)
+
+        match tryFromInlineForm with
+        | Some path -> Some path
+        | None ->
+            match
+                otherOptions
+                |> Array.tryFindIndex (fun opt -> String.Equals(opt, "-o", StringComparison.OrdinalIgnoreCase))
+            with
+            | Some idx when idx + 1 < otherOptions.Length -> otherOptions[idx + 1] |> resolveOutputPath |> Some
+            | _ -> None
+
+    let tryGetOutputPathFromProjectSnapshot (projectSnapshot: FSharpProjectSnapshot) =
+        tryGetOutputPathFromCommandLineOptions projectSnapshot.ProjectFileName (projectSnapshot.OtherOptions |> List.toArray)
+
+    [<Literal>]
+    let HotReloadTraceOutputFlagName = "FSHARP_HOTRELOAD_TRACE_OUTPUT"
+
+    let traceOutputFingerprint = isEnvVarTruthy HotReloadTraceOutputFlagName
+
+    let getErrorDiagnostics (diagnostics: FSharpDiagnostic[]) =
+        diagnostics
+        |> Array.filter (fun diagnostic -> diagnostic.Severity = FSharpDiagnosticSeverity.Error)
+
+    let waitForStableFile = FSharpHotReloadFileSystem.waitForStableFile
+
+    let computeFileHash (path: string) : byte[] option =
+        if File.Exists path then
+            try
+                use stream = File.Open(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite)
+                use sha = System.Security.Cryptography.SHA256.Create()
+                Some(sha.ComputeHash stream)
+            with _ ->
+                None
+        else
+            None
+
+    let tryGetOutputFingerprint (path: string) =
+        if File.Exists path then
+            let timestamp = File.GetLastWriteTimeUtc path
+            let hash = computeFileHash path
+            Some(timestamp, hash)
+        else
+            None
+
+    let hasOutputFingerprintChanged path previous current =
+        match previous, current with
+        | Some(previousTimestamp, previousHash), Some(currentTimestamp, currentHash) ->
+            let timestampChanged = previousTimestamp <> currentTimestamp
+
+            // Prefer content identity whenever both reads produced hashes. Rebuilding or merely
+            // touching an unchanged output must not make a stale semantic edit look current.
+            let hashChanged =
+                match previousHash, currentHash with
+                | Some previousBytes, Some currentBytes ->
+                    Some(not (StructuralComparisons.StructuralEqualityComparer.Equals(previousBytes, currentBytes)))
+                | _ -> None
+
+            let changed = defaultArg hashChanged timestampChanged
+
+            if traceOutputFingerprint && timestampChanged then
+                printfn $"[fsharp-hotreload][trace] detected write timestamp change for {path} (prev={previousTimestamp:O}, new={currentTimestamp:O})"
+
+            if traceOutputFingerprint && hashChanged = Some true then
+                printfn $"[fsharp-hotreload][trace] detected content hash change for {path}"
+
+            changed
+        | None, Some _ -> true
+        | Some _, None -> true
+        | None, None -> false
+
+    let readIlModule path =
+        waitForStableFile path
+
+        let options: ILReaderOptions =
+            {
+                pdbDirPath = None
+                reduceMemoryUsage = ReduceMemoryFlag.Yes
+                metadataOnly = MetadataOnlyFlag.No
+                tryGetMetadataSnapshot = fun _ -> None
+            }
+
+        use reader = OpenILModuleReader path options
+        reader.ILModuleDef
+
+    let toPublicDelta (delta: IlxDelta) : FSharpHotReloadDelta =
+        {
+            Metadata = Array.copy delta.Metadata
+            IL = Array.copy delta.IL
+            Pdb = delta.Pdb |> Option.map Array.copy
+            UpdatedTypes = delta.UpdatedTypeTokens
+            UpdatedMethods = delta.UpdatedMethodTokens
+            RequiredCapabilities = delta.RequiredCapabilities
+            AddedOrChangedMethods =
+                delta.AddedOrChangedMethods
+                |> List.map (fun info ->
+                    {
+                        MethodToken = info.MethodToken
+                        LocalSignatureToken = info.LocalSignatureToken
+                        CodeOffset = info.CodeOffset
+                        CodeLength = info.CodeLength
+                    })
+            UserStringUpdates = delta.UserStringUpdates |> List.map (fun (o, n, s) -> struct (o, n, s))
+            GenerationId = delta.GenerationId
+            BaseGenerationId = delta.BaseGenerationId
+            SequencePointUpdates = delta.SequencePointUpdates
+            ActiveStatementUpdates = delta.ActiveStatementUpdates
+        }
+
+    let mapHotReloadError =
+        function
+        | HotReloadError.NoActiveSession -> FSharpHotReloadError.NoActiveSession
+        | HotReloadError.NoChanges -> FSharpHotReloadError.NoChanges
+        | HotReloadError.UnsupportedEdit diagnostics -> FSharpHotReloadError.UnsupportedEdit(FSharpHotReloadRudeEditMapping.ofDiagnostics diagnostics)
+        | HotReloadError.DeltaEmissionException ex -> FSharpHotReloadError.DeltaEmissionFailed ex.Message
+
+    let createBaseline (tcGlobals: TcGlobals) (ilModule: ILModuleDef) (outputPath: string) =
+        let pdbPath =
+            Path.ChangeExtension(outputPath, ".pdb")
+            |> Option.ofObj
+            |> Option.defaultValue (outputPath + ".pdb")
+
+        let writerOptions: ILBinaryWriter.options =
+            {
+                ilg = tcGlobals.ilg
+                outfile = outputPath
+                pdbfile = if File.Exists(pdbPath) then Some pdbPath else None
+                emitTailcalls = false
+                deterministic = true
+                portablePDB = true
+                embeddedPDB = false
+                embedAllSource = false
+                embedSourceList = []
+                allGivenSources = []
+                sourceLink = ""
+                checksumAlgorithm = HashAlgorithm.Sha256
+                signer = None
+                dumpDebugInfo = false
+                referenceAssemblyOnly = false
+                referenceAssemblyAttribOpt = None
+                referenceAssemblySignatureHash = None
+                pathMap = PathMap.empty
+                moduleCustomDebugInfoRows = []
+                methodCustomDebugInfoRows = Map.empty
+            }
+
+        let _, pdbBytesOpt, tokenMappings, _ =
+            ILBinaryWriter.WriteILBinaryInMemoryWithArtifacts(writerOptions, ilModule, id)
+
+        let portablePdbSnapshot = pdbBytesOpt |> Option.map HotReloadPdb.createSnapshot
+        let assemblyBytes = File.ReadAllBytes(outputPath)
+
+        let baseline =
+            HotReloadBaseline.createFromEmittedArtifacts ilModule tokenMappings assemblyBytes portablePdbSnapshot None
+
+        // The in-memory rewrite above passes no hot reload CDI side channel, so its PDB
+        // never carries EnC rows or the F# synthesized-name snapshot. The on-disk PDB
+        // produced by the flag-on build is the durable source: read it as a sibling input
+        // when the rewrite yielded none. Recorded synthesized-name snapshots take
+        // precedence over IL reconstruction; absent records preserve the old fallback.
+        let baseline =
+            if
+                baseline.SynthesizedNameSnapshotSource = SynthesizedNameSnapshotSource.Reconstructed
+                && File.Exists(pdbPath)
+            then
+                match FSharp.Compiler.EncMethodDebugInformation.readSynthesizedNameSnapshotFromPortablePdb (File.ReadAllBytes pdbPath) with
+                | Some recordedSnapshot ->
+                    if isEnvVarTruthy "FSHARP_HOTRELOAD_TRACE_CLOSURENAMES" then
+                        printfn "[fsharp-hotreload][closure-names] synthesized-name snapshot source=recorded buckets=%d" (Map.count recordedSnapshot)
+
+                    { baseline with
+                        SynthesizedNameSnapshot = recordedSnapshot
+                        SynthesizedNameSnapshotSource = SynthesizedNameSnapshotSource.Recorded
+                    }
+                | None ->
+                    if isEnvVarTruthy "FSHARP_HOTRELOAD_TRACE_CLOSURENAMES" then
+                        printfn
+                            "[fsharp-hotreload][closure-names] synthesized-name snapshot source=reconstructed buckets=%d"
+                            (Map.count baseline.SynthesizedNameSnapshot)
+
+                    baseline
+            else
+                baseline
+
+        // The in-memory rewrite above passes no EnC CDI side channel (methodCustomDebugInfoRows =
+        // Map.empty), so its PDB never carries EnC rows. The on-disk PDB produced by the flag-on
+        // build is the durable source of the baseline EnC method debug information: read it as a
+        // sibling input when the rewrite yielded none (flag-off PDBs and PDBs without EnC rows still decode to the
+        // empty map, and the session starts fine either way).
+        let baseline =
+            if Map.isEmpty baseline.EncMethodDebugInfos && File.Exists(pdbPath) then
+                let baseline =
+                    { baseline with
+                        EncMethodDebugInfos =
+                            FSharp.Compiler.EncMethodDebugInformation.readEncMethodDebugInfoFromPortablePdb (File.ReadAllBytes(pdbPath))
+                    }
+
+                // Closure mapping: the chain -> closure-name tables are a pure function
+                // of the occurrence keys just decoded (baseline names are occurrence-derived
+                // under the flag), so a session started from disk — typically in a different
+                // process than the fsc that built the baseline — reconstructs exactly the
+                // tables the emitting compile installed. Fail closed for replay-named and
+                // mid-session baselines (see deriveEncClosureNamesFromEncDebugInfos).
+                { baseline with
+                    EncClosureNames = HotReloadBaseline.deriveEncClosureNames ilModule baseline
+                }
+            else
+                baseline
+
+        // Sequence-point sibling-read: the IL module is read back from disk WITHOUT debug points, so
+        // the in-memory rewrite's PDB decodes to an empty sequence-point view. The on-disk PDB
+        // written by the build is the real source of the committed lines that line-shift
+        // detection and active-statement remapping diff against.
+        if Map.isEmpty baseline.SequencePointSnapshots && File.Exists(pdbPath) then
+            { baseline with
+                SequencePointSnapshots = FSharp.Compiler.HotReload.ActiveStatementAnalysis.decodeMethodSequencePoints (File.ReadAllBytes(pdbPath))
+            }
+        else
+            baseline
+
+    let toHotReloadImplementationSnapshot (typedImplFiles: CheckedImplFile list) : CheckedAssemblyAfterOptimization =
+        typedImplFiles
+        |> List.map (fun implFile ->
+            {
+                CheckedImplFileAfterOptimization.ImplFile = implFile
+                OptimizeDuringCodeGen = fun _ expr -> expr
+            })
+        |> CheckedAssemblyAfterOptimization
+
+    let getHotReloadDiffInputs (projectResults: FSharpCheckProjectResults) =
+        // Use non-optimized typed implementation trees for symbol diffing so method-body edits
+        // keep user-authored identities (Roslyn parity), while IL deltas still come from built output.
+        let tcGlobals, _thisCcu, _tcImports, typedImplFiles = projectResults.TypedImplementationFiles
+        tcGlobals, toHotReloadImplementationSnapshot typedImplFiles
+
+    let createHotReloadService sessionStore =
+        FSharpHotReloadService(
+            sessionStore,
+            readIlModule,
+            createBaseline,
+            getHotReloadDiffInputs,
+            getErrorDiagnostics,
+            waitForStableFile,
+            tryGetOutputFingerprint,
+            hasOutputFingerprintChanged,
+            toPublicDelta,
+            mapHotReloadError
+        )
+
+    // We deliberately do NOT reset the process-global capture store here. Wiping it from a
+    // per-instance constructor is unsound: the store is shared by the whole process, so a host
+    // that creates a second checker (an IDE, or a test run) would silently discard the first
+    // checker's hot-reload capture state — including committed baselines owned by a still-live
+    // checker.
+    //
+    // The freshness property the wipe used to provide is preserved at capture time instead: the
+    // fsc emit hook's ambient capture path (HotReloadState.SetBaseline) REPLACEs the ambient
+    // project slot on every fresh capture, so a new owner's first capture overwrites the relevant
+    // entry without clobbering committed/other-project state belonging to another live checker.
+    // Consecutive captures with NO checker creation between still chain, because the store is
+    // never replaced. Session entities are unaffected regardless: they own private stores
+    // (createSessionStore) and reconstruct baselines from disk artifacts. Explicit teardown of the
+    // process-global store remains available via HotReloadState.clearSessionState for callers that
+    // genuinely own that lifetime.
+
+    // Projects tracked by LIVE session entities created via CreateHotReloadSession, keyed by
+    // the resolved output path each AddProject baselined (most recent first). Compile consults
+    // this to resolve the scoped emission context — which session, and which project inside
+    // it, a given in-process compile serves. Disposing a session removes its entries.
+    let liveHotReloadEmissionTargets =
+        ResizeArray<string * FSharp.Compiler.HotReloadState.HotReloadSessionStore * FSharp.Compiler.HotReloadState.HotReloadProjectKey>()
+
+    let liveHotReloadEmissionTargetsGate = obj ()
+
+    let normalizeOutputPathForEmissionTargets (path: string) =
+        try
+            Path.GetFullPath(path)
+        with _ ->
+            path
+
+    let registerHotReloadEmissionTarget
+        (store: FSharp.Compiler.HotReloadState.HotReloadSessionStore)
+        (outputPath: string)
+        (projectKey: FSharp.Compiler.HotReloadState.HotReloadProjectKey)
+        =
+        let normalized = normalizeOutputPathForEmissionTargets outputPath
+
+        lock liveHotReloadEmissionTargetsGate (fun () ->
+            // A recapture of the same project in the same session replaces its entry.
+            liveHotReloadEmissionTargets.RemoveAll(fun (_, existingStore, existingKey) ->
+                obj.ReferenceEquals(existingStore, store) && existingKey = projectKey)
+            |> ignore
+
+            liveHotReloadEmissionTargets.Insert(0, (normalized, store, projectKey)))
+
+    let unregisterHotReloadEmissionTargets (store: FSharp.Compiler.HotReloadState.HotReloadSessionStore) =
+        lock liveHotReloadEmissionTargetsGate (fun () ->
+            liveHotReloadEmissionTargets.RemoveAll(fun (_, existingStore, _) -> obj.ReferenceEquals(existingStore, store))
+            |> ignore)
+
+    // Resolves the session entity (and tracked project) an in-process compile belongs to by
+    // the compile's output path. The most recently baselined project wins when several live
+    // sessions track the same output.
+    let tryResolveHotReloadEmissionContext (outputPath: string option) =
+        match outputPath with
+        | None -> None
+        | Some outputPath ->
+            let target = normalizeOutputPathForEmissionTargets outputPath
+
+            lock liveHotReloadEmissionTargetsGate (fun () ->
+                liveHotReloadEmissionTargets
+                |> Seq.tryPick (fun (registeredPath, store, projectKey) ->
+                    if String.Equals(registeredPath, target, StringComparison.OrdinalIgnoreCase) then
+                        Some(
+                            {
+                                FSharp.Compiler.HotReloadState.HotReloadEmissionContext.Store = store
+                                FSharp.Compiler.HotReloadState.HotReloadEmissionContext.ProjectKey = projectKey
+                            }
+                        )
+                    else
+                        None))
+
     static member getParallelReferenceResolutionFromEnvironment() =
         getParallelReferenceResolutionFromEnvironment ()
 
@@ -236,6 +638,36 @@ type FSharpChecker
             useTransparentCompiler,
             ?transparentCompilerCacheSizes = transparentCompilerCacheSizes
         )
+
+    // Runtime capability strings cross the public boundary once and are parsed into the typed
+    // model here; everything downstream consults EditAndContinueCapabilities only.
+    static member private ParseHotReloadCapabilities(capabilities: string seq option) =
+        capabilities
+        |> Option.map EditAndContinueCapabilities.Parse
+        |> Option.defaultValue EditAndContinueCapabilities.BaselineOnly
+
+    member this.CreateHotReloadSession(?capabilities: string seq) =
+        ensureKeepAssemblyContents ()
+        use _ = Activity.startNoTags "FSharpChecker.CreateHotReloadSession"
+
+        // The session owns a private store instance that is NEVER registered as the
+        // process-wide store: it is fully independent of the checker's default session
+        // and of any other session created from this (or another) checker.
+        let sessionStore = FSharp.Compiler.HotReloadState.createSessionStore ()
+        let sessionService = createHotReloadService sessionStore
+        sessionService.SetSessionCapabilities(FSharpChecker.ParseHotReloadCapabilities capabilities)
+
+        new FSharpHotReloadSession(
+            sessionService,
+            (fun projectSnapshot opName -> this.ParseAndCheckProject(projectSnapshot, userOpName = opName)),
+            tryGetOutputPathFromProjectSnapshot,
+            (fun outputPath projectKey -> registerHotReloadEmissionTarget sessionStore outputPath projectKey),
+            (fun () -> unregisterHotReloadEmissionTargets sessionStore)
+        )
+
+    member _.HotReloadCapabilities =
+        let capabilities = HotReloadCapability.current
+        FSharpHotReloadCapabilities.FromInternalFlags(capabilities.Flags)
 
     member _.UsesTransparentCompiler = useTransparentCompiler = Some true
 
@@ -316,9 +748,60 @@ type FSharpChecker
         let _userOpName = defaultArg userOpName "Unknown"
         use _ = Activity.start "FSharpChecker.Compile" [| Activity.Tags.userOpName, _userOpName |]
 
+        let hasTestArgument (feature: string) (argv: string[]) =
+            let inlineEnabled =
+                argv
+                |> Array.exists (fun arg ->
+                    arg.StartsWith("--test:", StringComparison.OrdinalIgnoreCase)
+                    && arg.Substring("--test:".Length).Equals(feature, StringComparison.OrdinalIgnoreCase))
+
+            let splitEnabled =
+                argv
+                |> Array.pairwise
+                |> Array.exists (fun (arg, value) ->
+                    arg.Equals("--test", StringComparison.OrdinalIgnoreCase)
+                    && value.Equals(feature, StringComparison.OrdinalIgnoreCase))
+
+            inlineEnabled || splitEnabled
+
+        // A non-capture compile of a project tracked by a live session entity is scoped to
+        // that session: the emit hook then replays the session's chained closure-name and
+        // synthesized-name state into this compile. Capture compiles stay session-independent
+        // (they publish to the process-local capture slot, never to a session's store).
+        let emissionContext =
+            if hasTestArgument "HotReloadDeltas" argv then
+                None
+            else
+                tryResolveHotReloadEmissionContext (tryGetOutputPathFromCommandLineOptions "" argv)
+
+        let ensureHotReloadSessionHookArgument (argv: string[]) =
+            // Keep synthesized-name replay active for checker-owned hot reload sessions even when
+            // callers intentionally compile updates without --test:HotReloadDeltas.
+            if
+                emissionContext.IsSome
+                && not (hasTestArgument "HotReloadDeltas" argv)
+                && not (hasTestArgument "HotReloadHook" argv)
+            then
+                Array.append argv [| "--test:HotReloadHook" |]
+            else
+                argv
+
+        let argv = ensureHotReloadSessionHookArgument argv
+
         async {
             let ctok = CompilationThreadToken()
-            return CompileHelpers.compileFromArgs (ctok, argv, legacyReferenceResolver, None, None)
+
+            match emissionContext with
+            | Some context ->
+                let previousContext = FSharp.Compiler.HotReloadState.tryGetCurrentEmissionContext ()
+
+                FSharp.Compiler.HotReloadState.setCurrentEmissionContext (Some context)
+
+                try
+                    return CompileHelpers.compileFromArgs (ctok, argv, legacyReferenceResolver, None, None)
+                finally
+                    FSharp.Compiler.HotReloadState.setCurrentEmissionContext previousContext
+            | None -> return CompileHelpers.compileFromArgs (ctok, argv, legacyReferenceResolver, None, None)
         }
 
     /// This function is called when the entire environment is known to have changed for reasons not encoded in the ProjectOptions of any project/compilation.
@@ -663,6 +1146,7 @@ open System.IO
 open Internal.Utilities
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.CompilerConfig
+open FSharp.Compiler.CompilerGeneratedNameMapState
 open FSharp.Compiler.EditorServices
 open FSharp.Compiler.Text.Range
 open FSharp.Compiler.DiagnosticsLogger

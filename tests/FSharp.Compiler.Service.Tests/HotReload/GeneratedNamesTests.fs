@@ -2,9 +2,11 @@ namespace FSharp.Compiler.Service.Tests.HotReload
 
 open Xunit
 
-open FSharp.Compiler.CompilerGeneratedNameMapState
 open FSharp.Compiler.CompilerGlobalState
+open FSharp.Compiler.CompilerGeneratedNameMapState
 open FSharp.Compiler.GeneratedNames
+open FSharp.Compiler.HotReloadBaseline
+open FSharp.Compiler.IlxDeltaEmitter
 open FSharp.Compiler.SynthesizedTypeMaps
 open FSharp.Compiler.Text
 
@@ -52,7 +54,7 @@ module GeneratedNamesTests =
         let snapshot =
             map.Snapshot
             |> Seq.find (fun struct (key, _) -> key = "closure")
-            |> fun struct (_, names) -> names
+            |> (fun struct (_, names) -> names)
 
         map.BeginSession()
 
@@ -65,7 +67,10 @@ module GeneratedNamesTests =
         Assert.Equal<string[]>(snapshot, [| replayFirst; replaySecond |])
 
     [<Fact>]
-    let ``NiceNameGenerator counters not incremented during replay mode`` () =
+    let ``NiceNameGenerator counters not incremented during hot reload mode`` () =
+        // This test verifies that when hot reload is enabled, the internal
+        // basicNameCounts counter is NOT incremented. This prevents counter drift
+        // between the per-file basicNameCounts and the global map ordinals.
         let compilerState = CompilerGlobalState()
         let map = FSharpSynthesizedTypeMaps()
         map.BeginSession()
@@ -73,9 +78,11 @@ module GeneratedNamesTests =
 
         let generator = compilerState.NiceNameGenerator
 
-        generator.FreshCompilerGeneratedName("test", zeroRange) |> ignore
-        generator.FreshCompilerGeneratedName("test", zeroRange) |> ignore
+        // Generate names while hot reload is enabled
+        let _ = generator.FreshCompilerGeneratedName("test", zeroRange)
+        let _ = generator.FreshCompilerGeneratedName("test", zeroRange)
 
+        // Disable hot reload - fallback names should start fresh.
         clearCompilerGeneratedNameMap (compilerState :> obj)
 
         let first = generator.FreshCompilerGeneratedName("test", zeroRange)
@@ -163,16 +170,28 @@ module GeneratedNamesTests =
         expectNoPositionalName "endpoints@hotreload#g0_o0"
 
     [<Fact>]
-    let ``generation-suffixed name parsing recognizes generation and occurrence`` () =
-        Assert.True(IsHotReloadGenerationSuffixedName "f@hotreload#g2_o3_4")
-        Assert.Equal(Some 2, TryGetHotReloadNameGeneration "f@hotreload#g2_o3_4")
+    let ``synthesized type shape guard compares structural surface`` () =
+        let baselineShape =
+            {
+                GenericArity = 0
+                BaseType = Some "class Microsoft.FSharp.Core.FSharpFunc`2"
+                InterfaceTypes = [ "class System.IDisposable" ]
+                FieldTypeNames = [ "class System.String"; "valuetype System.Int32" ]
+                MethodNameAndArities = [ ".ctor", 0; "Invoke", 0 ]
+            }
 
-        match TryNormalizeHotReloadGenerationName "Pipe #1 stage #2 at line 28@hotreload#g0_o1_2" with
-        | Some actual ->
-            Assert.Equal("Pipe #1 stage #2", actual.NormalizedBasicName)
-            Assert.Equal(0, actual.Generation)
-            Assert.Equal<int list>([ 1; 2 ], actual.OccurrenceOrdinal)
-        | None -> failwith "Expected generation-suffixed name to normalize."
+        Assert.True(Option.isNone (tryFindSynthesizedTypeShapeMismatch baselineShape baselineShape))
+
+        let expectMismatch fragment freshShape =
+            match tryFindSynthesizedTypeShapeMismatch baselineShape freshShape with
+            | Some message -> Assert.Contains(fragment, message)
+            | None -> failwithf "Expected shape mismatch containing '%s'." fragment
+
+        expectMismatch "generic arity" { baselineShape with GenericArity = 1 }
+        expectMismatch "base type" { baselineShape with BaseType = Some "class System.Object" }
+        expectMismatch "interface set" { baselineShape with InterfaceTypes = [] }
+        expectMismatch "field type multiset" { baselineShape with FieldTypeNames = [ "class System.String" ] }
+        expectMismatch "method set" { baselineShape with MethodNameAndArities = [ ".ctor", 0 ] }
 
     [<Fact>]
     let ``generation-suffixed name parsing rejects malformed names`` () =

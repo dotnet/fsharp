@@ -13,6 +13,7 @@ open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.ILPdbWriter
 open FSharp.Compiler.AbstractIL.Diagnostics
 open FSharp.Compiler.CompilerConfig
+open FSharp.Compiler.CompilerEmitHookBootstrap
 open FSharp.Compiler.CompilerDiagnostics
 open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.Features
@@ -1467,6 +1468,15 @@ let testFlag tcConfigB =
                     { tcConfigB.optSettings with
                         processingMode = OptimizationProcessingMode.Parallel
                     }
+            | "HotReloadDeltas" ->
+                // Experimental Edit-and-Continue baseline capture. Incubated behind --test: like
+                // GraphBasedChecking et al., so it stays out of fsc help while the feature is experimental.
+                tcConfigB.emitCaptureArtifacts <- true
+                configureHotReloadEmitHook tcConfigB
+            | "HotReloadHook" ->
+                // Hook-only replay mode keeps synthesized-name replay active for hot reload sessions
+                // without enabling baseline-capture emission for the current compilation.
+                configureHotReloadEmitHook tcConfigB
 #if DEBUG
             | "ShowParserStackOnParseError" -> showParserStackOnParseError <- true
 #endif
