@@ -877,3 +877,48 @@ let _ = c.Val{caret}ue
 
     Assert.Contains("grandparent property docs", xml)
     Assert.DoesNotContain("<inheritdoc", xml)
+
+[<Fact>]
+let ``symbol does not surface a sibling indexer overload's docs on an implicit override`` () =
+    // Property analogue of the overload guard. Base declares two Item indexer overloads; only the
+    // int overload is documented. Derived overrides the UNdocumented string overload with
+    // <inheritdoc/>. A name-only property cref cannot tell the indexers apart (the slot name is the
+    // accessor get_Item, so the guard must count by property name), so Path A abstains for the whole
+    // overload set rather than surfacing the int overload's docs on the string override. As with
+    // overloaded methods, the correctly signature-matched docs are still delivered by the tooltip
+    // layer (Path B).
+    let src =
+        """
+module Test
+type Base() =
+    /// <summary>INT indexer docs</summary>
+    abstract Item: int -> string with get
+    abstract Item: string -> string with get
+    default _.Item with get (i: int) = "i"
+    default _.Item with get (s: string) = "s"
+type Derived() =
+    inherit Base()
+    /// <inheritdoc/>
+    override _.Item with get (i: int) = "di"
+    /// <inheritdoc/>
+    override _.Item with get (s: string) = "ds"
+let d = Derived(){caret}
+"""
+    let _, checkResults = Checker.getCheckedResolveContext src
+    let entity = XmlDocTests.findSymbolByName "Derived" checkResults :?> FSharpEntity
+
+    let docOfIndexer (paramTypeName: string) =
+        entity.MembersFunctionsAndValues
+        |> Seq.filter (fun v -> v.DisplayName = "Item" && v.IsProperty)
+        |> Seq.find (fun v ->
+            v.CurriedParameterGroups
+            |> Seq.collect id
+            |> Seq.exists (fun p -> (string p.Type).EndsWith paramTypeName))
+        |> fun v ->
+            match v.XmlDoc with
+            | FSharpXmlDoc.FromXmlText t -> t.GetXmlText()
+            | _ -> ""
+
+    // The overridden (string) indexer's base overload is undocumented: it must not borrow the
+    // int overload's docs.
+    Assert.DoesNotContain("INT indexer docs", docOfIndexer "string")

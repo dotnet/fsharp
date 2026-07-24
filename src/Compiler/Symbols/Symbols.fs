@@ -351,8 +351,12 @@ module Impl =
             try
                 match d with
                 | E _ -> true
-                | P _ ->
-                    match GetImmediateIntrinsicPropInfosOfType (Some memberName, AccessibleFromSomeFSharpCode) cenv.g cenv.amap range0 targetTy with
+                | P p ->
+                    // The slot branch passes slot.Name, which for a property is the accessor name
+                    // (get_Item/set_Item); the intrinsic-property lookup filters by property name
+                    // (Item), so use p.PropertyName here rather than the accessor to actually count
+                    // the overloaded indexers.
+                    match GetImmediateIntrinsicPropInfosOfType (Some p.PropertyName, AccessibleFromSomeFSharpCode) cenv.g cenv.amap range0 targetTy with
                     | []
                     | [ _ ] -> true
                     | _ -> false
