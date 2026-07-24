@@ -103,6 +103,7 @@ type LanguageFeature =
     | ErrorOnMissingSignatureAttribute
     | AccessProtectedBaseFieldFromClosure
     | ImprovedImpliedArgumentNamesPartTwo
+    | SupportCallerArgumentExpression
 
 /// LanguageVersion management
 type LanguageVersion =

@@ -154,6 +154,8 @@ module internal ILExtensions =
                 | "System.Runtime.CompilerServices.CallerMemberNameAttribute" -> WellKnownILAttributes.CallerMemberNameAttribute
                 | "System.Runtime.CompilerServices.CallerFilePathAttribute" -> WellKnownILAttributes.CallerFilePathAttribute
                 | "System.Runtime.CompilerServices.CallerLineNumberAttribute" -> WellKnownILAttributes.CallerLineNumberAttribute
+                | "System.Runtime.CompilerServices.CallerArgumentExpressionAttribute" ->
+                    WellKnownILAttributes.CallerArgumentExpressionAttribute
                 | "System.Runtime.CompilerServices.RequiresLocationAttribute" -> WellKnownILAttributes.RequiresLocationAttribute
                 | "System.Runtime.CompilerServices.NullableAttribute" -> WellKnownILAttributes.NullableAttribute
                 | "System.Runtime.CompilerServices.NullableContextAttribute" -> WellKnownILAttributes.NullableContextAttribute
@@ -572,6 +574,7 @@ module internal AttributeHelpers =
                 | "CallerMemberNameAttribute" -> WellKnownValAttributes.CallerMemberNameAttribute
                 | "CallerFilePathAttribute" -> WellKnownValAttributes.CallerFilePathAttribute
                 | "CallerLineNumberAttribute" -> WellKnownValAttributes.CallerLineNumberAttribute
+                | "CallerArgumentExpressionAttribute" -> WellKnownValAttributes.CallerArgumentExpressionAttribute
                 | "MethodImplAttribute" -> WellKnownValAttributes.MethodImplAttribute
                 | _ -> WellKnownValAttributes.None
 
@@ -648,7 +651,18 @@ module internal AttributeHelpers =
                     | "NoEagerConstraintApplicationAttribute" -> WellKnownValAttributes.NoEagerConstraintApplicationAttribute
                     | _ -> WellKnownValAttributes.None
                 | _ -> WellKnownValAttributes.None
-            | ValueNone -> WellKnownValAttributes.None
+            | ValueNone ->
+                let typeCompiledNameIs name =
+                    let path, typeName = splitILTypeName name
+
+                    match tcref.TryDeref with
+                    | ValueNone -> false
+                    | ValueSome x -> x.CompilationPath.MangledPath = path && x.CompiledName = typeName
+
+                if typeCompiledNameIs "System.Runtime.CompilerServices.CallerArgumentExpressionAttribute" then
+                    WellKnownValAttributes.CallerArgumentExpressionAttribute
+                else
+                    WellKnownValAttributes.None
 
     let computeValWellKnownFlags (g: TcGlobals) (attribs: Attribs) : WellKnownValAttributes =
         let mutable flags = WellKnownValAttributes.None

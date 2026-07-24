@@ -1106,7 +1106,6 @@ type TcGlobals(
   // Adding an unnecessary "let" instead of inlining into a multi-line pipelined compute-once "member val" that is too complex for @dsyme
   let v_attribs_Unsupported = [
         tryFindSysAttrib "System.Runtime.CompilerServices.ModuleInitializerAttribute"
-        tryFindSysAttrib "System.Runtime.CompilerServices.CallerArgumentExpressionAttribute"
         tryFindSysAttrib "System.Runtime.InteropServices.UnmanagedCallersOnlyAttribute"
         tryFindSysAttrib "System.Runtime.CompilerServices.CompilerFeatureRequiredAttribute"
         tryFindSysAttrib "System.Diagnostics.CodeAnalysis.SetsRequiredMembersAttribute"

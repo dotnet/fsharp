@@ -328,6 +328,9 @@ type TcFileState =
                 -> UnscopedTyparEnv
                 -> range * Expr * TType * SynExpr
                 -> Expr * UnscopedTyparEnv
+
+        /// The impl file content. Used to support `CallerArgumentExpression` feature.
+        SourceText: ISourceText option
     }
 
     static member Create:
@@ -372,5 +375,6 @@ type TcFileState =
                 -> OverallTy
                 -> UnscopedTyparEnv
                 -> range * Expr * TType * SynExpr
-                -> Expr * UnscopedTyparEnv) ->
+                -> Expr * UnscopedTyparEnv) *
+        sourceText: ISourceText option ->
             TcFileState

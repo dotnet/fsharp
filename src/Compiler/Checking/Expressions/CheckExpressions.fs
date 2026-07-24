@@ -7956,9 +7956,23 @@ and TcConstExpr cenv (overallTy: OverallTy) env m tpenv c =
 // Check an 'assert x' expression.
 and TcAssertExpr cenv overallTy env (m: range) tpenv x =
     let synm = m.MakeSynthetic() // Mark as synthetic so the language service won't pick it up.
+    
+    // wrap an extra parentheses so 'assert(x=1) isn't considered a named argument to a method call
+    let arg1Expr = SynExpr.Paren (x, range0, None, synm)
+    
+    let argExpr = 
+        match cenv.SourceText with
+        | Some sourceText when cenv.g.langVersion.SupportsFeature LanguageFeature.SupportCallerArgumentExpression -> 
+            let mArgExpr = x.Range.MakeSynthetic()
+            let code = sourceText.GetSubTextFromRange mArgExpr
+            if System.String.IsNullOrEmpty code then arg1Expr
+            else 
+                let arg2Expr = SynExpr.Const (SynConst.String (code, SynStringKind.Regular, mArgExpr), mArgExpr)
+                SynExpr.Tuple(false, [arg1Expr; arg2Expr], [], mArgExpr)
+        | _ -> arg1Expr
+
     let callDiagnosticsExpr = SynExpr.App (ExprAtomicFlag.Atomic, false, mkSynLidGet synm ["System";"Diagnostics";"Debug"] "Assert",
-                                           // wrap an extra parentheses so 'assert(x=1) isn't considered a named argument to a method call
-                                           SynExpr.Paren (x, range0, None, synm), synm)
+                                           argExpr, synm)
 
     TcExpr cenv overallTy env tpenv callDiagnosticsExpr
 
@@ -10656,8 +10670,23 @@ and TcMethodApplication
     /// STEP 5. Build the argument list. Adjust for optional arguments, byref arguments and coercions.
 
     let objArgPreBinder, objArgs, allArgsPreBinders, allArgs, allArgsCoerced, optArgPreBinder, paramArrayPreBinders, outArgExprs, outArgTmpBinds =
+        
+        // We apply CallerArgumentExpression to optional parameters only when the method call has syntactic arguments.
+        // Otherwise, we cannot get the range of the argument. The argument range will be the method name range.
+        //      System.ArgumentException.ThrowIfNullOrEmpty(null)              <-- Can get the argument text through its range
+        //      (System.ArgumentException.ThrowIfNullOrEmpty) null             <-- Cannot get the right text
+        //      System.ArgumentException.ThrowIfNullOrEmpty <| null            <-- Cannot get the right text
+        //      null |> System.ArgumentException.ThrowIfNullOrEmpty            <-- Cannot get the right text
+        //      let f = System.ArgumentException.ThrowIfNullOrEmpty in f(null) <-- Cannot get the right text
+        let canApplyCallerArgumentExpression = curriedCallerArgsOpt.IsSome
+        
+        let extensionMethodObjArg =
+            match finalCalledMeth.Method.GetExtensionObjArgName(), objArgs with
+            | Some name, objArg :: _ -> Some (name, objArg.Range)
+            | _ -> None
+                    
         let tcVal = LightweightTcValForUsingInBuildMethodCall g
-        AdjustCallerArgs tcVal TcFieldInit env.eCallerMemberName cenv.infoReader ad finalCalledMeth objArgs lambdaVars mItem mMethExpr
+        AdjustCallerArgs tcVal TcFieldInit cenv.infoReader ad finalCalledMeth objArgs lambdaVars mItem mMethExpr (env.eCallerMemberName, cenv.SourceText, canApplyCallerArgumentExpression, extensionMethodObjArg)
 
     // Record the resolution of the named argument for the Language Service
     allArgs |> List.iter (fun assignedArg ->
@@ -12679,6 +12708,20 @@ and AnalyzeAndMakeAndPublishRecursiveValue
     // NOTE: top arity, type and typars get fixed-up after inference
     let prelimTyscheme = GeneralizedType(enclosingDeclaredTypars@declaredTypars, ty)
     let prelimValReprInfo = TranslateSynValInfo cenv mBinding (TcAttributes cenv envinner) valSynInfo
+
+    // If the binding is an instance member whose first parameter has no name, then set the the `thisId` to first parameter.
+    // This is used to generate the correct `thisArg` name for an F# instance extension method to enable 
+    // the `[<CallerArgumentExpression "this">]` feature for F# instance extension method.
+    //
+    // Example:
+    //    type System.Object with
+    //        member this.A([<CallerArgumentExpression "this">] ?arg: string) = arg
+    //               ^^^^                               ^^^^
+    match declPattern, prelimValReprInfo with
+    | SynPat.InstanceMember(thisId, _, _, _, _), PrelimValReprInfo(curriedArgInfos = [thisArg] :: _) when thisArg.Name.IsNone -> 
+        thisArg.Name <- Some thisId
+    | _ -> ()
+
     let valReprInfo, valReprInfoForDisplay = UseSyntacticValReprInfo declKind prelimTyscheme prelimValReprInfo
     let hasDeclaredTypars = not (List.isEmpty declaredTypars)
     let prelimValScheme = ValScheme(bindingId, prelimTyscheme, valReprInfo, valReprInfoForDisplay, memberInfoOpt, false, inlineFlag, NormalVal, vis, false, false, false, hasDeclaredTypars)
