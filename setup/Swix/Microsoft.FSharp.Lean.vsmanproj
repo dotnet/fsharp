@@ -42,4 +42,12 @@
   </Target>
 
   <Import Project="$(SwixPluginDir)\Microsoft.VisualStudioEng.MicroBuild.Plugins.SwixBuild.targets" />
+
+  <!-- FinalizeManifest emits the finalized Microsoft.FSharp.vsman to $(TargetPath) (arcade's OutDir, i.e.
+       artifacts\bin\...); stage it into the insertion drop folder next to the signed VSIX + .vsmand so the drop
+       upload has the complete, self-consistent VS setup manifest + payload. -->
+  <Target Name="StageVsmanIntoInsertion" AfterTargets="Build" Condition="Exists('$(TargetPath)')">
+    <Copy SourceFiles="$(TargetPath)" DestinationFolder="$(InsertionDir)" SkipUnchangedFiles="false" />
+    <Message Importance="high" Text="Staged finalized .vsman: $(TargetPath) -> $(InsertionDir)" />
+  </Target>
 </Project>
