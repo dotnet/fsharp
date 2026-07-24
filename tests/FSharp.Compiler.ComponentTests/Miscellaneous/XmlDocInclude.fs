@@ -169,6 +169,25 @@ let f x = x
             cleanup dir
 
     [<Fact>]
+    let ``Zero xpath matches emits no warning and inserts comment`` () =
+        let res =
+            runInclude (scenario (Snippets.memberWithInclude "d.xml" "/data/nope") [ "d.xml", Snippets.dataSummaryRemarks ])
+
+        // Roslyn parity: a valid XPath that matches nothing must NOT emit any diagnostic.
+        res.Compilation |> shouldSucceed |> withDiagnostics [] |> ignore
+
+        let inner = memberInner "M:Test.included(System.Int32,System.Int32)" res.Xml
+        Assert.Contains("No matching elements were found for the following include tag", inner)
+        Assert.Contains("<include", inner) // original tag is kept
+
+    [<Fact>]
+    let ``Invalid xpath still warns`` () =
+        let res =
+            runInclude (scenario (Snippets.memberWithInclude "d.xml" "/data/[bad") [ "d.xml", Snippets.dataSummaryRemarks ])
+
+        res.Compilation |> shouldSucceed |> withWarningCode 3887 |> ignore
+
+    [<Fact>]
     let ``Missing include file does not fail compilation`` () =
         Fs
             """

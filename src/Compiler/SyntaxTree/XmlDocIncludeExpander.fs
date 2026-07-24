@@ -21,6 +21,11 @@ let private pathComparer = StringComparer.OrdinalIgnoreCase
 let private includeKey (resolvedPath: string) (xpath: string) =
     resolvedPath.ToUpperInvariant() + "\u0000" + xpath
 
+/// Roslyn-parity comment inserted when an <include> XPath is valid but matches no elements.
+/// No warning is emitted in this case; the original tag is kept after the comment.
+let private noMatchCommentText =
+    " No matching elements were found for the following include tag "
+
 /// Load an XML file from disk, using a per-expansion local cache.
 /// The local cache avoids re-reading the same file within a single doc generation pass
 /// while avoiding stale data across compilations (unlike a global static cache).
@@ -64,12 +69,7 @@ let private evaluateXPath (doc: XDocument) (xpath: string) : Result<XElement seq
         if String.IsNullOrWhiteSpace(xpath) then
             Result.Error "XPath expression is empty"
         else
-            let elements = doc.XPathSelectElements(xpath)
-
-            if obj.ReferenceEquals(elements, null) || Seq.isEmpty elements then
-                Result.Error $"XPath query returned no results: {xpath}"
-            else
-                Result.Ok elements
+            Result.Ok(doc.XPathSelectElements(xpath))
     with ex ->
         Result.Error $"Invalid XPath expression '{xpath}': {ex.Message}"
 
@@ -110,8 +110,17 @@ type private ExpansionContext =
         Range: range
     }
 
+/// Outcome of resolving a single <include> directive.
+type private IncludeOutcome =
+    /// Expanded to these nodes.
+    | IncludeResolved of XNode seq
+    /// Valid XPath but zero matches: Roslyn parity is a comment + the kept tag, with no warning.
+    | IncludeNoMatch
+    /// Genuine failure (missing file, invalid/empty XPath, cycle): warn and keep the tag.
+    | IncludeError of string
+
 /// Load and expand includes from an external file
-let rec private resolveSingleInclude (baseFileName: string) (includeInfo: IncludeInfo) (ctx: ExpansionContext) : Result<XNode seq, string> =
+let rec private resolveSingleInclude (baseFileName: string) (includeInfo: IncludeInfo) (ctx: ExpansionContext) : IncludeOutcome =
 
     let resolvedPathResult =
         try
@@ -120,32 +129,37 @@ let rec private resolveSingleInclude (baseFileName: string) (includeInfo: Includ
             Result.Error $"Invalid file path: {includeInfo.FilePath}"
 
     match resolvedPathResult with
-    | Result.Error msg -> Result.Error msg
+    | Result.Error msg -> IncludeError msg
     | Result.Ok resolvedPath ->
 
         let key = includeKey resolvedPath includeInfo.XPath
 
         if ctx.InProgressIncludes.Contains(key) then
-            Result.Error $"Circular include detected: {resolvedPath}"
+            IncludeError $"Circular include detected: {resolvedPath}"
         else
-            loadXmlFile ctx.FileCache resolvedPath
-            |> Result.bind (fun includeDoc -> evaluateXPath includeDoc includeInfo.XPath)
-            |> Result.map (fun elements ->
-                // Clone the in-progress set and add this (file,xpath) for recursive expansion
-                let childInProgress =
-                    HashSet<string>(ctx.InProgressIncludes, StringComparer.Ordinal)
+            match
+                loadXmlFile ctx.FileCache resolvedPath
+                |> Result.bind (fun includeDoc -> evaluateXPath includeDoc includeInfo.XPath)
+            with
+            | Result.Error msg -> IncludeError msg
+            | Result.Ok elements ->
+                let elements = elements |> Seq.toList // materialize once (avoid re-running the XPath query)
 
-                childInProgress.Add(key) |> ignore
+                if List.isEmpty elements then
+                    IncludeNoMatch
+                else
+                    // Clone the in-progress set and add this (file,xpath) for recursive expansion
+                    let childInProgress =
+                        HashSet<string>(ctx.InProgressIncludes, StringComparer.Ordinal)
 
-                let childCtx =
-                    {
-                        FileCache = ctx.FileCache
-                        InProgressIncludes = childInProgress
-                        Range = ctx.Range
-                    }
+                    childInProgress.Add(key) |> ignore
 
-                let nodes = elements |> Seq.cast<XNode>
-                expandAllIncludeNodes resolvedPath nodes childCtx)
+                    let childCtx =
+                        { ctx with
+                            InProgressIncludes = childInProgress
+                        }
+
+                    IncludeResolved(expandAllIncludeNodes resolvedPath (elements |> Seq.cast<XNode>) childCtx)
 
 /// Recursively expand includes in XElement nodes
 and private expandAllIncludeNodes (baseFileName: string) (nodes: XNode seq) (ctx: ExpansionContext) : XNode seq =
@@ -166,10 +180,16 @@ and private expandAllIncludeNodes (baseFileName: string) (nodes: XNode seq) (ctx
                 Seq.singleton node
             | Some(Result.Ok includeInfo) ->
                 match resolveSingleInclude baseFileName includeInfo ctx with
-                | Result.Error msg ->
+                | IncludeResolved expandedNodes -> expandedNodes
+                | IncludeNoMatch ->
+                    // Roslyn parity: valid XPath, zero matches => comment + keep the tag, no warning.
+                    seq {
+                        XComment(noMatchCommentText) :> XNode
+                        node
+                    }
+                | IncludeError msg ->
                     warning (Error(FSComp.SR.xmlDocIncludeError msg, ctx.Range))
-                    Seq.singleton node
-                | Result.Ok expandedNodes -> expandedNodes)
+                    Seq.singleton node)
 
 /// Expand all <include> elements in an XmlDoc.
 /// Uses a per-call file cache and case-insensitive cycle detection.
