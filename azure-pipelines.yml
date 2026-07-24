@@ -86,6 +86,16 @@ extends:
               - checkout: self
                 clean: true
                 fetchDepth: 1
+              # PROBE (non-fatal): can pipeline 499 authenticate the devdiv internal-tooling feed that main uses
+              # (via restore-internal-tools.yml) to restore the MicroBuild SwixBuild plugin for the .vsman drop?
+              # This is the exact read-only connection dotnet/fsharp main uses. continueOnError so the proven
+              # product/tests/signed-VSIX build is unaffected while we learn whether 499 is authorized for it.
+              - task: NuGetAuthenticate@1
+                displayName: 'PROBE: authenticate devdiv/dotnet-core-internal-tooling (main''s internal-tools feed)'
+                continueOnError: true
+                inputs:
+                  nuGetServiceConnections: 'devdiv/dotnet-core-internal-tooling'
+                  forceReinstallCredentialProvider: true
               - script: eng\CIBuild.cmd -configuration $(_BuildConfig)
                 displayName: 'Build (product) + tests + insertion VSIX + sign'
                 env:
@@ -93,6 +103,18 @@ extends:
                   BUILD_INSERTION: 1
                   SignType: $(_SignType)
                   OfficialBuildId: $(Build.BuildNumber)
+              # PROBE (non-fatal): restore main's internal Tools.csproj (which references the MicroBuild SwixBuild
+              # plugin) from the authenticated devdiv feed. If this restores the plugin, 499 can build the .vsman
+              # drop exactly like main; if it 401s, 499 needs authorization for the connection above.
+              - script: >
+                  "$(Build.SourcesDirectory)\.dotnet\dotnet.exe" restore
+                  "$(Build.SourcesDirectory)\eng\common\internal\Tools.csproj"
+                  --configfile "$(Build.SourcesDirectory)\NuGet.config"
+                displayName: 'PROBE: restore internal tools (MicroBuild SwixBuild plugin)'
+                continueOnError: true
+                env:
+                  DOTNET_ROOT: '$(Build.SourcesDirectory)\.dotnet'
+                  DOTNET_MULTILEVEL_LOOKUP: '0'
               - task: PublishTestResults@2
                 displayName: 'Publish test results'
                 condition: always()
