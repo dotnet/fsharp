@@ -16,6 +16,11 @@ open Internal.Utilities.Library
 /// Case-insensitive path comparer for cycle detection and caching
 let private pathComparer = StringComparer.OrdinalIgnoreCase
 
+/// Cycle-detection key. The same file included via DIFFERENT XPath sections is not a cycle,
+/// so the key combines the (case-folded) resolved path with the exact XPath.
+let private includeKey (resolvedPath: string) (xpath: string) =
+    resolvedPath.ToUpperInvariant() + "\u0000" + xpath
+
 /// Load an XML file from disk, using a per-expansion local cache.
 /// The local cache avoids re-reading the same file within a single doc generation pass
 /// while avoiding stale data across compilations (unlike a global static cache).
@@ -101,7 +106,7 @@ let private classifyInclude (elem: XElement) : Result<IncludeInfo, string> optio
 type private ExpansionContext =
     {
         FileCache: Dictionary<string, Result<XDocument, string>>
-        InProgressFiles: HashSet<string>
+        InProgressIncludes: HashSet<string>
         Range: range
     }
 
@@ -118,20 +123,24 @@ let rec private resolveSingleInclude (baseFileName: string) (includeInfo: Includ
     | Result.Error msg -> Result.Error msg
     | Result.Ok resolvedPath ->
 
-        if ctx.InProgressFiles.Contains(resolvedPath) then
+        let key = includeKey resolvedPath includeInfo.XPath
+
+        if ctx.InProgressIncludes.Contains(key) then
             Result.Error $"Circular include detected: {resolvedPath}"
         else
             loadXmlFile ctx.FileCache resolvedPath
             |> Result.bind (fun includeDoc -> evaluateXPath includeDoc includeInfo.XPath)
             |> Result.map (fun elements ->
-                // Clone the in-progress set and add the current file for recursive expansion
-                let childInProgress = HashSet<string>(ctx.InProgressFiles, pathComparer)
-                childInProgress.Add(resolvedPath) |> ignore
+                // Clone the in-progress set and add this (file,xpath) for recursive expansion
+                let childInProgress =
+                    HashSet<string>(ctx.InProgressIncludes, StringComparer.Ordinal)
+
+                childInProgress.Add(key) |> ignore
 
                 let childCtx =
                     {
                         FileCache = ctx.FileCache
-                        InProgressFiles = childInProgress
+                        InProgressIncludes = childInProgress
                         Range = ctx.Range
                     }
 
@@ -194,7 +203,7 @@ let expandIncludes (doc: XmlDoc) : XmlDoc =
                 let ctx =
                     {
                         FileCache = Dictionary<string, Result<XDocument, string>>(pathComparer)
-                        InProgressFiles = HashSet<string>(pathComparer)
+                        InProgressIncludes = HashSet<string>(StringComparer.Ordinal)
                         Range = doc.Range
                     }
 

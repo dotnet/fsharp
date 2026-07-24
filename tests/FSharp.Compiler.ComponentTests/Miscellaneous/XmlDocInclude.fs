@@ -241,6 +241,40 @@ let f x = x
             cleanup dir
 
     [<Fact>]
+    let ``Same file different xpath is not a cycle`` () =
+        // The member includes /data/summary of self.xml; that <summary> in turn includes
+        // /data/remarks of the SAME file. Different sections => must NOT be a false cycle.
+        let selfData =
+            """<?xml version="1.0"?>
+<data>
+  <summary>S: <include file="self.xml" path="/data/remarks"/></summary>
+  <remarks>Shared remarks.</remarks>
+</data>"""
+
+        let res =
+            runInclude (scenario (Snippets.memberWithInclude "self.xml" "/data/summary") [ "self.xml", selfData ])
+
+        res.Compilation |> shouldSucceed |> ignore
+
+        // If a false cycle fired, the inner <include> would survive unexpanded and this would NOT match.
+        res.Xml
+        |> memberXmlEquals
+            "M:Test.included(System.Int32,System.Int32)"
+            "<summary>S: <remarks>Shared remarks.</remarks></summary>"
+
+    [<Fact>]
+    let ``Self include cycle is detected and terminates`` () =
+        let res =
+            runInclude (
+                scenario
+                    (Snippets.memberWithInclude "self.xml" "/data/summary")
+                    [ "self.xml", Snippets.selfCycle "self.xml" ]
+            )
+
+        // Genuine self-reference (/data/summary includes /data/summary) must warn and terminate (test finishing = termination).
+        res.Compilation |> shouldSucceed |> withWarningCode 3887 |> ignore
+
+    [<Fact>]
     let ``Include with rich XML content preserves structure`` () =
         let dir =
             setupDir [
