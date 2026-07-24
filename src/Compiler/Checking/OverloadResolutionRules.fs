@@ -643,10 +643,7 @@ let filterByOverloadResolutionPriority<'T> (g: TcGlobals) (getMeth: 'T -> MethIn
                 |> List.map (fun c ->
                     let m = getMeth c
 
-                    let stamp =
-                        match tryTcrefOfAppTy g m.ApparentEnclosingType with
-                        | ValueSome tcref -> tcref.Stamp
-                        | ValueNone -> 0L
+                    let stamp = m.DeclaringTyconRef.Stamp
 
                     (c, stamp, m.GetOverloadResolutionPriority()))
 
