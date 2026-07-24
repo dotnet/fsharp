@@ -60,6 +60,7 @@ param (
     [switch]$testIntegration,
     [switch]$testScripting,
     [switch]$testVs,
+    [switch]$testApex,
     [switch]$testAll,
     [switch]$testAllButIntegration,
     [switch]$testAllButIntegrationAndAot,
@@ -128,6 +129,7 @@ function Print-Usage() {
     Write-Host "  -testIntegration              Run F# integration tests"
     Write-Host "  -testScripting                Run Scripting tests"
     Write-Host "  -testVs                       Run F# editor unit tests"
+    Write-Host "  -testApex                     Run F# Apex VS integration tests (requires -deployExtensions)"
     Write-Host "  -testpack                     Verify built packages"
     Write-Host "  -testAOT                      Run AOT/Trimming tests"
     Write-Host "  -testEditor                   Run VS Editor tests"
@@ -402,6 +404,148 @@ function TestUsingMSBuild([string] $testProject, [string] $targetFramework, [str
     Exec-Console $dotnetExe $test_args
 }
 
+# Runs the Apex VS integration tests. These are a classic MSTest (VSTest) project, NOT part of the
+# repo's Microsoft.Testing.Platform 'dotnet test' path, and they drive a real VS instance via the Apex
+# UI-automation framework — so they are launched with vstest.console.exe (from the installed VS).
+# The project is intentionally excluded from VisualFSharp.slnx (its dependencies must version-match the
+# VS it drives), so this builds it explicitly. It also must match a specific VS version
+# (MicrosoftTestApexVisualStudioVersion); if the installed VS does not match, the run is skipped rather
+# than producing confusing Apex/VS-mismatch failures. The F# VSIX must be deployed into the RoslynDev
+# hive first (build with -deployExtensions); Apex launches devenv /rootsuffix RoslynDev.
+function TestApexUsingVSTest([string] $targetFramework) {
+    $projectName = "FSharp.Editor.Apex.IntegrationTests"
+    $apexProject = Join-Path $RepoRoot "vsintegration\tests\$projectName\$projectName.csproj"
+
+    # Create the results directory up-front so the CI 'publish test logs' step never fails on a missing
+    # path, even when the run is skipped below (a marker file records the skip reason).
+    $testResultsDir = "$ArtifactsDir\TestResults\$configuration"
+    Create-Directory $testResultsDir
+
+    # The Apex package (MicrosoftTestApexVisualStudioVersion) is pinned to a VS 18.x build. Because the
+    # installed VS differs by machine (CI's image trails a dev's local install and they rarely share the
+    # same minor), gate on the MAJOR version by default so any VS 18.x can run the tests; set
+    # FSHARP_APEX_VS_VERSION to a stricter prefix (e.g. "18.9") to force an exact minor.
+    $expectedVsVersion = if (${env:FSHARP_APEX_VS_VERSION}) { ${env:FSHARP_APEX_VS_VERSION} } else { "18" }
+
+    # Determine which VS will run the tests, and gate on its version. An explicit
+    # VisualStudio.InstallationUnderTest.Path override is trusted (gate skipped); otherwise enumerate
+    # ALL installed VS instances (not just the latest) and pick one whose version starts with the target
+    # prefix, skipping the run if none match rather than producing confusing Apex/VS-mismatch errors.
+    $overridePath = ${env:VisualStudio.InstallationUnderTest.Path}
+    if ($overridePath) {
+        Write-Host "Using explicit VisualStudio.InstallationUnderTest.Path=$overridePath (VS version gate skipped)."
+        $vsDir = Split-Path -Parent (Split-Path -Parent (Split-Path -Parent $overridePath))
+    }
+    else {
+        $vswhere = Join-Path ${env:ProgramFiles(x86)} "Microsoft Visual Studio\Installer\vswhere.exe"
+        # Query the properties separately (parallel arrays in a stable order) instead of parsing
+        # `-format json`: Windows PowerShell 5.1's ConvertFrom-Json mishandles vswhere's multi-instance
+        # JSON array (it collapses the instances into one object with array-valued properties), which
+        # would make every version comparison fail. Build.ps1 runs under Windows PowerShell 5.1.
+        $versions = @()
+        $paths = @()
+        $names = @()
+        if (Test-Path $vswhere) {
+            $versions = @(& $vswhere -all -prerelease -products * -property installationVersion)
+            $paths    = @(& $vswhere -all -prerelease -products * -property installationPath)
+            $names    = @(& $vswhere -all -prerelease -products * -property displayName)
+        }
+        $found = $versions -join ', '
+
+        # Print the full VS inventory for diagnostics (helps explain a skip on CI). Always logged.
+        Write-Host "Visual Studio instances found by vswhere ($($versions.Count)) [vswhere: $vswhere]:"
+        if ($versions.Count -eq 0) {
+            Write-Host "  (none)"
+        }
+        for ($k = 0; $k -lt $versions.Count; $k++) {
+            $mm = ($versions[$k] -split '\.')[0..1] -join '.'
+            $hasIde = Test-Path (Join-Path $paths[$k] "Common7\IDE\devenv.exe")
+            $name = if ($k -lt $names.Count) { $names[$k] } else { "" }
+            Write-Host ("  [{0}] version={1} (major.minor {2}) devenv={3} name='{4}' path={5}" -f $k, $versions[$k], $mm, $hasIde, $name, $paths[$k])
+        }
+
+        # Among installs whose version starts with the target prefix (major, or an explicit major.minor)
+        # and that actually have an IDE (devenv.exe — excludes Build Tools / incomplete installs), pick
+        # the LOWEST version: it is closest to the pinned Apex minor, and "Apex older than VS" is the
+        # safer cross-minor direction than the reverse.
+        $vsDir = $null
+        $selectedVersion = $null
+        $versionMatchPath = $null
+        $candidates = for ($k = 0; $k -lt $versions.Count; $k++) {
+            if ($versions[$k] -like "$expectedVsVersion.*") {
+                [PSCustomObject]@{ Version = $versions[$k]; Path = $paths[$k] }
+            }
+        }
+        $candidates = @($candidates | Sort-Object { [version]$_.Version })
+        foreach ($c in $candidates) {
+            if (-not $versionMatchPath) { $versionMatchPath = $c.Path }
+            if (Test-Path (Join-Path $c.Path "Common7\IDE\devenv.exe")) {
+                $vsDir = $c.Path.TrimEnd("\")
+                $selectedVersion = $c.Version
+                break
+            }
+        }
+
+        if (-not $vsDir) {
+            if ($versionMatchPath) {
+                Write-Host "##vso[task.logissue type=warning]Found VS $expectedVsVersion ($versionMatchPath) but no devenv.exe under Common7\IDE (incomplete install, Build Tools, or a VS update in progress); skipping Apex integration tests (non-gating)."
+                Write-Host "Skipping Apex tests: VS $expectedVsVersion present but devenv.exe missing at [$versionMatchPath]. If VS was updating, retry once it finishes."
+            }
+            else {
+                Write-Host "##vso[task.logissue type=warning]No installed VS matches the Apex target $expectedVsVersion (found: $found); skipping Apex integration tests (non-gating)."
+                Write-Host "Skipping Apex tests: no VS $expectedVsVersion found among installs [$found]. Set FSHARP_APEX_VS_VERSION or VisualStudio.InstallationUnderTest.Path to run against a different install."
+            }
+            Set-Content -Path (Join-Path $testResultsDir "apex-tests-skipped.txt") -Value "Apex integration tests skipped: no usable VS matching target $expectedVsVersion (installed: $found)."
+            return
+        }
+        Write-Host "Selected VS $selectedVersion at '$vsDir' for the Apex tests (target $expectedVsVersion)."
+        # This process env var propagates to the child vstest.console -> testhost -> Apex processes.
+        ${env:VisualStudio.InstallationUnderTest.Path} = Join-Path $vsDir "Common7\IDE\devenv.exe"
+    }
+
+    $vstestConsole = @(
+        (Join-Path $vsDir "Common7\IDE\CommonExtensions\Microsoft\TestWindow\vstest.console.exe"),
+        (Join-Path $vsDir "Common7\IDE\Extensions\TestPlatform\vstest.console.exe")
+    ) | Where-Object { Test-Path $_ } | Select-Object -First 1
+    if (-not $vstestConsole) {
+        throw "vstest.console.exe not found under '$vsDir' (looked in CommonExtensions\Microsoft\TestWindow and Extensions\TestPlatform)."
+    }
+
+    # Build the Apex test project explicitly (it is intentionally excluded from VisualFSharp.slnx).
+    $dotnetPath = InitializeDotNetCli
+    $dotnetExe = Join-Path $dotnetPath "dotnet.exe"
+    $buildBinLog = "$LogDir\${projectName}_$targetFramework.binlog"
+    Exec-Console $dotnetExe "build `"$apexProject`" -c $configuration /bl:`"$buildBinLog`""
+
+    $testAssembly = Join-Path $ArtifactsDir "bin\$projectName\$configuration\$targetFramework\$projectName.dll"
+    if (-not (Test-Path $testAssembly)) {
+        throw "Apex test assembly not found at '$testAssembly' after build."
+    }
+
+    $jobName = if ($env:SYSTEM_JOBNAME) { $env:SYSTEM_JOBNAME } else { "local" }
+    $trxFileName = "$projectName.$targetFramework.$jobName.trx"
+
+    $vstestArgs = @(
+        $testAssembly,
+        "/Platform:x64",
+        "/Framework:.NETFramework,Version=v4.7.2",
+        "/logger:trx;LogFileName=$trxFileName",
+        "/ResultsDirectory:$testResultsDir"
+    )
+
+    Write-Host "$vstestConsole $($vstestArgs -join ' ')"
+    & $vstestConsole @vstestArgs
+    $vstestExitCode = $LASTEXITCODE
+
+    # This leg is non-gating (signal only): a test failure must NOT fail the build. Surface it as a
+    # warning and let the published TRX / Tests tab carry the signal. Genuine infra errors (missing
+    # assembly / vstest.console) already threw above and remain hard failures.
+    if ($vstestExitCode -ne 0) {
+        Write-Host "##vso[task.logissue type=warning]Apex integration tests reported failures (vstest.console exit code $vstestExitCode). This leg is non-gating; see the published TRX and the Tests tab."
+        Write-Host "Apex tests exit code $vstestExitCode (non-gating; not failing the build)."
+    }
+}
+
 function Prepare-TempDir() {
     Copy-Item (Join-Path $RepoRoot "tests\Resources\Directory.Build.props") $TempDir
     Copy-Item (Join-Path $RepoRoot "tests\Resources\Directory.Build.targets") $TempDir
@@ -667,6 +811,10 @@ try {
 
     if ($testIntegration) {
         TestUsingMSBuild -testProject "$RepoRoot\vsintegration\tests\FSharp.Editor.IntegrationTests\FSharp.Editor.IntegrationTests.csproj" -targetFramework $script:desktopTargetFramework
+    }
+
+    if ($testApex) {
+        TestApexUsingVSTest -targetFramework $script:desktopTargetFramework
     }
 
     if ($testAOT) {
