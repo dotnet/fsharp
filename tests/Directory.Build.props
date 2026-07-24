@@ -25,7 +25,7 @@
        central list does not apply; supply the versions inline from the properties they define before this import. -->
   <ItemGroup Condition="'$(_IsTestRunnerProject)' == 'true' AND '$(ExcludeFromTestPackageReferences)' != 'true' AND '$(ImportDirectoryPackagesProps)' == 'false'">
     <PackageReference Update="xunit.v3.mtp-v2" Version="$(XunitVersion)" />
-    <PackageReference Update="xunit.v3.runner.console" Version="$(XunitRunnerConsoleVersion)" />
+    <PackageReference Update="xunit.v3.runner.console" Version="$(XunitVersion)" />
     <PackageReference Update="Microsoft.Testing.Extensions.HangDump" Version="$(MicrosoftTestingExtensionsHangDumpVersion)" />
     <PackageReference Update="XunitXml.TestLogger" Version="$(XunitXmlTestLoggerVersion)" />
     <PackageReference Update="Microsoft.TestPlatform.ObjectModel" Version="$(MicrosoftTestPlatformVersion)" />
