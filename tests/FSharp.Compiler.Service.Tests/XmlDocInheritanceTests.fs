@@ -609,3 +609,56 @@ let _ = d.Ge{caret}t()
 
     Assert.Contains("generic base method docs", xmlText xml)
     Assert.DoesNotContain("<inheritdoc", xmlText xml)
+
+[<Fact>]
+let ``tooltip inherited markup is spliced as XML, not escaped text`` () =
+    // Regression: the expanded doc must round-trip as real XML. A previous defect stored the
+    // engine output as a single line beginning with whitespace, so XmlDoc elaboration re-wrapped
+    // it in an implicit <summary> and XML-escaped the inherited markup (&lt;summary&gt;...), which
+    // an IDE would render as literal angle brackets instead of formatted documentation.
+    let text =
+        getTooltipXml
+            """
+module Test
+type Base<'T>() =
+    /// <summary>Clones a <typeparamref name="T"/> value</summary>
+    abstract member Clone: unit -> 'T
+    default _.Clone() = Unchecked.defaultof<'T>
+type Derived() =
+    inherit Base<int>()
+    /// <inheritdoc/>
+    override _.Clone() = 0
+let d = Derived()
+let _ = d.Clo{caret}ne()
+"""
+        |> xmlText
+
+    Assert.Contains("<summary>", text)
+    Assert.Contains("Clones a", text)
+    Assert.Contains("<typeparamref", text)
+    Assert.DoesNotContain("&lt;", text)
+    Assert.DoesNotContain("&gt;", text)
+    Assert.DoesNotContain("<inheritdoc", text)
+
+[<Fact>]
+let ``symbol inherited markup is spliced as XML, not escaped text`` () =
+    // Same regression guard on the FSharpSymbol.XmlDoc (Path A) resolver.
+    let text =
+        getSymbolXml
+            "Derived"
+            """
+module Test
+/// <summary>Base docs with <c>inline code</c></summary>
+type Base() = class end
+/// <inheritdoc/>
+type Derived() =
+    inherit Base()
+let _ = Derived(){caret}
+"""
+        |> xmlText
+
+    Assert.Contains("<summary>", text)
+    Assert.Contains("<c>inline code</c>", text)
+    Assert.DoesNotContain("&lt;", text)
+    Assert.DoesNotContain("&gt;", text)
+    Assert.DoesNotContain("<inheritdoc", text)

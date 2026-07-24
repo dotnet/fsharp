@@ -488,7 +488,11 @@ module internal SymbolHelpers =
                 if System.String.Equals(xmlText, expandedText, System.StringComparison.Ordinal) then
                     FSharpXmlDoc.FromXmlText xmlDoc
                 else
-                    FSharpXmlDoc.FromXmlText(XmlDoc([| expandedText |], xmlDoc.Range))
+                    // The engine returns already-elaborated XML text (its first line is the <doc>
+                    // wrapper's leading whitespace). Split it back into lines so XmlDoc's elaboration
+                    // sees the leading '<' and passes it through verbatim instead of re-wrapping the
+                    // whole thing in an implicit <summary> and XML-escaping the inherited markup.
+                    FSharpXmlDoc.FromXmlText(XmlDoc(expandedText.Split('\n'), xmlDoc.Range))
         | _ -> GetXmlDocHelpSigOfItemForLookup infoReader m d
 
     let GetXmlCommentForMethInfoItem infoReader m d (minfo: MethInfo) =

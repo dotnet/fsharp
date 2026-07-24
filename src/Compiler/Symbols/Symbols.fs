@@ -283,7 +283,11 @@ module Impl =
         if System.String.Equals(xmlText, expandedText, System.StringComparison.Ordinal) then
             FSharpXmlDoc.FromXmlText doc
         else
-            FSharpXmlDoc.FromXmlText(XmlDoc([| expandedText |], doc.Range))
+            // The engine returns already-elaborated XML text (its first line is the <doc> wrapper's
+            // leading whitespace). Split it back into lines so XmlDoc's elaboration sees the leading
+            // '<' and passes it through verbatim instead of re-wrapping the whole thing in an
+            // implicit <summary> and XML-escaping the inherited markup.
+            FSharpXmlDoc.FromXmlText(XmlDoc(expandedText.Split('\n'), doc.Range))
 
     let makeElaboratedXmlDoc (doc: XmlDoc) =
         makeReadOnlyCollection (doc.GetElaboratedXmlLines())
