@@ -79,7 +79,8 @@
     <PackageVersion Include="Microsoft.VisualStudio.TextManager.Interop" Version="18.9.438" />
     <PackageVersion Include="Microsoft.VisualStudio.Threading" Version="18.7.19" />
     <PackageVersion Include="Microsoft.VisualStudio.Validation" Version="18.7.1" />
-    <PackageVersion Include="Microsoft.VSSDK.BuildTools" Version="$(MicrosoftVSSDKBuildToolsVersion)" />
+    <!-- Microsoft.VSSDK.BuildTools is injected as an implicit PackageReference by Arcade's VisualStudio.targets
+         (Version="$(MicrosoftVSSDKBuildToolsVersion)"); an implicit reference must not be centrally managed (NU1009). -->
     <PackageVersion Include="Newtonsoft.Json" Version="13.0.4" />
     <PackageVersion Include="NuGet.VisualStudio" Version="17.14.0" />
     <!-- Raised from 1.3.0: Microsoft.VisualStudio.ComponentModelHost 18.9.453 (transitive via the VS SDK) requires >= 1.3.1. -->
