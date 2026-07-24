@@ -168,15 +168,6 @@ Full XML:
   <param name="y">Included y parameter.</param>
 </data>"""
 
-        let nestedA fileB =
-            $"""<?xml version="1.0"?><data><summary>Nested A start. {includeElement fileB "/data/part"} Nested A end.</summary></data>"""
-
-        let nestedB =
-            """<?xml version="1.0"?>
-<data>
-  <part>Nested B content.</part>
-</data>"""
-
         let chainA fileB =
             $"""<?xml version="1.0"?><data><summary>A({includeElement fileB "/data/part"})A</summary></data>"""
 
