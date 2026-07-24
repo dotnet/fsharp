@@ -170,5 +170,9 @@ and expandInheritDocFromXmlText
                     root.Nodes()
                     |> Seq.map (fun node -> node.ToString(SaveOptions.DisableFormatting))
                     |> String.concat "\n"
-        with :? System.Xml.XmlException ->
+        with _ ->
+            // Doc-comment inheritance is best-effort: it must never crash a tooltip or the public
+            // FSharpSymbol.XmlDoc. Besides XML parse errors, the caller-supplied resolveCref can throw
+            // while walking CCUs (e.g. invalidOp on an unresolved assembly). On any failure, fall back
+            // to the original text (which still contains the verbatim <inheritdoc>, harmless downstream).
             xmlText
