@@ -1371,3 +1371,87 @@ if result <> "{expected}" then
         |> compileAndRun
         |> shouldSucceed
         |> ignore
+
+    // -------------------------------------------------------------------------
+    // Phase 6 (scope a): most-concrete tiebreaker for constructors and
+    // generic-type members whose instantiation is inferred from the arguments.
+    // Method type args are empty for these, so the pre-Phase-6 gate excluded
+    // them and they resolved as FS0041.
+    // -------------------------------------------------------------------------
+
+    [<Fact>]
+    let ``MoreConcrete - inferred generic ctor prefers concrete param`` () =
+        FSharp """
+module Test
+
+type Wrapper<'T>(tag: string) =
+    new(x: 'T)        = Wrapper<'T>("value")
+    new(x: 'T option) = Wrapper<'T>("option")
+    member _.Tag = tag
+
+// 'T is inferred; BOTH ctors are applicable to (int option).
+let w = Wrapper(Some 5)
+if w.Tag <> "option" then failwithf "expected option, got %s" w.Tag
+        """
+        |> withLangVersionPreview
+        |> asExe
+        |> compileAndRun
+        |> shouldSucceed
+        |> ignore
+
+    [<Fact>]
+    let ``MoreConcrete - generic-type static member prefers concrete param`` () =
+        FSharp """
+module Test
+
+type Factory<'T>() =
+    static member Make(x: 'T)        = "value"
+    static member Make(x: 'T option) = "option"
+
+let r = Factory<_>.Make(Some 5)
+if r <> "option" then failwithf "expected option, got %s" r
+        """
+        |> withLangVersionPreview
+        |> asExe
+        |> compileAndRun
+        |> shouldSucceed
+        |> ignore
+
+    [<Fact>]
+    let ``MoreConcrete - explicit type arg leaves a single applicable ctor`` () =
+        // 'T pinned = int; only new(x:int) applies -> no tiebreak needed.
+        FSharp """
+module Test
+
+type Wrapper<'T>(tag: string) =
+    new(x: 'T)        = Wrapper<'T>("value")
+    new(x: 'T option) = Wrapper<'T>("option")
+    member _.Tag = tag
+
+let w = Wrapper<int>(5)
+if w.Tag <> "value" then failwithf "expected value, got %s" w.Tag
+        """
+        |> withLangVersionPreview
+        |> asExe
+        |> compileAndRun
+        |> shouldSucceed
+        |> ignore
+
+    [<Fact>]
+    let ``MoreConcrete - constructor with incomparable concreteness stays ambiguous`` () =
+        // c1 more concrete at pos1, c2 more concrete at pos2 -> incomparable -> must remain FS0041.
+        FSharp """
+module Test
+
+type Pair<'A, 'B>(tag: string) =
+    new(x: 'A option, y: 'B)        = Pair<'A, 'B>("first")
+    new(x: 'A, y: 'B option)        = Pair<'A, 'B>("second")
+    member _.Tag = tag
+
+let p = Pair(Some 1, Some 2)
+        """
+        |> withLangVersionPreview
+        |> compile
+        |> shouldFail
+        |> withErrorCode 41
+        |> ignore
