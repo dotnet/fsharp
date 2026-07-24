@@ -46,6 +46,12 @@ let private extractInheritDocDirectives (doc: XDocument) =
         })
     |> List.ofSeq
 
+/// Serializes a sequence of XML nodes back to text, one node per line.
+let private nodesToString (nodes: seq<#XNode>) : string =
+    nodes
+    |> Seq.map (fun node -> node.ToString(SaveOptions.DisableFormatting))
+    |> String.concat "\n"
+
 /// Applies an XPath filter to XML content
 let private applyXPathFilter (xpath: string) (sourceXml: string) : string =
     try
@@ -65,9 +71,7 @@ let private applyXPathFilter (xpath: string) (sourceXml: string) : string =
         if Seq.isEmpty selectedElements then
             ""
         else
-            selectedElements
-            |> Seq.map (fun elem -> elem.ToString(SaveOptions.DisableFormatting))
-            |> String.concat "\n"
+            nodesToString selectedElements
     with
     | :? XPathException
     | :? System.Xml.XmlException -> ""
@@ -83,8 +87,7 @@ let private selectDefaultInheritedContent (sourceXml: string) : string =
             match node with
             | :? XElement as element -> element.Name.LocalName <> "overloads"
             | _ -> true)
-        |> Seq.map (fun node -> node.ToString(SaveOptions.DisableFormatting))
-        |> String.concat "\n"
+        |> nodesToString
     with :? System.Xml.XmlException ->
         ""
 
