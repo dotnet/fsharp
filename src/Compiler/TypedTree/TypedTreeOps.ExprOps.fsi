@@ -208,6 +208,9 @@ module internal Makers =
     val mkCallNewFormat:
         TcGlobals -> range -> TType -> TType -> TType -> TType -> TType -> formatStringExpr: Expr -> Expr
 
+    /// Build a call to the 'string' operator (Operators.ToString) at the given argument type.
+    val mkCallStringOperator: TcGlobals -> range -> argTy: TType -> Expr -> Expr
+
     val mkCallGetGenericComparer: TcGlobals -> range -> Expr
 
     val mkCallGetGenericEREqualityComparer: TcGlobals -> range -> Expr
@@ -445,6 +448,10 @@ module internal Makers =
     val mkStaticCall_String_Concat4: TcGlobals -> range -> Expr -> Expr -> Expr -> Expr -> Expr
 
     val mkStaticCall_String_Concat_Array: TcGlobals -> range -> Expr -> Expr
+
+    /// Concatenate string-valued expressions, choosing the cheapest String.Concat overload by arity.
+    /// An empty list yields "" and a singleton yields itself.
+    val mkStringConcat: TcGlobals * range * Expr list -> Expr
 
     val mkDecr: TcGlobals -> range -> Expr -> Expr
 
