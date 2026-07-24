@@ -1275,6 +1275,7 @@ let rec BuildMethodCall tcVal g amap isMutable m isProp minfo valUseFlags minst 
 
         // Build a record allocation from a call to the synthesized all-fields constructor of an F# record.
         | RecdCtor (g, ty) ->
+            checkLanguageFeatureAndRecover g.langVersion LanguageFeature.RecordConstructorSyntax m
             let tcref = tcrefOfAppTy g ty
             let tinst = argsOfAppTy g ty
             mkRecordExpr g (RecdExpr, tcref, tinst, tcref.TrueInstanceFieldsAsRefList, allArgs, m), ty)
