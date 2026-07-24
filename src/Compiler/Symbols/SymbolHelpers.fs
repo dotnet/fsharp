@@ -380,6 +380,9 @@ module internal SymbolHelpers =
             | None -> None
 
         // The overridden member with the same name on the base class of the member's enclosing type.
+        // Matching is by name only, so for an overloaded base member the first overload carrying a
+        // non-empty doc wins; that may not be the exact overload being hovered. This is an accepted
+        // display-only heuristic at the InfoReader layer (no signature to disambiguate against here).
         let tryBaseMethodTarget (name: string) (enclosingTy: TType) =
             match GetSuperTypeOfType g amap m enclosingTy with
             | Some baseTy when not (isObjTyAnyNullness g baseTy) ->
@@ -409,10 +412,23 @@ module internal SymbolHelpers =
     let GetXmlCommentForItemAux (xmlDoc: XmlDoc option) (infoReader: InfoReader) m d =
         match xmlDoc with
         | Some xmlDoc when not xmlDoc.IsEmpty ->
+            // Fast path: scan the raw (unelaborated) lines for "<inheritdoc" before paying for a
+            // GetXmlText() elaboration + concat. This runs on every documented tooltip/completion/
+            // signature-help item, and the overwhelming majority of docs contain no <inheritdoc>.
+            // processLines leaves docs whose first line starts with '<' unchanged, so a genuine
+            // <inheritdoc> tag is always present in UnprocessedLines; the rare case where the raw
+            // text merely mentions "<inheritdoc" but it gets XML-escaped into an implicit <summary>
+            // is caught by the precise GetXmlText() check below.
+            let mightContainInheritDoc =
+                xmlDoc.UnprocessedLines
+                |> Array.exists (fun line -> line.IndexOf("<inheritdoc", System.StringComparison.Ordinal) >= 0)
+
+            if not mightContainInheritDoc then
+                FSharpXmlDoc.FromXmlText xmlDoc
+            else
+
             let xmlText = xmlDoc.GetXmlText()
 
-            // Fast path: the overwhelming majority of docs contain no <inheritdoc>. Pay only a
-            // single ordinal scan and return unchanged, without computing base types or resolvers.
             if xmlText.IndexOf("<inheritdoc", System.StringComparison.Ordinal) < 0 then
                 FSharpXmlDoc.FromXmlText xmlDoc
             else

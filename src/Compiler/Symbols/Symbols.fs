@@ -257,11 +257,22 @@ module Impl =
 
     /// Returns the XML text if it contains an <inheritdoc> element, or None.
     /// Avoids a second GetXmlText() allocation by returning the text for reuse.
+    /// Scans the raw lines first so docs without <inheritdoc> skip the GetXmlText() elaboration.
     let tryGetInheritDocXmlText (doc: XmlDoc) =
         if doc.IsEmpty then None
+        elif
+            doc.UnprocessedLines
+            |> Array.exists (fun line -> line.IndexOf("<inheritdoc", System.StringComparison.Ordinal) >= 0)
+            |> not
+        then
+            None
         else
             let xmlText = doc.GetXmlText()
-            if xmlText.IndexOf("<inheritdoc") >= 0 then Some xmlText else None
+
+            if xmlText.IndexOf("<inheritdoc", System.StringComparison.Ordinal) >= 0 then
+                Some xmlText
+            else
+                None
 
     /// Creates an FSharpXmlDoc with <inheritdoc> elements expanded.
     /// Takes the pre-computed xmlText to avoid a redundant GetXmlText() call.
