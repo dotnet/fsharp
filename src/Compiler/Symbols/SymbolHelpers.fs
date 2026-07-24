@@ -387,31 +387,39 @@ module internal SymbolHelpers =
                 | ValueNone -> None
             | None -> None
 
-        // The overridden member with the same name on the base class of the member's enclosing type.
-        // Matching is by name only, so for an overloaded base member the first overload carrying a
-        // non-empty doc wins; that may not be the exact overload being hovered. This is an accepted
-        // display-only heuristic at the InfoReader layer (no signature to disambiguate against here).
-        let tryBaseMethodTarget (name: string) (enclosingTy: TType) =
-            match GetSuperTypeOfType g amap m enclosingTy with
-            | Some baseTy when not (isObjTyAnyNullness g baseTy) ->
-                GetImmediateIntrinsicMethInfosOfType (Some name, AccessibleFromSomeFSharpCode) g amap m baseTy
-                |> List.tryPick (fun minfo -> docTextOf minfo.XmlDoc |> Option.map (fun xmlText -> "M:" + name, xmlText))
-            | _ -> None
+        // For an OVERRIDE, the overridden base member with a matching signature. Only genuine
+        // overrides inherit (Roslyn GetCandidateSymbol: a non-override method inherits only from an
+        // interface implementation, which is not resolvable at this InfoReader layer). Signature
+        // matching disambiguates overloaded base members so the correct overload's docs are used.
+        let tryBaseMethodTarget (minfo: MethInfo) =
+            if not minfo.IsDefiniteFSharpOverride then
+                None
+            else
+                match GetSuperTypeOfType g amap m minfo.ApparentEnclosingType with
+                | Some baseTy when not (isObjTyAnyNullness g baseTy) ->
+                    GetImmediateIntrinsicMethInfosOfType (Some minfo.LogicalName, AccessibleFromSomeFSharpCode) g amap m baseTy
+                    |> List.filter (fun baseMinfo -> MethInfosEquivByNameAndSig EraseNone true g amap m minfo baseMinfo)
+                    |> List.tryPick (fun baseMinfo -> docTextOf baseMinfo.XmlDoc |> Option.map (fun xmlText -> "M:" + minfo.LogicalName, xmlText))
+                | _ -> None
 
-        let tryBasePropertyTarget (name: string) (enclosingTy: TType) =
-            match GetSuperTypeOfType g amap m enclosingTy with
-            | Some baseTy when not (isObjTyAnyNullness g baseTy) ->
-                GetImmediateIntrinsicPropInfosOfType (Some name, AccessibleFromSomeFSharpCode) g amap m baseTy
-                |> List.tryPick (fun pinfo -> docTextOf pinfo.XmlDoc |> Option.map (fun xmlText -> "P:" + name, xmlText))
-            | _ -> None
+        let tryBasePropertyTarget (pinfo: PropInfo) =
+            if not pinfo.IsDefiniteFSharpOverride then
+                None
+            else
+                match GetSuperTypeOfType g amap m pinfo.ApparentEnclosingType with
+                | Some baseTy when not (isObjTyAnyNullness g baseTy) ->
+                    GetImmediateIntrinsicPropInfosOfType (Some pinfo.PropertyName, AccessibleFromSomeFSharpCode) g amap m baseTy
+                    |> List.filter (fun basePinfo -> PropInfosEquivByNameAndSig EraseNone g amap m pinfo basePinfo)
+                    |> List.tryPick (fun basePinfo -> docTextOf basePinfo.XmlDoc |> Option.map (fun xmlText -> "P:" + pinfo.PropertyName, xmlText))
+                | _ -> None
 
         try
             match d with
             | Item.DelegateCtor ty
             | Item.Types(_, ty :: _) -> tryBaseTypeTarget ty
             | Item.UnqualifiedType(tcref :: _) -> tryBaseTypeTarget (generalizedTyconRef g tcref)
-            | Item.MethodGroup(_, minfo :: _, _) -> tryBaseMethodTarget minfo.LogicalName minfo.ApparentEnclosingType
-            | Item.Property(info = pinfo :: _) -> tryBasePropertyTarget pinfo.PropertyName pinfo.ApparentEnclosingType
+            | Item.MethodGroup(_, minfo :: _, _) -> tryBaseMethodTarget minfo
+            | Item.Property(info = pinfo :: _) -> tryBasePropertyTarget pinfo
             | _ -> None
         with _ ->
             None

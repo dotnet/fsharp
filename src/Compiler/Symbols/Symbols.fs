@@ -340,7 +340,21 @@ module Impl =
                 | ValueNone -> None
             with _ -> None
         | [] ->
-            // For overrides of base class abstract members, slot sigs may be empty.
+            // slotSigs is empty for overrides of base-CLASS virtuals (e.g. override _.ToString()),
+            // whose overridden slot lives in a base/external assembly. Only such genuine overrides
+            // inherit here; a plain new member that merely shares a name with a base member has no
+            // inheritance candidate (Roslyn GetCandidateSymbol returns null for a non-override,
+            // non-interface-implementing method).
+            let isOverride =
+                match d with
+                | V v -> v.IsOverrideOrExplicitImpl
+                | M m | C m -> m.IsDefiniteFSharpOverride
+                | P p -> p.IsDefiniteFSharpOverride
+                | E e -> e.AddMethod.IsDefiniteFSharpOverride
+
+            if not isOverride then
+                None
+            else
             // Fall back to finding the base type and building a member cref from it.
             try
                 let name =

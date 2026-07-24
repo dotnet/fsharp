@@ -357,3 +357,53 @@ let f (x: D) = x{caret}
 
     Assert.DoesNotContain("<inheritdoc", xmlText xml)
     Assert.DoesNotContain("invocation list", xmlText xml)
+
+[<Fact>]
+let ``tooltip does not inherit for a non-override member sharing a base name`` () =
+    // A new (non-override) member that merely shares a name with a base member has no
+    // inheritance candidate in Roslyn (method -> interface impl only). F# must not fall back
+    // to the base member's docs just because the names collide.
+    let xml =
+        getTooltipXml
+            """
+module Test
+type Base() =
+    /// <summary>base foo docs</summary>
+    member _.Foo(x: int) = x
+type Derived() =
+    inherit Base()
+    /// <inheritdoc/>
+    member _.Foo(x: int) = x + 1
+let d = Derived()
+let _ = d.Fo{caret}o(0)
+"""
+
+    Assert.DoesNotContain("<inheritdoc", xmlText xml)
+    Assert.DoesNotContain("base foo docs", xmlText xml)
+
+[<Fact>]
+let ``tooltip override inherits the matching base overload docs`` () =
+    // With multiple base overloads, an override's <inheritdoc/> must inherit the docs of the
+    // overload it actually overrides (by signature), not the first documented same-named overload.
+    let xml =
+        getTooltipXml
+            """
+module Test
+type Base() =
+    /// <summary>int overload docs</summary>
+    abstract M: int -> unit
+    /// <summary>string overload docs</summary>
+    abstract M: string -> unit
+    default _.M(_: int) = ()
+    default _.M(_: string) = ()
+type Derived() =
+    inherit Base()
+    /// <inheritdoc/>
+    override _.M(x: string) = ()
+let d = Derived()
+let _ = d.M{caret}("")
+"""
+
+    Assert.Contains("string overload docs", xmlText xml)
+    Assert.DoesNotContain("int overload docs", xmlText xml)
+    Assert.DoesNotContain("<inheritdoc", xmlText xml)
