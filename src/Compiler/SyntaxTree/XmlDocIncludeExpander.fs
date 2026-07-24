@@ -5,6 +5,7 @@ module internal FSharp.Compiler.Xml.XmlDocIncludeExpander
 open System
 open System.Collections.Generic
 open System.IO
+open System.Xml
 open System.Xml.Linq
 open System.Xml.XPath
 open FSharp.Compiler.DiagnosticsLogger
@@ -37,7 +38,16 @@ let private loadXmlFile (cache: Dictionary<string, Result<XDocument, string>>) (
                 if not (FileSystem.FileExistsShim(filePath)) then
                     Result.Error $"File not found: {filePath}"
                 else
-                    let doc = XDocument.Load(filePath)
+                    use stream = FileSystem.OpenFileForReadShim(filePath)
+
+                    let settings =
+                        XmlReaderSettings(DtdProcessing = DtdProcessing.Prohibit, XmlResolver = null, MaxCharactersFromEntities = 0L)
+
+                    use reader = XmlReader.Create(stream, settings)
+
+                    let doc =
+                        XDocument.Load(reader, LoadOptions.PreserveWhitespace ||| LoadOptions.SetLineInfo)
+
                     Result.Ok doc
             with ex ->
                 Result.Error $"Error loading file '{filePath}': {ex.Message}"
@@ -48,19 +58,21 @@ let private loadXmlFile (cache: Dictionary<string, Result<XDocument, string>>) (
 /// Resolve a file path (absolute or relative to source file).
 /// Always normalizes via GetFullPath so that cycle detection uses canonical paths.
 let private resolveFilePath (baseFileName: string) (includePath: string) : string =
-    if Path.IsPathRooted(includePath) then
-        Path.GetFullPath(includePath)
+    if FileSystem.IsPathRootedShim(includePath) then
+        FileSystem.GetFullPathShim(includePath)
     else
         let baseDir =
             if String.IsNullOrEmpty(baseFileName) || baseFileName = "unknown" then
                 Directory.GetCurrentDirectory()
             else
-                match Path.GetDirectoryName(baseFileName) with
-                | Null -> Directory.GetCurrentDirectory()
-                | NonNull dir when String.IsNullOrEmpty(dir) -> Directory.GetCurrentDirectory()
-                | NonNull dir -> dir
+                let dir = FileSystem.GetDirectoryNameShim(baseFileName)
 
-        Path.GetFullPath(Path.Combine(baseDir, includePath))
+                if String.IsNullOrEmpty(dir) then
+                    Directory.GetCurrentDirectory()
+                else
+                    dir
+
+        FileSystem.GetFullFilePathInDirectoryShim baseDir includePath
 
 /// Evaluate XPath and return matching elements
 let private evaluateXPath (doc: XDocument) (xpath: string) : Result<XElement list, string> =

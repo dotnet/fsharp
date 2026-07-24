@@ -203,6 +203,36 @@ let f x = x
         res.Compilation |> shouldSucceed |> withWarningCode 3887 |> ignore
 
     [<Fact>]
+    let ``Included file with a DTD is rejected without entity expansion`` () =
+        let billionLaughs =
+            """<?xml version="1.0"?>
+<!DOCTYPE data [ <!ENTITY lol "lol"> <!ENTITY lol2 "&lol;&lol;&lol;"> ]>
+<data><summary>&lol2;</summary></data>"""
+
+        let res =
+            runInclude
+                { scenario (Snippets.memberWithInclude "d.xml" "/data/summary") [ "d.xml", billionLaughs ] with
+                    WarnOn = [ 3390 ] }
+
+        res.Compilation |> shouldSucceed |> withWarningCode 3887 |> ignore
+        Assert.DoesNotContain("lollol", res.Xml)
+
+    [<Fact>]
+    let ``Included code block preserves inter-element whitespace`` () =
+        let externalDoc =
+            """<?xml version="1.0"?>
+<data><summary><code><see cref="T:System.String"/>
+    <see cref="T:System.Int32"/></code></summary></data>"""
+
+        let res =
+            runInclude (scenario (Snippets.memberWithInclude "d.xml" "/data/summary") [ "d.xml", externalDoc ])
+
+        res.Compilation |> shouldSucceed |> ignore
+
+        let inner = memberInner "M:Test.included(System.Int32,System.Int32)" res.Xml
+        Assert.Contains("\n    <see cref=\"T:System.Int32\"", inner)
+
+    [<Fact>]
     let ``Non-element xpath result warns`` () =
         // An XPath that selects non-element nodes (here a text node) must warn, not crash XML doc writing.
         let res =
