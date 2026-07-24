@@ -136,7 +136,7 @@ let parseSourceCode (name: string, code: string) =
                 IsExe = true
                 LangVersionText = "preview" }
         )
-        |> Async.RunImmediate
+        |> Async.RunSynchronouslyImmediate
 
     let tree = parseResults.ParseTree
     let sourceDirectoryValue = $"{RootDirectory}/{FileInfo(location).Directory.Name}"

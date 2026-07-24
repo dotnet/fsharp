@@ -467,7 +467,7 @@ module CompilerAssertHelpers =
 
         // Generate a response file, purely for diagnostic reasons.
         File.WriteAllLines(Path.ChangeExtension(outputFilePath, ".rsp"), args)
-        let errors, ex = checker.Compile args |> Async.RunImmediate
+        let errors, ex = checker.Compile args |> Async.RunSynchronouslyImmediate
         errors, ex, outputFilePath
 
     let compileDisposable (outputDirectory:DirectoryInfo) isExe options targetFramework nameOpt (sources:SourceCodeFileKind list) =
@@ -770,7 +770,7 @@ Updated automatically, please check diffs in your pull request, changes must be 
         Assert.Equal(expectedOutput, output)  
 
     static member Pass (source: string) =
-        let parseResults, fileAnswer = checker.ParseAndCheckFileInProject("test.fs", 0, SourceText.ofString source, defaultProjectOptions TargetFramework.Current) |> Async.RunImmediate
+        let parseResults, fileAnswer = checker.ParseAndCheckFileInProject("test.fs", 0, SourceText.ofString source, defaultProjectOptions TargetFramework.Current) |> Async.RunSynchronouslyImmediate
 
         Assert.Empty(parseResults.Diagnostics)
 
@@ -784,7 +784,7 @@ Updated automatically, please check diffs in your pull request, changes must be 
         let defaultOptions = defaultProjectOptions TargetFramework.Current
         let options = { defaultOptions with OtherOptions = Array.append options defaultOptions.OtherOptions}
 
-        let parseResults, fileAnswer = checker.ParseAndCheckFileInProject("test.fs", 0, SourceText.ofString source, options) |> Async.RunImmediate
+        let parseResults, fileAnswer = checker.ParseAndCheckFileInProject("test.fs", 0, SourceText.ofString source, options) |> Async.RunSynchronouslyImmediate
 
         Assert.Empty(parseResults.Diagnostics)
 
@@ -803,7 +803,7 @@ Updated automatically, please check diffs in your pull request, changes must be 
                 0,
                 SourceText.ofString (File.ReadAllText absoluteSourceFile),
                 { defaultOptions with OtherOptions = Array.append options defaultOptions.OtherOptions; SourceFiles = [|sourceFile|] })
-            |> Async.RunImmediate
+            |> Async.RunSynchronouslyImmediate
 
         Assert.Empty(parseResults.Diagnostics)
 
@@ -834,7 +834,7 @@ Updated automatically, please check diffs in your pull request, changes must be 
                     0,
                     SourceText.ofString source,
                     { defaultOptions with OtherOptions = Array.append options defaultOptions.OtherOptions; SourceFiles = [|name|] })
-                |> Async.RunImmediate
+                |> Async.RunSynchronouslyImmediate
 
             if parseResults.Diagnostics.Length > 0 then
                 if options |> Array.contains "--test:ContinueAfterParseFailure" then
@@ -860,7 +860,7 @@ Updated automatically, please check diffs in your pull request, changes must be 
                     0,
                     SourceText.ofString source,
                     { defaultOptions with OtherOptions = Array.append options defaultOptions.OtherOptions})
-                |> Async.RunImmediate
+                |> Async.RunSynchronouslyImmediate
 
             if parseResults.Diagnostics.Length > 0 then
                 parseResults.Diagnostics
@@ -881,7 +881,7 @@ Updated automatically, please check diffs in your pull request, changes must be 
                 0,
                 SourceText.ofString source,
                 { defaultOptions with OtherOptions = Array.append options defaultOptions.OtherOptions})
-            |> Async.RunImmediate
+            |> Async.RunSynchronouslyImmediate
 
         match fileAnswer with
         | FSharpCheckFileAnswer.Aborted -> Assert.Fail("Type Checker Aborted"); failwith "Type Checker Aborted"
@@ -904,7 +904,7 @@ Updated automatically, please check diffs in your pull request, changes must be 
                     0,
                     SourceText.ofString source,
                     { defaultOptions with OtherOptions = Array.append options defaultOptions.OtherOptions})
-                |> Async.RunImmediate
+                |> Async.RunSynchronouslyImmediate
 
             if parseResults.Diagnostics.Length > 0 then
                 parseResults.Diagnostics
@@ -947,12 +947,12 @@ Updated automatically, please check diffs in your pull request, changes must be 
                         }
                     ))
 
-            let snapshot = FSharpProjectSnapshot.FromOptions(projectOptions, getFileSnapshot) |> Async.RunImmediate
+            let snapshot = FSharpProjectSnapshot.FromOptions(projectOptions, getFileSnapshot) |> Async.RunSynchronouslyImmediate
 
             checker.ParseAndCheckProject(snapshot)
         else
             checker.ParseAndCheckProject(projectOptions)
-        |> Async.RunImmediate
+        |> Async.RunSynchronouslyImmediate
 
     static member CompileExeWithOptions(options, (source: SourceCodeFileKind)) =
         compile true options source (fun (errors, _, _) ->
@@ -1048,7 +1048,7 @@ Updated automatically, please check diffs in your pull request, changes must be 
             { FSharpParsingOptions.Default with
                 SourceFiles = [| sourceFileName |]
                 LangVersionText = langVersion }
-        checker.ParseFile(sourceFileName, SourceText.ofString source, parsingOptions) |> Async.RunImmediate
+        checker.ParseFile(sourceFileName, SourceText.ofString source, parsingOptions) |> Async.RunSynchronouslyImmediate
 
     static member ParseWithErrors (source: string, ?langVersion: string) = fun expectedParseErrors ->
         let parseResults = CompilerAssert.Parse (source, ?langVersion=langVersion)

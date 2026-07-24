@@ -32,7 +32,8 @@ let ``can generate options for different frameworks regardless of execution envi
     let tempFile = Path.Combine(path, file)
     let _, errors =
         checker.GetProjectOptionsFromScript(tempFile, SourceText.ofString scriptSource, assumeDotNetFramework = assumeDotNetFramework, useSdkRefs = useSdkRefs, otherFlags = [| flag |])
-        |> Async.RunImmediate
+        |> Async.RunSynchronouslyImmediate
+
     match errors with
     | [] -> ()
     | errors -> failwithf "Error while parsing script with otherFlags:%A:\n%A" [| flag |] errors
@@ -53,7 +54,8 @@ let pi = Math.PI
 """
     let options, errors =
         checker.GetProjectOptionsFromScript(file, SourceText.ofString scriptSource, assumeDotNetFramework = false, useSdkRefs = true, otherFlags = [|flag|])
-        |> Async.RunImmediate
+        |> Async.RunSynchronouslyImmediate
+
     match errors with
     | [] -> ()
     | errors -> failwithf "Error while parsing script with assumeDotNetFramework:%b, useSdkRefs:%b, and otherFlags:%A:\n%A" false true [|flag|] errors
