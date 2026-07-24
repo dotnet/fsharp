@@ -4,6 +4,9 @@ BenchmarkDotNet.Artifacts/
 
 /tests/scripts/current
 .dotnet/
+# Also ignore .dotnet as a symlink (the trailing-slash pattern above matches directories only,
+# which once let a dev-machine symlink slip into a commit and break every CI checkout).
+.dotnet
 .packages/
 .tools/
 

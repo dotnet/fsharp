@@ -13,6 +13,7 @@ open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.ILPdbWriter
 open FSharp.Compiler.AbstractIL.Diagnostics
 open FSharp.Compiler.CompilerConfig
+open FSharp.Compiler.CompilerEmitHookBootstrap
 open FSharp.Compiler.CompilerDiagnostics
 open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.Features
@@ -1467,6 +1468,22 @@ let testFlag tcConfigB =
                     { tcConfigB.optSettings with
                         processingMode = OptimizationProcessingMode.Parallel
                     }
+            | "HotReloadDeltas" ->
+                // Experimental Edit-and-Continue baseline capture. Incubated behind --test:, like
+                // GraphBasedChecking et al., so it stays out of fsc help while the feature is experimental.
+                tcConfigB.emitCaptureArtifacts <- true
+                configureHotReloadEmitHook tcConfigB
+            | "HotReloadHook" ->
+                // Hook-only replay mode: keeps synthesized-name replay active for hot reload sessions
+                // without enabling baseline-capture emission for the current compilation.
+                configureHotReloadEmitHook tcConfigB
+            | "HotReloadClassStateMachines" ->
+                // Emit resumable (task/taskSeq/user CE) state machines as reference types
+                // (classes) so adding/removing a let!/do!/yield is an
+                // AddInstanceFieldToExistingType + method update (Roslyn parity) rather than a
+                // forbidden struct re-layout. Must be set on BOTH the baseline and the delta
+                // compile so they agree on the state machine shape.
+                tcConfigB.emitHotReloadClassStateMachines <- true
 #if DEBUG
             | "ShowParserStackOnParseError" -> showParserStackOnParseError <- true
 #endif

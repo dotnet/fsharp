@@ -197,6 +197,7 @@ type TcGlobals(
     pathMap: PathMap,
     langVersion: LanguageVersion,
     realsig: bool,
+    emitHotReloadClassStateMachines: bool,
     compilationMode: CompilationMode) =
 
   let v_langFeatureNullness = langVersion.SupportsFeature LanguageFeature.NullnessChecking
@@ -1160,6 +1161,11 @@ type TcGlobals(
   member _.langVersion = langVersion
 
   member _.realsig = realsig
+
+  /// Hot reload: emit resumable (task/taskSeq/user CE) state machines as reference types
+  /// (classes) so adding/removing a let!/do!/yield is an AddInstanceFieldToExistingType +
+  /// method update rather than a forbidden struct re-layout. Set by --test:HotReloadClassStateMachines.
+  member _.emitHotReloadClassStateMachines = emitHotReloadClassStateMachines
 
   member _.unionCaseRefEq x y = primUnionCaseRefEq compilingFSharpCore fslibCcu x y
 
