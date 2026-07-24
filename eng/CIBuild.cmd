@@ -123,19 +123,36 @@ if errorlevel 1 ( echo Error: signing failed 1>&2 & exit /b 1 )
 
 rem --- Step 7 (opt-in via BUILD_VSMAN): lean VS insertion .vsman drop. Produces a Visual Studio setup manifest
 rem    (Microsoft.FSharp.vsman + payload) describing ONLY the signed VisualFSharpFull.vsix (compiler + IDE -
-rem    where the sqlite CVE lives), via the MicroBuild SWIX FinalizeManifest. The SwixBuild plugin is provided
-rem    by the MicroBuildSwixPlugin pipeline task (MicroBuildPluginDirectory); MicroBuild.Core is already in
-rem    .\packages from Step 1. Uses DESKTOP MSBuild (the swix/vsman projects are legacy ToolsVersion 15.0).
+rem    where the sqlite CVE lives), via the MODERN MicroBuild SWIX plugin (Microsoft.VisualStudioEng.MicroBuild.
+rem    Plugins.SwixBuild) restored like main from the devdiv dotnet-core-internal-tooling feed (authenticated by
+rem    the pipeline's NuGetAuthenticate). Uses DESKTOP MSBuild (the .vsmanproj + SWIX tasks are .NET Framework).
 rem    Gated so a drop-authoring failure never affects the proven product/tests/signed-VSIX path. ---
 if not defined BUILD_VSMAN ( echo vsman drop skipped ^(set BUILD_VSMAN=1 to build the lean .vsman insertion drop^) & exit /b 0 )
+echo ---------------- Restoring modern MicroBuild SwixBuild plugin (internal-tools feed) ----------------
+set "_dotnet=%_root%\.dotnet\dotnet.exe"
+if not exist "%_dotnet%" set "_dotnet=dotnet"
+set "DOTNET_ROOT=%_root%\.dotnet"
+set "DOTNET_MULTILEVEL_LOOKUP=0"
+set "NUGET_PACKAGES=%_root%\.packages\"
+rem    Restore sources = the committed public feeds PLUS the devdiv dotnet-core-internal-tooling feed (which
+rem    carries the SwixBuild plugin), passed as --source so nothing devdiv is written into a committed config
+rem    (CFS stays green). NuGetAuthenticate (pipeline step) supplied the credential for the devdiv feed.
+set "_itFeed=https://pkgs.dev.azure.com/devdiv/_packaging/dotnet-core-internal-tooling/nuget/v3/index.json"
+set "_srcArgs=--source "%_itFeed%""
+for /f "usebackq delims=" %%U in (`powershell -NoProfile -ExecutionPolicy Bypass -Command "([xml](Get-Content -Raw '%_root%\NuGet.Config')).configuration.packageSources.add | Where-Object { $_.value } | ForEach-Object { $_.value }"`) do set "_srcArgs=!_srcArgs! --source "%%U""
+"%_dotnet%" restore "%_root%\eng\common\internal\Tools.csproj" --configfile "%_root%\NuGet.Config" !_srcArgs!
+if errorlevel 1 ( echo Error: internal tools ^(SwixBuild plugin^) restore failed 1>&2 & exit /b 1 )
+set "SwixPluginDir="
+for /f "delims=" %%D in ('dir /b /s "%NUGET_PACKAGES%microsoft.visualstudioeng.microbuild.plugins.swixbuild\*\build\Microsoft.VisualStudioEng.MicroBuild.Plugins.SwixBuild.targets" 2^>nul') do set "SwixPluginDir=%%~dpD"
+if not defined SwixPluginDir ( echo Error: modern SwixBuild plugin not found after restore 1>&2 & exit /b 1 )
+echo SwixPluginDir=%SwixPluginDir%
 echo ---------------- Building lean VS insertion .vsman drop ----------------
 set "_vswhere=%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\vswhere.exe"
 set "_msbuild="
 for /f "usebackq tokens=*" %%M in (`"%_vswhere%" -latest -products * -requires Microsoft.Component.MSBuild -find MSBuild\**\Bin\MSBuild.exe`) do set "_msbuild=%%M"
 if not defined _msbuild ( echo Error: desktop MSBuild not found via vswhere 1>&2 & exit /b 1 )
 echo Using desktop MSBuild: %_msbuild%
-echo MicroBuildPluginDirectory=%MicroBuildPluginDirectory%
-"%_msbuild%" "%_root%\setup\Swix\Microsoft.FSharp.Lean.vsmanproj" /p:Configuration=Release /p:BUILD_BUILDNUMBER=%OfficialBuildId% /bl:"%_root%\artifacts\log\Release\vsman.binlog"
+"%_msbuild%" "%_root%\setup\Swix\Microsoft.FSharp.Lean.vsmanproj" /p:Configuration=Release /p:SwixPluginDir="%SwixPluginDir%." /p:ManifestBuildVersion=15.9.%OfficialBuildId% /bl:"%_root%\artifacts\log\Release\vsman.binlog"
 if errorlevel 1 ( echo Error: .vsman drop build failed 1>&2 & exit /b 1 )
 echo ---------------- Lean .vsman insertion drop built ----------------
 if exist "%_root%\Release\insertion" ( dir "%_root%\Release\insertion" ) else ( echo Error: Release\insertion not produced 1>&2 & exit /b 1 )

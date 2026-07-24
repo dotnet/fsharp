@@ -78,19 +78,34 @@ extends:
                   sbomEnabled: false
                 - output: pipelineArtifact
                   displayName: 'Publish insertion VSIX'
-                  condition: succeeded()
+                  condition: succeededOrFailed()
                   targetPath: '$(Build.SourcesDirectory)/vsintegration/Vsix/VisualFSharpFull/bin/Release'
                   artifactName: 'VSIX'
+                  sbomEnabled: false
+                - output: pipelineArtifact
+                  displayName: 'Publish lean insertion drop (.vsman)'
+                  condition: succeededOrFailed()
+                  targetPath: '$(Build.SourcesDirectory)/release/insertion'
+                  artifactName: 'InsertionDrop'
                   sbomEnabled: false
             steps:
               - checkout: self
                 clean: true
                 fetchDepth: 1
+              # Authenticate the devdiv dotnet-core-internal-tooling feed (main's read-only connection, confirmed
+              # authorized for 499 by build 3030418) so CIBuild Step 7 can restore the modern MicroBuild SwixBuild
+              # plugin for the .vsman drop. Harmless when BUILD_VSMAN is unset.
+              - task: NuGetAuthenticate@1
+                displayName: 'Authenticate devdiv/dotnet-core-internal-tooling (SwixBuild plugin feed)'
+                inputs:
+                  nuGetServiceConnections: 'devdiv/dotnet-core-internal-tooling'
+                  forceReinstallCredentialProvider: true
               - script: eng\CIBuild.cmd -configuration $(_BuildConfig)
-                displayName: 'Build (product) + tests + insertion VSIX + sign'
+                displayName: 'Build (product) + tests + insertion VSIX + sign + lean .vsman'
                 env:
                   DisableLocalization: true
                   BUILD_INSERTION: 1
+                  BUILD_VSMAN: 1
                   SignType: $(_SignType)
                   OfficialBuildId: $(Build.BuildNumber)
               - task: PublishTestResults@2

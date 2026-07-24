@@ -1,39 +1,39 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Lean VS insertion manifest: produces a .vsman describing ONLY the signed VisualFSharpFull.vsix
-     (compiler + IDE - where the sqlite CVE lives). Deliberately excludes the legacy SDK targeting
-     component and the loose-file Compiler/Dependencies/IDE components (which would package unsigned
-     net40\bin files). Everything referenced here is already Microsoft-signed inside the VSIX. -->
-<Project ToolsVersion="15.0" DefaultTargets="Build" InitialTargets="IncludeFSharpManifests" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<!-- Lean VS insertion manifest (modern MicroBuild SWIX plugin). Produces $(Configuration)\insertion\Microsoft.FSharp.vsman
+     describing ONLY the signed VisualFSharpFull.vsix (compiler + IDE, where the sqlite CVE lives). Uses the modern
+     Microsoft.VisualStudioEng.MicroBuild.Plugins.SwixBuild plugin restored (like main) from the devdiv
+     dotnet-core-internal-tooling feed - NOT the legacy devdiv-only plugin. The plugin build folder is passed as
+     $(SwixPluginDir) by eng\CIBuild.cmd. Everything referenced is already Microsoft-signed inside the VSIX. -->
+<Project ToolsVersion="15.0" DefaultTargets="Build" InitialTargets="CopyInsertionItems" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
 
-    <Import Project="..\FSharp.Setup.props" />
+  <PropertyGroup>
+    <Configuration Condition="'$(Configuration)' == ''">Release</Configuration>
+    <TargetType>build-manifest</TargetType>
+    <TargetName>Microsoft.FSharp</TargetName>
+    <FinalizeManifest>true</FinalizeManifest>
+    <FinalizeSkipLayout>true</FinalizeSkipLayout>
+    <ManifestBuildVersion Condition="'$(ManifestBuildVersion)' == ''">15.9.200.0</ManifestBuildVersion>
+    <OutputPath>$(MSBuildThisFileDirectory)..\..\$(Configuration)\insertion\</OutputPath>
+    <InsertionDir>$(OutputPath)</InsertionDir>
+    <IntermediateOutputPath>$(MSBuildThisFileDirectory)obj\$(Configuration)\</IntermediateOutputPath>
+    <VsixBuildLocation Condition="'$(VsixBuildLocation)' == ''">$(MSBuildThisFileDirectory)..\..\vsintegration\Vsix\VisualFSharpFull\bin\$(Configuration)</VsixBuildLocation>
+  </PropertyGroup>
 
-    <PropertyGroup>
-        <FSharpSourcesRoot>..\..\src</FSharpSourcesRoot>
-        <FinalizeManifest>true</FinalizeManifest>
-        <FinalizeSkipLayout>true</FinalizeSkipLayout>
-        <IsPackage>true</IsPackage>
-        <OutputPath>$(FSharpSourcesRoot)\..\$(Configuration)\insertion</OutputPath>
-        <InsertionDir>$(OutputPath)</InsertionDir>
-        <!-- The signed VSIX + its component json are emitted by the VisualFSharpFull build here (bin\$(Configuration)),
-             which is exactly what eng\Signing.props signs. Override the net40\bin default from FSharp.Setup.props. -->
-        <VsixBuildLocation Condition="'$(VsixBuildLocation)' == '' or !Exists('$(VsixBuildLocation)\VisualFSharpFull.vsix')">$(FSharpSourcesRoot)\..\vsintegration\Vsix\VisualFSharpFull\bin\$(Configuration)</VsixBuildLocation>
-    </PropertyGroup>
+  <Import Project="$(SwixPluginDir)\Microsoft.VisualStudioEng.MicroBuild.Plugins.SwixBuild.props" />
 
-    <ItemGroup>
-        <InsertionItems Include="$(VsixBuildLocation)\VisualFSharpFull.vsix" />
-        <InsertionItems Include="$(VsixBuildLocation)\Microsoft.FSharp.VSIX.Full.Core.json" />
-    </ItemGroup>
+  <ItemGroup>
+    <InsertionItems Include="$(VsixBuildLocation)\VisualFSharpFull.vsix" />
+    <InsertionItems Include="$(VsixBuildLocation)\Microsoft.FSharp.VSIX.Full.Core.json" />
+  </ItemGroup>
 
-    <Import Project="$(FSharpSourcesRoot)\Microbuild.Settings.targets" />
+  <ItemGroup>
+    <MergeManifest Include="$(InsertionDir)Microsoft.FSharp.VSIX.Full.Core.json" />
+  </ItemGroup>
 
-    <Target Name="CopyInsertionItems">
-        <MakeDir Directories="$(InsertionDir)" />
-        <Copy SourceFiles="@(InsertionItems)" DestinationFolder="$(InsertionDir)" />
-    </Target>
+  <Target Name="CopyInsertionItems">
+    <MakeDir Directories="$(InsertionDir)" />
+    <Copy SourceFiles="@(InsertionItems)" DestinationFolder="$(InsertionDir)" />
+  </Target>
 
-    <Target Name="IncludeFSharpManifests" DependsOnTargets="CopyInsertionItems">
-        <ItemGroup>
-            <MergeManifest Include="$(OutputPath)\Microsoft.FSharp.VSIX.Full.Core.json" />
-        </ItemGroup>
-    </Target>
+  <Import Project="$(SwixPluginDir)\Microsoft.VisualStudioEng.MicroBuild.Plugins.SwixBuild.targets" />
 </Project>
