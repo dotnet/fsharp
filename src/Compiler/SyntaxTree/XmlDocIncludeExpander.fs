@@ -14,6 +14,12 @@ open FSharp.Compiler.IO
 open FSharp.Compiler.Text
 open Internal.Utilities.Library
 
+[<Literal>]
+let private maxIncludeDepth = 64
+
+[<Literal>]
+let private maxIncludeExpansions = 10000
+
 /// Path comparison must match the host filesystem: case-insensitive on Windows/macOS, case-sensitive elsewhere.
 let private pathComparer =
     if
@@ -38,13 +44,28 @@ let private includeKeyComparer =
             + 631
     }
 
+/// Per-pass shared state: file cache, remaining expansion budget, and fully expanded fragment memo.
+type ExpansionEnv =
+    {
+        FileCache: Dictionary<string, Result<XDocument, string>>
+        mutable Budget: int
+        Memo: Dictionary<struct (string * string), struct (XNode list * int)>
+    }
+
+let mkExpansionEnv () : ExpansionEnv =
+    {
+        FileCache = Dictionary<string, Result<XDocument, string>>(pathComparer)
+        Budget = maxIncludeExpansions
+        Memo = Dictionary<struct (string * string), struct (XNode list * int)>(includeKeyComparer)
+    }
+
 /// Roslyn-parity comment inserted when an <include> XPath is valid but matches no elements.
 /// No warning is emitted in this case; the original tag is kept after the comment.
 let private noMatchCommentText =
     " No matching elements were found for the following include tag "
 
-/// Load an XML file from disk, using a per-expansion local cache.
-/// The local cache avoids re-reading the same file within a single doc generation pass
+/// Load an XML file from disk, using a per-pass shared cache.
+/// The cache avoids re-reading the same file within a single doc generation pass
 /// while avoiding stale data across compilations (unlike a global static cache).
 let private loadXmlFile (cache: Dictionary<string, Result<XDocument, string>>) (filePath: string) : Result<XDocument, string> =
     match cache.TryGetValue(filePath) with
@@ -133,16 +154,34 @@ let private classifyInclude (elem: XElement) : Result<IncludeInfo, string> optio
         | Null, NonNull _ -> Some(Result.Error "<include> element is missing required 'file' attribute")
         | Null, Null -> Some(Result.Error "<include> element is missing required 'file' and 'path' attributes")
 
+let private cloneNode (node: XNode) : XNode =
+    match node with
+    | :? XElement as element -> XElement(element) :> XNode
+    | :? XText as text -> XText(text) :> XNode
+    | :? XComment as comment -> XComment(comment) :> XNode
+    | other -> XNode.ReadFrom(other.CreateReader())
+
+let private cloneNodes (nodes: XNode list) : XNode seq = nodes |> Seq.map cloneNode
+
 /// Expansion context threaded through recursive calls
 type private ExpansionContext =
     {
-        FileCache: Dictionary<string, Result<XDocument, string>>
+        Env: ExpansionEnv
         InProgressIncludes: HashSet<struct (string * string)>
+        Depth: int
         Range: range
         Emit: bool
+        HadError: bool ref
+        MaxDepth: int ref
     }
 
+let private noteResolvedDepth (ctx: ExpansionContext) depth =
+    if depth > ctx.MaxDepth.Value then
+        ctx.MaxDepth.Value <- depth
+
 let private warnIncludeError (ctx: ExpansionContext) (msg: string) =
+    ctx.HadError.Value <- true
+
     if ctx.Emit then
         warning (Error(FSComp.SR.xmlDocIncludeError msg, ctx.Range))
 
@@ -172,28 +211,58 @@ let rec private resolveSingleInclude (baseFileName: string) (includeInfo: Includ
 
         if ctx.InProgressIncludes.Contains(key) then
             IncludeError $"Circular include detected: {resolvedPath}"
+        elif ctx.Depth >= maxIncludeDepth then
+            IncludeError $"include expansion limit exceeded (maximum nesting depth {maxIncludeDepth}) at: {resolvedPath}"
+        elif ctx.Env.Budget <= 0 then
+            IncludeError $"include expansion limit exceeded (maximum of {maxIncludeExpansions} includes) at: {resolvedPath}"
         else
-            match
-                loadXmlFile ctx.FileCache resolvedPath
-                |> Result.bind (fun includeDoc -> evaluateXPath includeDoc includeInfo.XPath)
-            with
-            | Result.Error msg -> IncludeError msg
-            | Result.Ok elements ->
-                match elements with
-                | [] -> IncludeNoMatch
-                | matchedElements ->
-                    // Clone the in-progress set and add this (file,xpath) for recursive expansion
-                    let childInProgress =
-                        HashSet<struct (string * string)>(ctx.InProgressIncludes, includeKeyComparer)
+            match ctx.Env.Memo.TryGetValue key with
+            | true, struct (nodes, expansionDepth) when ctx.Depth + expansionDepth <= maxIncludeDepth ->
+                ctx.Env.Budget <- ctx.Env.Budget - 1
+                noteResolvedDepth ctx (ctx.Depth + expansionDepth - 1)
+                IncludeResolved(cloneNodes nodes)
+            | _ ->
+                match
+                    loadXmlFile ctx.Env.FileCache resolvedPath
+                    |> Result.bind (fun includeDoc -> evaluateXPath includeDoc includeInfo.XPath)
+                with
+                | Result.Error msg -> IncludeError msg
+                | Result.Ok elements ->
+                    match elements with
+                    | [] -> IncludeNoMatch
+                    | matchedElements ->
+                        ctx.Env.Budget <- ctx.Env.Budget - 1
 
-                    childInProgress.Add(key) |> ignore
+                        // Clone the in-progress set and add this (file,xpath) for recursive expansion.
+                        let childInProgress =
+                            HashSet<struct (string * string)>(ctx.InProgressIncludes, includeKeyComparer)
 
-                    let childCtx =
-                        { ctx with
-                            InProgressIncludes = childInProgress
-                        }
+                        childInProgress.Add(key) |> ignore
 
-                    IncludeResolved(expandAllIncludeNodes resolvedPath (matchedElements |> Seq.cast<XNode>) childCtx)
+                        let fragmentHadError = ref false
+                        let fragmentMaxDepth = ref ctx.Depth
+
+                        let childCtx =
+                            { ctx with
+                                InProgressIncludes = childInProgress
+                                Depth = ctx.Depth + 1
+                                HadError = fragmentHadError
+                                MaxDepth = fragmentMaxDepth
+                            }
+
+                        let resolvedNodes =
+                            expandAllIncludeNodes resolvedPath (matchedElements |> Seq.cast<XNode>) childCtx
+                            |> Seq.toList
+
+                        noteResolvedDepth ctx fragmentMaxDepth.Value
+
+                        if fragmentHadError.Value then
+                            ctx.HadError.Value <- true
+                        else
+                            let expansionDepth = fragmentMaxDepth.Value - ctx.Depth + 1
+                            ctx.Env.Memo[key] <- struct (resolvedNodes |> List.map cloneNode, expansionDepth)
+
+                        IncludeResolved resolvedNodes
 
 /// Recursively expand includes in XElement nodes
 and private expandAllIncludeNodes (baseFileName: string) (nodes: XNode seq) (ctx: ExpansionContext) : XNode seq =
@@ -229,7 +298,7 @@ and private expandAllIncludeNodes (baseFileName: string) (nodes: XNode seq) (ctx
 /// `emit` controls whether include errors are reported as warnings (build path)
 /// or suppressed (quiet validation path). Returns the input unchanged when there
 /// are no include tags, when parsing fails, or when nothing was expanded.
-let expandIncludeLines (emit: bool) (baseFileName: string) (range: range) (lines: string[]) : string[] =
+let expandIncludeLines (env: ExpansionEnv) (emit: bool) (baseFileName: string) (range: range) (lines: string[]) : string[] =
     let hasIncludes = lines |> Array.exists mayContainInclude
 
     if not hasIncludes then
@@ -253,10 +322,13 @@ let expandIncludeLines (emit: bool) (baseFileName: string) (range: range) (lines
         | Some root ->
             let ctx =
                 {
-                    FileCache = Dictionary<string, Result<XDocument, string>>(pathComparer)
+                    Env = env
                     InProgressIncludes = HashSet<struct (string * string)>(includeKeyComparer)
+                    Depth = 0
                     Range = range
                     Emit = emit
+                    HadError = ref false
+                    MaxDepth = ref -1
                 }
 
             let expandedText =

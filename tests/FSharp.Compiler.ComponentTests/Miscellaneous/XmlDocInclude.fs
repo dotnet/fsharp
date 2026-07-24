@@ -260,6 +260,108 @@ let f (x: int) = x
         res.Xml |> memberXmlEquals "M:Test.f(System.Int32)" "<summary>A(<part>B(<leaf>C</leaf>)B</part>)A</summary>"
 
     [<Fact>]
+    let ``Deep include chain stops with expansion limit warning`` () =
+        let chainLength = 200
+
+        let files =
+            [
+                for i in 0 .. chainLength - 1 ->
+                    let content =
+                        if i = chainLength - 1 then
+                            """<?xml version="1.0"?><data><summary>Deep leaf.</summary></data>"""
+                        else
+                            $"""<?xml version="1.0"?><data><summary>Depth {i}. {Snippets.includeElement $"deep{i + 1}.xml" "/data/summary"}</summary></data>"""
+
+                    $"deep{i}.xml", content
+            ]
+
+        let res = runInclude (scenario (Snippets.memberWithInclude "deep0.xml" "/data/summary") files)
+
+        res.Compilation
+        |> shouldSucceed
+        |> withWarningCode 3887
+        |> withDiagnosticMessageMatches "include expansion limit exceeded"
+        |> ignore
+
+    [<Fact>]
+    let ``Diamond include DAG expands shared fragments correctly`` () =
+        let levels = 15
+
+        let files =
+            [
+                for i in 0 .. levels do
+                    if i = levels then
+                        yield $"d{i}.xml", """<?xml version="1.0"?><data><summary>Leaf.</summary></data>"""
+                    else
+                        yield
+                            $"d{i}.xml",
+                            $"""<?xml version="1.0"?><data><summary>D{i}[{Snippets.includeElement $"a{i}.xml" "/data/part"}{Snippets.includeElement $"b{i}.xml" "/data/part"}]</summary></data>"""
+
+                        yield
+                            $"a{i}.xml",
+                            $"""<?xml version="1.0"?><data><part>A{i}{Snippets.includeElement $"d{i + 1}.xml" "/data/summary"}</part></data>"""
+
+                        yield
+                            $"b{i}.xml",
+                            $"""<?xml version="1.0"?><data><part>B{i}{Snippets.includeElement $"d{i + 1}.xml" "/data/summary"}</part></data>"""
+            ]
+
+        let rec expected level =
+            if level = levels then
+                "<summary>Leaf.</summary>"
+            else
+                $"<summary>D{level}[<part>A{level}{expected (level + 1)}</part><part>B{level}{expected (level + 1)}</part>]</summary>"
+
+        let res = runInclude (scenario (Snippets.memberWithInclude "d0.xml" "/data/summary") files)
+
+        res.Compilation |> shouldSucceed |> withDiagnostics [] |> ignore
+        res.Xml |> memberXmlEquals "M:Test.included(System.Int32,System.Int32)" (expected 0)
+
+    [<Fact>]
+    let ``Memoized include reused deeper still respects depth limit`` () =
+        let suffixLength = 60
+        let prefixLength = 10
+
+        let suffixFiles =
+            [
+                for i in 0 .. suffixLength - 1 ->
+                    let content =
+                        if i = suffixLength - 1 then
+                            """<?xml version="1.0"?><data><summary>Suffix leaf.</summary></data>"""
+                        else
+                            $"""<?xml version="1.0"?><data><summary>S{i}. {Snippets.includeElement $"suffix{i + 1}.xml" "/data/summary"}</summary></data>"""
+
+                    $"suffix{i}.xml", content
+            ]
+
+        let prefixFiles =
+            [
+                for i in 0 .. prefixLength - 1 ->
+                    let nextInclude =
+                        if i = prefixLength - 1 then
+                            Snippets.includeElement "suffix0.xml" "/data/summary"
+                        else
+                            Snippets.includeElement $"prefix{i + 1}.xml" "/data/summary"
+
+                    $"prefix{i}.xml", $"""<?xml version="1.0"?><data><summary>P{i}. {nextInclude}</summary></data>"""
+            ]
+
+        let source =
+            $"""module Test
+
+/// <summary>{Snippets.includeElement "suffix0.xml" "/data/summary"} {Snippets.includeElement "prefix0.xml" "/data/summary"}</summary>
+let f (x: int) = x
+"""
+
+        let res = runInclude (scenario source (suffixFiles @ prefixFiles))
+
+        res.Compilation
+        |> shouldSucceed
+        |> withWarningCode 3887
+        |> withDiagnosticMessageMatches "include expansion limit exceeded"
+        |> ignore
+
+    [<Fact>]
     let ``Relative include inside external file resolves relative to that file`` () =
         // b.xml lives in d1/ and includes a BARE relative "c.xml": it must resolve to d1/c.xml
         // (b's directory), NOT the source directory. A decoy c.xml in the source dir must be ignored.
@@ -468,6 +570,25 @@ let siblingIncludes (x: int) = x
         |> memberXmlEquals
             "M:Test.siblingIncludes(System.Int32)"
             "<summary>First <item>Shared.</item> and second <item>Shared.</item></summary>"
+
+    [<Fact>]
+    let ``Same include file used by two members expands for both`` () =
+        let source =
+            """module Test
+
+/// <include file="shared.xml" path="/data/summary"/>
+let first (x: int) = x
+
+/// <include file="shared.xml" path="/data/summary"/>
+let second (x: int) = x
+"""
+
+        let res = runInclude (scenario source [ "shared.xml", Snippets.dataSummaryRemarks ])
+
+        res.Compilation |> shouldSucceed |> withDiagnostics [] |> ignore
+
+        res.Xml |> memberXmlEquals "M:Test.first(System.Int32)" "<summary>Included summary text.</summary>"
+        res.Xml |> memberXmlEquals "M:Test.second(System.Int32)" "<summary>Included summary text.</summary>"
 
     [<Fact>]
     let ``Include with rich XML content preserves structure`` () =
