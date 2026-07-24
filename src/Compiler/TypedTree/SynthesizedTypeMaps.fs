@@ -3,6 +3,7 @@ module internal FSharp.Compiler.SynthesizedTypeMaps
 open System
 open System.Collections.Generic
 
+open FSharp.Compiler.CompilerGeneratedNameMapState
 open FSharp.Compiler.GeneratedNames
 open FSharp.Compiler.Syntax.PrettyNaming
 
