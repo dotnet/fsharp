@@ -619,6 +619,14 @@ Microsoft.FSharp.Control.AsyncActivation`1[T]: Microsoft.FSharp.Control.AsyncRet
 Microsoft.FSharp.Control.AsyncActivation`1[T]: Microsoft.FSharp.Control.AsyncReturn OnSuccess(T)
 Microsoft.FSharp.Control.AsyncActivation`1[T]: Microsoft.FSharp.Control.AsyncReturn Success(Microsoft.FSharp.Control.AsyncActivation`1[T], T)
 Microsoft.FSharp.Control.AsyncActivation`1[T]: Void OnExceptionRaised()
+Microsoft.FSharp.Control.AsyncModule: Microsoft.FSharp.Control.FSharpAsync`1[Microsoft.FSharp.Core.FSharpResult`2[T,System.Exception]] Catch[T](Microsoft.FSharp.Control.FSharpAsync`1[T])
+Microsoft.FSharp.Control.AsyncModule: Microsoft.FSharp.Control.FSharpAsync`1[Microsoft.FSharp.Core.Unit] Empty
+Microsoft.FSharp.Control.AsyncModule: Microsoft.FSharp.Control.FSharpAsync`1[Microsoft.FSharp.Core.Unit] Ignore[T](Microsoft.FSharp.Control.FSharpAsync`1[T])
+Microsoft.FSharp.Control.AsyncModule: Microsoft.FSharp.Control.FSharpAsync`1[Microsoft.FSharp.Core.Unit] get_Empty()
+Microsoft.FSharp.Control.AsyncModule: Microsoft.FSharp.Control.FSharpAsync`1[TResult] Bind[T,TResult](Microsoft.FSharp.Core.FSharpFunc`2[T,Microsoft.FSharp.Control.FSharpAsync`1[TResult]], Microsoft.FSharp.Control.FSharpAsync`1[T])
+Microsoft.FSharp.Control.AsyncModule: Microsoft.FSharp.Control.FSharpAsync`1[TResult] Map[T,TResult](Microsoft.FSharp.Core.FSharpFunc`2[T,TResult], Microsoft.FSharp.Control.FSharpAsync`1[T])
+Microsoft.FSharp.Control.AsyncModule: Microsoft.FSharp.Control.FSharpAsync`1[T] CatchWith[T](Microsoft.FSharp.Core.FSharpFunc`2[System.Exception,T], Microsoft.FSharp.Control.FSharpAsync`1[T])
+Microsoft.FSharp.Control.AsyncModule: Microsoft.FSharp.Control.FSharpAsync`1[T] Result[T](T)
 Microsoft.FSharp.Control.AsyncPrimitives: Microsoft.FSharp.Control.AsyncReturn Bind[T,TResult](Microsoft.FSharp.Control.AsyncActivation`1[T], Microsoft.FSharp.Control.FSharpAsync`1[TResult], Microsoft.FSharp.Core.FSharpFunc`2[TResult,Microsoft.FSharp.Control.FSharpAsync`1[T]])
 Microsoft.FSharp.Control.AsyncPrimitives: Microsoft.FSharp.Control.AsyncReturn CallThenInvoke[T,TResult](Microsoft.FSharp.Control.AsyncActivation`1[T], TResult, Microsoft.FSharp.Core.FSharpFunc`2[TResult,Microsoft.FSharp.Control.FSharpAsync`1[T]])
 Microsoft.FSharp.Control.AsyncPrimitives: Microsoft.FSharp.Control.AsyncReturn Invoke[T](Microsoft.FSharp.Control.FSharpAsync`1[T], Microsoft.FSharp.Control.AsyncActivation`1[T])
@@ -747,6 +755,15 @@ Microsoft.FSharp.Control.ObservableModule: System.IObservable`1[T] Merge[T](Syst
 Microsoft.FSharp.Control.ObservableModule: System.Tuple`2[System.IObservable`1[TResult1],System.IObservable`1[TResult2]] Split[T,TResult1,TResult2](Microsoft.FSharp.Core.FSharpFunc`2[T,Microsoft.FSharp.Core.FSharpChoice`2[TResult1,TResult2]], System.IObservable`1[T])
 Microsoft.FSharp.Control.ObservableModule: System.Tuple`2[System.IObservable`1[T],System.IObservable`1[T]] Partition[T](Microsoft.FSharp.Core.FSharpFunc`2[T,System.Boolean], System.IObservable`1[T])
 Microsoft.FSharp.Control.ObservableModule: Void Add[T](Microsoft.FSharp.Core.FSharpFunc`2[T,Microsoft.FSharp.Core.Unit], System.IObservable`1[T])
+Microsoft.FSharp.Control.Task: System.Threading.Tasks.Task`1[Microsoft.FSharp.Core.FSharpResult`2[T,System.Exception]] Catch[T](System.Threading.Tasks.Task`1[T])
+Microsoft.FSharp.Control.Task: System.Threading.Tasks.Task`1[Microsoft.FSharp.Core.Unit] Empty
+Microsoft.FSharp.Control.Task: System.Threading.Tasks.Task`1[Microsoft.FSharp.Core.Unit] Ignore[T](System.Threading.Tasks.Task`1[T])
+Microsoft.FSharp.Control.Task: System.Threading.Tasks.Task`1[Microsoft.FSharp.Core.Unit] get_Empty()
+Microsoft.FSharp.Control.Task: System.Threading.Tasks.Task`1[TResult] Bind[T,TResult](Microsoft.FSharp.Core.FSharpFunc`2[T,System.Threading.Tasks.Task`1[TResult]], System.Threading.Tasks.Task`1[T])
+Microsoft.FSharp.Control.Task: System.Threading.Tasks.Task`1[TResult] Map[T,TResult](Microsoft.FSharp.Core.FSharpFunc`2[T,TResult], System.Threading.Tasks.Task`1[T])
+Microsoft.FSharp.Control.Task: System.Threading.Tasks.Task`1[T] CatchWith[T](Microsoft.FSharp.Core.FSharpFunc`2[System.Exception,T], System.Threading.Tasks.Task`1[T])
+Microsoft.FSharp.Control.Task: System.Threading.Tasks.Task`1[T] OfValueTask[T](System.Threading.Tasks.ValueTask`1[T])
+Microsoft.FSharp.Control.Task: System.Threading.Tasks.Task`1[T] Result[T](T)
 Microsoft.FSharp.Control.TaskBuilder: System.Threading.Tasks.Task`1[T] RunDynamic[T](Microsoft.FSharp.Core.CompilerServices.ResumableCode`2[Microsoft.FSharp.Control.TaskStateMachineData`1[T],T])
 Microsoft.FSharp.Control.TaskBuilder: System.Threading.Tasks.Task`1[T] Run[T](Microsoft.FSharp.Core.CompilerServices.ResumableCode`2[Microsoft.FSharp.Control.TaskStateMachineData`1[T],T])
 Microsoft.FSharp.Control.TaskBuilderBase: Microsoft.FSharp.Core.CompilerServices.ResumableCode`2[Microsoft.FSharp.Control.TaskStateMachineData`1[TOverall],Microsoft.FSharp.Core.Unit] For[T,TOverall](System.Collections.Generic.IEnumerable`1[T], Microsoft.FSharp.Core.FSharpFunc`2[T,Microsoft.FSharp.Core.CompilerServices.ResumableCode`2[Microsoft.FSharp.Control.TaskStateMachineData`1[TOverall],Microsoft.FSharp.Core.Unit]])
@@ -804,6 +821,15 @@ Microsoft.FSharp.Control.TaskBuilderModule: Microsoft.FSharp.Control.TaskBuilder
 Microsoft.FSharp.Control.TaskBuilderModule: Microsoft.FSharp.Control.TaskBuilder task
 Microsoft.FSharp.Control.TaskStateMachineData`1[T]: System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1[T] MethodBuilder
 Microsoft.FSharp.Control.TaskStateMachineData`1[T]: T Result
+Microsoft.FSharp.Control.ValueTask: System.Threading.Tasks.ValueTask`1[Microsoft.FSharp.Core.FSharpResult`2[T,System.Exception]] Catch[T](System.Threading.Tasks.ValueTask`1[T])
+Microsoft.FSharp.Control.ValueTask: System.Threading.Tasks.ValueTask`1[Microsoft.FSharp.Core.Unit] Empty
+Microsoft.FSharp.Control.ValueTask: System.Threading.Tasks.ValueTask`1[Microsoft.FSharp.Core.Unit] Ignore[T](System.Threading.Tasks.ValueTask`1[T])
+Microsoft.FSharp.Control.ValueTask: System.Threading.Tasks.ValueTask`1[Microsoft.FSharp.Core.Unit] get_Empty()
+Microsoft.FSharp.Control.ValueTask: System.Threading.Tasks.ValueTask`1[TResult] Bind[T,TResult](Microsoft.FSharp.Core.FSharpFunc`2[T,System.Threading.Tasks.ValueTask`1[TResult]], System.Threading.Tasks.ValueTask`1[T])
+Microsoft.FSharp.Control.ValueTask: System.Threading.Tasks.ValueTask`1[TResult] Map[T,TResult](Microsoft.FSharp.Core.FSharpFunc`2[T,TResult], System.Threading.Tasks.ValueTask`1[T])
+Microsoft.FSharp.Control.ValueTask: System.Threading.Tasks.ValueTask`1[T] CatchWith[T](Microsoft.FSharp.Core.FSharpFunc`2[System.Exception,T], System.Threading.Tasks.ValueTask`1[T])
+Microsoft.FSharp.Control.ValueTask: System.Threading.Tasks.ValueTask`1[T] OfTask[T](System.Threading.Tasks.Task`1[T])
+Microsoft.FSharp.Control.ValueTask: System.Threading.Tasks.ValueTask`1[T] Result[T](T)
 Microsoft.FSharp.Control.WebExtensions: Microsoft.FSharp.Control.FSharpAsync`1[Microsoft.FSharp.Core.Unit] AsyncDownloadFile(System.Net.WebClient, System.Uri, System.String)
 Microsoft.FSharp.Control.WebExtensions: Microsoft.FSharp.Control.FSharpAsync`1[System.Byte[]] AsyncDownloadData(System.Net.WebClient, System.Uri)
 Microsoft.FSharp.Control.WebExtensions: Microsoft.FSharp.Control.FSharpAsync`1[System.Net.WebResponse] AsyncGetResponse(System.Net.WebRequest)

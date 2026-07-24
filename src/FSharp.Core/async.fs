@@ -2355,3 +2355,45 @@ module WebExtensions =
                 start = (fun userToken -> this.DownloadFileAsync(address, fileName, userToken)),
                 result = (fun _ -> ())
             )
+
+[<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
+module Async =
+
+    [<CompiledName("Result")>]
+    let inline result (value: 'T) : Async<'T> =
+        async.Return value
+
+    [<CompiledName("Map")>]
+    let inline map ([<InlineIfLambda>] mapping: 'T -> 'U) (computation: Async<'T>) : Async<'U> =
+        async.Bind(computation, mapping >> async.Return)
+
+    [<CompiledName("Bind")>]
+    let inline bind ([<InlineIfLambda>] binder: 'T -> Async<'U>) (computation: Async<'T>) : Async<'U> =
+        async.Bind(computation, binder)
+
+    [<CompiledName("Ignore")>]
+    [<RequiresExplicitTypeArguments>]
+    let inline ignore<'T> (computation: Async<'T>) : Async<unit> =
+        Async.Ignore computation
+
+    [<CompiledName("CatchWith")>]
+    let catchWith (handler: exn -> 'T) (computation: Async<'T>) : Async<'T> =
+        async {
+            try
+                return! computation
+            with e ->
+                return handler e
+        }
+
+    [<CompiledName("Catch")>]
+    let catch (computation: Async<'T>) : Async<Result<'T, exn>> =
+        async {
+            try
+                let! v = computation
+                return Result.Ok v
+            with e ->
+                return Result.Error e
+        }
+
+    [<CompiledName("Empty")>]
+    let empty: Async<unit> = async.Zero()

@@ -457,3 +457,279 @@ module HighPriority =
         /// </summary>
         member inline MergeSources< ^TResult1, ^TResult2> :
             task1: Task< ^TResult1 > * task2: Task< ^TResult2 > -> Task<struct (^TResult1 * ^TResult2)>
+
+namespace Microsoft.FSharp.Control
+
+open System.Threading.Tasks
+open Microsoft.FSharp.Core
+
+/// <summary>Contains camelCase module-level functions for <see cref="T:System.Threading.Tasks.Task`1"/> computations.</summary>
+///
+/// <category index="1">Async Programming</category>
+[<RequireQualifiedAccess>]
+[<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
+module Task =
+
+    /// <summary>Creates a task that returns the given value.</summary>
+    ///
+    /// <param name="value">The value to return.</param>
+    ///
+    /// <returns>A completed task that returns <c>value</c>.</returns>
+    ///
+    /// <example id="task-result-1">
+    /// <code lang="fsharp">
+    /// let t = Task.result 42
+    /// t.Result // evaluates to 42
+    /// </code>
+    /// </example>
+    [<CompiledName("Result")>]
+    val inline result: value: 'T -> Task<'T>
+
+    /// <summary>Creates a task that applies the mapping function to the result of the given task.</summary>
+    ///
+    /// <param name="mapping">The function to apply to the result.</param>
+    /// <param name="task">The input task.</param>
+    ///
+    /// <returns>A task that applies <c>mapping</c> to the result of <c>task</c>.</returns>
+    ///
+    /// <example id="task-map-1">
+    /// <code lang="fsharp">
+    /// let t = Task.result 21 |> Task.map (fun x -> x * 2)
+    /// t.Result // evaluates to 42
+    /// </code>
+    /// </example>
+    [<CompiledName("Map")>]
+    val inline map: mapping: ('T -> 'U) -> task: Task<'T> -> Task<'U>
+
+    /// <summary>Creates a task that passes the result of the given task to the binder function.</summary>
+    ///
+    /// <param name="binder">A function that takes the result of the task and returns a new task.</param>
+    /// <param name="task">The input task.</param>
+    ///
+    /// <returns>A task that performs a monadic bind on the result of <c>task</c>.</returns>
+    ///
+    /// <example id="task-bind-1">
+    /// <code lang="fsharp">
+    /// let t = Task.result 21 |> Task.bind (fun x -> Task.result (x * 2))
+    /// t.Result // evaluates to 42
+    /// </code>
+    /// </example>
+    [<CompiledName("Bind")>]
+    val inline bind: binder: ('T -> Task<'U>) -> task: Task<'T> -> Task<'U>
+
+    /// <summary>Creates a task that runs the given task and ignores its result.</summary>
+    ///
+    /// <param name="task">The input task.</param>
+    ///
+    /// <returns>A task that is equivalent to the input task, but disregards the result.</returns>
+    ///
+    /// <example id="task-ignore-1">
+    /// <code lang="fsharp">
+    /// let t : Task&lt;unit&gt; = Task.result 42 |> Task.ignore&lt;int&gt;
+    /// t.Result // evaluates to ()
+    /// </code>
+    /// </example>
+    [<CompiledName("Ignore")>]
+    [<RequiresExplicitTypeArguments>]
+    val inline ignore<'T> : task: Task<'T> -> Task<unit>
+
+    /// <summary>Creates a task that runs the given task.
+    /// If it raises an exception, the handler function is called with the exception and its result is returned.</summary>
+    ///
+    /// <param name="handler">A function to handle exceptions, returning a recovery value.</param>
+    /// <param name="task">The input task.</param>
+    ///
+    /// <returns>A task that returns the result of <c>task</c>, or the result of <c>handler</c> if an exception is raised.</returns>
+    ///
+    /// <example id="task-catchwith-1">
+    /// <code lang="fsharp">
+    /// let safeDiv x y =
+    ///     task { return x / y }
+    ///     |> Task.catchWith (fun _ -> 0)
+    /// (safeDiv 10 0).Result // evaluates to 0
+    /// </code>
+    /// </example>
+    [<CompiledName("CatchWith")>]
+    val inline catchWith: handler: (exn -> 'T) -> task: Task<'T> -> Task<'T>
+
+    /// <summary>Creates a task that runs the given task and returns its result as <c>Ok</c>,
+    /// or returns <c>Error</c> with the exception if one is raised.</summary>
+    ///
+    /// <param name="task">The input task.</param>
+    ///
+    /// <returns>A task that returns <c>Ok</c> of the result or <c>Error</c> of the exception.</returns>
+    ///
+    /// <example id="task-catch-1">
+    /// <code lang="fsharp">
+    /// let safeDiv x y = task { return x / y } |> Task.catch
+    /// (safeDiv 10 2).Result // evaluates to Ok 5
+    /// (safeDiv 10 0).Result // evaluates to Error (DivideByZeroException ...)
+    /// </code>
+    /// </example>
+    [<CompiledName("Catch")>]
+    val catch: task: Task<'T> -> Task<Result<'T, exn>>
+
+    /// <summary>A completed task that returns <c>unit</c>. This is a <c>Task&lt;unit&gt;</c> (not the non-generic <c>Task.CompletedTask</c>).</summary>
+    ///
+    /// <example id="task-empty-1">
+    /// <code lang="fsharp">
+    /// Task.empty.Result // evaluates to ()
+    /// </code>
+    /// </example>
+    [<CompiledName("Empty")>]
+    val empty: Task<unit>
+
+#if NETSTANDARD2_1
+    /// <summary>Converts a <see cref="T:System.Threading.Tasks.ValueTask`1"/> to a <see cref="T:System.Threading.Tasks.Task`1"/>.</summary>
+    ///
+    /// <param name="valueTask">The input value task.</param>
+    ///
+    /// <returns>A task equivalent to the given value task.</returns>
+    ///
+    /// <example id="task-ofvaluetask-1">
+    /// <code lang="fsharp">
+    /// let vt = ValueTask&lt;int&gt;(42)
+    /// let t = Task.ofValueTask vt
+    /// t.Result // evaluates to 42
+    /// </code>
+    /// </example>
+    [<CompiledName("OfValueTask")>]
+    val inline ofValueTask: valueTask: ValueTask<'T> -> Task<'T>
+#endif
+
+#if NETSTANDARD2_1
+/// <summary>Contains camelCase module-level functions for <see cref="T:System.Threading.Tasks.ValueTask`1"/> computations.</summary>
+///
+/// <category index="1">Async Programming</category>
+[<RequireQualifiedAccess>]
+[<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
+module ValueTask =
+
+    /// <summary>Creates a value task that returns the given value.</summary>
+    ///
+    /// <param name="value">The value to return.</param>
+    ///
+    /// <returns>A completed value task that returns <c>value</c>.</returns>
+    ///
+    /// <example id="valuetask-result-1">
+    /// <code lang="fsharp">
+    /// let vt = ValueTask.result 42
+    /// vt.Result // evaluates to 42
+    /// </code>
+    /// </example>
+    [<CompiledName("Result")>]
+    val inline result: value: 'T -> ValueTask<'T>
+
+    /// <summary>Creates a value task that applies the mapping function to the result of the given value task.</summary>
+    ///
+    /// <param name="mapping">The function to apply to the result.</param>
+    /// <param name="task">The input value task.</param>
+    ///
+    /// <returns>A value task that applies <c>mapping</c> to the result of <c>task</c>.</returns>
+    ///
+    /// <example id="valuetask-map-1">
+    /// <code lang="fsharp">
+    /// let vt = ValueTask.result 21 |> ValueTask.map (fun x -> x * 2)
+    /// vt.Result // evaluates to 42
+    /// </code>
+    /// </example>
+    [<CompiledName("Map")>]
+    val inline map: mapping: ('T -> 'U) -> task: ValueTask<'T> -> ValueTask<'U>
+
+    /// <summary>Creates a value task that passes the result of the given value task to the binder function.</summary>
+    ///
+    /// <param name="binder">A function that takes the result of the value task and returns a new value task.</param>
+    /// <param name="task">The input value task.</param>
+    ///
+    /// <returns>A value task that performs a monadic bind on the result of <c>task</c>.</returns>
+    ///
+    /// <example id="valuetask-bind-1">
+    /// <code lang="fsharp">
+    /// let vt = ValueTask.result 21 |> ValueTask.bind (fun x -> ValueTask.result (x * 2))
+    /// vt.Result // evaluates to 42
+    /// </code>
+    /// </example>
+    [<CompiledName("Bind")>]
+    val inline bind: binder: ('T -> ValueTask<'U>) -> task: ValueTask<'T> -> ValueTask<'U>
+
+    /// <summary>Creates a value task that runs the given value task and ignores its result.</summary>
+    ///
+    /// <remarks>When the value task is already synchronously complete, this avoids allocating a <c>Task</c>.</remarks>
+    ///
+    /// <param name="task">The input value task.</param>
+    ///
+    /// <returns>A value task that is equivalent to the input value task, but disregards the result.</returns>
+    ///
+    /// <example id="valuetask-ignore-1">
+    /// <code lang="fsharp">
+    /// let vt : ValueTask&lt;unit&gt; = ValueTask.result 42 |> ValueTask.ignore&lt;int&gt;
+    /// vt.Result // evaluates to ()
+    /// </code>
+    /// </example>
+    [<CompiledName("Ignore")>]
+    [<RequiresExplicitTypeArguments>]
+    val inline ignore<'T> : task: ValueTask<'T> -> ValueTask<unit>
+
+    /// <summary>Creates a value task that runs the given value task.
+    /// If it raises an exception, the handler function is called with the exception and its result is returned.</summary>
+    ///
+    /// <param name="handler">A function to handle exceptions, returning a recovery value.</param>
+    /// <param name="task">The input value task.</param>
+    ///
+    /// <returns>A value task that returns the result of <c>task</c>, or the result of <c>handler</c> if an exception is raised.</returns>
+    ///
+    /// <example id="valuetask-catchwith-1">
+    /// <code lang="fsharp">
+    /// let safeDiv x y =
+    ///     task { return x / y }
+    ///     |> ValueTask.ofTask
+    ///     |> ValueTask.catchWith (fun _ -> 0)
+    /// (safeDiv 10 0).Result // evaluates to 0
+    /// </code>
+    /// </example>
+    [<CompiledName("CatchWith")>]
+    val inline catchWith: handler: (exn -> 'T) -> task: ValueTask<'T> -> ValueTask<'T>
+
+    /// <summary>Creates a value task that runs the given value task and returns its result as <c>Ok</c>,
+    /// or returns <c>Error</c> with the exception if one is raised.</summary>
+    ///
+    /// <param name="task">The input value task.</param>
+    ///
+    /// <returns>A value task that returns <c>Ok</c> of the result or <c>Error</c> of the exception.</returns>
+    ///
+    /// <example id="valuetask-catch-1">
+    /// <code lang="fsharp">
+    /// let safeDiv x y = task { return x / y } |> ValueTask.ofTask |> ValueTask.catch
+    /// (safeDiv 10 2).Result // evaluates to Ok 5
+    /// (safeDiv 10 0).Result // evaluates to Error (DivideByZeroException ...)
+    /// </code>
+    /// </example>
+    [<CompiledName("Catch")>]
+    val catch: task: ValueTask<'T> -> ValueTask<Result<'T, exn>>
+
+    /// <summary>A completed value task that returns <c>unit</c>.</summary>
+    ///
+    /// <example id="valuetask-empty-1">
+    /// <code lang="fsharp">
+    /// ValueTask.empty.Result // evaluates to ()
+    /// </code>
+    /// </example>
+    [<CompiledName("Empty")>]
+    val empty: ValueTask<unit>
+
+    /// <summary>Converts a <see cref="T:System.Threading.Tasks.Task`1"/> to a <see cref="T:System.Threading.Tasks.ValueTask`1"/>.</summary>
+    ///
+    /// <param name="task">The input task.</param>
+    ///
+    /// <returns>A value task equivalent to the given task.</returns>
+    ///
+    /// <example id="valuetask-oftask-1">
+    /// <code lang="fsharp">
+    /// let t = Task.FromResult 42
+    /// let vt = ValueTask.ofTask t
+    /// vt.Result // evaluates to 42
+    /// </code>
+    /// </example>
+    [<CompiledName("OfTask")>]
+    val inline ofTask: task: Task<'T> -> ValueTask<'T>
+#endif
