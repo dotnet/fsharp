@@ -517,3 +517,35 @@ let _ = S{caret}(0)
 
     Assert.DoesNotContain("<inheritdoc", xmlText xml)
     Assert.DoesNotContain("ValueType", xmlText xml)
+
+[<Fact>]
+let ``tooltip picks the called constructor overload when the derived type has several`` () =
+    // The derived type declares two <inheritdoc/> constructors. Each call site must expand against
+    // the base constructor matching THAT overload, proving Path B receives the resolved ctor minfo
+    // for the call, not merely the first constructor in the group.
+    let source =
+        """
+module Test
+type Base =
+    val x: int
+    /// <summary>base int ctor docs</summary>
+    new (x: int) = { x = x }
+    /// <summary>base string ctor docs</summary>
+    new (s: string) = { x = s.Length }
+type Derived =
+    inherit Base
+    /// <inheritdoc/>
+    new (x: int) = { inherit Base(x) }
+    /// <inheritdoc/>
+    new (s: string) = { inherit Base(s) }
+"""
+
+    let intCall = getTooltipXml (source + "let _ = Deri{caret}ved(0)\n")
+    Assert.Contains("base int ctor docs", xmlText intCall)
+    Assert.DoesNotContain("base string ctor docs", xmlText intCall)
+    Assert.DoesNotContain("<inheritdoc", xmlText intCall)
+
+    let stringCall = getTooltipXml (source + "let _ = Deri{caret}ved(\"\")\n")
+    Assert.Contains("base string ctor docs", xmlText stringCall)
+    Assert.DoesNotContain("base int ctor docs", xmlText stringCall)
+    Assert.DoesNotContain("<inheritdoc", xmlText stringCall)
