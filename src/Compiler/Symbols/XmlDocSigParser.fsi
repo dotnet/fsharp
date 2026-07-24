@@ -2,15 +2,14 @@
 
 namespace FSharp.Compiler.Symbols
 
-/// Represents the kind of element in a documentation comment ID
+/// Represents the kind of member element in a documentation comment ID (the `M:`/`P:`/`E:`
+/// members carried by ParsedDocCommentId.Member). Types, fields and namespaces have their own
+/// ParsedDocCommentId cases and so do not appear here.
 [<RequireQualifiedAccess>]
 type internal DocCommentIdKind =
-    | Type
     | Method
     | Property
-    | Field
     | Event
-    | Namespace
     | Unknown
 
 /// Represents a parsed documentation comment ID (cref format)

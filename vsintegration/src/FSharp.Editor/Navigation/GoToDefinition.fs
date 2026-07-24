@@ -831,14 +831,6 @@ type internal SymbolMemberType =
     | Constructor
     | Other
 
-    static member FromString(s: string) =
-        match s with
-        | "E" -> Event
-        | "P" -> Property
-        | "CTOR" -> Constructor // That one is "artificial one", so we distinguish constructors.
-        | "M" -> Method
-        | _ -> Other
-
 type internal SymbolPath =
     {
         EntityPath: string list
