@@ -1136,3 +1136,95 @@ let mkLetBangExpression
             Trivia = { InKeyword = mIn }
             IsFromSource = true // User-written let!/use! bindings
         }
+
+let mkAbstractMember
+    parseState
+    attrs
+    (accessBeforeKeyword: SynAccess option)
+    memberFlags
+    (accessBeforeId: SynAccess option)
+    mInline
+    id
+    typeParams
+    typeWithConstraints
+    accessors
+    =
+    if Option.isSome accessBeforeKeyword then
+        errorR (Error(FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier (), rhs parseState 2))
+
+    let (ty: SynType), arity = typeWithConstraints
+
+    let isInline, doc, explicitValTyparDecls =
+        Option.isSome mInline, grabXmlDoc (parseState, attrs, 1), typeParams
+
+    let mWith, (getSet, getSetRangeOpt: GetSetKeywords option, getterAccess, setterAccess) =
+        accessors
+
+    let getSetAdjuster arity =
+        match arity, getSet with
+        | SynValInfo([], _), SynMemberKind.Member -> SynMemberKind.PropertyGet
+        | _ -> getSet
+
+    let mWhole =
+        let m = rhs parseState 1
+
+        match getSetRangeOpt with
+        | None -> unionRanges m ty.Range
+        | Some gs -> unionRanges m gs.Range
+        |> unionRangeWithXmlDoc doc
+
+    [ accessBeforeKeyword; accessBeforeId; getterAccess; setterAccess ]
+    |> List.iter (function
+        | None -> ()
+        | Some access -> errorR (Error(FSComp.SR.parsAccessibilityModsIllegalForAbstract (), access.Range)))
+
+    let mkFlags, leadingKeyword = memberFlags
+
+    let trivia =
+        {
+            LeadingKeyword = leadingKeyword
+            InlineKeyword = mInline
+            WithKeyword = mWith
+            EqualsRange = None
+        }
+
+    let vis2 = SynValSigAccess.Single None
+
+    let valSpfn =
+        SynValSig(attrs, id, explicitValTyparDecls, ty, arity, isInline, false, doc, vis2, None, mWhole, trivia)
+
+    let trivia: SynMemberDefnAbstractSlotTrivia = { GetSetKeywords = getSetRangeOpt }
+
+    [
+        SynMemberDefn.AbstractSlot(valSpfn, mkFlags (getSetAdjuster arity), mWhole, trivia)
+    ]
+
+let mkMatchClauses patternAndGuard patternResult (mNextBar: range option) nextClauses mLastOuter =
+    let (pat: SynPat), guard = patternAndGuard
+    let (mArrow: range option), (resultExpr: SynExpr) = patternResult
+    fun mBar ->
+        let m = unionRanges resultExpr.Range pat.Range
+        let clause = SynMatchClause(pat, guard, resultExpr, m, DebugPointAtTarget.Yes, { ArrowRange = mArrow; BarRange = mBar })
+
+        let clauses, mLast =
+            match nextClauses with
+            | Some patternClauses ->
+                let clauses, mLast = patternClauses mNextBar
+                clause :: clauses, mLast
+
+            | _ -> [clause], resultExpr.Range
+
+        clauses, mLastOuter |> Option.defaultValue mLast
+
+let mkMatchClausesRecoverMissingResult (patternAndGuard: SynPat * SynExpr option) exprDebugString (mExpr: range option) (mNextBar: range option) nextClauses mLastOuter =
+    let pat, guard = patternAndGuard
+    let mBeforeResult =
+        match mExpr with
+        | Some m -> m
+        | _ ->
+
+        match guard with
+        | Some expr -> expr.Range
+        | _ -> pat.Range
+    let patternResult = None, arbExpr (exprDebugString, mBeforeResult.EndRange)
+    mkMatchClauses patternAndGuard patternResult (mNextBar: range option) nextClauses mLastOuter
