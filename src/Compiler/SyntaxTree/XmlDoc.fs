@@ -67,9 +67,17 @@ type XmlDoc(unprocessedLines: string[], range: range) =
 
     member doc.Check(paramNamesOpt: string list option) =
         try
+            // Expand <include> directives quietly (emit=false: no FS3887) so that included
+            // <param>/<paramref> participate in parameter validation, matching C#/Roslyn.
+            // Include errors are reported by the documentation-file writer (emit=true), not
+            // here, to avoid double emission.
+            let expandedText =
+                XmlDocIncludeExpander.expandIncludeLines false doc.Range.FileName doc.Range (doc.GetElaboratedXmlLines())
+                |> String.concat Environment.NewLine
+
             // We must wrap with <doc> in order to have only one root element
             let xml =
-                XDocument.Parse("<doc>\n" + doc.GetXmlText() + "\n</doc>", LoadOptions.SetLineInfo ||| LoadOptions.PreserveWhitespace)
+                XDocument.Parse("<doc>\n" + expandedText + "\n</doc>", LoadOptions.SetLineInfo ||| LoadOptions.PreserveWhitespace)
 
             // The parameter names are checked for consistency, so parameter references and
             // parameter documentation must match an actual parameter.  In addition, if any parameters

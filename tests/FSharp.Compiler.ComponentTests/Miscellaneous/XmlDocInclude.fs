@@ -541,3 +541,71 @@ let f x = x
             |> ignore
         finally
             cleanup dir
+
+    [<Fact>]
+    let ``Included param documentation satisfies all-params-documented rule`` () =
+        // x is documented inline, y ONLY via include. Without expansion in Check, the
+        // "document all params" rule fires for y (3390). With expansion, both count.
+        let res =
+            runInclude
+                { scenario
+                    """module Test
+
+/// <summary>S</summary>
+/// <param name="x">Inline x doc.</param>
+/// <include file="p.xml" path="/docs/param"/>
+let f (x: int) (y: int) = x + y
+"""
+                    [ "p.xml", """<?xml version="1.0"?><docs><param name="y">Included y doc.</param></docs>""" ]
+                  with
+                    WarnOn = [ 3390 ] }
+
+        res.Compilation |> shouldSucceed |> withDiagnostics [] |> ignore
+
+    [<Fact>]
+    let ``Included param for a non-existent parameter warns`` () =
+        // The include brings <param name="Q"> but f has no parameter Q -> unknown-parameter warning.
+        let res =
+            runInclude
+                { scenario
+                    """module Test
+
+/// <summary>S</summary>
+/// <param name="x">Inline x doc.</param>
+/// <include file="p.xml" path="/docs/param"/>
+let f (x: int) = x
+"""
+                    [ "p.xml", """<?xml version="1.0"?><docs><param name="Q">Doc for a non-existent param.</param></docs>""" ]
+                  with
+                    WarnOn = [ 3390 ] }
+
+        res.Compilation
+        |> shouldSucceed
+        |> withWarningCode 3390
+        |> withDiagnosticMessageMatches "unknown parameter 'Q'"
+        |> ignore
+
+    [<Fact>]
+    let ``Include error is reported once when doc checking and doc generation are both on`` () =
+        // --warnon:3390 makes Check run (emit=false, quiet); --doc makes the writer run (emit=true).
+        // A missing include file must yield EXACTLY ONE 3887, not two.
+        let res =
+            runInclude
+                { scenario
+                    """module Test
+
+/// <summary>S</summary>
+/// <include file="does-not-exist.xml" path="/data/summary"/>
+let f (x: int) = x
+"""
+                    []
+                  with
+                    WarnOn = [ 3390 ] }
+
+        res.Compilation |> shouldSucceed |> ignore
+
+        let includeWarnings =
+            res.Compilation.Output.Diagnostics
+            |> List.filter (fun diagnostic -> diagnostic.Error = Warning 3887)
+
+        Assert.Equal(1, includeWarnings.Length)
