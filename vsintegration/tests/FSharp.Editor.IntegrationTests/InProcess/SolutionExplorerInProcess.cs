@@ -60,6 +60,7 @@ internal partial class SolutionExplorerInProcess
 
         return $@"<Project Sdk=""Microsoft.NET.Sdk"">
   <PropertyGroup>
+    <LoadLocalFSharpBuild>True</LoadLocalFSharpBuild>
     <LocalFSharpCompilerConfiguration>Debug</LocalFSharpCompilerConfiguration>
     <LocalFSharpCompilerPath>{RepoRoot}</LocalFSharpCompilerPath>
   </PropertyGroup>

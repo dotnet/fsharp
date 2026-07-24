@@ -656,18 +656,26 @@ stages:
               publishLocation: pipeline
             condition: succeeded()
 
+          - task: PublishPipelineArtifact@1
+            displayName: Publish UseLocalCompiler task artifacts for Regression Tests
+            inputs:
+              targetPath: '$(Build.SourcesDirectory)/artifacts/bin/UseLocalCompiler.FSharp.Build.Tasks'
+              artifactName: 'UseLocalCompilerTaskArtifacts'
+              publishLocation: pipeline
+            condition: succeeded()
+
           - pwsh: |
-              # Stage UseLocalCompiler props and TargetFrameworks.props together
+              # Stage the local test props file and TargetFrameworks.props together
               $stagingDir = "$(Build.SourcesDirectory)/UseLocalCompilerPropsStaging"
               New-Item -ItemType Directory -Force -Path $stagingDir | Out-Null
               Copy-Item "$(Build.SourcesDirectory)/UseLocalCompiler.Directory.Build.props" -Destination $stagingDir
               Copy-Item "$(Build.SourcesDirectory)/eng/TargetFrameworks.props" -Destination $stagingDir
               Write-Host "Staged files for UseLocalCompilerProps artifact:"
               Get-ChildItem $stagingDir -Name
-            displayName: Stage UseLocalCompiler props files
+            displayName: Stage local test props files
 
           - task: PublishPipelineArtifact@1
-            displayName: Publish UseLocalCompiler props file for Regression Tests
+            displayName: Publish local test props file for Regression Tests
             inputs:
               targetPath: '$(Build.SourcesDirectory)/UseLocalCompilerPropsStaging'
               artifactName: 'UseLocalCompilerProps'
@@ -892,6 +900,14 @@ stages:
           commit: e81e00a464b9d35d272f61708a1a0bfbf487b6d5
           buildScript: dotnet build Nu.sln --configuration Release
           displayName: Nu_Build
+        - repo: Lanayx/Oxpecker
+          commit: cb7e4b83e3f2aba7ded46b17a36d1aea8c13c292
+          buildScript: dotnet build .\Oxpecker.slnx -bl
+          displayName: Oxpecker_Build
+        - repo: Lanayx/Oxpecker
+          commit: cb7e4b83e3f2aba7ded46b17a36d1aea8c13c292
+          buildScript: dotnet build .\Oxpecker.Solid.slnx -bl
+          displayName: Oxpecker_Solid_Build
         # Design-time provider packaging oracle. Pin d8aba70 (pre-workaround base of FSharp.Data.GraphQL#583):
         # it uses the bare IsFSharpDesignTimeProvider gesture, so the client pack drops the provider without this fix.
         # Linux-only: the $PWD local feed and the grep content assertion need bash. (nupkg entry names are stored

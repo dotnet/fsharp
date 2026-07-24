@@ -1,45 +1,32 @@
 <Project>
-  <!-- Import target frameworks from single source of truth.
-       For regression tests: TargetFrameworks.props is co-located with this props file.
-       For local usage: use eng/TargetFrameworks.props relative to this file's directory. -->
-  <Import Project="$(MSBuildThisFileDirectory)TargetFrameworks.props" Condition="Exists('$(MSBuildThisFileDirectory)TargetFrameworks.props')" />
-  <Import Project="$(MSBuildThisFileDirectory)eng/TargetFrameworks.props" Condition="!Exists('$(MSBuildThisFileDirectory)TargetFrameworks.props')" />
-
   <PropertyGroup>
     <LoadLocalFSharpBuild Condition="'$(LoadLocalFSharpBuild)' == ''">False</LoadLocalFSharpBuild>
-    
     <LocalFSharpCompilerConfiguration Condition="'$(LocalFSharpCompilerConfiguration)' == ''">Release</LocalFSharpCompilerConfiguration>
-
-    <LocalFSharpCompilerPath Condition=" '$(LocalFSharpCompilerPath)' == '' ">$(MSBuildThisFileDirectory)</LocalFSharpCompilerPath>
-
-    <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
-    <DisableAutoSetFscCompilerPath>true</DisableAutoSetFscCompilerPath>
-    <FscToolPath Condition="'$(FscToolPath)' == ''">$([System.IO.Path]::GetDirectoryName($(DOTNET_HOST_PATH)))</FscToolPath>
-    <FscToolExe Condition="'$(FscToolExe)' == ''">$([System.IO.Path]::GetFileName($(DOTNET_HOST_PATH)))</FscToolExe>
-
-    <DotnetFscCompilerPath>$(LocalFSharpCompilerPath)/artifacts/bin/fsc/$(LocalFSharpCompilerConfiguration)/$(FSharpNetCoreProductTargetFramework)/fsc.dll</DotnetFscCompilerPath>
-    <Fsc_DotNET_DotnetFscCompilerPath>$(LocalFSharpCompilerPath)/artifacts/bin/fsc/$(LocalFSharpCompilerConfiguration)/$(FSharpNetCoreProductTargetFramework)/fsc.dll</Fsc_DotNET_DotnetFscCompilerPath>
-
-    <FSharpPreferNetFrameworkTools>False</FSharpPreferNetFrameworkTools>
-    <FSharpPrefer64BitTools>True</FSharpPrefer64BitTools>
+    <LocalFSharpCompilerPath Condition="'$(LocalFSharpCompilerPath)' == ''">$(MSBuildThisFileDirectory)</LocalFSharpCompilerPath>
+    <LocalFSharpBuildTaskAssembly Condition="'$(LocalFSharpBuildTaskAssembly)' == ''">$([System.IO.Path]::Combine('$(LocalFSharpCompilerPath)', 'artifacts', 'bin', 'UseLocalCompiler.FSharp.Build.Tasks', '$(LocalFSharpCompilerConfiguration)', 'netstandard2.0', 'UseLocalCompiler.FSharp.Build.Tasks.dll'))</LocalFSharpBuildTaskAssembly>
   </PropertyGroup>
 
-  <!-- 
-    Use FSharpTargetsShim to redirect the SDK to use the locally built F# targets.
-    This replaces all the individual UsingTask overrides since Microsoft.FSharp.NetSdk.targets
-    imports Microsoft.FSharp.Targets which registers all the F# build tasks.
-    See: https://github.com/dotnet/sdk/blob/main/src/Tasks/Microsoft.NET.Build.Tasks/targets/Microsoft.NET.Sdk.FSharpTargetsShim.targets
-  -->
-  <PropertyGroup Condition="'$(LoadLocalFSharpBuild)' == 'True'">
-    <LocalFSharpBuildBinPath>$(LocalFSharpCompilerPath)/artifacts/bin/fsc/$(LocalFSharpCompilerConfiguration)/$(FSharpNetCoreProductTargetFramework)</LocalFSharpBuildBinPath>
-    <FSharpBuildAssemblyFile>$(LocalFSharpBuildBinPath)/FSharp.Build.dll</FSharpBuildAssemblyFile>
-    <FSharpTargetsPath>$(LocalFSharpBuildBinPath)/Microsoft.FSharp.Targets</FSharpTargetsPath>
-    <FSharpPropsShim>$(LocalFSharpBuildBinPath)/Microsoft.FSharp.NetSdk.props</FSharpPropsShim>
-    <FSharpTargetsShim>$(LocalFSharpBuildBinPath)/Microsoft.FSharp.NetSdk.targets</FSharpTargetsShim>
-    <FSharpOverridesTargetsShim>$(LocalFSharpBuildBinPath)/Microsoft.FSharp.Overrides.NetSdk.targets</FSharpOverridesTargetsShim>
-  </PropertyGroup>
+  <UsingTask TaskName="Fsc" AssemblyFile="$(LocalFSharpBuildTaskAssembly)" Override="true" Condition="'$(LoadLocalFSharpBuild)' == 'True'" />
 
-  <ItemGroup>
-    <Reference Include="$(LocalFSharpCompilerPath)/artifacts/bin/FSharp.Core/$(LocalFSharpCompilerConfiguration)/netstandard2.0/FSharp.Core.dll" />
-  </ItemGroup>
+  <Target Name="UseLocalFSharpCoreReference" BeforeTargets="ResolveAssemblyReferences" Condition="'$(LoadLocalFSharpBuild)' == 'True' and '$(MSBuildProjectExtension)' == '.fsproj'">
+    <PropertyGroup>
+      <_LocalFSharpCoreTargetFramework>netstandard2.1</_LocalFSharpCoreTargetFramework>
+      <_TargetFrameworkVersionWithoutV>$(TargetFrameworkVersion)</_TargetFrameworkVersionWithoutV>
+      <_TargetFrameworkVersionWithoutV Condition="'$(_TargetFrameworkVersionWithoutV)' != '' and $([System.String]::Copy('$(_TargetFrameworkVersionWithoutV)').StartsWith('v'))">$([System.String]::Copy('$(_TargetFrameworkVersionWithoutV)').Substring(1))</_TargetFrameworkVersionWithoutV>
+      <_LocalFSharpCoreTargetFramework Condition="'$(TargetFrameworkIdentifier)' == '.NETFramework'">netstandard2.0</_LocalFSharpCoreTargetFramework>
+      <_LocalFSharpCoreTargetFramework Condition="'$(TargetFrameworkIdentifier)' == '.NETStandard' and '$(_TargetFrameworkVersionWithoutV)' != '' and $([System.Version]::Parse('$(_TargetFrameworkVersionWithoutV)')) &lt; $([System.Version]::Parse('2.1'))">netstandard2.0</_LocalFSharpCoreTargetFramework>
+      <_LocalFSharpCoreTargetFramework Condition="'$(TargetFrameworkIdentifier)' == '.NETCoreApp' and '$(_TargetFrameworkVersionWithoutV)' != '' and $([System.Version]::Parse('$(_TargetFrameworkVersionWithoutV)')) &lt; $([System.Version]::Parse('3.0'))">netstandard2.0</_LocalFSharpCoreTargetFramework>
+      <LocalFSharpCoreAssemblyPath>$([System.IO.Path]::Combine('$(LocalFSharpCompilerPath)', 'artifacts', 'bin', 'FSharp.Core', '$(LocalFSharpCompilerConfiguration)', '$(_LocalFSharpCoreTargetFramework)', 'FSharp.Core.dll'))</LocalFSharpCoreAssemblyPath>
+    </PropertyGroup>
+
+    <Error Condition="!Exists('$(LocalFSharpCoreAssemblyPath)')" Text="The local FSharp.Core override could not be found at '$(LocalFSharpCoreAssemblyPath)'." />
+
+    <ItemGroup>
+      <Reference Remove="@(Reference)" Condition="'%(Reference.Identity)' == 'FSharp.Core' or '%(Reference.FileName)' == 'FSharp.Core' or '%(Reference.NuGetPackageId)' == 'FSharp.Core'" />
+      <Reference Include="FSharp.Core">
+        <HintPath>$(LocalFSharpCoreAssemblyPath)</HintPath>
+        <Private>true</Private>
+      </Reference>
+    </ItemGroup>
+  </Target>
 </Project>
