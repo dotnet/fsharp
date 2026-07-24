@@ -74,7 +74,11 @@ let private applyXPathFilter (xpath: string) (sourceXml: string) : string =
             nodesToString selectedElements
     with
     | :? XPathException
-    | :? System.Xml.XmlException -> ""
+    | :? System.Xml.XmlException
+    // XPathSelectElements raises InvalidOperationException when the expression selects non-element
+    // nodes (e.g. a text()/node() XPath). Such selections are not supported for inheritance; degrade
+    // to no inherited content rather than letting the exception crash the tooltip/completion caller.
+    | :? System.InvalidOperationException -> ""
 
 /// Selects the default inherited content, excluding top-level <overloads> nodes.
 let private selectDefaultInheritedContent (sourceXml: string) : string =

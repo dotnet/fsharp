@@ -662,3 +662,17 @@ let _ = Derived(){caret}
     Assert.DoesNotContain("&lt;", text)
     Assert.DoesNotContain("&gt;", text)
     Assert.DoesNotContain("<inheritdoc", text)
+
+[<Fact>]
+let ``engine path filter selecting text nodes degrades gracefully`` () =
+    // A user-authored path attribute whose XPath selects non-element (text) nodes must not throw
+    // out of the tooltip/completion pipeline. XPathSelectElements raises InvalidOperationException
+    // on text-node results, which is neither XPathException nor XmlException; the engine must
+    // swallow it and degrade to dropping the directive rather than crashing.
+    let result =
+        expandWith
+            [ "B", "<summary>Hello <b>world</b></summary>" ]
+            None
+            """<inheritdoc cref="B" path="/summary/node()"/>"""
+
+    Assert.DoesNotContain("<inheritdoc", result)
