@@ -877,6 +877,19 @@ let ``Baseline reader rejects pointer-table indirection in an uncompressed strea
     Assert.True((tryReadFromAssemblyAndPdbBytes assemblyBytes (Some pdbBytes)).IsNone)
 
 [<Fact>]
+let ``Baseline valid-mask reader does not sign-extend bit 31`` () =
+    let bytes = [| 0uy; 0uy; 0uy; 0x80uy; 0uy; 0uy; 0uy; 0uy |]
+
+    Assert.Equal(0x0000000080000000UL, FSharp.Compiler.AbstractIL.ILBaselineReader.readUInt64 bytes 0)
+
+[<Fact>]
+let ``Baseline table data starts after valid tables with zero rows`` () =
+    let rowCounts = Array.zeroCreate 64
+    let valid = 1UL <<< 3
+
+    Assert.Equal(128, FSharp.Compiler.AbstractIL.ILBaselineReader.tableDataStart 100 valid rowCounts)
+
+[<Fact>]
 let ``Baseline reader rejects a string offset outside the strings stream`` () =
     let assemblyBytes, pdbBytes =
         Plumbing.writeInMemory (Plumbing.buildModule [ "Compute" ]) (Map.empty<string, PdbMethodCustomDebugInfo list>)
