@@ -6,6 +6,7 @@ open System
 open System.IO
 open Xunit
 open FSharp.Test.Compiler
+open FSharp.Test.XmlDocIncludeTestFramework
 
 module XmlDocInclude =
 
@@ -126,8 +127,20 @@ module Test
 let f x = x
 """
         |> withXmlDoc
+        |> ignoreWarnings
         |> compile
         |> shouldSucceed
+        |> ignore
+
+    [<Fact>]
+    let ``Missing include file warns by default`` () =
+        let res =
+            runInclude (scenario (Snippets.memberWithInclude "does-not-exist.xml" "/data/summary") [])
+
+        res.Compilation
+        |> shouldSucceed
+        |> withWarningCode 3887
+        |> withDiagnosticMessageMatches "include"
         |> ignore
 
     [<Fact>]
@@ -170,6 +183,7 @@ module Test
 let f x = x
 """
             |> withXmlDoc
+            |> ignoreWarnings
             |> compile
             |> shouldSucceed
             |> ignore
@@ -263,23 +277,17 @@ let f x = x
 
     [<Fact>]
     let ``Include with empty path attribute generates warning`` () =
-        let dir = setupDir [ "data/simple.data.xml", simpleData ]
-        let dataPath = Path.Combine(dir, "data/simple.data.xml").Replace("\\", "/")
+        let res =
+            runInclude (scenario (Snippets.memberWithInclude "data/simple.data.xml" "") [ "data/simple.data.xml", simpleData ])
 
-        try
-            Fs
-                $"""
-module Test
-/// <include file="{dataPath}" path=""/>
-let f x = x
-"""
-            |> withXmlDoc
-            |> compile
-            |> shouldSucceed
-            |> verifyXmlDocNotContains [ "Included summary text." ]
-            |> ignore
-        finally
-            cleanup dir
+        res.Compilation
+        |> shouldSucceed
+        |> withWarningCode 3887
+        |> withDiagnosticMessageMatches "XPath expression is empty"
+        |> ignore
+
+        Assert.True(res.XmlExists, $"XML doc file should exist: {res.XmlPath}")
+        Assert.DoesNotContain("Included summary text.", res.Xml)
 
     [<Fact>]
     let ``Include missing file attribute does not fail compilation`` () =
@@ -290,6 +298,7 @@ module Test
 let f x = x
 """
         |> withXmlDoc
+        |> ignoreWarnings
         |> compile
         |> shouldSucceed
         |> ignore
@@ -307,6 +316,7 @@ module Test
 let f x = x
 """
             |> withXmlDoc
+            |> ignoreWarnings
             |> compile
             |> shouldSucceed
             |> ignore

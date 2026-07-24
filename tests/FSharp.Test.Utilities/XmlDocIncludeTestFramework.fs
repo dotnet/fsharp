@@ -55,6 +55,7 @@ module XmlDocIncludeTestFramework =
             |> withName "Library"
             |> withOutputDirectory (Some directory)
             |> withXmlDoc
+            |> ignoreWarnings
             |> fun compilationUnit ->
                 (compilationUnit, includeScenario.WarnOn)
                 ||> List.fold (fun current warning -> current |> withWarnOn warning)
