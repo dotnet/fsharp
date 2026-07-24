@@ -553,7 +553,9 @@ type FSharpChecker
                 baseline.SynthesizedNameSnapshotSource = SynthesizedNameSnapshotSource.Reconstructed
                 && siblingPdbBytes.IsSome
             then
-                match EncMethodDebugInformation.readSynthesizedNameSnapshotFromPortablePdb siblingPdbBytes.Value with
+                match
+                    FSharp.Compiler.EncMethodDebugInformation.readSynthesizedNameSnapshotFromPortablePdb siblingPdbBytes.Value
+                with
                 | Some recordedSnapshot ->
                     if isEnvVarTruthy "FSHARP_HOTRELOAD_TRACE_CLOSURENAMES" then
                         printfn "[fsharp-hotreload][closure-names] synthesized-name snapshot source=recorded buckets=%d" (Map.count recordedSnapshot)
@@ -581,7 +583,8 @@ type FSharpChecker
             if Map.isEmpty baseline.EncMethodDebugInfos && siblingPdbBytes.IsSome then
                 let baseline =
                     { baseline with
-                        EncMethodDebugInfos = EncMethodDebugInformation.readEncMethodDebugInfoFromPortablePdb siblingPdbBytes.Value
+                        EncMethodDebugInfos =
+                            FSharp.Compiler.EncMethodDebugInformation.readEncMethodDebugInfoFromPortablePdb siblingPdbBytes.Value
                     }
 
                 // Closure mapping: the chain -> closure-name tables are a pure function
