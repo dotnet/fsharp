@@ -1617,15 +1617,47 @@ let SplitValuesByIsUsedOrHasEffect cenv fvs x =
 
 let IlAssemblyCodeInstrHasEffect i = 
     match i with 
-    | ( AI_nop | AI_ldc _ | AI_add | AI_sub | AI_mul | AI_xor | AI_and | AI_or 
-               | AI_ceq | AI_cgt | AI_cgt_un | AI_clt | AI_clt_un | AI_conv _ | AI_shl 
-               | AI_shr | AI_shr_un | AI_neg | AI_not | AI_ldnull )
+    | AI_nop | AI_ldc _ | AI_add | AI_sub | AI_mul | AI_xor | AI_and | AI_or
+    | AI_ceq | AI_cgt | AI_cgt_un | AI_clt | AI_clt_un | AI_conv _ | AI_shl
+    | AI_shr | AI_shr_un | AI_neg | AI_not | AI_ldnull
     | I_ldstr _ | I_ldtoken _ -> false
     | _ -> true
-  
+
 let IlAssemblyCodeHasEffect instrs = List.exists IlAssemblyCodeInstrHasEffect instrs
 
-let rec ExprHasEffect g expr = 
+/// The context an expression's effects are analyzed in. It governs whether a fully-ground
+/// `Unchecked.defaultof` (an `EI_ilzero` witness) may be treated as effect-free and its unused
+/// binding dropped: safe when emitting here, but not inside an `inline` value's body, whose
+/// optimized form is pickled as cross-assembly info and re-inlined at each use site — dropping
+/// the witness there corrupts that info and trips FS0073 in the consumer's IlxGen (e.g. the SRTP
+/// witness/dummy arguments used pervasively by FSharpPlus).
+[<RequireQualifiedAccess>]
+type EffectContext =
+    /// Emitting IL here, at a fully instantiated use site.
+    | Emit
+    /// Analyzing the pickled body of an `inline` value, re-inlined at other sites.
+    | InlineBody
+
+let ILAsmWithIlzeroHasEffect context instrs tyargs =
+    let hasIlzero = instrs |> List.exists (function EI_ilzero _ -> true | _ -> false)
+
+    if not hasIlzero then
+        IlAssemblyCodeHasEffect instrs
+    else
+        // A fully-ground ilzero is a pure default-value load whose unused binding may be dropped,
+        // but only at emission and only when no tyarg still holds a free typar: such a binding is
+        // the sole pin for those typars and dropping it leaves them unsolved (FS0073).
+        let ilzeroIsSafeToDrop =
+            match context with
+            | EffectContext.Emit -> tyargs |> List.forall (fun ty -> Zset.isEmpty (freeInType CollectTypars ty).FreeTypars)
+            | EffectContext.InlineBody -> false
+
+        let otherInstrsHaveEffect =
+            instrs |> List.exists (function EI_ilzero _ -> false | i -> IlAssemblyCodeInstrHasEffect i)
+
+        otherInstrsHaveEffect || not ilzeroIsSafeToDrop
+
+let rec ExprHasEffect context g expr = 
     match stripDebugPoints expr with 
     | Expr.Val (vref, _, _) -> vref.IsTypeFunction || vref.IsMutable
     | Expr.Quote _ 
@@ -1633,20 +1665,20 @@ let rec ExprHasEffect g expr =
     | Expr.TyLambda _ 
     | Expr.Const _ -> false
     // type applications do not have effects, with the exception of type functions
-    | Expr.App (f0, _, _, [], _) -> IsTyFuncValRefExpr f0 || ExprHasEffect g f0
-    | Expr.Op (op, _, args, m) -> ExprsHaveEffect g args || OpHasEffect g m op
-    | Expr.LetRec (binds, body, _, _) -> BindingsHaveEffect g binds || ExprHasEffect g body
-    | Expr.Let (bind, body, _, _) -> BindingHasEffect g bind || ExprHasEffect g body
+    | Expr.App (f0, _, _, [], _) -> IsTyFuncValRefExpr f0 || ExprHasEffect context g f0
+    | Expr.Op (op, tyargs, args, m) -> ExprsHaveEffect context g args || OpHasEffect context g m op tyargs
+    | Expr.LetRec (binds, body, _, _) -> BindingsHaveEffect context g binds || ExprHasEffect context g body
+    | Expr.Let (bind, body, _, _) -> BindingHasEffect context g bind || ExprHasEffect context g body
     // REVIEW: could add Expr.Obj on an interface type - these are similar to records of lambda expressions 
     | _ -> true
 
-and ExprsHaveEffect g exprs = List.exists (ExprHasEffect g) exprs
+and ExprsHaveEffect context g exprs = List.exists (ExprHasEffect context g) exprs
 
-and BindingsHaveEffect g binds = List.exists (BindingHasEffect g) binds
+and BindingsHaveEffect context g binds = List.exists (BindingHasEffect context g) binds
 
-and BindingHasEffect g bind = bind.Expr |> ExprHasEffect g
+and BindingHasEffect context g bind = bind.Expr |> ExprHasEffect context g
 
-and OpHasEffect g m op = 
+and OpHasEffect context g m op tyargs =
     match op with 
     | TOp.Tuple _ -> false
     | TOp.AnonRecd _ -> false
@@ -1660,7 +1692,7 @@ and OpHasEffect g m op =
     | TOp.UnionCaseTagGet _ -> false
     | TOp.UnionCaseProof _ -> false
     | TOp.UnionCaseFieldGet (ucref, n) -> isUnionCaseFieldMutable g ucref n 
-    | TOp.ILAsm (instrs, _) -> IlAssemblyCodeHasEffect instrs
+    | TOp.ILAsm (instrs, _) -> ILAsmWithIlzeroHasEffect context instrs tyargs
     | TOp.TupleFieldGet _ -> false
     | TOp.ExnFieldGet (ecref, n) -> isExnFieldMutable ecref n 
     | TOp.RefAddrGet _ -> false
@@ -1686,6 +1718,9 @@ and OpHasEffect g m op =
     | TOp.ILCall _ (* conservative *)
     | TOp.LValueOp _ (* conservative *)
     | TOp.ValFieldSet _ -> true
+
+let effectContextOf (cenv: cenv) =
+    if cenv.optimizing then EffectContext.Emit else EffectContext.InlineBody
 
 
 let TryEliminateBinding cenv _env bind e2 _m =
@@ -1717,7 +1752,7 @@ let TryEliminateBinding cenv _env bind e2 _m =
               match argsr with 
               | Expr.Val (VRefLocal vspec2, _, _) :: argsr2
                  when valEq vspec1 vspec2 && IsUniqueUse vspec2 (List.rev rargsl@argsr2) -> Some(List.rev rargsl, argsr2)
-              | argsrh :: argsrt when not (ExprHasEffect g argsrh) -> GetImmediateUseContext (argsrh :: rargsl) argsrt 
+              | argsrh :: argsrt when not (ExprHasEffect (effectContextOf cenv) g argsrh) -> GetImmediateUseContext (argsrh :: rargsl) argsrt 
               | _ -> None
 
         let (DebugPoints(e2, recreate0)) = e2
@@ -2603,7 +2638,7 @@ and OptimizeExprOp cenv env (op, tyargs, args, m) =
         newExpr,
         { TotalSize = 1
           FunctionSize = 1
-          HasEffect = OpHasEffect g m newOp
+          HasEffect = OpHasEffect (effectContextOf cenv) g m newOp tyargs
           MightMakeCriticalTailcall = false
           Info = ValueOfExpr newExpr }
 
@@ -2680,7 +2715,7 @@ and OptimizeExprOpFallback cenv env (op, tyargs, argsR, m) arginfos value_ =
     let argsFSize = AddFunctionSizes arginfos
     let argEffects = OrEffects arginfos
     let argValues = List.map (fun x -> x.Info) arginfos
-    let effect = OpHasEffect g m op
+    let effect = OpHasEffect (effectContextOf cenv) g m op tyargs
     let cost, value_ = 
       match op with
       | TOp.UnionCase c -> 2, MakeValueInfoForUnionCase c (Array.ofList argValues)
@@ -4657,26 +4692,34 @@ and p_ValInfo (v: ValInfo) st =
     p_ExprValueInfo v.ValExprInfo st
     p_bool v.ValMakesNoCriticalTailcalls st
 
-and p_ModuleInfo x st = 
+and p_ModuleInfo x st =
+    // Stamp tiebreaker is safe: every Val reaching ValInfos.Entries has its stamp
+    // assigned during single-threaded type-checking.
+    let stableValKey (vref: ValRef) =
+        let k = vref.Deref.GetLinkageFullKey()
+
+        struct (
+            vref.LogicalName,
+            k.PartialKey.MemberParentMangledName,
+            k.PartialKey.TotalArgCount,
+            k.PartialKey.MemberIsOverride,
+            vref.Deref.Stamp
+        )
+
+    let mergeRacedFlags (vref: ValRef, vinfo: ValInfo) =
+        let merged = vinfo.ValMakesNoCriticalTailcalls || vref.Deref.MakesNoCriticalTailcalls
+
+        if merged = vinfo.ValMakesNoCriticalTailcalls then
+            vref, vinfo
+        else
+            vref, { vinfo with ValMakesNoCriticalTailcalls = merged }
+
     let entries =
         x.ValInfos.Entries
         |> Seq.toArray
-        |> Array.sortBy (fun (vref: ValRef, _) ->
-            let k = vref.Deref.GetLinkageFullKey()
+        |> Array.sortBy (fst >> stableValKey)
+        |> Array.map mergeRacedFlags
 
-            struct (
-                vref.LogicalName,
-                k.PartialKey.MemberParentMangledName,
-                k.PartialKey.TotalArgCount,
-                k.PartialKey.MemberIsOverride,
-                vref.Deref.Stamp
-            ))
-        |> Array.map (fun (vref, vinfo) ->
-            let merged = vinfo.ValMakesNoCriticalTailcalls || vref.Deref.MakesNoCriticalTailcalls
-            if merged = vinfo.ValMakesNoCriticalTailcalls then
-                vref, vinfo
-            else
-                vref, { vinfo with ValMakesNoCriticalTailcalls = merged })
     p_array (p_tup2 (p_vref "opttab") p_ValInfo) entries st
     p_namemap p_LazyModuleInfo x.ModuleOrNamespaceInfos st
 

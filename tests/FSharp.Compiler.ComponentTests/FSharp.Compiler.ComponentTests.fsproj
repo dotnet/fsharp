@@ -252,9 +252,11 @@
     <!--<Compile Include="EmittedIL\StructGettersReadOnly.fs" />-->
     <Compile Include="EmittedIL\TailCalls.fs" />
     <Compile Include="EmittedIL\TupleElimination.fs" />
+    <Compile Include="EmittedIL\UncheckedDefaultofOptimization.fs" />
     <Compile Include="EmittedIL\TypeTestsInPatternMatching.fs" />
     <Compile Include="EmittedIL\WhileLoops.fs" />
     <Compile Include="EmittedIL\ArgumentNames.fs" />
+    <Compile Include="EmittedIL\CompilerGeneratedNameDeterminism.fs" />
     <Compile Include="EmittedIL\AssemblyBoundary\AssemblyBoundary.fs" />
     <Compile Include="EmittedIL\AsyncExpressionStepping\AsyncExpressionStepping.fs" />
     <Compile Include="EmittedIL\AttributeTargets\AttributeTargets.fs" />
@@ -278,6 +280,7 @@
     <Compile Include="EmittedIL\ByRefTests.fs" />
     <Compile Include="EmittedIL\Misc\Misc.fs" />
     <Compile Include="Misc.fs" />
+    <Compile Include="Optimizations\TaskCEUnitPropertyAccess.fs" />
     <Compile Include="EmittedIL\operators\Operators.fs" />
     <Compile Include="EmittedIL\Platform\Platform.fs" />
     <Compile Include="EmittedIL\QueryExpressionStepping\QueryExpressionStepping.fs" />
@@ -352,6 +355,7 @@
     <Compile Include="Language\MultiDimensionalArrayTests.fs" />
     <Compile Include="Language\RegressionTests.fs" />
     <Compile Include="Language\AttributeCheckingTests.fs" />
+    <Compile Include="Language\AttributeResolutionInRecursiveScopes.fs" />
     <Compile Include="Language\ObsoleteAttributeCheckingTests.fs" />
     <Compile Include="Language\ExperimentalAttributeCheckingTests.fs" />
     <Compile Include="Language\SequenceExpressions\SequenceExpressionTests.fs" />
@@ -463,10 +467,12 @@
     <Compile Include="CompilerOptions\Fsc\pdb\Pdb.fs" />
     <Compile Include="CompilerOptions\fsc\tailcalls\tailcalls.fs" />
     <Compile Include="CompilerOptions\fsi\FsiCliTests.fs" />
+    <Compile Include="CompilerOptions\fsi\FsiCommandLineArgsTests.fs" />
     <Compile Include="CompilerOptions\fsi\Nologo.fs" />
     <Compile Include="CompilerOptions\fsi\Langversion.fs" />
     <Compile Include="CompilerService\RangeModule.fs" />
     <Compile Include="CompilerService\Caches.fs" />
+    <Compile Include="CompilerService\EncMethodDebugInformationTests.fs" />
     <Compile Include="CompilerService\LruCache.fs" />
     <Compile Include="CompilerService\AsyncMemoize.fs" />
     <Compile Include="CompilerService\FSharpWorkspace.fs" />
@@ -514,6 +520,7 @@
     <Compile Include="FSharpChecker\FindReferences.fs" />
     <Compile Include="FSharpChecker\SemanticClassificationRegressions.fs" />
     <Compile Include="Attributes\AttributeCtorSetPropAccess.fs" />
+    <Compile Include="Attributes\CompiledNameMultipleValues.fs" />
   </ItemGroup>
 
   <ItemGroup>

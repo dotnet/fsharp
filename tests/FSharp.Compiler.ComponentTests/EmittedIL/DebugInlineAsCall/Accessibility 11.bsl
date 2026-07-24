@@ -78,6 +78,15 @@ T::.cctor
     IL_000b:  pop
     IL_000c:  ret
 
+T::staticInitialization@
+  (5,12-5,21)  let i = 1
+    IL_0000:  ldc.i4.1
+    IL_0001:  stsfld T::i
+    IL_0006:  ldc.i4.1
+    IL_0007:  volatile.
+    IL_0009:  stsfld T::init@4
+    IL_000e:  ret
+
 T::<InlinePrivateMethod>__debug@7
   (6,58-6,59)  i
     IL_0000:  volatile.
@@ -97,12 +106,3 @@ T::<InlinePrivateMethod>__debug@7
     IL_0013:  nop
     IL_0014:  ldsfld T::i
     IL_0019:  ret
-
-T::staticInitialization@
-  (5,12-5,21)  let i = 1
-    IL_0000:  ldc.i4.1
-    IL_0001:  stsfld T::i
-    IL_0006:  ldc.i4.1
-    IL_0007:  volatile.
-    IL_0009:  stsfld T::init@4
-    IL_000e:  ret

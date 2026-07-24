@@ -231,3 +231,80 @@ module ProvidedTypeHostingTests =
             let table = mtyp.AllEntitiesByCompiledAndLogicalMangledNames
             for name in names do
                 Assert.True(table.ContainsKey name, $"Lookup cache dropped interned entity '{name}'.")
+
+    let private newNamedEntity (name: string) =
+        Construct.NewModuleOrNamespace
+            (Some(CompPath(ILScopeRef.Local, SyntaxAccess.Unknown, [])))
+            taccessPublic
+            (ident (name, Range.range0))
+            XmlDoc.Empty
+            []
+            (MaybeLazy.Strict(Construct.NewEmptyModuleOrNamespaceType(Namespace true)))
+
+    // #20020: interned provided namespaces must be unique per name, and types interned under a namespace built by racing threads stay reachable.
+    [<Fact>]
+    let ``GetOrInternNamespaceEntity yields one namespace per name and keeps interned types reachable`` () =
+        let root = Construct.NewEmptyModuleOrNamespaceType(Namespace true)
+        let namespaceNames = [| "NsA"; "NsB"; "NsC" |]
+        let workerCount = 60
+        use barrier = new System.Threading.Barrier(workerCount)
+
+        let workers =
+            [ for w in 0 .. workerCount - 1 ->
+                  let ns = namespaceNames[w % namespaceNames.Length]
+                  let typeName = $"Type{w}"
+
+                  System.Threading.Thread(fun () ->
+                      barrier.SignalAndWait()
+                      let nsEntity = root.GetOrInternNamespaceEntity(ns, fun () -> newNamedEntity ns)
+
+                      nsEntity.ModuleOrNamespaceType.GetOrInternProvidedEntity(typeName, fun () -> newNamedEntity typeName)
+                      |> ignore) ]
+
+        workers |> List.iter (fun t -> t.Start())
+        workers |> List.iter (fun t -> t.Join())
+
+        let namespaceEntities = root.AllEntities |> Seq.toList
+        Assert.Equal(namespaceNames.Length, namespaceEntities.Length)
+
+        Assert.Equal(
+            namespaceNames.Length,
+            namespaceEntities |> List.map (fun e -> e.LogicalName) |> List.distinct |> List.length)
+
+        for i in 0 .. namespaceNames.Length - 1 do
+            let ns = namespaceNames[i]
+            let expectedTypes = [ for w in 0 .. workerCount - 1 do if w % namespaceNames.Length = i then $"Type{w}" ]
+            let nsEntity = root.GetOrInternNamespaceEntity(ns, fun () -> failwith "namespace should already be interned")
+            let table = nsEntity.ModuleOrNamespaceType.AllEntitiesByCompiledAndLogicalMangledNames
+
+            for typeName in expectedTypes do
+                Assert.True(
+                    table.ContainsKey typeName,
+                    $"Provided type '{typeName}' under concurrently-created namespace '{ns}' was stranded.")
+
+            Assert.Equal(expectedTypes.Length, nsEntity.ModuleOrNamespaceType.AllEntities |> Seq.length)
+
+    // #20020: AddModuleOrNamespaceByMutation and AddProvidedTypeEntity share the 'entities' field; concurrent appends must not drop any entity.
+    [<Fact>]
+    let ``Concurrent AddModuleOrNamespaceByMutation and AddProvidedTypeEntity never lose an append`` () =
+        for _ in 1..5 do
+            let mtyp = Construct.NewEmptyModuleOrNamespaceType(Namespace true)
+            let appendCount = 80
+            use barrier = new System.Threading.Barrier(appendCount)
+
+            let threads =
+                [ for i in 0 .. appendCount - 1 ->
+                      let entity = newNamedEntity $"E{i}"
+
+                      System.Threading.Thread(fun () ->
+                          barrier.SignalAndWait()
+
+                          if i % 2 = 0 then
+                              mtyp.AddModuleOrNamespaceByMutation entity
+                          else
+                              mtyp.AddProvidedTypeEntity entity) ]
+
+            threads |> List.iter (fun t -> t.Start())
+            threads |> List.iter (fun t -> t.Join())
+
+            Assert.Equal(appendCount, mtyp.AllEntities |> Seq.length)

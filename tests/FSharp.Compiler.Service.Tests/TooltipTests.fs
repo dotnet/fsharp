@@ -370,21 +370,6 @@ let getCheckResults source options =
     checkResults
 
 
-let taggedTextsToString (t: TaggedText array) =
-    t
-    |> Array.map (fun taggedText -> taggedText.Text)
-    |> String.concat ""
-
-let assertAndExtractTooltip (ToolTipText(items)) =
-    Assert.Equal(1,items.Length)
-    match items[0] with
-    | ToolTipElement.Group [ singleElement ] ->
-        let toolTipText =
-            singleElement.MainDescription
-            |> taggedTextsToString
-        toolTipText, singleElement.XmlDoc, singleElement.Remarks |> Option.map taggedTextsToString
-    | _ -> failwith $"Expected group, got {items[0]}"
-    
 let assertAndGetSingleToolTipText items =
     let text,_xml,_remarks = assertAndExtractTooltip items
     text
