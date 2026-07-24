@@ -454,3 +454,66 @@ let _ = Deri{caret}ved("")
     Assert.Contains("string ctor docs", xmlText xml)
     Assert.DoesNotContain("int ctor docs", xmlText xml)
     Assert.DoesNotContain("<inheritdoc", xmlText xml)
+
+[<Fact>]
+let ``tooltip constructor inherits from a generic base constructor`` () =
+    // The base type is generic (Base<'T>) instantiated as Base<int>. The base constructor's
+    // parameter 'T must be seen as int so it matches the derived new(x: int) by signature.
+    let xml =
+        getTooltipXml
+            """
+module Test
+type Base<'T> =
+    val x: 'T
+    /// <summary>generic base ctor docs</summary>
+    new (x: 'T) = { x = x }
+type Derived =
+    inherit Base<int>
+    /// <inheritdoc/>
+    new (x: int) = { inherit Base<int>(x) }
+let _ = Deri{caret}ved(0)
+"""
+
+    Assert.Contains("generic base ctor docs", xmlText xml)
+    Assert.DoesNotContain("<inheritdoc", xmlText xml)
+
+[<Fact>]
+let ``tooltip constructor with no matching base overload drops the tag silently`` () =
+    // The derived constructor's signature (string) matches no base constructor (only int exists),
+    // so nothing is inherited: the tag is dropped silently, without fabricating the wrong docs.
+    let xml =
+        getTooltipXml
+            """
+module Test
+type Base =
+    val x: int
+    /// <summary>base int ctor docs</summary>
+    new (x: int) = { x = x }
+type Derived =
+    inherit Base
+    /// <inheritdoc/>
+    new (s: string) = { inherit Base(s.Length) }
+let _ = Deri{caret}ved("")
+"""
+
+    Assert.DoesNotContain("base int ctor docs", xmlText xml)
+    Assert.DoesNotContain("<inheritdoc", xmlText xml)
+
+[<Fact>]
+let ``tooltip struct constructor inheritdoc does not leak ValueType docs`` () =
+    // A struct has no inheritance candidate (Roslyn returns null). A struct constructor with
+    // <inheritdoc/> must silently drop the tag, never surfacing System.ValueType's ctor docs.
+    let xml =
+        getTooltipXml
+            """
+module Test
+[<Struct>]
+type S =
+    val X: int
+    /// <inheritdoc/>
+    new (x: int) = { X = x }
+let _ = S{caret}(0)
+"""
+
+    Assert.DoesNotContain("<inheritdoc", xmlText xml)
+    Assert.DoesNotContain("ValueType", xmlText xml)
