@@ -64,12 +64,15 @@ let private resolveFilePath (baseFileName: string) (includePath: string) : strin
         Path.GetFullPath(Path.Combine(baseDir, includePath))
 
 /// Evaluate XPath and return matching elements
-let private evaluateXPath (doc: XDocument) (xpath: string) : Result<XElement seq, string> =
+let private evaluateXPath (doc: XDocument) (xpath: string) : Result<XElement list, string> =
     try
         if String.IsNullOrWhiteSpace(xpath) then
             Result.Error "XPath expression is empty"
         else
-            Result.Ok(doc.XPathSelectElements(xpath))
+            // Materialize inside the try: XPathSelectElements is lazily enumerated and throws
+            // InvalidOperationException during enumeration when the result is not a set of elements
+            // (for example a text or attribute node-set). Enumerating here keeps that a warning.
+            Result.Ok(doc.XPathSelectElements(xpath) |> List.ofSeq)
     with ex ->
         Result.Error $"Invalid XPath expression '{xpath}': {ex.Message}"
 
@@ -143,11 +146,9 @@ let rec private resolveSingleInclude (baseFileName: string) (includeInfo: Includ
             with
             | Result.Error msg -> IncludeError msg
             | Result.Ok elements ->
-                let elements = elements |> Seq.toList // materialize once (avoid re-running the XPath query)
-
-                if List.isEmpty elements then
-                    IncludeNoMatch
-                else
+                match elements with
+                | [] -> IncludeNoMatch
+                | matchedElements ->
                     // Clone the in-progress set and add this (file,xpath) for recursive expansion
                     let childInProgress =
                         HashSet<string>(ctx.InProgressIncludes, StringComparer.Ordinal)
@@ -159,7 +160,7 @@ let rec private resolveSingleInclude (baseFileName: string) (includeInfo: Includ
                             InProgressIncludes = childInProgress
                         }
 
-                    IncludeResolved(expandAllIncludeNodes resolvedPath (elements |> Seq.cast<XNode>) childCtx)
+                    IncludeResolved(expandAllIncludeNodes resolvedPath (matchedElements |> Seq.cast<XNode>) childCtx)
 
 /// Recursively expand includes in XElement nodes
 and private expandAllIncludeNodes (baseFileName: string) (nodes: XNode seq) (ctx: ExpansionContext) : XNode seq =

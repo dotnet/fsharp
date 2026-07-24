@@ -176,14 +176,37 @@ let f x = x
         // Roslyn parity: a valid XPath that matches nothing must NOT emit any diagnostic.
         res.Compilation |> shouldSucceed |> withDiagnostics [] |> ignore
 
-        let inner = memberInner "M:Test.included(System.Int32,System.Int32)" res.Xml
-        Assert.Contains("No matching elements were found for the following include tag", inner)
-        Assert.Contains("<include", inner) // original tag is kept
+        // Roslyn parity: comment FIRST, then the original include tag is kept verbatim.
+        res.Xml
+        |> memberXmlEquals
+            "M:Test.included(System.Int32,System.Int32)"
+            """<!-- No matching elements were found for the following include tag --><include file="d.xml" path="/data/nope"/>"""
+
+    [<Fact>]
+    let ``Zero xpath matches inline preserves sibling text`` () =
+        let res =
+            runInclude (scenario (Snippets.memberInlineInclude "d.xml" "/data/nope") [ "d.xml", Snippets.dataSummaryRemarks ])
+
+        res.Compilation |> shouldSucceed |> withDiagnostics [] |> ignore
+
+        // The comment + kept tag are spliced in place; surrounding text survives.
+        res.Xml
+        |> memberXmlEquals
+            "M:Test.inlineIncluded(System.Int32)"
+            """<summary>Inline before <!-- No matching elements were found for the following include tag --><include file="d.xml" path="/data/nope"/> inline after.</summary>"""
 
     [<Fact>]
     let ``Invalid xpath still warns`` () =
         let res =
             runInclude (scenario (Snippets.memberWithInclude "d.xml" "/data/[bad") [ "d.xml", Snippets.dataSummaryRemarks ])
+
+        res.Compilation |> shouldSucceed |> withWarningCode 3887 |> ignore
+
+    [<Fact>]
+    let ``Non-element xpath result warns`` () =
+        // An XPath that selects non-element nodes (here a text node) must warn, not crash XML doc writing.
+        let res =
+            runInclude (scenario (Snippets.memberWithInclude "d.xml" "/data/summary/text()") [ "d.xml", Snippets.dataSummaryRemarks ])
 
         res.Compilation |> shouldSucceed |> withWarningCode 3887 |> ignore
 
