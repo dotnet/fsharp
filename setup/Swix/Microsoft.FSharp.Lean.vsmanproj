@@ -17,6 +17,12 @@
     <InsertionDir>$(OutputPath)</InsertionDir>
     <IntermediateOutputPath>$(MSBuildThisFileDirectory)obj\$(Configuration)\</IntermediateOutputPath>
     <VsixBuildLocation Condition="'$(VsixBuildLocation)' == ''">$(MSBuildThisFileDirectory)..\..\vsintegration\Vsix\VisualFSharpFull\bin\$(Configuration)</VsixBuildLocation>
+    <!-- The .vsmanproj compiles no code; skip .NETFramework reference-assembly resolution. The CI VS image lacks
+         the v4.0 targeting pack, and the SWIX plugin's ResolveAssemblyReferences override doesn't cover the
+         GetReferenceAssemblyPaths call in Microsoft.Common.targets (MSB3644). Non-empty dirs bypass the check. -->
+    <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
+    <_TargetFrameworkDirectories>$(MSBuildThisFileDirectory)</_TargetFrameworkDirectories>
+    <_FullFrameworkReferenceAssemblyPaths>$(MSBuildThisFileDirectory)</_FullFrameworkReferenceAssemblyPaths>
   </PropertyGroup>
 
   <Import Project="$(SwixPluginDir)\Microsoft.VisualStudioEng.MicroBuild.Plugins.SwixBuild.props" />
