@@ -36,6 +36,9 @@ module PortableCustomDebugInfoKinds =
     /// EnC State Machine State Map CDI kind.
     val encStateMachineStateMap: System.Guid
 
+    /// F#-owned hot reload synthesized-name snapshot CDI kind.
+    val fsharpSynthesizedNameSnapshot: System.Guid
+
 /// Closure ordinal of a lambda that is lowered to a static (non-capturing) method.
 /// Mirrors Roslyn's LambdaDebugInfo.StaticClosureOrdinal.
 [<Literal>]
@@ -135,6 +138,19 @@ val tryEncodeOccurrenceKey: ordinalChain: int list -> int option
 /// root-first ordinal chain.
 val decodeOccurrenceKey: key: int -> int list
 
+/// Serializes an allocation-ordered synthesized-name snapshot into the F#-owned module
+/// CDI blob. An empty snapshot returns an empty blob so no CDI row needs to be emitted.
+val serializeSynthesizedNameSnapshot: snapshot: seq<struct (string * string[])> -> byte[]
+
+/// Deserializes the F#-owned synthesized-name snapshot CDI blob. Bucket order in the
+/// blob is deterministic only; each bucket array is returned exactly in recorded slot order.
+val deserializeSynthesizedNameSnapshot: blob: byte[] -> Map<string, string[]>
+
+/// Creates the module-level CustomDebugInformation row for the allocation-ordered
+/// synthesized-name snapshot. Empty snapshots emit no row.
+val computeSynthesizedNameSnapshotCustomDebugInfoRows:
+    snapshot: seq<struct (string * string[])> -> FSharp.Compiler.AbstractIL.ILPdbWriter.PdbModuleCustomDebugInfo list
+
 /// Serializes the EnC Local Slot Map blob for 'info', byte-for-byte as Roslyn's
 /// SerializeLocalSlots. Returns the empty array when there are no slots (no CDI row
 /// should be emitted then).
@@ -176,3 +192,8 @@ val deserialize:
 /// Fail safe: a null/empty or non-PDB image yields the empty map, and a method whose
 /// blobs do not decode is omitted rather than guessed.
 val readEncMethodDebugInfoFromPortablePdb: pdbBytes: byte[] -> Map<int, EncMethodDebugInformation>
+
+/// Reads the F#-owned allocation-ordered synthesized-name snapshot from a portable PDB.
+/// None means either the record is absent or invalid; callers must fall back to IL
+/// reconstruction rather than trusting a partial layout.
+val readSynthesizedNameSnapshotFromPortablePdb: pdbBytes: byte[] -> Map<string, string[]> option
