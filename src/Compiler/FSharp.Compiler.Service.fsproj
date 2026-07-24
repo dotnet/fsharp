@@ -240,8 +240,6 @@
     <Compile Include="AbstractIL\ILMetadataHeaps.fs" />
     <Compile Include="AbstractIL\ilread.fsi" />
     <Compile Include="AbstractIL\ilread.fs" />
-    <Compile Include="AbstractIL\EncMethodDebugInformation.fsi" />
-    <Compile Include="AbstractIL\EncMethodDebugInformation.fs" />
     <Compile Include="AbstractIL\ilwritepdb.fsi" />
     <Compile Include="AbstractIL\ilwritepdb.fs" />
     <Compile Include="AbstractIL\EncMethodDebugInformation.fsi" />
