@@ -11,27 +11,11 @@ open FSharp.Test.Compiler
 
 module XmlDocIncludeTestFramework =
 
-    type IncludeScenario =
-        {
-            Source: string
-            Files: (string * string) list
-            WarnOn: int list
-        }
+    type IncludeScenario = { Source: string; Files: (string * string) list; WarnOn: int list }
 
-    type IncludeResult =
-        {
-            Xml: string
-            XmlExists: bool
-            XmlPath: string
-            Compilation: CompilationResult
-        }
+    type IncludeResult = { Xml: string; XmlExists: bool; XmlPath: string; Compilation: CompilationResult }
 
-    let scenario source files =
-        {
-            Source = source
-            Files = files
-            WarnOn = []
-        }
+    let scenario source files = { Source = source; Files = files; WarnOn = [] }
 
     let withParamChecking includeScenario =
         if includeScenario.WarnOn |> List.contains 3390 then
@@ -46,22 +30,14 @@ module XmlDocIncludeTestFramework =
         if Path.IsPathRooted relativePath then
             invalidArg (nameof relativePath) $"Include test file path must be relative: {relativePath}"
 
-        let basePath = Path.GetFullPath(directory.FullName)
-        let fullPath = Path.GetFullPath(Path.Combine(basePath, relativePath))
-        let basePathWithSeparator =
-            basePath.TrimEnd([| Path.DirectorySeparatorChar; Path.AltDirectorySeparatorChar |]) + string Path.DirectorySeparatorChar
-
-        if not (fullPath.StartsWith(basePathWithSeparator, StringComparison.Ordinal)) then
-            invalidArg (nameof relativePath) $"Include test file path must stay under the scenario directory: {relativePath}"
-
-        fullPath
+        Path.GetFullPath(Path.Combine(directory.FullName, relativePath))
 
     let private writeScenarioFile directory (relativePath, contents: string) =
         let path = fullPathForRelativeFile directory relativePath
-        let parent = Path.GetDirectoryName path
 
-        if not (String.IsNullOrEmpty parent) then
-            Directory.CreateDirectory parent |> ignore
+        match Path.GetDirectoryName path with
+        | parent when not (String.IsNullOrEmpty parent) -> Directory.CreateDirectory parent |> ignore
+        | _ -> ()
 
         File.WriteAllText(path, contents)
 
@@ -78,7 +54,7 @@ module XmlDocIncludeTestFramework =
             |> withFileName (Path.Combine(directory.FullName, "Library.fs"))
             |> withName "Library"
             |> withOutputDirectory (Some directory)
-            |> withOptions [ $"--doc:{xmlPath}" ]
+            |> withXmlDoc
             |> fun compilationUnit ->
                 (compilationUnit, includeScenario.WarnOn)
                 ||> List.fold (fun current warning -> current |> withWarnOn warning)
@@ -86,71 +62,68 @@ module XmlDocIncludeTestFramework =
 
         let xmlExists = File.Exists xmlPath
 
-        let xml =
-            if xmlExists then
-                File.ReadAllText xmlPath
-            else
-                ""
-
         {
-            Xml = xml
+            Xml = if xmlExists then File.ReadAllText xmlPath else ""
             XmlExists = xmlExists
             XmlPath = xmlPath
             Compilation = result
         }
 
-    let private memberElementName = XName.Get "member"
-    let private nameAttributeName = XName.Get "name"
-
+    // Text-output verification reads emitted .xml directly, decoupled from the compiler doc reader under test.
     let tryMemberInner memberName xml =
         if String.IsNullOrWhiteSpace xml then
             failwith "No XML documentation was emitted (did compilation succeed? check the CompilationResult)"
 
         let document =
             try
-                XDocument.Parse xml
+                XDocument.Parse(xml, LoadOptions.PreserveWhitespace)
             with ex ->
                 failwith $"Could not parse XML documentation output: {ex.Message}\nFull XML:\n{xml}"
 
-        let matchingMember =
-            document.Descendants memberElementName
-            |> Seq.tryFind (fun element ->
-                let nameAttribute = element.Attribute nameAttributeName
+        let matchingMembers =
+            document.Descendants(XName.Get "member")
+            |> Seq.filter (fun element ->
+                let nameAttribute = element.Attribute(XName.Get "name")
                 not (isNull nameAttribute) && nameAttribute.Value = memberName)
+            |> Seq.toList
 
-        match matchingMember with
-        | Some element ->
+        let matchingMember =
+            match matchingMembers with
+            | [] -> None
+            | [ element ] -> Some element
+            | members -> failwith $"Ambiguous: {members.Length} members named '{memberName}'"
+
+        matchingMember
+        |> Option.map (fun element ->
             element.Nodes()
             |> Seq.map (fun node -> node.ToString(SaveOptions.DisableFormatting))
-            |> String.concat ""
-            |> Some
-        | None -> None
+            |> String.concat "")
 
     let memberExists memberName xml =
         tryMemberInner memberName xml |> Option.isSome
 
     let memberInner memberName xml =
-        match tryMemberInner memberName xml with
-        | Some inner -> inner
-        | None -> failwith $"Could not find XML documentation member '{memberName}'.\nFull XML:\n{xml}"
+        tryMemberInner memberName xml
+        |> Option.defaultWith (fun () -> failwith $"Could not find XML documentation member '{memberName}'.\nFull XML:\n{xml}")
 
     let memberXmlAbsent memberName xml =
-        match tryMemberInner memberName xml with
-        | Some inner ->
-            failwith
-                $"""Expected XML documentation member '{memberName}' to be absent, but it was present.
-Member XML:
-{inner}
-
-Full XML:
-{xml}"""
-        | None -> ()
+        tryMemberInner memberName xml
+        |> Option.iter (fun inner -> failwith $"Expected no member '{memberName}' but found: {inner}")
 
     let private canonicalizeInnerXml fragment =
-        try
-            XElement.Parse("<r>" + fragment + "</r>").ToString(SaveOptions.DisableFormatting)
-        with ex ->
-            failwith $"Could not parse XML documentation fragment: {ex.Message}\nFragment:\n{fragment}"
+        let root =
+            try
+                XElement.Parse("<r>" + fragment + "</r>", LoadOptions.PreserveWhitespace)
+            with ex ->
+                failwith $"Could not parse XML documentation fragment: {ex.Message}\nFragment:\n{fragment}"
+
+        root.DescendantNodes()
+        |> Seq.choose (function :? XText as t -> Some t | _ -> None)
+        |> Seq.filter (fun t -> String.IsNullOrWhiteSpace t.Value && (t.Value.Contains '\n' || t.Value.Contains '\r'))
+        |> Seq.toList
+        |> List.iter (fun t -> t.Remove())
+
+        root.ToString(SaveOptions.DisableFormatting)
 
     let memberXmlEquals memberName expectedInner xml =
         let actualInner = memberInner memberName xml
@@ -177,11 +150,8 @@ Full XML:
 
     module Snippets =
 
-        let private xmlAttribute value =
-            SecurityElement.Escape value
-
-        let private includeFileAttribute (file: string) =
-            file.Replace("\\", "/") |> xmlAttribute
+        let private includeElement file path =
+            $"""<include file="{normalizePathSeparator file |> SecurityElement.Escape}" path="{SecurityElement.Escape path}"/>"""
 
         let dataSummaryRemarks =
             """<?xml version="1.0"?>
@@ -198,10 +168,7 @@ Full XML:
 </data>"""
 
         let nestedA fileB =
-            $"""<?xml version="1.0"?>
-<data>
-  <summary>Nested A start. <include file="{includeFileAttribute fileB}" path="/data/part"/> Nested A end.</summary>
-</data>"""
+            $"""<?xml version="1.0"?><data><summary>Nested A start. {includeElement fileB "/data/part"} Nested A end.</summary></data>"""
 
         let nestedB =
             """<?xml version="1.0"?>
@@ -210,21 +177,18 @@ Full XML:
 </data>"""
 
         let selfCycle selfFile =
-            $"""<?xml version="1.0"?>
-<data>
-  <summary>Self cycle start. <include file="{includeFileAttribute selfFile}" path="/data/summary"/> Self cycle end.</summary>
-</data>"""
+            $"""<?xml version="1.0"?><data><summary>Self cycle start. {includeElement selfFile "/data/summary"} Self cycle end.</summary></data>"""
 
         let memberWithInclude file path =
             $"""module Test
 
-/// <include file="{includeFileAttribute file}" path="{xmlAttribute path}"/>
+/// {includeElement file path}
 let included (x: int) (y: int) = x + y
 """
 
         let memberInlineInclude file path =
             $"""module Test
 
-/// <summary>Inline before <include file="{includeFileAttribute file}" path="{xmlAttribute path}"/> inline after.</summary>
+/// <summary>Inline before {includeElement file path} inline after.</summary>
 let inlineIncluded (x: int) = x
 """
