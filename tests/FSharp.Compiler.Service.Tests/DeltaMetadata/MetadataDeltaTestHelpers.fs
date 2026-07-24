@@ -129,7 +129,8 @@ module internal MetadataDeltaTestHelpers =
           referenceAssemblyOnly = false
           referenceAssemblyAttribOpt = None
           referenceAssemblySignatureHash = None
-          pathMap = PathMap.empty }
+          pathMap = PathMap.empty
+          methodCustomDebugInfoRows = Map.empty }
 
     /// Compile a baseline module to bytes using the plain IL writer entry point. The feature
     /// branch this helper was ported from used a hot-reload variant
