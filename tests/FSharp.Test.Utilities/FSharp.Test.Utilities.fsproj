@@ -35,6 +35,7 @@
     <Compile Include="ProjectGeneration.fs" />
     <Compile Include="Assert.fs" />
     <Compile Include="Compiler.fs" />
+    <Compile Include="XmlDocIncludeTestFramework.fs" />
     <Compile Include="ILVerifierModule.fs" />
     <Compile Include="DataAttributeBase.fs" />
     <Compile Include="DirectoryAttribute.fs" />
