@@ -143,8 +143,15 @@ for /f "usebackq delims=" %%U in (`powershell -NoProfile -ExecutionPolicy Bypass
 "%_dotnet%" restore "%_root%\eng\restore-swixplugin.proj" --configfile "%_root%\NuGet.Config" !_srcArgs!
 if errorlevel 1 ( echo Error: SwixBuild plugin restore failed 1>&2 & exit /b 1 )
 set "SwixPluginDir="
-for /f "delims=" %%D in ('dir /b /s "%NUGET_PACKAGES%microsoft.visualstudioeng.microbuild.plugins.swixbuild\*\build\Microsoft.VisualStudioEng.MicroBuild.Plugins.SwixBuild.targets" 2^>nul') do set "SwixPluginDir=%%~dpD"
-if not defined SwixPluginDir ( echo Error: modern SwixBuild plugin not found after restore 1>&2 & exit /b 1 )
+echo Searching for the restored SwixBuild plugin under "%NUGET_PACKAGES%"...
+for /f "delims=" %%D in ('dir /b /s "%NUGET_PACKAGES%microsoft.visualstudioeng.microbuild.plugins.swixbuild\Microsoft.VisualStudioEng.MicroBuild.Plugins.SwixBuild.targets" 2^>nul') do set "SwixPluginDir=%%~dpD"
+if not defined SwixPluginDir for /f "delims=" %%D in ('dir /b /s "%USERPROFILE%\.nuget\packages\microsoft.visualstudioeng.microbuild.plugins.swixbuild\Microsoft.VisualStudioEng.MicroBuild.Plugins.SwixBuild.targets" 2^>nul') do set "SwixPluginDir=%%~dpD"
+if not defined SwixPluginDir (
+  echo Error: modern SwixBuild plugin not found after restore 1>&2
+  echo --- diagnostic: plugin folder contents ---
+  dir /s /b "%NUGET_PACKAGES%microsoft.visualstudioeng.microbuild.plugins.swixbuild" 2>nul
+  exit /b 1
+)
 echo SwixPluginDir=%SwixPluginDir%
 echo ---------------- Building lean VS insertion .vsman drop ----------------
 set "_vswhere=%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\vswhere.exe"
