@@ -138,6 +138,17 @@ let private containsSRTPTypeVar (g: TcGlobals) (ty: TType) : bool =
 
     loop ty
 
+/// True if any of these types mentions a comparable (non-SRTP) type variable — from a method
+/// type parameter OR an enclosing-type type parameter. The latter lets constructors and
+/// generic-type members (whose instantiation is inferred from the arguments, so they carry no
+/// method type arguments) participate in the concreteness ordering. Reuses the existing
+/// free-typar machinery rather than introducing a new type walker.
+let private paramTypesMentionComparableTypeVar (g: TcGlobals) (paramTys: TType list) : bool =
+    paramTys
+    |> List.exists (fun ty ->
+        freeInTypeLeftToRight g true ty
+        |> List.exists (fun tp -> not (isStaticallyResolvedTypeParam tp)))
+
 /// Returns 1 if ty1 is more concrete, -1 if ty2 is more concrete, 0 if incomparable.
 let compareTypeConcreteness (g: TcGlobals) ty1 ty2 =
     let rec loop ty1 ty2 =
@@ -208,60 +219,69 @@ let explainIncomparableMethodConcreteness<'T>
     (meth1: CalledMeth<'T>)
     (meth2: CalledMeth<'T>)
     : IncomparableConcretenessInfo option =
-    if meth1.CalledTyArgs.IsEmpty || meth2.CalledTyArgs.IsEmpty then
+    let formalParams1 =
+        meth1.Method.GetParamDatas(ctx.amap, ctx.m, meth1.Method.FormalMethodInst)
+        |> List.concat
+
+    let formalParams2 =
+        meth2.Method.GetParamDatas(ctx.amap, ctx.m, meth2.Method.FormalMethodInst)
+        |> List.concat
+
+    let paramTysOf ps =
+        ps |> List.map (fun (ParamData(_, _, _, _, _, _, _, ty)) -> ty)
+
+    let hasSRTP ps =
+        paramTysOf ps |> List.exists (containsSRTPTypeVar ctx.g)
+
+    // Mirror moreConcreteRule's firing gate so the FS0041 detail only explains cases the rule
+    // actually ranks: both parameter lists must mention a comparable (non-SRTP) type variable
+    // and have equal length, and neither may involve SRTP.
+    if
+        formalParams1.Length <> formalParams2.Length
+        || not (paramTypesMentionComparableTypeVar ctx.g (paramTysOf formalParams1))
+        || not (paramTypesMentionComparableTypeVar ctx.g (paramTysOf formalParams2))
+        || hasSRTP formalParams1
+        || hasSRTP formalParams2
+    then
         None
     else
-        let formalParams1 =
-            meth1.Method.GetParamDatas(ctx.amap, ctx.m, meth1.Method.FormalMethodInst)
+        let rec collectComparisons paramIdx (ty1: TType) (ty2: TType) : (int * int) list =
+            let sty1 = stripTyEqns ctx.g ty1
+            let sty2 = stripTyEqns ctx.g ty2
+
+            match sty1, sty2 with
+            | TType_app(tcref1, args1, _), TType_app(tcref2, args2, _) when tyconRefEq ctx.g tcref1 tcref2 && args1.Length = args2.Length ->
+                args1
+                |> List.mapi2
+                    (fun argIdx arg1 arg2 ->
+                        let c = compareTypeConcreteness ctx.g arg1 arg2
+                        (argIdx + 1, c))
+                    args2
+            | _ -> [ (paramIdx, compareTypeConcreteness ctx.g ty1 ty2) ]
+
+        let allComparisons =
+            List.mapi2
+                (fun i (ParamData(_, _, _, _, _, _, _, ty1)) (ParamData(_, _, _, _, _, _, _, ty2)) -> collectComparisons (i + 1) ty1 ty2)
+                formalParams1
+                formalParams2
             |> List.concat
 
-        let formalParams2 =
-            meth2.Method.GetParamDatas(ctx.amap, ctx.m, meth2.Method.FormalMethodInst)
-            |> List.concat
+        let meth1Better =
+            allComparisons |> List.choose (fun (pos, c) -> if c > 0 then Some pos else None)
 
-        if formalParams1.Length <> formalParams2.Length then
-            None
+        let meth2Better =
+            allComparisons |> List.choose (fun (pos, c) -> if c < 0 then Some pos else None)
+
+        if not meth1Better.IsEmpty && not meth2Better.IsEmpty then
+            Some
+                {
+                    Method1Signature = NicePrint.stringOfMethInfoForOverloadError infoReader ctx.m denv meth1.Method
+                    Method1BetterPositions = meth1Better
+                    Method2Signature = NicePrint.stringOfMethInfoForOverloadError infoReader ctx.m denv meth2.Method
+                    Method2BetterPositions = meth2Better
+                }
         else
-            let rec collectComparisons paramIdx (ty1: TType) (ty2: TType) : (int * int) list =
-                let sty1 = stripTyEqns ctx.g ty1
-                let sty2 = stripTyEqns ctx.g ty2
-
-                match sty1, sty2 with
-                | TType_app(tcref1, args1, _), TType_app(tcref2, args2, _) when
-                    tyconRefEq ctx.g tcref1 tcref2 && args1.Length = args2.Length
-                    ->
-                    args1
-                    |> List.mapi2
-                        (fun argIdx arg1 arg2 ->
-                            let c = compareTypeConcreteness ctx.g arg1 arg2
-                            (argIdx + 1, c))
-                        args2
-                | _ -> [ (paramIdx, compareTypeConcreteness ctx.g ty1 ty2) ]
-
-            let allComparisons =
-                List.mapi2
-                    (fun i (ParamData(_, _, _, _, _, _, _, ty1)) (ParamData(_, _, _, _, _, _, _, ty2)) ->
-                        collectComparisons (i + 1) ty1 ty2)
-                    formalParams1
-                    formalParams2
-                |> List.concat
-
-            let meth1Better =
-                allComparisons |> List.choose (fun (pos, c) -> if c > 0 then Some pos else None)
-
-            let meth2Better =
-                allComparisons |> List.choose (fun (pos, c) -> if c < 0 then Some pos else None)
-
-            if not meth1Better.IsEmpty && not meth2Better.IsEmpty then
-                Some
-                    {
-                        Method1Signature = NicePrint.stringOfMethInfoForOverloadError infoReader ctx.m denv meth1.Method
-                        Method1BetterPositions = meth1Better
-                        Method2Signature = NicePrint.stringOfMethInfoForOverloadError infoReader ctx.m denv meth2.Method
-                        Method2BetterPositions = meth2Better
-                    }
-            else
-                None
+            None
 
 // -------------------------------------------------------------------------
 // Helper functions for comparisons
@@ -526,21 +546,29 @@ let private moreConcreteRule: TiebreakRule =
         RequiredFeature = Some LanguageFeature.MoreConcreteTiebreaker
         Compare =
             fun ctx (struct (candidate, _, _)) (struct (other, _, _)) ->
-                if not candidate.CalledTyArgs.IsEmpty && not other.CalledTyArgs.IsEmpty then
+                let formalParams1 = getCachedParamData ctx candidate
+                let formalParams2 = getCachedParamData ctx other
+
+                let paramTysOf ps =
+                    ps |> List.map (fun (ParamData(_, _, _, _, _, _, _, ty)) -> ty)
+
+                let mentionsComparable ps =
+                    paramTypesMentionComparableTypeVar ctx.g (paramTysOf ps)
+
+                // Fire when both candidates' formal parameters mention a comparable type variable,
+                // whether from a method type parameter or an enclosing generic type (the latter
+                // covers constructors and generic-type members with inferred instantiation).
+                if mentionsComparable formalParams1 && mentionsComparable formalParams2 then
                     if getCachedHasSRTP ctx candidate || getCachedHasSRTP ctx other then
                         0
+                    elif formalParams1.Length = formalParams2.Length then
+                        aggregateMap2
+                            (fun (ParamData(_, _, _, _, _, _, _, ty1)) (ParamData(_, _, _, _, _, _, _, ty2)) ->
+                                compareTypeConcreteness ctx.g ty1 ty2)
+                            formalParams1
+                            formalParams2
                     else
-                        let formalParams1 = getCachedParamData ctx candidate
-                        let formalParams2 = getCachedParamData ctx other
-
-                        if formalParams1.Length = formalParams2.Length then
-                            aggregateMap2
-                                (fun (ParamData(_, _, _, _, _, _, _, ty1)) (ParamData(_, _, _, _, _, _, _, ty2)) ->
-                                    compareTypeConcreteness ctx.g ty1 ty2)
-                                formalParams1
-                                formalParams2
-                        else
-                            0
+                        0
                 else
                     0
     }
