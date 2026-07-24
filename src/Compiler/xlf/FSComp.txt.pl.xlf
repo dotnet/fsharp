@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
   <file datatype="xml" source-language="en" target-language="pl" original="../FSComp.resx">
     <body>
@@ -600,6 +600,11 @@
       <trans-unit id="featureReallyLongList">
         <source>list literals of any size</source>
         <target state="translated">wyświetlanie na liście literałów o dowolnym rozmiarze</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureRecordSpreads">
+        <source>record type and expression spreads</source>
+        <target state="new">record type and expression spreads</target>
         <note />
       </trans-unit>
       <trans-unit id="featureRefCellNotationInformationals">
@@ -1247,6 +1252,16 @@
         <target state="translated">Oczekiwano treści elementu członkowskiego</target>
         <note />
       </trans-unit>
+      <trans-unit id="parsMissingSpreadSrcExpr">
+        <source>Missing spread source expression after '...'.</source>
+        <target state="new">Missing spread source expression after '...'.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="parsMissingSpreadSrcTy">
+        <source>Missing spread source type after '...'.</source>
+        <target state="new">Missing spread source type after '...'.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="parsMissingUnionCaseName">
         <source>Missing union case name</source>
         <target state="translated">Brak nazwy przypadku unii</target>
@@ -1260,6 +1275,16 @@
       <trans-unit id="parsOnlySimplePatternsAreAllowedInConstructors">
         <source>Only simple patterns are allowed in primary constructors</source>
         <target state="translated">Tylko proste wzorce są dozwolone w konstruktorach podstawowych</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="parsSpreadNotSupported">
+        <source>The spread operator '...' is not supported in this construct.</source>
+        <target state="new">The spread operator '...' is not supported in this construct.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="parsSpreadNotSupportedBeforeWith">
+        <source>The spread operator '...' is not supported in this position. Use one of the forms {{ ...expr1; A = expr2 }} or {{ expr1 with A = expr2 }} instead.</source>
+        <target state="new">The spread operator '...' is not supported in this position. Use one of the forms {{ ...expr1; A = expr2 }} or {{ expr1 with A = expr2 }} instead.</target>
         <note />
       </trans-unit>
       <trans-unit id="parsStaticMemberImcompleteSyntax">
@@ -1480,6 +1505,16 @@
       <trans-unit id="tcAnonRecdTypeDuplicateFieldId">
         <source>The field '{0}' appears multiple times in this anonymous record type.</source>
         <target state="translated">Pole „{0}” występuje wielokrotnie w tym anonimowym typie rekordu.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcAnonRecordExprSpreadSourceCannotBeNullable">
+        <source>The source expression of a spread into an anonymous record expression cannot be nullable.</source>
+        <target state="new">The source expression of a spread into an anonymous record expression cannot be nullable.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcAnonRecordExprSpreadSourceMustBeRecord">
+        <source>The source expression of a spread into an anonymous record expression must have a nominal or anonymous record type.</source>
+        <target state="new">The source expression of a spread into an anonymous record expression must have a nominal or anonymous record type.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcAttributeIsNotValidForUnionCaseWithFields">
@@ -1767,6 +1802,41 @@
         <target state="new">The value or member '{0}' has been marked 'inline' but is part of a recursive binding group. F# does not support recursive 'inline' values. Either remove the 'inline' modifier or refactor the recursion.</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcRecordExprSpreadFieldShadowsExplicitField">
+        <source>Spread field '{0}' shadows an explicitly declared field with the same name.</source>
+        <target state="new">Spread field '{0}' shadows an explicitly declared field with the same name.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcRecordExprSpreadSourceCannotBeNullable">
+        <source>The source expression of a spread into a nominal record expression cannot be nullable.</source>
+        <target state="new">The source expression of a spread into a nominal record expression cannot be nullable.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcRecordExprSpreadSourceMustBeRecord">
+        <source>The source expression of a spread into a nominal record expression must have a nominal or anonymous record type.</source>
+        <target state="new">The source expression of a spread into a nominal record expression must have a nominal or anonymous record type.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcRecordExprSpreadWithCannotBeUsedWithSpreads">
+        <source>Spread expressions and 'with' cannot be used together in the same copy-and-update expression.</source>
+        <target state="new">Spread expressions and 'with' cannot be used together in the same copy-and-update expression.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcRecordTypeDefinitionSpreadFieldShadowsExplicitField">
+        <source>Spread field '{0}' from type '{1}' shadows an explicitly declared field with the same name.</source>
+        <target state="new">Spread field '{0}' from type '{1}' shadows an explicitly declared field with the same name.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcRecordTypeDefinitionSpreadSourceCannotBeNullable">
+        <source>The source type of a spread into a record type definition cannot be nullable.</source>
+        <target state="new">The source type of a spread into a record type definition cannot be nullable.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcRecordTypeDefinitionSpreadSourceMustBeRecord">
+        <source>The source type of a spread into a record type definition must itself be a nominal or anonymous record type.</source>
+        <target state="new">The source type of a spread into a record type definition must itself be a nominal or anonymous record type.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcRequireMergeSourcesOrBindN">
         <source>The 'let! ... and! ...' construct may only be used if the computation expression builder defines either a '{0}' method or appropriate 'MergeSources' and 'Bind' methods</source>
         <target state="translated">Konstrukcji „let! ... and! ...” można użyć tylko wtedy, gdy konstruktor wyrażeń obliczeniowych definiuje metodę „{0}” lub odpowiednie metody „MergeSource” i „Bind”</target>
@@ -1850,6 +1920,11 @@
       <trans-unit id="tcTraitMayNotUseComplexThings">
         <source>A trait may not specify optional, in, out, ParamArray, CallerInfo or Quote arguments</source>
         <target state="translated">Cecha nie może określać opcjonalnych argumentów in, out, ParamArray, CallerInfo lub Quote</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcTypeDefinitionIsCyclicThroughSpreads">
+        <source>This type definition involves a cyclic reference through a spread.</source>
+        <target state="new">This type definition involves a cyclic reference through a spread.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcTypeDoesNotHaveAnyNull">

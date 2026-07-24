@@ -659,31 +659,6 @@ let UnifyTupleTypeAndInferCharacteristics contextInfo (cenv: cenv) denv m knownT
     AddCxTypeEqualsType contextInfo denv cenv.css m knownTy ty2
     tupInfo, ptys
 
-// Allow inference of assembly-affinity and structness from the known type - even from another assembly. This is a rule of
-// the language design and allows effective cross-assembly use of anonymous types in some limited circumstances.
-let UnifyAnonRecdTypeAndInferCharacteristics contextInfo (cenv: cenv) denv m ty isExplicitStruct unsortedNames =
-    let g = cenv.g
-    let anonInfo, ptys =
-        match tryDestAnonRecdTy g ty with
-        | ValueSome (anonInfo, ptys) ->
-            // Note: use the assembly of the known type, not the current assembly
-            // Note: use the structness of the known type, unless explicit
-            // Note: use the names of our type, since they are always explicit
-            let tupInfo = (if isExplicitStruct then tupInfoStruct else anonInfo.TupInfo)
-            let anonInfo = AnonRecdTypeInfo.Create(anonInfo.Assembly, tupInfo, unsortedNames)
-            let ptys =
-                if List.length ptys = Array.length unsortedNames then ptys
-                else NewInferenceTypes g (Array.toList anonInfo.SortedNames)
-            anonInfo, ptys
-        | ValueNone ->
-            // Note: no known anonymous record type - use our assembly
-            let anonInfo = AnonRecdTypeInfo.Create(cenv.thisCcu, mkTupInfo isExplicitStruct, unsortedNames)
-            anonInfo, NewInferenceTypes g (Array.toList anonInfo.SortedNames)
-    let ty2 = TType_anon (anonInfo, ptys)
-    AddCxTypeEqualsType contextInfo denv cenv.css m ty ty2
-    anonInfo, ptys
-
-
 /// Optimized unification routine that avoids creating new inference
 /// variables unnecessarily
 let UnifyFunctionTypeUndoIfFailed (cenv: cenv) denv m ty =
@@ -2000,24 +1975,23 @@ let CheckRecdExprDuplicateFields (elems: Ident list) =
 //-------------------------------------------------------------------------
 
 /// Helper used to check record expressions and record patterns
-let BuildFieldMap (cenv: cenv) env isPartial ty (flds: ((Ident list * Ident) * 'T) list) m =
+let BuildFieldMap (cenv: cenv) env isPartial ty (flds: (Ident * ExplicitOrSpread<Ident list * 'Explicit, 'Spread>) list) m =
     let g = cenv.g
     let ad = env.eAccessRights
 
-    let allFields = flds |> List.map (fun ((_, ident), _) -> ident)
-    if allFields.Length > 1 then
-        // In the case of nested record fields on the same level in record copy-and-update.
-        // We need to reverse the list to get the correct order of fields.
-        let idents = if isPartial then allFields |> List.rev else allFields
-        CheckRecdExprDuplicateFields idents
+    let allFields = flds |> List.map (fun (ident, _) -> ident)
 
     let fldResolutions =
         flds
-        |> List.choose (fun (fld, fldExpr) ->
+        |> List.choose (fun (fldId, fld) ->
             try
-                let fldPath, fldId = fld
-                let frefSet = ResolveField cenv.tcSink cenv.nameResolver env.eNameResEnv ad ty fldPath fldId allFields
-                Some(fld, frefSet, fldExpr)
+                let fldExpr, fldInfo =
+                    match fld with
+                    | ExplicitOrSpread.Explicit (path, fldExpr) -> ExplicitOrSpread.Explicit fldExpr, ExplicitOrSpread.Explicit (path, fldId)
+                    | ExplicitOrSpread.Spread fldExpr -> ExplicitOrSpread.Spread fldExpr, ExplicitOrSpread.Spread fldId
+
+                ResolveField cenv.tcSink cenv.nameResolver env.eNameResEnv ad ty fldInfo allFields
+                |> Option.map (fun frefSet -> fldId, frefSet, fldExpr)
             with e ->
                 errorRecoveryNoRange e
                 None
@@ -2051,7 +2025,7 @@ let BuildFieldMap (cenv: cenv) env isPartial ty (flds: ((Ident list * Ident) * '
                 rfinfo1.TypeInst, rfinfo1.TyconRef
 
     let fldsmap, rfldsList =
-        ((Map.empty, []), fldResolutions) ||> List.fold (fun (fs, rfldsList) ((_, ident), frefs, fldExpr) ->
+        ((Map.empty, []), fldResolutions) ||> List.fold (fun (fs, rfldsList) (ident, frefs, fldExpr) ->
                 match frefs |> List.filter (fun (FieldResolution(rfinfo2, _)) -> tyconRefEq g tcref rfinfo2.TyconRef) with
                 | [FieldResolution(rfinfo2, showDeprecated)] ->
 
@@ -6055,11 +6029,33 @@ and TcExprUndelayed (cenv: cenv) (overallTy: OverallTy) env tpenv (synExpr: SynE
 
     | SynExpr.AnonRecd (isStruct, withExprOpt, unsortedFieldExprs, mWholeExpr, trivia) ->
         match withExprOpt with 
-        | None | IsSimpleOrBoundExpr ->
-            TcNonControlFlowExpr env <| fun env ->
-            TcPossiblyPropagatingExprLeafThenConvert (fun ty -> isAnonRecdTy g ty || isTyparTy g ty) cenv overallTy env mWholeExpr (fun overallTy ->
-                TcAnonRecdExpr cenv overallTy env tpenv (isStruct, withExprOpt, unsortedFieldExprs, mWholeExpr)
-            )
+        | None | Some (IsSimpleOrBoundExpr, _) ->
+            let anySpreadsNotSimpleOrBound =
+                unsortedFieldExprs
+                |> List.exists (function
+                    | SynExprAnonRecordFieldOrSpread.Field _
+                    | SynExprAnonRecordFieldOrSpread.Spread (SynExprSpread (expr = IsSimpleOrBoundExpr), _) -> false
+                    | SynExprAnonRecordFieldOrSpread.Spread _ -> true)
+
+            if anySpreadsNotSimpleOrBound then
+                let rec loop unsortedFieldExprs cont =
+                    match unsortedFieldExprs with
+                    | [] -> cont []
+                    | (SynExprAnonRecordFieldOrSpread.Field _ as fieldOrSpread) :: unsortedFieldExprs
+                    | (SynExprAnonRecordFieldOrSpread.Spread (SynExprSpread (expr = IsSimpleOrBoundExpr), _) as fieldOrSpread) :: unsortedFieldExprs ->
+                        loop unsortedFieldExprs (cont << fun fields -> fieldOrSpread :: fields)
+                    | SynExprAnonRecordFieldOrSpread.Spread (SynExprSpread (spreadRange, spreadExpr, m), maybeBlockSep) :: unsortedFieldExprs ->
+                        bindSrcIn spreadExpr (fun spreadExpr ->
+                            loop unsortedFieldExprs (cont << fun fields ->
+                                SynExprAnonRecordFieldOrSpread.Spread (SynExprSpread (spreadRange, spreadExpr, m), maybeBlockSep) :: fields))
+
+                let wrappedExpr = loop unsortedFieldExprs (fun synRecdFields -> SynExpr.AnonRecd (isStruct, withExprOpt, synRecdFields, mWholeExpr, trivia))
+                TcExpr cenv overallTy env tpenv wrappedExpr
+            else
+                TcNonControlFlowExpr env <| fun env ->
+                TcPossiblyPropagatingExprLeafThenConvert (fun ty -> isAnonRecdTy g ty || isTyparTy g ty) cenv overallTy env mWholeExpr (fun overallTy ->
+                    TcAnonRecdExpr cenv overallTy env tpenv (isStruct, withExprOpt, unsortedFieldExprs, mWholeExpr)
+                )
         | Some withExpr ->
             BindOriginalRecdExpr withExpr (fun withExpr -> SynExpr.AnonRecd (isStruct, withExpr, unsortedFieldExprs, mWholeExpr, trivia))
             |> TcExpr cenv overallTy env tpenv
@@ -6094,9 +6090,31 @@ and TcExprUndelayed (cenv: cenv) (overallTy: OverallTy) env tpenv (synExpr: SynE
 
     | SynExpr.Record (inherits, withExprOpt, synRecdFields, mWholeExpr) ->        
         match withExprOpt with
-        | None | IsSimpleOrBoundExpr ->
-            TcNonControlFlowExpr env <| fun env ->
-            TcExprRecord cenv overallTy env tpenv (inherits, withExprOpt, synRecdFields, mWholeExpr)
+        | None | Some (IsSimpleOrBoundExpr, _) ->
+            let anySpreadsNotSimpleOrBound =
+                synRecdFields
+                |> List.exists (function
+                    | SynExprRecordFieldOrSpread.Field _
+                    | SynExprRecordFieldOrSpread.Spread (SynExprSpread (expr = IsSimpleOrBoundExpr), _) -> false
+                    | SynExprRecordFieldOrSpread.Spread _ -> true)
+
+            if anySpreadsNotSimpleOrBound then
+                let rec loop synRecdFields cont =
+                    match synRecdFields with
+                    | [] -> cont []
+                    | (SynExprRecordFieldOrSpread.Field _ as fieldOrSpread) :: synRecdFields
+                    | (SynExprRecordFieldOrSpread.Spread (SynExprSpread (expr = IsSimpleOrBoundExpr), _) as fieldOrSpread) :: synRecdFields ->
+                        loop synRecdFields (cont << fun fields -> fieldOrSpread :: fields)
+                    | SynExprRecordFieldOrSpread.Spread (SynExprSpread (spreadRange, spreadExpr, m), maybeBlockSep) :: synRecdFields ->
+                        bindSrcIn spreadExpr (fun spreadExpr ->
+                            loop synRecdFields (cont << fun fields ->
+                                SynExprRecordFieldOrSpread.Spread (SynExprSpread (spreadRange, spreadExpr, m), maybeBlockSep) :: fields))
+
+                let wrappedExpr = loop synRecdFields (fun synRecdFields -> SynExpr.Record (inherits, withExprOpt, synRecdFields, mWholeExpr))
+                TcExpr cenv overallTy env tpenv wrappedExpr
+            else
+                TcNonControlFlowExpr env <| fun env ->
+                TcExprRecord cenv overallTy env tpenv (inherits, withExprOpt, synRecdFields, mWholeExpr)
         | Some withExpr ->
             BindOriginalRecdExpr withExpr (fun withExpr -> SynExpr.Record (inherits, withExpr, synRecdFields, mWholeExpr))
             |> TcExpr cenv overallTy env tpenv
@@ -7059,7 +7077,7 @@ and TcCtorCall isNaked cenv env tpenv (overallTy: OverallTy) objTy mObjTyOpt ite
         error(Error(FSComp.SR.tcSyntaxCanOnlyBeUsedToCreateObjectTypes(if superInit then "inherit" else "new"), mWholeCall))
 
 // Check a record construction expression
-and TcRecordConstruction (cenv: cenv) (overallTy: TType) isObjExpr env tpenv withExprInfoOpt objTy fldsList m =
+and TcRecordConstruction (cenv: cenv) (overallTy: TType) isObjExpr env tpenv withExprInfoOpt (spreadSrcs : (Expr -> Expr) list) objTy fldsList m =
     let g = cenv.g
 
     let tcref, tinst = destAppTy g objTy
@@ -7072,24 +7090,44 @@ and TcRecordConstruction (cenv: cenv) (overallTy: TType) isObjExpr env tpenv wit
         errorR(Error(FSComp.SR.tcConstructorRequiresCall(tycon.DisplayName), m))
 
     let fspecs = tycon.TrueInstanceFieldsAsList
-    // Freshen types and work out their subtype flexibility
-    let fldsList =
-        [ for fname, fexpr in fldsList do
-              let fspec =
-                  try
-                      fspecs |> List.find (fun fspec -> fspec.LogicalName = fname)
-                  with :? KeyNotFoundException ->
-                      error (Error(FSComp.SR.tcUndefinedField(fname, NicePrint.minimalStringOfType env.DisplayEnv objTy), m))
-              let fty = actualTyOfRecdFieldForTycon tycon tinst fspec
-              let flex = not (isTyparTy g fty)
-              yield (fname, fexpr, fty, flex) ]
 
+    // Freshen types and work out their subtype flexibility
     // Type check and generalize the supplied bindings
     let fldsList, tpenv =
         let env = { env with eContextInfo = ContextInfo.RecordFields }
-        (tpenv, fldsList) ||> List.mapFold (fun tpenv (fname, fexpr, fty, flex) ->
-              let fieldExpr, tpenv = TcExprFlex cenv flex false fty env tpenv fexpr
-              (fname, fieldExpr), tpenv)
+        let rec tcFields checkedFields tpenv fields =
+            match fields with
+            | [] -> List.rev checkedFields, tpenv
+            | (fname, ExplicitOrSpread.Explicit fexpr) :: fields ->
+                let checkedFields, tpenv =
+                    fspecs
+                    |> List.tryFind (fun fspec -> fspec.LogicalName = fname)
+                    |> Option.map (fun fspec ->
+                        let fty = actualTyOfRecdFieldForTycon tycon tinst fspec
+                        let flex = not (isTyparTy g fty)
+                        let fieldExpr, tpenv = TcExprFlex cenv flex false fty env tpenv fexpr
+                        (fname, fieldExpr) :: checkedFields, tpenv)
+                    |> Option.defaultWith (fun () ->
+                        error (Error(FSComp.SR.tcUndefinedField(fname, NicePrint.minimalStringOfType env.DisplayEnv objTy), m)))
+
+                tcFields checkedFields tpenv fields
+
+            | (fname, ExplicitOrSpread.Spread (ty, spreadValue)) :: fields ->
+                let checkedFields =
+                    fspecs
+                    |> List.tryPick (fun fspec ->
+                        if fspec.LogicalName = fname then
+                            let fty = actualTyOfRecdFieldForTycon tycon tinst fspec
+                            let overallTy = MustConvertTo (false, fty)
+                            UnifyOverallType cenv env m overallTy ty
+                            let fieldExpr = TcAdjustExprForTypeDirectedConversions cenv overallTy ty env m spreadValue
+                            Some ((fname, mkCoerceIfNeeded g fty (tyOfExpr g fieldExpr) fieldExpr) :: checkedFields)
+                        else None)
+                    |> Option.defaultValue checkedFields // We ignore extra fields from spreads.
+
+                tcFields checkedFields tpenv fields
+
+        tcFields [] tpenv fldsList
 
     // Add rebindings for unbound field when an "old value" is available
     // Effect order: mutable fields may get modified by other bindings...
@@ -7149,16 +7187,20 @@ and TcRecordConstruction (cenv: cenv) (overallTy: TType) isObjExpr env tpenv wit
     let expr = mkRecordExpr g (GetRecdInfo env, tcref, tinst, rfrefs, args, m)
 
     let expr =
-      match withExprInfoOpt with
-      | None ->
-          // '{ recd fields }'. //
-          expr
+        let locals =
+            [
+                match withExprInfoOpt with
+                | None -> id
+                | Some (withExpr, withExprAddrVal, _) ->
+                    // '{ recd with fields }'.
+                    // Assign the first object to a tmp and then construct
+                    let wrap, oldaddr, _readonly, _writeonly = mkExprAddrOfExpr g tycon.IsStructOrEnumTycon false NeverMutates withExpr None m
+                    fun expr -> wrap (mkCompGenLet m withExprAddrVal oldaddr expr)
 
-      | Some (withExpr, withExprAddrVal, _) ->
-          // '{ recd with fields }'.
-          // Assign the first object to a tmp and then construct
-          let wrap, oldaddr, _readonly, _writeonly = mkExprAddrOfExpr g tycon.IsStructOrEnumTycon false NeverMutates withExpr None m
-          wrap (mkCompGenLet m withExprAddrVal oldaddr expr)
+                yield! spreadSrcs
+            ]
+
+        (locals, expr) ||> List.foldBack (fun local expr -> local expr)
 
     expr, tpenv
 
@@ -7450,10 +7492,11 @@ and TcObjectExpr (cenv: cenv) env tpenv (objTy, realObjTy, argopt, binds, extraI
         let fldsList =
             binds |> List.map (fun b ->
                 match BindingNormalization.NormalizeBinding ObjExprBinding cenv env b with
-                | NormalizedBinding (_, _, _, _, [], _, _, _, SynPat.Named(SynIdent(id,_), _, _, _), NormalizedBindingRhs(_, _, rhsExpr), _, _) -> id.idText, rhsExpr
+                | NormalizedBinding (_, _, _, _, [], _, _, _, SynPat.Named(SynIdent(id,_), _, _, _), NormalizedBindingRhs(_, _, rhsExpr), _, _) -> id.idText, ExplicitOrSpread.Explicit rhsExpr
                 | _ -> error(Error(FSComp.SR.tcOnlySimpleBindingsCanBeUsedInConstructionExpressions(), b.RangeOfBindingWithoutRhs)))
 
-        TcRecordConstruction cenv objTy true env tpenv None objTy fldsList mWholeExpr
+        let spreadSrcs = []
+        TcRecordConstruction cenv objTy true env tpenv None spreadSrcs objTy fldsList mWholeExpr
     else
         // object expression construction e.g. { new A() with ... } or { new IA with ... }
         let ctorCall, baseIdOpt, tpenv =
@@ -7965,6 +8008,7 @@ and TcAssertExpr cenv overallTy env (m: range) tpenv x =
 and TcRecdExpr cenv overallTy env tpenv (inherits, withExprOpt, synRecdFields, mWholeExpr) =
     CallExprHasTypeSink cenv.tcSink (mWholeExpr, env.NameEnv, overallTy, env.eAccessRights)
     let g = cenv.g
+    let ad = env.eAccessRights
 
     let requiresCtor = (GetCtorShapeCounter env = 1) // Get special expression forms for constructors
     let haveCtor = Option.isSome inherits
@@ -7981,27 +8025,24 @@ and TcRecdExpr cenv overallTy env tpenv (inherits, withExprOpt, synRecdFields, m
 
     let hasOrigExpr = withExprOptChecked.IsSome
 
-    let fldsList =
-        let flds =
-            synRecdFields
-            |> List.map (fun (SynExprRecordField (fieldName = (synLongId, isOk); expr = exprBeingAssigned)) ->
-                // if we met at least one field that is not syntactically correct - raise ReportedError to transfer control to the recovery routine
-                if not isOk then
-                    // raising ReportedError None transfers control to the closest errorRecovery point but do not make any records into log
-                    // we assume that parse errors were already reported
-                    raise (ReportedError None)
+    let spreadSrcs, fldsList, tpenv =
+        let spreadSrcTys, spreadSrcs, flds =
+            Spreads.Values.Records.check
+                TcExprFlex
+                g
+                env
+                cenv
+                tpenv
+                ad
+                mWholeExpr
+                withExprOpt
+                overallTy
+                synRecdFields
 
-                match withExprOpt, synLongId.LongIdent, exprBeingAssigned with
-                | _, [ id ], _ -> ([], id), exprBeingAssigned
-                | Some withExpr, lid, Some exprBeingAssigned -> TransformAstForNestedUpdates cenv env overallTy lid exprBeingAssigned withExpr
-                | _ -> List.frontAndBack synLongId.LongIdent, exprBeingAssigned)
-
-        let flds = if hasOrigExpr then GroupUpdatesToNestedFields flds else flds
         // Check if the overall type is an anon record type and if so raise an copy-update syntax error
         // let f (r: {| A: int; C: int |}) = { r with A = 1; B = 2; C = 3 }
         if isAnonRecdTy cenv.g overallTy || isStructAnonRecdTy cenv.g overallTy then
-            for fld, _ in flds do
-                let _, fldId = fld
+            for fldId, _ in flds do
                 match TryFindAnonRecdFieldOfType g overallTy fldId.idText with
                 | Some item ->
                     CallNameResolutionSink cenv.tcSink (fldId.idRange, env.eNameResEnv, item, emptyTyparInst, ItemOccurrence.UseInType, env.eAccessRights)
@@ -8012,30 +8053,42 @@ and TcRecdExpr cenv overallTy env tpenv (inherits, withExprOpt, synRecdFields, m
             // Use the  right } in the expression
             let lastPartRange = withStartEnd (mkPos mWholeExpr.StartLine (mWholeExpr.EndColumn - 1)) (mkPos mWholeExpr.StartLine mWholeExpr.EndColumn) mWholeExpr
             errorR(Error(FSComp.SR.chkCopyUpdateSyntaxInAnonRecords(), lastPartRange))
-            []
+            [], [], tpenv
         else
             // If the overall type is a record type build a map of the fields
-            match flds with
-            | [] -> []
-            | _ ->
-                match BuildFieldMap cenv env hasOrigExpr overallTy flds mWholeExpr with
-                | None -> []
-                | Some(tinst, tcref, _, fldsList) ->
+            let fieldMap =
+                match flds with
+                | [] -> []
+                | _ ->
+                    let tcrefs =
+                        spreadSrcTys
+                        |> List.choose (tryTcrefOfAppTy g >> ValueOption.toOption)
 
-                let gtyp = mkWoNullAppTy tcref tinst
-                UnifyTypes cenv env mWholeExpr overallTy gtyp
+                    let env = { env with eNameResEnv = (env.eNameResEnv, tcrefs) ||> AddTyconRefsToNameEnv BulkAdd.Yes false g cenv.amap ad mWholeExpr false }
 
-                // (#15290) For copy-and-update expressions, register the record type as a related symbol
-                // so that "Find All References" on the record type includes copy-and-update usages.
-                // Reported via CallRelatedSymbolSink to avoid affecting colorization or symbol info.
-                if hasOrigExpr then
-                    let item = Item.Types(tcref.DisplayName, [gtyp])
-                    CallRelatedSymbolSink cenv.tcSink (mWholeExpr, item, RelatedSymbolUseKind.CopyAndUpdateRecord)
+                    match BuildFieldMap cenv env hasOrigExpr overallTy flds mWholeExpr with
+                    | None -> []
+                    | Some(tinst, tcref, _, fldsList) ->
 
-                [ for n, v in fldsList do
-                    match v with
-                    | Some v -> yield n, v
-                    | None -> () ]
+                    let gtyp = mkWoNullAppTy tcref tinst
+                    UnifyTypes cenv env mWholeExpr overallTy gtyp
+
+                    // (#15290) For copy-and-update expressions, register the record type as a related symbol
+                    // so that "Find All References" on the record type includes copy-and-update usages.
+                    // Reported via CallRelatedSymbolSink to avoid affecting colorization or symbol info.
+                    if hasOrigExpr then
+                        let item = Item.Types(tcref.DisplayName, [gtyp])
+                        CallRelatedSymbolSink cenv.tcSink (mWholeExpr, item, RelatedSymbolUseKind.CopyAndUpdateRecord)
+
+                    [
+                        for fldId, fld in fldsList do
+                            match fld with
+                            | ExplicitOrSpread.Explicit None -> ()
+                            | ExplicitOrSpread.Explicit (Some fieldExpr) -> fldId, ExplicitOrSpread.Explicit fieldExpr
+                            | ExplicitOrSpread.Spread spread -> fldId, ExplicitOrSpread.Spread spread
+                    ]
+
+            spreadSrcs, fieldMap, tpenv
 
     let withExprInfoOpt =
         match withExprOptChecked with
@@ -8081,7 +8134,7 @@ and TcRecdExpr cenv overallTy env tpenv (inherits, withExprOpt, synRecdFields, m
         SolveTypeAsError env.DisplayEnv cenv.css mWholeExpr overallTy
         mkDefault (mWholeExpr, overallTy), tpenv
     else
-        let expr, tpenv = TcRecordConstruction cenv overallTy false env tpenv withExprInfoOpt overallTy fldsList mWholeExpr
+        let expr, tpenv = TcRecordConstruction cenv overallTy false env tpenv withExprInfoOpt spreadSrcs overallTy fldsList mWholeExpr
 
         let expr =
             match superInitExprOpt  with
@@ -8089,12 +8142,6 @@ and TcRecdExpr cenv overallTy env tpenv (inherits, withExprOpt, synRecdFields, m
             | Some superInitExpr  -> mkCompGenSequential mWholeExpr superInitExpr  expr
             | None -> expr
         expr, tpenv
-
-and CheckAnonRecdExprDuplicateFields (elems: Ident array) =
-    elems |> Array.iteri (fun i (uc1: Ident) ->
-        elems |> Array.iteri (fun j (uc2: Ident) ->
-            if j > i && uc1.idText = uc2.idText then
-               errorR(Error (FSComp.SR.tcAnonRecdDuplicateFieldId(uc1.idText), uc1.idRange))))
 
 // Check '{| .... |}'
 and TcAnonRecdExpr cenv (overallTy: TType) env tpenv (isStruct, optOrigSynExpr, unsortedFieldIdsAndSynExprsGiven, mWholeExpr) =
@@ -8106,7 +8153,10 @@ and TcAnonRecdExpr cenv (overallTy: TType) env tpenv (isStruct, optOrigSynExpr, 
         // Ideally we should also check for duplicate field IDs in the TcCopyAndUpdateAnonRecdExpr case, but currently the logic is too complex to guarantee a proper error reporting
         // So here we error instead errorR to avoid cascading  internal errors
         unsortedFieldIdsAndSynExprsGiven
-        |> List.countBy (fun (fId, _, _) -> textOfLid fId.LongIdent)
+        |> List.choose (function
+            | SynExprAnonRecordFieldOrSpread.Field (SynExprAnonRecordField (fieldName = SynLongIdent (name, _, _)), _) -> Some name
+            | SynExprAnonRecordFieldOrSpread.Spread _ -> (* Spreads are allowed to shadow fields. *) None)
+        |> List.countBy textOfLid
         |> List.iter (fun (label, count) ->
             if count > 1 then error (Error (FSComp.SR.tcAnonRecdDuplicateFieldId(label), mWholeExpr)))
 
@@ -8115,39 +8165,74 @@ and TcAnonRecdExpr cenv (overallTy: TType) env tpenv (isStruct, optOrigSynExpr, 
 and TcNewAnonRecdExpr cenv (overallTy: TType) env tpenv (isStruct, unsortedFieldIdsAndSynExprsGiven, mWholeExpr) =
 
     let g = cenv.g
-    let unsortedFieldSynExprsGiven = unsortedFieldIdsAndSynExprsGiven |> List.map (fun (_, _, fieldExpr) -> fieldExpr)
-    let unsortedFieldIds = unsortedFieldIdsAndSynExprsGiven |> List.map (fun (synLongIdent, _, _) -> synLongIdent.LongIdent[0]) |> List.toArray
-    let anonInfo, sortedFieldTys = UnifyAnonRecdTypeAndInferCharacteristics env.eContextInfo cenv env.DisplayEnv mWholeExpr overallTy isStruct unsortedFieldIds
+    let ad = env.eAccessRights
 
-    if unsortedFieldIds.Length > 1 then
-        CheckAnonRecdExprDuplicateFields unsortedFieldIds
+    let maybeAnonRecdTargetTy = tryDestAnonRecdTy g overallTy
 
-    // Sort into canonical order
-    let sortedIndexedArgs =
-        unsortedFieldIdsAndSynExprsGiven
-        |> List.indexed
-        |> List.sortBy (fun (i,_) -> unsortedFieldIds[i].idText)
+    let spreadSrcs, unsortedFields, anonInfo, tpenv =
+        let spreadSrcs, fieldIdsInAlphabeticalOrder, fieldTysInAlphabeticalOrder, fieldsInSrcOrder =
+            Spreads.Values.AnonymousRecords.check
+                TcExprFlex
+                TcAdjustExprForTypeDirectedConversions
+                MustConvertTo
+                UnifyOverallType
+                ignore
+                g
+                env
+                cenv
+                tpenv
+                ad
+                mWholeExpr
+                maybeAnonRecdTargetTy
+                None
+                overallTy
+                unsortedFieldIdsAndSynExprsGiven
 
-    // Map from sorted indexes to unsorted indexes
-    let sigma = sortedIndexedArgs |> List.map fst |> List.toArray
-    let sortedFieldExprs = sortedIndexedArgs |> List.map snd
+        // Unify the overall ty with the inferred target anonymous record type.
+        let anonInfo, sortedFieldTys =
+            let anonInfo, sortedFieldTys =
+                let unsortedNames =
+                    fieldsInSrcOrder
+                    |> List.map (fun (fieldId, _, _) -> fieldId)
+                    |> List.toArray
 
-    sortedFieldExprs |> List.iteri (fun j (synLongIdent, _, _) ->
-        let m = rangeOfLid synLongIdent.LongIdent
-        let item = Item.AnonRecdField(anonInfo, sortedFieldTys, j, m)
-        CallNameResolutionSink cenv.tcSink (m, env.NameEnv, item, emptyTyparInst, ItemOccurrence.Use, env.eAccessRights))
+                match maybeAnonRecdTargetTy with
+                | ValueSome (anonInfo, _) ->
+                    // Note: use the assembly of the known type, not the current assembly
+                    // Note: use the structness of the known type, unless explicit
+                    // Note: use the names of our type, since they are always explicit
+                    let tupInfo = if isStruct then tupInfoStruct else anonInfo.TupInfo
+                    let anonInfo = AnonRecdTypeInfo.Create(anonInfo.Assembly, tupInfo, unsortedNames)
+                    anonInfo, fieldTysInAlphabeticalOrder
+                | ValueNone ->
+                    // Note: no known anonymous record type - use our assembly
+                    let anonInfo = AnonRecdTypeInfo.Create(cenv.thisCcu, mkTupInfo isStruct, unsortedNames)
+                    anonInfo, fieldTysInAlphabeticalOrder
+            let ty2 = TType_anon (anonInfo, sortedFieldTys)
+            AddCxTypeEqualsType env.eContextInfo env.DisplayEnv cenv.css mWholeExpr overallTy ty2
+            anonInfo, sortedFieldTys
 
-    let unsortedFieldTys =
-        sortedFieldTys
-        |> List.indexed
-        |> List.sortBy (fun (sortedIdx, _) -> sigma[sortedIdx])
-        |> List.map snd
+        // All sorted field identifiers, including potential duplicates.
+        let sortedNames = fieldIdsInAlphabeticalOrder
 
-    let flexes = unsortedFieldTys |> List.map (fun _ -> true)
+        // Call name resolution.
+        sortedNames
+        |> List.iteri (fun j fieldName ->
+            let m = fieldName.idRange
+            let item = Item.AnonRecdField(anonInfo, sortedFieldTys, j, m)
+            CallNameResolutionSink cenv.tcSink (m, env.NameEnv, item, emptyTyparInst, ItemOccurrence.Use, env.eAccessRights))
 
-    let unsortedCheckedArgs, tpenv = TcExprsWithFlexes cenv env mWholeExpr tpenv flexes unsortedFieldTys unsortedFieldSynExprsGiven
+        spreadSrcs, fieldsInSrcOrder, anonInfo, tpenv
 
-    mkAnonRecd g mWholeExpr anonInfo unsortedFieldIds unsortedCheckedArgs unsortedFieldTys, tpenv
+    let unsortedNames = [| for fieldName, _, _ in unsortedFields -> fieldName |]
+    let unsortedTys = [ for _, fieldTy, _ in unsortedFields -> fieldTy ]
+    let unsortedExprs = [ for _, _, tcField in unsortedFields -> tcField () ]
+
+    let expr =
+        (spreadSrcs, mkAnonRecd g mWholeExpr anonInfo unsortedNames unsortedExprs unsortedTys)
+        ||> List.foldBack (fun wrap expr -> wrap expr)
+
+    expr, tpenv
 
 and TcCopyAndUpdateAnonRecdExpr cenv (overallTy: TType) env tpenv (isStruct, (origExpr, blockSeparator), unsortedFieldIdsAndSynExprsGiven, mWholeExpr) =
     // The fairly complex case '{| origExpr with X = 1; Y = 2 |}'
@@ -8160,6 +8245,7 @@ and TcCopyAndUpdateAnonRecdExpr cenv (overallTy: TType) env tpenv (isStruct, (or
     // Unlike in the case of record type copy-and-update {| a with X = 1 |} does not force a.X to exist or have had type 'int'
 
     let g = cenv.g
+    let ad = env.eAccessRights
     let origExprTy = NewInferenceType g
     let origExprChecked, tpenv = TcExpr cenv (MustEqual origExprTy) env tpenv origExpr
     let oldv, oldve = mkCompGenLocal mWholeExpr "inputRecord" origExprTy
@@ -8168,17 +8254,27 @@ and TcCopyAndUpdateAnonRecdExpr cenv (overallTy: TType) env tpenv (isStruct, (or
     if not (isAppTy g origExprTy || isAnonRecdTy g origExprTy) then
         error (Error (FSComp.SR.tcCopyAndUpdateNeedsRecordType(), mOrigExpr))
 
-    // Expand expressions with respect to potential nesting
-    let unsortedFieldIdsAndSynExprsGiven =
-        unsortedFieldIdsAndSynExprsGiven
-        |> List.map (fun (synLongIdent, _, exprBeingAssigned) ->
-            match synLongIdent.LongIdent with
-            | [] -> error(Error(FSComp.SR.nrUnexpectedEmptyLongId(), mWholeExpr))
-            | [ id ] -> ([], id), Some exprBeingAssigned
-            | lid -> TransformAstForNestedUpdates cenv env origExprTy lid exprBeingAssigned (origExpr, blockSeparator))
-        |> GroupUpdatesToNestedFields
+    let maybeAnonRecdTargetTy = tryDestAnonRecdTy g overallTy
 
-    let unsortedFieldSynExprsGiven = unsortedFieldIdsAndSynExprsGiven |> List.choose snd
+    // Collect explicitly-defined fields and fields from spreads
+    // and expand expressions with respect to potential nesting.
+    let spreadSrcs, _fieldIdsInAlphabeticalOrder, _fieldTysInAlphabeticalOrder, fieldsInSrcOrder =
+        Spreads.Values.AnonymousRecords.check
+            TcExprFlex
+            TcAdjustExprForTypeDirectedConversions
+            MustConvertTo
+            UnifyOverallType
+            (fun m -> errorR (Error (FSComp.SR.tcRecordExprSpreadWithCannotBeUsedWithSpreads (), m)))
+            g
+            env
+            cenv
+            tpenv
+            ad
+            mWholeExpr
+            maybeAnonRecdTargetTy
+            (Some (origExpr, blockSeparator))
+            origExprTy
+            unsortedFieldIdsAndSynExprsGiven
 
     let origExprIsStruct =
         match tryDestAnonRecdTy g origExprTy with
@@ -8195,37 +8291,59 @@ and TcCopyAndUpdateAnonRecdExpr cenv (overallTy: TType) env tpenv (isStruct, (or
     ///   - Choice2Of2 for a binding coming from the original expression
     let unsortedIdAndExprsAll =
         [|
-            for (_, id), e in unsortedFieldIdsAndSynExprsGiven do
-                yield (id, Choice1Of2 e)
+            for id, ty, tcField in fieldsInSrcOrder do
+                yield (id, ty, Choice1Of2 tcField)
+
             match tryDestAnonRecdTy g origExprTy with
             | ValueSome (anonInfo, tinst) ->
                 for i, id in Array.indexed anonInfo.SortedIds do
-                    yield id, Choice2Of2 (mkAnonRecdFieldGetViaExprAddr (anonInfo, oldveaddr, tinst, i, mOrigExpr))
+                    yield id, NewInferenceType g, Choice2Of2 (mkAnonRecdFieldGetViaExprAddr (anonInfo, oldveaddr, tinst, i, mOrigExpr))
             | ValueNone ->
                 match tryAppTy g origExprTy with
                 | ValueSome(tcref, tinst) when tcref.IsRecordTycon ->
                     let fspecs = tcref.Deref.TrueInstanceFieldsAsList
                     for fspec in fspecs do
-                        yield fspec.Id, Choice2Of2 (mkRecdFieldGetViaExprAddr (oldveaddr, tcref.MakeNestedRecdFieldRef fspec, tinst, mOrigExpr))
+                        yield fspec.Id, NewInferenceType g, Choice2Of2 (mkRecdFieldGetViaExprAddr (oldveaddr, tcref.MakeNestedRecdFieldRef fspec, tinst, mOrigExpr))
                 | _ ->
                     error (Error (FSComp.SR.tcCopyAndUpdateNeedsRecordType(), mOrigExpr))
         |]
-        |> Array.distinctBy (fst >> textOfId)
+        |> Array.distinctBy (fun (fieldId, _, _) -> textOfId fieldId)
 
-    let unsortedFieldIdsAll = Array.map fst unsortedIdAndExprsAll
+    let unsortedFieldIdsAll = [|for fieldId, _, _ in unsortedIdAndExprsAll -> fieldId|]
 
-    let anonInfo, sortedFieldTysAll = UnifyAnonRecdTypeAndInferCharacteristics env.eContextInfo cenv env.DisplayEnv mWholeExpr overallTy isStruct unsortedFieldIdsAll
-
-    let sortedIndexedFieldsAll = unsortedIdAndExprsAll |> Array.indexed |> Array.sortBy (snd >> fst >> textOfId)
+    let sortedIndexedFieldsAll = unsortedIdAndExprsAll |> Array.indexed |> Array.sortBy (fun (_, (fieldId, _, _)) -> textOfId fieldId)
 
     // map from sorted indexes to unsorted indexes
     let sigma = Array.map fst sortedIndexedFieldsAll
 
     let sortedFieldsAll = Array.map snd sortedIndexedFieldsAll
 
+    // Unify the overall ty with the inferred target anonymous record type.
+    let anonInfo, sortedFieldTysAll =
+        let anonInfo =
+            let unsortedNames = unsortedFieldIdsAll
+
+            match maybeAnonRecdTargetTy with
+            | ValueSome (anonInfo, _) ->
+                // Note: use the assembly of the known type, not the current assembly
+                // Note: use the structness of the known type, unless explicit
+                // Note: use the names of our type, since they are always explicit
+                let tupInfo = if isStruct then tupInfoStruct else anonInfo.TupInfo
+                let anonInfo = AnonRecdTypeInfo.Create(anonInfo.Assembly, tupInfo, unsortedNames)
+                anonInfo
+            | ValueNone ->
+                // Note: no known anonymous record type - use our assembly
+                let anonInfo = AnonRecdTypeInfo.Create(cenv.thisCcu, mkTupInfo isStruct, unsortedNames)
+                anonInfo
+
+        let sortedFieldTysAll = [for _, ty, _ in sortedFieldsAll -> ty]
+        let ty2 = TType_anon (anonInfo, sortedFieldTysAll)
+        AddCxTypeEqualsType env.eContextInfo env.DisplayEnv cenv.css mWholeExpr overallTy ty2
+        anonInfo, sortedFieldTysAll
+
     // Report _all_ identifiers to name resolution. We should likely just report the ones
     // that are explicit in source code.
-    sortedFieldsAll |> Array.iteri (fun j (fieldId, expr) ->
+    sortedFieldsAll |> Array.iteri (fun j (fieldId, _, expr) ->
         match expr with
         | Choice1Of2 _ ->
             let item = Item.AnonRecdField(anonInfo, sortedFieldTysAll, j, fieldId.idRange)
@@ -8238,33 +8356,21 @@ and TcCopyAndUpdateAnonRecdExpr cenv (overallTy: TType) env tpenv (isStruct, (or
         |> List.sortBy (fun (sortedIdx, _) -> sigma[sortedIdx])
         |> List.map snd
 
-    let unsortedFieldTysGiven =
-        unsortedFieldTysAll
-        |> List.take unsortedFieldIdsAndSynExprsGiven.Length
-
-    let flexes = unsortedFieldTysGiven |> List.map (fun _ -> true)
-
     // Check the expressions in unsorted order
-    let unsortedFieldExprsGiven, tpenv =
-        TcExprsWithFlexes cenv env mWholeExpr tpenv flexes unsortedFieldTysGiven unsortedFieldSynExprsGiven
-
-    let unsortedFieldExprsGiven = unsortedFieldExprsGiven |> List.toArray
-
-    let unsortedFieldIds =
-        unsortedIdAndExprsAll
-        |> Array.map fst
+    let unsortedFieldExprsGiven = fieldsInSrcOrder |> List.map (fun (_, _, tcField) -> tcField ()) |> List.toArray
+    let unsortedFieldIds = unsortedFieldIdsAll
 
     let unsortedFieldExprs =
         unsortedIdAndExprsAll
-        |> Array.mapi (fun unsortedIdx (_, expr) ->
+        |> Array.mapi (fun unsortedIdx (_fieldId, ty, expr) ->
             match expr with
             | Choice1Of2 _ -> unsortedFieldExprsGiven[unsortedIdx]
-            | Choice2Of2 subExpr -> UnifyTypes cenv env mOrigExpr (tyOfExpr g subExpr) unsortedFieldTysAll[unsortedIdx]; subExpr)
+            | Choice2Of2 subExpr -> UnifyTypes cenv env mOrigExpr (tyOfExpr g subExpr) ty; subExpr)
         |> List.ofArray
 
     // Permute the expressions to sorted order in the TAST
     let expr = mkAnonRecd g mWholeExpr anonInfo unsortedFieldIds unsortedFieldExprs unsortedFieldTysAll
-    let expr = wrap expr
+    let expr = (wrap :: spreadSrcs, expr) ||> List.foldBack (fun wrap expr -> wrap expr)
 
     // Bind the original expression
     let expr = mkCompGenLet mOrigExpr oldv origExprChecked expr
@@ -8834,6 +8940,13 @@ and TcApplicationThen (cenv: cenv) (overallTy: OverallTy) env tpenv mExprAndArg 
         | [] when g.langVersion.SupportsFeature LanguageFeature.EmptyBodiedComputationExpressions -> Some (EmptyFieldListAsUnit (SynExpr.Const (SynConst.Unit, range0)))
         | _ -> None
 
+    let (|SpreadsOnly|_|) recordFields =
+        if g.langVersion.SupportsFeature LanguageFeature.RecordSpreads && not (List.isEmpty recordFields) && recordFields |> List.forall (function SynExprRecordFieldOrSpread.Spread _ -> true | _ -> false) then
+            let spreadRanges = recordFields |> List.choose (function SynExprRecordFieldOrSpread.Spread (SynExprSpread (_, _, m), _) -> Some m | _ -> None)
+            Some (SpreadsOnly spreadRanges)
+        else
+            None
+
     // If the type of 'synArg' unifies as a function type, then this is a function application, otherwise
     // it is an error or a computation expression or indexer or delegate invoke
     match UnifyFunctionTypeUndoIfFailed cenv denv mLeftExpr exprTy with
@@ -8854,15 +8967,21 @@ and TcApplicationThen (cenv: cenv) (overallTy: OverallTy) env tpenv mExprAndArg 
             // Note that 'seq' predated computation expressions and is not actually a computation expression builder
             // though users don't realise that.
             let synArg =
-                match synArg with
+                match leftExpr with
                 // seq { comp }
                 // seq { }
-                | SynExpr.ComputationExpr (false, comp, m)
-                | SynExpr.Record (None, None, EmptyFieldListAsUnit comp, m) when
-                        (match leftExpr with
-                         | ApplicableExpr(expr=Expr.Op(TOp.Coerce, _, [SeqExpr g], _)) -> true
-                         | _ -> false) ->
-                    SynExpr.ComputationExpr (true, comp, m)
+                | ApplicableExpr(expr=Expr.Op(TOp.Coerce, _, [SeqExpr g], _)) ->
+                    match synArg with
+                    | SynExpr.ComputationExpr (false, comp, m)
+                    | SynExpr.Record (None, None, EmptyFieldListAsUnit comp, m) ->
+                        SynExpr.ComputationExpr (true, comp, m)
+
+                    | SynExpr.Record (None, None, SpreadsOnly spreadRanges, m) ->
+                        for m in spreadRanges do
+                            errorR (Error (FSComp.SR.parsSpreadNotSupported (), m))
+                        SynExpr.ComputationExpr (true, arbExpr ("spreadsInSeqExpr", m), m)
+
+                    | _ -> synArg
 
                 | _ -> synArg
 
@@ -9446,7 +9565,9 @@ and TcImplicitOpItemThen (cenv: cenv) overallTy env id sln tpenv mItem delayed =
 
         | SynExpr.Tuple (_, synExprs, _, _)
         | SynExpr.ArrayOrList (_, synExprs, _) -> synExprs |> List.forall isSimpleArgument
-        | SynExpr.Record (copyInfo=copyOpt; recordFields=fields) -> copyOpt |> Option.forall (fst >> isSimpleArgument) && fields |> List.forall ((fun (SynExprRecordField(expr=e)) -> e) >> Option.forall isSimpleArgument)
+        | SynExpr.Record (copyInfo=copyOpt; recordFields=fields) ->
+            copyOpt |> Option.forall (fst >> isSimpleArgument)
+            && fields |> List.forall ((function SynExprRecordFieldOrSpread.Field (SynExprRecordField(expr=e), _) -> e | _ -> None) >> Option.forall isSimpleArgument)
         | SynExpr.App (_, _, synExpr, synExpr2, _) -> isSimpleArgument synExpr && isSimpleArgument synExpr2
         | SynExpr.IfThenElse (ifExpr=synExpr; thenExpr=synExpr2; elseExpr=synExprOpt) -> isSimpleArgument synExpr && isSimpleArgument synExpr2 && Option.forall isSimpleArgument synExprOpt
         | SynExpr.DotIndexedGet (synExpr, _, _, _) -> isSimpleArgument synExpr

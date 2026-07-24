@@ -23,6 +23,14 @@ type public RecordContext =
     | Declaration of isInIdentifier: bool
 
 [<RequireQualifiedAccess>]
+type public RecordSpreadContext =
+    /// type R = { ...| }
+    | Declaration
+
+    /// let r = { ...| }
+    | Construction
+
+[<RequireQualifiedAccess>]
 type public PatternContext =
     /// <summary>Completing union case field pattern (e.g. fun (Some v| ) -> ) or fun (Some (v| )) -> ). In theory, this could also be parameterized active pattern usage.</summary>
     /// <param name="fieldIndex">Position in the tuple. <see cref="None">None</see> if there is no tuple, with only one field outside of parentheses - `Some v|`</param>
@@ -58,6 +66,9 @@ type public CompletionContext =
 
     /// Completing records field
     | RecordField of context: RecordContext
+
+    /// Completing a record spread: { ...| }
+    | RecordSpread of context: RecordSpreadContext
 
     | RangeOperator
 

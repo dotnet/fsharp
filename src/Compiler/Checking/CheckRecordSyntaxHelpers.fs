@@ -2,6 +2,7 @@
 
 module internal FSharp.Compiler.CheckRecordSyntaxHelpers
 
+open System
 open FSharp.Compiler.CheckBasics
 open FSharp.Compiler.DiagnosticsLogger
 open FSharp.Compiler.Features
@@ -13,47 +14,6 @@ open FSharp.Compiler.Text.Range
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.Xml
 open FSharp.Compiler.SyntaxTrivia
-
-/// Merges updates to nested record fields on the same level in record copy-and-update.
-///
-/// `TransformAstForNestedUpdates` expands `{ x with A.B = 10; A.C = "" }`
-///
-/// into
-///
-/// { x with
-///        A = { x.A with B = 10 };
-///        A = { x.A with C = "" }
-/// }
-///
-/// which we here convert to
-///
-/// { x with A = { x.A with B = 10; C = "" } }
-let GroupUpdatesToNestedFields (fields: ((Ident list * Ident) * SynExpr option) list) =
-    let rec groupIfNested res xs =
-        match xs with
-        | [] -> res
-        | [ x ] -> x :: res
-        | x :: y :: ys ->
-            match x, y with
-            | (lidwid, Some(SynExpr.Record(baseInfo, copyInfo, fields1, m))), (_, Some(SynExpr.Record(recordFields = fields2))) ->
-                let reducedRecd =
-                    (lidwid, Some(SynExpr.Record(baseInfo, copyInfo, fields1 @ fields2, m)))
-
-                groupIfNested res (reducedRecd :: ys)
-            | (lidwid, Some(SynExpr.AnonRecd(isStruct, copyInfo, fields1, m, trivia))), (_, Some(SynExpr.AnonRecd(recordFields = fields2))) ->
-                let reducedRecd =
-                    (lidwid, Some(SynExpr.AnonRecd(isStruct, copyInfo, fields1 @ fields2, m, trivia)))
-
-                groupIfNested res (reducedRecd :: ys)
-            | _ -> groupIfNested (x :: res) (y :: ys)
-
-    fields
-    |> List.groupBy (fun ((_, field), _) -> field.idText)
-    |> List.collect (fun (_, fields) ->
-        if fields.Length < 2 then
-            fields
-        else
-            groupIfNested [] fields)
 
 /// Expands a long identifier into nested copy-and-update expressions.
 ///
@@ -122,17 +82,27 @@ let TransformAstForNestedUpdates (cenv: TcFileState) (env: TcEnv) overallTy (lid
             | Item.AnonRecdField(
                 anonInfo = {
                                AnonRecdTypeInfo.TupInfo = TupInfo.Const isStruct
-                           }) ->
-                let fields = [ LongIdentWithDots([ fieldId ], []), None, nestedField ]
+                           }
+                range = m) ->
+                let fields =
+                    [
+                        SynExprAnonRecordFieldOrSpread.Field(
+                            SynExprAnonRecordField(LongIdentWithDots([ fieldId ], []), None, nestedField, m),
+                            None
+                        )
+                    ]
+
                 SynExpr.AnonRecd(isStruct, copyInfo outerFieldId, fields, outerFieldId.idRange, { OpeningBraceRange = range0 })
             | _ ->
                 let fields =
                     [
-                        SynExprRecordField(
-                            (LongIdentWithDots([ fieldId ], []), true),
-                            None,
-                            Some nestedField,
-                            unionRanges fieldId.idRange nestedField.Range,
+                        SynExprRecordFieldOrSpread.Field(
+                            SynExprRecordField(
+                                (LongIdentWithDots([ fieldId ], []), true),
+                                None,
+                                Some nestedField,
+                                unionRanges fieldId.idRange nestedField.Range
+                            ),
                             None
                         )
                     ]
@@ -149,7 +119,7 @@ let TransformAstForNestedUpdates (cenv: TcFileState) (env: TcEnv) overallTy (lid
 
     match access, fields with
     | _, [] -> failwith "unreachable"
-    | accessIds, [ (fieldId, _) ] -> (accessIds, fieldId), Some exprBeingAssigned
+    | accessIds, [ (fieldId, _) ] -> (accessIds, fieldId), exprBeingAssigned
     | accessIds, (outerFieldId, item) :: rest ->
         checkLanguageFeatureAndRecover cenv.g.langVersion LanguageFeature.NestedCopyAndUpdate (rangeOfLid lid)
 
@@ -157,22 +127,20 @@ let TransformAstForNestedUpdates (cenv: TcFileState) (env: TcEnv) overallTy (lid
 
         let outerFieldId = ident (outerFieldId.idText, outerFieldId.idRange.MakeSynthetic())
 
-        (accessIds, outerFieldId),
-        Some(synExprRecd (recdExprCopyInfo (fields |> List.map fst) withExpr) outerFieldId rest exprBeingAssigned)
+        (accessIds, outerFieldId), synExprRecd (recdExprCopyInfo (fields |> List.map fst) withExpr) outerFieldId rest exprBeingAssigned
 
 /// This name is used when a complex expression is bound for use as a binding in a copy-and-update expression.
 /// For example, in `{ f () with ... }`, `f ()` is replaced by `let bind@ = f ()`
 let BindIdText = "bind@"
 
 /// Finding the 'bind@' identifier is the only way to detect that an expression has already been bound.
-let inline (|IsSimpleOrBoundExpr|_|) (withExprOpt: (SynExpr * BlockSeparator) option) =
-    match withExprOpt with
-    | None -> true
-    | Some(expr, _) ->
-        match expr with
-        | SynExpr.LongIdent(_, lIds, _, _) -> lIds.LongIdent |> List.exists (fun id -> id.idText = BindIdText)
-        | SynExpr.Ident _ -> true
-        | _ -> false
+let inline (|IsSimpleOrBoundExpr|_|) (withExpr: SynExpr) =
+    match withExpr with
+    | SynExpr.LongIdent(_, lIds, _, _) ->
+        lIds.LongIdent
+        |> List.exists _.idText.StartsWith(BindIdText, StringComparison.Ordinal)
+    | SynExpr.Ident _ -> true
+    | _ -> false
 
 /// When the original expression in copy-and-update is more complex than `{ x with ... }`, like `{ f () with ... }`,
 /// we bind it first, so that it's not evaluated multiple times during a nested update
@@ -209,3 +177,42 @@ let BindOriginalRecdExpr (withExpr: SynExpr * BlockSeparator) mkRecdExpr =
             Range = mOrigExprSynth
             Trivia = SynLetOrUseTrivia.Zero
         }
+
+let mutable private bindId = 0
+
+let private newBindId () =
+    System.Threading.Interlocked.Increment &bindId
+
+let bindSrcIn (spreadSrcExpr: SynExpr) =
+    let mOrigExprSynth = spreadSrcExpr.Range.MakeSynthetic()
+    let id = mkSynId mOrigExprSynth $"%s{BindIdText}-%d{newBindId ()}"
+    let newSpreadSrcExpr = SynExpr.Ident id
+
+    let binding =
+        mkSynBinding
+            (PreXmlDoc.Empty, mkSynPatVar None id)
+            (None,
+             false,
+             false,
+             mOrigExprSynth,
+             DebugPointAtBinding.NoneAtSticky,
+             None,
+             spreadSrcExpr,
+             mOrigExprSynth,
+             [],
+             [],
+             None,
+             SynBindingTrivia.Zero)
+
+    fun mkBody ->
+        SynExpr.LetOrUse
+            {
+                IsRecursive = false
+                //isUse = false,
+                IsFromSource = false // compiler generated during desugaring
+                // isBang = false,
+                Bindings = [ binding ]
+                Body = mkBody newSpreadSrcExpr
+                Range = mOrigExprSynth
+                Trivia = SynLetOrUseTrivia.Zero
+            }

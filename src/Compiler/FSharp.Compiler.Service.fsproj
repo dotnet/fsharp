@@ -407,6 +407,7 @@
     <Compile Include="Checking\CheckBasics.fs" />
     <Compile Include="Checking\CheckRecordSyntaxHelpers.fsi" />
     <Compile Include="Checking\CheckRecordSyntaxHelpers.fs" />
+    <Compile Include="Checking\Spreads.fs" />
     <Compile Include="Checking\Expressions\CheckExpressionsOps.fs" />
     <Compile Include="Checking\Expressions\CheckExpressions.fsi" />
     <Compile Include="Checking\Expressions\CheckExpressions.fs" />
