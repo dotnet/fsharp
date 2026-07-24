@@ -7,7 +7,6 @@ open System.Collections.Generic
 open System.IO
 open System.Xml.Linq
 open System.Xml.XPath
-open FSharp.Compiler.Xml
 open FSharp.Compiler.DiagnosticsLogger
 open FSharp.Compiler.IO
 open FSharp.Compiler.Text
@@ -111,6 +110,7 @@ type private ExpansionContext =
         FileCache: Dictionary<string, Result<XDocument, string>>
         InProgressIncludes: HashSet<string>
         Range: range
+        Emit: bool
     }
 
 /// Outcome of resolving a single <include> directive.
@@ -177,7 +177,9 @@ and private expandAllIncludeNodes (baseFileName: string) (nodes: XNode seq) (ctx
                 let newElem = XElement(elem.Name, elem.Attributes(), expandedChildren)
                 Seq.singleton (newElem :> XNode)
             | Some(Result.Error msg) ->
-                warning (Error(FSComp.SR.xmlDocIncludeError msg, ctx.Range))
+                if ctx.Emit then
+                    warning (Error(FSComp.SR.xmlDocIncludeError msg, ctx.Range))
+
                 Seq.singleton node
             | Some(Result.Ok includeInfo) ->
                 match resolveSingleInclude baseFileName includeInfo ctx with
@@ -189,53 +191,54 @@ and private expandAllIncludeNodes (baseFileName: string) (nodes: XNode seq) (ctx
                         node
                     }
                 | IncludeError msg ->
-                    warning (Error(FSComp.SR.xmlDocIncludeError msg, ctx.Range))
+                    if ctx.Emit then
+                        warning (Error(FSComp.SR.xmlDocIncludeError msg, ctx.Range))
+
                     Seq.singleton node)
 
-/// Expand all <include> elements in an XmlDoc.
-/// Uses a per-call file cache and case-insensitive cycle detection.
-let expandIncludes (doc: XmlDoc) : XmlDoc =
-    if doc.IsEmpty then
-        doc
+/// Expand all <include> elements in the given elaborated XML doc lines.
+/// `emit` controls whether include errors are reported as warnings (build path)
+/// or suppressed (quiet validation path). Returns the input unchanged when there
+/// are no include tags, when parsing fails, or when nothing was expanded.
+let expandIncludeLines (emit: bool) (baseFileName: string) (range: range) (lines: string[]) : string[] =
+    let elaboratedLines = lines
+    let hasIncludes = elaboratedLines |> Array.exists mayContainInclude
+
+    if not hasIncludes then
+        elaboratedLines
     else
-        let elaboratedLines = doc.GetElaboratedXmlLines()
-        let hasIncludes = elaboratedLines |> Array.exists mayContainInclude
+        let text = elaboratedLines |> String.concat "\n"
 
-        if not hasIncludes then
-            doc
-        else
-            let baseFileName = doc.Range.FileName
-            let text = elaboratedLines |> String.concat "\n"
-
-            let parsedRoot =
-                try
-                    Some(
-                        XElement.Parse(
-                            "<__include_root__>" + text + "</__include_root__>",
-                            LoadOptions.PreserveWhitespace ||| LoadOptions.SetLineInfo
-                        )
+        let parsedRoot =
+            try
+                Some(
+                    XElement.Parse(
+                        "<__include_root__>" + text + "</__include_root__>",
+                        LoadOptions.PreserveWhitespace ||| LoadOptions.SetLineInfo
                     )
-                with _ ->
-                    None
+                )
+            with _ ->
+                None
 
-            match parsedRoot with
-            | None -> doc
-            | Some root ->
-                let ctx =
-                    {
-                        FileCache = Dictionary<string, Result<XDocument, string>>(pathComparer)
-                        InProgressIncludes = HashSet<string>(StringComparer.Ordinal)
-                        Range = doc.Range
-                    }
+        match parsedRoot with
+        | None -> elaboratedLines
+        | Some root ->
+            let ctx =
+                {
+                    FileCache = Dictionary<string, Result<XDocument, string>>(pathComparer)
+                    InProgressIncludes = HashSet<string>(StringComparer.Ordinal)
+                    Range = range
+                    Emit = emit
+                }
 
-                let expandedText =
-                    expandAllIncludeNodes baseFileName (root.Nodes()) ctx
-                    |> Seq.map (fun (n: XNode) -> n.ToString(SaveOptions.DisableFormatting))
-                    |> String.concat ""
+            let expandedText =
+                expandAllIncludeNodes baseFileName (root.Nodes()) ctx
+                |> Seq.map (fun (n: XNode) -> n.ToString(SaveOptions.DisableFormatting))
+                |> String.concat ""
 
-                let expandedLines = String.getLines expandedText
+            let expandedLines = String.getLines expandedText
 
-                if Array.lengthsEqAndForall2 (=) expandedLines elaboratedLines then
-                    doc
-                else
-                    XmlDoc(expandedLines, doc.Range)
+            if Array.lengthsEqAndForall2 (=) expandedLines elaboratedLines then
+                elaboratedLines
+            else
+                expandedLines

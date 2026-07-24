@@ -84,10 +84,12 @@ module XmlDocWriter =
 
         let mutable members = []
 
-        let addMember id xmlDoc =
+        let addMember id (xmlDoc: XmlDoc) =
             if hasDoc xmlDoc then
-                let expandedDoc = expandIncludes xmlDoc
-                let doc = expandedDoc.GetXmlText()
+                let expandedLines =
+                    expandIncludeLines true xmlDoc.Range.FileName xmlDoc.Range (xmlDoc.GetElaboratedXmlLines())
+
+                let doc = expandedLines |> String.concat System.Environment.NewLine
                 members <- (id, doc) :: members
 
         let doVal (v: Val) = addMember v.XmlDocSig v.XmlDoc
