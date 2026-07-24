@@ -164,9 +164,9 @@ if r <> "low-int" then failwithf "expected low-int, got %s" r
 
     [<FactForNETCOREAPP>]
     let ``ORPA - naked-generic-receiver priority is not compared across extension classes`` () =
-        // Both extensions have a naked generic receiver (this T) in *different* static classes.
-        // The buggy "group by extended type" logic collapses them (extended type is a type var),
-        // letting the high-priority object overload suppress the int one across classes.
+        // Both extensions have a generic receiver (this T) that instantiates to int here, so
+        // the buggy "group by extended type" logic puts them in the same (int) bucket and lets
+        // the high-priority object overload suppress the int one across the two static classes.
         // C#-parity groups by static class, so concreteness picks the int overload.
         Fs """
 module T

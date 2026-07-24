@@ -267,11 +267,12 @@ namespace H6Observable
 
 namespace H7GenericReceiver
 {
-    // Both extensions have a *naked generic* receiver (this T), so under the buggy
-    // "group by extended type" logic they collapse into the same group (the extended
-    // type is a type variable) and priority is compared across the two static classes.
-    // C#-parity: priority is scoped per static class, so these must NOT be compared;
-    // concreteness of the second parameter (int over object) then decides.
+    // Both extensions have a generic receiver (this T) that instantiates to the SAME
+    // concrete receiver type at the call site (int for 42.Pick(7)). Under the buggy
+    // "group by extended type" logic they therefore land in the same (int) bucket, and
+    // priority is compared across the two static classes. C#-parity groups by static
+    // class, so these must NOT be compared; concreteness of the second parameter
+    // (int over object) then decides.
     public static class H7GenHighObj
     {
         [OverloadResolutionPriority(1)]
