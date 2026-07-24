@@ -12,6 +12,8 @@
 		<PackageReference Include="Microsoft.VisualStudio.LanguageServer.Protocol" Version="17.13.6-preview" />
 		<PackageReference Include="Microsoft.VisualStudio.Threading" Version="17.12.21" />
 		<PackageReference Include="StreamJsonRpc" Version="2.25.29" />
+		<!-- Pin the transitive MessagePack (via StreamJsonRpc) to a patched version. Older versions (< 2.5.301) have known vulnerabilities (NU1902/NU1903). -->
+		<PackageReference Include="MessagePack" Version="2.5.302" />
 	</ItemGroup>
 
 	<ItemGroup>

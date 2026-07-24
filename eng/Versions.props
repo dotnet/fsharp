@@ -89,6 +89,9 @@
     <SystemBuffersVersion>4.6.1</SystemBuffersVersion>
     <SystemMemoryVersion>4.6.3</SystemMemoryVersion>
     <SystemRuntimeCompilerServicesUnsafeVersion>6.1.2</SystemRuntimeCompilerServicesUnsafeVersion>
+    <!-- Overrides for vulnerable transitive net472 facades pulled in via Microsoft.CodeAnalysis.Test.Resources.Proprietary -> NETStandard.Library 1.6.1. -->
+    <SystemNetHttpVersion>4.3.4</SystemNetHttpVersion>
+    <SystemTextRegularExpressionsVersion>4.3.1</SystemTextRegularExpressionsVersion>
     <!-- System.* packages from dotnet/runtime are managed in Version.Details.xml / Version.Details.props for source-build. -->
   </PropertyGroup>
 
