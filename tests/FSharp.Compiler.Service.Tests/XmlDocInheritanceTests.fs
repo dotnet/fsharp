@@ -798,3 +798,82 @@ let _ = Derived(){caret}
 
     Assert.Contains("Base RW prop", xml)
     Assert.DoesNotContain("<inheritdoc", xml)
+
+[<Fact>]
+let ``tooltip override inherits from a grandparent-declared virtual`` () =
+    // C : B : A where A declares the documented abstract, B does not redeclare it, and C overrides
+    // it with <inheritdoc/>. The overridden slot is declared on the grandparent A, so the tooltip
+    // layer must locate A via the implemented slot signature, not only the direct base B.
+    let xml =
+        getTooltipXml
+            """
+module Test
+type A() =
+    /// <summary>grandparent virtual docs</summary>
+    abstract member M: unit -> unit
+    default _.M() = ()
+type B() =
+    inherit A()
+type C() =
+    inherit B()
+    /// <inheritdoc/>
+    override _.M() = ()
+let c = C()
+let _ = c.M{caret}()
+"""
+        |> xmlText
+
+    Assert.Contains("grandparent virtual docs", xml)
+    Assert.DoesNotContain("<inheritdoc", xml)
+
+[<Fact>]
+let ``tooltip override inherits from a generic grandparent-declared virtual`` () =
+    // Generic variant of the grandparent case: the slot's declaring type must be the INSTANTIATED
+    // base (A<int>), so the intrinsic-method scan and signature match line up on the concrete type.
+    let xml =
+        getTooltipXml
+            """
+module Test
+type A<'T>() =
+    /// <summary>generic grandparent virtual docs</summary>
+    abstract member M: unit -> 'T
+    default _.M() = Unchecked.defaultof<'T>
+type B<'T>() =
+    inherit A<'T>()
+type C() =
+    inherit B<int>()
+    /// <inheritdoc/>
+    override _.M() = 0
+let c = C()
+let _ = c.M{caret}()
+"""
+        |> xmlText
+
+    Assert.Contains("generic grandparent virtual docs", xml)
+    Assert.DoesNotContain("<inheritdoc", xml)
+
+[<Fact>]
+let ``tooltip property override inherits from a grandparent-declared virtual`` () =
+    // Symmetric grandparent case for properties: the overridden property slot is declared on the
+    // grandparent A, so tryBasePropertyTarget must consult the implemented slot signatures too.
+    let xml =
+        getTooltipXml
+            """
+module Test
+type A() =
+    /// <summary>grandparent property docs</summary>
+    abstract member Value: int
+    default _.Value = 0
+type B() =
+    inherit A()
+type C() =
+    inherit B()
+    /// <inheritdoc/>
+    override _.Value = 1
+let c = C()
+let _ = c.Val{caret}ue
+"""
+        |> xmlText
+
+    Assert.Contains("grandparent property docs", xml)
+    Assert.DoesNotContain("<inheritdoc", xml)

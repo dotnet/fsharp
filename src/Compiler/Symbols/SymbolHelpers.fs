@@ -387,6 +387,22 @@ module internal SymbolHelpers =
                 | ValueNone -> None
             | None -> None
 
+        // Candidate declaring types to look for the overridden member on: the declaring types of the
+        // implemented slot signatures come first (these locate a member declared on a GRANDPARENT that
+        // an intermediate base does not redeclare, and are already instantiated for generic bases), then
+        // the direct base type as a fallback for overrides that record no F# slot signature (e.g. an
+        // override of a base-CLASS virtual such as ToString). Both are only used after the caller has
+        // confirmed a genuine F# override, so ImplementedSlotSignatures is safe to read.
+        let overriddenMemberBaseTypes (slotSigs: SlotSig list) (apparentEnclosingTy: TType) =
+            let fromSlots = slotSigs |> List.map (fun slot -> slot.DeclaringType)
+
+            let fromDirectBase =
+                match GetSuperTypeOfType g amap m apparentEnclosingTy with
+                | Some baseTy when not (isObjTyAnyNullness g baseTy) -> [ baseTy ]
+                | _ -> []
+
+            fromSlots @ fromDirectBase
+
         // For an OVERRIDE, the overridden base member with a matching signature. Only genuine
         // overrides inherit (Roslyn GetCandidateSymbol: a non-override method inherits only from an
         // interface implementation, which is not resolvable at this InfoReader layer). Signature
@@ -395,23 +411,21 @@ module internal SymbolHelpers =
             if not minfo.IsDefiniteFSharpOverride then
                 None
             else
-                match GetSuperTypeOfType g amap m minfo.ApparentEnclosingType with
-                | Some baseTy when not (isObjTyAnyNullness g baseTy) ->
+                overriddenMemberBaseTypes minfo.ImplementedSlotSignatures minfo.ApparentEnclosingType
+                |> List.tryPick (fun baseTy ->
                     GetImmediateIntrinsicMethInfosOfType (Some minfo.LogicalName, AccessibleFromSomeFSharpCode) g amap m baseTy
                     |> List.filter (fun baseMinfo -> MethInfosEquivByNameAndSig EraseNone true g amap m minfo baseMinfo)
-                    |> List.tryPick (fun baseMinfo -> docTextOf baseMinfo.XmlDoc |> Option.map (fun xmlText -> "M:" + minfo.LogicalName, xmlText))
-                | _ -> None
+                    |> List.tryPick (fun baseMinfo -> docTextOf baseMinfo.XmlDoc |> Option.map (fun xmlText -> "M:" + minfo.LogicalName, xmlText)))
 
         let tryBasePropertyTarget (pinfo: PropInfo) =
             if not pinfo.IsDefiniteFSharpOverride then
                 None
             else
-                match GetSuperTypeOfType g amap m pinfo.ApparentEnclosingType with
-                | Some baseTy when not (isObjTyAnyNullness g baseTy) ->
+                overriddenMemberBaseTypes pinfo.ImplementedSlotSignatures pinfo.ApparentEnclosingType
+                |> List.tryPick (fun baseTy ->
                     GetImmediateIntrinsicPropInfosOfType (Some pinfo.PropertyName, AccessibleFromSomeFSharpCode) g amap m baseTy
                     |> List.filter (fun basePinfo -> PropInfosEquivByNameAndSig EraseNone g amap m pinfo basePinfo)
-                    |> List.tryPick (fun basePinfo -> docTextOf basePinfo.XmlDoc |> Option.map (fun xmlText -> "P:" + pinfo.PropertyName, xmlText))
-                | _ -> None
+                    |> List.tryPick (fun basePinfo -> docTextOf basePinfo.XmlDoc |> Option.map (fun xmlText -> "P:" + pinfo.PropertyName, xmlText)))
 
         // For a CONSTRUCTOR, the base-type constructor with a matching parameter signature (Roslyn
         // GetCandidateSymbol matches constructors by signature). Constructors are not overrides, so
