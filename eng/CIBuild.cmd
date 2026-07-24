@@ -152,6 +152,14 @@ if not exist "%SwixPluginDir%\Microsoft.VisualStudio.Setup.Tools.targets" (
 )
 echo SwixPluginDir=%SwixPluginDir%
 echo ---------------- Building lean VS insertion .vsman drop ----------------
+rem    The component json (Microsoft.FSharp.VSIX.Full.Core.json) was emitted by the VSIX build (Step 5) BEFORE
+rem    signing (Step 6), so its payload size is the unsigned VSIX size. FinalizeManifest recomputes the payload
+rem    HASH from the signed VSIX but keeps that stale size -> hash/size inconsistency. Patch the json's VSIX
+rem    payload size to the actual signed VSIX size so the finalized .vsman is fully self-consistent.
+set "_vsixFile=%_root%\vsintegration\Vsix\VisualFSharpFull\bin\Release\VisualFSharpFull.vsix"
+set "_compJson=%_root%\vsintegration\Vsix\VisualFSharpFull\bin\Release\Microsoft.FSharp.VSIX.Full.Core.json"
+powershell -NoProfile -ExecutionPolicy Bypass -Command "$sz=(Get-Item '%_vsixFile%').Length; $c=Get-Content -Raw '%_compJson%'; $c=[regex]::Replace($c, '(\"fileName\":\"VisualFSharpFull.vsix\",\"size\":)\d+', ('${1}'+$sz)); Set-Content -NoNewline -Path '%_compJson%' -Value $c; Write-Host ('Patched component json VSIX payload size -> '+$sz)"
+if errorlevel 1 ( echo Error: component json size patch failed 1>&2 & exit /b 1 )
 set "_vswhere=%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\vswhere.exe"
 set "_msbuild="
 for /f "usebackq tokens=*" %%M in (`"%_vswhere%" -latest -products * -requires Microsoft.Component.MSBuild -find MSBuild\**\Bin\MSBuild.exe`) do set "_msbuild=%%M"
