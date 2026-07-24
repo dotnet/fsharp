@@ -9,24 +9,29 @@ open FSharp.Compiler.AbstractIL.ILPdbWriter
 open FSharp.Compiler.AbstractIL.StrongNameSign
 
 type options =
-    { ilg: ILGlobals
-      outfile: string
-      pdbfile: string option
-      portablePDB: bool
-      embeddedPDB: bool
-      embedAllSource: bool
-      embedSourceList: string list
-      allGivenSources: ILSourceDocument list
-      sourceLink: string
-      checksumAlgorithm: HashAlgorithm
-      signer: ILStrongNameSigner option
-      emitTailcalls: bool
-      deterministic: bool
-      dumpDebugInfo: bool
-      referenceAssemblyOnly: bool
-      referenceAssemblyAttribOpt: ILAttribute option
-      referenceAssemblySignatureHash: int option
-      pathMap: PathMap }
+    {
+        ilg: ILGlobals
+        outfile: string
+        pdbfile: string option
+        portablePDB: bool
+        embeddedPDB: bool
+        embedAllSource: bool
+        embedSourceList: string list
+        allGivenSources: ILSourceDocument list
+        sourceLink: string
+        checksumAlgorithm: HashAlgorithm
+        signer: ILStrongNameSigner option
+        emitTailcalls: bool
+        deterministic: bool
+        dumpDebugInfo: bool
+        referenceAssemblyOnly: bool
+        referenceAssemblyAttribOpt: ILAttribute option
+        referenceAssemblySignatureHash: int option
+        pathMap: PathMap
+        /// Per-method EnC CustomDebugInformation rows for the portable PDB writer, keyed by
+        /// IL method name. Empty for ordinary compiles, so flag-off output stays byte-identical.
+        methodCustomDebugInfoRows: Map<string, PdbMethodCustomDebugInfo list>
+    }
 
 /// Computes the trailing byte for a user string blob per ECMA-335 II.24.2.4.
 /// Returns 1 if any character needs special handling, 0 otherwise.
