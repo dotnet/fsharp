@@ -1,6 +1,5 @@
 module FSharp.Compiler.Service.Tests.GotoDefinitionRecordsTests
 
-open System
 open Xunit
 
 let private simpleRecordSource =
@@ -11,10 +10,10 @@ let private simpleRecordSource =
           "    myY{caret3} : int (*loc-29*)"
           "  }"
           "let rDefault ="
-          "  { myX{caret4} = 2 (*loc-30*)"
-          "    myY{caret5} = 3 (*loc-31*)"
+          "  { myX{caret4} = 2"
+          "    myY{caret5} = 3"
           "  }"
-          "let _ = { rDefault with myX{caret6} = 7 } (*loc-32*)" ]
+          "let _ = { rDefault with myX{caret6} = 7 }" ]
 
 [<Fact>]
 let ``GotoDefinition.Simple.Datatype.Record`` () =

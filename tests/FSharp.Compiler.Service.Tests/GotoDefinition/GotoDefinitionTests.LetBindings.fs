@@ -1,6 +1,5 @@
 module FSharp.Compiler.Service.Tests.GotoDefinitionLetBindingsTests
 
-open System
 open Xunit
 
 [<Fact>]
@@ -27,7 +26,7 @@ let private trivialLetSource =
         "\n"
         [ "let _ ="
           "  let x{caret2} = () (*loc-2*)"
-          "  x{caret1} (*loc-1*)" ]
+          "  x{caret1}" ]
 
 [<Fact>]
 let ``GotoDefinition.Simple.Binding.TrivialLet`` () =
@@ -40,7 +39,7 @@ let private nestedSameNameSource =
         [ "let _ ="
           "  let x{caret3} = () (*loc-5*)"
           "  let x{caret2} = () (*loc-3*)"
-          "  x{caret1} (*loc-4*)" ]
+          "  x{caret1}" ]
 
 [<Fact>]
 let ``GotoDefinition.Simple.Binding.NestedLetWithSameName`` () =
@@ -56,7 +55,7 @@ let private nestedXIsXSource =
         [ "let _ ="
           "  let x = () (*loc-7*)"
           "  let x ="
-          "    x{caret} (*loc-6*)"
+          "    x{caret}"
           "  ()" ]
 
 [<Fact>]
