@@ -345,6 +345,13 @@ module Impl =
             // inherit here; a plain new member that merely shares a name with a base member has no
             // inheritance candidate (Roslyn GetCandidateSymbol returns null for a non-override,
             // non-interface-implementing method).
+            //
+            // Constructors (C) are also non-overrides and therefore resolve to None on this path.
+            // Constructor <inheritdoc/> is instead expanded at the tooltip/completion/signature-help
+            // layer (SymbolHelpers.tryBaseCtorTarget), which matches the base constructor by its
+            // parameter signature. This name-based cref resolver (buildCrefResolver) collapses
+            // overloads, so resolving a constructor here could surface a wrong overload's docs;
+            // returning None keeps FSharpSymbol.XmlDoc honest rather than potentially wrong.
             let isOverride =
                 match d with
                 | V v -> v.IsOverrideOrExplicitImpl

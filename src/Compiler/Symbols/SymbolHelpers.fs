@@ -413,12 +413,32 @@ module internal SymbolHelpers =
                     |> List.tryPick (fun basePinfo -> docTextOf basePinfo.XmlDoc |> Option.map (fun xmlText -> "P:" + pinfo.PropertyName, xmlText))
                 | _ -> None
 
+        // For a CONSTRUCTOR, the base-type constructor with a matching parameter signature (Roslyn
+        // GetCandidateSymbol matches constructors by signature). Constructors are not overrides, so
+        // there is no override gate. Parameter-only matching (MethInfosEquivByNameAndPartialSig) is
+        // used deliberately: a constructor's logical return type is its own declaring type, so the
+        // full-signature comparer would never match a base constructor. Structs/enums/delegates have
+        // no inheritance candidate.
+        let tryBaseCtorTarget (minfo: MethInfo) =
+            let enclTy = minfo.ApparentEnclosingType
+
+            if isStructTy g enclTy || isEnumTy g enclTy || isDelegateTy g enclTy then
+                None
+            else
+                match GetSuperTypeOfType g amap m enclTy with
+                | Some baseTy when not (isObjTyAnyNullness g baseTy) ->
+                    GetIntrinsicConstructorInfosOfType infoReader m baseTy
+                    |> List.filter (fun baseCtor -> MethInfosEquivByNameAndPartialSig EraseNone true g amap m minfo baseCtor)
+                    |> List.tryPick (fun baseCtor -> docTextOf baseCtor.XmlDoc |> Option.map (fun xmlText -> "M:" + minfo.LogicalName, xmlText))
+                | _ -> None
+
         try
             match d with
             | Item.DelegateCtor ty
             | Item.Types(_, ty :: _) -> tryBaseTypeTarget ty
             | Item.UnqualifiedType(tcref :: _) -> tryBaseTypeTarget (generalizedTyconRef g tcref)
             | Item.MethodGroup(_, minfo :: _, _) -> tryBaseMethodTarget minfo
+            | Item.CtorGroup(_, minfo :: _) -> tryBaseCtorTarget minfo
             | Item.Property(info = pinfo :: _) -> tryBasePropertyTarget pinfo
             | _ -> None
         with _ ->

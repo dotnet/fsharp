@@ -407,3 +407,50 @@ let _ = d.M{caret}("")
     Assert.Contains("string overload docs", xmlText xml)
     Assert.DoesNotContain("int overload docs", xmlText xml)
     Assert.DoesNotContain("<inheritdoc", xmlText xml)
+
+[<Fact>]
+let ``tooltip constructor inherits matching base constructor docs`` () =
+    // Roslyn GetCandidateSymbol: a constructor inherits documentation from the base-type
+    // constructor with a matching signature (constructors are not overrides).
+    let xml =
+        getTooltipXml
+            """
+module Test
+type Base =
+    val x: int
+    /// <summary>base ctor docs</summary>
+    new (x: int) = { x = x }
+type Derived =
+    inherit Base
+    /// <inheritdoc/>
+    new (x: int) = { inherit Base(x) }
+let _ = Deri{caret}ved(0)
+"""
+
+    Assert.Contains("base ctor docs", xmlText xml)
+    Assert.DoesNotContain("<inheritdoc", xmlText xml)
+
+[<Fact>]
+let ``tooltip constructor inherits the matching base constructor overload docs`` () =
+    // With multiple base constructors, <inheritdoc/> must inherit the docs of the base
+    // constructor whose signature matches, not the first documented one.
+    let xml =
+        getTooltipXml
+            """
+module Test
+type Base =
+    val x: int
+    /// <summary>int ctor docs</summary>
+    new (x: int) = { x = x }
+    /// <summary>string ctor docs</summary>
+    new (s: string) = { x = s.Length }
+type Derived =
+    inherit Base
+    /// <inheritdoc/>
+    new (s: string) = { inherit Base(s) }
+let _ = Deri{caret}ved("")
+"""
+
+    Assert.Contains("string ctor docs", xmlText xml)
+    Assert.DoesNotContain("int ctor docs", xmlText xml)
+    Assert.DoesNotContain("<inheritdoc", xmlText xml)
