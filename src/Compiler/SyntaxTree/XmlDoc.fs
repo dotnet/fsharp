@@ -65,15 +65,20 @@ type XmlDoc(unprocessedLines: string[], range: range) =
         else
             doc.GetElaboratedXmlLines() |> String.concat Environment.NewLine
 
+    member doc.GetExpandedXmlText(emit) =
+        if doc.IsEmpty then
+            ""
+        else
+            XmlDocIncludeExpander.expandIncludeLines emit doc.Range.FileName doc.Range (doc.GetElaboratedXmlLines())
+            |> String.concat Environment.NewLine
+
     member doc.Check(paramNamesOpt: string list option) =
         try
             // Expand <include> directives quietly (emit=false: no FS3887) so that included
             // <param>/<paramref> participate in parameter validation, matching C#/Roslyn.
             // Include errors are reported by the documentation-file writer (emit=true), not
             // here, to avoid double emission.
-            let expandedText =
-                XmlDocIncludeExpander.expandIncludeLines false doc.Range.FileName doc.Range (doc.GetElaboratedXmlLines())
-                |> String.concat Environment.NewLine
+            let expandedText = doc.GetExpandedXmlText false
 
             // We must wrap with <doc> in order to have only one root element
             let xml =

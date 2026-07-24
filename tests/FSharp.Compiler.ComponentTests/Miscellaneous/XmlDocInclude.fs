@@ -5,6 +5,7 @@ namespace Miscellaneous
 open System
 open System.IO
 open Xunit
+open TestFramework
 open FSharp.Test.Compiler
 open FSharp.Test.XmlDocIncludeTestFramework
 
@@ -12,8 +13,7 @@ module XmlDocInclude =
 
     // Test helper: create temp directory with files
     let private setupDir (files: (string * string) list) =
-        let dir = Path.Combine(Path.GetTempPath(), "XmlDocTest_" + Guid.NewGuid().ToString("N"))
-        Directory.CreateDirectory(dir) |> ignore
+        let dir = (createTemporaryDirectory ()).FullName
 
         for name, content in files do
             let p = Path.Combine(dir, name)
@@ -38,7 +38,7 @@ module XmlDocInclude =
     [<Fact>]
     let ``Include with absolute path expands`` () =
         let dir = setupDir [ "data/simple.data.xml", simpleData ]
-        let dataPath = Path.Combine(dir, "data/simple.data.xml").Replace("\\", "/")
+        let dataPath = Path.Combine(dir, "data/simple.data.xml") |> normalizePathSeparator
 
         try
             Fs
@@ -67,7 +67,7 @@ let f x = x
 </data>"""
             ]
 
-        let dataPath = Path.Combine(dir, "data.xml").Replace("\\", "/")
+        let dataPath = Path.Combine(dir, "data.xml") |> normalizePathSeparator
 
         try
             Fs
@@ -151,7 +151,7 @@ let inlineWithSibling (x: int) = x
 </inner>"""
             ]
 
-        let outerPath = Path.Combine(dir, "outer.xml").Replace("\\", "/")
+        let outerPath = Path.Combine(dir, "outer.xml") |> normalizePathSeparator
 
         try
             Fs
@@ -320,7 +320,7 @@ let f x = x
 </data>"""
             ]
 
-        let aPath = Path.Combine(dir, "a.xml").Replace("\\", "/")
+        let aPath = Path.Combine(dir, "a.xml") |> normalizePathSeparator
 
         try
             Fs
@@ -420,7 +420,7 @@ let siblingIncludes (x: int) = x
 </data>"""
             ]
 
-        let dataPath = Path.Combine(dir, "data.xml").Replace("\\", "/")
+        let dataPath = Path.Combine(dir, "data.xml") |> normalizePathSeparator
 
         try
             Fs
@@ -440,7 +440,7 @@ let f x = x
     [<Fact>]
     let ``Include tag is not present in output`` () =
         let dir = setupDir [ "data/simple.data.xml", simpleData ]
-        let dataPath = Path.Combine(dir, "data/simple.data.xml").Replace("\\", "/")
+        let dataPath = Path.Combine(dir, "data/simple.data.xml") |> normalizePathSeparator
 
         try
             Fs
@@ -473,8 +473,8 @@ let f x = x
 </data>"""
             ]
 
-        let path1 = Path.Combine(dir, "data1.xml").Replace("\\", "/")
-        let path2 = Path.Combine(dir, "data2.xml").Replace("\\", "/")
+        let path1 = Path.Combine(dir, "data1.xml") |> normalizePathSeparator
+        let path2 = Path.Combine(dir, "data2.xml") |> normalizePathSeparator
 
         try
             Fs
@@ -525,7 +525,7 @@ let f x = x
     [<Fact>]
     let ``Include missing path attribute does not fail compilation`` () =
         let dir = setupDir [ "data/simple.data.xml", simpleData ]
-        let dataPath = Path.Combine(dir, "data/simple.data.xml").Replace("\\", "/")
+        let dataPath = Path.Combine(dir, "data/simple.data.xml") |> normalizePathSeparator
 
         try
             Fs
@@ -586,6 +586,138 @@ let f (x: int) = x
         |> ignore
 
     [<Fact>]
+    let ``Included paramref for a non-existent parameter warns`` () =
+        let res =
+            runInclude
+                { scenario
+                    """module Test
+
+/// <summary>S</summary>
+/// <param name="x">Inline x doc.</param>
+/// <include file="p.xml" path="/docs/paramref"/>
+let f (x: int) = x
+"""
+                    [ "p.xml", """<?xml version="1.0"?><docs><paramref name="Q"/></docs>""" ]
+                  with
+                    WarnOn = [ 3390 ] }
+
+        res.Compilation
+        |> shouldSucceed
+        |> withWarningCode 3390
+        |> withDiagnosticMessageMatches "This XML comment is invalid: unknown parameter 'Q'"
+        |> ignore
+
+    [<Fact>]
+    let ``Included paramref for an existing parameter is accepted`` () =
+        let res =
+            runInclude
+                { scenario
+                    """module Test
+
+/// <summary>S</summary>
+/// <param name="x">Inline x doc.</param>
+/// <include file="p.xml" path="/docs/paramref"/>
+let f (x: int) = x
+"""
+                    [ "p.xml", """<?xml version="1.0"?><docs><paramref name="x"/></docs>""" ]
+                  with
+                    WarnOn = [ 3390 ] }
+
+        res.Compilation |> shouldSucceed |> withDiagnostics [] |> ignore
+
+    [<Fact>]
+    let ``Included duplicate param documentation warns`` () =
+        let res =
+            runInclude
+                { scenario
+                    """module Test
+
+/// <summary>S</summary>
+/// <param name="x">Inline x doc.</param>
+/// <include file="p.xml" path="/docs/param"/>
+let f (x: int) = x
+"""
+                    [ "p.xml", """<?xml version="1.0"?><docs><param name="x">Included duplicate x doc.</param></docs>""" ]
+                  with
+                    WarnOn = [ 3390 ] }
+
+        res.Compilation
+        |> shouldSucceed
+        |> withWarningCode 3390
+        |> withDiagnosticMessageMatches "This XML comment is invalid: multiple documentation entries for parameter 'x'"
+        |> ignore
+
+    [<Fact>]
+    let ``Included param without name warns`` () =
+        let res =
+            runInclude
+                { scenario
+                    """module Test
+
+/// <summary>S</summary>
+/// <param name="x">Inline x doc.</param>
+/// <include file="p.xml" path="/docs/param"/>
+let f (x: int) = x
+"""
+                    [ "p.xml", """<?xml version="1.0"?><docs><param>Included param without a name.</param></docs>""" ]
+                  with
+                    WarnOn = [ 3390 ] }
+
+        res.Compilation
+        |> shouldSucceed
+        |> withWarningCode 3390
+        |> withDiagnosticMessageMatches "This XML comment is invalid: missing 'name' attribute for parameter or parameter reference"
+        |> ignore
+
+    [<Fact>]
+    let ``Included XPath matching multiple params satisfies param validation`` () =
+        let res =
+            runInclude { scenario (Snippets.memberWithInclude "params.xml" "/data/param") [ "params.xml", Snippets.dataTwoParams ] with WarnOn = [ 3390 ] }
+
+        res.Compilation |> shouldSucceed |> withDiagnostics [] |> ignore
+
+    [<Fact>]
+    let ``Nested include param documentation satisfies param validation`` () =
+        let res =
+            runInclude
+                { scenario
+                    """module Test
+
+/// <summary>S</summary>
+/// <param name="x">Inline x doc.</param>
+/// <include file="a.xml" path="/docs/include"/>
+let f (x: int) (y: int) = x + y
+"""
+                    [
+                        "a.xml",
+                        """<?xml version="1.0"?><docs><include file="b.xml" path="/docs/param"/></docs>"""
+                        "b.xml",
+                        """<?xml version="1.0"?><docs><param name="y">Included y doc.</param></docs>"""
+                    ]
+                  with
+                    WarnOn = [ 3390 ] }
+
+        res.Compilation |> shouldSucceed |> withDiagnostics [] |> ignore
+
+    [<Fact>]
+    let ``Included param before inline param satisfies param validation`` () =
+        let res =
+            runInclude
+                { scenario
+                    """module Test
+
+/// <summary>S</summary>
+/// <include file="p.xml" path="/docs/param"/>
+/// <param name="y">Inline y doc.</param>
+let f (x: int) (y: int) = x + y
+"""
+                    [ "p.xml", """<?xml version="1.0"?><docs><param name="x">Included x doc.</param></docs>""" ]
+                  with
+                    WarnOn = [ 3390 ] }
+
+        res.Compilation |> shouldSucceed |> withDiagnostics [] |> ignore
+
+    [<Fact>]
     let ``Include error is reported once when doc checking and doc generation are both on`` () =
         // --warnon:3390 makes Check run (emit=false, quiet); --doc makes the writer run (emit=true).
         // A missing include file must yield EXACTLY ONE 3887, not two.
@@ -609,3 +741,12 @@ let f (x: int) = x
             |> List.filter (fun diagnostic -> diagnostic.Error = Warning 3887)
 
         Assert.Equal(1, includeWarnings.Length)
+
+    [<Fact>]
+    let ``Whitespace-only doc with a non-XML whitespace char does not warn under param checking`` () =
+        // Regression: IsEmpty docs must short-circuit to "" (parity with GetXmlText); otherwise a
+        // non-XML whitespace char (form feed) makes XDocument.Parse throw -> spurious FS3390.
+        let res =
+            runInclude { scenario "module Test\n\n///\u000C\nlet f (x: int) = x\n" [] with WarnOn = [ 3390 ] }
+
+        res.Compilation |> shouldSucceed |> withDiagnostics [] |> ignore

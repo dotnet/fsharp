@@ -113,6 +113,10 @@ type private ExpansionContext =
         Emit: bool
     }
 
+let private warnIncludeError (ctx: ExpansionContext) (msg: string) =
+    if ctx.Emit then
+        warning (Error(FSComp.SR.xmlDocIncludeError msg, ctx.Range))
+
 /// Outcome of resolving a single <include> directive.
 type private IncludeOutcome =
     /// Expanded to these nodes.
@@ -177,9 +181,7 @@ and private expandAllIncludeNodes (baseFileName: string) (nodes: XNode seq) (ctx
                 let newElem = XElement(elem.Name, elem.Attributes(), expandedChildren)
                 Seq.singleton (newElem :> XNode)
             | Some(Result.Error msg) ->
-                if ctx.Emit then
-                    warning (Error(FSComp.SR.xmlDocIncludeError msg, ctx.Range))
-
+                warnIncludeError ctx msg
                 Seq.singleton node
             | Some(Result.Ok includeInfo) ->
                 match resolveSingleInclude baseFileName includeInfo ctx with
@@ -191,9 +193,7 @@ and private expandAllIncludeNodes (baseFileName: string) (nodes: XNode seq) (ctx
                         node
                     }
                 | IncludeError msg ->
-                    if ctx.Emit then
-                        warning (Error(FSComp.SR.xmlDocIncludeError msg, ctx.Range))
-
+                    warnIncludeError ctx msg
                     Seq.singleton node)
 
 /// Expand all <include> elements in the given elaborated XML doc lines.
@@ -201,13 +201,12 @@ and private expandAllIncludeNodes (baseFileName: string) (nodes: XNode seq) (ctx
 /// or suppressed (quiet validation path). Returns the input unchanged when there
 /// are no include tags, when parsing fails, or when nothing was expanded.
 let expandIncludeLines (emit: bool) (baseFileName: string) (range: range) (lines: string[]) : string[] =
-    let elaboratedLines = lines
-    let hasIncludes = elaboratedLines |> Array.exists mayContainInclude
+    let hasIncludes = lines |> Array.exists mayContainInclude
 
     if not hasIncludes then
-        elaboratedLines
+        lines
     else
-        let text = elaboratedLines |> String.concat "\n"
+        let text = lines |> String.concat "\n"
 
         let parsedRoot =
             try
@@ -221,7 +220,7 @@ let expandIncludeLines (emit: bool) (baseFileName: string) (range: range) (lines
                 None
 
         match parsedRoot with
-        | None -> elaboratedLines
+        | None -> lines
         | Some root ->
             let ctx =
                 {
@@ -238,7 +237,7 @@ let expandIncludeLines (emit: bool) (baseFileName: string) (range: range) (lines
 
             let expandedLines = String.getLines expandedText
 
-            if Array.lengthsEqAndForall2 (=) expandedLines elaboratedLines then
-                elaboratedLines
+            if Array.lengthsEqAndForall2 (=) expandedLines lines then
+                lines
             else
                 expandedLines
