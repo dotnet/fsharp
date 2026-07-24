@@ -54,7 +54,7 @@
   </ItemGroup>
 
   <ItemGroup Condition="'$(FSHARPCORE_USE_PACKAGE)' == 'true'">
-    <PackageReference Include="FSharp.Core" Version="$(FSharpCoreShippedPackageVersionValue)" />
+    <PackageReference Include="FSharp.Core" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(BUILDING_USING_DOTNET)' == 'true'">
@@ -65,19 +65,19 @@
 
   <!-- Runtime dependencies. Beware. -->
   <ItemGroup>
-	<PackageReference Include="Microsoft.NETCore.ILDAsm" Version="$(MicrosoftNETCoreILDAsmVersion)">
+	<PackageReference Include="Microsoft.NETCore.ILDAsm">
 		<IncludeAssets>runtime; native</IncludeAssets>
 		<PrivateAssets>all</PrivateAssets>
 	</PackageReference>
-	<PackageReference Include="Microsoft.NETCore.ILAsm" Version="$(MicrosoftNETCoreILAsmVersion)">
+	<PackageReference Include="Microsoft.NETCore.ILAsm">
 		<IncludeAssets>runtime; native</IncludeAssets>
 		<PrivateAssets>all</PrivateAssets>
 	</PackageReference>
-	<PackageReference Include="Microsoft.Net.Compilers" Version="$(MicrosoftNetCompilersVersion)">
+	<PackageReference Include="Microsoft.Net.Compilers">
 		<IncludeAssets>runtime; native</IncludeAssets>
 		<PrivateAssets>all</PrivateAssets>
 	</PackageReference>
-	<PackageReference Include="Microsoft.DiaSymReader.PortablePdb" Version="$(MicrosoftDiaSymReaderPortablePdbVersion)">
+	<PackageReference Include="Microsoft.DiaSymReader.PortablePdb">
 		<PrivateAssets>all</PrivateAssets>
 		<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 	</PackageReference>
@@ -94,24 +94,24 @@
   </ItemGroup>
 
   <ItemGroup Condition="'$(TargetFramework)' != '$(FSharpNetCoreProductTargetFramework)'">
-    <PackageReference Include="System.Reflection.Metadata" Version="$(SystemReflectionMetadataVersion)" />
-    <PackageReference Include="System.Diagnostics.DiagnosticSource" Version="$(SystemDiagnosticsDiagnosticSourceVersion)" />
+    <PackageReference Include="System.Reflection.Metadata" />
+    <PackageReference Include="System.Diagnostics.DiagnosticSource" />
   </ItemGroup>
 <PropertyGroup>
  <NoWarn>$(NoWarn);NU1510;44</NoWarn> <!-- NU1510: Project is explicitly referencing the runtime assembly 'System.Collections.Immutable', however, if we remove it, it tries to find it on the wrong path. Also, local NoWarn does not help - This is just me trying to enforce it -->
  <!-- 44: AssemblyName.CodeBase is deprecated but needed for assembly resolution in VS integration tests -->
 </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="System.Collections.Immutable" Version="$(SystemCollectionsImmutableVersion)" GeneratePathProperty="true" />
-    <PackageReference Include="Microsoft.CodeAnalysis.Workspaces.Common" Version="$(MicrosoftCodeAnalysisCSharpVersion)" />
-    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="$(MicrosoftCodeAnalysisCSharpVersion)" />
-    <PackageReference Include="Microsoft.CodeAnalysis.Test.Resources.Proprietary" Version="$(MicrosoftCodeAnalysisTestResourcesProprietaryVersion)" />
-    <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.15.3" />
-    <PackageReference Include="Newtonsoft.Json" Version="$(NewtonsoftJsonVersion)" />
+    <PackageReference Include="System.Collections.Immutable" GeneratePathProperty="true" />
+    <PackageReference Include="Microsoft.CodeAnalysis.Workspaces.Common" />
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" />
+    <PackageReference Include="Microsoft.CodeAnalysis.Test.Resources.Proprietary" />
+    <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" />
+    <PackageReference Include="Newtonsoft.Json" />
     <!-- xUnit3 extensibility packages for custom test utilities -->
-    <PackageReference Include="xunit.v3.common" Version="$(XunitVersion)" />
-    <PackageReference Include="xunit.v3.assert" Version="$(XunitVersion)" />
-    <PackageReference Include="xunit.v3.extensibility.core" Version="$(XunitVersion)" GeneratePathProperty="true" />
+    <PackageReference Include="xunit.v3.common" />
+    <PackageReference Include="xunit.v3.assert" />
+    <PackageReference Include="xunit.v3.extensibility.core" GeneratePathProperty="true" />
   </ItemGroup>
 
   <!-- Explicit reference to xunit.v3.core.dll to ensure F# compiler finds types -->

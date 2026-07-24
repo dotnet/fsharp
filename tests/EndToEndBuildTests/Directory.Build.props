@@ -1,11 +1,12 @@
 <Project>
 
   <PropertyGroup>
+    <!-- Auxiliary/consumer-style projects keep their own inline package versions (not under repo CPM). -->
+    <ImportDirectoryPackagesProps>false</ImportDirectoryPackagesProps>
     <FSharpTestCompilerVersion Condition = " '$(FSharpTestCompilerVersion)' == '' ">net40</FSharpTestCompilerVersion>
     <RollForward>LatestMajor</RollForward>
     <!-- xUnit3 package versions for EndToEndBuildTests - these must be defined before importing parent props -->
     <XunitVersion Condition="'$(XunitVersion)' == ''">3.2.2</XunitVersion>
-    <XunitRunnerConsoleVersion Condition="'$(XunitRunnerConsoleVersion)' == ''">3.2.2</XunitRunnerConsoleVersion>
     <MicrosoftTestingExtensionsHangDumpVersion Condition="'$(MicrosoftTestingExtensionsHangDumpVersion)' == ''">2.0.2</MicrosoftTestingExtensionsHangDumpVersion>
     <XunitXmlTestLoggerVersion Condition="'$(XunitXmlTestLoggerVersion)' == ''">8.0.0</XunitXmlTestLoggerVersion>
     <MicrosoftTestPlatformVersion Condition="'$(MicrosoftTestPlatformVersion)' == ''">17.14.1</MicrosoftTestPlatformVersion>

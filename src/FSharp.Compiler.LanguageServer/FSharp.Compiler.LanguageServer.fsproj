@@ -8,10 +8,12 @@
 	</PropertyGroup>
 
 	<ItemGroup Label="Package References">
-		<PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="8.0.0" />
-		<PackageReference Include="Microsoft.VisualStudio.LanguageServer.Protocol" Version="17.13.6-preview" />
-		<PackageReference Include="Microsoft.VisualStudio.Threading" Version="17.12.21" />
-		<PackageReference Include="StreamJsonRpc" Version="2.25.29" />
+		<!-- net8.0 host keeps DI 8.0.0; the central 10.0.0 is only needed by consumers that pull DI >= 10 transitively. -->
+		<PackageReference Include="Microsoft.Extensions.DependencyInjection" VersionOverride="8.0.0" />
+		<PackageReference Include="Microsoft.VisualStudio.LanguageServer.Protocol" />
+		<!-- Pinned below the central versions: this LSP host targets the VS 17.x servicing baseline. -->
+		<PackageReference Include="Microsoft.VisualStudio.Threading" VersionOverride="17.12.21" />
+		<PackageReference Include="StreamJsonRpc" />
 	</ItemGroup>
 
 	<ItemGroup>
@@ -28,7 +30,7 @@
 	</ItemGroup>
 
 	<ItemGroup Condition="'$(FSHARPCORE_USE_PACKAGE)' == 'true'">
-		<PackageReference Include="FSharp.Core" Version="$(FSharpCoreShippedPackageVersionValue)" />
+		<PackageReference Include="FSharp.Core" />
 	</ItemGroup>
 
 	<ItemGroup>

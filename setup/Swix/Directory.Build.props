@@ -1,6 +1,8 @@
 <Project>
 
   <PropertyGroup>
+    <!-- Auxiliary/consumer-style projects keep their own inline package versions (not under repo CPM). -->
+    <ImportDirectoryPackagesProps>false</ImportDirectoryPackagesProps>
     <UseVsMicroBuildAssemblyVersion>true</UseVsMicroBuildAssemblyVersion>
     <VisualStudioInsertionComponent>Microsoft.FSharp</VisualStudioInsertionComponent>
     <OutputArchitecture>neutral</OutputArchitecture>
