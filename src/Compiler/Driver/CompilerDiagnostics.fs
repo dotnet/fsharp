@@ -1027,14 +1027,22 @@ type Exception with
                     | Some info ->
                         let formatPositions positions =
                             match positions with
-                            | [ p ] -> sprintf "position %d" p
-                            | _ -> positions |> List.map string |> String.concat ", " |> sprintf "positions %s"
+                            | [ p ] -> FSComp.SR.csConcretenessPosition p
+                            | _ ->
+                                positions
+                                |> List.map string
+                                |> String.concat ", "
+                                |> FSComp.SR.csConcretenessPositions
 
                         let line1 =
-                            sprintf "  - %s is more concrete at %s" info.Method1Name (formatPositions info.Method1BetterPositions)
+                            FSComp.SR.formatDashItem (
+                                FSComp.SR.csConcretenessMoreConcreteAt (info.Method1Signature, formatPositions info.Method1BetterPositions)
+                            )
 
                         let line2 =
-                            sprintf "  - %s is more concrete at %s" info.Method2Name (formatPositions info.Method2BetterPositions)
+                            FSComp.SR.formatDashItem (
+                                FSComp.SR.csConcretenessMoreConcreteAt (info.Method2Signature, formatPositions info.Method2BetterPositions)
+                            )
 
                         baseMessage + nl + FSComp.SR.csIncomparableConcreteness (line1 + nl + line2)
                     | None -> baseMessage

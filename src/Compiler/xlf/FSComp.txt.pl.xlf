@@ -177,6 +177,21 @@
         <target state="new">The constraints 'comparison' and 'delegate' are inconsistent</target>
         <note />
       </trans-unit>
+      <trans-unit id="csConcretenessMoreConcreteAt">
+        <source>{0} is more concrete at {1}</source>
+        <target state="new">{0} is more concrete at {1}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="csConcretenessPosition">
+        <source>position {0}</source>
+        <target state="new">position {0}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="csConcretenessPositions">
+        <source>positions {0}</source>
+        <target state="new">positions {0}</target>
+        <note />
+      </trans-unit>
       <trans-unit id="csFunctionDoesNotSupportType">
         <source>'{0}' does not support the type '{1}', because the latter lacks the required (real or built-in) member '{2}'</source>
         <target state="translated">Element „{0}” nie obsługuje typu „{1}”, ponieważ ten drugi nie ma wymaganej (rzeczywistej lub wbudowanej) składowej „{2}”</target>
@@ -1668,8 +1683,8 @@
         <note />
       </trans-unit>
       <trans-unit id="tcMoreConcreteTiebreakerUsed">
-        <source>Overload resolution selected '{0}' based on type concreteness. The more concrete type '{1}' was preferred over '{2}'. This is an informational message and can be enabled with --warnon:3575.</source>
-        <target state="new">Overload resolution selected '{0}' based on type concreteness. The more concrete type '{1}' was preferred over '{2}'. This is an informational message and can be enabled with --warnon:3575.</target>
+        <source>Overload resolution preferred the more concrete overload '{0}' over '{1}' based on parameter type concreteness. This is an informational message and can be enabled with --warnon:3575.</source>
+        <target state="new">Overload resolution preferred the more concrete overload '{0}' over '{1}' based on parameter type concreteness. This is an informational message and can be enabled with --warnon:3575.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcMultipleFieldsInRecord">

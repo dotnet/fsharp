@@ -105,7 +105,9 @@ let result = Example.Compare(Ok 42 : Result<int, string>)
         |> shouldFail
         |> withErrorCode 41 // FS0041: A unique overload could not be determined
         |> withDiagnosticMessageMatches "Neither candidate is strictly more concrete"
-        |> withDiagnosticMessageMatches "Compare is more concrete at position 1"
+        // The detail names the two distinct candidate signatures, not the bare "Compare" name.
+        |> withDiagnosticMessageMatches "Result<'ok,string> -> string is more concrete at"
+        |> withDiagnosticMessageMatches "Result<int,'error> -> string is more concrete at"
         |> ignore
 
     [<Fact>]
@@ -1090,6 +1092,9 @@ let result : string = Resolver.Resolve(Some([1]))
         |> shouldFail
         |> withWarningCode 3575
         |> withDiagnosticMessageMatches "concreteness"
+        // FS3575 names the two distinct signatures (concrete winner, generic loser), not "Invoke"/"Invoke".
+        |> withDiagnosticMessageMatches "Option<'t list>"
+        |> withDiagnosticMessageMatches "Invoke: value: Option<'t> ->"
         |> ignore
 
     [<Fact>]
@@ -1101,7 +1106,9 @@ let result : string = Resolver.Resolve(Some([1]))
         |> shouldFail
         |> withWarningCode 3576
         |> withDiagnosticMessageMatches "bypassed"
-        |> withDiagnosticMessageMatches "Invoke"
+        // FS3576 names the two distinct signatures (generic loser, concrete winner), not "Invoke"/"Invoke".
+        |> withDiagnosticMessageMatches "Option<'t list>"
+        |> withDiagnosticMessageMatches "Invoke: value: Option<'t> ->"
         |> ignore
 
     [<Fact>]

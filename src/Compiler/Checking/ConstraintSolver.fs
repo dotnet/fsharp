@@ -3828,6 +3828,8 @@ and private computeConcretenessWarnings
     (applicableMeths: (CalledMeth<Expr> * exn list * Trace * TypeDirectedConversionUsed) list)
     (calledMeth: CalledMeth<Expr>)
     (baseWarns: exn list)
+    infoReader
+    denv
     (m: range)
     : exn list =
     let anyMoreConcreteUsed =
@@ -3837,27 +3839,28 @@ and private computeConcretenessWarnings
     if not anyMoreConcreteUsed then
         baseWarns
     else
-        let concretenessWarns =
-            applicableMeths
-            |> List.choose (fun loser ->
-                let (loserMeth, _, _, _) = loser
+        let signatureOf (meth: CalledMeth<_>) =
+            NicePrint.stringOfMethInfoForOverloadError infoReader m denv meth.Method
 
+        let loserSigs =
+            applicableMeths
+            |> List.choose (fun (loserMeth, _, _, _) ->
                 if System.Object.ReferenceEquals(loserMeth, calledMeth) then
                     None
                 else
                     match cache.TryGetValue(struct(calledMeth :> obj, loserMeth :> obj)) with
-                    | true, ValueSome TiebreakRuleId.MoreConcrete ->
-                        Some(calledMeth.Method.DisplayName, loserMeth.Method.DisplayName)
+                    | true, ValueSome TiebreakRuleId.MoreConcrete -> Some(signatureOf loserMeth)
                     | _ -> None)
 
-        match concretenessWarns with
+        match loserSigs with
         | [] -> baseWarns
-        | (winnerName, loserName) :: _ ->
+        | firstLoserSig :: _ ->
+            let winnerSig = signatureOf calledMeth
             let warn3575 =
-                Error(FSComp.SR.tcMoreConcreteTiebreakerUsed (winnerName, winnerName, loserName), m)
+                Error(FSComp.SR.tcMoreConcreteTiebreakerUsed (winnerSig, firstLoserSig), m)
             let warn3576List =
-                concretenessWarns
-                |> List.map (fun (winner, loser) -> Error(FSComp.SR.tcGenericOverloadBypassed (loser, winner), m))
+                loserSigs
+                |> List.map (fun loserSig -> Error(FSComp.SR.tcGenericOverloadBypassed (loserSig, winnerSig), m))
 
             warn3575 :: warn3576List @ baseWarns
 
@@ -3899,7 +3902,7 @@ and GetMostApplicableOverload csenv ndeep candidates applicableMeths calledMethG
         let allWarns =
             match decidingRuleCache with
             | ValueNone -> warns
-            | ValueSome cache -> computeConcretenessWarnings cache applicableMeths calledMeth warns m
+            | ValueSome cache -> computeConcretenessWarnings cache applicableMeths calledMeth warns infoReader csenv.DisplayEnv m
 
         Some calledMeth, OkResult(allWarns, ()), WithTrace t
 
@@ -3933,7 +3936,7 @@ and GetMostApplicableOverload csenv ndeep candidates applicableMeths calledMethG
                     applicableMeths
                     |> List.tryPick (fun (meth2, _, _, _) ->
                         if System.Object.ReferenceEquals(meth1, meth2) then None
-                        else explainIncomparableMethodConcreteness ctx meth1 meth2))
+                        else explainIncomparableMethodConcreteness ctx infoReader csenv.DisplayEnv meth1 meth2))
 
         let err = FailOverloading csenv calledMethGroup reqdRetTyOpt isOpConversion callerArgs (PossibleCandidates(methodName, methods, cx, incomparableConcretenessInfo)) m
         None, ErrorD err, NoTrace

@@ -7,6 +7,7 @@ module internal FSharp.Compiler.OverloadResolutionRules
 open FSharp.Compiler.Features
 open FSharp.Compiler.Import
 open FSharp.Compiler.Infos
+open FSharp.Compiler.InfoReader
 open FSharp.Compiler.MethodCalls
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.Text
@@ -192,9 +193,9 @@ let compareTypeConcreteness (g: TcGlobals) ty1 ty2 =
 /// Represents why two methods are incomparable under concreteness ordering.
 type IncomparableConcretenessInfo =
     {
-        Method1Name: string
+        Method1Signature: string
         Method1BetterPositions: int list
-        Method2Name: string
+        Method2Signature: string
         Method2BetterPositions: int list
     }
 
@@ -202,6 +203,8 @@ type IncomparableConcretenessInfo =
 /// Returns Some info when the methods are incomparable due to mixed concreteness results.
 let explainIncomparableMethodConcreteness<'T>
     (ctx: OverloadResolutionContext)
+    (infoReader: InfoReader)
+    (denv: DisplayEnv)
     (meth1: CalledMeth<'T>)
     (meth2: CalledMeth<'T>)
     : IncomparableConcretenessInfo option =
@@ -252,9 +255,9 @@ let explainIncomparableMethodConcreteness<'T>
             if not meth1Better.IsEmpty && not meth2Better.IsEmpty then
                 Some
                     {
-                        Method1Name = meth1.Method.DisplayName
+                        Method1Signature = NicePrint.stringOfMethInfoForOverloadError infoReader ctx.m denv meth1.Method
                         Method1BetterPositions = meth1Better
-                        Method2Name = meth2.Method.DisplayName
+                        Method2Signature = NicePrint.stringOfMethInfoForOverloadError infoReader ctx.m denv meth2.Method
                         Method2BetterPositions = meth2Better
                     }
             else

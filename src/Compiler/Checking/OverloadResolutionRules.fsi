@@ -5,10 +5,12 @@
 module internal FSharp.Compiler.OverloadResolutionRules
 
 open FSharp.Compiler.Infos
+open FSharp.Compiler.InfoReader
 open FSharp.Compiler.MethodCalls
 open FSharp.Compiler.Text
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.TypedTree
+open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.Import
 
 type OverloadResolutionContext =
@@ -26,15 +28,17 @@ type OverloadResolutionContext =
 
 /// Represents why two methods are incomparable under concreteness ordering.
 type IncomparableConcretenessInfo =
-    { Method1Name: string
+    { Method1Signature: string
       Method1BetterPositions: int list
-      Method2Name: string
+      Method2Signature: string
       Method2BetterPositions: int list }
 
 /// Explain why two CalledMeth objects are incomparable under the concreteness ordering.
 /// Returns Some info when the methods are incomparable due to mixed concreteness results.
 val explainIncomparableMethodConcreteness:
     ctx: OverloadResolutionContext ->
+    infoReader: InfoReader ->
+    denv: DisplayEnv ->
     meth1: CalledMeth<'T> ->
     meth2: CalledMeth<'T> ->
         IncomparableConcretenessInfo option
