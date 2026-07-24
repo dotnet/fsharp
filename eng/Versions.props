@@ -38,7 +38,7 @@
     <!-- -->
     <!-- FSharp.Compiler.Service version -->
     <FCSMajorVersion>43</FCSMajorVersion>
-    <FCSMinorVersion>12</FCSMinorVersion>
+    <FCSMinorVersion>13</FCSMinorVersion>
     <FCSBuildVersion>$(FSBuildVersion)</FCSBuildVersion>
     <FCSRevisionVersion>$(FSRevisionVersion)</FCSRevisionVersion>
     <FSharpCompilerServicePackageVersion>$(FCSMajorVersion).$(FCSMinorVersion).$(FCSBuildVersion)</FSharpCompilerServicePackageVersion>
@@ -103,16 +103,17 @@
     <MicrosoftVisualStudioShellPackagesVersion>18.0.2188-preview.1</MicrosoftVisualStudioShellPackagesVersion>
     <VisualStudioProjectSystemPackagesVersion>18.0.1237-pre</VisualStudioProjectSystemPackagesVersion>
     <VisualStudioShellProjectsPackages>18.0.2077-preview.1</VisualStudioShellProjectsPackages>
-    <MicrosoftVisualStudioThreadingPackagesVersion>18.0.5</MicrosoftVisualStudioThreadingPackagesVersion>
+    <MicrosoftVisualStudioThreadingPackagesVersion>18.7.19</MicrosoftVisualStudioThreadingPackagesVersion>
   
     <!-- Roslyn packages. Rest is managed by maestro bot and is in the imported .Details.props file -->
     <MicrosoftCodeAnalysisTestResourcesProprietaryVersion>2.0.28</MicrosoftCodeAnalysisTestResourcesProprietaryVersion>
     <!-- Visual Studio Shell packages -->
     <MicrosoftVisualStudioInteropVersion>$(MicrosoftVisualStudioShellPackagesVersion)</MicrosoftVisualStudioInteropVersion>
     <MicrosoftVisualStudioImagingInterop140DesignTimeVersion>$(VisualStudioShellProjectsPackages)</MicrosoftVisualStudioImagingInterop140DesignTimeVersion>
-    <MicrosoftVisualStudioShellInteropVersion>$(MicrosoftVisualStudioShellPackagesVersion)</MicrosoftVisualStudioShellInteropVersion>
-    <MicrosoftVisualStudioTextManagerInteropVersion>$(MicrosoftVisualStudioShellPackagesVersion)</MicrosoftVisualStudioTextManagerInteropVersion>
-    <MicrosoftVisualStudioOLEInteropVersion>$(MicrosoftVisualStudioShellPackagesVersion)</MicrosoftVisualStudioOLEInteropVersion>
+    <!-- Interop packages are pinned to the version required by Microsoft.VisualStudio.SDK (pulled transitively via Microsoft.CodeAnalysis.ExternalAccess.FSharp), which is newer than the other shell packages. -->
+    <MicrosoftVisualStudioShellInteropVersion>18.9.438</MicrosoftVisualStudioShellInteropVersion>
+    <MicrosoftVisualStudioTextManagerInteropVersion>18.9.438</MicrosoftVisualStudioTextManagerInteropVersion>
+    <MicrosoftVisualStudioOLEInteropVersion>18.9.438</MicrosoftVisualStudioOLEInteropVersion>
     <MicrosoftVisualStudioShellDesignVersion>$(MicrosoftVisualStudioShellPackagesVersion)</MicrosoftVisualStudioShellDesignVersion>
     <MicrosoftInternalVisualStudioShellFrameworkVersion>$(MicrosoftVisualStudioShellPackagesVersion)</MicrosoftInternalVisualStudioShellFrameworkVersion>
     <MicrosoftVisualStudioPackageLanguageService150Version>$(MicrosoftVisualStudioShellPackagesVersion)</MicrosoftVisualStudioPackageLanguageService150Version>
@@ -127,7 +128,12 @@
     <MicrosoftVisualStudioEditorVersion>$(VisualStudioEditorPackagesVersion)</MicrosoftVisualStudioEditorVersion>
     <MicrosoftVisualStudioLanguageStandardClassificationVersion>$(VisualStudioEditorPackagesVersion)</MicrosoftVisualStudioLanguageStandardClassificationVersion>
     <MicrosoftVisualStudioLanguageIntellisenseVersion>$(VisualStudioEditorPackagesVersion)</MicrosoftVisualStudioLanguageIntellisenseVersion>
-    <MicrosoftVisualStudioPlatformVSEditorVersion>$(VisualStudioEditorPackagesVersion)</MicrosoftVisualStudioPlatformVSEditorVersion>
+    <!-- Microsoft.VisualStudio.Platform.VSEditor is the runtime implementation of the editor. Unlike the other editor
+         packages it is not pulled transitively by Microsoft.CodeAnalysis.ExternalAccess.FSharp, so it stays at the
+         explicit pin while Microsoft.VisualStudio.Text.* / .Editor get bumped to 18.9.123 transitively. Pin VSEditor to
+         the matching 18.9.123 so its implementation types load against the newer Text.Internal interfaces; otherwise the
+         VsMocks MEF catalog throws ReflectionTypeLoadException and every legacy VS unit test fails. -->
+    <MicrosoftVisualStudioPlatformVSEditorVersion>18.9.123</MicrosoftVisualStudioPlatformVSEditorVersion>
     <MicrosoftVisualStudioTextUIWpfVersion>$(VisualStudioEditorPackagesVersion)</MicrosoftVisualStudioTextUIWpfVersion>
     <NuGetVisualStudioVersion>17.14.0</NuGetVisualStudioVersion>
     <MicrosoftVisualStudioExtensibilityTestingVersion>0.1.800-beta</MicrosoftVisualStudioExtensibilityTestingVersion>
@@ -135,6 +141,20 @@
 
     <!-- Visual Studio Threading packages -->
     <MicrosoftVisualStudioThreadingVersion>$(MicrosoftVisualStudioThreadingPackagesVersion)</MicrosoftVisualStudioThreadingVersion>
+
+    <!-- Transitive packages pinned to the versions required by Microsoft.CodeAnalysis.ExternalAccess.FSharp
+         (via Microsoft.VisualStudio.SDK 18.9.496), which are newer than the versions the Shell packages pull in.
+         Pinning them avoids MSB3277 assembly version conflicts across the vsintegration projects. -->
+    <MicrosoftVisualStudioValidationVersion>18.7.1</MicrosoftVisualStudioValidationVersion>
+    <MicrosoftVisualStudioRpcContractsVersion>18.9.453</MicrosoftVisualStudioRpcContractsVersion>
+    <MicrosoftServiceHubFrameworkVersion>4.10.128</MicrosoftServiceHubFrameworkVersion>
+    <StreamJsonRpcVersion>2.26.5</StreamJsonRpcVersion>
+
+    <!-- Microsoft.VisualStudio.Shell.15.0 18.9.x references Microsoft.VisualStudio.SolutionPersistence at runtime but
+         does not declare it as a NuGet dependency (it is expected to come from the VS install). The standalone VS unit
+         test host loads Shell.15.0 into a MEF catalog, so the assembly must be deployed next to it or Assembly.GetTypes
+         throws and every legacy VS unit test fails. -->
+    <MicrosoftVisualStudioSolutionPersistenceVersion>1.0.52</MicrosoftVisualStudioSolutionPersistenceVersion>
 
     <!-- Visual Studio Project System packages-->
     <MicrosoftVisualStudioProjectSystemVersion>$(VisualStudioProjectSystemPackagesVersion)</MicrosoftVisualStudioProjectSystemVersion>

@@ -22,6 +22,7 @@ module internal ExprConstruction =
     /// An ordering for value definitions, based on stamp
     val valOrder: IComparer<Val>
 
+    /// Stable, source-position-derived key for ordering Vals.
     val valSourceOrderKey: Val -> struct (int * int * int * string)
 
     /// An ordering for type definitions, based on stamp

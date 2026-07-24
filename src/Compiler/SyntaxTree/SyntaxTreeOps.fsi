@@ -87,6 +87,12 @@ val (|SynExprErrorSkip|): p: SynExpr -> SynExpr
 [<return: Struct>]
 val (|SynExprParen|_|): e: SynExpr -> (SynExpr * range * range option * range) voption
 
+/// Collects the ordered sub-expressions of nested `SynExpr.Sequential`, avoiding deep recursion (empty if not a Sequential).
+val flattenSequentials: expr: SynExpr -> SynExpr list
+
+/// A pattern that collects all sequential expressions to avoid StackOverflowException
+val (|Sequentials|_|): SynExpr -> SynExpr list option
+
 val (|SynPatErrorSkip|): p: SynPat -> SynPat
 
 /// Push non-simple parts of a patten match over onto the r.h.s. of a lambda.
@@ -301,6 +307,9 @@ val mkSynBinding:
         memberFlagsOpt: SynMemberFlags option *
         trivia: SynBindingTrivia ->
             SynBinding
+
+val mkSynLetBangBinding:
+    mKeyword: range -> headPat: SynPat -> rhs: SynExpr -> debugPoint: DebugPointAtBinding -> mBind: range -> SynBinding
 
 val NonVirtualMemberFlags: k: SynMemberKind -> SynMemberFlags
 

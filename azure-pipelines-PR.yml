@@ -124,17 +124,8 @@ stages:
           - script: .\eng\common\dotnet.cmd
           - script: .\eng\test-determinism.cmd -configuration Release
             displayName: Determinism tests (race detector — same flags both builds)
-            # Hard gate: any non-determinism between two same-flags Release builds fails CI.
-            # The single known-racy binary, FSharp.Compiler.Service.dll, is excluded via the
-            # skipList in eng/test-determinism.ps1 — its residual parallel-optimizer
-            # newUnique() closure-name race (func2@1-N suffix permutation) is tracked in
-            # #19928 and fixed by #19929 (always-defer + source-stable closure naming).
-            # #19810 fixes the structural/heap-order races (#1-7), which are deterministic.
-            # #19929 removes the skip and restores full coverage once the closure race lands.
-          # The seq-vs-par leg is intentionally NOT here. It catches a deeper architectural
-          # issue with parallel optimizer's newUnique() race leaking into closure type names —
-          # see #19928 / #19929. Same-flags Release-mode determinism (the original #19732 ask)
-          # fixes the structural races here; the residual closure-name race is fixed in #19929.
+          - script: .\eng\test-determinism.cmd -configuration Release -mode seq-vs-par
+            displayName: Determinism tests (1-shot diff — sequential vs parallel)
           - task: PublishPipelineArtifact@1
             displayName: Publish Determinism Logs
             inputs:
@@ -783,7 +774,7 @@ stages:
               workingDirectory: $(Build.SourcesDirectory)
               installationPath: $(Build.SourcesDirectory)/.dotnet
           - script: .\eng\common\dotnet.cmd
-          - script: .\Build.cmd $(_kind) -pack -c $(_BuildConfig)
+          - script: .\Build.cmd $(_kind) -ci -pack -c $(_BuildConfig)
             env:
               NativeToolsOnMachine: true
             displayName: Initial build and prepare packages.
