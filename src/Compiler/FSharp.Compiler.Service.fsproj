@@ -355,6 +355,7 @@
     <Compile Include="TypedTree\TypedTreeOps.ExprOps.fs" />
     <Compile Include="TypedTree\TypedTreeOps.Transforms.fsi" />
     <Compile Include="TypedTree\TypedTreeOps.Transforms.fs" />
+    <Compile Include="TypedTree\TypedTreeDiff.fs" />
     <Compile Include="TypedTree\TypedTreePickle.fsi" />
     <Compile Include="TypedTree\TypedTreePickle.fs" />
     <Compile Include="TypedTree\UpdatePrettyTyparNames.fsi" />

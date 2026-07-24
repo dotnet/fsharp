@@ -65,6 +65,7 @@
     <Compile Include="HashIfExpression.fs" />
     <Compile Include="ProductVersion.fs" />
     <Compile Include="EditDistance.fs" />
+    <Compile Include="HotReload\TypedTreeDiffTests.fs" />
     <Compile Include="SuggestionBuffer.fs" />
     <Compile Include="ByteMemoryTests.fs" />
     <Compile Include="BlockTests.fs" />
