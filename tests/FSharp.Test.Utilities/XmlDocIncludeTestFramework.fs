@@ -177,6 +177,18 @@ Full XML:
   <part>Nested B content.</part>
 </data>"""
 
+        let chainA fileB =
+            $"""<?xml version="1.0"?><data><summary>A({includeElement fileB "/data/part"})A</summary></data>"""
+
+        let chainB fileC =
+            $"""<?xml version="1.0"?><data><part>B({includeElement fileC "/data/leaf"})B</part></data>"""
+
+        let chainC leafText =
+            $"""<?xml version="1.0"?><data><leaf>{leafText}</leaf></data>"""
+
+        let twoSiblings =
+            """<?xml version="1.0"?><data><item>One</item><item>Two</item></data>"""
+
         let selfCycle selfFile =
             $"""<?xml version="1.0"?><data><summary>Self cycle start. {includeElement selfFile "/data/summary"} Self cycle end.</summary></data>"""
 

@@ -211,6 +211,61 @@ let f x = x
         res.Compilation |> shouldSucceed |> withWarningCode 3887 |> ignore
 
     [<Fact>]
+    let ``Recursive include chain of depth three fully expands`` () =
+        let res =
+            runInclude (
+                scenario
+                    """module Test
+
+/// <include file="a.xml" path="/data/summary"/>
+let f (x: int) = x
+"""
+                    [ "a.xml", Snippets.chainA "b.xml"
+                      "b.xml", Snippets.chainB "c.xml"
+                      "c.xml", Snippets.chainC "C" ]
+            )
+
+        res.Compilation |> shouldSucceed |> ignore
+        res.Xml |> memberXmlEquals "M:Test.f(System.Int32)" "<summary>A(<part>B(<leaf>C</leaf>)B</part>)A</summary>"
+
+    [<Fact>]
+    let ``Relative include inside external file resolves relative to that file`` () =
+        // b.xml lives in d1/ and includes a BARE relative "c.xml": it must resolve to d1/c.xml
+        // (b's directory), NOT the source directory. A decoy c.xml in the source dir must be ignored.
+        let res =
+            runInclude (
+                scenario
+                    """module Test
+
+/// <include file="d1/b.xml" path="/data/part"/>
+let f (x: int) = x
+"""
+                    [ "d1/b.xml", Snippets.chainB "c.xml"
+                      "d1/c.xml", Snippets.chainC "Relative C"
+                      "c.xml", Snippets.chainC "Root decoy C" ]
+            )
+
+        res.Compilation |> shouldSucceed |> ignore
+        res.Xml |> memberXmlEquals "M:Test.f(System.Int32)" "<part>B(<leaf>Relative C</leaf>)B</part>"
+        Assert.DoesNotContain("Root decoy C", memberInner "M:Test.f(System.Int32)" res.Xml)
+
+    [<Fact>]
+    let ``External xpath selecting two siblings inserts both in order`` () =
+        let res =
+            runInclude (
+                scenario
+                    """module Test
+
+/// <include file="sib.xml" path="/data/item"/>
+let f (x: int) = x
+"""
+                    [ "sib.xml", Snippets.twoSiblings ]
+            )
+
+        res.Compilation |> shouldSucceed |> ignore
+        res.Xml |> memberXmlEquals "M:Test.f(System.Int32)" "<item>One</item><item>Two</item>"
+
+    [<Fact>]
     let ``Missing include file does not fail compilation`` () =
         Fs
             """
