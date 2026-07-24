@@ -676,3 +676,46 @@ let ``engine path filter selecting text nodes degrades gracefully`` () =
             """<inheritdoc cref="B" path="/summary/node()"/>"""
 
     Assert.DoesNotContain("<inheritdoc", result)
+
+[<Fact>]
+let ``engine explicit cref recursion does not leak the caller's implicit target`` () =
+    // A directive with an explicit cref must expand the referenced doc against THAT doc's own base,
+    // not the caller's implicit target. Here "Other" itself contains a bare <inheritdoc/>; it must
+    // not resolve to the caller's implicit target ("Caller"). Previously the caller's target leaked
+    // in, injecting the wrong ("CALLER") documentation.
+    let result =
+        expandWith
+            [
+                "Other", "<summary>OTHER <inheritdoc/></summary>"
+                "Caller", "<summary>CALLER</summary>"
+            ]
+            (Some "Caller")
+            """<inheritdoc cref="Other"/>"""
+
+    Assert.Contains("OTHER", result)
+    Assert.DoesNotContain("CALLER", result)
+    Assert.DoesNotContain("<inheritdoc", result)
+
+[<Fact>]
+let ``symbol does not surface an arbitrary overload for an ambiguous member cref`` () =
+    // An explicit member cref without a parameter signature is ambiguous when the target name is
+    // overloaded. The name-based resolver must not surface an arbitrary (here: the first) overload's
+    // documentation, which would be wrong as often as right.
+    let xml =
+        getSymbolXml
+            "Consumer"
+            """
+module Test
+type C() =
+    /// <summary>AAA overload int</summary>
+    member _.Foo(x: int) = ()
+    /// <summary>BBB overload string</summary>
+    member _.Foo(x: string) = ()
+/// <inheritdoc cref="M:Test.C.Foo"/>
+type Consumer() = class end
+let _ = Consumer(){caret}
+"""
+        |> xmlText
+
+    Assert.DoesNotContain("AAA", xml)
+    Assert.DoesNotContain("BBB", xml)

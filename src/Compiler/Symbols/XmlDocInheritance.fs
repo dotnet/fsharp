@@ -134,14 +134,18 @@ and expandInheritDocFromXmlText
             if directives.IsEmpty then
                 xmlText
             else
-                let resolveAndReplace (directive: InheritDocDirective) (cref: string) (implicitCrefForRecursion: string option) =
+                let resolveAndReplace (directive: InheritDocDirective) (cref: string) =
                     if visited.Contains(cref) then
                         directive.Element.Remove()
                     else
                         match resolveCref cref with
                         | Some inheritedXml ->
+                            // Recurse with no implicit target: a bare <inheritdoc/> nested inside a
+                            // resolved doc must inherit from THAT doc's own base (not knowable here,
+                            // and not the caller's), so it is dropped rather than resolved against the
+                            // wrong target. Only explicit-cref chains propagate through recursion.
                             let expandedInheritedXml =
-                                expandInheritedDoc resolveCref implicitCrefForRecursion m visited cref inheritedXml
+                                expandInheritedDoc resolveCref None m visited cref inheritedXml
 
                             let contentToInherit =
                                 match directive.Path with
@@ -157,10 +161,10 @@ and expandInheritDocFromXmlText
 
                 for directive in directives do
                     match directive.Cref with
-                    | Some cref -> resolveAndReplace directive cref implicitTargetCrefOpt
+                    | Some cref -> resolveAndReplace directive cref
                     | None ->
                         match implicitTargetCrefOpt with
-                        | Some implicitCref -> resolveAndReplace directive implicitCref None
+                        | Some implicitCref -> resolveAndReplace directive implicitCref
                         | None -> directive.Element.Remove()
 
                 match xdoc.Root with

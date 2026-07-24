@@ -128,17 +128,27 @@ module Impl =
 
     /// Tries to find a member's or field's XmlDoc on an entity by name
     let private tryFindMemberXmlDoc (entity: Entity) (memberName: string) : string option =
-        entity.MembersOfFSharpTyconSorted
-        |> List.tryPick (fun vref ->
-            if vref.DisplayName = memberName || vref.LogicalName = memberName then
-                tryGetXmlDocText vref.XmlDoc
-            else None)
-        |> Option.orElseWith (fun () ->
+        let matchingMemberDocs =
+            entity.MembersOfFSharpTyconSorted
+            |> List.choose (fun vref ->
+                if vref.DisplayName = memberName || vref.LogicalName = memberName then
+                    tryGetXmlDocText vref.XmlDoc
+                else
+                    None)
+
+        match matchingMemberDocs with
+        | [ single ] -> Some single
+        // Two or more documented overloads share this name. A member cref without a parameter
+        // signature cannot pick between them, so surfacing one arbitrarily would be wrong as often
+        // as right; return None instead of guessing.
+        | _ :: _ :: _ -> None
+        | [] ->
             entity.AllFieldsArray
             |> Array.tryPick (fun field ->
                 if field.DisplayName = memberName || field.LogicalName = memberName then
                     tryGetXmlDocText field.XmlDoc
-                else None))
+                else
+                    None)
 
     /// Tries to find an entity in a module/namespace by path
     let rec private tryFindEntityByPath (mtyp: ModuleOrNamespaceType) (path: string list) : Entity option =
