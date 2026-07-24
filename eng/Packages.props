@@ -42,6 +42,11 @@
          transitively by Microsoft.VisualStudio.SDK 18.9.496 (via Microsoft.CodeAnalysis.ExternalAccess.FSharp).
          Under CPM transitive pinning the central pin must match that resolved version, otherwise NU1109 downgrades
          and MSB3277 assembly-version conflicts break every vsintegration project. -->
+    <!-- ComponentModelHost is only ever pulled transitively. Projects that reference the full VS SDK get 18.9.453,
+         but FSharp.Editor.IntegrationTests pulls Shell.Framework 18.x (via the 18.9.x editor packages) while its
+         ComponentModelHost would otherwise stay at 17.x; that 17.x/18.x split makes S/IComponentModel ambiguous
+         (CS0433). Pin to the SDK 18.9.496 version so those types resolve to a single assembly. -->
+    <PackageVersion Include="Microsoft.VisualStudio.ComponentModelHost" Version="18.9.453" />
     <PackageVersion Include="Microsoft.VisualStudio.Designer.Interfaces" Version="18.9.438" />
     <PackageVersion Include="Microsoft.VisualStudio.Editor" Version="$(VisualStudioEditorPackagesVersion)" />
     <PackageVersion Include="Microsoft.VisualStudio.Extensibility.Build" Version="17.13.39620" />
