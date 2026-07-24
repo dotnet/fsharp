@@ -10634,6 +10634,7 @@ and TcMethodApplication
                         | [ paramName ] ->
                             match TryGetCallerArgType g baseMinfo callerArgs paramName with
                             | Some callerArgTy ->
+                                let callerArgTy = if isByrefTy g callerArgTy then destByrefTy g callerArgTy else callerArgTy
                                 let retTy = baseMinfo.GetFSharpReturnType(cenv.amap, mMethExpr, callerTyArgs)
                                 let argNullness =
                                     if TypeNullIsTrueValue g callerArgTy || TypeNullIsExtraValueNew g mMethExpr callerArgTy then

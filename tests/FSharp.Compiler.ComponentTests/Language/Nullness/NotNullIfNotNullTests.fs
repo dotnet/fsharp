@@ -36,6 +36,11 @@ namespace NotNullLib {
         // Object echo: the argument is coerced to 'object', but a 'with null' nullness rides along.
         [return: NotNullIfNotNull("input")]
         public static object? EchoObj(object? input) => input;
+
+        // Byref echo: the argument arrives as byref<string | null>; the referenced nullness is the
+        // element's, not the (always non-null) byref wrapper's.
+        [return: NotNullIfNotNull("s")]
+        public static string? RefEcho(ref string? s) => s;
     }
 
     public static class Extensions {
@@ -366,6 +371,35 @@ let r : obj = C.EchoObj notNull
     |> withStrictNullness
     |> compile
     |> shouldSucceed
+
+[<FactForNETCOREAPP>]
+let ``Csharp NotNullIfNotNull - object echo of None stays nullable`` () =
+    FSharp """module MyLibrary
+open NotNullLib
+
+let r : obj = C.EchoObj (None : int option)
+"""
+    |> asLibrary
+    |> withReferences [csNotNullLib]
+    |> withStrictNullness
+    |> compile
+    |> shouldFail
+    |> withDiagnosticMessageMatches nullableExpected
+
+[<FactForNETCOREAPP>]
+let ``Csharp NotNullIfNotNull - byref argument uses the element nullness, not the wrapper`` () =
+    FSharp """module MyLibrary
+open NotNullLib
+
+let mutable s : string | null = null
+let r : string = C.RefEcho(&s)
+"""
+    |> asLibrary
+    |> withReferences [csNotNullLib]
+    |> withStrictNullness
+    |> compile
+    |> shouldFail
+    |> withDiagnosticMessageMatches nullableExpected
 
 [<FactForNETCOREAPP>]
 let ``Csharp NotNullIfNotNull - unannotated parameter with non-null return annotation fails`` () =
