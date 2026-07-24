@@ -288,7 +288,7 @@ module Impl =
     /// Takes the pre-computed xmlText to avoid a redundant GetXmlText() call.
     let makeExpandedXmlDoc (cenv: SymbolEnv) (implicitTargetCrefOpt: string option) (doc: XmlDoc) (xmlText: string) =
         let resolveCref = buildCrefResolver cenv
-        let expandedText = expandInheritDocFromXmlText resolveCref implicitTargetCrefOpt doc.Range Set.empty xmlText
+        let expandedText = expandInheritDocFromXmlText resolveCref implicitTargetCrefOpt Set.empty xmlText
 
         if System.String.Equals(xmlText, expandedText, System.StringComparison.Ordinal) then
             FSharpXmlDoc.FromXmlText doc

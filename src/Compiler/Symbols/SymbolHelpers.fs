@@ -483,7 +483,7 @@ module internal SymbolHelpers =
                     | None -> None, (fun _ -> None)
 
                 let expandedText =
-                    expandInheritDocFromXmlText resolveCref implicitTargetCrefOpt m Set.empty xmlText
+                    expandInheritDocFromXmlText resolveCref implicitTargetCrefOpt Set.empty xmlText
 
                 if System.String.Equals(xmlText, expandedText, System.StringComparison.Ordinal) then
                     FSharpXmlDoc.FromXmlText xmlDoc

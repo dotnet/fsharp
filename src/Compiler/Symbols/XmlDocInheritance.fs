@@ -4,7 +4,6 @@ module internal FSharp.Compiler.XmlDocInheritance
 
 open System.Xml.Linq
 open System.Xml.XPath
-open FSharp.Compiler.Text
 
 /// Represents an inheritdoc directive found in XML documentation
 type InheritDocDirective =
@@ -99,7 +98,6 @@ let private selectDefaultInheritedContent (sourceXml: string) : string =
 let rec private expandInheritedDoc
     (resolveCref: string -> string option)
     (implicitTargetCrefOpt: string option)
-    (m: range)
     (visited: Set<string>)
     (cref: string)
     (xmlText: string)
@@ -108,7 +106,7 @@ let rec private expandInheritedDoc
         xmlText
     else
         let newVisited = visited.Add(cref)
-        expandInheritDocFromXmlText resolveCref implicitTargetCrefOpt m newVisited xmlText
+        expandInheritDocFromXmlText resolveCref implicitTargetCrefOpt newVisited xmlText
 
 /// Expands `<inheritdoc>` elements in XML documentation text.
 /// The caller provides a `resolveCref` function that maps a cref string to its resolved XML doc text.
@@ -118,7 +116,6 @@ let rec private expandInheritedDoc
 and expandInheritDocFromXmlText
     (resolveCref: string -> string option)
     (implicitTargetCrefOpt: string option)
-    (m: range)
     (visited: Set<string>)
     (xmlText: string)
     : string =
@@ -145,7 +142,7 @@ and expandInheritDocFromXmlText
                             // and not the caller's), so it is dropped rather than resolved against the
                             // wrong target. Only explicit-cref chains propagate through recursion.
                             let expandedInheritedXml =
-                                expandInheritedDoc resolveCref None m visited cref inheritedXml
+                                expandInheritedDoc resolveCref None visited cref inheritedXml
 
                             let contentToInherit =
                                 match directive.Path with

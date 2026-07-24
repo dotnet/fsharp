@@ -2,7 +2,6 @@ module FSharp.Compiler.Service.Tests.XmlDocInheritanceTests
 
 open System.Text.RegularExpressions
 open FSharp.Compiler.Symbols
-open FSharp.Compiler.Text.Range
 open FSharp.Compiler.Xml
 open FSharp.Compiler.XmlDocInheritance
 open Xunit
@@ -10,7 +9,7 @@ open Xunit
 let expandWith (crefMap: (string * string) list) (implicitTarget: string option) (xml: string) : string =
     let map = Map.ofList crefMap
     let resolve cref = Map.tryFind cref map
-    expandInheritDocFromXmlText resolve implicitTarget range0 Set.empty xml
+    expandInheritDocFromXmlText resolve implicitTarget Set.empty xml
 
 let getTooltipXml (markedSource: string) =
     let _, xml, _ = Checker.getTooltip markedSource |> TooltipTests.assertAndExtractTooltip
