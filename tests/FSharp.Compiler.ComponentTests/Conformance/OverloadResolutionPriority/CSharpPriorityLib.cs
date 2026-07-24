@@ -114,17 +114,6 @@ namespace ExtensionPriorityTests
         public static string Transform(this int value) => "ModuleB-int-priority2";
     }
 
-    public static class CrossExtA
-    {
-        [OverloadResolutionPriority(1)]
-        public static string Ext(this System.Guid g) => "A-priority1";
-    }
-
-    public static class CrossExtB
-    {
-        public static string Ext(this System.Guid g) => "B-priority0";
-    }
-    
     // ===== Same priority, normal tiebreakers apply =====
     
     public static class SamePriorityTiebreaker
@@ -259,5 +248,19 @@ namespace ExtensionPriorityTests
         public override string Compute(object o) => "derived-object";
         public override string Compute(string s) => "derived-string";
         public override string Compute(int i) => "derived-int";
+    }
+}
+
+namespace H6Observable
+{
+    public static class H6HighObj
+    {
+        [OverloadResolutionPriority(1)]
+        public static string Pick(this System.Guid g, object o) => "high-obj";
+    }
+
+    public static class H6LowInt
+    {
+        public static string Pick(this System.Guid g, int i) => "low-int";
     }
 }

@@ -144,18 +144,22 @@ if r <> "params" then failwithf "expected params, got %s" r
         |> ignore
 
     [<FactForNETCOREAPP>]
-    let ``ORPA - priority not compared across extension static classes`` () =
+    let ``ORPA - priority is not compared across extension classes (concreteness decides)`` () =
+        // C#-parity: OverloadResolutionPriority is scoped per containing type. Two extension
+        // methods on System.Guid declared in *different* static classes must not have their
+        // priorities compared; ordinary betterness (concreteness) picks the more specific int.
         Fs """
 module T
-open ExtensionPriorityTests
+open H6Observable
 let g = System.Guid.NewGuid()
-let r = g.Ext()
+let r = g.Pick(42)
+if r <> "low-int" then failwithf "expected low-int, got %s" r
 """
         |> withReferences [csharpPriorityLib]
         |> withLangVersionPreview
-        |> compile
-        |> shouldFail
-        |> withErrorCode 41
+        |> asExe
+        |> compileAndRun
+        |> shouldSucceed
         |> ignore
 
     [<FactForNETCOREAPP>]
