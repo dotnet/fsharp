@@ -53,6 +53,7 @@
     <Compile Include="XmlDocTests - Units of Measure.fs" />
     <Compile Include="RangeTests.fs" />
     <Compile Include="TooltipTests.fs" />
+    <Compile Include="XmlDocInheritanceTests.fs" />
     <Compile Include="TokenizerTests.fs" />
     <Compile Include="QuickParseTests.fs" />
     <Compile Include="CompilerTestHelpers.fs" />
