@@ -1764,8 +1764,11 @@ let mkRecdToString (g: TcGlobals, tcref: TyconRef, tycon: Tycon, openBrace: stri
             if i = 0 then [ nameEq; value ] else [ mkString g m "; "; nameEq; value ])
         |> List.concat
 
-    // With no fields the open/close braces would abut, doubling their inner space ("{|  |}"); trim one.
-    let close = if List.isEmpty fieldParts then closeBrace.TrimStart() else closeBrace
+    let close =
+        if List.isEmpty fieldParts then
+            // Avoid a double space in an empty record.
+            closeBrace.TrimStart()
+        else closeBrace
     let parts = mkString g m openBrace :: fieldParts @ [ mkString g m close ]
     let fieldTys = tcref.AllInstanceFieldsAsList |> List.map (fun fspec -> fspec.FormalType)
     thisv, mkToStringRecursionGuard (g, m, fieldTys, mkStringConcat (g, m, parts))
