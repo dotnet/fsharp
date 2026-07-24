@@ -284,3 +284,17 @@ namespace H7GenericReceiver
         public static string Pick<T>(this T value, int i) => "low-generic-int";
     }
 }
+
+namespace SameClassExtensionPriority
+{
+    // Two extension methods on the SAME static class extending the same receiver. Because they
+    // share a declaring type, priority IS compared (unlike the cross-class H6/H7 cases): the
+    // high-priority object overload must beat the exact int overload.
+    public static class SameClassExtensions
+    {
+        [OverloadResolutionPriority(1)]
+        public static string Pick(this string s, object o) => "high-obj";
+
+        public static string Pick(this string s, int i) => "low-int";
+    }
+}

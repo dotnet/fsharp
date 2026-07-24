@@ -163,6 +163,65 @@ if r <> "opt-high" then failwithf "expected opt-high, got %s" r
         |> ignore
 
     [<FactForNETCOREAPP>]
+    let ``ORPA - no applicable overload preserves normal diagnostics`` () =
+        // Priority is pruned only among *applicable* members. When none is applicable, the full
+        // candidate set is kept so the normal "no overloads found" diagnostic lists every overload
+        // (pre-fix the high-priority string overload was kept before applicability and gave a bare
+        // type-mismatch instead of the overload listing).
+        Fs """
+module T
+open System.Runtime.CompilerServices
+type C() =
+    [<OverloadResolutionPriority(1)>] member _.M(s: string) = "string"
+    member _.M(b: bool) = "bool"
+let r = C().M(42)
+"""
+        |> withLangVersionPreview
+        |> compile
+        |> shouldFail
+        |> withErrorCode 41
+        |> withDiagnosticMessageMatches "bool"
+        |> withDiagnosticMessageMatches "string"
+        |> ignore
+
+    [<FactForNETCOREAPP>]
+    let ``ORPA - equal priority stays ambiguous when concreteness is incomparable`` () =
+        // Both overloads share priority 1, so the group keeps both; ordinary betterness then finds
+        // them incomparable (each more concrete in one position) and the call stays ambiguous.
+        // Guards that priority pruning does not arbitrarily pick a survivor among equal priorities.
+        Fs """
+module T
+open System.Runtime.CompilerServices
+type C() =
+    [<OverloadResolutionPriority(1)>] member _.M(x: int, y: obj) = "int-obj"
+    [<OverloadResolutionPriority(1)>] member _.M(x: obj, y: int) = "obj-int"
+let r = C().M(1, 1)
+"""
+        |> withLangVersionPreview
+        |> compile
+        |> shouldFail
+        |> withErrorCode 41
+        |> ignore
+
+    [<FactForNETCOREAPP>]
+    let ``ORPA - same extension class priority beats exact overload`` () =
+        // Complement of the cross-class H6/H7 tests: two extension methods in the *same* static
+        // class DO have their priorities compared, so the high-priority object overload wins over
+        // the exact int overload.
+        Fs """
+module T
+open SameClassExtensionPriority
+let r = "receiver".Pick(42)
+if r <> "high-obj" then failwithf "expected high-obj, got %s" r
+"""
+        |> withReferences [csharpPriorityLib]
+        |> withLangVersionPreview
+        |> asExe
+        |> compileAndRun
+        |> shouldSucceed
+        |> ignore
+
+    [<FactForNETCOREAPP>]
     let ``ORPA - priority is not compared across extension classes (concreteness decides)`` () =
         // C#-parity: OverloadResolutionPriority is scoped per containing type. Two extension
         // methods on System.Guid declared in *different* static classes must not have their

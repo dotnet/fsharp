@@ -3568,14 +3568,12 @@ and ResolveOverloadingCore
                 reqdRetTyOpt 
                 candidate)
 
-    // C#-parity OverloadResolutionPriority: when any candidate carries an explicit priority,
-    // prune to the highest-priority *applicable* members per declaring type BEFORE the
-    // exact-match and betterness rules below. This guarantees (a) an inapplicable high-priority
-    // member cannot shadow an applicable lower-priority one, and (b) priority — not natural
-    // betterness such as params/subsumption — decides among the applicable members. Priority is
-    // never compared across declaring types (the group key lives in filterByOverloadResolutionPriority).
-    // The no-priority path is a cheap fast-path returning the candidates untouched, and inapplicable
-    // candidates keep their place so "no overloads found" diagnostics stay complete (A5: order preserved).
+    // C#-parity OverloadResolutionPriority: when a candidate carries an explicit priority, prune to
+    // the highest-priority *applicable* members per declaring type BEFORE exact-match/betterness, so
+    // (a) an inapplicable high-priority member can't shadow an applicable lower-priority one, and
+    // (b) priority — not natural betterness (params/subsumption) — decides among applicable members.
+    // No-priority is a fast-path; inapplicable candidates keep their place so "no overloads" diagnostics
+    // stay complete (A5: order preserved).
     let candidates =
         if g.langVersion.SupportsFeature LanguageFeature.OverloadResolutionPriority
            && candidates |> List.exists (fun cm -> cm.Method.GetOverloadResolutionPriority() <> 0) then
@@ -3586,8 +3584,7 @@ and ResolveOverloadingCore
                     applicable
                     |> filterByOverloadResolutionPriority g (fun (cm, _, _, _) -> cm.Method)
                     |> List.map (fun (cm, _, _, _) -> cm)
-                candidates
-                |> List.filter (fun cm -> survivors |> List.exists (fun s -> System.Object.ReferenceEquals(s, cm)))
+                candidates |> List.filter (fun cm -> List.memq cm survivors)
         else candidates
 
     // Exact match rule.
