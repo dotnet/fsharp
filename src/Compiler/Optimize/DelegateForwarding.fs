@@ -9,6 +9,7 @@ module internal FSharp.Compiler.DelegateForwarding
 open Internal.Utilities.Collections
 
 open FSharp.Compiler.AbstractIL.IL
+open FSharp.Compiler.Text
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics
@@ -182,8 +183,6 @@ let private staticLeadingArgIsRefType g takesInstanceArg (leadingArgs: Expr list
     | [ recv ] when not takesInstanceArg -> isRefTy g (tyOfExpr g recv)
     | _ -> true
 
-/// Boxing the receiver needs it as a value: '&localVar' is recovered by the recognizer, but any other
-/// address form leaves a byref the box cannot consume.
 let private receiverNotByref g (leadingArgs: Expr list) =
     match leadingArgs with
     | [ recv ] -> not (isByrefTy g (tyOfExpr g recv))
@@ -192,6 +191,13 @@ let private receiverNotByref g (leadingArgs: Expr list) =
 let private receiverNotTypar g (leadingArgs: Expr list) =
     match leadingArgs with
     | [ recv ] -> not (isTyparTy g (tyOfExpr g recv))
+    | _ -> true
+
+let private receiverNotMutableStruct g takesInstanceArg (leadingArgs: Expr list) =
+    match leadingArgs with
+    | [ recv ] when takesInstanceArg ->
+        let ty = tyOfExpr g recv
+        not (isStructTy g ty) || isRecdOrStructTyReadOnly g Range.range0 ty
     | _ -> true
 
 /// The receiver is evaluated once at the construction site rather than on every Invoke, which is only
@@ -231,6 +237,7 @@ let fsharpValDirectlyBindable
         && staticLeadingArgIsRefType g takesInstanceArg leadingArgs
         && receiverNotByref g leadingArgs
         && receiverNotTypar g leadingArgs
+        && receiverNotMutableStruct g takesInstanceArg leadingArgs
     then
         ValueSome(virtualCall, takesInstanceArg)
     else
@@ -255,6 +262,7 @@ let ilMethodDirectlyBindable
     && staticLeadingArgIsRefType g takesInstanceArg leadingArgs
     && receiverNotByref g leadingArgs
     && receiverNotTypar g leadingArgs
+    && receiverNotMutableStruct g takesInstanceArg leadingArgs
 
 /// Residual IL compatibility check; the type checker verified the call and the forwarding match pinned
 /// the shape. Parameter types are deliberately not compared - value types are exact by construction and

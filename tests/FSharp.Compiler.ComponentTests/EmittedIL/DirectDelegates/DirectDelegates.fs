@@ -481,6 +481,40 @@ let main _ =
     |> compileExeAndRun
     |> shouldSucceed
 
+// A *mutable* value-type receiver is kept as a closure. Boxing it once as the delegate Target would let a
+// mutating method accumulate changes across invocations, whereas the closure works on a fresh by-value copy
+// each call. Here Bump adds 100 to the receiver's field; both invocations must return 105 (not 105 then 205),
+// preserving the pre-feature by-value semantics. The immutable-struct case above still goes direct.
+[<Fact>]
+let ``Mutable struct receiver stays a closure so mutation does not persist (preview)`` () =
+    FSharp """
+module MutableStructReceiverClosure
+
+open System
+
+[<Struct>]
+type C =
+    val mutable N : int
+    new (n) = { N = n }
+    member this.Bump () : int = this.N <- this.N + 100; this.N
+
+[<EntryPoint>]
+let main _ =
+    let c = C(5)
+    let d = Func<int>(c.Bump)
+    let r1 = d.Invoke()
+    let r2 = d.Invoke()
+    if r1 <> 105 then failwithf "first invoke: expected 105 but got %d" r1
+    if r2 <> 105 then failwithf "second invoke: expected 105 (no persisted mutation) but got %d" r2
+    if d.Method.Name <> "Invoke" then failwithf "expected closure 'Invoke' but got '%s'" d.Method.Name
+    0
+        """
+    |> withLangVersionPreview
+    |> withOptions [ "--optimize+" ]
+    |> withNoWarn 52
+    |> compileExeAndRun
+    |> shouldSucceed
+
 // Case 52: an extension member compiles to a static method whose first parameter is the receiver. The CLR's
 // "closed over the first argument" delegate binds that receiver as the Target, so the delegate points directly
 // at the static extension method (in release, where the eta-lambda does not need to survive for debugging).
@@ -899,8 +933,108 @@ let main _ =
     |> compileExeAndRun
     |> shouldSucceed
 
-#if NETCOREAPP
+// A value-type receiver reached as a byref that the recognizer cannot recover to a local value (here a struct
+// array element, addressed as &arr.[0]) has no boxable value to store as the Target, so a closure is kept.
 [<Fact>]
+let ``Byref struct receiver stays a closure (preview)`` () =
+    FSharp """
+module ByrefReceiverClosure
+
+open System
+
+[<Struct>]
+type S =
+    val V : int
+    new (v) = { V = v }
+    member this.Add (x: int) : int = this.V + x
+
+[<EntryPoint>]
+let main _ =
+    let arr = [| S 100 |]
+    // The receiver is &arr.[0] - an array-element address, not the address of a local, so it stays a byref.
+    let d = Func<int, int>(fun x -> arr.[0].Add x)
+    if d.Invoke 5 <> 105 then failwithf "wrong result %d" (d.Invoke 5)
+    if d.Method.Name <> "Invoke" then failwithf "expected closure 'Invoke' but got '%s'" d.Method.Name
+    0
+        """
+    |> withLangVersionPreview
+    |> withOptions [ "--optimize+" ]
+    |> compileExeAndRun
+    |> shouldSucceed
+
+// An inline function with a statically-resolved-type-parameter (SRTP) constraint is expanded at the use site
+// (mandatory inlining), leaving arithmetic rather than a forwarding call, so a closure is kept. The witness-
+// argument guard is a defensive backstop for the same family: a witness-passing target is never bound directly.
+[<Fact>]
+let ``SRTP inline target stays a closure (preview)`` () =
+    FSharp """
+module SrtpInlineClosure
+
+open System
+
+let inline addTwice (x: ^T) : ^T = x + x
+
+[<EntryPoint>]
+let main _ =
+    let d = Func<int, int>(fun x -> addTwice x)
+    if d.Invoke 5 <> 10 then failwithf "wrong result %d" (d.Invoke 5)
+    if d.Method.Name <> "Invoke" then failwithf "expected closure 'Invoke' but got '%s'" d.Method.Name
+    0
+        """
+    |> withLangVersionPreview
+    |> withOptions [ "--optimize+" ]
+    |> compileExeAndRun
+    |> shouldSucceed
+
+// A virtual method invoked on a value type is a 'constrained.' callvirt; the direct IL-method path excludes
+// constrained calls (the closed delegate cannot reproduce the constrained receiver), so a closure is kept.
+[<Fact>]
+let ``Constrained virtual call on a value type stays a closure (preview)`` () =
+    FSharp """
+module ConstrainedCallClosure
+
+open System
+
+[<EntryPoint>]
+let main _ =
+    // e.ToString() on an enum is a constrained callvirt to Object::ToString.
+    let make (e: DayOfWeek) = Func<string>(fun () -> e.ToString())
+    let d = make DayOfWeek.Monday
+    if d.Invoke() <> "Monday" then failwithf "wrong result %s" (d.Invoke())
+    if d.Method.Name <> "Invoke" then failwithf "expected closure 'Invoke' but got '%s'" d.Method.Name
+    0
+        """
+    |> withLangVersionPreview
+    |> withOptions [ "--optimize+" ]
+    |> compileExeAndRun
+    |> shouldSucceed
+
+// A constructor (newobj) as the delegate body is a structural bail - grouped with base and self-init calls,
+// which the type checker anyway forbids inside a closure (FS0408) - so a closure is kept.
+[<Fact>]
+let ``Constructor target stays a closure (preview)`` () =
+    FSharp """
+module ConstructorClosure
+
+open System
+
+type Boxed(v: int) =
+    member _.V = v
+
+[<EntryPoint>]
+let main _ =
+    let d = Func<int, Boxed>(fun n -> Boxed(n))
+    let r = d.Invoke 5
+    if r.V <> 5 then failwithf "wrong result %d" r.V
+    if d.Method.Name <> "Invoke" then failwithf "expected closure 'Invoke' but got '%s'" d.Method.Name
+    0
+        """
+    |> withLangVersionPreview
+    |> withOptions [ "--optimize+" ]
+    |> compileExeAndRun
+    |> shouldSucceed
+
+[<FactForNETCOREAPP>]
 let ``Minimal API binds a direct delegate handler by parameter name (preview)`` () =
     let aspNetFrameworkReferences =
         ReferenceHelpers.getFrameworkReference { Name = "Microsoft.AspNetCore.App"; Version = None }
@@ -944,4 +1078,3 @@ X.run () """)
     |> withLangVersionPreview
     |> runFsi
     |> shouldSucceed
-#endif
