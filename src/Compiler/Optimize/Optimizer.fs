@@ -12,6 +12,7 @@ open FSharp.Compiler
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AttributeChecking
 open FSharp.Compiler.CompilerGlobalState
+open FSharp.Compiler.DelegateForwarding
 open FSharp.Compiler.DiagnosticsLogger
 open FSharp.Compiler.Text.Range
 open FSharp.Compiler.Syntax.PrettyNaming
@@ -1707,7 +1708,7 @@ and OpHasEffect context g m op tyargs =
     | TOp.ExnFieldSet _
     | TOp.Coerce
     | TOp.Reraise
-    | TOp.IntegerForLoop _ 
+    | TOp.IntegerForLoop _
     | TOp.While _
     | TOp.TryWith _ (* conservative *)
     | TOp.TryFinally _ (* conservative *)
@@ -1722,6 +1723,43 @@ and OpHasEffect context g m op tyargs =
 let effectContextOf (cenv: cenv) =
     if cenv.optimizing then EffectContext.Emit else EffectContext.InlineBody
 
+/// Prevent the optimizer from inlining a recognized direct-delegate forwarding target into the delegate
+/// body: inlining would dissolve the call before IlxGen can point the delegate at it, making the emitted
+/// form depend on the target's size (locally, and through a referenced assembly's optimization data).
+/// Mandatory inlining of 'inline' values takes precedence via OptimizeVal.
+let AddDirectDelegateTargetToDontInlineSet cenv env (slotsig: SlotSig) tmvs body m =
+    let g = cenv.g
+
+    if
+        g.langVersion.SupportsFeature Features.LanguageFeature.DirectDelegateConstruction
+        && cenv.optimizing
+        && cenv.settings.InlineLambdas
+    then
+        let exprHasEffect = ExprHasEffect (effectContextOf cenv)
+    
+        // Normalize the elided unit parameter of a zero-parameter Invoke (e.g. System.Action) exactly as
+        // IlxGen will before it runs the recognizer
+        let tmvs, body =
+            if slotsig.FormalParams |> List.forall List.isEmpty then
+                BindUnitVars g (tmvs, [], body)
+            else
+                tmvs, body
+
+        match classifyForwardingTarget exprHasEffect g tmvs body with
+        | DirectDelegateForwardingTargetCandidate.FSharpVal(vref, valUseFlags, _, leadingArgs) when
+            // ValReprInfo.IsSome mirrors IlxGen's Method-storage requirement. Witnesses are not knowable
+            // here; over-suppressing a witness-requiring target only costs an inline in a closure body.
+            vref.ValReprInfo.IsSome
+            && (fsharpValDirectlyBindable exprHasEffect g tmvs leadingArgs vref valUseFlags false)
+                .IsSome
+            ->
+            match (GetInfoForVal cenv env m vref).ValExprInfo with
+            | StripLambdaValue(lambdaId, _, _, _, _) ->
+                { env with dontInline = Map.add lambdaId [] env.dontInline }
+            | _ -> env
+        | _ -> env
+    else
+        env
 
 let TryEliminateBinding cenv _env bind e2 _m =
     let g = cenv.g
@@ -2441,11 +2479,16 @@ let rec OptimizeExpr cenv (env: IncrementalOptimizationEnv) expr =
             MightMakeCriticalTailcall=false
             Info=UnknownValue }
 
-    | Expr.Obj (_, ty, basev, createExpr, overrides, iimpls, m) -> 
-        match expr with 
-        | NewDelegateExpr g (lambdaId, vsl, body, _, remake) -> 
+    | Expr.Obj (_, ty, basev, createExpr, overrides, iimpls, m) ->
+        match expr with
+        | NewDelegateExpr g (lambdaId, vsl, body, _, remake) ->
+            let env =
+                match overrides with
+                | [ TObjExprMethod(slotsig, _, _, _, _, mMeth) ] ->
+                    AddDirectDelegateTargetToDontInlineSet cenv env slotsig vsl body mMeth
+                | _ -> env
             OptimizeNewDelegateExpr cenv env (lambdaId, vsl, body, remake)
-        | _ -> 
+        | _ ->
             OptimizeObjectExpr cenv env (ty, basev, createExpr, overrides, iimpls, m)
 
     | Expr.Op (op, tyargs, args, m) -> 

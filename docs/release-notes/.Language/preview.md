@@ -9,3 +9,8 @@
 ### Fixed
 
 ### Changed
+
+* Direct delegate construction ([PR #19993](https://github.com/dotnet/fsharp/pull/19993))
+  * A delegate built from a method or function now points straight at that method instead of an intermediate closure, so `delegate.Method` is the real target and no closure class is generated.
+  * Two delegates built from the same method and target now compare equal, where the previous closure form produced distinct instances; this also makes `Delegate.Remove` (and `-=` on events) match and remove such a delegate that it previously left in place.
+  * A `null` instance receiver now faults at delegate construction rather than at the first invoke: an `ArgumentException` for a non-virtual target (the delegate constructor rejects a null `this`) or a `NullReferenceException` for a virtual one (from `ldvirtftn`), matching how C# builds the same delegate.

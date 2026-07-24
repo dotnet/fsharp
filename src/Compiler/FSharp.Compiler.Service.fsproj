@@ -423,6 +423,7 @@
     <Compile Include="Checking\CheckDeclarations.fs" />
     <Compile Include="Checking\SignatureHash.fsi" />
     <Compile Include="Checking\SignatureHash.fs" />
+    <Compile Include="Optimize\DelegateForwarding.fs" />
     <Compile Include="Optimize\Optimizer.fsi" />
     <Compile Include="Optimize\Optimizer.fs" />
     <Compile Include="Optimize\DetupleArgs.fsi" />
