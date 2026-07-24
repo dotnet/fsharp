@@ -141,9 +141,7 @@ type IlDeltaStreamBuilder private (userStringHeapStart: int, standaloneSigRowCou
     new(baselineMetadata: MetadataSnapshot option) =
         let userStringHeapStart, standaloneSigRowCount =
             match baselineMetadata with
-            | Some snapshot ->
-                snapshot.HeapSizes.UserStringHeapSize,
-                snapshot.TableRowCounts.[TableNames.StandAloneSig.Index]
+            | Some snapshot -> snapshot.HeapSizes.UserStringHeapSize, snapshot.TableRowCounts.[TableNames.StandAloneSig.Index]
             | None -> 0, 0
 
         IlDeltaStreamBuilder(userStringHeapStart, standaloneSigRowCount, SeededOffsets)
