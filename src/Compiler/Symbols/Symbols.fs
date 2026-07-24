@@ -342,16 +342,45 @@ module Impl =
             | E _ -> "E:"
             | _ -> "M:"
 
+        // A name-only member cref (no parameter signature) cannot disambiguate overloads, so building
+        // one for an overloaded target lets the name-based resolver surface a sibling overload's docs.
+        // Only treat the target as resolvable when it declares a single member of that name. Abstract+
+        // default and a property's get/set each collapse to one MethInfo/PropInfo, so plain virtual
+        // overrides and read/write properties are unaffected; only genuine overload sets (2+) are blocked.
+        let targetHasUniqueMember (targetTy: TType) (memberName: string) : bool =
+            try
+                match d with
+                | E _ -> true
+                | P _ ->
+                    match GetImmediateIntrinsicPropInfosOfType (Some memberName, AccessibleFromSomeFSharpCode) cenv.g cenv.amap range0 targetTy with
+                    | []
+                    | [ _ ] -> true
+                    | _ -> false
+                | _ ->
+                    // abstract + default declarations of one method are two MethInfos sharing a
+                    // signature; collapse them so only genuinely distinct overloads count towards
+                    // ambiguity (a single virtual override must still resolve).
+                    let minfos = GetImmediateIntrinsicMethInfosOfType (Some memberName, AccessibleFromSomeFSharpCode) cenv.g cenv.amap range0 targetTy
+                    let distinctOverloads =
+                        minfos
+                        |> List.fold (fun acc mi ->
+                            if acc |> List.exists (fun e -> MethInfosEquivByNameAndSig EraseNone true cenv.g cenv.amap range0 e mi) then
+                                acc
+                            else
+                                mi :: acc) []
+                    List.length distinctOverloads <= 1
+            with _ -> true
+
         match slotSigs with
         | slot :: _ ->
             try
                 let declaringTy = slot.DeclaringType
                 let methodName = slot.Name
                 match tryTcrefOfAppTy cenv.g declaringTy with
-                | ValueSome tcref ->
+                | ValueSome tcref when targetHasUniqueMember declaringTy methodName ->
                     let typeName = tcref.CompiledRepresentationForNamedType.FullName
                     Some (crefPrefix + typeName + "." + methodName)
-                | ValueNone -> None
+                | _ -> None
             with _ -> None
         | [] ->
             // slotSigs is empty for overrides of base-CLASS virtuals (e.g. override _.ToString()),
@@ -400,10 +429,10 @@ module Impl =
                     match GetSuperTypeOfType cenv.g cenv.amap range0 declaringTy with
                     | Some baseTy when not (isObjTyAnyNullness cenv.g baseTy) ->
                         match tryTcrefOfAppTy cenv.g baseTy with
-                        | ValueSome baseTcref ->
+                        | ValueSome baseTcref when targetHasUniqueMember baseTy name ->
                             let baseName = baseTcref.CompiledRepresentationForNamedType.FullName
                             Some (crefPrefix + baseName + "." + name)
-                        | ValueNone -> None
+                        | _ -> None
                     | _ -> None
                 | None -> None
             with _ -> None

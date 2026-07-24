@@ -718,3 +718,83 @@ let _ = Consumer(){caret}
 
     Assert.DoesNotContain("AAA", xml)
     Assert.DoesNotContain("BBB", xml)
+
+
+/// Reads the XmlDoc of a specific member declared on a type (targets the override, not the type).
+let private getMemberXml (typeName: string) (memberName: string) markedSource =
+    let _, checkResults = Checker.getCheckedResolveContext markedSource
+    let entity = XmlDocTests.findSymbolByName typeName checkResults :?> FSharpEntity
+    let m =
+        entity.MembersFunctionsAndValues
+        |> Seq.find (fun v -> v.DisplayName = memberName)
+    m.XmlDoc
+
+[<Fact>]
+let ``symbol does not surface a sibling overload's docs on an implicit override`` () =
+    // Base declares two M overloads; only M(int) is documented. Derived overrides the UNdocumented
+    // M(string) with <inheritdoc/>. A name-only member cref cannot tell the overloads apart, so
+    // Path A (FSharpSymbol.XmlDoc) must not surface the int overload's docs on the string override.
+    let xml =
+        getMemberXml "Derived" "M"
+            """
+module Test
+type Base() =
+    /// <summary>INT overload docs</summary>
+    abstract member M: int -> unit
+    default _.M(x: int) = ()
+    abstract member M: string -> unit
+    default _.M(x: string) = ()
+type Derived() =
+    inherit Base()
+    /// <inheritdoc/>
+    override _.M(x: string) = ()
+let _ = Derived(){caret}
+"""
+        |> xmlText
+
+    Assert.DoesNotContain("INT overload docs", xml)
+
+[<Fact>]
+let ``symbol inherits docs on a single overriding method (not over-blocked)`` () =
+    // Guards the overload gate against over-blocking: a single virtual (abstract + default is two
+    // MethInfos sharing a signature, collapsed to one overload) must still inherit on Path A.
+    let xml =
+        getMemberXml "Derived" "M"
+            """
+module Test
+type Base() =
+    /// <summary>ONLY overload docs</summary>
+    abstract member M: int -> unit
+    default _.M(x: int) = ()
+type Derived() =
+    inherit Base()
+    /// <inheritdoc/>
+    override _.M(x: int) = ()
+let _ = Derived(){caret}
+"""
+        |> xmlText
+
+    Assert.Contains("ONLY overload docs", xml)
+    Assert.DoesNotContain("<inheritdoc", xml)
+
+[<Fact>]
+let ``symbol inherits docs on an overriding get/set property (not over-blocked)`` () =
+    // A read/write property's get/set collapse to a single PropInfo, so the overload gate must not
+    // block it. Proves the property branch of the gate is distinct from the method branch.
+    let xml =
+        getMemberXml "Derived" "P"
+            """
+module Test
+type Base() =
+    /// <summary>Base RW prop</summary>
+    abstract member P: int with get, set
+type Derived() =
+    inherit Base()
+    /// <inheritdoc/>
+    override _.P with get() = 0 and set (v: int) = ()
+let _ = Derived(){caret}
+"""
+        |> xmlText
+
+    Assert.Contains("Base RW prop", xml)
+    Assert.DoesNotContain("<inheritdoc", xml)
