@@ -361,7 +361,15 @@ module internal SymbolHelpers =
             if xmlDoc.IsEmpty then None else Some(xmlDoc.GetXmlText())
 
         // Base class (skipping obj) or, failing that, the first implemented interface of a type.
+        // NOTE (intentional deviation from Roslyn): Roslyn inherits System.Object's documentation
+        // for a class whose only supertype is object; F# instead falls through to the first
+        // interface (or nothing) to avoid surfacing System.Object's summary as tooltip noise.
         let tryBaseTypeTarget (ty: TType) =
+            // Roslyn GetCandidateSymbol: structs, enums and delegates have no inheritance candidate.
+            if isStructTy g ty || isEnumTy g ty || isDelegateTy g ty then
+                None
+            else
+
             let baseTyOpt =
                 match GetSuperTypeOfType g amap m ty with
                 | Some baseTy when not (isObjTyAnyNullness g baseTy) -> Some baseTy

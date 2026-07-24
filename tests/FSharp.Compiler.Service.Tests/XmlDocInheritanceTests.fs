@@ -290,3 +290,70 @@ type Derive{caret}d() = class end
 
     Assert.Contains("Base summary text", xmlText xml)
     Assert.DoesNotContain("<inheritdoc", xmlText xml)
+
+// --- Phase 4: implicit resolution priority parity (Roslyn GetCandidateSymbol) ---
+
+[<Fact>]
+let ``engine does not leak implicit target across cref chains`` () =
+    // A explicitly inherits from B; B has a bare <inheritdoc/> (implicit). When expanding B's
+    // content, the implicit target must be B's (unknown at the text-only engine layer -> None),
+    // NOT A's implicit target. The bogus implicit target below must never be consulted.
+    let result =
+        expandWith
+            [ "B", """<summary>B summary</summary><inheritdoc/>""" ]
+            (Some "SHOULD_NOT_BE_USED")
+            """<inheritdoc cref="B"/>"""
+
+    Assert.Contains("B summary", result)
+    Assert.DoesNotContain("<inheritdoc", result)
+    Assert.DoesNotContain("SHOULD_NOT_BE_USED", result)
+
+[<Fact>]
+let ``tooltip drops implicit inheritdoc on class with object base and no interface`` () =
+    // Roslyn would inherit System.Object's docs here; F# intentionally treats a bare object base
+    // as "nothing useful to inherit" (documented deviation) and drops the tag silently.
+    let xml =
+        getTooltipXml
+            """
+module Test
+/// <inheritdoc/>
+type Lon{caret}e() = class end
+"""
+
+    Assert.DoesNotContain("<inheritdoc", xmlText xml)
+    Assert.DoesNotContain("Supports all classes", xmlText xml)
+
+[<Fact>]
+let ``symbol drops implicit inheritdoc on a struct (no ValueType inheritance)`` () =
+    // A struct's only supertype is System.ValueType. Roslyn (and the inheritdoc spec) return no
+    // candidate for structs/enums/delegates, so nothing is inherited. Guards against the Path A
+    // resolver reaching System.ValueType's external documentation.
+    let xml =
+        getSymbolXml
+            "S"
+            """
+module Test
+/// <inheritdoc/>
+[<Struct>]
+type S =
+    val X: int
+let f (x: S) = x{caret}
+"""
+
+    Assert.DoesNotContain("<inheritdoc", xmlText xml)
+    Assert.DoesNotContain("base class for value", xmlText xml)
+
+[<Fact>]
+let ``symbol drops implicit inheritdoc on a delegate`` () =
+    let xml =
+        getSymbolXml
+            "D"
+            """
+module Test
+/// <inheritdoc/>
+type D = delegate of int -> int
+let f (x: D) = x{caret}
+"""
+
+    Assert.DoesNotContain("<inheritdoc", xmlText xml)
+    Assert.DoesNotContain("invocation list", xmlText xml)

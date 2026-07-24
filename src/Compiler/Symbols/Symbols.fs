@@ -292,6 +292,12 @@ module Impl =
     let getImplicitTargetCrefForEntity (cenv: SymbolEnv) (entity: EntityRef) : string option =
         try
             let ty = generalizedTyconRef cenv.g entity
+            // Roslyn GetCandidateSymbol: structs, enums and delegates have no inheritance candidate.
+            // Their CLR supertype (System.ValueType / System.Enum / System.MulticastDelegate) must not
+            // be surfaced as inherited documentation.
+            if isStructTy cenv.g ty || isEnumTy cenv.g ty || isDelegateTy cenv.g ty then
+                None
+            else
             // First try base class
             match GetSuperTypeOfType cenv.g cenv.amap range0 ty with
             | Some baseTy when not (isObjTyAnyNullness cenv.g baseTy) ->
@@ -300,7 +306,11 @@ module Impl =
                 | ValueSome tcref -> Some ("T:" + tcref.CompiledRepresentationForNamedType.FullName)
                 | ValueNone -> None
             | _ ->
-                // Fall back to first implemented interface
+                // Fall back to first implemented interface.
+                // NOTE (intentional deviation from Roslyn): for a class whose only supertype is
+                // System.Object, Roslyn inherits System.Object's documentation. F# instead falls
+                // through to the first implemented interface (or nothing), because surfacing
+                // System.Object's summary as a tooltip is noise rather than useful inheritance.
                 let interfaces = GetImmediateInterfacesOfType SkipUnrefInterfaces.Yes cenv.g cenv.amap range0 ty
                 match interfaces with
                 | intfTy :: _ ->
