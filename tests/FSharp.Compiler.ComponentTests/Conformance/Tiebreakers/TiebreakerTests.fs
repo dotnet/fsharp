@@ -1455,3 +1455,64 @@ let p = Pair(Some 1, Some 2)
         |> shouldFail
         |> withErrorCode 41
         |> ignore
+
+    // Edge-case matrix for scope (a): every row is a genuine rule-#13 decision (FS0041 at
+    // --langversion:default, resolves to the concrete overload "c" at preview), covering the
+    // axes: naked generics, constructors, extension methods, static methods, optionals, paramarray.
+    let mostConcreteEdgeCases: obj[] seq =
+        let case (name: string) (source: string) =
+            let checkedSource =
+                source + sprintf "\nif r <> \"c\" then failwith (\"%s: got \" + r)" name
+
+            [| box name; box checkedSource |]
+
+        [
+            case "naked-generic-ctor" """
+module T
+type W<'T>(t: string) =
+    new(x: 'T)        = W<'T>("g")
+    new(x: 'T option) = W<'T>("c")
+    member _.T = t
+let r = (W(Some 5)).T"""
+
+            case "generic-extension" """
+module T
+open System.Runtime.CompilerServices
+type W() = class end
+[<Extension>]
+type E =
+    [<Extension>] static member M(w: W, x: 'T)        = "g"
+    [<Extension>] static member M(w: W, x: 'T option) = "c"
+let r = (W()).M(Some 5)"""
+
+            case "static-method-generic-type" """
+module T
+type Factory<'T>() =
+    static member Make(x: 'T)        = "g"
+    static member Make(x: 'T option) = "c"
+let r = Factory<_>.Make(Some 5)"""
+
+            case "optional-tail" """
+module T
+type F() =
+    static member M(x: 'T, ?y: int)        = "g"
+    static member M(x: 'T option, ?y: int) = "c"
+let r = F.M(Some 5)"""
+
+            case "paramarray-tail" """
+module T
+type F() =
+    static member M(x: 'T, [<System.ParamArray>] rest: int[])        = "g"
+    static member M(x: 'T option, [<System.ParamArray>] rest: int[]) = "c"
+let r = F.M(Some 5)"""
+        ]
+
+    [<Theory>]
+    [<MemberData(nameof mostConcreteEdgeCases)>]
+    let ``MoreConcrete - edge-case matrix picks the concrete overload`` (_name: string) (source: string) =
+        FSharp source
+        |> withLangVersionPreview
+        |> asExe
+        |> compileAndRun
+        |> shouldSucceed
+        |> ignore
