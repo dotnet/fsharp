@@ -429,22 +429,28 @@ stages:
               coreclr_release:
                 _configuration: Release
                 _testKind: testCoreclr
+                prepareMachineArg: ''
                 transparentCompiler: # Empty display name part.
               vs_release:
                 _configuration: Release
                 _testKind: testVs
                 setupVsHive: true
                 FSharp_CacheEvictionImmediate: true
+                prepareMachineArg: ''
                 transparentCompiler:
               transparent_compiler_release:
                 _configuration: Release
                 _testKind: testCoreclr
                 TEST_TRANSPARENT_COMPILER: 1 # Pipeline variable will map to env var.
+                prepareMachineArg: ''
                 transparentCompiler: TransparentCompiler
-              # inttests_release:
-              #   _configuration: Release
-              #   _testKind: testIntegration
-              #   setupVsHive: true
+              inttests_release:
+                _configuration: Release
+                _testKind: testIntegration
+                setupVsHive: true
+                # Enables on-exit devenv cleanup; the integration leg also runs VS on an
+                # interactive desktop session (Setup-IntegrationTestRun in eng\Build.ps1).
+                prepareMachineArg: -prepareMachine
           steps:
           - checkout: self
             clean: true
@@ -453,13 +459,25 @@ stages:
             displayName: Setup VS Hive
             condition: eq(variables.setupVsHive, 'true')
 
-          - script: eng\CIBuildNoPublish.cmd -compressallmetadata -configuration $(_configuration) -$(_testKind)
+          - script: eng\CIBuildNoPublish.cmd -compressallmetadata -configuration $(_configuration) -$(_testKind) $(prepareMachineArg)
             env:
               DOTNET_DbgEnableMiniDump: 1
               DOTNET_DbgMiniDumpType: 2 # 1=mini, 2=heap, 3=triage, 4=full. Heap dumps include managed object data for debugging.
               DOTNET_DbgMiniDumpName: $(Build.SourcesDirectory)\artifacts\log\$(_configuration)\$(Build.BuildId)-%e-%p-%t.dmp
               NativeToolsOnMachine: true
             displayName: Build and Test $(_testKind) $(transparentCompiler)
+
+          # Publish the integration-test startup screenshot to prove devenv ran on a live
+          # interactive desktop session (captured by Setup-IntegrationTestRun).
+          - task: PublishBuildArtifacts@1
+            displayName: Publish Integration Test Screenshot
+            condition: and(always(), eq(variables._testKind, 'testIntegration'))
+            continueOnError: true
+            inputs:
+                PathToPublish: '$(Build.SourcesDirectory)\artifacts\log\$(_configuration)\StartingBuild.png'
+                ArtifactName: 'Windows $(_configuration) $(_testKind) screenshot'
+                ArtifactType: Container
+                parallel: true
 
           - task: PublishTestResults@2
             displayName: Publish Test Results

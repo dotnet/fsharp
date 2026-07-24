@@ -402,6 +402,90 @@ function TestUsingMSBuild([string] $testProject, [string] $targetFramework, [str
     Exec-Console $dotnetExe $test_args
 }
 
+# Runs a test assembly via the xUnit v2 console runner, bypassing `dotnet test` (and therefore
+# the repo-wide Microsoft.Testing.Platform gate declared in global.json). Used only for projects
+# whose harness cannot run under MTP -- today that is FSharp.Editor.IntegrationTests, which
+# depends on Microsoft.VisualStudio.Extensibility.Testing.Xunit (VS-hive launcher, xUnit-v2-locked).
+# The runner is restored via a <PackageDownload Include="xunit.runner.console" .../> on the
+# test project, so it is present in the NuGet global packages folder after a normal slnx restore.
+function TestUsingXUnitConsole([string] $testProject, [string] $targetFramework) {
+
+    $projectName = [System.IO.Path]::GetFileNameWithoutExtension($testProject)
+    $assemblyPath = "$ArtifactsDir\bin\$projectName\$configuration\$targetFramework\$projectName.dll"
+    if (-not (Test-Path $assemblyPath)) {
+        throw "Test assembly not found at $assemblyPath. Was $projectName built before -testIntegration was invoked?"
+    }
+
+    # Get-PackageVersion (eng\build-utils.ps1) reads <XunitRunnerConsoleV2Version> from eng\Versions.props,
+    # and Get-PackageDir resolves the NuGet cache path. Defensive Trim() covers accidental whitespace in the value.
+    $runnerVersion = (Get-PackageVersion "XunitRunnerConsoleV2").Trim()
+    $xunitConsole = Join-Path (Get-PackageDir "xunit.runner.console" $runnerVersion) "tools\net472\xunit.console.exe"
+    if (-not (Test-Path $xunitConsole)) {
+        throw "xunit.console.exe not found at $xunitConsole. Ensure restore of $projectName ran first (PackageDownload of xunit.runner.console v$runnerVersion)."
+    }
+
+    $testResultsDir = "$ArtifactsDir\TestResults\$configuration"
+    Create-Directory $testResultsDir
+    $jobName = if ($env:SYSTEM_JOBNAME) { $env:SYSTEM_JOBNAME } else { "local" }
+    $resultsXml = Join-Path $testResultsDir "$projectName.$targetFramework.$jobName.xml"
+
+    # -parallel none / -noshadow mirror the project's xunit.runner.json (parallelizeTestCollections=false, shadowCopy=false).
+    $xunit_args = """$assemblyPath"" -xml ""$resultsXml"" -parallel none -noshadow -nologo"
+
+    Write-Host("$xunitConsole $xunit_args")
+
+    Exec-Console $xunitConsole $xunit_args
+}
+
+# Sets up the CI machine for running our VS integration tests, mirroring dotnet/roslyn's
+# Setup-IntegrationTestRun (eng\build.ps1). The VS editor's view-driven diagnostic producers
+# (e.g. the error-squiggle tagger) only run reliably with a realized, visible desktop, so we
+# ensure devenv runs on an interactive session: probe by taking a screenshot, and if that fails
+# reconnect the session to the physical console via tscon, then re-capture (fail-fast otherwise).
+function Setup-IntegrationTestRun() {
+    # Ensure leftover devenv instances are cleaned up on exit (honored when -ci -prepareMachine).
+    $script:processesToStopOnExit += "devenv"
+
+    $screenshotPath = (Join-Path $LogDir "StartingBuild.png")
+    try {
+        Capture-Screenshot $screenshotPath
+    }
+    catch {
+        Write-Host "Screenshot failed; attempting to connect to the console"
+
+        # Keep the session open so we have a UI to interact with
+        $quserItems = ((quser $env:USERNAME | Select-Object -Skip 1) -split '\s+')
+        $sessionid = $quserItems[2]
+        if ($sessionid -eq 'Disc') {
+            # When the session isn't connected, the third value is 'Disc' instead of the ID
+            $sessionid = $quserItems[1]
+        }
+
+        if ($quserItems[1] -eq 'console') {
+            Write-Host "Disconnecting from console before attempting reconnection"
+            try {
+                tsdiscon
+            } catch {
+                # ignore
+            }
+
+            # Disconnection is asynchronous, so wait a few seconds for it to complete
+            Start-Sleep -Seconds 3
+            query user
+        }
+
+        Write-Host "tscon $sessionid /dest:console"
+        tscon $sessionid /dest:console
+
+        # Connection is asynchronous, so wait a few seconds for it to complete
+        Start-Sleep 3
+        query user
+
+        # Make sure we can capture a screenshot. An exception at this point will fail-fast the build.
+        Capture-Screenshot $screenshotPath
+    }
+}
+
 function Prepare-TempDir() {
     Copy-Item (Join-Path $RepoRoot "tests\Resources\Directory.Build.props") $TempDir
     Copy-Item (Join-Path $RepoRoot "tests\Resources\Directory.Build.targets") $TempDir
@@ -529,6 +613,7 @@ try {
     Process-Arguments
 
     . (Join-Path $PSScriptRoot "build-utils.ps1")
+    . (Join-Path $PSScriptRoot "build-utils-win.ps1")
 
     Update-Arguments
 
@@ -544,6 +629,15 @@ try {
     if ($ci) {
         Prepare-TempDir
         EnablePreviewSdks
+
+        if ($testIntegration -and -not $noVisualStudio) {
+            # Minimize all windows to avoid interference during integration test runs, then ensure
+            # devenv has an interactive desktop session (see Setup-IntegrationTestRun).
+            $shell = New-Object -ComObject "Shell.Application"
+            $shell.MinimizeAll()
+
+            Setup-IntegrationTestRun
+        }
     }
 
     $buildTool = InitializeBuildTool
@@ -665,8 +759,8 @@ try {
         TestUsingMSBuild -testProject "$RepoRoot\vsintegration\tests\UnitTests\VisualFSharp.UnitTests.fsproj" -targetFramework $script:desktopTargetFramework
     }
 
-    if ($testIntegration) {
-        TestUsingMSBuild -testProject "$RepoRoot\vsintegration\tests\FSharp.Editor.IntegrationTests\FSharp.Editor.IntegrationTests.csproj" -targetFramework $script:desktopTargetFramework
+    if ($testIntegration -and -not $noVisualStudio) {
+        TestUsingXUnitConsole -testProject "$RepoRoot\vsintegration\tests\FSharp.Editor.IntegrationTests\FSharp.Editor.IntegrationTests.csproj" -targetFramework $script:desktopTargetFramework
     }
 
     if ($testAOT) {

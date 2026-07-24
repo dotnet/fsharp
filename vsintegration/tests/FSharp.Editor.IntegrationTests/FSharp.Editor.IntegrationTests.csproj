@@ -35,8 +35,21 @@
     <PackageReference Include="Nullable" Version="1.3.0" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- xUnit v2 console runner: this project is excluded from the repo-wide Microsoft.Testing.Platform
+         gate (ExcludeFromTestPackageReferences above) because Microsoft.VisualStudio.Extensibility.Testing.Xunit
+         is locked to xUnit v2. PackageDownload restores the runner to the NuGet global packages folder
+         so eng\Build.ps1's TestUsingXUnitConsole can locate it, without adding it to this project's
+         compile/runtime closure. PackageDownload requires the bracketed exact-pin syntax. -->
+    <PackageDownload Include="xunit.runner.console" Version="[$(XunitRunnerConsoleV2Version)]" />
+  </ItemGroup>
+
   <Target Name="SyncXunitDesktopDll" AfterTargets="Build" Condition="'$(OutputType)' == 'Exe'">
     <Copy SourceFiles="$(TargetPath)" DestinationFiles="$(TargetDir)$(AssemblyName).dll" SkipUnchangedFiles="true" />
+    <!-- xunit.console.exe loads <dll>.config (not <exe>.config) for the test-AppDomain's binding redirects.
+         Without this copy, the IdeTestFramework's heavy VS-interop dependency graph fails to bind and the
+         custom xUnit test framework silently reports 0 discovered tests. -->
+    <Copy SourceFiles="$(TargetPath).config" DestinationFiles="$(TargetDir)$(AssemblyName).dll.config" SkipUnchangedFiles="true" Condition="Exists('$(TargetPath).config')" />
   </Target>
 
 </Project>
