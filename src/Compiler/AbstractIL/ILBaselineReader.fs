@@ -27,12 +27,28 @@ let private readInt32 (bytes: byte[]) (offset: int) =
     ||| (int bytes.[offset + 2] <<< 16)
     ||| (int bytes.[offset + 3] <<< 24)
 
-/// Read a little-endian 64-bit integer from bytes at offset.
-let private readInt64 (bytes: byte[]) (offset: int) =
-    int64 (readInt32 bytes offset) ||| (int64 (readInt32 bytes (offset + 4)) <<< 32)
+/// Read a little-endian unsigned 64-bit integer from bytes at offset.
+let readUInt64 (bytes: byte[]) (offset: int) =
+    uint64 (uint32 (readInt32 bytes offset))
+    ||| (uint64 (uint32 (readInt32 bytes (offset + 4))) <<< 32)
 
 /// Number of metadata tables per ECMA-335.
 let private tableCount = 64
+
+/// Computes the first table-row offset from the table header and parsed row counts.
+let tableDataStart tablesOffset (valid: uint64) (rowCounts: int[]) =
+    if rowCounts.Length <> tableCount then
+        invalidArg (nameof rowCounts) $"metadata table row counts must contain {tableCount} entries"
+
+    let mutable rowCountSize = 0
+
+    for i in 0..63 do
+        // ECMA-335 II.24.2.6 stores one row-count cell for every Valid bit,
+        // including tables whose declared row count is zero.
+        if (valid &&& (1UL <<< i)) <> 0UL then
+            rowCountSize <- rowCountSize + 4
+
+    tablesOffset + 24 + rowCountSize
 
 /// Find the CLI metadata root in PE file bytes.
 /// Returns the offset to the metadata root, or None if not found.
@@ -157,8 +173,8 @@ let private findStream (headers: StreamHeader list) (name: string) : StreamHeade
     headers |> List.tryFind (fun h -> h.Name = name)
 
 /// Parse table row counts from the #~ or #- stream.
-/// Returns (heapSizes byte, table row counts array, tables stream offset).
-let private parseTablesStream (bytes: byte[]) (tablesStream: StreamHeader) : byte * int[] * int =
+/// Returns the heap-size flags, row counts, tables-stream offset, and Valid mask.
+let private parseTablesStream (bytes: byte[]) (tablesStream: StreamHeader) : byte * int[] * int * uint64 =
     let offset = tablesStream.Offset
 
     // Header structure:
@@ -172,13 +188,13 @@ let private parseTablesStream (bytes: byte[]) (tablesStream: StreamHeader) : byt
     // 24+: Row counts for present tables
 
     let heapSizes = bytes.[offset + 6]
-    let valid = readInt64 bytes (offset + 8)
+    let valid = readUInt64 bytes (offset + 8)
 
     let rowCounts = Array.zeroCreate tableCount
     let mutable rowCountOffset = offset + 24
 
     for i in 0..63 do
-        if (valid &&& (1L <<< i)) <> 0L then
+        if (valid &&& (1UL <<< i)) <> 0UL then
             let rowCount = readInt32 bytes rowCountOffset
 
             if rowCount < 0 then
@@ -187,7 +203,7 @@ let private parseTablesStream (bytes: byte[]) (tablesStream: StreamHeader) : byt
             rowCounts.[i] <- rowCount
             rowCountOffset <- rowCountOffset + 4
 
-    heapSizes, rowCounts, offset
+    heapSizes, rowCounts, offset, valid
 
 /// Extract metadata snapshot from PE file bytes.
 /// This replaces metadataSnapshotFromReader for hot reload baseline creation.
@@ -209,7 +225,7 @@ let metadataSnapshotFromBytes (bytes: byte[]) : MetadataSnapshot option =
         match tablesStream with
         | None -> None
         | Some tables ->
-            let _, rowCounts, _ = parseTablesStream bytes tables
+            let _, rowCounts, _, _ = parseTablesStream bytes tables
 
             // SRM's StringHeap trims the #Strings alignment padding down to a single
             // terminating zero (StringHeap.TrimEnd), and EnC heap aggregation (runtime,
@@ -630,7 +646,7 @@ let private createMetadataContext (bytes: byte[]) : MetadataContext option =
         match tablesStreamOpt with
         | None -> None
         | Some tablesStream ->
-            let heapSizes, rowCounts, tablesOffset = parseTablesStream bytes tablesStream
+            let heapSizes, rowCounts, tablesOffset, valid = parseTablesStream bytes tablesStream
 
             let pointerTables =
                 [|
@@ -654,14 +670,8 @@ let private createMetadataContext (bytes: byte[]) : MetadataContext option =
                 let guidsBig = (heapSizes &&& 0x02uy) <> 0uy
                 let blobsBig = (heapSizes &&& 0x04uy) <> 0uy
 
-                // Calculate where row data starts (after row count array)
-                let mutable rowCountSize = 0
-
-                for i in 0..63 do
-                    if rowCounts.[i] > 0 then
-                        rowCountSize <- rowCountSize + 4
-
-                let tablesStart = tablesOffset + 24 + rowCountSize
+                // Calculate where row data starts (after row count array).
+                let tablesStart = tableDataStart tablesOffset valid rowCounts
 
                 let stringsStream =
                     streamHeaders |> List.tryFind (fun header -> header.Name = "#Strings")
@@ -1344,7 +1354,7 @@ let readModuleMvidFromBytes (bytes: byte[]) : System.Guid option =
         match tablesStreamOpt with
         | None -> None
         | Some tablesStream ->
-            let heapSizes, rowCounts, tablesOffset = parseTablesStream bytes tablesStream
+            let heapSizes, rowCounts, tablesOffset, valid = parseTablesStream bytes tablesStream
 
             // Check if Module table has at least 1 row
             if rowCounts.[0] < 1 then
@@ -1357,14 +1367,8 @@ let readModuleMvidFromBytes (bytes: byte[]) : System.Guid option =
 
                 let stringIndexSize = if stringsBig then 4 else 2
 
-                // Row counts end, then rows start
-                let mutable rowCountSize = 0
-
-                for i in 0..63 do
-                    if rowCounts.[i] > 0 then
-                        rowCountSize <- rowCountSize + 4
-
-                let tablesStart = tablesOffset + 24 + rowCountSize
+                // Row counts end, then rows start.
+                let tablesStart = tableDataStart tablesOffset valid rowCounts
 
                 // Module table is table 0, so it starts at tablesStart
                 // Module row: Generation (2) + Name (string index) + Mvid (guid index) + EncId (guid index) + EncBaseId (guid index)
@@ -1424,14 +1428,14 @@ let private parsePdbTablesStream (bytes: byte[]) (tablesStream: StreamHeader) : 
     let offset = tablesStream.Offset
 
     // Header: Reserved(4) + MajorVersion(1) + MinorVersion(1) + HeapSizes(1) + Reserved(1) + Valid(8) + Sorted(8) + RowCounts(var)
-    let valid = readInt64 bytes (offset + 8)
+    let valid = readUInt64 bytes (offset + 8)
 
     // PDB table row counts (8 tables, indices 0x30-0x37)
     let pdbRowCounts = Array.zeroCreate 8
     let mutable rowCountOffset = offset + 24
 
     for i in 0..63 do
-        if (valid &&& (1L <<< i)) <> 0L then
+        if (valid &&& (1UL <<< i)) <> 0UL then
             let count = readInt32 bytes rowCountOffset
             // Map table index to PDB array index
             if i >= 0x30 && i <= 0x37 then
