@@ -10,6 +10,7 @@ open Internal.Utilities.Library.Extras
 open FSharp.Core.Printf
 open FSharp.Compiler
 open FSharp.Compiler.AbstractIL.Diagnostics
+open FSharp.Compiler.AccessibilityLogic
 open FSharp.Compiler.DiagnosticsLogger
 open FSharp.Compiler.InfoReader
 open FSharp.Compiler.Infos
@@ -21,6 +22,7 @@ open FSharp.Compiler.Text.Range
 open FSharp.Compiler.Text.Layout
 open FSharp.Compiler.Text.TaggedText
 open FSharp.Compiler.Xml
+open FSharp.Compiler.XmlDocInheritance
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypedTreeOps
@@ -339,13 +341,102 @@ module internal SymbolHelpers =
 
         |> GetXmlDocFromLoader infoReader
 
+    /// Computes the implicit inherit target for an Item at the tooltip/completion/signature-help
+    /// layer (Path B): a cref token plus the base type/member's raw XML doc text, read directly
+    /// from the in-memory typed tree. Returns None when no base is readily computable, in which
+    /// case a naked <inheritdoc/> silently expands to nothing.
+    ///
+    /// Only the headline Item kinds are supported here: types (base class or first interface) and
+    /// overriding methods/properties. All other kinds return None. This mirrors the Path A helpers
+    /// getImplicitTargetCrefForEntity / getImplicitTargetCrefForMember in Symbols.fs, but reads the
+    /// base doc directly (the InfoReader layer has no SymbolEnv/CCU walk to resolve arbitrary crefs).
+    ///
+    /// The returned cref token is only ever compared for equality against itself by the resolver
+    /// built in GetXmlCommentForItemAux, so its exact spelling does not need to match a real cref.
+    let private tryGetImplicitInheritTarget (infoReader: InfoReader) m (d: Item) : (string * string) option =
+        let g = infoReader.g
+        let amap = infoReader.amap
+
+        let docTextOf (xmlDoc: XmlDoc) =
+            if xmlDoc.IsEmpty then None else Some(xmlDoc.GetXmlText())
+
+        // Base class (skipping obj) or, failing that, the first implemented interface of a type.
+        let tryBaseTypeTarget (ty: TType) =
+            let baseTyOpt =
+                match GetSuperTypeOfType g amap m ty with
+                | Some baseTy when not (isObjTyAnyNullness g baseTy) -> Some baseTy
+                | _ ->
+                    match GetImmediateInterfacesOfType SkipUnrefInterfaces.Yes g amap m ty with
+                    | intfTy :: _ -> Some intfTy
+                    | [] -> None
+
+            match baseTyOpt with
+            | Some baseTy ->
+                match tryTcrefOfAppTy g baseTy with
+                | ValueSome tcref ->
+                    docTextOf tcref.XmlDoc
+                    |> Option.map (fun xmlText -> "T:" + tcref.CompiledRepresentationForNamedType.FullName, xmlText)
+                | ValueNone -> None
+            | None -> None
+
+        // The overridden member with the same name on the base class of the member's enclosing type.
+        let tryBaseMethodTarget (name: string) (enclosingTy: TType) =
+            match GetSuperTypeOfType g amap m enclosingTy with
+            | Some baseTy when not (isObjTyAnyNullness g baseTy) ->
+                GetImmediateIntrinsicMethInfosOfType (Some name, AccessibleFromSomeFSharpCode) g amap m baseTy
+                |> List.tryPick (fun minfo -> docTextOf minfo.XmlDoc |> Option.map (fun xmlText -> "M:" + name, xmlText))
+            | _ -> None
+
+        let tryBasePropertyTarget (name: string) (enclosingTy: TType) =
+            match GetSuperTypeOfType g amap m enclosingTy with
+            | Some baseTy when not (isObjTyAnyNullness g baseTy) ->
+                GetImmediateIntrinsicPropInfosOfType (Some name, AccessibleFromSomeFSharpCode) g amap m baseTy
+                |> List.tryPick (fun pinfo -> docTextOf pinfo.XmlDoc |> Option.map (fun xmlText -> "P:" + name, xmlText))
+            | _ -> None
+
+        try
+            match d with
+            | Item.DelegateCtor ty
+            | Item.Types(_, ty :: _) -> tryBaseTypeTarget ty
+            | Item.UnqualifiedType(tcref :: _) -> tryBaseTypeTarget (generalizedTyconRef g tcref)
+            | Item.MethodGroup(_, minfo :: _, _) -> tryBaseMethodTarget minfo.LogicalName minfo.ApparentEnclosingType
+            | Item.Property(info = pinfo :: _) -> tryBasePropertyTarget pinfo.PropertyName pinfo.ApparentEnclosingType
+            | _ -> None
+        with _ ->
+            None
+
     /// Produce an XmlComment with a signature or raw text, given the F# comment and the item
     let GetXmlCommentForItemAux (xmlDoc: XmlDoc option) (infoReader: InfoReader) m d =
         match xmlDoc with
-        | Some xmlDoc when not xmlDoc.IsEmpty  ->
-            // <inheritdoc> elements are left intact here. Full resolution happens through the
-            // Symbols.fs path (FSharpEntity.XmlDoc / FSharpMemberOrFunctionOrValue.XmlDoc).
-            FSharpXmlDoc.FromXmlText xmlDoc
+        | Some xmlDoc when not xmlDoc.IsEmpty ->
+            let xmlText = xmlDoc.GetXmlText()
+
+            // Fast path: the overwhelming majority of docs contain no <inheritdoc>. Pay only a
+            // single ordinal scan and return unchanged, without computing base types or resolvers.
+            if xmlText.IndexOf("<inheritdoc", System.StringComparison.Ordinal) < 0 then
+                FSharpXmlDoc.FromXmlText xmlDoc
+            else
+                // Only implicit <inheritdoc/> is resolvable at this layer (no SymbolEnv/CCU walk to
+                // resolve explicit crefs). Compute the base target and expand against it.
+                let implicitTargetCrefOpt, resolveCref =
+                    match tryGetImplicitInheritTarget infoReader m d with
+                    | Some(baseCref, baseXmlText) ->
+                        let resolve cref =
+                            if System.String.Equals(cref, baseCref, System.StringComparison.Ordinal) then
+                                Some baseXmlText
+                            else
+                                None
+
+                        Some baseCref, resolve
+                    | None -> None, (fun _ -> None)
+
+                let expandedText =
+                    expandInheritDocFromXmlText resolveCref implicitTargetCrefOpt m Set.empty xmlText
+
+                if System.String.Equals(xmlText, expandedText, System.StringComparison.Ordinal) then
+                    FSharpXmlDoc.FromXmlText xmlDoc
+                else
+                    FSharpXmlDoc.FromXmlText(XmlDoc([| expandedText |], xmlDoc.Range))
         | _ -> GetXmlDocHelpSigOfItemForLookup infoReader m d
 
     let GetXmlCommentForMethInfoItem infoReader m d (minfo: MethInfo) =

@@ -167,7 +167,116 @@ let ``engine removes implicit inheritdoc without target`` () =
     Assert.Contains("After", result)
     Assert.DoesNotContain("<inheritdoc", result)
 
-[<Fact(Skip = "RED: blocked on Phase 3 IDE wiring; proves inheritdoc not expanded in tooltip today (G1)")>]
+[<Fact>]
+let ``tooltip expands implicit inheritdoc from base class`` () =
+    let xml =
+        getTooltipXml
+            """
+module Test
+/// <summary>Base summary text</summary>
+type Base() = class end
+/// <inheritdoc/>
+type Derive{caret}d() = inherit Base()
+"""
+
+    Assert.Contains("Base summary text", xmlText xml)
+    Assert.DoesNotContain("<inheritdoc", xmlText xml)
+
+[<Fact>]
+let ``tooltip expands implicit inheritdoc from implemented interface`` () =
+    let xml =
+        getTooltipXml
+            """
+module Test
+/// <summary>Interface summary text</summary>
+type IThing =
+    abstract member Do: unit -> unit
+/// <inheritdoc/>
+type Thin{caret}g() =
+    interface IThing with
+        member _.Do() = ()
+"""
+
+    Assert.Contains("Interface summary text", xmlText xml)
+    Assert.DoesNotContain("<inheritdoc", xmlText xml)
+
+[<Fact>]
+let ``tooltip expands implicit inheritdoc on overriding method`` () =
+    let xml =
+        getTooltipXml
+            """
+module Test
+type Base() =
+    /// <summary>Base method summary</summary>
+    abstract member Foo: unit -> unit
+    default _.Foo() = ()
+type Derived() =
+    inherit Base()
+    /// <inheritdoc/>
+    override _.Foo() = ()
+let d = Derived()
+d.Fo{caret}o()
+"""
+
+    Assert.Contains("Base method summary", xmlText xml)
+    Assert.DoesNotContain("<inheritdoc", xmlText xml)
+
+[<Fact>]
+let ``tooltip expands implicit inheritdoc on overriding property`` () =
+    let xml =
+        getTooltipXml
+            """
+module Test
+type Base() =
+    /// <summary>Base property summary</summary>
+    abstract member Value: int
+    default _.Value = 0
+type Derived() =
+    inherit Base()
+    /// <inheritdoc/>
+    override _.Value = 1
+let d = Derived()
+d.Val{caret}ue
+"""
+
+    Assert.Contains("Base property summary", xmlText xml)
+    Assert.DoesNotContain("<inheritdoc", xmlText xml)
+
+[<Fact>]
+let ``completion expands implicit inheritdoc from base class`` () =
+    let xml =
+        getCompletionXml
+            "Derived"
+            """
+module Test
+/// <summary>Base summary text</summary>
+type Base() = class end
+/// <inheritdoc/>
+type Derived() = inherit Base()
+let _ : Deri{caret} = failwith ""
+"""
+
+    Assert.Contains("Base summary text", xmlText xml)
+    Assert.DoesNotContain("<inheritdoc", xmlText xml)
+
+[<Fact>]
+let ``symbol resolves explicit cref inheritdoc to a same-file type`` () =
+    let xml =
+        getSymbolXml
+            "Derived"
+            """
+module Test
+/// <summary>Base summary text</summary>
+type Base() = class end
+/// <inheritdoc cref="T:Test.Base"/>
+type Derived() = class end
+let _ = Derived(){caret}
+"""
+
+    Assert.Contains("Base summary text", xmlText xml)
+    Assert.DoesNotContain("<inheritdoc", xmlText xml)
+
+[<Fact(Skip = "documented limitation: explicit cref not resolvable at InfoReader/tooltip layer; use FSharpSymbol.XmlDoc")>]
 let ``tooltip expands explicit cref inheritdoc to a same-file type`` () =
     let xml =
         getTooltipXml
