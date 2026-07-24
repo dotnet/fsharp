@@ -285,3 +285,16 @@ val mkSynField:
         SynField
 
 val leadingKeywordIsAbstract: SynLeadingKeyword -> bool
+
+val mkAbstractMember:
+    parseState: IParseState ->
+    attrs: SynAttributeList list ->
+    accessBeforeKeyword: SynAccess option ->
+    abstractMemberFlags: (SynMemberKind -> SynMemberFlags) * SynLeadingKeyword ->
+        accessBeforeId: SynAccess option ->
+        mInline: range option ->
+        id: SynIdent ->
+        typeParams: SynValTyparDecls ->
+        typeWithConstraints: SynType * SynValInfo ->
+            accessors: range option * (SynMemberKind * GetSetKeywords option * SynAccess option * SynAccess option) ->
+                SynMemberDefn list
