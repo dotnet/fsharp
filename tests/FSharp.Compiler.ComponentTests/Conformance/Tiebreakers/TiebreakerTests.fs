@@ -1372,50 +1372,12 @@ if result <> "{expected}" then
         |> shouldSucceed
         |> ignore
 
-    // -------------------------------------------------------------------------
-    // Phase 6 (scope a): most-concrete tiebreaker for constructors and
-    // generic-type members whose instantiation is inferred from the arguments.
-    // Method type args are empty for these, so the pre-Phase-6 gate excluded
-    // them and they resolved as FS0041.
-    // -------------------------------------------------------------------------
-
-    [<Fact>]
-    let ``MoreConcrete - inferred generic ctor prefers concrete param`` () =
-        FSharp """
-module Test
-
-type Wrapper<'T>(tag: string) =
-    new(x: 'T)        = Wrapper<'T>("value")
-    new(x: 'T option) = Wrapper<'T>("option")
-    member _.Tag = tag
-
-// 'T is inferred; BOTH ctors are applicable to (int option).
-let w = Wrapper(Some 5)
-if w.Tag <> "option" then failwithf "expected option, got %s" w.Tag
-        """
-        |> withLangVersionPreview
-        |> asExe
-        |> compileAndRun
-        |> shouldSucceed
-        |> ignore
-
-    [<Fact>]
-    let ``MoreConcrete - generic-type static member prefers concrete param`` () =
-        FSharp """
-module Test
-
-type Factory<'T>() =
-    static member Make(x: 'T)        = "value"
-    static member Make(x: 'T option) = "option"
-
-let r = Factory<_>.Make(Some 5)
-if r <> "option" then failwithf "expected option, got %s" r
-        """
-        |> withLangVersionPreview
-        |> asExe
-        |> compileAndRun
-        |> shouldSucceed
-        |> ignore
+    // Phase 6 (scope a): the most-concrete tiebreaker also applies to constructors and generic-type
+    // members whose instantiation is inferred from the arguments. These carry no method type args,
+    // so before Phase 6 the rule's gate excluded them and they resolved as FS0041. The "picks the
+    // concrete overload" behaviour across every member kind is covered by the parametrized matrix
+    // below; the standalone facts here assert the distinct guard behaviours (single-applicable,
+    // incomparable, and that a later shipped rule still decides successful resolutions).
 
     [<Fact>]
     let ``MoreConcrete - explicit type arg leaves a single applicable ctor`` () =
@@ -1456,9 +1418,69 @@ let p = Pair(Some 1, Some 2)
         |> withErrorCode 41
         |> ignore
 
+    [<Fact>]
+    let ``MoreConcrete - a later shipped rule still decides a successful resolution (static)`` () =
+        // Safety property: the most-concrete tiebreak is a last resort. It must not preempt a
+        // resolution that a rule enabled at default langversion already settles. Here the named
+        // arg z (string vs obj) makes the nullable/optional-interop rule decisive at default; the
+        // preview feature must select the SAME overload, not silently flip to the concrete one.
+        FSharp """
+module Test
+type Box<'T>() =
+    static member Make(x: 'T,        z: string) = "A_naked"
+    static member Make(x: 'T option, z: obj)    = "B_concrete"
+let r = Box.Make(Some 5, z = "k")
+if r <> "A_naked" then failwithf "expected A_naked, got %s" r
+        """
+        |> withLangVersionPreview
+        |> asExe
+        |> compileAndRun
+        |> shouldSucceed
+        |> ignore
+
+    [<Fact>]
+    let ``MoreConcrete - a later shipped rule still decides a successful resolution (ctor)`` () =
+        // Same safety property for constructors (empty method type args): the named arg z makes an
+        // earlier-at-default rule decisive; preview must run the same constructor body.
+        FSharp """
+module Test
+type W<'T> =
+    val tag: string
+    new (x: 'T,        z: string) = { tag = "A_naked:" + z }
+    new (x: 'T option, z: obj)    = { tag = "B_concrete:" + string z }
+let w = W(Some 5, z = "hi")
+if w.tag <> "A_naked:hi" then failwithf "expected A_naked:hi, got %s" w.tag
+        """
+        |> withLangVersionPreview
+        |> asExe
+        |> compileAndRun
+        |> shouldSucceed
+        |> ignore
+
+    [<Fact>]
+    let ``MoreConcrete - overload resolution priority still wins over concreteness`` () =
+        // Cross-feature guard: ORPA is a pre-filter applied before any tiebreak, so a high-priority
+        // LESS-concrete overload must beat a low-priority MORE-concrete one. The most-concrete rule
+        // must not resurrect the pruned low-priority candidate.
+        FSharp """
+module Test
+open System.Runtime.CompilerServices
+type C<'T>() =
+    [<OverloadResolutionPriority(1)>] static member M(x: 'T)        = "high-generic"
+    static member M(x: 'T option) = "low-concrete"
+let r = C<_>.M(Some 5)
+if r <> "high-generic" then failwithf "expected high-generic, got %s" r
+        """
+        |> withLangVersionPreview
+        |> asExe
+        |> compileAndRun
+        |> shouldSucceed
+        |> ignore
+
     // Edge-case matrix for scope (a): every row is a genuine rule-#13 decision (FS0041 at
-    // --langversion:default, resolves to the concrete overload "c" at preview), covering the
-    // axes: naked generics, constructors, extension methods, static methods, optionals, paramarray.
+    // --langversion:default, resolves to the concrete overload "c" at preview), covering the axes
+    // the feature must serve: naked generics, constructors, extension methods, static methods,
+    // instance methods on a generic type, optionals, and paramarray.
     let mostConcreteEdgeCases: obj[] seq =
         let case (name: string) (source: string) =
             let checkedSource =
@@ -1491,6 +1513,13 @@ type Factory<'T>() =
     static member Make(x: 'T)        = "g"
     static member Make(x: 'T option) = "c"
 let r = Factory<_>.Make(Some 5)"""
+
+            case "instance-method-generic-type" """
+module T
+type Factory<'T>() =
+    member _.Make(x: 'T)        = "g"
+    member _.Make(x: 'T option) = "c"
+let r = Factory<_>().Make(Some 5)"""
 
             case "optional-tail" """
 module T

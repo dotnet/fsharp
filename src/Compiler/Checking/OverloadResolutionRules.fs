@@ -138,16 +138,17 @@ let private containsSRTPTypeVar (g: TcGlobals) (ty: TType) : bool =
 
     loop ty
 
-/// True if any of these types mentions a comparable (non-SRTP) type variable — from a method
-/// type parameter OR an enclosing-type type parameter. The latter lets constructors and
+/// The type carried by a formal parameter.
+let private paramDataType (ParamData(_, _, _, _, _, _, _, ty)) = ty
+
+/// True if any of these parameters' types mentions a comparable (non-SRTP) type variable — from a
+/// method type parameter OR an enclosing-type type parameter. The latter lets constructors and
 /// generic-type members (whose instantiation is inferred from the arguments, so they carry no
-/// method type arguments) participate in the concreteness ordering. Reuses the existing
-/// free-typar machinery rather than introducing a new type walker.
-let private paramTypesMentionComparableTypeVar (g: TcGlobals) (paramTys: TType list) : bool =
-    paramTys
-    |> List.exists (fun ty ->
-        freeInTypeLeftToRight g true ty
-        |> List.exists (fun tp -> not (isStaticallyResolvedTypeParam tp)))
+/// method type arguments) participate in the concreteness ordering. Reuses the existing free-typar
+/// machinery rather than introducing a new type walker.
+let private paramsMentionComparableTypeVar (g: TcGlobals) (ps: ParamData list) : bool =
+    freeInTypesLeftToRight g true (List.map paramDataType ps)
+    |> List.exists (fun tp -> not (isStaticallyResolvedTypeParam tp))
 
 /// Returns 1 if ty1 is more concrete, -1 if ty2 is more concrete, 0 if incomparable.
 let compareTypeConcreteness (g: TcGlobals) ty1 ty2 =
@@ -227,19 +228,16 @@ let explainIncomparableMethodConcreteness<'T>
         meth2.Method.GetParamDatas(ctx.amap, ctx.m, meth2.Method.FormalMethodInst)
         |> List.concat
 
-    let paramTysOf ps =
-        ps |> List.map (fun (ParamData(_, _, _, _, _, _, _, ty)) -> ty)
-
     let hasSRTP ps =
-        paramTysOf ps |> List.exists (containsSRTPTypeVar ctx.g)
+        ps |> List.exists (fun p -> containsSRTPTypeVar ctx.g (paramDataType p))
 
     // Mirror moreConcreteRule's firing gate so the FS0041 detail only explains cases the rule
     // actually ranks: both parameter lists must mention a comparable (non-SRTP) type variable
     // and have equal length, and neither may involve SRTP.
     if
         formalParams1.Length <> formalParams2.Length
-        || not (paramTypesMentionComparableTypeVar ctx.g (paramTysOf formalParams1))
-        || not (paramTypesMentionComparableTypeVar ctx.g (paramTysOf formalParams2))
+        || not (paramsMentionComparableTypeVar ctx.g formalParams1)
+        || not (paramsMentionComparableTypeVar ctx.g formalParams2)
         || hasSRTP formalParams1
         || hasSRTP formalParams2
     then
@@ -260,10 +258,7 @@ let explainIncomparableMethodConcreteness<'T>
             | _ -> [ (paramIdx, compareTypeConcreteness ctx.g ty1 ty2) ]
 
         let allComparisons =
-            List.mapi2
-                (fun i (ParamData(_, _, _, _, _, _, _, ty1)) (ParamData(_, _, _, _, _, _, _, ty2)) -> collectComparisons (i + 1) ty1 ty2)
-                formalParams1
-                formalParams2
+            List.mapi2 (fun i p1 p2 -> collectComparisons (i + 1) (paramDataType p1) (paramDataType p2)) formalParams1 formalParams2
             |> List.concat
 
         let meth1Better =
@@ -549,22 +544,18 @@ let private moreConcreteRule: TiebreakRule =
                 let formalParams1 = getCachedParamData ctx candidate
                 let formalParams2 = getCachedParamData ctx other
 
-                let paramTysOf ps =
-                    ps |> List.map (fun (ParamData(_, _, _, _, _, _, _, ty)) -> ty)
-
-                let mentionsComparable ps =
-                    paramTypesMentionComparableTypeVar ctx.g (paramTysOf ps)
-
                 // Fire when both candidates' formal parameters mention a comparable type variable,
                 // whether from a method type parameter or an enclosing generic type (the latter
                 // covers constructors and generic-type members with inferred instantiation).
-                if mentionsComparable formalParams1 && mentionsComparable formalParams2 then
+                if
+                    paramsMentionComparableTypeVar ctx.g formalParams1
+                    && paramsMentionComparableTypeVar ctx.g formalParams2
+                then
                     if getCachedHasSRTP ctx candidate || getCachedHasSRTP ctx other then
                         0
                     elif formalParams1.Length = formalParams2.Length then
                         aggregateMap2
-                            (fun (ParamData(_, _, _, _, _, _, _, ty1)) (ParamData(_, _, _, _, _, _, _, ty2)) ->
-                                compareTypeConcreteness ctx.g ty1 ty2)
+                            (fun p1 p2 -> compareTypeConcreteness ctx.g (paramDataType p1) (paramDataType p2))
                             formalParams1
                             formalParams2
                     else
@@ -618,9 +609,14 @@ let private allTiebreakRules: TiebreakRule list =
         preferNonExtensionRule
         extensionPriorityRule
         preferNonGenericRule
-        moreConcreteRule
         nullableOptionalInteropRule
         propertyOverrideRule
+        // The most-concrete tiebreak is a last resort: it must run after every rule that is
+        // enabled at default langversion (e.g. the F# 5.0 nullable/optional-interop rule and the
+        // property-override rule) so that enabling this preview feature can only break ties those
+        // rules left unresolved (i.e. today's FS0041 ambiguities), never re-decide a resolution
+        // that already succeeds at default.
+        moreConcreteRule
     ]
 
 let private isRuleEnabled (context: OverloadResolutionContext) (rule: TiebreakRule) =
