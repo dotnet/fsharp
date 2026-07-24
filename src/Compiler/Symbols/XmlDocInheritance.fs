@@ -4,7 +4,6 @@ module internal FSharp.Compiler.XmlDocInheritance
 
 open System.Xml.Linq
 open System.Xml.XPath
-open FSharp.Compiler.DiagnosticsLogger
 open FSharp.Compiler.Text
 
 /// Represents an inheritdoc directive found in XML documentation
@@ -19,7 +18,8 @@ type InheritDocDirective =
     }
 
 /// Checks if an XML document contains <inheritdoc> elements
-let private hasInheritDoc (xmlText: string) = xmlText.IndexOf("<inheritdoc") >= 0
+let private hasInheritDoc (xmlText: string) =
+    xmlText.IndexOf("<inheritdoc", System.StringComparison.Ordinal) >= 0
 
 /// Extracts inheritdoc directives from parsed XML
 let private extractInheritDocDirectives (doc: XDocument) =
@@ -47,7 +47,7 @@ let private extractInheritDocDirectives (doc: XDocument) =
     |> List.ofSeq
 
 /// Applies an XPath filter to XML content
-let private applyXPathFilter (m: range) (xpath: string) (sourceXml: string) : string option =
+let private applyXPathFilter (xpath: string) (sourceXml: string) : string =
     try
         let doc =
             XDocument.Parse("<doc>" + sourceXml + "</doc>", LoadOptions.PreserveWhitespace)
@@ -63,17 +63,30 @@ let private applyXPathFilter (m: range) (xpath: string) (sourceXml: string) : st
         let selectedElements = doc.XPathSelectElements(adjustedXpath)
 
         if Seq.isEmpty selectedElements then
-            None
+            ""
         else
-            let result =
-                selectedElements
-                |> Seq.map (fun elem -> elem.ToString(SaveOptions.DisableFormatting))
-                |> String.concat "\n"
+            selectedElements
+            |> Seq.map (fun elem -> elem.ToString(SaveOptions.DisableFormatting))
+            |> String.concat "\n"
+    with
+    | :? XPathException
+    | :? System.Xml.XmlException -> ""
 
-            Some result
-    with ex ->
-        warning (Error(FSComp.SR.xmlDocInheritDocError ($"invalid XPath '{xpath}': {ex.Message}"), m))
-        None
+/// Selects the default inherited content, excluding top-level <overloads> nodes.
+let private selectDefaultInheritedContent (sourceXml: string) : string =
+    try
+        let doc =
+            XElement.Parse("<temp>" + sourceXml + "</temp>", LoadOptions.PreserveWhitespace)
+
+        doc.Nodes()
+        |> Seq.filter (fun node ->
+            match node with
+            | :? XElement as element -> element.Name.LocalName <> "overloads"
+            | _ -> true)
+        |> Seq.map (fun node -> node.ToString(SaveOptions.DisableFormatting))
+        |> String.concat "\n"
+    with :? System.Xml.XmlException ->
+        ""
 
 /// Recursively expands inheritdoc in the retrieved documentation
 let rec private expandInheritedDoc
@@ -116,7 +129,7 @@ and expandInheritDocFromXmlText
             else
                 let resolveAndReplace (directive: InheritDocDirective) (cref: string) (implicitCrefForRecursion: string option) =
                     if visited.Contains(cref) then
-                        warning (Error(FSComp.SR.xmlDocInheritDocError ($"Circular reference detected for '{cref}'"), m))
+                        directive.Element.Remove()
                     else
                         match resolveCref cref with
                         | Some inheritedXml ->
@@ -125,17 +138,15 @@ and expandInheritDocFromXmlText
 
                             let contentToInherit =
                                 match directive.Path with
-                                | Some xpath ->
-                                    applyXPathFilter m xpath expandedInheritedXml
-                                    |> Option.defaultValue expandedInheritedXml
-                                | None -> expandedInheritedXml
+                                | Some xpath -> applyXPathFilter xpath expandedInheritedXml
+                                | None -> selectDefaultInheritedContent expandedInheritedXml
 
                             try
                                 let newContent = XElement.Parse("<temp>" + contentToInherit + "</temp>")
                                 directive.Element.ReplaceWith(newContent.Nodes())
-                            with ex ->
-                                warning (Error(FSComp.SR.xmlDocInheritDocError ($"Failed to process inheritdoc: {ex.Message}"), m))
-                        | None -> warning (Error(FSComp.SR.xmlDocInheritDocError ($"Cannot resolve cref '{cref}'"), m))
+                            with :? System.Xml.XmlException ->
+                                directive.Element.Remove()
+                        | None -> directive.Element.Remove()
 
                 for directive in directives do
                     match directive.Cref with
@@ -143,13 +154,7 @@ and expandInheritDocFromXmlText
                     | None ->
                         match implicitTargetCrefOpt with
                         | Some implicitCref -> resolveAndReplace directive implicitCref None
-                        | None ->
-                            warning (
-                                Error(
-                                    FSComp.SR.xmlDocInheritDocError ("Implicit inheritdoc (without cref) requires a base type or interface"),
-                                    m
-                                )
-                            )
+                        | None -> directive.Element.Remove()
 
                 match xdoc.Root with
                 | null -> xmlText
