@@ -4,7 +4,7 @@ namespace FSharp.Compiler.Symbols
 
 /// Represents the kind of element in a documentation comment ID
 [<RequireQualifiedAccess>]
-type DocCommentIdKind =
+type internal DocCommentIdKind =
     | Type
     | Method
     | Property
@@ -15,7 +15,7 @@ type DocCommentIdKind =
 
 /// Represents a parsed documentation comment ID (cref format)
 [<RequireQualifiedAccess>]
-type ParsedDocCommentId =
+type internal ParsedDocCommentId =
     /// Type reference (T:Namespace.Type)
     | Type of path: string list
     /// Member reference (M:, P:, E:) with type path, member name, generic arity, and kind
@@ -25,6 +25,6 @@ type ParsedDocCommentId =
     /// Invalid or unparseable ID
     | None
 
-module XmlDocSigParser =
+module internal XmlDocSigParser =
     /// Parse a documentation comment ID string (e.g., "M:Namespace.Type.Method(System.String)")
     val parseDocCommentId: docCommentId: string -> ParsedDocCommentId
