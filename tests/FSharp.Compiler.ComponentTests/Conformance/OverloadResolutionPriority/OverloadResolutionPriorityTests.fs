@@ -144,6 +144,25 @@ if r <> "params" then failwithf "expected params, got %s" r
         |> ignore
 
     [<FactForNETCOREAPP>]
+    let ``ORPA - high-priority optional-arg overload beats low-priority exact`` () =
+        // Exact-match must not pre-empt priority: M(int) is the *exact* match for M(1), but the
+        // higher-priority M(int, ?int) overload (non-exact, optional omitted) must win.
+        Fs """
+module T
+open System.Runtime.CompilerServices
+type C() =
+    [<OverloadResolutionPriority(1)>] member _.M(x: int, ?y: int) = "opt-high"
+    member _.M(x: int) = "plain-low"
+let r = C().M(1)
+if r <> "opt-high" then failwithf "expected opt-high, got %s" r
+"""
+        |> withLangVersionPreview
+        |> asExe
+        |> compileAndRun
+        |> shouldSucceed
+        |> ignore
+
+    [<FactForNETCOREAPP>]
     let ``ORPA - priority is not compared across extension classes (concreteness decides)`` () =
         // C#-parity: OverloadResolutionPriority is scoped per containing type. Two extension
         // methods on System.Guid declared in *different* static classes must not have their

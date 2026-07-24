@@ -3547,6 +3547,49 @@ and ResolveOverloadingCore
     let alwaysCheckReturn =
         isOpConversion || anyHasOutArgs
 
+    let g = csenv.g
+
+    // Determine the applicable candidates (argument subsumption/conversion allowed).
+    // Factored out so the same predicate computes both the applicable set below and the
+    // OverloadResolutionPriority pruning set.
+    let computeApplicable (cands: CalledMeth<Expr> list) =
+        cands |> FilterEachThenUndo (fun newTrace candidate ->
+            let csenv = { csenv with IsSpeculativeForMethodOverloading = true }
+            let csenvNoCtx = stripMemberAccessOnNullableCtx csenv
+            let cxsln = AssumeMethodSolvesTrait csenvNoCtx cx m (WithTrace newTrace) candidate
+            CanMemberSigsMatchUpToCheck 
+                csenvNoCtx 
+                permitOptArgs
+                alwaysCheckReturn
+                (TypesEquiv csenvNoCtx ndeep (WithTrace newTrace) cxsln)  // instantiations equivalent
+                (TypesMustSubsume csenv ndeep (WithTrace newTrace) cxsln m) // obj can subsume
+                (ReturnTypesMustSubsumeOrConvert csenvNoCtx ad ndeep (WithTrace newTrace) cxsln cx.IsSome m) // return can subsume or convert
+                (ArgsMustSubsumeOrConvertWithContextualReport csenvNoCtx ad ndeep (WithTrace newTrace) cxsln cx.IsSome candidate)  // args can subsume
+                reqdRetTyOpt 
+                candidate)
+
+    // C#-parity OverloadResolutionPriority: when any candidate carries an explicit priority,
+    // prune to the highest-priority *applicable* members per declaring type BEFORE the
+    // exact-match and betterness rules below. This guarantees (a) an inapplicable high-priority
+    // member cannot shadow an applicable lower-priority one, and (b) priority — not natural
+    // betterness such as params/subsumption — decides among the applicable members. Priority is
+    // never compared across declaring types (the group key lives in filterByOverloadResolutionPriority).
+    // The no-priority path is a cheap fast-path returning the candidates untouched, and inapplicable
+    // candidates keep their place so "no overloads found" diagnostics stay complete (A5: order preserved).
+    let candidates =
+        if g.langVersion.SupportsFeature LanguageFeature.OverloadResolutionPriority
+           && candidates |> List.exists (fun cm -> cm.Method.GetOverloadResolutionPriority() <> 0) then
+            match computeApplicable candidates with
+            | [] -> candidates
+            | applicable ->
+                let survivors =
+                    applicable
+                    |> filterByOverloadResolutionPriority g (fun (cm, _, _, _) -> cm.Method)
+                    |> List.map (fun (cm, _, _, _) -> cm)
+                candidates
+                |> List.filter (fun cm -> survivors |> List.exists (fun s -> System.Object.ReferenceEquals(s, cm)))
+        else candidates
+
     // Exact match rule.
     //
     // See what candidates we have based on current inferred type information 
@@ -3575,21 +3618,7 @@ and ResolveOverloadingCore
     | _ -> 
       // Now determine the applicable methods.
       // Subsumption on arguments is allowed.
-      let applicable =
-          candidates |> FilterEachThenUndo (fun newTrace candidate ->
-              let csenv = { csenv with IsSpeculativeForMethodOverloading = true }
-              let csenvNoCtx = stripMemberAccessOnNullableCtx csenv
-              let cxsln = AssumeMethodSolvesTrait csenvNoCtx cx m (WithTrace newTrace) candidate
-              CanMemberSigsMatchUpToCheck 
-                  csenvNoCtx 
-                  permitOptArgs
-                  alwaysCheckReturn
-                  (TypesEquiv csenvNoCtx ndeep (WithTrace newTrace) cxsln)  // instantiations equivalent
-                  (TypesMustSubsume csenv ndeep (WithTrace newTrace) cxsln m) // obj can subsume
-                  (ReturnTypesMustSubsumeOrConvert csenvNoCtx ad ndeep (WithTrace newTrace) cxsln cx.IsSome m) // return can subsume or convert
-                  (ArgsMustSubsumeOrConvertWithContextualReport csenvNoCtx ad ndeep (WithTrace newTrace) cxsln cx.IsSome candidate)  // args can subsume
-                  reqdRetTyOpt 
-                  candidate)
+      let applicable = computeApplicable candidates
 
       match applicable with 
       | [] ->
@@ -3659,7 +3688,6 @@ and ResolveOverloading
     let candidates =
         calledMethGroup 
         |> List.filter (fun cmeth -> cmeth.IsCandidate(m, ad))
-        |> filterByOverloadResolutionPriority g (fun cm -> cm.Method)
 
     let calledMethOpt, errors, calledMethTrace = 
         match calledMethGroup, candidates with 
