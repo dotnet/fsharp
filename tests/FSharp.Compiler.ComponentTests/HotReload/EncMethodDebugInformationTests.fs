@@ -33,6 +33,19 @@ module EncMethodDebugInformationTests =
         Assert.Equal<EncMethodDebugInformation>(EncMethodDebugInformation.Empty, decodedNull)
 
     [<Fact>]
+    let ``Baseline valid-mask reader does not sign-extend bit 31`` () =
+        let bytes = [| 0uy; 0uy; 0uy; 0x80uy; 0uy; 0uy; 0uy; 0uy |]
+
+        Assert.Equal(0x0000000080000000UL, FSharp.Compiler.AbstractIL.ILBaselineReader.readUInt64 bytes 0)
+
+    [<Fact>]
+    let ``Baseline table data starts after valid tables with zero rows`` () =
+        let rowCounts = Array.zeroCreate 64
+        let valid = 1UL <<< 3
+
+        Assert.Equal(128, FSharp.Compiler.AbstractIL.ILBaselineReader.tableDataStart 100 valid rowCounts)
+
+    [<Fact>]
     let ``Lambda map with a single closure round-trips`` () =
         let info =
             { EncMethodDebugInformation.Empty with
