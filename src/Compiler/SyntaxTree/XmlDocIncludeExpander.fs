@@ -97,14 +97,6 @@ let private classifyInclude (elem: XElement) : Result<IncludeInfo, string> optio
         | Null, NonNull _ -> Some(Result.Error "<include> element is missing required 'file' attribute")
         | Null, Null -> Some(Result.Error "<include> element is missing required 'file' and 'path' attributes")
 
-/// Active pattern to parse a line as an include directive (must be include tag alone on the line)
-let private (|ParsedXmlInclude|_|) (line: string) : Result<IncludeInfo, string> option =
-    try
-        let elem = XElement.Parse(line.Trim())
-        classifyInclude elem
-    with _ ->
-        None
-
 /// Expansion context threaded through recursive calls
 type private ExpansionContext =
     {
@@ -176,41 +168,45 @@ let expandIncludes (doc: XmlDoc) : XmlDoc =
     if doc.IsEmpty then
         doc
     else
-        let unprocessedLines = doc.UnprocessedLines
-        let baseFileName = doc.Range.FileName
-
-        let hasIncludes = unprocessedLines |> Array.exists mayContainInclude
+        let elaboratedLines = doc.GetElaboratedXmlLines()
+        let hasIncludes = elaboratedLines |> Array.exists mayContainInclude
 
         if not hasIncludes then
             doc
         else
-            let ctx =
-                {
-                    FileCache = Dictionary<string, Result<XDocument, string>>(pathComparer)
-                    InProgressFiles = HashSet<string>(pathComparer)
-                    Range = doc.Range
-                }
+            let baseFileName = doc.Range.FileName
+            let text = elaboratedLines |> String.concat "\n"
 
-            let expandedLines =
-                unprocessedLines
-                |> Array.collect (fun line ->
-                    match line with
-                    | s when not (mayContainInclude s) -> [| line |]
-                    | ParsedXmlInclude(Result.Ok includeInfo) ->
-                        match resolveSingleInclude baseFileName includeInfo ctx with
-                        | Result.Error msg ->
-                            warning (Error(FSComp.SR.xmlDocIncludeError msg, doc.Range))
-                            [| line |]
-                        | Result.Ok nodes -> nodes |> Seq.map (fun n -> n.ToString()) |> Array.ofSeq
-                    | ParsedXmlInclude(Result.Error msg) ->
-                        warning (Error(FSComp.SR.xmlDocIncludeError msg, doc.Range))
-                        [| line |]
-                    | _ -> [| line |])
+            let parsedRoot =
+                try
+                    let syntheticRoot = "<__include_root__>" + text + "</__include_root__>"
+                    Some(XElement.Parse(syntheticRoot, LoadOptions.PreserveWhitespace ||| LoadOptions.SetLineInfo))
+                with _ ->
+                    None
 
-            if
-                expandedLines.Length = unprocessedLines.Length
-                && Array.forall2 (=) expandedLines unprocessedLines
-            then
-                doc
-            else
-                XmlDoc(expandedLines, doc.Range)
+            match parsedRoot with
+            | None -> doc
+            | Some root ->
+                let ctx =
+                    {
+                        FileCache = Dictionary<string, Result<XDocument, string>>(pathComparer)
+                        InProgressFiles = HashSet<string>(pathComparer)
+                        Range = doc.Range
+                    }
+
+                let expandedNodes = expandAllIncludeNodes baseFileName (root.Nodes()) ctx
+
+                let expandedText =
+                    expandedNodes
+                    |> Seq.map (fun (n: XNode) -> n.ToString(SaveOptions.DisableFormatting))
+                    |> String.concat ""
+
+                let expandedLines = expandedText.Replace("\r\n", "\n").Split('\n')
+
+                if
+                    expandedLines.Length = elaboratedLines.Length
+                    && Array.forall2 (=) expandedLines elaboratedLines
+                then
+                    doc
+                else
+                    XmlDoc(expandedLines, doc.Range)

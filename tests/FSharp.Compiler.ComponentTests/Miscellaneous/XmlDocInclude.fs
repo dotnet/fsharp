@@ -86,6 +86,22 @@ let f x = x
             cleanup dir
 
     [<Fact>]
+    let ``Inline include inside summary expands`` () =
+        let res =
+            runInclude (
+                scenario
+                    (Snippets.memberInlineInclude "d.xml" "/data/remarks")
+                    [ "d.xml", Snippets.dataSummaryRemarks ]
+            )
+
+        res.Compilation |> shouldSucceed |> ignore
+
+        res.Xml
+        |> memberXmlEquals
+            "M:Test.inlineIncluded(System.Int32)"
+            "<summary>Inline before <remarks>Included remarks text.</remarks> inline after.</summary>"
+
+    [<Fact>]
     let ``Nested includes in external file expand`` () =
         let dir =
             setupDir [
