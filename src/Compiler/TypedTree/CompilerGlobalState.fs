@@ -122,10 +122,9 @@ type internal CompilerGlobalState () as this =
     member _.NewFileScope (fileRange: range) =
         PerFileNamingScope(globalNng, fileRange.FileIndex)
 
-    /// Reset all compiler-generated-name occurrence counters on this state, so successive in-process
-    /// codegen runs over the same source produce identical generated names (a fresh-process layout).
-    /// Callers must ensure no compilation is concurrently generating names (quiescence). Needed by
-    /// Edit-and-Continue style scenarios that re-emit from a warm checker.
+    /// Reset every compiler-generated-name allocator owned by this compiler state so repeated
+    /// codegen runs over the same source reproduce a fresh-process layout. The caller must ensure
+    /// no compilation is concurrently generating names.
     member _.ResetCompilerGeneratedNameState() =
         globalNng.ResetCompilerGeneratedNameState()
         globalStableNameGenerator.ResetCompilerGeneratedNameState()
