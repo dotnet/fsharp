@@ -20,6 +20,14 @@ namespace PriorityTests
         [OverloadResolutionPriority(0)]
         public static string Invoke(int i) => "priority-0-int";
     }
+
+    public static class ParamsPriority
+    {
+        public static string M1(int i) => "exact";
+
+        [OverloadResolutionPriority(1)]
+        public static string M1(params int[] i) => "params";
+    }
     
     public static class NegativePriority
     {
@@ -104,6 +112,17 @@ namespace ExtensionPriorityTests
         
         [OverloadResolutionPriority(2)]
         public static string Transform(this int value) => "ModuleB-int-priority2";
+    }
+
+    public static class CrossExtA
+    {
+        [OverloadResolutionPriority(1)]
+        public static string Ext(this System.Guid g) => "A-priority1";
+    }
+
+    public static class CrossExtB
+    {
+        public static string Ext(this System.Guid g) => "B-priority0";
     }
     
     // ===== Same priority, normal tiebreakers apply =====

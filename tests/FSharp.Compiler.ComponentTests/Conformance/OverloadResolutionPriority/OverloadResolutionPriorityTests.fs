@@ -110,3 +110,83 @@ let result = MyClass().Work("hello")
         |> compile
         |> shouldSucceed
         |> ignore
+
+    [<FactForNETCOREAPP>]
+    let ``ORPA - inapplicable high-priority does not shadow applicable low-priority`` () =
+        Fs """
+module T
+open System.Runtime.CompilerServices
+type C() =
+    [<OverloadResolutionPriority(1)>] member _.M(s: string) = "string"
+    member _.M(i: int) = "int"
+let r = C().M(42)
+if r <> "int" then failwithf "expected int, got %s" r
+"""
+        |> withLangVersionPreview
+        |> asExe
+        |> compileAndRun
+        |> shouldSucceed
+        |> ignore
+
+    [<FactForNETCOREAPP>]
+    let ``ORPA - high-priority params beats low-priority exact`` () =
+        Fs """
+module T
+open PriorityTests
+let r = ParamsPriority.M1(1)
+if r <> "params" then failwithf "expected params, got %s" r
+"""
+        |> withReferences [csharpPriorityLib]
+        |> withLangVersionPreview
+        |> asExe
+        |> compileAndRun
+        |> shouldSucceed
+        |> ignore
+
+    [<FactForNETCOREAPP>]
+    let ``ORPA - priority not compared across extension static classes`` () =
+        Fs """
+module T
+open ExtensionPriorityTests
+let g = System.Guid.NewGuid()
+let r = g.Ext()
+"""
+        |> withReferences [csharpPriorityLib]
+        |> withLangVersionPreview
+        |> compile
+        |> shouldFail
+        |> withErrorCode 41
+        |> ignore
+
+    [<FactForNETCOREAPP>]
+    let ``ORPA - override uses least-derived base priority`` () =
+        Fs """
+module T
+open ExtensionPriorityTests
+let d = DerivedOverridesVirtual()
+let r = d.Compute("hello")
+if r <> "derived-object" then failwithf "expected derived-object, got %s" r
+"""
+        |> withReferences [csharpPriorityLib]
+        |> withLangVersionPreview
+        |> asExe
+        |> compileAndRun
+        |> shouldSucceed
+        |> ignore
+
+    [<FactForNETCOREAPP>]
+    let ``ORPA - equal priority resolves by concreteness`` () =
+        Fs """
+module T
+open System.Runtime.CompilerServices
+type C() =
+    [<OverloadResolutionPriority(1)>] member _.M(x: obj) = "obj"
+    [<OverloadResolutionPriority(1)>] member _.M(x: string) = "string"
+let r = C().M("hi")
+if r <> "string" then failwithf "got %s" r
+"""
+        |> withLangVersionPreview
+        |> asExe
+        |> compileAndRun
+        |> shouldSucceed
+        |> ignore
