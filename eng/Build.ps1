@@ -421,14 +421,16 @@ function TestApexUsingVSTest([string] $targetFramework) {
     $testResultsDir = "$ArtifactsDir\TestResults\$configuration"
     Create-Directory $testResultsDir
 
-    # The Apex package (MicrosoftTestApexVisualStudioVersion) targets this VS major.minor. Keep in sync;
-    # override with FSHARP_APEX_VS_VERSION when a machine's matching VS has a different minor.
-    $expectedVsVersion = if (${env:FSHARP_APEX_VS_VERSION}) { ${env:FSHARP_APEX_VS_VERSION} } else { "18.9" }
+    # The Apex package (MicrosoftTestApexVisualStudioVersion) is pinned to a VS 18.x build. Because the
+    # installed VS differs by machine (CI's image trails a dev's local install and they rarely share the
+    # same minor), gate on the MAJOR version by default so any VS 18.x can run the tests; set
+    # FSHARP_APEX_VS_VERSION to a stricter prefix (e.g. "18.9") to force an exact minor.
+    $expectedVsVersion = if (${env:FSHARP_APEX_VS_VERSION}) { ${env:FSHARP_APEX_VS_VERSION} } else { "18" }
 
     # Determine which VS will run the tests, and gate on its version. An explicit
     # VisualStudio.InstallationUnderTest.Path override is trusted (gate skipped); otherwise enumerate
-    # ALL installed VS instances (not just the latest) and pick the one whose major.minor matches the
-    # Apex target, skipping the run if none match rather than producing confusing Apex/VS-mismatch errors.
+    # ALL installed VS instances (not just the latest) and pick one whose version starts with the target
+    # prefix, skipping the run if none match rather than producing confusing Apex/VS-mismatch errors.
     $overridePath = ${env:VisualStudio.InstallationUnderTest.Path}
     if ($overridePath) {
         Write-Host "Using explicit VisualStudio.InstallationUnderTest.Path=$overridePath (VS version gate skipped)."
@@ -462,20 +464,25 @@ function TestApexUsingVSTest([string] $targetFramework) {
             Write-Host ("  [{0}] version={1} (major.minor {2}) devenv={3} name='{4}' path={5}" -f $k, $versions[$k], $mm, $hasIde, $name, $paths[$k])
         }
 
-        # Among installs whose major.minor matches the Apex target, pick the first that actually has an
-        # IDE (devenv.exe) — excludes Build Tools and catches an incomplete/mid-update install.
+        # Among installs whose version starts with the target prefix (major, or an explicit major.minor)
+        # and that actually have an IDE (devenv.exe — excludes Build Tools / incomplete installs), pick
+        # the LOWEST version: it is closest to the pinned Apex minor, and "Apex older than VS" is the
+        # safer cross-minor direction than the reverse.
         $vsDir = $null
         $selectedVersion = $null
         $versionMatchPath = $null
-        for ($k = 0; $k -lt $versions.Count; $k++) {
-            $mm = ($versions[$k] -split '\.')[0..1] -join '.'
-            if ($mm -eq $expectedVsVersion) {
-                if (-not $versionMatchPath) { $versionMatchPath = $paths[$k] }
-                if (Test-Path (Join-Path $paths[$k] "Common7\IDE\devenv.exe")) {
-                    $vsDir = $paths[$k].TrimEnd("\")
-                    $selectedVersion = $versions[$k]
-                    break
-                }
+        $candidates = for ($k = 0; $k -lt $versions.Count; $k++) {
+            if ($versions[$k] -like "$expectedVsVersion.*") {
+                [PSCustomObject]@{ Version = $versions[$k]; Path = $paths[$k] }
+            }
+        }
+        $candidates = @($candidates | Sort-Object { [version]$_.Version })
+        foreach ($c in $candidates) {
+            if (-not $versionMatchPath) { $versionMatchPath = $c.Path }
+            if (Test-Path (Join-Path $c.Path "Common7\IDE\devenv.exe")) {
+                $vsDir = $c.Path.TrimEnd("\")
+                $selectedVersion = $c.Version
+                break
             }
         }
 
