@@ -151,6 +151,7 @@ type internal TcGlobals =
         pathMap: Internal.Utilities.PathMap *
         langVersion: Features.LanguageVersion *
         realsig: bool *
+        emitHotReloadClassStateMachines: bool *
         compilationMode: CompilationMode ->
             TcGlobals
 
@@ -902,6 +903,9 @@ type internal TcGlobals =
     member raw_expr_tcr: TypedTree.EntityRef
 
     member realsig: bool
+
+    /// Hot reload: emit resumable state machines as reference types.
+    member emitHotReloadClassStateMachines: bool
 
     member ref_tuple1_tcr: TypedTree.EntityRef
 

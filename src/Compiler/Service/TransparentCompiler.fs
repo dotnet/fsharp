@@ -969,6 +969,8 @@ type internal TransparentCompiler
                     if
                         tcGlobals.langVersion <> tcConfig.langVersion
                         || tcGlobals.realsig <> tcConfig.realsig
+                        || tcGlobals.emitHotReloadClassStateMachines
+                           <> tcConfig.emitHotReloadClassStateMachines
                     then
                         TcGlobals(
                             tcGlobals.compilingFSharpCore,
@@ -984,6 +986,7 @@ type internal TransparentCompiler
                             tcGlobals.pathMap,
                             tcConfig.langVersion,
                             tcConfig.realsig,
+                            tcConfig.emitHotReloadClassStateMachines,
                             tcConfig.compilationMode
                         )
                     else
