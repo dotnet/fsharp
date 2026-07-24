@@ -320,6 +320,9 @@ type MethInfo =
     /// Describes a use of a pseudo-method corresponding to the default constructor for a .NET struct type
     | DefaultStructCtor of tcGlobals: TcGlobals * structTy: TType
 
+    /// Describes a use of the compiler-synthesized all-fields constructor of an F# record type
+    | RecdCtor of tcGlobals: TcGlobals * recdTy: TType
+
 #if !NO_TYPEPROVIDERS
     /// Describes a use of a method backed by provided metadata
     | ProvidedMeth of

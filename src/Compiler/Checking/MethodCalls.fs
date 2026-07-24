@@ -1120,8 +1120,13 @@ let rec MakeMethInfoCall (amap: ImportMap) m (minfo: MethInfo) minst args static
 
     | MethInfoWithModifiedReturnType(mi,_) -> MakeMethInfoCall amap m mi minst args staticTyOpt
 
-    | DefaultStructCtor(_, ty) -> 
+    | DefaultStructCtor(_, ty) ->
        mkDefault (m, ty)
+
+    | RecdCtor(g, ty) ->
+        let tcref = tcrefOfAppTy g ty
+        let tinst = argsOfAppTy g ty
+        mkRecordExpr g (RecdExpr, tcref, tinst, tcref.TrueInstanceFieldsAsRefList, args, m)
 
 #if !NO_TYPEPROVIDERS
     | ProvidedMeth(amap, mi, _, m) -> 
@@ -1264,9 +1269,16 @@ let rec BuildMethodCall tcVal g amap isMutable m isProp minfo valUseFlags minst 
                     else
                         warning(Error(FSComp.SR.tcDefaultStructConstructorCall(), m))
             else
-                if not (TypeHasDefaultValue g m ty) then 
+                if not (TypeHasDefaultValue g m ty) then
                     errorR(Error(FSComp.SR.tcDefaultStructConstructorCall(), m))
-            mkDefault (m, ty), ty)
+            mkDefault (m, ty), ty
+
+        // Build a record allocation from a call to the synthesized all-fields constructor of an F# record.
+        | RecdCtor (g, ty) ->
+            checkLanguageFeatureAndRecover g.langVersion LanguageFeature.RecordConstructorSyntax m
+            let tcref = tcrefOfAppTy g ty
+            let tinst = argsOfAppTy g ty
+            mkRecordExpr g (RecdExpr, tcref, tinst, tcref.TrueInstanceFieldsAsRefList, allArgs, m), ty)
 
 let ILFieldStaticChecks g amap infoReader ad m (finfo : ILFieldInfo) =
     CheckILFieldInfoAccessible g amap m ad finfo

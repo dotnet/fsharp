@@ -602,6 +602,11 @@
         <target state="translated">literais de lista de qualquer tamanho</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureRecordConstructorSyntax">
+        <source>Constructing a record via its all-fields constructor</source>
+        <target state="new">Constructing a record via its all-fields constructor</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureRefCellNotationInformationals">
         <source>informational messages related to reference cells</source>
         <target state="translated">mensagens informativas relacionadas a células de referência</target>

@@ -953,14 +953,23 @@ type InfoReader(g: TcGlobals, amap: ImportMap) as this =
             else
                 match tryTcrefOfAppTy g metadataTy with
                 | ValueNone -> []
-                | ValueSome tcref -> 
-                    tcref.MembersOfFSharpTyconByName 
-                    |> NameMultiMap.find ".ctor"
-                    |> List.choose(fun vref -> 
-                        match vref.MemberInfo with 
-                        | Some membInfo when (membInfo.MemberFlags.MemberKind = SynMemberKind.Constructor) -> Some vref 
-                        | _ -> None) 
-                    |> List.map (fun x -> FSMeth(g, origTy, x, None)) 
+                | ValueSome tcref ->
+                    let declaredCtors =
+                        tcref.MembersOfFSharpTyconByName
+                        |> NameMultiMap.find ".ctor"
+                        |> List.choose(fun vref ->
+                            match vref.MemberInfo with
+                            | Some membInfo when (membInfo.MemberFlags.MemberKind = SynMemberKind.Constructor) -> Some vref
+                            | _ -> None)
+                        |> List.map (fun x -> FSMeth(g, origTy, x, None))
+                    // An F# record exposes no *declared* constructor, but its synthesized all-fields constructor is
+                    // callable from C# as 'new MyRecord(f1, f2, ...)'. We surface that same constructor to F# too so
+                    // resolution succeeds; the RecordConstructorSyntax langversion gate is enforced at the call site
+                    // (see BuildMethodCall) so an unsupported langversion gives FS3350 rather than a generic FS0800.
+                    if tcref.IsRecordTycon then
+                        declaredCtors @ [ RecdCtor(g, origTy) ]
+                    else
+                        declaredCtors
       )    
 
     static member ExcludeHiddenOfMethInfos g amap m minfos = 
@@ -1260,6 +1269,11 @@ let rec GetXmlDocSigOfMethInfo (infoReader: InfoReader)  m (minfo: MethInfo) =
 
     | MethInfoWithModifiedReturnType(mi,_) -> GetXmlDocSigOfMethInfo infoReader m mi
     | DefaultStructCtor(g, ty) ->
+        match tryTcrefOfAppTy g ty with
+        | ValueSome tcref ->
+            Some(None, $"M:{tcref.CompiledRepresentationForNamedType.FullName}.#ctor")
+        | _ -> None
+    | RecdCtor(g, ty) ->
         match tryTcrefOfAppTy g ty with
         | ValueSome tcref ->
             Some(None, $"M:{tcref.CompiledRepresentationForNamedType.FullName}.#ctor")
