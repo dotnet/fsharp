@@ -201,7 +201,7 @@ type FSharpSynthesizedTypeMaps() =
 
     member _.GetOrAddName(basicName: string) =
         lock syncLock (fun () ->
-            let mapKey = GeneratedNames.SynthesizedNameMapKey basicName
+            let mapKey = SynthesizedNameMapKey basicName
             let bucket = getOrAddBucket mapKey
 
             // Keep ordinal reservation and bucket mutation in one critical section so
@@ -235,7 +235,6 @@ type FSharpSynthesizedTypeMaps() =
     /// <summary>Captures the current stable names grouped by compiler-generated base name.</summary>
     member _.Snapshot: seq<struct (string * string[])> =
         lock syncLock (fun () ->
-            // Copy and order the complete snapshot while holding the allocation lock.
             buckets
             |> Seq.map (fun (KeyValue(key, bucket)) -> struct (key, bucket.ToArray()))
             |> Seq.sortWith (fun struct (left, _) struct (right, _) -> StringComparer.Ordinal.Compare(left, right))
