@@ -88,20 +88,21 @@
     <SystemBuffersVersion>4.6.1</SystemBuffersVersion>
     <SystemMemoryVersion>4.6.3</SystemMemoryVersion>
     <SystemRuntimeCompilerServicesUnsafeVersion>6.1.2</SystemRuntimeCompilerServicesUnsafeVersion>
-    <!-- System.* packages from dotnet/runtime are managed in Version.Details.xml / Version.Details.props for source-build. -->
-    <!-- Product/PR builds consume MSBuild 18.10 (via fsc/fsi and FSharp.Build.UnitTests), which pulls these
-         dotnet/runtime packages transitively at >= 10.0.9. CPM transitive pinning needs the *central* pin to
-         meet that floor, so define dedicated ...CentralVersion properties for eng/Packages.props. These do NOT
-         touch the darc-flowed $(System*Version) properties, which stay authoritative for source-build live
-         versions and for FSharp.Compiler.Service's shipped nuspec dependency metadata (FCS itself does not pull
-         MSBuild, so it must keep the darc version). The floor only raises when darc is below it; once darc flows
-         >= 10.0.9 the darc version wins, so this never freezes or downgrades the flow. -->
+    <!-- System.* packages from dotnet/runtime flow via Version.Details.xml / Version.Details.props (darc). -->
+    <!-- fsc/fsi and FSharp.Build.UnitTests consume MSBuild 18.10, which pulls these dotnet/runtime packages
+         transitively at >= 10.0.9 — in product/PR builds AND in source-build (which builds live MSBuild 18.10
+         too, hence the floor must apply there as well). CPM transitive pinning needs the *central* pin to meet
+         that floor, so define dedicated ...CentralVersion properties for eng/Packages.props. These do NOT touch
+         the darc-flowed $(System*Version) properties, which stay authoritative for FSharp.Compiler.Service's
+         shipped nuspec dependency metadata (FCS does not pull MSBuild, so it keeps the darc version). The floor
+         only raises when darc is below it; once darc flows >= 10.0.9 the darc version wins, so this never
+         freezes or downgrades the flow. -->
     <SystemSecurityCryptographyXmlCentralVersion>$(SystemSecurityCryptographyXmlVersion)</SystemSecurityCryptographyXmlCentralVersion>
     <SystemCollectionsImmutableCentralVersion>$(SystemCollectionsImmutableVersion)</SystemCollectionsImmutableCentralVersion>
     <SystemReflectionMetadataCentralVersion>$(SystemReflectionMetadataVersion)</SystemReflectionMetadataCentralVersion>
   </PropertyGroup>
 
-  <PropertyGroup Condition="'$(DotNetBuildSourceOnly)' != 'true'">
+  <PropertyGroup>
     <!-- Minimum central version the MSBuild-pulled dotnet/runtime packages must meet (see comment above). -->
     <SystemRuntimeCentralFloorVersion>10.0.9</SystemRuntimeCentralFloorVersion>
     <SystemSecurityCryptographyXmlCentralVersion Condition="$([MSBuild]::VersionLessThan('$(SystemSecurityCryptographyXmlVersion)', '$(SystemRuntimeCentralFloorVersion)'))">$(SystemRuntimeCentralFloorVersion)</SystemSecurityCryptographyXmlCentralVersion>
