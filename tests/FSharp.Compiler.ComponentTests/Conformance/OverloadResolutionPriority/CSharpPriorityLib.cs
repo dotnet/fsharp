@@ -264,3 +264,22 @@ namespace H6Observable
         public static string Pick(this System.Guid g, int i) => "low-int";
     }
 }
+
+namespace H7GenericReceiver
+{
+    // Both extensions have a *naked generic* receiver (this T), so under the buggy
+    // "group by extended type" logic they collapse into the same group (the extended
+    // type is a type variable) and priority is compared across the two static classes.
+    // C#-parity: priority is scoped per static class, so these must NOT be compared;
+    // concreteness of the second parameter (int over object) then decides.
+    public static class H7GenHighObj
+    {
+        [OverloadResolutionPriority(1)]
+        public static string Pick<T>(this T value, object o) => "high-generic-obj";
+    }
+
+    public static class H7GenLowInt
+    {
+        public static string Pick<T>(this T value, int i) => "low-generic-int";
+    }
+}

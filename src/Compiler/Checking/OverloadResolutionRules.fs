@@ -642,10 +642,7 @@ let filterByOverloadResolutionPriority<'T> (g: TcGlobals) (getMeth: 'T -> MethIn
                 twoOrMoreCandidates
                 |> List.map (fun c ->
                     let m = getMeth c
-
-                    let stamp = m.DeclaringTyconRef.Stamp
-
-                    (c, stamp, m.GetOverloadResolutionPriority()))
+                    (c, m.DeclaringTyconRef.Stamp, m.GetOverloadResolutionPriority()))
 
             enriched
             |> List.groupBy (fun (_, stamp, _) -> stamp)
