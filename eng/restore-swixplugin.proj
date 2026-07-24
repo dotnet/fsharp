@@ -1,0 +1,20 @@
+<!-- Minimal restore project: pulls ONLY the modern MicroBuild SwixBuild plugin (from the devdiv
+     dotnet-core-internal-tooling feed, like main) so eng\CIBuild.cmd Step 7 can build the lean .vsman drop.
+     Deliberately not eng/common/internal/Tools.csproj (which also pulls ManifestTool/IBCMerge/Drop.App and
+     needs arcade-internal version props we don't carry). -->
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <Import Project="$(MSBuildThisFileDirectory)Versions.props" Condition="Exists('$(MSBuildThisFileDirectory)Versions.props')" />
+
+  <PropertyGroup>
+    <TargetFramework>net472</TargetFramework>
+    <AutomaticallyUseReferenceAssemblyPackages>false</AutomaticallyUseReferenceAssemblyPackages>
+    <BuildWithNetFrameworkHostedCompiler>false</BuildWithNetFrameworkHostedCompiler>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Remove="@(PackageReference)" />
+    <PackageReference Include="Microsoft.VisualStudioEng.MicroBuild.Plugins.SwixBuild" Version="$(MicrosoftVisualStudioEngMicroBuildPluginsSwixBuildVersion)" />
+  </ItemGroup>
+
+</Project>

@@ -139,9 +139,9 @@ rem    carries the SwixBuild plugin), passed as --source so nothing devdiv is wr
 rem    (CFS stays green). NuGetAuthenticate (pipeline step) supplied the credential for the devdiv feed.
 set "_itFeed=https://pkgs.dev.azure.com/devdiv/_packaging/dotnet-core-internal-tooling/nuget/v3/index.json"
 set "_srcArgs=--source "%_itFeed%""
-for /f "usebackq delims=" %%U in (`powershell -NoProfile -ExecutionPolicy Bypass -Command "([xml](Get-Content -Raw '%_root%\NuGet.Config')).configuration.packageSources.add | Where-Object { $_.value } | ForEach-Object { $_.value }"`) do set "_srcArgs=!_srcArgs! --source "%%U""
-"%_dotnet%" restore "%_root%\eng\common\internal\Tools.csproj" --configfile "%_root%\NuGet.Config" !_srcArgs!
-if errorlevel 1 ( echo Error: internal tools ^(SwixBuild plugin^) restore failed 1>&2 & exit /b 1 )
+for /f "usebackq delims=" %%U in (`powershell -NoProfile -ExecutionPolicy Bypass -Command "([xml](Get-Content -Raw '%_root%\NuGet.Config')).configuration.packageSources.add | Where-Object { $_.value -like 'http*' } | ForEach-Object { $_.value }"`) do set "_srcArgs=!_srcArgs! --source "%%U""
+"%_dotnet%" restore "%_root%\eng\restore-swixplugin.proj" --configfile "%_root%\NuGet.Config" !_srcArgs!
+if errorlevel 1 ( echo Error: SwixBuild plugin restore failed 1>&2 & exit /b 1 )
 set "SwixPluginDir="
 for /f "delims=" %%D in ('dir /b /s "%NUGET_PACKAGES%microsoft.visualstudioeng.microbuild.plugins.swixbuild\*\build\Microsoft.VisualStudioEng.MicroBuild.Plugins.SwixBuild.targets" 2^>nul') do set "SwixPluginDir=%%~dpD"
 if not defined SwixPluginDir ( echo Error: modern SwixBuild plugin not found after restore 1>&2 & exit /b 1 )
