@@ -5,6 +5,7 @@
 # Paths under src/Compiler/*.fsi that are currently expected to differ from origin/main
 src/Compiler/AbstractIL/ilwrite.fsi
 src/Compiler/AbstractIL/ilwritepdb.fsi
+src/Compiler/AbstractIL/EncMethodDebugInformation.fsi
 src/Compiler/CodeGen/IlxGen.fsi
 src/Compiler/Driver/CompilerConfig.fsi
 src/Compiler/Optimize/LowerStateMachines.fsi

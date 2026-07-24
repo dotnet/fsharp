@@ -67,9 +67,10 @@ type internal CompilerGlobalState =
     /// under parallel optimization. See https://github.com/dotnet/fsharp/issues/19732.
     member NewFileScope: fileRange: range -> PerFileNamingScope
 
-    /// Reset every compiler-generated-name allocator owned by this compiler state so repeated
-    /// codegen runs over the same source produce identical generated names. Callers must ensure
-    /// no compilation is concurrently generating names.
+    /// Reset all compiler-generated-name occurrence counters on this state, so successive in-process
+    /// codegen runs over the same source produce identical generated names (a fresh-process layout).
+    /// Callers must ensure no compilation is concurrently generating names (quiescence). Needed by
+    /// Edit-and-Continue style scenarios that re-emit from a warm checker.
     member ResetCompilerGeneratedNameState: unit -> unit
 
 type Unique = int64
