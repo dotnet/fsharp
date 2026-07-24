@@ -6,23 +6,6 @@ open FSharp.Test.Assert
 open FSharp.Test.Compiler.Assertions.TextBasedDiagnosticAsserts
 open Xunit
 
-let private assertItemsWithNames contains names (completionInfo: DeclarationListInfo) =
-    let itemNames =
-        completionInfo.Items
-        |> Array.map _.NameInCode
-        |> Array.map normalizeNewLines
-        |> set
-
-    for name in names do
-        let name = normalizeNewLines name
-        Set.contains name itemNames |> shouldEqual contains
-
-let assertHasItemWithNames names (completionInfo: DeclarationListInfo) =
-    assertItemsWithNames true names completionInfo
-
-let assertHasNoItemsWithNames names (completionInfo: DeclarationListInfo) =
-    assertItemsWithNames false names completionInfo
-
 [<Fact>]
 let ``Expr - After record decl 01`` () =
     let info = Checker.getCompletionInfo """
@@ -438,9 +421,6 @@ module Options =
 
         let assertItemAllowed name source =
             assertItemWithOptions [allowObsoleteOptions] name source
-
-        let assertItemNotAllowed name source =
-            assertItemWithOptions [disallowObsoleteOptions] name source
 
         [<Fact>]
         let ``Prop - Instance 01`` () =
@@ -861,3 +841,69 @@ normaliz{caret}
 """
 
     assertHasItemWithNames [ "normalize'" ] info
+
+// Tests for https://github.com/dotnet/fsharp/issues/19906
+// Named-argument completion must continue suggesting later named args after the first.
+
+[<Fact>]
+let ``Issue 19906 - non-overloaded method - second named arg suggested`` () =
+    let info = Checker.getCompletionInfo """
+type T() = member _.M(apple:int, banana:int, cherry:int) = ()
+let t = T()
+let _ = t.M(apple=1, b{caret})
+"""
+    assertHasItemWithNames ["banana"; "cherry"] info
+    assertHasNoItemsWithNames ["apple"] info
+
+[<Fact>]
+let ``Issue 19906 - overloaded method - Task.Factory.StartNew second named arg suggested`` () =
+    let info = Checker.getCompletionInfo """
+open System.Threading.Tasks
+let _ = Task.Factory.StartNew(action=(fun _ -> ()), s{caret})
+"""
+    assertHasItemWithNames ["state"; "cancellationToken"; "scheduler"; "creationOptions"] info
+    assertHasNoItemsWithNames ["action"] info
+
+[<Fact>]
+let ``Issue 19906 - overloaded method - third named arg suggested`` () =
+    let info = Checker.getCompletionInfo """
+open System.Threading.Tasks
+let _ = Task.Factory.StartNew(action=(fun _ -> ()), state=null, c{caret})
+"""
+    assertHasItemWithNames ["cancellationToken"; "creationOptions"] info
+
+[<Fact>]
+let ``Issue 19906 - optional args - second optional arg suggested`` () =
+    let info = Checker.getCompletionInfo """
+type T() = static member F(?x:int, ?y:int, ?z:int) = ()
+let _ = T.F(?x=1, ?y{caret})
+"""
+    assertHasItemWithNames ["y"; "z"] info
+
+[<Fact>]
+let ``Issue 19906 - regression guard - zero-arg ctor with settable props still works`` () =
+    let info = Checker.getCompletionInfo """
+type R() =
+    member val Apple = "" with get, set
+    member val Banana = "" with get, set
+    member val Cherry = "" with get, set
+let _ = R(Apple="x", B{caret})
+"""
+    assertHasItemWithNames ["Banana"; "Cherry"] info
+
+[<Fact>]
+let ``Issue 19906 - regression guard - positional then partial still works`` () =
+    let info = Checker.getCompletionInfo """
+open System.Threading.Tasks
+let _ = Task.Factory.StartNew((fun _ -> ()), s{caret})
+"""
+    assertHasItemWithNames ["state"; "cancellationToken"; "scheduler"; "creationOptions"] info
+
+[<Fact>]
+let ``Issue 19906 - regression guard - dotted completion inside named-arg RHS`` () =
+    let info = Checker.getCompletionInfo """
+let s = "x"
+let _ = System.Uri(uriString = s.{caret}, kind = System.UriKind.Absolute)
+"""
+    assertHasItemWithNames ["Length"; "Substring"] info
+    assertHasNoItemsWithNames ["uriString"; "kind"] info

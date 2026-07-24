@@ -1,30 +1,14 @@
 module EmittedIL.SequencePointsTests
 
-open System.Diagnostics
-open System.IO
-open System.Runtime.CompilerServices
-open System.Runtime.InteropServices
 open Xunit
 open FSharp.Test.Compiler
 
-[<AbstractClass; Sealed>]
-type private Baseline =
-    static member verify(source: string, [<CallerMemberName; Optional; DefaultParameterValue("")>] name: string) =
-        let source = source.Trim()
-        let moduleName = StackTrace().GetFrame(1).GetMethod().DeclaringType.Name
-        FSharp source
-        |> asLibrary
-        |> withPortablePdb
-        |> withNoOptimize
-        |> compile
-        |> shouldSucceed
-        |> verifySequencePointsBaseline source (Path.Combine(__SOURCE_DIRECTORY__, moduleName, name + ".bsl"))
-        |> ignore
+let private baseline = SequencePointsBaseline(__SOURCE_DIRECTORY__)
 
 module Function =
     [<Fact>]
     let ``Body - Unit 01`` () =
-        Baseline.verify """
+        baseline.verify """
 module Module
 
 let f () =
@@ -33,7 +17,7 @@ let f () =
 
     [<Fact>]
     let ``Body - LetThenValue 01`` () =
-        Baseline.verify """
+        baseline.verify """
 module Module
 
 let f () =
@@ -43,7 +27,7 @@ let f () =
 
     [<Fact>]
     let ``Body - SequentialUnits 01`` () =
-        Baseline.verify """
+        baseline.verify """
 module Module
 
 let f () =
@@ -53,7 +37,7 @@ let f () =
 
     [<Fact>]
     let ``Body - ErasedCall 01`` () =
-        Baseline.verify """
+        baseline.verify """
 module Module
 
 let f () =
@@ -62,7 +46,7 @@ let f () =
 
     [<Fact>]
     let ``Body - Erased call 02`` () =
-        Baseline.verify """
+        baseline.verify """
 module Module
 
 let f () =
@@ -72,7 +56,7 @@ let f () =
 
     [<Fact>]
     let ``Body - Erased call 03`` () =
-        Baseline.verify """
+        baseline.verify """
 module Module
 
 let f () =
@@ -83,7 +67,7 @@ let f () =
 
     [<Fact>]
     let ``Body - Erased call 04`` () =
-        Baseline.verify """
+        baseline.verify """
 module Module
 
 let f () =
@@ -94,7 +78,7 @@ let f () =
 
     [<Fact>]
     let ``Body - Erased call 05`` () =
-        Baseline.verify """
+        baseline.verify """
 module Module
 
 let f () =
@@ -105,7 +89,7 @@ let f () =
 
     [<Fact>]
     let ``Body - Erased call 06`` () =
-        Baseline.verify """
+        baseline.verify """
 module Module
 
 let f () =
@@ -116,7 +100,7 @@ let f () =
 
     [<Fact>]
     let ``Body - ErasedThenKeptCall 01`` () =
-        Baseline.verify """
+        baseline.verify """
 module Module
 
 let f () =
@@ -126,7 +110,7 @@ let f () =
 
     [<Fact>]
     let ``Body - KeptThenErasedCall 01`` () =
-        Baseline.verify """
+        baseline.verify """
 module Module
 
 let f () =
@@ -137,7 +121,7 @@ let f () =
 module ForEach =
     [<Fact>]
     let ``List - Simple 01`` () =
-        Baseline.verify """
+        baseline.verify """
 module Module
 
 let f (l: int list) =
@@ -147,7 +131,7 @@ let f (l: int list) =
 
     [<Fact>]
     let ``List - Body - SingleStatement 01`` () =
-        Baseline.verify """
+        baseline.verify """
 module Module
 
 let f (l: int list) =
@@ -157,7 +141,7 @@ let f (l: int list) =
 
     [<Fact>]
     let ``List - Body - MultipleStatements 01`` () =
-        Baseline.verify """
+        baseline.verify """
 module Module
 
 let f (l: int list) =
@@ -168,7 +152,7 @@ let f (l: int list) =
 
     [<Fact>]
     let ``List - Body - ErasedCall 01`` () =
-        Baseline.verify """
+        baseline.verify """
 module Module
 
 let f (l: int list) =
@@ -178,7 +162,7 @@ let f (l: int list) =
 
     [<Fact>]
     let ``List - Body - ErasedThenKeptCall 01`` () =
-        Baseline.verify """
+        baseline.verify """
 module Module
 
 let f (l: int list) =
@@ -189,7 +173,7 @@ let f (l: int list) =
 
     [<Fact>]
     let ``List - Body - KeptThenErasedCall 01`` () =
-        Baseline.verify """
+        baseline.verify """
 module Module
 
 let f (l: int list) =
@@ -200,7 +184,7 @@ let f (l: int list) =
 
     [<Fact>]
     let ``List - Body - ParenUnit 01`` () =
-        Baseline.verify """
+        baseline.verify """
 module Module
 
 let f (l: int list) =
@@ -210,7 +194,7 @@ let f (l: int list) =
 
     [<Fact>]
     let ``List - Body - SequentialUnits 01`` () =
-        Baseline.verify """
+        baseline.verify """
 module Module
 
 let f (l: int list) =
@@ -221,7 +205,7 @@ let f (l: int list) =
 
     [<Fact>]
     let ``List - Body - LetUnit 01`` () =
-        Baseline.verify """
+        baseline.verify """
 module Module
 
 let f (l: int list) =
@@ -232,7 +216,7 @@ let f (l: int list) =
 
     [<Fact>]
     let ``List - Pattern - Tuple 01`` () =
-        Baseline.verify """
+        baseline.verify """
 module Module
 
 let f (l: (int * int) list) =
@@ -242,7 +226,7 @@ let f (l: (int * int) list) =
 
     [<Fact>]
     let ``List - Pattern - ActivePattern 01`` () =
-        Baseline.verify """
+        baseline.verify """
 module Module
 
 let (|Id|) (x: int) = x
@@ -254,7 +238,7 @@ let f (l: int list) =
 
     [<Fact>]
     let ``List - Comprehensions - Value 01`` () =
-        Baseline.verify """
+        baseline.verify """
 module Module
 
 let a =
@@ -266,7 +250,7 @@ let a =
 
     [<Fact>]
     let ``List - Comprehensions - Value 02`` () =
-        Baseline.verify """
+        baseline.verify """
 module Module
 
 let f (l: int list) =
@@ -278,7 +262,7 @@ let f (l: int list) =
 
     [<Fact>]
     let ``List - Comprehensions - Tuple 01`` () =
-        Baseline.verify """
+        baseline.verify """
 module Module
 
 let f (l: (int * int) list) =
@@ -290,7 +274,7 @@ let f (l: (int * int) list) =
 
     [<Fact>]
     let ``List - Comprehensions - Tuple 02`` () =
-        Baseline.verify """
+        baseline.verify """
 module Module
 
 let f (l: (int * int) list) =
@@ -302,7 +286,7 @@ let f (l: (int * int) list) =
 
     [<Fact>]
     let ``List - Comprehensions - Arrow 01`` () =
-        Baseline.verify """
+        baseline.verify """
 module Module
 
 let f (l: int list) =
@@ -313,7 +297,7 @@ let f (l: int list) =
 
     [<Fact>]
     let ``List - Comprehensions - ActivePattern 01`` () =
-        Baseline.verify """
+        baseline.verify """
 module Module
 
 let (|Id|) (x: int) = x
@@ -327,7 +311,7 @@ let f (l: int list) =
 
     [<Fact>]
     let ``Array - Simple 01`` () =
-        Baseline.verify """
+        baseline.verify """
 module Module
 
 let f (l: int[]) =
@@ -337,7 +321,7 @@ let f (l: int[]) =
 
     [<Fact>]
     let ``Array - Body - SingleStatement 01`` () =
-        Baseline.verify """
+        baseline.verify """
 module Module
 
 let f (l: int[]) =
@@ -347,7 +331,7 @@ let f (l: int[]) =
 
     [<Fact>]
     let ``Array - Body - MultipleStatements 01`` () =
-        Baseline.verify """
+        baseline.verify """
 module Module
 
 let f (l: int[]) =
@@ -358,7 +342,7 @@ let f (l: int[]) =
 
     [<Fact>]
     let ``Array - Pattern - Tuple 01`` () =
-        Baseline.verify """
+        baseline.verify """
 module Module
 
 let f (l: (int * int)[]) =
@@ -368,7 +352,7 @@ let f (l: (int * int)[]) =
 
     [<Fact>]
     let ``Array - Pattern - ActivePattern 01`` () =
-        Baseline.verify """
+        baseline.verify """
 module Module
 
 let (|Id|) (x: int) = x
@@ -380,7 +364,7 @@ let f (l: int[]) =
 
     [<Fact>]
     let ``Array - Comprehensions - Value 01`` () =
-        Baseline.verify """
+        baseline.verify """
 module Module
 
 let a =
@@ -392,7 +376,7 @@ let a =
 
     [<Fact>]
     let ``Array - Comprehensions - Value 02`` () =
-        Baseline.verify """
+        baseline.verify """
 module Module
 
 let f (l: int list) =
@@ -404,7 +388,7 @@ let f (l: int list) =
 
     [<Fact>]
     let ``Array - Comprehensions - Tuple 01`` () =
-        Baseline.verify """
+        baseline.verify """
 module Module
 
 let f (l: (int * int) list) =
@@ -416,7 +400,7 @@ let f (l: (int * int) list) =
 
     [<Fact>]
     let ``Array - Comprehensions - Tuple 02`` () =
-        Baseline.verify """
+        baseline.verify """
 module Module
 
 let f (l: (int * int) list) =
@@ -428,7 +412,7 @@ let f (l: (int * int) list) =
 
     [<Fact>]
     let ``Array - Comprehensions - Arrow 01`` () =
-        Baseline.verify """
+        baseline.verify """
 module Module
 
 let f (l: int list) =
@@ -439,7 +423,7 @@ let f (l: int list) =
 
     [<Fact>]
     let ``Array - Comprehensions - ActivePattern 01`` () =
-        Baseline.verify """
+        baseline.verify """
 module Module
 
 let (|Id|) (x: int) = x
@@ -453,7 +437,7 @@ let f (l: int list) =
 
     [<Fact>]
     let ``Seq - Simple 01`` () =
-        Baseline.verify """
+        baseline.verify """
 module Module
 
 let f (l: int seq) =
@@ -463,7 +447,7 @@ let f (l: int seq) =
 
     [<Fact>]
     let ``Seq - Body - SingleStatement 01`` () =
-        Baseline.verify """
+        baseline.verify """
 module Module
 
 let f (l: int seq) =
@@ -473,7 +457,7 @@ let f (l: int seq) =
 
     [<Fact>]
     let ``Seq - Body - MultipleStatements 01`` () =
-        Baseline.verify """
+        baseline.verify """
 module Module
 
 let f (l: int seq) =
@@ -484,7 +468,7 @@ let f (l: int seq) =
 
     [<Fact>]
     let ``Seq - Pattern - Tuple 01`` () =
-        Baseline.verify """
+        baseline.verify """
 module Module
 
 let f (l: (int * int) seq) =
@@ -494,7 +478,7 @@ let f (l: (int * int) seq) =
 
     [<Fact>]
     let ``Seq - Pattern - ActivePattern 01`` () =
-        Baseline.verify """
+        baseline.verify """
 module Module
 
 let (|Id|) (x: int) = x
@@ -506,7 +490,7 @@ let f (l: int seq) =
 
     [<Fact>]
     let ``Seq - Comprehensions - Value 01`` () =
-        Baseline.verify """
+        baseline.verify """
 module Module
 
 let a =
@@ -518,7 +502,7 @@ let a =
 
     [<Fact>]
     let ``Seq - Comprehensions - Value 02`` () =
-        Baseline.verify """
+        baseline.verify """
 module Module
 
 let f (l: int list) =
@@ -530,7 +514,7 @@ let f (l: int list) =
 
     [<Fact>]
     let ``Seq - Comprehensions - Tuple 01`` () =
-        Baseline.verify """
+        baseline.verify """
 module Module
 
 let f (l: (int * int) list) =
@@ -542,7 +526,7 @@ let f (l: (int * int) list) =
 
     [<Fact>]
     let ``Seq - Comprehensions - Tuple 02`` () =
-        Baseline.verify """
+        baseline.verify """
 module Module
 
 let f (l: (int * int) list) =
@@ -554,7 +538,7 @@ let f (l: (int * int) list) =
 
     [<Fact>]
     let ``Seq - Comprehensions - Arrow 01`` () =
-        Baseline.verify """
+        baseline.verify """
 module Module
 
 let f (l: int list) =
@@ -565,7 +549,7 @@ let f (l: int list) =
 
     [<Fact>]
     let ``Seq - Comprehensions - ActivePattern 01`` () =
-        Baseline.verify """
+        baseline.verify """
 module Module
 
 let (|Id|) (x: int) = x
@@ -579,7 +563,7 @@ let f (l: int list) =
 
     [<Fact>]
     let ``String - Body - SingleStatement 01`` () =
-        Baseline.verify """
+        baseline.verify """
 module Module
 
 let f (l: string) =
@@ -590,7 +574,7 @@ let f (l: string) =
 module If =
     [<Fact>]
     let ``If 01`` () =
-        Baseline.verify """
+        baseline.verify """
 module Module
 
 let f (x: int) =
@@ -602,7 +586,7 @@ let g () =
 
     [<Fact>]
     let ``If 02 - Bind`` () =
-        Baseline.verify """
+        baseline.verify """
 module Module
 
 let f (x: int) =
@@ -615,7 +599,7 @@ let g () =
 
     [<Fact>]
     let ``If 03 - Set`` () =
-        Baseline.verify """
+        baseline.verify """
 module Module
 
 let f (x: int) =
@@ -627,7 +611,7 @@ let g (arr: int[]) =
 
     [<Fact>]
     let ``If 04`` () =
-        Baseline.verify """
+        baseline.verify """
 module Module
 
 let f (x: int) =
@@ -639,7 +623,7 @@ let g () =
 
     [<Fact>]
     let ``If 05`` () =
-        Baseline.verify """
+        baseline.verify """
 module Module
 
 let f (x: int) =
@@ -654,7 +638,7 @@ let g () =
 module Match =
     [<Fact>]
     let ``Match 01`` () =
-        Baseline.verify """
+        baseline.verify """
 module Module
 
 let f (x: int) =
@@ -668,7 +652,7 @@ let g () =
 
     [<Fact>]
     let ``Match 02 - Bind`` () =
-        Baseline.verify """
+        baseline.verify """
 module Module
 
 let f (x: int) =
@@ -685,7 +669,7 @@ let g () =
 module Binding =
     [<Fact>]
     let ``Module - Unit 01`` () =
-        Baseline.verify """
+        baseline.verify """
 module Module
 
 let i = ()
@@ -693,7 +677,7 @@ let i = ()
 
     [<Fact>]
     let ``Module - SequentialUnits 01`` () =
-        Baseline.verify """
+        baseline.verify """
 module Module
 
 let i = ()
@@ -702,7 +686,7 @@ let j = ()
 
     [<Fact>]
     let ``Module - ErasedCall 01`` () =
-        Baseline.verify """
+        baseline.verify """
 module Module
 
 let i = System.Diagnostics.Debug.Write ""
@@ -710,7 +694,7 @@ let i = System.Diagnostics.Debug.Write ""
 
     [<Fact>]
     let ``Module - Erased call 02`` () =
-        Baseline.verify """
+        baseline.verify """
 module Module
 
 let i =
@@ -720,7 +704,7 @@ let i =
 
     [<Fact>]
     let ``Module - Erased call 03`` () =
-        Baseline.verify """
+        baseline.verify """
 module Module
 
 let i =
@@ -731,7 +715,7 @@ let i =
 
     [<Fact>]
     let ``Module - Erased call 04`` () =
-        Baseline.verify """
+        baseline.verify """
 module Module
 
 let i =
@@ -742,7 +726,7 @@ let i =
 
     [<Fact>]
     let ``Module - Erased call 05`` () =
-        Baseline.verify """
+        baseline.verify """
 module Module
 
 let i =
@@ -753,7 +737,7 @@ let i =
 
     [<Fact>]
     let ``Module - Erased call 06`` () =
-        Baseline.verify """
+        baseline.verify """
 module Module
 
 let i =
@@ -764,7 +748,7 @@ let i =
 
     [<Fact>]
     let ``Local - Unit 01`` () =
-        Baseline.verify """
+        baseline.verify """
 module Module
 
 do
@@ -774,7 +758,7 @@ do
 
     [<Fact>]
     let ``Local - SequentialUnits 01`` () =
-        Baseline.verify """
+        baseline.verify """
 module Module
 
 do
@@ -785,7 +769,7 @@ do
 
     [<Fact>]
     let ``Local - ErasedCall 01`` () =
-        Baseline.verify """
+        baseline.verify """
 module Module
 
 do
@@ -795,7 +779,7 @@ do
 
     [<Fact>]
     let ``Local - Erased call 02`` () =
-        Baseline.verify """
+        baseline.verify """
 module Module
 
 let i =
@@ -805,7 +789,7 @@ let i =
 
     [<Fact>]
     let ``Local - Erased call 03`` () =
-        Baseline.verify """
+        baseline.verify """
 module Module
 
 let i =
@@ -816,7 +800,7 @@ let i =
 
     [<Fact>]
     let ``Local - Erased call 04`` () =
-        Baseline.verify """
+        baseline.verify """
 module Module
 
 let i =
@@ -827,7 +811,7 @@ let i =
 
     [<Fact>]
     let ``Local - Erased call 05`` () =
-        Baseline.verify """
+        baseline.verify """
 module Module
 
 let i =
@@ -838,7 +822,7 @@ let i =
 
     [<Fact>]
     let ``Local - Erased call 06`` () =
-        Baseline.verify """
+        baseline.verify """
 module Module
 
 let i =

@@ -1,3 +1,10 @@
 <Project>
   <Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.targets', '$(MSBuildThisFileDirectory)../'))" />
+
+  <ItemGroup>
+    <!-- Deploy Microsoft.VisualStudio.SolutionPersistence next to the VS unit-test host. Shell.15.0 18.9.x references
+         it at runtime without declaring a NuGet dependency (it normally comes from the VS install), and the tests load
+         Shell.15.0 into a MEF catalog, so it must be copied locally. Scoped to test projects to keep it out of the VSIX. -->
+    <PackageReference Include="Microsoft.VisualStudio.SolutionPersistence" Version="$(MicrosoftVisualStudioSolutionPersistenceVersion)" PrivateAssets="all" ExcludeAssets="contentFiles;analyzers;native" />
+  </ItemGroup>
 </Project>

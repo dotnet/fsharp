@@ -1093,6 +1093,11 @@ module SynExpr =
                     | SynInterpolatedStringPart.FillExpr(qualifiers = Some _) -> true
                     | _ -> false)
 
+            // {| A = (1; 2) |}
+            // { A = (1; 2) }
+            // Removing the parens would let the semicolon be parsed as a field separator.
+            | (SynExpr.Record _ | SynExpr.AnonRecd _), SynExpr.Sequential _ -> true
+
             // { (!x) with … }
             | SynExpr.Record(copyInfo = Some(SynExpr.Paren(expr = Is inner), _)),
               SynExpr.App(isInfix = false; funcExpr = FuncExpr.SymbolicOperator(StartsWith('!' | '~')))

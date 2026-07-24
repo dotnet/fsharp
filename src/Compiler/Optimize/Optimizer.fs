@@ -23,6 +23,7 @@ open FSharp.Compiler.Text.LayoutRender
 open FSharp.Compiler.Text.TaggedText
 open FSharp.Compiler.TypedTree 
 open FSharp.Compiler.TypedTreeBasics
+open FSharp.Compiler.Xml
 open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TypedTreeOps.DebugPrint
 open FSharp.Compiler.TypedTreePickle
@@ -327,6 +328,8 @@ type OptimizationSettings =
       reportTotalSizes : bool
       
       processingMode : OptimizationProcessingMode
+
+      alwaysInline: bool
     }
 
     static member Defaults = 
@@ -344,6 +347,7 @@ type OptimizationSettings =
           reportHasEffect = false
           reportTotalSizes = false
           processingMode = OptimizationProcessingMode.Parallel
+          alwaysInline = false
         }
 
     /// Determines if JIT optimizations are enabled
@@ -429,6 +433,10 @@ type cenv =
       stackGuard: StackGuard
 
       realsig: bool
+
+      specializedInlineVals: HashMultiMap<Stamp, TType * Expr>
+
+      signatureHidingInfo: SignatureHidingInfo
     }
 
     override x.ToString() = "<cenv>"
@@ -443,8 +451,12 @@ type IncrementalOptimizationEnv =
     { /// An identifier to help with name generation
       latestBoundId: Ident option
 
-      /// The set of lambda IDs we've inlined to reach this point. Helps to prevent recursive inlining 
-      dontInline: Zset<Unique>  
+      /// Prevents recursive inlining/specialization. Maps lambda ID to a list of specialized types
+      /// currently being processed. An empty list means "block unconditionally" (used by normal
+      /// inlining and non-concrete debug specialization). A non-empty list means "block only these
+      /// specific type specializations" (used by concrete debug specialization, allowing different
+      /// type instantiations of the same function to proceed).
+      dontInline: Map<Stamp, TType list>
 
       /// Recursively bound vars. If an sub-expression that is a candidate for method splitting
       /// contains any of these variables then don't split it, for fear of mucking up tailcalls.
@@ -468,7 +480,7 @@ type IncrementalOptimizationEnv =
 
     static member Empty = 
         { latestBoundId = None 
-          dontInline = Zset.empty Int64.order
+          dontInline = Map.empty
           typarInfos = []
           functionVal = None 
           dontSplitVars = ValMap.Empty
@@ -492,17 +504,8 @@ let rec IsPartialExprVal x =
     | ValValue (_, a) 
     | SizeValue (_, a) -> IsPartialExprVal a
 
-let CheckInlineValueIsComplete (v: Val) res =
-    if v.ShouldInline && IsPartialExprVal res then
-        errorR(Error(FSComp.SR.optValueMarkedInlineButIncomplete(v.DisplayName), v.Range))
-        //System.Diagnostics.Debug.Assert(false, sprintf "Break for incomplete inline value %s" v.DisplayName)
-
-let check (vref: ValRef) (res: ValInfo) =
-    CheckInlineValueIsComplete vref.Deref res.ValExprInfo
-    (vref, res)
-
 //-------------------------------------------------------------------------
-// Bind information about values 
+// Bind information about values
 //------------------------------------------------------------------------- 
 
 let EmptyModuleInfo = 
@@ -686,10 +689,6 @@ let GetInfoForVal cenv env m (vref: ValRef) =
             GetInfoForNonLocalVal cenv env vref
     res
 
-let GetInfoForValWithCheck cenv env m (vref: ValRef) =  
-    let res = GetInfoForVal cenv env m vref
-    check vref res |> ignore
-    res
 
 let IsPartialExpr cenv env m x =
     let rec isPartialExpression x =
@@ -1322,7 +1321,7 @@ let CombineValueInfos einfos res =
 let CombineValueInfosUnknown einfos = CombineValueInfos einfos UnknownValue
 
 /// Hide information because of a signature
-let AbstractLazyModulInfoByHiding isAssemblyBoundary mhi =
+let AbstractLazyModulInfoByHiding isAssemblyBoundary (cenv: cenv) mhi =
 
     // The freevars and FreeTyvars can indicate if the non-public (hidden) items have been used.
     // Under those checks, the further hidden* checks may be subsumed (meaning, not required anymore).
@@ -1348,15 +1347,16 @@ let AbstractLazyModulInfoByHiding isAssemblyBoundary mhi =
             then detailR
             else ValValue (vref2, detailR)
 
-        // Check for escape in lambda 
-        | CurriedLambdaValue (_, _, _, expr, _) | ConstExprValue(_, expr) when            
+        // Check for escape in lambda
+        | CurriedLambdaValue (_, _, _, expr, _) | ConstExprValue(_, expr) when
             (let fvs = freeInExpr CollectAll expr
-             (isAssemblyBoundary && not (freeVarsAllPublic fvs)) || 
-             Zset.exists hiddenVal fvs.FreeLocals ||
-             Zset.exists hiddenTycon fvs.FreeTyvars.FreeTycons ||
              Zset.exists hiddenTyconRepr fvs.FreeLocalTyconReprs ||
              Zset.exists hiddenRecdField fvs.FreeRecdFields ||
-             Zset.exists hiddenUnionCase fvs.FreeUnionCases ) ->
+             Zset.exists hiddenUnionCase fvs.FreeUnionCases ||
+             (cenv.settings.alwaysInline &&
+              ((isAssemblyBoundary && not (freeVarsAllPublic fvs)) ||
+               Zset.exists hiddenVal fvs.FreeLocals ||
+               Zset.exists hiddenTycon fvs.FreeTyvars.FreeTycons))) ->
                 UnknownValue
 
         // Check for escape in constant 
@@ -1396,8 +1396,10 @@ let AbstractLazyModulInfoByHiding isAssemblyBoundary mhi =
          { ModuleOrNamespaceInfos = NameMap.map abstractLazyModulInfo ss.ModuleOrNamespaceInfos
            ValInfos = 
                ValInfos(ss.ValInfos.Entries 
-                         |> Seq.filter (fun (vref, _) -> not (hiddenVal vref.Deref))
-                         |> Seq.map (fun (vref, e) -> check (* "its implementation uses a binding hidden by a signature" m *) vref (abstractValInfo e) )) } 
+                         |> Seq.filter (fun (vref, _) ->
+                             not (hiddenVal vref.Deref) ||
+                             (not cenv.settings.alwaysInline && vref.Deref.ShouldInline))
+                         |> Seq.map (fun (vref, e) -> (vref, abstractValInfo e))) }
 
     and abstractLazyModulInfo (ss: LazyModuleInfo) = 
           ss.Force() |> abstractModulInfo |> notlazy
@@ -1423,7 +1425,7 @@ let usesMethodLocalConstructsOrProtectedField cenv (fvs: FreeVars) expr =
     || (fvs.ContainsILFieldAccess && AccessibilityLogic.exprReferencesProtectedILField cenv.amap expr)
 
 /// Hide information because of a "let ... in ..." or "let rec ... in ... "
-let AbstractExprInfoByVars cenv (boundVars: Val list, boundTyVars) ivalue =
+let AbstractExprInfoByVars (cenv: cenv) (boundVars: Val list, boundTyVars) ivalue =
     // Module and member bindings can be skipped when checking abstraction, since abstraction of these values has already been done when 
     // we hit the end of the module and called AbstractLazyModulInfoByHiding. If we don't skip these then we end up quadratically retraversing  
     // the inferred optimization data, i.e. at each binding all the way up a sequences of 'lets' in a module. 
@@ -1482,8 +1484,7 @@ let AbstractExprInfoByVars cenv (boundVars: Val list, boundTyVars) ivalue =
 
       let rec abstractModulInfo ss =
          { ModuleOrNamespaceInfos = ss.ModuleOrNamespaceInfos |> NameMap.map (InterruptibleLazy.force >> abstractModulInfo >> notlazy) 
-           ValInfos = ss.ValInfos.Map (fun (vref, e) -> 
-               check vref (abstractValInfo e) ) }
+           ValInfos = ss.ValInfos.Map (fun (vref, e) -> (vref, abstractValInfo e)) }
 
       abstractExprInfo ivalue
 
@@ -1523,9 +1524,9 @@ let RemapOptimizationInfo g tmenv =
     remapLazyModulInfo
 
 /// Hide information when a value is no longer visible
-let AbstractAndRemapModulInfo g (repackage, hidden) info =
+let AbstractAndRemapModulInfo g (cenv: cenv) (repackage, hidden) info =
     let mrpi = mkRepackageRemapping repackage
-    let info = info |> AbstractLazyModulInfoByHiding false hidden
+    let info = info |> AbstractLazyModulInfoByHiding false cenv hidden
     let info = info |> RemapOptimizationInfo g mrpi
     info
 
@@ -1616,15 +1617,47 @@ let SplitValuesByIsUsedOrHasEffect cenv fvs x =
 
 let IlAssemblyCodeInstrHasEffect i = 
     match i with 
-    | ( AI_nop | AI_ldc _ | AI_add | AI_sub | AI_mul | AI_xor | AI_and | AI_or 
-               | AI_ceq | AI_cgt | AI_cgt_un | AI_clt | AI_clt_un | AI_conv _ | AI_shl 
-               | AI_shr | AI_shr_un | AI_neg | AI_not | AI_ldnull )
+    | AI_nop | AI_ldc _ | AI_add | AI_sub | AI_mul | AI_xor | AI_and | AI_or
+    | AI_ceq | AI_cgt | AI_cgt_un | AI_clt | AI_clt_un | AI_conv _ | AI_shl
+    | AI_shr | AI_shr_un | AI_neg | AI_not | AI_ldnull
     | I_ldstr _ | I_ldtoken _ -> false
     | _ -> true
-  
+
 let IlAssemblyCodeHasEffect instrs = List.exists IlAssemblyCodeInstrHasEffect instrs
 
-let rec ExprHasEffect g expr = 
+/// The context an expression's effects are analyzed in. It governs whether a fully-ground
+/// `Unchecked.defaultof` (an `EI_ilzero` witness) may be treated as effect-free and its unused
+/// binding dropped: safe when emitting here, but not inside an `inline` value's body, whose
+/// optimized form is pickled as cross-assembly info and re-inlined at each use site — dropping
+/// the witness there corrupts that info and trips FS0073 in the consumer's IlxGen (e.g. the SRTP
+/// witness/dummy arguments used pervasively by FSharpPlus).
+[<RequireQualifiedAccess>]
+type EffectContext =
+    /// Emitting IL here, at a fully instantiated use site.
+    | Emit
+    /// Analyzing the pickled body of an `inline` value, re-inlined at other sites.
+    | InlineBody
+
+let ILAsmWithIlzeroHasEffect context instrs tyargs =
+    let hasIlzero = instrs |> List.exists (function EI_ilzero _ -> true | _ -> false)
+
+    if not hasIlzero then
+        IlAssemblyCodeHasEffect instrs
+    else
+        // A fully-ground ilzero is a pure default-value load whose unused binding may be dropped,
+        // but only at emission and only when no tyarg still holds a free typar: such a binding is
+        // the sole pin for those typars and dropping it leaves them unsolved (FS0073).
+        let ilzeroIsSafeToDrop =
+            match context with
+            | EffectContext.Emit -> tyargs |> List.forall (fun ty -> Zset.isEmpty (freeInType CollectTypars ty).FreeTypars)
+            | EffectContext.InlineBody -> false
+
+        let otherInstrsHaveEffect =
+            instrs |> List.exists (function EI_ilzero _ -> false | i -> IlAssemblyCodeInstrHasEffect i)
+
+        otherInstrsHaveEffect || not ilzeroIsSafeToDrop
+
+let rec ExprHasEffect context g expr = 
     match stripDebugPoints expr with 
     | Expr.Val (vref, _, _) -> vref.IsTypeFunction || vref.IsMutable
     | Expr.Quote _ 
@@ -1632,20 +1665,20 @@ let rec ExprHasEffect g expr =
     | Expr.TyLambda _ 
     | Expr.Const _ -> false
     // type applications do not have effects, with the exception of type functions
-    | Expr.App (f0, _, _, [], _) -> IsTyFuncValRefExpr f0 || ExprHasEffect g f0
-    | Expr.Op (op, _, args, m) -> ExprsHaveEffect g args || OpHasEffect g m op
-    | Expr.LetRec (binds, body, _, _) -> BindingsHaveEffect g binds || ExprHasEffect g body
-    | Expr.Let (bind, body, _, _) -> BindingHasEffect g bind || ExprHasEffect g body
+    | Expr.App (f0, _, _, [], _) -> IsTyFuncValRefExpr f0 || ExprHasEffect context g f0
+    | Expr.Op (op, tyargs, args, m) -> ExprsHaveEffect context g args || OpHasEffect context g m op tyargs
+    | Expr.LetRec (binds, body, _, _) -> BindingsHaveEffect context g binds || ExprHasEffect context g body
+    | Expr.Let (bind, body, _, _) -> BindingHasEffect context g bind || ExprHasEffect context g body
     // REVIEW: could add Expr.Obj on an interface type - these are similar to records of lambda expressions 
     | _ -> true
 
-and ExprsHaveEffect g exprs = List.exists (ExprHasEffect g) exprs
+and ExprsHaveEffect context g exprs = List.exists (ExprHasEffect context g) exprs
 
-and BindingsHaveEffect g binds = List.exists (BindingHasEffect g) binds
+and BindingsHaveEffect context g binds = List.exists (BindingHasEffect context g) binds
 
-and BindingHasEffect g bind = bind.Expr |> ExprHasEffect g
+and BindingHasEffect context g bind = bind.Expr |> ExprHasEffect context g
 
-and OpHasEffect g m op = 
+and OpHasEffect context g m op tyargs =
     match op with 
     | TOp.Tuple _ -> false
     | TOp.AnonRecd _ -> false
@@ -1659,7 +1692,7 @@ and OpHasEffect g m op =
     | TOp.UnionCaseTagGet _ -> false
     | TOp.UnionCaseProof _ -> false
     | TOp.UnionCaseFieldGet (ucref, n) -> isUnionCaseFieldMutable g ucref n 
-    | TOp.ILAsm (instrs, _) -> IlAssemblyCodeHasEffect instrs
+    | TOp.ILAsm (instrs, _) -> ILAsmWithIlzeroHasEffect context instrs tyargs
     | TOp.TupleFieldGet _ -> false
     | TOp.ExnFieldGet (ecref, n) -> isExnFieldMutable ecref n 
     | TOp.RefAddrGet _ -> false
@@ -1686,6 +1719,9 @@ and OpHasEffect g m op =
     | TOp.LValueOp _ (* conservative *)
     | TOp.ValFieldSet _ -> true
 
+let effectContextOf (cenv: cenv) =
+    if cenv.optimizing then EffectContext.Emit else EffectContext.InlineBody
+
 
 let TryEliminateBinding cenv _env bind e2 _m =
     let g = cenv.g
@@ -1696,6 +1732,7 @@ let TryEliminateBinding cenv _env bind e2 _m =
        not vspec1.IsCompilerGenerated then 
        None 
     elif vspec1.IsFixed then None 
+    elif vspec1.InlineInfo = ValInline.InlinedDefinition then None
     elif vspec1.LogicalName.StartsWithOrdinal stackVarPrefix ||
          vspec1.LogicalName.Contains suffixForVariablesThatMayNotBeEliminated then None
     else
@@ -1715,7 +1752,7 @@ let TryEliminateBinding cenv _env bind e2 _m =
               match argsr with 
               | Expr.Val (VRefLocal vspec2, _, _) :: argsr2
                  when valEq vspec1 vspec2 && IsUniqueUse vspec2 (List.rev rargsl@argsr2) -> Some(List.rev rargsl, argsr2)
-              | argsrh :: argsrt when not (ExprHasEffect g argsrh) -> GetImmediateUseContext (argsrh :: rargsl) argsrt 
+              | argsrh :: argsrt when not (ExprHasEffect (effectContextOf cenv) g argsrh) -> GetImmediateUseContext (argsrh :: rargsl) argsrt 
               | _ -> None
 
         let (DebugPoints(e2, recreate0)) = e2
@@ -2346,6 +2383,17 @@ let inline IsStateMachineExpr g overallExpr =
         isReturnsResumableCodeTy g valRef.TauType
     | _ -> false
 
+let shouldForceInlineMembersInDebug (g: TcGlobals) (tcref: EntityRef) =
+    match g.fslibForceInlineModules.TryGetValue tcref.LogicalName with
+    | true, modRef -> tyconRefEq g tcref modRef 
+    | _ -> false
+
+let shouldForceInlineInDebug (g: TcGlobals) (vref: ValRef) : bool =
+    ValHasWellKnownAttribute g WellKnownValAttributes.NoDynamicInvocationAttribute_True vref.Deref ||
+    ValHasWellKnownAttribute g WellKnownValAttributes.NoDynamicInvocationAttribute_False vref.Deref ||
+
+    vref.HasDeclaringEntity && shouldForceInlineMembersInDebug g vref.DeclaringEntity
+
 /// Optimize/analyze an expression
 let rec OptimizeExpr cenv (env: IncrementalOptimizationEnv) expr =
     cenv.stackGuard.Guard <| fun () ->
@@ -2590,7 +2638,7 @@ and OptimizeExprOp cenv env (op, tyargs, args, m) =
         newExpr,
         { TotalSize = 1
           FunctionSize = 1
-          HasEffect = OpHasEffect g m newOp
+          HasEffect = OpHasEffect (effectContextOf cenv) g m newOp tyargs
           MightMakeCriticalTailcall = false
           Info = ValueOfExpr newExpr }
 
@@ -2667,7 +2715,7 @@ and OptimizeExprOpFallback cenv env (op, tyargs, argsR, m) arginfos value_ =
     let argsFSize = AddFunctionSizes arginfos
     let argEffects = OrEffects arginfos
     let argValues = List.map (fun x -> x.Info) arginfos
-    let effect = OpHasEffect g m op
+    let effect = OpHasEffect (effectContextOf cenv) g m op tyargs
     let cost, value_ = 
       match op with
       | TOp.UnionCase c -> 2, MakeValueInfoForUnionCase c (Array.ofList argValues)
@@ -2858,7 +2906,7 @@ and OptimizeLetRec cenv env (binds, bodyExpr, m) =
         let fvs = List.fold (fun acc x -> unionFreeVars acc (fst x |> freeInBindingRhs CollectLocals)) fvs0 bindsR
         SplitValuesByIsUsedOrHasEffect cenv (fun () -> fvs.FreeLocals) bindsR
     // Trim out any optimization info that involves escaping values 
-    let evalueR = AbstractExprInfoByVars cenv (vs, []) einfo.Info 
+    let evalueR = AbstractExprInfoByVars cenv (vs, []) einfo.Info
     // REVIEW: size of constructing new closures - should probably add #freevars + #recfixups here 
     let bodyExprR = Expr.LetRec (bindsRR, bodyExprR, m, Construct.NewFreeVarsCache()) 
     let info = CombineValueInfos (einfo :: bindinfos) evalueR 
@@ -2933,7 +2981,7 @@ and OptimizeLinearExpr cenv env expr contf =
               Info = UnknownValue }
         else 
             // On the way back up: Trim out any optimization info that involves escaping values on the way back up
-            let evalueR = AbstractExprInfoByVars cenv ([bindR.Var], []) bodyInfo.Info 
+            let evalueR = AbstractExprInfoByVars cenv ([bindR.Var], []) bodyInfo.Info
 
             // Preserve the debug points for eliminated bindings that have debug points. 
             let bodyR =
@@ -3099,7 +3147,9 @@ and TryOptimizeVal cenv env (vOpt: ValRef option, shouldInline, inlineIfLambda, 
     | ConstExprValue(_size, expr) ->
         Some (remarkExpr m (copyExpr g CloneAllAndMarkExprValsAsCompilerGenerated expr))
 
-    | CurriedLambdaValue (_, _, _, expr, _) when shouldInline || inlineIfLambda ->
+    | CurriedLambdaValue (_, _, _, expr, _) when
+            shouldInline && (cenv.settings.alwaysInline || Option.exists (shouldForceInlineInDebug cenv.g) vOpt) ||
+            inlineIfLambda && cenv.settings.alwaysInline ->
         let fvs = freeInExpr CollectLocals expr
         if usesMethodLocalConstructsOrProtectedField cenv fvs expr then
             None
@@ -3110,11 +3160,11 @@ and TryOptimizeVal cenv env (vOpt: ValRef option, shouldInline, inlineIfLambda, 
     | TupleValue _ | UnionCaseValue _ | RecdValue _ when shouldInline ->
         failwith "tuple, union and record values cannot be marked 'inline'"
 
-    | UnknownValue when shouldInline ->
+    | UnknownValue when shouldInline && cenv.settings.alwaysInline ->
         warning(Error(FSComp.SR.optValueMarkedInlineHasUnexpectedValue(), m))
         None
 
-    | _ when shouldInline ->
+    | _ when shouldInline && cenv.settings.alwaysInline ->
         warning(Error(FSComp.SR.optValueMarkedInlineCouldNotBeInlined(), m))
         None
 
@@ -3141,7 +3191,7 @@ and OptimizeVal cenv env expr (v: ValRef, m) =
 
     let g = cenv.g
 
-    let valInfoForVal = GetInfoForValWithCheck cenv env m v 
+    let valInfoForVal = GetInfoForVal cenv env m v 
 
     match TryOptimizeVal cenv env (Some v, v.ShouldInline, v.InlineIfLambda, valInfoForVal.ValExprInfo, m) with
     | Some e -> 
@@ -3160,12 +3210,14 @@ and OptimizeVal cenv env expr (v: ValRef, m) =
            e, AddValEqualityInfo g m v einfo 
 
     | None ->
-       if v.ShouldInline then
-            match valInfoForVal.ValExprInfo with
-            | UnknownValue -> error(Error(FSComp.SR.optFailedToInlineValue(v.DisplayName), m))
-            | _ -> warning(Error(FSComp.SR.optFailedToInlineValue(v.DisplayName), m))
-       if v.InlineIfLambda then 
-           warning(Error(FSComp.SR.optFailedToInlineSuggestedValue(v.DisplayName), m))
+       if cenv.settings.alwaysInline then
+           if v.ShouldInline then
+                match valInfoForVal.ValExprInfo with
+                | UnknownValue -> error(Error(FSComp.SR.optFailedToInlineValue(v.DisplayName), m))
+                | _ -> warning(Error(FSComp.SR.optFailedToInlineValue(v.DisplayName), m))
+
+           if v.InlineIfLambda then
+               warning(Error(FSComp.SR.optFailedToInlineSuggestedValue(v.DisplayName), m))
 
        expr, (AddValEqualityInfo g m v 
                     { Info=valInfoForVal.ValExprInfo 
@@ -3447,8 +3499,148 @@ and TryDevirtualizeApplication cenv env (f, tyargs, args, m) =
     | _ -> None
 
 /// Attempt to inline an application of a known value at callsites
-and TryInlineApplication cenv env finfo (tyargs: TType list, args: Expr list, m) =
+and TryInlineApplication cenv env finfo (valExpr: Expr) (tyargs: TType list, args: Expr list, m) =
     let g = cenv.g
+
+    match cenv.settings.alwaysInline, stripExpr valExpr with
+    | false, Expr.Val(vref, _, _) when vref.ShouldInline && not (shouldForceInlineInDebug cenv.g vref) ->
+        let hasNoTraits =
+            let tps, _ = tryDestForallTy g vref.Type
+            GetTraitConstraintInfosOfTypars g tps |> List.isEmpty
+
+        // Direct-calling an SRTP callee is only safe when every tyarg is a bare typar: then the
+        // callee's SRTP constraints land on the caller's own typars and IlxGen rewrites the
+        // call to the $W variant inside the caller's $W compilation context. Non-typar tyargs
+        // (e.g. MyBuilder<'T>) require static resolution of the trait, which the callee's
+        // non-$W stub cannot do, so those must go through the specialization path.
+        let allTyargsAreBareTypars =
+            tyargs |> List.forall (isTyparTy g)
+
+        // When inside an inline function body being prepared for export (!cenv.optimizing),
+        // only emit a direct call if the callee is publicly accessible. Non-public vals
+        // (e.g. in internal modules, or hidden by .fsi) can't be called by consumers,
+        // so route those through the specialization path which inlines the body.
+        let isHiddenBySignature = cenv.signatureHidingInfo.HiddenVals.Contains vref.Deref
+        let canCallDirectly =
+            (cenv.optimizing || (vref.Accessibility.IsPublic && not isHiddenBySignature)) &&
+            (hasNoTraits || (allTyargsAreBareTypars && vref.ValReprInfo.IsSome))
+
+        let argsR = args |> List.map (OptimizeExpr cenv env >> fst)
+        let info = { TotalSize = 1; FunctionSize = 1; HasEffect = true; MightMakeCriticalTailcall = false; Info = UnknownValue }
+
+        if canCallDirectly then
+            Some(mkApps g ((exprForValRef m vref, vref.Type), [tyargs], argsR, m), info)
+        else
+
+        let origFinfo = GetInfoForVal cenv env m vref
+        match stripValue origFinfo.ValExprInfo with
+        | CurriedLambdaValue(origLambdaId, _, _, origLambda, origLambdaTy) ->
+            let f2R = CopyExprForInlining cenv true origLambda m
+            let specLambda = MakeApplicationAndBetaReduce g (f2R, origLambdaTy, [tyargs], [], m)
+            let specLambdaTy = tyOfExpr g specLambda
+
+            // Typars that flow in from the enclosing scope when tyargs are non-concrete.
+            // specLambdaTy is closed over the vref's typars after beta-reduction, so its free
+            // typars are exactly the ones carried in by tyargs.
+            let freeTypars =
+                (freeInType CollectTyparsNoCaching specLambdaTy).FreeTypars
+                |> Zset.elements
+
+            let allTyargsAreConcrete = List.isEmpty freeTypars
+
+            // Proceed with specialization only if this (stamp, type) pair isn't already being
+            // processed. For concrete type args, allow different type instantiations of the same
+            // function (e.g. sum<int, int->int> can call sum<int, int> in its body). For
+            // non-concrete type args, never specialize recursively.
+            let canSpecialize =
+                match Map.tryFind origLambdaId env.dontInline with
+                | Some tys ->
+                    allTyargsAreConcrete &&
+                    not tys.IsEmpty &&
+                    not (tys |> List.exists (typeEquiv g specLambdaTy))
+                | None -> true
+
+            if not canSpecialize then
+                None else
+
+            let specLambdaR =
+                if allTyargsAreConcrete then
+                    match cenv.specializedInlineVals.FindAll(origLambdaId) |> List.tryFind (fun (ty, _) -> typeEquiv g ty specLambdaTy) with
+                    | Some (_, body) -> copyExpr g CloneAll body
+                    | None ->
+
+                    let existingTypes = defaultArg (Map.tryFind origLambdaId env.dontInline) []
+                    let env = { env with dontInline = Map.add origLambdaId (specLambdaTy :: existingTypes) env.dontInline }
+                    let specLambdaR, _ = OptimizeExpr cenv env specLambda
+                    cenv.specializedInlineVals.Add(origLambdaId, (specLambdaTy, specLambdaR))
+                    specLambdaR
+                else
+                    let specLambdaR, _ = OptimizeExpr cenv { env with dontInline = Map.add origLambdaId [] env.dontInline } specLambda
+                    specLambdaR
+
+            // Abstract the specialized lambda over its free typars so IlxGen emits a static
+            // method with flattened arguments. The alternative closure form (valReprInfo = None)
+            // wraps args in a reference Tuple<>, which cannot hold byrefs and fails to load at
+            // runtime. When a free typar carries SRTP constraints the specialized body still
+            // needs runtime witnesses from the enclosing scope; those only flow through the
+            // closure path, so keep the closure compilation for that case.
+            let freeTyparsNeedWitnesses =
+                GetTraitWitnessInfosOfTypars g 0 freeTypars |> List.isEmpty |> not
+
+            let debugValName = $"<{vref.LogicalName}>__debug"
+
+            // The closure form wraps tupled args in a reference Tuple<> and cannot hold byrefs.
+            // When byrefs appear in the specialized call shape and the closure path is our only
+            // option (witnesses required), skip specialization entirely and let the outer pass
+            // emit a regular call - IlxGen handles $W witness rewriting inside inline callers.
+            let specArgsHaveByref =
+                let rec check ty =
+                    match tryDestFunTy g ty with
+                    | ValueSome(argTy, retTy) ->
+                        let argHasByref =
+                            if isRefTupleTy g argTy then
+                                destRefTupleTy g argTy |> List.exists (isByrefTy g)
+                            else
+                                isByrefTy g argTy
+                        argHasByref || check retTy
+                    | ValueNone -> false
+
+                check specLambdaTy
+
+            if freeTyparsNeedWitnesses && specArgsHaveByref then
+                None else
+
+            // Static method path (no witnesses needed): abstract over free typars so IlxGen emits
+            // a method with flattened arguments rather than a closure that wraps args in Tuple<>.
+            // Closure path (witnesses needed, no byref): keep the body as-is; witnesses from the
+            // enclosing scope flow through the closure, so no typar abstraction is needed.
+            let debugValTy, debugValBody, valReprInfo, typeInstForCall =
+                if not freeTyparsNeedWitnesses then
+                    let ty = mkForallTyIfNeeded freeTypars specLambdaTy
+                    let body = mkTypeLambda m freeTypars (specLambdaR, specLambdaTy)
+                    let argInfos, retInfo =
+                        match vref.ValReprInfo with
+                        | Some(ValReprInfo(_, argInfos, retInfo)) -> argInfos, retInfo
+                        | None ->
+                            let (ValReprInfo(_, a, r)) =
+                                InferValReprInfoOfExpr g AllowTypeDirectedDetupling.No specLambdaTy [] [] specLambdaR
+                            a, r
+                    let reprInfo = ValReprInfo(ValReprInfo.InferTyparInfo freeTypars, argInfos, retInfo)
+                    ty, body, Some reprInfo, [List.map mkTyparTy freeTypars]
+                else
+                    specLambdaTy, specLambdaR, None, []
+
+            let debugVal =
+                Construct.NewVal(debugValName, m, None, debugValTy, Immutable, true, valReprInfo, taccessPublic, ValNotInRecScope, None,
+                    NormalVal, [], ValInline.InlinedDefinition, XmlDoc.Empty, true, false, false, false, false, false, None,
+                    ParentNone)
+
+            let callExpr = mkApps g ((exprForVal m debugVal, debugValTy), typeInstForCall, argsR, m)
+            Some(mkCompGenLet m debugVal debugValBody callExpr, info)
+
+        | _ -> None
+    | _ ->
+
     // Considering inlining app 
     match finfo.Info with 
     | StripLambdaValue (lambdaId, arities, size, f2, f2ty) when
@@ -3457,7 +3649,7 @@ and TryInlineApplication cenv env finfo (tyargs: TType list, args: Expr list, m)
         cenv.settings.InlineLambdas &&
         not finfo.HasEffect &&
         // Don't inline recursively! 
-        not (Zset.contains lambdaId env.dontInline) &&
+        not (Map.containsKey lambdaId env.dontInline) &&
         (// Check the number of argument groups is enough to saturate the lambdas of the target. 
          (if tyargs |> List.exists (fun t -> match t with TType_measure _ -> false | _ -> true) then 1 else 0) + args.Length = arities &&
           if size <= cenv.settings.lambdaInlineThreshold + args.Length then true
@@ -3529,7 +3721,7 @@ and TryInlineApplication cenv env finfo (tyargs: TType list, args: Expr list, m)
         // Inlining: beta reducing 
         let exprR = MakeApplicationAndBetaReduce g (f2R, f2ty, [tyargs], argsR, m)
         // Inlining: reoptimizing
-        Some(OptimizeExpr cenv {env with dontInline= Zset.add lambdaId env.dontInline} exprR)
+        Some(OptimizeExpr cenv {env with dontInline = Map.add lambdaId [] env.dontInline} exprR)
           
     | _ -> None
 
@@ -3647,7 +3839,7 @@ and OptimizeApplication cenv env (f0, f0ty, tyargs, args, m) =
         OptimizeExpr cenv env remade
     | Choice2Of2 (newf0, remake) -> 
 
-    match TryInlineApplication cenv env finfo (tyargs, args, m) with 
+    match TryInlineApplication cenv env finfo f0 (tyargs, args, m) with 
     | Some (res, info) ->
         // inlined
         (res |> remake), info
@@ -3694,7 +3886,7 @@ and OptimizeApplication cenv env (f0, f0ty, tyargs, args, m) =
                  // Note we also have to check the argument count to ensure this is a direct call (or a partial application).
                  let doesNotMakeCriticalTailcall = 
                      vref.MakesNoCriticalTailcalls ||
-                     (let valInfoForVal = GetInfoForValWithCheck cenv env m vref in valInfoForVal.ValMakesNoCriticalTailcalls) ||
+                     (let valInfoForVal = GetInfoForVal cenv env m vref in valInfoForVal.ValMakesNoCriticalTailcalls) ||
                      (match env.functionVal with | None -> false | Some (v, _) -> valEq vref.Deref v)
                  if doesNotMakeCriticalTailcall then
                     let numArgs = otherArgs.Length + newArgs.Length
@@ -4043,9 +4235,9 @@ and OptimizeDecisionTreeTarget cenv env _m (TTarget(vs, expr, flags)) =
     let env = BindInternalValsToUnknown cenv vs env 
     let exprR, einfo = OptimizeExpr cenv env expr 
     let exprR, einfo = ConsiderSplitToMethod cenv.settings.abstractBigTargets cenv.settings.bigTargetSize cenv env (exprR, einfo) 
-    let evalueR = AbstractExprInfoByVars cenv (vs, []) einfo.Info 
-    TTarget(vs, exprR, flags), 
-    { TotalSize=einfo.TotalSize 
+    let evalueR = AbstractExprInfoByVars cenv (vs, []) einfo.Info
+    TTarget(vs, exprR, flags),
+    { TotalSize=einfo.TotalSize
       FunctionSize=einfo.FunctionSize
       HasEffect=einfo.HasEffect
       MightMakeCriticalTailcall = einfo.MightMakeCriticalTailcall 
@@ -4241,6 +4433,18 @@ and OptimizeBinding cenv isRec env (TBind(vref, expr, spBind)) =
             else einfo 
         if vref.ShouldInline && IsPartialExprVal einfo.Info then 
             errorR(InternalError("the inline value '"+vref.LogicalName+"' was not inferred to have a known value", vref.Range))
+
+        if vref.ShouldInline && vref.IsMember && not g.compilingFSharpCore && canAccessFromEverywhere vref.Accessibility then
+            // A publicly-accessible inline member whose body references a value that is not
+            // accessible everywhere cannot be inlined at an external call site, so report it
+            // here (FS1113) instead of deferring a confusing FS1118 to the consumer. Only free
+            // value references are considered: a class-scope self identifier (`as self`) makes
+            // members reference a private safe-init field, but that is a field (never a free
+            // local) so it does not trip this check. Values that are themselves inline are
+            // excluded, as they are expanded transitively when the outer member is inlined.
+            let fvs = freeInExpr CollectLocals exprOptimized
+            if fvs.FreeLocals |> Zset.exists (fun v -> not v.ShouldInline && not (canAccessFromEverywhere v.Accessibility)) then
+                errorR(Error(FSComp.SR.optValueMarkedInlineButIncomplete(vref.DisplayName), vref.Range))
         
         let env = BindInternalLocalVal cenv vref (mkValInfo einfo vref) env
 
@@ -4260,16 +4464,22 @@ and OptimizeBindings cenv isRec env xs =
     
 and OptimizeModuleExprWithSig cenv env mty def  = 
         let g = cenv.g
-        // Optimize the module implementation
-        let (def, info), (_env, bindInfosColl) = OptimizeModuleContents cenv (env, []) def  
-        let bindInfosColl = List.concat bindInfosColl 
-        
+
         // Compute the elements truly hidden by the module signature.
         // The hidden set here must contain NOT MORE THAN the set of values made inaccessible by 
         // the application of the signature. If it contains extra elements we'll accidentally eliminate
         // bindings.
-         
+        // This only walks structural elements (Val/Entity declarations), not expressions,
+        // so it gives the same result before and after optimization.
         let _renaming, hidden as rpi = ComputeRemappingFromImplementationToSignature g def mty
+
+        // Make hiding info available during optimization so TryInlineApplication
+        // can avoid emitting direct calls to vals hidden by signature.
+        let cenv = { cenv with signatureHidingInfo = hidden }
+
+        // Optimize the module implementation
+        let (def, info), (_env, bindInfosColl) = OptimizeModuleContents cenv (env, []) def
+        let bindInfosColl = List.concat bindInfosColl
 
         let def = 
             if not cenv.settings.LocalOptimizationsEnabled then def else 
@@ -4333,7 +4543,7 @@ and OptimizeModuleExprWithSig cenv env mty def  =
             
             elimModuleDefn def 
 
-        let info = AbstractAndRemapModulInfo g rpi info
+        let info = AbstractAndRemapModulInfo g cenv rpi info
 
         def, info 
 
@@ -4406,14 +4616,14 @@ and OptimizeImplFileInternal cenv env isIncrementalFragment hidden implFile =
             // This optimizes and builds minfo ignoring the signature
             let (defR, minfo), (_env, _bindInfosColl) = OptimizeModuleContents cenv (env, []) contents
             let hidden = ComputeImplementationHidingInfoAtAssemblyBoundary defR hidden
-            let minfo = AbstractLazyModulInfoByHiding false hidden minfo
+            let minfo = AbstractLazyModulInfoByHiding false cenv hidden minfo
             let env = BindValsInModuleOrNamespace cenv minfo env
             env, defR, minfo, hidden
         else
             // This optimizes and builds minfo w.r.t. the signature
             let mexprR, minfo = OptimizeModuleExprWithSig cenv env signature contents
             let hidden = ComputeSignatureHidingInfoAtAssemblyBoundary signature hidden
-            let minfoExternal = AbstractLazyModulInfoByHiding true hidden minfo
+            let minfoExternal = AbstractLazyModulInfoByHiding true cenv hidden minfo
             let env = BindValsInModuleOrNamespace cenv minfo env
             env, mexprR, minfoExternal, hidden
 
@@ -4435,6 +4645,8 @@ let OptimizeImplFile (settings, ccu, tcGlobals, tcVal, importMap, optEnv, isIncr
           casApplied=Dictionary<Stamp, bool>() 
           stackGuard = StackGuard("OptimizerStackGuardDepth")
           realsig = tcGlobals.realsig
+          specializedInlineVals = HashMultiMap(HashIdentity.Structural, true)
+          signatureHidingInfo = SignatureHidingInfo.Empty
         }
 
     let env, _, _, _ as results = OptimizeImplFileInternal cenv optEnv isIncrementalFragment hidden mimpls
@@ -4480,26 +4692,34 @@ and p_ValInfo (v: ValInfo) st =
     p_ExprValueInfo v.ValExprInfo st
     p_bool v.ValMakesNoCriticalTailcalls st
 
-and p_ModuleInfo x st = 
+and p_ModuleInfo x st =
+    // Stamp tiebreaker is safe: every Val reaching ValInfos.Entries has its stamp
+    // assigned during single-threaded type-checking.
+    let stableValKey (vref: ValRef) =
+        let k = vref.Deref.GetLinkageFullKey()
+
+        struct (
+            vref.LogicalName,
+            k.PartialKey.MemberParentMangledName,
+            k.PartialKey.TotalArgCount,
+            k.PartialKey.MemberIsOverride,
+            vref.Deref.Stamp
+        )
+
+    let mergeRacedFlags (vref: ValRef, vinfo: ValInfo) =
+        let merged = vinfo.ValMakesNoCriticalTailcalls || vref.Deref.MakesNoCriticalTailcalls
+
+        if merged = vinfo.ValMakesNoCriticalTailcalls then
+            vref, vinfo
+        else
+            vref, { vinfo with ValMakesNoCriticalTailcalls = merged }
+
     let entries =
         x.ValInfos.Entries
         |> Seq.toArray
-        |> Array.sortBy (fun (vref: ValRef, _) ->
-            let k = vref.Deref.GetLinkageFullKey()
+        |> Array.sortBy (fst >> stableValKey)
+        |> Array.map mergeRacedFlags
 
-            struct (
-                vref.LogicalName,
-                k.PartialKey.MemberParentMangledName,
-                k.PartialKey.TotalArgCount,
-                k.PartialKey.MemberIsOverride,
-                vref.Deref.Stamp
-            ))
-        |> Array.map (fun (vref, vinfo) ->
-            let merged = vinfo.ValMakesNoCriticalTailcalls || vref.Deref.MakesNoCriticalTailcalls
-            if merged = vinfo.ValMakesNoCriticalTailcalls then
-                vref, vinfo
-            else
-                vref, { vinfo with ValMakesNoCriticalTailcalls = merged })
     p_array (p_tup2 (p_vref "opttab") p_ValInfo) entries st
     p_namemap p_LazyModuleInfo x.ModuleOrNamespaceInfos st
 
