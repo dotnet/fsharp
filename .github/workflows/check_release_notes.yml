@@ -9,6 +9,9 @@ permissions:
   contents: read
   issues: write
   pull-requests: read
+concurrency:
+  group: release-notes-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
 jobs:
   check_release_notes:
     permissions:
@@ -34,8 +37,8 @@ jobs:
         FSHARP_REPO_URL="https://github.com/${GITHUB_REPOSITORY}"
         PR_URL="${FSHARP_REPO_URL}/pull/${PR_NUMBER}"
 
-        [[ "$PR_BASE_SHA" =~ ^[0-9a-f]{40}$ ]]
-        [[ "$PR_HEAD_SHA" =~ ^[0-9a-f]{40}$ ]]
+        [[ "$PR_BASE_SHA" =~ ^[0-9a-f]{40}$ ]] || { echo "::error::Unexpected base SHA: $PR_BASE_SHA"; exit 1; }
+        [[ "$PR_HEAD_SHA" =~ ^[0-9a-f]{40}$ ]] || { echo "::error::Unexpected head SHA: $PR_HEAD_SHA"; exit 1; }
 
         echo "PR Tags: $PR_LABELS"
         echo "Opt out of release notes: $OPT_OUT_RELEASE_NOTES"
@@ -84,7 +87,7 @@ jobs:
         readonly paths=(
             "src/FSharp.Core|${_fsharp_core_release_notes_path}"
             "src/Compiler|${_fsharp_compiler_release_notes_path}"
-            "LanguageFeatures.fsi|${_fsharp_language_release_notes_path}"
+            "src/Compiler/Facilities/LanguageFeatures.fsi|${_fsharp_language_release_notes_path}"
             "vsintegration/src|${_fsharp_vs_release_notes_path}"
         )
 
