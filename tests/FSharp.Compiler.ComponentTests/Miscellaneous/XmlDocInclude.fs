@@ -4,6 +4,7 @@ namespace Miscellaneous
 
 open System
 open System.IO
+open System.Runtime.InteropServices
 open Xunit
 open TestFramework
 open FSharp.Test.Compiler
@@ -388,6 +389,35 @@ let f x = x
         |> memberXmlEquals
             "M:Test.included(System.Int32,System.Int32)"
             "<summary>S: <remarks>Shared remarks.</remarks></summary>"
+
+    [<Fact>]
+    let ``Case-distinct include files are not treated as a cycle on case-sensitive filesystems`` () =
+        if RuntimeInformation.IsOSPlatform(OSPlatform.Linux) then
+            let source = Snippets.memberWithInclude "Data.xml" "/data/summary"
+
+            let dataUpper =
+                """<?xml version="1.0"?>
+<data>
+  <summary>Upper start. <include file="data.xml" path="/data/summary"/> Upper end.</summary>
+</data>"""
+
+            let dataLower =
+                """<?xml version="1.0"?>
+<data>
+  <summary>Lower summary.</summary>
+</data>"""
+
+            let res =
+                runInclude (scenario source [ "Data.xml", dataUpper; "data.xml", dataLower ])
+
+            res.Compilation |> shouldSucceed |> withDiagnostics [] |> ignore
+
+            res.Xml
+            |> memberXmlEquals
+                "M:Test.included(System.Int32,System.Int32)"
+                "<summary>Upper start. <summary>Lower summary.</summary> Upper end.</summary>"
+        else
+            ()
 
     [<Fact>]
     let ``Self include cycle is detected and terminates`` () =

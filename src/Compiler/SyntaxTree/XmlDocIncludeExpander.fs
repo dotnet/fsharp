@@ -5,6 +5,7 @@ module internal FSharp.Compiler.Xml.XmlDocIncludeExpander
 open System
 open System.Collections.Generic
 open System.IO
+open System.Runtime.InteropServices
 open System.Xml
 open System.Xml.Linq
 open System.Xml.XPath
@@ -13,13 +14,29 @@ open FSharp.Compiler.IO
 open FSharp.Compiler.Text
 open Internal.Utilities.Library
 
-/// Case-insensitive path comparer for cycle detection and caching
-let private pathComparer = StringComparer.OrdinalIgnoreCase
+/// Path comparison must match the host filesystem: case-insensitive on Windows/macOS, case-sensitive elsewhere.
+let private pathComparer =
+    if
+        RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
+        || RuntimeInformation.IsOSPlatform(OSPlatform.OSX)
+    then
+        StringComparer.OrdinalIgnoreCase
+    else
+        StringComparer.Ordinal
 
-/// Cycle-detection key. The same file included via DIFFERENT XPath sections is not a cycle,
-/// so the key combines the (case-folded) resolved path with the exact XPath.
-let private includeKey (resolvedPath: string) (xpath: string) =
-    resolvedPath.ToUpperInvariant() + "\u0000" + xpath
+/// Cycle-detection key comparer: path per the OS-aware pathComparer, xpath ordinal.
+/// The same file included via a DIFFERENT xpath is NOT a cycle, so both parts matter.
+let private includeKeyComparer =
+    { new IEqualityComparer<struct (string * string)> with
+        member _.Equals(struct (p1, x1), struct (p2, x2)) =
+            pathComparer.Equals(p1, p2) && String.Equals(x1, x2, StringComparison.Ordinal)
+
+        member _.GetHashCode(struct (p, x)) =
+            // Combine hashes consistently with Equals (path via pathComparer, xpath ordinal).
+            (pathComparer.GetHashCode(p) <<< 1)
+            + StringComparer.Ordinal.GetHashCode(x)
+            + 631
+    }
 
 /// Roslyn-parity comment inserted when an <include> XPath is valid but matches no elements.
 /// No warning is emitted in this case; the original tag is kept after the comment.
@@ -41,7 +58,7 @@ let private loadXmlFile (cache: Dictionary<string, Result<XDocument, string>>) (
                     use stream = FileSystem.OpenFileForReadShim(filePath)
 
                     let settings =
-                        XmlReaderSettings(DtdProcessing = DtdProcessing.Prohibit, XmlResolver = null, MaxCharactersFromEntities = 0L)
+                        XmlReaderSettings(DtdProcessing = DtdProcessing.Prohibit, XmlResolver = null)
 
                     use reader = XmlReader.Create(stream, settings)
 
@@ -120,7 +137,7 @@ let private classifyInclude (elem: XElement) : Result<IncludeInfo, string> optio
 type private ExpansionContext =
     {
         FileCache: Dictionary<string, Result<XDocument, string>>
-        InProgressIncludes: HashSet<string>
+        InProgressIncludes: HashSet<struct (string * string)>
         Range: range
         Emit: bool
     }
@@ -151,7 +168,7 @@ let rec private resolveSingleInclude (baseFileName: string) (includeInfo: Includ
     | Result.Error msg -> IncludeError msg
     | Result.Ok resolvedPath ->
 
-        let key = includeKey resolvedPath includeInfo.XPath
+        let key = struct (resolvedPath, includeInfo.XPath)
 
         if ctx.InProgressIncludes.Contains(key) then
             IncludeError $"Circular include detected: {resolvedPath}"
@@ -167,7 +184,7 @@ let rec private resolveSingleInclude (baseFileName: string) (includeInfo: Includ
                 | matchedElements ->
                     // Clone the in-progress set and add this (file,xpath) for recursive expansion
                     let childInProgress =
-                        HashSet<string>(ctx.InProgressIncludes, StringComparer.Ordinal)
+                        HashSet<struct (string * string)>(ctx.InProgressIncludes, includeKeyComparer)
 
                     childInProgress.Add(key) |> ignore
 
@@ -237,7 +254,7 @@ let expandIncludeLines (emit: bool) (baseFileName: string) (range: range) (lines
             let ctx =
                 {
                     FileCache = Dictionary<string, Result<XDocument, string>>(pathComparer)
-                    InProgressIncludes = HashSet<string>(StringComparer.Ordinal)
+                    InProgressIncludes = HashSet<struct (string * string)>(includeKeyComparer)
                     Range = range
                     Emit = emit
                 }
