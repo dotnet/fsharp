@@ -143,12 +143,10 @@ for /f "usebackq delims=" %%U in (`powershell -NoProfile -ExecutionPolicy Bypass
 "%_dotnet%" restore "%_root%\eng\restore-swixplugin.proj" --configfile "%_root%\NuGet.Config" !_srcArgs!
 if errorlevel 1 ( echo Error: SwixBuild plugin restore failed 1>&2 & exit /b 1 )
 set "SwixPluginDir="
-echo Searching for the restored SwixBuild plugin under "%NUGET_PACKAGES%"...
-for /f "delims=" %%D in ('dir /b /s "%NUGET_PACKAGES%microsoft.visualstudioeng.microbuild.plugins.swixbuild\Microsoft.VisualStudio.Setup.Tools.targets" 2^>nul') do set "SwixPluginDir=%%~dpD"
-if not defined SwixPluginDir for /f "delims=" %%D in ('dir /b /s "%USERPROFILE%\.nuget\packages\microsoft.visualstudioeng.microbuild.plugins.swixbuild\Microsoft.VisualStudio.Setup.Tools.targets" 2^>nul') do set "SwixPluginDir=%%~dpD"
+echo Locating the restored SwixBuild plugin build folder under "%NUGET_PACKAGES%"...
+for /f "usebackq delims=" %%D in (`powershell -NoProfile -ExecutionPolicy Bypass -Command "$p = Get-ChildItem -Path '%NUGET_PACKAGES%' -Recurse -Filter 'Microsoft.VisualStudio.Setup.Tools.targets' -ErrorAction SilentlyContinue ^| Where-Object { $_.FullName -match 'swixbuild' } ^| Select-Object -First 1; if ($p) { $p.DirectoryName }"`) do set "SwixPluginDir=%%D"
 if not defined SwixPluginDir (
-  echo Error: modern SwixBuild plugin (build\ folder) not found after restore 1>&2
-  echo --- diagnostic: plugin folder contents ---
+  echo Error: modern SwixBuild plugin build folder not found after restore 1>&2
   dir /s /b "%NUGET_PACKAGES%microsoft.visualstudioeng.microbuild.plugins.swixbuild" 2>nul
   exit /b 1
 )
@@ -159,7 +157,7 @@ set "_msbuild="
 for /f "usebackq tokens=*" %%M in (`"%_vswhere%" -latest -products * -requires Microsoft.Component.MSBuild -find MSBuild\**\Bin\MSBuild.exe`) do set "_msbuild=%%M"
 if not defined _msbuild ( echo Error: desktop MSBuild not found via vswhere 1>&2 & exit /b 1 )
 echo Using desktop MSBuild: %_msbuild%
-"%_msbuild%" "%_root%\setup\Swix\Microsoft.FSharp.Lean.vsmanproj" /p:Configuration=Release /p:SwixPluginDir="%SwixPluginDir%." /p:ManifestBuildVersion=15.9.%OfficialBuildId% /bl:"%_root%\artifacts\log\Release\vsman.binlog"
+"%_msbuild%" "%_root%\setup\Swix\Microsoft.FSharp.Lean.vsmanproj" /p:Configuration=Release /p:SwixPluginDir="%SwixPluginDir%" /p:ManifestBuildVersion=15.9.%OfficialBuildId% /bl:"%_root%\artifacts\log\Release\vsman.binlog"
 if errorlevel 1 ( echo Error: .vsman drop build failed 1>&2 & exit /b 1 )
 echo ---------------- Lean .vsman insertion drop built ----------------
 if exist "%_root%\Release\insertion" ( dir "%_root%\Release\insertion" ) else ( echo Error: Release\insertion not produced 1>&2 & exit /b 1 )
