@@ -126,6 +126,13 @@
          stay a property rather than being inlined into eng/Packages.props. -->
     <MicrosoftVSSDKBuildToolsVersion>17.14.2120</MicrosoftVSSDKBuildToolsVersion>
 
+    <!-- Read by name by the test harness (tests/FSharp.Test.Utilities/TestFramework.fs parses this file to
+         locate csc/vbc/ilasm/ildasm in the NuGet cache), so these must stay properties rather than being
+         inlined into eng/Packages.props. -->
+    <MicrosoftNetCompilersVersion>4.3.0-1.22220.8</MicrosoftNetCompilersVersion>
+    <MicrosoftNETCoreILAsmVersion>5.0.0-preview.7.20364.11</MicrosoftNETCoreILAsmVersion>
+    <MicrosoftNETCoreILDAsmVersion>5.0.0-preview.7.20364.11</MicrosoftNETCoreILDAsmVersion>
+
     <!-- other packages -->
     <BenchmarkDotNetVersion>0.13.10</BenchmarkDotNetVersion>
     <MicrosoftTestPlatformVersion>17.14.1</MicrosoftTestPlatformVersion>

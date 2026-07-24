@@ -31,9 +31,9 @@
          keeps 8.0.0 via a VersionOverride. -->
     <PackageVersion Include="Microsoft.Extensions.DependencyInjection" Version="10.0.0" />
     <PackageVersion Include="Microsoft.Internal.VisualStudio.Shell.Framework" Version="18.0.2188-preview.1" />
-    <PackageVersion Include="Microsoft.Net.Compilers" Version="4.3.0-1.22220.8" />
-    <PackageVersion Include="Microsoft.NETCore.ILAsm" Version="5.0.0-preview.7.20364.11" />
-    <PackageVersion Include="Microsoft.NETCore.ILDAsm" Version="5.0.0-preview.7.20364.11" />
+    <PackageVersion Include="Microsoft.Net.Compilers" Version="$(MicrosoftNetCompilersVersion)" />
+    <PackageVersion Include="Microsoft.NETCore.ILAsm" Version="$(MicrosoftNETCoreILAsmVersion)" />
+    <PackageVersion Include="Microsoft.NETCore.ILDAsm" Version="$(MicrosoftNETCoreILDAsmVersion)" />
     <PackageVersion Include="Microsoft.ServiceHub.Framework" Version="4.10.128" />
     <PackageVersion Include="Microsoft.Testing.Extensions.HangDump" Version="$(MicrosoftTestingExtensionsHangDumpVersion)" />
     <PackageVersion Include="Microsoft.TestPlatform.ObjectModel" Version="$(MicrosoftTestPlatformVersion)" />
