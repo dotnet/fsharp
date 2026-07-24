@@ -112,18 +112,14 @@ type IlDeltaStreams =
         StandaloneSignatures: StandaloneSignatureUpdate list
     }
 
+type private SeededOffsets = SeededOffsets
+
 /// <summary>
 /// Accumulates metadata tables, Edit-and-Continue bookkeeping, and encoded method bodies prior to serialising
 /// a hot reload delta. Uses pure F# token calculators instead of SRM MetadataBuilder.
 /// Callers retrieve the resulting byte arrays via <see cref="Build"/>.
 /// </summary>
-type IlDeltaStreamBuilder(baselineMetadata: MetadataSnapshot option) =
-    // Initialize token calculators with baseline heap/table offsets
-    let userStringHeapStart, standaloneSigRowCount =
-        match baselineMetadata with
-        | Some snapshot -> snapshot.HeapSizes.UserStringHeapSize, snapshot.TableRowCounts.[TableNames.StandAloneSig.Index]
-        | None -> 0, 0
-
+type IlDeltaStreamBuilder private (userStringHeapStart: int, standaloneSigRowCount: int, _seededOffsets: SeededOffsets) =
     let userStringCalculator = UserStringTokenCalculator(userStringHeapStart)
 
     let standaloneSigCalculator =
@@ -140,6 +136,25 @@ type IlDeltaStreamBuilder(baselineMetadata: MetadataSnapshot option) =
 
         for _ = 1 to padding do
             methodBodyStream.EmitByte 0uy
+
+    /// <summary>Create a builder seeded from an emitted baseline metadata snapshot, when one is available.</summary>
+    new(baselineMetadata: MetadataSnapshot option) =
+        let userStringHeapStart, standaloneSigRowCount =
+            match baselineMetadata with
+            | Some snapshot ->
+                snapshot.HeapSizes.UserStringHeapSize,
+                snapshot.TableRowCounts.[TableNames.StandAloneSig.Index]
+            | None -> 0, 0
+
+        IlDeltaStreamBuilder(userStringHeapStart, standaloneSigRowCount, SeededOffsets)
+
+    /// <summary>Create an unseeded builder for a first-generation or isolated metadata delta.</summary>
+    new() = IlDeltaStreamBuilder(0, 0, SeededOffsets)
+
+    /// <summary>Create a builder seeded with explicit baseline heap and table sizes.</summary>
+    new(initialUserStringHeapSize: int, initialStandAloneSigRowCount: int) =
+        // Lower metadata-writer tests use explicit offsets without constructing a full baseline snapshot.
+        IlDeltaStreamBuilder(initialUserStringHeapSize, initialStandAloneSigRowCount, SeededOffsets)
 
     /// <summary>Expose the user string token calculator for advanced scenarios.</summary>
     member _.UserStringCalculator = userStringCalculator
