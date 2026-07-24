@@ -118,6 +118,10 @@ type PdbMethodData =
         DebugPoints: PdbDebugPoint array
     }
 
+/// A pre-serialized CustomDebugInformation row (kind GUID + blob) to attach to a method
+/// definition row in the portable PDB.
+type PdbMethodCustomDebugInfo = { KindGuid: Guid; Blob: byte[] }
+
 module SequencePoint =
     let orderBySource sp1 sp2 =
         let c1 = compare sp1.Document sp2.Document
@@ -337,7 +341,15 @@ let scopeSorter (scope1: PdbMethodScope) (scope2: PdbMethodScope) =
         0
 
 type PortablePdbGenerator
-    (embedAllSource: bool, embedSourceList: string list, sourceLink: string, checksumAlgorithm, info: PdbData, pathMap: PathMap) =
+    (
+        embedAllSource: bool,
+        embedSourceList: string list,
+        sourceLink: string,
+        checksumAlgorithm,
+        info: PdbData,
+        pathMap: PathMap,
+        methodCustomDebugInfoRows: Map<string, PdbMethodCustomDebugInfo list>
+    ) =
 
     // Deterministic: build the Document table in a stable order by mapped file path,
     // but preserve the original-document-index -> handle mapping by filename.
@@ -487,6 +499,27 @@ type PortablePdbGenerator
 
     let moduleImportScopeHandle = MetadataTokens.ImportScopeHandle(1)
     let importScopesTable = Dictionary<PdbImports, ImportScopeHandle>()
+
+    // Per-method CustomDebugInformation rows keyed by IL method name. Names that match
+    // more than one method row (overloads, same name on different types) fail closed and
+    // attach nothing, so a row can never land on the wrong method.
+    let methodCustomDebugInfoByName =
+        if Map.isEmpty methodCustomDebugInfoRows then
+            methodCustomDebugInfoRows
+        else
+            let nameCounts = Dictionary<string, int>()
+
+            for minfo in info.Methods do
+                nameCounts[minfo.MethName] <-
+                    match nameCounts.TryGetValue minfo.MethName with
+                    | true, count -> count + 1
+                    | _ -> 1
+
+            methodCustomDebugInfoRows
+            |> Map.filter (fun methName _ ->
+                match nameCounts.TryGetValue methName with
+                | true, 1 -> true
+                | _ -> false)
 
     let serializeImport (writer: BlobBuilder) (import: PdbImport) =
         match import with
@@ -777,6 +810,23 @@ type PortablePdbGenerator
 
         metadata.AddMethodDebugInformation(docHandle, sequencePointBlob) |> ignore
 
+        // MetadataBuilder sorts the CustomDebugInformation table by parent at serialize
+        // time, so adding rows in method order here is safe.
+        match Map.tryFind minfo.MethName methodCustomDebugInfoByName with
+        | Some cdiRows ->
+            // MethToken is the uncoded token (0x06 <<< 24 ||| rid); the handle needs the rid.
+            let methodHandle =
+                MetadataTokens.MethodDefinitionHandle(minfo.MethToken &&& 0x00FFFFFF)
+
+            for cdiRow in cdiRows do
+                metadata.AddCustomDebugInformation(
+                    MethodDefinitionHandle.op_Implicit methodHandle,
+                    metadata.GetOrAddGuid cdiRow.KindGuid,
+                    metadata.GetOrAddBlob cdiRow.Blob
+                )
+                |> ignore
+        | None -> ()
+
         match minfo.RootScope with
         | None -> ()
         | Some scope -> writeMethodScopes minfo.MethToken scope
@@ -831,9 +881,10 @@ let generatePortablePdb
     checksumAlgorithm
     (info: PdbData)
     (pathMap: PathMap)
+    (methodCustomDebugInfoRows: Map<string, PdbMethodCustomDebugInfo list>)
     =
     let generator =
-        PortablePdbGenerator(embedAllSource, embedSourceList, sourceLink, checksumAlgorithm, info, pathMap)
+        PortablePdbGenerator(embedAllSource, embedSourceList, sourceLink, checksumAlgorithm, info, pathMap, methodCustomDebugInfoRows)
 
     generator.Emit()
 

@@ -256,6 +256,7 @@
     <Compile Include="EmittedIL\TypeTestsInPatternMatching.fs" />
     <Compile Include="EmittedIL\WhileLoops.fs" />
     <Compile Include="EmittedIL\ArgumentNames.fs" />
+    <Compile Include="EmittedIL\CompilerGeneratedNameDeterminism.fs" />
     <Compile Include="EmittedIL\AssemblyBoundary\AssemblyBoundary.fs" />
     <Compile Include="EmittedIL\AsyncExpressionStepping\AsyncExpressionStepping.fs" />
     <Compile Include="EmittedIL\AttributeTargets\AttributeTargets.fs" />
@@ -354,6 +355,7 @@
     <Compile Include="Language\MultiDimensionalArrayTests.fs" />
     <Compile Include="Language\RegressionTests.fs" />
     <Compile Include="Language\AttributeCheckingTests.fs" />
+    <Compile Include="Language\AttributeResolutionInRecursiveScopes.fs" />
     <Compile Include="Language\ObsoleteAttributeCheckingTests.fs" />
     <Compile Include="Language\ExperimentalAttributeCheckingTests.fs" />
     <Compile Include="Language\SequenceExpressions\SequenceExpressionTests.fs" />
@@ -470,6 +472,7 @@
     <Compile Include="CompilerOptions\fsi\Langversion.fs" />
     <Compile Include="CompilerService\RangeModule.fs" />
     <Compile Include="CompilerService\Caches.fs" />
+    <Compile Include="CompilerService\EncMethodDebugInformationTests.fs" />
     <Compile Include="CompilerService\LruCache.fs" />
     <Compile Include="CompilerService\AsyncMemoize.fs" />
     <Compile Include="CompilerService\FSharpWorkspace.fs" />
