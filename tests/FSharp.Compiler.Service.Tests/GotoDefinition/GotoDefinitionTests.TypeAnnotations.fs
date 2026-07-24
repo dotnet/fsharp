@@ -1,13 +1,12 @@
 module FSharp.Compiler.Service.Tests.GotoDefinitionTypeAnnotationsTests
 
-open System
 open Xunit
 
 let private bug2516SpacedSource =
     """
                 //regression test for bug 2516
                 type One{caret1} (*Marker1*) = One
-                let f (x : One{caret2} (*Marker2*)) = 2
+                let f (x : One{caret2}) = 2
                 """
 
 [<Fact>]
@@ -26,10 +25,10 @@ let private overloadResolutionSource =
           "   member this.Foo(x) (*#2#*) = ()"
           ""
           "let d = new D()"
-          "d.Foo{caret1}() (*$1$*)"
-          "d.Foo{caret2}(1) (*$2$*)"
-          "d.ToString{caret3}() (*$3$*)"
-          "d.ToString{caret4}(\"aaa\") (*$4$*)" ]
+          "d.Foo{caret1}()"
+          "d.Foo{caret2}(1)"
+          "d.ToString{caret3}()"
+          "d.ToString{caret4}(\"aaa\")" ]
 
 [<Fact>]
 let ``GotoDefinition.OverloadResolution`` () =
@@ -47,8 +46,8 @@ let private overloadStaticsSource =
           "   static member Foo(i : int) (*#1#*) = ()"
           "   static member Foo(s : string) (*#2#*) = ()"
           ""
-          "T.Foo{caret1} 1 (*$1$*)"
-          "T.Foo{caret2} \"abc\" (*$2$*)" ]
+          "T.Foo{caret1} 1"
+          "T.Foo{caret2} \"abc\"" ]
 
 [<Fact>]
 let ``GotoDefinition.OverloadResolutionStatics`` () =
@@ -68,26 +67,26 @@ let private constructorsSource =
           "B(1)"
           "B(\"abc\")"
           ""
-          "new B{caret1}() (*$1b$*)"
-          "new B{caret2}(1) (*$2b$*)"
-          "new B{caret3}(\"abc\") (*$3b$*)"
+          "new B{caret1}()"
+          "new B{caret2}(1)"
+          "new B{caret3}(\"abc\")"
           ""
           "type D1() ="
-          "    inherit B{caret4}() (*$1c$*)"
+          "    inherit B{caret4}()"
           ""
           "type D2() ="
-          "    inherit B{caret5}(1) (*$2c$*)"
+          "    inherit B{caret5}(1)"
           ""
           "type D3() ="
-          "    inherit B{caret6}(\"abc\") (*$3c$*)"
+          "    inherit B{caret6}(\"abc\")"
           ""
-          "let o1 = { new B{caret7}() (*$1d$*) with"
+          "let o1 = { new B{caret7}() with"
           "             override this.ToString() = \"\""
           "         }"
-          "let o2 = { new B{caret8}(1) (*$2d$*) with"
+          "let o2 = { new B{caret8}(1) with"
           "             override this.ToString() = \"\""
           "         }"
-          "let o3 = { new B{caret9}(\"aaa\") (*$3d$*) with"
+          "let o3 = { new B{caret9}(\"aaa\") with"
           "             override this.ToString() = \"\""
           "         }" ]
 
@@ -111,7 +110,7 @@ let private simplePolymorphSource =
         [ "let _ ="
           "  let a = 2"
           "  let id (x : 'a{caret1}) (*loc-33*)"
-          "    : 'a{caret2} = x (*loc-34*)"
+          "    : 'a{caret2} = x"
           "  ()" ]
 
 [<Fact>]
@@ -123,7 +122,7 @@ let private bug2516ModuleSource =
     """
             module GotoDefinition
             type One{caret1}(*Mark1*) = One
-            let f (x : One{caret2}(*Mark2*)) = 2"""
+            let f (x : One{caret2}) = 2"""
 
 [<Fact>]
 let ``Identifier.Bug2516`` () =

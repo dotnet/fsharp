@@ -1,6 +1,5 @@
 module FSharp.Compiler.Service.Tests.GotoDefinitionActivePatternsTests
 
-open System
 open Xunit
 
 let private overlapSource =
@@ -10,13 +9,13 @@ let private overlapSource =
           "  type Parity = Even | Odd"
           "  let (|Even{caret1}|Odd|) x = (*loc-59*)"
           "    if x % 0 = 0"
-          "       then Even{caret2} (*loc-60*)"
+          "       then Even{caret2}"
           "       else Odd"
           "  let foo (x : int) ="
           "    match x with"
-          "    | Even{caret3} -> 1 (*loc-61*)"
+          "    | Even{caret3} -> 1"
           "    | Odd  -> 0"
-          "  let patval = (|Even{caret4}|Odd|) (*loc-61b*)" ]
+          "  let patval = (|Even{caret4}|Odd|)" ]
 
 [<Fact>]
 let ``GotoDefinition.Simple.ActivePat`` () =

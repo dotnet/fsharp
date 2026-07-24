@@ -1,6 +1,5 @@
 module FSharp.Compiler.Service.Tests.GotoDefinitionPatternMatchingTests
 
-open System
 open Xunit
 
 let private nestedLetSource =
@@ -10,7 +9,7 @@ let private nestedLetSource =
           "  let     x = ()"
           "  let rec x = (*loc-9*)"
           "    fun y -> (*loc-10*)"
-          "      x y{caret} (*loc-8*)"
+          "      x y{caret}"
           "  ()" ]
 
 [<Fact>]
@@ -25,7 +24,7 @@ let private lambdaMultiBindSource =
         [ "let _ ="
           "  fun x (*loc-37*)"
           "      x{caret1} -> (*loc-38*)"
-          "    x{caret2} (*loc-39*)" ]
+          "    x{caret2}" ]
 
 [<Fact>]
 let ``GotoDefinition.Simple.Tricky.LambdaMultBind`` () =
@@ -39,7 +38,7 @@ let private functionPatternSource =
           "  let f = () (*loc-40*)"
           "  let f = (*loc-41*)"
           "    function f{caret1} -> (*loc-42*)"
-          "      f{caret2} (*loc-43*)"
+          "      f{caret2}"
           "  ()" ]
 
 [<Fact>]
@@ -55,7 +54,7 @@ let private andPatternSource =
           "  let f x ="
           "    match x with"
           "    | Suc y & z -> (*loc-47*)"
-          "        y{caret} (*loc-46*)"
+          "        y{caret}"
           "  ()" ]
 
 [<Fact>]
@@ -71,7 +70,7 @@ let private consPatternSource =
           "  let f xs ="
           "    match xs with"
           "    | x :: xs -> (*loc-49*)"
-          "        x{caret} (*loc-48*)"
+          "        x{caret}"
           "    | _       -> []"
           "  ()" ]
 
@@ -88,7 +87,7 @@ let private pairPatternSource =
           "  let f x ="
           "    match x with"
           "    | (y : int, z) -> (*loc-51*)"
-          "         y{caret} (*loc-50*)"
+          "         y{caret}"
           "  ()" ]
 
 [<Fact>]
@@ -104,7 +103,7 @@ let private consWhenSource =
           "  let f xs ="
           "    match xs with"
           "    | x :: xs (*loc-54*)"
-          "      when xs{caret} <> [] -> (*loc-52*)"
+          "      when xs{caret} <> [] ->"
           "        x :: xs (*loc-53*)"
           "  ()" ]
 
