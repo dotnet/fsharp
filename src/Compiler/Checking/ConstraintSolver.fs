@@ -3568,12 +3568,10 @@ and ResolveOverloadingCore
                 reqdRetTyOpt 
                 candidate)
 
-    // C#-parity OverloadResolutionPriority: when a candidate carries an explicit priority, prune to
-    // the highest-priority *applicable* members per declaring type BEFORE exact-match/betterness, so
-    // (a) an inapplicable high-priority member can't shadow an applicable lower-priority one, and
-    // (b) priority — not natural betterness (params/subsumption) — decides among applicable members.
-    // No-priority is a fast-path; inapplicable candidates keep their place so "no overloads" diagnostics
-    // stay complete (A5: order preserved).
+    // C#-parity OverloadResolutionPriority: prune to the highest-priority *applicable* members per
+    // declaring type before exact-match/betterness, so an inapplicable high-priority member can't
+    // shadow an applicable lower-priority one, and priority (not params/subsumption betterness) decides
+    // among applicable members. If none applies, keep the full set so "no overloads" diagnostics stay complete.
     let candidates =
         if g.langVersion.SupportsFeature LanguageFeature.OverloadResolutionPriority
            && candidates |> List.exists (fun cm -> cm.Method.GetOverloadResolutionPriority() <> 0) then

@@ -164,10 +164,9 @@ if r <> "opt-high" then failwithf "expected opt-high, got %s" r
 
     [<FactForNETCOREAPP>]
     let ``ORPA - no applicable overload preserves normal diagnostics`` () =
-        // Priority is pruned only among *applicable* members. When none is applicable, the full
-        // candidate set is kept so the normal "no overloads found" diagnostic lists every overload
-        // (pre-fix the high-priority string overload was kept before applicability and gave a bare
-        // type-mismatch instead of the overload listing).
+        // Priority is pruned only among *applicable* members; when none applies the full set is kept so
+        // the "no overloads found" diagnostic lists every overload (pre-fix the high-priority string overload
+        // was kept before applicability and gave a bare type-mismatch instead of the overload listing).
         Fs """
 module T
 open System.Runtime.CompilerServices

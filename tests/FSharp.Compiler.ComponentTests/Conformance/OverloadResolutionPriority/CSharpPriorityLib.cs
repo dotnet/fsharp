@@ -287,9 +287,8 @@ namespace H7GenericReceiver
 
 namespace SameClassExtensionPriority
 {
-    // Two extension methods on the SAME static class extending the same receiver. Because they
-    // share a declaring type, priority IS compared (unlike the cross-class H6/H7 cases): the
-    // high-priority object overload must beat the exact int overload.
+    // Same declaring type (unlike the cross-class H6/H7 cases), so priority IS compared:
+    // the high-priority object overload must beat the exact int overload.
     public static class SameClassExtensions
     {
         [OverloadResolutionPriority(1)]
