@@ -549,3 +549,63 @@ type Derived =
     Assert.Contains("base string ctor docs", xmlText stringCall)
     Assert.DoesNotContain("base int ctor docs", xmlText stringCall)
     Assert.DoesNotContain("<inheritdoc", xmlText stringCall)
+
+[<Fact>]
+let ``tooltip type inherits docs from a generic base class`` () =
+    // "Inheriting generics": a generic derived type inheriting a generic base type's docs.
+    let xml =
+        getTooltipXml
+            """
+module Test
+/// <summary>generic base type docs</summary>
+type Base<'T>() =
+    member _.M() = ()
+/// <inheritdoc/>
+type Deri{caret}ved<'T>() =
+    inherit Base<'T>()
+"""
+
+    Assert.Contains("generic base type docs", xmlText xml)
+    Assert.DoesNotContain("<inheritdoc", xmlText xml)
+
+[<Fact>]
+let ``tooltip type inherits docs from a generic interface`` () =
+    // A type whose <inheritdoc/> resolves through a generic implemented interface.
+    let xml =
+        getTooltipXml
+            """
+module Test
+/// <summary>generic iface docs</summary>
+type IThing<'T> =
+    abstract member Do: 'T -> unit
+/// <inheritdoc/>
+type Thin{caret}g() =
+    interface IThing<int> with
+        member _.Do(_) = ()
+"""
+
+    Assert.Contains("generic iface docs", xmlText xml)
+    Assert.DoesNotContain("<inheritdoc", xmlText xml)
+
+[<Fact>]
+let ``tooltip method override inherits from a generic base method`` () =
+    // Override of a method declared on a generic base (Get: unit -> 'T instantiated to int):
+    // signature matching must still find the overridden slot.
+    let xml =
+        getTooltipXml
+            """
+module Test
+type Base<'T>() =
+    /// <summary>generic base method docs</summary>
+    abstract member Get: unit -> 'T
+    default _.Get() = Unchecked.defaultof<'T>
+type Derived() =
+    inherit Base<int>()
+    /// <inheritdoc/>
+    override _.Get() = 0
+let d = Derived()
+let _ = d.Ge{caret}t()
+"""
+
+    Assert.Contains("generic base method docs", xmlText xml)
+    Assert.DoesNotContain("<inheritdoc", xmlText xml)
