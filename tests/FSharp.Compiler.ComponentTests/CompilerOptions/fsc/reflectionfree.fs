@@ -245,6 +245,21 @@ let main _ =
     |> withStdOutContains "{| A = 1; B = hi |}"
 
 [<Fact>]
+let ``An empty anonymous record renders with a single inner space`` () =
+    FSharp """
+module Test
+[<EntryPoint>]
+let main _ =
+    System.Console.WriteLine("[" + string {| |} + "]") // the empty braces keep a single space, not a doubled one
+    0
+    """
+    |> asExe
+    |> withOptions [ "--reflectionfree" ]
+    |> compileExeAndRun
+    |> shouldSucceed
+    |> withStdOutContains "[{| |}]"
+
+[<Fact>]
 let ``Recursively defined types render when the data is finite`` () =
     FSharp """
 module Test
