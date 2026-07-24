@@ -275,6 +275,44 @@ let f x = x
         res.Compilation |> shouldSucceed |> withWarningCode 3887 |> ignore
 
     [<Fact>]
+    let ``Mutual include cycle between two files is detected and warns`` () =
+        let res =
+            runInclude (
+                scenario
+                    (Snippets.memberWithInclude "a.xml" "/data/summary")
+                    [
+                        "a.xml",
+                        """<?xml version="1.0"?><data><summary>A: <include file="b.xml" path="/data/inner"/> end.</summary></data>"""
+                        "b.xml",
+                        """<?xml version="1.0"?><data><inner>B: <include file="a.xml" path="/data/summary"/> end.</inner></data>"""
+                    ]
+            )
+
+        // A(/data/summary) -> B(/data/inner) -> A(/data/summary): genuine cycle must warn and terminate.
+        res.Compilation |> shouldSucceed |> withWarningCode 3887 |> ignore
+
+    [<Fact>]
+    let ``Same file and xpath from sibling positions both expand`` () =
+        // The same (file, xpath) appears at two NON-nested sibling sites; per-branch visited-set
+        // copying must let both expand without a false circular-include warning.
+        let source =
+            $"""module Test
+
+/// <summary>First {Snippets.includeElement "shared.xml" "/data/item"} and second {Snippets.includeElement "shared.xml" "/data/item"}</summary>
+let siblingIncludes (x: int) = x
+"""
+
+        let res =
+            runInclude (scenario source [ "shared.xml", """<?xml version="1.0"?><data><item>Shared.</item></data>""" ])
+
+        res.Compilation |> shouldSucceed |> ignore
+
+        res.Xml
+        |> memberXmlEquals
+            "M:Test.siblingIncludes(System.Int32)"
+            "<summary>First <item>Shared.</item> and second <item>Shared.</item></summary>"
+
+    [<Fact>]
     let ``Include with rich XML content preserves structure`` () =
         let dir =
             setupDir [
