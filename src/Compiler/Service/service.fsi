@@ -15,6 +15,10 @@ open FSharp.Compiler.Symbols
 open FSharp.Compiler.Text
 open FSharp.Compiler.Tokenization
 
+module internal HotReloadIncrementalEmit =
+    /// Runs the incremental path and falls back to the full threaded optimizer if it fails.
+    val runWithFallback: incremental: (unit -> 'T) -> fallback: (unit -> 'T) -> 'T
+
 /// Used to parse and check F# source code.
 [<Sealed; AutoSerializable(false)>]
 type public FSharpChecker =
@@ -55,6 +59,24 @@ type public FSharpChecker =
         [<Experimental "This parameter is experimental and likely to be removed in the future.">] ?transparentCompilerCacheSizes:
             CacheSizes ->
             FSharpChecker
+
+    /// <summary>
+    /// Creates an independent hot reload session (the F# analogue of Roslyn's
+    /// <c>DebuggingSession</c>): per-project committed baselines and generation chains keyed by
+    /// project identity, with session-wide capabilities and active statements. The session is
+    /// fully independent of the checker's default (process-wide) session and of other sessions;
+    /// dispose it to end it. Requires the checker to be created with
+    /// <c>keepAssemblyContents = true</c>.
+    /// </summary>
+    /// <param name="capabilities">Optional runtime edit-and-continue capability names (for example
+    /// <c>AddMethodToExistingType</c>), as reported by the target runtime. Unknown names are
+    /// ignored. When omitted, only baseline edits (method-body updates) are assumed supported;
+    /// use <c>FSharpHotReloadSession.UpdateCapabilities</c> when the process reports them later.</param>
+    [<Experimental("This FCS API is experimental and subject to change.")>]
+    member CreateHotReloadSession: ?capabilities: string seq -> FSharpHotReloadSession
+
+    [<Experimental("This FCS API is experimental and subject to change.")>]
+    member HotReloadCapabilities: FSharpHotReloadCapabilities
 
     [<Experimental("This FCS API is experimental and subject to change.")>]
     member UsesTransparentCompiler: bool
@@ -508,6 +530,14 @@ type public FSharpChecker =
 
     member internal FrameworkImportsCache: FrameworkImportsCache
     member internal ReferenceResolver: LegacyReferenceResolver
+
+    /// Compile a DLL from cached typecheck results, skipping parse/typecheck/optimization.
+    /// For dev-loop use only. Requires keepAssemblyContents=true.
+    /// Writes the assembly and portable PDB to outfile and returns the emitted module plus the
+    /// bytes and token mappings from the same write for direct in-memory consumption.
+    member internal CompileFromCheckedProject:
+        results: FSharpCheckProjectResults * outfile: string * naming: FSharp.Compiler.HotReload.HotReloadEmitNaming ->
+            Async<FSharp.Compiler.HotReload.HotReloadInProcessCompileResult>
 
     /// Tokenize a single line, returning token information and a tokenization state represented by an integer
     member TokenizeLine: line: string * state: FSharpTokenizerLexState -> FSharpTokenInfo[] * FSharpTokenizerLexState

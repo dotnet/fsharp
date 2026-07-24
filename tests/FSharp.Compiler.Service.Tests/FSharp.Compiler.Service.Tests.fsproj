@@ -29,8 +29,6 @@
     <Compile Include="CheckerExtensionsTests.fs" />
     <Compile Include="TypeChecker\Obsolete.fs" />
     <Compile Include="GeneratedCodeSymbolsTests.fs" />
-    <Compile Include="HotReload\GeneratedNamesTests.fs" />
-    <Compile Include="HotReload\NameMapTests.fs" />
     <Compile Include="BreakpointLocationTests.fs" />
     <Compile Include="AssemblyReaderShim.fs" />
     <Compile Include="ModuleReaderCancellationTests.fs" />
@@ -87,6 +85,35 @@
     <Compile Include="CapturedTypes.fs" />
     <Compile Include="WarnScopeTests.fs" />
     <Compile Include="OverloadCacheTests.fs" />
+  </ItemGroup>
+
+  <!-- Hot reload relies on .NET Core-only APIs (MetadataUpdater.ApplyUpdate, AssemblyLoadContext),
+       so its tests build and run on .NET Core only, not .NET Framework. -->
+  <ItemGroup Condition="'$(TargetFrameworkIdentifier)' == '.NETCoreApp'">
+    <Compile Include="HotReload/EditAndContinueCapabilitiesTests.fs" />
+    <Compile Include="HotReload/TypedTreeDiffTests.fs" />
+    <!-- Loads baseline assemblies through AssemblyLoadContext, which .NET Framework does not have. -->
+    <Compile Include="HotReload/HotReloadCheckerTests.fs" Condition="'$(TargetFrameworkIdentifier)' == '.NETCoreApp'" />
+    <Compile Include="HotReload/HotReloadSessionTests.fs" />
+    <Compile Include="HotReload/ActiveStatementTests.fs" />
+    <Compile Include="HotReload/GeneratedNamesTests.fs" />
+    <Compile Include="HotReload/ArchitectureGuardTests.fs" />
+    <Compile Include="HotReload/DeltaBuilderTests.fs" />
+    <Compile Include="HotReload/DefinitionIndexTests.fs" />
+    <Compile Include="DeltaMetadata/MetadataDeltaTestHelpers.fs" />
+    <Compile Include="DeltaMetadata/FSharpDeltaMetadataWriterTests.fs" />
+    <!-- Parses its baseline table with System.Text.Json, which .NET Framework does not have. -->
+    <Compile Include="HotReload/RoslynBaselineComparisons.fs" Condition="'$(TargetFrameworkIdentifier)' == '.NETCoreApp'" />
+    <Compile Include="HotReload/NameMapTests.fs" />
+    <Compile Include="HotReload/ClosureNameAllocatorTests.fs" />
+    <Compile Include="HotReload/RudeEditDiagnosticsTests.fs" />
+    <Compile Include="HotReload/ThreadSafetyTests.fs" />
+    <Compile Include="HotReload/CodedIndexTests.fs" />
+    <Compile Include="HotReload/ErrorPathTests.fs" />
+    <Compile Include="HotReload/EdgeCaseTests.fs" />
+    <Compile Include="HotReload/ILBaselineReaderTests.fs" />
+    <Compile Include="HotReload/PortablePdbReaderTests.fs" />
+    <Compile Include="HotReload/SrmParityTests.fs" />
     <Compile Include="EditorServiceAsserts.fs" />
     <Compile Include="GotoDefinition\GotoDefinitionTests.ActivePatterns.fs" />
     <Compile Include="GotoDefinition\GotoDefinitionTests.Classes.fs" />

@@ -534,11 +534,27 @@ type public FSharpCheckProjectResults =
     /// Get a view of the overall signature of the assembly. Only valid to use if HasCriticalErrors is false.
     member AssemblySignature: FSharpAssemblySignature
 
+    /// Get the unoptimized typed implementation files of the assembly, for compiler-internal use
+    /// (e.g. hot-reload symbol diffing). Only valid when 'keepAssemblyContents' is set.
+    member internal TypedImplementationFiles: TcGlobals * CcuThunk * TcImports * CheckedImplFile list
+
     /// Get a view of the overall contents of the assembly. Only valid to use if HasCriticalErrors is false.
     member AssemblyContents: FSharpAssemblyContents
 
     /// Get an optimized view of the overall contents of the assembly. Only valid to use if HasCriticalErrors is false.
     member GetOptimizedAssemblyContents: unit -> FSharpAssemblyContents
+
+    /// Get the internal compilation data needed for CompileFromCheckedProject.
+    /// Requires keepAssemblyContents=true.
+    member internal CompilationData:
+        TcConfig *
+        TcGlobals *
+        TcImports *
+        CcuThunk *
+        ModuleOrNamespaceType *
+        TopAttribs option *
+        ILAssemblyRef *
+        CheckedImplFile list option
 
     /// Get the resolution of the ProjectOptions
     member ProjectContext: FSharpProjectContext
