@@ -179,8 +179,12 @@ let expandIncludes (doc: XmlDoc) : XmlDoc =
 
             let parsedRoot =
                 try
-                    let syntheticRoot = "<__include_root__>" + text + "</__include_root__>"
-                    Some(XElement.Parse(syntheticRoot, LoadOptions.PreserveWhitespace ||| LoadOptions.SetLineInfo))
+                    Some(
+                        XElement.Parse(
+                            "<__include_root__>" + text + "</__include_root__>",
+                            LoadOptions.PreserveWhitespace ||| LoadOptions.SetLineInfo
+                        )
+                    )
                 with _ ->
                     None
 
@@ -194,19 +198,14 @@ let expandIncludes (doc: XmlDoc) : XmlDoc =
                         Range = doc.Range
                     }
 
-                let expandedNodes = expandAllIncludeNodes baseFileName (root.Nodes()) ctx
-
                 let expandedText =
-                    expandedNodes
+                    expandAllIncludeNodes baseFileName (root.Nodes()) ctx
                     |> Seq.map (fun (n: XNode) -> n.ToString(SaveOptions.DisableFormatting))
                     |> String.concat ""
 
-                let expandedLines = expandedText.Replace("\r\n", "\n").Split('\n')
+                let expandedLines = String.getLines expandedText
 
-                if
-                    expandedLines.Length = elaboratedLines.Length
-                    && Array.forall2 (=) expandedLines elaboratedLines
-                then
+                if Array.lengthsEqAndForall2 (=) expandedLines elaboratedLines then
                     doc
                 else
                     XmlDoc(expandedLines, doc.Range)

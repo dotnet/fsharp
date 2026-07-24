@@ -151,7 +151,7 @@ Full XML:
 
     module Snippets =
 
-        let private includeElement file path =
+        let includeElement file path =
             $"""<include file="{normalizePathSeparator file |> SecurityElement.Escape}" path="{SecurityElement.Escape path}"/>"""
 
         let dataSummaryRemarks =

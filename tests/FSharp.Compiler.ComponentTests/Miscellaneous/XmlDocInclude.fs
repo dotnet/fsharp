@@ -102,6 +102,40 @@ let f x = x
             "<summary>Inline before <remarks>Included remarks text.</remarks> inline after.</summary>"
 
     [<Fact>]
+    let ``Inline include with XPath selecting multiple elements expands all inline`` () =
+        let res =
+            runInclude (
+                scenario
+                    (Snippets.memberInlineInclude "d.xml" "/data/*")
+                    [ "d.xml", Snippets.dataSummaryRemarks ]
+            )
+
+        res.Compilation |> shouldSucceed |> ignore
+
+        res.Xml
+        |> memberXmlEquals
+            "M:Test.inlineIncluded(System.Int32)"
+            "<summary>Inline before <summary>Included summary text.</summary><remarks>Included remarks text.</remarks> inline after.</summary>"
+
+    [<Fact>]
+    let ``Inline include preserves sibling XML elements`` () =
+        let source =
+            $"""module Test
+
+/// <summary>See {Snippets.includeElement "d.xml" "/data/remarks"} and <see cref="T:System.Int32"/> here.</summary>
+let inlineWithSibling (x: int) = x
+"""
+
+        let res = runInclude (scenario source [ "d.xml", Snippets.dataSummaryRemarks ])
+
+        res.Compilation |> shouldSucceed |> ignore
+
+        res.Xml
+        |> memberXmlEquals
+            "M:Test.inlineWithSibling(System.Int32)"
+            "<summary>See <remarks>Included remarks text.</remarks> and <see cref=\"T:System.Int32\"/> here.</summary>"
+
+    [<Fact>]
     let ``Nested includes in external file expand`` () =
         let dir =
             setupDir [
