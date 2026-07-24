@@ -74,6 +74,11 @@ module internal ILExtensions =
     let TryFindFSharpAttribute g tref attrs =
         List.tryFind (IsMatchingFSharpAttribute g tref) attrs
 
+    let TryFindFSharpAttributeOpt g tref attrs =
+        match tref with
+        | None -> None
+        | Some tref -> TryFindFSharpAttribute g tref attrs
+
     [<return: Struct>]
     let (|ExtractAttribNamedArg|_|) nm args =
         args
@@ -125,7 +130,20 @@ module internal ILExtensions =
         | ILAttribElem.String(n) -> n
         | _ -> None
 
+    let TryFindFSharpInt32AttributeOpt g nmOpt attrs =
+        match nmOpt with
+        | Some nm ->
+            match TryFindFSharpAttribute g nm attrs with
+            | Some(Attrib(_, _, [ AttribInt32Arg b ], _, _, _, _)) -> Some b
+            | _ -> None
+        | None -> None
+
     let TryFindILAttribute (AttribInfo(atref, _)) attrs = HasILAttribute atref attrs
+
+    let TryDecodeILAttributeOpt attr attrs =
+        match attr with
+        | Some(AttribInfo(atref, _)) -> TryDecodeILAttribute atref attrs
+        | _ -> None
 
     let IsILAttrib (AttribInfo(builtInAttrRef, _)) attr = isILAttrib builtInAttrRef attr
 
