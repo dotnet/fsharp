@@ -380,6 +380,7 @@
     <Compile Include="Language\BooleanReturningAndReturnTypeDirectedPartialActivePatternTests.fs" />
     <Compile Include="Language\Nullness\NullableLibraryConstructsTests.fs" />
     <Compile Include="Language\Nullness\NullableCsharpImportTests.fs" />
+    <Compile Include="Language\Nullness\NotNullIfNotNullTests.fs" />
     <Compile Include="Language\Nullness\NullableRegressionTests.fs" />
     <Compile Include="Language\Nullness\NullableReferenceTypesTests.fs" />
     <Compile Include="Language\Nullness\EventNullnessTests.fs" />

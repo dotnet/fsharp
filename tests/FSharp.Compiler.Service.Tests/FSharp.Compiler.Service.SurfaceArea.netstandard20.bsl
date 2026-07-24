@@ -1842,6 +1842,7 @@ FSharp.Compiler.AbstractIL.IL+WellKnownILAttributes: WellKnownILAttributes IsUnm
 FSharp.Compiler.AbstractIL.IL+WellKnownILAttributes: WellKnownILAttributes NoEagerConstraintApplicationAttribute
 FSharp.Compiler.AbstractIL.IL+WellKnownILAttributes: WellKnownILAttributes None
 FSharp.Compiler.AbstractIL.IL+WellKnownILAttributes: WellKnownILAttributes NotComputed
+FSharp.Compiler.AbstractIL.IL+WellKnownILAttributes: WellKnownILAttributes NotNullIfNotNullAttribute
 FSharp.Compiler.AbstractIL.IL+WellKnownILAttributes: WellKnownILAttributes NullableAttribute
 FSharp.Compiler.AbstractIL.IL+WellKnownILAttributes: WellKnownILAttributes NullableContextAttribute
 FSharp.Compiler.AbstractIL.IL+WellKnownILAttributes: WellKnownILAttributes ObsoleteAttribute
