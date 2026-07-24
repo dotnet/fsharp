@@ -18,6 +18,14 @@ module XmlDocIncludeTestFramework =
             WarnOn: int list
         }
 
+    type IncludeResult =
+        {
+            Xml: string
+            XmlExists: bool
+            XmlPath: string
+            Compilation: CompilationResult
+        }
+
     let scenario source files =
         {
             Source = source
@@ -57,39 +65,47 @@ module XmlDocIncludeTestFramework =
 
         File.WriteAllText(path, contents)
 
-    let private addWarnOnCodes warnOnCodes compilationUnit =
-        (compilationUnit, warnOnCodes)
-        ||> List.fold (fun current warning -> current |> withWarnOn warning)
-
     let runInclude includeScenario =
         let directory = createTemporaryDirectory ()
 
         for file in includeScenario.Files do
             writeScenarioFile directory file
 
-        let sourcePath = Path.Combine(directory.FullName, "Library.fs")
         let xmlPath = Path.Combine(directory.FullName, "Library.xml")
-        File.WriteAllText(sourcePath, includeScenario.Source)
 
         let result =
-            FsFromPath sourcePath
+            Fs includeScenario.Source
+            |> withFileName (Path.Combine(directory.FullName, "Library.fs"))
+            |> withName "Library"
             |> withOutputDirectory (Some directory)
             |> withOptions [ $"--doc:{xmlPath}" ]
-            |> addWarnOnCodes includeScenario.WarnOn
+            |> fun compilationUnit ->
+                (compilationUnit, includeScenario.WarnOn)
+                ||> List.fold (fun current warning -> current |> withWarnOn warning)
             |> compile
 
+        let xmlExists = File.Exists xmlPath
+
         let xml =
-            if File.Exists xmlPath then
+            if xmlExists then
                 File.ReadAllText xmlPath
             else
                 ""
 
-        xml, result
+        {
+            Xml = xml
+            XmlExists = xmlExists
+            XmlPath = xmlPath
+            Compilation = result
+        }
 
     let private memberElementName = XName.Get "member"
     let private nameAttributeName = XName.Get "name"
 
-    let memberInner memberName xml =
+    let tryMemberInner memberName xml =
+        if String.IsNullOrWhiteSpace xml then
+            failwith "No XML documentation was emitted (did compilation succeed? check the CompilationResult)"
+
         let document =
             try
                 XDocument.Parse xml
@@ -107,7 +123,28 @@ module XmlDocIncludeTestFramework =
             element.Nodes()
             |> Seq.map (fun node -> node.ToString(SaveOptions.DisableFormatting))
             |> String.concat ""
+            |> Some
+        | None -> None
+
+    let memberExists memberName xml =
+        tryMemberInner memberName xml |> Option.isSome
+
+    let memberInner memberName xml =
+        match tryMemberInner memberName xml with
+        | Some inner -> inner
         | None -> failwith $"Could not find XML documentation member '{memberName}'.\nFull XML:\n{xml}"
+
+    let memberXmlAbsent memberName xml =
+        match tryMemberInner memberName xml with
+        | Some inner ->
+            failwith
+                $"""Expected XML documentation member '{memberName}' to be absent, but it was present.
+Member XML:
+{inner}
+
+Full XML:
+{xml}"""
+        | None -> ()
 
     let private canonicalizeInnerXml fragment =
         try
