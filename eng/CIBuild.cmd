@@ -142,11 +142,11 @@ set "_srcArgs=--source "%_itFeed%""
 for /f "usebackq delims=" %%U in (`powershell -NoProfile -ExecutionPolicy Bypass -Command "([xml](Get-Content -Raw '%_root%\NuGet.Config')).configuration.packageSources.add | Where-Object { $_.value -like 'http*' } | ForEach-Object { $_.value }"`) do set "_srcArgs=!_srcArgs! --source "%%U""
 "%_dotnet%" restore "%_root%\eng\restore-swixplugin.proj" --configfile "%_root%\NuGet.Config" !_srcArgs!
 if errorlevel 1 ( echo Error: SwixBuild plugin restore failed 1>&2 & exit /b 1 )
-set "SwixPluginDir="
-echo Locating the restored SwixBuild plugin build folder under "%NUGET_PACKAGES%"...
-for /f "usebackq delims=" %%D in (`powershell -NoProfile -ExecutionPolicy Bypass -Command "$p = Get-ChildItem -Path '%NUGET_PACKAGES%' -Recurse -Filter 'Microsoft.VisualStudio.Setup.Tools.targets' -ErrorAction SilentlyContinue ^| Where-Object { $_.FullName -match 'swixbuild' } ^| Select-Object -First 1; if ($p) { $p.DirectoryName }"`) do set "SwixPluginDir=%%D"
-if not defined SwixPluginDir (
-  echo Error: modern SwixBuild plugin build folder not found after restore 1>&2
+rem    The plugin restored to a known path (version pinned in eng\Versions.props). Construct the build\ folder
+rem    directly (contains Setup.Tools.props/targets + SwixBuild.props/targets) - robust, no fragile search.
+set "SwixPluginDir=%NUGET_PACKAGES%microsoft.visualstudioeng.microbuild.plugins.swixbuild\1.1.286\build"
+if not exist "%SwixPluginDir%\Microsoft.VisualStudio.Setup.Tools.targets" (
+  echo Error: modern SwixBuild plugin build folder not found at "%SwixPluginDir%" 1>&2
   dir /s /b "%NUGET_PACKAGES%microsoft.visualstudioeng.microbuild.plugins.swixbuild" 2>nul
   exit /b 1
 )
