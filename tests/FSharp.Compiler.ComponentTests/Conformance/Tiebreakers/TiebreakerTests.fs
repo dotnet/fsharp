@@ -1372,11 +1372,10 @@ if result <> "{expected}" then
         |> shouldSucceed
         |> ignore
 
-    // Phase 6 (scope a): the most-concrete tiebreaker also applies to constructors and generic-type
-    // members whose instantiation is inferred from the arguments. These carry no method type args,
-    // so before Phase 6 the rule's gate excluded them and they resolved as FS0041. The "picks the
-    // concrete overload" behaviour across every member kind is covered by the parametrized matrix
-    // below; the standalone facts here assert the distinct guard behaviours (single-applicable,
+    // Constructors and generic-type members whose instantiation is inferred from the arguments carry
+    // no method type args, so the rule ranks them via their enclosing-type type parameters. The
+    // "picks the concrete overload" behaviour across member kinds is covered by the parametrized
+    // matrix below; the standalone facts here assert the distinct guard behaviours (single-applicable,
     // incomparable, and that a later shipped rule still decides successful resolutions).
 
     [<Fact>]
@@ -1477,10 +1476,10 @@ if r <> "high-generic" then failwithf "expected high-generic, got %s" r
         |> shouldSucceed
         |> ignore
 
-    // Edge-case matrix for scope (a): every row is a genuine rule-#13 decision (FS0041 at
-    // --langversion:default, resolves to the concrete overload "c" at preview), covering the axes
-    // the feature must serve: naked generics, constructors, extension methods, static methods,
-    // instance methods on a generic type, optionals, and paramarray.
+    // Edge-case matrix: every row is FS0041 at --langversion:default and resolves to the concrete
+    // overload "c" at preview, covering the member kinds the feature must serve: naked generics,
+    // constructors, extension methods, static and instance methods on a generic type, optionals,
+    // and paramarray.
     let mostConcreteEdgeCases: obj[] seq =
         let case (name: string) (source: string) =
             let checkedSource =

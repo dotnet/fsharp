@@ -150,6 +150,10 @@ let private paramsMentionComparableTypeVar (g: TcGlobals) (ps: ParamData list) :
     freeInTypesLeftToRight g true (List.map paramDataType ps)
     |> List.exists (fun tp -> not (isStaticallyResolvedTypeParam tp))
 
+/// True if any of these parameters' types mentions a statically-resolved (SRTP) type variable.
+let private paramsMentionSRTP (g: TcGlobals) (ps: ParamData list) : bool =
+    ps |> List.exists (fun p -> containsSRTPTypeVar g (paramDataType p))
+
 /// Returns 1 if ty1 is more concrete, -1 if ty2 is more concrete, 0 if incomparable.
 let compareTypeConcreteness (g: TcGlobals) ty1 ty2 =
     let rec loop ty1 ty2 =
@@ -228,9 +232,6 @@ let explainIncomparableMethodConcreteness<'T>
         meth2.Method.GetParamDatas(ctx.amap, ctx.m, meth2.Method.FormalMethodInst)
         |> List.concat
 
-    let hasSRTP ps =
-        ps |> List.exists (fun p -> containsSRTPTypeVar ctx.g (paramDataType p))
-
     // Mirror moreConcreteRule's firing gate so the FS0041 detail only explains cases the rule
     // actually ranks: both parameter lists must mention a comparable (non-SRTP) type variable
     // and have equal length, and neither may involve SRTP.
@@ -238,8 +239,8 @@ let explainIncomparableMethodConcreteness<'T>
         formalParams1.Length <> formalParams2.Length
         || not (paramsMentionComparableTypeVar ctx.g formalParams1)
         || not (paramsMentionComparableTypeVar ctx.g formalParams2)
-        || hasSRTP formalParams1
-        || hasSRTP formalParams2
+        || paramsMentionSRTP ctx.g formalParams1
+        || paramsMentionSRTP ctx.g formalParams2
     then
         None
     else
@@ -517,11 +518,7 @@ let private getCachedHasSRTP (ctx: OverloadResolutionContext) (meth: CalledMeth<
         let hasTyArgSRTP =
             hasTyparSRTP || meth.CalledTyArgs |> List.exists (containsSRTPTypeVar ctx.g)
 
-        hasTyArgSRTP
-        || (let paramData = getCachedParamData ctx meth in
-
-            paramData
-            |> List.exists (fun (ParamData(_, _, _, _, _, _, _, ty)) -> containsSRTPTypeVar ctx.g ty))
+        hasTyArgSRTP || paramsMentionSRTP ctx.g (getCachedParamData ctx meth)
 
     match ctx.srtpCache with
     | ValueNone -> computeHasSRTP ()
