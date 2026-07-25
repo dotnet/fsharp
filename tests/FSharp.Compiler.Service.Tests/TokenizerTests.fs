@@ -23,6 +23,17 @@ let tokenizeLines (lines:string[]) =
       let tokenizer = sourceTok.CreateLineTokenizer(line)
       yield n, parseLine(line, state, tokenizer) |> List.ofSeq ]
 
+/// Scans every token of a (possibly multi-line) source using a single line tokenizer,
+/// threading the lex state across embedded newlines (column index resets at each newline).
+let scanTokens (defines: string list) (source: string) =
+    let sourceTok = FSharpSourceTokenizer(defines, Some "C:\\test.fsx", None, None)
+    let tokenizer = sourceTok.CreateLineTokenizer(source)
+    let rec loop (state: FSharpTokenizerLexState) acc =
+        match tokenizer.ScanToken(state) with
+        | Some tok, nstate -> loop nstate (tok :: acc)
+        | None, _ -> List.rev acc
+    loop FSharpTokenizerLexState.Initial []
+
 [<Fact>]
 let ``Tokenizer test - simple let with string``() =
     let tokenizedLines = 
@@ -293,3 +304,163 @@ let ``Tokenizer test - optional parameters with question mark``() =
         printfn "actual   = %A" actual
         printfn "expected = %A" expected
         actual |> Assert.shouldBeEqualWith expected (sprintf "actual and expected did not match,actual =\n%A\nexpected=\n%A\n" actual expected)
+
+[<Fact>]
+let ``Lexer.CommentsLexing.Bug1548``() =
+    let cm = FSharpTokenColorKind.Comment
+    let kw = FSharpTokenColorKind.Keyword
+
+    // This specifies the source code to test and a collection of tokens that
+    // we want to find in the result (note: it doesn't have to contain every token, because
+    // behavior for some of them is undefined - e.g. "(* "\"*)" - what is token here?
+    let sources =
+      [ "// some comment",
+            [ ((0, 1), cm); ((2, 2), cm); ((3, 6), cm); ((7, 7), cm); ((8, 14), cm) ]
+        "// (* hello // 12345\nlet",
+            [ ((6, 10), cm); ((15, 19), cm); ((0, 2), kw) ] // checks 'hello', '12345' and keyword 'let'
+        "//- test",
+            [ ((0, 2), cm); ((4, 7), cm) ] // checks whether '//-' isn't treated as an operator
+
+        // same thing for XML comments - these are treated in a different lexer branch
+        "/// some comment",
+            [ ((0, 2), cm); ((3, 3), cm); ((4, 7), cm); ((8, 8), cm); ((9, 15), cm) ]
+        "/// (* hello // 12345\nmember",
+            [ ((7, 11), cm); ((16, 20), cm); ((0, 5), kw) ]
+        "///- test",
+            [ ((0, 3), cm); ((5, 8), cm) ]
+
+        // same thing for "////" - these are treated in a different lexer branch
+        "//// some comment",
+            [ ((0, 3), cm); ((4, 4), cm); ((5, 8), cm); ((9, 9), cm); ((10, 16), cm) ]
+        "//// (* hello // 12345\nlet",
+            [ ((8, 12), cm); ((17, 21), cm); ((0, 2), kw) ]
+        "////- test",
+            [ ((0, 4), cm); ((6, 9), cm) ]
+
+        "(* test 123 (* 456 nested *) comments *)",
+            [ ((3, 6), cm); ((8, 10), cm); ((15, 17), cm); ((19, 24), cm); ((29, 36), cm) ] // checks 'test', '123', '456', 'nested', 'comments'
+        "(* \"with 123 \\\" *)\" string *)",
+            [ ((4, 7), cm); ((9, 11), cm); ((20, 25), cm) ] // checks 'with', '123', 'string'
+        "(* @\"with 123 \"\" *)\" string *)",
+            [ ((5, 8), cm); ((10, 12), cm); ((21, 26), cm) ] // checks 'with', '123', 'string'
+      ]
+
+    for lineText, expected in sources do
+        // Lex the (possibly multi-line) source and add every lexed token's color to a dictionary
+        let lexed = System.Collections.Generic.Dictionary<int * int, FSharpTokenColorKind>()
+        for tok in scanTokens [ "COMPILED"; "EDITING" ] lineText do
+            lexed[(tok.LeftColumn, tok.RightColumn)] <- tok.ColorClass
+
+        // Verify that all tokens in the specified list occur in the lexed result with the right color
+        for pos, clr in expected do
+            let succ, v = lexed.TryGetValue(pos)
+            let found = [ for kvp in lexed -> kvp.Key, kvp.Value ]
+            Assert.True(succ, sprintf "Cannot find token %A at %A in %A\nFound: %A" clr pos lineText found)
+            Assert.True((clr = v), sprintf "Wrong color of token %A at %A in %A\nFound: %A" clr pos lineText found)
+
+[<Fact>]
+let ``TokenInfo.TriggerClasses``() =
+    let punct = FSharpTokenColorKind.Punctuation
+    let delim = FSharpTokenCharKind.Delimiter
+
+    // Tokenize a minimal source, return the (ColorClass, CharClass, TriggerClass) of the first token
+    let triggerInfoOf (tokenName: string) (source: string) =
+        let toks = scanTokens [] source
+        match toks |> List.tryFind (fun t -> t.TokenName = tokenName) with
+        | Some t -> (t.ColorClass, t.CharClass, t.FSharpTokenTriggerClass)
+        | None ->
+            failwithf "Token %s was not produced by source %A. Tokens: %A"
+                tokenName source (toks |> List.map (fun t -> t.TokenName))
+
+    // important - tokens with specific trigger classes used to drive IntelliSense
+    triggerInfoOf "DOT" "a.b"
+    |> Assert.shouldBe (punct, delim, FSharpTokenTriggerClass.MemberSelect)             // member select for dot completions
+    triggerInfoOf "LPAREN" "f(x,y)"
+    |> Assert.shouldBe (punct, delim, FSharpTokenTriggerClass.ParamStart ||| FSharpTokenTriggerClass.MatchBraces) // for parameter info
+    triggerInfoOf "COMMA" "f(x,y)"
+    |> Assert.shouldBe (punct, delim, FSharpTokenTriggerClass.ParamNext)
+    triggerInfoOf "RPAREN" "f(x,y)"
+    |> Assert.shouldBe (punct, delim, FSharpTokenTriggerClass.ParamEnd ||| FSharpTokenTriggerClass.MatchBraces)
+
+    // matching - other cases where we expect MatchBraces
+    let matchBracesInfo = (punct, delim, FSharpTokenTriggerClass.MatchBraces)
+    triggerInfoOf "LQUOTE" "<@ 1 @>" |> Assert.shouldBe matchBracesInfo
+    triggerInfoOf "LBRACK" "[ 1 ]" |> Assert.shouldBe matchBracesInfo
+    triggerInfoOf "LBRACE" "{ x = 1 }" |> Assert.shouldBe matchBracesInfo
+    triggerInfoOf "LBRACK_BAR" "[| 1 |]" |> Assert.shouldBe matchBracesInfo
+    triggerInfoOf "RQUOTE" "<@ 1 @>" |> Assert.shouldBe matchBracesInfo
+    triggerInfoOf "RBRACK" "[ 1 ]" |> Assert.shouldBe matchBracesInfo
+    triggerInfoOf "RBRACE" "{ x = 1 }" |> Assert.shouldBe matchBracesInfo
+    triggerInfoOf "BAR_RBRACK" "[| 1 |]" |> Assert.shouldBe matchBracesInfo
+
+// Each case has exactly one brace pair: left brace at the start marker, right brace at the end marker.
+[<Fact>]
+let ``MatchingBraces.VerifyMatches``() =
+    let lines =
+        [ ""
+          "                let x = (1, 2)//1"
+          "                let y =    (  3 + 1  ) * 2"
+          "                let z ="
+          "                   async {"
+          "                       return 10"
+          "                   }"
+          "                let lst = "
+          "                    [// list_start"
+          "                        1;2;3"
+          "                    ]//list_end"
+          "                let arr = "
+          "                    [|"
+          "                        1"
+          "                        2"
+          "                    |]"
+          "                let quote = <@(* S0 *) 1 @>(* E0 *)"
+          "                let quoteWithNestedList = <@(* S1 *) ['x';'y';'z'](* E_L*) @>(* E1 *)"
+          "                [< System.Serializable() >]"
+          "                type T = class end"
+          "            " ]
+    let source = String.concat "\n" lines
+    let linesArr = List.toArray lines
+    let braces = matchBraces ("MatchingBracesVerifyMatches", source)
+
+    // Locate the START of the marker substring (0-based row/col).
+    let findMarker (marker: string) =
+        let mutable found = None
+        let mutable i = 0
+        while found.IsNone && i < linesArr.Length do
+            let idx = linesArr[i].IndexOf(marker, System.StringComparison.Ordinal)
+            if idx >= 0 then found <- Some(i, idx)
+            i <- i + 1
+        match found with
+        | Some p -> p
+        | None -> failwithf "Marker %A not found in source" marker
+
+    let checkBraces startMarker endMarker (expectedSpanLen: int) =
+        let (startRow, startCol) = findMarker startMarker
+        let (endRow, endCol) = findMarker endMarker
+
+        // exactly one matching pair has its left brace at the start marker (FCS line is 1-based)
+        let matching =
+            braces |> Array.filter (fun (l, _) -> l.StartLine = startRow + 1 && l.StartColumn = startCol)
+        Assert.Equal(1, matching.Length)
+
+        let (lbrace, rbrace) = matching[0]
+        // left brace span: single line, starts at the start marker, expectedSpanLen columns wide
+        Assert.Equal(lbrace.StartLine, lbrace.EndLine)
+        Assert.Equal(startRow + 1, lbrace.StartLine)
+        Assert.Equal(startCol, lbrace.StartColumn)
+        Assert.Equal(startCol + expectedSpanLen, lbrace.EndColumn)
+        // right brace span: single line, starts at the end marker, expectedSpanLen columns wide
+        Assert.Equal(rbrace.StartLine, rbrace.EndLine)
+        Assert.Equal(endRow + 1, rbrace.StartLine)
+        Assert.Equal(endCol, rbrace.StartColumn)
+        Assert.Equal(endCol + expectedSpanLen, rbrace.EndColumn)
+
+    checkBraces "(1" ")//1" 1
+    checkBraces "( " ") *" 1
+    checkBraces "{" "}" 1
+    checkBraces "[// list_start" "]//list_end" 1
+    checkBraces "[|" "|]" 2
+    checkBraces "<@(* S0 *)" "@>(* E0 *)" 2
+    checkBraces "<@(* S1 *)" "@>(* E1 *)" 2
+    checkBraces "['x'" "](* E_L*)" 1
+    checkBraces "[<" ">]" 2
