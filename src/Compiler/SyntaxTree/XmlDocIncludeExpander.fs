@@ -68,12 +68,15 @@ let private loadXmlFile (cache: Dictionary<string, Result<XDocument, string>>) (
         result
 
 /// Resolve a file path (absolute or relative to the source file), normalized via
-/// GetFullPath so cycle detection uses canonical paths. GetFullFilePathInDirectoryShim
-/// already passes rooted include paths through unchanged, and GetDirectoryNameShim maps an
-/// empty or directory-less base file name (such as the "unknown" range sentinel) to ".",
-/// i.e. the current directory.
+/// GetFullPath so cycle detection uses canonical paths. A rooted include path is resolved
+/// directly and must not depend on the base file name (which may be a virtual/sentinel range
+/// name). Otherwise GetDirectoryNameShim maps an empty or directory-less base file name (such
+/// as the "unknown" range sentinel) to ".", i.e. the current directory.
 let private resolveFilePath (baseFileName: string) (includePath: string) : string =
-    FileSystem.GetFullFilePathInDirectoryShim (FileSystem.GetDirectoryNameShim baseFileName) includePath
+    if FileSystem.IsPathRootedShim includePath then
+        FileSystem.GetFullPathShim includePath
+    else
+        FileSystem.GetFullFilePathInDirectoryShim (FileSystem.GetDirectoryNameShim baseFileName) includePath
 
 /// Evaluate XPath and return matching elements
 let private evaluateXPath (doc: XDocument) (xpath: string) : Result<XElement list, string> =
