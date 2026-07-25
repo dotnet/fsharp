@@ -762,8 +762,8 @@ module AsyncTaskLikeAwaitTests =
                 asyncLocal.Value <- "completing-context" // if ExecutionContext is not propagated correctly to the continuation, it will see this
                 tcs.SetResult())
 
-        Assert.True(completion.Wait(TimeSpan.FromSeconds 5L), "Completion task did not finish in time.")
-        Assert.True(t.Wait(TimeSpan.FromSeconds 5L), "Awaited task did not finish in time.")
+        Assert.True(completion.Wait(TimeSpan.FromSeconds 5.), "Completion task hung?")
+        Assert.True(t.Wait(TimeSpan.FromSeconds 5.), "Awaited subject task hung?")
         Assert.Equal("trace-id", t.Result) // Validate the chaining worked correctly
         Assert.Equal("root-context", asyncLocal.Value) // Root level context should be preserved
 
