@@ -281,6 +281,9 @@ let f x = x
 
         res.Compilation |> shouldSucceed |> ignore
         assertSingleIncludeWarningMatches "DTD is prohibited" res
+        // The framed message must also name both the file and the xpath.
+        assertSingleIncludeWarningMatches "d.xml" res
+        assertSingleIncludeWarningMatches "/data/summary" res
         let inner = memberInner "M:Test.included(System.Int32,System.Int32)" res.Xml
         Assert.Contains("<include file=\"d.xml\" path=\"/data/summary\"", inner)
         Assert.DoesNotContain("lollol", inner)
@@ -436,6 +439,9 @@ let f (x: int) = x
 
         res.Compilation |> shouldSucceed |> ignore
         assertSingleIncludeWarningMatches "maximum include nesting depth of 64" res
+        // The framed message must also name both the file and the xpath.
+        assertSingleIncludeWarningMatches "overdepth64.xml" res
+        assertSingleIncludeWarningMatches "/data/summary" res
 
         let inner = memberInner "M:Test.included(System.Int32,System.Int32)" res.Xml
         Assert.Contains("<include file=\"overdepth64.xml\" path=\"/data/summary\"", inner)
@@ -717,6 +723,9 @@ let f x = x
         // Genuine self-reference (/data/summary includes /data/summary) must warn and terminate (test finishing = termination).
         res.Compilation |> shouldSucceed |> ignore
         assertSingleIncludeWarningMatches "a circular include was detected" res
+        // The framed message must also name both the file and the xpath.
+        assertSingleIncludeWarningMatches "self.xml" res
+        assertSingleIncludeWarningMatches "/data/summary" res
 
     [<Fact>]
     let ``Mutual include cycle between two files is detected and warns`` () =
@@ -844,6 +853,9 @@ let f (x: int) = x
 
         res.Compilation |> shouldSucceed |> ignore
         assertSingleIncludeWarningMatches "maximum of 10000 include expansions" res
+        // The framed message must also name both the file and the xpath.
+        assertSingleIncludeWarningMatches "leaf.xml" res
+        assertSingleIncludeWarningMatches "/data/leaf" res
 
         let inner = memberInner "M:Test.f(System.Int32)" res.Xml
         Assert.Equal(10000, countSubstring "<leaf>L</leaf>" inner)
@@ -943,6 +955,8 @@ let f x = x
         |> shouldSucceed
         |> withWarningCode 3887
         |> withDiagnosticMessageMatches "XPath expression is empty"
+        // Even with an empty xpath, the framed message still names the file.
+        |> withDiagnosticMessageMatches "data/simple.data.xml"
         |> ignore
 
         Assert.True(res.XmlExists, $"XML doc file should exist: {res.XmlPath}")

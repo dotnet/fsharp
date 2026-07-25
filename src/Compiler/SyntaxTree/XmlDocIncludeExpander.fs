@@ -145,49 +145,51 @@ let private warnIncludeError (ctx: ExpansionContext) (msg: string) =
     if ctx.Emit then
         warning (Error(FSComp.SR.xmlDocIncludeError msg, ctx.Range))
 
+/// Warn about a failure to expand a well-formed <include> directive, naming both the
+/// file and the xpath (Roslyn CS1589 parity). The frame is a localized FSComp message;
+/// only the short `reason` is a passthrough argument.
+let private warnFramedIncludeError (ctx: ExpansionContext) (includeInfo: IncludeInfo) (reason: string) =
+    if ctx.Emit then
+        warning (Error(FSComp.SR.xmlDocIncludeError2 (includeInfo.XPath, includeInfo.FilePath, reason), ctx.Range))
+
 /// Outcome of resolving a single <include> directive.
 type private IncludeOutcome =
     /// Expanded to these nodes.
     | IncludeResolved of XNode seq
     /// Valid XPath but zero matches: Roslyn parity is a comment + the kept tag, with no warning.
     | IncludeNoMatch
-    /// Genuine failure (missing file, invalid/empty XPath, cycle): warn and keep the tag.
+    /// Genuine failure (missing file, invalid/empty XPath, cycle): the short reason, framed and warned by the caller.
     | IncludeError of string
-    /// The per-document expansion budget is exhausted: keep the tag, but warn only once per document.
+    /// The per-document expansion budget is exhausted: the short reason, warned only once per document.
     | IncludeBudgetExceeded of string
 
 /// Load and expand includes from an external file
 let rec private resolveSingleInclude (baseFileName: string) (includeInfo: IncludeInfo) (ctx: ExpansionContext) : IncludeOutcome =
 
-    let describeFailure (reason: string) =
-        $"Unable to include XML fragment '{includeInfo.XPath}' of file '{includeInfo.FilePath}' -- {reason}"
-
-    let resolvedPathResult =
+    let resolvedPath =
         try
-            Result.Ok(resolveFilePath baseFileName includeInfo.FilePath)
+            Some(resolveFilePath baseFileName includeInfo.FilePath)
         with _ ->
-            Result.Error $"Invalid file path: {includeInfo.FilePath}"
+            None
 
-    match resolvedPathResult with
-    | Result.Error _ -> IncludeError(describeFailure "the file path is invalid")
-    | Result.Ok resolvedPath ->
+    match resolvedPath with
+    | None -> IncludeError "the file path is invalid"
+    | Some resolvedPath ->
 
         let key = struct (resolvedPath, includeInfo.XPath)
 
         if ctx.InProgressIncludes.Contains(key) then
-            IncludeError(describeFailure "a circular include was detected")
+            IncludeError "a circular include was detected"
         elif ctx.Depth >= maxIncludeDepth then
-            IncludeError(describeFailure $"the maximum include nesting depth of {maxIncludeDepth} was exceeded")
+            IncludeError $"the maximum include nesting depth of {maxIncludeDepth} was exceeded"
         elif ctx.Budget.Value <= 0 then
-            IncludeBudgetExceeded(
-                describeFailure $"the maximum of {maxIncludeExpansions} include expansions per documentation comment was exceeded"
-            )
+            IncludeBudgetExceeded $"the maximum of {maxIncludeExpansions} include expansions per documentation comment was exceeded"
         else
             match
                 loadXmlFile ctx.Env.FileCache resolvedPath
                 |> Result.bind (fun includeDoc -> evaluateXPath includeDoc includeInfo.XPath)
             with
-            | Result.Error msg -> IncludeError(describeFailure msg)
+            | Result.Error msg -> IncludeError msg
             | Result.Ok [] -> IncludeNoMatch
             | Result.Ok matchedElements ->
                 ctx.Budget.Value <- ctx.Budget.Value - 1
@@ -228,14 +230,14 @@ and private expandAllIncludeNodes (baseFileName: string) (nodes: XNode seq) (ctx
                         XComment(noMatchCommentText) :> XNode
                         node
                     }
-                | IncludeError msg ->
-                    warnIncludeError ctx msg
+                | IncludeError reason ->
+                    warnFramedIncludeError ctx includeInfo reason
                     Seq.singleton node
-                | IncludeBudgetExceeded msg ->
+                | IncludeBudgetExceeded reason ->
                     // Report the document-wide budget limit at most once to avoid warning spam.
                     if not ctx.BudgetExhaustedWarned.Value then
                         ctx.BudgetExhaustedWarned.Value <- true
-                        warnIncludeError ctx msg
+                        warnFramedIncludeError ctx includeInfo reason
 
                     Seq.singleton node)
 
