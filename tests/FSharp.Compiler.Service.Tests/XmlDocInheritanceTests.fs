@@ -953,3 +953,19 @@ let ``engine survives an extremely deep acyclic inheritdoc chain without overflo
     let result = expandWith crefMap None """<inheritdoc cref="c0"/>"""
 
     Assert.DoesNotContain("UNREACHABLE LEAF", result)
+
+[<Fact>]
+let ``engine splices whole inherited doc when inheritdoc is nested inside an element (documented limitation)`` () =
+    // KNOWN LIMITATION vs Roslyn. When <inheritdoc/> is nested inside another documentation element
+    // (e.g. <summary>), Roslyn narrows the default selection to that element's matching children
+    // (an ancestor-aware XPath + text-node selection). F#'s selection helper returns whole top-level
+    // ELEMENTS only, so the target's <summary> AND <remarks> are spliced verbatim, producing nested
+    // <summary> markup. The common authoring pattern (a top-level <inheritdoc/> sibling) is unaffected
+    // and works correctly; this test pins the nested-case behavior so a future change is deliberate.
+    let bDoc = "<summary>Base summary</summary><remarks>Base remarks</remarks>"
+    let src = """<summary>Prefix <inheritdoc cref="B"/> suffix</summary>"""
+    let result = expandWith [ "B", bDoc ] None src
+
+    Assert.Contains("Base summary", result)
+    Assert.Contains("Base remarks", result)
+    Assert.DoesNotContain("<inheritdoc", result)

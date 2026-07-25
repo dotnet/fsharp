@@ -88,6 +88,12 @@ let private applyXPathFilter (xpath: string) (sourceXml: string) : string =
     | :? System.InvalidOperationException -> ""
 
 /// Selects the default inherited content, excluding top-level <overloads> nodes.
+///
+/// Known limitation vs Roslyn: this returns the target's whole top-level nodes. Roslyn additionally
+/// narrows the selection when the <inheritdoc/> is nested inside another documentation element (e.g.
+/// a bare <inheritdoc/> inside <summary> selects only the target's summary children). Implementing
+/// that requires ancestor-aware XPath plus text-node selection; until then a nested <inheritdoc/>
+/// splices the whole inherited doc. The common top-level usage is unaffected.
 let private selectDefaultInheritedContent (sourceXml: string) : string =
     try
         let doc =
