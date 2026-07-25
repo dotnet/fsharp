@@ -355,6 +355,22 @@ let f x = x
         Assert.DoesNotContain("PUBLIC DTD SECRET", inner)
 
     [<Fact>]
+    let ``Included file that is not well-formed XML warns and keeps the tag`` () =
+        // A syntactically broken external file (unclosed <summary>) must not crash the compiler:
+        // it warns once via FS3887 (naming both the file and the xpath) and keeps the unexpanded tag.
+        let malformed = "<?xml version=\"1.0\"?>\n<data><summary>Unclosed summary</data>"
+
+        let res =
+            runInclude (scenario (Snippets.memberWithInclude "broken.xml" "/data/summary") [ "broken.xml", malformed ])
+
+        res.Compilation |> shouldSucceed |> ignore
+        assertSingleIncludeWarningMatches "broken.xml" res
+        assertSingleIncludeWarningMatches "/data/summary" res
+        let inner = memberInner "M:Test.included(System.Int32,System.Int32)" res.Xml
+        Assert.Contains("<include file=\"broken.xml\" path=\"/data/summary\"", inner)
+        Assert.DoesNotContain("Unclosed summary", inner)
+
+    [<Fact>]
     let ``Included code block preserves inter-element whitespace`` () =
         let externalDoc =
             """<?xml version="1.0"?>
