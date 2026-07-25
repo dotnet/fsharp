@@ -922,3 +922,34 @@ let d = Derived(){caret}
     // The overridden (string) indexer's base overload is undocumented: it must not borrow the
     // int overload's docs.
     Assert.DoesNotContain("INT indexer docs", docOfIndexer "string")
+
+[<Fact>]
+let ``engine caps a deep acyclic inheritdoc chain`` () =
+    // The visited-set stops CYCLES but not a deep ACYCLIC chain (c0 -> c1 -> c2 -> ...). Without a
+    // depth cap such a chain recurses unboundedly and eventually stack-overflows (uncatchable, aborts
+    // the process/IDE). A chain far deeper than the cap must therefore stop expanding gracefully
+    // instead of resolving all the way to the leaf.
+    let depth = 300
+    let crefMap =
+        [ for i in 0 .. depth - 1 -> $"c{i}", $"""<inheritdoc cref="c{i + 1}"/>""" ]
+        @ [ $"c{depth}", "<summary>DEEP LEAF CONTENT</summary>" ]
+
+    let result = expandWith crefMap None """<inheritdoc cref="c0"/>"""
+
+    // The cap engages long before the leaf, so its content is never reached.
+    Assert.DoesNotContain("DEEP LEAF CONTENT", result)
+
+[<Fact>]
+let ``engine survives an extremely deep acyclic inheritdoc chain without overflow`` () =
+    // A chain far deeper than any real hierarchy and past the stack-overflow threshold. With the depth
+    // cap the call unwinds at maxInheritDocDepth and completes; without it this would abort the test
+    // host with an uncatchable StackOverflowException. The assertion below is secondary - the primary
+    // guarantee is simply that this returns at all.
+    let depth = 50000
+    let crefMap =
+        [ for i in 0 .. depth - 1 -> $"c{i}", $"""<inheritdoc cref="c{i + 1}"/>""" ]
+        @ [ $"c{depth}", "<summary>UNREACHABLE LEAF</summary>" ]
+
+    let result = expandWith crefMap None """<inheritdoc cref="c0"/>"""
+
+    Assert.DoesNotContain("UNREACHABLE LEAF", result)

@@ -5,6 +5,14 @@ module internal FSharp.Compiler.XmlDocInheritance
 open System.Xml.Linq
 open System.Xml.XPath
 
+/// Upper bound on inheritdoc expansion depth. The visited-set guards against CYCLES, but a deep
+/// ACYCLIC explicit-cref chain (A -> B -> C -> ...) recurses non-tail and would eventually raise an
+/// uncatchable StackOverflowException that aborts the process/IDE. Real inheritance chains are only
+/// a few levels deep, so this generous cap never truncates a legitimate chain while bounding the
+/// worst case to graceful degradation (the tag past the cap is left unexpanded).
+[<Literal>]
+let private maxInheritDocDepth = 100
+
 /// Represents an inheritdoc directive found in XML documentation
 type InheritDocDirective =
     {
@@ -102,7 +110,7 @@ let rec private expandInheritedDoc
     (cref: string)
     (xmlText: string)
     : string =
-    if visited.Contains(cref) then
+    if visited.Contains(cref) || visited.Count >= maxInheritDocDepth then
         xmlText
     else
         let newVisited = visited.Add(cref)
