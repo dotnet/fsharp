@@ -23,7 +23,10 @@ type public XmlDoc =
     member GetXmlText: unit -> string
 
     /// Get the elaborated XML documentation as XML text after expanding includes
-    member internal GetExpandedXmlText: emit: bool * ?env: XmlDocIncludeExpander.ExpansionEnv -> string
+    member internal GetExpandedXmlText: emit: bool -> string
+
+    /// Get the elaborated XML documentation as XML text after expanding includes
+    member internal GetExpandedXmlText: emit: bool * env: XmlDocIncludeExpander.ExpansionEnv -> string
 
     /// Indicates if the XmlDoc is empty
     member IsEmpty: bool

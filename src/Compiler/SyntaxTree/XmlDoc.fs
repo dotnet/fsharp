@@ -65,12 +65,13 @@ type XmlDoc(unprocessedLines: string[], range: range) =
         else
             doc.GetElaboratedXmlLines() |> String.concat Environment.NewLine
 
-    member doc.GetExpandedXmlText(emit, ?env) =
+    member doc.GetExpandedXmlText(emit) =
+        doc.GetExpandedXmlText(emit, XmlDocIncludeExpander.mkExpansionEnv ())
+
+    member doc.GetExpandedXmlText(emit, env: XmlDocIncludeExpander.ExpansionEnv) =
         if doc.IsEmpty then
             ""
         else
-            let env = defaultArg env (XmlDocIncludeExpander.mkExpansionEnv ())
-
             XmlDocIncludeExpander.expandIncludeLines env emit doc.Range.FileName doc.Range (doc.GetElaboratedXmlLines())
             |> String.concat Environment.NewLine
 

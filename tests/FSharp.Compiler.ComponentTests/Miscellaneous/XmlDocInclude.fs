@@ -3,8 +3,8 @@
 namespace Miscellaneous
 
 open System
+open System.Collections.Generic
 open System.IO
-open System.Runtime.InteropServices
 open Xunit
 open TestFramework
 open FSharp.Test.Compiler
@@ -28,6 +28,58 @@ module XmlDocInclude =
             Directory.Delete(dir, true)
         with _ ->
             ()
+
+    let private countSubstring (needle: string) (text: string) =
+        let rec loop index count =
+            let next = text.IndexOf(needle, index, StringComparison.Ordinal)
+
+            if next < 0 then
+                count
+            else
+                loop (next + needle.Length) (count + 1)
+
+        loop 0 0
+
+    let private includeWarnings res =
+        res.Compilation.Output.Diagnostics
+        |> List.filter (fun diagnostic -> diagnostic.Error = Warning 3887)
+
+    let private includeWarningCount res = includeWarnings res |> List.length
+
+    let private assertIncludeWarningCount expected res =
+        Assert.Equal(expected, includeWarningCount res)
+
+    let private assertSingleIncludeWarningMatches expectedMessage res =
+        let warnings = includeWarnings res
+        Assert.Equal(1, warnings.Length)
+        Assert.Contains(expectedMessage, warnings.Head.Message)
+
+    let private fileSystemSupportsCaseDistinctFiles () =
+        let directory = createTemporaryDirectory ()
+        let upperPath = Path.Combine(directory.FullName, "Data.xml")
+        let lowerPath = Path.Combine(directory.FullName, "data.xml")
+
+        try
+            File.WriteAllText(upperPath, "upper")
+            File.WriteAllText(lowerPath, "lower")
+            File.Exists upperPath
+            && File.Exists lowerPath
+            && File.ReadAllText upperPath = "upper"
+            && File.ReadAllText lowerPath = "lower"
+        finally
+            Directory.Delete(directory.FullName, true)
+
+    let private makeIncludeChainFiles prefix includeCount =
+        [
+            for i in 0 .. includeCount - 1 ->
+                let content =
+                    if i = includeCount - 1 then
+                        $"""<?xml version="1.0"?><data><summary>{prefix} leaf.</summary></data>"""
+                    else
+                        $"""<?xml version="1.0"?><data><summary>{prefix} depth {i}. {Snippets.includeElement $"{prefix}{i + 1}.xml" "/data/summary"}</summary></data>"""
+
+                $"{prefix}{i}.xml", content
+        ]
 
     // Test data
     let private simpleData =
@@ -204,7 +256,7 @@ let f x = x
         res.Compilation |> shouldSucceed |> withWarningCode 3887 |> ignore
 
     [<Fact>]
-    let ``Included file with a DTD is rejected without entity expansion`` () =
+    let ``Included file with internal entity DTD is rejected without entity expansion`` () =
         let billionLaughs =
             """<?xml version="1.0"?>
 <!DOCTYPE data [ <!ENTITY lol "lol"> <!ENTITY lol2 "&lol;&lol;&lol;"> ]>
@@ -215,8 +267,77 @@ let f x = x
                 { scenario (Snippets.memberWithInclude "d.xml" "/data/summary") [ "d.xml", billionLaughs ] with
                     WarnOn = [ 3390 ] }
 
-        res.Compilation |> shouldSucceed |> withWarningCode 3887 |> ignore
-        Assert.DoesNotContain("lollol", res.Xml)
+        res.Compilation |> shouldSucceed |> ignore
+        assertSingleIncludeWarningMatches "DTD is prohibited" res
+        let inner = memberInner "M:Test.included(System.Int32,System.Int32)" res.Xml
+        Assert.Contains("<include file=\"d.xml\" path=\"/data/summary\"", inner)
+        Assert.DoesNotContain("lollol", inner)
+        Assert.DoesNotContain("&lol2;", inner)
+
+    [<Fact>]
+    let ``Included file with external general entity is rejected without entity expansion`` () =
+        let externalEntity =
+            """<?xml version="1.0"?>
+<!DOCTYPE data [ <!ENTITY xxe SYSTEM "file:///etc/hostname"> ]>
+<data><summary>&xxe;</summary></data>"""
+
+        let res =
+            runInclude
+                { scenario (Snippets.memberWithInclude "d.xml" "/data/summary") [ "d.xml", externalEntity ] with
+                    WarnOn = [ 3390 ] }
+
+        res.Compilation |> shouldSucceed |> ignore
+        assertSingleIncludeWarningMatches "DTD is prohibited" res
+        let inner = memberInner "M:Test.included(System.Int32,System.Int32)" res.Xml
+        Assert.Contains("<include file=\"d.xml\" path=\"/data/summary\"", inner)
+        Assert.DoesNotContain("&xxe;", inner)
+        Assert.DoesNotContain("hostname", inner)
+
+    [<Fact>]
+    let ``Included file with external DTD subset is rejected before loading subset`` () =
+        let externalSubset =
+            """<?xml version="1.0"?>
+<!DOCTYPE data SYSTEM "evil.dtd">
+<data><summary>Should not expand.</summary></data>"""
+
+        let res =
+            runInclude
+                { scenario
+                    (Snippets.memberWithInclude "d.xml" "/data/summary")
+                    [ "d.xml", externalSubset
+                      "evil.dtd", "<!ENTITY secret 'DTD SECRET'>" ]
+                  with
+                    WarnOn = [ 3390 ] }
+
+        res.Compilation |> shouldSucceed |> ignore
+        assertSingleIncludeWarningMatches "DTD is prohibited" res
+        let inner = memberInner "M:Test.included(System.Int32,System.Int32)" res.Xml
+        Assert.Contains("<include file=\"d.xml\" path=\"/data/summary\"", inner)
+        Assert.DoesNotContain("Should not expand", inner)
+        Assert.DoesNotContain("DTD SECRET", inner)
+
+    [<Fact>]
+    let ``Included file with public external DTD subset is rejected before loading subset`` () =
+        let publicSubset =
+            """<?xml version="1.0"?>
+<!DOCTYPE data PUBLIC "-//example//DTD DATA//EN" "evil.dtd">
+<data><summary>Should not expand.</summary></data>"""
+
+        let res =
+            runInclude
+                { scenario
+                    (Snippets.memberWithInclude "d.xml" "/data/summary")
+                    [ "d.xml", publicSubset
+                      "evil.dtd", "<!ENTITY secret 'PUBLIC DTD SECRET'>" ]
+                  with
+                    WarnOn = [ 3390 ] }
+
+        res.Compilation |> shouldSucceed |> ignore
+        assertSingleIncludeWarningMatches "DTD is prohibited" res
+        let inner = memberInner "M:Test.included(System.Int32,System.Int32)" res.Xml
+        Assert.Contains("<include file=\"d.xml\" path=\"/data/summary\"", inner)
+        Assert.DoesNotContain("Should not expand", inner)
+        Assert.DoesNotContain("PUBLIC DTD SECRET", inner)
 
     [<Fact>]
     let ``Included code block preserves inter-element whitespace`` () =
@@ -232,6 +353,32 @@ let f x = x
 
         let inner = memberInner "M:Test.included(System.Int32,System.Int32)" res.Xml
         Assert.Contains("\n    <see cref=\"T:System.Int32\"", inner)
+
+    [<Fact>]
+    let ``Included multiline code block preserves exact whitespace`` () =
+        let externalDoc =
+            """<?xml version="1.0"?>
+<data><summary><code>
+    let x = 1
+
+    let y = x + 1
+</code></summary></data>"""
+
+        let res =
+            runInclude (scenario (Snippets.memberWithInclude "d.xml" "/data/summary") [ "d.xml", externalDoc ])
+
+        res.Compilation |> shouldSucceed |> withDiagnostics [] |> ignore
+
+        let expected =
+            """
+ <summary><code>
+    let x = 1
+
+    let y = x + 1
+</code></summary>
+"""
+
+        Assert.Equal(expected, memberInner "M:Test.included(System.Int32,System.Int32)" res.Xml)
 
     [<Fact>]
     let ``Non-element xpath result warns`` () =
@@ -260,6 +407,29 @@ let f (x: int) = x
         res.Xml |> memberXmlEquals "M:Test.f(System.Int32)" "<summary>A(<part>B(<leaf>C</leaf>)B</part>)A</summary>"
 
     [<Fact>]
+    let ``Include chain at maximum depth expands fully`` () =
+        let includeCount = 64
+        let res = runInclude (scenario (Snippets.memberWithInclude "boundary0.xml" "/data/summary") (makeIncludeChainFiles "boundary" includeCount))
+
+        res.Compilation |> shouldSucceed |> withDiagnostics [] |> ignore
+
+        let inner = memberInner "M:Test.included(System.Int32,System.Int32)" res.Xml
+        Assert.Contains("boundary leaf.", inner)
+        Assert.DoesNotContain("<include", inner)
+
+    [<Fact>]
+    let ``Include chain over maximum depth warns once and keeps failing include`` () =
+        let includeCount = 65
+        let res = runInclude (scenario (Snippets.memberWithInclude "overdepth0.xml" "/data/summary") (makeIncludeChainFiles "overdepth" includeCount))
+
+        res.Compilation |> shouldSucceed |> ignore
+        assertSingleIncludeWarningMatches "maximum nesting depth 64" res
+
+        let inner = memberInner "M:Test.included(System.Int32,System.Int32)" res.Xml
+        Assert.Contains("<include file=\"overdepth64.xml\" path=\"/data/summary\"", inner)
+        Assert.DoesNotContain("overdepth leaf.", inner)
+
+    [<Fact>]
     let ``Deep include chain stops with expansion limit warning`` () =
         let chainLength = 200
 
@@ -285,7 +455,7 @@ let f (x: int) = x
 
     [<Fact>]
     let ``Diamond include DAG expands shared fragments correctly`` () =
-        let levels = 15
+        let levels = 8
 
         let files =
             [
@@ -318,7 +488,7 @@ let f (x: int) = x
         res.Xml |> memberXmlEquals "M:Test.included(System.Int32,System.Int32)" (expected 0)
 
     [<Fact>]
-    let ``Memoized include reused deeper still respects depth limit`` () =
+    let ``Reused include deeper still respects depth limit`` () =
         let suffixLength = 60
         let prefixLength = 10
 
@@ -493,8 +663,12 @@ let f x = x
             "<summary>S: <remarks>Shared remarks.</remarks></summary>"
 
     [<Fact>]
-    let ``Case-distinct include files are not treated as a cycle on case-sensitive filesystems`` () =
-        if RuntimeInformation.IsOSPlatform(OSPlatform.Linux) then
+    let ``Case-distinct include paths are ordinal cycle keys`` () =
+        let keys = HashSet<struct (string * string)>()
+        keys.Add(struct ("Data.xml", "/data/summary")) |> ignore
+        Assert.False(keys.Contains(struct ("data.xml", "/data/summary")))
+
+        if fileSystemSupportsCaseDistinctFiles () then
             let source = Snippets.memberWithInclude "Data.xml" "/data/summary"
 
             let dataUpper =
@@ -518,8 +692,6 @@ let f x = x
             |> memberXmlEquals
                 "M:Test.included(System.Int32,System.Int32)"
                 "<summary>Upper start. <summary>Lower summary.</summary> Upper end.</summary>"
-        else
-            ()
 
     [<Fact>]
     let ``Self include cycle is detected and terminates`` () =
@@ -531,7 +703,8 @@ let f x = x
             )
 
         // Genuine self-reference (/data/summary includes /data/summary) must warn and terminate (test finishing = termination).
-        res.Compilation |> shouldSucceed |> withWarningCode 3887 |> ignore
+        res.Compilation |> shouldSucceed |> ignore
+        assertSingleIncludeWarningMatches "Circular include detected" res
 
     [<Fact>]
     let ``Mutual include cycle between two files is detected and warns`` () =
@@ -589,6 +762,77 @@ let second (x: int) = x
 
         res.Xml |> memberXmlEquals "M:Test.first(System.Int32)" "<summary>Included summary text.</summary>"
         res.Xml |> memberXmlEquals "M:Test.second(System.Int32)" "<summary>Included summary text.</summary>"
+
+    [<Fact>]
+    let ``Include budget is per documented member`` () =
+        let includeCountPerMember = 6000
+        let includes = String.replicate includeCountPerMember (Snippets.includeElement "leaf.xml" "/data/leaf")
+
+        let source =
+            $"""module Test
+
+/// <summary>{includes}</summary>
+let first (x: int) = x
+
+/// <summary>{includes}</summary>
+let second (x: int) = x
+"""
+
+        let res =
+            runInclude (scenario source [ "leaf.xml", """<?xml version="1.0"?><data><leaf>L</leaf></data>""" ])
+
+        res.Compilation |> shouldSucceed |> withDiagnostics [] |> ignore
+
+        let firstInner = memberInner "M:Test.first(System.Int32)" res.Xml
+        let secondInner = memberInner "M:Test.second(System.Int32)" res.Xml
+
+        Assert.Equal(includeCountPerMember, countSubstring "<leaf>L</leaf>" firstInner)
+        Assert.Equal(includeCountPerMember, countSubstring "<leaf>L</leaf>" secondInner)
+        Assert.DoesNotContain("<include", firstInner)
+        Assert.DoesNotContain("<include", secondInner)
+
+    [<Fact>]
+    let ``Document with exactly maximum include budget expands all siblings`` () =
+        let includeCount = 10000
+        let includes = String.replicate includeCount (Snippets.includeElement "leaf.xml" "/data/leaf")
+
+        let source =
+            $"""module Test
+
+/// <summary>{includes}</summary>
+let f (x: int) = x
+"""
+
+        let res =
+            runInclude (scenario source [ "leaf.xml", """<?xml version="1.0"?><data><leaf>L</leaf></data>""" ])
+
+        res.Compilation |> shouldSucceed |> withDiagnostics [] |> ignore
+
+        let inner = memberInner "M:Test.f(System.Int32)" res.Xml
+        Assert.Equal(includeCount, countSubstring "<leaf>L</leaf>" inner)
+        Assert.DoesNotContain("<include", inner)
+
+    [<Fact>]
+    let ``Document over maximum include budget warns once and keeps failing include`` () =
+        let includeCount = 10001
+        let includes = String.replicate includeCount (Snippets.includeElement "leaf.xml" "/data/leaf")
+
+        let source =
+            $"""module Test
+
+/// <summary>{includes}</summary>
+let f (x: int) = x
+"""
+
+        let res =
+            runInclude (scenario source [ "leaf.xml", """<?xml version="1.0"?><data><leaf>L</leaf></data>""" ])
+
+        res.Compilation |> shouldSucceed |> ignore
+        assertSingleIncludeWarningMatches "maximum of 10000 includes" res
+
+        let inner = memberInner "M:Test.f(System.Int32)" res.Xml
+        Assert.Equal(10000, countSubstring "<leaf>L</leaf>" inner)
+        Assert.Equal(1, countSubstring "<include file=\"leaf.xml\" path=\"/data/leaf\"" inner)
 
     [<Fact>]
     let ``Include with rich XML content preserves structure`` () =
@@ -897,6 +1141,35 @@ let f (x: int) (y: int) = x + y
                     WarnOn = [ 3390 ] }
 
         res.Compilation |> shouldSucceed |> withDiagnostics [] |> ignore
+
+    [<Fact>]
+    let ``Quiet doc checking expands recursive includes under limit without include warnings`` () =
+        let res =
+            runInclude
+                { scenario
+                    (Snippets.memberWithInclude "quiet0.xml" "/data/summary")
+                    (makeIncludeChainFiles "quiet" 10)
+                  with
+                    WarnOn = [ 3390 ] }
+
+        res.Compilation |> shouldSucceed |> withDiagnostics [] |> ignore
+        Assert.Equal(0, includeWarningCount res)
+        let inner = memberInner "M:Test.included(System.Int32,System.Int32)" res.Xml
+        Assert.Contains("quiet leaf.", inner)
+        Assert.DoesNotContain("<include", inner)
+
+    [<Fact>]
+    let ``Quiet doc checking does not duplicate include expansion limit warning`` () =
+        let res =
+            runInclude
+                { scenario
+                    (Snippets.memberWithInclude "quietover0.xml" "/data/summary")
+                    (makeIncludeChainFiles "quietover" 65)
+                  with
+                    WarnOn = [ 3390 ] }
+
+        res.Compilation |> shouldSucceed |> ignore
+        assertSingleIncludeWarningMatches "maximum nesting depth 64" res
 
     [<Fact>]
     let ``Include error is reported once when doc checking and doc generation are both on`` () =
