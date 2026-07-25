@@ -737,28 +737,30 @@ module Task =
     [<CompiledName("Empty")>]
     let empty: Task<unit> = result ()
 
-    [<CompiledName("Map")>]
-    let inline map ([<InlineIfLambda>] mapping: 'T -> 'U) (task: Task<'T>) : Task<'U> =
-        // if task.IsCompleted then // includes Canceled or Faulted states
-        //     try result (task.GetAwaiter().GetResult() |> mapping) // Result would surface AggregateException
-        //     with e -> Task.FromException<'U>(e)
-        // else
-        if task.Status = TaskStatus.RanToCompletion then
-            result (mapping task.Result)
-        else
-            TaskBuilder.task {
-                let! v = task
-                return mapping v
-            }
-
     [<CompiledName("Bind")>]
     let inline bind ([<InlineIfLambda>] binder: 'T -> Task<'U>) (task: Task<'T>) : Task<'U> =
         if task.Status = TaskStatus.RanToCompletion then
-            binder task.Result
+            try
+                binder task.Result
+            with e ->
+                Task.FromException<'U>(e)
         else
             TaskBuilder.task {
                 let! v = task
                 return! binder v
+            }
+
+    [<CompiledName("Map")>]
+    let inline map ([<InlineIfLambda>] mapping: 'T -> 'U) (task: Task<'T>) : Task<'U> =
+        if task.Status = TaskStatus.RanToCompletion then
+            try
+                mapping task.Result |> result
+            with e ->
+                Task.FromException<'U>(e)
+        else
+            TaskBuilder.task {
+                let! v = task
+                return mapping v
             }
 
     [<CompiledName("Ignore")>]
@@ -784,17 +786,7 @@ module Task =
 
     [<CompiledName("Catch")>]
     let catch (task: Task<'T>) : Task<Result<'T, exn>> =
-        if task.Status = TaskStatus.RanToCompletion then
-            result (Ok task.Result)
-        else
-            TaskBuilder.task {
-                try
-                    let! v = task
-                    return Ok v
-                with
-                | :? System.OperationCanceledException as e -> return! raise e
-                | e -> return Error e
-            }
+        task |> map Ok |> catchWith Error
 
 #if NETSTANDARD2_1
     [<CompiledName("OfValueTask")>]
