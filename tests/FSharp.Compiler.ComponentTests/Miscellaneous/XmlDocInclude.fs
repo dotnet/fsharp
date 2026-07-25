@@ -253,6 +253,21 @@ let f x = x
         res.Compilation |> shouldSucceed |> withWarningCode 3887 |> ignore
 
     [<Fact>]
+    let ``Include error names both the file and the xpath`` () =
+        // Missing file: the FS3887 message must still name BOTH the file and the xpath.
+        let res = runInclude (scenario (Snippets.memberWithInclude "missing-doc.xml" "/data/summary") [])
+        res.Compilation |> shouldSucceed |> ignore
+        assertSingleIncludeWarningMatches "missing-doc.xml" res
+        assertSingleIncludeWarningMatches "/data/summary" res
+
+    [<Fact>]
+    let ``Invalid xpath error names both the file and the xpath`` () =
+        let res = runInclude (scenario (Snippets.memberWithInclude "d.xml" "bad[[[") [ "d.xml", Snippets.dataSummaryRemarks ])
+        res.Compilation |> shouldSucceed |> ignore
+        assertSingleIncludeWarningMatches "d.xml" res
+        assertSingleIncludeWarningMatches "bad[[[" res
+
+    [<Fact>]
     let ``Included file with internal entity DTD is rejected without entity expansion`` () =
         let billionLaughs =
             """<?xml version="1.0"?>
@@ -420,7 +435,7 @@ let f (x: int) = x
         let res = runInclude (scenario (Snippets.memberWithInclude "overdepth0.xml" "/data/summary") (makeIncludeChainFiles "overdepth" includeCount))
 
         res.Compilation |> shouldSucceed |> ignore
-        assertSingleIncludeWarningMatches "maximum nesting depth 64" res
+        assertSingleIncludeWarningMatches "maximum include nesting depth of 64" res
 
         let inner = memberInner "M:Test.included(System.Int32,System.Int32)" res.Xml
         Assert.Contains("<include file=\"overdepth64.xml\" path=\"/data/summary\"", inner)
@@ -447,7 +462,7 @@ let f (x: int) = x
         res.Compilation
         |> shouldSucceed
         |> withWarningCode 3887
-        |> withDiagnosticMessageMatches "include expansion limit exceeded"
+        |> withDiagnosticMessageMatches "maximum include nesting depth of 64"
         |> ignore
 
     [<Fact>]
@@ -525,7 +540,7 @@ let f (x: int) = x
         res.Compilation
         |> shouldSucceed
         |> withWarningCode 3887
-        |> withDiagnosticMessageMatches "include expansion limit exceeded"
+        |> withDiagnosticMessageMatches "maximum include nesting depth of 64"
         |> ignore
 
     [<Fact>]
@@ -701,7 +716,7 @@ let f x = x
 
         // Genuine self-reference (/data/summary includes /data/summary) must warn and terminate (test finishing = termination).
         res.Compilation |> shouldSucceed |> ignore
-        assertSingleIncludeWarningMatches "Circular include detected" res
+        assertSingleIncludeWarningMatches "a circular include was detected" res
 
     [<Fact>]
     let ``Mutual include cycle between two files is detected and warns`` () =
@@ -828,7 +843,7 @@ let f (x: int) = x
             runInclude (scenario source [ "leaf.xml", """<?xml version="1.0"?><data><leaf>L</leaf></data>""" ])
 
         res.Compilation |> shouldSucceed |> ignore
-        assertSingleIncludeWarningMatches "maximum of 10000 includes" res
+        assertSingleIncludeWarningMatches "maximum of 10000 include expansions" res
 
         let inner = memberInner "M:Test.f(System.Int32)" res.Xml
         Assert.Equal(10000, countSubstring "<leaf>L</leaf>" inner)
@@ -1169,7 +1184,7 @@ let f (x: int) (y: int) = x + y
                     WarnOn = [ 3390 ] }
 
         res.Compilation |> shouldSucceed |> ignore
-        assertSingleIncludeWarningMatches "maximum nesting depth 64" res
+        assertSingleIncludeWarningMatches "maximum include nesting depth of 64" res
 
     [<Fact>]
     let ``Include error is reported once when doc checking and doc generation are both on`` () =

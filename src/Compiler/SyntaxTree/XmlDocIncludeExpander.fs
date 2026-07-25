@@ -159,6 +159,9 @@ type private IncludeOutcome =
 /// Load and expand includes from an external file
 let rec private resolveSingleInclude (baseFileName: string) (includeInfo: IncludeInfo) (ctx: ExpansionContext) : IncludeOutcome =
 
+    let describeFailure (reason: string) =
+        $"Unable to include XML fragment '{includeInfo.XPath}' of file '{includeInfo.FilePath}' -- {reason}"
+
     let resolvedPathResult =
         try
             Result.Ok(resolveFilePath baseFileName includeInfo.FilePath)
@@ -166,23 +169,25 @@ let rec private resolveSingleInclude (baseFileName: string) (includeInfo: Includ
             Result.Error $"Invalid file path: {includeInfo.FilePath}"
 
     match resolvedPathResult with
-    | Result.Error msg -> IncludeError msg
+    | Result.Error _ -> IncludeError(describeFailure "the file path is invalid")
     | Result.Ok resolvedPath ->
 
         let key = struct (resolvedPath, includeInfo.XPath)
 
         if ctx.InProgressIncludes.Contains(key) then
-            IncludeError $"Circular include detected: {resolvedPath}"
+            IncludeError(describeFailure "a circular include was detected")
         elif ctx.Depth >= maxIncludeDepth then
-            IncludeError $"include expansion limit exceeded (maximum nesting depth {maxIncludeDepth}) at: {resolvedPath}"
+            IncludeError(describeFailure $"the maximum include nesting depth of {maxIncludeDepth} was exceeded")
         elif ctx.Budget.Value <= 0 then
-            IncludeBudgetExceeded $"include expansion limit exceeded (maximum of {maxIncludeExpansions} includes) at: {resolvedPath}"
+            IncludeBudgetExceeded(
+                describeFailure $"the maximum of {maxIncludeExpansions} include expansions per documentation comment was exceeded"
+            )
         else
             match
                 loadXmlFile ctx.Env.FileCache resolvedPath
                 |> Result.bind (fun includeDoc -> evaluateXPath includeDoc includeInfo.XPath)
             with
-            | Result.Error msg -> IncludeError msg
+            | Result.Error msg -> IncludeError(describeFailure msg)
             | Result.Ok [] -> IncludeNoMatch
             | Result.Ok matchedElements ->
                 ctx.Budget.Value <- ctx.Budget.Value - 1
