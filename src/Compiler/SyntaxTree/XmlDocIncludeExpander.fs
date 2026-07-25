@@ -4,7 +4,6 @@ module internal FSharp.Compiler.Xml.XmlDocIncludeExpander
 
 open System
 open System.Collections.Generic
-open System.IO
 open System.Xml
 open System.Xml.Linq
 open System.Xml.XPath
@@ -68,24 +67,13 @@ let private loadXmlFile (cache: Dictionary<string, Result<XDocument, string>>) (
         cache[filePath] <- result
         result
 
-/// Resolve a file path (absolute or relative to source file).
-/// Always normalizes via GetFullPath so that cycle detection uses canonical paths.
+/// Resolve a file path (absolute or relative to the source file), normalized via
+/// GetFullPath so cycle detection uses canonical paths. GetFullFilePathInDirectoryShim
+/// already passes rooted include paths through unchanged, and GetDirectoryNameShim maps an
+/// empty or directory-less base file name (such as the "unknown" range sentinel) to ".",
+/// i.e. the current directory.
 let private resolveFilePath (baseFileName: string) (includePath: string) : string =
-    if FileSystem.IsPathRootedShim(includePath) then
-        FileSystem.GetFullPathShim(includePath)
-    else
-        let baseDir =
-            if String.IsNullOrEmpty(baseFileName) || baseFileName = "unknown" then
-                Directory.GetCurrentDirectory()
-            else
-                let dir = FileSystem.GetDirectoryNameShim(baseFileName)
-
-                if String.IsNullOrEmpty(dir) then
-                    Directory.GetCurrentDirectory()
-                else
-                    dir
-
-        FileSystem.GetFullFilePathInDirectoryShim baseDir includePath
+    FileSystem.GetFullFilePathInDirectoryShim (FileSystem.GetDirectoryNameShim baseFileName) includePath
 
 /// Evaluate XPath and return matching elements
 let private evaluateXPath (doc: XDocument) (xpath: string) : Result<XElement list, string> =
@@ -109,8 +97,14 @@ let private mayContainInclude (text: string) : bool =
 
 /// Classify an XElement as an include directive.
 /// Returns Some(Ok info) for valid includes, Some(Error msg) for malformed includes, None for non-includes.
+/// Only an unqualified <include> element is the documentation include tag: an element named
+/// "include" in a foreign XML namespace is ordinary content and is left untouched (Roslyn parity,
+/// matching its ElementNameIs check that the namespace is empty).
 let private classifyInclude (elem: XElement) : Result<IncludeInfo, string> option =
-    if elem.Name.LocalName <> "include" then
+    if
+        elem.Name.LocalName <> "include"
+        || not (String.IsNullOrEmpty elem.Name.NamespaceName)
+    then
         None
     else
         let fileAttr = elem.Attribute(!!(XName.op_Implicit "file"))

@@ -17,12 +17,6 @@ module XmlDocIncludeTestFramework =
 
     let scenario source files = { Source = source; Files = files; WarnOn = [] }
 
-    let withParamChecking includeScenario =
-        if includeScenario.WarnOn |> List.contains 3390 then
-            includeScenario
-        else
-            { includeScenario with WarnOn = includeScenario.WarnOn @ [ 3390 ] }
-
     let private fullPathForRelativeFile (directory: DirectoryInfo) (relativePath: string) =
         if String.IsNullOrWhiteSpace relativePath then
             invalidArg (nameof relativePath) "Include test file paths must be non-empty relative paths."
@@ -100,16 +94,9 @@ module XmlDocIncludeTestFramework =
             |> Seq.map (fun node -> node.ToString(SaveOptions.DisableFormatting))
             |> String.concat "")
 
-    let memberExists memberName xml =
-        tryMemberInner memberName xml |> Option.isSome
-
     let memberInner memberName xml =
         tryMemberInner memberName xml
         |> Option.defaultWith (fun () -> failwith $"Could not find XML documentation member '{memberName}'.\nFull XML:\n{xml}")
-
-    let memberXmlAbsent memberName xml =
-        tryMemberInner memberName xml
-        |> Option.iter (fun inner -> failwith $"Expected no member '{memberName}' but found: {inner}")
 
     let private canonicalizeInnerXml fragment =
         let root =

@@ -371,6 +371,23 @@ let f x = x
         Assert.DoesNotContain("Unclosed summary", inner)
 
     [<Fact>]
+    let ``Namespaced include element is not treated as an include`` () =
+        // An element named 'include' but in a foreign XML namespace is ordinary XML, not the
+        // documentation include tag (Roslyn parity). It must be preserved and never expanded,
+        // and no FS3887 must be emitted even though a matching file and xpath exist.
+        let source =
+            "module Test\n\n/// <summary><include xmlns=\"urn:not-doc\" file=\"d.xml\" path=\"/data/summary\"/></summary>\nlet included (x: int) (y: int) = x + y\n"
+
+        let res = runInclude (scenario source [ "d.xml", Snippets.dataSummaryRemarks ])
+
+        res.Compilation |> shouldSucceed |> withDiagnostics [] |> ignore
+
+        // The foreign-namespace element is kept verbatim; the included text must NOT appear.
+        let inner = memberInner "M:Test.included(System.Int32,System.Int32)" res.Xml
+        Assert.Contains("urn:not-doc", inner)
+        Assert.DoesNotContain("Included summary text.", inner)
+
+    [<Fact>]
     let ``Included code block preserves inter-element whitespace`` () =
         let externalDoc =
             """<?xml version="1.0"?>
