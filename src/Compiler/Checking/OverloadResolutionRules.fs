@@ -122,22 +122,6 @@ let private isStaticallyResolvedTypeParam (tp: Typar) =
     | TyparStaticReq.HeadType -> true
     | TyparStaticReq.None -> false
 
-let private containsSRTPTypeVar (g: TcGlobals) (ty: TType) : bool =
-    let rec loop (ty: TType) : bool =
-        let sty = stripTyEqns g ty
-
-        match sty with
-        | TType_var(tp, _) -> isStaticallyResolvedTypeParam tp
-        | TType_app(_, args, _) -> args |> List.exists loop
-        | TType_tuple(_, elems) -> elems |> List.exists loop
-        | TType_fun(dom, rng, _) -> loop dom || loop rng
-        | TType_anon(_, tys) -> tys |> List.exists loop
-        | TType_forall(_, body) -> loop body
-        | TType_measure _ -> false
-        | TType_ucase _ -> false
-
-    loop ty
-
 /// The type carried by a formal parameter.
 let private paramDataType (ParamData(_, _, _, _, _, _, _, ty)) = ty
 
@@ -151,8 +135,10 @@ let private paramsMentionComparableTypeVar (g: TcGlobals) (ps: ParamData list) :
     |> List.exists (fun tp -> not (isStaticallyResolvedTypeParam tp))
 
 /// True if any of these parameters' types mentions a statically-resolved (SRTP) type variable.
+/// Complement of paramsMentionComparableTypeVar over the same free-typar set.
 let private paramsMentionSRTP (g: TcGlobals) (ps: ParamData list) : bool =
-    ps |> List.exists (fun p -> containsSRTPTypeVar g (paramDataType p))
+    freeInTypesLeftToRight g true (List.map paramDataType ps)
+    |> List.exists isStaticallyResolvedTypeParam
 
 /// Returns 1 if ty1 is more concrete, -1 if ty2 is more concrete, 0 if incomparable.
 let compareTypeConcreteness (g: TcGlobals) ty1 ty2 =
@@ -516,7 +502,9 @@ let private getCachedHasSRTP (ctx: OverloadResolutionContext) (meth: CalledMeth<
             meth.Method.FormalMethodTypars |> List.exists isStaticallyResolvedTypeParam
 
         let hasTyArgSRTP =
-            hasTyparSRTP || meth.CalledTyArgs |> List.exists (containsSRTPTypeVar ctx.g)
+            hasTyparSRTP
+            || (freeInTypesLeftToRight ctx.g true meth.CalledTyArgs
+                |> List.exists isStaticallyResolvedTypeParam)
 
         hasTyArgSRTP || paramsMentionSRTP ctx.g (getCachedParamData ctx meth)
 

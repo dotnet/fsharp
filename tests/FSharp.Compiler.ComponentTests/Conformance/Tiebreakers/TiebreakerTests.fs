@@ -1476,6 +1476,23 @@ if r <> "high-generic" then failwithf "expected high-generic, got %s" r
         |> shouldSucceed
         |> ignore
 
+    [<Fact>]
+    let ``MoreConcrete - overloads differing only by SRTP concreteness stay ambiguous`` () =
+        // The tiebreak short-circuits on statically-resolved type parameters (they resolve via a
+        // different mechanism), so an SRTP-only concreteness difference must remain FS0041.
+        FSharp """
+module Test
+type F() =
+    static member inline M(x: ^T)        = "g"
+    static member inline M(x: ^T option) = "c"
+let r = F.M(Some 5)
+        """
+        |> withLangVersionPreview
+        |> compile
+        |> shouldFail
+        |> withErrorCode 41
+        |> ignore
+
     // Edge-case matrix: every row is FS0041 at --langversion:default and resolves to the concrete
     // overload "c" at preview, covering the member kinds the feature must serve: naked generics,
     // constructors, extension methods, static and instance methods on a generic type, optionals,
