@@ -412,6 +412,90 @@ function TestUsingMSBuild([string] $testProject, [string] $targetFramework, [str
 # (MicrosoftTestApexVisualStudioVersion); if the installed VS does not match, the run is skipped rather
 # than producing confusing Apex/VS-mismatch failures. The F# VSIX must be deployed into the RoslynDev
 # hive first (build with -deployExtensions); Apex launches devenv /rootsuffix RoslynDev.
+
+# ===== BEGIN Apex CI diagnostics helpers (Phase 2, TEMPORARY — revert once the CI hang is understood) =====
+# On CI the Apex host failed with "Timed out ... trying get running object": devenv started but never
+# registered its DTE automation object in the ROT. These helpers (a) make sure devenv has an interactive
+# console desktop (the usual reason DTE never registers) and (b) collect the RoslynDev-hive logs so we can
+# tell an interactive-desktop problem apart from an F# VSIX / package load failure.
+function Capture-ApexScreenshot([string] $path) {
+    # Returns $true only if a screenshot could be taken, which implies an interactive desktop is attached.
+    try {
+        Add-Type -AssemblyName System.Windows.Forms -ErrorAction Stop
+        Add-Type -AssemblyName System.Drawing -ErrorAction Stop
+        $bounds = [System.Windows.Forms.SystemInformation]::VirtualScreen
+        $bmp = New-Object System.Drawing.Bitmap $bounds.Width, $bounds.Height
+        $gfx = [System.Drawing.Graphics]::FromImage($bmp)
+        try {
+            $gfx.CopyFromScreen($bounds.Location, [System.Drawing.Point]::Empty, $bounds.Size)
+            $bmp.Save($path, [System.Drawing.Imaging.ImageFormat]::Png)
+            Write-Host "Captured screenshot to '$path'."
+            return $true
+        } finally {
+            $gfx.Dispose(); $bmp.Dispose()
+        }
+    } catch {
+        Write-Host "Screenshot capture failed (no interactive desktop?): $($_.Exception.Message)"
+        return $false
+    }
+}
+
+function Prepare-ApexInteractiveSession([string] $screenshotPath) {
+    # Mirrors dotnet/roslyn's Setup-IntegrationTestRun: if the desktop is not interactive, reconnect the
+    # session to the console so devenv can publish its DTE automation object; then minimize other windows.
+    if (-not (Capture-ApexScreenshot $screenshotPath)) {
+        Write-Host "No interactive desktop detected; attempting to reconnect the session to the console."
+        try {
+            $quserItems = ((quser $env:USERNAME | Select-Object -Skip 1) -split '\s+')
+            $sessionId = $quserItems[2]
+            if ($sessionId -eq 'Disc') { $sessionId = $quserItems[1] }
+            Write-Host "tscon $sessionId /dest:console"
+            tscon $sessionId /dest:console
+            Start-Sleep -Seconds 3
+            [void](Capture-ApexScreenshot $screenshotPath)
+        } catch {
+            Write-Host "##vso[task.logissue type=warning]Failed to reconnect session to console: $($_.Exception.Message)"
+        }
+    }
+
+    try {
+        (New-Object -ComObject "Shell.Application").MinimizeAll()
+    } catch {
+        Write-Host "MinimizeAll failed: $($_.Exception.Message)"
+    }
+}
+
+function Collect-ApexDiagnostics([string] $screenshotPath, [string] $destination) {
+    # After-run screenshot plus the RoslynDev experimental-hive logs. ActivityLog.xml records whether the
+    # F# package failed to load; ComponentModelCache\*.err records MEF composition failures.
+    [void](Capture-ApexScreenshot $screenshotPath)
+
+    $roamingVs = Join-Path $env:USERPROFILE "AppData\Roaming\Microsoft\VisualStudio"
+    $localVs   = Join-Path $env:USERPROFILE "AppData\Local\Microsoft\VisualStudio"
+
+    if (Test-Path $roamingVs) {
+        foreach ($hiveDir in @(Get-ChildItem -Path $roamingVs -Directory -Filter "*RoslynDev" -ErrorAction SilentlyContinue)) {
+            foreach ($name in @("ActivityLog.xml", "ActivityLog.xsl")) {
+                $src = Join-Path $hiveDir.FullName $name
+                if (Test-Path $src) {
+                    Copy-Item $src (Join-Path $destination "$($hiveDir.Name)-$name") -Force -ErrorAction SilentlyContinue
+                    Write-Host "Collected $src"
+                }
+            }
+        }
+    }
+    if (Test-Path $localVs) {
+        foreach ($hiveDir in @(Get-ChildItem -Path $localVs -Directory -Filter "*RoslynDev" -ErrorAction SilentlyContinue)) {
+            $mefErr = Join-Path $hiveDir.FullName "ComponentModelCache\Microsoft.VisualStudio.Default.err"
+            if (Test-Path $mefErr) {
+                Copy-Item $mefErr (Join-Path $destination "$($hiveDir.Name)-Microsoft.VisualStudio.Default.err") -Force -ErrorAction SilentlyContinue
+                Write-Host "Collected $mefErr"
+            }
+        }
+    }
+}
+# ===== END Apex CI diagnostics helpers (Phase 2) =====
+
 function TestApexUsingVSTest([string] $targetFramework) {
     $projectName = "FSharp.Editor.Apex.IntegrationTests"
     $apexProject = Join-Path $RepoRoot "vsintegration\tests\$projectName\$projectName.csproj"
@@ -534,8 +618,21 @@ function TestApexUsingVSTest([string] $targetFramework) {
     )
 
     Write-Host "$vstestConsole $($vstestArgs -join ' ')"
+
+    # ===== BEGIN Apex CI diagnostics (Phase 2, TEMPORARY — revert once the CI hang is understood) =====
+    if ($ci) {
+        Prepare-ApexInteractiveSession (Join-Path $testResultsDir "apex-before-run.png")
+    }
+    # ===== END Apex CI diagnostics (Phase 2) =====
+
     & $vstestConsole @vstestArgs
     $vstestExitCode = $LASTEXITCODE
+
+    # ===== BEGIN Apex CI diagnostics (Phase 2, TEMPORARY — revert once the CI hang is understood) =====
+    if ($ci) {
+        Collect-ApexDiagnostics (Join-Path $testResultsDir "apex-after-run.png") $testResultsDir
+    }
+    # ===== END Apex CI diagnostics (Phase 2) =====
 
     # This leg is non-gating (signal only): a test failure must NOT fail the build. Surface it as a
     # warning and let the published TRX / Tests tab carry the signal. Genuine infra errors (missing
