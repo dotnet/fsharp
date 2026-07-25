@@ -113,12 +113,11 @@ extends:
                   SignType: $(_SignType)
                   OfficialBuildId: $(Build.BuildNumber)
               # Upload the produced .vsman insertion drop to the devdiv artifact service, exactly like main:
-              # get a DevDiv drop token via the WIF connection main uses (dnceng-devdiv-drop-rw-code-rw-wif),
-              # then 1ES.MicroBuildVstsDrop. PROBE (continueOnError) for now - surfaces whether 499 is authorized
-              # for that connection without failing the proven product/tests/signed-VSIX/.vsman build.
+              # get a DevDiv drop token via the WIF connection main uses (dnceng-devdiv-drop-rw-code-rw-wif) -
+              # confirmed authorized for 499 (build 3031405) - then 1ES.MicroBuildVstsDrop. The upload prints the
+              # vsdrop manifest URL that the VS insertion step consumes.
               - task: AzureCLI@2
-                displayName: 'PROBE: Get DevDiv Drop Access Token (dnceng-devdiv-drop-rw-code-rw-wif)'
-                continueOnError: true
+                displayName: 'Get DevDiv Drop Access Token'
                 condition: succeeded()
                 inputs:
                   azureSubscription: 'dnceng-devdiv-drop-rw-code-rw-wif'
@@ -128,8 +127,7 @@ extends:
                     $token = az account get-access-token --resource 499b84ac-1321-427f-aa17-267ca6975798 --query accessToken -o tsv
                     Write-Host "##vso[task.setvariable variable=DevDivDropAccessToken;issecret=true]$token"
               - task: 1ES.MicroBuildVstsDrop@1
-                displayName: 'PROBE: Upload VSTS Drop (.vsman insertion drop)'
-                continueOnError: true
+                displayName: 'Upload VSTS Drop (.vsman insertion drop)'
                 condition: succeeded()
                 inputs:
                   dropName: $(VisualStudioDropName)
