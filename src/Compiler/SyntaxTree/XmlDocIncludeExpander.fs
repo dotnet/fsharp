@@ -136,6 +136,7 @@ type private ExpansionContext =
         InProgressIncludes: HashSet<struct (string * string)>
         Depth: int
         Budget: int ref
+        BudgetExhaustedWarned: bool ref
         Range: range
         Emit: bool
     }
@@ -152,6 +153,8 @@ type private IncludeOutcome =
     | IncludeNoMatch
     /// Genuine failure (missing file, invalid/empty XPath, cycle): warn and keep the tag.
     | IncludeError of string
+    /// The per-document expansion budget is exhausted: keep the tag, but warn only once per document.
+    | IncludeBudgetExceeded of string
 
 /// Load and expand includes from an external file
 let rec private resolveSingleInclude (baseFileName: string) (includeInfo: IncludeInfo) (ctx: ExpansionContext) : IncludeOutcome =
@@ -173,7 +176,7 @@ let rec private resolveSingleInclude (baseFileName: string) (includeInfo: Includ
         elif ctx.Depth >= maxIncludeDepth then
             IncludeError $"include expansion limit exceeded (maximum nesting depth {maxIncludeDepth}) at: {resolvedPath}"
         elif ctx.Budget.Value <= 0 then
-            IncludeError $"include expansion limit exceeded (maximum of {maxIncludeExpansions} includes) at: {resolvedPath}"
+            IncludeBudgetExceeded $"include expansion limit exceeded (maximum of {maxIncludeExpansions} includes) at: {resolvedPath}"
         else
             match
                 loadXmlFile ctx.Env.FileCache resolvedPath
@@ -222,6 +225,13 @@ and private expandAllIncludeNodes (baseFileName: string) (nodes: XNode seq) (ctx
                     }
                 | IncludeError msg ->
                     warnIncludeError ctx msg
+                    Seq.singleton node
+                | IncludeBudgetExceeded msg ->
+                    // Report the document-wide budget limit at most once to avoid warning spam.
+                    if not ctx.BudgetExhaustedWarned.Value then
+                        ctx.BudgetExhaustedWarned.Value <- true
+                        warnIncludeError ctx msg
+
                     Seq.singleton node)
 
 /// Expand all <include> elements in the given elaborated XML doc lines.
@@ -256,6 +266,7 @@ let expandIncludeLines (env: ExpansionEnv) (emit: bool) (baseFileName: string) (
                     InProgressIncludes = HashSet<struct (string * string)>()
                     Depth = 0
                     Budget = ref maxIncludeExpansions
+                    BudgetExhaustedWarned = ref false
                     Range = range
                     Emit = emit
                 }

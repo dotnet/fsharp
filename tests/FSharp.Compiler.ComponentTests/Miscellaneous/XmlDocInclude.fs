@@ -46,9 +46,6 @@ module XmlDocInclude =
 
     let private includeWarningCount res = includeWarnings res |> List.length
 
-    let private assertIncludeWarningCount expected res =
-        Assert.Equal(expected, includeWarningCount res)
-
     let private assertSingleIncludeWarningMatches expectedMessage res =
         let warnings = includeWarnings res
         Assert.Equal(1, warnings.Length)
@@ -813,8 +810,11 @@ let f (x: int) = x
         Assert.DoesNotContain("<include", inner)
 
     [<Fact>]
-    let ``Document over maximum include budget warns once and keeps failing include`` () =
-        let includeCount = 10001
+    let ``Document over maximum include budget warns once and keeps failing includes`` () =
+        // Several excess includes: the budget limit must be reported exactly once per document,
+        // not once per over-budget include (no warning spam), while every unexpanded tag is kept.
+        let excessCount = 5
+        let includeCount = 10000 + excessCount
         let includes = String.replicate includeCount (Snippets.includeElement "leaf.xml" "/data/leaf")
 
         let source =
@@ -832,7 +832,7 @@ let f (x: int) = x
 
         let inner = memberInner "M:Test.f(System.Int32)" res.Xml
         Assert.Equal(10000, countSubstring "<leaf>L</leaf>" inner)
-        Assert.Equal(1, countSubstring "<include file=\"leaf.xml\" path=\"/data/leaf\"" inner)
+        Assert.Equal(excessCount, countSubstring "<include file=\"leaf.xml\" path=\"/data/leaf\"" inner)
 
     [<Fact>]
     let ``Include with rich XML content preserves structure`` () =
