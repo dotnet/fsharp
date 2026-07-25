@@ -22,6 +22,10 @@ variables:
   # OfficialBuildId (so Arcade applies real signatures instead of dry-running).
   - name: _SignType
     value: Real
+  # VS insertion drop name (same convention as dotnet/fsharp main). The drop is uploaded to the devdiv artifact
+  # service and referenced by the VS insertion PR.
+  - name: VisualStudioDropName
+    value: Products/$(System.TeamProject)/$(Build.Repository.Name)/$(Build.SourceBranchName)/$(Build.BuildNumber)
 
 resources:
   repositories:
@@ -108,6 +112,32 @@ extends:
                   BUILD_VSMAN: 1
                   SignType: $(_SignType)
                   OfficialBuildId: $(Build.BuildNumber)
+              # Upload the produced .vsman insertion drop to the devdiv artifact service, exactly like main:
+              # get a DevDiv drop token via the WIF connection main uses (dnceng-devdiv-drop-rw-code-rw-wif),
+              # then 1ES.MicroBuildVstsDrop. PROBE (continueOnError) for now - surfaces whether 499 is authorized
+              # for that connection without failing the proven product/tests/signed-VSIX/.vsman build.
+              - task: AzureCLI@2
+                displayName: 'PROBE: Get DevDiv Drop Access Token (dnceng-devdiv-drop-rw-code-rw-wif)'
+                continueOnError: true
+                condition: succeeded()
+                inputs:
+                  azureSubscription: 'dnceng-devdiv-drop-rw-code-rw-wif'
+                  scriptType: pscore
+                  scriptLocation: inlineScript
+                  inlineScript: |
+                    $token = az account get-access-token --resource 499b84ac-1321-427f-aa17-267ca6975798 --query accessToken -o tsv
+                    Write-Host "##vso[task.setvariable variable=DevDivDropAccessToken;issecret=true]$token"
+              - task: 1ES.MicroBuildVstsDrop@1
+                displayName: 'PROBE: Upload VSTS Drop (.vsman insertion drop)'
+                continueOnError: true
+                condition: succeeded()
+                inputs:
+                  dropName: $(VisualStudioDropName)
+                  dropFolder: '$(Build.SourcesDirectory)/release/insertion'
+                  dropRetentionDays: 90
+                  accessToken: $(DevDivDropAccessToken)
+                  dropServiceUri: 'https://devdiv.artifacts.visualstudio.com'
+                  vsDropServiceUri: 'https://vsdrop.corp.microsoft.com/file/v1'
               - task: PublishTestResults@2
                 displayName: 'Publish test results'
                 condition: always()
