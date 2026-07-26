@@ -533,14 +533,16 @@ module Task =
     [<RequiresExplicitTypeArguments>]
     val inline ignore<'T> : task: Task<'T> -> Task<unit>
 
-    /// <summary>Creates a task that runs the given task.
-    /// If it raises an exception, the handler function is called with the exception and its result is returned.</summary>
-    ///
-    /// <param name="handler">A function to handle exceptions, returning a recovery value.</param>
-    /// <param name="task">The input task.</param>
-    ///
-    /// <returns>A task that returns the result of <c>task</c>, or the result of <c>handler</c> if an exception is raised.</returns>
-    ///
+    /// <summary>Creates a <c>Task</c> that yields the original result on success, or the result of
+    /// <c>handler exn</c> for non-cancellation exceptions.</summary>
+    /// <remarks><c>OperationCanceledException</c> and derived types such as <c>TaskCanceledException</c> propagate unchanged
+    /// (and the task remains Canceled) in order to maintain cancellation semantics, and therefore are never passed to <c>handler</c>.
+    /// </remarks>
+    /// <param name="handler">A function to handle (non-cancellation) exceptions, yielding a recovery value based on the exception.
+    /// Any exception thrown by <c>handler</c> will propagate.</param>
+    /// <param name="task">The input <c>Task</c>.</param>
+    /// <returns>A <c>Task</c> that yields the result of <c>task</c> on success, or <c>handler exn</c> on failure.
+    /// Propagates the underlying cancellation exception when <c>task</c> is canceled.</returns>
     /// <example id="task-catchwith-1">
     /// <code lang="fsharp">
     /// let safeDiv x y =
@@ -552,13 +554,14 @@ module Task =
     [<CompiledName("CatchWith")>]
     val inline catchWith: handler: (exn -> 'T) -> task: Task<'T> -> Task<'T>
 
-    /// <summary>Creates a task that runs the given task and returns its result as <c>Ok</c>,
-    /// or returns <c>Error</c> with the exception if one is raised.</summary>
-    ///
-    /// <param name="task">The input task.</param>
-    ///
-    /// <returns>A task that returns <c>Ok</c> of the result or <c>Error</c> of the exception.</returns>
-    ///
+    /// <summary>Creates a <c>Task</c> that reifies the outcome of the given <c>Task</c> as a <c>Result</c>:
+    /// <c>Ok</c> on success, <c>Error</c> on failure, so faults become values. Cancellation still propagates.</summary>
+    /// <remarks><c>OperationCanceledException</c> and derived types such as <c>TaskCanceledException</c> propagate unchanged
+    /// (and the task remains Canceled) in order to maintain cancellation semantics.</remarks>
+    /// <param name="task">The input <c>Task</c>.</param>
+    /// <returns>A <c>Task</c> that yields a <c>Result</c>: <c>Ok</c> with the outcome on success,
+    /// or <c>Error</c> with the exception on failure.
+    /// Propagates the underlying cancellation exception when <c>task</c> is canceled.</returns>
     /// <example id="task-catch-1">
     /// <code lang="fsharp">
     /// let safeDiv x y = task { return x / y } |> Task.catch
@@ -670,13 +673,18 @@ module ValueTask =
     [<RequiresExplicitTypeArguments>]
     val inline ignore<'T> : task: ValueTask<'T> -> ValueTask<unit>
 
-    /// <summary>Creates a value task that runs the given value task.
-    /// If it raises an exception, the handler function is called with the exception and its result is returned.</summary>
-    ///
-    /// <param name="handler">A function to handle exceptions, returning a recovery value.</param>
-    /// <param name="task">The input value task.</param>
-    ///
-    /// <returns>A value task that returns the result of <c>task</c>, or the result of <c>handler</c> if an exception is raised.</returns>
+    /// <summary>Creates a <c>ValueTask</c> that yields the original result on success, or the result of
+    /// <c>handler exn</c> for non-cancellation exceptions.</summary>
+    /// <remarks><c>OperationCanceledException</c> and derived types such as <c>TaskCanceledException</c> propagate unchanged
+    /// (and the task remains Canceled) in order to maintain cancellation semantics,
+    /// and therefore are never passed to <c>handler</c>.
+    /// </remarks>
+    /// <param name="handler">A function to handle (non-cancellation) exceptions, yielding a recovery value based on the exception.
+    /// Any exception thrown by <c>handler</c> will propagate.</param>
+    /// <param name="task">The input <c>ValueTask</c>.</param>
+    /// <returns>A <c>ValueTask</c> that yields the result of <c>task</c> on success,
+    /// or <c>handler exn</c> on failure.
+    /// Propagates the underlying cancellation exception when <c>task</c> is canceled.</returns>
     ///
     /// <example id="valuetask-catchwith-1">
     /// <code lang="fsharp">
@@ -690,13 +698,14 @@ module ValueTask =
     [<CompiledName("CatchWith")>]
     val inline catchWith: handler: (exn -> 'T) -> task: ValueTask<'T> -> ValueTask<'T>
 
-    /// <summary>Creates a value task that runs the given value task and returns its result as <c>Ok</c>,
-    /// or returns <c>Error</c> with the exception if one is raised.</summary>
-    ///
-    /// <param name="task">The input value task.</param>
-    ///
-    /// <returns>A value task that returns <c>Ok</c> of the result or <c>Error</c> of the exception.</returns>
-    ///
+    /// <summary>Creates a <c>ValueTask</c> that reifies the outcome of the given <c>ValueTask</c> as a <c>Result</c>:
+    /// <c>Ok</c> on success, <c>Error</c> on failure, so faults become values. Cancellation still propagates.</summary>
+    /// <remarks><c>OperationCanceledException</c> and derived types such as <c>TaskCanceledException</c> propagate unchanged
+    /// (and the task remains Canceled) in order to maintain cancellation semantics.</remarks>
+    /// <param name="task">The input <c>ValueTask</c>.</param>
+    /// <returns>A <c>ValueTask</c> that yields a <c>Result</c>: <c>Ok</c> with the outcome on success,
+    /// or <c>Error</c> with the exception on failure.
+    /// Propagates the underlying cancellation exception when <c>task</c> is canceled.</returns>
     /// <example id="valuetask-catch-1">
     /// <code lang="fsharp">
     /// let safeDiv x y = task { return x / y } |> ValueTask.ofTask |> ValueTask.catch
