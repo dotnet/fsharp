@@ -107,7 +107,7 @@ module XmlDocIncludeTestFramework =
 
         root.DescendantNodes()
         |> Seq.choose (function :? XText as t -> Some t | _ -> None)
-        |> Seq.filter (fun t -> String.IsNullOrWhiteSpace t.Value && (t.Value.Contains '\n' || t.Value.Contains '\r'))
+        |> Seq.filter (fun t -> String.IsNullOrWhiteSpace t.Value && (t.Value.Contains "\n" || t.Value.Contains "\r"))
         |> Seq.toList
         |> List.iter (fun t -> t.Remove())
 
