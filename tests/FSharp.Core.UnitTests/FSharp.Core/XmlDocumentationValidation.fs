@@ -4,27 +4,32 @@ module FSharp.Core.UnitTests.XmlDocumentationValidation
 
 open System
 open System.IO
-open System.Text.RegularExpressions
 open System.Xml
 open Xunit
 
+let isConditionalDirectiveLine (trimmedLine: string) =
+    trimmedLine.StartsWith("#if")
+    || trimmedLine.StartsWith("#else")
+    || trimmedLine.StartsWith("#elif")
+    || trimmedLine.StartsWith("#endif")
+
 /// Extracts XML documentation blocks from F# signature files
 let extractXmlDocBlocks (content: string) =
-    // Regex to match XML documentation comments (/// followed by XML content)
-    let xmlDocPattern = @"^\s*///\s*(.*)$"
-    let regex = Regex(xmlDocPattern, RegexOptions.Multiline)
-    
     let lines = content.Split([|'\n'; '\r'|], StringSplitOptions.RemoveEmptyEntries)
     let mutable xmlBlocks = []
     let mutable currentBlock = []
     let mutable lineNumber = 0
-    
+
     for line in lines do
         lineNumber <- lineNumber + 1
         let trimmedLine = line.Trim()
         if trimmedLine.StartsWith("///") then
             let xmlContent = trimmedLine.Substring(3).Trim()
             currentBlock <- (xmlContent, lineNumber) :: currentBlock
+        elif isConditionalDirectiveLine trimmedLine then
+            // Keep the current XML documentation block open across conditional directives.
+            // This supports docs that are split by #if/#else/#endif in .fsi files.
+            ()
         else
             if not (List.isEmpty currentBlock) then
                 xmlBlocks <- List.rev currentBlock :: xmlBlocks
