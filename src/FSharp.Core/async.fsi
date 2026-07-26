@@ -1259,14 +1259,16 @@ namespace Microsoft.FSharp.Control
 #endif
             /// overloads, an <see cref="T:System.AggregateException"/> carrying multiple inner exceptions is not preserved:
             /// the first inner exception surfaces (standard <c>GetResult()</c> semantics).</p>
-            /// <p>This overload uses statically resolved type parameters (SRTP) so it can accept any task-like type.
 #if NETSTANDARD2_1
+            /// <p>This overload uses statically resolved type parameters (SRTP) so it can accept any task-like type.
             /// The specific overloads for <see cref="T:System.Threading.Tasks.Task`1"/>, <see cref="T:System.Threading.Tasks.Task"/>,
             /// <see cref="T:System.Threading.Tasks.ValueTask`1"/> and <see cref="T:System.Threading.Tasks.ValueTask"/>
-#else
-            /// The specific overloads for <see cref="T:System.Threading.Tasks.Task`1"/> and <see cref="T:System.Threading.Tasks.Task"/>
-#endif
             /// are preferred when the argument type is known.</p>
+#else
+            /// <p>This overload uses statically resolved type parameters (SRTP) so it can accept any task-like type.
+            /// The specific overloads for <see cref="T:System.Threading.Tasks.Task`1"/> and <see cref="T:System.Threading.Tasks.Task"/>
+            /// are preferred when the argument type is known.</p>
+#endif
             /// </remarks>
             /// <category index="2">Awaiting Results</category>
             /// <example id="await-tasklike-1">
