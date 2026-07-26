@@ -395,7 +395,8 @@ module RuntimeHelpers =
         let disposeOriginal() =
             if shouldDisposeOriginalAtTheEnd then
                 shouldDisposeOriginalAtTheEnd <- false
-                originalSource.Value.Dispose() 
+                if originalSource.IsValueCreated then
+                    originalSource.Value.Dispose() 
 
         let moveExceptionHandler exn = 
             exceptionalSource <- Some ((exceptionHandler exn).GetEnumerator())

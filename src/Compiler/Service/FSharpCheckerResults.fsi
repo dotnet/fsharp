@@ -253,6 +253,8 @@ type public FSharpCheckFileResults =
     /// The errors returned by parsing a source file.
     member Diagnostics: FSharpDiagnostic[]
 
+    member HasErrors: bool
+
     /// Get a view of the contents of the assembly up to and including the file just checked
     member PartialAssemblySignature: FSharpAssemblySignature
 

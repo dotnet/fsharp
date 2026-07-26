@@ -42,6 +42,8 @@
   <PropertyGroup>
     <!-- Set PublishReadyToRun to speed up the build. -->
     <EnablePublishReadyToRun>true</EnablePublishReadyToRun>
+    <!-- Crossgen2 has no PowerPC backend, so it is not built for ppc64le. -->
+    <EnablePublishReadyToRun Condition="'$([System.Runtime.InteropServices.RuntimeInformation]::ProcessArchitecture)' == 'Ppc64le'">false</EnablePublishReadyToRun>
     <!-- Crossgen2 is not built with source-built Mono-based .NET SDKs. -->
     <EnablePublishReadyToRun Condition="'$(DotNetBuildUseMonoRuntime)' == 'true'">false</EnablePublishReadyToRun>
   </PropertyGroup>

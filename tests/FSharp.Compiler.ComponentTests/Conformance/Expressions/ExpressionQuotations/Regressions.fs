@@ -216,3 +216,69 @@ module Regressions =
     // E_QuoteDynamic01 test removed - the FS0458 error for member constraint calls in quotations
     // was specific to F# 4.6 behavior. Modern F# (8.0+) handles this case differently and the code
     // now compiles successfully. This was a version-gate test, not a behavior test.
+
+    // ========================================
+    // Inline regression tests
+    // ========================================
+
+    // https://github.com/dotnet/fsharp/issues/18706
+    [<Fact>]
+    let ``Empty string pattern match in quotation should compile`` () =
+        FSharp """
+module Test
+let q = <@ fun (x: string) -> match x with "" -> "empty" | _ -> "other" @>
+        """
+        |> asLibrary
+        |> typecheck
+        |> shouldSucceed
+
+    // https://github.com/dotnet/fsharp/issues/18706
+    [<Fact>]
+    let ``Empty string pattern match in quotation with multiple cases should compile`` () =
+        FSharp """
+module Test
+let q = <@ fun (x: string) -> match x with "" -> "empty" | "hello" -> "hello" | _ -> "other" @>
+        """
+        |> asLibrary
+        |> typecheck
+        |> shouldSucceed
+
+    // https://github.com/dotnet/fsharp/issues/18706
+    [<Fact>]
+    let ``Non-empty string pattern match in quotation should still compile`` () =
+        FSharp """
+module Test
+let q = <@ fun (x: string) -> match x with "hello" -> "match" | _ -> "other" @>
+        """
+        |> asLibrary
+        |> typecheck
+        |> shouldSucceed
+
+    // https://github.com/dotnet/fsharp/issues/18706
+    [<Fact>]
+    let ``Empty string pattern match in quotation produces correct runtime result`` () =
+        FSharp """
+open Microsoft.FSharp.Quotations
+open Microsoft.FSharp.Quotations.Patterns
+
+let q = <@ fun (x: string) -> match x with "" -> "empty" | _ -> "other" @>
+
+// Verify the quotation has the expected shape: a Lambda containing an IfThenElse
+match q with
+| Lambda(_, IfThenElse _) -> ()
+| _ -> failwithf "Unexpected quotation shape: %A" q
+        """
+        |> asExe
+        |> compileExeAndRun
+        |> shouldSucceed
+
+    // https://github.com/dotnet/fsharp/issues/18706
+    [<Fact>]
+    let ``Empty string pattern match in quotation with outer variable should compile`` () =
+        FSharp """
+let x = "test"
+let q = <@@ match x with "" -> "empty" | _ -> "other" @@>
+        """
+        |> asExe
+        |> compileExeAndRun
+        |> shouldSucceed

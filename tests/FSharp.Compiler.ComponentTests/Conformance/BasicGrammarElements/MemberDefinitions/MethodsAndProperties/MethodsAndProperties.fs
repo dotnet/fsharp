@@ -71,7 +71,7 @@ module MemberDefinitions_MethodsAndProperties =
         |> shouldFail
         |> withDiagnostics [
             (Error 827, Line 10, Col 20, Line 10, Col 29, "'(|Foo|Bar|)' is not a valid method name. Use a 'let' binding instead.")
-            (Error 39, Line 21, Col 10, Line 21, Col 13, "The type 'FaaBor' does not define the field, constructor or member 'Foo'.")
+            (Error 39, Line 21, Col 10, Line 21, Col 13, "The type 'FaaBor' does not define a field, constructor, or member named 'Foo'.")
         ]
 
     // SOURCE=E_ActivePatternMember02.fs  SCFLAGS="--test:ErrorRanges"	# E_ActivePatternMember02.fs
@@ -154,7 +154,7 @@ module MemberDefinitions_MethodsAndProperties =
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
-            (Error 39, Line 13, Col 9, Line 13, Col 15, "The type 'Foo' does not define the field, constructor or member 'Item'.")
+            (Error 39, Line 13, Col 9, Line 13, Col 15, "The type 'Foo' does not define a field, constructor, or member named 'Item'.")
         ]
 
     // SOURCE=E_OutscopeThisPtr01.fs      SCFLAGS="--test:ErrorRanges"	# E_OutscopeThisPtr01.fs

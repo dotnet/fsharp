@@ -84,6 +84,7 @@ Copyright (c) Microsoft Corporation. All Rights Reserved.
 --checked[+|-]                           Generate overflow checks (off by default)
 --define:<string>                        Define conditional compilation symbols (Short form: -d)
 --strict-indentation[+|-]                Override indentation rules implied by the language version (off by default)
+--always-inline[+|-]                     Always inline 'inline' functions
 
 
                 - MISCELLANEOUS -

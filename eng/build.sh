@@ -26,7 +26,6 @@ usage()
   echo "Test actions:"
   echo "  --testcoreclr                  Run unit tests on .NET Core (short: --test, -t)"
   echo "  --testCompilerComponentTests   Run FSharp.Compiler.ComponentTests on .NET Core"
-  echo "  --testBenchmarks               Build and Run Benchmark suite"
   echo "  --testScripting                Run FSharp.Private.ScriptingTests on .NET Core"
   echo ""
   echo "Advanced settings:"
@@ -40,6 +39,7 @@ usage()
   echo "  --fromVMR                      Set when building from within the VMR"
   echo "  --buildnorealsig               Build product with realsig- (default use realsig+ where necessary)"
   echo "  --tfm                          Override the default target framework"
+  echo "  --warnNotAsError <codes>       Suppress specific warnings from being treated as errors (semi-colon delimited)"
   echo ""
   echo "Command line arguments starting with '/p:' are passed through to MSBuild."
 }
@@ -80,6 +80,7 @@ product_build=false
 from_vmr=false
 buildnorealsig=true
 properties=""
+warn_not_as_error=""
 docker=false
 args=""
 
@@ -151,9 +152,6 @@ while [[ $# > 0 ]]; do
     --testcompilercomponenttests)
       test_compilercomponent_tests=true
       ;;
-      --testbenchmarks)
-      test_benchmarks=true
-      ;;
     --testscripting)
       test_scripting=true
       ;;
@@ -187,6 +185,10 @@ while [[ $# > 0 ]]; do
       ;;
     --tfm)
       tfm=$2
+      shift
+      ;;
+    --warnnotaserror)
+      warn_not_as_error=$2
       shift
       ;;
     /p:*)
@@ -243,8 +245,8 @@ function Test() {
   projectname="${projectname%.*}"
   testresultsdir="$artifacts_dir/TestResults/$configuration"
 
-  # MTP requires --solution flag for .sln files
-  if [[ "$testproject" == *.sln ]]; then
+  # MTP requires --solution flag for .sln/.slnx files
+  if [[ "$testproject" == *.sln ]] || [[ "$testproject" == *.slnx ]]; then
     testtarget="--solution"
   else
     testtarget="--project"
@@ -273,9 +275,9 @@ function BuildSolution {
     bl="/bl:\"$log_dir/Build.binlog\""
   fi
 
-  local projects="$repo_root/FSharp.sln"
+  local projects="$repo_root/FSharp.slnx"
   if [[ "$product_build" = true ]]; then
-    projects="$repo_root/Microsoft.FSharp.Compiler.sln"
+    projects="$repo_root/src/Microsoft.FSharp.Compiler/Microsoft.FSharp.Compiler.fsproj"
   fi
 
   echo "$projects:"
@@ -328,6 +330,11 @@ function BuildSolution {
     # do real build
     BuildMessage="Error building solution"
 
+    local msbuild_warn_not_as_error=""
+    if [[ "$warn_not_as_error" != "" && "$warn_as_error" == true ]]; then
+      msbuild_warn_not_as_error="/warnNotAsError:$warn_not_as_error"
+    fi
+
     MSBuild $toolset_build_proj \
       $bl \
       /p:Configuration=$configuration \
@@ -347,7 +354,8 @@ function BuildSolution {
       /p:DotNetBuild=$product_build \
       /p:DotNetBuildSourceOnly=$source_build \
       /p:DotNetBuildFromVMR=$from_vmr \
-      ${properties[@]+"${properties[@]}"}
+      ${properties[@]+"${properties[@]}"} \
+      $msbuild_warn_not_as_error
   fi
 }
 
@@ -408,12 +416,6 @@ fi
 if [[ "$test_compilercomponent_tests" == true ]]; then
   coreclrtestframework=$tfm
   Test --testproject "$repo_root/tests/FSharp.Compiler.ComponentTests/FSharp.Compiler.ComponentTests.fsproj" --targetframework $coreclrtestframework
-fi
-
-if [[ "$test_benchmarks" == true ]]; then
-  pushd "$repo_root/tests/benchmarks"
-  ./SmokeTestBenchmarks.sh
-  popd
 fi
 
 if [[ "$test_scripting" == true ]]; then

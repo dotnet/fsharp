@@ -161,7 +161,7 @@
   } 
 
   .method public static !!b  fullyInferredTestCase<class a,class b>(!!a arg1,
-                                                                   !!b arg2) cil managed
+                                                                    !!b arg2) cil managed
   {
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationArgumentCountsAttribute::.ctor(int32[]) = ( 01 00 02 00 00 00 01 00 00 00 01 00 00 00 00 00 ) 
     .param type a 
@@ -204,6 +204,7 @@
        extends [runtime]System.Object
 {
 } 
+
 
 
 

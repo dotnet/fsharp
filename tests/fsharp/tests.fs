@@ -27,8 +27,6 @@ let FSI = FSI_NETFX
 #endif
 // ^^^^^^^^^^^^ To run these tests in F# Interactive , 'build net40', then send this chunk, then evaluate body of a test ^^^^^^^^^^^^
 
-let log = printfn
-
 module CoreTests =
 
 
@@ -130,12 +128,12 @@ module CoreTests =
 
 
     [<Fact>]
-    let ``state-machines-non-optimized`` () = 
+    let ``state-machines-optimized-no-tailcalls`` () =
         let cfg = testConfig "core/state-machines"
 
-        
 
-        fsc cfg "%s -o:test.exe -g --tailcalls- --optimize-" cfg.fsc_flags ["test.fsx"]
+
+        fsc cfg "%s -o:test.exe -g --tailcalls- --optimize+" cfg.fsc_flags ["test.fsx"]
 
         peverify cfg "test.exe"
 

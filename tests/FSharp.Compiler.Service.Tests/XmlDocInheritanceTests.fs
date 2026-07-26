@@ -12,7 +12,7 @@ let expandWith (crefMap: (string * string) list) (implicitTarget: string option)
     expandInheritDocFromXmlText resolve implicitTarget Set.empty xml
 
 let getTooltipXml (markedSource: string) =
-    let _, xml, _ = Checker.getTooltip markedSource |> TooltipTests.assertAndExtractTooltip
+    let _, xml, _ = Checker.getTooltip markedSource |> assertAndExtractTooltip
     xml
 
 let getCompletionXml name markedSource =
@@ -22,7 +22,7 @@ let getCompletionXml name markedSource =
         completionInfo.Items
         |> Array.find (fun item -> item.NameInCode = name)
 
-    let _, xml, _ = item.Description |> TooltipTests.assertAndExtractTooltip
+    let _, xml, _ = item.Description |> assertAndExtractTooltip
     xml
 
 let getSymbolXml name markedSource =

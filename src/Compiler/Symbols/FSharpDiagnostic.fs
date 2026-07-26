@@ -63,6 +63,7 @@ module ExtendedData =
             | ContextInfo.PatternMatchGuard _ -> PatternMatchGuard
             | ContextInfo.SequenceExpression _ -> SequenceExpression
             | ContextInfo.NullnessCheckOfCapturedArg _ -> NoContext
+            | ContextInfo.MemberAccessOnNullable _ -> NoContext
 
     type IFSharpDiagnosticExtendedData =
         interface end

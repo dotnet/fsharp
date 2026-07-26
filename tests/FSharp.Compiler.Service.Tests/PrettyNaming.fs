@@ -70,3 +70,19 @@ let ``IsLogicalTernaryOperator`` (logicalName: string, result: bool) =
 let ``IsLogicalInfixOpName`` (logicalName: string, result: bool) =
     IsLogicalInfixOpName logicalName
     |> Assert.shouldBe result
+
+// https://github.com/dotnet/fsharp/issues/14057
+// Operators containing '.' must be recognized as operators so that
+// Tokenizer.fixupSpan does not split them at the dot.
+[<Theory>]
+[<InlineData("-.-", true)>]
+[<InlineData(".+.", true)>]
+[<InlineData("...", true)>]
+[<InlineData("+", true)>]
+[<InlineData("-", true)>]
+[<InlineData("*", true)>]
+[<InlineData(".", true)>]
+[<InlineData("foo", false)>]
+[<InlineData("Foo.Bar", false)>]
+let ``IsOperatorDisplayName - operators with dots`` (displayName: string, result: bool) =
+    IsOperatorDisplayName displayName |> Assert.shouldBe result

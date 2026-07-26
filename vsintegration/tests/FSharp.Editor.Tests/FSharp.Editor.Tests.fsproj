@@ -47,6 +47,8 @@
     <Compile Include="CodeFixes\ConvertToNotEqualsEqualityExpressionTests.fs" />
     <Compile Include="CodeFixes\ConvertToSingleEqualsEqualityExpressionTests.fs" />
     <Compile Include="CodeFixes\AddMissingEqualsToTypeDefinitionTests.fs" />
+    <Compile Include="CodeFixes\AddMissingAttributeToSignatureTests.fs" />
+    <Compile Include="CodeFixes\RemoveExtraAttributeFromImplementationTests.fs" />
     <Compile Include="CodeFixes\AddTypeAnnotationToObjectOfIndeterminateTypeTests.fs" />
     <Compile Include="CodeFixes\ChangeRefCellDerefToNotExpressionTests.fs" />
     <Compile Include="CodeFixes\ChangePrefixNegationToInfixSubtractionTests.fs" />

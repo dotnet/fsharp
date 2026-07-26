@@ -56,7 +56,7 @@ let squares = [
             (Line 4, Col 1, Line 7, Col 6)
             (Line 5, Col 5, Line 5, Col 8)
             (Line 5, Col 11, Line 5, Col 13)
-            (Line 6, Col 15, Line 6, Col 20)
+            (Line 6, Col 9, Line 6, Col 20)
             (Line 16707566, Col 0, Line 16707566, Col 0)
         ]
 

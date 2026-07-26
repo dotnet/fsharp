@@ -76,7 +76,7 @@ let RepresentBindingAsStateVar g (bind: Binding) (resBody: StateMachineConversio
     let (TBind(v, e, sp)) = bind
     let addDebugPoint innerExpr =
         match sp with
-        | DebugPointAtBinding.Yes m -> Expr.DebugPoint(DebugPointAtLeafExpr.Yes m, innerExpr)
+        | DebugPointAtBinding.Yes m -> Expr.DebugPoint(DebugPointAtLeafExpr.Yes(false, m), innerExpr)
         | _ -> innerExpr
     let vref = mkLocalValRef v
     { resBody with
@@ -175,23 +175,29 @@ type LowerStateMachine(g: TcGlobals, outerResumableCodeDefns: ValMap<Expr>) =
         pcCount
 
     // Record definitions for any resumable code
-    let rec BindResumableCodeDefinitions (env: env) expr = 
+    let rec BindResumableCodeDefinitions (env: env) finalizing expr = 
 
         match expr with
         // Bind 'let __expand_ABC = bindExpr in bodyExpr'
-        | Expr.Let (defn, bodyExpr, _, _) when isStateMachineBindingVar g defn.Var -> 
+        | Expr.Let (defn, bodyExpr, m, _) when isStateMachineBindingVar g defn.Var -> 
             if sm_verbose then printfn "binding %A --> %A..." defn.Var defn.Expr
             let envR = { env with ResumableCodeDefns = env.ResumableCodeDefns.Add defn.Var defn.Expr }
-            BindResumableCodeDefinitions envR bodyExpr
+            let envR2, bodyR = BindResumableCodeDefinitions envR finalizing bodyExpr
+            // A dropped member-access receiver temp loses its side effect when unused (#13099).
+            if finalizing && defn.Var.IsMemberThisVal && Optimizer.ExprHasEffect Optimizer.EffectContext.Emit g defn.Expr &&
+               not (Zset.contains defn.Var (freeInExpr CollectLocals bodyExpr).FreeLocals) then
+                envR2, mkSequential m defn.Expr bodyR
+            else
+                envR2, bodyR
 
          // Eliminate 'if __useResumableCode ...'
          | IfUseResumableStateMachinesExpr g (thenExpr, _) ->
             if sm_verbose then printfn "eliminating 'if __useResumableCode...'"
-            BindResumableCodeDefinitions env thenExpr
+            BindResumableCodeDefinitions env finalizing thenExpr
 
          // Look through debug points to find resumable code bindings inside
          | Expr.DebugPoint (_, innerExpr) ->
-            let envR, _ = BindResumableCodeDefinitions env innerExpr
+            let envR, _ = BindResumableCodeDefinitions env finalizing innerExpr
             (envR, expr)
 
          | _ ->
@@ -338,6 +344,13 @@ type LowerStateMachine(g: TcGlobals, outerResumableCodeDefns: ValMap<Expr>) =
         if sm_verbose then printfn "expanding defns and reducing %A..." expr
         //if sm_verbose then printfn "checking %A for possible resumable code application..." expr
         match expr with
+        // Reduce helper-local 'if __useResumableCode then ... else ...' after inlining,
+        // but preserve real nested state machines so their own lowering can still choose
+        // the dynamic fallback if static compilation fails.
+        | IfUseResumableStateMachinesExpr g (thenExpr, _) when Option.isNone (IsStateMachineExpr g thenExpr) ->
+            if sm_verbose then printfn "reducing helper-local 'if __useResumableCode ...' to static branch"
+            Some (remake thenExpr)
+
         // defn --> [expand_code]
         | Expr.Val (defnRef, _, _) when env.ResumableCodeDefns.ContainsVal defnRef.Deref ->
             let defn = env.ResumableCodeDefns[defnRef.Deref]
@@ -372,22 +385,13 @@ type LowerStateMachine(g: TcGlobals, outerResumableCodeDefns: ValMap<Expr>) =
     // Repeated top-down rewrite
     let makeRewriteEnv (env: env) = 
         { PreIntercept = Some (fun cont e ->
-            match e with
-            // Don't recurse into nested state machine expressions - they will be
-            // processed by their own LowerStateMachineExpr during codegen.
-            // This prevents modification of the nested machine's internal
-            // 'if __useResumableCode' patterns which select its dynamic fallback.
-            | _ when Option.isSome (IsStateMachineExpr g e) -> Some e
-            // Eliminate 'if __useResumableCode' - nested state machines are already
-            // guarded above, so any remaining occurrences at this level are from
-            // beta-reduced inline helpers and should take the static branch.
-            | IfUseResumableStateMachinesExpr g (thenExpr, _) -> Some (cont thenExpr)
-            | _ ->
-            match TryReduceExpr env e [] id with Some e2 -> Some (cont e2) | None -> None)
+            match TryReduceExpr env e [] id with
+            | Some e2 -> Some (cont e2)
+            | None -> None)
           PostTransform = (fun _ -> None)
           PreInterceptBinding = None
           RewriteQuotations=true 
-          StackGuard = StackGuard("LowerStateMachineStackGuardDepth") }
+          StackGuard = StackGuard("LowerStateMachineStackGuard") }
 
     let ConvertStateMachineLeafExpression (env: env) expr = 
         if sm_verbose then printfn "ConvertStateMachineLeafExpression for %A..." expr
@@ -400,7 +404,7 @@ type LowerStateMachine(g: TcGlobals, outerResumableCodeDefns: ValMap<Expr>) =
     /// Repeatedly find outermost expansion definitions and apply outermost expansions 
     let rec RepeatBindAndApplyOuterDefinitions (env: env) expr = 
         if sm_verbose then printfn "RepeatBindAndApplyOuterDefinitions for %A..." expr
-        let env2, expr2 = BindResumableCodeDefinitions env expr
+        let env2, expr2 = BindResumableCodeDefinitions env true expr
         match TryReduceExpr env2 expr2 [] id with 
         | Some res -> RepeatBindAndApplyOuterDefinitions env2 res
         | None -> env2, expr2
@@ -411,7 +415,7 @@ type LowerStateMachine(g: TcGlobals, outerResumableCodeDefns: ValMap<Expr>) =
         // All expanded resumable code state machines e.g. 'task { .. }' begin with a bind of @builder or 'defn'
         // Seed the env with any expand-var definitions from outer scopes (e.g. across lambda boundaries)
         let initialEnv = { env.Empty with ResumableCodeDefns = outerResumableCodeDefns }
-        let env, expr = BindResumableCodeDefinitions initialEnv inputExpr 
+        let env, expr = BindResumableCodeDefinitions initialEnv false inputExpr 
         match expr with
         | StructStateMachineExpr g 
                (dataTy, 

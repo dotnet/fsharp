@@ -29,6 +29,21 @@ type DocumentDiagnosticAnalyzerTests() =
 
         task.Result
 
+    member private _.getSyntaxAndSemantic(fileContents: string) =
+        let task =
+            cancellableTask {
+                let document =
+                    RoslynTestHelpers.CreateSolution(fileContents)
+                    |> RoslynTestHelpers.GetSingleDocument
+
+                let! syntactic = FSharpDocumentDiagnosticAnalyzer.GetDiagnostics(document, DiagnosticsType.Syntax)
+                let! semantic = FSharpDocumentDiagnosticAnalyzer.GetDiagnostics(document, DiagnosticsType.Semantic)
+                return Seq.toArray syntactic, Seq.toArray semantic
+            }
+            |> CancellableTask.start CancellationToken.None
+
+        task.Result
+
     member private this.VerifyNoErrors(fileContents: string, ?additionalFlags: string[]) =
         let errors = this.getDiagnostics (fileContents, ?additionalFlags = additionalFlags)
 
@@ -88,66 +103,6 @@ type DocumentDiagnosticAnalyzerTests() =
         actualError.Location.SourceSpan.End
         |> Assert.shouldBeEqualWith expectedEnd "Error end positions should match"
 
-    member private this.VerifyDiagnosticBetweenMarkers_HACK_PLEASE_REFER_TO_COMMENT_INSIDE
-        (fileContents: string, expectedMessage: string, expectedSeverity: DiagnosticSeverity)
-        =
-        // TODO: once workaround (https://github.com/dotnet/fsharp/pull/15982) will not be needed, this should be reverted back to normal method (see PR)
-        let errors =
-            this.getDiagnostics fileContents
-            |> Seq.filter (fun e -> e.Severity = expectedSeverity)
-            |> Seq.toArray
-
-        errors.Length
-        |> Assert.shouldBeEqualWith 2 "There should be two errors generated"
-
-        let actualError = errors.[0]
-        Assert.Equal(expectedSeverity, actualError.Severity)
-
-        actualError.GetMessage()
-        |> Assert.shouldBeEqualWith expectedMessage "Error messages should match"
-
-        let expectedStart = fileContents.IndexOf(startMarker) + startMarker.Length
-
-        actualError.Location.SourceSpan.Start
-        |> Assert.shouldBeEqualWith expectedStart "Error start positions should match"
-
-        let expectedEnd = fileContents.IndexOf(endMarker)
-
-        actualError.Location.SourceSpan.End
-        |> Assert.shouldBeEqualWith expectedEnd "Error end positions should match"
-
-    member private this.VerifyErrorBetweenMarkers_HACK_PLEASE_REFER_TO_COMMENT_INSIDE(fileContents: string, expectedMessage: string) =
-        // TODO: once workaround (https://github.com/dotnet/fsharp/pull/15982) will not be needed, this should be reverted back to normal method (see PR)
-        this.VerifyDiagnosticBetweenMarkers_HACK_PLEASE_REFER_TO_COMMENT_INSIDE(fileContents, expectedMessage, DiagnosticSeverity.Error)
-
-    member private this.VerifyErrorAtMarker_HACK_PLEASE_REFER_TO_COMMENT_INSIDE
-        (fileContents: string, expectedMarker: string, ?expectedMessage: string)
-        =
-        let errors =
-            this.getDiagnostics fileContents
-            |> Seq.filter (fun e -> e.Severity = DiagnosticSeverity.Error)
-            |> Seq.toArray
-
-        errors.Length
-        |> Assert.shouldBeEqualWith 2 "There should be exactly two errors generated"
-
-        let actualError = errors.[0]
-
-        if expectedMessage.IsSome then
-            actualError.GetMessage()
-            |> Assert.shouldBeEqualWith expectedMessage.Value "Error messages should match"
-
-        Assert.Equal(DiagnosticSeverity.Error, actualError.Severity)
-        let expectedStart = fileContents.IndexOf(expectedMarker)
-
-        actualError.Location.SourceSpan.Start
-        |> Assert.shouldBeEqualWith expectedStart "Error start positions should match"
-
-        let expectedEnd = expectedStart + expectedMarker.Length
-
-        actualError.Location.SourceSpan.End
-        |> Assert.shouldBeEqualWith expectedEnd "Error end positions should match"
-
     member private this.VerifyErrorBetweenMarkers(fileContents: string, expectedMessage: string) =
         this.VerifyDiagnosticBetweenMarkers(fileContents, expectedMessage, DiagnosticSeverity.Error)
 
@@ -156,7 +111,7 @@ type DocumentDiagnosticAnalyzerTests() =
 
     [<Fact>]
     member public this.Error_Expression_IllegalIntegerLiteral() =
-        this.VerifyErrorBetweenMarkers_HACK_PLEASE_REFER_TO_COMMENT_INSIDE(
+        this.VerifyErrorBetweenMarkers(
             fileContents =
                 """
 let _ = 1
@@ -167,7 +122,7 @@ let a = 0.1(*start*).(*end*)0
 
     [<Fact>]
     member public this.Error_Expression_IncompleteDefine() =
-        this.VerifyErrorBetweenMarkers_HACK_PLEASE_REFER_TO_COMMENT_INSIDE(
+        this.VerifyErrorBetweenMarkers(
             fileContents =
                 """
 let a = (*start*);(*end*)
@@ -177,7 +132,7 @@ let a = (*start*);(*end*)
 
     [<Fact>]
     member public this.Error_Expression_KeywordAsValue() =
-        this.VerifyErrorBetweenMarkers_HACK_PLEASE_REFER_TO_COMMENT_INSIDE(
+        this.VerifyErrorBetweenMarkers(
             fileContents =
                 """
 let b =
@@ -312,7 +267,7 @@ let f () =
 
     [<Fact>]
     member public this.Error_Identifer_IllegalFloatPointLiteral() =
-        this.VerifyErrorBetweenMarkers_HACK_PLEASE_REFER_TO_COMMENT_INSIDE(
+        this.VerifyErrorBetweenMarkers(
             fileContents =
                 """
 let x: float = 1.2(*start*).(*end*)3
@@ -362,7 +317,7 @@ let x = 3
 let y = (*start*)x(*end*) 4
 let arr = [| 1; 2; 3 |]
             """,
-            expectedMessage = "This value is not a function and cannot be applied."
+            expectedMessage = "This value is not a function and cannot be applied. It has type 'int', which does not accept arguments."
         )
 
     [<Fact>]
@@ -373,7 +328,7 @@ let arr = [| 1; 2; 3 |]
 let f x = x + 1
 let r = (*start*)f 3(*end*) 4
             """,
-            expectedMessage = "This value is not a function and cannot be applied."
+            expectedMessage = "This value is not a function and cannot be applied. It has type 'int', which does not accept arguments."
         )
 
     [<Fact>]
@@ -425,7 +380,7 @@ async { if true then return 1 } |> ignore
 
     [<Fact>]
     member public this.ExtraEndif() =
-        this.VerifyErrorBetweenMarkers_HACK_PLEASE_REFER_TO_COMMENT_INSIDE(
+        this.VerifyErrorBetweenMarkers(
             fileContents =
                 """
 #if UNDEFINED
@@ -440,7 +395,7 @@ async { if true then return 1 } |> ignore
 
     [<Fact>]
     member public this.Squiggles_HashNotFirstSymbol_If() =
-        this.VerifyErrorAtMarker_HACK_PLEASE_REFER_TO_COMMENT_INSIDE(
+        this.VerifyErrorAtMarker(
             fileContents =
                 """
 (*comment*) #if UNDEFINED
@@ -455,7 +410,7 @@ async { if true then return 1 } |> ignore
 
     [<Fact>]
     member public this.Squiggles_HashNotFirstSymbol_Endif() =
-        this.VerifyErrorAtMarker_HACK_PLEASE_REFER_TO_COMMENT_INSIDE(
+        this.VerifyErrorAtMarker(
             fileContents =
                 """
 #if DEBUG
@@ -470,7 +425,7 @@ async { if true then return 1 } |> ignore
 
     [<Fact>]
     member public this.Squiggles_HashIfWithMultilineComment() =
-        this.VerifyErrorAtMarker_HACK_PLEASE_REFER_TO_COMMENT_INSIDE(
+        this.VerifyErrorAtMarker(
             fileContents =
                 """
 #if DEBUG (*comment*)
@@ -482,7 +437,7 @@ async { if true then return 1 } |> ignore
 
     [<Fact>]
     member public this.Squiggles_HashIfWithUnexpected() =
-        this.VerifyErrorAtMarker_HACK_PLEASE_REFER_TO_COMMENT_INSIDE(
+        this.VerifyErrorAtMarker(
             fileContents =
                 """
 #if DEBUG TEST
@@ -523,3 +478,63 @@ printf "%d" x
             """,
             additionalFlags = [| "--times" |]
         )
+
+    [<Fact>]
+    member this.``Parse diagnostic not duplicated in semantic results``() =
+        let source = "let x =   // incomplete expression - parse error\n"
+        let syntaxDiags, semanticDiags = this.getSyntaxAndSemantic source
+
+        let duplicates =
+            semanticDiags
+            |> Array.filter (fun (d: Diagnostic) ->
+                syntaxDiags
+                |> Array.exists (fun (s: Diagnostic) -> s.Id = d.Id && s.Location.SourceSpan = d.Location.SourceSpan))
+
+        Assert.Empty(duplicates)
+
+    [<Fact>]
+    member this.``Type error appears only in semantic results``() =
+        let source = "let x: int = \"hello\"\n"
+        let _syntaxDiags, semanticDiags = this.getSyntaxAndSemantic source
+        Assert.Contains(semanticDiags, fun (d: Diagnostic) -> d.Id = "FS0001")
+
+    [<Fact>]
+    member this.``Parse errors still reported in syntax pass``() =
+        let source = "let x =\n"
+        let syntaxDiags, _ = this.getSyntaxAndSemantic source
+        Assert.NotEmpty(syntaxDiags)
+
+    [<Fact>]
+    member this.``Clean code has no diagnostics``() =
+        let source = "let x = 42\nlet y = x + 1\n"
+        let syntaxDiags, semanticDiags = this.getSyntaxAndSemantic source
+        Assert.Empty(syntaxDiags)
+        Assert.Empty(semanticDiags)
+
+    [<Fact>]
+    member this.``Multiple parse errors not duplicated``() =
+        let source = "let x =\nlet y =\n"
+        let syntaxDiags, semanticDiags = this.getSyntaxAndSemantic source
+        let allDiags = Array.append syntaxDiags semanticDiags
+
+        let uniqueCount =
+            allDiags
+            |> Array.distinctBy (fun (d: Diagnostic) -> d.Id, d.Location.SourceSpan)
+            |> Array.length
+
+        Assert.Equal(allDiags.Length, uniqueCount)
+
+    [<Fact>]
+    member this.``Warning not duplicated across passes``() =
+        let source = "let x = 42\n"
+        let syntaxDiags, semanticDiags = this.getSyntaxAndSemantic source
+
+        let allWarnings =
+            Array.append syntaxDiags semanticDiags
+            |> Array.filter (fun (d: Diagnostic) -> d.Severity = DiagnosticSeverity.Warning)
+
+        let uniqueWarnings =
+            allWarnings
+            |> Array.distinctBy (fun (d: Diagnostic) -> d.Id, d.Location.SourceSpan)
+
+        Assert.Equal(allWarnings.Length, uniqueWarnings.Length)

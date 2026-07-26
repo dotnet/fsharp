@@ -155,4 +155,25 @@ namespace FSharp.Compiler.Service.Tests
         {
         }
     }
+
+    /// <summary>
+    /// Class with obsolete members for testing completion filtering (issue #13512).
+    /// </summary>
+    public class ObsoleteMembersClass
+    {
+        [Obsolete("Field is obsolete")] public static readonly int ObsoleteField = 1;
+
+        [Obsolete("Method is obsolete")]
+        public static void ObsoleteMethod()
+        {
+        }
+
+        [Obsolete("Property is obsolete")] public static int ObsoleteProperty => 1;
+        [Obsolete("Event is obsolete")] public static event EventHandler ObsoleteEvent;
+
+        public static readonly int NonObsoleteField = 2;
+        public static void NonObsoleteMethod() { }
+        public static int NonObsoleteProperty => 2;
+        public static event EventHandler NonObsoleteEvent;
+    }
 }

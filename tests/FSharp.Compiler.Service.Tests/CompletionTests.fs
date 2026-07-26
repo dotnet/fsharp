@@ -6,23 +6,6 @@ open FSharp.Test.Assert
 open FSharp.Test.Compiler.Assertions.TextBasedDiagnosticAsserts
 open Xunit
 
-let private assertItemsWithNames contains names (completionInfo: DeclarationListInfo) =
-    let itemNames =
-        completionInfo.Items
-        |> Array.map _.NameInCode
-        |> Array.map normalizeNewLines
-        |> set
-
-    for name in names do
-        let name = normalizeNewLines name
-        Set.contains name itemNames |> shouldEqual contains
-
-let assertHasItemWithNames names (completionInfo: DeclarationListInfo) =
-    assertItemsWithNames true names completionInfo
-
-let assertHasNoItemsWithNames names (completionInfo: DeclarationListInfo) =
-    assertItemsWithNames false names completionInfo
-
 [<Fact>]
 let ``Expr - After record decl 01`` () =
     let info = Checker.getCompletionInfo """
@@ -369,6 +352,45 @@ module Module =
 """
     assertHasNoItemsWithNames ["E"] info
 
+[<Fact>]
+let ``Pattern - Enum 01`` () =
+    let info =
+        Checker.getCompletionInfo """
+namespace Ns1
+type E =
+    | A = 1
+    | B = 2
+
+namespace Ns2
+
+open Ns1
+
+module M =
+    match E.A with
+    | E.{caret}
+"""
+    assertHasItemWithNames ["A"] info
+
+[<Fact>]
+let ``Pattern - Enum 02`` () =
+    let info =
+        Checker.getCompletionInfo """
+namespace Ns1
+type E =
+    | A = 1
+    | B = 2
+
+namespace Ns2
+
+open Ns1
+
+module M =
+    match E.A with
+    | E.{caret}
+    | E.B -> ()
+"""
+    assertHasItemWithNames ["A"] info
+
 #if NETCOREAPP
 [<Fact>]
 let ``Span appears in completion and is not marked obsolete`` () =
@@ -399,9 +421,6 @@ module Options =
 
         let assertItemAllowed name source =
             assertItemWithOptions [allowObsoleteOptions] name source
-
-        let assertItemNotAllowed name source =
-            assertItemWithOptions [disallowObsoleteOptions] name source
 
         [<Fact>]
         let ``Prop - Instance 01`` () =
@@ -691,6 +710,86 @@ exception E
 try () with E{caret}
 """
 
+        // https://github.com/dotnet/fsharp/issues/13512
+        [<Fact>]
+        let ``Event - Instance 01`` () =
+            assertItem "Ev" """
+type T() =
+    [<System.Obsolete; CLIEvent>]
+    member _.Ev = Event<System.EventHandler, _>().Publish
+
+T().{caret}
+"""
+
+        // https://github.com/dotnet/fsharp/issues/13512
+        [<Fact>]
+        let ``Event - Static 01`` () =
+            assertItem "Ev" """
+type T() =
+    [<System.Obsolete; CLIEvent>]
+    static member Ev = Event<System.EventHandler, _>().Publish
+
+T.{caret}
+"""
+
+        /// Helper to assert completion with a reference to the CSharp_Analysis assembly
+        let private assertCSharpInteropItem name source =
+            let csharpAssembly = PathRelativeToTestAssembly "CSharp_Analysis.dll"
+            let compilerOptions = [| $"-r:{csharpAssembly}" |]
+            [allowObsoleteOptions; disallowObsoleteOptions]
+            |> List.iter (fun completionOptions ->
+                let contains = completionOptions.SuggestObsoleteSymbols
+                let info = Checker.getCompletionInfoWithCompilerAndCompletionOptions compilerOptions completionOptions source
+                assertItemsWithNames contains [name] info
+            )
+
+        // https://github.com/dotnet/fsharp/issues/13512
+        [<Fact>]
+        let ``CSharp - Obsolete field is hidden`` () =
+            assertCSharpInteropItem "ObsoleteField" """
+open FSharp.Compiler.Service.Tests
+ObsoleteMembersClass.{caret}
+"""
+
+        // https://github.com/dotnet/fsharp/issues/13512
+        [<Fact>]
+        let ``CSharp - Obsolete method is hidden`` () =
+            assertCSharpInteropItem "ObsoleteMethod" """
+open FSharp.Compiler.Service.Tests
+ObsoleteMembersClass.{caret}
+"""
+
+        // https://github.com/dotnet/fsharp/issues/13512
+        [<Fact>]
+        let ``CSharp - Obsolete property is hidden`` () =
+            assertCSharpInteropItem "ObsoleteProperty" """
+open FSharp.Compiler.Service.Tests
+ObsoleteMembersClass.{caret}
+"""
+
+        // https://github.com/dotnet/fsharp/issues/13512
+        [<Fact>]
+        let ``CSharp - Obsolete event is hidden`` () =
+            assertCSharpInteropItem "ObsoleteEvent" """
+open FSharp.Compiler.Service.Tests
+ObsoleteMembersClass.{caret}
+"""
+
+        // https://github.com/dotnet/fsharp/issues/13512
+        [<Fact>]
+        let ``CSharp - Non-obsolete members are always shown`` () =
+            let csharpAssembly = PathRelativeToTestAssembly "CSharp_Analysis.dll"
+            let compilerOptions = [| $"-r:{csharpAssembly}" |]
+            let source = """
+open FSharp.Compiler.Service.Tests
+ObsoleteMembersClass.{caret}
+"""
+            [allowObsoleteOptions; disallowObsoleteOptions]
+            |> List.iter (fun completionOptions ->
+                let info = Checker.getCompletionInfoWithCompilerAndCompletionOptions compilerOptions completionOptions source
+                assertItemsWithNames true ["NonObsoleteField"; "NonObsoleteMethod"; "NonObsoleteProperty"; "NonObsoleteEvent"] info
+            )
+
 
     module PatternNameSuggestions =
         let private suggestPatternNames = { FSharpCodeCompletionOptions.Default with SuggestPatternNames = true }
@@ -728,3 +827,83 @@ match A 1 with
 type T() =
     override {caret}
 """
+
+// https://github.com/dotnet/fsharp/issues/13194
+[<Fact>]
+let ``Completion works for member whose name contains a single quote`` () =
+    let info =
+        Checker.getCompletionInfo
+            """
+/// Doc for normalize prime
+let normalize' x = x + 1
+
+normaliz{caret}
+"""
+
+    assertHasItemWithNames [ "normalize'" ] info
+
+// Tests for https://github.com/dotnet/fsharp/issues/19906
+// Named-argument completion must continue suggesting later named args after the first.
+
+[<Fact>]
+let ``Issue 19906 - non-overloaded method - second named arg suggested`` () =
+    let info = Checker.getCompletionInfo """
+type T() = member _.M(apple:int, banana:int, cherry:int) = ()
+let t = T()
+let _ = t.M(apple=1, b{caret})
+"""
+    assertHasItemWithNames ["banana"; "cherry"] info
+    assertHasNoItemsWithNames ["apple"] info
+
+[<Fact>]
+let ``Issue 19906 - overloaded method - Task.Factory.StartNew second named arg suggested`` () =
+    let info = Checker.getCompletionInfo """
+open System.Threading.Tasks
+let _ = Task.Factory.StartNew(action=(fun _ -> ()), s{caret})
+"""
+    assertHasItemWithNames ["state"; "cancellationToken"; "scheduler"; "creationOptions"] info
+    assertHasNoItemsWithNames ["action"] info
+
+[<Fact>]
+let ``Issue 19906 - overloaded method - third named arg suggested`` () =
+    let info = Checker.getCompletionInfo """
+open System.Threading.Tasks
+let _ = Task.Factory.StartNew(action=(fun _ -> ()), state=null, c{caret})
+"""
+    assertHasItemWithNames ["cancellationToken"; "creationOptions"] info
+
+[<Fact>]
+let ``Issue 19906 - optional args - second optional arg suggested`` () =
+    let info = Checker.getCompletionInfo """
+type T() = static member F(?x:int, ?y:int, ?z:int) = ()
+let _ = T.F(?x=1, ?y{caret})
+"""
+    assertHasItemWithNames ["y"; "z"] info
+
+[<Fact>]
+let ``Issue 19906 - regression guard - zero-arg ctor with settable props still works`` () =
+    let info = Checker.getCompletionInfo """
+type R() =
+    member val Apple = "" with get, set
+    member val Banana = "" with get, set
+    member val Cherry = "" with get, set
+let _ = R(Apple="x", B{caret})
+"""
+    assertHasItemWithNames ["Banana"; "Cherry"] info
+
+[<Fact>]
+let ``Issue 19906 - regression guard - positional then partial still works`` () =
+    let info = Checker.getCompletionInfo """
+open System.Threading.Tasks
+let _ = Task.Factory.StartNew((fun _ -> ()), s{caret})
+"""
+    assertHasItemWithNames ["state"; "cancellationToken"; "scheduler"; "creationOptions"] info
+
+[<Fact>]
+let ``Issue 19906 - regression guard - dotted completion inside named-arg RHS`` () =
+    let info = Checker.getCompletionInfo """
+let s = "x"
+let _ = System.Uri(uriString = s.{caret}, kind = System.UriKind.Absolute)
+"""
+    assertHasItemWithNames ["Length"; "Substring"] info
+    assertHasNoItemsWithNames ["uriString"; "kind"] info

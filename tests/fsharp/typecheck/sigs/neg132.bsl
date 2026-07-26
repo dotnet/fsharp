@@ -1,8 +1,8 @@
 
-neg132.fs(15,9,15,55): typecheck error FS0041: A unique overload for method 'SomeMethod' could not be determined based on type information prior to this program point. A type annotation may be needed.
+neg132.fs(15,27,15,37): typecheck error FS0041: A unique overload for method 'SomeMethod' could not be determined based on type information prior to this program point. A type annotation may be needed.
 
 Known types of arguments: 'a * ('b -> int)
 
 Candidates:
  - static member OverloadsWithSrtp.SomeMethod: x: 'T list * f: ('T list -> int) -> int
- - static member OverloadsWithSrtp.SomeMethod: x: ^T * f: (^T -> int) -> int when ^T: (member Length: int)
+ - static member OverloadsWithSrtp.SomeMethod<^T when ^T: (member Length: int)> : x: ^T * f: (^T -> int) -> int

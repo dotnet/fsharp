@@ -673,3 +673,73 @@ let nested2 : {| A: {| B: Expr<int> |}; C: Expr |} =
             (Error 3350, Line 8, Col 22, Line 8, Col 24, "Feature 'Support for better anonymous record parsing' is not available in F# 9.0. Please use language version 10.0 or greater.")
             (Error 3350, Line 8, Col 44, Line 8, Col 49, "Feature 'Support for better anonymous record parsing' is not available in F# 9.0. Please use language version 10.0 or greater.")
         ]
+
+module TypeAliasIndentation =
+
+    // https://github.com/dotnet/fsharp/issues/17992
+    [<Fact>]
+    let ``Anonymous record type alias with array suffix - closing bracket aligned with opening``() =
+        FSharp """
+module M
+type T =
+    {| Id: System.Guid
+    |} []
+"""
+        |> typecheck
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Anonymous record type alias with seq postfix - closing bracket aligned with opening``() =
+        FSharp """
+module M
+type T =
+    {| Id: System.Guid
+    |} seq
+"""
+        |> typecheck
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Anonymous record type alias with list postfix - closing bracket aligned with opening``() =
+        FSharp """
+module M
+type T =
+    {| Id: System.Guid
+    |} list
+"""
+        |> typecheck
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Anonymous record type alias with option postfix - closing bracket aligned with opening``() =
+        FSharp """
+module M
+type T =
+    {| Id: System.Guid
+    |} option
+"""
+        |> typecheck
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Anonymous record type alias with multiple fields and array suffix``() =
+        FSharp """
+module M
+type T =
+    {| Id: System.Guid
+       Name: string
+    |} []
+"""
+        |> typecheck
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Anonymous record type alias all on same line still works``() =
+        FSharp """
+module M
+type T = {| Id: System.Guid |} []
+type U = {| Id: System.Guid |} seq
+type V = {| Id: System.Guid |} list
+"""
+        |> typecheck
+        |> shouldSucceed

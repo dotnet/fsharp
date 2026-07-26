@@ -4,6 +4,7 @@ namespace Internal.Utilities.Library
 
 open System
 open System.Threading
+open System.Collections.Concurrent
 open System.Collections.Generic
 open System.Runtime.CompilerServices
 
@@ -296,6 +297,15 @@ type internal DictionaryExtensions =
     [<Extension>]
     static member inline BagExistsValueForKey:
         dic: Dictionary<'key, 'value list> * key: 'key * f: ('value -> bool) -> bool
+
+[<Extension; Class>]
+type internal ConcurrentDictionaryExtensions =
+
+    /// GetOrAdd whose value is produced by 'factory' at most once per key and then cached. The value is held
+    /// behind a Lazy, so under contention every caller observes the same instance and 'factory' runs once per key.
+    [<Extension>]
+    static member GetOrAddLazy:
+        dic: ConcurrentDictionary<'key, Lazy<'value>> * key: 'key * factory: ('key -> 'value) -> 'value
 
 module internal Lazy =
     val force: x: Lazy<'T> -> 'T

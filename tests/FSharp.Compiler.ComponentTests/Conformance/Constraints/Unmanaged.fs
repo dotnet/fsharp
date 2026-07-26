@@ -526,15 +526,17 @@ Main()
         |> compile
         |> shouldSucceed
         |> verifyIL ["""
-    .method assembly strict virtual instance class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,!!T> DirectInvoke<valuetype (class [runtime]System.ValueType modreq([runtime]System.Runtime.InteropServices.UnmanagedType)) T>() cil managed
-    {
-      .param type T 
-        .custom instance void [runtime]System.Runtime.CompilerServices.IsUnmanagedAttribute::.ctor() = ( 01 00 00 00 ) 
-      
-      .maxstack  8
-      IL_0000:  ldsfld     class Test/'func@3-1'<!0> class Test/'func@3-1'<!!T>::@_instance
-      IL_0005:  ret
-    } """]
+  .method assembly static class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,!!T> 
+          func@3<valuetype (class [runtime]System.ValueType modreq([runtime]System.Runtime.InteropServices.UnmanagedType)) T>() cil managed
+  {
+    .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 09 00 00 00 00 00 ) 
+    .param type T 
+      .custom instance void [runtime]System.Runtime.CompilerServices.IsUnmanagedAttribute::.ctor() = ( 01 00 00 00 ) 
+    
+    .maxstack  8
+    IL_0000:  ldsfld     class Test/'func@3-1'<!0> class Test/'func@3-1'<!!T>::@_instance
+    IL_0005:  ret
+  } """]
 
 
     [<Fact>]

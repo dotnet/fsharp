@@ -1241,7 +1241,7 @@ let unaryArg = [ ValReprInfo.unnamedTopArg ]
 let tupArg = [ [ ValReprInfo.unnamedTopArg1; ValReprInfo.unnamedTopArg1 ] ]
 
 let mkValSpecAux g m (tcref: TyconRef) ty vis slotsig methn valTy argData isGetter isCompGen =
-    let tps = tcref.Typars m
+    let tps = tcref.Typars
 
     let membInfo =
         match slotsig with
@@ -1298,18 +1298,16 @@ let mkImpliedValSpec g m tcref ty vis slotsig methn valTy argData isGetter =
     v
 
 let MakeValsForCompareAugmentation g (tcref: TyconRef) =
-    let m = tcref.Range
     let _, ty = mkMinimalTy g tcref
-    let tps = tcref.Typars m
+    let tps = tcref.Typars
     let vis = tcref.TypeReprAccessibility
 
     mkValSpec g tcref ty vis (Some(mkIComparableCompareToSlotSig g)) "CompareTo" (tps +-> (mkCompareObjTy g ty)) unaryArg false,
     mkValSpec g tcref ty vis (Some(mkGenericIComparableCompareToSlotSig g ty)) "CompareTo" (tps +-> (mkCompareTy g ty)) unaryArg false
 
 let MakeValsForCompareWithComparerAugmentation g (tcref: TyconRef) =
-    let m = tcref.Range
     let _, ty = mkMinimalTy g tcref
-    let tps = tcref.Typars m
+    let tps = tcref.Typars
     let vis = tcref.TypeReprAccessibility
 
     mkValSpec
@@ -1324,10 +1322,9 @@ let MakeValsForCompareWithComparerAugmentation g (tcref: TyconRef) =
         false
 
 let MakeValsForEqualsAugmentation g (tcref: TyconRef) =
-    let m = tcref.Range
     let _, ty = mkMinimalTy g tcref
     let vis = tcref.Accessibility
-    let tps = tcref.Typars m
+    let tps = tcref.Typars
 
     let objEqualsVal =
         mkValSpec g tcref ty vis (Some(mkEqualsSlotSig g)) "Equals" (tps +-> (mkEqualsObjTy g ty)) unaryArg false
@@ -1352,7 +1349,7 @@ let MakeValsForEqualsAugmentation g (tcref: TyconRef) =
 let MakeValsForEqualityWithComparerAugmentation g (tcref: TyconRef) =
     let _, ty = mkMinimalTy g tcref
     let vis = tcref.Accessibility
-    let tps = tcref.Typars tcref.Range
+    let tps = tcref.Typars
 
     let objGetHashCodeVal =
         mkValSpec g tcref ty vis (Some(mkGetHashCodeSlotSig g)) "GetHashCode" (tps +-> (mkHashTy g ty)) unitArg false
@@ -1395,7 +1392,7 @@ let MakeValsForEqualityWithComparerAugmentation g (tcref: TyconRef) =
 let MakeBindingsForCompareAugmentation g (tycon: Tycon) =
     let tcref = mkLocalTyconRef tycon
     let m = tycon.Range
-    let tps = tycon.Typars m
+    let tps = tycon.Typars
 
     let mkCompare comparef =
         match tycon.GeneratedCompareToValues with
@@ -1439,7 +1436,7 @@ let MakeBindingsForCompareAugmentation g (tycon: Tycon) =
 let MakeBindingsForCompareWithComparerAugmentation g (tycon: Tycon) =
     let tcref = mkLocalTyconRef tycon
     let m = tycon.Range
-    let tps = tycon.Typars m
+    let tps = tycon.Typars
 
     let mkCompare comparef =
         match tycon.GeneratedCompareToWithComparerValues with
@@ -1471,7 +1468,7 @@ let MakeBindingsForCompareWithComparerAugmentation g (tycon: Tycon) =
 let MakeBindingsForEqualityWithComparerAugmentation (g: TcGlobals) (tycon: Tycon) =
     let tcref = mkLocalTyconRef tycon
     let m = tycon.Range
-    let tps = tycon.Typars m
+    let tps = tycon.Typars
 
     let mkStructuralEquatable hashf equalsf =
         match tycon.GeneratedHashAndEqualsWithComparerValues with
@@ -1590,7 +1587,7 @@ let MakeBindingsForEqualityWithComparerAugmentation (g: TcGlobals) (tycon: Tycon
 let MakeBindingsForEqualsAugmentation (g: TcGlobals) (tycon: Tycon) =
     let tcref = mkLocalTyconRef tycon
     let m = tycon.Range
-    let tps = tycon.Typars m
+    let tps = tycon.Typars
 
     let mkEquals equalsf =
         match tycon.GeneratedHashAndEqualsValues with
@@ -1668,7 +1665,7 @@ let rec TypeDefinitelyHasEquality g ty =
                     )
                     &&
                     // Check the (possibly inferred) structural dependencies
-                    (tinst, tcref.TyparsNoRange)
+                    (tinst, tcref.Typars)
                     ||> List.lengthsEqAndForall2 (fun ty tp -> not tp.EqualityConditionalOn || TypeDefinitelyHasEquality g ty)
                 | _ -> false
 
@@ -1676,7 +1673,7 @@ let MakeValsForUnionAugmentation g (tcref: TyconRef) =
     let m = tcref.Range
     let _, tmty = mkMinimalTy g tcref
     let vis = tcref.TypeReprAccessibility
-    let tps = tcref.Typars m
+    let tps = tcref.Typars
 
     tcref.UnionCasesAsList
     |> List.map (fun uc ->
@@ -1690,7 +1687,7 @@ let MakeValsForUnionAugmentation g (tcref: TyconRef) =
 let MakeBindingsForUnionAugmentation g (tycon: Tycon) (vals: ValRef list) =
     let tcref = mkLocalTyconRef tycon
     let m = tycon.Range
-    let tps = tycon.Typars m
+    let tps = tycon.Typars
     let tinst, ty = mkMinimalTy g tcref
     let thisv, thise = mkThisVar g m ty
     let unitv, _ = mkCompGenLocal m "unitArg" g.unit_ty

@@ -4,6 +4,7 @@ namespace rec FSharp.Compiler.Symbols
 
 open System
 open System.Collections.Generic
+open FSharp.Compiler.DiagnosticsLogger
 open Internal.Utilities.Collections
 open Internal.Utilities.Library
 open FSharp.Compiler
@@ -549,7 +550,7 @@ module Impl =
             
 
     let getXmlDocSigForEntity (cenv: SymbolEnv) (ent:EntityRef)=
-        match GetXmlDocSigOfEntityRef cenv.infoReader ent.Range ent with
+        match GetXmlDocSigOfEntityRef cenv.infoReader ent with
         | Some (_, docsig) -> docsig
         | _ -> ""
 
@@ -569,6 +570,19 @@ type FSharpDisplayContext(denv: TcGlobals -> DisplayEnv) =
 
     member x.WithTopLevelPrefixGenericParameters () =
         FSharpDisplayContext(fun g -> (denv g).UseTopLevelPrefixGenericParameterStyle())
+
+
+[<Struct>]
+type FSharpObsoleteDiagnosticInfo =
+    { IsError: bool
+      DiagnosticId: string option
+      Message: string option
+      UrlFormat: string option }
+
+    static member FromDiagnosticInfo(info) =
+        let (ObsoleteDiagnosticInfo(isError, id, msg, urlFormat)) = info
+        { IsError = isError; DiagnosticId = id; Message = msg; UrlFormat = urlFormat }
+
 
 // delay the realization of 'item' in case it is unresolved
 type FSharpSymbol(cenv: SymbolEnv, item: unit -> Item, access: FSharpSymbol -> CcuThunk -> AccessorDomain -> bool) =
@@ -710,6 +724,9 @@ type FSharpSymbol(cenv: SymbolEnv, item: unit -> Item, access: FSharpSymbol -> C
     member sym.TryGetAttribute<'T>() =
         sym.Attributes |> Seq.tryFind (fun attr -> attr.IsAttribute<'T>())
 
+    abstract ObsoleteDiagnosticInfo: FSharpObsoleteDiagnosticInfo option
+    default _.ObsoleteDiagnosticInfo = None
+
 type FSharpEntity(cenv: SymbolEnv, entity: EntityRef, tyargs: TType list) = 
     inherit FSharpSymbol(cenv, 
                          (fun () -> 
@@ -740,7 +757,7 @@ type FSharpEntity(cenv: SymbolEnv, entity: EntityRef, tyargs: TType list) =
         | Some ccu -> ccuEq ccu cenv.g.fslibCcu
 
     new(cenv: SymbolEnv, tcref: TyconRef) =
-        let _, _, tyargs = FreshenTypeInst cenv.g range0 (tcref.Typars range0)
+        let _, _, tyargs = FreshenTypeInst cenv.g range0 (tcref.Typars)
         FSharpEntity(cenv, tcref, tyargs)
 
     member _.Entity = entity
@@ -835,7 +852,7 @@ type FSharpEntity(cenv: SymbolEnv, entity: EntityRef, tyargs: TType list) =
 
     member _.GenericParameters = 
         checkIsResolved()
-        entity.TyparsNoRange |> List.map (fun tp -> FSharpGenericParameter(cenv, tp)) |> makeReadOnlyCollection
+        entity.Typars |> List.map (fun tp -> FSharpGenericParameter(cenv, tp)) |> makeReadOnlyCollection
 
     member _.GenericArguments =
         checkIsResolved()
@@ -1098,7 +1115,7 @@ type FSharpEntity(cenv: SymbolEnv, entity: EntityRef, tyargs: TType list) =
     
         if entity.IsILEnumTycon then
             let (TILObjectReprData(_scoref, _enc, tdef)) = entity.ILTyconInfo
-            let formalTypars = entity.Typars range0
+            let formalTypars = entity.Typars
             let formalTypeInst = generalizeTypars formalTypars
             let ty = TType_app(entity, formalTypeInst, cenv.g.knownWithoutNull)
             let formalTypeInfo = ILTypeInfo.FromType cenv.g ty
@@ -1209,6 +1226,9 @@ type FSharpEntity(cenv: SymbolEnv, entity: EntityRef, tyargs: TType list) =
 
     member x.TryGetMembersFunctionsAndValues() = 
         try x.MembersFunctionsAndValues with _ -> [||] :> _
+
+    override this.ObsoleteDiagnosticInfo =
+        TryGetEntityObsoleteInfo cenv.g entity |> Option.map FSharpObsoleteDiagnosticInfo.FromDiagnosticInfo
 
     member this.TryGetMetadataText() =
         match entity.TryDeref with
@@ -1327,7 +1347,7 @@ type FSharpUnionCase(cenv, v: UnionCaseRef) =
     inherit FSharpSymbol (cenv,  
                           (fun () -> 
                                checkEntityIsResolved v.TyconRef
-                               Item.UnionCase(UnionCaseInfo(generalizeTypars v.TyconRef.TyparsNoRange, v), false)), 
+                               Item.UnionCase(UnionCaseInfo(generalizeTypars v.TyconRef.Typars, v), false)), 
                           (fun _this thisCcu2 ad -> 
                                checkForCrossProjectAccessibility cenv.g.ilg (thisCcu2, ad) (cenv.thisCcu, v.UnionCase.Accessibility)) 
                                //&& AccessibilityLogic.IsUnionCaseAccessible cenv.amap range0 ad v)
@@ -1375,7 +1395,7 @@ type FSharpUnionCase(cenv, v: UnionCaseRef) =
 
     member _.XmlDocSig = 
         checkIsResolved()
-        let unionCase = UnionCaseInfo(generalizeTypars v.TyconRef.TyparsNoRange, v)
+        let unionCase = UnionCaseInfo(generalizeTypars v.TyconRef.Typars, v)
         match GetXmlDocSigOfUnionCaseRef unionCase.UnionCaseRef with
         | Some (_, docsig) -> docsig
         | _ -> ""
@@ -1446,10 +1466,10 @@ type FSharpField(cenv: SymbolEnv, d: FSharpFieldData)  =
                                     Item.AnonRecdField(anonInfo, tinst, n, m)
                                 | RecdOrClass v -> 
                                     checkEntityIsResolved v.TyconRef
-                                    Item.RecdField(RecdFieldInfo(generalizeTypars v.TyconRef.TyparsNoRange, v))
+                                    Item.RecdField(RecdFieldInfo(generalizeTypars v.TyconRef.Typars, v))
                                 | Union (v, fieldIndex) ->
                                     checkEntityIsResolved v.TyconRef
-                                    Item.UnionCaseField (UnionCaseInfo (generalizeTypars v.TyconRef.TyparsNoRange, v), fieldIndex)
+                                    Item.UnionCaseField (UnionCaseInfo (generalizeTypars v.TyconRef.Typars, v), fieldIndex)
                                 | ILField f -> 
                                     Item.ILField f), 
                           (fun this thisCcu2 ad -> 
@@ -1550,13 +1570,13 @@ type FSharpField(cenv: SymbolEnv, d: FSharpFieldData)  =
         let xmlsig =
             match d with 
             | RecdOrClass v -> 
-                let recd = RecdFieldInfo(generalizeTypars v.TyconRef.TyparsNoRange, v)
+                let recd = RecdFieldInfo(generalizeTypars v.TyconRef.Typars, v)
                 GetXmlDocSigOfRecdFieldRef recd.RecdFieldRef
             | Union (v, _) -> 
-                let unionCase = UnionCaseInfo(generalizeTypars v.TyconRef.TyparsNoRange, v)
+                let unionCase = UnionCaseInfo(generalizeTypars v.TyconRef.Typars, v)
                 GetXmlDocSigOfUnionCaseRef unionCase.UnionCaseRef
             | ILField f -> 
-                GetXmlDocSigOfILFieldInfo cenv.infoReader range0 f
+                GetXmlDocSigOfILFieldInfo cenv.infoReader f
             | AnonField _ -> None
         match xmlsig with
         | Some (_, docsig) -> docsig
@@ -1644,7 +1664,16 @@ type FSharpField(cenv: SymbolEnv, d: FSharpFieldData)  =
             | Choice1Of3 r -> r.Accessibility
             | Choice2Of3 _ -> taccessPublic
             | Choice3Of3 _ -> taccessPublic
-        FSharpAccessibility access 
+        FSharpAccessibility access
+
+    override this.ObsoleteDiagnosticInfo =
+        let infoOption =
+            match d.TryRecdField with
+            | Choice1Of3 recdField -> TryGetFSharpObsoleteInfo cenv.g recdField.FieldAttribs
+            | Choice2Of3 ilFieldInfo -> TryGetILFieldObsoleteInfo cenv.g ilFieldInfo
+            | Choice3Of3 _ -> None
+
+        infoOption |> Option.map FSharpObsoleteDiagnosticInfo.FromDiagnosticInfo
 
     member private x.V = d
 
@@ -2213,7 +2242,7 @@ type FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
         match v.InlineInfo with 
         | ValInline.Always -> FSharpInlineAnnotation.AlwaysInline
         | ValInline.Optional -> FSharpInlineAnnotation.OptionalInline
-        | ValInline.Never -> FSharpInlineAnnotation.NeverInline
+        | ValInline.Never | ValInline.InlinedDefinition -> FSharpInlineAnnotation.NeverInline
 
     member _.IsMutable = 
         if isUnresolved() then false else 
@@ -2262,6 +2291,8 @@ type FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
     member _.IsEvent = 
         match d with 
         | E _ -> true
+        | P p when p.IsFSharpEventProperty -> true
+        | V v when v.IsFSharpEventProperty cenv.g -> true
         | _ -> false
 
     member _.EventForFSharpProperty = 
@@ -2335,6 +2366,9 @@ type FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
             not (isNil (GetImmediateIntrinsicPropInfosOfType (Some propName, AccessibleFromSomeFSharpCode) cenv.g cenv.amap range0 declaringTy))
         | V v -> v.IsPropertySetterMethod
         | _ -> false
+
+    member x.IsPropertyAccessor =
+        x.IsPropertyGetterMethod || x.IsPropertySetterMethod
 
     member _.IsInstanceMember = 
         if isUnresolved() then false else 
@@ -2437,8 +2471,7 @@ type FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
  
         match d with 
         | E e ->
-            let range = defaultArg sym.DeclarationLocationOpt range0
-            match GetXmlDocSigOfEvent cenv.infoReader range e with
+            match GetXmlDocSigOfEvent cenv.infoReader e with
             | Some (_, docsig) -> docsig
             | _ -> ""
         | P p ->
@@ -2898,6 +2931,17 @@ type FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
             |> Option.map (fun enclosingEntityFullName -> 
                     Array.append (enclosingEntityFullName.Split '.') [| x.CompiledName |])
         else None
+
+    override this.ObsoleteDiagnosticInfo =
+        let infoOption =
+            match d with
+            | E einfo -> TryGetEventObsoleteInfo einfo
+            | P pinfo -> TryGetPropObsoleteInfo pinfo
+            | M minfo
+            | C minfo -> TryGetMethodObsoleteInfo minfo
+            | V vref -> TryGetFSharpObsoleteInfo cenv.g vref.Attribs
+        
+        infoOption |> Option.map FSharpObsoleteDiagnosticInfo.FromDiagnosticInfo
 
 type FSharpType(cenv, ty:TType) =
 

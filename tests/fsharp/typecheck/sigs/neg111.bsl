@@ -6,4 +6,4 @@ neg111.fs(3,624,3,629): typecheck error FS0039: The value or constructor 'fail2'
    failwith
    failwithf
 
-neg111.fs(5,538,5,540): typecheck error FS0003: This value is not a function and cannot be applied.
+neg111.fs(5,538,5,540): typecheck error FS0003: This value is not a function and cannot be applied. It has type 'unit', which does not accept arguments.
