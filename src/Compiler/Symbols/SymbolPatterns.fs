@@ -2,6 +2,7 @@
 
 namespace FSharp.Compiler.Symbols
 
+
 open FSharp.Compiler.Syntax
 
 /// Patterns over FSharpSymbol and derivatives.

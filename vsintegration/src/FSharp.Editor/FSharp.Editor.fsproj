@@ -121,6 +121,8 @@
     <Compile Include="CodeFixes\MakeDeclarationMutable.fs" />
     <Compile Include="CodeFixes\ChangeToUpcast.fs" />
     <Compile Include="CodeFixes\AddMissingEqualsToTypeDefinition.fs" />
+    <Compile Include="CodeFixes\AddMissingAttributeToSignature.fs" />
+    <Compile Include="CodeFixes\RemoveExtraAttributeFromImplementation.fs" />
     <Compile Include="CodeFixes\ConvertToNotEqualsEqualityExpression.fs" />
     <Compile Include="CodeFixes\ConvertToSingleEqualsEqualityExpression.fs" />
     <Compile Include="CodeFixes\ChangeRefCellDerefToNotExpression.fs" />
@@ -180,7 +182,7 @@
     <PackageReference Include="Microsoft.CodeAnalysis.ExternalAccess.FSharp" Version="$(MicrosoftCodeAnalysisExternalAccessFSharpVersion)" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
     <PackageReference Include="Microsoft.VisualStudio.ProjectSystem" Version="$(MicrosoftVisualStudioProjectSystemVersion)" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
     <PackageReference Include="Microsoft.VisualStudio.ProjectSystem.Managed" Version="$(MicrosoftVisualStudioProjectSystemManagedVersion)" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
-    <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.11.2" Condition="'$(Configuration)' == 'Debug'" />    
+    <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.15.3" Condition="'$(Configuration)' == 'Debug'" />    
   </ItemGroup>
 
   <ItemGroup>

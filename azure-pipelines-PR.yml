@@ -12,7 +12,7 @@ trigger:
     - '*'
     exclude:
     - .github/*
-    - docs/*
+    - docs/**
     - .vscode/*
     - .devcontainer/*
     - tests/scripts/*
@@ -39,7 +39,7 @@ pr:
     - '*'
     exclude:
     - .github/*
-    - docs/*
+    - docs/**
     - attributions.md
     - CODE_OF_CONDUCT.md
     - DEVGUIDE.md
@@ -100,7 +100,7 @@ stages:
         helixRepo: dotnet/fsharp
         jobs:
           # Determinism, we want to run it only in PR builds
-        - job: Determinism_Debug
+        - job: Determinism_Release
           condition: eq(variables['Build.Reason'], 'PullRequest')
           variables:
           - name: _SignType
@@ -109,13 +109,6 @@ stages:
             name: $(DncEngPublicBuildPool)
             demands: ImageOverride -equals $(_WindowsMachineQueueName)
           timeoutInMinutes: 90
-          strategy:
-            maxParallel: 2
-            matrix:
-              regular:
-                _experimental_flag: ''
-              experimental_features:
-                _experimental_flag: ''
           steps:
           - checkout: self
             clean: true
@@ -129,15 +122,15 @@ stages:
               workingDirectory: $(Build.SourcesDirectory)
               installationPath: $(Build.SourcesDirectory)/.dotnet
           - script: .\eng\common\dotnet.cmd
-          - script: .\eng\test-determinism.cmd -configuration Debug
-            env:
-              FSHARP_EXPERIMENTAL_FEATURES: $(_experimental_flag)
-            displayName: Determinism tests with Debug configuration
+          - script: .\eng\test-determinism.cmd -configuration Release
+            displayName: Determinism tests (race detector — same flags both builds)
+          - script: .\eng\test-determinism.cmd -configuration Release -mode seq-vs-par
+            displayName: Determinism tests (1-shot diff — sequential vs parallel)
           - task: PublishPipelineArtifact@1
             displayName: Publish Determinism Logs
             inputs:
-              targetPath: '$(Build.SourcesDirectory)/artifacts/log/Debug'
-              artifactName: 'Determinism_Debug Attempt $(System.JobAttempt) Logs'
+              targetPath: '$(Build.SourcesDirectory)/artifacts/log/Release'
+              artifactName: 'Determinism_Release Attempt $(System.JobAttempt) Logs'
             continueOnError: true
             condition: not(succeeded())
 
@@ -781,7 +774,7 @@ stages:
               workingDirectory: $(Build.SourcesDirectory)
               installationPath: $(Build.SourcesDirectory)/.dotnet
           - script: .\eng\common\dotnet.cmd
-          - script: .\Build.cmd $(_kind) -pack -c $(_BuildConfig)
+          - script: .\Build.cmd $(_kind) -ci -pack -c $(_BuildConfig)
             env:
               NativeToolsOnMachine: true
             displayName: Initial build and prepare packages.
@@ -796,6 +789,7 @@ stages:
             continueOnError: true
             condition: always()
         - job: ILVerify
+          timeoutInMinutes: 120
           pool:
             name: $(DncEngPublicBuildPool)
             demands: ImageOverride -equals $(_WindowsMachineQueueName)
@@ -847,7 +841,11 @@ stages:
         - repo: fsprojects/FSharpPlus
           commit: 2648efe
           buildScript: dotnet msbuild build.proj -t:Build;Test -bl
-          displayName: FsharpPlus_NET10_Test
+          displayName: FsharpPlus_NET10_Test_Debug
+        - repo: fsprojects/FSharpPlus
+          commit: 2648efe
+          buildScript: dotnet msbuild build.proj -t:Build;Test -p:Configuration=Release -bl
+          displayName: FsharpPlus_NET10_Test_Release
         - repo: fsprojects/FSharpPlus
           commit: 2648efe
           buildScript: dotnet msbuild build.proj -t:Build;AllDocs -bl
@@ -859,30 +857,48 @@ stages:
           useVmImage: $(LinuxMachineQueueName)
           usePool: $(DncEngPublicBuildPool)
         - repo: TheAngryByrd/IcedTasks
-          commit: 863bf91cdee93d8c4c875bb5d321dd92eb20d5a9
+          commit: 5453025da1cd3db8aebe9283a9ff190062a703e0
           buildScript: dotnet build IcedTasks.sln -bl
           displayName: IcedTasks_Build
         - repo: TheAngryByrd/IcedTasks
-          commit: 863bf91cdee93d8c4c875bb5d321dd92eb20d5a9
+          commit: 5453025da1cd3db8aebe9283a9ff190062a703e0
           buildScript: dotnet test IcedTasks.sln -bl
-          displayName: IcedTasks_Test
+          displayName: IcedTasks_Test_Debug
+        - repo: TheAngryByrd/IcedTasks
+          commit: 5453025da1cd3db8aebe9283a9ff190062a703e0
+          buildScript: dotnet test IcedTasks.sln -c Release -bl
+          displayName: IcedTasks_Test_Release
         - repo: demystifyfp/FsToolkit.ErrorHandling
-          commit: 9cd957e335767df03e2fb0aa2f7b0fed782c5091
+          commit: a7119caabe329817bee49d7094610c45db7725c1
           buildScript: dotnet build FsToolkit.ErrorHandling.sln -bl
           displayName: FsToolkit_ErrorHandling_Build
         - repo: demystifyfp/FsToolkit.ErrorHandling
-          commit: 9cd957e335767df03e2fb0aa2f7b0fed782c5091
+          commit: a7119caabe329817bee49d7094610c45db7725c1
           buildScript: dotnet test FsToolkit.ErrorHandling.sln -bl
-          displayName: FsToolkit_ErrorHandling_Test
+          displayName: FsToolkit_ErrorHandling_Test_Debug
+        - repo: demystifyfp/FsToolkit.ErrorHandling
+          commit: a7119caabe329817bee49d7094610c45db7725c1
+          buildScript: dotnet test FsToolkit.ErrorHandling.sln -c Release -bl
+          displayName: FsToolkit_ErrorHandling_Test_Release
         - repo: opentk/opentk
-          commit: 60c20cca65a7df6e8335e8d6060d91b30909fbea
+          commit: d4b1b18be03859dc066298ee191f6efa521e7e28
           buildScript: dotnet build tests/OpenTK.Tests/OpenTK.Tests.fsproj -c Release -bl:build_1.binlog ;; dotnet build tests/OpenTK.Tests.Integration/OpenTK.Tests.Integration.fsproj -c Release -bl:build_2.binlog
           displayName: OpenTK_FSharp_Build
         - repo: bryanedds/Prime
-          commit: 8d55f4e8e1d76e42f5fb3c9ba69eb79fe695e9fa
+          commit: 6ddc28d46f81447eacb241b96e16ce693b210c96
           buildScript: dotnet build Prime.sln --configuration Release
           displayName: Prime_Build
         - repo: bryanedds/Nu
-          commit: b35cbe02029e0e33d72a4846816cf22714eb3aac
+          commit: e81e00a464b9d35d272f61708a1a0bfbf487b6d5
           buildScript: dotnet build Nu.sln --configuration Release
           displayName: Nu_Build
+        # Design-time provider packaging oracle. Pin d8aba70 (pre-workaround base of FSharp.Data.GraphQL#583):
+        # it uses the bare IsFSharpDesignTimeProvider gesture, so the client pack drops the provider without this fix.
+        # Linux-only: the $PWD local feed and the grep content assertion need bash. (nupkg entry names are stored
+        # uncompressed in the zip, so grep -aF on the package finds the provider path without extra tools.)
+        - repo: fsprojects/FSharp.Data.GraphQL
+          commit: d8aba70757792f2d76a66cb8171086ca4c7c1e8e
+          buildScript: dotnet pack src/FSharp.Data.GraphQL.Shared/FSharp.Data.GraphQL.Shared.fsproj -c Release -p:TreatWarningsAsErrors=false -o "$PWD/__gqlfeed__" ;; dotnet pack src/FSharp.Data.GraphQL.Client/FSharp.Data.GraphQL.Client.fsproj -c Release -p:IsNuGet=true -p:TreatWarningsAsErrors=false --source https://api.nuget.org/v3/index.json --source "$PWD/__gqlfeed__" -o "$PWD/__gqlfeed__" && grep -qaF typeproviders/fsharp41/netstandard2.0/FSharp.Data.GraphQL.Client.DesignTime.dll "$PWD/__gqlfeed__"/FSharp.Data.GraphQL.Client.*.nupkg
+          displayName: FSharpDataGraphQL_DesignTimeProvider_Packaging
+          useVmImage: $(LinuxMachineQueueName)
+          usePool: $(DncEngPublicBuildPool)

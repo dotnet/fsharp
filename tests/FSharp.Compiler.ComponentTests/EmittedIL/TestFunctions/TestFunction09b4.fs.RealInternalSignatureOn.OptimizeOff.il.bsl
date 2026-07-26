@@ -36,6 +36,7 @@
   .method public static !!a  Null<class a>() cil managed
   {
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.LiteralAttribute::.ctor() = ( 01 00 00 00 ) 
+    .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 09 00 00 00 00 00 ) 
     
     .maxstack  3
     .locals init (!!a V_0)
@@ -69,23 +70,22 @@
     
     .maxstack  8
     IL_0000:  nop
-    IL_0001:  nop
-    IL_0002:  call       int32 assembly::get_x()
-    IL_0007:  box        [runtime]System.Int32
-    IL_000c:  brfalse.s  IL_0010
+    IL_0001:  call       int32 assembly::get_x()
+    IL_0006:  box        [runtime]System.Int32
+    IL_000b:  brfalse.s  IL_000f
 
-    IL_000e:  br.s       IL_0023
+    IL_000d:  br.s       IL_0022
 
-    IL_0010:  ldstr      "Is null"
-    IL_0015:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`5<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [runtime]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::.ctor(string)
-    IL_001a:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::PrintFormatLine<class [FSharp.Core]Microsoft.FSharp.Core.Unit>(class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<!!0,class [runtime]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>)
-    IL_001f:  pop
-    IL_0020:  nop
-    IL_0021:  br.s       IL_0025
+    IL_000f:  ldstr      "Is null"
+    IL_0014:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`5<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [runtime]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::.ctor(string)
+    IL_0019:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::PrintFormatLine<class [FSharp.Core]Microsoft.FSharp.Core.Unit>(class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<!!0,class [runtime]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>)
+    IL_001e:  pop
+    IL_001f:  nop
+    IL_0020:  br.s       IL_0024
 
+    IL_0022:  nop
     IL_0023:  nop
-    IL_0024:  nop
-    IL_0025:  ret
+    IL_0024:  ret
   } 
 
   .property int32 x()

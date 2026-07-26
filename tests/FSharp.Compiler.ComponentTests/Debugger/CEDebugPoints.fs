@@ -30,7 +30,7 @@ let a =
     seq {
         yield 42
     }
-        """ "GenerateNext" [ (Line 6, Col 15, Line 6, Col 17) ]
+        """ "GenerateNext" [ (Line 6, Col 9, Line 6, Col 17) ]
 
     [<Fact>]
     let ``ReturnFrom in async CE - debug point covers full expression`` () =

@@ -840,7 +840,7 @@ module Array =
     /// <example id="exists2-1">
     /// <code lang="fsharp">
     /// let inputs1 = [| 1; 2 |]
-    /// let inputs2 = [| 1; 2; 0 |]
+    /// let inputs2 = [| 1; 3 |]
     ///
     /// (inputs1, inputs2) ||> Array.exists2 (fun a b -> a > b)
     /// </code>
@@ -850,7 +850,7 @@ module Array =
     /// <example id="exists2-2">
     /// <code lang="fsharp">
     /// let inputs1 = [| 1; 4 |]
-    /// let inputs2 = [| 1; 3; 5 |]
+    /// let inputs2 = [| 1; 3 |]
     ///
     /// (inputs1, inputs2) ||> Array.exists2 (fun a b -> a > b)
     /// </code>

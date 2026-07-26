@@ -301,14 +301,14 @@ module internal PrintUtilities =
 
     let layoutXmlDocOfEventInfo (denv: DisplayEnv) (infoReader: InfoReader) (einfo: EventInfo) restL =
         if denv.showDocumentation then
-            GetXmlDocSigOfEvent infoReader Range.range0 einfo
+            GetXmlDocSigOfEvent infoReader einfo
             |> layoutXmlDocFromSig denv infoReader true einfo.XmlDoc restL             
         else
             restL
 
     let layoutXmlDocOfILFieldInfo (denv: DisplayEnv) (infoReader: InfoReader) (finfo: ILFieldInfo) restL =
         if denv.showDocumentation then
-            GetXmlDocSigOfILFieldInfo infoReader Range.range0 finfo
+            GetXmlDocSigOfILFieldInfo infoReader finfo
             |> layoutXmlDocFromSig denv infoReader true XmlDoc.Empty restL
         else
             restL
@@ -329,7 +329,7 @@ module internal PrintUtilities =
 
     let layoutXmlDocOfEntity (denv: DisplayEnv) (infoReader: InfoReader) (eref: EntityRef) restL =
         if denv.showDocumentation then
-            GetXmlDocSigOfEntityRef infoReader Range.range0 eref
+            GetXmlDocSigOfEntityRef infoReader eref
             |> layoutXmlDocFromSig denv infoReader true eref.XmlDoc restL             
         else
             restL
@@ -463,7 +463,8 @@ module PrintIL =
                       let s = d.ToString ("g12", CultureInfo.InvariantCulture)
                       let s = ensureFloat s
                       s |> (tagNumericLiteral >> Some)
-                | _ -> None
+                | ILFieldInit.String s -> ("\"" + s + "\"") |> (tagStringLiteral >> Some)
+                | ILFieldInit.Null -> "null" |> (tagKeyword >> Some)
             | None -> None
         match textOpt with
         | None -> WordL.equals ^^ (comment "value unavailable")
@@ -647,6 +648,7 @@ module PrintTypes =
         | ILAttribElem.TypeRef (Some ty) -> 
             LeftL.keywordTypedefof ^^ SepL.leftAngle ^^ PrintIL.layoutILTypeRef denv ty ^^ RightL.rightAngle
         | ILAttribElem.TypeRef None -> emptyL
+        | ILAttribElem.Enum (_, value) -> layoutILAttribElement denv value
 
     and layoutILAttrib denv (ty, args) = 
         let argsL = bracketL (sepListL RightL.comma (List.map (layoutILAttribElement denv) args))
@@ -730,11 +732,13 @@ module PrintTypes =
         | _, _ -> squareAngleL (sepListL RightL.semicolon ((match kind with TyparKind.Type -> [] | TyparKind.Measure -> [wordL (tagText "Measure")]) @ List.map (layoutAttrib denv) attrs)) ^^ restL
 
     and layoutTyparRef denv (typar: Typar) =
+        let rawName = typar.DeclaredName |> Option.defaultValue typar.Name
+        let name = if System.String.IsNullOrEmpty rawName then rawName else NormalizeIdentifierBackticks rawName
         tagTypeParameter 
             (sprintf "%s%s%s"
                 (if denv.showStaticallyResolvedTyparAnnotations then prefixOfStaticReq typar.StaticReq else "'")
                 (if denv.showInferenceTyparAnnotations then prefixOfInferenceTypar typar else "")
-                (typar.DeclaredName |> Option.defaultValue typar.Name))
+                name)
         |> mkNav typar.Range
         |> wordL
 
@@ -1200,10 +1204,15 @@ module PrintTypes =
         let (prettyTyparInst, prettyArgInfos, prettyRetTy), cxs = PrettyTypes.PrettifyInstAndUncurriedSig denv.g (typarInst, argInfos, retTy)
         prettyTyparInst, prettyLayoutOfTopTypeInfoAux denv [prettyArgInfos] prettyRetTy cxs
 
-    let prettyLayoutOfCurriedMemberSig denv typarInst argInfos retTy parentTyparTys = 
+    let prettyLayoutOfCurriedMemberSig denv typarInst argInfos retTy parentTyparTys excludeSrtpConstraints = 
         let (prettyTyparInst, parentTyparTys, argInfos, retTy), cxs = PrettyTypes.PrettifyInstAndCurriedSig denv.g (typarInst, parentTyparTys, argInfos, retTy)
         // Filter out the parent typars, which don't get shown in the member signature 
         let cxs = cxs |> List.filter (fun (tp, _) -> not (parentTyparTys |> List.exists (fun ty -> match tryDestTyparTy denv.g ty with ValueSome destTypar -> typarEq tp destTypar | _ -> false))) 
+        // When SRTP method typars are shown on explicit type param declarations, exclude their constraints from postfix
+        let cxs =
+            if excludeSrtpConstraints then
+                cxs |> List.filter (fun (tp, _) -> tp.StaticReq <> TyparStaticReq.HeadType)
+            else cxs
         prettyTyparInst, prettyLayoutOfTopTypeInfoAux denv argInfos retTy cxs
 
     let prettyArgInfos denv allTyparInst =
@@ -1224,7 +1233,8 @@ module PrintTypes =
         // aren't chosen as names for displayed variables. 
         let memberParentTypars = List.map fst memberToParentInst
         let parentTyparTys = List.map (mkTyparTy >> instType allTyparInst) memberParentTypars
-        let prettyTyparInst, layout = prettyLayoutOfCurriedMemberSig denv typarInst argInfos retTy parentTyparTys
+        let hasStaticallyResolvedTypars = niceMethodTypars |> List.exists (fun tp -> tp.StaticReq = TyparStaticReq.HeadType)
+        let prettyTyparInst, layout = prettyLayoutOfCurriedMemberSig denv typarInst argInfos retTy parentTyparTys hasStaticallyResolvedTypars
 
         prettyTyparInst, niceMethodTypars, layout
 
@@ -1348,15 +1358,17 @@ module PrintTastMemberOrVals =
 
         let memberHasSameTyparNameAsParentTypeTypars =
             let parentTyparNames =
-                vref.DeclaringEntity.TyparsNoRange
+                vref.DeclaringEntity.Typars
                 |> Seq.choose (fun tp -> if tp.typar_id.idText = unassignedTyparName then None else Some tp.typar_id.idText)
                 |> set
             niceMethodTypars
             |> Seq.exists (fun tp -> parentTyparNames.Contains tp.typar_id.idText)
 
         let typarOrderMismatch = isTyparOrderMismatch niceMethodTypars argInfos
+        let hasStaticallyResolvedTypars =
+            niceMethodTypars |> List.exists (fun tp -> tp.StaticReq = TyparStaticReq.HeadType)
         let nameL =
-            if denv.showTyparBinding || typarOrderMismatch || memberHasSameTyparNameAsParentTypeTypars then
+            if denv.showTyparBinding || typarOrderMismatch || memberHasSameTyparNameAsParentTypeTypars || hasStaticallyResolvedTypars then
                 layoutTyparDecls denv nameL true niceMethodTypars
             else
                 nameL
@@ -1527,10 +1539,19 @@ module PrintTastMemberOrVals =
         let isTyFunction = v.IsTypeFunction // Bug: 1143, and innerpoly tests
         let typarOrderMismatch = isTyparOrderMismatch tps argInfos
 
+        let hasStaticallyResolvedTypars =
+            tps |> List.exists (fun tp -> tp.StaticReq = TyparStaticReq.HeadType) &&
+            not (IsLogicalOpName v.LogicalName) &&
+            not denv.shortConstraints
         let typarBindingsL = 
-            if isTyFunction || isOverGeneric || denv.showTyparBinding || typarOrderMismatch then 
+            if isTyFunction || isOverGeneric || denv.showTyparBinding || typarOrderMismatch || hasStaticallyResolvedTypars then 
                 layoutTyparDecls denv nameL true tps 
             else nameL
+        // When SRTP method typars are shown on explicit type param declarations, exclude their constraints from postfix
+        let cxs =
+            if hasStaticallyResolvedTypars then
+                cxs |> List.filter (fun (tp, _) -> tp.StaticReq <> TyparStaticReq.HeadType)
+            else cxs
         let valAndTypeL = (WordL.keywordVal ^^ (typarBindingsL |> addColonL)) --- layoutTopType denv env argInfos retTy cxs
         let valAndTypeL =
             match denv.generatedValueLayout v with
@@ -1589,6 +1610,18 @@ let prettyLayoutsOfUnresolvedOverloading denv argInfos retTy genericParameters =
 
 /// Printing info objects
 module InfoMemberPrinting = 
+
+    /// Controls how the enclosing type of a C#-style ([<Extension>]) extension method is
+    /// rendered in "free style" method layouts (e.g. the "Available overloads" list in
+    /// overload-resolution error messages).
+    [<RequireQualifiedAccess>]
+    type CSharpExtensionTypeDisplay =
+        /// Render the apparent/receiver type, e.g. `Foo` in `foo.CopyTo(...)`. This is the
+        /// default everywhere except overload-resolution error messages.
+        | ReceiverType
+        /// Render the extension's declaring type, e.g. `MemoryExtensions`, so the message is
+        /// not misleading (issue dotnet/fsharp#9838).
+        | DeclaringType
 
     /// Format the arguments of a method
     let layoutParamData denv (ParamData(isParamArray, _isInArg, _isOutArg, optArgInfo, _callerInfo, nmOpt, _reflArgInfo, pty)) =
@@ -1679,7 +1712,7 @@ module InfoMemberPrinting =
     // That is, this style:
     //          Container(argName1: argType1, ..., argNameN: argTypeN) : retType
     //          Container.Method(argName1: argType1, ..., argNameN: argTypeN) : retType
-    let layoutMethInfoCSharpStyle amap m denv (minfo: MethInfo) minst =
+    let layoutMethInfoCSharpStyle (extTypeDisplay: CSharpExtensionTypeDisplay) amap m denv (minfo: MethInfo) minst =
         let retTy = if minfo.IsConstructor then minfo.ApparentEnclosingType else minfo.GetFSharpReturnType(amap, m, minst) 
         let layout = 
             if minfo.IsExtensionMember then
@@ -1688,7 +1721,12 @@ module InfoMemberPrinting =
         let layout = 
             layout ^^
                 if isAppTy minfo.TcGlobals minfo.ApparentEnclosingAppType then
-                    let tcref = minfo.ApparentEnclosingTyconRef 
+                    let tcref =
+                        match extTypeDisplay with
+                        | CSharpExtensionTypeDisplay.DeclaringType when minfo.IsCSharpStyleExtensionMember ->
+                            minfo.DeclaringTyconRef
+                        | _ ->
+                            minfo.ApparentEnclosingTyconRef
                     PrintTypes.layoutTyconRef denv tcref
                 else
                     emptyL
@@ -1762,7 +1800,7 @@ module InfoMemberPrinting =
     //
     // For C# extension members:
     //          ApparentContainer.Method(argName1: argType1, ..., argNameN: argTypeN) : retType
-    let rec prettyLayoutOfMethInfoFreeStyle (infoReader: InfoReader) m denv typarInst methInfo =
+    let rec prettyLayoutOfMethInfoFreeStyle (extTypeDisplay: CSharpExtensionTypeDisplay) (infoReader: InfoReader) m denv typarInst methInfo =
         let amap = infoReader.amap
 
         match methInfo with 
@@ -1776,17 +1814,17 @@ module InfoMemberPrinting =
         | MethInfoWithModifiedReturnType(ILMeth(_, ilminfo, _) as wrappedInfo,retTy) -> 
             let prettyTyparInst, prettyMethInfo, minst = prettifyILMethInfo amap m wrappedInfo typarInst ilminfo
             let prettyMethInfo = MethInfoWithModifiedReturnType(prettyMethInfo,retTy)
-            let resL = layoutMethInfoCSharpStyle amap m denv prettyMethInfo minst
+            let resL = layoutMethInfoCSharpStyle extTypeDisplay amap m denv prettyMethInfo minst
             prettyTyparInst, resL
-        | MethInfoWithModifiedReturnType(mi,_) -> prettyLayoutOfMethInfoFreeStyle infoReader m denv typarInst mi
+        | MethInfoWithModifiedReturnType(mi,_) -> prettyLayoutOfMethInfoFreeStyle extTypeDisplay infoReader m denv typarInst mi
         | ILMeth(_, ilminfo, _) -> 
             let prettyTyparInst, prettyMethInfo, minst = prettifyILMethInfo amap m methInfo typarInst ilminfo
-            let resL = layoutMethInfoCSharpStyle amap m denv prettyMethInfo minst
+            let resL = layoutMethInfoCSharpStyle extTypeDisplay amap m denv prettyMethInfo minst
             prettyTyparInst, resL
 #if !NO_TYPEPROVIDERS
         | ProvidedMeth _ -> 
             let prettyTyparInst, _ = PrettyTypes.PrettifyInst amap.g typarInst 
-            prettyTyparInst, layoutMethInfoCSharpStyle amap m denv methInfo methInfo.FormalMethodInst
+            prettyTyparInst, layoutMethInfoCSharpStyle extTypeDisplay amap m denv methInfo methInfo.FormalMethodInst
     #endif
 
     let prettyLayoutOfPropInfoFreeStyle g amap m denv (pinfo: PropInfo) =
@@ -1822,8 +1860,8 @@ module InfoMemberPrinting =
         let resL = prettyLayoutOfPropInfoFreeStyle g amap m denv pinfo 
         resL |> bufferL os
 
-    let formatMethInfoToBufferFreeStyle amap m denv os (minfo: MethInfo) = 
-        let _, resL = prettyLayoutOfMethInfoFreeStyle amap m denv emptyTyparInst minfo 
+    let formatMethInfoToBufferFreeStyle (extTypeDisplay: CSharpExtensionTypeDisplay) amap m denv os (minfo: MethInfo) = 
+        let _, resL = prettyLayoutOfMethInfoFreeStyle extTypeDisplay amap m denv emptyTyparInst minfo 
         resL |> bufferL os
 
     /// Format a method to a layout (actually just containing a string) using "free style" (aka "standalone"). 
@@ -1902,8 +1940,12 @@ module TastDefinitionPrinting =
             | fields -> (prefixL ^^ nmL ^^ WordL.keywordOf) --- layoutUnionCaseFields denv infoReader true enclosingTcref fields
         layoutXmlDocOfUnionCase denv infoReader (UnionCaseRef(enclosingTcref, ucase.Id.idText)) caseL
 
-    let layoutUnionCases denv infoReader enclosingTcref ucases =
-        let prefixL = WordL.bar // See bug://2964 - always prefix in case preceded by accessibility modifier
+    let layoutUnionCases denv infoReader isStruct enclosingTcref ucases =
+        let prefixL =
+            match ucases with
+            // Single-case struct: bar changes base type semantics (FS0300), so omit it
+            | [ _ ] when isStruct -> emptyL
+            | _ -> WordL.bar // See bug://2964 - always prefix in case preceded by accessibility modifier
         List.map (layoutUnionCase denv infoReader prefixL enclosingTcref) ucases
 
     /// When to force a break? "type tyname = <HERE> repn"
@@ -1931,6 +1973,11 @@ module TastDefinitionPrinting =
         let nameL = ConvertLogicalNameToDisplayLayout (tagField >> wordL) finfo.FieldName
         let typL = layoutType denv (finfo.FieldType(infoReader.amap, m))
         let fieldL = staticL ^^ WordL.keywordVal ^^ (nameL |> addColonL) ^^ typL
+        let isLiteral = finfo.LiteralValue.IsSome
+        let fieldL =
+            if isLiteral then fieldL ^^ PrintIL.layoutILFieldInit finfo.LiteralValue
+            else fieldL
+        let fieldL = fieldL |> PrintTypes.layoutAttribs denv None isLiteral TyparKind.Type []
         layoutXmlDocOfILFieldInfo denv infoReader finfo fieldL
 
     let layoutEventInfo denv (infoReader: InfoReader) m (einfo: EventInfo) =
@@ -2058,7 +2105,7 @@ module TastDefinitionPrinting =
         let nameL = ConvertLogicalNameToDisplayLayout (tagger >> mkNav tycon.DefinitionRange >> wordL) tycon.DisplayNameCore
 
         let lhsL =
-            let tps = tycon.TyparsNoRange
+            let tps = tycon.Typars
             let tpsL = layoutTyparDecls denv nameL tycon.IsPrefixDisplay tps
             let tpsL = layoutAccessibility denv tycon.Accessibility tpsL
             typewordL ^^ tpsL
@@ -2332,8 +2379,9 @@ module TastDefinitionPrinting =
 
             | TFSharpTyconRepr { fsobjmodel_kind = TFSharpUnion } ->
                 let denv = denv.AddAccessibility tycon.TypeReprAccessibility 
+                let isStruct = tycon.IsStructOrEnumTycon
                 tycon.UnionCasesAsList
-                |> layoutUnionCases denv infoReader tcref
+                |> layoutUnionCases denv infoReader isStruct tcref
                 |> applyMaxMembers denv.maxMembers
                 |> aboveListL
                 |> addReprAccessL
@@ -2583,6 +2631,16 @@ module InferredSigPrinting =
 
         let (@@*) = if denv.printVerboseSignatures then (@@----) else (@@--)
 
+        // Detect namespace global: bare types/vals at root level (not wrapped in Module binding)
+        let rec hasBareToplevelTypes x =
+            match x with
+            | TMDefRec(_, _, tycons, _, _) -> not (List.isEmpty tycons)
+            | TMDefLet _ | TMDefDo _ -> true
+            | TMDefOpens _ -> false
+            | TMDefs defs -> defs |> List.exists hasBareToplevelTypes
+
+        let isGlobalNamespace = hasBareToplevelTypes expr
+
         let rec isConcreteNamespace x = 
             match x with 
             | TMDefRec(_, _opens, tycons, mbinds, _) -> 
@@ -2708,7 +2766,7 @@ module InferredSigPrinting =
                         if showHeader then
                             // OK, we're not in F# Interactive
                             // Check if this is an outer module with no namespace
-                            if isNil outerPath then
+                            if isNil outerPath && not isGlobalNamespace then
                                 // If so print a "module" declaration, no indentation
                                 modNameL @@ basic
                             else
@@ -2746,7 +2804,12 @@ module InferredSigPrinting =
         | EmptyModuleOrNamespaces mspecs when showHeader ->
             List.map emptyModuleOrNamespace mspecs
             |> aboveListL
-        | expr -> imdefL denv expr
+        | expr ->
+            let layout = imdefL denv expr
+            if isGlobalNamespace then
+                WordL.keywordNamespace ^^ wordL (TaggedText.tagNamespace "global") @@* layout
+            else
+                layout
 
 //--------------------------------------------------------------------------
 
@@ -2827,10 +2890,10 @@ let stringOfQualifiedValOrMember denv infoReader vref =
 
 /// Convert a MethInfo to a string
 let formatMethInfoToBufferFreeStyle infoReader m denv buf d =
-    InfoMemberPrinting.formatMethInfoToBufferFreeStyle infoReader m denv buf d
+    InfoMemberPrinting.formatMethInfoToBufferFreeStyle InfoMemberPrinting.CSharpExtensionTypeDisplay.ReceiverType infoReader m denv buf d
 
 let prettyLayoutOfMethInfoFreeStyle infoReader m denv typarInst minfo =
-    InfoMemberPrinting.prettyLayoutOfMethInfoFreeStyle infoReader m denv typarInst minfo
+    InfoMemberPrinting.prettyLayoutOfMethInfoFreeStyle InfoMemberPrinting.CSharpExtensionTypeDisplay.ReceiverType infoReader m denv typarInst minfo
 
 /// Convert a PropInfo to a string
 let prettyLayoutOfPropInfoFreeStyle g amap m denv d =
@@ -2838,7 +2901,14 @@ let prettyLayoutOfPropInfoFreeStyle g amap m denv d =
 
 /// Convert a MethInfo to a string
 let stringOfMethInfo infoReader m denv minfo =
-    buildString (fun buf -> InfoMemberPrinting.formatMethInfoToBufferFreeStyle infoReader m denv buf minfo)
+    buildString (fun buf -> InfoMemberPrinting.formatMethInfoToBufferFreeStyle InfoMemberPrinting.CSharpExtensionTypeDisplay.ReceiverType infoReader m denv buf minfo)
+
+/// Convert a MethInfo to a string, suitable for the "Available overloads" list
+/// in overload-resolution error messages. For C#-style extension methods, the
+/// rendering uses the extension's declaring type rather than the receiver type,
+/// so the message is not misleading (issue dotnet/fsharp#9838).
+let stringOfMethInfoForOverloadError infoReader m denv minfo =
+    buildString (fun buf -> InfoMemberPrinting.formatMethInfoToBufferFreeStyle InfoMemberPrinting.CSharpExtensionTypeDisplay.DeclaringType infoReader m denv buf minfo)
 
 let stringOfMethInfoFSharpStyle infoReader m denv minfo =
     InfoMemberPrinting.layoutMethInfoFSharpStyle infoReader m denv minfo

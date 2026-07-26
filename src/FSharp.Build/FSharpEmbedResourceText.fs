@@ -269,6 +269,7 @@ open Microsoft.FSharp.Text
 open Microsoft.FSharp.Collections
 open Printf
 
+#nowarn ""1182"" // Generated boilerplate may include helper functions not referenced when the resource file has no entries
 #nowarn ""3262"" // The call to Option.ofObj below is applied in multiple compilation modes for GetString, sometimes the value is typed as a non-nullable string
 "
 

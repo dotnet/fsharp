@@ -254,31 +254,10 @@ let mkGraph (filePairs: FilePairMap) (files: FileInProject array) : Graph<FileIn
 
             allDependencies
 
-    // If there is a script in the project, we just process sequentially all the files that may have been added as part of the script closure.
-    // That means all files up to the last script file.
-    let scriptCompilationLength =
-        files
-        |> Array.tryFindIndexBack (fun f -> f.IsScript)
-        |> Option.map (fun idx -> idx + 1)
-        |> Option.defaultValue 0
-
-    let sequentialPartForScriptCompilation =
-        files
-        |> Array.take scriptCompilationLength
-        |> Array.map (fun file ->
-            file.Idx,
-            [|
-                if file.Idx > 0 then
-                    file.Idx - 1
-            |])
-
-    let normalPart =
-        files
-        |> Array.skip scriptCompilationLength
-        |> Array.Parallel.map (fun file -> file.Idx, findDependencies file)
-
     let graph =
-        Array.append sequentialPartForScriptCompilation normalPart |> readOnlyDict
+        files
+        |> Array.Parallel.map (fun file -> file.Idx, findDependencies file)
+        |> readOnlyDict
 
     let trie = trie |> Array.last |> snd
 

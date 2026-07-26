@@ -270,7 +270,7 @@ type DebugPointAtTry =
     | No
 
 [<RequireQualifiedAccess>]
-type DebugPointAtLeafExpr = Yes of range
+type DebugPointAtLeafExpr = Yes of isHidden: bool * range: range
 
 [<RequireQualifiedAccess>]
 type DebugPointAtWith =

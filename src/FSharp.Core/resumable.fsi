@@ -123,6 +123,7 @@ type SetStateMachineMethodImpl<'Data> = delegate of byref<ResumableStateMachine<
 type AfterCode<'Data, 'Result> = delegate of byref<ResumableStateMachine<'Data>> -> 'Result
 
 /// Contains compiler intrinsics related to the definition of state machines.
+[<AutoOpen>]
 module StateMachineHelpers = 
 
     /// <summary>

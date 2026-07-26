@@ -174,9 +174,6 @@ jobs:
             RELEASE_NOTES_MESSAGE_DETAILS+=$'**If you believe that release notes are not necessary for this PR, please add <kbd>NO_RELEASE_NOTES</kbd> label to the pull request.**'
             RELEASE_NOTES_MESSAGE_DETAILS+=$'\n'
             RELEASE_NOTES_MESSAGE_DETAILS+=$'\n'
-            RELEASE_NOTES_MESSAGE_DETAILS+=$"**You can open this PR in browser to add release notes: [open in github.dev](https://github.dev/dotnet/fsharp/pull/${PR_NUMBER})**"
-            RELEASE_NOTES_MESSAGE_DETAILS+=$'\n'
-            RELEASE_NOTES_MESSAGE_DETAILS+=$'\n'
             RELEASE_NOTES_MESSAGE_DETAILS+='| Change path      | Release notes path | Description |'
             RELEASE_NOTES_MESSAGE_DETAILS+=$'\n'
             RELEASE_NOTES_MESSAGE_DETAILS+='| ---------------- | ------------------ | ----------- |'
@@ -218,6 +215,8 @@ jobs:
             RELEASE_NOTES_MESSAGE+=$'## :white_check_mark: No release notes required\n\n'
         else
             RELEASE_NOTES_MESSAGE+=$'## :heavy_exclamation_mark: Release notes required\n\n'
+            RELEASE_NOTES_MESSAGE+=$"**You can open this PR in browser to add release notes: [open in github.dev](https://github.dev/dotnet/fsharp/pull/${PR_NUMBER})**"
+            RELEASE_NOTES_MESSAGE+=$'\n\n'
             RELEASE_NOTES_MESSAGE+=$RELEASE_NOTES_MESSAGE_DETAILS
         fi
 

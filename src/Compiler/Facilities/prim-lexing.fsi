@@ -117,6 +117,11 @@ type internal LexBuffer<'Char> =
     /// The currently matched text as a Span, it is only valid until the lexer is advanced
     member LexemeView: System.ReadOnlySpan<'Char>
 
+    /// Length of the currently matched lexeme, in characters. Setting this to a value smaller than the
+    /// actual match effectively rewinds the scanner: the next token will start <c>LexemeLength</c>
+    /// characters into the previously-matched lexeme. Use with caution.
+    member LexemeLength: int with get, set
+
     /// Get single character of matched string
     member LexemeChar: int -> 'Char
 

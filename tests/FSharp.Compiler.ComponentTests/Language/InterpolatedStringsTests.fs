@@ -361,3 +361,83 @@ let s = $"{f.Invoke(42)}"
             """
         |> compileExeAndRun
         |> shouldSucceed
+
+    // Issue 16696: '=' immediately followed (no space) by an interpolated-string opener was
+    // greedily lexed as the invalid operator '=$' instead of '=' + an interpolated string.
+    // The hole {n} proves an interpolated string (not a plain one) is what gets lexed.
+    [<Fact>]
+    let ``Issue 16696 - '=' adjacent to an interpolated string binds it`` () =
+        Fsx """
+let n = 42
+let x =$"{n}"
+if x <> "42" then failwith "expected 42"
+        """
+        |> compileExeAndRun
+        |> shouldSucceed
+
+    // (The triple-quote form '=$"""..."""' is covered by the SyntaxTree baseline
+    // SynExprInterpolatedStringAdjacentEqualsTripleQuote.fs; '=$"' is a prefix of '=$"""', so the
+    // same lexer rule handles it after the rewind.)
+
+    // The reported cases from the issue: named-argument and record-field initialization.
+    [<Fact>]
+    let ``Issue 16696 - '=' adjacent to an interpolated string in named-argument and record contexts`` () =
+        Fsx """
+type C() = member val Name = "" with get, set
+type R = { Name: string }
+let n = 42
+let c = C(Name=$"{n}")
+let r = { Name=$"{n}" }
+if c.Name <> "42" || r.Name <> "42" then failwith "expected 42"
+        """
+        |> compileExeAndRun
+        |> shouldSucceed
+
+    // The verbatim ($@" / @$") forms, also adjacent to '='.
+    [<Fact>]
+    let ``Issue 16696 - '=' adjacent to a verbatim interpolated string binds it`` () =
+        Fsx """
+let n = 42
+let a =$@"{n}"
+let b =@$"{n}"
+if a <> "42" || b <> "42" then failwith "expected 42"
+        """
+        |> compileExeAndRun
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Issue 16696 - '=' adjacent to a verbatim interpolated string in named-argument and record contexts`` () =
+        Fsx """
+type C() = member val Name = "" with get, set
+type R = { Name: string }
+let n = 42
+let c = C(Name=$@"{n}")
+let r = { Name=@$"{n}" }
+if c.Name <> "42" || r.Name <> "42" then failwith "expected 42"
+        """
+        |> compileExeAndRun
+        |> shouldSucceed
+
+    // The extended multi-dollar ($$) form, also adjacent to '='. Note that a $$ string uses double
+    // braces for holes ({{n}}), so {n} would be literal text. Uses an escaped string literal because
+    // the source contains """, which cannot be embedded in an F# """...""" string.
+    [<Fact>]
+    let ``Issue 16696 - '=' adjacent to an extended multi-dollar interpolated string binds it`` () =
+        Fsx "let n = 42\nlet x =$$\"\"\"{{n}}\"\"\"\nif x <> \"42\" then failwith \"expected 42\""
+        |> compileExeAndRun
+        |> shouldSucceed
+
+    // Operator lexing is unchanged: a '$' anywhere in an operator is still reserved (FS0035).
+    // The only thing the fix changes is '=' directly before an interpolated-string opener;
+    // everything below still lexes as an operator exactly as before.
+    [<Theory>]
+    [<InlineData("let x =$abc")>]          // '=$' not before a quote
+    [<InlineData("let (=$) a b = a")>]     // defining (=$)
+    [<InlineData("let f a b = a =$ b")>]   // '=$' used as infix
+    [<InlineData("let (<$>) f x = f x")>]  // '$' inside an operator
+    [<InlineData("let (<=$=>) a b = a")>]  // '$' in the middle of an operator
+    let ``Issue 16696 - operators containing '$' are still rejected (operator lexing unchanged)`` (code: string) =
+        Fsx code
+        |> compile
+        |> shouldFail
+        |> withDiagnosticMessageMatches "is not permitted as a character in operator names"

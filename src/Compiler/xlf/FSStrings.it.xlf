@@ -32,6 +32,16 @@
         <target state="new">Nullness warning: The types '{0}' and '{1}' do not have compatible nullability.</target>
         <note />
       </trans-unit>
+      <trans-unit id="ConstraintSolverNullnessWarningOnDotAccess">
+        <source>Nullness warning: Possible dereference of a null value when accessing member '{0}' on a nullable expression of type '{1}'</source>
+        <target state="new">Nullness warning: Possible dereference of a null value when accessing member '{0}' on a nullable expression of type '{1}'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ConstraintSolverNullnessWarningOnDotAccessWithBinding">
+        <source>Nullness warning: Possible dereference of a null value when accessing member '{0}' on the nullable value '{1}' of type '{2}'</source>
+        <target state="new">Nullness warning: Possible dereference of a null value when accessing member '{0}' on the nullable value '{1}' of type '{2}'</target>
+        <note />
+      </trans-unit>
       <trans-unit id="ErrorFromAddingTypeEquationTuples">
         <source>Type mismatch. Expecting a tuple of length {0} of type\n    {1}    \nbut given a tuple of length {2} of type\n    {3}    {4}\n</source>
         <target state="translated">Tipo non corrispondente. È prevista una tupla di lunghezza {0} di tipo\n   {1}    \n, ma è stata specificata una tupla di lunghezza {2} di tipo\n    {3}{4}\n</target>
@@ -65,6 +75,16 @@
       <trans-unit id="InvalidAttributeTargetForLanguageElement2">
         <source>This attribute is not valid for use on this language element</source>
         <target state="new">This attribute is not valid for use on this language element</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="NONTERM.autoPropsDefnDecl">
+        <source> in auto property definition</source>
+        <target state="new"> in auto property definition</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="NONTERM.classMemberSpfnGetSetElements">
+        <source> in property definition</source>
+        <target state="new"> in property definition</target>
         <note />
       </trans-unit>
       <trans-unit id="NoConstructorsAvailableForType">
@@ -244,7 +264,7 @@
       </trans-unit>
       <trans-unit id="IndeterminateType">
         <source>The type of this expression could not be inferred before accessing its members. Add a type annotation, e.g. (expr: SomeType), to constrain the type before this point.</source>
-        <target state="new">Ricerca in un oggetto di tipo non determinato basato su informazioni che si trovano prima di questo punto del programma. Potrebbe essere necessaria un'annotazione di tipo prima di questo punto del programma per vincolare il tipo dell'oggetto. Questa modifica potrebbe consentire la risoluzione della ricerca.</target>
+        <target state="new">The type of this expression could not be inferred before accessing its members. Add a type annotation, e.g. (expr: SomeType), to constrain the type before this point.</target>
         <note />
       </trans-unit>
       <trans-unit id="NameClash1">
@@ -280,6 +300,11 @@
       <trans-unit id="FieldsFromDifferentTypes">
         <source>The fields '{0}' and '{1}' are from different types</source>
         <target state="translated">I campi '{0}' e '{1}' sono di tipi diversi</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ValNotMutableParameter">
+        <source>The parameter '{0}' is not mutable. Consider shadowing it with a new binding, e.g. 'let {1} = ...'. Use 'let mutable {1} = ...' only if you need to reassign it multiple times.</source>
+        <target state="new">The parameter '{0}' is not mutable. Consider shadowing it with a new binding, e.g. 'let {1} = ...'. Use 'let mutable {1} = ...' only if you need to reassign it multiple times.</target>
         <note />
       </trans-unit>
       <trans-unit id="ValueRestriction">

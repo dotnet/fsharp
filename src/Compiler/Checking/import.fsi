@@ -77,6 +77,10 @@ val internal ImportILTypeRef: ImportMap -> range -> ILTypeRef -> TyconRef
 /// Pre-check for ability to import a reference to a type definition, given an AbstractIL ILTypeRef, with caching
 val internal CanImportILTypeRef: ImportMap -> range -> ILTypeRef -> bool
 
+/// Imports a reference to a type definition (ILTypeRef) as a TyconRef when it can be imported.
+[<return: Struct>]
+val internal (|TryImportILTypeRef|_|): ImportMap -> range -> ILTypeRef -> TyconRef voption
+
 /// Import an IL type as an F# type.
 val internal ImportILType: ImportMap -> range -> TType list -> ILType -> TType
 

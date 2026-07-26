@@ -193,3 +193,28 @@ type MyClass() =
         |> shouldSucceed
         |> verifyAssemblyReference "System.Xml"
         |> ignore
+
+
+    // https://github.com/dotnet/fsharp/issues/19428
+    [<Fact>]
+    let ``Issue_19428_CompilationMappingOnGenericValue`` () =
+        FSharp """
+module GenericValueTest
+
+let l = []
+let empty<'T> = Seq.empty<'T>
+"""
+        |> compile
+        |> shouldSucceed
+        |> verifyIL [
+            """
+  .method public static class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!!a> l<a>() cil managed
+  {
+    .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 09 00 00 00 00 00 )
+"""
+            """
+  .method public static class [runtime]System.Collections.Generic.IEnumerable`1<!!T> empty<T>() cil managed
+  {
+    .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 09 00 00 00 00 00 )
+"""
+        ]

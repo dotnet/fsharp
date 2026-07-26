@@ -8,24 +8,17 @@ module CacheMetrics =
     /// Global telemetry Meter for all caches. Exposed for testing purposes.
     /// Set FSHARP_OTEL_EXPORT environment variable to enable OpenTelemetry export to external collectors in tests.
     val Meter: Meter
+
+    /// Current metric totals aggregated across all cache instances with the given name.
+    /// Totals only accumulate while a listener from ListenToAll is running.
+    val internal getTotalsByName: name: string -> Map<string, int64>
+
+    /// Current hit ratio (hits / (hits + misses)) aggregated across all cache instances with the given name.
+    val internal getRatioByName: name: string -> float
+
     val internal ListenToAll: unit -> IDisposable
     val internal StatsToString: unit -> string
     val internal CaptureStatsAndWriteToConsole: unit -> IDisposable
-
-    /// A listener that captures cache metrics, matching by cache name or exact cache tags.
-    [<Sealed>]
-    type CacheMetricsListener =
-        /// Creates a listener that aggregates metrics across all cache instances with the given name.
-        new: cacheName: string -> CacheMetricsListener
-        /// Gets the current totals for each metric type.
-        member GetTotals: unit -> Map<string, int64>
-        /// Gets the current hit ratio (hits / (hits + misses)).
-        member Ratio: float
-        /// Gets the total number of cache hits.
-        member Hits: int64
-        /// Gets the total number of cache misses.
-        member Misses: int64
-        interface IDisposable
 
 [<RequireQualifiedAccess; NoComparison>]
 type internal EvictionMode =
@@ -74,5 +67,3 @@ type internal Cache<'Key, 'Value when 'Key: not null> =
     member Evicted: IEvent<unit>
     /// For testing only.
     member EvictionFailed: IEvent<unit>
-    /// For testing only. Creates a local telemetry listener for this cache instance.
-    member CreateMetricsListener: unit -> CacheMetrics.CacheMetricsListener

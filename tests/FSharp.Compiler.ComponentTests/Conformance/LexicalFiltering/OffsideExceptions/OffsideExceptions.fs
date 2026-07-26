@@ -242,27 +242,9 @@ module A
         """
         |> typecheck
         |> shouldFail
-        |> withResults [
-             { Error = Error 10
-               Range = { StartLine = 5
-                         StartColumn = 1
-                         EndLine = 5
-                         EndColumn = 3 }
-               Message =
-                "Incomplete structured construct at or before this point in expression" };
-             { Error = Error 589
-               Range = { StartLine = 3
-                         StartColumn = 13
-                         EndLine = 3
-                         EndColumn = 15 }
-               Message =
-                "Incomplete conditional. Expected 'if <expr> then <expr>' or 'if <expr> then <expr> else <expr>'." };
-             { Error = Error 10
-               Range = { StartLine = 5
-                         StartColumn = 31
-                         EndLine = 5
-                         EndColumn = 33 }
-               Message = "Unexpected infix operator in implementation file" }
+        |> withDiagnostics [
+             Error 589, Line 3, Col 13, Line 3, Col 15, "Incomplete conditional. Expected 'if <expr> then <expr>' or 'if <expr> then <expr> else <expr>'."
+             Error 10, Line 5, Col 31, Line 5, Col 33, "Unexpected infix operator in implementation file"
         ] |> ignore
 
 

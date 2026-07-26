@@ -15,7 +15,6 @@ open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Range
 
 /// Represents collected XmlDoc lines
-[<RequireQualifiedAccess>]
 type XmlDoc(unprocessedLines: string[], range: range) =
     let rec processLines (lines: string list) =
         match lines with
@@ -77,7 +76,7 @@ type XmlDoc(unprocessedLines: string[], range: range) =
 
     member doc.Check(paramNamesOpt: string list option) =
         try
-            // Expand <include> directives quietly (emit=false: no FS3887) so that included
+            // Expand <include> directives quietly (emit=false: no FS3891) so that included
             // <param>/<paramref> participate in parameter validation, matching C#/Roslyn.
             // Include errors are reported by the documentation-file writer (emit=true), not
             // here, to avoid double emission.
@@ -231,6 +230,7 @@ type PreXmlDoc =
     | PreXmlMerge of PreXmlDoc * PreXmlDoc
     | PreXmlDoc of pos * XmlDocCollector
     | PreXmlDocEmpty
+    | PreXmlDocPairedWith of inner: PreXmlDoc * extraParamNames: string list
 
     member x.ToXmlDoc(check: bool, paramNamesOpt: string list option) =
         match x with
@@ -251,6 +251,13 @@ type PreXmlDoc =
                     doc.Check(paramNamesOpt)
 
                 doc
+        | PreXmlDocPairedWith(inner, extra) ->
+            let paramNamesOpt =
+                match paramNamesOpt with
+                | Some names -> Some(names @ extra)
+                | None -> None
+
+            inner.ToXmlDoc(check, paramNamesOpt)
 
     member x.Range =
         match x with
@@ -261,6 +268,7 @@ type PreXmlDoc =
             else unionRanges part1.Range part2.Range
         | PreXmlDocEmpty -> range0
         | PreXmlDoc(pos, collector) -> collector.LinesRange pos
+        | PreXmlDocPairedWith(inner, _) -> inner.Range
 
     member x.IsEmpty =
         match x with
@@ -268,10 +276,12 @@ type PreXmlDoc =
         | PreXmlMerge(a, b) -> a.IsEmpty && b.IsEmpty
         | PreXmlDocEmpty -> true
         | PreXmlDoc(pos, collector) -> not (collector.HasComments pos)
+        | PreXmlDocPairedWith(inner, _) -> inner.IsEmpty
 
     member x.MarkAsInvalid() =
         match x with
         | PreXmlDoc(pos, collector) -> collector.SetXmlDocValidity(pos, false)
+        | PreXmlDocPairedWith(inner, _) -> inner.MarkAsInvalid()
         | _ -> ()
 
     static member CreateFromGrabPoint(collector: XmlDocCollector, grabPointPos) =
@@ -283,6 +293,11 @@ type PreXmlDoc =
     static member Create(unprocessedLines, range) = PreXmlDirect(unprocessedLines, range)
 
     static member Merge a b = PreXmlMerge(a, b)
+
+    static member WithExtraParamsForCheck(doc: PreXmlDoc, extraParamNames: string list) =
+        match extraParamNames with
+        | [] -> doc
+        | _ -> PreXmlDocPairedWith(doc, extraParamNames)
 
 [<Sealed>]
 type XmlDocumentationInfo private (tryGetXmlDocument: unit -> XmlDocument option) =

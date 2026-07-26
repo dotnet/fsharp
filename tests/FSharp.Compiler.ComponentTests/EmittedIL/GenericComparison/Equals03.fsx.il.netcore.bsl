@@ -54,34 +54,33 @@
       IL_0003:  nop
       IL_0004:  ldc.i4.0
       IL_0005:  stloc.1
-      IL_0006:  br.s       IL_0038
+      IL_0006:  br.s       IL_0037
 
-      IL_0008:  nop
-      IL_0009:  ldstr      "5"
-      IL_000e:  ldstr      "5"
-      IL_0013:  call       bool [netstandard]System.String::Equals(string,
+      IL_0008:  ldstr      "5"
+      IL_000d:  ldstr      "5"
+      IL_0012:  call       bool [netstandard]System.String::Equals(string,
                                                                    string)
-      IL_0018:  brfalse.s  IL_0031
+      IL_0017:  brfalse.s  IL_0030
 
-      IL_001a:  ldc.r8     6.0999999999999996
-      IL_0023:  ldc.r8     7.0999999999999996
-      IL_002c:  ceq
-      IL_002e:  nop
-      IL_002f:  br.s       IL_0033
+      IL_0019:  ldc.r8     6.0999999999999996
+      IL_0022:  ldc.r8     7.0999999999999996
+      IL_002b:  ceq
+      IL_002d:  nop
+      IL_002e:  br.s       IL_0032
 
-      IL_0031:  ldc.i4.0
-      IL_0032:  nop
-      IL_0033:  stloc.0
-      IL_0034:  ldloc.1
-      IL_0035:  ldc.i4.1
-      IL_0036:  add
-      IL_0037:  stloc.1
-      IL_0038:  ldloc.1
-      IL_0039:  ldc.i4     0x989681
-      IL_003e:  blt.s      IL_0008
+      IL_0030:  ldc.i4.0
+      IL_0031:  nop
+      IL_0032:  stloc.0
+      IL_0033:  ldloc.1
+      IL_0034:  ldc.i4.1
+      IL_0035:  add
+      IL_0036:  stloc.1
+      IL_0037:  ldloc.1
+      IL_0038:  ldc.i4     0x989681
+      IL_003d:  blt.s      IL_0008
 
-      IL_0040:  ldloc.0
-      IL_0041:  ret
+      IL_003f:  ldloc.0
+      IL_0040:  ret
     } 
 
   } 
@@ -100,7 +99,6 @@
   } 
 
 } 
-
 
 
 

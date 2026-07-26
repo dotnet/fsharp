@@ -355,7 +355,7 @@ namespace Microsoft.FSharp.Control
         ///
         /// <returns>A new computation that waits for the input computation to finish.</returns>
         ///
-        /// <category index="3">Cancellation and Exceptions</category>
+        /// <category index="0">Starting Async Computations</category>
         ///
         /// <example id="start-child-1">
         /// <code lang="fsharp">
@@ -1077,6 +1077,7 @@ namespace Microsoft.FSharp.Control
     /// <summary>The F# compiler emits references to this type to implement F# async expressions.</summary>
     ///
     /// <category index="5">Async Internals</category>
+    [<NoEquality; NoComparison>]
     type AsyncReturn
 
     /// <summary>The F# compiler emits references to this type to implement F# async expressions.</summary>

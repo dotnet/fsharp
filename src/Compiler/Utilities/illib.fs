@@ -848,6 +848,13 @@ type DictionaryExtensions() =
         | true, values -> values |> List.exists f
         | _ -> false
 
+[<Extension>]
+type ConcurrentDictionaryExtensions() =
+
+    [<Extension>]
+    static member GetOrAddLazy(dic: ConcurrentDictionary<'key, Lazy<'value>>, key: 'key, factory: 'key -> 'value) =
+        dic.GetOrAdd(key, (fun k -> lazy factory k)).Value
+
 module Lazy =
     let force (x: Lazy<'T>) = x.Force()
 

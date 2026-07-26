@@ -2075,7 +2075,7 @@ module internal DebugPrint =
 
             | Expr.Link rX -> exprL rX.Value |> wrap
 
-            | Expr.DebugPoint(DebugPointAtLeafExpr.Yes m, rX) ->
+            | Expr.DebugPoint(DebugPointAtLeafExpr.Yes(_, m), rX) ->
                 aboveListL [ wordL (tagText "__debugPoint(") ^^ rangeL m ^^ wordL (tagText ")"); exprL rX ]
                 |> wrap
 
@@ -2318,7 +2318,7 @@ module internal DebugPrint =
                 )
             )
             ^^ wordL (tagText tycon.DisplayName)
-            ^^ layoutTyparDecls tycon.TyparsNoRange
+            ^^ layoutTyparDecls tycon.Typars
 
         let lhsL = lhsL --- layoutAttribs tycon.Attribs
 
