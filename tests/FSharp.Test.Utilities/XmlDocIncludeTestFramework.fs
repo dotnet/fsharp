@@ -65,7 +65,7 @@ module XmlDocIncludeTestFramework =
         }
 
     // Text-output verification reads emitted .xml directly, decoupled from the compiler doc reader under test.
-    let tryMemberInner memberName xml =
+    let private tryMemberInner memberName xml =
         if String.IsNullOrWhiteSpace xml then
             failwith "No XML documentation was emitted (did compilation succeed? check the CompilationResult)"
 

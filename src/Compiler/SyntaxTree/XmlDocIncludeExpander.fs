@@ -110,8 +110,8 @@ let private classifyInclude (elem: XElement) : Result<IncludeInfo, string> optio
     then
         None
     else
-        let fileAttr = elem.Attribute(!!(XName.op_Implicit "file"))
-        let pathAttr = elem.Attribute(!!(XName.op_Implicit "path"))
+        let fileAttr = elem.Attribute(XName.Get "file")
+        let pathAttr = elem.Attribute(XName.Get "path")
 
         match fileAttr, pathAttr with
         | NonNull file, NonNull path ->
@@ -130,7 +130,7 @@ let private classifyInclude (elem: XElement) : Result<IncludeInfo, string> optio
 type private ExpansionContext =
     {
         Env: ExpansionEnv
-        InProgressIncludes: HashSet<struct (string * string)>
+        InProgressIncludes: Set<struct (string * string)>
         Depth: int
         Budget: int ref
         BudgetExhaustedWarned: bool ref
@@ -190,12 +190,10 @@ let rec private resolveSingleInclude (baseFileName: string) (includeInfo: Includ
             | Result.Ok [] -> IncludeNoMatch
             | Result.Ok matchedElements ->
                 ctx.Budget.Value <- ctx.Budget.Value - 1
-                let childInProgress = HashSet<struct (string * string)>(ctx.InProgressIncludes)
-                childInProgress.Add(key) |> ignore
 
                 let childCtx =
                     { ctx with
-                        InProgressIncludes = childInProgress
+                        InProgressIncludes = ctx.InProgressIncludes.Add(key)
                         Depth = ctx.Depth + 1
                     }
 
@@ -267,7 +265,7 @@ let expandIncludeLines (env: ExpansionEnv) (emit: bool) (baseFileName: string) (
             let ctx =
                 {
                     Env = env
-                    InProgressIncludes = HashSet<struct (string * string)>()
+                    InProgressIncludes = Set.empty
                     Depth = 0
                     Budget = ref maxIncludeExpansions
                     BudgetExhaustedWarned = ref false

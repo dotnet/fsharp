@@ -2387,11 +2387,11 @@ $ code --diff {outFile} {expectedFile}
                 match fs.OutputDirectory with
                 | Some di -> di
                 | None -> createTemporaryDirectory()
-            
+
             let baseName = defaultArg fs.Name "output"
             let xmlPath = Path.Combine(outputDir.FullName, baseName + ".xml")
-            
-            FS { fs with 
+
+            FS { fs with
                     OutputDirectory = Some outputDir
                     Options = fs.Options @ [ $"--doc:{xmlPath}" ]
                }
@@ -2409,12 +2409,12 @@ $ code --diff {outFile} {expectedFile}
                 let dllBaseName = Path.GetFileNameWithoutExtension(dllPath)
                 let xmlPath1 = Path.Combine(dir, dllBaseName + ".xml")
                 let xmlPath2 = Path.Combine(dir, "output.xml")
-                
+
                 let xmlPath =
                     if File.Exists xmlPath1 then xmlPath1
                     elif File.Exists xmlPath2 then xmlPath2
                     else failwith $"XML doc file not found: tried {xmlPath1} and {xmlPath2}"
-                
+
                 let content = File.ReadAllText(xmlPath)
                 verifyFn content texts
                 result
