@@ -118,6 +118,14 @@ module AnonymousUnionTypes =
         |> verifyCompileAndRun
         |> shouldSucceed
 
+    [<Theory; FileInlineData("AnonPatternMatching2Columns.fs")>]
+    let ``PatternMatching2Columns_fs`` compilation =
+        compilation
+        |> getCompilation
+        |> withLangVersionPreview
+        |> verifyCompileAndRun
+        |> shouldSucceed
+
     [<Theory; FileInlineData("E_AnonWildcard.fs")>]
     let ``E_Wildcard_fs`` compilation =
         compilation
@@ -238,4 +246,15 @@ module AnonymousUnionTypes =
         |> shouldFail
         |> withDiagnostics [
             (Warning 3891, Line 4, Col 10, Line 4, Col 46, "The type 'int -> int' is a subtype of 'int -> int' and will be ignored")
+        ]
+
+    [<Theory; FileInlineData("W_AnonPatternMatching2Columns.fs")>]
+    let ``W_AnonPatternMatching2Columns_fs`` compilation =
+        compilation
+        |> getCompilation
+        |> withLangVersionPreview
+        |> verifyCompile
+        |> shouldFail
+        |> withDiagnostics [
+            (Warning 25, Line 5, Col 11, Line 5, Col 17, "Incomplete pattern matches on this expression. For example, the value '(``some-other-subtype``,``some-other-subtype``)' may indicate a case not covered by the pattern(s).")
         ]
