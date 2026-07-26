@@ -68,6 +68,16 @@ namespace FSharp.Editor.Apex.IntegrationTests.TestFramework
             var config = base.GetVisualStudioHostConfiguration();
             config.AutomaticallyDismissMessageBoxes = this.AutomaticallyDismissMessageBoxes;
             config.RootSuffix = this.RootSuffix;
+
+            // On a fresh experimental hive (e.g. CI), devenv shows a full-screen "Sign in to Visual Studio"
+            // first-launch dialog that blocks the UI thread, so it never registers its DTE automation
+            // object and Apex times out waiting for it. The devenv '/NoSigninPrompt' switch (registered by
+            // Microsoft.VisualStudio.Shell.Connected under AppCommandLine) suppresses that dialog.
+            config.CommandLineArguments =
+                string.IsNullOrEmpty(config.CommandLineArguments)
+                    ? "/NoSigninPrompt"
+                    : config.CommandLineArguments + " /NoSigninPrompt";
+
             return config;
         }
 
