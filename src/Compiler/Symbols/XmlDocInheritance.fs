@@ -181,9 +181,16 @@ and expandInheritDocFromXmlText
                 match xdoc.Root with
                 | null -> xmlText
                 | root ->
-                    root.Nodes()
-                    |> Seq.map (fun node -> node.ToString(SaveOptions.DisableFormatting))
-                    |> String.concat "\n"
+                    let serialized =
+                        root.Nodes()
+                        |> Seq.map (fun node -> node.ToString(SaveOptions.DisableFormatting))
+                        |> String.concat "\n"
+                    // XNode.ToString re-introduces the platform newline (\r\n on Windows/.NET Framework)
+                    // regardless of the LF used to join nodes here. Downstream, XmlDoc.processLines trims
+                    // only spaces, so a line holding a stray '\r' is recognised as neither blank nor XML
+                    // and the whole doc is re-wrapped in an implicit <summary> and XML-escaped. Normalise
+                    // to LF so the spliced markup round-trips as real XML on every platform.
+                    serialized.Replace("\r\n", "\n").Replace("\r", "\n")
         with _ ->
             // Doc-comment inheritance is best-effort: it must never crash a tooltip or the public
             // FSharpSymbol.XmlDoc. Besides XML parse errors, the caller-supplied resolveCref can throw
