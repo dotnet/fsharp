@@ -1258,7 +1258,9 @@ type MethInfo =
         | MethInfoWithModifiedReturnType(mi,_) -> mi.GetCustomAttrs()
         | _ -> ILAttributes.Empty
 
-    /// Returns 0 if the attribute is not present or if targeting a runtime without the attribute.
+    /// Returns 0 if the attribute is not present, if targeting a runtime without the attribute, or
+    /// for an F# override member (an override never carries its own priority — it is fixed by the
+    /// base declaration, matching C#'s "priority on an override is ignored" rule).
     member x.GetOverloadResolutionPriority() : int =
         match x with
         | ILMeth(g, ilMethInfo, _) ->

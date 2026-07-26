@@ -31,8 +31,10 @@ type OverloadResolutionContext =
     }
 
 /// Identifies a tiebreaker rule in overload resolution.
-/// Values are assigned to match the conceptual ordering in F# Language Spec §14.4.
-/// Rules are evaluated in ascending order by their integer value.
+/// The integer values are stable conceptual identifiers matching F# Language Spec §14.4; they do
+/// NOT define evaluation order. The actual evaluation order is the list order of `allTiebreakRules`
+/// (which deliberately runs `MoreConcrete` last — see the rationale there), so do not reorder the
+/// list to match these numbers.
 [<RequireQualifiedAccess>]
 type TiebreakRuleId =
     /// Prefer methods that don't use type-directed conversion
@@ -66,7 +68,8 @@ type TiebreakRuleId =
     /// For properties, prefer more derived type (partial override support)
     | PropertyOverride = 15
 
-/// Rules are ordered by their TiebreakRuleId (lower value = higher priority).
+/// A single tiebreaker rule. Evaluation order is the list order of `allTiebreakRules`, not the
+/// numeric `Id` (which is a report-only conceptual identifier).
 type TiebreakRule =
     {
         Id: TiebreakRuleId
@@ -139,6 +142,17 @@ let private paramsMentionComparableTypeVar (g: TcGlobals) (ps: ParamData list) :
 let private paramsMentionSRTP (g: TcGlobals) (ps: ParamData list) : bool =
     freeInTypesLeftToRight g true (List.map paramDataType ps)
     |> List.exists isStaticallyResolvedTypeParam
+
+/// True if a method's SRTP surface — its method type parameters, called type arguments, or
+/// parameter types — mentions a statically-resolved type variable. SRTP members are excluded from
+/// the concreteness ordering because their instantiation is resolved by trait solving, not by
+/// betterness. Shared by moreConcreteRule's firing gate and the FS0041 diagnostic explainer so the
+/// two cannot drift. Callers pass the already-computed parameter data to avoid recomputing it.
+let private methodMentionsSRTP (g: TcGlobals) (meth: CalledMeth<'T>) (paramData: ParamData list) : bool =
+    (meth.Method.FormalMethodTypars |> List.exists isStaticallyResolvedTypeParam)
+    || (freeInTypesLeftToRight g true meth.CalledTyArgs
+        |> List.exists isStaticallyResolvedTypeParam)
+    || paramsMentionSRTP g paramData
 
 /// Returns 1 if ty1 is more concrete, -1 if ty2 is more concrete, 0 if incomparable.
 let compareTypeConcreteness (g: TcGlobals) ty1 ty2 =
@@ -218,15 +232,16 @@ let explainIncomparableMethodConcreteness<'T>
         meth2.Method.GetParamDatas(ctx.amap, ctx.m, meth2.Method.FormalMethodInst)
         |> List.concat
 
-    // Mirror moreConcreteRule's firing gate so the FS0041 detail only explains cases the rule
-    // actually ranks: both parameter lists must mention a comparable (non-SRTP) type variable
-    // and have equal length, and neither may involve SRTP.
+    // Use moreConcreteRule's exact firing gate (via the shared methodMentionsSRTP) so the FS0041
+    // detail only explains cases the rule actually ranks: both parameter lists must mention a
+    // comparable (non-SRTP) type variable and have equal length, and neither method may involve
+    // SRTP anywhere in its type parameters, type arguments, or parameters.
     if
         formalParams1.Length <> formalParams2.Length
         || not (paramsMentionComparableTypeVar ctx.g formalParams1)
         || not (paramsMentionComparableTypeVar ctx.g formalParams2)
-        || paramsMentionSRTP ctx.g formalParams1
-        || paramsMentionSRTP ctx.g formalParams2
+        || methodMentionsSRTP ctx.g meth1 formalParams1
+        || methodMentionsSRTP ctx.g meth2 formalParams2
     then
         None
     else
@@ -498,15 +513,7 @@ let private getCachedParamData (ctx: OverloadResolutionContext) (meth: CalledMet
 
 let private getCachedHasSRTP (ctx: OverloadResolutionContext) (meth: CalledMeth<Expr>) =
     let computeHasSRTP () =
-        let hasTyparSRTP =
-            meth.Method.FormalMethodTypars |> List.exists isStaticallyResolvedTypeParam
-
-        let hasTyArgSRTP =
-            hasTyparSRTP
-            || (freeInTypesLeftToRight ctx.g true meth.CalledTyArgs
-                |> List.exists isStaticallyResolvedTypeParam)
-
-        hasTyArgSRTP || paramsMentionSRTP ctx.g (getCachedParamData ctx meth)
+        methodMentionsSRTP ctx.g meth (getCachedParamData ctx meth)
 
     match ctx.srtpCache with
     | ValueNone -> computeHasSRTP ()

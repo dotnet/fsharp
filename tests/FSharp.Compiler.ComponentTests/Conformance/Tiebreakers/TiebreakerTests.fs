@@ -20,6 +20,19 @@ type Example =
 let result = Example.Invoke(Some([1]))
         """
 
+    // Shared by the preview/non-preview pair below: two Compare overloads that are each more
+    // concrete at a different position, so the call is incomparable (FS0041) at every langversion.
+    let private incomparableConcretenessSource =
+        """
+module Test
+
+type Example =
+    static member Compare(value: Result<int, 'error>) = "int ok"
+    static member Compare(value: Result<'ok, string>) = "string error"
+
+let result = Example.Compare(Ok 42 : Result<int, string>)
+        """
+
     let genericVsConcreteNestingCases: obj[] seq =
         let case desc source =
             [| desc :> obj; source :> obj |]
@@ -90,16 +103,8 @@ if result <> "{concreteDesc}" then
 
     [<Fact>]
     let ``Example 6 - Incomparable Concreteness - Result int e vs Result t string - ambiguous with helpful message`` () =
-        // Preview is required: the "strictly more concrete" detail is gated behind MoreConcreteTiebreaker (H3).
-        FSharp """
-module Test
-
-type Example =
-    static member Compare(value: Result<int, 'error>) = "int ok"
-    static member Compare(value: Result<'ok, string>) = "string error"
-
-let result = Example.Compare(Ok 42 : Result<int, string>)
-        """
+        // Preview is required: the "strictly more concrete" detail is gated behind MoreConcreteTiebreaker.
+        FSharp incomparableConcretenessSource
         |> withLangVersionPreview
         |> typecheck
         |> shouldFail
@@ -112,18 +117,10 @@ let result = Example.Compare(Ok 42 : Result<int, string>)
 
     [<Fact>]
     let ``Incomparable Concreteness detail is absent under non-preview langversion`` () =
-        // H3 pair with Example 6: same source and harness (typecheck), only the langversion differs.
+        // Pairs with Example 6: same source and harness (typecheck), only the langversion differs.
         // With MoreConcreteTiebreaker off the call is still ambiguous (FS0041) but the plain message
         // must not carry the "strictly more concrete" detail.
-        FSharp """
-module Test
-
-type Example =
-    static member Compare(value: Result<int, 'error>) = "int ok"
-    static member Compare(value: Result<'ok, string>) = "string error"
-
-let result = Example.Compare(Ok 42 : Result<int, string>)
-        """
+        FSharp incomparableConcretenessSource
         |> withLangVersion "9.0"
         |> typecheck
         |> shouldFail
@@ -1456,7 +1453,7 @@ if w.tag <> "A_naked:hi" then failwithf "expected A_naked:hi, got %s" w.tag
         |> shouldSucceed
         |> ignore
 
-    [<Fact>]
+    [<FactForNETCOREAPP>]
     let ``MoreConcrete - overload resolution priority still wins over concreteness`` () =
         // Cross-feature guard: ORPA is a pre-filter applied before any tiebreak, so a high-priority
         // LESS-concrete overload must beat a low-priority MORE-concrete one. The most-concrete rule

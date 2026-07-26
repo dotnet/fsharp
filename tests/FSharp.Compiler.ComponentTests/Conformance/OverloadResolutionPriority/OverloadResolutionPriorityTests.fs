@@ -9,6 +9,28 @@ open Conformance.SharedTestHelpers
 
 module OverloadResolutionPriorityTests =
 
+    // Shared by the preview/non-preview override pair below: an F# override carrying
+    // [<OverloadResolutionPriority>], which is an error (FS3586) only when the feature is on.
+    let private orpOnOverrideSource =
+        """
+module TestORPOnOverride
+
+open System.Runtime.CompilerServices
+
+type Base() =
+    abstract member DoWork: int -> string
+    default _.DoWork(x: int) = "base"
+
+    abstract member DoWork: string -> string
+    default _.DoWork(s: string) = "base-string"
+
+type Derived() =
+    inherit Base()
+
+    [<OverloadResolutionPriority(1)>]
+    override _.DoWork(x: int) = "derived"
+"""
+
     [<FactForNETCOREAPP>]
     let ``OverloadResolutionPriority - comprehensive test`` () =
         FsFromPath (__SOURCE_DIRECTORY__ ++ "ORPTestRunner.fs")
@@ -67,24 +89,7 @@ run ()
 
     [<FactForNETCOREAPP>]
     let ``OverloadResolutionPriority - error on F# override`` () =
-        Fs """
-module TestORPOnOverride
-
-open System.Runtime.CompilerServices
-
-type Base() =
-    abstract member DoWork: int -> string
-    default _.DoWork(x: int) = "base"
-
-    abstract member DoWork: string -> string
-    default _.DoWork(s: string) = "base-string"
-
-type Derived() =
-    inherit Base()
-
-    [<OverloadResolutionPriority(1)>]
-    override _.DoWork(x: int) = "derived"
-"""
+        Fs orpOnOverrideSource
         |> withLangVersionPreview
         |> compile
         |> shouldFail
@@ -93,26 +98,9 @@ type Derived() =
 
     [<FactForNETCOREAPP>]
     let ``OverloadResolutionPriority - override attribute is silent under non-preview langversion`` () =
-        // H3: the ORPA-on-override error (FS3586) is an ORPA-feature diagnostic, so it must not fire
+        // The ORPA-on-override error (FS3586) is an ORPA-feature diagnostic, so it must not fire
         // when the feature is off. Same source as the preview guard above, compiled under 9.0.
-        Fs """
-module TestORPOnOverride
-
-open System.Runtime.CompilerServices
-
-type Base() =
-    abstract member DoWork: int -> string
-    default _.DoWork(x: int) = "base"
-
-    abstract member DoWork: string -> string
-    default _.DoWork(s: string) = "base-string"
-
-type Derived() =
-    inherit Base()
-
-    [<OverloadResolutionPriority(1)>]
-    override _.DoWork(x: int) = "derived"
-"""
+        Fs orpOnOverrideSource
         |> withLangVersion "9.0"
         |> compile
         |> shouldSucceed
@@ -231,7 +219,7 @@ let r = C().M(1, 1)
 
     [<FactForNETCOREAPP>]
     let ``ORPA - same extension class priority beats exact overload`` () =
-        // Complement of the cross-class H6/H7 tests: two extension methods in the *same* static
+        // Complement of the cross-class extension tests: two extension methods in the *same* static
         // class DO have their priorities compared, so the high-priority object overload wins over
         // the exact int overload.
         Fs """

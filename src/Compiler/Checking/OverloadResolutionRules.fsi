@@ -44,8 +44,8 @@ val explainIncomparableMethodConcreteness:
         IncomparableConcretenessInfo option
 
 /// Identifies a tiebreaker rule in overload resolution.
-/// Values are assigned to match the conceptual ordering in F# Language Spec §14.4.
-/// Rules are evaluated in ascending order by their integer value.
+/// The integer values are stable conceptual identifiers matching F# Language Spec §14.4; they do
+/// NOT define evaluation order (that is the list order of `allTiebreakRules`).
 [<RequireQualifiedAccess>]
 type TiebreakRuleId =
     | NoTDC = 1
