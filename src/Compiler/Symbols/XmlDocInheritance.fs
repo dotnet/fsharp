@@ -8,7 +8,7 @@ open System.Xml.XPath
 /// Upper bound on inheritdoc expansion depth. The visited-set guards against CYCLES, but a deep
 /// ACYCLIC explicit-cref chain (A -> B -> C -> ...) recurses non-tail and would eventually raise an
 /// uncatchable StackOverflowException that aborts the process/IDE. Real inheritance chains are only
-/// a few levels deep, so this generous cap never truncates a legitimate chain while bounding the
+/// a few levels deep, so this cap sits well above any expected real-world depth while bounding the
 /// worst case to graceful degradation (the tag past the cap is left unexpanded).
 [<Literal>]
 let private maxInheritDocDepth = 100
