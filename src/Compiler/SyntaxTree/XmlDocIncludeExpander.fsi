@@ -11,7 +11,7 @@ type ExpansionEnv
 val mkExpansionEnv: unit -> ExpansionEnv
 
 /// Expand all <include file="..." path="..."/> elements in the given elaborated XML doc lines.
-/// When `emit` is true, include errors are reported as warnings (FS3891); when false they are
+/// When `emit` is true, include errors are reported as warnings (FS3892); when false they are
 /// suppressed (for quiet validation such as XmlDoc.Check). Returns the input unchanged when there
 /// are no includes, parsing fails, or nothing expanded.
 val expandIncludeLines:

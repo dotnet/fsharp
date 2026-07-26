@@ -76,7 +76,7 @@ type XmlDoc(unprocessedLines: string[], range: range) =
 
     member doc.Check(paramNamesOpt: string list option) =
         try
-            // Expand <include> directives quietly (emit=false: no FS3891) so that included
+            // Expand <include> directives quietly (emit=false: no FS3892) so that included
             // <param>/<paramref> participate in parameter validation, matching C#/Roslyn.
             // Include errors are reported by the documentation-file writer (emit=true), not
             // here, to avoid double emission.
