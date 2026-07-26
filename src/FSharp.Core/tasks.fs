@@ -860,6 +860,7 @@ module ValueTask =
                     | :? System.OperationCanceledException as e -> return! raise e
                     | e -> return handler e
                 }
+
             ValueTask<'T>(t)
 
     [<CompiledName("Catch")>]
