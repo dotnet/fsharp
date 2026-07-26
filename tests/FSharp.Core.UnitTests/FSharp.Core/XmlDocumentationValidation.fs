@@ -15,31 +15,44 @@ let isConditionalDirectiveLine (trimmedLine: string) =
 
 /// Extracts XML documentation blocks from F# signature files
 let extractXmlDocBlocks (content: string) =
-    let lines = content.Split([|'\n'; '\r'|], StringSplitOptions.RemoveEmptyEntries)
-    let mutable xmlBlocks = []
-    let mutable currentBlock = []
-    let mutable lineNumber = 0
+    seq {
+        let currentBlock = ResizeArray<_>()
+        let tryFlushCurrentBlock () =
+            if currentBlock.Count > 0 then
+                let block = currentBlock |> Seq.toList
+                currentBlock.Clear()
+                Some block
+            else
+                None
 
-    for line in lines do
-        lineNumber <- lineNumber + 1
-        let trimmedLine = line.Trim()
-        if trimmedLine.StartsWith("///") then
-            let xmlContent = trimmedLine.Substring(3).Trim()
-            currentBlock <- (xmlContent, lineNumber) :: currentBlock
-        elif isConditionalDirectiveLine trimmedLine then
-            // Keep the current XML documentation block open across conditional directives.
-            // This supports docs that are split by #if/#else/#endif in .fsi files.
-            ()
-        else
-            if not (List.isEmpty currentBlock) then
-                xmlBlocks <- List.rev currentBlock :: xmlBlocks
-                currentBlock <- []
-    
-    // Don't forget the last block if file ends with XML comments
-    if not (List.isEmpty currentBlock) then
-        xmlBlocks <- List.rev currentBlock :: xmlBlocks
-    
-    List.rev xmlBlocks
+        use reader = new StringReader(content)
+        let mutable lineNumber = 0
+        let mutable line = reader.ReadLine()
+
+        while not (isNull line) do
+            lineNumber <- lineNumber + 1
+            let trimmed = line.Trim()
+
+            if trimmed.StartsWith("///") then
+                let xmlContent = trimmed.Substring(3).Trim()
+                if not (String.IsNullOrWhiteSpace xmlContent) then
+                    currentBlock.Add((xmlContent, lineNumber))
+            elif isConditionalDirectiveLine trimmed || trimmed.Length = 0 then
+                // Keep the current XML documentation block open across conditional directives and blank lines
+                // Handles docs that have internal #if/#else/#endif guards within xmldoc blocks to cover TFM variations.
+                ()
+            else    
+                match tryFlushCurrentBlock () with
+                | Some block -> yield block
+                | None -> ()
+
+            line <- reader.ReadLine()
+
+        // Don't forget the last block if file ends with XML comments
+        match tryFlushCurrentBlock () with
+        | Some block -> yield block
+        | None -> ()
+    }
 
 /// Validates that XML content is well-formed
 let validateXmlBlock (xmlLines: (string * int) list) =
