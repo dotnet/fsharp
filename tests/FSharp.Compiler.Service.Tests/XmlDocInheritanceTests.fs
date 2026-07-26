@@ -221,6 +221,27 @@ d.Fo{caret}o()
     Assert.DoesNotContain("<inheritdoc", xmlText xml)
 
 [<Fact>]
+let ``tooltip expands implicit inheritdoc on overriding multi-argument method`` () =
+    let xml =
+        getTooltipXml
+            """
+module Test
+type Base() =
+    /// <summary>Base add summary</summary>
+    abstract member Add: x: int -> y: int -> int
+    default _.Add(x, y) = x + y
+type Derived() =
+    inherit Base()
+    /// <inheritdoc/>
+    override _.Add(x, y) = x + y + 1
+let d = Derived()
+d.Ad{caret}d 1 2
+"""
+
+    Assert.Contains("Base add summary", xmlText xml)
+    Assert.DoesNotContain("<inheritdoc", xmlText xml)
+
+[<Fact>]
 let ``tooltip expands implicit inheritdoc on overriding property`` () =
     let xml =
         getTooltipXml

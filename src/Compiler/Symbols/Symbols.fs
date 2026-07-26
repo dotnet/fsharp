@@ -345,9 +345,10 @@ module Impl =
 
         // A name-only member cref (no parameter signature) cannot disambiguate overloads, so building
         // one for an overloaded target lets the name-based resolver surface a sibling overload's docs.
-        // Only treat the target as resolvable when it declares a single member of that name. Abstract+
-        // default and a property's get/set each collapse to one MethInfo/PropInfo, so plain virtual
-        // overrides and read/write properties are unaffected; only genuine overload sets (2+) are blocked.
+        // Only treat the target as resolvable when it declares a single member of that name. An abstract
+        // method and its default collapse to one signature, and a property's get/set to one PropInfo, so
+        // plain virtual overrides and read/write properties are unaffected; only genuine overload sets
+        // (2+) are blocked.
         let targetHasUniqueMember (targetTy: TType) (memberName: string) : bool =
             try
                 match d with
@@ -362,18 +363,29 @@ module Impl =
                     | [ _ ] -> true
                     | _ -> false
                 | _ ->
-                    // abstract + default declarations of one method are two MethInfos sharing a
-                    // signature; collapse them so only genuinely distinct overloads count towards
-                    // ambiguity (a single virtual override must still resolve).
+                    // Abstract slots and their default implementations surface as two MethInfos whose
+                    // curried-vs-flattened arities (e.g. [1;1] vs [2] for a two-parameter member) defeat
+                    // the arity-strict MethInfosEquivByNameAndSig, making a single valid virtual override
+                    // look like an overload set. Such a pair shares an XML doc signature, so treat methods
+                    // with an equal signature as one member. The IL doc signature omits the return type, so
+                    // also require return-type equivalence to keep op_Implicit/op_Explicit conversion
+                    // overloads (which legally differ only by return type) counted as distinct.
                     let minfos = GetImmediateIntrinsicMethInfosOfType (Some memberName, AccessibleFromSomeFSharpCode) cenv.g cenv.amap range0 targetTy
-                    let distinctOverloads =
+                    let docSig (mi: MethInfo) =
+                        match GetXmlDocSigOfMethInfo cenv.infoReader range0 mi with
+                        | Some(_, s) when s <> "" -> s
+                        | _ -> mi.LogicalName + "@" + string mi.NumArgs
+                    let sameMember (a: MethInfo) (b: MethInfo) =
+                        docSig a = docSig b &&
+                        match a.GetCompiledReturnType(cenv.amap, range0, a.FormalMethodInst),
+                              b.GetCompiledReturnType(cenv.amap, range0, b.FormalMethodInst) with
+                        | Some ra, Some rb -> typeEquiv cenv.g ra rb
+                        | None, None -> true
+                        | _ -> false
+                    let distinctMembers =
                         minfos
-                        |> List.fold (fun acc mi ->
-                            if acc |> List.exists (fun e -> MethInfosEquivByNameAndSig EraseNone true cenv.g cenv.amap range0 e mi) then
-                                acc
-                            else
-                                mi :: acc) []
-                    List.length distinctOverloads <= 1
+                        |> List.fold (fun acc mi -> if acc |> List.exists (sameMember mi) then acc else mi :: acc) []
+                    List.length distinctMembers <= 1
             with _ -> true
 
         match slotSigs with

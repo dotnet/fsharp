@@ -1744,29 +1744,10 @@ type TypeA() = class end
 /// <inheritdoc cref="T:Test.TypeA"/>
 type TypeB() = class end
 """
-        let _, checkResults = getParseAndCheckResults code
-
-        let typeASymbol = findSymbolByName "TypeA" checkResults
-        let xmlDocA = (typeASymbol :?> FSharpEntity).XmlDoc
-
-        let typeBSymbol = findSymbolByName "TypeB" checkResults
-        let xmlDocB = (typeBSymbol :?> FSharpEntity).XmlDoc
-
-        // Circular references should not crash; the result should still be FromXmlText
-        match xmlDocA, xmlDocB with
-        | FSharpXmlDoc.FromXmlText tA, FSharpXmlDoc.FromXmlText tB ->
-            let textA = tA.UnprocessedLines |> String.concat "\n"
-            let textB = tB.UnprocessedLines |> String.concat "\n"
-            Assert.NotEmpty(textA)
-            Assert.NotEmpty(textB)
-            // Cycle detection should prevent the <inheritdoc> from expanding infinitely.
-            // One type may resolve (getting the other's unexpanded doc), but at least one
-            // will still contain the unresolved <inheritdoc> element.
-            Assert.True(
-                textA.Contains("<inheritdoc") || textB.Contains("<inheritdoc"),
-                "At least one circular reference should retain <inheritdoc> due to cycle detection"
-            )
-        | _ -> failwith "Expected both types to have FromXmlText XmlDoc"
+        // Cycle detection must terminate without crashing. The cyclic <inheritdoc> is dropped rather
+        // than expanded infinitely (Roslyn-consistent), so neither doc retains an <inheritdoc> marker.
+        Assert.DoesNotContain("<inheritdoc", getEntityXmlText code "TypeA")
+        Assert.DoesNotContain("<inheritdoc", getEntityXmlText code "TypeB")
 
     [<Theory>]
     [<InlineData("ServiceImpl", "Service interface")>]
@@ -2166,19 +2147,15 @@ type DerivedType() = class end
         let code = """
 module Test
 
+/// <summary>My own docs</summary>
 /// <inheritdoc cref="T:NonExistent.Type"/>
 type MyType() = class end
 """
-        let _, checkResults = getParseAndCheckResults code
-        let symbol = findSymbolByName "MyType" checkResults
-        let xmlDoc = (symbol :?> FSharpEntity).XmlDoc
-        // Should not crash; the unresolvable <inheritdoc> is left in place
-        match xmlDoc with
-        | FSharpXmlDoc.FromXmlText t ->
-            let xmlText = t.UnprocessedLines |> String.concat "\n"
-            // The inheritdoc element remains because the cref target doesn't exist
-            Assert.Contains("inheritdoc", xmlText)
-        | _ -> failwith "Expected FromXmlText"
+        let xmlText = getEntityXmlText code "MyType"
+        // An unresolvable cref inherits nothing, so the <inheritdoc> is dropped (Roslyn-consistent)
+        // without crashing; the type's own documentation is preserved.
+        Assert.Contains("My own docs", xmlText)
+        Assert.DoesNotContain("inheritdoc", xmlText)
 
     [<Fact>]
     let ``inheritdoc preserves surrounding doc elements``() =
@@ -2230,19 +2207,16 @@ module Test
 /// <summary>Base type docs</summary>
 type BaseType() = class end
 
+/// <summary>Derived own docs</summary>
 /// <inheritdoc cref="T:Test.BaseType" path="[[[invalid"/>
 type DerivedType() = class end
 """
-        let _, checkResults = getParseAndCheckResults code
-        let symbol = findSymbolByName "DerivedType" checkResults
-        let xmlDoc = (symbol :?> FSharpEntity).XmlDoc
-        // Should not crash; invalid XPath falls back to using the full inherited doc
-        match xmlDoc with
-        | FSharpXmlDoc.FromXmlText t ->
-            let xmlText = t.UnprocessedLines |> String.concat "\n"
-            Assert.Contains("Base type docs", xmlText)
-            Assert.DoesNotContain("inheritdoc", xmlText)
-        | _ -> failwith "Expected FromXmlText"
+        let xmlText = getEntityXmlText code "DerivedType"
+        // An invalid XPath selects no inherited content, so the <inheritdoc> is dropped without
+        // crashing; the derived type's own documentation is preserved.
+        Assert.Contains("Derived own docs", xmlText)
+        Assert.DoesNotContain("Base type docs", xmlText)
+        Assert.DoesNotContain("inheritdoc", xmlText)
 
     [<Fact>]
     let ``inheritdoc with field cref should resolve``() =
