@@ -167,4 +167,32 @@
     <!-- -->
   </PropertyGroup>
 
+  <!-- Apex VS integration-test leg: build the F# VSIX against the Roslyn version the *installed* VS
+       ships, instead of the repo's forward pin (which targets the VS being inserted into and is newer
+       than any CI/scout VS image). Otherwise the deployed FSharpPackage/FSharpProjectPackage fail to load
+       with FileNotFoundException on Microsoft.VisualStudio.LanguageServices, and every Apex test fails.
+       FSHARP_APEX_ROSLYN_VERSION is set (only in the Apex CI job) by eng/SetApexRoslynVersion.ps1, which
+       reads the installed VS's Roslyn assembly version and resolves the matching NuGet version. The F#
+       editor references Roslyn compile-only (ExcludeAssets=runtime), so only this compile-time version
+       must match; nothing Roslyn ships in the VSIX. This does NOT change the committed pin. -->
+  <PropertyGroup Condition="'$(FSHARP_APEX_ROSLYN_VERSION)' != ''">
+    <MicrosoftCodeAnalysisPackageVersion>$(FSHARP_APEX_ROSLYN_VERSION)</MicrosoftCodeAnalysisPackageVersion>
+    <MicrosoftCodeAnalysisCompilersPackageVersion>$(FSHARP_APEX_ROSLYN_VERSION)</MicrosoftCodeAnalysisCompilersPackageVersion>
+    <MicrosoftCodeAnalysisCSharpPackageVersion>$(FSHARP_APEX_ROSLYN_VERSION)</MicrosoftCodeAnalysisCSharpPackageVersion>
+    <MicrosoftCodeAnalysisEditorFeaturesPackageVersion>$(FSHARP_APEX_ROSLYN_VERSION)</MicrosoftCodeAnalysisEditorFeaturesPackageVersion>
+    <MicrosoftCodeAnalysisEditorFeaturesTextPackageVersion>$(FSHARP_APEX_ROSLYN_VERSION)</MicrosoftCodeAnalysisEditorFeaturesTextPackageVersion>
+    <MicrosoftCodeAnalysisExternalAccessFSharpPackageVersion>$(FSHARP_APEX_ROSLYN_VERSION)</MicrosoftCodeAnalysisExternalAccessFSharpPackageVersion>
+    <MicrosoftCodeAnalysisFeaturesPackageVersion>$(FSHARP_APEX_ROSLYN_VERSION)</MicrosoftCodeAnalysisFeaturesPackageVersion>
+    <MicrosoftVisualStudioLanguageServicesPackageVersion>$(FSHARP_APEX_ROSLYN_VERSION)</MicrosoftVisualStudioLanguageServicesPackageVersion>
+    <!-- Re-derive the consumed *Version props (Version.Details.props captured them from the old pin). -->
+    <MicrosoftCodeAnalysisVersion>$(FSHARP_APEX_ROSLYN_VERSION)</MicrosoftCodeAnalysisVersion>
+    <MicrosoftCodeAnalysisCompilersVersion>$(FSHARP_APEX_ROSLYN_VERSION)</MicrosoftCodeAnalysisCompilersVersion>
+    <MicrosoftCodeAnalysisCSharpVersion>$(FSHARP_APEX_ROSLYN_VERSION)</MicrosoftCodeAnalysisCSharpVersion>
+    <MicrosoftCodeAnalysisEditorFeaturesVersion>$(FSHARP_APEX_ROSLYN_VERSION)</MicrosoftCodeAnalysisEditorFeaturesVersion>
+    <MicrosoftCodeAnalysisEditorFeaturesTextVersion>$(FSHARP_APEX_ROSLYN_VERSION)</MicrosoftCodeAnalysisEditorFeaturesTextVersion>
+    <MicrosoftCodeAnalysisExternalAccessFSharpVersion>$(FSHARP_APEX_ROSLYN_VERSION)</MicrosoftCodeAnalysisExternalAccessFSharpVersion>
+    <MicrosoftCodeAnalysisFeaturesVersion>$(FSHARP_APEX_ROSLYN_VERSION)</MicrosoftCodeAnalysisFeaturesVersion>
+    <MicrosoftVisualStudioLanguageServicesVersion>$(FSHARP_APEX_ROSLYN_VERSION)</MicrosoftVisualStudioLanguageServicesVersion>
+  </PropertyGroup>
+
 </Project>

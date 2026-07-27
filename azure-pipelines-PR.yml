@@ -527,6 +527,12 @@ stages:
           - powershell: eng\SetupVSHive.ps1
             displayName: Setup VS Hive
 
+          # Detect the installed VS's Roslyn version and set FSHARP_APEX_ROSLYN_VERSION so the VSIX below
+          # is built against it (the repo's forward Roslyn pin is newer than any CI/scout VS, so a VSIX
+          # built against the pin cannot load its Roslyn assemblies in the installed VS). Non-fatal.
+          - powershell: eng\SetApexRoslynVersion.ps1
+            displayName: Detect CI VS Roslyn version for Apex VSIX build
+
           # Build + deploy the F# VSIX into the RoslynDev hive, then run the Apex tests. The Apex host
           # resolves the installed VS via LocateVisualStudio (set as VisualStudio.InstallationUnderTest.Path
           # by the -testApex path), so it does not depend on the local-only 'Canary' milestone.
