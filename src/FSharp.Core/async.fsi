@@ -47,8 +47,9 @@ namespace Microsoft.FSharp.Control
     [<CompiledName("FSharpAsync")>]
     type Async =
 
-        /// <summary><p>Runs the asynchronous computation on a threadpool thread</p>
-        /// <p>During processing, the calling thread blocks awaiting the outcome.</p>
+        /// <summary><p>Runs the computation and blocks the caller until it completes.</p>
+        /// <p>Runs inline on the calling thread when it is a thread-pool thread with no ambient SynchronizationContext
+        /// and no timeout; otherwise runs on the thread pool.</p>
         /// </summary>
         /// <remarks>
         /// <p>Note For F# interactive, F# scripts, and unit tests consider using
