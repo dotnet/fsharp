@@ -6,23 +6,6 @@ open FSharp.Test.Assert
 open FSharp.Test.Compiler.Assertions.TextBasedDiagnosticAsserts
 open Xunit
 
-let private assertItemsWithNames contains names (completionInfo: DeclarationListInfo) =
-    let itemNames =
-        completionInfo.Items
-        |> Array.map _.NameInCode
-        |> Array.map normalizeNewLines
-        |> set
-
-    for name in names do
-        let name = normalizeNewLines name
-        Set.contains name itemNames |> shouldEqual contains
-
-let assertHasItemWithNames names (completionInfo: DeclarationListInfo) =
-    assertItemsWithNames true names completionInfo
-
-let assertHasNoItemsWithNames names (completionInfo: DeclarationListInfo) =
-    assertItemsWithNames false names completionInfo
-
 [<Fact>]
 let ``Expr - After record decl 01`` () =
     let info = Checker.getCompletionInfo """
@@ -438,9 +421,6 @@ module Options =
 
         let assertItemAllowed name source =
             assertItemWithOptions [allowObsoleteOptions] name source
-
-        let assertItemNotAllowed name source =
-            assertItemWithOptions [disallowObsoleteOptions] name source
 
         [<Fact>]
         let ``Prop - Instance 01`` () =
