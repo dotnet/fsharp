@@ -823,6 +823,28 @@ let mkSynBinding
     let mBind = unionRangeWithXmlDoc xmlDoc mBind
     SynBinding(vis, SynBindingKind.Normal, isInline, isMutable, attrs, xmlDoc, info, headPat, retTyOpt, rhsExpr, mBind, spBind, trivia)
 
+/// A compiler-generated `let!` binding, as produced while desugaring computation expressions: the
+/// usual binding defaults with the leading keyword marked as `let!` at mKeyword.
+let mkSynLetBangBinding mKeyword headPat rhs debugPoint mBind =
+    SynBinding(
+        accessibility = None,
+        kind = SynBindingKind.Normal,
+        isInline = false,
+        isMutable = false,
+        attributes = [],
+        xmlDoc = PreXmlDoc.Empty,
+        valData = SynInfo.emptySynValData,
+        headPat = headPat,
+        returnInfo = None,
+        expr = rhs,
+        range = mBind,
+        debugPoint = debugPoint,
+        trivia =
+            { SynBindingTrivia.Zero with
+                LeadingKeyword = SynLeadingKeyword.LetBang mKeyword
+            }
+    )
+
 let NonVirtualMemberFlags k : SynMemberFlags =
     {
         MemberKind = k

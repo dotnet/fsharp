@@ -55,7 +55,7 @@ type CustomAttribute() =
         |> typecheck
         |> shouldSucceed
 
-    // https://github.com/dotnet/fsharp/issues/5795 - attribute on union case in rec module is not yet resolved
+    // https://github.com/dotnet/fsharp/issues/5795 - attribute on union case in rec module now resolves
     [<Fact>]
     let ``Issue 5795 - attribute on union case in rec module`` () =
         FSharp """
@@ -67,11 +67,9 @@ type CustomAttribute() =
 type A = | [<CustomAttribute>] A
         """
         |> typecheck
-        |> shouldFail
-        |> withDiagnostics
-            [ Error 1133, Line 7, Col 14, Line 7, Col 29, "No constructors are available for the type 'CustomAttribute'" ]
+        |> shouldSucceed
 
-    // https://github.com/dotnet/fsharp/issues/5795 - attribute on type parameter in rec module is not yet resolved
+    // https://github.com/dotnet/fsharp/issues/5795 - attribute on type parameter in rec module now resolves
     [<Fact>]
     let ``Issue 5795 - attribute on type parameter in rec module`` () =
         FSharp """
@@ -83,8 +81,7 @@ type CustomAttribute() =
 type B<[<CustomAttribute>]'a> = | B of 'a
         """
         |> typecheck
-        |> shouldFail
-        |> withErrorCode 39
+        |> shouldSucceed
 
     // Nested module case: open inside outer module, attribute on inner module
     [<Fact>]
