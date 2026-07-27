@@ -277,7 +277,9 @@ let visitSynType (t: SynType) : FileContentEntry list =
             let continuations = List.map (snd >> visit) fields
             Continuation.concatenate continuations continuation
         | SynType.AnonUnion(cases, _) ->
-            let continuations = cases |> List.map (fun (SynAnonUnionCase(typ, _, _)) -> visit typ)
+            let continuations =
+                cases |> List.map (fun (SynAnonUnionCase(typ, _, _)) -> visit typ)
+
             Continuation.concatenate continuations continuation
         | SynType.Array(elementType = elementType) -> visit elementType continuation
         | SynType.WithNull(innerType = innerType) -> visit innerType continuation

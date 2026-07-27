@@ -1696,11 +1696,33 @@ and SolveTypeSubsumesType (csenv: ConstraintSolverEnv) ndeep m2 (trace: Optional
         //    sty2 :> ICloneable OR
         // when sty2 is not an erased union type
         | TType_anon_union (_, cases1), _ ->
-            match cases1 |> List.tryFind (fun ty1 -> TypeFeasiblySubsumesType ndeep g amap csenv.m ty1 CanCoerce sty2) with
-            | Some ty1 ->
+            let feasibleCases =
+                cases1 |> FilterEachThenUndo (fun trace ty1 ->
+                    SolveTypeSubsumesType csenv ndeep m2 (WithTrace trace) cxsln ty1 sty2)
+
+            match feasibleCases with
+            | [] ->
+                ErrorD (ConstraintSolverError(
+                    FSComp.SR.csAnonUnionTypeNotContained(
+                        NicePrint.minimalStringOfType denv sty2,
+                        NicePrint.minimalStringOfType denv sty1),
+                    csenv.m, m2))
+            | [(ty1, _, _, _)] ->
                 SolveTypeSubsumesType csenv ndeep m2 trace cxsln ty1 sty2
-            | None ->
-                ErrorD (ConstraintSolverError(FSComp.SR.csAnonUnionTypeNotContained(NicePrint.minimalStringOfType denv sty2, NicePrint.minimalStringOfType denv sty1), csenv.m, m2))
+            | _ ->
+                csenv.SolverState.PushPostInferenceCheck(preDefaults=true, check=fun () ->
+                    let definiteCases =
+                        cases1 |> List.filter (fun ty1 ->
+                            TypeDefinitelySubsumesTypeNoCoercion ndeep g amap csenv.m ty1 sty2)
+                    match definiteCases with
+                    | [ty1] -> SolveTypeSubsumesType csenv ndeep m2 trace cxsln ty1 sty2 |> RaiseOperationResult
+                    | _ ->
+                        ErrorD (ConstraintSolverError(
+                            FSComp.SR.csAnonUnionTypeAmbiguous(
+                                NicePrint.minimalStringOfType denv sty2,
+                                NicePrint.minimalStringOfType denv sty1),
+                            csenv.m, m2)) |> RaiseOperationResult)
+                CompleteD
 
         | _ ->
             // By now we know the type is not a variable type

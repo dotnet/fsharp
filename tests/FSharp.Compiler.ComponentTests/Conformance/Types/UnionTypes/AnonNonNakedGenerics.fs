@@ -6,5 +6,5 @@ let decide<'T, 'U>(x: (list<'T> | list<'U>)): int =
     | :? list<'T> -> 0
     | :? list<'U> -> 1
 
-if not (decide<int, string>([1]) = 0) then failwith "Test failed"
-if not (decide<int, string>(["asd"]) = 1) then failwith "Test failed"
+if not (decide<int, string> [1] = 0) then failwith "Test failed"
+if not (decide<int, string> ["asd"] = 1) then failwith "Test failed"
