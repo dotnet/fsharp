@@ -47,8 +47,7 @@ namespace Microsoft.FSharp.Control
     [<CompiledName("FSharpAsync")>]
     type Async =
 
-        /// <summary><p>Runs the asynchronous computation on a threadpool thread, honoring the ambient
-        /// <see cref="T:System.Threading.SynchronizationContext"/>.</p>
+        /// <summary><p>Runs the asynchronous computation on a threadpool thread</p>
         /// <p>During processing, the calling thread blocks awaiting the outcome.</p>
         /// </summary>
         /// <remarks>
