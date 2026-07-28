@@ -5,6 +5,10 @@ open System.Reflection
 open System.Text
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.ILBinaryReader
+open FSharp.Compiler.Diagnostics
+open FSharp.Compiler.Service.Tests.Common
+// The synthetic ILModuleReader harness (ModuleReader, referenceReaderProjectWithTypeDefs).
+open FSharp.Compiler.Service.Tests.ModuleReaderCancellationTests
 open FSharp.Test.Compiler
 open FSharp.Test.Assert
 open Xunit
@@ -356,6 +360,273 @@ let ``Nested types - grouping keeps them under the declaring type`` () =
     let nsContents = (typeDefs.AsArrayOfPreNamespaces() |> Array.exactlyOne).GetContents()
     let struct (_, outerPre) = nsContents.AsArrayOfPreTypeDefs() |> Array.exactlyOne
     outerPre.GetTypeDef().NestedTypes.AsArray() |> Array.map (fun td -> td.Name) |> shouldEqual [| "Inner" |]
+
+
+// ---- End-to-end: what checking a file actually reads out of a reference ------------------------
+//
+// The tests above pin the reader API in isolation. These pin the guarantee it exists for: checking a
+// file must pull only the namespaces it names out of a referenced assembly. A regression is easy to
+// introduce far from the reader - anything that walks a CCU's whole ModuleOrNamespaceType realises
+// every namespace of it, and every type in them (addConstraintSources in CompilerImports did exactly
+// that for every referenced assembly, F# or not).
+
+/// A type to put in the synthetic reference assembly.
+type private TypeShape =
+    { Name: string
+      Namespace: string list
+      /// Names of the types nested in it (leaves themselves).
+      Nested: string list
+      /// Full name of a base type in the same assembly.
+      Extends: string option }
+
+let private shape name ns =
+    { Name = name; Namespace = ns; Nested = []; Extends = None }
+
+let private fullName ns name = String.concat "." (ns @ [ name ])
+
+/// Resolved by simple name against the project's references, so System.Object can be named.
+let private systemRuntimeScopeRef =
+    ILScopeRef.Assembly(ILAssemblyRef.Create("System.Runtime", None, None, false, None, None))
+
+/// What a check pulled out of the reference, by full type name ("Ns.T", nested as "Ns.T+Inner").
+type private ReadLog() =
+    member val TypeDefs = HashSet<string>()
+    member val Members = HashSet<string>()
+    member val NestedTypes = HashSet<string>()
+    member val CustomAttrs = HashSet<string>()
+
+let private sorted (names: HashSet<string>) = List.ofSeq names |> List.sort
+
+/// A pre-type-def that records reading its type def, and each part of it read afterwards.
+///
+/// `ilName` follows the reader's convention: a top-level type def carries its full name (that is what
+/// readBlobHeapAsTypeName gives it) while the pre-type-def carries the simple one; a nested type def
+/// carries the simple name, since nested rows have no namespace. Import rebuilds a nested type's
+/// ILTypeRef from its declaring type def's name, so a simple name there resolves in the wrong namespace.
+let rec private trackedPreTypeDefWith
+    (log: ReadLog)
+    (attributes: TypeAttributes)
+    (ilName: string)
+    (path: string)
+    (ty: TypeShape)
+    : ILPreTypeDef =
+    let methods =
+        mkILMethodsComputed (fun () ->
+            log.Members.Add path |> ignore
+            [||])
+
+    let nested =
+        mkILTypeDefsComputed (fun () ->
+            log.NestedTypes.Add path |> ignore
+
+            [| for name in ty.Nested ->
+                   struct ([],
+                           trackedPreTypeDefWith log TypeAttributes.NestedPublic name $"{path}+{name}" (shape name [])) |])
+
+    let customAttrs =
+        ILAttributesStored.CreateReader(
+            0,
+            fun _ ->
+                log.CustomAttrs.Add path |> ignore
+                [||]
+        )
+
+    // A type with no base type of its own still derives from System.Object, as any class emitted by a
+    // compiler does - otherwise a member lookup on it has no hierarchy to walk and simply fails.
+    let extends =
+        let scope, name =
+            match ty.Extends with
+            | Some name -> ILScopeRef.Local, name
+            | None -> systemRuntimeScopeRef, "System.Object"
+
+        Some(mkILBoxedType (mkILNonGenericTySpec (mkILTyRef (scope, name))))
+
+    // One instance, as a real reader's pre-type-def hands out: import holds on to the one it was given.
+    let typeDef =
+        ILTypeDef(ilName, attributes, ILTypeDefLayout.Auto, [], [], extends,
+            methods, nested, mkILFields [], emptyILMethodImpls, mkILEvents [],
+            mkILProperties [], emptyILSecurityDecls, customAttrs)
+
+    { new ILPreTypeDef with
+        member _.Name = ty.Name
+
+        member _.GetTypeDef() =
+            log.TypeDefs.Add path |> ignore
+            typeDef }
+
+let private trackedPreTypeDef log (ty: TypeShape) =
+    let path = fullName ty.Namespace ty.Name
+    trackedPreTypeDefWith log TypeAttributes.Public path path ty
+
+/// Check `source` against a reference assembly built from `shapes`, and report what it read.
+let private checkAgainstReference (shapes: TypeShape list) (source: string) =
+    let log = ReadLog()
+
+    let typeDefs =
+        mkILTypeDefsComputed (fun () ->
+            [| for s in shapes -> struct (s.Namespace, trackedPreTypeDef log s) |])
+
+    let path, options = mkTestFileAndOptions [||]
+    let options = referenceReaderProjectWithTypeDefs typeDefs false options
+
+    let _, results = parseAndCheckFile path source options
+
+    results.Diagnostics
+    |> Array.filter (fun d -> d.Severity = FSharpDiagnosticSeverity.Error)
+    |> Array.map _.Message
+    |> shouldEqual [||]
+
+    log
+
+/// Types at several namespace depths, with a sibling at each and a nested type in Ns1.A.
+let private referenceShapes =
+    [ shape "G" []
+      { shape "A" [ "Ns1" ] with Nested = [ "Inner" ] }
+      shape "B" [ "Ns1" ]
+      shape "D" [ "Ns1"; "Deep" ]
+      shape "X" [ "Ns2" ] ]
+
+let private useNs1A = """
+module Module
+
+let f (x: Ns1.A) = x
+"""
+
+[<Fact>]
+let ``Laziness - checking a file reads only the namespaces it names`` () =
+    let log = checkAgainstReference referenceShapes useNs1A
+
+    // Ns1.B comes along with Ns1.A, and G with the root level that names Ns1: import granularity is the
+    // namespace level, not the type, since building an entity for one type needs its ILTypeDef. What
+    // matters is that the levels not on the path - Ns1.Deep and Ns2 - are never read.
+    sorted log.TypeDefs |> shouldEqual [ "G"; "Ns1.A"; "Ns1.B" ]
+
+[<Fact>]
+let ``Laziness - checking a file builds no pre-type-def for un-named namespaces (grouped reader)`` () =
+    let log = ReadLog()
+    let built = HashSet<string>()
+
+    // The lazy namespace tree the file reader produces (the test above uses the flat shape of custom
+    // readers and FSI). Here even building the pre-type-def is deferred to the level, so an un-imported
+    // namespace costs nothing beyond its own name.
+    let typeDefs =
+        mkILTypeDefsGroupedComputed
+            (fun () -> [| for s in referenceShapes -> struct (s.Namespace, s) |])
+            (fun s ->
+                let path = fullName s.Namespace s.Name
+                built.Add path |> ignore
+                trackedPreTypeDef log s)
+
+    let path, options = mkTestFileAndOptions [||]
+    let options = referenceReaderProjectWithTypeDefs typeDefs false options
+    parseAndCheckFile path useNs1A options |> ignore
+
+    sorted built |> shouldEqual [ "G"; "Ns1.A"; "Ns1.B" ]
+    sorted log.TypeDefs |> shouldEqual [ "G"; "Ns1.A"; "Ns1.B" ]
+
+[<Fact>]
+let ``Laziness - importing a type reads neither its members nor its nested types`` () =
+    let log = checkAgainstReference referenceShapes useNs1A
+
+    // Reading a type def is the whole cost of importing it: what is inside stays behind its own lazies.
+    sorted log.Members |> shouldEqual []
+    sorted log.NestedTypes |> shouldEqual []
+
+[<Fact>]
+let ``Laziness - attributes are read for the types brought into scope, not for all imported ones`` () =
+    let log = checkAgainstReference referenceShapes useNs1A
+
+    // A type's attributes are read when it enters the name environment (an entry has to be checked for
+    // RequireQualifiedAccess and for extension members) or when a use of it is resolved (Obsolete and
+    // friends are reported there). G is at the root level, which is in scope everywhere; Ns1.A is named.
+    // Ns1.B is imported alongside Ns1.A but never enters scope, so its attributes stay unread.
+    sorted log.CustomAttrs |> shouldEqual [ "G"; "Ns1.A" ]
+
+[<Fact>]
+let ``Laziness - a nested type is read only once it is named`` () =
+    let source = """
+module Module
+
+let f (x: Ns1.A.Inner) = x
+"""
+    let log = checkAgainstReference referenceShapes source
+
+    // Naming the nested type forces its declaring type's nested table - and only that one.
+    sorted log.NestedTypes |> shouldEqual [ "Ns1.A" ]
+    sorted log.TypeDefs |> shouldEqual [ "G"; "Ns1.A"; "Ns1.A+Inner"; "Ns1.B" ]
+    sorted log.Members |> shouldEqual []
+
+[<Fact>]
+let ``Laziness - opening a namespace does not read its child namespaces`` () =
+    let source = """
+module Module
+
+open Ns1
+
+let f (x: A) = x
+"""
+    let log = checkAgainstReference referenceShapes source
+
+    // An open imports the namespace's own types, so Ns1.Deep must stay untouched.
+    sorted log.TypeDefs |> shouldEqual [ "G"; "Ns1.A"; "Ns1.B" ]
+
+    // The open brings every type of Ns1 into scope, so unlike the qualified use above it does read the
+    // attributes of all of them - that is the price of an open, and it is bounded by the namespace.
+    sorted log.CustomAttrs |> shouldEqual [ "G"; "Ns1.A"; "Ns1.B" ]
+
+[<Fact>]
+let ``Laziness - a deep type reads only the levels on its path`` () =
+    let source = """
+module Module
+
+let f (x: Ns1.Deep.D) = x
+"""
+    let log = checkAgainstReference referenceShapes source
+
+    // Ns1 is on the path so its own types come too; Ns2 is not.
+    sorted log.TypeDefs |> shouldEqual [ "G"; "Ns1.A"; "Ns1.B"; "Ns1.Deep.D" ]
+
+[<Fact>]
+let ``Laziness - a reference nothing names reads only its root level`` () =
+    let source = """
+module Module
+
+let x = 1
+"""
+    let log = checkAgainstReference referenceShapes source
+
+    // The floor: the root level is realised for every reference, because the initial name resolution
+    // environment names its root namespaces. Nothing below it is touched.
+    sorted log.TypeDefs |> shouldEqual [ "G" ]
+
+let private withBaseTypeShapes =
+    [ { shape "A" [ "Ns1" ] with Extends = Some "Ns2.Base" }
+      shape "Base" [ "Ns2" ]
+      shape "X" [ "Ns2" ]
+      shape "D" [ "Ns1"; "Deep" ] ]
+
+[<Fact>]
+let ``Laziness - the base type of an imported type is not read`` () =
+    let log = checkAgainstReference withBaseTypeShapes useNs1A
+
+    // Importing Ns1.A only records its base type as an ILType; the entity behind it is resolved when
+    // something needs the hierarchy. Naming the type in a signature doesn't, so Ns2 stays unread -
+    // note there is no global type here, so even the root level costs nothing.
+    sorted log.TypeDefs |> shouldEqual [ "Ns1.A" ]
+
+[<Fact>]
+let ``Laziness - a member lookup reads the base type's namespace`` () =
+    let source = """
+module Module
+
+let f (x: Ns1.A) = x.ToString()
+"""
+    let log = checkAgainstReference withBaseTypeShapes source
+
+    // A member lookup walks the hierarchy, so the base type is imported - which realises its namespace
+    // level, bringing Ns2.X with it. Ns1.Deep is still not on any path.
+    sorted log.TypeDefs |> shouldEqual [ "Ns1.A"; "Ns2.Base"; "Ns2.X" ]
+    sorted log.Members |> shouldEqual [ "Ns1.A"; "Ns2.Base" ]
 
 
 // ---- Row indices let a flattened read module be put back into metadata order -------------------
