@@ -358,7 +358,7 @@ let ``Nested types - grouping keeps them under the declaring type`` () =
     outerPre.GetTypeDef().NestedTypes.AsArray() |> Array.map (fun td -> td.Name) |> shouldEqual [| "Inner" |]
 
 
-// ---- Flattening a read module preserves the metadata TypeDef order -----------------------------
+// ---- Row indices let a flattened read module be put back into metadata order -------------------
 
 /// The full names of a module's top-level types, in raw metadata TypeDef table order.
 let private metadataTypeDefOrder (path: string) =
@@ -375,21 +375,16 @@ let private metadataTypeDefOrder (path: string) =
             yield (if ns = "" then name else ns + "." + name) ]
 
 [<Fact>]
-let ``Reading - flattening a module keeps the metadata TypeDef order`` () =
-    // The grouped reader walks namespace by namespace, but consumers that flatten (AsArray/AsList/the
-    // enumerator) expect the reader's original order - static linking emits the types it collects that
-    // way, so regrouping them would reorder the types of a --standalone assembly.
+let ``Reading - sorting a flattened module by row index gives the metadata TypeDef order`` () =
+    // Flattening (AsArray/AsList/the enumerator) walks namespace by namespace, so it does *not* reproduce
+    // the TypeDef table order - a namespace can be split across the table. Consumers that need the
+    // reader's order sort by MetadataIndex; static linking does, so that --standalone emits the types of
+    // a dependent assembly in its original order. Pin both halves of that contract here.
     //
     // FSharp.Core is the right subject: F#-compiled assemblies routinely split a namespace across the
     // TypeDef table (Roslyn-compiled ones group it, which would make this test vacuous).
     let path = typeof<int list>.Assembly.Location
     let metadataOrder = metadataTypeDefOrder path
-
-    // A namespace is split if it starts more consecutive runs of types than it has distinct names.
-    let namespaces = metadataOrder |> List.map (fun full -> fst (splitILTypeName full))
-    let runCount = 1 + (namespaces |> List.pairwise |> List.filter (fun (a, b) -> a <> b) |> List.length)
-
-    Assert.True(runCount > (List.distinct namespaces).Length, $"{path} has no split namespaces, so this test proves nothing")
 
     let options =
         { pdbDirPath = None
@@ -398,8 +393,13 @@ let ``Reading - flattening a module keeps the metadata TypeDef order`` () =
           tryGetMetadataSnapshot = (fun _ -> None) }
 
     let moduleDef = (OpenILModuleReader path options).ILModuleDef
+    let typeDefs = moduleDef.TypeDefs.AsList()
 
     // ILTypeDef.Name for a top-level type read from metadata is the full "Namespace.Name".
-    moduleDef.TypeDefs.AsList() |> List.map _.Name |> shouldEqual metadataOrder
-    moduleDef.TypeDefs.AsArray() |> Array.map _.Name |> shouldEqual (Array.ofList metadataOrder)
-    List.ofSeq moduleDef.TypeDefs |> List.map _.Name |> shouldEqual metadataOrder
+    // Every row is there, but the namespace walk hands them back in a different order.
+    let names = typeDefs |> List.map _.Name
+    List.sort names |> shouldEqual (List.sort metadataOrder)
+    Assert.True(names <> metadataOrder, "flattening happened to match row order, so the sort below proves nothing")
+
+    // List.sortBy is stable, so row indices alone restore the order the rows were read in.
+    typeDefs |> List.sortBy (fun td -> td.MetadataIndex) |> List.map _.Name |> shouldEqual metadataOrder
