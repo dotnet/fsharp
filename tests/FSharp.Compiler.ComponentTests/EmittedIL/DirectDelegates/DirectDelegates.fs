@@ -1047,6 +1047,7 @@ module X =
     open System.Net.Sockets
     open Microsoft.AspNetCore.Builder
     open Microsoft.AspNetCore.Http
+    open Microsoft.Extensions.Logging
 
     let divide (first: int) (second: int) : int = first / second
 
@@ -1059,8 +1060,10 @@ module X =
             p
 
         let url = sprintf "http://127.0.0.1:%d" port
-        let app = WebApplication.CreateBuilder().Build()
-        
+        let builder = WebApplication.CreateBuilder()
+        builder.Logging.ClearProviders() |> ignore
+        let app = builder.Build()
+
         // Route parameters {second}/{first} bind to the handler's parameters by name, which requires delegate.Method to be the
         // real 'divide' (a direct delegate), not a synthesized closure 'Invoke'.
         app.MapGet("/divide/{second}/{first}", Func<int, int, int>(fun z w -> divide z w)) |> ignore
