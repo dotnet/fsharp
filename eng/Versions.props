@@ -193,18 +193,6 @@
     <MicrosoftCodeAnalysisExternalAccessFSharpVersion>$(FSHARP_APEX_ROSLYN_VERSION)</MicrosoftCodeAnalysisExternalAccessFSharpVersion>
     <MicrosoftCodeAnalysisFeaturesVersion>$(FSHARP_APEX_ROSLYN_VERSION)</MicrosoftCodeAnalysisFeaturesVersion>
     <MicrosoftVisualStudioLanguageServicesVersion>$(FSHARP_APEX_ROSLYN_VERSION)</MicrosoftVisualStudioLanguageServicesVersion>
-
-    <!-- Same forward-pin problem as Roslyn, for the dotnet/runtime System.* family: main (via darc) bumps
-         these to a .NET 10 servicing build (e.g. 10.0.8 -> assembly 10.0.0.8) that a CI/scout VS older
-         than the insertion target cannot bind (VS 18.7 ships System.Composition.AttributedModel 8.0.0.0
-         and its binding-redirect ceiling is below 10.0.0.8), so FSharp.Editor's MEF parts fail to load and
-         IFSharpWorkspaceService is null. Roll them back to 10.0.2 for the Apex leg (the value this branch
-         and the user's working local hive used, proven to bind on a VS shipping 8.0.0.0). -->
-    <FSharpApexSystemPackageVersion>10.0.2</FSharpApexSystemPackageVersion>
-    <SystemCompositionPackageVersion>$(FSharpApexSystemPackageVersion)</SystemCompositionPackageVersion>
-    <SystemCollectionsImmutablePackageVersion>$(FSharpApexSystemPackageVersion)</SystemCollectionsImmutablePackageVersion>
-    <SystemCompositionVersion>$(FSharpApexSystemPackageVersion)</SystemCompositionVersion>
-    <SystemCollectionsImmutableVersion>$(FSharpApexSystemPackageVersion)</SystemCollectionsImmutableVersion>
   </PropertyGroup>
 
 </Project>
