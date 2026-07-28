@@ -1,0 +1,119 @@
+# F# Apex VS integration test stage (DartLab). SCAFFOLD — mirrors dotnet/roslyn's
+# eng/pipelines/test-gates/roslyn-vs-integration/stage.yml, trimmed to the F# scenario.
+# See eng/pipelines/apex-integration/README.md and every `# TODO(P0):` below.
+
+parameters:
+- name: prNumber
+  type: string
+  default: 'None'
+- name: sha
+  type: string
+  default: 'None'
+- name: EnforceLatestCommit
+  type: boolean
+  default: true
+- name: visualStudioBootstrapperURI
+  type: string
+  default: '(default)'
+- name: testCaseFilter
+  type: string
+  default: ''
+- name: testMachineCleanUpStrategy
+  type: string
+  default: delete
+- name: testMachineRetention
+  type: string
+  default: 1:0:0:0
+- name: dartLabTemplatesRepositoryAlias
+  type: string
+  default: DartLabTemplates
+- name: fsharpRepositoryAlias
+  type: string
+  default: self
+
+stages:
+- template: /stages/visual-studio/agent.yml@${{ parameters.dartLabTemplatesRepositoryAlias }}
+  parameters:
+    name: FSharpVSIntegration
+    displayName: F# VS Integration (Apex)
+    testLabPoolName: VS-Platform
+    testMachineCleanUpStrategy: ${{ parameters.testMachineCleanUpStrategy }}
+    testMachineRetention: ${{ parameters.testMachineRetention }}
+    templateContext:
+      # TODO(P0): set the F# DevDiv owner / areaPath (Roslyn uses
+      # `mlinfraswat` / `DevDiv\NET Developer Experience\CSharp and VB IDE`).
+      owner: fsharp
+      areaPath: DevDiv\NET Developer Experience\FSharp
+    # '(default)' => install the VS from the build-under-test Products drop. Interim: replace the
+    # whole expression with a hard-coded bootstrapper URI for a pinned int.main Products drop, e.g.
+    # 'https://vsdrop.corp.microsoft.com/file/v1/Products/DevDiv/VS/int.main/<build>;bootstrappers/Enterprise/vs_enterprise.exe'.
+    visualStudioBootstrapperURI: ${{ iif(eq(parameters.visualStudioBootstrapperURI, '(default)'), 'https://vsdrop.corp.microsoft.com/file/v1/$(VisualStudio.BuildUnderTest.ProductsDropName);bootstrappers/Enterprise/vs_enterprise.exe', parameters.visualStudioBootstrapperURI) }}
+    # F#-minimal component set: core editor + MSBuild + .NET SDK/targeting packs + Roslyn language
+    # services + the F# components + the VS SDK (so the locally-built F# VSIX can be deployed/loaded).
+    # Expand only if a test needs more; every added component increases install time.
+    visualStudioInstallationParameters: >-
+      --add Microsoft.VisualStudio.Component.CoreEditor
+      --add Microsoft.VisualStudio.Workload.CoreEditor
+      --add Microsoft.Component.MSBuild
+      --add Microsoft.NetCore.Component.SDK
+      --add Microsoft.NetCore.Component.Runtime.8.0
+      --add Microsoft.NetCore.Component.DevelopmentTools
+      --add Microsoft.Net.Component.4.7.2.TargetingPack
+      --add Microsoft.Net.Component.4.8.SDK
+      --add Microsoft.VisualStudio.Component.Roslyn.Compiler
+      --add Microsoft.VisualStudio.Component.Roslyn.LanguageServices
+      --add Microsoft.VisualStudio.Component.FSharp
+      --add Microsoft.VisualStudio.Component.FSharp.Desktop
+      --add Microsoft.VisualStudio.Component.ManagedDesktop.Core
+      --add Microsoft.VisualStudio.Component.ManagedDesktop.Prerequisites
+      --add Microsoft.VisualStudio.Workload.ManagedDesktop
+      --add Microsoft.Component.CodeAnalysis.SDK
+      --add Microsoft.VisualStudio.Component.VSSDK
+      --add Microsoft.VisualStudio.ComponentGroup.VisualStudioExtension.Prerequisites
+      --add Microsoft.VisualStudio.Workload.VisualStudioExtension
+      --installPath "C:\Test\VisualStudio" --quiet --norestart --wait
+    testExecutionJobStrategy:
+      matrix:
+        release:
+          _configuration: Release
+    testMachineTotalCount: 1
+    testAgentElevated: true
+    preTestMachineConfigurationStepList:
+    - checkout: none
+    # TODO(P0): only needed for the gate/end-state where the VS bootstrapper comes from a VS build
+    # resource. For the interim pinned-drop approach (hard-coded bootstrapper URI above), delete
+    # these two steps.
+    # - task: DownloadBuildArtifacts@1
+    #   displayName: Download Visual Studio build artifacts
+    #   inputs:
+    #     buildType: specific
+    #     project: $(resources.pipeline.VisualStudioBuildUnderTest.projectID)
+    #     definition: $(resources.pipeline.VisualStudioBuildUnderTest.pipelineID)
+    #     buildVersionToDownload: specific
+    #     buildId: $(resources.pipeline.VisualStudioBuildUnderTest.runID)
+    #     downloadType: specific
+    #     artifactName: BuildArtifacts
+    #     downloadPath: $(Pipeline.Workspace)\VisualStudioBuildUnderTest
+    # - task: PowerShell@2
+    #   name: SetProductsDropName
+    #   displayName: Set 'VisualStudio.BuildUnderTest.ProductsDropName'
+    #   inputs:
+    #     filePath: $(DartLab.Path)\Scripts\VisualStudio\Build\Get-VisualStudioDropName.ps1
+    #     arguments: -DropNamePrefix 'Products' -VstsDropUrlsJson '$(Pipeline.Workspace)\VisualStudioBuildUnderTest\BuildArtifacts\VstsDropUrls.json' -OutVariableName 'VisualStudio.BuildUnderTest.ProductsDropName'
+    deployAndRunTestsStepList:
+    # TODO(P0): check out the internal mirror (see azure-pipelines-integration-dartlab.yml resources).
+    - checkout: FSharpMirror
+      fetchDepth: 1
+      fetchTags: false
+      persistCredentials: true
+    - ${{ if ne(parameters.prNumber, 'None') }}:
+      - task: PowerShell@2
+        displayName: Setup branch for validation
+        inputs:
+          filePath: 'eng\setup-pr-validation.ps1'
+          arguments: "-sourceBranchName $(Build.SourceBranch) -prNumber ${{ parameters.prNumber }} -commitSHA ${{ parameters.sha }} -enforceLatestCommit ${{ iif(parameters.EnforceLatestCommit, '1', '0') }}"
+        condition: succeeded()
+    - template: /eng/pipelines/apex-integration/integration-job.yml@${{ parameters.fsharpRepositoryAlias }}
+      parameters:
+        configuration: $(_configuration)
+        testCaseFilter: ${{ parameters.testCaseFilter }}
