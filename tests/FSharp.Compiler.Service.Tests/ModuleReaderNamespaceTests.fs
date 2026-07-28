@@ -212,9 +212,9 @@ let ``Lookup - FindByName reports the missing type name`` () =
 
 [<Fact>]
 let ``Hybrid level - lookup and flattening see both sources`` () =
-    // A level carrying BOTH namespaced flat entries and a child pre-namespace of the same name - the
-    // shape ImportILNamespaceLevel has to merge. No reader produces it today, but both halves support
-    // it, so pin it here (the import side is covered in ModuleReaderCancellationTests).
+    // A level carrying BOTH namespaced flat entries and a child pre-namespace of the same name. No
+    // reader produces this - a level names its children one way or the other, see
+    // mkILTypeDefsAndNamespacesComputed - but lookup and flattening still take in both sources.
     let ns2 =
         mkILPreNamespaceComputed("Ns2", fun () -> mkILTypeDefsComputed (fun () -> [| struct ([], mkPreTypeDef "TDeepGrouped") |]))
 

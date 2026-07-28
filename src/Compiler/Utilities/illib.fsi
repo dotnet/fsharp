@@ -86,6 +86,19 @@ type DelayInitArrayMap<'T, 'TDictKey, 'TDictValue> =
 
     abstract CreateDictionary: 'T[] -> IDictionary<'TDictKey, 'TDictValue>
 
+/// Computes a value once, in place. Unlike a lazy, the state the computation needs lives in the derived
+/// object itself, so an unforced value costs one object rather than a lazy plus its closure - which matters
+/// where very many of them are allocated and held, as for the contents of .NET assemblies.
+[<AbstractClass>]
+type internal DelayInitValue<'T when 'T: not null and 'T: not struct> =
+    new: unit -> DelayInitValue<'T>
+
+    /// The computed value, computing it on the first call.
+    member Value: 'T
+
+    /// Called at most once, under the instance's lock. An exception is not cached: the next access retries.
+    abstract Compute: unit -> 'T
+
 module internal Order =
 
     val orderBy: p: ('T -> 'U) -> IComparer<'T> when 'U: comparison and 'T: not null and 'T: not struct

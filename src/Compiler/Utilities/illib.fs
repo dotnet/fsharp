@@ -191,6 +191,34 @@ type DelayInitArrayMap<'T, 'TDictKey, 'TDictValue>(f: unit -> 'T[]) =
 
     abstract CreateDictionary: 'T[] -> IDictionary<'TDictKey, 'TDictValue>
 
+[<AbstractClass>]
+type DelayInitValue<'T when 'T: not null and 'T: not struct>() =
+    // Locks the instance rather than a private sync object, and stores in place rather than in a lazy:
+    // either would add an object per value, and there is one of these per type and per namespace of every
+    // assembly read.
+    [<VolatileField>]
+    let mutable value: objnull = null
+
+    abstract Compute: unit -> 'T
+
+    member private this.Realise() =
+        Monitor.Enter this
+
+        try
+            match value with
+            | null ->
+                let computed = this.Compute()
+                value <- box computed
+                computed
+            | v -> unbox<'T> v
+        finally
+            Monitor.Exit this
+
+    member this.Value =
+        match value with
+        | null -> this.Realise()
+        | v -> unbox<'T> v
+
 //-------------------------------------------------------------------------
 // Library: projections
 //------------------------------------------------------------------------
