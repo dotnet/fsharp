@@ -1890,7 +1890,7 @@ let rec seekReadModule (ctxt: ILMetadataReader) canReduceMemory (pectxtEager: PE
         NativeResources = nativeResources
         TypeDefs =
             mkILTypeDefsGroupedComputed
-                (fun () -> seekReadTopTypeDefsGrouped ctxt)
+                (fun () -> seekReadTopTypeDefEntries ctxt)
                 (fun (struct (nameIdx, i)) -> mkILPreTypeDefRead (readStringHeap ctxt nameIdx, i, ctxt.typeDefReader))
         SubSystemFlags = int32 subsys
         IsILOnly = ilOnly
@@ -2077,10 +2077,6 @@ and seekReadTypeDefRowWithExtents ctxt (idx: int) =
     let info = seekReadTypeDefRow ctxt idx
     info, seekReadTypeDefRowExtents ctxt info idx
 
-and seekReadNestedPreTypeDef ctxt (idx: int) =
-    let _, nameIdx, _, _, _, _ = seekReadTypeDefRow ctxt idx
-    mkILPreTypeDefRead (readStringHeap ctxt nameIdx, idx, ctxt.typeDefReader)
-
 and typeDefReader ctxtH : ILTypeDefStored =
     mkILTypeDefReader (fun idx ->
         let (ctxt: ILMetadataReader) = getHole ctxtH
@@ -2224,7 +2220,7 @@ and typeDefReader ctxtH : ILTypeDefStored =
 
 // Reads only each row's namespace (for grouping) and carries the name/row indices as plain data; the
 // name read and pre-type-def build happen in the shared maker, so an un-imported namespace pays neither.
-and seekReadTopTypeDefsGrouped (ctxt: ILMetadataReader) =
+and seekReadTopTypeDefEntries (ctxt: ILMetadataReader) =
     [|
         for i = 1 to ctxt.getNumRows TableNames.TypeDef do
             let flags, nameIdx, namespaceIdx, _, _, _ = seekReadTypeDefRow ctxt i
@@ -2244,7 +2240,11 @@ and seekReadNestedTypeDefs (ctxt: ILMetadataReader) tidx =
             seekReadIndexedRows (ctxt.getNumRows TableNames.Nested, seekReadNestedRow ctxt, snd, simpleIndexCompare tidx, false, fst)
 
         // Nested types carry no namespace in metadata; they sit flat at the enclosing type's level.
-        [| for i in nestedIdxs -> struct ([], seekReadNestedPreTypeDef ctxt i) |])
+        [|
+            for i in nestedIdxs do
+                let _, nameIdx, _, _, _, _ = seekReadTypeDefRow ctxt i
+                yield struct ([], mkILPreTypeDefRead (readStringHeap ctxt nameIdx, i, ctxt.typeDefReader))
+        |])
 
 and seekReadInterfaceImpls (ctxt: ILMetadataReader) mdv numTypars tidx =
     InterruptibleLazy(fun () ->

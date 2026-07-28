@@ -64,6 +64,20 @@ let private mkGroupedTypeDefs (fullNames: string list) : ILTypeDefs =
         (fun () -> [| for n in fullNames -> let ns, name = splitILTypeName n in struct (ns, name) |])
         mkPreTypeDef
 
+/// Wrap the type defs so that forcing any namespace's contents records its full path in `forced`.
+let private trackNamespaceForcing (forced: HashSet<string>) (typeDefs: ILTypeDefs) : ILTypeDefs =
+    let rec track (path: string) (tds: ILTypeDefs) =
+        mkILTypeDefsAndNamespacesComputed
+            (fun () -> tds.AsArrayOfPreTypeDefs())
+            (fun () ->
+                [| for ns in tds.AsArrayOfPreNamespaces() ->
+                       let nsPath = if path = "" then ns.Name else $"{path}.{ns.Name}"
+                       mkILPreNamespaceComputed(ns.Name, fun () ->
+                           forced.Add nsPath |> ignore
+                           track nsPath (ns.GetContents())) |])
+
+    track "" typeDefs
+
 
 [<Fact>]
 let ``Grouping - split namespace preserves metadata order`` () =
@@ -115,18 +129,8 @@ let ``Grouping - flat compat members flatten across namespaces`` () =
 let ``Grouping - namespaces are realised lazily`` () =
     let forced = HashSet<string>()
 
-    // Wrap the grouped type defs so we can observe when each namespace's contents is forced.
-    let rec track (path: string) (tds: ILTypeDefs) : ILTypeDefs =
-        mkILTypeDefsAndNamespacesComputed
-            (fun () -> tds.AsArrayOfPreTypeDefs())
-            (fun () ->
-                [| for ns in tds.AsArrayOfPreNamespaces() ->
-                       let nsPath = if path = "" then ns.Name else $"{path}.{ns.Name}"
-                       mkILPreNamespaceComputed(ns.Name, fun () ->
-                           forced.Add nsPath |> ignore
-                           track nsPath (ns.GetContents())) |])
-
-    let typeDefs = track "" (mkGroupedTypeDefs [ "Type1"; "Ns1.T1"; "Ns2.Inner.T2" ])
+    let typeDefs =
+        trackNamespaceForcing forced (mkGroupedTypeDefs [ "Type1"; "Ns1.T1"; "Ns2.Inner.T2" ])
 
     // Reading global-namespace types and enumerating child namespaces must not force any contents.
     typeDefs.AsArrayOfPreTypeDefs() |> Array.map (fun struct (_, p) -> p.Name) |> shouldEqual [| "Type1" |]
@@ -185,18 +189,7 @@ let ``Lookup - by name works for flat readers (namespaced pre-type-defs)`` () =
 [<Fact>]
 let ``Lookup - by name descends only into the relevant namespace`` () =
     let forced = HashSet<string>()
-
-    let rec track (path: string) (tds: ILTypeDefs) : ILTypeDefs =
-        mkILTypeDefsAndNamespacesComputed
-            (fun () -> tds.AsArrayOfPreTypeDefs())
-            (fun () ->
-                [| for ns in tds.AsArrayOfPreNamespaces() ->
-                       let nsPath = if path = "" then ns.Name else $"{path}.{ns.Name}"
-                       mkILPreNamespaceComputed(ns.Name, fun () ->
-                           forced.Add nsPath |> ignore
-                           track nsPath (ns.GetContents())) |])
-
-    let typeDefs = track "" (mkGroupedTypeDefs [ "Ns1.T1"; "Ns2.Inner.T2" ])
+    let typeDefs = trackNamespaceForcing forced (mkGroupedTypeDefs [ "Ns1.T1"; "Ns2.Inner.T2" ])
 
     // Finding a type descends only into the namespaces on its path, not its siblings.
     typeDefs.ExistsByName "Ns2.Inner.T2" |> shouldEqual true
@@ -207,6 +200,64 @@ let ``Lookup - by name descends only into the relevant namespace`` () =
     // A miss under an existing namespace does not force siblings either.
     typeDefs.ExistsByName "Ns2.Nope" |> shouldEqual false
     forced.Contains "Ns1" |> shouldEqual false
+
+
+[<Fact>]
+let ``Lookup - FindByName reports the missing type name`` () =
+    let typeDefs = mkGroupedTypeDefs [ "Ns1.T1" ]
+
+    Assert.Throws<KeyNotFoundException>(fun () -> typeDefs.FindByName "Ns1.Missing" |> ignore).Message
+    |> shouldEqual "Ns1.Missing"
+
+
+[<Fact>]
+let ``Hybrid level - lookup and flattening see both sources`` () =
+    // A level carrying BOTH namespaced flat entries and a child pre-namespace of the same name - the
+    // shape ImportILNamespaceLevel has to merge. No reader produces it today, but both halves support
+    // it, so pin it here (the import side is covered in ModuleReaderCancellationTests).
+    let ns2 =
+        mkILPreNamespaceComputed("Ns2", fun () -> mkILTypeDefsComputed (fun () -> [| struct ([], mkPreTypeDef "TDeepGrouped") |]))
+
+    let ns1 =
+        mkILPreNamespaceComputed(
+            "Ns1",
+            fun () -> mkILTypeDefsAndNamespacesComputed (fun () -> [| struct ([], mkPreTypeDef "TGrouped") |]) (fun () -> [| ns2 |])
+        )
+
+    let typeDefs =
+        mkILTypeDefsAndNamespacesComputed
+            (fun () ->
+                [| struct ([ "Ns1" ], mkPreTypeDef "TFlat")
+                   struct ([ "Ns1"; "Ns2" ], mkPreTypeDef "TDeepFlat") |])
+            (fun () -> [| ns1 |])
+
+    // The flat entries hit this level's own dictionary; the grouped ones are found by descending.
+    typeDefs.ExistsByName "Ns1.TFlat" |> shouldEqual true
+    typeDefs.ExistsByName "Ns1.TGrouped" |> shouldEqual true
+    typeDefs.ExistsByName "Ns1.Ns2.TDeepFlat" |> shouldEqual true
+    typeDefs.ExistsByName "Ns1.Ns2.TDeepGrouped" |> shouldEqual true
+    typeDefs.ExistsByName "Ns1.Missing" |> shouldEqual false
+
+    // Flattening unions both sources: this level's entries first, then each namespace's subtree.
+    typeDefs.AllPreTypeDefs()
+    |> Array.map _.Name
+    |> shouldEqual [| "TFlat"; "TDeepFlat"; "TGrouped"; "TDeepGrouped" |]
+
+
+[<Fact>]
+let ``Duplicate namespace nodes - lookup sees the first, flattening sees all`` () =
+    // mkILTypeDefsGroupedComputed merges a split namespace into one node, so no reader should hand the
+    // same level two namespaces with one name. This pins the documented fallback if one ever does.
+    let mkNs name typeName =
+        mkILPreNamespaceComputed(name, fun () -> mkILTypeDefsComputed (fun () -> [| struct ([], mkPreTypeDef typeName) |]))
+
+    let typeDefs =
+        mkILTypeDefsAndNamespacesComputed (fun () -> [||]) (fun () -> [| mkNs "Ns" "First"; mkNs "Ns" "Second" |])
+
+    typeDefs.ExistsByName "Ns.First" |> shouldEqual true
+    typeDefs.ExistsByName "Ns.Second" |> shouldEqual false
+
+    typeDefs.AllPreTypeDefs() |> Array.map _.Name |> shouldEqual [| "First"; "Second" |]
 
 
 // ---- C# realistic-shape path (reads real metadata via ILModuleReader) --------------------------
@@ -305,3 +356,50 @@ let ``Nested types - grouping keeps them under the declaring type`` () =
     let nsContents = (typeDefs.AsArrayOfPreNamespaces() |> Array.exactlyOne).GetContents()
     let struct (_, outerPre) = nsContents.AsArrayOfPreTypeDefs() |> Array.exactlyOne
     outerPre.GetTypeDef().NestedTypes.AsArray() |> Array.map (fun td -> td.Name) |> shouldEqual [| "Inner" |]
+
+
+// ---- Flattening a read module preserves the metadata TypeDef order -----------------------------
+
+/// The full names of a module's top-level types, in raw metadata TypeDef table order.
+let private metadataTypeDefOrder (path: string) =
+    use fs = System.IO.File.OpenRead path
+    use pe = new System.Reflection.PortableExecutable.PEReader(fs)
+    let md = System.Reflection.Metadata.PEReaderExtensions.GetMetadataReader pe
+
+    [ for handle in md.TypeDefinitions do
+        let td: System.Reflection.Metadata.TypeDefinition = md.GetTypeDefinition handle
+        // Nested types have their own rows; ILTypeDefs only holds top-level ones.
+        if td.GetDeclaringType().IsNil then
+            let ns = md.GetString td.Namespace
+            let name = md.GetString td.Name
+            yield (if ns = "" then name else ns + "." + name) ]
+
+[<Fact>]
+let ``Reading - flattening a module keeps the metadata TypeDef order`` () =
+    // The grouped reader walks namespace by namespace, but consumers that flatten (AsArray/AsList/the
+    // enumerator) expect the reader's original order - static linking emits the types it collects that
+    // way, so regrouping them would reorder the types of a --standalone assembly.
+    //
+    // FSharp.Core is the right subject: F#-compiled assemblies routinely split a namespace across the
+    // TypeDef table (Roslyn-compiled ones group it, which would make this test vacuous).
+    let path = typeof<int list>.Assembly.Location
+    let metadataOrder = metadataTypeDefOrder path
+
+    // A namespace is split if it starts more consecutive runs of types than it has distinct names.
+    let namespaces = metadataOrder |> List.map (fun full -> fst (splitILTypeName full))
+    let runCount = 1 + (namespaces |> List.pairwise |> List.filter (fun (a, b) -> a <> b) |> List.length)
+
+    Assert.True(runCount > (List.distinct namespaces).Length, $"{path} has no split namespaces, so this test proves nothing")
+
+    let options =
+        { pdbDirPath = None
+          reduceMemoryUsage = ReduceMemoryFlag.Yes
+          metadataOnly = MetadataOnlyFlag.Yes
+          tryGetMetadataSnapshot = (fun _ -> None) }
+
+    let moduleDef = (OpenILModuleReader path options).ILModuleDef
+
+    // ILTypeDef.Name for a top-level type read from metadata is the full "Namespace.Name".
+    moduleDef.TypeDefs.AsList() |> List.map _.Name |> shouldEqual metadataOrder
+    moduleDef.TypeDefs.AsArray() |> Array.map _.Name |> shouldEqual (Array.ofList metadataOrder)
+    List.ofSeq moduleDef.TypeDefs |> List.map _.Name |> shouldEqual metadataOrder
