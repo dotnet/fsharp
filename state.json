@@ -17,14 +17,6 @@
         "Affects-Build-Infra"
       ]
     },
-    "20080": {
-      "sha": "4529ecffed6ca6e9408bd78f7ef6f7ad9700b19e",
-      "cats": [
-        "Affects-Agent-Config",
-        "Affects-Build-Infra",
-        "Affects-Restore"
-      ]
-    },
     "20074": {
       "sha": "1020ddab4c43d9e69d10e31323a76a7b5ea430d8",
       "cats": [
@@ -108,10 +100,6 @@
     },
     "19993": {
       "sha": "a7c04526bcf3d010bdda177291fc7e69d710d038",
-      "cats": []
-    },
-    "19977": {
-      "sha": "e0c2cefd4f3e432eb42032f880dcc2a5abdb5890",
       "cats": []
     },
     "19976": {
