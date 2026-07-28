@@ -1039,7 +1039,7 @@ let ``Minimal API binds a direct delegate handler by parameter name (preview)`` 
     let aspNetFrameworkReferences =
         ReferenceHelpers.getFrameworkReference { Name = "Microsoft.AspNetCore.App"; Version = None }
 
-    Fsx (aspNetFrameworkReferences + """
+    let script = aspNetFrameworkReferences + """
 module X =
     open System
     open System.Net
@@ -1074,7 +1074,18 @@ module X =
         finally
             app.StopAsync().GetAwaiter().GetResult()
 
-X.run () """)
-    |> withLangVersionPreview
-    |> runFsi
-    |> shouldSucceed
+X.run () """
+
+    let scriptPath =
+        Path.Combine(Path.GetTempPath(), $"direct_delegate_minimal_api_{System.Guid.NewGuid():N}.fsx")
+
+    File.WriteAllText(scriptPath, script)
+
+    try
+        let result = runFsiProcess [ "--langversion:preview"; scriptPath ]
+
+        Assert.True(
+            result.ExitCode = 0,
+            $"fsi exited with %d{result.ExitCode}.\nstdout:\n%s{result.StdOut}\nstderr:\n%s{result.StdErr}")
+    finally
+        try File.Delete scriptPath with _ -> ()
