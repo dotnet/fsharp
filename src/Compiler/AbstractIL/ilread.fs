@@ -1889,9 +1889,8 @@ let rec seekReadModule (ctxt: ILMetadataReader) canReduceMemory (pectxtEager: PE
         Name = ilModuleName
         NativeResources = nativeResources
         TypeDefs =
-            mkILTypeDefsGroupedComputed
-                (fun () -> seekReadTopTypeDefEntries ctxt)
-                (fun (struct (nameIdx, i)) -> mkILPreTypeDefRead (readStringHeap ctxt nameIdx, i, ctxt.typeDefReader))
+            mkILTypeDefsGroupedComputed (fun () -> seekReadTopTypeDefEntries ctxt) (fun (struct (nameIdx, i)) ->
+                mkILPreTypeDefRead (readStringHeap ctxt nameIdx, i, ctxt.typeDefReader))
         SubSystemFlags = int32 subsys
         IsILOnly = ilOnly
         SubsystemVersion = subsysversion
@@ -2218,8 +2217,8 @@ and typeDefReader ctxtH : ILTypeDefStored =
             metadataIndex = idx
         ))
 
-// Reads only each row's namespace (for grouping) and carries the name/row indices as plain data; the
-// name read and pre-type-def build happen in the shared maker, so an un-imported namespace pays neither.
+// Reads only each row's namespace, for grouping; the name read and the pre-type-def build are deferred to
+// the maker, so an un-imported namespace pays for neither.
 and seekReadTopTypeDefEntries (ctxt: ILMetadataReader) =
     [|
         for i = 1 to ctxt.getNumRows TableNames.TypeDef do

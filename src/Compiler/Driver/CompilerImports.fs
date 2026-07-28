@@ -2341,6 +2341,13 @@ and [<Sealed>] TcImports
             let! ccuinfos = phase2s |> runMethod
 
             if importsBase.IsSome then
+                // Only F# assemblies can carry a trait constraint to label: an IL assembly's entities have no
+                // vals at all. Walking one would force every namespace of it - the whole point of importing
+                // namespaces lazily - to find nothing.
+                let addConstraintSources (ia: ImportedAssembly) =
+                    if ia.FSharpViewOfMetadata.IsFSharp then
+                        addConstraintSources ia
+
                 importsBase.Value.CcuTable.Values |> Seq.iter addConstraintSources
                 ccuTable.Values |> Seq.iter addConstraintSources
 

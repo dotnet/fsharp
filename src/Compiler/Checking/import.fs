@@ -235,16 +235,23 @@ module Nullness =
         { DirectAttributes: AttributesFromIL
           Fallback : NullableContextSource}
           with
+            // Matched rather than chained through ValueOption.orElseWith: that is not inline, so each call
+            // allocated a closure on a path walked per imported member.
             member this.GetFlags(g:TcGlobals) =
-                let fallback = this.Fallback
-                this.DirectAttributes.GetNullable(g)
-                |> ValueOption.orElseWith(fun () ->
-                    match fallback with
-                    | FromClass attrs -> attrs.GetNullableContext(g)
-                    | FromMethodAndClass(methodCtx,classCtx) ->
-                        methodCtx.GetNullableContext(g)
-                        |> ValueOption.orElseWith (fun () -> classCtx.GetNullableContext(g)))
-                |> ValueOption.defaultValue arrayWithByte0
+                match this.DirectAttributes.GetNullable(g) with
+                | ValueSome flags -> flags
+                | ValueNone ->
+                    let fromContext =
+                        match this.Fallback with
+                        | FromClass attrs -> attrs.GetNullableContext(g)
+                        | FromMethodAndClass(methodCtx,classCtx) ->
+                            match methodCtx.GetNullableContext(g) with
+                            | ValueSome flags -> ValueSome flags
+                            | ValueNone -> classCtx.GetNullableContext(g)
+
+                    match fromContext with
+                    | ValueSome flags -> flags
+                    | ValueNone -> arrayWithByte0
             static member Empty =
                 let emptyFromIL = AttributesFromIL(0,ILAttributesStored.CreateGiven(ILAttributes.Empty))
                 {DirectAttributes = emptyFromIL; Fallback = FromClass(emptyFromIL)}
@@ -666,95 +673,66 @@ let ImportILGenericParameters amap m scoref tinst (nullableFallback:Nullness.Nul
             tp.SetConstraints constraints)
         tps
 
+/// Most IL types have no type parameters, so they share this value instead of each allocating a lazy plus a
+/// closure over the nullable-context fallback, which is only needed when there is a parameter to import.
+let private noTypars = LazyWithContext<Typars, range>.NotLazy []
+
 /// Import an IL type definition as a new F# TAST Entity node.
 let rec ImportILTypeDef amap m scoref (cpath: CompilationPath) enc nm (tdef: ILTypeDef)  =
-    let lazyModuleOrNamespaceTypeForNestedTypes =
-        InterruptibleLazy(fun _ ->
-            let cpath = cpath.NestedCompPath nm ModuleOrType
-            ImportILTypeDefs amap m scoref cpath (enc@[tdef]) tdef.NestedTypes
+    let moduleOrNamespaceTypeForNestedTypes =
+        MaybeLazy.Lazy(
+            // Captures tdef, not its nested types: the closure then holds nothing the entity doesn't
+            // already keep alive.
+            InterruptibleLazy(fun _ ->
+                let cpath = cpath.NestedCompPath nm ModuleOrType
+                ImportILTypeDefs amap m scoref cpath (enc@[tdef]) tdef.NestedTypes
+            )
         )
 
-    let nullableFallback = Nullness.FromClass(Nullness.AttributesFromIL(tdef.MetadataIndex,tdef.CustomAttrsStored))
+    let typars =
+        match tdef.GenericParams with
+        | [] -> noTypars
+        | gps ->
+            let nullableFallback = Nullness.FromClass(Nullness.AttributesFromIL(tdef.MetadataIndex,tdef.CustomAttrsStored))
+
+            // The read of the type parameters may fail to resolve types. Entity.Typars forces
+            // entity_typars with entity_range, so the range used here is always the import-time
+            // range 'm' passed to NewILTycon below — never a caller's ad-hoc source range.
+            // Make sure we reraise the original exception one occurs - see findOriginalException.
+            LazyWithContext.Create(
+                (fun m -> ImportILGenericParameters amap m scoref [] nullableFallback gps),
+                findOriginalException
+            )
 
     // Add the type itself.
     Construct.NewILTycon
         (Some cpath)
         (nm, m)
-        // The read of the type parameters may fail to resolve types. Entity.Typars forces
-        // entity_typars with entity_range, so the range used here is always the import-time
-        // range 'm' passed to NewILTycon above — never a caller's ad-hoc source range.
-        // Make sure we reraise the original exception one occurs - see findOriginalException.
-        (LazyWithContext.Create(
-            (fun m -> ImportILGenericParameters amap m scoref [] nullableFallback tdef.GenericParams),
-            findOriginalException
-        ))
+        typars
         (scoref, enc, tdef)
-        (MaybeLazy.Lazy lazyModuleOrNamespaceTypeForNestedTypes)
+        moduleOrNamespaceTypeForNestedTypes
 
 
-/// Import one namespace level as a ModuleOrNamespaceType, descending lazily into child namespaces.
-/// A level has two sources, both with namespaces relative to it: `items` (a relative namespace and a
-/// thunk importing the type; a flat table's full namespaces are bucketed here by leading component)
-/// and `preNamespaces` (child namespaces realised only when imported). A head in both is merged.
-and ImportILNamespaceLevel amap m scoref (cpath: CompilationPath) enc
-        (items: (string list * (CompilationPath -> Entity)) list) (preNamespaces: ILPreNamespace list) =
+/// Import a table of IL types as a ModuleOrNamespaceType. Each child namespace becomes a namespace entity
+/// whose contents are imported the same way once forced.
+and ImportILTypeDefs amap m scoref (cpath: CompilationPath) enc (tdefs: ILTypeDefs) =
+    // We be very careful not to force a read of the type defs or of the child namespaces' contents here
+    let struct (levelTypes, preNamespaces) = ilTypeDefsAsNamespaceLevel tdefs
+
     let typeEntities =
-        [ for rem, importEntity in items do
-            if List.isEmpty rem then
-                yield importEntity cpath ]
-
-    // Keyed by leading component; List.groupBy keeps first-seen order, so a split head merges in order.
-    let childContributions =
-        [ for rem, importEntity in items do
-            match rem with
-            | [] -> ()
-            | head :: rest -> head, Choice1Of2(rest, importEntity)
-          for preNamespace in preNamespaces do
-            preNamespace.Name, Choice2Of2 preNamespace ]
+        [ for pre in levelTypes -> ImportILTypeDef amap m scoref cpath enc pre.Name (pre.GetTypeDef()) ]
 
     let namespaceEntities =
-        [ for head, headContributions in List.groupBy fst childContributions ->
-            let childCPath = cpath.NestedCompPath head (Namespace true)
-            let contributions = List.map snd headContributions
+        [ for preNamespace in preNamespaces do
+            let childCPath = cpath.NestedCompPath preNamespace.Name (Namespace true)
 
             let modty =
-                InterruptibleLazy(fun _ ->
-                    let flatItems =
-                        contributions
-                        |> List.choose (function
-                            | Choice1Of2 item -> Some item
-                            | Choice2Of2 _ -> None)
+                InterruptibleLazy(fun _ -> ImportILTypeDefs amap m scoref childCPath enc (preNamespace.GetContents()))
 
-                    // A child namespace's contents are the same two sources again, for the child level.
-                    let childSources =
-                        contributions
-                        |> List.choose (function
-                            | Choice2Of2 preNamespace -> Some (importILNamespaceLevelSources amap m scoref enc (preNamespace.GetContents()))
-                            | Choice1Of2 _ -> None)
-
-                    ImportILNamespaceLevel amap m scoref childCPath enc
-                        (flatItems @ List.collect fst childSources) (List.collect snd childSources))
-
-            Construct.NewModuleOrNamespace (Some cpath) taccessPublic (mkSynId m head) XmlDoc.Empty [] (MaybeLazy.Lazy modty) ]
+            Construct.NewModuleOrNamespace (Some cpath) taccessPublic (mkSynId m preNamespace.Name) XmlDoc.Empty [] (MaybeLazy.Lazy modty) ]
 
     let kind = match enc with [] -> Namespace true | _ -> ModuleOrType
     Construct.NewModuleOrNamespaceType kind (typeEntities @ namespaceEntities) []
-
-/// The two sources a namespace level takes, read off an IL type-def table without forcing the type defs
-/// or the child namespaces' contents.
-and importILNamespaceLevelSources amap m scoref enc (tdefs: ILTypeDefs) =
-    let items =
-        [ for struct (ns, pre) in tdefs.AsArrayOfPreTypeDefs() -> ns, importILPreTypeDef amap m scoref enc pre ]
-
-    items, List.ofArray (tdefs.AsArrayOfPreNamespaces())
-
-// Curried so the import is deferred until its namespace level is reached.
-and importILPreTypeDef amap m scoref enc (pre: ILPreTypeDef) (cpath: CompilationPath) =
-    ImportILTypeDef amap m scoref cpath enc pre.Name (pre.GetTypeDef())
-
-and ImportILTypeDefs amap m scoref cpath enc (tdefs: ILTypeDefs) =
-    let items, preNamespaces = importILNamespaceLevelSources amap m scoref enc tdefs
-    ImportILNamespaceLevel amap m scoref cpath enc items preNamespaces
 
 /// Import the main type definitions in an IL assembly.
 ///
@@ -772,17 +750,21 @@ let ImportILAssemblyExportedType amap m auxModLoader (scoref: ILScopeRef) (expor
     else
         let ns, n = splitILTypeName exportedType.Name
 
-        // The type actually lives in another module, resolved lazily via auxModLoader.
-        let importEntity (cpath: CompilationPath) =
-            let tdef =
-                try
-                    let modul = auxModLoader exportedType.ScopeRef
-                    modul.TypeDefs.FindByName exportedType.Name
-                with :? KeyNotFoundException ->
-                    error(Error(FSComp.SR.impReferenceToDllRequiredByAssembly(exportedType.ScopeRef.QualifiedName, scoref.QualifiedName, exportedType.Name), m))
-            ImportILTypeDef amap m scoref cpath [] n tdef
+        let pre =
+            { new ILPreTypeDef with
+                member _.Name = n
 
-        [ ImportILNamespaceLevel amap m scoref (CompPath(scoref, SyntaxAccess.Unknown, [])) [] [ ns, importEntity ] [] ]
+                member _.GetTypeDef() =
+                    try
+                        let modul = auxModLoader exportedType.ScopeRef
+                        modul.TypeDefs.FindByName exportedType.Name
+                    with :? KeyNotFoundException ->
+                        error(Error(FSComp.SR.impReferenceToDllRequiredByAssembly(exportedType.ScopeRef.QualifiedName, scoref.QualifiedName, exportedType.Name), m)) }
+
+        // A one-entry flat table: ilTypeDefsAsNamespaceLevel turns its namespace into the entity chain.
+        let tdefs = mkILTypeDefsComputed (fun () -> [| struct (ns, pre) |])
+
+        [ ImportILTypeDefs amap m scoref (CompPath(scoref, SyntaxAccess.Unknown, [])) [] tdefs ]
 
 /// Import the "exported types" table for multi-module assemblies.
 let ImportILAssemblyExportedTypes amap m auxModLoader scoref (exportedTypes: ILExportedTypesAndForwarders) =

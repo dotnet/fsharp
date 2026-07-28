@@ -6206,8 +6206,9 @@ type Construct() =
         ModuleOrNamespaceType(mkind, QueueList.ofList vals, QueueList.ofList tycons)
 
     /// Create a new node for an empty module or namespace contents
-    static member NewEmptyModuleOrNamespaceType mkind = 
-        Construct.NewModuleOrNamespaceType mkind [] []
+    static member NewEmptyModuleOrNamespaceType mkind =
+        // Not via NewModuleOrNamespaceType: QueueList.ofList would build two more objects to hold nothing.
+        ModuleOrNamespaceType(mkind, QueueList.Empty, QueueList.Empty)
 
     static member NewEmptyFSharpTyconData kind =
         { fsobjmodel_cases = Construct.MakeUnionCases []
