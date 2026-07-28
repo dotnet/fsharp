@@ -215,8 +215,7 @@ let ``Type defs 01 - assembly import`` () =
     | None -> failwith "Expecting results"
 
 
-// can only be run explicitly
-[<Fact(Skip = "Type shouldn't be imported, see dotnet/fsharp#16166")>]
+[<Fact>]
 let ``Type defs 02 - assembly import`` () =
     let source = source1
 

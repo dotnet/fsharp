@@ -905,8 +905,12 @@ type Entity =
     member x.IsFSharpException = match x.ExceptionInfo with TExnNone -> false | _ -> true
 
     /// Demangle the module name, if FSharpModuleWithSuffix is used
-    member x.DemangledModuleOrNamespaceName =  
-          CompilationPath.DemangleEntityName x.LogicalName x.ModuleOrNamespaceType.ModuleOrNamespaceKind
+    member x.DemangledModuleOrNamespaceName =
+          // Check the suffix before reading the entity contents.
+          if x.LogicalName.EndsWithOrdinal FSharpModuleSuffix then
+              CompilationPath.DemangleEntityName x.LogicalName x.ModuleOrNamespaceType.ModuleOrNamespaceKind
+          else
+              x.LogicalName
     
     /// Get the type parameters for an entity that is a type declaration, otherwise return the empty list.
     ///
