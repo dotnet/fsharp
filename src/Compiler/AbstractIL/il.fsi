@@ -1720,8 +1720,6 @@ type internal ILPreTypeDefImpl =
 [<Sealed>]
 type internal ILTypeDefStored
 
-val internal mkILPreTypeDef: ILTypeDef -> ILPreTypeDef
-val internal mkILPreTypeDefEntry: ILTypeDef -> struct (string list * ILPreTypeDef)
 val internal mkILPreTypeDefRead: string * int32 * ILTypeDefStored -> ILPreTypeDef
 val mkILPreNamespaceComputed: string * (unit -> ILTypeDefs) -> ILPreNamespace
 val internal mkILTypeDefReader: (int32 -> ILTypeDef) -> ILTypeDefStored

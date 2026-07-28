@@ -134,14 +134,17 @@ let createPreTypeDefs typeData : struct (string list * ILPreTypeDef)[] =
     |> Array.ofList
     |> Array.map (fun data -> struct (data.Namespace, PreTypeDef data :> ILPreTypeDef))
 
-let referenceReaderProject getPreTypeDefs (cancelOnModuleAccess: bool) (options: FSharpProjectOptions) =
-    let reader = new ModuleReader("Reference", mkILTypeDefsComputed getPreTypeDefs, cancelOnModuleAccess)
+let referenceReaderProjectWithTypeDefs (typeDefs: ILTypeDefs) (cancelOnModuleAccess: bool) (options: FSharpProjectOptions) =
+    let reader = new ModuleReader("Reference", typeDefs, cancelOnModuleAccess)
 
     let project = FSharpReferencedProject.ILModuleReference(
         reader.Path, (fun _ -> reader.Timestamp), (fun _ -> reader)
     )
 
     { options with ReferencedProjects = [| project |]; OtherOptions = Array.append options.OtherOptions [| $"-r:{reader.Path}"|] }
+
+let referenceReaderProject getPreTypeDefs (cancelOnModuleAccess: bool) (options: FSharpProjectOptions) =
+    referenceReaderProjectWithTypeDefs (mkILTypeDefsComputed getPreTypeDefs) cancelOnModuleAccess options
 
 let parseAndCheck path source options =
     cts <- new CancellationTokenSource()
@@ -336,20 +339,157 @@ let _f3 (x: T3) = x
         |> shouldEqual [||]
     | None -> failwith "Expecting results"
 
+/// The synthetic reference assembly, analysed as a whole project.
+let private referencedAssembly (options: FSharpProjectOptions) =
+    let results = checker.ParseAndCheckProject(options) |> Async.RunSynchronously
+
+    results.ProjectContext.GetReferencedAssemblies()
+    |> List.find (fun a -> a.SimpleName.StartsWith "Reference")
+
+/// The imported types in entity order, each as "Namespace.Path.TypeName".
+let private importedTypeOrder (options: FSharpProjectOptions) =
+    (referencedAssembly options).Contents.Entities
+    |> Seq.map (fun e -> if e.AccessPath = "global" then e.DisplayName else $"{e.AccessPath}.{e.DisplayName}")
+    |> List.ofSeq
+
 [<Fact>]
 let ``Split namespace - import order is preserved`` () =
     let getPreTypeDefs _ = createPreTypeDefs splitNamespaceTypes
     let _, options = mkTestFileAndOptions [||]
     let options = referenceReaderProject getPreTypeDefs false options
 
-    let results = checker.ParseAndCheckProject(options) |> Async.RunSynchronously
-    let refAsm =
-        results.ProjectContext.GetReferencedAssemblies()
-        |> List.find (fun a -> a.SimpleName.StartsWith "Reference")
-
     // Depth-first: Ns1's own type T2 first, then the merged Ns1.Ns2 with T1 before T3 (metadata order).
-    // This is the same order the pre-ILPreNamespace import produced for this shape.
-    refAsm.Contents.Entities
+    // Verified to be the same order the pre-ILPreNamespace import produced for this shape - though see
+    // the ordering tests below: that parity is a coincidence of this shape's namespace depths.
+    (referencedAssembly options).Contents.Entities
     |> Seq.map (fun e -> e.DisplayName, e.AccessPath)
     |> List.ofSeq
     |> shouldEqual [ "T2", "Ns1"; "T1", "Ns1.Ns2"; "T3", "Ns1.Ns2" ]
+
+
+// ---- Entity order ------------------------------------------------------------------------------
+//
+// Types at namespace depths 0-3, with sibling types at each depth, two sibling namespaces inside Ns1
+// and a second top-level namespace - enough to pin sibling order at every depth for both reader shapes.
+let private orderedTypes =
+    [ "G0", []
+      "G1", []
+      "A1", [ "N1" ]
+      "B1", [ "N1" ]
+      "A2", [ "N1"; "N2" ]
+      "B2", [ "N1"; "N2" ]
+      "A3", [ "N1"; "N2"; "N3" ]
+      "B3", [ "N1"; "N2"; "N3" ]
+      "PA", [ "N1"; "P" ]
+      "QA", [ "N1"; "Q" ]
+      "C1", [ "M1" ] ]
+
+let private mkTypeData (name, ns) =
+    { Name = name; Namespace = ns; HasCtor = false; CancelOnImport = false }
+
+/// Metadata order at every depth, types before child namespaces.
+///
+/// NOTE: this is a deliberate change from the pre-ILPreNamespace import, which bucketed types by
+/// prepending into a dictionary and so reversed siblings once per namespace component consumed - its
+/// order alternated with depth: "N1.B1, N1.A1" and namespaces "N1.Q, N1.P, N1.N2", but "N1.N2.A2,
+/// N1.N2.B2" and then "N1.N2.N3.B3, N1.N2.N3.A3" again.
+///
+/// That order cannot be kept now that both reader shapes exist: in a grouped tree a type is an item of
+/// exactly one level, so it would be reversed once whatever its depth, while a flat table reverses it
+/// once per component. Metadata order is the only order the two shapes can agree on - which is why
+/// both tests below assert the same list.
+let private expectedOrder =
+    [ "G0"
+      "G1"
+      "N1.A1"
+      "N1.B1"
+      "N1.N2.A2"
+      "N1.N2.B2"
+      "N1.N2.N3.A3"
+      "N1.N2.N3.B3"
+      "N1.P.PA"
+      "N1.Q.QA"
+      "M1.C1" ]
+
+[<Fact>]
+let ``Import order - flat reader keeps metadata order at every depth`` () =
+    // A flat table: every entry at one level, carrying its full namespace (the shape custom readers,
+    // FSI and static linking produce, and the only shape that existed before ILPreNamespace).
+    let typeDefs =
+        mkILTypeDefsComputed (fun () -> createPreTypeDefs (List.map mkTypeData orderedTypes))
+
+    let _, options = mkTestFileAndOptions [||]
+    let options = referenceReaderProjectWithTypeDefs typeDefs false options
+
+    importedTypeOrder options |> shouldEqual expectedOrder
+
+[<Fact>]
+let ``Import order - grouped reader keeps metadata order at every depth`` () =
+    // A lazy namespace tree, the shape the default file reader produces. It must import in exactly the
+    // same order as the flat table above.
+    let typeDefs =
+        mkILTypeDefsGroupedComputed
+            (fun () -> [| for name, ns in orderedTypes -> struct (ns, mkTypeData (name, ns)) |])
+            (fun data -> PreTypeDef data :> ILPreTypeDef)
+
+    let _, options = mkTestFileAndOptions [||]
+    let options = referenceReaderProjectWithTypeDefs typeDefs false options
+
+    importedTypeOrder options |> shouldEqual expectedOrder
+
+
+// ---- Hybrid levels -----------------------------------------------------------------------------
+//
+// A level that carries BOTH namespaced flat entries and child pre-namespaces, with a namespace name
+// coming from both sources. ImportILNamespaceLevel has to merge those into one namespace entity;
+// without the merge one of the two same-named entities shadows the other in name resolution and its
+// types become unresolvable. No reader produces this shape today - grouped-reader entries carry no
+// namespace and flat readers have no pre-namespaces - but the import and ILTypeDefs both support it,
+// and addILTypeDef can construct it.
+let private hybridTypeDefs () =
+    let pre name = PreTypeDef(mkTypeData (name, [])) :> ILPreTypeDef
+
+    let ns2Contents () =
+        mkILTypeDefsComputed (fun () -> [| struct ([], pre "TDeepGrouped") |])
+
+    let ns1Contents () =
+        mkILTypeDefsAndNamespacesComputed
+            (fun () -> [| struct ([], pre "TGrouped") |])
+            (fun () -> [| mkILPreNamespaceComputed("Ns2", ns2Contents) |])
+
+    // Ns1 comes from both sources, and so does Ns1.Ns2 (via TDeepFlat's remaining namespace path).
+    mkILTypeDefsAndNamespacesComputed
+        (fun () -> [| struct ([ "Ns1" ], pre "TFlat"); struct ([ "Ns1"; "Ns2" ], pre "TDeepFlat") |])
+        (fun () -> [| mkILPreNamespaceComputed("Ns1", ns1Contents) |])
+
+[<Fact>]
+let ``Hybrid level - flat entries and pre-namespaces merge into one namespace`` () =
+    let source = """
+module Module
+
+open Ns1
+open Ns1.Ns2
+
+let _f1 (x: TFlat) = x
+let _f2 (x: TGrouped) = x
+let _f3 (x: TDeepFlat) = x
+let _f4 (x: TDeepGrouped) = x
+"""
+    let path, options = mkTestFileAndOptions [||]
+    let options = referenceReaderProjectWithTypeDefs (hybridTypeDefs ()) false options
+
+    match parseAndCheck path source options with
+    | Some results ->
+        results.Diagnostics
+        |> Array.filter (fun d -> d.Severity = FSharpDiagnosticSeverity.Error)
+        |> Array.map _.Message
+        |> shouldEqual [||]
+    | None -> failwith "Expecting results"
+
+[<Fact>]
+let ``Hybrid level - merged namespace keeps flat entries before pre-namespace contents`` () =
+    let _, options = mkTestFileAndOptions [||]
+    let options = referenceReaderProjectWithTypeDefs (hybridTypeDefs ()) false options
+
+    importedTypeOrder options
+    |> shouldEqual [ "Ns1.TFlat"; "Ns1.TGrouped"; "Ns1.Ns2.TDeepFlat"; "Ns1.Ns2.TDeepGrouped" ]

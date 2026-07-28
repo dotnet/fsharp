@@ -707,7 +707,8 @@ let rec ImportILTypeDef amap m scoref (cpath: CompilationPath) enc nm (tdef: ILT
 /// A level has two sources, both with namespaces relative to it: `items` (a relative namespace and a
 /// thunk importing the type; a flat table's full namespaces are bucketed here by leading component)
 /// and `preNamespaces` (child namespaces realised only when imported). A head in both is merged.
-and ImportILNamespaceLevel amap m scoref (cpath: CompilationPath) enc (items: (string list * (CompilationPath -> Entity)) list) (preNamespaces: ILPreNamespace list) =
+and ImportILNamespaceLevel amap m scoref (cpath: CompilationPath) enc
+        (items: (string list * (CompilationPath -> Entity)) list) (preNamespaces: ILPreNamespace list) =
     let typeEntities =
         [ for rem, importEntity in items do
             if List.isEmpty rem then
@@ -723,41 +724,47 @@ and ImportILNamespaceLevel amap m scoref (cpath: CompilationPath) enc (items: (s
             preNamespace.Name, Choice2Of2 preNamespace ]
 
     let namespaceEntities =
-        [ for head, contributions in List.groupBy fst childContributions ->
+        [ for head, headContributions in List.groupBy fst childContributions ->
             let childCPath = cpath.NestedCompPath head (Namespace true)
+            let contributions = List.map snd headContributions
 
             let modty =
                 InterruptibleLazy(fun _ ->
                     let flatItems =
-                        contributions |> List.choose (fun (_, c) -> match c with Choice1Of2 item -> Some item | Choice2Of2 _ -> None)
+                        contributions
+                        |> List.choose (function
+                            | Choice1Of2 item -> Some item
+                            | Choice2Of2 _ -> None)
 
-                    let structItems = ResizeArray<string list * (CompilationPath -> Entity)>()
-                    let structPreNamespaces = ResizeArray<ILPreNamespace>()
-
-                    for _, c in contributions do
-                        match c with
-                        | Choice2Of2 preNamespace ->
-                            let contents = preNamespace.GetContents()
-                            for struct (ns, pre) in contents.AsArrayOfPreTypeDefs() do
-                                structItems.Add(ns, importILPreTypeDef amap m scoref enc pre)
-                            structPreNamespaces.AddRange(contents.AsArrayOfPreNamespaces())
-                        | Choice1Of2 _ -> ()
+                    // A child namespace's contents are the same two sources again, for the child level.
+                    let childSources =
+                        contributions
+                        |> List.choose (function
+                            | Choice2Of2 preNamespace -> Some (importILNamespaceLevelSources amap m scoref enc (preNamespace.GetContents()))
+                            | Choice1Of2 _ -> None)
 
                     ImportILNamespaceLevel amap m scoref childCPath enc
-                        (flatItems @ List.ofSeq structItems) (List.ofSeq structPreNamespaces))
+                        (flatItems @ List.collect fst childSources) (List.collect snd childSources))
 
             Construct.NewModuleOrNamespace (Some cpath) taccessPublic (mkSynId m head) XmlDoc.Empty [] (MaybeLazy.Lazy modty) ]
 
     let kind = match enc with [] -> Namespace true | _ -> ModuleOrType
     Construct.NewModuleOrNamespaceType kind (typeEntities @ namespaceEntities) []
 
+/// The two sources a namespace level takes, read off an IL type-def table without forcing the type defs
+/// or the child namespaces' contents.
+and importILNamespaceLevelSources amap m scoref enc (tdefs: ILTypeDefs) =
+    let items =
+        [ for struct (ns, pre) in tdefs.AsArrayOfPreTypeDefs() -> ns, importILPreTypeDef amap m scoref enc pre ]
+
+    items, List.ofArray (tdefs.AsArrayOfPreNamespaces())
+
 // Curried so the import is deferred until its namespace level is reached.
 and importILPreTypeDef amap m scoref enc (pre: ILPreTypeDef) (cpath: CompilationPath) =
     ImportILTypeDef amap m scoref cpath enc pre.Name (pre.GetTypeDef())
 
 and ImportILTypeDefs amap m scoref cpath enc (tdefs: ILTypeDefs) =
-    let items = [ for struct (ns, pre) in tdefs.AsArrayOfPreTypeDefs() -> ns, importILPreTypeDef amap m scoref enc pre ]
-    let preNamespaces = List.ofArray (tdefs.AsArrayOfPreNamespaces())
+    let items, preNamespaces = importILNamespaceLevelSources amap m scoref enc tdefs
     ImportILNamespaceLevel amap m scoref cpath enc items preNamespaces
 
 /// Import the main type definitions in an IL assembly.
