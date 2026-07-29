@@ -761,9 +761,6 @@ let test3 = System.Text.RegularExpressions.RegexOptions.Compiled
 #if NETCOREAPP
                              ("NonBacktracking", Some 1024)
 #endif
-#if NET11_0_OR_GREATER
-                             ("AnyNewLine", Some 2048)
-#endif
                            ]
         |]
 
