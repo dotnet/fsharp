@@ -220,9 +220,9 @@ let TryFindRelevantImplicitConversion (infoReader: InfoReader) ad reqdTy actualT
                 Some (minfo, staticTy, (reqdTy, reqdTy2, ignore))
             | (minfo, staticTy) :: _ -> 
                 Some (minfo, staticTy, (reqdTy, reqdTy2, fun denv -> 
-                         let reqdTy2Text, actualTyText, _cxs = NicePrint.minimalStringsOfTwoTypes denv reqdTy2 actualTy
-                         let implicitsText = NicePrint.multiLineStringOfMethInfos infoReader m denv (List.map fst implicits)
-                         errorR(Error(FSComp.SR.tcAmbiguousImplicitConversion(actualTyText, reqdTy2Text, implicitsText), m))))
+                         let reqdTy2Text, actualTyText, _cxs = NicePrint.minimalRichTextsOfTwoTypes denv reqdTy2 actualTy
+                         let implicitsText = NicePrint.multiLineRichTextOfMethInfos infoReader m denv (List.map fst implicits)
+                         errorR(RichError(FSComp.SR.tcAmbiguousImplicitConversion(actualTyText, reqdTy2Text, implicitsText), m))))
             | _ -> None
         else
             None
@@ -260,16 +260,16 @@ let rec AdjustRequiredTypeForTypeDirectedConversions (infoReader: InfoReader) ad
     let g = infoReader.g
 
     let warn info denv =
-        let reqdTyText, actualTyText, _cxs = NicePrint.minimalStringsOfTwoTypes denv reqdTy actualTy
+        let reqdTyText, actualTyText, _cxs = NicePrint.minimalRichTextsOfTwoTypes denv reqdTy actualTy
         match info with
         | TypeDirectedConversion.BuiltIn ->
-            Error(FSComp.SR.tcBuiltInImplicitConversionUsed(actualTyText, reqdTyText), m)
+            RichError(FSComp.SR.tcBuiltInImplicitConversionUsed(actualTyText, reqdTyText), m)
         | TypeDirectedConversion.Implicit convMeth ->
-            let methText = NicePrint.stringOfMethInfo infoReader m denv convMeth
+            let methText = NicePrint.richTextOfMethInfo infoReader m denv convMeth
             if isMethodArg then
-                Error(FSComp.SR.tcImplicitConversionUsedForMethodArg(methText, actualTyText, reqdTyText), m)
+                RichError(FSComp.SR.tcImplicitConversionUsedForMethodArg(methText, actualTyText, reqdTyText), m)
             else
-                Error(FSComp.SR.tcImplicitConversionUsedForNonMethodArg(methText, actualTyText, reqdTyText), m)
+                RichError(FSComp.SR.tcImplicitConversionUsedForNonMethodArg(methText, actualTyText, reqdTyText), m)
 
     if isConstraint then 
         reqdTy, TypeDirectedConversionUsed.No, None
@@ -720,7 +720,7 @@ type CalledMeth<'T>
             let names = System.Collections.Generic.HashSet<_>() 
             for CallerNamedArg(nm, _) in namedCallerArgs do 
                 if not (names.Add nm.idText) then
-                    errorR(Error(FSComp.SR.typrelNamedArgumentHasBeenAssignedMoreThenOnce nm.idText, m))
+                    errorR(RichError(FSComp.SR.typrelNamedArgumentHasBeenAssignedMoreThenOnce (RichText.mkParameter nm.idText), m))
                 
             let argSet = { UnnamedCalledArgs=unnamedCalledArgs; UnnamedCallerArgs=unnamedCallerArgs; ParamArrayCalledArgOpt=paramArrayCalledArgOpt; ParamArrayCallerArgs=paramArrayCallerArgs; AssignedNamedArgs=assignedNamedArgs }
 
@@ -1025,7 +1025,7 @@ let TakeObjAddrForMethodCall g amap (minfo: MethInfo) isMutable m staticTyOpt ob
                 minfo.TryObjArgByrefType(amap, m, minfo.FormalMethodInst)
                 |> Option.iter (fun ty ->
                     if not (isInByrefTy g ty) then
-                        errorR(Error(FSComp.SR.tcCannotCallExtensionMethodInrefToByref(minfo.DisplayName), m)))
+                        errorR(RichError(FSComp.SR.tcCannotCallExtensionMethodInrefToByref(RichText.mkMethod minfo.DisplayName), m)))
                         
 
             wrap, [objArgExprCoerced] 
@@ -1202,7 +1202,7 @@ let rec BuildMethodCall tcVal g amap isMutable m isProp minfo valUseFlags minst 
             // prohibit calls to methods that are declared in specific array types (Get, Set, Address)
             // these calls are provided by the runtime and should not be called from the user code
             if isArrayTy g enclTy then
-                let tpe = TypeProviderError(FSComp.SR.tcRuntimeSuppliedMethodCannotBeUsedInUserCode(minfo.DisplayName), providedMeth.TypeProviderDesignation, m)
+                let tpe = TypeProviderError(FSComp.SR.tcRuntimeSuppliedMethodCannotBeUsedInUserCode(RichText.mkMethod minfo.DisplayName), providedMeth.TypeProviderDesignation, m)
                 error tpe
             let isStruct = isStructTy g enclTy
             let isCtor = minfo.IsConstructor
@@ -1289,7 +1289,7 @@ let rec BuildMethodCall tcVal g amap isMutable m isProp minfo valUseFlags minst 
 
 let ILFieldStaticChecks g amap infoReader ad m (finfo : ILFieldInfo) =
     CheckILFieldInfoAccessible g amap m ad finfo
-    if not finfo.IsStatic then error (Error (FSComp.SR.tcFieldIsNotStatic(finfo.FieldName), m))
+    if not finfo.IsStatic then error (RichError(FSComp.SR.tcFieldIsNotStatic(RichText.mkField finfo.FieldName), m))
 
     // Static IL interfaces fields are not supported in lower F# versions.
     if isInterfaceTy g finfo.ApparentEnclosingType then    
@@ -1306,9 +1306,9 @@ let ILFieldInstanceChecks  g amap ad m (finfo : ILFieldInfo) =
 let MethInfoChecks g amap isInstance tyargsOpt objArgs ad m (minfo: MethInfo)  =
     if minfo.IsInstance <> isInstance then
       if isInstance then 
-        error (Error (FSComp.SR.csMethodIsNotAnInstanceMethod(minfo.LogicalName), m))
+        error (RichError(FSComp.SR.csMethodIsNotAnInstanceMethod(RichText.mkMethod minfo.LogicalName), m))
       else        
-        error (Error (FSComp.SR.csMethodIsNotAStaticMethod(minfo.LogicalName), m))
+        error (RichError(FSComp.SR.csMethodIsNotAStaticMethod(RichText.mkMethod minfo.LogicalName), m))
 
     // keep the original accessibility domain to determine type accessibility
     let adOriginal = ad
@@ -1329,7 +1329,7 @@ let MethInfoChecks g amap isInstance tyargsOpt objArgs ad m (minfo: MethInfo)  =
         | _ -> ad
 
     if not (minfo.IsProtectedAccessibility && minfo.LogicalName.StartsWithOrdinal("set_")) && not(IsTypeAndMethInfoAccessible amap m adOriginal ad minfo) then 
-      error (Error (FSComp.SR.tcMethodNotAccessible(minfo.LogicalName), m))
+      error (RichError(FSComp.SR.tcMethodNotAccessible(RichText.mkMethod minfo.LogicalName), m))
 
     if isAnyTupleTy g minfo.ApparentEnclosingType && not minfo.IsExtensionMember &&
         (minfo.LogicalName.StartsWithOrdinal("get_Item") || minfo.LogicalName.StartsWithOrdinal("get_Rest")) then
@@ -1768,7 +1768,7 @@ let AdjustCallerArgs tcVal tcFieldInit eCallerMemberName (infoReader: InfoReader
         match objArgs, lambdaVars with 
         | [objArg], Some _ -> 
             if calledMethInfo.IsExtensionMember && calledMethInfo.ObjArgNeedsAddress(amap, mMethExpr) then
-                error(Error(FSComp.SR.tcCannotPartiallyApplyExtensionMethodForByref(calledMethInfo.DisplayName), mMethExpr))
+                error(RichError(FSComp.SR.tcCannotPartiallyApplyExtensionMethodForByref(RichText.mkMethod calledMethInfo.DisplayName), mMethExpr))
             let objArgTy = tyOfExpr g objArg
             let v, ve = mkCompGenLocal mMethExpr "objectArg" objArgTy
             (fun body -> mkCompGenLet mMethExpr v objArg body), [ve]
@@ -1835,7 +1835,7 @@ module ProvidedMethodCalls =
         let ty = ImportProvidedType amap m objTy
         let normTy = normalizeEnumTy g ty
         obj.PUntaint((fun v ->
-            let fail() = raise (TypeProviderError(FSComp.SR.etUnsupportedConstantType(v.GetType().ToString()), constant.TypeProviderDesignation, m))
+            let fail() = raise (TypeProviderError(FSComp.SR.etUnsupportedConstantType(RichText.mkText (v.GetType().ToString())), constant.TypeProviderDesignation, m))
             try 
                 if isNull v then mkNull m ty else
                 let c = 
@@ -1935,9 +1935,9 @@ module ProvidedMethodCalls =
             dict
 
         let rec exprToExprAndWitness top (ea: Tainted<(ProvidedExpr | null)>) =
-            let fail() = error(Error(FSComp.SR.etUnsupportedProvidedExpression(ea.PUntaint((fun etree -> match etree with null -> "<null>" | e -> e.UnderlyingExpressionString), m)), m))
+            let fail() = error(RichError(FSComp.SR.etUnsupportedProvidedExpression(RichText.mkText (ea.PUntaint((fun etree -> match etree with null -> "<null>" | e -> e.UnderlyingExpressionString), m))), m))
             match ea with
-            | Tainted.Null -> error(Error(FSComp.SR.etNullProvidedExpression(ea.TypeProviderDesignation), m))
+            | Tainted.Null -> error(RichError(FSComp.SR.etNullProvidedExpression(RichText.mkText ea.TypeProviderDesignation), m))
             | Tainted.NonNull ea ->
             let exprType = ea.PApplyOption((fun x -> x.GetExprType()), m)
             let exprType = match exprType with | Some exprType -> exprType | None -> fail()
@@ -2128,7 +2128,7 @@ module ProvidedMethodCalls =
             | true, v -> v
             | _ ->
                 let typeProviderDesignation = DisplayNameOfTypeProvider (pe.TypeProvider, m)
-                error(Error(FSComp.SR.etIncorrectParameterExpression(typeProviderDesignation, vRaw.Name), m))
+                error(RichError(FSComp.SR.etIncorrectParameterExpression(RichText.mkText typeProviderDesignation, RichText.mkParameter vRaw.Name), m))
                 
         and exprToExpr expr =
             let _, (resExpr, _) = exprToExprAndWitness false expr

@@ -263,7 +263,7 @@ let MethInfoHasWellKnownAttributeSpec (g: TcGlobals) (m: range) (spec: WellKnown
 let private reportObsoleteDiagnostic m diagnostic =
     match diagnostic with
     | Some(ObsoleteDiagnosticInfo(isError, id, msg, urlFormat)) ->
-        let obsoleteDiagnostic = ObsoleteDiagnostic(isError, id, msg, urlFormat, m)
+        let obsoleteDiagnostic = ObsoleteDiagnostic(isError, id, msg |> Option.map RichText.mkText, urlFormat, m)
         if isError then
             ErrorD(obsoleteDiagnostic)
         else
@@ -396,7 +396,7 @@ let private CheckCompilerMessageAttribute g attribs m =
     trackErrors {
         match attribs with
         | EntityAttrib g WellKnownEntityAttributes.CompilerMessageAttribute (Attrib(unnamedArgs= [ AttribStringArg s ; AttribInt32Arg n ]; propVal= namedArgs)) ->
-            let msg = UserCompilerMessage(s, n, m)
+            let msg = UserCompilerMessage(RichText.mkText s, n, m)
             let isError = 
                 match namedArgs with 
                 | ExtractAttribNamedArg "IsError" (AttribBoolArg v) -> v 
@@ -614,7 +614,7 @@ let CheckMethInfoAttributes g m tyargsOpt (minfo: MethInfo) =
                         trackErrors {
                              do! CheckFSharpAttributes g fsAttribs m
                              if Option.isNone tyargsOpt && (attribsHaveValFlag g WellKnownValAttributes.RequiresExplicitTypeArgumentsAttribute fsAttribs) then
-                                do! ErrorD(Error(FSComp.SR.tcFunctionRequiresExplicitTypeArguments(minfo.LogicalName), m))
+                                do! ErrorD(RichError(FSComp.SR.tcFunctionRequiresExplicitTypeArguments(RichText.mkMethod minfo.LogicalName), m))
                         }
                         
                     Some res) 

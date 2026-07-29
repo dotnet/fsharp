@@ -14,6 +14,7 @@ open Internal.Utilities.Library
 open FSharp.Compiler.AbstractIL.Diagnostics
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.DiagnosticsLogger
+open FSharp.Compiler.Text
 open FSharp.Compiler.IO
 open FSharp.Compiler.Text.Range
 open FSharp.Core.Printf
@@ -489,7 +490,7 @@ let convResolveAssemblyRef (cenv: cenv) (asmref: ILAssemblyRef) qualifiedName =
     let typT = assembly.GetType qualifiedName
 
     match typT with
-    | null -> error (Error(FSComp.SR.itemNotFoundDuringDynamicCodeGen ("type", qualifiedName, asmref.QualifiedName), range0))
+    | null -> error (RichError(FSComp.SR.itemNotFoundDuringDynamicCodeGen (RichText.mkText "type", RichText.mkQualifiedTypeName qualifiedName, RichText.mkText asmref.QualifiedName), range0))
     | res -> res
 
 /// Convert an Abstract IL type reference to Reflection.Emit System.Type value.
@@ -510,7 +511,7 @@ let convTypeRefAux (cenv: cenv) (tref: ILTypeRef) =
         let typT = Type.GetType qualifiedName
 
         match typT with
-        | null -> error (Error(FSComp.SR.itemNotFoundDuringDynamicCodeGen ("type", qualifiedName, "<emitted>"), range0))
+        | null -> error (RichError(FSComp.SR.itemNotFoundDuringDynamicCodeGen (RichText.mkText "type", RichText.mkQualifiedTypeName qualifiedName, RichText.mkText "<emitted>"), range0))
         | res -> res
     | ILScopeRef.PrimaryAssembly -> convResolveAssemblyRef cenv cenv.ilg.primaryAssemblyRef qualifiedName
 
@@ -705,7 +706,7 @@ let rec convTypeSpec cenv emEnv preferCreated (tspec: ILTypeSpec) =
 
     match res with
     | Null ->
-        error (Error(FSComp.SR.itemNotFoundDuringDynamicCodeGen ("type", tspec.TypeRef.QualifiedName, tspec.Scope.QualifiedName), range0))
+        error (RichError(FSComp.SR.itemNotFoundDuringDynamicCodeGen (RichText.mkText "type", RichText.mkUnknownType tspec.TypeRef.QualifiedName, RichText.mkText tspec.Scope.QualifiedName), range0))
     | NonNull res -> res
 
 and convTypeAux cenv emEnv preferCreated ty =
@@ -835,12 +836,12 @@ let queryableTypeGetField _emEnv (parentT: Type) (fref: ILFieldRef) =
     match res with
     | Null ->
         error (
-            Error(
+            RichError(
                 FSComp.SR.itemNotFoundInTypeDuringDynamicCodeGen (
-                    "field",
-                    fref.Name,
-                    fref.DeclaringTypeRef.FullName,
-                    fref.DeclaringTypeRef.Scope.QualifiedName
+                    RichText.mkText "field",
+                    RichText.mkMember fref.Name,
+                    RichText.mkQualifiedTypeName fref.DeclaringTypeRef.FullName,
+                    RichText.mkText fref.DeclaringTypeRef.Scope.QualifiedName
                 ),
                 range0
             )
@@ -1044,12 +1045,12 @@ let convMethodRef cenv emEnv (parentTI: Type) (mref: ILMethodRef) =
     match res with
     | Null ->
         error (
-            Error(
+            RichError(
                 FSComp.SR.itemNotFoundInTypeDuringDynamicCodeGen (
-                    "method",
-                    mref.Name,
-                    parentTI.FullName |> string,
-                    parentTI.Assembly.FullName |> string
+                    RichText.mkText "method",
+                    RichText.mkMember mref.Name,
+                    RichText.mkQualifiedTypeName (parentTI.FullName |> string),
+                    RichText.mkText (parentTI.Assembly.FullName |> string)
                 ),
                 range0
             )
@@ -1090,12 +1091,12 @@ let queryableTypeGetConstructor cenv emEnv (parentT: Type) (mref: ILMethodRef) =
     match res with
     | Null ->
         error (
-            Error(
+            RichError(
                 FSComp.SR.itemNotFoundInTypeDuringDynamicCodeGen (
-                    "constructor",
-                    mref.Name,
-                    parentT.FullName |> string,
-                    parentT.Assembly.FullName |> string
+                    RichText.mkText "constructor",
+                    RichText.mkMember mref.Name,
+                    RichText.mkQualifiedTypeName (parentT.FullName |> string),
+                    RichText.mkText (parentT.Assembly.FullName |> string)
                 ),
                 range0
             )
@@ -1130,12 +1131,12 @@ let convConstructorSpec cenv emEnv (mspec: ILMethodSpec) =
     match res with
     | Null ->
         error (
-            Error(
+            RichError(
                 FSComp.SR.itemNotFoundInTypeDuringDynamicCodeGen (
-                    "constructor",
-                    "",
-                    parentTI.FullName |> string,
-                    parentTI.Assembly.FullName |> string
+                    RichText.mkText "constructor",
+                    RichText.mkMember "",
+                    RichText.mkQualifiedTypeName (parentTI.FullName |> string),
+                    RichText.mkText (parentTI.Assembly.FullName |> string)
                 ),
                 range0
             )

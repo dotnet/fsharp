@@ -33,7 +33,7 @@ open FSharp.Compiler.TcGlobals
 let verbose = false
 #endif
 
-let ffailwith fileName str =
+let ffailwith (fileName: string) (str: string) =
     let msg = FSComp.SR.pickleErrorReadingWritingMetadata (fileName, str)
     System.Diagnostics.Debug.Assert(false, msg)
     failwith msg

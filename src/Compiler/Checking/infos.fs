@@ -327,7 +327,7 @@ let CrackParamAttribsInfo g (ty: TType, argInfo: ArgReprInfo) =
         | false, true, true ->
             match attribs with
             | ValAttrib g WellKnownValAttributes.CallerMemberNameAttribute (Attrib(_, _, _, _, _, _, callerMemberNameAttributeRange)) ->
-                warning(Error(FSComp.SR.CallerMemberNameIsOverridden(argInfo.Name.Value.idText), callerMemberNameAttributeRange))
+                warning(RichError(FSComp.SR.CallerMemberNameIsOverridden(RichText.mkParameter argInfo.Name.Value.idText), callerMemberNameAttributeRange))
                 CallerFilePath
             | _ -> failwith "Impossible"
         | _, _, _ ->
@@ -366,7 +366,7 @@ type ILFieldInit with
             | :? uint64 as i -> ILFieldInit.UInt64 i
             | _ -> 
                 let txt = match v with | null -> "?" | v -> try !!v.ToString() with _ -> "?"
-                error(Error(FSComp.SR.infosInvalidProvidedLiteralValue(txt), m))
+                error(RichError(FSComp.SR.infosInvalidProvidedLiteralValue(RichText.mkText txt), m))
 
 
 /// Compute the OptionalArgInfo for a provided parameter.
@@ -408,7 +408,7 @@ let ArbitraryMethodInfoOfPropertyInfo (pi: Tainted<ProvidedPropertyInfo>) m =
     elif pi.PUntaint((fun pi -> pi.CanWrite), m) then
         GetAndSanityCheckProviderMethod m pi (fun pi -> pi.GetSetMethod()) FSComp.SR.etPropertyCanWriteButHasNoSetter
     else
-        error(Error(FSComp.SR.etPropertyNeedsCanWriteOrCanRead(pi.PUntaint((fun mi -> mi.Name), m), pi.PUntaint((fun mi -> (nonNull<ProvidedType> mi.DeclaringType).Name), m)), m))
+        error(RichError(FSComp.SR.etPropertyNeedsCanWriteOrCanRead(RichText.mkMember (pi.PUntaint((fun mi -> mi.Name), m)), RichText.mkQualifiedTypeName (pi.PUntaint((fun mi -> (nonNull<ProvidedType> mi.DeclaringType).Name), m))), m))
 
 #endif
 
@@ -2350,7 +2350,7 @@ let private tyConformsToIDelegateEvent g ty =
 
 /// Create an error object to raise should an event not have the shape expected by the .NET idiom described further below
 let nonStandardEventError nm m =
-    Error (FSComp.SR.eventHasNonStandardType(nm, ("add_"+nm), ("remove_"+nm)), m)
+    RichError(FSComp.SR.eventHasNonStandardType(RichText.mkEvent nm, RichText.mkMethod ("add_"+nm), RichText.mkMethod ("remove_"+nm)), m)
 
 /// Find the delegate type that an F# event property implements by looking through the type hierarchy of the type of the property
 /// for the first instantiation of IDelegateEvent.

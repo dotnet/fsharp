@@ -747,7 +747,7 @@ valSpfn:
       { if Option.isSome $2 then errorR(Error(FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier(), rhs parseState 2))
         let attr1, attr2, isInline, isMutable, vis2, id, doc, explicitValTyparDecls, (ty, arity), (mEquals, konst: SynExpr option) = ($1), ($4), (Option.isSome $5), (Option.isSome $6), ($7), ($8), grabXmlDoc(parseState, $1, 1), ($9), ($11), ($12)
         let vis2 = SynValSigAccess.Single(vis2)
-        if not (isNil attr2) then errorR(Deprecated(FSComp.SR.parsAttributesMustComeBeforeVal(), rhs parseState 4))
+        if not (isNil attr2) then errorR(Deprecated(RichText.mkText (FSComp.SR.parsAttributesMustComeBeforeVal()), rhs parseState 4))
         let m =
             rhs2 parseState 1 11
             |> unionRangeWithXmlDoc doc
@@ -2953,7 +2953,7 @@ unionCaseReprElement:
 
 unionCaseRepr:
   | braceFieldDeclList
-     { errorR(Deprecated(FSComp.SR.parsConsiderUsingSeparateRecordType(), lhs parseState))
+     { errorR(Deprecated(RichText.mkText (FSComp.SR.parsConsiderUsingSeparateRecordType()), lhs parseState))
        let fields = $1 |> List.choose (function SynFieldOrSpread.Field field -> Some field | _ -> None)
        fields, rhs parseState 1 }
 
@@ -5483,7 +5483,7 @@ atomicExprQualification:
             | SynExpr.IndexRange(None, mOperator, None, _m1, _m2, _) ->
                 mkSynDot mDot mLhs e (SynIdent(ident(CompileOpName "*", mOperator), Some(IdentTrivia.OriginalNotationWithParen(lpr, "*", rpr))))
             | _ ->
-                errorR(Deprecated(FSComp.SR.astDeprecatedIndexerNotation(), lhs parseState))
+                errorR(Deprecated(RichText.mkText (FSComp.SR.astDeprecatedIndexerNotation()), lhs parseState))
                 exprFromParseError $2) }
 
   | LBRACK typedSequentialExpr RBRACK
@@ -7184,7 +7184,7 @@ opt_ODECLEND:
   | /* EMPTY */ { }
 
 deprecated_opt_equals:
-  | EQUALS { deprecatedWithError (FSComp.SR.parsNoEqualShouldFollowNamespace()) (lhs parseState); () }
+  | EQUALS { deprecatedWithError (RichText.mkText (FSComp.SR.parsNoEqualShouldFollowNamespace())) (lhs parseState); () }
   | /* EMPTY */ { }
 
 opt_OBLOCKSEP:
