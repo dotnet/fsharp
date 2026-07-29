@@ -155,7 +155,7 @@ exception ConstraintSolverNullnessWarningWithTypes of
 
 exception ConstraintSolverNullnessWarningWithType of DisplayEnv * TType * NullnessInfo * range * range
 
-exception ConstraintSolverNullnessWarning of string * range * range
+exception ConstraintSolverNullnessWarning of RichText * range * range
 
 exception ConstraintSolverNullnessWarningOnDotAccess of
     DisplayEnv *
@@ -165,7 +165,7 @@ exception ConstraintSolverNullnessWarningOnDotAccess of
     objExprRange: range *
     mMethod: range
 
-exception ConstraintSolverError of string * range * range
+exception ConstraintSolverError of RichText * range * range
 
 exception ErrorFromApplyingDefault of
     tcGlobals: TcGlobals *

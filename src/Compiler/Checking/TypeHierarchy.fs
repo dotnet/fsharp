@@ -3,6 +3,7 @@
 module internal FSharp.Compiler.TypeHierarchy
 
 open Internal.Utilities.Library.Extras
+open FSharp.Compiler.Text
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.DiagnosticsLogger
 open FSharp.Compiler.Import
@@ -251,7 +252,7 @@ let FoldHierarchyOfTypeAux followInterfaces allowMultiIntfInst skipUnref visitor
             | _ ->
                 state
 
-        if ndeep > 100 then (errorR(Error((FSComp.SR.recursiveClassHierarchy (showType ty)), m)); (visitedTycon, visited, acc)) else
+        if ndeep > 100 then (errorR(RichError((FSComp.SR.recursiveClassHierarchy (RichText.mkText (showType ty))), m)); (visitedTycon, visited, acc)) else
         let visitedTycon, visited, acc =
             if isInterfaceTy g ty then
                 List.foldBack

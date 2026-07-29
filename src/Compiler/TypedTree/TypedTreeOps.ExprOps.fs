@@ -457,7 +457,7 @@ module internal ExprFolding =
                              not (c.FieldByIndex n).IsMutable
                              && not (entityRefInThisAssembly g.compilingFSharpCore tcref)
                          then
-                             errorR (Error(FSComp.SR.tastRecursiveValuesMayNotAppearInConstructionOfType (tcref.LogicalName), m))
+                             errorR (RichError(FSComp.SR.tastRecursiveValuesMayNotAppearInConstructionOfType (richTextOfEntityRefName tcref tcref.LogicalName), m))
 
                          mkUnionCaseFieldSet (access, c, tinst, n, e, m))))
 
@@ -475,10 +475,10 @@ module internal ExprFolding =
                          // NICE: it would be better to do this check in the type checker
                          if not fspec.IsMutable && not (entityRefInThisAssembly g.compilingFSharpCore tcref) then
                              errorR (
-                                 Error(
+                                 RichError(
                                      FSComp.SR.tastRecursiveValuesMayNotBeAssignedToNonMutableField (
-                                         fspec.rfield_id.idText,
-                                         tcref.LogicalName
+                                         RichText.mkField fspec.rfield_id.idText,
+                                         richTextOfEntityRefName tcref tcref.LogicalName
                                      ),
                                      m
                                  )

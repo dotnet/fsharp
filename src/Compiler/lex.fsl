@@ -109,13 +109,13 @@ let lexemeTrimRightToInt32 args lexbuf n =
 
 let checkExprOp (lexbuf:UnicodeLexing.Lexbuf) =
     if lexbuf.LexemeContains ':' then
-        deprecatedWithError (FSComp.SR.lexCharNotAllowedInOperatorNames(":")) lexbuf.LexemeRange
+        deprecatedWithError (FSComp.SR.lexCharNotAllowedInOperatorNames(RichText.mkOperator ":")) lexbuf.LexemeRange
     if lexbuf.LexemeContains '$' then
-        deprecatedWithError (FSComp.SR.lexCharNotAllowedInOperatorNames("$")) lexbuf.LexemeRange
+        deprecatedWithError (FSComp.SR.lexCharNotAllowedInOperatorNames(RichText.mkOperator "$")) lexbuf.LexemeRange
         
 let checkExprGreaterColonOp (lexbuf:UnicodeLexing.Lexbuf) =
     if lexbuf.LexemeContains '$' then
-        deprecatedWithError (FSComp.SR.lexCharNotAllowedInOperatorNames("$")) lexbuf.LexemeRange
+        deprecatedWithError (FSComp.SR.lexCharNotAllowedInOperatorNames(RichText.mkOperator "$")) lexbuf.LexemeRange
 
 let unexpectedChar lexbuf =
     LEX_FAILURE (FSComp.SR.lexUnexpectedChar(lexeme lexbuf))
