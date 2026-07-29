@@ -66,7 +66,7 @@ let TcArrayOrListComputedExpression (cenv: TcFileState) env (overallTy: OverallT
             match comp with
             | SimpleSemicolonSequence cenv false _ -> ()
             | _ when validateExpressionWithIfRequiresParenthesis ->
-                errorR (Deprecated(RichText.mkText (FSComp.SR.tcExpressionWithIfRequiresParenthesis()), m))
+                errorR (Deprecated(RichText.mkText (FSComp.SR.tcExpressionWithIfRequiresParenthesis ()), m))
             | _ -> ()
 
             let replacementExpr =

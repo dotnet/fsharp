@@ -28,7 +28,13 @@ exception ValueNotContained of
     Val *
     (RichText * RichText * RichText -> RichText)
 
-exception UnionCaseNotContained of DisplayEnv * InfoReader * Tycon * UnionCase * UnionCase * (RichText * RichText -> RichText)
+exception UnionCaseNotContained of
+    DisplayEnv *
+    InfoReader *
+    Tycon *
+    UnionCase *
+    UnionCase *
+    (RichText * RichText -> RichText)
 
 exception FSharpExceptionNotContained of DisplayEnv * InfoReader * Tycon * Tycon * (RichText * RichText -> RichText)
 

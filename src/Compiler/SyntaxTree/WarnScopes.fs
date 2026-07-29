@@ -244,7 +244,9 @@ module internal WarnScopes =
                 | WarnScope.OpenOff m' :: _
                 | WarnScope.On m' :: _ ->
                     if scopedNowarnFeatureIsSupported then
-                        informationalWarning (RichError(FSComp.SR.lexWarnDirectivesMustMatch (RichText.mkKeyword "#nowarn", m'.StartLine), m))
+                        informationalWarning (
+                            RichError(FSComp.SR.lexWarnDirectivesMustMatch (RichText.mkKeyword "#nowarn", m'.StartLine), m)
+                        )
 
                     warnScopeMap
                 | scopes -> warnScopeMap.Add(n, WarnScope.OpenOff(mkScope m m) :: scopes)

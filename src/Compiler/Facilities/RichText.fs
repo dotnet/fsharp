@@ -142,9 +142,11 @@ module RichMessage =
     /// Characters that can stand in for a classified argument while the message is formatted. Control
     /// characters, so that in practice the first one is always free.
     let private candidateMarkers =
-        [| for c in '\u0001' .. '\u001f' do
-               if c <> '\n' && c <> '\r' && c <> '\t' then
-                   c |]
+        [|
+            for c in '\u0001' .. '\u001f' do
+                if c <> '\n' && c <> '\r' && c <> '\t' then
+                    c
+        |]
 
     /// Replaces the markers in a formatted message with the parts they stand for
     let private splice (marker: char) (args: ResizeArray<RichText>) (text: string) =
@@ -197,8 +199,7 @@ module RichMessage =
         let plain = format (fun arg -> arg.Text)
         let plainText = getText plain
 
-        let marker =
-            candidateMarkers |> Array.tryFind (fun c -> plainText.IndexOf c < 0)
+        let marker = candidateMarkers |> Array.tryFind (fun c -> plainText.IndexOf c < 0)
 
         match marker with
         | None -> plain, RichText.mkText plainText

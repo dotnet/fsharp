@@ -342,7 +342,17 @@ type ILMultiInMemoryAssemblyEmitEnv
         let typT = assembly.GetType qualifiedName
 
         match typT with
-        | null -> error (RichError(FSComp.SR.itemNotFoundDuringDynamicCodeGen (RichText.mkText "type", RichText.mkQualifiedTypeName qualifiedName, RichText.mkText asmref.QualifiedName), range0))
+        | null ->
+            error (
+                RichError(
+                    FSComp.SR.itemNotFoundDuringDynamicCodeGen (
+                        RichText.mkText "type",
+                        RichText.mkQualifiedTypeName qualifiedName,
+                        RichText.mkText asmref.QualifiedName
+                    ),
+                    range0
+                )
+            )
         | res -> res
 
     /// Convert an Abstract IL type reference to System.Type
@@ -357,7 +367,17 @@ type ILMultiInMemoryAssemblyEmitEnv
             let typT = Type.GetType qualifiedName
 
             match typT with
-            | null -> error (RichError(FSComp.SR.itemNotFoundDuringDynamicCodeGen (RichText.mkText "type", RichText.mkQualifiedTypeName qualifiedName, RichText.mkText "<emitted>"), range0))
+            | null ->
+                error (
+                    RichError(
+                        FSComp.SR.itemNotFoundDuringDynamicCodeGen (
+                            RichText.mkText "type",
+                            RichText.mkQualifiedTypeName qualifiedName,
+                            RichText.mkText "<emitted>"
+                        ),
+                        range0
+                    )
+                )
             | res -> res
         | ILScopeRef.PrimaryAssembly -> convResolveAssemblyRef ilg.primaryAssemblyRef qualifiedName
 
@@ -385,7 +405,14 @@ type ILMultiInMemoryAssemblyEmitEnv
         match res with
         | null ->
             error (
-                RichError(FSComp.SR.itemNotFoundDuringDynamicCodeGen (RichText.mkText "type", RichText.mkUnknownType tspec.TypeRef.QualifiedName, RichText.mkText tspec.Scope.QualifiedName), range0)
+                RichError(
+                    FSComp.SR.itemNotFoundDuringDynamicCodeGen (
+                        RichText.mkText "type",
+                        RichText.mkUnknownType tspec.TypeRef.QualifiedName,
+                        RichText.mkText tspec.Scope.QualifiedName
+                    ),
+                    range0
+                )
             )
         | _ -> res
 
@@ -3879,7 +3906,13 @@ type FsiInteractionProcessor
             | "show" -> fsiConsolePrompt.ShowPrompt <- true
             | "hide" -> fsiConsolePrompt.ShowPrompt <- false
             | "skip" -> fsiConsolePrompt.SkipNext()
-            | _ -> error (RichError((FSComp.SR.fsiInvalidDirective (RichText.mkKeyword "prompt", RichText.mkText (String.concat " " [ showPrompt ]))), m))
+            | _ ->
+                error (
+                    RichError(
+                        (FSComp.SR.fsiInvalidDirective (RichText.mkKeyword "prompt", RichText.mkText (String.concat " " [ showPrompt ]))),
+                        m
+                    )
+                )
 
             istate, Completed None
 
@@ -3946,7 +3979,10 @@ type FsiInteractionProcessor
             match args with
             | [] -> fsiOptions.ShowHelp(m)
             | [ arg ] -> runhDirective diagnosticsLogger ctok istate arg
-            | _ -> warning (RichError((FSComp.SR.fsiInvalidDirective (RichText.mkKeyword "help", RichText.mkText (String.concat " " args))), m))
+            | _ ->
+                warning (
+                    RichError((FSComp.SR.fsiInvalidDirective (RichText.mkKeyword "help", RichText.mkText (String.concat " " args))), m)
+                )
 
             istate, Completed None
 

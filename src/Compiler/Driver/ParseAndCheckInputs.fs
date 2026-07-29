@@ -105,7 +105,15 @@ let ComputeAnonModuleName check defaultNamespace fileName (m: range) =
     let modname = CanonicalizeFilename fileName
 
     if check && not (IsValidAnonModuleName modname) && not (IsScript fileName) then
-        warning (RichError(FSComp.SR.buildImplicitModuleIsNotLegalIdentifier (RichText.mkModule modname, RichText.mkText (FileSystemUtils.fileNameOfPath fileName)), m))
+        warning (
+            RichError(
+                FSComp.SR.buildImplicitModuleIsNotLegalIdentifier (
+                    RichText.mkModule modname,
+                    RichText.mkText (FileSystemUtils.fileNameOfPath fileName)
+                ),
+                m
+            )
+        )
 
     let combined =
         match defaultNamespace with

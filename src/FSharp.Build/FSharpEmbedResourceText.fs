@@ -440,9 +440,7 @@ open Printf
             // taken as up-to-date after the flag changed
             let condition6 =
                 condition5
-                && (richText = (File.ReadLines(outFileName)
-                                |> Seq.truncate 40
-                                |> Seq.contains richTextOpen))
+                && (richText = (File.ReadLines(outFileName) |> Seq.truncate 40 |> Seq.contains richTextOpen))
 
             if condition6 then
                 printMessage "Skipping generation of %s and %s from %s since up-to-date" outFileName outXmlFileName fileName
@@ -610,7 +608,10 @@ open Printf
                     // the parts it stands for - see the RichMessage module.
                     if richText && holes |> Array.contains "System.String" then
                         let richHole holeType =
-                            if holeType = "System.String" then "RichText" else holeType
+                            if holeType = "System.String" then
+                                "RichText"
+                            else
+                                holeType
 
                         let richFormalArgs =
                             holes
@@ -707,9 +708,7 @@ open Printf
     override this.Execute() =
 
         try
-            let generatedFiles =
-                this.EmbeddedText
-                |> Array.choose generateResxAndSource
+            let generatedFiles = this.EmbeddedText |> Array.choose generateResxAndSource
 
             let generatedSource, generatedResx =
                 [|

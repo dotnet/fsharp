@@ -457,7 +457,14 @@ module internal ExprFolding =
                              not (c.FieldByIndex n).IsMutable
                              && not (entityRefInThisAssembly g.compilingFSharpCore tcref)
                          then
-                             errorR (RichError(FSComp.SR.tastRecursiveValuesMayNotAppearInConstructionOfType (richTextOfEntityRefName tcref tcref.LogicalName), m))
+                             errorR (
+                                 RichError(
+                                     FSComp.SR.tastRecursiveValuesMayNotAppearInConstructionOfType (
+                                         richTextOfEntityRefName tcref tcref.LogicalName
+                                     ),
+                                     m
+                                 )
+                             )
 
                          mkUnionCaseFieldSet (access, c, tinst, n, e, m))))
 

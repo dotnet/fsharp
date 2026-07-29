@@ -490,7 +490,17 @@ let convResolveAssemblyRef (cenv: cenv) (asmref: ILAssemblyRef) qualifiedName =
     let typT = assembly.GetType qualifiedName
 
     match typT with
-    | null -> error (RichError(FSComp.SR.itemNotFoundDuringDynamicCodeGen (RichText.mkText "type", RichText.mkQualifiedTypeName qualifiedName, RichText.mkText asmref.QualifiedName), range0))
+    | null ->
+        error (
+            RichError(
+                FSComp.SR.itemNotFoundDuringDynamicCodeGen (
+                    RichText.mkText "type",
+                    RichText.mkQualifiedTypeName qualifiedName,
+                    RichText.mkText asmref.QualifiedName
+                ),
+                range0
+            )
+        )
     | res -> res
 
 /// Convert an Abstract IL type reference to Reflection.Emit System.Type value.
@@ -511,7 +521,17 @@ let convTypeRefAux (cenv: cenv) (tref: ILTypeRef) =
         let typT = Type.GetType qualifiedName
 
         match typT with
-        | null -> error (RichError(FSComp.SR.itemNotFoundDuringDynamicCodeGen (RichText.mkText "type", RichText.mkQualifiedTypeName qualifiedName, RichText.mkText "<emitted>"), range0))
+        | null ->
+            error (
+                RichError(
+                    FSComp.SR.itemNotFoundDuringDynamicCodeGen (
+                        RichText.mkText "type",
+                        RichText.mkQualifiedTypeName qualifiedName,
+                        RichText.mkText "<emitted>"
+                    ),
+                    range0
+                )
+            )
         | res -> res
     | ILScopeRef.PrimaryAssembly -> convResolveAssemblyRef cenv cenv.ilg.primaryAssemblyRef qualifiedName
 
@@ -706,7 +726,16 @@ let rec convTypeSpec cenv emEnv preferCreated (tspec: ILTypeSpec) =
 
     match res with
     | Null ->
-        error (RichError(FSComp.SR.itemNotFoundDuringDynamicCodeGen (RichText.mkText "type", RichText.mkUnknownType tspec.TypeRef.QualifiedName, RichText.mkText tspec.Scope.QualifiedName), range0))
+        error (
+            RichError(
+                FSComp.SR.itemNotFoundDuringDynamicCodeGen (
+                    RichText.mkText "type",
+                    RichText.mkUnknownType tspec.TypeRef.QualifiedName,
+                    RichText.mkText tspec.Scope.QualifiedName
+                ),
+                range0
+            )
+        )
     | NonNull res -> res
 
 and convTypeAux cenv emEnv preferCreated ty =
