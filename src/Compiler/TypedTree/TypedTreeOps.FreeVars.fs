@@ -1397,9 +1397,15 @@ module internal MemberRepresentation =
         let isDiscard (name: string) = name.StartsWithOrdinal "_"
 
         if v.IsMember then
-            if (arityOfVal v).HasNoArgs then tagMember name else tagMethod name
+            if (arityOfVal v).HasNoArgs then
+                tagMember name
+            else
+                tagMethod name
         elif isForallFunctionTy g v.Type && not (isDiscard v.DisplayNameCore) then
-            if IsOperatorDisplayName v.DisplayName then tagOperator name else tagFunction name
+            if IsOperatorDisplayName v.DisplayName then
+                tagOperator name
+            else
+                tagFunction name
         elif not v.IsCompiledAsTopLevel && not (isDiscard v.DisplayNameCore) then
             tagLocal name
         elif v.IsModuleBinding then
@@ -1508,8 +1514,7 @@ module internal MemberRepresentation =
     // A qualified name is classified one component at a time: each name by what it names and each dot
     // as punctuation. Splicing the flattened text into a message instead would classify the dots, and
     // every component, as whatever the last component happens to be.
-    let richTextOfPath p =
-        toRichText (layoutOfPath p)
+    let richTextOfPath p = toRichText (layoutOfPath p)
 
     let richTextOfQualifiedModRef r =
         toRichText (fullDisplayTextOfModRefAsLayout r)

@@ -86,7 +86,8 @@ module DispatchSlotChecking =
     val FormatOverride: denv: DisplayEnv -> d: OverrideInfo -> RichText
 
     /// Format the signature of a MethInfo as a string as part of an error message
-    val FormatMethInfoSig: g: TcGlobals -> amap: ImportMap -> m: range -> denv: DisplayEnv -> minfo: MethInfo -> RichText
+    val FormatMethInfoSig:
+        g: TcGlobals -> amap: ImportMap -> m: range -> denv: DisplayEnv -> minfo: MethInfo -> RichText
 
     /// Get the override information for an object expression method being used to implement dispatch slots
     val GetObjectExprOverrideInfo:

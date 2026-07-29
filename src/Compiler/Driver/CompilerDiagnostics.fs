@@ -670,17 +670,17 @@ let OutputNameSuggestions (os: RichTextBuilder) suggestNames suggestionsF idText
 
 let OutputTypesNotInEqualityRelationContextInfo contextInfo (ty1: RichText) (ty2: RichText) m (os: RichTextBuilder) fallback =
     match contextInfo with
-    | ContextInfo.IfExpression range when equals range m -> os.Append(FSComp.SR.ifExpression(ty1, ty2))
+    | ContextInfo.IfExpression range when equals range m -> os.Append(FSComp.SR.ifExpression (ty1, ty2))
     | ContextInfo.CollectionElement(isArray, range) when equals range m ->
         if isArray then
-            os.Append(FSComp.SR.arrayElementHasWrongType(ty1, ty2))
+            os.Append(FSComp.SR.arrayElementHasWrongType (ty1, ty2))
         else
-            os.Append(FSComp.SR.listElementHasWrongType(ty1, ty2))
-    | ContextInfo.OmittedElseBranch range when equals range m -> os.Append(FSComp.SR.missingElseBranch(ty2))
-    | ContextInfo.ElseBranchResult range when equals range m -> os.Append(FSComp.SR.elseBranchHasWrongType(ty1, ty2))
+            os.Append(FSComp.SR.listElementHasWrongType (ty1, ty2))
+    | ContextInfo.OmittedElseBranch range when equals range m -> os.Append(FSComp.SR.missingElseBranch (ty2))
+    | ContextInfo.ElseBranchResult range when equals range m -> os.Append(FSComp.SR.elseBranchHasWrongType (ty1, ty2))
     | ContextInfo.FollowingPatternMatchClause range when equals range m ->
-        os.Append(FSComp.SR.followingPatternMatchClauseHasWrongType(ty1, ty2))
-    | ContextInfo.PatternMatchGuard range when equals range m -> os.Append(FSComp.SR.patternMatchGuardIsNotBool(ty2))
+        os.Append(FSComp.SR.followingPatternMatchClauseHasWrongType (ty1, ty2))
+    | ContextInfo.PatternMatchGuard range when equals range m -> os.Append(FSComp.SR.patternMatchGuardIsNotBool (ty2))
     | contextInfo -> fallback contextInfo
 
 type Exception with
@@ -844,13 +844,11 @@ type Exception with
         | ErrorFromAddingTypeEquation(_g, denv, ty1, ty2, ConstraintSolverTupleDiffLengths(_, contextInfo, tl1, tl2, m1, m2), m) ->
             let ty1, ty2, tpcs = NicePrint.minimalRichTextsOfTwoTypes denv ty1 ty2
 
-            let tupleLengthsMessage (message: int * RichText * int * RichText -> RichText) =
-                message (tl1.Length, ty1, tl2.Length, ty2)
+            let tupleLengthsMessage (message: int * RichText * int * RichText -> RichText) = message (tl1.Length, ty1, tl2.Length, ty2)
 
             if ty1.Text <> ty2.Text + tpcs.Text then
                 match contextInfo with
-                | ContextInfo.IfExpression range when equals range m ->
-                    os.Append(tupleLengthsMessage FSComp.SR.ifExpressionTuple)
+                | ContextInfo.IfExpression range when equals range m -> os.Append(tupleLengthsMessage FSComp.SR.ifExpressionTuple)
                 | ContextInfo.ElseBranchResult range when equals range m ->
                     os.Append(tupleLengthsMessage FSComp.SR.elseBranchHasWrongTypeTuple)
                 | ContextInfo.FollowingPatternMatchClause range when equals range m ->
@@ -907,9 +905,9 @@ type Exception with
                 let ty1, ty2, _ = NicePrint.minimalRichTextsOfTwoTypes denv ty1 ty2
 
                 if isOperator then
-                    os.Append(snd (FSComp.SR.considerUpcastOperator(ty1, ty2)))
+                    os.Append(snd (FSComp.SR.considerUpcastOperator (ty1, ty2)))
                 else
-                    os.Append(snd (FSComp.SR.considerUpcast(ty1, ty2)))
+                    os.Append(snd (FSComp.SR.considerUpcast (ty1, ty2)))
             | _ ->
                 if not (typeEquiv g ty1 ty2) then
                     let ty1, ty2, tpcs = NicePrint.minimalRichTextsOfTwoTypes denv ty1 ty2
@@ -1005,9 +1003,7 @@ type Exception with
                         RichText.append (RichText.mkText " // ") nameOrOneBasedIndexMessage
                     | _ -> RichText.empty
 
-                RichText.append
-                    (NicePrint.richTextOfMethInfoForOverloadError x.infoReader m displayEnv x.methodSlot.Method)
-                    paramInfo
+                RichText.append (NicePrint.richTextOfMethInfoForOverloadError x.infoReader m displayEnv x.methodSlot.Method) paramInfo
 
             let nl = Environment.NewLine
 
@@ -1029,23 +1025,25 @@ type Exception with
                     if result.IsEmpty then
                         RichText.mkText nl
                     else
-                        RichText.concat
-                            [ RichText.mkText (nl + nl); result; RichText.mkText (nl + nl) ]
+                        RichText.concat [ RichText.mkText (nl + nl); result; RichText.mkText (nl + nl) ]
 
                 match failure with
                 | NoOverloadsFound(methodName, overloads, _) ->
                     RichText.concat
-                        [ FSComp.SR.csNoOverloadsFound (RichText.mkMethod methodName)
-                          optionalParts
-                          FSComp.SR.csAvailableOverloads (formatOverloads overloads) ]
-                | PossibleCandidates(methodName, [], _, _) ->
-                    FSComp.SR.csMethodIsOverloaded (RichText.mkMethod methodName)
+                        [
+                            FSComp.SR.csNoOverloadsFound (RichText.mkMethod methodName)
+                            optionalParts
+                            FSComp.SR.csAvailableOverloads (formatOverloads overloads)
+                        ]
+                | PossibleCandidates(methodName, [], _, _) -> FSComp.SR.csMethodIsOverloaded (RichText.mkMethod methodName)
                 | PossibleCandidates(methodName, overloads, _, incomparableInfo) ->
                     let baseMessage =
                         RichText.concat
-                            [ FSComp.SR.csMethodIsOverloaded (RichText.mkMethod methodName)
-                              optionalParts
-                              FSComp.SR.csCandidates (formatOverloads overloads) ]
+                            [
+                                FSComp.SR.csMethodIsOverloaded (RichText.mkMethod methodName)
+                                optionalParts
+                                FSComp.SR.csCandidates (formatOverloads overloads)
+                            ]
 
                     match incomparableInfo with
                     | Some info ->
@@ -1069,16 +1067,18 @@ type Exception with
                             )
 
                         RichText.concat
-                            [ baseMessage
-                              RichText.mkText nl
-                              RichText.mkText (FSComp.SR.csIncomparableConcreteness(line1 + nl + line2)) ]
+                            [
+                                baseMessage
+                                RichText.mkText nl
+                                RichText.mkText (FSComp.SR.csIncomparableConcreteness (line1 + nl + line2))
+                            ]
                     | None -> baseMessage
 
             os.Append msg
 
         | UnresolvedConversionOperator(denv, fromTy, toTy, _) ->
             let ty1, ty2, _tpcs = NicePrint.minimalRichTextsOfTwoTypes denv fromTy toTy
-            os.Append(FSComp.SR.csTypeDoesNotSupportConversion(ty1, ty2))
+            os.Append(FSComp.SR.csTypeDoesNotSupportConversion (ty1, ty2))
 
         | FunctionExpected _ -> os.Append(FunctionExpectedE().Format)
 
@@ -1108,7 +1108,7 @@ type Exception with
             elif isTyparTy denv.g ty then
                 os.Append(FSComp.SR.notAFunction ())
             else
-                os.Append(FSComp.SR.notAFunctionWithType(NicePrint.prettyRichTextOfTy denv ty))
+                os.Append(FSComp.SR.notAFunctionWithType (NicePrint.prettyRichTextOfTy denv ty))
 
         | TyconBadArgs(_, tcref, d, _) ->
             let exp = tcref.Typars.Length
@@ -1116,8 +1116,7 @@ type Exception with
             if exp = 0 then
                 os.Append(FSComp.SR.buildUnexpectedTypeArgs (richTextOfQualifiedTyconRef tcref, d))
             else
-                os.Append(fun rich ->
-                    TyconBadArgsE().Format (rich (richTextOfQualifiedTyconRef tcref)) exp d)
+                os.Append(fun rich -> TyconBadArgsE().Format (rich (richTextOfQualifiedTyconRef tcref)) exp d)
 
         | IndeterminateType _ -> os.Append(IndeterminateTypeE().Format)
 
@@ -1150,20 +1149,14 @@ type Exception with
         | FieldNotMutable _ -> os.Append(FieldNotMutableE().Format)
 
         | FieldsFromDifferentTypes(_, fref1, fref2, _) ->
-            os.Append(
-                FieldsFromDifferentTypesE(),
-                RichText.mkRecordField fref1.FieldName,
-                RichText.mkRecordField fref2.FieldName
-            )
+            os.Append(FieldsFromDifferentTypesE(), RichText.mkRecordField fref1.FieldName, RichText.mkRecordField fref2.FieldName)
 
-        | VarBoundTwice id ->
-            os.Append(VarBoundTwiceE(), RichText.mkLocal (ConvertValLogicalNameToDisplayNameCore id.idText))
+        | VarBoundTwice id -> os.Append(VarBoundTwiceE(), RichText.mkLocal (ConvertValLogicalNameToDisplayNameCore id.idText))
 
         | Recursion(denv, id, ty1, ty2, _) ->
             let ty1, ty2, tpcs = NicePrint.minimalRichTextsOfTwoTypes denv ty1 ty2
 
-            let name =
-                RichText.mkFunction (ConvertValLogicalNameToDisplayNameCore id.idText)
+            let name = RichText.mkFunction (ConvertValLogicalNameToDisplayNameCore id.idText)
 
             os.Append(RecursionE(), name, ty1, ty2, tpcs)
 
@@ -1693,12 +1686,7 @@ type Exception with
                 | [ tokenName1 ] -> os.Append(TokenName1E(), fix tokenName1)
                 | [ tokenName1; tokenName2 ] -> os.Append(TokenName1TokenName2E(), fix tokenName1, fix tokenName2)
                 | [ tokenName1; tokenName2; tokenName3 ] ->
-                    os.Append(
-                        TokenName1TokenName2TokenName3E(),
-                        fix tokenName1,
-                        fix tokenName2,
-                        fix tokenName3
-                    )
+                    os.Append(TokenName1TokenName2TokenName3E(), fix tokenName1, fix tokenName2, fix tokenName3)
                 | _ -> ()
         (*
               Printf.bprintf os ".\n\n    state = %A\n    token = %A\n    expect (shift) %A\n    expect (reduce) %A\n   prods=%A\n     non terminals: %A"
@@ -1809,12 +1797,7 @@ type Exception with
             let nsb = RichTextBuilder()
             name nsb
 
-            os.Append(
-                RequiredButNotSpecifiedE(),
-                richTextOfQualifiedModRef mref,
-                RichText.mkText k,
-                nsb.ToRichText()
-            )
+            os.Append(RequiredButNotSpecifiedE(), richTextOfQualifiedModRef mref, RichText.mkText k, nsb.ToRichText())
 
         | UseOfAddressOfOperator _ -> os.Append(UseOfAddressOfOperatorE().Format)
 
@@ -1838,12 +1821,7 @@ type Exception with
             let ty, _cxs = PrettyTypes.PrettifyType denv.g ty
             let ty = NicePrint.richTextOfTy denv ty
 
-            os.Append(
-                UnitTypeExpectedWithPossiblePropertySetterE(),
-                ty,
-                RichText.mkLocal bindingName,
-                RichText.mkProperty propertyName
-            )
+            os.Append(UnitTypeExpectedWithPossiblePropertySetterE(), ty, RichText.mkLocal bindingName, RichText.mkProperty propertyName)
 
         | UnitTypeExpectedWithPossibleAssignment(denv, ty, isAlreadyMutable, bindingName, _) ->
             let ty, _cxs = PrettyTypes.PrettifyType denv.g ty
@@ -1866,11 +1844,7 @@ type Exception with
             (path.Tail @ [ path.Head ])
             |> List.iter (fun (v: ValRef) -> bos.Append(LetRecUnsoundInnerE(), richTextOfValName denv.g v.Deref))
 
-            os.Append(
-                LetRecUnsound2E(),
-                richTextOfValName denv.g (List.head path).Deref,
-                bos.ToRichText()
-            )
+            os.Append(LetRecUnsound2E(), richTextOfValName denv.g (List.head path).Deref, bos.ToRichText())
 
         | LetRecEvaluatedOutOfOrder _ -> os.Append(LetRecEvaluatedOutOfOrderE().Format)
 
@@ -2008,7 +1982,9 @@ type Exception with
             let tau = v.TauType
 
             let name = richTextOfValName denv.g v
-            let signature = NicePrint.richTextOfQualifiedValOrMember denv infoReader (mkLocalValRef v)
+
+            let signature =
+                NicePrint.richTextOfQualifiedValOrMember denv infoReader (mkLocalValRef v)
 
             if isFunTy denv.g tau && (arityOfVal v).HasNoArgs then
                 os.Append(ValueRestrictionFunctionE(), name, signature, name)
@@ -2088,14 +2064,11 @@ type Exception with
         | MSBuildReferenceResolutionError(code, message, _) -> os.Append(MSBuildReferenceResolutionErrorE().Format message code)
 
         | ArgumentsInSigAndImplMismatch(sigArg, implArg) ->
-            os.Append(
-                ArgumentsInSigAndImplMismatchE(),
-                RichText.mkParameter sigArg.idText,
-                RichText.mkParameter implArg.idText
-            )
+            os.Append(ArgumentsInSigAndImplMismatchE(), RichText.mkParameter sigArg.idText, RichText.mkParameter implArg.idText)
 
         | DefinitionsInSigAndImplNotCompatibleAbbreviationsDiffer(denv, implTycon, _sigTycon, implTypeAbbrev, sigTypeAbbrev, _m) ->
-            let s1, s2, _ = NicePrint.minimalRichTextsOfTwoTypes denv implTypeAbbrev sigTypeAbbrev
+            let s1, s2, _ =
+                NicePrint.minimalRichTextsOfTwoTypes denv implTypeAbbrev sigTypeAbbrev
 
             os.Append(
                 DefinitionsInSigAndImplNotCompatibleAbbreviationsDifferE(),
@@ -2113,8 +2086,7 @@ type Exception with
                 let allowedTargets = allowedTargets |> String.concat ", "
                 os.Append(InvalidAttributeTargetForLanguageElement1E().Format elementTargets allowedTargets)
 
-        | NoConstructorsAvailableForType(t, denv, _) ->
-            os.Append(NoConstructorsAvailableForTypeE(), NicePrint.minimalRichTextOfType denv t)
+        | NoConstructorsAvailableForType(t, denv, _) -> os.Append(NoConstructorsAvailableForTypeE(), NicePrint.minimalRichTextOfType denv t)
 
         // Strip TargetInvocationException wrappers
         | :? TargetInvocationException as e when isNotNull e.InnerException -> (!!e.InnerException).Output(os, suggestNames)

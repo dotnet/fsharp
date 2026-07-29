@@ -3159,7 +3159,10 @@ and GenExprPreSteps (cenv: cenv) (cgbuf: CodeGenBuffer) eenv expr sequel =
                 ]
                 |> String.concat ","
 
-            informationalWarning (RichError(FSComp.SR.ilxGenUnknownDebugPoint (RichText.mkText debugPointName, RichText.mkText others), dpExpr.Range))
+            informationalWarning (
+                RichError(FSComp.SR.ilxGenUnknownDebugPoint (RichText.mkText debugPointName, RichText.mkText others), dpExpr.Range)
+            )
+
             CG.EmitDebugPoint cgbuf m
         | true, dp ->
             // printfn $"---- Found debug point {debugPointName} at {m} --> {dp}"
@@ -10365,9 +10368,11 @@ and GenSetStorage m cgbuf storage =
 
         CG.EmitInstr cgbuf (pop 1) Push0 (I_call(Normalcall, mkILMethSpecForMethRefInTy (ilSetterMethRef, ilContainerTy, []), None))
 
-    | StaticProperty(ilGetterMethSpec, _) -> error (RichError(FSComp.SR.ilStaticMethodIsNotLambda (RichText.mkMethod ilGetterMethSpec.Name), m))
+    | StaticProperty(ilGetterMethSpec, _) ->
+        error (RichError(FSComp.SR.ilStaticMethodIsNotLambda (RichText.mkMethod ilGetterMethSpec.Name), m))
 
-    | Method(_, _, mspec, _, m, _, _, _, _, _, _, _) -> error (RichError(FSComp.SR.ilStaticMethodIsNotLambda (RichText.mkMethod mspec.Name), m))
+    | Method(_, _, mspec, _, m, _, _, _, _, _, _, _) ->
+        error (RichError(FSComp.SR.ilStaticMethodIsNotLambda (RichText.mkMethod mspec.Name), m))
 
     | Null -> CG.EmitInstr cgbuf (pop 1) Push0 AI_pop
 
@@ -12394,7 +12399,10 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) : ILTypeRef option 
                         | None ->
                             errorR (
                                 RichError(
-                                    FSComp.SR.ilFieldDoesNotHaveValidOffsetForStructureLayout (RichText.mkQualifiedTypeName tdef.Name, RichText.mkField (fdef.Name.Replace("@", ""))),
+                                    FSComp.SR.ilFieldDoesNotHaveValidOffsetForStructureLayout (
+                                        RichText.mkQualifiedTypeName tdef.Name,
+                                        RichText.mkField (fdef.Name.Replace("@", ""))
+                                    ),
                                     (trimRangeToLine m)
                                 )
                             )

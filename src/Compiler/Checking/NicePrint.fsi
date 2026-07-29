@@ -100,8 +100,7 @@ val stringOfMethInfoForOverloadError:
 
 /// Convert a MethInfo to a F# signature
 /// Convert a MethInfo to a F# signature as rich text
-val richTextOfMethInfoFSharpStyle:
-    infoReader: InfoReader -> m: range -> denv: DisplayEnv -> minfo: MethInfo -> RichText
+val richTextOfMethInfoFSharpStyle: infoReader: InfoReader -> m: range -> denv: DisplayEnv -> minfo: MethInfo -> RichText
 
 val stringOfMethInfoFSharpStyle: infoReader: InfoReader -> m: range -> denv: DisplayEnv -> minfo: MethInfo -> string
 

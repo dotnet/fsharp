@@ -617,7 +617,7 @@ let libraryOnlyError m = errorR (LibraryUseOnly m)
 let libraryOnlyWarning m = warning (LibraryUseOnly m)
 
 let deprecatedOperator m =
-    deprecatedWithError (RichText.mkText (FSComp.SR.elDeprecatedOperator())) m
+    deprecatedWithError (RichText.mkText (FSComp.SR.elDeprecatedOperator ())) m
 
 [<DebuggerStepThrough>]
 let suppressErrorReporting f =

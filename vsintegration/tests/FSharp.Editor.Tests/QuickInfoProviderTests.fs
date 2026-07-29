@@ -61,7 +61,9 @@ module QuickInfoProviderTests =
                  | [] -> ""
                  | _ -> "\n" + String.concat "" remarkTexts)
 
-            let tps = xs |> List.collect (fun item -> item.TypeMapping |> List.map (fun tp -> tp.Parts))
+            let tps =
+                xs
+                |> List.collect (fun item -> item.TypeMapping |> List.map (fun tp -> tp.Parts))
 
             let tpTexts =
                 tps |> List.map (fun x -> x |> Array.map (fun y -> y.Text) |> String.concat "")
