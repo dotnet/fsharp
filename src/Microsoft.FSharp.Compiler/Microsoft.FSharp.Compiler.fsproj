@@ -12,14 +12,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.DotNet.NuGetRepack.Tasks" Version="$(MicrosoftDotNetNuGetRepackTasksVersion)" />
+    <PackageReference Include="Microsoft.DotNet.NuGetRepack.Tasks" Version="$(MicrosoftDotnetNuGetRepackTasksVersion)" PrivateAssets="all" />
   </ItemGroup>
-  <!-- TODO: Remove UsingTask when upgrading to Arcade 11: https://github.com/dotnet/fsharp/issues/19557 -->
-  <PropertyGroup>
-    <MicrosoftDotNetNuGetRepackTaskAssembly Condition="'$(MSBuildRuntimeType)' != 'Core'">$(NuGetPackageRoot)microsoft.dotnet.nugetrepack.tasks\$(MicrosoftDotNetNuGetRepackTasksVersion)\tools\netframework\Microsoft.DotNet.NuGetRepack.Tasks.dll</MicrosoftDotNetNuGetRepackTaskAssembly>
-    <MicrosoftDotNetNuGetRepackTaskAssembly Condition="'$(MSBuildRuntimeType)' == 'Core'">$(NuGetPackageRoot)microsoft.dotnet.nugetrepack.tasks\$(MicrosoftDotNetNuGetRepackTasksVersion)\tools\net\Microsoft.DotNet.NuGetRepack.Tasks.dll</MicrosoftDotNetNuGetRepackTaskAssembly>
-  </PropertyGroup>
-  <UsingTask TaskName="Microsoft.DotNet.Tools.UpdatePackageVersionTask" AssemblyFile="$(MicrosoftDotNetNuGetRepackTaskAssembly)" />
 
   <ItemGroup>
     <NuspecProperty Include="fSharpCorePreviewPackageVersion=$(FSCorePackageVersionValue)-$(VersionSuffix)" />
@@ -99,6 +93,10 @@
   <Target Name="PackDependentProjects"
     BeforeTargets="Build"
     DependsOnTargets="PackDependentProjectsCore;PackageReleaseDependentPackages">
+  </Target>
+
+  <Target Name="PackageReleasePackages" AfterTargets="Pack" Condition="'$(DotNetFinalVersionKind)' == ''">
+    <!-- override sdk PackageReleasePackages to do nothing. -->
   </Target>
 
 </Project>
