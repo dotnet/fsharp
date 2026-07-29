@@ -322,8 +322,12 @@ module NominalAndAnonymousRecords =
 
                 FSharp src
                 |> withLangVersion SupportedLangVersion
+                |> ignoreWarnings
                 |> typecheck
                 |> shouldSucceed
+                |> withDiagnostics [
+                    Information 3906, Line 3, Col 40, Line 3, Col 41, "Explicit field 'A: string' shadows a field with the same name from an earlier spread."
+                ]
 
             /// Rightward spread field shadows leftward spread field.
             [<Fact>]
@@ -341,8 +345,13 @@ module NominalAndAnonymousRecords =
 
                 FSharp src
                 |> withLangVersion SupportedLangVersion
+                |> ignoreWarnings
                 |> typecheck
                 |> shouldSucceed
+                |> withDiagnostics [
+                    Information 3905, Line 4, Col 40, Line 4, Col 45, "Spread field 'A: string' from type 'R2' shadows a field with the same name from an earlier spread."
+                    Information 3905, Line 5, Col 40, Line 5, Col 45, "Spread field 'A: int' from type 'R1' shadows a field with the same name from an earlier spread."
+                ]
 
             /// Rightward spread field shadows leftward explicit field with warning.
             [<Fact>]
@@ -395,6 +404,7 @@ module NominalAndAnonymousRecords =
                 |> typecheck
                 |> shouldFail
                 |> withDiagnostics [
+                    Information 3906, Line 4, Col 40, Line 4, Col 41, "Explicit field 'A: string' shadows a field with the same name from an earlier spread."
                     Warning 3897, Line 4, Col 52, Line 4, Col 57, "Spread field 'A: int' from type 'R1' shadows an explicitly declared field with the same name."
                     Error 37, Line 4, Col 59, Line 4, Col 60, "Duplicate definition of field 'A'"
                 ]
@@ -1104,8 +1114,13 @@ but here has type
 
                 FSharp src
                 |> withLangVersion SupportedLangVersion
+                |> ignoreWarnings
                 |> typecheck
                 |> shouldSucceed
+                |> withDiagnostics [
+                    Information 3907, Line 6, Col 84, Line 6, Col 89, "Spread field 'C: int' shadows a field with the same name from an earlier spread."
+                    Information 3907, Line 6, Col 84, Line 6, Col 89, "Spread field 'D: int' shadows a field with the same name from an earlier spread."
+                ]
 
             /// Rightward explicit duplicate field shadows field from spread.
             [<Fact>]
@@ -1119,8 +1134,12 @@ but here has type
 
                 FSharp src
                 |> withLangVersion SupportedLangVersion
+                |> ignoreWarnings
                 |> typecheck
                 |> shouldSucceed
+                |> withDiagnostics [
+                    Information 3906, Line 4, Col 68, Line 4, Col 75, "Explicit field 'A' shadows a field with the same name from an earlier spread."
+                ]
 
             /// Rightward spread field shadows leftward spread field.
             [<Fact>]
@@ -1136,8 +1155,13 @@ but here has type
 
                 FSharp src
                 |> withLangVersion SupportedLangVersion
+                |> ignoreWarnings
                 |> typecheck
                 |> shouldSucceed
+                |> withDiagnostics [
+                    Information 3907, Line 5, Col 68, Line 5, Col 73, "Spread field 'A: string' shadows a field with the same name from an earlier spread."
+                    Information 3907, Line 6, Col 65, Line 6, Col 70, "Spread field 'A: int' shadows a field with the same name from an earlier spread."
+                ]
 
             /// Rightward spread field shadows leftward explicit field with warning.
             [<Fact>]
@@ -1191,6 +1215,7 @@ but here has type
                 |> typecheck
                 |> shouldFail
                 |> withDiagnostics [
+                    Information 3906, Line 5, Col 40, Line 5, Col 47, "Explicit field 'A' shadows a field with the same name from an earlier spread."
                     Warning 3898, Line 5, Col 49, Line 5, Col 54, "Spread field 'A: int' shadows an explicitly declared field with the same name."
                     Error 3522, Line 5, Col 56, Line 5, Col 64, "The field 'A' appears multiple times in this record expression."
                 ]
@@ -1507,8 +1532,11 @@ but here has type
 
                 Fsx src
                 |> withLangVersion SupportedLangVersion
+                |> ignoreWarnings
                 |> compileExeAndRun
                 |> shouldSucceed
+                |> withDiagnostics [
+                ]
 
         module Effects =
             [<Fact>]
@@ -1530,8 +1558,17 @@ but here has type
 
                 FSharp src
                 |> withLangVersion SupportedLangVersion
+                |> ignoreWarnings
                 |> compileExeAndRun
                 |> shouldSucceed
+                |> withDiagnostics [
+                    Information 3907, Line 6, Col 41, Line 6, Col 48, "Spread field 'A: int' shadows a field with the same name from an earlier spread."
+                    Information 3907, Line 6, Col 41, Line 6, Col 48, "Spread field 'B: int' shadows a field with the same name from an earlier spread."
+                    Information 3907, Line 6, Col 50, Line 6, Col 57, "Spread field 'A: int' shadows a field with the same name from an earlier spread."
+                    Information 3907, Line 6, Col 50, Line 6, Col 57, "Spread field 'B: int' shadows a field with the same name from an earlier spread."
+                    Information 3907, Line 6, Col 59, Line 6, Col 66, "Spread field 'A: int' shadows a field with the same name from an earlier spread."
+                    Information 3906, Line 6, Col 68, Line 6, Col 75, "Explicit field 'A' shadows a field with the same name from an earlier spread."
+                ]
 
         module BackCompat =
             [<Fact>]
@@ -1902,8 +1939,15 @@ but here has type
 
                 FSharp src
                 |> withLangVersion SupportedLangVersion
+                |> ignoreWarnings
                 |> typecheck
                 |> shouldSucceed
+                |> withDiagnostics [
+                    Information 3907, Line 9, Col 40, Line 9, Col 45, "Spread field 'C: int' shadows a field with the same name from an earlier spread."
+                    Information 3907, Line 9, Col 40, Line 9, Col 45, "Spread field 'D: int' shadows a field with the same name from an earlier spread."
+                    Information 3907, Line 14, Col 42, Line 14, Col 47, "Spread field 'C: int' shadows a field with the same name from an earlier spread."
+                    Information 3907, Line 14, Col 42, Line 14, Col 47, "Spread field 'D: int' shadows a field with the same name from an earlier spread."
+                ]
 
             /// Rightward explicit duplicate field shadows field from spread.
             [<Fact>]
@@ -1922,8 +1966,12 @@ but here has type
 
                 FSharp src
                 |> withLangVersion SupportedLangVersion
+                |> ignoreWarnings
                 |> compileExeAndRun
                 |> shouldSucceed
+                |> withDiagnostics [
+                    Information 3906, Line 7, Col 40, Line 7, Col 46, "Explicit field 'A' shadows a field with the same name from an earlier spread."
+                ]
 
             /// Rightward spread field shadows leftward spread field.
             [<Fact>]
@@ -1942,8 +1990,12 @@ but here has type
 
                 FSharp src
                 |> withLangVersion SupportedLangVersion
+                |> ignoreWarnings
                 |> compileExeAndRun
                 |> shouldSucceed
+                |> withDiagnostics [
+                    Information 3907, Line 7, Col 40, Line 7, Col 55, "Spread field 'A: int' shadows a field with the same name from an earlier spread."
+                ]
 
             /// Rightward spread field shadows leftward explicit field with warning.
             [<Fact>]
@@ -2230,8 +2282,17 @@ but here has type
 
                 FSharp src
                 |> withLangVersion SupportedLangVersion
+                |> ignoreWarnings
                 |> compileExeAndRun
                 |> shouldSucceed
+                |> withDiagnostics [
+                    Information 3907, Line 8, Col 40, Line 8, Col 47, "Spread field 'A: int' shadows a field with the same name from an earlier spread."
+                    Information 3907, Line 8, Col 40, Line 8, Col 47, "Spread field 'B: int' shadows a field with the same name from an earlier spread."
+                    Information 3907, Line 8, Col 49, Line 8, Col 56, "Spread field 'A: int' shadows a field with the same name from an earlier spread."
+                    Information 3907, Line 8, Col 49, Line 8, Col 56, "Spread field 'B: int' shadows a field with the same name from an earlier spread."
+                    Information 3907, Line 8, Col 58, Line 8, Col 65, "Spread field 'A: int' shadows a field with the same name from an earlier spread."
+                    Information 3906, Line 8, Col 67, Line 8, Col 74, "Explicit field 'A' shadows a field with the same name from an earlier spread."
+                ]
 
         module Conversions =
             [<Fact>]
@@ -2391,8 +2452,19 @@ but here has type
 
                 Fsx src
                 |> withLangVersion SupportedLangVersion
+                |> ignoreWarnings
                 |> compileExeAndRun
                 |> shouldSucceed
+                |> withDiagnostics [
+                    Information 3906, Line 10, Col 111, Line 10, Col 116, "Explicit field 'B' shadows a field with the same name from an earlier spread."
+                    Information 3906, Line 11, Col 111, Line 11, Col 116, "Explicit field 'B' shadows a field with the same name from an earlier spread."
+                    Information 3906, Line 12, Col 114, Line 12, Col 119, "Explicit field 'B' shadows a field with the same name from an earlier spread."
+                    Information 3906, Line 13, Col 114, Line 13, Col 119, "Explicit field 'B' shadows a field with the same name from an earlier spread."
+                    Information 3906, Line 14, Col 108, Line 14, Col 113, "Explicit field 'B' shadows a field with the same name from an earlier spread."
+                    Information 3906, Line 15, Col 108, Line 15, Col 113, "Explicit field 'B' shadows a field with the same name from an earlier spread."
+                    Information 3906, Line 16, Col 111, Line 16, Col 116, "Explicit field 'B' shadows a field with the same name from an earlier spread."
+                    Information 3906, Line 17, Col 111, Line 17, Col 116, "Explicit field 'B' shadows a field with the same name from an earlier spread."
+                ]
 
         module WithAndSpreads =
             [<Fact>]
@@ -2412,6 +2484,7 @@ but here has type
                 |> shouldFail
                 |> withDiagnostics [
                     Error 3904, Line 6, Col 40, Line 6, Col 45, "Spread expressions and 'with' cannot be used together in the same copy-and-update expression."
+                    Information 3906, Line 6, Col 47, Line 6, Col 52, "Explicit field 'A' shadows a field with the same name from an earlier spread."
                 ]
 
         module NestedUpdates =
