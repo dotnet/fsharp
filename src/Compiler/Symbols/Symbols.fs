@@ -2403,11 +2403,11 @@ type FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
             prefix + x.LogicalName
         with _  -> "??"
 
-    member x.FormatLayout (displayContext: FSharpDisplayContext) =
+    member x.FormatRichText (displayContext: FSharpDisplayContext) =
         match x.IsMember, d with
         | true, V v ->
             NicePrint.prettyLayoutOfMemberNoInstShort { (displayContext.Contents cenv.g) with showMemberContainers=true } v.Deref
-            |> LayoutRender.toArray
+            |> LayoutRender.toRichText
         | _,_ ->
             checkIsResolved()
             let ty = 
@@ -2420,9 +2420,9 @@ type FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
                     mkIteratedFunTy cenv.g (List.map (mkRefTupledTy cenv.g) argTysl) retTy
                 | V v -> v.TauType
             NicePrint.prettyLayoutOfTypeNoCx (displayContext.Contents cenv.g) ty
-            |> LayoutRender.toArray
+            |> LayoutRender.toRichText
 
-    member x.GetReturnTypeLayout (displayContext: FSharpDisplayContext) =
+    member x.GetReturnTypeRichText (displayContext: FSharpDisplayContext) =
         checkIsResolved()
         match d with 
         | E _
@@ -2431,11 +2431,11 @@ type FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
         | M m ->
             let retTy = m.GetFSharpReturnType(cenv.amap, range0, m.FormalMethodInst)
             NicePrint.layoutType (displayContext.Contents cenv.g) retTy
-            |> LayoutRender.toArray
+            |> LayoutRender.toRichText
             |> Some
         | V v ->
             NicePrint.layoutOfValReturnType (displayContext.Contents cenv.g) v
-            |> LayoutRender.toArray
+            |> LayoutRender.toRichText
             |> Some
     
     member x.GetValSignatureText (displayContext: FSharpDisplayContext, m: range) =
@@ -2801,15 +2801,15 @@ type FSharpType(cenv, ty:TType) =
         protect <| fun () -> 
             NicePrint.prettyStringOfTy (context.Contents cenv.g) ty 
 
-    member _.FormatLayout(context: FSharpDisplayContext) =
+    member _.FormatRichText(context: FSharpDisplayContext) =
        protect <| fun () -> 
             NicePrint.prettyLayoutOfTypeNoCx (context.Contents cenv.g) ty
-            |> LayoutRender.toArray
+            |> LayoutRender.toRichText
 
-    member _.FormatLayoutWithConstraints(context: FSharpDisplayContext) =
+    member _.FormatRichTextWithConstraints(context: FSharpDisplayContext) =
         protect <| fun () -> 
             NicePrint.prettyLayoutOfType (context.Contents cenv.g) ty
-            |> LayoutRender.toArray
+            |> LayoutRender.toRichText
 
     override _.ToString() = 
        protect <| fun () -> 

@@ -459,8 +459,7 @@ let parseFormatStringInternal
 
             // residue of hole "...{n}..." in interpolated strings become %P(...)
             | 'P' when isInterpolated ->
-                let code, message = FSComp.SR.alwaysUseTypedStringInterpolation()
-                warning(DiagnosticWithText(code, message, m))
+                warning(Error(FSComp.SR.alwaysUseTypedStringInterpolation(), m))
                 checkOtherFlags ch
                 let i = requireAndSkipInterpolationHoleFormat (i+1)
                 // Note, the fragCol doesn't advance at all as these are magically inserted.
@@ -498,7 +497,7 @@ let parseFormatStringInternal
             | '%' ->
                 // This allows for things like `printf "%-4.2%"` to compile and print just a `%`
                 // For now we are adding a warning, but keeping this behavior.
-                warning(DiagnosticWithText(3376, FSComp.SR.forBadFormatSpecifierGeneral("%"), m))
+                warning(Error((3376, FSComp.SR.forBadFormatSpecifierGeneral("%")), m))
                 collectSpecifierLocation fragLine fragCol 0
                 appendToDotnetFormatString "%"
                 parseLoop acc (i+1, fragLine, fragCol+1) fragments

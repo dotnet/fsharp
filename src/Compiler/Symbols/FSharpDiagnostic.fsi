@@ -202,6 +202,10 @@ type FSharpDiagnostic =
     /// Gets the message for the diagnostic
     member Message: string
 
+    /// Gets the message for the diagnostic as parts classified by their kind, e.g. so that tooling is
+    /// able to render it with colors. Message is the text of all parts concatenated.
+    member RichMessage: RichText
+
     /// Gets the subcategory for the diagnostic
     member Subcategory: string
 
@@ -222,6 +226,17 @@ type FSharpDiagnostic =
     static member Create:
         severity: FSharpDiagnosticSeverity *
         message: string *
+        number: int *
+        range: range *
+        ?numberPrefix: string *
+        ?subcategory: string ->
+            FSharpDiagnostic
+
+    /// Creates a diagnostic whose message parts are classified by their kind, e.g. so that tooling is
+    /// able to render it with colors
+    static member Create:
+        severity: FSharpDiagnosticSeverity *
+        message: RichText *
         number: int *
         range: range *
         ?numberPrefix: string *

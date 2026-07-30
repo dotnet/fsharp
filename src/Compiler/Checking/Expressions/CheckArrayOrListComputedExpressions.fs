@@ -3,6 +3,7 @@
 /// Sequence expressions checking
 module internal FSharp.Compiler.CheckArrayOrListComputedExpressions
 
+open FSharp.Compiler.Text
 open FSharp.Compiler.CheckBasics
 open FSharp.Compiler.ConstraintSolver
 open FSharp.Compiler.CheckExpressionsOps
@@ -65,7 +66,7 @@ let TcArrayOrListComputedExpression (cenv: TcFileState) env (overallTy: OverallT
             match comp with
             | SimpleSemicolonSequence cenv false _ -> ()
             | _ when validateExpressionWithIfRequiresParenthesis ->
-                errorR (Deprecated(FSComp.SR.tcExpressionWithIfRequiresParenthesis (), m))
+                errorR (Deprecated(RichText.mkText (FSComp.SR.tcExpressionWithIfRequiresParenthesis ()), m))
             | _ -> ()
 
             let replacementExpr =

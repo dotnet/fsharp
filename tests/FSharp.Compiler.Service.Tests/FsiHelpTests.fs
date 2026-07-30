@@ -30,7 +30,7 @@ module FsiHelpTests =
 
     [<Fact>]
     let ``Can get help for FSComp.SR.considerUpcast`` () =
-        match FSharp.Compiler.Interactive.FsiHelp.Logic.Quoted.tryGetHelp <@ FSComp.SR.considerUpcast @> with
+        match FSharp.Compiler.Interactive.FsiHelp.Logic.Quoted.tryGetHelp <@ (FSComp.SR.considerUpcast: string * string -> int * string) @> with
         | ValueSome h ->
             h.Assembly |> shouldBe "FSharp.Compiler.Service.dll"
             h.FullName |> shouldBe "FSComp.SR.considerUpcast"

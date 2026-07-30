@@ -486,9 +486,6 @@ let findSymbolUse (evaluateSymbol:FSharpSymbolUse->bool) (results: FSharpCheckFi
     let symbolUses = getSymbolUses results
     symbolUses |> Seq.find (fun symbolUse -> evaluateSymbol symbolUse)
 
-let taggedTextToString (tts: TaggedText[]) =
-    tts |> Array.map (fun tt -> tt.Text) |> String.concat ""
-
 let getRangeCoords (r: range) =
     (r.StartLine, r.StartColumn), (r.EndLine, r.EndColumn)
 

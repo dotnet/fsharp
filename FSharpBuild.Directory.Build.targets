@@ -104,6 +104,30 @@
   <UsingTask TaskName="FSharpEmbedResourceText" AssemblyFile="$(FSharpBuildAssemblyFileOverride)" Override="true" Condition="'$(Configuration)' != 'Proto' AND '$(DisableCompilerRedirection)'!='true' AND Exists('$(ProtoOutputPath)')" />
   <UsingTask TaskName="FSharpEmbedResXSource" AssemblyFile="$(FSharpBuildAssemblyFileOverride)" Override="true" Condition="'$(Configuration)' != 'Proto' AND '$(DisableCompilerRedirection)'!='true' AND Exists('$(ProtoOutputPath)')" />   
 
+  <!-- Without a Bootstrap to redirect to, the task would come from the SDK's released FSharp.Build, and the
+       classified resource accessors FSComp.txt is compiled with would be missing from the generated source.
+
+       Scoped to the project holding FSComp.txt, the only file needing them: the task is loaded from
+       FSharp.Build's own output and an MSBuild node keeps it locked, so using it for FSharp.Build's own
+       FSBuild.txt would leave its build unable to overwrite that output.
+
+       Resource generation runs before references are resolved, so a ProjectReference would be too late,
+       hence the target below. Registered unconditionally, so a missing assembly is reported rather than
+       silently falling back to the SDK's copy.
+
+       TaskHostFactory keeps the assembly out of the MSBuild node, which would hold it, and the FSharp.Core
+       beside it, locked for its lifetime and leave a later build unable to overwrite FSharp.Build's output. -->
+  <PropertyGroup Condition="'$(MSBuildProjectName)' == 'FSharp.Compiler.Service' AND ('$(Configuration)' == 'Proto' OR !Exists('$(ProtoOutputPath)'))">
+    <LocalFSharpBuildAssemblyFile>$(ArtifactsDir)bin\FSharp.Build\$(Configuration)\netstandard2.0\FSharp.Build.dll</LocalFSharpBuildAssemblyFile>
+  </PropertyGroup>
+  <UsingTask TaskName="FSharpEmbedResourceText" AssemblyFile="$(LocalFSharpBuildAssemblyFile)" Override="true" TaskFactory="TaskHostFactory" Condition="'$(LocalFSharpBuildAssemblyFile)' != ''" />
+
+  <Target Name="BuildFSharpBuildForResourceGeneration"
+          BeforeTargets="GenerateFSharpTextResources"
+          Condition="'$(LocalFSharpBuildAssemblyFile)' != '' AND !Exists('$(LocalFSharpBuildAssemblyFile)')">
+    <MSBuild Projects="$(RepoRoot)src\FSharp.Build\FSharp.Build.fsproj" RemoveProperties="TargetFramework" />
+  </Target>
+
 
   <Target Name="BeforeResGen"
           Inputs="@(EmbeddedResource->'$(IntermediateOutputPath)%(Filename)%(Extension)')"

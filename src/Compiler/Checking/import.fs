@@ -83,6 +83,17 @@ let CanImportILScopeRef (env: ImportMap) m scoref =
     | ILScopeRef.Assembly assemblyRef -> isResolved assemblyRef
     | ILScopeRef.PrimaryAssembly -> isResolved env.g.ilg.primaryAssemblyRef
 
+/// A type's qualified name, classifying the enclosing path, the namespace and the name separately. How
+/// the name itself is classified is up to the caller, since the kind of type it is only becomes known
+/// once the type has been dereferenced.
+let private richTextOfQualifiedTypeName (path: string[]) leafOfName typeName =
+    let name = RichText.mkQualifiedName leafOfName typeName
+
+    if Array.isEmpty path then
+        name
+    else
+        RichText.concat [ richTextOfPath (Array.toList path); RichText.mkPunctuation "."; name ]
+
 /// Import a reference to a type definition, given the AbstractIL data for the type reference
 let ImportTypeRefData (env: ImportMap) m (scoref, path, typeName) =
 
@@ -106,13 +117,13 @@ let ImportTypeRefData (env: ImportMap) m (scoref, path, typeName) =
         match ccu with
         | ResolvedCcu ccu->ccu
         | UnresolvedCcu ccuName ->
-            error (Error(FSComp.SR.impTypeRequiredUnavailable(typeName, ccuName), m))
+            error (RichError(FSComp.SR.impTypeRequiredUnavailable(RichText.mkQualifiedTypeName typeName, RichText.mkText ccuName), m))
     let fakeTyconRef = mkNonLocalTyconRef (mkNonLocalEntityRef ccu path) typeName
     let tycon =
         try
             fakeTyconRef.Deref
         with _ ->
-            error (Error(FSComp.SR.impReferencedTypeCouldNotBeFoundInAssembly(String.concat "." (Array.append path  [| typeName |]), ccu.AssemblyName), m))
+            error (RichError(FSComp.SR.impReferencedTypeCouldNotBeFoundInAssembly(richTextOfQualifiedTypeName path RichText.mkUnknownType typeName, RichText.mkText ccu.AssemblyName), m))
 #if !NO_TYPEPROVIDERS
     // Validate (once because of caching)
     match tycon.TypeReprInfo with
@@ -123,7 +134,7 @@ let ImportTypeRefData (env: ImportMap) m (scoref, path, typeName) =
             ()
 #endif
     match tryRescopeEntity ccu tycon with
-    | ValueNone -> error (Error(FSComp.SR.impImportedAssemblyUsesNotPublicType(String.concat "." (Array.toList path@[typeName])), m))
+    | ValueNone -> error (RichError(FSComp.SR.impImportedAssemblyUsesNotPublicType(richTextOfQualifiedTypeName path (richTextOfEntityName tycon) typeName), m))
     | ValueSome tcref -> tcref
 
 
@@ -422,7 +433,7 @@ let rec ImportProvidedTypeAsILType (env: ImportMap) (m: range) (st: Tainted<Prov
         let tcref = ImportProvidedNamedType env m gst
         let tps = tcref.Typars
         if tps.Length <> genericArgs.Length then
-           error(Error(FSComp.SR.impInvalidNumberOfGenericArguments(tcref.CompiledName, tps.Length, genericArgs.Length), m))
+           error(RichError(FSComp.SR.impInvalidNumberOfGenericArguments(richTextOfEntityRefName tcref tcref.CompiledName, tps.Length, genericArgs.Length), m))
         // We're converting to an IL type, where generic arguments are erased
         let genericArgs = List.zip tps genericArgs |> List.filter (fun (tp, _) -> not tp.IsErased) |> List.map snd
 
@@ -499,7 +510,7 @@ let rec ImportProvidedType (env: ImportMap) (m: range) (* (tinst: TypeInst) *) (
 
         let tps = tcref.Typars
         if tps.Length <> genericArgsLength then
-           error(Error(FSComp.SR.impInvalidNumberOfGenericArguments(tcref.CompiledName, tps.Length, genericArgsLength), m))
+           error(RichError(FSComp.SR.impInvalidNumberOfGenericArguments(richTextOfEntityRefName tcref tcref.CompiledName, tps.Length, genericArgsLength), m))
 
         let genericArgs =
             (tps, genericArgs) ||> List.map2 (fun tp genericArg ->
@@ -514,10 +525,10 @@ let rec ImportProvidedType (env: ImportMap) (m: range) (* (tinst: TypeInst) *) (
                         | TType_app (tcref, [], _) when tyconRefEq g tcref g.measureone_tcr -> Measure.One(tcref.Range)
                         | TType_app (tcref, [], _) when tcref.TypeOrMeasureKind = TyparKind.Measure -> Measure.Const(tcref, tcref.Range)
                         | TType_app (tcref, _, _) ->
-                            errorR(Error(FSComp.SR.impInvalidMeasureArgument1(tcref.CompiledName, tp.Name), m))
+                            errorR(RichError(FSComp.SR.impInvalidMeasureArgument1(richTextOfEntityRefName tcref tcref.CompiledName, RichText.mkTypeParameter tp.Name), m))
                             Measure.One tcref.Range
                         | _ ->
-                            errorR(Error(FSComp.SR.impInvalidMeasureArgument2(tp.Name), m))
+                            errorR(RichError(FSComp.SR.impInvalidMeasureArgument2(RichText.mkTypeParameter tp.Name), m))
                             Measure.One range0
 
                     TType_measure (conv genericArg)
@@ -555,7 +566,7 @@ let ImportProvidedMethodBaseAsILMethodRef (env: ImportMap) (m: range) (mbase: Ta
                 | None ->
                     let methodName = minfo.PUntaint((fun minfo -> minfo.Name), m)
                     let typeName = declaringGenericTypeDefn.PUntaint((fun declaringGenericTypeDefn -> string declaringGenericTypeDefn.FullName), m)
-                    error(Error(FSComp.SR.etIncorrectProvidedMethod(DisplayNameOfTypeProvider(minfo.TypeProvider, m), methodName, metadataToken, typeName), m))
+                    error(RichError(FSComp.SR.etIncorrectProvidedMethod(RichText.mkText (DisplayNameOfTypeProvider(minfo.TypeProvider, m)), RichText.mkMethod methodName, metadataToken, RichText.mkQualifiedTypeName typeName), m))
          | _ ->
          match mbase.OfType<ProvidedConstructorInfo>() with
          | Some cinfo when cinfo.PUntaint((fun x -> (nonNull<ProvidedType> x.DeclaringType).IsGenericType), m) ->
@@ -587,7 +598,7 @@ let ImportProvidedMethodBaseAsILMethodRef (env: ImportMap) (m: range) (mbase: Ta
                 | Some found -> found.Coerce(m)
                 | None ->
                     let typeName = declaringGenericTypeDefn.PUntaint((fun x -> string x.FullName), m)
-                    error(Error(FSComp.SR.etIncorrectProvidedConstructor(DisplayNameOfTypeProvider(cinfo.TypeProvider, m), typeName), m))
+                    error(RichError(FSComp.SR.etIncorrectProvidedConstructor(RichText.mkText (DisplayNameOfTypeProvider(cinfo.TypeProvider, m)), RichText.mkQualifiedTypeName typeName), m))
          | _ -> mbase
 
      let retTy =
@@ -779,7 +790,7 @@ let ImportILAssemblyExportedType amap m auxModLoader (scoref: ILScopeRef) (expor
                      with :? KeyNotFoundException -> None)
                 with
                 | None ->
-                    error(Error(FSComp.SR.impReferenceToDllRequiredByAssembly(exportedType.ScopeRef.QualifiedName, scoref.QualifiedName, exportedType.Name), m))
+                    error(RichError(FSComp.SR.impReferenceToDllRequiredByAssembly(RichText.mkText exportedType.ScopeRef.QualifiedName, RichText.mkText scoref.QualifiedName, RichText.mkUnknownType exportedType.Name), m))
                 | Some preTypeDef ->
                     scoref, preTypeDef
             )

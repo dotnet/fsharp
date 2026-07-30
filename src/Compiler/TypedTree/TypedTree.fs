@@ -508,7 +508,7 @@ type EntityFlags(flags: int64) =
 
 exception UndefinedName of 
     depth: int * 
-    error: (string -> string) * 
+    error: (RichText -> RichText) * 
     id: Ident * 
     suggestions: Suggestions
 
@@ -1001,7 +1001,9 @@ type Entity =
     member x.CompilationPath = 
         match x.CompilationPathOpt with 
         | Some cpath -> cpath 
-        | None -> error(Error(FSComp.SR.tastTypeOrModuleNotConcrete(x.LogicalName), x.Range))
+        | None ->
+            let tag = if x.IsModuleOrNamespace then TextTag.Module else TextTag.Class
+            error(RichError(FSComp.SR.tastTypeOrModuleNotConcrete(RichText.ofTag tag x.LogicalName), x.Range))
     
     /// Get a table of fields for all the F#-defined record, struct and class fields in this type definition, including
     /// static fields, 'val' declarations and hidden fields from the compilation of implicit class constructions.

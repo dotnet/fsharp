@@ -2349,7 +2349,7 @@ type internal TypeCheckInfo
 
                 let tip = PrintUtilities.squashToWidth width tip
 
-                let tip = LayoutRender.toArray tip
+                let tip = LayoutRender.toRichText tip
                 ToolTipText.ToolTipText [ ToolTipElement.Single(tip, FSharpXmlDoc.None) ]
 
             | [] ->
@@ -2372,7 +2372,7 @@ type internal TypeCheckInfo
                             for line in lines ->
                                 let tip = wordL (TaggedText.tagStringLiteral line)
                                 let tip = PrintUtilities.squashToWidth width tip
-                                let tip = LayoutRender.toArray tip
+                                let tip = LayoutRender.toRichText tip
                                 ToolTipElement.Single(tip, FSharpXmlDoc.None)
                         ]
 
@@ -2921,7 +2921,7 @@ module internal ParseAndCheckFile =
             //    the formatting of types in it may change (for example, 'a to obj)
             //
             // So we'll create a diagnostic later, but cache the FormatCore message now
-            diagnostic.Exception.Data["CachedFormatCore"] <- diagnostic.FormatCore(flatErrors, suggestNamesForErrors)
+            diagnostic.Exception.Data["CachedFormatCore"] <- diagnostic.FormatRichCore(flatErrors, suggestNamesForErrors)
             diagnosticsCollector.Add(diagnostic)
 
             if diagnostic.Severity = FSharpDiagnosticSeverity.Error then
@@ -3471,7 +3471,7 @@ type FSharpCheckFileResults
                     match Tokenization.FSharpKeywords.KeywordsDescriptionLookup kw with
                     | None -> ()
                     | Some kwDescription ->
-                        let kwText = kw |> TaggedText.tagKeyword |> wordL |> LayoutRender.toArray
+                        let kwText = kw |> TaggedText.tagKeyword |> wordL |> LayoutRender.toRichText
                         yield ToolTipElement.Single(kwText, FSharpXmlDoc.FromXmlText(Xml.XmlDoc([| kwDescription |], range0)))
             ]
 
