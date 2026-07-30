@@ -1443,9 +1443,10 @@ type ProviderGeneratedType = ProviderGeneratedType of ilOrigTyRef: ILTypeRef * i
 /// The table of information recording remappings from type names in the provided assembly to type
 /// names in the statically linked, embedded assembly, plus what types are nested in side what types.
 type ProvidedAssemblyStaticLinkingMap = 
-    { ILTypeMap: Dictionary<ILTypeRef, ILTypeRef> }
+    // graph-based checking can embed generated types from one provider assembly in parallel
+    { ILTypeMap: ConcurrentDictionary<ILTypeRef, ILTypeRef> }
     static member CreateNew() = 
-        { ILTypeMap = Dictionary() }
+        { ILTypeMap = ConcurrentDictionary() }
 
 /// Check if this is a direct reference to a non-embedded generated type. This is not permitted at any name resolution.
 /// We check by seeing if the type is absent from the remapping context.

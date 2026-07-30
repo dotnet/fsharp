@@ -175,23 +175,29 @@ type LowerStateMachine(g: TcGlobals, outerResumableCodeDefns: ValMap<Expr>) =
         pcCount
 
     // Record definitions for any resumable code
-    let rec BindResumableCodeDefinitions (env: env) expr = 
+    let rec BindResumableCodeDefinitions (env: env) finalizing expr = 
 
         match expr with
         // Bind 'let __expand_ABC = bindExpr in bodyExpr'
-        | Expr.Let (defn, bodyExpr, _, _) when isStateMachineBindingVar g defn.Var -> 
+        | Expr.Let (defn, bodyExpr, m, _) when isStateMachineBindingVar g defn.Var -> 
             if sm_verbose then printfn "binding %A --> %A..." defn.Var defn.Expr
             let envR = { env with ResumableCodeDefns = env.ResumableCodeDefns.Add defn.Var defn.Expr }
-            BindResumableCodeDefinitions envR bodyExpr
+            let envR2, bodyR = BindResumableCodeDefinitions envR finalizing bodyExpr
+            // A dropped member-access receiver temp loses its side effect when unused (#13099).
+            if finalizing && defn.Var.IsMemberThisVal && Optimizer.ExprHasEffect Optimizer.EffectContext.Emit g defn.Expr &&
+               not (Zset.contains defn.Var (freeInExpr CollectLocals bodyExpr).FreeLocals) then
+                envR2, mkSequential m defn.Expr bodyR
+            else
+                envR2, bodyR
 
          // Eliminate 'if __useResumableCode ...'
          | IfUseResumableStateMachinesExpr g (thenExpr, _) ->
             if sm_verbose then printfn "eliminating 'if __useResumableCode...'"
-            BindResumableCodeDefinitions env thenExpr
+            BindResumableCodeDefinitions env finalizing thenExpr
 
          // Look through debug points to find resumable code bindings inside
          | Expr.DebugPoint (_, innerExpr) ->
-            let envR, _ = BindResumableCodeDefinitions env innerExpr
+            let envR, _ = BindResumableCodeDefinitions env finalizing innerExpr
             (envR, expr)
 
          | _ ->
@@ -398,7 +404,7 @@ type LowerStateMachine(g: TcGlobals, outerResumableCodeDefns: ValMap<Expr>) =
     /// Repeatedly find outermost expansion definitions and apply outermost expansions 
     let rec RepeatBindAndApplyOuterDefinitions (env: env) expr = 
         if sm_verbose then printfn "RepeatBindAndApplyOuterDefinitions for %A..." expr
-        let env2, expr2 = BindResumableCodeDefinitions env expr
+        let env2, expr2 = BindResumableCodeDefinitions env true expr
         match TryReduceExpr env2 expr2 [] id with 
         | Some res -> RepeatBindAndApplyOuterDefinitions env2 res
         | None -> env2, expr2
@@ -409,7 +415,7 @@ type LowerStateMachine(g: TcGlobals, outerResumableCodeDefns: ValMap<Expr>) =
         // All expanded resumable code state machines e.g. 'task { .. }' begin with a bind of @builder or 'defn'
         // Seed the env with any expand-var definitions from outer scopes (e.g. across lambda boundaries)
         let initialEnv = { env.Empty with ResumableCodeDefns = outerResumableCodeDefns }
-        let env, expr = BindResumableCodeDefinitions initialEnv inputExpr 
+        let env, expr = BindResumableCodeDefinitions initialEnv false inputExpr 
         match expr with
         | StructStateMachineExpr g 
                (dataTy, 

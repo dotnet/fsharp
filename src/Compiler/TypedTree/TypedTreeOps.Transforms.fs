@@ -673,7 +673,7 @@ module internal TypeTestsAndPatterns =
     let GetMemberCallInfo g (vref: ValRef, vFlags) =
         match vref.MemberInfo with
         | Some membInfo when not vref.IsExtensionMember ->
-            let numEnclTypeArgs = vref.MemberApparentEntity.TyparsNoRange.Length
+            let numEnclTypeArgs = vref.MemberApparentEntity.Typars.Length
 
             let virtualCall =
                 (membInfo.MemberFlags.IsOverrideOrExplicitImpl
@@ -978,7 +978,7 @@ module internal Rewriting =
 
     let rec remapEntityDataToNonLocal ctxt tmenv (d: Entity) =
         let tpsR, tmenvinner =
-            tmenvCopyRemapAndBindTypars (remapAttribs ctxt tmenv) tmenv (d.entity_typars.Force(d.entity_range))
+            tmenvCopyRemapAndBindTypars (remapAttribs ctxt tmenv) tmenv d.Typars
 
         let typarsR = LazyWithContext.NotLazy tpsR
         let attribsR = d.entity_attribs.AsList() |> remapAttribs ctxt tmenvinner

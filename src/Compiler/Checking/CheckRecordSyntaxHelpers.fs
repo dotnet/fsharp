@@ -142,6 +142,11 @@ let TransformAstForNestedUpdates (cenv: TcFileState) (env: TcEnv) overallTy (lid
     let access, fields =
         ResolveNestedField cenv.tcSink cenv.nameResolver env.eNameResEnv env.eAccessRights overallTy lid
 
+    // ResolveNestedField already reported the qualifier idents to the sink; mark them synthetic so the
+    // later ResolveField (via BuildFieldMap) doesn't report the surviving one a second time.
+    let access =
+        access |> List.map (fun id -> ident (id.idText, id.idRange.MakeSynthetic()))
+
     match access, fields with
     | _, [] -> failwith "unreachable"
     | accessIds, [ (fieldId, _) ] -> (accessIds, fieldId), Some exprBeingAssigned

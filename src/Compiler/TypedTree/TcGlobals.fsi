@@ -698,6 +698,8 @@ type internal TcGlobals =
 
     member knownFSharpCoreModules: System.Collections.Generic.IDictionary<string, TypedTree.EntityRef>
 
+    member fslibForceInlineModules: System.Collections.Generic.IDictionary<string, TypedTree.EntityRef>
+
     member knownIntrinsics:
         System.Collections.Concurrent.ConcurrentDictionary<string * string option * string * int, TypedTree.ValRef>
 

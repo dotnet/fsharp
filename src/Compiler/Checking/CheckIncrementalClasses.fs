@@ -161,6 +161,13 @@ let TcImplicitCtorInfo_Phase2A(cenv: cenv, env, tpenv, tcref: TyconRef, vis, att
         
     // Put them in order 
     let ctorArgs = List.map (fun v -> NameMap.find v vspecs) ctorArgNames
+
+    // Mark constructor arguments as parameters so that diagnostics
+    // (e.g. FS0027 on assignment to a non-mutable parameter) can distinguish them
+    // from ordinary local bindings.
+    for v in ctorArgs do
+        v.SetIsParameter()
+
     let safeThisValOpt = MakeAndPublishSafeThisVal cenv env thisIdOpt thisTy
         
     // NOTE: the type scheme here is not complete!!! The ctorTy is more or less 
@@ -503,7 +510,7 @@ type IncrClassReprInfo =
                             let ctorDeclaredTypars = staticCtorInfo.GetNormalizedIncrCtorDeclaredTypars cenv denv staticCtorInfo.TyconRef.Range
 
                             // Note: tcrefObjTy contains the original "formal" typars, thisTy is the "fresh" one... f<>fresh. 
-                            let revTypeInst = List.zip ctorDeclaredTypars (tcref.TyparsNoRange |> List.map mkTyparTy)
+                            let revTypeInst = List.zip ctorDeclaredTypars (tcref.Typars |> List.map mkTyparTy)
 
                             yield MakeIncrClassField(localRep.RepInfoTcGlobals, cpath, revTypeInst, v, isStatic, rfref)
                     | _ -> 

@@ -1181,7 +1181,7 @@ module FSharpExprConvert =
                 let isCtor = (ilMethRef.Name = ".ctor")
                 let isStatic = isCtor || ilMethRef.CallingConv.IsStatic
                 let scoref = ilMethRef.DeclaringTypeRef.Scope
-                let typars1 = tcref.Typars m
+                let typars1 = tcref.Typars
                 let typars2 = [ 1 .. ilMethRef.GenericArity ] |> List.map (fun _ -> Construct.NewRigidTypar "T" m)
                 let tinst1 = typars1 |> generalizeTypars
                 let tinst2 = typars2 |> generalizeTypars

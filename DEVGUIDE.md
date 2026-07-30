@@ -335,10 +335,13 @@ ilverify_FSharp.Core_Release_netstandard2.0.bsl
 ilverify_FSharp.Core_Release_netstandard2.1.bsl
 ```
 
+The comparison uses a two-level approach: an exact match is tried first, then a **soft comparison** that ignores IL byte offsets (`[offset 0x...]`) and trailing whitespace. Offsets shift whenever code above the error site changes, even though the verification error itself is semantically identical. When only offsets differ the check passes with a warning suggesting a baseline update.
+
 If you want to update them, either
 
 1. Run the [ilverify.ps1]([url](https://github.com/dotnet/fsharp/blob/main/tests/ILVerify/ilverify.ps1)) script in PowerShell. The script will create `.actual` files. If the differences make sense, replace the original baselines with the actual files.
 2. Set the `TEST_UPDATE_BSL` to `1` (please refer to "Updating baselines in tests" section in this file) **and** run `ilverify.ps1` - this will automatically replace baselines. After that, please carefully review the change and push it to your branch if it makes sense.
+3. Use the `/run ilverify` PR comment command to update baselines automatically via CI.
 
 ## Automated Source Code Formatting
 

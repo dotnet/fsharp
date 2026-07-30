@@ -170,3 +170,25 @@ let main _ =
         |> asExe
         |> compileExeAndRun
         |> shouldSucceed
+
+    // A member whose compiled name contains '@' (valid F# via double-backticks, warns FS1104) must
+    // still compile, run, and emit deterministically. The IlxGen method sort buckets names with '@'
+    // as compiler-generated, but ordering stays total/deterministic, so such members are harmless.
+    [<Fact>]
+    let ``Member name with at sign emits and runs correctly`` () =
+        FSharp """
+type C() =
+  member _.a () = 1
+  member _.``weird@name`` () = 42
+  member _.b () = 2
+
+[<EntryPoint>]
+let main _ =
+  let c = C()
+  if c.a() + c.``weird@name``() + c.b() <> 45 then failwith "wrong"
+  0
+        """
+        |> ignoreWarnings
+        |> asExe
+        |> compileExeAndRun
+        |> shouldSucceed

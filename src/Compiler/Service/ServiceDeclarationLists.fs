@@ -1093,12 +1093,12 @@ type DeclarationListInfo(declarations: DeclarationListItem[], isForType: bool, i
             items 
             |> List.map (fun x ->
                 match x.Item with
-                | Item.Types (_, TType_app(tcref, _, _) :: _) when isInterfaceTyconRef tcref -> { x with MinorPriority = 1000 + tcref.TyparsNoRange.Length }
-                | Item.Types (_, TType_app(tcref, _, _) :: _) -> { x with MinorPriority = 1 + tcref.TyparsNoRange.Length }
+                | Item.Types (_, TType_app(tcref, _, _) :: _) when isInterfaceTyconRef tcref -> { x with MinorPriority = 1000 + tcref.Typars.Length }
+                | Item.Types (_, TType_app(tcref, _, _) :: _) -> { x with MinorPriority = 1 + tcref.Typars.Length }
                 // Put delegate ctors after types, sorted by #typars. RemoveDuplicateItems will remove FakeInterfaceCtor and DelegateCtor if an earlier type is also reported with this name
-                | Item.DelegateCtor (TType_app(tcref, _, _)) -> { x with MinorPriority = 1000 + tcref.TyparsNoRange.Length }
+                | Item.DelegateCtor (TType_app(tcref, _, _)) -> { x with MinorPriority = 1000 + tcref.Typars.Length }
                 // Put type ctors after types, sorted by #typars. RemoveDuplicateItems will remove DefaultStructCtors if a type is also reported with this name
-                | Item.CtorGroup (_, cinfo :: _) -> { x with MinorPriority = 1000 + 10 * cinfo.DeclaringTyconRef.TyparsNoRange.Length }
+                | Item.CtorGroup (_, cinfo :: _) -> { x with MinorPriority = 1000 + 10 * cinfo.DeclaringTyconRef.Typars.Length }
                 | Item.MethodGroup(_, minfo :: _, _) -> { x with IsOwnMember = tyconRefOptEq x.Type minfo.DeclaringTyconRef }
                 | Item.Property(info = pinfo :: _) -> { x with IsOwnMember = tyconRefOptEq x.Type pinfo.DeclaringTyconRef }
                 | Item.ILField finfo -> { x with IsOwnMember = tyconRefOptEq x.Type finfo.DeclaringTyconRef }

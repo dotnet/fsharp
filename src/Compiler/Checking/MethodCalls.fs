@@ -1250,6 +1250,14 @@ let rec BuildMethodCall tcVal g amap isMutable m isProp minfo valUseFlags minst 
             let expr = mkCoerceExpr (expr, retTy, m, exprTy)
             expr, retTy
 
+        | MethInfoWithModifiedReturnType((FSMeth(_, _, vref, _) as innerMeth), retTy) ->
+            // Build the inner call directly, without re-invoking TakeObjAddrForMethodCall.
+            let vExpr, vExprTy = tcVal vref valUseFlags (innerMeth.DeclaringTypeInst @ minst) m
+            let expr, exprTy = BuildFSharpMethodApp g m vref vExpr vExprTy allArgs
+
+            let expr = mkCoerceExpr (expr, retTy, m, exprTy)
+            expr, retTy
+
         | MethInfoWithModifiedReturnType _ ->
             failwith "MethInfoWithModifiedReturnType: unexpected inner method kind"
 
@@ -1355,15 +1363,24 @@ let BuildNewDelegateExpr (eventInfoOpt: EventInfo option, g, amap, delegateTy, d
                     | _ -> None
                 | _ -> None
 
+            let delInvokeArgNamesIfFeatureEnabled =
+                if g.langVersion.SupportsFeature LanguageFeature.ImprovedImpliedArgumentNamesPartTwo then
+                    delInvokeMeth.GetParamNames() |> List.concat
+                else
+                    []
+
             let delArgVals =
                 delArgTys
                 |> List.mapi (fun i argTy ->
                     let argName =
                         match delFuncArgNamesIfFeatureEnabled with
                         | Some argNames -> argNames[i]
-                        | None -> "delegateArg" + string i
+                        | None ->
+                            match List.tryItem i delInvokeArgNamesIfFeatureEnabled with
+                            | Some (Some name) when name <> "" -> name
+                            | _ -> "delegateArg" + string i
 
-                    fst (mkCompGenLocal m argName argTy)) 
+                    fst (mkCompGenLocal m argName argTy))
 
             let expr = 
                 let args = 
@@ -1872,7 +1889,7 @@ module ProvidedMethodCalls =
                 else
                     if isGeneric then 
                         let genericArgs = st.PApplyArray((fun st -> st.GetGenericArguments()), "GetGenericArguments", m) 
-                        let typars = headTypeAsFSharpType.Typars(m)
+                        let typars = headTypeAsFSharpType.Typars
                         // Drop the generic arguments that don't correspond to type arguments, i.e. are units-of-measure
                         let genericArgs = 
                             [| for genericArg, tp in Seq.zip genericArgs typars do

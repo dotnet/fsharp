@@ -14,6 +14,11 @@
     <PackageReference Include="System.Composition" Version="$(SystemCompositionVersion)" PrivateAssets="all" ExcludeAssets="contentFiles;analyzers;native" />
     <PackageReference Include="System.Memory" Version="$(SystemMemoryVersion)" PrivateAssets="all" ExcludeAssets="contentFiles;analyzers;native" />
     <PackageReference Include="System.Runtime.CompilerServices.Unsafe" Version="$(SystemRuntimeCompilerServicesUnsafeVersion)" PrivateAssets="all" ExcludeAssets="contentFiles;analyzers;native" />
+    <!-- Pinned to match Microsoft.CodeAnalysis.ExternalAccess.FSharp's transitive versions and avoid MSB3277 conflicts. -->
+    <PackageReference Include="Microsoft.VisualStudio.Validation" Version="$(MicrosoftVisualStudioValidationVersion)" PrivateAssets="all" ExcludeAssets="contentFiles;analyzers;native" />
+    <PackageReference Include="Microsoft.VisualStudio.RpcContracts" Version="$(MicrosoftVisualStudioRpcContractsVersion)" PrivateAssets="all" ExcludeAssets="contentFiles;analyzers;native" />
+    <PackageReference Include="Microsoft.ServiceHub.Framework" Version="$(MicrosoftServiceHubFrameworkVersion)" PrivateAssets="all" ExcludeAssets="contentFiles;analyzers;native" />
+    <PackageReference Include="StreamJsonRpc" Version="$(StreamJsonRpcVersion)" PrivateAssets="all" ExcludeAssets="contentFiles;analyzers;native" />
   </ItemGroup>
 
   <!-- New VS does not allow embedded interop assemblies ... this turns off the target that turns it on -->

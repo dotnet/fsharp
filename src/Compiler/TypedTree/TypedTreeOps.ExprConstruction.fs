@@ -44,6 +44,10 @@ module internal ExprConstruction =
             member _.Compare(v1, v2) = compareBy v1 v2 _.Stamp
         }
 
+    let valSourceOrderKey (v: Val) =
+        let r = v.Range
+        struct (r.FileIndex, r.StartLine, r.StartColumn, v.LogicalName)
+
     let tyconOrder =
         { new IComparer<Tycon> with
             member _.Compare(tycon1, tycon2) = compareBy tycon1 tycon2 _.Stamp

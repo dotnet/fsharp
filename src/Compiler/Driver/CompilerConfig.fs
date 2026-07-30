@@ -600,6 +600,8 @@ type TcConfigBuilder =
 
         mutable strictIndentation: bool option
 
+        mutable alwaysInline: bool option
+
         mutable exename: string option
 
         // If true - the compiler will copy FSharp.Core.dll along the produced binaries
@@ -853,6 +855,7 @@ type TcConfigBuilder =
             dumpSignatureData = false
             realsig = false
             strictIndentation = None
+            alwaysInline = None
             compilationMode = TcGlobals.CompilationMode.Unset
         }
 
@@ -1253,6 +1256,14 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
     member _.fsiMultiAssemblyEmit = data.fsiMultiAssemblyEmit
     member _.FxResolver = data.FxResolver
     member _.strictIndentation = data.strictIndentation
+
+    member _.alwaysInline =
+        data.alwaysInline
+        |> Option.defaultValue (
+            data.optSettings.LocalOptimizationsEnabled
+            || data.extraOptimizationIterations > 0
+        )
+
     member _.primaryAssembly = data.primaryAssembly
     member _.noFeedback = data.noFeedback
     member _.stackReserveSize = data.stackReserveSize
