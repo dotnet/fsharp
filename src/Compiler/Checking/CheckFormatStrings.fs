@@ -37,6 +37,9 @@ let mkFlexibleDecimalFormatTypar (g: TcGlobals) m =
 let mkFlexibleFloatFormatTypar (g: TcGlobals) m =
     mkFlexibleFormatTypar g m [ g.float_ty; g.float32_ty; g.decimal_ty ] g.float_ty
 
+let stringFormatTy (g: TcGlobals) =
+    if g.checkNullness && g.langFeatureNullness then g.string_ty_ambivalent else g.string_ty
+
 type FormatInfoRegister =
   { mutable leftJustify    : bool
     mutable numPrefixIfPos : char option
@@ -448,8 +451,7 @@ let parseFormatStringInternal
                 checkOtherFlags ch
                 collectSpecifierLocation fragLine fragCol 1
                 let i = skipPossibleInterpolationHole (i+1)
-                let stringTy = if g.checkNullness && g.langFeatureNullness then g.string_ty_ambivalent else g.string_ty
-                parseLoop ((posi, stringTy) :: acc) (i, fragLine, fragCol+1) fragments
+                parseLoop ((posi, stringFormatTy g) :: acc) (i, fragLine, fragCol+1) fragments
 
             | 'O' ->
                 checkOtherFlags ch

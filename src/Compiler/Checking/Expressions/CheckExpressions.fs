@@ -7672,8 +7672,9 @@ and TcInterpolatedStringViaConcat (cenv: cenv, overallTy: OverallTy, env: TcEnv,
         | SynInterpolationFormatting.Printf (spec, _) ->
             match spec with
             // A bare '%s' requires a string; pass it through (it may be null) instead of formatting via 'sprintf'.
+            // Its type is the one 'sprintf "%s"' uses, so a nullable string is accepted here too.
             | "%s" ->
-                let fill, tpenv = TcExpr cenv (MustEqual g.string_ty) env tpenv synFill
+                let fill, tpenv = TcExpr cenv (MustEqual (CheckFormatStrings.stringFormatTy g)) env tpenv synFill
                 (fill, true), tpenv
             | "%c" -> convertViaString g.char_ty
             | "%d" | "%i" -> convertViaString (CheckFormatStrings.mkFlexibleIntFormatTypar g m)

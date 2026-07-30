@@ -18,6 +18,9 @@ val mkFlexibleIntFormatTypar: g: TcGlobals -> m: range -> TType
 /// A flexible type variable constrained to 'decimal', as accepted by the '%M' specifier.
 val mkFlexibleDecimalFormatTypar: g: TcGlobals -> m: range -> TType
 
+/// The type accepted by the '%s' specifier: ambivalent about nullness when nullness is checked.
+val stringFormatTy: g: TcGlobals -> TType
+
 val ParseFormatString:
     m: range ->
     fragmentRanges: range list ->
