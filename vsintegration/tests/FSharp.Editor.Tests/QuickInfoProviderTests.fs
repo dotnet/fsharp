@@ -51,7 +51,8 @@ module QuickInfoProviderTests =
 
             let descriptionText = descriptionTexts |> Array.concat |> String.concat ""
 
-            let remarks = xs |> List.choose (fun item -> item.Remarks)
+            let remarks =
+                xs |> List.choose (fun item -> item.Remarks |> Option.map (fun r -> r.Parts))
 
             let remarkTexts =
                 remarks |> Array.concat |> Array.map (fun taggedText -> taggedText.Text)

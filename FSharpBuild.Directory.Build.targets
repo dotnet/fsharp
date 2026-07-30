@@ -104,22 +104,17 @@
   <UsingTask TaskName="FSharpEmbedResourceText" AssemblyFile="$(FSharpBuildAssemblyFileOverride)" Override="true" Condition="'$(Configuration)' != 'Proto' AND '$(DisableCompilerRedirection)'!='true' AND Exists('$(ProtoOutputPath)')" />
   <UsingTask TaskName="FSharpEmbedResXSource" AssemblyFile="$(FSharpBuildAssemblyFileOverride)" Override="true" Condition="'$(Configuration)' != 'Proto' AND '$(DisableCompilerRedirection)'!='true' AND Exists('$(ProtoOutputPath)')" />   
 
-  <!-- Proto has no Bootstrap to redirect to, so it would otherwise resolve the tasks from the SDK's
-       FSharp.Build, which is a released copy and does not include this repo's changes to them. Use the
-       one built here instead; proto.proj builds FSharp.Build before anything that consumes the tasks. -->
-  <PropertyGroup Condition="'$(Configuration)' == 'Proto'">
-    <ProtoFSharpBuildAssemblyFile>$(ArtifactsDir)bin\FSharp.Build\Proto\netstandard2.0\FSharp.Build.dll</ProtoFSharpBuildAssemblyFile>
-  </PropertyGroup>
-  <UsingTask TaskName="FSharpEmbedResourceText" AssemblyFile="$(ProtoFSharpBuildAssemblyFile)" Override="true" Condition="'$(Configuration)' == 'Proto' AND Exists('$(ProtoFSharpBuildAssemblyFile)')" />
+  <!-- Without a Bootstrap to redirect to, the task would come from the SDK's released FSharp.Build, and the
+       classified resource accessors FSComp.txt is compiled with would be missing from the generated source.
 
-  <!-- A build with no Bootstrap to redirect to either, e.g. a plain build of FSharp.Compiler.Service.slnx,
-       would resolve the task from the SDK's FSharp.Build as well, and the classified resource accessors
-       FSComp.txt is compiled with would be missing from the generated source. Use the one built here.
-       Unlike the cases above there is nothing that builds it beforehand, and resource generation runs
-       before references are resolved, so a ProjectReference would be too late: the target below builds it,
-       and the task is registered unconditionally so that a missing assembly is reported rather than
+       Scoped to the project holding FSComp.txt, the only file needing them: the task is loaded from
+       FSharp.Build's own output and an MSBuild node keeps it locked, so using it for FSharp.Build's own
+       FSBuild.txt would leave its build unable to overwrite that output.
+
+       Resource generation runs before references are resolved, so a ProjectReference would be too late,
+       hence the target below. Registered unconditionally, so a missing assembly is reported rather than
        silently falling back to the SDK's copy. -->
-  <PropertyGroup Condition="'$(Configuration)' != 'Proto' AND '$(MSBuildProjectName)' == 'FSharp.Compiler.Service' AND !Exists('$(ProtoOutputPath)')">
+  <PropertyGroup Condition="'$(MSBuildProjectName)' == 'FSharp.Compiler.Service' AND ('$(Configuration)' == 'Proto' OR !Exists('$(ProtoOutputPath)'))">
     <LocalFSharpBuildAssemblyFile>$(ArtifactsDir)bin\FSharp.Build\$(Configuration)\netstandard2.0\FSharp.Build.dll</LocalFSharpBuildAssemblyFile>
   </PropertyGroup>
   <UsingTask TaskName="FSharpEmbedResourceText" AssemblyFile="$(LocalFSharpBuildAssemblyFile)" Override="true" Condition="'$(LocalFSharpBuildAssemblyFile)' != ''" />
