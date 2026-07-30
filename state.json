@@ -6,12 +6,6 @@
         "Affects-Compiler-Output"
       ]
     },
-    "20091": {
-      "sha": "60f35226a55324c613d43d04a2dea3ef6791e4d7",
-      "cats": [
-        "Affects-Build-Infra"
-      ]
-    },
     "20090": {
       "sha": "e991f3a00a8c24754bfadae7465dce80790af4d3",
       "cats": []
@@ -140,7 +134,7 @@
       ]
     },
     "19971": {
-      "sha": "55d2c6b212d411bd0f0692ba883d3a53b1af22d1",
+      "sha": "df0ef5847ec8f8a2e620d62d070656a9b0683004",
       "cats": [
         "Affects-Compiler-Output",
         "Affects-Test-Tooling"
@@ -190,7 +184,7 @@
       "cats": []
     },
     "20097": {
-      "sha": "2c1a75cb56ac30d794571d73b8276a323e4aabb4",
+      "sha": "4bb108688a798e0a6996d199e68846fb25370895",
       "cats": [
         "Affects-Bootstrap",
         "Affects-Build-Infra",
