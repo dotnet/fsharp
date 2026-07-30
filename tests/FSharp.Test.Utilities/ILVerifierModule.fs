@@ -26,13 +26,10 @@ module ILVerifierModule =
         Commands.executeProcess dotnetExe arguments workingDirectory
 
     let private verifyPEFileCore peverifierArgs (dllFilePath: string) =
-        let nuget_packages =
-            match Environment.GetEnvironmentVariable("NUGET_PACKAGES") with
-            | null ->
-                let profile = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile)
-                $"""{profile}/.nuget/packages"""
-            | path -> path
-        let peverifyFullArgs = [ yield "exec"; yield $"""{nuget_packages}/dotnet-ilverify/9.0.0/tools/net9.0/any/ILVerify.dll"""; yield "--verbose"; yield dllFilePath; yield! peverifierArgs ]
+        // Resolve ilverify through the local tool manifest (.config/dotnet-tools.json) rather than a
+        // hard-coded NuGet cache path. `dotnet tool run` locates the tool wherever it was restored, so
+        // verification does not depend on the NuGet cache layout, tool version, or target framework.
+        let peverifyFullArgs = [ yield "tool"; yield "run"; yield "ilverify"; yield "--"; yield "--verbose"; yield dllFilePath; yield! peverifierArgs ]
         let workingDirectory = Path.GetDirectoryName dllFilePath
         let exitCode, outputText, errorText =
             let peverifierCommandPath = Path.ChangeExtension(dllFilePath, ".peverifierCommandPath.cmd")
