@@ -110,8 +110,10 @@ let mkInterpolatedStringFillParts (litText: string, litRange: range, fill: SynEx
             | _, None -> litText, SynInterpolationFormatting.DotNet(None, None)
         | _ -> litText, SynInterpolationFormatting.DotNet(alignment, qualifier)
 
-    [ SynInterpolatedStringPart.String(litValue, litRange)
-      SynInterpolatedStringPart.FillExpr(holeExpr, formatting) ]
+    [
+        SynInterpolatedStringPart.String(litValue, litRange)
+        SynInterpolatedStringPart.FillExpr(holeExpr, formatting)
+    ]
 
 //------------------------------------------------------------------------
 // Parsing/lexing: status of #if/#endif processing in lexing, used for continuations
