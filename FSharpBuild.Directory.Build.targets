@@ -113,11 +113,14 @@
 
        Resource generation runs before references are resolved, so a ProjectReference would be too late,
        hence the target below. Registered unconditionally, so a missing assembly is reported rather than
-       silently falling back to the SDK's copy. -->
+       silently falling back to the SDK's copy.
+
+       TaskHostFactory keeps the assembly out of the MSBuild node, which would hold it, and the FSharp.Core
+       beside it, locked for its lifetime and leave a later build unable to overwrite FSharp.Build's output. -->
   <PropertyGroup Condition="'$(MSBuildProjectName)' == 'FSharp.Compiler.Service' AND ('$(Configuration)' == 'Proto' OR !Exists('$(ProtoOutputPath)'))">
     <LocalFSharpBuildAssemblyFile>$(ArtifactsDir)bin\FSharp.Build\$(Configuration)\netstandard2.0\FSharp.Build.dll</LocalFSharpBuildAssemblyFile>
   </PropertyGroup>
-  <UsingTask TaskName="FSharpEmbedResourceText" AssemblyFile="$(LocalFSharpBuildAssemblyFile)" Override="true" Condition="'$(LocalFSharpBuildAssemblyFile)' != ''" />
+  <UsingTask TaskName="FSharpEmbedResourceText" AssemblyFile="$(LocalFSharpBuildAssemblyFile)" Override="true" TaskFactory="TaskHostFactory" Condition="'$(LocalFSharpBuildAssemblyFile)' != ''" />
 
   <Target Name="BuildFSharpBuildForResourceGeneration"
           BeforeTargets="GenerateFSharpTextResources"
