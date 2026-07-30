@@ -7719,17 +7719,9 @@ and TcInterpolatedStringViaConcat (cenv: cenv, overallTy: OverallTy, env: TcEnv,
 
     let resultExpr =
         match argExprs with
-        | [] -> mkString g m ""
         // A lone arg has no Concat to map its null to ""; a possibly-null one coalesces via 'string'.
-        | [ (single, mustCallStringOp) ]->
-            if mustCallStringOp then mkCallStringOperator g m g.string_ty single
-            else single
-        | [ (a, _); (b, _) ] -> mkStaticCall_String_Concat2 g m a b
-        | [ (a, _); (b, _); (c, _) ] -> mkStaticCall_String_Concat3 g m a b c
-        | [ (a, _); (b, _); (c, _); (d, _) ] -> mkStaticCall_String_Concat4 g m a b c d
-        | _ ->
-            let exprs = argExprs |> List.map fst
-            mkStaticCall_String_Concat_Array g m (mkArray (g.string_ty, exprs, m))
+        | [ (single, true) ] -> mkCallStringOperator g m g.string_ty single
+        | _ -> mkStringConcat (g, m, List.map fst argExprs)
 
     TcPropagatingExprLeafThenConvert cenv overallTy g.string_ty env m (fun () -> resultExpr, tpenv)
 
