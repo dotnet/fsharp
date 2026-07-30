@@ -48,16 +48,16 @@ module RichDiagnosticTests =
     [<Fact>]
     let ``Undefined name suggestions are classified`` () =
         """
-let interesting = 1
-let _ = interestinh
+let frobnicate = 1
+let _ = frobnicatf
 """
         |> assertMessageParts
             [ TextTag.Text, "The value or constructor '"
-              TextTag.UnresolvedName, "interestinh"
+              TextTag.UnresolvedName, "frobnicatf"
               TextTag.Text, "' is not defined. Maybe you want one of the following:"
-              TextTag.LineBreak, "\n"
+              TextTag.LineBreak, System.Environment.NewLine
               TextTag.Text, "   "
-              TextTag.UnknownEntity, "interesting" ]
+              TextTag.UnknownEntity, "frobnicate" ]
 
     [<Fact>]
     let ``Message of an unconverted diagnostic is a single part`` () =
