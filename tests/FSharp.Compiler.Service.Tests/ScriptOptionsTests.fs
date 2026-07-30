@@ -79,7 +79,7 @@ let ``Fsx.ScriptClosure.SurfaceOrderOfHashes`` () =
     let tempFile = Path.Combine(Path.GetTempPath(), getTemporaryFileName () + ".fsx")
     let options, _errors =
         checker.GetProjectOptionsFromScript(tempFile, SourceText.ofString scriptSource)
-        |> Async.RunImmediate
+        |> Async.RunSynchronouslyImmediate
     let containsPartial (needle: string) = options.OtherOptions |> Array.exists (fun o -> o.Contains needle)
     Assert.True(containsPartial "--noframework", "OtherOptions should contain --noframework")
     Assert.True(containsPartial "System.Runtime.Remoting.dll", "OtherOptions should resolve System.Runtime.Remoting.dll")
@@ -108,7 +108,7 @@ let ``Fsx.InvalidMetaCommandFilenames`` () =
     let tempFile = Path.Combine(Path.GetTempPath(), getTemporaryFileName () + ".fsx")
     let options, _errors =
         checker.GetProjectOptionsFromScript(tempFile, SourceText.ofString scriptSource)
-        |> Async.RunImmediate
+        |> Async.RunSynchronouslyImmediate
     Assert.Equal(1, options.SourceFiles.Length)
     Assert.Equal(tempFile, options.SourceFiles.[0])
     Assert.Contains("--noframework", options.OtherOptions)
