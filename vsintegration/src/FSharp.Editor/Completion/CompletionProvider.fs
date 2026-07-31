@@ -104,7 +104,7 @@ type internal FSharpCompletionProvider
             sourceText: SourceText,
             caretPosition: int,
             trigger: CompletionTriggerKind,
-            getInfo: (unit -> DocumentId * string * string list * string option * bool option),
+            getInfo: (unit -> DocumentId * string * string list * string option),
             intelliSenseOptions: IntelliSenseOptions,
             cancellationToken: CancellationToken
         ) =

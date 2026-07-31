@@ -20,7 +20,7 @@ module CompletionProviderTests =
     let filePath = "C:\\test.fs"
 
     let mkGetInfo documentId =
-        fun () -> documentId, filePath, [], (Some "preview"), None
+        fun () -> documentId, filePath, [], (Some "preview")
 
     let formatCompletions (completions: string seq) =
         "\n\t" + String.Join("\n\t", completions)
