@@ -212,6 +212,13 @@
       "cats": [
         "Affects-Compiler-Output"
       ]
+    },
+    "20106": {
+      "sha": "6b88572ee2da5c1bfaa1e7f3b65fbf19257ce030",
+      "cats": [
+        "Affects-Build-Infra",
+        "Affects-Compiler-Output"
+      ]
     }
   }
 }
