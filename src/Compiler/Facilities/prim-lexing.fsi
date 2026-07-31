@@ -151,8 +151,7 @@ type internal LexBuffer<'Char> =
 
     /// Create a lex buffer suitable for Unicode lexing that reads characters from the given array.
     /// Important: does take ownership of the array.
-    static member FromChars:
-        reportLibraryOnlyFeatures: bool * langVersion: LanguageVersion * char[] -> LexBuffer<char>
+    static member FromChars: reportLibraryOnlyFeatures: bool * langVersion: LanguageVersion * char[] -> LexBuffer<char>
 
     /// Create a lex buffer that reads character or byte inputs by using the given function.
     static member FromFunction:

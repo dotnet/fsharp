@@ -539,9 +539,7 @@ type Document with
         async {
             let! _, _, parsingOptions, _ = this.GetFSharpCompilationOptionsAsync(userOpName)
 
-            return
-                CompilerEnvironment.GetConditionalDefinesForEditing parsingOptions,
-                parsingOptions.LangVersionText
+            return CompilerEnvironment.GetConditionalDefinesForEditing parsingOptions, parsingOptions.LangVersionText
         }
 
     /// Get the instance of the FSharpChecker from the workspace by the given F# document.

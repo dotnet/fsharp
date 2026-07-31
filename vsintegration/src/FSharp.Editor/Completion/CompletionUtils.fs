@@ -105,16 +105,7 @@ module internal CompletionUtils =
 
         let classifiedSpans = ResizeArray<_>()
 
-        Tokenizer.classifySpans (
-            documentId,
-            sourceText,
-            triggerLine.Span,
-            Some filePath,
-            defines,
-            langVersion,
-            classifiedSpans,
-            ct
-        )
+        Tokenizer.classifySpans (documentId, sourceText, triggerLine.Span, Some filePath, defines, langVersion, classifiedSpans, ct)
 
         classifiedSpans.Count = 0
         || // we should provide completion at the start of empty line, where there are no tokens at all
@@ -184,16 +175,7 @@ module internal CompletionUtils =
 
             let classifiedSpans = ResizeArray<_>()
 
-            Tokenizer.classifySpans (
-                documentId,
-                sourceText,
-                line.Span,
-                Some filePath,
-                defines,
-                langVersion,
-                classifiedSpans,
-                ct
-            )
+            Tokenizer.classifySpans (documentId, sourceText, line.Span, Some filePath, defines, langVersion, classifiedSpans, ct)
 
             let inline isBacktickIdentifier (classifiedSpan: ClassifiedSpan) =
                 classifiedSpan.ClassificationType = ClassificationTypeNames.Identifier

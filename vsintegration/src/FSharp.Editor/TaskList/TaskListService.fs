@@ -28,9 +28,7 @@ type internal FSharpTaskListService [<ImportingConstructor>] () as this =
                 |> Async.AwaitTask
                 |> liftAsync
 
-            return
-                CompilerEnvironment.GetConditionalDefinesForEditing parsingOptions,
-                Some parsingOptions.LangVersionText
+            return CompilerEnvironment.GetConditionalDefinesForEditing parsingOptions, Some parsingOptions.LangVersionText
         }
         |> Async.map (Option.defaultValue ([], None))
 
@@ -69,15 +67,7 @@ type internal FSharpTaskListService [<ImportingConstructor>] () as this =
         for line in sourceText.Lines do
 
             let contractedTokens =
-                Tokenizer.tokenizeLine (
-                    doc.Id,
-                    sourceText,
-                    line.Span.Start,
-                    doc.FilePath,
-                    defines,
-                    langVersion,
-                    cancellationToken
-                )
+                Tokenizer.tokenizeLine (doc.Id, sourceText, line.Span.Start, doc.FilePath, defines, langVersion, cancellationToken)
                 |> extractContractedComments
 
             if contractedTokens |> List.isEmpty then

@@ -242,8 +242,7 @@ type internal Position =
 
 type internal LexBufferFiller<'Char> = LexBuffer<'Char> -> unit
 
-and [<Sealed>] internal LexBuffer<'Char>
-    (filler: LexBufferFiller<'Char>, reportLibraryOnlyFeatures: bool, langVersion: LanguageVersion) =
+and [<Sealed>] internal LexBuffer<'Char>(filler: LexBufferFiller<'Char>, reportLibraryOnlyFeatures: bool, langVersion: LanguageVersion) =
     let context = Dictionary<string, obj>(1)
     let mutable buffer = [||]
     /// number of valid characters beyond bufferScanStart.
