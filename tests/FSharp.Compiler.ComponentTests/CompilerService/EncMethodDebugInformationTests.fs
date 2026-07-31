@@ -289,7 +289,7 @@ let private buildCSharpScratchPdb () =
         """<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>Library</OutputType>
-    <TargetFramework>net10.0</TargetFramework>
+    <TargetFramework>net11.0</TargetFramework>
     <DebugType>portable</DebugType>
     <Optimize>false</Optimize>
     <DebugSymbols>true</DebugSymbols>
@@ -323,7 +323,7 @@ let private buildCSharpScratchPdb () =
     if p.ExitCode <> 0 then
         failwith $"dotnet build of the C# scratch library failed: {stdout}\n{stderr}"
 
-    let pdbPath = Path.Combine(workDir, "bin", "Debug", "net10.0", "scratch.pdb")
+    let pdbPath = Path.Combine(workDir, "bin", "Debug", "net11.0", "scratch.pdb")
     Assert.True(File.Exists pdbPath, $"expected portable PDB at {pdbPath}")
     workDir, pdbPath
 
