@@ -324,12 +324,7 @@ type FSharpLineTokenizer =
 type FSharpSourceTokenizer =
 
     /// Create a tokenizer for a source file.
-    new:
-        conditionalDefines: string list *
-        fileName: string option *
-        langVersion: string option *
-        strictIndentation: bool option ->
-            FSharpSourceTokenizer
+    new: conditionalDefines: string list * fileName: string option * langVersion: string option -> FSharpSourceTokenizer
 
     /// Create a tokenizer for a line of this source file
     member CreateLineTokenizer: lineText: string -> FSharpLineTokenizer
@@ -580,7 +575,6 @@ type public FSharpLexer =
         text: ISourceText *
         tokenCallback: (FSharpToken -> unit) *
         ?langVersion: string *
-        ?strictIndentation: bool *
         ?filePath: string *
         ?conditionalDefines: string list *
         ?flags: FSharpLexerFlags *

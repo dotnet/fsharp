@@ -152,7 +152,6 @@ module CompletionProviderTests =
                 filePath,
                 [],
                 None,
-                None,
                 CancellationToken.None
             )
 

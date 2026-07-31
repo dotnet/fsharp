@@ -1130,8 +1130,7 @@ type FSharpLineTokenizer(lexbuf: UnicodeLexing.Lexbuf, maxLength: int option, fi
         }
 
 [<Sealed>]
-type FSharpSourceTokenizer
-    (conditionalDefines: string list, fileName: string option, langVersion: string option, strictIndentation: bool option) =
+type FSharpSourceTokenizer(conditionalDefines: string list, fileName: string option, langVersion: string option) =
 
     let langVersion =
         langVersion
@@ -1149,13 +1148,13 @@ type FSharpSourceTokenizer
 
     member _.CreateLineTokenizer(lineText: string) =
         let lexbuf =
-            UnicodeLexing.StringAsLexbuf(reportLibraryOnlyFeatures, langVersion, strictIndentation, lineText)
+            UnicodeLexing.StringAsLexbuf(reportLibraryOnlyFeatures, langVersion, lineText)
 
         FSharpLineTokenizer(lexbuf, Some lineText.Length, fileName, lexargs)
 
     member _.CreateBufferTokenizer bufferFiller =
         let lexbuf =
-            UnicodeLexing.FunctionAsLexbuf(reportLibraryOnlyFeatures, langVersion, strictIndentation, bufferFiller)
+            UnicodeLexing.FunctionAsLexbuf(reportLibraryOnlyFeatures, langVersion, bufferFiller)
 
         FSharpLineTokenizer(lexbuf, None, fileName, lexargs)
 
@@ -1731,7 +1730,6 @@ module FSharpLexerImpl =
         (flags: FSharpLexerFlags)
         reportLibraryOnlyFeatures
         langVersion
-        strictIndentation
         diagnosticsLogger
         onToken
         pathMap
@@ -1750,7 +1748,7 @@ module FSharpLexerImpl =
             (flags &&& FSharpLexerFlags.UseLexFilter) = FSharpLexerFlags.UseLexFilter
 
         let lexbuf =
-            UnicodeLexing.SourceTextAsLexbuf(reportLibraryOnlyFeatures, langVersion, strictIndentation, text)
+            UnicodeLexing.SourceTextAsLexbuf(reportLibraryOnlyFeatures, langVersion, text)
 
         let applyLineDirectives = isCompiling
 
@@ -1776,7 +1774,7 @@ module FSharpLexerImpl =
             ct.ThrowIfCancellationRequested()
             onToken (getNextToken lexbuf) lexbuf.LexemeRange
 
-    let lex text conditionalDefines flags reportLibraryOnlyFeatures langVersion strictIndentation lexCallback pathMap ct =
+    let lex text conditionalDefines flags reportLibraryOnlyFeatures langVersion lexCallback pathMap ct =
         let diagnosticsLogger =
             CompilationDiagnosticLogger("Lexer", FSharpDiagnosticOptions.Default)
 
@@ -1786,7 +1784,6 @@ module FSharpLexerImpl =
             flags
             reportLibraryOnlyFeatures
             langVersion
-            strictIndentation
             diagnosticsLogger
             lexCallback
             pathMap
@@ -1796,7 +1793,7 @@ module FSharpLexerImpl =
 type FSharpLexer =
 
     static member Tokenize
-        (text: ISourceText, tokenCallback, ?langVersion, ?strictIndentation, ?filePath: string, ?conditionalDefines, ?flags, ?pathMap, ?ct)
+        (text: ISourceText, tokenCallback, ?langVersion, ?filePath: string, ?conditionalDefines, ?flags, ?pathMap, ?ct)
         =
         let langVersion = defaultArg langVersion "latestmajor" |> LanguageVersion
         let flags = defaultArg flags FSharpLexerFlags.Default
@@ -1817,4 +1814,4 @@ type FSharpLexer =
             | _ -> tokenCallback fsTok
 
         let reportLibraryOnlyFeatures = true
-        lex text conditionalDefines flags reportLibraryOnlyFeatures langVersion strictIndentation onToken pathMap ct
+        lex text conditionalDefines flags reportLibraryOnlyFeatures langVersion onToken pathMap ct

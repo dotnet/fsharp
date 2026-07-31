@@ -30,10 +30,9 @@ type internal FSharpTaskListService [<ImportingConstructor>] () as this =
 
             return
                 CompilerEnvironment.GetConditionalDefinesForEditing parsingOptions,
-                Some parsingOptions.LangVersionText,
-                parsingOptions.StrictIndentation
+                Some parsingOptions.LangVersionText
         }
-        |> Async.map (Option.defaultValue ([], None, None))
+        |> Async.map (Option.defaultValue ([], None))
 
     let extractContractedComments (tokens: Tokenizer.SavedTokenInfo[]) =
         let granularTokens =
@@ -61,7 +60,6 @@ type internal FSharpTaskListService [<ImportingConstructor>] () as this =
             sourceText: SourceText,
             defines: string list,
             langVersion: string option,
-            strictIndentation: bool option,
             descriptors: (string * FSharpTaskListDescriptor)[],
             cancellationToken
         ) =
@@ -78,7 +76,6 @@ type internal FSharpTaskListService [<ImportingConstructor>] () as this =
                     doc.FilePath,
                     defines,
                     langVersion,
-                    strictIndentation,
                     cancellationToken
                 )
                 |> extractContractedComments
@@ -120,6 +117,6 @@ type internal FSharpTaskListService [<ImportingConstructor>] () as this =
             backgroundTask {
                 let descriptors = desc |> Seq.map (fun d -> d.Text, d) |> Array.ofSeq
                 let! sourceText = doc.GetTextAsync(cancellationToken)
-                let! defines, langVersion, strictIndentation = doc |> getDefinesAndLangVersion
-                return this.GetTaskListItems(doc, sourceText, defines, langVersion, strictIndentation, descriptors, cancellationToken)
+                let! defines, langVersion = doc |> getDefinesAndLangVersion
+                return this.GetTaskListItems(doc, sourceText, defines, langVersion, descriptors, cancellationToken)
             }
