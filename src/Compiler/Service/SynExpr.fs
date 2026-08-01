@@ -1087,10 +1087,13 @@ module SynExpr =
             | SynExpr.InterpolatedString _, SynExpr.Sequential _
             | SynExpr.InterpolatedString _, SynExpr.Tuple(isStruct = false) -> true
 
+            // Removing the parens would let a trailing alignment or format be parsed as part of the hole,
+            // e.g. the ',-3' in '$"{(if b then 1 else 0),-3}"' becoming a tuple in the else branch.
             | SynExpr.InterpolatedString(contents = contents), Dangling.Problematic _ ->
                 contents
                 |> List.exists (function
-                    | SynInterpolatedStringPart.FillExpr(qualifiers = Some _) -> true
+                    | SynInterpolatedStringPart.FillExpr(formatting = SynInterpolationFormatting.DotNet(alignment = Some _))
+                    | SynInterpolatedStringPart.FillExpr(formatting = SynInterpolationFormatting.DotNet(format = Some _)) -> true
                     | _ -> false)
 
             // {| A = (1; 2) |}
