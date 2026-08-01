@@ -105,6 +105,7 @@ type LanguageFeature =
     | DirectDelegateConstruction
     | AccessProtectedBaseFieldFromClosure
     | ImprovedImpliedArgumentNamesPartTwo
+    | RecordSpreads
 
 /// LanguageVersion management
 type LanguageVersion =
