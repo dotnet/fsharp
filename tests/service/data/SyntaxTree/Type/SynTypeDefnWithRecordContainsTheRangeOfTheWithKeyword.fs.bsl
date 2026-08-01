@@ -16,12 +16,14 @@ ImplFile
                   Simple
                     (Record
                        (None,
-                        [SynField
-                           ([], false, Some Bar,
-                            LongIdent (SynLongIdent ([int], [], [None])), false,
-                            PreXmlDoc ((3,6), FSharp.Compiler.Xml.XmlDocCollector),
-                            None, (3,6--3,15), { LeadingKeyword = None
-                                                 MutableKeyword = None })],
+                        [Field
+                           (SynField
+                              ([], false, Some Bar,
+                               LongIdent (SynLongIdent ([int], [], [None])),
+                               false,
+                               PreXmlDoc ((3,6), FSharp.Compiler.Xml.XmlDocCollector),
+                               None, (3,6--3,15), { LeadingKeyword = None
+                                                    MutableKeyword = None }))],
                         (3,4--3,17)), (3,4--3,17)),
                   [Member
                      (SynBinding
