@@ -7,36 +7,135 @@ open FSharp.Test.Compiler
 module Regression_ParallelCrossAssemblyInlineOverloads =
 
     [<Fact>]
-    let ``Cross-assembly overloaded inline static members compile and run`` () =
-        let library =
-            FSharp """
-module Library
+    let ``Cross-assembly overloaded inline Source members compile and run`` () =
+       let library =
+           (
+               FSharp """
+module LibraryImpl
 
-type InlineOps =
-    static member inline Source (x: int) : int = x + 1
-    static member inline Source (x: string) : string = x + "!"
+open System.Threading.Tasks
+open Microsoft.FSharp.Control
+
+module Result =
+   let ofChoice choice =
+       match choice with
+       | Choice1Of2 value -> Ok value
+       | Choice2Of2 error -> Error error
+
+module Async =
+   let singleton value = async.Return value
+
+type Validation<'ok, 'error> = Result<'ok, 'error>
+type TaskValidation<'ok, 'error> = Task<Validation<'ok, 'error>>
+
+type TaskValidationBuilderBase() =
+   member inline _.Return(value: 'ok) : TaskValidation<'ok, 'error> =
+       task { return Ok value }
+
+   member inline _.ReturnFrom(taskValidation: TaskValidation<'ok, 'error>) : TaskValidation<'ok, 'error> =
+       taskValidation
+
+   member inline this.Bind
+       (source: Validation<'okInput, 'error>, binder: 'okInput -> TaskValidation<'okOutput, 'error>)
+       : TaskValidation<'okOutput, 'error> =
+       task {
+           let! result = this.Source source
+           match result with
+           | Ok value -> return! binder value
+           | Error error -> return Error error
+       }
+
+   member inline this.Bind
+       (source: Choice<'okInput, 'error>, binder: 'okInput -> TaskValidation<'okOutput, 'error>)
+       : TaskValidation<'okOutput, 'error> =
+       task {
+           let! result = this.Source source
+           match result with
+           | Ok value -> return! binder value
+           | Error error -> return Error error
+       }
+
+   member inline this.Bind
+       (source: Async<'okInput>, binder: 'okInput -> TaskValidation<'okOutput, 'error>)
+       : TaskValidation<'okOutput, 'error> =
+       task {
+           let! result = this.Source source
+           match result with
+           | Ok value -> return! binder value
+           | Error error -> return Error error
+       }
+
+   member inline _.Delay(generator: unit -> TaskValidation<'ok, 'error>) : TaskValidation<'ok, 'error> =
+       generator ()
+
+   member inline this.Source(result: Validation<'ok, 'error>) : TaskValidation<'ok, 'error> =
+       task { return result }
+
+   member inline this.Source(choice: Choice<'ok, 'error>) : TaskValidation<'ok, 'error> =
+       task {
+           return
+               choice
+               |> Result.ofChoice
+       }
+
+   member inline this.Source(asyncComputation: Async<'ok>) : TaskValidation<'ok, 'error> =
+       task {
+           let! value = asyncComputation
+           return Ok value
+       }
+
+type TaskValidationBuilder() =
+   inherit TaskValidationBuilderBase()
+
+let taskValidation = TaskValidationBuilder()
 """
-            |> withOutputType CompileOutput.Library
-            |> withName "Library"
-            |> withOptimize
+               |> withAdditionalSourceFile (SourceCodeFileKind.Create("Library.Support.fs", """
+module LibraryImplSupport
 
-        let consumer =
-            FSharp """
-module Consumer
+let taskValidation = LibraryImpl.taskValidation
+"""))
+               |> withOutputType CompileOutput.Library
+               |> withName "Library"
+               |> withOptimize
+               |> withOptions ["--parallelcompilation+"; "--nowarn:75"]
+               |> ignoreWarnings
+           )
 
-open Library
+       let consumerSource =
+           "module ConsumerImpl\n\nopen LibraryImpl\nopen LibraryImplSupport\n\nlet run () =\n    taskValidation {\n        let! asyncValue = Async.singleton 42\n        let! resultValue = Ok 42\n        let! choiceValue = Choice1Of2 42\n        return asyncValue + resultValue + choiceValue\n    }\n"
+
+       let consumerAdditionalSources =
+           Array.init 12 (fun i ->
+               let source =
+                   "module Consumer"
+                   + string i
+                   + "\n\nopen LibraryImpl\nopen LibraryImplSupport\n\nlet run () =\n    taskValidation {\n        let! asyncValue = Async.singleton 42\n        let! resultValue = Ok 42\n        let! choiceValue = Choice1Of2 42\n        return asyncValue + resultValue + choiceValue\n    }\n"
+
+               SourceCodeFileKind.Create(sprintf "Consumer.%d.fs" i, source))
+           |> Array.toList
+
+       let consumer =
+           (
+               FSharp consumerSource
+               |> withAdditionalSourceFiles consumerAdditionalSources
+               |> withAdditionalSourceFile (SourceCodeFileKind.Create("Consumer.Support.fs", """
+module ConsumerSupport
 
 [<EntryPoint>]
 let main _ =
-    let x = InlineOps.Source 41
-    let y = InlineOps.Source "hello"
-    if x = 42 && y = "hello!" then 0 else 1
-"""
-            |> withOutputType CompileOutput.Exe
-            |> withReferences [ library ]
-            |> withOptimize
+   match ConsumerImpl.run () |> Async.RunSynchronously with
+   | Ok value -> if value = 126 then 0 else 1
+   | Error _ -> 1
+"""))
+               |> withOutputType CompileOutput.Exe
+               |> withReferences [ library ]
+               |> withOptimize
+               |> withOptions ["--parallelcompilation+"; "--nowarn:75"]
+               |> ignoreWarnings
+           )
 
-        consumer
-        |> compileAndRun
-        |> shouldSucceed
-        |> ignore
+       for _i = 1 to 30 do
+           consumer
+           |> compile
+           |> shouldSucceed
+           |> ignore
