@@ -166,10 +166,10 @@ val exprFromParseError: e: SynExpr -> SynExpr
 val patFromParseError: e: SynPat -> SynPat
 
 val rebindRanges:
-    first: (RecordFieldName * range option * SynExpr option) ->
-    fields: ((RecordFieldName * range option * SynExpr option) * BlockSeparator option) list ->
+    first: RecordBinding ->
+    fields: (RecordBinding * BlockSeparator option) list ->
     lastSep: BlockSeparator option ->
-        SynExprRecordField list
+        SynExprRecordFieldOrSpread list
 
 val mkUnderscoreRecdField: m: range -> SynLongIdent * bool
 
