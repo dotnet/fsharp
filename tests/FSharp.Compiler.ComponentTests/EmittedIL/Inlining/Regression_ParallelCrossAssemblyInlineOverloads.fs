@@ -35,6 +35,16 @@ type TaskValidationBuilderBase() =
    member inline _.ReturnFrom(taskValidation: TaskValidation<'ok, 'error>) : TaskValidation<'ok, 'error> =
        taskValidation
 
+   member inline _.Bind
+       (source: TaskValidation<'okInput, 'error>, binder: 'okInput -> TaskValidation<'okOutput, 'error>)
+       : TaskValidation<'okOutput, 'error> =
+       task {
+           let! result = source
+           match result with
+           | Ok value -> return! binder value
+           | Error error -> return Error error
+       }
+
    member inline this.Bind
        (source: Validation<'okInput, 'error>, binder: 'okInput -> TaskValidation<'okOutput, 'error>)
        : TaskValidation<'okOutput, 'error> =
@@ -102,14 +112,14 @@ let taskValidation = LibraryImpl.taskValidation
            )
 
        let consumerSource =
-           "module ConsumerImpl\n\nopen LibraryImpl\nopen LibraryImplSupport\n\nlet run () =\n    taskValidation {\n        let! asyncValue = Async.singleton 42\n        let! resultValue = Ok 42\n        let! choiceValue = Choice1Of2 42\n        return asyncValue + resultValue + choiceValue\n    }\n"
+           "module ConsumerImpl\n\nopen LibraryImpl\nopen LibraryImplSupport\n\nlet run () =\n    taskValidation.Bind(\n        Async.singleton 42,\n        fun asyncValue ->\n            taskValidation.Bind(\n                Ok 42,\n                fun resultValue ->\n                    taskValidation.Bind(\n                        Choice1Of2 42,\n                        fun choiceValue ->\n                            taskValidation.Return(asyncValue + resultValue + choiceValue))))\n"
 
        let consumerAdditionalSources =
            Array.init 12 (fun i ->
                let source =
                    "module Consumer"
                    + string i
-                   + "\n\nopen LibraryImpl\nopen LibraryImplSupport\n\nlet run () =\n    taskValidation {\n        let! asyncValue = Async.singleton 42\n        let! resultValue = Ok 42\n        let! choiceValue = Choice1Of2 42\n        return asyncValue + resultValue + choiceValue\n    }\n"
+                   + "\n\nopen LibraryImpl\nopen LibraryImplSupport\n\nlet run () =\n    taskValidation.Bind(\n        Async.singleton 42,\n        fun asyncValue ->\n            taskValidation.Bind(\n                Ok 42,\n                fun resultValue ->\n                    taskValidation.Bind(\n                        Choice1Of2 42,\n                        fun choiceValue ->\n                            taskValidation.Return(asyncValue + resultValue + choiceValue))))\n"
 
                SourceCodeFileKind.Create(sprintf "Consumer.%d.fs" i, source))
            |> Array.toList
@@ -123,7 +133,7 @@ module ConsumerSupport
 
 [<EntryPoint>]
 let main _ =
-   match ConsumerImpl.run () |> Async.RunSynchronously with
+   match (ConsumerImpl.run ()).GetAwaiter().GetResult() with
    | Ok value -> if value = 126 then 0 else 1
    | Error _ -> 1
 """))
