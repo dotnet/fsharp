@@ -6,11 +6,8 @@ open FSharp.Test.Compiler
 
 module Regression_ParallelCrossAssemblyInlineOverloads =
 
-    [<Fact>]
-    let ``Cross-assembly overloaded inline Source members compile and run`` () =
-       let library =
-           (
-               FSharp """
+    let private librarySource =
+        FSharp """
 module LibraryImpl
 
 open System.Threading.Tasks
@@ -99,36 +96,45 @@ type TaskValidationBuilder() =
 
 let taskValidation = TaskValidationBuilder()
 """
-               |> withAdditionalSourceFile (SourceCodeFileKind.Create("Library.Support.fs", """
+
+    let private mkLibrary options =
+        librarySource
+        |> withAdditionalSourceFile (
+           SourceCodeFileKind.Create(
+               "Library.Support.fs",
+               """
 module LibraryImplSupport
 
 let taskValidation = LibraryImpl.taskValidation
-"""))
-               |> withOutputType CompileOutput.Library
-               |> withName "Library"
-               |> withOptimize
-               |> withOptions ["--parallelcompilation+"; "--nowarn:75"]
-               |> ignoreWarnings
+"""
            )
+        )
+        |> withOutputType CompileOutput.Library
+        |> withName "Library"
+        |> withOptimize
+        |> withOptions options
+        |> ignoreWarnings
 
-       let consumerSource =
-           "module ConsumerImpl\n\nopen LibraryImpl\nopen LibraryImplSupport\n\nlet run () =\n    taskValidation.Bind(\n        Async.singleton 42,\n        fun asyncValue ->\n            taskValidation.Bind(\n                Ok 42,\n                fun resultValue ->\n                    taskValidation.Bind(\n                        Choice1Of2 42,\n                        fun choiceValue ->\n                            taskValidation.Return(asyncValue + resultValue + choiceValue))))\n"
+    let private consumerSource =
+        "module ConsumerImpl\n\nopen LibraryImpl\nopen LibraryImplSupport\n\nlet run () =\n    taskValidation.Bind(\n        Async.singleton 42,\n        fun asyncValue ->\n            taskValidation.Bind(\n                Ok 42,\n                fun resultValue ->\n                    taskValidation.Bind(\n                        Choice1Of2 42,\n                        fun choiceValue ->\n                            taskValidation.Return(asyncValue + resultValue + choiceValue))))\n"
 
-       let consumerAdditionalSources =
-           Array.init 12 (fun i ->
-               let source =
-                   "module Consumer"
-                   + string i
-                   + "\n\nopen LibraryImpl\nopen LibraryImplSupport\n\nlet run () =\n    taskValidation.Bind(\n        Async.singleton 42,\n        fun asyncValue ->\n            taskValidation.Bind(\n                Ok 42,\n                fun resultValue ->\n                    taskValidation.Bind(\n                        Choice1Of2 42,\n                        fun choiceValue ->\n                            taskValidation.Return(asyncValue + resultValue + choiceValue))))\n"
+    let private consumerAdditionalSources =
+        Array.init 12 (fun i ->
+           let source =
+               "module Consumer"
+               + string i
+               + "\n\nopen LibraryImpl\nopen LibraryImplSupport\n\nlet run () =\n    taskValidation.Bind(\n        Async.singleton 42,\n        fun asyncValue ->\n            taskValidation.Bind(\n                Ok 42,\n                fun resultValue ->\n                    taskValidation.Bind(\n                        Choice1Of2 42,\n                        fun choiceValue ->\n                            taskValidation.Return(asyncValue + resultValue + choiceValue))))\n"
 
-               SourceCodeFileKind.Create(sprintf "Consumer.%d.fs" i, source))
-           |> Array.toList
+           SourceCodeFileKind.Create(sprintf "Consumer.%d.fs" i, source))
+        |> Array.toList
 
-       let consumer =
-           (
-               FSharp consumerSource
-               |> withAdditionalSourceFiles consumerAdditionalSources
-               |> withAdditionalSourceFile (SourceCodeFileKind.Create("Consumer.Support.fs", """
+    let private mkConsumer options library =
+        FSharp consumerSource
+        |> withAdditionalSourceFiles consumerAdditionalSources
+        |> withAdditionalSourceFile (
+           SourceCodeFileKind.Create(
+               "Consumer.Support.fs",
+               """
 module ConsumerSupport
 
 [<EntryPoint>]
@@ -136,16 +142,29 @@ let main _ =
    match (ConsumerImpl.run ()).GetAwaiter().GetResult() with
    | Ok value -> if value = 126 then 0 else 1
    | Error _ -> 1
-"""))
-               |> withOutputType CompileOutput.Exe
-               |> withReferences [ library ]
-               |> withOptimize
-               |> withOptions ["--parallelcompilation+"; "--nowarn:75"]
-               |> ignoreWarnings
+"""
            )
+        )
+        |> withOutputType CompileOutput.Exe
+        |> withReferences [ library ]
+        |> withOptimize
+        |> withOptions options
+        |> ignoreWarnings
 
-       for _i = 1 to 30 do
+    let private assertCompiles repeatCount options =
+        let library = mkLibrary options
+        let consumer = mkConsumer options library
+
+        for _i = 1 to repeatCount do
            consumer
            |> compile
            |> shouldSucceed
            |> ignore
+
+    [<Fact>]
+    let ``Cross-assembly overloaded inline Source members compile and run`` () =
+        assertCompiles 30 [ "--parallelcompilation+"; "--nowarn:75" ]
+
+    [<Fact>]
+    let ``Cross-assembly overloaded inline Source members compile and run under sequential compilation`` () =
+        assertCompiles 1 [ "--parallelcompilation-"; "--nowarn:75" ]
