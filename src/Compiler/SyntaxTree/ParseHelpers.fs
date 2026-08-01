@@ -720,13 +720,27 @@ let rebindRanges first fields lastSep =
                 | Some mEq -> unionRanges lidwd.Range mEq
                 | None -> lidwd.Range
 
-    let rec run (name, mEquals, value: SynExpr option) l acc =
-        let lidwd, _ = name
-        let fieldRange = calculateFieldRange lidwd mEquals value
+    let rec run fieldOrSpread l acc =
+        match fieldOrSpread with
+        | RecordBinding.Field((lidwd, _ as name), mEquals, value) ->
+            let fieldRange = calculateFieldRange lidwd mEquals value
 
-        match l with
-        | [] -> List.rev (SynExprRecordField(name, mEquals, value, fieldRange, lastSep) :: acc)
-        | (f, m) :: xs -> run f xs (SynExprRecordField(name, mEquals, value, fieldRange, m) :: acc)
+            match l with
+            | [] ->
+                let field =
+                    SynExprRecordFieldOrSpread.Field(SynExprRecordField(name, mEquals, value, fieldRange), lastSep)
+
+                List.rev (field :: acc)
+            | (f, m) :: xs ->
+                let field =
+                    SynExprRecordFieldOrSpread.Field(SynExprRecordField(name, mEquals, value, fieldRange), m)
+
+                run f xs (field :: acc)
+
+        | RecordBinding.Spread spread ->
+            match l with
+            | [] -> List.rev (SynExprRecordFieldOrSpread.Spread(spread, lastSep) :: acc)
+            | (f, _) :: xs -> run f xs (SynExprRecordFieldOrSpread.Spread(spread, lastSep) :: acc)
 
     run first fields []
 

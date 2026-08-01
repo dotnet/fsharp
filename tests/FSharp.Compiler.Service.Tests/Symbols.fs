@@ -1772,3 +1772,60 @@ type Outer = { I1: Inner1; I2: Inner2 }
 let o = { I1 = { A = 1; B = 2 }; I2 = { C = 3 } }
 let o2 = { o with Outer.I1.A = 10; Outer.I1.B = 20; Outer.I2.C = 30 }
 """
+
+module RecordSpreads =
+    open FSharp.Compiler.EditorServices
+
+    [<Fact>]
+    let ``spread - spread operator is not classified as a record field`` () =
+        let _, checkResults =
+            getParseAndCheckResultsPreview """
+type R1 = { A : int; B : int }
+type R2 = { ...R1; C : int }
+"""
+        let items = checkResults.GetSemanticClassification(None, RelatedSymbolUseKind.All)
+        let badItems =
+            items
+            |> Array.filter (fun i ->
+                i.Type = SemanticClassificationType.RecordField
+                && i.Range.StartLine = 3
+                && i.Range.StartColumn < 15
+                && i.Range.EndColumn > 12)
+        if badItems.Length > 0 then
+            failwith $"Expected the '...' spread operator to NOT be classified as RecordField, but found: %A{badItems |> Array.map (fun i -> getRangeCoords i.Range)}"
+
+    [<Fact>]
+    let ``spread - GetSymbolUseAtLocation range excludes leading spread operator`` () =
+        let _, checkResults =
+            getParseAndCheckResultsPreview """
+type R1 = { A : int; B : int }
+let r1 = { A = 1; B = 2 }
+let r2 = { ...r1; C = 3 }
+"""
+        let line4 = "let r2 = { ...r1; C = 3 }"
+        match checkResults.GetSymbolUseAtLocation(4, 16, line4, [ "r1" ]) with
+        | None -> failwith "Expected to resolve symbol 'r1' inside the spread '...r1'."
+        | Some su ->
+            let spreadUse =
+                checkResults.GetUsesOfSymbolInFile(su.Symbol)
+                |> Array.find (fun u -> not u.IsFromDefinition)
+            if getRangeCoords su.Range <> getRangeCoords spreadUse.Range then
+                failwith $"GetSymbolUseAtLocation range %A{getRangeCoords su.Range} should match GetUsesOfSymbolInFile range %A{getRangeCoords spreadUse.Range} (no leading '...')."
+
+    [<Fact>]
+    let ``spread - GetSymbolUseAtLocation range excludes leading spread operator, anonymous`` () =
+        let _, checkResults =
+            getParseAndCheckResultsPreview """
+type R1 = { A : int; B : int }
+let r1 = { A = 1; B = 2 }
+let r2 = {| ...r1; C = 3 |}
+"""
+        let line4 = "let r2 = {| ...r1; C = 3 |}"
+        match checkResults.GetSymbolUseAtLocation(4, 17, line4, [ "r1" ]) with
+        | None -> failwith "Expected to resolve symbol 'r1' inside the spread '...r1'."
+        | Some su ->
+            let spreadUse =
+                checkResults.GetUsesOfSymbolInFile(su.Symbol)
+                |> Array.find (fun u -> not u.IsFromDefinition)
+            if getRangeCoords su.Range <> getRangeCoords spreadUse.Range then
+                failwith $"GetSymbolUseAtLocation range %A{getRangeCoords su.Range} should match GetUsesOfSymbolInFile range %A{getRangeCoords spreadUse.Range} (no leading '...')."
