@@ -11,12 +11,6 @@
         "Affects-Compiler-Output"
       ]
     },
-    "20105": {
-      "sha": "18bd7c334eb679068ecf255a5ed8456a22131710",
-      "cats": [
-        "Affects-Compiler-Output"
-      ]
-    },
     "20104": {
       "sha": "b895bf22fc413196952f9c2ea3245fce98eae914",
       "cats": []
