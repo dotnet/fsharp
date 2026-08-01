@@ -898,7 +898,12 @@ type SynExprAnonRecordFieldOrSpread =
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
 type SynInterpolatedStringPart =
     | String of value: string * range: range
-    | FillExpr of fillExpr: SynExpr * qualifiers: Ident option
+    | FillExpr of fillExpr: SynExpr * formatting: SynInterpolationFormatting
+
+[<NoEquality; NoComparison; RequireQualifiedAccess>]
+type SynInterpolationFormatting =
+    | DotNet of alignment: SynExpr option * format: Ident option
+    | Printf of specifier: string * range: range
 
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
 type SynSimplePat =

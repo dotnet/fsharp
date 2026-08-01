@@ -38,6 +38,16 @@ val rhs2: parseState: IParseState -> i: int -> j: int -> range
 
 val rhs: parseState: IParseState -> i: int -> range
 
+/// Peel a trailing printf specifier (e.g. "%d") off an interpolated-string literal that precedes a
+/// hole, returning the literal without it and the specifier text. '%%' is a literal escape.
+val peelTrailingPrintfSpecifier: litText: string -> string * string option
+
+/// Build the [String literal; FillExpr hole] pair for one interpolation hole, splitting the
+/// '{x,n}' alignment out of its tuple encoding and peeling a trailing printf specifier off the
+/// literal onto the hole.
+val mkInterpolatedStringFillParts:
+    litText: string * litRange: range * fill: (SynExpr * Ident option) -> SynInterpolatedStringPart list
+
 type LexerIfdefStackEntry =
     | IfDefIf
     | IfDefElse
