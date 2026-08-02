@@ -4448,20 +4448,7 @@ and OptimizeBinding cenv isRec env (TBind(vref, expr, spBind)) =
         raise (ReportedError (Some exn))
           
 and OptimizeBindings cenv isRec env xs =
-    if isRec then
-        let xsArray = xs |> List.toArray
-        let order = GetBindingOptimizationOrder cenv xs
-
-        let results, env =
-            (env, order)
-            ||> List.mapFold (fun env idx ->
-                let result, env = OptimizeBinding cenv isRec env xsArray[idx]
-                (idx, result), env)
-
-        let resultsByIndex = results |> Map.ofList
-        [ for idx in 0 .. xsArray.Length - 1 -> resultsByIndex[idx] ], env
-    else
-        List.mapFold (OptimizeBinding cenv isRec) env xs
+    List.mapFold (OptimizeBinding cenv isRec) env xs
     
 and OptimizeModuleExprWithSig cenv env mty def  = 
         let g = cenv.g
@@ -4556,8 +4543,6 @@ and GetBindingOptimizationOrder cenv (binds: Binding list) =
     // processed. If a caller is optimized before a later sibling it depends on, inline lookup can
     // observe an incomplete optimization environment. Compute a dependency-first schedule for the
     // recursive group, then restore source order after optimization.
-    let bindsArray = binds |> List.toArray
-
     let bindIndexByStamp =
         binds
         |> List.mapi (fun idx bind -> bind.Var.Stamp, idx)
@@ -4567,11 +4552,6 @@ and GetBindingOptimizationOrder cenv (binds: Binding list) =
         match bindIndexByStamp |> Map.tryFind stamp with
         | Some depIdx -> Set.add depIdx depIdxs
         | None -> depIdxs
-
-    let bindingArity idx =
-        bindsArray[idx].Var.ValReprInfo
-        |> Option.map (fun repr -> repr.TotalArgCount)
-        |> Option.defaultValue 0
 
     let rec addBindingDependencies depIdxs expr =
         let addVals depIdxs vals =
@@ -4636,9 +4616,6 @@ and GetBindingOptimizationOrder cenv (binds: Binding list) =
 
     let rootOrder =
         [ 0 .. binds.Length - 1 ]
-        // Prefer leaf-like bindings when there is no explicit dependency edge. This makes
-        // simple inline members such as getters and conversions available before their callers.
-        |> List.sortBy (fun idx -> bindingArity idx, -idx)
 
     for idx in rootOrder do
         visit idx
@@ -4686,7 +4663,11 @@ and OptimizeModuleBindings cenv isRec (env, bindInfosColl) xs =
             | ModuleOrNamespaceBinding.Binding bind -> Some bind
             | _ -> None)
 
-    if isRec && (bindingGroup |> List.forall Option.isSome) then
+    if
+        isRec
+        && (bindingGroup |> List.forall Option.isSome)
+        && (bindingGroup |> List.exists (Option.exists (fun bind -> bind.Var.ShouldInline)))
+    then
         let xsArray = xs |> List.toArray
         let binds = bindingGroup |> List.choose id
         let order = GetBindingOptimizationOrder cenv binds
