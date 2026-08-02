@@ -214,6 +214,15 @@
     "20113": {
       "sha": "8bee41ae5981b49e9bacf98f08462ab485ece5a2",
       "cats": []
+    },
+    "20119": {
+      "sha": "78786eca394bf2f9b327a70d890fb66a4b98a408",
+      "cats": [
+        "Affects-Agent-Config",
+        "Affects-Build-Infra",
+        "Affects-Restore",
+        "Scope-Review-Needed"
+      ]
     }
   }
 }
