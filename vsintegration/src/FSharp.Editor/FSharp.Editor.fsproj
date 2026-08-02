@@ -72,6 +72,7 @@
     <Compile Include="Formatting\EditorFormattingService.fs" />
     <Compile Include="Debugging\BreakpointResolutionService.fs" />
     <Compile Include="Debugging\LanguageDebugInfoService.fs" />
+    <Compile Include="Diagnostics\ActiveDocumentDetection.fs" />
     <Compile Include="Diagnostics\UnnecessaryParenthesesDiagnosticAnalyzer.fs" />
     <Compile Include="Diagnostics\DocumentDiagnosticAnalyzer.fs" />
     <Compile Include="Diagnostics\SimplifyNameDiagnosticAnalyzer.fs" />
@@ -115,31 +116,28 @@
     <Compile Include="CodeFixes\ConvertCSharpLambdaToFSharpLambda.fs" />
     <Compile Include="CodeFixes\MakeOuterBindingRecursive.fs" />
     <Compile Include="CodeFixes\RemoveReturnOrYield.fs" />
-    <Compile Include="CodeFixes\AddMissingFunKeyword.fs" />
-    <Compile Include="CodeFixes\ConvertToAnonymousRecord.fs" />
-    <Compile Include="CodeFixes\UseMutationWhenValueIsMutable.fs" />
-    <Compile Include="CodeFixes\MakeDeclarationMutable.fs" />
-    <Compile Include="CodeFixes\ChangeToUpcast.fs" />
-    <Compile Include="CodeFixes\AddMissingEqualsToTypeDefinition.fs" />
-    <Compile Include="CodeFixes\AddMissingAttributeToSignature.fs" />
-    <Compile Include="CodeFixes\RemoveExtraAttributeFromImplementation.fs" />
-    <Compile Include="CodeFixes\ConvertToNotEqualsEqualityExpression.fs" />
-    <Compile Include="CodeFixes\ConvertToSingleEqualsEqualityExpression.fs" />
-    <Compile Include="CodeFixes\ChangeRefCellDerefToNotExpression.fs" />
-    <Compile Include="CodeFixes\WrapExpressionInParentheses.fs" />
+    <Compile Include="CodeFixes\AddOpenCodeFix.fs" />
     <Compile Include="CodeFixes\ChangePrefixNegationToInfixSubtraction.fs" />
-    <Compile Include="CodeFixes\AddNewKeywordToDisposableConstructorInvocation.fs" />
-    <Compile Include="CodeFixes\AddOpenCodeFixProvider.fs" />
-    <Compile Include="CodeFixes\ProposeUppercaseLabel.fs" />
+    <Compile Include="CodeFixes\ConvertToAnonymousRecord.fs" />
+    <Compile Include="CodeFixes\AddMissingEqualsToTypeDefinition.fs" />
+    <Compile Include="CodeFixes\ChangeRefCellDerefToNot.fs" />
+    <Compile Include="CodeFixes\ConvertToSingleEquality.fs" />
     <Compile Include="CodeFixes\ReplaceWithSuggestion.fs" />
-    <Compile Include="CodeFixes\RemoveSuperfluousCaptureForUnionCaseWithNoData.fs" />
-    <Compile Include="CodeFixes\RemoveUnusedBinding.fs" />
-    <Compile Include="CodeFixes\PrefixUnusedValue.fs" />
-    <Compile Include="CodeFixes\DiscardUnusedValue.fs" />
     <Compile Include="CodeFixes\ImplementInterface.fs" />
-    <Compile Include="CodeFixes\SimplifyName.fs" />
+    <Compile Include="CodeFixes\RemoveUnusedBinding.fs" />
+    <Compile Include="CodeFixes\AddMissingFunKeyword.fs" />
+    <Compile Include="CodeFixes\ChangeToUpcast.fs" />
+    <Compile Include="CodeFixes\UseMutationWhenValueIsMutable.fs" />
+    <Compile Include="CodeFixes\UseTripleQuotedInterpolation.fs" />
+    <Compile Include="CodeFixes\AddExplicitTypeAnnotation.fs" />
+    <Compile Include="CodeFixes\ConvertPositionalDUToNamed.fs" />
+    <Compile Include="CodeFixes\RemoveUnnecessaryReturnOrYield.fs" />
+    <Compile Include="CodeFixes\AddParenthesesAroundLambda.fs" />
+    <Compile Include="CodeFixes\WrapExpressionInParentheses.fs" />
+    <Compile Include="CodeFixes\ProposeUppercaseLabel.fs" />
     <Compile Include="CodeFixes\RemoveUnusedOpens.fs" />
-    <Compile Include="CodeFixes\MissingReference.fs" />
+    <Compile Include="CodeFixes\SimplifyName.fs" />
+    <Compile Include="CodeFixes\RemoveUnusedDeclarations.fs" />
     <Compile Include="CodeFixes\FixIndexerAccessLegacy.fs" />
     <Compile Include="CodeFixes\FixIndexerAccess.fs" />
     <Compile Include="CodeFixes\RenameParamToMatchSignature.fs" />
@@ -182,7 +180,9 @@
     <PackageReference Include="Microsoft.CodeAnalysis.ExternalAccess.FSharp" Version="$(MicrosoftCodeAnalysisExternalAccessFSharpVersion)" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
     <PackageReference Include="Microsoft.VisualStudio.ProjectSystem" Version="$(MicrosoftVisualStudioProjectSystemVersion)" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
     <PackageReference Include="Microsoft.VisualStudio.ProjectSystem.Managed" Version="$(MicrosoftVisualStudioProjectSystemManagedVersion)" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
-    <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.15.3" Condition="'$(Configuration)' == 'Debug'" />    
+    <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.16.0" Condition="'$(Configuration)' == 'Debug'" />
+    <!-- Pin transitive version to match the VS host's System.Collections.Immutable to avoid FileLoadException (manifest mismatch) at runtime. -->
+    <PackageReference Include="System.Collections.Immutable" Version="$(SystemCollectionsImmutableVersion)" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
   </ItemGroup>
 
   <ItemGroup>
