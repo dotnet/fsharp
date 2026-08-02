@@ -4448,7 +4448,20 @@ and OptimizeBinding cenv isRec env (TBind(vref, expr, spBind)) =
         raise (ReportedError (Some exn))
           
 and OptimizeBindings cenv isRec env xs =
-    List.mapFold (OptimizeBinding cenv isRec) env xs
+    if isRec then
+        let xsArray = xs |> List.toArray
+        let order = GetBindingOptimizationOrder cenv false true xs
+
+        let results, env =
+            (env, order)
+            ||> List.mapFold (fun env idx ->
+                let result, env = OptimizeBinding cenv isRec env xsArray[idx]
+                (idx, result), env)
+
+        let resultsByIndex = results |> Map.ofList
+        [ for idx in 0 .. xsArray.Length - 1 -> resultsByIndex[idx] ], env
+    else
+        List.mapFold (OptimizeBinding cenv isRec) env xs
     
 and OptimizeModuleExprWithSig cenv env mty def  = 
         let g = cenv.g
@@ -4538,7 +4551,7 @@ and OptimizeModuleExprWithSig cenv env mty def  =
 and mkValBind (bind: Binding) info =
     (mkLocalValRef bind.Var, info)
 
-and GetBindingOptimizationOrder cenv preferLowArity (binds: Binding list) =
+and GetBindingOptimizationOrder cenv inlineDependenciesOnly preferLowArity (binds: Binding list) =
     // Recursive binding groups are published to the optimizer incrementally as each binding is
     // processed. If a caller is optimized before a later sibling it depends on, inline lookup can
     // observe an incomplete optimization environment. Compute a dependency-first schedule for the
@@ -4552,8 +4565,10 @@ and GetBindingOptimizationOrder cenv preferLowArity (binds: Binding list) =
 
     let addDependency depIdxs stamp =
         match bindIndexByStamp |> Map.tryFind stamp with
-        | Some depIdx -> Set.add depIdx depIdxs
+        | Some depIdx when not inlineDependenciesOnly || bindsArray[depIdx].Var.ShouldInline ->
+            Set.add depIdx depIdxs
         | None -> depIdxs
+        | Some _ -> depIdxs
 
     let rec addBindingDependencies depIdxs expr =
         let addVals depIdxs vals =
@@ -4675,15 +4690,16 @@ and OptimizeModuleBindings cenv isRec (env, bindInfosColl) xs =
             | ModuleOrNamespaceBinding.Binding bind -> Some bind
             | _ -> None)
 
+    let binds = bindingGroup |> List.choose id
+
     if
         isRec
         && (bindingGroup |> List.forall Option.isSome)
-        && (bindingGroup |> List.exists (Option.exists (fun bind -> bind.Var.ShouldInline)))
+        && (binds |> List.exists (fun bind -> bind.Var.ShouldInline))
     then
         let xsArray = xs |> List.toArray
-        let binds = bindingGroup |> List.choose id
         let preferLowArity = binds |> List.forall (fun bind -> bind.Var.IsMember)
-        let order = GetBindingOptimizationOrder cenv preferLowArity binds
+        let order = GetBindingOptimizationOrder cenv true preferLowArity binds
 
         let results, (env, bindInfosColl) =
             ((env, bindInfosColl), order)
