@@ -91,6 +91,37 @@ let run (builder: ValidationBuilder) =
        |> ignore
 
    [<Fact>]
+   let ``Trait-witness inline overload consumers compile`` () =
+       FSharp """
+module TraitWitnessOverloadRepro
+
+open System.Runtime.InteropServices
+
+type Default1 = class end
+
+type Intersperse =
+   inherit Default1
+
+   static member inline Intersperse (x: '``Collection<'T>``, e: 'T, [<Optional>]_impl: Default1) =
+       x
+
+   static member Intersperse (x: list<'T>, e: 'T, [<Optional>]_impl: Intersperse) =
+       x
+
+   static member inline Invoke (sep: 'T) (source: '``Collection<'T>``) =
+       let inline call_2 (a: ^a, b: ^b, s) =
+           ((^a or ^b): (static member Intersperse: _ * _ * _ -> _) (b, s, a))
+
+       let inline call (a: 'a, b: 'b, s) =
+           call_2 (a, b, s)
+
+       call (Unchecked.defaultof<Intersperse>, source, sep) : '``Collection<'T>``
+
+let _ = Intersperse.Invoke 0 [1]
+"""
+       |> assertCompiles
+
+   [<Fact>]
    let ``Issue 1565 example 1 compiles`` () =
        FSharp """
 module Issue1565Example1

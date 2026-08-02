@@ -632,7 +632,7 @@ let GetInfoForLocalValue cenv env (v: Val) m =
             match env.localExternalVals.TryFind v.Stamp with 
             | Some vval -> vval
             | None -> 
-                if v.ShouldInline then
+                if cenv.optimizing && v.ShouldInline then
                     errorR(Error(FSComp.SR.optValueMarkedInlineButWasNotBoundInTheOptEnv(fullDisplayTextOfValRef (mkLocalValRef v)), m))
                 UnknownValInfo 
 
@@ -3148,11 +3148,11 @@ and TryOptimizeVal cenv env (vOpt: ValRef option, shouldInline, inlineIfLambda, 
     | TupleValue _ | UnionCaseValue _ | RecdValue _ when shouldInline ->
         failwith "tuple, union and record values cannot be marked 'inline'"
 
-    | UnknownValue when shouldInline && cenv.settings.alwaysInline ->
+    | UnknownValue when shouldInline && cenv.settings.alwaysInline && cenv.optimizing ->
         warning(Error(FSComp.SR.optValueMarkedInlineHasUnexpectedValue(), m))
         None
 
-    | _ when shouldInline && cenv.settings.alwaysInline ->
+    | _ when shouldInline && cenv.settings.alwaysInline && cenv.optimizing ->
         warning(Error(FSComp.SR.optValueMarkedInlineCouldNotBeInlined(), m))
         None
 
@@ -3198,7 +3198,7 @@ and OptimizeVal cenv env expr (v: ValRef, m) =
            e, AddValEqualityInfo g m v einfo 
 
     | None ->
-       if cenv.settings.alwaysInline then
+       if cenv.optimizing && cenv.settings.alwaysInline then
            if v.ShouldInline then
                 match valInfoForVal.ValExprInfo with
                 | UnknownValue -> error(Error(FSComp.SR.optFailedToInlineValue(v.DisplayName), m))
@@ -4563,6 +4563,11 @@ and GetBindingOptimizationOrder cenv (binds: Binding list) =
         |> List.mapi (fun idx bind -> bind.Var.Stamp, idx)
         |> Map.ofList
 
+    let addDependency depIdxs stamp =
+        match bindIndexByStamp |> Map.tryFind stamp with
+        | Some depIdx -> Set.add depIdx depIdxs
+        | None -> depIdxs
+
     let bindingArity idx =
         bindsArray[idx].Var.ValReprInfo
         |> Option.map (fun repr -> repr.TotalArgCount)
@@ -4571,8 +4576,13 @@ and GetBindingOptimizationOrder cenv (binds: Binding list) =
     let rec addBindingDependencies depIdxs expr =
         let addVals depIdxs vals =
             vals
-            |> Seq.choose (fun (v: Val) -> bindIndexByStamp |> Map.tryFind v.Stamp)
-            |> Seq.fold (fun depIdxs depIdx -> Set.add depIdx depIdxs) depIdxs
+            |> Seq.fold (fun depIdxs (v: Val) -> addDependency depIdxs v.Stamp) depIdxs
+
+        let rec addTraitSolutionDependencies depIdxs (traitInfo: TraitConstraintInfo) =
+            match traitInfo.Solution with
+            | Some(FSMethSln(_, vref, _, _)) -> addDependency depIdxs vref.Deref.Stamp
+            | Some(ClosedExprSln witnessExpr) -> addBindingDependencies depIdxs witnessExpr
+            | _ -> depIdxs
 
         let fvs = freeInExpr CollectLocalsNoCaching expr
 
@@ -4586,9 +4596,12 @@ and GetBindingOptimizationOrder cenv (binds: Binding list) =
                     (fun _exprF noInterceptF depIdxs expr ->
                         let depIdxs =
                             match expr with
+                            | Expr.Val(vref, _, _) -> addDependency depIdxs vref.Deref.Stamp
                             // Member-constraint calls can hide the real sibling dependency behind
                             // a witness expression, so fold over the resolved witness as well.
                             | Expr.Op(TOp.TraitCall traitInfo, _, args, m) ->
+                                let depIdxs = addTraitSolutionDependencies depIdxs traitInfo
+
                                 match ConstraintSolver.CodegenWitnessExprForTraitConstraint cenv.TcVal cenv.g cenv.amap m traitInfo args with
                                 | OkResult (_, Some witnessExpr) -> addBindingDependencies depIdxs witnessExpr
                                 | _ -> depIdxs
