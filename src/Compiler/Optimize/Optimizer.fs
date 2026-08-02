@@ -4552,6 +4552,10 @@ and mkValBind (bind: Binding) info =
     (mkLocalValRef bind.Var, info)
 
 and GetBindingOptimizationOrder cenv (binds: Binding list) =
+    // Recursive binding groups are published to the optimizer incrementally as each binding is
+    // processed. If a caller is optimized before a later sibling it depends on, inline lookup can
+    // observe an incomplete optimization environment. Compute a dependency-first schedule for the
+    // recursive group, then restore source order after optimization.
     let bindsArray = binds |> List.toArray
 
     let bindIndexByStamp =
@@ -4582,6 +4586,8 @@ and GetBindingOptimizationOrder cenv (binds: Binding list) =
                     (fun _exprF noInterceptF depIdxs expr ->
                         let depIdxs =
                             match expr with
+                            // Member-constraint calls can hide the real sibling dependency behind
+                            // a witness expression, so fold over the resolved witness as well.
                             | Expr.Op(TOp.TraitCall traitInfo, _, args, m) ->
                                 match ConstraintSolver.CodegenWitnessExprForTraitConstraint cenv.TcVal cenv.g cenv.amap m traitInfo args with
                                 | OkResult (_, Some witnessExpr) -> addBindingDependencies depIdxs witnessExpr
@@ -4617,6 +4623,8 @@ and GetBindingOptimizationOrder cenv (binds: Binding list) =
 
     let rootOrder =
         [ 0 .. binds.Length - 1 ]
+        // Prefer leaf-like bindings when there is no explicit dependency edge. This makes
+        // simple inline members such as getters and conversions available before their callers.
         |> List.sortBy (fun idx -> bindingArity idx, -idx)
 
     for idx in rootOrder do
@@ -4677,6 +4685,7 @@ and OptimizeModuleBindings cenv isRec (env, bindInfosColl) xs =
                 (idx, result), state)
 
         let resultsByIndex = results |> Map.ofList
+        // Keep the emitted binding list in source order; only the optimization schedule changes.
         [ for idx in 0 .. xsArray.Length - 1 -> resultsByIndex[idx] ], (env, bindInfosColl)
     else
         List.mapFold (OptimizeModuleBinding cenv) (env, bindInfosColl) xs
