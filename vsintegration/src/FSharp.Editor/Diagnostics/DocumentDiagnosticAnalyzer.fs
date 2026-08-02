@@ -1,8 +1,9 @@
-﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 namespace Microsoft.VisualStudio.FSharp.Editor
 
 open System.Composition
+open System.Collections.Concurrent
 open System.Collections.Immutable
 open System.Collections.Generic
 open System.Threading
@@ -26,6 +27,9 @@ type internal FSharpDocumentDiagnosticAnalyzer [<ImportingConstructor>] () =
 
     let shouldProduceDiagnostics (document: Document) =
         document.Project.Solution.GetFSharpExtensionConfig().ShouldProduceDiagnostics()
+
+    static let cache =
+        ConcurrentDictionary<struct (DocumentId * DiagnosticsType), VersionStamp * VersionStamp * ImmutableArray<Diagnostic>>()
 
     static let diagnosticEqualityComparer =
         { new IEqualityComparer<FSharpDiagnostic> with
@@ -72,6 +76,27 @@ type internal FSharpDocumentDiagnosticAnalyzer [<ImportingConstructor>] () =
 
             let! ct = CancellableTask.getCancellationToken ()
 
+            let! textVersion = document.GetTextVersionAsync(ct)
+
+            let! projectVersion =
+                match diagnosticType with
+                | DiagnosticsType.Syntax -> CancellableTask.singleton VersionStamp.Default
+                | DiagnosticsType.Semantic -> (fun ct -> document.Project.GetDependentVersionAsync(ct))
+
+            let cacheKey = struct (document.Id, diagnosticType)
+
+            let cached =
+                match cache.TryGetValue(cacheKey) with
+                | true, (cachedTextVersion, cachedProjectVersion, cachedDiagnostics) when
+                    cachedTextVersion = textVersion && cachedProjectVersion = projectVersion
+                    ->
+                    ValueSome cachedDiagnostics
+                | _ -> ValueNone
+
+            match cached with
+            | ValueSome cachedDiagnostics -> return cachedDiagnostics
+            | ValueNone ->
+
             let! sourceText = document.GetTextAsync(ct)
             let filePath = document.FilePath
 
@@ -98,35 +123,39 @@ type internal FSharpDocumentDiagnosticAnalyzer [<ImportingConstructor>] () =
                     UnnecessaryParenthesesDiagnosticAnalyzer.GetDiagnostics document
                 | _ -> CancellableTask.singleton ImmutableArray.Empty
 
-            if errors.Count = 0 && unnecessaryParentheses.IsEmpty then
-                return ImmutableArray.Empty
-            else
-                let iab = ImmutableArray.CreateBuilder(errors.Count + unnecessaryParentheses.Length)
+            let result =
+                if errors.Count = 0 && unnecessaryParentheses.IsEmpty then
+                    ImmutableArray.Empty
+                else
+                    let iab = ImmutableArray.CreateBuilder(errors.Count + unnecessaryParentheses.Length)
 
-                for diagnostic in errors do
-                    if diagnostic.StartLine <> 0 && diagnostic.EndLine <> 0 then
-                        let linePositionSpan =
-                            LinePositionSpan(
-                                LinePosition(diagnostic.StartLine - 1, diagnostic.StartColumn),
-                                LinePosition(diagnostic.EndLine - 1, diagnostic.EndColumn)
-                            )
+                    for diagnostic in errors do
+                        if diagnostic.StartLine <> 0 && diagnostic.EndLine <> 0 then
+                            let linePositionSpan =
+                                LinePositionSpan(
+                                    LinePosition(diagnostic.StartLine - 1, diagnostic.StartColumn),
+                                    LinePosition(diagnostic.EndLine - 1, diagnostic.EndColumn)
+                                )
 
-                        let textSpan = sourceText.Lines.GetTextSpan(linePositionSpan)
+                            let textSpan = sourceText.Lines.GetTextSpan(linePositionSpan)
 
-                        // F# compiler report errors at end of file if parsing fails. It should be corrected to match Roslyn boundaries
-                        let correctedTextSpan =
-                            if textSpan.End <= sourceText.Length then
-                                textSpan
-                            else
-                                let start = min textSpan.Start (sourceText.Length - 1) |> max 0
+                            // F# compiler report errors at end of file if parsing fails. It should be corrected to match Roslyn boundaries
+                            let correctedTextSpan =
+                                if textSpan.End <= sourceText.Length then
+                                    textSpan
+                                else
+                                    let start = min textSpan.Start (sourceText.Length - 1) |> max 0
 
-                                TextSpan.FromBounds(start, sourceText.Length)
+                                    TextSpan.FromBounds(start, sourceText.Length)
 
-                        let location = Location.Create(filePath, correctedTextSpan, linePositionSpan)
-                        iab.Add(RoslynHelpers.ConvertError(diagnostic, location))
+                            let location = Location.Create(filePath, correctedTextSpan, linePositionSpan)
+                            iab.Add(RoslynHelpers.ConvertError(diagnostic, location))
 
-                iab.AddRange unnecessaryParentheses
-                return iab.ToImmutable()
+                    iab.AddRange unnecessaryParentheses
+                    iab.ToImmutable()
+
+            cache.[cacheKey] <- (textVersion, projectVersion, result)
+            return result
         }
 
     interface IFSharpDocumentDiagnosticAnalyzer with
