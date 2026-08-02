@@ -4538,11 +4538,13 @@ and OptimizeModuleExprWithSig cenv env mty def  =
 and mkValBind (bind: Binding) info =
     (mkLocalValRef bind.Var, info)
 
-and GetBindingOptimizationOrder cenv (binds: Binding list) =
+and GetBindingOptimizationOrder cenv preferLowArity (binds: Binding list) =
     // Recursive binding groups are published to the optimizer incrementally as each binding is
     // processed. If a caller is optimized before a later sibling it depends on, inline lookup can
     // observe an incomplete optimization environment. Compute a dependency-first schedule for the
     // recursive group, then restore source order after optimization.
+    let bindsArray = binds |> List.toArray
+
     let bindIndexByStamp =
         binds
         |> List.mapi (fun idx bind -> bind.Var.Stamp, idx)
@@ -4616,6 +4618,16 @@ and GetBindingOptimizationOrder cenv (binds: Binding list) =
 
     let rootOrder =
         [ 0 .. binds.Length - 1 ]
+        |> (if preferLowArity then
+                List.sortBy (fun idx ->
+                    let arity =
+                        bindsArray[idx].Var.ValReprInfo
+                        |> Option.map (fun repr -> repr.TotalArgCount)
+                        |> Option.defaultValue 0
+
+                    arity, -idx)
+            else
+                id)
 
     for idx in rootOrder do
         visit idx
@@ -4670,7 +4682,8 @@ and OptimizeModuleBindings cenv isRec (env, bindInfosColl) xs =
     then
         let xsArray = xs |> List.toArray
         let binds = bindingGroup |> List.choose id
-        let order = GetBindingOptimizationOrder cenv binds
+        let preferLowArity = binds |> List.forall (fun bind -> bind.Var.IsMember)
+        let order = GetBindingOptimizationOrder cenv preferLowArity binds
 
         let results, (env, bindInfosColl) =
             ((env, bindInfosColl), order)
