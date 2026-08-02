@@ -13,7 +13,6 @@ open Microsoft.CodeAnalysis.CSharp
 open Xunit
 open System
 open System.Collections.Immutable
-open System.Diagnostics
 open System.IO
 open System.Text
 open System.Text.RegularExpressions
@@ -2383,76 +2382,17 @@ $ code --diff {outFile} {expectedFile}
     /// Result type for CLI subprocess execution (runFsiProcess / runFscProcess).
     type ProcessResult = { ExitCode: int; StdOut: string; StdErr: string }
 
-    let private quoteProcessArg (arg: string) =
-        if String.IsNullOrEmpty(arg) then
-            "\"\""
-        elif arg.IndexOfAny([| ' '; '\t'; '"' |]) = -1 then
-            arg
-        else
-            let sb = StringBuilder()
-            sb.Append('"') |> ignore
-
-            let mutable backslashes = 0
-
-            for ch in arg do
-                match ch with
-                | '\\' ->
-                    backslashes <- backslashes + 1
-                | '"' ->
-                    sb.Append('\\', backslashes * 2 + 1) |> ignore
-                    sb.Append('"') |> ignore
-                    backslashes <- 0
-                | _ ->
-                    if backslashes > 0 then
-                        sb.Append('\\', backslashes) |> ignore
-                        backslashes <- 0
-
-                    sb.Append(ch) |> ignore
-
-            if backslashes > 0 then
-                sb.Append('\\', backslashes * 2) |> ignore
-
-            sb.Append('"') |> ignore
-            sb.ToString()
-
     /// Run an F# tool (FSI or FSC) as a subprocess. Shared helper for runFsiProcess / runFscProcess.
     let private runToolProcess (toolPath: string) (args: string list) : ProcessResult =
-        let psi = ProcessStartInfo()
-
 #if NETCOREAPP
-        psi.FileName <- TestFramework.initialConfig.DotNetExe
-        psi.ArgumentList.Add(toolPath)
-        for arg in args do
-            psi.ArgumentList.Add(arg)
+        let exe = TestFramework.initialConfig.DotNetExe
+        let arguments = toolPath + " " + (args |> String.concat " ")
 #else
-        psi.FileName <- toolPath
-        psi.Arguments <- args |> List.map quoteProcessArg |> String.concat " "
+        let exe = toolPath
+        let arguments = args |> String.concat " "
 #endif
-
-        psi.WorkingDirectory <- Directory.GetCurrentDirectory()
-        psi.RedirectStandardOutput <- true
-        psi.RedirectStandardError <- true
-        psi.CreateNoWindow <- true
-
-        psi.EnvironmentVariables["DOTNET_ROLL_FORWARD"] <- "LatestMajor"
-        psi.EnvironmentVariables["DOTNET_ROLL_FORWARD_TO_PRERELEASE"] <- "1"
-        psi.EnvironmentVariables.Remove("MSBuildSDKsPath")
-        psi.UseShellExecute <- false
-
-        use p = new Process()
-        p.StartInfo <- psi
-
-        if not (p.Start()) then
-            failwith "new process did not start"
-
-        let readOutput = backgroundTask { return! p.StandardOutput.ReadToEndAsync() }
-        let readErrors = backgroundTask { return! p.StandardError.ReadToEndAsync() }
-
-        p.WaitForExit()
-
-        { ExitCode = p.ExitCode
-          StdOut = readOutput.Result
-          StdErr = readErrors.Result }
+        let exitCode, stdout, stderr = Commands.executeProcess exe arguments (Directory.GetCurrentDirectory())
+        { ExitCode = exitCode; StdOut = stdout; StdErr = stderr }
 
     /// Run FSI as a subprocess with the given arguments. For CLI-level tests only (--help, exit codes, etc.).
     let runFsiProcess (args: string list) : ProcessResult =
