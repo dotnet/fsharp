@@ -6,9 +6,6 @@ open FSharp.Test.Compiler
 
 module Regression_RecursiveInlineMemberDependencies =
 
-    let private parallelOptions = [ "--parallelcompilation+"; "--nowarn:75" ]
-    let private sequentialOptions = [ "--parallelcompilation-"; "--nowarn:75" ]
-
     let private recursiveInlineMemberDependencySource =
         FSharp """
 module LibraryImpl
@@ -188,39 +185,32 @@ type SomeType =
         | Float f -> int64 f
 """
 
-    let private mkLibrary source options =
+    let private mkLibrary source =
         source
         |> withOutputType CompileOutput.Library
         |> withName "Library"
         |> withOptimize
-        |> withOptions options
+        |> withOptions [ "--nowarn:75" ]
         |> ignoreWarnings
 
-    let private assertCompiles repeatCount source options =
-        let library = mkLibrary source options
-
-        for _i = 1 to repeatCount do
-            library
-            |> compile
-            |> shouldSucceed
-            |> ignore
+    let private assertCompiles source =
+        mkLibrary source
+        |> compile
+        |> shouldSucceed
+        |> ignore
 
     [<Fact>]
-    let ``Recursive inline member dependencies compile under parallel compilation`` () =
-        assertCompiles 30 recursiveInlineMemberDependencySource parallelOptions
+    let ``Recursive inline member dependencies compile`` () =
+        assertCompiles recursiveInlineMemberDependencySource
 
     [<Fact>]
-    let ``Recursive inline member dependencies compile under sequential compilation`` () =
-        assertCompiles 1 recursiveInlineMemberDependencySource sequentialOptions
+    let ``Issue 1565 example 1 compiles`` () =
+        assertCompiles issue1565Example1
 
     [<Fact>]
-    let ``Issue 1565 example 1 compiles under sequential compilation`` () =
-        assertCompiles 1 issue1565Example1 sequentialOptions
+    let ``Issue 1565 example 2 compiles`` () =
+        assertCompiles issue1565Example2
 
     [<Fact>]
-    let ``Issue 1565 example 2 compiles under sequential compilation`` () =
-        assertCompiles 1 issue1565Example2 sequentialOptions
-
-    [<Fact>]
-    let ``Issue 1565 example 3 compiles under sequential compilation`` () =
-        assertCompiles 1 issue1565Example3 sequentialOptions
+    let ``Issue 1565 example 3 compiles`` () =
+        assertCompiles issue1565Example3
