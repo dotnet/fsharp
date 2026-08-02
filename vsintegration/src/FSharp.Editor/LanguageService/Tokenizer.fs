@@ -459,30 +459,28 @@ module internal Tokenizer =
             && let lineContents = textLine.Text.ToString(textLine.Span) in
                data.HashCode = lineContents.GetHashCode()
 
+    // Shared by concurrent editor operations (classification and symbol lookup), so must be thread-safe.
     type private SourceTextData(approxLines: int) =
-        let data = ResizeArray<SourceLineData option>(approxLines)
-
-        let extendTo i =
-            if i >= data.Count then
-                data.Capacity <- i + 1
-
-                for j in data.Count .. i do
-                    data.Add(None)
+        let data =
+            ConcurrentDictionary<int, SourceLineData>(Environment.ProcessorCount, approxLines)
 
         member x.Item
             with get (i: int) =
-                extendTo i
-                data.[i]
+                match data.TryGetValue(i) with
+                | true, v -> Some v
+                | _ -> None
             and set (i: int) v =
-                extendTo i
-                data.[i] <- v
+                match v with
+                | Some v -> data.[i] <- v
+                | None -> data.TryRemove(i) |> ignore
 
         member x.ClearFrom(n) =
             let mutable i = n
+            let mutable cont = true
 
-            while i < data.Count && data.[i].IsSome do
-                data.[i] <- None
-                i <- i + 1
+            while cont do
+                let removed, _ = data.TryRemove(i)
+                if removed then i <- i + 1 else cont <- false
 
     /// This saves the tokenization data for a file for as long as the DocumentId object is alive.
     /// This seems risky - if one single thing leaks a DocumentId (e.g. stores it in some global table of documents
