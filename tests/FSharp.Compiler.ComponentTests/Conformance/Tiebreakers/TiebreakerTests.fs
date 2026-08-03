@@ -110,9 +110,11 @@ if result <> "{concreteDesc}" then
         |> shouldFail
         |> withErrorCode 41 // FS0041: A unique overload could not be determined
         |> withDiagnosticMessageMatches "Neither candidate is strictly more concrete"
-        // The detail names the two distinct candidate signatures, not the bare "Compare" name.
-        |> withDiagnosticMessageMatches "Result<'ok,string> -> string is more concrete at"
-        |> withDiagnosticMessageMatches "Result<int,'error> -> string is more concrete at"
+        // The detail names each distinct candidate signature (not the bare "Compare" name) and
+        // attributes concreteness to the correct type-argument position: Result<int,'error> has the
+        // concrete 'int' at position 1, Result<'ok,string> has the concrete 'string' at position 2.
+        |> withDiagnosticMessageMatches "Result<int,'error> -> string is more concrete at position 1"
+        |> withDiagnosticMessageMatches "Result<'ok,string> -> string is more concrete at position 2"
         |> ignore
 
     [<Fact>]

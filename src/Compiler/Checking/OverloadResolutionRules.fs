@@ -251,12 +251,10 @@ let explainIncomparableMethodConcreteness<'T>
 
             match sty1, sty2 with
             | TType_app(tcref1, args1, _), TType_app(tcref2, args2, _) when tyconRefEq ctx.g tcref1 tcref2 && args1.Length = args2.Length ->
-                args1
-                |> List.mapi2
-                    (fun argIdx arg1 arg2 ->
-                        let c = compareTypeConcreteness ctx.g arg1 arg2
-                        (argIdx + 1, c))
-                    args2
+                (args1, args2)
+                ||> List.mapi2 (fun argIdx arg1 arg2 ->
+                    let c = compareTypeConcreteness ctx.g arg1 arg2
+                    (argIdx + 1, c))
             | _ -> [ (paramIdx, compareTypeConcreteness ctx.g ty1 ty2) ]
 
         let allComparisons =
