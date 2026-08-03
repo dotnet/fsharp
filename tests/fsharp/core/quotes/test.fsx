@@ -5884,10 +5884,8 @@ module Interpolation =
     let interpolatedWithLiteralQuoted = <@ $"abc {1} def" @>
     let actual2 = interpolatedWithLiteralQuoted.ToString()
     checkStrings "brewbreebrwhat2" actual2
-        """Call (None, PrintFormatToString,
-                 [NewObject (PrintfFormat`5, Value ("abc %P() def"),
-                             NewArray (Object, Call (None, Box, [Value (1)])),
-                             Value (<null>))])"""
+        """Call (None, Concat,
+                 [Value ("abc "), Call (None, ToString, [Value (1)]), Value (" def")])"""
 
 module TestQuotationWithIdenticalStaticInstanceMethods = 
     type C() =

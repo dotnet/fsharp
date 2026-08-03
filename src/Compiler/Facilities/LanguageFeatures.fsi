@@ -105,6 +105,7 @@ type LanguageFeature =
     | NotNullIfNotNull
     | AccessProtectedBaseFieldFromClosure
     | ImprovedImpliedArgumentNamesPartTwo
+    | RecordSpreads
 
 /// LanguageVersion management
 type LanguageVersion =
