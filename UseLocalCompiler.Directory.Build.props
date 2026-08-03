@@ -39,7 +39,28 @@
     <FSharpOverridesTargetsShim>$(LocalFSharpBuildBinPath)/Microsoft.FSharp.Overrides.NetSdk.targets</FSharpOverridesTargetsShim>
   </PropertyGroup>
 
-  <ItemGroup>
-    <Reference Include="$(LocalFSharpCompilerPath)/artifacts/bin/FSharp.Core/$(LocalFSharpCompilerConfiguration)/netstandard2.0/FSharp.Core.dll" />
-  </ItemGroup>
+  <!--
+    Reference the locally built FSharp.Core, picking the assembly that matches how NuGet would
+    resolve the FSharp.Core package for the consuming project's target framework:
+      - .NET Framework and netstandard2.0 consumers get the netstandard2.0 assembly.
+      - Everything else (.NET Core / .NET 5+, netstandard2.1) gets the netstandard2.1 assembly,
+        which exposes the IAsyncDisposable-based members (e.g. the task builder 'Using' overload).
+    This runs in a target (rather than a plain ItemGroup) because TargetFramework is not yet known
+    while Directory.Build.props is being evaluated. It runs before ResolvePackageAssets so the
+    reference participates in package conflict resolution and suppresses any older FSharp.Core
+    pulled in transitively by third-party packages.
+  -->
+  <Target Name="AddLocalFSharpCoreReference"
+          Condition="'$(LocalFSharpCompilerPath)' != ''"
+          BeforeTargets="ResolvePackageAssets;ResolveAssemblyReferences;CollectPackageReferences;CoreCompile">
+    <PropertyGroup>
+      <_LocalFSharpCoreTfm Condition="'$(TargetFrameworkIdentifier)' == '.NETFramework'">netstandard2.0</_LocalFSharpCoreTfm>
+      <_LocalFSharpCoreTfm Condition="'$(_LocalFSharpCoreTfm)' == '' and $(TargetFramework.StartsWith('net4'))">netstandard2.0</_LocalFSharpCoreTfm>
+      <_LocalFSharpCoreTfm Condition="'$(_LocalFSharpCoreTfm)' == '' and '$(TargetFramework)' == 'netstandard2.0'">netstandard2.0</_LocalFSharpCoreTfm>
+      <_LocalFSharpCoreTfm Condition="'$(_LocalFSharpCoreTfm)' == ''">netstandard2.1</_LocalFSharpCoreTfm>
+    </PropertyGroup>
+    <ItemGroup>
+      <Reference Include="$(LocalFSharpCompilerPath)/artifacts/bin/FSharp.Core/$(LocalFSharpCompilerConfiguration)/$(_LocalFSharpCoreTfm)/FSharp.Core.dll" />
+    </ItemGroup>
+  </Target>
 </Project>
