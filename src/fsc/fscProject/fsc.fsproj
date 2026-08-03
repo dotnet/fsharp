@@ -37,6 +37,11 @@
     <Error Condition="'$(Configuration)' == 'Proto' AND !Exists('$(MibcFile)')" Text="Mibc file '$(MibcFile)' does not exist." />
   </Target>
 
+  <!-- Override vulnerable System.Security.Cryptography.Xml pulled in transitively by Microsoft.Build.Tasks.Core (via FSharp.Build) on .NET (NU1903). net472 is excluded because it has no such transitive and the override's dependencies conflict with System.ValueTuple there. -->
+  <ItemGroup Condition="'$(TargetFramework)' == '$(FSharpNetCoreProductTargetFramework)'">
+    <PackageReference Include="System.Security.Cryptography.Xml" Version="$(SystemSecurityCryptographyXmlVersion)" />
+  </ItemGroup>
+
   <Import Project="$([MSBuild]::GetPathOfFileAbove('fsc.targets', '$(MSBuildThisFileDirectory)../'))" />
 
 </Project>
