@@ -9,7 +9,7 @@
     <XunitVersion Condition="'$(XunitVersion)' == ''">3.2.2</XunitVersion>
     <MicrosoftTestingExtensionsHangDumpVersion Condition="'$(MicrosoftTestingExtensionsHangDumpVersion)' == ''">2.0.2</MicrosoftTestingExtensionsHangDumpVersion>
     <XunitXmlTestLoggerVersion Condition="'$(XunitXmlTestLoggerVersion)' == ''">8.0.0</XunitXmlTestLoggerVersion>
-    <MicrosoftTestPlatformVersion Condition="'$(MicrosoftTestPlatformVersion)' == ''">17.14.1</MicrosoftTestPlatformVersion>
+    <MicrosoftTestPlatformVersion Condition="'$(MicrosoftTestPlatformVersion)' == ''">18.0.1</MicrosoftTestPlatformVersion>
   </PropertyGroup>
 
   <Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.props', '$(MSBuildThisFileDirectory)../'))" />
