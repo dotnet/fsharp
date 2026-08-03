@@ -30,7 +30,7 @@ variables:
   # PR against the VS 2017 15.9 servicing branch (rel/d15.9). Left 'false' so the pipeline is fully wired but does
   # not create a VS PR until deliberately enabled. Mirrors main's insert-into-vs.yml variable contract.
   - name: _InsertVS
-    value: 'false'
+    value: 'true'
   - name: InsertTargetBranch
     value: rel/d15.9
   - name: InsertTeamEmail
