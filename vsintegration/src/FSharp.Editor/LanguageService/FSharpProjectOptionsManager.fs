@@ -372,17 +372,14 @@ type private FSharpProjectOptionsReactor(checker: FSharpChecker) =
                         previousCts.Cancel()
                         previousCts.Dispose()
 
-                    cancellableTask {
-                        let! ct = CancellableTask.getCancellationToken ()
-                        do! Task.Delay(500, ct)
+                    async {
+                        do! Task.Delay(500, cts.Token) |> Async.AwaitTask
 
                         let! scriptProjectOptions, _ = getProjectOptionsFromScript textViewAndCaret
 
-                        checker.NotifyFileChanged(document.FilePath, scriptProjectOptions)
-                        |> Async.Start
+                        do! checker.NotifyFileChanged(document.FilePath, scriptProjectOptions)
                     }
-                    |> CancellableTask.start cts.Token
-                    |> ignore
+                    |> Async.Start
 
                 let onChangeCaretHandler (_, _newline: int, _oldline: int) = updateProjectOptions ()
                 let onKillFocus (_) = updateProjectOptions ()
@@ -552,7 +549,7 @@ type private FSharpProjectOptionsReactor(checker: FSharpChecker) =
 
                 if isInvalidated then
                     cache.TryRemove(projectId) |> ignore
-                    return! tryComputeOptions project ct
+                    return! tryComputeOptions project
                 else
                     return ValueSome(parsingOptions, projectOptions)
         }
