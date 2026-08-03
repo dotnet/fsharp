@@ -26,6 +26,21 @@ variables:
   # service and referenced by the VS insertion PR.
   - name: VisualStudioDropName
     value: Products/$(System.TeamProject)/$(Build.Repository.Name)/$(Build.SourceBranchName)/$(Build.BuildNumber)
+  # Automated VS insertion PR (MicroBuildInsertVsPayload). Set _InsertVS to 'true' to open the F# 15.9 insertion
+  # PR against the VS 2017 15.9 servicing branch (rel/d15.9). Left 'false' so the pipeline is fully wired but does
+  # not create a VS PR until deliberately enabled. Mirrors main's insert-into-vs.yml variable contract.
+  - name: _InsertVS
+    value: 'false'
+  - name: InsertTargetBranch
+    value: rel/d15.9
+  - name: InsertTeamEmail
+    value: fsharpteam@microsoft.com
+  - name: InsertTeamName
+    value: 'F#'
+  - name: InsertConfigValues
+    value: ''
+  - name: InsertBuildPolicy
+    value: 'Request Perf DDRITs'
 
 resources:
   repositories:
@@ -136,6 +151,38 @@ extends:
                   accessToken: $(DevDivDropAccessToken)
                   dropServiceUri: 'https://devdiv.artifacts.visualstudio.com'
                   vsDropServiceUri: 'https://vsdrop.corp.microsoft.com/file/v1'
+              # Automated VS insertion PR (gated on _InsertVS). Constructs the .vsman component payload value from
+              # the deterministic vsdrop URL (no log scanning), gets a VS-insertion token via the same WIF
+              # connection main uses (dnceng-fsharp-vs-insertion-wif), and opens the PR against rel/d15.9 via
+              # MicroBuildInsertVsPayload@5. Lean: only the VSIX .vsman component (no default.config nupkgs, per the
+              # no-new-FSharp.Core-nupkg constraint). AutoComplete stays false (rel branch) so a human reviews the PR.
+              - powershell: |
+                  $bv = "15.9.$(Build.BuildNumber)"
+                  $url = "https://vsdrop.corp.microsoft.com/file/v1/$(VisualStudioDropName);Microsoft.FSharp.vsman"
+                  Write-Host "##vso[task.setvariable variable=InsertJsonValues]Microsoft.FSharp.vsman{$bv}=$url"
+                  Write-Host "##vso[task.setvariable variable=InsertPayloadName]F# 15.9 $(Build.SourceBranchName) $(Build.BuildNumber)"
+                  Write-Host "##vso[task.setvariable variable=InsertAutoComplete]false"
+                  Write-Host "InsertJsonValues = Microsoft.FSharp.vsman{$bv}=$url"
+                displayName: 'Set VS insertion payload values'
+                condition: and(succeeded(), eq(variables._InsertVS, 'true'))
+              - task: AzureCLI@2
+                displayName: 'Get VS insertion access token'
+                condition: and(succeeded(), eq(variables._InsertVS, 'true'))
+                inputs:
+                  azureSubscription: 'dnceng-fsharp-vs-insertion-wif'
+                  scriptType: pscore
+                  scriptLocation: inlineScript
+                  inlineScript: |
+                    $token = az account get-access-token --resource "499b84ac-1321-427f-aa17-267ca6975798" --query accessToken -o tsv
+                    Write-Host "##vso[task.setvariable variable=InsertAccessToken;issecret=true]$token"
+              - script: git config --global credential.helper ""
+                displayName: 'Disable GCM (Entra token too large for credential store)'
+                condition: and(succeeded(), eq(variables._InsertVS, 'true'))
+              - task: ms-vseng.MicroBuildShipTasks.55100717-a81d-45ea-a363-b8fe3ec375ad.MicroBuildInsertVsPayload@5
+                displayName: 'Insert F# 15.9 VSIX into VS (rel/d15.9)'
+                condition: and(succeeded(), eq(variables._InsertVS, 'true'))
+                inputs:
+                  LinkWorkItemsToPR: false
               - task: PublishTestResults@2
                 displayName: 'Publish test results'
                 condition: always()
