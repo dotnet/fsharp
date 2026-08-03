@@ -13,6 +13,10 @@
 
     <PackageVersion Include="FsCheck" Version="2.16.6" />
     <PackageVersion Include="FSharp.Core" Version="$(FSharpCoreShippedPackageVersionValue)" />
+    <!-- Security: pin the transitive MessagePack (pulled via StreamJsonRpc) to a patched version.
+         Versions < 2.5.301 have known vulnerabilities (NU1902/NU1903). Transitive pinning applies it
+         wherever StreamJsonRpc is used (FSharp.Compiler.LanguageServer and the CLASP.Framework.Proxy). -->
+    <PackageVersion Include="MessagePack" Version="2.5.302" />
     <PackageVersion Include="Microsoft.Build" Version="$(MicrosoftBuildVersion)" />
     <PackageVersion Include="Microsoft.Build.Framework" Version="$(MicrosoftBuildFrameworkVersion)" />
     <PackageVersion Include="Microsoft.Build.Tasks.Core" Version="$(MicrosoftBuildTasksCoreVersion)" />
