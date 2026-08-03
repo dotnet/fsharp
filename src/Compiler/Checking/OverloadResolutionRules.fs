@@ -245,7 +245,7 @@ let explainIncomparableMethodConcreteness<'T>
     then
         None
     else
-        let rec collectComparisons paramIdx (ty1: TType) (ty2: TType) : (int * int) list =
+        let collectComparisons paramIdx (ty1: TType) (ty2: TType) : (int * int) list =
             let sty1 = stripTyEqns ctx.g ty1
             let sty2 = stripTyEqns ctx.g ty2
 
@@ -257,9 +257,24 @@ let explainIncomparableMethodConcreteness<'T>
                     (argIdx + 1, c))
             | _ -> [ (paramIdx, compareTypeConcreteness ctx.g ty1 ty2) ]
 
+        // Report the positions at which each candidate is strictly more concrete.
+        //
+        // With a single formal parameter we decompose a same-constructor application (e.g.
+        // Result<_,_>) into its type-argument positions, so the flagship "Result<int,'error> vs
+        // Result<'ok,string>" ambiguity is explained per differing type argument. This is unambiguous
+        // because every reported position refers to that one parameter's type arguments.
+        //
+        // With several formal parameters we compare per parameter and report the formal-parameter
+        // index instead - matching moreConcreteRule's own unit of comparison. A same-constructor
+        // parameter that is internally incomparable is neutral and simply drops out. (Flattening
+        // type-argument indices across parameters, as an earlier version did, produced ambiguous,
+        // duplicated position numbers such as "positions 1, 1".)
         let allComparisons =
-            List.mapi2 (fun i p1 p2 -> collectComparisons (i + 1) (paramDataType p1) (paramDataType p2)) formalParams1 formalParams2
-            |> List.concat
+            match formalParams1, formalParams2 with
+            | [ p1 ], [ p2 ] -> collectComparisons 1 (paramDataType p1) (paramDataType p2)
+            | _ ->
+                (formalParams1, formalParams2)
+                ||> List.mapi2 (fun i p1 p2 -> (i + 1, compareTypeConcreteness ctx.g (paramDataType p1) (paramDataType p2)))
 
         let meth1Better =
             allComparisons |> List.choose (fun (pos, c) -> if c > 0 then Some pos else None)

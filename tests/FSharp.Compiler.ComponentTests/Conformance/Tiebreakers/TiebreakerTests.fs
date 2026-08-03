@@ -33,6 +33,22 @@ type Example =
 let result = Example.Compare(Ok 42 : Result<int, string>)
         """
 
+    // Two 3-parameter overloads that disagree per parameter: the first is more concrete at
+    // parameter 1 (int vs 'a), the second at parameter 2 (string vs 'y), and parameter 3
+    // (Result<_,_>) is internally incomparable, so it favours neither. The call is therefore an
+    // incomparable FS0041. This exercises the multi-parameter breakdown: positions must be reported
+    // per formal parameter (1 and 2), never as flattened, duplicated type-argument indices.
+    let private multiParamIncomparableSource =
+        """
+module Test
+
+type Example =
+    static member Compare(a: int, b: 'y, c: Result<int, 'error>) = "one"
+    static member Compare(a: 'a, b: string, c: Result<'ok, string>) = "two"
+
+let result = Example.Compare(5, "hi", Ok 7)
+        """
+
     let genericVsConcreteNestingCases: obj[] seq =
         let case desc source =
             [| desc :> obj; source :> obj |]
@@ -115,6 +131,23 @@ if result <> "{concreteDesc}" then
         // concrete 'int' at position 1, Result<'ok,string> has the concrete 'string' at position 2.
         |> withDiagnosticMessageMatches "Result<int,'error> -> string is more concrete at position 1"
         |> withDiagnosticMessageMatches "Result<'ok,string> -> string is more concrete at position 2"
+        |> ignore
+
+    [<Fact>]
+    let ``Multi-parameter incomparable concreteness reports clean per-parameter positions`` () =
+        // Regression: with multiple parameters the breakdown must report the formal-parameter index,
+        // not flattened per-type-argument indices. A same-constructor parameter (Result<_,_>) is
+        // internally incomparable and must simply drop out, so each method is more concrete at exactly
+        // one parameter position - never the conflated, duplicated "positions 1, 1" / "positions 2, 2".
+        FSharp multiParamIncomparableSource
+        |> withLangVersionPreview
+        |> typecheck
+        |> shouldFail
+        |> withErrorCode 41
+        |> withDiagnosticMessageMatches "Neither candidate is strictly more concrete"
+        |> withDiagnosticMessageMatches @"b: 'y \* c: Result<int,'error> -> string is more concrete at position 1"
+        |> withDiagnosticMessageMatches @"b: string \* c: Result<'ok,string> -> string is more concrete at position 2"
+        |> withDiagnosticMessageDoesntMatch "positions"
         |> ignore
 
     [<Fact>]
