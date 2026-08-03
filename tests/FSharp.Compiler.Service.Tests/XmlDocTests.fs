@@ -1,9 +1,10 @@
-﻿module FSharp.Compiler.Service.Tests.XmlDocTests
+module FSharp.Compiler.Service.Tests.XmlDocTests
 
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.Service.Tests.Common
 open FSharp.Compiler.Symbols
 open FSharp.Compiler.Syntax
+open FSharp.Compiler.SyntaxTreeOps
 open FSharp.Test.Compiler
 open FSharp.Test.Assert
 open Xunit
@@ -74,9 +75,9 @@ let (|UnionCases|) = function
      | x -> failwith $"Unexpected ParsedInput %A{x}"
 
 let (|Record|) = function
-    | Types(_, [SynTypeDefn(typeRepr = SynTypeDefnRepr.Simple(simpleRepr = SynTypeDefnSimpleRepr.Record(recordFields = fields)))])
-     | TypeSigs(_, [SynTypeDefnSig(typeRepr = SynTypeDefnSigRepr.Simple(repr = SynTypeDefnSimpleRepr.Record(recordFields = fields)))]) ->
-         Record(fields)
+    | Types(_, [SynTypeDefn(typeRepr = SynTypeDefnRepr.Simple(simpleRepr = SynTypeDefnSimpleRepr.Record(recordFieldsAndSpreads = fieldsAndSpreads)))])
+     | TypeSigs(_, [SynTypeDefnSig(typeRepr = SynTypeDefnSigRepr.Simple(repr = SynTypeDefnSimpleRepr.Record(recordFieldsAndSpreads = fieldsAndSpreads)))]) ->
+         Record(fieldsAndSpreads |> List.choose (function SynFieldOrSpread.Field f -> Some f | SynFieldOrSpread.Spread _ -> None))
 
      | x -> failwith $"Unexpected ParsedInput %A{x}"
 
