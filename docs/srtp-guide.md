@@ -68,9 +68,41 @@ module Consumer =
     let r = multiply "ha" 3  // "hahaha"
 ```
 
+**Definition-site capture is intra-assembly only.** The capture shown above travels with the
+constraint *within a single assembly*. It is deliberately **not** serialized into compiled
+metadata (see [Binary compatibility](#binary-compatibility)), so when `multiply` lives in a
+*referenced* assembly the captured `StringOps` extension does not travel to the consumer.
+Cross-assembly, SRTP constraints are resolved from the **consumer's** scope: the consumer must
+have the extension in scope (e.g. `open StringOps` / `open type`) at its own call site.
+
+```fsharp
+// GenericLib compiled into library.dll (opens StringOps at its definition site)
+// Consumer.fs references library.dll:
+open GenericLib
+// error FS0001: None of the types support the operator '*'
+//   — StringOps is not in scope here, and cross-assembly capture is not serialized.
+let r = multiply "ha" 3
+
+// Fix: bring the extension into the consumer's scope.
+open StringOps
+let ok = multiply "ha" 3  // "hahaha"
+```
+
 ### Known Limitations
 
 - **FSharpPlus compatibility**: Code using return types as support types in SRTP constraints may fail to compile. See workarounds below.
+
+### Binary Compatibility
+
+Extension solutions captured during constraint solving are **not** written into compiled
+metadata. A trait constraint's set of candidate extension members and its accessor domain live
+only in-process while a file is being checked; they are discarded before IL/metadata emission,
+so the on-disk pickle format is unchanged and old and new compilers interoperate.
+
+The practical consequence is the intra- vs cross-assembly split described under
+[Scope Capture](#scope-capture): within one assembly an inline function carries its
+definition-site extensions, but a consumer of a *compiled* inline function resolves SRTP
+constraints from its own scope and must have the relevant extensions in scope.
 
 ## Weak Resolution Changes
 

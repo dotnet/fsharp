@@ -99,20 +99,22 @@ if r3 <> 10 then failwith (sprintf "Expected 10, got %d" r3)
         |> shouldSucceed
 
     [<Fact>]
-    let ``KNOWN LIMITATION definition-site extension capture does not travel across an assembly boundary`` () =
-        // This mirrors ScopeCapture.fs exactly (StringOps and GenericLib are SIBLING
-        // sub-modules; the consumer opens GenericLib only), but the inline SRTP function is
-        // defined in a SEPARATE assembly from its consumer. Intra-assembly (ScopeCapture.fs)
-        // the captured definition-site extension travels with the constraint and resolves at
-        // the call site. Across an assembly boundary it currently does NOT: TypedTreePickle
-        // p_trait/u_trait do not serialize TTrait.traitCtxt (the captured definition-site
-        // ITraitContext is a live name-resolution environment). On import the definition-site
-        // context is therefore lost; freshening (CopyTyparConstraints) can at best substitute
-        // the USE-site context, i.e. the consumer's scope — which opened GenericLib but not
-        // StringOps — so the extension member cannot be re-selected.
+    let ``cross-assembly SRTP resolution uses consumer scope, not definition-site capture`` () =
+        // Cross-assembly, extension solutions are resolved from the CONSUMER's scope, not
+        // captured from the library's definition site. This is the intended model per
+        // RFC FS-1043 (Binary compatibility / pickling): the trait's possible extension
+        // solutions and accessor domain are deliberately NOT serialized into compiled DLLs —
+        // they exist only during in-process constraint solving — so a consumer of a compiled
+        // inline function uses the extensions available at its OWN call site.
         //
-        // When cross-assembly definition-site capture is implemented, flip this test to
-        // |> compileAndRun |> shouldSucceed (expected output "hahaha").
+        // The passing companion test above (`open type extension operator crosses assembly
+        // boundary`) shows the supported path: the consumer opens the extension. Here the
+        // consumer opens GenericLib but NOT StringOps, so — unlike the intra-assembly
+        // ScopeCapture.fs, where definition-site capture travels within one assembly — the
+        // String.(*) extension is not in the consumer's scope and resolution fails as designed.
+        // This is a deliberate consistency trade-off, not a defect. If the design is ever
+        // changed to serialize definition-site capture across assemblies (a pickle-format
+        // change + RFC amendment), flip this to |> compileAndRun |> shouldSucceed ("hahaha").
         let library =
             FSharp """
 module ScopeCaptureLib
