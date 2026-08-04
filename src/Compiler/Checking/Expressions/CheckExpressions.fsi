@@ -490,6 +490,7 @@ val CheckRecursiveInlineGroup: bindings: PreInitializationGraphEliminationBindin
 /// inference variables with the given rigidity.
 val FreshenObjectArgType:
     cenv: TcFileState ->
+    traitCtxt: ITraitContext option ->
     m: range ->
     rigid: TyparRigidity ->
     tcref: TyconRef ->

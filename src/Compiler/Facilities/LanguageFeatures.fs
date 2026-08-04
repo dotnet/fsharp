@@ -107,6 +107,7 @@ type LanguageFeature =
     | MethodOverloadsCache
     | ImplicitDIMCoverage
     | PreprocessorElif
+    | ExtensionConstraintSolutions
     | ExceptionFieldSerializationSupport
     | ErrorOnMissingSignatureAttribute
     | NotNullIfNotNull
@@ -264,8 +265,9 @@ type LanguageVersion(versionText, ?disabledFeaturesArray: LanguageFeature array)
 
                 // F# preview (still preview in 10.0)
                 LanguageFeature.FromEndSlicing, previewVersion // Unfinished features --- needs work
-                LanguageFeature.MethodOverloadsCache, previewVersion // Performance optimization for overload resolution
+                LanguageFeature.MethodOverloadsCache, previewVersion
                 LanguageFeature.ImplicitDIMCoverage, languageVersion110
+                LanguageFeature.ExtensionConstraintSolutions, previewVersion
                 LanguageFeature.ErrorOnMissingSignatureAttribute, previewVersion // Opt-in: turn FS3888 from warning into error
                 LanguageFeature.AccessProtectedBaseFieldFromClosure, previewVersion // #5302: read a protected base field from a closure
                 LanguageFeature.RecordSpreads, previewVersion
@@ -462,6 +464,7 @@ type LanguageVersion(versionText, ?disabledFeaturesArray: LanguageFeature array)
         | LanguageFeature.MethodOverloadsCache -> FSComp.SR.featureMethodOverloadsCache ()
         | LanguageFeature.ImplicitDIMCoverage -> FSComp.SR.featureImplicitDIMCoverage ()
         | LanguageFeature.PreprocessorElif -> FSComp.SR.featurePreprocessorElif ()
+        | LanguageFeature.ExtensionConstraintSolutions -> FSComp.SR.featureExtensionConstraintSolutions ()
         | LanguageFeature.ExceptionFieldSerializationSupport -> FSComp.SR.featureExceptionFieldSerializationSupport ()
         | LanguageFeature.ErrorOnMissingSignatureAttribute -> FSComp.SR.featureErrorOnMissingSignatureAttribute ()
         | LanguageFeature.NotNullIfNotNull -> FSComp.SR.featureNotNullIfNotNull ()

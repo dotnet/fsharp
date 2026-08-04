@@ -1230,7 +1230,7 @@ module internal ExprFreeVars =
 
         | TOp.Reraise -> accUsesRethrow true acc
 
-        | TOp.TraitCall(TTrait(tys, _, _, argTys, retTy, _, sln)) ->
+        | TOp.TraitCall(TTrait(tys, _, _, argTys, retTy, _, sln, _)) ->
             Option.foldBack
                 (accFreeVarsInTraitSln opts)
                 sln.Value

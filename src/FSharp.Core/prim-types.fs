@@ -91,6 +91,11 @@ namespace Microsoft.FSharp.Core
         inherit Attribute()
         member _.Value = value
 
+    [<AttributeUsage (AttributeTargets.Method, AllowMultiple=false)>]
+    [<Sealed>]
+    type AllowOverloadOnReturnTypeAttribute() =
+        inherit Attribute()
+
     [<AttributeUsage (AttributeTargets.Property, AllowMultiple=false)>]  
     [<Sealed>]
     type CLIEventAttribute() = 

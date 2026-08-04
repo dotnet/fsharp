@@ -241,6 +241,26 @@ let inline inverse m =
         |> shouldSucceed
 
     [<Fact>]
+    let ``Extension binary operator does not report duplicate candidates`` () =
+        // Regression test: binary operators with same support type (e.g., list<_>) should not report duplicates
+        FSharp """
+open FSharp.Core.CompilerServices
+
+type List<'t> with
+    static member (<*>) (f: list<'T -> 'U>, x: list<'T>) : list<'U> =
+        let mutable coll = ListCollector<'U> ()
+        f |> List.iter (fun f ->
+            x |> List.iter (fun x ->
+                coll.Add (f x)))
+        coll.Close ()
+
+let result = [(+)] <*> [1;10] <*> [2;3]
+"""
+        |> withLangVersionPreview
+        |> typecheck
+        |> shouldSucceed
+
+    [<Fact>]
     let ``Nested inline SRTP with multiple overloads should not cause internal error`` () =
         // Regression test: unsolved type variables in trait constraint solutions during codegen
         // caused FS0073 "internal error: Undefined or unsolved type variable" when an inline

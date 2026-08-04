@@ -5837,7 +5837,16 @@ and GenTraitCall (cenv: cenv) cgbuf eenv (traitInfo: TraitConstraintInfo, argExp
         assert (not generateWitnesses || not cenv.options.alwaysInline)
 
         let exprOpt =
-            CommitOperationResult(ConstraintSolver.CodegenWitnessExprForTraitConstraint cenv.tcVal g cenv.amap m traitInfo argExprs)
+            match ConstraintSolver.CodegenWitnessExprForTraitConstraint cenv.tcVal g cenv.amap m traitInfo argExprs with
+            | OkResult(warns, res) ->
+                ReportWarnings warns
+                res
+            | ErrorResult(warns, _) ->
+                ReportWarnings warns
+                // Resolution may fail for generic inline code with unsolved constraints
+                // (e.g. rigid typars). The NotSupportedException stub below is emitted as
+                // fallback IL; inline functions resolve constraints at each call site.
+                None
 
         match exprOpt with
         | None ->
@@ -7333,20 +7342,32 @@ and GetIlxClosureFreeVars cenv m (thisVars: ValRef list) boxity eenv takenNames 
 
     let cloFreeTyvars = cloFreeTyvars.FreeTypars |> Zset.elements
 
-    // When generating witnesses, witness types may reference type variables that appear
-    // only in SRTP constraints of the captured type variables (e.g. 'b in 'a : (member M: unit -> 'b)).
-    // Include those so they are available when generating witness field types.
-    let cloFreeTyvars =
-        if ComputeGenerateWitnesses g eenv then
-            let extra =
-                GetTraitWitnessInfosOfTypars g 0 cloFreeTyvars
-                |> List.collect (fun w ->
-                    (freeInType CollectTyparsNoCaching (GenWitnessTy g w)).FreeTypars
-                    |> Zset.elements)
+    // Work out if the closure captures any witnesses.
+    // We need to do this BEFORE creating eenvinner because witness types
+    // may reference additional type variables not captured by the expression's
+    // free variables (e.g. from deeply nested SRTP on function types).
+    // Any extra typars found here must already be ambient in eenv.tyenv so
+    // that GenGenericArgs can resolve them at the closure instantiation site.
+    let cloWitnessInfos, cloFreeTyvars =
+        let generateWitnesses = ComputeGenerateWitnesses g eenv
 
-            (cloFreeTyvars @ extra) |> List.distinctBy (fun tp -> tp.Stamp)
+        if generateWitnesses then
+            let witnessInfos = GetTraitWitnessInfosOfTypars g 0 cloFreeTyvars
+
+            let witnessFreeTyvars =
+                witnessInfos
+                |> List.collect (fun w ->
+                    let ty = GenWitnessTy g w
+                    (freeInType CollectTyparsNoCaching ty).FreeTypars |> Zset.elements)
+
+            let extraTyvars =
+                witnessFreeTyvars
+                |> List.filter (fun tp -> not (cloFreeTyvars |> List.exists (fun tp2 -> tp.Stamp = tp2.Stamp)))
+                |> List.distinctBy (fun tp -> tp.Stamp)
+
+            witnessInfos, cloFreeTyvars @ extraTyvars
         else
-            cloFreeTyvars
+            [], cloFreeTyvars
 
     let eenvinner = eenv |> EnvForTypars cloFreeTyvars
 
@@ -7360,16 +7381,6 @@ and GetIlxClosureFreeVars cenv m (thisVars: ValRef list) boxity eenv takenNames 
     let eenvinner =
         eenvinner
         |> AddStorageForLocalVals g (thisVars |> List.map (fun v -> (v.Deref, Arg 0)))
-
-    // Work out if the closure captures any witnesses.
-    let cloWitnessInfos =
-        let generateWitnesses = ComputeGenerateWitnesses g eenvinner
-
-        if generateWitnesses then
-            // The 0 here represents that a closure doesn't reside within a generic class - there are no "enclosing class type parameters" to lop off.
-            GetTraitWitnessInfosOfTypars g 0 cloFreeTyvars
-        else
-            []
 
     // Captured witnesses get captured in free variable fields
     let ilCloWitnessFreeVars, ilCloWitnessStorage =
@@ -7678,8 +7689,18 @@ and ExprRequiresWitness cenv m expr =
 
     match expr with
     | Expr.Op(TOp.TraitCall(traitInfo), _, _, _) ->
-        ConstraintSolver.CodegenWitnessExprForTraitConstraintWillRequireWitnessArgs cenv.tcVal g cenv.amap m traitInfo
-        |> CommitOperationResult
+        match ConstraintSolver.CodegenWitnessExprForTraitConstraintWillRequireWitnessArgs cenv.tcVal g cenv.amap m traitInfo with
+        | OkResult(warns, res) ->
+            ReportWarnings warns
+            res
+        | ErrorResult(warns, _) ->
+            ReportWarnings warns
+            // Constraint resolution failed. This means either:
+            // - All support types are concrete but resolution still failed (shouldn't happen —
+            //   type-checking should have caught it), or
+            // - Support types contain unsolved typars so we genuinely don't know.
+            // Either way, return false → don't use witness path → fall back to dynamic invocation.
+            false
     | _ -> false
 
 /// Generate statically-resolved conditionals used for type-directed optimizations in FSharp.Core only.

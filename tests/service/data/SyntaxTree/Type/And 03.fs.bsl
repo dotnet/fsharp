@@ -6,7 +6,8 @@ ImplFile
           [Types
              ([SynTypeDefn
                  (SynComponentInfo
-                    ([], None, [], [A],
+                    ([], None, [],
+                     Some (LongIdent (SynLongIdent ([A], [], [None]))),
                      PreXmlDoc ((3,0), FSharp.Compiler.Xml.XmlDocCollector),
                      false, None, (3,5--3,6)),
                   Simple
@@ -18,7 +19,8 @@ ImplFile
                     WithKeyword = None });
                SynTypeDefn
                  (SynComponentInfo
-                    ([], None, [], [B],
+                    ([], None, [],
+                     Some (LongIdent (SynLongIdent ([B], [], [None]))),
                      PreXmlDoc ((5,4), FSharp.Compiler.Xml.XmlDocCollector),
                      false, None, (5,4--5,5)),
                   Simple (None (5,4--5,7), (5,4--5,7)), [], None, (5,4--5,7),
@@ -27,7 +29,8 @@ ImplFile
                     WithKeyword = None });
                SynTypeDefn
                  (SynComponentInfo
-                    ([], None, [], [C],
+                    ([], None, [],
+                     Some (LongIdent (SynLongIdent ([C], [], [None]))),
                      PreXmlDoc ((7,4), FSharp.Compiler.Xml.XmlDocCollector),
                      false, None, (7,4--7,5)),
                   Simple
