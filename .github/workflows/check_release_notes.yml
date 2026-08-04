@@ -305,8 +305,14 @@ jobs:
             exit 1
         fi
     # Keep one bot comment current without evaluating pull request content as JavaScript.
+    # Posting the informational comment is best-effort and must never fail the check:
+    # this job runs via pull_request_target, and the Actions GITHUB_TOKEN is not always
+    # permitted to create a new issue comment (the comment API can return HTTP 403
+    # "Resource not accessible by integration"), even though release-notes validation
+    # above has already succeeded.
     - name: Create or update comment
       if: ${{ (success() || failure()) && steps.release_notes_changes.outputs.release-notes-check-message != '' }}
+      continue-on-error: true
       uses: actions/github-script@v9
       env:
         COMMENT_BODY: ${{ steps.release_notes_changes.outputs.release-notes-check-message }}
