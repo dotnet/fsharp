@@ -1658,6 +1658,39 @@ module InheritDocTooltipTests =
         | FSharpXmlDoc.FromXmlText t -> t.UnprocessedLines |> String.concat "\n"
         | other -> failwith $"Expected FromXmlText for {entityName}.{memberName}, got {other}"
 
+    /// Compiles a signature file (.fsi) + implementation (.fs) as a project, finds the named entity
+    /// in the assembly signature, and returns its resolved XmlDoc text. Used to characterise that the
+    /// signature-file doc is authoritative (RFC FS-1341) and that its <inheritdoc> is expanded.
+    let private getEntityXmlTextFromSignature (fsiSource: string) (fsSource: string) (typeName: string) =
+        let tempDir = System.IO.Path.Combine(System.IO.Path.GetTempPath(), System.Guid.NewGuid().ToString("N"))
+        System.IO.Directory.CreateDirectory(tempDir) |> ignore
+        let fsiFile = System.IO.Path.Combine(tempDir, "Test.fsi")
+        let fsFile = System.IO.Path.Combine(tempDir, "Test.fs")
+        System.IO.File.WriteAllText(fsiFile, fsiSource)
+        System.IO.File.WriteAllText(fsFile, fsSource)
+
+        let dllName = System.IO.Path.Combine(tempDir, "Test.dll")
+        let projName = System.IO.Path.Combine(tempDir, "Test.fsproj")
+        let args = mkProjectCommandLineArgs(dllName, [])
+
+        let options =
+            { checker.GetProjectOptionsFromCommandLineArgs(projName, args) with
+                SourceFiles = [| fsiFile; fsFile |] }
+
+        let results = checker.ParseAndCheckProject(options) |> Async.RunSynchronously
+
+        let rec allEntities (entities: seq<FSharpEntity>) =
+            entities
+            |> Seq.collect (fun e -> Seq.append (Seq.singleton e) (allEntities e.NestedEntities))
+
+        let entity =
+            allEntities results.AssemblySignature.Entities
+            |> Seq.find (fun e -> e.DisplayName = typeName)
+
+        match entity.XmlDoc with
+        | FSharpXmlDoc.FromXmlText t -> t.GetXmlText()
+        | other -> failwith $"Expected FromXmlText for {typeName}, got {other}"
+
     [<Theory>]
     [<InlineData("DerivedType", "Base type documentation")>]
     [<InlineData("DerivedType", "Important remarks")>]
@@ -1674,6 +1707,36 @@ type DerivedType() = class end
 """
         let xmlText = getEntityXmlText code symbolName
         Assert.Contains(expectedText, xmlText)
+        Assert.DoesNotContain("inheritdoc", xmlText)
+
+    [<Fact>]
+    let ``inheritdoc in signature file is authoritative and expanded`` () =
+        // RFC FS-1341: for members declared in a signature file, the .fsi doc comment is authoritative
+        // and its <inheritdoc> is resolved the same way. Here the .fsi carries the <inheritdoc> and the
+        // .fs carries a different, non-authoritative doc that must be ignored.
+        let fsiSource = """
+module Test
+
+/// <summary>Base type documentation</summary>
+type BaseType =
+    new: unit -> BaseType
+
+/// <inheritdoc cref="T:Test.BaseType"/>
+type DerivedType =
+    new: unit -> DerivedType
+"""
+        let fsSource = """
+module Test
+
+/// <summary>Base type documentation</summary>
+type BaseType() = class end
+
+/// <summary>Implementation-only summary that must be ignored</summary>
+type DerivedType() = class end
+"""
+        let xmlText = getEntityXmlTextFromSignature fsiSource fsSource "DerivedType"
+        Assert.Contains("Base type documentation", xmlText)
+        Assert.DoesNotContain("Implementation-only summary", xmlText)
         Assert.DoesNotContain("inheritdoc", xmlText)
 
     [<Fact>]
