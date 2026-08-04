@@ -80,3 +80,35 @@ let f<'T>() = nameof<'T>
         |> shouldFail
         |> withErrorCode 39
         |> ignore
+
+    // Guard test: %B (binary integer formatting) is an always-on feature (shipped F# 6.0,
+    // permanently enabled because the minimum accepted --langversion is 8.0). It must compile
+    // and run with no special --langversion. This passes before and after the flag removal.
+    [<Fact>]
+    let ``PrintfBinaryFormat is unconditional - percent B works without special langversion``() =
+        FSharp """
+module Test
+let s = sprintf "%B" 19
+if s <> "10011" then failwithf "expected 10011 got %s" s
+        """
+        |> asExe
+        |> compileAndRun
+        |> shouldSucceed
+        |> ignore
+
+    // RED driver: after the flag is removed, PrintfBinaryFormat is no longer a recognized
+    // language-feature name, so --disableLanguageFeature:PrintfBinaryFormat must be rejected
+    // with error 3881 "Unrecognized language feature name".
+    // On the CURRENT (pre-removal) compiler this FAILS, because the name is still recognized
+    // (the flag exists), so no 3881 is produced. That failure is the intended RED state.
+    [<Fact>]
+    let ``disableLanguageFeature PrintfBinaryFormat is not a recognized feature``() =
+        FSharp """
+printfn "Hello, World"
+        """
+        |> withOptions ["--disableLanguageFeature:PrintfBinaryFormat"]
+        |> typecheck
+        |> shouldFail
+        |> withErrorCode 3881
+        |> withDiagnosticMessageMatches "Unrecognized language feature name"
+        |> ignore
