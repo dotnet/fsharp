@@ -81,11 +81,14 @@ let f<'T>() = nameof<'T>
         |> withErrorCode 39
         |> ignore
 
-    // Guard test: %B (binary integer formatting) is now unconditional. After removing the
-    // PrintfBinaryFormat feature flag it is accepted for every --langversion (previously it
-    // required 6.0+). It must compile and run with no special --langversion.
+    // Guard test: %B (binary integer formatting) parses, compiles and runs correctly now that
+    // the PrintfBinaryFormat feature flag is removed. The old flag gated %B at langversion 6.0,
+    // but the minimum supported langversion is 8.0 (anything lower errors with FS3880), so every
+    // supported langversion is already above the old gate - the removal is a pure no-op for all
+    // supported versions and there is no sub-6.0 langversion at which to observe the difference.
+    // This asserts the %B code path itself is intact after deleting the guard.
     [<Fact>]
-    let ``PrintfBinaryFormat is unconditional - percent B works without special langversion``() =
+    let ``PrintfBinaryFormat is unconditional - percent B compiles and runs``() =
         FSharp """
 module Test
 let s = sprintf "%B" 19
