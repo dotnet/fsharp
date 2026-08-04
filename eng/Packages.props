@@ -24,7 +24,7 @@
     <PackageVersion Include="Microsoft.CodeAnalysis.CSharp" Version="$(MicrosoftCodeAnalysisCSharpVersion)" />
     <PackageVersion Include="Microsoft.CodeAnalysis.EditorFeatures" Version="$(MicrosoftCodeAnalysisEditorFeaturesTextVersion)" />
     <PackageVersion Include="Microsoft.CodeAnalysis.EditorFeatures.Text" Version="$(MicrosoftCodeAnalysisEditorFeaturesTextVersion)" />
-    <PackageVersion Include="Microsoft.CodeAnalysis.ExternalAccess.FSharp" Version="$(MicrosoftCodeAnalysisExternalAccessFSharpVersion)" />
+    <PackageVersion Include="Microsoft.VisualStudio.LanguageServices.ExternalAccess" Version="$(MicrosoftVisualStudioLanguageServicesExternalAccessVersion)" />
     <PackageVersion Include="Microsoft.CodeAnalysis.Test.Resources.Proprietary" Version="2.0.28" />
     <PackageVersion Include="Microsoft.CodeAnalysis.Workspaces.Common" Version="$(MicrosoftCodeAnalysisCSharpVersion)" />
     <PackageVersion Include="Microsoft.CommonLanguageServerProtocol.Framework" Version="4.13.0-3.24579.1" />
@@ -43,7 +43,7 @@
     <PackageVersion Include="Microsoft.TestPlatform.ObjectModel" Version="$(MicrosoftTestPlatformVersion)" />
     <PackageVersion Include="Microsoft.VisualFSharp.Microsoft.VisualStudio.Shell.UI.Internal" Version="17.0.0" />
     <!-- The 18.9.x Visual Studio SDK packages below (Interop/Shell/Editor) are pinned to the versions pulled
-         transitively by Microsoft.VisualStudio.SDK 18.9.496 (via Microsoft.CodeAnalysis.ExternalAccess.FSharp).
+         transitively by Microsoft.VisualStudio.SDK 18.9.496 (via Microsoft.VisualStudio.LanguageServices.ExternalAccess).
          Under CPM transitive pinning the central pin must match that resolved version, otherwise NU1109 downgrades
          and MSB3277 assembly-version conflicts break every vsintegration project. -->
     <!-- ComponentModelHost is only ever pulled transitively. Projects that reference the full VS SDK get 18.9.453,

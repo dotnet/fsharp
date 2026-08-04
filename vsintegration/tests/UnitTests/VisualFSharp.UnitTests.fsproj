@@ -120,7 +120,7 @@
 	<PackageReference Include="Microsoft.CodeAnalysis.Workspaces.Common" />
 	<PackageReference Include="Microsoft.CodeAnalysis.CSharp" />
 
-	<PackageReference Include="Microsoft.CodeAnalysis.ExternalAccess.FSharp" />
+	<PackageReference Include="Microsoft.VisualStudio.LanguageServices.ExternalAccess" />
     <PackageReference Include="Microsoft.VisualStudio.Platform.VSEditor" />
     <PackageReference Include="Microsoft.VisualStudio.ProjectSystem.Managed" />
     <PackageReference Include="Microsoft.VisualStudio.ProjectSystem" />
