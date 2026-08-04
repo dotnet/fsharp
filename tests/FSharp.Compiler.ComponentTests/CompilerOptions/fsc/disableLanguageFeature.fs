@@ -81,9 +81,9 @@ let f<'T>() = nameof<'T>
         |> withErrorCode 39
         |> ignore
 
-    // Guard test: %B (binary integer formatting) is an always-on feature (shipped F# 6.0,
-    // permanently enabled because the minimum accepted --langversion is 8.0). It must compile
-    // and run with no special --langversion. This passes before and after the flag removal.
+    // Guard test: %B (binary integer formatting) is now unconditional. After removing the
+    // PrintfBinaryFormat feature flag it is accepted for every --langversion (previously it
+    // required 6.0+). It must compile and run with no special --langversion.
     [<Fact>]
     let ``PrintfBinaryFormat is unconditional - percent B works without special langversion``() =
         FSharp """
