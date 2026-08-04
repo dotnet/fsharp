@@ -1647,11 +1647,6 @@
         <target state="translated">Die Verwendung von "[&lt;Struct&gt;]" für Werte, Funktionen und Methoden ist nur für partielle aktive Musterdefinitionen zulässig.</target>
         <note />
       </trans-unit>
-      <trans-unit id="tcInvalidTypeForTypeExtension">
-        <source>This type cannot be used for a type extension. Type extensions are only supported for named types and tuple types.</source>
-        <target state="new">This type cannot be used for a type extension. Type extensions are only supported for named types and tuple types.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="tcInvalidUseBangBindingNoAndBangs">
         <source>use! may not be combined with and!</source>
         <target state="translated">"use!" darf nicht mit "and!" kombiniert werden.</target>

@@ -1647,11 +1647,6 @@
         <target state="translated">O uso de '[&lt;Struct&gt;]' em valores, funções e métodos somente é permitido em definições de padrões ativos parciais</target>
         <note />
       </trans-unit>
-      <trans-unit id="tcInvalidTypeForTypeExtension">
-        <source>This type cannot be used for a type extension. Type extensions are only supported for named types and tuple types.</source>
-        <target state="new">This type cannot be used for a type extension. Type extensions are only supported for named types and tuple types.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="tcInvalidUseBangBindingNoAndBangs">
         <source>use! may not be combined with and!</source>
         <target state="translated">use! não pode ser combinado com and!</target>

@@ -5656,34 +5656,6 @@ let rec TcModuleOrNamespaceElementNonMutRec (cenv: cenv) parent typeNames scopem
               | SynType.Paren(innerTy, _) -> tryExtractTuple innerTy
               | _ -> None
 
-          // Helper to extract function type from possibly parenthesized type
-          let rec tryExtractFun synTy =
-              match synTy with
-              | SynType.Fun(argTy, retTy, funRange, _) -> Some(argTy, retTy, funRange)
-              | SynType.Paren(innerTy, _) -> tryExtractFun innerTy
-              | _ -> None
-
-          // Helper to check if a type is valid for type extensions
-          // Valid: named types, tuples, function types, array types
-          // Invalid: hash constraints, anon types, static constants
-          let rec isValidTypeExtensionType synTy =
-              match synTy with
-              | SynType.LongIdent _ -> true
-              | SynType.App(SynType.LongIdent _, _, _, _, _, _, _) -> true
-              | SynType.LongIdentApp _ -> true
-              | SynType.Tuple _ -> true
-              | SynType.Fun _ -> true
-              | SynType.Array _ -> true
-              | SynType.Paren(innerTy, _) -> isValidTypeExtensionType innerTy
-              // Reject: hash constraints, anon types, static constants
-              | SynType.HashConstraint _ -> false
-              | SynType.Anon _ -> false
-              | SynType.StaticConstant _ -> false
-              | SynType.StaticConstantNull _ -> false
-              | SynType.StaticConstantExpr _ -> false
-              // For other types, allow them and let type checking catch issues
-              | _ -> true
-
           let typeDefs =
               typeDefs |> List.choose (fun typeDef ->
                   match typeDef with
@@ -5708,30 +5680,7 @@ let rec TcModuleOrNamespaceElementNonMutRec (cenv: cenv) parent typeNames scopem
                           let newCompInfo = SynComponentInfo(attrs, typars, constraints, newSynTy, xmlDoc, fixity, vis, tupleRange)
                           let (SynTypeDefn(_, repr, members, implicitCtor, range, trivia)) = typeDef
                           Some(SynTypeDefn(newCompInfo, repr, members, implicitCtor, range, trivia))
-                      | None ->
-                          match tryExtractFun synTy with
-                          | Some(argTy, retTy, funRange) ->
-                              // Transform function type extensions: type ('T1 -> 'T2) with ... -> type FSharpFunc<'T1,'T2> with ...
-                              let longId = [Ident("Microsoft", funRange); Ident("FSharp", funRange); Ident("Core", funRange); Ident("FSharpFunc", funRange)]
-                              // Create type parameter declarations from the argument and return types
-                              let makeTyParDecl (idx: int) (ty: SynType) =
-                                  match ty with
-                                  | SynType.Var(typar, _) -> SynTyparDecl([], typar, [], SynTyparDeclTrivia.Zero)
-                                  | _ ->
-                                      let typar = SynTypar(Ident("T" + string idx, ty.Range), TyparStaticReq.None, false)
-                                      SynTyparDecl([], typar, [], SynTyparDeclTrivia.Zero)
-                              let typarDecls = [makeTyParDecl 1 argTy; makeTyParDecl 2 retTy]
-                              let typars = Some(SynTyparDecls.PostfixList(typarDecls, [], funRange))
-                              let (SynComponentInfo(attrs, _, constraints, _, xmlDoc, fixity, vis, _)) = compInfo
-                              let newSynTy = Some(SynType.LongIdent(SynLongIdent(longId, [], [])))
-                              let newCompInfo = SynComponentInfo(attrs, typars, constraints, newSynTy, xmlDoc, fixity, vis, funRange)
-                              let (SynTypeDefn(_, repr, members, implicitCtor, range, trivia)) = typeDef
-                              Some(SynTypeDefn(newCompInfo, repr, members, implicitCtor, range, trivia))
-                          | None ->
-                              // Validate that the type is valid for type extensions
-                              if not (isValidTypeExtensionType synTy) then
-                                  errorR(Error(FSComp.SR.tcInvalidTypeForTypeExtension(), synTy.Range))
-                              Some typeDef
+                      | None -> Some typeDef
                   | SynTypeDefn(typeInfo = SynComponentInfo(synType = None)) -> None)
           let scopem = unionRanges m scopem
           let mutRecDefns = typeDefs |> List.map MutRecShape.Tycon

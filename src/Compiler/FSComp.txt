@@ -1842,4 +1842,3 @@ featureImprovedImpliedArgumentNamesPartTwo,"Improved implied argument names with
 3903,parsSpreadNotSupportedBeforeWith,"Spreading is not supported in this position. Use one of the forms {{ ...expr1; A = expr2 }} or {{ expr1 with A = expr2 }} instead."
 3904,tcRecordExprSpreadWithCannotBeUsedWithSpreads,"Spread expressions and 'with' cannot be used together in the same copy-and-update expression."
 featureRecordSpreads,"record type and expression spreads"
-3905,tcInvalidTypeForTypeExtension,"This type cannot be used for a type extension. Type extensions are only supported for named types and tuple types."

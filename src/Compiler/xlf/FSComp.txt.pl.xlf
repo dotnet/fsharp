@@ -1647,11 +1647,6 @@
         <target state="translated">Używanie elementu "[&lt;Struct&gt;]" w przypadku wartości, funkcji i metod jest dozwolone tylko w definicjach częściowo aktywnego wzorca</target>
         <note />
       </trans-unit>
-      <trans-unit id="tcInvalidTypeForTypeExtension">
-        <source>This type cannot be used for a type extension. Type extensions are only supported for named types and tuple types.</source>
-        <target state="new">This type cannot be used for a type extension. Type extensions are only supported for named types and tuple types.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="tcInvalidUseBangBindingNoAndBangs">
         <source>use! may not be combined with and!</source>
         <target state="translated">Elementu use! nie można łączyć z elementem and!</target>
