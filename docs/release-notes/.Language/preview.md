@@ -1,6 +1,6 @@
 ### Added
 
-* **Extension members for operators and SRTP constraints** ([RFC FS-1043](https://github.com/fsharp/fslang-design/blob/main/RFCs/FS-1043-extension-members-for-operators-and-srtp-constraints.md), [fslang-suggestions#230](https://github.com/fsharp/fslang-suggestions/issues/230)): Extension methods now participate in SRTP constraint resolution. This allows defining operators on types you don't own via type extensions:
+* **Extension members for operators and SRTP constraints** ([RFC FS-1043](https://github.com/fsharp/fslang-design/blob/main/RFCs/FS-1043-extension-members-for-operators-and-srtp-constraints.md), [fslang-suggestions#230](https://github.com/fsharp/fslang-suggestions/issues/230), [PR #19602](https://github.com/dotnet/fsharp/pull/19602)): Extension methods now participate in SRTP constraint resolution. This allows defining operators on types you don't own via type extensions:
 
   ```fsharp
   type System.String with
