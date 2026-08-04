@@ -8,7 +8,7 @@ on:
 permissions:
   contents: read
   issues: write
-  pull-requests: read
+  pull-requests: write
 concurrency:
   group: release-notes-${{ github.event.pull_request.number }}
   cancel-in-progress: true
@@ -17,7 +17,7 @@ jobs:
     permissions:
       contents: read
       issues: write
-      pull-requests: read
+      pull-requests: write
     env:
       GH_TOKEN: ${{ github.token }}
       PR_AUTHOR: ${{ github.event.pull_request.user.login }}
