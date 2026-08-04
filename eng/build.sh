@@ -40,6 +40,7 @@ usage()
   echo "  --fromVMR                      Set when building from within the VMR"
   echo "  --buildnorealsig               Build product with realsig- (default use realsig+ where necessary)"
   echo "  --tfm                          Override the default target framework"
+  echo "  --warnNotAsError <codes>       Suppress specific warnings from being treated as errors (semi-colon delimited)"
   echo ""
   echo "Command line arguments starting with '/p:' are passed through to MSBuild."
 }
@@ -80,6 +81,7 @@ from_vmr=false
 buildnorealsig=true
 testbatch=""
 properties=""
+warn_not_as_error=""
 docker=false
 args=""
 
@@ -185,6 +187,10 @@ while [[ $# > 0 ]]; do
       ;;
     --tfm)
       tfm=$2
+      shift
+      ;;
+    --warnnotaserror)
+      warn_not_as_error=$2
       shift
       ;;
     /p:*)
@@ -316,6 +322,11 @@ function BuildSolution {
     # do real build
     BuildMessage="Error building solution"
 
+    local msbuild_warn_not_as_error=""
+    if [[ "$warn_not_as_error" != "" && "$warn_as_error" == true ]]; then
+      msbuild_warn_not_as_error="/warnNotAsError:$warn_not_as_error"
+    fi
+
     MSBuild $toolset_build_proj \
       $bl \
       /p:Configuration=$configuration \
@@ -335,7 +346,8 @@ function BuildSolution {
       /p:DotNetBuild=$product_build \
       /p:DotNetBuildSourceOnly=$source_build \
       /p:DotNetBuildFromVMR=$from_vmr \
-      ${properties[@]+"${properties[@]}"}
+      ${properties[@]+"${properties[@]}"} \
+      $msbuild_warn_not_as_error
   fi
 }
 

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Dependencies>
-  <Source Uri="https://github.com/dotnet/dotnet" Mapping="fsharp" Sha="bb3ece47d8301de9bedd46eff3d8e8e538d9adcc" BarId="317140" />
+  <Source Uri="https://github.com/dotnet/dotnet" Mapping="fsharp" Sha="fa946937d18098cdb873c8d1bfdaa91c49e11c8d" BarId="325432" />
   <ProductDependencies>
     <Dependency Name="Microsoft.Build" Version="18.0.2">
       <Uri>https://github.com/dotnet/msbuild</Uri>
@@ -73,6 +73,10 @@
     <Dependency Name="Microsoft.VisualStudio.LanguageServices" Version="5.0.0-2.26270.4">
       <Uri>https://github.com/dotnet/roslyn</Uri>
       <Sha>95b450294d0852c47cebef2d649437fadaca6ea7</Sha>
+    </Dependency>
+    <Dependency Name="System.Security.Cryptography.Xml" Version="9.0.18">
+      <Uri>https://github.com/dotnet/runtime</Uri>
+      <Sha>9d5a6a9aa463d6d10b0b0ba6d5982cc82f363dc3</Sha>
     </Dependency>
   </ProductDependencies>
   <ToolsetDependencies>
