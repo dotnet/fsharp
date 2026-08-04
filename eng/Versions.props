@@ -113,7 +113,7 @@
     <!-- Visual Studio Shell packages -->
     <MicrosoftVisualStudioInteropVersion>$(MicrosoftVisualStudioShellPackagesVersion)</MicrosoftVisualStudioInteropVersion>
     <MicrosoftVisualStudioImagingInterop140DesignTimeVersion>$(VisualStudioShellProjectsPackages)</MicrosoftVisualStudioImagingInterop140DesignTimeVersion>
-    <!-- Interop packages are pinned to the version required by Microsoft.VisualStudio.SDK (pulled transitively via Microsoft.CodeAnalysis.ExternalAccess.FSharp), which is newer than the other shell packages. -->
+    <!-- Interop packages are pinned to the version required by Microsoft.VisualStudio.SDK (pulled transitively via Microsoft.VisualStudio.LanguageServices.ExternalAccess), which is newer than the other shell packages. -->
     <MicrosoftVisualStudioShellInteropVersion>18.9.438</MicrosoftVisualStudioShellInteropVersion>
     <MicrosoftVisualStudioTextManagerInteropVersion>18.9.438</MicrosoftVisualStudioTextManagerInteropVersion>
     <MicrosoftVisualStudioOLEInteropVersion>18.9.438</MicrosoftVisualStudioOLEInteropVersion>
@@ -132,7 +132,7 @@
     <MicrosoftVisualStudioLanguageStandardClassificationVersion>$(VisualStudioEditorPackagesVersion)</MicrosoftVisualStudioLanguageStandardClassificationVersion>
     <MicrosoftVisualStudioLanguageIntellisenseVersion>$(VisualStudioEditorPackagesVersion)</MicrosoftVisualStudioLanguageIntellisenseVersion>
     <!-- Microsoft.VisualStudio.Platform.VSEditor is the runtime implementation of the editor. Unlike the other editor
-         packages it is not pulled transitively by Microsoft.CodeAnalysis.ExternalAccess.FSharp, so it stays at the
+         packages it is not pulled transitively by Microsoft.VisualStudio.LanguageServices.ExternalAccess, so it stays at the
          explicit pin while Microsoft.VisualStudio.Text.* / .Editor get bumped to 18.9.123 transitively. Pin VSEditor to
          the matching 18.9.123 so its implementation types load against the newer Text.Internal interfaces; otherwise the
          VsMocks MEF catalog throws ReflectionTypeLoadException and every legacy VS unit test fails. -->
@@ -145,7 +145,7 @@
     <!-- Visual Studio Threading packages -->
     <MicrosoftVisualStudioThreadingVersion>$(MicrosoftVisualStudioThreadingPackagesVersion)</MicrosoftVisualStudioThreadingVersion>
 
-    <!-- Transitive packages pinned to the versions required by Microsoft.CodeAnalysis.ExternalAccess.FSharp
+    <!-- Transitive packages pinned to the versions required by Microsoft.VisualStudio.LanguageServices.ExternalAccess
          (via Microsoft.VisualStudio.SDK 18.9.496), which are newer than the versions the Shell packages pull in.
          Pinning them avoids MSB3277 assembly version conflicts across the vsintegration projects. -->
     <MicrosoftVisualStudioValidationVersion>18.7.1</MicrosoftVisualStudioValidationVersion>
