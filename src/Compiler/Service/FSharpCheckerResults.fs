@@ -2901,7 +2901,6 @@ type FSharpParsingOptions =
         DiagnosticOptions: FSharpDiagnosticOptions
         LangVersionText: string
         IsInteractive: bool
-        StrictIndentation: bool option
         CompilingFSharpCore: bool
         IsExe: bool
     }
@@ -2918,7 +2917,6 @@ type FSharpParsingOptions =
             DiagnosticOptions = FSharpDiagnosticOptions.Default
             LangVersionText = LanguageVersion.Default.VersionText
             IsInteractive = false
-            StrictIndentation = None
             CompilingFSharpCore = false
             IsExe = false
         }
@@ -2931,7 +2929,6 @@ type FSharpParsingOptions =
             DiagnosticOptions = tcConfig.diagnosticsOptions
             LangVersionText = tcConfig.langVersion.VersionText
             IsInteractive = isInteractive
-            StrictIndentation = tcConfig.strictIndentation
             CompilingFSharpCore = tcConfig.compilingFSharpCore
             IsExe = tcConfig.target.IsExe
         }
@@ -2944,7 +2941,6 @@ type FSharpParsingOptions =
             DiagnosticOptions = tcConfigB.diagnosticsOptions
             LangVersionText = tcConfigB.langVersion.VersionText
             IsInteractive = isInteractive
-            StrictIndentation = tcConfigB.strictIndentation
             CompilingFSharpCore = tcConfigB.compilingFSharpCore
             IsExe = tcConfigB.target.IsExe
         }
@@ -3056,8 +3052,8 @@ module internal ParseAndCheckFile =
         else
             (fun _ -> tokenizer.GetToken())
 
-    let createLexbuf langVersion strictIndentation sourceText =
-        UnicodeLexing.SourceTextAsLexbuf(true, LanguageVersion(langVersion), strictIndentation, sourceText)
+    let createLexbuf langVersion sourceText =
+        UnicodeLexing.SourceTextAsLexbuf(true, LanguageVersion(langVersion), sourceText)
 
     let matchBraces
         (
@@ -3077,7 +3073,7 @@ module internal ParseAndCheckFile =
 
         let matchingBraces = ResizeArray<_>()
 
-        usingLexbufForParsing (createLexbuf options.LangVersionText options.StrictIndentation sourceText, fileName) (fun lexbuf ->
+        usingLexbufForParsing (createLexbuf options.LangVersionText sourceText, fileName) (fun lexbuf ->
             let errHandler =
                 DiagnosticsHandler(false, fileName, options.DiagnosticOptions, suggestNamesForErrors, false)
 
@@ -3190,7 +3186,7 @@ module internal ParseAndCheckFile =
         use _ = UseBuildPhase BuildPhase.Parse
 
         let parseResult =
-            usingLexbufForParsing (createLexbuf options.LangVersionText options.StrictIndentation sourceText, fileName) (fun lexbuf ->
+            usingLexbufForParsing (createLexbuf options.LangVersionText sourceText, fileName) (fun lexbuf ->
 
                 let lexfun = createLexerFunction options lexbuf errHandler ct
 

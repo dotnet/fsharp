@@ -32,7 +32,7 @@ module internal SymbolHelpers =
                 |> Async.AwaitTask
                 |> liftAsync
 
-            let! defines, langVersion, strictIndentation = document.GetFsharpParsingOptionsAsync(userOpName) |> liftAsync
+            let! defines, langVersion = document.GetFsharpParsingOptionsAsync(userOpName) |> liftAsync
 
             let! cancellationToken = Async.CancellationToken |> liftAsync
             let! sourceText = document.GetTextAsync(cancellationToken)
@@ -51,7 +51,6 @@ module internal SymbolHelpers =
                     false,
                     false,
                     Some langVersion,
-                    strictIndentation,
                     cancellationToken
                 )
 
