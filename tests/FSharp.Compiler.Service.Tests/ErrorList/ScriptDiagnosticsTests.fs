@@ -1,4 +1,9 @@
-[<FSharp.Test.RunTestCasesInSequence>]
+// Serialized (NotThreadSafeResourceCollection => DisableParallelization) because the #r/#load
+// script tests resolve references through the shared checker and process-global reference
+// resolver. Running concurrently with other collections intermittently drops closure
+// diagnostics (e.g. a missing '#r' surfacing as 0 diagnostics). RunTestCasesInSequence alone
+// is a no-op marker and does not prevent cross-collection parallelism.
+[<Xunit.Collection(nameof FSharp.Test.NotThreadSafeResourceCollection)>]
 module FSharp.Compiler.Service.Tests.ScriptDiagnosticsTests
 
 open System
