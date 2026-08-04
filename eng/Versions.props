@@ -133,10 +133,10 @@
     <MicrosoftVisualStudioLanguageIntellisenseVersion>$(VisualStudioEditorPackagesVersion)</MicrosoftVisualStudioLanguageIntellisenseVersion>
     <!-- Microsoft.VisualStudio.Platform.VSEditor is the runtime implementation of the editor. Unlike the other editor
          packages it is not pulled transitively by Microsoft.CodeAnalysis.ExternalAccess.FSharp, so it stays at the
-         explicit pin while Microsoft.VisualStudio.Text.* / .Editor get bumped to 18.9.123 transitively. Pin VSEditor to
-         the matching 18.9.123 so its implementation types load against the newer Text.Internal interfaces; otherwise the
+         explicit pin while Microsoft.VisualStudio.Text.* / .Editor get bumped to 18.9.179 transitively. Pin VSEditor to
+         the matching 18.9.179 so its implementation types load against the newer Text.Internal interfaces; otherwise the
          VsMocks MEF catalog throws ReflectionTypeLoadException and every legacy VS unit test fails. -->
-    <MicrosoftVisualStudioPlatformVSEditorVersion>18.9.123</MicrosoftVisualStudioPlatformVSEditorVersion>
+    <MicrosoftVisualStudioPlatformVSEditorVersion>18.9.179</MicrosoftVisualStudioPlatformVSEditorVersion>
     <MicrosoftVisualStudioTextUIWpfVersion>$(VisualStudioEditorPackagesVersion)</MicrosoftVisualStudioTextUIWpfVersion>
     <NuGetVisualStudioVersion>17.14.0</NuGetVisualStudioVersion>
     <MicrosoftVisualStudioExtensibilityTestingVersion>0.1.800-beta</MicrosoftVisualStudioExtensibilityTestingVersion>
