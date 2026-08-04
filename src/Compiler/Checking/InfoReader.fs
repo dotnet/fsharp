@@ -963,10 +963,11 @@ type InfoReader(g: TcGlobals, amap: ImportMap) as this =
                             | _ -> None)
                         |> List.map (fun x -> FSMeth(g, origTy, x, None))
                     // An F# record exposes no *declared* constructor, but its synthesized all-fields constructor is
-                    // callable from C# as 'new MyRecord(f1, f2, ...)'. We surface that same constructor to F# too so
-                    // resolution succeeds; the RecordConstructorSyntax langversion gate is enforced at the call site
-                    // (see BuildMethodCall) so an unsupported langversion gives FS3350 rather than a generic FS0800.
-                    if tcref.IsRecordTycon then
+                    // callable from C# as 'new MyRecord(f1, f2, ...)'. Under the RecordConstructorSyntax feature we
+                    // surface that same constructor to F# too (it elaborates to a record allocation - see BuildMethodCall).
+                    // The langversion gate is applied here (not just at the call site) so the synthesized constructor
+                    // stays invisible to signature generation and name resolution on released langversions.
+                    if g.langVersion.SupportsFeature LanguageFeature.RecordConstructorSyntax && tcref.IsRecordTycon then
                         declaredCtors @ [ RecdCtor(g, origTy) ]
                     else
                         declaredCtors

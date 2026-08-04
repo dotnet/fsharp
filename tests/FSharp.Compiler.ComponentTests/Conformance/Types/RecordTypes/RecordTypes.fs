@@ -815,10 +815,10 @@ let _ = Lib.R(1, 2)
         |> shouldFail
         |> withErrorCode 1133
 
-    // On a released langversion the constructor candidate is still surfaced, so use produces the actionable
-    // FS3350 "feature not available" error rather than a generic FS0800 "invalid use of a type name".
+    // On a released langversion the constructor is not surfaced, so use of a record type name as a constructor
+    // is rejected with the generic FS0800 "invalid use of a type name".
     [<Fact>]
-    let ``Record constructor on an unsupported langversion reports the feature error`` () =
+    let ``Record constructor is unavailable on a released langversion`` () =
         Fsx """
 type R = { A: int; B: int }
 let r = R(1, 2)
@@ -826,4 +826,4 @@ let r = R(1, 2)
         |> withLangVersion90
         |> compile
         |> shouldFail
-        |> withErrorCode 3350
+        |> withErrorCode 800
