@@ -1333,8 +1333,9 @@ type MethInfo =
         | DefaultStructCtor _ ->
             [[]]
         | RecdCtor(g, ty) ->
-            [ (tcrefOfAppTy g ty).TrueInstanceFieldsAsList
-              |> List.map (fun _ -> ParamAttribs(false, false, false, NotOptional, NoCallerInfo, ReflectedArgInfo.None)) ]
+            (tcrefOfAppTy g ty).TrueInstanceFieldsAsList
+            |> List.map (fun _ -> ParamAttribs(false, false, false, NotOptional, NoCallerInfo, ReflectedArgInfo.None))
+            |> List.singleton
 
 #if !NO_TYPEPROVIDERS
         | ProvidedMeth(amap, mi, _, _) ->
@@ -1447,8 +1448,9 @@ type MethInfo =
                 | RecdCtor(g, ty) ->
                     let tcref = tcrefOfAppTy g ty
                     let tinst = argsOfAppTy g ty
-                    [ tcref.TrueInstanceFieldsAsList
-                      |> List.map (fun fspec -> ParamNameAndType(Some (mkSynId m fspec.LogicalName), actualTyOfRecdFieldForTycon tcref.Deref tinst fspec)) ]
+                    tcref.TrueInstanceFieldsAsList
+                    |> List.map (fun fspec -> ParamNameAndType(Some (mkSynId m fspec.LogicalName), actualTyOfRecdFieldForTycon tcref.Deref tinst fspec))
+                    |> List.singleton
 #if !NO_TYPEPROVIDERS
                 | ProvidedMeth(amap, mi, _, _) ->
                     // A single set of tupled parameters

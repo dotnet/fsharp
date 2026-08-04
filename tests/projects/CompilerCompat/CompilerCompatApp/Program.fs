@@ -75,14 +75,14 @@ let main _argv =
                 let viaCtor = { Library.RecordCtorPoint.A = 3; Library.RecordCtorPoint.B = 4 }
 #endif
                 if viaInline.A <> 7 || viaInline.B <> 9 then
-                    printfn "ERROR: inline record constructor result mismatch"
+                    Console.WriteLine "ERROR: inline record constructor result mismatch"
                     1
                 elif viaCtor.A <> 3 || viaCtor.B <> 4 then
-                    printfn "ERROR: record constructor result mismatch"
+                    Console.WriteLine "ERROR: record constructor result mismatch"
                     1
                 else
-                    printfn "RecordCtor: inline=(%d,%d) direct=(%d,%d)" viaInline.A viaInline.B viaCtor.A viaCtor.B
-                    printfn "SUCCESS: All compiler compatibility tests passed"
+                    Console.WriteLine $"RecordCtor: inline=({viaInline.A},{viaInline.B}) direct=({viaCtor.A},{viaCtor.B})"
+                    Console.WriteLine "SUCCESS: All compiler compatibility tests passed"
                     0
                 
     with ex ->
