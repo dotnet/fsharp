@@ -10,7 +10,8 @@
 
   <PropertyGroup Condition="'$(Configuration)' == 'Proto'">
     <TargetFramework>$(FSharpNetCoreProductTargetFramework)</TargetFramework>
-    <PublishReadyToRun>$(EnablePublishReadyToRun)</PublishReadyToRun>
+    <!-- Disabled: crossgen2 in .NET 11 preview SDK crashes on fsi (exit code 0xDEAD). Re-enable when SDK stabilizes. -->
+    <PublishReadyToRun>false</PublishReadyToRun>
     <RuntimeIdentifier>$(NETCoreSdkRuntimeIdentifier)</RuntimeIdentifier>
   </PropertyGroup>
 
@@ -23,6 +24,11 @@
     <OutputPath>$(ArtifactsDir)/bin/$(MSBuildProjectName)/$(Configuration)/</OutputPath>
     <IntermediateOutputPath>$(ArtifactsDir)obj/$(MSBuildProjectName)/$(Configuration)/</IntermediateOutputPath>
   </PropertyGroup>
+
+  <!-- Override vulnerable System.Security.Cryptography.Xml pulled in transitively by Microsoft.Build.Tasks.Core (via FSharp.Build) on .NET (NU1903). net472 is excluded because it has no such transitive and the override's dependencies conflict with System.ValueTuple there. -->
+  <ItemGroup Condition="'$(TargetFramework)' == '$(FSharpNetCoreProductTargetFramework)'">
+    <PackageReference Include="System.Security.Cryptography.Xml" Version="$(SystemSecurityCryptographyXmlVersion)" />
+  </ItemGroup>
 
   <Import Project="$([MSBuild]::GetPathOfFileAbove('fsi.targets', '$(MSBuildThisFileDirectory)../'))" />
 

@@ -103,6 +103,16 @@ printfn \"%s\" s"
         |> withStdOutContains "% 42"
 
     [<Fact>]
+    let ``Interpolation holes are rendered with invariant culture`` () =
+        Fsx """
+System.Threading.Thread.CurrentThread.CurrentCulture <- System.Globalization.CultureInfo "de-DE"
+printf "%s" $"{1.5}"
+        """
+        |> compileExeAndRun
+        |> shouldSucceed
+        |> withStdOutContains "1.5"
+
+    [<Fact>]
     let ``Percent signs separated by format specifier's flags`` () =
         Fsx """
 let s = $"...%-%...{0}"
