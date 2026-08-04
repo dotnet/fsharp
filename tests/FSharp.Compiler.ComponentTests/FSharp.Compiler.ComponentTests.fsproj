@@ -562,5 +562,15 @@
     <PackageReference Include="FSharp.Core" />
   </ItemGroup>
 
+  <!-- Bake the centrally-pinned Newtonsoft.Json version (eng/Packages.props via central package
+       management) into the test assembly so FsiCliTests can request exactly the version that is
+       present in the offline restore cache on the internal signed build, with no manual sync when
+       the central pin is bumped. -->
+  <PropertyGroup>
+    <NewtonsoftJsonCentralVersion>@(PackageVersion->WithMetadataValue('Identity','Newtonsoft.Json')->'%(Version)')</NewtonsoftJsonCentralVersion>
+  </PropertyGroup>
+  <ItemGroup>
+    <AssemblyMetadata Include="NewtonsoftJsonCentralVersion" Value="$(NewtonsoftJsonCentralVersion)" />
+  </ItemGroup>
 
 </Project>

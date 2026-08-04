@@ -85,10 +85,24 @@ module FsiCliTests =
         finally
             try System.IO.File.Delete(scriptPath) with _ -> ()
 
+    // The FSI #r "nuget:" restore below must request a package version that is guaranteed to be in
+    // the offline restore cache on the internal signed build (which cannot restore online). Central
+    // package management + transitive pinning means only the centrally-pinned version (eng/Packages.props)
+    // is ever restored into that cache, and it changes whenever the pin is bumped. Rather than hardcode
+    // a version that would silently drift, read the exact pinned version baked into this test assembly
+    // at build time via AssemblyMetadata (see FSharp.Compiler.ComponentTests.fsproj).
+    let private centralNewtonsoftJsonVersion =
+        System.Reflection.Assembly.GetExecutingAssembly().GetCustomAttributes(typeof<System.Reflection.AssemblyMetadataAttribute>, false)
+        |> Array.tryPick (fun a ->
+            let m = a :?> System.Reflection.AssemblyMetadataAttribute
+            if m.Key = "NewtonsoftJsonCentralVersion" && not (System.String.IsNullOrWhiteSpace m.Value) then Some m.Value else None)
+        |> Option.defaultWith (fun () ->
+            failwith "AssemblyMetadata 'NewtonsoftJsonCentralVersion' is missing. It should be emitted by FSharp.Compiler.ComponentTests.fsproj from the central Newtonsoft.Json PackageVersion.")
+
     [<Fact>]
     let ``FSI quiet mode suppresses NuGet restore output from stdout`` () =
-        let script = """
-#r "nuget: Newtonsoft.Json, 13.0.3"
+        let script = $"""
+#r "nuget: Newtonsoft.Json, {centralNewtonsoftJsonVersion}"
 printfn "RESULT_MARKER_18086"
 """
         let result = runFsiScript ["--quiet"] script
@@ -100,8 +114,8 @@ printfn "RESULT_MARKER_18086"
 
     [<Fact>]
     let ``FSI default (non-quiet) mode still evaluates script and prints user output`` () =
-        let script = """
-#r "nuget: Newtonsoft.Json, 13.0.3"
+        let script = $"""
+#r "nuget: Newtonsoft.Json, {centralNewtonsoftJsonVersion}"
 printfn "RESULT_MARKER_18086_DEFAULT"
 """
         let result = runFsiScript [] script
