@@ -8,7 +8,7 @@ on:
 permissions:
   contents: read
   issues: write
-  pull-requests: read
+  pull-requests: write
 concurrency:
   group: release-notes-${{ github.event.pull_request.number }}
   cancel-in-progress: true
@@ -17,7 +17,7 @@ jobs:
     permissions:
       contents: read
       issues: write
-      pull-requests: read
+      pull-requests: write
     env:
       GH_TOKEN: ${{ github.token }}
       PR_AUTHOR: ${{ github.event.pull_request.user.login }}
@@ -314,29 +314,40 @@ jobs:
         github-token: ${{ github.token }}
         script: |
             const marker = '<!-- DO_NOT_REMOVE: release_notes_check -->';
-            const comments = await github.paginate(github.rest.issues.listComments, {
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                issue_number: context.issue.number,
-                per_page: 100
-            });
-            const existing = comments.find(comment =>
-                comment.user?.login === 'github-actions[bot]' && comment.body?.includes(marker));
+            try {
+              const comments = await github.paginate(github.rest.issues.listComments, {
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: context.issue.number,
+                  per_page: 100
+              });
+              const existing = comments.find(comment =>
+                  comment.user?.login === 'github-actions[bot]' && comment.body?.includes(marker));
 
-            if (existing) {
-                const comment = await github.rest.issues.updateComment({
-                    owner: context.repo.owner,
-                    repo: context.repo.repo,
-                    comment_id: existing.id,
-                    body: process.env.COMMENT_BODY
-                });
-                return comment.data.id;
+              if (existing) {
+                  const comment = await github.rest.issues.updateComment({
+                      owner: context.repo.owner,
+                      repo: context.repo.repo,
+                      comment_id: existing.id,
+                      body: process.env.COMMENT_BODY
+                  });
+                  return comment.data.id;
+              }
+
+              const comment = await github.rest.issues.createComment({
+                  issue_number: context.issue.number,
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  body: process.env.COMMENT_BODY
+              });
+              return comment.data.id;
+            } catch (error) {
+              // Posting the summary comment is best-effort: the release-notes gate is already
+              // enforced in the previous step. Some pull_request_target runs get a restricted
+              // GITHUB_TOKEN that cannot write comments (403); skip instead of failing the gate.
+              if (error.status === 403) {
+                  core.notice('Skipping release-notes comment: GITHUB_TOKEN is not permitted to write comments for this run.');
+                  return;
+              }
+              throw error;
             }
-
-            const comment = await github.rest.issues.createComment({
-                issue_number: context.issue.number,
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                body: process.env.COMMENT_BODY
-            });
-            return comment.data.id;
