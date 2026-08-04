@@ -143,6 +143,17 @@ Code that binds such a function to a monomorphic type (`let g : int -> int = f`)
 
 # Examples
 
+> **Implementation status (scope note for this PR).** The two examples in this section —
+> *numeric widening* and *`op_Implicit` population* — illustrate the RFC's expressiveness but do
+> **not** compile with the current implementation and are **NOT IMPLEMENTED / out of scope** for
+> this PR. They rely on augmenting types that already carry a built-in `op_Addition` (widening) or
+> on populating `op_Implicit`, but *design point 5* above commits the built-in operator solution
+> before any extension member is considered. Concretely, `1 + 2L` resolves the built-in `int (+)`,
+> which forces both operands to `int` and rejects `2L` (`error FS0001: The type 'int64' does not
+> match the type 'int'`). See `docs/srtp-guide.md` (§ Aspirational Patterns) and the guard test
+> `numeric widening via extension operators does not compose with built-in operators (by design)`
+> in `ExtensionConstraintsTests.fs`.
+
 ## Widening to specific type
 
 **NOTE: this is an example of what is allowed by this RFC, but is not necessarily recommended for standard F# coding. In particular error messages may degrade for existing code, and extensive further prelude definitions would be required to give a consistent programming model.**

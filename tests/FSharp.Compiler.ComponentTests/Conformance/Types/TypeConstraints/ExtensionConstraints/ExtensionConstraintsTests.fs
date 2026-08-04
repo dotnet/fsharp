@@ -270,6 +270,32 @@ if r2 <> 3 then failwith (sprintf "Expected 3, got %d" r2)
     // ========================================================================
 
     [<Fact>]
+    let ``numeric widening via extension operators does not compose with built-in operators (by design)`` () =
+        // RFC FS-1043 "Widening to specific type" example. Design point 5: for a type that
+        // already carries a built-in operator, the built-in solution is committed before any
+        // extension member is considered. So `1 + 2L` resolves the built-in int (+), which forces
+        // both operands to int and rejects 2L — the widening extension on int64 is never reached.
+        // This is why numeric widening is documented as aspirational / NOT IMPLEMENTED
+        // (docs/RFC_Changes.md § Examples, docs/srtp-guide.md § Aspirational Patterns). This test
+        // guards that scope-out so the behavior can't silently change unnoticed.
+        FSharp """
+module Test
+let inline widen_to_int64 (x: ^T) : int64 = (^T : (static member widen_to_int64 : ^T -> int64) (x))
+type System.Int32 with
+    static member inline widen_to_int64 (a: int32) : int64 = int64 a
+type System.Int64 with
+    static member inline (+)(a: int64, b: 'T) : int64 = a + widen_to_int64 b
+    static member inline (+)(a: 'T, b: int64) : int64 = widen_to_int64 a + b
+
+let r = 1 + 2L
+        """
+        |> withLangVersionPreview
+        |> compile
+        |> shouldFail
+        |> withErrorCode 1
+        |> withDiagnosticMessageMatches "The type 'int64' does not match the type 'int'"
+
+    [<Fact>]
     let ``FS1215 warning suppressed when ExtensionConstraintSolutions is active`` () =
         Fsx """
 type System.String with
