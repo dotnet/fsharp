@@ -6,7 +6,7 @@ open FSharp.Test.Compiler
 open Xunit
 
 module NominalAndAnonymousRecords =
-    let [<Literal>] SupportedLangVersion = "preview"
+    let [<Literal>] SupportedLangVersion = "11.0"
 
     module LangVersion =
         [<Fact>]
@@ -24,8 +24,8 @@ module NominalAndAnonymousRecords =
             |> typecheck
             |> shouldFail
             |> withDiagnostics [
-                Error 3350, Line 3, Col 29, Line 3, Col 34, "Feature 'record type and expression spreads' is not available in F# 10.0. Please use language version 'PREVIEW' or greater."
-                Error 3350, Line 5, Col 28, Line 5, Col 33, "Feature 'record type and expression spreads' is not available in F# 10.0. Please use language version 'PREVIEW' or greater."
+                Error 3350, Line 3, Col 29, Line 3, Col 34, "Feature 'record type and expression spreads' is not available in F# 10.0. Please use language version 11.0 or greater."
+                Error 3350, Line 5, Col 28, Line 5, Col 33, "Feature 'record type and expression spreads' is not available in F# 10.0. Please use language version 11.0 or greater."
             ]
 
         [<Fact>]
