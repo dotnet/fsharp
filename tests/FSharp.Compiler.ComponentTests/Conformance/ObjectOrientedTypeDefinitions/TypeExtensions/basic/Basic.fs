@@ -252,3 +252,36 @@ module TypeExtensionsBasic =
         |> ignoreWarnings
         |> compileAndRun
         |> shouldSucceed
+
+    [<Fact>]
+    let ``Tuple type extension requires preview language version`` () =
+        // Tuple-type extensions are gated behind the extension feature flag. Below preview the
+        // syntax parses (it is not a parse error) but the checker rejects it with a clean
+        // feature-availability diagnostic (FS3350) rather than a confusing downstream error.
+        FSharp """
+module Test
+type ('T1 * 'T2) with
+    static member PairFirst ((a, _b)) = a
+        """
+        |> withLangVersion80
+        |> typecheck
+        |> shouldFail
+        |> withErrorCode 3350
+        |> withDiagnosticMessageMatches "is not available in F#"
+
+    [<Fact>]
+    let ``Struct tuple type extension rewrites to ValueTuple`` () =
+        // A struct tuple (type struct ('T1 * 'T2) with ...) is rewritten to System.ValueTuple.
+        FSharp """
+module Test
+type struct ('T1 * 'T2) with
+    static member Fst (struct (a, _b)) = a
+
+let r = System.ValueTuple<int, string>.Fst(struct (42, "x"))
+if r <> 42 then failwith "expected 42"
+        """
+        |> asExe
+        |> withLangVersionPreview
+        |> ignoreWarnings
+        |> compileAndRun
+        |> shouldSucceed

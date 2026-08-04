@@ -5662,6 +5662,8 @@ let rec TcModuleOrNamespaceElementNonMutRec (cenv: cenv) parent typeNames scopem
                   | SynTypeDefn(typeInfo = SynComponentInfo(synType = Some synTy) as compInfo) ->
                       match tryExtractTuple synTy with
                       | Some(isStruct, path, tupleRange) ->
+                          // Tuple-type extensions share the extension-member preview flag rather than getting their own feature.
+                          checkLanguageFeatureAndRecover g.langVersion LanguageFeature.ExtensionConstraintSolutions tupleRange
                           // Transform tuple type extensions: type ('T1 * 'T2) with ... -> type System.Tuple<'T1,'T2> with ...
                           let elemTys = path |> List.choose (function SynTupleTypeSegment.Type t -> Some t | _ -> None)
                           let tupleName = if isStruct then "ValueTuple" else "Tuple"

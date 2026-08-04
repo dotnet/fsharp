@@ -68,6 +68,16 @@ The proposed change is as follows, in the internal logic of the constraint solvi
 
 5. Built-in constraint solutions for things like `op_Addition` constraints are applied if and when the relevant types match precisely, and are applied even if some extension methods of that name are available.
 
+## Tuple type extensions
+
+As part of this implementation, type extensions may be written directly on tuple types using
+tuple syntax. The tuple type in the augmentation position is rewritten to its underlying named
+type: a reference tuple `type ('T1 * 'T2) with ...` extends `System.Tuple<'T1, 'T2>`, and a
+struct tuple `type struct ('T1 * 'T2) with ...` extends `System.ValueTuple<'T1, 'T2>`. This lets
+extension operators/members (including those participating in SRTP resolution) be attached to
+tuple types. The capability is gated behind the same preview language feature as the rest of this
+RFC; below preview the syntax parses but is rejected with a feature-availability diagnostic.
+
 ## Weak resolution no longer forces overload resolution for SRTP constraints prior to generalizing `inline` code
 
 Prior to this RFC, for generic inline code we apply "weak resolution" to constraints prior to generalization.

@@ -37,6 +37,27 @@ let inline multiply (x: ^T) (n: int) = x * n
 let result = multiply "ha" 3  // "hahaha"
 ```
 
+### Tuple Type Extensions
+
+Type extensions can be written directly on tuple types using tuple syntax. The tuple type is
+rewritten to its underlying named type — `System.Tuple<...>` for reference tuples and
+`System.ValueTuple<...>` for struct tuples:
+
+```fsharp
+// Reference tuple: rewritten to System.Tuple<'T1, 'T2>
+type ('T1 * 'T2) with
+    static member inline (<*>) ((a, f), (b, x)) = (a, f x)
+
+let r = (1, string) <*> (2, 3)   // (1, "3")
+
+// Struct tuple: rewritten to System.ValueTuple<'T1, 'T2>
+type struct ('T1 * 'T2) with
+    static member Fst (struct (a, _b)) = a
+```
+
+This capability is gated behind the same preview flag as extension constraint solutions (see
+[Feature Flag](#feature-flag)); below preview it is rejected with a feature-availability error.
+
 ### Resolution Priority
 
 When solving an SRTP constraint:
