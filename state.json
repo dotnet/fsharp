@@ -147,11 +147,8 @@
       "cats": []
     },
     "19974": {
-      "sha": "c320c76565116b3a9c34ae3df98a124af3964051",
-      "cats": [
-        "Affects-Build-Infra",
-        "Affects-Compiler-Output"
-      ]
+      "sha": "59788675a7644b709f6d1321e819ce2e6dcb8f02",
+      "cats": []
     },
     "19947": {
       "sha": "0d24d4c82901822179bd74b239ff6986a40f1996",
