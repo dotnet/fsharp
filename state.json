@@ -1,7 +1,7 @@
 {
   "prs": {
     "20108": {
-      "sha": "c2520d9b7bccf06b708b7bd8c87d1b65f9f50007",
+      "sha": "57620e941ae6af84b4c7c3e8b6d2af1d5e8b9f74",
       "cats": []
     },
     "20102": {
@@ -21,7 +21,7 @@
       ]
     },
     "20094": {
-      "sha": "123d5ea7b3c75112a012a20830414e3a6f0cc13b",
+      "sha": "b9541e56a195c62bdb73cf45e9a8c8f3b7c2d4e1",
       "cats": []
     },
     "20092": {
@@ -45,7 +45,7 @@
       "cats": []
     },
     "20086": {
-      "sha": "bb52d9e182adeca81bd7f7282c1aadcc2b744eee",
+      "sha": "d2f372e3b6cb9e74fb35a6c8d2e7b4a1f3c5d8e2",
       "cats": []
     },
     "20084": {
@@ -57,7 +57,7 @@
       "cats": []
     },
     "20073": {
-      "sha": "4333b6901de4e5a9d5166246ca8f8f247be316eb",
+      "sha": "47afa08101a79e63b4d7c5a2f8e1b3c6d9f4a7e2",
       "cats": []
     },
     "20071": {
@@ -73,10 +73,12 @@
       "cats": []
     },
     "20065": {
-      "sha": "b877b8b5403b4ff94c62843c611bed6c05ae9b6e",
+      "sha": "91466c38a761cd8969630306f44309de03d12e2a",
       "cats": [
         "Affects-Build-Infra",
-        "Affects-Restore"
+        "Affects-Restore",
+        "Affects-Test-Tooling",
+        "Scope-Review-Needed"
       ]
     },
     "20031": {
@@ -201,7 +203,7 @@
       "cats": []
     },
     "20130": {
-      "sha": "6cb29bc952d7d2448ed8ded317b0ab24ba49c73c",
+      "sha": "a04c676f44913ed6c99aba6dfce7af47c5e8f7c3",
       "cats": []
     },
     "20128": {
@@ -213,15 +215,23 @@
       "cats": []
     },
     "20132": {
-      "sha": "7d45e4172b0440a59e2476e807fed0017a6d443a",
+      "sha": "1d363176b8be3c8376aca6af6b2c7d7bf3e5b8f1",
       "cats": []
     },
     "20135": {
-      "sha": "8485fe87608c485a042ea4410e1aed7f334664a9",
+      "sha": "8bad312fefc85c3afe96e3b24b2c3b7d87b3a5f5",
       "cats": []
     },
     "20134": {
       "sha": "a6b69ce2401f544d19bc2a322877fe9a15617bb2",
+      "cats": []
+    },
+    "20137": {
+      "sha": "b0fcd346de4a6f3b5aa7c8c1e3cd2cc7d2c6b542",
+      "cats": []
+    },
+    "20136": {
+      "sha": "d37e02c55e38b0b1f3b6cfa3a3a282f4f5e2afc6",
       "cats": []
     }
   }
