@@ -597,11 +597,6 @@
         <target state="new">#elif preprocessor directive</target>
         <note />
       </trans-unit>
-      <trans-unit id="featurePrintfBinaryFormat">
-        <source>binary formatting for integers</source>
-        <target state="translated">整數的二進位格式化</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureReallyLongList">
         <source>list literals of any size</source>
         <target state="translated">列出任何大小的常值</target>
