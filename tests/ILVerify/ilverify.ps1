@@ -29,6 +29,12 @@ Write-Host "Repository path: $repo_path"
 [string] $script = if ($IsWindows) { Join-Path $repo_path "build.cmd" } else { Join-Path $repo_path "build.sh" }
 [string] $additional_arguments = if ($IsWindows) { "-noVisualStudio" } else { "" }
 
+# Disable the UpdateXlf target (not needed for IL verification). Without -ci the XliffTasks
+# UpdateXlfOnBuild property defaults to true, but the current netcore product TFM inner build
+# of FSharp.Compiler.Service does not define the UpdateXlf target, which fails the build with
+# "error MSB4057: The target "UpdateXlf" does not exist in the project."
+$env:UpdateXlfOnBuild = "false"
+
 # Set configurations to build
 [string[]] $configurations = @("Debug", "Release")
 
