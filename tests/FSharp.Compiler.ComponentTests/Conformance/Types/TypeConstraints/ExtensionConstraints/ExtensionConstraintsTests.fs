@@ -99,6 +99,43 @@ if r3 <> 10 then failwith (sprintf "Expected 10, got %d" r3)
         |> shouldSucceed
 
     [<Fact>]
+    let ``open type named extension member crosses assembly boundary through SRTP`` () =
+        // Companion to the operator cross-assembly test above, for a NAMED (non-operator)
+        // extension member. Named members and operators take slightly different name-resolution
+        // paths into SRTP, so this pins the named-member x cross-assembly x SRTP cell.
+        let library =
+            FSharp """
+module NamedLib
+
+[<AbstractClass; Sealed>]
+type Ops =
+    static member inline Widen (a: int) : int64 = int64 a + 100L
+    static member inline Widen (a: string) : int64 = int64 a.Length + 200L
+            """
+            |> withName "NamedLib"
+            |> asLibrary
+            |> withLangVersionPreview
+
+        FSharp """
+module Consumer
+open NamedLib
+open type Ops
+
+let inline widen (x: ^T) : int64 = ((^T or Ops) : (static member Widen : ^T -> int64) x)
+
+let r1 = widen 5
+if r1 <> 105L then failwith (sprintf "Expected 105, got %d" r1)
+
+let r2 = widen "abc"
+if r2 <> 203L then failwith (sprintf "Expected 203, got %d" r2)
+        """
+        |> asExe
+        |> withLangVersionPreview
+        |> withReferences [library]
+        |> compileAndRun
+        |> shouldSucceed
+
+    [<Fact>]
     let ``cross-assembly SRTP resolution uses consumer scope, not definition-site capture`` () =
         // Cross-assembly, extension solutions are resolved from the CONSUMER's scope, not
         // captured from the library's definition site. This is the intended model per
