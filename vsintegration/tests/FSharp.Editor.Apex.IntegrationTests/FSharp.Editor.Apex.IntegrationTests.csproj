@@ -1,0 +1,41 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Apex-based VS integration tests for the F# editor, ported from the TypeScript-VS repo.
+    These run out-of-process, driving a real Visual Studio instance via the Apex UI automation
+    framework (Microsoft.Test.Apex.VisualStudio) and MSTest, independently of the xUnit/IdeFact
+    integration tests in FSharp.Editor.IntegrationTests.
+  -->
+  <PropertyGroup>
+    <TargetFramework>net472</TargetFramework>
+    <LangVersion>preview</LangVersion>
+    <Nullable>disable</Nullable>
+    <OutputType>Library</OutputType>
+    <IsPackable>false</IsPackable>
+    <!-- Apex tests use MSTest, not the repo default xUnit3/MTP runner. -->
+    <ExcludeFromTestPackageReferences>true</ExcludeFromTestPackageReferences>
+    <NoWarn>$(NoWarn);CS1591;VSTHRD200</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- System.Web.Script.Serialization.JavaScriptSerializer, used to parse vswhere JSON output. -->
+    <Reference Include="System.Web.Extensions" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Test.Apex.VisualStudio" Version="$(MicrosoftTestApexVisualStudioVersion)" />
+    <PackageReference Include="MSTest.TestAdapter" Version="$(MSTestVersion)" />
+    <PackageReference Include="MSTest.TestFramework" Version="$(MSTestVersion)" />
+    <!--
+      Resolves MSB3277: Microsoft.Test.Apex.VisualStudio references System.Diagnostics.DiagnosticSource
+      10.0.0.8, but the only copy in the package graph is 5.0.0 (pulled transitively via
+      MSTest -> Testing.Extensions.Telemetry -> ApplicationInsights). RAR cannot unify to a version
+      that is not present, so no binding redirect is generated and testhost would ship only v5.
+      Referencing 10.0.8 (assembly 10.0.0.8, matching Apex) makes it primary: the conflict is genuinely
+      resolved, a 5->10 redirect is generated, and the correct assembly is deployed. Version is pinned
+      explicitly (not the repo's 10.0.2) because it must match Apex's required 10.0.0.8.
+    -->
+    <PackageReference Include="System.Diagnostics.DiagnosticSource" Version="10.0.8" />
+  </ItemGroup>
+
+</Project>
