@@ -4,9 +4,12 @@
 
 namespace FSharp.Editor.IntegrationTests;
 
+// SDK short names consumed by `dotnet new` in SolutionExplorerInProcess.AddProjectAsync.
+// The previous values (Microsoft.FSharp.NETCore.*) referenced VS template IDs that never
+// existed in any shipping template package -- the tests have never resolved them.
 internal static class WellKnownProjectTemplates
 {
-    public const string FSharpNetCoreClassLibrary = "Microsoft.FSharp.NETCore.ClassLibrary";
-    public const string FSharpNetCoreConsoleApplication = "Microsoft.FSharp.NETCore.ConsoleApplication";
-    public const string FSharpNetCoreXUnitTest = "Microsoft.FSharp.NETCore.XUnitTest";
+    public const string FSharpNetCoreClassLibrary = "classlib";
+    public const string FSharpNetCoreConsoleApplication = "console";
+    public const string FSharpNetCoreXUnitTest = "xunit";
 }

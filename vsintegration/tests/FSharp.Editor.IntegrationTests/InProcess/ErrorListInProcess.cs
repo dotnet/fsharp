@@ -33,6 +33,23 @@ namespace Microsoft.CodeAnalysis.Testing.InProcess
             errorList.AreWarningsShown = false;
         }
 
+        // Shows EVERY entry: all sources (Build + Other/IntelliSense) and all severities. F# live diagnostics are
+        // "Other"-source, and ShowBuildErrorsAsync (used by BuildProjectTests) leaves the shared Error List
+        // filtered to Build-only + no-warnings; because the whole test collection shares one VS instance, that
+        // stale filter otherwise HIDES the F# code-action diagnostics from GetErrorItems/GetAllEntries, making the
+        // produce-signal read zero even when diagnostics were published. Call this before reading the Error List.
+        public async Task ShowAllEntriesAsync(CancellationToken cancellationToken)
+        {
+            await JoinableTaskFactory.SwitchToMainThreadAsync(cancellationToken);
+
+            var errorList = await GetRequiredGlobalServiceAsync<SVsErrorList, IErrorList>(cancellationToken);
+            errorList.AreBuildErrorSourceEntriesShown = true;
+            errorList.AreOtherErrorSourceEntriesShown = true;
+            errorList.AreErrorsShown = true;
+            errorList.AreWarningsShown = true;
+            errorList.AreMessagesShown = true;
+        }
+
         public Task<ImmutableArray<string>> GetBuildErrorsAsync(CancellationToken cancellationToken)
         {
             return GetBuildErrorsAsync(__VSERRORCATEGORY.EC_WARNING, cancellationToken);
@@ -93,6 +110,32 @@ namespace Microsoft.CodeAnalysis.Testing.InProcess
 
             var errorItems = await GetErrorItemsAsync(cancellationToken);
             return errorItems.Count(e => e.GetCategory() <= minimumSeverity);
+        }
+
+        // Diagnostic instrumentation: dumps every error-list entry (all sources and severities) so a failing
+        // test can report whether a given diagnostic (e.g. unused-opens) was actually published headless.
+        public async Task<ImmutableArray<string>> GetAllEntriesAsync(CancellationToken cancellationToken)
+        {
+            await JoinableTaskFactory.SwitchToMainThreadAsync(cancellationToken);
+
+            var errorItems = await GetErrorItemsAsync(cancellationToken);
+            var list = new List<string>();
+
+            foreach (var item in errorItems)
+            {
+                var source = item.TryGetValue(StandardTableKeyNames.ErrorSource, out ErrorSource errorSource)
+                    ? errorSource.ToString()
+                    : "<no-source>";
+                var tool = item.GetBuildTool();
+                var document = Path.GetFileName(item.GetPath() ?? item.GetDocumentName()) ?? "<unknown>";
+                var line = item.GetLine() ?? -1;
+                var code = item.GetErrorCode() ?? "<none>";
+                var text = item.GetText() ?? "<none>";
+
+                list.Add($"[{item.GetCategory()}] source={source} tool={tool} {document}({line + 1}) {code}: {text}");
+            }
+
+            return list.ToImmutableArray();
         }
 
         private async Task<ImmutableArray<ITableEntryHandle>> GetErrorItemsAsync(CancellationToken cancellationToken)

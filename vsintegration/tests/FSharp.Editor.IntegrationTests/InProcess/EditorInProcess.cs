@@ -4,19 +4,26 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using FSharp.Editor.IntegrationTests.Extensions;
 using FSharp.Editor.IntegrationTests.Helpers;
+using Microsoft.VisualStudio.ComponentModelHost;
 using Microsoft.VisualStudio.Language.Intellisense;
-using Microsoft.VisualStudio.OLE.Interop;
 using Microsoft.VisualStudio.Shell.Interop;
 using Microsoft.VisualStudio.Text;
+using Microsoft.VisualStudio.Text.Editor;
 
 namespace Microsoft.VisualStudio.Extensibility.Testing;
 
 internal partial class EditorInProcess
 {
+    // VSStd14CmdID command-set GUID + ShowQuickFixes (Ctrl+.) id; OLECMDEXECOPT_DONTPROMPTUSER = 2.
+    private static readonly Guid s_vsStd14CmdSet = new Guid("4c7763bf-5faf-4264-a366-b7e1f27ba958");
+    private const uint ShowQuickFixesCmdId = 1;
+    private const uint OleCmdExecOptDontPromptUser = 2;
+
     public async Task<string> GetTextAsync(CancellationToken cancellationToken)
     {
         await JoinableTaskFactory.SwitchToMainThreadAsync(cancellationToken);
@@ -73,22 +80,169 @@ internal partial class EditorInProcess
         view.Selection.Clear();
     }
 
+    // dte.Find.Execute (used by PlaceCaretAsync) leaves VS's active selection on the Find feature rather
+    // than the editor, so shell commands dispatched afterwards through SUIHostCommandDispatcher (e.g.
+    // VSStd97CmdID.GotoDefn) are routed to the wrong command target and come back disabled (E_FAIL).
+    // Re-activate the document window so the editor is the active command context again. This uses VS's
+    // internal active-frame selection (IVsMonitorSelection) and does not depend on the OS foreground window.
+    public async Task ActivateAsync(CancellationToken cancellationToken)
+    {
+        await JoinableTaskFactory.SwitchToMainThreadAsync(cancellationToken);
+
+        var dte = await GetRequiredGlobalServiceAsync<SDTE, EnvDTE.DTE>(cancellationToken);
+        dte.ActiveDocument?.Activate();
+    }
+
     public async Task<IEnumerable<SuggestedActionSet>> InvokeCodeActionListAsync(CancellationToken cancellationToken)
     {
         await JoinableTaskFactory.SwitchToMainThreadAsync(cancellationToken);
 
-        var shell = await GetRequiredGlobalServiceAsync<SVsUIShell, IVsUIShell>(cancellationToken);
-        var cmdGroup = typeof(VSConstants.VSStd14CmdID).GUID;
-        var cmdExecOpt = OLECMDEXECOPT.OLECMDEXECOPT_DONTPROMPTUSER;
-
-        var cmdID = VSConstants.VSStd14CmdID.ShowQuickFixes;
-        object? obj = null;
-        shell.PostExecCommand(cmdGroup, (uint)cmdID, (uint)cmdExecOpt, ref obj);
-
         var view = await GetActiveTextViewAsync(cancellationToken);
-        var broker = await GetComponentModelServiceAsync<ILightBulbBroker>(cancellationToken);
+        var componentModel = await GetRequiredGlobalServiceAsync<SComponentModel, IComponentModel>(cancellationToken);
+        var broker = componentModel.GetService<ILightBulbBroker>();
+        var categoryRegistry = componentModel.GetService<ISuggestedActionCategoryRegistryService>();
+        var shell = await GetRequiredGlobalServiceAsync<SVsUIShell, IVsUIShell>(cancellationToken);
 
-        var lightbulbs = await LightBulbHelper.WaitForItemsAsync(broker, view, cancellationToken);
-        return lightbulbs;
+        // Trace document state
+        var caretPos = view.Caret.Position.BufferPosition.Position;
+        var docText = view.TextSnapshot.GetText();
+        System.Diagnostics.Trace.TraceInformation(
+            "[EditorInProcess] InvokeCodeActionListAsync: caretPos={0}, docLength={1}, docText=<<<{2}>>>",
+            caretPos, docText.Length, docText.Length <= 500 ? docText : docText.Substring(0, 500));
+
+        await ActivateAsync(cancellationToken);
+
+        // Reset the shared Error List to show all sources + severities. BuildProjectTests leaves it filtered to
+        // Build-only/no-warnings, which hides F#'s "Other"-source live diagnostics from our produce-signal read.
+        await TestServices.ErrorList.ShowAllEntriesAsync(cancellationToken);
+
+        System.Diagnostics.Trace.TraceInformation("[EditorInProcess] InvokeCodeActionListAsync: waiting for features (Workspace, SolutionCrawlerLegacy, DiagnosticService)");
+
+        await AsyncOperationWaiter.WaitForFeaturesAsync(
+            componentModel,
+            new[] { AsyncOperationWaiter.Workspace, AsyncOperationWaiter.SolutionCrawlerLegacy, AsyncOperationWaiter.DiagnosticService },
+            cancellationToken);
+
+        System.Diagnostics.Trace.TraceInformation("[EditorInProcess] InvokeCodeActionListAsync: features drained, invoking lightbulb");
+
+        Task ShowLightBulbAsync()
+        {
+            var cmdGroup = s_vsStd14CmdSet;
+            object? inArg = null;
+            shell.PostExecCommand(ref cmdGroup, ShowQuickFixesCmdId, OleCmdExecOptDontPromptUser, ref inArg);
+            return Task.CompletedTask;
+        }
+
+        // Error List produce signal: count error+warning diagnostics. The F# fixes we read are on-demand
+        // compiler diagnostics (FS0760 warning, FS0010/FS0039 parse errors) that appear in the Error List once
+        // the shared Error List filters are reset to show all sources/severities (see ShowAllEntriesAsync above).
+        async Task<int> GetDiagnosticCountAsync(CancellationToken token)
+            => await TestServices.ErrorList.GetErrorCountAsync(__VSERRORCATEGORY.EC_WARNING, token);
+
+        // Second, independent produce signal: does the broker offer a CODE FIX / REFACTORING at the caret? Low-churn
+        // (creates no lightbulb session). Scoped to AllCodeFixesAndRefactorings so unrelated providers - notably the
+        // GitHub Copilot suggested-action source, which injects a "GitHubCopilot" category and would otherwise make
+        // this return true at any caret - do NOT falsely satisfy the gate.
+        async Task<bool> HasSuggestedActionsAsync(CancellationToken token)
+        {
+            try
+            {
+                return await broker.HasSuggestedActionsAsync(categoryRegistry.AllCodeFixesAndRefactorings, view, token);
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        Task TriggerReanalysisAsync(CancellationToken token)
+            => TriggerDiagnosticsAsync(view, token);
+
+        try
+        {
+            return await LightBulbHelper.GetCodeActionsAsync(broker, view, categoryRegistry.AllCodeFixesAndRefactorings, JoinableTaskFactory, ShowLightBulbAsync, GetDiagnosticCountAsync, HasSuggestedActionsAsync, TriggerReanalysisAsync, cancellationToken);
+        }
+        catch (InvalidOperationException ex)
+        {
+            var entries = await TestServices.ErrorList.GetAllEntriesAsync(cancellationToken);
+            var probe = await ProbeAvailableActionsAsync(broker, view, categoryRegistry.AllCodeFixesAndRefactorings, cancellationToken);
+            var caretDiag = await DiagnoseCaretAndSourcesAsync(broker, view, categoryRegistry.AllCodeFixesAndRefactorings, cancellationToken);
+            throw new InvalidOperationException(
+                $"{ex.Message}{Environment.NewLine}trackingEnabled={AsyncOperationWaiter.IsTrackingEnabled()}{Environment.NewLine}" +
+                $"probe: {probe}{Environment.NewLine}" +
+                $"caretDiag: {caretDiag}{Environment.NewLine}" +
+                $"--- Error List ({entries.Length} entries) ---{Environment.NewLine}" +
+                string.Join(Environment.NewLine, entries),
+                ex);
+        }
+    }
+
+    // Failure diagnostic: reports the caret position and the text around it, so a failure message shows whether
+    // the caret landed on the token the code fix targets.
+    private async Task<string> DiagnoseCaretAndSourcesAsync(ILightBulbBroker broker, IWpfTextView view, ISuggestedActionCategorySet requested, CancellationToken cancellationToken)
+    {
+        await JoinableTaskFactory.SwitchToMainThreadAsync(cancellationToken);
+
+        try
+        {
+            var caret = view.Caret.Position.BufferPosition;
+            var snapshot = caret.Snapshot;
+            var line = caret.GetContainingLine();
+            var ctxStart = Math.Max(line.Start.Position, caret.Position - 8);
+            var ctxEnd = Math.Min(line.End.Position, caret.Position + 8);
+            var around = snapshot.GetText(Span.FromBounds(ctxStart, ctxEnd));
+
+            return $"caretPos={caret.Position}, lineNo={line.LineNumber + 1}, around=<<<{around}>>>";
+        }
+        catch (Exception ex)
+        {
+            return $"threw {ex.GetType().Name}: {ex.Message}";
+        }
+    }
+
+    // Bumps the document version with a net-zero edit (insert+delete a space at EOF) to force F# to recompute
+    // diagnostics on the now fully-loaded project, restoring the caret afterward.
+    private async Task TriggerDiagnosticsAsync(IWpfTextView view, CancellationToken cancellationToken)
+    {
+        await JoinableTaskFactory.SwitchToMainThreadAsync(cancellationToken);
+
+        var caret = view.Caret.Position.BufferPosition.Position;
+        var buffer = view.TextBuffer;
+        buffer.Insert(buffer.CurrentSnapshot.Length, " ");
+        buffer.Delete(new Span(buffer.CurrentSnapshot.Length - 1, 1));
+
+        var snapshot = buffer.CurrentSnapshot;
+        view.Caret.MoveTo(new SnapshotPoint(snapshot, Math.Min(caret, snapshot.Length)));
+    }
+
+    // Asks the lightbulb broker (producer-agnostic) whether any suggested actions exist at the caret and which
+    // categories, without creating a session - so a failure tells us if the fix was simply never offered.
+    private async Task<string> ProbeAvailableActionsAsync(ILightBulbBroker broker, IWpfTextView view, ISuggestedActionCategorySet requested, CancellationToken cancellationToken)
+    {
+        await JoinableTaskFactory.SwitchToMainThreadAsync(cancellationToken);
+
+        var result = "";
+        try
+        {
+            var has = await broker.HasSuggestedActionsAsync(requested, view, cancellationToken);
+            result += $"HasSuggestedActions={has}";
+        }
+        catch (Exception ex)
+        {
+            result += $"HasSuggestedActions threw {ex.GetType().Name}: {ex.Message}";
+        }
+
+        try
+        {
+            var categories = await ((ILightBulbBroker2)broker).GetSuggestedActionCategoriesAsync(requested, view, cancellationToken);
+            var names = categories is null ? Array.Empty<string>() : ((IEnumerable<string>)categories).ToArray();
+            result += $"; categories=[{string.Join(",", names)}]";
+        }
+        catch (Exception ex)
+        {
+            result += $"; categories threw {ex.GetType().Name}: {ex.Message}";
+        }
+
+        return result;
     }
 }

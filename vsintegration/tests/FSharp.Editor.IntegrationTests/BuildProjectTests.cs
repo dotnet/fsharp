@@ -43,7 +43,7 @@ module Test
 let answer =
 """;
         var expectedBuildSummary = "========== Build: 0 succeeded, 1 failed, 0 up-to-date, 0 skipped ==========";
-        var expectedError = "(Compiler) Library.fs(3, 1): error FS0010: Incomplete structured construct at or before this point in binding";
+        var expectedError = "(Fsc) Library.fs(3, 1): error FS0010: Incomplete structured construct at or before this point in binding";
 
         await SolutionExplorer.CreateSingleProjectSolutionAsync("Library", template, TestToken);
         await SolutionExplorer.RestoreNuGetPackagesAsync(TestToken);

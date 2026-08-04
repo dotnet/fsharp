@@ -1,8 +1,10 @@
-﻿// Licensed to the .NET Foundation under one or more agreements.
+// Licensed to the .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for more information.
 
 using Microsoft.CodeAnalysis.Testing;
+using System;
+using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
 using static Microsoft.VisualStudio.VSConstants;
@@ -11,6 +13,52 @@ namespace FSharp.Editor.IntegrationTests;
 
 public class GoToDefinitionTests : AbstractIntegrationTest
 {
+    // GoToDefn resolves at invocation time: if the F# checker has not produced a result for the active
+    // document yet, the command no-ops, and only re-issuing it (a retry) or getting lucky with a sleep
+    // recovers -- either of which is brittle or masks a real regression. We avoid that by giving every test
+    // the setup the F# checker handles cleanly on the first try: the code is written to disk, the project is
+    // built, and the file is opened FRESH (never an already-open, buffer-edited document). With that a
+    // single GotoDefn resolves, and the only thing left to wait for is the navigation itself --
+    // FSharpNavigation.NavigateToItem schedules the caret move asynchronously (via JoinableTaskFactory), so
+    // the caret has NOT moved by the time Shell.ExecuteCommandAsync(GotoDefn) returns.
+    //
+    // CI data behind this: with SetTextAsync on the auto-opened buffer, GoesToDefinition's first invocation
+    // deterministically no-ops even after a 10s settle (build 1463623), whereas FsiAndFs -- which adds files
+    // to disk and opens them fresh -- passes single-invoke. Editing an already-open buffer is the difference.
+    private static readonly TimeSpan GoToDefinitionNavigationTimeout = TimeSpan.FromSeconds(10);
+    private static readonly TimeSpan GoToDefinitionNavigationPollDelay = TimeSpan.FromMilliseconds(100);
+
+    private async Task GoToDefinitionAsync(string caretMarker, CancellationToken cancellationToken)
+    {
+        // Wait for the project system to load the project into the workspace.
+        await Workspace.WaitForProjectSystemAsync(cancellationToken);
+
+        // Make the editor the active command context (PlaceCaretAsync's dte.Find moves VS's active selection
+        // off the editor) and anchor the caret on the call site.
+        await Editor.ActivateAsync(cancellationToken);
+        await Editor.PlaceCaretAsync(caretMarker, cancellationToken);
+
+        var before = await Editor.GetCurrentLineTextAsync(cancellationToken);
+        await Shell.ExecuteCommandAsync(VSStd97CmdID.GotoDefn, cancellationToken);
+
+        // Wait for the single asynchronous navigation to move the caret off the call site. This is not a
+        // retry of the command -- it just observes the completion of the one navigation we triggered, and
+        // fails the test if it never happens (so a real regression is caught).
+        for (var elapsed = TimeSpan.Zero; elapsed < GoToDefinitionNavigationTimeout; elapsed += GoToDefinitionNavigationPollDelay)
+        {
+            var after = await Editor.GetCurrentLineTextAsync(cancellationToken);
+            if (!string.Equals(before, after, StringComparison.Ordinal))
+            {
+                return;
+            }
+
+            await Task.Delay(GoToDefinitionNavigationPollDelay, cancellationToken);
+        }
+
+        throw new InvalidOperationException(
+            $"GoToDefn did not navigate away from '{caretMarker}' within {GoToDefinitionNavigationTimeout.TotalSeconds:0}s.");
+    }
+
     [IdeFact]
     public async Task GoesToDefinition()
     {
@@ -27,10 +75,14 @@ let increment = add 1
 
         await SolutionExplorer.CreateSingleProjectSolutionAsync("Library", template, TestToken);
         await SolutionExplorer.RestoreNuGetPackagesAsync(TestToken);
-        await Editor.SetTextAsync(code, TestToken);
-        
-        await Editor.PlaceCaretAsync("add 1", TestToken);
-        await Shell.ExecuteCommandAsync(VSStd97CmdID.GotoDefn, TestToken);
+        // Add the code as a real file on disk and open it fresh after building (rather than editing the
+        // auto-opened buffer with SetTextAsync), so the F# checker resolves on the first GotoDefn -- see the
+        // note on GoToDefinitionAsync. Mirrors FsiAndFsFilesGoToCorrespondentDefinitions.
+        await SolutionExplorer.AddFileAsync("Library", "Test.fs", code, TestToken);
+        await SolutionExplorer.BuildSolutionAsync(TestToken);
+        await SolutionExplorer.OpenFileAsync("Library", "Test.fs", TestToken);
+
+        await GoToDefinitionAsync("add 1", TestToken);
         var actualText = await Editor.GetCurrentLineTextAsync(TestToken);
         
         Assert.Contains(expectedText, actualText);
@@ -72,8 +124,7 @@ let id (t: SomeType) = t
         await SolutionExplorer.BuildSolutionAsync(TestToken);
 
         await SolutionExplorer.OpenFileAsync("Library", "Module.fsi", TestToken);
-        await Editor.PlaceCaretAsync("SomeType ->", TestToken);
-        await Shell.ExecuteCommandAsync(VSStd97CmdID.GotoDefn, TestToken);
+        await GoToDefinitionAsync("SomeType ->", TestToken);
         var expectedText = "type SomeType =";
         var expectedWindow = "Module.fsi";
         var actualText = await Editor.GetCurrentLineTextAsync(TestToken);
@@ -82,8 +133,7 @@ let id (t: SomeType) = t
         Assert.Equal(expectedWindow, actualWindow);
 
         await SolutionExplorer.OpenFileAsync("Library", "Module.fs", TestToken);
-        await Editor.PlaceCaretAsync("SomeType)", TestToken);
-        await Shell.ExecuteCommandAsync(VSStd97CmdID.GotoDefn, TestToken);
+        await GoToDefinitionAsync("SomeType)", TestToken);
         expectedText = "type SomeType =";
         expectedWindow = "Module.fs";
         actualText = await Editor.GetCurrentLineTextAsync(TestToken);
