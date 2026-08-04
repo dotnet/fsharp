@@ -99,6 +99,52 @@ if r3 <> 10 then failwith (sprintf "Expected 10, got %d" r3)
         |> shouldSucceed
 
     [<Fact>]
+    let ``KNOWN LIMITATION definition-site extension capture does not travel across an assembly boundary`` () =
+        // This mirrors ScopeCapture.fs exactly (StringOps and GenericLib are SIBLING
+        // sub-modules; the consumer opens GenericLib only), but the inline SRTP function is
+        // defined in a SEPARATE assembly from its consumer. Intra-assembly (ScopeCapture.fs)
+        // the captured definition-site extension travels with the constraint and resolves at
+        // the call site. Across an assembly boundary it currently does NOT: TypedTreePickle
+        // p_trait/u_trait do not serialize TTrait.traitCtxt (the captured definition-site
+        // ITraitContext is a live name-resolution environment). On import the definition-site
+        // context is therefore lost; freshening (CopyTyparConstraints) can at best substitute
+        // the USE-site context, i.e. the consumer's scope — which opened GenericLib but not
+        // StringOps — so the extension member cannot be re-selected.
+        //
+        // When cross-assembly definition-site capture is implemented, flip this test to
+        // |> compileAndRun |> shouldSucceed (expected output "hahaha").
+        let library =
+            FSharp """
+module ScopeCaptureLib
+
+module StringOps =
+    type System.String with
+        static member (*)(s: string, n: int) = System.String.Concat(Array.replicate n s)
+
+module GenericLib =
+    open StringOps
+    let inline multiply (x: ^T) (n: int) = x * n
+            """
+            |> withName "ScopeCaptureLib"
+            |> asLibrary
+            |> withLangVersionPreview
+
+        FSharp """
+module Consumer
+open ScopeCaptureLib.GenericLib
+// Opens GenericLib only (not StringOps) — exactly as in ScopeCapture.fs.
+let r = multiply "ha" 3
+if r <> "hahaha" then failwith (sprintf "Expected 'hahaha', got '%s'" r)
+            """
+            |> asExe
+            |> withLangVersionPreview
+            |> withReferences [library]
+            |> compile
+            |> shouldFail
+            |> withErrorCode 1
+            |> withDiagnosticMessageMatches "None of the types .*support the operator '\*'"
+
+    [<Fact>]
     let ``Extension operators respect accessibility`` () =
         compileAndRunPreview "ExtensionAccessibility.fs"
 
