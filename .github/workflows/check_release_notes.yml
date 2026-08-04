@@ -8,7 +8,7 @@ on:
 permissions:
   contents: read
   issues: write
-  pull-requests: read
+  pull-requests: write
 concurrency:
   group: release-notes-${{ github.event.pull_request.number }}
   cancel-in-progress: true
@@ -17,7 +17,7 @@ jobs:
     permissions:
       contents: read
       issues: write
-      pull-requests: read
+      pull-requests: write
     env:
       GH_TOKEN: ${{ github.token }}
       PR_AUTHOR: ${{ github.event.pull_request.user.login }}
@@ -348,15 +348,8 @@ jobs:
                 });
                 return comment.data.id;
             } catch (error) {
-                // The informational comment is best-effort. The GITHUB_TOKEN for a
-                // pull_request_target run is not always allowed to write issue comments
-                // (e.g. Dependabot/darc-authored PRs), so the API can return HTTP 403
-                // "Resource not accessible by integration". Release-notes validation has
-                // already passed in the previous step, so a failed comment must not fail
-                // the check. Warn and continue for permission errors; rethrow anything else.
-                if (error.status === 403) {
-                    core.warning(`Skipping release-notes comment: ${error.message}`);
-                    return;
-                }
-                throw error;
+                // The comment is informational only. The release-notes verdict is enforced by the
+                // "Check for release notes changes" step, so never fail the job if posting fails
+                // (e.g. a read-only token on some pull requests).
+                core.warning(`Unable to post release-notes comment: ${error.message}`);
             }
