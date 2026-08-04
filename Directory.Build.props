@@ -96,4 +96,11 @@
     <None Include="README.md" Condition="Exists('README.md')" />
   </ItemGroup>
 
+  <!-- Acknowledge known advisories in test-only/tooling OpenTelemetry packages (pinned at 1.11.2 in the VMR).
+       These are not part of any shipped product and only affect test/telemetry infrastructure. -->
+  <ItemGroup>
+    <NuGetAuditSuppress Include="https://github.com/advisories/GHSA-g94r-2vxg-569j" />
+    <NuGetAuditSuppress Include="https://github.com/advisories/GHSA-4625-4j76-fww9" />
+  </ItemGroup>
+
 </Project>
