@@ -45,17 +45,19 @@ Two types are ranked as *more concrete*, *less concrete*, or *no preference*, as
 
 The most-concrete rule is the last rule consulted during betterness. For a given pair of candidates it produces a preference only when all of the following hold:
 
-1. Both candidates have the same number of formal parameters.
+1. Both candidates declare the same number of formal parameters. This is the declared arity: a `ParamArray` parameter counts once, and each optional or defaulted parameter counts once; the expanded call-site form is not used.
 2. The formal parameter types of both candidates mention a comparable (non-SRTP) type variable, bound either by a method type parameter or by the enclosing generic type. The enclosing-type case is what allows constructors and other members of a generic type to take part.
 3. Neither candidate involves an SRTP type variable (no `^T` in its type parameters, type arguments, or parameters).
 
 The two parameter lists are then compared under dominance. A strict dominator wins; otherwise the call remains ambiguous.
 
-Two points follow from condition 2. If only one of the candidates is generic the rule does not fire, because rule 8 has already decided. And the rule compares *formal parameter types*, not the *actual argument types* that rule 5 compares under subsumption; these are different orderings, and rule 5 runs first. SRTP is excluded because statically-resolved parameters are decided by trait-constraint solving rather than by specificity.
+The comparison is on the *uninstantiated formal parameter types*, not the *actual argument types* that rule 5 compares under subsumption, and rule 5 runs first. If only one candidate is generic the rule does not fire, because rule 8 has already decided.
+
+Extension members take part only after the existing intrinsic-over-extension and extension-scope preferences. The rule can at most break a tie those leave, for example between two extension members in the same scope.
 
 With three or more candidates the rule composes with ordinary betterness in the usual way: a candidate is selected only if it is strictly preferred over every other applicable candidate. If several candidates are pairwise incomparable, none is uniquely best and the call remains `FS0041`.
 
-Constructor type-argument inference has no C# analogue, because C# cannot infer a constructor's type arguments from its call arguments, so that case is an F# superset rather than a parity fix. Because the rule can prefer `new(x: 'T option)` over `new(x: 'T)`, it can also fix the result type (here `Wrapper<int>`), just as it already can for method overloads that return different types.
+Because the rule can prefer `new(x: 'T option)` over `new(x: 'T)`, it can also fix the result type (here `Wrapper<int>`), just as it already can for method overloads that return different types.
 
 ## Diagnostics
 
@@ -95,7 +97,7 @@ This appends one rule to [§14.4 Method Application Resolution](https://fsharp.g
    more concrete and none strictly less concrete, under the ordering above.
 ```
 
-At runtime the rule runs after every betterness rule the compiler applies, including the internal type-directed-conversion, nullable/optional interop, and property/override rules, and after the `OverloadResolutionPriorityAttribute` pre-filter (FS-1338). "Rule 9" therefore describes the position in the published spec, not the runtime order. Because it runs last, it can only turn a former `FS0041` into a success; it never overrides a resolution that an earlier rule has already settled. Within a single declaring type, `OverloadResolutionPriorityAttribute` pruning runs before betterness, so a higher-priority overload is kept even when a lower-priority one is more concrete.
+At runtime the rule runs after every betterness preference the compiler applies and after the `OverloadResolutionPriorityAttribute` pre-filter (FS-1338). "Rule 9" therefore describes the position in the published spec, not the runtime order. Because it runs last, it can only turn a former `FS0041` into a success; it never overrides a resolution that an earlier rule has already settled. Within a single declaring type, `OverloadResolutionPriorityAttribute` pruning runs before betterness, so a higher-priority overload is kept even when a lower-priority one is more concrete.
 
 # Drawbacks
 
@@ -105,7 +107,7 @@ At runtime the rule runs after every betterness rule the compiler applies, inclu
 # Alternatives
 
 - **Do nothing.** Keep requiring annotations. This preserves the status-quo friction, especially against C#-shaped libraries.
-- **Adopt full C# "better function member" semantics.** Larger and riskier. This tiebreaker is intentionally narrow.
+- **Adopt full C# "better function member" semantics.** Larger and riskier. This tiebreaker covers only the generic-wrapper case.
 - **`OverloadResolutionPriorityAttribute` (FS-1338).** Complementary and explicit. Its pruning runs before this rule.
 
 # Prior art

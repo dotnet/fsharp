@@ -11,7 +11,7 @@ This RFC adds F# support for `System.Runtime.CompilerServices.OverloadResolution
 
 # Summary
 
-F# honours `OverloadResolutionPriorityAttribute` during method overload resolution. Among the applicable candidates that share a declaring type, those below the highest priority in that type are pruned before F#'s betterness rules run. The default priority is `0`; a higher value wins, and a negative value deprioritises. This lets F# consume .NET 9+ APIs such as `Debug.Assert` and `MemoryExtensions` with the selection their authors intended for C#, and lets F# authors annotate their own overloads. The feature is gated behind the `OverloadResolutionPriority` language feature (preview).
+F# honours `OverloadResolutionPriorityAttribute` during method overload resolution. Among the applicable candidates that share a declaring type, those below the highest priority in that type are pruned before F#'s betterness rules run. The default priority is `0`; a higher value wins, and a negative value deprioritises. This lets F# consume .NET 9+ APIs such as `Debug.Assert` and `MemoryExtensions` with the selection their authors intended for C#, and lets F# authors annotate their own overloads. The feature is gated behind `--langversion:preview`.
 
 # Motivation
 
@@ -57,7 +57,7 @@ Three properties follow.
 ## Override and interface semantics
 
 - Applying the attribute to an F# override or an explicit interface implementation is an error, **FS3586**, raised during member checking when the feature is on. It is accepted silently when the feature is off.
-- An F# override therefore never carries its own priority, and its effective priority is `0`. For a C# or IL override, where C# also forbids the attribute on the override, F# reads the priority from the base declaration that the override resolves to, which matches C#.
+- An F# override therefore never carries its own priority, and its effective priority is `0`. For a C# or IL override, where C# also forbids the attribute on the override, F# reads the priority from the base declaration that the override resolves to, which matches C#. The one divergence is an F# override of an already-prioritized base member: its effective priority is still `0`, so a call resolved against it does not see the base priority.
 - Every F# interface implementation is explicit, so the attribute cannot sit on the implementing member. The priority lives on the interface member's declaration, and the implementation's effective priority is `0`. F# has no implicit interface implementations, so C#'s handling of those has no F# counterpart.
 
 ```fsharp
@@ -82,13 +82,13 @@ This inserts a pre-filter before the "choose a unique best candidate" step of [�
     - If a unique applicable candidate exists choose it; otherwise apply criteria 1)-8) (and rule 9).
 ```
 
-The compiler's betterness list also contains internal rules that are not in the published spec, interleaved with rules 1 to 8. Type-directed-conversion preferences run ahead of them, while a nullable/optional interop rule and a property/override rule run after rule 8. All of these run after this pre-filter and before FS-1340's most-concrete rule.
+The compiler applies further betterness preferences that are not written in the published spec. All of them run after this pre-filter and before FS-1340's most-concrete rule.
 
 # Drawbacks
 
 - The attribute adds a dimension that developers must understand when reading an annotated API.
 - F#'s conversions (`op_Implicit`, widening, `Span`) cover the common BCL patterns, but lack C#'s implicit constant narrowing, so the applicable set can differ between the two languages. Because pruning is over applicable candidates only, a high-priority overload that is applicable in C# but not in F# does not produce an error. F# falls back to the highest-priority applicable overload, which may be a different member than C# selects, and only reports "no overloads match" when nothing applies.
-- Priority can be misused to force unintuitive selections, though that is a choice the author makes visibly.
+- Priority can be misused to force unintuitive selections, though the annotation is explicit in the source.
 
 # Alternatives
 
@@ -97,7 +97,7 @@ The compiler's betterness list also contains internal rules that are not in the 
 
 # Prior art
 
-C# 13 and .NET 9 introduced [Overload Resolution Priority](https://github.com/dotnet/csharplang/blob/main/proposals/csharp-13.0/overload-resolution-priority.md), which updates §12.6.4.1 to group the applicable set by declaring type, drop members below the per-group maximum, and then apply the better-function-member rules. This RFC follows that shape, and the BCL is already annotated (`Debug.Assert`, `MemoryExtensions`). The corner cases adopted here all follow the C# proposal: per-declaring-type scope including extensions, no inheritance of priority, override priority taken from the least-derived declaration, and an error when the attribute is applied where it would be ignored.
+C# 13 and .NET 9 introduced [Overload Resolution Priority](https://github.com/dotnet/csharplang/blob/main/proposals/csharp-13.0/overload-resolution-priority.md), which updates §12.6.4.1 to group the applicable set by declaring type, drop members below the per-group maximum, and then apply the better-function-member rules. This RFC follows that shape, and the BCL is already annotated (`Debug.Assert`, `MemoryExtensions`). The corner cases adopted here follow the C# proposal and are covered in the detailed design above.
 
 # Compatibility
 
@@ -112,11 +112,10 @@ This is not a binary break. It changes resolution only for code that references 
 
 - **Diagnostics.** FS3586 only, for the attribute on an override or explicit interface implementation. There is no "selected X by priority" message; when pruning leaves an ambiguity the ordinary `FS0041` fires and lists the survivors.
 - **Tooling and culture-aware formatting.** Not applicable.
-- **Performance.** The guard and fast path make the feature a no-op unless a non-zero priority is present. Otherwise the grouping is linear in the size of the candidate group, plus one speculative applicability pass to compute the pruning set. Applicability is recomputed on the survivors, so it can run twice for an annotated group, bounded by the group size.
+- **Performance.** The guard and fast path make the feature a no-op unless a non-zero priority is present. Otherwise the grouping is linear in the size of the candidate group. Applicability may be computed twice for an annotated group, once to prune and once on the survivors, bounded by the group size.
 - **Scaling.** Linear in the number of candidates in a method group.
 
 # Unresolved questions
 
 - **Indexers.** F# ignores priority on C# indexers and resolves them by specificity. Whether it should honour priority there is open.
-- **Interface-implementation priority** is treated as `0` and is not inherited, matching C#'s `params` precedent, but has no dedicated test yet.
-- The broader F#-only priority mechanism of the suggestion remains out of scope and open.
+- Whether F# should later add the broader, F#-only priority mechanism the suggestion describes, for example a derived-over-base priority in trait calls.
