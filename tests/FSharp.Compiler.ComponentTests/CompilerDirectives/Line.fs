@@ -135,7 +135,7 @@ printfn ""
                 PathMap.empty,
                 true
             )
-        let lexbuf = StringAsLexbuf(true, langVersion, None, sourceText)
+        let lexbuf = StringAsLexbuf(true, langVersion, sourceText)
         resetLexbufPos "testt.fs" lexbuf
         let tokenizer _ =
             let t = Lexer.token lexargs true lexbuf
