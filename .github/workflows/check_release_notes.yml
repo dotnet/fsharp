@@ -307,6 +307,8 @@ jobs:
     # Keep one bot comment current without evaluating pull request content as JavaScript.
     - name: Create or update comment
       if: ${{ (success() || failure()) && steps.release_notes_changes.outputs.release-notes-check-message != '' }}
+      # The comment is informational; never let posting it fail the release-notes verdict.
+      continue-on-error: true
       uses: actions/github-script@v9
       env:
         COMMENT_BODY: ${{ steps.release_notes_changes.outputs.release-notes-check-message }}
