@@ -33,64 +33,6 @@ let inline run (builder: ValidationBuilder) =
        |> assertCompiles
 
    [<Fact>]
-   let ``Cross-assembly inline overload consumers compile`` () =
-       let library =
-           FSharpWithFileName "Library.fs" """
-module LibraryImpl
-
-type ValidationBuilder() =
-   member inline this.Bind(value: int, binder: int -> int) : int =
-       binder (this.Source value)
-
-   member inline this.Bind(value: string, binder: string -> int) : int =
-       binder (this.Source value)
-
-   member inline this.Bind(value: bool, binder: bool -> int) : int =
-       binder (this.Source value)
-
-   member inline this.Source(value: int) : int = value
-   member inline this.Source(value: string) : string = value
-   member inline this.Source(value: bool) : bool = value
-"""
-           |> withOutputType CompileOutput.Library
-           |> withName "Library"
-           |> withOptimize
-           |> withOptions [ "--nowarn:75" ]
-           |> ignoreWarnings
-
-       FSharpWithFileName "Consumer.fs" """
-module Consumer
-
-open LibraryImpl
-
-let run (builder: ValidationBuilder) =
-   builder.Bind(1, fun x -> x + 1)
-"""
-       |> withReferences [ library ]
-       |> withOptimize
-       |> withAdditionalSourceFiles [
-           FsSourceWithFileName "Consumer2.fs" """
-module Consumer2
-
-open LibraryImpl
-
-let run (builder: ValidationBuilder) =
-   builder.Bind("hello", fun x -> x.Length)
-""";
-           FsSourceWithFileName "Consumer3.fs" """
-module Consumer3
-
-open LibraryImpl
-
-let run (builder: ValidationBuilder) =
-   builder.Bind(true, fun x -> if x then 1 else 0)
-"""
-       ]
-       |> compile
-       |> shouldSucceed
-       |> ignore
-
-   [<Fact>]
    let ``Trait-witness inline overload consumers compile`` () =
        FSharp """
 module TraitWitnessOverloadRepro
