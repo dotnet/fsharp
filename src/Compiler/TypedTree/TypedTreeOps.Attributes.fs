@@ -183,6 +183,7 @@ module internal ILExtensions =
                     WellKnownILAttributes.SetsRequiredMembersAttribute
                 | "System.ObsoleteAttribute" -> WellKnownILAttributes.ObsoleteAttribute
                 | "System.Diagnostics.CodeAnalysis.ExperimentalAttribute" -> WellKnownILAttributes.ExperimentalAttribute
+                | "System.Diagnostics.CodeAnalysis.NotNullIfNotNullAttribute" -> WellKnownILAttributes.NotNullIfNotNullAttribute
                 | "System.AttributeUsageAttribute" -> WellKnownILAttributes.AttributeUsageAttribute
                 | _ -> WellKnownILAttributes.None
 
@@ -590,6 +591,11 @@ module internal AttributeHelpers =
             | [| "System"; "Diagnostics"; name |] ->
                 match name with
                 | "ConditionalAttribute" -> WellKnownValAttributes.ConditionalAttribute
+                | _ -> WellKnownValAttributes.None
+
+            | [| "System"; "Diagnostics"; "CodeAnalysis"; name |] ->
+                match name with
+                | "NotNullIfNotNullAttribute" -> WellKnownValAttributes.NotNullIfNotNullAttribute
                 | _ -> WellKnownValAttributes.None
 
             | [| "System"; name |] ->
@@ -2075,7 +2081,7 @@ module internal DebugPrint =
 
             | Expr.Link rX -> exprL rX.Value |> wrap
 
-            | Expr.DebugPoint(DebugPointAtLeafExpr.Yes m, rX) ->
+            | Expr.DebugPoint(DebugPointAtLeafExpr.Yes(_, m), rX) ->
                 aboveListL [ wordL (tagText "__debugPoint(") ^^ rangeL m ^^ wordL (tagText ")"); exprL rX ]
                 |> wrap
 
@@ -2318,7 +2324,7 @@ module internal DebugPrint =
                 )
             )
             ^^ wordL (tagText tycon.DisplayName)
-            ^^ layoutTyparDecls tycon.TyparsNoRange
+            ^^ layoutTyparDecls tycon.Typars
 
         let lhsL = lhsL --- layoutAttribs tycon.Attribs
 

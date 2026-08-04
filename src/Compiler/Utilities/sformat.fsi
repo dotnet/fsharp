@@ -215,6 +215,7 @@ module internal TaggedText =
     val internal keywordReturn: TaggedText
     val internal punctuationUnit: TaggedText
 
+[<NoEquality; NoComparison>]
 type internal IEnvironment =
     /// Return to the layout-generation
     /// environment to layout any otherwise uninterpreted object

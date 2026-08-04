@@ -69,6 +69,17 @@ type ContextInfo =
     /// The range points to the original argument location.
     | NullnessCheckOfCapturedArg of range
 
+    /// Obj-argument type check in a dotted member access on a nullable receiver.
+    | MemberAccessOnNullable of ObjArgInfo
+
+/// Receiver information for a dotted member access, used to produce
+/// targeted nullness warnings (e.g. "Possible dereference of null when
+/// accessing member 'M' on the nullable value 'x'").
+and ObjArgInfo =
+    { ObjExprRange: range
+      MemberName: string
+      BindingName: string option }
+
 /// Captures relevant information for a particular failed overload resolution.
 type OverloadInformation =
     { methodSlot: CalledMeth<Expr>
@@ -148,6 +159,14 @@ exception ConstraintSolverNullnessWarningWithTypes of
 exception ConstraintSolverNullnessWarningWithType of DisplayEnv * TType * NullnessInfo * range * range
 
 exception ConstraintSolverNullnessWarning of string * range * range
+
+exception ConstraintSolverNullnessWarningOnDotAccess of
+    DisplayEnv *
+    objTy: TType *
+    memberName: string *
+    bindingName: string option *
+    objExprRange: range *
+    mMethod: range
 
 exception ConstraintSolverError of string * range * range
 
@@ -249,6 +268,7 @@ val ResolveOverloadingForCall:
     DisplayEnv ->
     ConstraintSolverState ->
     range ->
+    objArgInfo: ObjArgInfo option ->
     methodName: string ->
     callerArgs: CallerArgs<Expr> ->
     AccessorDomain ->
@@ -262,6 +282,7 @@ val UnifyUniqueOverloading:
     ConstraintSolverState ->
     range ->
     int * int ->
+        objArgInfo: ObjArgInfo option ->
         string ->
         AccessorDomain ->
         CalledMeth<SynExpr> list ->
@@ -367,3 +388,6 @@ val CanonicalizePartialInferenceProblemForExtensions: ConstraintSolverState -> D
 
 /// Create an ITraitContext from implementation file contents for use during optimization/codegen
 val CreateImplFileTraitContext: TcGlobals -> ModuleOrNamespaceContents list -> CcuThunk list -> TraitContext
+
+val SolveTyparsEqualTypes:
+    g: TcGlobals -> css: ConstraintSolverState -> m: range -> typars: TypeInst -> tys: TypeInst -> unit

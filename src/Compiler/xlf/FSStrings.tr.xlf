@@ -32,6 +32,16 @@
         <target state="new">Nullness warning: The types '{0}' and '{1}' do not have compatible nullability.</target>
         <note />
       </trans-unit>
+      <trans-unit id="ConstraintSolverNullnessWarningOnDotAccess">
+        <source>Nullness warning: Possible dereference of a null value when accessing member '{0}' on a nullable expression of type '{1}'</source>
+        <target state="new">Nullness warning: Possible dereference of a null value when accessing member '{0}' on a nullable expression of type '{1}'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ConstraintSolverNullnessWarningOnDotAccessWithBinding">
+        <source>Nullness warning: Possible dereference of a null value when accessing member '{0}' on the nullable value '{1}' of type '{2}'</source>
+        <target state="new">Nullness warning: Possible dereference of a null value when accessing member '{0}' on the nullable value '{1}' of type '{2}'</target>
+        <note />
+      </trans-unit>
       <trans-unit id="ErrorFromAddingTypeEquationTuples">
         <source>Type mismatch. Expecting a tuple of length {0} of type\n    {1}    \nbut given a tuple of length {2} of type\n    {3}    {4}\n</source>
         <target state="translated">Tür uyuşmazlığı. {0} uzunluğunda türü\n {1} \nolan bir demet bekleniyordu ancak {2} uzunluğunda türü\n    {3}{4}\nolan bir demet verildi</target>
@@ -67,6 +77,16 @@
         <target state="new">This attribute is not valid for use on this language element</target>
         <note />
       </trans-unit>
+      <trans-unit id="NONTERM.autoPropsDefnDecl">
+        <source> in auto property definition</source>
+        <target state="new"> in auto property definition</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="NONTERM.classMemberSpfnGetSetElements">
+        <source> in property definition</source>
+        <target state="new"> in property definition</target>
+        <note />
+      </trans-unit>
       <trans-unit id="NoConstructorsAvailableForType">
         <source>No constructors are available for the type '{0}'</source>
         <target state="new">No constructors are available for the type '{0}'</target>
@@ -90,6 +110,11 @@
       <trans-unit id="Parser.TOKEN.BAR_JUST_BEFORE_NULL">
         <source>symbol '|' (directly before 'null')</source>
         <target state="new">symbol '|' (directly before 'null')</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.DOT.DOT.DOT">
+        <source>symbol '...'</source>
+        <target state="new">symbol '...'</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.DOT.DOT.HAT">
@@ -244,7 +269,7 @@
       </trans-unit>
       <trans-unit id="IndeterminateType">
         <source>The type of this expression could not be inferred before accessing its members. Add a type annotation, e.g. (expr: SomeType), to constrain the type before this point.</source>
-        <target state="new">Bu program noktasından önceki bilgilere dayalı olarak belirsiz türdeki nesne araması. Bu program noktasından önce nesnenin türünü kısıtlamak için bir tür ek açıklaması gerekebilir. Bu, aramanın çözümlenmesine izin verebilir.</target>
+        <target state="new">The type of this expression could not be inferred before accessing its members. Add a type annotation, e.g. (expr: SomeType), to constrain the type before this point.</target>
         <note />
       </trans-unit>
       <trans-unit id="NameClash1">
@@ -280,6 +305,11 @@
       <trans-unit id="FieldsFromDifferentTypes">
         <source>The fields '{0}' and '{1}' are from different types</source>
         <target state="translated">{0}' ve '{1}' alanları farklı türlerde</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ValNotMutableParameter">
+        <source>The parameter '{0}' is not mutable. Consider shadowing it with a new binding, e.g. 'let {1} = ...'. Use 'let mutable {1} = ...' only if you need to reassign it multiple times.</source>
+        <target state="new">The parameter '{0}' is not mutable. Consider shadowing it with a new binding, e.g. 'let {1} = ...'. Use 'let mutable {1} = ...' only if you need to reassign it multiple times.</target>
         <note />
       </trans-unit>
       <trans-unit id="ValueRestriction">

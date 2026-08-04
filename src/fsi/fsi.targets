@@ -10,6 +10,14 @@
     <Win32Resource>$(MSBuildThisFileDirectory)fsi.res</Win32Resource>
   </PropertyGroup>
 
+  <!-- MSBuild 18.9+ transitively brings System.Resources.Extensions/System.Text.Json which reference
+       System.ValueTuple 4.0.5.0, conflicting with the .NET Framework 4.7.2 facade (4.0.2.0).
+       Binding redirects resolve this at runtime; suppress the build error under /warnaserror.
+       Harmless on .NET Core targets where MSB3277 does not fire. -->
+  <PropertyGroup>
+    <NoWarn>$(NoWarn);MSB3277</NoWarn>
+  </PropertyGroup>
+
   <PropertyGroup Condition="'$(TargetFramework)' == 'net472'">
     <DefineConstants>$(DefineConstants);FSI_SHADOW_COPY_REFERENCES;FSI_SERVER</DefineConstants>
   </PropertyGroup>

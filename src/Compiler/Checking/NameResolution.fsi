@@ -624,6 +624,14 @@ val internal WithNewTypecheckResultsSink: ITypecheckResultsSink * TcResultsSink 
 /// Temporarily suspend reporting of name resolution and type checking results
 val internal TemporarilySuspendReportingTypecheckResultsToSink: TcResultsSink -> System.IDisposable
 
+/// Run `compute` with all typecheck-results reporting (sink notifications and diagnostics) buffered. If
+/// `commitWhen` holds for the result they are flushed to the sink and diagnostics logger that were active
+/// before buffering began; otherwise they are dropped. Diagnostics from a `compute` that raises are always
+/// flushed so the error still surfaces. `commitWhen` runs after reporting is restored, so it must be
+/// side-effect-free. `loggerName` names the internal capturing logger for debugging.
+val internal RunWithBufferedReporting:
+    sink: TcResultsSink -> loggerName: string -> compute: (unit -> 'T) -> commitWhen: ('T -> bool) -> 'T
+
 /// Report the active name resolution environment for a source range
 val internal CallEnvSink: TcResultsSink -> range * NameResolutionEnv * AccessorDomain -> unit
 
@@ -848,6 +856,16 @@ val internal ResolveTypeLongIdent:
     genOk: PermitDirectReferenceToGeneratedType ->
         ResultOrException<EnclosingTypeInst * TyconRef * TypeInst>
 
+[<RequireQualifiedAccess; NoEquality; NoComparison>]
+type internal ExplicitOrSpread<'Explicit, 'Spread> =
+    /// An expression or value derived from an explicit member or record field.
+    | Explicit of 'Explicit
+
+    /// An expression or value derived from a member or field coming from a spread.
+    | Spread of 'Spread
+
+val (|ExplicitOrSpread|): ExplicitOrSpread<'Value, 'Value> -> 'Value
+
 /// Resolve a long identifier to a field
 val internal ResolveField:
     sink: TcResultsSink ->
@@ -855,10 +873,9 @@ val internal ResolveField:
     nenv: NameResolutionEnv ->
     ad: AccessorDomain ->
     ty: TType ->
-    mp: Ident list ->
-    id: Ident ->
+    fldInfo: ExplicitOrSpread<Ident list * Ident, Ident> ->
     allFields: Ident list ->
-        FieldResolution list
+        FieldResolution list option
 
 /// Resolve a long identifier to a nested field
 val internal ResolveNestedField:
@@ -884,6 +901,14 @@ val internal ResolveExprLongIdent:
 
 val internal getRecordFieldsInScope: NameResolutionEnv -> Item list
 
+val internal getRecordTyconsInScope:
+    g: TcGlobals ->
+    ncenv: NameResolver ->
+    nenv: NameResolutionEnv ->
+    ad: AccessorDomain ->
+    m: range ->
+        (TyconRef * Item) list
+
 /// Resolve a (possibly incomplete) long identifier to a list of possible class or record fields
 val internal ResolvePartialLongIdentToClassOrRecdFields:
     NameResolver -> NameResolutionEnv -> range -> AccessorDomain -> string list -> bool -> bool -> Item list
@@ -892,6 +917,7 @@ val internal ResolvePartialLongIdentToClassOrRecdFields:
 val internal ResolveRecordOrClassFieldsOfType: NameResolver -> range -> AccessorDomain -> TType -> bool -> Item list
 
 /// Resolve a long identifier occurring in an expression position.
+/// Returns the terminal identifier range (#14284).
 val internal ResolveLongIdentAsExprAndComputeRange:
     sink: TcResultsSink ->
     ncenv: NameResolver ->
@@ -901,9 +927,10 @@ val internal ResolveLongIdentAsExprAndComputeRange:
     typeNameResInfo: TypeNameResolutionInfo ->
     lid: Ident list ->
     maybeAppliedArgExpr: SynExpr option ->
-        ResultOrException<EnclosingTypeInst * Item * range * Ident list * AfterResolution>
+        ResultOrException<EnclosingTypeInst * Item * range * range * Ident list * AfterResolution>
 
 /// Resolve a long identifier occurring in an expression position, qualified by a type.
+/// Returns the terminal identifier range (#14284).
 val internal ResolveExprDotLongIdentAndComputeRange:
     sink: TcResultsSink ->
     ncenv: NameResolver ->
@@ -916,7 +943,7 @@ val internal ResolveExprDotLongIdentAndComputeRange:
     findFlag: FindMemberFlag ->
     staticOnly: bool ->
     maybeAppliedArgExpr: SynExpr option ->
-        Item * range * Ident list * AfterResolution
+        Item * range * range * Ident list * AfterResolution
 
 /// A generator of type instantiations used when no more specific type instantiation is known.
 val FakeInstantiationGenerator: range -> Typar list -> TType list

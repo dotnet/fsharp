@@ -673,7 +673,7 @@ module internal TypeTestsAndPatterns =
     let GetMemberCallInfo g (vref: ValRef, vFlags) =
         match vref.MemberInfo with
         | Some membInfo when not vref.IsExtensionMember ->
-            let numEnclTypeArgs = vref.MemberApparentEntity.TyparsNoRange.Length
+            let numEnclTypeArgs = vref.MemberApparentEntity.Typars.Length
 
             let virtualCall =
                 (membInfo.MemberFlags.IsOverrideOrExplicitImpl
@@ -978,7 +978,7 @@ module internal Rewriting =
 
     let rec remapEntityDataToNonLocal ctxt tmenv (d: Entity) =
         let tpsR, tmenvinner =
-            tmenvCopyRemapAndBindTypars (remapAttribs ctxt tmenv) tmenv (d.entity_typars.Force(d.entity_range))
+            tmenvCopyRemapAndBindTypars (remapAttribs ctxt tmenv) tmenv d.Typars
 
         let typarsR = LazyWithContext.NotLazy tpsR
         let attribsR = d.entity_attribs.AsList() |> remapAttribs ctxt tmenvinner
@@ -1254,7 +1254,7 @@ module internal TupleCompilation =
               Let(enumeratorVar,
                   GetEnumeratorCall enumerableVar2,
                   _enumeratorBind,
-                  TryFinally(WhileLoopForCompiledForEachExpr(spInWhile, _, (Let(elemVar, _, _, bodyExpr) as elemLet), _), _))) when
+                  TryFinally(WhileLoopForCompiledForEachExpr(spInWhile, _, (Let(elemVar, _, spElem, bodyExpr) as elemLet), _), _))) when
             // Apply correctness conditions to ensure this really is a compiled for-each expression.
             valRefEq g (mkLocalValRef enumerableVar) enumerableVar2
             && enumerableVar.IsCompilerGenerated
@@ -1271,7 +1271,7 @@ module internal TupleCompilation =
             let mIn = elemLet.Range
 
             let mFor =
-                match spFor with
+                match spElem with
                 | DebugPointAtBinding.Yes mFor -> mFor
                 | _ -> enumerableExpr.Range
 
@@ -1287,7 +1287,7 @@ module internal TupleCompilation =
 
             let enumerableTy = tyOfExpr g enumerableExpr
 
-            ValueSome(enumerableTy, enumerableExpr, elemVar, bodyExpr, (mBody, spFor, spIn, mFor, mIn, spInWhile, mWholeExpr))
+            ValueSome(enumerableTy, enumerableExpr, elemVar, bodyExpr, (mBody, spFor, spElem, spIn, mFor, mIn, spInWhile, mWholeExpr))
         | _ -> ValueNone
 
     [<return: Struct>]
@@ -2147,7 +2147,7 @@ module internal TupleCompilation =
         match option, expr with
         | _, CompiledInt32RangeForEachExpr g (startExpr, (1 | -1 as step), finishExpr, elemVar, bodyExpr, ranges) ->
 
-            let _mBody, spFor, spIn, _mFor, _mIn, _spInWhile, mWholeExpr = ranges
+            let _mBody, spFor, _spElem, spIn, _mFor, _mIn, _spInWhile, mWholeExpr = ranges
 
             let spFor =
                 match spFor with
@@ -2164,13 +2164,13 @@ module internal TupleCompilation =
                      ValueNone)
             with
             | ValueSome(rangeTy, (start, step, finish)) ->
-                let mBody, _spFor, _spIn, mFor, mIn, spInWhile, _mWhole = ranges
+                let mBody, _spFor, _spElem, _spIn, mFor, mIn, spInWhile, _mWhole = ranges
 
                 mkOptimizedRangeLoop g (mBody, mFor, mIn, spInWhile) (rangeTy, enumerableExpr) (start, step, finish) (fun _count mkLoop ->
                     mkLoop (fun _idxVar loopVar -> mkInvisibleLet elemVar.Range elemVar loopVar bodyExpr))
             | ValueNone ->
 
-                let mBody, spFor, spIn, mFor, mIn, spInWhile, mWholeExpr = ranges
+                let mBody, spFor, spElem, spIn, mFor, mIn, spInWhile, mWholeExpr = ranges
 
                 if isStringTy g enumerableTy then
                     // type is string, optimize for expression as:
@@ -2189,7 +2189,7 @@ module internal TupleCompilation =
                     let finishExpr = mkDecr g mFor lengthExpr
                     // for compat reasons, loop item over string is sometimes object, not char
                     let loopItemExpr = mkCoerceIfNeeded g elemVar.Type g.char_ty charExpr
-                    let bodyExpr = mkInvisibleLet mIn elemVar loopItemExpr bodyExpr
+                    let bodyExpr = mkLet spElem mFor elemVar loopItemExpr bodyExpr
 
                     let forExpr =
                         mkFastForLoop g (DebugPointAtFor.No, spIn, mWholeExpr, idxVar, startExpr, true, finishExpr, bodyExpr)
@@ -2223,18 +2223,16 @@ module internal TupleCompilation =
                     let tailOrNullExpr =
                         mkUnionCaseFieldGetUnprovenViaExprAddr (currentExpr, g.cons_ucref, [ elemTy ], IndexTail, mIn)
 
-                    let bodyExpr =
-                        mkInvisibleLet
+                    let loopStep =
+                        mkSequential
                             mIn
-                            elemVar
-                            headOrDefaultExpr
-                            (mkSequential
-                                mIn
-                                bodyExpr
-                                (mkSequential
-                                    mIn
-                                    (mkValSet mIn (mkLocalValRef currentVar) nextExpr)
-                                    (mkValSet mIn (mkLocalValRef nextVar) tailOrNullExpr)))
+                            (mkValSet mIn (mkLocalValRef currentVar) nextExpr)
+                            (mkValSet mIn (mkLocalValRef nextVar) tailOrNullExpr)
+
+                    let bodyAndStep =
+                        mkSequential mIn bodyExpr (Expr.DebugPoint(DebugPointAtLeafExpr.Yes(true, mIn), loopStep))
+
+                    let bodyExpr = mkLet spElem mFor elemVar headOrDefaultExpr bodyAndStep
 
                     let expr =
                         // let mutable current = enumerableExpr

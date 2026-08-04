@@ -115,12 +115,53 @@ jobs:
         version: '9.0.x'
         installationPath: $(Pipeline.Workspace)/TestRepo/.dotnet
 
+    - pwsh: |
+        # Clean leftover SDK extraction directories in agent temp to prevent
+        # UseDotNet@2 "file already exists" errors when installing multiple SDKs sequentially.
+        # The task extracts to a temp folder before moving to installationPath, but doesn't
+        # always clean up between runs on the same agent.
+        $tempDir = $env:AGENT_TEMPDIRECTORY
+        if ($tempDir -and (Test-Path $tempDir)) {
+          Get-ChildItem $tempDir -Directory -ErrorAction SilentlyContinue |
+            Where-Object {
+              (Test-Path (Join-Path $_.FullName "dotnet.exe")) -and
+              ((Test-Path (Join-Path $_.FullName "sdk")) -or (Test-Path (Join-Path $_.FullName "host")) -or (Test-Path (Join-Path $_.FullName "shared")))
+            } |
+            ForEach-Object {
+              Write-Host "Removing leftover dotnet extraction dir: $($_.FullName)"
+              Remove-Item $_.FullName -Recurse -Force -ErrorAction Stop
+            }
+        }
+      displayName: Clean UseDotNet temp extraction directories for ${{ item.displayName }}
+
     - task: UseDotNet@2
       displayName:  Install .NET SDK 10.0.100 for ${{ item.displayName }}
       inputs:
         packageType: sdk
         version: '10.0.100'
         installationPath: $(Pipeline.Workspace)/TestRepo/.dotnet
+
+    # Install the SDK that built the compiler (version from global.json)
+    # into the regression test's .dotnet so fsc.dll can find the runtime.
+    # Tries default feed first, then ci.dot.net/public (same fallback as eng/common).
+    - pwsh: |
+        $v = (Get-Content "$(Build.SourcesDirectory)/global.json" | ConvertFrom-Json).tools.dotnet
+        $d = "$(Pipeline.Workspace)/TestRepo/.dotnet"
+        $u = "https://builds.dotnet.microsoft.com/dotnet/scripts/v1"
+        if ($IsWindows) {
+          Invoke-WebRequest "$u/dotnet-install.ps1" -OutFile "$d/dotnet-install.ps1"
+          & "$d/dotnet-install.ps1" -Version $v -InstallDir $d -SkipNonVersionedFiles
+          if ($LASTEXITCODE -ne 0) {
+            & "$d/dotnet-install.ps1" -Version $v -InstallDir $d -SkipNonVersionedFiles -AzureFeed "https://ci.dot.net/public"
+          }
+        } else {
+          Invoke-WebRequest "$u/dotnet-install.sh" -OutFile "$d/dotnet-install.sh"
+          chmod +x "$d/dotnet-install.sh"
+          bash "$d/dotnet-install.sh" --version $v --install-dir $d --skip-non-versioned-files ||
+            bash "$d/dotnet-install.sh" --version $v --install-dir $d --skip-non-versioned-files --azure-feed "https://ci.dot.net/public"
+        }
+      displayName: Install compiler SDK for ${{ item.displayName }}
+      continueOnError: true
 
     - pwsh: |
         Set-Location $(Pipeline.Workspace)/TestRepo

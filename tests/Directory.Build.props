@@ -22,6 +22,10 @@
   <!-- Enable Microsoft.Testing.Platform runner for all test projects -->
   <PropertyGroup Condition="($(MSBuildProjectName.EndsWith('.Tests')) OR $(MSBuildProjectName.EndsWith('.ComponentTests')) OR $(MSBuildProjectName.EndsWith('.UnitTests'))) AND '$(ExcludeFromTestPackageReferences)' != 'true'">
     <UseMicrosoftTestingPlatformRunner>true</UseMicrosoftTestingPlatformRunner>
+    <!-- Arcade SDK only auto-detects .Tests/.UnitTests/.IntegrationTests/.PerformanceTests suffixes.
+         Explicitly mark .ComponentTests as test projects so they are treated as non-shipping
+         and excluded from SymStore PDB conversion (which crashes on large test assemblies). -->
+    <IsTestProject>true</IsTestProject>
   </PropertyGroup>
 
   <PropertyGroup>

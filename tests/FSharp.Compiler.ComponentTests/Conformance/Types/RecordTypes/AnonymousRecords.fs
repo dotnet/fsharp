@@ -446,7 +446,7 @@ let v = {| A = 1; A = 2 |}
         |> compile
         |> shouldFail
         |> withDiagnostics [
-            (Error 3522, Line 2, Col 12, Line 2, Col 13, "The field 'A' appears multiple times in this record expression.")
+            (Error 3522, Line 2, Col 19, Line 2, Col 24, "The field 'A' appears multiple times in this record expression.")
         ]
 
     [<Fact>]
@@ -457,8 +457,8 @@ let v = {| A = 1; A = 2; A = 3 |}
         |> compile
         |> shouldFail
         |> withDiagnostics [
-            (Error 3522, Line 2, Col 12, Line 2, Col 13, "The field 'A' appears multiple times in this record expression.")
-            (Error 3522, Line 2, Col 19, Line 2, Col 20, "The field 'A' appears multiple times in this record expression.")
+            Error 3522, Line 2, Col 19, Line 2, Col 24, "The field 'A' appears multiple times in this record expression."
+            Error 3522, Line 2, Col 26, Line 2, Col 31, "The field 'A' appears multiple times in this record expression."
         ]
         
     [<Fact>]
@@ -469,8 +469,8 @@ let v = {| A = 0; B = 2; A = 5; B = 6 |}
         |> compile
         |> shouldFail
         |> withDiagnostics [
-            (Error 3522, Line 2, Col 12, Line 2, Col 13, "The field 'A' appears multiple times in this record expression.")
-            (Error 3522, Line 2, Col 19, Line 2, Col 20, "The field 'B' appears multiple times in this record expression.")
+            Error 3522, Line 2, Col 26, Line 2, Col 31, "The field 'A' appears multiple times in this record expression."
+            Error 3522, Line 2, Col 33, Line 2, Col 38, "The field 'B' appears multiple times in this record expression."
         ]
         
     [<Fact>]
@@ -481,7 +481,7 @@ let v = {| A = 2; C = "W"; A = 8; B = 6 |}
         |> compile
         |> shouldFail
         |> withDiagnostics [
-            (Error 3522, Line 2, Col 12, Line 2, Col 13, "The field 'A' appears multiple times in this record expression.")
+            Error 3522, Line 2, Col 28, Line 2, Col 33, "The field 'A' appears multiple times in this record expression."
         ]
 
     [<Fact>]
@@ -492,8 +492,8 @@ let v = {| A = 0; C = ""; A = 1; B = 2; A = 5 |}
         |> compile
         |> shouldFail
         |> withDiagnostics [
-            (Error 3522, Line 2, Col 12, Line 2, Col 13, "The field 'A' appears multiple times in this record expression.")
-            (Error 3522, Line 2, Col 27, Line 2, Col 28, "The field 'A' appears multiple times in this record expression.")
+            Error 3522, Line 2, Col 27, Line 2, Col 32, "The field 'A' appears multiple times in this record expression."
+            Error 3522, Line 2, Col 41, Line 2, Col 46, "The field 'A' appears multiple times in this record expression."
         ]
         
     [<Fact>]
@@ -504,8 +504,8 @@ let v = {| ``A`` = 0; B = 5; A = ""; B = 0 |}
         |> compile
         |> shouldFail
         |> withDiagnostics [
-            (Error 3522, Line 2, Col 12, Line 2, Col 17, "The field 'A' appears multiple times in this record expression.")
-            (Error 3522, Line 2, Col 23, Line 2, Col 24, "The field 'B' appears multiple times in this record expression.")
+            Error 3522, Line 2, Col 30, Line 2, Col 36, "The field 'A' appears multiple times in this record expression."
+            Error 3522, Line 2, Col 38, Line 2, Col 43, "The field 'B' appears multiple times in this record expression."
         ]
             
     [<Fact>]
@@ -673,3 +673,73 @@ let nested2 : {| A: {| B: Expr<int> |}; C: Expr |} =
             (Error 3350, Line 8, Col 22, Line 8, Col 24, "Feature 'Support for better anonymous record parsing' is not available in F# 9.0. Please use language version 10.0 or greater.")
             (Error 3350, Line 8, Col 44, Line 8, Col 49, "Feature 'Support for better anonymous record parsing' is not available in F# 9.0. Please use language version 10.0 or greater.")
         ]
+
+module TypeAliasIndentation =
+
+    // https://github.com/dotnet/fsharp/issues/17992
+    [<Fact>]
+    let ``Anonymous record type alias with array suffix - closing bracket aligned with opening``() =
+        FSharp """
+module M
+type T =
+    {| Id: System.Guid
+    |} []
+"""
+        |> typecheck
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Anonymous record type alias with seq postfix - closing bracket aligned with opening``() =
+        FSharp """
+module M
+type T =
+    {| Id: System.Guid
+    |} seq
+"""
+        |> typecheck
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Anonymous record type alias with list postfix - closing bracket aligned with opening``() =
+        FSharp """
+module M
+type T =
+    {| Id: System.Guid
+    |} list
+"""
+        |> typecheck
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Anonymous record type alias with option postfix - closing bracket aligned with opening``() =
+        FSharp """
+module M
+type T =
+    {| Id: System.Guid
+    |} option
+"""
+        |> typecheck
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Anonymous record type alias with multiple fields and array suffix``() =
+        FSharp """
+module M
+type T =
+    {| Id: System.Guid
+       Name: string
+    |} []
+"""
+        |> typecheck
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Anonymous record type alias all on same line still works``() =
+        FSharp """
+module M
+type T = {| Id: System.Guid |} []
+type U = {| Id: System.Guid |} seq
+type V = {| Id: System.Guid |} list
+"""
+        |> typecheck
+        |> shouldSucceed

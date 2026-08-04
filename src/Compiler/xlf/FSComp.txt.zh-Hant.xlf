@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
   <file datatype="xml" source-language="en" target-language="zh-Hant" original="../FSComp.resx">
     <body>
@@ -272,6 +272,11 @@
         <target state="new">{0} for F# {1}</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureAccessProtectedBaseFieldFromClosure">
+        <source>Access a protected base-class field from a closure inside a member</source>
+        <target state="new">Access a protected base-class field from a closure inside a member</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureAccessorFunctionShorthand">
         <source>underscore dot shorthand for accessor only function</source>
         <target state="translated">僅存取子函式的底線點速記</target>
@@ -402,6 +407,11 @@
         <target state="new">Error when invalid declarations are used in type definitions.</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureErrorOnMissingSignatureAttribute">
+        <source>error (rather than warning) when an enforced compiler-semantic attribute is present in the .fs but missing from the .fsi</source>
+        <target state="new">error (rather than warning) when an enforced compiler-semantic attribute is present in the .fs but missing from the .fsi</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureErrorReportingOnStaticClasses">
         <source>Error reporting on static classes</source>
         <target state="translated">報告靜態類別時發生錯誤</target>
@@ -455,6 +465,11 @@
       <trans-unit id="featureImprovedImpliedArgumentNames">
         <source>Improved implied argument names</source>
         <target state="translated">改良的隱含引數名稱</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureImprovedImpliedArgumentNamesPartTwo">
+        <source>Improved implied argument names with partial application</source>
+        <target state="new">Improved implied argument names with partial application</target>
         <note />
       </trans-unit>
       <trans-unit id="featureIndexerNotationWithoutDot">
@@ -527,6 +542,11 @@
         <target state="translated">'as' 模式右邊的非變數模式</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureNotNullIfNotNull">
+        <source>honor the 'NotNullIfNotNull' attribute on a method's return value</source>
+        <target state="new">honor the 'NotNullIfNotNull' attribute on a method's return value</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureNullableOptionalInterop">
         <source>nullable optional interop</source>
         <target state="translated">可為 Null 的選擇性 Interop</target>
@@ -592,6 +612,11 @@
         <target state="translated">列出任何大小的常值</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureRecordSpreads">
+        <source>record type and expression spreads</source>
+        <target state="new">record type and expression spreads</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureRefCellNotationInformationals">
         <source>informational messages related to reference cells</source>
         <target state="translated">與參考儲存格相關的資訊訊息</target>
@@ -655,11 +680,6 @@
       <trans-unit id="featureStaticMembersInInterfaces">
         <source>Static members in interfaces</source>
         <target state="translated">介面中的靜態成員</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="featureStrictIndentation">
-        <source>Raises errors on incorrect indentation, allows better recovery and analysis during editing</source>
-        <target state="translated">縮排不正確時引發錯誤，以便在編輯期間進行更好的復原和分析</target>
         <note />
       </trans-unit>
       <trans-unit id="featureStringInterpolation">
@@ -805,6 +825,11 @@
       <trans-unit id="ilxgenInvalidConstructInStateMachineDuringCodegen">
         <source>The resumable code construct '{0}' may only be used in inlined code protected by 'if __useResumableCode then ...' and the overall composition must form valid resumable code.</source>
         <target state="translated">可繼續的程式碼構造 '{0}' 只能用於 'if __useResumableCode then ...' 所保護的內嵌程式碼中，且整體組合必須形成有效的可繼續程式碼。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="implAttributeMissingFromSignature">
+        <source>The attribute '{0}' is present on '{1}' in the implementation but not in the signature, which takes precedence for tooling and consumers. Add the attribute to the signature, to ensure the attribute is not ignored by the compiler.</source>
+        <target state="new">The attribute '{0}' is present on '{1}' in the implementation but not in the signature, which takes precedence for tooling and consumers. Add the attribute to the signature, to ensure the attribute is not ignored by the compiler.</target>
         <note />
       </trans-unit>
       <trans-unit id="implMissingInlineIfLambda">
@@ -1017,6 +1042,11 @@
         <target state="translated">將所有編譯檔案的推斷介面列印至相關聯的簽章檔案</target>
         <note />
       </trans-unit>
+      <trans-unit id="optsAlwaysInline">
+        <source>Always inline 'inline' functions</source>
+        <target state="new">Always inline 'inline' functions</target>
+        <note />
+      </trans-unit>
       <trans-unit id="optsCheckNulls">
         <source>Enable nullness declarations and checks ({0} by default)</source>
         <target state="new">Enable nullness declarations and checks ({0} by default)</target>
@@ -1095,11 +1125,6 @@
       <trans-unit id="optsSignatureData">
         <source>Include F# interface information, the default is file. Essential for distributing libraries.</source>
         <target state="translated">包含 F# 介面資訊，預設值為檔案。發佈程式庫的基本功能。</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="optsStrictIndentation">
-        <source>Override indentation rules implied by the language version ({0} by default)</source>
-        <target state="new">Override indentation rules implied by the language version ({0} by default)</target>
         <note />
       </trans-unit>
       <trans-unit id="optsSupportedLangVersions">
@@ -1227,6 +1252,16 @@
         <target state="translated">必須是成員主體</target>
         <note />
       </trans-unit>
+      <trans-unit id="parsMissingSpreadSrcExpr">
+        <source>Missing spread source expression after '...'.</source>
+        <target state="new">Missing spread source expression after '...'.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="parsMissingSpreadSrcTy">
+        <source>Missing spread source type after '...'.</source>
+        <target state="new">Missing spread source type after '...'.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="parsMissingUnionCaseName">
         <source>Missing union case name</source>
         <target state="translated">遺漏聯集案例名稱</target>
@@ -1240,6 +1275,16 @@
       <trans-unit id="parsOnlySimplePatternsAreAllowedInConstructors">
         <source>Only simple patterns are allowed in primary constructors</source>
         <target state="translated">主要建構函式中只允許簡單模式</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="parsSpreadNotSupported">
+        <source>Spreading is not supported in this construct.</source>
+        <target state="new">Spreading is not supported in this construct.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="parsSpreadNotSupportedBeforeWith">
+        <source>Spreading is not supported in this position. Use one of the forms {{ ...expr1; A = expr2 }} or {{ expr1 with A = expr2 }} instead.</source>
+        <target state="new">Spreading is not supported in this position. Use one of the forms {{ ...expr1; A = expr2 }} or {{ expr1 with A = expr2 }} instead.</target>
         <note />
       </trans-unit>
       <trans-unit id="parsStaticMemberImcompleteSyntax">
@@ -1357,6 +1402,11 @@
         <target state="translated">(建議的名稱)</target>
         <note />
       </trans-unit>
+      <trans-unit id="tastNamespaceAndTypeWithSameNameInAssembly">
+        <source>The namespace '{0}' clashes with the type '{1}'.</source>
+        <target state="new">The namespace '{0}' clashes with the type '{1}'.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcAccessModifiersNotAllowedInSRTPConstraint">
         <source>Access modifiers cannot be applied to an SRTP constraint.</source>
         <target state="new">Access modifiers cannot be applied to an SRTP constraint.</target>
@@ -1457,6 +1507,16 @@
         <target state="translated">欄位 '{0}' 在這個匿名記錄類型中出現多次。</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcAnonRecordExprSpreadSourceCannotBeNullable">
+        <source>The source expression of a spread into an anonymous record expression cannot be nullable.</source>
+        <target state="new">The source expression of a spread into an anonymous record expression cannot be nullable.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcAnonRecordExprSpreadSourceMustBeRecord">
+        <source>The source expression of a spread into an anonymous record expression must have a nominal or anonymous record type.</source>
+        <target state="new">The source expression of a spread into an anonymous record expression must have a nominal or anonymous record type.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcAttributeIsNotValidForUnionCaseWithFields">
         <source>This attribute is not valid for use on union cases with fields.</source>
         <target state="new">This attribute is not valid for use on union cases with fields.</target>
@@ -1500,6 +1560,11 @@
       <trans-unit id="tcExpectedTypeParamMarkedWithUnitOfMeasureAttribute">
         <source>Expected unit-of-measure type parameter must be marked with the [&lt;Measure&gt;] attribute.</source>
         <target state="new">Expected unit-of-measure type parameter must be marked with the [&lt;Measure&gt;] attribute.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcGenericAttributesNotSupported">
+        <source>Generic attribute types are not supported in F#. The type '{0}' has type parameters and cannot be used as an attribute.</source>
+        <target state="new">Generic attribute types are not supported in F#. The type '{0}' has type parameters and cannot be used as an attribute.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcHighPrecedenceFunctionApplicationToListDeprecated">
@@ -1742,6 +1807,46 @@
         <target state="new">You can remove this `nonNull` assertion.</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcRecursiveInlineNotAllowed">
+        <source>The value or member '{0}' has been marked 'inline' but is part of a recursive binding group. F# does not support recursive 'inline' values. Either remove the 'inline' modifier or refactor the recursion.</source>
+        <target state="new">The value or member '{0}' has been marked 'inline' but is part of a recursive binding group. F# does not support recursive 'inline' values. Either remove the 'inline' modifier or refactor the recursion.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcRecordExprSpreadFieldShadowsExplicitField">
+        <source>Spread field '{0}' shadows an explicitly declared field with the same name.</source>
+        <target state="new">Spread field '{0}' shadows an explicitly declared field with the same name.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcRecordExprSpreadSourceCannotBeNullable">
+        <source>The source expression of a spread into a nominal record expression cannot be nullable.</source>
+        <target state="new">The source expression of a spread into a nominal record expression cannot be nullable.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcRecordExprSpreadSourceMustBeRecord">
+        <source>The source expression of a spread into a nominal record expression must have a nominal or anonymous record type.</source>
+        <target state="new">The source expression of a spread into a nominal record expression must have a nominal or anonymous record type.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcRecordExprSpreadWithCannotBeUsedWithSpreads">
+        <source>Spread expressions and 'with' cannot be used together in the same copy-and-update expression.</source>
+        <target state="new">Spread expressions and 'with' cannot be used together in the same copy-and-update expression.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcRecordTypeDefinitionSpreadFieldShadowsExplicitField">
+        <source>Spread field '{0}' from type '{1}' shadows an explicitly declared field with the same name.</source>
+        <target state="new">Spread field '{0}' from type '{1}' shadows an explicitly declared field with the same name.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcRecordTypeDefinitionSpreadSourceCannotBeNullable">
+        <source>The source type of a spread into a record type definition cannot be nullable.</source>
+        <target state="new">The source type of a spread into a record type definition cannot be nullable.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcRecordTypeDefinitionSpreadSourceMustBeRecord">
+        <source>The source type of a spread into a record type definition must itself be a nominal or anonymous record type.</source>
+        <target state="new">The source type of a spread into a record type definition must itself be a nominal or anonymous record type.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcRequireMergeSourcesOrBindN">
         <source>The 'let! ... and! ...' construct may only be used if the computation expression builder defines either a '{0}' method or appropriate 'MergeSources' and 'Bind' methods</source>
         <target state="translated">只有在計算運算式產生器定義 '{0}' 方法或正確的 'MergeSource' 和 'Bind' 方法時，才可使用 'let! ... and! ...' 建構</target>
@@ -1827,6 +1932,11 @@
         <target state="translated">特徵不能指定選擇性、in、out、ParamArray、CallerInfo 或 Quote 引數</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcTypeDefinitionIsCyclicThroughSpreads">
+        <source>This type definition involves a cyclic reference through a spread.</source>
+        <target state="new">This type definition involves a cyclic reference through a spread.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcTypeDoesNotHaveAnyNull">
         <source>The type '{0}' does not support a nullness qualification.</source>
         <target state="new">The type '{0}' does not support a nullness qualification.</target>
@@ -1884,7 +1994,7 @@
       </trans-unit>
       <trans-unit id="undefinedNameFieldConstructorOrMemberWhenTypeIsKnown">
         <source>The type '{0}' does not define a field, constructor, or member named '{1}'.</source>
-        <target state="new">The type '{0}' does not have a field, property, or member named '{1}'.</target>
+        <target state="new">The type '{0}' does not define a field, constructor, or member named '{1}'.</target>
         <note />
       </trans-unit>
       <trans-unit id="undefinedNameNamespace">
@@ -2279,7 +2389,7 @@
       </trans-unit>
       <trans-unit id="tastNamespaceAndModuleWithSameNameInAssembly">
         <source>The name '{0}' is used as both a namespace and a module in this assembly. Rename one of them to avoid the conflict.</source>
-        <target state="new">名稱為 '{0}' 的命名空間和模組都出現在這個組件的兩個部分中</target>
+        <target state="new">The name '{0}' is used as both a namespace and a module in this assembly. Rename one of them to avoid the conflict.</target>
         <note />
       </trans-unit>
       <trans-unit id="tastTwoModulesWithSameNameInAssembly">
@@ -3384,12 +3494,12 @@
       </trans-unit>
       <trans-unit id="csExpectTypeWithOperatorButGivenFunction">
         <source>Expecting a type supporting the operator '{0}' but given a function type. You may be missing an argument to a function, or the operator may not be in scope. Check that you have opened the correct module or namespace.</source>
-        <target state="new">必須是支援運算子 '{0}' 的類型，但提供的卻是函式類型。您可能遺漏函式的引數。</target>
+        <target state="new">Expecting a type supporting the operator '{0}' but given a function type. You may be missing an argument to a function, or the operator may not be in scope. Check that you have opened the correct module or namespace.</target>
         <note />
       </trans-unit>
       <trans-unit id="csExpectTypeWithOperatorButGivenTuple">
         <source>Operator '{0}' cannot be applied to a tuple type. You may have an unintended extra comma creating a tuple, or the operator may not be in scope. Check that you have opened the correct module or namespace.</source>
-        <target state="new">必須是支援運算子 '{0}' 的型別，但指定的是元組型別</target>
+        <target state="new">Operator '{0}' cannot be applied to a tuple type. You may have an unintended extra comma creating a tuple, or the operator may not be in scope. Check that you have opened the correct module or namespace.</target>
         <note />
       </trans-unit>
       <trans-unit id="csTypesDoNotSupportOperator">
@@ -4369,7 +4479,7 @@
       </trans-unit>
       <trans-unit id="tcNotSufficientlyGenericBecauseOfScope">
         <source>This code is not sufficiently generic. The type variable {0} could not be generalized because it would escape its scope. Consider adding a type annotation, converting the value to a function, or making the definition 'inline'.</source>
-        <target state="new">這個程式碼的一般程度不足。無法一般化類型變數 {0}，因為它會逸出其範圍。</target>
+        <target state="new">This code is not sufficiently generic. The type variable {0} could not be generalized because it would escape its scope. Consider adding a type annotation, converting the value to a function, or making the definition 'inline'.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcPropertyRequiresExplicitTypeParameters">
@@ -6603,8 +6713,8 @@
         <note />
       </trans-unit>
       <trans-unit id="lexfltTokenIsOffsideOfContextStartedEarlier">
-        <source>Unexpected syntax or possible incorrect indentation: this token is offside of context started at position {0}. Try indenting this further.\nTo continue using non-conforming indentation, pass the '--strict-indentation-' flag to the compiler, or set the language version to F# 7.</source>
-        <target state="translated">未預期的語法或可能不正確的縮排: 此權杖與在位置 {0} 啟動的內容不同步。請嘗試進一步縮排。\n若要繼續使用不符合的縮排，請傳遞 '--strict-indentation-' 旗標給編譯器，或將語言版本設定為 F# 7。</target>
+        <source>Unexpected syntax or possible incorrect indentation: this token is offside of context started at position {0}. Try indenting this further.</source>
+        <target state="needs-review-translation">未預期的語法或可能不正確的縮排: 此權杖與在位置 {0} 啟動的內容不同步。請嘗試進一步縮排。\n若要繼續使用不符合的縮排，請傳遞 '--strict-indentation-' 旗標給編譯器，或將語言版本設定為 F# 7。</target>
         <note />
       </trans-unit>
       <trans-unit id="lexfltSeparatorTokensOfPatternMatchMisaligned">
@@ -8982,16 +9092,21 @@
           <target state="new">This expression is a function value. When used in an interpolated string it will be formatted using its 'ToString' method, which is likely not the intended behavior. Consider applying the function to its arguments.</target>
           <note />
         </trans-unit>
-        <trans-unit id="parsLetBangCannotBeLastInCE">
-          <source>'{0}' cannot be the final expression in a computation expression. Finish with 'return', 'return!', or a simple expression.</source>
-          <target state="new">'{0}' cannot be the final expression in a computation expression. Finish with 'return', 'return!', or a simple expression.</target>
-          <note />
-        </trans-unit>
-        <trans-unit id="tcListLiteralWithSingleTupleElement">
-          <source>This list expression contains a single tuple element. Did you mean to use ';' instead of ',' to separate list elements?</source>
-          <target state="new">This list expression contains a single tuple element. Did you mean to use ';' instead of ',' to separate list elements?</target>
-          <note />
-        </trans-unit>
+      <trans-unit id="parsLetBangCannotBeLastInCE">
+        <source>'{0}' cannot be the final expression in a computation expression. Finish with 'return', 'return!', or a simple expression.</source>
+        <target state="new">'{0}' cannot be the final expression in a computation expression. Finish with 'return', 'return!', or a simple expression.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcListLiteralWithSingleTupleElement">
+        <source>This list expression contains a single tuple element. Did you mean to use ';' instead of ',' to separate list elements?</source>
+        <target state="new">This list expression contains a single tuple element. Did you mean to use ';' instead of ',' to separate list elements?</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureExceptionFieldSerializationSupport">
+        <source>emit GetObjectData and field-restoring deserialization constructor for exception types</source>
+        <target state="new">emit GetObjectData and field-restoring deserialization constructor for exception types</target>
+        <note />
+      </trans-unit>
     </body>
   </file>
 </xliff>

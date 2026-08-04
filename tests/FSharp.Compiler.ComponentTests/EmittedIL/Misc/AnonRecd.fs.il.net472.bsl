@@ -17,16 +17,6 @@
   .hash algorithm 0x00008004
   .ver 0:0:0:0
 }
-.mresource public FSharpSignatureCompressedData.assembly
-{
-  
-  
-}
-.mresource public FSharpOptimizationCompressedData.assembly
-{
-  
-  
-}
 .module assembly.exe
 
 .imagebase {value}
@@ -90,9 +80,7 @@
   .field private !'<B>j__TPar' B@
   .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
   .custom instance void [runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
-  .method public specialname rtspecialname 
-          instance void  .ctor(!'<A>j__TPar' A,
-                               !'<B>j__TPar' B) cil managed
+  .method public specialname rtspecialname instance void  .ctor(!'<A>j__TPar' A, !'<B>j__TPar' B) cil managed
   {
     .custom instance void System.Diagnostics.CodeAnalysis.DynamicDependencyAttribute::.ctor(valuetype System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes,
                                                                                             class [runtime]System.Type) = ( 01 00 60 06 00 00 1E 3C 3E 66 5F 5F 41 6E 6F 6E   
@@ -218,9 +206,7 @@
     IL_000e:  ret
   } 
 
-  .method public hidebysig virtual final 
-          instance int32  CompareTo(object obj,
-                                    class [runtime]System.Collections.IComparer comp) cil managed
+  .method public hidebysig virtual final instance int32  CompareTo(object obj, class [runtime]System.Collections.IComparer comp) cil managed
   {
     .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
     
@@ -350,9 +336,7 @@
     IL_000d:  ret
   } 
 
-  .method public hidebysig instance bool 
-          Equals(class '<>f__AnonymousType1912756633`2'<!'<A>j__TPar',!'<B>j__TPar'> obj,
-                 class [runtime]System.Collections.IEqualityComparer comp) cil managed
+  .method public hidebysig instance bool Equals(class '<>f__AnonymousType1912756633`2'<!'<A>j__TPar',!'<B>j__TPar'> obj, class [runtime]System.Collections.IEqualityComparer comp) cil managed
   {
     .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
     
@@ -401,9 +385,7 @@
     IL_003c:  ret
   } 
 
-  .method public hidebysig virtual final 
-          instance bool  Equals(object obj,
-                                class [runtime]System.Collections.IEqualityComparer comp) cil managed
+  .method public hidebysig virtual final instance bool  Equals(object obj, class [runtime]System.Collections.IEqualityComparer comp) cil managed
   {
     .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
     
@@ -540,9 +522,7 @@
   .field private class [runtime]System.Type Type@
   .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
   .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-  .method public specialname rtspecialname 
-          instance void  .ctor(valuetype System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes MemberType,
-                               class [runtime]System.Type Type) cil managed
+  .method public specialname rtspecialname instance void  .ctor(valuetype System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes MemberType, class [runtime]System.Type Type) cil managed
   {
     .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
     .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 

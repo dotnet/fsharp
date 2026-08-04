@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All Rights Reserved. See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation. All Rights Reserved. See License.txt in the project root for license information.
 
 module internal FSharp.Compiler.CheckDeclarations
 
@@ -49,6 +49,12 @@ open FSharp.Compiler.TypeProviders
 #endif
 
 type cenv = TcFileState
+
+let rec (|UndefinedNameError|_|) (e: exn) =
+    match e with
+    | UndefinedName _ -> Some ()
+    | WrappedError(inner, _) -> (|UndefinedNameError|_|) inner
+    | _ -> None
 
 //-------------------------------------------------------------------------
 // Mutually recursive shapes
@@ -425,14 +431,17 @@ module TcRecdUnionAndEnumDeclarations =
         let vis = CombineReprAccess parent vis
         Construct.NewRecdField isStatic konst id nameGenerated tyR isMutable vol attrsForProperty attrsForField xmldoc vis false
 
-    let TcFieldDecl (cenv: cenv) env parent isIncrClass tpenv (isStatic, synAttrs, id: Ident, nameGenerated, ty, isMutable, xmldoc, vis) =
+    let TcFieldDecl (cenv: cenv) env parent isIncrClass tpenv addFixup (isStatic, synAttrs, id: Ident, nameGenerated, ty, isMutable, xmldoc, vis) =
         let g = cenv.g
         let m = id.idRange
-        let attrs, _ = TcAttributesWithPossibleTargets TcCanFail.ReportAllErrors cenv env AttributeTargets.FieldDecl synAttrs
+        // Attribute types from the same recursive group may not resolve yet; the fixup re-resolves later.
+        let attrs, hasUnresolvedAttrs = TcAttributesWithPossibleTargets TcCanFail.IgnoreAllErrors cenv env AttributeTargets.FieldDecl synAttrs
 
-        let attrsForProperty, attrsForField = attrs |> List.partition (fun (attrTargets, _) -> (attrTargets &&& AttributeTargets.Property) <> enum 0) 
-        let attrsForProperty = (List.map snd attrsForProperty) 
-        let attrsForField = (List.map snd attrsForField)
+        let splitAttrs (attrsWithTargets: (AttributeTargets * Attrib) list) =
+            let propAttribs, fieldAttribs = attrsWithTargets |> List.partition (fun (attrTargets, _) -> (attrTargets &&& AttributeTargets.Property) <> enum 0)
+            List.map snd propAttribs, List.map snd fieldAttribs
+
+        let attrsForProperty, attrsForField = splitAttrs attrs
         let tyR, _ = TcTypeAndRecover cenv NoNewTypars CheckCxs ItemOccurrence.UseInType WarnOnIWSAM.Yes env tpenv ty
         let fieldFlags = computeValWellKnownFlags g attrsForField
         let zeroInit = hasFlag fieldFlags (WellKnownValAttributes.DefaultValueAttribute_True ||| WellKnownValAttributes.DefaultValueAttribute_False)
@@ -451,22 +460,37 @@ module TcRecdUnionAndEnumDeclarations =
         if isStatic && (not zeroInit || not isMutable || not isPrivate) then errorR(Error(FSComp.SR.tcStaticValFieldsMustBeMutableAndPrivate(), m))
         let konst = if zeroInit then Some Const.Zero else None
         let rfspec = MakeRecdFieldSpec g env parent (isStatic, konst, tyR, attrsForProperty, attrsForField, id, nameGenerated, isMutable, isVolatile, xmldoc, vis, m)
-        match parent with
-        | Parent tcref when useGenuineField tcref.Deref rfspec ->
-            // Recheck the attributes for errors if the definition only generates a field
-            TcAttributesWithPossibleTargets TcCanFail.ReportAllErrors cenv env AttributeTargets.FieldDeclRestricted synAttrs |> ignore
-        | _ -> ()
+        let isGenuineField = match parent with Parent tcref -> useGenuineField tcref.Deref rfspec | _ -> false
+
+        // Recheck the attributes for errors if the definition only generates a field. When the attribute type
+        // is from the same recursive group its constructor is not yet established, so defer to the fixup below.
+        let recheckGenuineField () =
+            if isGenuineField then
+                TcAttributesWithPossibleTargets TcCanFail.ReportAllErrors cenv env AttributeTargets.FieldDeclRestricted synAttrs |> ignore
+        if not hasUnresolvedAttrs then recheckGenuineField ()
+
+        let fixupAttrs () =
+            let finalAttrs =
+                if hasUnresolvedAttrs then
+                    let reresolved = TcAttributesWithPossibleTargets TcCanFail.ReportAllErrors cenv env AttributeTargets.FieldDecl synAttrs |> fst
+                    recheckGenuineField ()
+                    reresolved
+                else attrs
+            let propAttribs', fieldAttribs' = splitAttrs finalAttrs
+            rfspec.rfield_pattribs <- propAttribs'
+            rfspec.rfield_fattribs <- fieldAttribs'
+        addFixup fixupAttrs
         rfspec
 
-    let TcAnonFieldDecl cenv env parent tpenv nm (SynField(Attributes attribs, isStatic, idOpt, ty, isMutable, xmldoc, vis, m, _)) =
+    let TcAnonFieldDecl cenv env parent tpenv addFixup nm (SynField(Attributes attribs, isStatic, idOpt, ty, isMutable, xmldoc, vis, m, _)) =
         let mName = m.MakeSynthetic()
         let id = match idOpt with None -> mkSynId mName nm | Some id -> id
 
         let checkXmlDocs = cenv.diagnosticOptions.CheckXmlDocs
         let xmlDoc = xmldoc.ToXmlDoc(checkXmlDocs, Some [])
-        TcFieldDecl cenv env parent false tpenv (isStatic, attribs, id, idOpt.IsNone, ty, isMutable, xmlDoc, vis)
+        TcFieldDecl cenv env parent false tpenv addFixup (isStatic, attribs, id, idOpt.IsNone, ty, isMutable, xmlDoc, vis)
 
-    let TcNamedFieldDecl cenv env parent isIncrClass tpenv (SynField(Attributes attribs, isStatic, id, ty, isMutable, xmldoc, vis, m, _)) =
+    let TcNamedFieldDecl cenv env parent isIncrClass tpenv addFixup (SynField(Attributes attribs, isStatic, id, ty, isMutable, xmldoc, vis, m, _)) =
         match id with 
         | None ->
             errorR (Error(FSComp.SR.tcFieldRequiresName(), m))
@@ -474,10 +498,10 @@ module TcRecdUnionAndEnumDeclarations =
         | Some id ->
             let checkXmlDocs = cenv.diagnosticOptions.CheckXmlDocs
             let xmlDoc = xmldoc.ToXmlDoc(checkXmlDocs, Some [])
-            Some(TcFieldDecl cenv env parent isIncrClass tpenv (isStatic, attribs, id, false, ty, isMutable, xmlDoc, vis)) 
+            Some(TcFieldDecl cenv env parent isIncrClass tpenv addFixup (isStatic, attribs, id, false, ty, isMutable, xmlDoc, vis)) 
 
-    let TcNamedFieldDecls cenv env parent isIncrClass tpenv fields =
-        fields |> List.choose (TcNamedFieldDecl cenv env parent isIncrClass tpenv) 
+    let TcNamedFieldDecls cenv env parent isIncrClass tpenv addFixup fields =
+        fields |> List.choose (TcNamedFieldDecl cenv env parent isIncrClass tpenv addFixup)
 
     //-------------------------------------------------------------------------
     // Bind other elements of type definitions (constructors etc.)
@@ -522,13 +546,15 @@ module TcRecdUnionAndEnumDeclarations =
             | _ ->
                 seen.Add(f.LogicalName, sf))
                 
-    let TcUnionCaseDecl (cenv: cenv) env parent thisTy thisTyInst tpenv hasRQAAttribute (SynUnionCase(Attributes synAttrs, SynIdent(id, _), args, xmldoc, vis, m, _)) =
+    let TcUnionCaseDecl (cenv: cenv) env parent thisTy thisTyInst tpenv hasRQAAttribute addFixup (SynUnionCase(Attributes synAttrs, SynIdent(id, _), args, xmldoc, vis, m, _)) =
         let g = cenv.g
         let vis, _ = ComputeAccessAndCompPath g env None m vis None parent
         let vis = CombineReprAccess parent vis
 
         CheckUnionCaseName cenv id hasRQAAttribute
 
+        // Field fixups run after the union-case attributes below, preserving the non-deferred order.
+        let fieldFixups = ResizeArray()
         let rfields, recordTy = 
             match args with
             | SynUnionCaseKind.Fields flds -> 
@@ -540,9 +566,9 @@ module TcRecdUnionAndEnumDeclarations =
                         | Some fieldId, Parent tcref ->
                             let item = Item.UnionCaseField (UnionCaseInfo (thisTyInst, UnionCaseRef (tcref, id.idText)), i)
                             CallNameResolutionSink cenv.tcSink (fieldId.idRange, env.NameEnv, item, emptyTyparInst, ItemOccurrence.Binding, env.AccessRights)
-                            TcNamedFieldDecl cenv env parent false tpenv fld
+                            TcNamedFieldDecl cenv env parent false tpenv fieldFixups.Add fld
                         | _ ->
-                            Some(TcAnonFieldDecl cenv env parent tpenv (mkUnionCaseFieldName nFields i) fld)
+                            Some(TcAnonFieldDecl cenv env parent tpenv fieldFixups.Add (mkUnionCaseFieldName nFields i) fld)
                     )
                     |> List.choose (fun x -> x)
                 
@@ -576,42 +602,50 @@ module TcRecdUnionAndEnumDeclarations =
 
         let checkXmlDocs = cenv.diagnosticOptions.CheckXmlDocs
         let xmlDoc = xmldoc.ToXmlDoc(checkXmlDocs, Some names)
-        let attrs = TcAttributes cenv env AttributeTargets.UnionCaseDecl synAttrs
-        (*
-            The attributes of a union case decl get attached to the generated "static factory" method.
-            Enforce union-cases AttributeTargets:
-            - AttributeTargets.Method
-                type SomeUnion =
-                | Case1 of int // Compiles down to a static method
-            - AttributeTargets.Property
-                type SomeUnion =
-                | Case1 // Compiles down to a static property
-        *)
-        if g.langVersion.SupportsFeature(LanguageFeature.EnforceAttributeTargets) then
-            let attrTargets =
-                attrs
-                |> List.collect (fun attr ->
-                    attr.TyconRef.Attribs
-                    |> List.choose (fun attr ->
-                        match attr with
-                        | Attrib(unnamedArgs = [ AttribInt32Arg validOn ]) -> Some validOn
-                        | _ -> None))
-                
-            attrTargets
-            |> List.iter (fun target ->
-                // If the union case has fields, and the target is not AttributeTargets.Method || AttributeTargets.All. Then we raise a separate opt-in warning
-                let hasNotMethodTarget = (enum target &&& AttributeTargets.Method) = enum 0
-                if  hasNotMethodTarget then
-                    warning(Error(FSComp.SR.tcAttributeIsNotValidForUnionCaseWithFields(), id.idRange)))
-        
-        Construct.NewUnionCase id rfields recordTy attrs xmlDoc vis
+        let attrs, getFinalAttrs = TcAttributesCanFail cenv env AttributeTargets.UnionCaseDecl synAttrs
+        let unionCase = Construct.NewUnionCase id rfields recordTy attrs xmlDoc vis
 
-    let TcUnionCaseDecls (cenv: cenv) env (parent: ParentRef) (thisTy: TType) (thisTyInst: TypeInst) hasRQAAttribute tpenv unionCases =
+        // Attribute types from the same recursive group resolve only once the group is established.
+        addFixup (fun () ->
+            let attrs = getFinalAttrs ()
+            unionCase.Attribs <- attrs
+            (*
+                The attributes of a union case decl get attached to the generated "static factory" method.
+                Enforce union-cases AttributeTargets:
+                - AttributeTargets.Method
+                    type SomeUnion =
+                    | Case1 of int // Compiles down to a static method
+                - AttributeTargets.Property
+                    type SomeUnion =
+                    | Case1 // Compiles down to a static property
+            *)
+            if g.langVersion.SupportsFeature(LanguageFeature.EnforceAttributeTargets) then
+                let attrTargets =
+                    attrs
+                    |> List.collect (fun attr ->
+                        attr.TyconRef.Attribs
+                        |> List.choose (fun attr ->
+                            match attr with
+                            | Attrib(unnamedArgs = [ AttribInt32Arg validOn ]) -> Some validOn
+                            | _ -> None))
+
+                attrTargets
+                |> List.iter (fun target ->
+                    // If the union case has fields, and the target is not AttributeTargets.Method || AttributeTargets.All. Then we raise a separate opt-in warning
+                    let hasNotMethodTarget = (enum target &&& AttributeTargets.Method) = enum 0
+                    if  hasNotMethodTarget then
+                        warning(Error(FSComp.SR.tcAttributeIsNotValidForUnionCaseWithFields(), id.idRange)))
+
+            for f in fieldFixups do f())
+
+        unionCase
+
+    let TcUnionCaseDecls (cenv: cenv) env (parent: ParentRef) (thisTy: TType) (thisTyInst: TypeInst) hasRQAAttribute tpenv addFixup unionCases =
         let unionCasesR =
             unionCases
             |> List.filter (fun (SynUnionCase(_, SynIdent(id, _), _, _, _, _, _)) -> id.idText <> "")
-            |> List.map (TcUnionCaseDecl cenv env parent thisTy thisTyInst tpenv hasRQAAttribute) 
-        unionCasesR |> CheckDuplicates (fun uc -> uc.Id) "union case" 
+            |> List.map (TcUnionCaseDecl cenv env parent thisTy thisTyInst tpenv hasRQAAttribute addFixup)
+        unionCasesR |> CheckDuplicates (fun uc -> uc.Id) "union case"
 
     let MakeEnumCaseSpec g cenv env parent attrs thisTy caseRange (caseIdent: Ident) (xmldoc: PreXmlDoc) value =
         let vis, _ = ComputeAccessAndCompPath g env None caseRange None None parent
@@ -751,7 +785,7 @@ let TcOpenModuleOrNamespaceDecl tcSink g amap scopem env (longId, m) =
 let TcOpenTypeDecl (cenv: cenv) mOpenDecl scopem env (synType: SynType, m) =
     let g = cenv.g
 
-    checkLanguageFeatureError g.langVersion LanguageFeature.OpenTypeDeclaration mOpenDecl
+    checkLanguageFeatureAndRecover g.langVersion LanguageFeature.OpenTypeDeclaration mOpenDecl
 
     let ty, _tpenv = TcType cenv NoNewTypars CheckCxs ItemOccurrence.Open WarnOnIWSAM.Yes env emptyUnscopedTyparEnv synType
 
@@ -908,6 +942,18 @@ module AddAugmentationDeclarations =
                  PublishValueDefn cenv env ModuleOrMemberBinding vspec2
                  AugmentTypeDefinitions.MakeBindingsForEqualsAugmentation g tycon
             else []
+        else []
+
+    // Under --reflectionfree the structural ToString is generated here (rather than in IlxGen) so the 'string'
+    // operator calls in its body flow through the optimizer and get specialised. Like the Equals override, this
+    // runs late so tycon.HasMember gives correct results for a user-written ToString.
+    let AddReflectionFreeToStringBindings (cenv: cenv, env: TcEnv, tycon: Tycon) =
+        let g = cenv.g
+        if AugmentTypeDefinitions.TyconIsCandidateForAugmentationWithToString(g, tycon) && not (tycon.HasMember g "ToString" []) then
+            let tcref = mkLocalTyconRef tycon
+            let toStringVal = AugmentTypeDefinitions.MakeValsForToStringAugmentation(g, tcref)
+            PublishValueDefn cenv env ModuleOrMemberBinding toStringVal
+            AugmentTypeDefinitions.MakeBindingsForToStringAugmentation(g, tycon, toStringVal)
         else []
 
     let ShouldAugmentUnion (g: TcGlobals) (tycon: Tycon) =
@@ -1367,14 +1413,17 @@ module MutRecBindingChecking =
                         // Phase2B: typecheck the argument to an 'inherits' call and build the new object expr for the inherit-call 
                         | Phase2AInherit (synBaseTy, arg, baseValOpt, m) ->
                             let inheritsExpr, tpenv =
-                                try
-                                   let baseTy, tpenv = TcType cenv NoNewTypars CheckCxs ItemOccurrence.Use WarnOnIWSAM.Yes envInstance tpenv synBaseTy
-                                   let baseTy = baseTy |> convertToTypeWithMetadataIfPossible g
-                                   let mTcNew = unionRanges synBaseTy.Range arg.Range
-                                   TcNewExpr cenv envInstance tpenv baseTy (Some synBaseTy.Range) true arg mTcNew
-                                with RecoverableException e ->
-                                    errorRecovery e m
+                                if cenv.inheritResolutionFailed.ContainsKey(struct (tcref.Stamp, synBaseTy.Range)) then
                                     mkUnit g m, tpenv
+                                else
+                                    try
+                                       let baseTy, tpenv = TcType cenv NoNewTypars CheckCxs ItemOccurrence.Use WarnOnIWSAM.Yes envInstance tpenv synBaseTy
+                                       let baseTy = baseTy |> convertToTypeWithMetadataIfPossible g
+                                       let mTcNew = unionRanges synBaseTy.Range arg.Range
+                                       TcNewExpr cenv envInstance tpenv baseTy (Some synBaseTy.Range) true arg mTcNew
+                                    with RecoverableException e ->
+                                        errorRecovery e m
+                                        mkUnit g m, tpenv
                             let envInstance = match baseValOpt with Some baseVal -> AddLocalVal g cenv.tcSink scopem baseVal envInstance | None -> envInstance
                             let envNonRec = match baseValOpt with Some baseVal -> AddLocalVal g cenv.tcSink scopem baseVal envNonRec | None -> envNonRec
                             let innerState = (tpenv, envInstance, envStatic, envNonRec, generalizedRecBinds, preGeneralizationRecBinds, uncheckedRecBindsTable)
@@ -1501,52 +1550,61 @@ module MutRecBindingChecking =
         // Build an index ---> binding map
         let generalizedBindingsMap = generalizedRecBinds |> List.map (fun pgrbind -> (pgrbind.RecBindingInfo.Index, pgrbind)) |> Map.ofList
 
-        defnsBs |> MutRecShapes.mapTyconsAndLets 
+        let collectedBinds = ResizeArray()
 
-            // Phase2C: Fixup member bindings 
-            (fun (TyconBindingsPhase2B(tyconOpt, tcref, defnBs)) -> 
+        let result =
+            defnsBs |> MutRecShapes.mapTyconsAndLets 
 
-                let defnCs = 
-                    defnBs |> List.map (fun defnB -> 
+                // Phase2C: Fixup member bindings 
+                (fun (TyconBindingsPhase2B(tyconOpt, tcref, defnBs)) -> 
 
-                        // Phase2C: Generalise implicit ctor val 
-                        match defnB with
-                        | Phase2BIncrClassCtor (staticCtorInfo, incrCtorInfoOpt, safeThisValBindOpt) ->
-                            match incrCtorInfoOpt with
-                            | Some incrCtorInfo ->
-                                let valscheme = incrCtorInfo.InstanceCtorValScheme
-                                let valscheme = ChooseCanonicalValSchemeAfterInference g denv valscheme scopem
-                                AdjustRecType incrCtorInfo.InstanceCtorVal valscheme
-                            | None -> ()
-                            Phase2CIncrClassCtor (staticCtorInfo, incrCtorInfoOpt, safeThisValBindOpt)
+                    let defnCs = 
+                        defnBs |> List.map (fun defnB -> 
 
-                        | Phase2BInherit inheritsExpr -> 
-                            Phase2CInherit inheritsExpr
+                            // Phase2C: Generalise implicit ctor val 
+                            match defnB with
+                            | Phase2BIncrClassCtor (staticCtorInfo, incrCtorInfoOpt, safeThisValBindOpt) ->
+                                match incrCtorInfoOpt with
+                                | Some incrCtorInfo ->
+                                    let valscheme = incrCtorInfo.InstanceCtorValScheme
+                                    let valscheme = ChooseCanonicalValSchemeAfterInference g denv valscheme scopem
+                                    AdjustRecType incrCtorInfo.InstanceCtorVal valscheme
+                                | None -> ()
+                                Phase2CIncrClassCtor (staticCtorInfo, incrCtorInfoOpt, safeThisValBindOpt)
 
-                        | Phase2BIncrClassBindings bindRs -> 
-                            Phase2CIncrClassBindings bindRs
+                            | Phase2BInherit inheritsExpr -> 
+                                Phase2CInherit inheritsExpr
 
-                        | Phase2BIncrClassCtorJustAfterSuperInit -> 
-                            Phase2CIncrClassCtorJustAfterSuperInit
+                            | Phase2BIncrClassBindings bindRs -> 
+                                Phase2CIncrClassBindings bindRs
 
-                        | Phase2BIncrClassCtorJustAfterLastLet -> 
-                            Phase2CIncrClassCtorJustAfterLastLet
+                            | Phase2BIncrClassCtorJustAfterSuperInit -> 
+                                Phase2CIncrClassCtorJustAfterSuperInit
 
-                        | Phase2BMember idx ->
-                            // Phase2C: Fixup member bindings 
+                            | Phase2BIncrClassCtorJustAfterLastLet -> 
+                                Phase2CIncrClassCtorJustAfterLastLet
+
+                            | Phase2BMember idx ->
+                                // Phase2C: Fixup member bindings 
+                                let generalizedBinding = generalizedBindingsMap[idx] 
+                                let vxbind = TcLetrecAdjustMemberForSpecialVals cenv generalizedBinding
+                                let pgbrind = FixupLetrecBind cenv denv generalizedTyparsForRecursiveBlock vxbind
+                                collectedBinds.Add pgbrind
+                                Phase2CMember pgbrind)
+
+                    TyconBindingsPhase2C(tyconOpt, tcref, defnCs))
+
+                // Phase2C: Fixup let bindings 
+                (fun bindIdxs -> 
+                        [ for idx in bindIdxs do 
                             let generalizedBinding = generalizedBindingsMap[idx] 
                             let vxbind = TcLetrecAdjustMemberForSpecialVals cenv generalizedBinding
                             let pgbrind = FixupLetrecBind cenv denv generalizedTyparsForRecursiveBlock vxbind
-                            Phase2CMember pgbrind)
+                            collectedBinds.Add pgbrind
+                            yield pgbrind ])
 
-                TyconBindingsPhase2C(tyconOpt, tcref, defnCs))
-
-            // Phase2C: Fixup let bindings 
-            (fun bindIdxs -> 
-                    [ for idx in bindIdxs do 
-                        let generalizedBinding = generalizedBindingsMap[idx] 
-                        let vxbind = TcLetrecAdjustMemberForSpecialVals cenv generalizedBinding
-                        yield FixupLetrecBind cenv denv generalizedTyparsForRecursiveBlock vxbind ])
+        CheckRecursiveInlineGroup (List.ofSeq collectedBinds)
+        result
 
 
     // --- Extract field bindings from let-bindings 
@@ -1701,7 +1759,7 @@ module MutRecBindingChecking =
                             let thisValOpt = GetInstanceMemberThisVariable (v, x)
 
                             // Members have at least as many type parameters as the enclosing class. Just grab the type variables for the type.
-                            let thisTyInst = List.map mkTyparTy (List.truncate (tcref.Typars(v.Range).Length) v.Typars)
+                            let thisTyInst = List.map mkTyparTy (List.truncate (tcref.Typars.Length) v.Typars)
                                     
                             let x = localReps.FixupIncrClassExprPhase2C cenv thisValOpt safeStaticInitInfo thisTyInst x 
 
@@ -2153,7 +2211,7 @@ module TyconConstraintInference =
                 | ValueSome tp ->                    
                     // Within structural types, type parameters can be optimistically assumed to have comparison
                     // We record the ones for which we have made this assumption.
-                    if tycon.TyparsNoRange |> List.exists (fun tp2 -> typarRefEq tp tp2) then 
+                    if tycon.Typars |> List.exists (fun tp2 -> typarRefEq tp tp2) then 
                         assumedTyparsAcc <- assumedTyparsAcc.Add(tp.Stamp)
                         true                    
                     else
@@ -2180,7 +2238,7 @@ module TyconConstraintInference =
                             not (EntityHasWellKnownAttribute g WellKnownEntityAttributes.NoComparisonAttribute tcref.Deref)
                             &&
                             // Check the structural dependencies
-                            (tinst, tcref.TyparsNoRange) ||> List.lengthsEqAndForall2 (fun ty tp -> 
+                            (tinst, tcref.Typars) ||> List.lengthsEqAndForall2 (fun ty tp -> 
                                 if tp.ComparisonConditionalOn || assumedTypars.Contains tp.Stamp then 
                                     checkIfFieldTypeSupportsComparison tycon ty 
                                 else 
@@ -2239,7 +2297,7 @@ module TyconConstraintInference =
         // OK, we're done, Record the results for the type variable which provide the support
         for tyconStamp in uneliminatedTycons do
             let tycon, _ = tab[tyconStamp] 
-            for tp in tycon.Typars(tycon.Range) do
+            for tp in tycon.Typars do
                 if assumedTyparsActual.Contains(tp.Stamp) then 
                     tp.SetComparisonDependsOn true
 
@@ -2274,7 +2332,7 @@ module TyconConstraintInference =
                 | ValueSome tp ->
                     // Within structural types, type parameters can be optimistically assumed to have equality
                     // We record the ones for which we have made this assumption.
-                    if tycon.Typars(tycon.Range) |> List.exists (fun tp2 -> typarRefEq tp tp2) then                     
+                    if tycon.Typars |> List.exists (fun tp2 -> typarRefEq tp tp2) then                     
                         assumedTyparsAcc <- assumedTyparsAcc.Add(tp.Stamp)
                         true
                     else
@@ -2300,7 +2358,7 @@ module TyconConstraintInference =
                              not (EntityHasWellKnownAttribute g WellKnownEntityAttributes.NoEqualityAttribute tcref.Deref)
                              &&
                              // Check the structural dependencies
-                             (tinst, tcref.TyparsNoRange) ||> List.lengthsEqAndForall2 (fun ty tp -> 
+                             (tinst, tcref.Typars) ||> List.lengthsEqAndForall2 (fun ty tp -> 
                                  if tp.EqualityConditionalOn || assumedTypars.Contains tp.Stamp then 
                                      checkIfFieldTypeSupportsEquality tycon ty 
                                  else 
@@ -2360,7 +2418,7 @@ module TyconConstraintInference =
         // OK, we're done, Record the results for the type variable which provide the support
         for tyconStamp in uneliminatedTycons do
             let tycon, _ = tab[tyconStamp] 
-            for tp in tycon.Typars(tycon.Range) do
+            for tp in tycon.Typars do
                 if assumedTyparsActual.Contains(tp.Stamp) then 
                     tp.SetEqualityDependsOn true
 
@@ -2430,7 +2488,7 @@ module TcExceptionDeclarations =
                     CallNameResolutionSink cenv.tcSink (fieldId.idRange, env.NameEnv, item, emptyTyparInst, ItemOccurrence.Binding, env.AccessRights)
                 | _ -> ()
 
-                TcRecdUnionAndEnumDeclarations.TcAnonFieldDecl cenv env parent emptyUnscopedTyparEnv (mkExceptionFieldName i) fdef)
+                TcRecdUnionAndEnumDeclarations.TcAnonFieldDecl cenv env parent emptyUnscopedTyparEnv (fun f -> f ()) (mkExceptionFieldName i) fdef)
         TcRecdUnionAndEnumDeclarations.ValidateFieldNames(args, args')
         let repr = 
           match reprIdOpt with 
@@ -2604,9 +2662,10 @@ module EstablishTypeDefinitionCores =
     let private GetStructuralElementsOfTyconDefn (cenv: cenv) env tpenv (MutRecDefnsPhase1DataForTycon(_, synTyconRepr, _, _, _, _)) tycon = 
         let thisTyconRef = mkLocalTyconRef tycon
         let g = cenv.g
-        let m = tycon.Range
-        let env = AddDeclaredTypars CheckForDuplicateTypars (tycon.Typars m) env
+        let env = AddDeclaredTypars CheckForDuplicateTypars (tycon.Typars) env
         let env = MakeInnerEnvForTyconRef env thisTyconRef false 
+        let ad = env.AccessRights
+        let spreadSrcTys = ResizeArray ()
         [ match synTyconRepr with 
           | SynTypeDefnSimpleRepr.None _ -> ()
           | SynTypeDefnSimpleRepr.Union (_, unionCases, _) -> 
@@ -2646,17 +2705,35 @@ module EstablishTypeDefinitionCores =
                   for arg in ctorArgNames do
                       let ty = names[arg].Type
                       let m = names[arg].Ident.idRange
-                      if not (isNil (ListSet.subtract typarEq (freeInTypeLeftToRight g false ty) tycon.TyparsNoRange)) then
+                      if not (isNil (ListSet.subtract typarEq (freeInTypeLeftToRight g false ty) tycon.Typars)) then
                           errorR(Error(FSComp.SR.tcStructsMustDeclareTypesOfImplicitCtorArgsExplicitly(), m))   
                       yield (ty, m)
 
-          | SynTypeDefnSimpleRepr.Record (_, fields, _) -> 
-              for SynField(fieldType = ty; range = m) in fields do 
+          | SynTypeDefnSimpleRepr.Record (_, fieldsAndSpreads, _) ->
+              let tcField (SynField (fieldType = ty; range = m)) =
                   let tyR, _ = TcTypeAndRecover cenv NoNewTypars NoCheckCxs ItemOccurrence.UseInType WarnOnIWSAM.Yes env tpenv ty
-                  yield (tyR, m)
+                  (tyR, m), ignore
+  
+              let tcSpread (SynTypeSpread (ty = ty; range = m)) =
+                  let spreadSrcTy, _ = TcTypeAndRecover cenv NoNewTypars NoCheckCxs ItemOccurrence.UseInType WarnOnIWSAM.Yes env tpenv ty
+  
+                  if isRecdTy g spreadSrcTy then
+                      spreadSrcTys.Add spreadSrcTy
+                      ResolveRecordOrClassFieldsOfType cenv.nameResolver m ad spreadSrcTy false
+                      |> List.choose (function
+                          | Item.RecdField field -> Some (field.RecdField.Id.idText, (field.FieldType, m), ignore)
+                          | _ -> None)
+                  else
+                      match tryDestAnonRecdTy g spreadSrcTy with
+                      | ValueSome (anonInfo, tys) -> tys |> List.mapi (fun i ty -> (anonInfo.SortedNames[i], (ty, m), ignore))
+                      | ValueNone -> []
+  
+              // We must apply the spread shadowing logic here
+              // to get the correct set of field types.
+              yield! fieldsAndSpreads |> Spreads.Types.Records.check ignore tcField tcSpread
 
           | _ ->
-              () ]
+              () ], spreadSrcTys
 
     let ComputeModuleOrNamespaceKind g isModule typeNames attribs nm = 
         if not isModule then (Namespace true)
@@ -2738,6 +2815,23 @@ module EstablishTypeDefinitionCores =
                | _ -> () ]
             |> set
 
+    /// Pre-process open declarations from a list of mutually recursive shapes so that
+    /// opened namespaces are available during Phase1A attribute checking.
+    /// In recursive scopes, opens are normally processed in Phase1AB (after Phase1A builds
+    /// module/type entities), but attributes on modules need the opened namespaces.
+    /// Errors are suppressed because some opens may refer to modules being defined in the
+    /// current recursive scope, which don't exist yet during Phase1A. Those opens will be
+    /// properly processed (with full error reporting) during Phase1AB.
+    let private preProcessOpensForPhase1A (cenv: cenv) (env: TcEnv) (shapes: MutRecShapes<_, _, _>) =
+        suppressErrorReporting (fun () ->
+            use _holder = TemporarilySuspendReportingTypecheckResultsToSink cenv.tcSink
+            (env, shapes) ||> List.fold (fun env shape ->
+                match shape with
+                | MutRecShape.Open(MutRecDataForOpen(SynOpenDeclTarget.ModuleOrNamespace _ as target, openm, moduleRange, _)) ->
+                    let env, _ = TcOpenDecl cenv openm moduleRange env target
+                    env
+                | _ -> env))
+
     let TcTyconDefnCore_Phase1A_BuildInitialModule (cenv: cenv) envInitial parent typeNames compInfo decls =
         let g = cenv.g
         let (SynComponentInfo(Attributes attribs, _, _, _, xml, _, vis, im)) = compInfo
@@ -2754,7 +2848,11 @@ module EstablishTypeDefinitionCores =
         CheckForDuplicateConcreteType envInitial id.idText im
         CheckNamespaceModuleOrTypeName g id
 
-        let envForDecls, moduleTyAcc = MakeInnerEnv true envInitial id moduleKind    
+        let envForDecls, moduleTyAcc = MakeInnerEnv true envInitial id moduleKind
+
+        // Pre-process opens from children so nested modules can see opened namespaces during attribute checking
+        let envForDecls = preProcessOpensForPhase1A cenv envForDecls decls
+
         let moduleTy = Construct.NewEmptyModuleOrNamespaceType moduleKind
 
         let checkXmlDocs = cenv.diagnosticOptions.CheckXmlDocs
@@ -2764,6 +2862,16 @@ module EstablishTypeDefinitionCores =
         let innerTypeNames = TypeNamesInMutRecDecls cenv envForDecls decls
         MutRecDefnsPhase2DataForModule (moduleTyAcc, moduleEntity), (innerParent, innerTypeNames, envForDecls)
 
+    /// Re-resolve type-parameter attributes once the recursive group's attribute types are
+    /// established. Phase1A resolves them tentatively with diagnostics suppressed; this runs in the
+    /// deferred fixup, mirroring the entity/field/union attribute fixups.
+    let private fixupTyparAttrs (cenv: cenv) env (synTypars: SynTyparDecl list) (typars: Typar list) =
+        (synTypars, typars) ||> List.iter2 (fun (SynTyparDecl (attributes = Attributes synAttrs)) tp ->
+            if not (isNil synAttrs) then
+                TcAttributes cenv env AttributeTargets.GenericParameter synAttrs
+                |> filterOutWellKnownAttribs cenv.g WellKnownEntityAttributes.MeasureAttribute WellKnownValAttributes.None
+                |> tp.SetAttribs)
+
     /// Establish 'type <vis1> C < T1... TN > = <vis2> ...' including 
     ///    - computing the mangled name for C
     /// but 
@@ -2772,7 +2880,10 @@ module EstablishTypeDefinitionCores =
         let g = cenv.g
         let (SynComponentInfo (_, TyparDecls synTypars, _, _, xmlDoc, preferPostfix, synVis, _)) = synTyconInfo
         let id = synTyconInfo.LongIdent
-        let checkedTypars = TcTyparDecls cenv env synTypars
+        // In a recursive group a type-parameter's attribute type may be defined later in the group and
+        // not yet resolvable. Resolve tentatively with diagnostics suppressed; the deferred fixup
+        // re-resolves against the completed environment (see fixupTyparAttrs at the drain).
+        let checkedTypars = suppressErrorReporting (fun () -> TcTyparDecls cenv env synTypars)
         id |> List.iter (CheckNamespaceModuleOrTypeName g)
 
         match synTyconRepr with 
@@ -3114,6 +3225,12 @@ module EstablishTypeDefinitionCores =
                 let cpath = eref.CompilationPath.NestedCompPath eref.LogicalName ModuleOrNamespaceKind.ModuleOrType
                 let access = combineAccess tycon.Accessibility (if st.PUntaint((fun st -> st.IsPublic || st.IsNestedPublic), m) then taccessPublic else taccessPrivate cpath)
 
+                // Embed the type into the module we're compiling. This is a freshly-built local module for the
+                // 'type X = ABC<...>' generated-type set (see mkLocalTyconRef above), disjoint from the referenced
+                // provided-type modules that GetOrInternProvidedEntity interns into, and each generated set is
+                // built once on a single file's checking thread. There is therefore no cross-file same-mangled-name
+                // collision here, so adding the entity directly (rather than via GetOrInternProvidedEntity) cannot
+                // diverge the intern table from the 'entities' queue.
                 let nestedTycon = Construct.NewProvidedTycon(resolutionEnvironment, st, 
                                                              Import.ImportProvidedType cenv.amap m, 
                                                              isSuppressRelocate, 
@@ -3199,7 +3316,7 @@ module EstablishTypeDefinitionCores =
 
             let hasMeasureAttr = attribsHaveEntityFlag g WellKnownEntityAttributes.MeasureAttribute attrs
             let hasMeasureableAttr = attribsHaveEntityFlag g WellKnownEntityAttributes.MeasureableAttribute attrs
-            let envinner = AddDeclaredTypars CheckForDuplicateTypars (tycon.Typars m) envinner
+            let envinner = AddDeclaredTypars CheckForDuplicateTypars (tycon.Typars) envinner
             let envinner = MakeInnerEnvForTyconRef envinner thisTyconRef false 
 
             match synTyconRepr with 
@@ -3210,7 +3327,7 @@ module EstablishTypeDefinitionCores =
             // "type x = | A" can always be used instead. 
             | TyconCoreAbbrevThatIsReallyAUnion (hasMeasureAttr, envinner, id) _ -> ()
             
-            | SynTypeDefnSimpleRepr.TypeAbbrev(ParserDetail.Ok, rhsType, m) ->
+            | SynTypeDefnSimpleRepr.TypeAbbrev(ParserDetail.Ok, rhsType, _m) ->
 
 #if !NO_TYPEPROVIDERS
               // Check we have not already decided that this is a generative provided type definition. If we have already done this (i.e. this is the second pass
@@ -3259,7 +3376,7 @@ module EstablishTypeDefinitionCores =
 
                     if not firstPass then
                         let ftyvs = freeInTypeLeftToRight g false ty
-                        let typars = tycon.Typars m
+                        let typars = tycon.Typars
                         if ftyvs.Length <> typars.Length then
                             errorR(Deprecated(FSComp.SR.tcTypeAbbreviationHasTypeParametersMissingOnType(), tycon.Range))
 
@@ -3284,9 +3401,8 @@ module EstablishTypeDefinitionCores =
                match origInfo, tyconAndAttrsOpt with 
                | (typeDefCore, _, _), Some (tycon, (attrs, _)) ->
                 let (MutRecDefnsPhase1DataForTycon(_, synTyconRepr, explicitImplements, _, _, _)) = typeDefCore
-                let m = tycon.Range
                 let tcref = mkLocalTyconRef tycon
-                let envinner = AddDeclaredTypars CheckForDuplicateTypars (tycon.Typars m) envinner
+                let envinner = AddDeclaredTypars CheckForDuplicateTypars (tycon.Typars) envinner
                 let envinner = MakeInnerEnvForTyconRef envinner tcref false 
                 
                 let implementedTys, _ = List.mapFold (mapFoldFst (TcTypeAndRecover cenv NoNewTypars checkConstraints ItemOccurrence.UseInType WarnOnIWSAM.No envinner)) tpenv explicitImplements
@@ -3301,7 +3417,23 @@ module EstablishTypeDefinitionCores =
                         let kind = InferTyconKind g (kind, attrs, slotsigs, fields, inSig, isConcrete, m)
 
                         let inherits = inherits |> List.map (fun (ty, m, _) -> (ty, m)) 
-                        let inheritedTys = fst (List.mapFold (mapFoldFst (TcTypeAndRecover cenv NoNewTypars checkConstraints ItemOccurrence.UseInType WarnOnIWSAM.No envinner)) tpenv inherits)
+                        let tryResolveInheritType tpenv (ty: SynType, m) =
+                            let key = struct (tcref.Stamp, ty.Range)
+                            if cenv.inheritResolutionFailed.ContainsKey key then
+                                (g.obj_ty_ambivalent, m), tpenv
+                            else
+                                try
+                                    let resolved, tpenv = TcType cenv NoNewTypars checkConstraints ItemOccurrence.UseInType WarnOnIWSAM.No envinner tpenv ty
+                                    (resolved, m), tpenv
+                                with
+                                | RecoverableException (UndefinedNameError as e) ->
+                                    errorRecovery e ty.Range
+                                    cenv.inheritResolutionFailed.TryAdd(key, ()) |> ignore
+                                    (g.obj_ty_ambivalent, m), tpenv
+                                | RecoverableException e ->
+                                    errorRecovery e ty.Range
+                                    (g.obj_ty_ambivalent, m), tpenv
+                        let inheritedTys = inherits |> List.mapFold tryResolveInheritType tpenv |> fst
                         let implementedTys, inheritedTys =   
                             match kind with 
                             | SynTypeDefnKind.Interface -> 
@@ -3391,7 +3523,7 @@ module EstablishTypeDefinitionCores =
            with RecoverableException exn -> errorRecovery exn m))
 
     /// Establish the fields, dispatch slots and union cases of a type
-    let private TcTyconDefnCore_Phase1G_EstablishRepresentation (cenv: cenv) envinner tpenv inSig (MutRecDefnsPhase1DataForTycon(_, synTyconRepr, _, _, _, _)) (tycon: Tycon) (attrs: Attribs) =
+    let private TcTyconDefnCore_Phase1G_EstablishRepresentation (cenv: cenv) envinner tpenv inSig (MutRecDefnsPhase1DataForTycon(_, synTyconRepr, _, _, _, _)) (tycon: Tycon) (attrs: Attribs) addFixup =
         let g = cenv.g
         let m = tycon.Range
         try 
@@ -3447,7 +3579,7 @@ module EstablishTypeDefinitionCores =
                     if allowed then 
                         if kind = explicitKind then
                             warning(PossibleUnverifiableCode m)
-                    elif List.isEmpty (thisTyconRef.Typars m) then
+                    elif List.isEmpty (thisTyconRef.Typars) then
                         errorR (Error(FSComp.SR.tcOnlyStructsCanHaveStructLayout(), m))
                     else
                         errorR (Error(FSComp.SR.tcGenericTypesCannotHaveStructLayout(), m))
@@ -3479,7 +3611,7 @@ module EstablishTypeDefinitionCores =
                     if not ctorArgNames.IsEmpty then
                         errorR (Error(FSComp.SR.parsOnlyClassCanTakeValueArguments(), pat.Range))
 
-            let envinner = AddDeclaredTypars CheckForDuplicateTypars (tycon.Typars m) envinner
+            let envinner = AddDeclaredTypars CheckForDuplicateTypars (tycon.Typars) envinner
             let envinner = MakeInnerEnvForTyconRef envinner thisTyconRef false
 
             let multiCaseUnionStructCheck (unionCases: UnionCase list) =
@@ -3524,22 +3656,22 @@ module EstablishTypeDefinitionCores =
                     let item = Item.UnionCase(info, false)
                     CallNameResolutionSink cenv.tcSink (unionCase.Range, nenv, item, emptyTyparInst, ItemOccurrence.Binding, ad)
             
-            let typeRepr, baseValOpt, safeInitInfo = 
+            let (typeRepr, baseValOpt, safeInitInfo), recheck = 
                 match synTyconRepr with 
 
                 | SynTypeDefnSimpleRepr.Exception synExnDefnRepr -> 
                     let parent = Parent (mkLocalTyconRef tycon)
                     TcExceptionDeclarations.TcExnDefnCore_Phase1G_EstablishRepresentation cenv envinner parent tycon synExnDefnRepr |> ignore
-                    TNoRepr, None, NoSafeInitInfo
+                    (TNoRepr, None, NoSafeInitInfo), ignore
 
                 | SynTypeDefnSimpleRepr.None _ -> 
                     hiddenReprChecks false
                     noAllowNullLiteralAttributeCheck()
                     if hasMeasureAttr then 
                         let repr = TFSharpTyconRepr (Construct.NewEmptyFSharpTyconData TFSharpClass)
-                        repr, None, NoSafeInitInfo
+                        (repr, None, NoSafeInitInfo), ignore
                     else 
-                        TNoRepr, None, NoSafeInitInfo
+                        (TNoRepr, None, NoSafeInitInfo), ignore
 
                 // This unfortunate case deals with "type x = A" 
                 // In F# this only defines a new type if A is not in scope 
@@ -3554,10 +3686,10 @@ module EstablishTypeDefinitionCores =
                     TcRecdUnionAndEnumDeclarations.CheckUnionCaseName cenv unionCaseName hasRQAAttribute
                     let unionCase = Construct.NewUnionCase unionCaseName [] thisTy [] XmlDoc.Empty tycon.Accessibility
                     writeFakeUnionCtorsToSink [ unionCase ]
-                    Construct.MakeUnionRepr [ unionCase ], None, NoSafeInitInfo
+                    (Construct.MakeUnionRepr [ unionCase ], None, NoSafeInitInfo), ignore
 
                 | SynTypeDefnSimpleRepr.TypeAbbrev(ParserDetail.ErrorRecovery, _rhsType, _) ->
-                    TNoRepr, None, NoSafeInitInfo
+                    (TNoRepr, None, NoSafeInitInfo), ignore
 
                 | SynTypeDefnSimpleRepr.TypeAbbrev(ParserDetail.Ok, rhsType, _) ->
                     if hasSealedAttr = Some true then 
@@ -3568,12 +3700,12 @@ module EstablishTypeDefinitionCores =
                         let kind = if hasMeasureAttr then TyparKind.Measure else TyparKind.Type
                         let theTypeAbbrev, _ = TcTypeOrMeasureAndRecover (Some kind) cenv NoNewTypars CheckCxs ItemOccurrence.UseInType WarnOnIWSAM.No envinner tpenv rhsType
 
-                        TMeasureableRepr theTypeAbbrev, None, NoSafeInitInfo
+                        (TMeasureableRepr theTypeAbbrev, None, NoSafeInitInfo), ignore
                     // If we already computed a representation, e.g. for a generative type definition, then don't change it here.
                     elif (match tycon.TypeReprInfo with TNoRepr -> false | _ -> true) then 
-                        tycon.TypeReprInfo, None, NoSafeInitInfo
+                        (tycon.TypeReprInfo, None, NoSafeInitInfo), ignore
                     else 
-                        TNoRepr, None, NoSafeInitInfo
+                        (TNoRepr, None, NoSafeInitInfo), ignore
 
                 | SynTypeDefnSimpleRepr.Union (_, unionCases, mRepr) -> 
                     noMeasureAttributeCheck()
@@ -3583,35 +3715,154 @@ module EstablishTypeDefinitionCores =
                     structLayoutAttributeCheck false
 
                     let hasRQAAttribute = EntityHasWellKnownAttribute cenv.g WellKnownEntityAttributes.RequireQualifiedAccessAttribute tycon
-                    let unionCases = TcRecdUnionAndEnumDeclarations.TcUnionCaseDecls cenv envinner innerParent thisTy thisTyInst hasRQAAttribute tpenv unionCases
+                    let unionCases = TcRecdUnionAndEnumDeclarations.TcUnionCaseDecls cenv envinner innerParent thisTy thisTyInst hasRQAAttribute tpenv addFixup unionCases
                     multiCaseUnionStructCheck unionCases
 
                     writeFakeUnionCtorsToSink unionCases
                     CallEnvSink cenv.tcSink (mRepr, envinner.NameEnv, ad)
                     let repr = Construct.MakeUnionRepr unionCases
-                    repr, None, NoSafeInitInfo
+                    (repr, None, NoSafeInitInfo), ignore
 
-                | SynTypeDefnSimpleRepr.Record (_, fields, mRepr) -> 
+                | SynTypeDefnSimpleRepr.Record (_accessibility, fieldsAndSpreads, mRepr) -> 
                     noMeasureAttributeCheck()
                     noSealedAttributeCheck FSComp.SR.tcTypesAreAlwaysSealedRecord
                     noAbstractClassAttributeCheck()
                     noAllowNullLiteralAttributeCheck()
                     structLayoutAttributeCheck true  // these are allowed for records
-                    let recdFields = TcRecdUnionAndEnumDeclarations.TcNamedFieldDecls cenv envinner innerParent false tpenv fields
-                    recdFields |> CheckDuplicates (fun f -> f.Id) "field" |> ignore
-                    writeFakeRecordFieldsToSink recdFields
-                    CallEnvSink cenv.tcSink (mRepr, envinner.NameEnv, ad)
 
-                    let data =
-                        {
-                            fsobjmodel_cases = Construct.MakeUnionCases []
-                            fsobjmodel_kind = TFSharpRecord
-                            fsobjmodel_vslots = []
-                            fsobjmodel_rfields = Construct.MakeRecdFieldsTable recdFields
-                        }
+                    let check pass =
+                        let firstPass = pass = FirstPass
+                        let recdFields =
+                            let tcField synField =
+                                let field = TcRecdUnionAndEnumDeclarations.TcNamedFieldDecl cenv envinner innerParent false tpenv addFixup synField |> Option.get
+                                let errorAmbiguousShadowing () = if firstPass then errorR (Duplicate ("field", field.Id.idText, field.Id.idRange))
+                                field, errorAmbiguousShadowing
 
-                    let repr = TFSharpTyconRepr data
-                    repr, None, NoSafeInitInfo
+                            let tcSpread (SynTypeSpread (ty = ty; range = m)) =
+                                let mTy = ty.Range
+                                let (spreadSrcTy, _tpenv), error =
+                                    try TcType cenv NoNewTypars CheckCxs ItemOccurrence.UseInType WarnOnIWSAM.Yes envinner tpenv ty, false with
+                                    | RecoverableException e ->
+                                        if firstPass then
+                                            errorRecovery e ty.Range
+                                        (g.obj_ty_ambivalent, tpenv), true
+
+                                let spreadSrcTyIsNullable = g.checkNullness && (nullnessOfTy g spreadSrcTy).Evaluate() = NullnessInfo.WithNull
+                                let spreadSrcTyIsRecd = error || isRecdTy g spreadSrcTy || isAnonRecdTy g spreadSrcTy
+
+                                let isValidSpreadSrcTy = not spreadSrcTyIsNullable && spreadSrcTyIsRecd
+
+                                if isValidSpreadSrcTy then
+                                    let spreadSrcTy =
+                                        tryAppTy g spreadSrcTy
+                                        |> ValueOption.map (fun (tcref, tinst) ->
+                                            let _, _, newTinst = FreshenTypeInst g traitCtxtNone m tcref.Typars
+                                            SolveTyparsEqualTypes g cenv.css m newTinst tinst
+                                            TType_app (tcref, newTinst, g.knownWithoutNull))
+                                        |> ValueOption.defaultValue spreadSrcTy
+
+                                    let recordFieldsFromSpread =
+                                        if isRecdTy g spreadSrcTy then
+                                            ResolveRecordOrClassFieldsOfType cenv.nameResolver m ad spreadSrcTy false
+                                        else
+                                            tryDestAnonRecdTy g spreadSrcTy
+                                            |> ValueOption.map (fun (anonInfo, tys) ->
+                                                anonInfo.SortedIds
+                                                |> List.ofArray
+                                                |> List.mapi (fun i id -> Item.AnonRecdField (anonInfo, tys, i, id.idRange)))
+                                            |> ValueOption.defaultValue []
+
+                                    recordFieldsFromSpread
+                                    |> List.choose (fun field ->
+                                        match field with
+                                        | Item.RecdField fieldInfo ->
+                                            // Update the field ID's range to be that of the spread.
+                                            let syntheticId = ident (fieldInfo.RecdField.Id.idText, mTy)
+                                            let fieldTy = fieldInfo.FieldType
+                                            let vis =
+                                                let vis, _ = ComputeAccessAndCompPath g envinner None mTy None None innerParent
+                                                combineAccess vis thisTyconRef.TypeReprAccessibility
+
+                                            let recdField =
+                                                { fieldInfo.RecdField with
+                                                    rfield_id = syntheticId
+                                                    rfield_type = fieldTy
+                                                    rfield_access = vis }
+
+                                            let warnAmbiguousShadowing () =
+                                                let fmtedSpreadField = NicePrint.stringOfRecdField envinner.DisplayEnv cenv.infoReader fieldInfo.TyconRef recdField
+                                                let fmtedSpreadSrcTy = NicePrint.stringOfTy envinner.DisplayEnv spreadSrcTy
+                                                warning (Error (FSComp.SR.tcRecordTypeDefinitionSpreadFieldShadowsExplicitField (fmtedSpreadField, fmtedSpreadSrcTy), m))
+
+                                            Some (fieldInfo.RecdField.Id.idText, recdField, warnAmbiguousShadowing)
+
+                                        | Item.AnonRecdField (anonInfo, tys, fieldIndex, _) ->
+                                            let fieldId =
+                                                let orig = anonInfo.SortedIds[fieldIndex]
+                                                ident (orig.idText, m)
+
+                                            let ty = tys[fieldIndex]
+
+                                            let field =
+                                                let stat = false
+                                                let konst = None
+                                                let generated = false
+                                                let mut = false
+                                                let volatile = false
+                                                let pattribs = []
+                                                let fattribs = []
+                                                let vis = None
+                                                TcRecdUnionAndEnumDeclarations.MakeRecdFieldSpec g envinner innerParent (stat, konst, ty, pattribs, fattribs, fieldId, generated, mut, volatile, XmlDoc.Empty, vis, mTy)
+
+                                            let warnAmbiguousShadowing () =
+                                                let typars = tryAppTy g ty |> ValueOption.map (snd >> List.choose (tryDestTyparTy g >> ValueOption.toOption)) |> ValueOption.defaultValue []
+                                                let fmtedSpreadField = LayoutRender.showL (NicePrint.prettyLayoutOfMemberSig envinner.DisplayEnv ([], fieldId.idText, typars, [], ty))
+                                                let fmtedSpreadSrcTy = NicePrint.stringOfTy envinner.DisplayEnv spreadSrcTy
+                                                warning (Error (FSComp.SR.tcRecordTypeDefinitionSpreadFieldShadowsExplicitField (fmtedSpreadField, fmtedSpreadSrcTy), m))
+
+                                            Some (fieldId.idText, field, warnAmbiguousShadowing)
+
+                                        | _ -> None)
+                                elif not firstPass then
+                                    []
+                                else
+                                    if not ty.IsFromParseError then
+                                        if not spreadSrcTyIsRecd then
+                                            errorR (Error (FSComp.SR.tcRecordTypeDefinitionSpreadSourceMustBeRecord (), m))
+                                        elif spreadSrcTyIsNullable then
+                                            errorR (Error (FSComp.SR.tcRecordTypeDefinitionSpreadSourceCannotBeNullable (), m))
+                                    []
+
+                            let checkSpreadsLanguageFeature m =
+                                if firstPass then
+                                    checkLanguageFeatureAndRecover g.langVersion LanguageFeature.RecordSpreads m
+
+                            fieldsAndSpreads |> Spreads.Types.Records.check checkSpreadsLanguageFeature tcField tcSpread
+
+                        writeFakeRecordFieldsToSink recdFields
+                        CallEnvSink cenv.tcSink (mRepr, envinner.NameEnv, ad)
+
+                        let data =
+                            {
+                                fsobjmodel_cases = Construct.MakeUnionCases []
+                                fsobjmodel_kind = TFSharpRecord
+                                fsobjmodel_vslots = []
+                                fsobjmodel_rfields = Construct.MakeRecdFieldsTable recdFields
+                            }
+
+                        let repr = TFSharpTyconRepr data
+                        repr, None, NoSafeInitInfo
+
+                    let recheck =
+                        if fieldsAndSpreads |> List.exists (function SynFieldOrSpread.Spread _ -> true | SynFieldOrSpread.Field _ -> false) then
+                            fun () ->
+                                let repr, _, _ = check SecondPass
+                                tycon.entity_tycon_repr <- repr
+                        else
+                            ignore
+
+
+                    check FirstPass, recheck
 
                 | SynTypeDefnSimpleRepr.LibraryOnlyILAssembly (s, _) -> 
                     let s = (s :?> ILType)
@@ -3620,10 +3871,10 @@ module EstablishTypeDefinitionCores =
                     noAllowNullLiteralAttributeCheck()
                     structLayoutAttributeCheck false
                     noAbstractClassAttributeCheck()
-                    TAsmRepr s, None, NoSafeInitInfo
+                    (TAsmRepr s, None, NoSafeInitInfo), ignore
 
                 | SynTypeDefnSimpleRepr.General (kind, inherits, slotsigs, fields, isConcrete, isIncrClass, implicitCtorSynPats, _) ->
-                    let userFields = TcRecdUnionAndEnumDeclarations.TcNamedFieldDecls cenv envinner innerParent isIncrClass tpenv fields
+                    let userFields = TcRecdUnionAndEnumDeclarations.TcNamedFieldDecls cenv envinner innerParent isIncrClass tpenv addFixup fields
                     let implicitStructFields = 
                         [ // For structs with an implicit ctor, determine the fields immediately based on the arguments
                           match implicitCtorSynPats with 
@@ -3645,13 +3896,13 @@ module EstablishTypeDefinitionCores =
                     writeFakeRecordFieldsToSink userFields
                     
                     let superTy = tycon.TypeContents.tcaug_super
-                    let containerInfo = TyconContainerInfo(innerParent, thisTyconRef, thisTyconRef.Typars m, NoSafeInitInfo)
+                    let containerInfo = TyconContainerInfo(innerParent, thisTyconRef, thisTyconRef.Typars, NoSafeInitInfo)
                     let kind = InferTyconKind g (kind, attrs, slotsigs, fields, inSig, isConcrete, m)
                     match kind with 
                     | SynTypeDefnKind.Opaque -> 
                         hiddenReprChecks true
                         noAllowNullLiteralAttributeCheck()
-                        TNoRepr, None, NoSafeInitInfo
+                        (TNoRepr, None, NoSafeInitInfo), ignore
                     | _ ->
 
                         // Note: for a mutually recursive set we can't check this condition 
@@ -3717,7 +3968,7 @@ module EstablishTypeDefinitionCores =
                                   let _, _, curriedArgInfos, returnTy, _ = GetValReprTypeInCompiledForm g (arity |> TranslateSynValInfo cenv m (TcAttributes cenv envinner)  |> TranslatePartialValReprInfo []) 0 tyR m
                                   if curriedArgInfos.Length < 1 then error(Error(FSComp.SR.tcInvalidDelegateSpecification(), m))
                                   if curriedArgInfos.Length > 1 then error(Error(FSComp.SR.tcDelegatesCannotBeCurried(), m))
-                                  let ttps = thisTyconRef.Typars m
+                                  let ttps = thisTyconRef.Typars
                                   let fparams =
                                       curriedArgInfos.Head
                                       |> List.map (fun (ty, argInfo: ArgReprInfo) ->
@@ -3774,7 +4025,7 @@ module EstablishTypeDefinitionCores =
                                 fsobjmodel_rfields = Construct.MakeRecdFieldsTable (userFields @ implicitStructFields @ safeInitFields)
                             } 
                         let repr = TFSharpTyconRepr data
-                        repr, baseValOpt, safeInitInfo
+                        (repr, baseValOpt, safeInitInfo), ignore
 
                 | SynTypeDefnSimpleRepr.Enum (decls, m) -> 
                     let fieldTy, fields' = TcRecdUnionAndEnumDeclarations.TcEnumDecls cenv envinner tpenv innerParent thisTy decls
@@ -3798,7 +4049,7 @@ module EstablishTypeDefinitionCores =
                             fsobjmodel_rfields = Construct.MakeRecdFieldsTable (vfld :: fields')
                         }
                     let repr = TFSharpTyconRepr data
-                    repr, None, NoSafeInitInfo
+                    (repr, None, NoSafeInitInfo), ignore
             
             tycon.entity_tycon_repr <- typeRepr
             // We check this just after establishing the representation
@@ -3812,10 +4063,10 @@ module EstablishTypeDefinitionCores =
                     errorR(Error(FSComp.SR.tcConditionalAttributeUsage(), m))
             | _ -> ()         
                    
-            (baseValOpt, safeInitInfo)
+            baseValOpt, safeInitInfo, recheck
         with RecoverableException exn -> 
-            errorRecovery exn m 
-            None, NoSafeInitInfo
+            errorRecovery exn m
+            None, NoSafeInitInfo, ignore
 
     /// Check that a set of type definitions is free of cycles in abbreviations
     let private TcTyconDefnCore_CheckForCyclicAbbreviations tycons = 
@@ -4033,7 +4284,7 @@ module EstablishTypeDefinitionCores =
                 let (MutRecDefnsPhase1DataForTycon(synTyconInfo, _, _, _, _, _)) = typeDefCore
                 let (SynComponentInfo(_, TyparsAndConstraints (_, cs1), cs2, _, _, _, _, _)) = synTyconInfo
                 let synTyconConstraints = cs1 @ cs2
-                let envForTycon = AddDeclaredTypars CheckForDuplicateTypars (tycon.Typars m) envForDecls
+                let envForTycon = AddDeclaredTypars CheckForDuplicateTypars (tycon.Typars) envForDecls
                 let thisTyconRef = mkLocalTyconRef tycon
                 let envForTycon = MakeInnerEnvForTyconRef envForTycon thisTyconRef false 
                 try
@@ -4044,12 +4295,18 @@ module EstablishTypeDefinitionCores =
 
 
     let TcMutRecDefns_Phase1 mkLetInfo (cenv: cenv) envInitial parent typeNames inSig tpenv m scopem mutRecNSInfo (mutRecDefns: MutRecShapes<MutRecDefnsPhase1DataForTycon * 'MemberInfo, 'LetInfo, SynComponentInfo>) =
+        // Pre-process top-level opens so they are available during attribute checking in Phase1A.
+        // In recursive scopes (namespace rec / module rec), opens are normally processed in Phase1AB
+        // after module entities are built, but module attributes need access to opened namespaces.
+        // See https://github.com/dotnet/fsharp/issues/7931
+        let envWithOpens = preProcessOpensForPhase1A cenv envInitial mutRecDefns
+
         // Phase1A - build Entity for type definitions, exception definitions and module definitions.
         // Also for abbreviations of any of these. Augmentations are skipped in this phase.
         let withEntities = 
             mutRecDefns 
             |> MutRecShapes.mapWithParent 
-                 (parent, typeNames, envInitial)
+                 (parent, typeNames, envWithOpens)
                  // Build the initial entity for each module definition
                  (fun (innerParent, typeNames, envForDecls) compInfo decls -> 
                      TcTyconDefnCore_Phase1A_BuildInitialModule cenv envForDecls innerParent typeNames compInfo decls) 
@@ -4073,6 +4330,11 @@ module EstablishTypeDefinitionCores =
         let envTmp, withEnvs =  
             (envInitial, withEntities) ||> MutRecShapes.computeEnvs 
               (fun envAbove (MutRecDefnsPhase2DataForModule (moduleTyAcc, moduleEntity)) ->  
+                  // In recursive scopes all siblings build their entities in Phase1A against the same
+                  // envInitial, so duplicate sibling-module names are not yet visible there. Detect
+                  // them here at the publish point, where envAbove's accumulator already contains
+                  // any earlier-published siblings. See https://github.com/dotnet/fsharp/issues/6694.
+                  CheckForDuplicateModule envAbove moduleEntity.DemangledModuleOrNamespaceName moduleEntity.Range
                   PublishModuleDefn cenv envAbove moduleEntity 
                   MakeInnerEnvWithAcc true envAbove moduleEntity.Id moduleTyAcc moduleEntity.ModuleOrNamespaceType.ModuleOrNamespaceKind)
               (fun envAbove _ -> envAbove)
@@ -4128,14 +4390,49 @@ module EstablishTypeDefinitionCores =
         // be satisfied, so we have to do this prior to checking any constraints.
         //
         // First find all the field types in all the structural types
-        let tyconsWithStructuralTypes = 
-            (envMutRecPrelim, withEnvs) 
-            ||> MutRecShapes.mapTyconsWithEnv (fun envForDecls (origInfo, tyconOpt) -> 
-                   match origInfo, tyconOpt with 
+        let tyconsWithStructuralTypesAndSpreadSources =
+            (envMutRecPrelim, withEnvs)
+            ||> MutRecShapes.mapTyconsWithEnv (fun envForDecls (origInfo, tyconOpt) ->
+                   match origInfo, tyconOpt with
                    | (typeDefCore, _, _), Some tycon -> Some (tycon, GetStructuralElementsOfTyconDefn cenv envForDecls tpenv typeDefCore tycon)
-                   | _ -> None) 
-            |> MutRecShapes.collectTycons 
+                   | _ -> None)
+            |> MutRecShapes.collectTycons
             |> List.choose id
+
+        let tyconsWithStructuralTypes =
+            [
+                for tycon, (tys, _) in tyconsWithStructuralTypesAndSpreadSources ->
+                    tycon, tys
+            ]
+
+        // Check for cyclic spreads.
+        do
+            if cenv.g.langVersion.SupportsFeature LanguageFeature.RecordSpreads then
+                let (|PotentiallyRecursiveTycon|_|) ty =
+                    tryTcrefOfAppTy cenv.g ty
+                    |> ValueOption.bind _.TryDeref
+
+                let edges =
+                    [
+                        for dst, (_, spreadSrcs) in tyconsWithStructuralTypesAndSpreadSources do
+                            for src in spreadSrcs do
+                                match src with
+                                | PotentiallyRecursiveTycon src -> dst, src
+                                | _ -> ()
+                    ]
+
+                let tycons =
+                    let seen = HashSet ()
+                    [
+                        for dst, src in edges do
+                            if seen.Add dst.Stamp then
+                                yield dst
+                            if seen.Add src.Stamp then
+                                yield src
+                    ]
+
+                let graph = Graph<Tycon, Stamp> (_.Stamp, tycons, edges)
+                graph.IterateCycles (fun path -> errorR (Error (FSComp.SR.tcTypeDefinitionIsCyclicThroughSpreads (), (List.head path).Range)))
         
         let scSet = TyconConstraintInference.InferSetOfTyconsSupportingComparable cenv envMutRecPrelim.DisplayEnv tyconsWithStructuralTypes
         let seSet = TyconConstraintInference.InferSetOfTyconsSupportingEquatable cenv envMutRecPrelim.DisplayEnv tyconsWithStructuralTypes
@@ -4148,7 +4445,7 @@ module EstablishTypeDefinitionCores =
 
         // No inferred constraints allowed on declared typars 
         (envMutRecPrelim, withEnvs) ||> MutRecShapes.iterTyconsWithEnv (fun envForDecls (_, tyconOpt) -> 
-            tyconOpt |> Option.iter (fun tycon -> tycon.Typars m |> List.iter (SetTyparRigid envForDecls.DisplayEnv m)))
+            tyconOpt |> Option.iter (fun tycon -> tycon.Typars |> List.iter (SetTyparRigid envForDecls.DisplayEnv m)))
         
         // Phase1E. OK, now recheck the abbreviations, super/interface and explicit constraints types (this time checking constraints)
         (envMutRecPrelim, withAttrs) ||> MutRecShapes.iterTyconsWithEnv (fun envForDecls (origInfo, tyconAndAttrsOpt) -> 
@@ -4175,18 +4472,65 @@ module EstablishTypeDefinitionCores =
         // Now do the representations. Each baseValOpt is a residue from the representation which is potentially available when
         // checking the members.
         let withBaseValsAndSafeInitInfos = 
-            (envMutRecPrelim, withAttrs) ||> MutRecShapes.mapTyconsWithEnv (fun envForDecls (origInfo, tyconAndAttrsOpt) -> 
-                let info = 
-                    match origInfo, tyconAndAttrsOpt with 
-                    | (typeDefCore, _, _), Some (tycon, (attrs, _)) -> TcTyconDefnCore_Phase1G_EstablishRepresentation cenv envForDecls tpenv inSig typeDefCore tycon attrs
-                    | _ -> None, NoSafeInitInfo 
-                let tyconOpt, fixupFinalAttrs = 
-                    match tyconAndAttrsOpt with
-                    | None -> None, (fun () -> ())
-                    | Some (tycon, (_prelimAttrs, getFinalAttrs)) -> Some tycon, (fun () -> tycon.entity_attribs <- WellKnownEntityAttribs.Create(getFinalAttrs()))
+            let passOne =
+                (envMutRecPrelim, withAttrs) ||> MutRecShapes.mapTyconsWithEnv (fun envForDecls (origInfo, tyconAndAttrsOpt) ->
+                    let info, tyconOpt, fixupFinalAttrs =
+                        match origInfo, tyconAndAttrsOpt with
+                        | (typeDefCore, _, _), Some (tycon, (attrs, getFinalAttrs)) ->
+                            let fixups = ResizeArray()
+                            let info = TcTyconDefnCore_Phase1G_EstablishRepresentation cenv envForDecls tpenv inSig typeDefCore tycon attrs fixups.Add
+                            let (MutRecDefnsPhase1DataForTycon(SynComponentInfo(typeParams=TyparDecls synTypars), _, _, _, _, _)) = typeDefCore
+                            let fixupFinalAttrs () =
+                                tycon.entity_attribs <- WellKnownEntityAttribs.Create(getFinalAttrs())
+                                fixupTyparAttrs cenv envForDecls synTypars tycon.Typars
+                                for fixup in fixups do fixup()
+                            info, Some tycon, fixupFinalAttrs
+                        | _ -> (None, NoSafeInitInfo, ignore), None, ignore
 
-                (origInfo, tyconOpt, fixupFinalAttrs, info))
-                
+                    (origInfo, tyconOpt, fixupFinalAttrs, info))
+
+            let rechecks =
+                [
+                    for _, tyconOpt, _, (_, _, recheck) in passOne |> MutRecShapes.collectTycons do
+                        match tyconOpt with
+                        | Some tycon -> tycon.Stamp, recheck
+                        | None -> ()
+                ]
+
+            let spreadDependencies =
+                Map.ofList [
+                    for tycon, (_, spreadSrcTys) in tyconsWithStructuralTypesAndSpreadSources ->
+                        tycon.Stamp, [
+                            for ty in spreadSrcTys do
+                                match tryTcrefOfAppTy cenv.g ty |> ValueOption.bind _.TryDeref with
+                                | ValueSome tycon -> tycon.Stamp
+                                | ValueNone -> ()
+                        ]
+                ]
+
+            let recheckMap = Map.ofList rechecks
+            let seen = HashSet ()
+
+            let rec recheck tyconStamp =
+                if seen.Add tyconStamp then
+                    match spreadDependencies |> Map.tryFind tyconStamp with
+                    | Some spreadSrcStamps ->
+                        for spreadSrcStamp in spreadSrcStamps do
+                            if recheckMap |> Map.containsKey spreadSrcStamp then
+                                recheck spreadSrcStamp
+                    | None -> ()
+
+                    match recheckMap |> Map.tryFind tyconStamp with
+                    | Some recheck -> recheck ()
+                    | None -> ()
+
+            // Spreads require a second pass once all fields in the group are known.
+            for tyconStamp, _ in rechecks do
+                recheck tyconStamp
+
+            passOne |> MutRecShapes.mapTycons (fun (origInfo, tyconOpt, fixupFinalAttrs, (v, safeInit, _)) ->
+                (origInfo, tyconOpt, fixupFinalAttrs, (v, safeInit)))
+
         // Now check for cyclic structs and inheritance. It's possible these should be checked as separate conditions. 
         // REVIEW: checking for cyclic inheritance is happening too late. See note above.
         TcTyconDefnCore_CheckForCyclicStructsAndInheritance cenv tycons
@@ -4251,7 +4595,7 @@ module TcDeclarations =
             tcref.Deref.IsFSharpDelegateTycon ||
             tcref.Deref.IsFSharpEnumTycon
 
-        let reqTypars = tcref.Typars m
+        let reqTypars = tcref.Typars
 
         // Member definitions are intrinsic (added directly to the type) if:
         // a) For interfaces, only if it is in the original defn.
@@ -4707,8 +5051,9 @@ module TcDeclarations =
                     // We put the hash/compare bindings before the type definitions and the
                     // equality bindings after because tha is the order they've always been generated
                     // in, and there are code generation tests to check that.
-                    let binds = AddAugmentationDeclarations.AddGenericHashAndComparisonBindings cenv tycon 
+                    let binds = AddAugmentationDeclarations.AddGenericHashAndComparisonBindings cenv tycon
                     let binds3 = AddAugmentationDeclarations.AddGenericEqualityBindings cenv envForDecls tycon
+                    let binds5 = AddAugmentationDeclarations.AddReflectionFreeToStringBindings(cenv, envForDecls, tycon)
                     let binds4 =
                         if tycon.IsUnionTycon && AddAugmentationDeclarations.ShouldAugmentUnion g tycon then
                             let unionVals =
@@ -4718,7 +5063,7 @@ module TcDeclarations =
                             AugmentTypeDefinitions.MakeBindingsForUnionAugmentation g tycon (List.map mkLocalValRef unionVals)
                         else
                             []
-                    binds@binds4, binds3)
+                    binds@binds4, binds3@binds5)
 
         // Check for cyclic structs and inheritance all over again, since we may have added some fields to the struct when generating the implicit construction syntax 
         EstablishTypeDefinitionCores.TcTyconDefnCore_CheckForCyclicStructsAndInheritance cenv tycons
@@ -4874,6 +5219,10 @@ module TcDeclarations =
                 cenv true scopem m 
 
         let mutRecDefnsAfterVals = TcMutRecSignatureDecls_Phase2 cenv scopem envMutRecPrelimWithReprs withEnvs
+
+        // Now the sibling types and their constructors are established, re-resolve any attributes
+        // that referred to them (mirrors the implementation path in TcMutRecDefns_Phase2_Bindings).
+        mutRecDefnsAfterCore |> MutRecShapes.iterTycons (fun (_, _, fixupFinalAttrs, _, _) -> fixupFinalAttrs())
 
         // Updates the types of the modules to contain the contents so far, which now includes values and members
         MutRecBindingChecking.TcMutRecDefns_UpdateModuleContents mutRecNSInfo mutRecDefnsAfterVals
@@ -5722,7 +6071,9 @@ let emptyTcEnv g =
       eCallerMemberName = None 
       eLambdaArgInfos = []
       eIsControlFlow = false
-      eCachedImplicitYieldExpressions = HashMultiMap(HashIdentity.Structural, useConcurrentDictionary = true) }
+      eInObjectExpr = false
+      eCachedImplicitYieldExpressions = HashMultiMap(HashIdentity.Structural, useConcurrentDictionary = true)
+      eUseBoundValStamps = Set.empty }
 
 let CreateInitialTcEnv(g, amap, scopem, assemblyName, ccus) =
     (emptyTcEnv g, ccus) ||> List.collectFold (fun env (ccu, autoOpens, internalsVisible) -> 

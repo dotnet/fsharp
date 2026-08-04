@@ -526,7 +526,7 @@
 
     IL_0018:  ldc.i4.0
     IL_0019:  nop
-    IL_001a:  br.s       IL_003d
+    IL_001a:  br.s       IL_003b
 
     IL_001c:  ldarg.2
     IL_001d:  ldarg.2
@@ -537,7 +537,7 @@
     IL_0022:  ldc.i4.1
     IL_0023:  add
     IL_0024:  nop
-    IL_0025:  br.s       IL_003d
+    IL_0025:  br.s       IL_003b
 
     IL_0027:  ldarg.2
     IL_0028:  ldarg.2
@@ -545,7 +545,7 @@
 
     IL_002b:  ldc.i4.0
     IL_002c:  nop
-    IL_002d:  br.s       IL_003d
+    IL_002d:  br.s       IL_003b
 
     IL_002f:  ldarg.2
     IL_0030:  ldarg.2
@@ -559,30 +559,28 @@
     IL_0038:  ldc.i4.1
     IL_0039:  add
     IL_003a:  nop
-    IL_003b:  br.s       IL_003d
+    IL_003b:  stloc.0
+    IL_003c:  ldc.i4.0
+    IL_003d:  stloc.1
+    IL_003e:  ldarg.2
+    IL_003f:  stloc.2
+    IL_0040:  br.s       IL_0050
 
-    IL_003d:  stloc.0
-    IL_003e:  ldc.i4.0
-    IL_003f:  stloc.1
-    IL_0040:  ldarg.2
-    IL_0041:  stloc.2
-    IL_0042:  br.s       IL_0052
+    IL_0042:  ldloc.2
+    IL_0043:  call       void assembly::set_c(int8)
+    IL_0048:  ldloc.2
+    IL_0049:  ldarg.1
+    IL_004a:  add
+    IL_004b:  stloc.2
+    IL_004c:  ldloc.1
+    IL_004d:  ldc.i4.1
+    IL_004e:  add
+    IL_004f:  stloc.1
+    IL_0050:  ldloc.1
+    IL_0051:  ldloc.0
+    IL_0052:  blt.un.s   IL_0042
 
-    IL_0044:  ldloc.2
-    IL_0045:  call       void assembly::set_c(int8)
-    IL_004a:  ldloc.2
-    IL_004b:  ldarg.1
-    IL_004c:  add
-    IL_004d:  stloc.2
-    IL_004e:  ldloc.1
-    IL_004f:  ldc.i4.1
-    IL_0050:  add
-    IL_0051:  stloc.1
-    IL_0052:  ldloc.1
-    IL_0053:  ldloc.0
-    IL_0054:  blt.un.s   IL_0044
-
-    IL_0056:  ret
+    IL_0054:  ret
   } 
 
   .method public static void  f11(int8 start,

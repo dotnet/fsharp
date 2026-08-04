@@ -81,6 +81,13 @@ val prettyLayoutOfPropInfoFreeStyle:
 
 val stringOfMethInfo: infoReader: InfoReader -> m: range -> denv: DisplayEnv -> minfo: MethInfo -> string
 
+/// Convert a MethInfo to a string, suitable for the "Available overloads" list
+/// in overload-resolution error messages. For C#-style extension methods, the
+/// rendering uses the extension's declaring type rather than the receiver type,
+/// so the message is not misleading (issue dotnet/fsharp#9838).
+val stringOfMethInfoForOverloadError:
+    infoReader: InfoReader -> m: range -> denv: DisplayEnv -> minfo: MethInfo -> string
+
 /// Convert a MethInfo to a F# signature
 val stringOfMethInfoFSharpStyle: infoReader: InfoReader -> m: range -> denv: DisplayEnv -> minfo: MethInfo -> string
 

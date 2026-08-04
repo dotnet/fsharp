@@ -7,6 +7,7 @@ open Internal.Utilities.Library
 open FSharp.Compiler 
 open FSharp.Compiler.AbstractIL.IL 
 open FSharp.Compiler.DiagnosticsLogger
+open FSharp.Compiler.Import
 open FSharp.Compiler.Infos
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.TypedTree
@@ -233,6 +234,38 @@ let IsILFieldInfoAccessible g amap m ad x =
         let access = tpfi.PUntaint((fun fi -> ComputeILAccess fi.IsPublic fi.IsFamily fi.IsFamilyOrAssembly fi.IsFamilyAndAssembly), m)
         IsProvidedMemberAccessible amap m ad x.ApparentEnclosingType access
 #endif
+
+/// True if the IL field has protected (family) accessibility.
+let private isProtectedILFieldSpec (amap: ImportMap) m (fspec: ILFieldSpec) =
+    match fspec.DeclaringTypeRef with
+    | TryImportILTypeRef amap m (ILTyconRawMetadata tdef) ->
+        tdef.Fields.LookupByName fspec.Name
+        |> List.exists (fun fdef -> fdef.Access = ILMemberAccess.Family || fdef.Access = ILMemberAccess.FamilyOrAssembly)
+    | _ -> false
+
+let exprReferencesProtectedILField (amap: ImportMap) expr =
+    let mutable found = false
+
+    let folder =
+        { ExprFolder0 with
+            exprIntercept =
+                fun _recurseF noInterceptF z e ->
+                    // Invoked per-member (IlxGen) and per-TLR-candidate (SelectTLRVals), so prune the
+                    // walk as soon as a hit is recorded: skipping noInterceptF stops descent into this
+                    // node's subtree, bounding the post-hit cost to the current fold frontier.
+                    if found then
+                        z
+                    else
+                        match e with
+                        | Expr.Op(TOp.ILAsm(instrs, _), _, _, m) ->
+                            if instrs |> List.exists (function ILFieldInstr fspec -> isProtectedILFieldSpec amap m fspec | _ -> false) then
+                                found <- true
+                        | _ -> ()
+
+                        noInterceptF z e }
+
+    FoldExpr folder () expr |> ignore
+    found
 
 let GetILAccessOfILEventInfo (ILEventInfo (tinfo, edef)) =
     (resolveILMethodRef tinfo.RawMetadata edef.AddMethod).Access 

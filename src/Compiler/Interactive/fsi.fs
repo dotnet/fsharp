@@ -1225,7 +1225,20 @@ type internal FsiCommandLineOptions(fsi: FsiEvaluationSessionHostConfig, argv: s
                 @ fsiUsageSuffix tcConfigB
 
             let abbrevArgs = GetAbbrevFlagSet tcConfigB false
-            ParseCompilerOptions(collect, fsiCompilerOptions, List.tail (PostProcessCompilerArgs abbrevArgs argv))
+            // PostProcessCompilerArgs rewrites abbreviated flags like `-d 5` to `-d:5`.
+            // We must NOT apply that rewrite to user-script arguments that follow `--`,
+            // otherwise fsi.CommandLineArgs leaks the rewrite to scripts (see #10819).
+            // Split argv at the first `--`, post-process only the compiler-args prefix,
+            // and pass the suffix (including the `--` separator itself) through unmodified.
+            let processedArgs =
+                match Array.tryFindIndex (fun (a: string) -> a = "--") argv with
+                | Some idx ->
+                    let prefix = argv[0 .. idx - 1]
+                    let suffix = argv[idx..]
+                    PostProcessCompilerArgs abbrevArgs prefix @ List.ofArray suffix
+                | None -> PostProcessCompilerArgs abbrevArgs argv
+
+            ParseCompilerOptions(collect, fsiCompilerOptions, List.tail processedArgs)
         with e ->
             stopProcessingRecovery e range0
             failwithf "Error creating evaluation session: %A" e
@@ -1876,9 +1889,18 @@ type internal FsiDynamicCompiler
         let manifest =
             let manifest = ilxMainModule.Manifest.Value
 
+            let hasUserDebuggableAttr =
+                manifest.CustomAttrs.AsList()
+                |> List.exists (fun a -> a.Method.DeclaringType.TypeRef.FullName = "System.Diagnostics.DebuggableAttribute")
+
+            // Mirror the single-emit path (ilreflect.fs's mkDynamicAssemblyAndModule): attach
+            // DebuggableAttribute(DisableOptimizations|Default) to the submission's manifest exactly
+            // when local optimizations are disabled, so the JIT keeps locals around for debugging.
             let attrs =
                 [
                     tcGlobals.MakeInternalsVisibleToAttribute(dynamicCcuName tcConfigB.fsiMultiAssemblyEmit)
+                    if not tcConfigB.optSettings.LocalOptimizationsEnabled && not hasUserDebuggableAttr then
+                        tcGlobals.mkDebuggableAttributeV2 (tcConfigB.jitTracking, true)
                     yield! manifest.CustomAttrs.AsList()
                 ]
 
@@ -1919,6 +1941,7 @@ type internal FsiDynamicCompiler
                 referenceAssemblyAttribOpt = None
                 referenceAssemblySignatureHash = None
                 pathMap = tcConfig.pathMap
+                methodCustomDebugInfoRows = Map.empty
             }
 
         let assemblyBytes, pdbBytes = WriteILBinaryInMemory(opts, ilxMainModule, id)
@@ -2820,8 +2843,12 @@ type internal FsiDynamicCompiler
 
                             if result.Success then
 
+                                // Under --quiet, route NuGet restore stdout to stderr.
+                                let stdOutSink: System.IO.TextWriter =
+                                    if tcConfigB.noFeedback then Console.Error else Console.Out
+
                                 for line in result.StdOut do
-                                    Console.Out.WriteLine(line)
+                                    stdOutSink.WriteLine(line)
 
                                 for line in result.StdError do
                                     Console.Error.WriteLine(line)
@@ -3572,7 +3599,6 @@ type FsiStdinLexerProvider
         UnicodeLexing.FunctionAsLexbuf(
             true,
             tcConfigB.langVersion,
-            tcConfigB.strictIndentation,
             (fun (buf: char[], start, len) ->
                 //fprintf fsiConsoleOutput.Out "Calling ReadLine\n"
                 let inputOption =
@@ -3651,15 +3677,13 @@ type FsiStdinLexerProvider
 
     // Create a new lexer to read an "included" script file
     member _.CreateIncludedScriptLexer(sourceFileName, reader, diagnosticsLogger) =
-        let lexbuf =
-            UnicodeLexing.StreamReaderAsLexbuf(true, tcConfigB.langVersion, tcConfigB.strictIndentation, reader)
+        let lexbuf = UnicodeLexing.StreamReaderAsLexbuf(true, tcConfigB.langVersion, reader)
 
         CreateLexerForLexBuffer(sourceFileName, lexbuf, diagnosticsLogger)
 
     // Create a new lexer to read a string
     member _.CreateStringLexer(sourceFileName, source, diagnosticsLogger) =
-        let lexbuf =
-            UnicodeLexing.StringAsLexbuf(true, tcConfigB.langVersion, tcConfigB.strictIndentation, source)
+        let lexbuf = UnicodeLexing.StringAsLexbuf(true, tcConfigB.langVersion, source)
 
         CreateLexerForLexBuffer(sourceFileName, lexbuf, diagnosticsLogger)
 
@@ -3780,7 +3804,7 @@ type FsiInteractionProcessor
 
     let runhDirective diagnosticsLogger ctok istate source =
         let lexbuf =
-            UnicodeLexing.StringAsLexbuf(true, tcConfigB.langVersion, tcConfigB.strictIndentation, $"<@@ {source} @@>")
+            UnicodeLexing.StringAsLexbuf(true, tcConfigB.langVersion, $"<@@ {source} @@>")
 
         let tokenizer =
             fsiStdinLexerProvider.CreateBufferLexer("hdummy.fsx", lexbuf, diagnosticsLogger)
@@ -4343,8 +4367,7 @@ type FsiInteractionProcessor
         use _ = UseDiagnosticsLogger diagnosticsLogger
         use _scope = SetCurrentUICultureForThread fsiOptions.FsiLCID
 
-        let lexbuf =
-            UnicodeLexing.StringAsLexbuf(true, tcConfigB.langVersion, tcConfigB.strictIndentation, sourceText)
+        let lexbuf = UnicodeLexing.StringAsLexbuf(true, tcConfigB.langVersion, sourceText)
 
         let tokenizer =
             fsiStdinLexerProvider.CreateBufferLexer(scriptFileName, lexbuf, diagnosticsLogger)
@@ -4365,8 +4388,7 @@ type FsiInteractionProcessor
         use _unwind2 = UseDiagnosticsLogger diagnosticsLogger
         use _scope = SetCurrentUICultureForThread fsiOptions.FsiLCID
 
-        let lexbuf =
-            UnicodeLexing.StringAsLexbuf(true, tcConfigB.langVersion, tcConfigB.strictIndentation, sourceText)
+        let lexbuf = UnicodeLexing.StringAsLexbuf(true, tcConfigB.langVersion, sourceText)
 
         let tokenizer =
             fsiStdinLexerProvider.CreateBufferLexer(scriptFileName, lexbuf, diagnosticsLogger)

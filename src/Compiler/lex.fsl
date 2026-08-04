@@ -201,8 +201,8 @@ let shouldStartFile args lexbuf (m:range) err tok =
     if (m.StartColumn <> 0 || m.StartLine <> 1) then fail args lexbuf err tok
     else tok
 
-let evalIfDefExpression startPos reportLibraryOnlyFeatures langVersion strictIndentation args (lookup: string -> bool) (lexed: string) =
-    let lexbuf          = LexBuffer<char>.FromChars (reportLibraryOnlyFeatures, langVersion, strictIndentation, lexed.ToCharArray ())
+let evalIfDefExpression startPos reportLibraryOnlyFeatures langVersion args (lookup: string -> bool) (lexed: string) =
+    let lexbuf          = LexBuffer<char>.FromChars (reportLibraryOnlyFeatures, langVersion, lexed.ToCharArray ())
     lexbuf.StartPos     <- startPos
     lexbuf.EndPos       <- startPos
     let tokenStream     = FSharp.Compiler.PPLexer.tokenstream args
@@ -850,6 +850,8 @@ rule token (args: LexArgs) (skip: bool) = parse
 
  | "..^" { DOT_DOT_HAT }
 
+ | "..." { DOT_DOT_DOT }
+
  | "." { DOT }
 
  | ":" { COLON }
@@ -975,8 +977,20 @@ rule token (args: LexArgs) (skip: bool) = parse
 
  | ignored_op_char* ('@'|'^')                  op_char* { checkExprOp lexbuf; INFIX_AT_HAT_OP(lexeme lexbuf) }
 
+ // For '=' immediately followed (no space) by an interpolated-string opener, e.g. C(Name=$"123").
+ // Match the '=' together with the opener, but consume only the '=' and rewind so the next scan
+ // begins at the opener, letting the regular interpolated-string lexer process it (including any
+ // '{...}' holes). This covers the single ($"), extended/multi-dollar ($$"""), and verbatim
+ // ($@" / @$") interpolated-string forms. See https://github.com/dotnet/fsharp/issues/16696.
+ | '=' '$' '"'
+ | '=' ('$'+) '"' '"' '"'
+ | '=' ("$@" | "@$") '"' {
+       lexbuf.LexemeLength <- 1
+       lexbuf.EndPos <- lexbuf.StartPos.ShiftColumnBy(1)
+       EQUALS }
+
  | ignored_op_char* ('=' | "!=" | '<' | '$')  op_char* { checkExprOp lexbuf; INFIX_COMPARE_OP(lexeme lexbuf) }
- 
+
  | ignored_op_char* ('>')  op_char* { checkExprGreaterColonOp lexbuf; INFIX_COMPARE_OP(lexeme lexbuf) }
 
  | ignored_op_char* ('&')                      op_char* { checkExprOp lexbuf; INFIX_AMP_OP(lexeme lexbuf) }
@@ -1012,7 +1026,7 @@ rule token (args: LexArgs) (skip: bool) = parse
      shouldStartLine args lexbuf m (FSComp.SR.lexHashIfMustBeFirst())
      let lookup id = List.contains id args.conditionalDefines
      let lexed = lexeme lexbuf
-     let isTrue, expr = evalIfDefExpression lexbuf.StartPos lexbuf.ReportLibraryOnlyFeatures lexbuf.LanguageVersion lexbuf.StrictIndentation args lookup lexed
+     let isTrue, expr = evalIfDefExpression lexbuf.StartPos lexbuf.ReportLibraryOnlyFeatures lexbuf.LanguageVersion args lookup lexed
      args.ifdefStack <- (IfDefIf,m) :: args.ifdefStack
      IfdefStore.SaveIfHash(lexbuf, lexed, expr, m)
      let contCase = if isTrue then LexerEndlineContinuation.Token else LexerEndlineContinuation.IfdefSkip(0, m)
@@ -1044,7 +1058,7 @@ rule token (args: LexArgs) (skip: bool) = parse
        let lookup id = List.contains id args.conditionalDefines
        // Result is discarded: in active code, a prior #if/#elif branch is executing,
        // so this #elif always transitions to skipping. Eval is needed for trivia storage.
-       let _, expr = evalIfDefExpression lexbuf.StartPos lexbuf.ReportLibraryOnlyFeatures lexbuf.LanguageVersion lexbuf.StrictIndentation args lookup lexed
+       let _, expr = evalIfDefExpression lexbuf.StartPos lexbuf.ReportLibraryOnlyFeatures lexbuf.LanguageVersion args lookup lexed
        args.ifdefStack <- (IfDefElif,m) :: rest
        IfdefStore.SaveElifHash(lexbuf, lexed, expr, m)
        let tok = HASH_ELIF(m, lexed, LexCont.EndLine(args.ifdefStack, args.stringNest, LexerEndlineContinuation.IfdefSkip(0, m)))
@@ -1109,7 +1123,7 @@ and ifdefSkip (n: int) (m: range) (args: LexArgs) (skip: bool) = parse
      else
        let lexed = lexeme lexbuf
        let lookup id = List.contains id args.conditionalDefines
-       let _, expr = evalIfDefExpression lexbuf.StartPos lexbuf.ReportLibraryOnlyFeatures lexbuf.LanguageVersion lexbuf.StrictIndentation args lookup lexed
+       let _, expr = evalIfDefExpression lexbuf.StartPos lexbuf.ReportLibraryOnlyFeatures lexbuf.LanguageVersion args lookup lexed
        IfdefStore.SaveIfHash(lexbuf, lexed, expr, m)
        let tok = INACTIVECODE(LexCont.EndLine(args.ifdefStack, args.stringNest, LexerEndlineContinuation.IfdefSkip(n+1, m)))
        if skip then endline (LexerEndlineContinuation.IfdefSkip(n+1, m)) args skip lexbuf else tok }
@@ -1148,7 +1162,7 @@ and ifdefSkip (n: int) (m: range) (args: LexArgs) (skip: bool) = parse
 
       let evalAndSaveElif () =
         let lookup id = List.contains id args.conditionalDefines
-        let result, expr = evalIfDefExpression lexbuf.StartPos lexbuf.ReportLibraryOnlyFeatures lexbuf.LanguageVersion lexbuf.StrictIndentation args lookup lexed
+        let result, expr = evalIfDefExpression lexbuf.StartPos lexbuf.ReportLibraryOnlyFeatures lexbuf.LanguageVersion args lookup lexed
         IfdefStore.SaveElifHash(lexbuf, lexed, expr, m)
         result
 

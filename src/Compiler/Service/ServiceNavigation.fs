@@ -100,8 +100,8 @@ type NavigationItems(declarations: NavigationTopLevelDeclaration[]) =
 
 module NavigationImpl =
     let unionRangesChecked r1 r2 =
-        if equals r1 range0 then r2
-        elif equals r2 range0 then r1
+        if Range.equals r1 range0 then r2
+        elif Range.equals r2 range0 then r1
         else unionRanges r1 r2
 
     let rangeOfDecls2 f decls =
@@ -290,12 +290,14 @@ module NavigationImpl =
                         createTypeDecl (baseName, lid, FSharpGlyph.Enum, m, mBody, nested, NavigationEntityKind.Enum, access)
                     ]
 
-                | SynTypeDefnSimpleRepr.Record(_, fields, mBody) ->
+                | SynTypeDefnSimpleRepr.Record(_, fieldsAndSpreads, mBody) ->
                     let fields =
                         [
-                            for SynField(idOpt = id; range = m) in fields do
-                                match id with
-                                | Some ident -> yield createMember (ident, NavigationItemKind.Field, FSharpGlyph.Field, m, NavigationEntityKind.Record, false, access)
+                            for fieldOrSpread in fieldsAndSpreads do
+                                match fieldOrSpread with
+                                | SynFieldOrSpread.Field(SynField(idOpt = Some ident; range = m)) ->
+                                    yield createMember (ident, NavigationItemKind.Field, FSharpGlyph.Field, m, NavigationEntityKind.Record, false, access)
+                                | SynFieldOrSpread.Spread _
                                 | _ -> ()
                         ]
 
@@ -550,12 +552,14 @@ module NavigationImpl =
                         let nested = cases @ topMembers
                         let mBody = bodyRange mBody nested
                         createTypeDecl (baseName, lid, FSharpGlyph.Enum, m, mBody, nested, NavigationEntityKind.Enum, access)
-                    | SynTypeDefnSimpleRepr.Record(_, fields, mBody) ->
+                    | SynTypeDefnSimpleRepr.Record(_, fieldsAndSpreads, mBody) ->
                         let fields =
                             [
-                                for SynField(idOpt = id; range = m) in fields do
-                                    match id with
-                                    | Some ident -> yield createMember (ident, NavigationItemKind.Field, FSharpGlyph.Field, m, NavigationEntityKind.Record, false, access)
+                                for fieldOrSpread in fieldsAndSpreads do
+                                    match fieldOrSpread with
+                                    | SynFieldOrSpread.Field(SynField(idOpt = Some ident; range = m)) ->
+                                        yield createMember (ident, NavigationItemKind.Field, FSharpGlyph.Field, m, NavigationEntityKind.Record, false, access)
+                                    | SynFieldOrSpread.Spread _
                                     | _ -> ()
                             ]
 
@@ -1000,10 +1004,12 @@ module NavigateTo =
             | SynTypeDefnSimpleRepr.Enum(enumCases, _) ->
                 for c in enumCases do
                     addEnumCase c isSig container
-            | SynTypeDefnSimpleRepr.Record(_, fields, _) ->
-                for f in fields do
+            | SynTypeDefnSimpleRepr.Record(_, fieldsAndSpreads, _) ->
+                for fieldOrSpread in fieldsAndSpreads do
                     // TODO: add specific case for record field?
-                    addField f isSig container
+                    match fieldOrSpread with
+                    | SynFieldOrSpread.Field f -> addField f isSig container
+                    | SynFieldOrSpread.Spread _ -> ()
             | SynTypeDefnSimpleRepr.Union(_, unionCases, _) ->
                 for uc in unionCases do
                     addUnionCase uc isSig container

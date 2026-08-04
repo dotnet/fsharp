@@ -43,7 +43,114 @@ type C() =
          |> ignoreWarnings
          |> compile
          |> shouldSucceed
-    
+
+    // Regression tests for #17904 and #19020. Both have a common root cause:
+    // [<return: X>] prefix attributes must route to the return-value metadata slot,
+    // not stay on the binding alongside method-targeted attributes.
+
+    [<Fact>]
+    let ``Issue 19020 - [<return: X>] is emitted on the return parameter of class members`` () =
+        FSharp """
+module M
+open System
+[<AttributeUsage(AttributeTargets.ReturnValue)>]
+type DescAttribute() = inherit Attribute()
+
+type T() =
+    [<return: Desc>]
+    member _.Inst a = a + 1
+    [<return: Desc>]
+    static member Stat a = a + 1
+
+[<EntryPoint>]
+let main _ =
+    let inst = typeof<T>.GetMethod("Inst").ReturnParameter.GetCustomAttributes(typeof<DescAttribute>, false).Length
+    let stat = typeof<T>.GetMethod("Stat").ReturnParameter.GetCustomAttributes(typeof<DescAttribute>, false).Length
+    if inst <> 1 then failwithf "instance member: expected 1, got %d" inst
+    if stat <> 1 then failwithf "static member: expected 1, got %d" stat
+    0
+        """
+        |> asExe
+        |> compile
+        |> shouldSucceed
+        |> run
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Issue 17904 - [<X>] on method and [<return: X>] on return value are not duplicates`` () =
+        Fsx """
+open System
+[<AttributeUsage(AttributeTargets.All)>]
+type AttrAttribute() = inherit Attribute()
+
+type T() =
+    [<Attr>]
+    [<return: Attr>]
+    member _.Foo() = ()
+        """
+         |> ignoreWarnings
+         |> compile
+         |> shouldSucceed
+
+    [<Fact>]
+    let ``Issue 17904 - two [<return: X>] on the same return value remain duplicates`` () =
+        Fsx """
+open System
+[<AttributeUsage(AttributeTargets.All)>]
+type AttrAttribute() = inherit Attribute()
+
+type T() =
+    [<return: Attr>]
+    [<return: Attr>]
+    member _.Foo() = ()
+        """
+         |> ignoreWarnings
+         |> compile
+         |> shouldFail
+         |> withSingleDiagnostic (Error 429, Line 8, Col 7, Line 8, Col 19, "The attribute type 'AttrAttribute' has 'AllowMultiple=false'. Multiple instances of this attribute cannot be attached to a single language element.")
+
+    [<Fact>]
+    let ``Issue 17904 - [<X>] and [<method: X>] on a method remain duplicates`` () =
+        Fsx """
+open System
+[<AttributeUsage(AttributeTargets.All)>]
+type AttrAttribute() = inherit Attribute()
+
+type T() =
+    [<Attr>]
+    [<method: Attr>]
+    member _.Foo() = ()
+        """
+         |> ignoreWarnings
+         |> compile
+         |> shouldFail
+         |> withSingleDiagnostic (Error 429, Line 8, Col 7, Line 8, Col 19, "The attribute type 'AttrAttribute' has 'AllowMultiple=false'. Multiple instances of this attribute cannot be attached to a single language element.")
+
+    [<Fact>]
+    let ``CompilationRepresentation(Instance) on a union-type member is not rotated to the return value`` () =
+        FSharp """
+module M
+type MyOption<'T> =
+    | MySome of 'T
+    | MyNone
+    [<CompilationRepresentation(CompilationRepresentationFlags.Instance)>]
+    member this.Value = match this with | MySome v -> v | MyNone -> failwith "MyNone"
+
+[<EntryPoint>]
+let main _ =
+    let m = typeof<MyOption<int>>.GetMethod("get_Value")
+    if isNull m then failwith "get_Value not found — CompilationRepresentation(Instance) was likely rotated away from the member"
+    if m.IsStatic then failwith "get_Value should be an instance method"
+    if (MySome 42).Value <> 42 then failwith "Value did not return the carried payload"
+    0
+        """
+        |> asExe
+        |> compile
+        |> shouldSucceed
+        |> run
+        |> shouldSucceed
+
+
     [<FSharp.Test.FactForNETCOREAPP>]
     let ``Regression: typechecker does not fail when attribute is on type variable (https://github.com/dotnet/fsharp/issues/13525)`` () =
         let csharpBaseClass = 

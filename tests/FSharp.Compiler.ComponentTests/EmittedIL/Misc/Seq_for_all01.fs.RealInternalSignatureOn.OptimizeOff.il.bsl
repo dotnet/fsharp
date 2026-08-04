@@ -52,20 +52,19 @@
     {
       
       .maxstack  8
-      IL_0000:  nop
-      IL_0001:  ldc.i4.1
-      IL_0002:  ldc.i4.0
-      IL_0003:  ceq
-      IL_0005:  nop
-      IL_0006:  brfalse.s  IL_000c
+      IL_0000:  ldc.i4.1
+      IL_0001:  ldc.i4.0
+      IL_0002:  ceq
+      IL_0004:  nop
+      IL_0005:  brfalse.s  IL_000b
 
+      IL_0007:  nop
       IL_0008:  nop
-      IL_0009:  nop
-      IL_000a:  br.s       IL_000d
+      IL_0009:  br.s       IL_000c
 
-      IL_000c:  nop
-      IL_000d:  ldc.i4.1
-      IL_000e:  ret
+      IL_000b:  nop
+      IL_000c:  ldc.i4.1
+      IL_000d:  ret
     } 
 
     .method private specialname rtspecialname static void  .cctor() cil managed
@@ -139,6 +138,7 @@
   } 
 
 } 
+
 
 
 

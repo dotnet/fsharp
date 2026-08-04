@@ -79,6 +79,13 @@ type FSharpDisplayContext =
     /// for example, `int list seq` becomes `seq<int list>`
     member WithTopLevelPrefixGenericParameters: unit -> FSharpDisplayContext
 
+[<Struct>]
+type FSharpObsoleteDiagnosticInfo =
+    { IsError: bool
+      DiagnosticId: string option
+      Message: string option
+      UrlFormat: string option }
+
 /// Represents a symbol in checked F# source code or a compiled .NET component.
 ///
 /// The subtype of the symbol may reveal further information and can be one of FSharpEntity, FSharpUnionCase
@@ -147,6 +154,8 @@ type FSharpSymbol =
 
     /// Indicates if this symbol has an attribute matching the full name of the given type parameter
     member HasAttribute<'T> : unit -> bool
+
+    abstract ObsoleteDiagnosticInfo: FSharpObsoleteDiagnosticInfo option
 
 /// Represents an assembly as seen by the F# language
 type FSharpAssembly =
@@ -891,6 +900,9 @@ type FSharpMemberOrFunctionOrValue =
 
     /// Indicates if this is a setter method for a property, or a use of a property in setter mode
     member IsPropertySetterMethod: bool
+
+    /// Indicates if this is an accessor method for a property, i.e. either a getter or a setter.
+    member IsPropertyAccessor: bool
 
     /// Indicates if this is an add method for an event
     member IsEventAddMethod: bool

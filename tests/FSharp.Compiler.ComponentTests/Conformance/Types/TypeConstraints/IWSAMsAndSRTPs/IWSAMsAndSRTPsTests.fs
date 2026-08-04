@@ -288,6 +288,24 @@ let main _ =
             IL_000a:  ret
           }"""]
 
+    [<Fact>]
+    let ``SRTP get_Item works on strings`` () =
+        FSharp """
+let inline indexInto (slice: ^T when ^T: (member get_Item: int -> ^U)) i : ^U =
+    slice.get_Item i
+
+[<EntryPoint>]
+let main _ =
+    if indexInto "abcde" 2 <> 'c' then
+        failwith "Unexpected result"
+
+    0
+        """
+        |> asExe
+        |> withOptions ["--nowarn:77"]
+        |> compileAndRun
+        |> shouldSucceed
+
     [<Theory>]
     [<InlineData("let inline f_set_Item<'T when 'T : (member Item: int -> string with set) >(x: 'T) = (^T : (member Item: int -> string with set) (x, 3, \"a\"))")>]
     [<InlineData("let inline f_set_Item<'T when 'T : (member set_Item: int * string -> unit) >(x: 'T) = (^T : (member set_Item: int * string -> unit) (x, 3, \"a\"))")>]
@@ -699,6 +717,7 @@ let main _ =
         |> asExe
         |> compileAndRun
         |> shouldSucceed
+
 
     [<InlineData(true)>]        // RealSig
     [<InlineData(false)>]       // Regular
@@ -3404,7 +3423,7 @@ type System.Int32 with
 
 let inline decrement (x: ^T) : ^T = (^T : (static member Decrement : ^T -> ^T) x)
 
-// rec inline with SRTP is not supported (error 1114)
+// rec inline with SRTP is not supported (error 3890)
 let rec inline sumTo (x: ^T) : ^T =
     if x = LanguagePrimitives.GenericZero then LanguagePrimitives.GenericZero
     else x + sumTo (decrement x)
@@ -3413,7 +3432,7 @@ let rec inline sumTo (x: ^T) : ^T =
         |> withLangVersionPreview
         |> compile
         |> shouldFail
-        |> withErrorCode 1114
+        |> withErrorCode 3890
 
     [<Fact>]
     let ``SRTP constraint with no matching member produces clear error`` () =

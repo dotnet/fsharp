@@ -184,7 +184,11 @@ module Named =
         |> withOptions ["--test:ErrorRanges"]
         |> typecheck
         |> shouldFail
-        |> withSingleDiagnostic (Error 1209, Line 5, Col 6, Line 5, Col 11, "Active pattern '|A|B|' is not a function")
+        |> withDiagnostics [
+            (Error 1209, Line 7, Col 6, Line 7, Col 11, "Active pattern '|A|B|' is not a function")
+            (Error 1209, Line 8, Col 6, Line 8, Col 9, "Active pattern '|C|' is not a function")
+            (Error 1209, Line 9, Col 6, Line 9, Col 11, "Active pattern '|D|_|' is not a function")
+        ]
 
     // This test was automatically generated (moved from FSharpQA suite - Conformance/PatternMatching/Named)
     [<Theory; FileInlineData("E_ActivePatterns01.fs")>]

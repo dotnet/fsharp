@@ -286,7 +286,7 @@ and TcPat warnOnUpper (cenv: cenv) env valReprInfo vFlags (patEnv: TcPatLinearEn
 
     match synPat with
     | SynPat.As (_, SynPat.Named _, _) -> ()
-    | SynPat.As (_, _, m) -> checkLanguageFeatureError g.langVersion LanguageFeature.NonVariablePatternsToRightOfAsPatterns m
+    | SynPat.As (_, _, m) -> checkLanguageFeatureAndRecover g.langVersion LanguageFeature.NonVariablePatternsToRightOfAsPatterns m
     | _ -> ()
 
     match synPat with
@@ -498,19 +498,24 @@ and TcPatArrayOrList warnOnUpper cenv env vFlags patEnv ty isArray args m =
     phase2, acc
 
 and TcRecordPat warnOnUpper (cenv: cenv) env vFlags patEnv ty fieldPats m =
-    let fieldPats = 
+    let idents =
+        let (|Last|) = List.last
+        fieldPats
+        |> List.map (fun (NamePatPairField (fieldName = SynLongIdent (id = Last fieldId))) -> fieldId)
+
+    let fieldPats =
         fieldPats 
-        |> List.map (fun (NamePatPairField(fieldName = fieldLid; pat = pat)) -> 
-            match fieldLid.LongIdent with
-            | [id] -> ([], id), pat
-            | lid -> List.frontAndBack lid, pat)
+        |> List.map (fun (NamePatPairField(fieldName = fieldLid; pat = pat)) ->
+            let path, fieldId = List.frontAndBack fieldLid.LongIdent
+            fieldId, ExplicitOrSpread.Explicit (path, pat))
     
+    CheckRecdExprDuplicateFields idents
     match BuildFieldMap cenv env false ty fieldPats m with
     | None -> (fun _ -> TPat_error m), patEnv
     | Some(tinst, tcref, fldsmap, _fldsList) ->
 
     let gtyp = mkWoNullAppTy tcref tinst
-    let inst = List.zip (tcref.Typars m) tinst
+    let inst = List.zip (tcref.Typars) tinst
 
     UnifyTypes cenv env m ty gtyp
 
@@ -520,13 +525,14 @@ and TcRecordPat warnOnUpper (cenv: cenv) env vFlags patEnv ty fieldPats m =
     let fieldPats, patEnvR =
         (patEnv, ftys) ||> List.mapFold (fun s (ty, fsp) ->
             match fldsmap.TryGetValue fsp.rfield_id.idText with
-            | true, v ->
+            | true, ExplicitOrSpread.Explicit v ->
                 let warnOnUpper =
                     if cenv.g.langVersion.SupportsFeature(LanguageFeature.DontWarnOnUppercaseIdentifiersInBindingPatterns) then
                         AllIdsOK
                     else
                         warnOnUpper
                 TcPat warnOnUpper cenv env None vFlags s ty v
+            | true, ExplicitOrSpread.Spread _ -> (* Unreachable. *) error (InternalError ("Spreads in patterns are not supported.", m))
             | _ -> (fun _ -> TPat_wild m), s)
 
     let phase2 values =
@@ -658,7 +664,7 @@ and ApplyUnionCaseOrExn m (cenv: cenv) env overallTy item =
         CheckUnionCaseAttributes g ucref m |> CommitOperationResult
         CheckUnionCaseAccessible cenv.amap m ad ucref |> ignore
         let resTy = actualResultTyOfUnionCase ucinfo.TypeInst ucref
-        let inst = mkTyparInst ucref.TyconRef.TyparsNoRange ucinfo.TypeInst
+        let inst = mkTyparInst ucref.TyconRef.Typars ucinfo.TypeInst
         let mkf =
             try
                 UnifyTypes cenv env m overallTy resTy

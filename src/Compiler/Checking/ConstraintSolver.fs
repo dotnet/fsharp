@@ -130,7 +130,7 @@ let FreshMethInst g traitCtxt m fctps tinst tpsorig =
     FreshenAndFixupTypars g traitCtxt m TyparRigidity.Flexible fctps tinst tpsorig
 
 let FreshenMethInfo g traitCtxt m (minfo: MethInfo) =
-    let _, _, tpTys = FreshMethInst g traitCtxt m (minfo.GetFormalTyparsOfDeclaringType m) minfo.DeclaringTypeInst minfo.FormalMethodTypars
+    let _, _, tpTys = FreshMethInst g traitCtxt m (minfo.GetFormalTyparsOfDeclaringType()) minfo.DeclaringTypeInst minfo.FormalMethodTypars
     tpTys
 
 //-------------------------------------------------------------------------
@@ -189,6 +189,17 @@ type ContextInfo =
     /// The range points to the original argument location.
     | NullnessCheckOfCapturedArg of range
 
+    /// Obj-argument type check in a dotted member access on a nullable receiver.
+    | MemberAccessOnNullable of ObjArgInfo
+
+/// Receiver information for a dotted member access, used to produce
+/// targeted nullness warnings (e.g. "Possible dereference of null when
+/// accessing member 'M' on the nullable value 'x'").
+and ObjArgInfo =
+    { ObjExprRange: range
+      MemberName: string
+      BindingName: string option }
+
 /// Captures relevant information for a particular failed overload resolution.
 type OverloadInformation = 
     {
@@ -238,6 +249,8 @@ exception ConstraintSolverNullnessWarningWithTypes of DisplayEnv * TType * TType
 exception ConstraintSolverNullnessWarningWithType of DisplayEnv * TType * NullnessInfo * range  * range 
 
 exception ConstraintSolverNullnessWarning of string * range * range 
+
+exception ConstraintSolverNullnessWarningOnDotAccess of DisplayEnv * objTy: TType * memberName: string * bindingName: string option * objExprRange: range * mMethod: range
 
 exception ConstraintSolverError of string * range * range
 
@@ -360,6 +373,15 @@ let MakeConstraintSolverEnv contextInfo css m denv =
       IsSupportsNullFlex = false
       ExtraRigidTypars = emptyFreeTypars
     }
+
+/// Strip a MemberAccessOnNullable context before recursing into inner type
+/// components. That context describes the OUTER receiver of a dot-access and
+/// must not leak into recursive subsumption/unification of inner types
+/// (tuple components, type args, fun domain/range, ...). See #19658.
+let stripMemberAccessOnNullableCtx (csenv: ConstraintSolverEnv) =
+    match csenv.eContextInfo with
+    | ContextInfo.MemberAccessOnNullable _ -> { csenv with eContextInfo = ContextInfo.NoContext }
+    | _ -> csenv
 
 /// Check whether a type variable occurs in the r.h.s. of a type, e.g. to catch
 /// infinite equations such as
@@ -1044,6 +1066,7 @@ and shouldWarnUselessNullCheck (csenv:ConstraintSolverEnv) =
 and getNullnessWarningRange (csenv: ConstraintSolverEnv) =
     match csenv.eContextInfo with
     | ContextInfo.NullnessCheckOfCapturedArg capturedArgRange -> capturedArgRange
+    | ContextInfo.MemberAccessOnNullable info -> info.ObjExprRange
     | _ -> csenv.m
 
 // nullness1: actual
@@ -1119,7 +1142,11 @@ and SolveNullnessSubsumesNullness (csenv: ConstraintSolverEnv) m2 (trace: Option
             CompleteD
         | NullnessInfo.WithoutNull, NullnessInfo.WithNull -> 
             if csenv.g.checkNullness then               
-                WarnD(ConstraintSolverNullnessWarningWithTypes(csenv.DisplayEnv, ty1, ty2, n1, n2, getNullnessWarningRange csenv, m2))
+                match csenv.eContextInfo with
+                | ContextInfo.MemberAccessOnNullable info ->
+                    WarnD(ConstraintSolverNullnessWarningOnDotAccess(csenv.DisplayEnv, ty2, info.MemberName, info.BindingName, info.ObjExprRange, m2))
+                | _ ->
+                    WarnD(ConstraintSolverNullnessWarningWithTypes(csenv.DisplayEnv, ty1, ty2, n1, n2, getNullnessWarningRange csenv, m2))
             else
                 CompleteD
     | Nullness.KnownFromConstructor, _ | _, Nullness.KnownFromConstructor -> CompleteD // Unreachable after Normalize()
@@ -1137,7 +1164,7 @@ and SolveTyparEqualsType (csenv: ConstraintSolverEnv) ndeep m2 (trace: OptionalT
     }
 
 // Like SolveTyparEqualsType but asserts all typar equalities simultaneously instead of one by one
-and SolveTyparsEqualTypes (csenv: ConstraintSolverEnv) ndeep m2 (trace: OptionalTrace) tpTys tys =
+and SolveTyparsEqualTypesAux (csenv: ConstraintSolverEnv) ndeep m2 (trace: OptionalTrace) tpTys tys =
     trackErrors {
         do! Iterate2D (
                 fun tpTy ty ->
@@ -1498,7 +1525,19 @@ and SolveTypeSubsumesType (csenv: ConstraintSolverEnv) ndeep m2 (trace: Optional
     elif isObjTyAnyNullness g ty1 && not csenv.MatchingOnly && not(isTyparTy g ty2) then
         let nullness t = t |> stripTyEqnsA g canShortcut |> nullnessOfTy g
         SolveNullnessSubsumesNullness csenv m2 trace ty1 ty2 (nullness ty1) (nullness ty2)
-    else         
+    else
+        // Keep the caller's csenv available for the *outer* nullness check
+        // on the same-tycon branch below.
+        let csenvOuter = csenv
+
+        // Inside the recursion we describe the *inner* types (tuple components,
+        // type args, fun domain/range, ...). A MemberAccessOnNullable context
+        // describes the OUTER receiver only; recursing with it would attach the
+        // dot-access message to a deep mismatch (wrong message AND wrong range).
+        // Strip it once here so all recursive callsites below default to the
+        // safe behavior. See #19658.
+        let csenv = stripMemberAccessOnNullableCtx csenv
+
         let sty1 = stripTyEqnsA csenv.g canShortcut ty1
         let sty2 = stripTyEqnsA csenv.g canShortcut ty2
         let amap = csenv.amap
@@ -1571,18 +1610,18 @@ and SolveTypeSubsumesType (csenv: ConstraintSolverEnv) ndeep m2 (trace: Optional
                             (tyconRefEq g tagc1 g.byrefkind_In_tcr || tyconRefEq g tagc1 g.byrefkind_Out_tcr) ) -> ()
                 | _ -> return! SolveTypeEqualsType csenv ndeep m2 trace cxsln tag1 tag2
                 }
-            | _ -> SolveTypeEqualsTypeWithContravarianceEqns csenv ndeep m2 trace cxsln l1 l2 tc1.TyparsNoRange tc1
+            | _ -> SolveTypeEqualsTypeWithContravarianceEqns csenv ndeep m2 trace cxsln l1 l2 tc1.Typars tc1
 
         // Special handling for delegate types - ignore nullness differences
         // Delegates from C# interfaces without nullable annotations should match F# events
         // See https://github.com/dotnet/fsharp/issues/18361 and https://github.com/dotnet/fsharp/issues/18349
         | TType_app (tc1, l1, _), TType_app (tc2, l2, _) when tyconRefEq g tc1 tc2 && isDelegateTy g sty1 ->
-            SolveTypeEqualsTypeWithContravarianceEqns csenv ndeep m2 trace cxsln l1 l2 tc1.TyparsNoRange tc1
+            SolveTypeEqualsTypeWithContravarianceEqns csenv ndeep m2 trace cxsln l1 l2 tc1.Typars tc1
 
         | TType_app (tc1, l1, _)  , TType_app (tc2, l2, _) when tyconRefEq g tc1 tc2  ->
             trackErrors {            
-                do! SolveTypeEqualsTypeWithContravarianceEqns csenv ndeep m2 trace cxsln l1 l2 tc1.TyparsNoRange tc1
-                do! SolveNullnessSubsumesNullness csenv m2 trace ty1 ty2 (nullnessOfTy g sty1) (nullnessOfTy g sty2)
+                do! SolveTypeEqualsTypeWithContravarianceEqns csenv ndeep m2 trace cxsln l1 l2 tc1.Typars tc1
+                do! SolveNullnessSubsumesNullness csenvOuter m2 trace ty1 ty2 (nullnessOfTy g sty1) (nullnessOfTy g sty2)
             }
 
         | TType_ucase (uc1, l1), TType_ucase (uc2, l2) when g.unionCaseRefEq uc1 uc2  -> 
@@ -1622,7 +1661,10 @@ and SolveTypeSubsumesType (csenv: ConstraintSolverEnv) ndeep m2 (trace: Optional
                     // may feasibly convert to Head. 
                     match FindUniqueFeasibleSupertype g amap m ty1 ty2 with 
                     | None -> ErrorD(ConstraintSolverTypesNotInSubsumptionRelation(denv, ty1, ty2, m, m2))
-                    | Some t -> SolveTypeSubsumesType csenv ndeep m2 trace cxsln ty1 t
+                    // Use csenvOuter (not the stripped csenv) because this is
+                    // still the outer-level subsumption traversal walking up the
+                    // type hierarchy, not recursion into inner type arguments.
+                    | Some t -> SolveTypeSubsumesType csenvOuter ndeep m2 trace cxsln ty1 t
 
 and SolveTypeSubsumesTypeKeepAbbrevs csenv ndeep m2 trace cxsln ty1 ty2 = 
    let denv = csenv.DisplayEnv
@@ -2884,7 +2926,7 @@ and SolveTypeSupportsComparison (csenv: ConstraintSolverEnv) ndeep m2 trace ty =
                     match ty with
                     | AppTy g (tcref, tinst) ->
                         // Check the (possibly inferred) structural dependencies
-                        (tinst, tcref.TyparsNoRange) ||> Iterate2D (fun ty tp -> 
+                        (tinst, tcref.Typars) ||> Iterate2D (fun ty tp -> 
                             if tp.ComparisonConditionalOn then 
                                 SolveTypeSupportsComparison (csenv: ConstraintSolverEnv) ndeep m2 trace ty 
                             else 
@@ -2931,7 +2973,7 @@ and SolveTypeSupportsEquality (csenv: ConstraintSolverEnv) ndeep m2 trace ty =
                        ErrorD (ConstraintSolverError(FSComp.SR.csTypeDoesNotSupportEquality3(NicePrint.minimalStringOfType denv ty), m, m2))
                    else
                        // Check the (possibly inferred) structural dependencies
-                       (tinst, tcref.TyparsNoRange) ||> Iterate2D (fun ty tp -> 
+                       (tinst, tcref.Typars) ||> Iterate2D (fun ty tp -> 
                            if tp.EqualityConditionalOn then 
                                SolveTypeSupportsEquality csenv ndeep m2 trace ty
                            else 
@@ -3041,7 +3083,9 @@ and SolveTypeIsReferenceType (csenv: ConstraintSolverEnv) ndeep m2 trace ty =
     | ValueSome destTypar ->
         AddConstraint csenv ndeep m2 trace destTypar (TyparConstraint.IsReferenceType m)
     | _ ->
-        if isRefTy g ty then CompleteD
+        // Strip measure equations so we test the underlying erased representation — see dotnet/fsharp#19657.
+        let underlyingTy = stripTyEqnsAndMeasureEqns g ty
+        if isRefTy g underlyingTy then CompleteD
         else ErrorD (ConstraintSolverError(FSComp.SR.csGenericConstructRequiresReferenceSemantics(NicePrint.minimalStringOfType denv ty), m, m))
 
 and SolveTypeRequiresDefaultConstructor (csenv: ConstraintSolverEnv) ndeep m2 trace origTy =
@@ -3561,15 +3605,16 @@ and ResolveOverloadingCore
     let exactMatchCandidates =
         candidates |> FilterEachThenUndo (fun newTrace calledMeth ->
               let csenv = { csenv with IsSpeculativeForMethodOverloading = true }
-              let cxsln = AssumeMethodSolvesTrait csenv cx m (WithTrace newTrace) calledMeth
+              let csenvNoCtx = stripMemberAccessOnNullableCtx csenv
+              let cxsln = AssumeMethodSolvesTrait csenvNoCtx cx m (WithTrace newTrace) calledMeth
               CanMemberSigsMatchUpToCheck 
-                  csenv 
+                  csenvNoCtx 
                   permitOptArgs 
                   alwaysCheckReturn
-                  (TypesEquiv csenv ndeep (WithTrace newTrace) cxsln)  // instantiations equivalent
+                  (TypesEquiv csenvNoCtx ndeep (WithTrace newTrace) cxsln)  // instantiations equivalent
                   (TypesMustSubsume csenv ndeep (WithTrace newTrace) cxsln m) // obj can subsume
-                  (ReturnTypesMustSubsumeOrConvert csenv ad ndeep (WithTrace newTrace) cxsln cx.IsSome m) // return can subsume or convert
-                  (ArgsEquivOrConvert csenv ad ndeep (WithTrace newTrace) cxsln cx.IsSome)  // args exact
+                  (ReturnTypesMustSubsumeOrConvert csenvNoCtx ad ndeep (WithTrace newTrace) cxsln cx.IsSome m) // return can subsume or convert
+                  (ArgsEquivOrConvert csenvNoCtx ad ndeep (WithTrace newTrace) cxsln cx.IsSome)  // args exact
                   reqdRetTyOpt 
                   calledMeth)
 
@@ -3584,15 +3629,16 @@ and ResolveOverloadingCore
       let applicable =
           candidates |> FilterEachThenUndo (fun newTrace candidate ->
               let csenv = { csenv with IsSpeculativeForMethodOverloading = true }
-              let cxsln = AssumeMethodSolvesTrait csenv cx m (WithTrace newTrace) candidate
+              let csenvNoCtx = stripMemberAccessOnNullableCtx csenv
+              let cxsln = AssumeMethodSolvesTrait csenvNoCtx cx m (WithTrace newTrace) candidate
               CanMemberSigsMatchUpToCheck 
-                  csenv 
+                  csenvNoCtx 
                   permitOptArgs
                   alwaysCheckReturn
-                  (TypesEquiv csenv ndeep (WithTrace newTrace) cxsln)  // instantiations equivalent
+                  (TypesEquiv csenvNoCtx ndeep (WithTrace newTrace) cxsln)  // instantiations equivalent
                   (TypesMustSubsume csenv ndeep (WithTrace newTrace) cxsln m) // obj can subsume
-                  (ReturnTypesMustSubsumeOrConvert csenv ad ndeep (WithTrace newTrace) cxsln cx.IsSome m) // return can subsume or convert
-                  (ArgsMustSubsumeOrConvertWithContextualReport csenv ad ndeep (WithTrace newTrace) cxsln cx.IsSome candidate)  // args can subsume
+                  (ReturnTypesMustSubsumeOrConvert csenvNoCtx ad ndeep (WithTrace newTrace) cxsln cx.IsSome m) // return can subsume or convert
+                  (ArgsMustSubsumeOrConvertWithContextualReport csenvNoCtx ad ndeep (WithTrace newTrace) cxsln cx.IsSome candidate)  // args can subsume
                   reqdRetTyOpt 
                   candidate)
 
@@ -3606,15 +3652,16 @@ and ResolveOverloadingCore
               |> List.choose (fun calledMeth -> 
                       match CollectThenUndo (fun newTrace -> 
                                    let csenv = { csenv with IsSpeculativeForMethodOverloading = true }
-                                   let cxsln = AssumeMethodSolvesTrait csenv cx m (WithTrace newTrace) calledMeth
+                                   let csenvNoCtx = stripMemberAccessOnNullableCtx csenv
+                                   let cxsln = AssumeMethodSolvesTrait csenvNoCtx cx m (WithTrace newTrace) calledMeth
                                    CanMemberSigsMatchUpToCheck 
-                                       csenv 
+                                       csenvNoCtx 
                                        permitOptArgs
                                        alwaysCheckReturn
-                                       (TypesEquiv csenv ndeep (WithTrace newTrace) cxsln) 
+                                       (TypesEquiv csenvNoCtx ndeep (WithTrace newTrace) cxsln) 
                                        (TypesMustSubsume csenv ndeep (WithTrace newTrace) cxsln m)
-                                       (ReturnTypesMustSubsumeOrConvert csenv ad ndeep (WithTrace newTrace) cxsln cx.IsSome m)
-                                       (ArgsMustSubsumeOrConvertWithContextualReport csenv ad ndeep (WithTrace newTrace) cxsln cx.IsSome calledMeth) 
+                                       (ReturnTypesMustSubsumeOrConvert csenvNoCtx ad ndeep (WithTrace newTrace) cxsln cx.IsSome m)
+                                       (ArgsMustSubsumeOrConvertWithContextualReport csenvNoCtx ad ndeep (WithTrace newTrace) cxsln cx.IsSome calledMeth) 
                                        reqdRetTyOpt 
                                        calledMeth) with 
                       | OkResult _ -> None
@@ -3746,18 +3793,19 @@ and ResolveOverloading
         calledMethOpt, 
         trackErrors {
                         do! errors
-                        let cxsln = AssumeMethodSolvesTrait csenv cx m trace calledMeth
+                        let csenvNoCtx = stripMemberAccessOnNullableCtx csenv
+                        let cxsln = AssumeMethodSolvesTrait csenvNoCtx cx m trace calledMeth
                         match calledMethTrace with
                         | NoTrace ->
                            let! _usesTDC =
                             CanMemberSigsMatchUpToCheck 
-                                 csenv 
+                                 csenvNoCtx 
                                  permitOptArgs
                                  true
-                                 (TypesEquiv csenv ndeep trace cxsln) // instantiations equal
+                                 (TypesEquiv csenvNoCtx ndeep trace cxsln) // instantiations equal
                                  (TypesMustSubsume csenv ndeep trace cxsln m) // obj can subsume
-                                 (ReturnTypesMustSubsumeOrConvert csenv ad ndeep trace cxsln cx.IsSome m) // return can subsume or convert
-                                 (ArgsMustSubsumeOrConvert csenv ad ndeep trace cxsln cx.IsSome true)  // args can subsume or convert
+                                 (ReturnTypesMustSubsumeOrConvert csenvNoCtx ad ndeep trace cxsln cx.IsSome m) // return can subsume or convert
+                                 (ArgsMustSubsumeOrConvert csenvNoCtx ad ndeep trace cxsln cx.IsSome true)  // args can subsume or convert
                                  reqdRetTyOpt 
                                  calledMeth
                            return ()
@@ -4018,8 +4066,15 @@ and GetMostApplicableOverload csenv ndeep candidates applicableMeths calledMethG
         let err = FailOverloading csenv calledMethGroup reqdRetTyOpt isOpConversion callerArgs (PossibleCandidates(methodName, methods,cx)) m
         None, ErrorD err, NoTrace
 
-let ResolveOverloadingForCall denv css m  methodName callerArgs ad calledMethGroup permitOptArgs reqdRetTy =
-    let csenv = MakeConstraintSolverEnv ContextInfo.NoContext css m denv
+let ResolveOverloadingForCall denv css m objArgInfo methodName callerArgs ad calledMethGroup permitOptArgs reqdRetTy =
+    let csenvNoCtx = MakeConstraintSolverEnv ContextInfo.NoContext css m denv
+    let csenv =
+        match objArgInfo with
+        | Some info when csenvNoCtx.g.checkNullness ->
+            { csenvNoCtx with
+                eContextInfo =
+                    ContextInfo.MemberAccessOnNullable info }
+        | _ -> csenvNoCtx
     ResolveOverloading csenv NoTrace methodName 0 None callerArgs ad calledMethGroup permitOptArgs (Some reqdRetTy)
 
 /// This is used before analyzing the types of arguments in a single overload resolution
@@ -4028,12 +4083,20 @@ let UnifyUniqueOverloading
          css 
          m 
          callerArgCounts 
+         objArgInfo
          methodName 
          ad 
          (calledMethGroup: CalledMeth<SynExpr> list) 
          reqdRetTy    // The expected return type, if known 
    =
-    let csenv = MakeConstraintSolverEnv ContextInfo.NoContext css m denv
+    let csenvNoCtx = MakeConstraintSolverEnv ContextInfo.NoContext css m denv
+    let csenv =
+        match objArgInfo with
+        | Some info when csenvNoCtx.g.checkNullness ->
+            { csenvNoCtx with
+                eContextInfo =
+                    ContextInfo.MemberAccessOnNullable info }
+        | _ -> csenvNoCtx
     let m = csenv.m
     // See what candidates we have based on name and arity 
     let candidates = calledMethGroup |> List.filter (fun cmeth -> cmeth.IsCandidate(m, ad)) 
@@ -4043,13 +4106,13 @@ let UnifyUniqueOverloading
       let! _usesTDC =
         // Only one candidate found - we thus know the types we expect of arguments 
         CanMemberSigsMatchUpToCheck 
-            csenv 
+            csenvNoCtx 
             true // permitOptArgs
             true // always check return type
-            (TypesEquiv csenv ndeep NoTrace None) 
+            (TypesEquiv csenvNoCtx ndeep NoTrace None) 
             (TypesMustSubsume csenv ndeep NoTrace None m)
-            (ReturnTypesMustSubsumeOrConvert csenv ad ndeep NoTrace None false m)
-            (ArgsMustSubsumeOrConvert csenv ad ndeep NoTrace None false false)
+            (ReturnTypesMustSubsumeOrConvert csenvNoCtx ad ndeep NoTrace None false m)
+            (ArgsMustSubsumeOrConvert csenvNoCtx ad ndeep NoTrace None false false)
             (Some reqdRetTy)
             calledMeth
       return true
@@ -4337,7 +4400,7 @@ let CodegenWitnessesForTyparInst tcVal g amap m typars tyargs =
         // traitCtxtNone: codegen witness generation — constraints already resolved at this point (audited for RFC FS-1043)
         let ftps, _renaming, tinst = FreshenTypeInst g traitCtxtNone m typars
         let traitInfos = GetTraitConstraintInfosOfTypars g ftps
-        let! _res = SolveTyparsEqualTypes csenv 0 m NoTrace tinst tyargs
+        let! _res = SolveTyparsEqualTypesAux csenv 0 m NoTrace tinst tyargs
         return GenWitnessArgs amap g m traitInfos
     }
 
@@ -4571,3 +4634,8 @@ let IsApplicableMethApprox g amap m (minfo: MethInfo) availObjTy =
         | _ -> true
     else
         true
+
+let SolveTyparsEqualTypes g (css: ConstraintSolverState) m (typars: TypeInst) (tys: TypeInst) =
+    let csenv = MakeConstraintSolverEnv ContextInfo.NoContext css m (DisplayEnv.Empty g)
+    SolveTyparsEqualTypesAux csenv 0 m NoTrace typars tys
+    |> CommitOperationResult

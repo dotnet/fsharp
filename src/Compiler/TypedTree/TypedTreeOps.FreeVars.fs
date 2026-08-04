@@ -661,7 +661,7 @@ module internal MemberRepresentation =
         | Some _ ->
             if v.IsExtensionMember then 0
             elif not v.IsMember then 0
-            else v.MemberApparentEntity.TyparsNoRange.Length
+            else v.MemberApparentEntity.Typars.Length
 
     let GetValReprTypeInCompiledForm g valReprInfo numEnclosingTypars ty m =
         let tps, paramArgInfos, retTy, retInfo =
@@ -729,7 +729,7 @@ module internal MemberRepresentation =
         | Some arities ->
             let fullTypars, _ = destTopForallTy g arities v.Type
             let parent = v.MemberApparentEntity
-            let parentTypars = parent.TyparsNoRange
+            let parentTypars = parent.Typars
             let nparentTypars = parentTypars.Length
 
             if nparentTypars <= fullTypars.Length then
@@ -816,7 +816,7 @@ module internal MemberRepresentation =
     // Generalize type constructors to types
     //---------------------------------------------------------------------------
 
-    let generalTyconRefInst (tcref: TyconRef) = generalizeTypars tcref.TyparsNoRange
+    let generalTyconRefInst (tcref: TyconRef) = generalizeTypars tcref.Typars
 
     let generalizeTyconRef (g: TcGlobals) tcref =
         let tinst = generalTyconRefInst tcref
@@ -1395,17 +1395,19 @@ module internal MemberRepresentation =
     let fullNameOfParentOfValRef vref =
         match vref with
         | VRefLocal x ->
-            match x.PublicPath with
-            | None -> ValueNone
-            | Some(ValPubPath(pp, _)) -> ValueSome(fullNameOfPubPath pp)
+            match x.PublicPath, x.TryDeclaringEntity with
+            | None, _ -> ValueNone
+            | Some _, Parent eref -> ValueSome(fullNameOfEntityRef (fun (e: EntityRef) -> e.DemangledModuleOrNamespaceName) eref)
+            | Some(ValPubPath(pp, _)), ParentNone -> ValueSome(fullNameOfPubPath pp)
         | VRefNonLocal nlr -> ValueSome(fullNameOfEntityRef (fun (x: EntityRef) -> x.DemangledModuleOrNamespaceName) nlr.EnclosingEntity)
 
     let fullNameOfParentOfValRefAsLayout vref =
         match vref with
         | VRefLocal x ->
-            match x.PublicPath with
-            | None -> ValueNone
-            | Some(ValPubPath(pp, _)) -> ValueSome(fullNameOfPubPathAsLayout pp)
+            match x.PublicPath, x.TryDeclaringEntity with
+            | None, _ -> ValueNone
+            | Some _, Parent eref -> ValueSome(fullNameOfEntityRefAsLayout (fun (e: EntityRef) -> e.DemangledModuleOrNamespaceName) eref)
+            | Some(ValPubPath(pp, _)), ParentNone -> ValueSome(fullNameOfPubPathAsLayout pp)
         | VRefNonLocal nlr ->
             ValueSome(fullNameOfEntityRefAsLayout (fun (x: EntityRef) -> x.DemangledModuleOrNamespaceName) nlr.EnclosingEntity)
 

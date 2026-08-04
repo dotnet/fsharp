@@ -7,6 +7,7 @@
 module internal FSharp.Compiler.TypedTreeBasics
 
 open Internal.Utilities.Library.Extras
+open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.Text
 open FSharp.Compiler.TypedTree
@@ -154,6 +155,10 @@ val stripUnitEqns: unt: Measure -> Measure
 /// Detect a use of a nominal type, including type abbreviations.
 [<return: Struct>]
 val (|AbbrevOrAppTy|_|): ty: TType -> (TyconRef * TypeInst) voption
+
+/// Matches a type definition reference backed by Abstract IL metadata, returning that metadata.
+[<return: Struct>]
+val (|ILTyconRawMetadata|_|): tcref: TyconRef -> ILTypeDef voption
 
 val mkLocalValRef: v: Val -> ValRef
 
