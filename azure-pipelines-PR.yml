@@ -634,6 +634,11 @@ stages:
           - script: .\Build.cmd -c Release -pack
             env:
               NativeToolsOnMachine: true
+              # This step runs Build.cmd without -ci, so Arcade treats it as a local build and
+              # re-enables UpdateXlfOnBuild. That intermittently fails on the multi-targeted
+              # FSharp.Core build with 'The target "UpdateXlf" does not exist ... [TargetFramework=netstandard2.1]'
+              # (dotnet/fsharp#19961). Updating xlf files is never needed in CI, so disable it here.
+              UpdateXlfOnBuild: 'false'
           - script: .\tests\EndToEndBuildTests\EndToEndBuildTests.cmd -c Release
             displayName: End to end build tests
           
