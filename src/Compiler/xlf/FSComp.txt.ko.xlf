@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
   <file datatype="xml" source-language="en" target-language="ko" original="../FSComp.resx">
     <body>
@@ -367,6 +367,11 @@
         <target state="new">Deprecate places where 'seq' can be omitted</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureDirectDelegateConstruction">
+        <source>construct delegates that point directly at the target method, avoiding an intermediate closure</source>
+        <target state="new">construct delegates that point directly at the target method, avoiding an intermediate closure</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureDiscardUseValue">
         <source>discard pattern in use binding</source>
         <target state="translated">사용 중인 패턴 바인딩 무시</target>
@@ -537,6 +542,11 @@
         <target state="translated">'as' 패턴의 오른쪽에 있는 변수가 아닌 패턴</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureNotNullIfNotNull">
+        <source>honor the 'NotNullIfNotNull' attribute on a method's return value</source>
+        <target state="new">honor the 'NotNullIfNotNull' attribute on a method's return value</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureNullableOptionalInterop">
         <source>nullable optional interop</source>
         <target state="translated">nullable 선택적 interop</target>
@@ -602,6 +612,11 @@
         <target state="translated">모든 크기의 목록 리터럴</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureRecordSpreads">
+        <source>record type and expression spreads</source>
+        <target state="new">record type and expression spreads</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureRefCellNotationInformationals">
         <source>informational messages related to reference cells</source>
         <target state="translated">참조 셀과 관련된 정보 메시지</target>
@@ -665,11 +680,6 @@
       <trans-unit id="featureStaticMembersInInterfaces">
         <source>Static members in interfaces</source>
         <target state="translated">인터페이스의 정적 멤버</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="featureStrictIndentation">
-        <source>Raises errors on incorrect indentation, allows better recovery and analysis during editing</source>
-        <target state="translated">잘못된 들여쓰기에 대한 오류를 제기하고 편집 중에 더 나은 복구 및 분석이 가능합니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="featureStringInterpolation">
@@ -1117,11 +1127,6 @@
         <target state="translated">F# 인터페이스 정보를 포함합니다. 기본값은 파일입니다. 라이브러리를 배포하는 데 필수적입니다.</target>
         <note />
       </trans-unit>
-      <trans-unit id="optsStrictIndentation">
-        <source>Override indentation rules implied by the language version ({0} by default)</source>
-        <target state="new">Override indentation rules implied by the language version ({0} by default)</target>
-        <note />
-      </trans-unit>
       <trans-unit id="optsSupportedLangVersions">
         <source>Supported language versions:</source>
         <target state="translated">지원되는 언어 버전:</target>
@@ -1247,6 +1252,16 @@
         <target state="translated">멤버 본문이 필요한 경우</target>
         <note />
       </trans-unit>
+      <trans-unit id="parsMissingSpreadSrcExpr">
+        <source>Missing spread source expression after '...'.</source>
+        <target state="new">Missing spread source expression after '...'.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="parsMissingSpreadSrcTy">
+        <source>Missing spread source type after '...'.</source>
+        <target state="new">Missing spread source type after '...'.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="parsMissingUnionCaseName">
         <source>Missing union case name</source>
         <target state="translated">공용 구조체 대/소문자 이름이 없습니다.</target>
@@ -1260,6 +1275,16 @@
       <trans-unit id="parsOnlySimplePatternsAreAllowedInConstructors">
         <source>Only simple patterns are allowed in primary constructors</source>
         <target state="translated">기본 생성자에서는 단순 패턴만 허용됩니다.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="parsSpreadNotSupported">
+        <source>Spreading is not supported in this construct.</source>
+        <target state="new">Spreading is not supported in this construct.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="parsSpreadNotSupportedBeforeWith">
+        <source>Spreading is not supported in this position. Use one of the forms {{ ...expr1; A = expr2 }} or {{ expr1 with A = expr2 }} instead.</source>
+        <target state="new">Spreading is not supported in this position. Use one of the forms {{ ...expr1; A = expr2 }} or {{ expr1 with A = expr2 }} instead.</target>
         <note />
       </trans-unit>
       <trans-unit id="parsStaticMemberImcompleteSyntax">
@@ -1482,6 +1507,16 @@
         <target state="translated">'{0}' 필드가 이 익명 레코드 형식에서 여러 번 나타납니다.</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcAnonRecordExprSpreadSourceCannotBeNullable">
+        <source>The source expression of a spread into an anonymous record expression cannot be nullable.</source>
+        <target state="new">The source expression of a spread into an anonymous record expression cannot be nullable.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcAnonRecordExprSpreadSourceMustBeRecord">
+        <source>The source expression of a spread into an anonymous record expression must have a nominal or anonymous record type.</source>
+        <target state="new">The source expression of a spread into an anonymous record expression must have a nominal or anonymous record type.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcAttributeIsNotValidForUnionCaseWithFields">
         <source>This attribute is not valid for use on union cases with fields.</source>
         <target state="new">This attribute is not valid for use on union cases with fields.</target>
@@ -1525,6 +1560,11 @@
       <trans-unit id="tcExpectedTypeParamMarkedWithUnitOfMeasureAttribute">
         <source>Expected unit-of-measure type parameter must be marked with the [&lt;Measure&gt;] attribute.</source>
         <target state="new">Expected unit-of-measure type parameter must be marked with the [&lt;Measure&gt;] attribute.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcGenericAttributesNotSupported">
+        <source>Generic attribute types are not supported in F#. The type '{0}' has type parameters and cannot be used as an attribute.</source>
+        <target state="new">Generic attribute types are not supported in F#. The type '{0}' has type parameters and cannot be used as an attribute.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcHighPrecedenceFunctionApplicationToListDeprecated">
@@ -1767,6 +1807,41 @@
         <target state="new">The value or member '{0}' has been marked 'inline' but is part of a recursive binding group. F# does not support recursive 'inline' values. Either remove the 'inline' modifier or refactor the recursion.</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcRecordExprSpreadFieldShadowsExplicitField">
+        <source>Spread field '{0}' shadows an explicitly declared field with the same name.</source>
+        <target state="new">Spread field '{0}' shadows an explicitly declared field with the same name.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcRecordExprSpreadSourceCannotBeNullable">
+        <source>The source expression of a spread into a nominal record expression cannot be nullable.</source>
+        <target state="new">The source expression of a spread into a nominal record expression cannot be nullable.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcRecordExprSpreadSourceMustBeRecord">
+        <source>The source expression of a spread into a nominal record expression must have a nominal or anonymous record type.</source>
+        <target state="new">The source expression of a spread into a nominal record expression must have a nominal or anonymous record type.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcRecordExprSpreadWithCannotBeUsedWithSpreads">
+        <source>Spread expressions and 'with' cannot be used together in the same copy-and-update expression.</source>
+        <target state="new">Spread expressions and 'with' cannot be used together in the same copy-and-update expression.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcRecordTypeDefinitionSpreadFieldShadowsExplicitField">
+        <source>Spread field '{0}' from type '{1}' shadows an explicitly declared field with the same name.</source>
+        <target state="new">Spread field '{0}' from type '{1}' shadows an explicitly declared field with the same name.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcRecordTypeDefinitionSpreadSourceCannotBeNullable">
+        <source>The source type of a spread into a record type definition cannot be nullable.</source>
+        <target state="new">The source type of a spread into a record type definition cannot be nullable.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcRecordTypeDefinitionSpreadSourceMustBeRecord">
+        <source>The source type of a spread into a record type definition must itself be a nominal or anonymous record type.</source>
+        <target state="new">The source type of a spread into a record type definition must itself be a nominal or anonymous record type.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcRequireMergeSourcesOrBindN">
         <source>The 'let! ... and! ...' construct may only be used if the computation expression builder defines either a '{0}' method or appropriate 'MergeSources' and 'Bind' methods</source>
         <target state="translated">'let! ... and! ...' 구문은 계산 식 작성기에서 '{0}' 메서드 또는 적절한 'MergeSources' 및 'Bind' 메서드를 정의한 경우에만 사용할 수 있습니다.</target>
@@ -1850,6 +1925,11 @@
       <trans-unit id="tcTraitMayNotUseComplexThings">
         <source>A trait may not specify optional, in, out, ParamArray, CallerInfo or Quote arguments</source>
         <target state="translated">특성은 optional, in, out, ParamArray, CallerInfo, Quote 인수를 지정할 수 없습니다.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcTypeDefinitionIsCyclicThroughSpreads">
+        <source>This type definition involves a cyclic reference through a spread.</source>
+        <target state="new">This type definition involves a cyclic reference through a spread.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcTypeDoesNotHaveAnyNull">
@@ -6628,8 +6708,8 @@
         <note />
       </trans-unit>
       <trans-unit id="lexfltTokenIsOffsideOfContextStartedEarlier">
-        <source>Unexpected syntax or possible incorrect indentation: this token is offside of context started at position {0}. Try indenting this further.\nTo continue using non-conforming indentation, pass the '--strict-indentation-' flag to the compiler, or set the language version to F# 7.</source>
-        <target state="translated">예기치 않은 구문 또는 잘못된 들여쓰기: 이 토큰은 {0} 위치에서 시작된 컨텍스트의 오프 사이드입니다. 이를 더 들여쓰기해 보세요.\n규정을 준수하지 않는 들여쓰기를 계속 사용하려면 '--strict-indentation-' 플래그를 컴파일러에 전달하거나 언어 버전을 F# 7로 설정합니다.</target>
+        <source>Unexpected syntax or possible incorrect indentation: this token is offside of context started at position {0}. Try indenting this further.</source>
+        <target state="needs-review-translation">예기치 않은 구문 또는 잘못된 들여쓰기: 이 토큰은 {0} 위치에서 시작된 컨텍스트의 오프 사이드입니다. 이를 더 들여쓰기해 보세요.\n규정을 준수하지 않는 들여쓰기를 계속 사용하려면 '--strict-indentation-' 플래그를 컴파일러에 전달하거나 언어 버전을 F# 7로 설정합니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="lexfltSeparatorTokensOfPatternMatchMisaligned">

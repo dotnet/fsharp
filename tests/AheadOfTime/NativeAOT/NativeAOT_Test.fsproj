@@ -1,0 +1,36 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFrameworks>net9.0</TargetFrameworks>
+    <LangVersion>preview</LangVersion>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
+    <DisableImplicitNuGetFallbackFolder>true</DisableImplicitNuGetFallbackFolder>
+    <DisableImplicitLibraryPacksFolder>true</DisableImplicitLibraryPacksFolder>
+    <PublishAot>true</PublishAot>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <FSharpBuildAssemblyFile>$(LocalFSharpBuildBinPath)/FSharp.Build.dll</FSharpBuildAssemblyFile>
+    <DotnetFscCompilerPath>$(LocalFSharpBuildBinPath)/fsc.dll</DotnetFscCompilerPath>
+    <Fsc_DotNET_DotnetFscCompilerPath>$(LocalFSharpBuildBinPath)/fsc.dll</Fsc_DotNET_DotnetFscCompilerPath>
+    <FSharpPreferNetFrameworkTools>False</FSharpPreferNetFrameworkTools>
+    <FSharpPrefer64BitTools>True</FSharpPrefer64BitTools>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="Program.fs" />
+  </ItemGroup>
+
+  <Import Project="$(MSBuildThisFileDirectory)../../../eng/Versions.props" />
+
+  <ItemGroup>
+    <PackageReference Include="FSharp.Core" Version="$(FSharpCorePreviewPackageVersionValue)" />
+  </ItemGroup>
+
+</Project>

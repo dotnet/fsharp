@@ -761,6 +761,9 @@ let test3 = System.Text.RegularExpressions.RegexOptions.Compiled
 #if NETCOREAPP
                              ("NonBacktracking", Some 1024)
 #endif
+#if NET11_0_OR_GREATER
+                             ("AnyNewLine", Some 2048)
+#endif
                            ]
         |]
 
@@ -1991,15 +1994,6 @@ let hasRecordType (recordTypeName: string) (symbolUses: FSharpSymbolUse list) =
     )
     |> fun exists -> Assert.True(exists, $"Record type {recordTypeName} not found.")
     
-let private assertItemsWithNames contains names (completionInfo: DeclarationListInfo) =
-    let itemNames = completionInfo.Items |> Array.map _.NameInCode |> set
-
-    for name in names do
-        Assert.True(Set.contains name itemNames = contains)
-
-let assertHasItemWithNames names (completionInfo: DeclarationListInfo) =
-    assertItemsWithNames true names completionInfo
-
 [<Fact>]
 let ``Record fields are completed via type name usage`` () =
     let parseResults, checkResults =
