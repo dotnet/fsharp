@@ -320,29 +320,43 @@ jobs:
         github-token: ${{ github.token }}
         script: |
             const marker = '<!-- DO_NOT_REMOVE: release_notes_check -->';
-            const comments = await github.paginate(github.rest.issues.listComments, {
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                issue_number: context.issue.number,
-                per_page: 100
-            });
-            const existing = comments.find(comment =>
-                comment.user?.login === 'github-actions[bot]' && comment.body?.includes(marker));
-
-            if (existing) {
-                const comment = await github.rest.issues.updateComment({
+            try {
+                const comments = await github.paginate(github.rest.issues.listComments, {
                     owner: context.repo.owner,
                     repo: context.repo.repo,
-                    comment_id: existing.id,
+                    issue_number: context.issue.number,
+                    per_page: 100
+                });
+                const existing = comments.find(comment =>
+                    comment.user?.login === 'github-actions[bot]' && comment.body?.includes(marker));
+
+                if (existing) {
+                    const comment = await github.rest.issues.updateComment({
+                        owner: context.repo.owner,
+                        repo: context.repo.repo,
+                        comment_id: existing.id,
+                        body: process.env.COMMENT_BODY
+                    });
+                    return comment.data.id;
+                }
+
+                const comment = await github.rest.issues.createComment({
+                    issue_number: context.issue.number,
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
                     body: process.env.COMMENT_BODY
                 });
                 return comment.data.id;
+            } catch (error) {
+                // The informational comment is best-effort. The GITHUB_TOKEN for a
+                // pull_request_target run is not always allowed to write issue comments
+                // (e.g. Dependabot/darc-authored PRs), so the API can return HTTP 403
+                // "Resource not accessible by integration". Release-notes validation has
+                // already passed in the previous step, so a failed comment must not fail
+                // the check. Warn and continue for permission errors; rethrow anything else.
+                if (error.status === 403) {
+                    core.warning(`Skipping release-notes comment: ${error.message}`);
+                    return;
+                }
+                throw error;
             }
-
-            const comment = await github.rest.issues.createComment({
-                issue_number: context.issue.number,
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                body: process.env.COMMENT_BODY
-            });
-            return comment.data.id;
