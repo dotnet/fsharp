@@ -314,29 +314,41 @@ jobs:
         github-token: ${{ github.token }}
         script: |
             const marker = '<!-- DO_NOT_REMOVE: release_notes_check -->';
-            const comments = await github.paginate(github.rest.issues.listComments, {
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                issue_number: context.issue.number,
-                per_page: 100
-            });
-            const existing = comments.find(comment =>
-                comment.user?.login === 'github-actions[bot]' && comment.body?.includes(marker));
+            try {
+              const comments = await github.paginate(github.rest.issues.listComments, {
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: context.issue.number,
+                  per_page: 100
+              });
+              const existing = comments.find(comment =>
+                  comment.user?.login === 'github-actions[bot]' && comment.body?.includes(marker));
 
-            if (existing) {
-                const comment = await github.rest.issues.updateComment({
-                    owner: context.repo.owner,
-                    repo: context.repo.repo,
-                    comment_id: existing.id,
-                    body: process.env.COMMENT_BODY
-                });
-                return comment.data.id;
+              if (existing) {
+                  const comment = await github.rest.issues.updateComment({
+                      owner: context.repo.owner,
+                      repo: context.repo.repo,
+                      comment_id: existing.id,
+                      body: process.env.COMMENT_BODY
+                  });
+                  return comment.data.id;
+              }
+
+              const comment = await github.rest.issues.createComment({
+                  issue_number: context.issue.number,
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  body: process.env.COMMENT_BODY
+              });
+              return comment.data.id;
+            } catch (error) {
+              // GitHub forces the GITHUB_TOKEN to be read-only for pull_request_target runs
+              // whose pull request modifies files under .github/workflows/. In that case the
+              // comment write returns 403; posting the summary comment is best-effort, so skip
+              // it instead of failing the release-notes gate (enforced in the previous step).
+              if (error.status === 403) {
+                  core.notice('Skipping release-notes comment: GITHUB_TOKEN is read-only for this run (expected when a pull request modifies files under .github/workflows/).');
+                  return;
+              }
+              throw error;
             }
-
-            const comment = await github.rest.issues.createComment({
-                issue_number: context.issue.number,
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                body: process.env.COMMENT_BODY
-            });
-            return comment.data.id;
