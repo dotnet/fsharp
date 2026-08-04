@@ -76,7 +76,21 @@ let private resolveFilePath (baseFileName: string) (includePath: string) : strin
     if FileSystem.IsPathRootedShim includePath then
         FileSystem.GetFullPathShim includePath
     else
-        FileSystem.GetFullFilePathInDirectoryShim (FileSystem.GetDirectoryNameShim baseFileName) includePath
+        let sourceRelative =
+            FileSystem.GetFullFilePathInDirectoryShim (FileSystem.GetDirectoryNameShim baseFileName) includePath
+
+        // C#/Roslyn parity (XmlFileResolver): resolve relative to the including file first, then
+        // fall back to the compiler's working directory when no file exists next to the source.
+        // If neither exists the source-relative candidate is kept so the diagnostic names it.
+        if FileSystem.FileExistsShim sourceRelative then
+            sourceRelative
+        else
+            let workingDirRelative = FileSystem.GetFullPathShim includePath
+
+            if FileSystem.FileExistsShim workingDirRelative then
+                workingDirRelative
+            else
+                sourceRelative
 
 /// Evaluate XPath and return matching elements
 let private evaluateXPath (doc: XDocument) (xpath: string) : Result<XElement list, string> =

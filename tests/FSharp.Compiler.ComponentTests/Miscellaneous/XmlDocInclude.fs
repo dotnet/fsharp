@@ -1266,3 +1266,66 @@ let f (x: int) = x
             runInclude { scenario "module Test\n\n///\u000C\nlet f (x: int) = x\n" [] with WarnOn = [ 3390 ] }
 
         res.Compilation |> shouldSucceed |> withDiagnostics [] |> ignore
+
+    [<Fact>]
+    let ``Include file resolves against the working directory when absent next to the source`` () =
+        // RFC FS-1341 / C# XmlFileResolver parity: a relative file="" is resolved next to the
+        // including source file first, then falls back to the compiler's working directory.
+        let sourceDir = (createTemporaryDirectory ()).FullName
+        let subdir = "xmlinc_" + Guid.NewGuid().ToString("N")
+        let workingDirRelativeDir = Path.Combine(Directory.GetCurrentDirectory(), subdir)
+        Directory.CreateDirectory workingDirRelativeDir |> ignore
+        File.WriteAllText(Path.Combine(workingDirRelativeDir, "data.xml"), simpleData)
+
+        // Bare relative path: absent next to the source (sourceDir/subdir/data.xml),
+        // present under the working directory (cwd/subdir/data.xml).
+        let includeRef = subdir + "/data.xml"
+
+        try
+            Fs
+                $"""module Test
+
+/// {Snippets.includeElement includeRef "/data/summary"}
+let f (x: int) = x
+"""
+            |> withFileName (Path.Combine(sourceDir, "Library.fs"))
+            |> withName "Library"
+            |> withOutputDirectory (Some(DirectoryInfo sourceDir))
+            |> withXmlDoc
+            |> ignoreWarnings
+            |> compile
+            |> shouldSucceed
+            |> verifyXmlDocContains [ "Included summary text." ]
+            |> verifyXmlDocNotContains [ "<include" ]
+            |> ignore
+        finally
+            cleanup sourceDir
+            cleanup workingDirRelativeDir
+
+    [<Fact>]
+    let ``Include in a signature file resolves relative to the signature file`` () =
+        // RFC FS-1341: for a member declared in a signature file, the .fsi documentation is
+        // authoritative, and its <include> resolves relative to the .fsi (not the implementation).
+        let dir = (createTemporaryDirectory ()).FullName
+        File.WriteAllText(Path.Combine(dir, "data.xml"), simpleData)
+
+        try
+            Fsi
+                $"""module Test
+
+/// {Snippets.includeElement "data.xml" "/data/summary"}
+val f: x: int -> int
+"""
+            |> withFileName (Path.Combine(dir, "Library.fsi"))
+            |> withName "Library"
+            |> withAdditionalSourceFile (FsSourceWithFileName (Path.Combine(dir, "Library.fs")) "module Test\n\nlet f (x: int) = x\n")
+            |> withOutputDirectory (Some(DirectoryInfo dir))
+            |> withXmlDoc
+            |> ignoreWarnings
+            |> compile
+            |> shouldSucceed
+            |> verifyXmlDocContains [ "Included summary text." ]
+            |> verifyXmlDocNotContains [ "<include" ]
+            |> ignore
+        finally
+            cleanup dir
