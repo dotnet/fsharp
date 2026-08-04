@@ -48,24 +48,17 @@ type Foo() as this =
 
     assertHasItemWithNames [ "this" ] info
 
-[<Theory>]
-[<InlineData("""
+[<Fact>]
+let ``GenericType.Self.Bug69673_1.CtrlSpaceForThis`` () =
+    """
 type Base(o:obj) = class end
 type Foo() as this =
     inherit Base(this) // this
-    let o = th{caret}is // this ok
-    do this.Bar() // this ok, dotting ok
-    member this.Bar() = ()""")>]
-[<InlineData("""
-type Base(o:obj) = class end
-type Foo() as this =
-    inherit Base(this) // this
-    let o = this // this ok
-    do th{caret}is.Bar() // this ok, dotting ok
-    member this.Bar() = ()""")>]
-let ``GenericType.Self.Bug69673_1.CtrlSpaceForThis`` (markedSource: string) =
-    let info = Checker.getCompletionInfo markedSource
-    assertHasItemWithNames [ "this" ] info
+    let o = th{caret1}is // this ok
+    do th{caret2}is.Bar() // this ok, dotting ok
+    member this.Bar() = ()"""
+    |> SourceContext.extractOrderedMarkedSources
+    |> List.iter (fun source -> assertHasItemWithNames [ "this" ] (Checker.getCompletionInfo source))
 
 [<Fact>]
 let ``GenericType.Self.Bug69673_1.04`` () =

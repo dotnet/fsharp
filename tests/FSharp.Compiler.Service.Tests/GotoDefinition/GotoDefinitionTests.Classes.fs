@@ -1,6 +1,5 @@
 module FSharp.Compiler.Service.Tests.GotoDefinitionClassesTests
 
-open System
 open Xunit
 
 let private classFieldSource =
@@ -23,7 +22,7 @@ let private classSource =
           "  member c.Method () = () (*loc-63*)"
           "  static member Foo () = () (*loc-64*)"
           "let _ ="
-          "  let c = Class{caret2} () (*loc-65*)"
+          "  let c = Class{caret2} ()"
           "  c.Method () (*loc-66*)"
           "  Class.Foo () (*loc-67*)" ]
 

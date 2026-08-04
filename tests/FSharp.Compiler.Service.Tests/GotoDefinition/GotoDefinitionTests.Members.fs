@@ -1,6 +1,5 @@
 module FSharp.Compiler.Service.Tests.GotoDefinitionMembersTests
 
-open System
 open Xunit
 
 [<Fact>]
@@ -19,7 +18,7 @@ let private orPatSource =
           "  let f x ="
           "    match x with"
           "    | Suc x{caret1} (*loc-44*)"
-          "    | x{caret2} (*loc-45*) -> "
+          "    | x{caret2} -> "
           "        x"
           "  ()" ]
 
@@ -36,7 +35,7 @@ let private consPatSource =
           "    match xs with"
           "    | x :: xs (*loc-54*)"
           "      when xs <> [] -> (*loc-52*)"
-          "        x{caret1} :: xs{caret2} (*loc-53*)"
+          "        x{caret1} :: xs{caret2}"
           "  ()" ]
 
 [<Fact>]
@@ -49,7 +48,7 @@ let private inStringSource =
         "\n"
         [ "let _ ="
           "  let x = 2"
-          "  \"x{caret}(*loc-72*)\"" ]
+          "  \"x{caret}\"" ]
 
 [<Fact(Skip = "non-FCS: goto-def suppression inside a string literal is an IDE editor-layer (tokenizer) decision; FCS GetDeclarationLocation is string-unaware and navigates the supplied island regardless.")>]
 let ``GotoDefinition.Simple.Tricky.InStringFails`` () =
@@ -61,7 +60,7 @@ let private inMultiLineStringSource =
         [ "let _ ="
           "  let x = 2"
           "  \"this is a string"
-          "    x{caret}(*loc-73*)"
+          "    x{caret}"
           "  \"" ]
 
 [<Fact(Skip = "non-FCS: goto-def suppression inside a string literal is an IDE editor-layer (tokenizer) decision; FCS GetDeclarationLocation is string-unaware and navigates the supplied island regardless.")>]
@@ -70,7 +69,7 @@ let ``GotoDefinition.Simple.Tricky.InMultiLineStringFails`` () =
 
 [<Fact(Skip = "This is currently broken for dev enlistments.")>]
 let ``GotoDefinition.Library.InitialTest`` () =
-    let source = "let _ = List.map{caret} (*loc-1*)"
+    let source = "let _ = List.map{caret}"
 
     assertGoToDefinitionToExternalLine "map" source
 
@@ -82,8 +81,8 @@ let private ooClassSource =
           "  static member Foo{caret3} () = () (*loc-64*)"
           "let _ ="
           "  let c = Class () (*loc-65*)"
-          "  c.Method{caret4} () (*loc-66*)"
-          "  Class.Foo{caret5} () (*loc-67*)" ]
+          "  c.Method{caret4} ()"
+          "  Class.Foo{caret5} ()" ]
 
 [<Fact>]
 let ``GotoDefinition.ObjectOriented`` () =
@@ -103,11 +102,11 @@ let private ooClassPrimeSource =
           "  static member Foo () = () (*loc-64*)"
           "type Class' () ="
           "  member c.Method  () = c.Method{caret1} () (*loc-68*)"
-          "  member c.Method1 () = c.Method2{caret2} () (*loc-69*)"
+          "  member c.Method1 () = c.Method2{caret2} ()"
           "  member c.Method2 () = c.Method1 () (*loc-70*)"
           "  member c.Method3  () ="
           "    let c = Class ()"
-          "    c{caret3}.Method{caret4} () (*loc-71*)" ]
+          "    c{caret3}.Method{caret4} ()" ]
 
 [<Fact>]
 let ``GotoDefinition.ObjectOriented.Prime`` () =
@@ -130,10 +129,10 @@ let private overloadedPropertiesSource =
           "    with get (s:string) = 1"
           "    and  set (s:string) v = ()"
           ""
-          "D().Foo{caret1} 1 (*loc-u1*)"
-          "D().Foo{caret2} 1 <- 2 (*loc-u2*)"
-          "D().Foo{caret3} \"abc\" (*loc-u3*)"
-          "D().Foo{caret4} \"abc\" <- 2 (*loc-u4*)" ]
+          "D().Foo{caret1} 1"
+          "D().Foo{caret2} 1 <- 2"
+          "D().Foo{caret3} \"abc\""
+          "D().Foo{caret4} \"abc\" <- 2" ]
 
 [<Fact>]
 let ``GotoDefinition.OverloadResolutionForProperties`` () =
@@ -158,8 +157,8 @@ let private overloadedMethodsSource =
           "   override this.Method (i:int) = () (*loc-d1*)"
           ""
           "let d = new Derived()"
-          "d.Method{caret1} 12 (*loc-u1*)"
-          "d.Method{caret2}() (*loc-u2*)" ]
+          "d.Method{caret1} 12"
+          "d.Method{caret2}()" ]
 
 [<Fact>]
 let ``GotoDefinition.OverloadResolutionWithOverrides`` () =
@@ -180,8 +179,8 @@ let private inheritedMembersSource =
           "   override this.Method () = ()"
           "   override this.Property = 1"
           "let b = Bar()"
-          "b.Method{caret1}(*loc-1*)()"
-          "b.Property{caret2}(*loc-2*)" ]
+          "b.Method{caret1}()"
+          "b.Property{caret2}" ]
 
 [<Fact>]
 let ``GotoDefinition.InheritedMembers`` () =

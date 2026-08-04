@@ -6,33 +6,12 @@ open Xunit
 
 [<Fact>]
 let ``TupledArgsInLambda.Completion.Bug312557_2`` () =
-    let assertOffersTupleArgs (markedSource: string) =
-        let info = Checker.getCompletionInfo markedSource
-        assertHasItemWithNames [ "aaa"; "bbb" ] info
-
-    assertOffersTupleArgs
-        """(1,2) |> (fun (aaa,bbb) ->
+    """(1,2) |> (fun (aaa,bbb) ->
     printfn "hi"
-    printfn "%d%d" b{caret} a
-    printfn "%d%d" a b   ) """
-
-    assertOffersTupleArgs
-        """(1,2) |> (fun (aaa,bbb) ->
-    printfn "hi"
-    printfn "%d%d" b a
-    printfn "%d%d" a{caret} b   ) """
-
-    assertOffersTupleArgs
-        """(1,2) |> (fun (aaa,bbb) ->
-    printfn "hi"
-    printfn "%d%d" b a{caret}
-    printfn "%d%d" a b   ) """
-
-    assertOffersTupleArgs
-        """(1,2) |> (fun (aaa,bbb) ->
-    printfn "hi"
-    printfn "%d%d" b a
-    printfn "%d%d" a b{caret}   ) """
+    printfn "%d%d" b{caret1} a{caret3}
+    printfn "%d%d" a{caret2} b{caret4}   ) """
+    |> SourceContext.extractOrderedMarkedSources
+    |> List.iter (fun source -> assertHasItemWithNames [ "aaa"; "bbb" ] (Checker.getCompletionInfo source))
 
 [<Fact>]
 let ``DotCompletionInPatternsPartOfLambda`` () =

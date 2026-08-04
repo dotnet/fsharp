@@ -1190,68 +1190,24 @@ let f (r: {| A: int; C: int |}) =
         | _ -> failwith "Symbol was not FSharpField"
 
     [<Fact>]
-    let ``Nested copy-and-update 01`` () =
-        checkFieldUsage "Zoo" "RecordA`1" ((4, 44), (4, 47)) """
+    let ``Nested copy-and-update`` () =
+        let cases =
+            [ "Zoo", ((4, 44), (4, 47))
+              "Foo", ((4, 48), (4, 51))
+              "Zoo", ((4, 57), (4, 60))
+              "Zoo", ((4, 61), (4, 64))
+              "Bar", ((4, 65), (4, 68))
+              "Zoo", ((4, 74), (4, 77))
+              "Bar", ((4, 78), (4, 81))
+              "Foo", ((4, 87), (4, 90)) ]
+
+        """
 type RecordA<'a> = { Foo: 'a; Bar: int; Zoo: RecordA<'a> }
 
-let nestedFunc (a: RecordA<int>) = { a with Zo{caret}o.Foo = 1; Zoo.Zoo.Bar = 2; Zoo.Bar = 3; Foo = 4 }
+let nestedFunc (a: RecordA<int>) = { a with Zo{caret1}o.Fo{caret2}o = 1; Z{caret3}oo.Zo{caret4}o.B{caret5}ar = 2; Z{caret6}oo.B{caret7}ar = 3; Fo{caret8}o = 4 }
 """
-
-    [<Fact>]
-    let ``Nested copy-and-update 02`` () =
-        checkFieldUsage "Foo" "RecordA`1" ((4, 48), (4, 51)) """
-type RecordA<'a> = { Foo: 'a; Bar: int; Zoo: RecordA<'a> }
-
-let nestedFunc (a: RecordA<int>) = { a with Zoo.Fo{caret}o = 1; Zoo.Zoo.Bar = 2; Zoo.Bar = 3; Foo = 4 }
-"""
-
-    [<Fact>]
-    let ``Nested copy-and-update 03`` () =
-        checkFieldUsage "Zoo" "RecordA`1" ((4, 57), (4, 60)) """
-type RecordA<'a> = { Foo: 'a; Bar: int; Zoo: RecordA<'a> }
-
-let nestedFunc (a: RecordA<int>) = { a with Zoo.Foo = 1; Z{caret}oo.Zoo.Bar = 2; Zoo.Bar = 3; Foo = 4 }
-"""
-
-    [<Fact>]
-    let ``Nested copy-and-update 04`` () =
-        checkFieldUsage "Zoo" "RecordA`1" ((4, 61), (4, 64)) """
-type RecordA<'a> = { Foo: 'a; Bar: int; Zoo: RecordA<'a> }
-
-let nestedFunc (a: RecordA<int>) = { a with Zoo.Foo = 1; Zoo.Zo{caret}o.Bar = 2; Zoo.Bar = 3; Foo = 4 }
-"""
-
-    [<Fact>]
-    let ``Nested copy-and-update 05`` () =
-        checkFieldUsage "Bar" "RecordA`1" ((4, 65), (4, 68)) """
-type RecordA<'a> = { Foo: 'a; Bar: int; Zoo: RecordA<'a> }
-
-let nestedFunc (a: RecordA<int>) = { a with Zoo.Foo = 1; Zoo.Zoo.B{caret}ar = 2; Zoo.Bar = 3; Foo = 4 }
-"""
-
-    [<Fact>]
-    let ``Nested copy-and-update 06`` () =
-        checkFieldUsage "Zoo" "RecordA`1" ((4, 74), (4, 77)) """
-type RecordA<'a> = { Foo: 'a; Bar: int; Zoo: RecordA<'a> }
-
-let nestedFunc (a: RecordA<int>) = { a with Zoo.Foo = 1; Zoo.Zoo.Bar = 2; Z{caret}oo.Bar = 3; Foo = 4 }
-"""
-
-    [<Fact>]
-    let ``Nested copy-and-update 07`` () =
-        checkFieldUsage "Bar" "RecordA`1" ((4, 78), (4, 81)) """
-type RecordA<'a> = { Foo: 'a; Bar: int; Zoo: RecordA<'a> }
-
-let nestedFunc (a: RecordA<int>) = { a with Zoo.Foo = 1; Zoo.Zoo.Bar = 2; Zoo.B{caret}ar = 3; Foo = 4 }
-"""
-
-    [<Fact>]
-    let ``Nested copy-and-update 08`` () =
-        checkFieldUsage "Foo" "RecordA`1" ((4, 87), (4, 90)) """
-type RecordA<'a> = { Foo: 'a; Bar: int; Zoo: RecordA<'a> }
-
-let nestedFunc (a: RecordA<int>) = { a with Zoo.Foo = 1; Zoo.Zoo.Bar = 2; Zoo.Bar = 3; Fo{caret}o = 4 }
-"""
+        |> SourceContext.extractOrderedMarkedSources
+        |> List.iter2 (fun (name, range) source -> checkFieldUsage name "RecordA`1" range source) cases
 
 module ComputationExpressions =
     [<Fact>]

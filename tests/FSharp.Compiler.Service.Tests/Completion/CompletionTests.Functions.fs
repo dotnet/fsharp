@@ -34,36 +34,20 @@ let test3 = fffff ggggg ggggg"""
 
     assertHasItemWithNames [ "fffff" ] info
 
-[<Theory>]
-[<InlineData("""let fffff x y = 1
+[<Fact>]
+let ``CurriedArguments.Regression`` () =
+    let sources =
+        SourceContext.extractOrderedMarkedSources
+            """let fffff x y = 1
 let ggggg  = 1
-let test1 = f{caret}ffff "a" ggggg
-let test2 = fffff 1 ggggg
-let test3 = fffff ggggg ggggg""", "fffff")>]
-[<InlineData("""let fffff x y = 1
-let ggggg  = 1
-let test1 = fffff "a" gg{caret}ggg
-let test2 = fffff 1 ggggg
-let test3 = fffff ggggg ggggg""", "ggggg")>]
-[<InlineData("""let fffff x y = 1
-let ggggg  = 1
-let test1 = fffff "a" ggggg
-let test2 = fffff 1 gg{caret}ggg
-let test3 = fffff ggggg ggggg""", "ggggg")>]
-[<InlineData("""let fffff x y = 1
-let ggggg  = 1
-let test1 = fffff "a" ggggg
-let test2 = fffff 1 ggggg
-let test3 = fffff gg{caret}ggg ggggg""", "ggggg")>]
-[<InlineData("""let fffff x y = 1
-let ggggg  = 1
-let test1 = fffff "a" ggggg
-let test2 = fffff 1 ggggg
-let test3 = fffff ggggg gg{caret}ggg""", "ggggg")>]
-let ``CurriedArguments.Regression`` (markedSource: string) (expected: string) =
-    let info = Checker.getCompletionInfo markedSource
+let test1 = f{caret1}ffff "a" gg{caret2}ggg
+let test2 = fffff 1 gg{caret3}ggg
+let test3 = fffff gg{caret4}ggg gg{caret5}ggg"""
 
-    assertHasItemWithNames [ expected ] info
+    List.iter2
+        (fun expected source -> assertHasItemWithNames [ expected ] (Checker.getCompletionInfo source))
+        [ "fffff"; "ggggg"; "ggggg"; "ggggg"; "ggggg" ]
+        sources
 
 [<Fact>]
 let ``StringFunctions`` () =
