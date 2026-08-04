@@ -677,11 +677,6 @@
         <target state="translated">Miembros estáticos en interfaces</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureStrictIndentation">
-        <source>Raises errors on incorrect indentation, allows better recovery and analysis during editing</source>
-        <target state="translated">Genera errores en una sangría incorrecta, permite una mejor recuperación y análisis durante la edición.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureStringInterpolation">
         <source>string interpolation</source>
         <target state="translated">interpolación de cadena</target>
@@ -1125,11 +1120,6 @@
       <trans-unit id="optsSignatureData">
         <source>Include F# interface information, the default is file. Essential for distributing libraries.</source>
         <target state="translated">Incluir información de interfaz de F#, el valor predeterminado es file. Esencial para distribuir bibliotecas.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="optsStrictIndentation">
-        <source>Override indentation rules implied by the language version ({0} by default)</source>
-        <target state="new">Override indentation rules implied by the language version ({0} by default)</target>
         <note />
       </trans-unit>
       <trans-unit id="optsSupportedLangVersions">
@@ -6713,8 +6703,8 @@
         <note />
       </trans-unit>
       <trans-unit id="lexfltTokenIsOffsideOfContextStartedEarlier">
-        <source>Unexpected syntax or possible incorrect indentation: this token is offside of context started at position {0}. Try indenting this further.\nTo continue using non-conforming indentation, pass the '--strict-indentation-' flag to the compiler, or set the language version to F# 7.</source>
-        <target state="translated">Sintaxis inesperada o posible sangría incorrecta: este token está fuera del contexto iniciado en la posición {0}. Intente aplicar más sangría.\nPara seguir usando la sangría no conforme, pase la marca "--strict-indentation-" al compilador o establezca la versión del lenguaje en F# 7.</target>
+        <source>Unexpected syntax or possible incorrect indentation: this token is offside of context started at position {0}. Try indenting this further.</source>
+        <target state="needs-review-translation">Sintaxis inesperada o posible sangría incorrecta: este token está fuera del contexto iniciado en la posición {0}. Intente aplicar más sangría.\nPara seguir usando la sangría no conforme, pase la marca "--strict-indentation-" al compilador o establezca la versión del lenguaje en F# 7.</target>
         <note />
       </trans-unit>
       <trans-unit id="lexfltSeparatorTokensOfPatternMatchMisaligned">
