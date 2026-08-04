@@ -1,22 +1,22 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Dependencies>
-  <Source Uri="https://github.com/dotnet/dotnet" Mapping="fsharp" Sha="1358fe9202089df7bdb79282a191c9dbbb773a06" BarId="320196" />
+  <Source Uri="https://github.com/dotnet/dotnet" Mapping="fsharp" Sha="cb8306a63c5cf24e9381108a3a9eb58907fd0f60" BarId="323048" />
   <ProductDependencies>
-    <Dependency Name="Microsoft.Build" Version="18.10.0-1.26370.18">
+    <Dependency Name="Microsoft.Build" Version="18.10.0-preview-26357-08">
       <Uri>https://github.com/dotnet/msbuild</Uri>
-      <Sha>eae54023463db15e9a9081f35a959c9162797643</Sha>
+      <Sha>746aeb090c9e2bcedc398751370da862014ebf7a</Sha>
     </Dependency>
-    <Dependency Name="Microsoft.Build.Framework" Version="18.10.0-1.26370.18">
+    <Dependency Name="Microsoft.Build.Framework" Version="18.10.0-preview-26357-08">
       <Uri>https://github.com/dotnet/msbuild</Uri>
-      <Sha>eae54023463db15e9a9081f35a959c9162797643</Sha>
+      <Sha>746aeb090c9e2bcedc398751370da862014ebf7a</Sha>
     </Dependency>
-    <Dependency Name="Microsoft.Build.Tasks.Core" Version="18.10.0-1.26370.18">
+    <Dependency Name="Microsoft.Build.Tasks.Core" Version="18.10.0-preview-26357-08">
       <Uri>https://github.com/dotnet/msbuild</Uri>
-      <Sha>eae54023463db15e9a9081f35a959c9162797643</Sha>
+      <Sha>746aeb090c9e2bcedc398751370da862014ebf7a</Sha>
     </Dependency>
-    <Dependency Name="Microsoft.Build.Utilities.Core" Version="18.10.0-1.26370.18">
+    <Dependency Name="Microsoft.Build.Utilities.Core" Version="18.10.0-preview-26357-08">
       <Uri>https://github.com/dotnet/msbuild</Uri>
-      <Sha>eae54023463db15e9a9081f35a959c9162797643</Sha>
+      <Sha>746aeb090c9e2bcedc398751370da862014ebf7a</Sha>
     </Dependency>
     <Dependency Name="Microsoft.CodeAnalysis" Version="5.10.0-1.26365.3">
       <Uri>https://github.com/dotnet/roslyn</Uri>
@@ -75,7 +75,7 @@
       </Sha>
     </Dependency>
     <!-- Necessary for source-build. This allows the live version of the package to be used by source-build. -->
-    <Dependency Name="System.Security.Cryptography.Xml" Version="10.0.8">
+    <Dependency Name="System.Security.Cryptography.Xml" Version="10.0.10">
       <Uri>https://github.com/dotnet/runtime</Uri>
       <Sha>
       </Sha>
