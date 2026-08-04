@@ -20,7 +20,7 @@ module CompletionProviderTests =
     let filePath = "C:\\test.fs"
 
     let mkGetInfo documentId =
-        fun () -> documentId, filePath, [], (Some "preview"), None
+        fun () -> documentId, filePath, [], (Some "preview")
 
     let formatCompletions (completions: string seq) =
         "\n\t" + String.Join("\n\t", completions)
@@ -145,16 +145,7 @@ module CompletionProviderTests =
         let sourceText = SourceText.From(fileContents)
 
         let resultSpan =
-            CompletionUtils.getDefaultCompletionListSpan (
-                sourceText,
-                caretPosition,
-                documentId,
-                filePath,
-                [],
-                None,
-                None,
-                CancellationToken.None
-            )
+            CompletionUtils.getDefaultCompletionListSpan (sourceText, caretPosition, documentId, filePath, [], None, CancellationToken.None)
 
         Assert.Equal(expected, sourceText.ToString(resultSpan))
 
