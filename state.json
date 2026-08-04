@@ -1,24 +1,51 @@
 {
   "prs": {
-    "20198": {
-      "sha": "fc000be4ac78f33a32164916a31cb1fc846bd80e",
-      "cats": []
-    },
-    "20135": {
-      "sha": "a135602de63cf35a7ae8cb236251da679b1ef881",
-      "cats": []
-    },
-    "20132": {
-      "sha": "f451ce4e2dfdb79ad38a7aba08467ea76d000204",
-      "cats": []
-    },
-    "20130": {
-      "sha": "fa81ef0d4b3006490aa70d9b5cb4fe5afe9e767f",
-      "cats": []
-    },
-    "20108": {
-      "sha": "d8ad2964fe680d1a28be248c86b645d56cec5dbe",
-      "cats": []
-    }
+    "20199": {"sha": "586d20cb2cf8f04ec916097b0a82598187452038", "cats": []},
+    "20198": {"sha": "fc000be4ac78f33a32164916a31cb1fc846bd80e", "cats": []},
+    "20135": {"sha": "a135602de63cf35a7ae8cb236251da679b1ef881", "cats": []},
+    "20134": {"sha": "a6b69ce2401f544d19bc2a322877fe9a15617bb2", "cats": []},
+    "20133": {"sha": "b6fdb0a11a4dd77a66f56083d5c7b95b39916404", "cats": []},
+    "20132": {"sha": "cddcd44a0b1f68706d72a50849d702780387154e", "cats": []},
+    "20130": {"sha": "b4309f325c2467be0a56ec62e2b34ffbd61a5bbf", "cats": []},
+    "20128": {"sha": "149109eabf34cf59d3a0db411799ef3ef04a2fe3", "cats": []},
+    "20126": {"sha": "435769f274a6d2cf4cbbd28e276850d8e01856bb", "cats": []},
+    "20121": {"sha": "4592d35ba25bc5b372839298b52d5550ee1434bb", "cats": []},
+    "20119": {"sha": "78786eca394bf2f9b327a70d890fb66a4b98a408", "cats": ["Affects-Agent-Config","Affects-Build-Infra","Affects-Restore","Scope-Review-Needed"]},
+    "20113": {"sha": "8bee41ae5981b49e9bacf98f08462ab485ece5a2", "cats": []},
+    "20108": {"sha": "d8ad2964fe680d1a28be248c86b645d56cec5dbe", "cats": []},
+    "20102": {"sha": "184d5ab47a86875636e8e6d0c159fd1866a8210c", "cats": []},
+    "20100": {"sha": "e9da52766ef2dcac3178c06553913fff8537926d", "cats": []},
+    "20097": {"sha": "4bb108688a798e0a6996d199e68846fb25370895", "cats": ["Affects-Bootstrap","Affects-Build-Infra"]},
+    "20092": {"sha": "802966193b9050f71cf713021f1f4f82bc6ed40f", "cats": []},
+    "20090": {"sha": "e991f3a00a8c24754bfadae7465dce80790af4d3", "cats": []},
+    "20089": {"sha": "6f535911501d0838ee48d02265210ad4156e7dc0", "cats": []},
+    "20088": {"sha": "bdb5b043ed1900349810c2be04db37adc1d78543", "cats": []},
+    "20086": {"sha": "4a03befa7685955a516e895552bdf670e0eb4e74", "cats": []},
+    "20082": {"sha": "b8c97d22c929eb2d05c463fd2d90fc3c0dab581b", "cats": []},
+    "20073": {"sha": "47afa08101a78eee778f87c217b94dd3a6e82119", "cats": []},
+    "20071": {"sha": "ff894286558a815f6396784e38ba4fc301ef0f35", "cats": []},
+    "20070": {"sha": "4aefde1e2853ad5b104c7d01512ebee9bbfef70a", "cats": []},
+    "20065": {"sha": "91466c38a761cd8969630306f44309de03d12e2a", "cats": ["Affects-Build-Infra","Affects-Restore"]},
+    "20031": {"sha": "d2b296612c890fca2ae43a222612cf6ea988a32f", "cats": []},
+    "20030": {"sha": "ea8c3d3c242075eae3784289cfa72e671cb799b3", "cats": []},
+    "20027": {"sha": "b2642b808f8f3ef144737a65e92f2322c06b7cee", "cats": []},
+    "20026": {"sha": "6218916a8694dfcfda8546b0d68059eda8f4addf", "cats": []},
+    "20025": {"sha": "e56776fd78164b7b321a989b10fe017388f66acc", "cats": []},
+    "20019": {"sha": "06e0ad8a7c5ce316f0f23ff24269d1ca57cfd42b", "cats": []},
+    "20016": {"sha": "88e64501a0db50d05a18a0267434fa18f254527d", "cats": ["Affects-Build-Infra","Affects-Restore"]},
+    "20003": {"sha": "a7213b3fa5bbe0161bd3dd9564891fa40f0413bb", "cats": []},
+    "19994": {"sha": "84c93dd77d47452fe70efd53fdc2b30698f09787", "cats": []},
+    "19974": {"sha": "e6eba274b40601921aada8b1d47cc94a5cae321e", "cats": ["Affects-Build-Infra"]},
+    "19947": {"sha": "0d24d4c82901822179bd74b239ff6986a40f1996", "cats": []},
+    "19941": {"sha": "2c8d3a70811228a2bbada5d13a5800c8159bc2f2", "cats": ["Affects-Build-Infra"]},
+    "19930": {"sha": "fdb49f9abb55a8d81abaeb6d415c8bf9d3ef5c5e", "cats": ["Affects-Build-Infra"]},
+    "19844": {"sha": "f6c047398b3371368221366c19b3411952612b97", "cats": []},
+    "19804": {"sha": "5f2332de9cab1d42a6ba954f260fb2a890c6276b", "cats": []},
+    "19785": {"sha": "3a9a2016480f6bb0170232552504fffa653667b2", "cats": []},
+    "19774": {"sha": "0e262c5de4cbc31f0d594c589c0e4ac30c95c6a9", "cats": []},
+    "19602": {"sha": "8e88f7b14334c28c94d3134563d9fd81c4db8fed", "cats": []},
+    "19417": {"sha": "eeb5b487755df2d599b0f4007cd97e38677cbef8", "cats": []},
+    "19346": {"sha": "f647f00db23646ebf9b9f504ae1f7cb91455c0da", "cats": []},
+    "19284": {"sha": "f708022b01804a60ccc1a88636db4aaa911e7ff0", "cats": []}
   }
 }
