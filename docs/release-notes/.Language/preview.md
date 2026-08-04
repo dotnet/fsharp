@@ -11,3 +11,5 @@
 ### Fixed
 
 ### Changed
+
+* Removed the always-on `PrintfBinaryFormat` language feature flag, enabled for every supported `--langversion` since F# 6.0, so `%B` binary integer formatting is now unconditional and `--disableLanguageFeature:PrintfBinaryFormat` is no longer a recognized feature name (FS3881). ([Issue #20138](https://github.com/dotnet/fsharp/issues/20138), [PR #20202](https://github.com/dotnet/fsharp/pull/20202))
