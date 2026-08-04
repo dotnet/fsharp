@@ -31,8 +31,13 @@ jobs:
         demands:  ImageOverride -equals $(_WindowsMachineQueueName)
     timeoutInMinutes: 120
     steps:
-    - checkout: self
-      displayName: Checkout F# compiler repo (for scripts)
+    # Regression jobs run late in the pipeline (after EndToEndBuildTests) and only need a few
+    # self-contained scripts from this repo. Use `checkout: none` instead of `checkout: self`
+    # so we don't re-fetch the volatile PR merge ref (refs/pull/<n>/merge), which can disappear
+    # when the PR is updated or closed (common for darc auto-update PRs) and would otherwise fail
+    # every regression job at checkout. The scripts and global.json are consumed from the
+    # UseLocalCompilerProps artifact downloaded below.
+    - checkout: none
 
     - task: DownloadPipelineArtifact@2
       displayName: Download F# Compiler FSC Artifacts
@@ -145,7 +150,7 @@ jobs:
     # into the regression test's .dotnet so fsc.dll can find the runtime.
     # Tries default feed first, then ci.dot.net/public (same fallback as eng/common).
     - pwsh: |
-        $v = (Get-Content "$(Build.SourcesDirectory)/global.json" | ConvertFrom-Json).tools.dotnet
+        $v = (Get-Content "$(Pipeline.Workspace)/Props/global.json" | ConvertFrom-Json).tools.dotnet
         $d = "$(Pipeline.Workspace)/TestRepo/.dotnet"
         $u = "https://builds.dotnet.microsoft.com/dotnet/scripts/v1"
         if ($IsWindows) {
@@ -167,7 +172,7 @@ jobs:
         Set-Location $(Pipeline.Workspace)/TestRepo
         
         Write-Host "Running PrepareRepoForRegressionTesting.fsx..."
-        dotnet fsi $(Build.SourcesDirectory)/eng/scripts/PrepareRepoForRegressionTesting.fsx "$(Pipeline.Workspace)/Props/UseLocalCompiler.Directory.Build.props"
+        dotnet fsi $(Pipeline.Workspace)/Props/PrepareRepoForRegressionTesting.fsx "$(Pipeline.Workspace)/Props/UseLocalCompiler.Directory.Build.props"
         
         if ($LASTEXITCODE -ne 0) {
           Write-Host "Failed to prepare repository for regression testing"
@@ -322,7 +327,7 @@ jobs:
 
     - pwsh: |
         $binlogDir = "$(Pipeline.Workspace)/BinaryLogs"
-        $script = "$(Build.SourcesDirectory)/eng/scripts/ExtractTimingsFromBinlog.fsx"
+        $script = "$(Pipeline.Workspace)/Props/ExtractTimingsFromBinlog.fsx"
         
         if (-not (Test-Path $binlogDir)) {
           Write-Host "No binary logs directory found, skipping timing extraction"

@@ -583,11 +583,18 @@ stages:
             condition: succeeded()
 
           - pwsh: |
-              # Stage UseLocalCompiler props and TargetFrameworks.props together
+              # Stage the props, scripts and global.json the regression jobs need.
+              # Publishing these as an artifact lets the regression jobs use `checkout: none`,
+              # so they no longer re-fetch the volatile PR merge ref (refs/pull/<n>/merge) late
+              # in the pipeline - that ref can vanish when the PR is updated/closed (common for
+              # darc auto-update PRs), which previously failed every regression job at checkout.
               $stagingDir = "$(Build.SourcesDirectory)/UseLocalCompilerPropsStaging"
               New-Item -ItemType Directory -Force -Path $stagingDir | Out-Null
               Copy-Item "$(Build.SourcesDirectory)/UseLocalCompiler.Directory.Build.props" -Destination $stagingDir
               Copy-Item "$(Build.SourcesDirectory)/eng/TargetFrameworks.props" -Destination $stagingDir
+              Copy-Item "$(Build.SourcesDirectory)/eng/scripts/PrepareRepoForRegressionTesting.fsx" -Destination $stagingDir
+              Copy-Item "$(Build.SourcesDirectory)/eng/scripts/ExtractTimingsFromBinlog.fsx" -Destination $stagingDir
+              Copy-Item "$(Build.SourcesDirectory)/global.json" -Destination $stagingDir
               Write-Host "Staged files for UseLocalCompilerProps artifact:"
               Get-ChildItem $stagingDir -Name
             displayName: Stage UseLocalCompiler props files
