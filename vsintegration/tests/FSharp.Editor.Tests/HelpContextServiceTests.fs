@@ -51,7 +51,6 @@ type HelpContextServiceTests() =
                         Some "test.fs",
                         [],
                         None,
-                        None,
                         classifiedSpans,
                         CancellationToken.None
                     )

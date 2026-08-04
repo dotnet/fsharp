@@ -813,7 +813,7 @@ let TripleInterpolatedInVerbatimInterpolated = $\"123{456}789{$\"\"\"012\"\"\"}3
         CompilerAssert.TypeCheckWithErrorsAndOptions  [| "--langversion:8.0" |]
             code
             [|(FSharpDiagnosticSeverity.Error, 58, (1, 1, 1, 17),
-               "Unexpected syntax or possible incorrect indentation: this token is offside of context started at position (1:1). Try indenting this further.\nTo continue using non-conforming indentation, pass the '--strict-indentation-' flag to the compiler, or set the language version to F# 7.");
+               "Unexpected syntax or possible incorrect indentation: this token is offside of context started at position (1:1). Try indenting this further.");
               (FSharpDiagnosticSeverity.Error, 10, (1, 1, 1, 17),
                "Incomplete structured construct at or before this point in binding");
               (FSharpDiagnosticSeverity.Error, 3381, (1, 10, 1, 14),
