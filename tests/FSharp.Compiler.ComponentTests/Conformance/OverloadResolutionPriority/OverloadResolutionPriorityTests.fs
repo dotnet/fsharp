@@ -305,3 +305,50 @@ if r <> "string" then failwithf "got %s" r
         |> compileAndRun
         |> shouldSucceed
         |> ignore
+
+    [<FactForNETCOREAPP>]
+    let ``ORPA - honoured on a down-level target whose framework lacks the attribute`` () =
+        // Regression guard for recognising OverloadResolutionPriority by name rather than by
+        // resolving the type in the target framework. Both the referenced library (which
+        // polyfills the attribute) and the consumer target netstandard2.0, whose framework
+        // lacks OverloadResolutionPriorityAttribute, so the TcGlobals well-known-attribute slot
+        // is None; recognition must fall back to the name, as Roslyn does for polyfills. The two
+        // overloads return different types, making the choice observable at compile time:
+        // honouring priority selects Pick(obj):string; ignoring it would select the more concrete
+        // Pick(int):int, and then the string annotation on the result would not check.
+        let polyfillLib =
+            FSharp """
+namespace System.Runtime.CompilerServices
+
+open System
+
+[<AttributeUsage(AttributeTargets.All, AllowMultiple = false, Inherited = false)>]
+type OverloadResolutionPriorityAttribute(priority: int) =
+    inherit Attribute()
+    member _.Priority = priority
+
+namespace DownlevelLib
+
+open System.Runtime.CompilerServices
+
+type Api =
+    [<OverloadResolutionPriority(1)>]
+    static member Pick(o: obj) : string = "obj"
+    static member Pick(i: int) : int = 0
+"""
+            |> asLibrary
+            |> asNetStandard20
+            |> withName "DownlevelPriorityLib"
+
+        Fs """
+module T
+open DownlevelLib
+let picked = Api.Pick(42)
+let _check: string = picked
+"""
+        |> withReferences [polyfillLib]
+        |> asNetStandard20
+        |> withLangVersionPreview
+        |> compile
+        |> shouldSucceed
+        |> ignore
