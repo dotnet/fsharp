@@ -24,7 +24,7 @@ This file should be imported by eng/Versions.props
     <MicrosoftCodeAnalysisCSharpPackageVersion>5.11.0-1.26403.5</MicrosoftCodeAnalysisCSharpPackageVersion>
     <MicrosoftCodeAnalysisEditorFeaturesPackageVersion>5.11.0-1.26403.5</MicrosoftCodeAnalysisEditorFeaturesPackageVersion>
     <MicrosoftCodeAnalysisEditorFeaturesTextPackageVersion>5.11.0-1.26403.5</MicrosoftCodeAnalysisEditorFeaturesTextPackageVersion>
-    <MicrosoftCodeAnalysisExternalAccessFSharpPackageVersion>5.11.0-1.26403.5</MicrosoftCodeAnalysisExternalAccessFSharpPackageVersion>
+    <MicrosoftVisualStudioLanguageServicesExternalAccessPackageVersion>5.11.0-1.26403.5</MicrosoftVisualStudioLanguageServicesExternalAccessPackageVersion>
     <MicrosoftCodeAnalysisFeaturesPackageVersion>5.11.0-1.26403.5</MicrosoftCodeAnalysisFeaturesPackageVersion>
     <MicrosoftVisualStudioLanguageServicesPackageVersion>5.11.0-1.26403.5</MicrosoftVisualStudioLanguageServicesPackageVersion>
     <!-- dotnet-runtime dependencies -->
@@ -55,7 +55,7 @@ This file should be imported by eng/Versions.props
     <MicrosoftCodeAnalysisCSharpVersion>$(MicrosoftCodeAnalysisCSharpPackageVersion)</MicrosoftCodeAnalysisCSharpVersion>
     <MicrosoftCodeAnalysisEditorFeaturesVersion>$(MicrosoftCodeAnalysisEditorFeaturesPackageVersion)</MicrosoftCodeAnalysisEditorFeaturesVersion>
     <MicrosoftCodeAnalysisEditorFeaturesTextVersion>$(MicrosoftCodeAnalysisEditorFeaturesTextPackageVersion)</MicrosoftCodeAnalysisEditorFeaturesTextVersion>
-    <MicrosoftCodeAnalysisExternalAccessFSharpVersion>$(MicrosoftCodeAnalysisExternalAccessFSharpPackageVersion)</MicrosoftCodeAnalysisExternalAccessFSharpVersion>
+    <MicrosoftVisualStudioLanguageServicesExternalAccessVersion>$(MicrosoftVisualStudioLanguageServicesExternalAccessPackageVersion)</MicrosoftVisualStudioLanguageServicesExternalAccessVersion>
     <MicrosoftCodeAnalysisFeaturesVersion>$(MicrosoftCodeAnalysisFeaturesPackageVersion)</MicrosoftCodeAnalysisFeaturesVersion>
     <MicrosoftVisualStudioLanguageServicesVersion>$(MicrosoftVisualStudioLanguageServicesPackageVersion)</MicrosoftVisualStudioLanguageServicesVersion>
     <!-- dotnet-runtime dependencies -->

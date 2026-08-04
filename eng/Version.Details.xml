@@ -34,10 +34,6 @@
       <Uri>https://github.com/dotnet/roslyn</Uri>
       <Sha>e091fb9d8ae849cac0f577f86d5f2ffd01033b20</Sha>
     </Dependency>
-    <Dependency Name="Microsoft.CodeAnalysis.ExternalAccess.FSharp" Version="5.11.0-1.26403.5">
-      <Uri>https://github.com/dotnet/roslyn</Uri>
-      <Sha>e091fb9d8ae849cac0f577f86d5f2ffd01033b20</Sha>
-    </Dependency>
     <Dependency Name="Microsoft.CodeAnalysis.CSharp" Version="5.11.0-1.26403.5">
       <Uri>https://github.com/dotnet/roslyn</Uri>
       <Sha>e091fb9d8ae849cac0f577f86d5f2ffd01033b20</Sha>
@@ -47,6 +43,10 @@
       <Sha>e091fb9d8ae849cac0f577f86d5f2ffd01033b20</Sha>
     </Dependency>
     <Dependency Name="Microsoft.VisualStudio.LanguageServices" Version="5.11.0-1.26403.5">
+      <Uri>https://github.com/dotnet/roslyn</Uri>
+      <Sha>e091fb9d8ae849cac0f577f86d5f2ffd01033b20</Sha>
+    </Dependency>
+    <Dependency Name="Microsoft.VisualStudio.LanguageServices.ExternalAccess" Version="5.11.0-1.26403.5">
       <Uri>https://github.com/dotnet/roslyn</Uri>
       <Sha>e091fb9d8ae849cac0f577f86d5f2ffd01033b20</Sha>
     </Dependency>
