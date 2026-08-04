@@ -1264,14 +1264,24 @@ type MethInfo =
     member x.GetOverloadResolutionPriority() : int =
         match x with
         | ILMeth(g, ilMethInfo, _) ->
-            match TryDecodeILAttributeOpt g.attrib_OverloadResolutionPriorityAttribute ilMethInfo.RawMetadata.CustomAttrs with
-            | Some ([ ILAttribElem.Int32 priority ], _) -> priority
-            | _ -> 0
+            let md = ilMethInfo.RawMetadata
+
+            if md.HasWellKnownAttribute(g, WellKnownILAttributes.OverloadResolutionPriorityAttribute) then
+                match md.CustomAttrs with
+                | ILAttribDecoded WellKnownILAttributes.OverloadResolutionPriorityAttribute ([ ILAttribElem.Int32 priority ], _) -> priority
+                | _ -> 0
+            else
+                0
         | FSMeth(g, _, vref, _) ->
-            match TryFindFSharpInt32AttributeOpt g g.attrib_OverloadResolutionPriorityAttribute vref.Attribs with
-            | Some _ when vref.IsDefiniteFSharpOverrideMember -> 0
-            | Some priority -> priority
-            | None -> 0
+            if
+                not vref.IsDefiniteFSharpOverrideMember
+                && ValHasWellKnownAttribute g WellKnownValAttributes.OverloadResolutionPriorityAttribute vref.Deref
+            then
+                match vref.Attribs with
+                | ValAttribInt g WellKnownValAttributes.OverloadResolutionPriorityAttribute priority -> priority
+                | _ -> 0
+            else
+                0
         | MethInfoWithModifiedReturnType(mi, _) -> mi.GetOverloadResolutionPriority()
         | DefaultStructCtor _ -> 0
 #if !NO_TYPEPROVIDERS
