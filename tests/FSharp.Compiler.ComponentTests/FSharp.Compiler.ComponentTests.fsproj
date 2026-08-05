@@ -567,11 +567,12 @@
        requested version must be one that is already in the restore cache. Under central package
        management with transitive pinning, that is exactly the centrally-pinned version
        (eng/Packages.props). Bake that version into the test assembly so the test can request it at
-       runtime with no manual sync when the central pin is bumped. FsCheck is used (rather than a
-       general-purpose JSON package) because it is an F#-owned standalone leaf library that is centrally
-       pinned and restored by the build; keep the package id here in sync with the id in FsiCliTests.fs. -->
+       runtime with no manual sync when the central pin is bumped. MessagePack is used (rather than a
+       general-purpose JSON package) because it is an actively-maintained, non-system standalone library
+       that is centrally pinned and restored transitively by the product (StreamJsonRpc); keep the
+       package id here in sync with the id in FsiCliTests.fs. -->
   <PropertyGroup>
-    <FsiRestoreTestPackageVersion>@(PackageVersion->WithMetadataValue('Identity','FsCheck')->'%(Version)')</FsiRestoreTestPackageVersion>
+    <FsiRestoreTestPackageVersion>@(PackageVersion->WithMetadataValue('Identity','MessagePack')->'%(Version)')</FsiRestoreTestPackageVersion>
   </PropertyGroup>
   <ItemGroup>
     <AssemblyMetadata Include="FsiRestoreTestPackageVersion" Value="$(FsiRestoreTestPackageVersion)" />

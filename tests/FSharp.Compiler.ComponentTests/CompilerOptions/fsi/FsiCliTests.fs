@@ -91,9 +91,9 @@ module FsiCliTests =
     // is ever restored into that cache, and it changes whenever the pin is bumped. Rather than hardcode
     // a version that would silently drift, read the exact pinned version baked into this test assembly
     // at build time via AssemblyMetadata (see FSharp.Compiler.ComponentTests.fsproj). The package id
-    // (FsCheck) is kept in sync with that project; any centrally-pinned standalone package would do.
+    // (MessagePack) is kept in sync with that project; any centrally-pinned standalone package would do.
     [<Literal>]
-    let private restoreTestPackageId = "FsCheck"
+    let private restoreTestPackageId = "MessagePack"
 
     let private restoreTestPackageVersion =
         System.Reflection.Assembly.GetExecutingAssembly().GetCustomAttributes(typeof<System.Reflection.AssemblyMetadataAttribute>, false)
@@ -101,7 +101,7 @@ module FsiCliTests =
             let m = a :?> System.Reflection.AssemblyMetadataAttribute
             if m.Key = "FsiRestoreTestPackageVersion" && not (System.String.IsNullOrWhiteSpace m.Value) then Some m.Value else None)
         |> Option.defaultWith (fun () ->
-            failwith "AssemblyMetadata 'FsiRestoreTestPackageVersion' is missing. It should be emitted by FSharp.Compiler.ComponentTests.fsproj from the central FsCheck PackageVersion.")
+            failwith "AssemblyMetadata 'FsiRestoreTestPackageVersion' is missing. It should be emitted by FSharp.Compiler.ComponentTests.fsproj from the central MessagePack PackageVersion.")
 
     [<Fact>]
     let ``FSI quiet mode suppresses NuGet restore output from stdout`` () =
