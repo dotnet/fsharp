@@ -9,6 +9,8 @@ open Conformance.SharedTestHelpers
 
 module TiebreakerTests =
 
+    let private case (desc: string) (source: string) : obj[] = [| box desc; box source |]
+
     let private concretenessWarningSource =
         """
 module Test
@@ -50,9 +52,6 @@ let result = Example.Compare(5, "hi", Ok 7)
         """
 
     let genericVsConcreteNestingCases: obj[] seq =
-        let case desc source =
-            [| desc :> obj; source :> obj |]
-
         [
             case
                 "Basic - Option<'t> vs Option<int>"
@@ -420,8 +419,6 @@ let result = Example.Process(Some(Some 42))
         |> ignore
 
     let bothHaveOptionalTestCases: obj[] seq =
-        let case desc source = [| desc :> obj; source :> obj |]
-
         [
             case "Same optional types"
                  "module Test\ntype Example =\n    static member Format(value: Option<'t>, ?prefix: string) = \"generic\"\n    static member Format(value: Option<int>, ?prefix: string) = \"int\"\nlet result = Example.Format(Some 42)"
@@ -445,8 +442,6 @@ let result = Example.Process(Some(Some 42))
         |> ignore
 
     let paramArrayTestCases: obj[] seq =
-        let case desc source = [| desc :> obj; source :> obj |]
-
         [
             case "Option elements"
                  "module Test\ntype Example =\n    static member Log([<System.ParamArray>] items: Option<'t>[]) = \"generic options\"\n    static member Log([<System.ParamArray>] items: Option<int>[]) = \"int options\"\nlet result = Example.Log(Some 1, Some 2, Some 3)"
@@ -498,63 +493,30 @@ let result = Example.Send("dest", Some 1, Some 2, Some 3)
         |> shouldSucceed
         |> ignore
 
+    // An intrinsic member is preferred over an extension member (the PreferNonExtension tiebreaker),
+    // even when the extension is the more concrete candidate. Because the most-concrete tiebreaker
+    // runs last, enabling the preview feature must not let it override that earlier choice. Observed
+    // at runtime: the intrinsic (generic) overload is the one that executes.
     [<Fact>]
-    let ``Example 13 - Intrinsic method always preferred over extension`` () =
-        FSharp """
-module Test
-
-type Container<'t>() =
-    member this.Transform() = "intrinsic generic"
-
-[<AutoOpen>]
-module ContainerExtensions =
-    type Container<'t> with
-        member this.TransformExt() = "extension - same signature"
-
-let c = Container<int>()
-let result = c.Transform()
-        """
-        |> typecheck
-        |> shouldSucceed
-        |> ignore
-
-    [<Fact>]
-    let ``Example 13 - Less concrete intrinsic still wins over more concrete extension`` () =
+    let ``Intrinsic member is preferred over a more concrete extension member`` () =
         FSharp """
 module Test
 
 type Wrapper<'t>() =
-    member this.Process(value: 't) = "intrinsic generic"
+    member this.Process(value: 't) = "intrinsic"
 
 [<AutoOpen>]
 module WrapperExtensions =
     type Wrapper<'t> with
-        member this.ProcessExt(value: int) = "extension concrete"
+        member this.Process(value: int) = "extension"
 
 let w = Wrapper<int>()
 let result = w.Process(42)
-        """
-        |> typecheck
-        |> shouldSucceed
-        |> ignore
-
-    [<Fact>]
-    let ``Example 13 - Extension with different return type - intrinsic preferred`` () =
-        FSharp """
-module Test
-
-type Handler<'t>() =
-    member this.Execute(input: 't) = sprintf "intrinsic: %A" input
-
-[<AutoOpen>]
-module HandlerExtensions =
-    type Handler<'t> with
-        member this.ExecuteExt(input: int) = sprintf "extension int: %d" input
-
-let h = Handler<int>()
-let result = h.Execute(42)
-        """
-        |> typecheck
+if result <> "intrinsic" then failwithf "Expected 'intrinsic' but got '%s'" result
+"""
+        |> withLangVersionPreview
+        |> asExe
+        |> compileAndRun
         |> shouldSucceed
         |> ignore
 
@@ -580,8 +542,6 @@ let result = d.Map(fun x -> x + 1)
         |> ignore
 
     let sameModuleExtensionTestCases: obj[] seq =
-        let case desc source = [| desc :> obj; source :> obj |]
-
         [
             case "Result types"
                  "module Test\ntype Wrapper = class end\nmodule WrapperExtensions =\n    type Wrapper with\n        static member Process(value: Result<'ok, 'err>) = \"generic result\"\n        static member Process(value: Result<int, string>) = \"concrete result\"\nopen WrapperExtensions\nlet result = Wrapper.Process(Ok 42 : Result<int, string>)"
@@ -1001,8 +961,6 @@ let result : string = Resolver.Resolve(Some([1]))
         |> ignore
 
     let concreteWrapperTestCases: obj[] seq =
-        let case desc source = [| desc :> obj; source :> obj |]
-
         [
             case "Async<int> vs Async<'T>"
                  "module Test\ntype AsyncRunner =\n    static member Run(comp: Async<int>) = \"int async\"\n    static member Run(comp: Async<'T>) = \"generic async\"\nlet computation = async { return 42 }\nlet result = AsyncRunner.Run(computation)"
@@ -1075,8 +1033,6 @@ let result : string = Resolver.Resolve(Some([1]))
         ]
 
     let concreteWrapperNetCoreTestCases: obj[] seq =
-        let case desc source = [| desc :> obj; source :> obj |]
-
         [
             case "Span<byte> vs Span<'T>"
                  "module Test\nopen System\ntype Parser =\n    static member Parse(data: Span<'T>) = \"generic\"\n    static member Parse(data: Span<byte>) = \"bytes\"\nlet runTest () =\n    let buffer: byte[] = [| 1uy; 2uy; 3uy |]\n    let span = Span(buffer)\n    Parser.Parse(span)"
@@ -1314,9 +1270,6 @@ let result = t.Invoke(42)
         |> ignore
 
     let moreConcretDisabledAmbiguousCases: obj[] seq =
-        let case desc source =
-            [| desc :> obj; source :> obj |]
-
         [
             case
                 "fully generic vs wrapped generic"
@@ -1338,8 +1291,6 @@ let result = t.Invoke(42)
         |> ignore
 
     let moreConcreteTestCases: obj[] seq =
-        let case desc source = [| desc :> obj; source :> obj |]
-
         [
             case "Option<'T> vs Option<'T list> - nested list more concrete"
                  "module Test\ntype Resolver =\n    static member Resolve<'t>(x: Option<'t>) = \"generic\"\n    static member Resolve<'t>(x: Option<'t list>) = \"list\"\nlet result = Resolver.Resolve(Some [1;2;3])\nif result <> \"list\" then failwithf \"Expected 'list' but got '%s'\" result"

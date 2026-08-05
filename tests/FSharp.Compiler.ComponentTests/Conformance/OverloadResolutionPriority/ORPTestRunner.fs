@@ -12,9 +12,7 @@ let test (name: string) (expected: string) (actual: string) =
     else
         printfn "PASS: %s" name
 
-// ============================================================================
 // Basic Priority Tests - consuming C# ORP from F#
-// ============================================================================
 
 let testBasicPriority () =
     test "Higher priority wins over lower" "priority-2" (BasicPriority.Invoke("test"))
@@ -27,9 +25,7 @@ let testBasicPriority () =
     
     test "Default priority is 0" "mixed-priority" (DefaultPriority.Mixed("test"))
 
-// ============================================================================
 // Per-declaring-type Extension Tests
-// ============================================================================
 
 let testExtensions () =
     test "Extension type B priority" "TypeB-priority2" (ExtensionTypeB.ExtMethod("hello", 42))
@@ -37,9 +33,7 @@ let testExtensions () =
     let x = 42
     test "Per-type extension priority" "ModuleB-int-priority2" (x.Transform())
 
-// ============================================================================
 // Same Priority - Normal Tiebreakers Apply
-// ============================================================================
 
 let testSamePriorityTiebreakers () =
     test "Same priority - int wins by concreteness" "int" (SamePriorityTiebreaker.Process(42))
@@ -48,9 +42,7 @@ let testSamePriorityTiebreakers () =
     
     test "Same priority - int[] wins by concreteness" "int-array" (SamePriorityArrayTypes.Handle([|1; 2; 3|]))
 
-// ============================================================================
 // Inheritance Tests
-// ============================================================================
 
 let testInheritance () =
     let derived = DerivedClassWithNewMethods()
@@ -59,9 +51,7 @@ let testInheritance () =
     let derivedBase = DerivedClass()
     test "Base priority respected in derived" "Derived-string" (derivedBase.Method("test"))
 
-// ============================================================================
 // Instance Method Priority
-// ============================================================================
 
 let testInstanceMethods () =
     let obj = InstanceOnlyClass()
@@ -70,26 +60,20 @@ let testInstanceMethods () =
     let target = TargetClass()
     test "Extension adds new overload" "Extension-int-priority2" (target.DoWork(42))
 
-// ============================================================================
 // Explicit vs Implicit Zero Priority
-// ============================================================================
 
 let testExplicitVsImplicit () =
     test "No attr direct call" "no-attr" (ExplicitVsImplicitZero.WithoutAttr("test"))
     test "Explicit zero direct call" "explicit-zero" (ExplicitVsImplicitZero.WithExplicitZero(box "test"))
 
-// ============================================================================
 // Complex Generics
-// ============================================================================
 
 let testComplexGenerics () =
     test "Complex generics - fully generic wins" "fully-generic-priority2" (ComplexGenerics.Process(1, 2))
     
     test "Complex generics - partial match" "fully-generic-priority2" (ComplexGenerics.Process("hello", 42))
 
-// ============================================================================
 // F# Code USING the ORP attribute (defining overloads with ORP)
-// ============================================================================
 
 type FSharpWithORP =
     [<System.Runtime.CompilerServices.OverloadResolutionPriority(2)>]
@@ -123,9 +107,7 @@ let testFSharpUsingORP () =
     
     test "F# extension ORP - obj wins by priority" "fsharp-ext-obj-priority1" ("test".FsExtend(42))
 
-// ============================================================================
 // Virtual Base ORPA Inheritance Tests
-// ============================================================================
 
 let testVirtualBaseOrpa () =
     // When called via Base type, priority1 object overload should win over priority0 string
@@ -141,9 +123,7 @@ let testVirtualBaseOrpa () =
     let intResult = derived.Compute(42)
     test "Derived virtual - int with neg priority" "derived-int" intResult
 
-// ============================================================================
 // Main entry point
-// ============================================================================
 
 [<EntryPoint>]
 let main _ =

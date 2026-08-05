@@ -84,10 +84,6 @@ type TiebreakRule =
                 -> int
     }
 
-// -------------------------------------------------------------------------
-// Type Concreteness Comparison
-// -------------------------------------------------------------------------
-
 /// Fold over two lists pairwise with a comparison function, accumulating dominance state.
 /// Early-exits when incomparability is detected (both positive and negative seen).
 /// Returns the accumulated state so it can be chained across multiple lists.
@@ -131,8 +127,7 @@ let private paramDataType (ParamData(_, _, _, _, _, _, _, ty)) = ty
 /// True if any of these parameters' types mentions a comparable (non-SRTP) type variable — from a
 /// method type parameter OR an enclosing-type type parameter. The latter lets constructors and
 /// generic-type members (whose instantiation is inferred from the arguments, so they carry no
-/// method type arguments) participate in the concreteness ordering. Reuses the existing free-typar
-/// machinery rather than introducing a new type walker.
+/// method type arguments) participate in the concreteness ordering.
 let private paramsMentionComparableTypeVar (g: TcGlobals) (ps: ParamData list) : bool =
     freeInTypesLeftToRight g true (List.map paramDataType ps)
     |> List.exists (fun tp -> not (isStaticallyResolvedTypeParam tp))
@@ -184,13 +179,7 @@ let compareTypeConcreteness (g: TcGlobals) ty1 ty2 =
         | TType_fun(dom1, rng1, _), TType_fun(dom2, rng2, _) ->
             let cDomain = loop dom1 dom2
             let cRange = loop rng1 rng2
-            // Inline aggregation for 2 elements to avoid list allocation
-            let hasPositive = cDomain > 0 || cRange > 0
-            let hasNegative = cDomain < 0 || cRange < 0
-
-            if not hasNegative && hasPositive then 1
-            elif not hasPositive && hasNegative then -1
-            else 0
+            resolveAggregation (struct (cDomain > 0 || cRange > 0, cDomain < 0 || cRange < 0))
 
         | TType_anon(info1, tys1), TType_anon(info2, tys2) ->
             if not (anonInfoEquiv info1 info2) then
@@ -266,9 +255,7 @@ let explainIncomparableMethodConcreteness<'T>
         //
         // With several formal parameters we compare per parameter and report the formal-parameter
         // index instead - matching moreConcreteRule's own unit of comparison. A same-constructor
-        // parameter that is internally incomparable is neutral and simply drops out. (Flattening
-        // type-argument indices across parameters, as an earlier version did, produced ambiguous,
-        // duplicated position numbers such as "positions 1, 1".)
+        // parameter that is internally incomparable is neutral and simply drops out.
         let allComparisons =
             match formalParams1, formalParams2 with
             | [ p1 ], [ p2 ] -> collectComparisons 1 (paramDataType p1) (paramDataType p2)
@@ -292,10 +279,6 @@ let explainIncomparableMethodConcreteness<'T>
                 }
         else
             None
-
-// -------------------------------------------------------------------------
-// Helper functions for comparisons
-// -------------------------------------------------------------------------
 
 /// Compare two things by the given predicate.
 /// If the predicate returns true for x1 and false for x2, then x1 > x2
@@ -355,70 +338,39 @@ let private compareArgLists ctx (args1: CalledArg list) (args2: CalledArg list) 
     else
         0
 
-// -------------------------------------------------------------------------
-// Rule Definitions
-// -------------------------------------------------------------------------
-
-let private noTDCRule: TiebreakRule =
+/// Build a rule that prefers candidates for which `preferred` holds. The predicate reads only the
+/// already-computed per-candidate facts (candidate, type-directed-conversion use, warning count),
+/// so no resolution context is needed.
+let private preferFlagRule id (preferred: struct (CalledMeth<Expr> * TypeDirectedConversionUsed * int) -> bool) : TiebreakRule =
     {
-        Id = TiebreakRuleId.NoTDC
+        Id = id
         RequiredFeature = None
-        Compare =
-            fun _ (struct (_, usesTDC1, _)) (struct (_, usesTDC2, _)) ->
-                compare
-                    (match usesTDC1 with
-                     | TypeDirectedConversionUsed.No -> 1
-                     | _ -> 0)
-                    (match usesTDC2 with
-                     | TypeDirectedConversionUsed.No -> 1
-                     | _ -> 0)
+        Compare = fun _ a b -> compare (preferred a) (preferred b)
     }
 
-let private lessTDCRule: TiebreakRule =
-    {
-        Id = TiebreakRuleId.LessTDC
-        RequiredFeature = None
-        Compare =
-            fun _ (struct (_, usesTDC1, _)) (struct (_, usesTDC2, _)) ->
-                compare
-                    (match usesTDC1 with
-                     | TypeDirectedConversionUsed.Yes(_, false, _) -> 1
-                     | _ -> 0)
-                    (match usesTDC2 with
-                     | TypeDirectedConversionUsed.Yes(_, false, _) -> 1
-                     | _ -> 0)
-    }
+let private noTDCRule =
+    preferFlagRule TiebreakRuleId.NoTDC (fun (struct (_, usesTDC, _)) ->
+        match usesTDC with
+        | TypeDirectedConversionUsed.No -> true
+        | _ -> false)
 
-let private nullableTDCRule: TiebreakRule =
-    {
-        Id = TiebreakRuleId.NullableTDC
-        RequiredFeature = None
-        Compare =
-            fun _ (struct (_, usesTDC1, _)) (struct (_, usesTDC2, _)) ->
-                compare
-                    (match usesTDC1 with
-                     | TypeDirectedConversionUsed.Yes(_, _, true) -> 1
-                     | _ -> 0)
-                    (match usesTDC2 with
-                     | TypeDirectedConversionUsed.Yes(_, _, true) -> 1
-                     | _ -> 0)
-    }
+let private lessTDCRule =
+    preferFlagRule TiebreakRuleId.LessTDC (fun (struct (_, usesTDC, _)) ->
+        match usesTDC with
+        | TypeDirectedConversionUsed.Yes(_, false, _) -> true
+        | _ -> false)
 
-let private noWarningsRule: TiebreakRule =
-    {
-        Id = TiebreakRuleId.NoWarnings
-        RequiredFeature = None
-        Compare = fun _ (struct (_, _, warnCount1)) (struct (_, _, warnCount2)) -> compare (warnCount1 = 0) (warnCount2 = 0)
-    }
+let private nullableTDCRule =
+    preferFlagRule TiebreakRuleId.NullableTDC (fun (struct (_, usesTDC, _)) ->
+        match usesTDC with
+        | TypeDirectedConversionUsed.Yes(_, _, true) -> true
+        | _ -> false)
 
-let private noParamArrayRule: TiebreakRule =
-    {
-        Id = TiebreakRuleId.NoParamArray
-        RequiredFeature = None
-        Compare =
-            fun _ (struct (candidate, _, _)) (struct (other, _, _)) ->
-                compare (not candidate.UsesParamArrayConversion) (not other.UsesParamArrayConversion)
-    }
+let private noWarningsRule =
+    preferFlagRule TiebreakRuleId.NoWarnings (fun (struct (_, _, warnCount)) -> warnCount = 0)
+
+let private noParamArrayRule =
+    preferFlagRule TiebreakRuleId.NoParamArray (fun (struct (candidate, _, _)) -> not candidate.UsesParamArrayConversion)
 
 let private preciseParamArrayRule: TiebreakRule =
     {
@@ -432,20 +384,11 @@ let private preciseParamArrayRule: TiebreakRule =
                     0
     }
 
-let private noOutArgsRule: TiebreakRule =
-    {
-        Id = TiebreakRuleId.NoOutArgs
-        RequiredFeature = None
-        Compare = fun _ (struct (candidate, _, _)) (struct (other, _, _)) -> compare (not candidate.HasOutArgs) (not other.HasOutArgs)
-    }
+let private noOutArgsRule =
+    preferFlagRule TiebreakRuleId.NoOutArgs (fun (struct (candidate, _, _)) -> not candidate.HasOutArgs)
 
-let private noOptionalArgsRule: TiebreakRule =
-    {
-        Id = TiebreakRuleId.NoOptionalArgs
-        RequiredFeature = None
-        Compare =
-            fun _ (struct (candidate, _, _)) (struct (other, _, _)) -> compare (not candidate.HasOptionalArgs) (not other.HasOptionalArgs)
-    }
+let private noOptionalArgsRule =
+    preferFlagRule TiebreakRuleId.NoOptionalArgs (fun (struct (candidate, _, _)) -> not candidate.HasOptionalArgs)
 
 let private unnamedArgsRule: TiebreakRule =
     {
@@ -478,14 +421,8 @@ let private unnamedArgsRule: TiebreakRule =
                     0
     }
 
-let private preferNonExtensionRule: TiebreakRule =
-    {
-        Id = TiebreakRuleId.PreferNonExtension
-        RequiredFeature = None
-        Compare =
-            fun _ (struct (candidate, _, _)) (struct (other, _, _)) ->
-                compare (not candidate.Method.IsExtensionMember) (not other.Method.IsExtensionMember)
-    }
+let private preferNonExtensionRule =
+    preferFlagRule TiebreakRuleId.PreferNonExtension (fun (struct (candidate, _, _)) -> not candidate.Method.IsExtensionMember)
 
 let private extensionPriorityRule: TiebreakRule =
     {
@@ -499,46 +436,27 @@ let private extensionPriorityRule: TiebreakRule =
                     0
     }
 
-let private preferNonGenericRule: TiebreakRule =
-    {
-        Id = TiebreakRuleId.PreferNonGeneric
-        RequiredFeature = None
-        Compare =
-            fun _ (struct (candidate, _, _)) (struct (other, _, _)) -> compare candidate.CalledTyArgs.IsEmpty other.CalledTyArgs.IsEmpty
-    }
+let private preferNonGenericRule =
+    preferFlagRule TiebreakRuleId.PreferNonGeneric (fun (struct (candidate, _, _)) -> candidate.CalledTyArgs.IsEmpty)
 
-let private getCachedParamData (ctx: OverloadResolutionContext) (meth: CalledMeth<Expr>) =
-    let computeParamData () =
-        meth.Method.GetParamDatas(ctx.amap, ctx.m, meth.Method.FormalMethodInst)
-        |> List.concat
-
-    match ctx.paramDataCache with
-    | ValueNone -> computeParamData ()
+let private getCached (cache: System.Collections.Generic.Dictionary<obj, 'v> voption) (key: obj) (compute: unit -> 'v) =
+    match cache with
+    | ValueNone -> compute ()
     | ValueSome cache ->
-        let key = meth :> obj
-
-        match cache.TryGetValue(key) with
+        match cache.TryGetValue key with
         | true, v -> v
         | _ ->
-            let v = computeParamData ()
+            let v = compute ()
             cache[key] <- v
             v
 
+let private getCachedParamData (ctx: OverloadResolutionContext) (meth: CalledMeth<Expr>) =
+    getCached ctx.paramDataCache (meth :> obj) (fun () ->
+        meth.Method.GetParamDatas(ctx.amap, ctx.m, meth.Method.FormalMethodInst)
+        |> List.concat)
+
 let private getCachedHasSRTP (ctx: OverloadResolutionContext) (meth: CalledMeth<Expr>) =
-    let computeHasSRTP () =
-        methodMentionsSRTP ctx.g meth (getCachedParamData ctx meth)
-
-    match ctx.srtpCache with
-    | ValueNone -> computeHasSRTP ()
-    | ValueSome cache ->
-        let key = meth :> obj
-
-        match cache.TryGetValue(key) with
-        | true, v -> v
-        | _ ->
-            let result = computeHasSRTP ()
-            cache[key] <- result
-            result
+    getCached ctx.srtpCache (meth :> obj) (fun () -> methodMentionsSRTP ctx.g meth (getCachedParamData ctx meth))
 
 let private moreConcreteRule: TiebreakRule =
     {
@@ -596,10 +514,6 @@ let private propertyOverrideRule: TiebreakRule =
                 | _ -> 0
     }
 
-// -------------------------------------------------------------------------
-// Public API
-// -------------------------------------------------------------------------
-
 let private allTiebreakRules: TiebreakRule list =
     [
         noTDCRule
@@ -648,10 +562,6 @@ let findDecidingRule
                 loop rest
 
     loop allTiebreakRules
-
-// -------------------------------------------------------------------------
-// OverloadResolutionPriority Pre-Filter (RFC: .NET 9 attribute)
-// -------------------------------------------------------------------------
 
 /// Apply OverloadResolutionPriority pre-filter to a list of candidates.
 /// Groups methods by declaring type and keeps only highest-priority within each group.
