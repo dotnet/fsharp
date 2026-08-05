@@ -9,13 +9,14 @@ Reviewers can already see the Files tab, the commit log, and the issue thread. S
 
 ## Rules
 
-Rules 1, 2, 4, 5 are defaults; if the user insists, push back once then comply. Rule 3 is non-negotiable — `-b "..."` ships broken markdown (see PR #19866).
+Rules 1, 2, 4, 5, 6 are defaults; if the user insists, push back once then comply. Rule 3 is non-negotiable — `-b "..."` ships broken markdown (see PR #19866).
 
 1. **No change inventory.** No file/module/method/test lists. No `## Changes`/`## Implementation` section. Mention an identifier only when it *is* the user-visible behavior. Whatever the reader already has (Files tab for PRs, commit log for follow-up comments, issue history for issue edits) — don't re-list it.
 2. **No LLM slop, no justification scaffolding.** No emoji headers, no "TL;DR" above a 3-line body, no Motivation/Background/Approach/Testing sections, no re-stating the title or the comment you're replying to. No "matching the X norm", no "preventing the Y failure (PR #ZZZZ)", no stats, no links to past PRs as proof. The diff is the proof.
 3. **Body via `--body-file`, built without shell expansion.** Write the file with your file-creation/edit tool (it writes bytes verbatim — no `$`/backtick evaluation, no delimiter collisions, OS-agnostic). Never `-b "..."` / `--body "..."` — backticks and `$` get shell-evaluated and the render breaks. If you build the file in a shell, use a pwsh verbatim here-string `@'...'@` (cross-platform; single-quoted is mandatory). Applies to `gh pr create/edit/comment/review`, `gh issue create/edit/comment`.
 4. **`Fixes #N` to close issues.** Use only when the PR actually closes #N (auto-closes on merge). It is the highest-value line in most PR bodies — never omit it when valid. No "Related to" / speculative links. Preserve existing trailers (`Co-authored-by:`, `Signed-off-by:`, `Reverts #N`); don't invent them.
 5. **Title:** imperative, ≤72 chars, no trailing period, no `fix:`/`feat:` prefix. Name the behavior, not the file. A specific title lets the body shrink to `Fixes #N` + one sentence.
+6. **No hard-wrapped prose.** Write each paragraph as one unbroken line and let GitHub's renderer wrap it — blank lines separate paragraphs, and that's the only break you author. Manual mid-sentence line breaks (wrapping at a fixed column) are a machine tell and render raggedly across window widths.
 
 ## PR-body shapes (pick the smallest that carries the signal)
 
@@ -28,16 +29,14 @@ Update .NET SDK from 10.0.202 to 10.0.204.
 ~~~
 Fixes #18009
 
-Wrong colorization when a qualified type name with generic parameters
-is used in a static member access expression.
+Wrong colorization when a qualified type name with generic parameters is used in a static member access expression.
 ~~~
 
 **Issue link + 1-sentence why** — the most common non-trivial shape:
 ~~~
 Fixes #19751
 
-`--refout` MVIDs were unstable because hashing relied on per-process
-string randomization. Switched to a deterministic hash.
+`--refout` MVIDs were unstable because hashing relied on per-process string randomization. Switched to a deterministic hash.
 ~~~
 
 **Before/After code block** — when prose loses information; ≤15 lines, language tag:
@@ -73,8 +72,7 @@ Show the title + body (or comment text) in chat first. **Do not run `gh` until t
 
    ```powershell
    @'
-   Fix false-positive FS3261 when nullness narrowing leaks across iterations
-   of seq/list/array comprehensions.
+   Fix false-positive FS3261 when nullness narrowing leaks across iterations of seq/list/array comprehensions.
 
    Fixes #19644
    '@ | Set-Content -NoNewline pr-body.md
