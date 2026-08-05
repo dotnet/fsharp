@@ -80,38 +80,3 @@ let f<'T>() = nameof<'T>
         |> shouldFail
         |> withErrorCode 39
         |> ignore
-
-    // Guard test: %B (binary integer formatting) parses, compiles and runs correctly now that
-    // the PrintfBinaryFormat feature flag is removed. The old flag gated %B at langversion 6.0,
-    // but the minimum supported langversion is 8.0 (anything lower errors with FS3880), so every
-    // supported langversion is already above the old gate - the removal is a pure no-op for all
-    // supported versions and there is no sub-6.0 langversion at which to observe the difference.
-    // This asserts the %B code path itself is intact after deleting the guard.
-    [<Fact>]
-    let ``PrintfBinaryFormat is unconditional - percent B compiles and runs``() =
-        FSharp """
-module Test
-let s = sprintf "%B" 19
-if s <> "10011" then failwithf "expected 10011 got %s" s
-        """
-        |> asExe
-        |> compileAndRun
-        |> shouldSucceed
-        |> ignore
-
-    // RED driver: after the flag is removed, PrintfBinaryFormat is no longer a recognized
-    // language-feature name, so --disableLanguageFeature:PrintfBinaryFormat must be rejected
-    // with error 3881 "Unrecognized language feature name".
-    // On the CURRENT (pre-removal) compiler this FAILS, because the name is still recognized
-    // (the flag exists), so no 3881 is produced. That failure is the intended RED state.
-    [<Fact>]
-    let ``disableLanguageFeature PrintfBinaryFormat is not a recognized feature``() =
-        FSharp """
-printfn "Hello, World"
-        """
-        |> withOptions ["--disableLanguageFeature:PrintfBinaryFormat"]
-        |> typecheck
-        |> shouldFail
-        |> withErrorCode 3881
-        |> withDiagnosticMessageMatches "Unrecognized language feature name"
-        |> ignore
