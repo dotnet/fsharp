@@ -1662,30 +1662,16 @@ module InheritDocTooltipTests =
     /// in the assembly signature, and returns its resolved XmlDoc text. Used to characterise that the
     /// signature-file doc is authoritative (RFC FS-1341) and that its <inheritdoc> is expanded.
     let private getEntityXmlTextFromSignature (fsiSource: string) (fsSource: string) (typeName: string) =
-        let tempDir = System.IO.Path.Combine(System.IO.Path.GetTempPath(), System.Guid.NewGuid().ToString("N"))
-        System.IO.Directory.CreateDirectory(tempDir) |> ignore
-        let fsiFile = System.IO.Path.Combine(tempDir, "Test.fsi")
-        let fsFile = System.IO.Path.Combine(tempDir, "Test.fs")
-        System.IO.File.WriteAllText(fsiFile, fsiSource)
-        System.IO.File.WriteAllText(fsFile, fsSource)
-
-        let dllName = System.IO.Path.Combine(tempDir, "Test.dll")
-        let projName = System.IO.Path.Combine(tempDir, "Test.fsproj")
-        let args = mkProjectCommandLineArgs(dllName, [])
-
         let options =
-            { checker.GetProjectOptionsFromCommandLineArgs(projName, args) with
-                SourceFiles = [| fsiFile; fsFile |] }
+            createProjectOptionsFromNamedSources [ "Test.fsi", fsiSource; "Test.fs", fsSource ] []
 
         let results = checker.ParseAndCheckProject(options) |> Async.RunSynchronously
 
-        let rec allEntities (entities: seq<FSharpEntity>) =
-            entities
-            |> Seq.collect (fun e -> Seq.append (Seq.singleton e) (allEntities e.NestedEntities))
-
         let entity =
-            allEntities results.AssemblySignature.Entities
-            |> Seq.find (fun e -> e.DisplayName = typeName)
+            allSymbolsInEntities true results.AssemblySignature.Entities
+            |> List.pick (function
+                | :? FSharpEntity as e when e.DisplayName = typeName -> Some e
+                | _ -> None)
 
         match entity.XmlDoc with
         | FSharpXmlDoc.FromXmlText t -> t.GetXmlText()
