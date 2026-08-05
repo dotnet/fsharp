@@ -2699,8 +2699,11 @@ let GenMethodDefAsRow cenv env midx (mdef: ILMethodDef) =
           cenv.AddCode code
           addr
       | MethodBody.Abstract
-      | MethodBody.PInvoke _ ->
+      | MethodBody.PInvoke _
+      | MethodBody.NotAvailable ->
           // Now record the PDB record for this method - we write this out later.
+          // Metadata-only methods still participate in name ambiguity checks and occupy
+          // MethodDebugInformation rows even though they have no sequence points.
           if cenv.generatePdb then
             cenv.pdbinfo.Add
               { MethToken = getUncodedToken TableNames.Method midx
@@ -2713,7 +2716,7 @@ let GenMethodDefAsRow cenv env midx (mdef: ILMethodDef) =
           0x0000
       | MethodBody.Native ->
           failwith "cannot write body of native method - Abstract IL cannot roundtrip mixed native/managed binaries"
-      | _ -> 0x0000)
+      )
 
     UnsharedRow
        [| ULong codeAddr
@@ -3859,7 +3862,10 @@ type options =
      referenceAssemblyOnly: bool
      referenceAssemblyAttribOpt: ILAttribute option
      referenceAssemblySignatureHash : int option
-     pathMap: PathMap }
+     pathMap: PathMap
+     /// Per-method EnC CustomDebugInformation rows for the portable PDB writer, keyed by
+     /// IL method name. Empty for ordinary compiles, so flag-off output stays byte-identical.
+     methodCustomDebugInfoRows: Map<string, PdbMethodCustomDebugInfo list> }
 
 let writeBinaryAux (stream: Stream, options: options, modul, normalizeAssemblyRefs) =
 
@@ -4022,7 +4028,7 @@ let writeBinaryAux (stream: Stream, options: options, modul, normalizeAssemblyRe
             match options.pdbfile, options.portablePDB with
             | Some _, true ->
                 let pdbInfo =
-                    generatePortablePdb options.embedAllSource options.embedSourceList options.sourceLink options.checksumAlgorithm pdbData options.pathMap
+                    generatePortablePdb options.embedAllSource options.embedSourceList options.sourceLink options.checksumAlgorithm pdbData options.pathMap options.methodCustomDebugInfoRows
 
                 if options.embeddedPDB then
                     let uncompressedLength, contentId, stream, algorithmName, checkSum = pdbInfo

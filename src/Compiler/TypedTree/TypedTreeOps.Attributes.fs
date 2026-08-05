@@ -185,6 +185,7 @@ module internal ILExtensions =
                     WellKnownILAttributes.SetsRequiredMembersAttribute
                 | "System.ObsoleteAttribute" -> WellKnownILAttributes.ObsoleteAttribute
                 | "System.Diagnostics.CodeAnalysis.ExperimentalAttribute" -> WellKnownILAttributes.ExperimentalAttribute
+                | "System.Diagnostics.CodeAnalysis.NotNullIfNotNullAttribute" -> WellKnownILAttributes.NotNullIfNotNullAttribute
                 | "System.AttributeUsageAttribute" -> WellKnownILAttributes.AttributeUsageAttribute
                 | _ -> WellKnownILAttributes.None
 
@@ -593,6 +594,11 @@ module internal AttributeHelpers =
             | [| "System"; "Diagnostics"; name |] ->
                 match name with
                 | "ConditionalAttribute" -> WellKnownValAttributes.ConditionalAttribute
+                | _ -> WellKnownValAttributes.None
+
+            | [| "System"; "Diagnostics"; "CodeAnalysis"; name |] ->
+                match name with
+                | "NotNullIfNotNullAttribute" -> WellKnownValAttributes.NotNullIfNotNullAttribute
                 | _ -> WellKnownValAttributes.None
 
             | [| "System"; name |] ->

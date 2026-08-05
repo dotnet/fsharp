@@ -1258,7 +1258,8 @@ type WellKnownILAttributes =
     | RequiredMemberAttribute = (1u <<< 22)
     | NullableContextAttribute = (1u <<< 23)
     | AttributeUsageAttribute = (1u <<< 24)
-    | CallerArgumentExpressionAttribute = (1u <<< 25)
+    | NotNullIfNotNullAttribute = (1u <<< 25)
+    | CallerArgumentExpressionAttribute = (1u <<< 26)
     | NotComputed = (1u <<< 31)
 
 type internal ILAttributesStoredRepr =

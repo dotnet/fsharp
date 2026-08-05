@@ -1250,6 +1250,14 @@ let rec BuildMethodCall tcVal g amap isMutable m isProp minfo valUseFlags minst 
             let expr = mkCoerceExpr (expr, retTy, m, exprTy)
             expr, retTy
 
+        | MethInfoWithModifiedReturnType((FSMeth(_, _, vref, _) as innerMeth), retTy) ->
+            // Build the inner call directly, without re-invoking TakeObjAddrForMethodCall.
+            let vExpr, vExprTy = tcVal vref valUseFlags (innerMeth.DeclaringTypeInst @ minst) m
+            let expr, exprTy = BuildFSharpMethodApp g m vref vExpr vExprTy allArgs
+
+            let expr = mkCoerceExpr (expr, retTy, m, exprTy)
+            expr, retTy
+
         | MethInfoWithModifiedReturnType _ ->
             failwith "MethInfoWithModifiedReturnType: unexpected inner method kind"
 

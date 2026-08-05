@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
   <file datatype="xml" source-language="en" target-language="ru" original="../FSComp.resx">
     <body>
@@ -367,6 +367,11 @@
         <target state="new">Deprecate places where 'seq' can be omitted</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureDirectDelegateConstruction">
+        <source>construct delegates that point directly at the target method, avoiding an intermediate closure</source>
+        <target state="new">construct delegates that point directly at the target method, avoiding an intermediate closure</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureDiscardUseValue">
         <source>discard pattern in use binding</source>
         <target state="translated">шаблон отмены в привязке использования</target>
@@ -537,6 +542,11 @@
         <target state="translated">шаблоны без переменных справа от шаблонов "as"</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureNotNullIfNotNull">
+        <source>honor the 'NotNullIfNotNull' attribute on a method's return value</source>
+        <target state="new">honor the 'NotNullIfNotNull' attribute on a method's return value</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureNullableOptionalInterop">
         <source>nullable optional interop</source>
         <target state="translated">необязательное взаимодействие, допускающее значение NULL</target>
@@ -592,14 +602,14 @@
         <target state="new">#elif preprocessor directive</target>
         <note />
       </trans-unit>
-      <trans-unit id="featurePrintfBinaryFormat">
-        <source>binary formatting for integers</source>
-        <target state="translated">двоичное форматирование для целых чисел</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureReallyLongList">
         <source>list literals of any size</source>
         <target state="translated">список литералов любого размера</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureRecordSpreads">
+        <source>record type and expression spreads</source>
+        <target state="new">record type and expression spreads</target>
         <note />
       </trans-unit>
       <trans-unit id="featureRefCellNotationInformationals">
@@ -665,11 +675,6 @@
       <trans-unit id="featureStaticMembersInInterfaces">
         <source>Static members in interfaces</source>
         <target state="translated">Статические элементы в интерфейсах</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="featureStrictIndentation">
-        <source>Raises errors on incorrect indentation, allows better recovery and analysis during editing</source>
-        <target state="translated">Выдает ошибки при неправильном отступе, обеспечивает более эффективное восстановление и анализ во время редактирования</target>
         <note />
       </trans-unit>
       <trans-unit id="featureStringInterpolation">
@@ -1122,11 +1127,6 @@
         <target state="translated">Включить сведения об интерфейсе F#, по умолчанию используется файл. Необходимо для распространения библиотек.</target>
         <note />
       </trans-unit>
-      <trans-unit id="optsStrictIndentation">
-        <source>Override indentation rules implied by the language version ({0} by default)</source>
-        <target state="new">Override indentation rules implied by the language version ({0} by default)</target>
-        <note />
-      </trans-unit>
       <trans-unit id="optsSupportedLangVersions">
         <source>Supported language versions:</source>
         <target state="translated">Поддерживаемые языковые версии:</target>
@@ -1252,6 +1252,16 @@
         <target state="translated">Требуется текст сообщения элемента</target>
         <note />
       </trans-unit>
+      <trans-unit id="parsMissingSpreadSrcExpr">
+        <source>Missing spread source expression after '...'.</source>
+        <target state="new">Missing spread source expression after '...'.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="parsMissingSpreadSrcTy">
+        <source>Missing spread source type after '...'.</source>
+        <target state="new">Missing spread source type after '...'.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="parsMissingUnionCaseName">
         <source>Missing union case name</source>
         <target state="translated">Отсутствует имя случая объединения</target>
@@ -1265,6 +1275,16 @@
       <trans-unit id="parsOnlySimplePatternsAreAllowedInConstructors">
         <source>Only simple patterns are allowed in primary constructors</source>
         <target state="translated">В первичных конструкторах разрешены только простые шаблоны</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="parsSpreadNotSupported">
+        <source>Spreading is not supported in this construct.</source>
+        <target state="new">Spreading is not supported in this construct.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="parsSpreadNotSupportedBeforeWith">
+        <source>Spreading is not supported in this position. Use one of the forms {{ ...expr1; A = expr2 }} or {{ expr1 with A = expr2 }} instead.</source>
+        <target state="new">Spreading is not supported in this position. Use one of the forms {{ ...expr1; A = expr2 }} or {{ expr1 with A = expr2 }} instead.</target>
         <note />
       </trans-unit>
       <trans-unit id="parsStaticMemberImcompleteSyntax">
@@ -1487,6 +1507,16 @@
         <target state="translated">Поле "{0}" появляется несколько раз в этом типе анонимной записи.</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcAnonRecordExprSpreadSourceCannotBeNullable">
+        <source>The source expression of a spread into an anonymous record expression cannot be nullable.</source>
+        <target state="new">The source expression of a spread into an anonymous record expression cannot be nullable.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcAnonRecordExprSpreadSourceMustBeRecord">
+        <source>The source expression of a spread into an anonymous record expression must have a nominal or anonymous record type.</source>
+        <target state="new">The source expression of a spread into an anonymous record expression must have a nominal or anonymous record type.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcAttributeIsNotValidForUnionCaseWithFields">
         <source>This attribute is not valid for use on union cases with fields.</source>
         <target state="new">This attribute is not valid for use on union cases with fields.</target>
@@ -1550,6 +1580,11 @@
       <trans-unit id="tcExpectedTypeParamMarkedWithUnitOfMeasureAttribute">
         <source>Expected unit-of-measure type parameter must be marked with the [&lt;Measure&gt;] attribute.</source>
         <target state="new">Expected unit-of-measure type parameter must be marked with the [&lt;Measure&gt;] attribute.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcGenericAttributesNotSupported">
+        <source>Generic attribute types are not supported in F#. The type '{0}' has type parameters and cannot be used as an attribute.</source>
+        <target state="new">Generic attribute types are not supported in F#. The type '{0}' has type parameters and cannot be used as an attribute.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcHighPrecedenceFunctionApplicationToListDeprecated">
@@ -1787,9 +1822,59 @@
         <target state="new">You can remove this `nonNull` assertion.</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcRecordExplicitFieldShadowsSpreadField">
+        <source>Explicit field '{0}' shadows a field with the same name from an earlier spread.</source>
+        <target state="new">Explicit field '{0}' shadows a field with the same name from an earlier spread.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcRecordExprSpreadFieldShadowsSpreadField">
+        <source>Spread field '{0}' shadows a field with the same name from an earlier spread.</source>
+        <target state="new">Spread field '{0}' shadows a field with the same name from an earlier spread.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcRecordTypeDefinitionSpreadFieldShadowsSpreadField">
+        <source>Spread field '{0}' from type '{1}' shadows a field with the same name from an earlier spread.</source>
+        <target state="new">Spread field '{0}' from type '{1}' shadows a field with the same name from an earlier spread.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcRecursiveInlineNotAllowed">
         <source>The value or member '{0}' has been marked 'inline' but is part of a recursive binding group. F# does not support recursive 'inline' values. Either remove the 'inline' modifier or refactor the recursion.</source>
         <target state="new">The value or member '{0}' has been marked 'inline' but is part of a recursive binding group. F# does not support recursive 'inline' values. Either remove the 'inline' modifier or refactor the recursion.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcRecordExprSpreadFieldShadowsExplicitField">
+        <source>Spread field '{0}' shadows an explicitly declared field with the same name.</source>
+        <target state="new">Spread field '{0}' shadows an explicitly declared field with the same name.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcRecordExprSpreadSourceCannotBeNullable">
+        <source>The source expression of a spread into a nominal record expression cannot be nullable.</source>
+        <target state="new">The source expression of a spread into a nominal record expression cannot be nullable.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcRecordExprSpreadSourceMustBeRecord">
+        <source>The source expression of a spread into a nominal record expression must have a nominal or anonymous record type.</source>
+        <target state="new">The source expression of a spread into a nominal record expression must have a nominal or anonymous record type.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcRecordExprSpreadWithCannotBeUsedWithSpreads">
+        <source>Spread expressions and 'with' cannot be used together in the same copy-and-update expression.</source>
+        <target state="new">Spread expressions and 'with' cannot be used together in the same copy-and-update expression.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcRecordTypeDefinitionSpreadFieldShadowsExplicitField">
+        <source>Spread field '{0}' from type '{1}' shadows an explicitly declared field with the same name.</source>
+        <target state="new">Spread field '{0}' from type '{1}' shadows an explicitly declared field with the same name.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcRecordTypeDefinitionSpreadSourceCannotBeNullable">
+        <source>The source type of a spread into a record type definition cannot be nullable.</source>
+        <target state="new">The source type of a spread into a record type definition cannot be nullable.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcRecordTypeDefinitionSpreadSourceMustBeRecord">
+        <source>The source type of a spread into a record type definition must itself be a nominal or anonymous record type.</source>
+        <target state="new">The source type of a spread into a record type definition must itself be a nominal or anonymous record type.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcRequireMergeSourcesOrBindN">
@@ -1875,6 +1960,11 @@
       <trans-unit id="tcTraitMayNotUseComplexThings">
         <source>A trait may not specify optional, in, out, ParamArray, CallerInfo or Quote arguments</source>
         <target state="translated">Признак не может указывать необязательные аргументы in, out, ParamArray, CallerInfo или Quote</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcTypeDefinitionIsCyclicThroughSpreads">
+        <source>This type definition involves a cyclic reference through a spread.</source>
+        <target state="new">This type definition involves a cyclic reference through a spread.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcTypeDoesNotHaveAnyNull">
@@ -6653,8 +6743,8 @@
         <note />
       </trans-unit>
       <trans-unit id="lexfltTokenIsOffsideOfContextStartedEarlier">
-        <source>Unexpected syntax or possible incorrect indentation: this token is offside of context started at position {0}. Try indenting this further.\nTo continue using non-conforming indentation, pass the '--strict-indentation-' flag to the compiler, or set the language version to F# 7.</source>
-        <target state="translated">Неожиданный синтаксис или, возможно, неправильный отступ: этот токен находится вне контекста, начатого в позиции {0}. Попробуйте увеличить отступ.\nЧтобы продолжить использование несоответствующего отступа, передайте компилятору флаг '--strict-indentation-' или установите версию языка F# 7.</target>
+        <source>Unexpected syntax or possible incorrect indentation: this token is offside of context started at position {0}. Try indenting this further.</source>
+        <target state="needs-review-translation">Неожиданный синтаксис или, возможно, неправильный отступ: этот токен находится вне контекста, начатого в позиции {0}. Попробуйте увеличить отступ.\nЧтобы продолжить использование несоответствующего отступа, передайте компилятору флаг '--strict-indentation-' или установите версию языка F# 7.</target>
         <note />
       </trans-unit>
       <trans-unit id="lexfltSeparatorTokensOfPatternMatchMisaligned">

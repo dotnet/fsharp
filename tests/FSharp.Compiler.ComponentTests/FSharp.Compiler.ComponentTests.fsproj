@@ -172,6 +172,7 @@
     <Compile Include="Conformance\PatternMatching\Decimal\Decimal.fs" />
     <Compile Include="Conformance\Printing\Printing.fs" />
     <Compile Include="Conformance\PseudoCustomAttributes\PseudoCustomAttributes.fs" />
+    <Compile Include="Conformance\Spreads\RecordSpreadsTests.fs" />
     <Compile Include="Conformance\Types\RecordTypes\AnonymousRecords.fs" />
     <Compile Include="Conformance\Types\RecordTypes\RecordTypes.fs" />
     <Compile Include="Conformance\Types\StructTypes\StructTypes.fs" />
@@ -251,6 +252,7 @@
     <Compile Include="EmittedIL\RealInternalSignature\RealInternalSignature.fs" />
     <Compile Include="EmittedIL\SkipLocalsInit.fs" />
     <Compile Include="EmittedIL\StringFormatAndInterpolation.fs" />
+    <Compile Include="EmittedIL\ReflectionFreeToString.fs" />
     <!--<Compile Include="EmittedIL\StructGettersReadOnly.fs" />-->
     <Compile Include="EmittedIL\TailCalls.fs" />
     <Compile Include="EmittedIL\TupleElimination.fs" />
@@ -258,6 +260,7 @@
     <Compile Include="EmittedIL\TypeTestsInPatternMatching.fs" />
     <Compile Include="EmittedIL\WhileLoops.fs" />
     <Compile Include="EmittedIL\ArgumentNames.fs" />
+    <Compile Include="EmittedIL\CompilerGeneratedNameDeterminism.fs" />
     <Compile Include="EmittedIL\AssemblyBoundary\AssemblyBoundary.fs" />
     <Compile Include="EmittedIL\AsyncExpressionStepping\AsyncExpressionStepping.fs" />
     <Compile Include="EmittedIL\AttributeTargets\AttributeTargets.fs" />
@@ -265,6 +268,7 @@
     <Compile Include="EmittedIL\CompiledNameAttribute\CompiledNameAttribute.fs" />
     <Compile Include="EmittedIL\ComputationExpressions\ComputationExpressions.fs" />
     <Compile Include="EmittedIL\ComputedCollections\ComputedCollections.fs" />
+    <Compile Include="EmittedIL\DirectDelegates\DirectDelegates.fs" />
     <Compile Include="EmittedIL\DoNotBoxStruct\DoNotBoxStruct.fs" />
     <Compile Include="EmittedIL\ForLoop\ForLoop.fs" />
     <Compile Include="EmittedIL\GeneratedIterators\GeneratedIterators.fs" />
@@ -288,6 +292,9 @@
     <Compile Include="EmittedIL\SerializableAttribute\SerializableAttribute.fs" />
     <Compile Include="EmittedIL\SeqExpressionStepping\SeqExpressionStepping.fs" />
     <Compile Include="EmittedIL\SeqExpressionTailCalls\SeqExpressionTailCalls.fs" />
+    <Compile Include="EmittedIL\Spreads\RecordTypeSpreads.fs" />
+    <Compile Include="EmittedIL\Spreads\NominalRecordExpressionSpreads.fs" />
+    <Compile Include="EmittedIL\Spreads\AnonymousRecordExpressionSpreads.fs" />
     <Compile Include="EmittedIL\StaticInit\StaticInit.fs" />
     <Compile Include="EmittedIL\StaticOptimizations\StaticOptimizations.fs" />
     <Compile Include="EmittedIL\SteppingMatch\SteppingMatch.fs" />
@@ -356,6 +363,7 @@
     <Compile Include="Language\MultiDimensionalArrayTests.fs" />
     <Compile Include="Language\RegressionTests.fs" />
     <Compile Include="Language\AttributeCheckingTests.fs" />
+    <Compile Include="Language\AttributeResolutionInRecursiveScopes.fs" />
     <Compile Include="Language\ObsoleteAttributeCheckingTests.fs" />
     <Compile Include="Language\ExperimentalAttributeCheckingTests.fs" />
     <Compile Include="Language\SequenceExpressions\SequenceExpressionTests.fs" />
@@ -382,11 +390,13 @@
     <Compile Include="Language\BooleanReturningAndReturnTypeDirectedPartialActivePatternTests.fs" />
     <Compile Include="Language\Nullness\NullableLibraryConstructsTests.fs" />
     <Compile Include="Language\Nullness\NullableCsharpImportTests.fs" />
+    <Compile Include="Language\Nullness\NotNullIfNotNullTests.fs" />
     <Compile Include="Language\Nullness\NullableRegressionTests.fs" />
     <Compile Include="Language\Nullness\NullableReferenceTypesTests.fs" />
     <Compile Include="Language\Nullness\EventNullnessTests.fs" />
     <Compile Include="Language\IndexedSetTests.fs" />
     <Compile Include="Language\UseBindingDisposalTests.fs" />
+    <Compile Include="Language\RecordSpreadsTests.fs" />
     <Compile Include="Import\ImportTests.fs" />
     <Compile Include="ConstraintSolver\PrimitiveConstraints.fs" />
     <Compile Include="ConstraintSolver\MemberConstraints.fs" />
@@ -472,6 +482,7 @@
     <Compile Include="CompilerOptions\fsi\Langversion.fs" />
     <Compile Include="CompilerService\RangeModule.fs" />
     <Compile Include="CompilerService\Caches.fs" />
+    <Compile Include="CompilerService\EncMethodDebugInformationTests.fs" />
     <Compile Include="CompilerService\LruCache.fs" />
     <Compile Include="CompilerService\AsyncMemoize.fs" />
     <Compile Include="CompilerService\FSharpWorkspace.fs" />
@@ -519,6 +530,7 @@
     <Compile Include="FSharpChecker\FindReferences.fs" />
     <Compile Include="FSharpChecker\SemanticClassificationRegressions.fs" />
     <Compile Include="Attributes\AttributeCtorSetPropAccess.fs" />
+    <Compile Include="Attributes\GenericAttributeAbbreviations.fs" />
     <Compile Include="Attributes\CompiledNameMultipleValues.fs" />
   </ItemGroup>
 
@@ -550,8 +562,23 @@
   </ItemGroup>
 
   <ItemGroup Condition="'$(FSHARPCORE_USE_PACKAGE)' == 'true'">
-    <PackageReference Include="FSharp.Core" Version="$(FSharpCoreShippedPackageVersionValue)" />
+    <PackageReference Include="FSharp.Core" />
   </ItemGroup>
 
+  <!-- FsiCliTests spawns FSI and does `#r "nuget: <pkg>, <version>"` to verify that quiet mode
+       suppresses NuGet restore chatter. On the internal signed build NuGet restore is offline, so the
+       requested version must be one that is already in the restore cache. Under central package
+       management with transitive pinning, that is exactly the centrally-pinned version
+       (eng/Packages.props). Bake that version into the test assembly so the test can request it at
+       runtime with no manual sync when the central pin is bumped. MessagePack is used (rather than a
+       general-purpose JSON package) because it is an actively-maintained, non-system standalone library
+       that is centrally pinned and restored transitively by the product (StreamJsonRpc); keep the
+       package id here in sync with the id in FsiCliTests.fs. -->
+  <PropertyGroup>
+    <FsiRestoreTestPackageVersion>@(PackageVersion->WithMetadataValue('Identity','MessagePack')->'%(Version)')</FsiRestoreTestPackageVersion>
+  </PropertyGroup>
+  <ItemGroup>
+    <AssemblyMetadata Include="FsiRestoreTestPackageVersion" Value="$(FsiRestoreTestPackageVersion)" />
+  </ItemGroup>
 
 </Project>
