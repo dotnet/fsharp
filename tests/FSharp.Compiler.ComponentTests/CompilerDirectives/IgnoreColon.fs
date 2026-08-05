@@ -19,6 +19,4 @@ let main _ =
 
         FSharp source
         |> compile
-        |> withDiagnostics [
-            Error 3908, Line 6, Col 5, Line 6, Col 22, "#: directives must appear as the first non-whitespace characters on a line"
-        ]
+        |> withDiagnosticMessage "#: directives must appear as the first non-whitespace characters on a line"
