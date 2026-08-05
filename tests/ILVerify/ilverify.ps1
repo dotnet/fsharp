@@ -29,6 +29,15 @@ Write-Host "Repository path: $repo_path"
 [string] $script = if ($IsWindows) { Join-Path $repo_path "build.cmd" } else { Join-Path $repo_path "build.sh" }
 [string] $additional_arguments = if ($IsWindows) { "-noVisualStudio" } else { "" }
 
+# Disable the UpdateXlf target (not needed for IL verification). Without -ci the XliffTasks
+# UpdateXlfOnBuild property defaults to true, but the current netcore product TFM inner build
+# of FSharp.Compiler.Service does not define the UpdateXlf target, which fails the build with
+# "error MSB4057: The target "UpdateXlf" does not exist in the project."
+# NOTE: an environment variable is the lowest-precedence MSBuild property source and is overridden
+# by Arcade's own default, so it must also be passed as an explicit /p: command-line property below.
+$env:UpdateXlfOnBuild = "false"
+[string] $build_properties = "/p:UpdateXlfOnBuild=false"
+
 # Set configurations to build
 [string[]] $configurations = @("Debug", "Release")
 
@@ -57,9 +66,9 @@ if ($LASTEXITCODE -ne 0) {
 foreach ($configuration in $configurations) {
     Write-Host "Building $configuration configuration..."
     if ($additional_arguments) {
-        & $script -c $configuration $additional_arguments
+        & $script -c $configuration $additional_arguments $build_properties
     } else {
-        & $script -c $configuration
+        & $script -c $configuration $build_properties
     }
     if ($LASTEXITCODE -ne 0 -And $LASTEXITCODE -ne '') {
         Write-Host "Build failed for $configuration configuration (last exit code: $LASTEXITCODE)."

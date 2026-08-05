@@ -96,4 +96,30 @@
     <None Include="README.md" Condition="Exists('README.md')" />
   </ItemGroup>
 
+  <!-- The codeflow from the VMR enabled NuGet audit (via <auditSources> in NuGet.config). On this servicing
+       branch that surfaces advisories in transitive dependencies of Windows-only test and VS-integration
+       projects (FSharp.Test.Utilities, FSharp.Editor.Tests, VisualFSharp.UnitTests, VS product layer). None of
+       these packages ship in FSharp.Core or the compiler. Acknowledge the known advisories so audit does not
+       fail the build; the underlying versions match what the VMR flows for this branch. -->
+  <ItemGroup>
+    <!-- OpenTelemetry (test/telemetry infrastructure, pinned at 1.11.2 in the VMR) -->
+    <NuGetAuditSuppress Include="https://github.com/advisories/GHSA-g94r-2vxg-569j" />
+    <NuGetAuditSuppress Include="https://github.com/advisories/GHSA-4625-4j76-fww9" />
+    <!-- System.Net.Http / System.Text.RegularExpressions 4.3.0 (transitive in test packages) -->
+    <NuGetAuditSuppress Include="https://github.com/advisories/GHSA-7jgj-8wvc-jh57" />
+    <NuGetAuditSuppress Include="https://github.com/advisories/GHSA-cmhx-cq75-c4mj" />
+    <!-- MessagePack 2.5.187 (transitive via Visual Studio SDK packages) -->
+    <NuGetAuditSuppress Include="https://github.com/advisories/GHSA-hv8m-jj95-wg3x" />
+    <NuGetAuditSuppress Include="https://github.com/advisories/GHSA-vh6j-jc39-fggf" />
+    <NuGetAuditSuppress Include="https://github.com/advisories/GHSA-2f33-pr97-265q" />
+    <NuGetAuditSuppress Include="https://github.com/advisories/GHSA-2x83-8g95-xh59" />
+    <NuGetAuditSuppress Include="https://github.com/advisories/GHSA-cj9g-3mj2-g8vv" />
+    <NuGetAuditSuppress Include="https://github.com/advisories/GHSA-cxmj-83gh-fp49" />
+    <NuGetAuditSuppress Include="https://github.com/advisories/GHSA-q2h6-ghwm-5qm8" />
+    <NuGetAuditSuppress Include="https://github.com/advisories/GHSA-qhmf-xw27-6rqr" />
+    <NuGetAuditSuppress Include="https://github.com/advisories/GHSA-v72x-2h86-7f8m" />
+    <NuGetAuditSuppress Include="https://github.com/advisories/GHSA-w567-gjr2-hm5j" />
+    <NuGetAuditSuppress Include="https://github.com/advisories/GHSA-wfr3-xj75-pfwh" />
+  </ItemGroup>
+
 </Project>
