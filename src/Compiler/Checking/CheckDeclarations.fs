@@ -782,10 +782,8 @@ let TcOpenModuleOrNamespaceDecl tcSink g amap scopem env (longId, m) =
     let env = OpenModuleOrNamespaceRefs tcSink g amap scopem false env modrefs openDecl
     env, [openDecl]
 
-let TcOpenTypeDecl (cenv: cenv) mOpenDecl scopem env (synType: SynType, m) =
+let TcOpenTypeDecl (cenv: cenv) scopem env (synType: SynType, m) =
     let g = cenv.g
-
-    checkLanguageFeatureAndRecover g.langVersion LanguageFeature.OpenTypeDeclaration mOpenDecl
 
     let ty, _tpenv = TcType cenv NoNewTypars CheckCxs ItemOccurrence.Open WarnOnIWSAM.Yes env emptyUnscopedTyparEnv synType
 
@@ -799,14 +797,14 @@ let TcOpenTypeDecl (cenv: cenv) mOpenDecl scopem env (synType: SynType, m) =
     let env = OpenTypeContent cenv.tcSink g cenv.amap scopem env ty openDecl
     env, [openDecl]
 
-let TcOpenDecl (cenv: cenv) mOpenDecl scopem env target = 
+let TcOpenDecl (cenv: cenv) scopem env target = 
     let g = cenv.g
     match target with
     | SynOpenDeclTarget.ModuleOrNamespace (longId, m) ->
         TcOpenModuleOrNamespaceDecl cenv.tcSink g cenv.amap scopem env (longId.LongIdent, m)
 
     | SynOpenDeclTarget.Type (synType, m) ->
-        TcOpenTypeDecl cenv mOpenDecl scopem env (synType, m)
+        TcOpenTypeDecl cenv scopem env (synType, m)
         
 let MakeSafeInitField (cenv: cenv) env m isStatic = 
     let id =
@@ -1852,8 +1850,8 @@ module MutRecBindingChecking =
 
                 // Process the 'open' declarations                
                 let envForDecls =
-                    (envForDecls, opens) ||> List.fold (fun env (target, m, moduleRange, openDeclsRef) ->
-                        let env, openDecls = TcOpenDecl cenv m moduleRange env target
+                    (envForDecls, opens) ||> List.fold (fun env (target, _, moduleRange, openDeclsRef) ->
+                        let env, openDecls = TcOpenDecl cenv moduleRange env target
                         openDeclsRef.Value <- openDecls
                         env)
 
@@ -2824,8 +2822,8 @@ module EstablishTypeDefinitionCores =
             use _holder = TemporarilySuspendReportingTypecheckResultsToSink cenv.tcSink
             (env, shapes) ||> List.fold (fun env shape ->
                 match shape with
-                | MutRecShape.Open(MutRecDataForOpen(SynOpenDeclTarget.ModuleOrNamespace _ as target, openm, moduleRange, _)) ->
-                    let env, _ = TcOpenDecl cenv openm moduleRange env target
+                | MutRecShape.Open(MutRecDataForOpen(SynOpenDeclTarget.ModuleOrNamespace _ as target, _, moduleRange, _)) ->
+                    let env, _ = TcOpenDecl cenv moduleRange env target
                     env
                 | _ -> env))
 
@@ -5245,7 +5243,7 @@ let rec TcSignatureElementNonMutRec (cenv: cenv) parent typeNames endm (env: TcE
 
         | SynModuleSigDecl.Open (target, m) -> 
             let scopem = unionRanges m.EndRange endm
-            let env, _openDecl = TcOpenDecl cenv m scopem env target
+            let env, _openDecl = TcOpenDecl cenv scopem env target
             return env
 
         | SynModuleSigDecl.Val (vspec, m) -> 
@@ -5651,7 +5649,7 @@ let rec TcModuleOrNamespaceElementNonMutRec (cenv: cenv) parent typeNames scopem
 
       | SynModuleDecl.Open (target, m) -> 
           let scopem = unionRanges m.EndRange scopem
-          let env, openDecls = TcOpenDecl cenv m scopem env target
+          let env, openDecls = TcOpenDecl cenv scopem env target
           let defns =
               match openDecls with
               | [] -> []
