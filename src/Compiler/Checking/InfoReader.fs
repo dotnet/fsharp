@@ -962,11 +962,8 @@ type InfoReader(g: TcGlobals, amap: ImportMap) as this =
                             | Some membInfo when (membInfo.MemberFlags.MemberKind = SynMemberKind.Constructor) -> Some vref
                             | _ -> None)
                         |> List.map (fun x -> FSMeth(g, origTy, x, None))
-                    // An F# record exposes no *declared* constructor, but its synthesized all-fields constructor is
-                    // callable from C# as 'new MyRecord(f1, f2, ...)'. Under the RecordConstructorSyntax feature we
-                    // surface that same constructor to F# too (it elaborates to a record allocation - see BuildMethodCall).
-                    // The langversion gate is applied here (not just at the call site) so the synthesized constructor
-                    // stays invisible to signature generation and name resolution on released langversions.
+                    // Gate on the langversion here, not only at the call site, so the synthesized constructor
+                    // stays out of signature generation and name resolution when the feature is off.
                     if g.langVersion.SupportsFeature LanguageFeature.RecordConstructorSyntax && tcref.IsRecordTycon then
                         declaredCtors @ [ RecdCtor(g, origTy) ]
                     else
@@ -1278,7 +1275,7 @@ let rec GetXmlDocSigOfMethInfo (infoReader: InfoReader)  m (minfo: MethInfo) =
         match tryTcrefOfAppTy g ty with
         | ValueSome tcref ->
             Some(None, $"M:{tcref.CompiledRepresentationForNamedType.FullName}.#ctor")
-        | _ -> None
+        | ValueNone -> None
 
 #if !NO_TYPEPROVIDERS
     | ProvidedMeth _ -> None

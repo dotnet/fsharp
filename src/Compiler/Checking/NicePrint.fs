@@ -2133,8 +2133,7 @@ module TastDefinitionPrinting =
 
         let ctors =
             GetIntrinsicConstructorInfosOfType infoReader m ty
-            // A record's synthesized all-fields constructor (RecdCtor) is never part of its declared signature,
-            // so it must not be emitted into generated .fsi output.
+            // RecdCtor is synthesized, so it must not leak into generated signatures.
             |> List.filter (fun minfo ->
                 IsMethInfoAccessible amap m ad minfo
                 && not minfo.IsClassConstructor

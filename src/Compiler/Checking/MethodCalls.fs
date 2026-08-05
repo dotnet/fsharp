@@ -1281,7 +1281,7 @@ let rec BuildMethodCall tcVal g amap isMutable m isProp minfo valUseFlags minst 
                     errorR(Error(FSComp.SR.tcDefaultStructConstructorCall(), m))
             mkDefault (m, ty), ty
 
-        // Build a record allocation from a call to the synthesized all-fields constructor of an F# record.
+        // Lower the record constructor call to a plain record allocation.
         | RecdCtor (g, ty) ->
             let tcref = tcrefOfAppTy g ty
             let tinst = argsOfAppTy g ty
