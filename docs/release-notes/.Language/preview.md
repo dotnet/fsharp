@@ -12,6 +12,7 @@
 
 ### Changed
 
+* Removed the always-on `OpenTypeDeclaration` language feature flag; `--disableLanguageFeature:OpenTypeDeclaration` is no longer a recognised feature name. ([Issue #20148](https://github.com/dotnet/fsharp/issues/20148), [PR #20209](https://github.com/dotnet/fsharp/pull/20209))
 * Direct delegate construction ([PR #19993](https://github.com/dotnet/fsharp/pull/19993))
   * A delegate built from a method or function now points straight at that method instead of an intermediate closure, so `delegate.Method` is the real target and no closure class is generated.
   * Two delegates built from the same method and target now compare equal, where the previous closure form produced distinct instances; this also makes `Delegate.Remove` (and `-=` on events) match and remove such a delegate that it previously left in place.
