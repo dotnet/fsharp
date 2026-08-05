@@ -1844,3 +1844,4 @@ featureImprovedImpliedArgumentNamesPartTwo,"Improved implied argument names with
 3906,tcRecordExplicitFieldShadowsSpreadField,"Explicit field '%s' shadows a field with the same name from an earlier spread."
 3907,tcRecordExprSpreadFieldShadowsSpreadField,"Spread field '%s' shadows a field with the same name from an earlier spread."
 featureRecordSpreads,"record type and expression spreads"
+3908,lexColonDirectiveMustBeFirst,"#: directives must appear as the first non-whitespace characters on a line"
