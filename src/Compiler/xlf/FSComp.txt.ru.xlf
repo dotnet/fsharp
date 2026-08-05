@@ -687,11 +687,6 @@
         <target state="translated">интерполяция строк</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureStructActivePattern">
-        <source>struct representation for active patterns</source>
-        <target state="translated">представление структуры для активных шаблонов</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureSupportValueOptionsAsOptionalParameters">
         <source>Support ValueOption as valid type for optional member parameters</source>
         <target state="new">Support ValueOption as valid type for optional member parameters</target>

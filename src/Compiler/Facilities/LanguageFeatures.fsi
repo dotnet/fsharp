@@ -28,7 +28,6 @@ type LanguageFeature =
     | OverloadsForCustomOperations
     | ExpandedMeasurables
     | NullnessChecking
-    | StructActivePattern
     | PrintfBinaryFormat
     | IndexerNotationWithoutDot
     | RefCellNotationInformationals
