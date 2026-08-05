@@ -188,6 +188,57 @@ if r <> "hahaha" then failwith (sprintf "Expected 'hahaha', got '%s'" r)
         compileAndRunPreview "ExtensionAccessibility.fs"
 
     [<Fact>]
+    let ``private extension member does not leak to a sibling module through SRTP`` () =
+        // A 'private' extension member is accessible only inside its defining module. It must not
+        // become an SRTP solution in a sibling module that merely opens it — otherwise the feature
+        // would silently widen accessibility. Complements the positive ExtensionAccessibility.fs.
+        FSharp """
+module PrivateNoLeak
+module A =
+    type System.Int32 with
+        static member private Secret (x: int) = x + 1
+module B =
+    open A
+    let inline useSecret (x: ^T) = (^T : (static member Secret : ^T -> ^T) x)
+    let r = useSecret 5
+        """
+        |> asExe
+        |> withLangVersionPreview
+        |> compile
+        |> shouldFail
+        |> withErrorCode 1
+        |> withDiagnosticMessageMatches "does not support the operator 'Secret'"
+
+    [<Fact>]
+    let ``internal extension member does not leak across an assembly boundary through SRTP`` () =
+        // An 'internal' extension member is not accessible from another assembly (absent IVT), so
+        // it must not solve an SRTP constraint in a referencing assembly. Pins that accessibility
+        // is honored across the assembly boundary, not only within one compilation unit.
+        let library =
+            FSharp """
+module InternalNoLeakLib
+type System.Int32 with
+    static member internal Hidden (x: int) = x + 1
+            """
+            |> withName "InternalNoLeakLib"
+            |> asLibrary
+            |> withLangVersionPreview
+
+        FSharp """
+module Consumer
+open InternalNoLeakLib
+let inline useHidden (x: ^T) = (^T : (static member Hidden : ^T -> ^T) x)
+let r = useHidden 5
+            """
+        |> asExe
+        |> withLangVersionPreview
+        |> withReferences [library]
+        |> compile
+        |> shouldFail
+        |> withErrorCode 1
+        |> withDiagnosticMessageMatches "does not support the operator 'Hidden'"
+
+    [<Fact>]
     let ``Extrinsic extension captured at definition site resolves across modules`` () =
         compileAndRunPreview "ScopeCapture.fs"
 
