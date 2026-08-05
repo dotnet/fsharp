@@ -67,7 +67,7 @@ module Types =
                 | SynFieldOrSpread.Field(SynField(idOpt = None)) :: fieldsAndSpreads -> loop fields i fieldsAndSpreads
 
                 | SynFieldOrSpread.Field(SynField(idOpt = Some fieldId) as synField) :: fieldsAndSpreads ->
-                    let field, errorAmbiguousShadowing = tcField synField
+                    let field, errorAmbiguousShadowing, infoExplicitShadowing = tcField synField
 
                     let fields =
                         fields
@@ -76,7 +76,9 @@ module Types =
                             | Some(LeftwardExplicit, dupes) ->
                                 errorAmbiguousShadowing ()
                                 Some(LeftwardExplicit, (i, field) :: dupes)
-                            | Some(NoLeftwardExplicit, _dupes) -> Some(LeftwardExplicit, [ i, field ]))
+                            | Some(NoLeftwardExplicit, _dupes) ->
+                                infoExplicitShadowing ()
+                                Some(LeftwardExplicit, [ i, field ]))
 
                     loop fields (i + 1) fieldsAndSpreads
 
@@ -86,7 +88,7 @@ module Types =
                     let rec collectFieldsFromSpread fields i fieldsFromSpread =
                         match fieldsFromSpread with
                         | [] -> fields, i
-                        | (fieldId, field, warnAmbiguousShadowing) :: fieldsFromSpread ->
+                        | (fieldId, field, warnAmbiguousShadowing, infoSpreadShadowing) :: fieldsFromSpread ->
                             let fields =
                                 fields
                                 |> Map.change fieldId (function
@@ -94,7 +96,9 @@ module Types =
                                     | Some(LeftwardExplicit, _dupes) ->
                                         warnAmbiguousShadowing ()
                                         Some(LeftwardExplicit, [ i, field ])
-                                    | Some(NoLeftwardExplicit, _dupes) -> Some(NoLeftwardExplicit, [ i, field ]))
+                                    | Some(NoLeftwardExplicit, _dupes) ->
+                                        infoSpreadShadowing ()
+                                        Some(NoLeftwardExplicit, [ i, field ]))
 
                             collectFieldsFromSpread fields (i + 1) fieldsFromSpread
 
@@ -132,7 +136,7 @@ module Values =
                     let interveningSpreadSrc =
                         interveningSpreadSrcs |> Map.tryFind (textOfId (List.head synLongId.LongIdent))
 
-                    let fieldId, path, fieldExpr, errorAmbiguousShadowing =
+                    let fieldId, path, fieldExpr, errorAmbiguousShadowing, infoExplicitShadowing =
                         tcField interveningSpreadSrc synLongId fieldExpr m
 
                     let fields =
@@ -156,6 +160,7 @@ module Values =
 
                                 Some(LeftwardExplicit, fieldExpr, (i, (fieldId, ExplicitOrSpread.Explicit(path, fieldExpr))) :: dupes)
                             | Some(NoLeftwardExplicit, _dupeExpr, _dupes) ->
+                                infoExplicitShadowing ()
                                 Some(LeftwardExplicit, fieldExpr, [ i, (fieldId, ExplicitOrSpread.Explicit(path, fieldExpr)) ]))
 
                     loop fields (i + 1) spreadSrcTys spreadSrcExprs interveningSpreadSrcs fieldsAndSpreads
@@ -168,7 +173,7 @@ module Values =
                         let rec collectFieldsFromSpread fields i interveningSpreadSrcs fieldsFromSpread =
                             match fieldsFromSpread with
                             | [] -> fields, i, interveningSpreadSrcs
-                            | (fieldId, field, warnAmbiguousShadowing) :: fieldsFromSpread ->
+                            | (fieldId, field, warnAmbiguousShadowing, infoSpreadShadowing) :: fieldsFromSpread ->
                                 let tys =
                                     fields
                                     |> Map.change (textOfId fieldId) (function
@@ -177,6 +182,7 @@ module Values =
                                             warnAmbiguousShadowing ()
                                             Some(LeftwardExplicit, Some spreadSrcSynExpr, [ i, (fieldId, field) ])
                                         | Some(NoLeftwardExplicit, _existingExpr, _dupes) ->
+                                            infoSpreadShadowing ()
                                             Some(NoLeftwardExplicit, Some spreadSrcSynExpr, [ i, (fieldId, field) ]))
 
                                 let interveningSpreadSrcs =
@@ -236,7 +242,11 @@ module Values =
                     if not isFromNestedUpdate || isFromSpread then
                         errorR (Error(FSComp.SR.tcMultipleFieldsInRecord fieldId.idText, m))
 
-                fieldId, path, field, errorAmbiguousShadowing
+                let infoExplicitShadowing () =
+                    if not isFromNestedUpdate then
+                        informationalWarning (Error(FSComp.SR.tcRecordExplicitFieldShadowsSpreadField fieldId.idText, m))
+
+                fieldId, path, field, errorAmbiguousShadowing, infoExplicitShadowing
 
             let tcSpread (SynExprSpread(expr = expr; range = m)) =
                 let mExpr = expr.Range
@@ -306,7 +316,13 @@ module Values =
 
                                     warning (Error(FSComp.SR.tcRecordExprSpreadFieldShadowsExplicitField fmtedSpreadField, m))
 
-                                Some(fieldId, ExplicitOrSpread.Spread(ty, fieldExpr), warnAmbiguousShadowing)
+                                let infoSpreadShadowing () =
+                                    let fmtedSpreadField =
+                                        NicePrint.stringOfRecdField env.DisplayEnv cenv.infoReader fieldInfo.TyconRef fieldInfo.RecdField
+
+                                    informationalWarning (Error(FSComp.SR.tcRecordExprSpreadFieldShadowsSpreadField fmtedSpreadField, m))
+
+                                Some(fieldId, ExplicitOrSpread.Spread(ty, fieldExpr), warnAmbiguousShadowing, infoSpreadShadowing)
 
                             | Item.AnonRecdField(anonInfo, tys, fieldIndex, _) ->
                                 let fieldExpr =
@@ -315,20 +331,25 @@ module Values =
                                 let fieldId = anonInfo.SortedIds[fieldIndex]
                                 let ty = tys[fieldIndex]
 
-                                let warnAmbiguousShadowing () =
+                                let getFmtedSpreadField () =
                                     let typars =
                                         tryAppTy g ty
                                         |> ValueOption.map (snd >> List.choose (tryDestTyparTy g >> ValueOption.toOption))
                                         |> ValueOption.defaultValue []
 
-                                    let fmtedSpreadField =
-                                        LayoutRender.showL (
-                                            NicePrint.prettyLayoutOfMemberSig env.DisplayEnv ([], fieldId.idText, typars, [], ty)
-                                        )
+                                    LayoutRender.showL (
+                                        NicePrint.prettyLayoutOfMemberSig env.DisplayEnv ([], fieldId.idText, typars, [], ty)
+                                    )
 
-                                    warning (Error(FSComp.SR.tcRecordExprSpreadFieldShadowsExplicitField fmtedSpreadField, m))
+                                let warnAmbiguousShadowing () =
+                                    warning (Error(FSComp.SR.tcRecordExprSpreadFieldShadowsExplicitField (getFmtedSpreadField ()), m))
 
-                                Some(fieldId, ExplicitOrSpread.Spread(ty, fieldExpr), warnAmbiguousShadowing)
+                                let infoSpreadShadowing () =
+                                    informationalWarning (
+                                        Error(FSComp.SR.tcRecordExprSpreadFieldShadowsSpreadField (getFmtedSpreadField ()), m)
+                                    )
+
+                                Some(fieldId, ExplicitOrSpread.Spread(ty, fieldExpr), warnAmbiguousShadowing, infoSpreadShadowing)
 
                             | _ -> None)
 
@@ -398,7 +419,7 @@ module Values =
                     let interveningSpreadSrc =
                         interveningSpreadSrcs |> Map.tryFind (textOfId (List.head synLongId.LongIdent))
 
-                    let fieldId, fieldTy, transformedFieldExpr, mkTcField, errorAmbiguousShadowing =
+                    let fieldId, fieldTy, transformedFieldExpr, mkTcField, errorAmbiguousShadowing, infoExplicitShadowing =
                         tcField interveningSpreadSrc synExprAnonRecordField
 
                     let fields =
@@ -417,6 +438,7 @@ module Values =
                                     (i, (fieldId, fieldTy, mkTcField transformedFieldExpr)) :: dupes
                                 )
                             | Some(NoLeftwardExplicit, _dupeExpr, _dupes) ->
+                                infoExplicitShadowing ()
                                 Some(LeftwardExplicit, transformedFieldExpr, [ i, (fieldId, fieldTy, mkTcField transformedFieldExpr) ]))
 
                     loop fields (i + 1) spreadSrcExprs interveningSpreadSrcs fieldsAndSpreads
@@ -429,7 +451,7 @@ module Values =
                         let rec collectFieldsFromSpread fields i interveningSpreadSrcs fieldsFromSpread =
                             match fieldsFromSpread with
                             | [] -> fields, i, interveningSpreadSrcs
-                            | (fieldId, fieldTy, tcField, warnAmbiguousShadowing) :: fieldsFromSpread ->
+                            | (fieldId, fieldTy, tcField, warnAmbiguousShadowing, infoSpreadShadowing) :: fieldsFromSpread ->
                                 let tys =
                                     fields
                                     |> Map.change (textOfId fieldId) (function
@@ -438,6 +460,7 @@ module Values =
                                             warnAmbiguousShadowing ()
                                             Some(LeftwardExplicit, spreadSrcSynExpr, [ i, (fieldId, fieldTy, tcField) ])
                                         | Some(NoLeftwardExplicit, _existingExpr, _dupes) ->
+                                            infoSpreadShadowing ()
                                             Some(NoLeftwardExplicit, spreadSrcSynExpr, [ i, (fieldId, fieldTy, tcField) ]))
 
                                 let interveningSpreadSrcs =
@@ -519,7 +542,11 @@ module Values =
                     if not isFromNestedUpdate then
                         errorR (Error(FSComp.SR.tcAnonRecdDuplicateFieldId fieldId.idText, m))
 
-                fieldId, fieldTy, transformedFieldExpr, tcField, errorAmbiguousShadowing
+                let infoExplicitShadowing () =
+                    if not isFromNestedUpdate then
+                        informationalWarning (Error(FSComp.SR.tcRecordExplicitFieldShadowsSpreadField fieldId.idText, m))
+
+                fieldId, fieldTy, transformedFieldExpr, tcField, errorAmbiguousShadowing, infoExplicitShadowing
 
             let tcSpread (expr: SynExpr) m =
                 errorRIfSpreadUsedWithWith m
@@ -599,7 +626,13 @@ module Values =
 
                                     warning (Error(FSComp.SR.tcRecordExprSpreadFieldShadowsExplicitField fmtedSpreadField, m))
 
-                                Some(fieldId, ty, tcField, warnAmbiguousShadowing)
+                                let infoSpreadShadowing () =
+                                    let fmtedSpreadField =
+                                        NicePrint.stringOfRecdField env.DisplayEnv cenv.infoReader fieldInfo.TyconRef fieldInfo.RecdField
+
+                                    informationalWarning (Error(FSComp.SR.tcRecordExprSpreadFieldShadowsSpreadField fmtedSpreadField, m))
+
+                                Some(fieldId, ty, tcField, warnAmbiguousShadowing, infoSpreadShadowing)
 
                             | Item.AnonRecdField(anonInfo, tys, fieldIndex, _) ->
                                 let fieldId = anonInfo.SortedIds[fieldIndex]
@@ -621,20 +654,25 @@ module Values =
                                     let fieldExpr = mkCoerceIfNeeded g ty (tyOfExpr g fieldExpr) fieldExpr
                                     fieldExpr
 
-                                let warnAmbiguousShadowing () =
+                                let getFmtedSpreadField () =
                                     let typars =
                                         tryAppTy g ty
                                         |> ValueOption.map (snd >> List.choose (tryDestTyparTy g >> ValueOption.toOption))
                                         |> ValueOption.defaultValue []
 
-                                    let fmtedSpreadField =
-                                        LayoutRender.showL (
-                                            NicePrint.prettyLayoutOfMemberSig env.DisplayEnv ([], fieldId.idText, typars, [], ty)
-                                        )
+                                    LayoutRender.showL (
+                                        NicePrint.prettyLayoutOfMemberSig env.DisplayEnv ([], fieldId.idText, typars, [], ty)
+                                    )
 
-                                    warning (Error(FSComp.SR.tcRecordExprSpreadFieldShadowsExplicitField fmtedSpreadField, m))
+                                let warnAmbiguousShadowing () =
+                                    warning (Error(FSComp.SR.tcRecordExprSpreadFieldShadowsExplicitField (getFmtedSpreadField ()), m))
 
-                                Some(fieldId, ty, tcField, warnAmbiguousShadowing)
+                                let infoSpreadShadowing () =
+                                    informationalWarning (
+                                        Error(FSComp.SR.tcRecordExprSpreadFieldShadowsSpreadField (getFmtedSpreadField ()), m)
+                                    )
+
+                                Some(fieldId, ty, tcField, warnAmbiguousShadowing, infoSpreadShadowing)
 
                             | _ -> None)
 
