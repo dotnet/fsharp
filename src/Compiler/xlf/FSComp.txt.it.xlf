@@ -602,11 +602,6 @@
         <target state="new">#elif preprocessor directive</target>
         <note />
       </trans-unit>
-      <trans-unit id="featurePrintfBinaryFormat">
-        <source>binary formatting for integers</source>
-        <target state="translated">formattazione binaria per interi</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureReallyLongList">
         <source>list literals of any size</source>
         <target state="translated">elenca valori letterali di qualsiasi dimensione</target>
