@@ -90,19 +90,23 @@ module FsiCliTests =
     // package management + transitive pinning means only the centrally-pinned version (eng/Packages.props)
     // is ever restored into that cache, and it changes whenever the pin is bumped. Rather than hardcode
     // a version that would silently drift, read the exact pinned version baked into this test assembly
-    // at build time via AssemblyMetadata (see FSharp.Compiler.ComponentTests.fsproj).
-    let private centralNewtonsoftJsonVersion =
+    // at build time via AssemblyMetadata (see FSharp.Compiler.ComponentTests.fsproj). The package id
+    // (FsCheck) is kept in sync with that project; any centrally-pinned standalone package would do.
+    [<Literal>]
+    let private restoreTestPackageId = "FsCheck"
+
+    let private restoreTestPackageVersion =
         System.Reflection.Assembly.GetExecutingAssembly().GetCustomAttributes(typeof<System.Reflection.AssemblyMetadataAttribute>, false)
         |> Array.tryPick (fun a ->
             let m = a :?> System.Reflection.AssemblyMetadataAttribute
-            if m.Key = "NewtonsoftJsonCentralVersion" && not (System.String.IsNullOrWhiteSpace m.Value) then Some m.Value else None)
+            if m.Key = "FsiRestoreTestPackageVersion" && not (System.String.IsNullOrWhiteSpace m.Value) then Some m.Value else None)
         |> Option.defaultWith (fun () ->
-            failwith "AssemblyMetadata 'NewtonsoftJsonCentralVersion' is missing. It should be emitted by FSharp.Compiler.ComponentTests.fsproj from the central Newtonsoft.Json PackageVersion.")
+            failwith "AssemblyMetadata 'FsiRestoreTestPackageVersion' is missing. It should be emitted by FSharp.Compiler.ComponentTests.fsproj from the central FsCheck PackageVersion.")
 
     [<Fact>]
     let ``FSI quiet mode suppresses NuGet restore output from stdout`` () =
         let script = $"""
-#r "nuget: Newtonsoft.Json, {centralNewtonsoftJsonVersion}"
+#r "nuget: {restoreTestPackageId}, {restoreTestPackageVersion}"
 printfn "RESULT_MARKER_18086"
 """
         let result = runFsiScript ["--quiet"] script
@@ -115,7 +119,7 @@ printfn "RESULT_MARKER_18086"
     [<Fact>]
     let ``FSI default (non-quiet) mode still evaluates script and prints user output`` () =
         let script = $"""
-#r "nuget: Newtonsoft.Json, {centralNewtonsoftJsonVersion}"
+#r "nuget: {restoreTestPackageId}, {restoreTestPackageVersion}"
 printfn "RESULT_MARKER_18086_DEFAULT"
 """
         let result = runFsiScript [] script

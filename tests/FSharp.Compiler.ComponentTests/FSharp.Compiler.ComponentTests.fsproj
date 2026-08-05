@@ -562,15 +562,19 @@
     <PackageReference Include="FSharp.Core" />
   </ItemGroup>
 
-  <!-- Bake the centrally-pinned Newtonsoft.Json version (eng/Packages.props via central package
-       management) into the test assembly so FsiCliTests can request exactly the version that is
-       present in the offline restore cache on the internal signed build, with no manual sync when
-       the central pin is bumped. -->
+  <!-- FsiCliTests spawns FSI and does `#r "nuget: <pkg>, <version>"` to verify that quiet mode
+       suppresses NuGet restore chatter. On the internal signed build NuGet restore is offline, so the
+       requested version must be one that is already in the restore cache. Under central package
+       management with transitive pinning, that is exactly the centrally-pinned version
+       (eng/Packages.props). Bake that version into the test assembly so the test can request it at
+       runtime with no manual sync when the central pin is bumped. FsCheck is used (rather than a
+       general-purpose JSON package) because it is an F#-owned standalone leaf library that is centrally
+       pinned and restored by the build; keep the package id here in sync with the id in FsiCliTests.fs. -->
   <PropertyGroup>
-    <NewtonsoftJsonCentralVersion>@(PackageVersion->WithMetadataValue('Identity','Newtonsoft.Json')->'%(Version)')</NewtonsoftJsonCentralVersion>
+    <FsiRestoreTestPackageVersion>@(PackageVersion->WithMetadataValue('Identity','FsCheck')->'%(Version)')</FsiRestoreTestPackageVersion>
   </PropertyGroup>
   <ItemGroup>
-    <AssemblyMetadata Include="NewtonsoftJsonCentralVersion" Value="$(NewtonsoftJsonCentralVersion)" />
+    <AssemblyMetadata Include="FsiRestoreTestPackageVersion" Value="$(FsiRestoreTestPackageVersion)" />
   </ItemGroup>
 
 </Project>
