@@ -85,15 +85,17 @@ module FsiCliTests =
         finally
             try System.IO.File.Delete(scriptPath) with _ -> ()
 
-    // The FSI #r "nuget:" restore below must request a package version that is guaranteed to be in
-    // the offline restore cache on the internal signed build (which cannot restore online). Central
-    // package management + transitive pinning means only the centrally-pinned version (eng/Packages.props)
-    // is ever restored into that cache, and it changes whenever the pin is bumped. Rather than hardcode
-    // a version that would silently drift, read the exact pinned version baked into this test assembly
-    // at build time via AssemblyMetadata (see FSharp.Compiler.ComponentTests.fsproj). The package id
-    // (MessagePack) is kept in sync with that project; any centrally-pinned standalone package would do.
+    // The FSI #r "nuget:" restore below must request a package (and closure) already in the offline
+    // restore cache on the internal signed build (which cannot restore online), and it must be a genuine
+    // third-party assembly (not in the shared framework) so that on .NET Core it resolves to a restored
+    // package rather than the framework (which would emit NU1510 and skip real nuget resolution). FsCheck
+    // fits: a real third-party library whose only dependency (FSharp.Core) is always cached and filtered
+    // from fsx resolution, centrally pinned (eng/Packages.props) and restored by FSharp.Core.UnitTests, so
+    // it restores offline-clean on both net472 and .NET Core. Read the exact pinned version baked into this
+    // test assembly via AssemblyMetadata (see FSharp.Compiler.ComponentTests.fsproj) so the request never
+    // drifts from the pin; keep the package id below in sync with that project.
     [<Literal>]
-    let private restoreTestPackageId = "MessagePack"
+    let private restoreTestPackageId = "FsCheck"
 
     let private restoreTestPackageVersion =
         System.Reflection.Assembly.GetExecutingAssembly().GetCustomAttributes(typeof<System.Reflection.AssemblyMetadataAttribute>, false)
@@ -101,7 +103,7 @@ module FsiCliTests =
             let m = a :?> System.Reflection.AssemblyMetadataAttribute
             if m.Key = "FsiRestoreTestPackageVersion" && not (System.String.IsNullOrWhiteSpace m.Value) then Some m.Value else None)
         |> Option.defaultWith (fun () ->
-            failwith "AssemblyMetadata 'FsiRestoreTestPackageVersion' is missing. It should be emitted by FSharp.Compiler.ComponentTests.fsproj from the central MessagePack PackageVersion.")
+            failwith "AssemblyMetadata 'FsiRestoreTestPackageVersion' is missing. It should be emitted by FSharp.Compiler.ComponentTests.fsproj from the central FsCheck PackageVersion.")
 
     [<Fact>]
     let ``FSI quiet mode suppresses NuGet restore output from stdout`` () =
