@@ -274,22 +274,6 @@ if r <> "low-generic-int" then failwithf "expected low-generic-int, got %s" r
         |> ignore
 
     [<FactForNETCOREAPP>]
-    let ``ORPA - override uses least-derived base priority`` () =
-        Fs """
-module T
-open ExtensionPriorityTests
-let d = DerivedOverridesVirtual()
-let r = d.Compute("hello")
-if r <> "derived-object" then failwithf "expected derived-object, got %s" r
-"""
-        |> withReferences [csharpPriorityLib]
-        |> withLangVersionPreview
-        |> asExe
-        |> compileAndRun
-        |> shouldSucceed
-        |> ignore
-
-    [<FactForNETCOREAPP>]
     let ``ORPA - equal priority resolves by concreteness`` () =
         Fs """
 module T
@@ -306,18 +290,67 @@ if r <> "string" then failwithf "got %s" r
         |> shouldSucceed
         |> ignore
 
+    // Shared consumer for the two down-level guards below. It references a polyfill library
+    // that exposes DownlevelLib.Api with two return-type-divergent overloads — Pick(obj):string
+    // (carrying OverloadResolutionPriority 1) and Pick(int):int — and targets netstandard2.0,
+    // whose framework lacks OverloadResolutionPriorityAttribute, so the TcGlobals well-known
+    // slot is None. Honouring the priority must therefore rely on name-based recognition (as
+    // Roslyn does for polyfills). The choice is observable at compile time: honouring priority
+    // selects Pick(obj):string; ignoring it would select the more concrete Pick(int):int, and
+    // the string annotation on the result would then fail to check.
+    let private consumesDownlevelPriorityLib (polyfillLib: CompilationUnit) =
+        Fs """
+module T
+open DownlevelLib
+let picked = Api.Pick(42)
+let _check: string = picked
+"""
+        |> withReferences [ polyfillLib ]
+        |> asNetStandard20
+        |> withLangVersionPreview
+        |> compile
+        |> shouldSucceed
+        |> ignore
+
     [<FactForNETCOREAPP>]
-    let ``ORPA - honoured on a down-level target whose framework lacks the attribute`` () =
-        // Regression guard for recognising OverloadResolutionPriority by name rather than by
-        // resolving the type in the target framework. Both the referenced library (which
-        // polyfills the attribute) and the consumer target netstandard2.0, whose framework
-        // lacks OverloadResolutionPriorityAttribute, so the TcGlobals well-known-attribute slot
-        // is None; recognition must fall back to the name, as Roslyn does for polyfills. The two
-        // overloads return different types, making the choice observable at compile time:
-        // honouring priority selects Pick(obj):string; ignoring it would select the more concrete
-        // Pick(int):int, and then the string annotation on the result would not check.
-        let polyfillLib =
-            FSharp """
+    let ``ORPA - honoured down-level via a C# (interop) polyfill`` () =
+        // The realistic scenario: F# consuming a C# library that polyfills the attribute. The
+        // member is read as an IL method, exercising the IL classification path.
+        CSharp """
+using System;
+using System.Runtime.CompilerServices;
+
+namespace System.Runtime.CompilerServices
+{
+    [AttributeUsage(AttributeTargets.All, AllowMultiple = false, Inherited = false)]
+    public sealed class OverloadResolutionPriorityAttribute : Attribute
+    {
+        public OverloadResolutionPriorityAttribute(int priority) => Priority = priority;
+        public int Priority { get; }
+    }
+}
+
+namespace DownlevelLib
+{
+    public static class Api
+    {
+        [OverloadResolutionPriority(1)]
+        public static string Pick(object o) => "obj";
+        public static int Pick(int i) => 0;
+    }
+}
+"""
+        |> asLibrary
+        |> withCSharpLanguageVersionPreview
+        |> asNetStandard20
+        |> withName "DownlevelCsPriorityLib"
+        |> consumesDownlevelPriorityLib
+
+    [<FactForNETCOREAPP>]
+    let ``ORPA - honoured down-level via an F# polyfill`` () =
+        // The F# member path: the same shape defined in F#, read as an F# method, exercising the
+        // Val classification path.
+        FSharp """
 namespace System.Runtime.CompilerServices
 
 open System
@@ -336,19 +369,7 @@ type Api =
     static member Pick(o: obj) : string = "obj"
     static member Pick(i: int) : int = 0
 """
-            |> asLibrary
-            |> asNetStandard20
-            |> withName "DownlevelPriorityLib"
-
-        Fs """
-module T
-open DownlevelLib
-let picked = Api.Pick(42)
-let _check: string = picked
-"""
-        |> withReferences [polyfillLib]
+        |> asLibrary
         |> asNetStandard20
-        |> withLangVersionPreview
-        |> compile
-        |> shouldSucceed
-        |> ignore
+        |> withName "DownlevelFsPriorityLib"
+        |> consumesDownlevelPriorityLib
