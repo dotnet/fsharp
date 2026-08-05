@@ -62,7 +62,8 @@ module XmlDocInclude =
 
         result
 
-    let private countSubstring (needle: string) (text: string) = text.Split(needle).Length - 1
+    let private countSubstring (needle: string) (text: string) =
+        text.Split([| needle |], StringSplitOptions.None).Length - 1
 
     let private includeWarnings res =
         res.Compilation.Output.Diagnostics
