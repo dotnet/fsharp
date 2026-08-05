@@ -29,16 +29,40 @@ module XmlDocInclude =
         with _ ->
             ()
 
-    let private countSubstring (needle: string) (text: string) =
-        let rec loop index count =
-            let next = text.IndexOf(needle, index, StringComparison.Ordinal)
+    let private readEmittedXml (result: CompilationResult) : string =
+        match result with
+        | CompilationResult.Failure _ -> failwith "Cannot verify XML doc on failed compilation"
+        | CompilationResult.Success output ->
+            match output.OutputPath with
+            | None -> failwith "No output path available"
+            | Some dllPath ->
+                let dir = Path.GetDirectoryName dllPath
+                let byName = Path.Combine(dir, Path.GetFileNameWithoutExtension dllPath + ".xml")
+                let fallback = Path.Combine(dir, "output.xml")
 
-            if next < 0 then
-                count
-            else
-                loop (next + needle.Length) (count + 1)
+                if File.Exists byName then File.ReadAllText byName
+                elif File.Exists fallback then File.ReadAllText fallback
+                else failwith $"XML doc file not found: tried {byName} and {fallback}"
 
-        loop 0 0
+    let private verifyXmlDocContains (expected: string list) (result: CompilationResult) : CompilationResult =
+        let content = readEmittedXml result
+
+        for text in expected do
+            if not (content.Contains text) then
+                failwith $"XML doc missing: '{text}'\n\nActual:\n{content}"
+
+        result
+
+    let private verifyXmlDocNotContains (unexpected: string list) (result: CompilationResult) : CompilationResult =
+        let content = readEmittedXml result
+
+        for text in unexpected do
+            if content.Contains text then
+                failwith $"XML doc should not contain: '{text}'"
+
+        result
+
+    let private countSubstring (needle: string) (text: string) = text.Split(needle).Length - 1
 
     let private includeWarnings res =
         res.Compilation.Output.Diagnostics
@@ -135,37 +159,19 @@ let f x = x
         finally
             cleanup dir
 
-    [<Fact>]
-    let ``Inline include inside summary expands`` () =
+    [<Theory>]
+    [<InlineData("/data/remarks",
+                 "<summary>Inline before <remarks>Included remarks text.</remarks> inline after.</summary>")>]
+    [<InlineData("/data/*",
+                 "<summary>Inline before <summary>Included summary text.</summary><remarks>Included remarks text.</remarks> inline after.</summary>")>]
+    let ``Inline include expands selected elements in place`` (xpath: string) (expectedInner: string) =
         let res =
-            runInclude (
-                scenario
-                    (Snippets.memberInlineInclude "d.xml" "/data/remarks")
-                    [ "d.xml", Snippets.dataSummaryRemarks ]
-            )
+            runInclude (scenario (Snippets.memberInlineInclude "d.xml" xpath) [ "d.xml", Snippets.dataSummaryRemarks ])
 
         res.Compilation |> shouldSucceed |> ignore
 
         res.Xml
-        |> memberXmlEquals
-            "M:Test.inlineIncluded(System.Int32)"
-            "<summary>Inline before <remarks>Included remarks text.</remarks> inline after.</summary>"
-
-    [<Fact>]
-    let ``Inline include with XPath selecting multiple elements expands all inline`` () =
-        let res =
-            runInclude (
-                scenario
-                    (Snippets.memberInlineInclude "d.xml" "/data/*")
-                    [ "d.xml", Snippets.dataSummaryRemarks ]
-            )
-
-        res.Compilation |> shouldSucceed |> ignore
-
-        res.Xml
-        |> memberXmlEquals
-            "M:Test.inlineIncluded(System.Int32)"
-            "<summary>Inline before <summary>Included summary text.</summary><remarks>Included remarks text.</remarks> inline after.</summary>"
+        |> memberXmlEquals "M:Test.inlineIncluded(System.Int32)" expectedInner
 
     [<Fact>]
     let ``Inline include preserves sibling XML elements`` () =
@@ -267,92 +273,41 @@ let f x = x
         assertSingleIncludeWarningMatches "d.xml" res
         assertSingleIncludeWarningMatches "bad[[[" res
 
-    [<Fact>]
-    let ``Included file with internal entity DTD is rejected without entity expansion`` () =
-        let billionLaughs =
-            """<?xml version="1.0"?>
-<!DOCTYPE data [ <!ENTITY lol "lol"> <!ENTITY lol2 "&lol;&lol;&lol;"> ]>
-<data><summary>&lol2;</summary></data>"""
+    [<Theory>]
+    [<InlineData("internal entity",
+                 "<?xml version=\"1.0\"?>\n<!DOCTYPE data [ <!ENTITY lol \"lol\"> <!ENTITY lol2 \"&lol;&lol;&lol;\"> ]>\n<data><summary>&lol2;</summary></data>",
+                 null, "lollol", "&lol2;")>]
+    [<InlineData("external general entity",
+                 "<?xml version=\"1.0\"?>\n<!DOCTYPE data [ <!ENTITY xxe SYSTEM \"file:///etc/hostname\"> ]>\n<data><summary>&xxe;</summary></data>",
+                 null, "&xxe;", "hostname")>]
+    [<InlineData("external DTD subset",
+                 "<?xml version=\"1.0\"?>\n<!DOCTYPE data SYSTEM \"evil.dtd\">\n<data><summary>Should not expand.</summary></data>",
+                 "<!ENTITY secret 'DTD SECRET'>", "Should not expand", "DTD SECRET")>]
+    [<InlineData("public external DTD subset",
+                 "<?xml version=\"1.0\"?>\n<!DOCTYPE data PUBLIC \"-//example//DTD DATA//EN\" \"evil.dtd\">\n<data><summary>Should not expand.</summary></data>",
+                 "<!ENTITY secret 'PUBLIC DTD SECRET'>", "Should not expand", "PUBLIC DTD SECRET")>]
+    let ``Included file with a DTD is rejected without entity expansion``
+        (_case: string)
+        (maliciousXml: string)
+        (extraDtd: string)
+        (forbidden1: string)
+        (forbidden2: string)
+        =
+        let files =
+            [ "d.xml", maliciousXml ]
+            @ (if isNull extraDtd then [] else [ "evil.dtd", extraDtd ])
 
         let res =
-            runInclude
-                { scenario (Snippets.memberWithInclude "d.xml" "/data/summary") [ "d.xml", billionLaughs ] with
-                    WarnOn = [ 3390 ] }
+            runInclude { scenario (Snippets.memberWithInclude "d.xml" "/data/summary") files with WarnOn = [ 3390 ] }
 
         res.Compilation |> shouldSucceed |> ignore
         assertSingleIncludeWarningMatches "DTD is prohibited" res
-        // The framed message must also name both the file and the xpath.
         assertSingleIncludeWarningMatches "d.xml" res
         assertSingleIncludeWarningMatches "/data/summary" res
         let inner = memberInner "M:Test.included(System.Int32,System.Int32)" res.Xml
         Assert.Contains("<include file=\"d.xml\" path=\"/data/summary\"", inner)
-        Assert.DoesNotContain("lollol", inner)
-        Assert.DoesNotContain("&lol2;", inner)
-
-    [<Fact>]
-    let ``Included file with external general entity is rejected without entity expansion`` () =
-        let externalEntity =
-            """<?xml version="1.0"?>
-<!DOCTYPE data [ <!ENTITY xxe SYSTEM "file:///etc/hostname"> ]>
-<data><summary>&xxe;</summary></data>"""
-
-        let res =
-            runInclude
-                { scenario (Snippets.memberWithInclude "d.xml" "/data/summary") [ "d.xml", externalEntity ] with
-                    WarnOn = [ 3390 ] }
-
-        res.Compilation |> shouldSucceed |> ignore
-        assertSingleIncludeWarningMatches "DTD is prohibited" res
-        let inner = memberInner "M:Test.included(System.Int32,System.Int32)" res.Xml
-        Assert.Contains("<include file=\"d.xml\" path=\"/data/summary\"", inner)
-        Assert.DoesNotContain("&xxe;", inner)
-        Assert.DoesNotContain("hostname", inner)
-
-    [<Fact>]
-    let ``Included file with external DTD subset is rejected before loading subset`` () =
-        let externalSubset =
-            """<?xml version="1.0"?>
-<!DOCTYPE data SYSTEM "evil.dtd">
-<data><summary>Should not expand.</summary></data>"""
-
-        let res =
-            runInclude
-                { scenario
-                    (Snippets.memberWithInclude "d.xml" "/data/summary")
-                    [ "d.xml", externalSubset
-                      "evil.dtd", "<!ENTITY secret 'DTD SECRET'>" ]
-                  with
-                    WarnOn = [ 3390 ] }
-
-        res.Compilation |> shouldSucceed |> ignore
-        assertSingleIncludeWarningMatches "DTD is prohibited" res
-        let inner = memberInner "M:Test.included(System.Int32,System.Int32)" res.Xml
-        Assert.Contains("<include file=\"d.xml\" path=\"/data/summary\"", inner)
-        Assert.DoesNotContain("Should not expand", inner)
-        Assert.DoesNotContain("DTD SECRET", inner)
-
-    [<Fact>]
-    let ``Included file with public external DTD subset is rejected before loading subset`` () =
-        let publicSubset =
-            """<?xml version="1.0"?>
-<!DOCTYPE data PUBLIC "-//example//DTD DATA//EN" "evil.dtd">
-<data><summary>Should not expand.</summary></data>"""
-
-        let res =
-            runInclude
-                { scenario
-                    (Snippets.memberWithInclude "d.xml" "/data/summary")
-                    [ "d.xml", publicSubset
-                      "evil.dtd", "<!ENTITY secret 'PUBLIC DTD SECRET'>" ]
-                  with
-                    WarnOn = [ 3390 ] }
-
-        res.Compilation |> shouldSucceed |> ignore
-        assertSingleIncludeWarningMatches "DTD is prohibited" res
-        let inner = memberInner "M:Test.included(System.Int32,System.Int32)" res.Xml
-        Assert.Contains("<include file=\"d.xml\" path=\"/data/summary\"", inner)
-        Assert.DoesNotContain("Should not expand", inner)
-        Assert.DoesNotContain("PUBLIC DTD SECRET", inner)
+        Assert.DoesNotContain(forbidden1, inner)
+        Assert.DoesNotContain(forbidden2, inner)
 
     [<Fact>]
     let ``Included file that is not well-formed XML warns and keeps the tag`` () =
@@ -1049,49 +1004,38 @@ let f (x: int) (y: int) = x + y
 
         res.Compilation |> shouldSucceed |> withDiagnostics [] |> ignore
 
-    [<Fact>]
-    let ``Included param for a non-existent parameter warns`` () =
-        // The include brings <param name="Q"> but f has no parameter Q -> unknown-parameter warning.
-        let res =
-            runInclude
-                { scenario
-                    """module Test
+    [<Theory>]
+    [<InlineData("param",
+                 """<param name="Q">Doc for a non-existent param.</param>""",
+                 "unknown parameter 'Q'")>]
+    [<InlineData("paramref",
+                 """<paramref name="Q"/>""",
+                 "This XML comment is invalid: unknown parameter 'Q'")>]
+    [<InlineData("param",
+                 """<param name="x">Included duplicate x doc.</param>""",
+                 "This XML comment is invalid: multiple documentation entries for parameter 'x'")>]
+    [<InlineData("param",
+                 """<param>Included param without a name.</param>""",
+                 "This XML comment is invalid: missing 'name' attribute for parameter or parameter reference")>]
+    let ``Included param or paramref that fails validation warns`` (pathTag: string) (fragment: string) (message: string) =
+        let source =
+            $"""module Test
 
 /// <summary>S</summary>
 /// <param name="x">Inline x doc.</param>
-/// <include file="p.xml" path="/docs/param"/>
+/// <include file="p.xml" path="/docs/{pathTag}"/>
 let f (x: int) = x
 """
-                    [ "p.xml", """<?xml version="1.0"?><docs><param name="Q">Doc for a non-existent param.</param></docs>""" ]
-                  with
+
+        let res =
+            runInclude
+                { scenario source [ "p.xml", $"""<?xml version="1.0"?><docs>{fragment}</docs>""" ] with
                     WarnOn = [ 3390 ] }
 
         res.Compilation
         |> shouldSucceed
         |> withWarningCode 3390
-        |> withDiagnosticMessageMatches "unknown parameter 'Q'"
-        |> ignore
-
-    [<Fact>]
-    let ``Included paramref for a non-existent parameter warns`` () =
-        let res =
-            runInclude
-                { scenario
-                    """module Test
-
-/// <summary>S</summary>
-/// <param name="x">Inline x doc.</param>
-/// <include file="p.xml" path="/docs/paramref"/>
-let f (x: int) = x
-"""
-                    [ "p.xml", """<?xml version="1.0"?><docs><paramref name="Q"/></docs>""" ]
-                  with
-                    WarnOn = [ 3390 ] }
-
-        res.Compilation
-        |> shouldSucceed
-        |> withWarningCode 3390
-        |> withDiagnosticMessageMatches "This XML comment is invalid: unknown parameter 'Q'"
+        |> withDiagnosticMessageMatches message
         |> ignore
 
     [<Fact>]
@@ -1111,50 +1055,6 @@ let f (x: int) = x
                     WarnOn = [ 3390 ] }
 
         res.Compilation |> shouldSucceed |> withDiagnostics [] |> ignore
-
-    [<Fact>]
-    let ``Included duplicate param documentation warns`` () =
-        let res =
-            runInclude
-                { scenario
-                    """module Test
-
-/// <summary>S</summary>
-/// <param name="x">Inline x doc.</param>
-/// <include file="p.xml" path="/docs/param"/>
-let f (x: int) = x
-"""
-                    [ "p.xml", """<?xml version="1.0"?><docs><param name="x">Included duplicate x doc.</param></docs>""" ]
-                  with
-                    WarnOn = [ 3390 ] }
-
-        res.Compilation
-        |> shouldSucceed
-        |> withWarningCode 3390
-        |> withDiagnosticMessageMatches "This XML comment is invalid: multiple documentation entries for parameter 'x'"
-        |> ignore
-
-    [<Fact>]
-    let ``Included param without name warns`` () =
-        let res =
-            runInclude
-                { scenario
-                    """module Test
-
-/// <summary>S</summary>
-/// <param name="x">Inline x doc.</param>
-/// <include file="p.xml" path="/docs/param"/>
-let f (x: int) = x
-"""
-                    [ "p.xml", """<?xml version="1.0"?><docs><param>Included param without a name.</param></docs>""" ]
-                  with
-                    WarnOn = [ 3390 ] }
-
-        res.Compilation
-        |> shouldSucceed
-        |> withWarningCode 3390
-        |> withDiagnosticMessageMatches "This XML comment is invalid: missing 'name' attribute for parameter or parameter reference"
-        |> ignore
 
     [<Fact>]
     let ``Included XPath matching multiple params satisfies param validation`` () =
@@ -1251,12 +1151,7 @@ let f (x: int) = x
                     WarnOn = [ 3390 ] }
 
         res.Compilation |> shouldSucceed |> ignore
-
-        let includeWarnings =
-            res.Compilation.Output.Diagnostics
-            |> List.filter (fun diagnostic -> diagnostic.Error = Warning 3905)
-
-        Assert.Equal(1, includeWarnings.Length)
+        Assert.Equal(1, includeWarningCount res)
 
     [<Fact>]
     let ``Whitespace-only doc with a non-XML whitespace char does not warn under param checking`` () =

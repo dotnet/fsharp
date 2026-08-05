@@ -76,10 +76,7 @@ type XmlDoc(unprocessedLines: string[], range: range) =
 
     member doc.Check(paramNamesOpt: string list option) =
         try
-            // Expand <include> directives quietly (emit=false: no FS3905) so that included
-            // <param>/<paramref> participate in parameter validation, matching C#/Roslyn.
-            // Include errors are reported by the documentation-file writer (emit=true), not
-            // here, to avoid double emission.
+            // emit=false: quiet expansion so included <param>/<paramref> reach validation; the writer emits FS3905.
             let expandedText = doc.GetExpandedXmlText false
 
             // We must wrap with <doc> in order to have only one root element

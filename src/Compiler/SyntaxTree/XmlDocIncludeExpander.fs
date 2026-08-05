@@ -12,17 +12,12 @@ open FSharp.Compiler.IO
 open FSharp.Compiler.Text
 open Internal.Utilities.Library
 
-// Matches Roslyn's finite include-recursion guard; deep real-world docs stay far below this.
 [<Literal>]
 let private maxIncludeDepth = 64
 
-// Per-document include budget: high enough for generated docs, finite to stop runaway expansion.
 [<Literal>]
 let private maxIncludeExpansions = 10000
 
-let private pathComparer = StringComparer.Ordinal
-
-/// Per-pass shared state: file cache only.
 type ExpansionEnv =
     {
         FileCache: Dictionary<string, Result<XDocument, string>>
@@ -30,17 +25,12 @@ type ExpansionEnv =
 
 let mkExpansionEnv () : ExpansionEnv =
     {
-        FileCache = Dictionary<string, Result<XDocument, string>>(pathComparer)
+        FileCache = Dictionary<string, Result<XDocument, string>>(StringComparer.Ordinal)
     }
 
-/// Roslyn-parity comment inserted when an <include> XPath is valid but matches no elements.
-/// No warning is emitted in this case; the original tag is kept after the comment.
 let private noMatchCommentText =
     " No matching elements were found for the following include tag "
 
-/// Load an XML file from disk, using a per-pass shared cache.
-/// The cache avoids re-reading the same file within a single doc generation pass
-/// while avoiding stale data across compilations (unlike a global static cache).
 let private loadXmlFile (cache: Dictionary<string, Result<XDocument, string>>) (filePath: string) : Result<XDocument, string> =
     match cache.TryGetValue(filePath) with
     | true, result -> result
@@ -67,11 +57,8 @@ let private loadXmlFile (cache: Dictionary<string, Result<XDocument, string>>) (
         cache[filePath] <- result
         result
 
-/// Resolve a file path (absolute or relative to the source file), normalized via
-/// GetFullPath so cycle detection uses canonical paths. A rooted include path is resolved
-/// directly and must not depend on the base file name (which may be a virtual/sentinel range
-/// name). Otherwise GetDirectoryNameShim maps an empty or directory-less base file name (such
-/// as the "unknown" range sentinel) to ".", i.e. the current directory.
+/// A rooted include path is resolved directly and must not depend on the base file name, which may
+/// be a virtual/sentinel range name that GetDirectoryNameShim maps to the current directory.
 let private resolveFilePath (baseFileName: string) (includePath: string) : string =
     if FileSystem.IsPathRootedShim includePath then
         FileSystem.GetFullPathShim includePath
@@ -79,9 +66,7 @@ let private resolveFilePath (baseFileName: string) (includePath: string) : strin
         let sourceRelative =
             FileSystem.GetFullFilePathInDirectoryShim (FileSystem.GetDirectoryNameShim baseFileName) includePath
 
-        // C#/Roslyn parity (XmlFileResolver): resolve relative to the including file first, then
-        // fall back to the compiler's working directory when no file exists next to the source.
-        // If neither exists the source-relative candidate is kept so the diagnostic names it.
+        // C#/Roslyn XmlFileResolver parity: source-relative first, then the working directory.
         if FileSystem.FileExistsShim sourceRelative then
             sourceRelative
         else
@@ -92,7 +77,6 @@ let private resolveFilePath (baseFileName: string) (includePath: string) : strin
             else
                 sourceRelative
 
-/// Evaluate XPath and return matching elements
 let private evaluateXPath (doc: XDocument) (xpath: string) : Result<XElement list, string> =
     try
         if String.IsNullOrWhiteSpace(xpath) then
@@ -105,15 +89,11 @@ let private evaluateXPath (doc: XDocument) (xpath: string) : Result<XElement lis
     with ex ->
         Result.Error $"Invalid XPath expression '{xpath}': {ex.Message}"
 
-/// Include directive information
 type private IncludeInfo = { FilePath: string; XPath: string }
 
-/// Quick check if a string might contain an include tag (no allocations)
 let private mayContainInclude (text: string) : bool =
     not (String.IsNullOrEmpty(text)) && text.Contains("<include")
 
-/// Classify an XElement as an include directive.
-/// Returns Some(Ok info) for valid includes, Some(Error msg) for malformed includes, None for non-includes.
 /// Only an unqualified <include> element is the documentation include tag: an element named
 /// "include" in a foreign XML namespace is ordinary content and is left untouched (Roslyn parity,
 /// matching its ElementNameIs check that the namespace is empty).
@@ -156,16 +136,13 @@ let private warnIncludeError (ctx: ExpansionContext) (msg: string) =
     if ctx.Emit then
         warning (Error(FSComp.SR.xmlDocIncludeError msg, ctx.Range))
 
-/// Warn about a failure to expand a well-formed <include> directive, naming both the
-/// file and the xpath (Roslyn CS1589 parity). The frame is a localized FSComp message;
-/// only the short `reason` is a passthrough argument.
+/// Names both the file and the xpath (Roslyn CS1589 parity); only the short `reason` varies.
 let private warnFramedIncludeError (ctx: ExpansionContext) (includeInfo: IncludeInfo) (reason: string) =
     if ctx.Emit then
         warning (Error(FSComp.SR.xmlDocIncludeError2 (includeInfo.XPath, includeInfo.FilePath, reason), ctx.Range))
 
 /// Outcome of resolving a single <include> directive.
 type private IncludeOutcome =
-    /// Expanded to these nodes.
     | IncludeResolved of XNode seq
     /// Valid XPath but zero matches: Roslyn parity is a comment + the kept tag, with no warning.
     | IncludeNoMatch
@@ -174,7 +151,6 @@ type private IncludeOutcome =
     /// The per-document expansion budget is exhausted: the short reason, warned only once per document.
     | IncludeBudgetExceeded of string
 
-/// Load and expand includes from an external file
 let rec private resolveSingleInclude (baseFileName: string) (includeInfo: IncludeInfo) (ctx: ExpansionContext) : IncludeOutcome =
 
     let resolvedPath =
@@ -213,7 +189,6 @@ let rec private resolveSingleInclude (baseFileName: string) (includeInfo: Includ
 
                 IncludeResolved(expandAllIncludeNodes resolvedPath (matchedElements |> Seq.cast<XNode>) childCtx)
 
-/// Recursively expand includes in XElement nodes
 and private expandAllIncludeNodes (baseFileName: string) (nodes: XNode seq) (ctx: ExpansionContext) : XNode seq =
     nodes
     |> Seq.collect (fun node ->
@@ -243,17 +218,12 @@ and private expandAllIncludeNodes (baseFileName: string) (nodes: XNode seq) (ctx
                     warnFramedIncludeError ctx includeInfo reason
                     Seq.singleton node
                 | IncludeBudgetExceeded reason ->
-                    // Report the document-wide budget limit at most once to avoid warning spam.
                     if not ctx.BudgetExhaustedWarned.Value then
                         ctx.BudgetExhaustedWarned.Value <- true
                         warnFramedIncludeError ctx includeInfo reason
 
                     Seq.singleton node)
 
-/// Expand all <include> elements in the given elaborated XML doc lines.
-/// `emit` controls whether include errors are reported as warnings (build path)
-/// or suppressed (quiet validation path). Returns the input unchanged when there
-/// are no include tags, when parsing fails, or when nothing was expanded.
 let expandIncludeLines (env: ExpansionEnv) (emit: bool) (baseFileName: string) (range: range) (lines: string[]) : string[] =
     let hasIncludes = lines |> Array.exists mayContainInclude
 
