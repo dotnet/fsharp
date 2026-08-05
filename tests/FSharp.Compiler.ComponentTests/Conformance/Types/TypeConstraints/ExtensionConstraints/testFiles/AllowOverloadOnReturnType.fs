@@ -38,3 +38,29 @@ if r4 <> 42.0 then failwith $"Expected 42.0, got {r4}"
 
 let r5: string = convert 42
 if r5 <> "42" then failwith $"Expected '42', got '{r5}'"
+
+// ---- AllowOverloadOnReturnType on an EXTENSION member through SRTP (H3) ----
+// The attribute must also work when the return-type-overloaded candidates are optional
+// extension members (defined in a separate module) rather than intrinsic members.
+
+module Domain =
+    type Meters = { V: float }
+
+module Extensions =
+    open Domain
+    type Meters with
+        [<AllowOverloadOnReturnType>]
+        static member inline Of (x: int) : Meters = { V = float x }
+        [<AllowOverloadOnReturnType>]
+        static member inline Of (x: int) : string = $"{x}m"
+
+open Domain
+open Extensions
+
+let inline meters (x: int) : ^U = ((^U or Domain.Meters) : (static member Of: int -> ^U) x)
+
+let r6: Meters = meters 7
+if r6 <> { V = 7.0 } then failwith $"Expected 7.0, got {r6.V}"
+
+let r7: string = meters 7
+if r7 <> "7m" then failwith $"Expected '7m', got '{r7}'"
