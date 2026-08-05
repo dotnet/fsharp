@@ -1,6 +1,5 @@
 module FSharp.Compiler.Service.Tests.GotoDefinitionMiscTests
 
-open System
 open Xunit
 
 let private nestedLetRecSource =
@@ -10,7 +9,7 @@ let private nestedLetRecSource =
           "  let     x = ()"
           "  let rec x = (*loc-9*)"
           "    fun y -> (*loc-10*)"
-          "      x{caret} y (*loc-8*)"
+          "      x{caret} y"
           "  ()" ]
 
 [<Fact>]
@@ -25,7 +24,7 @@ let private asPatternSource =
         [ "let _ ="
           "  let foo          = ()"
           "  let f (_ as foo{caret1}) = (*loc-35*)"
-          "    foo{caret2} (*loc-36*)"
+          "    foo{caret2}"
           "  ()" ]
 
 [<Fact>]
@@ -103,6 +102,6 @@ let ``GotoDefinition.UnitOfMeasure.Bug193064`` () =
     let source =
         """
             open Microsoft.FSharp.Data.UnitSystems.SI
-            UnitSymbols.A{caret}(*Marker*)"""
+            UnitSymbols.A{caret}"""
 
     assertGoToDefinitionToExternalLine "type A = ampere" source
