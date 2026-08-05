@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Dependencies>
-  <Source Uri="https://github.com/dotnet/dotnet" Mapping="fsharp" Sha="322f5005d6589845edf1d69d55820a7d1ab9a09c" BarId="325363" />
+  <Source Uri="https://github.com/dotnet/dotnet" Mapping="fsharp" Sha="aedf05ae4b6c7f74f789e64a0a8d9d169414f04f" BarId="325626" />
   <ProductDependencies>
     <Dependency Name="Microsoft.Build" Version="18.10.0-preview-26357-08">
       <Uri>https://github.com/dotnet/msbuild</Uri>
