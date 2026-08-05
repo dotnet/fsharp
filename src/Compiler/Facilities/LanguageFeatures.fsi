@@ -100,6 +100,7 @@ type LanguageFeature =
     | ExceptionFieldSerializationSupport
     | ErrorOnMissingSignatureAttribute
     | NotNullIfNotNull
+    | DirectDelegateConstruction
     | AccessProtectedBaseFieldFromClosure
     | ImprovedImpliedArgumentNamesPartTwo
     | RecordSpreads
