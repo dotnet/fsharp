@@ -1677,24 +1677,6 @@ module InheritDocTooltipTests =
         | FSharpXmlDoc.FromXmlText t -> t.GetXmlText()
         | other -> failwith $"Expected FromXmlText for {typeName}, got {other}"
 
-    [<Theory>]
-    [<InlineData("DerivedType", "Base type documentation")>]
-    [<InlineData("DerivedType", "Important remarks")>]
-    let ``inheritdoc should expand for same compilation type`` (symbolName: string, expectedText: string) =
-        let code = """
-module Test
-
-/// <summary>Base type documentation</summary>
-/// <remarks>Important remarks</remarks>
-type BaseType() = class end
-
-/// <inheritdoc cref="T:Test.BaseType"/>
-type DerivedType() = class end
-"""
-        let xmlText = getEntityXmlText code symbolName
-        Assert.Contains(expectedText, xmlText)
-        Assert.DoesNotContain("inheritdoc", xmlText)
-
     [<Fact>]
     let ``inheritdoc in signature file is authoritative and expanded`` () =
         // RFC FS-1341: for members declared in a signature file, the .fsi doc comment is authoritative
@@ -1799,10 +1781,8 @@ type TypeB() = class end
         Assert.DoesNotContain("<inheritdoc", getEntityXmlText code "TypeA")
         Assert.DoesNotContain("<inheritdoc", getEntityXmlText code "TypeB")
 
-    [<Theory>]
-    [<InlineData("ServiceImpl", "Service interface")>]
-    [<InlineData("ServiceImpl", "Core contract")>]
-    let ``inheritdoc should work for interface implementation tooltip`` (symbolName: string, expectedText: string) =
+    [<Fact>]
+    let ``inheritdoc should work for interface implementation tooltip`` () =
         let code = """
 module Test
 
@@ -1818,8 +1798,9 @@ type ServiceImpl() =
     interface IService with
         member _.Execute(input) = input
 """
-        let xmlText = getEntityXmlText code symbolName
-        Assert.Contains(expectedText, xmlText)
+        let xmlText = getEntityXmlText code "ServiceImpl"
+        Assert.Contains("Service interface", xmlText)
+        Assert.Contains("Core contract", xmlText)
         Assert.DoesNotContain("inheritdoc", xmlText)
 
     [<Fact>]
@@ -1839,10 +1820,8 @@ type DerivedFromOuter() = class end
         Assert.Contains("Outer container documentation", xmlText)
         Assert.DoesNotContain("inheritdoc", xmlText)
 
-    [<Theory>]
-    [<InlineData("DerivedInSecond", "Type in first module")>]
-    [<InlineData("DerivedInSecond", "Important base type")>]
-    let ``inheritdoc from previous module in same compilation`` (symbolName: string, expectedText: string) =
+    [<Fact>]
+    let ``inheritdoc from previous module in same compilation`` () =
         let code = """
 module FirstModule
 
@@ -1855,8 +1834,9 @@ module SecondModule
 /// <inheritdoc cref="T:FirstModule.BaseInFirst"/>
 type DerivedInSecond() = class end
 """
-        let xmlText = getEntityXmlText code symbolName
-        Assert.Contains(expectedText, xmlText)
+        let xmlText = getEntityXmlText code "DerivedInSecond"
+        Assert.Contains("Type in first module", xmlText)
+        Assert.Contains("Important base type", xmlText)
         Assert.DoesNotContain("inheritdoc", xmlText)
 
     [<Fact>]
@@ -1920,10 +1900,8 @@ type DerivedClass() =
         Assert.Contains("Base method docs", xmlText)
         Assert.DoesNotContain("<inheritdoc", xmlText)
 
-    [<Theory>]
-    [<InlineData("DerivedRecord", "Base record documentation")>]
-    [<InlineData("DerivedRecord", "This is a data record")>]
-    let ``inheritdoc for record type from same module`` (symbolName: string, expectedText: string) =
+    [<Fact>]
+    let ``inheritdoc for record type from same module`` () =
         let code = """
 module Test
 
@@ -1934,14 +1912,13 @@ type BaseRecord = { Name: string; Value: int }
 /// <inheritdoc cref="T:Test.BaseRecord"/>
 type DerivedRecord = { Id: int; Data: string }
 """
-        let xmlText = getEntityXmlText code symbolName
-        Assert.Contains(expectedText, xmlText)
+        let xmlText = getEntityXmlText code "DerivedRecord"
+        Assert.Contains("Base record documentation", xmlText)
+        Assert.Contains("This is a data record", xmlText)
         Assert.DoesNotContain("inheritdoc", xmlText)
 
-    [<Theory>]
-    [<InlineData("DerivedUnion", "Base union type")>]
-    [<InlineData("DerivedUnion", "Represents choices")>]
-    let ``inheritdoc for discriminated union from same module`` (symbolName: string, expectedText: string) =
+    [<Fact>]
+    let ``inheritdoc for discriminated union from same module`` () =
         let code = """
 module Test
 
@@ -1956,8 +1933,9 @@ type DerivedUnion =
     | OptionX
     | OptionY of string
 """
-        let xmlText = getEntityXmlText code symbolName
-        Assert.Contains(expectedText, xmlText)
+        let xmlText = getEntityXmlText code "DerivedUnion"
+        Assert.Contains("Base union type", xmlText)
+        Assert.Contains("Represents choices", xmlText)
         Assert.DoesNotContain("inheritdoc", xmlText)
 
     [<Fact>]
@@ -1978,10 +1956,8 @@ type ServiceImpl() =
         Assert.Contains("Service method", xmlText)
         Assert.DoesNotContain("<inheritdoc", xmlText)
 
-    [<Theory>]
-    [<InlineData("DerivedClass", "Base class documentation")>]
-    [<InlineData("DerivedClass", "Base remarks")>]
-    let ``implicit inheritdoc should resolve from base class for type`` (symbolName: string, expectedText: string) =
+    [<Fact>]
+    let ``implicit inheritdoc should resolve from base class for type`` () =
         let code = """
 module Test
 
@@ -1993,14 +1969,13 @@ type BaseClass() = class end
 type DerivedClass() =
     inherit BaseClass()
 """
-        let xmlText = getEntityXmlText code symbolName
-        Assert.Contains(expectedText, xmlText)
+        let xmlText = getEntityXmlText code "DerivedClass"
+        Assert.Contains("Base class documentation", xmlText)
+        Assert.Contains("Base remarks", xmlText)
         Assert.DoesNotContain("inheritdoc", xmlText)
 
-    [<Theory>]
-    [<InlineData("MyImpl", "Interface documentation")>]
-    [<InlineData("MyImpl", "Interface remarks")>]
-    let ``implicit inheritdoc should resolve from interface for type`` (symbolName: string, expectedText: string) =
+    [<Fact>]
+    let ``implicit inheritdoc should resolve from interface for type`` () =
         let code = """
 module Test
 
@@ -2014,8 +1989,9 @@ type MyImpl() =
     interface IMyInterface with
         member _.DoWork() = ()
 """
-        let xmlText = getEntityXmlText code symbolName
-        Assert.Contains(expectedText, xmlText)
+        let xmlText = getEntityXmlText code "MyImpl"
+        Assert.Contains("Interface documentation", xmlText)
+        Assert.Contains("Interface remarks", xmlText)
         Assert.DoesNotContain("inheritdoc", xmlText)
 
     // ===========================================

@@ -5,30 +5,21 @@ module internal FSharp.Compiler.XmlDocInheritance
 open System.Xml.Linq
 open System.Xml.XPath
 
-/// Upper bound on inheritdoc expansion depth. The visited-set guards against CYCLES, but a deep
-/// ACYCLIC explicit-cref chain (A -> B -> C -> ...) recurses non-tail and would eventually raise an
-/// uncatchable StackOverflowException that aborts the process/IDE. Real inheritance chains are only
-/// a few levels deep, so this cap sits well above any expected real-world depth while bounding the
-/// worst case to graceful degradation (the tag past the cap is left unexpanded).
+/// Bounds non-tail recursion on deep acyclic explicit-cref chains, which would otherwise raise an
+/// uncatchable StackOverflowException. Real inheritance chains are only a few levels deep.
 [<Literal>]
 let private maxInheritDocDepth = 100
 
-/// Represents an inheritdoc directive found in XML documentation
 type InheritDocDirective =
     {
-        /// Optional cref attribute specifying explicit target
         Cref: string option
-        /// Optional path attribute for XPath filtering
         Path: string option
-        /// The original XElement for replacement
         Element: XElement
     }
 
-/// Checks if an XML document contains <inheritdoc> elements
 let private hasInheritDoc (xmlText: string) =
     xmlText.IndexOf("<inheritdoc", System.StringComparison.Ordinal) >= 0
 
-/// Extracts inheritdoc directives from parsed XML
 let private extractInheritDocDirectives (doc: XDocument) =
     let inheritDocName = XName.op_Implicit "inheritdoc"
 
@@ -53,13 +44,11 @@ let private extractInheritDocDirectives (doc: XDocument) =
         })
     |> List.ofSeq
 
-/// Serializes a sequence of XML nodes back to text, one node per line.
 let private nodesToString (nodes: seq<#XNode>) : string =
     nodes
     |> Seq.map (fun node -> node.ToString(SaveOptions.DisableFormatting))
     |> String.concat "\n"
 
-/// Applies an XPath filter to XML content
 let private applyXPathFilter (xpath: string) (sourceXml: string) : string =
     try
         let doc =
@@ -87,13 +76,8 @@ let private applyXPathFilter (xpath: string) (sourceXml: string) : string =
     // to no inherited content rather than letting the exception crash the tooltip/completion caller.
     | :? System.InvalidOperationException -> ""
 
-/// Selects the default inherited content, excluding top-level <overloads> nodes.
-///
-/// Known limitation vs Roslyn: this returns the target's whole top-level nodes. Roslyn additionally
-/// narrows the selection when the <inheritdoc/> is nested inside another documentation element (e.g.
-/// a bare <inheritdoc/> inside <summary> selects only the target's summary children). Implementing
-/// that requires ancestor-aware XPath plus text-node selection; until then a nested <inheritdoc/>
-/// splices the whole inherited doc. The common top-level usage is unaffected.
+/// Selects the target's whole top-level nodes, excluding <overloads>. A nested <inheritdoc/> is
+/// not narrowed to matching children the way Roslyn does; it splices the whole inherited doc.
 let private selectDefaultInheritedContent (sourceXml: string) : string =
     try
         let doc =
@@ -108,7 +92,6 @@ let private selectDefaultInheritedContent (sourceXml: string) : string =
     with :? System.Xml.XmlException ->
         ""
 
-/// Recursively expands inheritdoc in the retrieved documentation
 let rec private expandInheritedDoc
     (resolveCref: string -> string option)
     (implicitTargetCrefOpt: string option)
@@ -122,11 +105,6 @@ let rec private expandInheritedDoc
         let newVisited = visited.Add(cref)
         expandInheritDocFromXmlText resolveCref implicitTargetCrefOpt newVisited xmlText
 
-/// Expands `<inheritdoc>` elements in XML documentation text.
-/// The caller provides a `resolveCref` function that maps a cref string to its resolved XML doc text.
-/// Takes an optional implicit target cref for resolving <inheritdoc/> without cref attribute.
-/// Tracks visited signatures to prevent infinite recursion.
-/// Takes a pre-computed xmlText string, avoiding an extra GetXmlText() call.
 and expandInheritDocFromXmlText
     (resolveCref: string -> string option)
     (implicitTargetCrefOpt: string option)
@@ -181,10 +159,7 @@ and expandInheritDocFromXmlText
                 match xdoc.Root with
                 | null -> xmlText
                 | root ->
-                    let serialized =
-                        root.Nodes()
-                        |> Seq.map (fun node -> node.ToString(SaveOptions.DisableFormatting))
-                        |> String.concat "\n"
+                    let serialized = nodesToString (root.Nodes())
                     // XNode.ToString re-introduces the platform newline (\r\n on Windows/.NET Framework)
                     // regardless of the LF used to join nodes here. Downstream, XmlDoc.processLines trims
                     // only spaces, so a line holding a stray '\r' is recognised as neither blank nor XML

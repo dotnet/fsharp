@@ -279,38 +279,6 @@ let _ : Deri{caret} = failwith ""
     Assert.Contains("Base summary text", xmlText xml)
     Assert.DoesNotContain("<inheritdoc", xmlText xml)
 
-[<Fact>]
-let ``symbol resolves explicit cref inheritdoc to a same-file type`` () =
-    let xml =
-        getSymbolXml
-            "Derived"
-            """
-module Test
-/// <summary>Base summary text</summary>
-type Base() = class end
-/// <inheritdoc cref="T:Test.Base"/>
-type Derived() = class end
-let _ = Derived(){caret}
-"""
-
-    Assert.Contains("Base summary text", xmlText xml)
-    Assert.DoesNotContain("<inheritdoc", xmlText xml)
-
-[<Fact(Skip = "documented limitation: explicit cref not resolvable at InfoReader/tooltip layer; use FSharpSymbol.XmlDoc")>]
-let ``tooltip expands explicit cref inheritdoc to a same-file type`` () =
-    let xml =
-        getTooltipXml
-            """
-module Test
-/// <summary>Base summary text</summary>
-type Base() = class end
-/// <inheritdoc cref="T:Test.Base"/>
-type Derive{caret}d() = class end
-"""
-
-    Assert.Contains("Base summary text", xmlText xml)
-    Assert.DoesNotContain("<inheritdoc", xmlText xml)
-
 // --- Phase 4: implicit resolution priority parity (Roslyn GetCandidateSymbol) ---
 
 [<Fact>]

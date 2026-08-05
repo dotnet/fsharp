@@ -83,8 +83,6 @@ module XmlDocWriter =
 
         let mutable members = []
 
-        // <inheritdoc> elements are written to the XML file as-is.
-        // Resolution happens at tooling time (IDE tooltips, FCS Symbols API).
         let addMember id xmlDoc =
             if hasDoc xmlDoc then
                 let doc = xmlDoc.GetXmlText()

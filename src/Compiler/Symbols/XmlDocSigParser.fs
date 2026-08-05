@@ -4,9 +4,6 @@ namespace FSharp.Compiler.Symbols
 
 open System.Text.RegularExpressions
 
-/// Represents the kind of member element in a documentation comment ID (the `M:`/`P:`/`E:`
-/// members carried by ParsedDocCommentId.Member). Types, fields and namespaces have their own
-/// ParsedDocCommentId cases and so do not appear here.
 [<RequireQualifiedAccess>]
 type internal DocCommentIdKind =
     | Method
@@ -14,16 +11,11 @@ type internal DocCommentIdKind =
     | Event
     | Unknown
 
-/// Represents a parsed documentation comment ID (cref format)
 [<RequireQualifiedAccess>]
 type internal ParsedDocCommentId =
-    /// Type reference (T:Namespace.Type)
     | Type of path: string list
-    /// Member reference (M:, P:, E:) with type path, member name, generic arity, and kind
     | Member of typePath: string list * memberName: string * genericArity: int * kind: DocCommentIdKind
-    /// Field reference (F:Namespace.Type.field)
     | Field of typePath: string list * fieldName: string
-    /// Invalid or unparseable ID
     | None
 
 module internal XmlDocSigParser =
@@ -34,7 +26,6 @@ module internal XmlDocSigParser =
     let private fnGenericArgsRx =
         Regex(@"^(?<entity>.+)``(?<typars>\d+)$", RegexOptions.Compiled)
 
-    /// Parse a documentation comment ID string (e.g., "M:Namespace.Type.Method(System.String)")
     let parseDocCommentId (docCommentId: string) =
 
         let m = docCommentIdRx.Match(docCommentId)
@@ -50,7 +41,6 @@ module internal XmlDocSigParser =
                 let entityPath = parts[.. (parts.Length - 2)] |> List.ofArray
                 let memberOrVal = parts[parts.Length - 1]
 
-                // Try and parse generic params count from the name
                 let genericM = fnGenericArgsRx.Match(memberOrVal)
 
                 let (memberOrVal, genericParametersCount) =

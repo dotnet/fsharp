@@ -237,10 +237,6 @@ module Impl =
     let private buildCrefResolver (cenv: SymbolEnv) : string -> string option =
         let allCcus = cenv.tcImports.GetCcusInDeclOrder()
 
-        let tryFindXmlDocBySignature (assemblyName: string) (xmlDocSig: string) : XmlDoc option =
-            cenv.amap.assemblyLoader.TryFindXmlDocumentationInfo(assemblyName)
-            |> Option.bind (fun xmlDocInfo -> xmlDocInfo.TryGetXmlDocBySig(xmlDocSig))
-
         fun cref ->
             // 1. Try same-compilation module type first (most precise for current compilation)
             let fromModuleType =
@@ -262,7 +258,7 @@ module Impl =
                         // 4. Fall back to external XML documentation files (for IL types like System.Exception)
                         allCcus
                         |> List.tryPick (fun ccu ->
-                            match tryFindXmlDocBySignature ccu.AssemblyName cref with
+                            match TryFindXmlDocByAssemblyNameAndSig cenv.infoReader ccu.AssemblyName cref with
                             | Some xmlDoc when not xmlDoc.IsEmpty -> Some(xmlDoc.GetXmlText())
                             | _ -> None)
 
@@ -334,7 +330,7 @@ module Impl =
                     | ValueNone -> None
                 | [] -> None
         with _ -> None
-    
+
     /// Computes the implicit target cref for a member (from implemented interface or overridden base method)
     let getImplicitTargetCrefForMember (cenv: SymbolEnv) (d: FSharpMemberOrValData) (slotSigs: SlotSig list) : string option =
         let crefPrefix =
@@ -406,12 +402,8 @@ module Impl =
             // inheritance candidate (Roslyn GetCandidateSymbol returns null for a non-override,
             // non-interface-implementing method).
             //
-            // Constructors (C) are also non-overrides and therefore resolve to None on this path.
-            // Constructor <inheritdoc/> is instead expanded at the tooltip/completion/signature-help
-            // layer (SymbolHelpers.tryBaseCtorTarget), which matches the base constructor by its
-            // parameter signature. This name-based cref resolver (buildCrefResolver) collapses
-            // overloads, so resolving a constructor here could surface a wrong overload's docs;
-            // returning None keeps FSharpSymbol.XmlDoc honest rather than potentially wrong.
+            // Constructors are non-overrides too, so they resolve to None here; their <inheritdoc/> is
+            // handled by SymbolHelpers.tryBaseCtorTarget, which signature-matches the base constructor.
             let isOverride =
                 match d with
                 | V v -> v.IsOverrideOrExplicitImpl
@@ -453,7 +445,7 @@ module Impl =
                     | _ -> None
                 | None -> None
             with _ -> None
-    
+
     let rescopeEntity optViewedCcu (entity: Entity) = 
         match optViewedCcu with 
         | None -> mkLocalEntityRef entity
@@ -2507,7 +2499,7 @@ type FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
     member _.XmlDoc = 
         if isUnresolved() then XmlDoc.Empty  |> makeXmlDoc else
         let doc =
-            match d with 
+            match d with
             | E e -> e.XmlDoc
             | P p -> p.XmlDoc
             | M m | C m -> m.XmlDoc
