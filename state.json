@@ -25,7 +25,7 @@
       "cats": []
     },
     "20128": {
-      "sha": "149109eabf34cf59d3a0db411799ef3ef04a2fe3",
+      "sha": "c5582ba15ab8c17798e731ad71d9a3783e6056d0",
       "cats": []
     },
     "20126": {
@@ -33,17 +33,12 @@
       "cats": []
     },
     "20121": {
-      "sha": "4592d35ba25bc5b372839298b52d5550ee1434bb",
+      "sha": "fbec9a8bea4f40e24561a7851cc65da73417b701",
       "cats": []
     },
     "20119": {
-      "sha": "78786eca394bf2f9b327a70d890fb66a4b98a408",
-      "cats": [
-        "Affects-Agent-Config",
-        "Affects-Build-Infra",
-        "Affects-Restore",
-        "Scope-Review-Needed"
-      ]
+      "sha": "25f732737ad94832d2e56dd6b8d133531d3e0a31",
+      "cats": []
     },
     "20113": {
       "sha": "8bee41ae5981b49e9bacf98f08462ab485ece5a2",
@@ -147,7 +142,7 @@
       "cats": []
     },
     "19974": {
-      "sha": "59788675a7644b709f6d1321e819ce2e6dcb8f02",
+      "sha": "b48d9563a1c4c421d05fd19526417db7b64ccc42",
       "cats": []
     },
     "19947": {
