@@ -872,6 +872,11 @@
         <target state="translated">不能内插字节字符串</target>
         <note />
       </trans-unit>
+      <trans-unit id="lexColonDirectiveMustBeFirst">
+        <source>#: directives must appear as the first non-whitespace characters on a line</source>
+        <target state="new">#: directives must appear as the first non-whitespace characters on a line</target>
+        <note />
+      </trans-unit>
       <trans-unit id="lexExtendedStringInterpolationNotSupported">
         <source>Extended string interpolation is not supported in this version of F#.</source>
         <target state="translated">此版本的 F# 不支持扩展字符串内插。</target>

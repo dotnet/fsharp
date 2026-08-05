@@ -872,6 +872,11 @@
         <target state="translated">une chaîne d'octets ne peut pas être interpolée</target>
         <note />
       </trans-unit>
+      <trans-unit id="lexColonDirectiveMustBeFirst">
+        <source>#: directives must appear as the first non-whitespace characters on a line</source>
+        <target state="new">#: directives must appear as the first non-whitespace characters on a line</target>
+        <note />
+      </trans-unit>
       <trans-unit id="lexExtendedStringInterpolationNotSupported">
         <source>Extended string interpolation is not supported in this version of F#.</source>
         <target state="translated">L'interpolation de chaîne étendue n'est pas prise en charge dans cette version de F#.</target>

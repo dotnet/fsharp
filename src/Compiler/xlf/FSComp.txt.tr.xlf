@@ -872,6 +872,11 @@
         <target state="translated">bir bayt dizesi, düz metin arasına kod eklenerek kullanılamaz</target>
         <note />
       </trans-unit>
+      <trans-unit id="lexColonDirectiveMustBeFirst">
+        <source>#: directives must appear as the first non-whitespace characters on a line</source>
+        <target state="new">#: directives must appear as the first non-whitespace characters on a line</target>
+        <note />
+      </trans-unit>
       <trans-unit id="lexExtendedStringInterpolationNotSupported">
         <source>Extended string interpolation is not supported in this version of F#.</source>
         <target state="translated">Genişletilmiş dize ilişkilendirmesi bu F# sürümünde desteklenmiyor.</target>
