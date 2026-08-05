@@ -1,4 +1,4 @@
-﻿module FSharp.Compiler.Service.Tests.CompletionTests
+module FSharp.Compiler.Service.Tests.CompletionTests
 
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.EditorServices
@@ -907,3 +907,105 @@ let _ = System.Uri(uriString = s.{caret}, kind = System.UriKind.Absolute)
 """
     assertHasItemWithNames ["Length"; "Substring"] info
     assertHasNoItemsWithNames ["uriString"; "kind"] info
+
+module RecordSpreads =
+    [<Literal>]
+    let private SupportedLangVersion = "preview"
+
+    let private getCompletionInfo markedSource =
+        Checker.getCompletionInfoWithCompilerAndCompletionOptions
+            [| $"--langversion:{SupportedLangVersion}" |]
+            FSharpCodeCompletionOptions.Default
+            markedSource
+
+    let private getCompletionInfoFor partialIdent markedSource =
+        Checker.getCompletionInfoWithCompilerAndCompletionOptions
+            [| $"--langversion:{SupportedLangVersion}" |]
+            FSharpCodeCompletionOptions.Default
+            markedSource
+
+    [<Fact>]
+    let ``spread - completion fires inside nominal record type spread, no ident yet`` () =
+        let info = getCompletionInfo """
+type R1 = { A: int; B: int }
+type R2 = class end
+type R3 = { ...{caret} }
+"""
+        let names = info.Items |> Array.map _.NameInCode
+        if not (Array.contains "R1" names) then
+            failwith $"Expected completion at '{{ ...|caret| }}' to offer in-scope record type 'R1', but got %A{names}."
+
+        if Array.contains "R2" names then
+            failwith $"Expected completion at '{{ ...|caret| }}' not to offer in-scope non-record type 'R2', but got %A{names}."
+
+    [<Fact>]
+    let ``spread - completion fires inside nominal record type spread, partial ident`` () =
+        let info = getCompletionInfo """
+type R1 = { A: int; B: int }
+type R2 = class end
+type R3 = { ...R{caret} }
+"""
+        let names = info.Items |> Array.map _.NameInCode
+        if not (Array.contains "R1" names) then
+            failwith $"Expected completion at '{{ ...R|caret| }}' to offer in-scope record type 'R1', but got %A{names}."
+
+        if Array.contains "R2" names then
+            failwith $"Expected completion at '{{ ...R|caret| }}' not to offer in-scope non-record type 'R2', but got %A{names}."
+
+    [<Fact>]
+    let ``spread - completion fires inside nominal record expression spread, no ident yet`` () =
+        let info = getCompletionInfo """
+type R = { A: int; B: int }
+let r1 = { A = 1; B = 2 }
+let r2 = obj ()
+let r3 = { ...{caret} }
+"""
+        let names = info.Items |> Array.map _.NameInCode
+        if not (Array.contains "r1" names) then
+            failwith $"Expected completion at '{{ ...r|caret| }}' to offer in-scope record value 'r1', but got %A{names}."
+
+        if Array.contains "r2" names then
+            failwith $"Expected completion at '{{ ...r|caret| }}' not to offer in-scope non-record value 'r2', but got %A{names}."
+
+    [<Fact>]
+    let ``spread - completion fires inside nominal record expression spread, partial ident`` () =
+        let info = getCompletionInfo """
+type R = { A: int; B: int }
+let r1 = { A = 1; B = 2 }
+let r2 = obj ()
+let r3 = { ...r{caret} }
+"""
+        let names = info.Items |> Array.map _.NameInCode
+        if not (Array.contains "r1" names) then
+            failwith $"Expected completion at '{{ ...r|caret| }}' to offer in-scope record value 'r1', but got %A{names}."
+
+        if Array.contains "r2" names then
+            failwith $"Expected completion at '{{ ...r|caret| }}' not to offer in-scope non-record value 'r2', but got %A{names}."
+
+    [<Fact>]
+    let ``spread - completion fires inside anonymous record expression spread, no ident yet`` () =
+        let info = getCompletionInfo """
+let r1 = {| A = 1; B = 2 |}
+let r2 = obj ()
+let r3 = {| ...{caret} ; X = 1 |}
+"""
+        let names = info.Items |> Array.map _.NameInCode
+        if not (Array.contains "r1" names) then
+            failwith $"Expected completion at '{{| ...|caret| ; X = 1 |}}' to offer in-scope record value 'r1', but got %A{names}."
+
+        if Array.contains "r2" names then
+            failwith $"Expected completion at '{{ ...|caret| }}' not to offer in-scope non-record value 'r2', but got %A{names}."
+
+    [<Fact>]
+    let ``spread - completion fires inside anonymous record expression spread, partial ident`` () =
+        let info = getCompletionInfo """
+let r1 = {| A = 1; B = 2 |}
+let r2 = obj ()
+let r3 = {| ...r{caret} ; X = 1 |}
+"""
+        let names = info.Items |> Array.map _.NameInCode
+        if not (Array.contains "r1" names) then
+            failwith $"Expected completion at '{{| ...r|caret| ; X = 1 |}}' to offer in-scope record value 'r1', but got %A{names}."
+
+        if Array.contains "r2" names then
+            failwith $"Expected completion at '{{ ...r|caret| }}' not to offer in-scope non-record value 'r2', but got %A{names}."

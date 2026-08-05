@@ -65,8 +65,6 @@ variables:
     value: Products/$(System.TeamProject)/$(Build.Repository.Name)/$(Build.SourceBranchName)/$(Build.BuildNumber)
   - name: Codeql.Enabled
     value: true
-  - ${{ if and(ne(variables['System.TeamProject'], 'public'), notin(variables['Build.Reason'], 'PullRequest')) }}:
-    - group: DotNet-FSharp-SDLValidation-Params
   - ${{ if and(eq(variables['System.TeamProject'], 'public'), eq(variables['Build.Reason'], 'PullRequest')) }}:
     - name: RunningAsPullRequest
       value: true
@@ -338,78 +336,6 @@ stages:
             inputs:
                 PathToPublish: '$(Build.SourcesDirectory)\artifacts\log\Release'
                 ArtifactName: 'Windows Release WindowsNoRealsig_testDesktop process dumps'
-                ArtifactType: Container
-                parallel: true
-
-        - job: WindowsStrictIndentation
-          pool:
-            name: $(DncEngPublicBuildPool)
-            demands: ImageOverride -equals $(_WindowsMachineQueueName)
-          timeoutInMinutes: 120
-          steps:
-          - checkout: self
-            clean: true
-
-          - script: eng\CIBuildNoPublish.cmd -compressallmetadata -configuration Release /p:AdditionalFscCmdFlags=--strict-indentation+
-            env:
-              DOTNET_DbgEnableMiniDump: 1
-              DOTNET_DbgMiniDumpType: 2 # 1=mini, 2=heap, 3=triage, 4=full. Heap dumps include managed object data for debugging.
-              DOTNET_DbgMiniDumpName: $(Build.SourcesDirectory)\artifacts\log\Release\$(Build.BuildId)-%e-%p-%t.dmp
-              NativeToolsOnMachine: true
-            displayName: Build
-
-          - task: PublishBuildArtifacts@1
-            displayName: Publish Build BinLog
-            condition: always()
-            continueOnError: true
-            inputs:
-                PathToPublish: '$(Build.SourcesDirectory)\artifacts\log/Release\Build.VisualFSharp.slnx.binlog'
-                ArtifactName: 'Windows Release build binlogs'
-                ArtifactType: Container
-                parallel: true
-          - task: PublishBuildArtifacts@1
-            displayName: Publish Dumps
-            condition: failed()
-            continueOnError: true
-            inputs:
-                PathToPublish: '$(Build.SourcesDirectory)\artifacts\log\Release'
-                ArtifactName: 'Windows Release WindowsStrictIndentation process dumps'
-                ArtifactType: Container
-                parallel: true
-
-        - job: WindowsNoStrictIndentation
-          pool:
-            name: $(DncEngPublicBuildPool)
-            demands: ImageOverride -equals $(_WindowsMachineQueueName)
-          timeoutInMinutes: 120
-          steps:
-          - checkout: self
-            clean: true
-
-          - script: eng\CIBuildNoPublish.cmd -compressallmetadata -configuration Release /p:AdditionalFscCmdFlags=--strict-indentation-
-            env:
-              DOTNET_DbgEnableMiniDump: 1
-              DOTNET_DbgMiniDumpType: 2 # 1=mini, 2=heap, 3=triage, 4=full. Heap dumps include managed object data for debugging.
-              DOTNET_DbgMiniDumpName: $(Build.SourcesDirectory)\artifacts\log\Release\$(Build.BuildId)-%e-%p-%t.dmp
-              NativeToolsOnMachine: true
-            displayName: Build
-
-          - task: PublishBuildArtifacts@1
-            displayName: Publish Build BinLog
-            condition: always()
-            continueOnError: true
-            inputs:
-                PathToPublish: '$(Build.SourcesDirectory)\artifacts\log/Release\Build.VisualFSharp.slnx.binlog'
-                ArtifactName: 'Windows Release build binlogs'
-                ArtifactType: Container
-                parallel: true
-          - task: PublishBuildArtifacts@1
-            displayName: Publish Dumps
-            condition: failed()
-            continueOnError: true
-            inputs:
-                PathToPublish: '$(Build.SourcesDirectory)\artifacts\log\Release'
-                ArtifactName: 'Windows Release WindowsNoStrictIndentation process dumps'
                 ArtifactType: Container
                 parallel: true
 

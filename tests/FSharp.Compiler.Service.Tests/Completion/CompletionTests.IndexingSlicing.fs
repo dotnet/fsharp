@@ -59,26 +59,15 @@ let test1 = strs.[1].{caret}"""
 
     assertHasItemWithNames [ "Substring"; "GetHashCode" ] info
 
-[<Theory>]
-[<InlineData("""let string_of_int (x:int) = x.ToString()
+[<Fact>]
+let ``DotOff.ArraySliceNotation`` () =
+    """let string_of_int (x:int) = x.ToString()
 let strs = Array.init 10 string_of_int
-let test2 = strs.[1..].{caret}
-let test3 = strs.[..1].
-let test4 = strs.[1..1].""")>]
-[<InlineData("""let string_of_int (x:int) = x.ToString()
-let strs = Array.init 10 string_of_int
-let test2 = strs.[1..].
-let test3 = strs.[..1].{caret}
-let test4 = strs.[1..1].""")>]
-[<InlineData("""let string_of_int (x:int) = x.ToString()
-let strs = Array.init 10 string_of_int
-let test2 = strs.[1..].
-let test3 = strs.[..1].
-let test4 = strs.[1..1].{caret}""")>]
-let ``DotOff.ArraySliceNotation`` (source: string) =
-    let info = Checker.getCompletionInfo source
-
-    assertHasItemWithNames [ "Length" ] info
+let test2 = strs.[1..].{caret1}
+let test3 = strs.[..1].{caret2}
+let test4 = strs.[1..1].{caret3}"""
+    |> SourceContext.extractOrderedMarkedSources
+    |> List.iter (fun source -> assertHasItemWithNames [ "Length" ] (Checker.getCompletionInfo source))
 
 [<Fact>]
 let ``DotOff.DictionaryIndexer`` () =

@@ -20,7 +20,7 @@ let private closure (files: (string * string) list) (active: string) : FSharpDia
 #if NETCOREAPP
             checker.GetProjectOptionsFromScript(activePath, SourceText.ofString source, assumeDotNetFramework = false, useSdkRefs = true) |> Async.RunSynchronouslyImmediate
 #else
-            checker.GetProjectOptionsFromScript(activePath, SourceText.ofString source) |> Async.RunImmediate
+            checker.GetProjectOptionsFromScript(activePath, SourceText.ofString source) |> Async.RunSynchronouslyImmediate
 #endif
         let results = checker.ParseAndCheckProject(options) |> Async.RunSynchronouslyImmediate
         results.Diagnostics
