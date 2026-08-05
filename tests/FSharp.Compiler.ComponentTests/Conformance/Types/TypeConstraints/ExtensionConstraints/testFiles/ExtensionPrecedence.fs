@@ -20,6 +20,21 @@ let inline combine (x: ^T) (y: ^T) = (^T : (static member Combine: ^T * ^T -> ^T
 let r1 = combine 3 4
 if r1 <> 12 then failwith $"Expected 12 (multiply from ExtB), got {r1}"
 
+// ---- Reversed open order flips the winner (deterministic, order-driven) ----
+// The section above opens ExtA then ExtB, so ExtB (multiply) wins. Here a nested scope opens
+// them in the opposite order, so ExtA (add) must win. This pins that the tie-break is decided
+// by lexical open order, not by an arbitrary/hash-dependent candidate enumeration, so the
+// winner is stable across compilations rather than merely happening to prefer ExtB.
+
+module Reversed =
+    open ExtB
+    open ExtA // ExtA opened last here, should win
+
+    let inline combine (x: ^T) (y: ^T) = (^T : (static member Combine: ^T * ^T -> ^T) (x, y))
+
+    let r = combine 3 4
+    if r <> 7 then failwith $"Expected 7 (add from ExtA), got {r}"
+
 // ---- Multiple extensions on same type with different signatures ----
 
 type System.String with
