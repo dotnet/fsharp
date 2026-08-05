@@ -28,7 +28,9 @@ type LoadClosureInput =
 
       ParseDiagnostics: PhasedDiagnostic list
 
-      MetaCommandDiagnostics: PhasedDiagnostic list }
+      MetaCommandDiagnostics: PhasedDiagnostic list
+
+      SourceText: ISourceText option }
 
 [<RequireQualifiedAccess>]
 type LoadClosure =

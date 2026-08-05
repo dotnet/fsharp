@@ -1826,6 +1826,7 @@ FSharp.Compiler.AbstractIL.IL+WellKnownILAttributes: UInt32 value__
 FSharp.Compiler.AbstractIL.IL+WellKnownILAttributes: WellKnownILAttributes AllowNullLiteralAttribute
 FSharp.Compiler.AbstractIL.IL+WellKnownILAttributes: WellKnownILAttributes AttributeUsageAttribute
 FSharp.Compiler.AbstractIL.IL+WellKnownILAttributes: WellKnownILAttributes AutoOpenAttribute
+FSharp.Compiler.AbstractIL.IL+WellKnownILAttributes: WellKnownILAttributes CallerArgumentExpressionAttribute
 FSharp.Compiler.AbstractIL.IL+WellKnownILAttributes: WellKnownILAttributes CallerFilePathAttribute
 FSharp.Compiler.AbstractIL.IL+WellKnownILAttributes: WellKnownILAttributes CallerLineNumberAttribute
 FSharp.Compiler.AbstractIL.IL+WellKnownILAttributes: WellKnownILAttributes CallerMemberNameAttribute

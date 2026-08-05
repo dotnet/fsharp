@@ -30,6 +30,7 @@ type LoadClosureInput =
         SyntaxTree: ParsedInput option
         ParseDiagnostics: PhasedDiagnostic list
         MetaCommandDiagnostics: PhasedDiagnostic list
+        SourceText: ISourceText option
     }
 
 [<RequireQualifiedAccess>]
@@ -91,7 +92,8 @@ module ScriptPreprocessClosure =
             range: range *
             parsedInput: ParsedInput option *
             parseDiagnostics: PhasedDiagnostic list *
-            metaDiagnostics: PhasedDiagnostic list
+            metaDiagnostics: PhasedDiagnostic list *
+            sourceText: ISourceText option
 
     type Observed() =
         let seen = Dictionary<_, bool>()
@@ -138,7 +140,9 @@ module ScriptPreprocessClosure =
 
         // The root compiland is last in the list of compilands.
         let isLastCompiland = (IsScript fileName, tcConfig.target.IsExe)
+
         ParseOneInputLexbuf(tcConfig, lexResourceManager, lexbuf, fileName, isLastCompiland, diagnosticsLogger)
+        |> fst
 
     /// Create a TcConfig for load closure starting from a single .fsx file
     let CreateScriptTextTcConfig
@@ -487,14 +491,14 @@ module ScriptPreprocessClosure =
                                 for subSource in ClosureSourceOfFilename(subFile, m, tcConfigResult.inputCodePage, false) do
                                     yield! processClosureSource subSource
                             else
-                                ClosureFile(subFile, m, None, [], [])
+                                ClosureFile(subFile, m, None, [], [], None)
 
-                        ClosureFile(fileName, m, Some parseResult, parseDiagnostics, diagnosticsLogger.Diagnostics)
+                        ClosureFile(fileName, m, Some parseResult, parseDiagnostics, diagnosticsLogger.Diagnostics, Some sourceText)
 
                     else
                         // Don't traverse into .fs leafs.
                         printfn "yielding non-script source %s" fileName
-                        ClosureFile(fileName, m, None, [], [])
+                        ClosureFile(fileName, m, None, [], [], None)
             ]
 
         let sources = closureSources |> List.collect processClosureSource
@@ -506,7 +510,7 @@ module ScriptPreprocessClosure =
 
     /// Mark the last file as isLastCompiland.
     let MarkLastCompiland (tcConfig: TcConfig, lastClosureFile) =
-        let (ClosureFile(fileName, m, lastParsedInput, parseDiagnostics, metaDiagnostics)) =
+        let (ClosureFile(fileName, m, lastParsedInput, parseDiagnostics, metaDiagnostics, sourceText)) =
             lastClosureFile
 
         match lastParsedInput with
@@ -521,7 +525,7 @@ module ScriptPreprocessClosure =
                 ParsedImplFileInput(name, isScript, qualNameOfFile, hashDirectives, implFileFlags, isLastCompiland, trivia, identifiers)
 
             let lastClosureFileR =
-                ClosureFile(fileName, m, Some(ParsedInput.ImplFile lastParsedImplFileR), parseDiagnostics, metaDiagnostics)
+                ClosureFile(fileName, m, Some(ParsedInput.ImplFile lastParsedImplFileR), parseDiagnostics, metaDiagnostics, sourceText)
 
             lastClosureFileR
         | _ -> lastClosureFile
@@ -539,12 +543,12 @@ module ScriptPreprocessClosure =
 
         // Get all source files.
         let sourceFiles =
-            [ for ClosureFile(fileName, m, _, _, _) in closureFiles -> (fileName, m) ]
+            [ for ClosureFile(fileName, m, _, _, _, _) in closureFiles -> (fileName, m) ]
 
         let sourceInputs =
             [
                 for closureFile in closureFiles ->
-                    let (ClosureFile(fileName, _, input, parseDiagnostics, metaDiagnostics)) =
+                    let (ClosureFile(fileName, _, input, parseDiagnostics, metaDiagnostics, sourceText)) =
                         closureFile
 
                     let closureInput: LoadClosureInput =
@@ -553,6 +557,7 @@ module ScriptPreprocessClosure =
                             SyntaxTree = input
                             ParseDiagnostics = parseDiagnostics
                             MetaCommandDiagnostics = metaDiagnostics
+                            SourceText = sourceText
                         }
 
                     closureInput
@@ -573,7 +578,7 @@ module ScriptPreprocessClosure =
         // Root errors and warnings - look at the last item in the closureFiles list
         let loadClosureRootDiagnostics, allRootDiagnostics =
             match List.rev closureFiles with
-            | ClosureFile(_, _, _, parseDiagnostics, metaDiagnostics) :: _ ->
+            | ClosureFile(_, _, _, parseDiagnostics, metaDiagnostics, _) :: _ ->
                 (earlierDiagnostics @ metaDiagnostics @ resolutionDiagnostics),
                 (parseDiagnostics @ earlierDiagnostics @ metaDiagnostics @ resolutionDiagnostics)
             | _ -> [], [] // When no file existed.

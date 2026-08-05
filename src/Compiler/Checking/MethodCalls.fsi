@@ -436,7 +436,6 @@ val AdjustCallerArgExpr:
 val AdjustCallerArgs:
     tcVal: (ValRef -> ValUseFlag -> TType list -> range -> Expr * TType) ->
     tcFieldInit: (range -> AbstractIL.IL.ILFieldInit -> Const) ->
-    eCallerMemberName: string option ->
     infoReader: InfoReader ->
     ad: AccessorDomain ->
     calledMeth: CalledMeth<Expr> ->
@@ -444,6 +443,10 @@ val AdjustCallerArgs:
     lambdaVars: 'a option ->
     mItem: range ->
     mMethExpr: range ->
+    eCallerMemberName: string option *
+    sourceText: ISourceText option *
+    canApplyCallerArgumentExpression: bool *
+    extensionMethodObjArg: (string * range) option ->
         (Expr -> Expr) *
         Expr list *
         'b option list *

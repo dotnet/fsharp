@@ -236,6 +236,7 @@ type CallerInfo =
     | CallerLineNumber
     | CallerMemberName
     | CallerFilePath
+    | CallerArgumentExpression of paramName: string
 
     override x.ToString() = sprintf "%+A" x
 
@@ -317,20 +318,36 @@ let CrackParamAttribsInfo g (ty: TType, argInfo: ArgReprInfo) =
     let isCallerLineNumberArg = ArgReprInfoHasWellKnownAttribute g WellKnownValAttributes.CallerLineNumberAttribute argInfo
     let isCallerFilePathArg = ArgReprInfoHasWellKnownAttribute g WellKnownValAttributes.CallerFilePathAttribute argInfo
     let isCallerMemberNameArg = ArgReprInfoHasWellKnownAttribute g WellKnownValAttributes.CallerMemberNameAttribute argInfo
+    let isCallerArgumentExpressionArg = ArgReprInfoHasWellKnownAttribute g WellKnownValAttributes.CallerArgumentExpressionAttribute argInfo
 
     let callerInfo =
-        match isCallerLineNumberArg, isCallerFilePathArg, isCallerMemberNameArg with
-        | false, false, false -> NoCallerInfo
-        | true, false, false -> CallerLineNumber
-        | false, true, false -> CallerFilePath
-        | false, false, true -> CallerMemberName
-        | false, true, true ->
+        match isCallerLineNumberArg, isCallerFilePathArg, isCallerMemberNameArg, isCallerArgumentExpressionArg with
+        | false, false, false, false -> NoCallerInfo
+        | true, false, false, false -> CallerLineNumber
+        | false, true, false, false -> CallerFilePath
+        | false, false, true, false -> CallerMemberName
+        | false, false, false, true -> 
+            match attribs with
+            | ValAttribString g WellKnownValAttributes.CallerArgumentExpressionAttribute x -> CallerArgumentExpression x
+            | _ -> 
+                // The attribute does not have a string value, ignore it.
+                NoCallerInfo
+
+        // The caller info precedence: CallerFilePath > CallerMemberName > CallerArgumentExpression
+        | false, true, false, true
+        | false, false, true, true ->
+            let info = if isCallerFilePathArg then CallerFilePath else CallerMemberName
+            warning(Error(FSComp.SR.tcCallerArgumentExpressionIsOverridden(string info), argInfo.Name.Value.idRange))
+            info
+        | false, true, true, _ -> 
             match attribs with
             | ValAttrib g WellKnownValAttributes.CallerMemberNameAttribute (Attrib(_, _, _, _, _, _, callerMemberNameAttributeRange)) ->
                 warning(Error(FSComp.SR.CallerMemberNameIsOverridden(argInfo.Name.Value.idText), callerMemberNameAttributeRange))
+                if isCallerArgumentExpressionArg then
+                    warning(Error(FSComp.SR.tcCallerArgumentExpressionIsOverridden(nameof CallerFilePath), argInfo.Name.Value.idRange))
                 CallerFilePath
             | _ -> failwith "Impossible"
-        | _, _, _ ->
+        | _, _, _, _ ->
             // if multiple caller info attributes are specified, pick the "wrong" one here
             // so that we get an error later
             match tryDestOptionTy g ty with
@@ -657,6 +674,13 @@ type ILMethInfo =
         x.GetCompiledReturnType(amap, m, minst)
         |> GetFSharpViewOfReturnType amap.g
 
+    /// Get the name of the 'self'/'this'/'object' argument of an IL extension method.
+    member x.GetExtensionObjArgName() =
+        if x.IsILExtensionMethod then
+            let p = x.RawMetadata.Parameters.Head
+            p.Name
+        else
+            None
 
 /// Describes an F# use of a method
 [<System.Diagnostics.DebuggerDisplay("{DebuggerDisplayName}")>]
@@ -1227,6 +1251,20 @@ type MethInfo =
                     yield ImportProvidedType amap m (p.PApply((fun p -> p.ParameterType), m)) ] ]
 #endif
 
+    /// Get the name of the 'self'/'this'/'object' argument of an extension method.
+    member x.GetExtensionObjArgName() =
+        match x with
+        | ILMeth(_, ilminfo, _) -> ilminfo.GetExtensionObjArgName()
+        | FSMeth(_, _, vref, _) ->
+            if x.IsInstance then
+                if x.IsExtensionMember then
+                    vref.ValReprInfo.Value.ArgInfos.Head.Head.Name |> Option.map (fun x -> x.idText)
+                else
+                    None
+            else None
+        | MethInfoWithModifiedReturnType(mi,_) -> mi.GetExtensionObjArgName()
+        | _ -> None
+
     /// Get the (zero or one) 'self'/'this'/'object' arguments associated with a method.
     /// An instance method returns one object argument.
     member x.GetObjArgTypes (amap, m, minst) =
@@ -1278,14 +1316,17 @@ type MethInfo =
                  let isCallerLineNumberArg = p.CustomAttrsStored.HasWellKnownAttribute(g, WellKnownILAttributes.CallerLineNumberAttribute)
                  let isCallerFilePathArg = p.CustomAttrsStored.HasWellKnownAttribute(g, WellKnownILAttributes.CallerFilePathAttribute)
                  let isCallerMemberNameArg = p.CustomAttrsStored.HasWellKnownAttribute(g, WellKnownILAttributes.CallerMemberNameAttribute)
+                 let isCallerArgumentExpressionArg = tryFindILAttribByFlag WellKnownILAttributes.CallerArgumentExpressionAttribute p.CustomAttrsStored.CustomAttrs
 
                  let callerInfo =
-                    match isCallerLineNumberArg, isCallerFilePathArg, isCallerMemberNameArg with
-                    | false, false, false -> NoCallerInfo
-                    | true, false, false -> CallerLineNumber
-                    | false, true, false -> CallerFilePath
-                    | false, false, true -> CallerMemberName
-                    | _, _, _ ->
+                    match isCallerLineNumberArg, isCallerFilePathArg, isCallerMemberNameArg, isCallerArgumentExpressionArg with
+                    | false, false, false, None -> NoCallerInfo
+                    | true, false, false, None -> CallerLineNumber
+                    | false, true, false, None -> CallerFilePath
+                    | false, false, true, None -> CallerMemberName            
+                    | false, false, false, Some ([ILAttribElem.String (Some name) ], _) -> CallerArgumentExpression(name)
+                    | false, false, false, _ -> NoCallerInfo
+                    | _, _, _, _ ->
                         // if multiple caller info attributes are specified, pick the "wrong" one here
                         // so that we get an error later
                         if p.Type.TypeRef.FullName = "System.Int32" then CallerFilePath

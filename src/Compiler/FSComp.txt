@@ -1844,3 +1844,8 @@ featureImprovedImpliedArgumentNamesPartTwo,"Improved implied argument names with
 3906,tcRecordExplicitFieldShadowsSpreadField,"Explicit field '%s' shadows a field with the same name from an earlier spread."
 3907,tcRecordExprSpreadFieldShadowsSpreadField,"Spread field '%s' shadows a field with the same name from an earlier spread."
 featureRecordSpreads,"record type and expression spreads"
+featureSupportCallerArgumentExpression,"Support `CallerArgumentExpression`"
+3908,tcCallerArgumentExpressionSelfReferential,"The [<CallerArgumentExpression>] on this parameter will have no effect because it's self-referential."
+3909,tcCallerArgumentExpressionHasInvalidParameterName,"The [<CallerArgumentExpression>] on this parameter will have no effect because it's applied with an invalid parameter name."
+3910,tcCallerArgumentExpressionIsOverridden,"The [<CallerArgumentExpression>] on this parameter will have no effect because it's overridden by the [<%s>]."
+3911,tcCallerArgumentExpressionWillNotBeApplied,"This usage blocks passing string representations of arguments to parameters annotated with [<CallerArgumentExpression>]. The default values of these parameters will be passed. Only the usages like `Method(arguments)` can capture the string representation of arguments. You can disable this warning by using '#nowarn \"3911\"' or '--nowarn:3911'."

@@ -6144,7 +6144,8 @@ let CheckOneImplFile
         env,
         rootSigOpt: ModuleOrNamespaceType option,
         synImplFile,
-        diagnosticOptions) =
+        diagnosticOptions,
+        sourceText: ISourceText option) =
 
     let (ParsedImplFileInput (fileName, isScript, qualNameOfFile, _, implFileFrags, isLastCompiland, _, _)) = synImplFile
     let infoReader = InfoReader(g, amap)
@@ -6167,7 +6168,8 @@ let CheckOneImplFile
                 tcSimplePats=TcSimplePats,
                 tcSequenceExpressionEntry=TcSequenceExpressionEntry,
                 tcArrayOrListSequenceExpression=TcArrayOrListComputedExpression,
-                tcComputationExpression=TcComputationExpression)    
+                tcComputationExpression=TcComputationExpression,
+                sourceText=sourceText)    
 
         let envinner, moduleTyAcc = MakeInitialEnv env 
 
@@ -6312,7 +6314,8 @@ let CheckOneSigFile (g, amap, thisCcu, checkForErrors, conditionalDefines, tcSin
             tcSimplePats=TcSimplePats,
             tcSequenceExpressionEntry=TcSequenceExpressionEntry,
             tcArrayOrListSequenceExpression=TcArrayOrListComputedExpression,
-            tcComputationExpression=TcComputationExpression)
+            tcComputationExpression=TcComputationExpression,
+            sourceText=None)
 
     let envinner, moduleTyAcc = MakeInitialEnv tcEnv 
     let m = sigFile.QualifiedName.Range
