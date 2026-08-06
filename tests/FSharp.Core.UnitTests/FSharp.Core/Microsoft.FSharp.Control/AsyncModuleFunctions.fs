@@ -55,14 +55,14 @@ let ``Async.map propagates Cancellation (sync)`` () =
 [<Fact>]
 let ``Async.map propagates Cancellation (async)`` () =
     let mutable mapperWasCalled = false
-    let tcs = TaskCompletionSource<int>()
-    let t =
+    let cts = new CancellationTokenSource()
+    let a =
         async { do! Async.Sleep 5000 }
         |> Async.map (fun () -> async { mapperWasCalled <- true })
-        |> Async.StartAsTask
-    let ct = cancelWithToken tcs
-    let e = Assert.ThrowsAsync<OperationCanceledException>(fun () -> t).Result
-    Assert.Equal(ct, e.CancellationToken)
+    let t = Async.StartAsTask(a, cancellationToken = cts.Token)
+    cts.Cancel()
+    let e = Assert.ThrowsAsync<TaskCanceledException>(fun () -> t).Result
+    Assert.NotEqual(cts.Token, e.CancellationToken)
     Assert.False mapperWasCalled
 
 
@@ -95,15 +95,15 @@ let ``Async.bind propagates Cancellation (sync)`` () =
 
 [<Fact>]
 let ``Async.bind propagates Cancellation (async)`` () =
-    let tcs = TaskCompletionSource<int>()
+    let cts = new CancellationTokenSource()
     let mutable binderWasCalled = false
-    let t =
+    let a =
         async { do! Async.Sleep 5000 }
         |> Async.bind (fun () -> async { binderWasCalled <- true })
-        |> Async.StartAsTask
-    let ct = cancelWithToken tcs
-    let e = Assert.ThrowsAsync<OperationCanceledException>(fun () -> t).Result
-    Assert.Equal(ct, e.CancellationToken)
+    let t = Async.StartAsTask(a, cancellationToken = cts.Token)
+    cts.Cancel()
+    let e = Assert.ThrowsAsync<TaskCanceledException>(fun () -> t).Result
+    Assert.NotEqual(cts.Token, e.CancellationToken)
     Assert.False binderWasCalled
 
 
@@ -130,7 +130,7 @@ let ``Async.ignore propagates incoming exception (async)`` () =
     let tcs = TaskCompletionSource<int>()
     let t = async { return! tcs.Task |> Async.AwaitTask } |> Async.ignore<int> |> Async.StartAsTask
     tcs.SetException(Exception "boom")
-    let e = Assert.ThrowsAsync<exn>(fun () -> t).Result
+    let e = Assert.ThrowsAsync<AggregateException>(fun () -> t).Result.InnerException
     Assert.Equal("boom", e.Message)
 
 [<Fact>]
@@ -143,16 +143,16 @@ let ``Async.ignore propagates Cancellation (sync)`` () =
 [<Fact>]
 let ``Async.ignore propagates Cancellation (async)`` () =
     let mutable cancellationFailed = false
-    let tcs = TaskCompletionSource<int>()
-    let t =
-        async { let! r = Async.AwaitTask tcs.Task
+    let cts = new CancellationTokenSource()
+    let a =
+        async { do! Async.Sleep 5000
                 cancellationFailed <- true
-                return r }
+                return 42 }
         |> Async.ignore<int>
-        |> Async.StartAsTask
-    let ct = cancelWithToken tcs
-    let e = Assert.ThrowsAsync<OperationCanceledException>(fun () -> t).Result
-    Assert.Equal(ct, e.CancellationToken)
+    let t = Async.StartAsTask(a, cancellationToken = cts.Token)
+    cts.Cancel()
+    let e = Assert.ThrowsAsync<TaskCanceledException>(fun () -> t).Result
+    Assert.NotEqual(cts.Token, e.CancellationToken)
     Assert.False cancellationFailed
 
 
@@ -187,20 +187,29 @@ let ``Async.catchWith recovers from exception (async)`` () = async {
 
 [<Fact>]
 let ``Async.catchWith propagates Cancellation (sync)`` () =
+    let mutable cancellationFailed = false
     let ct = CancellationToken true
     let a = async { do! Async.Sleep 5000
+                    cancellationFailed <- true
                     return 42 }
             |> Async.catchWith (fun _ -> -1)
-    let e = Assert.Throws<TaskCanceledException>(fun () -> a |> asyncWaitWithCt ct |> ignore)
+    let e = Assert.Throws<OperationCanceledException>(fun () -> a |> asyncWaitWithCt ct |> ignore)
     Assert.Equal(ct, e.CancellationToken)
+    Assert.False cancellationFailed
 
 [<Fact>]
-let ``Async.catchWith propagates Cancellation (async)`` () = task {
-    let tcs = TaskCompletionSource<int>()
-    let t = async { return! tcs.Task |> Async.AwaitTask } |> Async.catchWith (fun _ -> -1) |> Async.StartAsTask
-    let ct = cancelWithToken tcs
-    let! e = Assert.ThrowsAsync<TaskCanceledException>(fun () -> t)
-    Assert.Equal(ct, e.CancellationToken) }
+let ``Async.catchWith propagates Cancellation (async)`` () =
+    let mutable cancellationFailed = false
+    let cts = new CancellationTokenSource()
+    let a =
+        async { do! Async.Sleep 5000
+                cancellationFailed <- true
+                return 42 }
+        |> Async.catchWith (fun _ -> -1)
+    let t = Async.StartAsTask(a, cancellationToken = cts.Token)
+    cts.Cancel()
+    let e = Assert.ThrowsAsync<TaskCanceledException>(fun () -> t).Result
+    Assert.NotEqual(cts.Token, e.CancellationToken)
 
 
 [<Fact>]
@@ -233,19 +242,18 @@ let ``Async.catch returns Error on exception (async)`` () : unit =
 [<Fact>]
 let ``Async.catch propagates Cancellation (sync)`` () =
     let ct = CancellationToken true
-    let a = async { do! Async.Sleep 5000
-                    return 42 }
-            |> Async.catch
-    let e = Assert.Throws<TaskCanceledException>(fun () -> a |> asyncWaitWithCt ct |> ignore)
+    let a = async { do! Async.Sleep 5000 } |> Async.catch
+    let e = Assert.Throws<OperationCanceledException>(fun () -> a |> asyncWaitWithCt ct |> ignore)
     Assert.Equal(ct, e.CancellationToken)
 
 [<Fact>]
 let ``Async.catch propagates Cancellation (async)`` () =
-    let tcs = TaskCompletionSource<int>()
-    let t = async { return! tcs.Task |> Async.AwaitTask } |> Async.catch |> Async.StartAsTask
-    let ct = cancelWithToken tcs
+    let cts = new CancellationTokenSource()
+    let a = async { do! Async.Sleep 5000 } |> Async.catch
+    let t = Async.StartAsTask(a, cancellationToken = cts.Token)
+    cts.Cancel()
     let e = Assert.ThrowsAsync<TaskCanceledException>(fun () -> t).Result
-    Assert.Equal(ct, e.CancellationToken)
+    Assert.NotEqual(cts.Token, e.CancellationToken)
 
 
 [<Fact>]
