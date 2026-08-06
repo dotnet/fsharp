@@ -399,7 +399,6 @@ let parseFormatStringInternal
             let ch = fmt[i]
             match ch with
             | 'd' | 'i' | 'u' | 'B' | 'o' | 'x' | 'X' ->
-                if ch = 'B' then checkLanguageFeatureAndRecover g.langVersion Features.LanguageFeature.PrintfBinaryFormat m
                 if info.precision then failwith (FSComp.SR.forFormatDoesntSupportPrecision(ch.ToString()))
                 collectSpecifierLocation fragLine fragCol 1
                 let i = skipPossibleInterpolationHole (i+1)
