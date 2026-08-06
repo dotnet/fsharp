@@ -32,7 +32,8 @@ let ``can generate options for different frameworks regardless of execution envi
     let tempFile = Path.Combine(path, file)
     let _, errors =
         checker.GetProjectOptionsFromScript(tempFile, SourceText.ofString scriptSource, assumeDotNetFramework = assumeDotNetFramework, useSdkRefs = useSdkRefs, otherFlags = [| flag |])
-        |> Async.RunImmediate
+        |> Async.RunSynchronouslyImmediate
+
     match errors with
     | [] -> ()
     | errors -> failwithf "Error while parsing script with otherFlags:%A:\n%A" [| flag |] errors
@@ -53,7 +54,8 @@ let pi = Math.PI
 """
     let options, errors =
         checker.GetProjectOptionsFromScript(file, SourceText.ofString scriptSource, assumeDotNetFramework = false, useSdkRefs = true, otherFlags = [|flag|])
-        |> Async.RunImmediate
+        |> Async.RunSynchronouslyImmediate
+
     match errors with
     | [] -> ()
     | errors -> failwithf "Error while parsing script with assumeDotNetFramework:%b, useSdkRefs:%b, and otherFlags:%A:\n%A" false true [|flag|] errors
@@ -77,7 +79,7 @@ let ``Fsx.ScriptClosure.SurfaceOrderOfHashes`` () =
     let tempFile = Path.Combine(Path.GetTempPath(), getTemporaryFileName () + ".fsx")
     let options, _errors =
         checker.GetProjectOptionsFromScript(tempFile, SourceText.ofString scriptSource)
-        |> Async.RunImmediate
+        |> Async.RunSynchronouslyImmediate
     let containsPartial (needle: string) = options.OtherOptions |> Array.exists (fun o -> o.Contains needle)
     Assert.True(containsPartial "--noframework", "OtherOptions should contain --noframework")
     Assert.True(containsPartial "System.Runtime.Remoting.dll", "OtherOptions should resolve System.Runtime.Remoting.dll")
@@ -106,7 +108,7 @@ let ``Fsx.InvalidMetaCommandFilenames`` () =
     let tempFile = Path.Combine(Path.GetTempPath(), getTemporaryFileName () + ".fsx")
     let options, _errors =
         checker.GetProjectOptionsFromScript(tempFile, SourceText.ofString scriptSource)
-        |> Async.RunImmediate
+        |> Async.RunSynchronouslyImmediate
     Assert.Equal(1, options.SourceFiles.Length)
     Assert.Equal(tempFile, options.SourceFiles.[0])
     Assert.Contains("--noframework", options.OtherOptions)
