@@ -606,7 +606,11 @@ try {
     }
 
     if ($testBenchmarks) {
+        # Benchmarks do not produce any publishing artifacts, and arcade publish.proj is failing when it encounters 0 items to publish.
+        $originalPublishValue = $publish
+        $publish = $False
         BuildSolution "FSharp.Benchmarks.sln" $False
+        $publish = $originalPublishValue
     }
 
     # When building in product build mode, only build the compiler solution.
