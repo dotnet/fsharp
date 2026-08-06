@@ -214,7 +214,10 @@ let StaticLinkILModules
         let topTypeDefs, normalTypeDefs =
             moduls
             |> List.map (fun m ->
+                // A module read from metadata groups its type defs by namespace, which is not the TypeDef
+                // row order when a namespace is split across the table. Emit them as read instead.
                 m.TypeDefs.AsList()
+                |> List.sortBy (fun td -> td.MetadataIndex)
                 |> List.partition (fun td -> isTypeNameForGlobalFunctions td.Name))
             |> List.unzip
 
