@@ -56,11 +56,11 @@ let result = Example.Compare(5, "hi", Ok 7)
         [
             case
                 "fully generic vs wrapped generic"
-                "module Test\ntype Example =\n    static member Process(value: 't) = \"fully generic\"\n    static member Process(value: Option<'t>) = \"wrapped\"\nlet result = Example.Process(Some 42)"
+                "module Test\ntype Example =\n    static member Process(value: 't) = \"fully generic\"\n    static member Process(value: Option<'t>) = \"wrapped\"\nlet result = Example.Process(Some 42)\nif result <> \"wrapped\" then failwithf \"Expected 'wrapped' but got '%s'\" result"
 
             case
                 "array generic vs bare generic"
-                "module Test\ntype Example =\n    static member Handle(value: 't) = \"bare\"\n    static member Handle(value: 't array) = \"array\"\nlet result = Example.Handle([|1; 2; 3|])"
+                "module Test\ntype Example =\n    static member Handle(value: 't) = \"bare\"\n    static member Handle(value: 't array) = \"array\"\nlet result = Example.Handle([|1; 2; 3|])\nif result <> \"array\" then failwithf \"Expected 'array' but got '%s'\" result"
         ]
 
     let moreConcreteTestCases: obj[] seq =
@@ -187,6 +187,12 @@ let createFromTask () =
     let task = Task.FromResult(42)
     let result = ValueTaskFactory.Create(task)
     result
+
+// Discriminator: the concrete Task overload yields FromTask; picking the generic 'T overload
+// would yield FromResult (with 'T = Task<int>) and fail here.
+match createFromTask () with
+| FromTask _ -> ()
+| FromResult _ -> failwith "picked the generic 'T overload instead of the concrete Task<'T> one"
         """
 
     // Computation-expression Source overloads (FsToolkit AsyncResult pattern).
@@ -221,6 +227,14 @@ let asyncResult = AsyncResultBuilder()
 let example () =
     let source : Async<Result<int, string>> = async { return Ok 42 }
     asyncResult.Source(source)
+
+// Discriminator: the concrete Async<Result<_,_>> Source overload makes example() an
+// Async<Result<int,string>>. The generic Async<'t> overload would make it
+// Async<Result<Result<int,string>,exn>>, so matching Ok 42 (an int) would fail to type-check -
+// proving the concrete overload was selected.
+match Async.RunSynchronously(example ()) with
+| Ok 42 -> ()
+| _ -> failwith "wrong Source overload selected"
         """
 
     // Builder.Source with a Result overload vs a fully generic one.
@@ -235,6 +249,7 @@ type Builder() =
 let b = Builder()
 
 let result = b.Source(Ok 42 : Result<int, string>)
+if result <> "result" then failwithf "Expected 'result' but got '%s' - wrong Source overload selected" result
         """
 
     // Same-module extension Source overloads resolved by concreteness.
@@ -264,6 +279,14 @@ let asyncResult = AsyncResultBuilder()
 let example () =
     let source : Async<Result<int, string>> = async { return Ok 42 }
     asyncResult.Source(source)
+
+// Discriminator: the concrete Async<Result<_,_>> Source overload makes example() an
+// Async<Result<int,string>>. The generic Async<'t> overload would make it
+// Async<Result<Result<int,string>,exn>>, so matching Ok 42 (an int) would fail to type-check -
+// proving the concrete overload was selected.
+match Async.RunSynchronously(example ()) with
+| Ok 42 -> ()
+| _ -> failwith "wrong Source overload selected"
         """
 
     // Cross-feature: a high-priority (ORPA) less-concrete overload beats a low-priority more-concrete
@@ -1482,7 +1505,8 @@ module WithTieBreakerFeature =
     let ``Generic-vs-wrapped overloads resolve to the concrete one`` (_description: string) (source: string) =
         FSharp source
         |> withLangVersionPreview
-        |> typecheck
+        |> asExe
+        |> compileAndRun
         |> shouldSucceed
         |> ignore
 
@@ -1512,19 +1536,19 @@ module WithTieBreakerFeature =
 
     [<Fact>]
     let ``Task<T> vs T factory resolves to the concrete Task overload`` () =
-        FSharp example7Source |> withLangVersionPreview |> typecheck |> shouldSucceed |> ignore
+        FSharp example7Source |> withLangVersionPreview |> asExe |> compileAndRun |> shouldSucceed |> ignore
 
     [<Fact>]
     let ``CE Source overloads resolve (FsToolkit AsyncResult pattern)`` () =
-        FSharp example8Source |> withLangVersionPreview |> typecheck |> shouldSucceed |> ignore
+        FSharp example8Source |> withLangVersionPreview |> asExe |> compileAndRun |> shouldSucceed |> ignore
 
     [<Fact>]
     let ``Builder Source with Result vs generic resolves`` () =
-        FSharp realWorldSource |> withLangVersionPreview |> typecheck |> shouldSucceed |> ignore
+        FSharp realWorldSource |> withLangVersionPreview |> asExe |> compileAndRun |> shouldSucceed |> ignore
 
     [<Fact>]
     let ``Same-module extension Source overloads resolve by concreteness`` () =
-        FSharp fsToolkitSource |> withLangVersionPreview |> typecheck |> shouldSucceed |> ignore
+        FSharp fsToolkitSource |> withLangVersionPreview |> asExe |> compileAndRun |> shouldSucceed |> ignore
 
     [<FactForNETCOREAPP>]
     let ``Overload resolution priority still wins over concreteness`` () =
@@ -1576,6 +1600,9 @@ module WithTieBreakerFeature =
         |> typecheck
         |> shouldFail
         |> withWarningCode 3576
+        // "Multiple" must name BOTH bypassed generic overloads, not just report a single warning.
+        |> withDiagnosticMessageMatches "Process: value: 't ->"
+        |> withDiagnosticMessageMatches "Process: value: Option<'t> ->"
         |> ignore
 
 /// Exact mirror of WithTieBreakerFeature pinned to langversion 10.0 (feature off): every source
