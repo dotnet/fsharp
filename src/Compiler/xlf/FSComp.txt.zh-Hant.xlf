@@ -457,11 +457,6 @@
         <target state="new">Implicit dispatch slot coverage for default interface member implementations</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureImplicitYield">
-        <source>implicit yield</source>
-        <target state="translated">隱含 yield</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureImprovedImpliedArgumentNames">
         <source>Improved implied argument names</source>
         <target state="translated">改良的隱含引數名稱</target>
