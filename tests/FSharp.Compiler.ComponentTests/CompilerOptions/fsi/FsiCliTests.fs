@@ -85,32 +85,70 @@ module FsiCliTests =
         finally
             try System.IO.File.Delete(scriptPath) with _ -> ()
 
+    // On failure, surface the FSI subprocess output so CI logs show what actually happened (e.g. a
+    // NuGet restore error) instead of a bare "Expected 0, Actual 1". xunit's Assert.Equal/Contains do
+    // not include the process stdout/stderr, so these wrappers append it to the failure message.
+    let private fsiDiagnostics (result: ProcessResult) =
+        $"FSI exit code: %d{result.ExitCode}\n--- FSI STDOUT ---\n%s{result.StdOut}\n--- FSI STDERR ---\n%s{result.StdErr}\n--- end FSI output ---"
+
+    let private assertFsiExitCode (expected: int) (result: ProcessResult) =
+        if result.ExitCode <> expected then
+            Assert.Fail($"Expected FSI exit code %d{expected} but got %d{result.ExitCode}.\n%s{fsiDiagnostics result}")
+
+    let private assertStdOutContains (expected: string) (result: ProcessResult) =
+        if not (result.StdOut.Contains(expected)) then
+            Assert.Fail($"Expected FSI stdout to contain '%s{expected}'.\n%s{fsiDiagnostics result}")
+
+    let private assertStdOutDoesNotContain (unexpected: string) (result: ProcessResult) =
+        if result.StdOut.Contains(unexpected) then
+            Assert.Fail($"Expected FSI stdout NOT to contain '%s{unexpected}'.\n%s{fsiDiagnostics result}")
+
+    // The FSI #r "nuget:" restore below must request a package (and closure) already in the offline
+    // restore cache on the internal signed build (which cannot restore online), and it must be a genuine
+    // third-party assembly (not in the shared framework) so that on .NET Core it resolves to a restored
+    // package rather than the framework (which would emit NU1510 and skip real nuget resolution). FsCheck
+    // fits: a real third-party library whose only dependency (FSharp.Core) is always cached and filtered
+    // from fsx resolution, centrally pinned (eng/Packages.props) and restored by FSharp.Core.UnitTests, so
+    // it restores offline-clean on both net472 and .NET Core. Read the exact pinned version baked into this
+    // test assembly via AssemblyMetadata (see FSharp.Compiler.ComponentTests.fsproj) so the request never
+    // drifts from the pin; keep the package id below in sync with that project.
+    [<Literal>]
+    let private restoreTestPackageId = "FsCheck"
+
+    let private restoreTestPackageVersion =
+        System.Reflection.Assembly.GetExecutingAssembly().GetCustomAttributes(typeof<System.Reflection.AssemblyMetadataAttribute>, false)
+        |> Array.tryPick (fun a ->
+            let m = a :?> System.Reflection.AssemblyMetadataAttribute
+            if m.Key = "FsiRestoreTestPackageVersion" && not (System.String.IsNullOrWhiteSpace m.Value) then Some m.Value else None)
+        |> Option.defaultWith (fun () ->
+            failwith "AssemblyMetadata 'FsiRestoreTestPackageVersion' is missing. It should be emitted by FSharp.Compiler.ComponentTests.fsproj from the central FsCheck PackageVersion.")
+
     [<Fact>]
     let ``FSI quiet mode suppresses NuGet restore output from stdout`` () =
-        let script = """
-#r "nuget: Newtonsoft.Json, 13.0.3"
+        let script = $"""
+#r "nuget: {restoreTestPackageId}, {restoreTestPackageVersion}"
 printfn "RESULT_MARKER_18086"
 """
         let result = runFsiScript ["--quiet"] script
-        Assert.Equal(0, result.ExitCode)
-        Assert.Contains("RESULT_MARKER_18086", result.StdOut)
-        Assert.DoesNotContain("Determining projects to restore", result.StdOut)
-        Assert.DoesNotContain("Restored ", result.StdOut)
-        Assert.DoesNotContain("NU1", result.StdOut)
+        assertFsiExitCode 0 result
+        assertStdOutContains "RESULT_MARKER_18086" result
+        assertStdOutDoesNotContain "Determining projects to restore" result
+        assertStdOutDoesNotContain "Restored " result
+        assertStdOutDoesNotContain "NU1" result
 
     [<Fact>]
     let ``FSI default (non-quiet) mode still evaluates script and prints user output`` () =
-        let script = """
-#r "nuget: Newtonsoft.Json, 13.0.3"
+        let script = $"""
+#r "nuget: {restoreTestPackageId}, {restoreTestPackageVersion}"
 printfn "RESULT_MARKER_18086_DEFAULT"
 """
         let result = runFsiScript [] script
-        Assert.Equal(0, result.ExitCode)
-        Assert.Contains("RESULT_MARKER_18086_DEFAULT", result.StdOut)
+        assertFsiExitCode 0 result
+        assertStdOutContains "RESULT_MARKER_18086_DEFAULT" result
 
     [<Fact>]
     let ``FSI quiet mode still prints user printfn output to stdout`` () =
         let script = """printfn "hello from quiet script" """
         let result = runFsiScript ["--quiet"] script
-        Assert.Equal(0, result.ExitCode)
-        Assert.Contains("hello from quiet script", result.StdOut)
+        assertFsiExitCode 0 result
+        assertStdOutContains "hello from quiet script" result

@@ -2379,6 +2379,14 @@ $ code --diff {outFile} {expectedFile}
         | Some h -> h
         | None -> failwith "Implied signature hash returned 'None' which should not happen"
 
+    let withXmlDoc (cUnit: CompilationUnit) : CompilationUnit =
+        match cUnit with
+        | FS fs ->
+            let outputDir = fs.OutputDirectory |> Option.defaultWith createTemporaryDirectory
+            let xmlPath = Path.Combine(outputDir.FullName, (defaultArg fs.Name "output") + ".xml")
+            cUnit |> withOutputDirectory (Some outputDir) |> withOptions [ $"--doc:{xmlPath}" ]
+        | _ -> failwith "withXmlDoc is only supported for F#"
+
     /// Result type for CLI subprocess execution (runFsiProcess / runFscProcess).
     type ProcessResult = { ExitCode: int; StdOut: string; StdErr: string }
 

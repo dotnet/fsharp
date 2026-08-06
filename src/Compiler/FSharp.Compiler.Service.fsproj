@@ -250,7 +250,9 @@
     <!-- ECMA-335 Edit-and-Continue metadata delta writer. See PR #TBD.
          Placed after ilwrite.fs/.fsi (not immediately after ilwritepdb) because
          IlxDeltaStreams.fs and DeltaMetadataTables.fs reuse ilwrite.fs's
-         markerForUnicodeBytes helper for #US heap encoding. -->
+         markerForUnicodeBytes helper for #US heap encoding.
+         ILDeltaHandles.fs and ILMetadataHeaps.fs moved earlier (before ilread) in this
+         branch because baseline reading depends on them. -->
     <Compile Include="AbstractIL\IlxDeltaStreams.fs" />
     <Compile Include="AbstractIL\DeltaMetadataEncoding.fs" />
     <Compile Include="AbstractIL\DeltaMetadataTypes.fs" />
@@ -293,6 +295,8 @@
     </None>
     <Compile Include="SyntaxTree\UnicodeLexing.fsi" />
     <Compile Include="SyntaxTree\UnicodeLexing.fs" />
+    <Compile Include="SyntaxTree\XmlDocIncludeExpander.fsi" />
+    <Compile Include="SyntaxTree\XmlDocIncludeExpander.fs" />
     <Compile Include="SyntaxTree\XmlDoc.fsi" />
     <Compile Include="SyntaxTree\XmlDoc.fs" />
     <Compile Include="SyntaxTree\SyntaxTrivia.fsi" />
@@ -427,6 +431,7 @@
     <Compile Include="Checking\CheckBasics.fs" />
     <Compile Include="Checking\CheckRecordSyntaxHelpers.fsi" />
     <Compile Include="Checking\CheckRecordSyntaxHelpers.fs" />
+    <Compile Include="Checking\Spreads.fs" />
     <Compile Include="Checking\Expressions\CheckExpressionsOps.fs" />
     <Compile Include="Checking\Expressions\CheckExpressions.fsi" />
     <Compile Include="Checking\Expressions\CheckExpressions.fs" />
@@ -443,6 +448,7 @@
     <Compile Include="Checking\CheckDeclarations.fs" />
     <Compile Include="Checking\SignatureHash.fsi" />
     <Compile Include="Checking\SignatureHash.fs" />
+    <Compile Include="Optimize\DelegateForwarding.fs" />
     <Compile Include="Optimize\Optimizer.fsi" />
     <Compile Include="Optimize\Optimizer.fs" />
     <Compile Include="Optimize\DetupleArgs.fsi" />
@@ -540,6 +546,10 @@
     <Compile Include="Driver\CompilerOptions.fs" />
     <Compile Include="Driver\OptimizeInputs.fsi" />
     <Compile Include="Driver\OptimizeInputs.fs" />
+    <Compile Include="Symbols\XmlDocSigParser.fsi" />
+    <Compile Include="Symbols\XmlDocSigParser.fs" />
+    <Compile Include="Symbols\XmlDocInheritance.fsi" />
+    <Compile Include="Symbols\XmlDocInheritance.fs" />
     <Compile Include="Driver\XmlDocFileWriter.fsi" />
     <Compile Include="Driver\XmlDocFileWriter.fs" />
     <Compile Include="Driver\BinaryResourceFormats.fsi" />
@@ -669,17 +679,17 @@
   </ItemGroup>
 
   <ItemGroup Condition="'$(FSHARPCORE_USE_PACKAGE)' == 'true'">
-    <PackageReference Include="FSharp.Core" Version="$(FSharpCoreShippedPackageVersionValue)" />
+    <PackageReference Include="FSharp.Core" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(TargetFrameworkIdentifier)' != '.NETCoreApp'">
-    <PackageReference Include="System.Collections.Immutable" Version="$(SystemCollectionsImmutableVersion)" />
-    <PackageReference Include="System.Reflection.Emit" Version="$(SystemReflectionEmitVersion)" />
-    <PackageReference Include="System.Reflection.Metadata" Version="$(SystemReflectionMetadataVersion)" />
-    <PackageReference Include="System.Buffers" Version="$(SystemBuffersVersion)" />
-    <PackageReference Include="System.Diagnostics.DiagnosticSource" Version="$(SystemDiagnosticsDiagnosticSourceVersion)" />
-    <PackageReference Include="System.Memory" Version="$(SystemMemoryVersion)" />
-    <PackageReference Include="System.Runtime.CompilerServices.Unsafe" Version="$(SystemRuntimeCompilerServicesUnsafeVersion)" />
+    <PackageReference Include="System.Collections.Immutable" />
+    <PackageReference Include="System.Reflection.Emit" />
+    <PackageReference Include="System.Reflection.Metadata" />
+    <PackageReference Include="System.Buffers" />
+    <PackageReference Include="System.Diagnostics.DiagnosticSource" />
+    <PackageReference Include="System.Memory" />
+    <PackageReference Include="System.Runtime.CompilerServices.Unsafe" />
   </ItemGroup>
 
   <ItemGroup>
