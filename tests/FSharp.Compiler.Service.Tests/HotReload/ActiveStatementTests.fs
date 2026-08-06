@@ -37,7 +37,7 @@ module ActiveStatementTests =
     /// content-versioned, so each edit needs a fresh one).
     let private snapshotOf (projectOptions: FSharpProjectOptions) =
         FSharpProjectSnapshot.FromOptions(projectOptions, DocumentSource.FileSystem)
-        |> Async.RunImmediate
+        |> Async.RunSynchronouslyImmediate
 
     let private prepareProjectOptions
         (checker: FSharpChecker)
@@ -53,7 +53,7 @@ module ActiveStatementTests =
                 useSdkRefs = true,
                 useFsiAuxLib = false
             )
-            |> Async.RunImmediate
+            |> Async.RunSynchronouslyImmediate
 
         { projectOptions with
             SourceFiles = [| fsPath |]
@@ -85,7 +85,7 @@ module ActiveStatementTests =
         let argv =
             Array.concat [ [| "fsc.exe" |]; options; projectOptions.SourceFiles ]
 
-        let diagnostics, exOpt = checker.Compile(argv) |> Async.RunImmediate
+        let diagnostics, exOpt = checker.Compile(argv) |> Async.RunSynchronouslyImmediate
 
         let errors =
             diagnostics
@@ -226,15 +226,15 @@ let target () = 41
 
             use session = checker.CreateHotReloadSession()
 
-            match session.AddProject(snapshotOf projectOptions) |> Async.RunImmediate with
+            match session.AddProject(snapshotOf projectOptions) |> Async.RunSynchronouslyImmediate with
             | Error error -> failwithf "Failed to start session: %A" error
             | Ok() -> ()
 
             File.WriteAllText(fsPath, lineShiftUpdatedSource)
-            checker.NotifyFileChanged(fsPath, projectOptions) |> Async.RunImmediate
+            checker.NotifyFileChanged(fsPath, projectOptions) |> Async.RunSynchronouslyImmediate
             compileUpdate checker projectOptions
 
-            match session.EmitDelta(snapshotOf projectOptions) |> Async.RunImmediate with
+            match session.EmitDelta(snapshotOf projectOptions) |> Async.RunSynchronouslyImmediate with
             | Error error -> failwithf "Expected a line-update-only delta, got error: %A" error
             | Ok delta ->
                 // A pure line shift recompiles nothing: no metadata/IL rows, no generation.
@@ -260,13 +260,13 @@ let target () = 41
                 // sequence-point view intact so the same source edit is offered again.
                 session.Discard()
 
-                match session.EmitDelta(snapshotOf projectOptions) |> Async.RunImmediate with
+                match session.EmitDelta(snapshotOf projectOptions) |> Async.RunSynchronouslyImmediate with
                 | Error error -> failwithf "Expected discarded line update to be offered again, got: %A" error
                 | Ok discardedDelta -> Assert.Single(discardedDelta.SequencePointUpdates) |> ignore
 
                 session.Commit()
 
-                match session.EmitDelta(snapshotOf projectOptions) |> Async.RunImmediate with
+                match session.EmitDelta(snapshotOf projectOptions) |> Async.RunSynchronouslyImmediate with
                 | Error FSharpHotReloadError.NoChanges -> ()
                 | Error error -> failwithf "Expected NoChanges after committing line update, got: %A" error
                 | Ok _ -> failwith "Committed line update was emitted a second time.")
@@ -288,21 +288,21 @@ let target () = 41
             do
                 use discarded = checker.CreateHotReloadSession()
 
-                match discarded.AddProject(snapshotOf projectOptions) |> Async.RunImmediate with
+                match discarded.AddProject(snapshotOf projectOptions) |> Async.RunSynchronouslyImmediate with
                 | Error error -> failwithf "Failed to start session: %A" error
                 | Ok() -> ()
 
             use session = checker.CreateHotReloadSession()
 
-            match session.AddProject(snapshotOf projectOptions) |> Async.RunImmediate with
+            match session.AddProject(snapshotOf projectOptions) |> Async.RunSynchronouslyImmediate with
             | Error error -> failwithf "Failed to restart session from disk: %A" error
             | Ok() -> ()
 
             File.WriteAllText(fsPath, lineShiftUpdatedSource)
-            checker.NotifyFileChanged(fsPath, projectOptions) |> Async.RunImmediate
+            checker.NotifyFileChanged(fsPath, projectOptions) |> Async.RunSynchronouslyImmediate
             compileUpdate checker projectOptions
 
-            match session.EmitDelta(snapshotOf projectOptions) |> Async.RunImmediate with
+            match session.EmitDelta(snapshotOf projectOptions) |> Async.RunSynchronouslyImmediate with
             | Error error -> failwithf "Expected a line-update-only delta after restart, got error: %A" error
             | Ok delta ->
                 Assert.Empty(delta.UpdatedMethods)
@@ -346,7 +346,7 @@ type Type =
 
             use session = checker.CreateHotReloadSession()
 
-            match session.AddProject(snapshotOf projectOptions) |> Async.RunImmediate with
+            match session.AddProject(snapshotOf projectOptions) |> Async.RunSynchronouslyImmediate with
             | Error error -> failwithf "Failed to start session: %A" error
             | Ok() -> ()
 
@@ -358,10 +358,10 @@ type Type =
                 )
 
             File.WriteAllText(fsPath, remapUpdatedSource)
-            checker.NotifyFileChanged(fsPath, projectOptions) |> Async.RunImmediate
+            checker.NotifyFileChanged(fsPath, projectOptions) |> Async.RunSynchronouslyImmediate
             compileUpdate checker projectOptions
 
-            match session.EmitDelta(snapshotOf projectOptions) |> Async.RunImmediate with
+            match session.EmitDelta(snapshotOf projectOptions) |> Async.RunSynchronouslyImmediate with
             | Error error -> failwithf "EmitDelta failed: %A" error
             | Ok delta ->
                 Assert.Contains(getValueToken, delta.UpdatedMethods)
@@ -446,7 +446,7 @@ type Type =
 
             use session = checker.CreateHotReloadSession()
 
-            match session.AddProject(snapshotOf projectOptions) |> Async.RunImmediate with
+            match session.AddProject(snapshotOf projectOptions) |> Async.RunSynchronouslyImmediate with
             | Error error -> failwithf "Failed to start session: %A" error
             | Ok() -> ()
 
@@ -455,10 +455,10 @@ type Type =
                 )
 
             File.WriteAllText(fsPath, deleteUpdatedSource)
-            checker.NotifyFileChanged(fsPath, projectOptions) |> Async.RunImmediate
+            checker.NotifyFileChanged(fsPath, projectOptions) |> Async.RunSynchronouslyImmediate
             compileUpdate checker projectOptions
 
-            match session.EmitDelta(snapshotOf projectOptions) |> Async.RunImmediate with
+            match session.EmitDelta(snapshotOf projectOptions) |> Async.RunSynchronouslyImmediate with
             | Ok _ -> failwith "Expected a rude edit for an edit deleting the active statement"
             | Error(FSharpHotReloadError.UnsupportedEdit edits) ->
                 let message = edits |> List.map (fun e -> $"{e.Id}: {e.Message}") |> String.concat System.Environment.NewLine
@@ -470,7 +470,7 @@ type Type =
             Assert.Equal(1, session.ProjectIdentifiers.Length)
             session.SetActiveStatements([])
 
-            match session.EmitDelta(snapshotOf projectOptions) |> Async.RunImmediate with
+            match session.EmitDelta(snapshotOf projectOptions) |> Async.RunSynchronouslyImmediate with
             | Error error -> failwithf "Expected the edit to apply once no statements are active: %A" error
             | Ok delta -> Assert.Contains(runToken, delta.UpdatedMethods))
 
@@ -489,7 +489,7 @@ type Type =
 
             use session = checker.CreateHotReloadSession()
 
-            match session.AddProject(snapshotOf projectOptions) |> Async.RunImmediate with
+            match session.AddProject(snapshotOf projectOptions) |> Async.RunSynchronouslyImmediate with
             | Error error -> failwithf "Failed to start session: %A" error
             | Ok() -> ()
 
@@ -500,10 +500,10 @@ type Type =
                 )
 
             File.WriteAllText(fsPath, remapUpdatedSource)
-            checker.NotifyFileChanged(fsPath, projectOptions) |> Async.RunImmediate
+            checker.NotifyFileChanged(fsPath, projectOptions) |> Async.RunSynchronouslyImmediate
             compileUpdate checker projectOptions
 
-            match session.EmitDelta(snapshotOf projectOptions) |> Async.RunImmediate with
+            match session.EmitDelta(snapshotOf projectOptions) |> Async.RunSynchronouslyImmediate with
             | Ok _ -> failwith "Expected a rude edit for editing a non-leaf frame's active statement"
             | Error(FSharpHotReloadError.UnsupportedEdit edits) ->
                 let message = edits |> List.map (fun e -> $"{e.Id}: {e.Message}") |> String.concat System.Environment.NewLine

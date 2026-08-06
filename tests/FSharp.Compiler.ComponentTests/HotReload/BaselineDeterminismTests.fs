@@ -103,7 +103,7 @@ let pipeline (inputs: int list) =
                 useSdkRefs = true,
                 useFsiAuxLib = false
             )
-            |> Async.RunImmediate
+            |> Async.RunSynchronouslyImmediate
 
         [| fileA; fileB; fileC |], Path.Combine(workDir, "Library.dll"), scriptOptions.OtherOptions
 
@@ -136,7 +136,7 @@ let pipeline (inputs: int list) =
                     sourceFiles
                 ]
 
-        let diagnostics, _ = checker.Compile argv |> Async.RunImmediate
+        let diagnostics, _ = checker.Compile argv |> Async.RunSynchronouslyImmediate
 
         let errors =
             diagnostics |> Array.filter (fun d -> d.Severity = FSharpDiagnosticSeverity.Error)

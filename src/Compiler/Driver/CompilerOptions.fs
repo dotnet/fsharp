@@ -1202,14 +1202,6 @@ let languageFlags tcConfigB =
         CompilerOption("define", tagString, OptionString(defineSymbol tcConfigB), None, Some(FSComp.SR.optsDefine ()))
 
         CompilerOption(
-            "strict-indentation",
-            tagNone,
-            OptionSwitch(fun switch -> tcConfigB.strictIndentation <- Some(switch = OptionSwitch.On)),
-            None,
-            Some(FSComp.SR.optsStrictIndentation (formatOptionSwitch (Option.defaultValue false tcConfigB.strictIndentation)))
-        )
-
-        CompilerOption(
             "always-inline",
             tagNone,
             OptionSwitch(fun switch -> tcConfigB.alwaysInline <- Some(switch = OptionSwitch.On)),

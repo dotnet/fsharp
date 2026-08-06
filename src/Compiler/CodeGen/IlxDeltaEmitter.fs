@@ -265,10 +265,7 @@ let private defaultWriterOptions (ilg: ILGlobals) (checksumAlgorithm: HashAlgori
 
         Path.Combine(Path.GetTempPath(), fileName)
 
-    let scratchPdb =
-        match Path.ChangeExtension(scratchDll, ".pdb") with
-        | null -> scratchDll + ".pdb"
-        | path -> path
+    let scratchPdb = Path.ChangeExtension(scratchDll, ".pdb")
 
     {
         ilg = ilg

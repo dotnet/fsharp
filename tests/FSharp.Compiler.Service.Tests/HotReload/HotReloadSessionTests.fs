@@ -115,7 +115,7 @@ module HotReloadSessionTests =
                 useSdkRefs = true,
                 useFsiAuxLib = false
             )
-            |> Async.RunImmediate
+            |> Async.RunSynchronouslyImmediate
 
         { projectOptions with
             SourceFiles = [| fsPath |]
@@ -147,7 +147,7 @@ module HotReloadSessionTests =
         let argv =
             Array.concat [ [| "fsc.exe" |]; options; projectOptions.SourceFiles ]
 
-        let diagnostics, exOpt = checker.Compile(argv) |> Async.RunImmediate
+        let diagnostics, exOpt = checker.Compile(argv) |> Async.RunSynchronouslyImmediate
 
         let errors =
             diagnostics
@@ -159,7 +159,7 @@ module HotReloadSessionTests =
 
     let private createProjectSnapshot (projectOptions: FSharpProjectOptions) =
         FSharpProjectSnapshot.FromOptions(projectOptions, DocumentSource.FileSystem)
-        |> Async.RunImmediate
+        |> Async.RunSynchronouslyImmediate
 
     let private prepareMultiFileProjectOptions
         (checker: FSharpChecker)
@@ -201,7 +201,7 @@ module HotReloadSessionTests =
 
     let private writeAndCompile (checker: FSharpChecker) (fsPath: string) (options: FSharpProjectOptions) (source: string) capture =
         File.WriteAllText(fsPath, source)
-        checker.NotifyFileChanged(fsPath, options) |> Async.RunImmediate
+        checker.NotifyFileChanged(fsPath, options) |> Async.RunSynchronouslyImmediate
         compileProject checker options capture
 
     let private withEnvVar name value action =
@@ -725,7 +725,7 @@ module HotReloadSessionTests =
     let private checkProjectOrFail (checker: FSharpChecker) (options: FSharpProjectOptions) =
         let results =
             checker.ParseAndCheckProject(options)
-            |> Async.RunImmediate
+            |> Async.RunSynchronouslyImmediate
 
         let errors =
             results.Diagnostics
@@ -738,18 +738,18 @@ module HotReloadSessionTests =
 
     let private compileFromCheckedProjectAndReadBytes (checker: FSharpChecker) (results: FSharpCheckProjectResults) (outfile: string) =
         checker.CompileFromCheckedProject(results, outfile, HotReloadEmitNaming.ClearForLineBasedBaseline)
-        |> Async.RunImmediate
+        |> Async.RunSynchronouslyImmediate
         |> ignore
 
         File.ReadAllBytes(outfile)
 
     let private addProjectOrFail (session: FSharpHotReloadSession) snapshot =
-        match session.AddProject(snapshot) |> Async.RunImmediate with
+        match session.AddProject(snapshot) |> Async.RunSynchronouslyImmediate with
         | Ok() -> ()
         | Error error -> failwithf "AddProject failed: %A" error
 
     let private emitOrFail (session: FSharpHotReloadSession) snapshot =
-        match session.EmitDelta(snapshot) |> Async.RunImmediate with
+        match session.EmitDelta(snapshot) |> Async.RunSynchronouslyImmediate with
         | Ok delta -> delta
         | Error error -> failwithf "EmitDelta failed: %A" error
 
@@ -775,7 +775,7 @@ module HotReloadSessionTests =
             let delta =
                 withEnvVar "FSHARP_HOTRELOAD_INPROCESS_COMPILE" "1" (fun () ->
                     File.WriteAllText(fsPath, trimmedEditedSource)
-                    checker.NotifyFileChanged(fsPath, options) |> Async.RunImmediate
+                    checker.NotifyFileChanged(fsPath, options) |> Async.RunSynchronouslyImmediate
                     emitOrFail session (createProjectSnapshot options))
 
             Assert.Equal<string list>([ "Baseline" ], delta.RequiredCapabilities)
@@ -1004,7 +1004,7 @@ module Entry =
 
             let _, updatedEntry = (generatedIncrementalEmitSources 1).[11]
             File.WriteAllText(fsPaths[11], updatedEntry.TrimStart())
-            checker.NotifyFileChanged(fsPaths[11], options) |> Async.RunImmediate
+            checker.NotifyFileChanged(fsPaths[11], options) |> Async.RunSynchronouslyImmediate
 
             let editedResults = checkProjectOrFail checker options
 
@@ -1077,7 +1077,7 @@ module Consumer =
                 compileFromCheckedProjectAndReadBytes checker warmResults dllPath |> ignore)
 
             File.WriteAllText(implementationPath, (implementationSource 2 3).TrimStart())
-            checker.NotifyFileChanged(implementationPath, options) |> Async.RunImmediate
+            checker.NotifyFileChanged(implementationPath, options) |> Async.RunSynchronouslyImmediate
 
             let editedResults = checkProjectOrFail checker options
 
@@ -1232,7 +1232,7 @@ let current () = FileB.derived () + {generation}
                 Environment.SetEnvironmentVariable("FSHARP_HOTRELOAD_INPROCESS_COMPILE", "1")
 
                 File.WriteAllText(fileCPath, fileCSource 1)
-                checker.NotifyFileChanged(fileCPath, options) |> Async.RunImmediate
+                checker.NotifyFileChanged(fileCPath, options) |> Async.RunSynchronouslyImmediate
 
                 let delta = emitOrFail session (createProjectSnapshot options)
                 Assert.NotEmpty(delta.UpdatedMethods)
@@ -1370,7 +1370,7 @@ let current () = FileB.derived () + {generation}
             use session = checker.CreateHotReloadSession()
 
             // No AddProject: emitting is unrepresentable as anything but an error.
-            match session.EmitDelta(createProjectSnapshot options) |> Async.RunImmediate with
+            match session.EmitDelta(createProjectSnapshot options) |> Async.RunSynchronouslyImmediate with
             | Error FSharpHotReloadError.NoActiveSession -> ()
             | Error other -> failwithf "Expected NoActiveSession, got %A" other
             | Ok _ -> failwith "Expected EmitDelta to fail for a project the session does not track.")
@@ -1460,7 +1460,7 @@ let appValue () = "app generation {generation}: " + SessionLib.libValue ()
             let delta1 = emitOrFail session (createProjectSnapshot options)
 
             // A second emit cannot overwrite the first update while the host still owns it.
-            match session.EmitDelta(createProjectSnapshot options) |> Async.RunImmediate with
+            match session.EmitDelta(createProjectSnapshot options) |> Async.RunSynchronouslyImmediate with
             | Error(FSharpHotReloadError.UnsupportedEdit diagnostics) ->
                 Assert.Contains(diagnostics, fun diagnostic -> diagnostic.Message.Contains("already pending"))
             | Error other -> failwithf "Expected UnsupportedEdit for a second pending emit, got %A" other
@@ -1518,7 +1518,7 @@ type Calculator<'T>() =
             // runtime capability; without it the edit is rude.
             writeAndCompile checker genericFsPath genericOptions (genericSource 1) false
 
-            match session.EmitDelta(createProjectSnapshot genericOptions) |> Async.RunImmediate with
+            match session.EmitDelta(createProjectSnapshot genericOptions) |> Async.RunSynchronouslyImmediate with
             | Error(FSharpHotReloadError.UnsupportedEdit _) -> ()
             | Error other -> failwithf "Expected UnsupportedEdit without GenericUpdateMethod, got %A" other
             | Ok _ -> failwith "Expected generic method edit to be rude under BaselineOnly capabilities."
@@ -1736,7 +1736,7 @@ let probe input =
             let delta =
                 withEnvVar "FSHARP_HOTRELOAD_INPROCESS_COMPILE" "1" (fun () ->
                     File.WriteAllText(fsPath, editedSource)
-                    checker.NotifyFileChanged(fsPath, options) |> Async.RunImmediate
+                    checker.NotifyFileChanged(fsPath, options) |> Async.RunSynchronouslyImmediate
                     emitOrFail session (createProjectSnapshot options))
 
             let userUpdatedNames =
@@ -1891,7 +1891,7 @@ module Layout =
             let delta =
                 withEnvVar "FSHARP_HOTRELOAD_INPROCESS_COMPILE" "1" (fun () ->
                     File.WriteAllText(layoutPath, editedLayout.TrimStart())
-                    checker.NotifyFileChanged(layoutPath, options) |> Async.RunImmediate
+                    checker.NotifyFileChanged(layoutPath, options) |> Async.RunSynchronouslyImmediate
                     emitOrFail session (createProjectSnapshot options))
 
             Assert.Contains(headingToken, delta.UpdatedMethods))
@@ -2132,7 +2132,7 @@ let probe () =
                 let delta =
                     withEnvVar "FSHARP_HOTRELOAD_INPROCESS_COMPILE" "1" (fun () ->
                         File.WriteAllText(fsPath, editedSource)
-                        checker.NotifyFileChanged(fsPath, options) |> Async.RunImmediate
+                        checker.NotifyFileChanged(fsPath, options) |> Async.RunSynchronouslyImmediate
                         emitOrFail session (createProjectSnapshot options))
 
                 let userUpdatedNames =
@@ -2248,8 +2248,8 @@ let probe input =
                 let result =
                     withEnvVar "FSHARP_HOTRELOAD_INPROCESS_COMPILE" "1" (fun () ->
                         File.WriteAllText(fsPath, editedSource)
-                        checker.NotifyFileChanged(fsPath, options) |> Async.RunImmediate
-                        session.EmitDelta(createProjectSnapshot options) |> Async.RunImmediate)
+                        checker.NotifyFileChanged(fsPath, options) |> Async.RunSynchronouslyImmediate
+                        session.EmitDelta(createProjectSnapshot options) |> Async.RunSynchronouslyImmediate)
 
                 if disableSnapshotCdi then
                     match result with
@@ -2316,11 +2316,11 @@ let added () = 2
 
             withEnvVar "FSHARP_HOTRELOAD_INPROCESS_COMPILE" "1" (fun () ->
                 File.WriteAllText(fsPath, updatedSource.TrimStart())
-                checker.NotifyFileChanged(fsPath, options) |> Async.RunImmediate
+                checker.NotifyFileChanged(fsPath, options) |> Async.RunSynchronouslyImmediate
 
                 // The fast path must refuse to write only the implementation assembly. With no
                 // external build available, the normal stale-output guard rejects the fallback.
-                match session.EmitDelta(createProjectSnapshot options) |> Async.RunImmediate with
+                match session.EmitDelta(createProjectSnapshot options) |> Async.RunSynchronouslyImmediate with
                 | Error(FSharpHotReloadError.DeltaEmissionFailed _) -> ()
                 | Error other -> failwithf "Expected stale-output failure, got %A" other
                 | Ok _ -> failwith "Expected the refout project to require a fresh external build."
@@ -2361,14 +2361,14 @@ let value () = {generation}
 
             withEnvVar "FSHARP_HOTRELOAD_INPROCESS_COMPILE" "1" (fun () ->
                 File.WriteAllText(fsPath, source 1)
-                checker.NotifyFileChanged(fsPath, options) |> Async.RunImmediate
+                checker.NotifyFileChanged(fsPath, options) |> Async.RunSynchronouslyImmediate
                 let snapshot = createProjectSnapshot options
 
                 let results =
                     [| session.EmitDelta(snapshot)
                        session.EmitDelta(snapshot) |]
                     |> Async.Parallel
-                    |> Async.RunImmediate
+                    |> Async.RunSynchronouslyImmediate
 
                 Assert.Equal(1, results |> Array.filter Result.isOk |> Array.length)
 
@@ -2430,7 +2430,7 @@ let probe () = 1
                 // external `dotnet build`/compileProject step. The in-process compile path must
                 // produce the updated output assembly by itself.
                 File.WriteAllText(fsPath, inprocSource 1)
-                checker.NotifyFileChanged(fsPath, options) |> Async.RunImmediate
+                checker.NotifyFileChanged(fsPath, options) |> Async.RunSynchronouslyImmediate
 
                 let delta = emitOrFail session (createProjectSnapshot options)
                 Assert.Equal(1, delta.UpdatedMethods.Length)
@@ -2442,7 +2442,7 @@ let probe () = 1
                 // in-process compile wrote a fresh sibling PDB: the stale external-build PDB
                 // still carries probe's unshifted lines and detection would emit nothing.
                 File.WriteAllText(fsPath, inprocSourceShifted 2)
-                checker.NotifyFileChanged(fsPath, options) |> Async.RunImmediate
+                checker.NotifyFileChanged(fsPath, options) |> Async.RunSynchronouslyImmediate
 
                 let shiftedDelta = emitOrFail session (createProjectSnapshot options)
                 Assert.Equal(1, shiftedDelta.UpdatedMethods.Length)
@@ -2458,9 +2458,9 @@ let probe () = 1
             // Flag off (the default): a further body edit without an external recompile must be
             // refused, proving flag-off behavior is unaffected by the in-process compile path.
             File.WriteAllText(fsPath, inprocSourceShifted 3)
-            checker.NotifyFileChanged(fsPath, options) |> Async.RunImmediate
+            checker.NotifyFileChanged(fsPath, options) |> Async.RunSynchronouslyImmediate
 
-            match session.EmitDelta(createProjectSnapshot options) |> Async.RunImmediate with
+            match session.EmitDelta(createProjectSnapshot options) |> Async.RunSynchronouslyImmediate with
             | Error(FSharpHotReloadError.DeltaEmissionFailed _) -> ()
             | Error other -> failwithf "Expected a stale-output DeltaEmissionFailed error, got %A" other
             | Ok _ -> failwith "Expected EmitDelta to refuse a delta from an unchanged (stale) build output.")
@@ -2502,14 +2502,14 @@ let changed () = IncrementalSupport.addOne {generation}
             withEnvVar "FSHARP_HOTRELOAD_INPROCESS_COMPILE" "1" (fun () ->
                 withEnvVar "FSHARP_HOTRELOAD_INCREMENTAL_EMIT" "1" (fun () ->
                     File.WriteAllText(entryPath, (entrySource 1).TrimStart())
-                    checker.NotifyFileChanged(entryPath, options) |> Async.RunImmediate
+                    checker.NotifyFileChanged(entryPath, options) |> Async.RunSynchronouslyImmediate
 
                     let firstDelta = emitOrFail session (createProjectSnapshot options)
                     Assert.Equal(1, firstDelta.UpdatedMethods.Length)
                     session.Commit()
 
                     File.WriteAllText(entryPath, (entrySource 2).TrimStart())
-                    checker.NotifyFileChanged(entryPath, options) |> Async.RunImmediate
+                    checker.NotifyFileChanged(entryPath, options) |> Async.RunSynchronouslyImmediate
 
                     let secondDelta = emitOrFail session (createProjectSnapshot options)
                     Assert.Equal(1, secondDelta.UpdatedMethods.Length)

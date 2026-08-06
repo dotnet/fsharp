@@ -68,7 +68,7 @@ type internal DiffTestHarness() =
 
         let projectResults =
             checker.ParseAndCheckProject(projectOptions)
-            |> Async.RunImmediate
+            |> Async.RunSynchronouslyImmediate
 
         if projectResults.HasCriticalErrors then
             let errors =
