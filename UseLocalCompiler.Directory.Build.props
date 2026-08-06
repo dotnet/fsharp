@@ -32,17 +32,13 @@
     <OtherFlags>$(OtherFlags) --nowarn:75 --times</OtherFlags>
   </PropertyGroup>
 
-  <!-- Gate 2 (regression matrix only): serve the locally built FSharp.Core the SDK's own way, by pinning the
-       implicit FSharp.Core version (FSCorePackageVersion, which the SDK's implicit reference uses) and adding the
-       staged library-packs folder as a restore source. Only engages when the repo has not already pinned FSharp.Core
-       via FSharpCoreImplicitPackageVersion or FSCorePackageVersionSet, so pinned/CPM/Update repos keep their own core,
-       i.e. exactly normal usage. We deliberately do NOT set FSharpCoreImplicitPackageVersion: leaving it empty keeps a
-       repo's own conditional pin working, and setting FSCorePackageVersionSet both protects our version and skips the
-       SDK default that would otherwise initialize _FSharpCoreLibraryPacksFolder, so we set that folder ourselves. -->
+  <!-- Gate 2 (regression matrix only): serve the local FSharp.Core the SDK's own way. FSCorePackageVersion pins the
+       implicit reference; FSCorePackageVersionSet suppresses the SDK default that inits _FSharpCoreLibraryPacksFolder,
+       so we point that (the restore feed) at RegressionLocalCorePackagesDir from the runner, else a co-located library-packs. -->
   <PropertyGroup Condition="'$(RegressionLocalCore)' == 'true' and '$(FSharpCoreImplicitPackageVersion)' == '' and '$(FSCorePackageVersionSet)' != 'true'">
     <FSCorePackageVersion>$(RegressionLocalCoreVersion)</FSCorePackageVersion>
     <FSCorePackageVersionSet>true</FSCorePackageVersionSet>
-    <_FSharpCoreLibraryPacksFolder>$(MSBuildThisFileDirectory)library-packs</_FSharpCoreLibraryPacksFolder>
+    <_FSharpCoreLibraryPacksFolder>$([MSBuild]::ValueOrDefault('$(RegressionLocalCorePackagesDir)', '$(MSBuildThisFileDirectory)library-packs'))</_FSharpCoreLibraryPacksFolder>
   </PropertyGroup>
 
   <Target Name="_ValidateRegressionLocalCore" BeforeTargets="CollectPackageReferences;CoreCompile"
@@ -50,9 +46,8 @@
     <Error Text="RegressionLocalCore is set but RegressionLocalCoreVersion is empty. The regression job must pass the exact local FSharp.Core package version." />
   </Target>
 
-  <!-- Gate 3 (CompilerCompat and VS integration, i.e. LoadLocalFSharpBuild without the regression matrix):
-       reference the locally built FSharp.Core directly. The regression matrix does NOT take this path; it uses
-       the SDK library-packs flow above so each repo gets the FSharp.Core (ns2.0 or ns2.1) it would normally resolve. -->
+  <!-- Gate 3 (CompilerCompat and VS integration): reference the locally built FSharp.Core directly. The regression
+       matrix uses Gate 2's library-packs flow instead, so it is excluded here. -->
   <PropertyGroup Condition="'$(LoadLocalFSharpBuild)' == 'True' and '$(RegressionLocalCore)' != 'true'">
     <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
   </PropertyGroup>
