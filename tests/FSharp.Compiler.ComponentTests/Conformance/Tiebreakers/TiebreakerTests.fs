@@ -7,11 +7,12 @@ open FSharp.Test.Compiler
 open Xunit
 open Conformance.SharedTestHelpers
 
-module TiebreakerTests =
+/// Source fixtures shared by the three feature-gating submodules below.
+module TiebreakerFixtures =
 
-    let private case (desc: string) (source: string) : obj[] = [| box desc; box source |]
+    let case (desc: string) (source: string) : obj[] = [| box desc; box source |]
 
-    let private concretenessWarningSource =
+    let concretenessWarningSource =
         """
 module Test
 
@@ -24,7 +25,7 @@ let result = Example.Invoke(Some([1]))
 
     // Shared by the preview/non-preview pair below: two Compare overloads that are each more
     // concrete at a different position, so the call is incomparable (FS0041) at every langversion.
-    let private incomparableConcretenessSource =
+    let incomparableConcretenessSource =
         """
 module Test
 
@@ -40,7 +41,7 @@ let result = Example.Compare(Ok 42 : Result<int, string>)
     // (Result<_,_>) is internally incomparable, so it favours neither. The call is therefore an
     // incomparable FS0041. This exercises the multi-parameter breakdown: positions must be reported
     // per formal parameter (1 and 2), never as flattened, duplicated type-argument indices.
-    let private multiParamIncomparableSource =
+    let multiParamIncomparableSource =
         """
 module Test
 
@@ -50,6 +51,255 @@ type Example =
 
 let result = Example.Compare(5, "hi", Ok 7)
         """
+
+    let moreConcretDisabledAmbiguousCases: obj[] seq =
+        [
+            case
+                "fully generic vs wrapped generic"
+                "module Test\ntype Example =\n    static member Process(value: 't) = \"fully generic\"\n    static member Process(value: Option<'t>) = \"wrapped\"\nlet result = Example.Process(Some 42)"
+
+            case
+                "array generic vs bare generic"
+                "module Test\ntype Example =\n    static member Handle(value: 't) = \"bare\"\n    static member Handle(value: 't array) = \"array\"\nlet result = Example.Handle([|1; 2; 3|])"
+        ]
+
+    let moreConcreteTestCases: obj[] seq =
+        [
+            case "Option<'T> vs Option<'T list> - nested list more concrete"
+                 "module Test\ntype Resolver =\n    static member Resolve<'t>(x: Option<'t>) = \"generic\"\n    static member Resolve<'t>(x: Option<'t list>) = \"list\"\nlet result = Resolver.Resolve(Some [1;2;3])\nif result <> \"list\" then failwithf \"Expected 'list' but got '%s'\" result"
+
+            case "Result<'T,'E> vs Result<'T, string> - partial concreteness"
+                 "module Test\ntype Handler =\n    static member Handle<'t,'e>(x: Result<'t,'e>) = \"generic\"\n    static member Handle<'t>(x: Result<'t, string>) = \"string err\"\nlet result = Handler.Handle(Ok 42 : Result<int, string>)\nif result <> \"string err\" then failwithf \"Expected 'string err' but got '%s'\" result"
+
+            case "'T vs Option<'T> - wrapped more concrete than bare"
+                 "module Test\ntype Picker =\n    static member Pick<'t>(x: 't) = \"bare\"\n    static member Pick<'t>(x: Option<'t>) = \"option\"\nlet result = Picker.Pick(Some 1)\nif result <> \"option\" then failwithf \"Expected 'option' but got '%s'\" result"
+
+            case "Option<'T> vs Option<Option<'T>> - double wrap more concrete"
+                 "module Test\ntype Deep =\n    static member Go<'t>(x: Option<'t>) = \"single\"\n    static member Go<'t>(x: Option<Option<'t>>) = \"double\"\nlet result = Deep.Go(Some(Some 1))\nif result <> \"double\" then failwithf \"Expected 'double' but got '%s'\" result"
+
+            case "list<'T> vs list<int * 'T> - tuple element more concrete"
+                 "module Test\ntype Proc =\n    static member Run<'t>(x: list<'t>) = \"generic\"\n    static member Run<'t>(x: list<int * 't>) = \"paired\"\nlet result = Proc.Run([(1, \"a\")])\nif result <> \"paired\" then failwithf \"Expected 'paired' but got '%s'\" result"
+
+            case "'a -> 'b vs 'a -> string - concrete range in function type"
+                 "module Test\ntype Dispatcher =\n    static member Dispatch<'a, 'b>(handler: 'a -> 'b) = \"fully generic\"\n    static member Dispatch<'a>(handler: 'a -> string) = \"concrete range\"\nlet result = Dispatcher.Dispatch(fun (x: int) -> \"hello\")\nif result <> \"concrete range\" then failwithf \"Expected 'concrete range' but got '%s'\" result"
+
+            case "'a * 'b vs 'a * int - concrete element in tuple type"
+                 "module Test\ntype Handler =\n    static member Handle<'a, 'b>(pair: 'a * 'b) = \"fully generic tuple\"\n    static member Handle<'a>(pair: 'a * int) = \"concrete second\"\nlet result = Handler.Handle((\"hello\", 42))\nif result <> \"concrete second\" then failwithf \"Expected 'concrete second' but got '%s'\" result"
+
+            case "'a -> 'b vs int -> 'b - concrete domain in function type"
+                 "module Test\ntype Mapper =\n    static member Map<'a, 'b>(f: 'a -> 'b, items: 'a list) = \"generic\"\n    static member Map<'b>(f: int -> 'b, items: int list) = \"int domain\"\nlet result = Mapper.Map((fun x -> string x), [1; 2; 3])\nif result <> \"int domain\" then failwithf \"Expected 'int domain' but got '%s'\" result"
+
+            case "'a * 'b vs int * 'b - concrete first element in tuple"
+                 "module Test\ntype Tupler =\n    static member Pack<'a, 'b>(x: 'a * 'b) = \"generic\"\n    static member Pack<'b>(x: int * 'b) = \"int first\"\nlet result = Tupler.Pack((42, \"hello\"))\nif result <> \"int first\" then failwithf \"Expected 'int first' but got '%s'\" result"
+        ]
+
+    // Edge-case matrix: every row is FS0041 at --langversion:default and resolves to the concrete
+    // overload "c" at preview, covering the member kinds the feature must serve: naked generics,
+    // constructors, extension methods, static and instance methods on a generic type, optionals,
+    // and paramarray.
+    let mostConcreteEdgeCases: obj[] seq =
+        let case (name: string) (source: string) =
+            let checkedSource =
+                source + sprintf "\nif r <> \"c\" then failwith (\"%s: got \" + r)" name
+
+            [| box name; box checkedSource |]
+
+        [
+            case "naked-generic-ctor" """
+module T
+type W<'T>(t: string) =
+    new(x: 'T)        = W<'T>("g")
+    new(x: 'T option) = W<'T>("c")
+    member _.T = t
+let r = (W(Some 5)).T"""
+
+            case "generic-extension" """
+module T
+open System.Runtime.CompilerServices
+type W() = class end
+[<Extension>]
+type E =
+    [<Extension>] static member M(w: W, x: 'T)        = "g"
+    [<Extension>] static member M(w: W, x: 'T option) = "c"
+let r = (W()).M(Some 5)"""
+
+            case "static-method-generic-type" """
+module T
+type Factory<'T>() =
+    static member Make(x: 'T)        = "g"
+    static member Make(x: 'T option) = "c"
+let r = Factory<_>.Make(Some 5)"""
+
+            case "instance-method-generic-type" """
+module T
+type Factory<'T>() =
+    member _.Make(x: 'T)        = "g"
+    member _.Make(x: 'T option) = "c"
+let r = Factory<_>().Make(Some 5)"""
+
+            case "optional-tail" """
+module T
+type F() =
+    static member M(x: 'T, ?y: int)        = "g"
+    static member M(x: 'T option, ?y: int) = "c"
+let r = F.M(Some 5)"""
+
+            case "paramarray-tail" """
+module T
+type F() =
+    static member M(x: 'T, [<System.ParamArray>] rest: int[])        = "g"
+    static member M(x: 'T option, [<System.ParamArray>] rest: int[]) = "c"
+let r = F.M(Some 5)"""
+        ]
+
+    // Result/partial-concreteness across multiple type parameters: one generic overload and one
+    // whose type argument is partially pinned. Built for both the With (preview) and Without (10.0) pair.
+    let example5PartialSource (methodName: string) (concreteParam: string) (concreteDesc: string) (callExpr: string) =
+        $"""
+module Test
+
+type Example =
+    static member {methodName}(value: Result<'ok, 'error>) = "fully generic"
+    static member {methodName}(value: {concreteParam}) = "{concreteDesc}"
+
+let result = Example.{methodName}({callExpr})
+if result <> "{concreteDesc}" then
+    failwithf "Expected '{concreteDesc}' but got '%%s' - wrong overload selected" result
+        """
+
+    // Task<'T> vs 'T factory overloads (the RFC's ValueTask-shaped motivation).
+    let example7Source =
+        """
+module Test
+
+open System.Threading.Tasks
+
+[<NoComparison>]
+type ValueTaskSimulator<'T> =
+    | FromResult of 'T
+    | FromTask of Task<'T>
+
+type ValueTaskFactory =
+    static member Create(result: 'T) = ValueTaskSimulator<'T>.FromResult result
+    static member Create(task: Task<'T>) = ValueTaskSimulator<'T>.FromTask task
+
+let createFromTask () =
+    let task = Task.FromResult(42)
+    let result = ValueTaskFactory.Create(task)
+    result
+        """
+
+    // Computation-expression Source overloads (FsToolkit AsyncResult pattern).
+    let example8Source =
+        """
+module Test
+
+open System
+
+type AsyncResultBuilder() =
+    member _.Return(x) = async { return Ok x }
+    member _.ReturnFrom(x) = x
+    
+    member _.Source(result: Async<Result<'ok, 'error>>) : Async<Result<'ok, 'error>> = result
+    member _.Source(result: Result<'ok, 'error>) : Async<Result<'ok, 'error>> = async { return result }
+    member _.Source(asyncValue: Async<'t>) : Async<Result<'t, exn>> = 
+        async { 
+            let! v = asyncValue 
+            return Ok v 
+        }
+    
+    member _.Bind(computation: Async<Result<'ok, 'error>>, f: 'ok -> Async<Result<'ok2, 'error>>) =
+        async {
+            let! result = computation
+            match result with
+            | Ok value -> return! f value
+            | Error e -> return Error e
+        }
+
+let asyncResult = AsyncResultBuilder()
+
+let example () =
+    let source : Async<Result<int, string>> = async { return Ok 42 }
+    asyncResult.Source(source)
+        """
+
+    // Builder.Source with a Result overload vs a fully generic one.
+    let realWorldSource =
+        """
+module Test
+
+type Builder() =
+    member _.Source(x: Result<'a, 'e>) = "result"
+    member _.Source(x: 't) = "generic"
+
+let b = Builder()
+
+let result = b.Source(Ok 42 : Result<int, string>)
+        """
+
+    // Same-module extension Source overloads resolved by concreteness.
+    let fsToolkitSource =
+        """
+module Test
+
+open System
+
+type AsyncResultBuilder() =
+    member _.Return(x) = async { return Ok x }
+
+[<AutoOpen>]
+module AsyncResultCEExtensions =
+    type AsyncResultBuilder with
+        member inline _.Source(result: Async<'t>) : Async<Result<'t, exn>> =
+            async { 
+                let! v = result 
+                return Ok v 
+            }
+            
+        member inline _.Source(result: Async<Result<'ok, 'error>>) : Async<Result<'ok, 'error>> =
+            result
+
+let asyncResult = AsyncResultBuilder()
+
+let example () =
+    let source : Async<Result<int, string>> = async { return Ok 42 }
+    asyncResult.Source(source)
+        """
+
+    // Cross-feature: a high-priority (ORPA) less-concrete overload beats a low-priority more-concrete
+    // one under preview, but with both features off the call is ambiguous.
+    let orpWinsSource =
+        """
+module Test
+open System.Runtime.CompilerServices
+type C<'T>() =
+    [<OverloadResolutionPriority(1)>] static member M(x: 'T)        = "high-generic"
+    static member M(x: 'T option) = "low-concrete"
+let r = C<_>.M(Some 5)
+if r <> "high-generic" then failwithf "expected high-generic, got %s" r
+        """
+
+    // Three overloads where two generic ones are bypassed in favour of the most concrete (FS3576).
+    let multipleBypassedSource =
+        """
+module Test
+
+type Example =
+    static member Process<'t>(value: 't) = "fully generic"
+    static member Process<'t>(value: Option<'t>) = "option generic"
+    static member Process<'t>(value: Option<'t list>) = "most concrete"
+
+let result = Example.Process(Some([1]))
+        """
+
+/// Tests whose outcome is identical whether or not the most-concrete tiebreaker is enabled.
+/// Some are pinned to a feature-off version (no-pin/10.0/latest) and resolve via an earlier rule
+/// (exact match, PreferNonGeneric/NonExtension, TDC, adhoc, SRTP). Others are pinned to preview to
+/// prove the feature does NOT change their outcome - either an earlier rule still decides them, or
+/// they stay ambiguous (FS0041) even with the tiebreaker on (incomparable / SRTP-only differences).
+module AgnosticOfTieBreakerFeature =
+
+    open TiebreakerFixtures
 
     let genericVsConcreteNestingCases: obj[] seq =
         [
@@ -90,27 +340,6 @@ let result = Example.Transform(Ok 42 : Result<int, string>)
 if result <> "both concrete" then
     failwithf "Expected 'both concrete' but got '%s' - wrong overload selected" result
         """
-        |> asExe
-        |> compileAndRun
-        |> shouldSucceed
-        |> ignore
-
-    [<Theory>]
-    [<InlineData("Process", "Result<int, 'error>", "int ok", "Ok 42 : Result<int, exn>")>]
-    [<InlineData("Handle", "Result<'ok, string>", "string error", "Ok \"test\" : Result<string, string>")>]
-    let ``Example 5 - Multiple Type Parameters - Partial concreteness resolves`` (methodName: string, concreteParam: string, concreteDesc: string, callExpr: string) =
-        FSharp $"""
-module Test
-
-type Example =
-    static member {methodName}(value: Result<'ok, 'error>) = "fully generic"
-    static member {methodName}(value: {concreteParam}) = "{concreteDesc}"
-
-let result = Example.{methodName}({callExpr})
-if result <> "{concreteDesc}" then
-    failwithf "Expected '{concreteDesc}' but got '%%s' - wrong overload selected" result
-        """
-        |> withLangVersionPreview
         |> asExe
         |> compileAndRun
         |> shouldSucceed
@@ -197,32 +426,6 @@ let result = Example.Pair(1, 2)
         |> ignore
 
     [<Fact>]
-    let ``Example 7 - ValueTask constructor scenario - Task of T vs T - resolves to Task`` () =
-        FSharp """
-module Test
-
-open System.Threading.Tasks
-
-[<NoComparison>]
-type ValueTaskSimulator<'T> =
-    | FromResult of 'T
-    | FromTask of Task<'T>
-
-type ValueTaskFactory =
-    static member Create(result: 'T) = ValueTaskSimulator<'T>.FromResult result
-    static member Create(task: Task<'T>) = ValueTaskSimulator<'T>.FromTask task
-
-let createFromTask () =
-    let task = Task.FromResult(42)
-    let result = ValueTaskFactory.Create(task)
-    result
-        """
-        |> withLangVersionPreview
-        |> typecheck
-        |> shouldSucceed
-        |> ignore
-
-    [<Fact>]
     let ``Example 7 - ValueTask constructor - bare int resolves to result overload`` () =
         FSharp """
 module Test
@@ -237,44 +440,6 @@ let createFromInt () =
     let result = ValueTaskFactory.Create(42)
     result
         """
-        |> typecheck
-        |> shouldSucceed
-        |> ignore
-
-    [<Fact>]
-    let ``Example 8 - CE Source overloads - FsToolkit AsyncResult pattern - resolves`` () =
-        FSharp """
-module Test
-
-open System
-
-type AsyncResultBuilder() =
-    member _.Return(x) = async { return Ok x }
-    member _.ReturnFrom(x) = x
-    
-    member _.Source(result: Async<Result<'ok, 'error>>) : Async<Result<'ok, 'error>> = result
-    member _.Source(result: Result<'ok, 'error>) : Async<Result<'ok, 'error>> = async { return result }
-    member _.Source(asyncValue: Async<'t>) : Async<Result<'t, exn>> = 
-        async { 
-            let! v = asyncValue 
-            return Ok v 
-        }
-    
-    member _.Bind(computation: Async<Result<'ok, 'error>>, f: 'ok -> Async<Result<'ok2, 'error>>) =
-        async {
-            let! result = computation
-            match result with
-            | Ok value -> return! f value
-            | Error e -> return Error e
-        }
-
-let asyncResult = AsyncResultBuilder()
-
-let example () =
-    let source : Async<Result<int, string>> = async { return Ok 42 }
-    asyncResult.Source(source)
-        """
-        |> withLangVersionPreview
         |> typecheck
         |> shouldSucceed
         |> ignore
@@ -338,24 +503,6 @@ let builder = SimpleTaskBuilder()
 
 let result = builder.Bind(42, fun x -> Task.FromResult(x + 1))
         """
-        |> typecheck
-        |> shouldSucceed
-        |> ignore
-
-    [<Fact>]
-    let ``Real-world pattern - Source with Result types vs generic - resolves`` () =
-        FSharp """
-module Test
-
-type Builder() =
-    member _.Source(x: Result<'a, 'e>) = "result"
-    member _.Source(x: 't) = "generic"
-
-let b = Builder()
-
-let result = b.Source(Ok 42 : Result<int, string>)
-        """
-        |> withLangVersionPreview
         |> typecheck
         |> shouldSucceed
         |> ignore
@@ -682,39 +829,6 @@ let result = Pair.Compare(Ok 42 : Result<int, string>)
         |> typecheck
         |> shouldFail
         |> withErrorCode 41 // FS0041: incomparable concreteness
-        |> ignore
-
-    [<Fact>]
-    let ``FsToolkit pattern - same module extensions resolved by concreteness`` () =
-        FSharp """
-module Test
-
-open System
-
-type AsyncResultBuilder() =
-    member _.Return(x) = async { return Ok x }
-
-[<AutoOpen>]
-module AsyncResultCEExtensions =
-    type AsyncResultBuilder with
-        member inline _.Source(result: Async<'t>) : Async<Result<'t, exn>> =
-            async { 
-                let! v = result 
-                return Ok v 
-            }
-            
-        member inline _.Source(result: Async<Result<'ok, 'error>>) : Async<Result<'ok, 'error>> =
-            result
-
-let asyncResult = AsyncResultBuilder()
-
-let example () =
-    let source : Async<Result<int, string>> = async { return Ok 42 }
-    asyncResult.Source(source)
-        """
-        |> withLangVersionPreview
-        |> typecheck
-        |> shouldSucceed
         |> ignore
 
     [<Fact>]
@@ -1064,61 +1178,6 @@ let result : string = Resolver.Resolve(Some([1]))
         |> ignore
 
     [<Fact>]
-    let ``Warning 3575 - Not emitted by default when concreteness tiebreaker used`` () =
-        FSharp concretenessWarningSource
-        |> withLangVersionPreview
-        |> typecheck
-        |> shouldSucceed
-        |> ignore
-
-    [<Fact>]
-    let ``Warning 3575 - Emitted when enabled and concreteness tiebreaker is used`` () =
-        FSharp concretenessWarningSource
-        |> withLangVersionPreview
-        |> withOptions ["--warnon:3575"]
-        |> typecheck
-        |> shouldFail
-        |> withWarningCode 3575
-        |> withDiagnosticMessageMatches "concreteness"
-        // FS3575 names the two distinct signatures (concrete winner, generic loser), not "Invoke"/"Invoke".
-        |> withDiagnosticMessageMatches "Option<'t list>"
-        |> withDiagnosticMessageMatches "Invoke: value: Option<'t> ->"
-        |> ignore
-
-    [<Fact>]
-    let ``Warning 3576 - Emitted when enabled and generic overload is bypassed`` () =
-        FSharp concretenessWarningSource
-        |> withLangVersionPreview
-        |> withOptions ["--warnon:3576"]
-        |> typecheck
-        |> shouldFail
-        |> withWarningCode 3576
-        |> withDiagnosticMessageMatches "bypassed"
-        // FS3576 names the two distinct signatures (generic loser, concrete winner), not "Invoke"/"Invoke".
-        |> withDiagnosticMessageMatches "Option<'t list>"
-        |> withDiagnosticMessageMatches "Invoke: value: Option<'t> ->"
-        |> ignore
-
-    [<Fact>]
-    let ``Warning 3576 - Multiple bypassed overloads`` () =
-        FSharp """
-module Test
-
-type Example =
-    static member Process<'t>(value: 't) = "fully generic"
-    static member Process<'t>(value: Option<'t>) = "option generic"
-    static member Process<'t>(value: Option<'t list>) = "most concrete"
-
-let result = Example.Process(Some([1]))
-        """
-        |> withLangVersionPreview
-        |> withOptions ["--warnon:3576"]
-        |> typecheck
-        |> shouldFail
-        |> withWarningCode 3576
-        |> ignore
-
-    [<Fact>]
     let ``SRTP - member constraint with overloaded static member`` () =
         FSharp """
 module Test
@@ -1269,67 +1328,6 @@ let result = t.Invoke(42)
         |> shouldSucceed
         |> ignore
 
-    let moreConcretDisabledAmbiguousCases: obj[] seq =
-        [
-            case
-                "fully generic vs wrapped generic"
-                "module Test\ntype Example =\n    static member Process(value: 't) = \"fully generic\"\n    static member Process(value: Option<'t>) = \"wrapped\"\nlet result = Example.Process(Some 42)"
-
-            case
-                "array generic vs bare generic"
-                "module Test\ntype Example =\n    static member Handle(value: 't) = \"bare\"\n    static member Handle(value: 't array) = \"array\"\nlet result = Example.Handle([|1; 2; 3|])"
-        ]
-
-    [<Theory>]
-    [<MemberData(nameof moreConcretDisabledAmbiguousCases)>]
-    let ``LangVersion Latest - MoreConcrete disabled - overloads remain ambiguous`` (_description: string) (source: string) =
-        FSharp source
-        |> withLangVersion "latest"
-        |> typecheck
-        |> shouldFail
-        |> withErrorCode 41
-        |> ignore
-
-    let moreConcreteTestCases: obj[] seq =
-        [
-            case "Option<'T> vs Option<'T list> - nested list more concrete"
-                 "module Test\ntype Resolver =\n    static member Resolve<'t>(x: Option<'t>) = \"generic\"\n    static member Resolve<'t>(x: Option<'t list>) = \"list\"\nlet result = Resolver.Resolve(Some [1;2;3])\nif result <> \"list\" then failwithf \"Expected 'list' but got '%s'\" result"
-
-            case "Result<'T,'E> vs Result<'T, string> - partial concreteness"
-                 "module Test\ntype Handler =\n    static member Handle<'t,'e>(x: Result<'t,'e>) = \"generic\"\n    static member Handle<'t>(x: Result<'t, string>) = \"string err\"\nlet result = Handler.Handle(Ok 42 : Result<int, string>)\nif result <> \"string err\" then failwithf \"Expected 'string err' but got '%s'\" result"
-
-            case "'T vs Option<'T> - wrapped more concrete than bare"
-                 "module Test\ntype Picker =\n    static member Pick<'t>(x: 't) = \"bare\"\n    static member Pick<'t>(x: Option<'t>) = \"option\"\nlet result = Picker.Pick(Some 1)\nif result <> \"option\" then failwithf \"Expected 'option' but got '%s'\" result"
-
-            case "Option<'T> vs Option<Option<'T>> - double wrap more concrete"
-                 "module Test\ntype Deep =\n    static member Go<'t>(x: Option<'t>) = \"single\"\n    static member Go<'t>(x: Option<Option<'t>>) = \"double\"\nlet result = Deep.Go(Some(Some 1))\nif result <> \"double\" then failwithf \"Expected 'double' but got '%s'\" result"
-
-            case "list<'T> vs list<int * 'T> - tuple element more concrete"
-                 "module Test\ntype Proc =\n    static member Run<'t>(x: list<'t>) = \"generic\"\n    static member Run<'t>(x: list<int * 't>) = \"paired\"\nlet result = Proc.Run([(1, \"a\")])\nif result <> \"paired\" then failwithf \"Expected 'paired' but got '%s'\" result"
-
-            case "'a -> 'b vs 'a -> string - concrete range in function type"
-                 "module Test\ntype Dispatcher =\n    static member Dispatch<'a, 'b>(handler: 'a -> 'b) = \"fully generic\"\n    static member Dispatch<'a>(handler: 'a -> string) = \"concrete range\"\nlet result = Dispatcher.Dispatch(fun (x: int) -> \"hello\")\nif result <> \"concrete range\" then failwithf \"Expected 'concrete range' but got '%s'\" result"
-
-            case "'a * 'b vs 'a * int - concrete element in tuple type"
-                 "module Test\ntype Handler =\n    static member Handle<'a, 'b>(pair: 'a * 'b) = \"fully generic tuple\"\n    static member Handle<'a>(pair: 'a * int) = \"concrete second\"\nlet result = Handler.Handle((\"hello\", 42))\nif result <> \"concrete second\" then failwithf \"Expected 'concrete second' but got '%s'\" result"
-
-            case "'a -> 'b vs int -> 'b - concrete domain in function type"
-                 "module Test\ntype Mapper =\n    static member Map<'a, 'b>(f: 'a -> 'b, items: 'a list) = \"generic\"\n    static member Map<'b>(f: int -> 'b, items: int list) = \"int domain\"\nlet result = Mapper.Map((fun x -> string x), [1; 2; 3])\nif result <> \"int domain\" then failwithf \"Expected 'int domain' but got '%s'\" result"
-
-            case "'a * 'b vs int * 'b - concrete first element in tuple"
-                 "module Test\ntype Tupler =\n    static member Pack<'a, 'b>(x: 'a * 'b) = \"generic\"\n    static member Pack<'b>(x: int * 'b) = \"int first\"\nlet result = Tupler.Pack((42, \"hello\"))\nif result <> \"int first\" then failwithf \"Expected 'int first' but got '%s'\" result"
-        ]
-
-    [<Theory>]
-    [<MemberData(nameof moreConcreteTestCases)>]
-    let ``MoreConcrete tiebreaker resolves both-generic overloads`` (_description: string) (source: string) =
-        FSharp source
-        |> withLangVersionPreview
-        |> asExe
-        |> compileAndRun
-        |> shouldSucceed
-        |> ignore
-
     let orpIgnoredTestCases: obj[] seq =
         [
             [| "higher priority does not win"; "BasicPriority.Invoke(\"test\")"; "priority-1-string" |]
@@ -1439,26 +1437,6 @@ if w.tag <> "A_naked:hi" then failwithf "expected A_naked:hi, got %s" w.tag
         |> shouldSucceed
         |> ignore
 
-    [<FactForNETCOREAPP>]
-    let ``MoreConcrete - overload resolution priority still wins over concreteness`` () =
-        // Cross-feature guard: ORPA is a pre-filter applied before any tiebreak, so a high-priority
-        // LESS-concrete overload must beat a low-priority MORE-concrete one. The most-concrete rule
-        // must not resurrect the pruned low-priority candidate.
-        FSharp """
-module Test
-open System.Runtime.CompilerServices
-type C<'T>() =
-    [<OverloadResolutionPriority(1)>] static member M(x: 'T)        = "high-generic"
-    static member M(x: 'T option) = "low-concrete"
-let r = C<_>.M(Some 5)
-if r <> "high-generic" then failwithf "expected high-generic, got %s" r
-        """
-        |> withLangVersionPreview
-        |> asExe
-        |> compileAndRun
-        |> shouldSucceed
-        |> ignore
-
     [<Fact>]
     let ``MoreConcrete - overloads differing only by SRTP concreteness stay ambiguous`` () =
         // The tiebreak short-circuits on statically-resolved type parameters (they resolve via a
@@ -1476,71 +1454,208 @@ let r = F.M(Some 5)
         |> withErrorCode 41
         |> ignore
 
-    // Edge-case matrix: every row is FS0041 at --langversion:default and resolves to the concrete
-    // overload "c" at preview, covering the member kinds the feature must serve: naked generics,
-    // constructors, extension methods, static and instance methods on a generic type, optionals,
-    // and paramarray.
-    let mostConcreteEdgeCases: obj[] seq =
-        let case (name: string) (source: string) =
-            let checkedSource =
-                source + sprintf "\nif r <> \"c\" then failwith (\"%s: got \" + r)" name
+/// The most-concrete tiebreaker turns a previously ambiguous call into a successful
+/// resolution. Each test here has an exact mirror in WithoutTieBreakerFeature that pins the
+/// same source to a feature-off language version and asserts FS0041 instead.
+module WithTieBreakerFeature =
 
-            [| box name; box checkedSource |]
+    open TiebreakerFixtures
 
-        [
-            case "naked-generic-ctor" """
-module T
-type W<'T>(t: string) =
-    new(x: 'T)        = W<'T>("g")
-    new(x: 'T option) = W<'T>("c")
-    member _.T = t
-let r = (W(Some 5)).T"""
-
-            case "generic-extension" """
-module T
-open System.Runtime.CompilerServices
-type W() = class end
-[<Extension>]
-type E =
-    [<Extension>] static member M(w: W, x: 'T)        = "g"
-    [<Extension>] static member M(w: W, x: 'T option) = "c"
-let r = (W()).M(Some 5)"""
-
-            case "static-method-generic-type" """
-module T
-type Factory<'T>() =
-    static member Make(x: 'T)        = "g"
-    static member Make(x: 'T option) = "c"
-let r = Factory<_>.Make(Some 5)"""
-
-            case "instance-method-generic-type" """
-module T
-type Factory<'T>() =
-    member _.Make(x: 'T)        = "g"
-    member _.Make(x: 'T option) = "c"
-let r = Factory<_>().Make(Some 5)"""
-
-            case "optional-tail" """
-module T
-type F() =
-    static member M(x: 'T, ?y: int)        = "g"
-    static member M(x: 'T option, ?y: int) = "c"
-let r = F.M(Some 5)"""
-
-            case "paramarray-tail" """
-module T
-type F() =
-    static member M(x: 'T, [<System.ParamArray>] rest: int[])        = "g"
-    static member M(x: 'T option, [<System.ParamArray>] rest: int[]) = "c"
-let r = F.M(Some 5)"""
-        ]
+    // Both-generic overloads that differ only by concreteness: the tiebreaker resolves them.
+    let moreConcreteFlipCases = moreConcreteTestCases
 
     [<Theory>]
-    [<MemberData(nameof mostConcreteEdgeCases)>]
-    let ``MoreConcrete - edge-case matrix picks the concrete overload`` (_name: string) (source: string) =
+    [<MemberData(nameof moreConcreteFlipCases)>]
+    let ``Both-generic overloads resolve to the more concrete one`` (_description: string) (source: string) =
         FSharp source
         |> withLangVersionPreview
         |> asExe
         |> compileAndRun
         |> shouldSucceed
         |> ignore
+
+    // Generic vs wrapped-generic (e.g. 't vs Option<'t>, 't vs 't array): concreteness resolves them.
+    let disabledFlipCases = moreConcretDisabledAmbiguousCases
+
+    [<Theory>]
+    [<MemberData(nameof disabledFlipCases)>]
+    let ``Generic-vs-wrapped overloads resolve to the concrete one`` (_description: string) (source: string) =
+        FSharp source
+        |> withLangVersionPreview
+        |> typecheck
+        |> shouldSucceed
+        |> ignore
+
+    // Member-kind matrix: ctor / extension / static / instance / optional-tail / paramarray-tail.
+    let edgeCaseFlipCases = mostConcreteEdgeCases
+
+    [<Theory>]
+    [<MemberData(nameof edgeCaseFlipCases)>]
+    let ``Edge-case matrix picks the concrete overload`` (_name: string) (source: string) =
+        FSharp source
+        |> withLangVersionPreview
+        |> asExe
+        |> compileAndRun
+        |> shouldSucceed
+        |> ignore
+
+    [<Theory>]
+    [<InlineData("Process", "Result<int, 'error>", "int ok", "Ok 42 : Result<int, exn>")>]
+    [<InlineData("Handle", "Result<'ok, string>", "string error", "Ok \"test\" : Result<string, string>")>]
+    let ``Partial concreteness resolves`` (methodName: string) (concreteParam: string) (concreteDesc: string) (callExpr: string) =
+        FSharp(example5PartialSource methodName concreteParam concreteDesc callExpr)
+        |> withLangVersionPreview
+        |> asExe
+        |> compileAndRun
+        |> shouldSucceed
+        |> ignore
+
+    [<Fact>]
+    let ``Task<T> vs T factory resolves to the concrete Task overload`` () =
+        FSharp example7Source |> withLangVersionPreview |> typecheck |> shouldSucceed |> ignore
+
+    [<Fact>]
+    let ``CE Source overloads resolve (FsToolkit AsyncResult pattern)`` () =
+        FSharp example8Source |> withLangVersionPreview |> typecheck |> shouldSucceed |> ignore
+
+    [<Fact>]
+    let ``Builder Source with Result vs generic resolves`` () =
+        FSharp realWorldSource |> withLangVersionPreview |> typecheck |> shouldSucceed |> ignore
+
+    [<Fact>]
+    let ``Same-module extension Source overloads resolve by concreteness`` () =
+        FSharp fsToolkitSource |> withLangVersionPreview |> typecheck |> shouldSucceed |> ignore
+
+    [<FactForNETCOREAPP>]
+    let ``Overload resolution priority still wins over concreteness`` () =
+        FSharp orpWinsSource |> withLangVersionPreview |> asExe |> compileAndRun |> shouldSucceed |> ignore
+
+    // The tiebreaker emits advisory diagnostics (FS3575 selected / FS3576 bypassed) when opted into.
+
+    [<Fact>]
+    let ``Warning 3575 - Not emitted by default when concreteness tiebreaker used`` () =
+        FSharp concretenessWarningSource
+        |> withLangVersionPreview
+        |> typecheck
+        |> shouldSucceed
+        |> ignore
+
+    [<Fact>]
+    let ``Warning 3575 - Emitted when enabled and concreteness tiebreaker is used`` () =
+        FSharp concretenessWarningSource
+        |> withLangVersionPreview
+        |> withOptions ["--warnon:3575"]
+        |> typecheck
+        |> shouldFail
+        |> withWarningCode 3575
+        |> withDiagnosticMessageMatches "concreteness"
+        // FS3575 names the two distinct signatures (concrete winner, generic loser), not "Invoke"/"Invoke".
+        |> withDiagnosticMessageMatches "Option<'t list>"
+        |> withDiagnosticMessageMatches "Invoke: value: Option<'t> ->"
+        |> ignore
+
+    [<Fact>]
+    let ``Warning 3576 - Emitted when enabled and generic overload is bypassed`` () =
+        FSharp concretenessWarningSource
+        |> withLangVersionPreview
+        |> withOptions ["--warnon:3576"]
+        |> typecheck
+        |> shouldFail
+        |> withWarningCode 3576
+        |> withDiagnosticMessageMatches "bypassed"
+        // FS3576 names the two distinct signatures (generic loser, concrete winner), not "Invoke"/"Invoke".
+        |> withDiagnosticMessageMatches "Option<'t list>"
+        |> withDiagnosticMessageMatches "Invoke: value: Option<'t> ->"
+        |> ignore
+
+    [<Fact>]
+    let ``Warning 3576 - Multiple bypassed overloads`` () =
+        FSharp multipleBypassedSource
+        |> withLangVersionPreview
+        |> withOptions ["--warnon:3576"]
+        |> typecheck
+        |> shouldFail
+        |> withWarningCode 3576
+        |> ignore
+
+/// Exact mirror of WithTieBreakerFeature pinned to langversion 10.0 (feature off): every source
+/// that resolves under preview instead stays ambiguous (FS0041) without the tiebreaker.
+module WithoutTieBreakerFeature =
+
+    open TiebreakerFixtures
+
+    // Both-generic overloads that differ only by concreteness: ambiguous without the tiebreaker.
+    let moreConcreteFlipCases = moreConcreteTestCases
+
+    [<Theory>]
+    [<MemberData(nameof moreConcreteFlipCases)>]
+    let ``Both-generic overloads stay ambiguous`` (_description: string) (source: string) =
+        FSharp source
+        |> withLangVersion "10.0"
+        |> compile
+        |> shouldFail
+        |> withErrorCode 41
+        |> ignore
+
+    let disabledFlipCases = moreConcretDisabledAmbiguousCases
+
+    [<Theory>]
+    [<MemberData(nameof disabledFlipCases)>]
+    let ``Generic-vs-wrapped overloads stay ambiguous`` (_description: string) (source: string) =
+        FSharp source
+        |> withLangVersion "10.0"
+        |> typecheck
+        |> shouldFail
+        |> withErrorCode 41
+        |> ignore
+
+    let edgeCaseFlipCases = mostConcreteEdgeCases
+
+    [<Theory>]
+    [<MemberData(nameof edgeCaseFlipCases)>]
+    let ``Edge-case matrix stays ambiguous`` (_name: string) (source: string) =
+        FSharp source
+        |> withLangVersion "10.0"
+        |> compile
+        |> shouldFail
+        |> withErrorCode 41
+        |> ignore
+
+    [<Theory>]
+    [<InlineData("Process", "Result<int, 'error>", "int ok", "Ok 42 : Result<int, exn>")>]
+    [<InlineData("Handle", "Result<'ok, string>", "string error", "Ok \"test\" : Result<string, string>")>]
+    let ``Partial concreteness stays ambiguous`` (methodName: string) (concreteParam: string) (concreteDesc: string) (callExpr: string) =
+        FSharp(example5PartialSource methodName concreteParam concreteDesc callExpr)
+        |> withLangVersion "10.0"
+        |> compile
+        |> shouldFail
+        |> withErrorCode 41
+        |> ignore
+
+    [<Fact>]
+    let ``Task<T> vs T factory stays ambiguous`` () =
+        FSharp example7Source |> withLangVersion "10.0" |> typecheck |> shouldFail |> withErrorCode 41 |> ignore
+
+    [<Fact>]
+    let ``CE Source overloads stay ambiguous`` () =
+        FSharp example8Source |> withLangVersion "10.0" |> typecheck |> shouldFail |> withErrorCode 41 |> ignore
+
+    [<Fact>]
+    let ``Builder Source with Result vs generic stays ambiguous`` () =
+        FSharp realWorldSource |> withLangVersion "10.0" |> typecheck |> shouldFail |> withErrorCode 41 |> ignore
+
+    [<Fact>]
+    let ``Same-module extension Source overloads stay ambiguous`` () =
+        FSharp fsToolkitSource |> withLangVersion "10.0" |> typecheck |> shouldFail |> withErrorCode 41 |> ignore
+
+    [<FactForNETCOREAPP>]
+    let ``Overload resolution priority disabled leaves the call ambiguous`` () =
+        FSharp orpWinsSource |> withLangVersion "10.0" |> compile |> shouldFail |> withErrorCode 41 |> ignore
+
+    [<Fact>]
+    let ``Advisory warning source stays ambiguous`` () =
+        FSharp concretenessWarningSource |> withLangVersion "10.0" |> typecheck |> shouldFail |> withErrorCode 41 |> ignore
+
+    [<Fact>]
+    let ``Multiple bypassed source stays ambiguous`` () =
+        FSharp multipleBypassedSource |> withLangVersion "10.0" |> typecheck |> shouldFail |> withErrorCode 41 |> ignore
