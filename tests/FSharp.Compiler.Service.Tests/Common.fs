@@ -509,16 +509,31 @@ let assertRange
     Assert.Equal(Position.mkPos expectedStartLine expectedStartColumn, actualRange.Start)
     Assert.Equal(Position.mkPos expectedEndLine expectedEndColumn, actualRange.End)
 
-let createProjectOptions fileSources extraArgs =
+let private createProjectOptionsWith (writeSourceFiles: System.IO.DirectoryInfo -> string[]) extraArgs =
     let tempDir = createTemporaryDirectory()
     let temp2 = getTemporaryFileNameInDirectory tempDir
     let dllName = changeExtension temp2 ".dll"
     let projFileName = changeExtension temp2 ".fsproj"
-
-    let sourceFiles = 
-        [| for fileSource: string in fileSources do
-                let fileName = changeExtension (getTemporaryFileNameInDirectory tempDir) ".fs"
-                FileSystem.OpenFileForWriteShim(fileName).Write(fileSource)
-                fileName |]
+    let sourceFiles = writeSourceFiles tempDir
     let args = [| yield! mkProjectCommandLineArgs (dllName, []); yield! extraArgs |]
     { checker.GetProjectOptionsFromCommandLineArgs (projFileName, args) with SourceFiles = sourceFiles }
+
+let createProjectOptions fileSources extraArgs =
+    createProjectOptionsWith
+        (fun tempDir ->
+            [| for fileSource: string in fileSources do
+                   let fileName = changeExtension (getTemporaryFileNameInDirectory tempDir) ".fs"
+                   FileSystem.OpenFileForWriteShim(fileName).Write(fileSource)
+                   fileName |])
+        extraArgs
+
+/// Like createProjectOptions but preserves caller-provided file names, so a signature file
+/// (.fsi) can be paired with its implementation. Source order is preserved (.fsi before .fs).
+let createProjectOptionsFromNamedSources (namedSources: (string * string) list) extraArgs =
+    createProjectOptionsWith
+        (fun tempDir ->
+            [| for fileName, fileSource in namedSources do
+                   let filePath = System.IO.Path.Combine(tempDir.FullName, fileName)
+                   FileSystem.OpenFileForWriteShim(filePath).Write(fileSource)
+                   filePath |])
+        extraArgs
