@@ -136,20 +136,18 @@ module internal PervasiveAutoOpens =
     let notFound () = raise (KeyNotFoundException())
 
     type Async with
+        static member RunSynchronouslyImmediate(computation: Async<'T>, ?cancellationToken) =
+            let tcs = TaskCompletionSource<'T>()
 
-        static member RunImmediate(computation: Async<'T>, ?cancellationToken) =
-            let cancellationToken = defaultArg cancellationToken Async.DefaultCancellationToken
-
-            let ts = TaskCompletionSource<'T>()
-
-            let task = ts.Task
-
-            Async.StartWithContinuations(computation, ts.SetResult, ts.SetException, (fun _ -> ts.SetCanceled()), cancellationToken)
-
-            try
-                task.Result
-            with :? AggregateException as ex when ex.InnerExceptions.Count = 1 ->
-                raise (ex.InnerExceptions[0])
+            Async.StartWithContinuations(
+                computation,
+                tcs.SetResult,
+                tcs.SetException,
+                tcs.SetException,
+                ?cancellationToken = cancellationToken
+            )
+            // Synchronously block waiting for the result (i.e. even if continuations run on another thread, caller thread will be blocked)
+            tcs.Task.GetAwaiter().GetResult() // GetResult() unpacks the AggregateException that .Result would present
 
 [<AbstractClass>]
 type DelayInitArrayMap<'T, 'TDictKey, 'TDictValue>(f: unit -> 'T[]) =

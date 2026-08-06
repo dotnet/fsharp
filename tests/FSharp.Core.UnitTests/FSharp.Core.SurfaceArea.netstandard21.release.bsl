@@ -674,6 +674,7 @@ Microsoft.FSharp.Control.FSharpAsync: System.Threading.Tasks.Task`1[T] StartAsTa
 Microsoft.FSharp.Control.FSharpAsync: System.Threading.Tasks.Task`1[T] StartImmediateAsTask[T](Microsoft.FSharp.Control.FSharpAsync`1[T], Microsoft.FSharp.Core.FSharpOption`1[System.Threading.CancellationToken])
 Microsoft.FSharp.Control.FSharpAsync: System.Tuple`3[Microsoft.FSharp.Core.FSharpFunc`2[System.Tuple`3[TArg,System.AsyncCallback,System.Object],System.IAsyncResult],Microsoft.FSharp.Core.FSharpFunc`2[System.IAsyncResult,T],Microsoft.FSharp.Core.FSharpFunc`2[System.IAsyncResult,Microsoft.FSharp.Core.Unit]] AsBeginEnd[TArg,T](Microsoft.FSharp.Core.FSharpFunc`2[TArg,Microsoft.FSharp.Control.FSharpAsync`1[T]])
 Microsoft.FSharp.Control.FSharpAsync: T RunSynchronously[T](Microsoft.FSharp.Control.FSharpAsync`1[T], Microsoft.FSharp.Core.FSharpOption`1[System.Int32], Microsoft.FSharp.Core.FSharpOption`1[System.Threading.CancellationToken])
+Microsoft.FSharp.Control.FSharpAsync: T RunSynchronouslyImmediate[T](Microsoft.FSharp.Control.FSharpAsync`1[T], Microsoft.FSharp.Core.FSharpOption`1[System.Threading.CancellationToken])
 Microsoft.FSharp.Control.FSharpAsync: Void CancelDefaultToken()
 Microsoft.FSharp.Control.FSharpAsync: Void Start(Microsoft.FSharp.Control.FSharpAsync`1[Microsoft.FSharp.Core.Unit], Microsoft.FSharp.Core.FSharpOption`1[System.Threading.CancellationToken])
 Microsoft.FSharp.Control.FSharpAsync: Void StartImmediate(Microsoft.FSharp.Control.FSharpAsync`1[Microsoft.FSharp.Core.Unit], Microsoft.FSharp.Core.FSharpOption`1[System.Threading.CancellationToken])

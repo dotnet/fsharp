@@ -1,6 +1,5 @@
 module FSharp.Compiler.Service.Tests.GotoDefinitionModulesTests
 
-open System
 open Xunit
 
 let private moduleDefSource =
@@ -22,8 +21,8 @@ let private moduleSource =
         [ "module Too{caret1} = (*loc-55*)"
           "  let foo{caret2} = 0 (*loc-56*)"
           "module Bar ="
-          "  open Too{caret5} (*loc-57*)"
-          "let _ = Too{caret3}.foo{caret4} (*loc-58*)" ]
+          "  open Too{caret5}"
+          "let _ = Too{caret3}.foo{caret4}" ]
 
 [<Fact>]
 let ``GotoDefinition.Simple.Module`` () =
