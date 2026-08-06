@@ -747,11 +747,6 @@
         <target state="translated">'while!' 運算式</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureWildCardInForLoop">
-        <source>wild card in for loop</source>
-        <target state="translated">for 迴圈中的萬用字元</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureWitnessPassing">
         <source>witness passing for trait constraints in F# quotations</source>
         <target state="translated">見證 F# 引號中特徵條件約束的傳遞</target>
