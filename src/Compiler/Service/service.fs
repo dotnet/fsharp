@@ -362,10 +362,7 @@ type FSharpChecker
         | HotReloadError.DeltaEmissionException ex -> FSharpHotReloadError.DeltaEmissionFailed ex.Message
 
     let createBaseline (tcGlobals: TcGlobals) (ilModule: ILModuleDef) (outputPath: string) =
-        let pdbPath =
-            Path.ChangeExtension(outputPath, ".pdb")
-            |> Option.ofObj
-            |> Option.defaultValue (outputPath + ".pdb")
+        let pdbPath = Path.ChangeExtension(outputPath, ".pdb")
 
         let writerOptions: ILBinaryWriter.options =
             {

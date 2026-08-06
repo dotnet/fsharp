@@ -492,10 +492,7 @@ type internal FSharpHotReloadService
                                 // remapping and the emitted PDB delta. Missing/unreadable PDBs
                                 // degrade gracefully (analysis stays inert, fail closed).
                                 let freshDebugPdb =
-                                    let pdbPath =
-                                        Path.ChangeExtension(outputPath, ".pdb")
-                                        |> Option.ofObj
-                                        |> Option.defaultValue (outputPath + ".pdb")
+                                    let pdbPath = Path.ChangeExtension(outputPath, ".pdb")
 
                                     if File.Exists(pdbPath) then
                                         FSharpHotReloadFileSystem.tryReadAllBytes File.ReadAllBytes pdbPath
