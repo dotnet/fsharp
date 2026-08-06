@@ -16,7 +16,7 @@ let rec parseLine(line: string, state: FSharpTokenizerLexState ref, tokenizer: F
       state.Value <- nstate }
 
 let tokenizeLines (lines:string[]) =
-  let sourceTok = FSharpSourceTokenizer([], Some "C:\\test.fsx", None, None)
+  let sourceTok = FSharpSourceTokenizer([], Some "C:\\test.fsx", None)
   [ let state = ref FSharpTokenizerLexState.Initial
     for n, line in lines |> Seq.zip [ 0 .. lines.Length-1 ] do
 
@@ -26,7 +26,7 @@ let tokenizeLines (lines:string[]) =
 /// Scans every token of a (possibly multi-line) source using a single line tokenizer,
 /// threading the lex state across embedded newlines (column index resets at each newline).
 let scanTokens (defines: string list) (source: string) =
-    let sourceTok = FSharpSourceTokenizer(defines, Some "C:\\test.fsx", None, None)
+    let sourceTok = FSharpSourceTokenizer(defines, Some "C:\\test.fsx", None)
     let tokenizer = sourceTok.CreateLineTokenizer(source)
     let rec loop (state: FSharpTokenizerLexState) acc =
         match tokenizer.ScanToken(state) with
@@ -220,7 +220,7 @@ let ``Tokenizer test - single-line nested string interpolation``() =
 [<Fact>]
 let ``Tokenizer test - elif directive produces HASH_ELIF token``() =
     let defines = ["DEBUG"]
-    let sourceTok = FSharpSourceTokenizer(defines, Some "C:\\test.fsx", None, None)
+    let sourceTok = FSharpSourceTokenizer(defines, Some "C:\\test.fsx", None)
     let lines =
         [| "#if DEBUG"
            "let x = 1"
