@@ -42,7 +42,7 @@ module RuntimeIntegrationTests =
     /// content-versioned, so each edit needs a fresh one).
     let private snapshotOf (projectOptions: FSharpProjectOptions) =
         FSharpProjectSnapshot.FromOptions(projectOptions, DocumentSource.FileSystem)
-        |> Async.RunImmediate
+        |> Async.RunSynchronouslyImmediate
 
     let private reflectionFlags =
         BindingFlags.Instance ||| BindingFlags.NonPublic ||| BindingFlags.Public
@@ -115,7 +115,7 @@ type Type =
                 useSdkRefs = true,
                 useFsiAuxLib = false
             )
-            |> Async.RunImmediate
+            |> Async.RunSynchronouslyImmediate
 
         let projectOptions =
             { projectOptions with
@@ -131,14 +131,14 @@ type Type =
 
         let projectResults =
             checker.ParseAndCheckProject(projectOptions)
-            |> Async.RunImmediate
+            |> Async.RunSynchronouslyImmediate
 
         if projectResults.Diagnostics |> Array.exists (fun d -> d.Severity = FSharpDiagnosticSeverity.Error) then
             failwithf "Compilation failed: %A" projectResults.Diagnostics
 
         let compileDiagnostics, compileException =
             checker.Compile(Array.append [| "fsc.exe" |] (Array.append projectOptions.OtherOptions [| fsPath |]))
-            |> Async.RunImmediate
+            |> Async.RunSynchronouslyImmediate
 
         let compileErrors =
             compileDiagnostics
@@ -512,7 +512,7 @@ let transform (values: int list) =
                         useSdkRefs = true,
                         useFsiAuxLib = false
                     )
-                    |> Async.RunImmediate
+                    |> Async.RunSynchronouslyImmediate
 
                 let projectOptions =
                     { projectOptions with
@@ -532,7 +532,7 @@ let transform (values: int list) =
                 checker.InvalidateAll()
                 let compileDiagnostics, _ =
                     checker.Compile(Array.concat [ [| "fsc.exe" |]; projectOptions.OtherOptions; projectOptions.SourceFiles ])
-                    |> Async.RunImmediate
+                    |> Async.RunSynchronouslyImmediate
 
                 let errors = compileDiagnostics |> Array.filter (fun d -> d.Severity = FSharpDiagnosticSeverity.Error)
                 if errors.Length > 0 then failwithf "Baseline compilation failed: %A" (errors |> Array.map (fun d -> d.Message))
@@ -540,7 +540,7 @@ let transform (values: int list) =
                 // Start hot reload session
                 use session = checker.CreateHotReloadSession()
 
-                match session.AddProject(snapshotOf projectOptions) |> Async.RunImmediate with
+                match session.AddProject(snapshotOf projectOptions) |> Async.RunSynchronouslyImmediate with
                 | Error error -> failwithf "Failed to start hot reload session: %A" error
                 | Ok () -> ()
 
@@ -560,7 +560,7 @@ let transform (values: int list) =
 
                 // Update source
                 File.WriteAllText(fsPath, updatedSource)
-                checker.NotifyFileChanged(fsPath, projectOptions) |> Async.RunImmediate
+                checker.NotifyFileChanged(fsPath, projectOptions) |> Async.RunSynchronouslyImmediate
 
                 // Recompile without hot reload capture (same as HotReloadDemoApp pattern)
                 let updatedOptions =
@@ -572,13 +572,13 @@ let transform (values: int list) =
 
                 let compileDiagnostics2, _ =
                     checker.Compile(Array.concat [ [| "fsc.exe" |]; updatedOptions.OtherOptions; updatedOptions.SourceFiles ])
-                    |> Async.RunImmediate
+                    |> Async.RunSynchronouslyImmediate
 
                 let errors2 = compileDiagnostics2 |> Array.filter (fun d -> d.Severity = FSharpDiagnosticSeverity.Error)
                 if errors2.Length > 0 then failwithf "Update compilation failed: %A" (errors2 |> Array.map (fun d -> d.Message))
 
                 // Emit delta
-                match session.EmitDelta(snapshotOf projectOptions) |> Async.RunImmediate with
+                match session.EmitDelta(snapshotOf projectOptions) |> Async.RunSynchronouslyImmediate with
                 | Error error -> failwithf "EmitDelta failed: %A" error
                 | Ok delta ->
                     // The runtime is about to apply this update; commit immediately, matching
@@ -677,7 +677,7 @@ let extra () = 99
                         useSdkRefs = true,
                         useFsiAuxLib = false
                     )
-                    |> Async.RunImmediate
+                    |> Async.RunSynchronouslyImmediate
 
                 let projectOptions =
                     { projectOptions with
@@ -696,7 +696,7 @@ let extra () = 99
                 checker.InvalidateAll()
                 let compileDiagnostics, _ =
                     checker.Compile(Array.concat [ [| "fsc.exe" |]; projectOptions.OtherOptions; projectOptions.SourceFiles ])
-                    |> Async.RunImmediate
+                    |> Async.RunSynchronouslyImmediate
 
                 let errors = compileDiagnostics |> Array.filter (fun d -> d.Severity = FSharpDiagnosticSeverity.Error)
                 if errors.Length > 0 then failwithf "Baseline compilation failed: %A" (errors |> Array.map (fun d -> d.Message))
@@ -708,7 +708,7 @@ let extra () = 99
 
                 use session = checker.CreateHotReloadSession(capabilities = capabilities)
 
-                match session.AddProject(snapshotOf projectOptions) |> Async.RunImmediate with
+                match session.AddProject(snapshotOf projectOptions) |> Async.RunSynchronouslyImmediate with
                 | Error error -> failwithf "Failed to start hot reload session: %A" error
                 | Ok () -> ()
 
@@ -723,7 +723,7 @@ let extra () = 99
                 Assert.Equal(1, existingMethod.Invoke(null, [||]) :?> int)
 
                 File.WriteAllText(fsPath, moduleFunctionUpdatedSource)
-                checker.NotifyFileChanged(fsPath, projectOptions) |> Async.RunImmediate
+                checker.NotifyFileChanged(fsPath, projectOptions) |> Async.RunSynchronouslyImmediate
 
                 let updatedOptions =
                     { projectOptions with
@@ -734,12 +734,12 @@ let extra () = 99
 
                 let compileDiagnostics2, _ =
                     checker.Compile(Array.concat [ [| "fsc.exe" |]; updatedOptions.OtherOptions; updatedOptions.SourceFiles ])
-                    |> Async.RunImmediate
+                    |> Async.RunSynchronouslyImmediate
 
                 let errors2 = compileDiagnostics2 |> Array.filter (fun d -> d.Severity = FSharpDiagnosticSeverity.Error)
                 if errors2.Length > 0 then failwithf "Update compilation failed: %A" (errors2 |> Array.map (fun d -> d.Message))
 
-                match session.EmitDelta(snapshotOf projectOptions) |> Async.RunImmediate with
+                match session.EmitDelta(snapshotOf projectOptions) |> Async.RunSynchronouslyImmediate with
                 | Error error -> failwithf "EmitDelta failed: %A" error
                 | Ok delta ->
                     // The runtime is about to apply this update; commit immediately, matching
@@ -802,7 +802,7 @@ let extra () = 99
                         useSdkRefs = true,
                         useFsiAuxLib = false
                     )
-                    |> Async.RunImmediate
+                    |> Async.RunSynchronouslyImmediate
 
                 let projectOptions =
                     { projectOptions with
@@ -821,7 +821,7 @@ let extra () = 99
                 checker.InvalidateAll()
                 let compileDiagnostics, _ =
                     checker.Compile(Array.concat [ [| "fsc.exe" |]; projectOptions.OtherOptions; projectOptions.SourceFiles ])
-                    |> Async.RunImmediate
+                    |> Async.RunSynchronouslyImmediate
 
                 let errors = compileDiagnostics |> Array.filter (fun d -> d.Severity = FSharpDiagnosticSeverity.Error)
                 if errors.Length > 0 then failwithf "Baseline compilation failed: %A" (errors |> Array.map (fun d -> d.Message))
@@ -832,7 +832,7 @@ let extra () = 99
 
                 use session = checker.CreateHotReloadSession(capabilities = capabilities)
 
-                match session.AddProject(snapshotOf projectOptions) |> Async.RunImmediate with
+                match session.AddProject(snapshotOf projectOptions) |> Async.RunSynchronouslyImmediate with
                 | Error error -> failwithf "Failed to start hot reload session: %A" error
                 | Ok () -> ()
 
@@ -848,7 +848,7 @@ let extra () = 99
                 Assert.Equal(1, existingMethod.Invoke(null, [||]) :?> int)
 
                 File.WriteAllText(fsPath, moduleValueUpdatedSource)
-                checker.NotifyFileChanged(fsPath, projectOptions) |> Async.RunImmediate
+                checker.NotifyFileChanged(fsPath, projectOptions) |> Async.RunSynchronouslyImmediate
 
                 let updatedOptions =
                     { projectOptions with
@@ -859,12 +859,12 @@ let extra () = 99
 
                 let compileDiagnostics2, _ =
                     checker.Compile(Array.concat [ [| "fsc.exe" |]; updatedOptions.OtherOptions; updatedOptions.SourceFiles ])
-                    |> Async.RunImmediate
+                    |> Async.RunSynchronouslyImmediate
 
                 let errors2 = compileDiagnostics2 |> Array.filter (fun d -> d.Severity = FSharpDiagnosticSeverity.Error)
                 if errors2.Length > 0 then failwithf "Update compilation failed: %A" (errors2 |> Array.map (fun d -> d.Message))
 
-                match session.EmitDelta(snapshotOf projectOptions) |> Async.RunImmediate with
+                match session.EmitDelta(snapshotOf projectOptions) |> Async.RunSynchronouslyImmediate with
                 | Error error -> failwithf "EmitDelta failed: %A" error
                 | Ok delta ->
                     // The runtime is about to apply this update; commit immediately, matching
@@ -920,16 +920,16 @@ let extra () = 99
                     // UPDATED method body that also initializes the second value.
                     // ---------------------------------------------------------------
                     File.WriteAllText(fsPath, moduleValueSecondUpdateSource)
-                    checker.NotifyFileChanged(fsPath, projectOptions) |> Async.RunImmediate
+                    checker.NotifyFileChanged(fsPath, projectOptions) |> Async.RunSynchronouslyImmediate
 
                     let compileDiagnostics3, _ =
                         checker.Compile(Array.concat [ [| "fsc.exe" |]; updatedOptions.OtherOptions; updatedOptions.SourceFiles ])
-                        |> Async.RunImmediate
+                        |> Async.RunSynchronouslyImmediate
 
                     let errors3 = compileDiagnostics3 |> Array.filter (fun d -> d.Severity = FSharpDiagnosticSeverity.Error)
                     if errors3.Length > 0 then failwithf "Second update compilation failed: %A" (errors3 |> Array.map (fun d -> d.Message))
 
-                    match session.EmitDelta(snapshotOf projectOptions) |> Async.RunImmediate with
+                    match session.EmitDelta(snapshotOf projectOptions) |> Async.RunSynchronouslyImmediate with
                     | Error error -> failwithf "EmitDelta (generation 2) failed: %A" error
                     | Ok delta2 ->
                         // The runtime is about to apply this update; commit immediately, matching
@@ -1025,7 +1025,7 @@ type Type =
                         useSdkRefs = true,
                         useFsiAuxLib = false
                     )
-                    |> Async.RunImmediate
+                    |> Async.RunSynchronouslyImmediate
 
                 let projectOptions =
                     { projectOptions with
@@ -1046,7 +1046,7 @@ type Type =
 
                 let baselineCompileDiagnostics, _ =
                     checker.Compile(Array.concat [ [| "fsc.exe" |]; projectOptions.OtherOptions; projectOptions.SourceFiles ])
-                    |> Async.RunImmediate
+                    |> Async.RunSynchronouslyImmediate
 
                 let baselineErrors =
                     baselineCompileDiagnostics
@@ -1060,7 +1060,7 @@ type Type =
                     | Some capabilities -> checker.CreateHotReloadSession(capabilities = capabilities)
                     | None -> checker.CreateHotReloadSession()
 
-                match session.AddProject(snapshotOf projectOptions) |> Async.RunImmediate with
+                match session.AddProject(snapshotOf projectOptions) |> Async.RunSynchronouslyImmediate with
                 | Error error -> failwithf "[%s] failed to start hot reload session: %A" testLabel error
                 | Ok () -> ()
 
@@ -1077,7 +1077,7 @@ type Type =
                 Assert.Equal(baselineExpected, baselineMessage)
 
                 File.WriteAllText(fsPath, updatedSource)
-                checker.NotifyFileChanged(fsPath, projectOptions) |> Async.RunImmediate
+                checker.NotifyFileChanged(fsPath, projectOptions) |> Async.RunSynchronouslyImmediate
 
                 let updatedOptions =
                     { projectOptions with
@@ -1088,7 +1088,7 @@ type Type =
 
                 let updateCompileDiagnostics, _ =
                     checker.Compile(Array.concat [ [| "fsc.exe" |]; updatedOptions.OtherOptions; updatedOptions.SourceFiles ])
-                    |> Async.RunImmediate
+                    |> Async.RunSynchronouslyImmediate
 
                 let updateErrors =
                     updateCompileDiagnostics
@@ -1097,7 +1097,7 @@ type Type =
                 if updateErrors.Length > 0 then
                     failwithf "[%s] updated compilation failed: %A" testLabel (updateErrors |> Array.map (fun d -> d.Message))
 
-                match session.EmitDelta(snapshotOf projectOptions) |> Async.RunImmediate with
+                match session.EmitDelta(snapshotOf projectOptions) |> Async.RunSynchronouslyImmediate with
                 | Error error -> failwithf "[%s] EmitDelta failed: %A" testLabel error
                 | Ok delta ->
                     // The runtime is about to apply this update; commit immediately, matching
@@ -1618,7 +1618,7 @@ type Type =
                         useSdkRefs = true,
                         useFsiAuxLib = false
                     )
-                    |> Async.RunImmediate
+                    |> Async.RunSynchronouslyImmediate
 
                 let projectOptions =
                     { projectOptions with
@@ -1638,7 +1638,7 @@ type Type =
                 checker.InvalidateAll()
                 let compileDiagnostics, _ =
                     checker.Compile(Array.concat [ [| "fsc.exe" |]; projectOptions.OtherOptions; projectOptions.SourceFiles ])
-                    |> Async.RunImmediate
+                    |> Async.RunSynchronouslyImmediate
 
                 let errors = compileDiagnostics |> Array.filter (fun d -> d.Severity = FSharpDiagnosticSeverity.Error)
                 if errors.Length > 0 then failwithf "Baseline compilation failed: %A" (errors |> Array.map (fun d -> d.Message))
@@ -1646,7 +1646,7 @@ type Type =
                 // Start hot reload session
                 use session = checker.CreateHotReloadSession()
 
-                match session.AddProject(snapshotOf projectOptions) |> Async.RunImmediate with
+                match session.AddProject(snapshotOf projectOptions) |> Async.RunSynchronouslyImmediate with
                 | Error error -> failwithf "Failed to start hot reload session: %A" error
                 | Ok () -> ()
 
@@ -1669,7 +1669,7 @@ type Type =
                 let applyGeneration gen =
                     let newSource = stringLiteralUpdatedSource gen
                     File.WriteAllText(fsPath, newSource)
-                    checker.NotifyFileChanged(fsPath, projectOptions) |> Async.RunImmediate
+                    checker.NotifyFileChanged(fsPath, projectOptions) |> Async.RunSynchronouslyImmediate
 
                     // Recompile without hot reload capture
                     let updatedOptions =
@@ -1681,13 +1681,13 @@ type Type =
 
                     let compileDiagnostics, _ =
                         checker.Compile(Array.concat [ [| "fsc.exe" |]; updatedOptions.OtherOptions; updatedOptions.SourceFiles ])
-                        |> Async.RunImmediate
+                        |> Async.RunSynchronouslyImmediate
 
                     let errors = compileDiagnostics |> Array.filter (fun d -> d.Severity = FSharpDiagnosticSeverity.Error)
                     if errors.Length > 0 then failwithf "Gen %d compilation failed: %A" gen (errors |> Array.map (fun d -> d.Message))
 
                     // Emit delta
-                    match session.EmitDelta(snapshotOf projectOptions) |> Async.RunImmediate with
+                    match session.EmitDelta(snapshotOf projectOptions) |> Async.RunSynchronouslyImmediate with
                     | Error error -> failwithf "Gen %d EmitDelta failed: %A" gen error
                     | Ok delta ->
                         // The runtime is about to apply this update; commit immediately, matching
@@ -1850,7 +1850,7 @@ type Type =
                     useSdkRefs = true,
                     useFsiAuxLib = false
                 )
-                |> Async.RunImmediate
+                |> Async.RunSynchronouslyImmediate
 
             let projectOptions =
                 { projectOptions with
@@ -1870,7 +1870,7 @@ type Type =
 
             let baselineCompileDiagnostics, _ =
                 checker.Compile(Array.concat [ [| "fsc.exe" |]; projectOptions.OtherOptions; projectOptions.SourceFiles ])
-                |> Async.RunImmediate
+                |> Async.RunSynchronouslyImmediate
 
             let baselineErrors =
                 baselineCompileDiagnostics
@@ -1881,7 +1881,7 @@ type Type =
 
             use session = checker.CreateHotReloadSession()
 
-            match session.AddProject(snapshotOf projectOptions) |> Async.RunImmediate with
+            match session.AddProject(snapshotOf projectOptions) |> Async.RunSynchronouslyImmediate with
             | Error error -> failwithf "failed to start hot reload session: %A" error
             | Ok () -> ()
 
@@ -1961,7 +1961,7 @@ type Type =
 
             // Apply the method-body edit and rebuild on disk, like dotnet-watch does.
             File.WriteAllText(fsPath, sprintfMethodSpecUpdatedSource)
-            checker.NotifyFileChanged(fsPath, projectOptions) |> Async.RunImmediate
+            checker.NotifyFileChanged(fsPath, projectOptions) |> Async.RunSynchronouslyImmediate
 
             let updatedOptions =
                 { projectOptions with
@@ -1972,7 +1972,7 @@ type Type =
 
             let updateCompileDiagnostics, _ =
                 checker.Compile(Array.concat [ [| "fsc.exe" |]; updatedOptions.OtherOptions; updatedOptions.SourceFiles ])
-                |> Async.RunImmediate
+                |> Async.RunSynchronouslyImmediate
 
             let updateErrors =
                 updateCompileDiagnostics
@@ -1981,7 +1981,7 @@ type Type =
             if updateErrors.Length > 0 then
                 failwithf "updated compilation failed: %A" (updateErrors |> Array.map (fun d -> d.Message))
 
-            match session.EmitDelta(snapshotOf projectOptions) |> Async.RunImmediate with
+            match session.EmitDelta(snapshotOf projectOptions) |> Async.RunSynchronouslyImmediate with
             | Error error -> failwithf "EmitDelta failed: %A" error
             | Ok delta ->
                 // The runtime is about to apply this update; commit immediately, matching
@@ -2162,7 +2162,7 @@ let probe () = List.sum (transform [ 1; 2; 3 ])
                         useSdkRefs = true,
                         useFsiAuxLib = false
                     )
-                    |> Async.RunImmediate
+                    |> Async.RunSynchronouslyImmediate
 
                 let projectOptions =
                     { projectOptions with
@@ -2182,7 +2182,7 @@ let probe () = List.sum (transform [ 1; 2; 3 ])
                 checker.InvalidateAll()
                 let compileDiagnostics, _ =
                     checker.Compile(Array.concat [ [| "fsc.exe" |]; projectOptions.OtherOptions; projectOptions.SourceFiles ])
-                    |> Async.RunImmediate
+                    |> Async.RunSynchronouslyImmediate
 
                 let errors = compileDiagnostics |> Array.filter (fun d -> d.Severity = FSharpDiagnosticSeverity.Error)
                 if errors.Length > 0 then failwithf "Baseline compilation failed: %A" (errors |> Array.map (fun d -> d.Message))
@@ -2194,7 +2194,7 @@ let probe () = List.sum (transform [ 1; 2; 3 ])
 
                 use session = checker.CreateHotReloadSession(capabilities = capabilities)
 
-                match session.AddProject(snapshotOf projectOptions) |> Async.RunImmediate with
+                match session.AddProject(snapshotOf projectOptions) |> Async.RunSynchronouslyImmediate with
                 | Error error -> failwithf "Failed to start hot reload session: %A" error
                 | Ok () -> ()
 
@@ -2217,7 +2217,7 @@ let probe () = List.sum (transform [ 1; 2; 3 ])
 
                 let applyGeneration gen (source: string) expectedValue =
                     File.WriteAllText(fsPath, source)
-                    checker.NotifyFileChanged(fsPath, projectOptions) |> Async.RunImmediate
+                    checker.NotifyFileChanged(fsPath, projectOptions) |> Async.RunSynchronouslyImmediate
 
                     let updatedOptions =
                         { projectOptions with
@@ -2228,12 +2228,12 @@ let probe () = List.sum (transform [ 1; 2; 3 ])
 
                     let compileDiagnostics, _ =
                         checker.Compile(Array.concat [ [| "fsc.exe" |]; updatedOptions.OtherOptions; updatedOptions.SourceFiles ])
-                        |> Async.RunImmediate
+                        |> Async.RunSynchronouslyImmediate
 
                     let errors = compileDiagnostics |> Array.filter (fun d -> d.Severity = FSharpDiagnosticSeverity.Error)
                     if errors.Length > 0 then failwithf "Gen %d compilation failed: %A" gen (errors |> Array.map (fun d -> d.Message))
 
-                    match session.EmitDelta(snapshotOf projectOptions) |> Async.RunImmediate with
+                    match session.EmitDelta(snapshotOf projectOptions) |> Async.RunSynchronouslyImmediate with
                     | Error error -> failwithf "Gen %d EmitDelta failed: %A" gen error
                     | Ok delta ->
                         // The runtime is about to apply this update; commit immediately, matching
@@ -2399,7 +2399,7 @@ let probe () = List.sum (transform [ 1; 2; 3 ])
                         useSdkRefs = true,
                         useFsiAuxLib = false
                     )
-                    |> Async.RunImmediate
+                    |> Async.RunSynchronouslyImmediate
 
                 let projectOptions =
                     { projectOptions with
@@ -2418,7 +2418,7 @@ let probe () = List.sum (transform [ 1; 2; 3 ])
                 checker.InvalidateAll()
                 let compileDiagnostics, _ =
                     checker.Compile(Array.concat [ [| "fsc.exe" |]; projectOptions.OtherOptions; projectOptions.SourceFiles ])
-                    |> Async.RunImmediate
+                    |> Async.RunSynchronouslyImmediate
 
                 let errors = compileDiagnostics |> Array.filter (fun d -> d.Severity = FSharpDiagnosticSeverity.Error)
                 if errors.Length > 0 then failwithf "Baseline compilation failed: %A" (errors |> Array.map (fun d -> d.Message))
@@ -2426,12 +2426,12 @@ let probe () = List.sum (transform [ 1; 2; 3 ])
                 // No capabilities negotiated: the session defaults to baseline-only.
                 use session = checker.CreateHotReloadSession()
 
-                match session.AddProject(snapshotOf projectOptions) |> Async.RunImmediate with
+                match session.AddProject(snapshotOf projectOptions) |> Async.RunSynchronouslyImmediate with
                 | Error error -> failwithf "Failed to start hot reload session: %A" error
                 | Ok () -> ()
 
                 File.WriteAllText(fsPath, closureAdditionUpdatedSource)
-                checker.NotifyFileChanged(fsPath, projectOptions) |> Async.RunImmediate
+                checker.NotifyFileChanged(fsPath, projectOptions) |> Async.RunSynchronouslyImmediate
 
                 let updatedOptions =
                     { projectOptions with
@@ -2442,12 +2442,12 @@ let probe () = List.sum (transform [ 1; 2; 3 ])
 
                 let compileDiagnostics2, _ =
                     checker.Compile(Array.concat [ [| "fsc.exe" |]; updatedOptions.OtherOptions; updatedOptions.SourceFiles ])
-                    |> Async.RunImmediate
+                    |> Async.RunSynchronouslyImmediate
 
                 let errors2 = compileDiagnostics2 |> Array.filter (fun d -> d.Severity = FSharpDiagnosticSeverity.Error)
                 if errors2.Length > 0 then failwithf "Update compilation failed: %A" (errors2 |> Array.map (fun d -> d.Message))
 
-                match session.EmitDelta(snapshotOf projectOptions) |> Async.RunImmediate with
+                match session.EmitDelta(snapshotOf projectOptions) |> Async.RunSynchronouslyImmediate with
                 | Ok _ -> failwith "Expected the added lambda to be rejected without the NewTypeDefinition capability."
                 | Error (FSharpHotReloadError.UnsupportedEdit edits) ->
                     let message = edits |> List.map (fun e -> $"{e.Id}: {e.Message}") |> String.concat System.Environment.NewLine
@@ -2545,7 +2545,7 @@ let probe () = List.sum (transform [ 1; 2; 3 ])
                         useSdkRefs = true,
                         useFsiAuxLib = false
                     )
-                    |> Async.RunImmediate
+                    |> Async.RunSynchronouslyImmediate
 
                 let projectOptions =
                     { projectOptions with
@@ -2564,7 +2564,7 @@ let probe () = List.sum (transform [ 1; 2; 3 ])
                 checker.InvalidateAll()
                 let compileDiagnostics, _ =
                     checker.Compile(Array.concat [ [| "fsc.exe" |]; projectOptions.OtherOptions; projectOptions.SourceFiles ])
-                    |> Async.RunImmediate
+                    |> Async.RunSynchronouslyImmediate
 
                 let errors = compileDiagnostics |> Array.filter (fun d -> d.Severity = FSharpDiagnosticSeverity.Error)
                 if errors.Length > 0 then failwithf "Baseline compilation failed: %A" (errors |> Array.map (fun d -> d.Message))
@@ -2574,7 +2574,7 @@ let probe () = List.sum (transform [ 1; 2; 3 ])
 
                 use session = checker.CreateHotReloadSession(capabilities = capabilities)
 
-                match session.AddProject(snapshotOf projectOptions) |> Async.RunImmediate with
+                match session.AddProject(snapshotOf projectOptions) |> Async.RunSynchronouslyImmediate with
                 | Error error -> failwithf "Failed to start hot reload session: %A" error
                 | Ok () -> ()
 
@@ -2596,7 +2596,7 @@ let probe () = List.sum (transform [ 1; 2; 3 ])
 
                 let applyGeneration gen (source: string) expectedValue =
                     File.WriteAllText(fsPath, source)
-                    checker.NotifyFileChanged(fsPath, projectOptions) |> Async.RunImmediate
+                    checker.NotifyFileChanged(fsPath, projectOptions) |> Async.RunSynchronouslyImmediate
 
                     let updatedOptions =
                         { projectOptions with
@@ -2607,12 +2607,12 @@ let probe () = List.sum (transform [ 1; 2; 3 ])
 
                     let compileDiagnostics, _ =
                         checker.Compile(Array.concat [ [| "fsc.exe" |]; updatedOptions.OtherOptions; updatedOptions.SourceFiles ])
-                        |> Async.RunImmediate
+                        |> Async.RunSynchronouslyImmediate
 
                     let errors = compileDiagnostics |> Array.filter (fun d -> d.Severity = FSharpDiagnosticSeverity.Error)
                     if errors.Length > 0 then failwithf "Gen %d compilation failed: %A" gen (errors |> Array.map (fun d -> d.Message))
 
-                    match session.EmitDelta(snapshotOf projectOptions) |> Async.RunImmediate with
+                    match session.EmitDelta(snapshotOf projectOptions) |> Async.RunSynchronouslyImmediate with
                     | Error error -> failwithf "Gen %d EmitDelta failed: %A" gen error
                     | Ok delta ->
                         // The runtime is about to apply this update; commit immediately, matching
@@ -2744,7 +2744,7 @@ let probe () = List.sum (transform [ 1; 2; 3 ])
                         useSdkRefs = true,
                         useFsiAuxLib = false
                     )
-                    |> Async.RunImmediate
+                    |> Async.RunSynchronouslyImmediate
 
                 let projectOptions =
                     { projectOptions with
@@ -2765,7 +2765,7 @@ let probe () = List.sum (transform [ 1; 2; 3 ])
                 checker.InvalidateAll()
                 let compileDiagnostics, _ =
                     checker.Compile(Array.concat [ [| "fsc.exe" |]; projectOptions.OtherOptions; projectOptions.SourceFiles ])
-                    |> Async.RunImmediate
+                    |> Async.RunSynchronouslyImmediate
 
                 let errors = compileDiagnostics |> Array.filter (fun d -> d.Severity = FSharpDiagnosticSeverity.Error)
                 if errors.Length > 0 then failwithf "Baseline compilation failed: %A" (errors |> Array.map (fun d -> d.Message))
@@ -2786,7 +2786,7 @@ let probe () = List.sum (transform [ 1; 2; 3 ])
 
                 use session = checker.CreateHotReloadSession(capabilities = capabilities)
 
-                match session.AddProject(snapshotOf projectOptions) |> Async.RunImmediate with
+                match session.AddProject(snapshotOf projectOptions) |> Async.RunSynchronouslyImmediate with
                 | Error error -> failwithf "Failed to start hot reload session from disk: %A" error
                 | Ok () -> ()
 
@@ -2837,7 +2837,7 @@ let probe () = List.sum (transform [ 1; 2; 3 ])
 
                 let applyGeneration gen (source: string) expectedValue =
                     File.WriteAllText(fsPath, source)
-                    checker.NotifyFileChanged(fsPath, projectOptions) |> Async.RunImmediate
+                    checker.NotifyFileChanged(fsPath, projectOptions) |> Async.RunSynchronouslyImmediate
 
                     let updatedOptions =
                         { projectOptions with
@@ -2848,12 +2848,12 @@ let probe () = List.sum (transform [ 1; 2; 3 ])
 
                     let compileDiagnostics, _ =
                         checker.Compile(Array.concat [ [| "fsc.exe" |]; updatedOptions.OtherOptions; updatedOptions.SourceFiles ])
-                        |> Async.RunImmediate
+                        |> Async.RunSynchronouslyImmediate
 
                     let errors = compileDiagnostics |> Array.filter (fun d -> d.Severity = FSharpDiagnosticSeverity.Error)
                     if errors.Length > 0 then failwithf "Gen %d compilation failed: %A" gen (errors |> Array.map (fun d -> d.Message))
 
-                    match session.EmitDelta(snapshotOf projectOptions) |> Async.RunImmediate with
+                    match session.EmitDelta(snapshotOf projectOptions) |> Async.RunSynchronouslyImmediate with
                     | Error error -> failwithf "Gen %d EmitDelta failed: %A" gen error
                     | Ok delta ->
                         // The runtime is about to apply this update; commit immediately, matching
@@ -2975,7 +2975,7 @@ let probe () = List.sum (transform [ 1; 2; 3 ])
                         useSdkRefs = true,
                         useFsiAuxLib = false
                     )
-                    |> Async.RunImmediate
+                    |> Async.RunSynchronouslyImmediate
 
                 let projectOptions =
                     { projectOptions with
@@ -2994,7 +2994,7 @@ let probe () = List.sum (transform [ 1; 2; 3 ])
                 checker.InvalidateAll()
                 let compileDiagnostics, _ =
                     checker.Compile(Array.concat [ [| "fsc.exe" |]; projectOptions.OtherOptions; projectOptions.SourceFiles ])
-                    |> Async.RunImmediate
+                    |> Async.RunSynchronouslyImmediate
 
                 let errors = compileDiagnostics |> Array.filter (fun d -> d.Severity = FSharpDiagnosticSeverity.Error)
                 if errors.Length > 0 then failwithf "Baseline compilation failed: %A" (errors |> Array.map (fun d -> d.Message))
@@ -3004,7 +3004,7 @@ let probe () = List.sum (transform [ 1; 2; 3 ])
 
                 use session = checker.CreateHotReloadSession()
 
-                match session.AddProject(snapshotOf projectOptions) |> Async.RunImmediate with
+                match session.AddProject(snapshotOf projectOptions) |> Async.RunSynchronouslyImmediate with
                 | Error error -> failwithf "Failed to start hot reload session from disk: %A" error
                 | Ok () -> ()
 
@@ -3036,7 +3036,7 @@ let probe () = List.sum (transform [ 1; 2; 3 ])
 
                 let applyGeneration gen (source: string) expectedValue =
                     File.WriteAllText(fsPath, source)
-                    checker.NotifyFileChanged(fsPath, projectOptions) |> Async.RunImmediate
+                    checker.NotifyFileChanged(fsPath, projectOptions) |> Async.RunSynchronouslyImmediate
 
                     let updatedOptions =
                         { projectOptions with
@@ -3047,12 +3047,12 @@ let probe () = List.sum (transform [ 1; 2; 3 ])
 
                     let compileDiagnostics, _ =
                         checker.Compile(Array.concat [ [| "fsc.exe" |]; updatedOptions.OtherOptions; updatedOptions.SourceFiles ])
-                        |> Async.RunImmediate
+                        |> Async.RunSynchronouslyImmediate
 
                     let errors = compileDiagnostics |> Array.filter (fun d -> d.Severity = FSharpDiagnosticSeverity.Error)
                     if errors.Length > 0 then failwithf "Gen %d compilation failed: %A" gen (errors |> Array.map (fun d -> d.Message))
 
-                    match session.EmitDelta(snapshotOf projectOptions) |> Async.RunImmediate with
+                    match session.EmitDelta(snapshotOf projectOptions) |> Async.RunSynchronouslyImmediate with
                     | Error error -> failwithf "Gen %d EmitDelta failed: %A" gen error
                     | Ok delta ->
                         // The runtime is about to apply this update; commit immediately, matching
@@ -3141,7 +3141,7 @@ let probe () = List.sum (transform [ 1; 2; 3 ])
                     useSdkRefs = true,
                     useFsiAuxLib = false
                 )
-                |> Async.RunImmediate
+                |> Async.RunSynchronouslyImmediate
 
             let projectOptions =
                 { projectOptions with
@@ -3160,7 +3160,7 @@ let probe () = List.sum (transform [ 1; 2; 3 ])
             checker.InvalidateAll()
             let compileDiagnostics, _ =
                 checker.Compile(Array.concat [ [| "fsc.exe" |]; projectOptions.OtherOptions; projectOptions.SourceFiles ])
-                |> Async.RunImmediate
+                |> Async.RunSynchronouslyImmediate
 
             let errors = compileDiagnostics |> Array.filter (fun d -> d.Severity = FSharpDiagnosticSeverity.Error)
             if errors.Length > 0 then failwithf "Baseline compilation failed: %A" (errors |> Array.map (fun d -> d.Message))
@@ -3179,7 +3179,7 @@ let probe () = List.sum (transform [ 1; 2; 3 ])
 
             use session = checker.CreateHotReloadSession()
 
-            match session.AddProject(snapshotOf projectOptions) |> Async.RunImmediate with
+            match session.AddProject(snapshotOf projectOptions) |> Async.RunSynchronouslyImmediate with
             | Error error -> failwithf "Failed to start hot reload session from disk: %A" error
             | Ok () -> ()
 
@@ -3243,7 +3243,7 @@ let probe () = List.sum (transform [ 1; 2; 3 ])
                         useSdkRefs = true,
                         useFsiAuxLib = false
                     )
-                    |> Async.RunImmediate
+                    |> Async.RunSynchronouslyImmediate
 
                 let projectOptions =
                     { projectOptions with
@@ -3262,7 +3262,7 @@ let probe () = List.sum (transform [ 1; 2; 3 ])
                 checker.InvalidateAll()
                 let compileDiagnostics, _ =
                     checker.Compile(Array.concat [ [| "fsc.exe" |]; projectOptions.OtherOptions; projectOptions.SourceFiles ])
-                    |> Async.RunImmediate
+                    |> Async.RunSynchronouslyImmediate
 
                 let errors = compileDiagnostics |> Array.filter (fun d -> d.Severity = FSharpDiagnosticSeverity.Error)
                 if errors.Length > 0 then failwithf "Baseline compilation failed: %A" (errors |> Array.map (fun d -> d.Message))
@@ -3270,7 +3270,7 @@ let probe () = List.sum (transform [ 1; 2; 3 ])
                 // Removed-only edits need no capabilities beyond baseline.
                 use session = checker.CreateHotReloadSession()
 
-                match session.AddProject(snapshotOf projectOptions) |> Async.RunImmediate with
+                match session.AddProject(snapshotOf projectOptions) |> Async.RunSynchronouslyImmediate with
                 | Error error -> failwithf "Failed to start hot reload session: %A" error
                 | Ok () -> ()
 
@@ -3287,7 +3287,7 @@ let probe () = List.sum (transform [ 1; 2; 3 ])
                 Assert.Equal(27, probe.Invoke(null, [||]) :?> int)
 
                 File.WriteAllText(fsPath, closureAdditionBaselineSource)
-                checker.NotifyFileChanged(fsPath, projectOptions) |> Async.RunImmediate
+                checker.NotifyFileChanged(fsPath, projectOptions) |> Async.RunSynchronouslyImmediate
 
                 let updatedOptions =
                     { projectOptions with
@@ -3298,12 +3298,12 @@ let probe () = List.sum (transform [ 1; 2; 3 ])
 
                 let compileDiagnostics2, _ =
                     checker.Compile(Array.concat [ [| "fsc.exe" |]; updatedOptions.OtherOptions; updatedOptions.SourceFiles ])
-                    |> Async.RunImmediate
+                    |> Async.RunSynchronouslyImmediate
 
                 let errors2 = compileDiagnostics2 |> Array.filter (fun d -> d.Severity = FSharpDiagnosticSeverity.Error)
                 if errors2.Length > 0 then failwithf "Update compilation failed: %A" (errors2 |> Array.map (fun d -> d.Message))
 
-                match session.EmitDelta(snapshotOf projectOptions) |> Async.RunImmediate with
+                match session.EmitDelta(snapshotOf projectOptions) |> Async.RunSynchronouslyImmediate with
                 | Error error -> failwithf "EmitDelta failed: %A" error
                 | Ok delta ->
                     // The runtime is about to apply this update; commit immediately, matching
@@ -3408,7 +3408,7 @@ type Counter() =
                         useSdkRefs = true,
                         useFsiAuxLib = false
                     )
-                    |> Async.RunImmediate
+                    |> Async.RunSynchronouslyImmediate
 
                 let projectOptions =
                     { projectOptions with
@@ -3427,7 +3427,7 @@ type Counter() =
                 checker.InvalidateAll()
                 let compileDiagnostics, _ =
                     checker.Compile(Array.concat [ [| "fsc.exe" |]; projectOptions.OtherOptions; projectOptions.SourceFiles ])
-                    |> Async.RunImmediate
+                    |> Async.RunSynchronouslyImmediate
 
                 let errors = compileDiagnostics |> Array.filter (fun d -> d.Severity = FSharpDiagnosticSeverity.Error)
                 if errors.Length > 0 then failwithf "Baseline compilation failed: %A" (errors |> Array.map (fun d -> d.Message))
@@ -3437,7 +3437,7 @@ type Counter() =
 
                 use session = checker.CreateHotReloadSession(capabilities = capabilities)
 
-                match session.AddProject(snapshotOf projectOptions) |> Async.RunImmediate with
+                match session.AddProject(snapshotOf projectOptions) |> Async.RunSynchronouslyImmediate with
                 | Error error -> failwithf "Failed to start hot reload session: %A" error
                 | Ok () -> ()
 
@@ -3463,7 +3463,7 @@ type Counter() =
 
                 let applyGeneration gen (source: string) =
                     File.WriteAllText(fsPath, source)
-                    checker.NotifyFileChanged(fsPath, projectOptions) |> Async.RunImmediate
+                    checker.NotifyFileChanged(fsPath, projectOptions) |> Async.RunSynchronouslyImmediate
 
                     let updatedOptions =
                         { projectOptions with
@@ -3474,12 +3474,12 @@ type Counter() =
 
                     let compileDiagnostics, _ =
                         checker.Compile(Array.concat [ [| "fsc.exe" |]; updatedOptions.OtherOptions; updatedOptions.SourceFiles ])
-                        |> Async.RunImmediate
+                        |> Async.RunSynchronouslyImmediate
 
                     let errors = compileDiagnostics |> Array.filter (fun d -> d.Severity = FSharpDiagnosticSeverity.Error)
                     if errors.Length > 0 then failwithf "Gen %d compilation failed: %A" gen (errors |> Array.map (fun d -> d.Message))
 
-                    match session.EmitDelta(snapshotOf projectOptions) |> Async.RunImmediate with
+                    match session.EmitDelta(snapshotOf projectOptions) |> Async.RunSynchronouslyImmediate with
                     | Error error -> failwithf "Gen %d EmitDelta failed: %A" gen error
                     | Ok delta ->
                         // The runtime is about to apply this update; commit immediately, matching
@@ -3623,7 +3623,7 @@ type Holder() =
                         useSdkRefs = true,
                         useFsiAuxLib = false
                     )
-                    |> Async.RunImmediate
+                    |> Async.RunSynchronouslyImmediate
 
                 let projectOptions =
                     { projectOptions with
@@ -3642,7 +3642,7 @@ type Holder() =
                 checker.InvalidateAll()
                 let compileDiagnostics, _ =
                     checker.Compile(Array.concat [ [| "fsc.exe" |]; projectOptions.OtherOptions; projectOptions.SourceFiles ])
-                    |> Async.RunImmediate
+                    |> Async.RunSynchronouslyImmediate
 
                 let errors = compileDiagnostics |> Array.filter (fun d -> d.Severity = FSharpDiagnosticSeverity.Error)
                 if errors.Length > 0 then failwithf "Baseline compilation failed: %A" (errors |> Array.map (fun d -> d.Message))
@@ -3651,7 +3651,7 @@ type Holder() =
 
                 use session = checker.CreateHotReloadSession(capabilities = capabilities)
 
-                match session.AddProject(snapshotOf projectOptions) |> Async.RunImmediate with
+                match session.AddProject(snapshotOf projectOptions) |> Async.RunSynchronouslyImmediate with
                 | Error error -> failwithf "Failed to start hot reload session: %A" error
                 | Ok () -> ()
 
@@ -3670,7 +3670,7 @@ type Holder() =
 
                 let applyGeneration gen (source: string) =
                     File.WriteAllText(fsPath, source)
-                    checker.NotifyFileChanged(fsPath, projectOptions) |> Async.RunImmediate
+                    checker.NotifyFileChanged(fsPath, projectOptions) |> Async.RunSynchronouslyImmediate
 
                     let updatedOptions =
                         { projectOptions with
@@ -3681,12 +3681,12 @@ type Holder() =
 
                     let compileDiagnostics, _ =
                         checker.Compile(Array.concat [ [| "fsc.exe" |]; updatedOptions.OtherOptions; updatedOptions.SourceFiles ])
-                        |> Async.RunImmediate
+                        |> Async.RunSynchronouslyImmediate
 
                     let errors = compileDiagnostics |> Array.filter (fun d -> d.Severity = FSharpDiagnosticSeverity.Error)
                     if errors.Length > 0 then failwithf "Gen %d compilation failed: %A" gen (errors |> Array.map (fun d -> d.Message))
 
-                    match session.EmitDelta(snapshotOf projectOptions) |> Async.RunImmediate with
+                    match session.EmitDelta(snapshotOf projectOptions) |> Async.RunSynchronouslyImmediate with
                     | Error error -> failwithf "Gen %d EmitDelta failed: %A" gen error
                     | Ok delta ->
                         // The runtime is about to apply this update; commit immediately, matching
@@ -3790,7 +3790,7 @@ type Holder() =
                         useSdkRefs = true,
                         useFsiAuxLib = false
                     )
-                    |> Async.RunImmediate
+                    |> Async.RunSynchronouslyImmediate
 
                 let projectOptions =
                     { projectOptions with
@@ -3809,14 +3809,14 @@ type Holder() =
                 checker.InvalidateAll()
                 let compileDiagnostics, _ =
                     checker.Compile(Array.concat [ [| "fsc.exe" |]; projectOptions.OtherOptions; projectOptions.SourceFiles ])
-                    |> Async.RunImmediate
+                    |> Async.RunSynchronouslyImmediate
 
                 let errors = compileDiagnostics |> Array.filter (fun d -> d.Severity = FSharpDiagnosticSeverity.Error)
                 if errors.Length > 0 then failwithf "Baseline compilation failed: %A" (errors |> Array.map (fun d -> d.Message))
 
                 use session = checker.CreateHotReloadSession(capabilities = capabilities)
 
-                match session.AddProject(snapshotOf projectOptions) |> Async.RunImmediate with
+                match session.AddProject(snapshotOf projectOptions) |> Async.RunSynchronouslyImmediate with
                 | Error error -> failwithf "Failed to start hot reload session: %A" error
                 | Ok () -> ()
 
@@ -3829,7 +3829,7 @@ type Holder() =
 
                 let applyGeneration gen (source: string) =
                     File.WriteAllText(fsPath, source)
-                    checker.NotifyFileChanged(fsPath, projectOptions) |> Async.RunImmediate
+                    checker.NotifyFileChanged(fsPath, projectOptions) |> Async.RunSynchronouslyImmediate
 
                     let updatedOptions =
                         { projectOptions with
@@ -3840,12 +3840,12 @@ type Holder() =
 
                     let compileDiagnostics, _ =
                         checker.Compile(Array.concat [ [| "fsc.exe" |]; updatedOptions.OtherOptions; updatedOptions.SourceFiles ])
-                        |> Async.RunImmediate
+                        |> Async.RunSynchronouslyImmediate
 
                     let errors = compileDiagnostics |> Array.filter (fun d -> d.Severity = FSharpDiagnosticSeverity.Error)
                     if errors.Length > 0 then failwithf "Gen %d compilation failed: %A" gen (errors |> Array.map (fun d -> d.Message))
 
-                    match session.EmitDelta(snapshotOf projectOptions) |> Async.RunImmediate with
+                    match session.EmitDelta(snapshotOf projectOptions) |> Async.RunSynchronouslyImmediate with
                     | Error error -> failwithf "Gen %d EmitDelta failed: %A" gen error
                     | Ok delta ->
                         // The runtime is about to apply this update; commit immediately, matching
@@ -4577,7 +4577,7 @@ let probe () = greetingPrefix + "|" + Greeter.Message()
                         useSdkRefs = true,
                         useFsiAuxLib = false
                     )
-                    |> Async.RunImmediate
+                    |> Async.RunSynchronouslyImmediate
 
                 let projectOptions =
                     { projectOptions with
@@ -4604,7 +4604,7 @@ let probe () = greetingPrefix + "|" + Greeter.Message()
 
                     let compileDiagnostics, _ =
                         checker.Compile(Array.concat [ [| "fsc.exe" |]; projectOptions.OtherOptions; projectOptions.SourceFiles ])
-                        |> Async.RunImmediate
+                        |> Async.RunSynchronouslyImmediate
 
                     let errors = compileDiagnostics |> Array.filter (fun d -> d.Severity = FSharpDiagnosticSeverity.Error)
                     if errors.Length > 0 then failwithf "On-disk build failed: %A" (errors |> Array.map (fun d -> d.Message))
@@ -4636,7 +4636,7 @@ let probe () = greetingPrefix + "|" + Greeter.Message()
 
                 let compileDiagnostics, _ =
                     checker.Compile(Array.concat [ [| "fsc.exe" |]; projectOptions.OtherOptions; projectOptions.SourceFiles ])
-                    |> Async.RunImmediate
+                    |> Async.RunSynchronouslyImmediate
 
                 let errors = compileDiagnostics |> Array.filter (fun d -> d.Severity = FSharpDiagnosticSeverity.Error)
                 if errors.Length > 0 then failwithf "Baseline compilation failed: %A" (errors |> Array.map (fun d -> d.Message))
@@ -4648,7 +4648,7 @@ let probe () = greetingPrefix + "|" + Greeter.Message()
 
                 use session = checker.CreateHotReloadSession(capabilities = capabilities)
 
-                match session.AddProject(snapshotOf projectOptions) |> Async.RunImmediate with
+                match session.AddProject(snapshotOf projectOptions) |> Async.RunSynchronouslyImmediate with
                 | Error error -> failwithf "Failed to start hot reload session from disk: %A" error
                 | Ok () -> ()
 
@@ -4664,14 +4664,14 @@ let probe () = greetingPrefix + "|" + Greeter.Message()
 
                 let applyGeneration gen (source: string) (rebuiltDll: byte[]) (rebuiltPdb: byte[]) (expected: string) =
                     File.WriteAllText(fsPath, source)
-                    checker.NotifyFileChanged(fsPath, projectOptions) |> Async.RunImmediate
+                    checker.NotifyFileChanged(fsPath, projectOptions) |> Async.RunSynchronouslyImmediate
 
                     // The watch host's force rebuild: a separate fsc process rewrites the
                     // project output between the edit and the delta emission.
                     File.WriteAllBytes(dllPath, rebuiltDll)
                     File.WriteAllBytes(pdbPath, rebuiltPdb)
 
-                    match session.EmitDelta(snapshotOf projectOptions) |> Async.RunImmediate with
+                    match session.EmitDelta(snapshotOf projectOptions) |> Async.RunSynchronouslyImmediate with
                     | Error error -> failwithf "Gen %d EmitDelta failed: %A" gen error
                     | Ok delta ->
                         // The runtime is about to apply this update; commit immediately, matching
@@ -4782,7 +4782,7 @@ let probe () = greetingPrefix + "|" + Greeter.Message()
                     useSdkRefs = true,
                     useFsiAuxLib = false
                 )
-                |> Async.RunImmediate
+                |> Async.RunSynchronouslyImmediate
 
             let projectOptions =
                 { projectOptions with
@@ -4802,7 +4802,7 @@ let probe () = greetingPrefix + "|" + Greeter.Message()
 
             let compileDiagnostics, _ =
                 checker.Compile(Array.concat [ [| "fsc.exe" |]; projectOptions.OtherOptions; projectOptions.SourceFiles ])
-                |> Async.RunImmediate
+                |> Async.RunSynchronouslyImmediate
 
             let errors = compileDiagnostics |> Array.filter (fun d -> d.Severity = FSharpDiagnosticSeverity.Error)
             if errors.Length > 0 then
@@ -4819,12 +4819,12 @@ let probe () = greetingPrefix + "|" + Greeter.Message()
 
             use session = checker.CreateHotReloadSession(capabilities = capabilities)
 
-            match session.AddProject(snapshotOf projectOptions) |> Async.RunImmediate with
+            match session.AddProject(snapshotOf projectOptions) |> Async.RunSynchronouslyImmediate with
             | Error error -> failwithf "[%s] failed to start hot reload session: %A" testLabel error
             | Ok () -> ()
 
             File.WriteAllText(fsPath, updatedSource)
-            checker.NotifyFileChanged(fsPath, projectOptions) |> Async.RunImmediate
+            checker.NotifyFileChanged(fsPath, projectOptions) |> Async.RunSynchronouslyImmediate
 
             let updatedOptions =
                 { projectOptions with
@@ -4835,13 +4835,13 @@ let probe () = greetingPrefix + "|" + Greeter.Message()
 
             let compileDiagnostics2, _ =
                 checker.Compile(Array.concat [ [| "fsc.exe" |]; updatedOptions.OtherOptions; updatedOptions.SourceFiles ])
-                |> Async.RunImmediate
+                |> Async.RunSynchronouslyImmediate
 
             let errors2 = compileDiagnostics2 |> Array.filter (fun d -> d.Severity = FSharpDiagnosticSeverity.Error)
             if errors2.Length > 0 then
                 failwithf "[%s] update compilation failed: %A" testLabel (errors2 |> Array.map (fun d -> d.Message))
 
-            match session.EmitDelta(snapshotOf projectOptions) |> Async.RunImmediate with
+            match session.EmitDelta(snapshotOf projectOptions) |> Async.RunSynchronouslyImmediate with
             | Ok _ -> failwithf "[%s] expected the edit to be rejected, but a delta was emitted." testLabel
             | Error (FSharpHotReloadError.UnsupportedEdit edits) ->
                 edits |> List.map (fun e -> $"{e.Id}: {e.Message}") |> String.concat System.Environment.NewLine |> assertMessage
@@ -4887,7 +4887,7 @@ let probe () = greetingPrefix + "|" + Greeter.Message()
                     useSdkRefs = true,
                     useFsiAuxLib = false
                 )
-                |> Async.RunImmediate
+                |> Async.RunSynchronouslyImmediate
 
             let projectOptions =
                 let hotReloadOptions =
@@ -4914,7 +4914,7 @@ let probe () = greetingPrefix + "|" + Greeter.Message()
             let compileOnce label options =
                 let diagnostics, _ =
                     checker.Compile(Array.concat [ [| "fsc.exe" |]; options.OtherOptions; options.SourceFiles ])
-                    |> Async.RunImmediate
+                    |> Async.RunSynchronouslyImmediate
 
                 let errors =
                     diagnostics
@@ -4938,7 +4938,7 @@ let probe () = greetingPrefix + "|" + Greeter.Message()
 
             use session = checker.CreateHotReloadSession(capabilities = capabilities)
 
-            match session.AddProject(snapshotOf projectOptions) |> Async.RunImmediate with
+            match session.AddProject(snapshotOf projectOptions) |> Async.RunSynchronouslyImmediate with
             | Error error -> failwithf "[%s] failed to start hot reload session: %A" testLabel error
             | Ok () -> ()
 
@@ -4948,7 +4948,7 @@ let probe () = greetingPrefix + "|" + Greeter.Message()
                 | ValueNone -> failwithf "[%s] expected an active hot reload project view." testLabel
 
             File.WriteAllText(fsPath, updatedSource)
-            checker.NotifyFileChanged(fsPath, projectOptions) |> Async.RunImmediate
+            checker.NotifyFileChanged(fsPath, projectOptions) |> Async.RunSynchronouslyImmediate
 
             let updatedOptions =
                 { projectOptions with
@@ -4960,7 +4960,7 @@ let probe () = greetingPrefix + "|" + Greeter.Message()
             compileOnce "updated" updatedOptions
 
             session.EmitDelta(snapshotOf projectOptions)
-            |> Async.RunImmediate
+            |> Async.RunSynchronouslyImmediate
             |> handleResult baseline
         finally
             try checker.InvalidateAll() with _ -> ()
@@ -5356,7 +5356,7 @@ let probe () = List.sum (transform [ 1; 2; 3 ])
                         useSdkRefs = true,
                         useFsiAuxLib = false
                     )
-                    |> Async.RunImmediate
+                    |> Async.RunSynchronouslyImmediate
 
                 // Deliberately NO --test:HotReloadDeltas anywhere: both compiles use the
                 // plain fsc naming, matching a stock SDK project under dotnet watch.
@@ -5377,7 +5377,7 @@ let probe () = List.sum (transform [ 1; 2; 3 ])
 
                 let compileDiagnostics, _ =
                     checker.Compile(Array.concat [ [| "fsc.exe" |]; projectOptions.OtherOptions; projectOptions.SourceFiles ])
-                    |> Async.RunImmediate
+                    |> Async.RunSynchronouslyImmediate
 
                 let errors =
                     compileDiagnostics
@@ -5392,16 +5392,16 @@ let probe () = List.sum (transform [ 1; 2; 3 ])
                 let capabilities = [ "Baseline"; "AddMethodToExistingType"; "NewTypeDefinition" ]
                 use session = checker.CreateHotReloadSession(capabilities = capabilities)
 
-                match session.AddProject(snapshotOf projectOptions) |> Async.RunImmediate with
+                match session.AddProject(snapshotOf projectOptions) |> Async.RunSynchronouslyImmediate with
                 | Error error -> failwithf "Failed to start hot reload session from disk: %A" error
                 | Ok() -> ()
 
                 File.WriteAllText(fsPath, updatedSource)
-                checker.NotifyFileChanged(fsPath, projectOptions) |> Async.RunImmediate
+                checker.NotifyFileChanged(fsPath, projectOptions) |> Async.RunSynchronouslyImmediate
 
                 let updatedDiagnostics, _ =
                     checker.Compile(Array.concat [ [| "fsc.exe" |]; projectOptions.OtherOptions; projectOptions.SourceFiles ])
-                    |> Async.RunImmediate
+                    |> Async.RunSynchronouslyImmediate
 
                 let updatedErrors =
                     updatedDiagnostics
@@ -5410,7 +5410,7 @@ let probe () = List.sum (transform [ 1; 2; 3 ])
                 if updatedErrors.Length > 0 then
                     failwithf "Updated compilation failed: %A" (updatedErrors |> Array.map (fun d -> d.Message))
 
-                match session.EmitDelta(snapshotOf projectOptions) |> Async.RunImmediate with
+                match session.EmitDelta(snapshotOf projectOptions) |> Async.RunSynchronouslyImmediate with
                 | Ok _ ->
                     failwith
                         "Expected the flag-off pipe-stage insertion to be rejected as a rude edit, but a delta was emitted."
@@ -5471,7 +5471,7 @@ let probe () = List.sum (transform [ 1; 2; 3 ])
                         useSdkRefs = true,
                         useFsiAuxLib = false
                     )
-                    |> Async.RunImmediate
+                    |> Async.RunSynchronouslyImmediate
 
                 let projectOptions =
                     { projectOptions with
@@ -5491,7 +5491,7 @@ let probe () = List.sum (transform [ 1; 2; 3 ])
 
                 let compileDiagnostics, _ =
                     checker.Compile(Array.concat [ [| "fsc.exe" |]; projectOptions.OtherOptions; projectOptions.SourceFiles ])
-                    |> Async.RunImmediate
+                    |> Async.RunSynchronouslyImmediate
 
                 let errors = compileDiagnostics |> Array.filter (fun d -> d.Severity = FSharpDiagnosticSeverity.Error)
                 if errors.Length > 0 then failwithf "Baseline compilation failed: %A" (errors |> Array.map (fun d -> d.Message))
@@ -5521,7 +5521,7 @@ let probe () = List.sum (transform [ 1; 2; 3 ])
 
                 use session = checker.CreateHotReloadSession()
 
-                match session.AddProject(snapshotOf projectOptions) |> Async.RunImmediate with
+                match session.AddProject(snapshotOf projectOptions) |> Async.RunSynchronouslyImmediate with
                 | Error error -> failwithf "Failed to start hot reload session from disk: %A" error
                 | Ok () -> ()
 
@@ -5536,7 +5536,7 @@ let probe () = List.sum (transform [ 1; 2; 3 ])
 
                 let updatedSource = taskStableResumeBaselineSource.Replace("Hello", "Welcome")
                 File.WriteAllText(fsPath, updatedSource)
-                checker.NotifyFileChanged(fsPath, projectOptions) |> Async.RunImmediate
+                checker.NotifyFileChanged(fsPath, projectOptions) |> Async.RunSynchronouslyImmediate
 
                 let updatedOptions =
                     { projectOptions with
@@ -5547,12 +5547,12 @@ let probe () = List.sum (transform [ 1; 2; 3 ])
 
                 let compileDiagnostics2, _ =
                     checker.Compile(Array.concat [ [| "fsc.exe" |]; updatedOptions.OtherOptions; updatedOptions.SourceFiles ])
-                    |> Async.RunImmediate
+                    |> Async.RunSynchronouslyImmediate
 
                 let errors2 = compileDiagnostics2 |> Array.filter (fun d -> d.Severity = FSharpDiagnosticSeverity.Error)
                 if errors2.Length > 0 then failwithf "Update compilation failed: %A" (errors2 |> Array.map (fun d -> d.Message))
 
-                match session.EmitDelta(snapshotOf projectOptions) |> Async.RunImmediate with
+                match session.EmitDelta(snapshotOf projectOptions) |> Async.RunSynchronouslyImmediate with
                 | Error error -> failwithf "EmitDelta failed: %A" error
                 | Ok delta ->
                     // The runtime is about to apply this update; commit immediately, matching
@@ -5664,7 +5664,7 @@ type Type =
                         useSdkRefs = true,
                         useFsiAuxLib = false
                     )
-                    |> Async.RunImmediate
+                    |> Async.RunSynchronouslyImmediate
 
                 let projectOptions =
                     { projectOptions with
@@ -5684,14 +5684,14 @@ type Type =
 
                 let compileDiagnostics, _ =
                     checker.Compile(Array.concat [ [| "fsc.exe" |]; projectOptions.OtherOptions; projectOptions.SourceFiles ])
-                    |> Async.RunImmediate
+                    |> Async.RunSynchronouslyImmediate
 
                 let errors = compileDiagnostics |> Array.filter (fun d -> d.Severity = FSharpDiagnosticSeverity.Error)
                 if errors.Length > 0 then failwithf "Baseline compilation failed: %A" (errors |> Array.map (fun d -> d.Message))
 
                 use session = checker.CreateHotReloadSession()
 
-                match session.AddProject(snapshotOf projectOptions) |> Async.RunImmediate with
+                match session.AddProject(snapshotOf projectOptions) |> Async.RunSynchronouslyImmediate with
                 | Error error -> failwithf "Failed to start hot reload session: %A" error
                 | Ok () -> ()
 
@@ -5715,16 +5715,16 @@ type Type =
 
                 let applyGeneration gen (source: string) (expected: string) =
                     File.WriteAllText(fsPath, source)
-                    checker.NotifyFileChanged(fsPath, projectOptions) |> Async.RunImmediate
+                    checker.NotifyFileChanged(fsPath, projectOptions) |> Async.RunSynchronouslyImmediate
 
                     let compileDiagnostics, _ =
                         checker.Compile(Array.concat [ [| "fsc.exe" |]; updatedOptions.OtherOptions; updatedOptions.SourceFiles ])
-                        |> Async.RunImmediate
+                        |> Async.RunSynchronouslyImmediate
 
                     let errors = compileDiagnostics |> Array.filter (fun d -> d.Severity = FSharpDiagnosticSeverity.Error)
                     if errors.Length > 0 then failwithf "Gen %d compilation failed: %A" gen (errors |> Array.map (fun d -> d.Message))
 
-                    match session.EmitDelta(snapshotOf projectOptions) |> Async.RunImmediate with
+                    match session.EmitDelta(snapshotOf projectOptions) |> Async.RunSynchronouslyImmediate with
                     | Error error -> failwithf "Gen %d EmitDelta failed: %A" gen error
                     | Ok delta ->
                         // The runtime is about to apply this update; commit immediately, matching

@@ -490,10 +490,7 @@ type FSharpChecker
         | HotReloadError.DeltaEmissionException ex -> FSharpHotReloadError.DeltaEmissionFailed ex.Message
 
     let createBaseline (tcGlobals: TcGlobals) (ilModule: ILModuleDef) (outputPath: string) =
-        let pdbPath =
-            Path.ChangeExtension(outputPath, ".pdb")
-            |> Option.ofObj
-            |> Option.defaultValue (outputPath + ".pdb")
+        let pdbPath = Path.ChangeExtension(outputPath, ".pdb")
 
         let writerOptions: ILBinaryWriter.options =
             {
@@ -1604,7 +1601,7 @@ type FSharpChecker
 
     /// Tokenize a single line, returning token information and a tokenization state represented by an integer
     member _.TokenizeLine(line: string, state: FSharpTokenizerLexState) =
-        let tokenizer = FSharpSourceTokenizer([], None, None, None)
+        let tokenizer = FSharpSourceTokenizer([], None, None)
         let lineTokenizer = tokenizer.CreateLineTokenizer line
         let mutable state = (None, state)
 

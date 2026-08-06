@@ -537,8 +537,6 @@ type TcConfigBuilder =
         mutable emitCaptureArtifacts: bool
         mutable compilerEmitHook: ICompilerEmitHook option
 
-        mutable strictIndentation: bool option
-
         mutable alwaysInline: bool option
 
         mutable exename: string option
@@ -882,8 +880,6 @@ type TcConfig =
     member xmlDocInfoLoader: IXmlDocumentationInfoLoader option
 
     member FxResolver: FxResolver
-
-    member strictIndentation: bool option
 
     member alwaysInline: bool
 

@@ -678,10 +678,7 @@ type internal FSharpHotReloadService
                                                 with
                                                 | Some _ -> None
                                                 | None ->
-                                                    let pdbPath =
-                                                        Path.ChangeExtension(outputPath, ".pdb")
-                                                        |> Option.ofObj
-                                                        |> Option.defaultValue (outputPath + ".pdb")
+                                                    let pdbPath = Path.ChangeExtension(outputPath, ".pdb")
 
                                                     if File.Exists(pdbPath) then
                                                         FSharpHotReloadFileSystem.tryReadAllBytes File.ReadAllBytes pdbPath
