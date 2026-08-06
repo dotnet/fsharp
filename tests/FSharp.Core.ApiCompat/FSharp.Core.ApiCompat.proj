@@ -1,0 +1,58 @@
+<!--
+  Assembly-level ApiCompat identity gate: proves the shipped net TFM FSharp.Core has the
+  *identical public surface* to the netstandard2.1 FSharp.Core. This is what makes the
+  "net10.0 == netstandard2.1" invariant enforceable (see files/plan.md 4e).
+
+  Mechanism (pinned): Microsoft.DotNet.ApiCompat.Task.ValidateAssembliesTask, which is REGISTERED
+  BY THE .NET SDK (Microsoft.NET.ApiCompat.targets, imported by Sdk.targets) - NOT Arcade, and NOT
+  SDK package validation (EnablePackageValidation), whose strict knob is inert for this scenario.
+
+  This project performs NO compilation; it only runs the identity check. Invoke it as:
+      dotnet msbuild FSharp.Core.ApiCompat.proj -t:ValidateFSharpCoreApiIdentity -p:Configuration=<cfg>
+  so it can be a dedicated, guaranteed-blocking CI leg (FSharpCore_ApiCompat) or a local check.
+
+  Inputs are the freshly-built IMPLEMENTATION assemblies for the current $(Configuration):
+    Left  = netstandard2.1 FSharp.Core.dll   (the contract)
+    Right = <pinned net>   FSharp.Core.dll   (must match it exactly, in BOTH directions)
+  EnableStrictMode=true makes member add/remove fail in either direction. AttributesMustMatch is
+  left OFF (default) so the benign internal->public-BCL attribute-provenance shift of the
+  CollectionBuilder/ScopedRef/DynamicallyAccessedMembers polyfills stays invisible and the gate
+  passes with an EMPTY suppression set. Do not pre-author a suppression file.
+-->
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <!-- A TFM is required for SDK evaluation, but nothing is compiled or restored. -->
+    <TargetFramework>$(FSharpNetCoreProductTargetFramework)</TargetFramework>
+    <IsPackable>false</IsPackable>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <DisableImplicitFrameworkReferences>true</DisableImplicitFrameworkReferences>
+    <Configuration Condition="'$(Configuration)' == ''">Release</Configuration>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <_FSharpCoreBinDir>$(MSBuildThisFileDirectory)..\..\artifacts\bin\FSharp.Core\$(Configuration)</_FSharpCoreBinDir>
+    <_FSharpCoreNsAssembly>$([MSBuild]::NormalizePath('$(_FSharpCoreBinDir)', 'netstandard2.1', 'FSharp.Core.dll'))</_FSharpCoreNsAssembly>
+    <_FSharpCoreNetAssembly>$([MSBuild]::NormalizePath('$(_FSharpCoreBinDir)', '$(FSharpCoreShippedNetTargetFramework)', 'FSharp.Core.dll'))</_FSharpCoreNetAssembly>
+  </PropertyGroup>
+
+  <!-- No compile / no restore: the gate is run by explicitly targeting ValidateFSharpCoreApiIdentity,
+       which pulls only CollectApiCompatInputs (for RoslynAssembliesPath) and the task below. -->
+  <Target Name="ValidateFSharpCoreApiIdentity" DependsOnTargets="CollectApiCompatInputs">
+    <Error Condition="!Exists('$(_FSharpCoreNsAssembly)')"
+           Text="ApiCompat gate: netstandard2.1 FSharp.Core not found at '$(_FSharpCoreNsAssembly)'. Build FSharp.Core ($(Configuration)) first." />
+    <Error Condition="!Exists('$(_FSharpCoreNetAssembly)')"
+           Text="ApiCompat gate: $(FSharpCoreShippedNetTargetFramework) FSharp.Core not found at '$(_FSharpCoreNetAssembly)'. Build FSharp.Core ($(Configuration)) first." />
+
+    <Message Importance="high"
+             Text="ApiCompat identity gate: comparing netstandard2.1 (contract) vs $(FSharpCoreShippedNetTargetFramework) FSharp.Core [$(Configuration), strict/bidirectional, empty suppressions]." />
+
+    <ValidateAssembliesTask
+        LeftAssemblies="$(_FSharpCoreNsAssembly)"
+        RightAssemblies="$(_FSharpCoreNetAssembly)"
+        EnableStrictMode="true"
+        GenerateSuppressionFile="false"
+        RoslynAssembliesPath="$(RoslynAssembliesPath)" />
+  </Target>
+
+</Project>
