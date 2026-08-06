@@ -662,11 +662,6 @@
         <target state="translated">omezení vlastního typu</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureSingleUnderscorePattern">
-        <source>single underscore pattern</source>
-        <target state="translated">vzor s jedním podtržítkem</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureStaticLetInRecordsDusEmptyTypes">
         <source>Allow static let bindings in union, record, struct, non-incremental-class types</source>
         <target state="translated">Povolit vazby statického let v typech union, record, struct a non-incremental-class</target>

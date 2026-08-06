@@ -16,7 +16,6 @@ module internal FSharp.Compiler.Features
 
 [<RequireQualifiedAccess>]
 type LanguageFeature =
-    | SingleUnderscorePattern
     | WildCardInForLoop
     | RelaxWhitespace
     | RelaxWhitespace2
@@ -152,7 +151,6 @@ type LanguageVersion(versionText, ?disabledFeaturesArray: LanguageFeature array)
         dict
             [
                 // F# 4.7
-                LanguageFeature.SingleUnderscorePattern, languageVersion47
                 LanguageFeature.WildCardInForLoop, languageVersion47
                 LanguageFeature.RelaxWhitespace, languageVersion47
                 LanguageFeature.ImplicitYield, languageVersion47
@@ -364,7 +362,6 @@ type LanguageVersion(versionText, ?disabledFeaturesArray: LanguageFeature array)
     /// Get a string name for the given feature.
     static member GetFeatureString feature =
         match feature with
-        | LanguageFeature.SingleUnderscorePattern -> FSComp.SR.featureSingleUnderscorePattern ()
         | LanguageFeature.WildCardInForLoop -> FSComp.SR.featureWildCardInForLoop ()
         | LanguageFeature.RelaxWhitespace -> FSComp.SR.featureRelaxWhitespace ()
         | LanguageFeature.RelaxWhitespace2 -> FSComp.SR.featureRelaxWhitespace2 ()

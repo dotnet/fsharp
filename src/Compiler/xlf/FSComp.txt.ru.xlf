@@ -662,11 +662,6 @@
         <target state="translated">ограничения самостоятельного типа</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureSingleUnderscorePattern">
-        <source>single underscore pattern</source>
-        <target state="translated">шаблон с одним подчеркиванием</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureStaticLetInRecordsDusEmptyTypes">
         <source>Allow static let bindings in union, record, struct, non-incremental-class types</source>
         <target state="translated">Разрешить статические привязки "let" в типах union, record, struct, non-incremental-class</target>

@@ -662,11 +662,6 @@
         <target state="translated">自类型约束</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureSingleUnderscorePattern">
-        <source>single underscore pattern</source>
-        <target state="translated">单下划线模式</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureStaticLetInRecordsDusEmptyTypes">
         <source>Allow static let bindings in union, record, struct, non-incremental-class types</source>
         <target state="translated">允许在联合、记录、结构、非增量类类型中使用静态 let 绑定</target>

@@ -662,11 +662,6 @@
         <target state="translated">restrições de auto-tipo</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureSingleUnderscorePattern">
-        <source>single underscore pattern</source>
-        <target state="translated">padrão de sublinhado simples</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureStaticLetInRecordsDusEmptyTypes">
         <source>Allow static let bindings in union, record, struct, non-incremental-class types</source>
         <target state="translated">Permitir associações let estáticas em tipos de união, registro, struct e não incremental</target>

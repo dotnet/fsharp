@@ -662,11 +662,6 @@
         <target state="translated">vincoli di tipo automatico</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureSingleUnderscorePattern">
-        <source>single underscore pattern</source>
-        <target state="translated">criterio per carattere di sottolineatura singolo</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureStaticLetInRecordsDusEmptyTypes">
         <source>Allow static let bindings in union, record, struct, non-incremental-class types</source>
         <target state="translated">Consenti binding statici let in tipi di classe non incrementali, union, record, struct</target>

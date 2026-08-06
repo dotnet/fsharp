@@ -662,11 +662,6 @@
         <target state="translated">ograniczenia typu własnego</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureSingleUnderscorePattern">
-        <source>single underscore pattern</source>
-        <target state="translated">wzorzec z pojedynczym podkreśleniem</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureStaticLetInRecordsDusEmptyTypes">
         <source>Allow static let bindings in union, record, struct, non-incremental-class types</source>
         <target state="translated">Zezwalaj na statyczne powiązania let w typach związku, rekordu, struktur, nieprzyrostowych klas</target>
