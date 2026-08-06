@@ -31,7 +31,6 @@ type LanguageFeature =
     | StructActivePattern
     | IndexerNotationWithoutDot
     | RefCellNotationInformationals
-    | UseBindingValueDiscard
     | UnionIsPropertiesVisible
     | NonVariablePatternsToRightOfAsPatterns
     | AttributesToRightOfModuleKeyword

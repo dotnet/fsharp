@@ -12210,11 +12210,9 @@ and TcLetBinding (cenv: cenv) isUse env containerInfo declKind tpenv (synBinds, 
                 let tmp, _ = mkCompGenLocal m "patternInput" (generalizedTypars +-> tauTy)
 
                 if isUse then
-                    let isDiscarded = match checkedPat with TPat_wild _ -> true | _ -> false
-                    if not isDiscarded then
-                        errorR(Error(FSComp.SR.tcInvalidUseBinding(), m))
-                    else
-                        checkLanguageFeatureAndRecover g.langVersion LanguageFeature.UseBindingValueDiscard checkedPat.Range
+                    match checkedPat with
+                    | TPat_wild _ -> ()
+                    | _ -> errorR(Error(FSComp.SR.tcInvalidUseBinding(), m))
 
                 elif isFixed then
                     errorR(Error(FSComp.SR.tcInvalidUseBinding(), m))
