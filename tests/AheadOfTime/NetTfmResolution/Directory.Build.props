@@ -1,0 +1,6 @@
+<Project>
+  <!-- Isolated from the AheadOfTime local-compiler shim on purpose: this test exercises pure
+       NuGet asset RESOLUTION of the shipped FSharp.Core package against a real (stock-SDK) F#
+       consumer. It must not depend on a locally built fsc being present. Empty = stop the
+       Directory.Build.props crawl at this folder. -->
+</Project>

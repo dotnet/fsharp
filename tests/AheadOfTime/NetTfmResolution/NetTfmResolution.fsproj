@@ -1,0 +1,32 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Consumer asset-RESOLUTION test (e2e-2, the linchpin).
+       Targets EXACTLY the pinned shipped net TFM (FSharpCoreShippedNetTargetFramework) so that,
+       when that pin bumps, this consumer follows automatically (no literal net10.0 here). The
+       driver (VerifyNetResolution.fsx) then witnesses STRUCTURALLY, from project.assets.json,
+       that FSharp.Core resolves to lib/<pin>/FSharp.Core.dll and NOT to a netstandard asset. -->
+  <Import Project="$(MSBuildThisFileDirectory)../../../eng/TargetFrameworks.props" />
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>$(FSharpCoreShippedNetTargetFramework)</TargetFramework>
+    <LangVersion>preview</LangVersion>
+    <!-- Allow the net10.0 app to run on a newer installed shared framework (CI/dev may only have net11). -->
+    <RollForward>Major</RollForward>
+    <!-- Opt out of the repo's Central Package Management: this consumer pins FSharp.Core inline. -->
+    <ManagePackageVersionsCentrally>false</ManagePackageVersionsCentrally>
+    <!-- Force the PACKAGED FSharp.Core, not the SDK's implicit one. -->
+    <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
+    <DisableImplicitNuGetFallbackFolder>true</DisableImplicitNuGetFallbackFolder>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="Program.fs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Exact version is injected by the driver: -p:FSharpCoreTestVersion=<newest built version>. -->
+    <PackageReference Include="FSharp.Core" Version="$(FSharpCoreTestVersion)" />
+  </ItemGroup>
+
+</Project>
