@@ -6,7 +6,7 @@ open FSharp.Test
 open FSharp.Test.Compiler
 
 [<Literal>]
-let SupportedLangVersion = "preview"
+let SupportedLangVersion = "11.0"
 
 let inlineLib =
     FsFromPath (Path.Combine (__SOURCE_DIRECTORY__, "SpreadInlineLib.fs"))
