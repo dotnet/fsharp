@@ -1287,11 +1287,6 @@
         <target state="translated">Neočekávaný konec vstupu ve větvi else if nebo elif podmíněného výrazu Očekávalo se elif &lt;expr&gt; then &lt;expr&gt; nebo else if &lt;expr&gt; then &lt;expr&gt;.</target>
         <note />
       </trans-unit>
-      <trans-unit id="parsUnexpectedSymbolDot">
-        <source>Unexpected symbol '.' in member definition. Expected 'with', '=' or other token.</source>
-        <target state="translated">Neočekávaný symbol . v definici členu. Očekávalo se with, = nebo jiný token.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="optsChecksumAlgorithm">
         <source>Specify algorithm for calculating source file checksum stored in PDB. Supported values are: SHA1 or SHA256 (default)</source>
         <target state="translated">Zadejte algoritmus pro výpočet kontrolního součtu zdrojového souboru uloženého v PDB. Podporované hodnoty jsou: SHA1 nebo SHA256 (výchozí).</target>

@@ -1287,11 +1287,6 @@
         <target state="translated">Fin de entrada inesperado en la rama "else if" o "elif" de una expresión condicional. Se espera "elif &lt;expr&gt; then &lt;expr&gt;" o "else if &lt;expr&gt; then &lt;expr&gt;".</target>
         <note />
       </trans-unit>
-      <trans-unit id="parsUnexpectedSymbolDot">
-        <source>Unexpected symbol '.' in member definition. Expected 'with', '=' or other token.</source>
-        <target state="translated">Símbolo inesperado "." en la definición de miembro. Se esperaba "with", "=" u otro token.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="optsChecksumAlgorithm">
         <source>Specify algorithm for calculating source file checksum stored in PDB. Supported values are: SHA1 or SHA256 (default)</source>
         <target state="translated">Especifique el algoritmo para calcular la suma de comprobación del archivo de origen almacenada en PDB. Los valores admitidos son SHA1 o SHA256 (predeterminado)</target>

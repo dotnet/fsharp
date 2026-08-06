@@ -1287,11 +1287,6 @@
         <target state="translated">Koşullu ifadenin 'else if' veya 'elif' dalında beklenmeyen giriş sonu. 'elif &lt;expr&gt; then &lt;expr&gt;' veya 'else if &lt;expr&gt; then &lt;expr&gt;' bekleniyordu.</target>
         <note />
       </trans-unit>
-      <trans-unit id="parsUnexpectedSymbolDot">
-        <source>Unexpected symbol '.' in member definition. Expected 'with', '=' or other token.</source>
-        <target state="translated">Üye tanımında '.' sembolü beklenmiyordu. 'with', '=' veya başka bir belirteç bekleniyordu.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="optsChecksumAlgorithm">
         <source>Specify algorithm for calculating source file checksum stored in PDB. Supported values are: SHA1 or SHA256 (default)</source>
         <target state="translated">PDB içinde depolanan kaynak dosyası sağlama toplamını hesaplama algoritmasını belirtin. Desteklenen değerler: SHA1 veya SHA256 (varsayılan)</target>
