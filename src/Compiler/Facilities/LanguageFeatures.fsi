@@ -29,7 +29,6 @@ type LanguageFeature =
     | ExpandedMeasurables
     | NullnessChecking
     | StructActivePattern
-    | PrintfBinaryFormat
     | IndexerNotationWithoutDot
     | RefCellNotationInformationals
     | UseBindingValueDiscard

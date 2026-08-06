@@ -64,11 +64,24 @@ type XmlDoc(unprocessedLines: string[], range: range) =
         else
             doc.GetElaboratedXmlLines() |> String.concat Environment.NewLine
 
+    member doc.GetExpandedXmlText(emit) =
+        doc.GetExpandedXmlText(emit, XmlDocIncludeExpander.mkExpansionEnv ())
+
+    member doc.GetExpandedXmlText(emit, env: XmlDocIncludeExpander.ExpansionEnv) =
+        if doc.IsEmpty then
+            ""
+        else
+            XmlDocIncludeExpander.expandIncludeLines env emit doc.Range.FileName doc.Range (doc.GetElaboratedXmlLines())
+            |> String.concat Environment.NewLine
+
     member doc.Check(paramNamesOpt: string list option) =
         try
+            // emit=false: quiet expansion so included <param>/<paramref> reach validation; the writer emits FS3908.
+            let expandedText = doc.GetExpandedXmlText false
+
             // We must wrap with <doc> in order to have only one root element
             let xml =
-                XDocument.Parse("<doc>\n" + doc.GetXmlText() + "\n</doc>", LoadOptions.SetLineInfo ||| LoadOptions.PreserveWhitespace)
+                XDocument.Parse("<doc>\n" + expandedText + "\n</doc>", LoadOptions.SetLineInfo ||| LoadOptions.PreserveWhitespace)
 
             // The parameter names are checked for consistency, so parameter references and
             // parameter documentation must match an actual parameter.  In addition, if any parameters

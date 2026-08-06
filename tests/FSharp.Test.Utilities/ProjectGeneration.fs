@@ -337,7 +337,7 @@ type SyntheticProject =
                     SourceText.ofString referenceScript,
                     assumeDotNetFramework = false
                 )
-                |> Async.RunImmediate
+                |> Async.RunSynchronouslyImmediate
 
             {
                 ProjectFileName = this.ProjectFileName

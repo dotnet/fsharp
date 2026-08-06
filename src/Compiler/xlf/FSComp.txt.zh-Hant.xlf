@@ -602,11 +602,6 @@
         <target state="new">#elif preprocessor directive</target>
         <note />
       </trans-unit>
-      <trans-unit id="featurePrintfBinaryFormat">
-        <source>binary formatting for integers</source>
-        <target state="translated">整數的二進位格式化</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureReallyLongList">
         <source>list literals of any size</source>
         <target state="translated">列出任何大小的常值</target>
@@ -1807,6 +1802,21 @@
         <target state="new">You can remove this `nonNull` assertion.</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcRecordExplicitFieldShadowsSpreadField">
+        <source>Explicit field '{0}' shadows a field with the same name from an earlier spread.</source>
+        <target state="new">Explicit field '{0}' shadows a field with the same name from an earlier spread.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcRecordExprSpreadFieldShadowsSpreadField">
+        <source>Spread field '{0}' shadows a field with the same name from an earlier spread.</source>
+        <target state="new">Spread field '{0}' shadows a field with the same name from an earlier spread.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcRecordTypeDefinitionSpreadFieldShadowsSpreadField">
+        <source>Spread field '{0}' from type '{1}' shadows a field with the same name from an earlier spread.</source>
+        <target state="new">Spread field '{0}' from type '{1}' shadows a field with the same name from an earlier spread.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcRecursiveInlineNotAllowed">
         <source>The value or member '{0}' has been marked 'inline' but is part of a recursive binding group. F# does not support recursive 'inline' values. Either remove the 'inline' modifier or refactor the recursion.</source>
         <target state="new">The value or member '{0}' has been marked 'inline' but is part of a recursive binding group. F# does not support recursive 'inline' values. Either remove the 'inline' modifier or refactor the recursion.</target>
@@ -2155,6 +2165,16 @@
       <trans-unit id="xmlDocDuplicateParameter">
         <source>This XML comment is invalid: multiple documentation entries for parameter '{0}'</source>
         <target state="translated">此 XML 註解無效: '{0}' 參數有多項文件輸入</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="xmlDocIncludeError">
+        <source>XML documentation include error: {0}</source>
+        <target state="new">XML documentation include error: {0}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="xmlDocIncludeError2">
+        <source>XML documentation include error: Unable to include XML fragment '{0}' of file '{1}' -- {2}</source>
+        <target state="new">XML documentation include error: Unable to include XML fragment '{0}' of file '{1}' -- {2}</target>
         <note />
       </trans-unit>
       <trans-unit id="xmlDocInvalidParameterName">
