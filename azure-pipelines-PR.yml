@@ -159,6 +159,10 @@ stages:
             env:
               DOTNET_ROLL_FORWARD_TO_PRERELEASE: 1
             displayName: Validate test projects are registered in TestSplit.fsx
+          - script: ./eng/common/dotnet.sh fsi eng/tests/AuditFSharpCoreTfmGuards.fsx
+            env:
+              DOTNET_ROLL_FORWARD_TO_PRERELEASE: 1
+            displayName: Audit FSharp.Core TFM (#if) guards use the standardized idiom
 
         # Check whether package with current version has been published to nuget.org
         # We will try to restore both FSharp.Core and FCS and if restore is _successful_, package version needs to be bumped.
