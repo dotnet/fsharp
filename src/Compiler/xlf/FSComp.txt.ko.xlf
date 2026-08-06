@@ -682,11 +682,6 @@
         <target state="translated">문자열 보간</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureStructActivePattern">
-        <source>struct representation for active patterns</source>
-        <target state="translated">활성 패턴에 대한 구조체 표현</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureSupportValueOptionsAsOptionalParameters">
         <source>Support ValueOption as valid type for optional member parameters</source>
         <target state="new">Support ValueOption as valid type for optional member parameters</target>
