@@ -194,17 +194,11 @@ module HotReloadSession =
                     try
                         File.Copy(baselineDllPath, runtimeDllPath, true)
 
-                        let baselinePdbPath =
-                            match Path.ChangeExtension(baselineDllPath, ".pdb") with
-                            | null -> None
-                            | value -> Some value
+                        let baselinePdbPath = Path.ChangeExtension(baselineDllPath, ".pdb")
 
-                        match baselinePdbPath with
-                        | Some pdbPath when File.Exists(pdbPath) ->
-                            match Path.GetFileName(pdbPath) with
-                            | null -> ()
-                            | pdbName -> File.Copy(pdbPath, Path.Combine(runtimeDirectory, pdbName), true)
-                        | _ -> ()
+                        if File.Exists(baselinePdbPath) then
+                            let pdbName = Path.GetFileName(baselinePdbPath)
+                            File.Copy(baselinePdbPath, Path.Combine(runtimeDirectory, pdbName), true)
 
                         let runtimeAssembly = Assembly.LoadFrom(runtimeDllPath)
                         let loadContext =
