@@ -115,7 +115,7 @@ module HotReloadSessionTests =
                 useSdkRefs = true,
                 useFsiAuxLib = false
             )
-            |> Async.RunImmediate
+            |> Async.RunSynchronouslyImmediate
 
         { projectOptions with
             SourceFiles = [| fsPath |]
@@ -147,7 +147,7 @@ module HotReloadSessionTests =
         let argv =
             Array.concat [ [| "fsc.exe" |]; options; projectOptions.SourceFiles ]
 
-        let diagnostics, exOpt = checker.Compile(argv) |> Async.RunImmediate
+        let diagnostics, exOpt = checker.Compile(argv) |> Async.RunSynchronouslyImmediate
 
         let errors =
             diagnostics
@@ -159,7 +159,7 @@ module HotReloadSessionTests =
 
     let private createProjectSnapshot (projectOptions: FSharpProjectOptions) =
         FSharpProjectSnapshot.FromOptions(projectOptions, DocumentSource.FileSystem)
-        |> Async.RunImmediate
+        |> Async.RunSynchronouslyImmediate
 
     let private withProjectDir (testName: string) (action: string -> unit) =
         let projectDir =
@@ -191,7 +191,7 @@ module HotReloadSessionTests =
 
     let private writeAndCompile (checker: FSharpChecker) (fsPath: string) (options: FSharpProjectOptions) (source: string) capture =
         File.WriteAllText(fsPath, source)
-        checker.NotifyFileChanged(fsPath, options) |> Async.RunImmediate
+        checker.NotifyFileChanged(fsPath, options) |> Async.RunSynchronouslyImmediate
         compileProject checker options capture
 
     let private withEnvVar name value action =
@@ -692,12 +692,12 @@ module HotReloadSessionTests =
             printfn "[g1] userStringUpdate original=%s new=%s value=%A" (formatToken oldToken) (formatToken newToken) value
 
     let private addProjectOrFail (session: FSharpHotReloadSession) snapshot =
-        match session.AddProject(snapshot) |> Async.RunImmediate with
+        match session.AddProject(snapshot) |> Async.RunSynchronouslyImmediate with
         | Ok() -> ()
         | Error error -> failwithf "AddProject failed: %A" error
 
     let private emitOrFail (session: FSharpHotReloadSession) snapshot =
-        match session.EmitDelta(snapshot) |> Async.RunImmediate with
+        match session.EmitDelta(snapshot) |> Async.RunSynchronouslyImmediate with
         | Ok delta -> delta
         | Error error -> failwithf "EmitDelta failed: %A" error
 
@@ -721,7 +721,7 @@ module HotReloadSessionTests =
             addProjectOrFail session (createProjectSnapshot options)
 
             File.WriteAllText(fsPath, trimmedEditedSource)
-            checker.NotifyFileChanged(fsPath, options) |> Async.RunImmediate
+            checker.NotifyFileChanged(fsPath, options) |> Async.RunSynchronouslyImmediate
             compileProject checker options true
 
             let delta = emitOrFail session (createProjectSnapshot options)
@@ -922,7 +922,7 @@ let appValue () = "app generation {generation}"
             use session = checker.CreateHotReloadSession()
 
             // No AddProject: emitting is unrepresentable as anything but an error.
-            match session.EmitDelta(createProjectSnapshot options) |> Async.RunImmediate with
+            match session.EmitDelta(createProjectSnapshot options) |> Async.RunSynchronouslyImmediate with
             | Error FSharpHotReloadError.NoActiveSession -> ()
             | Error other -> failwithf "Expected NoActiveSession, got %A" other
             | Ok _ -> failwith "Expected EmitDelta to fail for a project the session does not track.")
@@ -1012,7 +1012,7 @@ let appValue () = "app generation {generation}: " + SessionLib.libValue ()
             let delta1 = emitOrFail session (createProjectSnapshot options)
 
             // A second emit cannot overwrite the first update while the host still owns it.
-            match session.EmitDelta(createProjectSnapshot options) |> Async.RunImmediate with
+            match session.EmitDelta(createProjectSnapshot options) |> Async.RunSynchronouslyImmediate with
             | Error(FSharpHotReloadError.UnsupportedEdit diagnostics) ->
                 Assert.Contains(diagnostics, fun diagnostic -> diagnostic.Message.Contains("already pending"))
             | Error other -> failwithf "Expected UnsupportedEdit for a second pending emit, got %A" other
@@ -1070,7 +1070,7 @@ type Calculator<'T>() =
             // runtime capability; without it the edit is rude.
             writeAndCompile checker genericFsPath genericOptions (genericSource 1) false
 
-            match session.EmitDelta(createProjectSnapshot genericOptions) |> Async.RunImmediate with
+            match session.EmitDelta(createProjectSnapshot genericOptions) |> Async.RunSynchronouslyImmediate with
             | Error(FSharpHotReloadError.UnsupportedEdit _) -> ()
             | Error other -> failwithf "Expected UnsupportedEdit without GenericUpdateMethod, got %A" other
             | Ok _ -> failwith "Expected generic method edit to be rude under BaselineOnly capabilities."
@@ -1278,7 +1278,7 @@ let probe input =
             Assert.False(Map.isEmpty baselineView.Baseline.EncClosureNames, "Expected a flag-on baseline with closure-name tables.")
 
             File.WriteAllText(fsPath, editedSource)
-            checker.NotifyFileChanged(fsPath, options) |> Async.RunImmediate
+            checker.NotifyFileChanged(fsPath, options) |> Async.RunSynchronouslyImmediate
             compileProject checker options false
 
             let delta = emitOrFail session (createProjectSnapshot options)
@@ -1558,7 +1558,7 @@ let probe () =
                     baselineView.Baseline.SynthesizedNameSnapshot
 
                 File.WriteAllText(fsPath, editedSource)
-                checker.NotifyFileChanged(fsPath, options) |> Async.RunImmediate
+                checker.NotifyFileChanged(fsPath, options) |> Async.RunSynchronouslyImmediate
                 compileProject checker options false
 
                 let delta = emitOrFail session (createProjectSnapshot options)
@@ -1666,10 +1666,10 @@ let probe input =
                 Assert.Equal(expectedSnapshotSource, baselineView.Baseline.SynthesizedNameSnapshotSource)
 
                 File.WriteAllText(fsPath, editedSource)
-                checker.NotifyFileChanged(fsPath, options) |> Async.RunImmediate
+                checker.NotifyFileChanged(fsPath, options) |> Async.RunSynchronouslyImmediate
                 compileProject checker options false
 
-                let result = session.EmitDelta(createProjectSnapshot options) |> Async.RunImmediate
+                let result = session.EmitDelta(createProjectSnapshot options) |> Async.RunSynchronouslyImmediate
 
                 match result with
                 | Ok _ ->

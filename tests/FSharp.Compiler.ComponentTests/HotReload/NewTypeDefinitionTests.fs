@@ -42,7 +42,7 @@ module NewTypeDefinitionTests =
     /// content-versioned, so each edit needs a fresh one).
     let private snapshotOf (projectOptions: FSharpProjectOptions) =
         FSharpProjectSnapshot.FromOptions(projectOptions, DocumentSource.FileSystem)
-        |> Async.RunImmediate
+        |> Async.RunSynchronouslyImmediate
 
     /// The full capability set advertised by current CoreCLR runtimes.
     let private fullCapabilities = EditAndContinueCapabilities.AllNames
@@ -100,7 +100,7 @@ module NewTypeDefinitionTests =
                         useSdkRefs = true,
                         useFsiAuxLib = false
                     )
-                    |> Async.RunImmediate
+                    |> Async.RunSynchronouslyImmediate
 
                 let projectOptions =
                     { projectOptions with
@@ -121,7 +121,7 @@ module NewTypeDefinitionTests =
                 let compileOnce (label: string) (options: FSharpProjectOptions) =
                     let diagnostics, _ =
                         checker.Compile(Array.concat [ [| "fsc.exe" |]; options.OtherOptions; options.SourceFiles ])
-                        |> Async.RunImmediate
+                        |> Async.RunSynchronouslyImmediate
 
                     let errors =
                         diagnostics
@@ -142,7 +142,7 @@ module NewTypeDefinitionTests =
                     | ValueSome _ -> failwithf "[%s] expected no in-process session after the reset." testLabel
                     | ValueNone -> ()
 
-                match session.AddProject(snapshotOf projectOptions) |> Async.RunImmediate with
+                match session.AddProject(snapshotOf projectOptions) |> Async.RunSynchronouslyImmediate with
                 | Error error -> failwithf "[%s] failed to start hot reload session: %A" testLabel error
                 | Ok () -> ()
 
@@ -163,10 +163,10 @@ module NewTypeDefinitionTests =
 
                 for updatedSource, verifyUpdated in generations do
                     File.WriteAllText(fsPath, updatedSource)
-                    checker.NotifyFileChanged(fsPath, projectOptions) |> Async.RunImmediate
+                    checker.NotifyFileChanged(fsPath, projectOptions) |> Async.RunSynchronouslyImmediate
                     compileOnce "updated" updatedOptions
 
-                    match session.EmitDelta(snapshotOf projectOptions) |> Async.RunImmediate with
+                    match session.EmitDelta(snapshotOf projectOptions) |> Async.RunSynchronouslyImmediate with
                     | Error error -> failwithf "[%s] EmitDelta failed: %A" testLabel error
                     | Ok delta ->
                         Assert.NotEmpty(delta.Metadata)
@@ -219,7 +219,7 @@ module NewTypeDefinitionTests =
                     useSdkRefs = true,
                     useFsiAuxLib = false
                 )
-                |> Async.RunImmediate
+                |> Async.RunSynchronouslyImmediate
 
             let projectOptions =
                 { projectOptions with
@@ -240,7 +240,7 @@ module NewTypeDefinitionTests =
             let compileOnce (label: string) (options: FSharpProjectOptions) =
                 let diagnostics, _ =
                     checker.Compile(Array.concat [ [| "fsc.exe" |]; options.OtherOptions; options.SourceFiles ])
-                    |> Async.RunImmediate
+                    |> Async.RunSynchronouslyImmediate
 
                 let errors =
                     diagnostics
@@ -251,12 +251,12 @@ module NewTypeDefinitionTests =
 
             compileOnce "baseline" projectOptions
 
-            match session.AddProject(snapshotOf projectOptions) |> Async.RunImmediate with
+            match session.AddProject(snapshotOf projectOptions) |> Async.RunSynchronouslyImmediate with
             | Error error -> failwithf "[%s] failed to start hot reload session: %A" testLabel error
             | Ok () -> ()
 
             File.WriteAllText(fsPath, updatedSource)
-            checker.NotifyFileChanged(fsPath, projectOptions) |> Async.RunImmediate
+            checker.NotifyFileChanged(fsPath, projectOptions) |> Async.RunSynchronouslyImmediate
 
             let updatedOptions =
                 { projectOptions with
@@ -268,7 +268,7 @@ module NewTypeDefinitionTests =
             compileOnce "updated" updatedOptions
 
             session.EmitDelta(snapshotOf projectOptions)
-            |> Async.RunImmediate
+            |> Async.RunSynchronouslyImmediate
             |> handleResult
         finally
             try checker.InvalidateAll() with _ -> ()
