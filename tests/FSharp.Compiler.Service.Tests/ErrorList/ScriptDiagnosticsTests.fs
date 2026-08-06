@@ -18,11 +18,11 @@ let private closure (files: (string * string) list) (active: string) : FSharpDia
         let source = File.ReadAllText activePath
         let options, _ =
 #if NETCOREAPP
-            checker.GetProjectOptionsFromScript(activePath, SourceText.ofString source, assumeDotNetFramework = false, useSdkRefs = true) |> Async.RunImmediate
+            checker.GetProjectOptionsFromScript(activePath, SourceText.ofString source, assumeDotNetFramework = false, useSdkRefs = true) |> Async.RunSynchronouslyImmediate
 #else
-            checker.GetProjectOptionsFromScript(activePath, SourceText.ofString source) |> Async.RunImmediate
+            checker.GetProjectOptionsFromScript(activePath, SourceText.ofString source) |> Async.RunSynchronouslyImmediate
 #endif
-        let results = checker.ParseAndCheckProject(options) |> Async.RunImmediate
+        let results = checker.ParseAndCheckProject(options) |> Async.RunSynchronouslyImmediate
         results.Diagnostics
     finally
         try Directory.Delete(dir, true) with _ -> ()

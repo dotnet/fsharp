@@ -20,7 +20,6 @@ type LanguageFeature =
     | WildCardInForLoop
     | RelaxWhitespace
     | RelaxWhitespace2
-    | StrictIndentation
     | NameOf
     | ImplicitYield
     | OpenTypeDeclaration
@@ -40,7 +39,6 @@ type LanguageFeature =
     | ExpandedMeasurables
     | NullnessChecking
     | StructActivePattern
-    | PrintfBinaryFormat
     | IndexerNotationWithoutDot
     | RefCellNotationInformationals
     | UseBindingValueDiscard
@@ -110,8 +108,11 @@ type LanguageFeature =
     | PreprocessorElif
     | ExceptionFieldSerializationSupport
     | ErrorOnMissingSignatureAttribute
+    | NotNullIfNotNull
+    | DirectDelegateConstruction
     | AccessProtectedBaseFieldFromClosure
     | ImprovedImpliedArgumentNamesPartTwo
+    | RecordSpreads
 
 /// LanguageVersion management
 type LanguageVersion(versionText, ?disabledFeaturesArray: LanguageFeature array) =
@@ -176,7 +177,6 @@ type LanguageVersion(versionText, ?disabledFeaturesArray: LanguageFeature array)
                 LanguageFeature.ExpandedMeasurables, languageVersion60
                 LanguageFeature.ResumableStateMachines, languageVersion60
                 LanguageFeature.StructActivePattern, languageVersion60
-                LanguageFeature.PrintfBinaryFormat, languageVersion60
                 LanguageFeature.IndexerNotationWithoutDot, languageVersion60
                 LanguageFeature.RefCellNotationInformationals, languageVersion60
                 LanguageFeature.UseBindingValueDiscard, languageVersion60
@@ -214,7 +214,6 @@ type LanguageVersion(versionText, ?disabledFeaturesArray: LanguageFeature array)
                 LanguageFeature.DiagnosticForObjInference, languageVersion80
                 LanguageFeature.WarningWhenTailRecAttributeButNonTailRecUsage, languageVersion80
                 LanguageFeature.StaticLetInRecordsDusEmptyTypes, languageVersion80
-                LanguageFeature.StrictIndentation, languageVersion80
                 LanguageFeature.ConstraintIntersectionOnFlexibleTypes, languageVersion80
                 LanguageFeature.WhileBang, languageVersion80
                 LanguageFeature.ExtendedFixedBindings, languageVersion80
@@ -256,17 +255,21 @@ type LanguageVersion(versionText, ?disabledFeaturesArray: LanguageFeature array)
                 LanguageFeature.WarnWhenFunctionValueUsedAsInterpolatedStringArg, languageVersion110
                 LanguageFeature.PreprocessorElif, languageVersion110
                 LanguageFeature.ExceptionFieldSerializationSupport, languageVersion110
+                LanguageFeature.NotNullIfNotNull, languageVersion110
                 LanguageFeature.ImprovedImpliedArgumentNamesPartTwo, languageVersion110
+                LanguageFeature.ImplicitDIMCoverage, languageVersion110
+                LanguageFeature.MethodOverloadsCache, languageVersion110 // Performance optimization for overload resolution
+                LanguageFeature.ErrorOnMissingSignatureAttribute, languageVersion110 // Turn FS3888 from warning into error
+                LanguageFeature.DirectDelegateConstruction, languageVersion110
+                LanguageFeature.AccessProtectedBaseFieldFromClosure, languageVersion110 // #5302: read a protected base field from a closure
+                LanguageFeature.RecordSpreads, languageVersion110
 
                 // Difference between languageVersion110 and preview - 11.0 gets turned on automatically by picking a preview .NET 11 SDK
                 // previewVersion is only when "preview" is specified explicitly in project files  and users also need a preview SDK
 
-                // F# preview (still preview in 10.0)
+                // F# preview
+                // Unfinished features that still need work before they can be assigned a release language version.
                 LanguageFeature.FromEndSlicing, previewVersion // Unfinished features --- needs work
-                LanguageFeature.MethodOverloadsCache, previewVersion // Performance optimization for overload resolution
-                LanguageFeature.ImplicitDIMCoverage, languageVersion110
-                LanguageFeature.ErrorOnMissingSignatureAttribute, previewVersion // Opt-in: turn FS3888 from warning into error
-                LanguageFeature.AccessProtectedBaseFieldFromClosure, previewVersion // #5302: read a protected base field from a closure
             ]
 
     static let defaultLanguageVersion = LanguageVersion("default")
@@ -384,7 +387,6 @@ type LanguageVersion(versionText, ?disabledFeaturesArray: LanguageFeature array)
         | LanguageFeature.OverloadsForCustomOperations -> FSComp.SR.featureOverloadsForCustomOperations ()
         | LanguageFeature.ExpandedMeasurables -> FSComp.SR.featureExpandedMeasurables ()
         | LanguageFeature.StructActivePattern -> FSComp.SR.featureStructActivePattern ()
-        | LanguageFeature.PrintfBinaryFormat -> FSComp.SR.featurePrintfBinaryFormat ()
         | LanguageFeature.IndexerNotationWithoutDot -> FSComp.SR.featureIndexerNotationWithoutDot ()
         | LanguageFeature.RefCellNotationInformationals -> FSComp.SR.featureRefCellNotationInformationals ()
         | LanguageFeature.UseBindingValueDiscard -> FSComp.SR.featureDiscardUseValue ()
@@ -421,7 +423,6 @@ type LanguageVersion(versionText, ?disabledFeaturesArray: LanguageFeature array)
         | LanguageFeature.DiagnosticForObjInference -> FSComp.SR.featureInformationalObjInferenceDiagnostic ()
 
         | LanguageFeature.StaticLetInRecordsDusEmptyTypes -> FSComp.SR.featureStaticLetInRecordsDusEmptyTypes ()
-        | LanguageFeature.StrictIndentation -> FSComp.SR.featureStrictIndentation ()
         | LanguageFeature.ConstraintIntersectionOnFlexibleTypes -> FSComp.SR.featureConstraintIntersectionOnFlexibleTypes ()
         | LanguageFeature.WarningWhenTailRecAttributeButNonTailRecUsage -> FSComp.SR.featureChkNotTailRecursive ()
         | LanguageFeature.UnmanagedConstraintCsharpInterop -> FSComp.SR.featureUnmanagedConstraintCsharpInterop ()
@@ -463,8 +464,11 @@ type LanguageVersion(versionText, ?disabledFeaturesArray: LanguageFeature array)
         | LanguageFeature.PreprocessorElif -> FSComp.SR.featurePreprocessorElif ()
         | LanguageFeature.ExceptionFieldSerializationSupport -> FSComp.SR.featureExceptionFieldSerializationSupport ()
         | LanguageFeature.ErrorOnMissingSignatureAttribute -> FSComp.SR.featureErrorOnMissingSignatureAttribute ()
+        | LanguageFeature.NotNullIfNotNull -> FSComp.SR.featureNotNullIfNotNull ()
+        | LanguageFeature.DirectDelegateConstruction -> FSComp.SR.featureDirectDelegateConstruction ()
         | LanguageFeature.AccessProtectedBaseFieldFromClosure -> FSComp.SR.featureAccessProtectedBaseFieldFromClosure ()
         | LanguageFeature.ImprovedImpliedArgumentNamesPartTwo -> FSComp.SR.featureImprovedImpliedArgumentNamesPartTwo ()
+        | LanguageFeature.RecordSpreads -> FSComp.SR.featureRecordSpreads ()
 
     /// Get a version string associated with the given feature.
     static member GetFeatureVersionString feature =

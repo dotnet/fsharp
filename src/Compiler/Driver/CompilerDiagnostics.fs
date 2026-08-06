@@ -402,6 +402,9 @@ type PhasedDiagnostic with
         | 3582 -> false // infoIfFunctionShadowsUnionCase - off by default
         | 3570 -> false // tcAmbiguousDiscardDotLambda - off by default
         | 3878 -> false // tcAttributeIsNotValidForUnionCaseWithFields - off by default
+        | 3905 -> false // tcRecordTypeDefinitionSpreadFieldShadowsSpreadField - off by default
+        | 3906 -> false // tcRecordExplicitFieldShadowsSpreadField - off by default
+        | 3907 -> false // tcRecordExprSpreadFieldShadowsSpreadField - off by default
         | _ ->
             match x.Exception with
             | DiagnosticEnabledWithLanguageFeature(_, _, _, enabled) -> enabled
@@ -1187,7 +1190,8 @@ type Exception with
                 | Parser.TOKEN_COLON_QMARK -> SR.GetString("Parser.TOKEN.COLON.QMARK")
                 | Parser.TOKEN_INT32_DOT_DOT -> SR.GetString("Parser.TOKEN.INT32.DOT.DOT")
                 | Parser.TOKEN_DOT_DOT -> SR.GetString("Parser.TOKEN.DOT.DOT")
-                | Parser.TOKEN_DOT_DOT_HAT -> SR.GetString("Parser.TOKEN.DOT.DOT")
+                | Parser.TOKEN_DOT_DOT_HAT -> SR.GetString("Parser.TOKEN.DOT.DOT.HAT")
+                | Parser.TOKEN_DOT_DOT_DOT -> SR.GetString("Parser.TOKEN.DOT.DOT.DOT")
                 | Parser.TOKEN_QUOTE -> SR.GetString("Parser.TOKEN.QUOTE")
                 | Parser.TOKEN_STAR -> SR.GetString("Parser.TOKEN.STAR")
                 | Parser.TOKEN_HIGH_PRECEDENCE_TYAPP -> SR.GetString("Parser.TOKEN.HIGH.PRECEDENCE.TYAPP")
