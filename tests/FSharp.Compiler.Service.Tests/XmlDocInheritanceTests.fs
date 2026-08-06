@@ -1,0 +1,960 @@
+module FSharp.Compiler.Service.Tests.XmlDocInheritanceTests
+
+open System.Text.RegularExpressions
+open FSharp.Compiler.Symbols
+open FSharp.Compiler.Xml
+open FSharp.Compiler.XmlDocInheritance
+open Xunit
+
+let expandWith (crefMap: (string * string) list) (implicitTarget: string option) (xml: string) : string =
+    let map = Map.ofList crefMap
+    let resolve cref = Map.tryFind cref map
+    expandInheritDocFromXmlText resolve implicitTarget Set.empty xml
+
+let getTooltipXml (markedSource: string) =
+    let _, xml, _ = Checker.getTooltip markedSource |> assertAndExtractTooltip
+    xml
+
+let getCompletionXml name markedSource =
+    let completionInfo = Checker.getCompletionInfo markedSource
+
+    let item =
+        completionInfo.Items
+        |> Array.find (fun item -> item.NameInCode = name)
+
+    let _, xml, _ = item.Description |> assertAndExtractTooltip
+    xml
+
+let getSymbolXml name markedSource =
+    let _, checkResults = Checker.getCheckedResolveContext markedSource
+    let symbol = XmlDocTests.findSymbolByName name checkResults
+
+    match symbol with
+    | :? FSharpEntity as entity -> entity.XmlDoc
+    | :? FSharpMemberOrFunctionOrValue as value -> value.XmlDoc
+    | :? FSharpUnionCase as unionCase -> unionCase.XmlDoc
+    | :? FSharpField as field -> field.XmlDoc
+    | :? FSharpActivePatternCase as activePatternCase -> activePatternCase.XmlDoc
+    | _ -> failwith $"Unexpected symbol type {symbol.GetType()}"
+
+let xmlText (xml: FSharpXmlDoc) =
+    match xml with
+    | FSharpXmlDoc.FromXmlText xmlDoc -> xmlDoc.GetXmlText()
+    | other -> failwith $"Expected FromXmlText, got {other}"
+
+[<Fact>]
+let ``engine recursively expands multi-level inheritdoc chain`` () =
+    let result =
+        expandWith
+            [
+                "B", """<inheritdoc cref="C"/>"""
+                "C", """<summary>Leaf summary text</summary>"""
+            ]
+            None
+            """<inheritdoc cref="B"/>"""
+
+    Assert.Contains("Leaf summary text", result)
+    Assert.DoesNotContain("<inheritdoc", result)
+
+[<Fact>]
+let ``engine expands shared diamond target in each branch`` () =
+    let result =
+        expandWith
+            [
+                "B", """<inheritdoc cref="C"/>"""
+                "C", """<v>shared</v>"""
+                "D", """<inheritdoc cref="C"/>"""
+            ]
+            None
+            """<part1><inheritdoc cref="B"/></part1><part2><inheritdoc cref="D"/></part2>"""
+
+    Assert.Equal(2, Regex.Matches(result, "shared").Count)
+    Assert.DoesNotContain("<inheritdoc", result)
+
+[<Fact>]
+let ``engine removes self-cycle inheritdoc`` () =
+    let result =
+        expandWith
+            [ "A", """<inheritdoc cref="A"/>""" ]
+            None
+            """<inheritdoc cref="A"/>"""
+
+    Assert.DoesNotContain("<inheritdoc", result)
+
+[<Fact>]
+let ``engine removes indirect cycle inheritdoc`` () =
+    let result =
+        expandWith
+            [
+                "A", """<inheritdoc cref="B"/>"""
+                "B", """<inheritdoc cref="A"/>"""
+            ]
+            None
+            """<inheritdoc cref="A"/>"""
+
+    Assert.DoesNotContain("<inheritdoc", result)
+
+[<Fact>]
+let ``engine path selects summary without remarks`` () =
+    let result =
+        expandWith
+            [
+                "A", """<summary>Selected summary</summary><remarks>Skipped remarks</remarks>"""
+            ]
+            None
+            """<inheritdoc cref="A" path="/summary"/>"""
+
+    Assert.Contains("Selected summary", result)
+    Assert.DoesNotContain("Skipped remarks", result)
+    Assert.DoesNotContain("<inheritdoc", result)
+
+[<Fact>]
+let ``engine default inheritdoc excludes top-level overloads`` () =
+    let result =
+        expandWith
+            [
+                "A", """<overloads>Skipped overload text</overloads><summary>Kept summary text</summary>"""
+            ]
+            None
+            """<inheritdoc cref="A"/>"""
+
+    Assert.Contains("Kept summary text", result)
+    Assert.DoesNotContain("Skipped overload text", result)
+    Assert.DoesNotContain("<overloads", result)
+    Assert.DoesNotContain("<inheritdoc", result)
+
+[<Fact>]
+let ``engine removes unresolvable cref inheritdoc and preserves surrounding content`` () =
+    let result =
+        expandWith [] None """<summary>Before <inheritdoc cref="Missing"/> After</summary>"""
+
+    Assert.Contains("Before", result)
+    Assert.Contains("After", result)
+    Assert.DoesNotContain("<inheritdoc", result)
+
+[<Fact>]
+let ``engine removes invalid XPath inheritdoc without inherited content`` () =
+    let result =
+        expandWith
+            [ "A", """<summary>Inherited summary</summary>""" ]
+            None
+            """<summary>Before <inheritdoc cref="A" path="///["/> After</summary>"""
+
+    Assert.Contains("Before", result)
+    Assert.Contains("After", result)
+    Assert.DoesNotContain("Inherited summary", result)
+    Assert.DoesNotContain("<inheritdoc", result)
+
+[<Fact>]
+let ``engine removes malformed inherited content inheritdoc`` () =
+    let result =
+        expandWith
+            [ "A", """<summary>Malformed summary""" ]
+            None
+            """Before <inheritdoc cref="A"/> After"""
+
+    Assert.Contains("Before", result)
+    Assert.Contains("After", result)
+    Assert.DoesNotContain("Malformed summary", result)
+    Assert.DoesNotContain("<inheritdoc", result)
+
+[<Fact>]
+let ``engine removes implicit inheritdoc without target`` () =
+    let result = expandWith [] None """<summary>Before <inheritdoc/> After</summary>"""
+
+    Assert.Contains("Before", result)
+    Assert.Contains("After", result)
+    Assert.DoesNotContain("<inheritdoc", result)
+
+[<Fact>]
+let ``tooltip expands implicit inheritdoc from base class`` () =
+    let xml =
+        getTooltipXml
+            """
+module Test
+/// <summary>Base summary text</summary>
+type Base() = class end
+/// <inheritdoc/>
+type Derive{caret}d() = inherit Base()
+"""
+
+    Assert.Contains("Base summary text", xmlText xml)
+    Assert.DoesNotContain("<inheritdoc", xmlText xml)
+
+[<Fact>]
+let ``tooltip expands implicit inheritdoc from implemented interface`` () =
+    let xml =
+        getTooltipXml
+            """
+module Test
+/// <summary>Interface summary text</summary>
+type IThing =
+    abstract member Do: unit -> unit
+/// <inheritdoc/>
+type Thin{caret}g() =
+    interface IThing with
+        member _.Do() = ()
+"""
+
+    Assert.Contains("Interface summary text", xmlText xml)
+    Assert.DoesNotContain("<inheritdoc", xmlText xml)
+
+[<Fact>]
+let ``tooltip expands implicit inheritdoc on overriding method`` () =
+    let xml =
+        getTooltipXml
+            """
+module Test
+type Base() =
+    /// <summary>Base method summary</summary>
+    abstract member Foo: unit -> unit
+    default _.Foo() = ()
+type Derived() =
+    inherit Base()
+    /// <inheritdoc/>
+    override _.Foo() = ()
+let d = Derived()
+d.Fo{caret}o()
+"""
+
+    Assert.Contains("Base method summary", xmlText xml)
+    Assert.DoesNotContain("<inheritdoc", xmlText xml)
+
+[<Fact>]
+let ``tooltip expands implicit inheritdoc on overriding multi-argument method`` () =
+    let xml =
+        getTooltipXml
+            """
+module Test
+type Base() =
+    /// <summary>Base add summary</summary>
+    abstract member Add: x: int -> y: int -> int
+    default _.Add(x, y) = x + y
+type Derived() =
+    inherit Base()
+    /// <inheritdoc/>
+    override _.Add(x, y) = x + y + 1
+let d = Derived()
+d.Ad{caret}d 1 2
+"""
+
+    Assert.Contains("Base add summary", xmlText xml)
+    Assert.DoesNotContain("<inheritdoc", xmlText xml)
+
+[<Fact>]
+let ``tooltip expands implicit inheritdoc on overriding property`` () =
+    let xml =
+        getTooltipXml
+            """
+module Test
+type Base() =
+    /// <summary>Base property summary</summary>
+    abstract member Value: int
+    default _.Value = 0
+type Derived() =
+    inherit Base()
+    /// <inheritdoc/>
+    override _.Value = 1
+let d = Derived()
+d.Val{caret}ue
+"""
+
+    Assert.Contains("Base property summary", xmlText xml)
+    Assert.DoesNotContain("<inheritdoc", xmlText xml)
+
+[<Fact>]
+let ``completion expands implicit inheritdoc from base class`` () =
+    let xml =
+        getCompletionXml
+            "Derived"
+            """
+module Test
+/// <summary>Base summary text</summary>
+type Base() = class end
+/// <inheritdoc/>
+type Derived() = inherit Base()
+let _ : Deri{caret} = failwith ""
+"""
+
+    Assert.Contains("Base summary text", xmlText xml)
+    Assert.DoesNotContain("<inheritdoc", xmlText xml)
+
+// --- Phase 4: implicit resolution priority parity (Roslyn GetCandidateSymbol) ---
+
+[<Fact>]
+let ``engine does not leak implicit target across cref chains`` () =
+    // A explicitly inherits from B; B has a bare <inheritdoc/> (implicit). When expanding B's
+    // content, the implicit target must be B's (unknown at the text-only engine layer -> None),
+    // NOT A's implicit target. The bogus implicit target below must never be consulted.
+    let result =
+        expandWith
+            [ "B", """<summary>B summary</summary><inheritdoc/>""" ]
+            (Some "SHOULD_NOT_BE_USED")
+            """<inheritdoc cref="B"/>"""
+
+    Assert.Contains("B summary", result)
+    Assert.DoesNotContain("<inheritdoc", result)
+    Assert.DoesNotContain("SHOULD_NOT_BE_USED", result)
+
+[<Fact>]
+let ``tooltip drops implicit inheritdoc on class with object base and no interface`` () =
+    // Roslyn would inherit System.Object's docs here; F# intentionally treats a bare object base
+    // as "nothing useful to inherit" (documented deviation) and drops the tag silently.
+    let xml =
+        getTooltipXml
+            """
+module Test
+/// <inheritdoc/>
+type Lon{caret}e() = class end
+"""
+
+    Assert.DoesNotContain("<inheritdoc", xmlText xml)
+    Assert.DoesNotContain("Supports all classes", xmlText xml)
+
+[<Fact>]
+let ``symbol drops implicit inheritdoc on a struct (no ValueType inheritance)`` () =
+    // A struct's only supertype is System.ValueType. Roslyn (and the inheritdoc spec) return no
+    // candidate for structs/enums/delegates, so nothing is inherited. Guards against the Path A
+    // resolver reaching System.ValueType's external documentation.
+    let xml =
+        getSymbolXml
+            "S"
+            """
+module Test
+/// <inheritdoc/>
+[<Struct>]
+type S =
+    val X: int
+let f (x: S) = x{caret}
+"""
+
+    Assert.DoesNotContain("<inheritdoc", xmlText xml)
+    Assert.DoesNotContain("base class for value", xmlText xml)
+
+[<Fact>]
+let ``symbol drops implicit inheritdoc on a delegate`` () =
+    let xml =
+        getSymbolXml
+            "D"
+            """
+module Test
+/// <inheritdoc/>
+type D = delegate of int -> int
+let f (x: D) = x{caret}
+"""
+
+    Assert.DoesNotContain("<inheritdoc", xmlText xml)
+    Assert.DoesNotContain("invocation list", xmlText xml)
+
+[<Fact>]
+let ``tooltip does not inherit for a non-override member sharing a base name`` () =
+    // A new (non-override) member that merely shares a name with a base member has no
+    // inheritance candidate in Roslyn (method -> interface impl only). F# must not fall back
+    // to the base member's docs just because the names collide.
+    let xml =
+        getTooltipXml
+            """
+module Test
+type Base() =
+    /// <summary>base foo docs</summary>
+    member _.Foo(x: int) = x
+type Derived() =
+    inherit Base()
+    /// <inheritdoc/>
+    member _.Foo(x: int) = x + 1
+let d = Derived()
+let _ = d.Fo{caret}o(0)
+"""
+
+    Assert.DoesNotContain("<inheritdoc", xmlText xml)
+    Assert.DoesNotContain("base foo docs", xmlText xml)
+
+[<Fact>]
+let ``tooltip override inherits the matching base overload docs`` () =
+    // With multiple base overloads, an override's <inheritdoc/> must inherit the docs of the
+    // overload it actually overrides (by signature), not the first documented same-named overload.
+    let xml =
+        getTooltipXml
+            """
+module Test
+type Base() =
+    /// <summary>int overload docs</summary>
+    abstract M: int -> unit
+    /// <summary>string overload docs</summary>
+    abstract M: string -> unit
+    default _.M(_: int) = ()
+    default _.M(_: string) = ()
+type Derived() =
+    inherit Base()
+    /// <inheritdoc/>
+    override _.M(x: string) = ()
+let d = Derived()
+let _ = d.M{caret}("")
+"""
+
+    Assert.Contains("string overload docs", xmlText xml)
+    Assert.DoesNotContain("int overload docs", xmlText xml)
+    Assert.DoesNotContain("<inheritdoc", xmlText xml)
+
+[<Fact>]
+let ``tooltip constructor inherits matching base constructor docs`` () =
+    // Roslyn GetCandidateSymbol: a constructor inherits documentation from the base-type
+    // constructor with a matching signature (constructors are not overrides).
+    let xml =
+        getTooltipXml
+            """
+module Test
+type Base =
+    val x: int
+    /// <summary>base ctor docs</summary>
+    new (x: int) = { x = x }
+type Derived =
+    inherit Base
+    /// <inheritdoc/>
+    new (x: int) = { inherit Base(x) }
+let _ = Deri{caret}ved(0)
+"""
+
+    Assert.Contains("base ctor docs", xmlText xml)
+    Assert.DoesNotContain("<inheritdoc", xmlText xml)
+
+[<Fact>]
+let ``tooltip constructor inherits the matching base constructor overload docs`` () =
+    // With multiple base constructors, <inheritdoc/> must inherit the docs of the base
+    // constructor whose signature matches, not the first documented one.
+    let xml =
+        getTooltipXml
+            """
+module Test
+type Base =
+    val x: int
+    /// <summary>int ctor docs</summary>
+    new (x: int) = { x = x }
+    /// <summary>string ctor docs</summary>
+    new (s: string) = { x = s.Length }
+type Derived =
+    inherit Base
+    /// <inheritdoc/>
+    new (s: string) = { inherit Base(s) }
+let _ = Deri{caret}ved("")
+"""
+
+    Assert.Contains("string ctor docs", xmlText xml)
+    Assert.DoesNotContain("int ctor docs", xmlText xml)
+    Assert.DoesNotContain("<inheritdoc", xmlText xml)
+
+[<Fact>]
+let ``tooltip constructor inherits from a generic base constructor`` () =
+    // The base type is generic (Base<'T>) instantiated as Base<int>. The base constructor's
+    // parameter 'T must be seen as int so it matches the derived new(x: int) by signature.
+    let xml =
+        getTooltipXml
+            """
+module Test
+type Base<'T> =
+    val x: 'T
+    /// <summary>generic base ctor docs</summary>
+    new (x: 'T) = { x = x }
+type Derived =
+    inherit Base<int>
+    /// <inheritdoc/>
+    new (x: int) = { inherit Base<int>(x) }
+let _ = Deri{caret}ved(0)
+"""
+
+    Assert.Contains("generic base ctor docs", xmlText xml)
+    Assert.DoesNotContain("<inheritdoc", xmlText xml)
+
+[<Fact>]
+let ``tooltip constructor with no matching base overload drops the tag silently`` () =
+    // The derived constructor's signature (string) matches no base constructor (only int exists),
+    // so nothing is inherited: the tag is dropped silently, without fabricating the wrong docs.
+    let xml =
+        getTooltipXml
+            """
+module Test
+type Base =
+    val x: int
+    /// <summary>base int ctor docs</summary>
+    new (x: int) = { x = x }
+type Derived =
+    inherit Base
+    /// <inheritdoc/>
+    new (s: string) = { inherit Base(s.Length) }
+let _ = Deri{caret}ved("")
+"""
+
+    Assert.DoesNotContain("base int ctor docs", xmlText xml)
+    Assert.DoesNotContain("<inheritdoc", xmlText xml)
+
+[<Fact>]
+let ``tooltip struct constructor inheritdoc does not leak ValueType docs`` () =
+    // A struct has no inheritance candidate (Roslyn returns null). A struct constructor with
+    // <inheritdoc/> must silently drop the tag, never surfacing System.ValueType's ctor docs.
+    let xml =
+        getTooltipXml
+            """
+module Test
+[<Struct>]
+type S =
+    val X: int
+    /// <inheritdoc/>
+    new (x: int) = { X = x }
+let _ = S{caret}(0)
+"""
+
+    Assert.DoesNotContain("<inheritdoc", xmlText xml)
+    Assert.DoesNotContain("ValueType", xmlText xml)
+
+[<Fact>]
+let ``tooltip picks the called constructor overload when the derived type has several`` () =
+    // The derived type declares two <inheritdoc/> constructors. Each call site must expand against
+    // the base constructor matching THAT overload, proving Path B receives the resolved ctor minfo
+    // for the call, not merely the first constructor in the group.
+    let source =
+        """
+module Test
+type Base =
+    val x: int
+    /// <summary>base int ctor docs</summary>
+    new (x: int) = { x = x }
+    /// <summary>base string ctor docs</summary>
+    new (s: string) = { x = s.Length }
+type Derived =
+    inherit Base
+    /// <inheritdoc/>
+    new (x: int) = { inherit Base(x) }
+    /// <inheritdoc/>
+    new (s: string) = { inherit Base(s) }
+"""
+
+    let intCall = getTooltipXml (source + "let _ = Deri{caret}ved(0)\n")
+    Assert.Contains("base int ctor docs", xmlText intCall)
+    Assert.DoesNotContain("base string ctor docs", xmlText intCall)
+    Assert.DoesNotContain("<inheritdoc", xmlText intCall)
+
+    let stringCall = getTooltipXml (source + "let _ = Deri{caret}ved(\"\")\n")
+    Assert.Contains("base string ctor docs", xmlText stringCall)
+    Assert.DoesNotContain("base int ctor docs", xmlText stringCall)
+    Assert.DoesNotContain("<inheritdoc", xmlText stringCall)
+
+[<Fact>]
+let ``tooltip type inherits docs from a generic base class`` () =
+    // "Inheriting generics": a generic derived type inheriting a generic base type's docs.
+    let xml =
+        getTooltipXml
+            """
+module Test
+/// <summary>generic base type docs</summary>
+type Base<'T>() =
+    member _.M() = ()
+/// <inheritdoc/>
+type Deri{caret}ved<'T>() =
+    inherit Base<'T>()
+"""
+
+    Assert.Contains("generic base type docs", xmlText xml)
+    Assert.DoesNotContain("<inheritdoc", xmlText xml)
+
+[<Fact>]
+let ``tooltip type inherits docs from a generic interface`` () =
+    // A type whose <inheritdoc/> resolves through a generic implemented interface.
+    let xml =
+        getTooltipXml
+            """
+module Test
+/// <summary>generic iface docs</summary>
+type IThing<'T> =
+    abstract member Do: 'T -> unit
+/// <inheritdoc/>
+type Thin{caret}g() =
+    interface IThing<int> with
+        member _.Do(_) = ()
+"""
+
+    Assert.Contains("generic iface docs", xmlText xml)
+    Assert.DoesNotContain("<inheritdoc", xmlText xml)
+
+[<Fact>]
+let ``tooltip method override inherits from a generic base method`` () =
+    // Override of a method declared on a generic base (Get: unit -> 'T instantiated to int):
+    // signature matching must still find the overridden slot.
+    let xml =
+        getTooltipXml
+            """
+module Test
+type Base<'T>() =
+    /// <summary>generic base method docs</summary>
+    abstract member Get: unit -> 'T
+    default _.Get() = Unchecked.defaultof<'T>
+type Derived() =
+    inherit Base<int>()
+    /// <inheritdoc/>
+    override _.Get() = 0
+let d = Derived()
+let _ = d.Ge{caret}t()
+"""
+
+    Assert.Contains("generic base method docs", xmlText xml)
+    Assert.DoesNotContain("<inheritdoc", xmlText xml)
+
+[<Fact>]
+let ``tooltip inherited markup is spliced as XML, not escaped text`` () =
+    // Regression: the expanded doc must round-trip as real XML. A previous defect stored the
+    // engine output as a single line beginning with whitespace, so XmlDoc elaboration re-wrapped
+    // it in an implicit <summary> and XML-escaped the inherited markup (&lt;summary&gt;...), which
+    // an IDE would render as literal angle brackets instead of formatted documentation.
+    let text =
+        getTooltipXml
+            """
+module Test
+type Base<'T>() =
+    /// <summary>Clones a <typeparamref name="T"/> value</summary>
+    abstract member Clone: unit -> 'T
+    default _.Clone() = Unchecked.defaultof<'T>
+type Derived() =
+    inherit Base<int>()
+    /// <inheritdoc/>
+    override _.Clone() = 0
+let d = Derived()
+let _ = d.Clo{caret}ne()
+"""
+        |> xmlText
+
+    Assert.Contains("<summary>", text)
+    Assert.Contains("Clones a", text)
+    Assert.Contains("<typeparamref", text)
+    Assert.DoesNotContain("&lt;", text)
+    Assert.DoesNotContain("&gt;", text)
+    Assert.DoesNotContain("<inheritdoc", text)
+
+[<Fact>]
+let ``symbol inherited markup is spliced as XML, not escaped text`` () =
+    // Same regression guard on the FSharpSymbol.XmlDoc (Path A) resolver.
+    let text =
+        getSymbolXml
+            "Derived"
+            """
+module Test
+/// <summary>Base docs with <c>inline code</c></summary>
+type Base() = class end
+/// <inheritdoc/>
+type Derived() =
+    inherit Base()
+let _ = Derived(){caret}
+"""
+        |> xmlText
+
+    Assert.Contains("<summary>", text)
+    Assert.Contains("<c>inline code</c>", text)
+    Assert.DoesNotContain("&lt;", text)
+    Assert.DoesNotContain("&gt;", text)
+    Assert.DoesNotContain("<inheritdoc", text)
+
+[<Fact>]
+let ``engine path filter selecting text nodes degrades gracefully`` () =
+    // A user-authored path attribute whose XPath selects non-element (text) nodes must not throw
+    // out of the tooltip/completion pipeline. XPathSelectElements raises InvalidOperationException
+    // on text-node results, which is neither XPathException nor XmlException; the engine must
+    // swallow it and degrade to dropping the directive rather than crashing.
+    let result =
+        expandWith
+            [ "B", "<summary>Hello <b>world</b></summary>" ]
+            None
+            """<inheritdoc cref="B" path="/summary/node()"/>"""
+
+    Assert.DoesNotContain("<inheritdoc", result)
+
+[<Fact>]
+let ``engine explicit cref recursion does not leak the caller's implicit target`` () =
+    // A directive with an explicit cref must expand the referenced doc against THAT doc's own base,
+    // not the caller's implicit target. Here "Other" itself contains a bare <inheritdoc/>; it must
+    // not resolve to the caller's implicit target ("Caller"). Previously the caller's target leaked
+    // in, injecting the wrong ("CALLER") documentation.
+    let result =
+        expandWith
+            [
+                "Other", "<summary>OTHER <inheritdoc/></summary>"
+                "Caller", "<summary>CALLER</summary>"
+            ]
+            (Some "Caller")
+            """<inheritdoc cref="Other"/>"""
+
+    Assert.Contains("OTHER", result)
+    Assert.DoesNotContain("CALLER", result)
+    Assert.DoesNotContain("<inheritdoc", result)
+
+[<Fact>]
+let ``symbol does not surface an arbitrary overload for an ambiguous member cref`` () =
+    // An explicit member cref without a parameter signature is ambiguous when the target name is
+    // overloaded. The name-based resolver must not surface an arbitrary (here: the first) overload's
+    // documentation, which would be wrong as often as right.
+    let xml =
+        getSymbolXml
+            "Consumer"
+            """
+module Test
+type C() =
+    /// <summary>AAA overload int</summary>
+    member _.Foo(x: int) = ()
+    /// <summary>BBB overload string</summary>
+    member _.Foo(x: string) = ()
+/// <inheritdoc cref="M:Test.C.Foo"/>
+type Consumer() = class end
+let _ = Consumer(){caret}
+"""
+        |> xmlText
+
+    Assert.DoesNotContain("AAA", xml)
+    Assert.DoesNotContain("BBB", xml)
+
+
+/// Reads the XmlDoc of a specific member declared on a type (targets the override, not the type).
+let private getMemberXml (typeName: string) (memberName: string) markedSource =
+    let _, checkResults = Checker.getCheckedResolveContext markedSource
+    let entity = XmlDocTests.findSymbolByName typeName checkResults :?> FSharpEntity
+    let m =
+        entity.MembersFunctionsAndValues
+        |> Seq.find (fun v -> v.DisplayName = memberName)
+    m.XmlDoc
+
+[<Fact>]
+let ``symbol does not surface a sibling overload's docs on an implicit override`` () =
+    // Base declares two M overloads; only M(int) is documented. Derived overrides the UNdocumented
+    // M(string) with <inheritdoc/>. A name-only member cref cannot tell the overloads apart, so
+    // Path A (FSharpSymbol.XmlDoc) must not surface the int overload's docs on the string override.
+    let xml =
+        getMemberXml "Derived" "M"
+            """
+module Test
+type Base() =
+    /// <summary>INT overload docs</summary>
+    abstract member M: int -> unit
+    default _.M(x: int) = ()
+    abstract member M: string -> unit
+    default _.M(x: string) = ()
+type Derived() =
+    inherit Base()
+    /// <inheritdoc/>
+    override _.M(x: string) = ()
+let _ = Derived(){caret}
+"""
+        |> xmlText
+
+    Assert.DoesNotContain("INT overload docs", xml)
+
+[<Fact>]
+let ``symbol inherits docs on a single overriding method (not over-blocked)`` () =
+    // Guards the overload gate against over-blocking: a single virtual (abstract + default is two
+    // MethInfos sharing a signature, collapsed to one overload) must still inherit on Path A.
+    let xml =
+        getMemberXml "Derived" "M"
+            """
+module Test
+type Base() =
+    /// <summary>ONLY overload docs</summary>
+    abstract member M: int -> unit
+    default _.M(x: int) = ()
+type Derived() =
+    inherit Base()
+    /// <inheritdoc/>
+    override _.M(x: int) = ()
+let _ = Derived(){caret}
+"""
+        |> xmlText
+
+    Assert.Contains("ONLY overload docs", xml)
+    Assert.DoesNotContain("<inheritdoc", xml)
+
+[<Fact>]
+let ``symbol inherits docs on an overriding get/set property (not over-blocked)`` () =
+    // A read/write property's get/set collapse to a single PropInfo, so the overload gate must not
+    // block it. Proves the property branch of the gate is distinct from the method branch.
+    let xml =
+        getMemberXml "Derived" "P"
+            """
+module Test
+type Base() =
+    /// <summary>Base RW prop</summary>
+    abstract member P: int with get, set
+type Derived() =
+    inherit Base()
+    /// <inheritdoc/>
+    override _.P with get() = 0 and set (v: int) = ()
+let _ = Derived(){caret}
+"""
+        |> xmlText
+
+    Assert.Contains("Base RW prop", xml)
+    Assert.DoesNotContain("<inheritdoc", xml)
+
+[<Fact>]
+let ``tooltip override inherits from a grandparent-declared virtual`` () =
+    // C : B : A where A declares the documented abstract, B does not redeclare it, and C overrides
+    // it with <inheritdoc/>. The overridden slot is declared on the grandparent A, so the tooltip
+    // layer must locate A via the implemented slot signature, not only the direct base B.
+    let xml =
+        getTooltipXml
+            """
+module Test
+type A() =
+    /// <summary>grandparent virtual docs</summary>
+    abstract member M: unit -> unit
+    default _.M() = ()
+type B() =
+    inherit A()
+type C() =
+    inherit B()
+    /// <inheritdoc/>
+    override _.M() = ()
+let c = C()
+let _ = c.M{caret}()
+"""
+        |> xmlText
+
+    Assert.Contains("grandparent virtual docs", xml)
+    Assert.DoesNotContain("<inheritdoc", xml)
+
+[<Fact>]
+let ``tooltip override inherits from a generic grandparent-declared virtual`` () =
+    // Generic variant of the grandparent case: the slot's declaring type must be the INSTANTIATED
+    // base (A<int>), so the intrinsic-method scan and signature match line up on the concrete type.
+    let xml =
+        getTooltipXml
+            """
+module Test
+type A<'T>() =
+    /// <summary>generic grandparent virtual docs</summary>
+    abstract member M: unit -> 'T
+    default _.M() = Unchecked.defaultof<'T>
+type B<'T>() =
+    inherit A<'T>()
+type C() =
+    inherit B<int>()
+    /// <inheritdoc/>
+    override _.M() = 0
+let c = C()
+let _ = c.M{caret}()
+"""
+        |> xmlText
+
+    Assert.Contains("generic grandparent virtual docs", xml)
+    Assert.DoesNotContain("<inheritdoc", xml)
+
+[<Fact>]
+let ``tooltip property override inherits from a grandparent-declared virtual`` () =
+    // Symmetric grandparent case for properties: the overridden property slot is declared on the
+    // grandparent A, so tryBasePropertyTarget must consult the implemented slot signatures too.
+    let xml =
+        getTooltipXml
+            """
+module Test
+type A() =
+    /// <summary>grandparent property docs</summary>
+    abstract member Value: int
+    default _.Value = 0
+type B() =
+    inherit A()
+type C() =
+    inherit B()
+    /// <inheritdoc/>
+    override _.Value = 1
+let c = C()
+let _ = c.Val{caret}ue
+"""
+        |> xmlText
+
+    Assert.Contains("grandparent property docs", xml)
+    Assert.DoesNotContain("<inheritdoc", xml)
+
+[<Fact>]
+let ``symbol does not surface a sibling indexer overload's docs on an implicit override`` () =
+    // Property analogue of the overload guard. Base declares two Item indexer overloads; only the
+    // int overload is documented. Derived overrides the UNdocumented string overload with
+    // <inheritdoc/>. A name-only property cref cannot tell the indexers apart (the slot name is the
+    // accessor get_Item, so the guard must count by property name), so Path A abstains for the whole
+    // overload set rather than surfacing the int overload's docs on the string override. As with
+    // overloaded methods, the correctly signature-matched docs are still delivered by the tooltip
+    // layer (Path B).
+    let src =
+        """
+module Test
+type Base() =
+    /// <summary>INT indexer docs</summary>
+    abstract Item: int -> string with get
+    abstract Item: string -> string with get
+    default _.Item with get (i: int) = "i"
+    default _.Item with get (s: string) = "s"
+type Derived() =
+    inherit Base()
+    /// <inheritdoc/>
+    override _.Item with get (i: int) = "di"
+    /// <inheritdoc/>
+    override _.Item with get (s: string) = "ds"
+let d = Derived(){caret}
+"""
+    let _, checkResults = Checker.getCheckedResolveContext src
+    let entity = XmlDocTests.findSymbolByName "Derived" checkResults :?> FSharpEntity
+
+    let docOfIndexer (paramTypeName: string) =
+        entity.MembersFunctionsAndValues
+        |> Seq.filter (fun v -> v.DisplayName = "Item" && v.IsProperty)
+        |> Seq.find (fun v ->
+            v.CurriedParameterGroups
+            |> Seq.collect id
+            |> Seq.exists (fun p -> (string p.Type).EndsWith paramTypeName))
+        |> fun v ->
+            match v.XmlDoc with
+            | FSharpXmlDoc.FromXmlText t -> t.GetXmlText()
+            | _ -> ""
+
+    // The overridden (string) indexer's base overload is undocumented: it must not borrow the
+    // int overload's docs.
+    Assert.DoesNotContain("INT indexer docs", docOfIndexer "string")
+
+[<Fact>]
+let ``engine caps a deep acyclic inheritdoc chain`` () =
+    // The visited-set stops CYCLES but not a deep ACYCLIC chain (c0 -> c1 -> c2 -> ...). Without a
+    // depth cap such a chain recurses unboundedly and eventually stack-overflows (uncatchable, aborts
+    // the process/IDE). A chain far deeper than the cap must therefore stop expanding gracefully
+    // instead of resolving all the way to the leaf.
+    let depth = 300
+    let crefMap =
+        [ for i in 0 .. depth - 1 -> $"c{i}", $"""<inheritdoc cref="c{i + 1}"/>""" ]
+        @ [ $"c{depth}", "<summary>DEEP LEAF CONTENT</summary>" ]
+
+    let result = expandWith crefMap None """<inheritdoc cref="c0"/>"""
+
+    // The cap engages long before the leaf, so its content is never reached.
+    Assert.DoesNotContain("DEEP LEAF CONTENT", result)
+
+[<Fact>]
+let ``engine survives an extremely deep acyclic inheritdoc chain without overflow`` () =
+    // A chain far deeper than any real hierarchy and past the stack-overflow threshold. With the depth
+    // cap the call unwinds at maxInheritDocDepth and completes; without it this would abort the test
+    // host with an uncatchable StackOverflowException. The assertion below is secondary - the primary
+    // guarantee is simply that this returns at all.
+    let depth = 50000
+    let crefMap =
+        [ for i in 0 .. depth - 1 -> $"c{i}", $"""<inheritdoc cref="c{i + 1}"/>""" ]
+        @ [ $"c{depth}", "<summary>UNREACHABLE LEAF</summary>" ]
+
+    let result = expandWith crefMap None """<inheritdoc cref="c0"/>"""
+
+    Assert.DoesNotContain("UNREACHABLE LEAF", result)
+
+[<Fact>]
+let ``engine splices whole inherited doc when inheritdoc is nested inside an element (documented limitation)`` () =
+    // KNOWN LIMITATION vs Roslyn. When <inheritdoc/> is nested inside another documentation element
+    // (e.g. <summary>), Roslyn narrows the default selection to that element's matching children
+    // (an ancestor-aware XPath + text-node selection). F#'s selection helper returns whole top-level
+    // ELEMENTS only, so the target's <summary> AND <remarks> are spliced verbatim, producing nested
+    // <summary> markup. The common authoring pattern (a top-level <inheritdoc/> sibling) is unaffected
+    // and works correctly; this test pins the nested-case behavior so a future change is deliberate.
+    let bDoc = "<summary>Base summary</summary><remarks>Base remarks</remarks>"
+    let src = """<summary>Prefix <inheritdoc cref="B"/> suffix</summary>"""
+    let result = expandWith [ "B", bDoc ] None src
+
+    Assert.Contains("Base summary", result)
+    Assert.Contains("Base remarks", result)
+    Assert.DoesNotContain("<inheritdoc", result)
