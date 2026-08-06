@@ -602,11 +602,6 @@
         <target state="new">#elif preprocessor directive</target>
         <note />
       </trans-unit>
-      <trans-unit id="featurePrintfBinaryFormat">
-        <source>binary formatting for integers</source>
-        <target state="translated">整数的二进制格式设置</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureReallyLongList">
         <source>list literals of any size</source>
         <target state="translated">列出任何大小的文本</target>
@@ -1800,6 +1795,21 @@
       <trans-unit id="tcPassingWithoutNullTononNullFunction">
         <source>You can remove this `nonNull` assertion.</source>
         <target state="new">You can remove this `nonNull` assertion.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcRecordExplicitFieldShadowsSpreadField">
+        <source>Explicit field '{0}' shadows a field with the same name from an earlier spread.</source>
+        <target state="new">Explicit field '{0}' shadows a field with the same name from an earlier spread.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcRecordExprSpreadFieldShadowsSpreadField">
+        <source>Spread field '{0}' shadows a field with the same name from an earlier spread.</source>
+        <target state="new">Spread field '{0}' shadows a field with the same name from an earlier spread.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcRecordTypeDefinitionSpreadFieldShadowsSpreadField">
+        <source>Spread field '{0}' from type '{1}' shadows a field with the same name from an earlier spread.</source>
+        <target state="new">Spread field '{0}' from type '{1}' shadows a field with the same name from an earlier spread.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcRecursiveInlineNotAllowed">

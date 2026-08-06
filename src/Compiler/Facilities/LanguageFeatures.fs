@@ -39,7 +39,6 @@ type LanguageFeature =
     | ExpandedMeasurables
     | NullnessChecking
     | StructActivePattern
-    | PrintfBinaryFormat
     | IndexerNotationWithoutDot
     | RefCellNotationInformationals
     | UseBindingValueDiscard
@@ -178,7 +177,6 @@ type LanguageVersion(versionText, ?disabledFeaturesArray: LanguageFeature array)
                 LanguageFeature.ExpandedMeasurables, languageVersion60
                 LanguageFeature.ResumableStateMachines, languageVersion60
                 LanguageFeature.StructActivePattern, languageVersion60
-                LanguageFeature.PrintfBinaryFormat, languageVersion60
                 LanguageFeature.IndexerNotationWithoutDot, languageVersion60
                 LanguageFeature.RefCellNotationInformationals, languageVersion60
                 LanguageFeature.UseBindingValueDiscard, languageVersion60
@@ -259,18 +257,19 @@ type LanguageVersion(versionText, ?disabledFeaturesArray: LanguageFeature array)
                 LanguageFeature.ExceptionFieldSerializationSupport, languageVersion110
                 LanguageFeature.NotNullIfNotNull, languageVersion110
                 LanguageFeature.ImprovedImpliedArgumentNamesPartTwo, languageVersion110
+                LanguageFeature.ImplicitDIMCoverage, languageVersion110
+                LanguageFeature.MethodOverloadsCache, languageVersion110 // Performance optimization for overload resolution
+                LanguageFeature.ErrorOnMissingSignatureAttribute, languageVersion110 // Turn FS3888 from warning into error
+                LanguageFeature.DirectDelegateConstruction, languageVersion110
+                LanguageFeature.AccessProtectedBaseFieldFromClosure, languageVersion110 // #5302: read a protected base field from a closure
+                LanguageFeature.RecordSpreads, languageVersion110
 
                 // Difference between languageVersion110 and preview - 11.0 gets turned on automatically by picking a preview .NET 11 SDK
                 // previewVersion is only when "preview" is specified explicitly in project files  and users also need a preview SDK
 
-                // F# preview (still preview in 10.0)
+                // F# preview
+                // Unfinished features that still need work before they can be assigned a release language version.
                 LanguageFeature.FromEndSlicing, previewVersion // Unfinished features --- needs work
-                LanguageFeature.MethodOverloadsCache, previewVersion // Performance optimization for overload resolution
-                LanguageFeature.ImplicitDIMCoverage, languageVersion110
-                LanguageFeature.ErrorOnMissingSignatureAttribute, previewVersion // Opt-in: turn FS3888 from warning into error
-                LanguageFeature.DirectDelegateConstruction, previewVersion
-                LanguageFeature.AccessProtectedBaseFieldFromClosure, previewVersion // #5302: read a protected base field from a closure
-                LanguageFeature.RecordSpreads, previewVersion
             ]
 
     static let defaultLanguageVersion = LanguageVersion("default")
@@ -388,7 +387,6 @@ type LanguageVersion(versionText, ?disabledFeaturesArray: LanguageFeature array)
         | LanguageFeature.OverloadsForCustomOperations -> FSComp.SR.featureOverloadsForCustomOperations ()
         | LanguageFeature.ExpandedMeasurables -> FSComp.SR.featureExpandedMeasurables ()
         | LanguageFeature.StructActivePattern -> FSComp.SR.featureStructActivePattern ()
-        | LanguageFeature.PrintfBinaryFormat -> FSComp.SR.featurePrintfBinaryFormat ()
         | LanguageFeature.IndexerNotationWithoutDot -> FSComp.SR.featureIndexerNotationWithoutDot ()
         | LanguageFeature.RefCellNotationInformationals -> FSComp.SR.featureRefCellNotationInformationals ()
         | LanguageFeature.UseBindingValueDiscard -> FSComp.SR.featureDiscardUseValue ()

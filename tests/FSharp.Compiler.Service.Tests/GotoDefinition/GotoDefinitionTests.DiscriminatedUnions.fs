@@ -1,6 +1,5 @@
 module FSharp.Compiler.Service.Tests.GotoDefinitionDiscriminatedUnionsTests
 
-open System
 open Xunit
 
 let private discUnionSource =
@@ -11,7 +10,7 @@ let private discUnionSource =
                     | Gamma
 
                 let valueX = Beta{caret2}(1.0M, ())(*GotoTypeDef*)
-                let valueY = valueX{caret1} (*GotoValDef*)
+                let valueY = valueX{caret1}
                 """
 
 [<Fact>]
@@ -25,20 +24,20 @@ let private simpleDatatypeSource =
     String.concat
         "\n"
         [ "type Zero = (*loc-13*)"
-          "let foo (_ : Zero{caret1}) : 'a = failwith \"hi\" (*loc-14*)"
+          "let foo (_ : Zero{caret1}) : 'a = failwith \"hi\""
           "type One{caret3} = (*loc-16*)"
           "  One{caret2} (*loc-15*)"
-          "let f (x : One{caret5}) = (*loc-17*)"
-          "  One{caret4} (*loc-18*)"
+          "let f (x : One{caret5}) ="
+          "  One{caret4}"
           "type Nat{caret6} = (*loc-19*)"
           "  | Suc of Nat{caret7} (*loc-20*)"
           "  | Zro (*loc-21*)"
           "let rec plus m n = (*loc-23*)"
           "  match m with (*loc-22*)"
-          "  | Zro{caret8}   -> (*loc-24*)"
+          "  | Zro{caret8}   ->"
           "      n"
           "  | Suc{caret9} m -> (*loc-25*)"
-          "      Suc (plus m{caret10} n{caret11}) (*loc-26*)" ]
+          "      Suc (plus m{caret10} n{caret11})" ]
 
 [<Fact>]
 let ``GotoDefinition.Simple.Datatype`` () =
