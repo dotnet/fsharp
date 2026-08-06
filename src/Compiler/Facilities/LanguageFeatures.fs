@@ -38,7 +38,6 @@ type LanguageFeature =
     | OverloadsForCustomOperations
     | ExpandedMeasurables
     | NullnessChecking
-    | StructActivePattern
     | IndexerNotationWithoutDot
     | RefCellNotationInformationals
     | UseBindingValueDiscard
@@ -176,7 +175,6 @@ type LanguageVersion(versionText, ?disabledFeaturesArray: LanguageFeature array)
                 LanguageFeature.OverloadsForCustomOperations, languageVersion60
                 LanguageFeature.ExpandedMeasurables, languageVersion60
                 LanguageFeature.ResumableStateMachines, languageVersion60
-                LanguageFeature.StructActivePattern, languageVersion60
                 LanguageFeature.IndexerNotationWithoutDot, languageVersion60
                 LanguageFeature.RefCellNotationInformationals, languageVersion60
                 LanguageFeature.UseBindingValueDiscard, languageVersion60
@@ -386,7 +384,6 @@ type LanguageVersion(versionText, ?disabledFeaturesArray: LanguageFeature array)
         | LanguageFeature.StringInterpolation -> FSComp.SR.featureStringInterpolation ()
         | LanguageFeature.OverloadsForCustomOperations -> FSComp.SR.featureOverloadsForCustomOperations ()
         | LanguageFeature.ExpandedMeasurables -> FSComp.SR.featureExpandedMeasurables ()
-        | LanguageFeature.StructActivePattern -> FSComp.SR.featureStructActivePattern ()
         | LanguageFeature.IndexerNotationWithoutDot -> FSComp.SR.featureIndexerNotationWithoutDot ()
         | LanguageFeature.RefCellNotationInformationals -> FSComp.SR.featureRefCellNotationInformationals ()
         | LanguageFeature.UseBindingValueDiscard -> FSComp.SR.featureDiscardUseValue ()
