@@ -404,6 +404,9 @@ type PhasedDiagnostic with
         | 3582 -> false // infoIfFunctionShadowsUnionCase - off by default
         | 3570 -> false // tcAmbiguousDiscardDotLambda - off by default
         | 3878 -> false // tcAttributeIsNotValidForUnionCaseWithFields - off by default
+        | 3905 -> false // tcRecordTypeDefinitionSpreadFieldShadowsSpreadField - off by default
+        | 3906 -> false // tcRecordExplicitFieldShadowsSpreadField - off by default
+        | 3907 -> false // tcRecordExprSpreadFieldShadowsSpreadField - off by default
         | _ ->
             match x.Exception with
             | DiagnosticEnabledWithLanguageFeature(_, _, _, enabled) -> enabled
