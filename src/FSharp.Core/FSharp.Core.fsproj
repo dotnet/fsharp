@@ -36,6 +36,12 @@
     <Configurations>Debug;Release;Proto</Configurations>
   </PropertyGroup>
 
+  <!-- Pinned .NET TFM for the shipped FSharp.Core, surfaced to FSharp.Core.nuspec as a $token$
+       so the package lib/dependency group stay driven by the single knob in eng/TargetFrameworks.props. -->
+  <ItemGroup Condition="'$(Configuration)' != 'Proto'">
+    <NuspecProperty Include="FSharpCoreShippedNetTargetFramework=$(FSharpCoreShippedNetTargetFramework)" />
+  </ItemGroup>
+
     <!-- .FSharp.Core always uses the old style initialization mechanism because of SQL CLR requirements -->
   <PropertyGroup Condition="'$(BUILDING_USING_DOTNET)' != 'true' and '$(Configuration)' != 'Proto'">
     <OtherFlags>$(OtherFlags) --realsig-</OtherFlags>
