@@ -302,11 +302,6 @@
         <target state="new">Allow object expressions without overrides</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureAndBang">
-        <source>applicative computation expressions</source>
-        <target state="translated">expressões de computação aplicáveis</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureArithmeticInLiterals">
         <source>Arithmetic and logical operations in literals, enum definitions and attributes</source>
         <target state="translated">Operações aritméticas e lógicas em literais, definições de enumeração e atributos</target>
@@ -1435,11 +1430,6 @@
       <trans-unit id="tcAmbiguousImplicitConversion">
         <source>This expression has type '{0}' and is only made compatible with type '{1}' through an ambiguous implicit conversion. Consider using an explicit call to 'op_Implicit'. The applicable implicit conversions are:{2}</source>
         <target state="translated">Essa expressão possui o tipo '{0}' e só é compatível com o tipo '{1}' por uma conversão implícita ambígua. Considere usar uma chamada explícita para 'op_Implicit'. As conversões implícitas aplicáveis são:{2}</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="tcAndBangNotSupported">
-        <source>This feature is not supported in this version of F#. You may need to add /langversion:preview to use this feature.</source>
-        <target state="translated">Este recurso não tem suporte nesta versão do F#. Talvez seja necessário adicionar /langversion:preview para usar este recurso.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcAnonRecdDuplicateFieldId">
