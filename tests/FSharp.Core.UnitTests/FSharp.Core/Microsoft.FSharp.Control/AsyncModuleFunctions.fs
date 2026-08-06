@@ -19,8 +19,7 @@ let cancelWithToken (tcs: TaskCompletionSource<'T>) =
     ct
 #endif
 
-// TODO use Async.RunSynchronouslyImmediate
-let asyncWait (a: Async<'T>): 'T = Async.RunSynchronously a
+let asyncWait (a: Async<'T>): 'T = Async.RunSynchronouslyImmediate a
 let asyncWaitWithCt (ct: CancellationToken) (a: Async<'T>): 'T = Async.RunSynchronously(a, cancellationToken = ct)
 
 [<Fact>]
