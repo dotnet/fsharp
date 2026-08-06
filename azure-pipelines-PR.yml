@@ -591,6 +591,8 @@ stages:
               NativeToolsOnMachine: true
           - script: .\tests\EndToEndBuildTests\EndToEndBuildTests.cmd -c Release
             displayName: End to end build tests
+          - script: .\eng\common\dotnet.cmd fsi .\tests\FSharp.Core.PackageVerification\VerifyFSharpCorePackage.fsx
+            displayName: 'e2e-1: verify shipped FSharp.Core nupkg (lib layout, satellites, nuspec group, AssemblyVersion parity)'
           
           # Publish artifacts for regression testing
           - task: PublishPipelineArtifact@1
@@ -734,6 +736,16 @@ stages:
           - powershell: $(Build.SourcesDirectory)/tests/AheadOfTime/check.ps1
             displayName: Build, trim, publish and check the state of the trimmed app.
             workingDirectory: $(Build.SourcesDirectory)/tests/AheadOfTime
+          - script: .\eng\common\dotnet.cmd fsi .\tests\AheadOfTime\NetTfmResolution\VerifyNetResolution.fsx
+            displayName: 'e2e-2: net-TFM consumer asset-resolution witness (assets.json + runtime smoke)'
+            workingDirectory: $(Build.SourcesDirectory)
+          - task: PublishPipelineArtifact@1
+            displayName: Publish e2e-2 resolution evidence (project.assets.json)
+            inputs:
+              targetPath: '$(Build.SourcesDirectory)/tests/AheadOfTime/NetTfmResolution/obj'
+              artifactName: 'e2e2 NetTfmResolution obj Attempt $(System.JobAttempt) $(_kind)'
+            continueOnError: true
+            condition: always()
           - task: PublishPipelineArtifact@1
             displayName: Publish Trim Tests Logs
             inputs:
