@@ -438,6 +438,7 @@ Microsoft.FSharp.Collections.MapModule: Microsoft.FSharp.Collections.FSharpMap`2
 Microsoft.FSharp.Collections.MapModule: Microsoft.FSharp.Collections.FSharpMap`2[TKey,T] Change[TKey,T](TKey, Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Core.FSharpOption`1[T],Microsoft.FSharp.Core.FSharpOption`1[T]], Microsoft.FSharp.Collections.FSharpMap`2[TKey,T])
 Microsoft.FSharp.Collections.MapModule: Microsoft.FSharp.Collections.FSharpMap`2[TKey,T] Empty[TKey,T]()
 Microsoft.FSharp.Collections.MapModule: Microsoft.FSharp.Collections.FSharpMap`2[TKey,T] Filter[TKey,T](Microsoft.FSharp.Core.FSharpFunc`2[TKey,Microsoft.FSharp.Core.FSharpFunc`2[T,System.Boolean]], Microsoft.FSharp.Collections.FSharpMap`2[TKey,T])
+Microsoft.FSharp.Collections.MapModule: Microsoft.FSharp.Collections.FSharpMap`2[TKey,T] Merge[TKey,T](Microsoft.FSharp.Core.FSharpFunc`2[TKey,Microsoft.FSharp.Core.FSharpFunc`2[T,Microsoft.FSharp.Core.FSharpFunc`2[T,T]]], Microsoft.FSharp.Collections.FSharpMap`2[TKey,T], Microsoft.FSharp.Collections.FSharpMap`2[TKey,T])
 Microsoft.FSharp.Collections.MapModule: Microsoft.FSharp.Collections.FSharpMap`2[TKey,T] OfArray[TKey,T](System.Tuple`2[TKey,T][])
 Microsoft.FSharp.Collections.MapModule: Microsoft.FSharp.Collections.FSharpMap`2[TKey,T] OfList[TKey,T](Microsoft.FSharp.Collections.FSharpList`1[System.Tuple`2[TKey,T]])
 Microsoft.FSharp.Collections.MapModule: Microsoft.FSharp.Collections.FSharpMap`2[TKey,T] OfSeq[TKey,T](System.Collections.Generic.IEnumerable`1[System.Tuple`2[TKey,T]])
