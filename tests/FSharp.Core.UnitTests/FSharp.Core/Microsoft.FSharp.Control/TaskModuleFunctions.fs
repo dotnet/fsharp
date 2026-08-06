@@ -7,7 +7,6 @@ open System
 open System.Threading
 open System.Threading.Tasks
 open Xunit
-open Xunit.Internal
 
 module TaskModuleFunctionsTests =
 
@@ -46,38 +45,30 @@ module TaskModuleFunctionsTests =
     [<Fact>]
     let ``Task.map propagates incoming exception (sync)`` () =
         let t = Task.FromException<int>(Exception "boom") |> Task.map (fun x -> x * 2)
-        task {
-            let! e = Assert.ThrowsAnyAsync<Exception>(fun () -> t)
-            Assert.Equal("boom", e.Message)
-        }
+        let! e = Assert.ThrowsAsync<exn>(fun () -> t).Result
+        Assert.Equal("boom", e.Message)
 
     [<Fact>]
     let ``Task.map propagates incoming exception (async)`` () =
         let tcs = TaskCompletionSource<int>()
         let t = tcs.Task |> Task.map (fun x -> x * 2)
         tcs.SetException(Exception "boom")
-        task {
-            let! e = Assert.ThrowsAnyAsync<Exception>(fun () -> t)
-            Assert.Equal("boom", e.Message)
-        }
+        let! e = Assert.ThrowsAsync<exn>(fun () -> t).Result
+        Assert.Equal("boom", e.Message)
             
     [<Fact>]
     let ``Task.map propagates mapper exception as Fault (sync)`` () =
         let t = Task.result () |> Task.map (fun () -> failwith "boom")
-        task {
-            let! e = Assert.ThrowsAnyAsync<Exception>(fun () -> t)
-            Assert.Equal("boom", e.Message)
-        }
+        let! e = Assert.ThrowsAsync<exn>(fun () -> t).Result
+        Assert.Equal("boom", e.Message)
 
     [<Fact>]
     let ``Task.map propagates mapper exception as Fault (async)`` () =
         let tcs = TaskCompletionSource<unit>()
         let t = tcs.Task |> Task.map (fun () -> failwith "boom")
         tcs.SetResult ()
-        task {
-            let! e = Assert.ThrowsAnyAsync<Exception>(fun () -> t)
-            Assert.Equal("boom", e.Message)
-        }
+        let! e = Assert.ThrowsAsync<exn>(fun () -> t).Result
+        Assert.Equal("boom", e.Message)
 
     [<Fact>]
     let ``Task.map propagates Cancellation (sync)`` () =
@@ -114,38 +105,30 @@ module TaskModuleFunctionsTests =
     [<Fact>]
     let ``Task.bind propagates incoming exception (sync)`` () =
         let t = Task.FromException<int>(Exception "boom") |> Task.bind (fun x -> Task.result (x * 2))
-        task {
-            let! e = Assert.ThrowsAnyAsync<Exception>(fun () -> t)
-            Assert.Equal("boom", e.Message)
-        }
+        let e = Assert.ThrowsAsync<exn>(fun () -> t).Result
+        Assert.Equal("boom", e.Message)
 
     [<Fact>]
     let ``Task.bind propagates incoming exception (async)`` () =
         let tcs = TaskCompletionSource<int>()
         let t = tcs.Task |> Task.bind (fun x -> Task.result (x * 2))
         tcs.SetException(Exception "boom")
-        task {
-            let! e = Assert.ThrowsAnyAsync<Exception>(fun () -> t)
-            Assert.Equal("boom", e.Message)
-        }
+        let e = Assert.ThrowsAsync<exn>(fun () -> t).Result
+        Assert.Equal("boom", e.Message)
             
     [<Fact>]
     let ``Task.bind propagates binder exception as Fault (sync)`` () =
         let t = Task.result () |> Task.bind (fun () -> failwith "boom")
-        task {
-            let! e = Assert.ThrowsAnyAsync<Exception>(fun () -> t)
-            Assert.Equal("boom", e.Message)
-        }
-
+        let e = Assert.ThrowsAsync<exn>(fun () -> t).Result
+        Assert.Equal("boom", e.Message)
+        
     [<Fact>]
     let ``Task.bind propagates binder exception as Fault (async)`` () =
         let tcs = TaskCompletionSource<unit>()
         let t = tcs.Task |> Task.bind (fun () -> failwith "boom")
         tcs.SetResult ()
-        task {
-            let! e = Assert.ThrowsAnyAsync<Exception>(fun () -> t)
-            Assert.Equal("boom", e.Message)
-        }
+        let e = Assert.ThrowsAsync<exn>(fun () -> t).Result
+        Assert.Equal("boom", e.Message)
 
     [<Fact>]
     let ``Task.bind propagates Cancellation (sync)`` () =
@@ -184,7 +167,7 @@ module TaskModuleFunctionsTests =
     let ``Task.ignore propagates incoming exception (sync)`` () =
         let t = Task.FromException<int>(Exception "boom") |> Task.ignore<int>
         Assert.True t.IsCompleted
-        let e = Assert.ThrowsAsync<Exception>(fun () -> t).Result
+        let e = Assert.ThrowsAsync<exn>(fun () -> t).Result
         Assert.Equal("boom", e.Message)
 
     [<Fact>]
@@ -193,7 +176,7 @@ module TaskModuleFunctionsTests =
         let t = tcs.Task |> Task.ignore<int>
         Assert.False t.IsCompleted
         tcs.SetException(Exception "boom")
-        let e = Assert.ThrowsAsync<Exception>(fun () -> t).Result
+        let e = Assert.ThrowsAsync<exn>(fun () -> t).Result
         Assert.Equal("boom", e.Message)
 
     [<Fact>]
@@ -264,6 +247,7 @@ module TaskModuleFunctionsTests =
         Assert.Equal(ct, e.CancellationToken)
         Assert.True t.IsCanceled
 
+    
     [<Fact>]
     let ``Task.catch returns Ok on success (sync)`` () : unit=
         let t = Task.result 42 |> Task.catch
@@ -370,10 +354,8 @@ module ValueTaskModuleFunctionsTests =
         let tcs = TaskCompletionSource<int>()
         let t = tcs.Task |> ValueTask.ofTask |> ValueTask.map (fun x -> x * 2)
         tcs.SetException(Exception "boom")
-        task {
-            let! e = Assert.ThrowsAnyAsync<Exception>(fun () -> t.AsTask())
-            Assert.Equal("boom", e.Message)
-        }
+        let e = Assert.ThrowsAsync<exn>(fun () -> t.AsTask()).Result
+        Assert.Equal("boom", e.Message)
             
     [<Fact>]
     let ``ValueTask.map propagates mapper exception as Fault (sync)`` () =
@@ -388,10 +370,8 @@ module ValueTaskModuleFunctionsTests =
         let tcs = TaskCompletionSource<unit>()
         let t = tcs.Task |> ValueTask.ofTask |> ValueTask.map (fun () -> failwith "boom")
         tcs.SetResult ()
-        task {
-            let! e = Assert.ThrowsAnyAsync<Exception>(fun () -> t.AsTask())
-            Assert.Equal("boom", e.Message)
-        }
+        let e = Assert.ThrowsAsync<exn>(fun () -> t.AsTask()).Result
+        Assert.Equal("boom", e.Message)
 
     [<Fact>]
     let ``ValueTask.map propagates Cancellation (sync)`` () =
@@ -438,28 +418,22 @@ module ValueTaskModuleFunctionsTests =
         let tcs = TaskCompletionSource<int>()
         let t = tcs.Task |> ValueTask.ofTask |> ValueTask.bind (fun x -> ValueTask.result (x * 2))
         tcs.SetException(Exception "boom")
-        task {
-            let! e = Assert.ThrowsAnyAsync<Exception>(fun () -> t.AsTask())
-            Assert.Equal("boom", e.Message)
-        }
+        let e = Assert.ThrowsAsync<exn>(fun () -> t.AsTask()).Result
+        Assert.Equal("boom", e.Message)
             
     [<Fact>]
     let ``ValueTask.bind propagates binder exception as Fault (sync)`` () =
         let t = ValueTask.result () |> ValueTask.bind (fun () -> failwith "boom")
-        task {
-            let! e = Assert.ThrowsAnyAsync<Exception>(fun () -> t.AsTask())
-            Assert.Equal("boom", e.Message)
-        }
+        let e = Assert.ThrowsAsync<exn>(fun () -> t.AsTask()).Result
+        Assert.Equal("boom", e.Message)
 
     [<Fact>]
     let ``ValueTask.bind propagates binder exception as Fault (async)`` () =
         let tcs = TaskCompletionSource<unit>()
         let t = tcs.Task |> ValueTask.ofTask |> ValueTask.bind (fun () -> failwith "boom")
         tcs.SetResult ()
-        task {
-            let! e = Assert.ThrowsAnyAsync<Exception>(fun () -> t.AsTask())
-            Assert.Equal("boom", e.Message)
-        }
+        let e = Assert.ThrowsAsync<exn>(fun () -> t.AsTask()).Result
+        Assert.Equal("boom", e.Message)
 
     [<Fact>]
     let ``ValueTask.bind propagates Cancellation (sync)`` () =
