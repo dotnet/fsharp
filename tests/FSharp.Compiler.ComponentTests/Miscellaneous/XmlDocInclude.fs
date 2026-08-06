@@ -67,7 +67,7 @@ module XmlDocInclude =
 
     let private includeWarnings res =
         res.Compilation.Output.Diagnostics
-        |> List.filter (fun diagnostic -> diagnostic.Error = Warning 3905)
+        |> List.filter (fun diagnostic -> diagnostic.Error = Warning 3908)
 
     let private includeWarningCount res = includeWarnings res |> List.length
 
@@ -257,11 +257,11 @@ let f x = x
         let res =
             runInclude (scenario (Snippets.memberWithInclude "d.xml" "/data/[bad") [ "d.xml", Snippets.dataSummaryRemarks ])
 
-        res.Compilation |> shouldSucceed |> withWarningCode 3905 |> ignore
+        res.Compilation |> shouldSucceed |> withWarningCode 3908 |> ignore
 
     [<Fact>]
     let ``Include error names both the file and the xpath`` () =
-        // Missing file: the FS3905 message must still name BOTH the file and the xpath.
+        // Missing file: the FS3908 message must still name BOTH the file and the xpath.
         let res = runInclude (scenario (Snippets.memberWithInclude "missing-doc.xml" "/data/summary") [])
         res.Compilation |> shouldSucceed |> ignore
         assertSingleIncludeWarningMatches "missing-doc.xml" res
@@ -313,7 +313,7 @@ let f x = x
     [<Fact>]
     let ``Included file that is not well-formed XML warns and keeps the tag`` () =
         // A syntactically broken external file (unclosed <summary>) must not crash the compiler:
-        // it warns once via FS3905 (naming both the file and the xpath) and keeps the unexpanded tag.
+        // it warns once via FS3908 (naming both the file and the xpath) and keeps the unexpanded tag.
         let malformed = "<?xml version=\"1.0\"?>\n<data><summary>Unclosed summary</data>"
 
         let res =
@@ -330,7 +330,7 @@ let f x = x
     let ``Namespaced include element is not treated as an include`` () =
         // An element named 'include' but in a foreign XML namespace is ordinary XML, not the
         // documentation include tag (Roslyn parity). It must be preserved and never expanded,
-        // and no FS3905 must be emitted even though a matching file and xpath exist.
+        // and no FS3908 must be emitted even though a matching file and xpath exist.
         let source =
             "module Test\n\n/// <summary><include xmlns=\"urn:not-doc\" file=\"d.xml\" path=\"/data/summary\"/></summary>\nlet included (x: int) (y: int) = x + y\n"
 
@@ -390,7 +390,7 @@ let f x = x
         let res =
             runInclude (scenario (Snippets.memberWithInclude "d.xml" "/data/summary/text()") [ "d.xml", Snippets.dataSummaryRemarks ])
 
-        res.Compilation |> shouldSucceed |> withWarningCode 3905 |> ignore
+        res.Compilation |> shouldSucceed |> withWarningCode 3908 |> ignore
 
     [<Fact>]
     let ``Recursive include chain of depth three fully expands`` () =
@@ -456,7 +456,7 @@ let f (x: int) = x
 
         res.Compilation
         |> shouldSucceed
-        |> withWarningCode 3905
+        |> withWarningCode 3908
         |> withDiagnosticMessageMatches "maximum include nesting depth of 64"
         |> ignore
 
@@ -534,7 +534,7 @@ let f (x: int) = x
 
         res.Compilation
         |> shouldSucceed
-        |> withWarningCode 3905
+        |> withWarningCode 3908
         |> withDiagnosticMessageMatches "maximum include nesting depth of 64"
         |> ignore
 
@@ -596,7 +596,7 @@ let f x = x
 
         res.Compilation
         |> shouldSucceed
-        |> withWarningCode 3905
+        |> withWarningCode 3908
         |> withDiagnosticMessageMatches "include"
         |> ignore
 
@@ -731,7 +731,7 @@ let f x = x
             )
 
         // A(/data/summary) -> B(/data/inner) -> A(/data/summary): genuine cycle must warn and terminate.
-        res.Compilation |> shouldSucceed |> withWarningCode 3905 |> ignore
+        res.Compilation |> shouldSucceed |> withWarningCode 3908 |> ignore
 
     [<Fact>]
     let ``Same file and xpath from sibling positions both expand`` () =
@@ -942,7 +942,7 @@ let f x = x
 
         res.Compilation
         |> shouldSucceed
-        |> withWarningCode 3905
+        |> withWarningCode 3908
         |> withDiagnosticMessageMatches "XPath expression is empty"
         // Even with an empty xpath, the framed message still names the file.
         |> withDiagnosticMessageMatches "data/simple.data.xml"
@@ -1137,7 +1137,7 @@ let f (x: int) (y: int) = x + y
     [<Fact>]
     let ``Include error is reported once when doc checking and doc generation are both on`` () =
         // --warnon:3390 makes Check run (emit=false, quiet); --doc makes the writer run (emit=true).
-        // A missing include file must yield EXACTLY ONE 3905, not two.
+        // A missing include file must yield EXACTLY ONE 3908, not two.
         let res =
             runInclude
                 { scenario

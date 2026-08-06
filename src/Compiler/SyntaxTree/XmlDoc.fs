@@ -76,7 +76,7 @@ type XmlDoc(unprocessedLines: string[], range: range) =
 
     member doc.Check(paramNamesOpt: string list option) =
         try
-            // emit=false: quiet expansion so included <param>/<paramref> reach validation; the writer emits FS3905.
+            // emit=false: quiet expansion so included <param>/<paramref> reach validation; the writer emits FS3908.
             let expandedText = doc.GetExpandedXmlText false
 
             // We must wrap with <doc> in order to have only one root element
