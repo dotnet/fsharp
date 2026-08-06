@@ -30,7 +30,7 @@ let ``GoToDefinition on a record constructor call navigates to the record type``
     let location = checkResults.GetDeclarationLocation(4, 16, "let r = MyRecord(1, 2)", [ "MyRecord" ])
     match location with
     | FindDeclResult.DeclFound r -> Assert.Equal(3, r.StartLine) // 'type MyRecord = ...'
-    | other -> failwith $"Expected the record type declaration, got {other}"
+    | _ -> failwith $"Expected the record type declaration, got {location}"
 
 [<Fact>]
 let ``Tooltip on a record constructor call mentions the record type`` () =
