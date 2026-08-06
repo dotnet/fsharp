@@ -85,6 +85,24 @@ module FsiCliTests =
         finally
             try System.IO.File.Delete(scriptPath) with _ -> ()
 
+    // On failure, surface the FSI subprocess output so CI logs show what actually happened (e.g. a
+    // NuGet restore error) instead of a bare "Expected 0, Actual 1". xunit's Assert.Equal/Contains do
+    // not include the process stdout/stderr, so these wrappers append it to the failure message.
+    let private fsiDiagnostics (result: ProcessResult) =
+        $"FSI exit code: %d{result.ExitCode}\n--- FSI STDOUT ---\n%s{result.StdOut}\n--- FSI STDERR ---\n%s{result.StdErr}\n--- end FSI output ---"
+
+    let private assertFsiExitCode (expected: int) (result: ProcessResult) =
+        if result.ExitCode <> expected then
+            Assert.Fail($"Expected FSI exit code %d{expected} but got %d{result.ExitCode}.\n%s{fsiDiagnostics result}")
+
+    let private assertStdOutContains (expected: string) (result: ProcessResult) =
+        if not (result.StdOut.Contains(expected)) then
+            Assert.Fail($"Expected FSI stdout to contain '%s{expected}'.\n%s{fsiDiagnostics result}")
+
+    let private assertStdOutDoesNotContain (unexpected: string) (result: ProcessResult) =
+        if result.StdOut.Contains(unexpected) then
+            Assert.Fail($"Expected FSI stdout NOT to contain '%s{unexpected}'.\n%s{fsiDiagnostics result}")
+
     // The FSI #r "nuget:" restore below must request a package (and closure) already in the offline
     // restore cache on the internal signed build (which cannot restore online), and it must be a genuine
     // third-party assembly (not in the shared framework) so that on .NET Core it resolves to a restored
@@ -112,11 +130,11 @@ module FsiCliTests =
 printfn "RESULT_MARKER_18086"
 """
         let result = runFsiScript ["--quiet"] script
-        Assert.Equal(0, result.ExitCode)
-        Assert.Contains("RESULT_MARKER_18086", result.StdOut)
-        Assert.DoesNotContain("Determining projects to restore", result.StdOut)
-        Assert.DoesNotContain("Restored ", result.StdOut)
-        Assert.DoesNotContain("NU1", result.StdOut)
+        assertFsiExitCode 0 result
+        assertStdOutContains "RESULT_MARKER_18086" result
+        assertStdOutDoesNotContain "Determining projects to restore" result
+        assertStdOutDoesNotContain "Restored " result
+        assertStdOutDoesNotContain "NU1" result
 
     [<Fact>]
     let ``FSI default (non-quiet) mode still evaluates script and prints user output`` () =
@@ -125,12 +143,12 @@ printfn "RESULT_MARKER_18086"
 printfn "RESULT_MARKER_18086_DEFAULT"
 """
         let result = runFsiScript [] script
-        Assert.Equal(0, result.ExitCode)
-        Assert.Contains("RESULT_MARKER_18086_DEFAULT", result.StdOut)
+        assertFsiExitCode 0 result
+        assertStdOutContains "RESULT_MARKER_18086_DEFAULT" result
 
     [<Fact>]
     let ``FSI quiet mode still prints user printfn output to stdout`` () =
         let script = """printfn "hello from quiet script" """
         let result = runFsiScript ["--quiet"] script
-        Assert.Equal(0, result.ExitCode)
-        Assert.Contains("hello from quiet script", result.StdOut)
+        assertFsiExitCode 0 result
+        assertStdOutContains "hello from quiet script" result
