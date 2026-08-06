@@ -12,7 +12,6 @@ type LanguageFeature =
     | RelaxWhitespace2
     | NameOf
     | ImplicitYield
-    | OpenTypeDeclaration
     | DotlessFloat32Literal
     | PackageManagement
     | FromEndSlicing
