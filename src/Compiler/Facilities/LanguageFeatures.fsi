@@ -97,6 +97,7 @@ type LanguageFeature =
     | PreprocessorElif
     | ExceptionFieldSerializationSupport
     | ErrorOnMissingSignatureAttribute
+    | RecordConstructorSyntax
     | NotNullIfNotNull
     | DirectDelegateConstruction
     | AccessProtectedBaseFieldFromClosure
