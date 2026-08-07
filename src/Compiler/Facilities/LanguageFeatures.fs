@@ -21,7 +21,6 @@ type LanguageFeature =
     | RelaxWhitespace
     | RelaxWhitespace2
     | NameOf
-    | ImplicitYield
     | DotlessFloat32Literal
     | PackageManagement
     | FromEndSlicing
@@ -154,7 +153,6 @@ type LanguageVersion(versionText, ?disabledFeaturesArray: LanguageFeature array)
                 LanguageFeature.SingleUnderscorePattern, languageVersion47
                 LanguageFeature.WildCardInForLoop, languageVersion47
                 LanguageFeature.RelaxWhitespace, languageVersion47
-                LanguageFeature.ImplicitYield, languageVersion47
 
                 // F# 5.0
                 LanguageFeature.FixedIndexSlice3d4d, languageVersion50
@@ -368,7 +366,6 @@ type LanguageVersion(versionText, ?disabledFeaturesArray: LanguageFeature array)
         | LanguageFeature.RelaxWhitespace -> FSComp.SR.featureRelaxWhitespace ()
         | LanguageFeature.RelaxWhitespace2 -> FSComp.SR.featureRelaxWhitespace2 ()
         | LanguageFeature.NameOf -> FSComp.SR.featureNameOf ()
-        | LanguageFeature.ImplicitYield -> FSComp.SR.featureImplicitYield ()
         | LanguageFeature.DotlessFloat32Literal -> FSComp.SR.featureDotlessFloat32Literal ()
         | LanguageFeature.PackageManagement -> FSComp.SR.featurePackageManagement ()
         | LanguageFeature.FromEndSlicing -> FSComp.SR.featureFromEndSlicing ()
