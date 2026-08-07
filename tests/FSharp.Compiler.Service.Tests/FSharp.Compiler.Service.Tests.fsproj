@@ -57,6 +57,7 @@
     <Compile Include="RangeTests.fs" />
     <Compile Include="CompilerGlobalStateTests.fs" />
     <Compile Include="TooltipTests.fs" />
+    <Compile Include="XmlDocInheritanceTests.fs" />
     <Compile Include="TypeChecker\TypeCheckerRecoveryTests.fs" />
     <Compile Include="TokenizerTests.fs" />
     <Compile Include="QuickParseTests.fs" />
@@ -188,6 +189,14 @@
     <Compile Include="Tooltip\TooltipTests.Records.fs" />
     <Compile Include="Tooltip\TooltipTests.TypeProviders.fs" />
     <Compile Include="Tooltip\TooltipTests.Types.fs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- ECMA-335 Edit-and-Continue metadata delta writer tests. See PR #TBD. -->
+    <Compile Include="DeltaMetadata\CodedIndexTests.fs" />
+    <Compile Include="DeltaMetadata\MetadataDeltaTestHelpers.fs" />
+    <Compile Include="DeltaMetadata\SrmReaderParityTests.fs" />
+    <Compile Include="DeltaMetadata\FSharpDeltaMetadataWriterTests.fs" />
   </ItemGroup>
 
 	<ItemGroup>

@@ -557,11 +557,6 @@
         <target state="new">nullness checking</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureOpenTypeDeclaration">
-        <source>open type declaration</source>
-        <target state="translated">declaração de tipo aberto</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureOverloadsForCustomOperations">
         <source>overloads for custom operations</source>
         <target state="translated">sobrecargas para operações personalizadas</target>
@@ -600,11 +595,6 @@
       <trans-unit id="featurePreprocessorElif">
         <source>#elif preprocessor directive</source>
         <target state="new">#elif preprocessor directive</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="featurePrintfBinaryFormat">
-        <source>binary formatting for integers</source>
-        <target state="translated">formatação binária para números inteiros</target>
         <note />
       </trans-unit>
       <trans-unit id="featureReallyLongList">
@@ -685,11 +675,6 @@
       <trans-unit id="featureStringInterpolation">
         <source>string interpolation</source>
         <target state="translated">interpolação da cadeia de caracteres</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="featureStructActivePattern">
-        <source>struct representation for active patterns</source>
-        <target state="translated">representação estrutural para padrões ativos</target>
         <note />
       </trans-unit>
       <trans-unit id="featureSupportValueOptionsAsOptionalParameters">
@@ -1802,6 +1787,21 @@
         <target state="new">You can remove this `nonNull` assertion.</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcRecordExplicitFieldShadowsSpreadField">
+        <source>Explicit field '{0}' shadows a field with the same name from an earlier spread.</source>
+        <target state="new">Explicit field '{0}' shadows a field with the same name from an earlier spread.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcRecordExprSpreadFieldShadowsSpreadField">
+        <source>Spread field '{0}' shadows a field with the same name from an earlier spread.</source>
+        <target state="new">Spread field '{0}' shadows a field with the same name from an earlier spread.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcRecordTypeDefinitionSpreadFieldShadowsSpreadField">
+        <source>Spread field '{0}' from type '{1}' shadows a field with the same name from an earlier spread.</source>
+        <target state="new">Spread field '{0}' from type '{1}' shadows a field with the same name from an earlier spread.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcRecursiveInlineNotAllowed">
         <source>The value or member '{0}' has been marked 'inline' but is part of a recursive binding group. F# does not support recursive 'inline' values. Either remove the 'inline' modifier or refactor the recursion.</source>
         <target state="new">The value or member '{0}' has been marked 'inline' but is part of a recursive binding group. F# does not support recursive 'inline' values. Either remove the 'inline' modifier or refactor the recursion.</target>
@@ -2150,6 +2150,16 @@
       <trans-unit id="xmlDocDuplicateParameter">
         <source>This XML comment is invalid: multiple documentation entries for parameter '{0}'</source>
         <target state="translated">Este comentário XML é inválido: várias entradas de documentação para o parâmetro '{0}'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="xmlDocIncludeError">
+        <source>XML documentation include error: {0}</source>
+        <target state="new">XML documentation include error: {0}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="xmlDocIncludeError2">
+        <source>XML documentation include error: Unable to include XML fragment '{0}' of file '{1}' -- {2}</source>
+        <target state="new">XML documentation include error: Unable to include XML fragment '{0}' of file '{1}' -- {2}</target>
         <note />
       </trans-unit>
       <trans-unit id="xmlDocInvalidParameterName">
