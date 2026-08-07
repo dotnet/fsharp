@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
   <file datatype="xml" source-language="en" target-language="es" original="../FSComp.resx">
     <body>
@@ -6719,7 +6719,7 @@
       </trans-unit>
       <trans-unit id="lexfltTokenIsOffsideOfContextStartedEarlier">
         <source>Unexpected syntax or possible incorrect indentation: this token is offside of context started at position {0}. Try indenting this further.</source>
-        <target state="needs-review-translation">Sintaxis inesperada o posible sangría incorrecta: este token está fuera del contexto iniciado en la posición {0}. Intente aplicar más sangría.\nPara seguir usando la sangría no conforme, pase la marca "--strict-indentation-" al compilador o establezca la versión del lenguaje en F# 7.</target>
+        <target state="new">Unexpected syntax or possible incorrect indentation: this token is offside of context started at position {0}. Try indenting this further.</target>
         <note />
       </trans-unit>
       <trans-unit id="lexfltSeparatorTokensOfPatternMatchMisaligned">

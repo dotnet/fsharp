@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
   <file datatype="xml" source-language="en" target-language="zh-Hant" original="../FSComp.resx">
     <body>
@@ -6719,7 +6719,7 @@
       </trans-unit>
       <trans-unit id="lexfltTokenIsOffsideOfContextStartedEarlier">
         <source>Unexpected syntax or possible incorrect indentation: this token is offside of context started at position {0}. Try indenting this further.</source>
-        <target state="needs-review-translation">未預期的語法或可能不正確的縮排: 此權杖與在位置 {0} 啟動的內容不同步。請嘗試進一步縮排。\n若要繼續使用不符合的縮排，請傳遞 '--strict-indentation-' 旗標給編譯器，或將語言版本設定為 F# 7。</target>
+        <target state="new">Unexpected syntax or possible incorrect indentation: this token is offside of context started at position {0}. Try indenting this further.</target>
         <note />
       </trans-unit>
       <trans-unit id="lexfltSeparatorTokensOfPatternMatchMisaligned">

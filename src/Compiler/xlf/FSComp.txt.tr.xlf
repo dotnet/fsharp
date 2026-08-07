@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
   <file datatype="xml" source-language="en" target-language="tr" original="../FSComp.resx">
     <body>
@@ -6719,7 +6719,7 @@
       </trans-unit>
       <trans-unit id="lexfltTokenIsOffsideOfContextStartedEarlier">
         <source>Unexpected syntax or possible incorrect indentation: this token is offside of context started at position {0}. Try indenting this further.</source>
-        <target state="needs-review-translation">Beklenmeyen sözdizimi veya olası yanlış girinti: Bu belirteç, {0} konumunda başlayan bağlamın ofsaytıdır. Bunu daha fazla girintilemeyi deneyin.\nUygun olmayan girintiyi kullanmaya devam etmek için '--strict-indentation-' işaretini derleyiciye iletin veya dil sürümünü F# 7 olarak ayarlayın.</target>
+        <target state="new">Unexpected syntax or possible incorrect indentation: this token is offside of context started at position {0}. Try indenting this further.</target>
         <note />
       </trans-unit>
       <trans-unit id="lexfltSeparatorTokensOfPatternMatchMisaligned">
