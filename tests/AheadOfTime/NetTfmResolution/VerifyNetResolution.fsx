@@ -28,20 +28,23 @@ let run (fileName: string) (args: string) (workDir: string) =
     p.WaitForExit()
     p.ExitCode, out, err
 
-// 1. Newest built FSharp.Core version.
-let shippingDir = Path.Combine(repoRoot, "artifacts", "packages", "Release", "Shipping")
+// 1. Newest built FSharp.Core version. The shipped nupkg lands in different sub-lanes depending on
+// the pack (top-level Shipping locally, Dependency/Shipping on CI); search both and take the newest.
+let searchDirs =
+    [ "artifacts/packages/Release/Shipping"
+      "artifacts/packages/Release/Dependency/Shipping" ]
+    |> List.map (fun d -> Path.Combine(repoRoot, d))
 let version =
-    if not (Directory.Exists shippingDir) then None
-    else
-        Directory.GetFiles(shippingDir, "FSharp.Core.*.nupkg")
-        |> Array.filter (fun f -> not (f.EndsWith ".symbols.nupkg"))
-        |> Array.sortByDescending File.GetLastWriteTimeUtc
-        |> Array.tryHead
-        |> Option.map (fun f -> Regex.Replace(Path.GetFileName f, @"^FSharp\.Core\.(.*)\.nupkg$", "$1"))
+    searchDirs
+    |> List.collect (fun d -> if Directory.Exists d then Directory.GetFiles(d, "FSharp.Core.*.nupkg") |> List.ofArray else [])
+    |> List.filter (fun f -> not (f.EndsWith ".symbols.nupkg"))
+    |> List.sortByDescending File.GetLastWriteTimeUtc
+    |> List.tryHead
+    |> Option.map (fun f -> Regex.Replace(Path.GetFileName f, @"^FSharp\.Core\.(.*)\.nupkg$", "$1"))
 
 match version with
 | None ->
-    eprintfn "e2e-2: no FSharp.Core.*.nupkg in %s — pack first." shippingDir
+    eprintfn "e2e-2: no FSharp.Core.*.nupkg under: %s — pack first." (String.Join("; ", searchDirs))
     exit 2
 | Some ver ->
 
