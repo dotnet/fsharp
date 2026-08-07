@@ -657,11 +657,6 @@
         <target state="translated">ograniczenia typu własnego</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureSingleUnderscorePattern">
-        <source>single underscore pattern</source>
-        <target state="translated">wzorzec z pojedynczym podkreśleniem</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureStaticLetInRecordsDusEmptyTypes">
         <source>Allow static let bindings in union, record, struct, non-incremental-class types</source>
         <target state="translated">Zezwalaj na statyczne powiązania let w typach związku, rekordu, struktur, nieprzyrostowych klas</target>
@@ -1280,11 +1275,6 @@
       <trans-unit id="parsUnexpectedEndOfFileElif">
         <source>Unexpected end of input in 'else if' or 'elif' branch of conditional expression. Expected 'elif &lt;expr&gt; then &lt;expr&gt;' or 'else if &lt;expr&gt; then &lt;expr&gt;'.</source>
         <target state="translated">Nieoczekiwane zakończenie danych wejściowych w gałęzi „else” wyrażenia warunkowego. Oczekiwano konstrukcji „elif &lt;expr&gt; then &lt;expr&gt;” lub „else if &lt;expr&gt; then &lt;expr&gt;”.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="parsUnexpectedSymbolDot">
-        <source>Unexpected symbol '.' in member definition. Expected 'with', '=' or other token.</source>
-        <target state="translated">Nieoczekiwany symbol „.” w definicji składowej. Oczekiwano ciągu „with”, znaku „=” lub innego tokenu.</target>
         <note />
       </trans-unit>
       <trans-unit id="optsChecksumAlgorithm">
