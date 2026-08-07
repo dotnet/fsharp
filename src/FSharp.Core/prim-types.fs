@@ -4096,7 +4096,7 @@ namespace Microsoft.FSharp.Core
 
     and 'T voption = ValueOption<'T>
 
-// These attributes only exist in .NET 8 and up; on net8+ the public BCL types are used and this internal polyfill is dropped.
+// These attributes only exist in .NET 8 and up.
 #if !NET8_0_OR_GREATER
 namespace System.Runtime.CompilerServices
     open System

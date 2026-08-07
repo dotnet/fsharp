@@ -2608,7 +2608,7 @@ namespace Microsoft.FSharp.Core
       /// Represents an Error or a Failure. The code failed with a value of 'TError representing what went wrong.
       | Error of ErrorValue:'TError
 
-// These attributes only exist in .NET 8 and up; on net8+ the public BCL types are used and this internal polyfill is dropped.
+// These attributes only exist in .NET 8 and up.
 #if !NET8_0_OR_GREATER
 namespace System.Runtime.CompilerServices
     open System

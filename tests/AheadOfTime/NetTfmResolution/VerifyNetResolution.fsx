@@ -1,14 +1,10 @@
-// Driver for the consumer asset-RESOLUTION test (e2e-2, the linchpin).
+// Consumer asset-RESOLUTION test (e2e-2, the linchpin): restores a net-TFM consumer against the
+// locally built FSharp.Core and witnesses from obj/project.assets.json that FSharp.Core resolved to
+// lib/<netNN.0>/FSharp.Core.dll for BOTH compile and runtime (never a netstandard asset). Only the
+// FSharp.Core cache entry for that version is purged, never the whole packages dir. A build+run smoke
+// of a widened member follows, reported but non-fatal locally (the structural witness is the gate).
 //
-//   1. Discovers the EXACT locally built FSharp.Core package version (newest nupkg).
-//   2. Clean-restores the net-TFM consumer against it (FSharp.Core source-mapped to the local lane;
-//      only the FSharp.Core cache entry for that version is purged, never the whole packages dir).
-//   3. Witnesses STRUCTURALLY from obj/project.assets.json that FSharp.Core resolved to
-//      lib/<netNN.0>/FSharp.Core.dll for BOTH compile and runtime, and NOT to any netstandard asset.
-//   4. Best-effort build + run of the widened-member runtime smoke (reported, non-fatal locally when
-//      the net shared framework is absent; the structural witness is the authoritative gate).
-//
-// Portable (Linux/macOS/Windows CI): dotnet fsi tests/AheadOfTime/NetTfmResolution/VerifyNetResolution.fsx
+// Portable (Linux/macOS/Windows): dotnet fsi tests/AheadOfTime/NetTfmResolution/VerifyNetResolution.fsx
 
 open System
 open System.IO

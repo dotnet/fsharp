@@ -23,16 +23,13 @@ type SurfaceAreaTest() =
 
 // We are testing the surface area of the FSharp.Core assembly.
 // A modern .NET host (net11+) binds lib/net10.0, net472 binds lib/netstandard2.0.
-// The netstandard2.1 surface is no longer exercised by a running test host; it is
-// verified by the FSharp.Core.ApiCompat net10.0-vs-netstandard2.1 identity gate instead.
+// netstandard2.1 is no longer host-loaded here; its identity is verified by the
+// FSharp.Core.ApiCompat net10.0-vs-netstandard2.1 gate.
 //
 #if NET
             "net"
 #elif NETCOREAPP
-            // Currently unreachable for this test: a net5.0+ host defines NET (above), and net472 falls
-            // to the netstandard20 branch below. Retained so a future .NET Standard 2.1 test host still
-            // resolves the right baseline. The netstandard21 baselines are intentionally kept but no
-            // longer regenerated here (ns2.1 coverage moved to the ApiCompat identity gate).
+            // Unreachable today (a net5.0+ host defines NET); kept for a future .NET Standard 2.1 host.
             "netstandard21"
 #else
             "netstandard20"

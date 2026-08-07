@@ -1,26 +1,15 @@
-// Audit of the TFM (#if) guards in src/FSharp.Core.
+// Allow-list audit of the TFM (#if) guards in src/FSharp.Core (the "#ifdef management" gate).
 //
-// Why this exists (the user's explicit "#ifdef management" ask): shipping FSharp.Core as an extra
-// net TFM next to netstandard2.0/netstandard2.1 only stays correct if the TFM #if guards keep using
-// the ONE standardized idiom. The dangerous regressions are:
-//   * a bare  #if NETSTANDARD2_1            -> excludes the net TFM, silently dropping a feature there
-//   * a bare  #if !NET                      -> drops a BCL polyfill on EVERY net TFM (wrong floor)
-//   * any NEW TFM #if that doesn't follow the reviewed idiom.
+// Every TFM-discriminating #if/#elif in src/FSharp.Core/**/*.{fs,fsi} must be allow-listed below by
+// (<file>, <normalized guard-expr>). A non-allow-listed guard fails the audit, forcing review. This
+// catches the regressions that silently mistarget the shipped net TFM:
+//   * bare  #if NETSTANDARD2_1   -> excludes net, dropping a feature there
+//   * bare  #if !NET             -> drops a BCL polyfill on EVERY net (wrong floor)
+// Standardized idioms: `#if NETSTANDARD2_1_OR_GREATER || NET` (feature on ns2.1 + all net) and
+// `#if !NET5_0_OR_GREATER` / `#if !NET8_0_OR_GREATER` (polyfill below a BCL floor).
 //
-// The standardized idioms are:
-//   * feature available on ns2.1 AND all net:  #if NETSTANDARD2_1_OR_GREATER || NET   (or NETSTANDARD2_1 || NET)
-//   * BCL polyfill present only below a floor:  #if !NET5_0_OR_GREATER / #if !NET8_0_OR_GREATER
-//
-// Mechanism: this is an ALLOW-LIST audit. Every TFM-discriminating #if / #elif guard in
-// src/FSharp.Core/**/*.{fs,fsi} must appear in the allow-list below, keyed by <file>:<guard-expr>
-// (NOT by line number). Any guard that is not allow-listed fails the audit, which forces a human to
-// review the new guard and, if it is a legitimate use of the idiom, add it here. This catches the
-// bare-NETSTANDARD2_1 and bare-!NET anti-patterns automatically (they are simply not allow-listed).
-//
-// Run:            dotnet fsi eng/tests/AuditFSharpCoreTfmGuards.fsx
-// Self-test:      dotnet fsi eng/tests/AuditFSharpCoreTfmGuards.fsx --self-test
-// Portability: uses `git ls-files` + the .NET regex engine (NOT `git grep -P`, which is unavailable
-// on git builds without PCRE, e.g. macOS).
+// Run:       dotnet fsi eng/tests/AuditFSharpCoreTfmGuards.fsx  [--self-test]
+// Uses `git ls-files` + the .NET regex engine (not `git grep -P`, absent on macOS git builds).
 
 open System
 open System.Diagnostics

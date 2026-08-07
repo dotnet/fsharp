@@ -1,14 +1,9 @@
-// End-to-end verification of the SHIPPED FSharp.Core NuGet package (e2e-1).
+// End-to-end verification of the SHIPPED FSharp.Core NuGet package (e2e-1): asserts the lib layout
+// (netstandard2.0/netstandard2.1 + the discovered net TFM, non-degenerate), satellite resources, a
+// matching nuspec dependency group, and a uniform AssemblyVersion across the three lib assemblies.
+// The net TFM folder is discovered from the package, never hard-coded.
 //
-// Asserts that the produced FSharp.Core.*.nupkg:
-//   * contains lib/<pin>/FSharp.Core.dll + .xml (non-degenerate) for the shipped net TFM, where
-//     <pin> is DISCOVERED from the package (a lib/netNN.0 folder), never hard-coded to a literal;
-//   * still contains lib/netstandard2.0 and lib/netstandard2.1 (no regression);
-//   * carries at least one satellite **/FSharp.Core.resources.dll under lib/<pin>;
-//   * declares a <group targetFramework="netNN.0"> dependency group in the .nuspec;
-//   * has the SAME AssemblyVersion across all three lib assemblies (TFM must not fork identity).
-//
-// Portable: pure .NET (System.IO.Compression + Reflection), runnable on Linux/macOS/Windows in CI.
+// Portable pure .NET; runnable on Linux/macOS/Windows.
 // Usage: dotnet fsi tests/FSharp.Core.PackageVerification/VerifyFSharpCorePackage.fsx [<packagesDir>]
 
 open System
