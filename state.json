@@ -79,23 +79,32 @@
       ]
     },
     "20031": {
-      "sha": "d2b296612c890fca2ae43a222612cf6ea988a32f",
-      "cats": []
+      "sha": "9daea0305fcd83a38928386d942e8c9657a6d05c",
+      "cats": [
+        "Affects-Build-Infra",
+        "Affects-Compiler-Output"
+      ]
     },
     "20030": {
-      "sha": "ea8c3d3c242075eae3784289cfa72e671cb799b3",
-      "cats": []
+      "sha": "f222ff46392dede870e51fa4418dac7481bc5e36",
+      "cats": [
+        "Affects-Compiler-Output"
+      ]
     },
     "20027": {
-      "sha": "b2642b808f8f3ef144737a65e92f2322c06b7cee",
-      "cats": []
+      "sha": "d04bd1ac3d3386c56d49596fa215b828f5c78d73",
+      "cats": [
+        "Affects-Compiler-Output"
+      ]
     },
     "20026": {
-      "sha": "6218916a8694dfcfda8546b0d68059eda8f4addf",
-      "cats": []
+      "sha": "c156e15df8d2d8a8a19dcdb165483ae97082ffd8",
+      "cats": [
+        "Affects-Compiler-Output"
+      ]
     },
     "20025": {
-      "sha": "e56776fd78164b7b321a989b10fe017388f66acc",
+      "sha": "b78ffd6ba7173110aeb2f9eb49a394e0a19aadbf",
       "cats": []
     },
     "20016": {
@@ -122,9 +131,10 @@
       "cats": []
     },
     "19941": {
-      "sha": "2c8d3a70811228a2bbada5d13a5800c8159bc2f2",
+      "sha": "9f75f33ca9a4606ace7b9287dd8cb09e1a1729ca",
       "cats": [
-        "Affects-Build-Infra"
+        "Affects-Build-Infra",
+        "Affects-Compiler-Output"
       ]
     },
     "19930": {
@@ -134,7 +144,7 @@
       ]
     },
     "19844": {
-      "sha": "f6c047398b3371368221366c19b3411952612b97",
+      "sha": "ea376f40ff0182539f0917462c6372757d657ad2",
       "cats": []
     },
     "19785": {
