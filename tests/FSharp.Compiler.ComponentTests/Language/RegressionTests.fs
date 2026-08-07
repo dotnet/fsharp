@@ -84,11 +84,13 @@ dosmth x
         |> shouldSucceed
 
     // https://github.com/dotnet/fsharp/issues/20203
-    // Release-only System.InvalidProgramException from Seq.collect / yield! over a *struct*
-    // collection implementing seq<'T>, materialised with List.ofSeq / Seq.toList / Seq.toArray.
-    // These tests MUST fail (throw InvalidProgramException at runtime) until the codegen fix is applied.
+    // Release-only InvalidProgramException from Seq.collect / yield! over a *struct* seq<'T>,
+    // materialised with List.ofSeq / Seq.toList / Seq.toArray. Fixed by boxing the struct
+    // sub-collection to seq<'T> before AddMany and using a unit try/finally result type.
 
-    let private structSeqPrelude = """
+    let private structSeqPrelude =
+        """
+open System
 open System.Collections
 open System.Collections.Generic
 
@@ -100,58 +102,95 @@ type StructSeq(items: int[]) =
         member _.GetEnumerator() : IEnumerator = items.GetEnumerator()
 """
 
-    [<Fact>]
-    let ``Issue20203 - Seq.collect over struct seq to List``() =
-        structSeqPrelude + """
-let result = [ StructSeq [|1;2|] ] |> Seq.collect id |> List.ofSeq
-if result <> [1;2] then failwithf "expected [1;2], got %A" result
-"""
-        |> Fsx
+    let private runOptimized body =
+        Fsx(structSeqPrelude + "\n" + body)
         |> withOptimize
         |> compileExeAndRun
         |> shouldSucceed
+        |> ignore
+
+    [<Theory>]
+    // struct seq<int> via all three collector-lowered materialisers
+    [<InlineData("let r = [ StructSeq [|1;2|] ] |> Seq.collect id |> List.ofSeq in if r <> [1;2] then failwithf \"%A\" r")>]
+    [<InlineData("let r = [ StructSeq [|1;2|] ] |> Seq.collect id |> Seq.toList in if r <> [1;2] then failwithf \"%A\" r")>]
+    [<InlineData("let r = [ StructSeq [|1;2|] ] |> Seq.collect id |> Seq.toArray in if r <> [|1;2|] then failwithf \"%A\" r")>]
+    // yield! comprehension forms (regression guards - already worked)
+    [<InlineData("let r = [ for a in [ StructSeq [|1;2|] ] do yield! a ] |> List.ofSeq in if r <> [1;2] then failwithf \"%A\" r")>]
+    [<InlineData("let r = [| for a in [ StructSeq [|1;2|] ] do yield! a |] in if r <> [|1;2|] then failwithf \"%A\" r")>]
+    // non-identity collect mapping
+    [<InlineData("let r = [ StructSeq [|1;2|] ] |> Seq.collect (fun s -> s) |> List.ofSeq in if r <> [1;2] then failwithf \"%A\" r")>]
+    // multiple sub-collections, order preserved
+    [<InlineData("let r = [ StructSeq [|1;2|]; StructSeq [|3;4;5|] ] |> Seq.collect id |> List.ofSeq in if r <> [1;2;3;4;5] then failwithf \"%A\" r")>]
+    // negatives / no-regression: reference inner collections still work
+    [<InlineData("let r = [ [1;2] ] |> Seq.collect id |> List.ofSeq in if r <> [1;2] then failwithf \"%A\" r")>]
+    [<InlineData("let r = [ ResizeArray [1;2] ] |> Seq.collect id |> List.ofSeq in if r <> [1;2] then failwithf \"%A\" r")>]
+    // Array.ofSeq path (NOT lowered to the collector loop) must still work for a struct seq
+    [<InlineData("let r = [ StructSeq [|1;2|] ] |> Seq.collect id |> Array.ofSeq in if r <> [|1;2|] then failwithf \"%A\" r")>]
+    // Seq.map (no collect) yields a list of one struct
+    [<InlineData("let r = [ StructSeq [|1;2|] ] |> Seq.map id |> List.ofSeq in if List.length r <> 1 then failwithf \"%A\" (List.length r)")>]
+    // empty cases
+    [<InlineData("let r = ([] : StructSeq list) |> Seq.collect id |> List.ofSeq in if r <> [] then failwithf \"%A\" r")>]
+    [<InlineData("let r = [ StructSeq [||] ] |> Seq.collect id |> List.ofSeq in if r <> [] then failwithf \"%A\" r")>]
+    // boundary: single element and large (no off-by-one in the collector loop)
+    [<InlineData("let r = [ StructSeq [|1|] ] |> Seq.collect id |> List.ofSeq in if r <> [1] then failwithf \"%A\" r")>]
+    [<InlineData("let r = [ StructSeq [| for i in 1..1000 -> i |] ] |> Seq.collect id |> List.ofSeq in if List.length r <> 1000 || List.head r <> 1 || List.last r <> 1000 then failwithf \"%A\" (List.length r)")>]
+    let ``Issue20203 - struct seq materialisation under optimization`` (body: string) =
+        runOptimized body
 
     [<Fact>]
-    let ``Issue20203 - Seq.collect over struct seq to Seq.toList``() =
-        structSeqPrelude + """
-let result = [ StructSeq [|1;2|] ] |> Seq.collect id |> Seq.toList
-if result <> [1;2] then failwithf "expected [1;2], got %A" result
+    let ``Issue20203 - generic struct seq element types``() =
+        Fsx """
+open System.Collections
+open System.Collections.Generic
+
+[<Struct>]
+type StructSeq<'T>(items: 'T[]) =
+    interface IEnumerable<'T> with
+        member _.GetEnumerator() : IEnumerator<'T> = (items :> IEnumerable<'T>).GetEnumerator()
+    interface IEnumerable with
+        member _.GetEnumerator() : IEnumerator = items.GetEnumerator()
+
+let s = [ StructSeq<string> [|"a";"b"|] ] |> Seq.collect id |> List.ofSeq
+if s <> ["a";"b"] then failwithf "strings: %A" s
+let n = [ StructSeq<int64> [|1L;2L|] ] |> Seq.collect id |> List.ofSeq
+if n <> [1L;2L] then failwithf "int64: %A" n
 """
-        |> Fsx
         |> withOptimize
         |> compileExeAndRun
         |> shouldSucceed
+        |> ignore
 
     [<Fact>]
-    let ``Issue20203 - Seq.collect over struct seq to Seq.toArray``() =
-        structSeqPrelude + """
-let result = [ StructSeq [|1;2|] ] |> Seq.collect id |> Seq.toArray
-if result <> [|1;2|] then failwithf "expected [|1;2|], got %A" result
-"""
-        |> Fsx
-        |> withOptimize
-        |> compileExeAndRun
-        |> shouldSucceed
+    let ``Issue20203 - struct seq with disposable enumerator still disposes``() =
+        Fsx """
+open System.Collections
+open System.Collections.Generic
 
-    [<Fact>]
-    let ``Issue20203 - yield! comprehension over struct seq still works``() =
-        structSeqPrelude + """
-let xs = [ StructSeq [|1;2|] ]
-let result = [ for a in xs do yield! a ] |> List.ofSeq
-if result <> [1;2] then failwithf "expected [1;2], got %A" result
-"""
-        |> Fsx
-        |> withOptimize
-        |> compileExeAndRun
-        |> shouldSucceed
+let mutable disposed = 0
 
-    [<Fact>]
-    let ``Issue20203 - Seq.collect over multiple struct seqs preserves order``() =
-        structSeqPrelude + """
-let result = [ StructSeq [|1;2|]; StructSeq [|3;4;5|] ] |> Seq.collect id |> List.ofSeq
-if result <> [1;2;3;4;5] then failwithf "expected [1;2;3;4;5], got %A" result
+type TrackingEnumerator(items: int[]) =
+    let inner = (items :> IEnumerable<int>).GetEnumerator()
+    interface IEnumerator<int> with
+        member _.Current = inner.Current
+    interface IEnumerator with
+        member _.Current = box inner.Current
+        member _.MoveNext() = inner.MoveNext()
+        member _.Reset() = inner.Reset()
+    interface System.IDisposable with
+        member _.Dispose() = disposed <- disposed + 1; inner.Dispose()
+
+[<Struct>]
+type StructSeq(items: int[]) =
+    interface IEnumerable<int> with
+        member _.GetEnumerator() : IEnumerator<int> = new TrackingEnumerator(items) :> IEnumerator<int>
+    interface IEnumerable with
+        member _.GetEnumerator() : IEnumerator = (new TrackingEnumerator(items)) :> IEnumerator
+
+let r = [ StructSeq [|1;2|] ] |> Seq.collect id |> List.ofSeq
+if r <> [1;2] then failwithf "result: %A" r
+if disposed < 1 then failwith "enumerator was not disposed"
 """
-        |> Fsx
         |> withOptimize
         |> compileExeAndRun
         |> shouldSucceed
+        |> ignore
