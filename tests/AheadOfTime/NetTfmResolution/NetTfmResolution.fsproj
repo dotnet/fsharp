@@ -1,10 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-  <!-- Consumer asset-RESOLUTION test (e2e-2, the linchpin).
-       Targets EXACTLY the pinned shipped net TFM (FSharpCoreShippedNetTargetFramework) so that,
-       when that pin bumps, this consumer follows automatically (no literal net10.0 here). The
-       driver (VerifyNetResolution.fsx) then witnesses STRUCTURALLY, from project.assets.json,
-       that FSharp.Core resolves to lib/<pin>/FSharp.Core.dll and NOT to a netstandard asset. -->
+  <!-- Consumer for e2e-2 (see VerifyNetResolution.fsx). Targets EXACTLY the pinned shipped net TFM
+       so a pin bump is followed automatically (no literal net10.0 here). -->
   <Import Project="$(MSBuildThisFileDirectory)../../../eng/TargetFrameworks.props" />
 
   <PropertyGroup>

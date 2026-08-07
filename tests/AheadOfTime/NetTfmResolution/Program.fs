@@ -1,11 +1,8 @@
 module NetTfmResolution.Program
 
-// Runtime smoke for the shipped net-TFM FSharp.Core asset (e2e-2, step 5).
-//
-// Exercises a genuinely net-path public member: TaskBuilderBase.Using for an IAsyncDisposable
-// resource, guarded in FSharp.Core behind `#if NETSTANDARD2_1 || NET` (see tasks.fs / tasks.fsi).
-// If the consumer had bound a netstandard2.0 asset, this `use!` overload would not exist. Loading
-// and running it therefore proves the widened net asset is what got resolved AND that it works.
+// Runtime smoke for the shipped net-TFM FSharp.Core asset (e2e-2). Exercises TaskBuilderBase.Using
+// for an IAsyncDisposable resource, guarded behind `#if NETSTANDARD2_1 || NET`: this `use!` overload
+// is absent from the netstandard2.0 asset, so running it proves the widened net asset was resolved.
 
 open System
 open System.Threading.Tasks
@@ -20,7 +17,7 @@ let private run () =
     let recorder = ref []
     let work =
         task {
-            use _res = new AsyncResource(recorder) // net/ns2.1-path TaskBuilderBase.Using(IAsyncDisposable)
+            use _res = new AsyncResource(recorder)
             return 42
         }
     let result = work.GetAwaiter().GetResult()
