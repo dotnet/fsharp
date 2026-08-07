@@ -105,7 +105,9 @@ for tfmProp in targets.EnumerateObject() do
                             if nsLibRegex.IsMatch p then fail (sprintf "%s resolved to a netstandard asset (%s) under '%s' — expected the net TFM asset" section p tfmProp.Name)
                             elif not (netLibRegex.IsMatch p) then fail (sprintf "%s resolved to an unexpected path '%s' under '%s'" section p tfmProp.Name)
                             else printfn "e2e-2: %s [%s] -> %s ✓" section tfmProp.Name p
-                | false, _ -> ()
+                // A resolved package always carries both compile and runtime; an absent section means
+                // FSharp.Core did not bind for that phase — fail closed rather than silently pass.
+                | false, _ -> fail (sprintf "no '%s' section for FSharp.Core under '%s' — not bound for that phase" section tfmProp.Name)
             checkSection "compile"
             checkSection "runtime"
 
