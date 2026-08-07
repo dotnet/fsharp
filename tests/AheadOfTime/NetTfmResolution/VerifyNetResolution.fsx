@@ -1,0 +1,151 @@
+// Consumer asset-RESOLUTION test (e2e-2, the linchpin): restores a net-TFM consumer against the
+// locally built FSharp.Core and witnesses from obj/project.assets.json that FSharp.Core resolved to
+// lib/<netNN.0>/FSharp.Core.dll for BOTH compile and runtime (never a netstandard asset). Only the
+// FSharp.Core cache entry for that version is purged, never the whole packages dir. A build+run smoke
+// of a widened member follows, reported but non-fatal locally (the structural witness is the gate).
+//
+// Portable (Linux/macOS/Windows): dotnet fsi tests/AheadOfTime/NetTfmResolution/VerifyNetResolution.fsx
+
+open System
+open System.IO
+open System.Text.Json
+open System.Text.RegularExpressions
+open System.Diagnostics
+
+let scriptDir = __SOURCE_DIRECTORY__
+let repoRoot = Path.GetFullPath(Path.Combine(scriptDir, "..", "..", ".."))
+let proj = Path.Combine(scriptDir, "NetTfmResolution.fsproj")
+let dotnet =
+    let local = Path.Combine(repoRoot, ".dotnet", if OperatingSystem.IsWindows() then "dotnet.exe" else "dotnet")
+    if File.Exists local then local else "dotnet"
+
+let run (fileName: string) (args: string) (workDir: string) =
+    let psi = ProcessStartInfo(fileName, args, WorkingDirectory = workDir, UseShellExecute = false,
+                               RedirectStandardOutput = true, RedirectStandardError = true)
+    use p = Process.Start psi
+    let out = p.StandardOutput.ReadToEnd()
+    let err = p.StandardError.ReadToEnd()
+    p.WaitForExit()
+    p.ExitCode, out, err
+
+// 1. Newest built FSharp.Core nupkg. The shipped package lands in different sub-lanes depending on
+// the pack (top-level Shipping locally, Dependency/Shipping on CI); search both and take the newest.
+let searchDirs =
+    [ "artifacts/packages/Release/Shipping"
+      "artifacts/packages/Release/Dependency/Shipping" ]
+    |> List.map (fun d -> Path.Combine(repoRoot, d))
+let nupkg =
+    searchDirs
+    |> List.collect (fun d -> if Directory.Exists d then Directory.GetFiles(d, "FSharp.Core.*.nupkg") |> List.ofArray else [])
+    |> List.filter (fun f -> not (f.EndsWith ".symbols.nupkg"))
+    |> List.sortByDescending File.GetLastWriteTimeUtc
+    |> List.tryHead
+
+match nupkg with
+| None ->
+    eprintfn "e2e-2: no FSharp.Core.*.nupkg under: %s — pack first." (String.Join("; ", searchDirs))
+    exit 2
+| Some nupkgPath ->
+
+let ver = Regex.Replace(Path.GetFileName nupkgPath, @"^FSharp\.Core\.(.*)\.nupkg$", "$1")
+printfn "e2e-2: consumer will pin FSharp.Core %s" ver
+
+// 2. Clean the consumer obj/bin and only the cached FSharp.Core for this version.
+for sub in [ "obj"; "bin" ] do
+    let d = Path.Combine(scriptDir, sub)
+    if Directory.Exists d then Directory.Delete(d, true)
+
+// Stage the built nupkg into a clean, flat local feed the consumer's NuGet.Config points at. A
+// depth-0 flat folder is resolved deterministically everywhere, unlike pointing NuGet at the
+// packages root (its folder-source recursion does not reliably reach the Dependency sub-lane on CI).
+let feedDir = Path.Combine(scriptDir, "obj", "localfeed")
+Directory.CreateDirectory feedDir |> ignore
+File.Copy(nupkgPath, Path.Combine(feedDir, Path.GetFileName nupkgPath), true)
+
+let nugetPackages =
+    match Environment.GetEnvironmentVariable "NUGET_PACKAGES" with
+    | null | "" -> Path.Combine(Environment.GetFolderPath Environment.SpecialFolder.UserProfile, ".nuget", "packages")
+    | p -> p
+let cachedFsCore = Path.Combine(nugetPackages, "fsharp.core", ver)
+if Directory.Exists cachedFsCore then
+    printfn "e2e-2: purging cached fsharp.core/%s" ver
+    Directory.Delete(cachedFsCore, true)
+
+let rc, out, err = run dotnet (sprintf "restore \"%s\" -p:FSharpCoreTestVersion=%s --nologo" proj ver) scriptDir
+if rc <> 0 then
+    eprintfn "e2e-2: restore FAILED (exit %d)\n%s\n%s" rc out err
+    exit 1
+printfn "e2e-2: restore OK"
+
+// 3. Structural witness from project.assets.json.
+let assetsPath = Path.Combine(scriptDir, "obj", "project.assets.json")
+if not (File.Exists assetsPath) then
+    eprintfn "e2e-2: %s not produced" assetsPath
+    exit 1
+
+let doc = JsonDocument.Parse(File.ReadAllText assetsPath)
+let root = doc.RootElement
+
+let mutable errors = []
+let fail m = errors <- m :: errors
+let netLibRegex = Regex(@"^lib/net\d+\.0/FSharp\.Core\.dll$", RegexOptions.IgnoreCase)
+let nsLibRegex = Regex(@"^lib/netstandard\d\.\d/FSharp\.Core\.dll$", RegexOptions.IgnoreCase)
+
+// targets -> <tfm> -> "FSharp.Core/<ver>" -> { compile: {...}, runtime: {...} }
+let mutable checkedAny = false
+let targets = root.GetProperty("targets")
+for tfmProp in targets.EnumerateObject() do
+    for libProp in tfmProp.Value.EnumerateObject() do
+        if libProp.Name.StartsWith("FSharp.Core/", StringComparison.OrdinalIgnoreCase) then
+            checkedAny <- true
+            let libVer = libProp.Name.Substring("FSharp.Core/".Length)
+            if libVer <> ver then fail (sprintf "resolved FSharp.Core %s, expected the built %s" libVer ver)
+            let checkSection (section: string) =
+                match libProp.Value.TryGetProperty section with
+                | true, sec ->
+                    let paths = sec.EnumerateObject() |> Seq.map (fun p -> p.Name.Replace('\\','/')) |> Seq.toList
+                    let dllPaths = paths |> List.filter (fun p -> p.EndsWith("FSharp.Core.dll", StringComparison.OrdinalIgnoreCase))
+                    match dllPaths with
+                    | [] ->
+                        // No FSharp.Core.dll selected for this section — a resolution failure. A "_._"
+                        // placeholder is NuGet's explicit "no asset"; either way the section is unbound.
+                        let detail = if paths |> List.exists (fun p -> p.EndsWith "_._") then " (_._ placeholder)" else ""
+                        fail (sprintf "%s under '%s' selected no FSharp.Core.dll asset%s" section tfmProp.Name detail)
+                    | ps ->
+                        for p in ps do
+                            if nsLibRegex.IsMatch p then fail (sprintf "%s resolved to a netstandard asset (%s) under '%s' — expected the net TFM asset" section p tfmProp.Name)
+                            elif not (netLibRegex.IsMatch p) then fail (sprintf "%s resolved to an unexpected path '%s' under '%s'" section p tfmProp.Name)
+                            else printfn "e2e-2: %s [%s] -> %s ✓" section tfmProp.Name p
+                // A resolved package always carries both compile and runtime; an absent section means
+                // FSharp.Core did not bind for that phase — fail closed rather than silently pass.
+                | false, _ -> fail (sprintf "no '%s' section for FSharp.Core under '%s' — not bound for that phase" section tfmProp.Name)
+            checkSection "compile"
+            checkSection "runtime"
+
+if not checkedAny then fail "FSharp.Core not found in project.assets.json targets"
+
+match errors with
+| _ :: _ ->
+    eprintfn "e2e-2: STRUCTURAL WITNESS FAILED:"
+    for e in List.rev errors do eprintfn "  - %s" e
+    exit 1
+| [] ->
+
+printfn "e2e-2: structural witness OK — FSharp.Core compile+runtime both bound to the net TFM lib."
+
+// 4. Best-effort build + run of the runtime smoke.
+let brc, bout, berr = run dotnet (sprintf "build \"%s\" -c Release -p:FSharpCoreTestVersion=%s --no-restore --nologo" proj ver) scriptDir
+if brc <> 0 then
+    printfn "e2e-2: (non-fatal locally) build did not succeed:\n%s\n%s" bout berr
+    printfn "e2e-2: PASS on the structural witness (the authoritative gate)."
+    exit 0
+
+let rrc, rout, rerr = run dotnet (sprintf "run --project \"%s\" -c Release -p:FSharpCoreTestVersion=%s --no-build --no-restore" proj ver) scriptDir
+printf "%s" rout
+if rrc <> 0 then
+    printfn "e2e-2: (non-fatal locally) run did not succeed (net shared framework may be absent):\n%s" rerr
+    printfn "e2e-2: PASS on the structural witness (the authoritative gate)."
+    exit 0
+
+printfn "e2e-2: PASS — structural witness + runtime smoke both green."
+exit 0

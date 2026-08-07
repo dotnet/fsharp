@@ -89,7 +89,7 @@ type TaskBuilderBase() =
     member inline _.For(sequence: seq<'T>, body: 'T -> TaskCode<'TOverall, unit>) : TaskCode<'TOverall, unit> =
         ResumableCode.For(sequence, body)
 
-#if NETSTANDARD2_1
+#if NETSTANDARD2_1 || NET
     member inline internal this.TryFinallyAsync
         (body: TaskCode<'TOverall, 'T>, compensation: unit -> ValueTask)
         : TaskCode<'TOverall, 'T> =
