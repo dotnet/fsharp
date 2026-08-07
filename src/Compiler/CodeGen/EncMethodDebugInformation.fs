@@ -1,4 +1,4 @@
-/// Edit-and-Continue method debug information blobs.
+/// Edit-and-Continue method debug information blobs for hot reload.
 ///
 /// This module replicates, byte for byte, the three Portable-PDB CustomDebugInformation
 /// blob formats Roslyn persists per method to support Edit and Continue
@@ -15,12 +15,15 @@
 /// WriteCompressedSignedInteger and BlobReader.ReadCompressedInteger /
 /// ReadCompressedSignedInteger, exactly as Roslyn writes/reads them.
 ///
-/// Every "syntax offset" slot in these blobs is an opaque, caller-defined integer key
-/// (Roslyn: the syntax offset of the lambda/closure/state-machine-suspension syntax
-/// node). This module does not require the key to be a source offset; it only requires
-/// determinism across generations. tryEncodeOccurrenceKey/decodeOccurrenceKey provide one
-/// reusable way to pack a short (depth <= 2) ordinal chain into such a key.
-module internal FSharp.Compiler.AbstractIL.EncMethodDebugInformation
+/// F# semantics of the "syntax offset" slots: Roslyn stores the syntax offset of the
+/// lambda/closure/state-machine-suspension syntax node. The F# typed-tree diff has no
+/// syntax map; instead these integer slots carry OCCURRENCE KEYS — a deterministic
+/// int packed from the occurrence ordinal chain of the lambda occurrence model
+/// (TypedTreeDiff.LambdaOccurrenceId). See tryEncodeOccurrenceKey/decodeOccurrenceKey.
+/// The blob format is identical either way, so mdv/Roslyn tooling can still decode our
+/// maps; only the *meaning* of the integers is F#-specific (debugger-interop
+/// caveat documented in docs/hot-reload-closure-mapping.md).
+module internal FSharp.Compiler.EncMethodDebugInformation
 
 #nowarn "9" // NativePtr: BlobReader only exposes a byte*-based constructor
 
@@ -35,6 +38,9 @@ open System.Text
 open Microsoft.FSharp.NativeInterop
 
 open FSharp.Compiler.AbstractIL.ILPdbWriter
+open FSharp.Compiler.TcGlobals
+open FSharp.Compiler.TypedTree
+open FSharp.Compiler.TypedTreeDiff
 
 /// Portable-PDB CustomDebugInformation kind GUIDs for the EnC blobs, copied verbatim
 /// from roslyn/src/Dependencies/CodeAnalysis.Debugging/PortableCustomDebugInfoKinds.cs.
@@ -79,7 +85,7 @@ let UndefinedMethodOrdinal = -1
 let private SyntaxOffsetBaselineMarker = 0xFFuy
 
 /// Largest synthesized-local kind serializable in the slot map: the kind is stored as
-/// (kind + 1) in bits 0-5 of the leading byte (bit 6 is unused, bit 7 flags a trailing ordinal), and
+/// (kind + 1) in bits 0-6 of the leading byte (bit 7 flags a trailing ordinal), and
 /// Roslyn's reader recovers it with mask 0x3F, so only kinds 0..0x3E round-trip.
 [<Literal>]
 let MaxSerializableLocalKind = 0x3E
@@ -95,23 +101,24 @@ type EncLocalSlotInfo =
     /// A long-lived synthesized local.
     /// kind: synthesized-local kind (Roslyn SynthesizedLocalKind value, 0..MaxSerializableLocalKind;
     /// 0 = user-defined local).
-    /// syntaxOffset: caller-defined key of the declaring occurrence
+    /// syntaxOffset: in F#, the occurrence key of the declaring occurrence
     /// (Roslyn: syntax offset of the local's declarator).
     /// ordinal: zero-based disambiguator among slots sharing the same kind and offset (>= 0).
     | Slot of kind: int * syntaxOffset: int * ordinal: int
 
 /// One closure scope in the EnC Lambda and Closure Map. The closure's ordinal is its
 /// index in EncMethodDebugInformation.Closures; lambdas reference closures by that index.
+/// SyntaxOffset: in F#, the occurrence key of the closure's occurrence.
 type EncClosureInfo =
     {
-        /// Caller-defined key (Roslyn: syntax offset of the scope owning the closure).
+        /// Occurrence key (Roslyn: syntax offset of the scope owning the closure).
         SyntaxOffset: int
     }
 
 /// One lambda in the EnC Lambda and Closure Map.
 type EncLambdaInfo =
     {
-        /// Caller-defined key (Roslyn: syntax offset of the lambda body).
+        /// Occurrence key (Roslyn: syntax offset of the lambda body).
         SyntaxOffset: int
         /// Index into EncMethodDebugInformation.Closures of the closure holding the
         /// lambda's captures, or StaticClosureOrdinal / ThisOnlyClosureOrdinal.
@@ -124,7 +131,7 @@ type EncStateMachineStateInfo =
         /// State machine state number assigned to the suspension point (may be negative:
         /// Roslyn uses negative numbers for increasing-iteration finalize states).
         StateNumber: int
-        /// Caller-defined key (Roslyn: syntax offset of the await/yield syntax node).
+        /// Occurrence key (Roslyn: syntax offset of the await/yield syntax node).
         SyntaxOffset: int
     }
 
@@ -169,13 +176,14 @@ let private MaxOccurrenceSegment = 0xFFFF
 [<Literal>]
 let private MaxOccurrenceKey = 0x1FFFFFFD
 
-/// Packs an ordinal chain (root-first enclosing ordinals, ending with the innermost
-/// ordinal) into a deterministic int suitable for a "syntax offset" blob slot. Packing:
-/// 16-bit segments, least-significant segment = the innermost ordinal; an enclosing
-/// ordinal p is stored as (p + 1) shifted left 16 so that depth-1 keys (< 0x10000) and
-/// depth-2 keys (>= 0x10000) never collide. Fails closed (None) past the limits: chains
-/// deeper than 2, ordinals > 0xFFFF, or keys exceeding the compressed-integer budget,
-/// callers must then treat the chain as unmappable, never truncate.
+/// Packs an occurrence ordinal chain (root-first enclosing-occurrence ordinals,
+/// ending with the occurrence's own ordinal) into the deterministic int carried in the
+/// "syntax offset" blob slots. Packing: 16-bit segments, least-significant segment =
+/// the occurrence's own ordinal; an enclosing ordinal p is stored as (p + 1) shifted
+/// left 16 so that depth-1 keys (< 0x10000) and depth-2 keys (>= 0x10000) never collide.
+/// Fails closed (None) past the limits: chains deeper than 2, ordinals > 0xFFFF,
+/// or keys exceeding the compressed-integer budget — callers must then treat the
+/// occurrence as unmappable (rude edit), never truncate.
 let tryEncodeOccurrenceKey (ordinalChain: int list) : int option =
     match ordinalChain with
     | [ ordinal ] when ordinal >= 0 && ordinal <= MaxOccurrenceSegment -> Some ordinal
@@ -185,14 +193,8 @@ let tryEncodeOccurrenceKey (ordinalChain: int list) : int option =
         && ordinal <= MaxOccurrenceSegment
         && parent < MaxOccurrenceSegment
         ->
-        // Pack in int64: a large parent (e.g. 0xFFFE) would wrap ((parent + 1) <<< 16) negative in
-        // int32 and a negative key slips past the <= MaxOccurrenceKey bound, failing OPEN.
-        let key = ((int64 parent + 1L) <<< 16) ||| int64 ordinal
-
-        if key <= int64 MaxOccurrenceKey then
-            Some(int key)
-        else
-            None
+        let key = ((parent + 1) <<< 16) ||| ordinal
+        if key <= MaxOccurrenceKey then Some key else None
     | _ -> None
 
 /// Unpacks an occurrence key produced by tryEncodeOccurrenceKey back into its
@@ -299,7 +301,7 @@ let deserializeSynthesizedNameSnapshot (blob: byte[]) : Map<string, string[]> =
 
                 let bucketCount = reader.ReadCompressedInteger()
 
-                if bucketCount <= 0 || bucketCount > reader.RemainingBytes / 2 then
+                if bucketCount < 0 then
                     invalidData "synthesized name snapshot" reader.Offset
 
                 let buckets = ResizeArray<string * string[]>()
@@ -308,9 +310,7 @@ let deserializeSynthesizedNameSnapshot (blob: byte[]) : Map<string, string[]> =
                     let key = readUtf8String "synthesized name snapshot" &reader
                     let nameCount = reader.ReadCompressedInteger()
 
-                    // Every serialized name consumes at least one byte for its UTF-8
-                    // length, so this check bounds allocation before Array.zeroCreate.
-                    if nameCount < 0 || nameCount > reader.RemainingBytes then
+                    if nameCount < 0 then
                         invalidData "synthesized name snapshot" reader.Offset
 
                     let names = Array.zeroCreate nameCount
@@ -332,6 +332,7 @@ let deserializeSynthesizedNameSnapshot (blob: byte[]) : Map<string, string[]> =
 /// Creates the module-level CustomDebugInformation row for the allocation-ordered
 /// synthesized-name snapshot. Empty snapshots emit no row.
 let computeSynthesizedNameSnapshotCustomDebugInfoRows (snapshot: seq<struct (string * string[])>) : PdbModuleCustomDebugInfo list =
+
     let blob = serializeSynthesizedNameSnapshot snapshot
 
     if blob.Length = 0 then
@@ -348,7 +349,7 @@ let computeSynthesizedNameSnapshotCustomDebugInfoRows (snapshot: seq<struct (str
 // EnC Local Slot Map
 // Format (EditAndContinueMethodDebugInformation.cs, SerializeLocalSlots lines 145-191,
 // UncompressSlotMap lines 92-143): optional baseline record [0xFF, compressed(-baseline)],
-// then one record per slot: 0x00 for a temp, otherwise a leading byte with bits 0-5 =
+// then one record per slot: 0x00 for a temp, otherwise a leading byte with bits 0-6 =
 // kind + 1 and bit 7 = has-ordinal flag, followed by compressed(syntaxOffset - baseline)
 // and, when flagged, compressed(ordinal).
 // ---------------------------------------------------------------------------
@@ -457,8 +458,8 @@ let serializeLambdaMap (info: EncMethodDebugInformation) : byte[] =
         let builder = BlobBuilder()
         builder.WriteCompressedInteger(info.MethodOrdinal + 1)
 
-        // Negative offsets are rare (Roslyn: field/property initializers), so the
-        // baseline is -1 unless a smaller offset exists (Roslyn lines 266-286).
+        // Negative offsets are rare (Roslyn: field/property initializers; F#: reserved),
+        // so the baseline is -1 unless a smaller offset exists (Roslyn lines 266-286).
         let syntaxOffsetBaseline =
             let closureMin = (-1, closures) ||> List.fold (fun acc c -> min acc c.SyntaxOffset)
             (closureMin, lambdas) ||> List.fold (fun acc l -> min acc l.SyntaxOffset)
@@ -633,11 +634,248 @@ let deserialize (slotMapBlob: byte[]) (lambdaMapBlob: byte[]) (stateMachineState
         StateMachineStates = deserializeStateMachineStates stateMachineStateMapBlob
     }
 
+// ---------------------------------------------------------------------------
+// Baseline emission bridge: lambda occurrences -> CDI rows for the
+// portable PDB writer. Computed in the fsc emit path when --test:HotReloadDeltas
+// is on; the rows ride the IL writer options into ilwritepdb keyed by IL method name.
+// ---------------------------------------------------------------------------
+
+/// Root-first ordinal chain of an occurrence: the occurrence id stores enclosing
+/// ordinals nearest-enclosing-first, while the key packing wants root-first with the
+/// occurrence's own ordinal last.
+let private occurrenceOrdinalChain (occurrence: LambdaOccurrence) =
+    List.rev occurrence.Id.ParentChain @ [ occurrence.Id.Ordinal ]
+
+/// Builds the EnC method debug information for one member from its lambda
+/// occurrence sequence. Modeling decisions (documented in
+/// docs/hot-reload-closure-mapping.md, "Baseline CDI emission as implemented"):
+///   - MethodOrdinal stays UndefinedMethodOrdinal: F# needs no Roslyn-style
+///     partial-method/ordinal disambiguation at baseline.
+///   - One closure scope per occurrence, and lambda i references closure i: IlxGen
+///     lowers every lambda occurrence (curried group) to its own closure class, so
+///     unlike C# there is no shared display-class scope to model and no static/this-only
+///     lambdas at the typed-tree level (refinement to Static/ThisOnly ordinals is a
+///     lowering-side concern).
+///   - LocalSlots stays empty: the EnC Local Slot Map describes the lowered local slot
+///     layout, an IlxGen emission artifact that is not trivially derivable from the
+///     typed tree; it is omitted rather than guessed.
+/// Fails closed (None) when any occurrence key is not encodable (chains deeper than 2
+/// or ordinals past the packing limits): a partial map could silently mismatch
+/// occurrences, so the method then gets no lambda map at all.
+let tryCreateFromLambdaOccurrences (occurrences: LambdaOccurrence list) : EncMethodDebugInformation option =
+    let keys =
+        occurrences |> List.map (occurrenceOrdinalChain >> tryEncodeOccurrenceKey)
+
+    if keys |> List.exists Option.isNone then
+        None
+    else
+        let keys = keys |> List.map Option.get
+
+        Some
+            {
+                MethodOrdinal = UndefinedMethodOrdinal
+                LocalSlots = []
+                Closures = keys |> List.map (fun key -> { SyntaxOffset = key })
+                Lambdas =
+                    keys
+                    |> List.mapi (fun closureOrdinal key ->
+                        {
+                            SyntaxOffset = key
+                            ClosureOrdinal = closureOrdinal
+                        })
+                StateMachineStates = []
+            }
+
+/// Computes the per-member EnC method debug information of a flag-on compilation from its
+/// implementation files, keyed by IL method (compiled) name. Keying is fail closed: members
+/// without a compiled name, compiled names claimed by more than one member binding anywhere
+/// in the assembly (overloads, same-named members on different types), and members with
+/// unencodable occurrence chains are omitted, so an entry can never describe the wrong
+/// method. Members without lambda occurrences carry no entry.
+let computeMethodEncDebugInfo (g: TcGlobals) (implFiles: CheckedImplFile list) : Map<string, EncMethodDebugInformation> =
+    let allMembers = implFiles |> List.collect (collectMemberLambdaOccurrences g)
+
+    let ambiguousNames =
+        allMembers
+        |> List.choose (fun (symbol, _) -> symbol.CompiledName)
+        |> List.countBy id
+        |> List.filter (fun (_, count) -> count > 1)
+        |> List.map fst
+        |> Set.ofList
+
+    (Map.empty, allMembers)
+    ||> List.fold (fun acc (symbol: SymbolId, occurrences) ->
+        match symbol.CompiledName, occurrences with
+        | Some methName, _ :: _ when not (Set.contains methName ambiguousNames) ->
+            match tryCreateFromLambdaOccurrences occurrences with
+            | Some info -> Map.add methName info acc
+            | None -> acc
+        | _ -> acc)
+
+/// Computes the per-method EnC CustomDebugInformation side channel for the baseline PDB
+/// writer from the optimized implementation files of a flag-on compilation, keyed by IL
+/// method (compiled) name (fail-closed keying per computeMethodEncDebugInfo) — the writer
+/// additionally drops any name that does not identify exactly one IL method row, so a map
+/// can never attach to the wrong method.
+let computeMethodCustomDebugInfoRows
+    (g: TcGlobals)
+    (implFiles: CheckedImplFile list)
+    (stateMachineResumePointsByStructName: Map<string, int list>)
+    : Map<string, PdbMethodCustomDebugInfo list> =
+
+    // State machine resume points are recorded by the IlxGen lowering against the
+    // emitted state machine STRUCT's full name ('{member}@hotreload...' nested in the
+    // member's enclosing type); the basic name of the struct's simple name is the
+    // owning member's compiled name, which is this conduit's key. Fail closed on
+    // collisions (two recordings reducing to one basic name: same-named members, or
+    // nested CEs lowering several machines inside one member) — a state map must never
+    // describe the wrong method. The PDB writer additionally drops any name that does
+    // not identify exactly one IL method row.
+    let recordedStateMachineStatesByMethodName =
+        let simpleName (fullName: string) =
+            let separatorIndex = fullName.LastIndexOfAny [| '+'; '.' |]
+
+            if separatorIndex >= 0 then
+                fullName.Substring(separatorIndex + 1)
+            else
+                fullName
+
+        let basicName (name: string) =
+            match name.IndexOf('@') with
+            | atIndex when atIndex > 0 -> name.Substring(0, atIndex)
+            | _ -> name
+
+        stateMachineResumePointsByStructName
+        |> Map.toList
+        |> List.map (fun (structFullName, resumePoints) -> basicName (simpleName structFullName), resumePoints)
+        |> List.groupBy fst
+        |> List.choose (fun (methName, group) ->
+            match group with
+            | [ (_, resumePoints) ] when not resumePoints.IsEmpty ->
+                // SyntaxOffset carries the resume point's ORDINAL (state numbers are
+                // positional in the F# lowering), keeping the occurrence-key
+                // philosophy: deterministic ints, not source offsets.
+                let states =
+                    resumePoints
+                    |> List.sortBy id
+                    |> List.mapi (fun ordinal stateNumber ->
+                        {
+                            StateNumber = stateNumber
+                            SyntaxOffset = ordinal
+                        })
+
+                Some(methName, states)
+            | _ -> None)
+        |> Map.ofList
+
+    let derivedStateMachineStatesByMethodName =
+        let memberInputs = implFiles |> List.collect (collectMemberDebugInfoInputs g)
+
+        let ambiguousNames =
+            memberInputs
+            |> List.choose (fun input -> input.Symbol.CompiledName)
+            |> List.countBy id
+            |> List.filter (fun (_, count) -> count > 1)
+            |> List.map fst
+            |> Set.ofList
+
+        let tryDeriveStatesFromContinuations (occurrences: LambdaOccurrence list) =
+            let roots =
+                occurrences
+                |> List.filter (fun occurrence -> List.isEmpty occurrence.Id.ParentChain)
+
+            match roots with
+            | [ root ] ->
+                let sameEnd (occurrence: LambdaOccurrence) =
+                    occurrence.Range.EndLine = root.Range.EndLine
+                    && occurrence.Range.EndColumn = root.Range.EndColumn
+
+                let continuations =
+                    occurrences
+                    |> List.filter (fun occurrence -> not (List.isEmpty occurrence.Id.ParentChain) && sameEnd occurrence)
+
+                match continuations with
+                | [] -> None
+                | _ ->
+                    continuations
+                    |> List.mapi (fun ordinal _ ->
+                        {
+                            StateNumber = ordinal + 1
+                            SyntaxOffset = ordinal
+                        })
+                    |> Some
+            | _ -> None
+
+        (Map.empty, memberInputs)
+        ||> List.fold (fun acc input ->
+            match input.Symbol.CompiledName, input.HasResumableStateMachine with
+            | Some methName, true when not (Set.contains methName ambiguousNames) ->
+                match tryDeriveStatesFromContinuations input.LambdaOccurrences with
+                | Some states -> Map.add methName states acc
+                | None -> acc
+            | _ -> acc)
+
+    let stateMachineStatesByMethodName =
+        (recordedStateMachineStatesByMethodName, derivedStateMachineStatesByMethodName)
+        ||> Map.fold (fun acc methName states ->
+            if Map.containsKey methName acc then
+                acc
+            else
+                Map.add methName states acc)
+
+    let lambdaRows =
+        (Map.empty<string, PdbMethodCustomDebugInfo list>, computeMethodEncDebugInfo g implFiles)
+        ||> Map.fold (fun acc methName info ->
+            let lambdaMapBlob = serializeLambdaMap info
+
+            if lambdaMapBlob.Length = 0 then
+                acc
+            else
+                // The EnC Local Slot Map stays omitted (see tryCreateFromLambdaOccurrences).
+                Map.add
+                    methName
+                    [
+                        {
+                            KindGuid = PortableCustomDebugInfoKinds.encLambdaAndClosureMap
+                            Blob = lambdaMapBlob
+                        }
+                    ]
+                    acc)
+
+    (lambdaRows, stateMachineStatesByMethodName)
+    ||> Map.fold (fun acc methName states ->
+        let stateMapBlob =
+            serializeStateMachineStates
+                { EncMethodDebugInformation.Empty with
+                    StateMachineStates = states
+                }
+
+        if stateMapBlob.Length = 0 then
+            acc
+        else
+            let stateRow: PdbMethodCustomDebugInfo =
+                {
+                    KindGuid = PortableCustomDebugInfoKinds.encStateMachineStateMap
+                    Blob = stateMapBlob
+                }
+
+            match Map.tryFind methName acc with
+            | Some rows -> Map.add methName (rows @ [ stateRow ]) acc
+            | None -> Map.add methName [ stateRow ] acc)
+
+// ---------------------------------------------------------------------------
+// Baseline read bridge: portable-PDB EnC CDI rows -> the per-method map the
+// hot reload session baseline (FSharpEmitBaseline.EncMethodDebugInfos) exposes to the
+// generation-aware closure lowering.
+// ---------------------------------------------------------------------------
+
 /// Decodes every method-level EnC CustomDebugInformation row of a portable PDB image into
 /// per-method EnC debug information, keyed by MethodDef token (0x06xxxxxx). The CDI parent
-/// of the EnC rows is always a MethodDef handle, so token keying is unambiguous.
-/// Fail safe: a null/empty or non-PDB image yields the empty map, and a method whose
-/// blobs do not decode is omitted rather than guessed.
+/// of the EnC rows is always a MethodDef handle, so token keying is unambiguous here — the
+/// name keying on the write side exists only because the PDB writer lacks tokens.
+/// Fail safe: a null/empty or non-PDB image yields the empty map (back-compat with
+/// baselines compiled without --test:HotReloadDeltas or whose PDBs carry no EnC rows), and a method
+/// whose blobs do not decode is omitted rather than guessed.
 let readEncMethodDebugInfoFromPortablePdb (pdbBytes: byte[]) : Map<int, EncMethodDebugInformation> =
     if isEmpty pdbBytes then
         Map.empty
@@ -687,13 +925,13 @@ let readEncMethodDebugInfoFromPortablePdb (pdbBytes: byte[]) : Map<int, EncMetho
                     // (and so potentially mismatched) map for its method.
                     acc)
         with :? BadImageFormatException ->
-            // Not a portable PDB image (or a corrupted one): callers still get an empty
-            // map instead of a crash.
+            // Not a portable PDB image (or a corrupted one): the session still starts,
+            // with no per-method EnC information.
             Map.empty
 
 /// Reads the F#-owned allocation-ordered synthesized-name snapshot from a portable PDB.
-/// None means either the record is absent or invalid; callers must fall back to IL
-/// reconstruction rather than trusting a partial layout.
+/// None means either the record is absent (old baseline / flag-off baseline) or invalid;
+/// callers must then fall back to IL reconstruction rather than trusting a partial layout.
 let readSynthesizedNameSnapshotFromPortablePdb (pdbBytes: byte[]) : Map<string, string[]> option =
     if isEmpty pdbBytes then
         None
