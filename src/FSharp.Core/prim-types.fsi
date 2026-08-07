@@ -5834,6 +5834,18 @@ namespace Microsoft.FSharp.Core
             [<CompiledName("NonNullQuickPattern")>]
             val inline (|NonNullQuick|) : value: 'T | null -> 'T when 'T : not null and 'T : not struct
 
+            /// <summary>Re-types a value of any type into the nullable type <c>('T | null)</c>. This exists purely to satisfy
+            /// interoperability with C# APIs that expose an unconstrained nullable generic, for example a method
+            /// <c>T? M&lt;T&gt;()</c> or an interface member such as <c>T? GetValue&lt;T&gt;(int index)</c>.</summary>
+            /// <remarks>Unlike <see cref="M:Microsoft.FSharp.Core.Operators.WithNull``1(``0)"/>, this places no
+            /// <c>not null</c> or <c>not struct</c> constraint on 'T. Regular F# code does not do this, because <c>'T | null</c>
+            /// is meaningless when 'T is a struct: a value type has no separate <c>null</c> value, so the annotation carries no
+            /// runtime meaning and is erased. Use this only to meet an interop signature. This is an unsafe operation.</remarks>
+            /// <param name="value">The value.</param>
+            /// <returns>The same value, re-typed as <c>'T | null</c>.</returns>
+            [<CompiledName("WithNull")>]
+            val inline withNull<'T> : value: 'T -> 'T | null
+
         /// <summary>A module of comparison and equality operators that are statically resolved, but which are not fully generic and do not make structural comparison. Opening this
         /// module may make code that relies on structural or generic comparison no longer compile.</summary>
         module NonStructuralComparison = 

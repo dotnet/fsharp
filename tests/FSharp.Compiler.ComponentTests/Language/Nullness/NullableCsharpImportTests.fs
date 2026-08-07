@@ -259,5 +259,63 @@ let theOtherOne = NullableClass.nullableImmArrayOfNotNullStrings
     |> shouldFail
     |> withDiagnostics 
                 [Error 3261, Line 7, Col 18, Line 7, Col 29, "Nullness warning: Possible dereference of a null value when accessing member 'Length' on the nullable value 'firstString' of type 'string | null'."]
-            
-            
+
+// https://github.com/dotnet/fsharp/issues/17734
+[<FactForNETCOREAPP>]
+let ``Unchecked.withNull implements an unconstrained C# nullable generic member`` () =
+    let csharpLib =
+        CSharp """
+#nullable enable
+namespace Interop {
+    public interface IEventContext {
+        T? GetValue<T>(int index);
+    }
+}""" |> withName "csEventContext"
+     |> withCSharpLanguageVersionPreview
+
+    FSharp """module MyLibrary
+open Interop
+
+let ctx =
+    { new IEventContext with
+        member _.GetValue(index) = Unchecked.withNull (Unchecked.defaultof<_>) }
+"""
+    |> asLibrary
+    |> withReferences [csharpLib]
+    |> withStrictNullness
+    |> compile
+    |> shouldSucceed
+
+[<FactForNETCOREAPP>]
+let ``Unchecked.withNull null assignment through generic layers is valid IL for structs`` () =
+    FSharp """module MyProgram
+let observe (v: 'T) : objnull =
+    let mutable x = Unchecked.withNull v
+    x <- null
+    box x
+
+let forward (v: 'T) = observe v
+
+[<EntryPoint>]
+let main _ =
+    System.Console.Write(sprintf "%A %b" (forward 42) (isNull (forward "hello")))
+    0
+"""
+    |> withStrictNullness
+    |> compileExeAndRun
+    |> shouldSucceed
+    |> withStdOutContains "0 true"
+
+[<Fact>]
+let ``Unchecked.withNull does not allow assigning null to a concrete struct mutable`` () =
+    FSharp """module MyLibrary
+let f () =
+    let mutable x = Unchecked.withNull 42
+    x <- null
+"""
+    |> asLibrary
+    |> withStrictNullness
+    |> typecheck
+    |> shouldFail
+    |> withErrorCode 43
+
