@@ -8,7 +8,6 @@ module internal FSharp.Compiler.Features
 type LanguageFeature =
     | SingleUnderscorePattern
     | WildCardInForLoop
-    | RelaxWhitespace
     | RelaxWhitespace2
     | NameOf
     | ImplicitYield

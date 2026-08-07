@@ -18,7 +18,6 @@ module internal FSharp.Compiler.Features
 type LanguageFeature =
     | SingleUnderscorePattern
     | WildCardInForLoop
-    | RelaxWhitespace
     | RelaxWhitespace2
     | NameOf
     | ImplicitYield
@@ -152,7 +151,6 @@ type LanguageVersion(versionText, ?disabledFeaturesArray: LanguageFeature array)
                 // F# 4.7
                 LanguageFeature.SingleUnderscorePattern, languageVersion47
                 LanguageFeature.WildCardInForLoop, languageVersion47
-                LanguageFeature.RelaxWhitespace, languageVersion47
                 LanguageFeature.ImplicitYield, languageVersion47
 
                 // F# 5.0
@@ -362,7 +360,6 @@ type LanguageVersion(versionText, ?disabledFeaturesArray: LanguageFeature array)
         match feature with
         | LanguageFeature.SingleUnderscorePattern -> FSComp.SR.featureSingleUnderscorePattern ()
         | LanguageFeature.WildCardInForLoop -> FSComp.SR.featureWildCardInForLoop ()
-        | LanguageFeature.RelaxWhitespace -> FSComp.SR.featureRelaxWhitespace ()
         | LanguageFeature.RelaxWhitespace2 -> FSComp.SR.featureRelaxWhitespace2 ()
         | LanguageFeature.NameOf -> FSComp.SR.featureNameOf ()
         | LanguageFeature.ImplicitYield -> FSComp.SR.featureImplicitYield ()

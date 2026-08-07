@@ -612,11 +612,6 @@
         <target state="translated">informační zprávy související s referenčními buňkami</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureRelaxWhitespace">
-        <source>whitespace relaxation</source>
-        <target state="new">whitespace relaxation</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureRelaxWhitespace2">
         <source>whitespace relaxation v2</source>
         <target state="translated">relaxace whitespace v2</target>
