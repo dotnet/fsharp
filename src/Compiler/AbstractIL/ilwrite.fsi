@@ -33,6 +33,10 @@ type options =
         methodCustomDebugInfoRows: Map<string, PdbMethodCustomDebugInfo list>
     }
 
+/// Computes the trailing byte for a user string blob per ECMA-335 II.24.2.4.
+/// Returns 1 if any character needs special handling, 0 otherwise.
+val markerForUnicodeBytes: b: byte[] -> int
+
 /// Write a binary to the file system.
 val WriteILBinaryFile: options: options * inputModule: ILModuleDef * (ILAssemblyRef -> ILAssemblyRef) -> unit
 
