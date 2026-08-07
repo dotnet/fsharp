@@ -106,6 +106,7 @@ type LanguageFeature =
     | PreprocessorElif
     | ExceptionFieldSerializationSupport
     | ErrorOnMissingSignatureAttribute
+    | RecordConstructorSyntax
     | NotNullIfNotNull
     | DirectDelegateConstruction
     | AccessProtectedBaseFieldFromClosure
@@ -264,6 +265,8 @@ type LanguageVersion(versionText, ?disabledFeaturesArray: LanguageFeature array)
                 // previewVersion is only when "preview" is specified explicitly in project files  and users also need a preview SDK
 
                 // F# preview
+                LanguageFeature.RecordConstructorSyntax, previewVersion // Allow constructing a record via its all-fields constructor, e.g. MyRecord(a, b)
+
                 // Unfinished features that still need work before they can be assigned a release language version.
                 LanguageFeature.FromEndSlicing, previewVersion // Unfinished features --- needs work
             ]
@@ -458,6 +461,7 @@ type LanguageVersion(versionText, ?disabledFeaturesArray: LanguageFeature array)
         | LanguageFeature.PreprocessorElif -> FSComp.SR.featurePreprocessorElif ()
         | LanguageFeature.ExceptionFieldSerializationSupport -> FSComp.SR.featureExceptionFieldSerializationSupport ()
         | LanguageFeature.ErrorOnMissingSignatureAttribute -> FSComp.SR.featureErrorOnMissingSignatureAttribute ()
+        | LanguageFeature.RecordConstructorSyntax -> FSComp.SR.featureRecordConstructorSyntax ()
         | LanguageFeature.NotNullIfNotNull -> FSComp.SR.featureNotNullIfNotNull ()
         | LanguageFeature.DirectDelegateConstruction -> FSComp.SR.featureDirectDelegateConstruction ()
         | LanguageFeature.AccessProtectedBaseFieldFromClosure -> FSComp.SR.featureAccessProtectedBaseFieldFromClosure ()

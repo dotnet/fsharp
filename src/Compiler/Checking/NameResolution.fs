@@ -704,7 +704,9 @@ let rec TrySelectExtensionMethInfoOfILExtMem m amap apparentTy (actualParent, mi
     | ProvidedMeth(amap,providedMeth,_,m) -> 
         ProvidedMeth(amap, providedMeth, Some pri,m) |> Some
 #endif
-    | DefaultStructCtor _ -> 
+    | DefaultStructCtor _ ->
+        None
+    | RecdCtor _ ->
         None
 
 /// Select from a list of extension methods
