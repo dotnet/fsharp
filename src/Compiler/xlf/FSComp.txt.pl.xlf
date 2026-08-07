@@ -867,6 +867,11 @@
         <target state="translated">ciąg bajtowy nie może być interpolowany</target>
         <note />
       </trans-unit>
+      <trans-unit id="lexColonDirectiveMustBeFirst">
+        <source>#: directives must appear as the first non-whitespace characters on a line</source>
+        <target state="new">#: directives must appear as the first non-whitespace characters on a line</target>
+        <note />
+      </trans-unit>
       <trans-unit id="lexExtendedStringInterpolationNotSupported">
         <source>Extended string interpolation is not supported in this version of F#.</source>
         <target state="translated">Rozszerzona interpolacja ciągów nie jest obsługiwana w tej wersji języka F#.</target>
