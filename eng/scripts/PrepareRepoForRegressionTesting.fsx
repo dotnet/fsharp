@@ -1,5 +1,5 @@
-/// Script to inject UseLocalCompiler.Directory.Build.props import into a third-party repository's Directory.Build.props
-/// Usage: dotnet fsi PrepareRepoForRegressionTesting.fsx <path-to-UseLocalCompiler.Directory.Build.props>
+/// Script to inject a local F# test props import into a third-party repository's Directory.Build.props
+/// Usage: dotnet fsi PrepareRepoForRegressionTesting.fsx <path-to-local-test-props-file>
 
 open System
 open System.IO
@@ -14,20 +14,22 @@ let useLocalCompilerPropsPath =
     if scriptArgs.Length > 0 then
         scriptArgs.[0]
     else
-        failwith "Usage: dotnet fsi PrepareRepoForRegressionTesting.fsx <path-to-UseLocalCompiler.Directory.Build.props>"
+        failwith "Usage: dotnet fsi PrepareRepoForRegressionTesting.fsx <path-to-local-test-props-file>"
 
 printfn "PrepareRepoForRegressionTesting.fsx"
 printfn "==================================="
 printfn "UseLocalCompiler props path: %s" useLocalCompilerPropsPath
 
 if not (File.Exists(useLocalCompilerPropsPath)) then
-    failwithf "UseLocalCompiler.Directory.Build.props not found at: %s" useLocalCompilerPropsPath
+    failwithf "Local test props file not found at: %s" useLocalCompilerPropsPath
 
-printfn "✓ UseLocalCompiler.Directory.Build.props found"
+printfn "✓ Local test props file found"
 
 let absolutePropsPath = 
     Path.GetFullPath(useLocalCompilerPropsPath).Replace("\\", "/")
 printfn "Absolute path: %s" absolutePropsPath
+
+let propsFileName = Path.GetFileName(absolutePropsPath)
 
 if File.Exists(propsFilePath) then
     printfn "Directory.Build.props exists, modifying it..."
@@ -40,7 +42,7 @@ if File.Exists(propsFilePath) then
     if isNull projectElement then
         failwith "Could not find Project element in Directory.Build.props"
     
-    let xpath = "//Import[contains(@Project, 'UseLocalCompiler.Directory.Build.props')]"
+    let xpath = sprintf "//Import[contains(@Project, '%s')]" propsFileName
     let existingImport = doc.SelectSingleNode(xpath)
     
     if isNull existingImport then

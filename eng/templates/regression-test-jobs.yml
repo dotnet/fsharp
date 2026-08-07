@@ -47,7 +47,13 @@ jobs:
         downloadPath: '$(Pipeline.Workspace)/FSharpCompiler/artifacts/bin/FSharp.Core'
 
     - task: DownloadPipelineArtifact@2
-      displayName:  Download UseLocalCompiler props
+      displayName: Download UseLocalCompiler task artifacts
+      inputs:
+        artifactName: 'UseLocalCompilerTaskArtifacts'
+        downloadPath: '$(Pipeline.Workspace)/FSharpCompiler/artifacts/bin/UseLocalCompiler.FSharp.Build.Tasks'
+
+    - task: DownloadPipelineArtifact@2
+      displayName:  Download local test props
       inputs:
         artifactName: 'UseLocalCompilerProps'
         downloadPath: '$(Pipeline.Workspace)/Props'

@@ -61,6 +61,9 @@
     <Project Path="src/FSharp.Build/FSharp.Build.fsproj">
       <BuildType Solution="Proto|*" Project="Release" />
     </Project>
+    <Project Path="tests/UseLocalCompiler.FSharp.Build.Tasks/UseLocalCompiler.FSharp.Build.Tasks.fsproj">
+      <BuildType Solution="Proto|*" Project="Release" />
+    </Project>
     <Project Path="src/FSharp.Compiler.Interactive.Settings/FSharp.Compiler.Interactive.Settings.fsproj">
       <BuildType Solution="Proto|*" Project="Release" />
     </Project>
