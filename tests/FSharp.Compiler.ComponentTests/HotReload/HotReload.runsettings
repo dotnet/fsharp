@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RunSettings>
+  <RunConfiguration>
+    <EnvironmentVariables>
+      <DOTNET_MODIFIABLE_ASSEMBLIES>debug</DOTNET_MODIFIABLE_ASSEMBLIES>
+      <COMPlus_ForceEnc>1</COMPlus_ForceEnc>
+    </EnvironmentVariables>
+  </RunConfiguration>
+</RunSettings>

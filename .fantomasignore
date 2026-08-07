@@ -102,6 +102,10 @@ src/Compiler/Facilities/prim-parsing.fsi
 src/Compiler/Utilities/TaggedCollections.fsi
 src/Compiler/Service/ServiceDeclarationLists.fsi
 
+# Fantomas limitation: reformatting produces invalid F# (script uses constructs fantomas mis-handles)
+
+tools/hot-reload/compare_roslyn.fsx
+
 # Fantomas limitations on signature files in FSharp.Core (to investigate)
 
 src/FSharp.Core/fslib-extra-pervasives.fsi
