@@ -737,11 +737,6 @@
         <target state="translated">Espressione "while!"</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureWildCardInForLoop">
-        <source>wild card in for loop</source>
-        <target state="translated">carattere jolly nel ciclo for</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureWitnessPassing">
         <source>witness passing for trait constraints in F# quotations</source>
         <target state="translated">Passaggio del testimone per vincoli di tratto in quotation F#</target>
