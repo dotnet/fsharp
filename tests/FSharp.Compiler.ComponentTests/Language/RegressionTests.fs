@@ -82,3 +82,76 @@ dosmth x
         |> asLibrary
         |> typecheck
         |> shouldSucceed
+
+    // https://github.com/dotnet/fsharp/issues/20203
+    // Release-only System.InvalidProgramException from Seq.collect / yield! over a *struct*
+    // collection implementing seq<'T>, materialised with List.ofSeq / Seq.toList / Seq.toArray.
+    // These tests MUST fail (throw InvalidProgramException at runtime) until the codegen fix is applied.
+
+    let private structSeqPrelude = """
+open System.Collections
+open System.Collections.Generic
+
+[<Struct>]
+type StructSeq(items: int[]) =
+    interface IEnumerable<int> with
+        member _.GetEnumerator() : IEnumerator<int> = (items :> IEnumerable<int>).GetEnumerator()
+    interface IEnumerable with
+        member _.GetEnumerator() : IEnumerator = items.GetEnumerator()
+"""
+
+    [<Fact>]
+    let ``Issue20203 - Seq.collect over struct seq to List``() =
+        structSeqPrelude + """
+let result = [ StructSeq [|1;2|] ] |> Seq.collect id |> List.ofSeq
+if result <> [1;2] then failwithf "expected [1;2], got %A" result
+"""
+        |> Fsx
+        |> withOptimize
+        |> compileExeAndRun
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Issue20203 - Seq.collect over struct seq to Seq.toList``() =
+        structSeqPrelude + """
+let result = [ StructSeq [|1;2|] ] |> Seq.collect id |> Seq.toList
+if result <> [1;2] then failwithf "expected [1;2], got %A" result
+"""
+        |> Fsx
+        |> withOptimize
+        |> compileExeAndRun
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Issue20203 - Seq.collect over struct seq to Seq.toArray``() =
+        structSeqPrelude + """
+let result = [ StructSeq [|1;2|] ] |> Seq.collect id |> Seq.toArray
+if result <> [|1;2|] then failwithf "expected [|1;2|], got %A" result
+"""
+        |> Fsx
+        |> withOptimize
+        |> compileExeAndRun
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Issue20203 - yield! comprehension over struct seq still works``() =
+        structSeqPrelude + """
+let xs = [ StructSeq [|1;2|] ]
+let result = [ for a in xs do yield! a ] |> List.ofSeq
+if result <> [1;2] then failwithf "expected [1;2], got %A" result
+"""
+        |> Fsx
+        |> withOptimize
+        |> compileExeAndRun
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Issue20203 - Seq.collect over multiple struct seqs preserves order``() =
+        structSeqPrelude + """
+let result = [ StructSeq [|1;2|]; StructSeq [|3;4;5|] ] |> Seq.collect id |> List.ofSeq
+if result <> [1;2;3;4;5] then failwithf "expected [1;2;3;4;5], got %A" result
+"""
+        |> Fsx
+        |> withOptimize
+        |> compileExeAndRun
+        |> shouldSucceed
