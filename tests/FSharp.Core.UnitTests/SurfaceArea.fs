@@ -21,11 +21,12 @@ type SurfaceAreaTest() =
     member this.VerifySurfaceAreaFSharpCore () : unit =
         let platform =
 
-// Surface area of the FSharp.Core assembly per host: a modern .NET host binds lib/net10.0,
-// net472 binds lib/netstandard2.0. The netstandard2.1 surface is verified separately by the
-// FSharp.Core.ApiCompat net10.0-vs-netstandard2.1 identity gate.
-#if NET
-            "net"
+// We are testing the surface area of the FSharp.Core assembly.
+// NETCOREAPP builds with netstandard2.1
+// Net472 builds with netstandard1.0
+//
+#if NETCOREAPP
+            "netstandard21"
 #else
             "netstandard20"
 #endif

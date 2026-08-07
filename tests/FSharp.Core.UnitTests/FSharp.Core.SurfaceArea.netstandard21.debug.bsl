@@ -1,19 +1,5 @@
-! AssemblyReference: System.Collections
-! AssemblyReference: System.Collections.Concurrent
-! AssemblyReference: System.ComponentModel.EventBasedAsync
-! AssemblyReference: System.Console
-! AssemblyReference: System.Linq
-! AssemblyReference: System.Linq.Expressions
-! AssemblyReference: System.Linq.Queryable
-! AssemblyReference: System.Net.Requests
-! AssemblyReference: System.Net.WebClient
-! AssemblyReference: System.Runtime
 ! AssemblyReference: System.Runtime.Numerics
-! AssemblyReference: System.Text.RegularExpressions
-! AssemblyReference: System.Threading
-! AssemblyReference: System.Threading.Tasks.Parallel
-! AssemblyReference: System.Threading.Thread
-! AssemblyReference: System.Threading.ThreadPool
+! AssemblyReference: netstandard
 Microsoft.FSharp.Collections.Array2DModule: Int32 Base1[T](T[,])
 Microsoft.FSharp.Collections.Array2DModule: Int32 Base2[T](T[,])
 Microsoft.FSharp.Collections.Array2DModule: Int32 Length1[T](T[,])
@@ -619,8 +605,8 @@ Microsoft.FSharp.Collections.SetModule: Microsoft.FSharp.Collections.FSharpSet`1
 Microsoft.FSharp.Collections.SetModule: Microsoft.FSharp.Collections.FSharpSet`1[T] UnionMany[T](System.Collections.Generic.IEnumerable`1[Microsoft.FSharp.Collections.FSharpSet`1[T]])
 Microsoft.FSharp.Collections.SetModule: Microsoft.FSharp.Collections.FSharpSet`1[T] Union[T](Microsoft.FSharp.Collections.FSharpSet`1[T], Microsoft.FSharp.Collections.FSharpSet`1[T])
 Microsoft.FSharp.Collections.SetModule: System.Collections.Generic.IEnumerable`1[T] ToSeq[T](Microsoft.FSharp.Collections.FSharpSet`1[T])
-Microsoft.FSharp.Collections.SetModule: System.Tuple`2[Microsoft.FSharp.Collections.FSharpSet`1[T1],Microsoft.FSharp.Collections.FSharpSet`1[T2]] PartitionWith[T,T1,T2](Microsoft.FSharp.Core.FSharpFunc`2[T,Microsoft.FSharp.Core.FSharpChoice`2[T1,T2]], Microsoft.FSharp.Collections.FSharpSet`1[T])
 Microsoft.FSharp.Collections.SetModule: System.Tuple`2[Microsoft.FSharp.Collections.FSharpSet`1[T],Microsoft.FSharp.Collections.FSharpSet`1[T]] Partition[T](Microsoft.FSharp.Core.FSharpFunc`2[T,System.Boolean], Microsoft.FSharp.Collections.FSharpSet`1[T])
+Microsoft.FSharp.Collections.SetModule: System.Tuple`2[Microsoft.FSharp.Collections.FSharpSet`1[T1],Microsoft.FSharp.Collections.FSharpSet`1[T2]] PartitionWith[T,T1,T2](Microsoft.FSharp.Core.FSharpFunc`2[T,Microsoft.FSharp.Core.FSharpChoice`2[T1,T2]], Microsoft.FSharp.Collections.FSharpSet`1[T])
 Microsoft.FSharp.Collections.SetModule: T MaxElement[T](Microsoft.FSharp.Collections.FSharpSet`1[T])
 Microsoft.FSharp.Collections.SetModule: T MinElement[T](Microsoft.FSharp.Collections.FSharpSet`1[T])
 Microsoft.FSharp.Collections.SetModule: TState FoldBack[T,TState](Microsoft.FSharp.Core.FSharpFunc`2[T,Microsoft.FSharp.Core.FSharpFunc`2[TState,TState]], Microsoft.FSharp.Collections.FSharpSet`1[T], TState)
@@ -687,8 +673,8 @@ Microsoft.FSharp.Control.FSharpAsync: System.Threading.CancellationToken get_Def
 Microsoft.FSharp.Control.FSharpAsync: System.Threading.Tasks.Task`1[T] StartAsTask[T](Microsoft.FSharp.Control.FSharpAsync`1[T], Microsoft.FSharp.Core.FSharpOption`1[System.Threading.Tasks.TaskCreationOptions], Microsoft.FSharp.Core.FSharpOption`1[System.Threading.CancellationToken])
 Microsoft.FSharp.Control.FSharpAsync: System.Threading.Tasks.Task`1[T] StartImmediateAsTask[T](Microsoft.FSharp.Control.FSharpAsync`1[T], Microsoft.FSharp.Core.FSharpOption`1[System.Threading.CancellationToken])
 Microsoft.FSharp.Control.FSharpAsync: System.Tuple`3[Microsoft.FSharp.Core.FSharpFunc`2[System.Tuple`3[TArg,System.AsyncCallback,System.Object],System.IAsyncResult],Microsoft.FSharp.Core.FSharpFunc`2[System.IAsyncResult,T],Microsoft.FSharp.Core.FSharpFunc`2[System.IAsyncResult,Microsoft.FSharp.Core.Unit]] AsBeginEnd[TArg,T](Microsoft.FSharp.Core.FSharpFunc`2[TArg,Microsoft.FSharp.Control.FSharpAsync`1[T]])
-Microsoft.FSharp.Control.FSharpAsync: T RunSynchronouslyImmediate[T](Microsoft.FSharp.Control.FSharpAsync`1[T], Microsoft.FSharp.Core.FSharpOption`1[System.Threading.CancellationToken])
 Microsoft.FSharp.Control.FSharpAsync: T RunSynchronously[T](Microsoft.FSharp.Control.FSharpAsync`1[T], Microsoft.FSharp.Core.FSharpOption`1[System.Int32], Microsoft.FSharp.Core.FSharpOption`1[System.Threading.CancellationToken])
+Microsoft.FSharp.Control.FSharpAsync: T RunSynchronouslyImmediate[T](Microsoft.FSharp.Control.FSharpAsync`1[T], Microsoft.FSharp.Core.FSharpOption`1[System.Threading.CancellationToken])
 Microsoft.FSharp.Control.FSharpAsync: Void CancelDefaultToken()
 Microsoft.FSharp.Control.FSharpAsync: Void Start(Microsoft.FSharp.Control.FSharpAsync`1[Microsoft.FSharp.Core.Unit], Microsoft.FSharp.Core.FSharpOption`1[System.Threading.CancellationToken])
 Microsoft.FSharp.Control.FSharpAsync: Void StartImmediate(Microsoft.FSharp.Control.FSharpAsync`1[Microsoft.FSharp.Core.Unit], Microsoft.FSharp.Core.FSharpOption`1[System.Threading.CancellationToken])
@@ -1909,6 +1895,7 @@ Microsoft.FSharp.Core.Operators: System.IO.TextWriter ConsoleOut[T]()
 Microsoft.FSharp.Core.Operators: System.Nullable`1[T] NullV[T]()
 Microsoft.FSharp.Core.Operators: System.Nullable`1[T] WithNullV[T](T)
 Microsoft.FSharp.Core.Operators: System.Object Box[T](T)
+Microsoft.FSharp.Core.Operators: System.RuntimeMethodHandle MethodHandleOf[T,TResult](Microsoft.FSharp.Core.FSharpFunc`2[T,TResult])
 Microsoft.FSharp.Core.Operators: System.String NameOf[T](T)
 Microsoft.FSharp.Core.Operators: System.String ToString[T](T)
 Microsoft.FSharp.Core.Operators: System.String op_Concatenate(System.String, System.String)

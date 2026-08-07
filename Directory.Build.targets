@@ -10,6 +10,17 @@
     <NoWarn>$(NoWarn);NU1507</NoWarn>
   </PropertyGroup>
 
+  <!-- FSharp.Core additionally builds $(FSharpCoreShippedNetTargetFramework) for its shipped NuGet package
+       only. In-repo .NET consumers must keep binding the netstandard2.1 asset they resolved before that
+       target existed, so the in-box compiler/tools and their IL / surface-area baselines stay unchanged.
+       .NET Framework consumers resolve netstandard2.0 and are left alone; Proto ships only netstandard2.0.
+       Any pre-existing explicit SetTargetFramework pin is preserved. -->
+  <ItemGroup Condition="'$(TargetFrameworkIdentifier)' == '.NETCoreApp' and '$(Configuration)' != 'Proto'">
+    <ProjectReference Update="@(ProjectReference)">
+      <SetTargetFramework Condition="'%(ProjectReference.Filename)' == 'FSharp.Core' and '%(ProjectReference.SetTargetFramework)' == ''">TargetFramework=netstandard2.1</SetTargetFramework>
+    </ProjectReference>
+  </ItemGroup>
+
   <!-- Disable R2R when building source-only and not targeting the current SDK bundled TFM. -->
   <PropertyGroup>
     <PublishReadyToRun Condition="'$(DotNetBuildSourceOnly)' == 'true' and
