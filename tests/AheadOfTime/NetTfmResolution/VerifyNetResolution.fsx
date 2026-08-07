@@ -41,7 +41,7 @@ let version =
 
 match version with
 | None ->
-    eprintfn "e2e-2: no FSharp.Core.*.nupkg in %s — pack first (Milestone B)." shippingDir
+    eprintfn "e2e-2: no FSharp.Core.*.nupkg in %s — pack first." shippingDir
     exit 2
 | Some ver ->
 
