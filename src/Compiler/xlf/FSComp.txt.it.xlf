@@ -457,11 +457,6 @@
         <target state="new">Implicit dispatch slot coverage for default interface member implementations</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureImplicitYield">
-        <source>implicit yield</source>
-        <target state="translated">istruzione yield implicita</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureImprovedImpliedArgumentNames">
         <source>Improved implied argument names</source>
         <target state="translated">Nomi di argomenti impliciti migliorati</target>
@@ -4812,19 +4807,9 @@
         <target state="translated">Espressione oggetto non valida. Gli oggetti senza override o interfacce devono usare il formato di espressione 'new Type(args)' senza parentesi graffe.</target>
         <note />
       </trans-unit>
-      <trans-unit id="tcInvalidObjectSequenceOrRecordExpression">
-        <source>Invalid object, sequence or record expression</source>
-        <target state="translated">Espressione record, sequenza o oggetto non valida</target>
-        <note />
-      </trans-unit>
       <trans-unit id="tcInvalidSequenceExpressionSyntaxForm">
         <source>Invalid record, sequence or computation expression. Sequence expressions should be of the form 'seq {{ ... }}'</source>
         <target state="translated">Espressione di calcolo, sequenza o record non valida. Il formato delle espressioni sequenza deve essere 'seq {{ ... }}'</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="tcExpressionWithIfRequiresParenthesis">
-        <source>This list or array expression includes an element of the form 'if ... then ... else'. Parenthesize this expression to indicate it is an individual element of the list or array, to disambiguate this from a list generated using a sequence expression</source>
-        <target state="translated">Questa espressione elenco o matrice include un elemento nel formato 'if ... then ... else'. Racchiudere l'espressione in parentesi per indicare che si tratta di un elemento singolo dell'elenco o della matrice allo scopo di eliminare l'ambiguità rispetto a un elenco generato mediante un'espressione sequenza</target>
         <note />
       </trans-unit>
       <trans-unit id="tcUnableToParseFormatString">
@@ -5090,11 +5075,6 @@
       <trans-unit id="tcConstructIsAmbiguousInComputationExpression">
         <source>This construct is ambiguous as part of a computation expression. Nested expressions may be written using 'let _ = (...)' and nested computations using 'let! res = builder {{ ... }}'.</source>
         <target state="translated">Questo costrutto è ambiguo all'interno di un'espressione di calcolo. È possibile scrivere le espressioni annidate con 'let _ = (...)' e i calcoli annidati con 'let! res = builder {{ ... }}'.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="tcConstructIsAmbiguousInSequenceExpression">
-        <source>This construct is ambiguous as part of a sequence expression. Nested expressions may be written using 'let _ = (...)' and nested sequences using 'yield! seq {{... }}'.</source>
-        <target state="translated">Questo costrutto è ambiguo all'interno di un'espressione sequenza. È possibile scrivere le espressioni annidate con 'let _ = (...)' e le sequenze annidate con 'yield! seq {{... }}'.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcDoBangIllegalInSequenceExpression">

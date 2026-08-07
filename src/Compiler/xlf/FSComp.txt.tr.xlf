@@ -457,11 +457,6 @@
         <target state="new">Implicit dispatch slot coverage for default interface member implementations</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureImplicitYield">
-        <source>implicit yield</source>
-        <target state="translated">örtük yield</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureImprovedImpliedArgumentNames">
         <source>Improved implied argument names</source>
         <target state="translated">Geliştirilmiş örtük bağımsız değişken adları</target>
@@ -4812,19 +4807,9 @@
         <target state="translated">Geçersiz nesne ifadesi. Geçersiz kılmaların ve arabirimlerin olmadığı nesneler küme ayraçsız 'new Type(args)' ifade biçimini kullanmalıdır.</target>
         <note />
       </trans-unit>
-      <trans-unit id="tcInvalidObjectSequenceOrRecordExpression">
-        <source>Invalid object, sequence or record expression</source>
-        <target state="translated">Geçersiz nesne, dizi veya kayıt ifadesi</target>
-        <note />
-      </trans-unit>
       <trans-unit id="tcInvalidSequenceExpressionSyntaxForm">
         <source>Invalid record, sequence or computation expression. Sequence expressions should be of the form 'seq {{ ... }}'</source>
         <target state="translated">Geçersiz kayıt, dizi veya hesaplama ifadesi. Dizi ifadeleri 'seq {{ ... }}' biçiminde olmalıdır</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="tcExpressionWithIfRequiresParenthesis">
-        <source>This list or array expression includes an element of the form 'if ... then ... else'. Parenthesize this expression to indicate it is an individual element of the list or array, to disambiguate this from a list generated using a sequence expression</source>
-        <target state="translated">Liste veya dizi ifadesi 'if ... then ... else' biçiminde bir öğe içeriyor. Listenin veya dizinin bağımsız bir öğesi olduğunu belirtmek, dizi ifadesi kullanılarak oluşturulmuş listeden ayırt etmek için bu ifadeyi ayraç içine alın</target>
         <note />
       </trans-unit>
       <trans-unit id="tcUnableToParseFormatString">
@@ -5090,11 +5075,6 @@
       <trans-unit id="tcConstructIsAmbiguousInComputationExpression">
         <source>This construct is ambiguous as part of a computation expression. Nested expressions may be written using 'let _ = (...)' and nested computations using 'let! res = builder {{ ... }}'.</source>
         <target state="translated">Bu yapı, bir hesaplama ifadesinin parçası olarak belirsiz. İç içe ifadeler 'let _ = (...)' kullanılarak ve iç içe hesaplamalar 'let! res = builder {{ ... }}' kullanılarak yazılabilir.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="tcConstructIsAmbiguousInSequenceExpression">
-        <source>This construct is ambiguous as part of a sequence expression. Nested expressions may be written using 'let _ = (...)' and nested sequences using 'yield! seq {{... }}'.</source>
-        <target state="translated">Bu yapı, bir dizi ifadesinin parçası olarak belirsiz. İç içe ifadeler 'let _ = (...)' kullanılarak ve iç içe diziler 'yield! seq {{... }}' kullanılarak yazılabilir.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcDoBangIllegalInSequenceExpression">

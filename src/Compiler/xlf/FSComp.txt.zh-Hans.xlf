@@ -457,11 +457,6 @@
         <target state="new">Implicit dispatch slot coverage for default interface member implementations</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureImplicitYield">
-        <source>implicit yield</source>
-        <target state="translated">隐式 yield</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureImprovedImpliedArgumentNames">
         <source>Improved implied argument names</source>
         <target state="translated">改进了默示的参数名称</target>
@@ -4812,19 +4807,9 @@
         <target state="translated">对象表达式无效。没有重写或接口的对象应使用不带括号的表达式格式“new Type(args)”。</target>
         <note />
       </trans-unit>
-      <trans-unit id="tcInvalidObjectSequenceOrRecordExpression">
-        <source>Invalid object, sequence or record expression</source>
-        <target state="translated">对象、序列或记录表达式无效</target>
-        <note />
-      </trans-unit>
       <trans-unit id="tcInvalidSequenceExpressionSyntaxForm">
         <source>Invalid record, sequence or computation expression. Sequence expressions should be of the form 'seq {{ ... }}'</source>
         <target state="translated">记录、序列或计算表达式无效。序列表达式的格式应为“seq {{ ... }}”</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="tcExpressionWithIfRequiresParenthesis">
-        <source>This list or array expression includes an element of the form 'if ... then ... else'. Parenthesize this expression to indicate it is an individual element of the list or array, to disambiguate this from a list generated using a sequence expression</source>
-        <target state="translated">此列表或数组表达式包括采用“if ... then ... else”格式的元素。请使用括号将此表达式括起来以指示它是列表或数组中的单个元素，从而将此表达式与使用序列表达式生成的列表进行区分</target>
         <note />
       </trans-unit>
       <trans-unit id="tcUnableToParseFormatString">
@@ -5090,11 +5075,6 @@
       <trans-unit id="tcConstructIsAmbiguousInComputationExpression">
         <source>This construct is ambiguous as part of a computation expression. Nested expressions may be written using 'let _ = (...)' and nested computations using 'let! res = builder {{ ... }}'.</source>
         <target state="translated">此构造作为计算表达式的一部分具有多义性。可以使用“let _ = (...)”来编写嵌套的表达式，并可以使用“let! res = builder {{ ... }}”来编写嵌套的计算。</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="tcConstructIsAmbiguousInSequenceExpression">
-        <source>This construct is ambiguous as part of a sequence expression. Nested expressions may be written using 'let _ = (...)' and nested sequences using 'yield! seq {{... }}'.</source>
-        <target state="translated">此构造作为序列表达式的一部分具有多义性。可以使用“let _ = (...)”来编写嵌套的表达式，并可以使用“yield! seq {{... }}”来编写嵌套的序列。</target>
         <note />
       </trans-unit>
       <trans-unit id="tcDoBangIllegalInSequenceExpression">

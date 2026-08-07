@@ -457,11 +457,6 @@
         <target state="new">Implicit dispatch slot coverage for default interface member implementations</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureImplicitYield">
-        <source>implicit yield</source>
-        <target state="translated">yield implícito</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureImprovedImpliedArgumentNames">
         <source>Improved implied argument names</source>
         <target state="translated">Nomes de argumento implícitos aprimorados</target>
@@ -4812,19 +4807,9 @@
         <target state="translated">Expressão de objeto inválida. Objetos sem substituições ou interfaces devem usar o formato de expressão 'new Type(args)' sem as chaves.</target>
         <note />
       </trans-unit>
-      <trans-unit id="tcInvalidObjectSequenceOrRecordExpression">
-        <source>Invalid object, sequence or record expression</source>
-        <target state="translated">Expressão de objeto, sequência ou registro inválida</target>
-        <note />
-      </trans-unit>
       <trans-unit id="tcInvalidSequenceExpressionSyntaxForm">
         <source>Invalid record, sequence or computation expression. Sequence expressions should be of the form 'seq {{ ... }}'</source>
         <target state="translated">Expressão de registro, sequência ou computação inválida. Expressões de sequência devem estar na forma 'seq {{ ... }}'</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="tcExpressionWithIfRequiresParenthesis">
-        <source>This list or array expression includes an element of the form 'if ... then ... else'. Parenthesize this expression to indicate it is an individual element of the list or array, to disambiguate this from a list generated using a sequence expression</source>
-        <target state="translated">Esta expressão de lista ou matriz inclui um elemento da forma 'if ... then ... else'. Use parênteses nesta expressão para indicar os elementos individuais da lista ou matriz. Use uma expressão de sequência para tirar esta ambiguidade desta lista gerada</target>
         <note />
       </trans-unit>
       <trans-unit id="tcUnableToParseFormatString">
@@ -5090,11 +5075,6 @@
       <trans-unit id="tcConstructIsAmbiguousInComputationExpression">
         <source>This construct is ambiguous as part of a computation expression. Nested expressions may be written using 'let _ = (...)' and nested computations using 'let! res = builder {{ ... }}'.</source>
         <target state="translated">Esse constructo é ambíguo como parte de uma expressão de computação. Expressões aninhadas podem ser gravadas com o uso de 'let _ = (...)' e computações aninhadas através de 'let! res = builder {{ ... }}'.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="tcConstructIsAmbiguousInSequenceExpression">
-        <source>This construct is ambiguous as part of a sequence expression. Nested expressions may be written using 'let _ = (...)' and nested sequences using 'yield! seq {{... }}'.</source>
-        <target state="translated">Esse constructo é ambíguo como parte de uma expressão de sequência. Expressões aninhadas podem ser gravadas usando 'let _ = (...)' e sequências aninhadas através de 'yield! seq {{... }}'.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcDoBangIllegalInSequenceExpression">
