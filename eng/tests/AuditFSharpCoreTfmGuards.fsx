@@ -99,10 +99,12 @@ let auditRepo () =
 let selfTest () =
     let mutable ok = true
     let check desc (expr: string) shouldBeTfm =
-        let isTfm = tfmToken.IsMatch(normalize expr)
-        if isTfm <> shouldBeTfm then
+        // Drive the REAL extractor (guardLine -> normalize -> tfmToken) via a synthetic #if line, so a
+        // drift in the #if/#elif line parser cannot silently green this self-test while the audit goes blind.
+        let detected = tfmGuardsIn [| sprintf "#if %s" expr |] |> Array.isEmpty |> not
+        if detected <> shouldBeTfm then
             ok <- false
-            eprintfn "  self-test FAIL: %s -> tfmToken=%b, expected %b" desc isTfm shouldBeTfm
+            eprintfn "  self-test FAIL: %s -> detected=%b, expected %b" desc detected shouldBeTfm
     // These MUST be recognized as TFM guards (and, not being allow-listed for a fake file, would fail):
     check "bare NETSTANDARD2_1" "NETSTANDARD2_1" true
     check "bare !NET" "!NET" true
@@ -112,6 +114,9 @@ let selfTest () =
     // These are NOT TFM guards and must be ignored by the audit:
     check "DEBUG" "DEBUG" false
     check "FX_NO_SOMETHING" "FX_NO_SOMETHING" false
+    // The line parser must recognize #elif, not only #if.
+    if tfmGuardsIn [| "#elif NETSTANDARD2_1_OR_GREATER || NET" |] |> Array.isEmpty then
+        ok <- false; eprintfn "  self-test FAIL: #elif TFM guard not detected"
     // Allow-list containment behaves as expected:
     if not (allowList.Contains("src/FSharp.Core/tasks.fs", "NETSTANDARD2_1 || NET")) then
         ok <- false; eprintfn "  self-test FAIL: known-good pair not in allow-list"

@@ -96,9 +96,10 @@ for tfmProp in targets.EnumerateObject() do
                     let dllPaths = paths |> List.filter (fun p -> p.EndsWith("FSharp.Core.dll", StringComparison.OrdinalIgnoreCase))
                     match dllPaths with
                     | [] ->
-                        // A "_._" placeholder means no asset selected for this section — a resolution failure.
-                        if paths |> List.exists (fun p -> p.EndsWith "_._") then
-                            fail (sprintf "%s under '%s' resolved to a _._ placeholder (no %s asset)" section tfmProp.Name (if section = "compile" then "compile" else "runtime"))
+                        // No FSharp.Core.dll selected for this section — a resolution failure. A "_._"
+                        // placeholder is NuGet's explicit "no asset"; either way the section is unbound.
+                        let detail = if paths |> List.exists (fun p -> p.EndsWith "_._") then " (_._ placeholder)" else ""
+                        fail (sprintf "%s under '%s' selected no FSharp.Core.dll asset%s" section tfmProp.Name detail)
                     | ps ->
                         for p in ps do
                             if nsLibRegex.IsMatch p then fail (sprintf "%s resolved to a netstandard asset (%s) under '%s' — expected the net TFM asset" section p tfmProp.Name)

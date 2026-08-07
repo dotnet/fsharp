@@ -66,15 +66,15 @@ let entrySize (path: string) =
     zip.Entries |> Seq.tryFind (fun e -> e.FullName.Replace('\\','/').Equals(path, StringComparison.OrdinalIgnoreCase))
     |> Option.map (fun e -> e.Length) |> Option.defaultValue 0L
 
-// Required lib layout.
+// Required lib layout: each TFM must ship a non-degenerate dll + xml.
 let requiredLibs = [ "netstandard2.0"; "netstandard2.1"; pin ]
+let checkAsset (minSize: int64) (path: string) =
+    let size = entrySize path
+    if not (entryExists path) then fail (sprintf "missing %s" path)
+    elif size < minSize then fail (sprintf "%s is degenerate (%d bytes)" path size)
 for tfm in requiredLibs do
-    let dll = sprintf "lib/%s/FSharp.Core.dll" tfm
-    if not (entryExists dll) then fail (sprintf "missing %s" dll)
-    elif entrySize dll < 100000L then fail (sprintf "%s is degenerate (%d bytes)" dll (entrySize dll))
-    let xml = sprintf "lib/%s/FSharp.Core.xml" tfm
-    if not (entryExists xml) then fail (sprintf "missing %s" xml)
-    elif entrySize xml < 1000L then fail (sprintf "%s is degenerate (%d bytes)" xml (entrySize xml))
+    checkAsset 100000L (sprintf "lib/%s/FSharp.Core.dll" tfm)
+    checkAsset 1000L (sprintf "lib/%s/FSharp.Core.xml" tfm)
 
 // Satellite resources for the shipped net TFM.
 let satellitePattern = Regex(sprintf @"^lib/%s/[^/]+/FSharp\.Core\.resources\.dll$" (Regex.Escape pin))
