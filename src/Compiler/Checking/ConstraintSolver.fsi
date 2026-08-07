@@ -386,8 +386,11 @@ val CanonicalizePartialInferenceProblem: ConstraintSolverState -> DisplayEnv -> 
 
 val CanonicalizePartialInferenceProblemForExtensions: ConstraintSolverState -> DisplayEnv -> range -> Typars -> unit
 
-/// Create an ITraitContext from implementation file contents for use during optimization/codegen
-val CreateImplFileTraitContext: TcGlobals -> ModuleOrNamespaceContents list -> CcuThunk list -> TraitContext
+/// Create an ITraitContext from implementation file contents for use during optimization/codegen.
+/// earlierSignatures carries the signatures of preceding same-assembly files so their extension
+/// members are visible to trait-witness generation using the same val identity code generation binds.
+val CreateImplFileTraitContext:
+    TcGlobals -> ModuleOrNamespaceContents list -> ModuleOrNamespaceType list -> CcuThunk list -> TraitContext
 
 val SolveTyparsEqualTypes:
     g: TcGlobals -> css: ConstraintSolverState -> m: range -> typars: TypeInst -> tys: TypeInst -> unit

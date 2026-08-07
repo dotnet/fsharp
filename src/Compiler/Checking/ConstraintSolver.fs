@@ -4503,7 +4503,7 @@ let CanonicalizePartialInferenceProblemForExtensions css denv m tps =
     |> RaiseOperationResult
 
 /// Create an ITraitContext from the expression tree contents of implementation files.
-let CreateImplFileTraitContext (g: TcGlobals) (implFileContents: ModuleOrNamespaceContents list) (referencedCcus: CcuThunk list) : TraitContext =
+let CreateImplFileTraitContext (g: TcGlobals) (implFileContents: ModuleOrNamespaceContents list) (earlierSignatures: ModuleOrNamespaceType list) (referencedCcus: CcuThunk list) : TraitContext =
     let extensionVals =
         lazy
             (let result = HashMultiMap<Stamp, ValRef>(10, HashIdentity.Structural)
@@ -4524,6 +4524,12 @@ let CreateImplFileTraitContext (g: TcGlobals) (implFileContents: ModuleOrNamespa
                  for entity in mty.AllEntities do
                      if entity.IsModuleOrNamespace then
                          collectFromModuleOrNamespaceType entity.ModuleOrNamespaceType
+
+             // Earlier same-assembly files contribute their signature vals — the same val identity
+             // that later files see in scope during code generation — so trait witnesses reference
+             // the val IlxGen binds, mirroring the referenced-assembly path below.
+             for signature in earlierSignatures do
+                 collectFromModuleOrNamespaceType signature
 
              for ccu in referencedCcus do
                  try collectFromModuleOrNamespaceType ccu.Contents.ModuleOrNamespaceType
@@ -4554,6 +4560,9 @@ let CreateImplFileTraitContext (g: TcGlobals) (implFileContents: ModuleOrNamespa
                  for entity in mty.AllEntities do
                      if entity.IsModuleOrNamespace then
                          collectFromModuleOrNamespaceType entity.ModuleOrNamespaceType
+
+             for signature in earlierSignatures do
+                 collectFromModuleOrNamespaceType signature
 
              for ccu in referencedCcus do
                  try collectFromModuleOrNamespaceType ccu.Contents.ModuleOrNamespaceType

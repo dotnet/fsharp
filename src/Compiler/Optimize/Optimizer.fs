@@ -483,6 +483,10 @@ type IncrementalOptimizationEnv =
 
       /// Referenced CCUs collected via BindCcu, used for cross-assembly extension member resolution
       referencedCcus: CcuThunk list
+
+      /// Signatures of earlier same-assembly implementation files, so extension members they declare are
+      /// visible to trait-witness generation for later files (batch path only — see OptimizeImplFile).
+      earlierImplFileSignatures: ModuleOrNamespaceType list
     }
 
     static member Empty = 
@@ -495,7 +499,8 @@ type IncrementalOptimizationEnv =
           localExternalVals = LayeredMap.Empty 
           globalModuleInfos = LayeredMap.Empty 
           methEnv = { pipelineCount = 0 }
-          referencedCcus = [] }
+          referencedCcus = []
+          earlierImplFileSignatures = [] }
 
     override x.ToString() = "<IncrementalOptimizationEnv>"
 
@@ -4643,7 +4648,9 @@ and OptimizeImplFileInternal cenv env isIncrementalFragment hidden implFile =
 let OptimizeImplFile (settings, ccu, tcGlobals: TcGlobals, tcVal, importMap, optEnv, isIncrementalFragment, emitTailcalls, hidden, mimpls: CheckedImplFile) =
     let traitCtxt =
         if tcGlobals.langVersion.SupportsFeature LanguageFeature.ExtensionConstraintSolutions then
-            Some(ConstraintSolver.CreateImplFileTraitContext tcGlobals [mimpls.Contents] optEnv.referencedCcus :> ITraitContext)
+            // earlierImplFileSignatures fixes a cross-file extension operator falling back to FSharp.Core's
+            // dynamic operator (runtime NotSupportedException); see the field doc for why signatures are used.
+            Some(ConstraintSolver.CreateImplFileTraitContext tcGlobals [ mimpls.Contents ] optEnv.earlierImplFileSignatures optEnv.referencedCcus :> ITraitContext)
         else
             None
 
@@ -4664,13 +4671,22 @@ let OptimizeImplFile (settings, ccu, tcGlobals: TcGlobals, tcVal, importMap, opt
           signatureHidingInfo = SignatureHidingInfo.Empty
         }
 
-    let env, _, _, _ as results = OptimizeImplFileInternal cenv optEnv isIncrementalFragment hidden mimpls
+    let env, implFileR, minfo, hidden = OptimizeImplFileInternal cenv optEnv isIncrementalFragment hidden mimpls
+
+    // Accumulate only in the batch path (isIncrementalFragment = false), where IlxGen binds each file's
+    // signature vals across files — matching these signatures. The incremental (FSI) path binds contents
+    // vals instead, so accumulating signatures there would make witnesses reference vals IlxGen never bound.
+    let env =
+        if not isIncrementalFragment && tcGlobals.langVersion.SupportsFeature LanguageFeature.ExtensionConstraintSolutions then
+            { env with earlierImplFileSignatures = mimpls.Signature :: optEnv.earlierImplFileSignatures }
+        else
+            env
 
     let optimizeDuringCodeGen disableMethodSplitting expr =
         let env = { env with disableMethodSplitting = env.disableMethodSplitting || disableMethodSplitting }
         OptimizeExpr cenv env expr |> fst
 
-    results, optimizeDuringCodeGen
+    (env, implFileR, minfo, hidden), optimizeDuringCodeGen
 
 
 /// Pickle to stable format for cross-module optimization data

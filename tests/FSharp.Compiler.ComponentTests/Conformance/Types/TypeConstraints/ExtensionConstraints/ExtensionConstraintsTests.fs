@@ -238,9 +238,84 @@ let r = useHidden 5
         |> withErrorCode 1
         |> withDiagnosticMessageMatches "does not support the operator 'Hidden'"
 
+    // Shared fixtures for the cross-file extension-operator tests: an extension `( * )` on System.String
+    // declared in one file and consumed from another. Written once and reused by the plain and the
+    // signature-file variants, which exercise the exact same impl and consumer.
+    let private extStringMultiplyImpl = """
+module Lib.Ext
+type System.String with
+    static member ( * ) (s: string, n: int) = System.String.Concat(Array.create n s)
+"""
+
+    let private consumerUsesStar = """
+module Consumer
+open Lib.Ext
+let r : string = "ha" * 3
+if r <> "hahaha" then failwith (sprintf "Expected 'hahaha', got '%s'" r)
+"""
+
     [<Fact>]
     let ``Extrinsic extension captured at definition site resolves across modules`` () =
+        // Intra-assembly definition-site capture: an inline function carries the extensions in scope at its
+        // own definition to a caller that never opened them. Positive counterpart to the cross-assembly
+        // test above, which shows the capture stops at the assembly boundary.
         compileAndRunPreview "ScopeCapture.fs"
+
+    [<Fact>]
+    let ``Cross-file extension operator in same assembly emits the extension, not the dynamic fallback`` () =
+        // Regression: an extension operator in an earlier file was invisible to trait-witness generation for
+        // a later file of the same assembly, so the constraint fell back to FSharp.Core's dynamic operator
+        // and threw at runtime. The IL must not contain the dynamic-fallback marker.
+        FSharpWithFileName "Ext.fs" extStringMultiplyImpl
+        |> withAdditionalSourceFile (FsSourceWithFileName "Consumer.fs" consumerUsesStar)
+        |> asExe
+        |> withLangVersionPreview
+        |> withOptimize
+        |> compileAndRun
+        |> shouldSucceed
+        |> verifyILNotPresent [ "Dynamic invocation of op_Multiply" ]
+
+    [<Fact>]
+    let ``Cross-file inline SRTP function is solved by an extension operator in an earlier file`` () =
+        // Same two-file assembly, but the later file calls an inline SRTP function whose constraint the
+        // earlier extension solves — proving the witness inlines across files, not only within one.
+        FSharpWithFileName "Ext.fs" """
+module Lib.Ext
+type System.String with
+    static member ( * ) (s: string, n: int) = System.String.Concat(Array.create n s)
+let inline multiply (x: ^T) (n: int) : ^T = x * n
+        """
+        |> withAdditionalSourceFile (FsSourceWithFileName "Consumer.fs" """
+module Consumer
+open Lib.Ext
+let r : string = multiply "ha" 3
+if r <> "hahaha" then failwith (sprintf "Expected 'hahaha', got '%s'" r)
+        """)
+        |> asExe
+        |> withLangVersionPreview
+        |> withOptimize
+        |> compileAndRun
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Cross-file extension operator with an explicit signature file resolves through SRTP`` () =
+        // Sharpest signature/impl split: the extension is declared in an explicit .fsi, so its signature val
+        // identity differs most from the impl val. The witness must reference the signature val (what code
+        // generation binds across files), not the impl val.
+        Fsi """
+module Lib.Ext
+type System.String with
+    static member ( * ) : s: string * n: int -> string
+        """
+        |> withFileName "Ext.fsi"
+        |> withAdditionalSourceFiles
+            [ FsSourceWithFileName "Ext.fs" extStringMultiplyImpl
+              FsSourceWithFileName "Consumer.fs" consumerUsesStar ]
+        |> asExe
+        |> withLangVersionPreview
+        |> withOptimize
+        |> compileAndRun
+        |> shouldSucceed
 
     [<Fact>]
     let ``Extrinsic extension not captured without ExtensionConstraintSolutions`` () =
