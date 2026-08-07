@@ -372,11 +372,6 @@
         <target state="new">construct delegates that point directly at the target method, avoiding an intermediate closure</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureDiscardUseValue">
-        <source>discard pattern in use binding</source>
-        <target state="translated">vzor discard ve vazbě použití</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureDontWarnOnUppercaseIdentifiersInBindingPatterns">
         <source>Don't warn on uppercase identifiers in binding patterns</source>
         <target state="new">Don't warn on uppercase identifiers in binding patterns</target>
