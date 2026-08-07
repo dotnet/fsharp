@@ -277,6 +277,7 @@
     <Compile Include="EmittedIL\Inlining\Regression_TLR_RealsigPrivate.fs" />
     <Compile Include="EmittedIL\Inlining\Regression_RealsigAugmentationClosure.fs" />
     <Compile Include="EmittedIL\Inlining\Regression_Specialize_ConstraintVerification.fs" />
+    <Compile Include="EmittedIL\Inlining\Regression_RecursiveInlineMemberDependencies.fs" />
     <Compile Include="EmittedIL\Inlining\Inlining.fs" />
     <Compile Include="EmittedIL\ListExpressionStepping\ListExpressionStepping.fs" />
     <Compile Include="EmittedIL\MethodImplAttribute\MethodImplAttribute.fs" />
