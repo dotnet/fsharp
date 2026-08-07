@@ -28,32 +28,40 @@ let run (fileName: string) (args: string) (workDir: string) =
     p.WaitForExit()
     p.ExitCode, out, err
 
-// 1. Newest built FSharp.Core version. The shipped nupkg lands in different sub-lanes depending on
+// 1. Newest built FSharp.Core nupkg. The shipped package lands in different sub-lanes depending on
 // the pack (top-level Shipping locally, Dependency/Shipping on CI); search both and take the newest.
 let searchDirs =
     [ "artifacts/packages/Release/Shipping"
       "artifacts/packages/Release/Dependency/Shipping" ]
     |> List.map (fun d -> Path.Combine(repoRoot, d))
-let version =
+let nupkg =
     searchDirs
     |> List.collect (fun d -> if Directory.Exists d then Directory.GetFiles(d, "FSharp.Core.*.nupkg") |> List.ofArray else [])
     |> List.filter (fun f -> not (f.EndsWith ".symbols.nupkg"))
     |> List.sortByDescending File.GetLastWriteTimeUtc
     |> List.tryHead
-    |> Option.map (fun f -> Regex.Replace(Path.GetFileName f, @"^FSharp\.Core\.(.*)\.nupkg$", "$1"))
 
-match version with
+match nupkg with
 | None ->
     eprintfn "e2e-2: no FSharp.Core.*.nupkg under: %s — pack first." (String.Join("; ", searchDirs))
     exit 2
-| Some ver ->
+| Some nupkgPath ->
 
+let ver = Regex.Replace(Path.GetFileName nupkgPath, @"^FSharp\.Core\.(.*)\.nupkg$", "$1")
 printfn "e2e-2: consumer will pin FSharp.Core %s" ver
 
 // 2. Clean the consumer obj/bin and only the cached FSharp.Core for this version.
 for sub in [ "obj"; "bin" ] do
     let d = Path.Combine(scriptDir, sub)
     if Directory.Exists d then Directory.Delete(d, true)
+
+// Stage the built nupkg into a clean, flat local feed the consumer's NuGet.Config points at. A
+// depth-0 flat folder is resolved deterministically everywhere, unlike pointing NuGet at the
+// packages root (its folder-source recursion does not reliably reach the Dependency sub-lane on CI).
+let feedDir = Path.Combine(scriptDir, "obj", "localfeed")
+Directory.CreateDirectory feedDir |> ignore
+File.Copy(nupkgPath, Path.Combine(feedDir, Path.GetFileName nupkgPath), true)
+
 let nugetPackages =
     match Environment.GetEnvironmentVariable "NUGET_PACKAGES" with
     | null | "" -> Path.Combine(Environment.GetFolderPath Environment.SpecialFolder.UserProfile, ".nuget", "packages")
