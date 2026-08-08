@@ -255,12 +255,18 @@ type LanguageVersion(versionText, ?disabledFeaturesArray: LanguageFeature array)
                 LanguageFeature.ExceptionFieldSerializationSupport, languageVersion110
                 LanguageFeature.NotNullIfNotNull, languageVersion110
                 LanguageFeature.ImprovedImpliedArgumentNamesPartTwo, languageVersion110
-                LanguageFeature.RuntimeAsync, previewVersion
+                LanguageFeature.ImplicitDIMCoverage, languageVersion110
+                LanguageFeature.MethodOverloadsCache, languageVersion110 // Performance optimization for overload resolution
+                LanguageFeature.ErrorOnMissingSignatureAttribute, languageVersion110 // Turn FS3888 from warning into error
+                LanguageFeature.DirectDelegateConstruction, languageVersion110
+                LanguageFeature.AccessProtectedBaseFieldFromClosure, languageVersion110 // #5302: read a protected base field from a closure
+                LanguageFeature.RecordSpreads, languageVersion110
 
                 // Difference between languageVersion110 and preview - 11.0 gets turned on automatically by picking a preview .NET 11 SDK
                 // previewVersion is only when "preview" is specified explicitly in project files  and users also need a preview SDK
 
                 // F# preview
+                LanguageFeature.RuntimeAsync, previewVersion
                 LanguageFeature.RecordConstructorSyntax, previewVersion // Allow constructing a record via its all-fields constructor, e.g. MyRecord(a, b)
 
                 // Unfinished features that still need work before they can be assigned a release language version.
