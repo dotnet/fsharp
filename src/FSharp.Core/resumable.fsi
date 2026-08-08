@@ -194,6 +194,11 @@ module StateMachineHelpers =
         afterCode: AfterCode<'Data, 'Result> 
             -> 'Result
 
+    /// Marks an expression result for lowering as a .NET runtime-async method.
+    /// This function is compiler-recognised and must not be called directly.
+    [<MethodImpl(MethodImplOptions.NoInlining)>]
+    val __runtimeAsync<'T> : 'T -> System.Threading.Tasks.Task<'T>
+
 /// <summary>Adding this attribute to the method adjusts the processing of some generic methods
 /// during overload resolution.</summary>
 ///

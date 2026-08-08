@@ -19,6 +19,7 @@ type LanguageFeature =
     | FixedIndexSlice3d4d
     | AndBang
     | ResumableStateMachines
+    | RuntimeAsync
     | NullableOptionalInterop
     | DefaultInterfaceMemberConsumption
     | WitnessPassing
