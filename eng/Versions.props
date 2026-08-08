@@ -117,9 +117,10 @@
     <SystemReflectionEmitVersion>4.7.0</SystemReflectionEmitVersion>
 
     <!-- Shared version groups referenced by multiple PackageVersion entries in eng/Packages.props. -->
-    <!-- Shared pin for the editor packages in eng/Packages.props; must match 18.9.123 (resolved transitively
-         via Microsoft.VisualStudio.SDK 18.9.496). Full NU1109 rationale lives there, next to the 18.9.x pins. -->
-    <VisualStudioEditorPackagesVersion>18.9.123</VisualStudioEditorPackagesVersion>
+    <!-- Shared pin for the editor packages in eng/Packages.props; must match 18.9.179 (resolved transitively
+         via Microsoft.CodeAnalysis.EditorFeatures / .LanguageServices.ExternalAccess 5.11.0). Full NU1109
+         rationale lives there, next to the 18.9.x pins. -->
+    <VisualStudioEditorPackagesVersion>18.9.179</VisualStudioEditorPackagesVersion>
     <MicrosoftVisualStudioExtensibilityTestingVersion>0.1.800-beta</MicrosoftVisualStudioExtensibilityTestingVersion>
 
     <!-- Read by name by the Arcade SDK (tools/VisualStudio.targets injects it into VSIX projects), so it must
