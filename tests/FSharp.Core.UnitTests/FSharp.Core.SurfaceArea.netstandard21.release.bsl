@@ -965,6 +965,7 @@ Microsoft.FSharp.Core.CompilerServices.SetStateMachineMethodImpl`1[TData]: Void 
 Microsoft.FSharp.Core.CompilerServices.StateMachineHelpers: Boolean __useResumableCode[T]()
 Microsoft.FSharp.Core.CompilerServices.StateMachineHelpers: Microsoft.FSharp.Core.FSharpOption`1[System.Int32] __resumableEntry()
 Microsoft.FSharp.Core.CompilerServices.StateMachineHelpers: T __resumeAt[T](Int32)
+Microsoft.FSharp.Core.CompilerServices.StateMachineHelpers: System.Threading.Tasks.Task`1[T] __runtimeAsync[T](T)
 Microsoft.FSharp.Core.CompilerServices.StateMachineHelpers: TResult __stateMachine[TData,TResult](Microsoft.FSharp.Core.CompilerServices.MoveNextMethodImpl`1[TData], Microsoft.FSharp.Core.CompilerServices.SetStateMachineMethodImpl`1[TData], Microsoft.FSharp.Core.CompilerServices.AfterCode`2[TData,TResult])
 Microsoft.FSharp.Core.CompilerServices.StateMachineHelpers: Void __debugPoint(System.String)
 Microsoft.FSharp.Core.CompilerServices.TypeProviderAssemblyAttribute: System.String AssemblyName

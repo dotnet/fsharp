@@ -2496,6 +2496,13 @@ let rec OptimizeExpr cenv (env: IncrementalOptimizationEnv) expr =
 
     | Expr.App (f, fty, tyargs, argsl, m) -> 
         match expr with
+        | Expr.App(Expr.Val(vref, flags, _), fty, [ _ ], [ body ], _)
+            when valRefEq g vref g.cgh__runtimeAsync_vref ->
+            let bodyR, bodyInfo = OptimizeExpr cenv env body
+            Expr.App(Expr.Val(vref, flags, m), fty, tyargs, [ bodyR ], m),
+            { bodyInfo with
+                HasEffect = true
+                Info = UnknownValue }
         | DelegateInvokeExpr g (delInvokeRef, delInvokeTy, tyargs, delExpr, delInvokeArg, m) ->
             OptimizeFSharpDelegateInvoke cenv env (delInvokeRef, delExpr, delInvokeTy, tyargs, delInvokeArg, m) 
         | _ -> 
@@ -4383,8 +4390,8 @@ and OptimizeBinding cenv isRec env (TBind(vref, expr, spBind)) =
             let env = if vref.IsCompilerGenerated && Option.isSome env.latestBoundId then env else {env with latestBoundId=Some vref.Id} 
             let cenv = if vref.InlineInfo.ShouldInline then { cenv with optimizing=false} else cenv 
             let arityInfo = InferValReprInfoOfBinding g AllowTypeDirectedDetupling.No vref expr
-            let exprOptimized, einfo = OptimizeLambdas (Some vref) cenv env arityInfo expr vref.Type 
-            let size = localVarSize 
+            let exprOptimized, einfo = OptimizeLambdas (Some vref) cenv env arityInfo expr vref.Type
+            let size = localVarSize
             exprOptimized, {einfo with FunctionSize=einfo.FunctionSize+size; TotalSize = einfo.TotalSize+size} 
 
         // Trim out optimization information for large lambdas we'll never inline

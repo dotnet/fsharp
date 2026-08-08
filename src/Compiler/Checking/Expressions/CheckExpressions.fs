@@ -8687,8 +8687,18 @@ and Propagate (cenv: cenv) (overallTy: OverallTy) (env: TcEnv) tpenv (expr: Appl
 
         | DelayedApp (atomicFlag, isSugar, synLeftExprOpt, synArg, mExprAndArg) :: delayedList' ->
             let denv = env.DisplayEnv
-            match UnifyFunctionTypeUndoIfFailed cenv denv mExpr exprTy with
-            | ValueSome (_, resultTy) ->
+
+            let isRuntimeAsync =
+                match expr.Expr with
+                | Expr.Val(vref, _, _)
+                | Expr.App(Expr.Val(vref, _, _), _, [ _ ], [], _)
+                    when valRefEq g vref g.cgh__runtimeAsync_vref -> true
+                | _ -> false
+
+            match isRuntimeAsync, UnifyFunctionTypeUndoIfFailed cenv denv mExpr exprTy with
+            | true, _ ->
+                ()
+            | false, ValueSome (_, resultTy) ->
 
                 // We add tag parameter to the return type for "&x" and 'NativePtr.toByRef'
                 // See RFC FS-1053.md
@@ -8701,7 +8711,7 @@ and Propagate (cenv: cenv) (overallTy: OverallTy) (env: TcEnv) tpenv (expr: Appl
 
                 propagate isAddrOf delayedList' mExprAndArg resultTy
 
-            | _ ->
+            | false, _ ->
                 let mArg = synArg.Range
                 match synArg with
                 // async { ... }
@@ -8997,10 +9007,57 @@ and TcApplicationThen (cenv: cenv) (overallTy: OverallTy) env tpenv mExprAndArg 
         else
             None
 
+    let tryTcRuntimeAsyncApplication () =
+        let intrinsic =
+            match leftExpr with
+            | ApplicableExpr(expr=Expr.Val (vref, flags, m))
+                    when valRefEq g vref g.cgh__runtimeAsync_vref ->
+                    Some(vref, flags, m)
+            | ApplicableExpr(expr=Expr.App (Expr.Val (vref, flags, m), _, [ _ ], [], _))
+                    when valRefEq g vref g.cgh__runtimeAsync_vref ->
+                    Some(vref, flags, m)
+            | _ ->
+                    None
+
+        match intrinsic with
+        | None ->
+            None
+        | Some(vref, flags, m) ->
+            checkLanguageFeatureAndRecover g.langVersion LanguageFeature.RuntimeAsync m
+
+            let _, carrierTy = stripFunTy g exprTy
+
+            // The intrinsic's signature is 'T -> Task<'T>, so the carrier is always Task<'T>.
+            let bodyResultTy =
+                match stripTyEqns g carrierTy with
+                | AppTy g (_, [ resultTy ]) -> resultTy
+                | _ -> NewInferenceType g
+
+            checkLanguageFeatureRuntimeAndRecover cenv.infoReader LanguageFeature.RuntimeAsync m
+
+            let arg, tpenv = TcExprFlex2 cenv bodyResultTy env false tpenv synArg
+            let marker =
+                Expr.App(Expr.Val(vref, flags, m), vref.Type, [ bodyResultTy ], [ arg ], mExprAndArg)
+
+            Some(
+                TcDelayed
+                    cenv
+                    overallTy
+                    env
+                    tpenv
+                    mExprAndArg
+                    (MakeApplicableExprNoFlex cenv marker)
+                    carrierTy
+                    atomicFlag
+                    delayed
+            )
+
     // If the type of 'synArg' unifies as a function type, then this is a function application, otherwise
     // it is an error or a computation expression or indexer or delegate invoke
-    match UnifyFunctionTypeUndoIfFailed cenv denv mLeftExpr exprTy with
-    | ValueSome (domainTy, resultTy) ->
+    match tryTcRuntimeAsyncApplication (), UnifyFunctionTypeUndoIfFailed cenv denv mLeftExpr exprTy with
+    | Some result, _ ->
+        result
+    | None, ValueSome (domainTy, resultTy) ->
 
         // atomicLeftExpr[idx] unifying as application gives a warning
         if not isSugar then
@@ -9066,7 +9123,7 @@ and TcApplicationThen (cenv: cenv) (overallTy: OverallTy) env tpenv mExprAndArg 
             let exprAndArg, resultTy = buildApp cenv leftExpr resultTy arg mExprAndArg
             TcDelayed cenv overallTy env tpenv mExprAndArg exprAndArg resultTy atomicFlag delayed
 
-    | ValueNone ->
+    | None, ValueNone ->
         // Type-directed invocables
 
         match synArg with

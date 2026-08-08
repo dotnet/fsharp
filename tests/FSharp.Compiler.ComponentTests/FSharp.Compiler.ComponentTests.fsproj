@@ -17,6 +17,7 @@
     <DefineConstants Condition="'$(Configuration)'=='debug'">$(DefineConstants);DEBUG</DefineConstants>
     <!-- allow testing of static methods in interfaces on .NET 6  -->
     <EnablePreviewFeatures>true</EnablePreviewFeatures>
+    <Features>runtime-async=on</Features>
     <EnableUnsafeBinaryFormatterSerialization>true</EnableUnsafeBinaryFormatterSerialization>
 </PropertyGroup>
 
@@ -385,6 +386,7 @@
     <Compile Include="Language\InterfaceTests.fs" />
     <Compile Include="Language\CopyAndUpdateTests.fs" />
     <Compile Include="Language\ConstraintIntersectionTests.fs" />
+    <Compile Include="Language\RuntimeAsyncTests.fs" />
     <Compile Include="Language\BooleanReturningAndReturnTypeDirectedPartialActivePatternTests.fs" />
     <Compile Include="Language\Nullness\NullableLibraryConstructsTests.fs" />
     <Compile Include="Language\Nullness\NullableCsharpImportTests.fs" />
