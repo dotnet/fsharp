@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
   <file datatype="xml" source-language="en" target-language="ja" original="../FSComp.resx">
     <body>
@@ -557,11 +557,6 @@
         <target state="new">nullness checking</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureOpenTypeDeclaration">
-        <source>open type declaration</source>
-        <target state="translated">オープン型宣言</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureOverloadsForCustomOperations">
         <source>overloads for custom operations</source>
         <target state="translated">カスタム操作のオーバーロード</target>
@@ -605,6 +600,11 @@
       <trans-unit id="featureReallyLongList">
         <source>list literals of any size</source>
         <target state="translated">任意のサイズのリテラルを一覧表示する</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureRecordConstructorSyntax">
+        <source>Constructing a record via its all-fields constructor</source>
+        <target state="new">Constructing a record via its all-fields constructor</target>
         <note />
       </trans-unit>
       <trans-unit id="featureRecordSpreads">
@@ -680,11 +680,6 @@
       <trans-unit id="featureStringInterpolation">
         <source>string interpolation</source>
         <target state="translated">文字列の補間</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="featureStructActivePattern">
-        <source>struct representation for active patterns</source>
-        <target state="translated">アクティブなパターンの構造体表現</target>
         <note />
       </trans-unit>
       <trans-unit id="featureSupportValueOptionsAsOptionalParameters">
@@ -2160,6 +2155,16 @@
       <trans-unit id="xmlDocDuplicateParameter">
         <source>This XML comment is invalid: multiple documentation entries for parameter '{0}'</source>
         <target state="translated">この XML コメントは無効です: パラメーター '{0}' に複数のドキュメント エントリがあります</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="xmlDocIncludeError">
+        <source>XML documentation include error: {0}</source>
+        <target state="new">XML documentation include error: {0}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="xmlDocIncludeError2">
+        <source>XML documentation include error: Unable to include XML fragment '{0}' of file '{1}' -- {2}</source>
+        <target state="new">XML documentation include error: Unable to include XML fragment '{0}' of file '{1}' -- {2}</target>
         <note />
       </trans-unit>
       <trans-unit id="xmlDocInvalidParameterName">
