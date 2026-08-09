@@ -1599,7 +1599,7 @@ namespace Microsoft.FSharp.Control
         /// <example id="async-result-1">
         /// <code lang="fsharp">
         /// let computation = Async.result 42
-        /// computation |> Async.RunSynchronously // evaluates to 42
+        /// computation |> Async.RunSynchronouslyImmediate // evaluates to 42
         /// </code>
         /// </example>
         [<CompiledName("Result")>]
@@ -1615,7 +1615,7 @@ namespace Microsoft.FSharp.Control
         /// <example id="async-map-1">
         /// <code lang="fsharp">
         /// let computation = Async.result 21 |> Async.map (fun x -> x * 2)
-        /// computation |> Async.RunSynchronously // evaluates to 42
+        /// computation |> Async.RunSynchronouslyImmediate // evaluates to 42
         /// </code>
         /// </example>
         [<CompiledName("Map")>]
@@ -1631,7 +1631,7 @@ namespace Microsoft.FSharp.Control
         /// <example id="async-bind-1">
         /// <code lang="fsharp">
         /// let computation = Async.result 21 |> Async.bind (fun x -> Async.result (x * 2))
-        /// computation |> Async.RunSynchronously // evaluates to 42
+        /// computation |> Async.RunSynchronouslyImmediate // evaluates to 42
         /// </code>
         /// </example>
         [<CompiledName("Bind")>]
@@ -1645,49 +1645,58 @@ namespace Microsoft.FSharp.Control
         ///
         /// <example id="async-ignore-1">
         /// <code lang="fsharp">
-        /// let readFile filename numBytes =
+        /// let readFile filename numBytes: Async&lt;unit&gt; =
         ///     async {
         ///         use file = System.IO.File.OpenRead(filename)
         ///         do! file.AsyncRead(numBytes) |> Async.ignore&lt;byte[]&gt;
         ///     }
         /// </code>
         /// </example>
+        /// <example id="async-ignore-2">
+        /// <code lang="fsharp">
+        /// let computation : Async&lt;unit&gt; = Async.result 42 |> Async.ignore&lt;int&gt;
+        /// computation |> Async.RunSynchronously // evaluates to ()
+        /// </code>
+        /// </example>
         [<CompiledName("Ignore")>]
         [<RequiresExplicitTypeArguments>]
         val inline ignore<'T> : computation: Async<'T> -> Async<unit>
 
-        /// <summary>Creates an asynchronous computation that runs the given computation.
-        /// If it raises an exception, the handler function is called with the exception and its result is returned.</summary>
-        ///
-        /// <param name="handler">A function to handle exceptions, returning a recovery value.</param>
+        /// <summary>Creates an asynchronous computation that yields the original result on success, or the result of
+        /// <c>handler exn</c> for non-cancellation exceptions.</summary>
+        /// <remarks><c>OperationCanceledException</c> and derived types such as <c>TaskCanceledException</c> propagate unchanged,
+        /// and therefore are never passed to <c>handler</c>.
+        /// </remarks>
+        /// <param name="handler">A function to handle (non-cancellation) exceptions, yielding a recovery value based on the exception.
+        /// Any exception thrown by <c>handler</c> will propagate.</param>
         /// <param name="computation">The input computation.</param>
-        ///
-        /// <returns>An asynchronous computation that returns the result of <c>computation</c>, or the result of <c>handler</c> if an exception is raised.</returns>
-        ///
+        /// <returns>An asynchronous computation that yields the result of <c>computation</c> on success,
+        /// or <c>handler exn</c> on failure.
+        /// Propagates the underlying cancellation exception where cancellation occurs.</returns>
         /// <example id="async-catchwith-1">
         /// <code lang="fsharp">
         /// let safeDiv x y =
         ///     async { return x / y }
         ///     |> Async.catchWith (fun _ -> 0)
-        /// safeDiv 10 0 |> Async.RunSynchronously // evaluates to 0
+        /// safeDiv 10 0 |> Async.RunSynchronouslyImmediate // evaluates to 0
         /// </code>
         /// </example>
         [<CompiledName("CatchWith")>]
         val catchWith: handler: (exn -> 'T) -> computation: Async<'T> -> Async<'T>
 
-        /// <summary>Creates an asynchronous computation that runs the given computation and returns its result as <c>Ok</c>,
-        /// or returns <c>Error</c> with the exception if one is raised.</summary>
-        ///
+        /// <summary>Creates an asynchronous computation that reifies the outcome of the given <c>computation</c> as a <c>Result</c>:
+        /// <c>Ok</c> on success, <c>Error</c> on failure, so exceptions become values. Cancellation still propagates.</summary>
+        /// <remarks><c>OperationCanceledException</c> and derived types such as <c>TaskCanceledException</c> propagate unchanged.</remarks>
         /// <param name="computation">The input computation.</param>
-        ///
-        /// <returns>An asynchronous computation that returns <c>Ok</c> of the result or <c>Error</c> of the exception.</returns>
-        ///
+        /// <returns>An asynchronous computation that yields a <c>Result</c>: <c>Ok</c> with the outcome on success,
+        /// or <c>Error</c> with the exception on failure.
+        /// Propagates the underlying cancellation exception when cancellation occurs.</returns>
         /// <example id="async-catch-1">
         /// <code lang="fsharp">
         /// let safeDiv x y =
         ///     async { return x / y } |> Async.catch
-        /// safeDiv 10 2 |> Async.RunSynchronously // evaluates to Ok 5
-        /// safeDiv 10 0 |> Async.RunSynchronously // evaluates to Error (DivideByZeroException ...)
+        /// safeDiv 10 2 |> Async.RunSynchronouslyImmediate // evaluates to Ok 5
+        /// safeDiv 10 0 |> Async.RunSynchronouslyImmediate // evaluates to Error (DivideByZeroException ...)
         /// </code>
         /// </example>
         [<CompiledName("Catch")>]
@@ -1697,7 +1706,7 @@ namespace Microsoft.FSharp.Control
         ///
         /// <example id="async-empty-1">
         /// <code lang="fsharp">
-        /// Async.empty |> Async.RunSynchronously // evaluates to ()
+        /// Async.empty |> Async.RunSynchronouslyImmediate // evaluates to ()
         /// </code>
         /// </example>
         [<CompiledName("Empty")>]
