@@ -408,7 +408,7 @@ let ArbitraryMethodInfoOfPropertyInfo (pi: Tainted<ProvidedPropertyInfo>) m =
     elif pi.PUntaint((fun pi -> pi.CanWrite), m) then
         GetAndSanityCheckProviderMethod m pi (fun pi -> pi.GetSetMethod()) FSComp.SR.etPropertyCanWriteButHasNoSetter
     else
-        error(Error(FSComp.SR.etPropertyNeedsCanWriteOrCanRead(RichText.mkMember (pi.PUntaint((fun mi -> mi.Name), m)), RichText.mkQualifiedTypeName (pi.PUntaint((fun mi -> (nonNull<ProvidedType> mi.DeclaringType).Name), m))), m))
+        error(Error(FSComp.SR.etPropertyNeedsCanWriteOrCanRead(RichText.mkMember (pi.PUntaint((fun mi -> mi.Name), m)), RichText.ofQualifiedTypeName (pi.PUntaint((fun mi -> (nonNull<ProvidedType> mi.DeclaringType).Name), m))), m))
 
 #endif
 

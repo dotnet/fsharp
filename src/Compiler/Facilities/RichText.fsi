@@ -95,10 +95,10 @@ module internal RichText =
     /// A dotted name, classifying the namespace and the dots, and the name itself with the given
     /// constructor. For names that arrive from metadata, reflection or a type provider as one string;
     /// not for an assembly-qualified name, since an assembly version has dots in it too.
-    val mkQualifiedName: leafOfName: (string -> RichText) -> name: string -> RichText
+    val ofQualifiedName: leafOfName: (string -> RichText) -> name: string -> RichText
 
     /// A dotted type name whose kind is not known, e.g. because the type could not be dereferenced
-    val mkQualifiedTypeName: name: string -> RichText
+    val ofQualifiedTypeName: name: string -> RichText
 
 /// Splices classified arguments into the holes of a message that comes from a resource file.
 ///

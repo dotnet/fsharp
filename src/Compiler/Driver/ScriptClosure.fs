@@ -362,7 +362,7 @@ module ScriptPreprocessClosure =
                                 reportError m
                             )
 
-                        errorR (Error((number, RichText.mkText message), m))
+                        errorR (Error((number, message), m))
 
                     | NonNull dependencyManager ->
                         yield! resolvePackageManagerLines m packageManagerLines scriptName packageManagerKey dependencyManager

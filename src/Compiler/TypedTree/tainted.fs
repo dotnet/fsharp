@@ -68,7 +68,7 @@ type internal TypeProviderError
             let _,msgWithPrefix =
                 FSComp.SR.etProviderErrorWithContext(
                     RichText.mkText tpDesignation,
-                    RichText.mkQualifiedTypeName tc,
+                    RichText.ofQualifiedTypeName tc,
                     RichText.mkMethod mc,
                     this.RichMessage)
             msgWithPrefix

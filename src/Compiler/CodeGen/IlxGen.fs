@@ -10764,7 +10764,7 @@ and GenAttribArg amap (g: TcGlobals) eenv x (ilArgTy: ILType) =
                     else
                         string ilElemTy
 
-                error (Error(FSComp.SR.ilCustomAttrInvalidArrayElemType (RichText.mkQualifiedTypeName elemTypeName), m))
+                error (Error(FSComp.SR.ilCustomAttrInvalidArrayElemType (RichText.ofQualifiedTypeName elemTypeName), m))
         else
             ILAttribElem.Array(ilElemTy, List.map (fun arg -> GenAttribArg amap g eenv arg ilElemTy) args)
 
@@ -12398,7 +12398,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) : ILTypeRef option 
                             errorR (
                                 Error(
                                     FSComp.SR.ilFieldDoesNotHaveValidOffsetForStructureLayout (
-                                        RichText.mkQualifiedTypeName tdef.Name,
+                                        RichText.ofQualifiedTypeName tdef.Name,
                                         RichText.mkField (fdef.Name.Replace("@", ""))
                                     ),
                                     (trimRangeToLine m)

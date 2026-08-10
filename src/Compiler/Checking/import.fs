@@ -87,7 +87,7 @@ let CanImportILScopeRef (env: ImportMap) m scoref =
 /// the name itself is classified is up to the caller, since the kind of type it is only becomes known
 /// once the type has been dereferenced.
 let private richTextOfQualifiedTypeName (path: string[]) leafOfName typeName =
-    let name = RichText.mkQualifiedName leafOfName typeName
+    let name = RichText.ofQualifiedName leafOfName typeName
 
     if Array.isEmpty path then
         name
@@ -117,7 +117,7 @@ let ImportTypeRefData (env: ImportMap) m (scoref, path, typeName) =
         match ccu with
         | ResolvedCcu ccu->ccu
         | UnresolvedCcu ccuName ->
-            error (Error(FSComp.SR.impTypeRequiredUnavailable(RichText.mkQualifiedTypeName typeName, RichText.mkText ccuName), m))
+            error (Error(FSComp.SR.impTypeRequiredUnavailable(RichText.ofQualifiedTypeName typeName, RichText.mkText ccuName), m))
     let fakeTyconRef = mkNonLocalTyconRef (mkNonLocalEntityRef ccu path) typeName
     let tycon =
         try
@@ -566,7 +566,7 @@ let ImportProvidedMethodBaseAsILMethodRef (env: ImportMap) (m: range) (mbase: Ta
                 | None ->
                     let methodName = minfo.PUntaint((fun minfo -> minfo.Name), m)
                     let typeName = declaringGenericTypeDefn.PUntaint((fun declaringGenericTypeDefn -> string declaringGenericTypeDefn.FullName), m)
-                    error(Error(FSComp.SR.etIncorrectProvidedMethod(RichText.mkText (DisplayNameOfTypeProvider(minfo.TypeProvider, m)), RichText.mkMethod methodName, metadataToken, RichText.mkQualifiedTypeName typeName), m))
+                    error(Error(FSComp.SR.etIncorrectProvidedMethod(RichText.mkText (DisplayNameOfTypeProvider(minfo.TypeProvider, m)), RichText.mkMethod methodName, metadataToken, RichText.ofQualifiedTypeName typeName), m))
          | _ ->
          match mbase.OfType<ProvidedConstructorInfo>() with
          | Some cinfo when cinfo.PUntaint((fun x -> (nonNull<ProvidedType> x.DeclaringType).IsGenericType), m) ->
@@ -598,7 +598,7 @@ let ImportProvidedMethodBaseAsILMethodRef (env: ImportMap) (m: range) (mbase: Ta
                 | Some found -> found.Coerce(m)
                 | None ->
                     let typeName = declaringGenericTypeDefn.PUntaint((fun x -> string x.FullName), m)
-                    error(Error(FSComp.SR.etIncorrectProvidedConstructor(RichText.mkText (DisplayNameOfTypeProvider(cinfo.TypeProvider, m)), RichText.mkQualifiedTypeName typeName), m))
+                    error(Error(FSComp.SR.etIncorrectProvidedConstructor(RichText.mkText (DisplayNameOfTypeProvider(cinfo.TypeProvider, m)), RichText.ofQualifiedTypeName typeName), m))
          | _ -> mbase
 
      let retTy =
@@ -790,7 +790,7 @@ let ImportILAssemblyExportedType amap m auxModLoader (scoref: ILScopeRef) (expor
                      with :? KeyNotFoundException -> None)
                 with
                 | None ->
-                    error(Error(FSComp.SR.impReferenceToDllRequiredByAssembly(RichText.mkText exportedType.ScopeRef.QualifiedName, RichText.mkText scoref.QualifiedName, RichText.mkUnknownType exportedType.Name), m))
+                    error(Error(FSComp.SR.impReferenceToDllRequiredByAssembly(RichText.mkText exportedType.ScopeRef.QualifiedName, RichText.mkText scoref.QualifiedName, RichText.ofQualifiedTypeName exportedType.Name), m))
                 | Some preTypeDef ->
                     scoref, preTypeDef
             )

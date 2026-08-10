@@ -5114,10 +5114,10 @@ and CrackStaticConstantArgs (cenv: cenv) env tpenv (staticParameters: Tainted<Pr
                 | [] ->
                     if sp.PUntaint((fun sp -> sp.IsOptional), m) then
                          match sp.PUntaint((fun sp -> sp.RawDefaultValue), m) with
-                         | null -> error (Error(FSComp.SR.etStaticParameterRequiresAValue (RichText.mkParameter spName, RichText.mkQualifiedTypeName containerName, RichText.mkQualifiedTypeName containerName, RichText.mkParameter spName), m))
+                         | null -> error (Error(FSComp.SR.etStaticParameterRequiresAValue (RichText.mkParameter spName, RichText.ofQualifiedTypeName containerName, RichText.ofQualifiedTypeName containerName, RichText.mkParameter spName), m))
                          | v -> v
                     else
-                      error (Error(FSComp.SR.etStaticParameterRequiresAValue (RichText.mkParameter spName, RichText.mkQualifiedTypeName containerName, RichText.mkQualifiedTypeName containerName, RichText.mkParameter spName), m))
+                      error (Error(FSComp.SR.etStaticParameterRequiresAValue (RichText.mkParameter spName, RichText.ofQualifiedTypeName containerName, RichText.ofQualifiedTypeName containerName, RichText.mkParameter spName), m))
                  | ps ->
                       error (Error(FSComp.SR.etMultipleStaticParameterWithName (RichText.mkParameter spName), (fst (List.last ps)).idRange)))
 

@@ -326,7 +326,7 @@ type ILMultiInMemoryAssemblyEmitEnv
         asmName
 
     /// Convert an ILAssemblyRef to a dynamic System.Type given the dynamic emit context
-    let convResolveAssemblyRef (asmref: ILAssemblyRef) qualifiedName =
+    let convResolveAssemblyRef (asmref: ILAssemblyRef) (tref: ILTypeRef) =
         let assembly =
             match resolveAssemblyRef asmref with
             | Some(Choice1Of2 path) ->
@@ -339,7 +339,7 @@ type ILMultiInMemoryAssemblyEmitEnv
                 let asmName = convAssemblyRef asmref
                 FileSystem.AssemblyLoader.AssemblyLoad asmName
 
-        let typT = assembly.GetType qualifiedName
+        let typT = assembly.GetType tref.BasicQualifiedName
 
         match typT with
         | null ->
@@ -347,7 +347,7 @@ type ILMultiInMemoryAssemblyEmitEnv
                 Error(
                     FSComp.SR.itemNotFoundDuringDynamicCodeGen (
                         RichText.mkText "type",
-                        RichText.mkQualifiedTypeName qualifiedName,
+                        richTextOfILTypeRef tref,
                         RichText.mkText asmref.QualifiedName
                     ),
                     range0
@@ -357,14 +357,11 @@ type ILMultiInMemoryAssemblyEmitEnv
 
     /// Convert an Abstract IL type reference to System.Type
     let convTypeRefAux (tref: ILTypeRef) =
-        let qualifiedName =
-            (String.concat "+" (tref.Enclosing @ [ tref.Name ])).Replace(",", @"\,")
-
         match tref.Scope with
-        | ILScopeRef.Assembly asmref -> convResolveAssemblyRef asmref qualifiedName
+        | ILScopeRef.Assembly asmref -> convResolveAssemblyRef asmref tref
         | ILScopeRef.Module _
         | ILScopeRef.Local ->
-            let typT = Type.GetType qualifiedName
+            let typT = Type.GetType tref.BasicQualifiedName
 
             match typT with
             | null ->
@@ -372,14 +369,14 @@ type ILMultiInMemoryAssemblyEmitEnv
                     Error(
                         FSComp.SR.itemNotFoundDuringDynamicCodeGen (
                             RichText.mkText "type",
-                            RichText.mkQualifiedTypeName qualifiedName,
+                            richTextOfILTypeRef tref,
                             RichText.mkText "<emitted>"
                         ),
                         range0
                     )
                 )
             | res -> res
-        | ILScopeRef.PrimaryAssembly -> convResolveAssemblyRef ilg.primaryAssemblyRef qualifiedName
+        | ILScopeRef.PrimaryAssembly -> convResolveAssemblyRef ilg.primaryAssemblyRef tref
 
     /// Convert an ILTypeRef to a dynamic System.Type given the dynamic emit context
     let convTypeRef (tref: ILTypeRef) =
@@ -408,7 +405,7 @@ type ILMultiInMemoryAssemblyEmitEnv
                 Error(
                     FSComp.SR.itemNotFoundDuringDynamicCodeGen (
                         RichText.mkText "type",
-                        RichText.mkUnknownType tspec.TypeRef.QualifiedName,
+                        richTextOfILTypeRef tspec.TypeRef,
                         RichText.mkText tspec.Scope.QualifiedName
                     ),
                     range0
@@ -2840,7 +2837,7 @@ type internal FsiDynamicCompiler
                                 reportError m
                             )
 
-                        errorR (Error((number, RichText.mkText message), m))
+                        errorR (Error((number, message), m))
                         istate
                     | NonNull dependencyManager ->
                         let directive d =

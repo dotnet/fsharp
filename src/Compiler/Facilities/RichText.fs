@@ -122,7 +122,7 @@ module RichText =
     /// punctuation, and the name itself as a type of unknown kind. This is for names that arrive from
     /// metadata, reflection or a type provider as one string; do not use it on an assembly-qualified
     /// name, since an assembly version has dots in it too.
-    let mkQualifiedName leafOfName (name: string) =
+    let ofQualifiedName leafOfName (name: string) =
         match name.LastIndexOf '.' with
         | -1 -> leafOfName name
         | i ->
@@ -136,7 +136,7 @@ module RichText =
 
             concat [ namespaceParts; ofTag TextTag.Punctuation "."; leafOfName leaf ]
 
-    let mkQualifiedTypeName name = mkQualifiedName mkUnknownType name
+    let ofQualifiedTypeName name = ofQualifiedName mkUnknownType name
 
 module RichMessage =
 

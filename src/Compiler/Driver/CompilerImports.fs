@@ -1963,7 +1963,7 @@ and [<Sealed>] TcImports
                     Error(
                         FSComp.SR.etHostingAssemblyFoundWithoutHosts (
                             RichText.mkText fileNameOfRuntimeAssembly,
-                            RichText.mkQualifiedTypeName typeName
+                            RichText.ofQualifiedTypeName typeName
                         ),
                         m
                     )
