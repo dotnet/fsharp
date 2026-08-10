@@ -3037,11 +3037,10 @@ let TcComputationExpression (cenv: TcFileState) env (overallTy: OverallTy) tpenv
     // then allow the type-directed rule interpreting non-unit-typed expressions in statement
     // positions as 'yield'.  'yield!' may be present in the computation expression.
     let enableImplicitYield =
-        cenv.g.langVersion.SupportsFeature LanguageFeature.ImplicitYield
-        && (hasMethInfo "Yield" cenv env mBuilderVal ad builderTy
-            && hasMethInfo "Combine" cenv env mBuilderVal ad builderTy
-            && hasMethInfo "Delay" cenv env mBuilderVal ad builderTy
-            && YieldFree cenv comp)
+        hasMethInfo "Yield" cenv env mBuilderVal ad builderTy
+        && hasMethInfo "Combine" cenv env mBuilderVal ad builderTy
+        && hasMethInfo "Delay" cenv env mBuilderVal ad builderTy
+        && YieldFree comp
 
     let origComp = comp
 

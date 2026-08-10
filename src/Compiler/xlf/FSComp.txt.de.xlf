@@ -457,11 +457,6 @@
         <target state="new">Implicit dispatch slot coverage for default interface member implementations</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureImplicitYield">
-        <source>implicit yield</source>
-        <target state="translated">implizite yield-Anweisung</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureImprovedImpliedArgumentNames">
         <source>Improved implied argument names</source>
         <target state="translated">Verbesserte implizite Argumentnamen</target>
@@ -4817,19 +4812,9 @@
         <target state="translated">Ungültiger Objektausdruck. Objekte ohne Überschreibungen oder Schnittstellen sollten das Ausdrucksformat "new Type(args)" ohne geschweifte Klammern verwenden.</target>
         <note />
       </trans-unit>
-      <trans-unit id="tcInvalidObjectSequenceOrRecordExpression">
-        <source>Invalid object, sequence or record expression</source>
-        <target state="translated">Ungültiger Objekt-, Sequenz- oder Datensatzausdruck.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="tcInvalidSequenceExpressionSyntaxForm">
         <source>Invalid record, sequence or computation expression. Sequence expressions should be of the form 'seq {{ ... }}'</source>
         <target state="translated">Ungültiger Datensatz-, Sequenz- oder Berechnungsausdruck. Sequenzausdrücke müssen das Format "seq {{ ... }}" besitzen.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="tcExpressionWithIfRequiresParenthesis">
-        <source>This list or array expression includes an element of the form 'if ... then ... else'. Parenthesize this expression to indicate it is an individual element of the list or array, to disambiguate this from a list generated using a sequence expression</source>
-        <target state="translated">Dieser Listen- oder Arrayausdruck enthält ein Element im Format "if ... then ... else". Setzen Sie diesen Ausdruck in Klammern, um ihn als einzelnes Element der Liste oder des Arrays zu kenntlich zu machen und den Ausdruck von einer Liste zu unterscheiden, die mithilfe eines Sequenzausdrucks erzeugt wurde.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcUnableToParseFormatString">
@@ -5095,11 +5080,6 @@
       <trans-unit id="tcConstructIsAmbiguousInComputationExpression">
         <source>This construct is ambiguous as part of a computation expression. Nested expressions may be written using 'let _ = (...)' and nested computations using 'let! res = builder {{ ... }}'.</source>
         <target state="translated">Dieses Konstrukt ist als Teil eines Berechnungsausdrucks nicht eindeutig. Geschachtelte Ausdrücke können mit "let _ = (...)", geschachtelte Berechnungen mit "let! res = builder {{ ... }}" ausgedrückt werden.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="tcConstructIsAmbiguousInSequenceExpression">
-        <source>This construct is ambiguous as part of a sequence expression. Nested expressions may be written using 'let _ = (...)' and nested sequences using 'yield! seq {{... }}'.</source>
-        <target state="translated">Dieses Konstrukt ist als Teil eines Sequenzausdrucks nicht eindeutig. Geschachtelte Ausdrücke können mit "let _ = (...)", geschachtelte Sequenzen mit "yield! seq {{... }}" ausgedrückt werden.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcDoBangIllegalInSequenceExpression">

@@ -457,11 +457,6 @@
         <target state="new">Implicit dispatch slot coverage for default interface member implementations</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureImplicitYield">
-        <source>implicit yield</source>
-        <target state="translated">неявное использование yield</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureImprovedImpliedArgumentNames">
         <source>Improved implied argument names</source>
         <target state="translated">Улучшенные имена подразумеваемых аргументов</target>
@@ -4817,19 +4812,9 @@
         <target state="translated">Недопустимое выражение объекта. Объекты без переопределений или интерфейсов должны использовать форму выражения "new Type(args)" без фигурных скобок.</target>
         <note />
       </trans-unit>
-      <trans-unit id="tcInvalidObjectSequenceOrRecordExpression">
-        <source>Invalid object, sequence or record expression</source>
-        <target state="translated">Недопустимое выражение объекта, последовательности или записи</target>
-        <note />
-      </trans-unit>
       <trans-unit id="tcInvalidSequenceExpressionSyntaxForm">
         <source>Invalid record, sequence or computation expression. Sequence expressions should be of the form 'seq {{ ... }}'</source>
         <target state="translated">Недопустимая запись, выражение последовательности или вычислительное выражение. Выражения последовательностей должны иметь форму "seq {{ ... }}'</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="tcExpressionWithIfRequiresParenthesis">
-        <source>This list or array expression includes an element of the form 'if ... then ... else'. Parenthesize this expression to indicate it is an individual element of the list or array, to disambiguate this from a list generated using a sequence expression</source>
-        <target state="translated">Данный список выражений массива включает элемент формы "if ... then ... else". Заключите данное выражение в скобки, чтобы показать, что это отдельный элемент списка или массива, отличающийся от списка, созданного с использованием выражения последовательности</target>
         <note />
       </trans-unit>
       <trans-unit id="tcUnableToParseFormatString">
@@ -5095,11 +5080,6 @@
       <trans-unit id="tcConstructIsAmbiguousInComputationExpression">
         <source>This construct is ambiguous as part of a computation expression. Nested expressions may be written using 'let _ = (...)' and nested computations using 'let! res = builder {{ ... }}'.</source>
         <target state="translated">Этот конструктор является неоднозначным как часть вычислительного выражения. Вложенные выражения могут записываться с использованием "let _ = (...)", а вложенные вычисления - с использованием "let! res = builder {{ ... }}".</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="tcConstructIsAmbiguousInSequenceExpression">
-        <source>This construct is ambiguous as part of a sequence expression. Nested expressions may be written using 'let _ = (...)' and nested sequences using 'yield! seq {{... }}'.</source>
-        <target state="translated">Этот конструктор является неоднозначным как часть выражения последовательности. Вложенные выражения могут записываться с использованием "let _ = (...)", а вложенные последовательности - с использованием "yield! seq {{... }}".</target>
         <note />
       </trans-unit>
       <trans-unit id="tcDoBangIllegalInSequenceExpression">
