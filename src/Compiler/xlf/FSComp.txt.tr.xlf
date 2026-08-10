@@ -6729,7 +6729,7 @@
       </trans-unit>
       <trans-unit id="lexfltTokenIsOffsideOfContextStartedEarlier">
         <source>Unexpected syntax or possible incorrect indentation: this token is offside of context started at position {0}. Try indenting this further.</source>
-        <target state="needs-review-translation">Beklenmeyen sözdizimi veya olası yanlış girinti: Bu belirteç, {0} konumunda başlayan bağlamın ofsaytıdır. Bunu daha fazla girintilemeyi deneyin.\nUygun olmayan girintiyi kullanmaya devam etmek için '--strict-indentation-' işaretini derleyiciye iletin veya dil sürümünü F# 7 olarak ayarlayın.</target>
+        <target state="new">Unexpected syntax or possible incorrect indentation: this token is offside of context started at position {0}. Try indenting this further.</target>
         <note />
       </trans-unit>
       <trans-unit id="lexfltSeparatorTokensOfPatternMatchMisaligned">

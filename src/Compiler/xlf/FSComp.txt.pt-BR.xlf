@@ -6729,7 +6729,7 @@
       </trans-unit>
       <trans-unit id="lexfltTokenIsOffsideOfContextStartedEarlier">
         <source>Unexpected syntax or possible incorrect indentation: this token is offside of context started at position {0}. Try indenting this further.</source>
-        <target state="needs-review-translation">Sintaxe inesperada ou possível recuo incorreto: esse token está fora do contexto iniciado na posição {0}. Tente recuar isso ainda mais.\nPara continuar usando o recuo não compatível, passe o sinalizador '--strict-indentation-' para o compilador ou defina a versão da linguagem como F# 7.</target>
+        <target state="new">Unexpected syntax or possible incorrect indentation: this token is offside of context started at position {0}. Try indenting this further.</target>
         <note />
       </trans-unit>
       <trans-unit id="lexfltSeparatorTokensOfPatternMatchMisaligned">
