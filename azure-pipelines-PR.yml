@@ -760,24 +760,24 @@ stages:
           useVmImage: $(LinuxMachineQueueName)
           usePool: $(DncEngPublicBuildPool)
         - repo: fsprojects/FSharpPlus
-          commit: 2648efe
+          commit: 747e3f1
           buildScript: dotnet build tests/FSharpPlus.Tests/FSharpPlus.Tests.fsproj -c Release -bl
           displayName: FsharpPlus_NET10_Build_Lib_Tests
          # remove this before merging
         - repo: fsprojects/FSharpPlus
-          commit: 2648efe
+          commit: 747e3f1
           buildScript: dotnet msbuild build.proj -t:Build;Test -bl
           displayName: FsharpPlus_NET10_Test_Debug
         - repo: fsprojects/FSharpPlus
-          commit: 2648efe
+          commit: 747e3f1
           buildScript: dotnet msbuild build.proj -t:Build;Test -p:Configuration=Release -bl
           displayName: FsharpPlus_NET10_Test_Release
         - repo: fsprojects/FSharpPlus
-          commit: 2648efe
+          commit: 747e3f1
           buildScript: dotnet msbuild build.proj -t:Build;AllDocs -bl
           displayName: FsharpPlus_NET10_Docs
         - repo: fsprojects/FSharpPlus
-          commit: 2648efe
+          commit: 747e3f1
           buildScript: build.sh
           displayName: FsharpPlus_Net10_Linux
           useVmImage: $(LinuxMachineQueueName)
