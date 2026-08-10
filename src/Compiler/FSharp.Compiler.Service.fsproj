@@ -110,6 +110,7 @@
     </EmbeddedText>
     <EmbeddedText Include="Interactive\FSIstrings.txt">
       <Link>FSIstrings.txt</Link>
+      <RichText>true</RichText>
     </EmbeddedText>
     <EmbeddedResource Include="FSStrings.resx">
       <Link>FSStrings.resx</Link>

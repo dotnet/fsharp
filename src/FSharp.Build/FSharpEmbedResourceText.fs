@@ -576,20 +576,28 @@ open Printf
                         | None -> ""
                         | Some n -> sprintf "%d, " n
 
-                    fprintfn
-                        out
-                        "    static member %s%s = (%sGetStringFunc(\"%s\",\"%s\") %s)"
-                        ident
-                        (formalArgs.ToString())
-                        errPrefix
-                        ident
-                        justPercentsFromFormatString
-                        (actualArgs.ToString())
+                    // A numbered message is a diagnostic message, and a diagnostic is created from rich
+                    // text, so the accessor returns text that is already converted - a message with
+                    // nothing classified in it is one unclassified part. Unnumbered messages are plain
+                    // strings spliced into other text and stay strings.
+                    let numberedReturnsRichText = richText && optErrNum.IsSome
+
+                    let messageExpr =
+                        let getString =
+                            sprintf "GetStringFunc(\"%s\",\"%s\") %s" ident justPercentsFromFormatString (actualArgs.ToString())
+
+                        if numberedReturnsRichText then
+                            sprintf "RichText.mkText (%s)" getString
+                        else
+                            getString
+
+                    fprintfn out "    static member %s%s = (%s%s)" ident (formalArgs.ToString()) errPrefix messageExpr
 
                     let signatureMember =
                         let returnType =
                             match optErrNum with
                             | None -> "string"
+                            | Some _ when numberedReturnsRichText -> "int * RichText"
                             | Some _ -> "int * string"
 
                         if Array.isEmpty holes then

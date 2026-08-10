@@ -175,7 +175,7 @@ let TransformImplFile g amap implFile =
         implFile
     else
         for fv in localsToTransform do
-            warning (RichError(FSComp.SR.abImplicitHeapAllocation(richTextOfValName g fv), fv.Range))
+            warning (Error(FSComp.SR.abImplicitHeapAllocation(richTextOfValName g fv), fv.Range))
 
         let heapValMap = 
             [ for localVal in localsToTransform do

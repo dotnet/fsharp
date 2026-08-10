@@ -146,12 +146,7 @@ exception ObsoleteDiagnostic of
 /// an DiagnosticWithText as an exception even if it's a warning.
 ///
 /// We will eventually rename this to remove this use of "Error"
-let Error ((n, text), m) =
-    DiagnosticWithText(n, RichText.mkText text, m)
-
-/// Same as 'Error(...)', but for a message whose parts are classified, so that tooling is able to
-/// render it with colors. See docs/rich-diagnostics.md.
-let RichError ((n, text): int * RichText, m) = DiagnosticWithText(n, text, m)
+let Error ((n, text): int * RichText, m) = DiagnosticWithText(n, text, m)
 
 /// The F# compiler code currently uses 'ErrorWithSuggestions(...)' in many places to create
 /// an DiagnosticWithText as an exception even if it's a warning.

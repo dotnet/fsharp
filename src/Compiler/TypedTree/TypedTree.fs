@@ -512,7 +512,7 @@ exception UndefinedName of
     id: Ident * 
     suggestions: Suggestions
 
-exception InternalUndefinedItemRef of (string * string * string -> int * string) * string * string * string
+exception InternalUndefinedItemRef of (string * string * string -> int * RichText) * string * string * string
 
 [<CustomEquality;NoComparison>]
 type ModuleOrNamespaceKind = 
@@ -1003,7 +1003,7 @@ type Entity =
         | Some cpath -> cpath 
         | None ->
             let tag = if x.IsModuleOrNamespace then TextTag.Module else TextTag.Class
-            error(RichError(FSComp.SR.tastTypeOrModuleNotConcrete(RichText.ofTag tag x.LogicalName), x.Range))
+            error(Error(FSComp.SR.tastTypeOrModuleNotConcrete(RichText.ofTag tag x.LogicalName), x.Range))
     
     /// Get a table of fields for all the F#-defined record, struct and class fields in this type definition, including
     /// static fields, 'val' declarations and hidden fields from the compilation of implicit class constructions.

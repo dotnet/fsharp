@@ -194,7 +194,7 @@ let ChooseTyparSolutionAndRange (g: TcGlobals) amap (tp:Typar) =
              let join m x =
                  if TypeFeasiblySubsumesType 0 g amap m x CanCoerce maxTy then maxTy, isRefined
                  elif TypeFeasiblySubsumesType 0 g amap m maxTy CanCoerce x then x, true
-                 else errorR(RichError(FSComp.SR.typrelCannotResolveImplicitGenericInstantiation(RichText.mkText (DebugPrint.showType x), RichText.mkText (DebugPrint.showType maxTy)), m)); maxTy, isRefined
+                 else errorR(Error(FSComp.SR.typrelCannotResolveImplicitGenericInstantiation(RichText.mkText (DebugPrint.showType x), RichText.mkText (DebugPrint.showType maxTy)), m)); maxTy, isRefined
              // Don't continue if an error occurred and we set the value eagerly
              if tp.IsSolved then (maxTy, isRefined), m else
              match tpc with

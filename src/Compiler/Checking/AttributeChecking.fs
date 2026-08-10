@@ -614,7 +614,7 @@ let CheckMethInfoAttributes g m tyargsOpt (minfo: MethInfo) =
                         trackErrors {
                              do! CheckFSharpAttributes g fsAttribs m
                              if Option.isNone tyargsOpt && (attribsHaveValFlag g WellKnownValAttributes.RequiresExplicitTypeArgumentsAttribute fsAttribs) then
-                                do! ErrorD(RichError(FSComp.SR.tcFunctionRequiresExplicitTypeArguments(RichText.mkMethod minfo.LogicalName), m))
+                                do! ErrorD(Error(FSComp.SR.tcFunctionRequiresExplicitTypeArguments(RichText.mkMethod minfo.LogicalName), m))
                         }
                         
                     Some res) 

@@ -180,7 +180,7 @@ let IsEntityAccessible amap m ad (tcref:TyconRef) =
 let CheckTyconAccessible amap m ad tcref =
     let res = IsEntityAccessible amap m ad tcref
     if not res then  
-        errorR(RichError(FSComp.SR.typeIsNotAccessible (richTextOfEntityRef tcref), m))
+        errorR(Error(FSComp.SR.typeIsNotAccessible (richTextOfEntityRef tcref), m))
     res
 
 /// Indicates if a type definition and its representation contents are accessible
@@ -193,7 +193,7 @@ let CheckTyconReprAccessible amap m ad tcref =
     CheckTyconAccessible amap m ad tcref &&
     (let res = IsAccessible ad tcref.TypeReprAccessibility
      if not res then 
-         errorR (RichError(FSComp.SR.unionCasesAreNotAccessible (richTextOfEntityRef tcref), m))
+         errorR (Error(FSComp.SR.unionCasesAreNotAccessible (richTextOfEntityRef tcref), m))
      res)
             
 /// Indicates if a type is accessible (both definition and instantiation)
@@ -341,7 +341,7 @@ let IsValAccessible ad (vref:ValRef) =
 
 let CheckValAccessible g m ad (vref:ValRef) = 
     if not (IsValAccessible ad vref) then 
-        errorR (RichError(FSComp.SR.valueIsNotAccessible (richTextOfValName g vref.Deref), m))
+        errorR (Error(FSComp.SR.valueIsNotAccessible (richTextOfValName g vref.Deref), m))
         
 let IsUnionCaseAccessible amap m ad (ucref:UnionCaseRef) =
     IsTyconReprAccessible amap m ad ucref.TyconRef &&
@@ -351,7 +351,7 @@ let CheckUnionCaseAccessible amap m ad (ucref:UnionCaseRef) =
     CheckTyconReprAccessible amap m ad ucref.TyconRef &&
     (let res = IsAccessible ad ucref.UnionCase.Accessibility
      if not res then 
-        errorR (RichError(FSComp.SR.unionCaseIsNotAccessible (RichText.mkUnionCase ucref.CaseName), m))
+        errorR (Error(FSComp.SR.unionCaseIsNotAccessible (RichText.mkUnionCase ucref.CaseName), m))
      res)
 
 let IsRecdFieldAccessible amap m ad (rfref:RecdFieldRef) =
@@ -362,7 +362,7 @@ let CheckRecdFieldAccessible amap m ad (rfref:RecdFieldRef) =
     CheckTyconReprAccessible amap m ad rfref.TyconRef &&
     (let res = IsAccessible ad rfref.RecdField.Accessibility
      if not res then 
-        errorR (RichError(FSComp.SR.fieldIsNotAccessible (RichText.mkRecordField rfref.FieldName), m))
+        errorR (Error(FSComp.SR.fieldIsNotAccessible (RichText.mkRecordField rfref.FieldName), m))
      res)
 
 let CheckRecdFieldInfoAccessible amap m ad (rfinfo:RecdFieldInfo) = 
@@ -370,7 +370,7 @@ let CheckRecdFieldInfoAccessible amap m ad (rfinfo:RecdFieldInfo) =
 
 let CheckILFieldInfoAccessible g amap m ad finfo =
     if not (IsILFieldInfoAccessible g amap m ad finfo) then 
-        errorR (RichError(FSComp.SR.structOrClassFieldIsNotAccessible (RichText.mkField finfo.FieldName), m))
+        errorR (Error(FSComp.SR.structOrClassFieldIsNotAccessible (RichText.mkField finfo.FieldName), m))
     
 /// Uses a separate accessibility domains for containing type and method itself
 /// This makes sense cases like

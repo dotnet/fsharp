@@ -498,7 +498,7 @@ let parseFormatStringInternal
             | '%' ->
                 // This allows for things like `printf "%-4.2%"` to compile and print just a `%`
                 // For now we are adding a warning, but keeping this behavior.
-                warning(Error((3376, FSComp.SR.forBadFormatSpecifierGeneral("%")), m))
+                warning(Error((3376, RichText.mkText (FSComp.SR.forBadFormatSpecifierGeneral("%"))), m))
                 collectSpecifierLocation fragLine fragCol 0
                 appendToDotnetFormatString "%"
                 parseLoop acc (i+1, fragLine, fragCol+1) fragments

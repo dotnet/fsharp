@@ -2850,7 +2850,7 @@ and SolveTypeCanCarryNullness (csenv: ConstraintSolverEnv)  ty nullness =
                 return! AddConstraint csenv 0 m NoTrace (destTyparTy g strippedTy) (TyparConstraint.IsReferenceType m)
         | None -> 
             let tyText = NicePrint.minimalRichTextOfType csenv.DisplayEnv strippedTy
-            return! ErrorD(RichError(FSComp.SR.tcTypeDoesNotHaveAnyNull(tyText), m))
+            return! ErrorD(Error(FSComp.SR.tcTypeDoesNotHaveAnyNull(tyText), m))
     }
 
 and SolveTypeSupportsComparison (csenv: ConstraintSolverEnv) ndeep m2 trace ty =
@@ -3150,9 +3150,9 @@ and CanMemberSigsMatchUpToCheck
 
                         if calledObjArgTys.Length <> callerObjArgTys.Length then 
                             if calledObjArgTys.Length <> 0 then
-                                ErrorD(RichError(FSComp.SR.csMemberIsNotStatic(RichText.mkMethod minfo.LogicalName), m))
+                                ErrorD(Error(FSComp.SR.csMemberIsNotStatic(RichText.mkMethod minfo.LogicalName), m))
                             else
-                                ErrorD(RichError(FSComp.SR.csMemberIsNotInstance(RichText.mkMethod minfo.LogicalName), m))
+                                ErrorD(Error(FSComp.SR.csMemberIsNotInstance(RichText.mkMethod minfo.LogicalName), m))
                         else
                             // The object types must be non-null
                             let nonNullCalledObjArgTys = 
@@ -3400,16 +3400,16 @@ and ReportNoCandidatesError (csenv: ConstraintSolverEnv) (nUnnamedCallerArgs, nN
     // No version accessible 
     | ([], others), _, _, _, _ ->  
         if isNil others then
-            RichError(FSComp.SR.csMemberIsNotAccessible(RichText.mkMethod methodName, RichText.mkText (ShowAccessDomain ad)), m)
+            Error(FSComp.SR.csMemberIsNotAccessible(RichText.mkMethod methodName, RichText.mkText (ShowAccessDomain ad)), m)
         else
-            RichError(FSComp.SR.csMemberIsNotAccessible2(RichText.mkMethod methodName, RichText.mkText (ShowAccessDomain ad)), m)
+            Error(FSComp.SR.csMemberIsNotAccessible2(RichText.mkMethod methodName, RichText.mkText (ShowAccessDomain ad)), m)
     | _, ([], cmeth :: _), _, _, _ ->  
     
         // Check all the argument types.
         if cmeth.CalledObjArgTys(m).Length <> 0 then
-            RichError(FSComp.SR.csMethodIsNotAStaticMethod(RichText.mkMethod methodName), m)
+            Error(FSComp.SR.csMethodIsNotAStaticMethod(RichText.mkMethod methodName), m)
         else
-            RichError(FSComp.SR.csMethodIsNotAnInstanceMethod(RichText.mkMethod methodName), m)
+            Error(FSComp.SR.csMethodIsNotAnInstanceMethod(RichText.mkMethod methodName), m)
 
     // One method, incorrect name/arg assignment 
     | _, _, _, _, ([], [cmeth]) -> 
@@ -3424,8 +3424,8 @@ and ReportNoCandidatesError (csenv: ConstraintSolverEnv) (nUnnamedCallerArgs, nN
 
                 ErrorWithSuggestions((msgNum, FSComp.SR.csCtorHasNoArgumentOrReturnProperty(RichText.mkMethod methodName, RichText.mkUnresolvedName id.idText, msgText)), id.idRange, id.idText, suggestFields)
             else
-                RichError((msgNum, FSComp.SR.csMemberHasNoArgumentOrReturnProperty(RichText.mkMethod methodName, RichText.mkUnresolvedName id.idText, msgText)), id.idRange)
-        | [] -> RichError((msgNum, msgText), m)
+                Error((msgNum, FSComp.SR.csMemberHasNoArgumentOrReturnProperty(RichText.mkMethod methodName, RichText.mkUnresolvedName id.idText, msgText)), id.idRange)
+        | [] -> Error((msgNum, msgText), m)
 
     // One method, incorrect number of arguments provided by the user
     | _, _, ([], [cmeth]), _, _ when not cmeth.HasCorrectArity ->  
@@ -3436,7 +3436,7 @@ and ReportNoCandidatesError (csenv: ConstraintSolverEnv) (nUnnamedCallerArgs, nN
         if nActual = nReqd then 
             let nreqdTyArgs = cmeth.NumCalledTyArgs
             let nactualTyArgs = cmeth.NumCallerTyArgs
-            RichError (FSComp.SR.csMemberSignatureMismatchArityType(RichText.mkMethod methodName, nreqdTyArgs, nactualTyArgs, signature), m)
+            Error (FSComp.SR.csMemberSignatureMismatchArityType(RichText.mkMethod methodName, nreqdTyArgs, nactualTyArgs, signature), m)
         else
             let nReqdNamed = cmeth.TotalNumAssignedNamedArgs
 
@@ -3449,11 +3449,11 @@ and ReportNoCandidatesError (csenv: ConstraintSolverEnv) (nUnnamedCallerArgs, nN
                             |> List.exists (fun c -> isSequential c.Expr))
 
                     if couldBeNameArgs then
-                        RichError (FSComp.SR.csCtorSignatureMismatchArityProp(RichText.mkMethod methodName, nReqd, nActual, signature), m)
+                        Error (FSComp.SR.csCtorSignatureMismatchArityProp(RichText.mkMethod methodName, nReqd, nActual, signature), m)
                     else
-                        RichError (FSComp.SR.csCtorSignatureMismatchArity(RichText.mkMethod methodName, nReqd, nActual, signature), m)
+                        Error (FSComp.SR.csCtorSignatureMismatchArity(RichText.mkMethod methodName, nReqd, nActual, signature), m)
                 else
-                    RichError (FSComp.SR.csMemberSignatureMismatchArity(RichText.mkMethod methodName, nReqd, nActual, signature), m)
+                    Error (FSComp.SR.csMemberSignatureMismatchArity(RichText.mkMethod methodName, nReqd, nActual, signature), m)
             else
                 if nReqd > nActual then
                     let diff = nReqd - nActual
@@ -3461,29 +3461,29 @@ and ReportNoCandidatesError (csenv: ConstraintSolverEnv) (nUnnamedCallerArgs, nN
                     match NamesOfCalledArgs missingArgs with 
                     | [] ->
                         if nActual = 0 then 
-                            RichError (FSComp.SR.csMemberSignatureMismatch(RichText.mkMethod methodName, diff, signature), m)
+                            Error (FSComp.SR.csMemberSignatureMismatch(RichText.mkMethod methodName, diff, signature), m)
                         else 
-                            RichError (FSComp.SR.csMemberSignatureMismatch2(RichText.mkMethod methodName, diff, signature), m)
+                            Error (FSComp.SR.csMemberSignatureMismatch2(RichText.mkMethod methodName, diff, signature), m)
                     | names -> 
                         let str = RichText.concatWith (RichText.mkText ";") (pathOfLid names |> List.map (RichText.mkParameter))
                         if nActual = 0 then 
-                            RichError (FSComp.SR.csMemberSignatureMismatch3(RichText.mkMethod methodName, diff, signature, str), m)
+                            Error (FSComp.SR.csMemberSignatureMismatch3(RichText.mkMethod methodName, diff, signature, str), m)
                         else 
-                            RichError (FSComp.SR.csMemberSignatureMismatch4(RichText.mkMethod methodName, diff, signature, str), m)
+                            Error (FSComp.SR.csMemberSignatureMismatch4(RichText.mkMethod methodName, diff, signature, str), m)
                 else 
-                    RichError (FSComp.SR.csMemberSignatureMismatchArityNamed(RichText.mkMethod methodName, (nReqd+nReqdNamed), nActual, nReqdNamed, signature), m)
+                    Error (FSComp.SR.csMemberSignatureMismatchArityNamed(RichText.mkMethod methodName, (nReqd+nReqdNamed), nActual, nReqdNamed, signature), m)
 
     // One or more accessible, all the same arity, none correct 
     | (cmeth :: cmeths2, _), _, _, _, _ when not cmeth.HasCorrectArity && cmeths2 |> List.forall (fun cmeth2 -> cmeth.TotalNumUnnamedCalledArgs = cmeth2.TotalNumUnnamedCalledArgs) -> 
-        RichError (FSComp.SR.csMemberNotAccessible(RichText.mkMethod methodName, nUnnamedCallerArgs, RichText.mkMethod methodName, cmeth.TotalNumUnnamedCalledArgs), m)
+        Error (FSComp.SR.csMemberNotAccessible(RichText.mkMethod methodName, nUnnamedCallerArgs, RichText.mkMethod methodName, cmeth.TotalNumUnnamedCalledArgs), m)
     // Many methods, all with incorrect number of generic arguments
     | _, _, _, ([], cmeth :: _), _ -> 
         let msg = FSComp.SR.csIncorrectGenericInstantiation(RichText.mkText (ShowAccessDomain ad), RichText.mkMethod methodName, cmeth.NumCallerTyArgs)
-        RichError (msg, m)
+        Error (msg, m)
     // Many methods of different arities, all incorrect 
     | _, _, ([], cmeth :: _), _, _ -> 
         let minfo = cmeth.Method
-        RichError (FSComp.SR.csMemberOverloadArityMismatch(RichText.mkMethod methodName, cmeth.TotalNumUnnamedCallerArgs, (List.sum minfo.NumArgs)), m)
+        Error (FSComp.SR.csMemberOverloadArityMismatch(RichText.mkMethod methodName, cmeth.TotalNumUnnamedCallerArgs, (List.sum minfo.NumArgs)), m)
     | _ -> 
         let msg = 
             if nNamedCallerArgs = 0 then 
@@ -3495,7 +3495,7 @@ and ReportNoCandidatesError (csenv: ConstraintSolverEnv) (nUnnamedCallerArgs, nN
                 else 
                     let sample = s.MinimumElement
                     FSComp.SR.csNoMemberTakesTheseArguments3(RichText.mkText (ShowAccessDomain ad), RichText.mkMethod methodName, nUnnamedCallerArgs, RichText.mkParameter sample)
-        RichError (msg, m)
+        Error (msg, m)
     |> ErrorD
 
 and ReportNoCandidatesErrorExpr csenv callerArgCounts methodName ad calledMethGroup =
@@ -3703,13 +3703,13 @@ and ResolveOverloading
             let minfo = calledMeth.Method
             match minfo with
             | ILMeth(ilMethInfo= ilMethInfo) when not isStaticConstrainedCall && ilMethInfo.IsStatic && ilMethInfo.IsAbstract ->
-                None, ErrorD (RichError(FSComp.SR.chkStaticAbstractInterfaceMembers(RichText.mkMethod ilMethInfo.ILName), m)), NoTrace
+                None, ErrorD (Error(FSComp.SR.chkStaticAbstractInterfaceMembers(RichText.mkMethod ilMethInfo.ILName), m)), NoTrace
             | FSMeth(g, _, vref, _) when not isStaticConstrainedCall && not minfo.IsInstance && isInterfaceTy g minfo.ApparentEnclosingType && vref.IsDispatchSlotMember ->
-                None, ErrorD (RichError(FSComp.SR.chkStaticAbstractInterfaceMembers(RichText.mkMethod minfo.LogicalName), m)), NoTrace
+                None, ErrorD (Error(FSComp.SR.chkStaticAbstractInterfaceMembers(RichText.mkMethod minfo.LogicalName), m)), NoTrace
             | _ -> Some calledMeth, CompleteD, NoTrace
 
         | [], _ when not isOpConversion -> 
-            None, ErrorD (RichError(FSComp.SR.csMethodNotFound(RichText.mkMethod methodName), m)), NoTrace
+            None, ErrorD (Error(FSComp.SR.csMethodNotFound(RichText.mkMethod methodName), m)), NoTrace
 
         | _, [] when not isOpConversion -> 
             None, ReportNoCandidatesErrorExpr csenv callerArgs.CallerArgCounts methodName ad calledMethGroup, NoTrace
@@ -3996,7 +3996,7 @@ let UnifyUniqueOverloading
      }
         
     | [], _ -> 
-        ErrorD (RichError(FSComp.SR.csMethodNotFound(RichText.mkMethod methodName), m))
+        ErrorD (Error(FSComp.SR.csMethodNotFound(RichText.mkMethod methodName), m))
     | _, [] -> trackErrors {
         do! ReportNoCandidatesErrorSynExpr csenv callerArgCounts methodName ad calledMethGroup 
         return false

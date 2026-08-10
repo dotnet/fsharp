@@ -118,8 +118,10 @@ module internal RichMessage =
     /// Formats a message with no diagnostic number
     val text: format: ((RichText -> string) -> string) -> RichText
 
-    /// Formats a message with a diagnostic number
-    val numbered: format: ((RichText -> string) -> int * string) -> int * RichText
+    /// Formats a message with a diagnostic number. The formatted message it is given is the
+    /// unclassified text the numbered accessors return, i.e. one part, which the parts standing in for
+    /// the classified arguments are spliced back into.
+    val numbered: format: ((RichText -> string) -> int * RichText) -> int * RichText
 
 /// Accumulates rich text. Adjacent parts with the same classification are merged, so that where one
 /// append ended is not visible in the result.

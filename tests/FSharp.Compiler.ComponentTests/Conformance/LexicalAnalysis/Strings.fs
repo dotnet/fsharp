@@ -7,6 +7,7 @@ open FSharp.Test.Compiler
 let private invalidCharWarningMsg (value: string) (wrapped: string) = 
     FSComp.SR.lexInvalidCharLiteralInString (value, wrapped)
     |> snd
+    |> _.Text
 
 [<Fact>]
 let ``Decimal char > 255 is not valid``() =

@@ -252,7 +252,7 @@ module internal Utilities =
 
     let reportError m =
         let report errorType err msg =
-            let error = err, msg
+            let error = err, RichText.mkText msg
 
             match errorType with
             | ErrorReportType.Warning -> warning (Error(error, m))
@@ -344,7 +344,7 @@ type ILMultiInMemoryAssemblyEmitEnv
         match typT with
         | null ->
             error (
-                RichError(
+                Error(
                     FSComp.SR.itemNotFoundDuringDynamicCodeGen (
                         RichText.mkText "type",
                         RichText.mkQualifiedTypeName qualifiedName,
@@ -369,7 +369,7 @@ type ILMultiInMemoryAssemblyEmitEnv
             match typT with
             | null ->
                 error (
-                    RichError(
+                    Error(
                         FSComp.SR.itemNotFoundDuringDynamicCodeGen (
                             RichText.mkText "type",
                             RichText.mkQualifiedTypeName qualifiedName,
@@ -405,7 +405,7 @@ type ILMultiInMemoryAssemblyEmitEnv
         match res with
         | null ->
             error (
-                RichError(
+                Error(
                     FSComp.SR.itemNotFoundDuringDynamicCodeGen (
                         RichText.mkText "type",
                         RichText.mkUnknownType tspec.TypeRef.QualifiedName,
@@ -2831,7 +2831,7 @@ type internal FsiDynamicCompiler
                         )
                     with
                     | Null ->
-                        let err =
+                        let number, message =
                             fsiOptions.DependencyProvider.CreatePackageManagerUnknownError(
                                 tcConfigB.compilerToolPaths,
                                 outputDir,
@@ -2840,7 +2840,7 @@ type internal FsiDynamicCompiler
                                 reportError m
                             )
 
-                        errorR (Error(err, m))
+                        errorR (Error((number, RichText.mkText message), m))
                         istate
                     | NonNull dependencyManager ->
                         let directive d =
@@ -3071,7 +3071,7 @@ type internal FsiDynamicCompiler
             )
 
             if IsCompilerGeneratedName name then
-                invalidArg "name" (FSComp.SR.lexhlpIdentifiersContainingAtSymbolReserved () |> snd)
+                invalidArg "name" (FSComp.SR.lexhlpIdentifiersContainingAtSymbolReserved () |> snd).Text
 
             let istate, tys = importReflectionType istate (value.GetType())
             let ty = List.head tys
@@ -3906,7 +3906,7 @@ type FsiInteractionProcessor
             | "skip" -> fsiConsolePrompt.SkipNext()
             | _ ->
                 error (
-                    RichError(
+                    Error(
                         (FSComp.SR.fsiInvalidDirective (RichText.mkKeyword "prompt", RichText.mkText (String.concat " " [ showPrompt ]))),
                         m
                     )
@@ -3977,16 +3977,13 @@ type FsiInteractionProcessor
             match args with
             | [] -> fsiOptions.ShowHelp(m)
             | [ arg ] -> runhDirective diagnosticsLogger ctok istate arg
-            | _ ->
-                warning (
-                    RichError((FSComp.SR.fsiInvalidDirective (RichText.mkKeyword "help", RichText.mkText (String.concat " " args))), m)
-                )
+            | _ -> warning (Error((FSComp.SR.fsiInvalidDirective (RichText.mkKeyword "help", RichText.mkText (String.concat " " args))), m))
 
             istate, Completed None
 
         | ParsedHashDirective(c, hashArguments, m) ->
             let arg = (parsedHashDirectiveArguments hashArguments tcConfigB.langVersion)
-            warning (RichError((FSComp.SR.fsiInvalidDirective (RichText.mkKeyword c, RichText.mkText (String.concat " " arg))), m))
+            warning (Error((FSComp.SR.fsiInvalidDirective (RichText.mkKeyword c, RichText.mkText (String.concat " " arg))), m))
             istate, Completed None
 
     /// Most functions return a step status - this decides whether to continue and propagates the

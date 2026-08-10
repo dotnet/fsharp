@@ -1960,7 +1960,7 @@ and [<Sealed>] TcImports
                 let typeName = !!typeof<TypeProviderAssemblyAttribute>.FullName
 
                 warning (
-                    RichError(
+                    Error(
                         FSComp.SR.etHostingAssemblyFoundWithoutHosts (
                             RichText.mkText fileNameOfRuntimeAssembly,
                             RichText.mkQualifiedTypeName typeName

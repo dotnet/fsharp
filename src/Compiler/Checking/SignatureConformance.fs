@@ -130,7 +130,7 @@ module private AttributeConformance =
                 for flag in policy do
                     if flag |> Flags.intersects missing then
                         let m = rangeOfMissing classify implAttribs flag fallback
-                        emit(RichError (FSComp.SR.implAttributeMissingFromSignature(RichText.mkClass (displayName flag), RichText.mkText (displayNameOf impl)), m))
+                        emit(Error (FSComp.SR.implAttributeMissingFromSignature(RichText.mkClass (displayName flag), RichText.mkText (displayNameOf impl)), m))
 
     let private emitter (g: TcGlobals) : exn -> unit =
         if g.langVersion.SupportsFeature LanguageFeature.ErrorOnMissingSignatureAttribute then
@@ -235,7 +235,7 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
 
                     if existsSimilarAttrib then 
                         let (Attrib(implTcref, _, _, _, _, _, implRange)) = implAttrib
-                        warning(RichError(FSComp.SR.tcAttribArgsDiffer(richTextOfEntityRef implTcref), implRange))
+                        warning(Error(FSComp.SR.tcAttribArgsDiffer(richTextOfEntityRef implTcref), implRange))
                         check keptImplAttribsRev remainingImplAttribs sigAttribs    
                     else
                         check (implAttrib :: keptImplAttribsRev) remainingImplAttribs sigAttribs    
@@ -284,7 +284,7 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
                       | TyparConstraint.DefaultsTo(_, _acty, _) -> true
                       | _ -> 
                           if not (List.exists  (typarConstraintsAEquiv g aenv implTyparCx) sigTypar.Constraints)
-                          then (errorR(RichError(FSComp.SR.typrelSigImplNotCompatibleConstraintsDiffer(RichText.mkTypeParameter sigTypar.Name, LayoutRender.toRichText (NicePrint.layoutTyparConstraint denv (implTypar, implTyparCx))), m)); false)
+                          then (errorR(Error(FSComp.SR.typrelSigImplNotCompatibleConstraintsDiffer(RichText.mkTypeParameter sigTypar.Name, LayoutRender.toRichText (NicePrint.layoutTyparConstraint denv (implTypar, implTyparCx))), m)); false)
                           else  true) &&
 
                   // Check the constraints in the signature are present in the implementation
@@ -297,7 +297,7 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
                       | TyparConstraint.SupportsEquality _ -> true
                       | _ -> 
                           if not (List.exists  (fun implTyparCx -> typarConstraintsAEquiv g aenv implTyparCx sigTyparCx) implTypar.Constraints) then
-                              (errorR(RichError(FSComp.SR.typrelSigImplNotCompatibleConstraintsDifferRemove(RichText.mkTypeParameter sigTypar.Name, LayoutRender.toRichText (NicePrint.layoutTyparConstraint denv (sigTypar, sigTyparCx))), m)); false)
+                              (errorR(Error(FSComp.SR.typrelSigImplNotCompatibleConstraintsDifferRemove(RichText.mkTypeParameter sigTypar.Name, LayoutRender.toRichText (NicePrint.layoutTyparConstraint denv (sigTypar, sigTyparCx))), m)); false)
                           else  
                               true) &&
                   (not checkingSig || checkAttribs aenv implTypar.Attribs sigTypar.Attribs implTypar.SetAttribs))
@@ -316,12 +316,12 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
             checkEnforcedEntityAttribs implTycon sigTycon m
             
             if implTycon.LogicalName <> sigTycon.LogicalName then 
-                errorR (RichError (FSComp.SR.DefinitionsInSigAndImplNotCompatibleNamesDiffer(kindText, richTextOfEntityName sigTycon sigTycon.LogicalName, richTextOfEntityName implTycon implTycon.LogicalName), m))
+                errorR (Error (FSComp.SR.DefinitionsInSigAndImplNotCompatibleNamesDiffer(kindText, richTextOfEntityName sigTycon sigTycon.LogicalName, richTextOfEntityName implTycon implTycon.LogicalName), m))
                 false 
             else
             
             if implTycon.CompiledName <> sigTycon.CompiledName then 
-                errorR (RichError (FSComp.SR.DefinitionsInSigAndImplNotCompatibleNamesDiffer(kindText, richTextOfEntityName sigTycon sigTycon.CompiledName, richTextOfEntityName implTycon implTycon.CompiledName), m))
+                errorR (Error (FSComp.SR.DefinitionsInSigAndImplNotCompatibleNamesDiffer(kindText, richTextOfEntityName sigTycon sigTycon.CompiledName, richTextOfEntityName implTycon implTycon.CompiledName), m))
                 false 
             else
             
@@ -331,10 +331,10 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
             let sigTypars = sigTycon.Typars
             
             if implTypars.Length <> sigTypars.Length then  
-                errorR (RichError(FSComp.SR.DefinitionsInSigAndImplNotCompatibleParameterCountsDiffer(kindText, implTyconName), m)) 
+                errorR (Error(FSComp.SR.DefinitionsInSigAndImplNotCompatibleParameterCountsDiffer(kindText, implTyconName), m)) 
                 false
             elif isLessAccessible implTycon.Accessibility sigTycon.Accessibility then 
-                errorR(RichError(FSComp.SR.DefinitionsInSigAndImplNotCompatibleAccessibilityDiffer(kindText, implTyconName), m)) 
+                errorR(Error(FSComp.SR.DefinitionsInSigAndImplNotCompatibleAccessibilityDiffer(kindText, implTyconName), m)) 
                 false
             else 
                 let aenv = aenv.BindEquivTypars implTypars sigTypars 
@@ -354,7 +354,7 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
                 (unimplIntfTys 
                  |> List.forall (fun ity -> 
                     let errorMessage = FSComp.SR.DefinitionsInSigAndImplNotCompatibleMissingInterface(kindText, implTyconName, NicePrint.minimalRichTextOfType denv ity)
-                    errorR (RichError(errorMessage, m)); false)) &&
+                    errorR (Error(errorMessage, m)); false)) &&
                     
                 let implUserIntfTys = flatten implUserIntfTys
 
@@ -365,43 +365,43 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
                 let aNull = IsUnionTypeWithNullAsTrueValue g implTycon
                 let fNull = IsUnionTypeWithNullAsTrueValue g sigTycon
                 if aNull && not fNull then 
-                    errorR(RichError(FSComp.SR.DefinitionsInSigAndImplNotCompatibleImplementationSaysNull(kindText, implTyconName), m))
+                    errorR(Error(FSComp.SR.DefinitionsInSigAndImplNotCompatibleImplementationSaysNull(kindText, implTyconName), m))
                     false
                 elif fNull && not aNull then 
-                    errorR(RichError(FSComp.SR.DefinitionsInSigAndImplNotCompatibleSignatureSaysNull(kindText, implTyconName), m))
+                    errorR(Error(FSComp.SR.DefinitionsInSigAndImplNotCompatibleSignatureSaysNull(kindText, implTyconName), m))
                     false
                 else
 
                 let aNull2 = TypeNullIsExtraValue g m (generalizedTyconRef g (mkLocalTyconRef implTycon))
                 let fNull2 = TypeNullIsExtraValue g m (generalizedTyconRef g (mkLocalTyconRef implTycon)) // TODO: should be sigTycon, raises extra errors
                 if aNull2 && not fNull2 then 
-                    errorR(RichError(FSComp.SR.DefinitionsInSigAndImplNotCompatibleImplementationSaysNull2(kindText, implTyconName), m))
+                    errorR(Error(FSComp.SR.DefinitionsInSigAndImplNotCompatibleImplementationSaysNull2(kindText, implTyconName), m))
                     false
                 elif fNull2 && not aNull2 then 
-                    errorR(RichError(FSComp.SR.DefinitionsInSigAndImplNotCompatibleSignatureSaysNull2(kindText, implTyconName), m))
+                    errorR(Error(FSComp.SR.DefinitionsInSigAndImplNotCompatibleSignatureSaysNull2(kindText, implTyconName), m))
                     false
                 else
 
                 let aSealed = isSealedTy g (generalizedTyconRef g (mkLocalTyconRef implTycon))
                 let fSealed = isSealedTy g (generalizedTyconRef g (mkLocalTyconRef sigTycon))
                 if aSealed && not fSealed then 
-                    errorR(RichError(FSComp.SR.DefinitionsInSigAndImplNotCompatibleImplementationSealed(kindText, implTyconName), m))
+                    errorR(Error(FSComp.SR.DefinitionsInSigAndImplNotCompatibleImplementationSealed(kindText, implTyconName), m))
                     false
                 elif not aSealed && fSealed then
-                    errorR(RichError(FSComp.SR.DefinitionsInSigAndImplNotCompatibleImplementationIsNotSealed(kindText, implTyconName), m))
+                    errorR(Error(FSComp.SR.DefinitionsInSigAndImplNotCompatibleImplementationIsNotSealed(kindText, implTyconName), m))
                     false
                 else
 
                 let aPartial = isAbstractTycon implTycon
                 let fPartial = isAbstractTycon sigTycon
                 if aPartial && not fPartial then 
-                    errorR(RichError(FSComp.SR.DefinitionsInSigAndImplNotCompatibleImplementationIsAbstract(kindText, implTyconName), m))
+                    errorR(Error(FSComp.SR.DefinitionsInSigAndImplNotCompatibleImplementationIsAbstract(kindText, implTyconName), m))
                     false
                 elif not aPartial && fPartial then 
-                    errorR(RichError(FSComp.SR.DefinitionsInSigAndImplNotCompatibleSignatureIsAbstract(kindText, implTyconName), m))
+                    errorR(Error(FSComp.SR.DefinitionsInSigAndImplNotCompatibleSignatureIsAbstract(kindText, implTyconName), m))
                     false
                 elif not (typeAEquiv g aenv (superOfTycon g implTycon) (superOfTycon g sigTycon)) then 
-                    errorR (RichError(FSComp.SR.DefinitionsInSigAndImplNotCompatibleTypesHaveDifferentBaseTypes(kindText, implTyconName), m))
+                    errorR (Error(FSComp.SR.DefinitionsInSigAndImplNotCompatibleTypesHaveDifferentBaseTypes(kindText, implTyconName), m))
                     false
                 else
 
@@ -632,17 +632,17 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
             let m1 = implFields |> NameMap.ofKeyedList (fun rfld -> rfld.LogicalName)
             let m2 = sigFields |> NameMap.ofKeyedList (fun rfld -> rfld.LogicalName)
             NameMap.suball2 
-                (fun fieldName _ -> errorR(RichError (FSComp.SR.DefinitionsInSigAndImplNotCompatibleFieldRequiredButNotSpecified(kindText, implTyconName, RichText.mkRecordField fieldName), m)); false) 
+                (fun fieldName _ -> errorR(Error (FSComp.SR.DefinitionsInSigAndImplNotCompatibleFieldRequiredButNotSpecified(kindText, implTyconName, RichText.mkRecordField fieldName), m)); false) 
                 (checkField aenv infoReader implTycon sigTycon) m1 m2 &&
             NameMap.suball2 
-                (fun fieldName _ -> errorR(RichError (FSComp.SR.DefinitionsInSigAndImplNotCompatibleFieldWasPresent(kindText, implTyconName, RichText.mkRecordField fieldName), m)); false) 
+                (fun fieldName _ -> errorR(Error (FSComp.SR.DefinitionsInSigAndImplNotCompatibleFieldWasPresent(kindText, implTyconName, RichText.mkRecordField fieldName), m)); false) 
                 (fun x y -> checkField aenv infoReader implTycon sigTycon y x) m2 m1 &&
 
             // This check is required because constructors etc. are externally visible 
             // and thus compiled representations do pick up dependencies on the field order  
             (if List.forall2 (checkField aenv infoReader implTycon sigTycon)  implFields sigFields
              then true
-             else (errorR(RichError (FSComp.SR.DefinitionsInSigAndImplNotCompatibleFieldOrderDiffer(kindText, implTyconName), m)); false))
+             else (errorR(Error (FSComp.SR.DefinitionsInSigAndImplNotCompatibleFieldOrderDiffer(kindText, implTyconName), m)); false))
 
         and checkRecordFieldsForExn _g _denv err aenv (infoReader: InfoReader) (enclosingImplTycon: Tycon) (enclosingSigTycon: Tycon) (implFields: TyconRecdFields) (sigFields: TyconRecdFields) =
             let implFields = implFields.TrueFieldsAsList
@@ -664,11 +664,11 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
             let m2 = NameMap.ofKeyedList (fun (v: ValRef) -> v.DisplayName) sigAbstractSlots
             (m1, m2) ||> NameMap.suball2 (fun _s vref -> 
                 let valText = NicePrint.richTextValOrMember denv infoReader vref
-                errorR(RichError (FSComp.SR.DefinitionsInSigAndImplNotCompatibleAbstractMemberMissingInImpl(kindText, implTyconName, valText), m)); false) (fun _x _y -> true)  &&
+                errorR(Error (FSComp.SR.DefinitionsInSigAndImplNotCompatibleAbstractMemberMissingInImpl(kindText, implTyconName, valText), m)); false) (fun _x _y -> true)  &&
 
             (m2, m1) ||> NameMap.suball2 (fun _s vref -> 
                 let valText = NicePrint.richTextValOrMember denv infoReader vref
-                errorR(RichError (FSComp.SR.DefinitionsInSigAndImplNotCompatibleAbstractMemberMissingInSig(kindText, implTyconName, valText), m)); false) (fun _x _y -> true)  
+                errorR(Error (FSComp.SR.DefinitionsInSigAndImplNotCompatibleAbstractMemberMissingInSig(kindText, implTyconName, valText), m)); false) (fun _x _y -> true)  
 
         and checkClassFields isStruct m aenv infoReader (implTycon: Tycon) (signTycon: Tycon) (implFields: TyconRecdFields) (sigFields: TyconRecdFields) =
             let kindText = RichText.mkText (implTycon.TypeOrMeasureKind.ToString())
@@ -678,11 +678,11 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
             let m1 = implFields |> NameMap.ofKeyedList (fun rfld -> rfld.LogicalName) 
             let m2 = sigFields |> NameMap.ofKeyedList (fun rfld -> rfld.LogicalName) 
             NameMap.suball2 
-                (fun fieldName _ -> errorR(RichError (FSComp.SR.DefinitionsInSigAndImplNotCompatibleFieldRequiredButNotSpecified(kindText, implTyconName, RichText.mkRecordField fieldName), m)); false) 
+                (fun fieldName _ -> errorR(Error (FSComp.SR.DefinitionsInSigAndImplNotCompatibleFieldRequiredButNotSpecified(kindText, implTyconName, RichText.mkRecordField fieldName), m)); false) 
                 (checkField aenv infoReader implTycon signTycon) m1 m2 &&
             (if isStruct then 
                 NameMap.suball2 
-                    (fun fieldName _ -> warning(RichError (FSComp.SR.DefinitionsInSigAndImplNotCompatibleFieldIsInImplButNotSig(kindText, implTyconName, RichText.mkRecordField fieldName), m)); true) 
+                    (fun fieldName _ -> warning(Error (FSComp.SR.DefinitionsInSigAndImplNotCompatibleFieldIsInImplButNotSig(kindText, implTyconName, RichText.mkRecordField fieldName), m)); true) 
                     (fun x y -> checkField aenv infoReader implTycon signTycon y x) m2 m1
              else
                 true)
@@ -697,9 +697,9 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
               match Zset.elements (Zset.diff aset fset) with 
               | [] -> 
                   match Zset.elements (Zset.diff fset aset) with             
-                  | [] -> (errorR (RichError (FSComp.SR.DefinitionsInSigAndImplNotCompatibleNumbersDiffer(kindText, implTyconName, RichText.mkText k), m)); false)
-                  | l -> (errorR (RichError (FSComp.SR.DefinitionsInSigAndImplNotCompatibleSignatureDefinesButImplDoesNot(kindText, implTyconName, RichText.mkText k, RichText.mkText (String.concat ";" l)), m)); false)
-              | l -> (errorR (RichError (FSComp.SR.DefinitionsInSigAndImplNotCompatibleImplDefinesButSignatureDoesNot(kindText, implTyconName, RichText.mkText k, RichText.mkText (String.concat ";" l)), m)); false)
+                  | [] -> (errorR (Error (FSComp.SR.DefinitionsInSigAndImplNotCompatibleNumbersDiffer(kindText, implTyconName, RichText.mkText k), m)); false)
+                  | l -> (errorR (Error (FSComp.SR.DefinitionsInSigAndImplNotCompatibleSignatureDefinesButImplDoesNot(kindText, implTyconName, RichText.mkText k, RichText.mkText (String.concat ";" l)), m)); false)
+              | l -> (errorR (Error (FSComp.SR.DefinitionsInSigAndImplNotCompatibleImplDefinesButSignatureDoesNot(kindText, implTyconName, RichText.mkText k, RichText.mkText (String.concat ";" l)), m)); false)
 
             match implTycon.TypeReprInfo, sigTycon.TypeReprInfo with 
             | (TILObjectRepr _ 
@@ -711,13 +711,13 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
             | TFSharpTyconRepr r, TNoRepr  -> 
                 match r.fsobjmodel_kind with 
                 | TFSharpStruct | TFSharpEnum -> 
-                   (errorR (RichError(FSComp.SR.DefinitionsInSigAndImplNotCompatibleImplDefinesStruct(kindText, implTyconName), m)); false)
+                   (errorR (Error(FSComp.SR.DefinitionsInSigAndImplNotCompatibleImplDefinesStruct(kindText, implTyconName), m)); false)
                 | _ -> 
                    true
             | TAsmRepr _, TNoRepr -> 
-                (errorR (RichError(FSComp.SR.DefinitionsInSigAndImplNotCompatibleDotNetTypeRepresentationIsHidden(kindText, implTyconName), m)); false)
+                (errorR (Error(FSComp.SR.DefinitionsInSigAndImplNotCompatibleDotNetTypeRepresentationIsHidden(kindText, implTyconName), m)); false)
             | TMeasureableRepr _, TNoRepr -> 
-                (errorR (RichError(FSComp.SR.DefinitionsInSigAndImplNotCompatibleTypeIsHidden(kindText, implTyconName), m)); false)
+                (errorR (Error(FSComp.SR.DefinitionsInSigAndImplNotCompatibleTypeIsHidden(kindText, implTyconName), m)); false)
 
             // Union types are compatible with union types in signature
             | TFSharpTyconRepr { fsobjmodel_kind=TFSharpUnion; fsobjmodel_cases=r1},
@@ -756,16 +756,16 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
                                (returnTypesAEquiv g aenv rty1 rty2)))
                     | _ -> false
                 if not compat then
-                    errorR (RichError(FSComp.SR.DefinitionsInSigAndImplNotCompatibleTypeIsDifferentKind(kindText, implTyconName), m))
+                    errorR (Error(FSComp.SR.DefinitionsInSigAndImplNotCompatibleTypeIsDifferentKind(kindText, implTyconName), m))
                     false
                 else 
                   let isStruct = (match r1.fsobjmodel_kind with TFSharpStruct -> true | _ -> false)
                   checkClassFields isStruct m aenv infoReader implTycon sigTycon r1.fsobjmodel_rfields r2.fsobjmodel_rfields &&
                   checkVirtualSlots denv infoReader m implTycon r1.fsobjmodel_vslots r2.fsobjmodel_vslots
             | TAsmRepr tcr1,  TAsmRepr tcr2 -> 
-                if tcr1 <> tcr2 then  (errorR (RichError(FSComp.SR.DefinitionsInSigAndImplNotCompatibleILDiffer(kindText, implTyconName), m)); false) else true
+                if tcr1 <> tcr2 then  (errorR (Error(FSComp.SR.DefinitionsInSigAndImplNotCompatibleILDiffer(kindText, implTyconName), m)); false) else true
             | TMeasureableRepr ty1,  TMeasureableRepr ty2 -> 
-                if typeAEquiv g aenv ty1 ty2 then true else (errorR (RichError(FSComp.SR.DefinitionsInSigAndImplNotCompatibleRepresentationsDiffer(kindText, implTyconName), m)); false)
+                if typeAEquiv g aenv ty1 ty2 then true else (errorR (Error(FSComp.SR.DefinitionsInSigAndImplNotCompatibleRepresentationsDiffer(kindText, implTyconName), m)); false)
             | TNoRepr, TNoRepr -> true
 #if !NO_TYPEPROVIDERS
             | TProvidedTypeRepr info1, TProvidedTypeRepr info2 ->  
@@ -774,15 +774,15 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
                 System.Diagnostics.Debug.Assert(false, "unreachable: TProvidedNamespaceRepr only on namespaces, not types" )
                 true
 #endif
-            | TNoRepr, _ -> (errorR (RichError(FSComp.SR.DefinitionsInSigAndImplNotCompatibleRepresentationsDiffer(kindText, implTyconName), m)); false)
-            | _, _ -> (errorR (RichError(FSComp.SR.DefinitionsInSigAndImplNotCompatibleRepresentationsDiffer(kindText, implTyconName), m)); false)
+            | TNoRepr, _ -> (errorR (Error(FSComp.SR.DefinitionsInSigAndImplNotCompatibleRepresentationsDiffer(kindText, implTyconName), m)); false)
+            | _, _ -> (errorR (Error(FSComp.SR.DefinitionsInSigAndImplNotCompatibleRepresentationsDiffer(kindText, implTyconName), m)); false)
 
         and checkTypeAbbrev m aenv (implTycon: Tycon) (sigTycon: Tycon) =
             let kindText = RichText.mkText (implTycon.TypeOrMeasureKind.ToString())
             let implTyconName = richTextOfEntity implTycon
             let kind1 = implTycon.TypeOrMeasureKind
             let kind2 = sigTycon.TypeOrMeasureKind
-            if kind1 <> kind2 then (errorR (RichError (FSComp.SR.DefinitionsInSigAndImplNotCompatibleSignatureDeclaresDiffer(kindText, implTyconName, RichText.mkText (kind2.ToString()), RichText.mkText (kind1.ToString())), m)); false)
+            if kind1 <> kind2 then (errorR (Error (FSComp.SR.DefinitionsInSigAndImplNotCompatibleSignatureDeclaresDiffer(kindText, implTyconName, RichText.mkText (kind2.ToString()), RichText.mkText (kind1.ToString())), m)); false)
             else
               match implTycon.TypeAbbrev, sigTycon.TypeAbbrev with 
               | Some ty1, Some ty2 -> 
@@ -792,8 +792,8 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
                   else 
                       true
               | None, None -> true
-              | Some _, None -> (errorR (RichError (FSComp.SR.DefinitionsInSigAndImplNotCompatibleAbbreviationHiddenBySig(kindText, implTyconName), m)); false)
-              | None, Some _ -> (errorR (RichError (FSComp.SR.DefinitionsInSigAndImplNotCompatibleSigHasAbbreviation(kindText, implTyconName), m)); false)
+              | Some _, None -> (errorR (Error (FSComp.SR.DefinitionsInSigAndImplNotCompatibleAbbreviationHiddenBySig(kindText, implTyconName), m)); false)
+              | None, Some _ -> (errorR (Error (FSComp.SR.DefinitionsInSigAndImplNotCompatibleSigHasAbbreviation(kindText, implTyconName), m)); false)
 
         and checkModuleOrNamespaceContents m aenv (infoReader: InfoReader) (implModRef: ModuleOrNamespaceRef) (signModType: ModuleOrNamespaceType) = 
             let implModType = implModRef.ModuleOrNamespaceType

@@ -56,11 +56,7 @@ exception DiagnosticEnabledWithLanguageFeature of
     enabledByLangFeature: bool
 
 /// Creates a diagnostic exception whose text comes via SR.*
-val Error: (int * string) * range -> exn
-
-/// Same as 'Error', but for a message whose parts are classified, so that tooling is able to render it
-/// with colors. See docs/rich-diagnostics.md.
-val RichError: (int * RichText) * range -> exn
+val Error: (int * RichText) * range -> exn
 
 exception InternalError of message: string * range: range
 

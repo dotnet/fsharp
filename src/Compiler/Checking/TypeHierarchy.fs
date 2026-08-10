@@ -252,7 +252,7 @@ let FoldHierarchyOfTypeAux followInterfaces allowMultiIntfInst skipUnref visitor
             | _ ->
                 state
 
-        if ndeep > 100 then (errorR(RichError((FSComp.SR.recursiveClassHierarchy (RichText.mkText (showType ty))), m)); (visitedTycon, visited, acc)) else
+        if ndeep > 100 then (errorR(Error((FSComp.SR.recursiveClassHierarchy (RichText.mkText (showType ty))), m)); (visitedTycon, visited, acc)) else
         let visitedTycon, visited, acc =
             if isInterfaceTy g ty then
                 List.foldBack

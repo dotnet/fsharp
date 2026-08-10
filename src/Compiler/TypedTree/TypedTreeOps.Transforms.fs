@@ -312,7 +312,7 @@ module internal XmlDocSignatures =
         let vtps = v.Typars |> Zset.ofList typarOrder
 
         if not (isFunTy g v.TauType) then
-            errorR (RichError(FSComp.SR.activePatternIdentIsNotFunctionTyped (RichText.mkActivePatternCase v.LogicalName), v.Range))
+            errorR (Error(FSComp.SR.activePatternIdentIsNotFunctionTyped (RichText.mkActivePatternCase v.LogicalName), v.Range))
 
         let argTys, resty = stripFunTy g vty
 

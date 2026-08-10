@@ -383,7 +383,7 @@ module DispatchSlotChecking =
                         checkLanguageFeatureAndRecover g.langVersion LanguageFeature.DefaultInterfaceMemberConsumption m
 
                     if reqdSlot.PossiblyNoMostSpecificImplementation then
-                        errorR(RichError(FSComp.SR.typrelInterfaceMemberNoMostSpecificImplementation(NicePrint.richTextOfMethInfo infoReader m denv dispatchSlot), m))
+                        errorR(Error(FSComp.SR.typrelInterfaceMemberNoMostSpecificImplementation(NicePrint.richTextOfMethInfo infoReader m denv dispatchSlot), m))
 
                     // error reporting path
                     let compiledSig = CompiledSigOfMeth g amap m dispatchSlot
@@ -417,15 +417,15 @@ module DispatchSlotChecking =
                                     noimpl()
 
                                 elif (argTys.Length <> vargTys.Length) then
-                                    fail(RichError(FSComp.SR.typrelMemberDoesNotHaveCorrectNumberOfArguments(FormatOverride denv overrideBy, FormatMethInfoSig g amap m denv dispatchSlot), overrideBy.Range))
+                                    fail(Error(FSComp.SR.typrelMemberDoesNotHaveCorrectNumberOfArguments(FormatOverride denv overrideBy, FormatMethInfoSig g amap m denv dispatchSlot), overrideBy.Range))
                                 elif methTypars.Length <> fvmethTypars.Length then
-                                    fail(RichError(FSComp.SR.typrelMemberDoesNotHaveCorrectNumberOfTypeParameters(FormatOverride denv overrideBy, FormatMethInfoSig g amap m denv dispatchSlot), overrideBy.Range))
+                                    fail(Error(FSComp.SR.typrelMemberDoesNotHaveCorrectNumberOfTypeParameters(FormatOverride denv overrideBy, FormatMethInfoSig g amap m denv dispatchSlot), overrideBy.Range))
                                 elif not (IsTyparKindMatch compiledSig overrideBy) then
-                                    fail(RichError(FSComp.SR.typrelMemberDoesNotHaveCorrectKindsOfGenericParameters(FormatOverride denv overrideBy, FormatMethInfoSig g amap m denv dispatchSlot), overrideBy.Range))
+                                    fail(Error(FSComp.SR.typrelMemberDoesNotHaveCorrectKindsOfGenericParameters(FormatOverride denv overrideBy, FormatMethInfoSig g amap m denv dispatchSlot), overrideBy.Range))
                                 else
-                                    fail(RichError(FSComp.SR.typrelMemberCannotImplement(FormatOverride denv overrideBy, NicePrint.richTextOfMethInfo infoReader m denv dispatchSlot, FormatMethInfoSig g amap m denv dispatchSlot), overrideBy.Range))
+                                    fail(Error(FSComp.SR.typrelMemberCannotImplement(FormatOverride denv overrideBy, NicePrint.richTextOfMethInfo infoReader m denv dispatchSlot, FormatMethInfoSig g amap m denv dispatchSlot), overrideBy.Range))
                         | overrideBy :: _ -> 
-                            errorR(RichError(FSComp.SR.typrelOverloadNotFound(FormatMethInfoSig g amap m denv dispatchSlot, FormatMethInfoSig g amap m denv dispatchSlot), overrideBy.Range))
+                            errorR(Error(FSComp.SR.typrelOverloadNotFound(FormatMethInfoSig g amap m denv dispatchSlot, FormatMethInfoSig g amap m denv dispatchSlot), overrideBy.Range))
 
                     | [ overrideBy ] -> 
                         if dispatchSlots |> List.exists (fun reqdSlot -> OverrideImplementsDispatchSlot g amap m reqdSlot.MethodInfo overrideBy) then
@@ -434,8 +434,8 @@ module DispatchSlotChecking =
                             // Error will be reported below in CheckOverridesAreAllUsedOnce 
                             ()
                     | ambiguousOverride :: _ ->
-                        fail(RichError(FSComp.SR.typrelOverrideWasAmbiguous(FormatMethInfoSig g amap ambiguousOverride.Range denv dispatchSlot), ambiguousOverride.Range))
-            | _ -> fail(RichError(FSComp.SR.typrelMoreThenOneOverride(FormatMethInfoSig g amap m denv dispatchSlot), m))
+                        fail(Error(FSComp.SR.typrelOverrideWasAmbiguous(FormatMethInfoSig g amap ambiguousOverride.Range denv dispatchSlot), ambiguousOverride.Range))
+            | _ -> fail(Error(FSComp.SR.typrelMoreThenOneOverride(FormatMethInfoSig g amap m denv dispatchSlot), m))
         
         if missingOverloadImplementation.Count > 0 then
             // compose message listing missing override implementation
@@ -451,9 +451,9 @@ module DispatchSlotChecking =
                 // only one missing override, we have specific message for that
                 let signature = (snd missingOverloadImplementation[0]).Value
                 if messageWithInterfaceSuggestion then 
-                    fail(RichError(FSComp.SR.typrelNoImplementationGivenWithSuggestion(signature), m))
+                    fail(Error(FSComp.SR.typrelNoImplementationGivenWithSuggestion(signature), m))
                 else
-                    fail(RichError(FSComp.SR.typrelNoImplementationGiven(signature), m))
+                    fail(Error(FSComp.SR.typrelNoImplementationGiven(signature), m))
             else
                 let signatures = 
                     let listed =
@@ -474,7 +474,7 @@ module DispatchSlotChecking =
                     | false, false -> FSComp.SR.typrelNoImplementationGivenSeveral
                     | true , true  -> FSComp.SR.typrelNoImplementationGivenSeveralTruncatedWithSuggestion
                     | true , false -> FSComp.SR.typrelNoImplementationGivenSeveralTruncated
-                fail(RichError(messageFunction(signatures), m))
+                fail(Error(messageFunction(signatures), m))
 
         res
 
@@ -637,13 +637,13 @@ module DispatchSlotChecking =
                                     (FormatMethInfoSig g amap m denv dispatchSlot))
                             |> RichText.concat
 
-                       errorR(RichError(FSComp.SR.typrelMemberHasMultiplePossibleDispatchSlots(FormatOverride denv overrideBy, details), overrideBy.Range))
+                       errorR(Error(FSComp.SR.typrelMemberHasMultiplePossibleDispatchSlots(FormatOverride denv overrideBy, details), overrideBy.Range))
 
 
             | [matchedSlot] -> 
                 let dispatchSlot = matchedSlot.MethodInfo
                 if dispatchSlot.IsFinal && (isObjExpr || not (typeEquiv g reqdTy dispatchSlot.ApparentEnclosingType)) then 
-                    errorR(RichError(FSComp.SR.typrelMethodIsSealed(NicePrint.richTextOfMethInfo infoReader m denv dispatchSlot), m))
+                    errorR(Error(FSComp.SR.typrelMethodIsSealed(NicePrint.richTextOfMethInfo infoReader m denv dispatchSlot), m))
             | matchedSlots -> 
                 // Filter out slots that have DIM coverage directly from RequiredSlot
                 let slotsWithoutDIMCoverage =
@@ -656,7 +656,7 @@ module DispatchSlotChecking =
                               isInterfaceTy g dispatchSlot.ApparentEnclosingType || 
                               not (DispatchSlotIsAlreadyImplemented g amap m availPriorOverridesKeyed dispatchSlot)) with
                 | h1 :: h2 :: _ -> 
-                    errorR(RichError(FSComp.SR.typrelOverrideImplementsMoreThenOneSlot((FormatOverride denv overrideBy), (NicePrint.richTextOfMethInfo infoReader m denv h1), (NicePrint.richTextOfMethInfo infoReader m denv h2)), m))
+                    errorR(Error(FSComp.SR.typrelOverrideImplementsMoreThenOneSlot((FormatOverride denv overrideBy), (NicePrint.richTextOfMethInfo infoReader m denv h1), (NicePrint.richTextOfMethInfo infoReader m denv h2)), m))
                 | _ -> 
                     // dispatch slots are ordered from the derived classes to base
                     // so we can check the topmost dispatch slot if it is final
@@ -669,7 +669,7 @@ module DispatchSlotChecking =
                                   RichText.mkPunctuation "::"
                                   RichText.mkMethod meth.LogicalName ]
 
-                        errorR(RichError(FSComp.SR.tcCannotOverrideSealedMethod name, m))
+                        errorR(Error(FSComp.SR.tcCannotOverrideSealedMethod name, m))
                     | _ -> ()
 
     /// Get the slots of a type that can or must be implemented. This depends
@@ -775,7 +775,7 @@ module DispatchSlotChecking =
                                     let minfo = reqdSlot.MethodInfo
                                     // If the slot is optional, then we do not need an explicit implementation.
                                     minfo.IsNewSlot && not reqdSlot.IsOptional) then
-                                errorR(RichError(FSComp.SR.typrelNeedExplicitImplementation(NicePrint.minimalRichTextOfType denv ty), reqdTyRange))
+                                errorR(Error(FSComp.SR.typrelNeedExplicitImplementation(NicePrint.minimalRichTextOfType denv ty), reqdTyRange))
                      
             // We also collect up the properties. This is used for abstract slot inference when overriding properties
             let isRelevantRequiredProperty (x: PropInfo) = 
@@ -944,9 +944,9 @@ let FinalTypeDefinitionChecksAtEndOfInferenceScope (infoReader: InfoReader, nenv
      then
         (* Warn when we're doing this for class types *)
         if AugmentTypeDefinitions.TyconIsCandidateForAugmentationWithEquals g tycon then
-            warning(RichError(FSComp.SR.typrelTypeImplementsIComparableShouldOverrideObjectEquals(richTextOfEntity tycon), tycon.Range))
+            warning(Error(FSComp.SR.typrelTypeImplementsIComparableShouldOverrideObjectEquals(richTextOfEntity tycon), tycon.Range))
         else
-            warning(RichError(FSComp.SR.typrelTypeImplementsIComparableDefaultObjectEqualsProvided(richTextOfEntity tycon), tycon.Range))
+            warning(Error(FSComp.SR.typrelTypeImplementsIComparableDefaultObjectEqualsProvided(richTextOfEntity tycon), tycon.Range))
 
     AugmentTypeDefinitions.CheckAugmentationAttribs isImplementation g amap tycon
     // Check some conditions about generic comparison and hashing. We can only check this condition after we've done the augmentation 
@@ -962,13 +962,13 @@ let FinalTypeDefinitionChecksAtEndOfInferenceScope (infoReader: InfoReader, nenv
 
         if (Option.isSome tycon.GeneratedHashAndEqualsWithComparerValues) && 
            (hasExplicitObjectGetHashCode || hasExplicitObjectEqualsOverride) then 
-            errorR(RichError(FSComp.SR.typrelExplicitImplementationOfGetHashCodeOrEquals(richTextOfEntity tycon), m)) 
+            errorR(Error(FSComp.SR.typrelExplicitImplementationOfGetHashCodeOrEquals(richTextOfEntity tycon), m)) 
 
         if not hasExplicitObjectEqualsOverride && hasExplicitObjectGetHashCode then 
-            warning(RichError(FSComp.SR.typrelExplicitImplementationOfGetHashCode(richTextOfEntity tycon), m)) 
+            warning(Error(FSComp.SR.typrelExplicitImplementationOfGetHashCode(richTextOfEntity tycon), m)) 
 
         if hasExplicitObjectEqualsOverride && not hasExplicitObjectGetHashCode then 
-            warning(RichError(FSComp.SR.typrelExplicitImplementationOfEquals(richTextOfEntity tycon), m)) 
+            warning(Error(FSComp.SR.typrelExplicitImplementationOfEquals(richTextOfEntity tycon), m)) 
 
         // remember these values to ensure we don't generate these methods during codegen 
         tcaug.SetHasObjectGetHashCode hasExplicitObjectGetHashCode

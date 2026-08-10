@@ -220,8 +220,10 @@ module RichMessage =
 
     let text (format: (RichText -> string) -> string) = formatWithMarkers format id |> snd
 
-    let numbered (format: (RichText -> string) -> int * string) =
-        let (number, _), text = formatWithMarkers format snd
+    let numbered (format: (RichText -> string) -> int * RichText) =
+        let (number, _), text =
+            formatWithMarkers format (fun (_, message: RichText) -> message.Text)
+
         number, text
 
 [<Sealed>]

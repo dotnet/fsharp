@@ -102,7 +102,7 @@ module DeclarationListHelpers =
     /// Generate the structured tooltip for a method info
     let FormatOverloadsToList (infoReader: InfoReader) m denv (item: ItemWithInst) minfos symbol (width: int option) : ToolTipElement =
         ToolTipFault |> Option.iter (fun msg -> 
-           let exn = Error((0, msg), range0)
+           let exn = Error((0, RichText.mkText msg), range0)
            let ph = PhasedDiagnostic.Create(exn, BuildPhase.TypeCheck, FSharpDiagnosticSeverity.Error)
            simulateError ph)
         

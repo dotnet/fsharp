@@ -246,10 +246,10 @@ and TcPatBindingName cenv env id ty isMemberThis vis1 valReprInfo (vFlags: TcPat
                 if not (String.IsNullOrEmpty name) && not (String.isLeadingIdentifierCharacterUpperCase name) then
                     match env.eNameResEnv.ePatItems.TryGetValue name with
                     | true, Item.Value vref when vref.LiteralValue.IsSome ->
-                        warning(RichError(FSComp.SR.checkLowercaseLiteralBindingInPattern (RichText.mkLocal name), id.idRange))
+                        warning(Error(FSComp.SR.checkLowercaseLiteralBindingInPattern (RichText.mkLocal name), id.idRange))
                     | _ -> ()
                 value
-            | _ -> error(RichError(FSComp.SR.tcNameNotBoundInPattern (RichText.mkUnresolvedName name), id.idRange))
+            | _ -> error(Error(FSComp.SR.tcNameNotBoundInPattern (RichText.mkUnresolvedName name), id.idRange))
 
         // isLeftMost indicates we are processing the left-most path through a disjunctive or pattern.
         // For those binding locations, CallNameResolutionSink is called in MakeAndPublishValue, like all other bindings
@@ -599,7 +599,7 @@ and TcPatLongIdent warnOnUpper cenv env ad valReprInfo vFlags (patEnv: TcPatLine
 
         match args with
         | SynArgPats.Pats _ -> ()
-        | _ -> errorR (RichError(FSComp.SR.tcNamedActivePattern (RichText.mkActivePatternCase apinfo.ActiveTags[idx]), m))
+        | _ -> errorR (Error(FSComp.SR.tcNamedActivePattern (RichText.mkActivePatternCase apinfo.ActiveTags[idx]), m))
 
         let args = GetSynArgPatterns args
 
@@ -724,11 +724,11 @@ and TcPatLongIdentUnionCaseOrExnCase warnOnUpper cenv env ad vFlags patEnv ty (m
                     extraPatterns.Add pat
                     match item with
                     | Item.UnionCase(uci, _) ->
-                        errorR (RichError(FSComp.SR.tcUnionCaseConstructorDoesNotHaveFieldWithGivenName (RichText.mkUnionCase uci.DisplayName, RichText.mkUnresolvedName id.idText), id.idRange))
+                        errorR (Error(FSComp.SR.tcUnionCaseConstructorDoesNotHaveFieldWithGivenName (RichText.mkUnionCase uci.DisplayName, RichText.mkUnresolvedName id.idText), id.idRange))
                     | Item.ExnCase tcref ->
-                        errorR (RichError(FSComp.SR.tcExceptionConstructorDoesNotHaveFieldWithGivenName (richTextOfEntityRef tcref, RichText.mkUnresolvedName id.idText), id.idRange))
+                        errorR (Error(FSComp.SR.tcExceptionConstructorDoesNotHaveFieldWithGivenName (richTextOfEntityRef tcref, RichText.mkUnresolvedName id.idText), id.idRange))
                     | _ ->
-                        errorR (RichError(FSComp.SR.tcConstructorDoesNotHaveFieldWithGivenName (RichText.mkUnresolvedName id.idText), id.idRange))
+                        errorR (Error(FSComp.SR.tcConstructorDoesNotHaveFieldWithGivenName (RichText.mkUnresolvedName id.idText), id.idRange))
 
                 | Some idx ->
                     let argItem =
@@ -743,7 +743,7 @@ and TcPatLongIdentUnionCaseOrExnCase warnOnUpper cenv env ad vFlags patEnv ty (m
                     | null -> result[idx] <- pat
                     | _ ->
                         extraPatterns.Add pat
-                        errorR (RichError(FSComp.SR.tcUnionCaseFieldCannotBeUsedMoreThanOnce (RichText.mkField id.idText), id.idRange))
+                        errorR (Error(FSComp.SR.tcUnionCaseFieldCannotBeUsedMoreThanOnce (RichText.mkField id.idText), id.idRange))
 
             for i = 0 to numArgTys - 1 do
                 if isNull (box result[i]) then
@@ -797,7 +797,7 @@ and TcPatLongIdentUnionCaseOrExnCase warnOnUpper cenv env ad vFlags patEnv ty (m
                     |> RichText.concatWith (RichText.mkText (Environment.NewLine + "\t"))
                     |> RichText.append (RichText.mkText (Environment.NewLine + "\t"))
 
-                errorR (RichError (FSComp.SR.tcUnionCaseExpectsTupledArguments(numArgTys, numArgs, missingArgs), m))
+                errorR (Error (FSComp.SR.tcUnionCaseExpectsTupledArguments(numArgTys, numArgs, missingArgs), m))
             else
                 errorR (UnionCaseWrongArguments (env.DisplayEnv, numArgTys, numArgs, m))
             args @ (List.init (numArgTys - numArgs) (fun _ -> SynPat.Wild (m.MakeSynthetic()))), extraPatterns
@@ -819,7 +819,7 @@ and TcPatLongIdentILField warnOnUpper (cenv: cenv) env vFlags patEnv ty (mLongId
     CheckILFieldInfoAccessible g cenv.amap mLongId env.AccessRights finfo
 
     if not finfo.IsStatic then
-        errorR (RichError(FSComp.SR.tcFieldIsNotStatic (RichText.mkField finfo.FieldName), mLongId))
+        errorR (Error(FSComp.SR.tcFieldIsNotStatic (RichText.mkField finfo.FieldName), mLongId))
 
     CheckILFieldAttributes g finfo m
 
@@ -840,7 +840,7 @@ and TcPatLongIdentILField warnOnUpper (cenv: cenv) env vFlags patEnv ty (mLongId
 and TcPatLongIdentRecdField warnOnUpper cenv env vFlags patEnv ty (mLongId, rfinfo, args, m) =
     let g = cenv.g
     CheckRecdFieldInfoAccessible cenv.amap mLongId env.AccessRights rfinfo
-    if not rfinfo.IsStatic then errorR (RichError(FSComp.SR.tcFieldIsNotStatic(RichText.mkRecordField rfinfo.DisplayName), mLongId))
+    if not rfinfo.IsStatic then errorR (Error(FSComp.SR.tcFieldIsNotStatic(RichText.mkRecordField rfinfo.DisplayName), mLongId))
     CheckRecdFieldInfoAttributes g rfinfo mLongId |> CommitOperationResult
 
     match rfinfo.LiteralValue with

@@ -317,7 +317,7 @@ type EntityFlags =
 
 exception UndefinedName of depth: int * error: (RichText -> RichText) * id: Ident * suggestions: Suggestions
 
-exception InternalUndefinedItemRef of (string * string * string -> int * string) * string * string * string
+exception InternalUndefinedItemRef of (string * string * string -> int * RichText) * string * string * string
 
 [<CustomEquality; NoComparison>]
 type ModuleOrNamespaceKind =

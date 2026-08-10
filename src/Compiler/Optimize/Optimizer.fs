@@ -640,7 +640,7 @@ let GetInfoForLocalValue cenv env (v: Val) m =
     | Some vval -> vval
     | None ->
         if not v.IsDispatchSlot && v.ShouldInline then
-            errorR(RichError(FSComp.SR.optValueMarkedInlineButWasNotBoundInTheOptEnv(richTextOfQualifiedValRef (mkLocalValRef v)), m))
+            errorR(Error(FSComp.SR.optValueMarkedInlineButWasNotBoundInTheOptEnv(richTextOfQualifiedValRef (mkLocalValRef v)), m))
         UnknownValInfo
 
 let TryGetInfoForCcu env (ccu: CcuThunk) = env.globalModuleInfos.TryFind(ccu.AssemblyName)
@@ -774,7 +774,7 @@ let MakeValueInfoForValue g m vref vinfo =
 #if DEBUG
     let rec check x = 
         match x with 
-        | ValValue (vref2, detail) -> if valRefEq g vref vref2 then error(RichError(FSComp.SR.optRecursiveValValue(RichText.mkText (showL(exprValueInfoL g vinfo))), m)) else check detail
+        | ValValue (vref2, detail) -> if valRefEq g vref vref2 then error(Error(FSComp.SR.optRecursiveValValue(RichText.mkText (showL(exprValueInfoL g vinfo))), m)) else check detail
         | SizeValue (_n, detail) -> check detail
         | _ -> ()
     check vinfo
@@ -3302,11 +3302,11 @@ and OptimizeVal cenv env expr (v: ValRef, m) =
        if cenv.settings.alwaysInline then
            if v.ShouldInline then
                 match valInfoForVal.ValExprInfo with
-                | UnknownValue -> error(RichError(FSComp.SR.optFailedToInlineValue(richTextOfValName g v.Deref), m))
-                | _ -> warning(RichError(FSComp.SR.optFailedToInlineValue(richTextOfValName g v.Deref), m))
+                | UnknownValue -> error(Error(FSComp.SR.optFailedToInlineValue(richTextOfValName g v.Deref), m))
+                | _ -> warning(Error(FSComp.SR.optFailedToInlineValue(richTextOfValName g v.Deref), m))
 
            if v.InlineIfLambda then
-               warning(RichError(FSComp.SR.optFailedToInlineSuggestedValue(richTextOfValName g v.Deref), m))
+               warning(Error(FSComp.SR.optFailedToInlineSuggestedValue(richTextOfValName g v.Deref), m))
 
        expr, (AddValEqualityInfo g m v 
                     { Info=valInfoForVal.ValExprInfo 
@@ -4558,7 +4558,7 @@ and OptimizeBinding cenv isRec env (TBind(vref, expr, spBind)) =
             // excluded, as they are expanded transitively when the outer member is inlined.
             let fvs = freeInExpr CollectLocals exprOptimized
             if fvs.FreeLocals |> Zset.exists (fun v -> not v.ShouldInline && not (canAccessFromEverywhere v.Accessibility)) then
-                errorR(RichError(FSComp.SR.optValueMarkedInlineButIncomplete(richTextOfValName g vref), vref.Range))
+                errorR(Error(FSComp.SR.optValueMarkedInlineButIncomplete(richTextOfValName g vref), vref.Range))
         
         let env = BindInternalLocalVal cenv vref (mkValInfo einfo vref) env
 

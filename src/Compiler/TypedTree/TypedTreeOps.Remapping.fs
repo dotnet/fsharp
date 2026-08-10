@@ -624,11 +624,11 @@ module internal SignatureOps =
             | true, true, _, _ -> ()
             | true, _, _, true
             | _, true, true, _ ->
-                errorR (RichError(FSComp.SR.tastNamespaceAndModuleWithSameNameInAssembly (richTextOfPath path2), entity2.Range))
+                errorR (Error(FSComp.SR.tastNamespaceAndModuleWithSameNameInAssembly (richTextOfPath path2), entity2.Range))
             | true, _, _, _
             | _, true, _, _ ->
                 errorR (
-                    RichError(
+                    Error(
                         FSComp.SR.tastNamespaceAndTypeWithSameNameInAssembly (
                             richTextOfPath path2,
                             richTextOfEntityName entity2 entity2.LogicalName
@@ -638,7 +638,7 @@ module internal SignatureOps =
                 )
             | false, false, false, false ->
                 errorR (
-                    RichError(
+                    Error(
                         FSComp.SR.tastDuplicateTypeDefinitionInAssembly (
                             richTextOfEntityName entity2 entity2.LogicalName,
                             richTextOfPath path
@@ -647,10 +647,10 @@ module internal SignatureOps =
                     )
                 )
             | false, false, true, true ->
-                errorR (RichError(FSComp.SR.tastTwoModulesWithSameNameInAssembly (richTextOfPath path2), entity2.Range))
+                errorR (Error(FSComp.SR.tastTwoModulesWithSameNameInAssembly (richTextOfPath path2), entity2.Range))
             | _ ->
                 errorR (
-                    RichError(
+                    Error(
                         FSComp.SR.tastConflictingModuleAndTypeDefinitionInAssembly (
                             richTextOfEntityName entity2 entity2.LogicalName,
                             richTextOfPath path

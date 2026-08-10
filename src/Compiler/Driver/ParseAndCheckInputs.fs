@@ -106,7 +106,7 @@ let ComputeAnonModuleName check defaultNamespace fileName (m: range) =
 
     if check && not (IsValidAnonModuleName modname) && not (IsScript fileName) then
         warning (
-            RichError(
+            Error(
                 FSComp.SR.buildImplicitModuleIsNotLegalIdentifier (
                     RichText.mkModule modname,
                     RichText.mkText (FileSystemUtils.fileNameOfPath fileName)
@@ -835,7 +835,7 @@ let ProcessMetaCommandsFromInput
                     errorR (HashDirectiveNotAllowedInNonScript m)
                 else
                     let arg = (parsedHashDirectiveArguments [] tcConfig.langVersion)
-                    warning (RichError((FSComp.SR.fsiInvalidDirective (RichText.mkKeyword c, RichText.mkText (String.concat " " arg))), m))
+                    warning (Error((FSComp.SR.fsiInvalidDirective (RichText.mkKeyword c, RichText.mkText (String.concat " " arg))), m))
 
                 state
 
@@ -1182,7 +1182,7 @@ let SkippedImplFilePlaceholder (tcConfig: TcConfig, tcImports: TcImports, tcGlob
 
         // Check if we've already seen an implementation for this fragment
         if Zset.contains qualNameOfFile tcState.tcsRootImpls then
-            errorR (RichError(FSComp.SR.buildImplementationAlreadyGiven (RichText.mkModule qualNameOfFile.Text), input.Range))
+            errorR (Error(FSComp.SR.buildImplementationAlreadyGiven (RichText.mkModule qualNameOfFile.Text), input.Range))
 
         let hadSig = rootSigOpt.IsSome
 
@@ -1242,11 +1242,11 @@ let CheckOneInput
 
                 // Check if we've seen this top module signature before.
                 if Zmap.mem qualNameOfFile tcState.tcsRootSigs then
-                    errorR (RichError(FSComp.SR.buildSignatureAlreadySpecified (RichText.mkModule qualNameOfFile.Text), m.StartRange))
+                    errorR (Error(FSComp.SR.buildSignatureAlreadySpecified (RichText.mkModule qualNameOfFile.Text), m.StartRange))
 
                 // Check if the implementation came first in compilation order
                 if Zset.contains qualNameOfFile tcState.tcsRootImpls then
-                    errorR (RichError(FSComp.SR.buildImplementationAlreadyGivenDetail (RichText.mkModule qualNameOfFile.Text), m))
+                    errorR (Error(FSComp.SR.buildImplementationAlreadyGivenDetail (RichText.mkModule qualNameOfFile.Text), m))
 
                 // Typecheck the signature file
                 let! tcEnv, sigFileType, createsGeneratedProvidedTypes =
@@ -1293,7 +1293,7 @@ let CheckOneInput
 
                 // Check if we've already seen an implementation for this fragment
                 if Zset.contains qualNameOfFile tcState.tcsRootImpls then
-                    errorR (RichError(FSComp.SR.buildImplementationAlreadyGiven (RichText.mkModule qualNameOfFile.Text), m))
+                    errorR (Error(FSComp.SR.buildImplementationAlreadyGiven (RichText.mkModule qualNameOfFile.Text), m))
 
                 let hadSig = rootSigOpt.IsSome
 
@@ -1380,7 +1380,7 @@ let CheckClosedInputSetFinish (declaredImpls: CheckedImplFile list, tcState) =
     tcState.tcsRootSigs
     |> Zmap.iter (fun qualNameOfFile _ ->
         if not (Zset.contains qualNameOfFile tcState.tcsRootImpls) then
-            errorR (RichError(FSComp.SR.buildSignatureWithoutImplementation (RichText.mkModule qualNameOfFile.Text), qualNameOfFile.Range)))
+            errorR (Error(FSComp.SR.buildSignatureWithoutImplementation (RichText.mkModule qualNameOfFile.Text), qualNameOfFile.Range)))
 
     tcState, declaredImpls, ccuContents
 
@@ -1459,11 +1459,11 @@ let CheckOneInputWithCallback
 
                 // Check if we've seen this top module signature before.
                 if Zmap.mem qualNameOfFile tcState.tcsRootSigs then
-                    errorR (RichError(FSComp.SR.buildSignatureAlreadySpecified (RichText.mkModule qualNameOfFile.Text), m.StartRange))
+                    errorR (Error(FSComp.SR.buildSignatureAlreadySpecified (RichText.mkModule qualNameOfFile.Text), m.StartRange))
 
                 // Check if the implementation came first in compilation order
                 if Zset.contains qualNameOfFile tcState.tcsRootImpls then
-                    errorR (RichError(FSComp.SR.buildImplementationAlreadyGivenDetail (RichText.mkModule qualNameOfFile.Text), m))
+                    errorR (Error(FSComp.SR.buildImplementationAlreadyGivenDetail (RichText.mkModule qualNameOfFile.Text), m))
 
                 // Typecheck the signature file
                 let! tcEnv, sigFileType, createsGeneratedProvidedTypes =
@@ -1541,7 +1541,7 @@ let CheckOneInputWithCallback
                         (fun tcState ->
                             // Check if we've already seen an implementation for this fragment
                             if Zset.contains qualNameOfFile tcState.tcsRootImpls then
-                                errorR (RichError(FSComp.SR.buildImplementationAlreadyGiven (RichText.mkModule qualNameOfFile.Text), m))
+                                errorR (Error(FSComp.SR.buildImplementationAlreadyGiven (RichText.mkModule qualNameOfFile.Text), m))
 
                             let ccuSigForFile, fsTcState =
                                 AddCheckResultsToTcState

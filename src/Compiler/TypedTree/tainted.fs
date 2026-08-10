@@ -33,11 +33,7 @@ type internal TypeProviderError
     new((errNum, msg: RichText), tpDesignation,m) = 
         TypeProviderError(errNum, tpDesignation, m, [msg])
 
-    /// For a message with nothing in it to classify, as Error is to RichError
-    new((errNum, msg: string), tpDesignation, m) =
-        TypeProviderError((errNum, RichText.mkText msg), tpDesignation, m)
-    
-    new(errNum, tpDesignation, m, messages: seq<RichText>) =         
+    new(errNum, tpDesignation, m, messages: seq<RichText>) =
         TypeProviderError(errNum, tpDesignation, m, List.ofSeq messages, None, None)
 
     member _.Number = errNum

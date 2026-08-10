@@ -24,9 +24,6 @@ type internal TypeProviderError =
     /// creates new instance of TypeProviderError that represents one error
     new: (int * RichText) * string * range -> TypeProviderError
 
-    /// creates new instance of TypeProviderError from a message with nothing in it to classify
-    new: (int * string) * string * range -> TypeProviderError
-
     /// creates new instance of TypeProviderError that represents collection of errors
     new: int * string * range * seq<RichText> -> TypeProviderError
 

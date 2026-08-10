@@ -97,7 +97,7 @@ type XmlDoc(unprocessedLines: string[], range: range) =
                         let nm = attr.Value
 
                         if not (paramNames |> List.contains nm) then
-                            warning (RichError(FSComp.SR.xmlDocInvalidParameterName (RichText.mkParameter nm), doc.Range))
+                            warning (Error(FSComp.SR.xmlDocInvalidParameterName (RichText.mkParameter nm), doc.Range))
 
                 let paramsWithDocs =
                     [
@@ -111,12 +111,12 @@ type XmlDoc(unprocessedLines: string[], range: range) =
 
                     for p in paramNames do
                         if not (paramsWithDocs |> List.contains p) then
-                            warning (RichError(FSComp.SR.xmlDocMissingParameter (RichText.mkParameter p), doc.Range))
+                            warning (Error(FSComp.SR.xmlDocMissingParameter (RichText.mkParameter p), doc.Range))
 
                 let duplicates = paramsWithDocs |> List.duplicates
 
                 for d in duplicates do
-                    warning (RichError(FSComp.SR.xmlDocDuplicateParameter (RichText.mkParameter d), doc.Range))
+                    warning (Error(FSComp.SR.xmlDocDuplicateParameter (RichText.mkParameter d), doc.Range))
 
                 for pref in xml.Descendants(XName.op_Implicit "paramref") do
                     match pref.Attribute(!!(XName.op_Implicit "name")) with
@@ -125,7 +125,7 @@ type XmlDoc(unprocessedLines: string[], range: range) =
                         let nm = attr.Value
 
                         if not (paramNames |> List.contains nm) then
-                            warning (RichError(FSComp.SR.xmlDocInvalidParameterName (RichText.mkParameter nm), doc.Range))
+                            warning (Error(FSComp.SR.xmlDocInvalidParameterName (RichText.mkParameter nm), doc.Range))
 
         with e ->
             warning (Error(FSComp.SR.xmlDocBadlyFormed e.Message, doc.Range))

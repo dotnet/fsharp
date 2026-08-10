@@ -7,16 +7,19 @@ open FSharp.Test.Compiler
 let private invalidCharWarningMsg (value: string) (wrapped: string) = 
     FSComp.SR.lexInvalidCharLiteralInString (value, wrapped)
     |> snd
+    |> _.Text
 
 /// `This byte array literal contains %d characters that do not encode as a single byte`
 let private invalidTwoByteErrorMsg count =
     FSComp.SR.lexByteArrayCannotEncode (count)
     |> snd
+    |> _.Text
 
 /// `This byte array literal contains %d non-ASCII characters.`
 let private invalidAsciiWarningMsg count =
     FSComp.SR.lexByteArrayOutisdeAscii (count)
     |> snd
+    |> _.Text
 
 [<Fact>]
 let ``Decimal char > 255 is not valid``() =
