@@ -273,6 +273,13 @@ if r <> "hahaha" then failwith (sprintf "Expected 'hahaha', got '%s'" r)
         |> withOptimize
         |> compileAndRun
         |> shouldSucceed
+        // The extension body must be inlined at the use site: literal "ha" -> Array.create -> String.Concat,
+        // i.e. the resolved witness is the extension, not FSharp.Core's dynamic operator.
+        |> verifyILContains ["""
+          IL_0001:  ldstr      "ha"
+          IL_0006:  call       !!0[] [FSharp.Core]Microsoft.FSharp.Collections.ArrayModule::Create<string>(int32,
+                                                                                                           !!0)
+          IL_000b:  call       string [runtime]System.String::Concat(string[])"""]
         |> verifyILNotPresent [ "Dynamic invocation of op_Multiply" ]
 
     [<Fact>]
@@ -296,6 +303,13 @@ if r <> "hahaha" then failwith (sprintf "Expected 'hahaha', got '%s'" r)
         |> withOptimize
         |> compileAndRun
         |> shouldSucceed
+        // The inline SRTP function's witness inlines across the file boundary all the way to the call site:
+        // the consumer's static initializer is the extension body, not a dynamic-operator dispatch.
+        |> verifyIL ["""
+          IL_0001:  ldstr      "ha"
+          IL_0006:  call       !!0[] [FSharp.Core]Microsoft.FSharp.Collections.ArrayModule::Create<string>(int32,
+                                                                                                           !!0)
+          IL_000b:  call       string [runtime]System.String::Concat(string[])"""]
 
     [<Fact>]
     let ``Cross-file extension operator with an explicit signature file resolves through SRTP`` () =
