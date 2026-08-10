@@ -1314,7 +1314,7 @@
       </trans-unit>
       <trans-unit id="tcAnonRecordExprSpreadSourceMustBeRecord">
         <source>The source expression of a spread into an anonymous record expression must have a nominal or anonymous record type.</source>
-        <target state="new">The source expression of a spread into an anonymous record expression must have a nominal or anonymous record type.</target>\
+        <target state="new">The source expression of a spread into an anonymous record expression must have a nominal or anonymous record type.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcAnonUnionCaseOverlap">

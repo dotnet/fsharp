@@ -126,6 +126,22 @@ module AnonymousUnionTypes =
         |> verifyCompileAndRun
         |> shouldSucceed
 
+    [<Theory; FileInlineData("AnonPatternMatchingNullable.fs")>]
+    let ``PatternMatchingNullable_fs`` compilation =
+        compilation
+        |> getCompilation
+        |> withLangVersionPreview
+        |> verifyCompileAndRun
+        |> shouldSucceed
+
+    [<Theory; FileInlineData("AnonBarLexing.fs")>]
+    let ``BarLexing_fs`` compilation =
+        compilation
+        |> getCompilation
+        |> withLangVersionPreview
+        |> verifyCompileAndRun
+        |> shouldSucceed
+
     [<Theory; FileInlineData("E_AnonWildcard.fs")>]
     let ``E_Wildcard_fs`` compilation =
         compilation
@@ -160,6 +176,40 @@ module AnonymousUnionTypes =
             (Error 193, Line 7, Col 17, Line 7, Col 19, "The type 'List<'a>' is ambiguous with respect to the anonymous union type '(int list | string list)' - multiple union cases match")
         ]
 
+    [<Theory; FileInlineData("E_AnonSystemNullable.fs")>]
+    let ``E_SystemNullable_fs`` compilation =
+        compilation
+        |> getCompilation
+        |> withLangVersionPreview
+        |> verifyCompile
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 193, Line 7, Col 17, Line 7, Col 19, "The type 'List<'a>' is ambiguous with respect to the anonymous union type '(int list | string list)' - multiple union cases match")
+        ]
+
+    [<Theory; FileInlineData("E_AnonNullableReferenceTypeValueType.fs")>]
+    let ``E_NullableReferenceTypeValueType_fs`` compilation =
+        compilation
+        |> getCompilation
+        |> withLangVersionPreview
+        |> verifyCompile
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 3260, Line 4, Col 9, Line 4, Col 17, "The type 'int' does not support a nullness qualification.");
+            (Error 43, Line 4, Col 9, Line 4, Col 17, "A generic construct requires that the type 'int' have reference semantics, but it does not, i.e. it is a struct")
+        ]
+
+    [<Theory; FileInlineData("E_AnonNullableReferenceType.fs")>]
+    let ``E_NullableReferenceType_fs`` compilation =
+        compilation
+        |> getCompilation
+        |> withLangVersionPreview
+        |> verifyCompile
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 3260, Line 4, Col 9, Line 4, Col 26, "The type '(int | string)' does not support a nullness qualification.")
+        ]
+
     [<Theory; FileInlineData("W_AnonPatternMatching.fs")>]
     let ``W_PatternMatching_fs`` compilation =
         compilation
@@ -183,7 +233,7 @@ module AnonymousUnionTypes =
         ]
 
     [<Theory; FileInlineData("W_AnonPatternMatching2Columns.fs")>]
-    let ``W_AnonPatternMatching2Columns_fs`` compilation =
+    let ``W_PatternMatching2Columns_fs`` compilation =
         compilation
         |> getCompilation
         |> withLangVersionPreview
@@ -191,6 +241,17 @@ module AnonymousUnionTypes =
         |> shouldFail
         |> withDiagnostics [
             (Warning 25, Line 5, Col 11, Line 5, Col 17, "Incomplete pattern matches on this expression. For example, the value '(``some-other-subtype``,``some-other-subtype``)' may indicate a case not covered by the pattern(s).")
+        ]
+
+    [<Theory; FileInlineData("W_AnonPatternMatchingNullable.fs")>]
+    let ``W_PatternMatchingNullable_fs`` compilation =
+        compilation
+        |> getCompilation
+        |> withLangVersionPreview
+        |> verifyCompile
+        |> shouldFail
+        |> withDiagnostics [
+            (Warning 25, Line 5, Col 11, Line 5, Col 12, "Incomplete pattern matches on this expression. For example, the value '``some-other-subtype``' may indicate a case not covered by the pattern(s).")
         ]
 
     [<Theory; FileInlineData("W_AnonTypeInclusion1.fs")>]
@@ -201,7 +262,7 @@ module AnonymousUnionTypes =
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
-            (Warning 3892, Line 0, Col 1, Line 0, Col 1, "The type 'int' is a subtype of 'int' and will be ignored")
+            (Warning 4000, Line 0, Col 1, Line 0, Col 1, "The type 'int' is a subtype of 'int' and will be ignored")
         ]
 
     [<Theory; FileInlineData("W_AnonTypeInclusion2.fs")>]
@@ -212,7 +273,7 @@ module AnonymousUnionTypes =
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
-            (Warning 3892, Line 4, Col 8, Line 4, Col 30, "The type 'int' is a subtype of 'System.ValueType' and will be ignored")
+            (Warning 4000, Line 4, Col 8, Line 4, Col 30, "The type 'int' is a subtype of 'System.ValueType' and will be ignored")
         ]
 
     [<Theory; FileInlineData("W_AnonTypeInclusion3.fs")>]
@@ -223,7 +284,7 @@ module AnonymousUnionTypes =
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
-            (Warning 3892, Line 0, Col 1, Line 0, Col 1, "The type 'int' is a subtype of 'System.Object' and will be ignored")
+            (Warning 4000, Line 0, Col 1, Line 0, Col 1, "The type 'int' is a subtype of 'System.Object' and will be ignored")
         ]
 
     [<Theory; FileInlineData("W_AnonTypeInclusion4.fs")>]
@@ -234,7 +295,7 @@ module AnonymousUnionTypes =
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
-            (Warning 3892, Line 4, Col 8, Line 4, Col 37, "The type 'string' is a subtype of 'System.IComparable' and will be ignored")
+            (Warning 4000, Line 4, Col 8, Line 4, Col 37, "The type 'string' is a subtype of 'System.IComparable' and will be ignored")
         ]
 
     [<Theory; FileInlineData("W_AnonUnitsOfMeasureOverlap.fs")>]
@@ -245,7 +306,7 @@ module AnonymousUnionTypes =
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
-            (Warning 3892, Line 4, Col 18, Line 4, Col 19, "The type 'int' is a subtype of 'int' and will be ignored")
+            (Warning 4000, Line 4, Col 18, Line 4, Col 19, "The type 'int' is a subtype of 'int' and will be ignored")
         ]
 
     [<Theory; FileInlineData("W_AnonTupleEliminationOverlap.fs")>]
@@ -256,7 +317,7 @@ module AnonymousUnionTypes =
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
-            (Warning 3892, Line 4, Col 8, Line 4, Col 45, "The type 'int * int' is a subtype of 'int * int' and will be ignored")
+            (Warning 4000, Line 4, Col 8, Line 4, Col 45, "The type 'int * int' is a subtype of 'int * int' and will be ignored")
         ]
 
     [<Theory; FileInlineData("W_AnonFunctionEliminationOverlap.fs")>]
@@ -267,5 +328,5 @@ module AnonymousUnionTypes =
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
-            (Warning 3892, Line 4, Col 10, Line 4, Col 46, "The type 'int -> int' is a subtype of 'int -> int' and will be ignored")
+            (Warning 4000, Line 4, Col 10, Line 4, Col 46, "The type 'int -> int' is a subtype of 'int -> int' and will be ignored")
         ]
