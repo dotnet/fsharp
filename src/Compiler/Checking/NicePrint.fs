@@ -2898,7 +2898,6 @@ let prettyLayoutOfMethInfoFreeStyle infoReader m denv typarInst minfo =
 let prettyLayoutOfPropInfoFreeStyle g amap m denv d =
     InfoMemberPrinting.prettyLayoutOfPropInfoFreeStyle g amap m denv d
 
-/// Convert a MethInfo to rich text
 let richTextOfMethInfo infoReader m denv minfo =
     InfoMemberPrinting.prettyLayoutOfMethInfoFreeStyle InfoMemberPrinting.CSharpExtensionTypeDisplay.ReceiverType infoReader m denv emptyTyparInst minfo
     |> snd

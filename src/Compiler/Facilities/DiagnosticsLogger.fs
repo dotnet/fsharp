@@ -826,8 +826,6 @@ let NormalizeErrorString (text: string) =
 
     buf.ToString()
 
-/// Same as 'NormalizeErrorString', but applied to the parts of a rich message, so that the
-/// classification of each part is preserved. Parts left empty by normalization are dropped.
 let NormalizeErrorRichText (text: RichText) =
     let full = text.Text
 

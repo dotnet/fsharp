@@ -118,10 +118,6 @@ module RichText =
     let collectParts mapping (text: RichText) =
         ofParts (Array.collect mapping text.Parts)
 
-    /// A dotted type name, classifying what is before the last dot as a namespace, the dot as
-    /// punctuation, and the name itself as a type of unknown kind. This is for names that arrive from
-    /// metadata, reflection or a type provider as one string; do not use it on an assembly-qualified
-    /// name, since an assembly version has dots in it too.
     let ofQualifiedName leafOfName (name: string) =
         match name.LastIndexOf '.' with
         | -1 -> leafOfName name

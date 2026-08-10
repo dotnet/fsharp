@@ -124,7 +124,6 @@ module DispatchSlotChecking =
            | _ -> argTys |> List.mapSquared (fun ty -> (ty, ValReprInfo.unnamedTopArg1)) 
        LayoutRender.toRichText (NicePrint.prettyLayoutOfMemberSig denv (memberToParentInst, id.idText, methTypars, argInfos, retTy))
 
-    /// Format the signature of a MethInfo as part of an error message
     let FormatMethInfoSig g amap m denv minfo =
         let denv = { denv with showTyparBinding = true }
         let (CompiledSig(argTys, retTy, fmethTypars, ttpinst)) = CompiledSigOfMeth g amap m minfo
