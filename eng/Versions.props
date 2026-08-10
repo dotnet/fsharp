@@ -90,8 +90,10 @@
     <SystemRuntimeCompilerServicesUnsafeVersion>6.1.2</SystemRuntimeCompilerServicesUnsafeVersion>
     <!-- System.* packages from dotnet/runtime flow via Version.Details.xml / Version.Details.props (darc). -->
     <!-- fsc/fsi and FSharp.Build.UnitTests consume MSBuild 18.10, which pulls these dotnet/runtime packages
-         transitively at >= 10.0.9; additionally Roslyn 5.11 (Microsoft.CodeAnalysis.Workspaces.Common) pulls
-         System.Composition transitively at >= 10.0.10 — in product/PR builds AND in source-build (which builds
+         transitively at >= 10.0.9; additionally Roslyn 5.11 pulls System.Composition (via
+         Microsoft.CodeAnalysis.Workspaces.Common) and System.Diagnostics.DiagnosticSource (via
+         Microsoft.CodeAnalysis.EditorFeatures / .LanguageServices.ExternalAccess) transitively at >= 10.0.10
+         — in product/PR builds AND in source-build (which builds
          live MSBuild 18.10 too, hence the floor must apply there as well). CPM transitive pinning needs the
          *central* pin to meet that floor, so define dedicated ...CentralVersion properties for eng/Packages.props.
          These do NOT touch the darc-flowed $(System*Version) properties, which stay authoritative for
@@ -102,16 +104,18 @@
     <SystemCollectionsImmutableCentralVersion>$(SystemCollectionsImmutableVersion)</SystemCollectionsImmutableCentralVersion>
     <SystemReflectionMetadataCentralVersion>$(SystemReflectionMetadataVersion)</SystemReflectionMetadataCentralVersion>
     <SystemCompositionCentralVersion>$(SystemCompositionVersion)</SystemCompositionCentralVersion>
+    <SystemDiagnosticsDiagnosticSourceCentralVersion>$(SystemDiagnosticsDiagnosticSourceVersion)</SystemDiagnosticsDiagnosticSourceCentralVersion>
   </PropertyGroup>
 
   <PropertyGroup>
     <!-- Minimum central version the MSBuild-pulled dotnet/runtime packages must meet (see comment above).
-         Raised to 10.0.10 for Roslyn 5.11's System.Composition >= 10.0.10 requirement; still satisfies MSBuild's >= 10.0.9. -->
+         Raised to 10.0.10 for Roslyn 5.11's System.Composition / System.Diagnostics.DiagnosticSource >= 10.0.10 requirement; still satisfies MSBuild's >= 10.0.9. -->
     <SystemRuntimeCentralFloorVersion>10.0.10</SystemRuntimeCentralFloorVersion>
     <SystemSecurityCryptographyXmlCentralVersion Condition="$([MSBuild]::VersionLessThan('$(SystemSecurityCryptographyXmlVersion)', '$(SystemRuntimeCentralFloorVersion)'))">$(SystemRuntimeCentralFloorVersion)</SystemSecurityCryptographyXmlCentralVersion>
     <SystemCollectionsImmutableCentralVersion Condition="$([MSBuild]::VersionLessThan('$(SystemCollectionsImmutableVersion)', '$(SystemRuntimeCentralFloorVersion)'))">$(SystemRuntimeCentralFloorVersion)</SystemCollectionsImmutableCentralVersion>
     <SystemReflectionMetadataCentralVersion Condition="$([MSBuild]::VersionLessThan('$(SystemReflectionMetadataVersion)', '$(SystemRuntimeCentralFloorVersion)'))">$(SystemRuntimeCentralFloorVersion)</SystemReflectionMetadataCentralVersion>
     <SystemCompositionCentralVersion Condition="$([MSBuild]::VersionLessThan('$(SystemCompositionVersion)', '$(SystemRuntimeCentralFloorVersion)'))">$(SystemRuntimeCentralFloorVersion)</SystemCompositionCentralVersion>
+    <SystemDiagnosticsDiagnosticSourceCentralVersion Condition="$([MSBuild]::VersionLessThan('$(SystemDiagnosticsDiagnosticSourceVersion)', '$(SystemRuntimeCentralFloorVersion)'))">$(SystemRuntimeCentralFloorVersion)</SystemDiagnosticsDiagnosticSourceCentralVersion>
   </PropertyGroup>
 
   <PropertyGroup>
