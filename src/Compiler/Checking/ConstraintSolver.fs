@@ -292,9 +292,14 @@ type ConstraintSolverState =
       PostInferenceChecksFinal: ResizeArray<unit -> unit>
 
       WarnWhenUsingWithoutNullOnAWithNullTarget: string option
+
+      /// RFC FS-1043: the CCU currently being compiled, used to scope the optimizer-replay cache of
+      /// extension-member solutions to built-in-operator SRTP constraints. None on codegen/approx paths
+      /// that never record solutions.
+      CompilingCcu: CcuThunk option
     }
 
-    static member New(g, amap, infoReader, tcVal) = 
+    static member New(g, amap, infoReader, tcVal, compilingCcu) = 
         { g = g 
           amap = amap 
           ExtraCxs = HashMultiMap(10, HashIdentity.Structural)
@@ -302,7 +307,8 @@ type ConstraintSolverState =
           TcVal = tcVal
           PostInferenceChecksPreDefaults = ResizeArray()
           PostInferenceChecksFinal = ResizeArray()
-          WarnWhenUsingWithoutNullOnAWithNullTarget = None }
+          WarnWhenUsingWithoutNullOnAWithNullTarget = None
+          CompilingCcu = compilingCcu }
 
     member this.PushPostInferenceCheck (preDefaults, check) =
         if preDefaults then
@@ -975,6 +981,64 @@ let CheckWarnIfRigid (csenv: ConstraintSolverEnv) ty1 (r: Typar) ty =
         WarnD(NonRigidTypar(denv, tpnmOpt, r.Range, ty1, ty, csenv.m)) 
     else 
         CompleteD
+
+/// RFC FS-1043: encode a list of fully-concrete nominal types as a stable, injective sequence of tycon
+/// stamps and arities. Returns None on any free type variable or non-app shape at any depth, so
+/// polymorphic/exotic constraints fall back to file-global resolution instead of an instantiation-blind
+/// match between type-checking and optimization. Shared by the sink key and the solution identity.
+let private tryEncodeConcreteTypesForExtOperatorKey (g: TcGlobals) tys =
+    let rec tryEncode ty (acc: int64 list) =
+        match stripTyEqnsAndMeasureEqns g ty with
+        | TType_app(tcref, tinst, _) ->
+            let acc = int64 tinst.Length :: tcref.Stamp :: acc
+            (Some acc, tinst) ||> List.fold (fun st ty -> match st with Some a -> tryEncode ty a | None -> None)
+        | _ -> None
+    (Some [], tys) ||> List.fold (fun st ty -> match st with Some a -> tryEncode ty a | None -> None)
+
+/// RFC FS-1043: solution-identity used to detect when two *different* extension members (or the same
+/// member at a different instantiation) are recorded for one key across call sites, which must disable
+/// optimizer replay. Includes the method instantiation so any instantiation difference degrades to a
+/// safe fallback rather than a wrong replay. ValueNone for non-method solutions, which are never recorded.
+let private ExtensionOperatorSolutionIdentity g sln =
+    let instTag minst =
+        match tryEncodeConcreteTypesForExtOperatorKey g minst with
+        | Some ks -> String.concat "," (List.map string ks)
+        | None -> "poly"
+    match sln with
+    | FSMethSln(_, vref, minst, _) -> ValueSome("F:" + string vref.Stamp + "@" + instTag minst)
+    | ILMethSln(_, _, ilMethodRef, minst, _) ->
+        ValueSome("I:" + ilMethodRef.DeclaringTypeRef.BasicQualifiedName + "::" + ilMethodRef.Name + "@" + instTag minst)
+    | _ -> ValueNone
+
+/// RFC FS-1043: key for the compilation-scoped extension-operator solution sink, or None when the
+/// operator name is not a logical operator or any support/argument/return type is not fully concrete.
+/// The encoding records each nominal type's tycon stamp and arity recursively so different
+/// instantiations (e.g. list<int> vs list<string>) produce different keys, and bails to None on any
+/// free type variable or non-app shape at any depth — such shapes safely fall back to file-global
+/// resolution rather than risk an instantiation-blind match between type-checking and optimization.
+let TryComputeExtensionOperatorSolutionKey (g: TcGlobals) (traitInfo: TraitConstraintInfo) =
+    let nm = traitInfo.MemberLogicalName
+    if not (IsLogicalOpName nm) then None
+    else
+        // Encode the argument types together with the return type, so operators that differ only by a
+        // return-type-determined instantiation (e.g. -> ResizeArray<int> vs -> ResizeArray<string>) get
+        // distinct keys and each site records and replays its own correct instantiation.
+        let argAndRetTys =
+            match traitInfo.CompiledReturnType with
+            | Some retTy -> traitInfo.CompiledObjectAndArgumentTypes @ [ retTy ]
+            | None -> traitInfo.CompiledObjectAndArgumentTypes
+        match tryEncodeConcreteTypesForExtOperatorKey g traitInfo.SupportTypes,
+              tryEncodeConcreteTypesForExtOperatorKey g argAndRetTys with
+        | Some supportKey, Some argRetKey -> Some(struct (nm, supportKey, argRetKey))
+        | _ -> None
+
+/// RFC FS-1043: retrieve the checker's unambiguous extension-member solution recorded for a built-in
+/// operator SRTP constraint (used by the optimizer to honor scope-aware resolution across the inline
+/// boundary), or None when there is no unique recorded solution.
+let TryGetRecordedExtensionOperatorSolution (g: TcGlobals) (compilingCcu: CcuThunk) (traitInfo: TraitConstraintInfo) : TraitConstraintSln option =
+    match TryComputeExtensionOperatorSolutionKey g traitInfo with
+    | Some key -> g.TryGetExtensionOperatorSolution(compilingCcu, key)
+    | None -> None
 
 /// Add the constraint "ty1 = ty" to the constraint problem, where ty1 is a type variable. 
 /// Propagate all effects of adding this constraint, e.g. to solve other variables 
@@ -2217,6 +2281,14 @@ and RecordMemberConstraintSolution css m trace traitInfo traitConstraintSln =
 
     | TTraitSolved (minfo, minst, staticTyOpt) ->
         let sln = MemberConstraintSolutionOfMethInfo css m minfo minst staticTyOpt
+        // RFC FS-1043: when an in-scope extension member solves a built-in operator constraint at a
+        // concrete call site, record the scope-aware decision so the optimizer can honor it after the
+        // trait context is lost across FSharp.Core's inline-operator boundary.
+        if minfo.IsExtensionMember && css.g.langVersion.SupportsFeature LanguageFeature.ExtensionConstraintSolutions then
+            match css.CompilingCcu, TryComputeExtensionOperatorSolutionKey css.g traitInfo, ExtensionOperatorSolutionIdentity css.g sln with
+            | Some compilingCcu, Some key, ValueSome identity ->
+                css.g.RecordExtensionOperatorSolution(compilingCcu, key, identity, sln)
+            | _ -> ()
         TransactMemberConstraintSolution traitInfo trace sln
         ResultD true
 
@@ -4365,7 +4437,8 @@ let CreateCodegenState tcVal g amap =
       InfoReader = InfoReader(g, amap)
       PostInferenceChecksPreDefaults = ResizeArray() 
       PostInferenceChecksFinal = ResizeArray()
-      WarnWhenUsingWithoutNullOnAWithNullTarget = None }
+      WarnWhenUsingWithoutNullOnAWithNullTarget = None
+      CompilingCcu = None }
 
 /// Determine if a codegen witness for a trait will require witness args to be available, e.g. in generic code
 let CodegenWitnessExprForTraitConstraintWillRequireWitnessArgs tcVal g amap m (traitInfo:TraitConstraintInfo) =
@@ -4627,7 +4700,8 @@ let IsApplicableMethApprox g amap m (minfo: MethInfo) availObjTy =
               InfoReader = InfoReader(g, amap)
               PostInferenceChecksPreDefaults = ResizeArray() 
               PostInferenceChecksFinal = ResizeArray()
-              WarnWhenUsingWithoutNullOnAWithNullTarget = None }
+              WarnWhenUsingWithoutNullOnAWithNullTarget = None
+              CompilingCcu = None }
         let csenv = MakeConstraintSolverEnv ContextInfo.NoContext css m (DisplayEnv.Empty g)
         let minst = FreshenMethInfo g traitCtxtNone m minfo
         match minfo.GetObjArgTypes(amap, m, minst) with

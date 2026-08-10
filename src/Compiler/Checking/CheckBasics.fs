@@ -363,7 +363,7 @@ type TcFileState =
 
         let niceNameGen = NiceNameGenerator()
         let infoReader = InfoReader(g, amap)
-        // traitCtxtNone: NameResolver construction — trait context flows separately through TcEnv during actual resolution (audited for RFC FS-1043)
+        // traitCtxtNone: NameResolver construction ï¿½ trait context flows separately through TcEnv during actual resolution (audited for RFC FS-1043)
         let instantiationGenerator m tpsorig = FreshenTypars g traitCtxtNone m tpsorig
         let nameResolver = NameResolver(g, amap, infoReader, instantiationGenerator)
         { g = g
@@ -373,7 +373,7 @@ type TcFileState =
           createsGeneratedProvidedTypes = false
           thisCcu = thisCcu
           isScript = isScript
-          css = ConstraintSolverState.New(g, amap, infoReader, tcVal)
+          css = ConstraintSolverState.New(g, amap, infoReader, tcVal, Some thisCcu)
           infoReader = infoReader
           tcSink = tcSink
           nameResolver = nameResolver

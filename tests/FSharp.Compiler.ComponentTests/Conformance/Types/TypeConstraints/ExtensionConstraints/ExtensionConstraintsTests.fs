@@ -35,6 +35,54 @@ module ExtensionConstraintsTests =
         compileAndRunPreview "ExtensionPrecedence.fs"
 
     [<Fact>]
+    let ``Duplicate built-in operator extension opening one dispatches to it`` () =
+        compileAndRunPreview "DuplicateBuiltinOperatorOpenOne.fs"
+
+    [<Fact>]
+    let ``Duplicate built-in operator extension shadowing picks most recently opened`` () =
+        compileAndRunPreview "DuplicateBuiltinOperatorShadow.fs"
+
+    [<Fact>]
+    let ``Duplicate built-in operator extension on a generic type replays the correct instantiation`` () =
+        compileAndRunPreview "DuplicateBuiltinOperatorGenericInstantiations.fs"
+
+    [<Fact>]
+    let ``Duplicate built-in operator extension differing only by return type replays the correct instantiation`` () =
+        compileAndRunPreview "DuplicateBuiltinOperatorReturnTypeInstantiations.fs"
+
+    [<Fact>]
+    let ``Duplicate built-in operator extension inlines the opened one, not the dynamic fallback`` () =
+        // IL-level proof of the shadow/duplicate fix: two same-signature '*' extensions on string exist in
+        // one compilation; opening exactly A must inline A's distinctive body (Array.replicate) at the
+        // concrete call site. Before the fix the optimizer could not disambiguate and emitted FSharp.Core's
+        // throwing dynamic-operator stub instead — that marker must be absent.
+        FSharpWithFileName "Test.fs" """
+module DuplicateBuiltinOperatorIL
+module A =
+    type System.String with
+        static member ( * ) (s: string, n: int) : string = System.String.Concat(Array.replicate n s)
+module B =
+    type System.String with
+        static member ( * ) (s: string, n: int) : string = s + string n
+open A
+let r : string = "ha" * 2
+if r <> "haha" then failwith $"Expected 'haha', got '{r}'"
+"""
+        |> asExe
+        |> withLangVersionPreview
+        |> withOptimize
+        |> compileAndRun
+        |> shouldSucceed
+        // A's body (Array.replicate -> String.Concat) inlined directly at the concrete call site, proving A
+        // specifically was chosen; not B's (s + string n), and not the dynamic fallback.
+        |> verifyILContains ["""
+          IL_0001:  ldstr      "ha"
+          IL_0006:  call       !!0[] [FSharp.Core]Microsoft.FSharp.Collections.ArrayModule::Replicate<string>(int32,
+                                                                                                             !!0)
+          IL_000b:  call       string [runtime]System.String::Concat(string[])"""]
+        |> verifyILNotPresent [ "Dynamic invocation of op_Multiply" ]
+
+    [<Fact>]
     let ``open type with homograph operators yields all overloads for SRTP`` () =
         compileAndRunPreview "OpenTypeOperatorHomographOrder.fs"
 

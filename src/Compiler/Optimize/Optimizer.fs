@@ -3104,6 +3104,25 @@ and OptimizeTraitCall cenv env (traitInfo, args, m) =
         | _ -> 
             traitInfo
 
+    // RFC FS-1043: recovery for shadowed/duplicated built-in operators. The file-global context above is
+    // scope-blind and returns every same-signature extension in the compilation, so resolution is
+    // ambiguous and fails (which would emit a runtime NotSupportedException stub). In that case, replay
+    // the type-checker's scope-aware decision recorded during checking, which is authoritative.
+    let resolveWithRecordedSolution () =
+        if not (g.langVersion.SupportsFeature LanguageFeature.ExtensionConstraintSolutions) then None
+        else
+        match traitInfo.Solution with
+        | Some _ -> None
+        | None ->
+            match ConstraintSolver.TryGetRecordedExtensionOperatorSolution g cenv.scope traitInfo with
+            | Some sln ->
+                let (TTrait(a, b, c, d, e, f, _, h)) = traitInfo
+                let traitInfoWithSln = TTrait(a, b, c, d, e, f, ref (Some sln), h)
+                match ConstraintSolver.CodegenWitnessExprForTraitConstraint cenv.TcVal g cenv.amap m traitInfoWithSln args with
+                | OkResult(_, Some expr) -> Some(OptimizeExpr cenv env expr)
+                | _ -> None
+            | None -> None
+
     // Resolve the static overloading early (during the compulsory rewrite phase) so we can inline. 
     match ConstraintSolver.CodegenWitnessExprForTraitConstraint cenv.TcVal g cenv.amap m traitInfoForResolution args with
 
@@ -3111,8 +3130,11 @@ and OptimizeTraitCall cenv env (traitInfo, args, m) =
 
     // Resolution fails when optimizing generic code, ignore the failure
     | _ -> 
-        let argsR, arginfos = OptimizeExprsThenConsiderSplits cenv env args 
-        OptimizeExprOpFallback cenv env (TOp.TraitCall traitInfo, [], argsR, m) arginfos UnknownValue 
+        match resolveWithRecordedSolution () with
+        | Some result -> result
+        | None ->
+            let argsR, arginfos = OptimizeExprsThenConsiderSplits cenv env args 
+            OptimizeExprOpFallback cenv env (TOp.TraitCall traitInfo, [], argsR, m) arginfos UnknownValue 
 
 and CopyExprForInlining cenv isInlineIfLambda expr (m: range) = 
     let g = cenv.g

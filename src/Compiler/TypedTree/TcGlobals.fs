@@ -11,6 +11,7 @@ module internal FSharp.Compiler.TcGlobals
 open System.Collections.Concurrent
 open System.Linq
 open System.Diagnostics
+open System.Runtime.CompilerServices
 
 open Internal.Utilities.Library
 open Internal.Utilities.Library.Extras
@@ -283,6 +284,17 @@ type TcGlobals(
   let v_mfe_tcr           = mk_MFCore_tcref fslibCcu "MatchFailureException"
 
   let mutable embeddedILTypeDefs = ConcurrentDictionary<string, ILTypeDef>()
+
+  // RFC FS-1043: compilation-scoped record of how the type-checker resolved built-in-operator SRTP
+  // constraints to extension members. Keyed by (operator logical name, support-type encoding, argument-type
+  // encoding); the value carries a solution-identity string for conflict detection (ValueNone once two
+  // different extensions are recorded for the same key). The optimizer consults this to honor the
+  // checker's scope-aware decision when an inlined FSharp.Core operator arrives without a trait context.
+  // The outer ConditionalWeakTable partitions the record by the CCU being compiled so nothing leaks or
+  // cross-contaminates when a single shared (framework) TcGlobals serves many projects under FCS.
+  // Not serialized (consistent with traitCtxt): purely intra-compilation.
+  let extensionOperatorSolutions =
+      ConditionalWeakTable<CcuThunk, ConcurrentDictionary<struct(string * int64 list * int64 list), struct(string * TraitConstraintSln) voption>>()
 
   let dummyAssemblyNameCarryingUsefulErrorInformation path typeName =
       FSComp.SR.tcGlobalsSystemTypeNotFound (String.concat "." path + "." + typeName)
@@ -1382,6 +1394,31 @@ type TcGlobals(
 
   /// Memoization table to help minimize the number of ILSourceDocument objects we create
   member _.memoize_file x = v_memoize_file.Apply x
+
+  /// RFC FS-1043: record how the type-checker resolved a built-in-operator SRTP constraint to an
+  /// extension member. 'identity' distinguishes the chosen extension so a second, different choice
+  /// for the same key marks the entry ambiguous (no safe optimizer replay). Partitioned by the CCU
+  /// being compiled so a shared framework TcGlobals cannot leak records across projects.
+  member _.RecordExtensionOperatorSolution(compilingCcu: CcuThunk, key: struct(string * int64 list * int64 list), identity: string, sln: TraitConstraintSln) =
+      let table = extensionOperatorSolutions.GetValue(compilingCcu, fun _ -> ConcurrentDictionary(HashIdentity.Structural))
+      table.AddOrUpdate(
+          key,
+          ValueSome(struct(identity, sln)),
+          (fun _ existing ->
+              match existing with
+              | ValueSome(struct(prevIdentity, _)) when prevIdentity = identity -> existing
+              | _ -> ValueNone))
+      |> ignore
+
+  /// RFC FS-1043: retrieve the checker's unambiguous extension-member solution for a built-in-operator
+  /// SRTP constraint, or None when unknown or ambiguous across call sites, scoped to the CCU being compiled.
+  member _.TryGetExtensionOperatorSolution(compilingCcu: CcuThunk, key: struct(string * int64 list * int64 list)) : TraitConstraintSln option =
+      match extensionOperatorSolutions.TryGetValue compilingCcu with
+      | true, table ->
+          match table.TryGetValue key with
+          | true, ValueSome(struct(_, sln)) -> Some sln
+          | _ -> None
+      | _ -> None
 
   member val system_Array_ty = mkSysNonGenericTy sys "Array"
   member val system_Object_ty = mkSysNonGenericTy sys "Object"
