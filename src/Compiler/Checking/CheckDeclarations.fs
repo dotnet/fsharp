@@ -5455,6 +5455,9 @@ and TcSignatureElementsMutRec cenv parent typeNames m mutRecNSInfo envInitial (d
             ((true, true), defs) ||> List.collectFold (fun (openOk, moduleAbbrevOk) def -> 
                 match def with 
                 | SynModuleSigDecl.Types (typeSpecs, _) ->
+                    let typeSpecs =
+                        typeSpecs |> List.map (fun (SynTypeDefnSig(compInfo, repr, members, range, trivia)) ->
+                            SynTypeDefnSig(DesugarTupleTypeExtensionCompInfo cenv.g compInfo, repr, members, range, trivia))
                     CheckDuplicatesAbstractMethodParamsSig typeSpecs
                     let decls = typeSpecs |> List.map MutRecShape.Tycon
                     decls, (false, false)

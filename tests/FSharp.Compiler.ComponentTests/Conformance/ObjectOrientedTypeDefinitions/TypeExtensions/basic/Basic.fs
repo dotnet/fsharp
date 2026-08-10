@@ -363,3 +363,26 @@ type ('T1 * 'T2) with
         |> shouldFail
         |> withErrorCode 3350
         |> withDiagnosticMessageMatches "is not available in F#"
+
+    [<Fact>]
+    let ``Tuple type extension in a recursive module with a signature file resolves`` () =
+        // A recursive module WITH a signature file routes through TcSignatureElementsMutRec, a
+        // fourth declaration path. Without the desugaring there the bare tuple SynType reaches
+        // type-checking and yields an internal error (rangeOfLid) rather than compiling.
+        let impl = """
+module rec Test
+type ('T1 * 'T2) with
+    static member PairFirst ((a, _b): 'T1 * 'T2) : 'T1 = a
+"""
+        Fsi """
+module rec Test
+type ('T1 * 'T2) with
+    static member PairFirst : ('T1 * 'T2) -> 'T1
+        """
+        |> withFileName "Test.fsi"
+        |> withAdditionalSourceFiles [ FsSourceWithFileName "Test.fs" impl ]
+        |> asLibrary
+        |> withLangVersionPreview
+        |> ignoreWarnings
+        |> compile
+        |> shouldSucceed
