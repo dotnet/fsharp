@@ -12,7 +12,6 @@ type LanguageFeature =
     | RelaxWhitespace2
     | NameOf
     | ImplicitYield
-    | OpenTypeDeclaration
     | DotlessFloat32Literal
     | PackageManagement
     | FromEndSlicing
@@ -28,8 +27,6 @@ type LanguageFeature =
     | OverloadsForCustomOperations
     | ExpandedMeasurables
     | NullnessChecking
-    | StructActivePattern
-    | PrintfBinaryFormat
     | IndexerNotationWithoutDot
     | RefCellNotationInformationals
     | UseBindingValueDiscard
@@ -100,6 +97,7 @@ type LanguageFeature =
     | PreprocessorElif
     | ExceptionFieldSerializationSupport
     | ErrorOnMissingSignatureAttribute
+    | RecordConstructorSyntax
     | NotNullIfNotNull
     | DirectDelegateConstruction
     | AccessProtectedBaseFieldFromClosure

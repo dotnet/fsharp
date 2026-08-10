@@ -782,10 +782,8 @@ let TcOpenModuleOrNamespaceDecl tcSink g amap scopem env (longId, m) =
     let env = OpenModuleOrNamespaceRefs tcSink g amap scopem false env modrefs openDecl
     env, [openDecl]
 
-let TcOpenTypeDecl (cenv: cenv) mOpenDecl scopem env (synType: SynType, m) =
+let TcOpenTypeDecl (cenv: cenv) scopem env (synType: SynType, m) =
     let g = cenv.g
-
-    checkLanguageFeatureAndRecover g.langVersion LanguageFeature.OpenTypeDeclaration mOpenDecl
 
     let ty, _tpenv = TcType cenv NoNewTypars CheckCxs ItemOccurrence.Open WarnOnIWSAM.Yes env emptyUnscopedTyparEnv synType
 
@@ -799,14 +797,14 @@ let TcOpenTypeDecl (cenv: cenv) mOpenDecl scopem env (synType: SynType, m) =
     let env = OpenTypeContent cenv.tcSink g cenv.amap scopem env ty openDecl
     env, [openDecl]
 
-let TcOpenDecl (cenv: cenv) mOpenDecl scopem env target = 
+let TcOpenDecl (cenv: cenv) scopem env target = 
     let g = cenv.g
     match target with
     | SynOpenDeclTarget.ModuleOrNamespace (longId, m) ->
         TcOpenModuleOrNamespaceDecl cenv.tcSink g cenv.amap scopem env (longId.LongIdent, m)
 
     | SynOpenDeclTarget.Type (synType, m) ->
-        TcOpenTypeDecl cenv mOpenDecl scopem env (synType, m)
+        TcOpenTypeDecl cenv scopem env (synType, m)
         
 let MakeSafeInitField (cenv: cenv) env m isStatic = 
     let id =
@@ -1852,8 +1850,8 @@ module MutRecBindingChecking =
 
                 // Process the 'open' declarations                
                 let envForDecls =
-                    (envForDecls, opens) ||> List.fold (fun env (target, m, moduleRange, openDeclsRef) ->
-                        let env, openDecls = TcOpenDecl cenv m moduleRange env target
+                    (envForDecls, opens) ||> List.fold (fun env (target, _, moduleRange, openDeclsRef) ->
+                        let env, openDecls = TcOpenDecl cenv moduleRange env target
                         openDeclsRef.Value <- openDecls
                         env)
 
@@ -2712,7 +2710,7 @@ module EstablishTypeDefinitionCores =
           | SynTypeDefnSimpleRepr.Record (_, fieldsAndSpreads, _) ->
               let tcField (SynField (fieldType = ty; range = m)) =
                   let tyR, _ = TcTypeAndRecover cenv NoNewTypars NoCheckCxs ItemOccurrence.UseInType WarnOnIWSAM.Yes env tpenv ty
-                  (tyR, m), ignore
+                  (tyR, m), ignore, ignore
   
               let tcSpread (SynTypeSpread (ty = ty; range = m)) =
                   let spreadSrcTy, _ = TcTypeAndRecover cenv NoNewTypars NoCheckCxs ItemOccurrence.UseInType WarnOnIWSAM.Yes env tpenv ty
@@ -2721,11 +2719,11 @@ module EstablishTypeDefinitionCores =
                       spreadSrcTys.Add spreadSrcTy
                       ResolveRecordOrClassFieldsOfType cenv.nameResolver m ad spreadSrcTy false
                       |> List.choose (function
-                          | Item.RecdField field -> Some (field.RecdField.Id.idText, (field.FieldType, m), ignore)
+                          | Item.RecdField field -> Some (field.RecdField.Id.idText, (field.FieldType, m), ignore, ignore)
                           | _ -> None)
                   else
                       match tryDestAnonRecdTy g spreadSrcTy with
-                      | ValueSome (anonInfo, tys) -> tys |> List.mapi (fun i ty -> (anonInfo.SortedNames[i], (ty, m), ignore))
+                      | ValueSome (anonInfo, tys) -> tys |> List.mapi (fun i ty -> (anonInfo.SortedNames[i], (ty, m), ignore, ignore))
                       | ValueNone -> []
   
               // We must apply the spread shadowing logic here
@@ -2824,8 +2822,8 @@ module EstablishTypeDefinitionCores =
             use _holder = TemporarilySuspendReportingTypecheckResultsToSink cenv.tcSink
             (env, shapes) ||> List.fold (fun env shape ->
                 match shape with
-                | MutRecShape.Open(MutRecDataForOpen(SynOpenDeclTarget.ModuleOrNamespace _ as target, openm, moduleRange, _)) ->
-                    let env, _ = TcOpenDecl cenv openm moduleRange env target
+                | MutRecShape.Open(MutRecDataForOpen(SynOpenDeclTarget.ModuleOrNamespace _ as target, _, moduleRange, _)) ->
+                    let env, _ = TcOpenDecl cenv moduleRange env target
                     env
                 | _ -> env))
 
@@ -3731,7 +3729,12 @@ module EstablishTypeDefinitionCores =
                             let tcField synField =
                                 let field = TcRecdUnionAndEnumDeclarations.TcNamedFieldDecl cenv envinner innerParent false tpenv addFixup synField |> Option.get
                                 let errorAmbiguousShadowing () = if firstPass then errorR (Duplicate ("field", field.Id.idText, field.Id.idRange))
-                                field, errorAmbiguousShadowing
+                                let infoExplicitShadowing () =
+                                    if firstPass then
+                                        let fmtedSpreadField = NicePrint.stringOfRecdField envinner.DisplayEnv cenv.infoReader thisTyconRef field
+                                        informationalWarning (Error (FSComp.SR.tcRecordExplicitFieldShadowsSpreadField fmtedSpreadField, field.Id.idRange))
+
+                                field, errorAmbiguousShadowing, infoExplicitShadowing
 
                             let tcSpread (SynTypeSpread (ty = ty; range = m)) =
                                 let mTy = ty.Range
@@ -3789,7 +3792,12 @@ module EstablishTypeDefinitionCores =
                                                 let fmtedSpreadSrcTy = NicePrint.stringOfTy envinner.DisplayEnv spreadSrcTy
                                                 warning (Error (FSComp.SR.tcRecordTypeDefinitionSpreadFieldShadowsExplicitField (fmtedSpreadField, fmtedSpreadSrcTy), m))
 
-                                            Some (fieldInfo.RecdField.Id.idText, recdField, warnAmbiguousShadowing)
+                                            let infoSpreadShadowing () =
+                                                let fmtedSpreadField = NicePrint.stringOfRecdField envinner.DisplayEnv cenv.infoReader fieldInfo.TyconRef recdField
+                                                let fmtedSpreadSrcTy = NicePrint.stringOfTy envinner.DisplayEnv spreadSrcTy
+                                                informationalWarning (Error (FSComp.SR.tcRecordTypeDefinitionSpreadFieldShadowsSpreadField (fmtedSpreadField, fmtedSpreadSrcTy), m))
+
+                                            Some (fieldInfo.RecdField.Id.idText, recdField, warnAmbiguousShadowing, infoSpreadShadowing)
 
                                         | Item.AnonRecdField (anonInfo, tys, fieldIndex, _) ->
                                             let fieldId =
@@ -3815,7 +3823,13 @@ module EstablishTypeDefinitionCores =
                                                 let fmtedSpreadSrcTy = NicePrint.stringOfTy envinner.DisplayEnv spreadSrcTy
                                                 warning (Error (FSComp.SR.tcRecordTypeDefinitionSpreadFieldShadowsExplicitField (fmtedSpreadField, fmtedSpreadSrcTy), m))
 
-                                            Some (fieldId.idText, field, warnAmbiguousShadowing)
+                                            let infoSpreadShadowing () =
+                                                let typars = tryAppTy g ty |> ValueOption.map (snd >> List.choose (tryDestTyparTy g >> ValueOption.toOption)) |> ValueOption.defaultValue []
+                                                let fmtedSpreadField = LayoutRender.showL (NicePrint.prettyLayoutOfMemberSig envinner.DisplayEnv ([], fieldId.idText, typars, [], ty))
+                                                let fmtedSpreadSrcTy = NicePrint.stringOfTy envinner.DisplayEnv spreadSrcTy
+                                                informationalWarning (Error (FSComp.SR.tcRecordTypeDefinitionSpreadFieldShadowsSpreadField (fmtedSpreadField, fmtedSpreadSrcTy), m))
+
+                                            Some (fieldId.idText, field, warnAmbiguousShadowing, infoSpreadShadowing)
 
                                         | _ -> None)
                                 elif not firstPass then
@@ -5245,7 +5259,7 @@ let rec TcSignatureElementNonMutRec (cenv: cenv) parent typeNames endm (env: TcE
 
         | SynModuleSigDecl.Open (target, m) -> 
             let scopem = unionRanges m.EndRange endm
-            let env, _openDecl = TcOpenDecl cenv m scopem env target
+            let env, _openDecl = TcOpenDecl cenv scopem env target
             return env
 
         | SynModuleSigDecl.Val (vspec, m) -> 
@@ -5651,7 +5665,7 @@ let rec TcModuleOrNamespaceElementNonMutRec (cenv: cenv) parent typeNames scopem
 
       | SynModuleDecl.Open (target, m) -> 
           let scopem = unionRanges m.EndRange scopem
-          let env, openDecls = TcOpenDecl cenv m scopem env target
+          let env, openDecls = TcOpenDecl cenv scopem env target
           let defns =
               match openDecls with
               | [] -> []

@@ -143,7 +143,7 @@ let testPatterns handler source =
 
     let checkResult =
         checker.ParseAndCheckFileInProject("A.fs", 0, Map.find "A.fs" files, projectOptions)
-        |> Async.RunImmediate
+        |> Async.RunSynchronouslyImmediate
 
     match checkResult with
     | _, FSharpCheckFileAnswer.Succeeded checkResults ->
