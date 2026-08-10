@@ -1595,3 +1595,108 @@ let main _ =
         |> shouldSucceed
         |> verifyILNotPresent ["call       int32 Test::apply(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,int32>,"]
 
+    // https://github.com/dotnet/fsharp/issues/20063
+    [<Fact>]
+    let ``Stackalloc 01 - Debug`` () =
+        FSharp """
+open System
+open FSharp.NativeInterop
+#nowarn 9
+
+let inline stackalloc n = Span<char>(NativePtr.stackalloc<char> n |> NativePtr.toVoidPtr, n)
+
+[<EntryPoint>]
+let main _ =
+    let b = stackalloc 3
+    b[0] <- 'a'
+    b[1] <- 'b'
+    b[2] <- 'c'
+    if String b = "abc" then 0 else 1
+"""
+        |> withDebug
+        |> withNoOptimize
+        |> asExe
+        |> compileAndRun
+        |> verifySequencePoints
+
+    [<Fact>]
+    let ``Stackalloc 02 - Nested wrappers`` () =
+        FSharp """
+open System
+open FSharp.NativeInterop
+#nowarn 9
+
+let inline alloc n : nativeptr<char> = NativePtr.stackalloc<char> n
+let inline stackalloc n = Span<char>(alloc n |> NativePtr.toVoidPtr, n)
+
+[<EntryPoint>]
+let main _ =
+    let b = stackalloc 2
+    b[0] <- 'a'
+    b[1] <- 'b'
+    if String b = "ab" then 0 else 1
+"""
+        |> withDebug
+        |> withNoOptimize
+        |> asExe
+        |> compileAndRun
+        |> verifySequencePoints
+
+    [<Fact>]
+    let ``Stackalloc 03 - Different assembly`` () =
+        let library =
+            FSharp """
+module MyLib
+
+open System
+open FSharp.NativeInterop
+#nowarn 9
+
+let inline alloc n : nativeptr<char> = NativePtr.stackalloc<char> n
+let inline stackalloc n = Span<char>(alloc n |> NativePtr.toVoidPtr, n)
+"""
+            |> withDebug
+            |> withNoOptimize
+            |> asLibrary
+            |> withName "Lib"
+
+        FSharp """
+open System
+open MyLib
+
+[<EntryPoint>]
+let main _ =
+    let b = stackalloc 2
+    b[0] <- 'a'
+    b[1] <- 'b'
+    if String b = "ab" then 0 else 1
+"""
+        |> withDebug
+        |> withNoOptimize
+        |> withReferences [library]
+        |> asExe
+        |> compileAndRun
+        |> verifySequencePoints
+
+    [<Fact>]
+    let ``Stackalloc 04 - Only the wrappers are force inlined`` () =
+        FSharp """
+open System
+open FSharp.NativeInterop
+#nowarn 9
+
+let inline stackalloc n = Span<char>(NativePtr.stackalloc<char> n |> NativePtr.toVoidPtr, n)
+let inline fill (b: Span<char>) c = b.Fill c
+
+[<EntryPoint>]
+let main _ =
+    let b = stackalloc 2
+    fill b 'a'
+    if String b = "aa" then 0 else 1
+"""
+        |> withDebug
+        |> withNoOptimize
+        |> asExe
+        |> compileAndRun
+        |> verifySequencePoints
+
