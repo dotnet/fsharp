@@ -44,6 +44,10 @@ module ExtensionConstraintsTests =
         compileAndRunPreview "DuplicateBuiltinOperatorShadow.fs"
 
     [<Fact>]
+    let ``Duplicate built-in operator extensions in distinct scopes each keep their own choice`` () =
+        compileAndRunPreview "DuplicateBuiltinOperatorDistinctScopes.fs"
+
+    [<Fact>]
     let ``Duplicate built-in operator extension on a generic type replays the correct instantiation`` () =
         compileAndRunPreview "DuplicateBuiltinOperatorGenericInstantiations.fs"
 

@@ -399,7 +399,7 @@ val CreateImplFileTraitContext:
 /// RFC FS-1043: optimizer hook returning the checker-recorded, unambiguous extension solution for a
 /// built-in-operator SRTP constraint (see ConstraintSolver.fs for the replay rationale), or None.
 val TryGetRecordedExtensionOperatorSolution:
-    g: TcGlobals -> compilingCcu: CcuThunk -> traitInfo: TraitConstraintInfo -> TraitConstraintSln option
+    g: TcGlobals -> compilingCcu: CcuThunk -> traitInfo: TraitConstraintInfo -> m: range -> TraitConstraintSln option
 
 val SolveTyparsEqualTypes:
     g: TcGlobals -> css: ConstraintSolverState -> m: range -> typars: TypeInst -> tys: TypeInst -> unit

@@ -3114,7 +3114,7 @@ and OptimizeTraitCall cenv env (traitInfo, args, m) =
         match traitInfo.Solution with
         | Some _ -> None
         | None ->
-            match ConstraintSolver.TryGetRecordedExtensionOperatorSolution g cenv.scope traitInfo with
+            match ConstraintSolver.TryGetRecordedExtensionOperatorSolution g cenv.scope traitInfo m with
             | Some sln ->
                 let (TTrait(a, b, c, d, e, f, _, h)) = traitInfo
                 let traitInfoWithSln = TTrait(a, b, c, d, e, f, ref (Some sln), h)

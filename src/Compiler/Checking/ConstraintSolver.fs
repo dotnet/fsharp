@@ -1035,9 +1035,9 @@ let TryComputeExtensionOperatorSolutionKey (g: TcGlobals) (traitInfo: TraitConst
 /// RFC FS-1043: retrieve the checker's unambiguous extension-member solution recorded for a built-in
 /// operator SRTP constraint (used by the optimizer to honor scope-aware resolution across the inline
 /// boundary), or None when there is no unique recorded solution.
-let TryGetRecordedExtensionOperatorSolution (g: TcGlobals) (compilingCcu: CcuThunk) (traitInfo: TraitConstraintInfo) : TraitConstraintSln option =
+let TryGetRecordedExtensionOperatorSolution (g: TcGlobals) (compilingCcu: CcuThunk) (traitInfo: TraitConstraintInfo) (m: range) : TraitConstraintSln option =
     match TryComputeExtensionOperatorSolutionKey g traitInfo with
-    | Some key -> g.TryGetExtensionOperatorSolution(compilingCcu, key)
+    | Some key -> g.TryGetExtensionOperatorSolution(compilingCcu, key, m)
     | None -> None
 
 /// Add the constraint "ty1 = ty" to the constraint problem, where ty1 is a type variable. 
@@ -2287,7 +2287,7 @@ and RecordMemberConstraintSolution css m trace traitInfo traitConstraintSln =
         if minfo.IsExtensionMember && css.g.langVersion.SupportsFeature LanguageFeature.ExtensionConstraintSolutions then
             match css.CompilingCcu, TryComputeExtensionOperatorSolutionKey css.g traitInfo, ExtensionOperatorSolutionIdentity css.g sln with
             | Some compilingCcu, Some key, ValueSome identity ->
-                css.g.RecordExtensionOperatorSolution(compilingCcu, key, identity, sln)
+                css.g.RecordExtensionOperatorSolution(compilingCcu, key, m, identity, sln)
             | _ -> ()
         TransactMemberConstraintSolution traitInfo trace sln
         ResultD true

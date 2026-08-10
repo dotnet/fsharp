@@ -227,17 +227,20 @@ type internal TcGlobals =
     /// Memoization table to help minimize the number of ILSourceDocument objects we create
     member memoize_file: x: int -> FSharp.Compiler.AbstractIL.IL.ILSourceDocument
 
-    /// RFC FS-1043 optimizer-replay cache; see TcGlobals.fs for the key shape and ambiguity invariant.
+    /// RFC FS-1043 optimizer-replay cache; see TcGlobals.fs for the key shape and range-disambiguation invariant.
     member RecordExtensionOperatorSolution:
         compilingCcu: TypedTree.CcuThunk *
         key: struct (string * int64 list * int64 list) *
+        recordRange: FSharp.Compiler.Text.range *
         identity: string *
         sln: TypedTree.TraitConstraintSln ->
             unit
 
-    /// Return the recorded extension solution only when it is known and unambiguous.
+    /// Return the recorded extension solution for the trait call at 'replayRange', or None when unknown or ambiguous.
     member TryGetExtensionOperatorSolution:
-        compilingCcu: TypedTree.CcuThunk * key: struct (string * int64 list * int64 list) ->
+        compilingCcu: TypedTree.CcuThunk *
+        key: struct (string * int64 list * int64 list) *
+        replayRange: FSharp.Compiler.Text.range ->
             TypedTree.TraitConstraintSln option
 
     member mkDebuggableAttributeV2:
