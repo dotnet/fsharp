@@ -1317,6 +1317,7 @@ type MethInfo =
                 0
         | MethInfoWithModifiedReturnType(mi, _) -> mi.GetOverloadResolutionPriority()
         | DefaultStructCtor _ -> 0
+        | RecdCtor _ -> 0
 #if !NO_TYPEPROVIDERS
         | ProvidedMeth _ -> 0
 #endif
