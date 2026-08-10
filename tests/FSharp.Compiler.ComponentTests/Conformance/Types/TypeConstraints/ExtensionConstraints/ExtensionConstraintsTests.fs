@@ -4,6 +4,7 @@ open Xunit
 open System.IO
 open FSharp.Test
 open FSharp.Test.Compiler
+open FSharp.Test.ScriptHelpers
 
 /// Tests for RFC FS-1043: Extension members become available to solve operator trait constraints.
 module ExtensionConstraintsTests =
@@ -81,6 +82,22 @@ if r <> "haha" then failwith $"Expected 'haha', got '{r}'"
                                                                                                              !!0)
           IL_000b:  call       string [runtime]System.String::Concat(string[])"""]
         |> verifyILNotPresent [ "Dynamic invocation of op_Multiply" ]
+
+    [<Fact>]
+    let ``Two same-signature extension operators in one scope are rejected, not crashed (FS0037)`` () =
+        // Redeclaring the same extension operator signature in a single scope must give the ordinary
+        // duplicate-member error, exactly as for any member — the SRTP feature must not turn it into a crash.
+        FSharpWithFileName "Test.fs" """
+module Test
+type System.String with
+    static member ( * ) (s: string, n: int) : string = System.String.Concat(Array.create n s)
+    static member ( * ) (s: string, n: int) : string = "B:" + s
+let r : string = "ha" * 3
+"""
+        |> withLangVersionPreview
+        |> typecheck
+        |> shouldFail
+        |> withErrorCode 37
 
     [<Fact>]
     let ``open type with homograph operators yields all overloads for SRTP`` () =
@@ -378,6 +395,28 @@ type System.String with
         |> withOptimize
         |> compileAndRun
         |> shouldSucceed
+
+    [<Fact>]
+    let ``Extension operator from an earlier FSI submission solves an SRTP constraint in a later one`` () =
+        // In FSI each ';;' submission compiles to its own dynamic assembly. An extension operator defined
+        // in one submission must stay visible to trait-witness generation in later submissions; otherwise
+        // the constraint falls back to FSharp.Core's dynamic operator and throws NotSupportedException at
+        // runtime. The optimizer's incremental (FSI) path binds contents vals, so earlier submissions must
+        // contribute their contents (not signatures) to the trait context.
+        use script = new FSharpScript(langVersion = LangVersion.Preview)
+
+        let _, defErrors =
+            script.Eval """
+type System.String with
+    static member ( * ) (s: string, n: int) : string = System.String.Concat(Array.create n s)"""
+        Assert.Empty defErrors
+
+        let result, useErrors = script.Eval """ "ha" * 3 """
+        Assert.Empty useErrors
+        match result with
+        | Result.Ok (Some value) -> Assert.Equal("hahaha", value.ReflectionValue :?> string)
+        | Result.Ok None -> failwith "Expected a value from the second submission"
+        | Result.Error ex -> raise ex
 
     [<Fact>]
     let ``Extrinsic extension not captured without ExtensionConstraintSolutions`` () =
