@@ -63,7 +63,7 @@ function CheckTrim($root, $tfm, $outputfile, $expected_len, $callerLineNumber) {
 $allErrors = @()
 
 # Shipped net TFM, read from the knob (single source of truth) so these legs follow a pin bump.
-$netPin = (Select-String -Path "$PSScriptRoot/../../../eng/TargetFrameworks.props" -Pattern 'FSharpCoreShippedNetTargetFramework[^>]*>(net\d+\.0)<').Matches[0].Groups[1].Value
+$netPin = (dotnet msbuild "$PSScriptRoot/../../../eng/TargetFrameworks.props" --getProperty:FSharpCoreShippedNetTargetFramework).Trim()
 
 # Check net9.0 trimmed assemblies.
 $allErrors += CheckTrim -root "SelfContained_Trimming_Test" -tfm "net9.0" -outputfile "FSharp.Core.dll" -expected_len 311296 -callerLineNumber 66

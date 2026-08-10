@@ -1,8 +1,9 @@
 // End-to-end pack-and-consume gate for the shipped FSharp.Core net-TFM asset.
 //   structural: the nupkg ships lib/{netstandard2.0,netstandard2.1,<netNN.0>} (non-degenerate dll+xml),
 //     a satellite resources.dll, a matching nuspec dependency <group>, and a uniform AssemblyVersion.
-//   resolution: a real net-TFM consumer binds FSharp.Core to lib/<netNN.0> for BOTH compile and runtime
-//     (never a netstandard asset), then a runtime smoke executes a widened member.
+//   resolution: two consumer legs - the pinned net TFM (exact match) and the in-dev product TFM (nearest
+//     fallback) - must BOTH bind FSharp.Core to lib/<pin> for compile and runtime, never a netstandard asset.
+//   A best-effort runtime smoke then executes a widened member on the net asset.
 // Portable: dotnet fsi tests/AheadOfTime/NetTfmResolution/VerifyNetResolution.fsx
 
 open System
@@ -141,7 +142,7 @@ if not (File.Exists assetsPath) then
     eprintfn "e2e: %s not produced" assetsPath
     exit 1
 
-let netLibRegex = Regex(@"^lib/net\d+\.0/FSharp\.Core\.dll$", RegexOptions.IgnoreCase)
+let pinLibRegex = Regex(sprintf @"^lib/%s/FSharp\.Core\.dll$" (Regex.Escape pin), RegexOptions.IgnoreCase)
 let nsLibRegex = Regex(@"^lib/netstandard\d\.\d/FSharp\.Core\.dll$", RegexOptions.IgnoreCase)
 let mutable checkedAny = false
 let targets = JsonDocument.Parse(File.ReadAllText assetsPath).RootElement.GetProperty("targets")
@@ -162,7 +163,7 @@ for tfmProp in targets.EnumerateObject() do
                     | ps ->
                         for p in ps do
                             if nsLibRegex.IsMatch p then fail (sprintf "%s resolved to a netstandard asset (%s) under '%s' — expected the net TFM asset" section p tfmProp.Name)
-                            elif not (netLibRegex.IsMatch p) then fail (sprintf "%s resolved to an unexpected path '%s' under '%s'" section p tfmProp.Name)
+                            elif not (pinLibRegex.IsMatch p) then fail (sprintf "%s resolved to '%s' under '%s' - expected the pinned net asset lib/%s" section p tfmProp.Name pin)
                             else printfn "e2e: %s [%s] -> %s ✓" section tfmProp.Name p
                 | false, _ -> fail (sprintf "no '%s' section for FSharp.Core under '%s' — not bound for that phase" section tfmProp.Name)
 if not checkedAny then fail "FSharp.Core not found in project.assets.json targets"
@@ -172,15 +173,16 @@ match errors with
     eprintfn "e2e: RESOLUTION WITNESS FAILED:"
     for e in List.rev errors do eprintfn "  - %s" e
     exit 1
-| [] -> printfn "e2e: resolution witness OK — FSharp.Core compile+runtime both bound to lib/%s." pin
+| [] -> printfn "e2e: resolution witness OK - exact-match and fallback consumer legs both bind FSharp.Core to lib/%s (compile+runtime)." pin
 
-// Runtime smoke: build+run the widened IAsyncDisposable member. Non-fatal locally (the net shared
-// framework may be absent); the structural + resolution witnesses above are the authoritative gates.
-let brc, bout, berr = run dotnet (sprintf "build \"%s\" -c Release -p:FSharpCoreTestVersion=%s --no-restore --nologo" proj ver) scriptDir
+// Runtime smoke on the pin leg: build+run the widened IAsyncDisposable member. Best-effort (non-fatal
+// everywhere, CI included - the net shared framework may be absent); the structural + resolution
+// witnesses above are the authoritative gates.
+let brc, bout, berr = run dotnet (sprintf "build \"%s\" -c Release -f %s -p:FSharpCoreTestVersion=%s --no-restore --nologo" proj pin ver) scriptDir
 if brc <> 0 then
-    printfn "e2e: (non-fatal locally) build did not succeed:\n%s\n%s" bout berr
+    printfn "e2e: (best-effort) build did not succeed:\n%s\n%s" bout berr
     exit 0
-let rrc, rrout, rrerr = run dotnet (sprintf "run --project \"%s\" -c Release -p:FSharpCoreTestVersion=%s --no-build --no-restore" proj ver) scriptDir
+let rrc, rrout, rrerr = run dotnet (sprintf "run --project \"%s\" -c Release -f %s -p:FSharpCoreTestVersion=%s --no-build --no-restore" proj pin ver) scriptDir
 printf "%s" rrout
-if rrc <> 0 then printfn "e2e: (non-fatal locally) run did not succeed:\n%s" rrerr
+if rrc <> 0 then printfn "e2e: (best-effort) run did not succeed:\n%s" rrerr
 exit 0

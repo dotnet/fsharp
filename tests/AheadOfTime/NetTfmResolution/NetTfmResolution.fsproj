@@ -1,11 +1,13 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-  <!-- Consumer for VerifyNetResolution.fsx: targets EXACTLY the pinned shipped net TFM (never a literal). -->
+  <!-- Consumer for VerifyNetResolution.fsx: two legs (never literals) - the pinned shipped net TFM
+       (exact match) and the in-dev product TFM (nearest fallback). Both must resolve FSharp.Core to
+       lib/<pin>, proving the net leg wins over lib/netstandard2.1 for a newer consumer too. -->
   <Import Project="$(MSBuildThisFileDirectory)../../../eng/TargetFrameworks.props" />
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>$(FSharpCoreShippedNetTargetFramework)</TargetFramework>
+    <TargetFrameworks>$(FSharpCoreShippedNetTargetFramework);$(FSharpNetCoreProductTargetFramework)</TargetFrameworks>
     <LangVersion>preview</LangVersion>
     <RollForward>Major</RollForward>
     <ManagePackageVersionsCentrally>false</ManagePackageVersionsCentrally>
