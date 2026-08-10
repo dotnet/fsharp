@@ -1027,7 +1027,14 @@ let TryComputeExtensionOperatorSolutionKey (g: TcGlobals) (traitInfo: TraitConst
             match traitInfo.CompiledReturnType with
             | Some retTy -> traitInfo.CompiledObjectAndArgumentTypes @ [ retTy ]
             | None -> traitInfo.CompiledObjectAndArgumentTypes
-        match tryEncodeConcreteTypesForExtOperatorKey g traitInfo.SupportTypes,
+        // Canonicalize the support types exactly as SolveMemberConstraint does before recording
+        // (ListSet.setify over type-equivalence). A binary operator constraint like (^T1 or ^T2 : ...)
+        // whose operands unify to one concrete type has support [T; T] at the inlined trait node but is
+        // deduplicated to [T] during checking. Without matching that here the record key ([T]) and the
+        // optimizer replay key ([T; T]) never match, the recorded scope-aware solution is lost, and the
+        // built-in operator falls back to its throwing dynamic stub (NotSupportedException at runtime).
+        let supportTys = ListSet.setify (typeAEquiv g TypeEquivEnv.EmptyIgnoreNulls) traitInfo.SupportTypes
+        match tryEncodeConcreteTypesForExtOperatorKey g supportTys,
               tryEncodeConcreteTypesForExtOperatorKey g argAndRetTys with
         | Some supportKey, Some argRetKey -> Some(struct (nm, supportKey, argRetKey))
         | _ -> None
