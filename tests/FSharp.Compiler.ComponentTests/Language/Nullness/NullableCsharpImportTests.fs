@@ -260,7 +260,10 @@ let theOtherOne = NullableClass.nullableImmArrayOfNotNullStrings
     |> withDiagnostics 
                 [Error 3261, Line 7, Col 18, Line 7, Col 29, "Nullness warning: Possible dereference of a null value when accessing member 'Length' on the nullable value 'firstString' of type 'string | null'."]
 
-// https://github.com/dotnet/fsharp/issues/17734
+// https://github.com/dotnet/fsharp/issues/17734#issuecomment-5197965168
+// Implementing a C#-authored interface whose member returns an unconstrained 'T | null
+// (e.g. SocketIO's IEventContext.GetValue<T>). Writing the generic member with Unchecked.defaultof
+// alone reports FS3261; withNull re-types it to the expected 'T | null without adding constraints.
 [<FactForNETCOREAPP>]
 let ``Unchecked.withNull implements an unconstrained C# nullable generic member`` () =
     let csharpLib =
@@ -278,7 +281,7 @@ open Interop
 
 let ctx =
     { new IEventContext with
-        member _.GetValue(index) = Unchecked.withNull (Unchecked.defaultof<_>) }
+        member _.GetValue<'T>(index: int) = Unchecked.withNull (Unchecked.defaultof<'T>) }
 """
     |> asLibrary
     |> withReferences [csharpLib]
