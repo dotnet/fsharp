@@ -15,7 +15,8 @@ type RichText(parts: TaggedText[]) =
         | [||] -> ""
         | [| part |] -> part.Text
         | parts ->
-            let buf = StringBuilder()
+            let capacity = parts |> Array.sumBy _.Text.Length
+            let buf = StringBuilder(capacity)
 
             for part in parts do
                 buf.Append(part.Text) |> ignore
