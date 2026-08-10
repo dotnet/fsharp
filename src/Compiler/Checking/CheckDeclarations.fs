@@ -5233,6 +5233,38 @@ module TcDeclarations =
 // Bind module types
 //------------------------------------------------------------------------- 
 
+/// Desugar a tuple-type extension `type ('T1 * 'T2) with ...` into an augmentation of `System.Tuple<...>`
+/// (or `System.ValueTuple<...>` for a struct tuple), sharing the extension-member preview flag. Runs in the
+/// impl (recursive and non-recursive) and signature declaration paths so a bare tuple SynType never reaches
+/// type-checking, where it would yield an empty long-ident and an internal error (rangeOfLid).
+let DesugarTupleTypeExtensionCompInfo (g: TcGlobals) (compInfo: SynComponentInfo) : SynComponentInfo =
+    let rec tryExtractTuple synTy =
+        match synTy with
+        | SynType.Tuple(isStruct, path, tupleRange) -> Some(isStruct, path, tupleRange)
+        | SynType.Paren(innerTy, _) -> tryExtractTuple innerTy
+        | _ -> None
+    match compInfo with
+    | SynComponentInfo(synType = Some synTy) ->
+        match tryExtractTuple synTy with
+        | Some(isStruct, path, tupleRange) ->
+            checkLanguageFeatureAndRecover g.langVersion LanguageFeature.ExtensionConstraintSolutions tupleRange
+            let elemTys = path |> List.choose (function SynTupleTypeSegment.Type t -> Some t | _ -> None)
+            let tupleName = if isStruct then "ValueTuple" else "Tuple"
+            let longId = [Ident("System", tupleRange); Ident(tupleName, tupleRange)]
+            let typarDecls =
+                elemTys |> List.mapi (fun i elemTy ->
+                    match elemTy with
+                    | SynType.Var(typar, _) -> SynTyparDecl([], typar, [], SynTyparDeclTrivia.Zero)
+                    | _ ->
+                        let typar = SynTypar(Ident("T" + string (i + 1), elemTy.Range), TyparStaticReq.None, false)
+                        SynTyparDecl([], typar, [], SynTyparDeclTrivia.Zero))
+            let typars = Some(SynTyparDecls.PostfixList(typarDecls, [], tupleRange))
+            let (SynComponentInfo(attrs, _, constraints, _, xmlDoc, fixity, vis, _)) = compInfo
+            let newSynTy = Some(SynType.LongIdent(SynLongIdent(longId, [], [])))
+            SynComponentInfo(attrs, typars, constraints, newSynTy, xmlDoc, fixity, vis, tupleRange)
+        | None -> compInfo
+    | _ -> compInfo
+
 let rec TcSignatureElementNonMutRec (cenv: cenv) parent typeNames endm (env: TcEnv) synSigDecl: Cancellable<TcEnv> =
   cancellable {
     let g = cenv.g
@@ -5244,6 +5276,9 @@ let rec TcSignatureElementNonMutRec (cenv: cenv) parent typeNames endm (env: TcE
             return env
 
         | SynModuleSigDecl.Types (typeSpecs, m) ->
+            let typeSpecs =
+                typeSpecs |> List.map (fun (SynTypeDefnSig(compInfo, repr, members, range, trivia)) ->
+                    SynTypeDefnSig(DesugarTupleTypeExtensionCompInfo g compInfo, repr, members, range, trivia))
             CheckDuplicatesAbstractMethodParamsSig typeSpecs
             let scopem = unionRanges m endm
             let mutRecDefns = typeSpecs |> List.map MutRecShape.Tycon
@@ -5560,7 +5595,9 @@ let TcModuleOrNamespaceElementsMutRec (cenv: cenv) parent typeNames m envInitial
             match ElimSynModuleDeclExpr def with
 
               | SynModuleDecl.Types (typeDefs, _) -> 
-                  let decls = typeDefs |> List.map MutRecShape.Tycon
+                  let decls =
+                      typeDefs |> List.map (fun (SynTypeDefn(compInfo, repr, members, implicitCtor, range, trivia)) ->
+                          MutRecShape.Tycon(SynTypeDefn(DesugarTupleTypeExtensionCompInfo cenv.g compInfo, repr, members, implicitCtor, range, trivia)))
                   decls, (false, false, attrs)
 
               | SynModuleDecl.Let (isRecursive = isRecursive; bindings = binds; range = m) -> 
@@ -5649,41 +5686,12 @@ let rec TcModuleOrNamespaceElementNonMutRec (cenv: cenv) parent typeNames scopem
               return ([defn], [], []), env, env
 
       | SynModuleDecl.Types (typeDefs, m) ->
-          // Helper to extract tuple from possibly parenthesized type
-          let rec tryExtractTuple synTy =
-              match synTy with
-              | SynType.Tuple(isStruct, path, tupleRange) -> Some(isStruct, path, tupleRange)
-              | SynType.Paren(innerTy, _) -> tryExtractTuple innerTy
-              | _ -> None
-
           let typeDefs =
               typeDefs |> List.choose (fun typeDef ->
                   match typeDef with
-                  | SynTypeDefn(typeInfo = SynComponentInfo(synType = Some synTy) as compInfo) ->
-                      match tryExtractTuple synTy with
-                      | Some(isStruct, path, tupleRange) ->
-                          // Tuple-type extensions share the extension-member preview flag rather than getting their own feature.
-                          checkLanguageFeatureAndRecover g.langVersion LanguageFeature.ExtensionConstraintSolutions tupleRange
-                          // Transform tuple type extensions: type ('T1 * 'T2) with ... -> type System.Tuple<'T1,'T2> with ...
-                          let elemTys = path |> List.choose (function SynTupleTypeSegment.Type t -> Some t | _ -> None)
-                          let tupleName = if isStruct then "ValueTuple" else "Tuple"
-                          let longId = [Ident("System", tupleRange); Ident(tupleName, tupleRange)]
-                          // Create type parameter declarations from the tuple element types
-                          let typarDecls =
-                              elemTys |> List.mapi (fun i elemTy ->
-                                  match elemTy with
-                                  | SynType.Var(typar, _) -> SynTyparDecl([], typar, [], SynTyparDeclTrivia.Zero)
-                                  | _ ->
-                                      let typar = SynTypar(Ident("T" + string (i + 1), elemTy.Range), TyparStaticReq.None, false)
-                                      SynTyparDecl([], typar, [], SynTyparDeclTrivia.Zero))
-                          let typars = Some(SynTyparDecls.PostfixList(typarDecls, [], tupleRange))
-                          let (SynComponentInfo(attrs, _, constraints, _, xmlDoc, fixity, vis, _)) = compInfo
-                          let newSynTy = Some(SynType.LongIdent(SynLongIdent(longId, [], [])))
-                          let newCompInfo = SynComponentInfo(attrs, typars, constraints, newSynTy, xmlDoc, fixity, vis, tupleRange)
-                          let (SynTypeDefn(_, repr, members, implicitCtor, range, trivia)) = typeDef
-                          Some(SynTypeDefn(newCompInfo, repr, members, implicitCtor, range, trivia))
-                      | None -> Some typeDef
-                  | SynTypeDefn(typeInfo = SynComponentInfo(synType = None)) -> None)
+                  | SynTypeDefn(typeInfo = SynComponentInfo(synType = None)) -> None
+                  | SynTypeDefn(compInfo, repr, members, implicitCtor, range, trivia) ->
+                      Some(SynTypeDefn(DesugarTupleTypeExtensionCompInfo g compInfo, repr, members, implicitCtor, range, trivia)))
           let scopem = unionRanges m scopem
           let mutRecDefns = typeDefs |> List.map MutRecShape.Tycon
           let mutRecDefnsChecked, envAfter = TcDeclarations.TcMutRecDefinitions cenv env parent typeNames tpenv m scopem None mutRecDefns false

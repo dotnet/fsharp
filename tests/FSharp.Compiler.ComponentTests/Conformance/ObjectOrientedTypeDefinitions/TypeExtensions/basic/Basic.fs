@@ -285,3 +285,81 @@ if r <> 42 then failwith "expected 42"
         |> ignoreWarnings
         |> compileAndRun
         |> shouldSucceed
+
+    [<Fact>]
+    let ``Tuple type extension in a recursive module resolves`` () =
+        // The tuple-to-System.Tuple desugaring must also run in the mutually-recursive module path.
+        // Without it the checker reaches type-checking with a bare tuple SynType, yielding an empty
+        // long-ident and an internal error (rangeOfLid) rather than compiling the extension.
+        FSharp """
+module rec Test
+type ('T1 * 'T2) with
+    static member PairFirst ((a, _b)) = a
+
+let r = System.Tuple<int, string>.PairFirst((42, "x"))
+if r <> 42 then failwith "expected 42"
+        """
+        |> asExe
+        |> withLangVersionPreview
+        |> ignoreWarnings
+        |> compileAndRun
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Tuple type extension in a recursive module requires preview language version`` () =
+        // The feature gate must fire in the recursive path too: below preview this is a clean FS3350,
+        // never an internal error that escapes the language-version check.
+        FSharp """
+module rec Test
+type ('T1 * 'T2) with
+    static member PairFirst ((a, _b)) = a
+        """
+        |> withLangVersion80
+        |> typecheck
+        |> shouldFail
+        |> withErrorCode 3350
+        |> withDiagnosticMessageMatches "is not available in F#"
+
+    [<Fact>]
+    let ``Tuple type extension declared in a signature file resolves`` () =
+        // The desugaring must also run when the extension is declared in an explicit signature file.
+        let impl = """
+module Test
+type ('T1 * 'T2) with
+    static member PairFirst ((a, _b): 'T1 * 'T2) : 'T1 = a
+"""
+        Fsi """
+module Test
+type ('T1 * 'T2) with
+    static member PairFirst : ('T1 * 'T2) -> 'T1
+        """
+        |> withFileName "Test.fsi"
+        |> withAdditionalSourceFiles [ FsSourceWithFileName "Test.fs" impl ]
+        |> asLibrary
+        |> withLangVersionPreview
+        |> ignoreWarnings
+        |> compile
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Tuple type extension in a signature file requires preview language version`` () =
+        // The feature gate must fire on the signature-file declaration too, as a clean FS3350
+        // rather than an internal error.
+        let impl = """
+module Test
+type ('T1 * 'T2) with
+    static member PairFirst ((a, _b)) = a
+"""
+        Fsi """
+module Test
+type ('T1 * 'T2) with
+    static member PairFirst : ('T1 * 'T2) -> 'T1
+        """
+        |> withFileName "Test.fsi"
+        |> withAdditionalSourceFiles [ FsSourceWithFileName "Test.fs" impl ]
+        |> asLibrary
+        |> withLangVersion80
+        |> compile
+        |> shouldFail
+        |> withErrorCode 3350
+        |> withDiagnosticMessageMatches "is not available in F#"
