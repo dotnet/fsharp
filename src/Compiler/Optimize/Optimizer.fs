@@ -436,6 +436,9 @@ type cenv =
 
       specializedInlineVals: HashMultiMap<Stamp, TType * Expr>
 
+      /// Cache for 'HasFrameLocalBody'
+      frameLocalVals: Dictionary<Stamp, bool>
+
       signatureHidingInfo: SignatureHidingInfo
     }
 
@@ -621,20 +624,23 @@ let BindTyparsToUnknown (tps: Typar list) env =
 let BindCcu (ccu: CcuThunk) mval env (_g: TcGlobals) = 
     { env with globalModuleInfos=env.globalModuleInfos.Add(ccu.AssemblyName, mval) }
 
-/// Lookup information about values 
-let GetInfoForLocalValue cenv env (v: Val) m = 
-    // Abstract slots do not have values 
-    if v.IsDispatchSlot then UnknownValInfo 
+/// Lookup information about values, without reporting values that are not bound yet
+let TryGetInfoForLocalValue cenv env (v: Val) =
+    // Abstract slots do not have values
+    if v.IsDispatchSlot then None
     else
         match cenv.localInternalVals.TryGetValue v.Stamp with
-        | true, res -> res
-        | _ ->
-            match env.localExternalVals.TryFind v.Stamp with 
-            | Some vval -> vval
-            | None -> 
-                if v.ShouldInline then
-                    errorR(Error(FSComp.SR.optValueMarkedInlineButWasNotBoundInTheOptEnv(fullDisplayTextOfValRef (mkLocalValRef v)), m))
-                UnknownValInfo 
+        | true, res -> Some res
+        | _ -> env.localExternalVals.TryFind v.Stamp
+
+/// Lookup information about values
+let GetInfoForLocalValue cenv env (v: Val) m =
+    match TryGetInfoForLocalValue cenv env v with
+    | Some vval -> vval
+    | None ->
+        if not v.IsDispatchSlot && v.ShouldInline then
+            errorR(Error(FSComp.SR.optValueMarkedInlineButWasNotBoundInTheOptEnv(fullDisplayTextOfValRef (mkLocalValRef v)), m))
+        UnknownValInfo
 
 let TryGetInfoForCcu env (ccu: CcuThunk) = env.globalModuleInfos.TryFind(ccu.AssemblyName)
 
@@ -681,13 +687,19 @@ let GetInfoForNonLocalVal cenv env (vref: ValRef) =
     else 
         UnknownValInfo
 
-let GetInfoForVal cenv env m (vref: ValRef) =  
-    let res = 
+let GetInfoForVal cenv env m (vref: ValRef) =
+    let res =
         if vref.IsLocalRef then
             GetInfoForLocalValue cenv env vref.binding m
         else
             GetInfoForNonLocalVal cenv env vref
     res
+
+let TryGetInfoForVal cenv env (vref: ValRef) =
+    if vref.IsLocalRef then
+        TryGetInfoForLocalValue cenv env vref.binding
+    else
+        Some(GetInfoForNonLocalVal cenv env vref)
 
 
 let IsPartialExpr cenv env m x =
@@ -2388,11 +2400,57 @@ let shouldForceInlineMembersInDebug (g: TcGlobals) (tcref: EntityRef) =
     | true, modRef -> tyconRefEq g tcref modRef 
     | _ -> false
 
-let shouldForceInlineInDebug (g: TcGlobals) (vref: ValRef) : bool =
+/// 'localloc' storage is released when the method executing it returns, so anything derived from
+/// it dangles at that method's callsite.
+let instrIsFrameLocal instr =
+    match instr with
+    | I_localloc -> true
+    | _ -> false
+
+/// The FSharp.Core values expanding to frame-local IL are marked [<NoDynamicInvocation>] and so are
+/// always inlined. A user 'inline' function wrapping one inherits the property but not the
+/// attribute - the callee is already inlined into the recorded body, leaving only its IL - so
+/// recover it from the body and propagate it through further wrappers.
+/// See https://github.com/dotnet/fsharp/issues/20063.
+let rec HasFrameLocalBody cenv env (vref: ValRef) =
+    let stamp = vref.Stamp
+
+    match cenv.frameLocalVals.TryGetValue stamp with
+    | true, res -> res
+    | _ ->
+        // Values bound within the body being walked have no info yet, but the walk covers them anyway.
+        match TryGetInfoForVal cenv env vref |> Option.map (fun info -> stripValue info.ValExprInfo) with
+        | Some(CurriedLambdaValue (_, _, _, body, _)) ->
+            cenv.frameLocalVals[stamp] <- false // Break cycles while the body is inspected
+            let res = ExprIsFrameLocal cenv env body
+            cenv.frameLocalVals[stamp] <- res
+            res
+
+        | _ -> false
+
+and ExprIsFrameLocal cenv env expr =
+    let folder =
+        { ExprFolder0 with
+            exprIntercept =
+                fun _recurseF noInterceptF acc expr ->
+                    if acc then acc else
+
+                    match expr with
+                    | Expr.Op (TOp.ILAsm (instrs, _), _, _, _) when List.exists instrIsFrameLocal instrs -> true
+                    | Expr.Val (vref, _, _) when vref.ShouldInline -> HasFrameLocalBody cenv env vref
+                    | _ -> noInterceptF acc expr }
+
+    FoldExpr folder false expr
+
+let shouldForceInlineInDebug cenv env (vref: ValRef) : bool =
+    let g = cenv.g
+
     ValHasWellKnownAttribute g WellKnownValAttributes.NoDynamicInvocationAttribute_True vref.Deref ||
     ValHasWellKnownAttribute g WellKnownValAttributes.NoDynamicInvocationAttribute_False vref.Deref ||
 
-    vref.HasDeclaringEntity && shouldForceInlineMembersInDebug g vref.DeclaringEntity
+    (vref.HasDeclaringEntity && shouldForceInlineMembersInDebug g vref.DeclaringEntity) ||
+
+    HasFrameLocalBody cenv env vref
 
 /// Optimize/analyze an expression
 let rec OptimizeExpr cenv (env: IncrementalOptimizationEnv) expr =
@@ -3148,7 +3206,7 @@ and TryOptimizeVal cenv env (vOpt: ValRef option, shouldInline, inlineIfLambda, 
         Some (remarkExpr m (copyExpr g CloneAllAndMarkExprValsAsCompilerGenerated expr))
 
     | CurriedLambdaValue (_, _, _, expr, _) when
-            shouldInline && (cenv.settings.alwaysInline || Option.exists (shouldForceInlineInDebug cenv.g) vOpt) ||
+            shouldInline && (cenv.settings.alwaysInline || Option.exists (shouldForceInlineInDebug cenv env) vOpt) ||
             inlineIfLambda && cenv.settings.alwaysInline ->
         let fvs = freeInExpr CollectLocals expr
         if usesMethodLocalConstructsOrProtectedField cenv fvs expr then
@@ -3503,7 +3561,7 @@ and TryInlineApplication cenv env finfo (valExpr: Expr) (tyargs: TType list, arg
     let g = cenv.g
 
     match cenv.settings.alwaysInline, stripExpr valExpr with
-    | false, Expr.Val(vref, _, _) when vref.ShouldInline && not (shouldForceInlineInDebug cenv.g vref) ->
+    | false, Expr.Val(vref, _, _) when vref.ShouldInline && not (shouldForceInlineInDebug cenv env vref) ->
         let hasNoTraits =
             let tps, _ = tryDestForallTy g vref.Type
             GetTraitConstraintInfosOfTypars g tps |> List.isEmpty
@@ -4671,6 +4729,7 @@ let OptimizeImplFile (settings, ccu, tcGlobals, tcVal, importMap, optEnv, isIncr
           stackGuard = StackGuard("OptimizerStackGuardDepth")
           realsig = tcGlobals.realsig
           specializedInlineVals = HashMultiMap(HashIdentity.Structural, true)
+          frameLocalVals = Dictionary<Stamp, bool>()
           signatureHidingInfo = SignatureHidingInfo.Empty
         }
 
