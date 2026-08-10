@@ -868,8 +868,8 @@
         <note />
       </trans-unit>
       <trans-unit id="lexColonDirectiveMustBeFirst">
-        <source>#: directives must appear as the first non-whitespace characters on a line</source>
-        <target state="new">#: directives must appear as the first non-whitespace characters on a line</target>
+        <source>#: directives must start at the beginning of a line</source>
+        <target state="new">#: directives must start at the beginning of a line</target>
         <note />
       </trans-unit>
       <trans-unit id="lexExtendedStringInterpolationNotSupported">
