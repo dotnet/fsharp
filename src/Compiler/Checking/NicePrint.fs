@@ -1742,7 +1742,7 @@ module InfoMemberPrinting =
 
         let layout,paramLayouts =
             match denv.showCsharpCodeAnalysisAttributes, minfo with
-            | true, ILMeth(_g,mi,_e) -> 
+            | true, (ILMeth(_, mi, _) | MethInfoWithModifiedReturnType(ILMeth(_, mi, _), _)) ->
                 let methodLayout = 
                     // Render Method attributes and [return:..] attributes on separate lines above (@@) the method definition
                     PrintTypes.layoutCsharpCodeAnalysisIlAttributes denv (minfo.GetCustomAttrs()) (squareAngleL >> (@@)) layout
@@ -1804,10 +1804,13 @@ module InfoMemberPrinting =
         let amap = infoReader.amap
 
         match methInfo with 
-        | DefaultStructCtor _ -> 
-            let prettyTyparInst, _ = PrettyTypes.PrettifyInst amap.g typarInst 
+        | DefaultStructCtor _ ->
+            let prettyTyparInst, _ = PrettyTypes.PrettifyInst amap.g typarInst
             let resL = PrintTypes.layoutTyconRef denv methInfo.ApparentEnclosingTyconRef ^^ wordL punctuationUnit
             prettyTyparInst, resL
+        | RecdCtor _ ->
+            let prettyTyparInst, _ = PrettyTypes.PrettifyInst amap.g typarInst
+            prettyTyparInst, layoutMethInfoCSharpStyle extTypeDisplay amap m denv methInfo methInfo.FormalMethodInst
         | FSMeth(_, _, vref, _) -> 
             let prettyTyparInst, resL = PrintTastMemberOrVals.prettyLayoutOfValOrMember { denv with showMemberContainers=true } infoReader typarInst vref
             prettyTyparInst, resL
@@ -2130,7 +2133,12 @@ module TastDefinitionPrinting =
 
         let ctors =
             GetIntrinsicConstructorInfosOfType infoReader m ty
-            |> List.filter (fun minfo -> IsMethInfoAccessible amap m ad minfo && not minfo.IsClassConstructor && shouldShow minfo.ArbitraryValRef)
+            // RecdCtor is synthesized, so it must not leak into generated signatures.
+            |> List.filter (fun minfo ->
+                IsMethInfoAccessible amap m ad minfo
+                && not minfo.IsClassConstructor
+                && (match minfo with RecdCtor _ -> false | _ -> true)
+                && shouldShow minfo.ArbitraryValRef)
 
         let iimpls =
             if suppressInheritanceAndInterfacesForTyInSimplifiedDisplays g amap m ty then 

@@ -823,6 +823,28 @@ let mkSynBinding
     let mBind = unionRangeWithXmlDoc xmlDoc mBind
     SynBinding(vis, SynBindingKind.Normal, isInline, isMutable, attrs, xmlDoc, info, headPat, retTyOpt, rhsExpr, mBind, spBind, trivia)
 
+/// A compiler-generated `let!` binding, as produced while desugaring computation expressions: the
+/// usual binding defaults with the leading keyword marked as `let!` at mKeyword.
+let mkSynLetBangBinding mKeyword headPat rhs debugPoint mBind =
+    SynBinding(
+        accessibility = None,
+        kind = SynBindingKind.Normal,
+        isInline = false,
+        isMutable = false,
+        attributes = [],
+        xmlDoc = PreXmlDoc.Empty,
+        valData = SynInfo.emptySynValData,
+        headPat = headPat,
+        returnInfo = None,
+        expr = rhs,
+        range = mBind,
+        debugPoint = debugPoint,
+        trivia =
+            { SynBindingTrivia.Zero with
+                LeadingKeyword = SynLeadingKeyword.LetBang mKeyword
+            }
+    )
+
 let NonVirtualMemberFlags k : SynMemberFlags =
     {
         MemberKind = k
@@ -978,13 +1000,24 @@ let rec synExprContainsError inpExpr =
             (match origExpr with
              | Some(e, _) -> walkExpr e
              | None -> false)
-            || walkExprs (List.map (fun (_, _, e) -> e) flds)
+            || walkExprs (
+                List.map
+                    (function
+                    | SynExprAnonRecordFieldOrSpread.Field(SynExprAnonRecordField(_, _, e, _), _)
+                    | SynExprAnonRecordFieldOrSpread.Spread(spread = SynExprSpread(expr = e)) -> e)
+                    flds
+            )
 
         | SynExpr.Record(_, origExpr, fs, _) ->
             (match origExpr with
              | Some(e, _) -> walkExpr e
              | None -> false)
-            || (let flds = fs |> List.choose (fun (SynExprRecordField(expr = v)) -> v)
+            || (let flds =
+                    fs
+                    |> List.choose (function
+                        | SynExprRecordFieldOrSpread.Field(SynExprRecordField(expr = v), _) -> v
+                        | SynExprRecordFieldOrSpread.Spread(SynExprSpread(expr = e), _) -> Some e)
+
                 walkExprs flds)
 
         | SynExpr.ObjExpr(bindings = bs; members = ms; extraImpls = is) ->

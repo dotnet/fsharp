@@ -69,6 +69,52 @@ let rhs2 (parseState: IParseState) i j =
 /// Get the range corresponding to one of the r.h.s. symbols of a grammar rule while it is being reduced
 let rhs parseState i = rhs2 parseState i i
 
+/// Split a trailing printf specifier (e.g. "%d") off an interpolated-string literal that precedes a
+/// hole. '%%' is a literal escape, not a specifier.
+let peelTrailingPrintfSpecifier (litText: string) : string * string option =
+    let n = litText.Length
+    let mutable i = 0
+    let mutable specStart = -1
+
+    while i < n && specStart < 0 do
+        if litText[i] = '%' then
+            if i + 1 < n && litText[i + 1] = '%' then
+                i <- i + 2 // '%%' escape, keep scanning
+            else
+                specStart <- i // start of a real specifier
+        else
+            i <- i + 1
+
+    // A real printf specifier ends, immediately before the hole, with a type character. Anything else
+    // (for example the explicit '%P(' placeholder syntax) is left in the literal untouched.
+    if specStart < 0 || "bscdiuxXoBeEfFgGMOAat".IndexOf litText[n - 1] < 0 then
+        litText, None
+    else
+        litText[.. specStart - 1], Some litText[specStart..]
+
+/// Build the [String literal; FillExpr hole] pair for one interpolation hole, splitting the '{x,n}'
+/// alignment out of its tuple encoding and peeling a trailing printf specifier onto the hole.
+let mkInterpolatedStringFillParts (litText: string, litRange: range, fill: SynExpr * Ident option) =
+    let fillExpr, qualifier = fill
+
+    let holeExpr, alignment =
+        match fillExpr with
+        | SynExpr.Tuple(false, [ e; (SynExpr.Const(SynConst.Int32 _, _) as n) ], _, _) -> e, Some n
+        | _ -> fillExpr, None
+
+    let litValue, formatting =
+        match qualifier, alignment with
+        | None, None ->
+            match peelTrailingPrintfSpecifier litText with
+            | lit, Some spec -> lit, SynInterpolationFormatting.Printf(spec, litRange)
+            | _, None -> litText, SynInterpolationFormatting.DotNet(None, None)
+        | _ -> litText, SynInterpolationFormatting.DotNet(alignment, qualifier)
+
+    [
+        SynInterpolatedStringPart.String(litValue, litRange)
+        SynInterpolatedStringPart.FillExpr(holeExpr, formatting)
+    ]
+
 //------------------------------------------------------------------------
 // Parsing/lexing: status of #if/#endif processing in lexing, used for continuations
 // for whitespace tokens in parser specification.
@@ -197,7 +243,7 @@ and LexCont = LexerContinuation
 // Parse IL assembly code
 //------------------------------------------------------------------------
 
-let ParseAssemblyCodeInstructions s reportLibraryOnlyFeatures langVersion strictIndentation m : IL.ILInstr[] =
+let ParseAssemblyCodeInstructions s reportLibraryOnlyFeatures langVersion m : IL.ILInstr[] =
 #if NO_INLINE_IL_PARSER
     ignore s
     ignore isFeatureSupported
@@ -206,13 +252,13 @@ let ParseAssemblyCodeInstructions s reportLibraryOnlyFeatures langVersion strict
     [||]
 #else
     try
-        AsciiParser.ilInstrs AsciiLexer.token (StringAsLexbuf(reportLibraryOnlyFeatures, langVersion, strictIndentation, s))
+        AsciiParser.ilInstrs AsciiLexer.token (StringAsLexbuf(reportLibraryOnlyFeatures, langVersion, s))
     with _ ->
         errorR (Error(FSComp.SR.astParseEmbeddedILError (), m))
         [||]
 #endif
 
-let ParseAssemblyCodeType s reportLibraryOnlyFeatures langVersion strictIndentation m =
+let ParseAssemblyCodeType s reportLibraryOnlyFeatures langVersion m =
     ignore s
 
 #if NO_INLINE_IL_PARSER
@@ -220,7 +266,7 @@ let ParseAssemblyCodeType s reportLibraryOnlyFeatures langVersion strictIndentat
     IL.PrimaryAssemblyILGlobals.typ_Object
 #else
     try
-        AsciiParser.ilType AsciiLexer.token (StringAsLexbuf(reportLibraryOnlyFeatures, langVersion, strictIndentation, s))
+        AsciiParser.ilType AsciiLexer.token (StringAsLexbuf(reportLibraryOnlyFeatures, langVersion, s))
     with RecoverableParseError ->
         errorR (Error(FSComp.SR.astParseEmbeddedILTypeError (), m))
         IL.PrimaryAssemblyILGlobals.typ_Object
@@ -720,13 +766,27 @@ let rebindRanges first fields lastSep =
                 | Some mEq -> unionRanges lidwd.Range mEq
                 | None -> lidwd.Range
 
-    let rec run (name, mEquals, value: SynExpr option) l acc =
-        let lidwd, _ = name
-        let fieldRange = calculateFieldRange lidwd mEquals value
+    let rec run fieldOrSpread l acc =
+        match fieldOrSpread with
+        | RecordBinding.Field((lidwd, _ as name), mEquals, value) ->
+            let fieldRange = calculateFieldRange lidwd mEquals value
 
-        match l with
-        | [] -> List.rev (SynExprRecordField(name, mEquals, value, fieldRange, lastSep) :: acc)
-        | (f, m) :: xs -> run f xs (SynExprRecordField(name, mEquals, value, fieldRange, m) :: acc)
+            match l with
+            | [] ->
+                let field =
+                    SynExprRecordFieldOrSpread.Field(SynExprRecordField(name, mEquals, value, fieldRange), lastSep)
+
+                List.rev (field :: acc)
+            | (f, m) :: xs ->
+                let field =
+                    SynExprRecordFieldOrSpread.Field(SynExprRecordField(name, mEquals, value, fieldRange), m)
+
+                run f xs (field :: acc)
+
+        | RecordBinding.Spread spread ->
+            match l with
+            | [] -> List.rev (SynExprRecordFieldOrSpread.Spread(spread, lastSep) :: acc)
+            | (f, _) :: xs -> run f xs (SynExprRecordFieldOrSpread.Spread(spread, lastSep) :: acc)
 
     run first fields []
 

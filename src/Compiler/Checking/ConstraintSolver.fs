@@ -1161,7 +1161,7 @@ and SolveTyparEqualsType (csenv: ConstraintSolverEnv) ndeep m2 (trace: OptionalT
     }
 
 // Like SolveTyparEqualsType but asserts all typar equalities simultaneously instead of one by one
-and SolveTyparsEqualTypes (csenv: ConstraintSolverEnv) ndeep m2 (trace: OptionalTrace) tpTys tys =
+and SolveTyparsEqualTypesAux (csenv: ConstraintSolverEnv) ndeep m2 (trace: OptionalTrace) tpTys tys =
     trackErrors {
         do! Iterate2D (
                 fun tpTy ty ->
@@ -2227,8 +2227,11 @@ and MemberConstraintSolutionOfMethInfo css m minfo minst staticTyOpt =
 
     | MethInfoWithModifiedReturnType(mi,_) -> MemberConstraintSolutionOfMethInfo css m mi minst staticTyOpt
 
-    | MethInfo.DefaultStructCtor _ -> 
+    | MethInfo.DefaultStructCtor _ ->
        error(InternalError("the default struct constructor was the unexpected solution to a trait constraint", m))
+
+    | MethInfo.RecdCtor _ ->
+       error(InternalError("the record all-fields constructor was the unexpected solution to a trait constraint", m))
 
 #if !NO_TYPEPROVIDERS
     | ProvidedMeth(amap, mi, _, m) -> 
@@ -4340,7 +4343,7 @@ let CodegenWitnessesForTyparInst tcVal g amap m typars tyargs =
         let csenv = MakeConstraintSolverEnv ContextInfo.NoContext css m (DisplayEnv.Empty g)
         let ftps, _renaming, tinst = FreshenTypeInst g m typars
         let traitInfos = GetTraitConstraintInfosOfTypars g ftps
-        let! _res = SolveTyparsEqualTypes csenv 0 m NoTrace tinst tyargs
+        let! _res = SolveTyparsEqualTypesAux csenv 0 m NoTrace tinst tyargs
         return GenWitnessArgs amap g m traitInfos
     }
 
@@ -4418,3 +4421,8 @@ let IsApplicableMethApprox g amap m (minfo: MethInfo) availObjTy =
         | _ -> true
     else
         true
+
+let SolveTyparsEqualTypes g (css: ConstraintSolverState) m (typars: TypeInst) (tys: TypeInst) =
+    let csenv = MakeConstraintSolverEnv ContextInfo.NoContext css m (DisplayEnv.Empty g)
+    SolveTyparsEqualTypesAux csenv 0 m NoTrace typars tys
+    |> CommitOperationResult

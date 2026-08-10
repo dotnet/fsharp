@@ -9,12 +9,23 @@ open FSharp.Test.Compiler.Assertions.StructuredResultsAsserts
 
 module OffsideExceptions =
 
+    // https://github.com/dotnet/fsharp/issues/15171
+    // The closing '>' of a nested multiline type-argument list may align with the opening type name.
+    [<Theory; FileInlineData("MultilineNestedTypeArguments.fs")>]
+    let MultilineNestedTypeArguments compilation =
+        compilation
+        |> getCompilation
+        |> asFsx
+        |> typecheck
+        |> shouldSucceed
+        |> ignore
+
     // This test was automatically generated (moved from FSharpQA suite - Conformance/LexicalFiltering/Basic/OffsideExceptions)
     //<Expects status="success"></Expects>
     [<Theory; FileInlineData("InfixTokenPlusOne.fs")>]
     let InfixTokenPlusOne compilation =
         compilation
-        |> getCompilation 
+        |> getCompilation
         |> asFsx
         |> typecheck
         |> shouldSucceed
@@ -229,7 +240,7 @@ module A
                       EndLine = 4
                       EndColumn = 6 }
             Message =
-             "Unexpected syntax or possible incorrect indentation: this token is offside of context started at position (3:5). Try indenting this further.\nTo continue using non-conforming indentation, pass the '--strict-indentation-' flag to the compiler, or set the language version to F# 7."
+             "Unexpected syntax or possible incorrect indentation: this token is offside of context started at position (3:5). Try indenting this further."
         } |> ignore
 
     [<Fact>]

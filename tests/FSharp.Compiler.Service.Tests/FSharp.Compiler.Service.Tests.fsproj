@@ -36,6 +36,7 @@
     <Compile Include="ModuleReaderCancellationTests.fs" />
     <Compile Include="EditorTests.fs" />
     <Compile Include="Symbols.fs" />
+    <Compile Include="RecordConstructorTests.fs" />
     <Compile Include="TestDoubles.fs" />
     <Compile Include="ConsoleOnlyOptionsTests.fs" />
     <Compile Include="VisualStudioVersusConsoleContextTests.fs" />
@@ -57,6 +58,7 @@
     <Compile Include="RangeTests.fs" />
     <Compile Include="CompilerGlobalStateTests.fs" />
     <Compile Include="TooltipTests.fs" />
+    <Compile Include="XmlDocInheritanceTests.fs" />
     <Compile Include="TypeChecker\TypeCheckerRecoveryTests.fs" />
     <Compile Include="TokenizerTests.fs" />
     <Compile Include="QuickParseTests.fs" />
@@ -190,6 +192,14 @@
     <Compile Include="Tooltip\TooltipTests.Types.fs" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- ECMA-335 Edit-and-Continue metadata delta writer tests. See PR #TBD. -->
+    <Compile Include="DeltaMetadata\CodedIndexTests.fs" />
+    <Compile Include="DeltaMetadata\MetadataDeltaTestHelpers.fs" />
+    <Compile Include="DeltaMetadata\SrmReaderParityTests.fs" />
+    <Compile Include="DeltaMetadata\FSharpDeltaMetadataWriterTests.fs" />
+  </ItemGroup>
+
 	<ItemGroup>
 		<None Include="..\service\data\SyntaxTree\**\*.*" Exclude="@(Compile)">
 			<Link>SyntaxTreeTestSource\%(RecursiveDir)\%(Extension)\%(Filename)%(Extension)</Link>
@@ -197,9 +207,6 @@
 	</ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Dotnet.ProjInfo" Version="0.37.0" />
-    <!-- Force a newer Newtonsoft.Json version to avoid conflicts. -->
-    <PackageReference Include="Newtonsoft.Json" Version="$(NewtonsoftJsonVersion)" />
 	<ProjectReference Include="..\..\src\Compiler\FSharp.Compiler.Service.fsproj">
 		<!-- If tests would use net10.0, the surface area changes because of different set of Assembly references -->
 		<SetTargetFramework>TargetFramework=netstandard2.0</SetTargetFramework>

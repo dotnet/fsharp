@@ -194,6 +194,9 @@ while [[ $# > 0 ]]; do
     /p:*)
       properties+=("$1")
       ;;
+    /clp:*)
+      properties+=("$1")
+      ;;
     *)
       echo "Invalid argument: $1"
       usage
@@ -299,9 +302,6 @@ function BuildSolution {
   if [[ "$ci" != true ]]; then
     quiet_restore=true
   fi
-
-  # Node reuse fails because multiple different versions of FSharp.Build.dll get loaded into MSBuild nodes
-  node_reuse=false
 
   # build bootstrap tools
   # source_build=In source build proto does no work, except cause sourcebuild in wrapper to build
