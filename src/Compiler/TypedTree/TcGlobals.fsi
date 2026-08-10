@@ -243,6 +243,10 @@ type internal TcGlobals =
         replayRange: FSharp.Compiler.Text.range ->
             TypedTree.TraitConstraintSln option
 
+    /// Drop all recorded extension-operator solutions for 'compilingCcu'. Called at each FSI fragment boundary
+    /// so identical-layout submissions sharing one session CcuThunk do not poison one another.
+    member ClearExtensionOperatorSolutions: compilingCcu: TypedTree.CcuThunk -> unit
+
     member mkDebuggableAttributeV2:
         jitTracking: bool * jitOptimizerDisabled: bool -> FSharp.Compiler.AbstractIL.IL.ILAttribute
 

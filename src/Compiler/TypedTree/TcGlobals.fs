@@ -1439,6 +1439,17 @@ type TcGlobals(
           | _ -> None
       | _ -> None
 
+  /// RFC FS-1043: drop all recorded extension-operator solutions for the CCU being compiled. FSI reuses one
+  /// session CcuThunk (and this sink) across submissions, and every EvalInteraction reuses the same dummy
+  /// file name and a fresh lexbuf, so two identical-layout submissions produce identical source ranges. The
+  /// range-based disambiguation cannot then tell an earlier submission's record from the current one, so a
+  /// stale entry could poison a later same-shaped submission. Each FSI fragment is its own compilation unit:
+  /// its records are made and replayed entirely within it, so clearing at the fragment boundary is sound and
+  /// prevents cross-submission contamination. Batch (fsc) compilation is a single unit with distinct file
+  /// names and never calls this.
+  member _.ClearExtensionOperatorSolutions(compilingCcu: CcuThunk) =
+      extensionOperatorSolutions.Remove(compilingCcu) |> ignore
+
   member val system_Array_ty = mkSysNonGenericTy sys "Array"
   member val system_Object_ty = mkSysNonGenericTy sys "Object"
   member val system_IDisposable_ty = mkSysNonGenericTy sys "IDisposable"
