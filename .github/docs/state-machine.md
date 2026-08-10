@@ -334,7 +334,7 @@ gh-aw safe-output defaults (suppressed below): `target: "*"`, `noop.report-as-is
 | `labelops-pr-maintenance` | `add-comment` | 5 | hide-older-comments: true |
 | `labelops-pr-maintenance` | `add-labels` | 3 | allowed: AI-needs-CI-fix-input |
 | `labelops-pr-maintenance` | `dispatch-workflow` | 3 | workflows: labelops-flake-fix |
-| `labelops-pr-security-scan` | `add-labels` | 50 | allowed: 10 labels (⚠️ Affects-* family + Scanned-Clean + Bypassed) |
+| `labelops-pr-security-scan` | `add-labels` | 50 | allowed: 11 labels (⚠️ Affects-* family + Suspicious-Prompting + Scope-Review-Needed + Scanned-Clean + Bypassed) |
 | `labelops-pr-security-scan` | `add-comment` | 25 | hide-older-comments: true |
 | `msbuild-quality-review` | `create-issue` | 1 | title `[msbuild-quality] `, labels: automation+Area-ProjectsAndBuild |
 | `msbuild-quality-review` | `create-pull-request` | 1 | draft: true, title `[msbuild-quality] `, protected-files: fallback-to-issue |
@@ -372,4 +372,4 @@ gh-aw safe-output defaults (suppressed below): `target: "*"`, `noop.report-as-is
 
 ---
 
-> generator-version: f107bba1a1cd61dc · source-shas: 06e56c52,149f0bbe,1af951a0,36b2b857,3775b51d,49b2989b,5e54b0e6,5e9a1344,7dca5b8f,9285c8a0,98d92f32,a5296399,acf12bdf,b5c04ea8,ec5fa486,f107bba1,
+> generator-version: f107bba1a1cd61dc · source-shas: 06e56c52,149f0bbe,1af951a0,36b2b857,3775b51d,420b9d6e,49b2989b,5e9a1344,7dca5b8f,9285c8a0,98d92f32,acf12bdf,b5c04ea8,d3e496db,ec5fa486,f107bba1,
