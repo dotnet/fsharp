@@ -10,8 +10,7 @@ $ErrorActionPreference = "Stop"
 
 $root = "NativeAOT_Test"
 
-# net9.0 is the stable control; the shipped net pin (FSharpCoreShippedNetTargetFramework) adds the
-# net-TFM leg exercising lib/<pin> under NativeAOT. Derived from the knob so it follows a pin bump.
+# net9.0 = stable control; the pin (read from the knob so it follows a bump) adds the net-TFM leg under NativeAOT.
 $netPin = (Select-String -Path "$PSScriptRoot/../../../eng/TargetFrameworks.props" -Pattern 'FSharpCoreShippedNetTargetFramework[^>]*>(net\d+\.0)<').Matches[0].Groups[1].Value
 $tfms = @("net9.0", $netPin)
 

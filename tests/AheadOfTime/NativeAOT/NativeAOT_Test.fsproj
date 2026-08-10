@@ -2,8 +2,7 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <!-- net9.0 stays as the stable fallback control; the shipped net pin (FSharpCoreShippedNetTargetFramework)
-         adds the net-TFM leg that exercises lib/<pin> under trimming/AOT. -->
+    <!-- net9.0 = stable control; the pin adds the net-TFM leg under NativeAOT. -->
     <TargetFrameworks>net9.0;$(FSharpCoreShippedNetTargetFramework)</TargetFrameworks>
     <LangVersion>preview</LangVersion>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>

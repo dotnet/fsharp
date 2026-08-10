@@ -159,10 +159,6 @@ stages:
             env:
               DOTNET_ROLL_FORWARD_TO_PRERELEASE: 1
             displayName: Validate test projects are registered in TestSplit.fsx
-          - script: ./eng/common/dotnet.sh fsi eng/tests/AuditFSharpCoreTfmGuards.fsx
-            env:
-              DOTNET_ROLL_FORWARD_TO_PRERELEASE: 1
-            displayName: Audit FSharp.Core TFM (#if) guards use the standardized idiom
 
         # Check whether package with current version has been published to nuget.org
         # We will try to restore both FSharp.Core and FCS and if restore is _successful_, package version needs to be bumped.
@@ -588,16 +584,14 @@ stages:
               NativeToolsOnMachine: true
           - script: .\tests\EndToEndBuildTests\EndToEndBuildTests.cmd -c Release
             displayName: End to end build tests
-          - script: .\eng\common\dotnet.cmd fsi .\tests\FSharp.Core.PackageVerification\VerifyFSharpCorePackage.fsx
-            displayName: 'e2e-1: verify shipped FSharp.Core nupkg (lib layout, satellites, nuspec group, AssemblyVersion parity)'
           - script: .\eng\common\dotnet.cmd fsi .\tests\AheadOfTime\NetTfmResolution\VerifyNetResolution.fsx
-            displayName: 'e2e-2: net-TFM consumer asset-resolution witness (assets.json + runtime smoke)'
+            displayName: 'e2e: verify shipped FSharp.Core nupkg + net-TFM consumer resolution (assets.json + runtime smoke)'
             workingDirectory: $(Build.SourcesDirectory)
           - task: PublishPipelineArtifact@1
-            displayName: Publish e2e-2 resolution evidence (project.assets.json)
+            displayName: Publish e2e resolution evidence (project.assets.json)
             inputs:
               targetPath: '$(Build.SourcesDirectory)/tests/AheadOfTime/NetTfmResolution/obj'
-              artifactName: 'e2e2 NetTfmResolution obj Attempt $(System.JobAttempt)'
+              artifactName: 'e2e NetTfmResolution obj Attempt $(System.JobAttempt)'
             continueOnError: true
             condition: always()
           

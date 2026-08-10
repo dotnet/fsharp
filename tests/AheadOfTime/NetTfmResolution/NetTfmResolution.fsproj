@@ -1,18 +1,14 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-  <!-- Consumer for e2e-2 (see VerifyNetResolution.fsx). Targets EXACTLY the pinned shipped net TFM
-       so a pin bump is followed automatically (no literal net10.0 here). -->
+  <!-- Consumer for VerifyNetResolution.fsx: targets EXACTLY the pinned shipped net TFM (never a literal). -->
   <Import Project="$(MSBuildThisFileDirectory)../../../eng/TargetFrameworks.props" />
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>$(FSharpCoreShippedNetTargetFramework)</TargetFramework>
     <LangVersion>preview</LangVersion>
-    <!-- Allow the net10.0 app to run on a newer installed shared framework (CI/dev may only have net11). -->
     <RollForward>Major</RollForward>
-    <!-- Opt out of the repo's Central Package Management: this consumer pins FSharp.Core inline. -->
     <ManagePackageVersionsCentrally>false</ManagePackageVersionsCentrally>
-    <!-- Force the PACKAGED FSharp.Core, not the SDK's implicit one. -->
     <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
     <DisableImplicitNuGetFallbackFolder>true</DisableImplicitNuGetFallbackFolder>
   </PropertyGroup>
@@ -22,7 +18,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <!-- Exact version is injected by the driver: -p:FSharpCoreTestVersion=<newest built version>. -->
     <PackageReference Include="FSharp.Core" Version="$(FSharpCoreTestVersion)" />
   </ItemGroup>
 

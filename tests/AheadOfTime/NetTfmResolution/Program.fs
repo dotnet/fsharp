@@ -1,8 +1,7 @@
 module NetTfmResolution.Program
 
-// Runtime smoke for the shipped net-TFM FSharp.Core asset (e2e-2). Exercises TaskBuilderBase.Using
-// for an IAsyncDisposable resource, guarded behind `#if NETSTANDARD2_1 || NET`: this `use` overload
-// is absent from the netstandard2.0 asset, so running it proves the widened net asset was resolved.
+// Runtime smoke: the `use` on an IAsyncDisposable resource (guarded `#if NETSTANDARD2_1 || NET`) is
+// absent from the netstandard2.0 asset, so executing it proves the widened net asset was resolved.
 
 open System
 open System.Threading.Tasks

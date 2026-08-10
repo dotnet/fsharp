@@ -62,8 +62,7 @@ function CheckTrim($root, $tfm, $outputfile, $expected_len, $callerLineNumber) {
 
 $allErrors = @()
 
-# Derive the shipped net TFM from the single source of truth (the knob), so these legs follow
-# the pin automatically when it bumps (no literal net10.0 to drift).
+# Shipped net TFM, read from the knob (single source of truth) so these legs follow a pin bump.
 $netPin = (Select-String -Path "$PSScriptRoot/../../../eng/TargetFrameworks.props" -Pattern 'FSharpCoreShippedNetTargetFramework[^>]*>(net\d+\.0)<').Matches[0].Groups[1].Value
 
 # Check net9.0 trimmed assemblies.
@@ -77,9 +76,7 @@ $allErrors += CheckTrim -root "StaticLinkedFSharpCore_Trimming_Test" -tfm "net9.
 # Check net9.0 trimmed assemblies with F# metadata resources removed
 $allErrors += CheckTrim -root "FSharpMetadataResource_Trimming_Test" -tfm "net9.0" -outputfile "FSharpMetadataResource_Trimming_Test.dll" -expected_len 7613440 -callerLineNumber 74
 
-# Check the shipped net TFM (<pin>) trimmed assemblies. The GATE here is that publish SUCCEEDS
-# under TreatWarningsAsErrors=true (IL2xxx/IL3050 become build errors); sizes are report-only
-# (-expected_len -1) because the byte count churns across net previews.
+# Shipped net pin: the GATE is publish SUCCESS under TreatWarningsAsErrors; sizes are report-only (-1, byte count churns across previews).
 $allErrors += CheckTrim -root "SelfContained_Trimming_Test" -tfm $netPin -outputfile "FSharp.Core.dll" -expected_len -1 -callerLineNumber 84
 $allErrors += CheckTrim -root "StaticLinkedFSharpCore_Trimming_Test" -tfm $netPin -outputfile "StaticLinkedFSharpCore_Trimming_Test.dll" -expected_len -1 -callerLineNumber 85
 $allErrors += CheckTrim -root "FSharpMetadataResource_Trimming_Test" -tfm $netPin -outputfile "FSharpMetadataResource_Trimming_Test.dll" -expected_len -1 -callerLineNumber 86
