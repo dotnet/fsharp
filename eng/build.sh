@@ -300,9 +300,6 @@ function BuildSolution {
     quiet_restore=true
   fi
 
-  # Node reuse fails because multiple different versions of FSharp.Build.dll get loaded into MSBuild nodes
-  node_reuse=false
-
   # build bootstrap tools
   # source_build=In source build proto does no work, except cause sourcebuild in wrapper to build
   bootstrap_dir=$artifacts_dir/Bootstrap
