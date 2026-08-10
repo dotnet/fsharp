@@ -1845,4 +1845,4 @@ featureImprovedImpliedArgumentNamesPartTwo,"Improved implied argument names with
 featureRecordSpreads,"record type and expression spreads"
 3908,xmlDocIncludeError,"XML documentation include error: %s"
 3908,xmlDocIncludeError2,"XML documentation include error: Unable to include XML fragment '%s' of file '%s' -- %s"
-3909,lexColonDirectiveMustBeFirst,"#: directives must appear as the first non-whitespace characters on a line"
+3909,lexColonDirectiveMustBeFirst,"#: directives must start at the beginning of a line"

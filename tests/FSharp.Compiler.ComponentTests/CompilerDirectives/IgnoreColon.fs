@@ -12,11 +12,13 @@ module test
 let main _ =
     #:source test.fs
     0
-"""
+#:ignore also at eof"""
 
     [<Fact>]
     let ignoreColonDirective () =
 
         FSharp source
         |> compile
-        |> withDiagnosticMessage "#: directives must appear as the first non-whitespace characters on a line"
+        |> withDiagnostics [
+            Error 3909, Line 6, Col 5, Line 6, Col 21, "#: directives must start at the beginning of a line"
+        ]
