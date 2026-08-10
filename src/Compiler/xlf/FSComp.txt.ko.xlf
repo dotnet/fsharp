@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
   <file datatype="xml" source-language="en" target-language="ko" original="../FSComp.resx">
     <body>
@@ -557,11 +557,6 @@
         <target state="new">nullness checking</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureOpenTypeDeclaration">
-        <source>open type declaration</source>
-        <target state="translated">개방형 형식 선언</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureOverloadsForCustomOperations">
         <source>overloads for custom operations</source>
         <target state="translated">사용자 지정 작업의 오버로드</target>
@@ -605,6 +600,11 @@
       <trans-unit id="featureReallyLongList">
         <source>list literals of any size</source>
         <target state="translated">모든 크기의 목록 리터럴</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureRecordConstructorSyntax">
+        <source>Constructing a record via its all-fields constructor</source>
+        <target state="new">Constructing a record via its all-fields constructor</target>
         <note />
       </trans-unit>
       <trans-unit id="featureRecordSpreads">
@@ -680,11 +680,6 @@
       <trans-unit id="featureStringInterpolation">
         <source>string interpolation</source>
         <target state="translated">문자열 보간</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="featureStructActivePattern">
-        <source>struct representation for active patterns</source>
-        <target state="translated">활성 패턴에 대한 구조체 표현</target>
         <note />
       </trans-unit>
       <trans-unit id="featureSupportValueOptionsAsOptionalParameters">
@@ -2160,6 +2155,16 @@
       <trans-unit id="xmlDocDuplicateParameter">
         <source>This XML comment is invalid: multiple documentation entries for parameter '{0}'</source>
         <target state="translated">이 XML 주석이 잘못됨: 매개 변수 '{0}'에 대한 여러 설명서 항목이 있음</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="xmlDocIncludeError">
+        <source>XML documentation include error: {0}</source>
+        <target state="new">XML documentation include error: {0}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="xmlDocIncludeError2">
+        <source>XML documentation include error: Unable to include XML fragment '{0}' of file '{1}' -- {2}</source>
+        <target state="new">XML documentation include error: Unable to include XML fragment '{0}' of file '{1}' -- {2}</target>
         <note />
       </trans-unit>
       <trans-unit id="xmlDocInvalidParameterName">
@@ -6719,7 +6724,7 @@
       </trans-unit>
       <trans-unit id="lexfltTokenIsOffsideOfContextStartedEarlier">
         <source>Unexpected syntax or possible incorrect indentation: this token is offside of context started at position {0}. Try indenting this further.</source>
-        <target state="needs-review-translation">예기치 않은 구문 또는 잘못된 들여쓰기: 이 토큰은 {0} 위치에서 시작된 컨텍스트의 오프 사이드입니다. 이를 더 들여쓰기해 보세요.\n규정을 준수하지 않는 들여쓰기를 계속 사용하려면 '--strict-indentation-' 플래그를 컴파일러에 전달하거나 언어 버전을 F# 7로 설정합니다.</target>
+        <target state="new">Unexpected syntax or possible incorrect indentation: this token is offside of context started at position {0}. Try indenting this further.</target>
         <note />
       </trans-unit>
       <trans-unit id="lexfltSeparatorTokensOfPatternMatchMisaligned">

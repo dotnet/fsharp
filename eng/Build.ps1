@@ -165,8 +165,6 @@ function Process-Arguments() {
         $script:useGlobalNugetCache = $False
     }
 
-    $script:nodeReuse = $False;
-
     if ($testAll) {
         $script:testDesktop = $True
         $script:testCoreClr = $True

@@ -17,6 +17,7 @@ let private coreOptions compilation =
 let verifyCompilation compilation =
     compilation
     |> coreOptions
+    |> withLangVersion10 // default baseline captures the pre-11 closure IL; DirectDelegateConstruction (11.0) is covered by the preview twin
     |> compile
     |> shouldSucceed
     |> verifyPEFileWithSystemDlls
@@ -212,6 +213,7 @@ let main _ =
     if d.Method.Name <> "Invoke" then failwithf "expected closure Method.Name 'Invoke' but got '%s'" d.Method.Name
     0
         """
+    |> withLangVersion10 // "without the feature": DirectDelegateConstruction is off pre-11, so the delegate goes through a closure
     |> compileExeAndRun
     |> shouldSucceed
 
