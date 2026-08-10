@@ -25,7 +25,7 @@ type public RichText =
     /// Gets whether the text has no parts
     member IsEmpty: bool
 
-module public RichText =
+module internal RichText =
 
     /// Text with no parts
     val empty: RichText
