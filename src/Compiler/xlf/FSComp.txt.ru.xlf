@@ -6724,7 +6724,7 @@
       </trans-unit>
       <trans-unit id="lexfltTokenIsOffsideOfContextStartedEarlier">
         <source>Unexpected syntax or possible incorrect indentation: this token is offside of context started at position {0}. Try indenting this further.</source>
-        <target state="needs-review-translation">Неожиданный синтаксис или, возможно, неправильный отступ: этот токен находится вне контекста, начатого в позиции {0}. Попробуйте увеличить отступ.\nЧтобы продолжить использование несоответствующего отступа, передайте компилятору флаг '--strict-indentation-' или установите версию языка F# 7.</target>
+        <target state="new">Unexpected syntax or possible incorrect indentation: this token is offside of context started at position {0}. Try indenting this further.</target>
         <note />
       </trans-unit>
       <trans-unit id="lexfltSeparatorTokensOfPatternMatchMisaligned">
