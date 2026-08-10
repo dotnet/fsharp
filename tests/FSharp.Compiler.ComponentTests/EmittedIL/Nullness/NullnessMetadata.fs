@@ -70,6 +70,7 @@ module NullnessMetadata =
     let ``Nullable attr for exception types`` compilation =  
         compilation
         |> getCompilation
+        |> withLangVersion10 // ExceptionFieldSerializationSupport (11.0) changes exception IL; pin to pre-11 (nullness stays on, gated at 9.0)
         |> verifyCompilation DoNotOptimize
 
     [<Theory; FileInlineData("ReferenceDU.fs")>]

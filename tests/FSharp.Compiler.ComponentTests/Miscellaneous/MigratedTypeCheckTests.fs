@@ -46,7 +46,9 @@ let ``type check neg10_a`` () = singleNegTest ( "typecheck/sigs") "neg10_a"
 let ``type check neg11`` () = singleNegTest ( "typecheck/sigs") "neg11"
 
 [<FactForDESKTOP>]
-let ``type check neg12`` () = singleNegTest ( "typecheck/sigs") "neg12"
+// Pinned to 10.0: at 11.0 AccessProtectedBaseFieldFromClosure lets the protected-member-from-closure
+// cases compile, dropping baseline errors. 11.0 behavior is covered by dedicated conformance tests.
+let ``type check neg12`` () = singleVersionedNegTest ("typecheck/sigs") LangVersion.V10 "neg12"
 
 [<FactForDESKTOP>]
 let ``type check neg13`` () = singleNegTest ( "typecheck/sigs") "neg13"
