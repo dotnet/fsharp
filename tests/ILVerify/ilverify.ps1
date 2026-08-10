@@ -55,12 +55,14 @@ $env:PublishWindowsPdb = "false"
 [string] $default_tfm = "netstandard2.0"
 # Read product TFM from centralized source of truth via MSBuild
 [string] $product_tfm = (& (Join-Path $repo_path "eng/common/dotnet.ps1") msbuild (Join-Path $repo_path "eng/TargetFrameworks.props") --getProperty:FSharpNetCoreProductTargetFramework).Trim()
+# Shipped FSharp.Core net TFM (the package-only leg) - verified like its netstandard siblings.
+[string] $fscore_shipped_net_tfm = (& (Join-Path $repo_path "eng/common/dotnet.ps1") msbuild (Join-Path $repo_path "eng/TargetFrameworks.props") --getProperty:FSharpCoreShippedNetTargetFramework).Trim()
 
 [string] $artifacts_bin_path = Join-Path (Join-Path $repo_path "artifacts") "bin"
 
 # List projects to verify, with TFMs
 $projects = @{
-    "FSharp.Core" = @($default_tfm, "netstandard2.1")
+    "FSharp.Core" = @($default_tfm, "netstandard2.1", $fscore_shipped_net_tfm)
     "FSharp.Compiler.Service" = @($default_tfm, $product_tfm)
 }
 
