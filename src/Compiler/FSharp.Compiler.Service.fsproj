@@ -40,6 +40,8 @@
     <FsLexOutputFolder>$(IntermediateOutputPath)$(TargetFramework)\</FsLexOutputFolder>
     <EnableDefaultEmbeddedResourceItems>false</EnableDefaultEmbeddedResourceItems>
     <Configurations>Debug;Release</Configurations>
+    <!-- FSComp.txt needs the classified accessors, which the SDK's FSharp.Build cannot generate -->
+    <UseBootstrappedFSharpBuildTasks>true</UseBootstrappedFSharpBuildTasks>
   </PropertyGroup>
 
   <!--  The FSharp.Compiler.Service dll provides a referencable public interface for tool builders -->
