@@ -2,6 +2,7 @@ namespace EmittedIL
 
 open System.Diagnostics
 open System.Runtime.CompilerServices
+open FSharp.Test
 open Xunit
 open FSharp.Test.Compiler
 
@@ -1596,7 +1597,7 @@ let main _ =
         |> verifyILNotPresent ["call       int32 Test::apply(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,int32>,"]
 
     // https://github.com/dotnet/fsharp/issues/20063
-    [<Fact>]
+    [<FactForNETCOREAPP>]
     let ``Stackalloc 01 - Debug`` () =
         FSharp """
 open System
@@ -1619,7 +1620,7 @@ let main _ =
         |> compileAndRun
         |> verifySequencePoints
 
-    [<Fact>]
+    [<FactForNETCOREAPP>]
     let ``Stackalloc 02 - Nested wrappers`` () =
         FSharp """
 open System
@@ -1642,7 +1643,7 @@ let main _ =
         |> compileAndRun
         |> verifySequencePoints
 
-    [<Fact>]
+    [<FactForNETCOREAPP>]
     let ``Stackalloc 03 - Different assembly`` () =
         let library =
             FSharp """
@@ -1678,7 +1679,7 @@ let main _ =
         |> compileAndRun
         |> verifySequencePoints
 
-    [<Fact>]
+    [<FactForNETCOREAPP>]
     let ``Stackalloc 04 - Only the wrappers are force inlined`` () =
         FSharp """
 open System
