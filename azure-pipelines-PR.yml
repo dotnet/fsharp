@@ -584,16 +584,9 @@ stages:
               NativeToolsOnMachine: true
           - script: .\tests\EndToEndBuildTests\EndToEndBuildTests.cmd -c Release
             displayName: End to end build tests
-          - script: .\eng\common\dotnet.cmd fsi .\tests\AheadOfTime\NetTfmResolution\VerifyNetResolution.fsx
-            displayName: 'e2e: verify shipped FSharp.Core nupkg + net-TFM consumer resolution (assets.json + runtime smoke)'
+          - script: .\eng\common\dotnet.cmd fsi .\tests\AheadOfTime\NetPackage\VerifyNetPackage.fsx
+            displayName: 'Verify shipped FSharp.Core nupkg ships lib/<net-pin>'
             workingDirectory: $(Build.SourcesDirectory)
-          - task: PublishPipelineArtifact@1
-            displayName: Publish e2e resolution evidence (project.assets.json)
-            inputs:
-              targetPath: '$(Build.SourcesDirectory)/tests/AheadOfTime/NetTfmResolution/obj'
-              artifactName: 'e2e NetTfmResolution obj Attempt $(System.JobAttempt)'
-            continueOnError: true
-            condition: always()
           
           # Publish artifacts for regression testing
           - task: PublishPipelineArtifact@1

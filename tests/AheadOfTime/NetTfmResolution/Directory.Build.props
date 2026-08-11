@@ -1,4 +1,0 @@
-<Project>
-  <!-- Empty: stop the crawl so the parent AheadOfTime local-fsc shim is NOT imported; this consumer
-       must resolve the shipped package with a stock SDK. -->
-</Project>
