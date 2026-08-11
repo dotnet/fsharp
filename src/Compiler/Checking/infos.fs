@@ -1291,6 +1291,37 @@ type MethInfo =
         | MethInfoWithModifiedReturnType(mi,_) -> mi.GetCustomAttrs()
         | _ -> ILAttributes.Empty
 
+    /// Returns 0 if the attribute is not present, if targeting a runtime without the attribute, or
+    /// for an F# override member (an override never carries its own priority — it is fixed by the
+    /// base declaration, matching C#'s "priority on an override is ignored" rule).
+    member x.GetOverloadResolutionPriority() : int =
+        match x with
+        | ILMeth(g, ilMethInfo, _) ->
+            let md = ilMethInfo.RawMetadata
+
+            if md.HasWellKnownAttribute(g, WellKnownILAttributes.OverloadResolutionPriorityAttribute) then
+                match md.CustomAttrs with
+                | ILAttribDecoded WellKnownILAttributes.OverloadResolutionPriorityAttribute ([ ILAttribElem.Int32 priority ], _) -> priority
+                | _ -> 0
+            else
+                0
+        | FSMeth(g, _, vref, _) ->
+            if
+                not vref.IsDefiniteFSharpOverrideMember
+                && ValHasWellKnownAttribute g WellKnownValAttributes.OverloadResolutionPriorityAttribute vref.Deref
+            then
+                match vref.Attribs with
+                | ValAttribInt g WellKnownValAttributes.OverloadResolutionPriorityAttribute priority -> priority
+                | _ -> 0
+            else
+                0
+        | MethInfoWithModifiedReturnType(mi, _) -> mi.GetOverloadResolutionPriority()
+        | DefaultStructCtor _ -> 0
+        | RecdCtor _ -> 0
+#if !NO_TYPEPROVIDERS
+        | ProvidedMeth _ -> 0
+#endif
+
     /// Get the parameter attributes of a method info, which get combined with the parameter names and types
     member x.GetParamAttribs(amap, m) =
         match x with
