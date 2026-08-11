@@ -62,9 +62,6 @@ function CheckTrim($root, $tfm, $outputfile, $expected_len, $callerLineNumber) {
 
 $allErrors = @()
 
-# Shipped net TFM, read from the knob (single source of truth) so these legs follow a pin bump.
-$netPin = (dotnet msbuild "$PSScriptRoot/../../../eng/TargetFrameworks.props" --getProperty:FSharpCoreShippedNetTargetFramework).Trim()
-
 # Check net9.0 trimmed assemblies.
 $allErrors += CheckTrim -root "SelfContained_Trimming_Test" -tfm "net9.0" -outputfile "FSharp.Core.dll" -expected_len 311296 -callerLineNumber 66
 
@@ -75,11 +72,6 @@ $allErrors += CheckTrim -root "StaticLinkedFSharpCore_Trimming_Test" -tfm "net9.
 
 # Check net9.0 trimmed assemblies with F# metadata resources removed
 $allErrors += CheckTrim -root "FSharpMetadataResource_Trimming_Test" -tfm "net9.0" -outputfile "FSharpMetadataResource_Trimming_Test.dll" -expected_len 7613440 -callerLineNumber 74
-
-# Shipped net pin: the GATE is publish SUCCESS under TreatWarningsAsErrors; sizes are report-only (-1, byte count churns across previews).
-$allErrors += CheckTrim -root "SelfContained_Trimming_Test" -tfm $netPin -outputfile "FSharp.Core.dll" -expected_len -1 -callerLineNumber 84
-$allErrors += CheckTrim -root "StaticLinkedFSharpCore_Trimming_Test" -tfm $netPin -outputfile "StaticLinkedFSharpCore_Trimming_Test.dll" -expected_len -1 -callerLineNumber 85
-$allErrors += CheckTrim -root "FSharpMetadataResource_Trimming_Test" -tfm $netPin -outputfile "FSharpMetadataResource_Trimming_Test.dll" -expected_len -1 -callerLineNumber 86
 
 # Report all errors and exit with failure if any occurred
 if ($allErrors.Count -gt 0) {

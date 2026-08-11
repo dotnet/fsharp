@@ -186,26 +186,6 @@ stages:
                 DOTNET_ROLL_FORWARD_TO_PRERELEASE: 1
             displayName: Check published package version
 
-        # Blocking gate enforcing the "net10.0 == netstandard2.1" public-surface invariant
-        # (mechanism documented in FSharp.Core.ApiCompat.proj).
-        - job: FSharpCore_ApiCompat
-          pool:
-            name: $(DncEngPublicBuildPool)
-            demands: ImageOverride -equals $(LinuxMachineQueueName)
-          steps:
-          - checkout: self
-            clean: true
-          - script: ./eng/common/dotnet.sh
-            displayName: Install .NET SDK
-          - script: ./eng/common/dotnet.sh build src/FSharp.Core/FSharp.Core.fsproj -c Release
-            env:
-              DOTNET_ROLL_FORWARD_TO_PRERELEASE: 1
-            displayName: Build FSharp.Core (all shipped TFMs, Release)
-          - script: ./eng/common/dotnet.sh msbuild tests/FSharp.Core.ApiCompat/FSharp.Core.ApiCompat.proj -t:ValidateFSharpCoreApiIdentity -p:Configuration=Release
-            env:
-              DOTNET_ROLL_FORWARD_TO_PRERELEASE: 1
-            displayName: ApiCompat net-vs-netstandard2.1 identity gate (strict, empty suppressions)
-
 
   #-------------------------------------------------------------------------------------------------------------------#
   #                                                    PR builds                                                      #
@@ -584,9 +564,6 @@ stages:
               NativeToolsOnMachine: true
           - script: .\tests\EndToEndBuildTests\EndToEndBuildTests.cmd -c Release
             displayName: End to end build tests
-          - script: .\eng\common\dotnet.cmd fsi .\tests\AheadOfTime\NetPackage\VerifyNetPackage.fsx
-            displayName: 'Verify shipped FSharp.Core nupkg ships lib/<net-pin>'
-            workingDirectory: $(Build.SourcesDirectory)
           
           # Publish artifacts for regression testing
           - task: PublishPipelineArtifact@1

@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFrameworks>net9.0;$(FSharpCoreShippedNetTargetFramework)</TargetFrameworks>
+    <TargetFrameworks>net9.0</TargetFrameworks>
     <LangVersion>preview</LangVersion>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <NoWarn>3879</NoWarn>

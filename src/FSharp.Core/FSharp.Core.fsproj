@@ -36,8 +36,7 @@
     <Configurations>Debug;Release;Proto</Configurations>
   </PropertyGroup>
 
-  <!-- Pinned .NET TFM for the shipped FSharp.Core, surfaced to FSharp.Core.nuspec as a $token$
-       so the package lib/dependency group stay driven by the single knob in eng/TargetFrameworks.props. -->
+  <!-- Surface the shipped-net pin to FSharp.Core.nuspec as a $token$. -->
   <ItemGroup Condition="'$(Configuration)' != 'Proto'">
     <NuspecProperty Include="FSharpCoreShippedNetTargetFramework=$(FSharpCoreShippedNetTargetFramework)" />
   </ItemGroup>

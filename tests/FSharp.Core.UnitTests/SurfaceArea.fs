@@ -22,8 +22,8 @@ type SurfaceAreaTest() =
         let platform =
 
 // We are testing the surface area of the FSharp.Core assembly.
-// NETCOREAPP builds with netstandard2.1
-// Net472 builds with netstandard1.0
+// NETCOREAPP binds the shipped net TFM (public surface identical to netstandard2.1; only referenced BCL assemblies differ).
+// Net472 binds netstandard2.0.
 //
 #if NETCOREAPP
             "netstandard21"
