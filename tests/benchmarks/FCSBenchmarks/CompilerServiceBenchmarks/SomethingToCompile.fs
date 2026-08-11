@@ -110,13 +110,6 @@ module internal PervasiveAutoOpens =
 
     let notFound () = raise (KeyNotFoundException())
 
-    type Async with
-        static member RunSynchronouslyImmediate (computation: Async<'T>, ?cancellationToken) =
-            let tcs = TaskCompletionSource<'T>()
-            Async.StartWithContinuations(computation, tcs.SetResult, tcs.SetException, tcs.SetException, ?cancellationToken = cancellationToken)
-            // Synchronously block waiting for the result (i.e. even if continuations run on another thread, caller thread will be blocked)
-            tcs.Task.GetAwaiter().GetResult() // GetResult() unpacks the AggregateException that .Result would present
-
 /// An efficient lazy for inline storage in a class type. Results in fewer thunks.
 [<Struct>]
 type InlineDelayInit<'T when 'T: not struct> =
