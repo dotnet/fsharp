@@ -35,6 +35,18 @@ module ExtensionConstraintsTests =
     let ``Nested Traverse-Sequence extension SRTP dispatch does not ICE and runs`` () =
         compileAndRunPreview "NestedTraverseSequenceSRTP.fs"
 
+    // @gusty's miniFSharpPlus reproduction as a single end-to-end mini-library: extension
+    // operators (++ >>= <*> |>>) and extension members solve SRTP constraints, the
+    // Default1/2/3 return-type mechanism selects witnesses, and user-written generic SRTP code
+    // consumes them at specific types. See the file header for the three documented adaptations.
+    // Uses the AllowOverloadOnReturnType attribute, so gate on it like the other attribute tests:
+    // full compile+run when FSharp.Core has it, else expect the clean FS0039.
+    [<Fact>]
+    let ``Extension members and operators solve SRTP across a mini functor-monad library`` () =
+        createTest "MiniFSharpPlusExtensionSRTP.fs"
+        |> withLangVersionPreview
+        |> compileAndRunOrExpectMissingAttribute "Microsoft.FSharp.Core.AllowOverloadOnReturnTypeAttribute"
+
     [<Fact>]
     let ``Most recently opened extension wins`` () =
         compileAndRunPreview "ExtensionPrecedence.fs"
