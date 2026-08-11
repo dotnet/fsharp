@@ -132,10 +132,6 @@
         "Affects-Build-Infra"
       ]
     },
-    "19844": {
-      "sha": "a719828a39e214375827797ee84fdc244aa9d770",
-      "cats": []
-    },
     "19785": {
       "sha": "a87e708f57173b68c19d7119b0b8f5a1bd3e2533",
       "cats": [
