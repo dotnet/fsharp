@@ -184,7 +184,7 @@ module AnonymousUnionTypes =
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
-            (Error 193, Line 7, Col 17, Line 7, Col 19, "The type 'List<'a>' is ambiguous with respect to the anonymous union type '(int list | string list)' - multiple union cases match")
+            (Error 4501, Line 4, Col 32, Line 4, Col 33, "The type System.Nullable<'T> is not allowed in an anonymous union type. Consider adding null case instead.")
         ]
 
     [<Theory; FileInlineData("E_AnonNullableReferenceTypeValueType.fs")>]
@@ -262,7 +262,7 @@ module AnonymousUnionTypes =
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
-            (Warning 4000, Line 0, Col 1, Line 0, Col 1, "The type 'int' is a subtype of 'int' and will be ignored")
+            (Warning 4500, Line 0, Col 1, Line 0, Col 1, "The type 'int' is a subtype of 'int' and will be ignored")
         ]
 
     [<Theory; FileInlineData("W_AnonTypeInclusion2.fs")>]
@@ -273,7 +273,7 @@ module AnonymousUnionTypes =
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
-            (Warning 4000, Line 4, Col 8, Line 4, Col 30, "The type 'int' is a subtype of 'System.ValueType' and will be ignored")
+            (Warning 4500, Line 4, Col 8, Line 4, Col 30, "The type 'int' is a subtype of 'System.ValueType' and will be ignored")
         ]
 
     [<Theory; FileInlineData("W_AnonTypeInclusion3.fs")>]
@@ -284,7 +284,7 @@ module AnonymousUnionTypes =
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
-            (Warning 4000, Line 0, Col 1, Line 0, Col 1, "The type 'int' is a subtype of 'System.Object' and will be ignored")
+            (Warning 4500, Line 0, Col 1, Line 0, Col 1, "The type 'int' is a subtype of 'System.Object' and will be ignored")
         ]
 
     [<Theory; FileInlineData("W_AnonTypeInclusion4.fs")>]
@@ -295,7 +295,7 @@ module AnonymousUnionTypes =
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
-            (Warning 4000, Line 4, Col 8, Line 4, Col 37, "The type 'string' is a subtype of 'System.IComparable' and will be ignored")
+            (Warning 4500, Line 4, Col 8, Line 4, Col 37, "The type 'string' is a subtype of 'System.IComparable' and will be ignored")
         ]
 
     [<Theory; FileInlineData("W_AnonUnitsOfMeasureOverlap.fs")>]
@@ -306,7 +306,7 @@ module AnonymousUnionTypes =
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
-            (Warning 4000, Line 4, Col 18, Line 4, Col 19, "The type 'int' is a subtype of 'int' and will be ignored")
+            (Warning 4500, Line 4, Col 18, Line 4, Col 19, "The type 'int' is a subtype of 'int' and will be ignored")
         ]
 
     [<Theory; FileInlineData("W_AnonTupleEliminationOverlap.fs")>]
@@ -317,7 +317,7 @@ module AnonymousUnionTypes =
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
-            (Warning 4000, Line 4, Col 8, Line 4, Col 45, "The type 'int * int' is a subtype of 'int * int' and will be ignored")
+            (Warning 4500, Line 4, Col 8, Line 4, Col 45, "The type 'int * int' is a subtype of 'int * int' and will be ignored")
         ]
 
     [<Theory; FileInlineData("W_AnonFunctionEliminationOverlap.fs")>]
@@ -328,5 +328,5 @@ module AnonymousUnionTypes =
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
-            (Warning 4000, Line 4, Col 10, Line 4, Col 46, "The type 'int -> int' is a subtype of 'int -> int' and will be ignored")
+            (Warning 4500, Line 4, Col 10, Line 4, Col 46, "The type 'int -> int' is a subtype of 'int -> int' and will be ignored")
         ]
