@@ -246,7 +246,7 @@ type QueryBuilder() =
         QuerySource (Enumerable.GroupJoin(outerSource.Source, innerSource.Source, Func<_, _>(outerKeySelector), Func<_, _>(innerKeySelector), Func<_, _, _>(resultSelector)))
 
     member _.LeftOuterJoin (outerSource: QuerySource<_, 'Q>, innerSource: QuerySource<_, 'Q>, outerKeySelector, innerKeySelector, resultSelector: _ ->  seq<_> -> _) : QuerySource<_, 'Q> =
-        QuerySource (Enumerable.GroupJoin(outerSource.Source, innerSource.Source, Func<_, _>(outerKeySelector), Func<_, _>(innerKeySelector), Func<_, _, _>(fun x g -> resultSelector x (g.DefaultIfEmpty()))))
+        QuerySource (Enumerable.GroupJoin(outerSource.Source, innerSource.Source, Func<_, _>(outerKeySelector), Func<_, _>(innerKeySelector), Func<_, _, _>(fun x (g: seq<_>) -> resultSelector x (g.DefaultIfEmpty()))))
 
     member _.RunQueryAsValue  (q: Quotations.Expr<'T>) : 'T =
         ForwardDeclarations.Query.Execute q

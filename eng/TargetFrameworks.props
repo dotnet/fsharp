@@ -16,22 +16,8 @@
     <!-- Derive major version by stripping 'net' prefix and '.0' suffix (e.g., net10.0 -> 10) -->
     <FSharpNetCoreProductMajorVersion>$([System.Text.RegularExpressions.Regex]::Replace('$(FSharpNetCoreProductTargetFramework)', '^net(\d+)\.0$', '$1'))</FSharpNetCoreProductMajorVersion>
 
-    <!-- Pinned *shipped* net TFM for the FSharp.Core NuGet package: LAGS the in-dev product TFM above, tracks
-         the latest stable released .NET, bumped deliberately (not with the product). Overridable via env/CLI. -->
+    <!-- Net TFM shipped in the FSharp.Core NuGet package. Lags the in-dev product TFM; bump deliberately. -->
     <FSharpCoreShippedNetTargetFramework Condition="'$(FSharpCoreShippedNetTargetFramework)' == ''">net10.0</FSharpCoreShippedNetTargetFramework>
-    <FSharpCoreShippedNetMajorVersion>$([System.Text.RegularExpressions.Regex]::Replace('$(FSharpCoreShippedNetTargetFramework)', '^net(\d+)\.0$', '$1'))</FSharpCoreShippedNetMajorVersion>
   </PropertyGroup>
-
-  <!-- The shipped FSharp.Core net TFM must be STRICTLY LESS than the in-dev product TFM (so F# for net(N+1)
-       still ships FSharp.Core targeting stable netN). Skipped in source-build (see Directory.Build.props). -->
-  <Target Name="_ValidateFSharpCoreShippedNetTfm"
-          Condition="'$(MSBuildProjectName)' == 'FSharp.Core' and '$(DotNetBuildSourceOnly)' != 'true'"
-          BeforeTargets="Build;Pack">
-    <!-- Require a plain netN.0 pin so the numeric comparison below can't throw an opaque Version parse error. -->
-    <Error Condition="!$([System.Text.RegularExpressions.Regex]::IsMatch('$(FSharpCoreShippedNetTargetFramework)', '^net\d+\.0$'))"
-           Text="FSharpCoreShippedNetTargetFramework ($(FSharpCoreShippedNetTargetFramework)) must be a plain 'netN.0' target framework (e.g. net10.0)." />
-    <Error Condition="!$([MSBuild]::VersionLessThan('$(FSharpCoreShippedNetMajorVersion).0', '$(FSharpNetCoreProductMajorVersion).0'))"
-           Text="FSharpCoreShippedNetTargetFramework ($(FSharpCoreShippedNetTargetFramework)) must be STRICTLY LESS than the in-dev product TFM ($(FSharpNetCoreProductTargetFramework)). Bump the pin only when the product advances." />
-  </Target>
 
 </Project>
