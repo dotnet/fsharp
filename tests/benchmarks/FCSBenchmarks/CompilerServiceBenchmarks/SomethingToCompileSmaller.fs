@@ -110,6 +110,25 @@ module internal PervasiveAutoOpens =
 
     let notFound () = raise (KeyNotFoundException())
 
+    type Async with
+
+        // NOTE The impl is similar (with some behavioral variation) to RunSynchronouslyImmediate, introduced in FSharp.Core 11
+        // NOTE Should not be removed as the compilation cost is part of the benchmark baseline
+        static member RunImmediate(computation: Async<'T>, ?cancellationToken) =
+            let cancellationToken = defaultArg cancellationToken Async.DefaultCancellationToken
+            let ts = TaskCompletionSource<'T>()
+            let task = ts.Task
+
+            Async.StartWithContinuations(
+                computation,
+                (fun k -> ts.SetResult k),
+                (fun exn -> ts.SetException exn),
+                (fun _ -> ts.SetCanceled()),
+                cancellationToken
+            )
+
+            task.Result
+
 /// An efficient lazy for inline storage in a class type. Results in fewer thunks.
 [<Struct>]
 type InlineDelayInit<'T when 'T: not struct> =
