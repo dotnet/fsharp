@@ -29,7 +29,6 @@ type LanguageFeature =
     | NullnessChecking
     | IndexerNotationWithoutDot
     | RefCellNotationInformationals
-    | UseBindingValueDiscard
     | UnionIsPropertiesVisible
     | NonVariablePatternsToRightOfAsPatterns
     | AttributesToRightOfModuleKeyword

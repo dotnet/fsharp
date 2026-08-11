@@ -39,7 +39,6 @@ type LanguageFeature =
     | NullnessChecking
     | IndexerNotationWithoutDot
     | RefCellNotationInformationals
-    | UseBindingValueDiscard
     | UnionIsPropertiesVisible
     | NonVariablePatternsToRightOfAsPatterns
     | AttributesToRightOfModuleKeyword
@@ -178,7 +177,6 @@ type LanguageVersion(versionText, ?disabledFeaturesArray: LanguageFeature array)
                 LanguageFeature.ResumableStateMachines, languageVersion60
                 LanguageFeature.IndexerNotationWithoutDot, languageVersion60
                 LanguageFeature.RefCellNotationInformationals, languageVersion60
-                LanguageFeature.UseBindingValueDiscard, languageVersion60
                 LanguageFeature.NonVariablePatternsToRightOfAsPatterns, languageVersion60
                 LanguageFeature.AttributesToRightOfModuleKeyword, languageVersion60
                 LanguageFeature.DelegateTypeNameResolutionFix, languageVersion60
@@ -390,7 +388,6 @@ type LanguageVersion(versionText, ?disabledFeaturesArray: LanguageFeature array)
         | LanguageFeature.ExpandedMeasurables -> FSComp.SR.featureExpandedMeasurables ()
         | LanguageFeature.IndexerNotationWithoutDot -> FSComp.SR.featureIndexerNotationWithoutDot ()
         | LanguageFeature.RefCellNotationInformationals -> FSComp.SR.featureRefCellNotationInformationals ()
-        | LanguageFeature.UseBindingValueDiscard -> FSComp.SR.featureDiscardUseValue ()
         | LanguageFeature.UnionIsPropertiesVisible -> FSComp.SR.featureUnionIsPropertiesVisible ()
         | LanguageFeature.NonVariablePatternsToRightOfAsPatterns -> FSComp.SR.featureNonVariablePatternsToRightOfAsPatterns ()
         | LanguageFeature.AttributesToRightOfModuleKeyword -> FSComp.SR.featureAttributesToRightOfModuleKeyword ()
