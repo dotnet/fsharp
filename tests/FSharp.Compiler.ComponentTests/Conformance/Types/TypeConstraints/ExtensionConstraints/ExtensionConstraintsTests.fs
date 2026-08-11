@@ -32,6 +32,10 @@ module ExtensionConstraintsTests =
         compileAndRunPreview "BasicExtensionOperators.fs"
 
     [<Fact>]
+    let ``Nested Traverse-Sequence extension SRTP dispatch does not ICE and runs`` () =
+        compileAndRunPreview "NestedTraverseSequenceSRTP.fs"
+
+    [<Fact>]
     let ``Most recently opened extension wins`` () =
         compileAndRunPreview "ExtensionPrecedence.fs"
 
