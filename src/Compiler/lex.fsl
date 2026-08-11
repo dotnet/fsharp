@@ -754,6 +754,12 @@ rule token (args: LexArgs) (skip: bool) = parse
      { errorR(Error(FSComp.SR.lexInvalidIdentifier(), lexbuf.LexemeRange))
        Keywords.IdentifierToken args lexbuf "" }
 
+ | "#:" anystring
+     { let m = lexbuf.LexemeRange
+       shouldStartLine args lexbuf m (FSComp.SR.lexColonDirectiveMustBeFirst())
+       if not skip then WHITESPACE (LexCont.Token(args.ifdefStack, args.stringNest))
+       else endline LexerEndlineContinuation.Token args skip lexbuf }
+
  | ('#' anywhite* | "#line" anywhite+ ) digit+ anywhite* ('@'? "\"" [^'\n''\r''"']+ '"')? anywhite* newline
      {  let pos = lexbuf.EndPos
         if skip then
