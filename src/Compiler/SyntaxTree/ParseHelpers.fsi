@@ -229,7 +229,7 @@ val mkDefnBindings:
     mWhole: range * BindingSet * attrs: SynAttributes * vis: SynAccess option * attrsm: range * mIn: range option ->
         SynModuleDecl list
 
-val idOfPat: parseState: IParseState -> m: range -> p: SynPat -> Ident
+val idOfPat: m: range -> p: SynPat -> Ident
 
 val checkForMultipleAugmentations: m: range -> a1: 'a list -> a2: 'a list -> 'a list
 
