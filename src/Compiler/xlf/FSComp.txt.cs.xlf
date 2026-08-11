@@ -867,6 +867,11 @@
         <target state="translated">Bajtový řetězec se nedá interpolovat.</target>
         <note />
       </trans-unit>
+      <trans-unit id="lexColonDirectiveMustBeFirst">
+        <source>#: directives must start at the beginning of a line</source>
+        <target state="new">#: directives must start at the beginning of a line</target>
+        <note />
+      </trans-unit>
       <trans-unit id="lexExtendedStringInterpolationNotSupported">
         <source>Extended string interpolation is not supported in this version of F#.</source>
         <target state="translated">Rozšířená interpolace řetězců není v této verzi jazyka F# podporována.</target>
