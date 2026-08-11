@@ -108,3 +108,27 @@ let ``XML documentation in FSharp.Core fsi files should be well-formed`` () =
     else
         // This will show in test output for successful runs
         Assert.True(true, message)
+
+/// Locates the FSharp.Core.xml emitted next to the referenced FSharp.Core assembly.
+let private findEmittedFSharpCoreXml () =
+    let asmPath = typeof<int list>.Assembly.Location
+    [ if not (String.IsNullOrEmpty asmPath) then Path.ChangeExtension(asmPath, ".xml")
+      Path.Combine(AppContext.BaseDirectory, "FSharp.Core.xml") ]
+    |> List.tryFind File.Exists
+
+[<Fact>]
+let ``Generated FSharp.Core.xml has no unexpanded include tags`` () =
+    match findEmittedFSharpCoreXml () with
+    | None ->
+        Assert.Fail("Could not locate the emitted FSharp.Core.xml next to the FSharp.Core assembly.")
+    | Some xmlPath ->
+        let doc = XmlDocument()
+        doc.Load(xmlPath)
+
+        // A surviving <include> element means compile-time expansion did not happen
+        // (missing fragment file, mistyped XPath, zero-match keep, or the feature regressed).
+        Assert.Equal(0, doc.SelectNodes("//include").Count)
+
+        // Sanity-check that expansion actually produced shared fragment text, so a silent
+        // zero-match (which drops the content without a warning) is also caught.
+        Assert.Contains("not a stable sort", doc.OuterXml)
