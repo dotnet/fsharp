@@ -10,7 +10,6 @@ type LanguageFeature =
     | RelaxWhitespace
     | RelaxWhitespace2
     | NameOf
-    | ImplicitYield
     | DotlessFloat32Literal
     | PackageManagement
     | FromEndSlicing
