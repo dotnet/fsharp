@@ -53,21 +53,8 @@ let TcArrayOrListComputedExpression (cenv: TcFileState) env (overallTy: OverallT
 
     | None ->
 
-        // LanguageFeatures.ImplicitYield do not require this validation
-        let implicitYieldEnabled =
-            cenv.g.langVersion.SupportsFeature LanguageFeature.ImplicitYield
-
-        let validateExpressionWithIfRequiresParenthesis = not implicitYieldEnabled
-        let acceptDeprecatedIfThenExpression = not implicitYieldEnabled
-
         match comp with
-        | SimpleSemicolonSequence cenv acceptDeprecatedIfThenExpression elems ->
-            match comp with
-            | SimpleSemicolonSequence cenv false _ -> ()
-            | _ when validateExpressionWithIfRequiresParenthesis ->
-                errorR (Deprecated(FSComp.SR.tcExpressionWithIfRequiresParenthesis (), m))
-            | _ -> ()
-
+        | SimpleSemicolonSequence cenv false elems ->
             let replacementExpr =
                 if isArray then
                     // This are to improve parsing/processing speed for parser tables by converting to an array blob ASAP
