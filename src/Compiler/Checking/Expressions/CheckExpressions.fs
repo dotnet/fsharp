@@ -4976,7 +4976,9 @@ and TcAnonUnionTypeOr (cenv: cenv) env (tpenv: UnscopedTyparEnv) synCases m =
     // create a disjoint set of cases
     // taking into account that a subtype is a "duplicate" of its supertype.
     let rec addToCases (pt: TType) (list: ResizeArray<TType>) =
-        if not (Seq.exists (isObjTyAnyNullness g) list) then
+        if isNullableTy g pt then  
+            error(Error(FSComp.SR.tcNullableNotAllowedInAnonymousUnion(), m))
+        elif not (Seq.exists (isObjTyAnyNullness g) list) then
             if isObjTyAnyNullness g pt then
                 // Warning: all existing types are subtypes of obj|null and will be ignored
                 for t in list do
