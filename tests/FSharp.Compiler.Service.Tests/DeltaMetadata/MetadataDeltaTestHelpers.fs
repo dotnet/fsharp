@@ -130,6 +130,7 @@ module internal MetadataDeltaTestHelpers =
           referenceAssemblyAttribOpt = None
           referenceAssemblySignatureHash = None
           pathMap = PathMap.empty
+          moduleCustomDebugInfoRows = []
           methodCustomDebugInfoRows = Map.empty }
 
     /// Compile a baseline module to bytes using the plain IL writer entry point. The feature

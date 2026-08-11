@@ -1149,6 +1149,7 @@ let main6
                             referenceAssemblyAttribOpt = referenceAssemblyAttribOpt
                             referenceAssemblySignatureHash = refAssemblySignatureHash
                             pathMap = tcConfig.pathMap
+                            moduleCustomDebugInfoRows = []
                             methodCustomDebugInfoRows = Map.empty
                         },
                         ilxMainModule,
@@ -1181,6 +1182,7 @@ let main6
                             referenceAssemblyAttribOpt = None
                             referenceAssemblySignatureHash = None
                             pathMap = tcConfig.pathMap
+                            moduleCustomDebugInfoRows = []
                             methodCustomDebugInfoRows = Map.empty
                         },
                         ilxMainModule,

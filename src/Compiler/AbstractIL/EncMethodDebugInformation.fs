@@ -31,7 +31,10 @@ open System.IO
 open System.Reflection.Metadata
 open System.Reflection.Metadata.Ecma335
 open System.Runtime.InteropServices
+open System.Text
 open Microsoft.FSharp.NativeInterop
+
+open FSharp.Compiler.AbstractIL.ILPdbWriter
 
 /// Portable-PDB CustomDebugInformation kind GUIDs for the EnC blobs, copied verbatim
 /// from roslyn/src/Dependencies/CodeAnalysis.Debugging/PortableCustomDebugInfoKinds.cs.
@@ -46,6 +49,10 @@ module PortableCustomDebugInfoKinds =
 
     /// EnC State Machine State Map CDI kind.
     let encStateMachineStateMap = Guid("8B78CD68-2EDE-420B-980B-E15884B8AAA3")
+
+    /// F#-owned hot reload synthesized-name snapshot CDI kind. The blob records
+    /// FSharpSynthesizedTypeMaps.Snapshot bucket arrays in allocation-slot order.
+    let fsharpSynthesizedNameSnapshot = Guid("49DDB47E-9C74-46EC-8626-0350676571EB")
 
 /// Closure ordinal of a lambda that is lowered to a static (non-capturing) method.
 /// Mirrors Roslyn's LambdaDebugInfo.StaticClosureOrdinal.
@@ -167,7 +174,7 @@ let private MaxOccurrenceKey = 0x1FFFFFFD
 /// 16-bit segments, least-significant segment = the innermost ordinal; an enclosing
 /// ordinal p is stored as (p + 1) shifted left 16 so that depth-1 keys (< 0x10000) and
 /// depth-2 keys (>= 0x10000) never collide. Fails closed (None) past the limits: chains
-/// deeper than 2, ordinals > 0xFFFF, or keys exceeding the compressed-integer budget —
+/// deeper than 2, ordinals > 0xFFFF, or keys exceeding the compressed-integer budget,
 /// callers must then treat the chain as unmappable, never truncate.
 let tryEncodeOccurrenceKey (ordinalChain: int list) : int option =
     match ordinalChain with
@@ -208,6 +215,134 @@ let private invalidData (blobName: string) (offset: int) =
 // Absent CDI rows arrive as null at runtime even though the parameter is non-null in the
 // nullness model, so guard with box (FS3261-safe) rather than dropping the check.
 let private isEmpty (blob: byte[]) = isNull (box blob) || blob.Length = 0
+
+// ---------------------------------------------------------------------------
+// F# hot reload module CDI: synthesized-name allocation snapshot
+// Format:
+// compressed(version = 1), compressed(bucket count),
+// then buckets sorted by key for deterministic PDB bytes:
+//   string key, compressed(name count), string name in allocation-slot order.
+// Strings are compressed(byte length) followed by UTF-8 bytes.
+// ---------------------------------------------------------------------------
+
+[<Literal>]
+let private SynthesizedNameSnapshotBlobVersion = 1
+
+let private writeUtf8String (builder: BlobBuilder) (value: string) =
+    if isNull (box value) then
+        invalidArg (nameof value) "snapshot strings must be non-null"
+
+    let bytes = Encoding.UTF8.GetBytes value
+    builder.WriteCompressedInteger bytes.Length
+    builder.WriteBytes bytes
+
+let private readUtf8String (blobName: string) (reader: byref<BlobReader>) =
+    let length = reader.ReadCompressedInteger()
+
+    if length < 0 || length > reader.RemainingBytes then
+        invalidData blobName reader.Offset
+
+    let bytes = reader.ReadBytes length
+    Encoding.UTF8.GetString(bytes, 0, bytes.Length)
+
+let private materializeSynthesizedNameSnapshot (snapshot: seq<struct (string * string[])>) =
+    snapshot
+    |> Seq.map (fun struct (key, names) ->
+        if isNull (box key) then
+            invalidArg (nameof snapshot) "snapshot keys must be non-null"
+
+        if isNull (box names) then
+            invalidArg (nameof snapshot) $"snapshot bucket '{key}' must be non-null"
+
+        key, Array.copy names)
+    |> Seq.sortBy fst
+    |> Seq.toArray
+
+/// Serializes an allocation-ordered synthesized-name snapshot into the F#-owned module
+/// CDI blob. An empty snapshot returns an empty blob so no CDI row needs to be emitted.
+let serializeSynthesizedNameSnapshot (snapshot: seq<struct (string * string[])>) : byte[] =
+    let buckets = materializeSynthesizedNameSnapshot snapshot
+
+    if buckets.Length = 0 then
+        Array.empty
+    else
+        let builder = BlobBuilder()
+        builder.WriteCompressedInteger SynthesizedNameSnapshotBlobVersion
+        builder.WriteCompressedInteger buckets.Length
+
+        for key, names in buckets do
+            writeUtf8String builder key
+            builder.WriteCompressedInteger names.Length
+
+            for name in names do
+                writeUtf8String builder name
+
+        builder.ToArray()
+
+/// Deserializes the F#-owned synthesized-name snapshot CDI blob. Bucket order in the
+/// blob is deterministic only; each bucket array is returned exactly in recorded slot order.
+let deserializeSynthesizedNameSnapshot (blob: byte[]) : Map<string, string[]> =
+    if isEmpty blob then
+        Map.empty
+    else
+        let handle = GCHandle.Alloc(blob, GCHandleType.Pinned)
+
+        try
+            let mutable reader =
+                BlobReader(NativePtr.ofNativeInt<byte> (handle.AddrOfPinnedObject()), blob.Length)
+
+            try
+                let version = reader.ReadCompressedInteger()
+
+                if version <> SynthesizedNameSnapshotBlobVersion then
+                    invalidData "synthesized name snapshot" reader.Offset
+
+                let bucketCount = reader.ReadCompressedInteger()
+
+                if bucketCount <= 0 || bucketCount > reader.RemainingBytes / 2 then
+                    invalidData "synthesized name snapshot" reader.Offset
+
+                let buckets = ResizeArray<string * string[]>()
+
+                for _ in 1..bucketCount do
+                    let key = readUtf8String "synthesized name snapshot" &reader
+                    let nameCount = reader.ReadCompressedInteger()
+
+                    // Every serialized name consumes at least one byte for its UTF-8
+                    // length, so this check bounds allocation before Array.zeroCreate.
+                    if nameCount < 0 || nameCount > reader.RemainingBytes then
+                        invalidData "synthesized name snapshot" reader.Offset
+
+                    let names = Array.zeroCreate nameCount
+
+                    for i in 0 .. nameCount - 1 do
+                        names[i] <- readUtf8String "synthesized name snapshot" &reader
+
+                    buckets.Add(key, names)
+
+                if reader.RemainingBytes <> 0 then
+                    invalidData "synthesized name snapshot" reader.Offset
+
+                buckets |> Seq.map id |> Map.ofSeq
+            with :? BadImageFormatException ->
+                invalidData "synthesized name snapshot" reader.Offset
+        finally
+            handle.Free()
+
+/// Creates the module-level CustomDebugInformation row for the allocation-ordered
+/// synthesized-name snapshot. Empty snapshots emit no row.
+let computeSynthesizedNameSnapshotCustomDebugInfoRows (snapshot: seq<struct (string * string[])>) : PdbModuleCustomDebugInfo list =
+    let blob = serializeSynthesizedNameSnapshot snapshot
+
+    if blob.Length = 0 then
+        []
+    else
+        [
+            {
+                KindGuid = PortableCustomDebugInfoKinds.fsharpSynthesizedNameSnapshot
+                Blob = blob
+            }
+        ]
 
 // ---------------------------------------------------------------------------
 // EnC Local Slot Map
@@ -555,3 +690,35 @@ let readEncMethodDebugInfoFromPortablePdb (pdbBytes: byte[]) : Map<int, EncMetho
             // Not a portable PDB image (or a corrupted one): callers still get an empty
             // map instead of a crash.
             Map.empty
+
+/// Reads the F#-owned allocation-ordered synthesized-name snapshot from a portable PDB.
+/// None means either the record is absent or invalid; callers must fall back to IL
+/// reconstruction rather than trusting a partial layout.
+let readSynthesizedNameSnapshotFromPortablePdb (pdbBytes: byte[]) : Map<string, string[]> option =
+    if isEmpty pdbBytes then
+        None
+    else
+        try
+            use provider =
+                MetadataReaderProvider.FromPortablePdbImage(ImmutableArray.CreateRange pdbBytes)
+
+            let reader = provider.GetMetadataReader()
+
+            let blobs =
+                [
+                    for cdiHandle in reader.CustomDebugInformation do
+                        let cdi = reader.GetCustomDebugInformation cdiHandle
+
+                        if cdi.Parent.Kind = HandleKind.ModuleDefinition then
+                            let kind = reader.GetGuid cdi.Kind
+
+                            if kind = PortableCustomDebugInfoKinds.fsharpSynthesizedNameSnapshot then
+                                reader.GetBlobBytes cdi.Value
+                ]
+
+            match blobs with
+            | [ blob ] -> Some(deserializeSynthesizedNameSnapshot blob)
+            | _ -> None
+        with
+        | :? BadImageFormatException
+        | :? InvalidDataException -> None

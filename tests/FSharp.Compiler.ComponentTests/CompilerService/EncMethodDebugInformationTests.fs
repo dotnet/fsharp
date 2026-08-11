@@ -16,6 +16,7 @@ open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.ILBinaryWriter
 open FSharp.Compiler.AbstractIL.ILPdbWriter
 open FSharp.Compiler.AbstractIL.EncMethodDebugInformation
+open FSharp.Compiler.HotReloadBaseline
 
 // -----------------------------------------------------------------------
 // Round-trip properties (pure codec)
@@ -182,6 +183,44 @@ let ``Full record round-trips through the three blobs`` () =
         deserialize (serializeLocalSlots info) (serializeLambdaMap info) (serializeStateMachineStates info)
 
     Assert.Equal<EncMethodDebugInformation>(info, decoded)
+
+[<Fact>]
+let ``Synthesized name snapshot preserves mixed bucket allocation order`` () =
+    let expectedNames =
+        [|
+            "endpoints@hotreload"
+            "endpoints@hotreload#g0_o0"
+            "endpoints@hotreload-2"
+            "endpoints@hotreload#g0_o1"
+            "endpoints@hotreload-4"
+            "endpoints@hotreload#g0_o2"
+            "endpoints@hotreload#g0_o3"
+            "endpoints@hotreload#g0_o4"
+        |]
+
+    let snapshot = [ struct ("endpoints", expectedNames) ]
+
+    let blob = serializeSynthesizedNameSnapshot snapshot
+    let decoded = deserializeSynthesizedNameSnapshot blob
+
+    match Map.tryFind "endpoints" decoded with
+    | Some actualNames -> Assert.Equal<string[]>(expectedNames, actualNames)
+    | None -> failwith "expected endpoints bucket to round-trip"
+
+[<Fact>]
+let ``Synthesized name snapshot rejects a present but empty payload`` () =
+    // Canonical empty snapshots are represented by an absent CDI row. Accepting this
+    // non-canonical payload would suppress reconstruction from the assembly token maps.
+    let blob = [| 1uy; 0uy |]
+    Assert.Throws<InvalidDataException>(fun () -> deserializeSynthesizedNameSnapshot blob |> ignore)
+    |> ignore
+
+[<Fact>]
+let ``Synthesized name snapshot bounds name allocation by remaining payload`` () =
+    // version=1, buckets=1, key="k", names=0x1fffffff, with no name payload.
+    let blob = [| 1uy; 1uy; 1uy; byte 'k'; 0xDFuy; 0xFFuy; 0xFFuy; 0xFFuy |]
+    Assert.Throws<InvalidDataException>(fun () -> deserializeSynthesizedNameSnapshot blob |> ignore)
+    |> ignore
 
 // -----------------------------------------------------------------------
 // Occurrence-key packing
@@ -450,11 +489,14 @@ module private Plumbing =
     let private ilg =
         mkILGlobals (ILScopeRef.Assembly primaryAssemblyRef, [], ILScopeRef.Assembly primaryAssemblyRef)
 
-    let private mkMethod (name: string) (body: MethodBody) : ILMethodDef =
-        mkILNonGenericStaticMethod (name, ILMemberAccess.Public, [], mkILReturn ILType.Void, body)
+    let private mkAbstractMethod (name: string) : ILMethodDef =
+        // MethodBody.Abstract is the smallest body shape the IL writer accepts: it still
+        // gets a full PdbMethodData row (token, name), but skips code/IL-body generation
+        // entirely, which is all this test needs.
+        mkILNonGenericStaticMethod (name, ILMemberAccess.Public, [], mkILReturn ILType.Void, MethodBody.Abstract)
 
-    let private mkType (typeName: string) (methods: (string * MethodBody) list) : ILTypeDef =
-        let methods = methods |> List.map (fun (name, body) -> mkMethod name body) |> mkILMethods
+    let private mkType (typeName: string) (methodNames: string list) : ILTypeDef =
+        let methods = methodNames |> List.map mkAbstractMethod |> mkILMethods
 
         ILTypeDef(
             typeName,
@@ -478,8 +520,8 @@ module private Plumbing =
     /// method table forbids two same-named methods of the same arity *within one type*
     /// (unrelated to CDI), but the CDI name-keying this test exercises is per-assembly,
     /// so cross-type name clashes are exactly the ambiguous case to cover.
-    let buildModuleOfMethodBodies (types: (string * (string * MethodBody) list) list) : ILModuleDef =
-        let typeDefs = types |> List.map (fun (typeName, methods) -> mkType typeName methods)
+    let buildModuleOfTypes (types: (string * string list) list) : ILModuleDef =
+        let typeDefs = types |> List.map (fun (typeName, methodNames) -> mkType typeName methodNames)
 
         let assemblyName = "EncCdiPlumbing_" + Guid.NewGuid().ToString("N")
 
@@ -496,19 +538,17 @@ module private Plumbing =
             (mkILExportedTypes [])
             "v4.0.30319" // Non-empty: pins the metadata version explicitly rather than relying on primaryAssemblyRef's.
 
-    let buildModuleOfTypes (types: (string * string list) list) : ILModuleDef =
-        types
-        |> List.map (fun (typeName, methodNames) ->
-            typeName, methodNames |> List.map (fun name -> name, MethodBody.Abstract))
-        |> buildModuleOfMethodBodies
-
     /// Builds a minimal in-memory module with one type "T" declaring 'methodNames'.
     let buildModule (methodNames: string list) : ILModuleDef = buildModuleOfTypes [ "T", methodNames ]
 
     /// Writes 'modul' through the same in-memory ILBinaryWriter entry point fsi.fs uses for
     /// dynamic assembly emission, attaching 'methodCustomDebugInfoRows' as the CDI side
     /// channel. No hot reload flag or session state is involved.
-    let writeInMemory (modul: ILModuleDef) (methodCustomDebugInfoRows: Map<string, PdbMethodCustomDebugInfo list>) =
+    let writeInMemoryWithModuleRows
+        (modul: ILModuleDef)
+        (moduleCustomDebugInfoRows: PdbModuleCustomDebugInfo list)
+        (methodCustomDebugInfoRows: Map<string, PdbMethodCustomDebugInfo list>)
+        =
         let options: options =
             {
                 ilg = ilg
@@ -529,12 +569,16 @@ module private Plumbing =
                 referenceAssemblyAttribOpt = None
                 referenceAssemblySignatureHash = None
                 pathMap = PathMap.empty
+                moduleCustomDebugInfoRows = moduleCustomDebugInfoRows
                 methodCustomDebugInfoRows = methodCustomDebugInfoRows
             }
 
         match WriteILBinaryInMemory(options, modul, id) with
         | assemblyBytes, Some pdbBytes -> assemblyBytes, pdbBytes
         | _, None -> failwith "expected a portable PDB to be produced"
+
+    let writeInMemory (modul: ILModuleDef) (methodCustomDebugInfoRows: Map<string, PdbMethodCustomDebugInfo list>) =
+        writeInMemoryWithModuleRows modul [] methodCustomDebugInfoRows
 
     type CdiRow =
         {
@@ -569,6 +613,123 @@ module private Plumbing =
                       Blob = pdbMdReader.GetBlobBytes cdi.Value
                   } ]
 
+    type private StreamHeader =
+        {
+            HeaderOffset: int
+            DataOffset: int
+            Size: int
+            Name: string
+        }
+
+    let private readInt32 (bytes: byte[]) offset =
+        int bytes[offset]
+        ||| (int bytes[offset + 1] <<< 8)
+        ||| (int bytes[offset + 2] <<< 16)
+        ||| (int bytes[offset + 3] <<< 24)
+
+    let private writeInt32 (bytes: byte[]) offset value =
+        bytes[offset] <- byte value
+        bytes[offset + 1] <- byte (value >>> 8)
+        bytes[offset + 2] <- byte (value >>> 16)
+        bytes[offset + 3] <- byte (value >>> 24)
+
+    let private metadataStreamHeaders (assemblyBytes: byte[]) =
+        use peReader = new PEReader(ImmutableArray.CreateRange assemblyBytes)
+        let metadataRoot = peReader.PEHeaders.MetadataStartOffset
+        let versionLength = readInt32 assemblyBytes (metadataRoot + 12)
+        let streamsOffset = metadataRoot + 16 + ((versionLength + 3) &&& ~~~3)
+        let streamCount = int assemblyBytes[streamsOffset + 2] ||| (int assemblyBytes[streamsOffset + 3] <<< 8)
+        let headers = ResizeArray<StreamHeader>()
+        let mutable headerOffset = streamsOffset + 4
+
+        for _ in 1..streamCount do
+            let relativeOffset = readInt32 assemblyBytes headerOffset
+            let size = readInt32 assemblyBytes (headerOffset + 4)
+            let mutable nameEnd = headerOffset + 8
+
+            while assemblyBytes[nameEnd] <> 0uy do
+                nameEnd <- nameEnd + 1
+
+            let name = Text.Encoding.ASCII.GetString(assemblyBytes, headerOffset + 8, nameEnd - headerOffset - 8)
+            let paddedNameLength = ((nameEnd - headerOffset - 8 + 1) + 3) &&& ~~~3
+
+            headers.Add
+                {
+                    HeaderOffset = headerOffset
+                    DataOffset = metadataRoot + relativeOffset
+                    Size = size
+                    Name = name
+                }
+
+            headerOffset <- headerOffset + 8 + paddedNameLength
+
+        headers |> Seq.toList
+
+    let private mutateStream name mutation (assemblyBytes: byte[]) =
+        let copy = Array.copy assemblyBytes
+
+        let stream =
+            metadataStreamHeaders copy
+            |> List.find (fun stream -> stream.Name = name)
+
+        mutation copy stream
+        copy
+
+    let zeroMvidGuid assemblyBytes =
+        mutateStream "#GUID" (fun bytes stream -> Array.Clear(bytes, stream.DataOffset, 16)) assemblyBytes
+
+    let truncateGuidStream assemblyBytes =
+        mutateStream "#GUID" (fun bytes stream -> writeInt32 bytes (stream.HeaderOffset + 4) 0) assemblyBytes
+
+    let truncateStringsStreamBeforeReferencedStrings assemblyBytes =
+        // Keep only the reserved empty string so every non-zero table index points
+        // outside the declared heap, while the following metadata bytes remain present.
+        mutateStream "#Strings" (fun bytes stream -> writeInt32 bytes (stream.HeaderOffset + 4) 1) assemblyBytes
+
+    let truncateStringsStreamBeforeMethodNameTerminator methodName assemblyBytes =
+        let copy = Array.copy assemblyBytes
+
+        let methodNameOffset =
+            use peReader = new PEReader(ImmutableArray.CreateRange copy)
+            let metadataReader = peReader.GetMetadataReader()
+
+            metadataReader.MethodDefinitions
+            |> Seq.map metadataReader.GetMethodDefinition
+            |> Seq.find (fun methodDef -> metadataReader.GetString(methodDef.Name) = methodName)
+            |> fun methodDef -> MetadataTokens.GetHeapOffset(methodDef.Name)
+
+        let stringsStream =
+            metadataStreamHeaders copy
+            |> List.find (fun stream -> stream.Name = "#Strings")
+
+        let terminatorOffset = methodNameOffset + Text.Encoding.UTF8.GetByteCount(methodName)
+
+        // The name bytes remain inside #Strings, but its terminating zero is now the
+        // first byte outside the declared stream.
+        writeInt32 copy (stringsStream.HeaderOffset + 4) terminatorOffset
+        copy
+
+    let addUnsupportedFieldPointerTable assemblyBytes =
+        mutateStream "#~" (fun bytes stream ->
+            bytes[stream.HeaderOffset + 8] <- byte '#'
+            bytes[stream.HeaderOffset + 9] <- byte '-'
+
+            let validLow = readInt32 bytes (stream.DataOffset + 8)
+            writeInt32 bytes (stream.DataOffset + 8) (validLow ||| (1 <<< 3))) assemblyBytes
+
+    let redirectBlobHeapPastEnd assemblyBytes =
+        let copy = Array.copy assemblyBytes
+
+        use peReader = new PEReader(ImmutableArray.CreateRange copy)
+        let metadataRoot = peReader.PEHeaders.MetadataStartOffset
+
+        let blobStream =
+            metadataStreamHeaders copy
+            |> List.find (fun stream -> stream.Name = "#Blob")
+
+        writeInt32 copy blobStream.HeaderOffset (copy.Length - metadataRoot + 16)
+        copy
+
 [<Fact>]
 let ``Synthetic CustomDebugInformation row attaches to the right MethodDef`` () =
     let modul = Plumbing.buildModule [ "Foo"; "Bar" ]
@@ -580,7 +741,7 @@ let ``Synthetic CustomDebugInformation row attaches to the right MethodDef`` () 
                 Closures = [ { SyntaxOffset = 0 } ]
                 Lambdas = [ { SyntaxOffset = 5; ClosureOrdinal = 0 } ] }
 
-    let rows =
+    let rows: Map<string, PdbMethodCustomDebugInfo list> =
         Map.ofList [ "Foo", [ { KindGuid = PortableCustomDebugInfoKinds.encLambdaAndClosureMap; Blob = blob } ] ]
 
     let assemblyBytes, pdbBytes = Plumbing.writeInMemory modul rows
@@ -600,7 +761,7 @@ let ``Synthetic CustomDebugInformation row attaches to the right MethodDef`` () 
 [<Fact>]
 let ``Empty map produces zero CustomDebugInformation rows`` () =
     let modul = Plumbing.buildModule [ "Foo" ]
-    let assemblyBytes, pdbBytes = Plumbing.writeInMemory modul Map.empty
+    let assemblyBytes, pdbBytes = Plumbing.writeInMemory modul (Map.empty<string, PdbMethodCustomDebugInfo list>)
     Assert.Empty(Plumbing.readAllCdiRows assemblyBytes pdbBytes)
 
 [<Fact>]
@@ -614,7 +775,7 @@ let ``A method name absent from the module attaches nothing`` () =
             { EncMethodDebugInformation.Empty with
                 StateMachineStates = [ { StateNumber = 0; SyntaxOffset = 1 } ] }
 
-    let rows =
+    let rows: Map<string, PdbMethodCustomDebugInfo list> =
         Map.ofList [ "DoesNotExist", [ { KindGuid = PortableCustomDebugInfoKinds.encStateMachineStateMap; Blob = blob } ] ]
 
     let assemblyBytes, pdbBytes = Plumbing.writeInMemory modul rows
@@ -634,26 +795,199 @@ let ``An ambiguous method name attaches to neither method`` () =
             { EncMethodDebugInformation.Empty with
                 StateMachineStates = [ { StateNumber = 0; SyntaxOffset = 1 } ] }
 
-    let rows =
+    let rows: Map<string, PdbMethodCustomDebugInfo list> =
         Map.ofList [ "Dup", [ { KindGuid = PortableCustomDebugInfoKinds.encStateMachineStateMap; Blob = blob } ] ]
 
     let assemblyBytes, pdbBytes = Plumbing.writeInMemory modul rows
     Assert.Empty(Plumbing.readAllCdiRows assemblyBytes pdbBytes)
 
 [<Fact>]
-let ``A method name shared with unavailable metadata attaches to neither method`` () =
+let ``Synthetic module CustomDebugInformation row round-trips synthesized snapshot`` () =
+    let modul = Plumbing.buildModule [ "Foo" ]
+
+    let expected =
+        [ struct ("endpoints", [| "endpoints@hotreload#g0_o0"; "endpoints@hotreload"; "endpoints@hotreload#g0_o1" |]) ]
+
+    let moduleRows = computeSynthesizedNameSnapshotCustomDebugInfoRows expected
+    let _, pdbBytes =
+        Plumbing.writeInMemoryWithModuleRows modul moduleRows (Map.empty<string, PdbMethodCustomDebugInfo list>)
+
+    match readSynthesizedNameSnapshotFromPortablePdb pdbBytes with
+    | Some snapshot ->
+        match Map.tryFind "endpoints" snapshot with
+        | Some names ->
+            let struct (_, expectedNames) = List.head expected
+            Assert.Equal<string[]>(expectedNames, names)
+        | None -> failwith "expected endpoints bucket"
+    | None -> failwith "expected recorded synthesized-name snapshot"
+
+[<Fact>]
+let ``Baseline reader populates token maps and uses reconstructed synthesized snapshot when no record exists`` () =
     let modul =
-        Plumbing.buildModuleOfMethodBodies
-            [ "T1", [ "Dup", MethodBody.Abstract ]
-              "T2", [ "Dup", MethodBody.NotAvailable ] ]
+        Plumbing.buildModuleOfTypes
+            [
+                "T", [ "Compute" ]
+                "endpoints@hotreload#g0_o0", []
+            ]
 
-    let blob =
-        serializeStateMachineStates
+    let assemblyBytes, pdbBytes = Plumbing.writeInMemory modul (Map.empty<string, PdbMethodCustomDebugInfo list>)
+    let baseline = readFromAssemblyAndPdbBytes assemblyBytes (Some pdbBytes)
+
+    Assert.Equal(SynthesizedNameSnapshotSource.Reconstructed, baseline.SynthesizedNameSnapshotSource)
+
+    Assert.True(
+        baseline.TokenMaps.TypeTokens
+        |> Seq.exists (fun kvp -> kvp.Key.Name = "T" && (kvp.Value &&& 0xFF000000) = 0x02000000),
+        "expected T TypeDef token")
+
+    Assert.True(
+        baseline.TokenMaps.MethodTokens
+        |> Seq.exists (fun kvp ->
+            kvp.Key.Name = "Compute"
+            && kvp.Key.DeclaringType.Name = "T"
+            && (kvp.Value &&& 0xFF000000) = 0x06000000),
+        "expected Compute MethodDef token")
+
+    match Map.tryFind "endpoints" baseline.SynthesizedNameSnapshot with
+    | Some names -> Assert.Contains("endpoints@hotreload#g0_o0", names)
+    | None -> failwith "expected reconstructed endpoints bucket"
+
+[<Fact>]
+let ``Baseline reader does not trust a portable PDB from another assembly`` () =
+    let assemblyBytes, _ =
+        Plumbing.writeInMemory (Plumbing.buildModule [ "First" ]) (Map.empty<string, PdbMethodCustomDebugInfo list>)
+
+    let _, unrelatedPdbBytes =
+        Plumbing.writeInMemory (Plumbing.buildModule [ "Second"; "Third" ]) (Map.empty<string, PdbMethodCustomDebugInfo list>)
+
+    let baseline = readFromAssemblyAndPdbBytes assemblyBytes (Some unrelatedPdbBytes)
+
+    Assert.True(baseline.PortablePdb.IsNone, "a mismatched PDB must not contribute baseline state")
+    Assert.Equal(SynthesizedNameSnapshotSource.Reconstructed, baseline.SynthesizedNameSnapshotSource)
+
+[<Fact>]
+let ``Baseline reader rejects an empty MVID`` () =
+    let assemblyBytes, pdbBytes =
+        Plumbing.writeInMemory (Plumbing.buildModule [ "Compute" ]) (Map.empty<string, PdbMethodCustomDebugInfo list>)
+
+    let assemblyBytes = Plumbing.zeroMvidGuid assemblyBytes
+    Assert.True((tryReadFromAssemblyAndPdbBytes assemblyBytes (Some pdbBytes)).IsNone)
+
+[<Fact>]
+let ``Baseline reader bounds the MVID read to the GUID stream`` () =
+    let assemblyBytes, pdbBytes =
+        Plumbing.writeInMemory (Plumbing.buildModule [ "Compute" ]) (Map.empty<string, PdbMethodCustomDebugInfo list>)
+
+    let assemblyBytes = Plumbing.truncateGuidStream assemblyBytes
+    Assert.True((tryReadFromAssemblyAndPdbBytes assemblyBytes (Some pdbBytes)).IsNone)
+
+[<Fact>]
+let ``Baseline reader rejects pointer-table indirection in an uncompressed stream`` () =
+    let assemblyBytes, pdbBytes =
+        Plumbing.writeInMemory (Plumbing.buildModule [ "Compute" ]) (Map.empty<string, PdbMethodCustomDebugInfo list>)
+
+    let assemblyBytes = Plumbing.addUnsupportedFieldPointerTable assemblyBytes
+    Assert.True((tryReadFromAssemblyAndPdbBytes assemblyBytes (Some pdbBytes)).IsNone)
+
+[<Fact>]
+let ``Baseline table data starts after valid tables even when their row count is zero`` () =
+    let valid = 1UL <<< 3
+
+    Assert.Equal(128, FSharp.Compiler.CodeGen.ILBaselineReader.tableDataStart 100 valid)
+
+[<Fact>]
+let ``Baseline valid-mask reader preserves the unsigned high bit`` () =
+    let bytes = [| 0uy; 0uy; 0uy; 0uy; 0uy; 0uy; 0uy; 0x80uy |]
+
+    Assert.Equal(0x8000000000000000UL, FSharp.Compiler.CodeGen.ILBaselineReader.readUInt64 bytes 0)
+
+[<Fact>]
+let ``Baseline reader rejects a malformed signature blob without throwing`` () =
+    let assemblyBytes, pdbBytes =
+        Plumbing.writeInMemory (Plumbing.buildModule [ "Compute" ]) (Map.empty<string, PdbMethodCustomDebugInfo list>)
+
+    let assemblyBytes = Plumbing.redirectBlobHeapPastEnd assemblyBytes
+
+    Assert.True((tryReadFromAssemblyAndPdbBytes assemblyBytes (Some pdbBytes)).IsNone)
+
+[<Fact>]
+let ``Baseline reader rejects a string offset outside the strings stream`` () =
+    let assemblyBytes, pdbBytes =
+        Plumbing.writeInMemory (Plumbing.buildModule [ "Compute" ]) (Map.empty<string, PdbMethodCustomDebugInfo list>)
+
+    let assemblyBytes = Plumbing.truncateStringsStreamBeforeReferencedStrings assemblyBytes
+
+    Assert.True((tryReadFromAssemblyAndPdbBytes assemblyBytes (Some pdbBytes)).IsNone)
+
+[<Fact>]
+let ``Baseline reader rejects a string without a terminator inside the strings stream`` () =
+    let assemblyBytes, pdbBytes =
+        Plumbing.writeInMemory (Plumbing.buildModule [ "Compute" ]) (Map.empty<string, PdbMethodCustomDebugInfo list>)
+
+    let assemblyBytes = Plumbing.truncateStringsStreamBeforeMethodNameTerminator "Compute" assemblyBytes
+
+    Assert.True((tryReadFromAssemblyAndPdbBytes assemblyBytes (Some pdbBytes)).IsNone)
+
+[<Fact>]
+let ``Baseline reader gives recorded synthesized snapshot precedence over reconstruction`` () =
+    let modul =
+        Plumbing.buildModuleOfTypes
+            [
+                "T", [ "Compute" ]
+                "endpoints@hotreload#g0_o0", []
+            ]
+
+    let recordedNames =
+        [| "recorded@hotreload"; "recorded@hotreload#g0_o0"; "recorded@hotreload-2" |]
+
+    let moduleRows = computeSynthesizedNameSnapshotCustomDebugInfoRows [ struct ("endpoints", recordedNames) ]
+    let assemblyBytes, pdbBytes =
+        Plumbing.writeInMemoryWithModuleRows modul moduleRows (Map.empty<string, PdbMethodCustomDebugInfo list>)
+    let baseline = readFromAssemblyAndPdbBytes assemblyBytes (Some pdbBytes)
+
+    Assert.Equal(SynthesizedNameSnapshotSource.Recorded, baseline.SynthesizedNameSnapshotSource)
+
+    match Map.tryFind "endpoints" baseline.SynthesizedNameSnapshot with
+    | Some names -> Assert.Equal<string[]>(recordedNames, names)
+    | None -> failwith "expected recorded endpoints bucket"
+
+[<Fact>]
+let ``Baseline reader reconstructs closure names from method CDI rows`` () =
+    let modul =
+        Plumbing.buildModuleOfTypes
+            [
+                "T", [ "Compute" ]
+                "Compute@hotreload#g0_o0", []
+            ]
+
+    let lambdaMap =
+        serializeLambdaMap
             { EncMethodDebugInformation.Empty with
-                StateMachineStates = [ { StateNumber = 0; SyntaxOffset = 1 } ] }
+                MethodOrdinal = 0
+                Closures = [ { SyntaxOffset = 0 } ] }
 
-    let rows =
-        Map.ofList [ "Dup", [ { KindGuid = PortableCustomDebugInfoKinds.encStateMachineStateMap; Blob = blob } ] ]
+    let methodRows: Map<string, PdbMethodCustomDebugInfo list> =
+        Map.ofList
+            [
+                "Compute",
+                [
+                    {
+                        KindGuid = PortableCustomDebugInfoKinds.encLambdaAndClosureMap
+                        Blob = lambdaMap
+                    }
+                ]
+            ]
 
-    let assemblyBytes, pdbBytes = Plumbing.writeInMemory modul rows
-    Assert.Empty(Plumbing.readAllCdiRows assemblyBytes pdbBytes)
+    let assemblyBytes, pdbBytes = Plumbing.writeInMemory modul methodRows
+    let baseline = readFromAssemblyAndPdbBytes assemblyBytes (Some pdbBytes)
+
+    Assert.False(Map.isEmpty baseline.EncMethodDebugInfos, "expected method EnC debug information")
+    Assert.False(Map.isEmpty baseline.EncClosureNames, "expected reconstructed closure-name table")
+
+    let closureNames =
+        baseline.EncClosureNames
+        |> Map.toSeq
+        |> Seq.collect (fun (_, rows) -> rows |> Map.toSeq |> Seq.map snd)
+        |> Set.ofSeq
+
+    Assert.Contains("Compute@hotreload#g0_o0", closureNames)
