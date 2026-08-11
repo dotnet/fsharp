@@ -603,8 +603,8 @@ Microsoft.FSharp.Collections.SetModule: Microsoft.FSharp.Collections.FSharpSet`1
 Microsoft.FSharp.Collections.SetModule: Microsoft.FSharp.Collections.FSharpSet`1[T] UnionMany[T](System.Collections.Generic.IEnumerable`1[Microsoft.FSharp.Collections.FSharpSet`1[T]])
 Microsoft.FSharp.Collections.SetModule: Microsoft.FSharp.Collections.FSharpSet`1[T] Union[T](Microsoft.FSharp.Collections.FSharpSet`1[T], Microsoft.FSharp.Collections.FSharpSet`1[T])
 Microsoft.FSharp.Collections.SetModule: System.Collections.Generic.IEnumerable`1[T] ToSeq[T](Microsoft.FSharp.Collections.FSharpSet`1[T])
-Microsoft.FSharp.Collections.SetModule: System.Tuple`2[Microsoft.FSharp.Collections.FSharpSet`1[T],Microsoft.FSharp.Collections.FSharpSet`1[T]] Partition[T](Microsoft.FSharp.Core.FSharpFunc`2[T,System.Boolean], Microsoft.FSharp.Collections.FSharpSet`1[T])
 Microsoft.FSharp.Collections.SetModule: System.Tuple`2[Microsoft.FSharp.Collections.FSharpSet`1[T1],Microsoft.FSharp.Collections.FSharpSet`1[T2]] PartitionWith[T,T1,T2](Microsoft.FSharp.Core.FSharpFunc`2[T,Microsoft.FSharp.Core.FSharpChoice`2[T1,T2]], Microsoft.FSharp.Collections.FSharpSet`1[T])
+Microsoft.FSharp.Collections.SetModule: System.Tuple`2[Microsoft.FSharp.Collections.FSharpSet`1[T],Microsoft.FSharp.Collections.FSharpSet`1[T]] Partition[T](Microsoft.FSharp.Core.FSharpFunc`2[T,System.Boolean], Microsoft.FSharp.Collections.FSharpSet`1[T])
 Microsoft.FSharp.Collections.SetModule: T MaxElement[T](Microsoft.FSharp.Collections.FSharpSet`1[T])
 Microsoft.FSharp.Collections.SetModule: T MinElement[T](Microsoft.FSharp.Collections.FSharpSet`1[T])
 Microsoft.FSharp.Collections.SetModule: TState FoldBack[T,TState](Microsoft.FSharp.Core.FSharpFunc`2[T,Microsoft.FSharp.Core.FSharpFunc`2[TState,TState]], Microsoft.FSharp.Collections.FSharpSet`1[T], TState)
@@ -617,6 +617,14 @@ Microsoft.FSharp.Control.AsyncActivation`1[T]: Microsoft.FSharp.Control.AsyncRet
 Microsoft.FSharp.Control.AsyncActivation`1[T]: Microsoft.FSharp.Control.AsyncReturn OnSuccess(T)
 Microsoft.FSharp.Control.AsyncActivation`1[T]: Microsoft.FSharp.Control.AsyncReturn Success(Microsoft.FSharp.Control.AsyncActivation`1[T], T)
 Microsoft.FSharp.Control.AsyncActivation`1[T]: Void OnExceptionRaised()
+Microsoft.FSharp.Control.AsyncModule: Microsoft.FSharp.Control.FSharpAsync`1[Microsoft.FSharp.Core.FSharpResult`2[T,System.Exception]] Catch[T](Microsoft.FSharp.Control.FSharpAsync`1[T])
+Microsoft.FSharp.Control.AsyncModule: Microsoft.FSharp.Control.FSharpAsync`1[Microsoft.FSharp.Core.Unit] Empty
+Microsoft.FSharp.Control.AsyncModule: Microsoft.FSharp.Control.FSharpAsync`1[Microsoft.FSharp.Core.Unit] Ignore[T](Microsoft.FSharp.Control.FSharpAsync`1[T])
+Microsoft.FSharp.Control.AsyncModule: Microsoft.FSharp.Control.FSharpAsync`1[Microsoft.FSharp.Core.Unit] get_Empty()
+Microsoft.FSharp.Control.AsyncModule: Microsoft.FSharp.Control.FSharpAsync`1[TResult] Bind[T,TResult](Microsoft.FSharp.Core.FSharpFunc`2[T,Microsoft.FSharp.Control.FSharpAsync`1[TResult]], Microsoft.FSharp.Control.FSharpAsync`1[T])
+Microsoft.FSharp.Control.AsyncModule: Microsoft.FSharp.Control.FSharpAsync`1[TResult] Map[T,TResult](Microsoft.FSharp.Core.FSharpFunc`2[T,TResult], Microsoft.FSharp.Control.FSharpAsync`1[T])
+Microsoft.FSharp.Control.AsyncModule: Microsoft.FSharp.Control.FSharpAsync`1[T] CatchWith[T](Microsoft.FSharp.Core.FSharpFunc`2[System.Exception,T], Microsoft.FSharp.Control.FSharpAsync`1[T])
+Microsoft.FSharp.Control.AsyncModule: Microsoft.FSharp.Control.FSharpAsync`1[T] Result[T](T)
 Microsoft.FSharp.Control.AsyncPrimitives: Microsoft.FSharp.Control.AsyncReturn Bind[T,TResult](Microsoft.FSharp.Control.AsyncActivation`1[T], Microsoft.FSharp.Control.FSharpAsync`1[TResult], Microsoft.FSharp.Core.FSharpFunc`2[TResult,Microsoft.FSharp.Control.FSharpAsync`1[T]])
 Microsoft.FSharp.Control.AsyncPrimitives: Microsoft.FSharp.Control.AsyncReturn CallThenInvoke[T,TResult](Microsoft.FSharp.Control.AsyncActivation`1[T], TResult, Microsoft.FSharp.Core.FSharpFunc`2[TResult,Microsoft.FSharp.Control.FSharpAsync`1[T]])
 Microsoft.FSharp.Control.AsyncPrimitives: Microsoft.FSharp.Control.AsyncReturn Invoke[T](Microsoft.FSharp.Control.FSharpAsync`1[T], Microsoft.FSharp.Control.AsyncActivation`1[T])
@@ -800,6 +808,14 @@ Microsoft.FSharp.Control.TaskBuilderModule: Microsoft.FSharp.Control.BackgroundT
 Microsoft.FSharp.Control.TaskBuilderModule: Microsoft.FSharp.Control.BackgroundTaskBuilder get_backgroundTask()
 Microsoft.FSharp.Control.TaskBuilderModule: Microsoft.FSharp.Control.TaskBuilder get_task()
 Microsoft.FSharp.Control.TaskBuilderModule: Microsoft.FSharp.Control.TaskBuilder task
+Microsoft.FSharp.Control.TaskModule: System.Threading.Tasks.Task`1[Microsoft.FSharp.Core.FSharpResult`2[T,System.Exception]] Catch[T](System.Threading.Tasks.Task`1[T])
+Microsoft.FSharp.Control.TaskModule: System.Threading.Tasks.Task`1[Microsoft.FSharp.Core.Unit] Empty
+Microsoft.FSharp.Control.TaskModule: System.Threading.Tasks.Task`1[Microsoft.FSharp.Core.Unit] Ignore[T](System.Threading.Tasks.Task`1[T])
+Microsoft.FSharp.Control.TaskModule: System.Threading.Tasks.Task`1[Microsoft.FSharp.Core.Unit] get_Empty()
+Microsoft.FSharp.Control.TaskModule: System.Threading.Tasks.Task`1[TResult] Bind[T,TResult](Microsoft.FSharp.Core.FSharpFunc`2[T,System.Threading.Tasks.Task`1[TResult]], System.Threading.Tasks.Task`1[T])
+Microsoft.FSharp.Control.TaskModule: System.Threading.Tasks.Task`1[TResult] Map[T,TResult](Microsoft.FSharp.Core.FSharpFunc`2[T,TResult], System.Threading.Tasks.Task`1[T])
+Microsoft.FSharp.Control.TaskModule: System.Threading.Tasks.Task`1[T] CatchWith[T](Microsoft.FSharp.Core.FSharpFunc`2[System.Exception,T], System.Threading.Tasks.Task`1[T])
+Microsoft.FSharp.Control.TaskModule: System.Threading.Tasks.Task`1[T] Result[T](T)
 Microsoft.FSharp.Control.TaskStateMachineData`1[T]: System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1[T] MethodBuilder
 Microsoft.FSharp.Control.TaskStateMachineData`1[T]: T Result
 Microsoft.FSharp.Control.WebExtensions: Microsoft.FSharp.Control.FSharpAsync`1[Microsoft.FSharp.Core.Unit] AsyncDownloadFile(System.Net.WebClient, System.Uri, System.String)
