@@ -89,3 +89,10 @@ let y17 = sequence (FF (EE 2))
 match y17 with
 | EE (FF v) when v = 2 -> ()
 | other -> failwithf "Expected EE (FF 2), got %A" other
+
+// A live (deferred then forced) closure on the same phantom-typar path must also evaluate
+// correctly, guarding against future reasoning that treats the defaulted-typar branch as dead code.
+let inline sequenceDelayed x : unit -> _ = fun () -> sequence x
+match (sequenceDelayed (FF (EE 2))) () with
+| EE (FF v) when v = 2 -> ()
+| other -> failwithf "Expected EE (FF 2) from delayed sequence, got %A" other

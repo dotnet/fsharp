@@ -7087,10 +7087,11 @@ and GenGenericArgs cenv m (tyenv: TypeReprEnv) tps =
         if tyenv.ContainsKey c then
             mkILTyvarTy tyenv[c, m]
         else
-            // Phantom typar not ambient in the closure instantiation environment. This can arise
-            // for inline SRTP functions where constraint resolution leaves a typar unsolved in the
-            // never-executed dynamic-invocation fallback body. Route through GenType so the shared
-            // defaulting in GenTypeAux (TType_var) applies, avoiding an ICE.
+            // Phantom typar not ambient in the closure instantiation environment. This arises for
+            // inline SRTP members whose emitted (non-inlined) fallback body carries a typar that
+            // constraint resolution left unsolved. Route through GenType so the shared defaulting in
+            // GenTypeAux (TType_var, #19710) applies instead of ICEing. At real call sites the typar
+            // is solved and ambient, so the common branch above is taken.
             GenType cenv m tyenv (mkTyparTy c))
 
 /// Generate a local type function contract class and implementation
