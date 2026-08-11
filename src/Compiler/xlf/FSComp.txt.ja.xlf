@@ -322,11 +322,6 @@
         <target state="new">Allow object expressions without overrides</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureAndBang">
-        <source>applicative computation expressions</source>
-        <target state="translated">適用できる計算式</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureArithmeticInLiterals">
         <source>Arithmetic and logical operations in literals, enum definitions and attributes</source>
         <target state="translated">リテラル、列挙型の定義と属性の算術演算と論理演算</target>
@@ -1455,11 +1450,6 @@
       <trans-unit id="tcAmbiguousImplicitConversion">
         <source>This expression has type '{0}' and is only made compatible with type '{1}' through an ambiguous implicit conversion. Consider using an explicit call to 'op_Implicit'. The applicable implicit conversions are:{2}</source>
         <target state="translated">この式の型は '{0}' であり、あいまいで暗黙的な変換によってのみ、型 '{1}' と互換性を持たせることが可能です。' op_Implicit' の明示的な呼び出しを使用することを検討してください。該当する暗黙的な変換は次のとおりです: {2}</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="tcAndBangNotSupported">
-        <source>This feature is not supported in this version of F#. You may need to add /langversion:preview to use this feature.</source>
-        <target state="translated">この機能は、このバージョンの F# ではサポートされていません。この機能を使用するには、/langversion:preview の追加が必要な場合があります。</target>
         <note />
       </trans-unit>
       <trans-unit id="tcAnonRecdDuplicateFieldId">

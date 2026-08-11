@@ -2129,14 +2129,6 @@ let rec TryTranslateComputationExpression
                         translatedCtxt
                 )
             | _ ->
-                if not (cenv.g.langVersion.SupportsFeature LanguageFeature.AndBang) then
-                    let andBangRange =
-                        match andBangBindings with
-                        | [] -> comp.Range
-                        | h :: _ -> h.Trivia.LeadingKeyword.Range
-
-                    error (Error(FSComp.SR.tcAndBangNotSupported (), andBangRange))
-
                 if ceenv.isQuery then
                     error (Error(FSComp.SR.tcBindMayNotBeUsedInQueries (), mBind))
 
@@ -2684,11 +2676,7 @@ and TranslateComputationExpressionBind
 
     let innerRange = innerComp.Range
 
-    let innerCompReturn =
-        if ceenv.cenv.g.langVersion.SupportsFeature LanguageFeature.AndBang then
-            convertSimpleReturnToExpr ceenv comp varSpace innerComp
-        else
-            None
+    let innerCompReturn = convertSimpleReturnToExpr ceenv comp varSpace innerComp
 
     match innerCompReturn with
     | Some(innerExpr, customOpInfo) when hasBuilderMethod ceenv bindRange (bindName + "Return") ->

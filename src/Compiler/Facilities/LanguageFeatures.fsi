@@ -15,7 +15,6 @@ type LanguageFeature =
     | PackageManagement
     | FromEndSlicing
     | FixedIndexSlice3d4d
-    | AndBang
     | ResumableStateMachines
     | NullableOptionalInterop
     | DefaultInterfaceMemberConsumption
