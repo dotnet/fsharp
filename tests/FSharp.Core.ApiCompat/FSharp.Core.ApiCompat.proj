@@ -1,11 +1,8 @@
 <!--
-  Assembly-level ApiCompat gate: the shipped net-TFM FSharp.Core must have the identical public
-  surface to netstandard2.1. Run explicitly (compiles/restores nothing):
-      dotnet msbuild FSharp.Core.ApiCompat.proj -t:ValidateFSharpCoreApiIdentity -p:Configuration=<cfg>
-
-  Uses the SDK-registered ValidateAssembliesTask (not Arcade, not SDK package validation whose strict
-  knob is inert here). EnableStrictMode fails a member add/remove in either direction; AttributesMustMatch
-  stays OFF so the internal->public-BCL attribute shift of the polyfills passes with an EMPTY suppression set.
+  Assembly-level ApiCompat gate: the shipped net-TFM FSharp.Core must have the identical public surface to
+  netstandard2.1. Uses the SDK-registered ValidateAssembliesTask (not Arcade, not SDK package validation whose
+  strict knob is inert here). EnableStrictMode fails a member add/remove in either direction; AttributesMustMatch
+  stays OFF so the polyfills' internal->public-BCL attribute shift passes with an EMPTY suppression set.
 -->
 <Project Sdk="Microsoft.NET.Sdk">
 
@@ -24,16 +21,11 @@
     <_FSharpCoreNetAssembly>$([MSBuild]::NormalizePath('$(_FSharpCoreBinDir)', '$(FSharpCoreShippedNetTargetFramework)', 'FSharp.Core.dll'))</_FSharpCoreNetAssembly>
   </PropertyGroup>
 
-  <!-- No compile / no restore: the gate is run by explicitly targeting ValidateFSharpCoreApiIdentity,
-       which pulls only CollectApiCompatInputs (for RoslynAssembliesPath) and the task below. -->
   <Target Name="ValidateFSharpCoreApiIdentity" DependsOnTargets="CollectApiCompatInputs">
     <Error Condition="!Exists('$(_FSharpCoreNsAssembly)')"
            Text="ApiCompat gate: netstandard2.1 FSharp.Core not found at '$(_FSharpCoreNsAssembly)'. Build FSharp.Core ($(Configuration)) first." />
     <Error Condition="!Exists('$(_FSharpCoreNetAssembly)')"
            Text="ApiCompat gate: $(FSharpCoreShippedNetTargetFramework) FSharp.Core not found at '$(_FSharpCoreNetAssembly)'. Build FSharp.Core ($(Configuration)) first." />
-
-    <Message Importance="high"
-             Text="ApiCompat identity gate: comparing netstandard2.1 (contract) vs $(FSharpCoreShippedNetTargetFramework) FSharp.Core [$(Configuration), strict/bidirectional, empty suppressions]." />
 
     <ValidateAssembliesTask
         LeftAssemblies="$(_FSharpCoreNsAssembly)"

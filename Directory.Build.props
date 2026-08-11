@@ -74,9 +74,8 @@
        Cannot live in eng/TargetFrameworks.props because it's imported before Arcade. -->
   <PropertyGroup Condition="'$(DotNetBuildSourceOnly)' == 'true'">
     <FSharpNetCoreProductTargetFramework>$(NetCurrent)</FSharpNetCoreProductTargetFramework>
-    <!-- The shipped-net pin is a nuget.org packaging knob. Source-build can only target the single current
-         .NET, so collapse the pin to $(NetCurrent) (its targeting pack is always present) rather than a
-         lagging TFM whose ref pack an offline VMR build may not carry. -->
+    <!-- The pin is a nuget.org packaging knob; source-build targets only $(NetCurrent), whose ref pack is
+         always present, so collapse the pin to it rather than a lagging TFM the VMR may not carry offline. -->
     <FSharpCoreShippedNetTargetFramework>$(NetCurrent)</FSharpCoreShippedNetTargetFramework>
   </PropertyGroup>
 

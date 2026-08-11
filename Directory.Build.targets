@@ -10,10 +10,8 @@
     <NoWarn>$(NoWarn);NU1507</NoWarn>
   </PropertyGroup>
 
-  <!-- FSharp.Core additionally builds $(FSharpCoreShippedNetTargetFramework) for its shipped NuGet package
-       only. In-repo .NET consumers must keep binding the netstandard2.1 asset they resolved before that
-       target existed, so the in-box compiler/tools and their IL / surface-area baselines stay unchanged.
-       .NET Framework consumers resolve netstandard2.0 and are left alone; Proto ships only netstandard2.0.
+  <!-- FSharp.Core now also builds the shipped-net TFM, but in-repo .NET consumers must keep binding its
+       netstandard2.1 asset so the in-box compiler/tools and their IL / surface-area baselines stay unchanged.
        Any pre-existing explicit SetTargetFramework pin is preserved. -->
   <ItemGroup Condition="'$(TargetFrameworkIdentifier)' == '.NETCoreApp' and '$(Configuration)' != 'Proto'">
     <ProjectReference Update="@(ProjectReference)">
