@@ -1958,7 +1958,16 @@ and [<Sealed>] TcImports
             match providers with
             | [] ->
                 let typeName = !!typeof<TypeProviderAssemblyAttribute>.FullName
-                warning (Error(FSComp.SR.etHostingAssemblyFoundWithoutHosts (fileNameOfRuntimeAssembly, typeName), m))
+
+                warning (
+                    Error(
+                        FSComp.SR.etHostingAssemblyFoundWithoutHosts (
+                            RichText.mkText fileNameOfRuntimeAssembly,
+                            RichText.ofQualifiedTypeName typeName
+                        ),
+                        m
+                    )
+                )
             | _ ->
 
 #if DEBUG
@@ -2341,6 +2350,12 @@ and [<Sealed>] TcImports
             let! ccuinfos = phase2s |> runMethod
 
             if importsBase.IsSome then
+                let addConstraintSources (ia: ImportedAssembly) =
+                    // Only an F# assembly can carry a trait constraint to label.
+                    // Prevent force-reading of the whole assembly namespace tree for other assemblies.
+                    if ia.FSharpViewOfMetadata.IsFSharp then
+                        addConstraintSources ia
+
                 importsBase.Value.CcuTable.Values |> Seq.iter addConstraintSources
                 ccuTable.Values |> Seq.iter addConstraintSources
 

@@ -297,16 +297,16 @@ let tryGetDataForCustomOperation (nm: Ident) ceenv =
                 || (isLikeZip && isLikeGroupJoin)
                 || (isLikeJoin && isLikeGroupJoin)
             then
-                errorR (Error(FSComp.SR.tcCustomOperationInvalid opName, nm.idRange))
+                errorR (Error(FSComp.SR.tcCustomOperationInvalid (RichText.mkMethod opName), nm.idRange))
 
             if not (ceenv.cenv.g.langVersion.SupportsFeature LanguageFeature.OverloadsForCustomOperations) then
                 match ceenv.customOperationMethodsIndexedByMethodName.TryGetValue methInfo.LogicalName with
                 | true, [ _ ] -> ()
-                | _ -> errorR (Error(FSComp.SR.tcCustomOperationMayNotBeOverloaded nm.idText, nm.idRange))
+                | _ -> errorR (Error(FSComp.SR.tcCustomOperationMayNotBeOverloaded (RichText.mkMethod nm.idText), nm.idRange))
 
         Some opDatas
     | true, opData :: _ ->
-        errorR (Error(FSComp.SR.tcCustomOperationMayNotBeOverloaded nm.idText, nm.idRange))
+        errorR (Error(FSComp.SR.tcCustomOperationMayNotBeOverloaded (RichText.mkMethod nm.idText), nm.idRange))
         Some [ opData ]
     | _ -> None
 
@@ -317,7 +317,7 @@ let customOperationCheckValidity m f opDatas =
     let vs = List.map f opDatas
     let v0 = vs[0]
 
-    let (opName,
+    let (opName: string,
          _maintainsVarSpaceUsingBind,
          _maintainsVarSpace,
          _allowInto,
@@ -329,7 +329,7 @@ let customOperationCheckValidity m f opDatas =
         opDatas[0]
 
     if not (List.allEqual vs) then
-        errorR (Error(FSComp.SR.tcCustomOperationInvalid opName, m))
+        errorR (Error(FSComp.SR.tcCustomOperationInvalid (RichText.mkMethod opName), m))
 
     v0
 
@@ -477,21 +477,21 @@ let customOpUsageText ceenv nm =
         if isLikeGroupJoin then
             Some(
                 FSComp.SR.customOperationTextLikeGroupJoin (
-                    nm.idText,
-                    customOperationJoinConditionWord ceenv nm,
-                    customOperationJoinConditionWord ceenv nm
+                    RichText.mkMethod nm.idText,
+                    RichText.mkKeyword (customOperationJoinConditionWord ceenv nm),
+                    RichText.mkKeyword (customOperationJoinConditionWord ceenv nm)
                 )
             )
         elif isLikeJoin then
             Some(
                 FSComp.SR.customOperationTextLikeJoin (
-                    nm.idText,
-                    customOperationJoinConditionWord ceenv nm,
-                    customOperationJoinConditionWord ceenv nm
+                    RichText.mkMethod nm.idText,
+                    RichText.mkKeyword (customOperationJoinConditionWord ceenv nm),
+                    RichText.mkKeyword (customOperationJoinConditionWord ceenv nm)
                 )
             )
         elif isLikeZip then
-            Some(FSComp.SR.customOperationTextLikeZip nm.idText)
+            Some(FSComp.SR.customOperationTextLikeZip (RichText.mkMethod nm.idText))
         else
             None
     | _ -> None
@@ -593,7 +593,7 @@ let isCustomOperationProjectionParameter ceenv i (nm: Ident) =
             let opDatas = (tryGetDataForCustomOperation nm ceenv).Value
 
             let opName, _, _, _, _, _, _, _j, _ = opDatas[0]
-            errorR (Error(FSComp.SR.tcCustomOperationInvalid opName, nm.idRange))
+            errorR (Error(FSComp.SR.tcCustomOperationInvalid (RichText.mkMethod opName), nm.idRange))
             false
 
 [<return: Struct>]
@@ -712,12 +712,22 @@ let JoinOrGroupJoinOp ceenv detector synExpr =
         Some(nm, innerSourcePat, mJoinCore, false)
     // join with bad pattern (gives error on "join" and continues)
     | SynExpr.App(_, _, CustomOpId (isCustomOperation ceenv) detector nm, _innerSourcePatExpr, mJoinCore) ->
-        errorR (Error(FSComp.SR.tcBinaryOperatorRequiresVariable (nm.idText, Option.get (customOpUsageText ceenv nm)), nm.idRange))
+        errorR (
+            Error(
+                FSComp.SR.tcBinaryOperatorRequiresVariable (RichText.mkMethod nm.idText, Option.get (customOpUsageText ceenv nm)),
+                nm.idRange
+            )
+        )
 
         Some(nm, arbPat mJoinCore, mJoinCore, true)
     // join (without anything after - gives error on "join" and continues)
     | CustomOpId (isCustomOperation ceenv) detector nm ->
-        errorR (Error(FSComp.SR.tcBinaryOperatorRequiresVariable (nm.idText, Option.get (customOpUsageText ceenv nm)), nm.idRange))
+        errorR (
+            Error(
+                FSComp.SR.tcBinaryOperatorRequiresVariable (RichText.mkMethod nm.idText, Option.get (customOpUsageText ceenv nm)),
+                nm.idRange
+            )
+        )
 
         Some(nm, arbPat synExpr.Range, synExpr.Range, true)
     | _ -> None
@@ -742,7 +752,12 @@ let MatchIntoSuffixOrRecover ceenv alreadyGivenError (nm: Ident) synExpr =
         (x, intoPat, alreadyGivenError)
     | _ ->
         if not alreadyGivenError then
-            errorR (Error(FSComp.SR.tcOperatorIncorrectSyntax (nm.idText, Option.get (customOpUsageText ceenv nm)), nm.idRange))
+            errorR (
+                Error(
+                    FSComp.SR.tcOperatorIncorrectSyntax (RichText.mkMethod nm.idText, Option.get (customOpUsageText ceenv nm)),
+                    nm.idRange
+                )
+            )
 
         (synExpr, arbPat synExpr.Range, true)
 
@@ -754,7 +769,12 @@ let MatchOnExprOrRecover ceenv alreadyGivenError nm (onExpr: SynExpr) =
             suppressErrorReporting (fun () -> TcExprOfUnknownType ceenv.cenv ceenv.env ceenv.tpenv onExpr)
             |> ignore
 
-            errorR (Error(FSComp.SR.tcOperatorIncorrectSyntax (nm.idText, Option.get (customOpUsageText ceenv nm)), nm.idRange))
+            errorR (
+                Error(
+                    FSComp.SR.tcOperatorIncorrectSyntax (RichText.mkMethod nm.idText, Option.get (customOpUsageText ceenv nm)),
+                    nm.idRange
+                )
+            )
 
         (arbExpr ("_innerSource", onExpr.Range),
          mkSynBifix onExpr.Range "=" (arbExpr ("_keySelectors", onExpr.Range)) (arbExpr ("_keySelector2", onExpr.Range)))
@@ -768,7 +788,9 @@ let (|JoinExpr|_|) (ceenv: ComputationExpressionContext<'a>) synExpr =
         Some(nm, innerSourcePat, innerSource, keySelectors, mJoinCore)
     | JoinOp ceenv (nm, innerSourcePat, mJoinCore, alreadyGivenError) ->
         if alreadyGivenError then
-            errorR (Error(FSComp.SR.tcOperatorRequiresIn (nm.idText, Option.get (customOpUsageText ceenv nm)), nm.idRange))
+            errorR (
+                Error(FSComp.SR.tcOperatorRequiresIn (RichText.mkMethod nm.idText, Option.get (customOpUsageText ceenv nm)), nm.idRange)
+            )
 
         Some(nm, innerSourcePat, arbExpr ("_innerSource", synExpr.Range), arbKeySelectors synExpr.Range, mJoinCore)
     | _ -> None
@@ -785,7 +807,9 @@ let (|GroupJoinExpr|_|) ceenv synExpr =
         Some(nm, innerSourcePat, innerSource, keySelectors, intoPat, mGroupJoinCore)
     | GroupJoinOp ceenv (nm, innerSourcePat, mGroupJoinCore, alreadyGivenError) ->
         if alreadyGivenError then
-            errorR (Error(FSComp.SR.tcOperatorRequiresIn (nm.idText, Option.get (customOpUsageText ceenv nm)), nm.idRange))
+            errorR (
+                Error(FSComp.SR.tcOperatorRequiresIn (RichText.mkMethod nm.idText, Option.get (customOpUsageText ceenv nm)), nm.idRange)
+            )
 
         Some(
             nm,
@@ -815,13 +839,15 @@ let (|JoinOrGroupJoinOrZipClause|_|) (ceenv: ComputationExpressionContext<'a>) s
 
     // zip (without secondSource or in - gives error)
     | CustomOpId (isCustomOperation ceenv) (customOperationIsLikeZip ceenv) nm ->
-        errorR (Error(FSComp.SR.tcOperatorIncorrectSyntax (nm.idText, Option.get (customOpUsageText ceenv nm)), nm.idRange))
+        errorR (
+            Error(FSComp.SR.tcOperatorIncorrectSyntax (RichText.mkMethod nm.idText, Option.get (customOpUsageText ceenv nm)), nm.idRange)
+        )
 
         Some(nm, arbPat synExpr.Range, arbExpr ("_secondSource", synExpr.Range), None, None, synExpr.Range)
 
     // zip secondSource (without in - gives error)
     | SynExpr.App(_, _, CustomOpId (isCustomOperation ceenv) (customOperationIsLikeZip ceenv) nm, ExprAsPat secondSourcePat, mZipCore) ->
-        errorR (Error(FSComp.SR.tcOperatorIncorrectSyntax (nm.idText, Option.get (customOpUsageText ceenv nm)), mZipCore))
+        errorR (Error(FSComp.SR.tcOperatorIncorrectSyntax (RichText.mkMethod nm.idText, Option.get (customOpUsageText ceenv nm)), mZipCore))
 
         Some(nm, secondSourcePat, arbExpr ("_innerSource", synExpr.Range), None, None, mZipCore)
 
@@ -843,7 +869,9 @@ let (|ForEachThenJoinOrGroupJoinOrZipClause|_|) (ceenv: ComputationExpressionCon
         Some(isFromSource, firstSourcePat, firstSource, nm, secondSourcePat, secondSource, keySelectorsOpt, pat3opt, mOpCore, innerComp)
 
     | JoinOrGroupJoinOrZipClause ceenv (nm, pat2, expr2, expr3, pat3opt, mOpCore) when strict ->
-        errorR (Error(FSComp.SR.tcBinaryOperatorRequiresBody (nm.idText, Option.get (customOpUsageText ceenv nm)), nm.idRange))
+        errorR (
+            Error(FSComp.SR.tcBinaryOperatorRequiresBody (RichText.mkMethod nm.idText, Option.get (customOpUsageText ceenv nm)), nm.idRange)
+        )
 
         Some(
             true,
@@ -1011,7 +1039,7 @@ let hasBuilderMethod ceenv m methodName =
 /// Checks if a builder method exists and reports an error if it doesn't
 let requireBuilderMethod methodName ceenv m1 m2 =
     if not (hasBuilderMethod ceenv m1 methodName) then
-        error (Error(FSComp.SR.tcRequireBuilderMethod methodName, m2))
+        error (Error(FSComp.SR.tcRequireBuilderMethod (RichText.mkMethod methodName), m2))
 
 /// One `let`/`use`/`let!`/`use!`/`do!` binding step, exposing whether it is a "bang" construct, its
 /// continuation body, and how to rebuild the step around a rewritten body.
@@ -1223,14 +1251,14 @@ let rec TryTranslateComputationExpression
                     SimplePatsOfPat cenv.synArgNameGenerator secondSourcePat
 
                 if Option.isSome later1 then
-                    errorR (Error(FSComp.SR.tcJoinMustUseSimplePattern nm.idText, firstSourcePat.Range))
+                    errorR (Error(FSComp.SR.tcJoinMustUseSimplePattern (RichText.mkMethod nm.idText), firstSourcePat.Range))
 
                 if Option.isSome later2 then
-                    errorR (Error(FSComp.SR.tcJoinMustUseSimplePattern nm.idText, secondSourcePat.Range))
+                    errorR (Error(FSComp.SR.tcJoinMustUseSimplePattern (RichText.mkMethod nm.idText), secondSourcePat.Range))
 
                 // check 'join' or 'groupJoin' or 'zip' is permitted for this builder
                 match tryGetDataForCustomOperation nm ceenv with
-                | None -> error (Error(FSComp.SR.tcMissingCustomOperation nm.idText, nm.idRange))
+                | None -> error (Error(FSComp.SR.tcMissingCustomOperation (RichText.mkMethod nm.idText), nm.idRange))
                 | Some opDatas ->
                     let opName, _, _, _, _, _, _, _, methInfo = opDatas[0]
 
@@ -1310,7 +1338,7 @@ let rec TryTranslateComputationExpression
                                 SimplePatsOfPat cenv.synArgNameGenerator secondResultPat
 
                             if Option.isSome later3 then
-                                errorR (Error(FSComp.SR.tcJoinMustUseSimplePattern nm.idText, secondResultPat.Range))
+                                errorR (Error(FSComp.SR.tcJoinMustUseSimplePattern (RichText.mkMethod nm.idText), secondResultPat.Range))
 
                             match relExpr with
                             | JoinRelation ceenv (keySelector1, keySelector2) ->
@@ -1320,12 +1348,14 @@ let rec TryTranslateComputationExpression
                                     // When we cannot resolve NullableOps, recommend the relevant namespace to be added
                                     errorR (
                                         Error(
-                                            FSComp.SR.cannotResolveNullableOperators (ConvertValLogicalNameToDisplayNameCore opId.idText),
+                                            FSComp.SR.cannotResolveNullableOperators (
+                                                RichText.mkOperator (ConvertValLogicalNameToDisplayNameCore opId.idText)
+                                            ),
                                             relExpr.Range
                                         )
                                     )
                                 else
-                                    errorR (Error(FSComp.SR.tcInvalidRelationInJoin nm.idText, relExpr.Range))
+                                    errorR (Error(FSComp.SR.tcInvalidRelationInJoin (RichText.mkMethod nm.idText), relExpr.Range))
 
                                 let l = wrapInArbErrSequence l "_keySelector1"
                                 let r = wrapInArbErrSequence r "_keySelector2"
@@ -1333,7 +1363,7 @@ let rec TryTranslateComputationExpression
                                 // we've already reported error now we can use operands of binary operation as join components
                                 mkJoinExpr l r secondResultSimplePats, varSpaceWithGroupJoinVars
                             | _ ->
-                                errorR (Error(FSComp.SR.tcInvalidRelationInJoin nm.idText, relExpr.Range))
+                                errorR (Error(FSComp.SR.tcInvalidRelationInJoin (RichText.mkMethod nm.idText), relExpr.Range))
                                 // since the shape of relExpr doesn't match our expectations (JoinRelation)
                                 // then we assume that this is l.h.s. of the join relation
                                 // so typechecker will treat relExpr as body of outerKeySelector lambda parameter in GroupJoin method
@@ -1349,19 +1379,21 @@ let rec TryTranslateComputationExpression
                                     // When we cannot resolve NullableOps, recommend the relevant namespace to be added
                                     errorR (
                                         Error(
-                                            FSComp.SR.cannotResolveNullableOperators (ConvertValLogicalNameToDisplayNameCore opId.idText),
+                                            FSComp.SR.cannotResolveNullableOperators (
+                                                RichText.mkOperator (ConvertValLogicalNameToDisplayNameCore opId.idText)
+                                            ),
                                             relExpr.Range
                                         )
                                     )
                                 else
-                                    errorR (Error(FSComp.SR.tcInvalidRelationInJoin nm.idText, relExpr.Range))
+                                    errorR (Error(FSComp.SR.tcInvalidRelationInJoin (RichText.mkMethod nm.idText), relExpr.Range))
                                 // this is not correct JoinRelation but it is still binary operation
                                 // we've already reported error now we can use operands of binary operation as join components
                                 let l = wrapInArbErrSequence l "_keySelector1"
                                 let r = wrapInArbErrSequence r "_keySelector2"
                                 mkJoinExpr l r secondSourceSimplePats, varSpaceWithGroupJoinVars
                             | _ ->
-                                errorR (Error(FSComp.SR.tcInvalidRelationInJoin nm.idText, relExpr.Range))
+                                errorR (Error(FSComp.SR.tcInvalidRelationInJoin (RichText.mkMethod nm.idText), relExpr.Range))
                                 // since the shape of relExpr doesn't match our expectations (JoinRelation)
                                 // then we assume that this is l.h.s. of the join relation
                                 // so typechecker will treat relExpr as body of outerKeySelector lambda parameter in Join method
@@ -1685,7 +1717,7 @@ let rec TryTranslateComputationExpression
                     && equals mUnit range0
                     ->
                     error (Error(FSComp.SR.tcEmptyBodyRequiresBuilderZeroMethod (), ceenv.mWhole))
-                | _ -> error (Error(FSComp.SR.tcRequireBuilderMethod "Zero", m))
+                | _ -> error (Error(FSComp.SR.tcRequireBuilderMethod (RichText.mkMethod "Zero"), m))
 
             let mCall = if equals m range0 then ceenv.mWhole else m
             Some(translatedCtxt (mkSynCall "Zero" mCall [] ceenv.builderValName))
@@ -2129,14 +2161,6 @@ let rec TryTranslateComputationExpression
                         translatedCtxt
                 )
             | _ ->
-                if not (cenv.g.langVersion.SupportsFeature LanguageFeature.AndBang) then
-                    let andBangRange =
-                        match andBangBindings with
-                        | [] -> comp.Range
-                        | h :: _ -> h.Trivia.LeadingKeyword.Range
-
-                    error (Error(FSComp.SR.tcAndBangNotSupported (), andBangRange))
-
                 if ceenv.isQuery then
                     error (Error(FSComp.SR.tcBindMayNotBeUsedInQueries (), mBind))
 
@@ -2236,7 +2260,7 @@ let rec TryTranslateComputationExpression
                             loop 2
 
                         if maxMergeSources = 1 then
-                            error (Error(FSComp.SR.tcRequireMergeSourcesOrBindN bindNName, mBind))
+                            error (Error(FSComp.SR.tcRequireMergeSourcesOrBindN (RichText.mkMethod bindNName), mBind))
 
                         let rec mergeSources (sourcesAndPats: (SynExpr * SynPat) list) =
                             let numSourcesAndPats = sourcesAndPats.Length
@@ -2508,7 +2532,12 @@ and ConsumeCustomOpClauses
             methInfo
 
         if isLikeZip || isLikeJoin || isLikeGroupJoin then
-            errorR (Error(FSComp.SR.tcBinaryOperatorRequiresBody (nm.idText, Option.get (customOpUsageText ceenv nm)), nm.idRange))
+            errorR (
+                Error(
+                    FSComp.SR.tcBinaryOperatorRequiresBody (RichText.mkMethod nm.idText, Option.get (customOpUsageText ceenv nm)),
+                    nm.idRange
+                )
+            )
 
             match optionalCont with
             | None ->
@@ -2555,7 +2584,10 @@ and ConsumeCustomOpClauses
                         let expectedArgCount = defaultArg expectedArgCount 0
 
                         errorR (
-                            Error(FSComp.SR.tcCustomOperationHasIncorrectArgCount (nm.idText, expectedArgCount, args.Length), nm.idRange)
+                            Error(
+                                FSComp.SR.tcCustomOperationHasIncorrectArgCount (RichText.mkMethod nm.idText, expectedArgCount, args.Length),
+                                nm.idRange
+                            )
                         )
 
                         mkSynCall
@@ -2583,7 +2615,7 @@ and ConsumeCustomOpClauses
                 match optionalIntoPat with
                 | Some intoPat ->
                     if not (customOperationAllowsInto ceenv nm) then
-                        error (Error(FSComp.SR.tcOperatorDoesntAcceptInto nm.idText, intoPat.Range))
+                        error (Error(FSComp.SR.tcOperatorDoesntAcceptInto (RichText.mkMethod nm.idText), intoPat.Range))
 
                     // Rebind using either for ... or let!....
                     let rebind =
@@ -2684,11 +2716,7 @@ and TranslateComputationExpressionBind
 
     let innerRange = innerComp.Range
 
-    let innerCompReturn =
-        if ceenv.cenv.g.langVersion.SupportsFeature LanguageFeature.AndBang then
-            convertSimpleReturnToExpr ceenv comp varSpace innerComp
-        else
-            None
+    let innerCompReturn = convertSimpleReturnToExpr ceenv comp varSpace innerComp
 
     match innerCompReturn with
     | Some(innerExpr, customOpInfo) when hasBuilderMethod ceenv bindRange (bindName + "Return") ->
@@ -3037,11 +3065,10 @@ let TcComputationExpression (cenv: TcFileState) env (overallTy: OverallTy) tpenv
     // then allow the type-directed rule interpreting non-unit-typed expressions in statement
     // positions as 'yield'.  'yield!' may be present in the computation expression.
     let enableImplicitYield =
-        cenv.g.langVersion.SupportsFeature LanguageFeature.ImplicitYield
-        && (hasMethInfo "Yield" cenv env mBuilderVal ad builderTy
-            && hasMethInfo "Combine" cenv env mBuilderVal ad builderTy
-            && hasMethInfo "Delay" cenv env mBuilderVal ad builderTy
-            && YieldFree cenv comp)
+        hasMethInfo "Yield" cenv env mBuilderVal ad builderTy
+        && hasMethInfo "Combine" cenv env mBuilderVal ad builderTy
+        && hasMethInfo "Delay" cenv env mBuilderVal ad builderTy
+        && YieldFree cenv comp
 
     let origComp = comp
 
