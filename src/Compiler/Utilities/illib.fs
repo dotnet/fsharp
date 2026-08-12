@@ -193,9 +193,7 @@ type DelayInitArrayMap<'T, 'TDictKey, 'TDictValue>(f: unit -> 'T[]) =
 
 [<AbstractClass>]
 type DelayInitValue<'T when 'T: not null and 'T: not struct>() =
-    // Locks the instance rather than a private sync object, and stores in place rather than in a lazy:
-    // either would add an object per value, and there is one of these per type and per namespace of every
-    // assembly read.
+    // Locks the instance and stores in place: a sync object or a lazy would add an object per value.
     [<VolatileField>]
     let mutable value: objnull = null
 

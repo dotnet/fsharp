@@ -2970,9 +2970,7 @@ type ILTypeDef
 and [<Sealed>] ILTypeDefs
     (
         f: unit -> ILPreTypeDef[],
-        // Realised independently of the pre-type-defs, so importing some namespaces doesn't force others.
-        // Plain fields rather than an InterruptibleLazy: there is one ILTypeDefs per read type (its nested
-        // types) and per namespace level, and a level with no child namespaces pays nothing.
+        // Plain fields rather than a lazy: there is one ILTypeDefs per read type and per namespace level.
         fNamespaces: unit -> ILPreNamespace[]
     ) =
     inherit DelayInitArrayMap<ILPreTypeDef, string, ILPreTypeDef>(f)
@@ -3015,9 +3013,6 @@ and [<Sealed>] ILTypeDefs
         | NonNull nss -> nss
         | _ -> this.RealiseNamespaces()
 
-    /// This level's own pre-type-defs, then each child namespace's subtree - not the TypeDef row order,
-    /// since a namespace can be split across the metadata table. Consumers that need the reader's order
-    /// sort by ILTypeDef.MetadataIndex (see StaticLinking).
     member x.AllPreTypeDefs() =
         [|
             yield! x.GetArray()
@@ -3025,7 +3020,6 @@ and [<Sealed>] ILTypeDefs
                 yield! ns.AllPreTypeDefs()
         |]
 
-    /// Descends only into the namespace on the type's path, so unrelated namespaces are never forced.
     member x.TryFindPreTypeDef(ns: string list, n: string) =
         match ns with
         | [] ->
@@ -3033,8 +3027,6 @@ and [<Sealed>] ILTypeDefs
             | true, pre -> Some pre
             | _ -> None
         | head :: rest ->
-            // Levels are narrow - in the framework reference assemblies 86% have a single child and the
-            // widest has 16 - so scanning beats keeping a per-level dictionary alive.
             match x.AsArrayOfPreNamespaces() |> Array.tryFind (fun ns -> ns.Name = head) with
             | Some(ns: ILPreNamespace) -> ns.TryFindPreTypeDef(rest, n)
             | None -> None
@@ -3070,9 +3062,6 @@ and [<NoEquality; NoComparison>] ILPreTypeDef =
     abstract Name: string
     abstract GetTypeDef: unit -> ILTypeDef
 
-/// A store supplies a level's two halves and gets the caching a level needs - realise each half once, and
-/// the leaf name lookup - from here, so that it is written once rather than per store.
-///
 /// Plain fields rather than lazies: there is one of these per namespace of every assembly read, and one
 /// that nothing looks inside stays a single object holding three nulls.
 and [<NoEquality; NoComparison; AbstractClass>] ILPreNamespace(name: string) =
@@ -3089,11 +3078,8 @@ and [<NoEquality; NoComparison; AbstractClass>] ILPreNamespace(name: string) =
 
     member _.Name = name
 
-    /// Called at most once. The types declared in this namespace itself.
     abstract ComputeTypes: unit -> ILPreTypeDef[]
 
-    /// Called at most once, and independently of the types: importing a level's types must not read the
-    /// child namespaces, nor the other way round.
     abstract ComputeNamespaces: unit -> ILPreNamespace[]
 
     member private this.RealiseTypes() =
@@ -3145,7 +3131,6 @@ and [<NoEquality; NoComparison; AbstractClass>] ILPreNamespace(name: string) =
             typesByName <- d
             d
 
-    /// Descends only into the namespace on the type's path, so unrelated namespaces are never realised.
     member this.TryFindPreTypeDef(ns: string list, n: string) =
         match ns with
         | [] ->
@@ -3153,13 +3138,11 @@ and [<NoEquality; NoComparison; AbstractClass>] ILPreNamespace(name: string) =
             | true, pre -> Some pre
             | _ -> None
         | head :: rest ->
-            // Levels are narrow - in the framework reference assemblies 86% have a single child and the
-            // widest has 16 - so scanning beats keeping a per-level dictionary of them alive.
+            // Levels are narrow - 86% of the framework's have one child - so scanning beats a dictionary.
             match this.GetNamespaces() |> Array.tryFind (fun ns -> ns.Name = head) with
             | Some ns -> ns.TryFindPreTypeDef(rest, n)
             | None -> None
 
-    /// Every pre-type-def in this namespace's subtree, forcing all of it.
     member this.AllPreTypeDefs() =
         [|
             yield! this.GetTypes()
@@ -3169,9 +3152,7 @@ and [<NoEquality; NoComparison; AbstractClass>] ILPreNamespace(name: string) =
 
 /// This is a memory-critical class. Very many of these objects get allocated and held to represent the contents of .NET assemblies.
 ///
-/// The name is resolved only when it is asked for: grouping a table into namespaces needs an entry's
-/// namespace but not its name, so a namespace nobody imports never reads one off the string heap. Two
-/// threads racing on it can both resolve it; they get equal strings and neither is published half-built.
+/// Two threads racing on the name both resolve it: they get equal strings, so no lock is needed.
 and [<Sealed>] ILPreTypeDefImpl(nameIdx: int32, metadataIndex: int32, storage: ILTypeDefStored) =
     inherit DelayInitValue<ILTypeDef>()
 
@@ -3198,8 +3179,7 @@ and [<Sealed>] ILPreTypeDefImpl(nameIdx: int32, metadataIndex: int32, storage: I
 
         member this.GetTypeDef() = this.Value
 
-/// A reader supplies both functions once and every type it reads shares them; nameIdx is then all a
-/// pre-type-def needs to hold to name itself. A Given type def carries its own name, and ignores nameIdx.
+/// Every type a reader reads shares these, so nameIdx is all a pre-type-def holds to name itself.
 and ILTypeDefStored =
     | Given of ILTypeDef
     | Reader of getTypeDef: (int32 -> ILTypeDef) * getName: (int32 -> string)
@@ -3599,8 +3579,7 @@ let mkILPreTypeDefEntry (td: ILTypeDef) : struct (string list * ILPreTypeDef) =
     let ns, _ = splitILTypeName td.Name
     struct (ns, ILPreTypeDefImpl(NoMetadataIdx, NoMetadataIdx, ILTypeDefStored.Given td) :> ILPreTypeDef)
 
-/// A class rather than an object expression over the thunks: there is one namespace node per namespace of
-/// every assembly read, so its wrapper objects add up.
+/// A class rather than an object expression: there is one of these per namespace of every assembly read.
 [<Sealed>]
 type private ILPreNamespaceImpl(name: string, types: unit -> ILPreTypeDef[], namespaces: unit -> ILPreNamespace[]) =
     inherit ILPreNamespace(name)
@@ -3611,9 +3590,8 @@ type private ILPreNamespaceImpl(name: string, types: unit -> ILPreTypeDef[], nam
 let mkILPreNamespaceComputed (name, types, namespaces) =
     ILPreNamespaceImpl(name, types, namespaces) :> ILPreNamespace
 
-/// A level names a child once. When grouped entries and directly supplied namespaces both name one, the two
-/// become a single child holding the contents of both, rather than two children an importer would turn into
-/// two entities of the same name.
+/// A level names a child once: one named by both sources becomes a single child, not two entities of the
+/// same name.
 let rec private mergePreNamespaces (grouped: ILPreNamespace[]) (supplied: ILPreNamespace[]) =
     if Array.isEmpty supplied then
         // Grouping never produces two children of one name, so this is the whole answer.
@@ -3639,12 +3617,11 @@ let inline private namespaceOfEntry (entries: struct (string list * ILPreTypeDef
     let struct (ns, _) = entries[i]
     ns
 
-/// Order namespaced entries so that each namespace occupies one contiguous run, a namespace's own types come
-/// ahead of its child namespaces, and both keep first-seen (metadata) order - which merges a namespace split
-/// across the source. Every level is then a range of this one array: descending costs a node, never a copy
-/// of the entries.
+/// Order entries so each namespace is one contiguous run, its own types ahead of its children, both in
+/// first-seen order - which merges a namespace split across the source. Every level is then a range of this
+/// one array: descending costs a node, never a copy.
 let private groupEntriesByNamespace (entries: struct (string list * ILPreTypeDef)[]) =
-    // Nested-type tables, and any level whose types all sit in it, need no ordering at all.
+    // A level whose types all sit in it needs no ordering.
     if entries |> Array.forall (fun (struct (ns, _)) -> List.isEmpty ns) then
         entries
     else
@@ -3676,15 +3653,13 @@ let private groupEntriesByNamespace (entries: struct (string list * ILPreTypeDef
         fill (ResizeArray entries) 0
         grouped.ToArray()
 
-/// A namespace as a range of the grouped array. Holds no entries of its own, so a namespace that is never
-/// imported stays a single object.
+/// A namespace as a range of the grouped array: one that is never imported stays a single object.
 [<Sealed>]
 type private ILPreNamespaceOfRange
     (name: string, entries: struct (string list * ILPreTypeDef)[], lo: int, hi: int, depth: int) =
     inherit ILPreNamespace(name)
 
-    /// The types of the level: grouping put them at the front of its range, as the leading run of entries
-    /// whose namespace ends at this depth.
+    /// Grouping put the level's own types at the front of its range.
     static member Types(entries: struct (string list * ILPreTypeDef)[], lo, hi, depth) =
         let mutable count = 0
 
@@ -3719,8 +3694,6 @@ type private ILPreNamespaceOfRange
 
 let mkILTypeDefsComputed f = ILTypeDefs f
 
-/// A level as a type table, for the two places one is the declared type: a module's own level, and a
-/// type's nested types.
 let mkILTypeDefsOfNamespace (preNamespace: ILPreNamespace) =
     ILTypeDefs(preNamespace.GetTypes, preNamespace.GetNamespaces)
 

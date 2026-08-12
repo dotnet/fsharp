@@ -246,8 +246,7 @@ module Nullness =
         { DirectAttributes: AttributesFromIL
           Fallback : NullableContextSource}
           with
-            // Matched rather than chained through ValueOption.orElseWith: that is not inline, so each call
-            // allocated a closure on a path walked per imported member.
+            // Not ValueOption.orElseWith: it is not inline, so each call allocated a closure per member.
             member this.GetFlags(g:TcGlobals) =
                 match this.DirectAttributes.GetNullable(g) with
                 | ValueSome flags -> flags
@@ -684,16 +683,14 @@ let ImportILGenericParameters amap m scoref tinst (nullableFallback:Nullness.Nul
             tp.SetConstraints constraints)
         tps
 
-/// Most IL types have no type parameters, so they share this value instead of each allocating a lazy plus a
-/// closure over the nullable-context fallback, which is only needed when there is a parameter to import.
+/// Most IL types have no type parameters, so they share this instead of each allocating a lazy and closure.
 let private noTypars = LazyWithContext<Typars, range>.NotLazy []
 
 /// Import an IL type definition as a new F# TAST Entity node.
 let rec ImportILTypeDef amap m scoref (cpath: CompilationPath) enc nm (tdef: ILTypeDef)  =
     let moduleOrNamespaceTypeForNestedTypes =
         MaybeLazy.Lazy(
-            // Captures tdef, not its nested types: the closure then holds nothing the entity doesn't
-            // already keep alive.
+            // Captures tdef, not its nested types: the closure holds nothing the entity doesn't already keep.
             InterruptibleLazy(fun _ ->
                 let cpath = cpath.NestedCompPath nm ModuleOrType
                 ImportILTypeDefs amap m scoref cpath (enc@[tdef]) tdef.NestedTypes
@@ -724,8 +721,7 @@ let rec ImportILTypeDef amap m scoref (cpath: CompilationPath) enc nm (tdef: ILT
         moduleOrNamespaceTypeForNestedTypes
 
 
-/// Import a table of IL types as a ModuleOrNamespaceType. Each child namespace becomes a namespace entity
-/// whose contents are imported the same way once forced.
+/// Import one namespace level as a ModuleOrNamespaceType.
 and ImportILTypeDefsOfLevel amap m scoref (cpath: CompilationPath) enc (types: ILPreTypeDef[]) (namespaces: ILPreNamespace[]) =
     let typeEntities =
         [ for pre in types -> ImportILTypeDef amap m scoref cpath enc pre.Name (pre.GetTypeDef()) ]

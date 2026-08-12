@@ -9,16 +9,10 @@ open FSharp.Compiler.AbstractIL.ILBinaryReader
 open BenchmarkDotNet.Attributes
 open FSharp.Benchmarks.Common.Categories
 
-// These benchmarks target the lazy-namespace work in the IL reader (ILPreNamespace): importing an
-// assembly should only realise the namespaces the code actually touches, so a project that references
-// large *non-F#* assemblies (the BCL) but opens only a couple of namespaces should read and retain less.
-//
-// Only non-F# assemblies exercise this path: F# assemblies are unpickled from FSharpSignatureData and
-// never build ILPreNamespace trees. Scripts pull in the whole framework, giving us the large-reference
-// surface for free.
-//
-// "Narrow" opens one namespace; "Wide" opens many. The narrow case is where laziness should pay off;
-// the wide case is the control that should stay flat (no regression when everything is forced anyway).
+// Importing an assembly should realise only the namespaces the code touches, so a project referencing
+// large assemblies but opening a couple of namespaces should read and retain less. Only non-F# assemblies
+// take this path: F# ones are unpickled from FSharpSignatureData. Narrow opens one namespace, Wide many -
+// Wide is the control that should stay flat.
 [<AutoOpen>]
 module private NamespaceImportHelpers =
 
@@ -48,7 +42,7 @@ let sb = StringBuilder()
 let ci = CultureInfo.InvariantCulture
 let ms = new MemoryStream()"""
 
-    /// Options with the full framework referenced, so the reader has many namespaces to (not) realise.
+    /// Script options: the full framework referenced, so there are many namespaces to (not) realise.
     let getScriptOptions (checker: FSharpChecker) (fileName: string) (source: string) =
         let options, diagnostics =
             checker.GetProjectOptionsFromScript(fileName, SourceText.ofString source, assumeDotNetFramework = false, useSdkRefs = true)
@@ -68,8 +62,7 @@ let ms = new MemoryStream()"""
             if errors.Length > 0 then failwithf "check had errors: %A" errors
             answer
 
-    /// Cold-start type-check: a brand-new checker with an empty IL reader cache, so the assemblies are
-    /// read and their namespace trees built from scratch. This is the "analysis startup" cost.
+    /// Empty reader cache and a fresh checker, so the namespace trees are built from scratch.
     let coldCheck (fileName: string) (source: string) (options: FSharpProjectOptions) =
         ClearAllILModuleReaderCache()
         let checker = FSharpChecker.Create(projectCacheSize = 200)
@@ -86,8 +79,6 @@ let main argv =
     Console.WriteLine(sum)
     0"""
 
-    /// fsc argv that compiles the console app as an exe against the resolved framework references.
-    /// `extraArgs` lets callers add flags like `--times` without duplicating the setup.
     let buildConsoleAppArgv (checker: FSharpChecker) (extraArgs: string list) =
         let dir = Path.Combine(Path.GetTempPath(), "fcsConsoleAppBench")
         Directory.CreateDirectory(dir) |> ignore
@@ -105,8 +96,7 @@ let main argv =
            yield! extraArgs
            yield sourceFile |]
 
-/// Startup time + transient allocation for a cold type-check. MemoryDiagnoser reports allocated
-/// bytes/op: fewer ILPreNamespace/ILPreTypeDef closures built for un-opened namespaces shows up here.
+/// Cold type-check: allocation here counts the namespace trees built for un-opened namespaces.
 [<MemoryDiagnoser>]
 [<BenchmarkCategory(LongCategory)>]
 type NamespaceImportStartupBenchmarks() =
@@ -118,7 +108,7 @@ type NamespaceImportStartupBenchmarks() =
 
     [<GlobalSetup>]
     member _.Setup() =
-        // Resolving script references is expensive and unrelated to what we measure; do it once up front.
+        // Resolving script references is unrelated to what we measure; do it once.
         let checker = FSharpChecker.Create()
         narrowOptions <- getScriptOptions checker narrowFile narrowSource
         wideOptions <- getScriptOptions checker wideFile wideSource
@@ -134,10 +124,8 @@ type NamespaceImportStartupBenchmarks() =
     [<IterationCleanup>]
     member _.Cleanup() = ClearAllILModuleReaderCache()
 
-/// End-to-end compile of a small console app (FSharpChecker.Compile, in-process fsc: resolve + read the
-/// framework references, type-check, optimize, write the exe). This is the realistic "build a console app"
-/// workload — the reference reading it drives is exactly where lazy ILPreNamespace applies. MemoryDiagnoser
-/// reports allocation/op; each iteration starts with a cleared IL reader cache so references are read cold.
+/// End-to-end compile of a console app: the realistic workload driving reference reading. Each iteration
+/// starts with a cleared reader cache.
 [<MemoryDiagnoser>]
 [<BenchmarkCategory(LongCategory)>]
 type ConsoleAppCompileBenchmarks() =
@@ -162,16 +150,14 @@ type ConsoleAppCompileBenchmarks() =
     [<IterationCleanup>]
     member _.Cleanup() = ClearAllILModuleReaderCache()
 
-/// Per-phase breakdown of the console-app compile via the compiler's own `--times` flag. Shows *where*
-/// the compile spends its time (parse / import references / typecheck / optimize / ilwrite), which is
-/// what pinpoints the effect of lazy ILPreNamespace (the "import" phase).
+/// Per-phase breakdown of the console-app compile via `--times`, to see the effect on the import phase.
 ///
-/// Not a BDN benchmark: run it from Program.fs with the `times` argument, in each repo, and compare.
+/// Not a BDN benchmark: run from Program.fs with the `times` argument.
 module TimesProbe =
 
     let run () =
         let checker = FSharpChecker.Create()
-        // Warm up JIT + reference resolution so the timed runs aren't dominated by first-call costs.
+        // Warm up JIT and reference resolution.
         checker.Compile(buildConsoleAppArgv checker []) |> Async.RunSynchronously |> ignore
 
         for i in 1..3 do
@@ -181,14 +167,11 @@ module TimesProbe =
             let _, exnOpt = checker.Compile(argv) |> Async.RunSynchronously
             exnOpt |> Option.iter raise
 
-/// Compile a real, large project (e.g. Rider's FSharp.Common: ~486 references, ~58 sources) from a
-/// captured fsc response file, measuring allocation + time + retained heap per cold compile. This is the
-/// realistic "many large references, import a subset of namespaces" workload where lazy ILPreNamespace
-/// should matter most. MemoryDiagnoser can't take a runtime file, so this is a standalone probe.
+/// Cold compile of a real, large project from a captured fsc response file - the "many large references,
+/// import a subset" workload. MemoryDiagnoser can't take a runtime file, so this is a standalone probe.
 ///
-/// Run from Program.fs: `compile-project <response-file> <project-dir>`. The project dir becomes the
-/// working directory so the response file's relative paths (obj/..., resources) resolve. Compare the
-/// printed allocation / retained numbers across `main` and this branch.
+/// Run from Program.fs: `compile-project <response-file> <project-dir>` - the project dir becomes the
+/// working directory so the response file's relative paths resolve.
 module CompileProjectProbe =
 
     let private forceGC () =
@@ -224,10 +207,8 @@ module CompileProjectProbe =
             printfn "run %d: %6.0f ms | allocated %8.1f MB | %d errors"
                 i sw.Elapsed.TotalMilliseconds (float allocated / 1024.0 / 1024.0) errs
 
-        // Retained memory held specifically by the IL module reader cache: the pre-type-def / namespace
-        // trees for every referenced assembly. This is what a long-lived process (Rider) keeps alive, and
-        // exactly what lazy ILPreNamespace shrinks (un-imported namespaces are never realised or retained).
-        // Isolate it as the heap drop when the cache is cleared, so it excludes JIT / checker / GC noise.
+        // What a long-lived process keeps alive. Isolated as the heap drop when the cache is cleared, so
+        // it excludes JIT / checker / GC noise.
         let mb (b: int64) = float b / 1024.0 / 1024.0
         for i in 1..3 do
             ClearAllILModuleReaderCache()
@@ -242,10 +223,8 @@ module CompileProjectProbe =
             printfn "retain %d: reader-cache holds %7.1f MB | total post-compile %7.1f MB (base %6.1f, withCache %6.1f, afterClear %6.1f)"
                 i (mb (withCache - afterClear)) (mb (withCache - baseHeap)) (mb baseHeap) (mb withCache) (mb afterClear)
 
-/// Deterministic retained-memory measurement for a real project: run ParseAndCheckProject and keep the
-/// results alive, so the imported referenced-assembly structures (CCUs, and the realised pre-type-def /
-/// namespace trees they hold) stay on the heap. This mirrors an IDE holding a project's analysis live,
-/// which is where lazy ILPreNamespace reduces the retained footprint. Reuses the compile response file.
+/// Retained memory for a real project: keeps ParseAndCheckProject's results alive so the imported
+/// structures stay on the heap, as an IDE holding a project's analysis does.
 ///
 /// Run from Program.fs: `retain-project <response-file> <project-dir>`.
 module RetainProjectProbe =
@@ -260,8 +239,7 @@ module RetainProjectProbe =
         let lines =
             File.ReadAllLines responseFile
             |> Array.filter (fun l -> l.Trim().Length > 0)
-        // Source files are .fs/.fsi paths that aren't flags (e.g. not --embed:...AssemblyInfo.fs), kept in
-        // response-file order: signature files must precede their implementations.
+        // Kept in response-file order: signature files must precede their implementations.
         let sources =
             lines
             |> Array.filter (fun l -> (l.EndsWith ".fs" || l.EndsWith ".fsi") && not (l.StartsWith "-"))
@@ -286,8 +264,7 @@ module RetainProjectProbe =
         printfn "ParseAndCheckProject: %d sources, %d refs"
             sources.Length (otherOptions |> Array.filter (fun o -> o.StartsWith "-r:") |> Array.length)
 
-        // Single measurement per process: FSharpChecker keeps global/static caches alive, so running
-        // multiple samples in one process contaminates the baseline. Invoke this command repeatedly instead.
+        // One measurement per process: FSharpChecker's static caches contaminate a second sample.
         ClearAllILModuleReaderCache()
         let checker = FSharpChecker.Create(projectCacheSize = 0)
         forceGC ()
@@ -296,18 +273,17 @@ module RetainProjectProbe =
         let errs = results.Diagnostics |> Array.filter (fun d -> d.Severity = FSharpDiagnosticSeverity.Error) |> Array.length
         forceGC ()
         let held = GC.GetTotalMemory true
-        // Keep the analysis (and thus the imported assembly structures) alive across the measurement.
+        // Keep the imported structures alive across the measurement.
         GC.KeepAlive results
         GC.KeepAlive checker
         printfn "analysis holds %7.1f MB (base %6.1f -> held %6.1f) | %d errors"
             (mb (held - baseHeap)) (mb baseHeap) (mb held) errs
 
-/// Single-file check in a real project context (the IDE hot path: open one file), then hold the analysis
-/// alive so an external heap dump (dotnet-gcdump) can attribute retained memory per type — showing the
-/// actual ILPreNamespace / ILPreTypeDef / InterruptibleLazy footprint. Reuses the compile response file.
+/// Single-file check in a real project - the IDE hot path - holding the analysis alive so an external heap
+/// dump can attribute retained memory per type.
 ///
 /// Run from Program.fs: `check-file <response-file> <project-dir> <file-to-check>`. Prints its PID and
-/// then sleeps, holding the checker + results rooted, so `dotnet-gcdump collect -p <pid>` can run.
+/// sleeps, so `dotnet-gcdump collect -p <pid>` can run.
 module CheckFileProbe =
 
     let private forceGC () =
@@ -336,7 +312,7 @@ module CheckFileProbe =
               UnresolvedReferences = None
               Stamp = None }
 
-        // A checker that keeps the incremental builder (and thus the imported referenced assemblies) alive.
+        // Keeps the incremental builder, and so the imported assemblies, alive.
         let checker = FSharpChecker.Create(projectCacheSize = 1)
         ClearAllILModuleReaderCache()
         let source = SourceText.ofString (File.ReadAllText fileToCheck)
@@ -360,12 +336,10 @@ module CheckFileProbe =
         GC.KeepAlive answer
         GC.KeepAlive checker
 
-/// Retained (live-heap) memory after a cold type-check, with the results kept alive. BenchmarkDotNet's
-/// MemoryDiagnoser measures allocation *during* an op, not what survives; the deferred namespace tree's
-/// win is that un-opened namespaces are never *retained*, so we measure that separately here.
+/// Retained memory after a cold check: MemoryDiagnoser measures allocation during an op, not what
+/// survives, and what survives is the point.
 ///
-/// Not a BDN benchmark: run it from Program.fs with the `retained-memory` argument. Compare the printed
-/// numbers across `main` and this branch (and narrow-vs-wide within a branch).
+/// Not a BDN benchmark: run from Program.fs with the `retained-memory` argument.
 module RetainedMemoryProbe =
 
     let private forceGC () =
@@ -378,7 +352,7 @@ module RetainedMemoryProbe =
         let setupChecker = FSharpChecker.Create()
         let options = getScriptOptions setupChecker fileName source
 
-        // Empty cache, fresh checker: baseline before any assembly namespaces are read.
+        // Baseline before any assembly namespaces are read.
         ClearAllILModuleReaderCache()
         let checker = FSharpChecker.Create(projectCacheSize = 200)
         forceGC ()
@@ -390,18 +364,16 @@ module RetainedMemoryProbe =
         let allocated = GC.GetTotalAllocatedBytes true - allocatedBefore
         forceGC ()
         let after = GC.GetTotalMemory(true)
-        // Keep everything the check produced alive across the measurement, else the delta is meaningless.
+        // Keep the check's output alive, else the delta is meaningless.
         GC.KeepAlive answer
         GC.KeepAlive checker
         printfn "%-8s retained: %10.2f KB  allocated: %10.2f KB (before %10.2f KB, after %10.2f KB)"
             label (float (after - before) / 1024.0) (float allocated / 1024.0) (float before / 1024.0) (float after / 1024.0)
 
-    /// Reads every reference assembly the framework offers and forces the whole type-def tree (every type,
-    /// its nested types, and every namespace level). Isolates the IL reader's per-type and per-namespace
-    /// object cost from anything the type-checker does with it.
+    /// Forces every type and namespace of every reference, isolating the reader's per-object cost from
+    /// anything the type-checker does with it.
     let private measureReadAll () =
-        // The running framework's implementation assemblies: unlike reference assemblies these hold real
-        // type bodies (System.Private.CoreLib alone has tens of thousands of types and nested types).
+        // Implementation assemblies, not reference ones: these hold real type bodies.
         let refs =
             Directory.GetFiles(System.Runtime.InteropServices.RuntimeEnvironment.GetRuntimeDirectory(), "*.dll")
 
@@ -436,9 +408,7 @@ module RetainedMemoryProbe =
         printfn "%-8s retained: %10.2f KB  allocated: %10.2f KB (%d assemblies, %d type defs)"
             "ReadAll" (float (after - before) / 1024.0) (float allocated / 1024.0) refs.Length typeCount
 
-    /// Type-checks a small file and then forces the *import* of every entity of every referenced assembly
-    /// (what walking an assembly's contents in an IDE does). Isolates the cost of turning IL type defs and
-    /// namespace levels into TAST entities, which the narrow/wide checks barely touch.
+    /// Forces the import of every entity of every reference, isolating the IL-to-TAST cost.
     let private measureImportAll () =
         let fileName = "importall.fsx"
         let setupChecker = FSharpChecker.Create()

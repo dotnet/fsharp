@@ -306,9 +306,8 @@ let ``Module def 01 - assembly import`` () =
     | None -> failwith "Expecting results"
 
 
-// A namespace split across the metadata (Ns1.Ns2 broken by the intervening Ns1.T2) must merge into
-// one namespace on import, and the import order must be preserved. These use the synthetic reader
-// above so the split order is under our control (Roslyn can't emit a genuinely split namespace).
+// A namespace split across the metadata must merge into one on import, in metadata order. Synthetic,
+// since Roslyn can't emit a genuinely split namespace.
 let private splitNamespaceTypes =
     [ { Name = "T1"; Namespace = ["Ns1"; "Ns2"]; HasCtor = false; CancelOnImport = false }
       { Name = "T2"; Namespace = ["Ns1"]; HasCtor = false; CancelOnImport = false }
@@ -316,7 +315,7 @@ let private splitNamespaceTypes =
 
 [<Fact>]
 let ``Split namespace - both fragments merge and are accessible`` () =
-    // open Ns1.Ns2 must bring in both T1 and T3, even though they are split by Ns1.T2 in the metadata.
+    // Both T1 and T3, though split by Ns1.T2 in the metadata.
     let source = """
 module Module
 
@@ -339,7 +338,6 @@ let _f3 (x: T3) = x
         |> shouldEqual [||]
     | None -> failwith "Expecting results"
 
-/// The synthetic reference assembly, analysed as a whole project.
 let private referencedAssembly (options: FSharpProjectOptions) =
     let results = checker.ParseAndCheckProject(options) |> Async.RunSynchronously
 
@@ -358,9 +356,8 @@ let ``Split namespace - import order is preserved`` () =
     let _, options = mkTestFileAndOptions [||]
     let options = referenceReaderProject getPreTypeDefs false options
 
-    // Depth-first: Ns1's own type T2 first, then the merged Ns1.Ns2 with T1 before T3 (metadata order).
-    // Verified to be the same order the pre-ILPreNamespace import produced for this shape - though see
-    // the ordering tests below: that parity is a coincidence of this shape's namespace depths.
+    // Depth-first, T1 before T3 despite the split. Matches the old import for this shape by coincidence
+    // of its depths - see the ordering tests below.
     (referencedAssembly options).Contents.Entities
     |> Seq.map (fun e -> e.DisplayName, e.AccessPath)
     |> List.ofSeq
@@ -369,8 +366,7 @@ let ``Split namespace - import order is preserved`` () =
 
 // ---- Entity order ------------------------------------------------------------------------------
 //
-// Types at namespace depths 0-3, with sibling types at each depth, two sibling namespaces inside Ns1
-// and a second top-level namespace - enough to pin sibling order at every depth for both reader shapes.
+// Depths 0-3 with siblings at each - enough to pin sibling order at every depth for both reader shapes.
 let private orderedTypes =
     [ "G0", []
       "G1", []
@@ -389,15 +385,9 @@ let private mkTypeData (name, ns) =
 
 /// Metadata order at every depth, types before child namespaces.
 ///
-/// NOTE: this is a deliberate change from the pre-ILPreNamespace import, which bucketed types by
-/// prepending into a dictionary and so reversed siblings once per namespace component consumed - its
-/// order alternated with depth: "N1.B1, N1.A1" and namespaces "N1.Q, N1.P, N1.N2", but "N1.N2.A2,
-/// N1.N2.B2" and then "N1.N2.N3.B3, N1.N2.N3.A3" again.
-///
-/// That order cannot be kept now that both reader shapes exist: in a grouped tree a type is an item of
-/// exactly one level, so it would be reversed once whatever its depth, while a flat table reverses it
-/// once per component. Metadata order is the only order the two shapes can agree on - which is why
-/// both tests below assert the same list.
+/// A deliberate change: the old import reversed siblings once per namespace component consumed, so its
+/// order alternated with depth. A grouped tree reverses a type once whatever its depth and a flat table
+/// once per component, so metadata order is the only one both shapes can agree on - hence one list here.
 let private expectedOrder =
     [ "G0"
       "G1"
@@ -411,8 +401,7 @@ let private expectedOrder =
       "N1.Q.QA"
       "M1.C1" ]
 
-/// The same types as a namespace tree built by hand: the shape a reader whose own store knows its
-/// namespaces hands over, as opposed to the entries a metadata table gives.
+/// The same types as a hand-built tree: what a reader whose own store knows its namespaces hands over.
 let rec private mkPreNamespace name depth (types: (string * string list) list) =
     let ownTypes, nested = types |> List.partition (fun (_, ns) -> List.length ns = depth)
 
@@ -429,8 +418,7 @@ let private mkNamespaceTree depth types =
 
 [<Fact>]
 let ``Import order - grouped entries keep metadata order at every depth`` () =
-    // Types handed over with their namespaces and grouped by the reader (what a metadata table, FSI and
-    // static linking produce).
+    // Namespaced entries grouped by the reader: what a metadata table, FSI and static linking produce.
     let typeDefs =
         mkILTypeDefsGroupedComputed
             (fun () -> createPreTypeDefs (List.map mkTypeData orderedTypes))

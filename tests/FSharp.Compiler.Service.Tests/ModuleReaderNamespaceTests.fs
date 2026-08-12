@@ -13,14 +13,10 @@ open FSharp.Test.Compiler
 open FSharp.Test.Assert
 open Xunit
 
-// These tests exercise how ILPreTypeDef / ILPreNamespace are created when reading .NET metadata: the
-// goal is lazy namespace reading, where only imported namespaces realise their pre-type-defs.
-//
-// Roslyn groups emitted types by namespace and doesn't preserve source order across namespaces, so C#
-// can't produce a genuinely "split" namespace (e.g. Ns1, Ns2, Ns1). C# is therefore used only for the
-// realistic-shape test (siblings sorted); split-namespace order is asserted with synthetic arrays.
+// How ILPreTypeDef / ILPreNamespace are created when reading metadata: only imported namespaces should
+// realise their pre-type-defs. Roslyn can't emit a genuinely split namespace, so C# is used only for the
+// realistic-shape test and split order is asserted with synthetic arrays.
 
-/// Render the namespace/type tree using the structural API.
 let private dumpTree (sortSiblings: bool) (typeDefs: ILTypeDefs) : string =
     let sb = StringBuilder()
 
@@ -47,7 +43,7 @@ let private dumpTree (sortSiblings: bool) (typeDefs: ILTypeDefs) : string =
 
 // ---- Synthetic pre-type-defs (control the exact metadata order) --------------------------------
 
-/// A pre-type-def carrying only its simple name; the namespace lives in the containing table.
+/// Carries only the simple name; the namespace lives in the containing table.
 let private mkPreTypeDef (name: string) : ILPreTypeDef =
     { new ILPreTypeDef with
         member _.Name = name
@@ -60,7 +56,7 @@ let private entryOf (fullName: string) : struct (string list * ILPreTypeDef) =
     let ns, name = splitILTypeName fullName
     struct (ns, mkPreTypeDef name)
 
-/// Group the given full type names (in order) into a namespace tree using the production grouping.
+/// Full type names, in order, through the production grouping.
 let private mkGroupedTypeDefs (fullNames: string list) : ILTypeDefs =
     mkILTypeDefsGroupedComputed (fun () -> [| for n in fullNames -> entryOf n |]) (fun () -> Array.empty)
 
@@ -158,8 +154,8 @@ let ``Grouping - namespaces are realised lazily`` () =
 
 [<Fact>]
 let ``Grouping - un-imported namespaces never have their type names read`` () =
-    // Grouping an entry needs its namespace, never its name. A reader whose name costs work - the metadata
-    // reader's is a string-heap read - therefore pays it only for the namespaces something imports.
+    // Grouping needs an entry's namespace, never its name - and a name is a string-heap read for the
+    // metadata reader.
     let read = HashSet<string>()
 
     let entry (fullName: string) : struct (string list * ILPreTypeDef) =
@@ -230,9 +226,8 @@ let ``Lookup - FindByName reports the missing type name`` () =
 
 [<Fact>]
 let ``Mixed level - a namespace named by both an entry and a pre-namespace becomes one child`` () =
-    // A level whose children come from BOTH grouped entries and directly supplied pre-namespaces, with a
-    // name in common. The two are one child holding the contents of both - at every depth - so an importer
-    // never sees two namespaces of one name.
+    // Children from BOTH grouped entries and supplied pre-namespaces, sharing a name: they must be one
+    // child at every depth, so an importer never sees two namespaces of one name.
     let ns2 =
         mkILPreNamespaceComputed("Ns2", (fun () -> [| mkPreTypeDef "TDeepSupplied" |]), (fun () -> Array.empty))
 
@@ -376,11 +371,10 @@ let ``Nested types - grouping keeps them under the declaring type`` () =
 
 // ---- End-to-end: what checking a file actually reads out of a reference ------------------------
 //
-// The tests above pin the reader API in isolation. These pin the guarantee it exists for: checking a
-// file must pull only the namespaces it names out of a referenced assembly. A regression is easy to
-// introduce far from the reader - anything that walks a CCU's whole ModuleOrNamespaceType realises
-// every namespace of it, and every type in them (addConstraintSources in CompilerImports did exactly
-// that for every referenced assembly, F# or not).
+// The tests above pin the reader API in isolation. These pin the guarantee it exists for: checking a file
+// must pull only the namespaces it names. The regression is easy to introduce far from the reader -
+// anything that walks a CCU's whole ModuleOrNamespaceType realises every namespace of it, as
+// addConstraintSources did.
 
 /// A type to put in the synthetic reference assembly.
 type private TypeShape =
@@ -409,11 +403,10 @@ type private ReadLog() =
 
 let private sorted (names: HashSet<string>) = List.ofSeq names |> List.sort
 
-/// A pre-type-def that records reading its type def, and each part of it read afterwards.
+/// Records reading its type def, and each part of it read afterwards.
 ///
-/// `ilName` follows the reader's convention: a top-level type def carries its full name (that is what
-/// readBlobHeapAsTypeName gives it) while the pre-type-def carries the simple one; a nested type def
-/// carries the simple name, since nested rows have no namespace. Import rebuilds a nested type's
+/// `ilName` follows the reader: a top-level type def carries its full name while the pre-type-def carries
+/// the simple one, and a nested type def carries the simple name. Import rebuilds a nested type's
 /// ILTypeRef from its declaring type def's name, so a simple name there resolves in the wrong namespace.
 let rec private trackedPreTypeDefWith
     (log: ReadLog)
@@ -442,8 +435,7 @@ let rec private trackedPreTypeDefWith
                 [||]
         )
 
-    // A type with no base type of its own still derives from System.Object, as any class emitted by a
-    // compiler does - otherwise a member lookup on it has no hierarchy to walk and simply fails.
+    // Without a base type a member lookup has no hierarchy to walk and simply fails.
     let extends =
         let scope, name =
             match ty.Extends with
@@ -452,7 +444,7 @@ let rec private trackedPreTypeDefWith
 
         Some(mkILBoxedType (mkILNonGenericTySpec (mkILTyRef (scope, name))))
 
-    // One instance, as a real reader's pre-type-def hands out: import holds on to the one it was given.
+    // One instance, as a real reader hands out: import holds on to the one it was given.
     let typeDef =
         ILTypeDef(ilName, attributes, ILTypeDefLayout.Auto, [], [], extends,
             methods, nested, mkILFields [], emptyILMethodImpls, mkILEvents [],
@@ -507,9 +499,8 @@ let f (x: Ns1.A) = x
 let ``Laziness - checking a file reads only the namespaces it names`` () =
     let log = checkAgainstReference referenceShapes useNs1A
 
-    // Ns1.B comes along with Ns1.A, and G with the root level that names Ns1: import granularity is the
-    // namespace level, not the type, since building an entity for one type needs its ILTypeDef. What
-    // matters is that the levels not on the path - Ns1.Deep and Ns2 - are never read.
+    // Import granularity is the namespace level, not the type, so Ns1.B and G come along. What matters is
+    // that the levels off the path - Ns1.Deep and Ns2 - are never read.
     sorted log.TypeDefs |> shouldEqual [ "G"; "Ns1.A"; "Ns1.B" ]
 
 [<Fact>]
@@ -517,9 +508,7 @@ let ``Laziness - checking a file reads no type name of an un-named namespace`` (
     let log = ReadLog()
     let read = HashSet<string>()
 
-    // Grouping an entry needs its namespace, never its name - and reading a name is a string-heap read for
-    // the file reader. The isolated test above pins that; this one pins that it survives a real check, so
-    // an un-imported namespace costs nothing beyond the namespace path grouping already has.
+    // The isolated test above pins that grouping never reads a name; this pins that it survives a check.
     let typeDefs =
         mkILTypeDefsGroupedComputed
             (fun () ->
@@ -557,10 +546,8 @@ let ``Laziness - importing a type reads neither its members nor its nested types
 let ``Laziness - attributes are read for the types brought into scope, not for all imported ones`` () =
     let log = checkAgainstReference referenceShapes useNs1A
 
-    // A type's attributes are read when it enters the name environment (an entry has to be checked for
-    // RequireQualifiedAccess and for extension members) or when a use of it is resolved (Obsolete and
-    // friends are reported there). G is at the root level, which is in scope everywhere; Ns1.A is named.
-    // Ns1.B is imported alongside Ns1.A but never enters scope, so its attributes stay unread.
+    // Attributes are read when a type enters the name environment or a use of it is resolved. Ns1.B is
+    // imported alongside Ns1.A but never enters scope.
     sorted log.CustomAttrs |> shouldEqual [ "G"; "Ns1.A" ]
 
 [<Fact>]
@@ -591,8 +578,7 @@ let f (x: A) = x
     // An open imports the namespace's own types, so Ns1.Deep must stay untouched.
     sorted log.TypeDefs |> shouldEqual [ "G"; "Ns1.A"; "Ns1.B" ]
 
-    // The open brings every type of Ns1 into scope, so unlike the qualified use above it does read the
-    // attributes of all of them - that is the price of an open, and it is bounded by the namespace.
+    // An open brings every type of Ns1 into scope, so it reads all their attributes - bounded by Ns1.
     sorted log.CustomAttrs |> shouldEqual [ "G"; "Ns1.A"; "Ns1.B" ]
 
 [<Fact>]
@@ -616,8 +602,7 @@ let x = 1
 """
     let log = checkAgainstReference referenceShapes source
 
-    // The floor: the root level is realised for every reference, because the initial name resolution
-    // environment names its root namespaces. Nothing below it is touched.
+    // The floor: the initial name resolution environment names each reference's root namespaces.
     sorted log.TypeDefs |> shouldEqual [ "G" ]
 
 let private withBaseTypeShapes =
@@ -630,9 +615,8 @@ let private withBaseTypeShapes =
 let ``Laziness - the base type of an imported type is not read`` () =
     let log = checkAgainstReference withBaseTypeShapes useNs1A
 
-    // Importing Ns1.A only records its base type as an ILType; the entity behind it is resolved when
-    // something needs the hierarchy. Naming the type in a signature doesn't, so Ns2 stays unread -
-    // note there is no global type here, so even the root level costs nothing.
+    // Importing Ns1.A only records its base type as an ILType; nothing here needs the hierarchy, so Ns2
+    // stays unread - and with no global type, even the root level costs nothing.
     sorted log.TypeDefs |> shouldEqual [ "Ns1.A" ]
 
 [<Fact>]
@@ -644,8 +628,7 @@ let f (x: Ns1.A) = x.ToString()
 """
     let log = checkAgainstReference withBaseTypeShapes source
 
-    // A member lookup walks the hierarchy, so the base type is imported - which realises its namespace
-    // level, bringing Ns2.X with it. Ns1.Deep is still not on any path.
+    // A member lookup walks the hierarchy, so the base type is imported, realising its namespace level.
     sorted log.TypeDefs |> shouldEqual [ "Ns1.A"; "Ns2.Base"; "Ns2.X" ]
     sorted log.Members |> shouldEqual [ "Ns1.A"; "Ns2.Base" ]
 
@@ -668,13 +651,9 @@ let private metadataTypeDefOrder (path: string) =
 
 [<Fact>]
 let ``Reading - sorting a flattened module by row index gives the metadata TypeDef order`` () =
-    // Flattening (AsArray/AsList/the enumerator) walks namespace by namespace, so it does *not* reproduce
-    // the TypeDef table order - a namespace can be split across the table. Consumers that need the
-    // reader's order sort by MetadataIndex; static linking does, so that --standalone emits the types of
-    // a dependent assembly in its original order. Pin both halves of that contract here.
-    //
-    // FSharp.Core is the right subject: F#-compiled assemblies routinely split a namespace across the
-    // TypeDef table (Roslyn-compiled ones group it, which would make this test vacuous).
+    // Flattening walks namespace by namespace, so it does not reproduce the TypeDef table order - a
+    // namespace can be split across it. Consumers needing the reader's order sort by MetadataIndex, as
+    // static linking does. FSharp.Core is the subject because F# routinely splits a namespace; Roslyn doesn't.
     let path = typeof<int list>.Assembly.Location
     let metadataOrder = metadataTypeDefOrder path
 

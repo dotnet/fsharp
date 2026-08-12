@@ -2220,8 +2220,7 @@ and typeDefReader ctxtH : ILTypeDefStored =
 
     mkILTypeDefReader(getTypeDef, getName)
 
-// Reads each row's namespace, which is what grouping the table needs. Reading the names is left to the
-// pre-type-defs, so an un-imported namespace never pays for one.
+// Only namespaces are read here; a name is left to its pre-type-def, so un-imported ones cost nothing.
 and seekReadTopTypeDefEntries (ctxt: ILMetadataReader) =
     [|
         for i = 1 to ctxt.getNumRows TableNames.TypeDef do
@@ -2241,7 +2240,7 @@ and seekReadNestedTypeDefs (ctxt: ILMetadataReader) tidx =
         let nestedIdxs =
             seekReadIndexedRows (ctxt.getNumRows TableNames.Nested, seekReadNestedRow ctxt, snd, simpleIndexCompare tidx, false, fst)
 
-        // Nested types carry no namespace in metadata; they all sit in the enclosing type.
+        // Nested types carry no namespace in metadata.
         [|
             for i in nestedIdxs do
                 let _, nameIdx, _, _, _, _ = seekReadTypeDefRow ctxt i
