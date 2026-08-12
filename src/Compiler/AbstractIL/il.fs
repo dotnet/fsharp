@@ -3607,7 +3607,7 @@ let rec private mergePreNamespaces (grouped: ILPreNamespace[]) (supplied: ILPreN
         merged.ToArray()
 
 and private combinePreNamespaces (a: ILPreNamespace) (b: ILPreNamespace) =
-    mkILPreNamespaceComputed(
+    mkILPreNamespaceComputed (
         a.Name,
         (fun () -> Array.append (a.GetTypes()) (b.GetTypes())),
         (fun () -> mergePreNamespaces (a.GetNamespaces()) (b.GetNamespaces()))
@@ -3655,8 +3655,7 @@ let private groupEntriesByNamespace (entries: struct (string list * ILPreTypeDef
 
 /// A namespace as a range of the grouped array: one that is never imported stays a single object.
 [<Sealed>]
-type private ILPreNamespaceOfRange
-    (name: string, entries: struct (string list * ILPreTypeDef)[], lo: int, hi: int, depth: int) =
+type private ILPreNamespaceOfRange(name: string, entries: struct (string list * ILPreTypeDef)[], lo: int, hi: int, depth: int) =
     inherit ILPreNamespace(name)
 
     /// Grouping put the level's own types at the front of its range.
@@ -3689,8 +3688,11 @@ type private ILPreNamespaceOfRange
 
         children.ToArray()
 
-    override _.ComputeTypes() = ILPreNamespaceOfRange.Types(entries, lo, hi, depth)
-    override _.ComputeNamespaces() = ILPreNamespaceOfRange.Namespaces(entries, lo, hi, depth)
+    override _.ComputeTypes() =
+        ILPreNamespaceOfRange.Types(entries, lo, hi, depth)
+
+    override _.ComputeNamespaces() =
+        ILPreNamespaceOfRange.Namespaces(entries, lo, hi, depth)
 
 let mkILTypeDefsComputed f = ILTypeDefs f
 

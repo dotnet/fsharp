@@ -2215,10 +2215,9 @@ and typeDefReader ctxtH : ILTypeDefStored =
             metadataIndex = idx
         )
 
-    let getName nameIdx =
-        readStringHeap (getHole ctxtH) nameIdx
+    let getName nameIdx = readStringHeap (getHole ctxtH) nameIdx
 
-    mkILTypeDefReader(getTypeDef, getName)
+    mkILTypeDefReader (getTypeDef, getName)
 
 // Only namespaces are read here; a name is left to its pre-type-def, so un-imported ones cost nothing.
 and seekReadTopTypeDefEntries (ctxt: ILMetadataReader) =
