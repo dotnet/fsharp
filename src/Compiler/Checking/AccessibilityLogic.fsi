@@ -86,7 +86,7 @@ val IsILPropInfoAccessible:
 
 val IsValAccessible: ad: AccessorDomain -> vref: ValRef -> bool
 
-val CheckValAccessible: m: range -> ad: AccessorDomain -> vref: ValRef -> unit
+val CheckValAccessible: g: TcGlobals -> m: range -> ad: AccessorDomain -> vref: ValRef -> unit
 
 val IsUnionCaseAccessible: amap: ImportMap -> m: range -> ad: AccessorDomain -> ucref: TypedTree.UnionCaseRef -> bool
 

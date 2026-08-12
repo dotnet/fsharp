@@ -16,7 +16,6 @@ module internal FSharp.Compiler.Features
 
 [<RequireQualifiedAccess>]
 type LanguageFeature =
-    | SingleUnderscorePattern
     | RelaxWhitespace2
     | NameOf
     | DotlessFloat32Literal
@@ -147,9 +146,6 @@ type LanguageVersion(versionText, ?disabledFeaturesArray: LanguageFeature array)
     static let features =
         dict
             [
-                // F# 4.7
-                LanguageFeature.SingleUnderscorePattern, languageVersion47
-
                 // F# 5.0
                 LanguageFeature.FixedIndexSlice3d4d, languageVersion50
                 LanguageFeature.DotlessFloat32Literal, languageVersion50
@@ -357,7 +353,6 @@ type LanguageVersion(versionText, ?disabledFeaturesArray: LanguageFeature array)
     /// Get a string name for the given feature.
     static member GetFeatureString feature =
         match feature with
-        | LanguageFeature.SingleUnderscorePattern -> FSComp.SR.featureSingleUnderscorePattern ()
         | LanguageFeature.RelaxWhitespace2 -> FSComp.SR.featureRelaxWhitespace2 ()
         | LanguageFeature.NameOf -> FSComp.SR.featureNameOf ()
         | LanguageFeature.DotlessFloat32Literal -> FSComp.SR.featureDotlessFloat32Literal ()

@@ -672,11 +672,6 @@
         <target state="translated">自我類型限制式</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureSingleUnderscorePattern">
-        <source>single underscore pattern</source>
-        <target state="translated">單一底線模式</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureStaticLetInRecordsDusEmptyTypes">
         <source>Allow static let bindings in union, record, struct, non-incremental-class types</source>
         <target state="translated">允許在等位、記錄、結構、非累加類別類型中使用靜態 let 繫結</target>
@@ -1295,11 +1290,6 @@
       <trans-unit id="parsUnexpectedEndOfFileElif">
         <source>Unexpected end of input in 'else if' or 'elif' branch of conditional expression. Expected 'elif &lt;expr&gt; then &lt;expr&gt;' or 'else if &lt;expr&gt; then &lt;expr&gt;'.</source>
         <target state="translated">條件運算式的 'else if' 或 'elif' 分支中出現未預期的輸入結尾。 預期為 'elif &lt;expr&gt; then &lt;expr&gt;' 或 'else if &lt;expr&gt; then &lt;expr&gt;'.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="parsUnexpectedSymbolDot">
-        <source>Unexpected symbol '.' in member definition. Expected 'with', '=' or other token.</source>
-        <target state="translated">成員定義中的非預期符號 '.'。預期為 'with'、'=' 或其他語彙基元。</target>
         <note />
       </trans-unit>
       <trans-unit id="optsChecksumAlgorithm">

@@ -672,11 +672,6 @@
         <target state="translated">自己型制約</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureSingleUnderscorePattern">
-        <source>single underscore pattern</source>
-        <target state="translated">単一のアンダースコア パターン</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureStaticLetInRecordsDusEmptyTypes">
         <source>Allow static let bindings in union, record, struct, non-incremental-class types</source>
         <target state="translated">共用体型、レコード型、構造体型、非増分クラス型の静的 let バインドを許可する</target>
@@ -1295,11 +1290,6 @@
       <trans-unit id="parsUnexpectedEndOfFileElif">
         <source>Unexpected end of input in 'else if' or 'elif' branch of conditional expression. Expected 'elif &lt;expr&gt; then &lt;expr&gt;' or 'else if &lt;expr&gt; then &lt;expr&gt;'.</source>
         <target state="translated">条件式の 'else if' または 'elif' 分岐の入力が予期しない形式で終了しています。'elif &lt;expr&gt; then &lt;expr&gt;' または 'else if &lt;expr&gt; then &lt;expr&gt;' が必要でした。</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="parsUnexpectedSymbolDot">
-        <source>Unexpected symbol '.' in member definition. Expected 'with', '=' or other token.</source>
-        <target state="translated">メンバー定義に予期しない記号 '.' があります。'with'、'=' またはその他のトークンが必要です。</target>
         <note />
       </trans-unit>
       <trans-unit id="optsChecksumAlgorithm">
