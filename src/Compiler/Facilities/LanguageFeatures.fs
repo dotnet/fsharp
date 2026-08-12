@@ -16,7 +16,6 @@ module internal FSharp.Compiler.Features
 
 [<RequireQualifiedAccess>]
 type LanguageFeature =
-    | SingleUnderscorePattern
     | RelaxWhitespace
     | RelaxWhitespace2
     | NameOf
@@ -149,7 +148,6 @@ type LanguageVersion(versionText, ?disabledFeaturesArray: LanguageFeature array)
         dict
             [
                 // F# 4.7
-                LanguageFeature.SingleUnderscorePattern, languageVersion47
                 LanguageFeature.RelaxWhitespace, languageVersion47
 
                 // F# 5.0
@@ -359,7 +357,6 @@ type LanguageVersion(versionText, ?disabledFeaturesArray: LanguageFeature array)
     /// Get a string name for the given feature.
     static member GetFeatureString feature =
         match feature with
-        | LanguageFeature.SingleUnderscorePattern -> FSComp.SR.featureSingleUnderscorePattern ()
         | LanguageFeature.RelaxWhitespace -> FSComp.SR.featureRelaxWhitespace ()
         | LanguageFeature.RelaxWhitespace2 -> FSComp.SR.featureRelaxWhitespace2 ()
         | LanguageFeature.NameOf -> FSComp.SR.featureNameOf ()
