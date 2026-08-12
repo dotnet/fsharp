@@ -1259,7 +1259,8 @@ type WellKnownILAttributes =
     | NullableContextAttribute = (1u <<< 23)
     | AttributeUsageAttribute = (1u <<< 24)
     | NotNullIfNotNullAttribute = (1u <<< 25)
-    | CallerArgumentExpressionAttribute = (1u <<< 26)
+    | OverloadResolutionPriorityAttribute = (1u <<< 26)
+    | CallerArgumentExpressionAttribute = (1u <<< 27)
     | NotComputed = (1u <<< 31)
 
 type internal ILAttributesStoredRepr =

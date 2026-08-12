@@ -165,6 +165,8 @@ module internal ILExtensions =
                 | "System.Runtime.CompilerServices.CompilerFeatureRequiredAttribute" ->
                     WellKnownILAttributes.CompilerFeatureRequiredAttribute
                 | "System.Runtime.CompilerServices.RequiredMemberAttribute" -> WellKnownILAttributes.RequiredMemberAttribute
+                | "System.Runtime.CompilerServices.OverloadResolutionPriorityAttribute" ->
+                    WellKnownILAttributes.OverloadResolutionPriorityAttribute
                 | _ -> WellKnownILAttributes.None
 
             elif name.StartsWith("Microsoft.FSharp.Core.") then
@@ -577,6 +579,7 @@ module internal AttributeHelpers =
                 | "CallerLineNumberAttribute" -> WellKnownValAttributes.CallerLineNumberAttribute
                 | "CallerArgumentExpressionAttribute" -> WellKnownValAttributes.CallerArgumentExpressionAttribute
                 | "MethodImplAttribute" -> WellKnownValAttributes.MethodImplAttribute
+                | "OverloadResolutionPriorityAttribute" -> WellKnownValAttributes.OverloadResolutionPriorityAttribute
                 | _ -> WellKnownValAttributes.None
 
             | [| "System"; "Runtime"; "InteropServices"; name |] ->

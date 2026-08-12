@@ -2129,14 +2129,6 @@ let rec TryTranslateComputationExpression
                         translatedCtxt
                 )
             | _ ->
-                if not (cenv.g.langVersion.SupportsFeature LanguageFeature.AndBang) then
-                    let andBangRange =
-                        match andBangBindings with
-                        | [] -> comp.Range
-                        | h :: _ -> h.Trivia.LeadingKeyword.Range
-
-                    error (Error(FSComp.SR.tcAndBangNotSupported (), andBangRange))
-
                 if ceenv.isQuery then
                     error (Error(FSComp.SR.tcBindMayNotBeUsedInQueries (), mBind))
 
@@ -2684,11 +2676,7 @@ and TranslateComputationExpressionBind
 
     let innerRange = innerComp.Range
 
-    let innerCompReturn =
-        if ceenv.cenv.g.langVersion.SupportsFeature LanguageFeature.AndBang then
-            convertSimpleReturnToExpr ceenv comp varSpace innerComp
-        else
-            None
+    let innerCompReturn = convertSimpleReturnToExpr ceenv comp varSpace innerComp
 
     match innerCompReturn with
     | Some(innerExpr, customOpInfo) when hasBuilderMethod ceenv bindRange (bindName + "Return") ->
@@ -3037,11 +3025,10 @@ let TcComputationExpression (cenv: TcFileState) env (overallTy: OverallTy) tpenv
     // then allow the type-directed rule interpreting non-unit-typed expressions in statement
     // positions as 'yield'.  'yield!' may be present in the computation expression.
     let enableImplicitYield =
-        cenv.g.langVersion.SupportsFeature LanguageFeature.ImplicitYield
-        && (hasMethInfo "Yield" cenv env mBuilderVal ad builderTy
-            && hasMethInfo "Combine" cenv env mBuilderVal ad builderTy
-            && hasMethInfo "Delay" cenv env mBuilderVal ad builderTy
-            && YieldFree cenv comp)
+        hasMethInfo "Yield" cenv env mBuilderVal ad builderTy
+        && hasMethInfo "Combine" cenv env mBuilderVal ad builderTy
+        && hasMethInfo "Delay" cenv env mBuilderVal ad builderTy
+        && YieldFree cenv comp
 
     let origComp = comp
 

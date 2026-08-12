@@ -117,7 +117,8 @@ type internal WellKnownValAttributes =
     | ValueAsStaticPropertyAttribute = (1uL <<< 39)
     | TailCallAttribute = (1uL <<< 40)
     | NotNullIfNotNullAttribute = (1uL <<< 41)
-    | CallerArgumentExpressionAttribute = (1uL <<< 42)
+    | OverloadResolutionPriorityAttribute = (1uL <<< 42)
+    | CallerArgumentExpressionAttribute = (1uL <<< 43)
     | NotComputed = (1uL <<< 63)
 
 module internal Flags =

@@ -698,6 +698,10 @@ type MethInfo =
     /// Describes a use of a pseudo-method corresponding to the default constructor for a .NET struct type
     | DefaultStructCtor of tcGlobals: TcGlobals * structTy: TType
 
+    /// Describes a use of the compiler-synthesized all-fields constructor of an F# record type,
+    /// i.e. the constructor C# sees as `new MyRecord(field1, field2, ...)`.
+    | RecdCtor of tcGlobals: TcGlobals * recdTy: TType
+
 #if !NO_TYPEPROVIDERS
     /// Describes a use of a method backed by provided metadata
     | ProvidedMeth of amap: ImportMap * methodBase: Tainted<ProvidedMethodBase> * extensionMethodPriority: ExtensionMethodPriority option * m: range
@@ -713,6 +717,7 @@ type MethInfo =
         | FSMeth(_, ty, _, _) -> ty
         | MethInfoWithModifiedReturnType(mi, _) -> mi.ApparentEnclosingType
         | DefaultStructCtor(_, ty) -> ty
+        | RecdCtor(_, ty) -> ty
 #if !NO_TYPEPROVIDERS
         | ProvidedMeth(amap, mi, _, m) ->
               ImportProvidedType amap m (mi.PApply((fun mi -> nonNull<ProvidedType> mi.DeclaringType), m))
@@ -750,6 +755,7 @@ type MethInfo =
             | _ -> Some (mb, staticParams)
 #endif
         | DefaultStructCtor _ -> None
+        | RecdCtor _ -> None
 
     /// Get the extension method priority of the method, if it has one.
     member x.ExtensionMemberPriorityOption =
@@ -761,6 +767,7 @@ type MethInfo =
 #endif
         | MethInfoWithModifiedReturnType(mi, _) -> mi.ExtensionMemberPriorityOption
         | DefaultStructCtor _ -> None
+        | RecdCtor _ -> None
 
     /// Get the extension method priority of the method. If it is not an extension method
     /// then use the highest possible value since non-extension methods always take priority
@@ -778,6 +785,7 @@ type MethInfo =
         | ProvidedMeth(_, mi, _, m) -> "ProvidedMeth: " + mi.PUntaint((fun mi -> mi.Name), m)
 #endif
         | DefaultStructCtor _ -> ".ctor"
+        | RecdCtor _ -> ".ctor"
 
     /// Get the method name in LogicalName form, i.e. the name as it would be stored in .NET metadata
     member x.LogicalName =
@@ -789,6 +797,7 @@ type MethInfo =
         | ProvidedMeth(_, mi, _, m) -> mi.PUntaint((fun mi -> mi.Name), m)
 #endif
         | DefaultStructCtor _ -> ".ctor"
+        | RecdCtor _ -> ".ctor"
 
      /// Get the method name in DisplayName form
     member x.DisplayName =
@@ -826,6 +835,7 @@ type MethInfo =
         | FSMeth(g, _, _, _) -> g
         | MethInfoWithModifiedReturnType(mi, _) -> mi.TcGlobals
         | DefaultStructCtor (g, _) -> g
+        | RecdCtor (g, _) -> g
 #if !NO_TYPEPROVIDERS
         | ProvidedMeth(amap, _, _, _) -> amap.g
 #endif
@@ -842,6 +852,7 @@ type MethInfo =
             memberMethodTypars
         | MethInfoWithModifiedReturnType(mi, _) -> mi.FormalMethodTypars
         | DefaultStructCtor _ -> []
+        | RecdCtor _ -> []
 #if !NO_TYPEPROVIDERS
         | ProvidedMeth _ -> [] // There will already have been an error if there are generic parameters here.
 #endif
@@ -858,6 +869,7 @@ type MethInfo =
         | FSMeth(_, _, vref, _) -> vref.XmlDoc
         | MethInfoWithModifiedReturnType(mi, _) -> mi.XmlDoc
         | DefaultStructCtor _ -> XmlDoc.Empty
+        | RecdCtor _ -> XmlDoc.Empty
 #if !NO_TYPEPROVIDERS
         | ProvidedMeth(_, mi, _, m)->
             let lines = mi.PUntaint((fun mix -> (mix :> IProvidedCustomAttributeProvider).GetXmlDocAttributes(mi.TypeProvider.PUntaintNoFailure id)), m)
@@ -880,6 +892,7 @@ type MethInfo =
         | FSMeth(g, _, vref, _) -> GetArgInfosOfMember x.IsCSharpStyleExtensionMember g vref |> List.map List.length
         | MethInfoWithModifiedReturnType(mi, _) -> mi.NumArgs
         | DefaultStructCtor _ -> [0]
+        | RecdCtor(g, ty) -> [ (tcrefOfAppTy g ty).TrueInstanceFieldsAsList.Length ]
 #if !NO_TYPEPROVIDERS
         | ProvidedMeth(_, mi, _, m) -> [mi.PApplyArray((fun mi -> mi.GetParameters()),"GetParameters", m).Length] // Why is this a list? Answer: because the method might be curried
 #endif
@@ -902,6 +915,7 @@ type MethInfo =
         | FSMeth(_, _, vref, _) -> vref.IsInstanceMember || x.IsCSharpStyleExtensionMember
         | MethInfoWithModifiedReturnType(mi, _) -> mi.IsInstance
         | DefaultStructCtor _ -> false
+        | RecdCtor _ -> false
 #if !NO_TYPEPROVIDERS
         | ProvidedMeth(_, mi, _, m) -> mi.PUntaint((fun mi -> not mi.IsConstructor && not mi.IsStatic), m)
 #endif
@@ -916,6 +930,7 @@ type MethInfo =
         | FSMeth _ -> false
         | MethInfoWithModifiedReturnType(mi, _) -> mi.IsProtectedAccessibility
         | DefaultStructCtor _ -> false
+        | RecdCtor _ -> false
 #if !NO_TYPEPROVIDERS
         | ProvidedMeth(_, mi, _, m) -> mi.PUntaint((fun mi -> mi.IsFamily), m)
 #endif
@@ -926,6 +941,7 @@ type MethInfo =
         | FSMeth(_, _, vref, _) -> vref.IsVirtualMember
         | MethInfoWithModifiedReturnType(mi, _) -> mi.IsVirtual
         | DefaultStructCtor _ -> false
+        | RecdCtor _ -> false
 #if !NO_TYPEPROVIDERS
         | ProvidedMeth(_, mi, _, m) -> mi.PUntaint((fun mi -> mi.IsVirtual), m)
 #endif
@@ -936,6 +952,7 @@ type MethInfo =
         | FSMeth(_g, _, vref, _) -> (vref.MemberInfo.Value.MemberFlags.MemberKind = SynMemberKind.Constructor)
         | MethInfoWithModifiedReturnType(mi, _) -> mi.IsConstructor
         | DefaultStructCtor _ -> true
+        | RecdCtor _ -> true
 #if !NO_TYPEPROVIDERS
         | ProvidedMeth(_, mi, _, m) -> mi.PUntaint((fun mi -> mi.IsConstructor), m)
 #endif
@@ -949,6 +966,7 @@ type MethInfo =
              | _ -> false
         | MethInfoWithModifiedReturnType(mi, _) -> mi.IsClassConstructor
         | DefaultStructCtor _ -> false
+        | RecdCtor _ -> false
 #if !NO_TYPEPROVIDERS
         | ProvidedMeth(_, mi, _, m) -> mi.PUntaint((fun mi -> mi.IsConstructor && mi.IsStatic), m) // Note: these are never public anyway
 #endif
@@ -959,6 +977,7 @@ type MethInfo =
         | FSMeth(_, _, vref, _) -> vref.MemberInfo.Value.MemberFlags.IsDispatchSlot
         | MethInfoWithModifiedReturnType(mi, _) -> mi.IsDispatchSlot
         | DefaultStructCtor _ -> false
+        | RecdCtor _ -> false
 #if !NO_TYPEPROVIDERS
         | ProvidedMeth _ -> x.IsVirtual // Note: follow same implementation as ILMeth
 #endif
@@ -971,6 +990,7 @@ type MethInfo =
         | FSMeth(_g, _, _vref, _) -> false
         | MethInfoWithModifiedReturnType(mi, _) -> mi.IsFinal
         | DefaultStructCtor _ -> true
+        | RecdCtor _ -> true
 #if !NO_TYPEPROVIDERS
         | ProvidedMeth(_, mi, _, m) -> mi.PUntaint((fun mi -> mi.IsFinal), m)
 #endif
@@ -987,6 +1007,7 @@ type MethInfo =
         | FSMeth(g, _, vref, _)  -> isInterfaceTy g minfo.ApparentEnclosingType  || vref.IsDispatchSlotMember
         | MethInfoWithModifiedReturnType(mi, _) -> mi.IsAbstract
         | DefaultStructCtor _ -> false
+        | RecdCtor _ -> false
 #if !NO_TYPEPROVIDERS
         | ProvidedMeth(_, mi, _, m) -> mi.PUntaint((fun mi -> mi.IsAbstract), m)
 #endif
@@ -1000,7 +1021,8 @@ type MethInfo =
 #if !NO_TYPEPROVIDERS
            | ProvidedMeth(_, mi, _, m) -> mi.PUntaint((fun mi -> mi.IsHideBySig), m) // REVIEW: Check this is correct
 #endif
-           | DefaultStructCtor _ -> false))
+           | DefaultStructCtor _ -> false
+           | RecdCtor _ -> false))
 
     /// Indicates if this is an IL method.
     member x.IsILMethod =
@@ -1016,6 +1038,7 @@ type MethInfo =
         | FSMeth(g, _, vref, _) -> vref.IsFSharpExplicitInterfaceImplementation g
         | MethInfoWithModifiedReturnType(mi, _) -> mi.IsFSharpExplicitInterfaceImplementation
         | DefaultStructCtor _ -> false
+        | RecdCtor _ -> false
 #if !NO_TYPEPROVIDERS
         | ProvidedMeth _ -> false
 #endif
@@ -1027,6 +1050,7 @@ type MethInfo =
         | FSMeth(_, _, vref, _) -> vref.IsDefiniteFSharpOverrideMember
         | MethInfoWithModifiedReturnType(mi, _) -> mi.IsDefiniteFSharpOverride
         | DefaultStructCtor _ -> false
+        | RecdCtor _ -> false
 #if !NO_TYPEPROVIDERS
         | ProvidedMeth _ -> false
 #endif
@@ -1161,6 +1185,7 @@ type MethInfo =
         | mi1, MethInfoWithModifiedReturnType(mi2, _)
         | MethInfoWithModifiedReturnType(mi1, _), mi2 -> MethInfo.MethInfosUseIdenticalDefinitions mi1 mi2
         | DefaultStructCtor _, DefaultStructCtor _ -> tyconRefEq x1.TcGlobals x1.DeclaringTyconRef x2.DeclaringTyconRef
+        | RecdCtor _, RecdCtor _ -> tyconRefEq x1.TcGlobals x1.DeclaringTyconRef x2.DeclaringTyconRef
 #if !NO_TYPEPROVIDERS
         | ProvidedMeth(_, mi1, _, _), ProvidedMeth(_, mi2, _, _)  -> ProvidedMethodBase.TaintedEquals (mi1, mi2)
 #endif
@@ -1174,6 +1199,7 @@ type MethInfo =
         | MethInfoWithModifiedReturnType(mi,_) -> mi.ComputeHashCode()
         | DefaultStructCtor(_, _ty) -> 34892 // "ty" doesn't support hashing. We could use "hash (tcrefOfAppTy g ty).CompiledName" or
                                            // something but we don't have a "g" parameter here yet. But this hash need only be very approximate anyway
+        | RecdCtor(_, _ty) -> 34893 // Approximate, as with DefaultStructCtor above.
 #if !NO_TYPEPROVIDERS
         | ProvidedMeth(_, mi, _, _) -> ProvidedMethodInfo.TaintedGetHashCode mi
 #endif
@@ -1188,6 +1214,7 @@ type MethInfo =
         | FSMeth(g, ty, vref, pri) -> FSMeth(g, instType inst ty, vref, pri)
         | MethInfoWithModifiedReturnType(mi, retTy) -> MethInfoWithModifiedReturnType(mi.Instantiate(amap, m, inst), retTy)
         | DefaultStructCtor(g, ty) -> DefaultStructCtor(g, instType inst ty)
+        | RecdCtor(g, ty) -> RecdCtor(g, instType inst ty)
 #if !NO_TYPEPROVIDERS
         | ProvidedMeth _ ->
             match inst with
@@ -1207,6 +1234,7 @@ type MethInfo =
             retTy |> Option.map (instType inst)
         | MethInfoWithModifiedReturnType(_,retTy) -> Some retTy
         | DefaultStructCtor _ -> None
+        | RecdCtor _ -> None
 #if !NO_TYPEPROVIDERS
         | ProvidedMeth(amap, mi, _, m) ->
             GetCompiledReturnTyOfProvidedMethodInfo amap m mi
@@ -1244,6 +1272,10 @@ type MethInfo =
             paramTypes |> List.mapSquared (fun (ParamNameAndType(_, ty)) -> instType inst ty)
         | MethInfoWithModifiedReturnType(mi,_) -> mi.GetParamTypes(amap,m,minst)
         | DefaultStructCtor _ -> []
+        | RecdCtor(g, ty) ->
+            let tcref = tcrefOfAppTy g ty
+            let tinst = argsOfAppTy g ty
+            [ tcref.TrueInstanceFieldsAsList |> List.map (fun fspec -> actualTyOfRecdFieldForTycon tcref.Deref tinst fspec) ]
 #if !NO_TYPEPROVIDERS
         | ProvidedMeth(amap, mi, _, m) ->
             // A single group of tupled arguments
@@ -1283,6 +1315,7 @@ type MethInfo =
             else []
         | MethInfoWithModifiedReturnType(mi,_) -> mi.GetObjArgTypes(amap, m, minst)
         | DefaultStructCtor _ -> []
+        | RecdCtor _ -> []
 #if !NO_TYPEPROVIDERS
         | ProvidedMeth(amap, mi, _, m) ->
             if x.IsInstance then [ ImportProvidedType amap m (mi.PApply((fun mi -> nonNull<ProvidedType> mi.DeclaringType), m)) ] // find the type of the 'this' argument
@@ -1295,6 +1328,37 @@ type MethInfo =
         | ILMeth(_, ilMethInfo, _) -> ilMethInfo.RawMetadata.CustomAttrs
         | MethInfoWithModifiedReturnType(mi,_) -> mi.GetCustomAttrs()
         | _ -> ILAttributes.Empty
+
+    /// Returns 0 if the attribute is not present, if targeting a runtime without the attribute, or
+    /// for an F# override member (an override never carries its own priority — it is fixed by the
+    /// base declaration, matching C#'s "priority on an override is ignored" rule).
+    member x.GetOverloadResolutionPriority() : int =
+        match x with
+        | ILMeth(g, ilMethInfo, _) ->
+            let md = ilMethInfo.RawMetadata
+
+            if md.HasWellKnownAttribute(g, WellKnownILAttributes.OverloadResolutionPriorityAttribute) then
+                match md.CustomAttrs with
+                | ILAttribDecoded WellKnownILAttributes.OverloadResolutionPriorityAttribute ([ ILAttribElem.Int32 priority ], _) -> priority
+                | _ -> 0
+            else
+                0
+        | FSMeth(g, _, vref, _) ->
+            if
+                not vref.IsDefiniteFSharpOverrideMember
+                && ValHasWellKnownAttribute g WellKnownValAttributes.OverloadResolutionPriorityAttribute vref.Deref
+            then
+                match vref.Attribs with
+                | ValAttribInt g WellKnownValAttributes.OverloadResolutionPriorityAttribute priority -> priority
+                | _ -> 0
+            else
+                0
+        | MethInfoWithModifiedReturnType(mi, _) -> mi.GetOverloadResolutionPriority()
+        | DefaultStructCtor _ -> 0
+        | RecdCtor _ -> 0
+#if !NO_TYPEPROVIDERS
+        | ProvidedMeth _ -> 0
+#endif
 
     /// Get the parameter attributes of a method info, which get combined with the parameter names and types
     member x.GetParamAttribs(amap, m) =
@@ -1340,6 +1404,10 @@ type MethInfo =
         | MethInfoWithModifiedReturnType(mi,_) -> mi.GetParamAttribs(amap, m)
         | DefaultStructCtor _ ->
             [[]]
+        | RecdCtor(g, ty) ->
+            (tcrefOfAppTy g ty).TrueInstanceFieldsAsList
+            |> List.map (fun _ -> ParamAttribs(false, false, false, NotOptional, NoCallerInfo, ReflectedArgInfo.None))
+            |> List.singleton
 
 #if !NO_TYPEPROVIDERS
         | ProvidedMeth(amap, mi, _, _) ->
@@ -1382,6 +1450,7 @@ type MethInfo =
             MakeSlotSig(x.LogicalName, x.ApparentEnclosingType, formalEnclosingTypars, formalMethTypars, formalParams, formalRetTy)
         | MethInfoWithModifiedReturnType(mi,_) -> mi.GetSlotSig(amap, m)
         | DefaultStructCtor _ -> error(InternalError("no slotsig for DefaultStructCtor", m))
+        | RecdCtor _ -> error(InternalError("no slotsig for RecdCtor", m))
         | _ ->
             let g = x.TcGlobals
             // slotsigs must contain the formal types for the arguments and return type
@@ -1448,6 +1517,12 @@ type MethInfo =
                 | MethInfoWithModifiedReturnType(_mi,_) -> failwith "unreachable"
                 | DefaultStructCtor _ ->
                     [[]]
+                | RecdCtor(g, ty) ->
+                    let tcref = tcrefOfAppTy g ty
+                    let tinst = argsOfAppTy g ty
+                    tcref.TrueInstanceFieldsAsList
+                    |> List.map (fun fspec -> ParamNameAndType(Some (mkSynId m fspec.LogicalName), actualTyOfRecdFieldForTycon tcref.Deref tinst fspec))
+                    |> List.singleton
 #if !NO_TYPEPROVIDERS
                 | ProvidedMeth(amap, mi, _, _) ->
                     // A single set of tupled parameters
@@ -1479,6 +1554,7 @@ type MethInfo =
             | None -> false
         | MethInfoWithModifiedReturnType _ -> false
         | DefaultStructCtor _ -> false
+        | RecdCtor _ -> false
 #if !NO_TYPEPROVIDERS
         | ProvidedMeth _ -> false
 #endif

@@ -33,6 +33,7 @@
     <Compile Include="CompilerDirectives\Line.fs" />
     <Compile Include="CompilerDirectives\Ifdef.fs" />
     <Compile Include="CompilerDirectives\NonStringArgs.fs" />
+    <Compile Include="CompilerDirectives\IgnoreColon.fs" />
     <Compile Include="Conformance\BasicGrammarElements\AccessibilityAnnotations\Basic\Basic.fs" />
     <Compile Include="Conformance\BasicGrammarElements\AccessibilityAnnotations\OnOverridesAndIFaceImpl\OnOverridesAndIFaceImpl.fs" />
     <Compile Include="Conformance\BasicGrammarElements\AccessibilityAnnotations\OnTypeMembers\OnTypeMembers.fs" />
@@ -191,6 +192,9 @@
     <Compile Include="Conformance\UnitsOfMeasure\Parsing\Parsing.fs" />
     <Compile Include="Conformance\UnitsOfMeasure\TypeChecker\TypeChecker.fs" />
     <Compile Include="Conformance\UnitsOfMeasure\WithOOP\WithOOP.fs" />
+    <Compile Include="Conformance\SharedTestHelpers.fs" />
+    <Compile Include="Conformance\Tiebreakers\TiebreakerTests.fs" />
+    <Compile Include="Conformance\OverloadResolutionPriority\OverloadResolutionPriorityTests.fs" />
     <Compile Include="Conformance\DeclarationElements\PInvokeDeclarations.fs" />
     <Compile Include="Conformance\DeclarationElements\ObjectConstructors.fs" />
     <Compile Include="Conformance\GeneratedEqualityHashingComparison\Attributes\New\Attributes_New.fs" />
@@ -501,6 +505,7 @@
     <Compile Include="Miscellaneous\ListLiterals.fs" />
     <Compile Include="Miscellaneous\SemanticClassificationKeyBuilder.fs" />
     <Compile Include="Miscellaneous\XmlDoc.fs" />
+    <Compile Include="Miscellaneous\XmlDocInclude.fs" />
     <Compile Include="Miscellaneous\FsharpSuiteMigrated.fs" />
     <Compile Include="Miscellaneous\MigratedCoreTests.fs" />
     <Compile Include="Miscellaneous\MigratedOverloadTests.fs" />
@@ -567,15 +572,17 @@
 
   <!-- FsiCliTests spawns FSI and does `#r "nuget: <pkg>, <version>"` to verify that quiet mode
        suppresses NuGet restore chatter. On the internal signed build NuGet restore is offline, so the
-       requested version must be one that is already in the restore cache. Under central package
-       management with transitive pinning, that is exactly the centrally-pinned version
-       (eng/Packages.props). Bake that version into the test assembly so the test can request it at
-       runtime with no manual sync when the central pin is bumped. MessagePack is used (rather than a
-       general-purpose JSON package) because it is an actively-maintained, non-system standalone library
-       that is centrally pinned and restored transitively by the product (StreamJsonRpc); keep the
-       package id here in sync with the id in FsiCliTests.fs. -->
+       requested package AND ITS ENTIRE TRANSITIVE CLOSURE must already be in the restore cache. The
+       package must also be a genuine third-party assembly (NOT in the shared framework), otherwise on
+       .NET Core it resolves to the framework (NU1510) instead of a restored package and the test no
+       longer exercises real nuget resolution. FsCheck fits: a real third-party library whose only
+       dependency is FSharp.Core (always cached, and filtered from fsx resolution), centrally pinned
+       (eng/Packages.props) and restored by FSharp.Core.UnitTests, so its closure is cached and it
+       restores offline-clean on both net472 and .NET Core. Bake the centrally-pinned version into the
+       test assembly so the test can request exactly the cached version with no manual sync when the pin
+       is bumped; keep the package id here in sync with the id in FsiCliTests.fs. -->
   <PropertyGroup>
-    <FsiRestoreTestPackageVersion>@(PackageVersion->WithMetadataValue('Identity','MessagePack')->'%(Version)')</FsiRestoreTestPackageVersion>
+    <FsiRestoreTestPackageVersion>@(PackageVersion->WithMetadataValue('Identity','FsCheck')->'%(Version)')</FsiRestoreTestPackageVersion>
   </PropertyGroup>
   <ItemGroup>
     <AssemblyMetadata Include="FsiRestoreTestPackageVersion" Value="$(FsiRestoreTestPackageVersion)" />

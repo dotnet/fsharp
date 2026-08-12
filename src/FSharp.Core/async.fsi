@@ -47,50 +47,86 @@ namespace Microsoft.FSharp.Control
     [<CompiledName("FSharpAsync")>]
     type Async =
 
-        /// <summary>Runs the asynchronous computation and await its result.</summary>
-        ///
-        /// <remarks>If an exception occurs in the asynchronous computation then an exception is re-raised by this
-        /// function.
-        ///
-        /// If no cancellation token is provided then the default cancellation token is used.
-        ///
-        /// The computation is started on the current thread if <see cref="P:System.Threading.SynchronizationContext.Current"/> is null,
-        /// <see cref="P:System.Threading.Thread.CurrentThread"/> has  <see cref="P:System.Threading.Thread.IsThreadPoolThread"/>
-        /// of <c>true</c>, and no timeout is specified. Otherwise the computation is started by queueing a new work item in the thread pool,
-        /// and the current thread is blocked awaiting the completion of the computation.
-        ///
-        /// The timeout parameter is given in milliseconds.  A value of -1 is equivalent to
-        /// <see cref="F:System.Threading.Timeout.Infinite"/>.
+        /// <summary><p>Runs the computation and blocks the caller until it completes.</p>
+        /// <p>Runs inline on the calling thread when it is a thread-pool thread with no ambient SynchronizationContext
+        /// and no timeout; otherwise runs on the thread pool.</p>
+        /// </summary>
+        /// <remarks>
+        /// <p>Note For F# interactive, F# scripts, and unit tests consider using
+        /// <see cref="M:Microsoft.FSharp.Control.FSharpAsync.RunSynchronouslyImmediate`1"/>, which
+        /// always starts on the calling thread and presents a simpler stack trace in exception cases and/or under a debugger.</p>
+        /// <p>Computation runs directly on the calling thread when
+        /// <see cref="P:System.Threading.SynchronizationContext.Current"/> is <c>null</c>,
+        /// <see cref="P:System.Threading.Thread.IsThreadPoolThread"/> is <c>true</c>, and no timeout is specified.</p>
         /// </remarks>
-        ///
         /// <param name="computation">The computation to run.</param>
-        /// <param name="timeout">The amount of time in milliseconds to wait for the result of the
-        /// computation before raising a <see cref="T:System.TimeoutException"/>.  If no value is provided
-        /// for timeout then a default of -1 is used to correspond to <see cref="F:System.Threading.Timeout.Infinite"/>.</param>
+        /// <param name="timeout">The number of milliseconds to wait for the result of the
+        /// computation before raising a <see cref="T:System.TimeoutException"/>. If no value or -1 is provided
+        /// the timeout will be <see cref="F:System.Threading.Timeout.Infinite"/>.</param>
         /// <param name="cancellationToken">The cancellation token to be associated with the computation.
-        /// If one is not supplied, the default cancellation token is used.</param>
-        ///
-        /// <returns>The result of the computation.</returns>
-        ///
+        /// If omitted, <c>Async.DefaultCancellationToken</c> is used.</param>
+        /// <returns>The result of the computation. Any exception raised by the computation is propagated to the caller.</returns>
         /// <category index="0">Starting Async Computations</category>
-        ///
         /// <example id="run-synchronously-1">
         /// <code lang="fsharp">
-        /// printfn "A"
+        /// printfn "A" // runs on caller thread
         ///
         /// let result = async {
-        ///     printfn "B"
+        ///     printfn "B" // runs on a background/threadpool thread
         ///     do! Async.Sleep(1000)
-        ///     printfn "C"
-        ///     17
+        ///     printfn "C" // continuation runs on a background/threadpool thread
+        ///     return 17
         /// } |> Async.RunSynchronously
         ///
-        /// printfn "D"
+        /// printfn "D" // runs on caller thread
         /// </code>
-        /// Prints "A", "B" immediately, then "C", "D" in 1 second. result is set to 17.
+        /// <p>Prints "A", "B" immediately, then "C", "D" after 1 second.</p>
+        /// <p>Yields <c>result = 17</c>.</p>
         /// </example>
         static member RunSynchronously : computation:Async<'T> * ?timeout : int * ?cancellationToken:CancellationToken-> 'T
-        
+
+        /// <summary><p>Starts the asynchronous computation on the calling thread, disregarding the ambient
+        /// <see cref="T:System.Threading.SynchronizationContext"/>.</p>
+        /// <p>During any asynchronous continuations after the first suspension, the calling thread blocks awaiting the outcome.</p>
+        /// </summary>
+        /// <remarks>
+        /// <p>Warning: blocks the calling thread for the duration of the computation. Calling it
+        /// from a UI thread will make the UI unresponsive and risks deadlock if any continuation in the
+        /// computation needs to be dispatched back to that context.</p>
+        /// <p>Normally preferred to <see cref="M:Microsoft.FSharp.Control.FSharpAsync.RunSynchronously`1"/> for
+        /// interactive use in F# scripts and F# interactive (FSI), and for unit tests as: <br/>
+        /// - a breakpoint will show a clearer call stack prior to the first suspension (as opposed to it waiting for an asynchronous completion notification from another thread<br/>
+        /// - the stack trace in the case of an exception will have two fewer frames.
+        /// </p>
+        /// <p>Does not support a timeout; see
+        /// <see cref="M:Microsoft.FSharp.Control.FSharpAsync.RunSynchronously`1"/> if one is desired.</p>
+        /// <p>Does not ensure execution takes place on a threadpool thread; see
+        /// <see cref="M:Microsoft.FSharp.Control.FSharpAsync.RunSynchronously`1"/> or
+        /// <see cref="M:Microsoft.FSharp.Control.FSharpAsync.SwitchToThreadPool"/> if this is required.</p>
+        /// </remarks>
+        /// <param name="computation">The computation to run.</param>
+        /// <param name="cancellationToken">The cancellation token to be associated with the computation.
+        /// If omitted, <c>Async.DefaultCancellationToken</c> is used.</param>
+        /// <returns>The result of the computation. Any exception raised by the computation is propagated to the caller.</returns>
+        /// <category index="0">Starting Async Computations</category>
+        /// <example id="run-synchronously-immediate-1">
+        /// <code lang="fsharp">
+        /// printfn "A" // runs on calling thread
+        ///
+        /// let result = async {
+        ///     printfn "B" // ALSO runs on calling thread (hence immediately)
+        ///     do! Async.Sleep(1000)
+        ///     printfn "C" // runs in continuation context (depends on SynchronizationContext etc)
+        ///     return 17
+        /// } |> Async.RunSynchronouslyImmediate
+        ///
+        /// printfn "D" // runs on calling thread
+        /// </code>
+        /// <p>Prints "A", "B" immediately, then "C", "D" after 1 second.</p>
+        /// <p>Yields <c>result = 17</c>.</p>
+        /// </example>
+        static member RunSynchronouslyImmediate : computation : Async<'T> * ?cancellationToken : CancellationToken -> 'T
+
         /// <summary>Starts the asynchronous computation in the thread pool. Do not await its result.</summary>
         ///
         /// <remarks>If no cancellation token is provided then the default cancellation token is used.</remarks>
@@ -970,7 +1006,7 @@ namespace Microsoft.FSharp.Control
         ///         use file = System.IO.File.OpenRead(filename)
         ///         printfn "Reading from file %s." filename
         ///         // Throw away the data being read.
-        ///         do! file.AsyncRead(numBytes) |> Async.Ignore
+        ///         do! file.AsyncRead(numBytes) |> Async.ignore&lt;byte[]&gt;
         ///     }
         /// readFile "example.txt" 42 |> Async.Start
         /// </code>
@@ -1547,4 +1583,132 @@ namespace Microsoft.FSharp.Control
     // Internals used by MailboxProcessor
     module internal AsyncBuilderImpl = 
         val async : AsyncBuilder
+
+    /// <summary>Contains camelCase module-level functions for <see cref="T:Microsoft.FSharp.Control.FSharpAsync`1"/> computations.</summary>
+    ///
+    /// <category index="1">Async Programming</category>
+    [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
+    module Async =
+
+        /// <summary>Creates an asynchronous computation that returns the given value.</summary>
+        ///
+        /// <param name="value">The value to return.</param>
+        ///
+        /// <returns>An asynchronous computation that returns <c>value</c> when executed.</returns>
+        ///
+        /// <example id="async-result-1">
+        /// <code lang="fsharp">
+        /// let computation = Async.result 42
+        /// computation |> Async.RunSynchronouslyImmediate // evaluates to 42
+        /// </code>
+        /// </example>
+        [<CompiledName("Result")>]
+        val inline result: value: 'T -> Async<'T>
+
+        /// <summary>Creates an asynchronous computation that applies the mapping function to the result of the given computation.</summary>
+        ///
+        /// <param name="mapping">The function to apply to the result.</param>
+        /// <param name="computation">The input computation.</param>
+        ///
+        /// <returns>An asynchronous computation that applies <c>mapping</c> to the result of <c>computation</c>.</returns>
+        ///
+        /// <example id="async-map-1">
+        /// <code lang="fsharp">
+        /// let computation = Async.result 21 |> Async.map (fun x -> x * 2)
+        /// computation |> Async.RunSynchronouslyImmediate // evaluates to 42
+        /// </code>
+        /// </example>
+        [<CompiledName("Map")>]
+        val inline map: mapping: ('T -> 'U) -> computation: Async<'T> -> Async<'U>
+
+        /// <summary>Creates an asynchronous computation that passes the result of the given computation to the binder function.</summary>
+        ///
+        /// <param name="binder">A function that takes the result of the computation and returns a new asynchronous computation.</param>
+        /// <param name="computation">The input computation.</param>
+        ///
+        /// <returns>An asynchronous computation that performs a monadic bind on the result of <c>computation</c>.</returns>
+        ///
+        /// <example id="async-bind-1">
+        /// <code lang="fsharp">
+        /// let computation = Async.result 21 |> Async.bind (fun x -> Async.result (x * 2))
+        /// computation |> Async.RunSynchronouslyImmediate // evaluates to 42
+        /// </code>
+        /// </example>
+        [<CompiledName("Bind")>]
+        val inline bind: binder: ('T -> Async<'U>) -> computation: Async<'T> -> Async<'U>
+
+        /// <summary>Creates an asynchronous computation that runs the given computation and ignores its result.</summary>
+        ///
+        /// <param name="computation">The input computation.</param>
+        ///
+        /// <returns>A computation that is equivalent to the input computation, but disregards the result.</returns>
+        ///
+        /// <example id="async-ignore-1">
+        /// <code lang="fsharp">
+        /// let readFile filename numBytes: Async&lt;unit&gt; =
+        ///     async {
+        ///         use file = System.IO.File.OpenRead(filename)
+        ///         do! file.AsyncRead(numBytes) |> Async.ignore&lt;byte[]&gt;
+        ///     }
+        /// </code>
+        /// </example>
+        /// <example id="async-ignore-2">
+        /// <code lang="fsharp">
+        /// let computation : Async&lt;unit&gt; = Async.result 42 |> Async.ignore&lt;int&gt;
+        /// computation |> Async.RunSynchronously // evaluates to ()
+        /// </code>
+        /// </example>
+        [<CompiledName("Ignore")>]
+        [<RequiresExplicitTypeArguments>]
+        val inline ignore<'T> : computation: Async<'T> -> Async<unit>
+
+        /// <summary>Creates an asynchronous computation that yields the original result on success, or the result of
+        /// <c>handler exn</c> for non-cancellation exceptions.</summary>
+        /// <remarks><c>OperationCanceledException</c> and derived types such as <c>TaskCanceledException</c> propagate unchanged,
+        /// and therefore are never passed to <c>handler</c>.
+        /// </remarks>
+        /// <param name="handler">A function to handle (non-cancellation) exceptions, yielding a recovery value based on the exception.
+        /// Any exception thrown by <c>handler</c> will propagate.</param>
+        /// <param name="computation">The input computation.</param>
+        /// <returns>An asynchronous computation that yields the result of <c>computation</c> on success,
+        /// or <c>handler exn</c> on failure.
+        /// Propagates the underlying cancellation exception where cancellation occurs.</returns>
+        /// <example id="async-catchwith-1">
+        /// <code lang="fsharp">
+        /// let safeDiv x y =
+        ///     async { return x / y }
+        ///     |> Async.catchWith (fun _ -> 0)
+        /// safeDiv 10 0 |> Async.RunSynchronouslyImmediate // evaluates to 0
+        /// </code>
+        /// </example>
+        [<CompiledName("CatchWith")>]
+        val catchWith: handler: (exn -> 'T) -> computation: Async<'T> -> Async<'T>
+
+        /// <summary>Creates an asynchronous computation that reifies the outcome of the given <c>computation</c> as a <c>Result</c>:
+        /// <c>Ok</c> on success, <c>Error</c> on failure, so exceptions become values. Cancellation still propagates.</summary>
+        /// <remarks><c>OperationCanceledException</c> and derived types such as <c>TaskCanceledException</c> propagate unchanged.</remarks>
+        /// <param name="computation">The input computation.</param>
+        /// <returns>An asynchronous computation that yields a <c>Result</c>: <c>Ok</c> with the outcome on success,
+        /// or <c>Error</c> with the exception on failure.
+        /// Propagates the underlying cancellation exception when cancellation occurs.</returns>
+        /// <example id="async-catch-1">
+        /// <code lang="fsharp">
+        /// let safeDiv x y =
+        ///     async { return x / y } |> Async.catch
+        /// safeDiv 10 2 |> Async.RunSynchronouslyImmediate // evaluates to Ok 5
+        /// safeDiv 10 0 |> Async.RunSynchronouslyImmediate // evaluates to Error (DivideByZeroException ...)
+        /// </code>
+        /// </example>
+        [<CompiledName("Catch")>]
+        val catch: computation: Async<'T> -> Async<Result<'T, exn>>
+
+        /// <summary>An asynchronous computation that returns <c>unit</c>. This is equivalent to <c>async.Zero()</c>.</summary>
+        ///
+        /// <example id="async-empty-1">
+        /// <code lang="fsharp">
+        /// Async.empty |> Async.RunSynchronouslyImmediate // evaluates to ()
+        /// </code>
+        /// </example>
+        [<CompiledName("Empty")>]
+        val empty: Async<unit>
 
