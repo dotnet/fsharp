@@ -145,9 +145,10 @@
       ]
     },
     "19785": {
-      "sha": "d1ae2a2ce2fd",
+      "sha": "c8eda9f82c7057bc396f83e4647887a6e03ac712",
       "cats": [
-        "Affects-Build-Infra"
+        "Affects-Build-Infra",
+        "Affects-Compiler-Output"
       ]
     },
     "19774": {
@@ -155,7 +156,7 @@
       "cats": []
     },
     "20247": {
-      "sha": "bd9fd6637fde",
+      "sha": "bd9fd6637fde171170df02058632b53a0699ea6e",
       "cats": []
     }
   }
