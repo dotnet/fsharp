@@ -765,19 +765,19 @@ stages:
           displayName: FsharpPlus_NET10_Build_Lib_Tests
          # remove this before merging
         - repo: fsprojects/FSharpPlus
-          commit: f73d335
+          commit: b5a650a
           buildScript: dotnet msbuild build.proj -t:Build;Test -bl
           displayName: FsharpPlus_NET10_Test_Debug
         - repo: fsprojects/FSharpPlus
-          commit: f73d335
+          commit: b5a650a
           buildScript: dotnet msbuild build.proj -t:Build;Test -p:Configuration=Release -bl
           displayName: FsharpPlus_NET10_Test_Release
         - repo: fsprojects/FSharpPlus
-          commit: f73d335
+          commit: b5a650a
           buildScript: dotnet msbuild build.proj -t:Build;AllDocs -bl
           displayName: FsharpPlus_NET10_Docs
         - repo: fsprojects/FSharpPlus
-          commit: f73d335
+          commit: b5a650a
           buildScript: build.sh
           displayName: FsharpPlus_Net10_Linux
           useVmImage: $(LinuxMachineQueueName)
