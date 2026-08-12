@@ -1523,8 +1523,8 @@ type ILTypeDefAccess =
     | Private
     | Nested of ILMemberAccess
 
-/// One namespace level: the types declared in it, and its child namespaces. A flat source is grouped into
-/// this shape on the way in, so there is only one shape to walk.
+/// One namespace level: the types declared in it, and its child namespaces. A reader is grouped into this
+/// shape on the way in; types already in hand stay one level, so that flattening keeps their order.
 [<NoEquality; NoComparison; Class; Sealed>]
 type ILTypeDefs =
     inherit DelayInitArrayMap<ILPreTypeDef, string, ILPreTypeDef>

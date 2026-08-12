@@ -3031,6 +3031,21 @@ and [<Sealed>] ILTypeDefs
             | Some(ns: ILPreNamespace) -> ns.TryFindPreTypeDef(rest, n)
             | None -> None
 
+    member private x.TryFindPreTypeDefOfWholeName(nm: string) =
+        let ns, n = splitILTypeName nm
+
+        match x.TryFindPreTypeDef(ns, n) with
+        | Some _ as res -> res
+        | None ->
+            match ns with
+            | [] -> None
+            | _ ->
+                // Probing an ungrouped level's whole names only once the walk has failed leaves a grouped
+                // level's types unforced.
+                match x.GetDictionary().TryGetValue nm with
+                | true, pre -> Some pre
+                | _ -> None
+
     member x.AsArray() =
         [| for pre in x.AllPreTypeDefs() -> pre.GetTypeDef() |]
 
@@ -3048,15 +3063,12 @@ and [<Sealed>] ILTypeDefs
     member x.AsArrayOfPreTypeDefs() = x.GetArray()
 
     member x.FindByName nm =
-        let ns, n = splitILTypeName nm
-
-        match x.TryFindPreTypeDef(ns, n) with
+        match x.TryFindPreTypeDefOfWholeName nm with
         | Some pre -> pre.GetTypeDef()
         | None -> raise (KeyNotFoundException(nm))
 
     member x.ExistsByName nm =
-        let ns, n = splitILTypeName nm
-        x.TryFindPreTypeDef(ns, n) |> Option.isSome
+        x.TryFindPreTypeDefOfWholeName nm |> Option.isSome
 
 and [<NoEquality; NoComparison>] ILPreTypeDef =
     abstract Name: string
@@ -3161,7 +3173,6 @@ and [<Sealed>] ILPreTypeDefImpl(nameIdx: int32, metadataIndex: int32, storage: I
 
     override _.Compute() =
         match storage with
-        | ILTypeDefStored.Given td -> td
         | ILTypeDefStored.Reader(getTypeDef, _) -> getTypeDef metadataIndex
 
     interface ILPreTypeDef with
@@ -3171,7 +3182,6 @@ and [<Sealed>] ILPreTypeDefImpl(nameIdx: int32, metadataIndex: int32, storage: I
             | _ ->
                 let n =
                     match storage with
-                    | ILTypeDefStored.Given td -> snd (splitILTypeName td.Name)
                     | ILTypeDefStored.Reader(_, getName) -> getName nameIdx
 
                 name <- n
@@ -3180,9 +3190,7 @@ and [<Sealed>] ILPreTypeDefImpl(nameIdx: int32, metadataIndex: int32, storage: I
         member this.GetTypeDef() = this.Value
 
 /// Every type a reader reads shares these, so nameIdx is all a pre-type-def holds to name itself.
-and ILTypeDefStored =
-    | Given of ILTypeDef
-    | Reader of getTypeDef: (int32 -> ILTypeDef) * getName: (int32 -> string)
+and ILTypeDefStored = Reader of getTypeDef: (int32 -> ILTypeDef) * getName: (int32 -> string)
 
 let mkILTypeDefReader (getTypeDef, getName) =
     ILTypeDefStored.Reader(getTypeDef, getName)
@@ -3575,9 +3583,14 @@ let mkRefForNestedILTypeDef scope (enc: ILTypeDef list, td: ILTypeDef) =
 let mkILPreTypeDefRead (nameIdx, metadataIndex, f) =
     ILPreTypeDefImpl(nameIdx, metadataIndex, f) :> ILPreTypeDef
 
-let mkILPreTypeDefEntry (td: ILTypeDef) : struct (string list * ILPreTypeDef) =
-    let ns, _ = splitILTypeName td.Name
-    struct (ns, ILPreTypeDefImpl(NoMetadataIdx, NoMetadataIdx, ILTypeDefStored.Given td) :> ILPreTypeDef)
+/// A type def already in hand. Named whole: the tables built out of these are not grouped by namespace.
+[<Sealed>]
+type private ILPreTypeDefGiven(td: ILTypeDef) =
+    interface ILPreTypeDef with
+        member _.Name = td.Name
+        member _.GetTypeDef() = td
+
+let private mkILPreTypeDefGiven (td: ILTypeDef) = ILPreTypeDefGiven td :> ILPreTypeDef
 
 /// A class rather than an object expression: there is one of these per namespace of every assembly read.
 [<Sealed>]
@@ -3714,17 +3727,15 @@ let mkILTypeDefsGroupedComputed (types: unit -> struct (string list * ILPreTypeD
     ILTypeDefs(getTypes, getNamespaces)
 
 let addILTypeDef td (tdefs: ILTypeDefs) =
-    mkILTypeDefsGroupedComputed
-        (fun () ->
-            [|
-                yield mkILPreTypeDefEntry td
-                for pre in tdefs.AsArrayOfPreTypeDefs() -> struct ([], pre)
-            |])
+    ILTypeDefs(
+        (fun () -> [| yield mkILPreTypeDefGiven td; yield! tdefs.AsArrayOfPreTypeDefs() |]),
         (fun () -> tdefs.AsArrayOfPreNamespaces())
+    )
 
-/// An ILTypeDef's name carries its namespace, so these group like any other flat source.
+/// Ungrouped: flattening has to give these back in the order they were built in, which is the TypeDef
+/// order of the module being written.
 let mkILTypeDefsFromArray (l: ILTypeDef[]) =
-    mkILTypeDefsGroupedComputed (fun () -> Array.map mkILPreTypeDefEntry l) (fun () -> Array.empty)
+    ILTypeDefs(fun () -> Array.map mkILPreTypeDefGiven l)
 
 let mkILTypeDefs l = mkILTypeDefsFromArray (Array.ofList l)
 
