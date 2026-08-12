@@ -1098,26 +1098,36 @@ module CancellableTasks =
                 return! Task.WhenAll (tasks)
             }
 
-        /// Runs the given tasks concurrently, but caps the number of tasks that are running at
-        /// the same time to at most maxDegreeOfParallelism, to avoid launching an unbounded number
-        /// of parallel typechecks (e.g. one per document/project) at once.
+        /// Runs the given tasks concurrently, but caps concurrent work to maxDegreeOfParallelism.
         let inline whenAllThrottled maxDegreeOfParallelism (tasks: CancellableTask<'a> seq) =
             cancellableTask {
                 let! ct = getCancellationToken ()
-                use semaphore = new SemaphoreSlim(maxDegreeOfParallelism: int)
+                let semaphore = new SemaphoreSlim(maxDegreeOfParallelism: int)
 
-                let runThrottled (task: CancellableTask<'a>) =
-                    backgroundTask {
-                        do! semaphore.WaitAsync(ct)
+                let started =
+                    [|
+                        for task in tasks do
+                            backgroundTask {
+                                do! semaphore.WaitAsync(ct)
 
-                        try
-                            return! start ct task
-                        finally
-                            semaphore.Release() |> ignore
-                    }
+                                try
+                                    return! start ct task
+                                finally
+                                    semaphore.Release() |> ignore
+                            }
+                    |]
 
-                let tasks = seq { for task in tasks do yield runThrottled task }
-                return! Task.WhenAll (tasks)
+                let allTask = Task.WhenAll started
+
+                allTask.ContinueWith(
+                    (fun (_: Task<'a[]>) -> semaphore.Dispose()),
+                    CancellationToken.None,
+                    TaskContinuationOptions.ExecuteSynchronously,
+                    TaskScheduler.Default
+                )
+                |> ignore
+
+                return! allTask
             }
 
         let inline whenAllTasks (tasks: CancellableTask seq) =
