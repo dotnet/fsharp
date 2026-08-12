@@ -1500,7 +1500,8 @@ let rec AddModuleOrNamespaceRefsToNameEnv g amap m root ad nenv (modrefs: Module
 
     let nenv =
         (nenv, modrefs) ||> List.fold (fun nenv modref ->
-            if modref.IsModule && EntityHasWellKnownAttribute g WellKnownEntityAttributes.AutoOpenAttribute modref.Deref then
+            // Check attributes before forcing the type reading.
+            if EntityHasWellKnownAttribute g WellKnownEntityAttributes.AutoOpenAttribute modref.Deref && modref.IsModule then
                 AddModuleOrNamespaceContentsToNameEnv g amap ad m false nenv modref
             else
                 nenv)
