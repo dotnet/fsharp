@@ -3628,11 +3628,11 @@ and TryInlineApplication cenv env finfo (valExpr: Expr) (tyargs: TType list, arg
             let specLambda = MakeApplicationAndBetaReduce g (f2R, origLambdaTy, [tyargs], [], m)
             let specLambdaTy = tyOfExpr g specLambda
 
-            // Typars that flow in from the enclosing scope when tyargs are non-concrete.
-            // specLambdaTy is closed over the vref's typars after beta-reduction, so its free
-            // typars are exactly the ones carried in by tyargs.
+            // Typars that flow in from the enclosing scope when tyargs are non-concrete. A tyarg can reach
+            // only the body, and typars left unabstracted below are erased to 'object'.
             let freeTypars =
-                (freeInType CollectTyparsNoCaching specLambdaTy).FreeTypars
+                (freeInExpr CollectTyparsAndLocalsNoCaching specLambda).FreeTyvars.FreeTypars
+                |> Zset.union (freeInType CollectTyparsNoCaching specLambdaTy).FreeTypars
                 |> Zset.elements
 
             let allTyargsAreConcrete = List.isEmpty freeTypars
@@ -3676,6 +3676,27 @@ and TryInlineApplication cenv env finfo (valExpr: Expr) (tyargs: TType list, arg
             let freeTyparsNeedWitnesses =
                 GetTraitWitnessInfosOfTypars g 0 freeTypars |> List.isEmpty |> not
 
+            // A static method would resolve values captured from the enclosing method against the caller's
+            // storage, so lift them into a leading argument group. The closure form captures them itself.
+            let specLambdaRFvs = freeInExpr CollectLocals specLambdaR
+
+            let capturedVals =
+                specLambdaRFvs.FreeLocals
+                |> Zset.elements
+                |> List.filter (fun v -> not v.IsCompiledAsTopLevel)
+
+            let capturedArgGroups = if List.isEmpty capturedVals then [] else [ capturedVals ]
+
+            // Captured values are passed by value, so writes to a mutable local would be lost -
+            // LowerLocalMutables promotes those to reference cells only after this loop. 'base' calls and
+            // protected fields cannot leave their member at all.
+            let cannotLiftCapturedVals =
+                usesMethodLocalConstructsOrProtectedField cenv specLambdaRFvs specLambdaR
+                || capturedVals |> List.exists (fun v -> v.IsMutable)
+
+            if not (List.isEmpty capturedVals) && cannotLiftCapturedVals then
+                Some(MakeApplicationAndBetaReduce g (specLambdaR, specLambdaTy, [], argsR, m), info) else
+
             let debugValName = $"<{vref.LogicalName}>__debug"
 
             // The closure form wraps tupled args in a reference Tuple<> and cannot hold byrefs.
@@ -3703,10 +3724,11 @@ and TryInlineApplication cenv env finfo (valExpr: Expr) (tyargs: TType list, arg
             // a method with flattened arguments rather than a closure that wraps args in Tuple<>.
             // Closure path (witnesses needed, no byref): keep the body as-is; witnesses from the
             // enclosing scope flow through the closure, so no typar abstraction is needed.
-            let debugValTy, debugValBody, valReprInfo, typeInstForCall =
+            let debugValTy, debugValBody, valReprInfo, typeInstForCall, capturedArgs =
                 if not freeTyparsNeedWitnesses then
-                    let ty = mkForallTyIfNeeded freeTypars specLambdaTy
-                    let body = mkTypeLambda m freeTypars (specLambdaR, specLambdaTy)
+                    let liftedBody, liftedTy = mkMultiLambdasCore g m capturedArgGroups (specLambdaR, specLambdaTy)
+                    let ty = mkForallTyIfNeeded freeTypars liftedTy
+                    let body = mkTypeLambda m freeTypars (liftedBody, liftedTy)
                     let argInfos, retInfo =
                         match vref.ValReprInfo with
                         | Some(ValReprInfo(_, argInfos, retInfo)) -> argInfos, retInfo
@@ -3714,17 +3736,20 @@ and TryInlineApplication cenv env finfo (valExpr: Expr) (tyargs: TType list, arg
                             let (ValReprInfo(_, a, r)) =
                                 InferValReprInfoOfExpr g AllowTypeDirectedDetupling.No specLambdaTy [] [] specLambdaR
                             a, r
-                    let reprInfo = ValReprInfo(ValReprInfo.InferTyparInfo freeTypars, argInfos, retInfo)
-                    ty, body, Some reprInfo, [List.map mkTyparTy freeTypars]
+                    let capturedArgInfos =
+                        capturedArgGroups
+                        |> List.map (List.map (fun (v: Val) -> { ValReprInfo.unnamedTopArg1 with Name = Some v.Id }))
+                    let reprInfo = ValReprInfo(ValReprInfo.InferTyparInfo freeTypars, capturedArgInfos @ argInfos, retInfo)
+                    ty, body, Some reprInfo, [List.map mkTyparTy freeTypars], List.map (mkRefTupledVars g m) capturedArgGroups
                 else
-                    specLambdaTy, specLambdaR, None, []
+                    specLambdaTy, specLambdaR, None, [], []
 
             let debugVal =
                 Construct.NewVal(debugValName, m, None, debugValTy, Immutable, true, valReprInfo, taccessPublic, ValNotInRecScope, None,
                     NormalVal, [], ValInline.InlinedDefinition, XmlDoc.Empty, true, false, false, false, false, false, None,
                     ParentNone)
 
-            let callExpr = mkApps g ((exprForVal m debugVal, debugValTy), typeInstForCall, argsR, m)
+            let callExpr = mkApps g ((exprForVal m debugVal, debugValTy), typeInstForCall, capturedArgs @ argsR, m)
             Some(mkCompGenLet m debugVal debugValBody callExpr, info)
 
         | _ -> None
