@@ -31,7 +31,7 @@ type BraceMatchingServiceTests() =
 
         match
             FSharpBraceMatchingService.GetBraceMatchingResult(checker, sourceText, fileName, parsingOptions, position, "UnitTest")
-            |> Async.RunImmediateExceptOnUI
+            |> Async.RunSynchronouslyImmediateExceptOnUI
         with
         | None -> ()
         | Some _ -> failwith $"Found match for brace '{marker}'"
@@ -61,7 +61,7 @@ type BraceMatchingServiceTests() =
                 startMarkerPosition,
                 "UnitTest"
             )
-            |> Async.RunImmediateExceptOnUI
+            |> Async.RunSynchronouslyImmediateExceptOnUI
         with
         | None -> failwith $"Didn't find a match for start brace at position '{startMarkerPosition}"
         | Some(left, right) ->
