@@ -17,7 +17,7 @@ type TypeMismatchSource =
     | NullnessOnlyMismatch
     | RegularMismatch
 
-exception RequiredButNotSpecified of DisplayEnv * ModuleOrNamespaceRef * string * (StringBuilder -> unit) * range
+exception RequiredButNotSpecified of DisplayEnv * ModuleOrNamespaceRef * string * (RichTextBuilder -> unit) * range
 
 exception ValueNotContained of
     kind: TypeMismatchSource *
@@ -26,11 +26,17 @@ exception ValueNotContained of
     ModuleOrNamespaceRef *
     Val *
     Val *
-    (string * string * string -> string)
+    (RichText * RichText * RichText -> RichText)
 
-exception UnionCaseNotContained of DisplayEnv * InfoReader * Tycon * UnionCase * UnionCase * (string * string -> string)
+exception UnionCaseNotContained of
+    DisplayEnv *
+    InfoReader *
+    Tycon *
+    UnionCase *
+    UnionCase *
+    (RichText * RichText -> RichText)
 
-exception FSharpExceptionNotContained of DisplayEnv * InfoReader * Tycon * Tycon * (string * string -> string)
+exception FSharpExceptionNotContained of DisplayEnv * InfoReader * Tycon * Tycon * (RichText * RichText -> RichText)
 
 exception FieldNotContained of
     kind: TypeMismatchSource *
@@ -40,7 +46,7 @@ exception FieldNotContained of
     Tycon *
     RecdField *
     RecdField *
-    (string * string -> string)
+    (RichText * RichText -> RichText)
 
 exception InterfaceNotRevealed of DisplayEnv * TType * range
 

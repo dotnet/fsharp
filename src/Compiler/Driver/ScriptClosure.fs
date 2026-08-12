@@ -328,7 +328,7 @@ module ScriptPreprocessClosure =
 
         and reportError m =
             ResolvingErrorReport(fun errorType err msg ->
-                let error = err, msg
+                let error = err, RichText.mkText msg
 
                 match errorType with
                 | ErrorReportType.Warning -> warning (Error(error, m))
@@ -353,7 +353,7 @@ module ScriptPreprocessClosure =
 
                     match managerOpt with
                     | Null ->
-                        let err =
+                        let number, message =
                             dependencyProvider.CreatePackageManagerUnknownError(
                                 tcConfig.compilerToolPaths,
                                 outputDir,
@@ -362,7 +362,7 @@ module ScriptPreprocessClosure =
                                 reportError m
                             )
 
-                        errorR (Error(err, m))
+                        errorR (Error((number, message), m))
 
                     | NonNull dependencyManager ->
                         yield! resolvePackageManagerLines m packageManagerLines scriptName packageManagerKey dependencyManager

@@ -231,7 +231,7 @@ type internal FSharpSignatureHelpProvider [<ImportingConstructor>] (serviceProvi
                                             editorOptions.QuickInfo.ShowRemarks
                                         )
 
-                                        p.Display |> Seq.iter (RoslynHelpers.CollectTaggedText parts)
+                                        p.Display.Parts |> Seq.iter (RoslynHelpers.CollectTaggedText parts)
 
                                         {
                                             ParameterName = p.ParameterName
@@ -454,8 +454,8 @@ type internal FSharpSignatureHelpProvider [<ImportingConstructor>] (serviceProvi
 
                         if argument.Count = 1 then
                             let argument = argument.[0]
-                            let taggedText = argument.Type.FormatLayout symbolUse.DisplayContext
-                            taggedText |> Seq.iter (RoslynHelpers.CollectTaggedText tt)
+                            let typeText = argument.Type.FormatRichText symbolUse.DisplayContext
+                            typeText.Parts |> Seq.iter (RoslynHelpers.CollectTaggedText tt)
 
                             let name =
                                 let displayName = argument.DisplayName
@@ -513,8 +513,8 @@ type internal FSharpSignatureHelpProvider [<ImportingConstructor>] (serviceProvi
 
                                 let tt = ResizeArray()
 
-                                let taggedText = arg.Type.FormatLayout symbolUse.DisplayContext
-                                taggedText |> Seq.iter (RoslynHelpers.CollectTaggedText tt)
+                                let typeText = arg.Type.FormatRichText symbolUse.DisplayContext
+                                typeText.Parts |> Seq.iter (RoslynHelpers.CollectTaggedText tt)
 
                                 let name =
                                     if String.IsNullOrWhiteSpace(arg.DisplayName) then

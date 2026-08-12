@@ -115,31 +115,22 @@ exception OverrideDoesntOverride of DisplayEnv * OverrideInfo * MethInfo option 
 
 module DispatchSlotChecking =
     /// Print the signature of an override to a buffer as part of an error message
-    let PrintOverrideToBuffer denv os (Override(_, _, id, methTypars, memberToParentInst, argTys, retTy, _, _, _)) = 
+    let FormatOverride denv (Override(_, _, id, methTypars, memberToParentInst, argTys, retTy, _, _, _)) = 
        let denv = { denv with showTyparBinding = true }
        let retTy = (retTy  |> GetFSharpViewOfReturnType denv.g)
        let argInfos = 
            match argTys with 
            | [] -> [[(denv.g.unit_ty, ValReprInfo.unnamedTopArg1)]]
            | _ -> argTys |> List.mapSquared (fun ty -> (ty, ValReprInfo.unnamedTopArg1)) 
-       LayoutRender.bufferL os (NicePrint.prettyLayoutOfMemberSig denv (memberToParentInst, id.idText, methTypars, argInfos, retTy))
+       LayoutRender.toRichText (NicePrint.prettyLayoutOfMemberSig denv (memberToParentInst, id.idText, methTypars, argInfos, retTy))
 
-    /// Print the signature of a MethInfo to a buffer as part of an error message
-    let PrintMethInfoSigToBuffer g amap m denv os minfo =
+    let FormatMethInfoSig g amap m denv minfo =
         let denv = { denv with showTyparBinding = true }
         let (CompiledSig(argTys, retTy, fmethTypars, ttpinst)) = CompiledSigOfMeth g amap m minfo
         let retTy = (retTy  |> GetFSharpViewOfReturnType g)
         let argInfos = argTys |> List.mapSquared (fun ty -> (ty, ValReprInfo.unnamedTopArg1))
         let nm = minfo.LogicalName
-        LayoutRender.bufferL os (NicePrint.prettyLayoutOfMemberSig denv (ttpinst, nm, fmethTypars, argInfos, retTy))
-
-    /// Format the signature of an override as a string as part of an error message
-    let FormatOverride denv d =
-        buildString (fun buf -> PrintOverrideToBuffer denv buf d)
-
-    /// Format the signature of a MethInfo as a string as part of an error message
-    let FormatMethInfoSig g amap m denv d =
-        buildString (fun buf -> PrintMethInfoSigToBuffer g amap m denv buf d)
+        LayoutRender.toRichText (NicePrint.prettyLayoutOfMemberSig denv (ttpinst, nm, fmethTypars, argInfos, retTy))
 
     /// Get the override info for an existing (inherited) method being used to implement a dispatch slot.
     let GetInheritedMemberOverrideInfo g amap m parentType (minfo: MethInfo) = 
@@ -391,13 +382,13 @@ module DispatchSlotChecking =
                         checkLanguageFeatureAndRecover g.langVersion LanguageFeature.DefaultInterfaceMemberConsumption m
 
                     if reqdSlot.PossiblyNoMostSpecificImplementation then
-                        errorR(Error(FSComp.SR.typrelInterfaceMemberNoMostSpecificImplementation(NicePrint.stringOfMethInfo infoReader m denv dispatchSlot), m))
+                        errorR(Error(FSComp.SR.typrelInterfaceMemberNoMostSpecificImplementation(NicePrint.richTextOfMethInfo infoReader m denv dispatchSlot), m))
 
                     // error reporting path
                     let compiledSig = CompiledSigOfMeth g amap m dispatchSlot
                     
                     let noimpl() =
-                        missingOverloadImplementation.Add((isReqdTyInterface, lazy NicePrint.stringOfMethInfo infoReader m denv dispatchSlot))
+                        missingOverloadImplementation.Add((isReqdTyInterface, lazy NicePrint.richTextOfMethInfo infoReader m denv dispatchSlot))
                     
                     match overrides |> List.filter (IsPartialMatch g dispatchSlot compiledSig) with 
                     | [] -> 
@@ -431,7 +422,7 @@ module DispatchSlotChecking =
                                 elif not (IsTyparKindMatch compiledSig overrideBy) then
                                     fail(Error(FSComp.SR.typrelMemberDoesNotHaveCorrectKindsOfGenericParameters(FormatOverride denv overrideBy, FormatMethInfoSig g amap m denv dispatchSlot), overrideBy.Range))
                                 else
-                                    fail(Error(FSComp.SR.typrelMemberCannotImplement(FormatOverride denv overrideBy, NicePrint.stringOfMethInfo infoReader m denv dispatchSlot, FormatMethInfoSig g amap m denv dispatchSlot), overrideBy.Range))
+                                    fail(Error(FSComp.SR.typrelMemberCannotImplement(FormatOverride denv overrideBy, NicePrint.richTextOfMethInfo infoReader m denv dispatchSlot, FormatMethInfoSig g amap m denv dispatchSlot), overrideBy.Range))
                         | overrideBy :: _ -> 
                             errorR(Error(FSComp.SR.typrelOverloadNotFound(FormatMethInfoSig g amap m denv dispatchSlot, FormatMethInfoSig g amap m denv dispatchSlot), overrideBy.Range))
 
@@ -464,13 +455,19 @@ module DispatchSlotChecking =
                     fail(Error(FSComp.SR.typrelNoImplementationGiven(signature), m))
             else
                 let signatures = 
-                    (missingOverloadImplementation 
-                    |> Seq.truncate maxDisplayedOverrides 
-                    |> Seq.map (snd >> fun signature -> System.Environment.NewLine + "\t'" + signature.Value + "'")
-                    |> String.concat "") + System.Environment.NewLine 
+                    let listed =
+                        missingOverloadImplementation 
+                        |> Seq.truncate maxDisplayedOverrides 
+                        |> Seq.map (fun (_, signature) ->
+                            RichText.concat
+                                [ RichText.mkText (System.Environment.NewLine + "\t'")
+                                  signature.Value
+                                  RichText.mkText "'" ])
+                        |> RichText.concat
+                    RichText.append listed (RichText.mkText System.Environment.NewLine) 
                 
                 // we have specific message if the list is truncated
-                let messageFunction =
+                let messageFunction: RichText -> int * RichText =
                     match shouldTruncate, messageWithInterfaceSuggestion with
                     | false, true  -> FSComp.SR.typrelNoImplementationGivenSeveralWithSuggestion
                     | false, false -> FSComp.SR.typrelNoImplementationGivenSeveral
@@ -633,9 +630,11 @@ module DispatchSlotChecking =
                     | possibleDispatchSlots -> 
                        let details =
                             possibleDispatchSlots
-                            |> List.map (fun dispatchSlot -> FormatMethInfoSig g amap m denv dispatchSlot)
-                            |> Seq.map (sprintf "%s   %s" System.Environment.NewLine)
-                            |> String.concat ""
+                            |> List.map (fun dispatchSlot ->
+                                RichText.append
+                                    (RichText.mkText (System.Environment.NewLine + "   "))
+                                    (FormatMethInfoSig g amap m denv dispatchSlot))
+                            |> RichText.concat
 
                        errorR(Error(FSComp.SR.typrelMemberHasMultiplePossibleDispatchSlots(FormatOverride denv overrideBy, details), overrideBy.Range))
 
@@ -643,7 +642,7 @@ module DispatchSlotChecking =
             | [matchedSlot] -> 
                 let dispatchSlot = matchedSlot.MethodInfo
                 if dispatchSlot.IsFinal && (isObjExpr || not (typeEquiv g reqdTy dispatchSlot.ApparentEnclosingType)) then 
-                    errorR(Error(FSComp.SR.typrelMethodIsSealed(NicePrint.stringOfMethInfo infoReader m denv dispatchSlot), m))
+                    errorR(Error(FSComp.SR.typrelMethodIsSealed(NicePrint.richTextOfMethInfo infoReader m denv dispatchSlot), m))
             | matchedSlots -> 
                 // Filter out slots that have DIM coverage directly from RequiredSlot
                 let slotsWithoutDIMCoverage =
@@ -656,14 +655,20 @@ module DispatchSlotChecking =
                               isInterfaceTy g dispatchSlot.ApparentEnclosingType || 
                               not (DispatchSlotIsAlreadyImplemented g amap m availPriorOverridesKeyed dispatchSlot)) with
                 | h1 :: h2 :: _ -> 
-                    errorR(Error(FSComp.SR.typrelOverrideImplementsMoreThenOneSlot((FormatOverride denv overrideBy), (NicePrint.stringOfMethInfo infoReader m denv h1), (NicePrint.stringOfMethInfo infoReader m denv h2)), m))
+                    errorR(Error(FSComp.SR.typrelOverrideImplementsMoreThenOneSlot((FormatOverride denv overrideBy), (NicePrint.richTextOfMethInfo infoReader m denv h1), (NicePrint.richTextOfMethInfo infoReader m denv h2)), m))
                 | _ -> 
                     // dispatch slots are ordered from the derived classes to base
                     // so we can check the topmost dispatch slot if it is final
                     let allMatchedVirts = matchedSlots |> List.map (fun rs -> rs.MethodInfo)
                     match allMatchedVirts with
-                    | meth :: _ when meth.IsFinal -> errorR(Error(FSComp.SR.tcCannotOverrideSealedMethod
-                                                                      (sprintf "%s::%s" (NicePrint.stringOfTy denv meth.ApparentEnclosingType) meth.LogicalName), m))
+                    | meth :: _ when meth.IsFinal ->
+                        let name =
+                            RichText.concat
+                                [ NicePrint.richTextOfTy denv meth.ApparentEnclosingType
+                                  RichText.mkPunctuation "::"
+                                  RichText.mkMethod meth.LogicalName ]
+
+                        errorR(Error(FSComp.SR.tcCannotOverrideSealedMethod name, m))
                     | _ -> ()
 
     /// Get the slots of a type that can or must be implemented. This depends
@@ -769,7 +774,7 @@ module DispatchSlotChecking =
                                     let minfo = reqdSlot.MethodInfo
                                     // If the slot is optional, then we do not need an explicit implementation.
                                     minfo.IsNewSlot && not reqdSlot.IsOptional) then
-                                errorR(Error(FSComp.SR.typrelNeedExplicitImplementation(NicePrint.minimalStringOfType denv ty), reqdTyRange))
+                                errorR(Error(FSComp.SR.typrelNeedExplicitImplementation(NicePrint.minimalRichTextOfType denv ty), reqdTyRange))
                      
             // We also collect up the properties. This is used for abstract slot inference when overriding properties
             let isRelevantRequiredProperty (x: PropInfo) = 
@@ -938,9 +943,9 @@ let FinalTypeDefinitionChecksAtEndOfInferenceScope (infoReader: InfoReader, nenv
      then
         (* Warn when we're doing this for class types *)
         if AugmentTypeDefinitions.TyconIsCandidateForAugmentationWithEquals g tycon then
-            warning(Error(FSComp.SR.typrelTypeImplementsIComparableShouldOverrideObjectEquals(tycon.DisplayName), tycon.Range))
+            warning(Error(FSComp.SR.typrelTypeImplementsIComparableShouldOverrideObjectEquals(richTextOfEntity tycon), tycon.Range))
         else
-            warning(Error(FSComp.SR.typrelTypeImplementsIComparableDefaultObjectEqualsProvided(tycon.DisplayName), tycon.Range))
+            warning(Error(FSComp.SR.typrelTypeImplementsIComparableDefaultObjectEqualsProvided(richTextOfEntity tycon), tycon.Range))
 
     AugmentTypeDefinitions.CheckAugmentationAttribs isImplementation g amap tycon
     // Check some conditions about generic comparison and hashing. We can only check this condition after we've done the augmentation 
@@ -956,13 +961,13 @@ let FinalTypeDefinitionChecksAtEndOfInferenceScope (infoReader: InfoReader, nenv
 
         if (Option.isSome tycon.GeneratedHashAndEqualsWithComparerValues) && 
            (hasExplicitObjectGetHashCode || hasExplicitObjectEqualsOverride) then 
-            errorR(Error(FSComp.SR.typrelExplicitImplementationOfGetHashCodeOrEquals(tycon.DisplayName), m)) 
+            errorR(Error(FSComp.SR.typrelExplicitImplementationOfGetHashCodeOrEquals(richTextOfEntity tycon), m)) 
 
         if not hasExplicitObjectEqualsOverride && hasExplicitObjectGetHashCode then 
-            warning(Error(FSComp.SR.typrelExplicitImplementationOfGetHashCode(tycon.DisplayName), m)) 
+            warning(Error(FSComp.SR.typrelExplicitImplementationOfGetHashCode(richTextOfEntity tycon), m)) 
 
         if hasExplicitObjectEqualsOverride && not hasExplicitObjectGetHashCode then 
-            warning(Error(FSComp.SR.typrelExplicitImplementationOfEquals(tycon.DisplayName), m)) 
+            warning(Error(FSComp.SR.typrelExplicitImplementationOfEquals(richTextOfEntity tycon), m)) 
 
         // remember these values to ensure we don't generate these methods during codegen 
         tcaug.SetHasObjectGetHashCode hasExplicitObjectGetHashCode

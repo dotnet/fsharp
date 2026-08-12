@@ -310,6 +310,27 @@ module internal MemberRepresentation =
 
     val tagEntityRefName: xref: EntityRef -> name: string -> TaggedText
 
+    /// A name of an entity as rich text, classified by the kind of entity it names. Use this only when
+    /// the name is not the entity's display name, e.g. its compiled or fully qualified one.
+    val richTextOfEntityRefName: xref: EntityRef -> name: string -> RichText
+
+    /// A name of an entity as rich text, classified by the kind of entity it names. Use this only when
+    /// the name is not the entity's display name.
+    val richTextOfEntityName: entity: Entity -> name: string -> RichText
+
+    /// The display name of an entity as rich text, classified by the kind of entity it is
+    val richTextOfEntityRef: xref: EntityRef -> RichText
+
+    /// The display name of an entity as rich text, classified by the kind of entity it is
+    val richTextOfEntity: entity: Entity -> RichText
+
+    /// The tag for the name of a value, by what kind of value it is. This is the choice the signature
+    /// printer makes, so that a name in a message reads the way it does in a signature.
+    val tagValName: g: TcGlobals -> v: Val -> name: string -> TaggedText
+
+    /// The display name of a value as rich text, classified by what kind of value it is
+    val richTextOfValName: g: TcGlobals -> v: Val -> RichText
+
     /// Return the full text for an item as we want it displayed to the user as a fully qualified entity
     val fullDisplayTextOfModRef: ModuleOrNamespaceRef -> string
 
@@ -322,6 +343,19 @@ module internal MemberRepresentation =
     val fullDisplayTextOfTyconRef: TyconRef -> string
 
     val fullDisplayTextOfTyconRefAsLayout: TyconRef -> Layout
+
+    /// A dotted path as rich text, classifying each component and each dot separately
+    val richTextOfPath: string list -> RichText
+
+    /// The fully qualified name of a module or namespace, classifying each component and each dot
+    /// separately, so that a dot never reads as part of a name
+    val richTextOfQualifiedModRef: ModuleOrNamespaceRef -> RichText
+
+    /// The fully qualified name of a type, classifying each component and each dot separately
+    val richTextOfQualifiedTyconRef: TyconRef -> RichText
+
+    /// The fully qualified name of a value, classifying each component and each dot separately
+    val richTextOfQualifiedValRef: ValRef -> RichText
 
     val fullDisplayTextOfExnRef: TyconRef -> string
 

@@ -1958,7 +1958,16 @@ and [<Sealed>] TcImports
             match providers with
             | [] ->
                 let typeName = !!typeof<TypeProviderAssemblyAttribute>.FullName
-                warning (Error(FSComp.SR.etHostingAssemblyFoundWithoutHosts (fileNameOfRuntimeAssembly, typeName), m))
+
+                warning (
+                    Error(
+                        FSComp.SR.etHostingAssemblyFoundWithoutHosts (
+                            RichText.mkText fileNameOfRuntimeAssembly,
+                            RichText.ofQualifiedTypeName typeName
+                        ),
+                        m
+                    )
+                )
             | _ ->
 
 #if DEBUG

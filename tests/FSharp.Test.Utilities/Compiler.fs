@@ -422,6 +422,11 @@ $ code --diff {outFile} {expectedFile}
 
     let private fromFSharpDiagnostic (errors: FSharpDiagnostic[]) : (SourceCodeFileName * ErrorInfo) list =
         let toErrorInfo (e: FSharpDiagnostic) : SourceCodeFileName * ErrorInfo =
+            // Every diagnostic assertion in the test suite doubles as a check that classifying message
+            // parts doesn't change the message itself. See docs/rich-diagnostics.md.
+            if e.RichMessage.Text <> e.Message then
+                failwith $"Rich message text doesn't match the message.\nMessage: %A{e.Message}\nParts:\n%s{dumpRichText e.RichMessage}"
+
             let errorNumber = e.ErrorNumber
             let severity = e.Severity
             let error =

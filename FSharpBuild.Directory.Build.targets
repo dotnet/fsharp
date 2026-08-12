@@ -97,12 +97,23 @@
     </ItemGroup>
   </Target>
 
-      <!-- SDK targets override -->
-  <PropertyGroup Condition="'$(Configuration)' != 'Proto' AND '$(DisableCompilerRedirection)'!='true' AND Exists('$(ProtoOutputPath)')">
-    <FSharpBuildAssemblyFileOverride>$(ProtoOutputPath)\fsc\FSharp.Build.dll</FSharpBuildAssemblyFileOverride>
-  </PropertyGroup>  
-  <UsingTask TaskName="FSharpEmbedResourceText" AssemblyFile="$(FSharpBuildAssemblyFileOverride)" Override="true" Condition="'$(Configuration)' != 'Proto' AND '$(DisableCompilerRedirection)'!='true' AND Exists('$(ProtoOutputPath)')" />
-  <UsingTask TaskName="FSharpEmbedResXSource" AssemblyFile="$(FSharpBuildAssemblyFileOverride)" Override="true" Condition="'$(Configuration)' != 'Proto' AND '$(DisableCompilerRedirection)'!='true' AND Exists('$(ProtoOutputPath)')" />   
+  <!-- SDK targets override: the SDK's released FSharp.Build cannot generate the classified resource
+       accessors FSComp.txt is compiled with, so the tasks come from the Bootstrap, or from this repo's own
+       build for projects opting in - FSharp.Build itself cannot, its FSBuild.txt would need its own output
+       before it is built. No Exists check, so a missing assembly is an error rather than a silent fallback
+       to the SDK's. TaskHostFactory keeps the node from locking what it loads. -->
+  <PropertyGroup>
+    <FSharpBuildTasksAssembly Condition="'$(Configuration)' != 'Proto' AND '$(DisableCompilerRedirection)' != 'true' AND Exists('$(ProtoOutputPath)')">$(ProtoOutputPath)\fsc\FSharp.Build.dll</FSharpBuildTasksAssembly>
+    <FSharpBuildTasksAssembly Condition="'$(FSharpBuildTasksAssembly)' == '' AND '$(UseBootstrappedFSharpBuildTasks)' == 'true'">$(ArtifactsDir)bin\FSharp.Build\$(Configuration)\netstandard2.0\FSharp.Build.dll</FSharpBuildTasksAssembly>
+  </PropertyGroup>
+  <UsingTask TaskName="FSharpEmbedResourceText" AssemblyFile="$(FSharpBuildTasksAssembly)" Override="true" TaskFactory="TaskHostFactory" Condition="'$(FSharpBuildTasksAssembly)' != ''" />
+  <UsingTask TaskName="FSharpEmbedResXSource" AssemblyFile="$(FSharpBuildTasksAssembly)" Override="true" TaskFactory="TaskHostFactory" Condition="'$(FSharpBuildTasksAssembly)' != ''" />
+
+  <Target Name="BuildFSharpBuildForResourceGeneration"
+          BeforeTargets="GenerateFSharpTextResources"
+          Condition="'$(UseBootstrappedFSharpBuildTasks)' == 'true' AND '$(FSharpBuildTasksAssembly)' != '' AND !Exists('$(FSharpBuildTasksAssembly)')">
+    <MSBuild Projects="$(RepoRoot)src\FSharp.Build\FSharp.Build.fsproj" RemoveProperties="TargetFramework" />
+  </Target>
 
 
   <Target Name="BeforeResGen"

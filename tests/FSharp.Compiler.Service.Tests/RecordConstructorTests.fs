@@ -18,9 +18,8 @@ let r = MyRecord(1, 2)
 let private tooltipToString (ToolTipText items) =
     items
     |> List.collect (function
-        | ToolTipElement.Group elements -> elements |> List.collect (fun e -> List.ofArray e.MainDescription)
+        | ToolTipElement.Group elements -> elements |> List.map (fun e -> e.MainDescription.Text)
         | _ -> [])
-    |> List.map (fun t -> t.Text)
     |> String.concat ""
 
 [<Fact>]

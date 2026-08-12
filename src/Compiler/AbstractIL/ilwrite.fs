@@ -7,6 +7,7 @@ open System.Collections.Generic
 open System.IO
 
 open Internal.Utilities
+open FSharp.Compiler.Text
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.Diagnostics
 open FSharp.Compiler.AbstractIL.BinaryConstants
@@ -694,7 +695,7 @@ let rec GenTypeDefPass1 enc cenv (tdef: ILTypeDef) =
     // Verify that the typedef contains fewer than maximumMethodsPerDotNetType
     let count = tdef.Methods.AsArray().Length
     if count > maximumMethodsPerDotNetType then
-        errorR(Error(FSComp.SR.tooManyMethodsInDotNetTypeWritingAssembly (tdef.Name, count, maximumMethodsPerDotNetType), rangeStartup))
+        errorR(Error(FSComp.SR.tooManyMethodsInDotNetTypeWritingAssembly (RichText.ofQualifiedTypeName tdef.Name, count, maximumMethodsPerDotNetType), rangeStartup))
 
     GenTypeDefsPass1 (enc@[tdef.Name]) cenv (tdef.NestedTypes.AsList())
 

@@ -45,6 +45,7 @@ module internal QuickInfoViewProvider =
         | TextTag.Operator -> ClassificationTypeNames.Operator
         | TextTag.StringLiteral -> ClassificationTypeNames.StringLiteral
         | TextTag.Punctuation -> ClassificationTypeNames.Punctuation
+        | TextTag.UnresolvedName
         | TextTag.UnknownEntity
         | TextTag.Text -> ClassificationTypeNames.Text
 
