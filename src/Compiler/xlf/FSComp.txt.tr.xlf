@@ -677,11 +677,6 @@
         <target state="translated">kendi kendine tür kısıtlamaları</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureSingleUnderscorePattern">
-        <source>single underscore pattern</source>
-        <target state="translated">tek alt çizgi deseni</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureStaticLetInRecordsDusEmptyTypes">
         <source>Allow static let bindings in union, record, struct, non-incremental-class types</source>
         <target state="translated">Birleşim, kayıt, yapı ve artımlı olmayan sınıf türlerinde statik let bağlamalarına izin ver</target>
@@ -1300,11 +1295,6 @@
       <trans-unit id="parsUnexpectedEndOfFileElif">
         <source>Unexpected end of input in 'else if' or 'elif' branch of conditional expression. Expected 'elif &lt;expr&gt; then &lt;expr&gt;' or 'else if &lt;expr&gt; then &lt;expr&gt;'.</source>
         <target state="translated">Koşullu ifadenin 'else if' veya 'elif' dalında beklenmeyen giriş sonu. 'elif &lt;expr&gt; then &lt;expr&gt;' veya 'else if &lt;expr&gt; then &lt;expr&gt;' bekleniyordu.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="parsUnexpectedSymbolDot">
-        <source>Unexpected symbol '.' in member definition. Expected 'with', '=' or other token.</source>
-        <target state="translated">Üye tanımında '.' sembolü beklenmiyordu. 'with', '=' veya başka bir belirteç bekleniyordu.</target>
         <note />
       </trans-unit>
       <trans-unit id="optsChecksumAlgorithm">

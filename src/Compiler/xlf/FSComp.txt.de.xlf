@@ -677,11 +677,6 @@
         <target state="translated">Selbsttypeinschränkungen</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureSingleUnderscorePattern">
-        <source>single underscore pattern</source>
-        <target state="translated">Muster mit einzelnem Unterstrich</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureStaticLetInRecordsDusEmptyTypes">
         <source>Allow static let bindings in union, record, struct, non-incremental-class types</source>
         <target state="translated">Statische let-Bindungen in den Typen "union", "record", "struct" und "non-incremental-class" zulassen</target>
@@ -1300,11 +1295,6 @@
       <trans-unit id="parsUnexpectedEndOfFileElif">
         <source>Unexpected end of input in 'else if' or 'elif' branch of conditional expression. Expected 'elif &lt;expr&gt; then &lt;expr&gt;' or 'else if &lt;expr&gt; then &lt;expr&gt;'.</source>
         <target state="translated">Unerwartetes Ende der Eingabe im "else if"- oder "elif"-Branch des bedingten Ausdrucks. Erwartet wird: "elif &lt;expr&gt; then &lt;expr&gt;" oder "else if &lt;expr&gt; then &lt;expr&gt;".</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="parsUnexpectedSymbolDot">
-        <source>Unexpected symbol '.' in member definition. Expected 'with', '=' or other token.</source>
-        <target state="translated">Unerwartetes Symbol "." in der Memberdefinition. Erwartet wurde "with", "=" oder ein anderes Token.</target>
         <note />
       </trans-unit>
       <trans-unit id="optsChecksumAlgorithm">
