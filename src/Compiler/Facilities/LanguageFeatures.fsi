@@ -6,7 +6,6 @@ module internal FSharp.Compiler.Features
 /// LanguageFeature enumeration
 [<RequireQualifiedAccess>]
 type LanguageFeature =
-    | SingleUnderscorePattern
     | RelaxWhitespace
     | RelaxWhitespace2
     | NameOf

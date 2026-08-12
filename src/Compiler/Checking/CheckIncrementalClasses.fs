@@ -335,7 +335,7 @@ type IncrClassReprInfo =
                  
         let reportIfUnused() = 
             if not v.HasBeenReferenced && not (v.DisplayName.StartsWithOrdinal("_")) && not v.IsCompilerGenerated then 
-                warning (Error(FSComp.SR.chkUnusedValue(v.DisplayName), v.Range))
+                warning (Error(FSComp.SR.chkUnusedValue(richTextOfValName cenv.g v), v.Range))
 
         let repr = 
             match InferValReprInfoOfBinding g AllowTypeDirectedDetupling.Yes v bind.Expr with 

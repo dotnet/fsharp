@@ -508,11 +508,11 @@ type EntityFlags(flags: int64) =
 
 exception UndefinedName of 
     depth: int * 
-    error: (string -> string) * 
+    error: (RichText -> RichText) * 
     id: Ident * 
     suggestions: Suggestions
 
-exception InternalUndefinedItemRef of (string * string * string -> int * string) * string * string * string
+exception InternalUndefinedItemRef of (string * string * string -> int * RichText) * string * string * string
 
 [<CustomEquality;NoComparison>]
 type ModuleOrNamespaceKind = 
@@ -905,8 +905,12 @@ type Entity =
     member x.IsFSharpException = match x.ExceptionInfo with TExnNone -> false | _ -> true
 
     /// Demangle the module name, if FSharpModuleWithSuffix is used
-    member x.DemangledModuleOrNamespaceName =  
-          CompilationPath.DemangleEntityName x.LogicalName x.ModuleOrNamespaceType.ModuleOrNamespaceKind
+    member x.DemangledModuleOrNamespaceName =
+          // Check the suffix before reading the entity contents.
+          if x.LogicalName.EndsWithOrdinal FSharpModuleSuffix then
+              CompilationPath.DemangleEntityName x.LogicalName x.ModuleOrNamespaceType.ModuleOrNamespaceKind
+          else
+              x.LogicalName
     
     /// Get the type parameters for an entity that is a type declaration, otherwise return the empty list.
     ///
@@ -1001,7 +1005,9 @@ type Entity =
     member x.CompilationPath = 
         match x.CompilationPathOpt with 
         | Some cpath -> cpath 
-        | None -> error(Error(FSComp.SR.tastTypeOrModuleNotConcrete(x.LogicalName), x.Range))
+        | None ->
+            let tag = if x.IsModuleOrNamespace then TextTag.Module else TextTag.Class
+            error(Error(FSComp.SR.tastTypeOrModuleNotConcrete(RichText.ofTag tag x.LogicalName), x.Range))
     
     /// Get a table of fields for all the F#-defined record, struct and class fields in this type definition, including
     /// static fields, 'val' declarations and hidden fields from the compilation of implicit class constructions.
@@ -6206,8 +6212,9 @@ type Construct() =
         ModuleOrNamespaceType(mkind, QueueList.ofList vals, QueueList.ofList tycons)
 
     /// Create a new node for an empty module or namespace contents
-    static member NewEmptyModuleOrNamespaceType mkind = 
-        Construct.NewModuleOrNamespaceType mkind [] []
+    static member NewEmptyModuleOrNamespaceType mkind =
+        // Not via NewModuleOrNamespaceType: QueueList.ofList would build two more objects to hold nothing.
+        ModuleOrNamespaceType(mkind, QueueList.Empty, QueueList.Empty)
 
     static member NewEmptyFSharpTyconData kind =
         { fsobjmodel_cases = Construct.MakeUnionCases []
