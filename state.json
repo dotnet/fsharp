@@ -1,38 +1,150 @@
 {
   "prs": {
-    "20246": { "sha": "4c967be0e2fe98ddc2fe26ccbb223a02c0cd9f94", "cats": [] },
-    "20244": { "sha": "1262508dda73de03aa2fda26ba4cb83acf09cbc6", "cats": ["Affects-Compiler-Output"] },
-    "20243": { "sha": "0504008f2d52f92b04d72022129a36048730d094", "cats": [] },
-    "20240": { "sha": "1077063763e1bfaf3518723988f599ef7f2abe66", "cats": [] },
-    "20232": { "sha": "78f2a8311b8ba22ce6ef0d32fcbb4e392d90537b", "cats": [] },
-    "20231": { "sha": "16d621fe93f2bd482fbe02ca6cb5138e2c4a32bc", "cats": [] },
-    "20227": { "sha": "c9b7fe80dcfac4e4d37e1cbb5f6cc91f987dc580", "cats": [] },
-    "20226": { "sha": "3a27eb86f4f6e99c521a82e57b4d07893d9ce5ef", "cats": [] },
-    "20222": { "sha": "6f415bfabe12fcdf66dc3b9077fd4c271d37c04b", "cats": [] },
-    "20133": { "sha": "2523b1c309de53a4a0e058542cc4f223f1501a5d", "cats": [] },
-    "20128": { "sha": "a86b21feab5390bb146186b44be2f9f43bcda826", "cats": [] },
-    "20126": { "sha": "435769f274a6d2cf4cbbd28e276850d8e01856bb", "cats": [] },
-    "20121": { "sha": "47373d0d9e3e67da3f29e92935c525df6c9a7cf8", "cats": [] },
-    "20119": { "sha": "25f732737ad94832d2e56dd6b8d133531d3e0a31", "cats": [] },
-    "20113": { "sha": "8bee41ae5981b49e9bacf98f08462ab485ece5a2", "cats": [] },
-    "20111": { "sha": "e9418796eb6aeb834a6641db820784a98330f543", "cats": [] },
-    "20102": { "sha": "184d5ab47a86875636e8e6d0c159fd1866a8210c", "cats": [] },
-    "20100": { "sha": "1457fed4948453d65d5d14b248b556a8dbd727a1", "cats": [] },
-    "20097": { "sha": "f1bc448a44c8d53c51ecb2c0667cd2f77d49770a", "cats": ["Affects-Bootstrap", "Affects-Build-Infra", "Affects-Compiler-Output"] },
-    "20092": { "sha": "7a4c3cc79aa4613b95883fb78182d43d27c5019f", "cats": [] },
-    "20088": { "sha": "94167098d599a244ba37b5b5d1dcf31e8426505a", "cats": [] },
-    "20073": { "sha": "9668780d5460f8858681c2af99da485ecfd84bdb", "cats": [] },
-    "20071": { "sha": "ff894286558a815f6396784e38ba4fc301ef0f35", "cats": [] },
-    "20065": { "sha": "91466c38a761cd8969630306f44309de03d12e2a", "cats": ["Affects-Build-Infra", "Affects-Restore"] },
-    "20031": { "sha": "9daea0305fcd83a38928386d942e8c9657a6d05c", "cats": ["Affects-Build-Infra", "Affects-Compiler-Output"] },
-    "20030": { "sha": "f222ff46392dede870e51fa4418dac7481bc5e36", "cats": ["Affects-Compiler-Output"] },
-    "20027": { "sha": "d04bd1ac3d3386c56d49596fa215b828f5c78d73", "cats": ["Affects-Compiler-Output"] },
-    "20025": { "sha": "b78ffd6ba7173110aeb2f9eb49a394e0a19aadbf", "cats": [] },
-    "20016": { "sha": "88e64501a0db50d05a18a0267434fa18f254527d", "cats": ["Affects-Build-Infra", "Affects-Restore"] },
-    "19994": { "sha": "84c93dd77d47452fe70efd53fdc2b30698f09787", "cats": [] },
-    "19941": { "sha": "9f75f33ca9a4606ace7b9287dd8cb09e1a1729ca", "cats": ["Affects-Build-Infra", "Affects-Compiler-Output"] },
-    "19930": { "sha": "fdb49f9abb55a8d81abaeb6d415c8bf9d3ef5c5e", "cats": ["Affects-Build-Infra"] },
-    "19785": { "sha": "b327126a25e27539918e88b59e99d28d231c9d29", "cats": ["Affects-Build-Infra"] },
-    "19774": { "sha": "0e262c5de4cbc31f0d594c589c0e4ac30c95c6a9", "cats": [] }
+    "20246": {
+      "sha": "4c967be0e2fe98ddc2fe26ccbb223a02c0cd9f94",
+      "cats": []
+    },
+    "20244": {
+      "sha": "1262508dda73de03aa2fda26ba4cb83acf09cbc6",
+      "cats": [
+        "Affects-Compiler-Output"
+      ]
+    },
+    "20243": {
+      "sha": "0504008f2d52f92b04d72022129a36048730d094",
+      "cats": []
+    },
+    "20240": {
+      "sha": "1077063763e1bfaf3518723988f599ef7f2abe66",
+      "cats": []
+    },
+    "20232": {
+      "sha": "78f2a8311b8ba22ce6ef0d32fcbb4e392d90537b",
+      "cats": []
+    },
+    "20231": {
+      "sha": "16d621fe93f2bd482fbe02ca6cb5138e2c4a32bc",
+      "cats": []
+    },
+    "20227": {
+      "sha": "c9b7fe80dcfac4e4d37e1cbb5f6cc91f987dc580",
+      "cats": []
+    },
+    "20226": {
+      "sha": "ad2d7a9ebaddaa239dd615da5ca1457140a4a9a6",
+      "cats": []
+    },
+    "20133": {
+      "sha": "2523b1c309de53a4a0e058542cc4f223f1501a5d",
+      "cats": []
+    },
+    "20128": {
+      "sha": "a86b21feab5390bb146186b44be2f9f43bcda826",
+      "cats": []
+    },
+    "20126": {
+      "sha": "435769f274a6d2cf4cbbd28e276850d8e01856bb",
+      "cats": []
+    },
+    "20121": {
+      "sha": "47373d0d9e3e67da3f29e92935c525df6c9a7cf8",
+      "cats": []
+    },
+    "20119": {
+      "sha": "25f732737ad94832d2e56dd6b8d133531d3e0a31",
+      "cats": []
+    },
+    "20113": {
+      "sha": "8bee41ae5981b49e9bacf98f08462ab485ece5a2",
+      "cats": []
+    },
+    "20111": {
+      "sha": "e9418796eb6aeb834a6641db820784a98330f543",
+      "cats": []
+    },
+    "20102": {
+      "sha": "184d5ab47a86875636e8e6d0c159fd1866a8210c",
+      "cats": []
+    },
+    "20100": {
+      "sha": "1457fed4948453d65d5d14b248b556a8dbd727a1",
+      "cats": []
+    },
+    "20092": {
+      "sha": "0beabc78ec19fc32185cdf88022d4680396498de",
+      "cats": []
+    },
+    "20073": {
+      "sha": "9668780d5460f8858681c2af99da485ecfd84bdb",
+      "cats": []
+    },
+    "20071": {
+      "sha": "ff894286558a815f6396784e38ba4fc301ef0f35",
+      "cats": []
+    },
+    "20065": {
+      "sha": "91466c38a761cd8969630306f44309de03d12e2a",
+      "cats": [
+        "Affects-Build-Infra",
+        "Affects-Restore"
+      ]
+    },
+    "20031": {
+      "sha": "9daea0305fcd83a38928386d942e8c9657a6d05c",
+      "cats": [
+        "Affects-Build-Infra",
+        "Affects-Compiler-Output"
+      ]
+    },
+    "20030": {
+      "sha": "f222ff46392dede870e51fa4418dac7481bc5e36",
+      "cats": [
+        "Affects-Compiler-Output"
+      ]
+    },
+    "20027": {
+      "sha": "d04bd1ac3d3386c56d49596fa215b828f5c78d73",
+      "cats": [
+        "Affects-Compiler-Output"
+      ]
+    },
+    "20025": {
+      "sha": "b78ffd6ba7173110aeb2f9eb49a394e0a19aadbf",
+      "cats": []
+    },
+    "20016": {
+      "sha": "88e64501a0db50d05a18a0267434fa18f254527d",
+      "cats": [
+        "Affects-Build-Infra",
+        "Affects-Restore"
+      ]
+    },
+    "19994": {
+      "sha": "84c93dd77d47452fe70efd53fdc2b30698f09787",
+      "cats": []
+    },
+    "19941": {
+      "sha": "9f75f33ca9a4606ace7b9287dd8cb09e1a1729ca",
+      "cats": [
+        "Affects-Build-Infra",
+        "Affects-Compiler-Output"
+      ]
+    },
+    "19930": {
+      "sha": "fdb49f9abb55a8d81abaeb6d415c8bf9d3ef5c5e",
+      "cats": [
+        "Affects-Build-Infra"
+      ]
+    },
+    "19785": {
+      "sha": "b327126a25e27539918e88b59e99d28d231c9d29",
+      "cats": [
+        "Affects-Build-Infra"
+      ]
+    },
+    "19774": {
+      "sha": "0e262c5de4cbc31f0d594c589c0e4ac30c95c6a9",
+      "cats": []
+    }
   }
 }
