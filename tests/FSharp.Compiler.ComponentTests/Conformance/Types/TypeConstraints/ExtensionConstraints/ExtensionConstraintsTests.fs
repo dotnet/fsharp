@@ -273,14 +273,35 @@ if r <> "hahaha" then failwith (sprintf "Expected 'hahaha', got '%s'" r)
             |> withDiagnosticMessageMatches "None of the types .*support the operator '\*'"
 
     [<Fact>]
-    let ``Extension operators respect accessibility`` () =
+    let ``Public extension operator solves an SRTP constraint`` () =
         compileAndRunPreview "ExtensionAccessibility.fs"
 
     [<Fact>]
+    let ``internal extension member does not solve an SRTP constraint within an assembly`` () =
+        // Only a public member may solve an SRTP constraint: a public inline function can be inlined
+        // into another assembly where the internal member is inaccessible (MethodAccessException), so
+        // it is rejected with FS0001 'is not public' at compile time. Internal-only-same-assembly SRTP
+        // is a deferred use-site-accessibility design.
+        FSharp """
+module InternalIntraNoLeak
+module InternalExt =
+    type System.Int32 with
+        static member internal Pong (x: int) = x + 200
+open InternalExt
+let inline pong (x: ^T) = (^T : (static member Pong : ^T -> ^T) x)
+let r = pong 5
+        """
+        |> asExe
+        |> withLangVersionPreview
+        |> compile
+        |> shouldFail
+        |> withErrorCode 1
+        |> withDiagnosticMessageMatches "is not public"
+
+    [<Fact>]
     let ``private extension member does not leak to a sibling module through SRTP`` () =
-        // A 'private' extension member is accessible only inside its defining module. It must not
-        // become an SRTP solution in a sibling module that merely opens it — otherwise the feature
-        // would silently widen accessibility. Complements the positive ExtensionAccessibility.fs.
+        // A 'private' extension is visible only in its defining module, so a sibling module that
+        // opens A still cannot use it as a witness: the candidate is dropped ('does not support').
         FSharp """
 module PrivateNoLeak
 module A =
@@ -297,6 +318,72 @@ module B =
         |> shouldFail
         |> withErrorCode 1
         |> withDiagnosticMessageMatches "does not support the operator 'Secret'"
+
+    [<Fact>]
+    let ``private extension member captured at def-site does not solve an inline SRTP constraint`` () =
+        // Regression: 'useSecret' and the private 'Secret' share module A, so def-site capture would
+        // pick the private witness and inline it into B (inaccessible) -> MethodAccessException under
+        // --realsig+ --optimize-. Found-but-rejected here yields FS0001 'is not public'.
+        FSharp """
+module PrivateCaptureNoLeak
+module A =
+    type System.Int32 with
+        static member private Secret (x: int) = x + 1
+    let inline useSecret (x: ^T) = (^T : (static member Secret : ^T -> ^T) x)
+module B =
+    let r = A.useSecret 5
+        """
+        |> asExe
+        |> withLangVersionPreview
+        |> withOptions [ "--realsig+"; "--optimize-" ]
+        |> compile
+        |> shouldFail
+        |> withErrorCode 1
+        |> withDiagnosticMessageMatches "is not public"
+
+    [<Fact>]
+    let ``private intrinsic member captured at def-site does not solve an inline SRTP constraint`` () =
+        // Regression: the leak is not extension-specific. 'UseSecret' is declared INSIDE 'Foo', so it
+        // has private def-site access to 'Foo.Secret'; capturing it would inline an inaccessible call
+        // into B. Proven: pre-fix this compiled and crashed at run time with MethodAccessException.
+        FSharp """
+module IntrinsicCaptureNoLeak
+type Foo =
+    { V: int }
+    static member private Secret (x: Foo) = { V = x.V + 1 }
+    static member inline UseSecret (x: ^T) = (^T : (static member Secret : ^T -> ^T) x)
+module B =
+    let r = Foo.UseSecret { V = 5 }
+        """
+        |> asExe
+        |> withLangVersionPreview
+        |> withOptions [ "--realsig+"; "--optimize-" ]
+        |> compile
+        |> shouldFail
+        |> withErrorCode 1
+        |> withDiagnosticMessageMatches "is not public"
+
+    [<Fact>]
+    let ``private op_Implicit conversion does not solve an SRTP constraint`` () =
+        // The op_Implicit/op_Explicit conversion arm must honor the same public-only rule; it is a
+        // different resolution path than named members, so it is pinned separately.
+        FSharp """
+module PrivImplicitNoLeak
+module A =
+    type Wrap = { X: int }
+    type Wrap with
+        static member private op_Implicit (w: Wrap) : int = w.X
+    let inline conv (x: ^T) : int = ((^T) : (static member op_Implicit : ^T -> int) x)
+module B =
+    let r = A.conv { A.Wrap.X = 5 }
+        """
+        |> asExe
+        |> withLangVersionPreview
+        |> withOptions [ "--realsig+"; "--optimize-" ]
+        |> compile
+        |> shouldFail
+        |> withErrorCode 1
+        |> withDiagnosticMessageMatches "does not support a conversion"
 
     [<Fact>]
     let ``internal extension member does not leak across an assembly boundary through SRTP`` () =

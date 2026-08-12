@@ -2,7 +2,8 @@
 
 module ExtensionAccessibility
 
-// ---- Public extension operator is visible everywhere ----
+// A public extension member solves an SRTP constraint everywhere, because the
+// inline function that carries the solution can be used from any scope.
 
 module PublicExt =
     type System.Int32 with
@@ -14,16 +15,3 @@ let inline ping (x: ^T) = (^T : (static member Ping: ^T -> ^T) x)
 
 let r1 = ping 5
 if r1 <> 105 then failwith $"Expected 105, got {r1}"
-
-// ---- Internal module extension: visible within this compilation unit ----
-
-module internal InternalExt =
-    type System.Int32 with
-        static member Pong(x: int) = x + 200
-
-open InternalExt
-
-let inline pong (x: ^T) = (^T : (static member Pong: ^T -> ^T) x)
-
-let r2 = pong 5
-if r2 <> 205 then failwith $"Expected 205, got {r2}"

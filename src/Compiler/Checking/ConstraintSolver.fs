@@ -1800,15 +1800,13 @@ and SolveMemberConstraint (csenv: ConstraintSolverEnv) ignoreUnresolvedOverload 
             let denv = csenv.DisplayEnv
             let extensionsEnabled = g.langVersion.SupportsFeature LanguageFeature.ExtensionConstraintSolutions
 
-            // traitAD: extension scope access rights, or AccessibleFromEverywhere when disabled
-            let traitAD =
-                if extensionsEnabled then
-                    match traitCtxt with
-                    | Some (:? TraitContext as tc) -> tc.AccessRights
-                    | Some _ -> error (InternalError("SolveMemberConstraint: unexpected ITraitContext implementation", m))
-                    | None -> AccessibleFromEverywhere
-                else
-                    AccessibleFromEverywhere
+            // The member that solves an SRTP constraint must be public.
+            // A generic inline function carries its solved constraint into every caller, including
+            // callers in other assemblies. A private or internal solution would be inlined into a
+            // scope that cannot access it and fail at run time with a MethodAccessException.
+            // Gating on AccessibleFromEverywhere keeps extension solutions consistent with the
+            // existing rule for intrinsic members and rejects an inaccessible solution at compile time.
+            let traitAD = AccessibleFromEverywhere
 
             let ndeep = ndeep + 1
             do! DepthCheck ndeep m

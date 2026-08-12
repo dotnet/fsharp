@@ -2111,7 +2111,11 @@ let r = "a" * 3
     // the same System.String (*) extrinsic extension scenario.
 
     [<Fact>]
-    let ``Internal record field resolves via SRTP within same compilation unit`` () =
+    let ``Internal record field does not resolve via SRTP (must be public)`` () =
+        // Only a public member may solve an SRTP constraint: a public inline function can be inlined
+        // into another assembly where an internal member is inaccessible (MethodAccessException), so
+        // the internal candidate is dropped at compile time. Same-assembly-only internal SRTP is a
+        // deferred use-site-accessibility design.
         FSharp """
 module TestInternalField
 
@@ -2125,8 +2129,10 @@ if v <> 42 then failwith (sprintf "Expected 42 but got %d" v)
         """
         |> asExe
         |> withLangVersionPreview
-        |> compileAndRun
-        |> shouldSucceed
+        |> compile
+        |> shouldFail
+        |> withErrorCode 1
+        |> withDiagnosticMessageMatches "does not support the operator 'get_X'"
 
     [<Fact>]
     let ``Cross-assembly extension operator resolves via SRTP`` () =
@@ -2615,7 +2621,9 @@ if result <> 42 then failwith (sprintf "Expected 42 but got %d" result)
         |> shouldSucceed
 
     [<Fact>]
-    let ``Internal type extension in same assembly resolves via SRTP`` () =
+    let ``Internal type extension in same assembly does not resolve via SRTP (must be public)`` () =
+        // Internal member on a public type, same public-only rule: 'Combine' is found but rejected
+        // with FS0001 'is not public' rather than inlined into a scope that cannot reach it.
         FSharp """
 module TestInternalExtension
 
@@ -2630,8 +2638,10 @@ if result.Value <> 3 then failwith (sprintf "Expected 3 but got %d" result.Value
         """
         |> asExe
         |> withLangVersionPreview
-        |> compileAndRun
-        |> shouldSucceed
+        |> compile
+        |> shouldFail
+        |> withErrorCode 1
+        |> withDiagnosticMessageMatches "is not public"
 
     [<Fact>]
     let ``SRTP constraints from different accessibility domains flow together`` () =
@@ -2667,7 +2677,8 @@ if result.Value <> 12 then failwith (sprintf "Expected 12 but got %d" result.Val
         |> shouldSucceed
 
     [<Fact>]
-    let ``Internal record field resolves via SRTP within same assembly`` () =
+    let ``Internal record field on public type does not resolve via SRTP (must be public)`` () =
+        // Public record type with an internal field: its get_X accessor is not public, same rule.
         FSharp """
 module TestInternalRecordField
 
@@ -2683,8 +2694,10 @@ if v <> 42 then failwith (sprintf "Expected 42 but got %d" v)
         """
         |> asExe
         |> withLangVersionPreview
-        |> compileAndRun
-        |> shouldSucceed
+        |> compile
+        |> shouldFail
+        |> withErrorCode 1
+        |> withDiagnosticMessageMatches "does not support the operator 'get_X'"
 
     [<Fact>]
     let ``Cross-assembly internal extension is not visible via SRTP`` () =
