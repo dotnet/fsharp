@@ -1388,6 +1388,15 @@ let MakeAndPublishVal (cenv: cenv) env (altActualParent, inSig, declKind, valRec
             | ParentNone -> errorR(Error(FSComp.SR.tcCompiledNameAttributeMisused(), m))
             | _ -> ()
 
+    // OverloadResolutionPriority not allowed on override members (only diagnosed when the feature is on)
+    match memberInfoOpt with
+    | Some (PrelimMemberInfo(memberInfo, _, _)) when
+            memberInfo.MemberFlags.IsOverrideOrExplicitImpl
+            && g.langVersion.SupportsFeature LanguageFeature.OverloadResolutionPriority ->
+        if attribsHaveValFlag g WellKnownValAttributes.OverloadResolutionPriorityAttribute attrs then
+            errorR(Error(FSComp.SR.tcOverloadResolutionPriorityOnOverride(), m))
+    | _ -> ()
+
     let compiledNameIsOnProp =
         match memberInfoOpt with
         | Some (PrelimMemberInfo(memberInfo, _, _)) ->
@@ -12209,11 +12218,9 @@ and TcLetBinding (cenv: cenv) isUse env containerInfo declKind tpenv (synBinds, 
                 let tmp, _ = mkCompGenLocal m "patternInput" (generalizedTypars +-> tauTy)
 
                 if isUse then
-                    let isDiscarded = match checkedPat with TPat_wild _ -> true | _ -> false
-                    if not isDiscarded then
-                        errorR(Error(FSComp.SR.tcInvalidUseBinding(), m))
-                    else
-                        checkLanguageFeatureAndRecover g.langVersion LanguageFeature.UseBindingValueDiscard checkedPat.Range
+                    match checkedPat with
+                    | TPat_wild _ -> ()
+                    | _ -> errorR(Error(FSComp.SR.tcInvalidUseBinding(), m))
 
                 elif isFixed then
                     errorR(Error(FSComp.SR.tcInvalidUseBinding(), m))
