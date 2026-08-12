@@ -8,6 +8,7 @@ open System.Collections.Concurrent
 open System.Collections.Generic
 open System.Runtime.CompilerServices
 
+/// Do not lock on these objects.
 [<Class>]
 type InterruptibleLazy<'T> =
     new: valueFactory: (unit -> 'T) -> InterruptibleLazy<'T>
