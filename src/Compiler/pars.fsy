@@ -5744,7 +5744,7 @@ forLoopRange:
   | parenPattern EQUALS declExpr forLoopDirection declExpr
       { let mEquals = rhs parseState 2
         let spTo = DebugPointAtInOrTo.Yes(rhs parseState 4)
-        idOfPat parseState (rhs parseState 1) $1, Some mEquals, $3, $4, $5, spTo }
+        idOfPat (rhs parseState 1) $1, Some mEquals, $3, $4, $5, spTo }
 
 forLoopDirection:
   | TO { true }

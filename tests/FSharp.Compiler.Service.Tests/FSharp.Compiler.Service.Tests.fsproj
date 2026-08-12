@@ -36,6 +36,7 @@
     <Compile Include="ModuleReaderCancellationTests.fs" />
     <Compile Include="EditorTests.fs" />
     <Compile Include="Symbols.fs" />
+    <Compile Include="RecordConstructorTests.fs" />
     <Compile Include="TestDoubles.fs" />
     <Compile Include="ConsoleOnlyOptionsTests.fs" />
     <Compile Include="VisualStudioVersusConsoleContextTests.fs" />
@@ -189,6 +190,14 @@
     <Compile Include="Tooltip\TooltipTests.Records.fs" />
     <Compile Include="Tooltip\TooltipTests.TypeProviders.fs" />
     <Compile Include="Tooltip\TooltipTests.Types.fs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- ECMA-335 Edit-and-Continue metadata delta writer tests. See PR #TBD. -->
+    <Compile Include="DeltaMetadata\CodedIndexTests.fs" />
+    <Compile Include="DeltaMetadata\MetadataDeltaTestHelpers.fs" />
+    <Compile Include="DeltaMetadata\SrmReaderParityTests.fs" />
+    <Compile Include="DeltaMetadata\FSharpDeltaMetadataWriterTests.fs" />
   </ItemGroup>
 
 	<ItemGroup>

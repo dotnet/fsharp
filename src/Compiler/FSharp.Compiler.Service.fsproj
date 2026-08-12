@@ -236,12 +236,26 @@
     <Compile Include="AbstractIL\ilbinary.fs" />
     <Compile Include="AbstractIL\ilread.fsi" />
     <Compile Include="AbstractIL\ilread.fs" />
-    <Compile Include="AbstractIL\EncMethodDebugInformation.fsi" />
-    <Compile Include="AbstractIL\EncMethodDebugInformation.fs" />
     <Compile Include="AbstractIL\ilwritepdb.fsi" />
     <Compile Include="AbstractIL\ilwritepdb.fs" />
+    <Compile Include="AbstractIL\EncMethodDebugInformation.fsi" />
+    <Compile Include="AbstractIL\EncMethodDebugInformation.fs" />
     <Compile Include="AbstractIL\ilwrite.fsi" />
     <Compile Include="AbstractIL\ilwrite.fs" />
+    <!-- ECMA-335 Edit-and-Continue metadata delta writer. See PR #TBD.
+         Placed after ilwrite.fs/.fsi (not immediately after ilwritepdb) because
+         IlxDeltaStreams.fs and DeltaMetadataTables.fs reuse ilwrite.fs's
+         markerForUnicodeBytes helper for #US heap encoding. -->
+    <Compile Include="AbstractIL\ILDeltaHandles.fs" />
+    <Compile Include="AbstractIL\ILMetadataHeaps.fs" />
+    <Compile Include="AbstractIL\IlxDeltaStreams.fs" />
+    <Compile Include="AbstractIL\DeltaMetadataEncoding.fs" />
+    <Compile Include="AbstractIL\DeltaMetadataTypes.fs" />
+    <Compile Include="AbstractIL\DeltaMetadataTables.fs" />
+    <Compile Include="AbstractIL\DeltaTableLayout.fs" />
+    <Compile Include="AbstractIL\DeltaIndexSizing.fs" />
+    <Compile Include="AbstractIL\DeltaMetadataSerializer.fs" />
+    <Compile Include="AbstractIL\FSharpDeltaMetadataWriter.fs" />
     <Compile Include="AbstractIL\ilreflect.fsi" />
     <Compile Include="AbstractIL\ilreflect.fs" />
     <Compile Include="SyntaxTree\PrettyNaming.fsi" />
@@ -276,6 +290,8 @@
     </None>
     <Compile Include="SyntaxTree\UnicodeLexing.fsi" />
     <Compile Include="SyntaxTree\UnicodeLexing.fs" />
+    <Compile Include="SyntaxTree\XmlDocIncludeExpander.fsi" />
+    <Compile Include="SyntaxTree\XmlDocIncludeExpander.fs" />
     <Compile Include="SyntaxTree\XmlDoc.fsi" />
     <Compile Include="SyntaxTree\XmlDoc.fs" />
     <Compile Include="SyntaxTree\SyntaxTrivia.fsi" />
@@ -389,6 +405,8 @@
     <Compile Include="Checking\MethodCalls.fs" />
     <Compile Include="Checking\PatternMatchCompilation.fsi" />
     <Compile Include="Checking\PatternMatchCompilation.fs" />
+    <Compile Include="Checking\OverloadResolutionRules.fsi" />
+    <Compile Include="Checking\OverloadResolutionRules.fs" />
     <Compile Include="Checking\OverloadResolutionCache.fsi" />
     <Compile Include="Checking\OverloadResolutionCache.fs" />
     <Compile Include="Checking\ConstraintSolver.fsi" />
@@ -451,6 +469,8 @@
     <Compile Include="CodeGen\EraseUnions.fs" />
     <Compile Include="CodeGen\IlxGen.fsi" />
     <Compile Include="CodeGen\IlxGen.fs" />
+    <Compile Include="CodeGen\ILBaselineReader.fs" />
+    <Compile Include="CodeGen\HotReloadBaseline.fs" />
     <Compile Include="Driver\FxResolver.fsi" />
     <Compile Include="Driver\FxResolver.fs" />
     <Compile Include="DependencyManager/AssemblyResolveHandler.fsi">

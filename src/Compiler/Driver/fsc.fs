@@ -594,7 +594,7 @@ let main1
     // Import basic assemblies
     let tcGlobals, frameworkTcImports =
         TcImports.BuildFrameworkTcImports(foundationalTcConfigP, sysRes, otherRes)
-        |> Async.RunImmediate
+        |> Async.RunSynchronouslyImmediate
 
     let ilSourceDocs =
         [
@@ -642,7 +642,7 @@ let main1
 
     let tcImports =
         TcImports.BuildNonFrameworkTcImports(tcConfigP, frameworkTcImports, otherRes, knownUnresolved, dependencyProvider)
-        |> Async.RunImmediate
+        |> Async.RunSynchronouslyImmediate
 
     // register tcImports to be disposed in future
     disposables.Register tcImports
@@ -1149,6 +1149,7 @@ let main6
                             referenceAssemblyAttribOpt = referenceAssemblyAttribOpt
                             referenceAssemblySignatureHash = refAssemblySignatureHash
                             pathMap = tcConfig.pathMap
+                            moduleCustomDebugInfoRows = []
                             methodCustomDebugInfoRows = Map.empty
                         },
                         ilxMainModule,
@@ -1181,6 +1182,7 @@ let main6
                             referenceAssemblyAttribOpt = None
                             referenceAssemblySignatureHash = None
                             pathMap = tcConfig.pathMap
+                            moduleCustomDebugInfoRows = []
                             methodCustomDebugInfoRows = Map.empty
                         },
                         ilxMainModule,

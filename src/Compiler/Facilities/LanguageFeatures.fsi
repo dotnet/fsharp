@@ -6,17 +6,13 @@ module internal FSharp.Compiler.Features
 /// LanguageFeature enumeration
 [<RequireQualifiedAccess>]
 type LanguageFeature =
-    | WildCardInForLoop
     | RelaxWhitespace
     | RelaxWhitespace2
     | NameOf
-    | ImplicitYield
-    | OpenTypeDeclaration
     | DotlessFloat32Literal
     | PackageManagement
     | FromEndSlicing
     | FixedIndexSlice3d4d
-    | AndBang
     | ResumableStateMachines
     | NullableOptionalInterop
     | DefaultInterfaceMemberConsumption
@@ -27,10 +23,8 @@ type LanguageFeature =
     | OverloadsForCustomOperations
     | ExpandedMeasurables
     | NullnessChecking
-    | StructActivePattern
     | IndexerNotationWithoutDot
     | RefCellNotationInformationals
-    | UseBindingValueDiscard
     | UnionIsPropertiesVisible
     | NonVariablePatternsToRightOfAsPatterns
     | AttributesToRightOfModuleKeyword
@@ -92,12 +86,15 @@ type LanguageFeature =
     | ErrorOnInvalidDeclsInTypeDefinitions
     | AllowTypedLetUseAndBang
     | ReturnFromFinal
+    | MoreConcreteTiebreaker
+    | OverloadResolutionPriority
     | WarnWhenFunctionValueUsedAsInterpolatedStringArg
     | MethodOverloadsCache
     | ImplicitDIMCoverage
     | PreprocessorElif
     | ExceptionFieldSerializationSupport
     | ErrorOnMissingSignatureAttribute
+    | RecordConstructorSyntax
     | NotNullIfNotNull
     | DirectDelegateConstruction
     | AccessProtectedBaseFieldFromClosure

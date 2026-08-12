@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
   <file datatype="xml" source-language="en" target-language="it" original="../FSComp.resx">
     <body>
@@ -177,6 +177,21 @@
         <target state="new">The constraints 'comparison' and 'delegate' are inconsistent</target>
         <note />
       </trans-unit>
+      <trans-unit id="csConcretenessMoreConcreteAt">
+        <source>{0} is more concrete at {1}</source>
+        <target state="new">{0} is more concrete at {1}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="csConcretenessPosition">
+        <source>position {0}</source>
+        <target state="new">position {0}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="csConcretenessPositions">
+        <source>positions {0}</source>
+        <target state="new">positions {0}</target>
+        <note />
+      </trans-unit>
       <trans-unit id="csFunctionDoesNotSupportType">
         <source>'{0}' does not support the type '{1}', because the latter lacks the required (real or built-in) member '{2}'</source>
         <target state="translated">'{0}' non supporta il tipo '{1}', perché in quest'ultimo manca il membro '{2}' richiesto (reale o predefinito)</target>
@@ -185,6 +200,11 @@
       <trans-unit id="csGenericConstructRequiresStructOrReferenceConstraint">
         <source>A generic construct requires that a generic type parameter be known as a struct or reference type. Consider adding a type annotation.</source>
         <target state="translated">Un costrutto generico richiede che un parametro di tipo generico sia noto come tipo riferimento o struct. Provare ad aggiungere un'annotazione di tipo.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="csIncomparableConcreteness">
+        <source>Neither candidate is strictly more concrete than the other:\n{0}</source>
+        <target state="new">Neither candidate is strictly more concrete than the other:\n{0}</target>
         <note />
       </trans-unit>
       <trans-unit id="csNoOverloadsFoundArgumentsPrefixPlural">
@@ -302,11 +322,6 @@
         <target state="new">Allow object expressions without overrides</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureAndBang">
-        <source>applicative computation expressions</source>
-        <target state="translated">espressioni di calcolo applicativo</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureArithmeticInLiterals">
         <source>Arithmetic and logical operations in literals, enum definitions and attributes</source>
         <target state="translated">Operazioni aritmetiche e logiche in valori letterali, definizioni di enumerazione e attributi</target>
@@ -370,11 +385,6 @@
       <trans-unit id="featureDirectDelegateConstruction">
         <source>construct delegates that point directly at the target method, avoiding an intermediate closure</source>
         <target state="new">construct delegates that point directly at the target method, avoiding an intermediate closure</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="featureDiscardUseValue">
-        <source>discard pattern in use binding</source>
-        <target state="translated">rimuovi criterio nell'utilizzo dell'associazione</target>
         <note />
       </trans-unit>
       <trans-unit id="featureDontWarnOnUppercaseIdentifiersInBindingPatterns">
@@ -457,11 +467,6 @@
         <target state="new">Implicit dispatch slot coverage for default interface member implementations</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureImplicitYield">
-        <source>implicit yield</source>
-        <target state="translated">istruzione yield implicita</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureImprovedImpliedArgumentNames">
         <source>Improved implied argument names</source>
         <target state="translated">Nomi di argomenti impliciti migliorati</target>
@@ -522,6 +527,11 @@
         <target state="translated">L'eliminazione della corrispondenza dei criteri non è consentita per case di unione che non accetta dati.</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureMoreConcreteTiebreaker">
+        <source>Use 'most concrete' tiebreaker for overload resolution when methods differ only by type parameter concreteness.</source>
+        <target state="new">Use 'most concrete' tiebreaker for overload resolution when methods differ only by type parameter concreteness.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureNameOf">
         <source>nameof</source>
         <target state="translated">nameof</target>
@@ -557,9 +567,9 @@
         <target state="new">nullness checking</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureOpenTypeDeclaration">
-        <source>open type declaration</source>
-        <target state="translated">dichiarazione di tipo aperto</target>
+      <trans-unit id="featureOverloadResolutionPriority">
+        <source>Support for OverloadResolutionPriorityAttribute to prioritize method overloads.</source>
+        <target state="new">Support for OverloadResolutionPriorityAttribute to prioritize method overloads.</target>
         <note />
       </trans-unit>
       <trans-unit id="featureOverloadsForCustomOperations">
@@ -605,6 +615,11 @@
       <trans-unit id="featureReallyLongList">
         <source>list literals of any size</source>
         <target state="translated">elenca valori letterali di qualsiasi dimensione</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureRecordConstructorSyntax">
+        <source>Constructing a record via its all-fields constructor</source>
+        <target state="new">Constructing a record via its all-fields constructor</target>
         <note />
       </trans-unit>
       <trans-unit id="featureRecordSpreads">
@@ -677,11 +692,6 @@
         <target state="translated">interpolazione di stringhe</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureStructActivePattern">
-        <source>struct representation for active patterns</source>
-        <target state="translated">rappresentazione struct per criteri attivi</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureSupportValueOptionsAsOptionalParameters">
         <source>Support ValueOption as valid type for optional member parameters</source>
         <target state="new">Support ValueOption as valid type for optional member parameters</target>
@@ -740,11 +750,6 @@
       <trans-unit id="featureWhileBang">
         <source>'while!' expression</source>
         <target state="translated">Espressione "while!"</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="featureWildCardInForLoop">
-        <source>wild card in for loop</source>
-        <target state="translated">carattere jolly nel ciclo for</target>
         <note />
       </trans-unit>
       <trans-unit id="featureWitnessPassing">
@@ -865,6 +870,11 @@
       <trans-unit id="lexByteStringMayNotBeInterpolated">
         <source>a byte string may not be interpolated</source>
         <target state="translated">non è possibile interpolare una stringa di byte</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="lexColonDirectiveMustBeFirst">
+        <source>#: directives must start at the beginning of a line</source>
+        <target state="new">#: directives must start at the beginning of a line</target>
         <note />
       </trans-unit>
       <trans-unit id="lexExtendedStringInterpolationNotSupported">
@@ -1427,11 +1437,6 @@
         <target state="translated">Questa espressione di tipo '{0}' è resa compatibile con il tipo '{1}' solo tramite una conversione implicita ambigua. Provare a usare una chiamata esplicita a 'op_Implicit'. Le conversioni implicite applicabili sono: {2}</target>
         <note />
       </trans-unit>
-      <trans-unit id="tcAndBangNotSupported">
-        <source>This feature is not supported in this version of F#. You may need to add /langversion:preview to use this feature.</source>
-        <target state="translated">Questa funzionalità non è supportata in questa versione di F#. Per usare questa funzionalità, potrebbe essere necessario aggiungere /langversion:preview.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="tcAnonRecdDuplicateFieldId">
         <source>The field '{0}' appears multiple times in this record expression.</source>
         <target state="translated">Il campo '{0}' viene visualizzato più volte in questa espressione di record.</target>
@@ -1550,6 +1555,11 @@
       <trans-unit id="tcGenericAttributesNotSupported">
         <source>Generic attribute types are not supported in F#. The type '{0}' has type parameters and cannot be used as an attribute.</source>
         <target state="new">Generic attribute types are not supported in F#. The type '{0}' has type parameters and cannot be used as an attribute.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcGenericOverloadBypassed">
+        <source>A more generic overload was bypassed: '{0}'. The selected overload '{1}' was chosen because it has more concrete type parameters.</source>
+        <target state="new">A more generic overload was bypassed: '{0}'. The selected overload '{1}' was chosen because it has more concrete type parameters.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcHighPrecedenceFunctionApplicationToListDeprecated">
@@ -1672,6 +1682,11 @@
         <target state="new">The following required properties have to be initialized:{0}</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcMoreConcreteTiebreakerUsed">
+        <source>Overload resolution preferred the more concrete overload '{0}' over '{1}' based on parameter type concreteness. This is an informational message and can be enabled with --warnon:3575.</source>
+        <target state="new">Overload resolution preferred the more concrete overload '{0}' over '{1}' based on parameter type concreteness. This is an informational message and can be enabled with --warnon:3575.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcMultipleFieldsInRecord">
         <source>The field '{0}' appears multiple times in this record expression or pattern</source>
         <target state="translated">Il campo "{0}" viene visualizzato più volte in questa espressione di record o criterio.</target>
@@ -1735,6 +1750,11 @@
       <trans-unit id="tcOtherThenAdjacentListArgumentReserved">
         <source>The syntax 'expr1[expr2]' is now reserved for indexing and is ambiguous when used as an argument. See https://aka.ms/fsharp-index-notation. If calling a function with multiple curried arguments, add a space between them, e.g. 'someFunction expr1 [expr2]'.</source>
         <target state="translated">La sintassi 'expr1[expr2]' è ora riservata per l'indicizzazione ed è ambigua quando usata come argomento. Vedere https://aka.ms/fsharp-index-notation. Se si chiama una funzione con più argomenti sottoposti a corsi, aggiungere uno spazio tra di essi, ad esempio 'someFunction expr1 [expr2]'.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcOverloadResolutionPriorityOnOverride">
+        <source>The 'OverloadResolutionPriorityAttribute' cannot be applied to an override member. Apply it to the original declaration instead.</source>
+        <target state="new">The 'OverloadResolutionPriorityAttribute' cannot be applied to an override member. Apply it to the original declaration instead.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcOverrideUsesMultipleArgumentsInsteadOfTuple">
@@ -2150,6 +2170,16 @@
       <trans-unit id="xmlDocDuplicateParameter">
         <source>This XML comment is invalid: multiple documentation entries for parameter '{0}'</source>
         <target state="translated">Questo commento XML non è valido: sono presenti più voci della documentazione per il parametro '{0}'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="xmlDocIncludeError">
+        <source>XML documentation include error: {0}</source>
+        <target state="new">XML documentation include error: {0}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="xmlDocIncludeError2">
+        <source>XML documentation include error: Unable to include XML fragment '{0}' of file '{1}' -- {2}</source>
+        <target state="new">XML documentation include error: Unable to include XML fragment '{0}' of file '{1}' -- {2}</target>
         <note />
       </trans-unit>
       <trans-unit id="xmlDocInvalidParameterName">
@@ -6709,7 +6739,7 @@
       </trans-unit>
       <trans-unit id="lexfltTokenIsOffsideOfContextStartedEarlier">
         <source>Unexpected syntax or possible incorrect indentation: this token is offside of context started at position {0}. Try indenting this further.</source>
-        <target state="needs-review-translation">Sintassi imprevista o possibile rientro non corretto: questo token è fuori dal contesto avviato nella posizione {0}. Provare a impostare ulteriormente il rientro.\nPer continuare a usare un rientro non conforme, passare il flag '--strict-indentation-' al compilatore, o impostare la versione del linguaggio su F# 7.</target>
+        <target state="new">Unexpected syntax or possible incorrect indentation: this token is offside of context started at position {0}. Try indenting this further.</target>
         <note />
       </trans-unit>
       <trans-unit id="lexfltSeparatorTokensOfPatternMatchMisaligned">
