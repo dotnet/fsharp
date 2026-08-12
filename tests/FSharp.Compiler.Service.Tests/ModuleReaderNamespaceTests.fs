@@ -24,24 +24,24 @@ open Xunit
 let private dumpTree (sortSiblings: bool) (typeDefs: ILTypeDefs) : string =
     let sb = StringBuilder()
 
-    let rec go (indent: int) (tds: ILTypeDefs) =
+    let rec go (indent: int) (types: ILPreTypeDef[]) (namespaces: ILPreNamespace[]) =
         let pad = String.replicate indent "  "
 
         let typeNames =
-            [ for struct (_, pre) in tds.AsArrayOfPreTypeDefs() do
+            [ for pre in types do
                 // Skip the always-present <Module> pseudo-type.
                 if pre.Name <> "<Module>" then yield pre.Name ]
         for name in (if sortSiblings then List.sort typeNames else typeNames) do
             sb.AppendLine($"{pad}{name}") |> ignore
 
-        let namespaces = List.ofArray (tds.AsArrayOfPreNamespaces())
+        let namespaces = List.ofArray namespaces
         let namespaces = if sortSiblings then List.sortBy (fun (ns: ILPreNamespace) -> ns.Name) namespaces else namespaces
         for ns in namespaces do
             sb.AppendLine($"{pad}{ns.Name}/") |> ignore
-            go (indent + 1) (ns.GetContents())
+            go (indent + 1) (ns.GetTypes()) (ns.GetNamespaces())
 
     sb.AppendLine("global") |> ignore
-    go 1 typeDefs
+    go 1 (typeDefs.AsArrayOfPreTypeDefs()) (typeDefs.AsArrayOfPreNamespaces())
     sb.ToString().Replace("\r\n", "\n").TrimEnd('\n')
 
 
@@ -56,31 +56,38 @@ let private mkPreTypeDef (name: string) : ILPreTypeDef =
                 mkILMethods [], mkILTypeDefs [], mkILFields [], emptyILMethodImpls, mkILEvents [],
                 mkILProperties [], emptyILSecurityDecls, emptyILCustomAttrsStored) }
 
-/// A flat-table entry from a full type name: its namespace paired with the pre-type-def (all types
-/// sit at one level).
-let private flatEntry (fullName: string) : struct (string list * ILPreTypeDef) =
+let private entryOf (fullName: string) : struct (string list * ILPreTypeDef) =
     let ns, name = splitILTypeName fullName
     struct (ns, mkPreTypeDef name)
 
 /// Group the given full type names (in order) into a namespace tree using the production grouping.
 let private mkGroupedTypeDefs (fullNames: string list) : ILTypeDefs =
-    mkILTypeDefsGroupedComputed
-        (fun () -> [| for n in fullNames -> let ns, name = splitILTypeName n in struct (ns, name) |])
-        mkPreTypeDef
+    mkILTypeDefsGroupedComputed (fun () -> [| for n in fullNames -> entryOf n |]) (fun () -> Array.empty)
 
-/// Wrap the type defs so that forcing any namespace's contents records its full path in `forced`.
+/// Wrap the type defs so that reading either half of any namespace records its full path in `forced`.
 let private trackNamespaceForcing (forced: HashSet<string>) (typeDefs: ILTypeDefs) : ILTypeDefs =
-    let rec track (path: string) (tds: ILTypeDefs) =
-        mkILTypeDefsAndNamespacesComputed
-            (fun () -> tds.AsArrayOfPreTypeDefs())
-            (fun () ->
-                [| for ns in tds.AsArrayOfPreNamespaces() ->
-                       let nsPath = if path = "" then ns.Name else $"{path}.{ns.Name}"
-                       mkILPreNamespaceComputed(ns.Name, fun () ->
-                           forced.Add nsPath |> ignore
-                           track nsPath (ns.GetContents())) |])
+    let rec track (path: string) (ns: ILPreNamespace) =
+        let childPath (child: ILPreNamespace) =
+            if path = "" then child.Name else $"{path}.{child.Name}"
 
-    track "" typeDefs
+        mkILPreNamespaceComputed(
+            ns.Name,
+            (fun () ->
+                forced.Add path |> ignore
+                ns.GetTypes()),
+            (fun () ->
+                forced.Add path |> ignore
+                [| for child in ns.GetNamespaces() -> track (childPath child) child |])
+        )
+
+    // The level itself is the table handed in; only the namespaces below it are tracked.
+    mkILTypeDefsOfNamespace (
+        mkILPreNamespaceComputed(
+            "",
+            (fun () -> typeDefs.AsArrayOfPreTypeDefs()),
+            (fun () -> [| for ns in typeDefs.AsArrayOfPreNamespaces() -> track ns.Name ns |])
+        )
+    )
 
 
 [<Fact>]
@@ -137,52 +144,59 @@ let ``Grouping - namespaces are realised lazily`` () =
         trackNamespaceForcing forced (mkGroupedTypeDefs [ "Type1"; "Ns1.T1"; "Ns2.Inner.T2" ])
 
     // Reading global-namespace types and enumerating child namespaces must not force any contents.
-    typeDefs.AsArrayOfPreTypeDefs() |> Array.map (fun struct (_, p) -> p.Name) |> shouldEqual [| "Type1" |]
+    typeDefs.AsArrayOfPreTypeDefs() |> Array.map _.Name |> shouldEqual [| "Type1" |]
     typeDefs.AsArrayOfPreNamespaces() |> Array.map _.Name |> shouldEqual [| "Ns1"; "Ns2" |]
     forced.Count |> shouldEqual 0
 
     // Importing a single namespace forces only that one (not its siblings, not deeper levels).
     let ns1 = typeDefs.AsArrayOfPreNamespaces() |> Array.find (fun ns -> ns.Name = "Ns1")
-    ns1.GetContents().AsArrayOfPreTypeDefs() |> Array.map (fun struct (_, p) -> p.Name) |> shouldEqual [| "T1" |]
+    ns1.GetTypes() |> Array.map _.Name |> shouldEqual [| "T1" |]
     forced.Contains "Ns1" |> shouldEqual true
     forced.Contains "Ns2" |> shouldEqual false
     forced.Contains "Ns2.Inner" |> shouldEqual false
 
 
 [<Fact>]
-let ``Grouping - pre-type-defs of un-imported namespaces are never built`` () =
-    // The maker for a type runs only once its namespace level is realised, so grouping and enumerating
-    // namespaces never touches an un-imported namespace's types.
-    let built = HashSet<string>()
+let ``Grouping - un-imported namespaces never have their type names read`` () =
+    // Grouping an entry needs its namespace, never its name. A reader whose name costs work - the metadata
+    // reader's is a string-heap read - therefore pays it only for the namespaces something imports.
+    let read = HashSet<string>()
 
-    let entry (fullName: string) : struct (string list * string) =
-        struct (fst (splitILTypeName fullName), fullName)
+    let entry (fullName: string) : struct (string list * ILPreTypeDef) =
+        let ns, name = splitILTypeName fullName
 
-    let mk (fullName: string) =
-        built.Add fullName |> ignore
-        mkPreTypeDef (snd (splitILTypeName fullName))
+        let pre =
+            { new ILPreTypeDef with
+                member _.Name =
+                    read.Add fullName |> ignore
+                    name
+
+                member _.GetTypeDef() = (mkPreTypeDef name).GetTypeDef() }
+
+        struct (ns, pre)
 
     let typeDefs =
-        mkILTypeDefsGroupedComputed (fun () -> [| entry "Type1"; entry "Ns1.T1"; entry "Ns2.Inner.T2" |]) mk
+        mkILTypeDefsGroupedComputed
+            (fun () -> [| entry "Type1"; entry "Ns1.T1"; entry "Ns2.Inner.T2" |])
+            (fun () -> Array.empty)
 
-    // Enumerating child namespace names builds nothing: types and namespaces realise independently.
+    // Child namespaces are named by the grouping, not by the types in them, so enumerating reads nothing.
     typeDefs.AsArrayOfPreNamespaces() |> Array.map _.Name |> shouldEqual [| "Ns1"; "Ns2" |]
-    built |> shouldEqual (HashSet<string>())
+    read |> shouldEqual (HashSet<string>())
 
-    // Reading the global-namespace types builds only those.
-    typeDefs.AsArrayOfPreTypeDefs() |> Array.map (fun struct (_, p) -> p.Name) |> shouldEqual [| "Type1" |]
-    built |> shouldEqual (HashSet [ "Type1" ])
+    typeDefs.AsArrayOfPreTypeDefs() |> Array.map _.Name |> shouldEqual [| "Type1" |]
+    read |> shouldEqual (HashSet [ "Type1" ])
 
-    // Importing Ns1 builds only Ns1's types; Ns2's remain untouched.
+    // Importing Ns1 reads only Ns1's; Ns2's remain untouched.
     let ns1 = typeDefs.AsArrayOfPreNamespaces() |> Array.find (fun ns -> ns.Name = "Ns1")
-    ns1.GetContents().AsArrayOfPreTypeDefs() |> Array.map (fun struct (_, p) -> p.Name) |> shouldEqual [| "T1" |]
-    built |> shouldEqual (HashSet [ "Type1"; "Ns1.T1" ])
+    ns1.GetTypes() |> Array.map _.Name |> shouldEqual [| "T1" |]
+    read |> shouldEqual (HashSet [ "Type1"; "Ns1.T1" ])
 
 
 [<Fact>]
-let ``Lookup - by name works for flat readers (namespaced pre-type-defs)`` () =
-    // A flat table: all entries at the top level, each carrying its full namespace.
-    let typeDefs = mkILTypeDefsComputed (fun () -> [| flatEntry "Ns1.Ns2.T"; flatEntry "GlobalType" |])
+let ``Lookup - by name works for a deeply nested namespace`` () =
+    let typeDefs =
+        mkILTypeDefsGroupedComputed (fun () -> [| entryOf "Ns1.Ns2.T"; entryOf "GlobalType" |]) (fun () -> Array.empty)
 
     typeDefs.ExistsByName "Ns1.Ns2.T" |> shouldEqual true
     typeDefs.ExistsByName "GlobalType" |> shouldEqual true
@@ -215,51 +229,49 @@ let ``Lookup - FindByName reports the missing type name`` () =
 
 
 [<Fact>]
-let ``Hybrid level - lookup and flattening see both sources`` () =
-    // A level carrying BOTH namespaced flat entries and a child pre-namespace of the same name. No
-    // reader produces this - a level names its children one way or the other, see
-    // mkILTypeDefsAndNamespacesComputed - but lookup and flattening still take in both sources.
+let ``Mixed level - a namespace named by both an entry and a pre-namespace becomes one child`` () =
+    // A level whose children come from BOTH grouped entries and directly supplied pre-namespaces, with a
+    // name in common. The two are one child holding the contents of both - at every depth - so an importer
+    // never sees two namespaces of one name.
     let ns2 =
-        mkILPreNamespaceComputed("Ns2", fun () -> mkILTypeDefsComputed (fun () -> [| struct ([], mkPreTypeDef "TDeepGrouped") |]))
+        mkILPreNamespaceComputed("Ns2", (fun () -> [| mkPreTypeDef "TDeepSupplied" |]), (fun () -> Array.empty))
 
     let ns1 =
-        mkILPreNamespaceComputed(
-            "Ns1",
-            fun () -> mkILTypeDefsAndNamespacesComputed (fun () -> [| struct ([], mkPreTypeDef "TGrouped") |]) (fun () -> [| ns2 |])
-        )
+        mkILPreNamespaceComputed("Ns1", (fun () -> [| mkPreTypeDef "TSupplied" |]), (fun () -> [| ns2 |]))
 
     let typeDefs =
-        mkILTypeDefsAndNamespacesComputed
+        mkILTypeDefsGroupedComputed
             (fun () ->
-                [| struct ([ "Ns1" ], mkPreTypeDef "TFlat")
-                   struct ([ "Ns1"; "Ns2" ], mkPreTypeDef "TDeepFlat") |])
+                [| struct ([ "Ns1" ], mkPreTypeDef "TGrouped")
+                   struct ([ "Ns1"; "Ns2" ], mkPreTypeDef "TDeepGrouped") |])
             (fun () -> [| ns1 |])
 
-    // The flat entries hit this level's own dictionary; the grouped ones are found by descending.
-    typeDefs.ExistsByName "Ns1.TFlat" |> shouldEqual true
+    typeDefs.AsArrayOfPreNamespaces() |> Array.map _.Name |> shouldEqual [| "Ns1" |]
+
     typeDefs.ExistsByName "Ns1.TGrouped" |> shouldEqual true
-    typeDefs.ExistsByName "Ns1.Ns2.TDeepFlat" |> shouldEqual true
+    typeDefs.ExistsByName "Ns1.TSupplied" |> shouldEqual true
     typeDefs.ExistsByName "Ns1.Ns2.TDeepGrouped" |> shouldEqual true
+    typeDefs.ExistsByName "Ns1.Ns2.TDeepSupplied" |> shouldEqual true
     typeDefs.ExistsByName "Ns1.Missing" |> shouldEqual false
 
-    // Flattening unions both sources: this level's entries first, then each namespace's subtree.
+    // Flattening a merged child takes the grouped side first, then the supplied one.
     typeDefs.AllPreTypeDefs()
     |> Array.map _.Name
-    |> shouldEqual [| "TFlat"; "TDeepFlat"; "TGrouped"; "TDeepGrouped" |]
+    |> shouldEqual [| "TGrouped"; "TSupplied"; "TDeepGrouped"; "TDeepSupplied" |]
 
 
 [<Fact>]
-let ``Duplicate namespace nodes - lookup sees the first, flattening sees all`` () =
-    // mkILTypeDefsGroupedComputed merges a split namespace into one node, so no reader should hand the
-    // same level two namespaces with one name. This pins the documented fallback if one ever does.
+let ``Duplicate namespace nodes - two supplied children of one name merge`` () =
     let mkNs name typeName =
-        mkILPreNamespaceComputed(name, fun () -> mkILTypeDefsComputed (fun () -> [| struct ([], mkPreTypeDef typeName) |]))
+        mkILPreNamespaceComputed(name, (fun () -> [| mkPreTypeDef typeName |]), (fun () -> Array.empty))
 
     let typeDefs =
-        mkILTypeDefsAndNamespacesComputed (fun () -> [||]) (fun () -> [| mkNs "Ns" "First"; mkNs "Ns" "Second" |])
+        mkILTypeDefsGroupedComputed (fun () -> [||]) (fun () -> [| mkNs "Ns" "First"; mkNs "Ns" "Second" |])
 
+    typeDefs.AsArrayOfPreNamespaces() |> Array.map _.Name |> shouldEqual [| "Ns" |]
     typeDefs.ExistsByName "Ns.First" |> shouldEqual true
-    typeDefs.ExistsByName "Ns.Second" |> shouldEqual false
+    typeDefs.ExistsByName "Ns.Second" |> shouldEqual true
+    typeDefs.AllPreTypeDefs() |> Array.map _.Name |> shouldEqual [| "First"; "Second" |]
 
     typeDefs.AllPreTypeDefs() |> Array.map _.Name |> shouldEqual [| "First"; "Second" |]
 
@@ -348,7 +360,7 @@ let ``Nested types - grouping keeps them under the declaring type`` () =
                     mkILMethods [], mkILTypeDefs [ inner ], mkILFields [], emptyILMethodImpls, mkILEvents [],
                     mkILProperties [], emptyILSecurityDecls, emptyILCustomAttrsStored) }
 
-    let typeDefs = mkILTypeDefsGroupedComputed (fun () -> [| struct ([ "Ns" ], outer) |]) id
+    let typeDefs = mkILTypeDefsGroupedComputed (fun () -> [| struct ([ "Ns" ], outer) |]) (fun () -> Array.empty)
 
     // Outer sits in namespace Ns; Inner is not a top-level type or namespace.
     dumpTree false typeDefs |> shouldEqual (
@@ -357,8 +369,8 @@ let ``Nested types - grouping keeps them under the declaring type`` () =
         "    Outer"
     )
 
-    let nsContents = (typeDefs.AsArrayOfPreNamespaces() |> Array.exactlyOne).GetContents()
-    let struct (_, outerPre) = nsContents.AsArrayOfPreTypeDefs() |> Array.exactlyOne
+    let ns: ILPreNamespace = typeDefs.AsArrayOfPreNamespaces() |> Array.exactlyOne
+    let outerPre = ns.GetTypes() |> Array.exactlyOne
     outerPre.GetTypeDef().NestedTypes.AsArray() |> Array.map (fun td -> td.Name) |> shouldEqual [| "Inner" |]
 
 
@@ -420,8 +432,7 @@ let rec private trackedPreTypeDefWith
             log.NestedTypes.Add path |> ignore
 
             [| for name in ty.Nested ->
-                   struct ([],
-                           trackedPreTypeDefWith log TypeAttributes.NestedPublic name $"{path}+{name}" (shape name [])) |])
+                   trackedPreTypeDefWith log TypeAttributes.NestedPublic name $"{path}+{name}" (shape name []) |])
 
     let customAttrs =
         ILAttributesStored.CreateReader(
@@ -463,8 +474,8 @@ let private checkAgainstReference (shapes: TypeShape list) (source: string) =
     let log = ReadLog()
 
     let typeDefs =
-        mkILTypeDefsComputed (fun () ->
-            [| for s in shapes -> struct (s.Namespace, trackedPreTypeDef log s) |])
+        mkILTypeDefsGroupedComputed (fun () -> [| for s in shapes -> struct (s.Namespace, trackedPreTypeDef log s) |]) (fun () ->
+            Array.empty)
 
     let path, options = mkTestFileAndOptions [||]
     let options = referenceReaderProjectWithTypeDefs typeDefs false options
@@ -502,26 +513,36 @@ let ``Laziness - checking a file reads only the namespaces it names`` () =
     sorted log.TypeDefs |> shouldEqual [ "G"; "Ns1.A"; "Ns1.B" ]
 
 [<Fact>]
-let ``Laziness - checking a file builds no pre-type-def for un-named namespaces (grouped reader)`` () =
+let ``Laziness - checking a file reads no type name of an un-named namespace`` () =
     let log = ReadLog()
-    let built = HashSet<string>()
+    let read = HashSet<string>()
 
-    // The lazy namespace tree the file reader produces (the test above uses the flat shape of custom
-    // readers and FSI). Here even building the pre-type-def is deferred to the level, so an un-imported
-    // namespace costs nothing beyond its own name.
+    // Grouping an entry needs its namespace, never its name - and reading a name is a string-heap read for
+    // the file reader. The isolated test above pins that; this one pins that it survives a real check, so
+    // an un-imported namespace costs nothing beyond the namespace path grouping already has.
     let typeDefs =
         mkILTypeDefsGroupedComputed
-            (fun () -> [| for s in referenceShapes -> struct (s.Namespace, s) |])
-            (fun s ->
-                let path = fullName s.Namespace s.Name
-                built.Add path |> ignore
-                trackedPreTypeDef log s)
+            (fun () ->
+                [| for s in referenceShapes ->
+                       let path = fullName s.Namespace s.Name
+                       let pre = trackedPreTypeDef log s
+
+                       let tracked =
+                           { new ILPreTypeDef with
+                               member _.Name =
+                                   read.Add path |> ignore
+                                   pre.Name
+
+                               member _.GetTypeDef() = pre.GetTypeDef() }
+
+                       struct (s.Namespace, tracked) |])
+            (fun () -> Array.empty)
 
     let path, options = mkTestFileAndOptions [||]
     let options = referenceReaderProjectWithTypeDefs typeDefs false options
     parseAndCheckFile path useNs1A options |> ignore
 
-    sorted built |> shouldEqual [ "G"; "Ns1.A"; "Ns1.B" ]
+    sorted read |> shouldEqual [ "G"; "Ns1.A"; "Ns1.B" ]
     sorted log.TypeDefs |> shouldEqual [ "G"; "Ns1.A"; "Ns1.B" ]
 
 [<Fact>]

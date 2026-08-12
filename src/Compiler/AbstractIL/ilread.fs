@@ -1888,9 +1888,7 @@ let rec seekReadModule (ctxt: ILMetadataReader) canReduceMemory (pectxtEager: PE
         MetadataIndex = idx
         Name = ilModuleName
         NativeResources = nativeResources
-        TypeDefs =
-            mkILTypeDefsGroupedComputed (fun () -> seekReadTopTypeDefEntries ctxt) (fun (struct (nameIdx, i)) ->
-                mkILPreTypeDefRead (readStringHeap ctxt nameIdx, i, ctxt.typeDefReader))
+        TypeDefs = mkILTypeDefsGroupedComputed (fun () -> seekReadTopTypeDefEntries ctxt) (fun () -> Array.empty)
         SubSystemFlags = int32 subsys
         IsILOnly = ilOnly
         SubsystemVersion = subsysversion
@@ -2077,7 +2075,7 @@ and seekReadTypeDefRowWithExtents ctxt (idx: int) =
     info, seekReadTypeDefRowExtents ctxt info idx
 
 and typeDefReader ctxtH : ILTypeDefStored =
-    mkILTypeDefReader (fun idx ->
+    let getTypeDef idx =
         let (ctxt: ILMetadataReader) = getHole ctxtH
         let mdv = ctxt.mdfile.GetView()
         // Re-read so as not to save all these in the lazy closure - this suspension ctxt.is the largest
@@ -2215,10 +2213,15 @@ and typeDefReader ctxtH : ILTypeDefStored =
             additionalFlags = additionalFlags,
             customAttrsStored = ILAttributesStored.CreateReader(idx, ctxt.customAttrsReaderFn_TypeDef),
             metadataIndex = idx
-        ))
+        )
 
-// Reads only each row's namespace, for grouping; the name read and the pre-type-def build are deferred to
-// the maker, so an un-imported namespace pays for neither.
+    let getName nameIdx =
+        readStringHeap (getHole ctxtH) nameIdx
+
+    mkILTypeDefReader(getTypeDef, getName)
+
+// Reads each row's namespace, which is what grouping the table needs. Reading the names is left to the
+// pre-type-defs, so an un-imported namespace never pays for one.
 and seekReadTopTypeDefEntries (ctxt: ILMetadataReader) =
     [|
         for i = 1 to ctxt.getNumRows TableNames.TypeDef do
@@ -2230,7 +2233,7 @@ and seekReadTopTypeDefEntries (ctxt: ILMetadataReader) =
                     | Some nspace -> splitNamespace nspace
                     | None -> []
 
-                yield struct (ns, struct (nameIdx, i))
+                yield struct (ns, mkILPreTypeDefRead (nameIdx, i, ctxt.typeDefReader))
     |]
 
 and seekReadNestedTypeDefs (ctxt: ILMetadataReader) tidx =
@@ -2238,11 +2241,11 @@ and seekReadNestedTypeDefs (ctxt: ILMetadataReader) tidx =
         let nestedIdxs =
             seekReadIndexedRows (ctxt.getNumRows TableNames.Nested, seekReadNestedRow ctxt, snd, simpleIndexCompare tidx, false, fst)
 
-        // Nested types carry no namespace in metadata; they sit flat at the enclosing type's level.
+        // Nested types carry no namespace in metadata; they all sit in the enclosing type.
         [|
             for i in nestedIdxs do
                 let _, nameIdx, _, _, _, _ = seekReadTypeDefRow ctxt i
-                yield struct ([], mkILPreTypeDefRead (readStringHeap ctxt nameIdx, i, ctxt.typeDefReader))
+                yield mkILPreTypeDefRead (nameIdx, i, ctxt.typeDefReader)
         |])
 
 and seekReadInterfaceImpls (ctxt: ILMetadataReader) mdv numTypars tidx =

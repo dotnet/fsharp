@@ -726,24 +726,27 @@ let rec ImportILTypeDef amap m scoref (cpath: CompilationPath) enc nm (tdef: ILT
 
 /// Import a table of IL types as a ModuleOrNamespaceType. Each child namespace becomes a namespace entity
 /// whose contents are imported the same way once forced.
-and ImportILTypeDefs amap m scoref (cpath: CompilationPath) enc (tdefs: ILTypeDefs) =
-    // We be very careful not to force a read of the type defs or of the child namespaces' contents here
-    let struct (levelTypes, preNamespaces) = ilTypeDefsAsNamespaceLevel tdefs
-
+and ImportILTypeDefsOfLevel amap m scoref (cpath: CompilationPath) enc (types: ILPreTypeDef[]) (namespaces: ILPreNamespace[]) =
     let typeEntities =
-        [ for pre in levelTypes -> ImportILTypeDef amap m scoref cpath enc pre.Name (pre.GetTypeDef()) ]
+        [ for pre in types -> ImportILTypeDef amap m scoref cpath enc pre.Name (pre.GetTypeDef()) ]
 
     let namespaceEntities =
-        [ for preNamespace in preNamespaces do
+        [ for preNamespace in namespaces do
             let childCPath = cpath.NestedCompPath preNamespace.Name (Namespace true)
 
+            // Each half is read once, so a child level needs no table of its own.
             let modty =
-                InterruptibleLazy(fun _ -> ImportILTypeDefs amap m scoref childCPath enc (preNamespace.GetContents()))
+                InterruptibleLazy(fun _ ->
+                    ImportILTypeDefsOfLevel amap m scoref childCPath enc (preNamespace.GetTypes()) (preNamespace.GetNamespaces()))
 
             Construct.NewModuleOrNamespace (Some cpath) taccessPublic (mkSynId m preNamespace.Name) XmlDoc.Empty [] (MaybeLazy.Lazy modty) ]
 
     let kind = match enc with [] -> Namespace true | _ -> ModuleOrType
     Construct.NewModuleOrNamespaceType kind (typeEntities @ namespaceEntities) []
+
+and ImportILTypeDefs amap m scoref (cpath: CompilationPath) enc (tdefs: ILTypeDefs) =
+    // We be very careful not to force a read of the type defs or of the child namespaces' contents here
+    ImportILTypeDefsOfLevel amap m scoref cpath enc (tdefs.AsArrayOfPreTypeDefs()) (tdefs.AsArrayOfPreNamespaces())
 
 /// Import the main type definitions in an IL assembly.
 ///
@@ -772,8 +775,8 @@ let ImportILAssemblyExportedType amap m auxModLoader (scoref: ILScopeRef) (expor
                     with :? KeyNotFoundException ->
                         error(Error(FSComp.SR.impReferenceToDllRequiredByAssembly(RichText.mkText exportedType.ScopeRef.QualifiedName, RichText.mkText scoref.QualifiedName, RichText.ofQualifiedTypeName exportedType.Name), m)) }
 
-        // A one-entry flat table: ilTypeDefsAsNamespaceLevel turns its namespace into the entity chain.
-        let tdefs = mkILTypeDefsComputed (fun () -> [| struct (ns, pre) |])
+        // A one-entry table: grouping turns the type's namespace into the entity chain.
+        let tdefs = mkILTypeDefsGroupedComputed (fun () -> [| struct (ns, pre) |]) (fun () -> Array.empty)
 
         [ ImportILTypeDefs amap m scoref (CompPath(scoref, SyntaxAccess.Unknown, [])) [] tdefs ]
 

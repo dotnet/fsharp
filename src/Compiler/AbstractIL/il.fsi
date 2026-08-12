@@ -1523,10 +1523,11 @@ type ILTypeDefAccess =
     | Private
     | Nested of ILMemberAccess
 
-/// Tables of named type definitions.
+/// One namespace level: the types declared directly in it, and its child namespaces. Tables read from a
+/// flat source are grouped into this shape on the way in, so there is only ever one shape to walk.
 [<NoEquality; NoComparison; Class; Sealed>]
 type ILTypeDefs =
-    inherit DelayInitArrayMap<struct (string list * ILPreTypeDef), string list * string, ILPreTypeDef>
+    inherit DelayInitArrayMap<ILPreTypeDef, string, ILPreTypeDef>
 
     interface IEnumerable<ILTypeDef>
 
@@ -1534,10 +1535,11 @@ type ILTypeDefs =
 
     member internal AsList: unit -> ILTypeDef list
 
-    /// The entries at this level, each with its namespace relative to the level. Does not force the type
-    /// defs or the child namespaces.
-    member internal AsArrayOfPreTypeDefs: unit -> struct (string list * ILPreTypeDef)[]
+    /// The types declared directly in this namespace. Forces neither the type defs themselves nor the
+    /// child namespaces.
+    member internal AsArrayOfPreTypeDefs: unit -> ILPreTypeDef[]
 
+    /// Forces neither the children's contents nor this level's types.
     member internal AsArrayOfPreNamespaces: unit -> ILPreNamespace[]
 
     /// Every pre-type-def in the subtree, forcing all of it.
@@ -1705,11 +1707,34 @@ type ILPreTypeDef =
     /// Realise the actual full typedef
     abstract GetTypeDef: unit -> ILTypeDef
 
-/// A namespace level realised on demand: its pre-type-defs are only created once it is imported.
-[<NoEquality; NoComparison>]
+/// One namespace of a type table, whose contents are read only once something looks inside it. Inherit this
+/// to hand the compiler a namespace backed by your own store: supply the types declared in the namespace
+/// itself and its children, and the level's table is built and cached here. See also
+/// <c>mkILPreNamespaceComputed</c>.
+[<NoEquality; NoComparison; AbstractClass>]
 type ILPreNamespace =
-    abstract Name: string
-    abstract GetContents: unit -> ILTypeDefs
+    new: name: string -> ILPreNamespace
+
+    member Name: string
+
+    /// Called at most once. The types declared in this namespace itself.
+    abstract ComputeTypes: unit -> ILPreTypeDef[]
+
+    /// Called at most once, and independently of the types: importing a level's types must not read the
+    /// child namespaces, nor the other way round.
+    abstract ComputeNamespaces: unit -> ILPreNamespace[]
+
+    /// The types declared in this namespace itself. Forces neither its children nor anything deeper.
+    member GetTypes: unit -> ILPreTypeDef[]
+
+    /// This namespace's children. Realised independently of its types.
+    member GetNamespaces: unit -> ILPreNamespace[]
+
+    /// Descends only into the namespace on the type's path, so unrelated namespaces are never realised.
+    member internal TryFindPreTypeDef: ns: string list * n: string -> ILPreTypeDef option
+
+    /// Every pre-type-def in this namespace's subtree, forcing all of it.
+    member internal AllPreTypeDefs: unit -> ILPreTypeDef[]
 
 [<NoEquality; NoComparison; Class; Sealed>]
 type internal ILPreTypeDefImpl =
@@ -1720,9 +1745,15 @@ type internal ILPreTypeDefImpl =
 [<Sealed>]
 type internal ILTypeDefStored
 
-val internal mkILPreTypeDefRead: string * int32 * ILTypeDefStored -> ILPreTypeDef
-val mkILPreNamespaceComputed: string * (unit -> ILTypeDefs) -> ILPreNamespace
-val internal mkILTypeDefReader: (int32 -> ILTypeDef) -> ILTypeDefStored
+/// The name is read through the store's <c>getName</c> when asked, so grouping a table by namespace never
+/// touches the string heap for a namespace nobody imports.
+val internal mkILPreTypeDefRead: nameIdx: int32 * metadataIndex: int32 * ILTypeDefStored -> ILPreTypeDef
+
+/// A namespace whose halves are computed on first use.
+val mkILPreNamespaceComputed:
+    name: string * types: (unit -> ILPreTypeDef[]) * namespaces: (unit -> ILPreNamespace[]) -> ILPreNamespace
+
+val internal mkILTypeDefReader: getTypeDef: (int32 -> ILTypeDef) * getName: (int32 -> string) -> ILTypeDefStored
 
 [<NoEquality; NoComparison; Sealed>]
 type ILNestedExportedTypes =
@@ -2375,7 +2406,7 @@ val mkILTypeDefs: ILTypeDef list -> ILTypeDefs
 val mkILTypeDefsFromArray: ILTypeDef[] -> ILTypeDefs
 val emptyILTypeDefs: ILTypeDefs
 
-/// Create table of types which is loaded/computed on-demand, and whose individual
+/// Create a table of types which is loaded/computed on-demand, and whose individual
 /// elements are also loaded/computed on-demand. Any call to tdefs.AsList will
 /// result in the laziness being forced.  Operations can examine the
 /// custom attributes and name of each type in order to decide whether
@@ -2383,25 +2414,22 @@ val emptyILTypeDefs: ILTypeDefs
 ///
 /// Note that individual type definitions may contain further delays
 /// in their method, field and other tables.
-val mkILTypeDefsComputed: (unit -> struct (string list * ILPreTypeDef)[]) -> ILTypeDefs
-
-/// Like <c>mkILTypeDefsComputed</c>, but also supplies the level's immediate child namespaces, realised
-/// independently of the type defs.
 ///
-/// A level names its children one way or the other: either its entries carry namespaces, or it supplies
-/// pre-namespaces. With a name coming from both sources the level has two children of one name, and on
-/// import one shadows the other.
-val mkILTypeDefsAndNamespacesComputed:
-    (unit -> struct (string list * ILPreTypeDef)[]) -> (unit -> ILPreNamespace[]) -> ILTypeDefs
+/// The types all sit in this one namespace; it has no children. A store that knows its namespaces builds a
+/// level per namespace instead, by inheriting <c>ILPreNamespace</c>.
+val mkILTypeDefsComputed: (unit -> ILPreTypeDef[]) -> ILTypeDefs
 
-/// Group namespaced entries into a lazy namespace tree, in first-seen (metadata) order. <c>mk</c> runs only
-/// once the level an entry belongs to is realised, so an un-imported namespace's pre-type-defs never exist.
-val mkILTypeDefsGroupedComputed: (unit -> struct (string list * 'Data)[]) -> ('Data -> ILPreTypeDef) -> ILTypeDefs
+/// A level as a type table, for the places one is the declared type - a module's own level, and a type's
+/// nested types. Below those, a namespace tree is walked as <c>ILPreNamespace</c> and needs no table.
+val mkILTypeDefsOfNamespace: ILPreNamespace -> ILTypeDefs
 
-/// A table as one namespace level: the pre-type-defs sitting at the level itself, plus its child
-/// namespaces. A flat table's entries are bucketed by leading namespace component here, so an importer has
-/// a single shape to walk; the children's own contents stay unrealised.
-val internal ilTypeDefsAsNamespaceLevel: ILTypeDefs -> struct (ILPreTypeDef[] * ILPreNamespace[])
+/// For a store that has no namespace structure to hand - a metadata table read in row order, say. Each type
+/// comes with the namespace it belongs to, given as its path below this level ([] for the types of the level
+/// itself), and those paths are grouped into child namespaces on demand, in first-seen order. A namespace
+/// split across the source becomes one child, as does one named both by a path here and by
+/// <c>namespaces</c>.
+val mkILTypeDefsGroupedComputed:
+    types: (unit -> struct (string list * ILPreTypeDef)[]) -> namespaces: (unit -> ILPreNamespace[]) -> ILTypeDefs
 
 val internal addILTypeDef: ILTypeDef -> ILTypeDefs -> ILTypeDefs
 

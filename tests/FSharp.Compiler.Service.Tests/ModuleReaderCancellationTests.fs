@@ -128,7 +128,7 @@ type PreTypeDef(data: PreTypeDefData) =
         member x.GetTypeDef() = getTypeDef ()
 
 
-// A flat table: each entry pairs the type's namespace with the pre-type-def (all at one level).
+// Entries for a reader with no namespace structure of its own.
 let createPreTypeDefs typeData : struct (string list * ILPreTypeDef)[] =
     typeData
     |> Array.ofList
@@ -144,7 +144,8 @@ let referenceReaderProjectWithTypeDefs (typeDefs: ILTypeDefs) (cancelOnModuleAcc
     { options with ReferencedProjects = [| project |]; OtherOptions = Array.append options.OtherOptions [| $"-r:{reader.Path}"|] }
 
 let referenceReaderProject getPreTypeDefs (cancelOnModuleAccess: bool) (options: FSharpProjectOptions) =
-    referenceReaderProjectWithTypeDefs (mkILTypeDefsComputed getPreTypeDefs) cancelOnModuleAccess options
+    let typeDefs = mkILTypeDefsGroupedComputed getPreTypeDefs (fun () -> Array.empty)
+    referenceReaderProjectWithTypeDefs typeDefs cancelOnModuleAccess options
 
 let parseAndCheck path source options =
     cts <- new CancellationTokenSource()
@@ -410,12 +411,30 @@ let private expectedOrder =
       "N1.Q.QA"
       "M1.C1" ]
 
+/// The same types as a namespace tree built by hand: the shape a reader whose own store knows its
+/// namespaces hands over, as opposed to the entries a metadata table gives.
+let rec private mkPreNamespace name depth (types: (string * string list) list) =
+    let ownTypes, nested = types |> List.partition (fun (_, ns) -> List.length ns = depth)
+
+    mkILPreNamespaceComputed(
+        name,
+        (fun () -> [| for t in ownTypes -> PreTypeDef(mkTypeData t) :> ILPreTypeDef |]),
+        (fun () ->
+            [| for name, group in List.groupBy (fun (_, ns) -> List.item depth ns) nested ->
+                   mkPreNamespace name (depth + 1) group |])
+    )
+
+let private mkNamespaceTree depth types =
+    mkILTypeDefsOfNamespace (mkPreNamespace "" depth types)
+
 [<Fact>]
-let ``Import order - flat reader keeps metadata order at every depth`` () =
-    // A flat table: every entry at one level, carrying its full namespace (the shape custom readers,
-    // FSI and static linking produce, and the only shape that existed before ILPreNamespace).
+let ``Import order - grouped entries keep metadata order at every depth`` () =
+    // Types handed over with their namespaces and grouped by the reader (what a metadata table, FSI and
+    // static linking produce).
     let typeDefs =
-        mkILTypeDefsComputed (fun () -> createPreTypeDefs (List.map mkTypeData orderedTypes))
+        mkILTypeDefsGroupedComputed
+            (fun () -> createPreTypeDefs (List.map mkTypeData orderedTypes))
+            (fun () -> Array.empty)
 
     let _, options = mkTestFileAndOptions [||]
     let options = referenceReaderProjectWithTypeDefs typeDefs false options
@@ -423,15 +442,9 @@ let ``Import order - flat reader keeps metadata order at every depth`` () =
     importedTypeOrder options |> shouldEqual expectedOrder
 
 [<Fact>]
-let ``Import order - grouped reader keeps metadata order at every depth`` () =
-    // A lazy namespace tree, the shape the default file reader produces. It must import in exactly the
-    // same order as the flat table above.
-    let typeDefs =
-        mkILTypeDefsGroupedComputed
-            (fun () -> [| for name, ns in orderedTypes -> struct (ns, mkTypeData (name, ns)) |])
-            (fun data -> PreTypeDef data :> ILPreTypeDef)
-
+let ``Import order - a hand-built namespace tree imports the same`` () =
+    // The two ways of handing over the same types must import identically.
     let _, options = mkTestFileAndOptions [||]
-    let options = referenceReaderProjectWithTypeDefs typeDefs false options
+    let options = referenceReaderProjectWithTypeDefs (mkNamespaceTree 0 orderedTypes) false options
 
     importedTypeOrder options |> shouldEqual expectedOrder
