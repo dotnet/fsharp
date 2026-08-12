@@ -124,9 +124,9 @@ val grabXmlDoc: parseState: IParseState * optAttributes: SynAttributeList list *
 val ParseAssemblyCodeType:
     s: string -> reportLibraryOnlyFeatures: bool -> langVersion: LanguageVersion -> m: range -> ILType
 
-val reportParseErrorAt: range -> (int * string) -> unit
+val reportParseErrorAt: range -> (int * RichText) -> unit
 
-val raiseParseErrorAt: range -> (int * string) -> 'a
+val raiseParseErrorAt: range -> (int * RichText) -> 'a
 
 val mkSynMemberDefnGetSet:
     parseState: IParseState ->

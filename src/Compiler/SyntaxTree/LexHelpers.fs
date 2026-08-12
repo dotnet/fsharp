@@ -291,7 +291,7 @@ let escape c =
 // Keyword table
 //-----------------------------------------------------------------------
 
-exception ReservedKeyword of string * range
+exception ReservedKeyword of RichText * range
 
 module Keywords =
     type private compatibilityMode =
@@ -426,7 +426,7 @@ module Keywords =
         | true, v ->
             match v with
             | RESERVED ->
-                warning (ReservedKeyword(FSComp.SR.lexhlpIdentifierReserved (s), lexbuf.LexemeRange))
+                warning (ReservedKeyword(FSComp.SR.lexhlpIdentifierReserved (RichText.mkKeyword s), lexbuf.LexemeRange))
                 IdentifierToken args lexbuf s
             | _ -> v
         | _ ->

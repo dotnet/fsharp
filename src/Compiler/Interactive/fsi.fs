@@ -252,7 +252,7 @@ module internal Utilities =
 
     let reportError m =
         let report errorType err msg =
-            let error = err, msg
+            let error = err, RichText.mkText msg
 
             match errorType with
             | ErrorReportType.Warning -> warning (Error(error, m))
@@ -326,7 +326,7 @@ type ILMultiInMemoryAssemblyEmitEnv
         asmName
 
     /// Convert an ILAssemblyRef to a dynamic System.Type given the dynamic emit context
-    let convResolveAssemblyRef (asmref: ILAssemblyRef) qualifiedName =
+    let convResolveAssemblyRef (asmref: ILAssemblyRef) (tref: ILTypeRef) =
         let assembly =
             match resolveAssemblyRef asmref with
             | Some(Choice1Of2 path) ->
@@ -339,27 +339,44 @@ type ILMultiInMemoryAssemblyEmitEnv
                 let asmName = convAssemblyRef asmref
                 FileSystem.AssemblyLoader.AssemblyLoad asmName
 
-        let typT = assembly.GetType qualifiedName
+        let typT = assembly.GetType tref.BasicQualifiedName
 
         match typT with
-        | null -> error (Error(FSComp.SR.itemNotFoundDuringDynamicCodeGen ("type", qualifiedName, asmref.QualifiedName), range0))
+        | null ->
+            error (
+                Error(
+                    FSComp.SR.itemNotFoundDuringDynamicCodeGen (
+                        RichText.mkText "type",
+                        richTextOfILTypeRef tref,
+                        RichText.mkText asmref.QualifiedName
+                    ),
+                    range0
+                )
+            )
         | res -> res
 
     /// Convert an Abstract IL type reference to System.Type
     let convTypeRefAux (tref: ILTypeRef) =
-        let qualifiedName =
-            (String.concat "+" (tref.Enclosing @ [ tref.Name ])).Replace(",", @"\,")
-
         match tref.Scope with
-        | ILScopeRef.Assembly asmref -> convResolveAssemblyRef asmref qualifiedName
+        | ILScopeRef.Assembly asmref -> convResolveAssemblyRef asmref tref
         | ILScopeRef.Module _
         | ILScopeRef.Local ->
-            let typT = Type.GetType qualifiedName
+            let typT = Type.GetType tref.BasicQualifiedName
 
             match typT with
-            | null -> error (Error(FSComp.SR.itemNotFoundDuringDynamicCodeGen ("type", qualifiedName, "<emitted>"), range0))
+            | null ->
+                error (
+                    Error(
+                        FSComp.SR.itemNotFoundDuringDynamicCodeGen (
+                            RichText.mkText "type",
+                            richTextOfILTypeRef tref,
+                            RichText.mkText "<emitted>"
+                        ),
+                        range0
+                    )
+                )
             | res -> res
-        | ILScopeRef.PrimaryAssembly -> convResolveAssemblyRef ilg.primaryAssemblyRef qualifiedName
+        | ILScopeRef.PrimaryAssembly -> convResolveAssemblyRef ilg.primaryAssemblyRef tref
 
     /// Convert an ILTypeRef to a dynamic System.Type given the dynamic emit context
     let convTypeRef (tref: ILTypeRef) =
@@ -385,7 +402,14 @@ type ILMultiInMemoryAssemblyEmitEnv
         match res with
         | null ->
             error (
-                Error(FSComp.SR.itemNotFoundDuringDynamicCodeGen ("type", tspec.TypeRef.QualifiedName, tspec.Scope.QualifiedName), range0)
+                Error(
+                    FSComp.SR.itemNotFoundDuringDynamicCodeGen (
+                        RichText.mkText "type",
+                        richTextOfILTypeRef tspec.TypeRef,
+                        RichText.mkText tspec.Scope.QualifiedName
+                    ),
+                    range0
+                )
             )
         | _ -> res
 
@@ -2826,7 +2850,7 @@ type internal FsiDynamicCompiler
                         )
                     with
                     | Null ->
-                        let err =
+                        let number, message =
                             fsiOptions.DependencyProvider.CreatePackageManagerUnknownError(
                                 tcConfigB.compilerToolPaths,
                                 outputDir,
@@ -2835,7 +2859,7 @@ type internal FsiDynamicCompiler
                                 reportError m
                             )
 
-                        errorR (Error(err, m))
+                        errorR (Error((number, message), m))
                         istate
                     | NonNull dependencyManager ->
                         let directive d =
@@ -3068,7 +3092,7 @@ type internal FsiDynamicCompiler
             )
 
             if IsCompilerGeneratedName name then
-                invalidArg "name" (FSComp.SR.lexhlpIdentifiersContainingAtSymbolReserved () |> snd)
+                invalidArg "name" (FSComp.SR.lexhlpIdentifiersContainingAtSymbolReserved () |> snd).Text
 
             let istate, tys = importReflectionType istate (value.GetType())
             let ty = List.head tys
@@ -3901,7 +3925,13 @@ type FsiInteractionProcessor
             | "show" -> fsiConsolePrompt.ShowPrompt <- true
             | "hide" -> fsiConsolePrompt.ShowPrompt <- false
             | "skip" -> fsiConsolePrompt.SkipNext()
-            | _ -> error (Error((FSComp.SR.fsiInvalidDirective ("prompt", String.concat " " [ showPrompt ])), m))
+            | _ ->
+                error (
+                    Error(
+                        (FSComp.SR.fsiInvalidDirective (RichText.mkKeyword "prompt", RichText.mkText (String.concat " " [ showPrompt ]))),
+                        m
+                    )
+                )
 
             istate, Completed None
 
@@ -3968,13 +3998,13 @@ type FsiInteractionProcessor
             match args with
             | [] -> fsiOptions.ShowHelp(m)
             | [ arg ] -> runhDirective diagnosticsLogger ctok istate arg
-            | _ -> warning (Error((FSComp.SR.fsiInvalidDirective ("help", String.concat " " args)), m))
+            | _ -> warning (Error((FSComp.SR.fsiInvalidDirective (RichText.mkKeyword "help", RichText.mkText (String.concat " " args))), m))
 
             istate, Completed None
 
         | ParsedHashDirective(c, hashArguments, m) ->
             let arg = (parsedHashDirectiveArguments hashArguments tcConfigB.langVersion)
-            warning (Error((FSComp.SR.fsiInvalidDirective (c, String.concat " " arg)), m))
+            warning (Error((FSComp.SR.fsiInvalidDirective (RichText.mkKeyword c, RichText.mkText (String.concat " " arg))), m))
             istate, Completed None
 
     /// Most functions return a step status - this decides whether to continue and propagates the

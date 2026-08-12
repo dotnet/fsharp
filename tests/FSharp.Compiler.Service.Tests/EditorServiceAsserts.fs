@@ -41,7 +41,7 @@ module EditorServiceAsserts =
         elements
         |> List.collect (fun e ->
             match e with
-            | ToolTipElement.Group items -> items |> List.map (fun d -> taggedTextToString d.MainDescription)
+            | ToolTipElement.Group items -> items |> List.map (fun d -> d.MainDescription.Text)
             | _ -> [])
 
     let flattenItemDescription (tooltip: ToolTipText) =
@@ -236,12 +236,12 @@ module EditorServiceAsserts =
             | ToolTipElement.Group elements ->
                 elements
                 |> List.collect (fun e ->
-                    [ taggedTextToString e.MainDescription
+                    [ e.MainDescription.Text
                       match e.XmlDoc with
                       | FSharpXmlDoc.FromXmlText xmlDoc -> String.concat "\n" xmlDoc.UnprocessedLines
                       | _ -> ""
                       match e.Remarks with
-                      | Some r -> taggedTextToString r
+                      | Some r -> r.Text
                       | None -> "" ])
             | ToolTipElement.CompositionError err -> [ err ]
             | ToolTipElement.None -> [])
@@ -471,7 +471,7 @@ module EditorServiceAsserts =
         checkResults.GetMethods(context.Pos.Line, context.Pos.Column, context.LineText, Some context.Names)
 
     let private paramDisplays (m: MethodGroupItem) =
-        m.Parameters |> Array.map (fun p -> taggedTextToString p.Display) |> Array.toList
+        m.Parameters |> Array.map (fun p -> p.Display.Text) |> Array.toList
 
     let private describeMethodGroup (mg: MethodGroup) =
         if mg.Methods.Length = 0 then
@@ -525,6 +525,6 @@ module EditorServiceAsserts =
         let mg = getMethodGroup markedSource
         if mg.Methods.Length = 0 then
             failwithf "Expected a method group, but got none. Looking for return type %A" expected
-        let actual = taggedTextToString mg.Methods[0].ReturnTypeText
+        let actual = mg.Methods[0].ReturnTypeText.Text
         if actual <> expected then
             failwithf "Expected first overload return type %A but got %A:\n%s" expected actual (describeMethodGroup mg)

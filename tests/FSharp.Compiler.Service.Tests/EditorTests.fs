@@ -98,7 +98,7 @@ let ``Intro test`` () =
 
     // Print concatenated parameter lists
     [ for mi in methods.Methods do
-        yield methods.MethodName , [ for p in mi.Parameters do yield p.Display |> taggedTextToString ] ]
+        yield methods.MethodName , [ for p in mi.Parameters do yield p.Display.Text ] ]
         |> shouldEqual
               [("Concat", ["[<ParamArray>] args: obj []"]);
                ("Concat", ["[<ParamArray>] values: string []"]);
@@ -1973,7 +1973,7 @@ do let x = 1 in ()
     let su = checkResults |> findSymbolUseByName "x"
     match checkResults.GetDescription(su.Symbol, su.GenericArguments, true, su.Range) with
     | ToolTipText [ToolTipElement.Group [data]] ->
-        data.MainDescription |> Array.map (fun text -> text.Text) |> String.concat "" |> shouldEqual "val x: int"
+        data.MainDescription.Text |> shouldEqual "val x: int"
     | elements -> failwith $"Tooltip elements: {elements}"
 
 let hasRecordField (fieldName:string) (symbolUses: FSharpSymbolUse list) =

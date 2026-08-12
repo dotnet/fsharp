@@ -501,6 +501,8 @@
     <Compile Include="Diagnostics\Records.fs" />
     <Compile Include="Diagnostics\ParsingAtEOF.fs" />
     <Compile Include="Diagnostics\NONTERM.fs" />
+    <Compile Include="Diagnostics\RichTextTests.fs" />
+    <Compile Include="Diagnostics\RichDiagnosticTests.fs" />
     <Compile Include="Globalization\GlobalizationTestCases.fs" />
     <Compile Include="Miscellaneous\ListLiterals.fs" />
     <Compile Include="Miscellaneous\SemanticClassificationKeyBuilder.fs" />
