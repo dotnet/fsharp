@@ -3301,7 +3301,7 @@ and u_ValData st =
              | Some(a, _) -> a)
         val_type = x2
         val_stamp = newStamp ()
-        val_flags = ValFlags x4
+        val_flags = ValFlags.OfPickledBits x4
         val_opt_data =
             match x1z, x1a, x10, x14, x13, x15, x8, x13b, x12, x9 with
             | None, None, None, None, TAccess [], None, None, ParentNone, "", [] -> None
