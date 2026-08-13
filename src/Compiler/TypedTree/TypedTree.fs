@@ -5888,7 +5888,9 @@ type CcuData =
       
       /// The table of .NET CLI type forwarders for this assembly
       TypeForwarders: CcuTypeForwarderTable
-      
+
+      CSharpStyleExtensionMembersCache: ConcurrentDictionary<Stamp, obj>
+
       XmlDocumentationInfo: XmlDocumentationInfo option }
 
     [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
