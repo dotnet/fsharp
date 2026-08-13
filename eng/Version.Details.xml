@@ -2,21 +2,25 @@
 <Dependencies>
   <Source Uri="https://github.com/dotnet/dotnet" Mapping="fsharp" Sha="7fb8cef14d9ae6bd729b04638f88d00f1ba7eb99" BarId="326361" />
   <ProductDependencies>
-    <Dependency Name="Microsoft.Build" Version="18.10.0-preview-26357-08">
+    <!-- Pinned at 18.10.0-1.26370.18: the 18.10.0-1.26371.x MSBuild builds dropped their net10.0
+         assets (they ship net11.0 + net472 only), which is incompatible with this repo's net10.0
+         product target framework - fsc/fsi fail to load Microsoft.Build.* at runtime. Unpin once
+         the product moves to net11.0 or MSBuild restores net10.0 assets. -->
+    <Dependency Name="Microsoft.Build" Version="18.10.0-1.26370.18" Pinned="true">
       <Uri>https://github.com/dotnet/msbuild</Uri>
-      <Sha>746aeb090c9e2bcedc398751370da862014ebf7a</Sha>
+      <Sha>eae54023463db15e9a9081f35a959c9162797643</Sha>
     </Dependency>
-    <Dependency Name="Microsoft.Build.Framework" Version="18.10.0-preview-26357-08">
+    <Dependency Name="Microsoft.Build.Framework" Version="18.10.0-1.26370.18" Pinned="true">
       <Uri>https://github.com/dotnet/msbuild</Uri>
-      <Sha>746aeb090c9e2bcedc398751370da862014ebf7a</Sha>
+      <Sha>eae54023463db15e9a9081f35a959c9162797643</Sha>
     </Dependency>
-    <Dependency Name="Microsoft.Build.Tasks.Core" Version="18.10.0-preview-26357-08">
+    <Dependency Name="Microsoft.Build.Tasks.Core" Version="18.10.0-1.26370.18" Pinned="true">
       <Uri>https://github.com/dotnet/msbuild</Uri>
-      <Sha>746aeb090c9e2bcedc398751370da862014ebf7a</Sha>
+      <Sha>eae54023463db15e9a9081f35a959c9162797643</Sha>
     </Dependency>
-    <Dependency Name="Microsoft.Build.Utilities.Core" Version="18.10.0-preview-26357-08">
+    <Dependency Name="Microsoft.Build.Utilities.Core" Version="18.10.0-1.26370.18" Pinned="true">
       <Uri>https://github.com/dotnet/msbuild</Uri>
-      <Sha>746aeb090c9e2bcedc398751370da862014ebf7a</Sha>
+      <Sha>eae54023463db15e9a9081f35a959c9162797643</Sha>
     </Dependency>
     <Dependency Name="Microsoft.CodeAnalysis" Version="5.10.0-1.26365.3">
       <Uri>https://github.com/dotnet/roslyn</Uri>
