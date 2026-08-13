@@ -187,20 +187,26 @@ let main _ =
 
     // https://github.com/dotnet/fsharp/issues/20253
     [<Fact>]
-    let ``Issue 20253 - imports legacy zero-bit inline metadata`` () =
+    let ``Issue 20253 - imports pre-witness inline metadata`` () =
         let legacyDll = Path.Combine(__SOURCE_DIRECTORY__, "LegacyInline.dll")
 
         let compiled =
             FSharp """
 module Consumer
+open LegacyInline
 open LegacyInline.Library
 
-type Adder() =
-    static member Invoke(x: int) = x + 1
+type Record = { Value: int }
+
+let optic: Lens<Record, int> =
+    (fun record -> record.Value),
+    (fun value record -> { record with Value = value })
 
 [<EntryPoint>]
 let main _ =
-    if invoke (Adder()) = 42 then 0 else 1
+    let result = invoke optic 42 { Value = 0 }
+    printfn "%d" result.Value
+    if result.Value = 42 then 0 else 1
             """
             |> asExe
             |> withOptions [ $"-r:{legacyDll}" ]
@@ -210,4 +216,4 @@ let main _ =
 
         compiled |> verifyILNotPresent [ "LegacyInline.Library::invoke" ]
 
-        compiled |> run |> shouldSucceed |> ignore
+        compiled |> run |> shouldSucceed |> verifyOutputContains [| "42" |]
