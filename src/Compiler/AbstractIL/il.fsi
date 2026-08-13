@@ -188,7 +188,7 @@ type ILCallingConv =
 
     /// Returns the shared instance for this combination. There are only 18, so readers should use
     /// this instead of allocating a fresh 'Callconv' per method signature.
-    static member internal Create: ILThisConvention * ILArgConvention -> ILCallingConv
+    static member Create: ILThisConvention * ILArgConvention -> ILCallingConv
 
 /// Array shapes. For most purposes the rank is the only thing that matters.
 type internal ILArrayBound = int32 option

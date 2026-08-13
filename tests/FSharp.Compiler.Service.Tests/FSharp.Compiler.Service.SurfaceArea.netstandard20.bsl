@@ -321,6 +321,7 @@ FSharp.Compiler.AbstractIL.IL+ILCallingConv: Boolean Equals(System.Object)
 FSharp.Compiler.AbstractIL.IL+ILCallingConv: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
 FSharp.Compiler.AbstractIL.IL+ILCallingConv: ILArgConvention Item2
 FSharp.Compiler.AbstractIL.IL+ILCallingConv: ILArgConvention get_Item2()
+FSharp.Compiler.AbstractIL.IL+ILCallingConv: ILCallingConv Create(ILThisConvention, ILArgConvention)
 FSharp.Compiler.AbstractIL.IL+ILCallingConv: ILCallingConv Instance
 FSharp.Compiler.AbstractIL.IL+ILCallingConv: ILCallingConv NewCallconv(ILThisConvention, ILArgConvention)
 FSharp.Compiler.AbstractIL.IL+ILCallingConv: ILCallingConv Static
