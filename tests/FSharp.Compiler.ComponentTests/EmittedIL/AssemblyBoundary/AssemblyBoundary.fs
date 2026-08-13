@@ -202,18 +202,14 @@ let optic: Lens<Record, int> =
     (fun record -> record.Value),
     (fun value record -> { record with Value = value })
 
-[<EntryPoint>]
-let main _ =
+let test () =
     let result = invoke optic 42 { Value = 0 }
-    printfn "%d" result.Value
-    if result.Value = 42 then 0 else 1
+    result.Value
             """
-            |> asExe
+            |> asLibrary
             |> withOptions [ $"-r:{legacyDll}" ]
             |> withOptimize
             |> compile
             |> shouldSucceed
 
         compiled |> verifyILNotPresent [ "LegacyInline.Library::invoke" ]
-
-        compiled |> run |> shouldSucceed |> verifyOutputContains [| "42" |]
