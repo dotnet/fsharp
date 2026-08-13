@@ -462,9 +462,6 @@ type ILTypeInfo =
             assert (isILAppTy g metadataTy)
             let metadataTyconRef = tcrefOfAppTy g metadataTy
             let (TILObjectReprData(_, _, tdef)) = metadataTyconRef.ILTyconInfo
-            // Entity.CompiledRepresentation caches exactly 'mkRefForNestedILTypeDef scoref (enc, tdef)'
-            // for a TILObjectRepr entity, so take it from there rather than rebuilding a duplicate
-            // ILTypeRef (and its enclosing-name list, and its hash) on every call.
             ILTypeInfo(g, ty, metadataTyconRef.CompiledRepresentationForNamedType, tdef)
         elif isILAppTy g ty then
             let tcref = tcrefOfAppTy g ty
