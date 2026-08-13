@@ -653,36 +653,33 @@ type AsyncType() =
         let ok = Async.RunSynchronously a
         Assert.True ok
 
-    (* StartTaskImmediate(Task/Task<'T>) coverage *)
+    (* StartTaskImmediate(Task/Task<'T>) *)
 
     [<Fact>]
     member _.``StartTaskImmediate(Task<'T>) flows result``() =
         let a = async {
-            let! v = Async.StartTaskImmediate(fun _ct -> Task.FromResult(42))
+            let! v = Async.StartTaskImmediate(fun _ct -> Task.result 42)
             return v = 42
         }
-        Assert.True(Async.RunSynchronously a)
+        Assert.True(Async.RunSynchronouslyImmediate a)
 
     [<Fact>]
     member _.``StartTaskImmediate(Task) happy path``() =
         let mutable called = false
         let a = async {
-            do! Async.StartTaskImmediate(fun _ct -> Task.Run(fun () -> called <- true))
-            return true
+            do! Async.StartTaskImmediate(fun _ct -> task { called <- true })
         }
-        let ok = Async.RunSynchronously a
-        Assert.True(called && ok)
+        Async.RunSynchronouslyImmediate a
+        Assert.True called
 
     [<Fact>]
     member _.``StartTaskImmediate flows CancellationToken``() =
         let cts = new CancellationTokenSource()
         let mutable capturedCt = CancellationToken.None
         let a = async {
-            do! Async.StartTaskImmediate(fun ct ->
-                capturedCt <- ct
-                Task.CompletedTask)
+            do! Async.StartTaskImmediate(fun ct -> task { capturedCt <- ct })
         }
-        Async.RunSynchronously(a, cancellationToken = cts.Token)
+        Async.RunSynchronouslyImmediate(a, cancellationToken = cts.Token)
         Assert.Equal(cts.Token, capturedCt)
 
     [<Fact>]
@@ -694,8 +691,7 @@ type AsyncType() =
                 return false
             with :? ArgumentException as ae -> return ae.Message = "original"
         }
-        let ok = Async.RunSynchronously a
-        Assert.True ok
+        Assert.True(Async.RunSynchronouslyImmediate a)
 
     [<Fact>]
     member _.``StartTaskImmediate(Task) exception unwraps``() =
@@ -706,8 +702,7 @@ type AsyncType() =
                 return false
             with :? ArgumentException as ae -> return ae.Message = "original"
         }
-        let ok = Async.RunSynchronously a
-        Assert.True ok
+        Assert.True(Async.RunSynchronouslyImmediate a)
 
     [<Fact>]
     member _.``StartTaskImmediate(Task<'T>) cancellation raises TaskCanceledException``() =
@@ -718,8 +713,7 @@ type AsyncType() =
                 return false
             with :? TaskCanceledException -> return true
         }
-        let ok = Async.RunSynchronously a
-        Assert.True ok
+        Assert.True(Async.RunSynchronouslyImmediate a)
 
 #if !NETFRAMEWORK
     (* Await(ValueTask and ValueTask<'T>) overloads coverage of mainline behaviors *)
@@ -730,8 +724,7 @@ type AsyncType() =
             do! Async.Await(ValueTask())
             return true
         }
-        let ok = Async.RunSynchronously a
-        Assert.True ok
+        Assert.True (Async.RunSynchronouslyImmediate a)
 
     [<Fact>]
     member _.``Await(ValueTask<'T>) happy path``() =
@@ -739,8 +732,7 @@ type AsyncType() =
             let! v = Async.Await(ValueTask<int>(42))
             return v = 42
         }
-        let ok = Async.RunSynchronously a
-        Assert.True ok
+        Assert.True (Async.RunSynchronouslyImmediate a)
 
     [<Fact>]
     member _.``Await(ValueTask) exception unwraps``() =
@@ -752,8 +744,7 @@ type AsyncType() =
                 return false
             with :? ArgumentException as ae -> return ae.Message = "original"
         }
-        let ok = Async.RunSynchronously a
-        Assert.True ok
+        Assert.True(Async.RunSynchronouslyImmediate a)
 
     [<Fact>]
     member _.``Await(ValueTask<'T>) exception unwraps``() =
@@ -764,10 +755,9 @@ type AsyncType() =
                 return false
             with :? ArgumentException as ae -> return ae.Message = "original"
         }
-        let ok = Async.RunSynchronously a
-        Assert.True ok
+        Assert.True(Async.RunSynchronouslyImmediate a)
 
-    (* StartTaskImmediate(ValueTask/ValueTask<'T>) coverage *)
+    (* StartTaskImmediate(ValueTask/ValueTask<'T>) *)
 
     [<Fact>]
     member _.``StartTaskImmediate(ValueTask<'T>) flows result``() =
@@ -775,7 +765,7 @@ type AsyncType() =
             let! v = Async.StartTaskImmediate(fun _ct -> ValueTask<int>(42))
             return v = 42
         }
-        Assert.True(Async.RunSynchronously a)
+        Assert.True(Async.RunSynchronouslyImmediate a)
 
     [<Fact>]
     member _.``StartTaskImmediate(ValueTask) happy path``() =
@@ -783,7 +773,7 @@ type AsyncType() =
             do! Async.StartTaskImmediate(fun _ct -> ValueTask())
             return true
         }
-        Assert.True(Async.RunSynchronously a)
+        Assert.True(Async.RunSynchronouslyImmediate a)
 
     [<Fact>]
     member _.``StartTaskImmediate(ValueTask<'T>) exception unwraps``() =
@@ -795,7 +785,7 @@ type AsyncType() =
                 return false
             with :? ArgumentException as ae -> return ae.Message = "original"
         }
-        Assert.True(Async.RunSynchronously a)
+        Assert.True(Async.RunSynchronouslyImmediate a)
 
     [<Fact>]
     member _.``StartTaskImmediate(ValueTask) exception unwraps``() =
@@ -807,10 +797,9 @@ type AsyncType() =
                 return false
             with :? ArgumentException as ae -> return ae.Message = "original"
         }
-        Assert.True(Async.RunSynchronously a)
+        Assert.True(Async.RunSynchronouslyImmediate a)
 #endif
 
-[<Collection(nameof FSharp.Test.NotThreadSafeResourceCollection)>]
 module AsyncTaskLikeAwaitTests =
 
     // Minimal custom task-like type wrapping Task<'T>
@@ -914,7 +903,6 @@ module AsyncTaskLikeAwaitTests =
             |> Async.RunSynchronously
         Assert.Equal(42, result)
 
-[<Collection(nameof FSharp.Test.NotThreadSafeResourceCollection)>]
 module AsyncStartTaskImmediateTaskLikeTests =
 
     [<Fact>]
@@ -927,7 +915,7 @@ module AsyncStartTaskImmediateTaskLikeTests =
             do! Async.StartTaskImmediate(fun _ -> Task.Yield())
             after <- true
         }
-        |> Async.RunSynchronously
+        |> Async.RunSynchronouslyImmediate
 
         Assert.True(before && after)
 
@@ -938,7 +926,7 @@ module AsyncStartTaskImmediateTaskLikeTests =
             async {
                 return! Async.StartTaskImmediate(fun _ -> Task.FromResult(42).ConfigureAwait(false))
             }
-            |> Async.RunSynchronously
+            |> Async.RunSynchronouslyImmediate
 
         Assert.Equal(42, result)
 
@@ -953,11 +941,10 @@ module AsyncStartTaskImmediateTaskLikeTests =
                     capturedCt <- ct
                     Task.CompletedTask.ConfigureAwait(false))
         }
-        Async.RunSynchronously(a, cancellationToken = cts.Token)
+        Async.RunSynchronouslyImmediate(a, cancellationToken = cts.Token)
 
         Assert.Equal(cts.Token, capturedCt)
 
-[<Collection(nameof FSharp.Test.NotThreadSafeResourceCollection)>]
 module AsyncAwaitStackTraceTests =
 
     open System.Runtime.CompilerServices
