@@ -15,8 +15,6 @@ open FSharp.Compiler.Caches
 
 [<Class>]
 type InterruptibleLazy<'T> private (value, valueFactory: unit -> 'T) =
-    let syncObj = obj ()
-
     [<VolatileField>]
     // TODO nullness - this is boxed to obj because of an attribute targets bug fixed in main, but not yet shipped (needs shipped 8.0.400)
     let mutable valueFactory: objnull = valueFactory
@@ -34,7 +32,7 @@ type InterruptibleLazy<'T> private (value, valueFactory: unit -> 'T) =
         match valueFactory with
         | null -> value
         | _ ->
-            Monitor.Enter(syncObj)
+            Monitor.Enter(this)
 
             try
                 match valueFactory with
@@ -44,7 +42,7 @@ type InterruptibleLazy<'T> private (value, valueFactory: unit -> 'T) =
                     value <- (valueFactory |> unbox<unit -> 'T>) ()
                     valueFactory <- Unchecked.defaultof<_>
             finally
-                Monitor.Exit(syncObj)
+                Monitor.Exit(this)
 
             value
 
@@ -151,8 +149,6 @@ module internal PervasiveAutoOpens =
 
 [<AbstractClass>]
 type DelayInitArrayMap<'T, 'TDictKey, 'TDictValue>(f: unit -> 'T[]) =
-    let syncObj = obj ()
-
     let mutable arrayStore: (_ array | null) = null
     let mutable dictStore: (_ | null) = null
 
@@ -162,7 +158,7 @@ type DelayInitArrayMap<'T, 'TDictKey, 'TDictValue>(f: unit -> 'T[]) =
         match arrayStore with
         | NonNull value -> value
         | _ ->
-            Monitor.Enter(syncObj)
+            Monitor.Enter(this)
 
             try
                 match arrayStore with
@@ -174,14 +170,14 @@ type DelayInitArrayMap<'T, 'TDictKey, 'TDictValue>(f: unit -> 'T[]) =
                     func <- Unchecked.defaultof<_>
                     freshArray
             finally
-                Monitor.Exit(syncObj)
+                Monitor.Exit(this)
 
     member this.GetDictionary() =
         match dictStore with
         | NonNull value -> value
         | _ ->
             let array = this.GetArray()
-            Monitor.Enter(syncObj)
+            Monitor.Enter(this)
 
             try
                 match dictStore with
@@ -191,9 +187,35 @@ type DelayInitArrayMap<'T, 'TDictKey, 'TDictValue>(f: unit -> 'T[]) =
                     dictStore <- dict
                     dict
             finally
-                Monitor.Exit(syncObj)
+                Monitor.Exit(this)
 
     abstract CreateDictionary: 'T[] -> IDictionary<'TDictKey, 'TDictValue>
+
+[<AbstractClass>]
+type DelayInitValue<'T when 'T: not null and 'T: not struct>() =
+    // Locks the instance and stores in place: a sync object or a lazy would add an object per value.
+    [<VolatileField>]
+    let mutable value: objnull = null
+
+    abstract Compute: unit -> 'T
+
+    member private this.Realise() =
+        Monitor.Enter this
+
+        try
+            match value with
+            | null ->
+                let computed = this.Compute()
+                value <- box computed
+                computed
+            | v -> unbox<'T> v
+        finally
+            Monitor.Exit this
+
+    member this.Value =
+        match value with
+        | null -> this.Realise()
+        | v -> unbox<'T> v
 
 //-------------------------------------------------------------------------
 // Library: projections

@@ -315,9 +315,9 @@ type EntityFlags =
     /// This bit is reserved for us in the pickle format, see pickle.fs, it's being listed here to stop it ever being used for anything else
     static member ReservedBitForPickleFormatTyconReprFlag: int64
 
-exception UndefinedName of depth: int * error: (string -> string) * id: Ident * suggestions: Suggestions
+exception UndefinedName of depth: int * error: (RichText -> RichText) * id: Ident * suggestions: Suggestions
 
-exception InternalUndefinedItemRef of (string * string * string -> int * string) * string * string * string
+exception InternalUndefinedItemRef of (string * string * string -> int * RichText) * string * string * string
 
 [<CustomEquality; NoComparison>]
 type ModuleOrNamespaceKind =
