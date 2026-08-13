@@ -236,8 +236,7 @@ let test () =
                 failwithf "fsc exit %d\nstdout:%s\nstderr:%s" result.ExitCode result.StdOut result.StdErr
 
             ILChecker.checkILNotPresent outputDll [ "LegacyInline.Library::invoke" ]
+            ILChecker.checkILPresent outputDll [ "Set::op_HatEquals" ]
         finally
-            try
+            if Directory.Exists workDir then
                 Directory.Delete(workDir, true)
-            with _ ->
-                ()
