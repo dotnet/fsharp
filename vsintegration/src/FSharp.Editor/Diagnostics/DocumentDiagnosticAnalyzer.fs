@@ -22,6 +22,15 @@ type internal DiagnosticsType =
     | Syntax
     | Semantic
 
+type private CachedDiagnosticsEntry =
+    {
+        TextVersion: VersionStamp
+        ProjectVersion: VersionStamp
+        FilePath: string
+        IsRemoveParensEnabled: bool
+        Diagnostics: ImmutableArray<Diagnostic>
+    }
+
 [<Export(typeof<IFSharpDocumentDiagnosticAnalyzer>)>]
 type internal FSharpDocumentDiagnosticAnalyzer [<ImportingConstructor>] () =
 
@@ -29,7 +38,14 @@ type internal FSharpDocumentDiagnosticAnalyzer [<ImportingConstructor>] () =
         document.Project.Solution.GetFSharpExtensionConfig().ShouldProduceDiagnostics()
 
     static let cache =
-        ConcurrentDictionary<struct (DocumentId * DiagnosticsType), VersionStamp * VersionStamp * ImmutableArray<Diagnostic>>()
+        ConcurrentDictionary<struct (DocumentId * DiagnosticsType), CachedDiagnosticsEntry>()
+
+    static let evictRemovedDocuments (solution: Solution) =
+        for entry in cache do
+            let struct (documentId, _) = entry.Key
+
+            if isNull (solution.GetDocument(documentId)) then
+                cache.TryRemove(entry.Key) |> ignore
 
     static let diagnosticEqualityComparer =
         { new IEqualityComparer<FSharpDiagnostic> with
@@ -83,79 +99,97 @@ type internal FSharpDocumentDiagnosticAnalyzer [<ImportingConstructor>] () =
                 | DiagnosticsType.Syntax -> CancellableTask.singleton VersionStamp.Default
                 | DiagnosticsType.Semantic -> (fun ct -> document.Project.GetDependentVersionAsync(ct))
 
+            let filePath = document.FilePath
+
+            let isRemoveParensEnabled =
+                match diagnosticType with
+                | DiagnosticsType.Syntax -> document.Project.IsFsharpRemoveParensEnabled
+                | DiagnosticsType.Semantic -> false
+
+            evictRemovedDocuments document.Project.Solution
+
             let cacheKey = struct (document.Id, diagnosticType)
 
             let cached =
                 match cache.TryGetValue(cacheKey) with
-                | true, (cachedTextVersion, cachedProjectVersion, cachedDiagnostics) when
-                    cachedTextVersion = textVersion && cachedProjectVersion = projectVersion
+                | true, cachedEntry when
+                    cachedEntry.TextVersion = textVersion
+                    && cachedEntry.ProjectVersion = projectVersion
+                    && cachedEntry.FilePath = filePath
+                    && cachedEntry.IsRemoveParensEnabled = isRemoveParensEnabled
                     ->
-                    ValueSome cachedDiagnostics
+                    ValueSome cachedEntry.Diagnostics
                 | _ -> ValueNone
 
             match cached with
             | ValueSome cachedDiagnostics -> return cachedDiagnostics
             | ValueNone ->
 
-            let! sourceText = document.GetTextAsync(ct)
-            let filePath = document.FilePath
+                let! sourceText = document.GetTextAsync(ct)
 
-            let errors = HashSet<FSharpDiagnostic>(diagnosticEqualityComparer)
+                let errors = HashSet<FSharpDiagnostic>(diagnosticEqualityComparer)
 
-            let! parseResults = document.GetFSharpParseResultsAsync("GetDiagnostics")
+                let! parseResults = document.GetFSharpParseResultsAsync("GetDiagnostics")
 
-            match diagnosticType with
-            | DiagnosticsType.Syntax ->
-                for diagnostic in parseResults.Diagnostics do
-                    errors.Add(diagnostic) |> ignore
-
-            | DiagnosticsType.Semantic ->
-                let! _, checkResults = document.GetFSharpParseAndCheckResultsAsync("GetDiagnostics")
-
-                for diagnostic in checkResults.Diagnostics do
-                    errors.Add(diagnostic) |> ignore
-
-                errors.ExceptWith(parseResults.Diagnostics)
-
-            let! unnecessaryParentheses =
                 match diagnosticType with
-                | DiagnosticsType.Syntax when document.Project.IsFsharpRemoveParensEnabled ->
-                    UnnecessaryParenthesesDiagnosticAnalyzer.GetDiagnostics document
-                | _ -> CancellableTask.singleton ImmutableArray.Empty
+                | DiagnosticsType.Syntax ->
+                    for diagnostic in parseResults.Diagnostics do
+                        errors.Add(diagnostic) |> ignore
 
-            let result =
-                if errors.Count = 0 && unnecessaryParentheses.IsEmpty then
-                    ImmutableArray.Empty
-                else
-                    let iab = ImmutableArray.CreateBuilder(errors.Count + unnecessaryParentheses.Length)
+                | DiagnosticsType.Semantic ->
+                    let! _, checkResults = document.GetFSharpParseAndCheckResultsAsync("GetDiagnostics")
 
-                    for diagnostic in errors do
-                        if diagnostic.StartLine <> 0 && diagnostic.EndLine <> 0 then
-                            let linePositionSpan =
-                                LinePositionSpan(
-                                    LinePosition(diagnostic.StartLine - 1, diagnostic.StartColumn),
-                                    LinePosition(diagnostic.EndLine - 1, diagnostic.EndColumn)
-                                )
+                    for diagnostic in checkResults.Diagnostics do
+                        errors.Add(diagnostic) |> ignore
 
-                            let textSpan = sourceText.Lines.GetTextSpan(linePositionSpan)
+                    errors.ExceptWith(parseResults.Diagnostics)
 
-                            // F# compiler report errors at end of file if parsing fails. It should be corrected to match Roslyn boundaries
-                            let correctedTextSpan =
-                                if textSpan.End <= sourceText.Length then
-                                    textSpan
-                                else
-                                    let start = min textSpan.Start (sourceText.Length - 1) |> max 0
+                let! unnecessaryParentheses =
+                    match diagnosticType with
+                    | DiagnosticsType.Syntax when isRemoveParensEnabled -> UnnecessaryParenthesesDiagnosticAnalyzer.GetDiagnostics document
+                    | _ -> CancellableTask.singleton ImmutableArray.Empty
 
-                                    TextSpan.FromBounds(start, sourceText.Length)
+                let result =
+                    if errors.Count = 0 && unnecessaryParentheses.IsEmpty then
+                        ImmutableArray.Empty
+                    else
+                        let iab = ImmutableArray.CreateBuilder(errors.Count + unnecessaryParentheses.Length)
 
-                            let location = Location.Create(filePath, correctedTextSpan, linePositionSpan)
-                            iab.Add(RoslynHelpers.ConvertError(diagnostic, location))
+                        for diagnostic in errors do
+                            if diagnostic.StartLine <> 0 && diagnostic.EndLine <> 0 then
+                                let linePositionSpan =
+                                    LinePositionSpan(
+                                        LinePosition(diagnostic.StartLine - 1, diagnostic.StartColumn),
+                                        LinePosition(diagnostic.EndLine - 1, diagnostic.EndColumn)
+                                    )
 
-                    iab.AddRange unnecessaryParentheses
-                    iab.ToImmutable()
+                                let textSpan = sourceText.Lines.GetTextSpan(linePositionSpan)
 
-            cache.[cacheKey] <- (textVersion, projectVersion, result)
-            return result
+                                // F# compiler report errors at end of file if parsing fails. It should be corrected to match Roslyn boundaries
+                                let correctedTextSpan =
+                                    if textSpan.End <= sourceText.Length then
+                                        textSpan
+                                    else
+                                        let start = min textSpan.Start (sourceText.Length - 1) |> max 0
+
+                                        TextSpan.FromBounds(start, sourceText.Length)
+
+                                let location = Location.Create(filePath, correctedTextSpan, linePositionSpan)
+                                iab.Add(RoslynHelpers.ConvertError(diagnostic, location))
+
+                        iab.AddRange unnecessaryParentheses
+                        iab.ToImmutable()
+
+                cache.[cacheKey] <-
+                    {
+                        TextVersion = textVersion
+                        ProjectVersion = projectVersion
+                        FilePath = filePath
+                        IsRemoveParensEnabled = isRemoveParensEnabled
+                        Diagnostics = result
+                    }
+
+                return result
         }
 
     interface IFSharpDocumentDiagnosticAnalyzer with
