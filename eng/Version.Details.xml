@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Dependencies>
-  <Source Uri="https://github.com/dotnet/dotnet" Mapping="fsharp" Sha="7fb8cef14d9ae6bd729b04638f88d00f1ba7eb99" BarId="326361" />
+  <Source Uri="https://github.com/dotnet/dotnet" Mapping="fsharp" Sha="7cdb217445905f3342bbb0266a4497b9a014389a" BarId="326717" />
   <ProductDependencies>
     <!-- Pinned at 18.10.0-1.26370.18: the 18.10.0-1.26371.x MSBuild builds dropped their net10.0
          assets (they ship net11.0 + net472 only), which is incompatible with this repo's net10.0
