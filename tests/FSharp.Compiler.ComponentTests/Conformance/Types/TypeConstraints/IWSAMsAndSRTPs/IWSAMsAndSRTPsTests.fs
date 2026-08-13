@@ -1935,7 +1935,11 @@ let r4 = "r" * 4
         |> withLangVersion80
         |> typecheck
         |> shouldFail
-        |> withErrorCode 1
+        |> withDiagnostics [
+            (Warning 1215, Line 4, Col 21, Line 4, Col 22, "Extension members cannot provide operator overloads.  Consider defining the operator as part of the type definition instead.")
+            (Error 1, Line 6, Col 16, Line 6, Col 17, "The type 'int' does not match the type 'string'")
+            (Error 43, Line 6, Col 14, Line 6, Col 15, "The type 'int' does not match the type 'string'")
+        ]
 
     [<Fact>]
     let ``Built-in numeric operators still work with extension methods in scope`` () =
@@ -1961,8 +1965,13 @@ module TestCustomType
 
 type Widget = { Name: string; Count: int }
 
-type Widget with
-    static member ( + ) (a: Widget, b: Widget) = { Name = a.Name + b.Name; Count = a.Count + b.Count }
+// Optional (extrinsic) extension in a SEPARATE module: resolution must go through
+// extension lookup, not the intrinsic members of Widget.
+module WidgetExt =
+    type Widget with
+        static member ( + ) (a: Widget, b: Widget) = { Name = a.Name + b.Name; Count = a.Count + b.Count }
+
+open WidgetExt
 
 let inline add (a: ^T) (b: ^T) : ^T = a + b
 
@@ -2104,7 +2113,10 @@ let r = "a" * 3
         |> withLangVersionPreview
         |> compile
         |> shouldFail
-        |> withErrorCode 1
+        |> withDiagnostics [
+            (Error 1, Line 9, Col 15, Line 9, Col 16, "None of the types 'string, int' support the operator '*'")
+            (Error 43, Line 9, Col 13, Line 9, Col 14, "None of the types 'string, int' support the operator '*'")
+        ]
 
     // Removed: "Inline SRTP function resolves using consumers scope for extensions"
     // was a duplicate of ExtensionConstraintsTests/ScopeCapture.fs which covers
@@ -3530,14 +3542,16 @@ if result <> "HELLO" then failwith (sprintf "Expected 'HELLO' but got '%s'" resu
         |> shouldSucceed
 
     [<Fact>]
-    let ``open type brings extension operators into SRTP scope`` () =
+    let ``open on defining module brings extension operators into SRTP scope`` () =
         FSharp """
-module TestOpenType
+module TestOpenModule
 
 module Ops =
     type System.String with
         static member ( * ) (s: string, n: int) = System.String.Concat(System.Linq.Enumerable.Repeat(s, n))
 
+// The extension operator lives in module Ops; 'open Ops' (module augmentation scope)
+// is what makes it visible to the SRTP resolution below.
 open Ops
 
 let inline repeat (x: ^T) (n: int) = x * n
@@ -3551,18 +3565,19 @@ if r <> "hahaha" then failwith (sprintf "Expected 'hahaha' but got '%s'" r)
 
     [<Fact>]
     let ``open type on class brings extension operators into SRTP scope`` () =
-        FSharp $"""
+        FSharp """
 module TestOpenTypeClass
 
-type Extensions =
-    static member Dummy = 0
+// A holder class that declares the (*) operator as a static member.
+type StringOps =
+    static member ( * ) (s: string, n: int) = System.String.Concat(System.Linq.Enumerable.Repeat(s, n))
 
-{stringRepeatExtDef}
+// 'open type' brings the class's static operator into scope so SRTP can resolve it.
+open type StringOps
 
-// This test verifies that extension operators defined at module level work with SRTP.
 let inline repeat (x: ^T) (n: int) = x * n
 let r = repeat "ha" 3
-if r <> "hahaha" then failwith (sprintf "Expected 'hahaha' but got '%%s'" r)
+if r <> "hahaha" then failwith (sprintf "Expected 'hahaha' but got '%s'" r)
         """
         |> withLangVersionPreview
         |> asExe
@@ -3598,8 +3613,13 @@ module TestStructExtOp
 [<Struct>]
 type Vec2 = { X: float; Y: float }
 
-type Vec2 with
-    static member (+) (a: Vec2, b: Vec2) = { X = a.X + b.X; Y = a.Y + b.Y }
+// Optional (extrinsic) extension in a SEPARATE module so resolution routes through
+// extension lookup rather than an intrinsic struct member.
+module Vec2Ext =
+    type Vec2 with
+        static member (+) (a: Vec2, b: Vec2) = { X = a.X + b.X; Y = a.Y + b.Y }
+
+open Vec2Ext
 
 let inline add (a: ^T) (b: ^T) = a + b
 let v1 = { X = 1.0; Y = 2.0 }
@@ -3640,10 +3660,15 @@ module TestMultiExtOp
 
 type MyNum = { V: int }
 
-type MyNum with
-    static member (+) (a: MyNum, b: MyNum) = { V = a.V + b.V }
-    static member (-) (a: MyNum, b: MyNum) = { V = a.V - b.V }
-    static member ( * ) (a: MyNum, b: MyNum) = { V = a.V * b.V }
+// Optional (extrinsic) extensions in a SEPARATE module so each operator is solved
+// through extension lookup, not as intrinsic members.
+module MyNumExt =
+    type MyNum with
+        static member (+) (a: MyNum, b: MyNum) = { V = a.V + b.V }
+        static member (-) (a: MyNum, b: MyNum) = { V = a.V - b.V }
+        static member ( * ) (a: MyNum, b: MyNum) = { V = a.V * b.V }
+
+open MyNumExt
 
 let inline addAndMultiply (x: ^T) (y: ^T) =
     (x + y) * (x - y)
@@ -3667,30 +3692,33 @@ module TestUoMExtension
 [<Measure>] type kg
 [<Measure>] type m
 
-type UoMHelper =
-    static member inline ScaleBy(x: float<'u>, factor: float) : float<'u> =
-        LanguagePrimitives.FloatWithMeasure(float x * factor)
+// Optional (extrinsic) extension member on System.Double, brought into scope via 'open'.
+module ScaleExt =
+    type System.Double with
+        static member Scale(x: float, factor: float) : float = x * factor
 
-type System.Double with
-    static member inline Scale(x: float<'u>, factor: float) : float<'u> =
-        LanguagePrimitives.FloatWithMeasure(float x * factor)
+open ScaleExt
 
+// Inline generic that dispatches to the Scale extension THROUGH an SRTP member constraint.
+let inline scaleRaw (x: ^T) (factor: float) : ^T =
+    (^T : (static member Scale : ^T * float -> ^T) (x, factor))
+
+// UoM-preserving wrapper: strips the measure, routes through the SRTP witness, re-applies it.
 let inline scale (x: float<'u>) (factor: float) : float<'u> =
-    UoMHelper.ScaleBy(x, factor)
+    LanguagePrimitives.FloatWithMeasure (scaleRaw (float x) factor)
 
 let mass = 5.0<kg>
 let scaled = scale mass 2.0
 if scaled <> 10.0<kg> then failwith (sprintf "Expected 10.0<kg> but got %A" scaled)
 
+let dist = 100.0<m>
+let scaledDist = scale dist 1.5
+if scaledDist <> 150.0<m> then failwith (sprintf "Expected 150.0<m> but got %A" scaledDist)
+
 // Also test basic UoM arithmetic works with inline
 let inline addMeasured (x: float<'u>) (y: float<'u>) = x + y
 let totalMass = addMeasured 3.0<kg> 7.0<kg>
 if totalMass <> 10.0<kg> then failwith (sprintf "Expected 10.0<kg> but got %A" totalMass)
-
-let dist1 = 100.0<m>
-let dist2 = 50.0<m>
-let totalDist = addMeasured dist1 dist2
-if totalDist <> 150.0<m> then failwith (sprintf "Expected 150.0<m> but got %A" totalDist)
         """
         |> asExe
         |> withLangVersionPreview
@@ -4510,16 +4538,20 @@ module Consumer =
 
     [<Fact>]
     let ``FS1215 interacts correctly with warnaserror under different langversions`` () =
-        // Under langversion:8.0, FS1215 fires → --warnaserror promotes to error
+        // Under langversion:8.0, FS1215 fires → --warnaserror promotes it to an error
         FSharp """
 module Test
 type System.String with
     static member ( * ) (s: string, n: int) = System.String.Concat(System.Linq.Enumerable.Repeat(s, n))
         """
         |> asLibrary
+        |> withLangVersion80
         |> withOptions ["--warnaserror"]
         |> compile
         |> shouldFail
+        |> withDiagnostics [
+            (Error 1215, Line 4, Col 21, Line 4, Col 22, "Extension members cannot provide operator overloads.  Consider defining the operator as part of the type definition instead.")
+        ]
         |> ignore
 
         // Under langversion:preview, FS1215 is suppressed → --warnaserror has no effect
@@ -4888,14 +4920,19 @@ if resultS.Value <> "hello" then failwith (sprintf "Quotation eval string: expec
     let ``Witness quotation: DU extension operator evaluates in quotation`` () =
         // Q7: Extension operator on a discriminated union type inside <@ @>.
         // Verifies DU types have no special edge cases in quotation encoding.
+        // The (+) lives in a SEPARATE module so it is a genuine optional extension
+        // resolved through extension lookup, not an intrinsic DU member.
         FSharp
             """
 module TestQ7
 
 type Tree<'T> = Leaf of 'T | Node of Tree<'T> * Tree<'T>
 
-type Tree<'T> with
-    static member (+) (a, b) = Node(a, b)
+module TreeExt =
+    type Tree<'T> with
+        static member (+) (a, b) = Node(a, b)
+
+open TreeExt
 
 let inline combine a b = a + b
 
@@ -5079,6 +5116,9 @@ let r = repeatStr "ha" 3
         |> withNoOptimize
         |> compile
         |> shouldFail
+        |> withDiagnostics [
+            (Error 1, Line 6, Col 19, Line 6, Col 23, "The type 'string' does not support the operator 'Repeat'")
+        ]
         |> ignore
 
         // With optimization — same result expected
@@ -5096,6 +5136,9 @@ let r = repeatStr "ha" 3
         |> withOptimize
         |> compile
         |> shouldFail
+        |> withDiagnostics [
+            (Error 1, Line 6, Col 19, Line 6, Col 23, "The type 'string' does not support the operator 'Repeat'")
+        ]
 
     [<Fact>]
     let ``Unsolvable SRTP with natural operator syntax produces compile error not runtime NSE`` () =
