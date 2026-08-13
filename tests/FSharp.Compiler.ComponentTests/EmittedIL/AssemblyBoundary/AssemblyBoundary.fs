@@ -184,3 +184,20 @@ let main _ =
     IL_004f:  ret
 }
               """]
+
+    // https://github.com/dotnet/fsharp/issues/20253
+    [<Fact>]
+    let ``Issue 20253 - imports legacy zero-bit inline metadata`` () =
+        let legacyDll = Path.Combine(__SOURCE_DIRECTORY__, "LegacyInline.dll")
+
+        FSharp """
+module Consumer
+open LegacyInline.Library
+let result (x: int) = increment x
+        """
+        |> asLibrary
+        |> withOptions [ $"-r:{legacyDll}" ]
+        |> withNoOptimize
+        |> compile
+        |> shouldSucceed
+        |> verifyILNotPresent [ "LegacyInline.Library::increment" ]
