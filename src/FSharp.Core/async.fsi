@@ -1439,7 +1439,7 @@ namespace Microsoft.FSharp.Control
             /// async {
             ///     let! html = fetchConfigured "https://example.com"
             ///     printfn $"Downloaded {html.Length} chars"
-            /// } |> Async.RunSynchronously
+            /// } |> Async.RunSynchronouslyImmediate
             /// </code>
             /// </example>
             [<NoEagerConstraintApplication>]
