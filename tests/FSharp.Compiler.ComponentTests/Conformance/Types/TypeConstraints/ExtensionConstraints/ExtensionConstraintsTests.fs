@@ -46,8 +46,10 @@ module ExtensionConstraintsTests =
     // operators (++ >>= <*> |>>) and extension members solve SRTP constraints, the
     // Default1/2/3 return-type mechanism selects witnesses, and user-written generic SRTP code
     // consumes them at specific types. See the file header for the three documented adaptations.
-    // Uses the AllowOverloadOnReturnType attribute, so gate on it like the other attribute tests:
-    // full compile+run when FSharp.Core has it, else expect the clean FS0039.
+    // Uses the AllowOverloadOnReturnType attribute. VERIFIED in-repo: the compilation cannot find
+    // the attribute (the SDK's FSharp.Core does not yet ship it), so this genuinely takes the clean
+    // FS0039 path. The guard is not a false-green here — it compiles and runs only once the attribute
+    // is available. Kept conditional so the test tracks whichever FSharp.Core the harness resolves.
     [<Fact>]
     let ``Extension members and operators solve SRTP across a mini functor-monad library`` () =
         createTest "MiniFSharpPlusExtensionSRTP.fs"
@@ -393,6 +395,55 @@ module B =
         |> withDiagnosticMessageMatches "does not support a conversion"
 
     [<Fact>]
+    let ``internal op_Implicit conversion does not solve an SRTP constraint`` () =
+        // Companion to the 'private op_Implicit' test for the conversion arm, and the conversion
+        // analogue of the public-only witness rule: an 'internal' op_Implicit extension is dropped
+        // as an SRTP witness even though it is accessible within the same assembly, because a public
+        // inline function carrying it could be inlined into another assembly where it is inaccessible.
+        // The candidate is filtered out, so the constraint reports 'does not support a conversion'.
+        FSharp """
+module InternalConvNoLeak
+module ConvExt =
+    type Wrap = { X: int }
+    type Wrap with
+        static member internal op_Implicit (w: Wrap) : int = w.X
+open ConvExt
+let inline toInt (x: ^T) : int = ((^T) : (static member op_Implicit : ^T -> int) x)
+let r = toInt { X = 5 }
+        """
+        |> asExe
+        |> withLangVersionPreview
+        |> compile
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 1, Line 9, Col 15, Line 9, Col 24, "The type 'Wrap' does not support a conversion to the type 'int'")
+        ]
+
+    [<Fact>]
+    let ``public member in an internal container does not solve an SRTP constraint`` () =
+        // The public-only witness rule uses EFFECTIVE accessibility: a 'public' member declared inside
+        // an 'internal' module has effective accessibility 'internal', so it is rejected as an SRTP
+        // witness (FS0001 'is not public') just like a directly-internal member — making the module
+        // public instead compiles and runs. Guards that the rule looks through the container, not only
+        // the member's own accessibility keyword.
+        FSharp """
+module PubInInternalContainer
+module internal Hidden =
+    type System.Int32 with
+        static member Boost (x: int) = x + 50
+open Hidden
+let inline boost (x: ^T) = (^T : (static member Boost : ^T -> ^T) x)
+let r = boost 5
+        """
+        |> asExe
+        |> withLangVersionPreview
+        |> compile
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 1, Line 8, Col 15, Line 8, Col 16, "The member or object constructor 'Boost' is not public. Private members may only be accessed from within the declaring type. Protected members may only be accessed from an extending type and cannot be accessed from inner lambda expressions.")
+        ]
+
+    [<Fact>]
     let ``internal extension member does not leak across an assembly boundary through SRTP`` () =
         // An 'internal' extension member is not accessible from another assembly (absent IVT), so
         // it must not solve an SRTP constraint in a referencing assembly. Pins that accessibility
@@ -420,6 +471,44 @@ let r = useHidden 5
         |> shouldFail
         |> withErrorCode 1
         |> withDiagnosticMessageMatches "does not support the operator 'Hidden'"
+
+    [<Fact>]
+    let ``internal extension witness is rejected across an assembly boundary even with InternalsVisibleTo`` () =
+        // Sharper than the non-IVT companion above: here [<InternalsVisibleTo>] makes the 'internal'
+        // extension member genuinely ACCESSIBLE in the friend consumer, so it is no longer 'does not
+        // support the operator' (candidate invisible) — instead it is FOUND and then rejected by the
+        // public-only witness rule with FS0001 'is not public'. IVT accessibility does not make an
+        // internal member a valid cross-assembly SRTP witness. (Control: making the member public
+        // compiles and runs; without IVT it reverts to 'does not support the operator'.)
+        let library =
+            FSharp """
+module IvtLib
+open System.Runtime.CompilerServices
+[<assembly: InternalsVisibleTo("friend")>]
+do ()
+module Ext =
+    type System.Int32 with
+        static member internal Hidden (x: int) = x + 1
+            """
+            |> withName "IvtLib"
+            |> asLibrary
+            |> withLangVersionPreview
+
+        FSharp """
+module Consumer
+open IvtLib.Ext
+let inline useHidden (x: ^T) = (^T : (static member Hidden : ^T -> ^T) x)
+let r = useHidden 5
+            """
+        |> withName "friend"
+        |> asExe
+        |> withLangVersionPreview
+        |> withReferences [library]
+        |> compile
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 1, Line 5, Col 19, Line 5, Col 20, "The member or object constructor 'Hidden' is not public. Private members may only be accessed from within the declaring type. Protected members may only be accessed from an extending type and cannot be accessed from inner lambda expressions.")
+        ]
 
     [<Fact>]
     let ``multiple SRTP constraints solved by public extension members run under realsig`` () =
@@ -561,11 +650,15 @@ type System.String with
 
     [<Fact>]
     let ``Extrinsic extension not captured without ExtensionConstraintSolutions`` () =
+        // Without the feature the (*) extension is not captured into the SRTP constraint, so 'multiply'
+        // resolves x*n as int arithmetic and the string call site mismatches. Pin that specific int/string
+        // mismatch so the test cannot pass on some unrelated FS0001.
         createTest "ScopeCapture.fs"
         |> withLangVersion80
         |> compile
         |> shouldFail
         |> withErrorCode 1
+        |> withDiagnosticMessageMatches "(?s)expected to have type.*'int'.*but here has type.*'string'"
 
     [<Fact>]
     let ``Sequentialized InvokeMap pattern compiles and runs`` () =
@@ -576,7 +669,15 @@ type System.String with
         compileAndRunPreview "OpExplicitReturnType.fs"
 
     [<Fact>]
+    let ``optional extension op_Explicit solves an SRTP constraint by return type`` () =
+        compileAndRunPreview "OpExplicitOptionalExtension.fs"
+
+    [<Fact>]
     let ``AllowOverloadOnReturnType resolves through SRTP`` () =
+        // VERIFIED in-repo: the compilation cannot find AllowOverloadOnReturnType (the SDK's
+        // FSharp.Core does not yet ship it), so this genuinely takes the clean FS0039 path — not a
+        // false-green. It compiles and runs only once the attribute is available; kept conditional
+        // so the test tracks whichever FSharp.Core the harness resolves.
         createTest "AllowOverloadOnReturnType.fs"
         |> withLangVersionPreview
         |> compileAndRunOrExpectMissingAttribute "Microsoft.FSharp.Core.AllowOverloadOnReturnTypeAttribute"
@@ -650,6 +751,11 @@ let r2 = resolve "hello"
         |> withLangVersionPreview
         |> compile
         |> shouldFail
+        |> withDiagnostics [
+            (Error 887, Line 5, Col 17, Line 5, Col 33, "The type 'Default2' is not an interface type")
+            (Error 1, Line 15, Col 18, Line 15, Col 20, "None of the types 'int, Default1' support the operator 'Resolve'")
+            (Error 1, Line 16, Col 18, Line 16, Col 25, "None of the types 'string, Default1' support the operator 'Resolve'")
+        ]
 
     [<Fact>]
     let ``Built-in operator wins over extension on same type`` () =
@@ -831,21 +937,29 @@ let r = addViaIWSAM { V = 1 } { V = 2 }
         |> withLangVersionPreview
         |> compile
         |> shouldFail
+        |> withDiagnostics [
+            (Error 1, Line 11, Col 21, Line 11, Col 30, "The type 'MyNum' is not compatible with the type 'IAdditionOperators<MyNum,MyNum,MyNum>'")
+        ]
 
     [<Fact>]
     let ``Extension not in scope is not resolved`` () =
         FSharp """
+namespace Test
+
 module Exts =
     type System.Int32 with
         static member Zing(x: int) = x + 999
 
 module Consumer =
     let inline zing (x: ^T) = (^T : (static member Zing: ^T -> ^T) x)
-    let r = zing 5  // Exts not opened — should fail
+    let r = zing 5  // Exts not opened, should fail
         """
         |> withLangVersionPreview
         |> compile
         |> shouldFail
+        |> withDiagnostics [
+            (Error 1, Line 10, Col 18, Line 10, Col 19, "The type 'int' does not support the operator 'Zing'")
+        ]
 
     [<Fact>]
     let ``Extension operator on FSharpFunc type`` () =
