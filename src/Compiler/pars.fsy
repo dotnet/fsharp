@@ -7247,10 +7247,6 @@ opt_rec:
   | REC { true }
   | /* EMPTY */ { false }
 
-opt_struct:
-  | STRUCT { Some(rhs parseState 1) }
-  | /* EMPTY */ { None }
-
 opt_inline:
   | INLINE { Some(rhs parseState 1) }
   | /* EMPTY */ { None }
