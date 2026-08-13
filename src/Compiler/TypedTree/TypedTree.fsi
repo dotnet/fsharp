@@ -104,7 +104,9 @@ type ValFlags =
         isGeneratedEventVal: bool ->
             ValFlags
 
-    new: flags: int64 -> ValFlags
+    /// Reconstruct flags from the F# binary metadata, undoing the InlinedDefinition -> Always
+    /// normalization performed by PickledBits.
+    static member OfPickledBits: bits: int64 -> ValFlags
 
     member WithIsCompilerGenerated: isCompGen: bool -> ValFlags
 
