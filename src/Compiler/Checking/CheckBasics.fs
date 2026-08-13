@@ -13,6 +13,7 @@ open FSharp.Compiler.AccessibilityLogic
 open FSharp.Compiler.CompilerGlobalState
 open FSharp.Compiler.ConstraintSolver
 open FSharp.Compiler.DiagnosticsLogger
+open FSharp.Compiler.Features
 open FSharp.Compiler.InfoReader
 open FSharp.Compiler.Infos
 open FSharp.Compiler.NameResolution
@@ -258,7 +259,15 @@ type TcEnv =
     member tenv.AccessRights = tenv.eAccessRights
 
     /// Makes this environment available in a form that can be stored into a trait during solving.
-    member tenv.TraitContext = Some (tenv :> ITraitContext)
+    /// The context is only ever consumed when extension members may solve SRTP constraints
+    /// (LanguageFeature.ExtensionConstraintSolutions). Capturing it otherwise would retain the
+    /// heavy TcEnv (name-resolution env + module accumulator) on every generalized, unsolved
+    /// trait constraint for no benefit, so return None when the feature is off.
+    member tenv.TraitContext =
+        if tenv.eNameResEnv.DisplayEnv.g.langVersion.SupportsFeature LanguageFeature.ExtensionConstraintSolutions then
+            Some (tenv :> ITraitContext)
+        else
+            None
 
     interface ITraitContext<AccessorDomain, MethInfo, InfoReader> with
         member tenv.SelectExtensionMethods(traitInfo, m, infoReader) =
