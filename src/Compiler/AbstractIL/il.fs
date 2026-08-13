@@ -683,7 +683,8 @@ type ILCallingConv =
 
     static member Static = ILCallingConvStatics.Static
 
-    static member Create(thisConv, argConv) = ILCallingConvStatics.Get(thisConv, argConv)
+    static member Create(thisConv, argConv) =
+        ILCallingConvStatics.Get(thisConv, argConv)
 
     override x.ToString() =
         if x.IsStatic then "static" else "instance"
