@@ -437,6 +437,9 @@ type cenv =
 
       specializedInlineVals: HashMultiMap<Stamp, TType * Expr>
 
+      /// Cache for 'HasFrameLocalBody'
+      frameLocalVals: Dictionary<Stamp, bool>
+
       signatureHidingInfo: SignatureHidingInfo
     }
 
@@ -622,20 +625,23 @@ let BindTyparsToUnknown (tps: Typar list) env =
 let BindCcu (ccu: CcuThunk) mval env (_g: TcGlobals) = 
     { env with globalModuleInfos=env.globalModuleInfos.Add(ccu.AssemblyName, mval) }
 
-/// Lookup information about values 
-let GetInfoForLocalValue cenv env (v: Val) m = 
-    // Abstract slots do not have values 
-    if v.IsDispatchSlot then UnknownValInfo 
+/// Lookup information about values, without reporting values that are not bound yet
+let TryGetInfoForLocalValue cenv env (v: Val) =
+    // Abstract slots do not have values
+    if v.IsDispatchSlot then None
     else
         match cenv.localInternalVals.TryGetValue v.Stamp with
-        | true, res -> res
-        | _ ->
-            match env.localExternalVals.TryFind v.Stamp with 
-            | Some vval -> vval
-            | None -> 
-                if v.ShouldInline then
-                    errorR(Error(FSComp.SR.optValueMarkedInlineButWasNotBoundInTheOptEnv(fullDisplayTextOfValRef (mkLocalValRef v)), m))
-                UnknownValInfo 
+        | true, res -> Some res
+        | _ -> env.localExternalVals.TryFind v.Stamp
+
+/// Lookup information about values
+let GetInfoForLocalValue cenv env (v: Val) m =
+    match TryGetInfoForLocalValue cenv env v with
+    | Some vval -> vval
+    | None ->
+        if not v.IsDispatchSlot && v.ShouldInline then
+            errorR(Error(FSComp.SR.optValueMarkedInlineButWasNotBoundInTheOptEnv(richTextOfQualifiedValRef (mkLocalValRef v)), m))
+        UnknownValInfo
 
 let TryGetInfoForCcu env (ccu: CcuThunk) = env.globalModuleInfos.TryFind(ccu.AssemblyName)
 
@@ -682,13 +688,19 @@ let GetInfoForNonLocalVal cenv env (vref: ValRef) =
     else 
         UnknownValInfo
 
-let GetInfoForVal cenv env m (vref: ValRef) =  
-    let res = 
+let GetInfoForVal cenv env m (vref: ValRef) =
+    let res =
         if vref.IsLocalRef then
             GetInfoForLocalValue cenv env vref.binding m
         else
             GetInfoForNonLocalVal cenv env vref
     res
+
+let TryGetInfoForVal cenv env (vref: ValRef) =
+    if vref.IsLocalRef then
+        TryGetInfoForLocalValue cenv env vref.binding
+    else
+        Some(GetInfoForNonLocalVal cenv env vref)
 
 
 let IsPartialExpr cenv env m x =
@@ -762,7 +774,7 @@ let MakeValueInfoForValue g m vref vinfo =
 #if DEBUG
     let rec check x = 
         match x with 
-        | ValValue (vref2, detail) -> if valRefEq g vref vref2 then error(Error(FSComp.SR.optRecursiveValValue(showL(exprValueInfoL g vinfo)), m)) else check detail
+        | ValValue (vref2, detail) -> if valRefEq g vref vref2 then error(Error(FSComp.SR.optRecursiveValValue(RichText.mkText (showL(exprValueInfoL g vinfo))), m)) else check detail
         | SizeValue (_n, detail) -> check detail
         | _ -> ()
     check vinfo
@@ -2426,11 +2438,57 @@ let shouldForceInlineMembersInDebug (g: TcGlobals) (tcref: EntityRef) =
     | true, modRef -> tyconRefEq g tcref modRef 
     | _ -> false
 
-let shouldForceInlineInDebug (g: TcGlobals) (vref: ValRef) : bool =
+/// 'localloc' storage is released when the method executing it returns, so anything derived from
+/// it dangles at that method's callsite.
+let instrIsFrameLocal instr =
+    match instr with
+    | I_localloc -> true
+    | _ -> false
+
+/// The FSharp.Core values expanding to frame-local IL are marked [<NoDynamicInvocation>] and so are
+/// always inlined. A user 'inline' function wrapping one inherits the property but not the
+/// attribute - the callee is already inlined into the recorded body, leaving only its IL - so
+/// recover it from the body and propagate it through further wrappers.
+/// See https://github.com/dotnet/fsharp/issues/20063.
+let rec HasFrameLocalBody cenv env (vref: ValRef) =
+    let stamp = vref.Stamp
+
+    match cenv.frameLocalVals.TryGetValue stamp with
+    | true, res -> res
+    | _ ->
+        // Values bound within the body being walked have no info yet, but the walk covers them anyway.
+        match TryGetInfoForVal cenv env vref |> Option.map (fun info -> stripValue info.ValExprInfo) with
+        | Some(CurriedLambdaValue (_, _, _, body, _)) ->
+            cenv.frameLocalVals[stamp] <- false // Break cycles while the body is inspected
+            let res = ExprIsFrameLocal cenv env body
+            cenv.frameLocalVals[stamp] <- res
+            res
+
+        | _ -> false
+
+and ExprIsFrameLocal cenv env expr =
+    let folder =
+        { ExprFolder0 with
+            exprIntercept =
+                fun _recurseF noInterceptF acc expr ->
+                    if acc then acc else
+
+                    match expr with
+                    | Expr.Op (TOp.ILAsm (instrs, _), _, _, _) when List.exists instrIsFrameLocal instrs -> true
+                    | Expr.Val (vref, _, _) when vref.ShouldInline -> HasFrameLocalBody cenv env vref
+                    | _ -> noInterceptF acc expr }
+
+    FoldExpr folder false expr
+
+let shouldForceInlineInDebug cenv env (vref: ValRef) : bool =
+    let g = cenv.g
+
     ValHasWellKnownAttribute g WellKnownValAttributes.NoDynamicInvocationAttribute_True vref.Deref ||
     ValHasWellKnownAttribute g WellKnownValAttributes.NoDynamicInvocationAttribute_False vref.Deref ||
 
-    vref.HasDeclaringEntity && shouldForceInlineMembersInDebug g vref.DeclaringEntity
+    (vref.HasDeclaringEntity && shouldForceInlineMembersInDebug g vref.DeclaringEntity) ||
+
+    HasFrameLocalBody cenv env vref
 
 /// Optimize/analyze an expression
 let rec OptimizeExpr cenv (env: IncrementalOptimizationEnv) expr =
@@ -3186,7 +3244,7 @@ and TryOptimizeVal cenv env (vOpt: ValRef option, shouldInline, inlineIfLambda, 
         Some (remarkExpr m (copyExpr g CloneAllAndMarkExprValsAsCompilerGenerated expr))
 
     | CurriedLambdaValue (_, _, _, expr, _) when
-            shouldInline && (cenv.settings.alwaysInline || Option.exists (shouldForceInlineInDebug cenv.g) vOpt) ||
+            shouldInline && (cenv.settings.alwaysInline || Option.exists (shouldForceInlineInDebug cenv env) vOpt) ||
             inlineIfLambda && cenv.settings.alwaysInline ->
         let fvs = freeInExpr CollectLocals expr
         if usesMethodLocalConstructsOrProtectedField cenv fvs expr then
@@ -3251,11 +3309,11 @@ and OptimizeVal cenv env expr (v: ValRef, m) =
        if cenv.settings.alwaysInline then
            if v.ShouldInline then
                 match valInfoForVal.ValExprInfo with
-                | UnknownValue -> error(Error(FSComp.SR.optFailedToInlineValue(v.DisplayName), m))
-                | _ -> warning(Error(FSComp.SR.optFailedToInlineValue(v.DisplayName), m))
+                | UnknownValue -> error(Error(FSComp.SR.optFailedToInlineValue(richTextOfValName g v.Deref), m))
+                | _ -> warning(Error(FSComp.SR.optFailedToInlineValue(richTextOfValName g v.Deref), m))
 
            if v.InlineIfLambda then
-               warning(Error(FSComp.SR.optFailedToInlineSuggestedValue(v.DisplayName), m))
+               warning(Error(FSComp.SR.optFailedToInlineSuggestedValue(richTextOfValName g v.Deref), m))
 
        expr, (AddValEqualityInfo g m v 
                     { Info=valInfoForVal.ValExprInfo 
@@ -3541,7 +3599,7 @@ and TryInlineApplication cenv env finfo (valExpr: Expr) (tyargs: TType list, arg
     let g = cenv.g
 
     match cenv.settings.alwaysInline, stripExpr valExpr with
-    | false, Expr.Val(vref, _, _) when vref.ShouldInline && not (shouldForceInlineInDebug cenv.g vref) ->
+    | false, Expr.Val(vref, _, _) when vref.ShouldInline && not (shouldForceInlineInDebug cenv env vref) ->
         let hasNoTraits =
             let tps, _ = tryDestForallTy g vref.Type
             GetTraitConstraintInfosOfTypars g tps |> List.isEmpty
@@ -3577,11 +3635,11 @@ and TryInlineApplication cenv env finfo (valExpr: Expr) (tyargs: TType list, arg
             let specLambda = MakeApplicationAndBetaReduce g (f2R, origLambdaTy, [tyargs], [], m)
             let specLambdaTy = tyOfExpr g specLambda
 
-            // Typars that flow in from the enclosing scope when tyargs are non-concrete.
-            // specLambdaTy is closed over the vref's typars after beta-reduction, so its free
-            // typars are exactly the ones carried in by tyargs.
+            // Typars that flow in from the enclosing scope when tyargs are non-concrete. A tyarg can reach
+            // only the body, and typars left unabstracted below are erased to 'object'.
             let freeTypars =
-                (freeInType CollectTyparsNoCaching specLambdaTy).FreeTypars
+                (freeInExpr CollectTyparsAndLocalsNoCaching specLambda).FreeTyvars.FreeTypars
+                |> Zset.union (freeInType CollectTyparsNoCaching specLambdaTy).FreeTypars
                 |> Zset.elements
 
             let allTyargsAreConcrete = List.isEmpty freeTypars
@@ -3625,6 +3683,27 @@ and TryInlineApplication cenv env finfo (valExpr: Expr) (tyargs: TType list, arg
             let freeTyparsNeedWitnesses =
                 GetTraitWitnessInfosOfTypars g 0 freeTypars |> List.isEmpty |> not
 
+            // A static method would resolve values captured from the enclosing method against the caller's
+            // storage, so lift them into a leading argument group. The closure form captures them itself.
+            let specLambdaRFvs = freeInExpr CollectLocals specLambdaR
+
+            let capturedVals =
+                specLambdaRFvs.FreeLocals
+                |> Zset.elements
+                |> List.filter (fun v -> not v.IsCompiledAsTopLevel)
+
+            let capturedArgGroups = if List.isEmpty capturedVals then [] else [ capturedVals ]
+
+            // Captured values are passed by value, so writes to a mutable local would be lost -
+            // LowerLocalMutables promotes those to reference cells only after this loop. 'base' calls and
+            // protected fields cannot leave their member at all.
+            let cannotLiftCapturedVals =
+                usesMethodLocalConstructsOrProtectedField cenv specLambdaRFvs specLambdaR
+                || capturedVals |> List.exists (fun v -> v.IsMutable)
+
+            if not (List.isEmpty capturedVals) && cannotLiftCapturedVals then
+                Some(MakeApplicationAndBetaReduce g (specLambdaR, specLambdaTy, [], argsR, m), info) else
+
             let debugValName = $"<{vref.LogicalName}>__debug"
 
             // The closure form wraps tupled args in a reference Tuple<> and cannot hold byrefs.
@@ -3652,10 +3731,11 @@ and TryInlineApplication cenv env finfo (valExpr: Expr) (tyargs: TType list, arg
             // a method with flattened arguments rather than a closure that wraps args in Tuple<>.
             // Closure path (witnesses needed, no byref): keep the body as-is; witnesses from the
             // enclosing scope flow through the closure, so no typar abstraction is needed.
-            let debugValTy, debugValBody, valReprInfo, typeInstForCall =
+            let debugValTy, debugValBody, valReprInfo, typeInstForCall, capturedArgs =
                 if not freeTyparsNeedWitnesses then
-                    let ty = mkForallTyIfNeeded freeTypars specLambdaTy
-                    let body = mkTypeLambda m freeTypars (specLambdaR, specLambdaTy)
+                    let liftedBody, liftedTy = mkMultiLambdasCore g m capturedArgGroups (specLambdaR, specLambdaTy)
+                    let ty = mkForallTyIfNeeded freeTypars liftedTy
+                    let body = mkTypeLambda m freeTypars (liftedBody, liftedTy)
                     let argInfos, retInfo =
                         match vref.ValReprInfo with
                         | Some(ValReprInfo(_, argInfos, retInfo)) -> argInfos, retInfo
@@ -3663,17 +3743,20 @@ and TryInlineApplication cenv env finfo (valExpr: Expr) (tyargs: TType list, arg
                             let (ValReprInfo(_, a, r)) =
                                 InferValReprInfoOfExpr g AllowTypeDirectedDetupling.No specLambdaTy [] [] specLambdaR
                             a, r
-                    let reprInfo = ValReprInfo(ValReprInfo.InferTyparInfo freeTypars, argInfos, retInfo)
-                    ty, body, Some reprInfo, [List.map mkTyparTy freeTypars]
+                    let capturedArgInfos =
+                        capturedArgGroups
+                        |> List.map (List.map (fun (v: Val) -> { ValReprInfo.unnamedTopArg1 with Name = Some v.Id }))
+                    let reprInfo = ValReprInfo(ValReprInfo.InferTyparInfo freeTypars, capturedArgInfos @ argInfos, retInfo)
+                    ty, body, Some reprInfo, [List.map mkTyparTy freeTypars], List.map (mkRefTupledVars g m) capturedArgGroups
                 else
-                    specLambdaTy, specLambdaR, None, []
+                    specLambdaTy, specLambdaR, None, [], []
 
             let debugVal =
                 Construct.NewVal(debugValName, m, None, debugValTy, Immutable, true, valReprInfo, taccessPublic, ValNotInRecScope, None,
                     NormalVal, [], ValInline.InlinedDefinition, XmlDoc.Empty, true, false, false, false, false, false, None,
                     ParentNone)
 
-            let callExpr = mkApps g ((exprForVal m debugVal, debugValTy), typeInstForCall, argsR, m)
+            let callExpr = mkApps g ((exprForVal m debugVal, debugValTy), typeInstForCall, capturedArgs @ argsR, m)
             Some(mkCompGenLet m debugVal debugValBody callExpr, info)
 
         | _ -> None
@@ -4482,7 +4565,7 @@ and OptimizeBinding cenv isRec env (TBind(vref, expr, spBind)) =
             // excluded, as they are expanded transitively when the outer member is inlined.
             let fvs = freeInExpr CollectLocals exprOptimized
             if fvs.FreeLocals |> Zset.exists (fun v -> not v.ShouldInline && not (canAccessFromEverywhere v.Accessibility)) then
-                errorR(Error(FSComp.SR.optValueMarkedInlineButIncomplete(vref.DisplayName), vref.Range))
+                errorR(Error(FSComp.SR.optValueMarkedInlineButIncomplete(richTextOfValName g vref), vref.Range))
         
         let env = BindInternalLocalVal cenv vref (mkValInfo einfo vref) env
 
@@ -4684,6 +4767,7 @@ let OptimizeImplFile (settings, ccu, tcGlobals, tcVal, importMap, optEnv, isIncr
           stackGuard = StackGuard("OptimizerStackGuardDepth")
           realsig = tcGlobals.realsig
           specializedInlineVals = HashMultiMap(HashIdentity.Structural, true)
+          frameLocalVals = Dictionary<Stamp, bool>()
           signatureHidingInfo = SignatureHidingInfo.Empty
         }
 
