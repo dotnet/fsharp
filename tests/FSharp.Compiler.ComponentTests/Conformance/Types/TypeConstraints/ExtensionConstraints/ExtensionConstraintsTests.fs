@@ -35,6 +35,13 @@ module ExtensionConstraintsTests =
     let ``Nested Traverse-Sequence extension SRTP dispatch does not ICE and runs`` () =
         compileAndRunPreview "NestedTraverseSequenceSRTP.fs"
 
+    // Regression: an SRTP constraint solved by an extension member on a struct must pass the
+    // struct receiver by value (extension members compile to static methods). Previously the
+    // witness took the receiver's address, emitting invalid IL (System.InvalidProgramException).
+    [<Fact>]
+    let ``Struct extension members solve SRTP constraints and run without invalid IL`` () =
+        compileAndRunPreview "StructExtensionMemberSRTP.fs"
+
     // @gusty's miniFSharpPlus reproduction as a single end-to-end mini-library: extension
     // operators (++ >>= <*> |>>) and extension members solve SRTP constraints, the
     // Default1/2/3 return-type mechanism selects witnesses, and user-written generic SRTP code

@@ -2347,9 +2347,10 @@ let GenWitnessExpr amap g m (traitInfo: TraitConstraintInfo) argExprs =
 
         // Fix bug 1281 / issue #8098: If the receiver needs its address taken for a
         // constrained call, go do that and re-resolve via TraitCall with the byref receiver.
-        // Skip for C#-style extension methods: they are static in IL and take the receiver by value.
+        // Skip for all extension members (C#- and F#-style): they are static in IL and take
+        // the receiver by value, so address-taking would push a byref where a value is expected.
         let needsAddrTaken =
-            not minfo.IsCSharpStyleExtensionMember &&
+            not minfo.IsExtensionMember &&
             minfo.IsInstance &&
             (minfo.IsStruct || (ComputeConstrainedCallInfo g amap m staticTyOpt argExprs minfo).IsSome)
 
