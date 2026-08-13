@@ -1,0 +1,1 @@
+{"timestamp":"2026-08-13T09:21:38Z","result":"fixed_ci","prs_processed":1,"prs":{"20251":{"status":"category_b2_fixed","action":"Changed [<Fact>] to [<FSharp.Test.FactForNETCOREAPP>] — IAsyncDisposable unavailable on Desktop","commit_pushed":true,"comment_posted":true}}}
