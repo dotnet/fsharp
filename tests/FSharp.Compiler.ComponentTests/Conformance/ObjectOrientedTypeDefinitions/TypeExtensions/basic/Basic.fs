@@ -253,6 +253,38 @@ module TypeExtensionsBasic =
         |> compileAndRun
         |> shouldSucceed
 
+    [<Theory; FileInlineData("TupleTypeExtension04.fs")>]
+    let ``TupleTypeExtension04_fs`` compilation =
+        // A tuple type extension of arity 8 (> 7) cannot be desugared to a flat System.Tuple<T1..T8>
+        // that unifies with a real 8-tuple (which uses a nested TRest slot), so it is rejected with FS3905.
+        compilation
+        |> getCompilation
+        |> asExe
+        |> withLangVersionPreview
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 3905, Line 9, Col 6, Line 9, Col 53, "Tuple type extensions are supported only for tuples of up to 7 elements, but this tuple type has 8 elements. Extensions of larger tuples are not supported.")
+        ]
+
+    [<Fact>]
+    let ``Tuple type extension of arity 7 compiles`` () =
+        // The maximum supported arity is 7 (goodTupleFields); a 7-tuple desugars to a flat
+        // System.Tuple<T1..T7> that matches a real 7-tuple, so the extension is valid.
+        FSharp """
+module Test
+type ('T1 * 'T2 * 'T3 * 'T4 * 'T5 * 'T6 * 'T7) with
+    static member Seven ((a, _, _, _, _, _, _)) = a
+
+let r = System.Tuple<int, int, int, int, int, int, int>.Seven((1, 2, 3, 4, 5, 6, 7))
+if r <> 1 then failwith "expected 1"
+        """
+        |> asExe
+        |> withLangVersionPreview
+        |> ignoreWarnings
+        |> compileAndRun
+        |> shouldSucceed
+
     [<Fact>]
     let ``Tuple type extension requires preview language version`` () =
         // Tuple-type extensions are gated behind the extension feature flag. Below preview the

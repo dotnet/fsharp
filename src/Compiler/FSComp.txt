@@ -1841,4 +1841,5 @@ featureImprovedImpliedArgumentNamesPartTwo,"Improved implied argument names with
 3902,parsSpreadNotSupported,"Spreading is not supported in this construct."
 3903,parsSpreadNotSupportedBeforeWith,"Spreading is not supported in this position. Use one of the forms {{ ...expr1; A = expr2 }} or {{ expr1 with A = expr2 }} instead."
 3904,tcRecordExprSpreadWithCannotBeUsedWithSpreads,"Spread expressions and 'with' cannot be used together in the same copy-and-update expression."
+3905,tcTupleTypeExtensionTooManyElements,"Tuple type extensions are supported only for tuples of up to 7 elements, but this tuple type has %d elements. Extensions of larger tuples are not supported."
 featureRecordSpreads,"record type and expression spreads"

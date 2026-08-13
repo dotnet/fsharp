@@ -5250,6 +5250,21 @@ let DesugarTupleTypeExtensionCompInfo (g: TcGlobals) (compInfo: SynComponentInfo
             checkLanguageFeatureAndRecover g.langVersion LanguageFeature.ExtensionConstraintSolutions tupleRange
             let elemTys = path |> List.choose (function SynTupleTypeSegment.Type t -> Some t | _ -> None)
             let tupleName = if isStruct then "ValueTuple" else "Tuple"
+            // Tuples of arity >= 8 are compiled with a nested TRest slot (e.g. an 8-tuple is
+            // System.Tuple<_,_,_,_,_,_,_,System.Tuple<_>>), so mapping N elements to a flat
+            // System.Tuple<T1..TN> only unifies with a real tuple when N <= goodTupleFields (7).
+            // Reject larger arities with a clear error rather than silently building an extension
+            // that never applies. (Desugaring to the nested TRest form is a possible future enhancement.)
+            if elemTys.Length > goodTupleFields then
+                errorR(Error(FSComp.SR.tcTupleTypeExtensionTooManyElements(elemTys.Length), tupleRange))
+                // Recover by retargeting the augmentation at the non-generic System.Tuple/ValueTuple
+                // placeholder so downstream checking does not choke on the bare tuple SynType (which
+                // otherwise surfaces as an internal 'rangeOfLid' error).
+                let longId = [Ident("System", tupleRange); Ident(tupleName, tupleRange)]
+                let (SynComponentInfo(attrs, _, constraints, _, xmlDoc, fixity, vis, _)) = compInfo
+                let newSynTy = Some(SynType.LongIdent(SynLongIdent(longId, [], [])))
+                SynComponentInfo(attrs, None, constraints, newSynTy, xmlDoc, fixity, vis, tupleRange)
+            else
             let longId = [Ident("System", tupleRange); Ident(tupleName, tupleRange)]
             let typarDecls =
                 elemTys |> List.mapi (fun i elemTy ->

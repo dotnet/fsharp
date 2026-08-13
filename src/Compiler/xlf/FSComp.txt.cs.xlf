@@ -9102,6 +9102,11 @@
         <target state="new">emit GetObjectData and field-restoring deserialization constructor for exception types</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcTupleTypeExtensionTooManyElements">
+        <source>Tuple type extensions are supported only for tuples of up to 7 elements, but this tuple type has {0} elements. Extensions of larger tuples are not supported.</source>
+        <target state="new">Tuple type extensions are supported only for tuples of up to 7 elements, but this tuple type has {0} elements. Extensions of larger tuples are not supported.</target>
+        <note />
+      </trans-unit>
     </body>
   </file>
 </xliff>
