@@ -64,6 +64,12 @@
     </EmbeddedResource>
     <EmbeddedResource Include="ILLink.Substitutions.xml" LogicalName="ILLink.Substitutions.xml" />
   </ItemGroup>
+  <ItemGroup>
+    <!-- XML doc fragments pulled into the .fsi files at compile time via <include> tags.
+         Referenced here so they are treated as compilation inputs (incremental build / up-to-date check). -->
+    <None Include="xmldoc/*.xml" />
+    <UpToDateCheckInput Include="xmldoc/*.xml" />
+  </ItemGroup>
   <ItemGroup Condition="'$(Configuration)' == 'Proto' or '$(BUILDING_USING_DOTNET)' == 'true'">
     <!-- This can be removed once CompileBefore support is shipped in an rtm release -->
     <CompileBefore Include="prim-types-prelude.fsi">
