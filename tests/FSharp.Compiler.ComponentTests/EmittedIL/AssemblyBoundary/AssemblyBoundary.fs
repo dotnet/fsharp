@@ -187,7 +187,7 @@ let main _ =
 
     // https://github.com/dotnet/fsharp/issues/20253
     [<Fact>]
-    let ``Issue 20253 - imports pre-witness inline metadata`` () =
+    let ``Issue 20253 - imports legacy zero-bit inline metadata`` () =
         let legacyDll = Path.Combine(__SOURCE_DIRECTORY__, "LegacyInline.dll")
 
         let compiled =
