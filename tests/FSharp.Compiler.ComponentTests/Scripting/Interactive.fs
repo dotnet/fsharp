@@ -360,7 +360,7 @@ asm.GetCustomAttributes(typeof<System.Diagnostics.DebuggableAttribute>, false)
             Assert.Equal(1, flags.Length)
 
     // https://github.com/dotnet/fsharp/issues/14454
-    [<Fact>]
+    [<FSharp.Test.FactForNETCOREAPP>]
     let ``Issue 14454 - IAsyncDisposable use in task CE`` () =
         Fsx
             """
