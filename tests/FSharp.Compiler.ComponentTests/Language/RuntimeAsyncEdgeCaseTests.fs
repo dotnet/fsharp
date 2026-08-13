@@ -84,14 +84,10 @@ let ``runtime async edge cases execute through the CE builder`` () =
     |> shouldSucceed
 
 // ============================ emitted IL (codegen contract) ============================
-//
-// Each fact below pins the *entire* method body in scope (not a single line): the normalized
-// `.method { ... }` block captured from the PR's own fsc on the pinned net11 preview. This hands
-// dotnet/runtime reviewers the exact lowering to check against docs/runtime-async.md. The blocks
-// are deliberately brittle across SDK/codegen bumps — a codegen exhibit is supposed to change when
-// the codegen changes. ILChecker.compareIL normalizes both sides identically ([System.Runtime] ->
-// [runtime], collapses the multi-line `.method` signature, strips comments), so the verbatim
-// ildasm text is what we assert.
+// Each fact pins the whole method body captured from the PR's fsc, so dotnet/runtime reviewers get
+// the exact lowering to check against docs/runtime-async.md. ILChecker normalizes both sides
+// ([System.Runtime] -> [runtime], collapses the `.method` signature, strips comments); a codegen
+// exhibit is meant to change when the codegen changes.
 
 // `Await(Task); 1` — direct call to the non-generic Await overload, then push 1 and ret.
 let private simpleAwaitBody = """
@@ -205,24 +201,11 @@ let ``runtime async currently emits a forbidden tail prefix (C1)`` () =
     |> verifyILContains [ tailPrefixBody ]
     |> shouldSucceed
 
-// ============== async impl-flag placement — F# source layout is not authoritative ==============
-//
-// The async marking is a *method* impl flag (MethodImplAttributes 0x2000, MethodImplOptions.Async;
-// il.fs WithAsync), written into the emitted PE method header. It is NOT rendered by the ildasm we
-// use, so it can only be checked from metadata — hence withMetadataReader rather than verifyIL.
-//
-// This is the composed / non-trivial case the trivial single-method exhibits above do not cover: a
-// larger user function (`outer`) that has a nested local function (`inner`), non-async code before
-// and after, and a runtimeTask CE that itself combines control flow (`for`, `let!`, `use`,
-// `try/finally`, `do!`, `if`). The property being pinned: the 0x2000 flag lands on the emitted IL
-// method that actually holds the async body (a compiler-generated closure the CE body is lifted
-// into), and NOT on the enclosing `outer` just because the CE is written lexically inside it.
-//
-// Empirically on the pinned net11 preview (implAttrs, async = 0x2000 bit):
-//   M::helper            0x0000  async=false
-//   M::outer             0x0000  async=false   <- encloses the CE, but is NOT the async method
-//   outer@NN::Invoke     0x2008  async=true    <- lifted async body carries the flag (+noinlining)
-//   RuntimeTaskBuilder::Run  0x2008  async=true (the intrinsic-bodied inline builder member)
+// ===== composed CE case: async marking follows the emitted method, not F# source layout =====
+// A larger `outer` (nested `inner`, non-async code before/after, a runtimeTask CE combining
+// for/let!/use/try-finally/do!/if). Empirically the 0x2000 (MethodImplOptions.Async) bit lands on
+// the lifted `outer@<line>::Invoke` (0x2008, +noinlining) and RuntimeTaskBuilder::Run, never on
+// `M::outer`/`M::helper` — asserted via assertAsyncFlagOnLiftedClosureOnly (ildasm/.bsl can't show it).
 let private composedLayoutProgram = """
 module M
 open System
@@ -251,104 +234,14 @@ let outer (n: int) : Task<int> =
     work                                  // non-async code AFTER the async part
 """
 
-// Full emitted IL of the composed program, so dotnet/runtime reviewers can read the exact lowering.
-//
-// (1) `M::outer` -- the *enclosing* user function. It is a plain, non-async method: it runs the
-// pre-async code (`baseline = inner 10`, i.e. `10 + helper n`) inline, constructs the closure that
-// holds the async body, and tail-calls its `Invoke`. It returns `Task<int>` but carries NO async
-// impl flag -- proof that the async marking follows the emitted async method, not the F# function the
-// CE is lexically written in. (It is even allowed `tail.` here precisely because it is not async.)
-let private composedOuterBody = """
-  .method public static class [System.Runtime]System.Threading.Tasks.Task`1<int32> 
-          outer(int32 n) cil managed
-  {
-    // Code size       23 (0x17)
-    .maxstack  5
-    .locals init (int32 V_0)
-    IL_0000:  ldc.i4.s   10
-    IL_0002:  ldarg.0
-    IL_0003:  ldc.i4.2
-    IL_0004:  mul
-    IL_0005:  add
-    IL_0006:  stloc.0
-    IL_0007:  ldarg.0
-    IL_0008:  ldloc.0
-    IL_0009:  newobj     instance void M/outer@13::.ctor(int32,
-                                                         int32)
-    IL_000e:  ldnull
-    IL_000f:  tail.
-    IL_0011:  callvirt   instance !1 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [System.Runtime]System.Threading.Tasks.Task`1<int32>>::Invoke(!0)
-    IL_0016:  ret
-  } // end of method M::outer
-"""
+// Two CE-only IL shapes the direct-intrinsic .bsl program cannot show (it has no use/try-finally),
+// pinned as targeted contiguous slices of outer@<line>::Invoke rather than the whole lifted body.
+// Captured from the PR's fsc; ILChecker normalizes [System.Runtime] -> [runtime].
 
-// (2) `outer@13::Invoke` -- the compiler-generated closure the CE body is lifted into: THIS is the
-// runtime-async method (the one carrying MethodImplAttributes.Async, checked via metadata below).
-// Its body is the full composed lowering the runtime must honour:
-//   * a `for` loop (blt.s / bne.un.s) around a suspension,
-//   * `AsyncHelpers::Await<int32>(Task<int32>)` -- the generic await intrinsic (the `let!`),
-//   * a try/finally where `do!` suspends via `AsyncHelpers::Await(Task)` INSIDE the try while the
-//     finally does only arithmetic (no await in a finally region -- that is forbidden),
-//   * the `use` disposal lowered as isinst IAsyncDisposable -> DisposeAsync(); Await(ValueTask),
-//     else isinst IDisposable -> Dispose(), emitted in straight-line code AFTER the protected region
-//     (the builder hoists the awaited DisposeAsync out of the finally, by design), and
-//   * the final `if total > 0 then ... else -1`.
-let private composedAsyncClosureBody = """
-    .method public strict virtual instance class [System.Runtime]System.Threading.Tasks.Task`1<int32> 
-            Invoke(class [FSharp.Core]Microsoft.FSharp.Core.Unit unit) cil managed noinlining
-    {
-      // Code size       231 (0xe7)
-      .maxstack  7
-      .locals init (int32 V_0,
-               int32 V_1,
-               int32 V_2,
-               class [System.Runtime]System.Threading.Tasks.Task`1<int32> V_3,
-               int32 V_4,
-               class [System.Runtime]System.IDisposable V_5,
-               class [System.Runtime]System.Exception V_6,
-               class [FSharp.Core]Microsoft.FSharp.Core.FSharpChoice`2<int32,class [FSharp.Core]Microsoft.FSharp.Core.Unit> V_7,
-               class [FSharp.Core]Microsoft.FSharp.Core.FSharpChoice`2<int32,class [FSharp.Core]Microsoft.FSharp.Core.Unit> V_8,
-               class [System.Runtime]System.Threading.Tasks.Task V_9,
-               class [System.Runtime]System.Exception V_10,
-               object V_11,
-               class [System.Runtime]System.IAsyncDisposable V_12,
-               class [System.Runtime]System.IAsyncDisposable V_13,
-               class [System.Runtime]System.IDisposable V_14,
-               class [System.Runtime]System.IDisposable V_15)
-      IL_0000:  ldarg.0
-      IL_0001:  ldfld      int32 M/outer@13::baseline
-      IL_0006:  stloc.0
-      IL_0007:  ldc.i4.1
-      IL_0008:  stloc.2
-      IL_0009:  ldarg.0
-      IL_000a:  ldfld      int32 M/outer@13::n
-      IL_000f:  stloc.1
-      IL_0010:  ldloc.1
-      IL_0011:  ldloc.2
-      IL_0012:  blt.s      IL_0032
-
-      IL_0014:  ldloc.2
-      IL_0015:  call       class [System.Runtime]System.Threading.Tasks.Task`1<!!0> [System.Runtime]System.Threading.Tasks.Task::FromResult<int32>(!!0)
-      IL_001a:  stloc.3
-      IL_001b:  ldloc.3
-      IL_001c:  call       !!0 [System.Runtime]System.Runtime.CompilerServices.AsyncHelpers::Await<int32>(class [System.Runtime]System.Threading.Tasks.Task`1<!!0>)
-      IL_0021:  stloc.s    V_4
-      IL_0023:  ldloc.0
-      IL_0024:  ldloc.s    V_4
-      IL_0026:  add
-      IL_0027:  stloc.0
-      IL_0028:  ldloc.2
-      IL_0029:  ldc.i4.1
-      IL_002a:  add
-      IL_002b:  stloc.2
-      IL_002c:  ldloc.2
-      IL_002d:  ldloc.1
-      IL_002e:  ldc.i4.1
-      IL_002f:  add
-      IL_0030:  bne.un.s   IL_0014
-
-      IL_0032:  newobj     instance void M/'outer@18-1'::.ctor()
-      IL_0037:  stloc.s    V_5
+// (1) `do!` suspends INSIDE the try; the finally does only arithmetic. Await in a finally is
+// forbidden (docs/runtime-async.md), so the suspension must sit in the protected region. The `use`
+// wraps it in an outer try/catch; the exhibit keeps both frames so the nesting is visible.
+let private ceAwaitInsideTry = """
       .try
       {
         .try
@@ -373,37 +266,11 @@ let private composedAsyncClosureBody = """
           IL_0052:  stloc.0
           IL_0053:  endfinally
         }  // end handler
-        IL_0054:  ldloc.0
-        IL_0055:  ldc.i4.0
-        IL_0056:  ble.s      IL_005b
+"""
 
-        IL_0058:  ldloc.0
-        IL_0059:  br.s       IL_005c
-
-        IL_005b:  ldc.i4.m1
-        IL_005c:  call       class [FSharp.Core]Microsoft.FSharp.Core.FSharpChoice`2<!0,!1> class [FSharp.Core]Microsoft.FSharp.Core.FSharpChoice`2<int32,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::NewChoice1Of2(!0)
-        IL_0061:  stloc.s    V_8
-        IL_0063:  leave.s    IL_007a
-
-      }  // end .try
-      catch [mscorlib]System.Object 
-      {
-        IL_0065:  castclass  [System.Runtime]System.Exception
-        IL_006a:  stloc.s    V_10
-        IL_006c:  ldloc.s    V_10
-        IL_006e:  stloc.s    V_6
-        IL_0070:  ldnull
-        IL_0071:  call       class [FSharp.Core]Microsoft.FSharp.Core.FSharpChoice`2<!0,!1> class [FSharp.Core]Microsoft.FSharp.Core.FSharpChoice`2<int32,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::NewChoice2Of2(!1)
-        IL_0076:  stloc.s    V_8
-        IL_0078:  leave.s    IL_007a
-
-      }  // end handler
-      IL_007a:  ldloc.s    V_8
-      IL_007c:  stloc.s    V_7
-      IL_007e:  ldloc.s    V_5
-      IL_0080:  box        [System.Runtime]System.IDisposable
-      IL_0085:  stloc.s    V_11
-      IL_0087:  ldloc.s    V_11
+// (2) `use` disposal emitted AFTER the protected region: the builder hoists the awaited DisposeAsync
+// out of the finally — isinst IAsyncDisposable -> DisposeAsync() -> Await(ValueTask).
+let private ceDisposalHoist = """
       IL_0089:  isinst     [System.Runtime]System.IAsyncDisposable
       IL_008e:  stloc.s    V_12
       IL_0090:  ldloc.s    V_12
@@ -414,80 +281,48 @@ let private composedAsyncClosureBody = """
       IL_0098:  ldloc.s    V_13
       IL_009a:  callvirt   instance valuetype [System.Runtime]System.Threading.Tasks.ValueTask [System.Runtime]System.IAsyncDisposable::DisposeAsync()
       IL_009f:  call       void [System.Runtime]System.Runtime.CompilerServices.AsyncHelpers::Await(valuetype [System.Runtime]System.Threading.Tasks.ValueTask)
-      IL_00a4:  br.s       IL_00c0
-
-      IL_00a6:  ldloc.s    V_11
-      IL_00a8:  isinst     [System.Runtime]System.IDisposable
-      IL_00ad:  stloc.s    V_14
-      IL_00af:  ldloc.s    V_14
-      IL_00b1:  brfalse.s  IL_00c0
-
-      IL_00b3:  ldloc.s    V_14
-      IL_00b5:  stloc.s    V_15
-      IL_00b7:  ldloc.s    V_15
-      IL_00b9:  callvirt   instance void [System.Runtime]System.IDisposable::Dispose()
-      IL_00be:  br.s       IL_00c0
-
-      IL_00c0:  ldloc.s    V_6
-      IL_00c2:  stloc.s    V_10
-      IL_00c4:  ldloc.s    V_10
-      IL_00c6:  brtrue.s   IL_00ca
-
-      IL_00c8:  br.s       IL_00cd
-
-      IL_00ca:  ldloc.s    V_10
-      IL_00cc:  throw
-
-      IL_00cd:  ldloc.s    V_7
-      IL_00cf:  isinst     class [FSharp.Core]Microsoft.FSharp.Core.FSharpChoice`2/Choice2Of2<int32,class [FSharp.Core]Microsoft.FSharp.Core.Unit>
-      IL_00d4:  brfalse.s  IL_00d8
-
-      IL_00d6:  br.s       IL_00e5
-
-      IL_00d8:  ldloc.s    V_7
-      IL_00da:  castclass  class [FSharp.Core]Microsoft.FSharp.Core.FSharpChoice`2/Choice1Of2<int32,class [FSharp.Core]Microsoft.FSharp.Core.Unit>
-      IL_00df:  call       instance !0 class [FSharp.Core]Microsoft.FSharp.Core.FSharpChoice`2/Choice1Of2<int32,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::get_Item()
-      IL_00e4:  ret
-
-      IL_00e5:  ldc.i4.0
-      IL_00e6:  ret
-    } // end of method outer@13::Invoke
 """
 
-[<Fact>]
-let ``async impl flag is on the lifted async method, not the enclosing F# function`` () =
+// MethodImplOptions.Async (0x2000) is a *method header* flag, not an IL instruction — neither the
+// ildasm we use nor the sequence-points decoder render it, so both the composed IL exhibit and the
+// sequence-points baseline show the lifted async body as an ordinary `outer@<line>` closure. This
+// reads it from metadata and pins the placement: the flag lands only on that lifted `__runtimeAsync`
+// body and never leaks onto the user's own `outer`/`helper` methods just because the async part is
+// written lexically inside `outer`. Empirically the lifted `Invoke` is 0x2008 (async + noinlining).
+let private assertAsyncFlagOnLiftedClosureOnly (md: MetadataReader) =
     let asyncBit = 0x2000
+    let methods =
+        [ for th in md.TypeDefinitions do
+            let td = md.GetTypeDefinition th
+            let typeName = md.GetString td.Name
+            for mh in td.GetMethods() do
+                let m = md.GetMethodDefinition mh
+                yield typeName, md.GetString m.Name, ((int m.ImplAttributes) &&& asyncBit) <> 0 ]
+
+    let isAsync typeName methodName =
+        methods |> List.exists (fun (t, m, a) -> t = typeName && m = methodName && a)
+
+    Assert.False(isAsync "M" "outer", "outer must not carry the async impl flag")
+    Assert.False(isAsync "M" "helper", "helper must not carry the async impl flag")
+    Assert.True(
+        methods |> List.exists (fun (t, _, a) -> a && t.StartsWith "outer@"),
+        "the lifted closure holding outer's async body must carry the async impl flag")
+
+[<Fact>]
+let ``composed CE body: await inside try, hoisted disposal, async flag on the lifted method`` () =
     FsFromPath builderPath
     |> withAdditionalSourceFile (FsSource composedLayoutProgram)
     |> withLangVersionPreview
     |> compile
     |> shouldSucceed
-    |> verifyILContains [ composedOuterBody; composedAsyncClosureBody ]
-    |> withMetadataReader (fun md ->
-        let methods =
-            [ for th in md.TypeDefinitions do
-                let td = md.GetTypeDefinition th
-                let typeName = md.GetString td.Name
-                for mh in td.GetMethods() do
-                    let m = md.GetMethodDefinition mh
-                    yield typeName, md.GetString m.Name, ((int m.ImplAttributes) &&& asyncBit) <> 0 ]
-
-        let isAsync typeName methodName =
-            methods |> List.exists (fun (t, m, a) -> t = typeName && m = methodName && a)
-
-        // The user functions are plain IL methods — the async flag must NOT leak onto them just
-        // because the CE (or a call to an async helper) appears lexically inside `outer`.
-        Assert.False(isAsync "M" "outer", "outer must not carry the async impl flag")
-        Assert.False(isAsync "M" "helper", "helper must not carry the async impl flag")
-
-        // The CE body is lifted into a compiler-generated closure (name `outer@<line>`); that
-        // emitted method is the one that carries the async flag.
-        let liftedIsAsync =
-            methods |> List.exists (fun (t, _, a) -> a && t.StartsWith "outer@")
-        Assert.True(liftedIsAsync, "the lifted closure holding outer's async body must carry the async impl flag"))
+    |> verifyILContains [ ceAwaitInsideTry; ceDisposalHoist ]
+    |> withMetadataReader assertAsyncFlagOnLiftedClosureOnly
 
 // DEMO (auduchinok's sequence-points baseline format): source spans interleaved with the IL that
 // implements them, so a large async body is readable and each Await maps to its `do!`/`let!`.
+// NOTE: like ildasm, this decoder cannot render the MethodImplOptions.Async flag, so in the .bsl the
+// lifted `outer@<line>::Invoke` looks like a plain closure. The flag that actually makes it a
+// runtime-async method is asserted on the very same compilation via assertAsyncFlagOnLiftedClosureOnly.
 let private composedDirectProgram = """
 module M
 open System.Threading.Tasks
@@ -517,7 +352,7 @@ let ``composed runtime-async body: source-mapped IL (sequence points baseline)``
     |> compile
     |> shouldSucceed
     |> verifySequencePointsBaseline composedDirectProgram (Path.Combine(runtimeAsyncDir, "ComposedRuntimeAsync.bsl"))
-    |> ignore
+    |> withMetadataReader assertAsyncFlagOnLiftedClosureOnly
 
 
 // Each pattern is contract-forbidden but compiles with NO diagnostic today; docs/runtime-async.md
