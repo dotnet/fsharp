@@ -108,7 +108,8 @@
     <!-- System.Net.Http / System.Text.RegularExpressions 4.3.0 (transitive in test packages) -->
     <NuGetAuditSuppress Include="https://github.com/advisories/GHSA-7jgj-8wvc-jh57" />
     <NuGetAuditSuppress Include="https://github.com/advisories/GHSA-cmhx-cq75-c4mj" />
-    <!-- MessagePack 2.5.187 (transitive via Visual Studio SDK packages) -->
+    <!-- MessagePack (transitive via Visual Studio SDK packages and Microsoft.CommonLanguageServerProtocol.Framework) -->
+    <NuGetAuditSuppress Include="https://github.com/advisories/GHSA-4qm4-8hg2-g2xm" />
     <NuGetAuditSuppress Include="https://github.com/advisories/GHSA-hv8m-jj95-wg3x" />
     <NuGetAuditSuppress Include="https://github.com/advisories/GHSA-vh6j-jc39-fggf" />
     <NuGetAuditSuppress Include="https://github.com/advisories/GHSA-2f33-pr97-265q" />
