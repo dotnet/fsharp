@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
   <file datatype="xml" source-language="en" target-language="ko" original="../FSComp.resx">
     <body>
@@ -177,6 +177,21 @@
         <target state="new">The constraints 'comparison' and 'delegate' are inconsistent</target>
         <note />
       </trans-unit>
+      <trans-unit id="csConcretenessMoreConcreteAt">
+        <source>{0} is more concrete at {1}</source>
+        <target state="new">{0} is more concrete at {1}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="csConcretenessPosition">
+        <source>position {0}</source>
+        <target state="new">position {0}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="csConcretenessPositions">
+        <source>positions {0}</source>
+        <target state="new">positions {0}</target>
+        <note />
+      </trans-unit>
       <trans-unit id="csFunctionDoesNotSupportType">
         <source>'{0}' does not support the type '{1}', because the latter lacks the required (real or built-in) member '{2}'</source>
         <target state="translated">'{1}' 형식에는 필수(실제 또는 기본 제공) 멤버 '{2}'이(가) 없기 때문에 '{0}'이(가) 이 형식을 지원하지 않습니다.</target>
@@ -185,6 +200,11 @@
       <trans-unit id="csGenericConstructRequiresStructOrReferenceConstraint">
         <source>A generic construct requires that a generic type parameter be known as a struct or reference type. Consider adding a type annotation.</source>
         <target state="translated">제네릭 구문을 사용하려면 구조체 또는 참조 형식의 제네릭 형식 매개 변수가 필요합니다. 형식 주석을 추가하세요.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="csIncomparableConcreteness">
+        <source>Neither candidate is strictly more concrete than the other:\n{0}</source>
+        <target state="new">Neither candidate is strictly more concrete than the other:\n{0}</target>
         <note />
       </trans-unit>
       <trans-unit id="csNoOverloadsFoundArgumentsPrefixPlural">
@@ -302,11 +322,6 @@
         <target state="new">Allow object expressions without overrides</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureAndBang">
-        <source>applicative computation expressions</source>
-        <target state="translated">적용 가능한 계산 식</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureArithmeticInLiterals">
         <source>Arithmetic and logical operations in literals, enum definitions and attributes</source>
         <target state="translated">리터럴, 열거형 정의 및 특성의 산술 연산 및 논리 연산</target>
@@ -370,11 +385,6 @@
       <trans-unit id="featureDirectDelegateConstruction">
         <source>construct delegates that point directly at the target method, avoiding an intermediate closure</source>
         <target state="new">construct delegates that point directly at the target method, avoiding an intermediate closure</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="featureDiscardUseValue">
-        <source>discard pattern in use binding</source>
-        <target state="translated">사용 중인 패턴 바인딩 무시</target>
         <note />
       </trans-unit>
       <trans-unit id="featureDontWarnOnUppercaseIdentifiersInBindingPatterns">
@@ -457,11 +467,6 @@
         <target state="new">Implicit dispatch slot coverage for default interface member implementations</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureImplicitYield">
-        <source>implicit yield</source>
-        <target state="translated">암시적 yield</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureImprovedImpliedArgumentNames">
         <source>Improved implied argument names</source>
         <target state="translated">향상된 암시적 인수 이름</target>
@@ -522,6 +527,11 @@
         <target state="translated">데이터를 사용하지 않는 공용 구조체 사례에는 패턴 일치 삭제가 허용되지 않습니다.</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureMoreConcreteTiebreaker">
+        <source>Use 'most concrete' tiebreaker for overload resolution when methods differ only by type parameter concreteness.</source>
+        <target state="new">Use 'most concrete' tiebreaker for overload resolution when methods differ only by type parameter concreteness.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureNameOf">
         <source>nameof</source>
         <target state="translated">nameof</target>
@@ -555,6 +565,11 @@
       <trans-unit id="featureNullnessChecking">
         <source>nullness checking</source>
         <target state="new">nullness checking</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureOverloadResolutionPriority">
+        <source>Support for OverloadResolutionPriorityAttribute to prioritize method overloads.</source>
+        <target state="new">Support for OverloadResolutionPriorityAttribute to prioritize method overloads.</target>
         <note />
       </trans-unit>
       <trans-unit id="featureOverloadsForCustomOperations">
@@ -602,6 +617,11 @@
         <target state="translated">모든 크기의 목록 리터럴</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureRecordConstructorSyntax">
+        <source>Constructing a record via its all-fields constructor</source>
+        <target state="new">Constructing a record via its all-fields constructor</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureRecordSpreads">
         <source>record type and expression spreads</source>
         <target state="new">record type and expression spreads</target>
@@ -610,11 +630,6 @@
       <trans-unit id="featureRefCellNotationInformationals">
         <source>informational messages related to reference cells</source>
         <target state="translated">참조 셀과 관련된 정보 메시지</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="featureRelaxWhitespace">
-        <source>whitespace relaxation</source>
-        <target state="new">whitespace relaxation</target>
         <note />
       </trans-unit>
       <trans-unit id="featureRelaxWhitespace2">
@@ -655,11 +670,6 @@
       <trans-unit id="featureSelfTypeConstraints">
         <source>self type constraints</source>
         <target state="translated">자체 형식 제약 조건</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="featureSingleUnderscorePattern">
-        <source>single underscore pattern</source>
-        <target state="translated">단일 밑줄 패턴</target>
         <note />
       </trans-unit>
       <trans-unit id="featureStaticLetInRecordsDusEmptyTypes">
@@ -735,11 +745,6 @@
       <trans-unit id="featureWhileBang">
         <source>'while!' expression</source>
         <target state="translated">'while!' 식</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="featureWildCardInForLoop">
-        <source>wild card in for loop</source>
-        <target state="translated">for 루프의 와일드카드</target>
         <note />
       </trans-unit>
       <trans-unit id="featureWitnessPassing">
@@ -860,6 +865,11 @@
       <trans-unit id="lexByteStringMayNotBeInterpolated">
         <source>a byte string may not be interpolated</source>
         <target state="translated">바이트 문자열을 보간하지 못할 수 있습니다.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="lexColonDirectiveMustBeFirst">
+        <source>#: directives must start at the beginning of a line</source>
+        <target state="new">#: directives must start at the beginning of a line</target>
         <note />
       </trans-unit>
       <trans-unit id="lexExtendedStringInterpolationNotSupported">
@@ -1282,11 +1292,6 @@
         <target state="translated">조건식의 'else if' 또는 'elif' 분기에서 입력이 예기치 않게 끝났습니다. 'elif &lt;expr&gt; then &lt;expr&gt;' 또는 'else if &lt;expr&gt; then &lt;expr&gt;'이 필요합니다.</target>
         <note />
       </trans-unit>
-      <trans-unit id="parsUnexpectedSymbolDot">
-        <source>Unexpected symbol '.' in member definition. Expected 'with', '=' or other token.</source>
-        <target state="translated">멤버 정의의 예기치 않은 기호 '.'입니다. 'with', '=' 또는 기타 토큰이 필요합니다.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="optsChecksumAlgorithm">
         <source>Specify algorithm for calculating source file checksum stored in PDB. Supported values are: SHA1 or SHA256 (default)</source>
         <target state="translated">PDB에 저장된 소스 파일 체크섬을 계산하기 위한 알고리즘을 지정합니다. 지원되는 값은 SHA1 또는 SHA256(기본값)입니다.</target>
@@ -1427,11 +1432,6 @@
         <target state="translated">이 식은 ‘{0}’ 형식이며 모호한 암시적 변환을 통해 ‘{1}’ 형식하고만 호환됩니다. ‘op_Implicit’에 대한 명시적 호출을 사용하십시오. 해당하는 암시적 변환은 ‘{2}’입니다.</target>
         <note />
       </trans-unit>
-      <trans-unit id="tcAndBangNotSupported">
-        <source>This feature is not supported in this version of F#. You may need to add /langversion:preview to use this feature.</source>
-        <target state="translated">이 기능은 이 F# 버전에서 지원되지 않습니다. 이 기능을 사용하기 위해 /langversion:preview를 추가해야 할 수도 있습니다.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="tcAnonRecdDuplicateFieldId">
         <source>The field '{0}' appears multiple times in this record expression.</source>
         <target state="translated">'{0}' 필드가 이 레코드 식에 여러 번 나타납니다.</target>
@@ -1550,6 +1550,11 @@
       <trans-unit id="tcGenericAttributesNotSupported">
         <source>Generic attribute types are not supported in F#. The type '{0}' has type parameters and cannot be used as an attribute.</source>
         <target state="new">Generic attribute types are not supported in F#. The type '{0}' has type parameters and cannot be used as an attribute.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcGenericOverloadBypassed">
+        <source>A more generic overload was bypassed: '{0}'. The selected overload '{1}' was chosen because it has more concrete type parameters.</source>
+        <target state="new">A more generic overload was bypassed: '{0}'. The selected overload '{1}' was chosen because it has more concrete type parameters.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcHighPrecedenceFunctionApplicationToListDeprecated">
@@ -1672,6 +1677,11 @@
         <target state="new">The following required properties have to be initialized:{0}</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcMoreConcreteTiebreakerUsed">
+        <source>Overload resolution preferred the more concrete overload '{0}' over '{1}' based on parameter type concreteness. This is an informational message and can be enabled with --warnon:3575.</source>
+        <target state="new">Overload resolution preferred the more concrete overload '{0}' over '{1}' based on parameter type concreteness. This is an informational message and can be enabled with --warnon:3575.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcMultipleFieldsInRecord">
         <source>The field '{0}' appears multiple times in this record expression or pattern</source>
         <target state="translated">'{0}' 필드가 이 레코드 식 또는 패턴에 여러 번 나타납니다.</target>
@@ -1735,6 +1745,11 @@
       <trans-unit id="tcOtherThenAdjacentListArgumentReserved">
         <source>The syntax 'expr1[expr2]' is now reserved for indexing and is ambiguous when used as an argument. See https://aka.ms/fsharp-index-notation. If calling a function with multiple curried arguments, add a space between them, e.g. 'someFunction expr1 [expr2]'.</source>
         <target state="translated">구문 'expr1[expr2]'은 이제 인덱싱용으로 예약되어 있으며 인수로 사용될 때 모호합니다. https://aka.ms/fsharp-index-notation을 참조하세요. 여러 개의 커리된 인수로 함수를 호출하는 경우 그 사이에 공백을 추가하세요(예: 'someFunction expr1 [expr2]').</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcOverloadResolutionPriorityOnOverride">
+        <source>The 'OverloadResolutionPriorityAttribute' cannot be applied to an override member. Apply it to the original declaration instead.</source>
+        <target state="new">The 'OverloadResolutionPriorityAttribute' cannot be applied to an override member. Apply it to the original declaration instead.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcOverrideUsesMultipleArgumentsInsteadOfTuple">
@@ -6719,7 +6734,7 @@
       </trans-unit>
       <trans-unit id="lexfltTokenIsOffsideOfContextStartedEarlier">
         <source>Unexpected syntax or possible incorrect indentation: this token is offside of context started at position {0}. Try indenting this further.</source>
-        <target state="needs-review-translation">예기치 않은 구문 또는 잘못된 들여쓰기: 이 토큰은 {0} 위치에서 시작된 컨텍스트의 오프 사이드입니다. 이를 더 들여쓰기해 보세요.\n규정을 준수하지 않는 들여쓰기를 계속 사용하려면 '--strict-indentation-' 플래그를 컴파일러에 전달하거나 언어 버전을 F# 7로 설정합니다.</target>
+        <target state="new">Unexpected syntax or possible incorrect indentation: this token is offside of context started at position {0}. Try indenting this further.</target>
         <note />
       </trans-unit>
       <trans-unit id="lexfltSeparatorTokensOfPatternMatchMisaligned">

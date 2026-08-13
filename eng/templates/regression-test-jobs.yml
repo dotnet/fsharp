@@ -65,41 +65,20 @@ jobs:
         
         Write-Host "Successfully checked out ${{ item.repo }} at commit ${{ item.commit }}"
         git log -1 --oneline
-        
+
         Write-Host "Repository structure:"
         Get-ChildItem -Name
-        
-        $buildScript = '${{ item.buildScript }}'
-        # Support ';;' separator for multiple commands — validate each command's script file
-        $commands = $buildScript -split ';;' | ForEach-Object { $_.Trim() } | Where-Object { $_ }
-        foreach ($cmd in $commands) {
-          if ($cmd -like "dotnet*") {
-            Write-Host "Built-in dotnet command, skipping file check:  $cmd"
-          } else {
-            $scriptFile = ($cmd -split ' ', 2)[0]
-            Write-Host "Verifying build script exists:  $scriptFile"
-            if (Test-Path $scriptFile) {
-              Write-Host "Build script found: $scriptFile"
-            } else {
-              Write-Host "Build script not found:  $scriptFile"
-              Write-Host "Available files in root:"
-              Get-ChildItem
-              exit 1
-            }
-          }
-        }
       displayName:  Checkout ${{ item.displayName }} at specific commit
 
     - pwsh: |
         Set-Location $(Pipeline.Workspace)/TestRepo
-        Write-Host "Removing global.json to use latest SDK..."
-        if (Test-Path "global.json") {
-          Remove-Item "global.json" -Force
-          Write-Host "global.json removed"
-        } else {
-          Write-Host "No global.json found"
-        }
-      displayName: Remove global.json to use latest SDK
+        # Pin the test repo to the exact SDK that built the compiler (allowPrerelease + rollForward:disable) so its
+        # F# SDK targets and the runtime that runs the local fsc.dll line up, with no silent fallback.
+        $sdk = (Get-Content "$(Build.SourcesDirectory)/global.json" | ConvertFrom-Json).sdk.version
+        @{ sdk = @{ version = $sdk; allowPrerelease = $true; rollForward = "disable" } } | ConvertTo-Json | Set-Content "global.json"
+        Write-Host "Pinned test repo to SDK $sdk"
+        Get-Content "global.json"
+      displayName: Pin global.json to compiler SDK for ${{ item.displayName }}
 
     - task: UseDotNet@2
       displayName:  Install .NET SDK 8.0.x for ${{ item.displayName }}
@@ -145,7 +124,7 @@ jobs:
     # into the regression test's .dotnet so fsc.dll can find the runtime.
     # Tries default feed first, then ci.dot.net/public (same fallback as eng/common).
     - pwsh: |
-        $v = (Get-Content "$(Build.SourcesDirectory)/global.json" | ConvertFrom-Json).tools.dotnet
+        $v = (Get-Content "$(Build.SourcesDirectory)/global.json" | ConvertFrom-Json).sdk.version
         $d = "$(Pipeline.Workspace)/TestRepo/.dotnet"
         $u = "https://builds.dotnet.microsoft.com/dotnet/scripts/v1"
         if ($IsWindows) {
@@ -161,19 +140,6 @@ jobs:
             bash "$d/dotnet-install.sh" --version $v --install-dir $d --skip-non-versioned-files --azure-feed "https://ci.dot.net/public"
         }
       displayName: Install compiler SDK for ${{ item.displayName }}
-      continueOnError: true
-
-    - pwsh: |
-        Set-Location $(Pipeline.Workspace)/TestRepo
-        
-        Write-Host "Running PrepareRepoForRegressionTesting.fsx..."
-        dotnet fsi $(Build.SourcesDirectory)/eng/scripts/PrepareRepoForRegressionTesting.fsx "$(Pipeline.Workspace)/Props/UseLocalCompiler.Directory.Build.props"
-        
-        if ($LASTEXITCODE -ne 0) {
-          Write-Host "Failed to prepare repository for regression testing"
-          exit 1
-        }
-      displayName: Setup local compiler configuration for ${{ item.displayName }}
 
     - pwsh: |
         Set-Location $(Pipeline.Workspace)/TestRepo
@@ -187,17 +153,17 @@ jobs:
         Write-Host ""
         Write-Host "F# Compiler artifacts available:"
         $productTfm = (dotnet msbuild "$(Pipeline.Workspace)/Props/TargetFrameworks.props" --getProperty:FSharpNetCoreProductTargetFramework).Trim()
-        Get-ChildItem "$(Pipeline.Workspace)/FSharpCompiler/bin/fsc/Release/$productTfm" -Name -ErrorAction SilentlyContinue
+        Get-ChildItem "$(Pipeline.Workspace)/FSharpCompiler/artifacts/bin/fsc/Release/$productTfm" -Name -ErrorAction SilentlyContinue
         Write-Host ""
         Write-Host "F# Core available:"
-        if (Test-Path "$(Pipeline.Workspace)/FSharpCompiler/bin/FSharp.Core/Release/netstandard2.0/FSharp.Core.dll") {
+        if (Test-Path "$(Pipeline.Workspace)/FSharpCompiler/artifacts/bin/FSharp.Core/Release/netstandard2.0/FSharp.Core.dll") {
           Write-Host "FSharp.Core.dll found"
         } else {
           Write-Host "FSharp.Core.dll not found"
         }
         Write-Host ""
-        Write-Host "Directory.Build.props content:"
-        Get-Content "Directory.Build.props"
+        Write-Host "Directory.Build.props content (none if injected via CustomAfterDirectoryBuildProps):"
+        Get-Content "Directory.Build.props" -ErrorAction SilentlyContinue
         Write-Host ""
         Write-Host "==========================================="
       displayName: Report build environment for ${{ item.displayName }}
@@ -216,14 +182,6 @@ jobs:
 
     - pwsh: |
         Set-Location $(Pipeline.Workspace)/TestRepo
-        Write-Host "============================================"
-        Write-Host "Starting build for ${{ item.displayName }}"
-        Write-Host "Repository: ${{ item.repo }}"
-        Write-Host "Commit: ${{ item.commit }}"
-        Write-Host "Build Script: ${{ item.buildScript }}"
-        Write-Host "============================================"
-        Write-Host ""
-        
         $errorLogPath = "$(Pipeline.Workspace)/build-errors.log"
         $fullLogPath = "$(Pipeline.Workspace)/build-full.log"
         
@@ -242,62 +200,24 @@ jobs:
           }
         }
 
-        function Run-Command {
-          param([string]$cmd)
-          if ($cmd -like "dotnet*") {
-            Write-Host "Executing built-in command:  $cmd"
-            if ($IsWindows) {
-              cmd /c $cmd 2>&1 | Tee-Object -FilePath $fullLogPath -Append | ForEach-Object {
-                Process-BuildOutput $_
-              }
-            } else {
-              # Escape semicolons for bash -c to prevent them being treated as command separators
-              $escapedCmd = $cmd -replace ';', '\;'
-              bash -c "$escapedCmd" 2>&1 | Tee-Object -FilePath $fullLogPath -Append | ForEach-Object {
-                Process-BuildOutput $_
-              }
-            }
-          } elseif ($IsWindows) {
-            Write-Host "Executing file-based script: $cmd"
-            cmd /c ".\$cmd" 2>&1 | Tee-Object -FilePath $fullLogPath -Append | ForEach-Object {
-              Process-BuildOutput $_
-            }
-          } else {
-            Write-Host "Executing file-based script: $cmd"
-            $scriptFile = ($cmd -split ' ', 2)[0]
-            chmod +x "$scriptFile"
-            bash -c "./$cmd" 2>&1 | Tee-Object -FilePath $fullLogPath -Append | ForEach-Object {
-              Process-BuildOutput $_
-            }
-          }
-          return $LASTEXITCODE
-        }
+        # Build logic lives in the fsx so a failure reproduces with the same one command, no pipeline required.
+        $fsxArgs = @(
+          "$(Build.SourcesDirectory)/eng/scripts/BuildWithLocalFSharp.fsx",
+          '--compiler-path', "$(Pipeline.Workspace)/FSharpCompiler",
+          '--props', "$(Pipeline.Workspace)/Props/UseLocalCompiler.Directory.Build.props",
+          '--core-packages-dir', "$(Pipeline.Workspace)/Props/library-packs",
+          '--nuget-packages', "$(Pipeline.Workspace)/.nuget-packages",
+          '--build-script', '${{ item.buildScript }}'
+        )
+        if ('${{ item.expectLocalCore }}' -eq 'True') { $fsxArgs += '--verify' }
 
-        # Support ';;' separator for multiple commands
-        $commands = ('${{ item.buildScript }}' -split ';;') | ForEach-Object { $_.Trim() } | Where-Object { $_ }
-        
-        foreach ($cmd in $commands) {
-          $exitCode = Run-Command $cmd
-          if ($exitCode -ne 0) {
-            Write-Host ""
-            Write-Host "============================================"
-            Write-Host "Command failed: $cmd"
-            Write-Host "Exit code: $exitCode"
-            Write-Host "============================================"
-            exit $exitCode
-          }
+        dotnet fsi @fsxArgs 2>&1 | Tee-Object -FilePath $fullLogPath -Append | ForEach-Object { Process-BuildOutput $_ }
+        $code = $LASTEXITCODE
+        if ($code -ne 0) {
+          Write-Host "##[error]Build failed for ${{ item.displayName }} (exit code $code)"
+          exit $code
         }
-        
-        Write-Host ""
-        Write-Host "============================================"
-        Write-Host "Build completed for ${{ item.displayName }}"
-        Write-Host "Exit code: 0"
-        Write-Host "============================================"
       displayName:  Build ${{ item.displayName }} with local F# compiler
-      env:
-        LocalFSharpCompilerPath: $(Pipeline.Workspace)/FSharpCompiler
-        LoadLocalFSharpBuild: 'True'
-        LocalFSharpCompilerConfiguration: Release
       timeoutInMinutes:  120
 
     - pwsh:  |
@@ -417,27 +337,14 @@ jobs:
           }
           
           Write-Host ""
-          Write-Host "##[section]LOCAL REPRODUCTION STEPS (from fsharp repo root):"
-          Write-Host "# 1. Build the F# compiler"
-          Write-Host "./build.sh -c Release"
-          Write-Host ""
-          Write-Host "# 2. Clone and checkout the failing library"
-          Write-Host "cd .."
+          $verifyFlag = if ('${{ item.expectLocalCore }}' -eq 'True') { ' --verify' } else { '' }
+          Write-Host "##[section]LOCAL REPRODUCTION (any OS; FSHARP_REPO = your dotnet/fsharp checkout built with build.sh/Build.cmd -c Release -pack):"
           Write-Host "git clone --recursive https://github.com/${{ item.repo }}.git TestRepo"
-          Write-Host "cd TestRepo"
-          Write-Host "git checkout ${{ item.commit }}"
-          Write-Host "git submodule update --init --recursive"
-          Write-Host "rm -f global.json"
-          Write-Host ""
-          Write-Host "# 3. Prepare the repo for local compiler"
-          Write-Host "dotnet fsi ../fsharp/eng/scripts/PrepareRepoForRegressionTesting.fsx `"../fsharp/UseLocalCompiler.Directory.Build.props`""
-          Write-Host ""
-          Write-Host "# 4. Build with local compiler"
-          Write-Host "export LocalFSharpCompilerPath=`$PWD/../fsharp"
-          Write-Host "export LoadLocalFSharpBuild=True"
-          Write-Host "export LocalFSharpCompilerConfiguration=Release"
-          Write-Host "${{ item.buildScript }}"
-          
+          Write-Host "cd TestRepo; git checkout ${{ item.commit }}; git submodule update --init --recursive"
+          Write-Host 'BUILD_COMMAND: ${{ item.buildScript }}'
+          Write-Host "dotnet fsi FSHARP_REPO/eng/scripts/BuildWithLocalFSharp.fsx$verifyFlag --build-script '<BUILD_COMMAND above>'"
+          Write-Host "#    If TestRepo/global.json pins a different SDK, align sdk.version to your compiler SDK (rollForward: disable); add --nuget-packages <dir> to isolate restore."
+
           Write-Host "##vso[task.logissue type=error;sourcepath=azure-pipelines-PR.yml]Regression test failed: ${{ item.displayName }}"
         }
         Write-Host "============================================"
