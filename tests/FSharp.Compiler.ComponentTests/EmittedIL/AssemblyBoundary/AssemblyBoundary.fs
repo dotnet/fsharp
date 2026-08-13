@@ -1,9 +1,11 @@
 namespace EmittedIL
 
+open System
 open Xunit
 open System.IO
 open FSharp.Test
 open FSharp.Test.Compiler
+open FSharp.Test.Utilities
 
 module AssemblyBoundary =
 
@@ -186,12 +188,21 @@ let main _ =
               """]
 
     // https://github.com/dotnet/fsharp/issues/20253
+    // Compiled out-of-process: in-process CompileRaw of a legacy pre-witness FSharp.Core
+    // consumer can mutate shared compiler/import state and break later in-process tests.
     [<Fact>]
     let ``Issue 20253 - imports legacy zero-bit inline metadata`` () =
         let legacyDll = Path.Combine(__SOURCE_DIRECTORY__, "LegacyInline.dll")
+        let workDir = Path.Combine(Path.GetTempPath(), "fsharp-issue20253-" + Guid.NewGuid().ToString("N"))
 
-        let compiled =
-            FSharp """
+        try
+            Directory.CreateDirectory workDir |> ignore
+            let source = Path.Combine(workDir, "Consumer.fs")
+            let outputDll = Path.Combine(workDir, "Consumer.dll")
+
+            File.WriteAllText(
+                source,
+                """
 module Consumer
 open LegacyInline
 open LegacyInline.Library
@@ -205,11 +216,27 @@ let optic: Lens<Record, int> =
 let test () =
     let result = invoke optic 42 { Value = 0 }
     result.Value
-            """
-            |> asLibrary
-            |> withOptions [ $"-r:{legacyDll}" ]
-            |> withOptimize
-            |> compile
-            |> shouldSucceed
+"""
+            )
 
-        compiled |> verifyILNotPresent [ "LegacyInline.Library::invoke" ]
+            let defaultOpts = CompilerAssert.DefaultProjectOptions(TargetFramework.Current).OtherOptions
+
+            let result =
+                runFscProcess [
+                    yield "--target:library"
+                    yield "--optimize+"
+                    yield! (defaultOpts |> Array.toList)
+                    yield $"-r:{legacyDll}"
+                    yield $"-o:{outputDll}"
+                    yield source
+                ]
+
+            if result.ExitCode <> 0 then
+                failwithf "fsc exit %d\nstdout:%s\nstderr:%s" result.ExitCode result.StdOut result.StdErr
+
+            ILChecker.checkILNotPresent outputDll [ "LegacyInline.Library::invoke" ]
+        finally
+            try
+                Directory.Delete(workDir, true)
+            with _ ->
+                ()
