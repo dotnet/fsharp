@@ -421,7 +421,30 @@ let r = useHidden 5
         |> withErrorCode 1
         |> withDiagnosticMessageMatches "does not support the operator 'Hidden'"
 
-    // Shared fixtures for the cross-file extension-operator tests: an extension `( * )` on System.String
+    [<Fact>]
+    let ``multiple SRTP constraints solved by public extension members run under realsig`` () =
+        // Positive counterpart to the realsig negatives above: two SRTP constraints in one inline
+        // function, both solved by public extension members, must compile and run correctly under
+        // --realsig+ --optimize- (the strict-codegen mode where earlier accessibility leaks surfaced).
+        FSharp """
+module MultiExtRealsig
+module Ops =
+    type System.Int32 with
+        static member Inc (x: int) = x + 1
+        static member Dbl (x: int) = x * 2
+open Ops
+let inline transform (x: ^T) =
+    let a = (^T : (static member Inc: ^T -> ^T) x)
+    (^T : (static member Dbl: ^T -> ^T) a)
+if transform 10 <> 22 then failwith "wrong result"
+        """
+        |> asExe
+        |> withLangVersionPreview
+        |> withOptions [ "--realsig+"; "--optimize-" ]
+        |> compileAndRun
+        |> shouldSucceed
+
+
     // declared in one file and consumed from another. Written once and reused by the plain and the
     // signature-file variants, which exercise the exact same impl and consumer.
     let private extStringMultiplyImpl = """

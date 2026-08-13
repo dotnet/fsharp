@@ -3237,7 +3237,8 @@ let main _ =
         """
         |> asExe
         |> compileExeAndRun
-        
+        |> shouldSucceed
+
     // https://github.com/dotnet/fsharp/issues/15987
     [<Fact>]
     let ``Issue 15987 - SRTP overload resolution returns correct value for typed argument`` () =
