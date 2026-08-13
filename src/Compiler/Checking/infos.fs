@@ -461,14 +461,15 @@ type ILTypeInfo =
             let metadataTy = convertToTypeWithMetadataIfPossible g ty
             assert (isILAppTy g metadataTy)
             let metadataTyconRef = tcrefOfAppTy g metadataTy
-            let (TILObjectReprData(scoref, enc, tdef)) = metadataTyconRef.ILTyconInfo
-            let metadataILTypeRef = mkRefForNestedILTypeDef scoref (enc, tdef)
-            ILTypeInfo(g, ty, metadataILTypeRef, tdef)
+            let (TILObjectReprData(_, _, tdef)) = metadataTyconRef.ILTyconInfo
+            // Entity.CompiledRepresentation caches exactly 'mkRefForNestedILTypeDef scoref (enc, tdef)'
+            // for a TILObjectRepr entity, so take it from there rather than rebuilding a duplicate
+            // ILTypeRef (and its enclosing-name list, and its hash) on every call.
+            ILTypeInfo(g, ty, metadataTyconRef.CompiledRepresentationForNamedType, tdef)
         elif isILAppTy g ty then
             let tcref = tcrefOfAppTy g ty
-            let (TILObjectReprData(scoref, enc, tdef)) = tcref.ILTyconInfo
-            let tref = mkRefForNestedILTypeDef scoref (enc, tdef)
-            ILTypeInfo(g, ty, tref, tdef)
+            let (TILObjectReprData(_, _, tdef)) = tcref.ILTyconInfo
+            ILTypeInfo(g, ty, tcref.CompiledRepresentationForNamedType, tdef)
         else
             failwith ("ILTypeInfo.FromType - no IL metadata for type" + Environment.StackTrace)
 
