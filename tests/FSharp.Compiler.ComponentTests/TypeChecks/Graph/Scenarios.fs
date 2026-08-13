@@ -1325,6 +1325,36 @@ module Dissolve =
 """
                     (set [| 0; 1 |])
             ]
+        // Tuple type extensions (RFC FS-1043) are desugared by DesugarTupleTypeExtensionCompInfo
+        // during type-checking, which happens AFTER this dependency graph is built. The graph
+        // builder therefore sees the raw SynComponentInfo (synType = Some (SynType.Tuple ...),
+        // LongIdent = []). Unlike a nominal type extension, a tuple extension has no LongId to key
+        // on, so the only thing that links a consumer to the declaring file is the `open`. This
+        // scenario pins that a consumer which opens the tuple-extension module depends on it, so
+        // graph-based checking orders the declaring file before the consumer.
+        scenario
+            "Tuple type extension links consumer to declaring file via open"
+            [
+                sourceFile
+                    "A.fs"
+                    """
+module A
+
+type (int * int) with
+    member x.Sum = fst x + snd x
+"""
+                    Set.empty
+                sourceFile
+                    "B.fs"
+                    """
+module B
+
+open A
+
+let getSum () = (1, 2).Sum
+"""
+                    (set [| 0 |])
+            ]
     ]
 
 
