@@ -2835,7 +2835,7 @@ and byteAsCallConv b =
             ILArgConvention.Default
 
     let generic = (b &&& e_IMAGE_CEE_CS_CALLCONV_GENERIC) <> 0x0uy
-    generic, Callconv(byteAsHasThis b, cc)
+    generic, ILCallingConv.Create(byteAsHasThis b, cc)
 
 and seekReadMemberRefAsMethodData ctxt numTypars idx : VarArgMethodData =
     ctxt.seekReadMemberRefAsMethodData (MemberRefAsMspecIdx(numTypars, idx))

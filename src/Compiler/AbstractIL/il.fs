@@ -683,6 +683,8 @@ type ILCallingConv =
 
     static member Static = ILCallingConvStatics.Static
 
+    static member Create(thisConv, argConv) = ILCallingConvStatics.Get(thisConv, argConv)
+
     override x.ToString() =
         if x.IsStatic then "static" else "instance"
 
@@ -693,9 +695,54 @@ and ILCallingConvStatics() =
 
     static let staticCallConv = Callconv(ILThisConvention.Static, ILArgConvention.Default)
 
+    /// Every combination, so that reading metadata never allocates a calling convention. The two
+    /// common ones above are placed in the table too, so all uses share one instance per combination.
+    static let allCallConvs =
+        let thisConvs =
+            [|
+                ILThisConvention.Instance
+                ILThisConvention.InstanceExplicit
+                ILThisConvention.Static
+            |]
+
+        let argConvs =
+            [|
+                ILArgConvention.Default
+                ILArgConvention.CDecl
+                ILArgConvention.StdCall
+                ILArgConvention.ThisCall
+                ILArgConvention.FastCall
+                ILArgConvention.VarArg
+            |]
+
+        Array.init (thisConvs.Length * argConvs.Length) (fun i ->
+            match thisConvs[i / argConvs.Length], argConvs[i % argConvs.Length] with
+            | ILThisConvention.Instance, ILArgConvention.Default -> instanceCallConv
+            | ILThisConvention.Static, ILArgConvention.Default -> staticCallConv
+            | thisConv, argConv -> Callconv(thisConv, argConv))
+
     static member Instance = instanceCallConv
 
     static member Static = staticCallConv
+
+    static member Get(thisConv, argConv) =
+        // Explicit, so adding a case to either union is a compile error here rather than a bad index.
+        let thisIdx =
+            match thisConv with
+            | ILThisConvention.Instance -> 0
+            | ILThisConvention.InstanceExplicit -> 1
+            | ILThisConvention.Static -> 2
+
+        let argIdx =
+            match argConv with
+            | ILArgConvention.Default -> 0
+            | ILArgConvention.CDecl -> 1
+            | ILArgConvention.StdCall -> 2
+            | ILArgConvention.ThisCall -> 3
+            | ILArgConvention.FastCall -> 4
+            | ILArgConvention.VarArg -> 5
+
+        allCallConvs[thisIdx * 6 + argIdx]
 
 type ILBoxity =
     | AsObject
