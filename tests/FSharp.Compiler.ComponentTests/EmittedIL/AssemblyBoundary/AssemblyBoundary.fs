@@ -6,6 +6,7 @@ open System.IO
 open FSharp.Test
 open FSharp.Test.Compiler
 open FSharp.Test.Utilities
+open TestFramework
 
 module AssemblyBoundary =
 
@@ -226,9 +227,9 @@ let test () =
                     yield "--target:library"
                     yield "--optimize+"
                     yield! (defaultOpts |> Array.toList)
-                    yield $"-r:{legacyDll}"
-                    yield $"-o:{outputDll}"
-                    yield source
+                    yield $"-r:{Commands.quotepath legacyDll}"
+                    yield $"-o:{Commands.quotepath outputDll}"
+                    yield Commands.quotepath source
                 ]
 
             if result.ExitCode <> 0 then
