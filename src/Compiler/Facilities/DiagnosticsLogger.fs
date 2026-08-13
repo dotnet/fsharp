@@ -78,10 +78,10 @@ let (|StopProcessing|_|) exn =
 let StopProcessing<'T> = StopProcessingExn None
 
 // int is e.g. 191 in FS0191
-exception DiagnosticWithText of number: int * message: string * range: range with
+exception DiagnosticWithText of number: int * message: RichText * range: range with
     override this.Message =
         match this :> exn with
-        | DiagnosticWithText(_, msg, _) -> msg
+        | DiagnosticWithText(_, msg, _) -> msg.Text
         | _ -> "impossible"
 
 exception InternalError of message: string * range: range with
@@ -101,11 +101,11 @@ exception InternalException of exn: Exception * msg: string * range: range with
         | InternalException(exn, _, _) -> exn.ToString()
         | _ -> "impossible"
 
-exception UserCompilerMessage of message: string * number: int * range: range
+exception UserCompilerMessage of message: RichText * number: int * range: range
 
 exception LibraryUseOnly of range: range
 
-exception Deprecated of message: string * range: range
+exception Deprecated of message: RichText * range: range
 
 exception Experimental of message: string option * diagnosticId: string option * urlFormat: string option * range: range
 
@@ -123,20 +123,22 @@ exception UnresolvedPathReferenceNoRange of assemblyName: string * path: string 
 
 exception UnresolvedPathReference of assemblyName: string * path: string * range: range
 
-exception DiagnosticWithSuggestions of number: int * message: string * range: range * identifier: string * suggestions: Suggestions with // int is e.g. 191 in FS0191
+exception DiagnosticWithSuggestions of number: int * message: RichText * range: range * identifier: string * suggestions: Suggestions with // int is e.g. 191 in FS0191
     override this.Message =
         match this :> exn with
-        | DiagnosticWithSuggestions(_, msg, _, _, _) -> msg
+        | DiagnosticWithSuggestions(_, msg, _, _, _) -> msg.Text
         | _ -> "impossible"
 
 /// A diagnostic that is raised when enabled manually, or by default with a language feature
-exception DiagnosticEnabledWithLanguageFeature of number: int * message: string * range: range * enabledByLangFeature: bool
+exception DiagnosticEnabledWithLanguageFeature of number: int * message: RichText * range: range * enabledByLangFeature: bool
 
-/// A diagnostic that is raised when a diagnostic is obsolete
+type ObsoleteDiagnosticInfo =
+    | ObsoleteDiagnosticInfo of isError: bool * diagnosticId: string option * message: string option * urlFormat: string option
+
 exception ObsoleteDiagnostic of
     isError: bool *
     diagnosticId: string option *
-    message: string option *
+    message: RichText option *
     urlFormat: string option *
     range: range
 
@@ -144,7 +146,7 @@ exception ObsoleteDiagnostic of
 /// an DiagnosticWithText as an exception even if it's a warning.
 ///
 /// We will eventually rename this to remove this use of "Error"
-let Error ((n, text), m) = DiagnosticWithText(n, text, m)
+let Error ((n, text): int * RichText, m) = DiagnosticWithText(n, text, m)
 
 /// The F# compiler code currently uses 'ErrorWithSuggestions(...)' in many places to create
 /// an DiagnosticWithText as an exception even if it's a warning.
@@ -179,7 +181,7 @@ let inline protectAssemblyExplorationNoReraise dflt1 dflt2 ([<InlineIfLambda>] f
 
 // Attach a range if this is a range dual exception.
 let rec AttachRange m (exn: exn) =
-    if equals m range0 then
+    if Range.equals m range0 then
         exn
     else
         match exn with
@@ -603,14 +605,14 @@ let stopProcessingRecovery exn m =
 let errorRecoveryNoRange exn =
     DiagnosticsThreadStatics.DiagnosticsLogger.ErrorRecoveryNoRange exn
 
-let deprecatedWithError s m = errorR (Deprecated(s, m))
+let deprecatedWithError (s: RichText) m = errorR (Deprecated(s, m))
 
 let libraryOnlyError m = errorR (LibraryUseOnly m)
 
 let libraryOnlyWarning m = warning (LibraryUseOnly m)
 
 let deprecatedOperator m =
-    deprecatedWithError (FSComp.SR.elDeprecatedOperator ()) m
+    deprecatedWithError (RichText.mkText (FSComp.SR.elDeprecatedOperator ())) m
 
 [<DebuggerStepThrough>]
 let suppressErrorReporting f =
@@ -824,6 +826,49 @@ let NormalizeErrorString (text: string) =
 
     buf.ToString()
 
+let NormalizeErrorRichText (text: RichText) =
+    let full = text.Text
+
+    // 'NormalizeErrorString' trims the message as a whole, so the trimmed range is computed over all
+    // parts rather than over each part on its own.
+    let mutable startIndex = 0
+    let mutable endIndex = full.Length
+
+    while startIndex < endIndex && Char.IsWhiteSpace full[startIndex] do
+        startIndex <- startIndex + 1
+
+    while endIndex > startIndex && Char.IsWhiteSpace full[endIndex - 1] do
+        endIndex <- endIndex - 1
+
+    let parts = ResizeArray()
+    let buf = System.Text.StringBuilder()
+    let mutable index = 0
+    // Set once a '\r' was replaced, so that a '\n' completing the sequence produces no second proxy,
+    // even when it belongs to the next part
+    let mutable skipLineFeed = false
+
+    for part in text.Parts do
+        buf.Clear() |> ignore
+
+        for c in part.Text do
+            if index >= startIndex && index < endIndex then
+                match c with
+                | '\n' when skipLineFeed -> ()
+                | '\r'
+                | '\n' -> buf.Append stringThatIsAProxyForANewlineInFlatErrors |> ignore
+                | c ->
+                    // handle remaining chars: control - replace with space, others - keep unchanged
+                    buf.Append(if Char.IsControl c then ' ' else c) |> ignore
+
+                skipLineFeed <- c = '\r'
+
+            index <- index + 1
+
+        if buf.Length > 0 then
+            parts.Add(TaggedText(part.Tag, buf.ToString()))
+
+    RichText.ofParts (parts.ToArray())
+
 /// Indicates whether a language feature check should be skipped. Typically used in recursive functions
 /// where we don't want repeated recursive calls to raise the same diagnostic multiple times.
 [<RequireQualifiedAccess>]
@@ -974,7 +1019,7 @@ type StackGuard(name: string) =
                     Thread.CurrentThread.Name <- $"F# Extra Compilation Thread for {name} (depth {depthWhenJump})"
                     return f ()
                 }
-                |> Async.RunImmediate
+                |> Async.RunSynchronouslyImmediate
         finally
             depth.Value <- depth.Value - 1
 

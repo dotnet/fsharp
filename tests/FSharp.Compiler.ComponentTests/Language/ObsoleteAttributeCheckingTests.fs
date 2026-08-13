@@ -412,7 +412,7 @@ c.Update()
         |> compile
         |> shouldFail
         |> withDiagnostics [
-            (Error 101, Line 9, Col 1, Line 9, Col 9, "This construct is deprecated. Use B instead")
+            (Error 101, Line 9, Col 3, Line 9, Col 9, "This construct is deprecated. Use B instead")
         ]
 
     [<Fact>]
@@ -432,7 +432,7 @@ c.Update()
         |> shouldFail
         |> withDiagnostics [
             (Error 101, Line 8, Col 9, Line 8, Col 10, "This construct is deprecated. Use B instead");
-            (Error 101, Line 9, Col 1, Line 9, Col 9, "This construct is deprecated. Use B instead")
+            (Error 101, Line 9, Col 3, Line 9, Col 9, "This construct is deprecated. Use B instead")
         ]
 
     [<Fact>]
@@ -453,7 +453,7 @@ c.Update()
         |> shouldFail
         |> withDiagnostics [
             (Error 101, Line 9, Col 9, Line 9, Col 10, "This construct is deprecated. Use B instead");
-            (Error 101, Line 10, Col 1, Line 10, Col 9, "This construct is deprecated. Use B instead")
+            (Error 101, Line 10, Col 3, Line 10, Col 9, "This construct is deprecated. Use B instead")
         ]
 
     [<Fact>]
@@ -492,7 +492,7 @@ c.Update()
         |> compile
         |> shouldFail
         |> withDiagnostics [
-            (Error 101, Line 10, Col 1, Line 10, Col 9, "This construct is deprecated. Use B instead")
+            (Error 101, Line 10, Col 3, Line 10, Col 9, "This construct is deprecated. Use B instead")
         ]
 
     [<Fact>]
@@ -548,7 +548,7 @@ C.Update()
         |> compile
         |> shouldFail
         |> withDiagnostics [
-            (Error 101, Line 9, Col 1, Line 9, Col 9, "This construct is deprecated. Use B instead")
+            (Error 101, Line 9, Col 3, Line 9, Col 9, "This construct is deprecated. Use B instead")
         ]
         
     [<Fact>]
@@ -602,7 +602,7 @@ let c = Color.Red
         |> compile
         |> shouldFail
         |> withDiagnostics [
-            (Error 101, Line 7, Col 9, Line 7, Col 18, "This construct is deprecated. Use B instead")
+            (Error 101, Line 7, Col 15, Line 7, Col 18, "This construct is deprecated. Use B instead")
         ]
 
     [<Fact>]
@@ -618,7 +618,7 @@ let c = Color.Red
         |> compile
         |> shouldFail
         |> withDiagnostics [
-            (Warning 44, Line 7, Col 9, Line 7, Col 18, "This construct is deprecated. Use B instead")
+            (Warning 44, Line 7, Col 15, Line 7, Col 18, "This construct is deprecated. Use B instead")
         ]
 
     [<Fact>]
@@ -653,7 +653,7 @@ let c = Color.Red
         |> compile
         |> shouldFail
         |> withDiagnostics [
-            (Error 101, Line 8, Col 9, Line 8, Col 18, "This construct is deprecated. Use B instead")
+            (Error 101, Line 8, Col 15, Line 8, Col 18, "This construct is deprecated. Use B instead")
         ]
 
     [<Fact>]
@@ -670,7 +670,7 @@ let c = Color.Red
         |> compile
         |> shouldFail
         |> withDiagnostics [
-            (Warning 44, Line 8, Col 9, Line 8, Col 18, "This construct is deprecated. Use B instead")
+            (Warning 44, Line 8, Col 15, Line 8, Col 18, "This construct is deprecated. Use B instead")
         ]
 
     [<Fact>]
@@ -939,7 +939,7 @@ b.text("Hello 2") |> ignore
         |> compile
         |> shouldFail
         |> withDiagnostics [
-            (Error 101, Line 16, Col 1, Line 16, Col 7, "This construct is deprecated. Use B instead")
+            (Error 101, Line 16, Col 3, Line 16, Col 7, "This construct is deprecated. Use B instead")
         ]
     
     [<Fact>]
@@ -985,7 +985,7 @@ let value2 = class1.A <- 12
         |> compile
         |> shouldFail
         |> withDiagnostics [
-            (Warning 44, Line 9, Col 14, Line 9, Col 22, "This construct is deprecated. member A is deprecated");
+            (Warning 44, Line 9, Col 21, Line 9, Col 22, "This construct is deprecated. member A is deprecated");
             (Warning 44, Line 9, Col 14, Line 9, Col 28, "This construct is deprecated. member A is deprecated")
         ]
         
@@ -1004,7 +1004,7 @@ let value2 = class1.A <- 12
         |> compile
         |> shouldFail
         |> withDiagnostics [
-            (Error 101, Line 9, Col 14, Line 9, Col 22, "This construct is deprecated. member A is deprecated")
+            (Error 101, Line 9, Col 21, Line 9, Col 22, "This construct is deprecated. member A is deprecated")
         ]
         
     [<Fact>]
@@ -1022,8 +1022,9 @@ let value2 = class1.A <- 12
         |> compile
         |> shouldFail
         |> withDiagnostics [
+           (Warning 44, Line 8, Col 21, Line 8, Col 22, "This construct is deprecated. member A is deprecated");
            (Warning 44, Line 8, Col 14, Line 8, Col 22, "This construct is deprecated. member A is deprecated");
-           (Warning 44, Line 9, Col 14, Line 9, Col 22, "This construct is deprecated. member A is deprecated")
+           (Warning 44, Line 9, Col 21, Line 9, Col 22, "This construct is deprecated. member A is deprecated")
         ]
         
     [<Fact>]
@@ -1041,8 +1042,8 @@ let value2 = class1.A <- 12
         |> compile
         |> shouldFail
         |> withDiagnostics [
-            (Error 101, Line 8, Col 14, Line 8, Col 22, "This construct is deprecated. member A is deprecated")
-            (Error 101, Line 9, Col 14, Line 9, Col 22, "This construct is deprecated. member A is deprecated")
+            (Error 101, Line 8, Col 21, Line 8, Col 22, "This construct is deprecated. member A is deprecated")
+            (Error 101, Line 9, Col 21, Line 9, Col 22, "This construct is deprecated. member A is deprecated")
         ]
     
     [<Fact>]
@@ -1331,10 +1332,10 @@ Class.ObsoleteEvent |> ignore
         |> compile
         |> shouldFail
         |> withDiagnostics [
-            (Warning 44, Line 3, Col 1, Line 3, Col 20, "This construct is deprecated. Field is obsolete");
-            (Warning 44, Line 4, Col 1, Line 4, Col 21, "This construct is deprecated. Method is obsolete");
-            (Warning 44, Line 5, Col 1, Line 5, Col 23, "This construct is deprecated. Property is obsolete")
-            (Warning 44, Line 6, Col 1, Line 6, Col 20, "This construct is deprecated. Event is obsolete")
+            (Warning 44, Line 3, Col 7, Line 3, Col 20, "This construct is deprecated. Field is obsolete");
+            (Warning 44, Line 4, Col 7, Line 4, Col 21, "This construct is deprecated. Method is obsolete");
+            (Warning 44, Line 5, Col 7, Line 5, Col 23, "This construct is deprecated. Property is obsolete")
+            (Warning 44, Line 6, Col 7, Line 6, Col 20, "This construct is deprecated. Event is obsolete")
         ]
 
     [<Fact>]
@@ -1370,10 +1371,10 @@ Class.ObsoleteEvent |> ignore
         |> compile
         |> shouldFail
         |> withDiagnostics [
-            (Error 101, Line 3, Col 1, Line 3, Col 20, "This construct is deprecated. Field is obsolete");
-            (Error 101, Line 4, Col 1, Line 4, Col 21, "This construct is deprecated. Method is obsolete");
-            (Error 101, Line 5, Col 1, Line 5, Col 23, "This construct is deprecated. Property is obsolete")
-            (Error 101, Line 6, Col 1, Line 6, Col 20, "This construct is deprecated. Event is obsolete")
+            (Error 101, Line 3, Col 7, Line 3, Col 20, "This construct is deprecated. Field is obsolete");
+            (Error 101, Line 4, Col 7, Line 4, Col 21, "This construct is deprecated. Method is obsolete");
+            (Error 101, Line 5, Col 7, Line 5, Col 23, "This construct is deprecated. Property is obsolete")
+            (Error 101, Line 6, Col 7, Line 6, Col 20, "This construct is deprecated. Event is obsolete")
         ]
         
     [<Fact>]
@@ -1531,7 +1532,7 @@ let f (x: IFirst) = x.F()
         |> typecheck
         |> shouldFail
         |> withDiagnostics [
-            (Warning 44, Line 13, Col 21, Line 13, Col 24, "This construct is deprecated. Use G instead")
+            (Warning 44, Line 13, Col 23, Line 13, Col 24, "This construct is deprecated. Use G instead")
             (Warning 44, Line 13, Col 21, Line 13, Col 26, "This construct is deprecated. Use G instead")
         ]
 
@@ -1555,7 +1556,7 @@ let f (x: IFirst) = x.F()
         |> typecheck
         |> shouldFail
         |> withDiagnostics [
-            (Error 101, Line 13, Col 21, Line 13, Col 24, "This construct is deprecated. Use G instead")
+            (Error 101, Line 13, Col 23, Line 13, Col 24, "This construct is deprecated. Use G instead")
         ]
         
     [<Fact>]
@@ -1579,7 +1580,7 @@ let f (x: IFirst) = x.F()
         |> withDiagnostics [
             (Warning 44, Line 9, Col 11, Line 9, Col 17, "This construct is deprecated. Use G instead")
             (Warning 44, Line 13, Col 11, Line 13, Col 17, "This construct is deprecated. Use G instead")
-            (Warning 44, Line 13, Col 21, Line 13, Col 24, "This construct is deprecated. Use G instead")
+            (Warning 44, Line 13, Col 23, Line 13, Col 24, "This construct is deprecated. Use G instead")
         ]
         
     [<Fact>]

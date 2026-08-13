@@ -18,7 +18,18 @@ module internal HashingPrimitives =
 
     type Hash = int
 
-    let inline hashText (s: string) : Hash = hash s
+    /// FNV-1a 32-bit over UTF-16 code units – deterministic across processes
+    /// (unlike String.GetHashCode which is randomized in .NET 6+).
+    let hashStableString (s: string) : Hash =
+        let mutable h = 2166136261u
+
+        for c in s do
+            h <- (h ^^^ uint32 c) * 16777619u
+
+        int h
+
+    let hashText (s: string) : Hash = hashStableString s
+
     let inline combineHash acc y : Hash = (acc <<< 1) + y + 631
     let inline pipeToHash (value: Hash) (acc: Hash) = combineHash acc value
     let inline addFullStructuralHash value (acc: Hash) = combineHash acc (hash value)
@@ -91,7 +102,7 @@ module HashIL =
     let hashILTypeRef (tref: ILTypeRef) =
         tref.Enclosing
         |> hashListOrderMatters hashText
-        |> addFullStructuralHash tref.Name
+        |> pipeToHash (hashText tref.Name)
 
     let private hashILArrayShape (sh: ILArrayShape) = sh.Rank
 

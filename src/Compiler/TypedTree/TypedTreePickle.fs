@@ -33,7 +33,7 @@ open FSharp.Compiler.TcGlobals
 let verbose = false
 #endif
 
-let ffailwith fileName str =
+let ffailwith (fileName: string) (str: string) =
     let msg = FSComp.SR.pickleErrorReadingWritingMetadata (fileName, str)
     System.Diagnostics.Debug.Assert(false, msg)
     failwith msg
@@ -2380,7 +2380,7 @@ let p_tyar_spec_data (x: Typar) st =
 let p_tyar_spec (x: Typar) st =
     //Disabled, workaround for bug 2721: if x.Rigidity <> TyparRigidity.Rigid then warning(Error(sprintf "p_tyar_spec: typar#%d is not rigid" x.Stamp, x.Range))
     if x.IsFromError then
-        warning (Error((0, "p_tyar_spec: from error"), x.Range))
+        warning (Error((0, RichText.mkText "p_tyar_spec: from error"), x.Range))
 
     p_osgn_decl st.otypars p_tyar_spec_data x st
 
@@ -2792,7 +2792,7 @@ and p_rfield_table x st =
     p_array p_recdfield_spec x.FieldsByIndex st
 
 and p_entity_spec_data (x: Entity) st =
-    p_tyar_specs (x.entity_typars.Force(x.entity_range)) st
+    p_tyar_specs x.Typars st
     p_string x.entity_logical_name st
     p_option p_string x.EntityCompiledName st
     p_range x.entity_range st

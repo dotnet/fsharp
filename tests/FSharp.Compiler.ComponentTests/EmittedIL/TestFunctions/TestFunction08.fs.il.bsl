@@ -37,20 +37,19 @@
   {
     
     .maxstack  8
-    IL_0000:  nop
-    IL_0001:  ldarg.0
-    IL_0002:  ldc.i4.3
-    IL_0003:  ble.s      IL_0009
+    IL_0000:  ldarg.0
+    IL_0001:  ldc.i4.3
+    IL_0002:  ble.s      IL_0008
 
-    IL_0005:  ldarg.0
-    IL_0006:  ldc.i4.4
-    IL_0007:  add
-    IL_0008:  ret
+    IL_0004:  ldarg.0
+    IL_0005:  ldc.i4.4
+    IL_0006:  add
+    IL_0007:  ret
 
-    IL_0009:  ldarg.0
-    IL_000a:  ldc.i4.4
-    IL_000b:  sub
-    IL_000c:  ret
+    IL_0008:  ldarg.0
+    IL_0009:  ldc.i4.4
+    IL_000a:  sub
+    IL_000b:  ret
   } 
 
 } 
@@ -67,7 +66,6 @@
   } 
 
 } 
-
 
 
 

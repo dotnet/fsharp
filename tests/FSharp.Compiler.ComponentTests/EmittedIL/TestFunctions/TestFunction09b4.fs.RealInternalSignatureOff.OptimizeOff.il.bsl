@@ -75,23 +75,22 @@
     .locals init (int32 V_0)
     IL_0000:  call       int32 assembly::get_x()
     IL_0005:  stloc.0
-    IL_0006:  nop
-    IL_0007:  call       int32 assembly::get_x()
-    IL_000c:  box        [runtime]System.Int32
-    IL_0011:  brfalse.s  IL_0015
+    IL_0006:  call       int32 assembly::get_x()
+    IL_000b:  box        [runtime]System.Int32
+    IL_0010:  brfalse.s  IL_0014
 
-    IL_0013:  br.s       IL_0028
+    IL_0012:  br.s       IL_0027
 
-    IL_0015:  ldstr      "Is null"
-    IL_001a:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`5<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [runtime]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::.ctor(string)
-    IL_001f:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::PrintFormatLine<class [FSharp.Core]Microsoft.FSharp.Core.Unit>(class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<!!0,class [runtime]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>)
-    IL_0024:  pop
-    IL_0025:  nop
-    IL_0026:  br.s       IL_002a
+    IL_0014:  ldstr      "Is null"
+    IL_0019:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`5<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [runtime]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::.ctor(string)
+    IL_001e:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::PrintFormatLine<class [FSharp.Core]Microsoft.FSharp.Core.Unit>(class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<!!0,class [runtime]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>)
+    IL_0023:  pop
+    IL_0024:  nop
+    IL_0025:  br.s       IL_0029
 
+    IL_0027:  nop
     IL_0028:  nop
-    IL_0029:  nop
-    IL_002a:  ret
+    IL_0029:  ret
   } 
 
 } 

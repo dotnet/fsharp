@@ -74,7 +74,7 @@ module BuildGraphTests =
 
         let work = Async.Parallel(Array.init requests (fun _ -> graphNode.GetOrComputeValue() ))
 
-        Async.RunImmediate(work)
+        Async.RunSynchronouslyImmediate(work)
         |> ignore
 
         Assert.shouldBe 1 computationCount
@@ -87,7 +87,7 @@ module BuildGraphTests =
 
         let work = Async.Parallel(Array.init requests (fun _ -> graphNode.GetOrComputeValue() ))
 
-        let result = Async.RunImmediate(work)
+        let result = Async.RunSynchronouslyImmediate(work)
 
         Assert.shouldNotBeEmpty result
         Assert.shouldBe requests result.Length
@@ -102,7 +102,7 @@ module BuildGraphTests =
 
         Assert.shouldBeTrue weak.IsAlive
 
-        Async.RunImmediate(graphNode.GetOrComputeValue())
+        Async.RunSynchronouslyImmediate(graphNode.GetOrComputeValue())
         |> ignore
 
         GC.Collect(2, GCCollectionMode.Forced, true)
@@ -119,7 +119,7 @@ module BuildGraphTests =
         
         Assert.shouldBeTrue weak.IsAlive
 
-        Async.RunImmediate(Async.Parallel(Array.init requests (fun _ -> graphNode.GetOrComputeValue() )))
+        Async.RunSynchronouslyImmediate(Async.Parallel(Array.init requests (fun _ -> graphNode.GetOrComputeValue() )))
         |> ignore
 
         GC.Collect(2, GCCollectionMode.Forced, true)
@@ -143,7 +143,7 @@ module BuildGraphTests =
 
         let ex =
             try
-                Async.RunImmediate(work, cancellationToken = cts.Token)
+                Async.RunSynchronouslyImmediate(work, cancellationToken = cts.Token)
                 |> ignore
                 failwith "Should have canceled"
             with
@@ -173,7 +173,7 @@ module BuildGraphTests =
 
         let ex =
             try
-                Async.RunImmediate(graphNode.GetOrComputeValue(), cancellationToken = cts.Token)
+                Async.RunSynchronouslyImmediate(graphNode.GetOrComputeValue(), cancellationToken = cts.Token)
                 |> ignore
                 failwith "Should have canceled"
             with
@@ -218,7 +218,7 @@ module BuildGraphTests =
 
         cts.Cancel()
         resetEvent.Set() |> ignore
-        Async.RunImmediate(work)
+        Async.RunSynchronouslyImmediate(work)
         |> ignore
 
         Assert.shouldBeTrue cts.IsCancellationRequested
@@ -365,12 +365,12 @@ module BuildGraphTests =
 
         let logger = DiagnosticsLoggerWithCallback errorCommitted
         use _ = UseDiagnosticsLogger logger
-        tasks |> Seq.take 50 |> MultipleDiagnosticsLoggers.Parallel |> Async.Ignore |> Async.RunImmediate
+        tasks |> Seq.take 50 |> MultipleDiagnosticsLoggers.Parallel |> Async.Ignore |> Async.RunSynchronouslyImmediate
 
         // all errors committed
         errorCountShouldBe 300
 
-        tasks |> Seq.skip 50 |> MultipleDiagnosticsLoggers.Sequential |> Async.Ignore |> Async.RunImmediate
+        tasks |> Seq.skip 50 |> MultipleDiagnosticsLoggers.Sequential |> Async.Ignore |> Async.RunSynchronouslyImmediate
 
         errorCountShouldBe 600
 
@@ -517,7 +517,7 @@ module BuildGraphTests =
                 |> Async.Ignore
             loggerShouldBe logger
         }
-        |> Async.RunImmediate
+        |> Async.RunSynchronouslyImmediate
 
         // Synchronous code will affect current context:
 
@@ -527,7 +527,7 @@ module BuildGraphTests =
             do! Async.SwitchToNewThread()
             loggerShouldBe DiscardErrorsLogger
         }
-        |> Async.RunImmediate
+        |> Async.RunSynchronouslyImmediate
         loggerShouldBe DiscardErrorsLogger
 
         SetThreadDiagnosticsLoggerNoUnwind logger
@@ -538,7 +538,7 @@ module BuildGraphTests =
             do! Async.SwitchToNewThread()
             loggerShouldBe DiscardErrorsLogger
         }
-        |> Async.RunImmediate
+        |> Async.RunSynchronouslyImmediate
         loggerShouldBe logger
 
 

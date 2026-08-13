@@ -31,7 +31,7 @@ let ``Visit record definition test`` () =
     let parseTree = parseSourceCode("C:\\test.fs", source)
 
     match SyntaxTraversal.Traverse(pos0, parseTree, visitor) with
-    | Some [ SynField (idOpt = Some id1); SynField (idOpt = Some id2) ] when id1.idText = "A" && id2.idText = "B" -> ()
+    | Some [ SynFieldOrSpread.Field (SynField (idOpt = Some id1)); SynFieldOrSpread.Field (SynField (idOpt = Some id2)) ] when id1.idText = "A" && id2.idText = "B" -> ()
     | _ -> failwith "Did not visit record definition"
 
 [<Fact>]
@@ -123,7 +123,7 @@ let ``Visit Record in SynTypeDefnSig`` () =
         { new SyntaxVisitorBase<_>() with
             member x.VisitRecordDefn(path, fields, range) =
                 fields
-                |> List.choose (fun (SynField(idOpt = idOpt)) -> idOpt |> Option.map (fun ident -> ident.idText))
+                |> List.choose (function SynFieldOrSpread.Field (SynField(idOpt = idOpt)) -> idOpt |> Option.map (fun ident -> ident.idText) | _ -> None)
                 |> String.concat ","
                 |> Some
         }

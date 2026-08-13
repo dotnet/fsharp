@@ -358,6 +358,22 @@ let inline cacheOptByref (cache: byref<'T option>) ([<InlineIfLambda>] f) =
        cache <- Some res
        res
 
+/// Version-stamped variant of 'cacheOptByref' for memo tables whose backing data may be appended to
+/// concurrently (e.g. provided-type linking under graph-based parallel checking). The cached value is tagged
+/// with the data 'version' observed when it was computed; a reader whose 'version' no longer matches the tag
+/// recomputes. Callers must read 'version' (with acquire semantics) before evaluating 'f', and 'f' must read
+/// only data covered by that version. This never strands a table missing an entry committed at or before the
+/// cached version, so unlike a flag-gated lock - whose fast/locked split can poison the cache during the first
+/// concurrent append - it stays coherent without any lock. 'cache' must be a reference type so its publication
+/// is a single atomic store; a struct option could tear under concurrent reads.
+let inline cacheOptByrefByVersion (version: int) (cache: byref<(int * 'T) option>) ([<InlineIfLambda>] f) =
+    match cache with
+    | Some (cachedVersion, value) when cachedVersion = version -> value
+    | _ ->
+        let value = f ()
+        cache <- Some(version, value)
+        value
+
 // REVIEW: this is only used because we want to mutate a record field,
 // and because you cannot take a byref<_> of such a thing directly,
 // we cannot use 'cacheOptByref'. If that is changed, this can be removed.

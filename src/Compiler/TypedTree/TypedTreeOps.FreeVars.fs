@@ -661,7 +661,7 @@ module internal MemberRepresentation =
         | Some _ ->
             if v.IsExtensionMember then 0
             elif not v.IsMember then 0
-            else v.MemberApparentEntity.TyparsNoRange.Length
+            else v.MemberApparentEntity.Typars.Length
 
     let GetValReprTypeInCompiledForm g valReprInfo numEnclosingTypars ty m =
         let tps, paramArgInfos, retTy, retInfo =
@@ -729,7 +729,7 @@ module internal MemberRepresentation =
         | Some arities ->
             let fullTypars, _ = destTopForallTy g arities v.Type
             let parent = v.MemberApparentEntity
-            let parentTypars = parent.TyparsNoRange
+            let parentTypars = parent.Typars
             let nparentTypars = parentTypars.Length
 
             if nparentTypars <= fullTypars.Length then
@@ -816,7 +816,7 @@ module internal MemberRepresentation =
     // Generalize type constructors to types
     //---------------------------------------------------------------------------
 
-    let generalTyconRefInst (tcref: TyconRef) = generalizeTypars tcref.TyparsNoRange
+    let generalTyconRefInst (tcref: TyconRef) = generalizeTypars tcref.Typars
 
     let generalizeTyconRef (g: TcGlobals) tcref =
         let tinst = generalTyconRefInst tcref
@@ -1381,6 +1381,41 @@ module internal MemberRepresentation =
         else
             tagClass name
 
+    let richTextOfEntityRefName xref name =
+        RichText.ofTaggedText (tagEntityRefName xref name)
+
+    let richTextOfEntityName (entity: Entity) name =
+        richTextOfEntityRefName (mkLocalEntityRef entity) name
+
+    let richTextOfEntityRef (xref: EntityRef) =
+        richTextOfEntityRefName xref xref.DisplayName
+
+    let richTextOfEntity (entity: Entity) =
+        richTextOfEntityName entity entity.DisplayName
+
+    let tagValName g (v: Val) name =
+        let isDiscard (name: string) = name.StartsWithOrdinal "_"
+
+        if v.IsMember then
+            if (arityOfVal v).HasNoArgs then
+                tagMember name
+            else
+                tagMethod name
+        elif isForallFunctionTy g v.Type && not (isDiscard v.DisplayNameCore) then
+            if IsOperatorDisplayName v.DisplayName then
+                tagOperator name
+            else
+                tagFunction name
+        elif not v.IsCompiledAsTopLevel && not (isDiscard v.DisplayNameCore) then
+            tagLocal name
+        elif v.IsModuleBinding then
+            tagModuleBinding name
+        else
+            tagUnknownEntity name
+
+    let richTextOfValName g (v: Val) =
+        RichText.ofTaggedText (tagValName g v v.DisplayName)
+
     let fullDisplayTextOfTyconRef (tcref: TyconRef) =
         fullNameOfEntityRef (fun tcref -> tcref.DisplayNameWithStaticParametersAndUnderscoreTypars) tcref
 
@@ -1395,17 +1430,19 @@ module internal MemberRepresentation =
     let fullNameOfParentOfValRef vref =
         match vref with
         | VRefLocal x ->
-            match x.PublicPath with
-            | None -> ValueNone
-            | Some(ValPubPath(pp, _)) -> ValueSome(fullNameOfPubPath pp)
+            match x.PublicPath, x.TryDeclaringEntity with
+            | None, _ -> ValueNone
+            | Some _, Parent eref -> ValueSome(fullNameOfEntityRef (fun (e: EntityRef) -> e.DemangledModuleOrNamespaceName) eref)
+            | Some(ValPubPath(pp, _)), ParentNone -> ValueSome(fullNameOfPubPath pp)
         | VRefNonLocal nlr -> ValueSome(fullNameOfEntityRef (fun (x: EntityRef) -> x.DemangledModuleOrNamespaceName) nlr.EnclosingEntity)
 
     let fullNameOfParentOfValRefAsLayout vref =
         match vref with
         | VRefLocal x ->
-            match x.PublicPath with
-            | None -> ValueNone
-            | Some(ValPubPath(pp, _)) -> ValueSome(fullNameOfPubPathAsLayout pp)
+            match x.PublicPath, x.TryDeclaringEntity with
+            | None, _ -> ValueNone
+            | Some _, Parent eref -> ValueSome(fullNameOfEntityRefAsLayout (fun (e: EntityRef) -> e.DemangledModuleOrNamespaceName) eref)
+            | Some(ValPubPath(pp, _)), ParentNone -> ValueSome(fullNameOfPubPathAsLayout pp)
         | VRefNonLocal nlr ->
             ValueSome(fullNameOfEntityRefAsLayout (fun (x: EntityRef) -> x.DemangledModuleOrNamespaceName) nlr.EnclosingEntity)
 
@@ -1413,6 +1450,9 @@ module internal MemberRepresentation =
 
     let fullDisplayTextOfModRef r =
         fullNameOfEntityRef (fun eref -> eref.DemangledModuleOrNamespaceName) r
+
+    let fullDisplayTextOfModRefAsLayout r =
+        fullNameOfEntityRefAsLayout (fun eref -> eref.DemangledModuleOrNamespaceName) r
 
     let fullDisplayTextOfTyconRefAsLayout tcref =
         fullNameOfEntityRefAsLayout (fun tcref -> tcref.DisplayNameWithStaticParametersAndUnderscoreTypars) tcref
@@ -1470,6 +1510,20 @@ module internal MemberRepresentation =
         | ValueNone -> wordL n
         | ValueSome pathText -> pathText ^^ SepL.dot ^^ wordL n
     //pathText +.+ vref.DisplayName
+
+    // A qualified name is classified one component at a time: each name by what it names and each dot
+    // as punctuation. Splicing the flattened text into a message instead would classify the dots, and
+    // every component, as whatever the last component happens to be.
+    let richTextOfPath p = toRichText (layoutOfPath p)
+
+    let richTextOfQualifiedModRef r =
+        toRichText (fullDisplayTextOfModRefAsLayout r)
+
+    let richTextOfQualifiedTyconRef tcref =
+        toRichText (fullDisplayTextOfTyconRefAsLayout tcref)
+
+    let richTextOfQualifiedValRef vref =
+        toRichText (fullDisplayTextOfValRefAsLayout vref)
 
     let fullMangledPathToTyconRef (tcref: TyconRef) =
         match tcref with

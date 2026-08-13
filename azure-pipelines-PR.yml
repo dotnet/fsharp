@@ -12,7 +12,7 @@ trigger:
     - '*'
     exclude:
     - .github/*
-    - docs/*
+    - docs/**
     - .vscode/*
     - .devcontainer/*
     - tests/scripts/*
@@ -39,7 +39,7 @@ pr:
     - '*'
     exclude:
     - .github/*
-    - docs/*
+    - docs/**
     - attributions.md
     - CODE_OF_CONDUCT.md
     - DEVGUIDE.md
@@ -65,8 +65,6 @@ variables:
     value: Products/$(System.TeamProject)/$(Build.Repository.Name)/$(Build.SourceBranchName)/$(Build.BuildNumber)
   - name: Codeql.Enabled
     value: true
-  - ${{ if and(ne(variables['System.TeamProject'], 'public'), notin(variables['Build.Reason'], 'PullRequest')) }}:
-    - group: DotNet-FSharp-SDLValidation-Params
   - ${{ if and(eq(variables['System.TeamProject'], 'public'), eq(variables['Build.Reason'], 'PullRequest')) }}:
     - name: RunningAsPullRequest
       value: true
@@ -100,7 +98,7 @@ stages:
         helixRepo: dotnet/fsharp
         jobs:
           # Determinism, we want to run it only in PR builds
-        - job: Determinism_Debug
+        - job: Determinism_Release
           condition: eq(variables['Build.Reason'], 'PullRequest')
           variables:
           - name: _SignType
@@ -109,13 +107,6 @@ stages:
             name: $(DncEngPublicBuildPool)
             demands: ImageOverride -equals $(_WindowsMachineQueueName)
           timeoutInMinutes: 90
-          strategy:
-            maxParallel: 2
-            matrix:
-              regular:
-                _experimental_flag: ''
-              experimental_features:
-                _experimental_flag: ''
           steps:
           - checkout: self
             clean: true
@@ -129,15 +120,15 @@ stages:
               workingDirectory: $(Build.SourcesDirectory)
               installationPath: $(Build.SourcesDirectory)/.dotnet
           - script: .\eng\common\dotnet.cmd
-          - script: .\eng\test-determinism.cmd -configuration Debug
-            env:
-              FSHARP_EXPERIMENTAL_FEATURES: $(_experimental_flag)
-            displayName: Determinism tests with Debug configuration
+          - script: .\eng\test-determinism.cmd -configuration Release
+            displayName: Determinism tests (race detector — same flags both builds)
+          - script: .\eng\test-determinism.cmd -configuration Release -mode seq-vs-par
+            displayName: Determinism tests (1-shot diff — sequential vs parallel)
           - task: PublishPipelineArtifact@1
             displayName: Publish Determinism Logs
             inputs:
-              targetPath: '$(Build.SourcesDirectory)/artifacts/log/Debug'
-              artifactName: 'Determinism_Debug Attempt $(System.JobAttempt) Logs'
+              targetPath: '$(Build.SourcesDirectory)/artifacts/log/Release'
+              artifactName: 'Determinism_Release Attempt $(System.JobAttempt) Logs'
             continueOnError: true
             condition: not(succeeded())
 
@@ -345,78 +336,6 @@ stages:
             inputs:
                 PathToPublish: '$(Build.SourcesDirectory)\artifacts\log\Release'
                 ArtifactName: 'Windows Release WindowsNoRealsig_testDesktop process dumps'
-                ArtifactType: Container
-                parallel: true
-
-        - job: WindowsStrictIndentation
-          pool:
-            name: $(DncEngPublicBuildPool)
-            demands: ImageOverride -equals $(_WindowsMachineQueueName)
-          timeoutInMinutes: 120
-          steps:
-          - checkout: self
-            clean: true
-
-          - script: eng\CIBuildNoPublish.cmd -compressallmetadata -configuration Release /p:AdditionalFscCmdFlags=--strict-indentation+
-            env:
-              DOTNET_DbgEnableMiniDump: 1
-              DOTNET_DbgMiniDumpType: 2 # 1=mini, 2=heap, 3=triage, 4=full. Heap dumps include managed object data for debugging.
-              DOTNET_DbgMiniDumpName: $(Build.SourcesDirectory)\artifacts\log\Release\$(Build.BuildId)-%e-%p-%t.dmp
-              NativeToolsOnMachine: true
-            displayName: Build
-
-          - task: PublishBuildArtifacts@1
-            displayName: Publish Build BinLog
-            condition: always()
-            continueOnError: true
-            inputs:
-                PathToPublish: '$(Build.SourcesDirectory)\artifacts\log/Release\Build.VisualFSharp.slnx.binlog'
-                ArtifactName: 'Windows Release build binlogs'
-                ArtifactType: Container
-                parallel: true
-          - task: PublishBuildArtifacts@1
-            displayName: Publish Dumps
-            condition: failed()
-            continueOnError: true
-            inputs:
-                PathToPublish: '$(Build.SourcesDirectory)\artifacts\log\Release'
-                ArtifactName: 'Windows Release WindowsStrictIndentation process dumps'
-                ArtifactType: Container
-                parallel: true
-
-        - job: WindowsNoStrictIndentation
-          pool:
-            name: $(DncEngPublicBuildPool)
-            demands: ImageOverride -equals $(_WindowsMachineQueueName)
-          timeoutInMinutes: 120
-          steps:
-          - checkout: self
-            clean: true
-
-          - script: eng\CIBuildNoPublish.cmd -compressallmetadata -configuration Release /p:AdditionalFscCmdFlags=--strict-indentation-
-            env:
-              DOTNET_DbgEnableMiniDump: 1
-              DOTNET_DbgMiniDumpType: 2 # 1=mini, 2=heap, 3=triage, 4=full. Heap dumps include managed object data for debugging.
-              DOTNET_DbgMiniDumpName: $(Build.SourcesDirectory)\artifacts\log\Release\$(Build.BuildId)-%e-%p-%t.dmp
-              NativeToolsOnMachine: true
-            displayName: Build
-
-          - task: PublishBuildArtifacts@1
-            displayName: Publish Build BinLog
-            condition: always()
-            continueOnError: true
-            inputs:
-                PathToPublish: '$(Build.SourcesDirectory)\artifacts\log/Release\Build.VisualFSharp.slnx.binlog'
-                ArtifactName: 'Windows Release build binlogs'
-                ArtifactType: Container
-                parallel: true
-          - task: PublishBuildArtifacts@1
-            displayName: Publish Dumps
-            condition: failed()
-            continueOnError: true
-            inputs:
-                PathToPublish: '$(Build.SourcesDirectory)\artifacts\log\Release'
-                ArtifactName: 'Windows Release WindowsNoStrictIndentation process dumps'
                 ArtifactType: Container
                 parallel: true
 
@@ -664,13 +583,19 @@ stages:
             condition: succeeded()
 
           - pwsh: |
-              # Stage UseLocalCompiler props and TargetFrameworks.props together
+              # Stage the props and the locally built FSharp.Core so regression jobs restore it the SDK way.
+              # Arcade packs FSharp.Core into a `Shipping` leaf whose parent varies by layout, so search for it.
               $stagingDir = "$(Build.SourcesDirectory)/UseLocalCompilerPropsStaging"
-              New-Item -ItemType Directory -Force -Path $stagingDir | Out-Null
+              $packsDir = Join-Path $stagingDir "library-packs"
+              New-Item -ItemType Directory -Force -Path $packsDir | Out-Null
               Copy-Item "$(Build.SourcesDirectory)/UseLocalCompiler.Directory.Build.props" -Destination $stagingDir
               Copy-Item "$(Build.SourcesDirectory)/eng/TargetFrameworks.props" -Destination $stagingDir
+              $core = Get-ChildItem "$(Build.SourcesDirectory)/artifacts/packages/Release" -Recurse -Filter "FSharp.Core.*.nupkg" |
+                Where-Object { $_.Name -notlike "*.symbols.nupkg" -and $_.Directory.Name -eq "Shipping" } | Select-Object -First 1
+              if (-not $core) { Write-Host "##[error]FSharp.Core.*.nupkg not found under artifacts/packages/Release/**/Shipping"; exit 1 }
+              Copy-Item $core.FullName -Destination $packsDir
               Write-Host "Staged files for UseLocalCompilerProps artifact:"
-              Get-ChildItem $stagingDir -Name
+              Get-ChildItem $stagingDir -Recurse -Name
             displayName: Stage UseLocalCompiler props files
 
           - task: PublishPipelineArtifact@1
@@ -781,7 +706,7 @@ stages:
               workingDirectory: $(Build.SourcesDirectory)
               installationPath: $(Build.SourcesDirectory)/.dotnet
           - script: .\eng\common\dotnet.cmd
-          - script: .\Build.cmd $(_kind) -pack -c $(_BuildConfig)
+          - script: .\Build.cmd $(_kind) -ci -pack -c $(_BuildConfig)
             env:
               NativeToolsOnMachine: true
             displayName: Initial build and prepare packages.
@@ -796,6 +721,7 @@ stages:
             continueOnError: true
             condition: always()
         - job: ILVerify
+          timeoutInMinutes: 120
           pool:
             name: $(DncEngPublicBuildPool)
             demands: ImageOverride -equals $(_WindowsMachineQueueName)
@@ -829,35 +755,36 @@ stages:
           commit: bbe2dec4d0379b5d7d0480997858c30d442fbb42
           buildScript: dotnet build -bl
           displayName: UMX_Slow_Repro        
+          expectLocalCore: true
         - repo: fsprojects/FSharpPlus
-          commit: f614035b75922aba41ed6a36c2fc986a2171d2b8
+          commit: f42f81885111c652b08218e0880c264447ae56e4
           buildScript: build.cmd
           displayName: FSharpPlus_Windows
         - repo: fsprojects/FSharpPlus
-          commit: f614035b75922aba41ed6a36c2fc986a2171d2b8
+          commit: f42f81885111c652b08218e0880c264447ae56e4
           buildScript: build.sh
           displayName: FSharpPlus_Linux
           useVmImage: $(LinuxMachineQueueName)
           usePool: $(DncEngPublicBuildPool)
         - repo: fsprojects/FSharpPlus
-          commit: 2648efe
+          commit: f42f81885111c652b08218e0880c264447ae56e4
           buildScript: dotnet build tests/FSharpPlus.Tests/FSharpPlus.Tests.fsproj -c Release -bl
           displayName: FsharpPlus_NET10_Build_Lib_Tests
-         # remove this before merging
+          expectLocalCore: true
         - repo: fsprojects/FSharpPlus
-          commit: 2648efe
+          commit: f42f81885111c652b08218e0880c264447ae56e4
           buildScript: dotnet msbuild build.proj -t:Build;Test -bl
           displayName: FsharpPlus_NET10_Test_Debug
         - repo: fsprojects/FSharpPlus
-          commit: 2648efe
+          commit: f42f81885111c652b08218e0880c264447ae56e4
           buildScript: dotnet msbuild build.proj -t:Build;Test -p:Configuration=Release -bl
           displayName: FsharpPlus_NET10_Test_Release
         - repo: fsprojects/FSharpPlus
-          commit: 2648efe
+          commit: f42f81885111c652b08218e0880c264447ae56e4
           buildScript: dotnet msbuild build.proj -t:Build;AllDocs -bl
           displayName: FsharpPlus_NET10_Docs
         - repo: fsprojects/FSharpPlus
-          commit: 2648efe
+          commit: f42f81885111c652b08218e0880c264447ae56e4
           buildScript: build.sh
           displayName: FsharpPlus_Net10_Linux
           useVmImage: $(LinuxMachineQueueName)
@@ -894,7 +821,25 @@ stages:
           commit: 6ddc28d46f81447eacb241b96e16ce693b210c96
           buildScript: dotnet build Prime.sln --configuration Release
           displayName: Prime_Build
+          expectLocalCore: true
         - repo: bryanedds/Nu
-          commit: b321cb41a0bea0dab6b4509f895e6cd4d024e9e5
+          commit: e81e00a464b9d35d272f61708a1a0bfbf487b6d5
           buildScript: dotnet build Nu.sln --configuration Release
           displayName: Nu_Build
+          expectLocalCore: true
+        # Explicit FSharp.Core PackageReference mixed with one implicit test project; the trigger for #20059 (Lanayx/Oxpecker#20065).
+        - repo: Lanayx/Oxpecker
+          commit: cb7e4b83e3f2aba7ded46b17a36d1aea8c13c292
+          buildScript: dotnet build Oxpecker.slnx -c Release
+          displayName: Oxpecker_Build
+          expectLocalCore: true
+        # Design-time provider packaging oracle. Pin d8aba70 (pre-workaround base of FSharp.Data.GraphQL#583):
+        # it uses the bare IsFSharpDesignTimeProvider gesture, so the client pack drops the provider without this fix.
+        # Linux-only: the $PWD local feed and the grep content assertion need bash. (nupkg entry names are stored
+        # uncompressed in the zip, so grep -aF on the package finds the provider path without extra tools.)
+        - repo: fsprojects/FSharp.Data.GraphQL
+          commit: d8aba70757792f2d76a66cb8171086ca4c7c1e8e
+          buildScript: dotnet pack src/FSharp.Data.GraphQL.Shared/FSharp.Data.GraphQL.Shared.fsproj -c Release -p:TreatWarningsAsErrors=false -o "$PWD/__gqlfeed__" ;; dotnet pack src/FSharp.Data.GraphQL.Client/FSharp.Data.GraphQL.Client.fsproj -c Release -p:IsNuGet=true -p:TreatWarningsAsErrors=false --source https://api.nuget.org/v3/index.json --source "$PWD/__gqlfeed__" -o "$PWD/__gqlfeed__" && grep -qaF typeproviders/fsharp41/netstandard2.0/FSharp.Data.GraphQL.Client.DesignTime.dll "$PWD/__gqlfeed__"/FSharp.Data.GraphQL.Client.*.nupkg
+          displayName: FSharpDataGraphQL_DesignTimeProvider_Packaging
+          useVmImage: $(LinuxMachineQueueName)
+          usePool: $(DncEngPublicBuildPool)

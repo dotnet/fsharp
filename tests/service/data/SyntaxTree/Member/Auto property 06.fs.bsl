@@ -43,4 +43,4 @@ ImplFile
         WarnDirectives = []
         CodeComments = [] }, set []))
 
-(4,18)-(4,19) parse error Unexpected symbol '=' in member definition
+(4,18)-(4,19) parse error Unexpected symbol '=' in auto property definition

@@ -131,24 +131,23 @@
     IL_0059:  bne.un.s   IL_003b
 
     IL_005b:  nop
-    IL_005c:  nop
-    IL_005d:  call       int32[] assembly::get_r()
-    IL_0062:  ldc.i4.0
-    IL_0063:  ldelem.i4
-    IL_0064:  ldc.i4.3
-    IL_0065:  bne.un.s   IL_006b
+    IL_005c:  call       int32[] assembly::get_r()
+    IL_0061:  ldc.i4.0
+    IL_0062:  ldelem.i4
+    IL_0063:  ldc.i4.3
+    IL_0064:  bne.un.s   IL_006a
 
-    IL_0067:  ldc.i4.0
-    IL_0068:  nop
-    IL_0069:  br.s       IL_006d
+    IL_0066:  ldc.i4.0
+    IL_0067:  nop
+    IL_0068:  br.s       IL_006c
 
-    IL_006b:  ldc.i4.1
-    IL_006c:  nop
-    IL_006d:  stloc.s    V_4
-    IL_006f:  ldloc.s    V_4
-    IL_0071:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.Operators::Exit<class [FSharp.Core]Microsoft.FSharp.Core.Unit>(int32)
-    IL_0076:  pop
-    IL_0077:  ret
+    IL_006a:  ldc.i4.1
+    IL_006b:  nop
+    IL_006c:  stloc.s    V_4
+    IL_006e:  ldloc.s    V_4
+    IL_0070:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.Operators::Exit<class [FSharp.Core]Microsoft.FSharp.Core.Unit>(int32)
+    IL_0075:  pop
+    IL_0076:  ret
   } 
 
   .property int32[] r()

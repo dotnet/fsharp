@@ -114,7 +114,22 @@ type internal WellKnownValAttributes =
     | NoEagerConstraintApplicationAttribute = (1uL <<< 38)
     | ValueAsStaticPropertyAttribute = (1uL <<< 39)
     | TailCallAttribute = (1uL <<< 40)
+    | NotNullIfNotNullAttribute = (1uL <<< 41)
+    | OverloadResolutionPriorityAttribute = (1uL <<< 42)
     | NotComputed = (1uL <<< 63)
+
+module internal Flags =
+    val inline isEmpty<'F when 'F: enum<uint64>> : flags: 'F -> bool
+
+    val inline union<'F when 'F: enum<uint64>> : a: 'F -> b: 'F -> 'F
+
+    val inline intersect<'F when 'F: enum<uint64>> : other: 'F -> flags: 'F -> 'F
+
+    val inline except<'F when 'F: enum<uint64>> : b: 'F -> a: 'F -> 'F
+
+    val inline intersects<'F when 'F: enum<uint64>> : other: 'F -> flags: 'F -> bool
+
+    val inline isSubsetOf<'F when 'F: enum<uint64>> : superset: 'F -> subset: 'F -> bool
 
 /// Generic wrapper for an item list together with cached well-known attribute flags.
 /// Used for O(1) lookup of well-known attributes on entities and vals.

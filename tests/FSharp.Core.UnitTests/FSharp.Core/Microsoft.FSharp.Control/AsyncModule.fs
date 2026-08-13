@@ -447,6 +447,114 @@ type AsyncModule() =
         }
         |> Async.RunSynchronously
 
+    // ---- RunSynchronouslyImmediate: basic functionality ----
+
+    [<Fact>]
+    member _.``RunSynchronouslyImmediate returns value``() =
+        let result = async { return 42 } |> Async.RunSynchronouslyImmediate
+        Assert.Equal(42, result)
+
+    [<Fact>]
+    member _.``RunSynchronouslyImmediate propagates exception``() =
+        Assert.Throws<InvalidOperationException>(fun () ->
+            async { invalidOp "test" }
+            |> Async.RunSynchronouslyImmediate
+            |> ignore
+        ) |> ignore
+
+    [<Fact>]
+    member _.``RunSynchronouslyImmediate respects pre-cancelled token``() =
+        use cts = new CancellationTokenSource()
+        cts.Cancel()
+        let oce = Assert.Throws<OperationCanceledException>(Action(fun () -> Async.RunSynchronouslyImmediate(async { () }, cancellationToken = cts.Token)))
+        Assert.Equal(cts.Token, oce.CancellationToken)
+
+    [<Fact>]
+    member _.``RunSynchronouslyImmediate works with Sleep``() =
+        let result =
+            async {
+                do! Async.Sleep 10
+                return 17
+            }
+            |> Async.RunSynchronouslyImmediate
+        Assert.Equal(17, result)
+
+    // ---- RunSynchronouslyImmediate: differences from RunSynchronously ----
+    //
+    // RunSynchronously will offload to the thread pool when SynchronizationContext.Current is
+    // non-null or Thread.IsThreadPoolThread is false (e.g. FSI, GUI threads, dedicated test threads).
+    // In those cases the computation commences on a different thread and exception stack traces are
+    // incomplete. RunSynchronouslyImmediate always executes the first step on the calling thread,
+    // giving a complete call stack that is much more useful during interactive testing.
+
+    static member private OnFreshThread f =
+        let mutable exn = null
+        let t = Thread(fun () ->
+            try f ()
+            with e -> exn <- e)
+        t.Start()
+        t.Join()
+        if exn <> null then raise exn
+ 
+    [<Fact>]
+    // RunSynchronously offloads to the thread pool when SynchronizationContext.Current is non-null
+    // (see RunSynchronously.ThreadJump.IfSyncCtxtNonNull).
+    // and/or the caller is not a threadpool thread
+    // RunSynchronouslyImmediate always starts on the calling thread regardless.
+    member _.``RunSynchronouslyImmediate Starts on calling thread even when SynchronizationContext present``() =
+        AsyncModule.OnFreshThread(fun () ->
+            // Aside: bonus condition that would also make RunSynchronously offload
+            Assert.False(Thread.CurrentThread.IsThreadPoolThread) 
+            let old = SynchronizationContext.Current
+            try SynchronizationContext.SetSynchronizationContext(SynchronizationContext())
+                let mutable startThreadId = -1
+                async { startThreadId <- Thread.CurrentThread.ManagedThreadId }
+                |> Async.RunSynchronouslyImmediate
+                Assert.Equal(Thread.CurrentThread.ManagedThreadId, startThreadId)
+            finally SynchronizationContext.SetSynchronizationContext old )
+
+    [<Fact>]
+    // Demonstrates the key difference in starting-thread identity between the two methods when called
+    // from a non-thread-pool thread (e.g. FSI, a test runner's main thread, or a dedicated thread):
+    // RunSynchronously offloads the computation to a thread-pool thread (different thread ID),
+    // while RunSynchronouslyImmediate keeps it on the calling thread (same thread ID).
+    // The latter ensures that exception stack traces include frames from the caller's thread,
+    // making failures much easier to diagnose during interactive testing.
+    member _.``RunSynchronouslyImmediate.vs.RunSynchronously.CallerThreadIdentity``() =
+        let mutable runSyncThreadId = -1
+        let mutable immThreadId = -1
+        let mutable callerThreadId = -1
+        AsyncModule.OnFreshThread(fun () ->
+            callerThreadId <- Thread.CurrentThread.ManagedThreadId
+            async { runSyncThreadId <- Thread.CurrentThread.ManagedThreadId }
+            |> Async.RunSynchronously
+            async { immThreadId <- Thread.CurrentThread.ManagedThreadId }
+            |> Async.RunSynchronouslyImmediate)
+        Assert.NotEqual(callerThreadId, runSyncThreadId)
+        Assert.Equal(callerThreadId, immThreadId)
+
+    [<Fact>]
+    // Because RunSynchronouslyImmediate starts on the calling thread, an exception thrown before
+    // any do! in the computation is captured on that thread. When re-raised to the caller the
+    // exception stack trace will include it as a nested exception.
+    member _.``RunSynchronouslyImmediate.ExceptionOriginatesOnCallingThread``() =
+        let mutable callerThreadId = -1
+        let mutable exceptionOriginThreadId = -1
+        AsyncModule.OnFreshThread(fun () ->
+            callerThreadId <- Thread.CurrentThread.ManagedThreadId
+            try async {
+                    exceptionOriginThreadId <- Thread.CurrentThread.ManagedThreadId
+                    failwith "boom"
+                }
+                |> Async.RunSynchronouslyImmediate
+            with e ->
+                // Not part of the test, but useful for understanding:
+                // shows full stack trace from test thread down
+                // Equivalent code under RunSynchronously would be capturing a partial trace from the threadpool thread here,
+                //  followed by rethrowing it as a nested exception at the wait site (via AsyncResult.Commit())
+                printfn $"STACKTRACE ===\n{e.StackTrace}\n===")
+        Assert.Equal(callerThreadId, exceptionOriginThreadId)
+
     [<Fact>]
     member _.``RaceBetweenCancellationAndError.AwaitWaitHandle``() = 
         let disposedEvent = new System.Threading.ManualResetEvent(false)

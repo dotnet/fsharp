@@ -444,10 +444,10 @@ type Test2 () =
             Compilation.Create(fsharpSource, Library, options = [|"--langversion:8.0"|], cmplRefs = [csCmpl])
 
         CompilerAssert.CompileWithErrors(fsCmpl, [|
-            (FSharpDiagnosticSeverity.Error, 629, (10, 9, 10, 27), "Method 'M1' is not accessible from this code location")
-            (FSharpDiagnosticSeverity.Error, 629, (15, 13, 15, 31), "Method 'M1' is not accessible from this code location")
-            (FSharpDiagnosticSeverity.Error, 629, (25, 9, 25, 28), "Method 'M1' is not accessible from this code location")
-            (FSharpDiagnosticSeverity.Error, 629, (30, 13, 30, 31), "Method 'M1' is not accessible from this code location")
+            (FSharpDiagnosticSeverity.Error, 629, (10, 25, 10, 27), "Method 'M1' is not accessible from this code location")
+            (FSharpDiagnosticSeverity.Error, 629, (15, 29, 15, 31), "Method 'M1' is not accessible from this code location")
+            (FSharpDiagnosticSeverity.Error, 629, (25, 26, 25, 28), "Method 'M1' is not accessible from this code location")
+            (FSharpDiagnosticSeverity.Error, 629, (30, 29, 30, 31), "Method 'M1' is not accessible from this code location")
         |])
 
     [<Fact>]

@@ -57,6 +57,13 @@
         "ilverify"
       ],
       "rollForward": false
+    },
+    "microsoft.aitools.binlogmcp": {
+      "version": "1.0.0",
+      "commands": [
+        "binlog-mcp"
+      ],
+      "rollForward": true
     }
   }
 }

@@ -15,7 +15,6 @@ open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Range
 
 /// Represents collected XmlDoc lines
-[<RequireQualifiedAccess>]
 type XmlDoc(unprocessedLines: string[], range: range) =
     let rec processLines (lines: string list) =
         match lines with
@@ -65,11 +64,24 @@ type XmlDoc(unprocessedLines: string[], range: range) =
         else
             doc.GetElaboratedXmlLines() |> String.concat Environment.NewLine
 
+    member doc.GetExpandedXmlText(emit) =
+        doc.GetExpandedXmlText(emit, XmlDocIncludeExpander.mkExpansionEnv ())
+
+    member doc.GetExpandedXmlText(emit, env: XmlDocIncludeExpander.ExpansionEnv) =
+        if doc.IsEmpty then
+            ""
+        else
+            XmlDocIncludeExpander.expandIncludeLines env emit doc.Range.FileName doc.Range (doc.GetElaboratedXmlLines())
+            |> String.concat Environment.NewLine
+
     member doc.Check(paramNamesOpt: string list option) =
         try
+            // emit=false: quiet expansion so included <param>/<paramref> reach validation; the writer emits FS3908.
+            let expandedText = doc.GetExpandedXmlText false
+
             // We must wrap with <doc> in order to have only one root element
             let xml =
-                XDocument.Parse("<doc>\n" + doc.GetXmlText() + "\n</doc>", LoadOptions.SetLineInfo ||| LoadOptions.PreserveWhitespace)
+                XDocument.Parse("<doc>\n" + expandedText + "\n</doc>", LoadOptions.SetLineInfo ||| LoadOptions.PreserveWhitespace)
 
             // The parameter names are checked for consistency, so parameter references and
             // parameter documentation must match an actual parameter.  In addition, if any parameters
@@ -85,7 +97,7 @@ type XmlDoc(unprocessedLines: string[], range: range) =
                         let nm = attr.Value
 
                         if not (paramNames |> List.contains nm) then
-                            warning (Error(FSComp.SR.xmlDocInvalidParameterName nm, doc.Range))
+                            warning (Error(FSComp.SR.xmlDocInvalidParameterName (RichText.mkParameter nm), doc.Range))
 
                 let paramsWithDocs =
                     [
@@ -99,12 +111,12 @@ type XmlDoc(unprocessedLines: string[], range: range) =
 
                     for p in paramNames do
                         if not (paramsWithDocs |> List.contains p) then
-                            warning (Error(FSComp.SR.xmlDocMissingParameter p, doc.Range))
+                            warning (Error(FSComp.SR.xmlDocMissingParameter (RichText.mkParameter p), doc.Range))
 
                 let duplicates = paramsWithDocs |> List.duplicates
 
                 for d in duplicates do
-                    warning (Error(FSComp.SR.xmlDocDuplicateParameter d, doc.Range))
+                    warning (Error(FSComp.SR.xmlDocDuplicateParameter (RichText.mkParameter d), doc.Range))
 
                 for pref in xml.Descendants(XName.op_Implicit "paramref") do
                     match pref.Attribute(!!(XName.op_Implicit "name")) with
@@ -113,7 +125,7 @@ type XmlDoc(unprocessedLines: string[], range: range) =
                         let nm = attr.Value
 
                         if not (paramNames |> List.contains nm) then
-                            warning (Error(FSComp.SR.xmlDocInvalidParameterName nm, doc.Range))
+                            warning (Error(FSComp.SR.xmlDocInvalidParameterName (RichText.mkParameter nm), doc.Range))
 
         with e ->
             warning (Error(FSComp.SR.xmlDocBadlyFormed e.Message, doc.Range))
@@ -215,6 +227,7 @@ type PreXmlDoc =
     | PreXmlMerge of PreXmlDoc * PreXmlDoc
     | PreXmlDoc of pos * XmlDocCollector
     | PreXmlDocEmpty
+    | PreXmlDocPairedWith of inner: PreXmlDoc * extraParamNames: string list
 
     member x.ToXmlDoc(check: bool, paramNamesOpt: string list option) =
         match x with
@@ -235,6 +248,13 @@ type PreXmlDoc =
                     doc.Check(paramNamesOpt)
 
                 doc
+        | PreXmlDocPairedWith(inner, extra) ->
+            let paramNamesOpt =
+                match paramNamesOpt with
+                | Some names -> Some(names @ extra)
+                | None -> None
+
+            inner.ToXmlDoc(check, paramNamesOpt)
 
     member x.Range =
         match x with
@@ -245,6 +265,7 @@ type PreXmlDoc =
             else unionRanges part1.Range part2.Range
         | PreXmlDocEmpty -> range0
         | PreXmlDoc(pos, collector) -> collector.LinesRange pos
+        | PreXmlDocPairedWith(inner, _) -> inner.Range
 
     member x.IsEmpty =
         match x with
@@ -252,10 +273,12 @@ type PreXmlDoc =
         | PreXmlMerge(a, b) -> a.IsEmpty && b.IsEmpty
         | PreXmlDocEmpty -> true
         | PreXmlDoc(pos, collector) -> not (collector.HasComments pos)
+        | PreXmlDocPairedWith(inner, _) -> inner.IsEmpty
 
     member x.MarkAsInvalid() =
         match x with
         | PreXmlDoc(pos, collector) -> collector.SetXmlDocValidity(pos, false)
+        | PreXmlDocPairedWith(inner, _) -> inner.MarkAsInvalid()
         | _ -> ()
 
     static member CreateFromGrabPoint(collector: XmlDocCollector, grabPointPos) =
@@ -267,6 +290,11 @@ type PreXmlDoc =
     static member Create(unprocessedLines, range) = PreXmlDirect(unprocessedLines, range)
 
     static member Merge a b = PreXmlMerge(a, b)
+
+    static member WithExtraParamsForCheck(doc: PreXmlDoc, extraParamNames: string list) =
+        match extraParamNames with
+        | [] -> doc
+        | _ -> PreXmlDocPairedWith(doc, extraParamNames)
 
 [<Sealed>]
 type XmlDocumentationInfo private (tryGetXmlDocument: unit -> XmlDocument option) =

@@ -623,14 +623,11 @@ type FSharpChecker
 
     static member Instance = globalInstance.Force()
 
-    static member internal CreateOverloadCacheMetricsListener() =
-        new CacheMetrics.CacheMetricsListener("overloadResolutionCache")
-
     member internal _.FrameworkImportsCache = backgroundCompiler.FrameworkImportsCache
 
     /// Tokenize a single line, returning token information and a tokenization state represented by an integer
     member _.TokenizeLine(line: string, state: FSharpTokenizerLexState) =
-        let tokenizer = FSharpSourceTokenizer([], None, None, None)
+        let tokenizer = FSharpSourceTokenizer([], None, None)
         let lineTokenizer = tokenizer.CreateLineTokenizer line
         let mutable state = (None, state)
 

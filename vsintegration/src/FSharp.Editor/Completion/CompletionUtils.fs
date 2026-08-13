@@ -96,7 +96,6 @@ module internal CompletionUtils =
             filePath: string,
             defines: string list,
             langVersion: string option,
-            strictIndentation: bool option,
             sourceText: SourceText,
             triggerPosition: int,
             ct: CancellationToken
@@ -106,17 +105,7 @@ module internal CompletionUtils =
 
         let classifiedSpans = ResizeArray<_>()
 
-        Tokenizer.classifySpans (
-            documentId,
-            sourceText,
-            triggerLine.Span,
-            Some filePath,
-            defines,
-            langVersion,
-            strictIndentation,
-            classifiedSpans,
-            ct
-        )
+        Tokenizer.classifySpans (documentId, sourceText, triggerLine.Span, Some filePath, defines, langVersion, classifiedSpans, ct)
 
         classifiedSpans.Count = 0
         || // we should provide completion at the start of empty line, where there are no tokens at all
@@ -148,7 +137,7 @@ module internal CompletionUtils =
 
     /// Indicates the text span to be replaced by a committed completion list item.
     let getDefaultCompletionListSpan
-        (sourceText: SourceText, caretIndex, documentId, filePath, defines, langVersion, strictIndentation, ct: CancellationToken)
+        (sourceText: SourceText, caretIndex, documentId, filePath, defines, langVersion, ct: CancellationToken)
         =
 
         // Gets connected identifier-part characters backward and forward from caret.
@@ -186,17 +175,7 @@ module internal CompletionUtils =
 
             let classifiedSpans = ResizeArray<_>()
 
-            Tokenizer.classifySpans (
-                documentId,
-                sourceText,
-                line.Span,
-                Some filePath,
-                defines,
-                langVersion,
-                strictIndentation,
-                classifiedSpans,
-                ct
-            )
+            Tokenizer.classifySpans (documentId, sourceText, line.Span, Some filePath, defines, langVersion, classifiedSpans, ct)
 
             let inline isBacktickIdentifier (classifiedSpan: ClassifiedSpan) =
                 classifiedSpan.ClassificationType = ClassificationTypeNames.Identifier

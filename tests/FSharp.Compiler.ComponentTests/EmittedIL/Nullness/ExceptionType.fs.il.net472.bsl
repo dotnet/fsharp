@@ -55,13 +55,15 @@
 
     .method family specialname rtspecialname instance void  .ctor(class [runtime]System.Runtime.Serialization.SerializationInfo info, valuetype [runtime]System.Runtime.Serialization.StreamingContext context) cil managed
     {
+      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
       
       .maxstack  8
       IL_0000:  ldarg.0
       IL_0001:  ldarg.1
       IL_0002:  ldarg.2
       IL_0003:  call       instance void [runtime]System.Exception::.ctor(class [runtime]System.Runtime.Serialization.SerializationInfo,
-                                                                           valuetype [runtime]System.Runtime.Serialization.StreamingContext)
+                                                                                 valuetype [runtime]System.Runtime.Serialization.StreamingContext)
       IL_0008:  ret
     } 
 
@@ -130,13 +132,15 @@
 
     .method family specialname rtspecialname instance void  .ctor(class [runtime]System.Runtime.Serialization.SerializationInfo info, valuetype [runtime]System.Runtime.Serialization.StreamingContext context) cil managed
     {
+      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
       
       .maxstack  8
       IL_0000:  ldarg.0
       IL_0001:  ldarg.1
       IL_0002:  ldarg.2
       IL_0003:  call       instance void [runtime]System.Exception::.ctor(class [runtime]System.Runtime.Serialization.SerializationInfo,
-                                                                           valuetype [runtime]System.Runtime.Serialization.StreamingContext)
+                                                                                 valuetype [runtime]System.Runtime.Serialization.StreamingContext)
       IL_0008:  ret
     } 
 
@@ -219,13 +223,15 @@
 
     .method family specialname rtspecialname instance void  .ctor(class [runtime]System.Runtime.Serialization.SerializationInfo info, valuetype [runtime]System.Runtime.Serialization.StreamingContext context) cil managed
     {
+      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
       
       .maxstack  8
       IL_0000:  ldarg.0
       IL_0001:  ldarg.1
       IL_0002:  ldarg.2
       IL_0003:  call       instance void [runtime]System.Exception::.ctor(class [runtime]System.Runtime.Serialization.SerializationInfo,
-                                                                           valuetype [runtime]System.Runtime.Serialization.StreamingContext)
+                                                                                 valuetype [runtime]System.Runtime.Serialization.StreamingContext)
       IL_0008:  ret
     } 
 
@@ -293,13 +299,15 @@
 
     .method family specialname rtspecialname instance void  .ctor(class [runtime]System.Runtime.Serialization.SerializationInfo info, valuetype [runtime]System.Runtime.Serialization.StreamingContext context) cil managed
     {
+      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
       
       .maxstack  8
       IL_0000:  ldarg.0
       IL_0001:  ldarg.1
       IL_0002:  ldarg.2
       IL_0003:  call       instance void [runtime]System.Exception::.ctor(class [runtime]System.Runtime.Serialization.SerializationInfo,
-                                                                           valuetype [runtime]System.Runtime.Serialization.StreamingContext)
+                                                                                 valuetype [runtime]System.Runtime.Serialization.StreamingContext)
       IL_0008:  ret
     } 
 

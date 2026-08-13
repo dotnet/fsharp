@@ -43,7 +43,7 @@ val GetCompiledReturnTyOfProvidedMethodInfo:
 
 /// The slotsig returned by methInfo.GetSlotSig is in terms of the type parameters on the parent type of the overriding method.
 /// Reverse-map the slotsig so it is in terms of the type parameters for the overriding method
-val ReparentSlotSigToUseMethodTypars: g: TcGlobals -> m: range -> ovByMethValRef: ValRef -> slotsig: SlotSig -> SlotSig
+val ReparentSlotSigToUseMethodTypars: g: TcGlobals -> ovByMethValRef: ValRef -> slotsig: SlotSig -> SlotSig
 
 /// Construct the data representing a parameter in the signature of an abstract method slot
 val MakeSlotParam: ty: TType * argInfo: ArgReprInfo -> SlotParam
@@ -320,6 +320,9 @@ type MethInfo =
     /// Describes a use of a pseudo-method corresponding to the default constructor for a .NET struct type
     | DefaultStructCtor of tcGlobals: TcGlobals * structTy: TType
 
+    /// Describes a use of the compiler-synthesized all-fields constructor of an F# record type
+    | RecdCtor of tcGlobals: TcGlobals * recdTy: TType
+
 #if !NO_TYPEPROVIDERS
     /// Describes a use of a method backed by provided metadata
     | ProvidedMeth of
@@ -514,7 +517,7 @@ type MethInfo =
     /// For extension methods, no type parameters are returned, because all the
     /// type parameters are part of the apparent type, rather the
     /// declaring type, even for extension methods extending generic types.
-    member GetFormalTyparsOfDeclaringType: m: range -> Typar list
+    member GetFormalTyparsOfDeclaringType: unit -> Typar list
 
     /// Get the (zero or one) 'self'/'this'/'object' arguments associated with a method.
     /// An instance method returns one object argument.
@@ -522,6 +525,9 @@ type MethInfo =
 
     /// Get custom attributes for method (only applicable for IL methods)
     member GetCustomAttrs: unit -> ILAttributes
+
+    /// Returns 0 if the attribute is not present.
+    member GetOverloadResolutionPriority: unit -> int
 
     /// Get the parameter attributes of a method info, which get combined with the parameter names and types
     member GetParamAttribs: amap: ImportMap * m: range -> ParamAttribs list list
@@ -705,7 +711,7 @@ type UnionCaseInfo =
     member UnionCaseRef: UnionCaseRef
 
     /// Get the instantiation of the type parameters of the declaring type of the union case
-    member GetTyparInst: m: range -> TyparInstantiation
+    member GetTyparInst: unit -> TyparInstantiation
 
 /// Describes an F# use of a property backed by Abstract IL metadata
 [<NoComparison; NoEquality>]
