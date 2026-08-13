@@ -35,6 +35,21 @@ module TypesAndTypeConstraints_IWSAMsAndSRTPs =
         |> withOptions ["--nowarn:988"]
         |> compileAndRun
 
+    let compileAndRunPreview compilation =
+        compilation
+        |> asExe
+        |> withLangVersionPreview
+        |> compileAndRun
+        |> shouldSucceed
+
+    let compileAndRunPreviewWith references compilation =
+        compilation
+        |> asExe
+        |> withLangVersionPreview
+        |> withReferences references
+        |> compileAndRun
+        |> shouldSucceed
+
     [<Fact>]
     let ``Srtp call Zero property returns valid result`` () =
         Fsx """
@@ -1918,10 +1933,7 @@ if r4 <> "rrrr" then failwith (sprintf "Expected 'rrrr' but got '%%s'" r4)
 let spaces n = " " * n
 if spaces 3 <> "   " then failwith (sprintf "Expected 3 spaces but got '%%s'" (spaces 3))
         """
-        |> asExe
-        |> withLangVersionPreview
-        |> compileAndRun
-        |> shouldSucceed
+        |> compileAndRunPreview
 
     [<Fact>]
     let ``Extension operator on string fails without langversion preview`` () =
@@ -1953,10 +1965,7 @@ if x <> 12 then failwith (sprintf "Expected 12 but got %%d" x)
 let y = 2.0 + 3.0
 if y <> 5.0 then failwith (sprintf "Expected 5.0 but got %%f" y)
         """
-        |> asExe
-        |> withLangVersionPreview
-        |> compileAndRun
-        |> shouldSucceed
+        |> compileAndRunPreview
 
     [<Fact>]
     let ``Extension method on custom type resolves via SRTP`` () =
@@ -1981,10 +1990,7 @@ let w3 = add w1 w2
 if w3.Name <> "AB" then failwith (sprintf "Expected 'AB' but got '%s'" w3.Name)
 if w3.Count <> 3 then failwith (sprintf "Expected 3 but got %d" w3.Count)
         """
-        |> asExe
-        |> withLangVersionPreview
-        |> compileAndRun
-        |> shouldSucceed
+        |> compileAndRunPreview
 
     [<Fact>]
     let ``Intrinsic method takes priority over extension method`` () =
@@ -2007,10 +2013,7 @@ module Consumer =
     let c = a + b
     if c.Value <> 1003 then failwith (sprintf "Expected 1003 (intrinsic) but got %d" c.Value)
         """
-        |> asExe
-        |> withLangVersionPreview
-        |> compileAndRun
-        |> shouldSucceed
+        |> compileAndRunPreview
 
     [<Fact>]
     let ``Multiple extension operators with different signatures resolve or error clearly`` () =
@@ -2035,10 +2038,7 @@ module Consumer =
     let r = add { Value = 1 } { Value = 2 }
     if r.Value <> 3 then failwith (sprintf "Expected 3 but got %d" r.Value)
         """
-        |> asExe
-        |> withLangVersionPreview
-        |> compileAndRun
-        |> shouldSucceed
+        |> compileAndRunPreview
 
     [<Fact>]
     let ``Intrinsic operator takes priority over extension with same name and signature`` () =
@@ -2058,10 +2058,7 @@ let inline add (x: ^T) (y: ^T) = x + y
 let result = add { Value = 1 } { Value = 2 }
 if result.Value <> 3 then failwith (sprintf "Expected 3 (intrinsic wins) but got %d" result.Value)
         """
-        |> asExe
-        |> withLangVersionPreview
-        |> compileAndRun
-        |> shouldSucceed
+        |> compileAndRunPreview
 
     [<Fact
 #if !NETCOREAPP
@@ -2161,11 +2158,7 @@ open ExtLib
 let r4 = "r" * 4
 if r4 <> "rrrr" then failwith (sprintf "Expected 'rrrr' but got '%s'" r4)
         """
-        |> asExe
-        |> withLangVersionPreview
-        |> withReferences [library]
-        |> compileAndRun
-        |> shouldSucceed
+        |> compileAndRunPreviewWith [library]
 
     [<Fact>]
     let ``Cross-assembly intrinsic augmentation operator resolves via SRTP`` () =
@@ -2193,11 +2186,7 @@ let b = { Value = 2 }
 let c = a + b
 if c.Value <> 3 then failwith (sprintf "Expected 3 but got %d" c.Value)
         """
-        |> asExe
-        |> withLangVersionPreview
-        |> withReferences [library]
-        |> compileAndRun
-        |> shouldSucceed
+        |> compileAndRunPreviewWith [library]
 
     [<Fact>]
     let ``Transitive cross-assembly extension operator resolves via SRTP`` () =
@@ -2225,11 +2214,7 @@ open MiddleLib
 let r4 = repeat "r" 4
 if r4 <> "rrrr" then failwith (sprintf "Expected 'rrrr' but got '%s'" r4)
         """
-        |> asExe
-        |> withLangVersionPreview
-        |> withReferences [libraryA; libraryB]
-        |> compileAndRun
-        |> shouldSucceed
+        |> compileAndRunPreviewWith [libraryA; libraryB]
 
     [<Fact>]
     let ``Overloads differing only by return type produce ambiguity error without attribute`` () =
@@ -2304,10 +2289,7 @@ let result2: string = Converter.Convert(42)
 if result <> 42 then failwith (sprintf "Expected 42 but got %d" result)
 if result2 <> "42" then failwith (sprintf "Expected '42' but got '%s'" result2)
         """
-        |> asExe
-        |> withLangVersionPreview
-        |> compileAndRun
-        |> shouldSucceed
+        |> compileAndRunPreview
 
     // TC5: Ambiguity error messages from extension operators
 
@@ -2385,10 +2367,7 @@ let f2 : float = Converter.op_Explicit c
 if i2 <> 42 then failwith (sprintf "Expected 42 but got %d" i2)
 if f2 <> 42.0 then failwith (sprintf "Expected 42.0 but got %f" f2)
         """
-        |> asExe
-        |> withLangVersionPreview
-        |> compileAndRun
-        |> shouldSucceed
+        |> compileAndRunPreview
 
     // AO4: op_Explicit return-type resolution in quotations
 
@@ -2413,10 +2392,7 @@ let r2 = Microsoft.FSharp.Linq.RuntimeHelpers.LeafExpressionConverter.EvaluateQu
 if r1 <> 42 then failwith (sprintf "Expected 42 but got %d" r1)
 if r2 <> 42.0 then failwith (sprintf "Expected 42.0 but got %f" r2)
         """
-        |> asExe
-        |> withLangVersionPreview
-        |> compileAndRun
-        |> shouldSucceed
+        |> compileAndRunPreview
 
     [<Theory>]
     [<InlineData("+", "+")>]
@@ -2553,10 +2529,7 @@ let r2 = addThenMultiply 3.0 4.0 5.0
 if r1 <> 35 then failwith (sprintf "Expected 35 but got %d" r1)
 if r2 <> 35.0 then failwith (sprintf "Expected 35.0 but got %f" r2)
         """
-        |> asExe
-        |> withLangVersionPreview
-        |> compileAndRun
-        |> shouldSucceed
+        |> compileAndRunPreview
 
     [<Fact>]
     let ``Instance extension method resolves via SRTP`` () =
@@ -2570,10 +2543,7 @@ let inline duplicate (x: ^T) : ^T = (^T : (member Duplicate : unit -> ^T) x)
 let result = duplicate "hello"
 if result <> "hellohello" then failwith (sprintf "Expected 'hellohello' but got '%s'" result)
         """
-        |> asExe
-        |> withLangVersionPreview
-        |> compileAndRun
-        |> shouldSucceed
+        |> compileAndRunPreview
 
     [<Fact>]
     let ``Instance extension method with parameter resolves via SRTP`` () =
@@ -2587,10 +2557,7 @@ let inline foo (x: ^T) (y: ^R) : ^R = (^T : (member Foo : ^R -> ^R) (x, y))
 let result = foo "foo" "bar"
 if result <> "foobar" then failwith (sprintf "Expected 'foobar' but got '%s'" result)
         """
-        |> asExe
-        |> withLangVersionPreview
-        |> compileAndRun
-        |> shouldSucceed
+        |> compileAndRunPreview
 
     [<Fact>]
     let ``Instance extension does not satisfy static SRTP constraint`` () =
@@ -2627,10 +2594,7 @@ let inline getValue (x: ^T) : int = (^T : (member GetValue : unit -> int) x)
 let result = getValue { Value = 42 }
 if result <> 42 then failwith (sprintf "Expected 42 but got %d" result)
         """
-        |> asExe
-        |> withLangVersionPreview
-        |> compileAndRun
-        |> shouldSucceed
+        |> compileAndRunPreview
 
     [<Fact>]
     let ``Internal type extension in same assembly does not resolve via SRTP (must be public)`` () =
@@ -2683,10 +2647,7 @@ let inline addThenSub (x: ^T) (y: ^T) (z: ^T) =
 let result = addThenSub { Value = 10 } { Value = 5 } { Value = 3 }
 if result.Value <> 12 then failwith (sprintf "Expected 12 but got %d" result.Value)
         """
-        |> asExe
-        |> withLangVersionPreview
-        |> compileAndRun
-        |> shouldSucceed
+        |> compileAndRunPreview
 
     [<Fact>]
     let ``Internal record field on public type does not resolve via SRTP (must be public)`` () =
@@ -2764,10 +2725,7 @@ if r1 <> 42L then failwith (sprintf "Expected 42L but got %d" r1)
 if r2 <> 42.0 then failwith (sprintf "Expected 42.0 but got %f" r2)
 if r3 <> 42.0 then failwith (sprintf "Expected 42.0 but got %f" r3)
         """
-        |> asExe
-        |> withLangVersionPreview
-        |> compileAndRun
-        |> shouldSucceed
+        |> compileAndRunPreview
 
     [<Fact>]
     let ``RFC op_Implicit extension example compiles with preview langversion`` () =
@@ -2784,10 +2742,7 @@ let inline implicitConv (x: ^T) : ^U = ((^T or ^U) : (static member op_Implicit 
 let r1: int64 = implicitConv 42
 if r1 <> 42L then failwith (sprintf "Expected 42L but got %d" r1)
         """
-        |> asExe
-        |> withLangVersionPreview
-        |> compileAndRun
-        |> shouldSucceed
+        |> compileAndRunPreview
 
     // ---- Quotation + runtime witness tests for RFC FS-1043 new functionality ----
 
@@ -2818,10 +2773,7 @@ match q with
 let d = { MetersPerSecond = 10.0 } * { Seconds = 5.0 }
 if d.Meters <> 50.0 then failwith (sprintf "Expected 50.0 but got %f" d.Meters)
         """
-        |> asExe
-        |> withLangVersionPreview
-        |> compileAndRun
-        |> shouldSucceed
+        |> compileAndRunPreview
 
     [<Fact>]
     let ``Witness quotation: inline SRTP function quoted at concrete call site`` () =
@@ -2847,10 +2799,7 @@ let resultFloat = Microsoft.FSharp.Linq.RuntimeHelpers.LeafExpressionConverter.E
 if resultInt <> 43 then failwith (sprintf "Expected 43 but got %d" resultInt)
 if abs (resultFloat - 4.14) > 0.001 then failwith (sprintf "Expected ~4.14 but got %f" resultFloat)
         """
-        |> asExe
-        |> withLangVersionPreview
-        |> compileAndRun
-        |> shouldSucceed
+        |> compileAndRunPreview
 
     [<Fact>]
     let ``Witness quotation: chained inline functions pass witnesses correctly`` () =
@@ -2873,10 +2822,7 @@ let qf = <@ doubleIt 1.5 @>
 let resultF = Microsoft.FSharp.Linq.RuntimeHelpers.LeafExpressionConverter.EvaluateQuotation qf :?> float
 if resultF <> 3.0 then failwith (sprintf "Expected 3.0 but got %f" resultF)
         """
-        |> asExe
-        |> withLangVersionPreview
-        |> compileAndRun
-        |> shouldSucceed
+        |> compileAndRunPreview
 
     [<Fact>]
     let ``Witness quotation: extension widening in quotation evaluates correctly`` () =
@@ -2901,10 +2847,7 @@ match q with
 let r = widen_to_int64 42
 if r <> 42L then failwith (sprintf "Expected 42L but got %d" r)
         """
-        |> asExe
-        |> withLangVersionPreview
-        |> compileAndRun
-        |> shouldSucceed
+        |> compileAndRunPreview
 
     [<Fact>]
     let ``Witness quotation: op_Implicit extension in quotation evaluates correctly`` () =
@@ -2931,10 +2874,7 @@ match q with
 let r : int64 = implicitConv 42
 if r <> 42L then failwith (sprintf "Expected 42L but got %d" r)
         """
-        |> asExe
-        |> withLangVersionPreview
-        |> compileAndRun
-        |> shouldSucceed
+        |> compileAndRunPreview
 
     [<Fact>]
     let ``Witness quotation: first-class usage of inline SRTP function`` () =
@@ -2957,10 +2897,7 @@ let q = <@ intAdd 3 4 @>
 let result = Microsoft.FSharp.Linq.RuntimeHelpers.LeafExpressionConverter.EvaluateQuotation q :?> int
 if result <> 7 then failwith (sprintf "Expected 7 but got %d" result)
         """
-        |> asExe
-        |> withLangVersionPreview
-        |> compileAndRun
-        |> shouldSucceed
+        |> compileAndRunPreview
 
     [<Fact>]
     let ``Witness quotation: comparison constraint witness in quotation`` () =
@@ -2979,10 +2916,7 @@ let qs = <@ myMax "apple" "banana" @>
 let resultS = Microsoft.FSharp.Linq.RuntimeHelpers.LeafExpressionConverter.EvaluateQuotation qs :?> string
 if resultS <> "banana" then failwith (sprintf "Expected banana but got %s" resultS)
         """
-        |> asExe
-        |> withLangVersionPreview
-        |> compileAndRun
-        |> shouldSucceed
+        |> compileAndRunPreview
 
     [<Fact>]
     let ``Witness quotation: abs and sign witnesses evaluate in quotation`` () =
@@ -3003,10 +2937,7 @@ let qAbsF = <@ abs -2.5 @>
 let resultAbsF = Microsoft.FSharp.Linq.RuntimeHelpers.LeafExpressionConverter.EvaluateQuotation qAbsF :?> float
 if resultAbsF <> 2.5 then failwith (sprintf "absF: Expected 2.5 but got %f" resultAbsF)
         """
-        |> asExe
-        |> withLangVersionPreview
-        |> compileAndRun
-        |> shouldSucceed
+        |> compileAndRunPreview
 
     [<Fact>]
     let ``Witness quotation: extension operator cross-assembly with quotation`` () =
@@ -3536,10 +3467,7 @@ let inline doThing (x: ^T) = (^T : (static member DoThing : ^T -> string) x)
 let result = doThing "hello"
 if result <> "HELLO" then failwith (sprintf "Expected 'HELLO' but got '%s'" result)
         """
-        |> asExe
-        |> withLangVersionPreview
-        |> compileAndRun
-        |> shouldSucceed
+        |> compileAndRunPreview
 
     [<Fact>]
     let ``open on defining module brings extension operators into SRTP scope`` () =
@@ -3600,10 +3528,7 @@ let result =
 
 if result <> "hahaha" then failwith (sprintf "Expected 'hahaha' but got '%%s'" result)
         """
-        |> asExe
-        |> withLangVersionPreview
-        |> compileAndRun
-        |> shouldSucceed
+        |> compileAndRunPreview
 
     [<Fact>]
     let ``Extension operator on struct type resolves without boxing`` () =
@@ -3627,10 +3552,7 @@ let v2 = { X = 3.0; Y = 4.0 }
 let v3 = add v1 v2
 if v3.X <> 4.0 || v3.Y <> 6.0 then failwith (sprintf "Expected {4.0, 6.0} but got {%f, %f}" v3.X v3.Y)
         """
-        |> asExe
-        |> withLangVersionPreview
-        |> compileAndRun
-        |> shouldSucceed
+        |> compileAndRunPreview
 
     [<Fact>]
     let ``Recursive function using extension operator resolves correctly`` () =
@@ -3648,10 +3570,7 @@ let rec repeatAndConcat (s: string) (n: int) : string =
 let result = repeatAndConcat "ab" 3
 if result <> "ababab" then failwith (sprintf "Expected 'ababab' but got '%%s'" result)
         """
-        |> asExe
-        |> withLangVersionPreview
-        |> compileAndRun
-        |> shouldSucceed
+        |> compileAndRunPreview
 
     [<Fact>]
     let ``Multiple extension operators satisfy combined SRTP constraints`` () =
@@ -3679,10 +3598,7 @@ let result = addAndMultiply a b
 // (5+3) * (5-3) = 8 * 2 = 16
 if result.V <> 16 then failwith (sprintf "Expected 16 but got %d" result.V)
         """
-        |> asExe
-        |> withLangVersionPreview
-        |> compileAndRun
-        |> shouldSucceed
+        |> compileAndRunPreview
 
     [<Fact>]
     let ``Units of measure with extension operators resolve via SRTP`` () =
@@ -3720,10 +3636,7 @@ let inline addMeasured (x: float<'u>) (y: float<'u>) = x + y
 let totalMass = addMeasured 3.0<kg> 7.0<kg>
 if totalMass <> 10.0<kg> then failwith (sprintf "Expected 10.0<kg> but got %A" totalMass)
         """
-        |> asExe
-        |> withLangVersionPreview
-        |> compileAndRun
-        |> shouldSucceed
+        |> compileAndRunPreview
 
     [<Fact>]
     let ``Extension operator SRTP resolves correctly under optimization`` () =
@@ -3779,10 +3692,7 @@ type 'T ``[]`` with
 let result = [| 3 |] ++ [| 6 |]
 if result <> [| 3; 6 |] then failwith (sprintf "Expected [|3; 6|] but got %A" result)
         """
-        |> asExe
-        |> withLangVersionPreview
-        |> compileAndRun
-        |> shouldSucceed
+        |> compileAndRunPreview
 
     [<Fact>]
     let ``Extension operator on generic type augmentation resolves via SRTP — Option map`` () =
@@ -3799,10 +3709,7 @@ match result with
 | Some "1" -> ()
 | other -> failwith (sprintf "Expected Some \"1\" but got %%A" other)
         """
-        |> asExe
-        |> withLangVersionPreview
-        |> compileAndRun
-        |> shouldSucceed
+        |> compileAndRunPreview
 
     // ---- Cross-assembly extrinsic extension operator regression tests ----
     // The bug: extension operators on GENERIC type augmentations from other
@@ -3824,11 +3731,7 @@ match result with
 | Some "42" -> ()
 | other -> failwith (sprintf "Expected Some \"42\" but got %A" other)
         """
-        |> asExe
-        |> withLangVersionPreview
-        |> withReferences [library]
-        |> compileAndRun
-        |> shouldSucceed
+        |> compileAndRunPreviewWith [library]
 
     [<Fact>]
     let ``Extension operator on array resolves via SRTP — cross-assembly extrinsic`` () =
@@ -3842,11 +3745,7 @@ open ExtLib
 let result = [| 1; 2 |] ++ [| 3; 4 |]
 if result <> [| 1; 2; 3; 4 |] then failwith (sprintf "Expected [|1;2;3;4|] but got %A" result)
         """
-        |> asExe
-        |> withLangVersionPreview
-        |> withReferences [library]
-        |> compileAndRun
-        |> shouldSucceed
+        |> compileAndRunPreviewWith [library]
 
     [<Fact>]
     let ``Extension operator on list resolves via SRTP — cross-assembly extrinsic`` () =
@@ -3860,11 +3759,7 @@ open ExtLib
 let result = [ 1; 2 ] ++ [ 3; 4 ]
 if result <> [ 1; 2; 3; 4 ] then failwith (sprintf "Expected [1;2;3;4] but got %A" result)
         """
-        |> asExe
-        |> withLangVersionPreview
-        |> withReferences [library]
-        |> compileAndRun
-        |> shouldSucceed
+        |> compileAndRunPreviewWith [library]
 
     [<Fact>]
     let ``Extension operator on Result resolves via SRTP — cross-assembly extrinsic`` () =
@@ -3888,11 +3783,7 @@ match result with
 | Ok 10 -> ()
 | other -> failwith (sprintf "Expected Ok 10 but got %A" other)
         """
-        |> asExe
-        |> withLangVersionPreview
-        |> withReferences [library]
-        |> compileAndRun
-        |> shouldSucceed
+        |> compileAndRunPreviewWith [library]
 
     [<Fact>]
     let ``Extension operator on BCL List resolves via SRTP — cross-assembly extrinsic`` () =
@@ -3923,11 +3814,7 @@ let result = a ++ b
 if result.Count <> 4 then failwith (sprintf "Expected count 4 but got %d" result.Count)
 if result.[2] <> 3 then failwith (sprintf "Expected result.[2]=3 but got %d" result.[2])
         """
-        |> asExe
-        |> withLangVersionPreview
-        |> withReferences [library]
-        |> compileAndRun
-        |> shouldSucceed
+        |> compileAndRunPreviewWith [library]
 
     [<Fact>]
     let ``Extension operator on user generic type resolves via SRTP — cross-assembly extrinsic`` () =
@@ -3965,11 +3852,7 @@ let b = { Value = 2 }
 let result = a + b
 if result.Value <> [ 1; 2 ] then failwith (sprintf "Expected [1; 2] but got %A" result.Value)
         """
-        |> asExe
-        |> withLangVersionPreview
-        |> withReferences [library; extLib]
-        |> compileAndRun
-        |> shouldSucceed
+        |> compileAndRunPreviewWith [library; extLib]
 
     [<Fact>]
     let ``Extension operator on generic type resolves via SRTP — multi-module same compilation`` () =
@@ -3991,10 +3874,7 @@ module Consumer =
     let result = a ++ b
     if result.Inner <> [ 10; 20 ] then failwith (sprintf "Expected [10; 20] but got %A" result.Inner)
         """
-        |> asExe
-        |> withLangVersionPreview
-        |> compileAndRun
-        |> shouldSucceed
+        |> compileAndRunPreview
 
     [<Fact>]
     let ``Extension operator on option resolves via SRTP — cross-assembly with optimization`` () =
@@ -4050,11 +3930,7 @@ match r2 with
 | Error "was None" -> ()
 | other -> failwith (sprintf "Expected Error \"was None\" but got %A" other)
         """
-        |> asExe
-        |> withLangVersionPreview
-        |> withReferences [library]
-        |> compileAndRun
-        |> shouldSucceed
+        |> compileAndRunPreviewWith [library]
 
     [<Fact>]
     let ``Extension operator on Map resolves via SRTP — cross-assembly extrinsic`` () =
@@ -4080,11 +3956,7 @@ let result = a ++ b
 if result.Count <> 3 then failwith (sprintf "Expected count 3 but got %d" result.Count)
 if result.[3] <> "c" then failwith (sprintf "Expected result.[3]=\"c\" but got %s" result.[3])
         """
-        |> asExe
-        |> withLangVersionPreview
-        |> withReferences [library]
-        |> compileAndRun
-        |> shouldSucceed
+        |> compileAndRunPreviewWith [library]
 
     // -----------------------------------------------------------------------
     // C#-style extension methods and SRTP
@@ -4116,11 +3988,7 @@ let inline doubleIt (x: ^T) = (^T : (member Double : unit -> int) x)
 let result = doubleIt 21
 if result <> 42 then failwith (sprintf "Expected 42 but got %d" result)
             """
-        |> asExe
-        |> withLangVersionPreview
-        |> withReferences [csLib]
-        |> compileAndRun
-        |> shouldSucceed
+        |> compileAndRunPreviewWith [csLib]
 
     [<Fact>]
     let ``C#-style extension on open generic array resolves via SRTP — Append`` () =
@@ -4150,11 +4018,7 @@ let inline append (a: ^T) (b: int[]) = (^T : (member Append : int[] -> int[]) (a
 let result = append [|1; 2|] [|3; 4|]
 if result <> [|1; 2; 3; 4|] then failwith (sprintf "Expected [|1;2;3;4|] but got %A" result)
             """
-        |> asExe
-        |> withLangVersionPreview
-        |> withReferences [csLib]
-        |> compileAndRun
-        |> shouldSucceed
+        |> compileAndRunPreviewWith [csLib]
 
     [<Fact>]
     let ``C#-style extension on unconstrained generic resolves via SRTP — Stringify`` () =
@@ -4183,11 +4047,7 @@ if r1 <> "42" then failwith (sprintf "Expected '42' but got '%s'" r1)
 let r2 = stringify "hello"
 if r2 <> "hello" then failwith (sprintf "Expected 'hello' but got '%s'" r2)
             """
-        |> asExe
-        |> withLangVersionPreview
-        |> withReferences [csLib]
-        |> compileAndRun
-        |> shouldSucceed
+        |> compileAndRunPreviewWith [csLib]
 
     [<Fact>]
     let ``C#-style extension with multiple type parameters resolves via SRTP — Select`` () =
@@ -4219,11 +4079,7 @@ let inline select (arr: ^T) (f: Func<int, string>) = (^T : (member Select : Func
 let result = select [|1; 2; 3|] (Func<int, string>(fun x -> string x))
 if result <> [|"1"; "2"; "3"|] then failwith (sprintf "Expected [|1;2;3|] as strings but got %A" result)
             """
-        |> asExe
-        |> withLangVersionPreview
-        |> withReferences [csLib]
-        |> compileAndRun
-        |> shouldSucceed
+        |> compileAndRunPreviewWith [csLib]
 
     [<Fact>]
     let ``C#-style extension on nullable value type resolves via SRTP — OrDefault`` () =
@@ -4256,11 +4112,7 @@ let v2 = Nullable<int>()
 let r2 = orDefault v2 99
 if r2 <> 99 then failwith (sprintf "Expected 99 but got %d" r2)
             """
-        |> asExe
-        |> withLangVersionPreview
-        |> withReferences [csLib]
-        |> compileAndRun
-        |> shouldSucceed
+        |> compileAndRunPreviewWith [csLib]
 
     [<Fact>]
     let ``C#-style extension on reference type resolves via SRTP — Safe on obj`` () =
@@ -4287,11 +4139,7 @@ let inline safe (x: ^T) = (^T : (member Safe : unit -> string) x)
 let r1 = safe (box 42)
 if r1 <> "42" then failwith (sprintf "Expected '42' but got '%s'" r1)
             """
-        |> asExe
-        |> withLangVersionPreview
-        |> withReferences [csLib]
-        |> compileAndRun
-        |> shouldSucceed
+        |> compileAndRunPreviewWith [csLib]
 
     [<Fact>]
     let ``C#-style extension on concrete generic instantiation resolves via SRTP — List Sum`` () =
@@ -4323,11 +4171,7 @@ let list = List<int>([| 10; 20; 30 |])
 let result = sum list
 if result <> 60 then failwith (sprintf "Expected 60 but got %d" result)
             """
-        |> asExe
-        |> withLangVersionPreview
-        |> withReferences [csLib]
-        |> compileAndRun
-        |> shouldSucceed
+        |> compileAndRunPreviewWith [csLib]
 
     // ---- Adversarial review gap tests ----
 
@@ -4362,11 +4206,7 @@ if r1 <> 25 then failwith (sprintf "Expected 25 but got %d" r1)
 let r2 = mag (MyVec(0, 0))
 if r2 <> 0 then failwith (sprintf "Expected 0 but got %d" r2)
             """
-        |> asExe
-        |> withLangVersionPreview
-        |> withReferences [csLib]
-        |> compileAndRun
-        |> shouldSucceed
+        |> compileAndRunPreviewWith [csLib]
 
     [<Fact>]
     let ``adversarial — Extension operator on DU type resolves via SRTP`` () =
@@ -4395,10 +4235,7 @@ match chained with
 | Node(Node(Leaf 1, Leaf 2), Leaf 3) -> ()
 | other -> failwith (sprintf "Expected Node(Node(Leaf 1, Leaf 2), Leaf 3) but got %A" other)
         """
-        |> asExe
-        |> withLangVersionPreview
-        |> compileAndRun
-        |> shouldSucceed
+        |> compileAndRunPreview
 
     [<Fact>]
     let ``adversarial — Mixed built-in + extension constraints in single inline function`` () =
@@ -4415,10 +4252,7 @@ if r1 <> "hello worldhello world" then failwith (sprintf "Expected 'hello worldh
 let r2 = mixedOp "ab" "cd" 3
 if r2 <> "abcdabcdabcd" then failwith (sprintf "Expected 'abcdabcdabcd' but got '%%s'" r2)
         """
-        |> asExe
-        |> withLangVersionPreview
-        |> compileAndRun
-        |> shouldSucceed
+        |> compileAndRunPreview
 
     [<Fact>]
     let ``adversarial — non-inline wrapper of SRTP extension operator resolves concretely`` () =
@@ -4445,11 +4279,7 @@ if r1 <> "ababab" then failwith (sprintf "Expected 'ababab' but got '%s'" r1)
 let r2 = repeatConcrete "x" 1
 if r2 <> "x" then failwith (sprintf "Expected 'x' but got '%s'" r2)
         """
-        |> asExe
-        |> withLangVersionPreview
-        |> withReferences [library]
-        |> compileAndRun
-        |> shouldSucceed
+        |> compileAndRunPreviewWith [library]
 
     [<Fact>]
     let ``adversarial — Extension operator in task CE`` () =
@@ -4466,10 +4296,7 @@ if result <> "xxx" then failwith (sprintf "Expected 'xxx' but got '%%s'" result)
 let result2 = (task {{ return repeatStr "ab" 2 }}).Result
 if result2 <> "abab" then failwith (sprintf "Expected 'abab' but got '%%s'" result2)
         """
-        |> asExe
-        |> withLangVersionPreview
-        |> compileAndRun
-        |> shouldSucceed
+        |> compileAndRunPreview
 
     [<Fact>]
     let ``adversarial — Signature file constraining inline SRTP with extension operator`` () =
@@ -4531,10 +4358,7 @@ module Consumer =
     if p.First <> 1 then failwith (sprintf "Expected 1 but got %d" p.First)
     if p.Second <> "b" then failwith (sprintf "Expected 'b' but got '%s'" p.Second)
         """
-        |> asExe
-        |> withLangVersionPreview
-        |> compileAndRun
-        |> shouldSucceed
+        |> compileAndRunPreview
 
     [<Fact>]
     let ``FS1215 interacts correctly with warnaserror under different langversions`` () =
@@ -4586,11 +4410,7 @@ let inline repeatStr (s: ^T) (n: int) = s * n
 let result = repeatStr "ab" 3
 if result <> "ababab" then failwith (sprintf "Direct: expected 'ababab' got '%s'" result)
         """
-        |> asExe
-        |> withLangVersionPreview
-        |> withReferences [library]
-        |> compileAndRun
-        |> shouldSucceed
+        |> compileAndRunPreviewWith [library]
 
     [<Fact>]
     let ``Extension operator satisfies multi-support SRTP constraint`` () =
@@ -4606,10 +4426,7 @@ let inline convert (x: ^T) : ^U = ((^T or ^U) : (static member op_Implicit: ^T -
 let f = convert { Celsius.Degrees = 100.0 }
 if abs (f.Degrees - 212.0) > 0.01 then failwith (sprintf "Expected 212 got %f" f.Degrees)
         """
-        |> asExe
-        |> withLangVersionPreview
-        |> compileAndRun
-        |> shouldSucceed
+        |> compileAndRunPreview
 
     [<Fact>]
     let ``Recursive inline and active pattern with extension operators`` () =
@@ -4643,10 +4460,7 @@ match 42 with
 | Positive -> ()
 | _ -> failwith "Expected Positive"
         """
-        |> asExe
-        |> withLangVersionPreview
-        |> compileAndRun
-        |> shouldSucceed
+        |> compileAndRunPreview
 
     [<Fact>]
     let ``Extension operator produces identical results with and without optimization`` () =
@@ -4726,11 +4540,7 @@ let q = <@ tripleIt 7 @>
 let result = Microsoft.FSharp.Linq.RuntimeHelpers.LeafExpressionConverter.EvaluateQuotation q :?> int
 if result <> 21 then failwith (sprintf "Quotation eval: expected 21 got %d" result)
         """
-        |> asExe
-        |> withLangVersionPreview
-        |> withReferences [csLib]
-        |> compileAndRun
-        |> shouldSucceed
+        |> compileAndRunPreviewWith [csLib]
 
     [<Fact>]
     let ``Witness quotation: C#-style extension on array evaluates in quotation`` () =
@@ -4794,11 +4604,7 @@ if not (findArrayExtensions q) then
 let result = Microsoft.FSharp.Linq.RuntimeHelpers.LeafExpressionConverter.EvaluateQuotation q :?> int[]
 if result <> [|1; 2; 3; 4|] then failwith (sprintf "Quotation eval: expected [|1;2;3;4|] got %A" result)
         """
-        |> asExe
-        |> withLangVersionPreview
-        |> withReferences [csLib]
-        |> compileAndRun
-        |> shouldSucceed
+        |> compileAndRunPreviewWith [csLib]
 
     [<Fact>]
     let ``Witness quotation: F# extrinsic extension on String cross-assembly evaluates in quotation`` () =
@@ -4832,11 +4638,7 @@ let q = <@ repeatStr "ha" 3 @>
 let result = Microsoft.FSharp.Linq.RuntimeHelpers.LeafExpressionConverter.EvaluateQuotation q :?> string
 if result <> "hahaha" then failwith (sprintf "Quotation eval: expected 'hahaha' got '%s'" result)
         """
-        |> asExe
-        |> withLangVersionPreview
-        |> withReferences [library]
-        |> compileAndRun
-        |> shouldSucceed
+        |> compileAndRunPreviewWith [library]
 
     [<Fact>]
     let ``Witness quotation: F# extrinsic extension on Option evaluates in quotation`` () =
@@ -4865,11 +4667,7 @@ match result with
 | Some "7" -> ()
 | other -> failwith (sprintf "Quotation eval: expected Some '7' got %A" other)
         """
-        |> asExe
-        |> withLangVersionPreview
-        |> withReferences [library]
-        |> compileAndRun
-        |> shouldSucceed
+        |> compileAndRunPreviewWith [library]
 
     [<Fact>]
     let ``Witness quotation: F# extrinsic extension on generic Box evaluates in quotation`` () =
@@ -4910,11 +4708,7 @@ let qs = <@ merge { Value = "hello" } { Value = "world" } @>
 let resultS = Microsoft.FSharp.Linq.RuntimeHelpers.LeafExpressionConverter.EvaluateQuotation qs :?> Box<string>
 if resultS.Value <> "hello" then failwith (sprintf "Quotation eval string: expected 'hello' got '%s'" resultS.Value)
         """
-        |> asExe
-        |> withLangVersionPreview
-        |> withReferences [library]
-        |> compileAndRun
-        |> shouldSucceed
+        |> compileAndRunPreviewWith [library]
 
     [<Fact>]
     let ``Witness quotation: DU extension operator evaluates in quotation`` () =
@@ -4949,10 +4743,7 @@ match result with
 | Node(Leaf 1, Leaf 2) -> ()
 | other -> failwith (sprintf "Quotation eval: expected Node(Leaf 1, Leaf 2) got %A" other)
         """
-        |> asExe
-        |> withLangVersionPreview
-        |> compileAndRun
-        |> shouldSucceed
+        |> compileAndRunPreview
 
     [<Fact>]
     let ``Witness quotation: ReflectedDefinition with extension operator`` () =
@@ -4994,10 +4785,7 @@ let q = <@ addTwoWidgets { V = 3 } { V = 4 } @>
 let result = Microsoft.FSharp.Linq.RuntimeHelpers.LeafExpressionConverter.EvaluateQuotation q :?> Widget
 if result.V <> 7 then failwith (sprintf "Quotation eval: expected 7 got %d" result.V)
         """
-        |> asExe
-        |> withLangVersionPreview
-        |> compileAndRun
-        |> shouldSucceed
+        |> compileAndRunPreview
 
     [<Fact>]
     let ``Extension operator via open type syntax resolves SRTP constraint`` () =
@@ -5018,10 +4806,7 @@ if r1 <> "hahaha" then failwith (sprintf "Expected 'hahaha' got '%s'" r1)
 let r2 = repeat "x" 5
 if r2 <> "xxxxx" then failwith (sprintf "Expected 'xxxxx' got '%s'" r2)
         """
-        |> asExe
-        |> withLangVersionPreview
-        |> compileAndRun
-        |> shouldSucceed
+        |> compileAndRunPreview
 
     [<Fact>]
     let ``F# Extension attribute method resolves via SRTP`` () =
@@ -5043,10 +4828,7 @@ let inline tripleIt (x: ^T) = (^T : (member Triple : unit -> int) x)
 let result = tripleIt 7
 if result <> 21 then failwith (sprintf "Expected 21 got %d" result)
         """
-        |> asExe
-        |> withLangVersionPreview
-        |> compileAndRun
-        |> shouldSucceed
+        |> compileAndRunPreview
 
     [<Fact>]
     let ``F# Extension attribute method resolves via SRTP cross-assembly`` () =
@@ -5078,11 +4860,7 @@ let inline tripleIt (x: ^T) = (^T : (member Triple : unit -> int) x)
 let result = tripleIt 7
 if result <> 21 then failwith (sprintf "Expected 21 got %d" result)
         """
-        |> asExe
-        |> withLangVersionPreview
-        |> withReferences [library]
-        |> compileAndRun
-        |> shouldSucceed
+        |> compileAndRunPreviewWith [library]
 
     [<Fact>]
     let ``Internal extension from referenced assembly not resolved via SRTP`` () =
@@ -5175,7 +4953,4 @@ type Foo with
 let r = { X = 1 } + { X = 2 }
 if r.X <> 3 then failwith (sprintf "Expected 3 but got %d" r.X)
         """
-        |> asExe
-        |> withLangVersionPreview
-        |> compileAndRun
-        |> shouldSucceed
+        |> compileAndRunPreview
