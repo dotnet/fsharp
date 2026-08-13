@@ -2001,18 +2001,27 @@ type MemoizeN with
     static member        MemoizeN (_: Default1, _:      'a -> 'b) = MemoizeN.getOrAdd (ConcurrentDictionary ())
     static member inline MemoizeN (_: MemoizeN, _:'t -> 'a -> 'b) = MemoizeN.getOrAdd (ConcurrentDictionary ()) << (<<) memoizeN
 
-let mutable calls = 0
-let sum3 a (b:int) c = calls <- calls + 1; a + b + c
+let effs = ResizeArray ()
+let sum3 a (b:int) c = effs.Add "sum3"; a + b + c
 let msum3 = memoizeN sum3
 msum3 1 2 3 |> ignore
 msum3 1 2 3 |> ignore
-if calls <> 1 then failwith $"depth-3 memoization ran {calls} times, expected 1"
+if effs.Count <> 1 then failwith $"depth-3 memoization ran the function {effs.Count} times, expected 1"
+
+let effs2 = ResizeArray ()
+let sum2 (a:int) (b:int) = effs2.Add "sum2"; a + b
+let msum2 = memoizeN sum2
+msum2 1 1 |> ignore
+msum2 1 1 |> ignore
+if effs2.Count <> 1 then failwith $"depth-2 memoization ran the function {effs2.Count} times, expected 1"
 """
         |> asExe
         |> compileAndRun
         |> shouldSucceed
 
-    // Without the `not csenv.MatchingOnly` gate, the lambda's type is left uninferred (FS0072).
+    // Guards the `not csenv.MatchingOnly` gate of the SolveFunTypeEqn SRTP fix (mirrors the same
+    // guard in SolveTypeEqualsType): an SRTP-constrained argument must not disturb overload
+    // candidate selection, else the lambda's type is left uninferred (FS0072).
     [<Fact>]
     let ``SRTP argument does not disturb overload resolution during MatchingOnly`` () =
         FSharp """

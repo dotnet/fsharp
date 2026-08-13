@@ -1500,10 +1500,12 @@ and SolveFunTypeEqn csenv ndeep m2 trace cxsln domainTy1 domainTy2 rangeTy1 rang
     trackErrors {
         let g = csenv.g
         let domainTy2 = reqTyForArgumentNullnessInference g domainTy1 domainTy2
-        // Keep a typar that still carries an unsolved SRTP constraint as the unification
-        // representative; otherwise its pending recursive trait resolution is merged away and
-        // specialization is truncated by one currying level (regressed by #15181). Under
-        // MatchingOnly only the left type variable may be solved, so keep the original order.
+        // Keep an inference variable that still carries an unsolved SRTP constraint as the
+        // unification representative: if the required domain absorbs it, the pending recursive
+        // trait resolution is merged away and recursive SRTP specialization is truncated by one
+        // currying level. This restores the forward domain order that nullness PR #15181 reversed,
+        // but only for that case; skipped under MatchingOnly, where only the left type variable may
+        // be solved (see SolveTypeEqualsType).
         let inline isUnsolvedTraitTypar ty =
             match tryDestTyparTy g ty with
             | ValueSome tp -> tp |> HasConstraint (function TyparConstraint.MayResolveMember(traitInfo, _) -> traitInfo.Solution.IsNone | _ -> false)
