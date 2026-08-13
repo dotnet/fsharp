@@ -104,8 +104,11 @@ type ValFlags =
         isGeneratedEventVal: bool ->
             ValFlags
 
-    /// Reconstruct flags from the F# binary metadata, undoing the InlinedDefinition -> Always
-    /// normalization performed by PickledBits.
+    /// Reconstruct flags from the F# binary metadata. PickledBits always writes
+    /// ValInline.InlinedDefinition (0x00) out as ValInline.Always (0x01), so zero inline bits
+    /// are never produced by a compiler that has this normalization. Any zero bits seen here
+    /// are therefore legacy metadata from compilers older than PR #19548, which used the same
+    /// 0x00 bits to mean ValInline.Always (ShouldInline=true), and must be imported as such.
     static member OfPickledBits: bits: int64 -> ValFlags
 
     member WithIsCompilerGenerated: isCompGen: bool -> ValFlags
