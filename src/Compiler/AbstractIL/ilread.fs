@@ -1908,7 +1908,7 @@ let rec seekReadModule (ctxt: ILMetadataReader) canReduceMemory (pectxtEager: PE
         MetadataIndex = idx
         Name = ilModuleName
         NativeResources = nativeResources
-        TypeDefs = mkILTypeDefsComputed (fun () -> seekReadTopTypeDefs ctxt)
+        TypeDefs = mkILTypeDefsGroupedComputed (fun () -> seekReadTopTypeDefEntries ctxt) (fun () -> Array.empty)
         SubSystemFlags = int32 subsys
         IsILOnly = ilOnly
         SubsystemVersion = subsysversion
@@ -2075,14 +2075,6 @@ and seekIsTopTypeDefOfIdx ctxt idx =
     let flags, _, _, _, _, _ = seekReadTypeDefRow ctxt idx
     isTopTypeDef flags
 
-and readBlobHeapAsSplitTypeName ctxt (nameIdx, namespaceIdx) =
-    let name = readStringHeap ctxt nameIdx
-    let nspace = readStringHeapOption ctxt namespaceIdx
-
-    match nspace with
-    | Some nspace -> splitNamespace nspace, name
-    | None -> [], name
-
 and readBlobHeapAsTypeName ctxt (nameIdx, namespaceIdx) =
     let name = readStringHeap ctxt nameIdx
     let nspace = readStringHeapOption ctxt namespaceIdx
@@ -2102,18 +2094,8 @@ and seekReadTypeDefRowWithExtents ctxt (idx: int) =
     let info = seekReadTypeDefRow ctxt idx
     info, seekReadTypeDefRowExtents ctxt info idx
 
-and seekReadPreTypeDef ctxt toponly (idx: int) =
-    let flags, nameIdx, namespaceIdx, _, _, _ = seekReadTypeDefRow ctxt idx
-
-    if toponly && not (isTopTypeDef flags) then
-        None
-    else
-        let ns, n = readBlobHeapAsSplitTypeName ctxt (nameIdx, namespaceIdx)
-        // Return the ILPreTypeDef
-        Some(mkILPreTypeDefRead (ns, n, idx, ctxt.typeDefReader))
-
 and typeDefReader ctxtH : ILTypeDefStored =
-    mkILTypeDefReader (fun idx ->
+    let getTypeDef idx =
         let (ctxt: ILMetadataReader) = getHole ctxtH
         let mdv = ctxt.mdfile.GetView()
         // Re-read so as not to save all these in the lazy closure - this suspension ctxt.is the largest
@@ -2251,14 +2233,25 @@ and typeDefReader ctxtH : ILTypeDefStored =
             additionalFlags = additionalFlags,
             customAttrsStored = ILAttributesStored.CreateReader(idx, ctxt.customAttrsReaderFn_TypeDef),
             metadataIndex = idx
-        ))
+        )
 
-and seekReadTopTypeDefs (ctxt: ILMetadataReader) =
+    let getName nameIdx = readStringHeap (getHole ctxtH) nameIdx
+
+    mkILTypeDefReader (getTypeDef, getName)
+
+// Only namespaces are read here; a name is left to its pre-type-def, so un-imported ones cost nothing.
+and seekReadTopTypeDefEntries (ctxt: ILMetadataReader) =
     [|
         for i = 1 to ctxt.getNumRows TableNames.TypeDef do
-            match seekReadPreTypeDef ctxt true i with
-            | None -> ()
-            | Some td -> yield td
+            let flags, nameIdx, namespaceIdx, _, _, _ = seekReadTypeDefRow ctxt i
+
+            if isTopTypeDef flags then
+                let ns =
+                    match readStringHeapOption ctxt namespaceIdx with
+                    | Some nspace -> splitNamespace nspace
+                    | None -> []
+
+                yield struct (ns, mkILPreTypeDefRead (nameIdx, i, ctxt.typeDefReader))
     |]
 
 and seekReadNestedTypeDefs (ctxt: ILMetadataReader) tidx =
@@ -2266,11 +2259,11 @@ and seekReadNestedTypeDefs (ctxt: ILMetadataReader) tidx =
         let nestedIdxs =
             seekReadIndexedRows (ctxt.getNumRows TableNames.Nested, seekReadNestedRow ctxt, snd, simpleIndexCompare tidx, false, fst)
 
+        // Nested types carry no namespace in metadata.
         [|
             for i in nestedIdxs do
-                match seekReadPreTypeDef ctxt false i with
-                | None -> ()
-                | Some td -> yield td
+                let _, nameIdx, _, _, _, _ = seekReadTypeDefRow ctxt i
+                yield mkILPreTypeDefRead (nameIdx, i, ctxt.typeDefReader)
         |])
 
 and seekReadInterfaceImpls (ctxt: ILMetadataReader) mdv numTypars tidx =
