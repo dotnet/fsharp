@@ -2190,7 +2190,7 @@ and typeDefReader ctxtH : ILTypeDefStored =
         let fdefs = seekReadFields ctxt (numTypars, hasLayout) fieldsIdx endFieldsIdx
         let nested = seekReadNestedTypeDefs ctxt idx
 
-        let impls = seekReadInterfaceImpls ctxt mdv numTypars idx
+        let impls = seekReadInterfaceImpls ctxt numTypars idx
 
         let mimpls = seekReadMethodImpls ctxt numTypars idx
         let props = seekReadProperties ctxt numTypars idx
@@ -2246,8 +2246,10 @@ and seekReadNestedTypeDefs (ctxt: ILMetadataReader) tidx =
                 yield mkILPreTypeDefRead (nameIdx, i, ctxt.typeDefReader)
         |])
 
-and seekReadInterfaceImpls (ctxt: ILMetadataReader) mdv numTypars tidx =
+and seekReadInterfaceImpls (ctxt: ILMetadataReader) numTypars tidx =
     InterruptibleLazy(fun () ->
+        let mdv = ctxt.mdfile.GetView()
+
         seekReadIndexedRows (
             ctxt.getNumRows TableNames.InterfaceImpl,
             id,
