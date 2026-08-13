@@ -266,6 +266,15 @@ type ValFlags(flags: int64) =
         else
             bits
 
+    /// Reconstruct flags from the F# binary metadata, undoing the InlinedDefinition -> Always
+    /// normalization performed by PickledBits. This also fixes up DLLs compiled by compilers older
+    /// than PR #19548, which wrote the same 0x00 bits to mean ValInline.Always (ShouldInline=true).
+    static member OfPickledBits(bits: int64) =
+        if bits &&& 0b00000000000000110000L = 0L then
+            ValFlags(bits ||| 0b00000000000000010000L)
+        else
+            ValFlags bits
+
 /// Represents the kind of a type parameter
 [<RequireQualifiedAccess (* ; StructuredFormatDisplay("{DebugText}") *) >]
 type TyparKind = 
