@@ -190,14 +190,24 @@ let main _ =
     let ``Issue 20253 - imports legacy zero-bit inline metadata`` () =
         let legacyDll = Path.Combine(__SOURCE_DIRECTORY__, "LegacyInline.dll")
 
-        FSharp """
+        let compiled =
+            FSharp """
 module Consumer
 open LegacyInline.Library
-let result (x: int) = increment x
-        """
-        |> asLibrary
-        |> withOptions [ $"-r:{legacyDll}" ]
-        |> withNoOptimize
-        |> compile
-        |> shouldSucceed
-        |> verifyILNotPresent [ "LegacyInline.Library::increment" ]
+
+type Adder() =
+    static member Invoke(x: int) = x + 1
+
+[<EntryPoint>]
+let main _ =
+    if invoke (Adder()) = 42 then 0 else 1
+            """
+            |> asExe
+            |> withOptions [ $"-r:{legacyDll}" ]
+            |> withOptimize
+            |> compile
+            |> shouldSucceed
+
+        compiled |> verifyILNotPresent [ "LegacyInline.Library::invoke" ]
+
+        compiled |> run |> shouldSucceed |> ignore
