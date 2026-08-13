@@ -11,7 +11,7 @@ open Xunit
 open System.Threading
 open System.Threading.Tasks
 
-// Cancels default token.
+// Test affects global state via Async.CancelDefaultToken
 [<Collection(nameof FSharp.Test.NotThreadSafeResourceCollection)>]
 module AsyncType =
 
@@ -40,6 +40,7 @@ module AsyncType =
 
         async { return () } |> expect Success
 
+// Multiple tests affect global state via Async.CancelDefaultToken
 [<Collection(nameof FSharp.Test.NotThreadSafeResourceCollection)>]
 type AsyncType() =
 
