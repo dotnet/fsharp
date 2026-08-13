@@ -14,6 +14,7 @@
 
   **Includes:**
   - Extension operators resolve via SRTP constraints (suggestion #230)
+  - Only **public** members solve SRTP constraints — a `private`, `internal`, or `protected` member (even one visible at the definition site, or exposed via `InternalsVisibleTo`) is not a valid witness and is rejected at compile time
   - Intrinsic members take priority over extension members
   - FS1215 warning suppressed when defining extension operators with preview langversion
   - Weak resolution disabled for inline code, keeping SRTP constraints generic

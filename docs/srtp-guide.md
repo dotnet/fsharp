@@ -65,6 +65,26 @@ When solving an SRTP constraint:
 2. **Overload resolution** considers both intrinsic and extension members. Extension members are lower priority in the resolution order (same as in regular F# overload resolution)
 3. Among extensions, standard F# name resolution rules apply (later `open` shadows earlier)
 
+### Accessibility
+
+An SRTP constraint may only be solved by a **public** member. A `private`, `internal`, or
+`protected` member is never a valid witness — even one that is visible at the point where the
+inline function is defined. The inline function carries its solution to arbitrary call sites,
+so a non-public witness would be inlined into scopes where it is inaccessible (a runtime
+`MethodAccessException`). The compiler therefore rejects it at definition time:
+
+```fsharp
+module A =
+    type System.Int32 with
+        static member private Secret (x: int) = x + 1
+    // error FS0001: ... 'Secret' ... is not public
+    let inline useSecret (x: ^T) = (^T : (static member Secret: ^T -> ^T) x)
+```
+
+This applies to every witness kind — named methods, operators, property accessors, and
+`op_Implicit`/`op_Explicit` conversions — and holds across assembly boundaries: an `internal`
+member is not a valid witness in a referencing assembly even with `InternalsVisibleTo`.
+
 ### Scope Capture
 
 With `--langversion:preview`, extrinsic extension members (defined on a type from another assembly) participate in SRTP constraint resolution when they are in scope where the inline function is defined:
@@ -176,11 +196,11 @@ Without the attribute, these overloads would produce an ambiguity error. Note th
 
 ## Design Intent: Aspirational Patterns
 
-> **⚠️ NOT IMPLEMENTED**: The patterns below are taken from the RFC to illustrate the
-> long-term design intent. They do **not** compile with the current implementation.
-> Cross-type operator extensions (e.g., `float + int`) interact with built-in operator
-> resolution in complex ways that are not yet supported. Do not use these patterns in
-> production code.
+> **⚠️ MOSTLY ASPIRATIONAL**: The patterns below are taken from the RFC to illustrate the
+> long-term design intent. Except where a subsection explicitly shows a working example, they do
+> **not** compile with the current implementation. Cross-type operator extensions (e.g.,
+> `float + int`) interact with built-in operator resolution in complex ways that are not yet
+> supported. Do not rely on the aspirational snippets in production code.
 
 ### Numeric Widening via Extension Operators (NOT IMPLEMENTED)
 
@@ -202,12 +222,27 @@ type System.Double with
 > arithmetic for all `float` operations in scope. This pattern requires careful design
 > to avoid degrading error messages and performance for existing code.
 
-### Defining op_Implicit via Extension Members (NOT IMPLEMENTED)
+### Defining op_Implicit via Extension Members
 
-The RFC describes populating a generic implicit conversion function:
+Public extension `op_Implicit`/`op_Explicit` conversions **do** participate in SRTP resolution
+when the target type is determined at the call site:
 
 ```fsharp
-// ⚠️ ASPIRATIONAL — does not compile
+module A =
+    type Wrap = { X: int }
+    type Wrap with
+        static member op_Implicit (w: Wrap) : int = w.X
+    let inline conv (x: ^T) : int = ((^T) : (static member op_Implicit : ^T -> int) x)
+
+let r = A.conv { A.Wrap.X = 5 }  // 5
+```
+
+What is **not** supported is the return-type-polymorphic form the RFC describes — a single
+`(^T or ^U)` conversion function backed by several `op_Implicit` overloads that differ only by
+return type:
+
+```fsharp
+// ⚠️ ASPIRATIONAL — does not compile (error FS0001: None of the types support the operator 'op_Implicit')
 let inline implicitConv (x: ^T) : ^U = ((^T or ^U) : (static member op_Implicit : ^T -> ^U) (x))
 
 type System.Int32 with
@@ -215,5 +250,5 @@ type System.Int32 with
     static member inline op_Implicit (a: int32) : double = double a
 ```
 
-> **Note**: Even if implemented, these conversions would be explicit in F# code
-> (you must call `implicitConv`), not implicit as in C#.
+> **Note**: Even where supported, these conversions are explicit in F# code
+> (you must call the conversion function), not implicit as in C#.
