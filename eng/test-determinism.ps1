@@ -429,6 +429,7 @@ try {
   TryDownloadDotnetFrameworkSdk
 
   $dotnetPath = InitializeDotNetCli
+  # Apphosts (bootstrap fsc.exe, testhost, etc.) resolve runtimes via DOTNET_ROOT, not PATH.
   $env:DOTNET_ROOT = "$dotnetPath"
   Get-Item -Path Env:
 
