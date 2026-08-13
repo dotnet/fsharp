@@ -759,35 +759,34 @@ stages:
           displayName: UMX_Slow_Repro        
           expectLocalCore: true
         - repo: fsprojects/FSharpPlus
-          commit: f614035b75922aba41ed6a36c2fc986a2171d2b8
+          commit: f42f81885111c652b08218e0880c264447ae56e4
           buildScript: build.cmd
           displayName: FSharpPlus_Windows
         - repo: fsprojects/FSharpPlus
-          commit: f614035b75922aba41ed6a36c2fc986a2171d2b8
+          commit: f42f81885111c652b08218e0880c264447ae56e4
           buildScript: build.sh
           displayName: FSharpPlus_Linux
           useVmImage: $(LinuxMachineQueueName)
           usePool: $(DncEngPublicBuildPool)
         - repo: fsprojects/FSharpPlus
-          commit: 2648efe
+          commit: f42f81885111c652b08218e0880c264447ae56e4
           buildScript: dotnet build tests/FSharpPlus.Tests/FSharpPlus.Tests.fsproj -c Release -bl
           displayName: FsharpPlus_NET10_Build_Lib_Tests
           expectLocalCore: true
-         # remove this before merging
         - repo: fsprojects/FSharpPlus
-          commit: 2648efe
+          commit: f42f81885111c652b08218e0880c264447ae56e4
           buildScript: dotnet msbuild build.proj -t:Build;Test -bl
           displayName: FsharpPlus_NET10_Test_Debug
         - repo: fsprojects/FSharpPlus
-          commit: 2648efe
+          commit: f42f81885111c652b08218e0880c264447ae56e4
           buildScript: dotnet msbuild build.proj -t:Build;Test -p:Configuration=Release -bl
           displayName: FsharpPlus_NET10_Test_Release
         - repo: fsprojects/FSharpPlus
-          commit: 2648efe
+          commit: f42f81885111c652b08218e0880c264447ae56e4
           buildScript: dotnet msbuild build.proj -t:Build;AllDocs -bl
           displayName: FsharpPlus_NET10_Docs
         - repo: fsprojects/FSharpPlus
-          commit: 2648efe
+          commit: f42f81885111c652b08218e0880c264447ae56e4
           buildScript: build.sh
           displayName: FsharpPlus_Net10_Linux
           useVmImage: $(LinuxMachineQueueName)
