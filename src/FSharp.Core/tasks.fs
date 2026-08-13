@@ -788,13 +788,13 @@ module Task =
     let catch (task: Task<'T>) : Task<Result<'T, exn>> =
         task |> map Ok |> catchWith Error
 
-#if NETSTANDARD2_1
+#if NETSTANDARD2_1 || NET
     [<CompiledName("OfValueTask")>]
     let inline ofValueTask (valueTask: ValueTask<'T>) : Task<'T> =
         valueTask.AsTask()
 #endif
 
-#if NETSTANDARD2_1
+#if NETSTANDARD2_1 || NET
 [<RequireQualifiedAccess>]
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module ValueTask =
