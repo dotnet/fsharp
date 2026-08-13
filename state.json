@@ -1,1 +1,1 @@
-{"timestamp":"2026-08-12T09:21:18Z","result":"no_eligible_prs","prs_processed":0,"notes":"No open PRs with AI-Issue-Regression-PR label found."}
+{"timestamp":"2026-08-13T13:23:49Z","result":"all_healthy","prs_processed":2,"notes":"PR #20257 CI still running (just started), no reviews. PR #20251 CI green, no human feedback since last shepherd fix."}
