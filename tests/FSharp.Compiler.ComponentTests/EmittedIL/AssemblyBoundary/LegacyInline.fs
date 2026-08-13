@@ -1,9 +1,9 @@
-// This source is the provenance record for LegacyInline.dll, which is checked in as a binary
-// and must not be regenerated with a current compiler. It was built with the official .NET SDK
-// 3.1.100 / F# 4.7 / fsc 10.7.0.0:
-//   dotnet fsc.dll --target:library --targetprofile:netcore --optimize+ -o:LegacyInline.dll LegacyInline.fs
-// The resulting DLL must retain the pre-F#6 PseudoVal zero-bit inline metadata that
-// https://github.com/dotnet/fsharp/issues/20253 depends on.
+// Provenance record for checked-in LegacyInline.dll.
+// Build with official .NET SDK 3.1.100 / F# 4.7 / fsc 10.7.0.0 from a netstandard2.0 SDK project via:
+//   dotnet build LegacyInline.fsproj -c Release
+// with Optimize=true, Deterministic=true, and PathMap=<project-root>=/src.
+// The DLL must retain the pre-F#6 PseudoVal zero-bit inline metadata for
+// https://github.com/dotnet/fsharp/issues/20253 and must not be regenerated with a current compiler.
 namespace LegacyInline
 
 type Lens<'a, 'b> =
