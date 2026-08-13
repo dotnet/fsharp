@@ -838,10 +838,10 @@ let hasthisToByte hasthis =
      | ILThisConvention.InstanceExplicit -> e_IMAGE_CEE_CS_CALLCONV_INSTANCE_EXPLICIT
      | ILThisConvention.Static -> 0x00uy
 
-let callconvToByte ntypars (Callconv (hasthis, bcc)) =
-    hasthisToByte hasthis |||
+let callconvToByte ntypars (callconv: ILCallingConv) =
+    hasthisToByte callconv.ThisConv |||
     (if ntypars > 0 then e_IMAGE_CEE_CS_CALLCONV_GENERIC else 0x00uy) |||
-    (match bcc with
+    (match callconv.BasicConv with
     | ILArgConvention.FastCall -> e_IMAGE_CEE_CS_CALLCONV_FASTCALL
     | ILArgConvention.StdCall -> e_IMAGE_CEE_CS_CALLCONV_STDCALL
     | ILArgConvention.ThisCall -> e_IMAGE_CEE_CS_CALLCONV_THISCALL

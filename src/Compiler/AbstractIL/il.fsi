@@ -175,19 +175,20 @@ type ILThisConvention =
 
 [<StructuralEquality; StructuralComparison>]
 type ILCallingConv =
+    private
     | Callconv of ILThisConvention * ILArgConvention
 
-    member internal IsInstance: bool
-    member internal IsInstanceExplicit: bool
-    member internal IsStatic: bool
-    member internal ThisConv: ILThisConvention
-    member internal BasicConv: ILArgConvention
+    member IsInstance: bool
+    member IsInstanceExplicit: bool
+    member IsStatic: bool
+    member ThisConv: ILThisConvention
+    member BasicConv: ILArgConvention
 
     static member Instance: ILCallingConv
     static member Static: ILCallingConv
 
-    /// Returns the shared instance for this combination. There are only 18, so readers should use
-    /// this instead of allocating a fresh 'Callconv' per method signature.
+    /// Returns the shared instance for this combination. Since the representation is private and there
+    /// are only 18 combinations, no calling convention is ever allocated per method signature.
     static member Create: ILThisConvention * ILArgConvention -> ILCallingConv
 
 /// Array shapes. For most purposes the rank is the only thing that matters.

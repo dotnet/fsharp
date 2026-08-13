@@ -319,23 +319,26 @@ FSharp.Compiler.AbstractIL.IL+ILCallingConv: Boolean Equals(ILCallingConv)
 FSharp.Compiler.AbstractIL.IL+ILCallingConv: Boolean Equals(ILCallingConv, System.Collections.IEqualityComparer)
 FSharp.Compiler.AbstractIL.IL+ILCallingConv: Boolean Equals(System.Object)
 FSharp.Compiler.AbstractIL.IL+ILCallingConv: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
-FSharp.Compiler.AbstractIL.IL+ILCallingConv: ILArgConvention Item2
-FSharp.Compiler.AbstractIL.IL+ILCallingConv: ILArgConvention get_Item2()
+FSharp.Compiler.AbstractIL.IL+ILCallingConv: Boolean IsInstance
+FSharp.Compiler.AbstractIL.IL+ILCallingConv: Boolean IsInstanceExplicit
+FSharp.Compiler.AbstractIL.IL+ILCallingConv: Boolean IsStatic
+FSharp.Compiler.AbstractIL.IL+ILCallingConv: Boolean get_IsInstance()
+FSharp.Compiler.AbstractIL.IL+ILCallingConv: Boolean get_IsInstanceExplicit()
+FSharp.Compiler.AbstractIL.IL+ILCallingConv: Boolean get_IsStatic()
+FSharp.Compiler.AbstractIL.IL+ILCallingConv: ILArgConvention BasicConv
+FSharp.Compiler.AbstractIL.IL+ILCallingConv: ILArgConvention get_BasicConv()
 FSharp.Compiler.AbstractIL.IL+ILCallingConv: ILCallingConv Create(ILThisConvention, ILArgConvention)
 FSharp.Compiler.AbstractIL.IL+ILCallingConv: ILCallingConv Instance
-FSharp.Compiler.AbstractIL.IL+ILCallingConv: ILCallingConv NewCallconv(ILThisConvention, ILArgConvention)
 FSharp.Compiler.AbstractIL.IL+ILCallingConv: ILCallingConv Static
 FSharp.Compiler.AbstractIL.IL+ILCallingConv: ILCallingConv get_Instance()
 FSharp.Compiler.AbstractIL.IL+ILCallingConv: ILCallingConv get_Static()
-FSharp.Compiler.AbstractIL.IL+ILCallingConv: ILThisConvention Item1
-FSharp.Compiler.AbstractIL.IL+ILCallingConv: ILThisConvention get_Item1()
+FSharp.Compiler.AbstractIL.IL+ILCallingConv: ILThisConvention ThisConv
+FSharp.Compiler.AbstractIL.IL+ILCallingConv: ILThisConvention get_ThisConv()
 FSharp.Compiler.AbstractIL.IL+ILCallingConv: Int32 CompareTo(ILCallingConv)
 FSharp.Compiler.AbstractIL.IL+ILCallingConv: Int32 CompareTo(System.Object)
 FSharp.Compiler.AbstractIL.IL+ILCallingConv: Int32 CompareTo(System.Object, System.Collections.IComparer)
 FSharp.Compiler.AbstractIL.IL+ILCallingConv: Int32 GetHashCode()
 FSharp.Compiler.AbstractIL.IL+ILCallingConv: Int32 GetHashCode(System.Collections.IEqualityComparer)
-FSharp.Compiler.AbstractIL.IL+ILCallingConv: Int32 Tag
-FSharp.Compiler.AbstractIL.IL+ILCallingConv: Int32 get_Tag()
 FSharp.Compiler.AbstractIL.IL+ILCallingConv: System.String ToString()
 FSharp.Compiler.AbstractIL.IL+ILCallingSignature: Boolean Equals(ILCallingSignature)
 FSharp.Compiler.AbstractIL.IL+ILCallingSignature: Boolean Equals(ILCallingSignature, System.Collections.IEqualityComparer)
