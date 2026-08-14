@@ -61,7 +61,7 @@
       "cats": []
     },
     "20133": {
-      "sha": "a2b7ecfc2437",
+      "sha": "d597d969321b",
       "cats": []
     },
     "20128": {
@@ -93,7 +93,7 @@
       "cats": []
     },
     "20100": {
-      "sha": "1457fed49484",
+      "sha": "a601f7140fb0",
       "cats": []
     },
     "20071": {
@@ -156,8 +156,9 @@
       "cats": []
     },
     "20260": {
-      "sha": "6ad68f18a394",
+      "sha": "df55ec38ae57",
       "cats": [
+        "Affects-Agent-Config",
         "Affects-Compiler-Output"
       ]
     }
