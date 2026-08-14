@@ -1109,7 +1109,6 @@ type ILMetadataReader =
         blobsStreamPhysicalLoc: int32
         blobsStreamSize: int32
         readUserStringHeap: int32 -> string
-        memoizeString: string -> string
         readStringHeap: int32 -> string
         readBlobHeap: int32 -> byte[]
         guidsStreamPhysicalLoc: int32
@@ -2083,7 +2082,7 @@ and readBlobHeapAsTypeName ctxt (nameIdx, namespaceIdx) =
 
     match nspace with
     | None -> name
-    | Some ns -> ctxt.memoizeString (ns + "." + name)
+    | Some ns -> ns + "." + name
 
 and seekReadTypeDefRowExtents (ctxt: ILMetadataReader) _info (idx: int) =
     if idx >= ctxt.getNumRows TableNames.TypeDef then
@@ -4250,7 +4249,7 @@ let openMetadataReader
                 let firstStreamLength = seekReadInt32 mdv (streamHeadersStart + 4)
                 firstStreamOffset, firstStreamLength
 
-    let stringsStreamPhysicalLoc, stringsStreamSize =
+    let stringsStreamPhysicalLoc, _stringsStreamSize =
         findStream [| 0x23; 0x53; 0x74; 0x72; 0x69; 0x6e; 0x67; 0x73 |] (* #Strings *)
 
     let userStringsStreamPhysicalLoc, userStringsStreamSize =
@@ -4524,8 +4523,9 @@ let openMetadataReader
     let cacheUserStringHeap =
         mkCacheGeneric reduceMemoryUsage inbase "UserStringHeap" (userStringsStreamSize / 20 + 1)
     // nb. Lots and lots of cache hits on this cache, hence never optimize cache away
-    let cacheStringHeap =
-        mkCacheGeneric false inbase "string heap" (stringsStreamSize / 50 + 1)
+    // Sized to grow rather than from the stream length: only a small fraction of a #Strings heap is ever
+    // read, so sizing from it left the table around 11% full, one nearly-empty table per reference.
+    let cacheStringHeap = mkCacheGeneric false inbase "string heap" 0
 
     let cacheBlobHeap =
         mkCacheGeneric reduceMemoryUsage inbase "blob heap" (blobsStreamSize / 50 + 1)
@@ -4569,7 +4569,6 @@ let openMetadataReader
             stringsStreamPhysicalLoc = stringsStreamPhysicalLoc
             blobsStreamPhysicalLoc = blobsStreamPhysicalLoc
             blobsStreamSize = blobsStreamSize
-            memoizeString = Tables.memoize id
             readUserStringHeap = cacheUserStringHeap (readUserStringHeapUncached ctxtH)
             readStringHeap = cacheStringHeap (readStringHeapUncached ctxtH)
             readBlobHeap = cacheBlobHeap (readBlobHeapUncached ctxtH)
