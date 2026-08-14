@@ -6854,7 +6854,7 @@ attrAnonUnionCaseDecls:
 
 /* The core of an anonymous union case definition */
 attrAnonUnionCaseDecl:
-  | typ { let mDecl = rhs parseState 3 in (fun xmlDoc -> SynAnonUnionCase ($1, xmlDoc, mDecl)) }
+  | typ { let mDecl = rhs parseState 1 in (fun xmlDoc -> SynAnonUnionCase ($1, xmlDoc, mDecl)) }
 
 typeArgsNoHpaDeprecated:
   | typeArgsActual

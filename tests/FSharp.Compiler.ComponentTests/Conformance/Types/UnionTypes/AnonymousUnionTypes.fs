@@ -200,7 +200,7 @@ module AnonymousUnionTypes =
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
-            (Error 4501, Line 4, Col 35, Line 4, Col 36, "The type System.Nullable<'T> is not allowed in an anonymous union type. Consider adding null case instead.")
+            (Error 4501, Line 4, Col 8, Line 4, Col 37, "The type System.Nullable<'T> is not allowed in an anonymous union type. Consider adding null case instead.")
         ]
 
     [<Theory; FileInlineData("E_AnonWithNullPosition1.fs")>]
@@ -256,7 +256,7 @@ module AnonymousUnionTypes =
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
-            (Error 4503, Line 4, Col 18, Line 4, Col 22, "The type 'System.ValueType' does not support 'null' because it is not a reference type. A null case may only be added to an anonymous union whose common type is a reference type.")
+            (Error 4503, Line 4, Col 8, Line 4, Col 23, "The type 'System.ValueType' does not support 'null' because it is not a reference type. A null case may only be added to an anonymous union whose common type is a reference type.")
         ]
 
     [<Theory; FileInlineData("E_AnonWithNullNested1.fs")>]
@@ -267,7 +267,7 @@ module AnonymousUnionTypes =
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
-            (Error 4502, Line 4, Col 25, Line 4, Col 26, "'null' may only appear as the last case of an outermost anonymous union, e.g. '(int | string | null)'.")
+            (Error 4502, Line 4, Col 8, Line 4, Col 27, "'null' may only appear as the last case of an outermost anonymous union, e.g. '(int | string | null)'.")
         ]
 
     [<Theory; FileInlineData("E_AnonWithNullNested2.fs")>]
@@ -278,9 +278,9 @@ module AnonymousUnionTypes =
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
-            (Error 4502, Line 4, Col 26, Line 4, Col 27, "'null' may only appear as the last case of an outermost anonymous union, e.g. '(int | string | null)'.");
-            (Warning 4500, Line 4, Col 18, Line 4, Col 19, "The type 'int' is a subtype of 'obj' and will be ignored");
-            (Warning 4500, Line 4, Col 18, Line 4, Col 19, "The type 'int16' is a subtype of 'System.Object' and will be ignored")
+            (Error 4502, Line 4, Col 13, Line 4, Col 38, "'null' may only appear as the last case of an outermost anonymous union, e.g. '(int | string | null)'.");
+            (Warning 4500, Line 4, Col 8, Line 4, Col 45, "The type 'int' is a subtype of 'obj' and will be ignored");
+            (Warning 4500, Line 4, Col 8, Line 4, Col 45, "The type 'int16' is a subtype of 'obj' and will be ignored")
         ]
 
     [<Theory; FileInlineData("W_AnonPatternMatching.fs")>]
@@ -346,7 +346,7 @@ module AnonymousUnionTypes =
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
-            (Warning 4500, Line 0, Col 1, Line 0, Col 1, "The type 'int' is a subtype of 'int' and will be ignored")
+            (Warning 4500, Line 4, Col 8, Line 4, Col 17, "The type 'int' is a subtype of 'int' and will be ignored")
         ]
 
     [<Theory; FileInlineData("W_AnonTypeInclusion2.fs")>]
@@ -368,7 +368,7 @@ module AnonymousUnionTypes =
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
-            (Warning 4500, Line 0, Col 1, Line 0, Col 1, "The type 'int' is a subtype of 'System.Object' and will be ignored")
+            (Warning 4500, Line 4, Col 8, Line 4, Col 17, "The type 'int' is a subtype of 'System.Object' and will be ignored")
         ]
 
     [<Theory; FileInlineData("W_AnonTypeInclusion4.fs")>]
@@ -390,7 +390,7 @@ module AnonymousUnionTypes =
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
-            (Warning 4500, Line 4, Col 18, Line 4, Col 19, "The type 'int' is a subtype of 'int' and will be ignored")
+            (Warning 4500, Line 4, Col 8, Line 4, Col 20, "The type 'int' is a subtype of 'int' and will be ignored")
         ]
 
     [<Theory; FileInlineData("W_AnonTupleEliminationOverlap.fs")>]

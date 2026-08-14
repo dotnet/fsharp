@@ -5019,7 +5019,7 @@ and TcAnonUnionTypeOr (cenv: cenv) env (tpenv: UnscopedTyparEnv) synCases m =
             // Warning: new type pt is a subtype of obj and will be ignored
             warning(Error(FSComp.SR.tcAnonUnionCaseOverlap(
                 NicePrint.stringOfTy env.DisplayEnv pt,
-                NicePrint.stringOfTy env.DisplayEnv cenv.g.system_Object_ty), m))
+                NicePrint.stringOfTy env.DisplayEnv cenv.g.obj_ty_noNulls), m))
 
     let createDisjointTypes synAnonUnionCases =
         let unionTypeCases = ResizeArray()
