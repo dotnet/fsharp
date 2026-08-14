@@ -174,8 +174,9 @@ type ExtensionMember =
 
     /// ILExtMem(declaringTyconRef, ilMetadata, pri)
     ///
-    /// IL-style extension member, backed by some kind of method with an [<Extension>] attribute
-    | ILExtMem of TyconRef * MethInfo * ExtensionMethodPriority
+    /// IL-style extension members, backed by methods with an [<Extension>] attribute. Methods extending
+    /// the same type via one 'open' are grouped: an 'open' of a class like Enumerable adds dozens of them.
+    | ILExtMem of TyconRef * MethInfo list * ExtensionMethodPriority
 
     /// Describes the sequence order of the introduction of an extension method. Extension methods that are introduced
     /// later through 'open' get priority in overload resolution.
