@@ -5,9 +5,11 @@ namespace Microsoft.FSharp.Control
     open System
     open System.Threading
     open System.Threading.Tasks
+    open System.Runtime.CompilerServices
     open System.Runtime.ExceptionServices
 
     open Microsoft.FSharp.Core
+    open Microsoft.FSharp.Core.CompilerServices
     open Microsoft.FSharp.Control
     open Microsoft.FSharp.Collections
 
@@ -776,47 +778,210 @@ namespace Microsoft.FSharp.Control
         /// <example-tbd></example-tbd>
         static member AwaitIAsyncResult: iar: IAsyncResult * ?millisecondsTimeout:int -> Async<bool>
 
-        /// <summary>Return an asynchronous computation that will wait for the given task to complete and return
-        /// its result.</summary>
-        ///
+        /// <summary>Creates an asynchronous computation that will wait asynchronously for the given task to complete, returning
+        /// its result. Note exceptions are wrapped in <see cref="T:System.AggregateException"/>; for new
+        /// code, prefer <c>Async.Await</c>, which surfaces single exceptions directly.</summary>
         /// <param name="task">The task to await.</param>
-        ///
-        /// <remarks>If an exception occurs in the asynchronous computation then an exception is re-raised by this
-        /// function.
-        ///
-        /// If the task is cancelled then <see cref="F:System.Threading.Tasks.TaskCanceledException"/> is raised. Note
+        /// <remarks>If the task is canceled then <see cref="T:System.Threading.Tasks.TaskCanceledException"/> is raised. Note
         /// that the task may be governed by a different cancellation token to the overall async computation
         /// where the AwaitTask occurs. In practice you should normally start the task with the
         /// cancellation token returned by <c>let! ct = Async.CancellationToken</c>, and catch
-        /// any <see cref="F:System.Threading.Tasks.TaskCanceledException"/> at the point where the
+        /// any <see cref="T:System.Threading.Tasks.TaskCanceledException"/> at the point where the
         /// overall async is started.
         /// </remarks>
-        ///
         /// <category index="2">Awaiting Results</category>
-        ///
-        /// <example-tbd></example-tbd>
+        /// <example id="awaittask-1">
+        /// <code lang="fsharp">
+        /// let t = Task.Run(fun () -> invalidOp "test"; 42)
+        /// async {
+        ///     try
+        ///         let! _ = Async.AwaitTask t
+        ///         ()
+        ///     with
+        ///     | :? System.InvalidOperationException ->
+        ///         printfn "unreachable" // will not match: exception is wrapped in AggregateException
+        ///     | :? System.AggregateException as e ->
+        ///         printfn $"Caught: {e.InnerException.Message}"
+        /// } |> Async.RunSynchronously
+        /// </code>
+        /// Prints <c>Caught: test</c>. The <c>InvalidOperationException</c> branch is not reached because
+        /// exceptions from tasks are always wrapped in <see cref="T:System.AggregateException"/>. Contrast with <c>Async.Await</c>.
+        /// </example>
         static member AwaitTask: task: Task<'T> -> Async<'T>
 
-        /// <summary>Return an asynchronous computation that will wait for the given task to complete and return
+        /// <summary>Creates an asynchronous computation that will wait asynchronously for the given task to complete.
+        /// Note exceptions are wrapped in <see cref="T:System.AggregateException"/>; for new
+        /// code, prefer <c>Async.Await</c>, which surfaces single exceptions directly.</summary>
+        /// <param name="task">The task to await.</param>
+        /// <remarks>If the task is canceled then <see cref="T:System.Threading.Tasks.TaskCanceledException"/> is raised. Note
+        /// that the task may be governed by a different cancellation token to the overall async computation
+        /// where the AwaitTask occurs. In practice you should normally start the task with the
+        /// cancellation token returned by <c>let! ct = Async.CancellationToken</c>, and catch
+        /// any <see cref="T:System.Threading.Tasks.TaskCanceledException"/> at the point where the
+        /// overall async is started.
+        /// </remarks>
+        /// <category index="2">Awaiting Results</category>
+        /// <example id="awaittask-2">
+        /// <code lang="fsharp">
+        /// let t = Task.Run(fun () -> invalidOp "test")
+        /// async {
+        ///     try
+        ///         do! Async.AwaitTask t
+        ///     with
+        ///     | :? System.InvalidOperationException ->
+        ///         printfn "unreachable" // will not match: exception is wrapped in AggregateException
+        ///     | :? System.AggregateException as e ->
+        ///         printfn $"Caught: {e.InnerException.Message}"
+        /// } |> Async.RunSynchronously
+        /// </code>
+        /// Prints <c>Caught: test</c>. The <c>InvalidOperationException</c> branch is not reached because
+        /// exceptions from tasks are always wrapped in <see cref="T:System.AggregateException"/>. Contrast with <c>Async.Await</c>.
+        /// </example>
+        static member AwaitTask: task: Task -> Async<unit>
+
+        /// <summary>Creates an asynchronous computation that will wait for the given task to complete and return
         /// its result.</summary>
         ///
         /// <param name="task">The task to await.</param>
         ///
-        /// <remarks>If an exception occurs in the asynchronous computation then an exception is re-raised by this
-        /// function.
-        ///
-        /// If the task is cancelled then <see cref="F:System.Threading.Tasks.TaskCanceledException"/> is raised. Note
-        /// that the task may be governed by a different cancellation token to the overall async computation
-        /// where the AwaitTask occurs. In practice you should normally start the task with the
-        /// cancellation token returned by <c>let! ct = Async.CancellationToken</c>, and catch
-        /// any <see cref="F:System.Threading.Tasks.TaskCanceledException"/> at the point where the
-        /// overall async is started.
+        /// <remarks>
+        /// <p>Exceptions are surfaced directly: a task faulted with a single exception raises that
+        /// exception; only <see cref="T:System.AggregateException"/>s carrying multiple inner exceptions are
+        /// re-raised as-is. For the legacy behavior of uniformly presenting the raw underlying
+        /// <see cref="T:System.AggregateException"/>, use <c>Async.AwaitTask</c>.</p>
+        /// 
+        /// <p>If the task is canceled then <see cref="T:System.Threading.Tasks.TaskCanceledException"/> is raised.</p>
+        /// 
+        /// <p>Note the task may be governed by a different cancellation token than the overall async computation;
+        /// typically tasks should be wired to the ambient cancellation token obtained via
+        /// <c>let! ct = Async.CancellationToken</c>, catching <see cref="T:System.Threading.Tasks.TaskCanceledException"/>
+        /// where the overall async is started.</p>
         /// </remarks>
         ///
         /// <category index="2">Awaiting Results</category>
         ///
-        /// <example-tbd></example-tbd>
-        static member AwaitTask: task: Task -> Async<unit>
+        /// <example id="await-task-1">
+        /// <code lang="fsharp">
+        /// let t = Task.Run(fun () -> invalidOp "test"; 42)
+        /// async {
+        ///     try
+        ///         let! _ = Async.Await t
+        ///         ()
+        ///     with
+        ///     | :? System.InvalidOperationException as e ->
+        ///         printfn $"Caught: {e.Message}"
+        ///     | :? System.AggregateException ->
+        ///         printfn "unreachable" // will not match: single exception is unwrapped
+        /// } |> Async.RunSynchronously
+        /// </code>
+        /// Prints <c>Caught: test</c>. The <c>AggregateException</c> branch is not reached because a
+        /// single-inner exception is unwrapped. Contrast with <c>Async.AwaitTask</c>.
+        /// </example>
+        static member Await: task: Task<'T> -> Async<'T>
+
+        /// <summary>Creates an asynchronous computation that will wait for the given task to complete.</summary>
+        /// <param name="task">The task to await.</param>
+        /// <remarks>
+        /// <p>Exceptions are surfaced directly: a task faulted with a single exception raises that
+        /// exception; only <see cref="T:System.AggregateException"/>s carrying multiple inner exceptions are
+        /// re-raised as-is. For the legacy behavior of uniformly presenting the raw underlying
+        /// <see cref="T:System.AggregateException"/>, use <c>Async.AwaitTask</c>.</p>
+        /// 
+        /// <p>If the task is canceled then <see cref="T:System.Threading.Tasks.TaskCanceledException"/> is raised.</p>
+        /// 
+        /// <p>Note the task may be governed by a different cancellation token than the overall async computation;
+        /// typically tasks should be wired to the ambient cancellation token obtained via
+        /// <c>let! ct = Async.CancellationToken</c>, catching <see cref="T:System.Threading.Tasks.TaskCanceledException"/>
+        /// where the overall async is started.</p>
+        /// </remarks>
+        /// <category index="2">Awaiting Results</category>
+        /// <example id="await-task-2">
+        /// <code lang="fsharp">
+        /// let t = Task.Run(fun () -> invalidOp "test")
+        /// async {
+        ///     try
+        ///         do! Async.Await t
+        ///     with
+        ///     | :? System.InvalidOperationException as e ->
+        ///         printfn $"Caught: {e.Message}"
+        ///     | :? System.AggregateException ->
+        ///         printfn "unreachable" // will not match: single exception is unwrapped
+        /// } |> Async.RunSynchronously
+        /// </code>
+        /// Prints <c>Caught: test</c>. The <c>AggregateException</c> branch is not reached because a
+        /// single-inner exception is unwrapped. Contrast with <c>Async.AwaitTask</c>.
+        /// </example>
+        static member Await: task: Task -> Async<unit>
+
+#if NETSTANDARD2_1
+        /// <summary>Creates an asynchronous computation that will wait for the given <c>ValueTask</c> to complete and return
+        /// its result.</summary>
+        /// <param name="task">The <c>ValueTask</c> to await.</param>
+        /// <remarks>
+        /// <p>Exceptions are surfaced directly: a task faulted with a single exception raises that
+        /// exception; only <see cref="T:System.AggregateException"/>s carrying multiple inner exceptions are
+        /// re-raised as-is. For the legacy behavior of uniformly presenting the raw underlying
+        /// <see cref="T:System.AggregateException"/>, use <c>Async.AwaitTask</c>.</p>
+        /// 
+        /// <p>If the task is canceled then <see cref="T:System.Threading.Tasks.TaskCanceledException"/> is raised.</p>
+        /// 
+        /// <p>Note the task may be governed by a different cancellation token than the overall async computation;
+        /// typically tasks should be wired to the ambient cancellation token obtained via
+        /// <c>let! ct = Async.CancellationToken</c>, catching <see cref="T:System.Threading.Tasks.TaskCanceledException"/>
+        /// where the overall async is started.</p>
+        /// </remarks>
+        /// <category index="2">Awaiting Results</category>
+        /// <example id="await-valuetask-1">
+        /// <code lang="fsharp">
+        /// let vt = ValueTask&lt;int&gt;(Task.Run(fun () -> invalidOp "test"; 42))
+        /// async {
+        ///     try
+        ///         let! _ = Async.Await vt
+        ///         ()
+        ///     with
+        ///     | :? System.InvalidOperationException as e ->
+        ///         printfn $"Caught: {e.Message}"
+        ///     | :? System.AggregateException ->
+        ///         printfn "unreachable" // will not match: single exception is unwrapped
+        /// } |> Async.RunSynchronously
+        /// </code>
+        /// Prints <c>Caught: test</c>.
+        /// </example>
+        static member Await: task: ValueTask<'T> -> Async<'T>
+
+        /// <summary>Creates an asynchronous computation that will wait for the given <c>ValueTask</c> to complete.</summary>
+        /// <param name="task">The <c>ValueTask</c> to await.</param>
+        /// <remarks>
+        /// <p>Exceptions are surfaced directly: a task faulted with a single exception raises that
+        /// exception; only <see cref="T:System.AggregateException"/>s carrying multiple inner exceptions are
+        /// re-raised as-is. For the legacy behavior of uniformly presenting the raw underlying
+        /// <see cref="T:System.AggregateException"/>, use <c>Async.AwaitTask</c>.</p>
+        /// 
+        /// <p>If the task is canceled then <see cref="T:System.Threading.Tasks.TaskCanceledException"/> is raised.</p>
+        /// 
+        /// <p>Note the task may be governed by a different cancellation token than the overall async computation;
+        /// typically tasks should be wired to the ambient cancellation token obtained via
+        /// <c>let! ct = Async.CancellationToken</c>, catching <see cref="T:System.Threading.Tasks.TaskCanceledException"/>
+        /// where the overall async is started.</p>
+        /// </remarks>
+        /// <category index="2">Awaiting Results</category>
+        /// <example id="await-valuetask-2">
+        /// <code lang="fsharp">
+        /// let vt = ValueTask(Task.Run(fun () -> invalidOp "test"))
+        /// async {
+        ///     try
+        ///         do! Async.Await vt
+        ///     with
+        ///     | :? System.InvalidOperationException as e ->
+        ///         printfn $"Caught: {e.Message}"
+        ///     | :? System.AggregateException ->
+        ///         printfn "unreachable" // will not match: single exception is unwrapped
+        /// } |> Async.RunSynchronously
+        /// </code>
+        /// Prints <c>Caught: test</c>.
+        /// </example>
+        static member Await: task: ValueTask -> Async<unit>
+#endif
 
         /// <summary>
         ///  Creates an asynchronous computation that will sleep for the given time. This is scheduled
@@ -1006,7 +1171,7 @@ namespace Microsoft.FSharp.Control
         ///         use file = System.IO.File.OpenRead(filename)
         ///         printfn "Reading from file %s." filename
         ///         // Throw away the data being read.
-        ///         do! file.AsyncRead(numBytes) |> Async.Ignore
+        ///         do! file.AsyncRead(numBytes) |> Async.ignore&lt;byte[]&gt;
         ///     }
         /// readFile "example.txt" 42 |> Async.Start
         /// </code>
@@ -1109,6 +1274,61 @@ namespace Microsoft.FSharp.Control
         static member StartImmediateAsTask: 
             computation:Async<'T> * ?cancellationToken:CancellationToken-> Task<'T>
 
+
+    /// <summary>A module of extension members providing support for awaiting any task-like value via the GetAwaiter pattern.</summary>
+    ///
+    /// <category index="2">Awaiting Results</category>
+    [<AutoOpen>]
+    module AsyncTaskLikeExtensions =
+
+        type Async with
+
+            /// <summary>Creates an asynchronous computation that will wait for the given task-like value to complete and return
+            /// its result.</summary>
+            /// <param name="task">The task-like value to await.</param>
+            /// <remarks><p>The value must satisfy the GetAwaiter pattern: it must have a <c>GetAwaiter()</c> method
+            /// returning an awaiter implementing <see cref="T:System.Runtime.CompilerServices.ICriticalNotifyCompletion"/>
+            /// with <c>IsCompleted</c> and <c>GetResult()</c> members.</p>
+            /// <p>Exceptions thrown by <c>GetResult()</c> are propagated directly.</p>
+            /// <p>Unlike the <see cref="T:System.Threading.Tasks.Task"/>
+#if NETSTANDARD2_1
+            /// and <see cref="T:System.Threading.Tasks.ValueTask"/>
+#endif
+            /// overloads, an <see cref="T:System.AggregateException"/> carrying multiple inner exceptions is not preserved:
+            /// the first inner exception surfaces (standard <c>GetResult()</c> semantics).</p>
+            /// <p>This overload uses statically resolved type parameters (SRTP) so it can accept any task-like type.
+#if NETSTANDARD2_1
+            /// The specific overloads for <see cref="T:System.Threading.Tasks.Task`1"/>, <see cref="T:System.Threading.Tasks.Task"/>,
+            /// <see cref="T:System.Threading.Tasks.ValueTask`1"/> and <see cref="T:System.Threading.Tasks.ValueTask"/>
+#else
+            /// The specific overloads for <see cref="T:System.Threading.Tasks.Task`1"/> and <see cref="T:System.Threading.Tasks.Task"/>
+#endif
+            /// are preferred when the argument type is known.</p>
+            /// </remarks>
+            /// <category index="2">Awaiting Results</category>
+            /// <example id="await-tasklike-1">
+            /// <code lang="fsharp">
+            /// // A minimal custom task-like type
+            /// type MyTask&lt;'T&gt;(task: System.Threading.Tasks.Task&lt;'T&gt;) =
+            ///     member _.GetAwaiter() = task.GetAwaiter()
+            ///
+            /// let myTask = MyTask(System.Threading.Tasks.Task.FromResult 42)
+            /// async {
+            ///     let! result = Async.Await myTask
+            ///     printfn $"Result: {result}"
+            /// } |> Async.RunSynchronously
+            /// </code>
+            /// Prints <c>Result: 42</c>.
+            /// </example>
+            // NOTE Aside from being a catch-all to cover the GetAwaiter pattern,
+            // On netstandard2.0, this overload also covers ValueTask and ValueTask<'T>.
+            [<NoEagerConstraintApplication>]
+            static member inline Await< ^TaskLike, ^Awaiter, 'T> :
+                task: ^TaskLike -> Async<'T>
+                    when ^TaskLike: (member GetAwaiter: unit -> ^Awaiter)
+                    and ^Awaiter :> ICriticalNotifyCompletion
+                    and ^Awaiter: (member get_IsCompleted: unit -> bool)
+                    and ^Awaiter: (member GetResult: unit -> 'T)
 
     /// <summary>The F# compiler emits references to this type to implement F# async expressions.</summary>
     ///
@@ -1583,4 +1803,132 @@ namespace Microsoft.FSharp.Control
     // Internals used by MailboxProcessor
     module internal AsyncBuilderImpl = 
         val async : AsyncBuilder
+
+    /// <summary>Contains camelCase module-level functions for <see cref="T:Microsoft.FSharp.Control.FSharpAsync`1"/> computations.</summary>
+    ///
+    /// <category index="1">Async Programming</category>
+    [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
+    module Async =
+
+        /// <summary>Creates an asynchronous computation that returns the given value.</summary>
+        ///
+        /// <param name="value">The value to return.</param>
+        ///
+        /// <returns>An asynchronous computation that returns <c>value</c> when executed.</returns>
+        ///
+        /// <example id="async-result-1">
+        /// <code lang="fsharp">
+        /// let computation = Async.result 42
+        /// computation |> Async.RunSynchronouslyImmediate // evaluates to 42
+        /// </code>
+        /// </example>
+        [<CompiledName("Result")>]
+        val inline result: value: 'T -> Async<'T>
+
+        /// <summary>Creates an asynchronous computation that applies the mapping function to the result of the given computation.</summary>
+        ///
+        /// <param name="mapping">The function to apply to the result.</param>
+        /// <param name="computation">The input computation.</param>
+        ///
+        /// <returns>An asynchronous computation that applies <c>mapping</c> to the result of <c>computation</c>.</returns>
+        ///
+        /// <example id="async-map-1">
+        /// <code lang="fsharp">
+        /// let computation = Async.result 21 |> Async.map (fun x -> x * 2)
+        /// computation |> Async.RunSynchronouslyImmediate // evaluates to 42
+        /// </code>
+        /// </example>
+        [<CompiledName("Map")>]
+        val inline map: mapping: ('T -> 'U) -> computation: Async<'T> -> Async<'U>
+
+        /// <summary>Creates an asynchronous computation that passes the result of the given computation to the binder function.</summary>
+        ///
+        /// <param name="binder">A function that takes the result of the computation and returns a new asynchronous computation.</param>
+        /// <param name="computation">The input computation.</param>
+        ///
+        /// <returns>An asynchronous computation that performs a monadic bind on the result of <c>computation</c>.</returns>
+        ///
+        /// <example id="async-bind-1">
+        /// <code lang="fsharp">
+        /// let computation = Async.result 21 |> Async.bind (fun x -> Async.result (x * 2))
+        /// computation |> Async.RunSynchronouslyImmediate // evaluates to 42
+        /// </code>
+        /// </example>
+        [<CompiledName("Bind")>]
+        val inline bind: binder: ('T -> Async<'U>) -> computation: Async<'T> -> Async<'U>
+
+        /// <summary>Creates an asynchronous computation that runs the given computation and ignores its result.</summary>
+        ///
+        /// <param name="computation">The input computation.</param>
+        ///
+        /// <returns>A computation that is equivalent to the input computation, but disregards the result.</returns>
+        ///
+        /// <example id="async-ignore-1">
+        /// <code lang="fsharp">
+        /// let readFile filename numBytes: Async&lt;unit&gt; =
+        ///     async {
+        ///         use file = System.IO.File.OpenRead(filename)
+        ///         do! file.AsyncRead(numBytes) |> Async.ignore&lt;byte[]&gt;
+        ///     }
+        /// </code>
+        /// </example>
+        /// <example id="async-ignore-2">
+        /// <code lang="fsharp">
+        /// let computation : Async&lt;unit&gt; = Async.result 42 |> Async.ignore&lt;int&gt;
+        /// computation |> Async.RunSynchronously // evaluates to ()
+        /// </code>
+        /// </example>
+        [<CompiledName("Ignore")>]
+        [<RequiresExplicitTypeArguments>]
+        val inline ignore<'T> : computation: Async<'T> -> Async<unit>
+
+        /// <summary>Creates an asynchronous computation that yields the original result on success, or the result of
+        /// <c>handler exn</c> for non-cancellation exceptions.</summary>
+        /// <remarks><c>OperationCanceledException</c> and derived types such as <c>TaskCanceledException</c> propagate unchanged,
+        /// and therefore are never passed to <c>handler</c>.
+        /// </remarks>
+        /// <param name="handler">A function to handle (non-cancellation) exceptions, yielding a recovery value based on the exception.
+        /// Any exception thrown by <c>handler</c> will propagate.</param>
+        /// <param name="computation">The input computation.</param>
+        /// <returns>An asynchronous computation that yields the result of <c>computation</c> on success,
+        /// or <c>handler exn</c> on failure.
+        /// Propagates the underlying cancellation exception where cancellation occurs.</returns>
+        /// <example id="async-catchwith-1">
+        /// <code lang="fsharp">
+        /// let safeDiv x y =
+        ///     async { return x / y }
+        ///     |> Async.catchWith (fun _ -> 0)
+        /// safeDiv 10 0 |> Async.RunSynchronouslyImmediate // evaluates to 0
+        /// </code>
+        /// </example>
+        [<CompiledName("CatchWith")>]
+        val catchWith: handler: (exn -> 'T) -> computation: Async<'T> -> Async<'T>
+
+        /// <summary>Creates an asynchronous computation that reifies the outcome of the given <c>computation</c> as a <c>Result</c>:
+        /// <c>Ok</c> on success, <c>Error</c> on failure, so exceptions become values. Cancellation still propagates.</summary>
+        /// <remarks><c>OperationCanceledException</c> and derived types such as <c>TaskCanceledException</c> propagate unchanged.</remarks>
+        /// <param name="computation">The input computation.</param>
+        /// <returns>An asynchronous computation that yields a <c>Result</c>: <c>Ok</c> with the outcome on success,
+        /// or <c>Error</c> with the exception on failure.
+        /// Propagates the underlying cancellation exception when cancellation occurs.</returns>
+        /// <example id="async-catch-1">
+        /// <code lang="fsharp">
+        /// let safeDiv x y =
+        ///     async { return x / y } |> Async.catch
+        /// safeDiv 10 2 |> Async.RunSynchronouslyImmediate // evaluates to Ok 5
+        /// safeDiv 10 0 |> Async.RunSynchronouslyImmediate // evaluates to Error (DivideByZeroException ...)
+        /// </code>
+        /// </example>
+        [<CompiledName("Catch")>]
+        val catch: computation: Async<'T> -> Async<Result<'T, exn>>
+
+        /// <summary>An asynchronous computation that returns <c>unit</c>. This is equivalent to <c>async.Zero()</c>.</summary>
+        ///
+        /// <example id="async-empty-1">
+        /// <code lang="fsharp">
+        /// Async.empty |> Async.RunSynchronouslyImmediate // evaluates to ()
+        /// </code>
+        /// </example>
+        [<CompiledName("Empty")>]
+        val empty: Async<unit>
 

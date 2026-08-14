@@ -395,7 +395,12 @@ let TryFindVersionAttribute g attrib attribName attribs deterministic =
     match AttributeHelpers.TryFindStringAttribute g attrib attribs with
     | Some versionString ->
         if deterministic && versionString.Contains("*") then
-            errorR (Error(FSComp.SR.fscAssemblyWildcardAndDeterminism (attribName, versionString), rangeStartup))
+            errorR (
+                Error(
+                    FSComp.SR.fscAssemblyWildcardAndDeterminism (RichText.mkClass attribName, RichText.mkText versionString),
+                    rangeStartup
+                )
+            )
 
         try
             Some(parseILVersion versionString)
