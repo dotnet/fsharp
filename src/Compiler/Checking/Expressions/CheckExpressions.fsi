@@ -117,7 +117,7 @@ exception OverrideInExtrinsicAugmentation of range
 
 exception NonUniqueInferredAbstractSlot of TcGlobals * DisplayEnv * string * MethInfo * MethInfo * range
 
-exception StandardOperatorRedefinitionWarning of string * range
+exception StandardOperatorRedefinitionWarning of RichText * range
 
 exception InvalidInternalsVisibleToAssemblyName of badName: string * fileName: string option
 
@@ -484,7 +484,7 @@ val FixupLetrecBind:
 
 /// Detect recursive 'inline' bindings within a recursive binding group and
 /// emit FS3890. Mutates inline info to suppress downstream cascades.
-val CheckRecursiveInlineGroup: bindings: PreInitializationGraphEliminationBinding list -> unit
+val CheckRecursiveInlineGroup: g: TcGlobals -> bindings: PreInitializationGraphEliminationBinding list -> unit
 
 /// Produce a fresh view of an object type, e.g. 'List<T>' becomes 'List<?>' for new
 /// inference variables with the given rigidity.

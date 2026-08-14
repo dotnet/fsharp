@@ -302,7 +302,7 @@ and private ConvExprCore cenv (env : QuotationTranslationEnv) (expr: Expr) : Exp
         let ty = tyOfExpr g expr
 
         match (freeInExpr CollectTyparsAndLocalsNoCaching x0).FreeLocals |> Seq.tryPick (fun v -> if env.vs.ContainsVal v then Some v else None) with
-        | Some v -> errorR(Error(FSComp.SR.crefBoundVarUsedInSplice(v.DisplayName), v.Range))
+        | Some v -> errorR(Error(FSComp.SR.crefBoundVarUsedInSplice(richTextOfValName cenv.g v), v.Range))
         | None -> ()
 
         cenv.exprSplices.Add((x0, m))
