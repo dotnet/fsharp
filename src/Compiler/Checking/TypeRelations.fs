@@ -126,7 +126,7 @@ let rec TypesFeasiblyEquivalent stripMeasures ndeep g amap m ty1 ty2 =
         TypesFeasiblyEquivalent stripMeasures ndeep g amap m domainTy1 domainTy2 &&
         TypesFeasiblyEquivalent stripMeasures ndeep g amap m rangeTy1 rangeTy2
 
-    | TType_anon_union (_, l1), TType_anon_union (_, l2) ->
+    | TType_anon_union (_, l1, _), TType_anon_union(_, l2, _) ->
         List.lengthsEqAndForall2 (TypesFeasiblyEquivalent stripMeasures ndeep g amap m) l1 l2
 
     | _ ->
@@ -159,7 +159,7 @@ let rec TypeFeasiblySubsumesType ndeep (g: TcGlobals) (amap: ImportMap) m (ty1: 
         | TType_fun _, TType_fun _ ->
             TypesFeasiblyEquiv ndeep g amap m ty1 ty2
 
-        | TType_anon_union (_, l1), TType_anon_union (_, l2) ->
+        | TType_anon_union (_, l1, _), TType_anon_union (_, l2, _) ->
             ListSet.isSupersetOf (fun x1 x2 -> TypeFeasiblySubsumesType ndeep g amap m x1 canCoerce x2) l1 l2
 
         | _ ->

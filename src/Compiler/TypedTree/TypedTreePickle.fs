@@ -2531,7 +2531,8 @@ let _ =
             p_anonInfo anonInfo st
             p_tys l st
 
-        | TType_anon_union (unionInfo, l) ->
+        | TType_anon_union (unionInfo, l, nullness) ->
+            p_nullnessB 21 nullness st // B tags: 21=WithNull, 22=WithoutNull, 23=Ambivalent
             p_byte 10 st
             p_tup2 p_ty (p_array p_int) (unionInfo.CommonAncestorTy, unionInfo.UnsortedCaseSourceIndices) st
             p_tys l st)
@@ -2621,9 +2622,16 @@ let _ =
             TType_anon(anonInfo, l)
 
         | 10 ->
+            let tagB = u_byteB st
             let anonUnionInfo = u_anonUnionInfo st
             let l = u_tys st
-            TType_anon_union(anonUnionInfo, l)
+
+            match tagB with
+            | 0 -> TType_anon_union(anonUnionInfo, l, KnownAmbivalentToNull)
+            | 21 -> TType_anon_union(anonUnionInfo, l, KnownWithNull)
+            | 22 -> TType_anon_union(anonUnionInfo, l, KnownWithoutNull)
+            | 23 -> TType_anon_union(anonUnionInfo, l, KnownAmbivalentToNull)
+            | _ -> ufailwith st "u_ty - 10/B"
 
         | _ -> ufailwith st "u_typ")
 

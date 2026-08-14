@@ -865,7 +865,7 @@ let rec SimplifyMeasuresInType g resultFirst (generalizable, generalized as para
     | TType_ucase(_, l)
     | TType_app (_, l, _)
     | TType_anon (_,l)
-    | TType_anon_union (_, l)
+    | TType_anon_union (_, l, _)
     | TType_tuple (_, l) -> SimplifyMeasuresInTypes g param l
 
     | TType_fun (domainTy, rangeTy, _) ->
@@ -911,7 +911,7 @@ let rec GetMeasureVarGcdInType v ty =
     | TType_ucase(_, l)
     | TType_app (_, l, _)
     | TType_anon (_,l)
-    | TType_anon_union (_, l)
+    | TType_anon_union (_, l, _)
     | TType_tuple (_, l) -> GetMeasureVarGcdInTypes v l
 
     | TType_fun (domainTy, rangeTy, _) -> GcdRational (GetMeasureVarGcdInType v domainTy) (GetMeasureVarGcdInType v rangeTy)
@@ -1476,8 +1476,11 @@ and SolveTypeEqualsType (csenv: ConstraintSolverEnv) ndeep m2 (trace: OptionalTr
         | TType_ucase (uc1, l1), TType_ucase (uc2, l2) when g.unionCaseRefEq uc1 uc2 ->
             SolveTypeEqualsTypeEqns csenv ndeep m2 trace None l1 l2
 
-        | TType_anon_union (_, cases1), TType_anon_union(_, cases2) ->
-            SolveTypeEqualsTypeEqns csenv ndeep m2 trace None cases1 cases2
+        | TType_anon_union (_, cases1, nullness1), TType_anon_union(_, cases2, nullness2) ->
+            trackErrors {
+                do! SolveTypeEqualsTypeEqns csenv ndeep m2 trace None cases1 cases2
+                do! SolveNullnessEquiv csenv m2 trace ty1 ty2 nullness1 nullness2
+            }
 
         | _  -> localAbortD
 
@@ -1688,41 +1691,47 @@ and SolveTypeSubsumesType (csenv: ConstraintSolverEnv) ndeep m2 (trace: Optional
         // (int|string) :> sty1 if
         //     int :> sty1 AND
         //     string :> sty1
-        | _, TType_anon_union (_, cases2) ->
-            cases2 |> IterateD (fun ty2 -> SolveTypeSubsumesType csenv ndeep m2 trace cxsln sty1 ty2)
+        | _, TType_anon_union (_, cases2, nullness2) ->
+            trackErrors {
+                do! cases2 |> IterateD (fun ty2 -> SolveTypeSubsumesType csenv ndeep m2 trace cxsln sty1 ty2)
+                do! SolveNullnessSubsumesNullness csenv m2 trace ty1 ty2 (nullnessOfTy g sty1) nullness2
+            }
 
         // sty2 :> (IComparable|ICloneable) if
         //    sty2 :> IComparable OR
         //    sty2 :> ICloneable OR
-        // when sty2 is not an erased union type
-        | TType_anon_union (_, cases1), _ ->
-            let feasibleCases =
-                cases1 |> FilterEachThenUndo (fun trace ty1 ->
-                    SolveTypeSubsumesType csenv ndeep m2 (WithTrace trace) cxsln ty1 sty2)
+        // when sty2 is not an anon union type
+        | TType_anon_union (_, cases1, nullness1), _ ->
+            trackErrors {
+                do! SolveNullnessSubsumesNullness csenv m2 trace ty1 ty2 nullness1 (nullnessOfTy g sty2)
+                let feasibleCases =
+                    cases1 |> FilterEachThenUndo (fun trace ty1 ->
+                        SolveTypeSubsumesType csenv ndeep m2 (WithTrace trace) cxsln ty1 sty2)
 
-            match feasibleCases with
-            | [] ->
-                ErrorD (ConstraintSolverError(
-                    FSComp.SR.csAnonUnionTypeNotContained(
-                        NicePrint.minimalStringOfType denv sty2,
-                        NicePrint.minimalStringOfType denv sty1),
-                    csenv.m, m2))
-            | [(ty1, _, _, _)] ->
-                SolveTypeSubsumesType csenv ndeep m2 trace cxsln ty1 sty2
-            | _ ->
-                csenv.SolverState.PushPostInferenceCheck(preDefaults=true, check=fun () ->
-                    let definiteCases =
-                        cases1 |> List.filter (fun ty1 ->
-                            TypeDefinitelySubsumesTypeNoCoercion ndeep g amap csenv.m ty1 sty2)
-                    match definiteCases with
-                    | [ty1] -> SolveTypeSubsumesType csenv ndeep m2 trace cxsln ty1 sty2 |> RaiseOperationResult
-                    | _ ->
-                        ErrorD (ConstraintSolverError(
-                            FSComp.SR.csAnonUnionTypeAmbiguous(
-                                NicePrint.minimalStringOfType denv sty2,
-                                NicePrint.minimalStringOfType denv sty1),
-                            csenv.m, m2)) |> RaiseOperationResult)
-                CompleteD
+                do! match feasibleCases with
+                        | [] ->
+                            ErrorD (ConstraintSolverError(
+                                FSComp.SR.csAnonUnionTypeNotContained(
+                                    NicePrint.minimalStringOfType denv sty2,
+                                    NicePrint.minimalStringOfType denv sty1),
+                                csenv.m, m2))
+                        | [(ty1, _, _, _)] ->
+                            SolveTypeSubsumesType csenv ndeep m2 trace cxsln ty1 sty2
+                        | _ ->
+                            csenv.SolverState.PushPostInferenceCheck(preDefaults=true, check=fun () ->
+                                let definiteCases =
+                                    cases1 |> List.filter (fun ty1 ->
+                                        TypeDefinitelySubsumesTypeNoCoercion ndeep g amap csenv.m ty1 sty2)
+                                match definiteCases with
+                                | [ty1] -> SolveTypeSubsumesType csenv ndeep m2 trace cxsln ty1 sty2 |> RaiseOperationResult
+                                | _ ->
+                                    ErrorD (ConstraintSolverError(
+                                        FSComp.SR.csAnonUnionTypeAmbiguous(
+                                            NicePrint.minimalStringOfType denv sty2,
+                                            NicePrint.minimalStringOfType denv sty1),
+                                        csenv.m, m2)) |> RaiseOperationResult)
+                            CompleteD
+                    }
 
         | _ ->
             // By now we know the type is not a variable type

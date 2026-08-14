@@ -4668,7 +4668,7 @@ type TType =
     /// Indicates the type is a variable type, whether declared, generalized or an inference type parameter
     | TType_var of typar: Typar * nullness: Nullness
 
-    | TType_anon_union of unionInfo: AnonUnionInfo * choices: TTypes
+    | TType_anon_union of unionInfo: AnonUnionInfo * choices: TTypes * nullness: Nullness
 
     /// Indicates the type is a unit-of-measure expression being used as an argument to a type or member
     | TType_measure of measure: Measure
@@ -4713,7 +4713,7 @@ type TType =
             | None -> tp.DisplayName
             | Some t -> tp.DisplayName + $" (solved: {if maxDepth < 0 then Boolean.TrueString else t.LimitedToString(maxDepth-1)})"
         | TType_measure ms -> ms.ToString()
-        | TType_anon_union (_, l) -> "( " + String.concat " | " (List.map string l) +  " )"
+        | TType_anon_union (_, l, nullness) -> "( " + String.concat " | " (List.map string l) + (if nullness.Evaluate() = NullnessInfo.WithNull then " | null )" else " )")
 
     override x.ToString() = x.LimitedToString(4)
 

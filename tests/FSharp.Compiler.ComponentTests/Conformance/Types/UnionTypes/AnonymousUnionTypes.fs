@@ -110,6 +110,14 @@ module AnonymousUnionTypes =
         |> verifyCompileAndRun
         |> shouldSucceed
 
+    [<Theory; FileInlineData("AnonNakedGenericsWithNull.fs")>]
+    let ``NakedGenericsWithNull_fs`` compilation =
+        compilation
+        |> getCompilation
+        |> withLangVersionPreview
+        |> verifyCompileAndRun
+        |> shouldSucceed
+
     [<Theory; FileInlineData("AnonNonNakedGenerics.fs")>]
     let ``NonNakedGenerics_fs`` compilation =
         compilation
@@ -126,8 +134,16 @@ module AnonymousUnionTypes =
         |> verifyCompileAndRun
         |> shouldSucceed
 
-    [<Theory; FileInlineData("AnonPatternMatchingNullable.fs")>]
-    let ``PatternMatchingNullable_fs`` compilation =
+    [<Theory; FileInlineData("AnonPatternMatchingWithNull.fs")>]
+    let ``PatternMatchingWithNull_fs`` compilation =
+        compilation
+        |> getCompilation
+        |> withLangVersionPreview
+        |> verifyCompileAndRun
+        |> shouldSucceed
+
+    [<Theory; FileInlineData("AnonPatternMatchingWithNull2Columns.fs")>]
+    let ``PatternMatchingWithNull2Columns_fs`` compilation =
         compilation
         |> getCompilation
         |> withLangVersionPreview
@@ -184,11 +200,22 @@ module AnonymousUnionTypes =
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
-            (Error 4501, Line 4, Col 32, Line 4, Col 33, "The type System.Nullable<'T> is not allowed in an anonymous union type. Consider adding null case instead.")
+            (Error 4501, Line 4, Col 35, Line 4, Col 36, "The type System.Nullable<'T> is not allowed in an anonymous union type. Consider adding null case instead.")
         ]
 
-    [<Theory; FileInlineData("E_AnonNullableReferenceTypeValueType.fs")>]
-    let ``E_NullableReferenceTypeValueType_fs`` compilation =
+    [<Theory; FileInlineData("E_AnonWithNullPosition1.fs")>]
+    let ``E_WithNullPosition1_fs`` compilation =
+        compilation
+        |> getCompilation
+        |> withLangVersionPreview
+        |> verifyCompile
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 3260, Line 4, Col 9, Line 4, Col 26, "The type '(int | string)' does not support a nullness qualification.")
+        ]
+
+    [<Theory; FileInlineData("E_AnonWithNullPosition2.fs")>]
+    let ``E_WithNullPosition2_fs`` compilation =
         compilation
         |> getCompilation
         |> withLangVersionPreview
@@ -199,15 +226,61 @@ module AnonymousUnionTypes =
             (Error 43, Line 4, Col 9, Line 4, Col 17, "A generic construct requires that the type 'int' have reference semantics, but it does not, i.e. it is a struct")
         ]
 
-    [<Theory; FileInlineData("E_AnonNullableReferenceType.fs")>]
-    let ``E_NullableReferenceType_fs`` compilation =
+    [<Theory; FileInlineData("E_AnonWithNullPosition3.fs")>]
+    let ``E_WithNullPosition3_fs`` compilation =
         compilation
         |> getCompilation
         |> withLangVersionPreview
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
-            (Error 3260, Line 4, Col 9, Line 4, Col 26, "The type '(int | string)' does not support a nullness qualification.")
+            (Error 4502, Line 4, Col 9, Line 4, Col 20, "'null' may only appear as the last case of an outermost anonymous union, e.g. '(int | string | null)'.")
+        ]
+
+    [<Theory; FileInlineData("E_AnonWithNullPosition4.fs")>]
+    let ``E_WithNullPosition4_fs`` compilation =
+        compilation
+        |> getCompilation
+        |> withLangVersionPreview
+        |> verifyCompile
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 618, Line 4, Col 9, Line 4, Col 13, "Invalid literal in type")
+        ]
+
+    [<Theory; FileInlineData("E_AnonWithNullRefTypeAncestor.fs")>]
+    let ``E_WithNullRefTypeAncestor_fs`` compilation =
+        compilation
+        |> getCompilation
+        |> withLangVersionPreview
+        |> verifyCompile
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 4503, Line 4, Col 18, Line 4, Col 22, "The type 'System.ValueType' does not support 'null' because it is not a reference type. A null case may only be added to an anonymous union whose common type is a reference type.")
+        ]
+
+    [<Theory; FileInlineData("E_AnonWithNullNested1.fs")>]
+    let ``E_WithNullNested1_fs`` compilation =
+        compilation
+        |> getCompilation
+        |> withLangVersionPreview
+        |> verifyCompile
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 4502, Line 4, Col 25, Line 4, Col 26, "'null' may only appear as the last case of an outermost anonymous union, e.g. '(int | string | null)'.")
+        ]
+
+    [<Theory; FileInlineData("E_AnonWithNullNested2.fs")>]
+    let ``E_WithNullNested2_fs`` compilation =
+        compilation
+        |> getCompilation
+        |> withLangVersionPreview
+        |> verifyCompile
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 4502, Line 4, Col 26, Line 4, Col 27, "'null' may only appear as the last case of an outermost anonymous union, e.g. '(int | string | null)'.");
+            (Warning 4500, Line 4, Col 18, Line 4, Col 19, "The type 'int' is a subtype of 'obj' and will be ignored");
+            (Warning 4500, Line 4, Col 18, Line 4, Col 19, "The type 'int16' is a subtype of 'System.Object' and will be ignored")
         ]
 
     [<Theory; FileInlineData("W_AnonPatternMatching.fs")>]
@@ -243,8 +316,8 @@ module AnonymousUnionTypes =
             (Warning 25, Line 5, Col 11, Line 5, Col 17, "Incomplete pattern matches on this expression. For example, the value '(``some-other-subtype``,``some-other-subtype``)' may indicate a case not covered by the pattern(s).")
         ]
 
-    [<Theory; FileInlineData("W_AnonPatternMatchingNullable.fs")>]
-    let ``W_PatternMatchingNullable_fs`` compilation =
+    [<Theory; FileInlineData("W_AnonPatternMatchingWithNull.fs")>]
+    let ``W_PatternMatchingWithNull_fs`` compilation =
         compilation
         |> getCompilation
         |> withLangVersionPreview
@@ -252,6 +325,17 @@ module AnonymousUnionTypes =
         |> shouldFail
         |> withDiagnostics [
             (Warning 25, Line 5, Col 11, Line 5, Col 12, "Incomplete pattern matches on this expression. For example, the value '``some-other-subtype``' may indicate a case not covered by the pattern(s).")
+        ]
+
+    [<Theory; FileInlineData("W_AnonPatternMatchingWithNull2Columns.fs")>]
+    let ``W_PatternMatchingWithNull2Columns_fs`` compilation =
+        compilation
+        |> getCompilation
+        |> withLangVersionPreview
+        |> verifyCompile
+        |> shouldFail
+        |> withDiagnostics [
+            (Warning 25, Line 5, Col 11, Line 5, Col 17, "Incomplete pattern matches on this expression. For example, the value '(_,``some-other-subtype``)' may indicate a case not covered by the pattern(s).")
         ]
 
     [<Theory; FileInlineData("W_AnonTypeInclusion1.fs")>]

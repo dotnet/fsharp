@@ -3269,7 +3269,7 @@ type TType =
     | TType_var of typar: Typar * nullness: Nullness
 
     /// Indicates the type is a union type, containing common ancestor type and the disjoint cases
-    | TType_anon_union of unionInfo: AnonUnionInfo * choices: TTypes
+    | TType_anon_union of unionInfo: AnonUnionInfo * choices: TTypes * nullness: Nullness
 
     /// Indicates the type is a unit-of-measure expression being used as an argument to a type or member
     | TType_measure of measure: Measure

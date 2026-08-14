@@ -523,7 +523,7 @@ module FSharpExprConvert =
                 | TType_app (_, tinst, _)
                 | TType_ucase (_, tinst)
                 | TType_anon (_, tinst)
-                | TType_anon_union (_, tinst)
+                | TType_anon_union (_, tinst, _)
                 | TType_tuple (_, tinst) -> tinst |> List.exists hasConditionalTypar
                 | TType_fun (domainTy, rangeTy, _) -> hasConditionalTypar domainTy || hasConditionalTypar rangeTy
                 | TType_forall (_, bodyTy) -> hasConditionalTypar bodyTy

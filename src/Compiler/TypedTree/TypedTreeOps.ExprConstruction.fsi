@@ -573,6 +573,9 @@ module internal TypeTesters =
     /// Determine if a type is a struct type
     val isStructTy: TcGlobals -> TType -> bool
 
+    /// Determine if a type is a System.ValueType
+    val isSystemValueTypeTy: TcGlobals -> TType -> bool
+
     /// Check if a type is a measureable type (like int<kg>) whose underlying type is a value type.
     val isMeasureableValueType: TcGlobals -> TType -> bool
 

@@ -1070,7 +1070,7 @@ module PrintTypes =
 
         | TType_measure unt -> layoutMeasure denv unt
 
-        | TType_anon_union (unionInfo, types) ->
+        | TType_anon_union (unionInfo, types, nullness) ->
             let sigma = unionInfo.UnsortedCaseSourceIndices
 
             let unsortedTyps =
@@ -1079,7 +1079,15 @@ module PrintTypes =
                 |> List.sortBy (fun (sortedIdx, _) -> sigma.[sortedIdx])
                 |> List.map snd
 
-            bracketL (layoutTypesWithInfoAndPrec denv env 2 (wordL (tagPunctuation "|")) unsortedTyps)
+            let casesL = unsortedTyps |> List.map (layoutTypeWithInfoAndPrec denv env 2)
+
+            let casesL =
+                if denv.showNullnessAnnotations <> Some false && nullness.Evaluate() = NullnessInfo.WithNull then
+                    casesL @ [wordL (tagKeyword "null")]
+                else
+                    casesL
+
+            bracketL (sepListL (wordL (tagPunctuation "|")) casesL)
 
     /// Layout a list of types, separated with the given separator, either '*' or ','
     and layoutTypesWithInfoAndPrec denv env prec sep typl =

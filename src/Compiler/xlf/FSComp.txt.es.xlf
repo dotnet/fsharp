@@ -1322,6 +1322,16 @@
         <target state="new">The type '{0}' is a subtype of '{1}' and will be ignored</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcAnonUnionNullMustBeTrailing">
+        <source>'null' may only appear as the last case of an outermost anonymous union, e.g. '(int | string | null)'.</source>
+        <target state="new">'null' may only appear as the last case of an outermost anonymous union, e.g. '(int | string | null)'.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcAnonUnionNullRequiresReferenceAncestor">
+        <source>The type '{0}' does not support 'null' because it is not a reference type. A null case may only be added to an anonymous union whose common type is a reference type.</source>
+        <target state="new">The type '{0}' does not support 'null' because it is not a reference type. A null case may only be added to an anonymous union whose common type is a reference type.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcAttributeIsNotValidForUnionCaseWithFields">
         <source>This attribute is not valid for use on union cases with fields.</source>
         <target state="new">This attribute is not valid for use on union cases with fields.</target>

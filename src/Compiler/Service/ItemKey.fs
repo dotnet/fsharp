@@ -359,7 +359,7 @@ and [<Sealed>] ItemKeyStoreBuilder(tcGlobals: TcGlobals) =
                 writeEntityRef tcref
                 writeString nm
 
-        | TType_anon_union(_, tinst) ->
+        | TType_anon_union(_, tinst, _) ->
             writeString ItemKeyTags.typeAnonUnionCase
             tinst |> List.iter (writeType false)
 

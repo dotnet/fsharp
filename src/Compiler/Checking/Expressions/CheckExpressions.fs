@@ -4976,11 +4976,15 @@ and TcAnonUnionTypeOr (cenv: cenv) env (tpenv: UnscopedTyparEnv) synCases m =
     // create a disjoint set of cases
     // taking into account that a subtype is a "duplicate" of its supertype.
     let rec addToCases (pt: TType) (list: ResizeArray<TType>) =
-        if isNullableTy g pt then  
+        if isNullableTy g pt then
+            // Error: System.Nullable cannot be a case of anon union
             error(Error(FSComp.SR.tcNullableNotAllowedInAnonymousUnion(), m))
+        elif (nullnessOfTy g pt).Evaluate() = NullnessInfo.WithNull then
+            // Error: Single case cannot be nullable
+            error(Error(FSComp.SR.tcAnonUnionNullMustBeTrailing(), m))
         elif not (Seq.exists (isObjTyAnyNullness g) list) then
             if isObjTyAnyNullness g pt then
-                // Warning: all existing types are subtypes of obj|null and will be ignored
+                // Warning: all existing types are subtypes of obj and will be ignored
                 for t in list do
                     warning(Error(FSComp.SR.tcAnonUnionCaseOverlap(
                         NicePrint.stringOfTy env.DisplayEnv t,
@@ -5019,29 +5023,65 @@ and TcAnonUnionTypeOr (cenv: cenv) env (tpenv: UnscopedTyparEnv) synCases m =
 
     let createDisjointTypes synAnonUnionCases =
         let unionTypeCases = ResizeArray()
-        do
-            synAnonUnionCases
-            |> List.map(fun (SynAnonUnionCase(typ=ty)) -> TcTypeAndRecover cenv NoNewTypars CheckCxs ItemOccurrence.UseInType WarnOnIWSAM.Yes env tpenv ty |> fst)
-            |> List.iter (fun ty -> addToCases ty unionTypeCases)
-        Seq.toList unionTypeCases
+        let mutable hasNullCase = false
+        let n = List.length synAnonUnionCases
+
+        synAnonUnionCases
+        |> List.iteri (fun i case ->
+            match case with
+            | SynAnonUnionCase (SynType.WithNull(innerTy, _, mWithNull, _), _, _) ->
+                if i <> n - 1 then
+                    // Error: "null" appearing anywhere but as the trailing case
+                    error(Error(FSComp.SR.tcAnonUnionNullMustBeTrailing(), mWithNull))
+                hasNullCase <- true
+                let tyR, _ = TcTypeAndRecover cenv NoNewTypars CheckCxs ItemOccurrence.UseInType WarnOnIWSAM.Yes env tpenv innerTy
+                addToCases tyR unionTypeCases
+            | SynAnonUnionCase (ty, _, _) ->
+                let tyR, _ = TcTypeAndRecover cenv NoNewTypars CheckCxs ItemOccurrence.UseInType WarnOnIWSAM.Yes env tpenv ty
+                addToCases tyR unionTypeCases)
+
+        Seq.toList unionTypeCases, hasNullCase
 
     let getCommonAncestorOfTys g amap tys =
         let superTypes = tys |> List.map (AllPrimarySuperTypesOfType g amap m AllowMultiIntfInstantiations.No)
         List.fold (ListSet.intersect (typeEquiv g)) (List.head superTypes) (List.tail superTypes) |> List.head
 
-    // Sort into order for ordered equality
-    let sortedIndexedAnonUnionCases =
-        createDisjointTypes synCases
-        |> List.indexed
-        |> List.sortBy (snd >> stripTyEqnsAndMeasureEqns g >> string)
+    let disjointCases, hasNullCase = createDisjointTypes synCases
 
-    // Map from sorted indexes to unsorted index
-    let sigma = List.map fst sortedIndexedAnonUnionCases |> List.toArray
-    let sortedAnonUnionCases = List.map snd sortedIndexedAnonUnionCases
-    let commonAncestorTy = getCommonAncestorOfTys g cenv.amap sortedAnonUnionCases
+    // Degenerate case: only one non-null case survived deduplication/collapse.
+    // Normalize to ordinary WithNull rather than producing a 1-case TType_anon_union.
+    match disjointCases, hasNullCase with
+    | [ singleTy ], true ->
+        if TypeNullNever g singleTy then
+            error(Error(FSComp.SR.tcTypeDoesNotHaveAnyNull(NicePrint.stringOfTy env.DisplayEnv singleTy), m))
+        match tryAddNullnessToTy (Nullness.Known NullnessInfo.WithNull) singleTy with
+        | Some withNullTy -> withNullTy, tpenv
+        | None -> error(Error(FSComp.SR.tcTypeDoesNotHaveAnyNull(NicePrint.stringOfTy env.DisplayEnv singleTy), m))
+    | _ ->
+        // Sort into order for ordered equality
+        let sortedIndexedAnonUnionCases =
+            disjointCases
+            |> List.indexed
+            |> List.sortBy (snd >> stripTyEqnsAndMeasureEqns g >> string)
 
-    let anonUnionInfo = AnonUnionInfo.Create(commonAncestorTy, sigma)
-    TType_anon_union(anonUnionInfo, sortedAnonUnionCases), tpenv
+        let sigma = List.map fst sortedIndexedAnonUnionCases |> List.toArray
+        let sortedAnonUnionCases = List.map snd sortedIndexedAnonUnionCases
+        let commonAncestorTy = getCommonAncestorOfTys g cenv.amap sortedAnonUnionCases
+
+        if hasNullCase && (isStructTy g commonAncestorTy || isSystemValueTypeTy g commonAncestorTy) then
+            error(Error(FSComp.SR.tcAnonUnionNullRequiresReferenceAncestor(NicePrint.stringOfTy env.DisplayEnv commonAncestorTy), m))
+
+        let ancestorTy =
+            if hasNullCase then
+                match tryAddNullnessToTy (Nullness.Known NullnessInfo.WithNull) commonAncestorTy with
+                | Some t -> t
+                | None -> error(Error(FSComp.SR.tcAnonUnionNullRequiresReferenceAncestor(NicePrint.stringOfTy env.DisplayEnv commonAncestorTy), m))
+            else
+                commonAncestorTy
+
+        let nullness = if hasNullCase then KnownWithNull else KnownWithoutNull
+        let anonUnionInfo = AnonUnionInfo.Create(ancestorTy, sigma)
+        TType_anon_union(anonUnionInfo, sortedAnonUnionCases, nullness), tpenv
 
 and TcMeasure (cenv: cenv) newOk checkConstraints occ env (tpenv: UnscopedTyparEnv) (StripParenTypes ty) m =
     match ty with
