@@ -494,8 +494,6 @@
     <Compile Include="HotReload\SymbolMatcher.fs" />
     <Compile Include="HotReload\HotReloadAccessorTypes.fs" />
     <Compile Include="CodeGen\IlxDeltaEmitter.fs" />
-    <Compile Include="CodeGen\ILBaselineReader.fs" />
-    <Compile Include="CodeGen\HotReloadBaseline.fs" />
     <Compile Include="Driver\FxResolver.fsi" />
     <Compile Include="Driver\FxResolver.fs" />
     <Compile Include="DependencyManager/AssemblyResolveHandler.fsi">
