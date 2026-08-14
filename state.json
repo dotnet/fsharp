@@ -161,6 +161,12 @@
     "19774": {
       "sha": "0e262c5de4cb",
       "cats": []
+    },
+    "20262": {
+      "sha": "8939c5f38a6e",
+      "cats": [
+        "Affects-Build-Infra"
+      ]
     }
   }
 }
