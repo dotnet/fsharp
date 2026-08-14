@@ -1205,7 +1205,7 @@ module FSharpExprConvert =
                 let argCount = (List.sumBy List.length argTys)  + (if isStatic then 0 else 1)
                 let key = ValLinkageFullKey({ MemberParentMangledName=memberParentName; MemberIsOverride=false; LogicalName=logicalName; TotalArgCount= argCount }, Some linkageType)
 
-                let (PubPath p) = tcref.PublicPath.Value
+                let p = tcref.PublicPath.Value.FullPath
                 let enclosingNonLocalRef = mkNonLocalEntityRef tcref.nlr.Ccu p
                 let vref = mkNonLocalValRef enclosingNonLocalRef key
                 makeFSExpr isMember vref 

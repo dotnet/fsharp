@@ -200,7 +200,7 @@ type ReaderState =
         ivals: NodeInTable<ValData, Val>
         ianoninfos: NodeInTable<AnonRecdTypeInfo, AnonRecdTypeInfo>
         istrings: InputTable<string>
-        ipubpaths: InputTable<PublicPath>
+        ipubpaths: InputTable<string[]>
         inlerefs: InputTable<NonLocalEntityRef>
         isimpletys: InputTable<TType>
         ifile: string
@@ -855,12 +855,12 @@ let p_ccuref s st = p_int (encode_ccuref st.occus s) st
 // References to public items in this module
 // A huge number of these occur in pickled F# data, so make them unique
 let decode_pubpath st stringTab a =
-    PubPath(Array.map (lookup_string st stringTab) a)
+    Array.map (lookup_string st stringTab) a
 
 let u_encoded_pubpath = u_array u_int
 let u_pubpath st = lookup_uniq st st.ipubpaths (u_int st)
 
-let encode_pubpath stringTab pubpathTab (PubPath a) =
+let encode_pubpath stringTab pubpathTab (a: string[]) =
     encode_uniq pubpathTab (Array.map (encode_string stringTab) a)
 
 let p_encoded_pubpath = p_array p_int
@@ -883,7 +883,7 @@ let encode_nleref ccuTab stringTab nlerefTab thisCcu (nleref: NonLocalEntityRef)
     // References to these nodes _do_ appear in F# assembly metadata, because they may be public.
     let nleref =
         match nleref.Deref.PublicPath with
-        | Some pubpath when nleref.Deref.IsProvidedGeneratedTycon ->
+        | ValueSome pubpath when nleref.Deref.IsProvidedGeneratedTycon ->
             if verbose then
                 dprintfn "remapping pickled reference to provider-generated type %s" nleref.Deref.DisplayNameWithStaticParameters
 
@@ -2796,7 +2796,11 @@ and p_entity_spec_data (x: Entity) st =
     p_string x.entity_logical_name st
     p_option p_string x.EntityCompiledName st
     p_range x.entity_range st
-    p_option p_pubpath x.entity_pubpath st
+    let pubPathOpt =
+        match x.PublicPath with
+        | ValueSome pubpath -> Some pubpath.FullPath
+        | ValueNone -> None
+    p_option p_pubpath pubPathOpt st
     p_access x.Accessibility st
     p_access x.TypeReprAccessibility st
     p_attribs (x.entity_attribs.AsList()) st
@@ -3126,7 +3130,7 @@ and u_rfield_table st =
     Construct.MakeRecdFieldsTable(u_list u_recdfield_spec st)
 
 and u_entity_spec_data st : Entity =
-    let x1, x2a, x2b, x2c, x3, (x4a, x4b), x6, x7f, x8, x9, _x10, x10b, x11, x12, x13, x14, x15 =
+    let x1, x2a, x2b, x2c, _x3, (x4a, x4b), x6, x7f, x8, x9, _x10, x10b, x11, x12, x13, x14, x15 =
         u_tup17
             u_tyar_specs
             u_string
@@ -3155,7 +3159,6 @@ and u_entity_spec_data st : Entity =
         entity_stamp = newStamp ()
         entity_logical_name = x2a
         entity_range = x2c
-        entity_pubpath = x3
         entity_attribs = WellKnownEntityAttribs.Create(x6)
         entity_tycon_repr = x7
         entity_tycon_tcaug = x9

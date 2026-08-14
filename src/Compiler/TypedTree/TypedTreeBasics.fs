@@ -366,10 +366,10 @@ let mkNestedValRef (cref: EntityRef) (v: Val) : ValRef =
         mkNonLocalValRefPreResolved v nlr key
 
 /// From Ref_private to Ref_nonlocal when exporting data.
-let rescopePubPathToParent viewedCcu (PubPath p) = NonLocalEntityRef(viewedCcu, p[0..p.Length-2])
+let rescopePubPathToParent viewedCcu (pp: PublicPath) = NonLocalEntityRef(viewedCcu, pp.EnclosingPath)
 
 /// From Ref_private to Ref_nonlocal when exporting data.
-let rescopePubPath viewedCcu (PubPath p) = NonLocalEntityRef(viewedCcu, p)
+let rescopePubPath viewedCcu (pp: PublicPath) = NonLocalEntityRef(viewedCcu, pp.FullPath)
 
 //---------------------------------------------------------------------------
 // Equality between TAST items.
@@ -414,10 +414,10 @@ let nonLocalRefEq (NonLocalEntityRef(x1, y1) as smr1) (NonLocalEntityRef(x2, y2)
 let nonLocalRefDefinitelyNotEq (NonLocalEntityRef(_, y1)) (NonLocalEntityRef(_, y2)) = 
     not (arrayPathEq y1 y2)
 
-let pubPathEq (PubPath path1) (PubPath path2) = arrayPathEq path1 path2
+let pubPathEq (path1: PublicPath) (path2: PublicPath) = path1.Equals path2
 
-let fslibRefEq (nlr1: NonLocalEntityRef) (PubPath path2) =
-    arrayPathEq nlr1.Path path2
+let fslibRefEq (nlr1: NonLocalEntityRef) (path2: PublicPath) =
+    path2.EqualsFullPath nlr1.Path
 
 // Compare two EntityRef's for equality when compiling fslib (FSharp.Core.dll)
 //
@@ -430,12 +430,12 @@ let fslibEntityRefEq fslibCcu (eref1: EntityRef) (eref2: EntityRef) =
     | ERefNonLocal nlr1, ERefLocal x2
     | ERefLocal x2, ERefNonLocal nlr1 ->
         ccuEq nlr1.Ccu fslibCcu &&
-        match x2.PublicPath with 
-        | Some pp2 -> fslibRefEq nlr1 pp2
-        | None -> false
+        match x2.PublicPath with
+        | ValueSome pp2 -> fslibRefEq nlr1 pp2
+        | ValueNone -> false
     | ERefLocal e1, ERefLocal e2 ->
-        match e1.PublicPath, e2.PublicPath with 
-        | Some pp1, Some pp2 -> pubPathEq pp1 pp2
+        match e1.PublicPath, e2.PublicPath with
+        | ValueSome pp1, ValueSome pp2 -> pubPathEq pp1 pp2
         | _ -> false
     | _ -> false
 
