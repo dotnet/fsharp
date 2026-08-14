@@ -2839,8 +2839,7 @@ and p_tcaug p st =
          p.tcaug_hash_and_equals_withc
          |> Option.map (fun (v1, v2, v3, _) -> (v1, v2, v3)),
          p.tcaug_equals,
-         (p.tcaug_adhoc_list
-          |> ResizeArray.toList
+         (p.AdhocMembers
           // Explicit impls of interfaces only get kept in the adhoc list
           // in order to get check the well-formedness of an interface.
           // Keeping them across assembly boundaries is not valid, because relinking their ValRefs
@@ -3201,7 +3200,10 @@ and u_tcaug st =
         tcaug_equals = b2
         // only used for code generation and checking - hence don't care about the values when reading back in
         tcaug_hasObjectGetHashCode = false
-        tcaug_adhoc_list = ResizeArray<_>(c |> List.map (fun (_, vref) -> (false, vref)))
+        tcaug_adhoc_list =
+            match c with
+            | [] -> null
+            | _ -> ResizeArray<_>(c |> List.map (fun (_, vref) -> (false, vref)))
         tcaug_adhoc = NameMultiMap.ofList c
         tcaug_interfaces = d
         tcaug_super = e
