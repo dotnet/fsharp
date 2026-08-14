@@ -68,7 +68,7 @@ $allErrors += CheckTrim -root "SelfContained_Trimming_Test" -tfm "net9.0" -outpu
 # Check net9.0 trimmed assemblies with static linked FSharpCore.
 # Statically links FSharp.Compiler.Service; the size is stable now that its codegen is
 # deterministic (#19928/#19929). Update if compiler/trimming output intentionally changes.
-$allErrors += CheckTrim -root "StaticLinkedFSharpCore_Trimming_Test" -tfm "net9.0" -outputfile "StaticLinkedFSharpCore_Trimming_Test.dll" -expected_len 9174016 -callerLineNumber 71
+$allErrors += CheckTrim -root "StaticLinkedFSharpCore_Trimming_Test" -tfm "net9.0" -outputfile "StaticLinkedFSharpCore_Trimming_Test.dll" -expected_len 9174528 -callerLineNumber 71
 
 # Check net9.0 trimmed assemblies with F# metadata resources removed
 $allErrors += CheckTrim -root "FSharpMetadataResource_Trimming_Test" -tfm "net9.0" -outputfile "FSharpMetadataResource_Trimming_Test.dll" -expected_len 7613440 -callerLineNumber 74

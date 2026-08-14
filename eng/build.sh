@@ -34,6 +34,8 @@ usage()
   echo "  --skipAnalyzers                Do not run analyzers during build operations"
   echo "  --skipBuild                    Do not run the build"
   echo "  --prepareMachine               Prepare machine for CI run, clean up processes after build"
+  echo "  --msbuildMultiThreaded <value> Sets MSBuild's multi-threaded mode, i.e. the -mt switch ('true' or 'false') (short: --mt)"
+  echo "  --nodeReuse <value>            Sets nodereuse msbuild parameter ('true' or 'false')"
   echo "  --sourceBuild                  Build the repository in source-only mode."
   echo "  --productBuild                 Build the repository in product-build mode."
   echo "  --fromVMR                      Set when building from within the VMR"
@@ -75,6 +77,8 @@ ci=false
 skip_analyzers=false
 skip_build=false
 prepare_machine=false
+# Empty means "not specified"; tools.sh leaves it off unless it's explicitly requested.
+msbuild_multi_threaded=''
 source_build=false
 product_build=false
 from_vmr=false
@@ -166,6 +170,14 @@ while [[ $# > 0 ]]; do
       ;;
     --preparemachine)
       prepare_machine=true
+      ;;
+    --msbuildmultithreaded|--mt)
+      msbuild_multi_threaded=$2
+      shift
+      ;;
+    --nodereuse)
+      node_reuse=$2
+      shift
       ;;
     --docker)
       docker=true
@@ -302,9 +314,6 @@ function BuildSolution {
   if [[ "$ci" != true ]]; then
     quiet_restore=true
   fi
-
-  # Node reuse fails because multiple different versions of FSharp.Build.dll get loaded into MSBuild nodes
-  node_reuse=false
 
   # build bootstrap tools
   # source_build=In source build proto does no work, except cause sourcebuild in wrapper to build

@@ -1050,7 +1050,7 @@ type TcConfigBuilder =
 
         let reportError =
             ResolvingErrorReport(fun errorType err msg ->
-                let error = err, msg
+                let error = err, RichText.mkText msg
 
                 match errorType with
                 | ErrorReportType.Warning -> warning (Error(error, m))
