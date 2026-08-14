@@ -14,11 +14,12 @@
     <PackageReference Include="System.Composition" PrivateAssets="all" ExcludeAssets="contentFiles;analyzers;native" />
     <PackageReference Include="System.Memory" PrivateAssets="all" ExcludeAssets="contentFiles;analyzers;native" />
     <PackageReference Include="System.Runtime.CompilerServices.Unsafe" PrivateAssets="all" ExcludeAssets="contentFiles;analyzers;native" />
+    <!-- Microsoft.ServiceHub.Framework, Microsoft.VisualStudio.RpcContracts and StreamJsonRpc are intentionally NOT
+         listed here (and carry no central PackageVersion): Roslyn's IDE packages already require the exact versions
+         transitively, so they flow in on their own. Do not re-pin them to silence an NU1109/NU1605 on a Roslyn bump —
+         a stale pin is what causes that error. Only packages with a non-Roslyn direct consumer need an entry below. -->
     <!-- Pinned to match Microsoft.VisualStudio.LanguageServices.ExternalAccess's transitive versions and avoid MSB3277 conflicts. -->
     <PackageReference Include="Microsoft.VisualStudio.Validation" PrivateAssets="all" ExcludeAssets="contentFiles;analyzers;native" />
-    <PackageReference Include="Microsoft.VisualStudio.RpcContracts" PrivateAssets="all" ExcludeAssets="contentFiles;analyzers;native" />
-    <PackageReference Include="Microsoft.ServiceHub.Framework" PrivateAssets="all" ExcludeAssets="contentFiles;analyzers;native" />
-    <PackageReference Include="StreamJsonRpc" PrivateAssets="all" ExcludeAssets="contentFiles;analyzers;native" />
   </ItemGroup>
 
   <!-- New VS does not allow embedded interop assemblies ... this turns off the target that turns it on -->

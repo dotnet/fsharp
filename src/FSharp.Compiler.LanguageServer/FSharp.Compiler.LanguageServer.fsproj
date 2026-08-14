@@ -13,7 +13,9 @@
 		<PackageReference Include="Microsoft.VisualStudio.LanguageServer.Protocol" />
 		<!-- Pinned below the central versions: this LSP host targets the VS 17.x servicing baseline. -->
 		<PackageReference Include="Microsoft.VisualStudio.Threading" VersionOverride="17.12.21" />
-		<PackageReference Include="StreamJsonRpc" />
+		<!-- StreamJsonRpc is a direct, first-class dependency here with no transitive floor, so it carries no central
+		     PackageVersion (that pin only existed to mirror Roslyn's IDE closure in vsintegration). Fix it explicitly. -->
+		<PackageReference Include="StreamJsonRpc" VersionOverride="2.26.10" />
 	</ItemGroup>
 
 	<ItemGroup>
