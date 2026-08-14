@@ -7,6 +7,7 @@ open FSharp.Test.Compiler
 let private invalidTrigraphCharWarningMsg = 
     FSComp.SR.lexInvalidTrigraphAsciiByteLiteral ()
     |> snd
+    |> _.Text
 
 [<Fact>]
 let ``all byte char notations pass type check`` () =

@@ -83,6 +83,8 @@
     <Compile Include="FSharp.Core\Microsoft.FSharp.Control\NestedTaskFailures.fs" />
     <Compile Include="FSharp.Core\Microsoft.FSharp.Control\MailboxProcessorType.fs" />
     <Compile Include="FSharp.Core\Microsoft.FSharp.Control\AsyncModule.fs" />
+    <Compile Include="FSharp.Core\Microsoft.FSharp.Control\AsyncModuleFunctions.fs" />
+    <Compile Include="FSharp.Core\Microsoft.FSharp.Control\TaskModuleFunctions.fs" />
     <Compile Include="FSharp.Core\Microsoft.FSharp.Control\ObservableModule.fs" />
     <Compile Include="FSharp.Core\Microsoft.FSharp.Control\EventModule.fs" />
     <Compile Include="FSharp.Core\Microsoft.FSharp.Reflection\FSharpReflection.fs" />
