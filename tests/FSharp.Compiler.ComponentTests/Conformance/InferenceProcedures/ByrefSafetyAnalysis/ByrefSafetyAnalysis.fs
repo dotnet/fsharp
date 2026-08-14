@@ -1000,7 +1000,7 @@ type outref<'T> with
         |> shouldSucceed
 #endif
 
-#if NETSTANDARD2_1_OR_GREATER
+#if NETCOREAPP
     [<Theory; FileInlineData("E_TopLevelByref.fs")>]
     let``E_TopLevelByref_fs`` compilation =
         compilation

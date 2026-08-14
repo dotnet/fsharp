@@ -40,6 +40,8 @@
     <FsLexOutputFolder>$(IntermediateOutputPath)$(TargetFramework)\</FsLexOutputFolder>
     <EnableDefaultEmbeddedResourceItems>false</EnableDefaultEmbeddedResourceItems>
     <Configurations>Debug;Release</Configurations>
+    <!-- FSComp.txt needs the classified accessors, which the SDK's FSharp.Build cannot generate -->
+    <UseBootstrappedFSharpBuildTasks>true</UseBootstrappedFSharpBuildTasks>
   </PropertyGroup>
 
   <!--  The FSharp.Compiler.Service dll provides a referencable public interface for tool builders -->
@@ -102,17 +104,25 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Compile Include="Utilities\NullHelpers.fs" />
     <EmbeddedText Include="FSComp.txt">
       <Link>FSComp.txt</Link>
+      <RichText>true</RichText>
     </EmbeddedText>
     <EmbeddedText Include="Interactive\FSIstrings.txt">
       <Link>FSIstrings.txt</Link>
+      <RichText>true</RichText>
     </EmbeddedText>
     <EmbeddedResource Include="FSStrings.resx">
       <Link>FSStrings.resx</Link>
       <LogicalName>FSStrings.resources</LogicalName>
     </EmbeddedResource>
+    <Compile Include="Utilities\NullHelpers.fs" CompileOrder="CompileFirst" />
+    <Compile Include="Utilities\sformat.fsi" CompileOrder="CompileFirst" />
+    <Compile Include="Utilities\sformat.fs" CompileOrder="CompileFirst" />
+    <Compile Include="Utilities\sr.fsi" CompileOrder="CompileFirst" />
+    <Compile Include="Utilities\sr.fs" CompileOrder="CompileFirst" />
+    <Compile Include="Facilities\RichText.fsi" CompileOrder="CompileFirst" />
+    <Compile Include="Facilities\RichText.fs" CompileOrder="CompileFirst" />
     <Compile Include="Utilities\Activity.fsi" />
     <Compile Include="Utilities\Activity.fs" />
     <Compile Include="Utilities\EnvironmentHelpers.fs" />
@@ -120,10 +130,6 @@
     <Compile Include="Utilities\Caches.fs" />
     <Compile Include="Utilities\illib.fsi" />
     <Compile Include="Utilities\illib.fs" />
-    <Compile Include="Utilities\sformat.fsi" />
-    <Compile Include="Utilities\sformat.fs" />
-    <Compile Include="Utilities\sr.fsi" />
-    <Compile Include="Utilities\sr.fs" />
     <Compile Include="Utilities\ResizeArray.fsi" />
     <Compile Include="Utilities\ResizeArray.fs" />
     <Compile Include="Utilities\HashMultiMap.fsi" />
@@ -414,6 +420,8 @@
     <Compile Include="Checking\MethodCalls.fs" />
     <Compile Include="Checking\PatternMatchCompilation.fsi" />
     <Compile Include="Checking\PatternMatchCompilation.fs" />
+    <Compile Include="Checking\OverloadResolutionRules.fsi" />
+    <Compile Include="Checking\OverloadResolutionRules.fs" />
     <Compile Include="Checking\OverloadResolutionCache.fsi" />
     <Compile Include="Checking\OverloadResolutionCache.fs" />
     <Compile Include="Checking\ConstraintSolver.fsi" />
