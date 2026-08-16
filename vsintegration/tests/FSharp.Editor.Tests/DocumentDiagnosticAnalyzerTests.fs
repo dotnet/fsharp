@@ -19,13 +19,19 @@ type DocumentDiagnosticAnalyzerTests() =
             RoslynTestHelpers.CreateSolution(fileContents, ?extraFSharpProjectOtherOptions = additionalFlags)
             |> RoslynTestHelpers.GetSingleDocument
 
-        let syntacticDiagnostics = FSharpDocumentDiagnosticAnalyzer.GetDiagnostics(document, DiagnosticsType.Syntax) |> Async2.RunSynchronously
-        let semanticDiagnostics = FSharpDocumentDiagnosticAnalyzer.GetDiagnostics(document, DiagnosticsType.Semantic) |> Async2.RunSynchronously
+        let syntacticDiagnostics =
+            FSharpDocumentDiagnosticAnalyzer.GetDiagnostics(document, DiagnosticsType.Syntax)
+            |> Async2.RunSynchronously
+
+        let semanticDiagnostics =
+            FSharpDocumentDiagnosticAnalyzer.GetDiagnostics(document, DiagnosticsType.Semantic)
+            |> Async2.RunSynchronously
+
         syntacticDiagnostics.AddRange(semanticDiagnostics)
 
     member private _.getSyntaxAndSemantic(fileContents: string) =
         let task =
-            cancellableTask {
+            async2 {
                 let document =
                     RoslynTestHelpers.CreateSolution(fileContents)
                     |> RoslynTestHelpers.GetSingleDocument
@@ -34,7 +40,7 @@ type DocumentDiagnosticAnalyzerTests() =
                 let! semantic = FSharpDocumentDiagnosticAnalyzer.GetDiagnostics(document, DiagnosticsType.Semantic)
                 return Seq.toArray syntactic, Seq.toArray semantic
             }
-            |> CancellableTask.start CancellationToken.None
+            |> Async2.startAsTask CancellationToken.None
 
         task.Result
 

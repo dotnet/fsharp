@@ -11,6 +11,7 @@ open Microsoft.CodeAnalysis.CodeFixes
 open Microsoft.CodeAnalysis.Text
 
 open Microsoft.VisualStudio.FSharp.Editor
+open Internal.Utilities.Library
 
 open FSharp.Editor.Tests.Helpers
 open FSharp.Editor.Tests.CodeFixes.CodeFixTestFramework
@@ -30,8 +31,7 @@ let private tryFixSigAt (diagIndex: int) (fsiCode: string) (fsCode: string) : st
     let sourceText = fsDoc.GetTextAsync().Result
 
     let _, checkResults =
-        fsDoc.GetFSharpParseAndCheckResultsAsync "test"
-        |> Microsoft.VisualStudio.FSharp.Editor.CancellableTasks.CancellableTask.runSynchronouslyWithoutCancellation
+        fsDoc.GetFSharpParseAndCheckResultsAsync "test" |> Async2.runWithoutCancellation
 
     let diagnostics =
         checkResults.Diagnostics
@@ -74,8 +74,7 @@ let private countDiags (fsiCode: string) (fsCode: string) : int =
     let fsDoc = documents |> List.find (fun d -> not d.IsFSharpSignatureFile)
 
     let _, checkResults =
-        fsDoc.GetFSharpParseAndCheckResultsAsync "test"
-        |> Microsoft.VisualStudio.FSharp.Editor.CancellableTasks.CancellableTask.runSynchronouslyWithoutCancellation
+        fsDoc.GetFSharpParseAndCheckResultsAsync "test" |> Async2.runWithoutCancellation
 
     checkResults.Diagnostics
     |> Array.filter (fun d -> d.ErrorNumber = 3888)
@@ -426,8 +425,7 @@ let inline f (x: int) = x + 1
     let sourceText = fsDoc.GetTextAsync().Result
 
     let _, checkResults =
-        fsDoc.GetFSharpParseAndCheckResultsAsync "test"
-        |> Microsoft.VisualStudio.FSharp.Editor.CancellableTasks.CancellableTask.runSynchronouslyWithoutCancellation
+        fsDoc.GetFSharpParseAndCheckResultsAsync "test" |> Async2.runWithoutCancellation
 
     let diagnostic =
         checkResults.Diagnostics

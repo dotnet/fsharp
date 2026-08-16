@@ -302,7 +302,6 @@ type internal FSharpClassificationService [<ImportingConstructor>] () =
 
                                 addSemanticClassification sourceText textSpan classificationData result
                 }
-                //|> CancellableTask.ifCanceledReturn ()
                 |> Async2.startAsUnitTask cancellationToken
 
         // Do not perform classification if we don't have project options (#defines matter)

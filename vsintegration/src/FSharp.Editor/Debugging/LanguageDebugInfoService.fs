@@ -52,7 +52,7 @@ type internal FSharpLanguageDebugInfoService [<ImportingConstructor>] () =
         member _.GetDataTipInfoAsync
             (document: Document, position: int, cancellationToken: CancellationToken)
             : Task<FSharpDebugDataTipInfo> =
-            cancellableTask {
+            async2 {
                 let defines, langVersion = document.GetFsharpParsingOptions()
 
                 let! cancellationToken = Async2.CancellationToken

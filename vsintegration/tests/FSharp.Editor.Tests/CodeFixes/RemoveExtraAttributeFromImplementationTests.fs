@@ -11,6 +11,7 @@ open Microsoft.CodeAnalysis.CodeFixes
 open Microsoft.CodeAnalysis.Text
 
 open Microsoft.VisualStudio.FSharp.Editor
+open Internal.Utilities.Library
 
 open FSharp.Editor.Tests.Helpers
 open FSharp.Editor.Tests.CodeFixes.CodeFixTestFramework
@@ -28,8 +29,7 @@ let private tryFixFsAt (diagIndex: int) (fsiCode: string) (fsCode: string) : str
     let sourceText = fsDoc.GetTextAsync().Result
 
     let _, checkResults =
-        fsDoc.GetFSharpParseAndCheckResultsAsync "test"
-        |> Microsoft.VisualStudio.FSharp.Editor.CancellableTasks.CancellableTask.runSynchronouslyWithoutCancellation
+        fsDoc.GetFSharpParseAndCheckResultsAsync "test" |> Async2.runWithoutCancellation
 
     let diagnostics =
         checkResults.Diagnostics

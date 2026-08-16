@@ -92,8 +92,6 @@ src/Compiler/Service/IncrementalBuild.fs
 src/Compiler/Service/ServiceAssemblyContent.fs
 src/Compiler/Service/ServiceDeclarationLists.fs
 src/Compiler/Service/ServiceErrorResolutionHints.fs
-vsintegration/src/FSharp.Editor/Common/CancellableTasks.fs
-
 # Fantomas limitations on signature files  (to investigate)
 
 src/Compiler/AbstractIL/ilread.fsi

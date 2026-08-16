@@ -173,5 +173,4 @@ type internal FSharpBlockStructureService [<ImportingConstructor>] () =
                     |> Seq.toImmutableArray
                     |> FSharpBlockStructure
             }
-            //|> CancellableTask.ifCanceledReturn emptyValue
             |> Async2.startInThreadPool cancellationToken
