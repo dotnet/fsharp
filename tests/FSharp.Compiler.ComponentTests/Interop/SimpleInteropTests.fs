@@ -223,3 +223,37 @@ let main _ =
         |> asExe
         |> compileExeAndRun
         |> shouldSucceed
+
+    [<Fact>]
+    let ``Issue 20264 - inherited generic base method call does not crash`` () =
+        let csLib =
+            CSharp
+                """
+namespace External
+{
+    public class Behavior<T>
+    {
+        public virtual void OnDetaching() { }
+    }
+}
+                """
+            |> withName "ExternalBehavior"
+
+        let fsLib =
+            FSharp
+                """
+module TestIssue20264
+
+open External
+
+type MyBehavior() =
+    inherit Behavior<int>()
+
+    override _.OnDetaching() =
+        base.OnDetaching()
+                """
+            |> withReferences [ csLib ]
+
+        fsLib
+        |> compile
+        |> shouldSucceed
