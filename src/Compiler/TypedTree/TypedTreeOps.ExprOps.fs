@@ -192,8 +192,10 @@ module internal AddressOps =
                 None, exprForValRef m vref, readonly, writeonly
 
             // LVALUE of "x" where "x" is mutable local, mutable intra-assembly module/static binding, or operation doesn't mutate.
-            // Note: we can always take the address of mutable intra-assembly values
-            | Expr.Val(vref, _, m) when MustTakeAddressOfVal g vref || CanTakeAddressOfImmutableVal g m vref mut ->
+            // Note: we can always take the address of mutable intra-assembly values.
+            // The second pattern matches a type-instantiated local value reference produced by TcVal for generalized let bindings.
+            | Expr.Val(vref, _, m)
+            | Expr.App(Expr.Val(vref, _, _), _, _, [], m) when MustTakeAddressOfVal g vref || CanTakeAddressOfImmutableVal g m vref mut ->
                 let readonly = not (MustTakeAddressOfVal g vref)
                 let writeonly = false
                 checkTakeNativeAddress readonly
@@ -455,7 +457,14 @@ module internal ExprFolding =
                              not (c.FieldByIndex n).IsMutable
                              && not (entityRefInThisAssembly g.compilingFSharpCore tcref)
                          then
-                             errorR (Error(FSComp.SR.tastRecursiveValuesMayNotAppearInConstructionOfType (tcref.LogicalName), m))
+                             errorR (
+                                 Error(
+                                     FSComp.SR.tastRecursiveValuesMayNotAppearInConstructionOfType (
+                                         richTextOfEntityRefName tcref tcref.LogicalName
+                                     ),
+                                     m
+                                 )
+                             )
 
                          mkUnionCaseFieldSet (access, c, tinst, n, e, m))))
 
@@ -475,8 +484,8 @@ module internal ExprFolding =
                              errorR (
                                  Error(
                                      FSComp.SR.tastRecursiveValuesMayNotBeAssignedToNonMutableField (
-                                         fspec.rfield_id.idText,
-                                         tcref.LogicalName
+                                         RichText.mkField fspec.rfield_id.idText,
+                                         richTextOfEntityRefName tcref tcref.LogicalName
                                      ),
                                      m
                                  )
@@ -1366,6 +1375,9 @@ module internal Makers =
     let mkCallNewFormat (g: TcGlobals) m aty bty cty dty ety formatStringExpr =
         mkApps g (typedExprForIntrinsic g m g.new_format_info, [ [ aty; bty; cty; dty; ety ] ], [ formatStringExpr ], m)
 
+    let mkCallStringOperator (g: TcGlobals) m argTy e =
+        mkApps g (typedExprForIntrinsic g m g.string_operator_info, [ [ argTy ] ], [ e ], m)
+
     let tryMkCallBuiltInWitness (g: TcGlobals) traitInfo argExprs m =
         let info, tinst = g.MakeBuiltInWitnessInfo traitInfo
         let vref = ValRefForIntrinsic info
@@ -1448,9 +1460,6 @@ module internal Makers =
 
     let mkCallSeqEmpty g m ty1 =
         mkApps g (typedExprForIntrinsic g m g.seq_empty_info, [ [ ty1 ] ], [], m)
-
-    let mkCall_sprintf (g: TcGlobals) m funcTy fmtExpr fillExprs =
-        mkApps g (typedExprForIntrinsic g m g.sprintf_info, [ [ funcTy ] ], fmtExpr :: fillExprs, m)
 
     let mkCallDeserializeQuotationFSharp20Plus g m e1 e2 e3 e4 =
         let args = [ e1; e2; e3; e4 ]
@@ -1569,6 +1578,17 @@ module internal Makers =
             [ arg ],
             m
         )
+
+    /// Concatenate string-valued expressions, choosing the cheapest String.Concat overload by arity.
+    /// An empty list yields "" and a singleton yields itself.
+    let mkStringConcat (g: TcGlobals, m: range, exprs: Expr list) =
+        match exprs with
+        | [] -> mkString g m ""
+        | [ arg ] -> arg
+        | [ arg1; arg2 ] -> mkStaticCall_String_Concat2 g m arg1 arg2
+        | [ arg1; arg2; arg3 ] -> mkStaticCall_String_Concat3 g m arg1 arg2 arg3
+        | [ arg1; arg2; arg3; arg4 ] -> mkStaticCall_String_Concat4 g m arg1 arg2 arg3 arg4
+        | _ -> mkStaticCall_String_Concat_Array g m (mkArray (g.string_ty, exprs, m))
 
     // Quotations can't contain any IL.
     // As a result, we aim to get rid of all IL generation in the typechecker and pattern match

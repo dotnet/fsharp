@@ -14,10 +14,10 @@ type InlayTypeHints(parseResults: FSharpParseFileResults, symbol: FSharpMemberOr
 
     let getHintParts (symbol: FSharpMemberOrFunctionOrValue) (symbolUse: FSharpSymbolUse) =
 
-        match symbol.GetReturnTypeLayout symbolUse.DisplayContext with
+        match symbol.GetReturnTypeRichText symbolUse.DisplayContext with
         | Some typeInfo ->
             let colon = TaggedText(TextTag.Text, ": ")
-            colon :: (typeInfo |> Array.toList)
+            colon :: (typeInfo.Parts |> Array.toList)
 
         // not sure when this can happen
         | None -> []

@@ -301,14 +301,14 @@ module internal PrintUtilities =
 
     let layoutXmlDocOfEventInfo (denv: DisplayEnv) (infoReader: InfoReader) (einfo: EventInfo) restL =
         if denv.showDocumentation then
-            GetXmlDocSigOfEvent infoReader Range.range0 einfo
+            GetXmlDocSigOfEvent infoReader einfo
             |> layoutXmlDocFromSig denv infoReader true einfo.XmlDoc restL             
         else
             restL
 
     let layoutXmlDocOfILFieldInfo (denv: DisplayEnv) (infoReader: InfoReader) (finfo: ILFieldInfo) restL =
         if denv.showDocumentation then
-            GetXmlDocSigOfILFieldInfo infoReader Range.range0 finfo
+            GetXmlDocSigOfILFieldInfo infoReader finfo
             |> layoutXmlDocFromSig denv infoReader true XmlDoc.Empty restL
         else
             restL
@@ -329,7 +329,7 @@ module internal PrintUtilities =
 
     let layoutXmlDocOfEntity (denv: DisplayEnv) (infoReader: InfoReader) (eref: EntityRef) restL =
         if denv.showDocumentation then
-            GetXmlDocSigOfEntityRef infoReader Range.range0 eref
+            GetXmlDocSigOfEntityRef infoReader eref
             |> layoutXmlDocFromSig denv infoReader true eref.XmlDoc restL             
         else
             restL
@@ -463,7 +463,8 @@ module PrintIL =
                       let s = d.ToString ("g12", CultureInfo.InvariantCulture)
                       let s = ensureFloat s
                       s |> (tagNumericLiteral >> Some)
-                | _ -> None
+                | ILFieldInit.String s -> ("\"" + s + "\"") |> (tagStringLiteral >> Some)
+                | ILFieldInit.Null -> "null" |> (tagKeyword >> Some)
             | None -> None
         match textOpt with
         | None -> WordL.equals ^^ (comment "value unavailable")
@@ -647,6 +648,7 @@ module PrintTypes =
         | ILAttribElem.TypeRef (Some ty) -> 
             LeftL.keywordTypedefof ^^ SepL.leftAngle ^^ PrintIL.layoutILTypeRef denv ty ^^ RightL.rightAngle
         | ILAttribElem.TypeRef None -> emptyL
+        | ILAttribElem.Enum (_, value) -> layoutILAttribElement denv value
 
     and layoutILAttrib denv (ty, args) = 
         let argsL = bracketL (sepListL RightL.comma (List.map (layoutILAttribElement denv) args))
@@ -730,11 +732,13 @@ module PrintTypes =
         | _, _ -> squareAngleL (sepListL RightL.semicolon ((match kind with TyparKind.Type -> [] | TyparKind.Measure -> [wordL (tagText "Measure")]) @ List.map (layoutAttrib denv) attrs)) ^^ restL
 
     and layoutTyparRef denv (typar: Typar) =
+        let rawName = typar.DeclaredName |> Option.defaultValue typar.Name
+        let name = if System.String.IsNullOrEmpty rawName then rawName else NormalizeIdentifierBackticks rawName
         tagTypeParameter 
             (sprintf "%s%s%s"
                 (if denv.showStaticallyResolvedTyparAnnotations then prefixOfStaticReq typar.StaticReq else "'")
                 (if denv.showInferenceTyparAnnotations then prefixOfInferenceTypar typar else "")
-                (typar.DeclaredName |> Option.defaultValue typar.Name))
+                name)
         |> mkNav typar.Range
         |> wordL
 
@@ -1200,10 +1204,15 @@ module PrintTypes =
         let (prettyTyparInst, prettyArgInfos, prettyRetTy), cxs = PrettyTypes.PrettifyInstAndUncurriedSig denv.g (typarInst, argInfos, retTy)
         prettyTyparInst, prettyLayoutOfTopTypeInfoAux denv [prettyArgInfos] prettyRetTy cxs
 
-    let prettyLayoutOfCurriedMemberSig denv typarInst argInfos retTy parentTyparTys = 
+    let prettyLayoutOfCurriedMemberSig denv typarInst argInfos retTy parentTyparTys excludeSrtpConstraints = 
         let (prettyTyparInst, parentTyparTys, argInfos, retTy), cxs = PrettyTypes.PrettifyInstAndCurriedSig denv.g (typarInst, parentTyparTys, argInfos, retTy)
         // Filter out the parent typars, which don't get shown in the member signature 
         let cxs = cxs |> List.filter (fun (tp, _) -> not (parentTyparTys |> List.exists (fun ty -> match tryDestTyparTy denv.g ty with ValueSome destTypar -> typarEq tp destTypar | _ -> false))) 
+        // When SRTP method typars are shown on explicit type param declarations, exclude their constraints from postfix
+        let cxs =
+            if excludeSrtpConstraints then
+                cxs |> List.filter (fun (tp, _) -> tp.StaticReq <> TyparStaticReq.HeadType)
+            else cxs
         prettyTyparInst, prettyLayoutOfTopTypeInfoAux denv argInfos retTy cxs
 
     let prettyArgInfos denv allTyparInst =
@@ -1224,7 +1233,8 @@ module PrintTypes =
         // aren't chosen as names for displayed variables. 
         let memberParentTypars = List.map fst memberToParentInst
         let parentTyparTys = List.map (mkTyparTy >> instType allTyparInst) memberParentTypars
-        let prettyTyparInst, layout = prettyLayoutOfCurriedMemberSig denv typarInst argInfos retTy parentTyparTys
+        let hasStaticallyResolvedTypars = niceMethodTypars |> List.exists (fun tp -> tp.StaticReq = TyparStaticReq.HeadType)
+        let prettyTyparInst, layout = prettyLayoutOfCurriedMemberSig denv typarInst argInfos retTy parentTyparTys hasStaticallyResolvedTypars
 
         prettyTyparInst, niceMethodTypars, layout
 
@@ -1348,15 +1358,17 @@ module PrintTastMemberOrVals =
 
         let memberHasSameTyparNameAsParentTypeTypars =
             let parentTyparNames =
-                vref.DeclaringEntity.TyparsNoRange
+                vref.DeclaringEntity.Typars
                 |> Seq.choose (fun tp -> if tp.typar_id.idText = unassignedTyparName then None else Some tp.typar_id.idText)
                 |> set
             niceMethodTypars
             |> Seq.exists (fun tp -> parentTyparNames.Contains tp.typar_id.idText)
 
         let typarOrderMismatch = isTyparOrderMismatch niceMethodTypars argInfos
+        let hasStaticallyResolvedTypars =
+            niceMethodTypars |> List.exists (fun tp -> tp.StaticReq = TyparStaticReq.HeadType)
         let nameL =
-            if denv.showTyparBinding || typarOrderMismatch || memberHasSameTyparNameAsParentTypeTypars then
+            if denv.showTyparBinding || typarOrderMismatch || memberHasSameTyparNameAsParentTypeTypars || hasStaticallyResolvedTypars then
                 layoutTyparDecls denv nameL true niceMethodTypars
             else
                 nameL
@@ -1385,7 +1397,8 @@ module PrintTastMemberOrVals =
                 let resL =
                     if short then tauL
                     else
-                        let nameL = layoutMemberName denv vref niceMethodTypars argInfos tagMember vref.DisplayNameCoreMangled true
+                        let tag = if isNil argInfos then tagMember else tagMethod
+                        let nameL = layoutMemberName denv vref niceMethodTypars argInfos tag vref.DisplayNameCoreMangled true
                         let nameL = if short then nameL else mkInlineL denv vref.Deref nameL
                         stat --- ((nameL  |> addColonL) ^^ tauL)
                 prettyTyparInst, resL
@@ -1497,21 +1510,8 @@ module PrintTastMemberOrVals =
         let argInfos, retTy = GetTopTauTypeInFSharpForm denv.g valReprInfo.ArgInfos tau v.Range
         let nameL =
 
-            let tagF =
-                if isForallFunctionTy denv.g v.Type && not (isDiscard v.DisplayNameCore) then
-                    if IsOperatorDisplayName v.DisplayName then
-                        tagOperator
-                    else
-                        tagFunction
-                elif not v.IsCompiledAsTopLevel && not(isDiscard v.DisplayNameCore) then
-                    tagLocal
-                elif v.IsModuleBinding then
-                    tagModuleBinding
-                else
-                    tagUnknownEntity
-
             v.DisplayName
-            |> tagF
+            |> tagValName denv.g v
             |> mkNav v.DefinitionRange
             |> wordL 
         let nameL = layoutAccessibility denv v.Accessibility nameL
@@ -1526,10 +1526,19 @@ module PrintTastMemberOrVals =
         let isTyFunction = v.IsTypeFunction // Bug: 1143, and innerpoly tests
         let typarOrderMismatch = isTyparOrderMismatch tps argInfos
 
+        let hasStaticallyResolvedTypars =
+            tps |> List.exists (fun tp -> tp.StaticReq = TyparStaticReq.HeadType) &&
+            not (IsLogicalOpName v.LogicalName) &&
+            not denv.shortConstraints
         let typarBindingsL = 
-            if isTyFunction || isOverGeneric || denv.showTyparBinding || typarOrderMismatch then 
+            if isTyFunction || isOverGeneric || denv.showTyparBinding || typarOrderMismatch || hasStaticallyResolvedTypars then 
                 layoutTyparDecls denv nameL true tps 
             else nameL
+        // When SRTP method typars are shown on explicit type param declarations, exclude their constraints from postfix
+        let cxs =
+            if hasStaticallyResolvedTypars then
+                cxs |> List.filter (fun (tp, _) -> tp.StaticReq <> TyparStaticReq.HeadType)
+            else cxs
         let valAndTypeL = (WordL.keywordVal ^^ (typarBindingsL |> addColonL)) --- layoutTopType denv env argInfos retTy cxs
         let valAndTypeL =
             match denv.generatedValueLayout v with
@@ -1588,6 +1597,18 @@ let prettyLayoutsOfUnresolvedOverloading denv argInfos retTy genericParameters =
 
 /// Printing info objects
 module InfoMemberPrinting = 
+
+    /// Controls how the enclosing type of a C#-style ([<Extension>]) extension method is
+    /// rendered in "free style" method layouts (e.g. the "Available overloads" list in
+    /// overload-resolution error messages).
+    [<RequireQualifiedAccess>]
+    type CSharpExtensionTypeDisplay =
+        /// Render the apparent/receiver type, e.g. `Foo` in `foo.CopyTo(...)`. This is the
+        /// default everywhere except overload-resolution error messages.
+        | ReceiverType
+        /// Render the extension's declaring type, e.g. `MemoryExtensions`, so the message is
+        /// not misleading (issue dotnet/fsharp#9838).
+        | DeclaringType
 
     /// Format the arguments of a method
     let layoutParamData denv (ParamData(isParamArray, _isInArg, _isOutArg, optArgInfo, _callerInfo, nmOpt, _reflArgInfo, pty)) =
@@ -1678,7 +1699,7 @@ module InfoMemberPrinting =
     // That is, this style:
     //          Container(argName1: argType1, ..., argNameN: argTypeN) : retType
     //          Container.Method(argName1: argType1, ..., argNameN: argTypeN) : retType
-    let layoutMethInfoCSharpStyle amap m denv (minfo: MethInfo) minst =
+    let layoutMethInfoCSharpStyle (extTypeDisplay: CSharpExtensionTypeDisplay) amap m denv (minfo: MethInfo) minst =
         let retTy = if minfo.IsConstructor then minfo.ApparentEnclosingType else minfo.GetFSharpReturnType(amap, m, minst) 
         let layout = 
             if minfo.IsExtensionMember then
@@ -1687,7 +1708,12 @@ module InfoMemberPrinting =
         let layout = 
             layout ^^
                 if isAppTy minfo.TcGlobals minfo.ApparentEnclosingAppType then
-                    let tcref = minfo.ApparentEnclosingTyconRef 
+                    let tcref =
+                        match extTypeDisplay with
+                        | CSharpExtensionTypeDisplay.DeclaringType when minfo.IsCSharpStyleExtensionMember ->
+                            minfo.DeclaringTyconRef
+                        | _ ->
+                            minfo.ApparentEnclosingTyconRef
                     PrintTypes.layoutTyconRef denv tcref
                 else
                     emptyL
@@ -1703,7 +1729,7 @@ module InfoMemberPrinting =
 
         let layout,paramLayouts =
             match denv.showCsharpCodeAnalysisAttributes, minfo with
-            | true, ILMeth(_g,mi,_e) -> 
+            | true, (ILMeth(_, mi, _) | MethInfoWithModifiedReturnType(ILMeth(_, mi, _), _)) ->
                 let methodLayout = 
                     // Render Method attributes and [return:..] attributes on separate lines above (@@) the method definition
                     PrintTypes.layoutCsharpCodeAnalysisIlAttributes denv (minfo.GetCustomAttrs()) (squareAngleL >> (@@)) layout
@@ -1761,31 +1787,34 @@ module InfoMemberPrinting =
     //
     // For C# extension members:
     //          ApparentContainer.Method(argName1: argType1, ..., argNameN: argTypeN) : retType
-    let rec prettyLayoutOfMethInfoFreeStyle (infoReader: InfoReader) m denv typarInst methInfo =
+    let rec prettyLayoutOfMethInfoFreeStyle (extTypeDisplay: CSharpExtensionTypeDisplay) (infoReader: InfoReader) m denv typarInst methInfo =
         let amap = infoReader.amap
 
         match methInfo with 
-        | DefaultStructCtor _ -> 
-            let prettyTyparInst, _ = PrettyTypes.PrettifyInst amap.g typarInst 
+        | DefaultStructCtor _ ->
+            let prettyTyparInst, _ = PrettyTypes.PrettifyInst amap.g typarInst
             let resL = PrintTypes.layoutTyconRef denv methInfo.ApparentEnclosingTyconRef ^^ wordL punctuationUnit
             prettyTyparInst, resL
+        | RecdCtor _ ->
+            let prettyTyparInst, _ = PrettyTypes.PrettifyInst amap.g typarInst
+            prettyTyparInst, layoutMethInfoCSharpStyle extTypeDisplay amap m denv methInfo methInfo.FormalMethodInst
         | FSMeth(_, _, vref, _) -> 
             let prettyTyparInst, resL = PrintTastMemberOrVals.prettyLayoutOfValOrMember { denv with showMemberContainers=true } infoReader typarInst vref
             prettyTyparInst, resL
         | MethInfoWithModifiedReturnType(ILMeth(_, ilminfo, _) as wrappedInfo,retTy) -> 
             let prettyTyparInst, prettyMethInfo, minst = prettifyILMethInfo amap m wrappedInfo typarInst ilminfo
             let prettyMethInfo = MethInfoWithModifiedReturnType(prettyMethInfo,retTy)
-            let resL = layoutMethInfoCSharpStyle amap m denv prettyMethInfo minst
+            let resL = layoutMethInfoCSharpStyle extTypeDisplay amap m denv prettyMethInfo minst
             prettyTyparInst, resL
-        | MethInfoWithModifiedReturnType(mi,_) -> prettyLayoutOfMethInfoFreeStyle infoReader m denv typarInst mi
+        | MethInfoWithModifiedReturnType(mi,_) -> prettyLayoutOfMethInfoFreeStyle extTypeDisplay infoReader m denv typarInst mi
         | ILMeth(_, ilminfo, _) -> 
             let prettyTyparInst, prettyMethInfo, minst = prettifyILMethInfo amap m methInfo typarInst ilminfo
-            let resL = layoutMethInfoCSharpStyle amap m denv prettyMethInfo minst
+            let resL = layoutMethInfoCSharpStyle extTypeDisplay amap m denv prettyMethInfo minst
             prettyTyparInst, resL
 #if !NO_TYPEPROVIDERS
         | ProvidedMeth _ -> 
             let prettyTyparInst, _ = PrettyTypes.PrettifyInst amap.g typarInst 
-            prettyTyparInst, layoutMethInfoCSharpStyle amap m denv methInfo methInfo.FormalMethodInst
+            prettyTyparInst, layoutMethInfoCSharpStyle extTypeDisplay amap m denv methInfo methInfo.FormalMethodInst
     #endif
 
     let prettyLayoutOfPropInfoFreeStyle g amap m denv (pinfo: PropInfo) =
@@ -1821,8 +1850,8 @@ module InfoMemberPrinting =
         let resL = prettyLayoutOfPropInfoFreeStyle g amap m denv pinfo 
         resL |> bufferL os
 
-    let formatMethInfoToBufferFreeStyle amap m denv os (minfo: MethInfo) = 
-        let _, resL = prettyLayoutOfMethInfoFreeStyle amap m denv emptyTyparInst minfo 
+    let formatMethInfoToBufferFreeStyle (extTypeDisplay: CSharpExtensionTypeDisplay) amap m denv os (minfo: MethInfo) = 
+        let _, resL = prettyLayoutOfMethInfoFreeStyle extTypeDisplay amap m denv emptyTyparInst minfo 
         resL |> bufferL os
 
     /// Format a method to a layout (actually just containing a string) using "free style" (aka "standalone"). 
@@ -1901,8 +1930,12 @@ module TastDefinitionPrinting =
             | fields -> (prefixL ^^ nmL ^^ WordL.keywordOf) --- layoutUnionCaseFields denv infoReader true enclosingTcref fields
         layoutXmlDocOfUnionCase denv infoReader (UnionCaseRef(enclosingTcref, ucase.Id.idText)) caseL
 
-    let layoutUnionCases denv infoReader enclosingTcref ucases =
-        let prefixL = WordL.bar // See bug://2964 - always prefix in case preceded by accessibility modifier
+    let layoutUnionCases denv infoReader isStruct enclosingTcref ucases =
+        let prefixL =
+            match ucases with
+            // Single-case struct: bar changes base type semantics (FS0300), so omit it
+            | [ _ ] when isStruct -> emptyL
+            | _ -> WordL.bar // See bug://2964 - always prefix in case preceded by accessibility modifier
         List.map (layoutUnionCase denv infoReader prefixL enclosingTcref) ucases
 
     /// When to force a break? "type tyname = <HERE> repn"
@@ -1930,6 +1963,11 @@ module TastDefinitionPrinting =
         let nameL = ConvertLogicalNameToDisplayLayout (tagField >> wordL) finfo.FieldName
         let typL = layoutType denv (finfo.FieldType(infoReader.amap, m))
         let fieldL = staticL ^^ WordL.keywordVal ^^ (nameL |> addColonL) ^^ typL
+        let isLiteral = finfo.LiteralValue.IsSome
+        let fieldL =
+            if isLiteral then fieldL ^^ PrintIL.layoutILFieldInit finfo.LiteralValue
+            else fieldL
+        let fieldL = fieldL |> PrintTypes.layoutAttribs denv None isLiteral TyparKind.Type []
         layoutXmlDocOfILFieldInfo denv infoReader finfo fieldL
 
     let layoutEventInfo denv (infoReader: InfoReader) m (einfo: EventInfo) =
@@ -2057,7 +2095,7 @@ module TastDefinitionPrinting =
         let nameL = ConvertLogicalNameToDisplayLayout (tagger >> mkNav tycon.DefinitionRange >> wordL) tycon.DisplayNameCore
 
         let lhsL =
-            let tps = tycon.TyparsNoRange
+            let tps = tycon.Typars
             let tpsL = layoutTyparDecls denv nameL tycon.IsPrefixDisplay tps
             let tpsL = layoutAccessibility denv tycon.Accessibility tpsL
             typewordL ^^ tpsL
@@ -2082,7 +2120,12 @@ module TastDefinitionPrinting =
 
         let ctors =
             GetIntrinsicConstructorInfosOfType infoReader m ty
-            |> List.filter (fun minfo -> IsMethInfoAccessible amap m ad minfo && not minfo.IsClassConstructor && shouldShow minfo.ArbitraryValRef)
+            // RecdCtor is synthesized, so it must not leak into generated signatures.
+            |> List.filter (fun minfo ->
+                IsMethInfoAccessible amap m ad minfo
+                && not minfo.IsClassConstructor
+                && (match minfo with RecdCtor _ -> false | _ -> true)
+                && shouldShow minfo.ArbitraryValRef)
 
         let iimpls =
             if suppressInheritanceAndInterfacesForTyInSimplifiedDisplays g amap m ty then 
@@ -2331,8 +2374,9 @@ module TastDefinitionPrinting =
 
             | TFSharpTyconRepr { fsobjmodel_kind = TFSharpUnion } ->
                 let denv = denv.AddAccessibility tycon.TypeReprAccessibility 
+                let isStruct = tycon.IsStructOrEnumTycon
                 tycon.UnionCasesAsList
-                |> layoutUnionCases denv infoReader tcref
+                |> layoutUnionCases denv infoReader isStruct tcref
                 |> applyMaxMembers denv.maxMembers
                 |> aboveListL
                 |> addReprAccessL
@@ -2582,6 +2626,16 @@ module InferredSigPrinting =
 
         let (@@*) = if denv.printVerboseSignatures then (@@----) else (@@--)
 
+        // Detect namespace global: bare types/vals at root level (not wrapped in Module binding)
+        let rec hasBareToplevelTypes x =
+            match x with
+            | TMDefRec(_, _, tycons, _, _) -> not (List.isEmpty tycons)
+            | TMDefLet _ | TMDefDo _ -> true
+            | TMDefOpens _ -> false
+            | TMDefs defs -> defs |> List.exists hasBareToplevelTypes
+
+        let isGlobalNamespace = hasBareToplevelTypes expr
+
         let rec isConcreteNamespace x = 
             match x with 
             | TMDefRec(_, _opens, tycons, mbinds, _) -> 
@@ -2707,7 +2761,7 @@ module InferredSigPrinting =
                         if showHeader then
                             // OK, we're not in F# Interactive
                             // Check if this is an outer module with no namespace
-                            if isNil outerPath then
+                            if isNil outerPath && not isGlobalNamespace then
                                 // If so print a "module" declaration, no indentation
                                 modNameL @@ basic
                             else
@@ -2745,7 +2799,12 @@ module InferredSigPrinting =
         | EmptyModuleOrNamespaces mspecs when showHeader ->
             List.map emptyModuleOrNamespace mspecs
             |> aboveListL
-        | expr -> imdefL denv expr
+        | expr ->
+            let layout = imdefL denv expr
+            if isGlobalNamespace then
+                WordL.keywordNamespace ^^ wordL (TaggedText.tagNamespace "global") @@* layout
+            else
+                layout
 
 //--------------------------------------------------------------------------
 
@@ -2809,7 +2868,9 @@ let dataExprL denv expr = PrintData.dataExprL denv expr
 
 let outputValOrMember denv infoReader os x = x |> PrintTastMemberOrVals.prettyLayoutOfValOrMemberNoInst denv infoReader |> bufferL os
 
-let stringValOrMember denv infoReader x = x |> PrintTastMemberOrVals.prettyLayoutOfValOrMemberNoInst denv infoReader |> showL
+let richTextValOrMember denv infoReader x = x |> PrintTastMemberOrVals.prettyLayoutOfValOrMemberNoInst denv infoReader |> toRichText
+
+let stringValOrMember denv infoReader x = (richTextValOrMember denv infoReader x).Text
 
 /// Print members with a qualification showing the type they are contained in 
 let layoutQualifiedValOrMember denv infoReader typarInst vref =
@@ -2821,33 +2882,58 @@ let outputQualifiedValOrMember denv infoReader os vref =
 let outputQualifiedValSpec denv infoReader os vref =
     outputQualifiedValOrMember denv infoReader os vref
 
-let stringOfQualifiedValOrMember denv infoReader vref =
-    PrintTastMemberOrVals.prettyLayoutOfValOrMemberNoInst { denv with showMemberContainers=true; } infoReader vref |> showL
+let richTextOfQualifiedValOrMember denv infoReader vref =
+    PrintTastMemberOrVals.prettyLayoutOfValOrMemberNoInst { denv with showMemberContainers=true; } infoReader vref |> toRichText
+
+let stringOfQualifiedValOrMember denv infoReader vref = (richTextOfQualifiedValOrMember denv infoReader vref).Text
 
 /// Convert a MethInfo to a string
 let formatMethInfoToBufferFreeStyle infoReader m denv buf d =
-    InfoMemberPrinting.formatMethInfoToBufferFreeStyle infoReader m denv buf d
+    InfoMemberPrinting.formatMethInfoToBufferFreeStyle InfoMemberPrinting.CSharpExtensionTypeDisplay.ReceiverType infoReader m denv buf d
 
 let prettyLayoutOfMethInfoFreeStyle infoReader m denv typarInst minfo =
-    InfoMemberPrinting.prettyLayoutOfMethInfoFreeStyle infoReader m denv typarInst minfo
+    InfoMemberPrinting.prettyLayoutOfMethInfoFreeStyle InfoMemberPrinting.CSharpExtensionTypeDisplay.ReceiverType infoReader m denv typarInst minfo
 
 /// Convert a PropInfo to a string
 let prettyLayoutOfPropInfoFreeStyle g amap m denv d =
     InfoMemberPrinting.prettyLayoutOfPropInfoFreeStyle g amap m denv d
 
-/// Convert a MethInfo to a string
-let stringOfMethInfo infoReader m denv minfo =
-    buildString (fun buf -> InfoMemberPrinting.formatMethInfoToBufferFreeStyle infoReader m denv buf minfo)
+let richTextOfMethInfo infoReader m denv minfo =
+    InfoMemberPrinting.prettyLayoutOfMethInfoFreeStyle InfoMemberPrinting.CSharpExtensionTypeDisplay.ReceiverType infoReader m denv emptyTyparInst minfo
+    |> snd
+    |> toRichText
 
-let stringOfMethInfoFSharpStyle infoReader m denv minfo =
+/// Convert a MethInfo to a string
+let stringOfMethInfo infoReader m denv minfo = (richTextOfMethInfo infoReader m denv minfo).Text
+
+/// Convert a MethInfo to a string, suitable for the "Available overloads" list
+/// in overload-resolution error messages. For C#-style extension methods, the
+/// rendering uses the extension's declaring type rather than the receiver type,
+/// so the message is not misleading (issue dotnet/fsharp#9838).
+let richTextOfMethInfoForOverloadError infoReader m denv minfo =
+    InfoMemberPrinting.prettyLayoutOfMethInfoFreeStyle InfoMemberPrinting.CSharpExtensionTypeDisplay.DeclaringType infoReader m denv emptyTyparInst minfo
+    |> snd
+    |> toRichText
+
+let stringOfMethInfoForOverloadError infoReader m denv minfo = (richTextOfMethInfoForOverloadError infoReader m denv minfo).Text
+
+let richTextOfMethInfoFSharpStyle infoReader m denv minfo =
     InfoMemberPrinting.layoutMethInfoFSharpStyle infoReader m denv minfo
-    |> showL
+    |> toRichText
+
+let stringOfMethInfoFSharpStyle infoReader m denv minfo = (richTextOfMethInfoFSharpStyle infoReader m denv minfo).Text
 
 /// Convert MethInfos to lines separated by newline including a newline as the first character
-let multiLineStringOfMethInfos infoReader m denv minfos =
+let multiLineRichTextOfMethInfos infoReader m denv minfos =
      minfos
-     |> List.map (stringOfMethInfo infoReader m denv >> sprintf "%s   %s" Environment.NewLine)
-     |> String.concat ""
+     |> List.map (fun minfo ->
+         RichText.append
+             (RichText.mkText (Environment.NewLine + "   "))
+             (richTextOfMethInfo infoReader m denv minfo))
+     |> RichText.concat
+
+let multiLineStringOfMethInfos infoReader m denv minfos =
+    (multiLineRichTextOfMethInfos infoReader m denv minfos).Text
 
 let stringOfPropInfo g amap m denv pinfo =
          buildString (fun buf -> InfoMemberPrinting.formatPropInfoToBufferFreeStyle g amap m denv buf pinfo)
@@ -2865,7 +2951,9 @@ let layoutOfParamData denv paramData = InfoMemberPrinting.layoutParamData denv p
 
 let layoutExnDef denv infoReader x = x |> TastDefinitionPrinting.layoutExnDefn denv infoReader
 
-let stringOfTyparConstraints denv x = x |> PrintTypes.layoutConstraintsWithInfo denv SimplifyTypes.typeSimplificationInfo0 |> showL
+let richTextOfTyparConstraints denv x = x |> PrintTypes.layoutConstraintsWithInfo denv SimplifyTypes.typeSimplificationInfo0 |> toRichText
+
+let stringOfTyparConstraints denv x = (richTextOfTyparConstraints denv x).Text
 
 let layoutTyconDefn denv infoReader ad m (* width *) x = TastDefinitionPrinting.layoutTyconDefn denv infoReader ad m true true (mkLocalEntityRef x) (* |> Display.squashTo width *)
 
@@ -2878,9 +2966,13 @@ let isGeneratedUnionCaseField pos f = TastDefinitionPrinting.isGeneratedUnionCas
 
 let isGeneratedExceptionField pos f = TastDefinitionPrinting.isGeneratedExceptionField pos f
 
+let richTextOfTyparConstraint denv tpc = richTextOfTyparConstraints denv [tpc]
+
 let stringOfTyparConstraint denv tpc = stringOfTyparConstraints denv [tpc]
 
-let stringOfTy denv x = x |> PrintTypes.layoutType denv |> showL
+let richTextOfTy denv x = x |> PrintTypes.layoutType denv |> toRichText
+
+let stringOfTy denv x = (richTextOfTy denv x).Text
 
 let prettyLayoutOfType denv x = x |> PrintTypes.prettyLayoutOfType denv
 
@@ -2890,15 +2982,26 @@ let prettyLayoutOfTypeNoCx denv x = x |> PrintTypes.prettyLayoutOfTypeNoConstrai
 
 let prettyLayoutOfTypar denv x = x |> PrintTypes.layoutTyparRef denv
 
-let prettyStringOfTy denv x = x |> PrintTypes.prettyLayoutOfType denv |> showL
+let prettyRichTextOfTy denv x = x |> PrintTypes.prettyLayoutOfType denv |> toRichText
+
+let prettyStringOfTy denv x = (prettyRichTextOfTy denv x).Text
 
 let prettyStringOfTyNoCx denv x = x |> PrintTypes.prettyLayoutOfTypeNoConstraints denv |> showL
 
-let stringOfRecdField denv infoReader enclosingTcref x = x |> TastDefinitionPrinting.layoutRecdField id false denv infoReader enclosingTcref |> showL
+let richTextOfRecdField denv infoReader enclosingTcref x =
+    x |> TastDefinitionPrinting.layoutRecdField id false denv infoReader enclosingTcref |> toRichText
 
-let stringOfUnionCase denv infoReader enclosingTcref x = x |> TastDefinitionPrinting.layoutUnionCase denv infoReader WordL.bar enclosingTcref |> showL
+let stringOfRecdField denv infoReader enclosingTcref x = (richTextOfRecdField denv infoReader enclosingTcref x).Text
 
-let stringOfExnDef denv infoReader x = x |> TastDefinitionPrinting.layoutExnDefn denv infoReader |> showL
+let richTextOfUnionCase denv infoReader enclosingTcref x =
+    x |> TastDefinitionPrinting.layoutUnionCase denv infoReader WordL.bar enclosingTcref |> toRichText
+
+let stringOfUnionCase denv infoReader enclosingTcref x = (richTextOfUnionCase denv infoReader enclosingTcref x).Text
+
+let richTextOfExnDef denv infoReader x =
+    x |> TastDefinitionPrinting.layoutExnDefn denv infoReader |> toRichText
+
+let stringOfExnDef denv infoReader x = (richTextOfExnDef denv infoReader x).Text
 
 let stringOfFSAttrib denv x = x |> PrintTypes.layoutAttrib denv |> squareAngleL |> showL
 
@@ -2925,7 +3028,7 @@ let prettyLayoutOfInstAndSig denv x = PrintTypes.prettyLayoutOfInstAndSig denv x
 ///
 /// If the output text is different without showing constraints and/or imperative type variable 
 /// annotations and/or fully qualifying paths then don't show them! 
-let minimalStringsOfTwoTypes denv ty1 ty2 =
+let minimalRichTextsOfTwoTypes denv ty1 ty2 =
     let (ty1, ty2), tpcs = PrettyTypes.PrettifyTypePair denv.g (ty1, ty2)
 
     let denv = suppressNullnessAnnotations denv
@@ -2933,9 +3036,9 @@ let minimalStringsOfTwoTypes denv ty1 ty2 =
     // try denv + no type annotations 
     let attempt1 = 
         let denv = { denv with showInferenceTyparAnnotations=false; showStaticallyResolvedTyparAnnotations=false }
-        let min1 = stringOfTy denv ty1
-        let min2 = stringOfTy denv ty2
-        if min1 <> min2 then Some (min1, min2, "") else None
+        let min1 = richTextOfTy denv ty1
+        let min2 = richTextOfTy denv ty2
+        if min1 <> min2 then Some (min1, min2, RichText.empty) else None
 
     match attempt1 with 
     | Some res -> res
@@ -2944,9 +3047,9 @@ let minimalStringsOfTwoTypes denv ty1 ty2 =
     // try denv + no type annotations + show full paths
     let attempt2 = 
         let denv = { denv with showInferenceTyparAnnotations=false; showStaticallyResolvedTyparAnnotations=false }.SetOpenPaths []
-        let min1 = stringOfTy denv ty1
-        let min2 = stringOfTy denv ty2
-        if min1 <> min2 then Some (min1, min2, "") else None
+        let min1 = richTextOfTy denv ty1
+        let min2 = richTextOfTy denv ty2
+        if min1 <> min2 then Some (min1, min2, RichText.empty) else None
 
     match attempt2 with 
     | Some res -> res
@@ -2954,9 +3057,9 @@ let minimalStringsOfTwoTypes denv ty1 ty2 =
 
     // try denv
     let attempt3 = 
-        let min1 = stringOfTy denv ty1
-        let min2 = stringOfTy denv ty2
-        if min1 <> min2 then Some (min1, min2, stringOfTyparConstraints denv tpcs) else None
+        let min1 = richTextOfTy denv ty1
+        let min2 = richTextOfTy denv ty2
+        if min1 <> min2 then Some (min1, min2, richTextOfTyparConstraints denv tpcs) else None
 
     match attempt3 with 
     | Some res -> res 
@@ -2966,9 +3069,9 @@ let minimalStringsOfTwoTypes denv ty1 ty2 =
         // try denv + show full paths + static parameters
         let denv = denv.SetOpenPaths []
         let denv = { denv with includeStaticParametersInTypeNames=true }
-        let min1 = stringOfTy denv ty1
-        let min2 = stringOfTy denv ty2
-        if min1 <> min2 then Some (min1, min2, stringOfTyparConstraints denv tpcs) else None
+        let min1 = richTextOfTy denv ty1
+        let min2 = richTextOfTy denv ty2
+        if min1 <> min2 then Some (min1, min2, richTextOfTyparConstraints denv tpcs) else None
 
     match attempt4 with
     | Some res -> res
@@ -2979,29 +3082,42 @@ let minimalStringsOfTwoTypes denv ty1 ty2 =
         let denv = { denv with includeStaticParametersInTypeNames=true }
         let makeName t =
             let assemblyName = PrintTypes.layoutAssemblyName denv t |> function | "" -> "" | name -> $" (%s{name})"
-            sprintf "%s%s" (stringOfTy denv t) assemblyName
+            RichText.append (richTextOfTy denv t) (RichText.mkText assemblyName)
 
-        (makeName ty1, makeName ty2, stringOfTyparConstraints denv tpcs)
-    
+        (makeName ty1, makeName ty2, richTextOfTyparConstraints denv tpcs)
+
+let minimalStringsOfTwoTypes denv ty1 ty2 =
+    let min1, min2, cxs = minimalRichTextsOfTwoTypes denv ty1 ty2
+    min1.Text, min2.Text, cxs.Text
+
 // Note: Always show imperative annotations when comparing value signatures 
-let minimalStringsOfTwoValues denv infoReader vref1 vref2 = 
+let minimalRichTextsOfTwoValues denv infoReader vref1 vref2 = 
     let denv = suppressNullnessAnnotations denv
     let denvMin = { denv with showInferenceTyparAnnotations=true; showStaticallyResolvedTyparAnnotations=false }
-    let min1 = buildString (fun buf -> outputQualifiedValOrMember denvMin infoReader buf vref1)
-    let min2 = buildString (fun buf -> outputQualifiedValOrMember denvMin infoReader buf vref2) 
+    let min1 = richTextOfQualifiedValOrMember denvMin infoReader vref1
+    let min2 = richTextOfQualifiedValOrMember denvMin infoReader vref2
     if min1 <> min2 then 
         (min1, min2) 
     else
         let denvMax = { denv with showInferenceTyparAnnotations=true; showStaticallyResolvedTyparAnnotations=true }
-        let max1 = buildString (fun buf -> outputQualifiedValOrMember denvMax infoReader buf vref1)
-        let max2 = buildString (fun buf -> outputQualifiedValOrMember denvMax infoReader buf vref2) 
+        let max1 = richTextOfQualifiedValOrMember denvMax infoReader vref1
+        let max2 = richTextOfQualifiedValOrMember denvMax infoReader vref2
         max1, max2
+
+let minimalStringsOfTwoValues denv infoReader vref1 vref2 =
+    let min1, min2 = minimalRichTextsOfTwoValues denv infoReader vref1 vref2
+    min1.Text, min2.Text
     
-let minimalStringOfType denv ty = 
+let minimalRichTextOfType denv ty =
     let ty, _cxs = PrettyTypes.PrettifyType denv.g ty
     let denv = suppressNullnessAnnotations denv
     let denvMin = { denv with showInferenceTyparAnnotations=false; showStaticallyResolvedTyparAnnotations=false }
-    showL (PrintTypes.layoutTypeWithInfoAndPrec denvMin SimplifyTypes.typeSimplificationInfo0 5 ty)
+    toRichText (PrintTypes.layoutTypeWithInfoAndPrec denvMin SimplifyTypes.typeSimplificationInfo0 5 ty)
 
-let minimalStringOfTypeWithNullness denv ty = 
+let minimalStringOfType denv ty = (minimalRichTextOfType denv ty).Text
+
+let minimalRichTextOfTypeWithNullness denv ty =
+    minimalRichTextOfType {denv with showNullnessAnnotations = Some true} ty
+
+let minimalStringOfTypeWithNullness denv ty =
     minimalStringOfType {denv with showNullnessAnnotations = Some true} ty

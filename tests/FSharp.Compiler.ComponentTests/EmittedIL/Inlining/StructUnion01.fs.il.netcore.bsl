@@ -466,25 +466,24 @@
   {
     
     .maxstack  8
-    IL_0000:  nop
-    IL_0001:  ldarga.s   x
-    IL_0003:  ldfld      int32 assembly/U::item1
-    IL_0008:  ldc.i4.3
-    IL_0009:  sub
-    IL_000a:  switch     ( 
-                          IL_0015)
-    IL_0013:  br.s       IL_001d
+    IL_0000:  ldarga.s   x
+    IL_0002:  ldfld      int32 assembly/U::item1
+    IL_0007:  ldc.i4.3
+    IL_0008:  sub
+    IL_0009:  switch     ( 
+                          IL_0014)
+    IL_0012:  br.s       IL_001c
 
-    IL_0015:  ldarga.s   x
-    IL_0017:  ldfld      int32 assembly/U::item2
-    IL_001c:  ret
+    IL_0014:  ldarga.s   x
+    IL_0016:  ldfld      int32 assembly/U::item2
+    IL_001b:  ret
 
-    IL_001d:  ldarga.s   x
-    IL_001f:  ldfld      int32 assembly/U::item1
-    IL_0024:  ldarga.s   x
-    IL_0026:  ldfld      int32 assembly/U::item2
-    IL_002b:  add
-    IL_002c:  ret
+    IL_001c:  ldarga.s   x
+    IL_001e:  ldfld      int32 assembly/U::item1
+    IL_0023:  ldarga.s   x
+    IL_0025:  ldfld      int32 assembly/U::item2
+    IL_002a:  add
+    IL_002b:  ret
   } 
 
   .method public static int32  g4(valuetype assembly/U x,
@@ -497,62 +496,61 @@
              int32 V_1,
              int32 V_2,
              int32 V_3)
-    IL_0000:  nop
-    IL_0001:  ldarga.s   x
-    IL_0003:  ldfld      int32 assembly/U::item1
-    IL_0008:  ldc.i4.3
-    IL_0009:  sub
-    IL_000a:  switch     ( 
-                          IL_0015)
-    IL_0013:  br.s       IL_0059
+    IL_0000:  ldarga.s   x
+    IL_0002:  ldfld      int32 assembly/U::item1
+    IL_0007:  ldc.i4.3
+    IL_0008:  sub
+    IL_0009:  switch     ( 
+                          IL_0014)
+    IL_0012:  br.s       IL_0058
 
-    IL_0015:  ldarga.s   y
-    IL_0017:  ldfld      int32 assembly/U::item1
-    IL_001c:  ldc.i4.5
-    IL_001d:  sub
-    IL_001e:  switch     ( 
-                          IL_0049)
-    IL_0027:  ldarga.s   y
-    IL_0029:  ldfld      int32 assembly/U::item2
-    IL_002e:  ldarga.s   y
-    IL_0030:  ldfld      int32 assembly/U::item1
-    IL_0035:  ldarga.s   x
-    IL_0037:  ldfld      int32 assembly/U::item2
-    IL_003c:  ldarga.s   x
-    IL_003e:  ldfld      int32 assembly/U::item1
-    IL_0043:  stloc.3
-    IL_0044:  stloc.2
-    IL_0045:  stloc.1
-    IL_0046:  stloc.0
-    IL_0047:  br.s       IL_0079
+    IL_0014:  ldarga.s   y
+    IL_0016:  ldfld      int32 assembly/U::item1
+    IL_001b:  ldc.i4.5
+    IL_001c:  sub
+    IL_001d:  switch     ( 
+                          IL_0048)
+    IL_0026:  ldarga.s   y
+    IL_0028:  ldfld      int32 assembly/U::item2
+    IL_002d:  ldarga.s   y
+    IL_002f:  ldfld      int32 assembly/U::item1
+    IL_0034:  ldarga.s   x
+    IL_0036:  ldfld      int32 assembly/U::item2
+    IL_003b:  ldarga.s   x
+    IL_003d:  ldfld      int32 assembly/U::item1
+    IL_0042:  stloc.3
+    IL_0043:  stloc.2
+    IL_0044:  stloc.1
+    IL_0045:  stloc.0
+    IL_0046:  br.s       IL_0078
 
-    IL_0049:  ldarga.s   x
-    IL_004b:  ldfld      int32 assembly/U::item2
-    IL_0050:  ldarga.s   y
-    IL_0052:  ldfld      int32 assembly/U::item2
-    IL_0057:  add
-    IL_0058:  ret
+    IL_0048:  ldarga.s   x
+    IL_004a:  ldfld      int32 assembly/U::item2
+    IL_004f:  ldarga.s   y
+    IL_0051:  ldfld      int32 assembly/U::item2
+    IL_0056:  add
+    IL_0057:  ret
 
-    IL_0059:  ldarga.s   y
-    IL_005b:  ldfld      int32 assembly/U::item2
-    IL_0060:  stloc.0
-    IL_0061:  ldarga.s   y
-    IL_0063:  ldfld      int32 assembly/U::item1
-    IL_0068:  stloc.1
-    IL_0069:  ldarga.s   x
-    IL_006b:  ldfld      int32 assembly/U::item2
-    IL_0070:  stloc.2
-    IL_0071:  ldarga.s   x
-    IL_0073:  ldfld      int32 assembly/U::item1
-    IL_0078:  stloc.3
-    IL_0079:  ldloc.3
-    IL_007a:  ldloc.2
-    IL_007b:  add
-    IL_007c:  ldloc.1
-    IL_007d:  add
-    IL_007e:  ldloc.0
-    IL_007f:  add
-    IL_0080:  ret
+    IL_0058:  ldarga.s   y
+    IL_005a:  ldfld      int32 assembly/U::item2
+    IL_005f:  stloc.0
+    IL_0060:  ldarga.s   y
+    IL_0062:  ldfld      int32 assembly/U::item1
+    IL_0067:  stloc.1
+    IL_0068:  ldarga.s   x
+    IL_006a:  ldfld      int32 assembly/U::item2
+    IL_006f:  stloc.2
+    IL_0070:  ldarga.s   x
+    IL_0072:  ldfld      int32 assembly/U::item1
+    IL_0077:  stloc.3
+    IL_0078:  ldloc.3
+    IL_0079:  ldloc.2
+    IL_007a:  add
+    IL_007b:  ldloc.1
+    IL_007c:  add
+    IL_007d:  ldloc.0
+    IL_007e:  add
+    IL_007f:  ret
   } 
 
   .method public static int32  f1(valuetype assembly/U& x) cil managed
@@ -585,25 +583,24 @@
   {
     
     .maxstack  8
-    IL_0000:  nop
-    IL_0001:  ldarg.0
-    IL_0002:  ldfld      int32 assembly/U::item1
-    IL_0007:  ldc.i4.3
-    IL_0008:  sub
-    IL_0009:  switch     ( 
-                          IL_0014)
-    IL_0012:  br.s       IL_001b
+    IL_0000:  ldarg.0
+    IL_0001:  ldfld      int32 assembly/U::item1
+    IL_0006:  ldc.i4.3
+    IL_0007:  sub
+    IL_0008:  switch     ( 
+                          IL_0013)
+    IL_0011:  br.s       IL_001a
 
-    IL_0014:  ldarg.0
-    IL_0015:  ldfld      int32 assembly/U::item2
-    IL_001a:  ret
+    IL_0013:  ldarg.0
+    IL_0014:  ldfld      int32 assembly/U::item2
+    IL_0019:  ret
 
-    IL_001b:  ldarg.0
-    IL_001c:  ldfld      int32 assembly/U::item1
-    IL_0021:  ldarg.0
-    IL_0022:  ldfld      int32 assembly/U::item2
-    IL_0027:  add
-    IL_0028:  ret
+    IL_001a:  ldarg.0
+    IL_001b:  ldfld      int32 assembly/U::item1
+    IL_0020:  ldarg.0
+    IL_0021:  ldfld      int32 assembly/U::item2
+    IL_0026:  add
+    IL_0027:  ret
   } 
 
   .method public static int32  f4(valuetype assembly/U& x,
@@ -624,62 +621,61 @@
     IL_0007:  ldarg.1
     IL_0008:  ldobj      assembly/U
     IL_000d:  stloc.1
-    IL_000e:  nop
-    IL_000f:  ldloca.s   V_0
-    IL_0011:  ldfld      int32 assembly/U::item1
-    IL_0016:  ldc.i4.3
-    IL_0017:  sub
-    IL_0018:  switch     ( 
-                          IL_0023)
-    IL_0021:  br.s       IL_0069
+    IL_000e:  ldloca.s   V_0
+    IL_0010:  ldfld      int32 assembly/U::item1
+    IL_0015:  ldc.i4.3
+    IL_0016:  sub
+    IL_0017:  switch     ( 
+                          IL_0022)
+    IL_0020:  br.s       IL_0068
 
-    IL_0023:  ldloca.s   V_1
-    IL_0025:  ldfld      int32 assembly/U::item1
-    IL_002a:  ldc.i4.5
-    IL_002b:  sub
-    IL_002c:  switch     ( 
-                          IL_0059)
-    IL_0035:  ldloca.s   V_1
-    IL_0037:  ldfld      int32 assembly/U::item2
-    IL_003c:  ldloca.s   V_1
-    IL_003e:  ldfld      int32 assembly/U::item1
-    IL_0043:  ldloca.s   V_0
-    IL_0045:  ldfld      int32 assembly/U::item2
-    IL_004a:  ldloca.s   V_0
-    IL_004c:  ldfld      int32 assembly/U::item1
-    IL_0051:  stloc.s    V_5
-    IL_0053:  stloc.s    V_4
-    IL_0055:  stloc.3
-    IL_0056:  stloc.2
-    IL_0057:  br.s       IL_008b
+    IL_0022:  ldloca.s   V_1
+    IL_0024:  ldfld      int32 assembly/U::item1
+    IL_0029:  ldc.i4.5
+    IL_002a:  sub
+    IL_002b:  switch     ( 
+                          IL_0058)
+    IL_0034:  ldloca.s   V_1
+    IL_0036:  ldfld      int32 assembly/U::item2
+    IL_003b:  ldloca.s   V_1
+    IL_003d:  ldfld      int32 assembly/U::item1
+    IL_0042:  ldloca.s   V_0
+    IL_0044:  ldfld      int32 assembly/U::item2
+    IL_0049:  ldloca.s   V_0
+    IL_004b:  ldfld      int32 assembly/U::item1
+    IL_0050:  stloc.s    V_5
+    IL_0052:  stloc.s    V_4
+    IL_0054:  stloc.3
+    IL_0055:  stloc.2
+    IL_0056:  br.s       IL_008a
 
-    IL_0059:  ldloca.s   V_0
-    IL_005b:  ldfld      int32 assembly/U::item2
-    IL_0060:  ldloca.s   V_1
-    IL_0062:  ldfld      int32 assembly/U::item2
-    IL_0067:  add
-    IL_0068:  ret
+    IL_0058:  ldloca.s   V_0
+    IL_005a:  ldfld      int32 assembly/U::item2
+    IL_005f:  ldloca.s   V_1
+    IL_0061:  ldfld      int32 assembly/U::item2
+    IL_0066:  add
+    IL_0067:  ret
 
-    IL_0069:  ldloca.s   V_1
-    IL_006b:  ldfld      int32 assembly/U::item2
-    IL_0070:  stloc.2
-    IL_0071:  ldloca.s   V_1
-    IL_0073:  ldfld      int32 assembly/U::item1
-    IL_0078:  stloc.3
-    IL_0079:  ldloca.s   V_0
-    IL_007b:  ldfld      int32 assembly/U::item2
-    IL_0080:  stloc.s    V_4
-    IL_0082:  ldloca.s   V_0
-    IL_0084:  ldfld      int32 assembly/U::item1
-    IL_0089:  stloc.s    V_5
-    IL_008b:  ldloc.s    V_5
-    IL_008d:  ldloc.s    V_4
-    IL_008f:  add
-    IL_0090:  ldloc.3
-    IL_0091:  add
-    IL_0092:  ldloc.2
-    IL_0093:  add
-    IL_0094:  ret
+    IL_0068:  ldloca.s   V_1
+    IL_006a:  ldfld      int32 assembly/U::item2
+    IL_006f:  stloc.2
+    IL_0070:  ldloca.s   V_1
+    IL_0072:  ldfld      int32 assembly/U::item1
+    IL_0077:  stloc.3
+    IL_0078:  ldloca.s   V_0
+    IL_007a:  ldfld      int32 assembly/U::item2
+    IL_007f:  stloc.s    V_4
+    IL_0081:  ldloca.s   V_0
+    IL_0083:  ldfld      int32 assembly/U::item1
+    IL_0088:  stloc.s    V_5
+    IL_008a:  ldloc.s    V_5
+    IL_008c:  ldloc.s    V_4
+    IL_008e:  add
+    IL_008f:  ldloc.3
+    IL_0090:  add
+    IL_0091:  ldloc.2
+    IL_0092:  add
+    IL_0093:  ret
   } 
 
 } 
@@ -696,7 +692,6 @@
   } 
 
 } 
-
 
 
 

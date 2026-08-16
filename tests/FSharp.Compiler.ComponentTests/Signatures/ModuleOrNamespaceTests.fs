@@ -376,3 +376,50 @@ let ```a` b`` (a:int) (b:int) = ()
 module Foo
 
 val ```a` b`` : a: int -> b: int -> unit"""
+
+// Found by corpus-wide roundtrip sweep. Fixed: #19593
+[<Fact>]
+let ``Namespace global with class type roundtrips`` () =
+    let implSource =
+        """
+namespace global
+
+type Foo() = 
+    member _.X = 1
+"""
+
+    let generatedSignature =
+        FSharp implSource
+        |> printSignatures
+
+    Fsi generatedSignature
+    |> withAdditionalSourceFile (FsSource implSource)
+    |> ignoreWarnings
+    |> compile
+    |> shouldSucceed
+    |> ignore
+
+// Namespace global with nested module — fixed by moving ns global detection into NicePrint
+[<Fact>]
+let ``Namespace global with module roundtrips`` () =
+    let implSource =
+        """
+namespace global
+
+type Foo() = 
+    member _.X = 1
+
+module Utils = 
+   let f (x:Foo) = x
+"""
+
+    let generatedSignature =
+        FSharp implSource
+        |> printSignatures
+
+    Fsi generatedSignature
+    |> withAdditionalSourceFile (FsSource implSource)
+    |> ignoreWarnings
+    |> compile
+    |> shouldSucceed
+    |> ignore

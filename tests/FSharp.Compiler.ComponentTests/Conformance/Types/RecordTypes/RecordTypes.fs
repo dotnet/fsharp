@@ -100,9 +100,9 @@ module RecordTypes =
         |> shouldFail
         |> withDiagnostics [
             (Error 39, Line 16, Col 15, Line 16, Col 30, "The type 'IStructuralHash' is not defined.")
-            (Error 72, Line 17, Col 1, Line 17, Col 25, "Lookup on object of indeterminate type based on information prior to this program point. A type annotation may be needed prior to this program point to constrain the type of the object. This may allow the lookup to be resolved.")
+            (Error 72, Line 17, Col 1, Line 17, Col 25, "The type of this expression could not be inferred before accessing its members. Add a type annotation, e.g. (expr: SomeType), to constrain the type before this point.")
             (Error 39, Line 20, Col 15, Line 20, Col 30, "The type 'IStructuralHash' is not defined.")
-            (Error 72, Line 21, Col 1, Line 21, Col 25, "Lookup on object of indeterminate type based on information prior to this program point. A type annotation may be needed prior to this program point to constrain the type of the object. This may allow the lookup to be resolved.")
+            (Error 72, Line 21, Col 1, Line 21, Col 25, "The type of this expression could not be inferred before accessing its members. Add a type annotation, e.g. (expr: SomeType), to constrain the type before this point.")
         ]
 
     // SOURCE=E_MutableFields01.fsx SCFLAGS="--test:ErrorRanges"                                # E_MutableFields01.fsx
@@ -115,9 +115,9 @@ module RecordTypes =
         |> withDiagnostics [
             (Warning 464, Line 15, Col 22, Line 15, Col 28, "This code is less generic than indicated by its annotations. A unit-of-measure specified using '_' has been determined to be '1', i.e. dimensionless. Consider making the code generic, or removing the use of '_'.")
             (Warning 464, Line 15, Col 35, Line 15, Col 42, "This code is less generic than indicated by its annotations. A unit-of-measure specified using '_' has been determined to be '1', i.e. dimensionless. Consider making the code generic, or removing the use of '_'.")
-            (Error 5, Line 17, Col 1, Line 17, Col 5, "This field is not mutable")
+            (Error 5, Line 17, Col 4, Line 17, Col 5, "This field is not mutable")
             (Error 1, Line 17, Col 16, Line 17, Col 22, "The type 'float<Kg>' does not match the type 'decimal<Kg>'")
-            (Error 5, Line 18, Col 1, Line 18, Col 5, "This field is not mutable")
+            (Error 5, Line 18, Col 4, Line 18, Col 5, "This field is not mutable")
             (Error 1, Line 18, Col 16, Line 18, Col 21, "This expression was expected to have type\n    'float'    \nbut here has type\n    'decimal'    ")
         ]
 
@@ -441,7 +441,7 @@ module RecordTypes =
         |> typecheck
         |> shouldFail
         |> withDiagnostics [
-            (Error 668, Line 4, Col 16, Line 4, Col 17, "The field 'B' appears multiple times in this record expression or pattern")
+            Error 668, Line 4, Col 25, Line 4, Col 32, "The field 'B' appears multiple times in this record expression or pattern"
         ]
         
     [<Fact>]
@@ -454,8 +454,8 @@ module RecordTypes =
         |> typecheck
         |> shouldFail
         |> withDiagnostics [
-            (Error 668, Line 4, Col 16, Line 4, Col 17, "The field 'B' appears multiple times in this record expression or pattern")
-            (Error 668, Line 4, Col 25, Line 4, Col 26, "The field 'B' appears multiple times in this record expression or pattern")
+            Error 668, Line 4, Col 25, Line 4, Col 32, "The field 'B' appears multiple times in this record expression or pattern"
+            Error 668, Line 4, Col 34, Line 4, Col 41, "The field 'B' appears multiple times in this record expression or pattern"
         ]
     
     [<Fact>]
@@ -468,8 +468,8 @@ module RecordTypes =
         |> typecheck
         |> shouldFail
         |> withDiagnostics [
-            (Error 668, Line 4, Col 16, Line 4, Col 17, "The field 'A' appears multiple times in this record expression or pattern")
-            (Error 668, Line 4, Col 23, Line 4, Col 24, "The field 'B' appears multiple times in this record expression or pattern")
+            Error 668, Line 4, Col 30, Line 4, Col 35, "The field 'A' appears multiple times in this record expression or pattern"
+            Error 668, Line 4, Col 37, Line 4, Col 42, "The field 'B' appears multiple times in this record expression or pattern"
         ]
     
     [<Fact>]
@@ -482,7 +482,7 @@ module RecordTypes =
         |> typecheck
         |> shouldFail
         |> withDiagnostics [
-            (Error 668, Line 4, Col 16, Line 4, Col 17, "The field 'A' appears multiple times in this record expression or pattern")
+            Error 668, Line 4, Col 31, Line 4, Col 36, "The field 'A' appears multiple times in this record expression or pattern"
         ]
         
     [<Fact>]
@@ -495,8 +495,8 @@ module RecordTypes =
         |> typecheck
         |> shouldFail
         |> withDiagnostics [
-            (Error 668, Line 4, Col 16, Line 4, Col 17, "The field 'A' appears multiple times in this record expression or pattern")
-            (Error 668, Line 4, Col 31, Line 4, Col 32, "The field 'A' appears multiple times in this record expression or pattern")
+            Error 668, Line 4, Col 31, Line 4, Col 36, "The field 'A' appears multiple times in this record expression or pattern"
+            Error 668, Line 4, Col 45, Line 4, Col 50, "The field 'A' appears multiple times in this record expression or pattern"
         ]
         
     [<Fact>]
@@ -509,8 +509,8 @@ module RecordTypes =
         |> typecheck
         |> shouldFail
         |> withDiagnostics [
-            (Error 668, Line 4, Col 16, Line 4, Col 21, "The field 'A' appears multiple times in this record expression or pattern")
-            (Error 668, Line 4, Col 27, Line 4, Col 28, "The field 'B' appears multiple times in this record expression or pattern")
+            Error 668, Line 4, Col 34, Line 4, Col 39, "The field 'A' appears multiple times in this record expression or pattern"
+            Error 668, Line 4, Col 41, Line 4, Col 46, "The field 'B' appears multiple times in this record expression or pattern"
         ]
     
     [<Fact>]
@@ -616,3 +616,214 @@ module RecordTypes =
         |> typecheck
         |> shouldFail
         |> withSingleDiagnostic (Error 954, Line 4, Col 18, Line 4, Col 30, "This type definition involves an immediate cyclic reference through a struct field or inheritance relation")
+
+    // Feature: allow constructing an F# record by calling its (synthesized) all-fields
+    // constructor positionally, e.g. MyRecord(1, "a"), as is already possible from C#.
+    // These tests describe the target behaviour and currently FAIL (records expose no
+    // F#-callable constructor; only { Field = ... } record syntax is permitted).
+
+    [<Fact>]
+    let ``Record can be constructed positionally via its all-fields constructor`` () =
+        Fsx """
+type Person = { Name : string; Age : int }
+let p = Person("Isaac", 21)
+if p.Name <> "Isaac" then failwith "wrong Name"
+if p.Age <> 21 then failwith "wrong Age"
+if p <> { Name = "Isaac"; Age = 21 } then failwith "not equal to record-syntax value"
+        """
+        |> withLangVersionPreview
+        |> compileExeAndRun
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Record positional constructor evaluates arguments left-to-right`` () =
+        Fsx """
+type R = { A : int; B : int }
+let log = System.Collections.Generic.List<int>()
+let side n = log.Add n; n
+let r = R(side 1, side 2)
+if List.ofSeq log <> [1; 2] then failwith "arguments not evaluated left-to-right"
+if r.A <> 1 || r.B <> 2 then failwith "wrong field values"
+        """
+        |> withLangVersionPreview
+        |> compileExeAndRun
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Record constructor supports named arguments matching field names`` () =
+        Fsx """
+type Person = { Name : string; Age : int }
+let p = Person(Age = 21, Name = "Isaac")
+if p.Name <> "Isaac" || p.Age <> 21 then failwith "wrong field values"
+        """
+        |> withLangVersionPreview
+        |> compileExeAndRun
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Generic record can be constructed positionally`` () =
+        Fsx """
+type Boxed<'T> = { Value : 'T; Label : string }
+let b = Boxed(42, "answer")
+if b.Value <> 42 || b.Label <> "answer" then failwith "wrong field values"
+        """
+        |> withLangVersionPreview
+        |> compileExeAndRun
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Struct record can be constructed positionally with all fields`` () =
+        Fsx """
+[<Struct>]
+type Point = { X : int; Y : int }
+let pt = Point(3, 4)
+if pt.X <> 3 || pt.Y <> 4 then failwith "wrong field values"
+        """
+        |> withLangVersionPreview
+        |> compileExeAndRun
+        |> shouldSucceed
+
+    // FS-1073 scope precedence / backward compatibility: the type name is treated as a record
+    // constructor ONLY when there is no other binding with the same name in scope. Here a value
+    // binding 'Record' shadows the record type's synthesized constructor, so 'Record 0' must remain
+    // the function application (returning a string), NOT a record construction. Calling 'string' on
+    // it therefore yields the function's own result.
+    [<Fact>]
+    let ``Record constructor does not shadow an in-scope value binding of the same name`` () =
+        Fsx """
+let Record (x: int) : string = "function"   // value binding 'Record : int -> string'
+type Record = { N : int }                    // record whose all-fields ctor would be 'Record : int -> Record'
+let result : string = string (Record 0)      // 'Record 0' must be the function application, not the ctor
+if result <> "function" then failwith $"expected the in-scope function to be called, got '{result}'"
+        """
+        |> withLangVersionPreview
+        |> compileExeAndRun
+        |> shouldSucceed
+
+    // FS-1073 accessibility gating: the synthesized constructor must be no more accessible than '{ ... }'
+    // construction. A record with 'private' representation can be constructed via the ctor only where the
+    // representation is accessible (i.e. inside the declaring module), never from outside - so F# does not
+    // inherit the C# behaviour where the IL constructor is public regardless of the record's accessibility.
+    [<Fact>]
+    let ``Private record can be constructed via its constructor inside the declaring scope`` () =
+        Fsx """
+type R = private { A : int; B : int }
+let r = R(1, 2)
+if r.A <> 1 || r.B <> 2 then failwith "wrong field values"
+        """
+        |> withLangVersionPreview
+        |> compileExeAndRun
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Private record constructor is not accessible from outside the declaring module`` () =
+        FSharp """
+namespace Test
+
+module M =
+    type R = private { A : int; B : int }
+
+module N =
+    let bad = M.R(1, 2)
+        """
+        |> withLangVersionPreview
+        |> typecheck
+        |> shouldFail
+        |> withSingleDiagnostic (Error 801, Line 8, Col 15, Line 8, Col 18, "This type has no accessible object constructors")
+
+    // Only the all-fields constructor is exposed: a struct record's default (zero) initialization and a
+    // [<CLIMutable>] record's IL parameterless .ctor both stay unavailable from F#.
+    [<Fact>]
+    let ``Struct record does not expose parameterless default initialization`` () =
+        Fsx """
+[<Struct>]
+type Point = { X : int; Y : int }
+let p = Point()
+        """
+        |> withLangVersionPreview
+        |> typecheck
+        |> shouldFail
+        |> withSingleDiagnostic (Error 501, Line 4, Col 9, Line 4, Col 16, "The object constructor 'Point' takes 2 argument(s) but is here given 0. The required signature is 'Point(X: int, Y: int) : Point'.")
+
+    [<Fact>]
+    let ``CLIMutable record does not expose its parameterless constructor`` () =
+        Fsx """
+[<CLIMutable>]
+type R = { A : int; B : int }
+let r = R()
+        """
+        |> withLangVersionPreview
+        |> typecheck
+        |> shouldFail
+        |> withSingleDiagnostic (Error 501, Line 4, Col 9, Line 4, Col 12, "The object constructor 'R' takes 2 argument(s) but is here given 0. The required signature is 'R(A: int, B: int) : R'.")
+
+    // A [<RequireQualifiedAccess>] record forces field *labels* to be qualified in { } construction;
+    // the positional constructor has no labels, so it must work without any spurious RQA diagnostic.
+    [<Fact>]
+    let ``Record constructor works on a RequireQualifiedAccess record`` () =
+        Fsx """
+[<RequireQualifiedAccess>]
+type R = { A : int; B : int }
+let r = R(1, 2)
+if r.A <> 1 || r.B <> 2 then failwith "wrong field values"
+        """
+        |> withLangVersionPreview
+        |> compileExeAndRun
+        |> shouldSucceed
+
+    // Signature-file interplay: the constructor is not a declared member, so it is never written in a
+    // .fsi - it rides on the visibility of the record's representation, exactly like { } construction.
+    [<Fact>]
+    let ``Record constructor is available when the signature exposes the record representation`` () =
+        Fsi """
+module Lib
+type R = { A: int; B: int }
+"""
+        |> withAdditionalSourceFiles [
+            FsSource """
+module Lib
+type R = { A: int; B: int }
+"""
+            FsSourceWithFileName "Consumer.fs" """
+module Consumer
+let r = Lib.R(1, 2)
+if r.A <> 1 || r.B <> 2 then failwith "wrong field values"
+"""
+        ]
+        |> withLangVersionPreview
+        |> compile
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Record constructor is unavailable when the signature hides the record representation`` () =
+        Fsi """
+module Lib
+type R
+"""
+        |> withAdditionalSourceFiles [
+            FsSource """
+module Lib
+type R = { A: int; B: int }
+"""
+            FsSourceWithFileName "Consumer.fs" """
+module Consumer
+let _ = Lib.R(1, 2)
+"""
+        ]
+        |> withLangVersionPreview
+        |> compile
+        |> shouldFail
+        |> withErrorCode 1133
+
+    // On a released langversion the constructor is not surfaced, so use of a record type name as a constructor
+    // is rejected with the generic FS0800 "invalid use of a type name".
+    [<Fact>]
+    let ``Record constructor is unavailable on a released langversion`` () =
+        Fsx """
+type R = { A: int; B: int }
+let r = R(1, 2)
+        """
+        |> withLangVersion90
+        |> compile
+        |> shouldFail
+        |> withErrorCode 800

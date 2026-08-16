@@ -11,6 +11,8 @@ compatibility: Requires GitHub CLI (gh) authenticated with access to dotnet/fsha
 
 Retrieve and systematically analyze Azure DevOps build failures for GitHub PRs.
 
+> **Related:** for build / compile / restore / WarnAsError failures, the `binlog-analysis` skill fetches the failed build's MSBuild binary log (local build or AzDo PR build) and analyzes it live via the `binlog-mcp` MCP — structured errors, root-cause diagnosis, and an MSBuild perf X-ray. Use it once you have the failed build or PR number.
+
 ## CRITICAL: Collect-First Workflow
 
 **DO NOT push fixes until ALL errors are collected and reproduced locally.**

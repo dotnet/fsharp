@@ -158,13 +158,7 @@ let processSynModuleOrNamespace<'Decl>
                         mkSingletonDict name { Current = current; Children = node } |> continuation)
                     tail
 
-        if kind = SynModuleOrNamespaceKind.AnonModule then
-            // We collect the child nodes from the decls
-            decls
-            |> List.choose (mkTrieForDeclaration idx)
-            |> mkImmutableDictFromKeyValuePairs
-        else
-            visit id name
+        visit id name
 
     {
         Current = Root(ImmutableHashSet.empty ())

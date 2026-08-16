@@ -129,7 +129,7 @@ type internal FSharpLanguageServiceTestable() as this =
     member this.OnProjectCleaned(projectSite:IProjectSite) = 
         let enableInMemoryCrossProjectReferences = true
         let _, checkOptions = ProjectSitesAndFiles.GetProjectOptionsForProjectSite(enableInMemoryCrossProjectReferences, (fun _ -> None), projectSite, serviceProvider.Value, "" , false)
-        this.FSharpChecker.NotifyProjectCleaned(checkOptions) |> Async.RunImmediate
+        this.FSharpChecker.NotifyProjectCleaned(checkOptions) |> Async.RunSynchronouslyImmediate
 
     member this.OnActiveViewChanged(textView) =
         bgRequests.OnActiveViewChanged(textView)
@@ -212,7 +212,7 @@ type internal FSharpLanguageServiceTestable() as this =
                     let fileName = VsTextLines.GetFilename buffer
                     let rdt = this.ServiceProvider.RunningDocumentTable
                     let defines = this.ProjectSitesAndFiles.GetDefinesForFile_DEPRECATED(rdt, fileName, this.FSharpChecker)
-                    let sourceTokenizer = FSharpSourceTokenizer(defines,Some(fileName), None, None)
+                    let sourceTokenizer = FSharpSourceTokenizer(defines,Some(fileName), None)
                     sourceTokenizer.CreateLineTokenizer(source))
 
             let colorizer = new FSharpColorizer_DEPRECATED(this.CloseColorizer, buffer, scanner) 

@@ -22,6 +22,7 @@ open FSharp.Compiler.Syntax
 open FSharp.Compiler.Syntax.PrettyNaming
 open FSharp.Compiler.SyntaxTreeOps
 open FSharp.Compiler.TcGlobals
+open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Range
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics
@@ -245,10 +246,10 @@ and TcPatBindingName cenv env id ty isMemberThis vis1 valReprInfo (vFlags: TcPat
                 if not (String.IsNullOrEmpty name) && not (String.isLeadingIdentifierCharacterUpperCase name) then
                     match env.eNameResEnv.ePatItems.TryGetValue name with
                     | true, Item.Value vref when vref.LiteralValue.IsSome ->
-                        warning(Error(FSComp.SR.checkLowercaseLiteralBindingInPattern name, id.idRange))
+                        warning(Error(FSComp.SR.checkLowercaseLiteralBindingInPattern (RichText.mkLocal name), id.idRange))
                     | _ -> ()
                 value
-            | _ -> error(Error(FSComp.SR.tcNameNotBoundInPattern name, id.idRange))
+            | _ -> error(Error(FSComp.SR.tcNameNotBoundInPattern (RichText.mkUnresolvedName name), id.idRange))
 
         // isLeftMost indicates we are processing the left-most path through a disjunctive or pattern.
         // For those binding locations, CallNameResolutionSink is called in MakeAndPublishValue, like all other bindings
@@ -286,7 +287,7 @@ and TcPat warnOnUpper (cenv: cenv) env valReprInfo vFlags (patEnv: TcPatLinearEn
 
     match synPat with
     | SynPat.As (_, SynPat.Named _, _) -> ()
-    | SynPat.As (_, _, m) -> checkLanguageFeatureError g.langVersion LanguageFeature.NonVariablePatternsToRightOfAsPatterns m
+    | SynPat.As (_, _, m) -> checkLanguageFeatureAndRecover g.langVersion LanguageFeature.NonVariablePatternsToRightOfAsPatterns m
     | _ -> ()
 
     match synPat with
@@ -498,19 +499,24 @@ and TcPatArrayOrList warnOnUpper cenv env vFlags patEnv ty isArray args m =
     phase2, acc
 
 and TcRecordPat warnOnUpper (cenv: cenv) env vFlags patEnv ty fieldPats m =
-    let fieldPats = 
+    let idents =
+        let (|Last|) = List.last
+        fieldPats
+        |> List.map (fun (NamePatPairField (fieldName = SynLongIdent (id = Last fieldId))) -> fieldId)
+
+    let fieldPats =
         fieldPats 
-        |> List.map (fun (NamePatPairField(fieldName = fieldLid; pat = pat)) -> 
-            match fieldLid.LongIdent with
-            | [id] -> ([], id), pat
-            | lid -> List.frontAndBack lid, pat)
+        |> List.map (fun (NamePatPairField(fieldName = fieldLid; pat = pat)) ->
+            let path, fieldId = List.frontAndBack fieldLid.LongIdent
+            fieldId, ExplicitOrSpread.Explicit (path, pat))
     
+    CheckRecdExprDuplicateFields idents
     match BuildFieldMap cenv env false ty fieldPats m with
     | None -> (fun _ -> TPat_error m), patEnv
     | Some(tinst, tcref, fldsmap, _fldsList) ->
 
     let gtyp = mkWoNullAppTy tcref tinst
-    let inst = List.zip (tcref.Typars m) tinst
+    let inst = List.zip (tcref.Typars) tinst
 
     UnifyTypes cenv env m ty gtyp
 
@@ -520,13 +526,14 @@ and TcRecordPat warnOnUpper (cenv: cenv) env vFlags patEnv ty fieldPats m =
     let fieldPats, patEnvR =
         (patEnv, ftys) ||> List.mapFold (fun s (ty, fsp) ->
             match fldsmap.TryGetValue fsp.rfield_id.idText with
-            | true, v ->
+            | true, ExplicitOrSpread.Explicit v ->
                 let warnOnUpper =
                     if cenv.g.langVersion.SupportsFeature(LanguageFeature.DontWarnOnUppercaseIdentifiersInBindingPatterns) then
                         AllIdsOK
                     else
                         warnOnUpper
                 TcPat warnOnUpper cenv env None vFlags s ty v
+            | true, ExplicitOrSpread.Spread _ -> (* Unreachable. *) error (InternalError ("Spreads in patterns are not supported.", m))
             | _ -> (fun _ -> TPat_wild m), s)
 
     let phase2 values =
@@ -592,7 +599,7 @@ and TcPatLongIdent warnOnUpper cenv env ad valReprInfo vFlags (patEnv: TcPatLine
 
         match args with
         | SynArgPats.Pats _ -> ()
-        | _ -> errorR (Error (FSComp.SR.tcNamedActivePattern apinfo.ActiveTags[idx], m))
+        | _ -> errorR (Error(FSComp.SR.tcNamedActivePattern (RichText.mkActivePatternCase apinfo.ActiveTags[idx]), m))
 
         let args = GetSynArgPatterns args
 
@@ -648,7 +655,7 @@ and ApplyUnionCaseOrExn m (cenv: cenv) env overallTy item =
 
     | Item.UnionCase(ucinfo, showDeprecated) ->
         if showDeprecated then
-            let diagnostic = Deprecated(FSComp.SR.nrUnionTypeNeedsQualifiedAccess(ucinfo.DisplayName, ucinfo.Tycon.DisplayName) |> snd, m)
+            let diagnostic = Deprecated(FSComp.SR.nrUnionTypeNeedsQualifiedAccess(RichText.mkUnionCase ucinfo.DisplayName, richTextOfEntity ucinfo.Tycon) |> snd, m)
             if g.langVersion.SupportsFeature(LanguageFeature.ErrorOnDeprecatedRequireQualifiedAccess) then
                 errorR(diagnostic)
             else
@@ -658,7 +665,7 @@ and ApplyUnionCaseOrExn m (cenv: cenv) env overallTy item =
         CheckUnionCaseAttributes g ucref m |> CommitOperationResult
         CheckUnionCaseAccessible cenv.amap m ad ucref |> ignore
         let resTy = actualResultTyOfUnionCase ucinfo.TypeInst ucref
-        let inst = mkTyparInst ucref.TyconRef.TyparsNoRange ucinfo.TypeInst
+        let inst = mkTyparInst ucref.TyconRef.Typars ucinfo.TypeInst
         let mkf =
             try
                 UnifyTypes cenv env m overallTy resTy
@@ -717,11 +724,11 @@ and TcPatLongIdentUnionCaseOrExnCase warnOnUpper cenv env ad vFlags patEnv ty (m
                     extraPatterns.Add pat
                     match item with
                     | Item.UnionCase(uci, _) ->
-                        errorR (Error (FSComp.SR.tcUnionCaseConstructorDoesNotHaveFieldWithGivenName (uci.DisplayName, id.idText), id.idRange))
+                        errorR (Error(FSComp.SR.tcUnionCaseConstructorDoesNotHaveFieldWithGivenName (RichText.mkUnionCase uci.DisplayName, RichText.mkUnresolvedName id.idText), id.idRange))
                     | Item.ExnCase tcref ->
-                        errorR (Error (FSComp.SR.tcExceptionConstructorDoesNotHaveFieldWithGivenName (tcref.DisplayName, id.idText), id.idRange))
+                        errorR (Error(FSComp.SR.tcExceptionConstructorDoesNotHaveFieldWithGivenName (richTextOfEntityRef tcref, RichText.mkUnresolvedName id.idText), id.idRange))
                     | _ ->
-                        errorR (Error (FSComp.SR.tcConstructorDoesNotHaveFieldWithGivenName id.idText, id.idRange))
+                        errorR (Error(FSComp.SR.tcConstructorDoesNotHaveFieldWithGivenName (RichText.mkUnresolvedName id.idText), id.idRange))
 
                 | Some idx ->
                     let argItem =
@@ -736,7 +743,7 @@ and TcPatLongIdentUnionCaseOrExnCase warnOnUpper cenv env ad vFlags patEnv ty (m
                     | null -> result[idx] <- pat
                     | _ ->
                         extraPatterns.Add pat
-                        errorR (Error (FSComp.SR.tcUnionCaseFieldCannotBeUsedMoreThanOnce id.idText, id.idRange))
+                        errorR (Error(FSComp.SR.tcUnionCaseFieldCannotBeUsedMoreThanOnce (RichText.mkField id.idText), id.idRange))
 
             for i = 0 to numArgTys - 1 do
                 if isNull (box result[i]) then
@@ -778,12 +785,17 @@ and TcPatLongIdentUnionCaseOrExnCase warnOnUpper cenv env ad vFlags patEnv ty (m
         elif numArgs < numArgTys then
             if numArgTys > 1 then
                 // Expects tuple without enough args
-                let printTy  = NicePrint.minimalStringOfType env.DisplayEnv
                 let missingArgs =
                     argNames.[numArgs..numArgTys - 1]
-                    |> List.map (fun id -> (if id.rfield_name_generated then "" else id.DisplayName + ": ") +  printTy  id.FormalType)
-                    |> String.concat (Environment.NewLine + "\t")
-                    |> fun s -> Environment.NewLine + "\t" + s
+                    |> List.map (fun id ->
+                        RichText.concat
+                            [ if not id.rfield_name_generated then
+                                  RichText.mkRecordField id.DisplayName
+                                  RichText.mkPunctuation ":"
+                                  RichText.mkText " "
+                              NicePrint.minimalRichTextOfType env.DisplayEnv id.FormalType ])
+                    |> RichText.concatWith (RichText.mkText (Environment.NewLine + "\t"))
+                    |> RichText.append (RichText.mkText (Environment.NewLine + "\t"))
 
                 errorR (Error (FSComp.SR.tcUnionCaseExpectsTupledArguments(numArgTys, numArgs, missingArgs), m))
             else
@@ -807,7 +819,7 @@ and TcPatLongIdentILField warnOnUpper (cenv: cenv) env vFlags patEnv ty (mLongId
     CheckILFieldInfoAccessible g cenv.amap mLongId env.AccessRights finfo
 
     if not finfo.IsStatic then
-        errorR (Error (FSComp.SR.tcFieldIsNotStatic finfo.FieldName, mLongId))
+        errorR (Error(FSComp.SR.tcFieldIsNotStatic (RichText.mkField finfo.FieldName), mLongId))
 
     CheckILFieldAttributes g finfo m
 
@@ -828,7 +840,7 @@ and TcPatLongIdentILField warnOnUpper (cenv: cenv) env vFlags patEnv ty (mLongId
 and TcPatLongIdentRecdField warnOnUpper cenv env vFlags patEnv ty (mLongId, rfinfo, args, m) =
     let g = cenv.g
     CheckRecdFieldInfoAccessible cenv.amap mLongId env.AccessRights rfinfo
-    if not rfinfo.IsStatic then errorR (Error (FSComp.SR.tcFieldIsNotStatic(rfinfo.DisplayName), mLongId))
+    if not rfinfo.IsStatic then errorR (Error(FSComp.SR.tcFieldIsNotStatic(RichText.mkRecordField rfinfo.DisplayName), mLongId))
     CheckRecdFieldInfoAttributes g rfinfo mLongId |> CommitOperationResult
 
     match rfinfo.LiteralValue with
@@ -853,7 +865,7 @@ and TcPatLongIdentLiteral warnOnUpper (cenv: cenv) env vFlags patEnv ty (mLongId
     | None -> error (Error(FSComp.SR.tcNonLiteralCannotBeUsedInPattern(), m))
     | Some lit ->
         let _, _, _, vexpty, _, _ = TcVal cenv env tpenv vref None None mLongId
-        CheckValAccessible mLongId env.AccessRights vref
+        CheckValAccessible g mLongId env.AccessRights vref
         CheckFSharpAttributes g vref.Attribs mLongId |> CommitOperationResult
         CheckNoArgsForLiteral args m
         let _, acc = TcArgPats warnOnUpper cenv env vFlags patEnv args

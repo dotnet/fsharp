@@ -117,7 +117,7 @@ exception OverrideInExtrinsicAugmentation of range
 
 exception NonUniqueInferredAbstractSlot of TcGlobals * DisplayEnv * string * MethInfo * MethInfo * range
 
-exception StandardOperatorRedefinitionWarning of string * range
+exception StandardOperatorRedefinitionWarning of RichText * range
 
 exception InvalidInternalsVisibleToAssemblyName of badName: string * fileName: string option
 
@@ -134,6 +134,9 @@ type ImplicitlyBoundTyparsAllowed =
     | NewTyparsOKButWarnIfNotRigid
     | NewTyparsOK
     | NoNewTypars
+
+/// Formats a list of names for display in diagnostics, truncating to at most 5 entries.
+val internal formatAvailableNames: names: string array -> string
 
 //-------------------------------------------------------------------------
 // The rest are all helpers needed for declaration checking (CheckDeclarations.fs)
@@ -479,6 +482,10 @@ val FixupLetrecBind:
     bind: PostSpecialValsRecursiveBinding ->
         PreInitializationGraphEliminationBinding
 
+/// Detect recursive 'inline' bindings within a recursive binding group and
+/// emit FS3890. Mutates inline info to suppress downstream cascades.
+val CheckRecursiveInlineGroup: g: TcGlobals -> bindings: PreInitializationGraphEliminationBinding list -> unit
+
 /// Produce a fresh view of an object type, e.g. 'List<T>' becomes 'List<?>' for new
 /// inference variables with the given rigidity.
 val FreshenObjectArgType:
@@ -718,6 +725,11 @@ val TcMatchPattern:
     tcTrueMatchClause: TcTrueMatchClause ->
         Pattern * Expr option * Val list * TcEnv * UnscopedTyparEnv
 
+/// Given the current 'inputTy' of a match clause, the elaborated pattern, and the optional 'when' clause,
+/// returns the (possibly narrowed) inputTy to use for subsequent clauses.
+/// E.g. `match x with | null -> ... | y -> ...` narrows `inputTy` of the y-clause to non-null.
+val EliminateNullnessFromInputType: g: TcGlobals -> inputTy: TType -> pat: Pattern -> whenExprOpt: Expr option -> TType
+
 [<return: Struct>]
 val (|BinOpExpr|_|): SynExpr -> (Ident * SynExpr * SynExpr) voption
 
@@ -895,15 +907,21 @@ val UnifyTupleTypeAndInferCharacteristics:
     'T list ->
         TupInfo * TTypes
 
+/// Helper used to check for duplicate fields in records.
+val CheckRecdExprDuplicateFields: elems: Ident list -> unit
+
 /// Helper used to check both record expressions and record patterns
 val BuildFieldMap:
     cenv: TcFileState ->
     env: TcEnv ->
     isPartial: bool ->
     ty: TType ->
-    flds: ((Ident list * Ident) * 'T) list ->
+    flds: (Ident * ExplicitOrSpread<Ident list * 'Explicit, 'Spread>) list ->
     m: range ->
-        (TypeInst * TyconRef * Map<string, 'T> * (string * 'T) list) option
+        (TypeInst *
+        TyconRef *
+        Map<string, ExplicitOrSpread<'Explicit, 'Spread>> *
+        (string * ExplicitOrSpread<'Explicit, 'Spread>) list) option
 
 /// Check a long identifier 'Case' or 'Case argsR' that has been resolved to an active pattern case
 val TcPatLongIdentActivePatternCase:

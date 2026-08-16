@@ -15,10 +15,6 @@
         },
         "release/dev18.0": {
             "MergeToBranch": "main",
-            "ExtraSwitches": "-QuietComments"
-        },
-        "main": {
-            "MergeToBranch": "feature/net11-scouting",
             "ExtraSwitches": "-QuietComments",
             "ResetToTargetPaths": [
                 "global.json",
@@ -26,7 +22,9 @@
                 "eng/Version.Details.props",
                 "eng/Versions.props",
                 "eng/common/**",
-                "eng/TargetFrameworks.props"
+                "eng/TargetFrameworks.props",
+                "azure-pipelines.yml",
+                "azure-pipelines-PR.yml"
             ]
         }
     }

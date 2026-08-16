@@ -56,3 +56,15 @@ module CompiledNameAttribute =
         |> compile
         |> shouldSucceed
         |> ignore
+
+    [<Theory; FileInlineData("CompiledNameAttribute06.fs")>]
+    let ``CompiledNameAttribute06_fs`` compilation =
+        compilation
+        |> getCompilation
+        |> verifyCompilation
+
+    [<Theory; FileInlineData("CompiledNameAttribute07.fs")>]
+    let ``CompiledNameAttribute07_fs`` compilation =
+        compilation
+        |> getCompilation
+        |> verifyCompilation

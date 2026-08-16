@@ -506,6 +506,24 @@ let ConvertValLogicalNameToDisplayNameCore opName =
         else
             opName
 
+/// Escape active pattern case names that need backticks for display/signatures.
+/// E.g. |A B| becomes |``A B``|  (only for display, not for name resolution)
+let EscapeActivePatternCases (opName: string) =
+    if IsActivePatternName opName then
+        let inner = opName.[1 .. opName.Length - 2]
+        let cases = inner.Split('|')
+
+        let escapedCases =
+            cases
+            |> Array.map (fun c ->
+                if c = "_" then c
+                elif not (IsIdentifierName c) then "``" + c + "``"
+                else c)
+
+        "|" + (escapedCases |> String.concat "|") + "|"
+    else
+        opName
+
 let DoesIdentifierNeedBackticks (name: string) : bool =
     not (IsUnencodedOpName name)
     && not (IsIdentifierName name)
@@ -538,7 +556,7 @@ let ConvertValLogicalNameToDisplayName isBaseVal name =
     if isBaseVal && name = "base" then
         "base"
     elif IsUnencodedOpName name || IsPossibleOpName name || IsActivePatternName name then
-        let nm = ConvertValLogicalNameToDisplayNameCore name
+        let nm = ConvertValLogicalNameToDisplayNameCore name |> EscapeActivePatternCases
         // Check for no decompilation, e.g. op_Implicit, op_NotAMangledOpName, op_A-B
         if IsPossibleOpName name && (nm = name) then
             AddBackticksToIdentifierIfNeeded nm
@@ -563,7 +581,7 @@ let ConvertValLogicalNameToDisplayLayout isBaseVal nonOpLayout name =
     if isBaseVal && name = "base" then
         nonOpLayout "base"
     elif IsUnencodedOpName name || IsPossibleOpName name || IsActivePatternName name then
-        let nm = ConvertValLogicalNameToDisplayNameCore name
+        let nm = ConvertValLogicalNameToDisplayNameCore name |> EscapeActivePatternCases
         // Check for no decompilation, e.g. op_Implicit, op_NotAMangledOpName, op_A-B
         if IsPossibleOpName name && (nm = name) then
             ConvertLogicalNameToDisplayLayout nonOpLayout name

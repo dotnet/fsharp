@@ -23,10 +23,7 @@ type internal FSharpTaskListService [<ImportingConstructor>] () as this =
             let! _, _, parsingOptions, _ =
                 doc.GetFSharpCompilationOptionsAsync(nameof (FSharpTaskListService))
 
-            return
-                CompilerEnvironment.GetConditionalDefinesForEditing parsingOptions,
-                Some parsingOptions.LangVersionText,
-                parsingOptions.StrictIndentation
+            return CompilerEnvironment.GetConditionalDefinesForEditing parsingOptions, Some parsingOptions.LangVersionText
         }
 
     let extractContractedComments (tokens: Tokenizer.SavedTokenInfo[]) =
@@ -55,7 +52,6 @@ type internal FSharpTaskListService [<ImportingConstructor>] () as this =
             sourceText: SourceText,
             defines: string list,
             langVersion: string option,
-            strictIndentation: bool option,
             descriptors: (string * FSharpTaskListDescriptor)[],
             cancellationToken
         ) =
@@ -65,16 +61,7 @@ type internal FSharpTaskListService [<ImportingConstructor>] () as this =
         for line in sourceText.Lines do
 
             let contractedTokens =
-                Tokenizer.tokenizeLine (
-                    doc.Id,
-                    sourceText,
-                    line.Span.Start,
-                    doc.FilePath,
-                    defines,
-                    langVersion,
-                    strictIndentation,
-                    cancellationToken
-                )
+                Tokenizer.tokenizeLine (doc.Id, sourceText, line.Span.Start, doc.FilePath, defines, langVersion, cancellationToken)
                 |> extractContractedComments
 
             if contractedTokens |> List.isEmpty then
@@ -114,7 +101,7 @@ type internal FSharpTaskListService [<ImportingConstructor>] () as this =
             async2 {
                 let descriptors = desc |> Seq.map (fun d -> d.Text, d) |> Array.ofSeq
                 let! sourceText = doc.GetTextAsync(cancellationToken)
-                let! defines, langVersion, strictIndentation = doc |> getDefinesAndLangVersion
-                return this.GetTaskListItems(doc, sourceText, defines, langVersion, strictIndentation, descriptors, cancellationToken)
+                let! defines, langVersion = doc |> getDefinesAndLangVersion
+                return this.GetTaskListItems(doc, sourceText, defines, langVersion, descriptors, cancellationToken)
             }
             |> Async2.startAsTask cancellationToken

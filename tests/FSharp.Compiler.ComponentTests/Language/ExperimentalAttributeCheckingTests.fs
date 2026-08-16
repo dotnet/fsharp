@@ -39,7 +39,7 @@ let text = Class1.Test()
         |> shouldFail
         |> withDiagnostics [
             (Warning 57, Line 4, Col 12, Line 4, Col 18, """This construct is experimental. This warning can be disabled using '--nowarn:57' or '#nowarn "57"'.""")
-            (Warning 57, Line 4, Col 12, Line 4, Col 23, """This construct is experimental. This warning can be disabled using '--nowarn:57' or '#nowarn "57"'.""")
+            (Warning 57, Line 4, Col 19, Line 4, Col 23, """This construct is experimental. This warning can be disabled using '--nowarn:57' or '#nowarn "57"'.""")
         ]
 
     [<FactForNETCOREAPP>]
@@ -74,7 +74,7 @@ let text = Class1.Test()
         |> shouldFail
         |> withDiagnostics [
             (Warning 57, Line 4, Col 12, Line 4, Col 18, """This construct is experimental. This warning can be disabled using '--nowarn:57' or '#nowarn "57"'.""")
-            (Warning 57, Line 4, Col 12, Line 4, Col 23, """This construct is experimental. This warning can be disabled using '--nowarn:57' or '#nowarn "57"'.""")
+            (Warning 57, Line 4, Col 19, Line 4, Col 23, """This construct is experimental. This warning can be disabled using '--nowarn:57' or '#nowarn "57"'.""")
         ]
 
     [<FactForNETCOREAPP>]

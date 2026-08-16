@@ -80,7 +80,7 @@ let main _ =
 
     [<Theory>]
     [<InlineData("let inline f0 (x: ^T) = x",
-                 "val inline f0: x: ^T -> ^T")>]
+                 "val inline f0<^T> : x: ^T -> ^T")>]
 
     [<InlineData("""
                  let inline f0 (x: ^T) = x
@@ -88,16 +88,16 @@ let main _ =
                  "val g0: x: 'T -> 'T")>]
 
     [<InlineData("let inline f1 (x: ^T) = (^T : (static member A: int) ())",
-                 "val inline f1: x: ^T -> int when ^T: (static member A: int)")>]
+                 "val inline f1<^T when ^T: (static member A: int)> : x: ^T -> int")>]
 
     [<InlineData("let inline f2 (x: 'T) = ((^T or int) : (static member A: int) ())",
-                 "val inline f2: x: ^T -> int when (^T or int) : (static member A: int)")>]
+                 "val inline f2<^T when (^T or int) : (static member A: int)> : x: ^T -> int")>]
 
     [<InlineData("let inline f3 (x: 'T) = ((^U or 'T) : (static member A: int) ())",
-                 "val inline f3: x: ^T -> int when (^U or ^T) : (static member A: int)")>]
+                 "val inline f3<^T,^U when (^U or ^T) : (static member A: int)> : x: ^T -> int")>]
 
     [<InlineData("let inline f4 (x: 'T when 'T : (static member A: int) ) = 'T.A",
-                "val inline f4: x: ^T -> int when ^T: (static member A: int)")>]
+                "val inline f4<^T when ^T: (static member A: int)> : x: ^T -> int")>]
 
     [<InlineData("""
              let inline f5 (x: ^T) = printfn "%d" x
@@ -106,11 +106,11 @@ let main _ =
     [<InlineData("""
              let inline f5 (x: ^T) = printfn "%d" x
              let inline h5 (x: 'T) = f5 x""",
-                 "val inline h5: x: ^T -> unit when ^T: (byte|int16|int32|int64|sbyte|uint16|uint32|uint64|nativeint|unativeint)")>]
+                 "val inline h5<^T when ^T: (byte|int16|int32|int64|sbyte|uint16|uint32|uint64|nativeint|unativeint)> : x: ^T -> unit")>]
     [<InlineData("""
              let inline uint32 (value: ^T) = (^T : (static member op_Explicit: ^T -> uint32) (value))
              let inline uint value = uint32 value""",
-                 "val inline uint: value: ^a -> uint32 when ^a: (static member op_Explicit: ^a -> uint32)")>]
+                 "val inline uint<^a when ^a: (static member op_Explicit: ^a -> uint32)> : value: ^a -> uint32")>]
 
     [<InlineData("let checkReflexive f x y = (f x y = - f y x)",
                  "val checkReflexive: f: ('a -> 'a -> int) -> x: 'a -> y: 'a -> bool")>]
@@ -286,6 +286,24 @@ let main _ =
                                                                                                                           !1)
             IL_000a:  ret
           }"""]
+
+    [<Fact>]
+    let ``SRTP get_Item works on strings`` () =
+        FSharp """
+let inline indexInto (slice: ^T when ^T: (member get_Item: int -> ^U)) i : ^U =
+    slice.get_Item i
+
+[<EntryPoint>]
+let main _ =
+    if indexInto "abcde" 2 <> 'c' then
+        failwith "Unexpected result"
+
+    0
+        """
+        |> asExe
+        |> withOptions ["--nowarn:77"]
+        |> compileAndRun
+        |> shouldSucceed
 
     [<Theory>]
     [<InlineData("let inline f_set_Item<'T when 'T : (member Item: int -> string with set) >(x: 'T) = (^T : (member Item: int -> string with set) (x, 3, \"a\"))")>]
@@ -698,6 +716,7 @@ let main _ =
         |> asExe
         |> compileAndRun
         |> shouldSucceed
+
 
     [<InlineData(true)>]        // RealSig
     [<InlineData(false)>]       // Regular
@@ -1956,3 +1975,65 @@ if resultInt <> 0 then failwith $"Expected 0 but got {resultInt}"
         |> compileAndRun
         |> shouldSucceed
 
+    // Recursive inline SRTP resolution must not be truncated by one currying level (regression from
+    // the domain-order reversal in nullness PR #15181).
+    [<Fact>]
+    let ``Recursive inline SRTP memoization specializes at every currying depth`` () =
+        FSharp """
+module Test
+open System.Collections.Concurrent
+
+type Default1 = class end
+
+[<Struct>]
+type MemoizationKeyWrapper<'a> = MemoizationKeyWrapper of 'a
+
+type MemoizeN =
+    inherit Default1
+    static member getOrAdd (cd: ConcurrentDictionary<MemoizationKeyWrapper<'a>,'b>) (f: 'a -> 'b) k =
+        cd.GetOrAdd (MemoizationKeyWrapper k, (fun (MemoizationKeyWrapper x) -> x) >> f)
+
+let inline memoizeN (f: ^F) : ^F =
+    let inline call_2 (a: ^MemoizeN, b: ^b) = ((^MemoizeN or ^b) : (static member MemoizeN : ^MemoizeN * 'b -> _ ) (a, b))
+    call_2 (Unchecked.defaultof<MemoizeN>, Unchecked.defaultof< ^F >) f
+
+type MemoizeN with
+    static member        MemoizeN (_: Default1, _:      'a -> 'b) = MemoizeN.getOrAdd (ConcurrentDictionary ())
+    static member inline MemoizeN (_: MemoizeN, _:'t -> 'a -> 'b) = MemoizeN.getOrAdd (ConcurrentDictionary ()) << (<<) memoizeN
+
+let effs = ResizeArray ()
+let sum3 a (b:int) c = effs.Add "sum3"; a + b + c
+let msum3 = memoizeN sum3
+msum3 1 2 3 |> ignore
+msum3 1 2 3 |> ignore
+if effs.Count <> 1 then failwith $"depth-3 memoization ran the function {effs.Count} times, expected 1"
+
+let effs2 = ResizeArray ()
+let sum2 (a:int) (b:int) = effs2.Add "sum2"; a + b
+let msum2 = memoizeN sum2
+msum2 1 1 |> ignore
+msum2 1 1 |> ignore
+if effs2.Count <> 1 then failwith $"depth-2 memoization ran the function {effs2.Count} times, expected 1"
+"""
+        |> asExe
+        |> compileAndRun
+        |> shouldSucceed
+
+    // Guards the `not csenv.MatchingOnly` gate of the SolveFunTypeEqn SRTP fix (mirrors the same
+    // guard in SolveTypeEqualsType): an SRTP-constrained argument must not disturb overload
+    // candidate selection, else the lambda's type is left uninferred (FS0072).
+    [<Fact>]
+    let ``SRTP argument does not disturb overload resolution during MatchingOnly`` () =
+        FSharp """
+module Test
+let inline dbl x = x + x
+type K =
+    static member M(g: int -> int, f: string -> int) = f "a"
+    static member M(g: System.DateTime -> System.DateTime, f: System.DateTime -> int) = 0
+
+let r = K.M(dbl, fun v -> v.Length)
+if r <> 1 then failwith $"Expected 1 but got {r}"
+"""
+        |> asExe
+        |> compileAndRun
+        |> shouldSucceed

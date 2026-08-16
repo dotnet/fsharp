@@ -72,6 +72,7 @@ type public NavigationItems =
     member Declarations: NavigationTopLevelDeclaration[]
 
 // Functionality to access navigable F# items.
+[<RequireQualifiedAccess>]
 module public Navigation =
     val internal empty: NavigationItems
     val getNavigation: ParsedInput -> NavigationItems
@@ -118,5 +119,6 @@ type NavigableItem =
       Kind: NavigableItemKind
       Container: NavigableContainer }
 
+[<RequireQualifiedAccess>]
 module public NavigateTo =
     val GetNavigableItems: ParsedInput -> NavigableItem[]

@@ -128,6 +128,7 @@ module MemberDefinitions_OverloadingMembers =
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"InferenceForLambdaArgs.fs"|])>]
     let ``InferenceForLambdaArgs_fs`` compilation =
         compilation
+        |> withOptions [ "--nowarn:3886" ]
         |> verifyCompileAndRun
         |> shouldSucceed
 

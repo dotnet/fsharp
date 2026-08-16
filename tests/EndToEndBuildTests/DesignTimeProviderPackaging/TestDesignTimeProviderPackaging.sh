@@ -74,7 +74,6 @@ echo "[Test 2] PASSED: Provider test passed"
 echo
 echo "=== Test 3: Host with ProjectReference to Provider ==="
 echo "[Test 3] Packing Host with ProjectReference to Provider..."
-echo "[Test 3] Note: This tests experimental execution-time reference checking"
 echo "[Test 3] Command: dotnet pack Host/Host.fsproj -o artifacts -c $configuration -v minimal -bl:artifacts/host.binlog -p:FSharpTestCompilerVersion=coreclr"
 if ! dotnet pack Host/Host.fsproj -o artifacts -c $configuration -v minimal -bl:artifacts/host.binlog -p:FSharpTestCompilerVersion=coreclr; then
     echo "[Test 3] FAILED: Pack command returned error code $?"
@@ -82,9 +81,17 @@ if ! dotnet pack Host/Host.fsproj -o artifacts -c $configuration -v minimal -bl:
     exit 1
 fi
 
-# Note: This test may not work as expected due to MSBuild evaluation phase limitations
-# The current implementation only checks IsFSharpDesignTimeProvider property directly
-echo "[Test 3] PASSED: Host test completed (implementation limitation noted - may not check references correctly)"
+# The provider is activated only through ProjectReference IsFSharpDesignTimeProvider metadata; it must still be
+# packaged under tools/fsharp41/ in the consumer's package. This is the case regressed by #18929 (the provider
+# was silently dropped from the package).
+echo "[Test 3] Checking that the referenced provider is packaged under tools/fsharp41..."
+if ! unzip -l artifacts/Host.1.0.0.nupkg | grep -q "tools/fsharp41/.*Provider.dll"; then
+    echo "[Test 3] FAILED: Host.1.0.0.nupkg does not contain the design-time provider under tools/fsharp41/"
+    echo "[Test 3] The provider referenced via the ProjectReference gesture was dropped from the package."
+    unzip -l artifacts/Host.1.0.0.nupkg | grep -i "fsharp41" || true
+    exit 1
+fi
+echo "[Test 3] PASSED: Host (ProjectReference gesture) test passed"
 
 echo
 echo "=== Test 4: Pack with --no-build (No Provider) ==="

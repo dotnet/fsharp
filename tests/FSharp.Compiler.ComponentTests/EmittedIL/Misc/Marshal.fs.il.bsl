@@ -17,16 +17,6 @@
   .hash algorithm 0x00008004
   .ver 0:0:0:0
 }
-.mresource public FSharpSignatureCompressedData.assembly
-{
-  
-  
-}
-.mresource public FSharpOptimizationCompressedData.assembly
-{
-  
-  
-}
 .module assembly.exe
 
 .imagebase {value}
@@ -47,15 +37,11 @@
          extends [runtime]System.MulticastDelegate
   {
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 03 00 00 00 00 00 ) 
-    .method public hidebysig specialname rtspecialname 
-            instance void  .ctor(object 'object',
-                                 native int 'method') runtime managed
+    .method public hidebysig specialname rtspecialname instance void  .ctor(object 'object', native int 'method') runtime managed
     {
     } 
 
-    .method public hidebysig strict virtual 
-            instance int32  Invoke([out] uint8[]  marshal([ + 1]) data,
-                                   [out] int32 length) runtime managed
+    .method public hidebysig strict virtual instance int32  Invoke([out] uint8[]  marshal([ + 1]) data, [out] int32 length) runtime managed
     {
     } 
 
@@ -68,8 +54,7 @@
     {
     } 
 
-    .method public hidebysig strict virtual 
-            instance int32  EndInvoke(class [runtime]System.IAsyncResult result) runtime managed
+    .method public hidebysig strict virtual instance int32  EndInvoke(class [runtime]System.IAsyncResult result) runtime managed
     {
     } 
 

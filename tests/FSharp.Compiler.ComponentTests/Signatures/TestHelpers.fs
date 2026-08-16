@@ -15,3 +15,12 @@ let assertSingleSignatureBinding implementation signature =
     FSharp $"module A\n\n{implementation}"
     |> printSignatures
     |> assertEqualIgnoreLineEnding $"\nmodule A\n\n{signature}"
+
+let assertSignatureRoundtrip (implSource: string) =
+    let generatedSignature = FSharp implSource |> printSignatures
+    Fsi generatedSignature
+    |> withAdditionalSourceFile (FsSource implSource)
+    |> ignoreWarnings
+    |> compile
+    |> shouldSucceed
+    |> ignore

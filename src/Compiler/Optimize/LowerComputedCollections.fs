@@ -114,7 +114,7 @@ let LowerComputedListOrArraySeqExpr tcVal g amap m collectorTy overallSeqExpr =
                 let cleanupE = BuildDisposableCleanup tcVal g infoReader m enumv
 
                 // A debug point should get emitted prior to both the evaluation of 'inp' and the call to GetEnumerator
-                let addForDebugPoint e = Expr.DebugPoint(DebugPointAtLeafExpr.Yes mFor, e)
+                let addForDebugPoint e = Expr.DebugPoint(DebugPointAtLeafExpr.Yes(false, mFor), e)
 
                 let spInAsWhile = match spIn with DebugPointAtInOrTo.Yes m -> DebugPointAtWhile.Yes m | DebugPointAtInOrTo.No -> DebugPointAtWhile.No
 
@@ -289,7 +289,7 @@ module List =
                     match body with
                     | Expr.Let(TBind(v, rhs, DebugPointAtBinding.Yes spBind), innerBody, m, flags) ->
                         let bodyForAdd = Expr.Let(TBind(v, rhs, DebugPointAtBinding.NoneAtInvisible), innerBody, m, flags)
-                        Expr.DebugPoint(DebugPointAtLeafExpr.Yes spBind, mkCallCollectorAdd tcVal g reader mBody collector bodyForAdd)
+                        Expr.DebugPoint(DebugPointAtLeafExpr.Yes(false, spBind), mkCallCollectorAdd tcVal g reader mBody collector bodyForAdd)
                     | _ ->
                         mkCallCollectorAdd tcVal g reader mIn collector body
 
@@ -339,12 +339,12 @@ module List =
 
                 let loop =
                     mkLoop (fun _idxVar loopVar ->
-                        let body =
-                            body
-                            |> Option.map (fun (loopVal, body) -> mkInvisibleLet m loopVal loopVar body)
-                            |> Option.defaultValue loopVar
-
-                        mkCallCollectorAdd tcVal g reader mBody collector body)
+                        match body with
+                        | Some (loopVal, body) ->
+                            mkInvisibleLet m loopVal loopVar
+                                (Expr.DebugPoint (DebugPointAtLeafExpr.Yes(false, mFor), mkCallCollectorAdd tcVal g reader mBody collector body))
+                        | None ->
+                            mkCallCollectorAdd tcVal g reader mBody collector loopVar)
 
                 let close = mkCallCollectorClose tcVal g reader mBody collector
                 mkSequential m loop close
@@ -447,7 +447,7 @@ module Array =
                 )
 
             // Add a debug point at the `for`, before anything gets evaluated.
-            Expr.DebugPoint (DebugPointAtLeafExpr.Yes mFor, mapping)
+            Expr.DebugPoint (DebugPointAtLeafExpr.Yes(false, mFor), mapping)
         )
 
     /// Whether to check for overflow when converting a value to a native int.
@@ -504,12 +504,13 @@ module Array =
             mkCompGenLetIn mFor "array" arrayTy (mkNewArray count) (fun (_, array) ->
                 let loop =
                     mkLoop (fun idxVar loopVar ->
-                        let body =
-                            body
-                            |> Option.map (fun (loopVal, body) -> mkInvisibleLet mBody loopVal loopVar body)
-                            |> Option.defaultValue loopVar
+                        let mkStore elem = mkAsmExpr ([stelem], [], [array; convToNativeInt NoCheckOvf idxVar; elem], [], mBody)
 
-                        mkAsmExpr ([stelem], [], [array; convToNativeInt NoCheckOvf idxVar; body], [], mBody))
+                        match body with
+                        | Some (loopVal, body) ->
+                            mkInvisibleLet mBody loopVal loopVar (Expr.DebugPoint (DebugPointAtLeafExpr.Yes(false, mFor), mkStore body))
+                        | None ->
+                            mkStore loopVar)
 
                 mkSequential m loop array)
 

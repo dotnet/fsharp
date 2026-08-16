@@ -29,10 +29,13 @@ type internal UnusedOpensDiagnosticAnalyzer [<ImportingConstructor>] () =
 
                 let! _, checkResults = document.GetFSharpParseAndCheckResultsAsync(nameof UnusedOpensDiagnosticAnalyzer)
 
-                let! unusedOpens =
-                    UnusedOpens.getUnusedOpens (checkResults, (fun lineNumber -> sourceText.Lines[Line.toZ lineNumber].ToString()))
+                if checkResults.HasErrors then
+                    return ValueNone
+                else
+                    let! unusedOpens =
+                        UnusedOpens.getUnusedOpens (checkResults, (fun lineNumber -> sourceText.Lines[Line.toZ lineNumber].ToString()))
 
-                return (ValueSome unusedOpens)
+                    return (ValueSome unusedOpens)
         }
 
     interface IFSharpUnusedOpensDiagnosticAnalyzer with

@@ -433,12 +433,13 @@ New features must be gated behind language version checks. Breaking changes requ
 
 Execute review in five waves, each building on the previous.
 
-### Wave 0: Orientation
+### Wave 0: Orientation & Dimension Dispatch
 
 1. Read the PR title, description, and linked issues.
-2. Identify which dimensions are relevant based on files changed.
+2. Identify which dimensions are relevant based on files changed — use the `reviewing-compiler-prs` skill dimension table.
 3. Use the hotspot table below to prioritize dimensions.
 4. Check if existing instructions files apply (`.github/instructions/`).
+5. **Dispatch independent subagents** — for each selected dimension, launch a separate background agent (via the task tool) to assess that dimension in parallel. Each subagent receives: the dimension's CHECK rules, the PR diff, and the file paths it should focus on. Collect results before proceeding to consolidation.
 
 ### Wave 1: Structural Scan
 
@@ -472,6 +473,50 @@ Execute review in five waves, each building on the previous.
 2. Verify naming consistency and F# idiom adherence.
 3. Verify build and packaging correctness.
 4. Confirm all test baselines are updated and explained.
+
+### Wave 5: Deliver Review as Inline Comments
+
+**This wave is mandatory.** Analysis without posting is worthless — the review MUST appear on the PR as posted inline comments at the correct file and line.
+
+1. **Deduplicate first.** Check existing reviews to avoid duplicate content:
+   ```bash
+   gh api repos/{owner}/{repo}/pulls/{number}/reviews --jq 'length'
+   ```
+   If reviews from automated accounts already exist, skip posting and apply the label only.
+
+2. **Post findings as a review with inline comments** at the best-fitting file and line. Use the GitHub API to create a single review with all comments:
+   ```bash
+   gh api repos/{owner}/{repo}/pulls/{number}/reviews \
+     --method POST \
+     --field event=COMMENT \
+     --field body='' \
+     --field 'comments=[
+      {"path":"src/Compiler/Checking/CheckDeclarations.fs","line":2750,"body":"**[Test Coverage]** This code path lacks a test. Add a test exercising this branch."},
+      {"path":"src/Compiler/CodeGen/IlxGen.fs","line":1234,"body":"**[IL Emission]** Call `stripTyEqns` before this match to handle type abbreviations."}
+     ]'
+   ```
+   Each comment needs:
+   - `path`: file path relative to repo root (from the diff)
+   - `line`: line number in the **new** version of the file (right side of diff)
+   - `body`: severity tag in `**[Dimension]**` format, the issue, and suggested fix
+
+3. **If no significant issues found**, post an approving review:
+   ```bash
+   gh pr review {number} --repo {owner}/{repo} --approve --body "LGTM"
+   ```
+
+4. **Apply the label and request human review:**
+   ```bash
+   gh pr edit {number} --repo {owner}/{repo} --add-label AI-reviewed --add-reviewer T-Gro
+   ```
+
+**Delivery rules:**
+- The review body MUST begin with an AI disclosure note (the `🤖` line above). This is non-negotiable — readers must know this is AI-generated, not human-written.
+- At most 10 inline comments — prioritize Behavioral over Quality over Nitpick.
+- Every comment must reference a specific file and line from the diff.
+- Never post duplicate content if reviews already exist on the PR.
+- If the PR is too large to review fully, note skipped areas in the review body.
+- **NEVER write a wall-of-text review body.** The body is either `LGTM` (approve) or empty (with inline findings). All analysis stays in your context — only actionable findings get posted as inline comments. A review body longer than 10 characters (other than `LGTM`) is a bug.
 
 ## Folder Hotspot Mapping
 

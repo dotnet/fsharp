@@ -849,11 +849,17 @@ type ILAttribElem =
     | Type of ILType option
     | TypeRef of ILTypeRef option
     | Array of ILType * ILAttribElem list
+    /// Represents an enum value together with its enum type. Used when an enum is stored in a
+    /// custom-attribute argument of type 'object', so the enum type is preserved in the encoded
+    /// blob (ECMA-335 II.23.3) instead of being collapsed to its underlying integer. The second
+    /// element is the underlying integer value (e.g. ILAttribElem.Int32).
+    | Enum of enumType: ILType * value: ILAttribElem
 
 /// Named args: values and flags indicating if they are fields or properties.
 type ILAttributeNamedArg = string * ILType * bool * ILAttribElem
 
 /// Custom attribute.
+[<RequireQualifiedAccess>]
 type ILAttribute =
     /// Attribute with args encoded to a binary blob according to ECMA-335 II.21 and II.23.3.
     /// 'decodeILAttribData' is used to parse the byte[] blob to ILAttribElem's as best as possible.
@@ -906,6 +912,8 @@ type WellKnownILAttributes =
     | RequiredMemberAttribute = (1u <<< 22)
     | NullableContextAttribute = (1u <<< 23)
     | AttributeUsageAttribute = (1u <<< 24)
+    | NotNullIfNotNullAttribute = (1u <<< 25)
+    | OverloadResolutionPriorityAttribute = (1u <<< 26)
     | NotComputed = (1u <<< 31)
 
 /// Represents the efficiency-oriented storage of ILAttributes in another item.
@@ -973,6 +981,7 @@ type internal ILSecurityAction =
     | InheritanceDemandChoice
     | DemandChoice
 
+[<RequireQualifiedAccess>]
 type internal ILSecurityDecl = ILSecurityDecl of ILSecurityAction * byte[]
 
 /// Abstract type equivalent to ILSecurityDecl list - use helpers
@@ -1041,6 +1050,7 @@ type MethodBody =
     | NotAvailable
 
 /// Generic parameters.  Formal generic parameter declarations may include the bounds, if any, on the generic parameter.
+[<NoEquality; NoComparison>]
 type ILGenericParameterDef =
     {
         Name: string
@@ -1513,10 +1523,11 @@ type ILTypeDefAccess =
     | Private
     | Nested of ILMemberAccess
 
-/// Tables of named type definitions.
+/// One namespace level: the types declared in it, and its child namespaces. A reader is grouped into this
+/// shape on the way in; types already in hand stay one level, so that flattening keeps their order.
 [<NoEquality; NoComparison; Class; Sealed>]
 type ILTypeDefs =
-    inherit DelayInitArrayMap<ILPreTypeDef, string list * string, ILPreTypeDef>
+    inherit DelayInitArrayMap<ILPreTypeDef, string, ILPreTypeDef>
 
     interface IEnumerable<ILTypeDef>
 
@@ -1524,13 +1535,19 @@ type ILTypeDefs =
 
     member internal AsList: unit -> ILTypeDef list
 
-    /// Get some information about the type defs, but do not force the read of the type defs themselves.
+    /// Forces neither the type defs nor the child namespaces.
     member internal AsArrayOfPreTypeDefs: unit -> ILPreTypeDef[]
 
-    /// Calls to <c>FindByName</c> will result in all the ILPreTypeDefs being read.
+    /// Forces neither the children's contents nor this level's types.
+    member internal AsArrayOfPreNamespaces: unit -> ILPreNamespace[]
+
+    /// Forces the whole subtree.
+    member internal AllPreTypeDefs: unit -> ILPreTypeDef[]
+
+    /// Descends only into the type's own namespace. Raises <c>KeyNotFoundException</c> if not found.
     member internal FindByName: string -> ILTypeDef
 
-    /// Calls to <c>ExistsByName</c> will result in all the ILPreTypeDefs being read.
+    /// Descends only into the type's own namespace.
     member internal ExistsByName: string -> bool
 
 [<Flags>]
@@ -1684,22 +1701,54 @@ type ILTypeDef =
 /// This information has to be "Goldilocks" - not too much, not too little, just right.
 [<NoEquality; NoComparison>]
 type ILPreTypeDef =
-    abstract Namespace: string list
     abstract Name: string
     /// Realise the actual full typedef
     abstract GetTypeDef: unit -> ILTypeDef
 
-[<NoEquality; NoComparison; Sealed>]
+/// One namespace of a type table, read only once something looks inside it. Inherit this to back a
+/// namespace with your own store; see also <c>mkILPreNamespaceComputed</c>.
+[<NoEquality; NoComparison; AbstractClass>]
+type ILPreNamespace =
+    new: name: string -> ILPreNamespace
+
+    member Name: string
+
+    /// Called at most once.
+    abstract ComputeTypes: unit -> ILPreTypeDef[]
+
+    /// Called at most once, and independently of the types: importing a level's types must not read its
+    /// children, nor the other way round.
+    abstract ComputeNamespaces: unit -> ILPreNamespace[]
+
+    /// Forces neither the children nor anything deeper.
+    member GetTypes: unit -> ILPreTypeDef[]
+
+    /// Realised independently of the types.
+    member GetNamespaces: unit -> ILPreNamespace[]
+
+    /// Descends only into the namespace on the type's path, so unrelated ones are never realised.
+    member internal TryFindPreTypeDef: ns: string list * n: string -> ILPreTypeDef option
+
+    /// Forces the whole subtree.
+    member internal AllPreTypeDefs: unit -> ILPreTypeDef[]
+
+[<NoEquality; NoComparison; Class; Sealed>]
 type internal ILPreTypeDefImpl =
+    inherit DelayInitValue<ILTypeDef>
+
     interface ILPreTypeDef
 
 [<Sealed>]
 type internal ILTypeDefStored
 
-val internal mkILPreTypeDef: ILTypeDef -> ILPreTypeDef
-val internal mkILPreTypeDefComputed: string list * string * (unit -> ILTypeDef) -> ILPreTypeDef
-val internal mkILPreTypeDefRead: string list * string * int32 * ILTypeDefStored -> ILPreTypeDef
-val internal mkILTypeDefReader: (int32 -> ILTypeDef) -> ILTypeDefStored
+/// The name is read on demand, so grouping by namespace never touches the string heap for a namespace
+/// nobody imports.
+val internal mkILPreTypeDefRead: nameIdx: int32 * metadataIndex: int32 * ILTypeDefStored -> ILPreTypeDef
+
+val mkILPreNamespaceComputed:
+    name: string * types: (unit -> ILPreTypeDef[]) * namespaces: (unit -> ILPreNamespace[]) -> ILPreNamespace
+
+val internal mkILTypeDefReader: getTypeDef: (int32 -> ILTypeDef) * getName: (int32 -> string) -> ILTypeDefStored
 
 [<NoEquality; NoComparison; Sealed>]
 type ILNestedExportedTypes =
@@ -2141,6 +2190,11 @@ val internal mkNormalStsfld: ILFieldSpec -> ILInstr
 val internal mkNormalLdsfld: ILFieldSpec -> ILInstr
 val internal mkNormalLdfld: ILFieldSpec -> ILInstr
 val internal mkNormalLdflda: ILFieldSpec -> ILInstr
+
+/// Matches an IL instruction that loads or stores a field, returning the referenced field spec.
+[<return: Struct>]
+val internal (|ILFieldInstr|_|): instr: ILInstr -> ILFieldSpec voption
+
 val internal mkNormalLdobj: ILType -> ILInstr
 val internal mkNormalStobj: ILType -> ILInstr
 val internal mkLdcInt32: int32 -> ILInstr
@@ -2355,7 +2409,19 @@ val emptyILTypeDefs: ILTypeDefs
 ///
 /// Note that individual type definitions may contain further delays
 /// in their method, field and other tables.
+///
+/// The types all sit in this one namespace; a store that knows its namespaces inherits
+/// <c>ILPreNamespace</c> instead.
 val mkILTypeDefsComputed: (unit -> ILPreTypeDef[]) -> ILTypeDefs
+
+/// A level as a type table, for where one is needed: a module's own level, and a type's nested types.
+val mkILTypeDefsOfNamespace: ILPreNamespace -> ILTypeDefs
+
+/// For a store with no namespace structure to hand - a metadata table in row order, say. Each type comes
+/// with its namespace path below this level ([] for the level's own types); those are grouped into children
+/// on demand, in first-seen order, with a split namespace becoming one child.
+val mkILTypeDefsGroupedComputed:
+    types: (unit -> struct (string list * ILPreTypeDef)[]) -> namespaces: (unit -> ILPreNamespace[]) -> ILTypeDefs
 
 val internal addILTypeDef: ILTypeDef -> ILTypeDefs -> ILTypeDefs
 
@@ -2470,6 +2536,17 @@ val internal ecmaPublicKey: PublicKey
 
 /// Strips ILType.Modified from the ILType.
 val internal stripILModifiedFromTy: ILType -> ILType
+
+// Built-in type names exposed for `mref.DeclaringTypeRef.Name = tname_X` matchers outside il.fs.
+
+[<Literal>]
+val internal tname_String: string = "System.String"
+
+[<Literal>]
+val internal tname_Type: string = "System.Type"
+
+[<Literal>]
+val internal tname_Bool: string = "System.Boolean"
 
 /// Discriminating different important built-in types.
 val internal isILObjectTy: ILGlobals -> ILType -> bool

@@ -571,7 +571,7 @@ type InfoReader(g: TcGlobals, amap: ImportMap) as this =
         FilterItemsInSuperTypesBasedOnItemsInSubTypes nmf (fun item1 items -> not (items |> List.exists (fun item2 -> equivTest item1 item2))) itemLists 
 
     /// Filter the overrides of methods or properties, either keeping the overrides or keeping the dispatch slots.
-    static let FilterOverrides findFlag (isVirt:'a->bool, isNewSlot, isDefiniteOverride, isFinal, equivSigs, nmf:'a->string) items = 
+    static let FilterOverrides findFlag (isVirt:'a->bool, isNewSlot, isDefiniteOverride, isFinal, isAbstract, equivSigs, nmf:'a->string) items = 
         let equivVirts x y = isVirt x && isVirt y && equivSigs x y
         let filterDefiniteOverrides = List.filter(isDefiniteOverride >> not)
 
@@ -610,9 +610,10 @@ type InfoReader(g: TcGlobals, amap: ImportMap) as this =
               //       (a) not virtual
               //       (b) is a new slot or 
               //       (c) not equivalent
+              //       (d) is abstract (e.g. C# 'abstract override' re-abstracting a base virtual method)
               // We keep virtual finals around for error detection later on
               |> FilterItemsInSubTypesBasedOnItemsInSuperTypes nmf (fun newItem priorItem  ->
-                     (isVirt newItem && isFinal newItem) || not (isVirt newItem) || isNewSlot newItem || not (equivVirts newItem priorItem) )
+                     (isVirt newItem && isFinal newItem) || not (isVirt newItem) || isNewSlot newItem || isAbstract newItem || not (equivVirts newItem priorItem) )
 
               // Remove any abstract slots in supertypes that are (a) hidden by another newslot and (b) implemented
               // We leave unimplemented ones around to give errors, e.g. for
@@ -649,6 +650,7 @@ type InfoReader(g: TcGlobals, amap: ImportMap) as this =
              (fun minfo -> minfo.IsNewSlot),
              (fun minfo -> minfo.IsDefiniteFSharpOverride),
              (fun minfo -> minfo.IsFinal),
+             (fun minfo -> minfo.IsAbstract),
              MethInfosEquivByNameAndSig EraseNone true g amap m,
              (fun minfo -> minfo.LogicalName)) 
 
@@ -664,7 +666,8 @@ type InfoReader(g: TcGlobals, amap: ImportMap) as this =
               ((fun (pinfo: PropInfo) -> pinfo.IsVirtualProperty),
                (fun pinfo -> pinfo.IsNewSlot),
                (fun pinfo -> pinfo.IsDefiniteFSharpOverride),
-               (fun _ -> false),
+               (fun _ -> false), // isFinal
+               (fun _ -> false), // isAbstract
                PropsGetterSetterEquiv (PropInfosEquivByNameAndSig EraseNone g amap m),
                (fun pinfo -> pinfo.PropertyName)) 
 
@@ -950,14 +953,21 @@ type InfoReader(g: TcGlobals, amap: ImportMap) as this =
             else
                 match tryTcrefOfAppTy g metadataTy with
                 | ValueNone -> []
-                | ValueSome tcref -> 
-                    tcref.MembersOfFSharpTyconByName 
-                    |> NameMultiMap.find ".ctor"
-                    |> List.choose(fun vref -> 
-                        match vref.MemberInfo with 
-                        | Some membInfo when (membInfo.MemberFlags.MemberKind = SynMemberKind.Constructor) -> Some vref 
-                        | _ -> None) 
-                    |> List.map (fun x -> FSMeth(g, origTy, x, None)) 
+                | ValueSome tcref ->
+                    let declaredCtors =
+                        tcref.MembersOfFSharpTyconByName
+                        |> NameMultiMap.find ".ctor"
+                        |> List.choose(fun vref ->
+                            match vref.MemberInfo with
+                            | Some membInfo when (membInfo.MemberFlags.MemberKind = SynMemberKind.Constructor) -> Some vref
+                            | _ -> None)
+                        |> List.map (fun x -> FSMeth(g, origTy, x, None))
+                    // Gate on the langversion here, not only at the call site, so the synthesized constructor
+                    // stays out of signature generation and name resolution when the feature is off.
+                    if g.langVersion.SupportsFeature LanguageFeature.RecordConstructorSyntax && tcref.IsRecordTycon then
+                        declaredCtors @ [ RecdCtor(g, origTy) ]
+                    else
+                        declaredCtors
       )    
 
     static member ExcludeHiddenOfMethInfos g amap m minfos = 
@@ -1028,7 +1038,7 @@ type InfoReader(g: TcGlobals, amap: ImportMap) as this =
 let checkLanguageFeatureRuntimeAndRecover (infoReader: InfoReader) langFeature m =
     if not (infoReader.IsLanguageFeatureRuntimeSupported langFeature) then
         let featureStr = LanguageVersion.GetFeatureString langFeature
-        errorR (Error(FSComp.SR.chkFeatureNotRuntimeSupported featureStr, m))
+        errorR (Error(FSComp.SR.chkFeatureNotRuntimeSupported (RichText.mkText featureStr), m))
 
 let GetIntrinsicConstructorInfosOfType (infoReader: InfoReader) m ty = 
     infoReader.GetIntrinsicConstructorInfosOfTypeAux m ty ty
@@ -1160,13 +1170,13 @@ let PropTypeOfEventInfo (infoReader: InfoReader) m ad (einfo: EventInfo) =
     mkIEventType g delTy argsTy
 
 /// Try to find the name of the metadata file for this external definition 
-let TryFindMetadataInfoOfExternalEntityRef (infoReader: InfoReader) m eref = 
+let TryFindMetadataInfoOfExternalEntityRef (infoReader: InfoReader) eref = 
     let g = infoReader.g
     match eref with 
     | ERefLocal _ -> None
     | ERefNonLocal nlref -> 
         // Generalize to get a formal signature 
-        let formalTypars = eref.Typars m
+        let formalTypars = eref.Typars
         let formalTypeInst = generalizeTypars formalTypars
         let ty = TType_app(eref, formalTypeInst, KnownAmbivalentToNull)
         if isILAppTy g ty then
@@ -1186,9 +1196,9 @@ let private libFileOfEntityRef x =
     | ERefLocal _ -> None
     | ERefNonLocal nlref -> nlref.Ccu.FileName 
 
-let GetXmlDocSigOfEntityRef infoReader m (eref: EntityRef) = 
+let GetXmlDocSigOfEntityRef infoReader (eref: EntityRef) = 
     if eref.IsILTycon then 
-        match TryFindMetadataInfoOfExternalEntityRef infoReader m eref  with
+        match TryFindMetadataInfoOfExternalEntityRef infoReader eref  with
         | None -> None
         | Some (ccuFileName, _, formalTypeInfo) -> Some(ccuFileName, "T:"+formalTypeInfo.ILTypeRef.FullName)
     else
@@ -1237,7 +1247,7 @@ let rec GetXmlDocSigOfMethInfo (infoReader: InfoReader)  m (minfo: MethInfo) =
         let fmtps = ilminfo.FormalMethodTypars            
         let genericArity = if fmtps.Length=0 then "" else sprintf "``%d" fmtps.Length
 
-        match TryFindMetadataInfoOfExternalEntityRef infoReader m ilminfo.DeclaringTyconRef  with 
+        match TryFindMetadataInfoOfExternalEntityRef infoReader ilminfo.DeclaringTyconRef  with 
         | None -> None
         | Some (ccuFileName, formalTypars, formalTypeInfo) ->
             let filminfo = ILMethInfo(g, IlType formalTypeInfo, ilminfo.RawMetadata, fmtps) 
@@ -1261,6 +1271,11 @@ let rec GetXmlDocSigOfMethInfo (infoReader: InfoReader)  m (minfo: MethInfo) =
         | ValueSome tcref ->
             Some(None, $"M:{tcref.CompiledRepresentationForNamedType.FullName}.#ctor")
         | _ -> None
+    | RecdCtor(g, ty) ->
+        match tryTcrefOfAppTy g ty with
+        | ValueSome tcref ->
+            Some(None, $"M:{tcref.CompiledRepresentationForNamedType.FullName}.#ctor")
+        | ValueNone -> None
 
 #if !NO_TYPEPROVIDERS
     | ProvidedMeth _ -> None
@@ -1291,23 +1306,23 @@ let GetXmlDocSigOfProp infoReader m (pinfo: PropInfo) =
         | None -> None
         | Some vref -> GetXmlDocSigOfScopedValRef g pinfo.DeclaringTyconRef vref
     | ILProp(ILPropInfo(_, pdef)) -> 
-        match TryFindMetadataInfoOfExternalEntityRef infoReader m pinfo.DeclaringTyconRef with
+        match TryFindMetadataInfoOfExternalEntityRef infoReader pinfo.DeclaringTyconRef with
         | Some (ccuFileName, formalTypars, formalTypeInfo) ->
             let filpinfo = ILPropInfo(formalTypeInfo, pdef)
             Some (ccuFileName, "P:"+formalTypeInfo.ILTypeRef.FullName+"."+pdef.Name+XmlDocArgsEnc g (formalTypars, []) (filpinfo.GetParamTypes(infoReader.amap, m)))
         | _ -> None
 
-let GetXmlDocSigOfEvent infoReader m (einfo: EventInfo) =
+let GetXmlDocSigOfEvent infoReader (einfo: EventInfo) =
     match einfo with
     | ILEvent _ ->
-        match TryFindMetadataInfoOfExternalEntityRef infoReader m einfo.DeclaringTyconRef with 
+        match TryFindMetadataInfoOfExternalEntityRef infoReader einfo.DeclaringTyconRef with 
         | Some (ccuFileName, _, formalTypeInfo) -> 
             Some(ccuFileName, "E:"+formalTypeInfo.ILTypeRef.FullName+"."+einfo.EventName)
         | _ -> None
     | _ -> None
 
-let GetXmlDocSigOfILFieldInfo infoReader m (finfo: ILFieldInfo) =
-    match TryFindMetadataInfoOfExternalEntityRef infoReader m finfo.DeclaringTyconRef with
+let GetXmlDocSigOfILFieldInfo infoReader (finfo: ILFieldInfo) =
+    match TryFindMetadataInfoOfExternalEntityRef infoReader finfo.DeclaringTyconRef with
     | Some (ccuFileName, _, formalTypeInfo) ->
         Some(ccuFileName, "F:"+formalTypeInfo.ILTypeRef.FullName+"."+finfo.FieldName)
     | _ -> None

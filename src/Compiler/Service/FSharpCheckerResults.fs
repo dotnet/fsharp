@@ -676,51 +676,71 @@ type internal TypeCheckInfo
                     | None -> None)
             | _ -> [])
 
-    let GetNamedParametersAndSettableFields endOfExprPos allowObsolete =
+    let GetNamedParametersAndSettableFields endOfExprPos cursorLine (lineStr: string) allowObsolete =
         let cnrs =
             GetCapturedNameResolutions endOfExprPos ResolveOverloads.No
             |> ResizeArray.toList
             |> List.rev
 
-        let result =
-            match cnrs with
-            | CNR(Item.CtorGroup(_, (ctor :: _ as ctors)), _, denv, nenv, ad, m) :: _ ->
-                let props =
-                    ResolveCompletionsInType
-                        ncenv
-                        nenv
-                        ResolveCompletionTargets.SettablePropertiesAndFields
-                        m
-                        ad
-                        false
-                        ctor.ApparentEnclosingType
-                        allowObsolete
-
-                let parameters = CollectParameters ctors amap m
-                let items = props @ parameters
-                Some(denv, m, items)
-            | CNR(Item.MethodGroup(_, methods, _), _, denv, nenv, ad, m) :: _ ->
-                let props =
-                    methods
-                    |> List.collect (fun meth ->
-                        let retTy = meth.GetFSharpReturnType(amap, m, meth.FormalMethodInst)
-
-                        ResolveCompletionsInType
-                            ncenv
-                            nenv
-                            ResolveCompletionTargets.SettablePropertiesAndFields
-                            m
-                            ad
-                            false
-                            retTy
-                            allowObsolete)
-
-                let parameters = CollectParameters methods amap m
-                let items = props @ parameters
-                Some(denv, m, items)
+        // A ctor or method group under the cursor whose named parameters and settable fields can be
+        // offered as completions. For a ctor we surface settable props of the constructed type; for a
+        // method, of its return type(s).
+        let (|NamedArgGroup|_|) item =
+            match item with
+            | Item.CtorGroup(name, (_ :: _ as meths)) -> Some(name, meths, true)
+            | Item.MethodGroup(name, (_ :: _ as meths), _) -> Some(name, meths, false)
             | _ -> None
 
-        match result with
+        let buildGroup (meths: MethInfo list) isCtor nenv ad m =
+            let propTys =
+                if isCtor then
+                    [ (List.head meths).ApparentEnclosingType ]
+                else
+                    meths
+                    |> List.map (fun meth -> meth.GetFSharpReturnType(amap, m, meth.FormalMethodInst))
+
+            let props =
+                propTys
+                |> List.collect (fun ty ->
+                    ResolveCompletionsInType ncenv nenv ResolveCompletionTargets.SettablePropertiesAndFields m ad false ty allowObsolete)
+
+            nenv.DisplayEnv, m, props @ CollectParameters meths amap m
+
+        // Walk the whole position-filtered CNR list rather than only its head: after the first named
+        // argument, overload refinement or a trailing partial argument can push the ctor/method group
+        // off the head of the list.
+        let fromCnrs =
+            cnrs
+            |> List.tryPick (function
+                | CNR(NamedArgGroup(_, meths, isCtor), _, _, nenv, ad, m) -> Some(buildGroup meths isCtor nenv ad m)
+                | _ -> None)
+
+        // For an overloaded call with a malformed trailing argument the type-checker can abandon overload
+        // resolution before publishing any method-group CNR at endOfExprPos. Recover by re-resolving the
+        // long ident to the left of the cursor. Restricted to the cursor's own line, since lineStr only
+        // holds that line and columns on other lines of a multi-line call could match an unrelated ident.
+        let fromLineText () =
+            if
+                endOfExprPos.Line <> cursorLine
+                || endOfExprPos.Column <= 0
+                || endOfExprPos.Column > lineStr.Length
+            then
+                None
+            else
+                let plid = QuickParse.GetPartialLongNameEx(lineStr, endOfExprPos.Column - 1)
+                let lastName = plid.PartialIdent
+
+                if String.IsNullOrEmpty lastName then
+                    None
+                else
+                    let (nenv, ad), m = GetBestEnvForPos endOfExprPos
+
+                    ResolvePartialLongIdent ncenv nenv (ConstraintSolver.IsApplicableMethApprox g amap m) m ad plid.QualifyingIdents false
+                    |> List.tryPick (function
+                        | NamedArgGroup(name, meths, isCtor) when name = lastName -> Some(buildGroup meths isCtor nenv ad m)
+                        | _ -> None)
+
+        match fromCnrs |> Option.orElseWith fromLineText with
         | None -> NameResResult.Empty
         | Some(denv, m, items) ->
             let items = List.map ItemWithNoInst items
@@ -904,6 +924,7 @@ type internal TypeCheckInfo
     /// Is the item suitable for completion in a pattern
     let IsPatternCandidate (item: CompletionItem) =
         match item.Item with
+        | Item.RecdField f -> f.Tycon.IsEnumTycon
         | Item.Value v -> v.LiteralValue.IsSome
         | Item.ILField field -> field.LiteralValue.IsSome
         | Item.ActivePatternCase _
@@ -1546,11 +1567,16 @@ type internal TypeCheckInfo
             allSymbols: unit -> AssemblySymbol list,
             options: FSharpCodeCompletionOptions
         ) =
+        let isSpread =
+            FindFirstNonWhitespacePosition lineStr (colAtEndOfNamesAndResidue - 1)
+            |> Option.exists (fun i ->
+                (i > 2 && lineStr[i - 3] <> '.' || i = 2)
+                && lineStr.AsSpan(i - 2).StartsWith("...".AsSpan()))
 
         // Are the last two chars (except whitespaces) = ".."
         let isLikeRangeOp =
             match FindFirstNonWhitespacePosition lineStr (colAtEndOfNamesAndResidue - 1) with
-            | Some x when x >= 1 && lineStr[x] = '.' && lineStr[x - 1] = '.' -> true
+            | Some x when not isSpread && x >= 1 && lineStr[x] = '.' && lineStr[x - 1] = '.' -> true
             | _ -> false
 
         // if last two chars are .. and we are not in range operator context - no completion
@@ -1580,7 +1606,7 @@ type internal TypeCheckInfo
                         |> Option.orElseWith (fun _ -> FindFirstNonWhitespacePosition lineStr (colAtEndOfNamesAndResidue - 1))
 
                     match lastPos with
-                    | Some p when lineStr[p] = '.' ->
+                    | Some p when not isSpread && lineStr[p] = '.' ->
                         match FindFirstNonWhitespacePosition lineStr (p - 1) with
                         | Some colAtEndOfNames ->
                             let colAtEndOfNames = colAtEndOfNames + 1 // convert 0-based to 1-based
@@ -1619,7 +1645,7 @@ type internal TypeCheckInfo
                         lastDotPos
                         |> Option.orElseWith (fun _ -> FindFirstNonWhitespacePosition lineStr (colAtEndOfNamesAndResidue - 1))
                     with
-                    | Some p when lineStr[p] = '.' ->
+                    | Some p when not isSpread && lineStr[p] = '.' ->
                         match FindFirstNonWhitespacePosition lineStr (p - 1) with
                         | Some colAtEndOfNames ->
                             let colAtEndOfNames = colAtEndOfNames + 1 // convert 0-based to 1-based
@@ -1630,11 +1656,18 @@ type internal TypeCheckInfo
                         | None -> ValueNone
                     | _ -> ValueNone
 
+            // Wildcard _ should not resolve to the member's synthetic self-identifier via fallback.
+            let isDiscardIdentifier =
+                match residueOpt, origLongIdentOpt with
+                | None, Some [ "_" ] -> true
+                | _ -> false
+
             match nameResItems with
             | NameResResult.Cancel(denv, m) -> Some([], denv, m)
             | NameResResult.Members(FilterRelevantItems getItem exactMatchResidueOpt (items, denv, m)) ->
                 // lookup based on name resolution results successful
                 Some(items |> List.map (CompletionItem (getType ()) ValueNone), denv, m)
+            | _ when isDiscardIdentifier -> None
             | _ ->
                 match origLongIdentOpt with
                 | None -> None
@@ -1942,10 +1975,48 @@ type internal TypeCheckInfo
             // No completion at '...: string'
             | Some(CompletionContext.RecordField(RecordContext.Declaration true)) -> None
 
+            // Completion at 'let r = { ...| }'
+            | Some(CompletionContext.RecordSpread RecordSpreadContext.Construction) ->
+                let envItems = getDeclaredItemsNotInRangeOpWithAllSymbols ()
+
+                envItems
+                |> Option.map (fun (items, denv, m) ->
+                    let items =
+                        [
+                            for completionItem in items do
+                                match completionItem.Item with
+                                | Item.Value vref when isRecdTy g vref.Type || isAnonRecdTy g vref.Type -> completionItem
+                                | _ -> ()
+                        ]
+
+                    items, denv, m)
+
+            // Completion at 'type R = { ...| }'
+            | Some(CompletionContext.RecordSpread RecordSpreadContext.Declaration) ->
+                let (nenv, ad), m = GetBestEnvForPos pos
+                let recordTycons = getRecordTyconsInScope g ncenv nenv ad m
+
+                let completionItems =
+                    [
+                        for tcref, item in recordTycons ->
+                            {
+                                ItemWithInst = ItemWithNoInst item
+                                Kind = CompletionItemKind.Other
+                                MinorPriority = 0
+                                IsOwnMember = false
+                                Type = Some tcref
+                                Unresolved = None
+                                CustomInsertText = ValueNone
+                                CustomDisplayText = ValueNone
+                            }
+                    ]
+
+                Some(completionItems, nenv.DisplayEnv, m)
+
             // Completion at ' SomeMethod( ... ) ' or ' [<SomeAttribute( ... )>] ' with named arguments
             | Some(CompletionContext.ParameterList(endPos, fields)) ->
                 let results =
-                    GetNamedParametersAndSettableFields endPos options.SuggestObsoleteSymbols
+                    GetNamedParametersAndSettableFields endPos line lineStr options.SuggestObsoleteSymbols
 
                 let declaredItems = getDeclaredItemsNotInRangeOpWithAllSymbols ()
 
@@ -1969,7 +2040,7 @@ type internal TypeCheckInfo
                             })
 
                     match declaredItems with
-                    | None -> Some(toCompletionItems (items, denv, m))
+                    | None -> Some(filtered, denv, m)
                     | Some(declItems, declaredDisplayEnv, declaredRange) -> Some(filtered @ declItems, declaredDisplayEnv, declaredRange)
                 | _ -> declaredItems
 
@@ -2230,11 +2301,11 @@ type internal TypeCheckInfo
                         |> List.sortBy (fun d ->
                             let n =
                                 match d.Item with
-                                | Item.Types(_, AbbrevOrAppTy(tcref, _) :: _) -> 1 + tcref.TyparsNoRange.Length
+                                | Item.Types(_, AbbrevOrAppTy(tcref, _) :: _) -> 1 + tcref.Typars.Length
                                 // Put delegate ctors after types, sorted by #typars. RemoveDuplicateItems will remove FakeInterfaceCtor and DelegateCtor if an earlier type is also reported with this name
-                                | Item.DelegateCtor(AbbrevOrAppTy(tcref, _)) -> 1000 + tcref.TyparsNoRange.Length
+                                | Item.DelegateCtor(AbbrevOrAppTy(tcref, _)) -> 1000 + tcref.Typars.Length
                                 // Put type ctors after types, sorted by #typars. RemoveDuplicateItems will remove DefaultStructCtors if a type is also reported with this name
-                                | Item.CtorGroup(_, cinfo :: _) -> 1000 + 10 * cinfo.DeclaringTyconRef.TyparsNoRange.Length
+                                | Item.CtorGroup(_, cinfo :: _) -> 1000 + 10 * cinfo.DeclaringTyconRef.Typars.Length
                                 | _ -> 0
 
                             (d.Item.DisplayName, n))
@@ -2321,7 +2392,7 @@ type internal TypeCheckInfo
 
                 let tip = PrintUtilities.squashToWidth width tip
 
-                let tip = LayoutRender.toArray tip
+                let tip = LayoutRender.toRichText tip
                 ToolTipText.ToolTipText [ ToolTipElement.Single(tip, FSharpXmlDoc.None) ]
 
             | [] ->
@@ -2344,7 +2415,7 @@ type internal TypeCheckInfo
                             for line in lines ->
                                 let tip = wordL (TaggedText.tagStringLiteral line)
                                 let tip = PrintUtilities.squashToWidth width tip
-                                let tip = LayoutRender.toArray tip
+                                let tip = LayoutRender.toRichText tip
                                 ToolTipElement.Single(tip, FSharpXmlDoc.None)
                         ]
 
@@ -2830,7 +2901,6 @@ type FSharpParsingOptions =
         DiagnosticOptions: FSharpDiagnosticOptions
         LangVersionText: string
         IsInteractive: bool
-        StrictIndentation: bool option
         CompilingFSharpCore: bool
         IsExe: bool
     }
@@ -2847,7 +2917,6 @@ type FSharpParsingOptions =
             DiagnosticOptions = FSharpDiagnosticOptions.Default
             LangVersionText = LanguageVersion.Default.VersionText
             IsInteractive = false
-            StrictIndentation = None
             CompilingFSharpCore = false
             IsExe = false
         }
@@ -2860,7 +2929,6 @@ type FSharpParsingOptions =
             DiagnosticOptions = tcConfig.diagnosticsOptions
             LangVersionText = tcConfig.langVersion.VersionText
             IsInteractive = isInteractive
-            StrictIndentation = tcConfig.strictIndentation
             CompilingFSharpCore = tcConfig.compilingFSharpCore
             IsExe = tcConfig.target.IsExe
         }
@@ -2873,7 +2941,6 @@ type FSharpParsingOptions =
             DiagnosticOptions = tcConfigB.diagnosticsOptions
             LangVersionText = tcConfigB.langVersion.VersionText
             IsInteractive = isInteractive
-            StrictIndentation = tcConfigB.strictIndentation
             CompilingFSharpCore = tcConfigB.compilingFSharpCore
             IsExe = tcConfigB.target.IsExe
         }
@@ -2893,7 +2960,7 @@ module internal ParseAndCheckFile =
             //    the formatting of types in it may change (for example, 'a to obj)
             //
             // So we'll create a diagnostic later, but cache the FormatCore message now
-            diagnostic.Exception.Data["CachedFormatCore"] <- diagnostic.FormatCore(flatErrors, suggestNamesForErrors)
+            diagnostic.Exception.Data["CachedFormatCore"] <- diagnostic.FormatRichCore(flatErrors, suggestNamesForErrors)
             diagnosticsCollector.Add(diagnostic)
 
             if diagnostic.Severity = FSharpDiagnosticSeverity.Error then
@@ -2985,8 +3052,8 @@ module internal ParseAndCheckFile =
         else
             (fun _ -> tokenizer.GetToken())
 
-    let createLexbuf langVersion strictIndentation sourceText =
-        UnicodeLexing.SourceTextAsLexbuf(true, LanguageVersion(langVersion), strictIndentation, sourceText)
+    let createLexbuf langVersion sourceText =
+        UnicodeLexing.SourceTextAsLexbuf(true, LanguageVersion(langVersion), sourceText)
 
     let matchBraces
         (
@@ -3006,7 +3073,7 @@ module internal ParseAndCheckFile =
 
         let matchingBraces = ResizeArray<_>()
 
-        usingLexbufForParsing (createLexbuf options.LangVersionText options.StrictIndentation sourceText, fileName) (fun lexbuf ->
+        usingLexbufForParsing (createLexbuf options.LangVersionText sourceText, fileName) (fun lexbuf ->
             let errHandler =
                 DiagnosticsHandler(false, fileName, options.DiagnosticOptions, suggestNamesForErrors, false)
 
@@ -3119,7 +3186,7 @@ module internal ParseAndCheckFile =
         use _ = UseBuildPhase BuildPhase.Parse
 
         let parseResult =
-            usingLexbufForParsing (createLexbuf options.LangVersionText options.StrictIndentation sourceText, fileName) (fun lexbuf ->
+            usingLexbufForParsing (createLexbuf options.LangVersionText sourceText, fileName) (fun lexbuf ->
 
                 let lexfun = createLexerFunction options lexbuf errHandler ct
 
@@ -3403,6 +3470,9 @@ type FSharpCheckFileResults
 
     member _.Diagnostics = errors
 
+    member _.HasErrors =
+        errors |> Array.exists (fun d -> d.Severity = FSharpDiagnosticSeverity.Error)
+
     member _.HasFullTypeCheckInfo = details.IsSome
 
     member _.TryGetCurrentTcImports() =
@@ -3440,7 +3510,7 @@ type FSharpCheckFileResults
                     match Tokenization.FSharpKeywords.KeywordsDescriptionLookup kw with
                     | None -> ()
                     | Some kwDescription ->
-                        let kwText = kw |> TaggedText.tagKeyword |> wordL |> LayoutRender.toArray
+                        let kwText = kw |> TaggedText.tagKeyword |> wordL |> LayoutRender.toRichText
                         yield ToolTipElement.Single(kwText, FSharpXmlDoc.FromXmlText(Xml.XmlDoc([| kwDescription |], range0)))
             ]
 

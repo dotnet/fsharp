@@ -43,7 +43,7 @@ module QuickInfoProviderTests =
         function
         | ToolTipElement.None -> Empty
         | ToolTipElement.Group(xs) ->
-            let descriptions = xs |> List.map (fun item -> item.MainDescription)
+            let descriptions = xs |> List.map (fun item -> item.MainDescription.Parts)
 
             let descriptionTexts =
                 descriptions
@@ -51,7 +51,8 @@ module QuickInfoProviderTests =
 
             let descriptionText = descriptionTexts |> Array.concat |> String.concat ""
 
-            let remarks = xs |> List.choose (fun item -> item.Remarks)
+            let remarks =
+                xs |> List.choose (fun item -> item.Remarks |> Option.map (fun r -> r.Parts))
 
             let remarkTexts =
                 remarks |> Array.concat |> Array.map (fun taggedText -> taggedText.Text)
@@ -61,7 +62,9 @@ module QuickInfoProviderTests =
                  | [] -> ""
                  | _ -> "\n" + String.concat "" remarkTexts)
 
-            let tps = xs |> List.collect (fun item -> item.TypeMapping)
+            let tps =
+                xs
+                |> List.collect (fun item -> item.TypeMapping |> List.map (fun tp -> tp.Parts))
 
             let tpTexts =
                 tps |> List.map (fun x -> x |> Array.map (fun y -> y.Text) |> String.concat "")

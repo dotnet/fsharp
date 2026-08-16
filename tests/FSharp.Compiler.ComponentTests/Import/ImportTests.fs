@@ -554,7 +554,7 @@ type T() =
         |> withReferences [csLib]
         |> compile
         |> shouldFail
-        |> withErrorCode 39 // "The type does not define the field, constructor or member"
+        |> withErrorCode 39 // "The type does not define a field, constructor, or member named"
         |> ignore
 
     // ========================================

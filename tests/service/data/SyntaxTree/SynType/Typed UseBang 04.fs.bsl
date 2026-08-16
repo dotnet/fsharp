@@ -70,3 +70,4 @@ ImplFile
         CodeComments = [] }, set []))
 
 (4,0)-(4,33) parse error Incomplete structured construct at or before this point in expression
+(4,0)-(4,4) parse error 'use!' cannot be the final expression in a computation expression. Finish with 'return', 'return!', or a simple expression.

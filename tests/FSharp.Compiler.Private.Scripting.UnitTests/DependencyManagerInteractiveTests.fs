@@ -36,9 +36,6 @@ type DependencyManagerInteractiveTests() =
         | Ok(value) -> value
         | Error ex -> raise ex
 
-    let getErrors ((_value: Result<FsiValue option, exn>), (errors: FSharpDiagnostic[])) =
-        errors
-
     [<FSharp.Test.FactSkipOnSignedBuild>]
     member _.``SmokeTest - #r nuget``() =
         let text = """
@@ -59,14 +56,6 @@ type DependencyManagerInteractiveTests() =
         let _opt, errors = script.Eval(text)
         Assert.Equal(errors.Length, 1)
 
-(*
-    [<Theory>]
-    [<InlineData("""#r "#i "unknown:Astring" """, """ """)>]
-    member _.``syntax produces error messages in FSharp 4.7``(code:string, message: string) =
-        use script = new scriptHost()
-        let errors = script.Eval(code) |> getErrors
-        Assert.Contains(message, errors |> Array.map(fun e -> e.Message))
-*)
     static member SdkDirOverrideTestData =
         [|
             yield [| None |]
@@ -238,14 +227,16 @@ type DependencyManagerInteractiveTests() =
             Assert.True((result1.Roots |> Seq.head).EndsWith("/microsoft.extensions.configuration.abstractions/3.1.1/"))
 
         // Netstandard gets fewer dependencies than desktop, because desktop framework doesn't contain assemblies like System.Memory
-        // Those assemblies must be delivered by nuget for desktop apps
+        // Those assemblies must be delivered by nuget for desktop apps.
+        // In .NET 11+, Microsoft.Extensions.* assemblies are part of the shared framework.
+        // The conflict resolution returns framework ref pack paths instead of NuGet cache paths.
+        // Only the directly-requested package root is available (transitive deps are framework-provided).
         let result2 = dp1.Resolve(idm1, ".fsx", [|"r", "Microsoft.Extensions.Configuration.Abstractions, 3.1.1"|], reportError, TestFramework.productTfm)
         Assert.Equal(true, result2.Success)
         Assert.Equal(2, result2.Resolutions |> Seq.length)
-        let expected = "/netcoreapp3.1/"
-        Assert.True((result2.Resolutions |> Seq.head).Contains(expected))
+        Assert.True((result2.Resolutions |> Seq.head).Contains("Microsoft.Extensions.Configuration.Abstractions"))
         Assert.Equal(1, result2.SourceFiles |> Seq.length)
-        Assert.Equal(2, result2.Roots |> Seq.length)
+        Assert.Equal(1, result2.Roots |> Seq.length)
         Assert.True((result2.Roots |> Seq.head).EndsWith("/microsoft.extensions.configuration.abstractions/3.1.1/"))
         ()
 

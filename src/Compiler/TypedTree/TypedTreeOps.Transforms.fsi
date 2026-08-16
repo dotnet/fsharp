@@ -148,6 +148,7 @@ module internal TypeTestsAndPatterns =
 [<AutoOpen>]
 module internal Rewriting =
 
+    [<NoEquality; NoComparison>]
     type ExprRewritingEnv =
         { PreIntercept: ((Expr -> Expr) -> Expr -> Expr option) option
           PostTransform: Expr -> Expr option

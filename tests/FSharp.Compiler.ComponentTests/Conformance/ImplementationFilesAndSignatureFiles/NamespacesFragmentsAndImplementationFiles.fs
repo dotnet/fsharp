@@ -136,7 +136,7 @@ module NamespacesBasic =
         |> compile
         |> shouldFail
         |> withErrorCode 0247
-        |> withDiagnosticMessageMatches "A namespace and a module named"
+        |> withDiagnosticMessageMatches "The name 'A\.B' is used as both a namespace and a module in this assembly"
         |> ignore
 
     // SOURCE="LastFileExeCanBeAnona.fs LastFileExeCanBeAnonb.fs"

@@ -537,10 +537,7 @@ type Document with
         async2 {
             let! _, _, parsingOptions, _ = this.GetFSharpCompilationOptionsAsync(userOpName)
 
-            return
-                CompilerEnvironment.GetConditionalDefinesForEditing parsingOptions,
-                parsingOptions.LangVersionText,
-                parsingOptions.StrictIndentation
+            return CompilerEnvironment.GetConditionalDefinesForEditing parsingOptions, parsingOptions.LangVersionText
         }
 
     /// Get the instance of the FSharpChecker from the workspace by the given F# document.
@@ -569,7 +566,7 @@ type Document with
     /// This tries to get the defines by looking at an internal cache; if it doesn't exist in the cache it will create an inaccurate but usable form of the defines.
     member this.GetFSharpQuickDefines() =
         match this.GetFsharpParsingOptions() with
-        | defines, _, _ -> defines
+        | defines, _ -> defines
 
     /// Parses the given F# document.
     member this.GetFSharpParseResultsAsync(userOpName) =
@@ -638,9 +635,9 @@ type Document with
 
     /// Try to find a F# lexer/token symbol of the given F# document and position.
     member this.TryFindFSharpLexerSymbolAsync(position, lookupKind, wholeActivePattern, allowStringToken, userOpName) =
-        async2 {
-            let! defines, langVersion, strictIndentation = this.GetFsharpParsingOptionsAsync(userOpName)
-            let! ct = Async2.CancellationToken
+        cancellableTask {
+            let! defines, langVersion = this.GetFsharpParsingOptionsAsync(userOpName)
+            let! ct = CancellableTask.getCancellationToken ()
             let! sourceText = this.GetTextAsync(ct)
 
             return
@@ -654,7 +651,6 @@ type Document with
                     wholeActivePattern,
                     allowStringToken,
                     Some langVersion,
-                    strictIndentation,
                     ct
                 )
         }

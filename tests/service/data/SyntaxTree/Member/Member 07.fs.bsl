@@ -109,4 +109,4 @@ ImplFile
         WarnDirectives = []
         CodeComments = [] }, set []))
 
-(5,23)-(5,24) parse error Unexpected symbol '=' in member definition
+(5,22)-(5,22) parse error Identifier expected

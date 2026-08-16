@@ -6,7 +6,9 @@ module internal FSharp.Compiler.AccessibilityLogic
 open Internal.Utilities.Library
 open FSharp.Compiler 
 open FSharp.Compiler.AbstractIL.IL 
+open FSharp.Compiler.Text
 open FSharp.Compiler.DiagnosticsLogger
+open FSharp.Compiler.Import
 open FSharp.Compiler.Infos
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.TypedTree
@@ -178,7 +180,7 @@ let IsEntityAccessible amap m ad (tcref:TyconRef) =
 let CheckTyconAccessible amap m ad tcref =
     let res = IsEntityAccessible amap m ad tcref
     if not res then  
-        errorR(Error(FSComp.SR.typeIsNotAccessible tcref.DisplayName, m))
+        errorR(Error(FSComp.SR.typeIsNotAccessible (richTextOfEntityRef tcref), m))
     res
 
 /// Indicates if a type definition and its representation contents are accessible
@@ -191,7 +193,7 @@ let CheckTyconReprAccessible amap m ad tcref =
     CheckTyconAccessible amap m ad tcref &&
     (let res = IsAccessible ad tcref.TypeReprAccessibility
      if not res then 
-         errorR (Error (FSComp.SR.unionCasesAreNotAccessible tcref.DisplayName, m))
+         errorR (Error(FSComp.SR.unionCasesAreNotAccessible (richTextOfEntityRef tcref), m))
      res)
             
 /// Indicates if a type is accessible (both definition and instantiation)
@@ -233,6 +235,38 @@ let IsILFieldInfoAccessible g amap m ad x =
         let access = tpfi.PUntaint((fun fi -> ComputeILAccess fi.IsPublic fi.IsFamily fi.IsFamilyOrAssembly fi.IsFamilyAndAssembly), m)
         IsProvidedMemberAccessible amap m ad x.ApparentEnclosingType access
 #endif
+
+/// True if the IL field has protected (family) accessibility.
+let private isProtectedILFieldSpec (amap: ImportMap) m (fspec: ILFieldSpec) =
+    match fspec.DeclaringTypeRef with
+    | TryImportILTypeRef amap m (ILTyconRawMetadata tdef) ->
+        tdef.Fields.LookupByName fspec.Name
+        |> List.exists (fun fdef -> fdef.Access = ILMemberAccess.Family || fdef.Access = ILMemberAccess.FamilyOrAssembly)
+    | _ -> false
+
+let exprReferencesProtectedILField (amap: ImportMap) expr =
+    let mutable found = false
+
+    let folder =
+        { ExprFolder0 with
+            exprIntercept =
+                fun _recurseF noInterceptF z e ->
+                    // Invoked per-member (IlxGen) and per-TLR-candidate (SelectTLRVals), so prune the
+                    // walk as soon as a hit is recorded: skipping noInterceptF stops descent into this
+                    // node's subtree, bounding the post-hit cost to the current fold frontier.
+                    if found then
+                        z
+                    else
+                        match e with
+                        | Expr.Op(TOp.ILAsm(instrs, _), _, _, m) ->
+                            if instrs |> List.exists (function ILFieldInstr fspec -> isProtectedILFieldSpec amap m fspec | _ -> false) then
+                                found <- true
+                        | _ -> ()
+
+                        noInterceptF z e }
+
+    FoldExpr folder () expr |> ignore
+    found
 
 let GetILAccessOfILEventInfo (ILEventInfo (tinfo, edef)) =
     (resolveILMethodRef tinfo.RawMetadata edef.AddMethod).Access 
@@ -305,9 +339,9 @@ let IsILPropInfoAccessible g amap m ad pinfo =
 let IsValAccessible ad (vref:ValRef) = 
     vref.Accessibility |> IsAccessible ad
 
-let CheckValAccessible  m ad (vref:ValRef) = 
+let CheckValAccessible g m ad (vref:ValRef) = 
     if not (IsValAccessible ad vref) then 
-        errorR (Error (FSComp.SR.valueIsNotAccessible vref.DisplayName, m))
+        errorR (Error(FSComp.SR.valueIsNotAccessible (richTextOfValName g vref.Deref), m))
         
 let IsUnionCaseAccessible amap m ad (ucref:UnionCaseRef) =
     IsTyconReprAccessible amap m ad ucref.TyconRef &&
@@ -317,7 +351,7 @@ let CheckUnionCaseAccessible amap m ad (ucref:UnionCaseRef) =
     CheckTyconReprAccessible amap m ad ucref.TyconRef &&
     (let res = IsAccessible ad ucref.UnionCase.Accessibility
      if not res then 
-        errorR (Error (FSComp.SR.unionCaseIsNotAccessible ucref.CaseName, m))
+        errorR (Error(FSComp.SR.unionCaseIsNotAccessible (RichText.mkUnionCase ucref.CaseName), m))
      res)
 
 let IsRecdFieldAccessible amap m ad (rfref:RecdFieldRef) =
@@ -328,7 +362,7 @@ let CheckRecdFieldAccessible amap m ad (rfref:RecdFieldRef) =
     CheckTyconReprAccessible amap m ad rfref.TyconRef &&
     (let res = IsAccessible ad rfref.RecdField.Accessibility
      if not res then 
-        errorR (Error (FSComp.SR.fieldIsNotAccessible rfref.FieldName, m))
+        errorR (Error(FSComp.SR.fieldIsNotAccessible (RichText.mkRecordField rfref.FieldName), m))
      res)
 
 let CheckRecdFieldInfoAccessible amap m ad (rfinfo:RecdFieldInfo) = 
@@ -336,7 +370,7 @@ let CheckRecdFieldInfoAccessible amap m ad (rfinfo:RecdFieldInfo) =
 
 let CheckILFieldInfoAccessible g amap m ad finfo =
     if not (IsILFieldInfoAccessible g amap m ad finfo) then 
-        errorR (Error (FSComp.SR.structOrClassFieldIsNotAccessible finfo.FieldName, m))
+        errorR (Error(FSComp.SR.structOrClassFieldIsNotAccessible (RichText.mkField finfo.FieldName), m))
     
 /// Uses a separate accessibility domains for containing type and method itself
 /// This makes sense cases like
@@ -356,6 +390,13 @@ let rec IsTypeAndMethInfoAccessible amap m accessDomainTy ad = function
     | FSMeth (_, _, vref, _) -> IsValAccessible ad vref
     | MethInfoWithModifiedReturnType(mi,_) -> IsTypeAndMethInfoAccessible amap m accessDomainTy ad mi
     | DefaultStructCtor(g, ty) -> IsTypeAccessible g amap m ad ty
+    | RecdCtor(g, ty) ->
+        // The synthesized all-fields constructor must be no more accessible than constructing the record
+        // with '{ ... }' syntax: require the type, its representation and every field to be accessible.
+        // This stops F# inheriting the C# behaviour where the IL constructor is public regardless of the
+        // record's 'private'/'internal' representation.
+        IsTypeAccessible g amap m ad ty &&
+        ((tcrefOfAppTy g ty).TrueInstanceFieldsAsRefList |> List.forall (IsRecdFieldAccessible amap m ad))
 #if !NO_TYPEPROVIDERS
     | ProvidedMeth(amap, tpmb, _, m) as etmi -> 
         let access = tpmb.PUntaint((fun mi -> ComputeILAccess mi.IsPublic mi.IsFamily mi.IsFamilyOrAssembly mi.IsFamilyAndAssembly), m)        
