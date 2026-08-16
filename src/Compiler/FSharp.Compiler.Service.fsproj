@@ -104,8 +104,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Compile Include="Utilities\NullHelpers.fs" />
-    <Compile Include="Utilities\Async2.fs" />
     <EmbeddedText Include="FSComp.txt">
       <Link>FSComp.txt</Link>
       <RichText>true</RichText>
@@ -125,6 +123,7 @@
     <Compile Include="Utilities\sr.fs" CompileOrder="CompileFirst" />
     <Compile Include="Facilities\RichText.fsi" CompileOrder="CompileFirst" />
     <Compile Include="Facilities\RichText.fs" CompileOrder="CompileFirst" />
+    <Compile Include="Utilities\Async2.fs" />
     <Compile Include="Utilities\Activity.fsi" />
     <Compile Include="Utilities\Activity.fs" />
 	<Compile Include="Utilities\Caches.fsi" />
