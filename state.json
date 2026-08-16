@@ -4,13 +4,6 @@
       "sha": "d3fdcde52aea",
       "cats": []
     },
-    "20260": {
-      "sha": "df55ec38ae57",
-      "cats": [
-        "Affects-Agent-Config",
-        "Affects-Compiler-Output"
-      ]
-    },
     "20259": {
       "sha": "6bf03ba46e20",
       "cats": []
@@ -169,6 +162,10 @@
       "cats": [
         "Affects-Build-Infra"
       ]
+    },
+    "20267": {
+      "sha": "f798f23769e5",
+      "cats": []
     }
   }
 }
