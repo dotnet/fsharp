@@ -37,10 +37,8 @@ module private FSharpProjectOptionsHelpers =
             member _.Description = project.Name
             member _.CompilationSourceFiles = sourcePaths
 
-            member _.CompilationOptions = [|
-                yield! options;
-                yield! referencePaths |> Seq.map (fun r -> "-r:" + r)
-            |]
+            member _.CompilationOptions =
+                [| yield! options; yield! referencePaths |> Seq.map (fun r -> "-r:" + r) |]
 
             member _.CompilationReferences = referencePaths
 
@@ -171,14 +169,22 @@ type private FSharpProjectOptionsReactor(checker: FSharpChecker) =
 
     let tryGetCachedPEReference projectId stamp comp =
         match emitCache.TryGetValue(projectId) with
-        | true, { Stamp = cachedStamp; Compilation = cachedCompilation; Reference = fsRefProj }
-            when cachedStamp = stamp && obj.ReferenceEquals(cachedCompilation, comp) ->
-            ValueSome fsRefProj
-        | _ ->
-            ValueNone
+        | true,
+          {
+              Stamp = cachedStamp
+              Compilation = cachedCompilation
+              Reference = fsRefProj
+          } when cachedStamp = stamp && obj.ReferenceEquals(cachedCompilation, comp) -> ValueSome fsRefProj
+        | _ -> ValueNone
 
     let cachePEReference projectId stamp comp fsRefProj =
-        emitCache.[projectId] <- { Stamp = stamp; Compilation = comp; Reference = fsRefProj }
+        emitCache.[projectId] <-
+            {
+                Stamp = stamp
+                Compilation = comp
+                Reference = fsRefProj
+            }
+
         fsRefProj
 
     let createNewPEReference projectId (referencedProject: Project) (comp: Compilation) =
@@ -238,12 +244,10 @@ type private FSharpProjectOptionsReactor(checker: FSharpChecker) =
             let! stamp = referencedProject.GetDependentVersionAsync(ct)
 
             match tryGetCachedPEReference projectId stamp comp with
-            | ValueSome fsRefProj ->
-                return fsRefProj
+            | ValueSome fsRefProj -> return fsRefProj
             | ValueNone ->
                 match weakPEReferences.TryGetValue comp with
-                | true, fsRefProj ->
-                    return cachePEReference projectId stamp comp fsRefProj
+                | true, fsRefProj -> return cachePEReference projectId stamp comp fsRefProj
                 | _ ->
                     let fsRefProj = createNewPEReference projectId referencedProject comp
                     weakPEReferences.Add(comp, fsRefProj)
@@ -288,14 +292,13 @@ type private FSharpProjectOptionsReactor(checker: FSharpChecker) =
 
                 let otherOptions =
                     if project.IsFSharpMetadata then
-                        project.ProjectReferences
-                        |> Seq.map (fun x -> "-r:" + project.Solution.GetProject(x.ProjectId).OutputFilePath)
-                        |> Array.ofSeq
-                        |> Array.append (
-                            project.MetadataReferences.OfType<PortableExecutableReference>()
-                            |> Seq.map (fun x -> "-r:" + x.FilePath)
-                            |> Array.ofSeq
-                        )
+                        [|
+                            for projectReference in project.ProjectReferences do
+                                "-r:" + project.Solution.GetProject(projectReference.ProjectId).OutputFilePath
+
+                            for metadataReference in project.MetadataReferences.OfType<PortableExecutableReference>() do
+                                "-r:" + metadataReference.FilePath
+                        |]
                     else
                         [||]
 
@@ -320,7 +323,7 @@ type private FSharpProjectOptionsReactor(checker: FSharpChecker) =
 
                 let parsingOptions, _ = checker.GetParsingOptionsFromProjectOptions(projectOptions)
 
-                let mutable debounceCts = null: CancellationTokenSource
+                let mutable debounceCts: CancellationTokenSource | null = null
 
                 let disposeDebounceCts () =
                     match Interlocked.Exchange(&debounceCts, null) with
@@ -356,7 +359,15 @@ type private FSharpProjectOptionsReactor(checker: FSharpChecker) =
                 let onKillFocus (_) = updateProjectOptions ()
                 let onSetFocus (_) = updateProjectOptions ()
 
-                let addToCacheAndSubscribe ({ Project = _; FileStamp = fileStamp; ParsingOptions = parsingOptions; ProjectOptions = projectOptions; Subscription = _ }: SingleFileCacheEntry) =
+                let addToCacheAndSubscribe
+                    ({
+                         Project = _
+                         FileStamp = fileStamp
+                         ParsingOptions = parsingOptions
+                         ProjectOptions = projectOptions
+                         Subscription = _
+                     }: SingleFileCacheEntry)
+                    =
                     let textViewSubscription =
                         match textViewAndCaret () with
                         | Some(textView, _) ->
@@ -396,7 +407,14 @@ type private FSharpProjectOptionsReactor(checker: FSharpChecker) =
 
                 return ValueSome(parsingOptions, projectOptions)
 
-            | true, { Project = oldProject; FileStamp = oldFileStamp; ParsingOptions = parsingOptions; ProjectOptions = projectOptions; Subscription = _ } ->
+            | true,
+              {
+                  Project = oldProject
+                  FileStamp = oldFileStamp
+                  ParsingOptions = parsingOptions
+                  ProjectOptions = projectOptions
+                  Subscription = _
+              } ->
                 let! isInvalidated =
                     if fileStamp <> oldFileStamp then
                         CancellableTask.singleton true
@@ -520,11 +538,10 @@ type private FSharpProjectOptionsReactor(checker: FSharpChecker) =
 
                                 checker.ClearCache(options, userOpName = "tryComputeOptions")
 
-                            lastSuccessfulCompilations.ToArray()
-                            |> Array.iter (fun pair ->
+                            for pair in lastSuccessfulCompilations.ToArray() do
                                 if not (currentSolution.ContainsProject(pair.Key)) then
                                     lastSuccessfulCompilations.TryRemove(pair.Key) |> ignore
-                                    emitCache.TryRemove(pair.Key) |> ignore)
+                                    emitCache.TryRemove(pair.Key) |> ignore
 
                             checker.InvalidateConfiguration(projectOptions, userOpName = "tryComputeOptions")
 
