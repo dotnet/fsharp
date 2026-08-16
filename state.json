@@ -169,6 +169,32 @@
       "cats": [
         "Affects-Build-Infra"
       ]
+    },
+    "19602": {
+      "sha": "601268db95e4",
+      "cats": [
+        "Affects-Compiler-Output"
+      ]
+    },
+    "19417": {
+      "sha": "eeb5b487755d",
+      "cats": [
+        "Affects-Compiler-Output"
+      ]
+    },
+    "19346": {
+      "sha": "a59e012bb495",
+      "cats": []
+    },
+    "19284": {
+      "sha": "f708022b0180",
+      "cats": [
+        "Affects-Compiler-Output"
+      ]
+    },
+    "18593": {
+      "sha": "c152ef94c596",
+      "cats": []
     }
   }
 }
