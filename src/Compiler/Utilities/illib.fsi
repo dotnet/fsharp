@@ -86,6 +86,16 @@ type DelayInitArrayMap<'T, 'TDictKey, 'TDictValue> =
 
     abstract CreateDictionary: 'T[] -> IDictionary<'TDictKey, 'TDictValue>
 
+/// Computes a value once, in place: an unforced value costs one object rather than a lazy plus its closure.
+[<AbstractClass>]
+type internal DelayInitValue<'T when 'T: not null and 'T: not struct> =
+    new: unit -> DelayInitValue<'T>
+
+    member Value: 'T
+
+    /// Called at most once, under the instance's lock. An exception is not cached: the next access retries.
+    abstract Compute: unit -> 'T
+
 module internal Order =
 
     val orderBy: p: ('T -> 'U) -> IComparer<'T> when 'U: comparison and 'T: not null and 'T: not struct
