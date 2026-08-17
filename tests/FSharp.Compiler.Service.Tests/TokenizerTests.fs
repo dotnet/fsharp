@@ -7,12 +7,12 @@ open Xunit
 
 let rec parseLine(line: string, state: FSharpTokenizerLexState ref, tokenizer: FSharpLineTokenizer) = seq {
   match tokenizer.ScanToken(state.Value) with
-  | Some(tok), nstate ->
+  | ValueSome(tok), nstate ->
       let str = line.Substring(tok.LeftColumn, tok.RightColumn - tok.LeftColumn + 1)
       yield str, tok
       state.Value <- nstate
       yield! parseLine(line, state, tokenizer)
-  | None, nstate -> 
+  | ValueNone, nstate ->
       state.Value <- nstate }
 
 let tokenizeLines (lines:string[]) =
@@ -30,21 +30,21 @@ let scanTokens (defines: string list) (source: string) =
     let tokenizer = sourceTok.CreateLineTokenizer(source)
     let rec loop (state: FSharpTokenizerLexState) acc =
         match tokenizer.ScanToken(state) with
-        | Some tok, nstate -> loop nstate (tok :: acc)
-        | None, _ -> List.rev acc
+        | ValueSome tok, nstate -> loop nstate (tok :: acc)
+        | ValueNone, _ -> List.rev acc
     loop FSharpTokenizerLexState.Initial []
 
 [<Fact>]
 let ``Tokenizer test - simple let with string``() =
-    let tokenizedLines = 
+    let tokenizedLines =
       tokenizeLines
         [| "// Sets the hello world variable"
            "let hello = \"Hello world\" " |]
 
-    let actual = 
+    let actual =
         [ for lineNo, lineToks in tokenizedLines do
             yield lineNo, [ for str, info in lineToks do yield info.TokenName, str ] ]
-    let expected = 
+    let expected =
       [(0,
         [("LINE_COMMENT", "//"); ("LINE_COMMENT", " "); ("LINE_COMMENT", "Sets");
          ("LINE_COMMENT", " "); ("LINE_COMMENT", "the"); ("LINE_COMMENT", " ");
@@ -57,14 +57,14 @@ let ``Tokenizer test - simple let with string``() =
          ("STRING_TEXT", "\""); ("STRING_TEXT", "Hello"); ("STRING_TEXT", " ");
          ("STRING_TEXT", "world"); ("STRING", "\""); ("WHITESPACE", " ")])]
 
-    if actual <> expected then 
+    if actual <> expected then
         printfn "actual   = %A" actual
         printfn "expected = %A" expected
         actual |> Assert.shouldBeEqualWith expected (sprintf "actual and expected did not match,actual =\n%A\nexpected=\n%A\n" actual expected)
 
 [<Fact>]
 let ``Tokenizer test 2 - single line non-nested string interpolation``() =
-    let tokenizedLines = 
+    let tokenizedLines =
       tokenizeLines
         [| "// Tests tokenizing string interpolation"
            "let hello0 = $\"\""
@@ -74,10 +74,10 @@ let ``Tokenizer test 2 - single line non-nested string interpolation``() =
            "let hello1v = @$\"Hello world\"  "
            "let hello2v = @$\"Hello world {1+1} = {2}\" " |]
 
-    let actual = 
+    let actual =
         [ for lineNo, lineToks in tokenizedLines do
             yield lineNo, [ for str, info in lineToks do yield info.TokenName, str ] ]
-    let expected = 
+    let expected =
         [(0,
           [("LINE_COMMENT", "//"); ("LINE_COMMENT", " "); ("LINE_COMMENT", "Tests");
            ("LINE_COMMENT", " "); ("LINE_COMMENT", "tokenizing"); ("LINE_COMMENT", " ");
@@ -121,23 +121,23 @@ let ``Tokenizer test 2 - single line non-nested string interpolation``() =
            ("STRING_TEXT", "="); ("STRING_TEXT", " "); ("INTERP_STRING_PART", "{");
            ("INT32", "2"); ("STRING_TEXT", "}"); ("INTERP_STRING_END", "\"");
            ("WHITESPACE", " ")]);]
-  
-    if actual <> expected then 
+
+    if actual <> expected then
         printfn "actual   = %A" actual
         printfn "expected = %A" expected
         actual |> Assert.shouldBeEqualWith expected (sprintf "actual and expected did not match,actual =\n%A\nexpected=\n%A\n" actual expected)
 
 [<Fact>]
 let ``Tokenizer test - multiline non-nested string interpolation``() =
-    let tokenizedLines = 
+    let tokenizedLines =
       tokenizeLines
         [| "let hello1t = $\"\"\"abc {1+"
            " 1} def\"\"\"" |]
 
-    let actual = 
+    let actual =
         [ for lineNo, lineToks in tokenizedLines do
             yield lineNo, [ for str, info in lineToks do yield info.TokenName, str ] ]
-    let expected = 
+    let expected =
         [(0,
           [("LET", "let"); ("WHITESPACE", " "); ("IDENT", "hello1t");
            ("WHITESPACE", " "); ("EQUALS", "="); ("WHITESPACE", " ");
@@ -146,8 +146,8 @@ let ``Tokenizer test - multiline non-nested string interpolation``() =
          (1,
           [("WHITESPACE", " "); ("INT32", "1"); ("STRING_TEXT", "}");
            ("STRING_TEXT", " "); ("STRING_TEXT", "def"); ("INTERP_STRING_END", "\"\"\"")])]
-  
-    if actual <> expected then 
+
+    if actual <> expected then
         printfn "actual   = %A" actual
         printfn "expected = %A" expected
         actual |> Assert.shouldBeEqualWith expected (sprintf "actual and expected did not match,actual =\n%A\nexpected=\n%A\n" actual expected)
@@ -155,7 +155,7 @@ let ``Tokenizer test - multiline non-nested string interpolation``() =
 [<Fact>]
 // checks nested '{' and nested single-quote strings
 let ``Tokenizer test - multi-line nested string interpolation``() =
-    let tokenizedLines = 
+    let tokenizedLines =
       tokenizeLines
         [| "let hello1t = $\"\"\"abc {\"a\" +               "
            "                          {                     "
@@ -163,10 +163,10 @@ let ``Tokenizer test - multi-line nested string interpolation``() =
            "                          }.contents            "
            "                         } def\"\"\"" |]
 
-    let actual = 
+    let actual =
         [ for lineNo, lineToks in tokenizedLines do
             yield lineNo, [ for str, info in lineToks do yield info.TokenName, str ] ]
-    let expected = 
+    let expected =
         [(0,
           [("LET", "let"); ("WHITESPACE", " "); ("IDENT", "hello1t");
            ("WHITESPACE", " "); ("EQUALS", "="); ("WHITESPACE", " ");
@@ -188,22 +188,22 @@ let ``Tokenizer test - multi-line nested string interpolation``() =
          (4,
           [("WHITESPACE", "                         "); ("STRING_TEXT", "}");
            ("STRING_TEXT", " "); ("STRING_TEXT", "def"); ("INTERP_STRING_END", "\"\"\"")])]
-  
-    if actual <> expected then 
+
+    if actual <> expected then
         printfn "actual   = %A" actual
         printfn "expected = %A" expected
         actual |> Assert.shouldBeEqualWith expected (sprintf "actual and expected did not match,actual =\n%A\nexpected=\n%A\n" actual expected)
 
 [<Fact>]
 let ``Tokenizer test - single-line nested string interpolation``() =
-    let tokenizedLines = 
+    let tokenizedLines =
       tokenizeLines
         [| " $\"abc { { contents = 1 } }\"     " |]
 
-    let actual = 
+    let actual =
         [ for lineNo, lineToks in tokenizedLines do
             yield lineNo, [ for str, info in lineToks do yield info.TokenName, str ] ]
-    let expected = 
+    let expected =
         [(0,
           [("WHITESPACE", " "); ("STRING_TEXT", "$\""); ("STRING_TEXT", "abc");
            ("STRING_TEXT", " "); ("INTERP_STRING_BEGIN_PART", "{"); ("WHITESPACE", " ");
@@ -211,8 +211,8 @@ let ``Tokenizer test - single-line nested string interpolation``() =
            ("WHITESPACE", " "); ("EQUALS", "="); ("WHITESPACE", " "); ("INT32", "1");
            ("WHITESPACE", " "); ("RBRACE", "}"); ("WHITESPACE", " ");
            ("STRING_TEXT", "}"); ("INTERP_STRING_END", "\""); ("WHITESPACE", "     ")])]
-  
-    if actual <> expected then 
+
+    if actual <> expected then
         printfn "actual   = %A" actual
         printfn "expected = %A" expected
         actual |> Assert.shouldBeEqualWith expected (sprintf "actual and expected did not match,actual =\n%A\nexpected=\n%A\n" actual expected)
@@ -291,7 +291,7 @@ let ``Tokenizer test - optional parameters with question mark``() =
     let actual =
         [ for lineNo, lineToks in tokenizedLines do
             yield lineNo, [ for str, info in lineToks do yield info.TokenName, str ] ]
-    
+
     let expected =
         [(0,
           [("MEMBER", "member"); ("WHITESPACE", " "); ("UNDERSCORE", "_"); ("DOT", ".");
@@ -299,7 +299,7 @@ let ``Tokenizer test - optional parameters with question mark``() =
            ("IDENT", "optional"); ("COLON", ":"); ("IDENT", "string");
            ("RPAREN", ")"); ("WHITESPACE", " "); ("EQUALS", "="); ("WHITESPACE", " ");
            ("IDENT", "optional")])]
-    
+
     if actual <> expected then
         printfn "actual   = %A" actual
         printfn "expected = %A" expected
