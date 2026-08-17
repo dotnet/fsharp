@@ -368,7 +368,7 @@ module AnonymousUnionTypes =
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
-            (Warning 4500, Line 4, Col 8, Line 4, Col 17, "The type 'int' is a subtype of 'System.Object' and will be ignored")
+            (Warning 4500, Line 4, Col 8, Line 4, Col 17, "The type 'int' is a subtype of 'obj' and will be ignored")
         ]
 
     [<Theory; FileInlineData("W_AnonTypeInclusion4.fs")>]

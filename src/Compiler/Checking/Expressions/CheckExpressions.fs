@@ -48,7 +48,6 @@ open Import
 
 #if !NO_TYPEPROVIDERS
 open FSharp.Compiler.TypeProviders
-open Internal.Utilities
 #endif
 
 //-------------------------------------------------------------------------
@@ -5042,10 +5041,6 @@ and TcAnonUnionTypeOr (cenv: cenv) env (tpenv: UnscopedTyparEnv) synCases m =
 
         Seq.toList unionTypeCases, hasNullCase
 
-    let getCommonAncestorOfTys g amap tys =
-        let superTypes = tys |> List.map (AllPrimarySuperTypesOfType g amap m AllowMultiIntfInstantiations.No)
-        List.fold (ListSet.intersect (typeEquiv g)) (List.head superTypes) (List.tail superTypes) |> List.head
-
     let disjointCases, hasNullCase = createDisjointTypes synCases
 
     // Degenerate case: only one non-null case survived deduplication/collapse.
@@ -5066,7 +5061,7 @@ and TcAnonUnionTypeOr (cenv: cenv) env (tpenv: UnscopedTyparEnv) synCases m =
 
         let sigma = List.map fst sortedIndexedAnonUnionCases |> List.toArray
         let sortedAnonUnionCases = List.map snd sortedIndexedAnonUnionCases
-        let commonAncestorTy = getCommonAncestorOfTys g cenv.amap sortedAnonUnionCases
+        let commonAncestorTy = getCommonAncestorOfTys g cenv.amap sortedAnonUnionCases m
 
         if hasNullCase && (isStructTy g commonAncestorTy || isSystemValueTypeTy g commonAncestorTy) then
             error(Error(FSComp.SR.tcAnonUnionNullRequiresReferenceAncestor(NicePrint.stringOfTy env.DisplayEnv commonAncestorTy), m))
