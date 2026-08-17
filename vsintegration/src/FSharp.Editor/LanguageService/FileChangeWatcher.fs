@@ -64,7 +64,8 @@ type internal IFSharpFileChangeWatcher =
 module private FileChangeWatcherImpl =
 
     // Same flags Roslyn uses for both subscribing and filtering callbacks.
-    let watchFlags = _VSFILECHANGEFLAGS.VSFILECHG_Size ||| _VSFILECHANGEFLAGS.VSFILECHG_Time
+    let watchFlags =
+        _VSFILECHANGEFLAGS.VSFILECHG_Size ||| _VSFILECHANGEFLAGS.VSFILECHG_Time
 
     let relevantFlags =
         _VSFILECHANGEFLAGS.VSFILECHG_Time
@@ -108,12 +109,31 @@ type internal FSharpFileChangeWatcher(fileChangeService: Task<IVsAsyncFileChange
                         do! service.FilterDirectoryChangesAsync(cookie, List.toArray filters, CancellationToken.None)
 
                 | WatchFiles _ :: _ ->
-                    let batch = pending |> List.takeWhile (function WatchFiles _ -> true | _ -> false)
+                    let batch =
+                        pending
+                        |> List.takeWhile (function
+                            | WatchFiles _ -> true
+                            | _ -> false)
+
                     pending <- pending |> List.skip batch.Length
 
-                    let paths = batch |> List.collect (function WatchFiles(p, _, _) -> p | _ -> [])
-                    let tokens = batch |> List.collect (function WatchFiles(_, t, _) -> t | _ -> [])
-                    let sink = batch |> List.pick (function WatchFiles(_, _, s) -> Some s | _ -> None)
+                    let paths =
+                        batch
+                        |> List.collect (function
+                            | WatchFiles(p, _, _) -> p
+                            | _ -> [])
+
+                    let tokens =
+                        batch
+                        |> List.collect (function
+                            | WatchFiles(_, t, _) -> t
+                            | _ -> [])
+
+                    let sink =
+                        batch
+                        |> List.pick (function
+                            | WatchFiles(_, _, s) -> Some s
+                            | _ -> None)
 
                     let! cookies = service.AdviseFileChangesAsync(List.toArray paths, watchFlags, sink, CancellationToken.None)
 
@@ -121,12 +141,19 @@ type internal FSharpFileChangeWatcher(fileChangeService: Task<IVsAsyncFileChange
                     ||> List.iter2 (fun token cookie -> token.Cookie <- Some cookie)
 
                 | UnwatchFiles _ :: _ ->
-                    let batch = pending |> List.takeWhile (function UnwatchFiles _ -> true | _ -> false)
+                    let batch =
+                        pending
+                        |> List.takeWhile (function
+                            | UnwatchFiles _ -> true
+                            | _ -> false)
+
                     pending <- pending |> List.skip batch.Length
 
                     let cookies =
                         batch
-                        |> List.collect (function UnwatchFiles t -> t | _ -> [])
+                        |> List.collect (function
+                            | UnwatchFiles t -> t
+                            | _ -> [])
                         |> List.choose (fun token -> token.Cookie)
 
                     if not cookies.IsEmpty then
@@ -192,7 +219,10 @@ and [<Sealed>] private FileChangeContext(enqueue: WatcherOperation -> unit, watc
 
     let raiseChanges (count: uint32) (files: string[]) (changeFlags: uint32[]) =
         for i in 0 .. int count - 1 do
-            if (enum<_VSFILECHANGEFLAGS> (int changeFlags[i]) &&& relevantFlags) <> enum<_VSFILECHANGEFLAGS> 0 then
+            if
+                (enum<_VSFILECHANGEFLAGS> (int changeFlags[i]) &&& relevantFlags)
+                <> enum<_VSFILECHANGEFLAGS> 0
+            then
                 fileChanged.Trigger files[i]
 
         VSConstants.S_OK
@@ -233,10 +263,11 @@ and [<Sealed>] private FileChangeContext(enqueue: WatcherOperation -> unit, watc
 
     interface IDisposable with
         member _.Dispose() =
-            let alreadyDisposed = lock gate (fun () ->
-                let d = disposed
-                disposed <- true
-                d)
+            let alreadyDisposed =
+                lock gate (fun () ->
+                    let d = disposed
+                    disposed <- true
+                    d)
 
             if not alreadyDisposed then
                 enqueue (UnwatchDirs directoryCookies)
@@ -244,34 +275,46 @@ and [<Sealed>] private FileChangeContext(enqueue: WatcherOperation -> unit, watc
 
     // Free-threaded sink: callbacks arrive on background threads and stay there.
     interface IVsFreeThreadedFileChangeEvents2 with
-        member _.FilesChanged(cChanges, rgpszFile, rggrfChange) = raiseChanges cChanges rgpszFile rggrfChange
+        member _.FilesChanged(cChanges, rgpszFile, rggrfChange) =
+            raiseChanges cChanges rgpszFile rggrfChange
+
         member _.DirectoryChanged _ = VSConstants.E_NOTIMPL
         member _.DirectoryChangedEx(_, _) = VSConstants.E_NOTIMPL
-        member _.DirectoryChangedEx2(_, cChanges, rgpszFile, rggrfChange) = raiseChanges cChanges rgpszFile rggrfChange
+
+        member _.DirectoryChangedEx2(_, cChanges, rgpszFile, rggrfChange) =
+            raiseChanges cChanges rgpszFile rggrfChange
 
     interface IVsFreeThreadedFileChangeEvents with
-        member _.FilesChanged(cChanges, rgpszFile, rggrfChange) = raiseChanges cChanges rgpszFile rggrfChange
+        member _.FilesChanged(cChanges, rgpszFile, rggrfChange) =
+            raiseChanges cChanges rgpszFile rggrfChange
+
         member _.DirectoryChanged _ = VSConstants.E_NOTIMPL
         member _.DirectoryChangedEx(_, _) = VSConstants.E_NOTIMPL
 
     interface IVsFileChangeEvents with
-        member _.FilesChanged(cChanges, rgpszFile, rggrfChange) = raiseChanges cChanges rgpszFile rggrfChange
+        member _.FilesChanged(cChanges, rgpszFile, rggrfChange) =
+            raiseChanges cChanges rgpszFile rggrfChange
+
         member _.DirectoryChanged _ = VSConstants.E_NOTIMPL
 
 /// Ref-counted, debounced watching of reference assemblies (or any other off-workspace files),
 /// modelled on Roslyn's ReferenceFileChangeTracker. Multiple projects watching the same dll
 /// share one subscription; bursts of writes produce a single callback per path.
 [<Sealed>]
-type internal FSharpReferenceChangeTracker(watcher: IFSharpFileChangeWatcher, onChanged: string -> unit) =
+type internal FSharpReferenceChangeTracker(watcher: IFSharpFileChangeWatcher, onChanged: string -> unit, ?notificationDelay: TimeSpan) =
 
     /// Delay between the last observed change to a path and the callback: a rebuild typically
     /// writes a temp file then renames, producing several rapid notifications.
-    static let notificationDelay = TimeSpan.FromSeconds 2.
+    let notificationDelay = defaultArg notificationDelay (TimeSpan.FromSeconds 2.)
 
     let gate = obj ()
     let mutable disposed = false
-    let watchedFiles = Dictionary<string, IFSharpWatchedFile * int>(StringComparer.OrdinalIgnoreCase)
-    let pendingTimers = ConcurrentDictionary<string, Timer>(StringComparer.OrdinalIgnoreCase)
+
+    let watchedFiles =
+        Dictionary<string, IFSharpWatchedFile * int>(StringComparer.OrdinalIgnoreCase)
+
+    let pendingTimers =
+        ConcurrentDictionary<string, Timer>(StringComparer.OrdinalIgnoreCase)
 
     // On each platform there is a place framework reference assemblies live; these rarely change
     // but account for most watched paths, so cover them with directory watches up front.
@@ -314,7 +357,9 @@ type internal FSharpReferenceChangeTracker(watcher: IFSharpFileChangeWatcher, on
                      if isWatched then
                          onChanged path
 
-                 let timer = pendingTimers.GetOrAdd(path, fun _ -> new Timer(fire, null, Timeout.Infinite, Timeout.Infinite))
+                 let timer =
+                     pendingTimers.GetOrAdd(path, fun _ -> new Timer(fire, null, Timeout.Infinite, Timeout.Infinite))
+
                  timer.Change(notificationDelay, Timeout.InfiniteTimeSpan) |> ignore)
 
              ctx)
