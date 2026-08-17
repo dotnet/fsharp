@@ -14,11 +14,9 @@
     <PackageReference Include="System.Composition" PrivateAssets="all" ExcludeAssets="contentFiles;analyzers;native" />
     <PackageReference Include="System.Memory" PrivateAssets="all" ExcludeAssets="contentFiles;analyzers;native" />
     <PackageReference Include="System.Runtime.CompilerServices.Unsafe" PrivateAssets="all" ExcludeAssets="contentFiles;analyzers;native" />
-    <!-- Microsoft.ServiceHub.Framework, Microsoft.VisualStudio.RpcContracts and StreamJsonRpc are intentionally NOT
-         listed here (and carry no central PackageVersion): Roslyn's IDE packages already require the exact versions
-         transitively, so they flow in on their own. Do not re-pin them to silence an NU1109/NU1605 on a Roslyn bump —
-         a stale pin is what causes that error. Only packages with a non-Roslyn direct consumer need an entry below. -->
-    <!-- Pinned to match Microsoft.VisualStudio.LanguageServices.ExternalAccess's transitive versions and avoid MSB3277 conflicts. -->
+    <!-- ServiceHub.Framework, RpcContracts and StreamJsonRpc are deliberately not pinned here: Roslyn's IDE
+         packages force their versions transitively, so re-pinning them is what triggers NU1109 on a Roslyn bump. -->
+    <!-- Validation pinned to match ExternalAccess's transitive version and avoid MSB3277 conflicts. -->
     <PackageReference Include="Microsoft.VisualStudio.Validation" PrivateAssets="all" ExcludeAssets="contentFiles;analyzers;native" />
   </ItemGroup>
 
