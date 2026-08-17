@@ -107,8 +107,11 @@
       "cats": []
     },
     "20113": {
-      "sha": "8bee41ae5981",
-      "cats": []
+      "sha": "84f9fe8880c0",
+      "cats": [
+        "Affects-Build-Infra",
+        "Affects-Bootstrap"
+      ]
     },
     "20111": {
       "sha": "e9418796eb6a",
@@ -177,6 +180,10 @@
     },
     "19774": {
       "sha": "0e262c5de4cb",
+      "cats": []
+    },
+    "20275": {
+      "sha": "2219dc80597e",
       "cats": []
     }
   }
