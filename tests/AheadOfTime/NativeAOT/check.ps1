@@ -9,7 +9,7 @@
 $ErrorActionPreference = "Stop"
 
 $root = "NativeAOT_Test"
-$tfm = "net9.0"
+$tfm = "net10.0"
 
 $cwd = Get-Location
 Set-Location $PSScriptRoot
@@ -18,6 +18,29 @@ dotnet publish -restore -c release -f:$tfm "$root.fsproj" -bl:"$PSScriptRoot/../
 if (-not ($LASTEXITCODE -eq 0)) {
     Set-Location $cwd
     Write-Error "NativeAOT publish failed with exit code $LASTEXITCODE" -ErrorAction Stop
+}
+
+# Prove this is a genuine net10 dogfood: a net10.0 consumer must resolve the locally-packed
+# FSharp.Core's lib/net10.0 asset, not the netstandard2.1 fallback. Assert on the *selected*
+# compile/runtime asset under "targets" (the "libraries" manifest lists every lib folder, so a
+# plain substring search would false-pass even when ns2.1 was chosen). Without this the test would
+# still succeed on the ns2.1 asset and the net10 target framework would go unexercised.
+$assets = Join-Path $PSScriptRoot "obj/project.assets.json"
+$assetsJson = Get-Content $assets -Raw | ConvertFrom-Json
+$net10Selected = $false
+foreach ($target in $assetsJson.targets.PSObject.Properties) {
+    foreach ($package in $target.Value.PSObject.Properties) {
+        if ($package.Name -like "FSharp.Core/*") {
+            $assetKeys = @()
+            if ($package.Value.runtime) { $assetKeys += @($package.Value.runtime.PSObject.Properties.Name) }
+            if ($package.Value.compile) { $assetKeys += @($package.Value.compile.PSObject.Properties.Name) }
+            if ($assetKeys -contains "lib/net10.0/FSharp.Core.dll") { $net10Selected = $true }
+        }
+    }
+}
+if (-not $net10Selected) {
+    Set-Location $cwd
+    Write-Error "The net10.0 consumer did not resolve the lib/net10.0 FSharp.Core asset (it fell back to a lower target framework). The net10 FSharp.Core target framework is not being dogfooded. See $assets." -ErrorAction Stop
 }
 
 $exe = Join-Path $PSScriptRoot "bin/release/$tfm/win-x64/publish/$root.exe"
