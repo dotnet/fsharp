@@ -1011,7 +1011,7 @@ type FSharpLineTokenizer(lexbuf: UnicodeLexing.Lexbuf, maxLength: int option, fi
             false, (EOF LexerStateEncoding.revertToDefaultLexCont, 0, 0)
 
     // Scan a token starting with the given lexer state
-    member x.ScanToken(lexState: FSharpTokenizerLexState) : FSharpTokenInfo option * FSharpTokenizerLexState =
+    member x.ScanToken(lexState: FSharpTokenizerLexState) : struct (FSharpTokenInfo voption * FSharpTokenizerLexState) =
 
         use _ = UseBuildPhase BuildPhase.Parse
         use _ = UseDiagnosticsLogger DiscardErrorsLogger
@@ -1022,12 +1022,12 @@ type FSharpLineTokenizer(lexbuf: UnicodeLexing.Lexbuf, maxLength: int option, fi
         let isCached, (token, leftc, rightc) = getTokenWithPosition lexcont
 
         // Check for end-of-string and failure
-        let tokenDataOption, lexcontFinal, tokenTag =
+        let struct (tokenDataOption, lexcontFinal, tokenTag) =
             match token with
             | EOF lexcont ->
                 // End of text! No more tokens.
-                None, lexcont, 0
-            | LEX_FAILURE _ -> None, LexerStateEncoding.revertToDefaultLexCont, 0
+                struct (ValueNone, lexcont, 0)
+            | LEX_FAILURE _ -> struct (ValueNone, LexerStateEncoding.revertToDefaultLexCont, 0)
             | _ ->
                 // Get the information about the token
                 let colorClass, charClass, triggerClass = TokenClassifications.tokenInfo token
@@ -1058,14 +1058,14 @@ type FSharpLineTokenizer(lexbuf: UnicodeLexing.Lexbuf, maxLength: int option, fi
                         FullMatchedLength = fullMatchedLength
                     }
 
-                Some tokenData, lexcontFinal, tokenTag
+                struct (ValueSome tokenData, lexcontFinal, tokenTag)
 
         // Check for patterns like #-IDENT and see if they look like meta commands for .fsx files. If they do then merge them into a single token.
-        let tokenDataOption, lexintFinal =
+        let struct (tokenDataOption, lexintFinal) =
             let lexintFinal = LexerStateEncoding.encodeLexInt lexcontFinal
 
             match tokenDataOption, singleLineTokenState, tokenTagToTokenId tokenTag with
-            | Some tokenData, SingleLineTokenState.BeforeHash, TOKEN_HASH ->
+            | ValueSome tokenData, SingleLineTokenState.BeforeHash, TOKEN_HASH ->
                 // Don't allow further matches.
                 singleLineTokenState <- SingleLineTokenState.NoFurtherMatchPossible
                 // Peek at the next token
@@ -1110,17 +1110,17 @@ type FSharpLineTokenizer(lexbuf: UnicodeLexing.Lexbuf, maxLength: int option, fi
 
                         let lexintFinal = LexerStateEncoding.encodeLexInt lexcontFinal
 
-                        Some tokenData, lexintFinal
-                    | _ -> tokenDataOption, lexintFinal
-                | _ -> tokenDataOption, lexintFinal
+                        struct (ValueSome tokenData, lexintFinal)
+                    | _ -> struct (tokenDataOption, lexintFinal)
+                | _ -> struct (tokenDataOption, lexintFinal)
             | _, SingleLineTokenState.BeforeHash, TOKEN_WHITESPACE ->
                 // Allow leading whitespace.
-                tokenDataOption, lexintFinal
+                struct (tokenDataOption, lexintFinal)
             | _ ->
                 singleLineTokenState <- SingleLineTokenState.NoFurtherMatchPossible
-                tokenDataOption, lexintFinal
+                struct (tokenDataOption, lexintFinal)
 
-        tokenDataOption, lexintFinal
+        struct (tokenDataOption, lexintFinal)
 
     static member ColorStateOfLexState(lexState: FSharpTokenizerLexState) =
         LexerStateEncoding.colorStateOfLexState lexState
