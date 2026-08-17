@@ -74,6 +74,8 @@
        Cannot live in eng/TargetFrameworks.props because it's imported before Arcade. -->
   <PropertyGroup Condition="'$(DotNetBuildSourceOnly)' == 'true'">
     <FSharpNetCoreProductTargetFramework>$(NetCurrent)</FSharpNetCoreProductTargetFramework>
+    <!-- Source-build targets only $(NetCurrent); collapse the shipped-net pin to it (its ref pack is always present). -->
+    <FSharpCoreShippedNetTargetFramework>$(NetCurrent)</FSharpCoreShippedNetTargetFramework>
   </PropertyGroup>
 
   <!-- It's important we set TFM before this, since FSharpTests.Directory.Build.props uses it.

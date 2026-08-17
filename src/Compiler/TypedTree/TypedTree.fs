@@ -266,6 +266,17 @@ type ValFlags(flags: int64) =
         else
             bits
 
+    /// Reconstruct flags from the F# binary metadata. PickledBits always writes
+    /// ValInline.InlinedDefinition (0x00) out as ValInline.Always (0x01), so zero inline bits
+    /// are never produced by a compiler that has this normalization. Any zero bits seen here
+    /// are therefore legacy metadata from compilers older than PR #19548, which used the same
+    /// 0x00 bits to mean ValInline.Always (ShouldInline=true), and must be imported as such.
+    static member OfPickledBits(bits: int64) =
+        if bits &&& 0b00000000000000110000L = 0L then
+            ValFlags(bits ||| 0b00000000000000010000L)
+        else
+            ValFlags bits
+
 /// Represents the kind of a type parameter
 [<RequireQualifiedAccess (* ; StructuredFormatDisplay("{DebugText}") *) >]
 type TyparKind = 

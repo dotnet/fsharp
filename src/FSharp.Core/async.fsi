@@ -926,7 +926,7 @@ namespace Microsoft.FSharp.Control
         /// </example>
         static member Await: task: Task -> Async<unit>
 
-#if NETSTANDARD2_1
+#if NETSTANDARD2_1 || NET
         /// <summary>Creates an asynchronous computation that will wait for the given <c>ValueTask</c> to complete and return
         /// its result.</summary>
         /// <param name="task">The <c>ValueTask</c> to await.</param>
@@ -1387,13 +1387,13 @@ namespace Microsoft.FSharp.Control
             /// with <c>IsCompleted</c> and <c>GetResult()</c> members.</p>
             /// <p>Exceptions thrown by <c>GetResult()</c> are propagated directly.</p>
             /// <p>Unlike the <see cref="T:System.Threading.Tasks.Task"/>
-#if NETSTANDARD2_1
+#if NETSTANDARD2_1 || NET
             /// and <see cref="T:System.Threading.Tasks.ValueTask"/>
 #endif
             /// overloads, an <see cref="T:System.AggregateException"/> carrying multiple inner exceptions is not preserved:
             /// the first inner exception surfaces (standard <c>GetResult()</c> semantics).</p>
             /// <p>This overload uses statically resolved type parameters (SRTP) so it can accept any task-like type.
-#if NETSTANDARD2_1
+#if NETSTANDARD2_1 || NET
             /// The specific overloads for <see cref="T:System.Threading.Tasks.Task`1"/>, <see cref="T:System.Threading.Tasks.Task"/>,
             /// <see cref="T:System.Threading.Tasks.ValueTask`1"/> and <see cref="T:System.Threading.Tasks.ValueTask"/>
 #else
@@ -2074,4 +2074,3 @@ namespace Microsoft.FSharp.Control
         /// </example>
         [<CompiledName("Empty")>]
         val empty: Async<unit>
-

@@ -2254,7 +2254,7 @@ type Async =
     static member Await(task: Task) : Async<unit> =
         AwaitUnitTask true task
 
-#if NETSTANDARD2_1
+#if NETSTANDARD2_1 || NET
     static member Await(task: ValueTask<'T>) : Async<'T> =
         if task.IsCompletedSuccessfully then
             CreateReturnAsync(task.GetAwaiter().GetResult())
