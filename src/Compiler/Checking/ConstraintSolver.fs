@@ -1711,9 +1711,9 @@ and SolveTypeSubsumesType (csenv: ConstraintSolverEnv) ndeep m2 (trace: Optional
                 do! match feasibleCases with
                         | [] ->
                             ErrorD (ConstraintSolverError(
-                                FSComp.SR.csAnonUnionTypeNotContained(
+                                RichText.mkText (FSComp.SR.csAnonUnionTypeNotContained(
                                     NicePrint.minimalStringOfType denv sty2,
-                                    NicePrint.minimalStringOfType denv sty1),
+                                    NicePrint.minimalStringOfType denv sty1)),
                                 csenv.m, m2))
                         | [(ty1, _, _, _)] ->
                             SolveTypeSubsumesType csenv ndeep m2 trace cxsln ty1 sty2
@@ -1726,9 +1726,9 @@ and SolveTypeSubsumesType (csenv: ConstraintSolverEnv) ndeep m2 (trace: Optional
                                 | [ty1] -> SolveTypeSubsumesType csenv ndeep m2 trace cxsln ty1 sty2 |> RaiseOperationResult
                                 | _ ->
                                     ErrorD (ConstraintSolverError(
-                                        FSComp.SR.csAnonUnionTypeAmbiguous(
+                                    RichText.mkText (FSComp.SR.csAnonUnionTypeAmbiguous(
                                             NicePrint.minimalStringOfType denv sty2,
-                                            NicePrint.minimalStringOfType denv sty1),
+                                            NicePrint.minimalStringOfType denv sty1)),
                                         csenv.m, m2)) |> RaiseOperationResult)
                             CompleteD
                     }
