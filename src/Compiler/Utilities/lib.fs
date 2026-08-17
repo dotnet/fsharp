@@ -419,7 +419,7 @@ type DisposablesTracker() =
     let items = Stack<IDisposable>()
 
     /// Register some items to dispose
-    member _.Register (i:#IDisposable | null) = 
+    member _.Register (i:#IDisposable | null) =
         match box i with
         | null -> ()
         | _ -> items.Push (!!i)
@@ -498,6 +498,10 @@ module WeakMap =
             | true, value -> value
             | false, _ ->
                 let value = valueFactory key
-                if shouldCache value then 
+                if shouldCache value then
+#if NETSTANDARD2_0
                     try table.Add(key, value) with _ -> ()
+#else
+                    table.TryAdd(key, value) |> ignore
+#endif
                 value
