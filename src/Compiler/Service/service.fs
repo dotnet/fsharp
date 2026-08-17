@@ -638,16 +638,22 @@ type FSharpChecker
     member _.TokenizeLine(line: string, state: FSharpTokenizerLexState) =
         let tokenizer = FSharpSourceTokenizer([], None, None)
         let lineTokenizer = tokenizer.CreateLineTokenizer line
-        let mutable state = (None, state)
+        let mutable lexState = state
+        let mutable token = ValueNone
+
+        let scanNext () =
+            let struct (t, s) = lineTokenizer.ScanToken(lexState)
+            token <- t
+            lexState <- s
+            token.IsSome
 
         let tokens =
             [|
-                while (state <- lineTokenizer.ScanToken(snd state)
-                       (fst state).IsSome) do
-                    yield (fst state).Value
+                while scanNext () do
+                    yield token.Value
             |]
 
-        tokens, snd state
+        tokens, lexState
 
     /// Tokenize an entire file, line by line
     member x.TokenizeFile(source: string) : FSharpTokenInfo[][] =

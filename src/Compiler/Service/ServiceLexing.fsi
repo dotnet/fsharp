@@ -310,7 +310,7 @@ type FSharpTokenInfo =
 [<Sealed>]
 type FSharpLineTokenizer =
     /// Scan one token from the line
-    member ScanToken: lexState: FSharpTokenizerLexState -> FSharpTokenInfo option * FSharpTokenizerLexState
+    member ScanToken: lexState: FSharpTokenizerLexState -> struct (FSharpTokenInfo voption * FSharpTokenizerLexState)
 
     /// Get the color state from the lexer state
     static member ColorStateOfLexState: FSharpTokenizerLexState -> FSharpTokenizerColorState
