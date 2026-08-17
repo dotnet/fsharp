@@ -7,8 +7,8 @@ namespace FSharp.Compiler.Text
 open System
 open System.IO
 open System.Collections.Immutable
+open System.Runtime.InteropServices
 open Internal.Utilities.Library
-
 open Internal.Utilities.Hashing
 
 type ISourceText =
@@ -154,9 +154,9 @@ type StringText(str: string) =
                     sb.Append(lastLine.Substring(0, range.EndColumn)).ToString()
 
         member _.GetChecksum() =
-            str
-            |> Md5Hasher.hashString
-            |> fun byteArray -> ImmutableArray.Create<byte>(byteArray, 0, byteArray.Length)
+            let bytes = Array.zeroCreate<byte> 16
+            Md5Hasher.hashStringInto str (Span bytes)
+            ImmutableCollectionsMarshal.AsImmutableArray<byte>(bytes)
 
 module SourceText =
 
@@ -167,36 +167,33 @@ module SourceTextNew =
     let ofString str = StringText(str) :> ISourceTextNew
 
     let ofISourceText (sourceText: ISourceText) =
-        match sourceText with
-        | :? ISourceTextNew as sourceText -> sourceText
-        | _ ->
-            { new ISourceTextNew with
-                member _.Item
-                    with get index = sourceText[index]
+        { new ISourceTextNew with
+            member _.Item
+                with get index = sourceText[index]
 
-                member _.GetLineString(x) = sourceText.GetLineString(x)
+            member _.GetLineString(x) = sourceText.GetLineString(x)
 
-                member _.GetLineCount() = sourceText.GetLineCount()
+            member _.GetLineCount() = sourceText.GetLineCount()
 
-                member _.GetLastCharacterPosition() = sourceText.GetLastCharacterPosition()
+            member _.GetLastCharacterPosition() = sourceText.GetLastCharacterPosition()
 
-                member _.GetSubTextString(x, y) = sourceText.GetSubTextString(x, y)
+            member _.GetSubTextString(x, y) = sourceText.GetSubTextString(x, y)
 
-                member _.SubTextEquals(x, y) = sourceText.SubTextEquals(x, y)
+            member _.SubTextEquals(x, y) = sourceText.SubTextEquals(x, y)
 
-                member _.Length = sourceText.Length
+            member _.Length = sourceText.Length
 
-                member _.ContentEquals(x) = sourceText.ContentEquals(x)
+            member _.ContentEquals(x) = sourceText.ContentEquals(x)
 
-                member _.CopyTo(a, b, c, d) = sourceText.CopyTo(a, b, c, d)
+            member _.CopyTo(a, b, c, d) = sourceText.CopyTo(a, b, c, d)
 
-                member _.GetSubTextFromRange(x) = sourceText.GetSubTextFromRange(x)
+            member _.GetSubTextFromRange(x) = sourceText.GetSubTextFromRange(x)
 
-                member _.GetChecksum() =
-                    sourceText.GetSubTextString(0, sourceText.Length)
-                    |> Md5Hasher.hashString
-                    |> fun byteArray -> ImmutableArray.Create<byte>(byteArray, 0, byteArray.Length)
-            }
+            member _.GetChecksum() =
+                let bytes = Array.zeroCreate<byte> 16
+                Md5Hasher.hashStringInto (!!sourceText.ToString()) (Span bytes)
+                ImmutableCollectionsMarshal.AsImmutableArray<byte>(bytes)
+        }
 
 // NOTE: the code in this file is a drop-in replacement runtime for Lexing.fs from the FsLexYacc repository
 
