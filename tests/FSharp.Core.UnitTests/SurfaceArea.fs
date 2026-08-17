@@ -37,6 +37,9 @@ type SurfaceAreaTest() =
         let assembly = typeof<int list>.Assembly
         let baseline = Path.Combine(__SOURCE_DIRECTORY__, $"FSharp.Core.SurfaceArea.{platform}.{flavor}.bsl")
 #if NETCOREAPP
+        // On .NETCoreApp this binds the shipped net10.0 FSharp.Core (see FSharp.Core.UnitTests.fsproj).
+        // Its public surface must match the netstandard2.1 contract, so we reuse that baseline and ignore
+        // the differing split-BCL assembly references rather than maintain a duplicate net10 baseline.
         SurfaceArea.verifyIgnoringAssemblyReferences assembly baseline
 #else
         SurfaceArea.verify assembly baseline
