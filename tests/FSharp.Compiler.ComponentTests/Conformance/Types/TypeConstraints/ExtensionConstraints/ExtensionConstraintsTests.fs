@@ -23,6 +23,16 @@ module ExtensionConstraintsTests =
         |> compileAndRun
         |> shouldSucceed
 
+    /// Compile and run a test file with --langversion:preview and --optimize-. No warnings allowed.
+    /// Debug (unoptimized) builds specialize inline bodies through a different path that must still
+    /// replay the scope-aware extension-operator solution.
+    let private compileAndRunPreviewNoOptimize fileName =
+        createTest fileName
+        |> withLangVersionPreview
+        |> withNoOptimize
+        |> compileAndRun
+        |> shouldSucceed
+
     // ========================================================================
     // Positive tests: compile AND run cleanly, zero warnings
     // ========================================================================
@@ -71,6 +81,14 @@ module ExtensionConstraintsTests =
     [<Fact>]
     let ``Duplicate built-in operator extensions in distinct scopes each keep their own choice`` () =
         compileAndRunPreview "DuplicateBuiltinOperatorDistinctScopes.fs"
+
+    // Regression (S-2): the debug (--optimize-) inline-specialization path kept the definition-site range of
+    // the trait, so replaying the recorded scope-aware solution found no match when two scopes solved the
+    // same operator key differently. Both inline sites then fell back to the throwing dynamic '*' stub
+    // (silent NotSupportedException at run, Debug-only). The optimizer must also try the user call-site range.
+    [<Fact>]
+    let ``Duplicate built-in operator inline functions in distinct scopes run under optimize-`` () =
+        compileAndRunPreviewNoOptimize "DuplicateBuiltinOperatorInlineDistinctScopes.fs"
 
     [<Fact>]
     let ``Duplicate built-in operator extensions with equal operand types each keep their own choice`` () =

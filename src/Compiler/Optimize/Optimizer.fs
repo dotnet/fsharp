@@ -487,6 +487,14 @@ type IncrementalOptimizationEnv =
       /// Signatures of earlier same-assembly implementation files, so extension members they declare are
       /// visible to trait-witness generation for later files (batch path only — see OptimizeImplFile).
       earlierImplFileSignatures: ModuleOrNamespaceType list
+
+      /// RFC FS-1043: the user call-site range when optimizing a debug inline-specialized body. The body is
+      /// copied with its definition-site ranges preserved (for step-into), so a built-in-operator trait node
+      /// inside it replays at the definition site, whereas the checker recorded its scope-aware extension
+      /// solution at this call site. When two scopes solve the same operator key with different extensions,
+      /// definition-site replay finds no match; this call site does, letting the correct extension be honored
+      /// instead of degrading to the throwing dynamic stub. None outside the debug-specialization path.
+      debugInlineCallSite: range option
     }
 
     static member Empty = 
@@ -500,7 +508,8 @@ type IncrementalOptimizationEnv =
           globalModuleInfos = LayeredMap.Empty 
           methEnv = { pipelineCount = 0 }
           referencedCcus = []
-          earlierImplFileSignatures = [] }
+          earlierImplFileSignatures = []
+          debugInlineCallSite = None }
 
     override x.ToString() = "<IncrementalOptimizationEnv>"
 
@@ -3114,7 +3123,18 @@ and OptimizeTraitCall cenv env (traitInfo, args, m) =
         match traitInfo.Solution with
         | Some _ -> None
         | None ->
-            match ConstraintSolver.TryGetRecordedExtensionOperatorSolution g cenv.scope traitInfo m with
+            // Try the trait node's own range first (matches the recorded call-site range on the fully-inlined
+            // optimize+ path). On the debug inline-specialization path the node keeps its definition-site range,
+            // which finds no record when two scopes solved the same key differently, so fall back to the user
+            // call site captured in the env — that range contains this scope's recorded solution.
+            let replayRanges =
+                match env.debugInlineCallSite with
+                | Some cs -> [ m; cs ]
+                | None -> [ m ]
+            let recorded =
+                replayRanges
+                |> List.tryPick (fun r -> ConstraintSolver.TryGetRecordedExtensionOperatorSolution g cenv.scope traitInfo r)
+            match recorded with
             | Some sln ->
                 let (TTrait(a, b, c, d, e, f, _, h)) = traitInfo
                 let traitInfoWithSln = TTrait(a, b, c, d, e, f, ref (Some sln), h)
@@ -3605,12 +3625,12 @@ and TryInlineApplication cenv env finfo (valExpr: Expr) (tyargs: TType list, arg
                     | None ->
 
                     let existingTypes = defaultArg (Map.tryFind origLambdaId env.dontInline) []
-                    let env = { env with dontInline = Map.add origLambdaId (specLambdaTy :: existingTypes) env.dontInline }
+                    let env = { env with dontInline = Map.add origLambdaId (specLambdaTy :: existingTypes) env.dontInline; debugInlineCallSite = Some m }
                     let specLambdaR, _ = OptimizeExpr cenv env specLambda
                     cenv.specializedInlineVals.Add(origLambdaId, (specLambdaTy, specLambdaR))
                     specLambdaR
                 else
-                    let specLambdaR, _ = OptimizeExpr cenv { env with dontInline = Map.add origLambdaId [] env.dontInline } specLambda
+                    let specLambdaR, _ = OptimizeExpr cenv { env with dontInline = Map.add origLambdaId [] env.dontInline; debugInlineCallSite = Some m } specLambda
                     specLambdaR
 
             // Abstract the specialized lambda over its free typars so IlxGen emits a static
