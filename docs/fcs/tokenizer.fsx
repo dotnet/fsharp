@@ -57,18 +57,18 @@ on the `FSharpSourceTokenizer` object that we created earlier:
 let tokenizer = sourceTok.CreateLineTokenizer("let answer=42")
 (**
 Now, we can write a simple recursive function that calls `ScanToken` on the `tokenizer`
-until it returns `None` (indicating the end of line). When the function succeeds, it 
+until it returns `ValueNone` (indicating the end of line). When the function succeeds, it 
 returns an `FSharpTokenInfo` object with all the interesting details:
 *)
 /// Tokenize a single line of F# code
 let rec tokenizeLine (tokenizer:FSharpLineTokenizer) state =
   match tokenizer.ScanToken(state) with
-  | Some tok, state ->
+  | ValueSome tok, state ->
       // Print token name
       printf "%s " tok.TokenName
       // Tokenize the rest, in the new state
       tokenizeLine tokenizer state
-  | None, state -> state
+  | ValueNone, state -> state
 (**
 The function returns the new state, which is needed if you need to tokenize multiple lines
 and an earlier line ends with a multi-line comment. As an initial state, we can use `0L`:

@@ -528,12 +528,12 @@ module internal Tokenizer =
             tokens.Add(SavedTokenInfo.Create token)
 
         let scanAndColorNextToken () =
-            let info, nextLexState = lineTokenizer.ScanToken(previousLexState)
+            let struct (info, nextLexState) = lineTokenizer.ScanToken(previousLexState)
             previousLexState <- nextLexState
 
             // Apply some hacks to clean up the token stream (we apply more later)
             match info with
-            | Some info when info.Tag = FSharpTokenTag.INT32_DOT_DOT ->
+            | ValueSome info when info.Tag = FSharpTokenTag.INT32_DOT_DOT ->
                 processToken
                     {
                         LeftColumn = info.LeftColumn
@@ -558,7 +558,7 @@ module internal Tokenizer =
                         FullMatchedLength = 2
                     }
 
-            | Some info -> processToken info
+            | ValueSome info -> processToken info
             | _ -> ()
 
             info.IsSome
