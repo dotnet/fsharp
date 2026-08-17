@@ -98,6 +98,19 @@ module ExtensionConstraintsTests =
     let ``Duplicate built-in operator extension on a generic type replays the correct instantiation`` () =
         compileAndRunPreview "DuplicateBuiltinOperatorGenericInstantiations.fs"
 
+    // Regression (miscompile): a generic inline extension operator (its parameter/result mention its own
+    // method typar) dispatched through an inline function's abstract SRTP support was committed at the
+    // definition site with that typar undetermined. It defaulted to obj and baked a `box ^T; unbox.any
+    // List<obj>` coercion into the stored inline body -> InvalidCastException at the concrete call site.
+    // Must run correctly under BOTH optimize modes (the def-site body carries the bad coercion regardless).
+    [<Fact>]
+    let ``Generic inline extension operator via SRTP runs under optimize+`` () =
+        compileAndRunPreview "InlineExtensionOperatorGenericReturnSRTP.fs"
+
+    [<Fact>]
+    let ``Generic inline extension operator via SRTP runs under optimize-`` () =
+        compileAndRunPreviewNoOptimize "InlineExtensionOperatorGenericReturnSRTP.fs"
+
     [<Fact>]
     let ``Duplicate built-in operator extension differing only by return type replays the correct instantiation`` () =
         compileAndRunPreview "DuplicateBuiltinOperatorReturnTypeInstantiations.fs"

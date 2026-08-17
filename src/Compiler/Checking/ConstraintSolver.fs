@@ -2200,9 +2200,33 @@ and SolveMemberConstraint (csenv: ConstraintSolverEnv) ignoreUnresolvedOverload 
                                             let objtys = minfo.GetObjArgTypes(amap, m, minst)
                                             Some(CalledMeth<Expr>(csenv.InfoReader, None, false, FreshenMethInfo g traitCtxt, m, traitAD, minfo, minst, minst, None, objtys, callerArgs, false, false, None, Some staticTy)))
 
+                            // RFC FS-1043 miscompile guard. When overload resolution against the support types
+                            // fails (e.g. at the definition site of a consuming inline function, where the support
+                            // type is still an abstract typar and cannot select an overload), a candidate whose own
+                            // method type parameters are not determined by the trait's support/argument/return types
+                            // must not be committed: doing so persists a provisional solution carrying a free method
+                            // typar into the stored inline body, where it later defaults to obj and bakes an unsound
+                            // coercion (box ^T; unbox.any List<obj>) that fails with InvalidCastException once the
+                            // body is instantiated at a concrete call site. In that case we roll the trace back and
+                            // leave the trait unsolved, so a witness call is emitted and re-solved per concrete call
+                            // site. A clean resolution (no error) always commits, so genuine return-type-directed
+                            // solutions with method typars determined at the call site are unaffected.
+                            let isSafeToCommit (calledMeth: CalledMeth<_>) =
+                                let traitFreeTypars = freeInTypesLeftToRightSkippingConstraints g (retTy :: supportTys @ traitObjAndArgTys)
+                                let minstFreeTypars = freeInTypesLeftToRightSkippingConstraints g calledMeth.CalledTyArgs
+                                minstFreeTypars |> List.forall (fun tp -> traitFreeTypars |> List.exists (fun tp2 -> typarEq tp tp2))
+
+                            let canCommitOverloadResult (methResult: CalledMeth<_> option, resolutionErrors) =
+                                match methResult with
+                                | Some calledMeth ->
+                                    match resolutionErrors with
+                                    | ErrorResult _ -> isSafeToCommit calledMeth
+                                    | _ -> true
+                                | None -> false
+
                             let methOverloadResult, errors = 
                                 trace.CollectThenUndoOrCommit
-                                    (fun (a, _) -> Option.isSome a)
+                                    canCommitOverloadResult
                                     (fun trace -> ResolveOverloading csenv (WithTrace trace) nm ndeep (Some traitInfo) CallerArgs.Empty traitAD calledMethGroup false (Some (MustEqual retTy)))
 
                             match anonRecdPropSearch, recdPropSearch, methOverloadResult with 
@@ -2218,7 +2242,7 @@ and SolveMemberConstraint (csenv: ConstraintSolverEnv) ignoreUnresolvedOverload 
                                 do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace retTy rty2
                                 return TTraitSolvedRecdProp(rfinfo, isSetProp)
 
-                            | None, None, Some (calledMeth: CalledMeth<_>) -> 
+                            | None, None, Some (calledMeth: CalledMeth<_>) when canCommitOverloadResult (methOverloadResult, errors) -> 
                                 // OK, the constraint is solved.
                                 let minfo = calledMeth.Method
 
