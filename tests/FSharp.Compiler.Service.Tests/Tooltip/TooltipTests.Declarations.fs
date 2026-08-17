@@ -134,7 +134,7 @@ let ``Fsx.Bug4311HoverOverReferenceInFirstLine`` () =
     assertReferenceTooltipContains "PresentationFramework.dll" (markAtEndOfMarker source "#r \"PresentationFrame")
     assertReferenceTooltipDoesNotContain "multiple results" (markAtEndOfMarker source "#r \"PresentationFrame")
 
-[<Fact(Skip = "non-FCS: #r \"System\" reference-assembly resolution is non-deterministic in the FCS test host (intermittently empty tooltip)")>]
+[<FactForDESKTOP>]
 let ``Fsx.Bug5073`` () =
     let source = "#r \"System\" "
     assertReferenceTooltipContains @"Reference Assemblies\Microsoft" (markAtEndOfMarker source "#r \"Sys")
