@@ -301,17 +301,17 @@ val mkAbstractMember:
 
 val mkMatchClauses:
     patternAndGuard: SynPat * SynExpr option ->
-    patternResult: range option * SynExpr ->
-    mNextBar: range option ->
-    nextClauses: (range option -> SynMatchClause list * range) option ->
-    mLastOuter: range option ->
-        (range option -> SynMatchClause list * range)
+        patternResult: range option * SynExpr ->
+            mNextBar: range option ->
+            nextClauses: (range option -> SynMatchClause list * range) option ->
+            mLastOuter: range option ->
+                (range option -> SynMatchClause list * range)
 
 val mkMatchClausesRecoverMissingResult:
     patternAndGuard: SynPat * SynExpr option ->
-    exprDebugString: string ->
-    mExpr: range option ->
-    mNextBar: range option ->
-    nextClauses: (range option -> SynMatchClause list * range) option ->
-    mLastOuter: range option ->
-        (range option -> SynMatchClause list * range)
+        exprDebugString: string ->
+        mExpr: range option ->
+        mNextBar: range option ->
+        nextClauses: (range option -> SynMatchClause list * range) option ->
+        mLastOuter: range option ->
+            (range option -> SynMatchClause list * range)
