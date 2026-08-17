@@ -2274,7 +2274,7 @@ type Async =
     static member StartTaskImmediate(createTask: CancellationToken -> Task) : Async<unit> =
         CreateBindAsync Async.CancellationToken (createTask >> Async.Await)
 
-#if NETSTANDARD2_1
+#if NETSTANDARD2_1 || NET
     static member StartTaskImmediate(createTask: CancellationToken -> ValueTask<'T>) : Async<'T> =
         CreateBindAsync Async.CancellationToken (createTask >> Async.Await)
 

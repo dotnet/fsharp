@@ -1045,7 +1045,7 @@ namespace Microsoft.FSharp.Control
         /// </example>
         static member StartTaskImmediate: createTask: (CancellationToken -> Task) -> Async<unit>
 
-#if NETSTANDARD2_1
+#if NETSTANDARD2_1 || NET
         /// <summary>Creates an asynchronous computation that passes the ambient <c>Async.CancellationToken</c> to
         /// <c>createTask</c>, and then awaits the resulting <c>ValueTask</c>, returning its result.</summary>
         ///
