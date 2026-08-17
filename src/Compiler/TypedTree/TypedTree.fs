@@ -699,13 +699,13 @@ type Entity =
       /// The methods and properties of the type
       //
       // MUTABILITY; used only during creation and remapping of tycons
-      mutable entity_tycon_tcaug: TyconAugmentation
+      mutable entity_tycon_tcaug: TyconAugmentation | null
 
       /// This field is used when the 'tycon' is really a module definition. It holds statically nested type definitions and nested modules
       //
       // MUTABILITY: only used during creation and remapping of tycons and
       // when compiling fslib to fixup compiler forward references to internal items
-      mutable entity_modul_type: MaybeLazy<ModuleOrNamespaceType>
+      mutable entity_modul_type: MaybeLazy<ModuleOrNamespaceType> | null
 
       /// The stable path to the type, e.g. Microsoft.FSharp.Core.FSharpFunc`2
       // MUTABILITY: only for unpickle linkage
@@ -888,10 +888,16 @@ type Entity =
             | _ -> x.entity_opt_data <- Some { Entity.NewEmptyEntityOptData() with entity_xmldocsig = v }
 
     /// The logical contents of the entity when it is a module or namespace fragment.
-    member x.ModuleOrNamespaceType = x.entity_modul_type.Force()
+    member x.ModuleOrNamespaceType =
+        match x.entity_modul_type with
+        | null -> Construct.NewEmptyModuleOrNamespaceType ModuleOrType
+        | entity_modul_type -> entity_modul_type.Force()
 
     /// The logical contents of the entity when it is a type definition.
-    member x.TypeContents = x.entity_tycon_tcaug
+    member x.TypeContents =
+        match x.entity_tycon_tcaug with
+        | null -> TyconAugmentation.Create()
+        | entity_tycon_tcaug -> entity_tycon_tcaug
 
     /// The kind of the type definition - is it a measure definition or a type definition?
     member x.TypeOrMeasureKind =
@@ -1109,10 +1115,10 @@ type Entity =
 
     /// Create a new entity with empty, unlinked data. Only used during unpickling of F# metadata.
     static member NewUnlinked() : Entity =
-        { entity_typars = Unchecked.defaultof<_>
+        { entity_typars = LazyWithContext.NotLazy []
           entity_flags = Unchecked.defaultof<_>
           entity_stamp = Unchecked.defaultof<_>
-          entity_logical_name = Unchecked.defaultof<_>
+          entity_logical_name = "<unknown>"
           entity_range = Unchecked.defaultof<_>
           entity_attribs = Unchecked.defaultof<_>
           entity_tycon_repr= Unchecked.defaultof<_>
@@ -6568,7 +6574,9 @@ type Construct() =
     /// contents of the module.
     static member NewModifiedModuleOrNamespace f orig =
         orig |> Construct.NewModifiedTycon (fun d ->
-            { d with entity_modul_type = MaybeLazy.Strict (f (d.entity_modul_type.Force())) })
+            match d.entity_modul_type with
+            | null -> d
+            | entity_modul_type -> { d with entity_modul_type = MaybeLazy.Strict (f (entity_modul_type.Force())) })
 
     /// Create a Val based on an existing one using the function 'f'.
     /// We require that we be given the parent for the new Val.

@@ -499,5 +499,9 @@ module WeakMap =
             | false, _ ->
                 let value = valueFactory key
                 if shouldCache value then
+#if NETSTANDARD2_0
                     try table.Add(key, value) with _ -> ()
+#else
+                    table.TryAdd(key, value) |> ignore
+#endif
                 value
