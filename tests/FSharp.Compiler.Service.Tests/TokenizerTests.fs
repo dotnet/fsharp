@@ -7,12 +7,12 @@ open Xunit
 
 let rec parseLine(line: string, state: FSharpTokenizerLexState ref, tokenizer: FSharpLineTokenizer) = seq {
   match tokenizer.ScanToken(state.Value) with
-  | Some(tok), nstate ->
+  | ValueSome(tok), nstate ->
       let str = line.Substring(tok.LeftColumn, tok.RightColumn - tok.LeftColumn + 1)
       yield str, tok
       state.Value <- nstate
       yield! parseLine(line, state, tokenizer)
-  | None, nstate ->
+  | ValueNone, nstate ->
       state.Value <- nstate }
 
 let tokenizeLines (lines:string[]) =
@@ -30,8 +30,8 @@ let scanTokens (defines: string list) (source: string) =
     let tokenizer = sourceTok.CreateLineTokenizer(source)
     let rec loop (state: FSharpTokenizerLexState) acc =
         match tokenizer.ScanToken(state) with
-        | Some tok, nstate -> loop nstate (tok :: acc)
-        | None, _ -> List.rev acc
+        | ValueSome tok, nstate -> loop nstate (tok :: acc)
+        | ValueNone, _ -> List.rev acc
     loop FSharpTokenizerLexState.Initial []
 
 [<Fact>]
