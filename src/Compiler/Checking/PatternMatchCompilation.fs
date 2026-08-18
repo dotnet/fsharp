@@ -420,11 +420,22 @@ let rec private frontierPathKey p =
 /// that later paths CALL. `caps` are the enclosing tree-bound locals the subtree references, forwarded into
 /// the shared thunk at each call site.
 [<Sealed>]
-type private ResidualJoin(caps: Val list, promotable: bool, materialize: unit -> Expr * TType) =
+type private ResidualJoin(caps: Val list, promotable: unit -> bool, materialize: unit -> Expr * TType) =
     let mutable count = 1
     let mutable shared: (Expr * TType) option = None
+    let mutable promotableResult: bool option = None
     member _.Caps = caps
-    member _.Promotable = promotable
+    // Thunkability (the byref-like/ref-struct checks) is evaluated lazily and cached, and is only ever
+    // consulted AFTER a state has crossed the promotion threshold. That keeps isThunkableTy — which resolves
+    // well-known types not yet available while the compiler bootstraps FSharp.Core — off the path of every
+    // ordinary match.
+    member _.Promotable =
+        match promotableResult with
+        | Some b -> b
+        | None ->
+            let b = promotable ()
+            promotableResult <- Some b
+            b
     member _.Bump() = count <- count + 1
     member _.Count = count
     member _.Promoted = shared.IsSome
@@ -1196,11 +1207,11 @@ let CompilePatternBasic
     let joinPromotionThreshold = 32
     // A join thunk is an FSharpFunc over the captured locals returning the match result. A byref-like type
     // (byref/inref/outref, or a ref struct such as Span) is forbidden as a generic type argument by the CLR,
-    // so it can be neither a thunk parameter nor a thunk result (FS0412). The result type is fixed for the
-    // whole match: when it is byref-like no state can ever be shared, so skip memoization entirely rather than
-    // pay its key-computation cost on a match that can never promote.
+    // so it can be neither a thunk parameter nor a thunk result (FS0412); such a state stays inline. This test
+    // is evaluated lazily, at the moment a state is actually promoted (see investigateMemoized), so it never
+    // runs for an ordinary match — importantly, not while FSharp.Core itself is being compiled and the
+    // well-known types it inspects are not yet available.
     let isThunkableTy ty = not (isByrefLikeTy g mExpr ty) && not (isByrefTy g ty)
-    let resultThunkable = isThunkableTy resultTy
     let joinBindings = System.Collections.Generic.List<Val * Expr>()
     let frontierMemo = System.Collections.Generic.Dictionary<string, ResidualJoin>()
 
@@ -1357,7 +1368,7 @@ let CompilePatternBasic
     /// ordinary matches are byte-for-byte unchanged. Only a state reached MORE times than that — the
     /// or-pattern/guard blow-up of #18425 — is compiled ONCE into a shared join thunk that later paths call.
     and investigateMemoized refuted frontiers =
-        let eligible = not warnOnIncomplete && resultThunkable
+        let eligible = not warnOnIncomplete
         if not eligible then
             InvestigateFrontiers refuted frontiers
         else
@@ -1367,7 +1378,10 @@ let CompilePatternBasic
             match frontierMemo.TryGetValue key with
             | true, entry ->
                 entry.Bump()
-                if entry.Promotable && (entry.Promoted || entry.Count > joinPromotionThreshold) then
+                // Consult Promotable (which runs the byref-like/thunkability checks) ONLY once a state has
+                // actually crossed the promotion threshold: ordinary matches never reach it, so isThunkableTy
+                // is never evaluated for benign code and self-host/bootstrap compilation is unaffected.
+                if (entry.Promoted || entry.Count > joinPromotionThreshold) && entry.Promotable then
                     let joinE, joinThunkTy = entry.SharedThunk()
                     callJoinThunk joinE joinThunkTy caps
                 else
@@ -1376,14 +1390,17 @@ let CompilePatternBasic
                     InvestigateFrontiers refuted frontiers
             | _ ->
                 let subtree = InvestigateFrontiers refuted frontiers
-                // The result type is already known thunkable (a byref-like result disables memoization for the
-                // whole match). A captured local can still be byref-like on its own, which likewise cannot cross
-                // a thunk boundary (FS0412); such states stay inline exactly as the pristine compiler emits them.
-                // A bare success leaf is already shared across edges by IlxGen's target-index mechanism, so
-                // thunking it would only add a redundant closure. Only interior switches (which codegen
-                // duplicates per edge, the actual #18425 blow-up) are worth sharing as a join thunk.
-                let promotable =
+                // Whether this state can ever be shared as a join thunk. Deferred behind a closure (evaluated at
+                // most once, and only after the promotion threshold) so the byref-like/ref-struct checks — and
+                // the well-known-type resolution they perform, unavailable while FSharp.Core itself is compiled —
+                // never run for an ordinary match. A bare success leaf is already shared across edges by IlxGen's
+                // target-index mechanism, so thunking it would only add a redundant closure. A byref-like result
+                // type or captured local cannot cross a thunk boundary (FS0412) and stays inline exactly as the
+                // pristine compiler emits it. Only interior switches (which codegen duplicates per edge, the
+                // actual #18425 blow-up) are worth sharing as a join thunk.
+                let promotable () =
                     (match subtree with TDSuccess _ -> false | _ -> true)
+                    && isThunkableTy resultTy
                     && caps |> List.forall (fun v -> isThunkableTy v.Type)
                 // Materialize the shared thunk only if/when this state is promoted. Abstract the captured
                 // tree-bound locals out of the body so the thunk can be let-bound OUTSIDE the match (where
