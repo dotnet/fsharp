@@ -14,6 +14,13 @@ open System.Reflection.PortableExecutable
 
 module CustomAttributes_ExtendedLayout =
 
+#if !NETCOREAPP
+    // Every test in this module requires System.Runtime.InteropServices.ExtendedLayoutAttribute,
+    // which only exists starting with .NET 11. On other target frameworks (e.g. net472) the module
+    // would otherwise be empty, which is not a valid module declaration, so keep one placeholder.
+    let private _requiresNetCore = ()
+#endif
+
 #if NETCOREAPP
     // System.Runtime.InteropServices.ExtendedLayoutAttribute / ExtendedLayoutKind only exist starting with .NET 11,
     // so these tests are gated to the .NET (Core) test flavor where that BCL is referenced.
