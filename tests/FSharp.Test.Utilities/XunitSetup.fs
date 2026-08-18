@@ -1,40 +1,33 @@
 namespace FSharp.Test
 
+open System
 open Xunit
+open TestFramework
 
-// xUnit3 assembly fixtures: ensure TestConsole is installed once per assembly
-// This replaces the OneTimeSetup.EnsureInitialized() call that was done in FSharpXunitFramework
-module private XUnitInit =
-    let private ensureInitialized = lazy (
+/// xUnit3 assembly fixture: performs one-time setup for the test assembly.
+/// Registered via [<assembly: AssemblyFixture(typeof<FSharpTestAssemblyFixture>)>] below.
+/// The constructor is called by xUnit once before any tests in the assembly run.
+type FSharpTestAssemblyFixture() =
+    do
 #if !NETCOREAPP
-        // On .NET Framework, we need the assembly resolver for finding assemblies
-        // that might be in different locations (e.g., when FSI loads assemblies)
+        // We need AssemblyResolver already here, because OpenTelemetry loads some assemblies dynamically.
+        log "Adding AssemblyResolver"
         AssemblyResolver.addResolver()
 #endif
-        TestConsole.install()
-    )
-    
-    /// Call this to ensure TestConsole is installed. Safe to call multiple times.
-    let initialize() = ensureInitialized.Force()
+        log $"Server GC enabled: {Runtime.GCSettings.IsServerGC}"
+        logConfig initialConfig
 
 /// Exclude from parallelization. Execute test cases in sequence and do not run any other collections at the same time.
 /// see https://github.com/xunit/xunit/issues/1999#issuecomment-522635397
 [<CollectionDefinition(nameof NotThreadSafeResourceCollection, DisableParallelization = true)>]
 type NotThreadSafeResourceCollection() = class end
 
+/// Mark test cases as not safe to run in parallel with other test cases of the same test collection.
+/// In case Xunit 3 enables internal parallelization of test collections.
+[<AttributeUsage(AttributeTargets.Class ||| AttributeTargets.Method, AllowMultiple = false)>]
+type RunTestCasesInSequenceAttribute() = inherit Attribute()
+
 module XUnitSetup =
 
-    // NOTE: Custom TestFramework temporarily disabled due to xUnit3 API incompatibilities
-    // TODO: Reimplement FSharpXunitFramework for xUnit3 if needed
-    // [<assembly: TestFramework("FSharp.Test.FSharpXunitFramework", "FSharp.Test.Utilities")>]
-    
-    // NOTE: CaptureTrace is disabled because it conflicts with TestConsole.ExecutionCapture
-    // which is used by FSI tests to capture console output. xUnit3's trace capture intercepts
-    // console output before it can reach TestConsole's redirectors.
-    // [<assembly: CaptureTrace>]
-    
-    /// Call this to ensure TestConsole is installed. Safe to call multiple times.
-    let initialize() = XUnitInit.initialize()
-    
-    // Force initialization when module is loaded
-    do initialize()
+    [<assembly: AssemblyFixture(typeof<FSharpTestAssemblyFixture>); CaptureConsole; CaptureTrace>]
+    do ()
