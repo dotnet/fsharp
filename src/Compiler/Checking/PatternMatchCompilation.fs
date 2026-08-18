@@ -396,9 +396,7 @@ type Actives = Active list
 /// Represents an unresolved portion of pattern matching within a clause
 type Frontier = Frontier of ClauseNumber * Actives * ValMap<Expr>
 
-// Structural key of a projection path, used (together with collision-free pattern-node identity ids
-// allocated per pattern-match compilation) to recognize when two residual decision states are equal
-// and can share a single compiled join point. See the join-point memoization in CompilePatternBasic.
+// Keep in sync with pathEq: equal keys may share one compiled residual state.
 let rec private frontierPathKey p =
     match p with
     | PathQuery(p, n) -> "Q" + string n + frontierPathKey p
@@ -408,44 +406,6 @@ let rec private frontierPathKey p =
     | PathArray(p, _, i1, i2) -> "A" + string i1 + "_" + string i2 + frontierPathKey p
     | PathExnConstr(p, _, n) -> "E" + string n + frontierPathKey p
     | PathEmpty _ -> "."
-
-/// A residual decision state seen during pattern-match compilation. F#'s pattern-match compiler reaches an
-/// equal residual state once per path that leads to it; an or-pattern sharing a guard produces 2^N such
-/// paths (issue #18425). The pristine compiler re-investigates the state on every path, so a benign match
-/// (a state reached a handful of times, which IlxGen/codegen already collapses to one block) is unaffected,
-/// but the 2^N case blows up compile time / DLL size / the stack. We therefore re-investigate (inline,
-/// exactly as pristine) up to a small promotion threshold, and only when a state is reached MORE than that
-/// AND the state compiles to an interior switch (which codegen would DUPLICATE, unlike a bare success leaf
-/// that IlxGen already shares by target index) do we compile it ONCE into a shared let-bound join function
-/// that later paths CALL. `caps` are the enclosing tree-bound locals the subtree references, forwarded into
-/// the shared thunk at each call site.
-[<Sealed>]
-type private ResidualJoin(caps: Val list, promotable: unit -> bool, materialize: unit -> Expr * TType) =
-    let mutable count = 1
-    let mutable shared: (Expr * TType) option = None
-    let mutable promotableResult: bool option = None
-    member _.Caps = caps
-    // Thunkability (the byref-like/ref-struct checks) is evaluated lazily and cached, and is only ever
-    // consulted AFTER a state has crossed the promotion threshold. That keeps isThunkableTy — which resolves
-    // well-known types not yet available while the compiler bootstraps FSharp.Core — off the path of every
-    // ordinary match.
-    member _.Promotable =
-        match promotableResult with
-        | Some b -> b
-        | None ->
-            let b = promotable ()
-            promotableResult <- Some b
-            b
-    member _.Bump() = count <- count + 1
-    member _.Count = count
-    member _.Promoted = shared.IsSome
-    member _.SharedThunk() =
-        match shared with
-        | Some s -> s
-        | None ->
-            let s = materialize ()
-            shared <- Some s
-            s
 
 type InvestigationPoint = Investigation of ClauseNumber * DecisionTreeTest * Path
 
@@ -1180,45 +1140,29 @@ let CompilePatternBasic
 
     // The main recursive loop of the pattern match compiler.
 
-    // Join-point memoization for #18425. Pristine recompiles identical residual frontier-states 2^N
-    // times (the compile-time / StackOverflow / DLL blow-up). Here each DISTINCT residual state is
-    // compiled ONCE into a let-bound join function; every other path that reaches an equal state emits
-    // a CALL to that function instead of re-emitting the subtree. Sharing a decision SUBTREE cannot go
-    // through the ordinary target mechanism (a target body is inlined/copied, so it re-explodes); a
-    // let-bound thunk called by reference is the only construct that survives codegen with O(1) duplication.
-    // A join thunk is let-bound OUTSIDE the match, so the only values it cannot see are the locals bound by
-    // ENCLOSING investigations of the decision tree (active-pattern pre-binders, projection temporaries).
-    // Those are captured as explicit parameters: 'fun <captured> () -> body', threaded to each call site
-    // through TDSuccess arguments -> target parameters (decision-tree-bound locals are invisible inside a
-    // target body, but TDSuccess arguments are). The trailing unit keeps the closed (no-capture) case delayed.
-    // The match input is deliberately NOT captured: it stays in scope where the thunks are let-bound.
-    // `refuted` is intentionally excluded from the key: on the memoized path warnOnIncomplete=false, and
-    // refuted only feeds incomplete-match warning text.
+    // Repeated states stay inline until the threshold, preserving ordinary match output.
     let stackGuard = StackGuard("InvestigateFrontiers")
-    // A residual state re-investigated at most this many times inline before it is shared as a join thunk.
-    // Below the threshold the output is byte-for-byte identical to the pristine compiler (which always
-    // re-investigates and relies on codegen to collapse the few duplicates); above it, sharing bounds the
-    // #18425 blow-up. The value is chosen empirically: an ordinary hand-written match reaches any single
-    // decision state only a handful of times (measured: <=16 even for a contrived 6-disjunct shared-guard
-    // active-pattern match), so 32 leaves all realistic code unchanged. Only the exponential #18425 shape
-    // reaches one state hundreds-to-millions of times, and only those states are shared. Keeping the value
-    // low (rather than in the hundreds) preserves a strong bound on the pathological case: it never grows
-    // past ~T inline copies of a residual before sharing collapses the rest.
     let joinPromotionThreshold = 32
-    // A join thunk is an FSharpFunc over the captured locals returning the match result. A byref-like type
-    // (byref/inref/outref, or a ref struct such as Span) is forbidden as a generic type argument by the CLR,
-    // so it can be neither a thunk parameter nor a thunk result (FS0412); such a state stays inline. This test
-    // is evaluated lazily, at the moment a state is actually promoted (see investigateMemoized), so it never
-    // runs for an ordinary match — importantly, not while FSharp.Core itself is being compiled and the
-    // well-known types it inspects are not yet available.
     let isThunkableTy ty = not (isByrefLikeTy g mExpr ty) && not (isByrefTy g ty)
-    let joinBindings = System.Collections.Generic.List<Val * Expr>()
-    let frontierMemo = System.Collections.Generic.Dictionary<string, ResidualJoin>()
+    let joinBindings = ResizeArray<Binding>()
+    let frontierMemo = Dictionary<string, int ref * Lazy<bool> * Lazy<Expr * TType>>()
 
-    // Collision-free identity ids for pattern nodes. Two states share a join only when they reference the
-    // SAME pattern objects, so the key must distinguish distinct objects with certainty: a structural hash
-    // (e.g. RuntimeHelpers.GetHashCode) could collide and fuse two different states into one, miscompiling.
-    // Reference-identity ids cannot collide, so equal keys guarantee equal states (modulo captured locals).
+    // The full body includes clause targets, which may contain constructs that cannot move into a lambda.
+    let isLiftableJoinBody body =
+        let fvs = freeInExpr (CollectLocalsWithStackGuard()) body
+        not fvs.UsesUnboundRethrow
+        && not fvs.UsesMethodLocalConstructs
+        && not (fvs.ContainsILFieldAccess && exprReferencesProtectedILField amap body)
+        && isThunkableTy resultTy
+        && fvs.FreeLocals
+           |> Internal.Utilities.Collections.Zset.forall (fun v ->
+               v.ValReprInfo.IsSome
+               || (v.BaseOrThisInfo = NormalVal
+                   && isThunkableTy v.Type
+                   && not (IsGenericValWithGenericConstraints g v)
+                   && not v.IsMutable))
+
+    // Reference identities make key collisions conservative: distinct nodes never fuse.
     let patternNodeId =
         let ids = System.Collections.Generic.Dictionary<Pattern, int>(HashIdentity.Reference)
         fun (pat: Pattern) ->
@@ -1232,15 +1176,6 @@ let CompilePatternBasic
     let frontierActiveKey (Active(path, _, pat)) =
         frontierPathKey path + "#" + string (patternNodeId pat)
 
-    // Structural key of a value-binding expression. Residual states that differ ONLY in which projection of
-    // the match input a clause variable is bound to (e.g. input.Item1 vs input.Item3 under a shared 'when'
-    // guard) must get DISTINCT keys, otherwise fusing them bakes one state's projections into the other and
-    // miscompiles. Captured-local stamps are already pinned in the state key, so fused states share identical
-    // captures and keying vals concretely by stamp is sound: an equal key then guarantees identical bound
-    // expressions. Projection accessors (tuple/record/union-field reads, coercions, and the value references
-    // active patterns bind) are decoded structurally so an identical projection rebuilt as a distinct object
-    // still fuses (the #18425 case); any other shape falls back to a reference-identity id, which never fuses
-    // distinct objects (sound, at worst less sharing).
     let boundExprNodeId =
         let ids = System.Collections.Generic.Dictionary<Expr, int>(HashIdentity.Reference)
         fun (e: Expr) ->
@@ -1275,10 +1210,7 @@ let CompilePatternBasic
             string i + ":" + String.concat "," (List.map frontierActiveKey actives) + "{" + frontierValMapKey valMap + "}")
         |> String.concat "|"
 
-    // The tree-bound locals a residual state references from ENCLOSING investigations: the input value of
-    // each active projection plus any locals free in already-bound pattern values, minus the match input
-    // (which stays in scope at the join-let site). These are exactly the values that must be threaded into
-    // a shared join. Computed from the frontiers (not the built subtree) so it is available before the miss.
+    // The match input stays in scope at the outer join binding; only tree-bound locals need parameters.
     let capturedValsOfFrontiers frontiers =
         let acc = System.Collections.Generic.Dictionary<Stamp, Val>()
         let addFreeLocals (e: Expr) =
@@ -1286,17 +1218,11 @@ let CompilePatternBasic
                 if v.Stamp <> origInputVal.Stamp then acc[v.Stamp] <- v
         for Frontier(_, actives, valMap) in frontiers do
             for Active(_, subexpr, _) in actives do
-                // The projected switch expression carries the enclosing pre-binder inside its accessor
-                // closure, so it (not the raw SubExpr root value) is what reveals the captured locals.
                 addFreeLocals (GetSubExprOfInput subexpr)
             for KeyValue(_, boundExpr) in valMap.Contents do
                 addFreeLocals boundExpr
         acc.Values |> List.ofSeq |> List.sortBy (fun v -> v.Stamp)
 
-    // Emit one call site of a shared join: forward the in-scope captured locals into the thunk. The captured
-    // locals are decision-tree-bound and so invisible inside a target body; route them through TDSuccess
-    // arguments into fresh target parameters, then apply. (Data-valued arguments are safe; a function-valued
-    // shared-target parameter is what the optimizer miscompiles, so the thunk itself is never threaded.)
     let callJoinThunk (joinE: Expr) (joinThunkTy: TType) (caps: Val list) =
         let targetParams = caps |> List.map (fun v -> fst (mkCompGenLocal mMatch "joinArg" v.Type))
         let args = (targetParams |> List.map (exprForVal mMatch)) @ [mkUnit g mMatch]
@@ -1363,63 +1289,43 @@ let CompilePatternBasic
 
         | None -> successTree
 
-    /// Join-point memoizing wrapper around InvestigateFrontiers. A residual state is re-investigated inline
-    /// (exactly as the pristine compiler) for the first `joinPromotionThreshold` paths that reach it, so
-    /// ordinary matches are byte-for-byte unchanged. Only a state reached MORE times than that — the
-    /// or-pattern/guard blow-up of #18425 — is compiled ONCE into a shared join thunk that later paths call.
     and investigateMemoized refuted frontiers =
-        let eligible = not warnOnIncomplete
-        if not eligible then
+        if warnOnIncomplete then
             InvestigateFrontiers refuted frontiers
         else
             let caps = capturedValsOfFrontiers frontiers
             let key =
                 frontiersStateKey frontiers + "|CAP:" + (caps |> List.map (fun v -> string v.Stamp) |> String.concat ",")
             match frontierMemo.TryGetValue key with
-            | true, entry ->
-                entry.Bump()
-                // Consult Promotable (which runs the byref-like/thunkability checks) ONLY once a state has
-                // actually crossed the promotion threshold: ordinary matches never reach it, so isThunkableTy
-                // is never evaluated for benign code and self-host/bootstrap compilation is unaffected.
-                if (entry.Promoted || entry.Count > joinPromotionThreshold) && entry.Promotable then
-                    let joinE, joinThunkTy = entry.SharedThunk()
+            | true, (count, promotable, shared) ->
+                count.Value <- count.Value + 1
+                if (shared.IsValueCreated || count.Value > joinPromotionThreshold) && promotable.Value then
+                    let joinE, joinThunkTy = shared.Value
                     callJoinThunk joinE joinThunkTy caps
                 else
-                    // Below the sharing threshold, or a leaf that codegen already shares by target index:
-                    // rebuild inline, identical to the pristine compiler.
                     InvestigateFrontiers refuted frontiers
             | _ ->
                 let subtree = InvestigateFrontiers refuted frontiers
-                // Whether this state can ever be shared as a join thunk. Deferred behind a closure (evaluated at
-                // most once, and only after the promotion threshold) so the byref-like/ref-struct checks — and
-                // the well-known-type resolution they perform, unavailable while FSharp.Core itself is compiled —
-                // never run for an ordinary match. A bare success leaf is already shared across edges by IlxGen's
-                // target-index mechanism, so thunking it would only add a redundant closure. A byref-like result
-                // type or captured local cannot cross a thunk boundary (FS0412) and stays inline exactly as the
-                // pristine compiler emits it. Only interior switches (which codegen duplicates per edge, the
-                // actual #18425 blow-up) are worth sharing as a join thunk.
-                let promotable () =
+                let joinBody =
+                    lazy (mkAndSimplifyMatch DebugPointAtBinding.NoneAtInvisible mExpr mMatch resultTy subtree (matchBuilder.CloseTargets()))
+                let promotable =
+                    lazy
                     (match subtree with TDSuccess _ -> false | _ -> true)
-                    && isThunkableTy resultTy
-                    && caps |> List.forall (fun v -> isThunkableTy v.Type)
-                // Materialize the shared thunk only if/when this state is promoted. Abstract the captured
-                // tree-bound locals out of the body so the thunk can be let-bound OUTSIDE the match (where
-                // those locals are out of scope) and shared purely by reference.
-                let materialize () =
-                    let joinBody = mkAndSimplifyMatch DebugPointAtBinding.NoneAtInvisible mExpr mMatch resultTy subtree (matchBuilder.CloseTargets())
+                    && isLiftableJoinBody joinBody.Value
+                let shared =
+                    lazy
                     let paramVals = caps |> List.map (fun v -> fst (mkCompGenLocal mMatch "joinCap" v.Type))
-                    let body =
-                        if caps.IsEmpty then joinBody
-                        else
-                            let remap = { Remap.Empty with valRemap = ValMap.OfList (List.map2 (fun (c: Val) (p: Val) -> (c, mkLocalValRef p)) caps paramVals) }
-                            remapExpr g CloneAll remap joinBody
+                    let remap =
+                        { Remap.Empty with
+                            valRemap = ValMap.OfList (List.map2 (fun (c: Val) (p: Val) -> c, mkLocalValRef p) caps paramVals) }
+                    let body = remapExpr g CloneAll remap joinBody.Value
                     let unitV, _ = mkCompGenLocal mMatch "unitArg" g.unit_ty
                     let joinThunkTy = List.foldBack (fun (p: Val) acc -> mkFunTy g p.Type acc) paramVals (mkFunTy g g.unit_ty resultTy)
                     let joinLam = mkLambdas g mMatch [] (paramVals @ [unitV]) (body, resultTy)
                     let joinV, joinE = mkCompGenLocal mMatch "joinThunk" joinThunkTy
-                    joinBindings.Add((joinV, joinLam))
+                    joinBindings.Add(mkInvisibleBind joinV joinLam)
                     (joinE, joinThunkTy)
-                frontierMemo[key] <- ResidualJoin(caps, promotable, materialize)
+                frontierMemo[key] <- ref 1, promotable, shared
                 subtree
 
     /// Select the set of discriminators which we can handle in one test, or as a series of iterated tests,
@@ -1941,13 +1847,6 @@ let isProblematicClause (clause: MatchClause) =
         let ips = investigationPoints clause.Pattern
         ips.Length > 0 && Span.exists id (ips.AsSpan (0, ips.Length - 1))
 
-/// Wrap the join-point thunk bindings produced by pattern-match compilation as let-bindings
-/// enclosing the materialized match expression. Joins form an acyclic DAG (a state only calls
-/// states created earlier/deeper), so binding in creation order with the first-created outermost
-/// keeps every callee in scope for its callers.
-let mkJoinLets m joins matchExpr =
-    List.foldBack (fun (v, rhs) acc -> mkInvisibleLet m v rhs acc) joins matchExpr
-
 let rec CompilePattern  g denv amap tcVal infoReader mExpr mMatch warnOnUnused actionOnFailure (origInputVal, origInputValTypars, origInputExprOpt) (clausesL: MatchClause list) inputTy resultTy =
     match clausesL with
     | _ when List.exists isProblematicClause clausesL ->
@@ -1974,7 +1873,7 @@ let rec CompilePattern  g denv amap tcVal infoReader mExpr mMatch warnOnUnused a
             let decisionTree, targets, joins = atMostOneProblematicClauseAtATime rest
 
             // Make the expression that represents the remaining cases of the pattern match.
-            let expr = mkJoinLets mMatch joins (mkAndSimplifyMatch DebugPointAtBinding.NoneAtInvisible mExpr mMatch resultTy decisionTree targets)
+            let expr = mkLetsBind mMatch joins (mkAndSimplifyMatch DebugPointAtBinding.NoneAtInvisible mExpr mMatch resultTy decisionTree targets)
 
             // Make the clause that represents the remaining cases of the pattern match
             let clauseForRestOfMatch = MatchClause(TPat_wild mMatch, None, TTarget(List.empty, expr, None), mMatch)

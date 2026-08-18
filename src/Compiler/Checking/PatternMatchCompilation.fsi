@@ -69,7 +69,7 @@ val internal CompilePattern:
         TType ->
         // result type
         TType ->
-            DecisionTree * DecisionTreeTarget list * (Val * Expr) list
+            DecisionTree * DecisionTreeTarget list * Bindings
 
 /// Exception raised when a pattern match is incomplete.
 /// Fields: isComputationExpression * (counterExample * isShownAsFieldPattern) option * range
