@@ -42,6 +42,7 @@
     <Compile Include="Conformance\BasicGrammarElements\CustomAttributes\AttributeUsage\AttributeUsage.fs" />
     <Compile Include="Conformance\BasicGrammarElements\CustomAttributes\AttributeUsage\AttributeResolutionInRecursiveScopes.fs" />
     <Compile Include="Conformance\BasicGrammarElements\CustomAttributes\Basic\Basic.fs" />
+    <Compile Include="Conformance\BasicGrammarElements\CustomAttributes\Basic\ExtendedLayout.fs" />
     <Compile Include="Conformance\BasicGrammarElements\CustomAttributes\ImportedAttributes\ImportedAttributes.fs" />
     <Compile Include="Conformance\BasicGrammarElements\CustomAttributes\ArgumentsOfAllTypes\ArgumentsOfAllTypes.fs" />
     <Compile Include="Conformance\BasicGrammarElements\DelegateTypes\DelegateDefinition.fs" />
