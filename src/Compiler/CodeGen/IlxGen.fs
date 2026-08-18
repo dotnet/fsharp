@@ -1398,7 +1398,7 @@ let StorageForVal m v eenv =
             eenv.valsInScope[v]
         with :? KeyNotFoundException ->
             assert false
-            errorR (Error(FSComp.SR.ilUndefinedValue (showL (valAtBindL v)), m))
+            errorR (Error(FSComp.SR.ilUndefinedValue (RichText.mkText (showL (valAtBindL v))), m))
             notlazy (Arg 668 (* random value for post-hoc diagnostic analysis on generated tree *) )
 
     v.Force()
@@ -3159,7 +3159,10 @@ and GenExprPreSteps (cenv: cenv) (cgbuf: CodeGenBuffer) eenv expr sequel =
                 ]
                 |> String.concat ","
 
-            informationalWarning (Error(FSComp.SR.ilxGenUnknownDebugPoint (debugPointName, others), dpExpr.Range))
+            informationalWarning (
+                Error(FSComp.SR.ilxGenUnknownDebugPoint (RichText.mkText debugPointName, RichText.mkText others), dpExpr.Range)
+            )
+
             CG.EmitDebugPoint cgbuf m
         | true, dp ->
             // printfn $"---- Found debug point {debugPointName} at {m} --> {dp}"
@@ -3211,13 +3214,13 @@ and GenExprPreSteps (cenv: cenv) (cgbuf: CodeGenBuffer) eenv expr sequel =
                     // is important if the nested state machine generates dynamic code (LoweredStateMachineResult.UseAlternative).
                     let eenv = RemoveTemplateReplacement eenv
                     checkLanguageFeatureError cenv.g.langVersion LanguageFeature.ResumableStateMachines expr.Range
-                    warning (Error(FSComp.SR.reprStateMachineNotCompilable msg, expr.Range))
+                    warning (Error(FSComp.SR.reprStateMachineNotCompilable (RichText.mkText msg), expr.Range))
                     GenExpr cenv cgbuf eenv altExpr sequel
                     true
                 | LoweredStateMachineResult.NoAlternative msg ->
                     let eenv = RemoveTemplateReplacement eenv
                     checkLanguageFeatureError cenv.g.langVersion LanguageFeature.ResumableStateMachines expr.Range
-                    errorR (Error(FSComp.SR.reprStateMachineNotCompilableNoAlternative msg, expr.Range))
+                    errorR (Error(FSComp.SR.reprStateMachineNotCompilableNoAlternative (RichText.mkText msg), expr.Range))
                     GenDefaultValue cenv cgbuf eenv (tyOfExpr cenv.g expr, expr.Range)
                     true
                 | LoweredStateMachineResult.NotAStateMachine ->
@@ -4507,7 +4510,7 @@ and GenApp (cenv: cenv) cgbuf eenv (f, fty, tyargs, curriedArgs, m) sequel =
         || valRefEq g v g.cgh__resumableEntry_vref
         || valRefEq g v g.cgh__stateMachine_vref
         ->
-        errorR (Error(FSComp.SR.ilxgenInvalidConstructInStateMachineDuringCodegen v.DisplayName, m))
+        errorR (Error(FSComp.SR.ilxgenInvalidConstructInStateMachineDuringCodegen (richTextOfValName g v.Deref), m))
         CG.EmitInstr cgbuf (pop 0) (Push [ g.ilg.typ_Object ]) AI_ldnull
         GenSequel cenv eenv.cloc cgbuf sequel
 
@@ -5891,7 +5894,7 @@ and GenGetValAddr cenv cgbuf eenv (v: ValRef, m) sequel =
     | Method _
     | Env _
     | Null ->
-        errorR (Error(FSComp.SR.ilAddressOfValueHereIsInvalid v.DisplayName, m))
+        errorR (Error(FSComp.SR.ilAddressOfValueHereIsInvalid (richTextOfValName cenv.g v.Deref), m))
 
         CG.EmitInstr
             cgbuf
@@ -6830,7 +6833,7 @@ and GenSequenceExpr
     let cloref = IlxClosureRef(ilCloTypeRef, ilCloLambdas, ilCloAllFreeVars)
 
     let ilxCloSpec =
-        IlxClosureSpec.Create(cloref, GenGenericArgs m eenvouter.tyenv cloFreeTyvars, false)
+        IlxClosureSpec.Create(cloref, GenGenericArgs cenv m eenvouter.tyenv cloFreeTyvars, false)
 
     let formalClospec =
         IlxClosureSpec.Create(cloref, mkILFormalGenericArgs 0 ilCloGenericParams, false)
@@ -7072,8 +7075,10 @@ and GenStaticDelegateClosureTypeDefs
 and GenGenericParams cenv eenv tps =
     tps |> DropErasedTypars |> List.map (GenGenericParam cenv eenv)
 
-and GenGenericArgs m (tyenv: TypeReprEnv) tps =
-    tps |> DropErasedTypars |> List.map (fun c -> (mkILTyvarTy tyenv[c, m]))
+and GenGenericArgs cenv m (tyenv: TypeReprEnv) tps =
+    tps
+    |> DropErasedTypars
+    |> List.map (fun tp -> GenType cenv m tyenv (mkTyparTy tp))
 
 /// Generate a local type function contract class and implementation
 and GenClosureAsLocalTypeFunction cenv (cgbuf: CodeGenBuffer) eenv thisVars expr m =
@@ -7473,7 +7478,7 @@ and GetIlxClosureInfo cenv m boxity isLocalTypeFunc canUseStaticField thisVars e
 
     /// Compute the contract if it is a local type function
     let ilCloGenericFormals = GenGenericParams cenv eenvinner cloFreeTyvars
-    let ilCloGenericActuals = GenGenericArgs m eenvouter.tyenv cloFreeTyvars
+    let ilCloGenericActuals = GenGenericArgs cenv m eenvouter.tyenv cloFreeTyvars
 
     let useStaticField = canUseStaticField && (ilCloAllFreeVars.Length = 0)
 
@@ -7781,7 +7786,7 @@ and GenDelegateExpr cenv cgbuf eenvouter expr (TObjExprMethod(slotsig, _attribs,
         CountClosure()
 
         // Push the constructor for the delegee
-        let ctxtGenericArgsForDelegee = GenGenericArgs m eenvouter.tyenv cloFreeTyvars
+        let ctxtGenericArgsForDelegee = GenGenericArgs cenv m eenvouter.tyenv cloFreeTyvars
 
         if useStaticClosure then
             GenUnit cenv eenvouter m cgbuf
@@ -10365,9 +10370,9 @@ and GenSetStorage m cgbuf storage =
 
         CG.EmitInstr cgbuf (pop 1) Push0 (I_call(Normalcall, mkILMethSpecForMethRefInTy (ilSetterMethRef, ilContainerTy, []), None))
 
-    | StaticProperty(ilGetterMethSpec, _) -> error (Error(FSComp.SR.ilStaticMethodIsNotLambda ilGetterMethSpec.Name, m))
+    | StaticProperty(ilGetterMethSpec, _) -> error (Error(FSComp.SR.ilStaticMethodIsNotLambda (RichText.mkMethod ilGetterMethSpec.Name), m))
 
-    | Method(_, _, mspec, _, m, _, _, _, _, _, _, _) -> error (Error(FSComp.SR.ilStaticMethodIsNotLambda mspec.Name, m))
+    | Method(_, _, mspec, _, m, _, _, _, _, _, _, _) -> error (Error(FSComp.SR.ilStaticMethodIsNotLambda (RichText.mkMethod mspec.Name), m))
 
     | Null -> CG.EmitInstr cgbuf (pop 1) Push0 AI_pop
 
@@ -10761,7 +10766,7 @@ and GenAttribArg amap (g: TcGlobals) eenv x (ilArgTy: ILType) =
                     else
                         string ilElemTy
 
-                error (Error(FSComp.SR.ilCustomAttrInvalidArrayElemType elemTypeName, m))
+                error (Error(FSComp.SR.ilCustomAttrInvalidArrayElemType (RichText.ofQualifiedTypeName elemTypeName), m))
         else
             ILAttribElem.Array(ilElemTy, List.map (fun arg -> GenAttribArg amap g eenv arg ilElemTy) args)
 
@@ -12394,7 +12399,10 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) : ILTypeRef option 
                         | None ->
                             errorR (
                                 Error(
-                                    FSComp.SR.ilFieldDoesNotHaveValidOffsetForStructureLayout (tdef.Name, fdef.Name.Replace("@", "")),
+                                    FSComp.SR.ilFieldDoesNotHaveValidOffsetForStructureLayout (
+                                        RichText.ofQualifiedTypeName tdef.Name,
+                                        RichText.mkField (fdef.Name.Replace("@", ""))
+                                    ),
                                     (trimRangeToLine m)
                                 )
                             )

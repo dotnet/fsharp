@@ -33,6 +33,7 @@
     <Compile Include="CompilerDirectives\Line.fs" />
     <Compile Include="CompilerDirectives\Ifdef.fs" />
     <Compile Include="CompilerDirectives\NonStringArgs.fs" />
+    <Compile Include="CompilerDirectives\IgnoreColon.fs" />
     <Compile Include="Conformance\BasicGrammarElements\AccessibilityAnnotations\Basic\Basic.fs" />
     <Compile Include="Conformance\BasicGrammarElements\AccessibilityAnnotations\OnOverridesAndIFaceImpl\OnOverridesAndIFaceImpl.fs" />
     <Compile Include="Conformance\BasicGrammarElements\AccessibilityAnnotations\OnTypeMembers\OnTypeMembers.fs" />
@@ -189,6 +190,9 @@
     <Compile Include="Conformance\UnitsOfMeasure\Parsing\Parsing.fs" />
     <Compile Include="Conformance\UnitsOfMeasure\TypeChecker\TypeChecker.fs" />
     <Compile Include="Conformance\UnitsOfMeasure\WithOOP\WithOOP.fs" />
+    <Compile Include="Conformance\SharedTestHelpers.fs" />
+    <Compile Include="Conformance\Tiebreakers\TiebreakerTests.fs" />
+    <Compile Include="Conformance\OverloadResolutionPriority\OverloadResolutionPriorityTests.fs" />
     <Compile Include="Conformance\DeclarationElements\PInvokeDeclarations.fs" />
     <Compile Include="Conformance\DeclarationElements\ObjectConstructors.fs" />
     <Compile Include="Conformance\GeneratedEqualityHashingComparison\Attributes\New\Attributes_New.fs" />
@@ -237,6 +241,7 @@
     <Compile Include="EmittedIL\DebugPointsOnStack\DebugPointsOnStack.fs" />
     <Compile Include="EmittedIL\Enums.fs" />
     <Compile Include="EmittedIL\Literals.fs" />
+    <Compile Include="EmittedIL\PrintFunction.fs" />
     <Compile Include="EmittedIL\NoCompilerInlining.fs" />
     <Compile Include="EmittedIL\DebugInlineAsCall.fs" />
     <Compile Include="EmittedIL\RealInternalSignature\ModuleVisibility.fs" />
@@ -495,6 +500,8 @@
     <Compile Include="Diagnostics\Records.fs" />
     <Compile Include="Diagnostics\ParsingAtEOF.fs" />
     <Compile Include="Diagnostics\NONTERM.fs" />
+    <Compile Include="Diagnostics\RichTextTests.fs" />
+    <Compile Include="Diagnostics\RichDiagnosticTests.fs" />
     <Compile Include="Globalization\GlobalizationTestCases.fs" />
     <Compile Include="Miscellaneous\ListLiterals.fs" />
     <Compile Include="Miscellaneous\SemanticClassificationKeyBuilder.fs" />
