@@ -213,6 +213,12 @@
 		<!-- If tests would use net10.0, the surface area changes because of different set of Assembly references -->
 		<SetTargetFramework>TargetFramework=netstandard2.0</SetTargetFramework>
 	</ProjectReference>
+	<!-- FSharp.Core is only transitive here, so the central pin does not reach it; pin it directly for the
+	     .NET Core inner build (net472 keeps resolving netstandard2.0, which lacks IAsyncDisposable). -->
+	<ProjectReference Include="..\..\src\FSharp.Core\FSharp.Core.fsproj"
+	                  Condition="'$(TargetFramework)' == '$(FSharpNetCoreProductTargetFramework)'">
+		<SetTargetFramework>TargetFramework=netstandard2.1</SetTargetFramework>
+	</ProjectReference>
     <ProjectReference Include="..\..\tests\FSharp.Test.Utilities\FSharp.Test.Utilities.fsproj" />
     <ProjectReference Include="..\service\data\CSharp_Analysis\CSharp_Analysis.csproj" />
   </ItemGroup>
