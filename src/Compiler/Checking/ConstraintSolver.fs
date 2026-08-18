@@ -2214,17 +2214,18 @@ and SolveMemberConstraint (csenv: ConstraintSolverEnv) ignoreUnresolvedOverload 
                                             let objtys = minfo.GetObjArgTypes(amap, m, minst)
                                             Some(CalledMeth<Expr>(csenv.InfoReader, None, false, FreshenMethInfo g traitCtxt, m, traitAD, minfo, minst, minst, None, objtys, callerArgs, false, false, None, Some staticTy)))
 
-                            // RFC FS-1043 miscompile guard. When overload resolution against the support types
-                            // fails (e.g. at the definition site of a consuming inline function, where the support
-                            // type is still an abstract typar and cannot select an overload), a candidate whose own
+                            // RFC FS-1043 miscompile guard. When overload resolution against a rigid support type
+                            // fails (at the definition site of a consuming inline function, where the support type
+                            // is still an abstract rigid typar and cannot select an overload), a candidate whose own
                             // method type parameters are not determined by the trait's support/argument/return types
                             // must not be committed: doing so persists a provisional solution carrying a free method
                             // typar into the stored inline body, where it later defaults to obj and bakes an unsound
                             // coercion (box ^T; unbox.any List<obj>) that fails with InvalidCastException once the
                             // body is instantiated at a concrete call site. In that case we roll the trace back and
                             // leave the trait unsolved, so a witness call is emitted and re-solved per concrete call
-                            // site. A clean resolution (no error) always commits, so genuine return-type-directed
-                            // solutions with method typars determined at the call site are unaffected.
+                            // site. The guard only applies when the support is rigid; for non-rigid support (a
+                            // concrete or inference type) the method typars are pinned at this site, so we commit as
+                            // prior compilers did. A clean resolution (no error) always commits.
                             let isSafeToCommit (calledMeth: CalledMeth<_>) =
                                 let traitFreeTypars = freeInTypesLeftToRightSkippingConstraints g (retTy :: supportTys @ traitObjAndArgTys)
                                 let minstFreeTypars = freeInTypesLeftToRightSkippingConstraints g calledMeth.CalledTyArgs
@@ -2234,7 +2235,7 @@ and SolveMemberConstraint (csenv: ConstraintSolverEnv) ignoreUnresolvedOverload 
                                 match methResult with
                                 | Some calledMeth ->
                                     match resolutionErrors with
-                                    | ErrorResult _ -> isSafeToCommit calledMeth
+                                    | ErrorResult _ -> not isRigid || isSafeToCommit calledMeth
                                     | _ -> true
                                 | None -> false
 
