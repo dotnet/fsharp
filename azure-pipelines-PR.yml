@@ -559,9 +559,11 @@ stages:
           steps:
           - checkout: self
             clean: true
-          - script: .\Build.cmd -c Release -pack
+          - script: .\Build.cmd -ci -c Release -pack
             env:
               NativeToolsOnMachine: true
+          - script: .\eng\common\dotnet.cmd fsi .\tests\AheadOfTime\NetPackage\VerifyNetPackage.fsx -- .\artifacts\packages\Release
+            displayName: Verify FSharp.Core package assets
           - script: .\tests\EndToEndBuildTests\EndToEndBuildTests.cmd -c Release
             displayName: End to end build tests
           
