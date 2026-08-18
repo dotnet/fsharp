@@ -80,6 +80,51 @@ type CStructLike =
         Assert.True(preserved, "ExtendedLayoutAttribute should be preserved on the emitted type.")
 
     [<Fact>]
+    let ``ExtendedLayout on a struct record emits the 0x18 layout flag and preserves the attribute`` () =
+        let output =
+            FSharp """
+namespace Test
+
+open System.Runtime.InteropServices
+
+[<Struct; ExtendedLayout(ExtendedLayoutKind.CStruct)>]
+type StructRecord = { X: int; Y: int }
+"""
+            |> asLibrary
+            |> compile
+            |> shouldSucceed
+            |> getOutputPath
+
+        use stream = File.OpenRead output
+        use peReader = new PEReader(stream)
+        let reader = peReader.GetMetadataReader()
+        let typeDef = findType reader "StructRecord"
+
+        let layout = typeDef.Attributes &&& TypeAttributes.LayoutMask
+        Assert.Equal(0x18, int layout)
+
+        let preserved =
+            typeDef.GetCustomAttributes()
+            |> Seq.map reader.GetCustomAttribute
+            |> Seq.exists (fun ca -> customAttributeTypeName reader ca = "System.Runtime.InteropServices.ExtendedLayoutAttribute")
+        Assert.True(preserved, "ExtendedLayoutAttribute should be preserved on the emitted struct record.")
+
+    [<Fact>]
+    let ``ExtendedLayout and StructLayout cannot be combined on a struct record`` () =
+        FSharp """
+namespace Test
+
+open System.Runtime.InteropServices
+
+[<Struct; ExtendedLayout(ExtendedLayoutKind.CStruct); StructLayout(LayoutKind.Sequential)>]
+type BothOnRecord = { X: int }
+"""
+        |> asLibrary
+        |> compile
+        |> shouldFail
+        |> withErrorCode 3910
+
+    [<Fact>]
     let ``ExtendedLayout and StructLayout cannot be combined on the same type`` () =
         FSharp """
 namespace Test
@@ -132,7 +177,7 @@ type IExtended =
         |> withErrorCode 3911
 
     [<Fact>]
-    let ``ExtendedLayout on a record is rejected`` () =
+    let ``ExtendedLayout on a reference record is rejected`` () =
         FSharp """
 namespace Test
 
@@ -155,6 +200,21 @@ open System.Runtime.InteropServices
 
 [<ExtendedLayout(ExtendedLayoutKind.CStruct)>]
 type U = A | B
+"""
+        |> asLibrary
+        |> compile
+        |> shouldFail
+        |> withErrorCode 3911
+
+    [<Fact>]
+    let ``ExtendedLayout on a struct union is rejected`` () =
+        FSharp """
+namespace Test
+
+open System.Runtime.InteropServices
+
+[<Struct; ExtendedLayout(ExtendedLayoutKind.CStruct)>]
+type U = A of x: int | B of y: int
 """
         |> asLibrary
         |> compile

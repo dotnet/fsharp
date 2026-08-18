@@ -3552,6 +3552,7 @@ module EstablishTypeDefinitionCores =
                 | Some attrib -> HasFSharpAttribute g attrib attrs
                 | None -> false
             let hasAllowNullLiteralAttr = hasFlag entityFlags WellKnownEntityAttributes.AllowNullLiteralAttribute_True
+            let hasStructAttr = hasFlag entityFlags WellKnownEntityAttributes.StructAttribute
 
             if hasAbstractAttr then 
                 tycon.TypeContents.tcaug_abstract <- true
@@ -3597,6 +3598,12 @@ module EstablishTypeDefinitionCores =
             let noExtendedLayoutAttributeCheck () =
                 if hasExtendedLayoutAttr then
                     errorR (Error(FSComp.SR.tcOnlyStructsCanHaveExtendedLayout(), m))
+
+            // Records become value types when marked [<Struct>]. Extended layout is valid on those
+            // (subject to the StructLayout conflict check); reference-typed records still reject it.
+            let recordExtendedLayoutAttributeCheck () =
+                if hasStructAttr then extendedLayoutAttributeCheck ()
+                else noExtendedLayoutAttributeCheck ()
                 
             let hiddenReprChecks hasRepr =
                  structLayoutAttributeCheck false
@@ -3746,7 +3753,7 @@ module EstablishTypeDefinitionCores =
                     noAbstractClassAttributeCheck()
                     noAllowNullLiteralAttributeCheck()
                     structLayoutAttributeCheck true  // these are allowed for records
-                    noExtendedLayoutAttributeCheck()
+                    recordExtendedLayoutAttributeCheck()
 
                     let check pass =
                         let firstPass = pass = FirstPass
