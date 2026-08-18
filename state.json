@@ -38,10 +38,6 @@
       "sha": "6bf03ba46e20",
       "cats": []
     },
-    "20258": {
-      "sha": "53a6dc48ddaf",
-      "cats": []
-    },
     "20257": {
       "sha": "7ad57e62ee6d",
       "cats": []
@@ -73,7 +69,7 @@
       "cats": []
     },
     "20232": {
-      "sha": "c88abbc7e413",
+      "sha": "0f53a54b17c4",
       "cats": []
     },
     "20231": {
@@ -113,7 +109,7 @@
       "cats": []
     },
     "20100": {
-      "sha": "e3c1f4ddc9dd",
+      "sha": "a40db98d520f",
       "cats": []
     },
     "20071": {
@@ -176,10 +172,10 @@
       "cats": []
     },
     "20277": {
-      "sha": "e4134e4a53bc",
+      "sha": "0b18dd879bf9",
       "cats": [
-        "Affects-Build-Infra",
-        "Affects-Bootstrap"
+        "Affects-Bootstrap",
+        "Affects-Build-Infra"
       ]
     },
     "20280": {
@@ -192,6 +188,10 @@
     },
     "20282": {
       "sha": "5b8526a01b43",
+      "cats": []
+    },
+    "20284": {
+      "sha": "e782a7404139",
       "cats": []
     }
   }
