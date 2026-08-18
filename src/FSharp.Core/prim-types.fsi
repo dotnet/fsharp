@@ -5839,6 +5839,15 @@ namespace Microsoft.FSharp.Core
             [<CompiledName("NonNullQuickPattern")>]
             val inline (|NonNullQuick|) : value: 'T | null -> 'T when 'T : not null and 'T : not struct
 
+            /// <summary>Unsafely retypes the value from 'T to ('T | null), bypassing the 'not null' and 'not struct' constraints that F# otherwise requires in order to write ('T | null). This is an unsafe operation.</summary>
+            /// <remarks>This exists purely for interoperability with C# APIs that expose an unconstrained nullable generic, such as a method <c>T? M&lt;T&gt;()</c> or an interface member <c>T? GetValue&lt;T&gt;(int index)</c> where <c>T</c> has no <c>class</c> constraint and can therefore also be a struct. Without it such a signature cannot be implemented or consumed from F# without spurious FS3261 nullness warnings.
+            ///
+            /// It is unsafe precisely because it sidesteps those constraints. Unlike <see cref="M:Microsoft.FSharp.Core.Operators.WithNull``1(``0)"/> it adds no <c>not null</c> or <c>not struct</c> constraint, so the resulting ('T | null) can be formed even when <c>'T</c> is a struct, where <c>null</c> is not a representable value: there the annotation carries no runtime meaning and is erased, and assigning <c>null</c> to such a location yields <c>Unchecked.defaultof&lt;'T&gt;</c> rather than a true null. Use it only to satisfy an interop signature.</remarks>
+            /// <param name="value">The value.</param>
+            /// <returns>The same value, retyped as ('T | null).</returns>
+            [<CompiledName("WithNull")>]
+            val inline withNull<'T> : value: 'T -> 'T | null
+
         /// <summary>A module of comparison and equality operators that are statically resolved, but which are not fully generic and do not make structural comparison. Opening this
         /// module may make code that relies on structural or generic comparison no longer compile.</summary>
         module NonStructuralComparison = 
