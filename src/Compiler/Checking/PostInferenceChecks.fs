@@ -1368,16 +1368,15 @@ and CheckILBaseCall cenv env (ilMethRef, enclTypeInst, methInst, retTypes, tyarg
     | ValueSome tcref when tcref.IsILTycon ->
         match tcref.ILTyconInfo with
         | TILObjectReprData(scoref, _, _) ->
-            let baseMethodExists =
-                tcref.ILTyconRawMetadata.Methods.FindByName ilMethRef.Name
-                |> List.exists (fun x -> List.length x.Parameters = ilMethRef.ArgTypes.Length)
+            if not (isNil (tcref.ILTyconRawMetadata.Methods.FindByNameAndArity(ilMethRef.Name, ilMethRef.ArgTypes.Length))) then
+                try
+                    let mdef =
+                        resolveILMethodRefWithRescope (rescopeILType scoref) tcref.ILTyconRawMetadata ilMethRef
 
-            if baseMethodExists then
-                let mdef =
-                    resolveILMethodRefWithRescope (rescopeILType scoref) tcref.ILTyconRawMetadata ilMethRef
-
-                if mdef.IsAbstract then
-                    errorR(Error(FSComp.SR.tcCannotCallAbstractBaseMember(RichText.mkMethod mdef.Name), m))
+                    if mdef.IsAbstract then
+                        errorR(Error(FSComp.SR.tcCannotCallAbstractBaseMember(RichText.mkMethod mdef.Name), m))
+                with _ ->
+                    ()
     | _ -> ()
 
     CheckTypeInstNoByrefs cenv env m tyargs
