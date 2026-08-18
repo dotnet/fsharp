@@ -18,6 +18,10 @@ type E = Microsoft.FSharp.Quotations.Expr;;
 type StaticIndexedPropertyTest() =
     static member IdxProp with get (n : int) = n + 1
 
+type QuotationEnum =
+    | A = 1
+    | B = 2
+
 module Check =
     let argumentException f =
         let mutable ex = false
@@ -101,6 +105,16 @@ type FSharpQuotationsTests() =
     member x.``NewStructTuple literal should be recognized by NewTuple active pattern`` () =
         match <@ struct(1, "") @> with
         | NewTuple [ Value(:? int as i, _) ; Value(:? string as s, _) ] when i = 1 && s = "" -> ()
+        | _ -> Assert.Fail()
+
+    [<Fact>]
+    member x.``Quotation of an enum value preserves the enum type`` () =
+        // Related to https://github.com/dotnet/fsharp/issues/995: an enum literal is quoted as a
+        // Value node carrying the enum type, not the bare underlying integer.
+        match <@ QuotationEnum.B @> with
+        | Value(v, t) ->
+            Assert.Equal(typeof<QuotationEnum>, t)
+            Assert.Equal(box QuotationEnum.B, v)
         | _ -> Assert.Fail()
 
     [<Fact>]

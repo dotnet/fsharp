@@ -125,6 +125,142 @@ let main _ =
         |> compileAndRun
         |> shouldSucceed
 
+    // ── issue #5302: read a protected base field from a closure in a derived member ──
+    // A `module Test` with a derived class whose body is `body`, plus an optional `tail` (e.g. an entry point).
+    let private derivedSourceTemplate = """
+module Test
+open TestBaseClass
+type DerivedClass() =
+    inherit BaseClass()
+    __BODY__
+__TAIL__
+"""
+
+    let private derivedSource body tail =
+        derivedSourceTemplate.Replace("__BODY__", body).Replace("__TAIL__", tail)
+
+    // A runnable program whose DerivedClass.Run() body is `expr`, with an entry point asserting `expected`.
+    let private derivedReturning (expr: string) (expected: string) =
+        derivedSource ("member x.Run() = " + expr) ("[<EntryPoint>]\nlet main _ = if DerivedClass().Run() = \"" + expected + "\" then 0 else 1")
+
+    // A compile-only program with an extra member/binding `body` (for rejection tests).
+    let private derivedMember body = derivedSource body ""
+
+    // Compile and run `src` under the feature (--langversion:preview, --realsig- so a surviving closure is
+    // placed by L2 rather than left in the module), tuning the pipeline with `tune` (e.g. optimization level).
+    let private runsTuned tune src =
+        FSharp src |> withReferences [baseClassLib] |> withLangVersionPreview |> withRealInternalSignatureOff |> tune |> asExe |> compileAndRun |> shouldSucceed
+
+    let private runsPreview src = runsTuned withOptimize src
+
+    // Compile `src` at the language level set by `setLang`; assert it is rejected with a message matching `diag`.
+    let private rejectedAt setLang diag src =
+        FSharp src |> withReferences [baseClassLib] |> setLang |> compile |> shouldFail |> withDiagnosticMessageMatches diag
+
+    let private rejectedPreview diag src = rejectedAt withLangVersionPreview diag src
+
+    // Every ordinary closure shape can read a protected base field. Run under --realsig- (so the closure is
+    // placed by L2, not left in the module) and --optimize+ (so a recursive closure exercises the L3 TLR-lift
+    // refusal); easier realsig/optimize modes are strictly less demanding.
+    [<Theory>]
+    [<InlineData("(fun () -> x.ProtectedField) ()", "protected-field")>]
+    [<InlineData("let rec f n = if n = 0 then x.ProtectedField else f (n - 1) in f 4", "protected-field")>]
+    [<InlineData("System.Func<string>(fun () -> x.ProtectedField).Invoke()", "protected-field")>]
+    [<InlineData("async { return x.ProtectedField } |> Async.RunSynchronously", "protected-field")>]
+    [<InlineData("(task { return x.ProtectedField }).Result", "protected-field")>]
+    [<InlineData("seq { yield x.ProtectedField } |> Seq.head", "protected-field")>]
+    [<InlineData("(function true -> x.ProtectedField | _ -> \"\") true", "protected-field")>]
+    [<InlineData("(lazy x.ProtectedField).Value", "protected-field")>]
+    [<InlineData("[ x.ProtectedField ] |> List.head", "protected-field")>]
+    [<InlineData("[| x.ProtectedField |] |> Array.head", "protected-field")>]
+    [<InlineData("let f () = BaseClass.ProtectedStaticField in f ()", "protected-static-field")>]
+    [<InlineData("let f () = x.ProtectedInternalField in f ()", "protected-internal-field")>]
+    [<InlineData("let rec f n = if n = 0 then (x.ProtectedField <- \"written\"; x.ProtectedField) else f (n - 1) in f 2", "written")>]
+    [<InlineData("let rec f n = if n = 0 then x.ProtectedIntField.ToString() else f (n - 1) in f 3", "42")>]
+    let ``Protected base field read from a closure runs (issue 5302)`` (expr: string) (expected: string) =
+        runsPreview (derivedReturning expr expected)
+
+    // L2 in isolation: under --optimize- the closure survives un-inlined and must still nest in the declaring
+    // type, or the relocated field load throws FieldAccessException at runtime.
+    [<Fact>]
+    let ``Protected base field from a closure nests in the declaring type under optimize- (issue 5302)`` () =
+        derivedReturning "let f () = x.ProtectedField in f ()" "protected-field"
+        |> runsTuned (withOptimization false)
+
+    // The closure carries the type parameter of a generic derived type (the lift is refused, not re-homed
+    // into the generic type — see issues #17607 / #14492).
+    [<Fact>]
+    let ``Protected base field from a closure in a generic derived type runs (issue 5302)`` () =
+        """
+open TestBaseClass
+type DerivedClass<'T>(seed: 'T) =
+    inherit BaseClass()
+    member x.Run() = let rec f n = if n = 0 then x.ProtectedField + string (box seed) else f (n - 1) in f 3
+[<EntryPoint>]
+let main _ = if DerivedClass<int>(7).Run() = "protected-field7" then 0 else 1
+"""
+        |> runsPreview
+
+    // A *direct* protected base field read in an object expression deriving from BaseClass is fine — the
+    // override method is on the object-expression class, which has family access. Only closures are excluded.
+    [<Fact>]
+    let ``Protected base field read directly in an object expression runs (issue 5302)`` () =
+        """
+open TestBaseClass
+let make () = { new BaseClass() with override this.ToString() = this.ProtectedField }
+[<EntryPoint>]
+let main _ = if (make ()).ToString() = "protected-field" then 0 else 1
+"""
+        |> runsPreview
+
+    // Precision: the gate narrows to *protected* fields, not any IL field. A recursive closure reading a
+    // PUBLIC field (System.String.Empty) must still be lifted to a module-level static under --optimize+, so
+    // the lifted static `Test::f@` is present (a closure class would be `Test/f@`).
+    [<Fact>]
+    let ``Public field in a recursive closure is still lifted under the feature (issue 5302)`` () =
+        FSharp """
+module Test
+type Holder() =
+    member _.Run() =
+        let rec f n = if n = 0 then System.String.Empty else f (n - 1)
+        f 4
+"""
+        |> withLangVersionPreview
+        |> withOptimize
+        |> compile
+        |> shouldSucceed
+        |> verifyILPresent ["Test::f@"]
+
+    // Fields only: a protected *method* call, and a closure inside an object expression, stay rejected even
+    // with the feature on (methods could escape their object scope; objexpr closures are emitted beside the
+    // object-expression class, not within it, so they cannot keep family access).
+    [<Theory>]
+    [<InlineData("member x.M() = let f () = x.ProtectedInstance() in f ()", "could escape their object scope")>]
+    [<InlineData("member x.M() = { new System.IComparable with member _.CompareTo(o) = x.ProtectedField.Length }", "field 'ProtectedField' is not accessible")>]
+    let ``Protected method or object-expression closure stays rejected with the feature (issue 5302)`` (body: string) (diag: string) =
+        derivedMember body |> rejectedPreview diag
+
+    // Regression for the object-expression soundness hole: an object expression deriving from BaseClass can
+    // read its own protected base field directly, but reading it from a surviving closure (here `lazy`) must
+    // stay rejected — that closure is emitted beside the object-expression class, so keeping the family region
+    // would type-check then throw FieldAccessException at runtime.
+    [<Fact>]
+    let ``Protected base field from a closure inside an object expression stays rejected (issue 5302)`` () =
+        """
+module Test
+open TestBaseClass
+let make () =
+    { new BaseClass() with
+        override this.ToString() = (lazy this.ProtectedField).Value }
+"""
+        |> rejectedPreview "field 'ProtectedField' is not accessible"
+
+    // Without the language feature the access stays rejected (FS1097), proving the gate.
+    [<Fact>]
+    let ``Protected base field from a closure is rejected without the language feature (issue 5302)`` () =
+        derivedMember "member x.Run() = let f () = x.ProtectedField in f ()"
+        |> rejectedAt withLangVersion80 "field 'ProtectedField' is not accessible"
+
     // #19963, static-field (I_ldsfld) variant of the above.
     [<Fact>]
     let ``Protected static base field read via optimized member does not crash (issue 19963)`` () =

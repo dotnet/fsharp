@@ -161,6 +161,13 @@ let TcImplicitCtorInfo_Phase2A(cenv: cenv, env, tpenv, tcref: TyconRef, vis, att
         
     // Put them in order 
     let ctorArgs = List.map (fun v -> NameMap.find v vspecs) ctorArgNames
+
+    // Mark constructor arguments as parameters so that diagnostics
+    // (e.g. FS0027 on assignment to a non-mutable parameter) can distinguish them
+    // from ordinary local bindings.
+    for v in ctorArgs do
+        v.SetIsParameter()
+
     let safeThisValOpt = MakeAndPublishSafeThisVal cenv env thisIdOpt thisTy
         
     // NOTE: the type scheme here is not complete!!! The ctorTy is more or less 
@@ -328,7 +335,7 @@ type IncrClassReprInfo =
                  
         let reportIfUnused() = 
             if not v.HasBeenReferenced && not (v.DisplayName.StartsWithOrdinal("_")) && not v.IsCompilerGenerated then 
-                warning (Error(FSComp.SR.chkUnusedValue(v.DisplayName), v.Range))
+                warning (Error(FSComp.SR.chkUnusedValue(richTextOfValName cenv.g v), v.Range))
 
         let repr = 
             match InferValReprInfoOfBinding g AllowTypeDirectedDetupling.Yes v bind.Expr with 

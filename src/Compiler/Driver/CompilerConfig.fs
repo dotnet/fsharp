@@ -598,7 +598,7 @@ type TcConfigBuilder =
         /// If true - every expression in quotations will be augmented with full debug info (fileName, location in file)
         mutable emitDebugInfoInQuotations: bool
 
-        mutable strictIndentation: bool option
+        mutable alwaysInline: bool option
 
         mutable exename: string option
 
@@ -852,7 +852,7 @@ type TcConfigBuilder =
                 }
             dumpSignatureData = false
             realsig = false
-            strictIndentation = None
+            alwaysInline = None
             compilationMode = TcGlobals.CompilationMode.Unset
         }
 
@@ -1050,7 +1050,7 @@ type TcConfigBuilder =
 
         let reportError =
             ResolvingErrorReport(fun errorType err msg ->
-                let error = err, msg
+                let error = err, RichText.mkText msg
 
                 match errorType with
                 | ErrorReportType.Warning -> warning (Error(error, m))
@@ -1252,7 +1252,14 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
     member _.bufferWidth = data.bufferWidth
     member _.fsiMultiAssemblyEmit = data.fsiMultiAssemblyEmit
     member _.FxResolver = data.FxResolver
-    member _.strictIndentation = data.strictIndentation
+
+    member _.alwaysInline =
+        data.alwaysInline
+        |> Option.defaultValue (
+            data.optSettings.LocalOptimizationsEnabled
+            || data.extraOptimizationIterations > 0
+        )
+
     member _.primaryAssembly = data.primaryAssembly
     member _.noFeedback = data.noFeedback
     member _.stackReserveSize = data.stackReserveSize

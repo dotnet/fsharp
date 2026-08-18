@@ -15,7 +15,6 @@ open FSharp.Compiler.CompilerConfig
 open FSharp.Compiler.CompilerDiagnostics
 open FSharp.Compiler.CompilerImports
 open FSharp.Compiler.DependencyManager
-open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.DiagnosticsLogger
 open FSharp.Compiler.IO
 open FSharp.Compiler.CodeAnalysis
@@ -135,7 +134,7 @@ module ScriptPreprocessClosure =
         let tcConfig = TcConfig.Create(tcConfigB, false)
 
         let lexbuf =
-            UnicodeLexing.SourceTextAsLexbuf(true, tcConfig.langVersion, tcConfig.strictIndentation, sourceText)
+            UnicodeLexing.SourceTextAsLexbuf(true, tcConfig.langVersion, sourceText)
 
         // The root compiland is last in the list of compilands.
         let isLastCompiland = (IsScript fileName, tcConfig.target.IsExe)
@@ -329,7 +328,7 @@ module ScriptPreprocessClosure =
 
         and reportError m =
             ResolvingErrorReport(fun errorType err msg ->
-                let error = err, msg
+                let error = err, RichText.mkText msg
 
                 match errorType with
                 | ErrorReportType.Warning -> warning (Error(error, m))
@@ -354,7 +353,7 @@ module ScriptPreprocessClosure =
 
                     match managerOpt with
                     | Null ->
-                        let err =
+                        let number, message =
                             dependencyProvider.CreatePackageManagerUnknownError(
                                 tcConfig.compilerToolPaths,
                                 outputDir,
@@ -363,7 +362,7 @@ module ScriptPreprocessClosure =
                                 reportError m
                             )
 
-                        errorR (Error(err, m))
+                        errorR (Error((number, message), m))
 
                     | NonNull dependencyManager ->
                         yield! resolvePackageManagerLines m packageManagerLines scriptName packageManagerKey dependencyManager

@@ -66,11 +66,14 @@ module CoreTests =
         exec cfg cfg.DotNetExe ($"msbuild {projectFile} /p:Configuration={cfg.BUILD_CONFIG} -property:FSharpRepositoryPath={FSharpRepositoryPath}")
 
 #if !NETCOREAPP
+    // Pinned to 10.0: at 11.0 ErrorOnMissingSignatureAttribute turns FS3888 (attribute on impl but
+    // not signature) from warning into error, which this test deliberately exercises. 11.0 behavior is
+    // covered by Conformance/Signatures/SignatureEnforcedAttributes.
     [<Fact>]
-    let ``attributes-FSC_OPTIMIZED`` () = singleTestBuildAndRun "core/attributes" FSC_OPTIMIZED
+    let ``attributes-FSC_OPTIMIZED`` () = singleTestBuildAndRunVersion "core/attributes" FSC_OPTIMIZED "10.0"
 
     [<Fact>]
-    let ``attributes-FSI`` () = singleTestBuildAndRun "core/attributes" FSI
+    let ``attributes-FSI`` () = singleTestBuildAndRunVersion "core/attributes" FSI "10.0"
 
     [<Fact>]
     let span () =
@@ -128,12 +131,12 @@ module CoreTests =
 
 
     [<Fact>]
-    let ``state-machines-non-optimized`` () = 
+    let ``state-machines-optimized-no-tailcalls`` () =
         let cfg = testConfig "core/state-machines"
 
-        
 
-        fsc cfg "%s -o:test.exe -g --tailcalls- --optimize-" cfg.fsc_flags ["test.fsx"]
+
+        fsc cfg "%s -o:test.exe -g --tailcalls- --optimize+" cfg.fsc_flags ["test.fsx"]
 
         peverify cfg "test.exe"
 

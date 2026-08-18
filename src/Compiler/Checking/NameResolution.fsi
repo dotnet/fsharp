@@ -106,7 +106,7 @@ type Item =
     /// CustomOperation(nm, helpText, methInfo)
     ///
     /// Used to indicate the availability or resolution of a custom query operation such as 'sortBy' or 'where' in computation expression syntax
-    | CustomOperation of string * (unit -> string option) * MethInfo option
+    | CustomOperation of string * (unit -> RichText option) * MethInfo option
 
     /// Represents the resolution of a name to a custom builder in the F# computation expression syntax
     | CustomBuilder of string * ValRef
@@ -621,6 +621,14 @@ val internal WithNewTypecheckResultsSink: ITypecheckResultsSink * TcResultsSink 
 /// Temporarily suspend reporting of name resolution and type checking results
 val internal TemporarilySuspendReportingTypecheckResultsToSink: TcResultsSink -> System.IDisposable
 
+/// Run `compute` with all typecheck-results reporting (sink notifications and diagnostics) buffered. If
+/// `commitWhen` holds for the result they are flushed to the sink and diagnostics logger that were active
+/// before buffering began; otherwise they are dropped. Diagnostics from a `compute` that raises are always
+/// flushed so the error still surfaces. `commitWhen` runs after reporting is restored, so it must be
+/// side-effect-free. `loggerName` names the internal capturing logger for debugging.
+val internal RunWithBufferedReporting:
+    sink: TcResultsSink -> loggerName: string -> compute: (unit -> 'T) -> commitWhen: ('T -> bool) -> 'T
+
 /// Report the active name resolution environment for a source range
 val internal CallEnvSink: TcResultsSink -> range * NameResolutionEnv * AccessorDomain -> unit
 
@@ -834,6 +842,16 @@ val internal ResolveTypeLongIdent:
     genOk: PermitDirectReferenceToGeneratedType ->
         ResultOrException<EnclosingTypeInst * TyconRef * TypeInst>
 
+[<RequireQualifiedAccess; NoEquality; NoComparison>]
+type internal ExplicitOrSpread<'Explicit, 'Spread> =
+    /// An expression or value derived from an explicit member or record field.
+    | Explicit of 'Explicit
+
+    /// An expression or value derived from a member or field coming from a spread.
+    | Spread of 'Spread
+
+val (|ExplicitOrSpread|): ExplicitOrSpread<'Value, 'Value> -> 'Value
+
 /// Resolve a long identifier to a field
 val internal ResolveField:
     sink: TcResultsSink ->
@@ -841,10 +859,9 @@ val internal ResolveField:
     nenv: NameResolutionEnv ->
     ad: AccessorDomain ->
     ty: TType ->
-    mp: Ident list ->
-    id: Ident ->
+    fldInfo: ExplicitOrSpread<Ident list * Ident, Ident> ->
     allFields: Ident list ->
-        FieldResolution list
+        FieldResolution list option
 
 /// Resolve a long identifier to a nested field
 val internal ResolveNestedField:
@@ -869,6 +886,14 @@ val internal ResolveExprLongIdent:
         ResultOrException<EnclosingTypeInst * Item * Ident list>
 
 val internal getRecordFieldsInScope: NameResolutionEnv -> Item list
+
+val internal getRecordTyconsInScope:
+    g: TcGlobals ->
+    ncenv: NameResolver ->
+    nenv: NameResolutionEnv ->
+    ad: AccessorDomain ->
+    m: range ->
+        (TyconRef * Item) list
 
 /// Resolve a (possibly incomplete) long identifier to a list of possible class or record fields
 val internal ResolvePartialLongIdentToClassOrRecdFields:

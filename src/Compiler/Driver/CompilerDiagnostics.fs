@@ -398,10 +398,15 @@ type PhasedDiagnostic with
         | 3395 -> false // tcImplicitConversionUsedForMethodArg - off by default
         | 3559 -> false // typrelNeverRefinedAwayFromTop - off by default
         | 3560 -> false // tcCopyAndUpdateRecordChangesAllFields - off by default
+        | 3575 -> false // tcMoreConcreteTiebreakerUsed - off by default
+        | 3576 -> false // tcGenericOverloadBypassed - off by default
         | 3579 -> false // alwaysUseTypedStringInterpolation - off by default
         | 3582 -> false // infoIfFunctionShadowsUnionCase - off by default
         | 3570 -> false // tcAmbiguousDiscardDotLambda - off by default
         | 3878 -> false // tcAttributeIsNotValidForUnionCaseWithFields - off by default
+        | 3905 -> false // tcRecordTypeDefinitionSpreadFieldShadowsSpreadField - off by default
+        | 3906 -> false // tcRecordExplicitFieldShadowsSpreadField - off by default
+        | 3907 -> false // tcRecordExprSpreadFieldShadowsSpreadField - off by default
         | _ ->
             match x.Exception with
             | DiagnosticEnabledWithLanguageFeature(_, _, _, enabled) -> enabled
@@ -581,6 +586,7 @@ module OldStyleMessages =
     let RuleNeverMatchedE () = Message("RuleNeverMatched", "")
     let EnumMatchIncomplete1E () = Message("EnumMatchIncomplete1", "")
     let ValNotMutableE () = Message("ValNotMutable", "%s")
+    let ValNotMutableParameterE () = Message("ValNotMutableParameter", "%s%s%s")
     let ValNotLocalE () = Message("ValNotLocal", "")
     let Obsolete1E () = Message("Obsolete1", "")
     let Obsolete2E () = Message("Obsolete2", "%s")
@@ -636,7 +642,17 @@ let (|InvalidArgument|_|) (exn: exn) =
     | :? ArgumentException as e -> ValueSome e.Message
     | _ -> ValueNone
 
-let OutputNameSuggestions (os: StringBuilder) suggestNames suggestionsF idText =
+/// Classifies a name that failed to resolve. It stands for nothing, so it is not an entity of unknown
+/// kind but a name of its own kind.
+let richTextOfUnresolvedName name =
+    RichText.mkUnresolvedName (ConvertValLogicalNameToDisplayNameCore name)
+
+/// Classifies a name that does resolve but whose kind is not known here, e.g. one offered as a
+/// suggestion in place of a name that did not resolve
+let richTextOfNameOfUnknownKind name =
+    RichText.mkUnknownEntity (ConvertValLogicalNameToDisplayNameCore name)
+
+let OutputNameSuggestions (os: RichTextBuilder) suggestNames suggestionsF idText =
     if suggestNames then
         let buffer = DiagnosticResolutionHints.SuggestionBuffer idText
 
@@ -644,55 +660,55 @@ let OutputNameSuggestions (os: StringBuilder) suggestNames suggestionsF idText =
             suggestionsF buffer.Add
 
             if not buffer.IsEmpty then
-                os.AppendString " "
-                os.AppendString(FSComp.SR.undefinedNameSuggestionsIntro ())
+                os.Append " "
+                os.Append(FSComp.SR.undefinedNameSuggestionsIntro ())
 
                 for value in buffer do
-                    os.AppendLine() |> ignore
-                    os.AppendString "   "
-                    os.AppendString(ConvertValLogicalNameToDisplayNameCore value)
+                    os.Append(RichText.mkLineBreak Environment.NewLine)
+                    os.Append "   "
+                    os.Append(richTextOfNameOfUnknownKind value)
 
-let OutputTypesNotInEqualityRelationContextInfo contextInfo ty1 ty2 m (os: StringBuilder) fallback =
+let OutputTypesNotInEqualityRelationContextInfo contextInfo (ty1: RichText) (ty2: RichText) m (os: RichTextBuilder) fallback =
     match contextInfo with
-    | ContextInfo.IfExpression range when equals range m -> os.AppendString(FSComp.SR.ifExpression (ty1, ty2))
+    | ContextInfo.IfExpression range when equals range m -> os.Append(FSComp.SR.ifExpression (ty1, ty2))
     | ContextInfo.CollectionElement(isArray, range) when equals range m ->
         if isArray then
-            os.AppendString(FSComp.SR.arrayElementHasWrongType (ty1, ty2))
+            os.Append(FSComp.SR.arrayElementHasWrongType (ty1, ty2))
         else
-            os.AppendString(FSComp.SR.listElementHasWrongType (ty1, ty2))
-    | ContextInfo.OmittedElseBranch range when equals range m -> os.AppendString(FSComp.SR.missingElseBranch ty2)
-    | ContextInfo.ElseBranchResult range when equals range m -> os.AppendString(FSComp.SR.elseBranchHasWrongType (ty1, ty2))
+            os.Append(FSComp.SR.listElementHasWrongType (ty1, ty2))
+    | ContextInfo.OmittedElseBranch range when equals range m -> os.Append(FSComp.SR.missingElseBranch (ty2))
+    | ContextInfo.ElseBranchResult range when equals range m -> os.Append(FSComp.SR.elseBranchHasWrongType (ty1, ty2))
     | ContextInfo.FollowingPatternMatchClause range when equals range m ->
-        os.AppendString(FSComp.SR.followingPatternMatchClauseHasWrongType (ty1, ty2))
-    | ContextInfo.PatternMatchGuard range when equals range m -> os.AppendString(FSComp.SR.patternMatchGuardIsNotBool ty2)
+        os.Append(FSComp.SR.followingPatternMatchClauseHasWrongType (ty1, ty2))
+    | ContextInfo.PatternMatchGuard range when equals range m -> os.Append(FSComp.SR.patternMatchGuardIsNotBool (ty2))
     | contextInfo -> fallback contextInfo
 
 type Exception with
 
-    member exn.Output(os: StringBuilder, suggestNames) =
+    member exn.Output(os: RichTextBuilder, suggestNames) =
 
         let typeEquationMessage g ty2 normalE tupleE = if isAnyTupleTy g ty2 then tupleE else normalE
 
         match exn with
         // TODO: this is now unused...?
         | ConstraintSolverTupleDiffLengths(_, _, tl1, tl2, m, m2) ->
-            os.AppendString(ConstraintSolverTupleDiffLengthsE().Format tl1.Length tl2.Length)
+            os.Append(ConstraintSolverTupleDiffLengthsE().Format tl1.Length tl2.Length)
 
             if m.StartLine <> m2.StartLine then
-                os.AppendString(SeeAlsoE().Format(stringOfRange m))
+                os.Append(SeeAlsoE().Format(stringOfRange m))
 
         | ConstraintSolverInfiniteTypes(denv, contextInfo, ty1, ty2, m, m2) ->
             // REVIEW: consider if we need to show _cxs (the type parameter constraints)
-            let ty1, ty2, _cxs = NicePrint.minimalStringsOfTwoTypes denv ty1 ty2
-            os.AppendString(ConstraintSolverInfiniteTypesE().Format ty1 ty2)
+            let ty1, ty2, _cxs = NicePrint.minimalRichTextsOfTwoTypes denv ty1 ty2
+            os.Append(ConstraintSolverInfiniteTypesE(), ty1, ty2)
 
             match contextInfo with
-            | ContextInfo.ReturnInComputationExpression -> os.AppendString(" " + FSComp.SR.returnUsedInsteadOfReturnBang ())
-            | ContextInfo.YieldInComputationExpression -> os.AppendString(" " + FSComp.SR.yieldUsedInsteadOfYieldBang ())
+            | ContextInfo.ReturnInComputationExpression -> os.Append(" " + FSComp.SR.returnUsedInsteadOfReturnBang ())
+            | ContextInfo.YieldInComputationExpression -> os.Append(" " + FSComp.SR.yieldUsedInsteadOfYieldBang ())
             | _ -> ()
 
             if m.StartLine <> m2.StartLine then
-                os.AppendString(SeeAlsoE().Format(stringOfRange m))
+                os.Append(SeeAlsoE().Format(stringOfRange m))
 
         | ConstraintSolverNullnessWarningEquivWithTypes(denv, ty1, ty2, _nullness1, _nullness2, m, m2) ->
 
@@ -702,12 +718,12 @@ type Exception with
                     showNullnessAnnotations = Some true
                 }
 
-            let t1, _t2, _cxs = NicePrint.minimalStringsOfTwoTypes denv ty1 ty2
+            let t1, _t2, _cxs = NicePrint.minimalRichTextsOfTwoTypes denv ty1 ty2
 
-            os.Append(ConstraintSolverNullnessWarningEquivWithTypesE().Format t1) |> ignore
+            os.Append(ConstraintSolverNullnessWarningEquivWithTypesE(), t1)
 
             if m.StartLine <> m2.StartLine then
-                os.Append(SeeAlsoE().Format(stringOfRange m)) |> ignore
+                os.Append(SeeAlsoE().Format(stringOfRange m))
 
         | ConstraintSolverNullnessWarningWithTypes(denv, ty1, ty2, _nullness1, _nullness2, m, m2) ->
 
@@ -717,12 +733,12 @@ type Exception with
                     showNullnessAnnotations = Some true
                 }
 
-            let t1, t2, _cxs = NicePrint.minimalStringsOfTwoTypes denv ty1 ty2
+            let t1, t2, _cxs = NicePrint.minimalRichTextsOfTwoTypes denv ty1 ty2
 
-            os.Append(ConstraintSolverNullnessWarningWithTypesE().Format t1 t2) |> ignore
+            os.Append(ConstraintSolverNullnessWarningWithTypesE(), t1, t2)
 
             if m.StartLine <> m2.StartLine || m.EndLine <> m2.EndLine then
-                os.Append(SeeAlsoE().Format(stringOfRange m)) |> ignore
+                os.Append(SeeAlsoE().Format(stringOfRange m))
 
         | ConstraintSolverNullnessWarningWithType(denv, ty, _, m, m2) ->
 
@@ -732,66 +748,67 @@ type Exception with
                     showNullnessAnnotations = Some true
                 }
 
-            let t = NicePrint.minimalStringOfType denv ty
-            os.Append(ConstraintSolverNullnessWarningWithTypeE().Format(t)) |> ignore
+            os.Append(ConstraintSolverNullnessWarningWithTypeE(), NicePrint.minimalRichTextOfType denv ty)
 
             if m.StartLine <> m2.StartLine || m.EndLine <> m2.EndLine then
-                os.Append(SeeAlsoE().Format(stringOfRange m)) |> ignore
+                os.Append(SeeAlsoE().Format(stringOfRange m))
 
         | ConstraintSolverNullnessWarningOnDotAccess(denv, objTy, memberName, bindingName, m, m2) ->
-            let tyStr = NicePrint.minimalStringOfTypeWithNullness denv objTy
+            let tyText = NicePrint.minimalRichTextOfTypeWithNullness denv objTy
 
             match bindingName with
             | Some name ->
-                os.Append(ConstraintSolverNullnessWarningOnDotAccessWithBindingE().Format memberName name tyStr)
-                |> ignore
-            | None ->
-                os.Append(ConstraintSolverNullnessWarningOnDotAccessE().Format memberName tyStr)
-                |> ignore
+                os.Append(
+                    ConstraintSolverNullnessWarningOnDotAccessWithBindingE(),
+                    RichText.mkMember memberName,
+                    RichText.mkLocal name,
+                    tyText
+                )
+            | None -> os.Append(ConstraintSolverNullnessWarningOnDotAccessE(), RichText.mkMember memberName, tyText)
 
             if m.StartLine <> m2.StartLine || m.EndLine <> m2.EndLine then
-                os.Append(SeeAlsoE().Format(stringOfRange m2)) |> ignore
+                os.Append(SeeAlsoE().Format(stringOfRange m2))
             else
-                os.Append(".") |> ignore
+                os.Append(".")
 
         | ConstraintSolverNullnessWarning(msg, m, m2) ->
-            os.Append(ConstraintSolverNullnessWarningE().Format(msg)) |> ignore
+            os.Append(ConstraintSolverNullnessWarningE(), msg)
 
             if m.StartLine <> m2.StartLine then
-                os.AppendString(SeeAlsoE().Format(stringOfRange m2))
+                os.Append(SeeAlsoE().Format(stringOfRange m2))
 
         | ConstraintSolverMissingConstraint(denv, tpr, tpc, m, m2) ->
-            os.AppendString(ConstraintSolverMissingConstraintE().Format(NicePrint.stringOfTyparConstraint denv (tpr, tpc)))
+            os.Append(ConstraintSolverMissingConstraintE(), NicePrint.richTextOfTyparConstraint denv (tpr, tpc))
 
             if m.StartLine <> m2.StartLine then
-                os.AppendString(SeeAlsoE().Format(stringOfRange m))
+                os.Append(SeeAlsoE().Format(stringOfRange m))
 
         | ConstraintSolverTypesNotInEqualityRelation(denv, ty1, ty2, m, m2, contextInfo) ->
             // REVIEW: consider if we need to show _cxs (the type parameter constraints)
-            let ty1str, ty2str, _cxs = NicePrint.minimalStringsOfTwoTypes denv ty1 ty2
+            let ty1Text, ty2Text, _cxs = NicePrint.minimalRichTextsOfTwoTypes denv ty1 ty2
 
             match ty1, ty2 with
-            | TType_measure _, TType_measure _ -> os.AppendString(ConstraintSolverTypesNotInEqualityRelation1E().Format ty1str ty2str)
+            | TType_measure _, TType_measure _ -> os.Append(ConstraintSolverTypesNotInEqualityRelation1E(), ty1Text, ty2Text)
             | _ ->
-                OutputTypesNotInEqualityRelationContextInfo contextInfo ty1str ty2str m os (fun _ ->
-                    os.AppendString(ConstraintSolverTypesNotInEqualityRelation2E().Format ty1str ty2str))
+                OutputTypesNotInEqualityRelationContextInfo contextInfo ty1Text ty2Text m os (fun _ ->
+                    os.Append(ConstraintSolverTypesNotInEqualityRelation2E(), ty1Text, ty2Text))
 
             if m.StartLine <> m2.StartLine then
-                os.AppendString(SeeAlsoE().Format(stringOfRange m))
+                os.Append(SeeAlsoE().Format(stringOfRange m))
 
         | ConstraintSolverTypesNotInSubsumptionRelation(denv, ty1, ty2, m, m2) ->
             // REVIEW: consider if we need to show _cxs (the type parameter constraints)
-            let ty1, ty2, cxs = NicePrint.minimalStringsOfTwoTypes denv ty1 ty2
-            os.AppendString(ConstraintSolverTypesNotInSubsumptionRelationE().Format ty2 ty1 cxs)
+            let ty1, ty2, cxs = NicePrint.minimalRichTextsOfTwoTypes denv ty1 ty2
+            os.Append(ConstraintSolverTypesNotInSubsumptionRelationE(), ty2, ty1, cxs)
 
             if m.StartLine <> m2.StartLine then
-                os.AppendString(SeeAlsoE().Format(stringOfRange m2))
+                os.Append(SeeAlsoE().Format(stringOfRange m2))
 
         | ConstraintSolverError(msg, m, m2) ->
-            os.AppendString msg
+            os.Append msg
 
             if m.StartLine <> m2.StartLine then
-                os.AppendString(SeeAlsoE().Format(stringOfRange m2))
+                os.Append(SeeAlsoE().Format(stringOfRange m2))
 
         | ErrorFromAddingTypeEquation(g, denv, ty1, ty2, ConstraintSolverTypesNotInEqualityRelation(_, ty1b, ty2b, m, _, contextInfo), _) when
             typeEquiv g ty1 ty1b && typeEquiv g ty2 ty2b
@@ -799,17 +816,17 @@ type Exception with
             let typeEquation1E =
                 typeEquationMessage g ty2 ErrorFromAddingTypeEquation1E ErrorFromAddingTypeEquation1TupleE
 
-            let ty1, ty2, tpcs = NicePrint.minimalStringsOfTwoTypes denv ty1 ty2
+            let ty1, ty2, tpcs = NicePrint.minimalRichTextsOfTwoTypes denv ty1 ty2
 
             OutputTypesNotInEqualityRelationContextInfo contextInfo ty1 ty2 m os (fun contextInfo ->
                 match contextInfo with
                 | ContextInfo.TupleInRecordFields ->
-                    os.AppendString(typeEquation1E().Format ty2 ty1 tpcs)
-                    os.AppendString(Environment.NewLine + FSComp.SR.commaInsteadOfSemicolonInRecord ())
-                | _ when ty2 = "bool" && ty1.EndsWithOrdinal(" ref") ->
-                    os.AppendString(typeEquation1E().Format ty2 ty1 tpcs)
-                    os.AppendString(Environment.NewLine + FSComp.SR.derefInsteadOfNot ())
-                | _ -> os.AppendString(typeEquation1E().Format ty2 ty1 tpcs))
+                    os.Append(typeEquation1E (), ty2, ty1, tpcs)
+                    os.Append(Environment.NewLine + FSComp.SR.commaInsteadOfSemicolonInRecord ())
+                | _ when ty2.Text = "bool" && ty1.Text.EndsWithOrdinal(" ref") ->
+                    os.Append(typeEquation1E (), ty2, ty1, tpcs)
+                    os.Append(Environment.NewLine + FSComp.SR.derefInsteadOfNot ())
+                | _ -> os.Append(typeEquation1E (), ty2, ty1, tpcs))
 
         | ErrorFromAddingTypeEquation(_, _, _, _, (ConstraintSolverTypesNotInEqualityRelation(_, _, _, _, _, contextInfo) as e), _) when
             (match contextInfo with
@@ -825,27 +842,30 @@ type Exception with
         | ErrorFromAddingTypeEquation(error = ConstraintSolverError _ as e) -> e.Output(os, suggestNames)
 
         | ErrorFromAddingTypeEquation(_g, denv, ty1, ty2, ConstraintSolverTupleDiffLengths(_, contextInfo, tl1, tl2, m1, m2), m) ->
-            let ty1, ty2, tpcs = NicePrint.minimalStringsOfTwoTypes denv ty1 ty2
-            let messageArgs = tl1.Length, ty1, tl2.Length, ty2
+            let ty1, ty2, tpcs = NicePrint.minimalRichTextsOfTwoTypes denv ty1 ty2
 
-            if ty1 <> ty2 + tpcs then
+            let tupleLengthsMessage (message: int * RichText * int * RichText -> RichText) = message (tl1.Length, ty1, tl2.Length, ty2)
+
+            if ty1.Text <> ty2.Text + tpcs.Text then
                 match contextInfo with
-                | ContextInfo.IfExpression range when equals range m -> os.AppendString(FSComp.SR.ifExpressionTuple messageArgs)
+                | ContextInfo.IfExpression range when equals range m -> os.Append(tupleLengthsMessage FSComp.SR.ifExpressionTuple)
                 | ContextInfo.ElseBranchResult range when equals range m ->
-                    os.AppendString(FSComp.SR.elseBranchHasWrongTypeTuple messageArgs)
+                    os.Append(tupleLengthsMessage FSComp.SR.elseBranchHasWrongTypeTuple)
                 | ContextInfo.FollowingPatternMatchClause range when equals range m ->
-                    os.AppendString(FSComp.SR.followingPatternMatchClauseHasWrongTypeTuple messageArgs)
+                    os.Append(tupleLengthsMessage FSComp.SR.followingPatternMatchClauseHasWrongTypeTuple)
                 | ContextInfo.CollectionElement(isArray, range) when equals range m ->
                     if isArray then
-                        os.AppendString(FSComp.SR.arrayElementHasWrongTypeTuple messageArgs)
+                        os.Append(tupleLengthsMessage FSComp.SR.arrayElementHasWrongTypeTuple)
                     else
-                        os.AppendString(FSComp.SR.listElementHasWrongTypeTuple messageArgs)
-                | _ -> os.AppendString(ErrorFromAddingTypeEquationTuplesE().Format tl1.Length ty1 tl2.Length ty2 tpcs)
+                        os.Append(tupleLengthsMessage FSComp.SR.listElementHasWrongTypeTuple)
+                | _ ->
+                    os.Append(fun rich ->
+                        ErrorFromAddingTypeEquationTuplesE().Format tl1.Length (rich ty1) tl2.Length (rich ty2) (rich tpcs))
             else
-                os.AppendString(ConstraintSolverTupleDiffLengthsE().Format tl1.Length tl2.Length)
+                os.Append(ConstraintSolverTupleDiffLengthsE().Format tl1.Length tl2.Length)
 
                 if m1.StartLine <> m2.StartLine then
-                    os.AppendString(SeeAlsoE().Format(stringOfRange m1))
+                    os.Append(SeeAlsoE().Format(stringOfRange m1))
 
         | ErrorFromAddingTypeEquation(g, denv, ty1, ty2, e, _) ->
             let typeEquation2E =
@@ -853,10 +873,10 @@ type Exception with
 
             let e =
                 if not (typeEquiv g ty1 ty2) then
-                    let ty1, ty2, tpcs = NicePrint.minimalStringsOfTwoTypes denv ty1 ty2
+                    let ty1, ty2, tpcs = NicePrint.minimalRichTextsOfTwoTypes denv ty1 ty2
 
-                    if ty1 <> ty2 + tpcs then
-                        os.AppendString(typeEquation2E().Format ty1 ty2 tpcs)
+                    if ty1.Text <> ty2.Text + tpcs.Text then
+                        os.Append(typeEquation2E (), ty1, ty2, tpcs)
 
                     e
 
@@ -875,36 +895,35 @@ type Exception with
             e.Output(os, suggestNames)
 
         | ErrorFromApplyingDefault(_, denv, _, defaultType, e, _) ->
-            let defaultType = NicePrint.minimalStringOfType denv defaultType
-            os.AppendString(ErrorFromApplyingDefault1E().Format defaultType)
+            os.Append(ErrorFromApplyingDefault1E(), NicePrint.minimalRichTextOfType denv defaultType)
             e.Output(os, suggestNames)
-            os.AppendString(ErrorFromApplyingDefault2E().Format)
+            os.Append(ErrorFromApplyingDefault2E().Format)
 
         | ErrorsFromAddingSubsumptionConstraint(g, denv, ty1, ty2, e, contextInfo, _) ->
             match contextInfo with
             | ContextInfo.DowncastUsedInsteadOfUpcast isOperator ->
-                let ty1, ty2, _ = NicePrint.minimalStringsOfTwoTypes denv ty1 ty2
+                let ty1, ty2, _ = NicePrint.minimalRichTextsOfTwoTypes denv ty1 ty2
 
                 if isOperator then
-                    os.AppendString(FSComp.SR.considerUpcastOperator (ty1, ty2) |> snd)
+                    os.Append(snd (FSComp.SR.considerUpcastOperator (ty1, ty2)))
                 else
-                    os.AppendString(FSComp.SR.considerUpcast (ty1, ty2) |> snd)
+                    os.Append(snd (FSComp.SR.considerUpcast (ty1, ty2)))
             | _ ->
                 if not (typeEquiv g ty1 ty2) then
-                    let ty1, ty2, tpcs = NicePrint.minimalStringsOfTwoTypes denv ty1 ty2
+                    let ty1, ty2, tpcs = NicePrint.minimalRichTextsOfTwoTypes denv ty1 ty2
 
-                    if ty1 <> (ty2 + tpcs) then
-                        os.AppendString(ErrorsFromAddingSubsumptionConstraintE().Format ty2 ty1 tpcs)
+                    if ty1.Text <> ty2.Text + tpcs.Text then
+                        os.Append(ErrorsFromAddingSubsumptionConstraintE(), ty2, ty1, tpcs)
                     else
                         e.Output(os, suggestNames)
                 else
                     e.Output(os, suggestNames)
 
-        | UpperCaseIdentifierInPattern _ -> os.AppendString(UpperCaseIdentifierInPatternE().Format)
+        | UpperCaseIdentifierInPattern _ -> os.Append(UpperCaseIdentifierInPatternE().Format)
 
-        | NotUpperCaseConstructor _ -> os.AppendString(NotUpperCaseConstructorE().Format)
+        | NotUpperCaseConstructor _ -> os.Append(NotUpperCaseConstructorE().Format)
 
-        | NotUpperCaseConstructorWithoutRQA _ -> os.AppendString(NotUpperCaseConstructorWithoutRQAE().Format)
+        | NotUpperCaseConstructorWithoutRQA _ -> os.Append(NotUpperCaseConstructorWithoutRQAE().Format)
 
         | ErrorFromAddingConstraint(_, e, _) -> e.Output(os, suggestNames)
 
@@ -913,7 +932,7 @@ type Exception with
 
         | TypeProviders.ProvidedTypeResolution(_, e) -> e.Output(os, suggestNames)
 
-        | :? TypeProviderError as e -> os.AppendString(e.ContextualErrorMessage)
+        | :? TypeProviderError as e -> os.Append(e.ContextualErrorRichMessage)
 #endif
 
         | UnresolvedOverloading(denv, callerArgs, failure, m) ->
@@ -948,16 +967,16 @@ type Exception with
                     NicePrint.prettyLayoutsOfUnresolvedOverloading denv argRepr retTy genericParameterTypes
 
                 match callerArgs.ArgumentNamesAndTypes with
-                | [] -> None, LayoutRender.showL retTyL, LayoutRender.showL genParamTysL
+                | [] -> None, LayoutRender.toRichText retTyL, LayoutRender.toRichText genParamTysL
                 | items ->
-                    let args = LayoutRender.showL argsL
+                    let args = LayoutRender.toRichText argsL
 
-                    let prefixMessage =
+                    let prefixMessage: RichText -> RichText =
                         match items with
                         | [ _ ] -> FSComp.SR.csNoOverloadsFoundArgumentsPrefixSingular
                         | _ -> FSComp.SR.csNoOverloadsFoundArgumentsPrefixPlural
 
-                    Some(prefixMessage args), LayoutRender.showL retTyL, LayoutRender.showL genParamTysL
+                    Some(prefixMessage args), LayoutRender.toRichText retTyL, LayoutRender.toRichText genParamTysL
 
             let knownReturnType =
                 match knownReturnType with
@@ -976,157 +995,205 @@ type Exception with
                     | :? ArgDoesNotMatchError as x ->
                         let nameOrOneBasedIndexMessage =
                             x.calledArg.NameOpt
-                            |> Option.map (fun n -> FSComp.SR.csOverloadCandidateNamedArgumentTypeMismatch n.idText)
+                            |> Option.map (fun n -> FSComp.SR.csOverloadCandidateNamedArgumentTypeMismatch (RichText.mkParameter n.idText))
                             |> Option.defaultValue (
-                                FSComp.SR.csOverloadCandidateIndexedArgumentTypeMismatch ((vsnd x.calledArg.Position) + 1)
+                                RichText.mkText (FSComp.SR.csOverloadCandidateIndexedArgumentTypeMismatch ((vsnd x.calledArg.Position) + 1))
                             ) //snd
 
-                        sprintf " // %s" nameOrOneBasedIndexMessage
-                    | _ -> ""
+                        RichText.append (RichText.mkText " // ") nameOrOneBasedIndexMessage
+                    | _ -> RichText.empty
 
-                (NicePrint.stringOfMethInfo x.infoReader m displayEnv x.methodSlot.Method)
-                + paramInfo
+                RichText.append (NicePrint.richTextOfMethInfoForOverloadError x.infoReader m displayEnv x.methodSlot.Method) paramInfo
 
             let nl = Environment.NewLine
 
             let formatOverloads (overloads: OverloadInformation list) =
                 overloads
                 |> List.map (overloadMethodInfo denv m)
-                |> List.sort
+                |> List.sortBy (fun overload -> overload.Text)
                 |> List.map FSComp.SR.formatDashItem
-                |> String.concat nl
+                |> RichText.concatWith (RichText.mkText nl)
 
             // assemble final message composing the parts
             let msg =
                 let optionalParts =
-                    [ knownReturnType; genericParametersMessage; argsMessage ]
-                    |> List.choose id
-                    |> String.concat (nl + nl)
-                    |> fun result ->
-                        if String.IsNullOrEmpty(result) then
-                            nl
-                        else
-                            nl + nl + result + nl + nl
+                    let result =
+                        [ knownReturnType; genericParametersMessage; argsMessage ]
+                        |> List.choose id
+                        |> RichText.concatWith (RichText.mkText (nl + nl))
+
+                    if result.IsEmpty then
+                        RichText.mkText nl
+                    else
+                        RichText.concat [ RichText.mkText (nl + nl); result; RichText.mkText (nl + nl) ]
 
                 match failure with
                 | NoOverloadsFound(methodName, overloads, _) ->
-                    FSComp.SR.csNoOverloadsFound methodName
-                    + optionalParts
-                    + (FSComp.SR.csAvailableOverloads (formatOverloads overloads))
-                | PossibleCandidates(methodName, [], _) -> FSComp.SR.csMethodIsOverloaded methodName
-                | PossibleCandidates(methodName, overloads, _) ->
-                    FSComp.SR.csMethodIsOverloaded methodName
-                    + optionalParts
-                    + FSComp.SR.csCandidates (formatOverloads overloads)
+                    RichText.concat
+                        [
+                            FSComp.SR.csNoOverloadsFound (RichText.mkMethod methodName)
+                            optionalParts
+                            FSComp.SR.csAvailableOverloads (formatOverloads overloads)
+                        ]
+                | PossibleCandidates(methodName, [], _, _) -> FSComp.SR.csMethodIsOverloaded (RichText.mkMethod methodName)
+                | PossibleCandidates(methodName, overloads, _, incomparableInfo) ->
+                    let baseMessage =
+                        RichText.concat
+                            [
+                                FSComp.SR.csMethodIsOverloaded (RichText.mkMethod methodName)
+                                optionalParts
+                                FSComp.SR.csCandidates (formatOverloads overloads)
+                            ]
 
-            os.AppendString msg
+                    match incomparableInfo with
+                    | Some info ->
+                        let formatPositions positions =
+                            match positions with
+                            | [ p ] -> FSComp.SR.csConcretenessPosition p
+                            | _ ->
+                                positions
+                                |> List.map string
+                                |> String.concat ", "
+                                |> FSComp.SR.csConcretenessPositions
+
+                        let line1 =
+                            FSComp.SR.formatDashItem (
+                                FSComp.SR.csConcretenessMoreConcreteAt (info.Method1Signature, formatPositions info.Method1BetterPositions)
+                            )
+
+                        let line2 =
+                            FSComp.SR.formatDashItem (
+                                FSComp.SR.csConcretenessMoreConcreteAt (info.Method2Signature, formatPositions info.Method2BetterPositions)
+                            )
+
+                        RichText.concat
+                            [
+                                baseMessage
+                                RichText.mkText nl
+                                RichText.mkText (FSComp.SR.csIncomparableConcreteness (line1 + nl + line2))
+                            ]
+                    | None -> baseMessage
+
+            os.Append msg
 
         | UnresolvedConversionOperator(denv, fromTy, toTy, _) ->
-            let ty1, ty2, _tpcs = NicePrint.minimalStringsOfTwoTypes denv fromTy toTy
-            os.AppendString(FSComp.SR.csTypeDoesNotSupportConversion (ty1, ty2))
+            let ty1, ty2, _tpcs = NicePrint.minimalRichTextsOfTwoTypes denv fromTy toTy
+            os.Append(FSComp.SR.csTypeDoesNotSupportConversion (ty1, ty2))
 
-        | FunctionExpected _ -> os.AppendString(FunctionExpectedE().Format)
+        | FunctionExpected _ -> os.Append(FunctionExpectedE().Format)
 
-        | BakedInMemberConstraintName(nm, _) -> os.AppendString(BakedInMemberConstraintNameE().Format nm)
+        | BakedInMemberConstraintName(nm, _) -> os.Append(BakedInMemberConstraintNameE(), RichText.mkMember nm)
 
-        | StandardOperatorRedefinitionWarning(msg, _) -> os.AppendString msg
+        | StandardOperatorRedefinitionWarning(msg, _) -> os.Append msg
 
-        | BadEventTransformation _ -> os.AppendString(BadEventTransformationE().Format)
+        | BadEventTransformation _ -> os.Append(BadEventTransformationE().Format)
 
-        | ParameterlessStructCtor _ -> os.AppendString(ParameterlessStructCtorE().Format)
+        | ParameterlessStructCtor _ -> os.Append(ParameterlessStructCtorE().Format)
 
-        | InterfaceNotRevealed(denv, intfTy, _) ->
-            os.AppendString(InterfaceNotRevealedE().Format(NicePrint.minimalStringOfType denv intfTy))
+        | InterfaceNotRevealed(denv, intfTy, _) -> os.Append(InterfaceNotRevealedE(), NicePrint.minimalRichTextOfType denv intfTy)
 
         | NotAFunctionButIndexer(_, _, name, _, _, old) ->
             if old then
                 match name with
-                | Some name -> os.AppendString(FSComp.SR.notAFunctionButMaybeIndexerWithName name)
-                | _ -> os.AppendString(FSComp.SR.notAFunctionButMaybeIndexer ())
+                | Some name -> os.Append(FSComp.SR.notAFunctionButMaybeIndexerWithName (RichText.mkLocal name))
+                | _ -> os.Append(FSComp.SR.notAFunctionButMaybeIndexer ())
             else
                 match name with
-                | Some name -> os.AppendString(FSComp.SR.notAFunctionButMaybeIndexerWithName2 name)
-                | _ -> os.AppendString(FSComp.SR.notAFunctionButMaybeIndexer2 ())
+                | Some name -> os.Append(FSComp.SR.notAFunctionButMaybeIndexerWithName2 (RichText.mkLocal name))
+                | _ -> os.Append(FSComp.SR.notAFunctionButMaybeIndexer2 ())
 
         | NotAFunction(denv, ty, _, marg) ->
             if marg.StartColumn = 0 then
-                os.AppendString(FSComp.SR.notAFunctionButMaybeDeclaration ())
+                os.Append(FSComp.SR.notAFunctionButMaybeDeclaration ())
             elif isTyparTy denv.g ty then
-                os.AppendString(FSComp.SR.notAFunction ())
+                os.Append(FSComp.SR.notAFunction ())
             else
-                os.AppendString(FSComp.SR.notAFunctionWithType (NicePrint.prettyStringOfTy denv ty))
+                os.Append(FSComp.SR.notAFunctionWithType (NicePrint.prettyRichTextOfTy denv ty))
 
         | TyconBadArgs(_, tcref, d, _) ->
             let exp = tcref.Typars.Length
 
             if exp = 0 then
-                os.AppendString(FSComp.SR.buildUnexpectedTypeArgs (fullDisplayTextOfTyconRef tcref, d))
+                os.Append(FSComp.SR.buildUnexpectedTypeArgs (richTextOfQualifiedTyconRef tcref, d))
             else
-                os.AppendString(TyconBadArgsE().Format (fullDisplayTextOfTyconRef tcref) exp d)
+                os.Append(fun rich -> TyconBadArgsE().Format (rich (richTextOfQualifiedTyconRef tcref)) exp d)
 
-        | IndeterminateType _ -> os.AppendString(IndeterminateTypeE().Format)
+        | IndeterminateType _ -> os.Append(IndeterminateTypeE().Format)
 
         | NameClash(nm, k1, nm1, _, k2, nm2, _) ->
             if nm = nm1 && nm1 = nm2 && k1 = k2 then
-                os.AppendString(NameClash1E().Format k1 nm1)
+                os.Append(NameClash1E(), RichText.mkText k1, richTextOfNameOfUnknownKind nm1)
             else
-                os.AppendString(NameClash2E().Format k1 nm1 nm k2 nm2)
+                os.Append(fun rich ->
+                    NameClash2E().Format
+                        k1
+                        (rich (richTextOfNameOfUnknownKind nm1))
+                        (rich (richTextOfNameOfUnknownKind nm))
+                        k2
+                        (rich (richTextOfNameOfUnknownKind nm2)))
 
         | Duplicate(k, s, _) ->
             if k = "member" then
-                os.AppendString(Duplicate1E().Format(ConvertValLogicalNameToDisplayNameCore s))
+                os.Append(Duplicate1E(), RichText.mkMember (ConvertValLogicalNameToDisplayNameCore s))
             else
-                os.AppendString(Duplicate2E().Format k (ConvertValLogicalNameToDisplayNameCore s))
+                os.Append(Duplicate2E(), RichText.mkText k, richTextOfNameOfUnknownKind s)
 
         | UndefinedName(_, k, id, suggestionsF) ->
-            os.AppendString(k (ConvertValLogicalNameToDisplayNameCore id.idText))
+            os.Append(k (richTextOfUnresolvedName id.idText))
             OutputNameSuggestions os suggestNames suggestionsF id.idText
 
         | InternalUndefinedItemRef(f, smr, ccuName, s) ->
             let _, errs = f (smr, ccuName, s)
-            os.AppendString errs
+            os.Append errs
 
-        | FieldNotMutable _ -> os.AppendString(FieldNotMutableE().Format)
+        | FieldNotMutable _ -> os.Append(FieldNotMutableE().Format)
 
         | FieldsFromDifferentTypes(_, fref1, fref2, _) ->
-            os.AppendString(FieldsFromDifferentTypesE().Format fref1.FieldName fref2.FieldName)
+            os.Append(FieldsFromDifferentTypesE(), RichText.mkRecordField fref1.FieldName, RichText.mkRecordField fref2.FieldName)
 
-        | VarBoundTwice id -> os.AppendString(VarBoundTwiceE().Format(ConvertValLogicalNameToDisplayNameCore id.idText))
+        | VarBoundTwice id -> os.Append(VarBoundTwiceE(), RichText.mkLocal (ConvertValLogicalNameToDisplayNameCore id.idText))
 
         | Recursion(denv, id, ty1, ty2, _) ->
-            let ty1, ty2, tpcs = NicePrint.minimalStringsOfTwoTypes denv ty1 ty2
-            os.AppendString(RecursionE().Format (ConvertValLogicalNameToDisplayNameCore id.idText) ty1 ty2 tpcs)
+            let ty1, ty2, tpcs = NicePrint.minimalRichTextsOfTwoTypes denv ty1 ty2
+
+            let name = RichText.mkFunction (ConvertValLogicalNameToDisplayNameCore id.idText)
+
+            os.Append(RecursionE(), name, ty1, ty2, tpcs)
 
         | InvalidRuntimeCoercion(denv, ty1, ty2, _) ->
-            let ty1, ty2, tpcs = NicePrint.minimalStringsOfTwoTypes denv ty1 ty2
-            os.AppendString(InvalidRuntimeCoercionE().Format ty1 ty2 tpcs)
+            let ty1, ty2, tpcs = NicePrint.minimalRichTextsOfTwoTypes denv ty1 ty2
+            os.Append(InvalidRuntimeCoercionE(), ty1, ty2, tpcs)
 
         | IndeterminateRuntimeCoercion(denv, ty1, ty2, _) ->
-            let ty1, ty2, _cxs = NicePrint.minimalStringsOfTwoTypes denv ty1 ty2
-            os.AppendString(IndeterminateRuntimeCoercionE().Format ty1 ty2)
+            let ty1, ty2, _cxs = NicePrint.minimalRichTextsOfTwoTypes denv ty1 ty2
+            os.Append(IndeterminateRuntimeCoercionE(), ty1, ty2)
 
         | IndeterminateStaticCoercion(denv, ty1, ty2, _) ->
             // REVIEW: consider if we need to show _cxs (the type parameter constraints)
-            let ty1, ty2, _cxs = NicePrint.minimalStringsOfTwoTypes denv ty1 ty2
-            os.AppendString(IndeterminateStaticCoercionE().Format ty1 ty2)
+            let ty1, ty2, _cxs = NicePrint.minimalRichTextsOfTwoTypes denv ty1 ty2
+            os.Append(IndeterminateStaticCoercionE(), ty1, ty2)
 
         | StaticCoercionShouldUseBox(denv, ty1, ty2, _) ->
             // REVIEW: consider if we need to show _cxs (the type parameter constraints)
-            let ty1, ty2, _cxs = NicePrint.minimalStringsOfTwoTypes denv ty1 ty2
-            os.AppendString(StaticCoercionShouldUseBoxE().Format ty1 ty2)
+            let ty1, ty2, _cxs = NicePrint.minimalRichTextsOfTwoTypes denv ty1 ty2
+            os.Append(StaticCoercionShouldUseBoxE(), ty1, ty2)
 
-        | TypeIsImplicitlyAbstract _ -> os.AppendString(TypeIsImplicitlyAbstractE().Format)
+        | TypeIsImplicitlyAbstract _ -> os.Append(TypeIsImplicitlyAbstractE().Format)
 
         | NonRigidTypar(denv, tpnmOpt, typarRange, ty1, ty2, _) ->
             // REVIEW: consider if we need to show _cxs (the type parameter constraints)
             let (ty1, ty2), _cxs = PrettyTypes.PrettifyTypePair denv.g (ty1, ty2)
 
+            let ty2 = NicePrint.richTextOfTy denv ty2
+
             match tpnmOpt with
-            | None -> os.AppendString(NonRigidTypar1E().Format (stringOfRange typarRange) (NicePrint.stringOfTy denv ty2))
+            | None -> os.Append(NonRigidTypar1E(), RichText.mkText (stringOfRange typarRange), ty2)
             | Some tpnm ->
+                let tpnm = RichText.mkTypeParameter tpnm
+
                 match ty1 with
-                | TType_measure _ -> os.AppendString(NonRigidTypar2E().Format tpnm (NicePrint.stringOfTy denv ty2))
-                | _ -> os.AppendString(NonRigidTypar3E().Format tpnm (NicePrint.stringOfTy denv ty2))
+                | TType_measure _ -> os.Append(NonRigidTypar2E(), tpnm, ty2)
+                | _ -> os.Append(NonRigidTypar3E(), tpnm, ty2)
 
         | SyntaxError(ctxt, _) ->
             let ctxt = unbox<Parsing.ParseErrorContext<Parser.token>> ctxt
@@ -1186,7 +1253,8 @@ type Exception with
                 | Parser.TOKEN_COLON_QMARK -> SR.GetString("Parser.TOKEN.COLON.QMARK")
                 | Parser.TOKEN_INT32_DOT_DOT -> SR.GetString("Parser.TOKEN.INT32.DOT.DOT")
                 | Parser.TOKEN_DOT_DOT -> SR.GetString("Parser.TOKEN.DOT.DOT")
-                | Parser.TOKEN_DOT_DOT_HAT -> SR.GetString("Parser.TOKEN.DOT.DOT")
+                | Parser.TOKEN_DOT_DOT_HAT -> SR.GetString("Parser.TOKEN.DOT.DOT.HAT")
+                | Parser.TOKEN_DOT_DOT_DOT -> SR.GetString("Parser.TOKEN.DOT.DOT.DOT")
                 | Parser.TOKEN_QUOTE -> SR.GetString("Parser.TOKEN.QUOTE")
                 | Parser.TOKEN_STAR -> SR.GetString("Parser.TOKEN.STAR")
                 | Parser.TOKEN_HIGH_PRECEDENCE_TYAPP -> SR.GetString("Parser.TOKEN.HIGH.PRECEDENCE.TYAPP")
@@ -1365,14 +1433,14 @@ type Exception with
 #endif
 
             match ctxt.CurrentToken with
-            | None -> os.AppendString(UnexpectedEndOfInputE().Format)
+            | None -> os.Append(UnexpectedEndOfInputE().Format)
             | Some token ->
                 let tokenId = token |> Parser.tagOfToken |> Parser.tokenTagToTokenId
 
                 match tokenId, token with
-                | EndOfStructuredConstructToken, _ -> os.AppendString(OBlockEndSentenceE().Format)
-                | Parser.TOKEN_LEX_FAILURE, Parser.LEX_FAILURE str -> os.AppendString str
-                | token, _ -> os.AppendString(UnexpectedE().Format(token |> tokenIdToText))
+                | EndOfStructuredConstructToken, _ -> os.Append(OBlockEndSentenceE().Format)
+                | Parser.TOKEN_LEX_FAILURE, Parser.LEX_FAILURE str -> os.Append str
+                | token, _ -> os.Append(UnexpectedE().Format(token |> tokenIdToText))
 
                 // Search for a state producing a single recognized non-terminal in the states on the stack
                 let foundInContext =
@@ -1470,126 +1538,137 @@ type Exception with
 
                         match prodIds with
                         | [ Parser.NONTERM_interaction ] ->
-                            os.AppendString(NONTERM_interactionE().Format)
+                            os.Append(NONTERM_interactionE().Format)
                             true
                         | [ Parser.NONTERM_hashDirective ] ->
-                            os.AppendString(NONTERM_hashDirectiveE().Format)
+                            os.Append(NONTERM_hashDirectiveE().Format)
                             true
                         | [ Parser.NONTERM_fieldDecl ] ->
-                            os.AppendString(NONTERM_fieldDeclE().Format)
+                            os.Append(NONTERM_fieldDeclE().Format)
                             true
                         | [ Parser.NONTERM_unionCaseRepr ] ->
-                            os.AppendString(NONTERM_unionCaseReprE().Format)
+                            os.Append(NONTERM_unionCaseReprE().Format)
                             true
                         | [ Parser.NONTERM_localBinding ] ->
-                            os.AppendString(NONTERM_localBindingE().Format)
+                            os.Append(NONTERM_localBindingE().Format)
                             true
                         | [ Parser.NONTERM_hardwhiteLetBindings ] ->
-                            os.AppendString(NONTERM_hardwhiteLetBindingsE().Format)
+                            os.Append(NONTERM_hardwhiteLetBindingsE().Format)
                             true
                         | [ Parser.NONTERM_classDefnMember ] ->
-                            os.AppendString(NONTERM_classDefnMemberE().Format)
+                            os.Append(NONTERM_classDefnMemberE().Format)
                             true
                         | [ Parser.NONTERM_defnBindings ] ->
-                            os.AppendString(NONTERM_defnBindingsE().Format)
+                            os.Append(NONTERM_defnBindingsE().Format)
                             true
                         | [ Parser.NONTERM_classMemberSpfn ] ->
-                            os.AppendString(NONTERM_classMemberSpfnE().Format)
+                            os.Append(NONTERM_classMemberSpfnE().Format)
                             true
                         | [ Parser.NONTERM_classMemberSpfnGetSetElements ] ->
-                            os.AppendString(NONTERM_classMemberSpfnGetSetElementsE().Format)
+                            os.Append(NONTERM_classMemberSpfnGetSetElementsE().Format)
                             true
                         | [ Parser.NONTERM_autoPropsDefnDecl ] ->
-                            os.AppendString(NONTERM_autoPropsDefnDeclE().Format)
+                            os.Append(NONTERM_autoPropsDefnDeclE().Format)
                             true
                         | [ Parser.NONTERM_valSpfn ] ->
-                            os.AppendString(NONTERM_valSpfnE().Format)
+                            os.Append(NONTERM_valSpfnE().Format)
                             true
                         | [ Parser.NONTERM_tyconSpfn ] ->
-                            os.AppendString(NONTERM_tyconSpfnE().Format)
+                            os.Append(NONTERM_tyconSpfnE().Format)
                             true
                         | [ Parser.NONTERM_anonLambdaExpr ] ->
-                            os.AppendString(NONTERM_anonLambdaExprE().Format)
+                            os.Append(NONTERM_anonLambdaExprE().Format)
                             true
                         | [ Parser.NONTERM_attrUnionCaseDecl ] ->
-                            os.AppendString(NONTERM_attrUnionCaseDeclE().Format)
+                            os.Append(NONTERM_attrUnionCaseDeclE().Format)
                             true
                         | [ Parser.NONTERM_cPrototype ] ->
-                            os.AppendString(NONTERM_cPrototypeE().Format)
+                            os.Append(NONTERM_cPrototypeE().Format)
                             true
                         | [ Parser.NONTERM_objExpr | Parser.NONTERM_objectImplementationMembers ] ->
-                            os.AppendString(NONTERM_objectImplementationMembersE().Format)
+                            os.Append(NONTERM_objectImplementationMembersE().Format)
                             true
                         | [ Parser.NONTERM_ifExprThen | Parser.NONTERM_ifExprElifs | Parser.NONTERM_ifExprCases ] ->
-                            os.AppendString(NONTERM_ifExprCasesE().Format)
+                            os.Append(NONTERM_ifExprCasesE().Format)
                             true
                         | [ Parser.NONTERM_openDecl ] ->
-                            os.AppendString(NONTERM_openDeclE().Format)
+                            os.Append(NONTERM_openDeclE().Format)
                             true
                         | [ Parser.NONTERM_fileModuleSpec ] ->
-                            os.AppendString(NONTERM_fileModuleSpecE().Format)
+                            os.Append(NONTERM_fileModuleSpecE().Format)
                             true
                         | [ Parser.NONTERM_patternClauses ] ->
-                            os.AppendString(NONTERM_patternClausesE().Format)
+                            os.Append(NONTERM_patternClausesE().Format)
                             true
                         | [ Parser.NONTERM_beginEndExpr ] ->
-                            os.AppendString(NONTERM_beginEndExprE().Format)
+                            os.Append(NONTERM_beginEndExprE().Format)
                             true
                         | [ Parser.NONTERM_recdExpr ] ->
-                            os.AppendString(NONTERM_recdExprE().Format)
+                            os.Append(NONTERM_recdExprE().Format)
                             true
                         | [ Parser.NONTERM_tyconDefn ] ->
-                            os.AppendString(NONTERM_tyconDefnE().Format)
+                            os.Append(NONTERM_tyconDefnE().Format)
                             true
                         | [ Parser.NONTERM_exconCore ] ->
-                            os.AppendString(NONTERM_exconCoreE().Format)
+                            os.Append(NONTERM_exconCoreE().Format)
                             true
                         | [ Parser.NONTERM_typeNameInfo ] ->
-                            os.AppendString(NONTERM_typeNameInfoE().Format)
+                            os.Append(NONTERM_typeNameInfoE().Format)
                             true
                         | [ Parser.NONTERM_attributeList ] ->
-                            os.AppendString(NONTERM_attributeListE().Format)
+                            os.Append(NONTERM_attributeListE().Format)
                             true
                         | [ Parser.NONTERM_quoteExpr ] ->
-                            os.AppendString(NONTERM_quoteExprE().Format)
+                            os.Append(NONTERM_quoteExprE().Format)
                             true
                         | [ Parser.NONTERM_typeConstraint ] ->
-                            os.AppendString(NONTERM_typeConstraintE().Format)
+                            os.Append(NONTERM_typeConstraintE().Format)
                             true
                         | [ NONTERM_Category_ImplementationFile ] ->
-                            os.AppendString(NONTERM_Category_ImplementationFileE().Format)
+                            os.Append(NONTERM_Category_ImplementationFileE().Format)
                             true
                         | [ NONTERM_Category_Definition ] ->
-                            os.AppendString(NONTERM_Category_DefinitionE().Format)
+                            os.Append(NONTERM_Category_DefinitionE().Format)
                             true
                         | [ NONTERM_Category_SignatureFile ] ->
-                            os.AppendString(NONTERM_Category_SignatureFileE().Format)
+                            os.Append(NONTERM_Category_SignatureFileE().Format)
                             true
                         | [ NONTERM_Category_Pattern ] ->
-                            os.AppendString(NONTERM_Category_PatternE().Format)
+                            os.Append(NONTERM_Category_PatternE().Format)
                             true
                         | [ NONTERM_Category_Expr ] ->
-                            os.AppendString(NONTERM_Category_ExprE().Format)
+                            os.Append(NONTERM_Category_ExprE().Format)
                             true
                         | [ NONTERM_Category_Type ] ->
-                            os.AppendString(NONTERM_Category_TypeE().Format)
+                            os.Append(NONTERM_Category_TypeE().Format)
                             true
                         | [ Parser.NONTERM_typeArgsActual ] ->
-                            os.AppendString(NONTERM_typeArgsActualE().Format)
+                            os.Append(NONTERM_typeArgsActualE().Format)
                             true
                         | _ -> false)
 
 #if DEBUG
                 if not foundInContext then
-                    Printf.bprintf
-                        os
-                        ". (no 'in' context found: %+A)"
-                        (List.mapSquared Parser.prodIdxToNonTerminal ctxt.ReducibleProductions)
+                    os.Append(
+                        sprintf ". (no 'in' context found: %+A)" (List.mapSquared Parser.prodIdxToNonTerminal ctxt.ReducibleProductions)
+                    )
 #else
                 foundInContext |> ignore // suppress unused variable warning in RELEASE
 #endif
+                // tokenIdToText describes a token as a keyword, as a symbol, or by a category such as
+                // 'identifier'. The message drops that wording, so it is what tells us how to classify
+                // what is left of it.
                 let fix (s: string) =
-                    s.Replace(SR.GetString("FixKeyword"), "").Replace(SR.GetString("FixSymbol"), "").Replace(SR.GetString("FixReplace"), "")
+                    let keyword = SR.GetString("FixKeyword")
+                    let symbol = SR.GetString("FixSymbol")
+
+                    let tag =
+                        if s.Contains keyword then TextTag.Keyword
+                        elif s.Contains symbol then TextTag.Punctuation
+                        else TextTag.Text
+
+                    s.Replace(keyword, "").Replace(symbol, "").Replace(SR.GetString("FixReplace"), "")
+                    |> RichText.ofTag tag
 
                 let tokenNames =
                     ctxt.ShiftTokens
@@ -1604,10 +1683,10 @@ type Exception with
                     |> Set.toList
 
                 match tokenNames with
-                | [ tokenName1 ] -> os.AppendString(TokenName1E().Format(fix tokenName1))
-                | [ tokenName1; tokenName2 ] -> os.AppendString(TokenName1TokenName2E().Format (fix tokenName1) (fix tokenName2))
+                | [ tokenName1 ] -> os.Append(TokenName1E(), fix tokenName1)
+                | [ tokenName1; tokenName2 ] -> os.Append(TokenName1TokenName2E(), fix tokenName1, fix tokenName2)
                 | [ tokenName1; tokenName2; tokenName3 ] ->
-                    os.AppendString(TokenName1TokenName2TokenName3E().Format (fix tokenName1) (fix tokenName2) (fix tokenName3))
+                    os.Append(TokenName1TokenName2TokenName3E(), fix tokenName1, fix tokenName2, fix tokenName3)
                 | _ -> ()
         (*
               Printf.bprintf os ".\n\n    state = %A\n    token = %A\n    expect (shift) %A\n    expect (reduce) %A\n   prods=%A\n     non terminals: %A"
@@ -1624,26 +1703,26 @@ type Exception with
             let ty, _cxs = PrettyTypes.PrettifyType denv.g ty
 
             if isTyparTy denv.g ty then
-                os.AppendString(RuntimeCoercionSourceSealed1E().Format(NicePrint.stringOfTy denv ty))
+                os.Append(RuntimeCoercionSourceSealed1E(), NicePrint.richTextOfTy denv ty)
             else
-                os.AppendString(RuntimeCoercionSourceSealed2E().Format(NicePrint.stringOfTy denv ty))
+                os.Append(RuntimeCoercionSourceSealed2E(), NicePrint.richTextOfTy denv ty)
 
         | CoercionTargetSealed(denv, ty, _) ->
             // REVIEW: consider if we need to show _cxs (the type parameter constraints)
             let ty, _cxs = PrettyTypes.PrettifyType denv.g ty
-            os.AppendString(CoercionTargetSealedE().Format(NicePrint.stringOfTy denv ty))
+            os.Append(CoercionTargetSealedE(), NicePrint.richTextOfTy denv ty)
 
-        | UpcastUnnecessary _ -> os.AppendString(UpcastUnnecessaryE().Format)
+        | UpcastUnnecessary _ -> os.Append(UpcastUnnecessaryE().Format)
 
-        | TypeTestUnnecessary _ -> os.AppendString(TypeTestUnnecessaryE().Format)
+        | TypeTestUnnecessary _ -> os.Append(TypeTestUnnecessaryE().Format)
 
-        | QuotationTranslator.IgnoringPartOfQuotedTermWarning(msg, _) -> Printf.bprintf os "%s" msg
+        | QuotationTranslator.IgnoringPartOfQuotedTermWarning(msg, _) -> os.Append msg
 
         | OverrideDoesntOverride(denv, impl, minfoVirtOpt, g, amap, m) ->
             let sig1 = DispatchSlotChecking.FormatOverride denv impl
 
             match minfoVirtOpt with
-            | None -> os.AppendString(OverrideDoesntOverride1E().Format sig1)
+            | None -> os.Append(OverrideDoesntOverride1E(), sig1)
             | Some minfoVirt ->
                 // https://github.com/dotnet/fsharp/issues/35
                 // Improve error message when attempting to override generic return type with unit:
@@ -1660,150 +1739,143 @@ type Exception with
                 match minfoVirt.ApparentEnclosingType with
                 | TType_app(tycon, tyargs, _) when tycon.IsFSharpInterfaceTycon && hasUnitTType_app tyargs ->
                     // match abstract member with 'unit' passed as generic argument
-                    os.AppendString(OverrideDoesntOverride4E().Format sig1)
+                    os.Append(OverrideDoesntOverride4E(), sig1)
                 | _ ->
-                    os.AppendString(OverrideDoesntOverride2E().Format sig1)
+                    os.Append(OverrideDoesntOverride2E(), sig1)
                     let sig2 = DispatchSlotChecking.FormatMethInfoSig g amap m denv minfoVirt
 
                     if sig1 <> sig2 then
-                        os.AppendString(OverrideDoesntOverride3E().Format sig2)
+                        os.Append(OverrideDoesntOverride3E(), sig2)
 
                     // If implementation and required slot doesn't have same "instance-ness", then tell user that.
                     if impl.IsInstance <> minfoVirt.IsInstance then
                         // Required slot is instance, meaning implementation is static, tell user that we expect instance.
                         if minfoVirt.IsInstance then
-                            os.AppendString(OverrideShouldBeStatic().Format)
+                            os.Append(OverrideShouldBeStatic().Format)
                         else
-                            os.AppendString(OverrideShouldBeInstance().Format)
+                            os.Append(OverrideShouldBeInstance().Format)
 
-        | UnionCaseWrongArguments(_, n1, n2, _) -> os.AppendString(UnionCaseWrongArgumentsE().Format n2 n1)
+        | UnionCaseWrongArguments(_, n1, n2, _) -> os.Append(UnionCaseWrongArgumentsE().Format n2 n1)
 
-        | UnionPatternsBindDifferentNames _ -> os.AppendString(UnionPatternsBindDifferentNamesE().Format)
+        | UnionPatternsBindDifferentNames _ -> os.Append(UnionPatternsBindDifferentNamesE().Format)
 
         | ValueNotContained(_, denv, infoReader, mref, implVal, sigVal, f) ->
             let text1, text2 =
-                NicePrint.minimalStringsOfTwoValues denv infoReader (mkLocalValRef implVal) (mkLocalValRef sigVal)
+                NicePrint.minimalRichTextsOfTwoValues denv infoReader (mkLocalValRef implVal) (mkLocalValRef sigVal)
 
-            os.AppendString(f ((fullDisplayTextOfModRef mref), text1, text2))
+            os.Append(f (richTextOfQualifiedModRef mref, text1, text2))
 
         | UnionCaseNotContained(denv, infoReader, enclosingTycon, v1, v2, f) ->
             let enclosingTcref = mkLocalEntityRef enclosingTycon
 
-            os.AppendString(
+            os.Append(
                 f (
-                    (NicePrint.stringOfUnionCase denv infoReader enclosingTcref v1),
-                    (NicePrint.stringOfUnionCase denv infoReader enclosingTcref v2)
+                    (NicePrint.richTextOfUnionCase denv infoReader enclosingTcref v1),
+                    (NicePrint.richTextOfUnionCase denv infoReader enclosingTcref v2)
                 )
             )
 
         | FSharpExceptionNotContained(denv, infoReader, v1, v2, f) ->
-            os.AppendString(
+            os.Append(
                 f (
-                    (NicePrint.stringOfExnDef denv infoReader (mkLocalEntityRef v1)),
-                    (NicePrint.stringOfExnDef denv infoReader (mkLocalEntityRef v2))
+                    (NicePrint.richTextOfExnDef denv infoReader (mkLocalEntityRef v1)),
+                    (NicePrint.richTextOfExnDef denv infoReader (mkLocalEntityRef v2))
                 )
             )
 
         | FieldNotContained(_, denv, infoReader, enclosingTycon, _, v1, v2, f) ->
             let enclosingTcref = mkLocalEntityRef enclosingTycon
 
-            os.AppendString(
+            os.Append(
                 f (
-                    (NicePrint.stringOfRecdField denv infoReader enclosingTcref v1),
-                    (NicePrint.stringOfRecdField denv infoReader enclosingTcref v2)
+                    (NicePrint.richTextOfRecdField denv infoReader enclosingTcref v1),
+                    (NicePrint.richTextOfRecdField denv infoReader enclosingTcref v2)
                 )
             )
 
         | RequiredButNotSpecified(_, mref, k, name, _) ->
-            let nsb = StringBuilder()
+            let nsb = RichTextBuilder()
             name nsb
-            os.AppendString(RequiredButNotSpecifiedE().Format (fullDisplayTextOfModRef mref) k (nsb.ToString()))
 
-        | UseOfAddressOfOperator _ -> os.AppendString(UseOfAddressOfOperatorE().Format)
+            os.Append(RequiredButNotSpecifiedE(), richTextOfQualifiedModRef mref, RichText.mkText k, nsb.ToRichText())
 
-        | DefensiveCopyWarning(s, _) -> os.AppendString(DefensiveCopyWarningE().Format s)
+        | UseOfAddressOfOperator _ -> os.Append(UseOfAddressOfOperatorE().Format)
 
-        | DeprecatedThreadStaticBindingWarning _ -> os.AppendString(DeprecatedThreadStaticBindingWarningE().Format)
+        | DefensiveCopyWarning(s, _) -> os.Append(DefensiveCopyWarningE().Format s)
+
+        | DeprecatedThreadStaticBindingWarning _ -> os.Append(DeprecatedThreadStaticBindingWarningE().Format)
 
         | FunctionValueUnexpected(denv, ty, _) ->
             let ty, _cxs = PrettyTypes.PrettifyType denv.g ty
-            let errorText = FunctionValueUnexpectedE().Format(NicePrint.stringOfTy denv ty)
-            os.AppendString errorText
+            os.Append(FunctionValueUnexpectedE(), NicePrint.richTextOfTy denv ty)
 
         | UnitTypeExpected(denv, ty, _) ->
             let ty, _cxs = PrettyTypes.PrettifyType denv.g ty
-            let warningText = UnitTypeExpectedE().Format(NicePrint.stringOfTy denv ty)
-            os.AppendString warningText
+            os.Append(UnitTypeExpectedE(), NicePrint.richTextOfTy denv ty)
 
         | UnitTypeExpectedWithEquality(denv, ty, _) ->
             let ty, _cxs = PrettyTypes.PrettifyType denv.g ty
-
-            let warningText =
-                UnitTypeExpectedWithEqualityE().Format(NicePrint.stringOfTy denv ty)
-
-            os.AppendString warningText
+            os.Append(UnitTypeExpectedWithEqualityE(), NicePrint.richTextOfTy denv ty)
 
         | UnitTypeExpectedWithPossiblePropertySetter(denv, ty, bindingName, propertyName, _) ->
             let ty, _cxs = PrettyTypes.PrettifyType denv.g ty
+            let ty = NicePrint.richTextOfTy denv ty
 
-            let warningText =
-                UnitTypeExpectedWithPossiblePropertySetterE().Format (NicePrint.stringOfTy denv ty) bindingName propertyName
-
-            os.AppendString warningText
+            os.Append(UnitTypeExpectedWithPossiblePropertySetterE(), ty, RichText.mkLocal bindingName, RichText.mkProperty propertyName)
 
         | UnitTypeExpectedWithPossibleAssignment(denv, ty, isAlreadyMutable, bindingName, _) ->
             let ty, _cxs = PrettyTypes.PrettifyType denv.g ty
+            let ty = NicePrint.richTextOfTy denv ty
 
-            let warningText =
-                if isAlreadyMutable then
-                    UnitTypeExpectedWithPossibleAssignmentToMutableE().Format (NicePrint.stringOfTy denv ty) bindingName
-                else
-                    UnitTypeExpectedWithPossibleAssignmentE().Format (NicePrint.stringOfTy denv ty) bindingName
+            let bindingName = RichText.mkLocal bindingName
 
-            os.AppendString warningText
+            if isAlreadyMutable then
+                os.Append(UnitTypeExpectedWithPossibleAssignmentToMutableE(), ty, bindingName)
+            else
+                os.Append(UnitTypeExpectedWithPossibleAssignmentE(), ty, bindingName)
 
-        | RecursiveUseCheckedAtRuntime _ -> os.AppendString(RecursiveUseCheckedAtRuntimeE().Format)
+        | RecursiveUseCheckedAtRuntime _ -> os.Append(RecursiveUseCheckedAtRuntimeE().Format)
 
-        | LetRecUnsound(_, [ v ], _) -> os.AppendString(LetRecUnsound1E().Format v.DisplayName)
+        | LetRecUnsound(denv, [ v ], _) -> os.Append(LetRecUnsound1E(), richTextOfValName denv.g v.Deref)
 
-        | LetRecUnsound(_, path, _) ->
-            let bos = StringBuilder()
+        | LetRecUnsound(denv, path, _) ->
+            let bos = RichTextBuilder()
 
             (path.Tail @ [ path.Head ])
-            |> List.iter (fun (v: ValRef) -> bos.AppendString(LetRecUnsoundInnerE().Format v.DisplayName))
+            |> List.iter (fun (v: ValRef) -> bos.Append(LetRecUnsoundInnerE(), richTextOfValName denv.g v.Deref))
 
-            os.AppendString(LetRecUnsound2E().Format (List.head path).DisplayName (bos.ToString()))
+            os.Append(LetRecUnsound2E(), richTextOfValName denv.g (List.head path).Deref, bos.ToRichText())
 
-        | LetRecEvaluatedOutOfOrder _ -> os.AppendString(LetRecEvaluatedOutOfOrderE().Format)
+        | LetRecEvaluatedOutOfOrder _ -> os.Append(LetRecEvaluatedOutOfOrderE().Format)
 
-        | LetRecCheckedAtRuntime _ -> os.AppendString(LetRecCheckedAtRuntimeE().Format)
+        | LetRecCheckedAtRuntime _ -> os.Append(LetRecCheckedAtRuntimeE().Format)
 
-        | SelfRefObjCtor(false, _) -> os.AppendString(SelfRefObjCtor1E().Format)
+        | SelfRefObjCtor(false, _) -> os.Append(SelfRefObjCtor1E().Format)
 
-        | SelfRefObjCtor(true, _) -> os.AppendString(SelfRefObjCtor2E().Format)
+        | SelfRefObjCtor(true, _) -> os.Append(SelfRefObjCtor2E().Format)
 
-        | VirtualAugmentationOnNullValuedType _ -> os.AppendString(VirtualAugmentationOnNullValuedTypeE().Format)
+        | VirtualAugmentationOnNullValuedType _ -> os.Append(VirtualAugmentationOnNullValuedTypeE().Format)
 
-        | NonVirtualAugmentationOnNullValuedType _ -> os.AppendString(NonVirtualAugmentationOnNullValuedTypeE().Format)
+        | NonVirtualAugmentationOnNullValuedType _ -> os.Append(NonVirtualAugmentationOnNullValuedTypeE().Format)
 
         | NonUniqueInferredAbstractSlot(_, denv, bindnm, bvirt1, bvirt2, _) ->
-            os.AppendString(NonUniqueInferredAbstractSlot1E().Format bindnm)
+            os.Append(NonUniqueInferredAbstractSlot1E(), RichText.mkMember bindnm)
             let ty1 = bvirt1.ApparentEnclosingType
             let ty2 = bvirt2.ApparentEnclosingType
             // REVIEW: consider if we need to show _cxs (the type parameter constraints)
-            let ty1, ty2, _cxs = NicePrint.minimalStringsOfTwoTypes denv ty1 ty2
-            os.AppendString(NonUniqueInferredAbstractSlot2E().Format)
+            let ty1, ty2, _cxs = NicePrint.minimalRichTextsOfTwoTypes denv ty1 ty2
+            os.Append(NonUniqueInferredAbstractSlot2E().Format)
 
             if ty1 <> ty2 then
-                os.AppendString(NonUniqueInferredAbstractSlot3E().Format ty1 ty2)
+                os.Append(NonUniqueInferredAbstractSlot3E(), ty1, ty2)
 
-            os.AppendString(NonUniqueInferredAbstractSlot4E().Format)
+            os.Append(NonUniqueInferredAbstractSlot4E().Format)
 
         | DiagnosticWithText(_, s, _)
-        | DiagnosticEnabledWithLanguageFeature(_, s, _, _) -> os.AppendString s
+        | DiagnosticEnabledWithLanguageFeature(_, s, _, _) -> os.Append s
 
         | DiagnosticWithSuggestions(_, s, _, idText, suggestionF) ->
-            os.AppendString(ConvertValLogicalNameToDisplayNameCore s)
+            os.Append s
             OutputNameSuggestions os suggestNames suggestionF idText
 
         | InternalError(s, _)
@@ -1815,82 +1887,91 @@ type Exception with
             let f2 = SR.GetString("Failure2")
 
             match s with
-            | f when f = f1 -> os.AppendString(Failure3E().Format s)
-            | f when f = f2 -> os.AppendString(Failure3E().Format s)
-            | _ -> os.AppendString(Failure4E().Format s)
+            | f when f = f1 -> os.Append(Failure3E().Format s)
+            | f when f = f2 -> os.Append(Failure3E().Format s)
+            | _ -> os.Append(Failure4E().Format s)
 #if DEBUG
-            Printf.bprintf os "\nStack Trace\n%s\n" (exn.ToString())
+            os.Append(sprintf "\nStack Trace\n%s\n" (exn.ToString()))
             Debug.Assert(false, sprintf "Unexpected exception seen in compiler: %s\n%s" s (exn.ToString()))
 #endif
 
         | WrappedError(e, _) -> e.Output(os, suggestNames)
 
         | PatternMatchCompilation.MatchIncomplete(isComp, cexOpt, _) ->
-            os.AppendString(MatchIncomplete1E().Format)
+            os.Append(MatchIncomplete1E().Format)
 
             match cexOpt with
             | None -> ()
-            | Some(cex, false) -> os.AppendString(MatchIncomplete2E().Format cex)
-            | Some(cex, true) -> os.AppendString(MatchIncomplete3E().Format cex)
+            | Some(cex, false) -> os.Append(MatchIncomplete2E(), cex)
+            | Some(cex, true) -> os.Append(MatchIncomplete3E(), cex)
 
             if isComp then
-                os.AppendString(MatchIncomplete4E().Format)
+                os.Append(MatchIncomplete4E().Format)
 
         | PatternMatchCompilation.MatchIncompleteForLoopHint(PatternMatchCompilation.MatchIncomplete(isComp, cexOpt, _)) ->
-            os.AppendString(MatchIncomplete1E().Format)
+            os.Append(MatchIncomplete1E().Format)
 
             match cexOpt with
             | None -> ()
-            | Some(cex, false) -> os.AppendString(MatchIncomplete2E().Format cex)
-            | Some(cex, true) -> os.AppendString(MatchIncomplete3E().Format cex)
+            | Some(cex, false) -> os.Append(MatchIncomplete2E(), cex)
+            | Some(cex, true) -> os.Append(MatchIncomplete3E(), cex)
 
-            os.AppendString(MatchIncompleteForLoopE().Format)
+            os.Append(MatchIncompleteForLoopE().Format)
 
             if isComp then
-                os.AppendString(MatchIncomplete4E().Format)
+                os.Append(MatchIncomplete4E().Format)
 
         | PatternMatchCompilation.EnumMatchIncomplete(isComp, cexOpt, _) ->
-            os.AppendString(EnumMatchIncomplete1E().Format)
+            os.Append(EnumMatchIncomplete1E().Format)
 
             match cexOpt with
             | None -> ()
-            | Some(cex, false) -> os.AppendString(MatchIncomplete2E().Format cex)
-            | Some(cex, true) -> os.AppendString(MatchIncomplete3E().Format cex)
+            | Some(cex, false) -> os.Append(MatchIncomplete2E(), cex)
+            | Some(cex, true) -> os.Append(MatchIncomplete3E(), cex)
 
             if isComp then
-                os.AppendString(MatchIncomplete4E().Format)
+                os.Append(MatchIncomplete4E().Format)
 
-        | PatternMatchCompilation.RuleNeverMatched _ -> os.AppendString(RuleNeverMatchedE().Format)
+        | PatternMatchCompilation.RuleNeverMatched _ -> os.Append(RuleNeverMatchedE().Format)
 
-        | ValNotMutable(_, vref, _) -> os.AppendString(ValNotMutableE().Format(vref.DisplayName))
+        | ValNotMutable(_, vref, _) ->
+            let name = vref.DisplayName
 
-        | ValNotLocal _ -> os.AppendString(ValNotLocalE().Format)
+            let msg =
+                if vref.Deref.IsParameter then
+                    ValNotMutableParameterE().Format name name name
+                else
+                    ValNotMutableE().Format name
+
+            os.Append msg
+
+        | ValNotLocal _ -> os.Append(ValNotLocalE().Format)
 
         | ObsoleteDiagnostic(message = message) ->
-            os.AppendString(Obsolete1E().Format)
+            os.Append(Obsolete1E().Format)
 
             match message with
-            | Some message when message <> "" -> os.AppendString(Obsolete2E().Format message)
+            | Some message when not message.IsEmpty -> os.Append(Obsolete2E(), message)
             | _ -> ()
 
         | Experimental(message = message) ->
-            os.AppendString(Experimental1E().Format)
+            os.Append(Experimental1E().Format)
 
             match message with
-            | Some message when message <> "" -> os.AppendString(Experimental2E().Format message)
+            | Some message when message <> "" -> os.Append(Experimental2E().Format message)
             | _ -> ()
 
-            os.AppendString(Experimental3E().Format)
+            os.Append(Experimental3E().Format)
 
-        | PossibleUnverifiableCode _ -> os.AppendString(PossibleUnverifiableCodeE().Format)
+        | PossibleUnverifiableCode _ -> os.Append(PossibleUnverifiableCodeE().Format)
 
-        | UserCompilerMessage(msg, _, _) -> os.AppendString msg
+        | UserCompilerMessage(msg, _, _) -> os.Append msg
 
-        | Deprecated(s, _) -> os.AppendString(DeprecatedE().Format s)
+        | Deprecated(s, _) -> os.Append(DeprecatedE(), s)
 
-        | LibraryUseOnly _ -> os.AppendString(LibraryUseOnlyE().Format)
+        | LibraryUseOnly _ -> os.Append(LibraryUseOnlyE().Format)
 
-        | MissingFields(sl, _) -> os.AppendString(MissingFieldsE().Format(String.concat "," sl + "."))
+        | MissingFields(sl, _) -> os.Append(MissingFieldsE().Format(String.concat "," sl + "."))
 
         | ValueRestriction(denv, infoReader, v, _, _) ->
             let denv =
@@ -1900,141 +1981,134 @@ type Exception with
 
             let tau = v.TauType
 
+            let name = richTextOfValName denv.g v
+
+            let signature =
+                NicePrint.richTextOfQualifiedValOrMember denv infoReader (mkLocalValRef v)
+
             if isFunTy denv.g tau && (arityOfVal v).HasNoArgs then
-                let msg =
-                    ValueRestrictionFunctionE().Format
-                        v.DisplayName
-                        (NicePrint.stringOfQualifiedValOrMember denv infoReader (mkLocalValRef v))
-                        v.DisplayName
-
-                os.AppendString msg
+                os.Append(ValueRestrictionFunctionE(), name, signature, name)
             else
-                let msg =
-                    ValueRestrictionE().Format
-                        v.DisplayName
-                        (NicePrint.stringOfQualifiedValOrMember denv infoReader (mkLocalValRef v))
-                        v.DisplayName
+                os.Append(ValueRestrictionE(), name, signature, name)
 
-                os.AppendString msg
+        | Parsing.RecoverableParseError -> os.Append(RecoverableParseErrorE().Format)
 
-        | Parsing.RecoverableParseError -> os.AppendString(RecoverableParseErrorE().Format)
+        | ReservedKeyword(s, _) -> os.Append(ReservedKeywordE(), s)
 
-        | ReservedKeyword(s, _) -> os.AppendString(ReservedKeywordE().Format s)
+        | IndentationProblem(s, _) -> os.Append(IndentationProblemE().Format s)
 
-        | IndentationProblem(s, _) -> os.AppendString(IndentationProblemE().Format s)
+        | OverrideInIntrinsicAugmentation _ -> os.Append(OverrideInIntrinsicAugmentationE().Format)
 
-        | OverrideInIntrinsicAugmentation _ -> os.AppendString(OverrideInIntrinsicAugmentationE().Format)
+        | OverrideInExtrinsicAugmentation _ -> os.Append(OverrideInExtrinsicAugmentationE().Format)
 
-        | OverrideInExtrinsicAugmentation _ -> os.AppendString(OverrideInExtrinsicAugmentationE().Format)
+        | IntfImplInIntrinsicAugmentation _ -> os.Append(IntfImplInIntrinsicAugmentationE().Format)
 
-        | IntfImplInIntrinsicAugmentation _ -> os.AppendString(IntfImplInIntrinsicAugmentationE().Format)
-
-        | IntfImplInExtrinsicAugmentation _ -> os.AppendString(IntfImplInExtrinsicAugmentationE().Format)
+        | IntfImplInExtrinsicAugmentation _ -> os.Append(IntfImplInExtrinsicAugmentationE().Format)
 
         | UnresolvedReferenceError(assemblyName, _)
-        | UnresolvedReferenceNoRange assemblyName -> os.AppendString(UnresolvedReferenceNoRangeE().Format assemblyName)
+        | UnresolvedReferenceNoRange assemblyName -> os.Append(UnresolvedReferenceNoRangeE().Format assemblyName)
 
         | UnresolvedPathReference(assemblyName, pathname, _)
 
         | UnresolvedPathReferenceNoRange(assemblyName, pathname) ->
-            os.AppendString(UnresolvedPathReferenceNoRangeE().Format pathname assemblyName)
+            os.Append(UnresolvedPathReferenceNoRangeE().Format pathname assemblyName)
 
-        | DeprecatedCommandLineOptionFull(fullText, _) -> os.AppendString fullText
+        | DeprecatedCommandLineOptionFull(fullText, _) -> os.Append fullText
 
-        | DeprecatedCommandLineOptionForHtmlDoc(optionName, _) -> os.AppendString(FSComp.SR.optsDCLOHtmlDoc optionName)
+        | DeprecatedCommandLineOptionForHtmlDoc(optionName, _) -> os.Append(FSComp.SR.optsDCLOHtmlDoc optionName)
 
         | DeprecatedCommandLineOptionSuggestAlternative(optionName, altOption, _) ->
-            os.AppendString(FSComp.SR.optsDCLODeprecatedSuggestAlternative (optionName, altOption))
+            os.Append(FSComp.SR.optsDCLODeprecatedSuggestAlternative (optionName, altOption))
 
-        | InternalCommandLineOption(optionName, _) -> os.AppendString(FSComp.SR.optsInternalNoDescription optionName)
+        | InternalCommandLineOption(optionName, _) -> os.Append(FSComp.SR.optsInternalNoDescription optionName)
 
-        | DeprecatedCommandLineOptionNoDescription(optionName, _) -> os.AppendString(FSComp.SR.optsDCLONoDescription optionName)
+        | DeprecatedCommandLineOptionNoDescription(optionName, _) -> os.Append(FSComp.SR.optsDCLONoDescription optionName)
 
-        | HashIncludeNotAllowedInNonScript _ -> os.AppendString(HashIncludeNotAllowedInNonScriptE().Format)
+        | HashIncludeNotAllowedInNonScript _ -> os.Append(HashIncludeNotAllowedInNonScriptE().Format)
 
-        | HashReferenceNotAllowedInNonScript _ -> os.AppendString(HashReferenceNotAllowedInNonScriptE().Format)
+        | HashReferenceNotAllowedInNonScript _ -> os.Append(HashReferenceNotAllowedInNonScriptE().Format)
 
-        | HashDirectiveNotAllowedInNonScript _ -> os.AppendString(HashDirectiveNotAllowedInNonScriptE().Format)
+        | HashDirectiveNotAllowedInNonScript _ -> os.Append(HashDirectiveNotAllowedInNonScriptE().Format)
 
-        | FileNameNotResolved(fileName, locations, _) -> os.AppendString(FileNameNotResolvedE().Format fileName locations)
+        | FileNameNotResolved(fileName, locations, _) -> os.Append(FileNameNotResolvedE().Format fileName locations)
 
-        | AssemblyNotResolved(originalName, _) -> os.AppendString(AssemblyNotResolvedE().Format originalName)
+        | AssemblyNotResolved(originalName, _) -> os.Append(AssemblyNotResolvedE().Format originalName)
 
         | IllegalFileNameChar(fileName, invalidChar) ->
-            os.AppendString(FSComp.SR.buildUnexpectedFileNameCharacter (fileName, string invalidChar) |> snd)
+            os.Append(FSComp.SR.buildUnexpectedFileNameCharacter (fileName, string invalidChar) |> snd)
 
         | HashLoadedSourceHasIssues(infos, warnings, errors, _) ->
 
             match warnings, errors with
             | _, e :: _ ->
-                os.AppendString(HashLoadedSourceHasIssues2E().Format)
+                os.Append(HashLoadedSourceHasIssues2E().Format)
                 e.Output(os, suggestNames)
             | e :: _, _ ->
-                os.AppendString(HashLoadedSourceHasIssues1E().Format)
+                os.Append(HashLoadedSourceHasIssues1E().Format)
                 e.Output(os, suggestNames)
             | [], [] ->
-                os.AppendString(HashLoadedSourceHasIssues0E().Format)
+                os.Append(HashLoadedSourceHasIssues0E().Format)
                 infos.Head.Output(os, suggestNames)
 
-        | HashLoadedScriptConsideredSource _ -> os.AppendString(HashLoadedScriptConsideredSourceE().Format)
+        | HashLoadedScriptConsideredSource _ -> os.Append(HashLoadedScriptConsideredSourceE().Format)
 
         | InvalidInternalsVisibleToAssemblyName(badName, fileNameOption) ->
             match fileNameOption with
-            | Some file -> os.AppendString(InvalidInternalsVisibleToAssemblyName1E().Format badName file)
-            | None -> os.AppendString(InvalidInternalsVisibleToAssemblyName2E().Format badName)
+            | Some file -> os.Append(InvalidInternalsVisibleToAssemblyName1E().Format badName file)
+            | None -> os.Append(InvalidInternalsVisibleToAssemblyName2E().Format badName)
 
-        | LoadedSourceNotFoundIgnoring(fileName, _) -> os.AppendString(LoadedSourceNotFoundIgnoringE().Format fileName)
+        | LoadedSourceNotFoundIgnoring(fileName, _) -> os.Append(LoadedSourceNotFoundIgnoringE().Format fileName)
 
         | MSBuildReferenceResolutionWarning(code, message, _)
 
-        | MSBuildReferenceResolutionError(code, message, _) -> os.AppendString(MSBuildReferenceResolutionErrorE().Format message code)
+        | MSBuildReferenceResolutionError(code, message, _) -> os.Append(MSBuildReferenceResolutionErrorE().Format message code)
 
         | ArgumentsInSigAndImplMismatch(sigArg, implArg) ->
-            os.AppendString(ArgumentsInSigAndImplMismatchE().Format sigArg.idText implArg.idText)
+            os.Append(ArgumentsInSigAndImplMismatchE(), RichText.mkParameter sigArg.idText, RichText.mkParameter implArg.idText)
 
         | DefinitionsInSigAndImplNotCompatibleAbbreviationsDiffer(denv, implTycon, _sigTycon, implTypeAbbrev, sigTypeAbbrev, _m) ->
-            let s1, s2, _ = NicePrint.minimalStringsOfTwoTypes denv implTypeAbbrev sigTypeAbbrev
+            let s1, s2, _ =
+                NicePrint.minimalRichTextsOfTwoTypes denv implTypeAbbrev sigTypeAbbrev
 
-            os.AppendString(
-                DefinitionsInSigAndImplNotCompatibleAbbreviationsDifferE().Format
-                    (implTycon.TypeOrMeasureKind.ToString())
-                    implTycon.DisplayName
-                    s1
-                    s2
+            os.Append(
+                DefinitionsInSigAndImplNotCompatibleAbbreviationsDifferE(),
+                RichText.mkText (implTycon.TypeOrMeasureKind.ToString()),
+                richTextOfEntity implTycon,
+                s1,
+                s2
             )
 
         | InvalidAttributeTargetForLanguageElement(elementTargets, allowedTargets, _m) ->
             if Array.isEmpty elementTargets then
-                os.AppendString(InvalidAttributeTargetForLanguageElement2E().Format)
+                os.Append(InvalidAttributeTargetForLanguageElement2E().Format)
             else
                 let elementTargets = String.concat ", " elementTargets
                 let allowedTargets = allowedTargets |> String.concat ", "
-                os.AppendString(InvalidAttributeTargetForLanguageElement1E().Format elementTargets allowedTargets)
+                os.Append(InvalidAttributeTargetForLanguageElement1E().Format elementTargets allowedTargets)
 
-        | NoConstructorsAvailableForType(t, denv, _) ->
-            os.AppendString(NoConstructorsAvailableForTypeE().Format(NicePrint.minimalStringOfType denv t))
+        | NoConstructorsAvailableForType(t, denv, _) -> os.Append(NoConstructorsAvailableForTypeE(), NicePrint.minimalRichTextOfType denv t)
 
         // Strip TargetInvocationException wrappers
         | :? TargetInvocationException as e when isNotNull e.InnerException -> (!!e.InnerException).Output(os, suggestNames)
 
-        | :? FileNotFoundException as exn -> Printf.bprintf os "%s" exn.Message
+        | :? FileNotFoundException as exn -> os.Append exn.Message
 
-        | :? DirectoryNotFoundException as exn -> Printf.bprintf os "%s" exn.Message
+        | :? DirectoryNotFoundException as exn -> os.Append exn.Message
 
-        | :? ArgumentException as exn -> Printf.bprintf os "%s" exn.Message
+        | :? ArgumentException as exn -> os.Append exn.Message
 
-        | :? NotSupportedException as exn -> Printf.bprintf os "%s" exn.Message
+        | :? NotSupportedException as exn -> os.Append exn.Message
 
-        | :? IOException as exn -> Printf.bprintf os "%s" exn.Message
+        | :? IOException as exn -> os.Append exn.Message
 
-        | :? UnauthorizedAccessException as exn -> Printf.bprintf os "%s" exn.Message
+        | :? UnauthorizedAccessException as exn -> os.Append exn.Message
 
-        | :? InvalidOperationException as exn when exn.Message.Contains "ControlledExecution.Run" -> Printf.bprintf os "%s" exn.Message
+        | :? InvalidOperationException as exn when exn.Message.Contains "ControlledExecution.Run" -> os.Append exn.Message
 
         | exn ->
-            os.AppendString(TargetInvocationExceptionWrapperE().Format exn.Message)
+            os.Append(TargetInvocationExceptionWrapperE().Format exn.Message)
 #if DEBUG
-            Printf.bprintf os "\nStack Trace\n%s\n" (exn.ToString())
+            os.Append(sprintf "\nStack Trace\n%s\n" (exn.ToString()))
 
             if showAssertForUnexpectedException.Value then
                 Debug.Assert(false, sprintf "Unknown exception seen in compiler: %s" (exn.ToString()))
@@ -2044,30 +2118,21 @@ type Exception with
 type PhasedDiagnostic with
 
     // remove any newlines and tabs
-    member x.OutputCore(os: StringBuilder, flattenErrors: bool, suggestNames: bool) =
-        let buf = StringBuilder()
+    member x.FormatRichCore(flattenErrors: bool, suggestNames: bool) =
+        let buf = RichTextBuilder()
 
         x.Exception.Output(buf, suggestNames)
 
-        let text =
-            if flattenErrors then
-                NormalizeErrorString(buf.ToString())
-            else
-                buf.ToString()
+        let text = buf.ToRichText()
 
-        os.AppendString text
+        if flattenErrors then NormalizeErrorRichText text else text
 
-    member x.FormatCore(flattenErrors: bool, suggestNames: bool) =
-        let os = StringBuilder()
-        x.OutputCore(os, flattenErrors, suggestNames)
-        os.ToString()
+    member x.FormatCore(flattenErrors: bool, suggestNames: bool) = x.FormatRichCore(flattenErrors, suggestNames).Text
 
     member x.EagerlyFormatCore(suggestNames: bool) =
         match x.Range with
         | Some m ->
-            let buf = StringBuilder()
-            x.Exception.Output(buf, suggestNames)
-            let message = buf.ToString()
+            let message = x.FormatRichCore(false, suggestNames)
             let exn = DiagnosticWithText(x.Number, message, m)
             { x with Exception = exn }
         | None -> x

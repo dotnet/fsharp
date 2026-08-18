@@ -235,3 +235,21 @@ module Structure =
         compilation
         |> getCompilation
         |> verifyExecution
+
+    [<Fact>]
+    let ``sizeof reports correct sizes for various struct DU forms`` () =
+        Fsx """
+[<Struct>] type SingleCase = | Only
+[<Struct>] type MultiNoData = A | B | C
+[<Struct>] type OneIntField = N | S of int
+[<Struct>] type TwoIntFields = T0 | T1 of x: int * y: int
+
+[<EntryPoint>]
+let main _ =
+    printf "SingleCase=%i;MultiNoData=%i;OneIntField=%i;TwoIntFields=%i" sizeof<SingleCase> sizeof<MultiNoData> sizeof<OneIntField> sizeof<TwoIntFields>
+    0
+        """
+        |> asExe
+        |> compileAndRun
+        |> shouldSucceed
+        |> verifyOutput "SingleCase=1;MultiNoData=4;OneIntField=8;TwoIntFields=12"

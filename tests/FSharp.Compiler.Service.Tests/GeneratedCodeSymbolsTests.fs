@@ -15,7 +15,7 @@ type T () =
 """
     let options = createProjectOptions [ source ] [ "--langversion:preview" ]
     let exprChecker = FSharpChecker.Create(keepAssemblyContents=true, useTransparentCompiler=false)
-    let wholeProjectResults = exprChecker.ParseAndCheckProject(options) |> Async.RunImmediate
+    let wholeProjectResults = exprChecker.ParseAndCheckProject(options) |> Async.RunSynchronouslyImmediate
 
     let mfvs =
         seq {
@@ -44,7 +44,7 @@ type T = A | B
 """
     let options = createProjectOptions [ source ] [ "--langversion:preview" ]
     let exprChecker = FSharpChecker.Create(keepAssemblyContents=true, useTransparentCompiler=false)
-    let wholeProjectResults = exprChecker.ParseAndCheckProject(options) |> Async.RunImmediate
+    let wholeProjectResults = exprChecker.ParseAndCheckProject(options) |> Async.RunSynchronouslyImmediate
 
     let mfvs =
         seq {
@@ -77,7 +77,7 @@ type T =
 """
     let  options = createProjectOptions [ source ] [ "--langversion:preview" ]
     let exprChecker = FSharpChecker.Create(keepAssemblyContents=true, useTransparentCompiler=false)
-    let wholeProjectResults = exprChecker.ParseAndCheckProject(options) |> Async.RunImmediate
+    let wholeProjectResults = exprChecker.ParseAndCheckProject(options) |> Async.RunSynchronouslyImmediate
 
     let mfvs =
         seq {

@@ -219,7 +219,7 @@ type Item =
     /// CustomOperation(nm, helpText, methInfo)
     ///
     /// Used to indicate the availability or resolution of a custom query operation such as 'sortBy' or 'where' in computation expression syntax
-    | CustomOperation of string * (unit -> string option) * MethInfo option
+    | CustomOperation of string * (unit -> RichText option) * MethInfo option
 
     /// Represents the resolution of a name to a custom builder in the F# computation expression syntax
     | CustomBuilder of string * ValRef
@@ -704,7 +704,9 @@ let rec TrySelectExtensionMethInfoOfILExtMem m amap apparentTy (actualParent, mi
     | ProvidedMeth(amap,providedMeth,_,m) -> 
         ProvidedMeth(amap, providedMeth, Some pri,m) |> Some
 #endif
-    | DefaultStructCtor _ -> 
+    | DefaultStructCtor _ ->
+        None
+    | RecdCtor _ ->
         None
 
 /// Select from a list of extension methods
@@ -1010,15 +1012,18 @@ let CheckForDirectReferenceToGeneratedType (tcref: TyconRef, genOk, m) =
     match tcref.TypeReprInfo with
     | TProvidedTypeRepr info when not info.IsErased ->
         if IsGeneratedTypeDirectReference (info.ProvidedType, m) then
-            error (Error(FSComp.SR.etDirectReferenceToGeneratedTypeNotAllowed(tcref.DisplayName), m))
+            error (Error(FSComp.SR.etDirectReferenceToGeneratedTypeNotAllowed(richTextOfEntityRef tcref), m))
     |  _ -> ()
 
 /// This adds a new entity for a lazily discovered provided type into the TAST structure.
 let AddEntityForProvidedType (amap: Import.ImportMap, modref: ModuleOrNamespaceRef, resolutionEnvironment, st: Tainted<ProvidedType>, m) =
     let importProvidedType t = Import.ImportProvidedType amap m t
     let isSuppressRelocate = amap.g.isInteractive || st.PUntaint((fun st -> st.IsSuppressRelocate), m)
-    let tycon = Construct.NewProvidedTycon(resolutionEnvironment, st, importProvidedType, isSuppressRelocate, m)
-    modref.ModuleOrNamespaceType.AddProvidedTypeEntity tycon
+    let providedTypeName = st.PUntaint((fun st -> st.Name), m)
+    let tycon =
+        modref.ModuleOrNamespaceType.GetOrInternProvidedEntity(
+            providedTypeName,
+            (fun () -> Construct.NewProvidedTycon(resolutionEnvironment, st, importProvidedType, isSuppressRelocate, m)))
     let tcref = modref.NestedTyconRef tycon
     System.Diagnostics.Debug.Assert(modref.TryDeref.IsSome)
     tcref
@@ -1371,7 +1376,6 @@ and private AddStaticPartsOfTyconRefToNameEnv bulkAddMode ownDefinition g amap m
         eUnindexedExtensionMembers = eUnindexedExtensionMembers }
 
 and private CanAutoOpenTyconRef (g: TcGlobals) (tcref: TyconRef) =
-    g.langVersion.SupportsFeature LanguageFeature.OpenTypeDeclaration &&
     not tcref.IsILTycon &&
     EntityHasWellKnownAttribute g WellKnownEntityAttributes.AutoOpenAttribute tcref.Deref &&
     tcref.Typars |> List.isEmpty
@@ -1496,7 +1500,8 @@ let rec AddModuleOrNamespaceRefsToNameEnv g amap m root ad nenv (modrefs: Module
 
     let nenv =
         (nenv, modrefs) ||> List.fold (fun nenv modref ->
-            if modref.IsModule && EntityHasWellKnownAttribute g WellKnownEntityAttributes.AutoOpenAttribute modref.Deref then
+            // Check attributes before forcing the type reading.
+            if EntityHasWellKnownAttribute g WellKnownEntityAttributes.AutoOpenAttribute modref.Deref && modref.IsModule then
                 AddModuleOrNamespaceContentsToNameEnv g amap ad m false nenv modref
             else
                 nenv)
@@ -2198,8 +2203,6 @@ type TcResultsSinkImpl(tcGlobals, ?sourceText: ISourceText) =
     let capturedOpenDeclarations = ResizeArray<OpenDeclaration>()
     let capturedFormatSpecifierLocations = ResizeArray<_>()
 
-    let capturedFormatSpecifierRanges = HashSet<range>()
-
     let capturedNameResolutionIdentifiers =
         HashSet<pos * string>
             { new IEqualityComparer<_> with
@@ -2304,8 +2307,7 @@ type TcResultsSinkImpl(tcGlobals, ?sourceText: ISourceText) =
                     capturedMethodGroupResolutions.Add(CapturedNameResolution(itemMethodGroup, [], occurrenceType, nenv, ad, m))
 
         member sink.NotifyFormatSpecifierLocation(m, numArgs) =
-            if capturedFormatSpecifierRanges.Add(m) then
-                capturedFormatSpecifierLocations.Add((m, numArgs))
+            capturedFormatSpecifierLocations.Add((m, numArgs))
 
         member sink.NotifyRelatedSymbolUse(m, item, kind) =
             if allowedRange m then
@@ -2337,6 +2339,61 @@ let TemporarilySuspendReportingTypecheckResultsToSink (sink: TcResultsSink) =
     sink.CurrentSink <- None
     { new System.IDisposable with member x.Dispose() = sink.CurrentSink <- old }
 
+/// A sink that records all notifications so they can later be replayed to the wrapped sink or discarded.
+/// Query members are forwarded to the wrapped sink so results computed while buffering (e.g. printf
+/// format-specifier ranges) are accurate when replayed.
+type private BufferingTypecheckResultsSink(sink: ITypecheckResultsSink) =
+    let buffered = ResizeArray<unit -> unit>()
+    member _.Replay() = for notify in buffered do notify ()
+
+    interface ITypecheckResultsSink with
+        member _.NotifyEnvWithScope(m, nenv, ad) = buffered.Add(fun () -> sink.NotifyEnvWithScope(m, nenv, ad))
+        member _.NotifyExprHasType(ty, nenv, ad, m) = buffered.Add(fun () -> sink.NotifyExprHasType(ty, nenv, ad, m))
+        member _.NotifyExprHasTypeSynthetic(ty, nenv, ad, m) = buffered.Add(fun () -> sink.NotifyExprHasTypeSynthetic(ty, nenv, ad, m))
+        member _.NotifyNameResolution(p, item, tpinst, occ, nenv, ad, m, replace) = buffered.Add(fun () -> sink.NotifyNameResolution(p, item, tpinst, occ, nenv, ad, m, replace))
+        member _.NotifyMethodGroupNameResolution(p, item, itemGroup, tpinst, occ, nenv, ad, m, replace) = buffered.Add(fun () -> sink.NotifyMethodGroupNameResolution(p, item, itemGroup, tpinst, occ, nenv, ad, m, replace))
+        member _.NotifyFormatSpecifierLocation(m, numArgs) = buffered.Add(fun () -> sink.NotifyFormatSpecifierLocation(m, numArgs))
+        member _.NotifyRelatedSymbolUse(m, item, kind) = buffered.Add(fun () -> sink.NotifyRelatedSymbolUse(m, item, kind))
+        member _.NotifyOpenDeclaration decl = buffered.Add(fun () -> sink.NotifyOpenDeclaration decl)
+        member _.CurrentSourceText = sink.CurrentSourceText
+        member _.FormatStringCheckContext = sink.FormatStringCheckContext
+
+/// Temporarily buffer reporting to the sink, returning a `replay` action that flushes the buffered
+/// notifications to the previously active sink (a no-op if there was none) and a disposable that restores it.
+let private bufferReportingToSink (sink: TcResultsSink) =
+    match sink.CurrentSink with
+    | None -> (fun () -> ()), { new System.IDisposable with member _.Dispose() = () }
+    | Some inner ->
+        let buffer = BufferingTypecheckResultsSink inner
+        sink.CurrentSink <- Some(buffer :> ITypecheckResultsSink)
+        buffer.Replay, { new System.IDisposable with member _.Dispose() = sink.CurrentSink <- Some inner }
+
+/// Run `compute` with all typecheck-results reporting buffered: its sink notifications and diagnostics are
+/// recorded rather than emitted. If `commitWhen` holds for the result they are flushed to the sink and
+/// diagnostics logger that were active before buffering began; otherwise they are dropped. Diagnostics from a
+/// `compute` that raises are always flushed so the error still surfaces. Lets a speculative pass defer
+/// reporting until its result is known to be kept. `commitWhen` runs after reporting is restored, so it must
+/// be side-effect-free. `loggerName` names the internal capturing logger for debugging.
+let RunWithBufferedReporting (sink: TcResultsSink) (loggerName: string) (compute: unit -> 'T) (commitWhen: 'T -> bool) : 'T =
+    let outerLogger = DiagnosticsThreadStatics.DiagnosticsLogger
+    let capturingLogger = CapturingDiagnosticsLogger(loggerName)
+    let replaySink, restoreSink = bufferReportingToSink sink
+
+    let result =
+        use _restoreSink = restoreSink
+        use _restoreLogger = UseDiagnosticsLogger capturingLogger
+
+        try
+            compute ()
+        with _ ->
+            capturingLogger.CommitDelayedDiagnostics outerLogger
+            reraise ()
+
+    if commitWhen result then
+        replaySink ()
+        capturingLogger.CommitDelayedDiagnostics outerLogger
+
+    result
 
 /// Report the active name resolution environment for a specific source range
 let CallEnvSink (sink: TcResultsSink) (scopem, nenv, ad) =
@@ -2548,14 +2605,14 @@ let CheckForTypeLegitimacyAndMultipleGenericTypeAmbiguities
                 // plausible types have different arities
                 (tcrefs |> Seq.distinctBy (fun (_, tcref) -> tcref.Typars.Length) |> Seq.length > 1)  ->
             [ for resInfo, tcref in tcrefs do
-                let resInfo = resInfo.AddWarning (fun _typarChecker -> errorR(Error(FSComp.SR.nrTypeInstantiationNeededToDisambiguateTypesWithSameName(tcref.DisplayName, tcref.DisplayNameWithStaticParametersAndUnderscoreTypars), m)))
+                let resInfo = resInfo.AddWarning (fun _typarChecker -> errorR(Error(FSComp.SR.nrTypeInstantiationNeededToDisambiguateTypesWithSameName(richTextOfEntityRef tcref, richTextOfEntityRefName tcref tcref.DisplayNameWithStaticParametersAndUnderscoreTypars), m)))
                 yield (resInfo, tcref) ]
 
         | [(resInfo, tcref)] when  typeNameResInfo.StaticArgsInfo.HasNoStaticArgsInfo && ((tcref.Typars).Length - resInfo.EnclosingTypeInst.Length) > 0 && typeNameResInfo.ResolutionFlag = ResolveTypeNamesToTypeRefs ->
             let resInfo =
                 resInfo.AddWarning (fun (ResultTyparChecker typarChecker) ->
                     if not (typarChecker()) then
-                        warning(Error(FSComp.SR.nrTypeInstantiationIsMissingAndCouldNotBeInferred(tcref.DisplayName, tcref.DisplayNameWithStaticParametersAndUnderscoreTypars), m)))
+                        warning(Error(FSComp.SR.nrTypeInstantiationIsMissingAndCouldNotBeInferred(richTextOfEntityRef tcref, richTextOfEntityRefName tcref tcref.DisplayNameWithStaticParametersAndUnderscoreTypars), m)))
             [(resInfo, tcref)]
 
         | _ ->
@@ -3001,14 +3058,16 @@ let rec ResolveLongIdentInTypePrim (ncenv: NameResolver) nenv lookupKind (resInf
                             |> Array.sort
                             |> Array.map (fun s -> $"    %s{s}")
                             |> fun a -> System.String.Join("\n", a)
+                        let message =
+                            FSComp.SR.tcMultipleRecdTypeChoice(RichText.mkText candidates, richTextOfEntityRefName tcref resolvedTypeName, RichText.mkText overlappingNames)
                         if g.langVersion.SupportsFeature(LanguageFeature.WarningWhenMultipleRecdTypeChoice) then
-                            warning(Error(FSComp.SR.tcMultipleRecdTypeChoice(candidates, resolvedTypeName, overlappingNames), m))
+                            warning(Error(message, m))
                         else
-                            informationalWarning(Error(FSComp.SR.tcMultipleRecdTypeChoice(candidates, resolvedTypeName, overlappingNames), m))
+                            informationalWarning(Error(message, m))
                 | _ -> ()
-                FSComp.SR.undefinedNameFieldConstructorOrMemberWhenTypeIsKnown(tcref.DisplayNameWithStaticParametersAndUnderscoreTypars, s)
+                FSComp.SR.undefinedNameFieldConstructorOrMemberWhenTypeIsKnown(richTextOfEntityRefName tcref tcref.DisplayNameWithStaticParametersAndUnderscoreTypars, s)
             | ValueSome tcref ->
-                FSComp.SR.undefinedNameFieldConstructorOrMemberWhenTypeIsKnown(tcref.DisplayNameWithStaticParametersAndUnderscoreTypars, s)
+                FSComp.SR.undefinedNameFieldConstructorOrMemberWhenTypeIsKnown(richTextOfEntityRefName tcref tcref.DisplayNameWithStaticParametersAndUnderscoreTypars, s)
             | _ ->
                 FSComp.SR.undefinedNameFieldConstructorOrMember(s)
 
@@ -3426,7 +3485,7 @@ let rec ResolveExprLongIdentPrim sink (ncenv: NameResolver) first fullyQualified
 
 let ResolveExprLongIdent sink (ncenv: NameResolver) m ad nenv typeNameResInfo lid maybeAppliedArgExpr =
     match lid with
-    | [] -> raze (Error(FSComp.SR.nrInvalidExpression(textOfLid lid), m))
+    | [] -> raze (Error(FSComp.SR.nrInvalidExpression(RichText.mkText (textOfLid lid)), m))
     | id :: rest -> ResolveExprLongIdentPrim sink ncenv true OpenQualified m ad nenv typeNameResInfo id rest false maybeAppliedArgExpr
 
 //-------------------------------------------------------------------------
@@ -3690,7 +3749,7 @@ let SuggestTypeLongIdentInModuleOrNamespace depth (modref: ModuleOrNamespaceRef)
             if IsEntityAccessible amap m ad (modref.NestedTyconRef e) then
                 addToBuffer e.DisplayName
 
-    let errorTextF s = FSComp.SR.undefinedNameTypeIn(s, fullDisplayTextOfModRef modref)
+    let errorTextF s = FSComp.SR.undefinedNameTypeIn(s, richTextOfQualifiedModRef modref)
     UndefinedName(depth, errorTextF, id, suggestPossibleTypes)
 
 /// Resolve a long identifier representing a type in a module or namespace
@@ -3956,17 +4015,30 @@ let SuggestLabelsOfRelatedRecords g (nenv: NameResolutionEnv) (id: Ident) (allFi
 
     UndefinedName(0, FSComp.SR.undefinedNameRecordLabel, id, suggestLabels)
 
+[<RequireQualifiedAccess; NoEquality; NoComparison>]
+type internal ExplicitOrSpread<'Explicit, 'Spread> =
+    /// An expression or value derived from an explicit member or record field.
+    | Explicit of 'Explicit
+
+    /// An expression or value derived from a member or field coming from a spread.
+    | Spread of 'Spread
+
+let (|ExplicitOrSpread|) (ExplicitOrSpread.Explicit value | ExplicitOrSpread.Spread value) = value
+
 /// Resolve a long identifier representing a record field
-let ResolveFieldPrim sink (ncenv: NameResolver) nenv ad ty (mp, id: Ident) allFields =
+let ResolveFieldPrim sink (ncenv: NameResolver) nenv ad ty (fldInfo: ExplicitOrSpread<'Explicit * Ident, Ident>) allFields =
+    let m = match fldInfo with ExplicitOrSpread.Explicit (_, id) | ExplicitOrSpread.Spread id -> id.idRange
     let typeNameResInfo = TypeNameResolutionInfo.Default
     let g = ncenv.g
-    let m = id.idRange
-    match mp with
-    | [] ->
+
+    match fldInfo with
+    | ExplicitOrSpread.Explicit ([], id)
+    | ExplicitOrSpread.Spread id ->
         let lookup() =
             let frefs =
-                try Map.find id.idText nenv.eFieldLabels
-                with :? KeyNotFoundException ->
+                match Map.tryFind id.idText nenv.eFieldLabels with
+                | Some frefs -> frefs
+                | None ->
                     // record label is unknown -> suggest related labels and give a hint to the user
                     error(SuggestLabelsOfRelatedRecords g nenv id allFields)
 
@@ -3983,21 +4055,22 @@ let ResolveFieldPrim sink (ncenv: NameResolver) nenv ad ty (mp, id: Ident) allFi
         match tryTcrefOfAppTy g ty with
         | ValueSome tcref ->
             match ncenv.InfoReader.TryFindRecdOrClassFieldInfoOfType(id.idText, m, ty) with
-            | ValueSome (RecdFieldInfo(_, rfref)) -> [ResolutionInfo.Empty, FieldResolution(FreshenRecdFieldRef ncenv m rfref, false)]
+            | ValueSome (RecdFieldInfo(_, rfref)) -> Some [ResolutionInfo.Empty, FieldResolution(FreshenRecdFieldRef ncenv m rfref, false)]
             | _ ->
-                if tcref.IsRecordTycon then
+                if fldInfo.IsSpread then None
+                elif tcref.IsRecordTycon then
                     // record label doesn't belong to record type -> suggest other labels of same record
                     let suggestLabels (addToBuffer: string -> unit) = 
                         for label in SuggestOtherLabelsOfSameRecordType g nenv ty id allFields do
                             addToBuffer label
 
-                    let typeName = NicePrint.minimalStringOfType nenv.eDisplayEnv ty
-                    let errorText = FSComp.SR.nrRecordDoesNotContainSuchLabel(typeName, id.idText)
+                    let typeName = NicePrint.minimalRichTextOfType nenv.eDisplayEnv ty
+                    let errorText = FSComp.SR.nrRecordDoesNotContainSuchLabel(typeName, RichText.mkUnresolvedName id.idText)
                     error(ErrorWithSuggestions(errorText, m, id.idText, suggestLabels))
                 else
-                    lookup()
-        | ValueNone -> lookup()
-    | _ ->
+                    Some (lookup())
+        | ValueNone -> Some (lookup())
+    | ExplicitOrSpread.Explicit (mp, id) ->
         let lid = (mp@[id])
         let tyconSearch ad () =
             match lid with
@@ -4027,17 +4100,18 @@ let ResolveFieldPrim sink (ncenv: NameResolver) nenv ad ty (mp, id: Ident) allFi
         if not (isNil rest) then
             errorR(Error(FSComp.SR.nrInvalidFieldLabel(), (List.head rest).idRange))
 
-        [(resInfo, item)]
+        Some [(resInfo, item)]
 
-let ResolveField sink ncenv nenv ad ty mp id allFields =
-    let res = ResolveFieldPrim sink ncenv nenv ad ty (mp, id) allFields
+let ResolveField sink ncenv nenv ad ty fldInfo allFields =
+    let res = ResolveFieldPrim sink ncenv nenv ad ty fldInfo allFields
     // Register the results of any field paths "Module.Type" in "Module.Type.field" as a name resolution. (Note, the path resolution
     // info is only non-empty if there was a unique resolution of the field)
-    let checker = ResultTyparChecker(fun () -> true)
     res
-    |> List.map (fun (resInfo, rfref) ->
-        ResolutionInfo.SendEntityPathToSink(sink, ncenv, nenv, ItemOccurrence.UseInType, ad, resInfo, checker)
-        rfref)
+    |> Option.map (fun res ->
+        let checker = ResultTyparChecker(fun () -> true)
+        res |> List.map (fun (resInfo, rfref) ->
+            ResolutionInfo.SendEntityPathToSink(sink, ncenv, nenv, ItemOccurrence.UseInType, ad, resInfo, checker)
+            rfref))
 
 /// Resolve a long identifier representing a nested record field.
 ///
@@ -4057,7 +4131,7 @@ let ResolveNestedField sink (ncenv: NameResolver) nenv ad recdTy lid =
         | ValueSome (anonInfo, tys) ->
             match anonInfo.SortedNames |> Array.tryFindIndex (fun x -> x = id.idText) with
             | Some index -> OneSuccess (Item.AnonRecdField (anonInfo, tys, index, m))
-            | _ -> raze (Error(FSComp.SR.nrRecordDoesNotContainSuchLabel(NicePrint.minimalStringOfType nenv.eDisplayEnv ty, id.idText), m))
+            | _ -> raze (Error(FSComp.SR.nrRecordDoesNotContainSuchLabel(NicePrint.minimalRichTextOfType nenv.eDisplayEnv ty, RichText.mkUnresolvedName id.idText), m))
         | _ ->
             let otherRecordFields ty =
                 let typeName = NicePrint.minimalStringOfType nenv.eDisplayEnv ty
@@ -4078,8 +4152,8 @@ let ResolveNestedField sink (ncenv: NameResolver) nenv ad recdTy lid =
                         for label in SuggestOtherLabelsOfSameRecordType g nenv ty id (otherRecordFields ty) do
                             addToBuffer label
 
-                    let typeName = NicePrint.minimalStringOfType nenv.eDisplayEnv ty
-                    let errorText = FSComp.SR.nrRecordDoesNotContainSuchLabel(typeName,id.idText)
+                    let typeName = NicePrint.minimalRichTextOfType nenv.eDisplayEnv ty
+                    let errorText = FSComp.SR.nrRecordDoesNotContainSuchLabel(typeName, RichText.mkUnresolvedName id.idText)
                     raze (ErrorWithSuggestions(errorText, m, id.idText, suggestLabels))
             else 
                 match Map.tryFind id.idText nenv.eFieldLabels with
@@ -4105,7 +4179,7 @@ let ResolveNestedField sink (ncenv: NameResolver) nenv ad recdTy lid =
             match lid with
             | id :: rest ->
                 lookupField recdTy id
-                |?> List.map (fun x -> id, x, rest)
+                |?> List.map (fun x -> ResolutionInfo.Empty, None, id, x, rest)
             | _ -> NoResultsOrUsefulErrors
 
         let tyconSearch ad () =
@@ -4118,10 +4192,10 @@ let ResolveNestedField sink (ncenv: NameResolver) nenv ad recdTy lid =
                 if isNil tcrefs then
                     NoResultsOrUsefulErrors
                 else
-                    ResolveLongIdentInTyconRefs ResultCollectionSettings.AllResults ncenv nenv LookupKind.RecdField 1 tyconId.idRange ad fieldId rest typeNameResInfo fieldId.idRange tcrefs None
+                    ResolveLongIdentInTyconRefs ResultCollectionSettings.AllResults ncenv nenv LookupKind.RecdField 1 tyconId.idRange ad fieldId rest typeNameResInfo tyconId.idRange tcrefs None
                     |?> List.choose (fun x ->
                         match x with
-                        | _, (Item.RecdField _ as item), rest -> Some (fieldId, item, rest)
+                        | resInfo, (Item.RecdField _ as item), rest -> Some (resInfo, Some tyconId, fieldId, item, rest)
                         | _ -> None)
             | _ -> NoResultsOrUsefulErrors
 
@@ -4130,11 +4204,11 @@ let ResolveNestedField sink (ncenv: NameResolver) nenv ad recdTy lid =
             | [] -> NoResultsOrUsefulErrors
             | modOrNsId :: rest ->
                 ResolveLongIdentAsModuleOrNamespaceThen sink ResultCollectionSettings.AtMostOneResult ncenv.amap modOrNsId.idRange OpenQualified nenv ad modOrNsId rest false ShouldNotifySink.Yes (ResolveFieldInModuleOrNamespace ncenv nenv ad)
-                |?> List.map (fun (_, FieldResolution(rfinfo, _), restAfterField) ->
+                |?> List.map (fun (resInfo, FieldResolution(rfinfo, _), restAfterField) ->
                     let fieldId = rest.[ rest.Length - restAfterField.Length - 1 ]
-                    fieldId, Item.RecdField rfinfo, restAfterField)
+                    resInfo, None, fieldId, Item.RecdField rfinfo, restAfterField)
 
-        let fieldId, item, rest =
+        let resInfo, tyconIdOpt, fieldId, item, rest =
             let search =
                 if isAnonRecdTy then
                     fieldSearch ()
@@ -4144,6 +4218,12 @@ let ResolveNestedField sink (ncenv: NameResolver) nenv ad recdTy lid =
             search
             |> AtMostOneResult id.idRange
             |> ForceRaise
+
+        match tyconIdOpt with
+        | Some _ ->
+            // Report every type-qualifier occurrence before grouping collapses duplicates; UseInType matches ResolveField.
+            ResolutionInfo.SendEntityPathToSink(sink, ncenv, nenv, ItemOccurrence.UseInType, ad, resInfo, ResultTyparChecker(fun () -> true))
+        | None -> ()
 
         let idsBeforeField =
             if isAnonRecdTy then
@@ -4284,7 +4364,7 @@ let ResolveLongIdentAsExprAndComputeRange (sink: TcResultsSink) (ncenv: NameReso
 
     match item1, item with
     | Item.MethodGroup(name, minfos1, _), Item.MethodGroup(_, [], _) when not (isNil minfos1) ->
-        raze(Error(FSComp.SR.methodIsNotStatic name, wholem))
+        raze(Error(FSComp.SR.methodIsNotStatic (RichText.mkMethod name), wholem))
     | _ -> 
 
     // Fake idents e.g. 'Microsoft.FSharp.Core.None' have identical ranges for each part
@@ -5152,6 +5232,17 @@ let getRecordFieldsInScope nenv =
         let typeInsts = fref.TyconRef.Typars |> List.map mkTyparTy
         Item.RecdField(RecdFieldInfo(typeInsts, fref)))
    |> List.ofSeq
+
+let getRecordTyconsInScope g (ncenv: NameResolver) nenv ad m =
+    [
+        for KeyValue (_, tcref) in nenv.eTyconsByDemangledNameAndArity do
+            if
+                not (tcref.LogicalName.Contains ",") &&
+                tcref.IsRecordTycon &&
+                not (IsTyconUnseen ad g ncenv.amap m false tcref)
+            then
+                tcref, ItemOfTyconRef ncenv m tcref
+    ]
 
 /// allowObsolete - specifies whether we should return obsolete types & modules
 ///   as (no other obsolete items are returned)

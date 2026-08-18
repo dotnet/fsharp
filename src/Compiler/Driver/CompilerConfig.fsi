@@ -470,7 +470,7 @@ type TcConfigBuilder =
 
         mutable emitDebugInfoInQuotations: bool
 
-        mutable strictIndentation: bool option
+        mutable alwaysInline: bool option
 
         mutable exename: string option
 
@@ -812,7 +812,7 @@ type TcConfig =
 
     member FxResolver: FxResolver
 
-    member strictIndentation: bool option
+    member alwaysInline: bool
 
     member GetTargetFrameworkDirectories: unit -> string list
 

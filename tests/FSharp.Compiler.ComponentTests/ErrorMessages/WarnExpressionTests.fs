@@ -285,6 +285,34 @@ while x < 3 do
                                  "The result of this expression has type 'int' and is implicitly ignored. Consider using 'ignore' to discard this value explicitly, e.g. 'expr |> ignore', or 'let' to bind the result to a name, e.g. 'let result = expr'.")
 
     [<Fact>]
+    let ``Warn On Last Expression Inside async Computation Expression - highlights only offending expression``() =
+        FSharp """
+let _ =
+    async {
+        for _ in [1] do
+            let x = 1
+            x
+    }
+        """
+        |> typecheck
+        |> shouldFail
+        |> withSingleDiagnostic (Warning 20, Line 6, Col 13, Line 6, Col 14,
+                                 "The result of this expression has type 'int' and is implicitly ignored. Consider using 'ignore' to discard this value explicitly, e.g. 'expr |> ignore', or 'let' to bind the result to a name, e.g. 'let result = expr'.")
+
+    [<Fact>]
+    let ``No Warning 20 For Trailing Non-unit Expression In seq Computation Expression (implicit yield)``() =
+        FSharp """
+let _ =
+    seq {
+        for _ in [1] do
+            let x = 1
+            x
+    }
+        """
+        |> typecheck
+        |> shouldSucceed
+
+    [<Fact>]
     let ``Warn If Possible Property Setter``() =
         FSharp """
 type MyClass(property1 : int) =

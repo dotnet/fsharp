@@ -44,6 +44,8 @@ let rec private evalILAttribElem elem =
     | ILAttribElem.Double x -> box x
     | ILAttribElem.Null -> null
     | ILAttribElem.Array (_, a) -> box [| for i in a -> evalILAttribElem i |]
+    // An enum value: evaluate to its underlying integer value (the enum type itself is not materialized here).
+    | ILAttribElem.Enum (_, value) -> evalILAttribElem value
     // TODO: typeof<..> in attribute values
     | ILAttribElem.Type (Some _t) -> fail() 
     | ILAttribElem.Type None -> null
@@ -155,6 +157,7 @@ let rec GetAttribInfosOfMethod amap m minfo =
     | FSMeth (g, _, vref, _) -> vref.Attribs |> AttribInfosOfFS g 
     | MethInfoWithModifiedReturnType(mi,_) -> GetAttribInfosOfMethod amap m mi
     | DefaultStructCtor _ -> []
+    | RecdCtor _ -> []
 #if !NO_TYPEPROVIDERS
     // TODO: provided attributes
     | ProvidedMeth (_, _mi, _, _m) -> 
@@ -191,6 +194,7 @@ let rec BindMethInfoAttributes m minfo f1 f2 f3 =
     | FSMeth (_, _, vref, _) -> f2 vref.Attribs
     | MethInfoWithModifiedReturnType(mi,_) -> BindMethInfoAttributes m mi f1 f2 f3
     | DefaultStructCtor _ -> f2 []
+    | RecdCtor _ -> f2 []
 #if !NO_TYPEPROVIDERS
     | ProvidedMeth (_, mi, _, _) -> f3 (mi.PApply((fun st -> (st :> IProvidedCustomAttributeProvider)), m))
 #endif
@@ -246,6 +250,7 @@ let rec MethInfoHasWellKnownAttribute g (m: range) (ilFlag: WellKnownILAttribute
     | ILMeth(_, ilMethInfo, _) -> ilMethInfo.RawMetadata.HasWellKnownAttribute(g, ilFlag)
     | FSMeth(_, _, vref, _) -> ValHasWellKnownAttribute g valFlag vref.Deref
     | DefaultStructCtor _ -> false
+    | RecdCtor _ -> false
     | MethInfoWithModifiedReturnType(mi, _) -> MethInfoHasWellKnownAttribute g m ilFlag valFlag attribSpec mi
 #if !NO_TYPEPROVIDERS
     | ProvidedMeth _ -> MethInfoHasAttribute g m attribSpec minfo
@@ -258,7 +263,7 @@ let MethInfoHasWellKnownAttributeSpec (g: TcGlobals) (m: range) (spec: WellKnown
 let private reportObsoleteDiagnostic m diagnostic =
     match diagnostic with
     | Some(ObsoleteDiagnosticInfo(isError, id, msg, urlFormat)) ->
-        let obsoleteDiagnostic = ObsoleteDiagnostic(isError, id, msg, urlFormat, m)
+        let obsoleteDiagnostic = ObsoleteDiagnostic(isError, id, msg |> Option.map RichText.mkText, urlFormat, m)
         if isError then
             ErrorD(obsoleteDiagnostic)
         else
@@ -391,7 +396,7 @@ let private CheckCompilerMessageAttribute g attribs m =
     trackErrors {
         match attribs with
         | EntityAttrib g WellKnownEntityAttributes.CompilerMessageAttribute (Attrib(unnamedArgs= [ AttribStringArg s ; AttribInt32Arg n ]; propVal= namedArgs)) ->
-            let msg = UserCompilerMessage(s, n, m)
+            let msg = UserCompilerMessage(RichText.mkText s, n, m)
             let isError = 
                 match namedArgs with 
                 | ExtractAttribNamedArg "IsError" (AttribBoolArg v) -> v 
@@ -609,7 +614,7 @@ let CheckMethInfoAttributes g m tyargsOpt (minfo: MethInfo) =
                         trackErrors {
                              do! CheckFSharpAttributes g fsAttribs m
                              if Option.isNone tyargsOpt && (attribsHaveValFlag g WellKnownValAttributes.RequiresExplicitTypeArgumentsAttribute fsAttribs) then
-                                do! ErrorD(Error(FSComp.SR.tcFunctionRequiresExplicitTypeArguments(minfo.LogicalName), m))
+                                do! ErrorD(Error(FSComp.SR.tcFunctionRequiresExplicitTypeArguments(RichText.mkMethod minfo.LogicalName), m))
                         }
                         
                     Some res) 

@@ -768,7 +768,7 @@ module internal SetTree =
     let ofArray comparer l =
         Array.fold (fun acc k -> add comparer k acc) empty l
 
-#if NETSTANDARD2_1_OR_GREATER
+#if NETSTANDARD2_1_OR_GREATER || NET
 [<System.Runtime.CompilerServices.CollectionBuilder(typeof<Set>, "Create")>]
 #endif
 [<Sealed>]
@@ -1097,7 +1097,7 @@ type Set<[<EqualityConditionalOn>] 'T when 'T: comparison>(comparer: IComparer<'
                 .Append("; ... ]")
                 .ToString()
 
-#if NETSTANDARD2_1_OR_GREATER
+#if NETSTANDARD2_1_OR_GREATER || NET
 and [<CompilerMessage("This type is for compiler use and should not be used directly", 1204, IsHidden = true);
       Sealed;
       AbstractClass;

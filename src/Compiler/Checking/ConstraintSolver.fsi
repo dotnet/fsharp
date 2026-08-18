@@ -89,7 +89,8 @@ type OverloadResolutionFailure =
     | PossibleCandidates of
         methodName: string *
         candidates: OverloadInformation list *  // methodNames may be different (with operators?), this is refactored from original logic to assemble overload failure message
-        cx: TraitConstraintInfo option
+        cx: TraitConstraintInfo option *
+        incomparableConcreteness: OverloadResolutionRules.IncomparableConcretenessInfo option
 
 /// Represents known information prior to checking an expression or pattern, e.g. it's expected type
 type OverallTy =
@@ -155,7 +156,7 @@ exception ConstraintSolverNullnessWarningWithTypes of
 
 exception ConstraintSolverNullnessWarningWithType of DisplayEnv * TType * NullnessInfo * range * range
 
-exception ConstraintSolverNullnessWarning of string * range * range
+exception ConstraintSolverNullnessWarning of RichText * range * range
 
 exception ConstraintSolverNullnessWarningOnDotAccess of
     DisplayEnv *
@@ -165,7 +166,7 @@ exception ConstraintSolverNullnessWarningOnDotAccess of
     objExprRange: range *
     mMethod: range
 
-exception ConstraintSolverError of string * range * range
+exception ConstraintSolverError of RichText * range * range
 
 exception ErrorFromApplyingDefault of
     tcGlobals: TcGlobals *
@@ -380,3 +381,6 @@ val ChooseTyparSolutionAndSolve: ConstraintSolverState -> DisplayEnv -> Typar ->
 val IsApplicableMethApprox: TcGlobals -> ImportMap -> range -> MethInfo -> TType -> bool
 
 val CanonicalizePartialInferenceProblem: ConstraintSolverState -> DisplayEnv -> range -> Typars -> unit
+
+val SolveTyparsEqualTypes:
+    g: TcGlobals -> css: ConstraintSolverState -> m: range -> typars: TypeInst -> tys: TypeInst -> unit

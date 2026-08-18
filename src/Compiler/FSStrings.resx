@@ -371,10 +371,10 @@
   </data>
   <data name="Parser.TOKEN.GREATER.BAR.RBRACE" xml:space="preserve">
     <value>symbol '&gt;|}'</value>
-  </data>  
+  </data>
   <data name="Parser.TOKEN.RQUOTE.BAR.RBRACE" xml:space="preserve">
     <value>symbol '@&gt;|}' or '@@&gt;|}'</value>
-  </data>  
+  </data>
   <data name="Parser.TOKEN.GREATER.BAR.RBRACK" xml:space="preserve">
     <value>symbol '&gt;|]'</value>
   </data>
@@ -1047,6 +1047,9 @@
   <data name="ValNotMutable" xml:space="preserve">
     <value>This value is not mutable. Consider using the mutable keyword, e.g. 'let mutable {0} = expression'.</value>
   </data>
+  <data name="ValNotMutableParameter" xml:space="preserve">
+    <value>The parameter '{0}' is not mutable. Consider shadowing it with a new binding, e.g. 'let {1} = ...'. Use 'let mutable {1} = ...' only if you need to reassign it multiple times.</value>
+  </data>
   <data name="ValNotLocal" xml:space="preserve">
     <value>This value is not local</value>
   </data>
@@ -1175,5 +1178,8 @@
   </data>
   <data name="NoConstructorsAvailableForType" xml:space="preserve">
     <value>No constructors are available for the type '{0}'</value>
+  </data>
+  <data name="Parser.TOKEN.DOT.DOT.DOT" xml:space="preserve">
+    <value>symbol '...'</value>
   </data>
 </root>

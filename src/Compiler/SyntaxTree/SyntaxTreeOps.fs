@@ -299,6 +299,22 @@ let (|SynExprParen|_|) (e: SynExpr) =
     | SynExpr.Paren(SynExprErrorSkip e, a, b, c) -> ValueSome(e, a, b, c)
     | _ -> ValueNone
 
+/// Collects the ordered sub-expressions of nested `SynExpr.Sequential`, avoiding deep recursion (empty if not a Sequential).
+let flattenSequentials expr =
+    let rec collect expr acc =
+        match expr with
+        | SynExpr.Sequential(expr1 = e1; expr2 = SynExpr.Sequential _ as e2) -> collect e2 (e1 :: acc)
+        | SynExpr.Sequential(expr1 = e1; expr2 = e2) -> e2 :: e1 :: acc
+        | _ -> acc
+
+    List.rev (collect expr [])
+
+/// A pattern that collects all sequential expressions to avoid StackOverflowException
+let (|Sequentials|_|) expr =
+    match flattenSequentials expr with
+    | [] -> None
+    | exprs -> Some exprs
+
 let (|SynPatErrorSkip|) (p: SynPat) =
     match p with
     | SynPat.FromParseError(p, _) -> p
@@ -807,6 +823,28 @@ let mkSynBinding
     let mBind = unionRangeWithXmlDoc xmlDoc mBind
     SynBinding(vis, SynBindingKind.Normal, isInline, isMutable, attrs, xmlDoc, info, headPat, retTyOpt, rhsExpr, mBind, spBind, trivia)
 
+/// A compiler-generated `let!` binding, as produced while desugaring computation expressions: the
+/// usual binding defaults with the leading keyword marked as `let!` at mKeyword.
+let mkSynLetBangBinding mKeyword headPat rhs debugPoint mBind =
+    SynBinding(
+        accessibility = None,
+        kind = SynBindingKind.Normal,
+        isInline = false,
+        isMutable = false,
+        attributes = [],
+        xmlDoc = PreXmlDoc.Empty,
+        valData = SynInfo.emptySynValData,
+        headPat = headPat,
+        returnInfo = None,
+        expr = rhs,
+        range = mBind,
+        debugPoint = debugPoint,
+        trivia =
+            { SynBindingTrivia.Zero with
+                LeadingKeyword = SynLeadingKeyword.LetBang mKeyword
+            }
+    )
+
 let NonVirtualMemberFlags k : SynMemberFlags =
     {
         MemberKind = k
@@ -962,13 +1000,24 @@ let rec synExprContainsError inpExpr =
             (match origExpr with
              | Some(e, _) -> walkExpr e
              | None -> false)
-            || walkExprs (List.map (fun (_, _, e) -> e) flds)
+            || walkExprs (
+                List.map
+                    (function
+                    | SynExprAnonRecordFieldOrSpread.Field(SynExprAnonRecordField(_, _, e, _), _)
+                    | SynExprAnonRecordFieldOrSpread.Spread(spread = SynExprSpread(expr = e)) -> e)
+                    flds
+            )
 
         | SynExpr.Record(_, origExpr, fs, _) ->
             (match origExpr with
              | Some(e, _) -> walkExpr e
              | None -> false)
-            || (let flds = fs |> List.choose (fun (SynExprRecordField(expr = v)) -> v)
+            || (let flds =
+                    fs
+                    |> List.choose (function
+                        | SynExprRecordFieldOrSpread.Field(SynExprRecordField(expr = v), _) -> v
+                        | SynExprRecordFieldOrSpread.Spread(SynExprSpread(expr = e), _) -> Some e)
+
                 walkExprs flds)
 
         | SynExpr.ObjExpr(bindings = bs; members = ms; extraImpls = is) ->
