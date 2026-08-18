@@ -302,6 +302,25 @@ type ('T1 * 'T2) with
         |> withDiagnosticMessageMatches "is not available in F#"
 
     [<Fact>]
+    let ``Instance members on a tuple type extension are not resolvable`` () =
+        // Tuple type extensions support static members and operators (see TupleTypeExtension01-03),
+        // but NOT instance members. The instance-member definition is accepted silently, yet it
+        // cannot be invoked through dot-notation on a tuple value: resolution fails with a plain
+        // 'not defined' error. This pins that known limitation as a conscious, tested boundary.
+        FSharp """
+module Test
+type (int * int) with
+    member x.Foo = 42
+
+let v = (1, 2).Foo
+        """
+        |> withLangVersionPreview
+        |> typecheck
+        |> shouldFail
+        |> withErrorCode 39
+        |> withDiagnosticMessageMatches "The field, constructor or member 'Foo' is not defined"
+
+    [<Fact>]
     let ``Struct tuple type extension rewrites to ValueTuple`` () =
         // A struct tuple (type struct ('T1 * 'T2) with ...) is rewritten to System.ValueTuple.
         FSharp """

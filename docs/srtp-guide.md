@@ -58,6 +58,11 @@ type struct ('T1 * 'T2) with
 This capability is gated behind the same preview flag as extension constraint solutions (see
 [Feature Flag](#feature-flag)); below preview it is rejected with a feature-availability error.
 
+Only **static** members and operators are supported on a tuple type extension. An **instance**
+member (`member x.Foo = ...`) can be declared but cannot be invoked through dot-notation on a
+tuple value — resolution fails with `error FS0039: The field, constructor or member 'Foo' is not
+defined`. Use a static member or operator (as above) instead.
+
 ### Resolution Priority
 
 When solving an SRTP constraint:
