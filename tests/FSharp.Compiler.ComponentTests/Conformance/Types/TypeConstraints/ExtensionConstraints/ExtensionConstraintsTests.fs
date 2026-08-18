@@ -997,7 +997,7 @@ module Consumer =
         FSharp """
 module Test
 
-type Microsoft.FSharp.Core.FSharpFunc<'t, 'u> with 
+type Microsoft.FSharp.Core.FSharpFunc<'t, 'u> with
     static member (|>>) (f: 't -> 'u, g: 'u -> 'v) : 't -> 'v = f >> g
 
 let composed = string |>> List.singleton
@@ -1014,7 +1014,7 @@ if result <> ["5"] then failwith $"Expected [\"5\"], got {result}"
         FSharp """
 module Test
 
-type Microsoft.FSharp.Core.FSharpFunc<'t, 'u> with 
+type Microsoft.FSharp.Core.FSharpFunc<'t, 'u> with
     static member (|>>) (f: 't -> 'u, g: 'u -> 'v) : 't -> 'v = f >> g
 
 // This tests: 5 |> (string |>> List.singleton)
@@ -1033,18 +1033,18 @@ if x02 <> ["5"] then failwith $"Expected [\"5\"], got {x02}"
         FSharp """
 module Test
 
-type List<'t> with 
+type List<'t> with
     static member (|>>) (x: list<'t>, f: 't -> 'u) : list<'u> = List.map f x
 
-type Option<'t> with 
+type Option<'t> with
     static member (|>>) (x: option<'t>, f: 't -> 'u) : option<'u> = Option.map f x
 
-type Microsoft.FSharp.Core.FSharpFunc<'t, 'u> with 
+type Microsoft.FSharp.Core.FSharpFunc<'t, 'u> with
     static member (|>>) (f: 't -> 'u, g: 'u -> 'v) : 't -> 'v = f >> g
 
 let inline flip f x y = f y x
 
-type List<'t> with 
+type List<'t> with
     static member inline (|>>>) (x: list<'MonadT>, f) = (flip (|>>) >> flip (|>>)) f x
 
 // Test: apply |>>> to a list of options
@@ -1063,21 +1063,21 @@ if x07 <> [Some "1"] then failwith $"Expected [Some \"1\"], got {x07}"
         FSharp """
 module Test
 
-type List<'t> with 
+type List<'t> with
     static member (|>>) (x: list<'t>, f: 't -> 'u) : list<'u> = List.map f x
 
-type Option<'t> with 
+type Option<'t> with
     static member (|>>) (x: option<'t>, f: 't -> 'u) : option<'u> = Option.map f x
 
-type Microsoft.FSharp.Core.FSharpFunc<'t, 'u> with 
+type Microsoft.FSharp.Core.FSharpFunc<'t, 'u> with
     static member (|>>) (f: 't -> 'u, g: 'u -> 'v) : 't -> 'v = f >> g
 
 let inline flip f x y = f y x
 
-type List<'t> with 
+type List<'t> with
     static member inline (|>>>) (x: list<'MonadT>, f) = (flip (|>>) >> flip (|>>)) f x
 
-type List<'t> with 
+type List<'t> with
     static member inline (|>>>>) (x: list<'Monad2T>, f) = (flip (|>>) >> flip (|>>) >> flip (|>>)) f x
 
 // Test: apply |>>>> to a nested structure
