@@ -4,6 +4,7 @@ namespace FSharp.Compiler.Symbols
 
 /// Patterns over FSharpSymbol and derivatives.
 [<Experimental("This module is subject to future redesign. Consider using patterns checking for properties of symbols directly, e.g. entity.IsFSharpRecord or entity.IsFSharpUnion")>]
+[<RequireQualifiedAccess>]
 module public FSharpSymbolPatterns =
 
     val (|AbbreviatedType|_|): FSharpEntity -> FSharpType option

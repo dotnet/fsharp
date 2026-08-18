@@ -42,16 +42,15 @@
                                                                                                                     00 00 01 00 00 00 00 00 ) 
     
     .maxstack  8
-    IL_0000:  nop
-    IL_0001:  ldarg.0
-    IL_0002:  ldarg.1
-    IL_0003:  ble.s      IL_0007
+    IL_0000:  ldarg.0
+    IL_0001:  ldarg.1
+    IL_0002:  ble.s      IL_0006
 
-    IL_0005:  ldarg.2
-    IL_0006:  ret
+    IL_0004:  ldarg.2
+    IL_0005:  ret
 
-    IL_0007:  ldarg.3
-    IL_0008:  ret
+    IL_0006:  ldarg.3
+    IL_0007:  ret
   } 
 
 } 
@@ -68,7 +67,6 @@
   } 
 
 } 
-
 
 
 

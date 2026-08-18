@@ -118,7 +118,7 @@ let ConvertSequenceExprToObject g amap overallExpr =
         let (TBind(v, e, sp)) = bind
         let addDebugPoint e =
             match sp with
-            | DebugPointAtBinding.Yes m -> Expr.DebugPoint(DebugPointAtLeafExpr.Yes m, e)
+            | DebugPointAtBinding.Yes m -> Expr.DebugPoint(DebugPointAtLeafExpr.Yes(false, m), e)
             | _ -> e
         let vref = mkLocalValRef v
         { resBody with
@@ -262,7 +262,7 @@ let ConvertSequenceExprToObject g amap overallExpr =
             //       body ]]
 
             // A debug point should get emitted prior to both the evaluation of 'inp' and the call to GetEnumerator
-            let addForDebugPoint e = Expr.DebugPoint(DebugPointAtLeafExpr.Yes mFor, e)
+            let addForDebugPoint e = Expr.DebugPoint(DebugPointAtLeafExpr.Yes(false, mFor), e)
 
             // The 'in' debug point is put back into the TypedTree at the right place for SeqWhile
             let mIn = match spIn with DebugPointAtInOrTo.Yes m -> m.NoteSourceConstruct(NotedSourceConstruct.While) | DebugPointAtInOrTo.No -> mIn
@@ -293,11 +293,11 @@ let ConvertSequenceExprToObject g amap overallExpr =
                 let asyncVars = unionFreeVars res1.asyncVars (freeInExpr CollectLocals compensation)
                 let addTryDebugPoint e =
                     match spTry with
-                    | DebugPointAtTry.Yes m -> Expr.DebugPoint(DebugPointAtLeafExpr.Yes m, e)
+                    | DebugPointAtTry.Yes m -> Expr.DebugPoint(DebugPointAtLeafExpr.Yes(false, m), e)
                     | _ -> e
                 let addFinallyDebugPoint e =
                     match spFinally with
-                    | DebugPointAtFinally.Yes m -> Expr.DebugPoint(DebugPointAtLeafExpr.Yes m, e)
+                    | DebugPointAtFinally.Yes m -> Expr.DebugPoint(DebugPointAtLeafExpr.Yes(false, m), e)
                     | _ -> e
                 Some { phase2 = (fun (pcVar, _currv, _, pcMap as ctxt) ->
                             let generate1, dispose1, checkDispose1 = res1.phase2 ctxt

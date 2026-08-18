@@ -78,7 +78,7 @@ module TyconDefinitionHash =
 
             let tyconHash = hashTyconRef tcref
             let attribHash = hashAttributeList tcref.Attribs
-            let typarsHash = hashTyparDecls g tycon.TyparsNoRange
+            let typarsHash = hashTyparDecls g tycon.Typars
             let topLevelDeclarationHash = tyconHash @@ attribHash @@ typarsHash
 
             // Interface implementation

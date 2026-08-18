@@ -81,6 +81,9 @@ let mkGetHashCodeSlotSig (g: TcGlobals) =
 let mkEqualsSlotSig (g: TcGlobals) =
     TSlotSig("Equals", g.obj_ty_noNulls, [], [], [ [ TSlotParam(Some("obj"), g.obj_ty_withNulls, false, false, false, []) ] ], Some g.bool_ty)
 
+let mkToStringSlotSig (g: TcGlobals) =
+    TSlotSig("ToString", g.obj_ty_noNulls, [], [], [ [] ], Some g.string_ty)
+
 //-------------------------------------------------------------------------
 // Helpers associated with code-generation of comparison/hash augmentations
 //-------------------------------------------------------------------------
@@ -111,6 +114,9 @@ let mkEqualsWithComparerTyExact g ty =
 
 let mkHashTy g ty =
     mkFunTy g (mkThisTy g ty) (mkFunTy g g.unit_ty g.int_ty)
+
+let mkToStringTy (g: TcGlobals, ty: TType) =
+    mkFunTy g (mkThisTy g ty) (mkFunTy g g.unit_ty g.string_ty)
 
 let mkHashWithComparerTy g ty =
     mkFunTy g (mkThisTy g ty) (mkFunTy g g.IEqualityComparer_ty g.int_ty)
@@ -1241,7 +1247,7 @@ let unaryArg = [ ValReprInfo.unnamedTopArg ]
 let tupArg = [ [ ValReprInfo.unnamedTopArg1; ValReprInfo.unnamedTopArg1 ] ]
 
 let mkValSpecAux g m (tcref: TyconRef) ty vis slotsig methn valTy argData isGetter isCompGen =
-    let tps = tcref.Typars m
+    let tps = tcref.Typars
 
     let membInfo =
         match slotsig with
@@ -1298,18 +1304,16 @@ let mkImpliedValSpec g m tcref ty vis slotsig methn valTy argData isGetter =
     v
 
 let MakeValsForCompareAugmentation g (tcref: TyconRef) =
-    let m = tcref.Range
     let _, ty = mkMinimalTy g tcref
-    let tps = tcref.Typars m
+    let tps = tcref.Typars
     let vis = tcref.TypeReprAccessibility
 
     mkValSpec g tcref ty vis (Some(mkIComparableCompareToSlotSig g)) "CompareTo" (tps +-> (mkCompareObjTy g ty)) unaryArg false,
     mkValSpec g tcref ty vis (Some(mkGenericIComparableCompareToSlotSig g ty)) "CompareTo" (tps +-> (mkCompareTy g ty)) unaryArg false
 
 let MakeValsForCompareWithComparerAugmentation g (tcref: TyconRef) =
-    let m = tcref.Range
     let _, ty = mkMinimalTy g tcref
-    let tps = tcref.Typars m
+    let tps = tcref.Typars
     let vis = tcref.TypeReprAccessibility
 
     mkValSpec
@@ -1324,10 +1328,9 @@ let MakeValsForCompareWithComparerAugmentation g (tcref: TyconRef) =
         false
 
 let MakeValsForEqualsAugmentation g (tcref: TyconRef) =
-    let m = tcref.Range
     let _, ty = mkMinimalTy g tcref
     let vis = tcref.Accessibility
-    let tps = tcref.Typars m
+    let tps = tcref.Typars
 
     let objEqualsVal =
         mkValSpec g tcref ty vis (Some(mkEqualsSlotSig g)) "Equals" (tps +-> (mkEqualsObjTy g ty)) unaryArg false
@@ -1352,7 +1355,7 @@ let MakeValsForEqualsAugmentation g (tcref: TyconRef) =
 let MakeValsForEqualityWithComparerAugmentation g (tcref: TyconRef) =
     let _, ty = mkMinimalTy g tcref
     let vis = tcref.Accessibility
-    let tps = tcref.Typars tcref.Range
+    let tps = tcref.Typars
 
     let objGetHashCodeVal =
         mkValSpec g tcref ty vis (Some(mkGetHashCodeSlotSig g)) "GetHashCode" (tps +-> (mkHashTy g ty)) unitArg false
@@ -1395,7 +1398,7 @@ let MakeValsForEqualityWithComparerAugmentation g (tcref: TyconRef) =
 let MakeBindingsForCompareAugmentation g (tycon: Tycon) =
     let tcref = mkLocalTyconRef tycon
     let m = tycon.Range
-    let tps = tycon.Typars m
+    let tps = tycon.Typars
 
     let mkCompare comparef =
         match tycon.GeneratedCompareToValues with
@@ -1439,7 +1442,7 @@ let MakeBindingsForCompareAugmentation g (tycon: Tycon) =
 let MakeBindingsForCompareWithComparerAugmentation g (tycon: Tycon) =
     let tcref = mkLocalTyconRef tycon
     let m = tycon.Range
-    let tps = tycon.Typars m
+    let tps = tycon.Typars
 
     let mkCompare comparef =
         match tycon.GeneratedCompareToWithComparerValues with
@@ -1471,7 +1474,7 @@ let MakeBindingsForCompareWithComparerAugmentation g (tycon: Tycon) =
 let MakeBindingsForEqualityWithComparerAugmentation (g: TcGlobals) (tycon: Tycon) =
     let tcref = mkLocalTyconRef tycon
     let m = tycon.Range
-    let tps = tycon.Typars m
+    let tps = tycon.Typars
 
     let mkStructuralEquatable hashf equalsf =
         match tycon.GeneratedHashAndEqualsWithComparerValues with
@@ -1590,7 +1593,7 @@ let MakeBindingsForEqualityWithComparerAugmentation (g: TcGlobals) (tycon: Tycon
 let MakeBindingsForEqualsAugmentation (g: TcGlobals) (tycon: Tycon) =
     let tcref = mkLocalTyconRef tycon
     let m = tycon.Range
-    let tps = tycon.Typars m
+    let tps = tycon.Typars
 
     let mkEquals equalsf =
         match tycon.GeneratedHashAndEqualsValues with
@@ -1668,7 +1671,7 @@ let rec TypeDefinitelyHasEquality g ty =
                     )
                     &&
                     // Check the (possibly inferred) structural dependencies
-                    (tinst, tcref.TyparsNoRange)
+                    (tinst, tcref.Typars)
                     ||> List.lengthsEqAndForall2 (fun ty tp -> not tp.EqualityConditionalOn || TypeDefinitelyHasEquality g ty)
                 | _ -> false
 
@@ -1676,7 +1679,7 @@ let MakeValsForUnionAugmentation g (tcref: TyconRef) =
     let m = tcref.Range
     let _, tmty = mkMinimalTy g tcref
     let vis = tcref.TypeReprAccessibility
-    let tps = tcref.Typars m
+    let tps = tcref.Typars
 
     tcref.UnionCasesAsList
     |> List.map (fun uc ->
@@ -1690,7 +1693,7 @@ let MakeValsForUnionAugmentation g (tcref: TyconRef) =
 let MakeBindingsForUnionAugmentation g (tycon: Tycon) (vals: ValRef list) =
     let tcref = mkLocalTyconRef tycon
     let m = tycon.Range
-    let tps = tycon.Typars m
+    let tps = tycon.Typars
     let tinst, ty = mkMinimalTy g tcref
     let thisv, thise = mkThisVar g m ty
     let unitv, _ = mkCompGenLocal m "unitArg" g.unit_ty
@@ -1700,3 +1703,145 @@ let MakeBindingsForUnionAugmentation g (tycon: Tycon) (vals: ValRef list) =
         let isdata = mkUnionCaseTest g (thise, ucr, tinst, m)
         let expr = mkLambdas g m tps [ thisv; unitv ] (isdata, g.bool_ty)
         mkCompGenBind v.Deref expr)
+
+//-------------------------------------------------------------------------
+// Build reflection-free ToString functions for union and record types.
+//
+// Under --reflectionfree the reflective 'sprintf "%+A"' ToString is unavailable, so we build a structural
+// one here (during type augmentation, so the 'string' operator calls flow through the optimizer and get
+// specialised - e.g. an int field renders via a direct, allocation-free ToString rather than a boxed call).
+//-------------------------------------------------------------------------
+
+// Guard deep recursion with a catchable exception, as C# records' PrintMembers do, when the runtime provides
+// it. A type whose fields are all primitive cannot nest, so it skips the guard.
+let mkToStringRecursionGuard (g: TcGlobals, m: Text.range, fieldTys: TType list, body: Expr) =
+    let isPrimitive (ty: TType) =
+        isIntegerTy g ty
+        || isFpTy g ty
+        || isDecimalTy g ty
+        || isStringTy g ty
+        || typeEquiv g g.char_ty ty
+        || isBoolTy g ty
+        || isUnitTy g ty
+        || isEnumTy g ty
+
+    if fieldTys |> List.forall isPrimitive then
+        body
+    else
+        match g.TryFindSysILTypeRef "System.Runtime.CompilerServices.RuntimeHelpers" with
+        | Some tref ->
+            let mspec =
+                mkILNonGenericStaticMethSpecInTy (mkILNonGenericBoxedTy tref, "EnsureSufficientExecutionStack", [], ILType.Void)
+
+            mkSequential m (mkAsmExpr ([ mkNormalCall mspec ], [], [], [], m)) body
+        | None -> body
+
+// Render one field value as a string the way option/list do (LanguagePrimitives.anyToStringShowingNull):
+// a null reference renders as "null", everything else via the 'string' operator. A value-type field can
+// never be null, so it skips the box+null-guard and renders directly.
+let mkFieldToString (g: TcGlobals, m: Text.range, fe: Expr) =
+    let fieldTy = tyOfExpr g fe
+
+    if isStructTy g fieldTy then
+        mkCallStringOperator g m fieldTy fe
+    else
+        let v, ve = mkCompGenLocal m "field" fieldTy
+        mkCompGenLet m v fe (mkNonNullCond g m g.string_ty (mkCallBox g m fieldTy ve) (mkCallStringOperator g m fieldTy ve) (mkString g m "null"))
+
+// A record's ToString as a single line "{ F1 = v1; F2 = v2 }" (no line breaks, unlike "%+A").
+// openBrace/closeBrace are "{ "/" }" for records and "{| "/" |}" for anonymous records.
+let mkRecdToString (g: TcGlobals, tcref: TyconRef, tycon: Tycon, openBrace: string, closeBrace: string) =
+    let m = tycon.Range
+    let tinst, ty = mkMinimalTy g tcref
+    let thisv, thise = mkThisVar g m ty
+
+    let fieldParts =
+        tcref.AllInstanceFieldsAsList
+        |> List.mapi (fun i fspec ->
+            let fref = tcref.MakeNestedRecdFieldRef fspec
+            let value = mkFieldToString (g, m, mkRecdFieldGetViaExprAddr (thise, fref, tinst, m))
+            let nameEq = mkString g m (fspec.DisplayNameCore + " = ")
+            if i = 0 then [ nameEq; value ] else [ mkString g m "; "; nameEq; value ])
+        |> List.concat
+
+    let close =
+        if List.isEmpty fieldParts then
+            // Avoid a double space in an empty record.
+            closeBrace.TrimStart()
+        else closeBrace
+    let parts = mkString g m openBrace :: fieldParts @ [ mkString g m close ]
+    let fieldTys = tcref.AllInstanceFieldsAsList |> List.map (fun fspec -> fspec.FormalType)
+    thisv, mkToStringRecursionGuard (g, m, fieldTys, mkStringConcat (g, m, parts))
+
+// A union's ToString as a match over the cases building "CaseName(f0, f1, ...)" (or just "CaseName" for a
+// nullary case).
+let mkUnionToString (g: TcGlobals, tcref: TyconRef, tycon: Tycon) =
+    let m = tycon.Range
+    let tinst, ty = mkMinimalTy g tcref
+    let thisv, thise = mkThisVar g m ty
+    let mbuilder = MatchBuilder(DebugPointAtBinding.NoneAtInvisible, m)
+
+    let mkResult (ucase: UnionCase) =
+        let cref = tcref.MakeNestedUnionCaseRef ucase
+        let rfields = ucase.RecdFields
+
+        if isNil rfields then
+            mkString g m ucase.DisplayNameCore
+        else
+            // provene is an expression proven to be of this case (the value itself for struct unions,
+            // otherwise a 'UnionCaseProof'), from which fields can be read.
+            let mkBody (provene: Expr) =
+                let fieldStrs =
+                    rfields
+                    |> List.mapi (fun j _ -> mkFieldToString (g, m, mkUnionCaseFieldGetProvenViaExprAddr (provene, cref, tinst, j, m)))
+
+                let sep = mkString g m ", "
+
+                let fieldsWithSeps =
+                    fieldStrs |> List.mapi (fun i fe -> if i = 0 then [ fe ] else [ sep; fe ]) |> List.concat
+
+                let parts = mkString g m (ucase.DisplayNameCore + "(") :: fieldsWithSeps @ [ mkString g m ")" ]
+                mkStringConcat (g, m, parts)
+
+            if cref.Tycon.IsStructOrEnumTycon then
+                mkBody thise
+            else
+                let ucv, ucve = mkCompGenLocal m "thisCast" (mkProvenUnionCaseTy cref tinst)
+                mkCompGenLet m ucv (mkUnionCaseProof (thise, cref, tinst, m)) (mkBody ucve)
+
+    let cases =
+        tcref.UnionCasesAsList
+        |> List.map (fun ucase ->
+            let cref = tcref.MakeNestedUnionCaseRef ucase
+            mkCase (DecisionTreeTest.UnionCase(cref, tinst), mbuilder.AddResultTarget(mkResult ucase)))
+
+    let dtree = TDSwitch(thise, cases, None, m)
+
+    let fieldTys =
+        tcref.UnionCasesAsList |> List.collect (fun uc -> uc.RecdFields) |> List.map (fun rf -> rf.FormalType)
+
+    thisv, mkToStringRecursionGuard (g, m, fieldTys, mbuilder.Close(dtree, m, g.string_ty))
+
+let TyconIsCandidateForAugmentationWithToString (g: TcGlobals, tycon: Tycon) =
+    g.useReflectionFreeCodeGen && (tycon.IsUnionTycon || tycon.IsRecordTycon)
+
+let MakeValsForToStringAugmentation (g: TcGlobals, tcref: TyconRef) =
+    let _, ty = mkMinimalTy g tcref
+    let vis = tcref.Accessibility
+    let tps = tcref.Typars
+    mkValSpec g tcref ty vis (Some(mkToStringSlotSig g)) "ToString" (tps +-> (mkToStringTy (g, ty))) unitArg false
+
+let MakeBindingsForToStringAugmentation (g: TcGlobals, tycon: Tycon, toStringVal: Val) =
+    let tcref = mkLocalTyconRef tycon
+    let m = tycon.Range
+    let tps = tycon.Typars
+
+    let thisv, body =
+        if tycon.IsUnionTycon then
+            mkUnionToString (g, tcref, tycon)
+        else
+            mkRecdToString (g, tcref, tycon, "{ ", " }")
+
+    let unitv, _ = mkCompGenLocal m "unitArg" g.unit_ty
+    let expr = mkLambdas g m tps [ thisv; unitv ] (body, g.string_ty)
+    [ mkCompGenBind toStringVal expr ]

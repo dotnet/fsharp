@@ -759,14 +759,14 @@ module FSharpExprConvert =
                 ConvExprPrim cenv env op
 
             | TOp.ILAsm ([ I_call (Normalcall, mspec, None) ], _), _, [arg]
-              when mspec.MethodRef.DeclaringTypeRef.Name = "System.String" && mspec.Name = "GetHashCode" ->
+              when mspec.MethodRef.DeclaringTypeRef.Name = tname_String && mspec.Name = "GetHashCode" ->
                 let ty = tyOfExpr g arg
                 let op = mkCallHash g m ty arg
                 ConvExprPrim cenv env op
 
             | TOp.ILCall (_, _, _, _, _, _, _, ilMethRef, _, _, _), [],
               [Expr.Op (TOp.ILAsm ([ I_ldtoken (ILToken.ILType _) ], _), [ty], _, _)]
-              when ilMethRef.DeclaringTypeRef.Name = "System.Type" && ilMethRef.Name = "GetTypeFromHandle" -> 
+              when ilMethRef.DeclaringTypeRef.Name = tname_Type && ilMethRef.Name = "GetTypeFromHandle" -> 
                 let op = mkCallTypeOf g m ty
                 ConvExprPrim cenv env op
 
@@ -1181,7 +1181,7 @@ module FSharpExprConvert =
                 let isCtor = (ilMethRef.Name = ".ctor")
                 let isStatic = isCtor || ilMethRef.CallingConv.IsStatic
                 let scoref = ilMethRef.DeclaringTypeRef.Scope
-                let typars1 = tcref.Typars m
+                let typars1 = tcref.Typars
                 let typars2 = [ 1 .. ilMethRef.GenericArity ] |> List.map (fun _ -> Construct.NewRigidTypar "T" m)
                 let tinst1 = typars1 |> generalizeTypars
                 let tinst2 = typars2 |> generalizeTypars

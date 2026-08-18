@@ -57,6 +57,9 @@ type PhasedDiagnostic with
     /// Eagerly format a PhasedDiagnostic return as a new PhasedDiagnostic requiring no formatting of types.
     member EagerlyFormatCore: suggestNames: bool -> PhasedDiagnostic
 
+    /// Format the core of the diagnostic as rich text. Doesn't include the range information.
+    member FormatRichCore: flattenErrors: bool * suggestNames: bool -> RichText
+
     /// Format the core of the diagnostic as a string. Doesn't include the range information.
     member FormatCore: flattenErrors: bool * suggestNames: bool -> string
 

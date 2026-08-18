@@ -4,8 +4,9 @@ module FSharp.Test.SurfaceArea
     open System
     open System.IO
     open System.Reflection
-    open System.Text.RegularExpressions 
-        
+    open FSharp.Test.Compiler
+    open System.Text.RegularExpressions
+
     // Gets string form of public surface area for the currently-loaded assembly
     let private getSurfaceAreaForAssembly (assembly: Assembly) =
 
@@ -41,43 +42,43 @@ module FSharp.Test.SurfaceArea
             |]
         assembly, actual
 
-    let private appendNewLine str = str + System.Environment.NewLine
-
-    // verify public surface area matches expected, handles baseline update when TEST_UPDATE_BSL is set
-    let verify assembly baselinePath outFilePath : unit =
-        let expected =
-            File.ReadAllLines(baselinePath)
-            |> String.concat System.Environment.NewLine
-            |> appendNewLine
-
+    let private verifyWith updateBaseline lineFilter assembly baselinePath : unit =
         let normalize (s:string) = Regex.Replace(s, "(\\r\\n|\\n|\\r)+", Environment.NewLine).Trim()
         let asm, actualNotNormalized = getSurfaceAreaForAssembly (assembly)
-        let actual = 
-            actualNotNormalized 
-            |> Seq.map normalize 
+
+        let render lines =
+            lines
+            |> Seq.map normalize
             |> Seq.filter (String.IsNullOrWhiteSpace >> not)
+            |> Seq.filter lineFilter
             |> Seq.sort
             |> String.concat Environment.NewLine
 
-        let expected = normalize expected
+        let actual = render actualNotNormalized
 
-        match Assert.shouldBeSameMultilineStringSets expected actual with
-        | None ->
-            File.Delete(outFilePath)
+        let compare fileContent produced =
+            let expected = Regex.Split(fileContent, "\\r\\n|\\n|\\r") |> render
 
-        | Some diff ->
-            match Environment.GetEnvironmentVariable("TEST_UPDATE_BSL") with
-            | null ->
-                File.WriteAllText(outFilePath, actual)
-
-                let msg = $"""Assembly: %A{asm}
+            match Assert.shouldBeSameMultilineStringSets expected produced with
+            | None -> None
+            | Some diff ->
+                Some $"""Assembly: %A{asm}
 
                   Expected and actual surface area don't match. To see the delta, run:
-                      windiff {baselinePath} {outFilePath}
+                      windiff {baselinePath} {Path.ChangeExtension(baselinePath, ".out")}
 
                   {diff}"""
 
-                failwith msg
-            | _ ->
-                File.Delete(outFilePath)
-                File.WriteAllText(baselinePath, actual)
+        if updateBaseline then
+            checkBaselineWith compare actual baselinePath
+        else
+            match compare (File.ReadAllText baselinePath) actual with
+            | None -> ()
+            | Some diff -> failwith diff
+
+    // verify public surface area matches expected, handles baseline update when TEST_UPDATE_BSL is set
+    let verify assembly baselinePath : unit =
+        verifyWith true (fun _ -> true) assembly baselinePath
+
+    let verifyIgnoringAssemblyReferences assembly baselinePath : unit =
+        verifyWith false (fun line -> not (line.StartsWith("! AssemblyReference:", StringComparison.Ordinal))) assembly baselinePath

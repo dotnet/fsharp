@@ -1,27 +1,10 @@
-﻿module FSharp.Compiler.Service.Tests.CompletionTests
+module FSharp.Compiler.Service.Tests.CompletionTests
 
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.EditorServices
 open FSharp.Test.Assert
 open FSharp.Test.Compiler.Assertions.TextBasedDiagnosticAsserts
 open Xunit
-
-let private assertItemsWithNames contains names (completionInfo: DeclarationListInfo) =
-    let itemNames =
-        completionInfo.Items
-        |> Array.map _.NameInCode
-        |> Array.map normalizeNewLines
-        |> set
-
-    for name in names do
-        let name = normalizeNewLines name
-        Set.contains name itemNames |> shouldEqual contains
-
-let assertHasItemWithNames names (completionInfo: DeclarationListInfo) =
-    assertItemsWithNames true names completionInfo
-
-let assertHasNoItemsWithNames names (completionInfo: DeclarationListInfo) =
-    assertItemsWithNames false names completionInfo
 
 [<Fact>]
 let ``Expr - After record decl 01`` () =
@@ -369,6 +352,45 @@ module Module =
 """
     assertHasNoItemsWithNames ["E"] info
 
+[<Fact>]
+let ``Pattern - Enum 01`` () =
+    let info =
+        Checker.getCompletionInfo """
+namespace Ns1
+type E =
+    | A = 1
+    | B = 2
+
+namespace Ns2
+
+open Ns1
+
+module M =
+    match E.A with
+    | E.{caret}
+"""
+    assertHasItemWithNames ["A"] info
+
+[<Fact>]
+let ``Pattern - Enum 02`` () =
+    let info =
+        Checker.getCompletionInfo """
+namespace Ns1
+type E =
+    | A = 1
+    | B = 2
+
+namespace Ns2
+
+open Ns1
+
+module M =
+    match E.A with
+    | E.{caret}
+    | E.B -> ()
+"""
+    assertHasItemWithNames ["A"] info
+
 #if NETCOREAPP
 [<Fact>]
 let ``Span appears in completion and is not marked obsolete`` () =
@@ -399,9 +421,6 @@ module Options =
 
         let assertItemAllowed name source =
             assertItemWithOptions [allowObsoleteOptions] name source
-
-        let assertItemNotAllowed name source =
-            assertItemWithOptions [disallowObsoleteOptions] name source
 
         [<Fact>]
         let ``Prop - Instance 01`` () =
@@ -822,3 +841,171 @@ normaliz{caret}
 """
 
     assertHasItemWithNames [ "normalize'" ] info
+
+// Tests for https://github.com/dotnet/fsharp/issues/19906
+// Named-argument completion must continue suggesting later named args after the first.
+
+[<Fact>]
+let ``Issue 19906 - non-overloaded method - second named arg suggested`` () =
+    let info = Checker.getCompletionInfo """
+type T() = member _.M(apple:int, banana:int, cherry:int) = ()
+let t = T()
+let _ = t.M(apple=1, b{caret})
+"""
+    assertHasItemWithNames ["banana"; "cherry"] info
+    assertHasNoItemsWithNames ["apple"] info
+
+[<Fact>]
+let ``Issue 19906 - overloaded method - Task.Factory.StartNew second named arg suggested`` () =
+    let info = Checker.getCompletionInfo """
+open System.Threading.Tasks
+let _ = Task.Factory.StartNew(action=(fun _ -> ()), s{caret})
+"""
+    assertHasItemWithNames ["state"; "cancellationToken"; "scheduler"; "creationOptions"] info
+    assertHasNoItemsWithNames ["action"] info
+
+[<Fact>]
+let ``Issue 19906 - overloaded method - third named arg suggested`` () =
+    let info = Checker.getCompletionInfo """
+open System.Threading.Tasks
+let _ = Task.Factory.StartNew(action=(fun _ -> ()), state=null, c{caret})
+"""
+    assertHasItemWithNames ["cancellationToken"; "creationOptions"] info
+
+[<Fact>]
+let ``Issue 19906 - optional args - second optional arg suggested`` () =
+    let info = Checker.getCompletionInfo """
+type T() = static member F(?x:int, ?y:int, ?z:int) = ()
+let _ = T.F(?x=1, ?y{caret})
+"""
+    assertHasItemWithNames ["y"; "z"] info
+
+[<Fact>]
+let ``Issue 19906 - regression guard - zero-arg ctor with settable props still works`` () =
+    let info = Checker.getCompletionInfo """
+type R() =
+    member val Apple = "" with get, set
+    member val Banana = "" with get, set
+    member val Cherry = "" with get, set
+let _ = R(Apple="x", B{caret})
+"""
+    assertHasItemWithNames ["Banana"; "Cherry"] info
+
+[<Fact>]
+let ``Issue 19906 - regression guard - positional then partial still works`` () =
+    let info = Checker.getCompletionInfo """
+open System.Threading.Tasks
+let _ = Task.Factory.StartNew((fun _ -> ()), s{caret})
+"""
+    assertHasItemWithNames ["state"; "cancellationToken"; "scheduler"; "creationOptions"] info
+
+[<Fact>]
+let ``Issue 19906 - regression guard - dotted completion inside named-arg RHS`` () =
+    let info = Checker.getCompletionInfo """
+let s = "x"
+let _ = System.Uri(uriString = s.{caret}, kind = System.UriKind.Absolute)
+"""
+    assertHasItemWithNames ["Length"; "Substring"] info
+    assertHasNoItemsWithNames ["uriString"; "kind"] info
+
+module RecordSpreads =
+    [<Literal>]
+    let private SupportedLangVersion = "preview"
+
+    let private getCompletionInfo markedSource =
+        Checker.getCompletionInfoWithCompilerAndCompletionOptions
+            [| $"--langversion:{SupportedLangVersion}" |]
+            FSharpCodeCompletionOptions.Default
+            markedSource
+
+    let private getCompletionInfoFor partialIdent markedSource =
+        Checker.getCompletionInfoWithCompilerAndCompletionOptions
+            [| $"--langversion:{SupportedLangVersion}" |]
+            FSharpCodeCompletionOptions.Default
+            markedSource
+
+    [<Fact>]
+    let ``spread - completion fires inside nominal record type spread, no ident yet`` () =
+        let info = getCompletionInfo """
+type R1 = { A: int; B: int }
+type R2 = class end
+type R3 = { ...{caret} }
+"""
+        let names = info.Items |> Array.map _.NameInCode
+        if not (Array.contains "R1" names) then
+            failwith $"Expected completion at '{{ ...|caret| }}' to offer in-scope record type 'R1', but got %A{names}."
+
+        if Array.contains "R2" names then
+            failwith $"Expected completion at '{{ ...|caret| }}' not to offer in-scope non-record type 'R2', but got %A{names}."
+
+    [<Fact>]
+    let ``spread - completion fires inside nominal record type spread, partial ident`` () =
+        let info = getCompletionInfo """
+type R1 = { A: int; B: int }
+type R2 = class end
+type R3 = { ...R{caret} }
+"""
+        let names = info.Items |> Array.map _.NameInCode
+        if not (Array.contains "R1" names) then
+            failwith $"Expected completion at '{{ ...R|caret| }}' to offer in-scope record type 'R1', but got %A{names}."
+
+        if Array.contains "R2" names then
+            failwith $"Expected completion at '{{ ...R|caret| }}' not to offer in-scope non-record type 'R2', but got %A{names}."
+
+    [<Fact>]
+    let ``spread - completion fires inside nominal record expression spread, no ident yet`` () =
+        let info = getCompletionInfo """
+type R = { A: int; B: int }
+let r1 = { A = 1; B = 2 }
+let r2 = obj ()
+let r3 = { ...{caret} }
+"""
+        let names = info.Items |> Array.map _.NameInCode
+        if not (Array.contains "r1" names) then
+            failwith $"Expected completion at '{{ ...r|caret| }}' to offer in-scope record value 'r1', but got %A{names}."
+
+        if Array.contains "r2" names then
+            failwith $"Expected completion at '{{ ...r|caret| }}' not to offer in-scope non-record value 'r2', but got %A{names}."
+
+    [<Fact>]
+    let ``spread - completion fires inside nominal record expression spread, partial ident`` () =
+        let info = getCompletionInfo """
+type R = { A: int; B: int }
+let r1 = { A = 1; B = 2 }
+let r2 = obj ()
+let r3 = { ...r{caret} }
+"""
+        let names = info.Items |> Array.map _.NameInCode
+        if not (Array.contains "r1" names) then
+            failwith $"Expected completion at '{{ ...r|caret| }}' to offer in-scope record value 'r1', but got %A{names}."
+
+        if Array.contains "r2" names then
+            failwith $"Expected completion at '{{ ...r|caret| }}' not to offer in-scope non-record value 'r2', but got %A{names}."
+
+    [<Fact>]
+    let ``spread - completion fires inside anonymous record expression spread, no ident yet`` () =
+        let info = getCompletionInfo """
+let r1 = {| A = 1; B = 2 |}
+let r2 = obj ()
+let r3 = {| ...{caret} ; X = 1 |}
+"""
+        let names = info.Items |> Array.map _.NameInCode
+        if not (Array.contains "r1" names) then
+            failwith $"Expected completion at '{{| ...|caret| ; X = 1 |}}' to offer in-scope record value 'r1', but got %A{names}."
+
+        if Array.contains "r2" names then
+            failwith $"Expected completion at '{{ ...|caret| }}' not to offer in-scope non-record value 'r2', but got %A{names}."
+
+    [<Fact>]
+    let ``spread - completion fires inside anonymous record expression spread, partial ident`` () =
+        let info = getCompletionInfo """
+let r1 = {| A = 1; B = 2 |}
+let r2 = obj ()
+let r3 = {| ...r{caret} ; X = 1 |}
+"""
+        let names = info.Items |> Array.map _.NameInCode
+        if not (Array.contains "r1" names) then
+            failwith $"Expected completion at '{{| ...r|caret| ; X = 1 |}}' to offer in-scope record value 'r1', but got %A{names}."
+
+        if Array.contains "r2" names then
+            failwith $"Expected completion at '{{ ...r|caret| }}' not to offer in-scope non-record value 'r2', but got %A{names}."

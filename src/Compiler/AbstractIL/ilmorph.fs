@@ -166,6 +166,7 @@ let rec celem_ty2ty f celem =
     | ILAttribElem.Type(Some ty) -> ILAttribElem.Type(Some(f ty))
     | ILAttribElem.TypeRef(Some tref) -> ILAttribElem.TypeRef(Some (f (mkILBoxedType (mkILNonGenericTySpec tref))).TypeRef)
     | ILAttribElem.Array(elemTy, elems) -> ILAttribElem.Array(f elemTy, List.map (celem_ty2ty f) elems)
+    | ILAttribElem.Enum(enumTy, value) -> ILAttribElem.Enum(f enumTy, celem_ty2ty f value)
     | _ -> celem
 
 let cnamedarg_ty2ty f ((nm, ty, isProp, elem): ILAttributeNamedArg) = (nm, f ty, isProp, celem_ty2ty f elem)

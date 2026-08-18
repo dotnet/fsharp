@@ -302,7 +302,7 @@ and private ConvExprCore cenv (env : QuotationTranslationEnv) (expr: Expr) : Exp
         let ty = tyOfExpr g expr
 
         match (freeInExpr CollectTyparsAndLocalsNoCaching x0).FreeLocals |> Seq.tryPick (fun v -> if env.vs.ContainsVal v then Some v else None) with
-        | Some v -> errorR(Error(FSComp.SR.crefBoundVarUsedInSplice(v.DisplayName), v.Range))
+        | Some v -> errorR(Error(FSComp.SR.crefBoundVarUsedInSplice(richTextOfValName cenv.g v), v.Range))
         | None -> ()
 
         cenv.exprSplices.Add((x0, m))
@@ -616,7 +616,7 @@ and private ConvExprCore cenv (env : QuotationTranslationEnv) (expr: Expr) : Exp
                 if useGenuineField tcref.Deref fspec then
                     mkFieldSet(parentTyconR, fldOrPropName, tyargsR, argsR)
                 else
-                    let envinner = BindFormalTypars env tcref.TyparsNoRange
+                    let envinner = BindFormalTypars env tcref.Typars
                     let propRetTypeR = ConvType cenv envinner m fspec.FormalType
                     mkPropSet( (parentTyconR, fldOrPropName, propRetTypeR, []), tyargsR, argsR)
 
@@ -793,7 +793,7 @@ and private ConvClassOrRecdFieldGetCore cenv env m rfref tyargs args =
         if useGenuineField tcref.Deref fspec then
             mkFieldGet(parentTyconR, fldOrPropName, tyargsR, argsR)
         else
-            let envinner = BindFormalTypars env tcref.TyparsNoRange
+            let envinner = BindFormalTypars env tcref.Typars
             let propRetTypeR = ConvType cenv envinner m fspec.FormalType
             mkPropGet( (parentTyconR, fldOrPropName, propRetTypeR, []), tyargsR, argsR)
 
@@ -1284,7 +1284,7 @@ let ConvMethodBase cenv env (methName, v: Val) =
 
         let vref = mkLocalValRef v
         let tps, witnessInfos, argInfos, retTy, _ = GetTypeOfMemberInMemberForm cenv.g vref
-        let numEnclTypeArgs = vref.MemberApparentEntity.TyparsNoRange.Length
+        let numEnclTypeArgs = vref.MemberApparentEntity.Typars.Length
         let argTys = argInfos |> List.concat |> List.map fst
 
         let isNewObj = (vspr.MemberFlags.MemberKind = SynMemberKind.Constructor)

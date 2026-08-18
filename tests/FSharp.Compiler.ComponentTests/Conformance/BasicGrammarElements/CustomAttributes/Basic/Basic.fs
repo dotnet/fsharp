@@ -34,6 +34,48 @@ module CustomAttributes_Basic =
         |> verifyCompileAndRun
         |> shouldSucceed
 
+    // Regression for https://github.com/dotnet/fsharp/issues/995
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"EnumValueAsObjectArg01.fs"|])>]
+    let ``EnumValueAsObjectArg01_fs`` compilation =
+        compilation
+        |> verifyCompileAndRun
+        |> shouldSucceed
+
+    // Cross-language: the same scenario as EnumValueAsObjectArg01.fs, but with the enum and the
+    // attribute defined in C#. See https://github.com/dotnet/fsharp/issues/995.
+    [<Fact>]
+    let ``Enum defined in C# used in an F# attribute arg of type obj keeps its type`` () =
+        let csLib =
+            CSharp """
+namespace CSharpLib
+{
+    public enum MyEnum { A = 1, B = 2 }
+
+    [System.AttributeUsage(System.AttributeTargets.All)]
+    public class MyAttribute : System.Attribute
+    {
+        public object Prop { get; set; }
+    }
+}
+"""
+            |> withName "CSharpLib"
+
+        FSharp """
+module Test
+open System
+open CSharpLib
+
+[<My(Prop = MyEnum.B)>]
+type MyClass = class end
+
+let prop = (typeof<MyClass>.GetCustomAttributes(false)[0] :?> MyAttribute).Prop
+if prop.GetType() <> typeof<MyEnum> then failwith "enum type was lost"
+if Convert.ToString(prop, Globalization.CultureInfo.InvariantCulture) <> "B" then failwith "expected \"B\""
+"""
+        |> withReferences [csLib]
+        |> compileExeAndRun
+        |> shouldSucceed
+
     // SOURCE=E_AttributeApplication01.fs					# E_AttributeApplication01.fs
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_AttributeApplication01.fs"|])>]
     let ``E_AttributeApplication01_fs`` compilation =
@@ -263,6 +305,14 @@ module CustomAttributes_Basic =
         |> verifyCompileAndRun
         |> shouldSucceed
 
+    // SOURCE=ReturnType04.fs							# ReturnType04.fs
+    // Regression test for https://github.com/dotnet/fsharp/issues/462
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"ReturnType04.fs"|])>]
+    let ``ReturnType04_fs`` compilation =
+        compilation
+        |> verifyCompileAndRun
+        |> shouldSucceed
+
     // SOURCE=SanityCheck01.fs							# SanityCheck01.fs
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"SanityCheck01.fs"|])>]
     let ``SanityCheck01_fs`` compilation =
@@ -395,10 +445,10 @@ module CustomAttributes_Basic =
         compilation
         |> verifyCompile
         |> shouldFail
-        |> withSingleDiagnostic (Error 3890, Line 7, Col 6, Line 7, Col 36, "LayoutKind value 1 (Extended) cannot be specified via StructLayoutAttribute. Use ExtendedLayoutAttribute instead.")
+        |> withSingleDiagnostic (Error 3912, Line 7, Col 6, Line 7, Col 36, "LayoutKind value 1 (Extended) cannot be specified via StructLayoutAttribute. Use ExtendedLayoutAttribute instead.")
 
     [<Fact>]
-    let ``StructLayoutAttribute has size=1 for struct DUs with no instance fields`` () =
+    let ``StructLayoutAttribute doesn't have size=1 for multi-case struct DUs with no instance fields`` () =
         Fsx """
         [<Struct>] type Option<'T> = None | Some
         """
@@ -414,8 +464,6 @@ module CustomAttributes_Basic =
                    [runtime]System.IComparable,
                    [runtime]System.Collections.IStructuralComparable
   {
-    .pack 0
-    .size 1
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.StructAttribute::.ctor() = ( 01 00 00 00 ) 
     .custom instance void [runtime]System.Diagnostics.DebuggerDisplayAttribute::.ctor(string) = ( 01 00 15 7B 5F 5F 44 65 62 75 67 44 69 73 70 6C   
                                                                                                   61 79 28 29 2C 6E 71 7D 00 00 )                   
@@ -426,5 +474,29 @@ module CustomAttributes_Basic =
       .field public static literal int32 None = int32(0x00000000)
       .field public static literal int32 Some = int32(0x00000001)
     } 
+        """
+        ]
+
+    [<Fact>]
+    let ``StructLayoutAttribute doesn't have size=1 for single-case struct DU`` () =
+        Fsx """
+        [<Struct>] type X = | Y
+        """
+        |> compile
+        |> shouldSucceed
+        |> verifyIL [
+        """
+        .class sequential autochar serializable sealed nested public beforefieldinit X
+        extends [runtime]System.ValueType
+        implements class [runtime]System.IEquatable`1<valuetype Test/X>,
+                   [runtime]System.Collections.IStructuralEquatable,
+                   class [runtime]System.IComparable`1<valuetype Test/X>,
+                   [runtime]System.IComparable,
+                   [runtime]System.Collections.IStructuralComparable
+  {
+    .custom instance void [FSharp.Core]Microsoft.FSharp.Core.StructAttribute::.ctor() = ( 01 00 00 00 ) 
+    .custom instance void [runtime]System.Diagnostics.DebuggerDisplayAttribute::.ctor(string) = ( 01 00 15 7B 5F 5F 44 65 62 75 67 44 69 73 70 6C   
+                                                                                                  61 79 28 29 2C 6E 71 7D 00 00 )                   
+    .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 01 00 00 00 00 00 ) 
         """
         ]

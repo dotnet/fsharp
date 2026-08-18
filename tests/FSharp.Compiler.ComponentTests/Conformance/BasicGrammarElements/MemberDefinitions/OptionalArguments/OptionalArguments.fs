@@ -635,3 +635,80 @@ let main _args =
         |> run
         |> verifyOutputContains [|"main;18;hello;42;"|]
     
+    // Regression test for https://github.com/dotnet/fsharp/issues/19711
+    // `?name = expr` (explicit caller-side question-mark syntax) must accept a
+    // ValueOption when the declared parameter is `[<Struct>] ?name`.
+    [<Fact>]
+    let ``ValueOption optional parameters can be passed using ?param syntax on methods`` () =
+        FSharp """
+module Program
+type OptionalArguments() =
+    member _.NoProblem (?number : int32) =
+        match number with
+        | Some v -> printfn "RSome %d" v
+        | None -> printfn "RNone"
+    member _.Problem ([<Struct>] ?number : int32) =
+        match number with
+        | ValueSome v -> printfn "VSome %d" v
+        | ValueNone -> printfn "VNone"
+
+[<EntryPoint>]
+let main _ =
+    let o = OptionalArguments()
+    o.NoProblem 123
+    o.NoProblem (number = 123)
+    o.NoProblem (?number = None)
+    o.NoProblem (?number = Some 123)
+    o.NoProblem (?number = Unchecked.defaultof<_>)
+    o.Problem 123
+    o.Problem (number = 123)
+    o.Problem (?number = ValueNone)
+    o.Problem (?number = ValueSome 123)
+    o.Problem (?number = Unchecked.defaultof<_>)
+    0
+        """
+        |> asExe
+        |> withOptions ["--nowarn:988"]
+        |> compileAndRun
+        |> shouldSucceed
+        |> withOutputContainsAllInOrder [
+            "RSome 123"; "RSome 123"; "RNone"; "RSome 123"; "RNone"
+            "VSome 123"; "VSome 123"; "VNone"; "VSome 123"; "VNone"
+        ]
+
+    [<Fact>]
+    let ``ValueOption optional parameters can be passed using ?param syntax on constructors`` () =
+        FSharp """
+module Program
+type X<'T>([<Struct>] ?x : 'T) =
+    member _.M() =
+        match x with
+        | ValueSome v -> printfn "VSome %A" v
+        | ValueNone -> printfn "VNone"
+
+[<EntryPoint>]
+let main _ =
+    X<int>(?x = ValueSome 1).M()
+    X<int>(?x = ValueNone).M()
+    X<int>(?x = Unchecked.defaultof<_>).M()
+    0
+        """
+        |> asExe
+        |> withOptions ["--nowarn:988"]
+        |> compileAndRun
+        |> shouldSucceed
+        |> withOutputContainsAllInOrder ["VSome 1"; "VNone"; "VNone"]
+
+    [<Fact>]
+    let ``ValueOption optional parameters via ?param syntax fail with langversion 9`` () =
+        FSharp """
+module Program
+type X() =
+    static member M ([<Struct>] ?x : int) = ()
+
+X.M(?x = ValueSome 1)
+        """
+        |> withLangVersion90
+        |> typecheck
+        |> shouldFail
+        |> withDiagnosticMessageMatches "voption"

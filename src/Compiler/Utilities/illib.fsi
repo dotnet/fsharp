@@ -4,9 +4,11 @@ namespace Internal.Utilities.Library
 
 open System
 open System.Threading
+open System.Collections.Concurrent
 open System.Collections.Generic
 open System.Runtime.CompilerServices
 
+/// Do not lock on these objects.
 [<Class>]
 type InterruptibleLazy<'T> =
     new: valueFactory: (unit -> 'T) -> InterruptibleLazy<'T>
@@ -69,7 +71,7 @@ module internal PervasiveAutoOpens =
     type Async with
 
         /// Runs the computation synchronously, always starting on the current thread.
-        static member RunImmediate: computation: Async<'T> * ?cancellationToken: CancellationToken -> 'T
+        static member RunSynchronouslyImmediate: computation: Async<'T> * ?cancellationToken: CancellationToken -> 'T
 
     val foldOn: p: ('a -> 'b) -> f: ('c -> 'b -> 'd) -> z: 'c -> x: 'a -> 'd
 
@@ -83,6 +85,16 @@ type DelayInitArrayMap<'T, 'TDictKey, 'TDictValue> =
     member GetDictionary: unit -> IDictionary<'TDictKey, 'TDictValue>
 
     abstract CreateDictionary: 'T[] -> IDictionary<'TDictKey, 'TDictValue>
+
+/// Computes a value once, in place: an unforced value costs one object rather than a lazy plus its closure.
+[<AbstractClass>]
+type internal DelayInitValue<'T when 'T: not null and 'T: not struct> =
+    new: unit -> DelayInitValue<'T>
+
+    member Value: 'T
+
+    /// Called at most once, under the instance's lock. An exception is not cached: the next access retries.
+    abstract Compute: unit -> 'T
 
 module internal Order =
 
@@ -296,6 +308,15 @@ type internal DictionaryExtensions =
     [<Extension>]
     static member inline BagExistsValueForKey:
         dic: Dictionary<'key, 'value list> * key: 'key * f: ('value -> bool) -> bool
+
+[<Extension; Class>]
+type internal ConcurrentDictionaryExtensions =
+
+    /// GetOrAdd whose value is produced by 'factory' at most once per key and then cached. The value is held
+    /// behind a Lazy, so under contention every caller observes the same instance and 'factory' runs once per key.
+    [<Extension>]
+    static member GetOrAddLazy:
+        dic: ConcurrentDictionary<'key, Lazy<'value>> * key: 'key * factory: ('key -> 'value) -> 'value
 
 module internal Lazy =
     val force: x: Lazy<'T> -> 'T

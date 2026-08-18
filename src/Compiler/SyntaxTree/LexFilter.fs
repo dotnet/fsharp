@@ -352,6 +352,14 @@ let rec isTypeSeqBlockElementContinuator token =
     //   member x.M1
     //   member x.M2
     | BAR -> true
+    // Closing tokens for anonymous record types and struct types in type aliases, e.g.
+    //   type T =
+    //       {| Id: int
+    //       |} []          <-- BAR_RBRACE here should not trigger OBLOCKSEP for '[]'
+    //   type T =
+    //       {| Id: int
+    //       |} seq         <-- BAR_RBRACE here should not trigger OBLOCKSEP for 'seq'
+    | BAR_RBRACE -> true
     | OBLOCKBEGIN | ORIGHT_BLOCK_END _ | OBLOCKEND _ | ODECLEND (_, _) -> true // The following arise during reprocessing of the inserted tokens when we hit a DONE
     | ODUMMY token -> isTypeSeqBlockElementContinuator token
     | _ -> false
@@ -374,6 +382,11 @@ let rec isSeqBlockElementContinuator token =
     //              ), <------- NOTE RPAREN HERE
     //              Shortcut.CtrlO)
     | END | AND | WITH | THEN | RPAREN | RBRACE _ | BAR_RBRACE | RBRACK | BAR_RBRACK | RQUOTE _ -> true
+
+    // A closing '>' of a (possibly multiline) type-argument list is a closing bracket, like ')' or ']'
+    // above: it may align with the first column of a sequence block without starting a new element.
+    // See dotnet/fsharp#15171.
+    | GREATER true -> true
 
     // The following arise during reprocessing of the inserted tokens when we hit a DONE
     | ORIGHT_BLOCK_END _ | OBLOCKEND _ | ODECLEND (_, _) -> true
@@ -763,9 +776,6 @@ type LexFilterImpl (
 
     let relaxWhitespace2 = lexbuf.SupportsFeature LanguageFeature.RelaxWhitespace2
 
-    let strictIndentation =
-        lexbuf.StrictIndentation |> Option.defaultWith (fun _ -> lexbuf.SupportsFeature LanguageFeature.StrictIndentation)
-
     //let indexerNotationWithoutDot = lexbuf.SupportsFeature LanguageFeature.IndexerNotationWithoutDot
 
     let tryPushCtxt strict ignoreIndent tokenTup (newCtxt: Context) =
@@ -954,7 +964,6 @@ type LexFilterImpl (
             | _, CtxtSeqBlock _ :: CtxtParen(LPAREN, _) :: (CtxtMemberHead _ as limitCtxt) :: _
             // 'static member P with get() = ' limited by 'static', likewise others
             | _, CtxtWithAsLet _ :: (CtxtMemberHead _ as limitCtxt) :: _
-                 when lexbuf.SupportsFeature LanguageFeature.RelaxWhitespace
                  -> PositionWithColumn(limitCtxt.StartPos, limitCtxt.StartCol + 1)
 
             // REVIEW: document these
@@ -1002,8 +1011,7 @@ type LexFilterImpl (
                 let isCorrectIndent = c2 >= p1.Column
 
                 if not isCorrectIndent then
-                    let warnF = if strictIndentation then error else warn 
-                    warnF tokenTup
+                    error tokenTup
                         (if debug then
                             sprintf "possible incorrect indentation: this token is offside of context at (original!) position %s, newCtxt = %A, stack = %A, newCtxtPos = %s, c1 = %d, c2 = %d"
                                 (warningStringOfPosition p1.Position) newCtxt offsideStack (stringOfPos newCtxt.StartPos) p1.Column c2
@@ -2350,7 +2358,7 @@ type LexFilterImpl (
             let leadingBar = match peekNextToken() with BAR -> true | _ -> false
 
             if debug then dprintf "WITH, pushing CtxtMatchClauses, lookaheadTokenStartPos = %a, tokenStartPos = %a\n" outputPos lookaheadTokenStartPos outputPos tokenStartPos
-            tryPushCtxt strictIndentation false lookaheadTokenTup (CtxtMatchClauses(leadingBar, lookaheadTokenStartPos)) |> ignore
+            tryPushCtxt true false lookaheadTokenTup (CtxtMatchClauses(leadingBar, lookaheadTokenStartPos)) |> ignore
 
             returnToken tokenLexbufState OWITH
 
@@ -2366,6 +2374,7 @@ type LexFilterImpl (
             match lookaheadTokenTup.Token with
             | RBRACE _
             | IDENT _
+            | DOT_DOT_DOT
             // The next clause detects the access annotations after the 'with' in:
             //    member  x.PublicGetSetProperty
             //                 with public get i = "Ralf"
@@ -2406,18 +2415,26 @@ type LexFilterImpl (
                 //
                 //    with x = ...
                 //
+                //  or
+                //
+                //    with ...spreadSrc
+                //
                 // Which can only be part of
                 //
                 //   { r with x = ... }
                 //
+                // or
+                //
+                //   { r with ...spreadSrc }
+                //
                 // and in this case push a CtxtSeqBlock to cover the sequence
-                let isFollowedByLongIdentEquals =
+                let isFollowedByLongIdentEqualsOrDotDotDot =
                     let tokenTup = popNextTokenTup()
-                    let res = isLongIdentEquals tokenTup.Token
+                    let res = isLongIdentEquals tokenTup.Token || match tokenTup.Token with DOT_DOT_DOT -> true | _ -> false
                     delayToken tokenTup
                     res
 
-                if isFollowedByLongIdentEquals then
+                if isFollowedByLongIdentEqualsOrDotDotDot then
                     pushCtxtSeqBlock tokenTup NoAddBlockEnd
 
                 returnToken tokenLexbufState OWITH
@@ -2762,10 +2779,10 @@ type LexFilterImpl (
               false
 
     and pushCtxtSeqBlock fallbackToken addBlockEnd =
-        pushCtxtSeqBlockAt strictIndentation true fallbackToken (peekNextTokenTup ()) addBlockEnd
+        pushCtxtSeqBlockAt true true fallbackToken (peekNextTokenTup ()) addBlockEnd
 
     and tryPushCtxtSeqBlock fallbackToken addBlockEnd =
-        pushCtxtSeqBlockAt strictIndentation false fallbackToken (peekNextTokenTup ()) addBlockEnd
+        pushCtxtSeqBlockAt true false fallbackToken (peekNextTokenTup ()) addBlockEnd
 
     and pushCtxtSeqBlockAt strict (useFallback: bool) (fallbackToken: TokenTup) (tokenTup: TokenTup) addBlockEnd =
          let pushed = tryPushCtxt strict false tokenTup (CtxtSeqBlock(FirstInSeqBlock, startPosOfTokenTup tokenTup, addBlockEnd))

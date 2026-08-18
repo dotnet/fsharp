@@ -25,7 +25,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<PackageReference Include="Microsoft.VisualStudio.LanguageServer.Protocol" Version="17.13.6-preview" />
+		<PackageReference Include="Microsoft.VisualStudio.LanguageServer.Protocol" />
 	</ItemGroup>
 
 	<ItemGroup>
@@ -39,7 +39,7 @@
 	</ItemGroup>
 
 	<ItemGroup Condition="'$(FSHARPCORE_USE_PACKAGE)' == 'true'">
-		<PackageReference Include="FSharp.Core" Version="$(FSharpCoreShippedPackageVersionValue)" />
+		<PackageReference Include="FSharp.Core" />
 	</ItemGroup>
 
 

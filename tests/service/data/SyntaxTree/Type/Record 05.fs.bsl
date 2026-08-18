@@ -12,23 +12,28 @@ ImplFile
                   Simple
                     (Record
                        (None,
-                        [SynField
-                           ([], false, Some F1,
-                            LongIdent (SynLongIdent ([int], [], [None])), false,
-                            PreXmlDoc ((4,6), FSharp.Compiler.Xml.XmlDocCollector),
-                            None, (4,6--4,13), { LeadingKeyword = None
-                                                 MutableKeyword = None });
-                         SynField
-                           ([], false, None, FromParseError (5,6--5,6), false,
-                            PreXmlDoc ((5,6), FSharp.Compiler.Xml.XmlDocCollector),
-                            None, (5,6--5,6), { LeadingKeyword = None
-                                                MutableKeyword = None });
-                         SynField
-                           ([], false, Some F3,
-                            LongIdent (SynLongIdent ([int], [], [None])), false,
-                            PreXmlDoc ((6,6), FSharp.Compiler.Xml.XmlDocCollector),
-                            None, (6,6--6,13), { LeadingKeyword = None
-                                                 MutableKeyword = None })],
+                        [Field
+                           (SynField
+                              ([], false, Some F1,
+                               LongIdent (SynLongIdent ([int], [], [None])),
+                               false,
+                               PreXmlDoc ((4,6), FSharp.Compiler.Xml.XmlDocCollector),
+                               None, (4,6--4,13), { LeadingKeyword = None
+                                                    MutableKeyword = None }));
+                         Field
+                           (SynField
+                              ([], false, None, FromParseError (5,6--5,6), false,
+                               PreXmlDoc ((5,6), FSharp.Compiler.Xml.XmlDocCollector),
+                               None, (5,6--5,6), { LeadingKeyword = None
+                                                   MutableKeyword = None }));
+                         Field
+                           (SynField
+                              ([], false, Some F3,
+                               LongIdent (SynLongIdent ([int], [], [None])),
+                               false,
+                               PreXmlDoc ((6,6), FSharp.Compiler.Xml.XmlDocCollector),
+                               None, (6,6--6,13), { LeadingKeyword = None
+                                                    MutableKeyword = None }))],
                         (4,4--6,15)), (4,4--6,15)), [], None, (3,5--6,15),
                   { LeadingKeyword = Type (3,0--3,4)
                     EqualsRange = Some (3,7--3,8)

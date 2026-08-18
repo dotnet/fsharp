@@ -41,6 +41,9 @@ type ValInline =
     /// Indicates the value must never be inlined by the optimizer
     | Never
 
+    /// Indicates a debug-only value produced from inlining an 'inline' function definition.
+    | InlinedDefinition
+
     /// Returns true if the implementation of a value must always be inlined
     member ShouldInline: bool
 
@@ -101,7 +104,12 @@ type ValFlags =
         isGeneratedEventVal: bool ->
             ValFlags
 
-    new: flags: int64 -> ValFlags
+    /// Reconstruct flags from the F# binary metadata. PickledBits always writes
+    /// ValInline.InlinedDefinition (0x00) out as ValInline.Always (0x01), so zero inline bits
+    /// are never produced by a compiler that has this normalization. Any zero bits seen here
+    /// are therefore legacy metadata from compilers older than PR #19548, which used the same
+    /// 0x00 bits to mean ValInline.Always (ShouldInline=true), and must be imported as such.
+    static member OfPickledBits: bits: int64 -> ValFlags
 
     member WithIsCompilerGenerated: isCompGen: bool -> ValFlags
 
@@ -118,6 +126,8 @@ type ValFlags =
     member InlineInfo: ValInline
 
     member IsImplied: bool
+
+    member IsParameter: bool
 
     member IsCompiledAsStaticPropertyWithoutField: bool
 
@@ -152,7 +162,11 @@ type ValFlags =
 
     member WithInlineIfLambda: ValFlags
 
+    member WithInlineInfo: inlineInfo: ValInline -> ValFlags
+
     member WithIsImplied: ValFlags
+
+    member WithIsParameter: ValFlags
 
     member WithIsCompiledAsStaticPropertyWithoutField: ValFlags
 
@@ -306,9 +320,9 @@ type EntityFlags =
     /// This bit is reserved for us in the pickle format, see pickle.fs, it's being listed here to stop it ever being used for anything else
     static member ReservedBitForPickleFormatTyconReprFlag: int64
 
-exception UndefinedName of depth: int * error: (string -> string) * id: Ident * suggestions: Suggestions
+exception UndefinedName of depth: int * error: (RichText -> RichText) * id: Ident * suggestions: Suggestions
 
-exception InternalUndefinedItemRef of (string * string * string -> int * string) * string * string * string
+exception InternalUndefinedItemRef of (string * string * string -> int * RichText) * string * string * string
 
 [<CustomEquality; NoComparison>]
 type ModuleOrNamespaceKind =
@@ -509,8 +523,8 @@ type Entity =
 
     /// Get the type parameters for an entity that is a type declaration, otherwise return the empty list.
     ///
-    /// Lazy because it may read metadata, must provide a context "range" in case error occurs reading metadata.
-    member Typars: m: range -> Typars
+    /// Lazy because it may read metadata. Uses the entity's own range for error context.
+    member Typars: Typars
 
     /// Get the value representing the accessibility of an F# type definition or module.
     member Accessibility: Accessibility
@@ -781,9 +795,6 @@ type Entity =
 
     /// These two bits represents the on-demand analysis about whether the entity has the IsReadOnly attribute
     member TryIsReadOnly: bool voption
-
-    /// Get the type parameters for an entity that is a type declaration, otherwise return the empty list.
-    member TyparsNoRange: Typars
 
     /// Get the type abbreviated by this type definition, if it is an F# type abbreviation definition
     member TypeAbbrev: TType option
@@ -1383,6 +1394,14 @@ type ModuleOrNamespaceType =
 #if !NO_TYPEPROVIDERS
     /// Mutation used in hosting scenarios to hold the hosted types in this module or namespace
     member AddProvidedTypeEntity: entity: Entity -> unit
+
+    /// Interns a provided-type entity by mangled name so concurrent linking from multiple files yields one
+    /// Entity. The first caller's 'create' wins; callers must use the returned entity.
+    member GetOrInternProvidedEntity: mangledName: string * create: (unit -> Entity) -> Entity
+
+    /// Interns a provided-namespace entity by mangled name, reusing any existing entity of that name so concurrent
+    /// linking yields one Entity. Callers must use the returned entity.
+    member GetOrInternNamespaceEntity: mangledName: string * create: (unit -> Entity) -> Entity
 #endif
 
     /// Return a new module or namespace type with a value added.
@@ -2013,7 +2032,14 @@ type Val =
 
     member SetInlineIfLambda: unit -> unit
 
+    /// Sets the inline information for this value. Used by the type checker
+    /// to downgrade an erroneously-recursive inline binding to non-inline
+    /// so that the optimizer does not cascade further diagnostics.
+    member SetInlineInfo: inlineInfo: ValInline -> unit
+
     member SetIsImplied: unit -> unit
+
+    member SetIsParameter: unit -> unit
 
     member SetIsCompiledAsStaticPropertyWithoutField: unit -> unit
 
@@ -2132,6 +2158,10 @@ type Val =
 
     /// Determines if the values is implied by another construct, e.g. a `IsA` property is implied by the union case for A
     member IsImplied: bool
+
+    /// Indicates whether this value is a function or method parameter, as opposed to a local binding.
+    /// Used to specialize diagnostics such as FS0027.
+    member IsParameter: bool
 
     /// Indicates if this is a 'base' value?
     member IsBaseVal: bool
@@ -2460,8 +2490,8 @@ type EntityRef =
 
     /// Get the type parameters for an entity that is a type declaration, otherwise return the empty list.
     ///
-    /// Lazy because it may read metadata, must provide a context "range" in case error occurs reading metadata.
-    member Typars: m: range -> Typars
+    /// Lazy because it may read metadata. Uses the entity's own range for error context.
+    member Typars: Typars
 
     /// Get the value representing the accessibility of an F# type definition or module.
     member Accessibility: Accessibility
@@ -2730,9 +2760,6 @@ type EntityRef =
 
     /// The on-demand analysis about whether the entity has the IsReadOnly attribute
     member TryIsReadOnly: bool voption
-
-    /// Get the type parameters for an entity that is a type declaration, otherwise return the empty list.
-    member TyparsNoRange: Typars
 
     /// Indicates if this entity is an F# type abbreviation definition
     member TypeAbbrev: TType option
@@ -4410,6 +4437,10 @@ type FreeVars =
         /// Indicates if the expression contains a call to rethrow that is not bound under a (try-)with branch.
         /// Rethrow may only occur in such locations.
         UsesUnboundRethrow: bool
+
+        /// Indicates if the expression contains a direct IL field load/store — a cheap over-approximate
+        /// gate the optimizer refines to protected (family) fields (issue #19963). Never read by escape checks.
+        ContainsILFieldAccess: bool
 
         /// The summary of locally defined tycon representations used in the expression. These may be made private by a signature
         /// or marked 'internal' or 'private' type we have to check various conditions associated with that.

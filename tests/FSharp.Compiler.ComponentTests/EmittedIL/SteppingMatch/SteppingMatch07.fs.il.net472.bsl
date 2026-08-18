@@ -477,21 +477,20 @@
   {
     
     .maxstack  8
-    IL_0000:  nop
-    IL_0001:  ldarg.0
-    IL_0002:  call       instance int32 assembly/Discr::get_Tag()
-    IL_0007:  ldc.i4.1
-    IL_0008:  bne.un.s   IL_000c
+    IL_0000:  ldarg.0
+    IL_0001:  call       instance int32 assembly/Discr::get_Tag()
+    IL_0006:  ldc.i4.1
+    IL_0007:  bne.un.s   IL_000b
 
-    IL_000a:  br.s       IL_0017
+    IL_0009:  br.s       IL_0016
 
-    IL_000c:  ldstr      "A"
-    IL_0011:  call       void [runtime]System.Console::WriteLine(string)
-    IL_0016:  ret
+    IL_000b:  ldstr      "A"
+    IL_0010:  call       void [runtime]System.Console::WriteLine(string)
+    IL_0015:  ret
 
-    IL_0017:  ldstr      "B"
-    IL_001c:  call       void [runtime]System.Console::WriteLine(string)
-    IL_0021:  ret
+    IL_0016:  ldstr      "B"
+    IL_001b:  call       void [runtime]System.Console::WriteLine(string)
+    IL_0020:  ret
   } 
 
 } 

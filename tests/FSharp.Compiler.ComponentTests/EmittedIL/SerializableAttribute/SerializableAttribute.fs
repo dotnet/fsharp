@@ -15,6 +15,7 @@ module SerializableAttribute =
         |> withEmbeddedPdb
         |> withEmbedAllSource
         |> ignoreWarnings
+        |> withLangVersion10 // baselines capture pre-11 serialization IL; ExceptionFieldSerializationSupport (11.0) is off here
         |> compile
         |> verifyILBaseline
 
