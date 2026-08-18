@@ -231,10 +231,8 @@ let main _ =
                 """
 namespace External
 {
-    public class Behavior<T>
-    {
-        public virtual void OnDetaching() { }
-    }
+    public class BehaviorBase { public virtual void OnDetaching() { } }
+    public class Behavior<T> : BehaviorBase { }
 }
                 """
             |> withName "ExternalBehavior"
