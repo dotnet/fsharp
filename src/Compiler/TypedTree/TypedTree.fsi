@@ -104,7 +104,12 @@ type ValFlags =
         isGeneratedEventVal: bool ->
             ValFlags
 
-    new: flags: int64 -> ValFlags
+    /// Reconstruct flags from the F# binary metadata. PickledBits always writes
+    /// ValInline.InlinedDefinition (0x00) out as ValInline.Always (0x01), so zero inline bits
+    /// are never produced by a compiler that has this normalization. Any zero bits seen here
+    /// are therefore legacy metadata from compilers older than PR #19548, which used the same
+    /// 0x00 bits to mean ValInline.Always (ShouldInline=true), and must be imported as such.
+    static member OfPickledBits: bits: int64 -> ValFlags
 
     member WithIsCompilerGenerated: isCompGen: bool -> ValFlags
 
@@ -315,9 +320,9 @@ type EntityFlags =
     /// This bit is reserved for us in the pickle format, see pickle.fs, it's being listed here to stop it ever being used for anything else
     static member ReservedBitForPickleFormatTyconReprFlag: int64
 
-exception UndefinedName of depth: int * error: (string -> string) * id: Ident * suggestions: Suggestions
+exception UndefinedName of depth: int * error: (RichText -> RichText) * id: Ident * suggestions: Suggestions
 
-exception InternalUndefinedItemRef of (string * string * string -> int * string) * string * string * string
+exception InternalUndefinedItemRef of (string * string * string -> int * RichText) * string * string * string
 
 [<CustomEquality; NoComparison>]
 type ModuleOrNamespaceKind =

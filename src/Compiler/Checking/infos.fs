@@ -327,7 +327,7 @@ let CrackParamAttribsInfo g (ty: TType, argInfo: ArgReprInfo) =
         | false, true, true ->
             match attribs with
             | ValAttrib g WellKnownValAttributes.CallerMemberNameAttribute (Attrib(_, _, _, _, _, _, callerMemberNameAttributeRange)) ->
-                warning(Error(FSComp.SR.CallerMemberNameIsOverridden(argInfo.Name.Value.idText), callerMemberNameAttributeRange))
+                warning(Error(FSComp.SR.CallerMemberNameIsOverridden(RichText.mkParameter argInfo.Name.Value.idText), callerMemberNameAttributeRange))
                 CallerFilePath
             | _ -> failwith "Impossible"
         | _, _, _ ->
@@ -366,7 +366,7 @@ type ILFieldInit with
             | :? uint64 as i -> ILFieldInit.UInt64 i
             | _ -> 
                 let txt = match v with | null -> "?" | v -> try !!v.ToString() with _ -> "?"
-                error(Error(FSComp.SR.infosInvalidProvidedLiteralValue(txt), m))
+                error(Error(FSComp.SR.infosInvalidProvidedLiteralValue(RichText.mkText txt), m))
 
 
 /// Compute the OptionalArgInfo for a provided parameter.
@@ -408,7 +408,7 @@ let ArbitraryMethodInfoOfPropertyInfo (pi: Tainted<ProvidedPropertyInfo>) m =
     elif pi.PUntaint((fun pi -> pi.CanWrite), m) then
         GetAndSanityCheckProviderMethod m pi (fun pi -> pi.GetSetMethod()) FSComp.SR.etPropertyCanWriteButHasNoSetter
     else
-        error(Error(FSComp.SR.etPropertyNeedsCanWriteOrCanRead(pi.PUntaint((fun mi -> mi.Name), m), pi.PUntaint((fun mi -> (nonNull<ProvidedType> mi.DeclaringType).Name), m)), m))
+        error(Error(FSComp.SR.etPropertyNeedsCanWriteOrCanRead(RichText.mkMember (pi.PUntaint((fun mi -> mi.Name), m)), RichText.ofQualifiedTypeName (pi.PUntaint((fun mi -> (nonNull<ProvidedType> mi.DeclaringType).Name), m))), m))
 
 #endif
 
@@ -1290,6 +1290,37 @@ type MethInfo =
         | ILMeth(_, ilMethInfo, _) -> ilMethInfo.RawMetadata.CustomAttrs
         | MethInfoWithModifiedReturnType(mi,_) -> mi.GetCustomAttrs()
         | _ -> ILAttributes.Empty
+
+    /// Returns 0 if the attribute is not present, if targeting a runtime without the attribute, or
+    /// for an F# override member (an override never carries its own priority — it is fixed by the
+    /// base declaration, matching C#'s "priority on an override is ignored" rule).
+    member x.GetOverloadResolutionPriority() : int =
+        match x with
+        | ILMeth(g, ilMethInfo, _) ->
+            let md = ilMethInfo.RawMetadata
+
+            if md.HasWellKnownAttribute(g, WellKnownILAttributes.OverloadResolutionPriorityAttribute) then
+                match md.CustomAttrs with
+                | ILAttribDecoded WellKnownILAttributes.OverloadResolutionPriorityAttribute ([ ILAttribElem.Int32 priority ], _) -> priority
+                | _ -> 0
+            else
+                0
+        | FSMeth(g, _, vref, _) ->
+            if
+                not vref.IsDefiniteFSharpOverrideMember
+                && ValHasWellKnownAttribute g WellKnownValAttributes.OverloadResolutionPriorityAttribute vref.Deref
+            then
+                match vref.Attribs with
+                | ValAttribInt g WellKnownValAttributes.OverloadResolutionPriorityAttribute priority -> priority
+                | _ -> 0
+            else
+                0
+        | MethInfoWithModifiedReturnType(mi, _) -> mi.GetOverloadResolutionPriority()
+        | DefaultStructCtor _ -> 0
+        | RecdCtor _ -> 0
+#if !NO_TYPEPROVIDERS
+        | ProvidedMeth _ -> 0
+#endif
 
     /// Get the parameter attributes of a method info, which get combined with the parameter names and types
     member x.GetParamAttribs(amap, m) =
@@ -2319,7 +2350,7 @@ let private tyConformsToIDelegateEvent g ty =
 
 /// Create an error object to raise should an event not have the shape expected by the .NET idiom described further below
 let nonStandardEventError nm m =
-    Error (FSComp.SR.eventHasNonStandardType(nm, ("add_"+nm), ("remove_"+nm)), m)
+    Error(FSComp.SR.eventHasNonStandardType(RichText.mkEvent nm, RichText.mkMethod ("add_"+nm), RichText.mkMethod ("remove_"+nm)), m)
 
 /// Find the delegate type that an F# event property implements by looking through the type hierarchy of the type of the property
 /// for the first instantiation of IDelegateEvent.
