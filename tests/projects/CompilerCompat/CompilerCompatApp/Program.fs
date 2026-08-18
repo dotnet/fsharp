@@ -124,8 +124,23 @@ let main _argv =
                                     else
                                         printfn "SUCCESS: extension generic wrapper compat test passed"
 
-                                        printfn "SUCCESS: All compiler compatibility tests passed"
-                                        0
+                                        // T8: record constructor syntax cross-compiler compat (from main)
+                                        let viaInline = Library.makeRecordCtorPoint 7 9
+#if USES_PREVIEW_COMPILER
+                                        let viaCtor = Library.RecordCtorPoint(3, 4)
+#else
+                                        let viaCtor = { Library.RecordCtorPoint.A = 3; Library.RecordCtorPoint.B = 4 }
+#endif
+                                        if viaInline.A <> 7 || viaInline.B <> 9 then
+                                            Console.WriteLine "ERROR: inline record constructor result mismatch"
+                                            1
+                                        elif viaCtor.A <> 3 || viaCtor.B <> 4 then
+                                            Console.WriteLine "ERROR: record constructor result mismatch"
+                                            1
+                                        else
+                                            Console.WriteLine $"RecordCtor: inline=({viaInline.A},{viaInline.B}) direct=({viaCtor.A},{viaCtor.B})"
+                                            Console.WriteLine "SUCCESS: All compiler compatibility tests passed"
+                                            0
                 
     with ex ->
         printfn "ERROR: Exception occurred: %s" ex.Message

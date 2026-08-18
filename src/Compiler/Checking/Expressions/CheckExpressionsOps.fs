@@ -181,65 +181,31 @@ let RewriteRangeExpr synExpr =
     | _ -> None
 
 /// Check if a computation or sequence expression is syntactically free of 'yield' (though not yield!)
-let YieldFree (cenv: TcFileState) expr =
-    if cenv.g.langVersion.SupportsFeature LanguageFeature.ImplicitYield then
+let YieldFree (_cenv: TcFileState) expr =
+    let rec YieldFree expr =
+        match expr with
+        | SynExpr.Sequential(expr1 = expr1; expr2 = expr2) -> YieldFree expr1 && YieldFree expr2
 
-        // Implement yield free logic for F# Language including the LanguageFeature.ImplicitYield
-        let rec YieldFree expr =
-            match expr with
-            | SynExpr.Sequential(expr1 = expr1; expr2 = expr2) -> YieldFree expr1 && YieldFree expr2
+        | SynExpr.IfThenElse(thenExpr = thenExpr; elseExpr = elseExprOpt) -> YieldFree thenExpr && Option.forall YieldFree elseExprOpt
 
-            | SynExpr.IfThenElse(thenExpr = thenExpr; elseExpr = elseExprOpt) -> YieldFree thenExpr && Option.forall YieldFree elseExprOpt
+        | SynExpr.TryWith(tryExpr = body; withCases = clauses) ->
+            YieldFree body
+            && clauses |> List.forall (fun (SynMatchClause(resultExpr = res)) -> YieldFree res)
 
-            | SynExpr.TryWith(tryExpr = body; withCases = clauses) ->
-                YieldFree body
-                && clauses |> List.forall (fun (SynMatchClause(resultExpr = res)) -> YieldFree res)
+        | SynExpr.Match(clauses = clauses)
+        | SynExpr.MatchBang(clauses = clauses) -> clauses |> List.forall (fun (SynMatchClause(resultExpr = res)) -> YieldFree res)
 
-            | SynExpr.Match(clauses = clauses)
-            | SynExpr.MatchBang(clauses = clauses) -> clauses |> List.forall (fun (SynMatchClause(resultExpr = res)) -> YieldFree res)
+        | SynExpr.For(doBody = body)
+        | SynExpr.TryFinally(tryExpr = body)
+        | SynExpr.LetOrUse({ Body = body })
+        | SynExpr.While(doExpr = body)
+        | SynExpr.WhileBang(doExpr = body)
+        | SynExpr.ForEach(bodyExpr = body) -> YieldFree body
+        | SynExpr.YieldOrReturn(flags = (true, _)) -> false
 
-            | SynExpr.For(doBody = body)
-            | SynExpr.TryFinally(tryExpr = body)
-            | SynExpr.LetOrUse({ Body = body })
-            | SynExpr.While(doExpr = body)
-            | SynExpr.WhileBang(doExpr = body)
-            | SynExpr.ForEach(bodyExpr = body) -> YieldFree body
-            | SynExpr.YieldOrReturn(flags = (true, _)) -> false
+        | _ -> true
 
-            | _ -> true
-
-        YieldFree expr
-    else
-        // Implement yield free logic for F# Language without the LanguageFeature.ImplicitYield
-        let rec YieldFree expr =
-            match expr with
-            | SynExpr.Sequential(expr1 = expr1; expr2 = expr2) -> YieldFree expr1 && YieldFree expr2
-
-            | SynExpr.IfThenElse(thenExpr = thenExpr; elseExpr = elseExprOpt) -> YieldFree thenExpr && Option.forall YieldFree elseExprOpt
-
-            | SynExpr.TryWith(tryExpr = e1; withCases = clauses) ->
-                YieldFree e1
-                && clauses |> List.forall (fun (SynMatchClause(resultExpr = res)) -> YieldFree res)
-
-            | SynExpr.Match(clauses = clauses)
-            | SynExpr.MatchBang(clauses = clauses) -> clauses |> List.forall (fun (SynMatchClause(resultExpr = res)) -> YieldFree res)
-
-            | SynExpr.For(doBody = body)
-            | SynExpr.TryFinally(tryExpr = body)
-            | SynExpr.LetOrUse({ Body = body })
-            | SynExpr.While(doExpr = body)
-            | SynExpr.WhileBang(doExpr = body)
-            | SynExpr.ForEach(bodyExpr = body) -> YieldFree body
-
-            | LetOrUse(_, true, _)
-            | SynExpr.YieldOrReturnFrom _
-            | SynExpr.YieldOrReturn _
-            | SynExpr.ImplicitZero _
-            | SynExpr.Do _ -> false
-
-            | _ -> true
-
-        YieldFree expr
+    YieldFree expr
 
 let inline IsSimpleSemicolonSequenceElement expr cenv acceptDeprecated =
     match expr with

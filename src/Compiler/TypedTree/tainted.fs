@@ -23,33 +23,35 @@ type internal TypeProviderError
         errNum: int,
         tpDesignation: string,
         m: range,
-        errors: string list,
+        errors: RichText list,
         typeNameContext: string option,
         methodNameContext: string option
     ) =
 
     inherit Exception()
 
-    new((errNum, msg: string), tpDesignation,m) = 
+    new((errNum, msg: RichText), tpDesignation,m) = 
         TypeProviderError(errNum, tpDesignation, m, [msg])
-    
-    new(errNum, tpDesignation, m, messages: seq<string>) =         
+
+    new(errNum, tpDesignation, m, messages: seq<RichText>) =
         TypeProviderError(errNum, tpDesignation, m, List.ofSeq messages, None, None)
 
     member _.Number = errNum
     member _.Range = m
 
-    override _.Message = 
+    member _.RichMessage = 
         match errors with
         | [text] -> text
         | inner -> 
             // imitates old-fashioned behavior with merged text
             // usually should not fall into this case (only if someone takes Message directly instead of using Iter)
             inner            
-            |> String.concat Environment.NewLine
+            |> RichText.concatWith (RichText.mkText Environment.NewLine)
+
+    override this.Message = this.RichMessage.Text
 
     member _.MapText(f, tpDesignation, m) = 
-        let (errNum: int), _ = f ""
+        let (errNum: int), _ = f RichText.empty
         TypeProviderError(errNum, tpDesignation, m,  (Seq.map (f >> snd) errors))
 
     member _.WithContext(typeNameContext:string, methodNameContext:string) = 
@@ -60,14 +62,21 @@ type internal TypeProviderError
     // TPE having type\method name as contextual information
     // without context: Type Provider 'TP' has reported the error: MSG
     // with context: Type Provider 'TP' has reported the error in method M of type T: MSG
-    member this.ContextualErrorMessage= 
+    member this.ContextualErrorRichMessage = 
         match typeNameContext, methodNameContext with
         | Some tc, Some mc ->
-            let _,msgWithPrefix = FSComp.SR.etProviderErrorWithContext(tpDesignation, tc, mc, this.Message)
+            let _,msgWithPrefix =
+                FSComp.SR.etProviderErrorWithContext(
+                    RichText.mkText tpDesignation,
+                    RichText.ofQualifiedTypeName tc,
+                    RichText.mkMethod mc,
+                    this.RichMessage)
             msgWithPrefix
         | _ ->
-            let _,msgWithPrefix = FSComp.SR.etProviderError(tpDesignation, this.Message)
+            let _,msgWithPrefix = FSComp.SR.etProviderError(RichText.mkText tpDesignation, this.RichMessage)
             msgWithPrefix
+
+    member this.ContextualErrorMessage = this.ContextualErrorRichMessage.Text
     
     /// provides uniform way to handle plain and composite instances of TypeProviderError
     member this.Iter f = 
@@ -101,11 +110,11 @@ type internal Tainted<'T> (context: TaintedContext, value: 'T) =
             | :? TypeProviderError -> reraise()
             | :? AggregateException as ae ->
                     let errNum,_ = FSComp.SR.etProviderError("", "")
-                    let messages = [for e in ae.InnerExceptions -> if isNull e.InnerException then e.Message else (e.Message + ": " + e.GetBaseException().Message)]
+                    let messages = [for e in ae.InnerExceptions -> RichText.mkText (if isNull e.InnerException then e.Message else (e.Message + ": " + e.GetBaseException().Message))]
                     raise <| TypeProviderError(errNum, this.TypeProviderDesignation, range, messages)
             | e -> 
                     let errNum,_ = FSComp.SR.etProviderError("", "")
-                    let error = if isNull e.InnerException then e.Message else (e.Message + ": " + e.GetBaseException().Message)
+                    let error = RichText.mkText (if isNull e.InnerException then e.Message else (e.Message + ": " + e.GetBaseException().Message))
                     raise <| TypeProviderError((errNum, error), this.TypeProviderDesignation, range)
 
     member _.TypeProvider = Tainted<_>(context, context.TypeProvider)
@@ -132,16 +141,16 @@ type internal Tainted<'T> (context: TaintedContext, value: 'T) =
         let u = this.Protect (fun x -> f (x, context.TypeProvider)) range
         Tainted(context, u)
 
-    member this.PApplyArray(f, methodName, range:range) =        
+    member this.PApplyArray(f, methodName: string, range:range) =        
         let a : 'U[] | null = this.Protect f range
         match a with 
-        | Null -> raise <| TypeProviderError(FSComp.SR.etProviderReturnedNull(methodName), this.TypeProviderDesignation, range)
+        | Null -> raise <| TypeProviderError(FSComp.SR.etProviderReturnedNull(RichText.mkMethod methodName), this.TypeProviderDesignation, range)
         | NonNull a -> a |> Array.map (fun u -> Tainted(context,u))
 
-    member this.PApplyFilteredArray(factory, filter, methodName, range:range) =        
+    member this.PApplyFilteredArray(factory, filter, methodName: string, range:range) =        
         let a : 'U[] | null = this.Protect factory range
         match a with 
-        | Null -> raise <| TypeProviderError(FSComp.SR.etProviderReturnedNull(methodName), this.TypeProviderDesignation, range)
+        | Null -> raise <| TypeProviderError(FSComp.SR.etProviderReturnedNull(RichText.mkMethod methodName), this.TypeProviderDesignation, range)
         | NonNull a -> a |> Array.filter filter |> Array.map (fun u -> Tainted(context,u))
 
     member this.PApplyOption(f, range: range) =        

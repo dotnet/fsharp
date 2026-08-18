@@ -4954,3 +4954,105 @@ let r = { X = 1 } + { X = 2 }
 if r.X <> 3 then failwith (sprintf "Expected 3 but got %d" r.X)
         """
         |> compileAndRunPreview
+
+    // Recursive inline SRTP resolution must not be truncated by one currying level (regression from
+    // the domain-order reversal in nullness PR #15181).
+    [<Fact>]
+    let ``Recursive inline SRTP memoization specializes at every currying depth`` () =
+        FSharp """
+module Test
+open System.Collections.Concurrent
+
+type Default1 = class end
+
+[<Struct>]
+type MemoizationKeyWrapper<'a> = MemoizationKeyWrapper of 'a
+
+type MemoizeN =
+    inherit Default1
+    static member getOrAdd (cd: ConcurrentDictionary<MemoizationKeyWrapper<'a>,'b>) (f: 'a -> 'b) k =
+        cd.GetOrAdd (MemoizationKeyWrapper k, (fun (MemoizationKeyWrapper x) -> x) >> f)
+
+let inline memoizeN (f: ^F) : ^F =
+    let inline call_2 (a: ^MemoizeN, b: ^b) = ((^MemoizeN or ^b) : (static member MemoizeN : ^MemoizeN * 'b -> _ ) (a, b))
+    call_2 (Unchecked.defaultof<MemoizeN>, Unchecked.defaultof< ^F >) f
+
+type MemoizeN with
+    static member        MemoizeN (_: Default1, _:      'a -> 'b) = MemoizeN.getOrAdd (ConcurrentDictionary ())
+    static member inline MemoizeN (_: MemoizeN, _:'t -> 'a -> 'b) = MemoizeN.getOrAdd (ConcurrentDictionary ()) << (<<) memoizeN
+
+let effs = ResizeArray ()
+let sum3 a (b:int) c = effs.Add "sum3"; a + b + c
+let msum3 = memoizeN sum3
+msum3 1 2 3 |> ignore
+msum3 1 2 3 |> ignore
+if effs.Count <> 1 then failwith $"depth-3 memoization ran the function {effs.Count} times, expected 1"
+
+let effs2 = ResizeArray ()
+let sum2 (a:int) (b:int) = effs2.Add "sum2"; a + b
+let msum2 = memoizeN sum2
+msum2 1 1 |> ignore
+msum2 1 1 |> ignore
+if effs2.Count <> 1 then failwith $"depth-2 memoization ran the function {effs2.Count} times, expected 1"
+"""
+        |> asExe
+        |> compileAndRun
+        |> shouldSucceed
+
+    // Guards the `not csenv.MatchingOnly` gate of the SolveFunTypeEqn SRTP fix (mirrors the same
+    // guard in SolveTypeEqualsType): an SRTP-constrained argument must not disturb overload
+    // candidate selection, else the lambda's type is left uninferred (FS0072).
+    [<Fact>]
+    let ``SRTP argument does not disturb overload resolution during MatchingOnly`` () =
+        FSharp """
+module Test
+let inline dbl x = x + x
+type K =
+    static member M(g: int -> int, f: string -> int) = f "a"
+    static member M(g: System.DateTime -> System.DateTime, f: System.DateTime -> int) = 0
+
+let r = K.M(dbl, fun v -> v.Length)
+if r <> 1 then failwith $"Expected 1 but got {r}"
+"""
+        |> asExe
+        |> compileAndRun
+        |> shouldSucceed
+
+    // The domain-order fix keeps the SRTP typar as the unification representative, so a nullable
+    // argument annotation survives the recursive specialization and nullness inference stays intact
+    // under --checknulls+ (no lost or spurious warning, no internal error).
+    [<Fact>]
+    let ``Recursive inline SRTP memoization preserves nullable argument inference under checknulls`` () =
+        FSharp """
+module Test
+open System.Collections.Concurrent
+
+type Default1 = class end
+
+[<Struct>]
+type MemoizationKeyWrapper<'a> = MemoizationKeyWrapper of 'a
+
+type MemoizeN =
+    inherit Default1
+    static member getOrAdd (cd: ConcurrentDictionary<MemoizationKeyWrapper<'a>,'b>) (f: 'a -> 'b) k =
+        cd.GetOrAdd (MemoizationKeyWrapper k, (fun (MemoizationKeyWrapper x) -> x) >> f)
+
+let inline memoizeN (f: ^F) : ^F =
+    let inline call_2 (a: ^MemoizeN, b: ^b) = ((^MemoizeN or ^b) : (static member MemoizeN : ^MemoizeN * 'b -> _ ) (a, b))
+    call_2 (Unchecked.defaultof<MemoizeN>, Unchecked.defaultof< ^F >) f
+
+type MemoizeN with
+    static member        MemoizeN (_: Default1, _:      'a -> 'b) = MemoizeN.getOrAdd (ConcurrentDictionary ())
+    static member inline MemoizeN (_: MemoizeN, _:'t -> 'a -> 'b) = MemoizeN.getOrAdd (ConcurrentDictionary ()) << (<<) memoizeN
+
+let lookup (prefix: int) (index: int) (s: string | null) = s.Length + prefix + index
+let mlookup = memoizeN lookup
+mlookup 1 2 "abc" |> ignore
+"""
+        |> withLangVersion "preview"
+        |> withCheckNulls
+        |> withWarnOn 3261
+        |> compile
+        |> withDiagnostics [
+            Warning 3261, Line 23, Col 60, Line 23, Col 61, "Nullness warning: Possible dereference of a null value when accessing member 'Length' on the nullable value 's' of type 'string | null'."
+        ]

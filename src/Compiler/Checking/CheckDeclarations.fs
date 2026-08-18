@@ -407,7 +407,7 @@ let CheckDuplicates (idf: _ -> Ident) k elems =
 let private CheckDuplicatesArgNames (synVal: SynValSig) m =
     let argNames = synVal.SynInfo.ArgNames |> List.duplicates
     for name in argNames do
-        errorR(Error((FSComp.SR.chkDuplicatedMethodParameter(name), m)))
+        errorR(Error(FSComp.SR.chkDuplicatedMethodParameter(RichText.mkParameter name), m))
 
 let private CheckDuplicatesAbstractMethodParamsSig (typeSpecs:  SynTypeDefnSig list) =
     for SynTypeDefnSig(typeRepr= trepr) in typeSpecs do 
@@ -511,7 +511,7 @@ module TcRecdUnionAndEnumDeclarations =
         let g = cenv.g
         let name = id.idText
         if name = "Tags" then
-            errorR(Error(FSComp.SR.tcUnionCaseNameConflictsWithGeneratedType(name, "Tags"), id.idRange))
+            errorR(Error(FSComp.SR.tcUnionCaseNameConflictsWithGeneratedType(RichText.mkUnionCase name, RichText.mkClass "Tags"), id.idRange))
 
         CheckNamespaceModuleOrTypeName g id
 
@@ -527,7 +527,7 @@ module TcRecdUnionAndEnumDeclarations =
         elems |> List.iteri (fun i (uc1: Ident) -> 
             elems |> List.iteri (fun j (uc2: Ident) -> 
                 if j > i && uc1.idText = uc2.idText then 
-                   errorR(Error(FSComp.SR.tcFieldNameIsUsedModeThanOnce(uc1.idText), uc1.idRange))))
+                   errorR(Error(FSComp.SR.tcFieldNameIsUsedModeThanOnce(RichText.mkRecordField uc1.idText), uc1.idRange))))
 
     let ValidateFieldNames (synFields: SynField list, tastFields: RecdField list) =
         let fields = synFields |> List.choose (function SynField(idOpt = Some ident) -> Some ident | _ -> None)
@@ -541,7 +541,7 @@ module TcRecdUnionAndEnumDeclarations =
                 match sf, synField with
                 | SynField(idOpt = Some id), SynField(idOpt = None)
                 | SynField(idOpt = None), SynField(idOpt = Some id) ->
-                    errorR(Error(FSComp.SR.tcFieldNameConflictsWithGeneratedNameForAnonymousField(id.idText), id.idRange))
+                    errorR(Error(FSComp.SR.tcFieldNameConflictsWithGeneratedNameForAnonymousField(RichText.mkRecordField id.idText), id.idRange))
                 | _ -> ()
             | _ ->
                 seen.Add(f.LogicalName, sf))
@@ -687,7 +687,7 @@ let PublishInterface (cenv: cenv) denv (tcref: TyconRef) m isCompGen interfaceTy
     let g = cenv.g
 
     if not (isInterfaceTy g interfaceTy) then
-        errorR(Error(FSComp.SR.tcTypeIsNotInterfaceType1(NicePrint.minimalStringOfType denv interfaceTy), m))
+        errorR(Error(FSComp.SR.tcTypeIsNotInterfaceType1(NicePrint.minimalRichTextOfType denv interfaceTy), m))
 
     if tcref.HasInterface g interfaceTy then 
         errorR(Error(FSComp.SR.tcDuplicateSpecOfInterface(), m))
@@ -767,13 +767,13 @@ let TcOpenModuleOrNamespaceDecl tcSink g amap scopem env (longId, m) =
 
     modrefs |> List.iter (fun (_, modref, _) ->
        if modref.IsModule && EntityHasWellKnownAttribute g WellKnownEntityAttributes.RequireQualifiedAccessAttribute modref.Deref then 
-           errorR(Error(FSComp.SR.tcModuleRequiresQualifiedAccess(fullDisplayTextOfModRef modref), m)))
+           errorR(Error(FSComp.SR.tcModuleRequiresQualifiedAccess(richTextOfQualifiedModRef modref), m)))
 
     // Bug FSharp 1.0 3133: 'open Lexing'. Skip this warning if we successfully resolved to at least a module name
     if not (modrefs |> List.exists (fun (_, modref, _) -> modref.IsModule && not (EntityHasWellKnownAttribute g WellKnownEntityAttributes.RequireQualifiedAccessAttribute modref.Deref))) then
         modrefs |> List.iter (fun (_, modref, _) ->
             if IsPartiallyQualifiedNamespace modref then 
-                 errorR(Error(FSComp.SR.tcOpenUsedWithPartiallyQualifiedPath(fullDisplayTextOfModRef modref), m)))
+                 errorR(Error(FSComp.SR.tcOpenUsedWithPartiallyQualifiedPath(richTextOfQualifiedModRef modref), m)))
         
     let modrefs = List.map p23 modrefs
     modrefs |> List.iter (fun modref -> CheckEntityAttributes g modref m |> CommitOperationResult)        
@@ -782,15 +782,13 @@ let TcOpenModuleOrNamespaceDecl tcSink g amap scopem env (longId, m) =
     let env = OpenModuleOrNamespaceRefs tcSink g amap scopem false env modrefs openDecl
     env, [openDecl]
 
-let TcOpenTypeDecl (cenv: cenv) mOpenDecl scopem env (synType: SynType, m) =
+let TcOpenTypeDecl (cenv: cenv) scopem env (synType: SynType, m) =
     let g = cenv.g
-
-    checkLanguageFeatureAndRecover g.langVersion LanguageFeature.OpenTypeDeclaration mOpenDecl
 
     let ty, _tpenv = TcType cenv NoNewTypars CheckCxs ItemOccurrence.Open WarnOnIWSAM.Yes env emptyUnscopedTyparEnv synType
 
     if not (isAppTy g ty) then
-        errorR(Error(FSComp.SR.tcNamedTypeRequired("open type"), m))
+        errorR(Error(FSComp.SR.tcNamedTypeRequired(RichText.mkKeyword "open type"), m))
 
     if isByrefTy g ty then
         errorR(Error(FSComp.SR.tcIllegalByrefsInOpenTypeDeclaration(), m))
@@ -799,14 +797,14 @@ let TcOpenTypeDecl (cenv: cenv) mOpenDecl scopem env (synType: SynType, m) =
     let env = OpenTypeContent cenv.tcSink g cenv.amap scopem env ty openDecl
     env, [openDecl]
 
-let TcOpenDecl (cenv: cenv) mOpenDecl scopem env target = 
+let TcOpenDecl (cenv: cenv) scopem env target = 
     let g = cenv.g
     match target with
     | SynOpenDeclTarget.ModuleOrNamespace (longId, m) ->
         TcOpenModuleOrNamespaceDecl cenv.tcSink g cenv.amap scopem env (longId.LongIdent, m)
 
     | SynOpenDeclTarget.Type (synType, m) ->
-        TcOpenTypeDecl cenv mOpenDecl scopem env (synType, m)
+        TcOpenTypeDecl cenv scopem env (synType, m)
         
 let MakeSafeInitField (cenv: cenv) env m isStatic = 
     let id =
@@ -841,12 +839,12 @@ module AddAugmentationDeclarations =
             let hasExplicitIStructuralComparable = tycon.HasInterface g g.mk_IStructuralComparable_ty
 
             if hasExplicitIComparable then 
-                errorR(Error(FSComp.SR.tcImplementsIComparableExplicitly(tycon.DisplayName), m)) 
+                errorR(Error(FSComp.SR.tcImplementsIComparableExplicitly(richTextOfEntity tycon), m)) 
 
             elif hasExplicitGenericIComparable then 
-                errorR(Error(FSComp.SR.tcImplementsGenericIComparableExplicitly(tycon.DisplayName), m)) 
+                errorR(Error(FSComp.SR.tcImplementsGenericIComparableExplicitly(richTextOfEntity tycon), m)) 
             elif hasExplicitIStructuralComparable then
-                errorR(Error(FSComp.SR.tcImplementsIStructuralComparableExplicitly(tycon.DisplayName), m)) 
+                errorR(Error(FSComp.SR.tcImplementsIStructuralComparableExplicitly(richTextOfEntity tycon), m)) 
             else
                 let hasExplicitGenericIComparable = tycon.HasInterface g genericIComparableTy
                 let cvspec1, cvspec2 = AugmentTypeDefinitions.MakeValsForCompareAugmentation g tcref
@@ -872,7 +870,7 @@ module AddAugmentationDeclarations =
             let hasExplicitIStructuralEquatable = tycon.HasInterface g g.mk_IStructuralEquatable_ty
 
             if hasExplicitIStructuralEquatable then
-                errorR(Error(FSComp.SR.tcImplementsIStructuralEquatableExplicitly(tycon.DisplayName), m))
+                errorR(Error(FSComp.SR.tcImplementsIStructuralEquatableExplicitly(richTextOfEntity tycon), m))
             else
                 let augmentation = AugmentTypeDefinitions.MakeValsForEqualityWithComparerAugmentation g tcref
                 PublishInterface cenv env.DisplayEnv tcref m true g.mk_IStructuralEquatable_ty
@@ -927,7 +925,7 @@ module AddAugmentationDeclarations =
             let hasExplicitGenericIEquatable = tcaugHasNominalInterface g tcaug g.system_GenericIEquatable_tcref
 
             if hasExplicitGenericIEquatable then 
-                errorR(Error(FSComp.SR.tcImplementsIEquatableExplicitly(tycon.DisplayName), m)) 
+                errorR(Error(FSComp.SR.tcImplementsIEquatableExplicitly(richTextOfEntity tycon), m)) 
 
             // Note: only provide the equals method if Equals is not implemented explicitly, and
             // we're actually generating Hash/Equals for this type
@@ -1165,7 +1163,7 @@ module MutRecBindingChecking =
                                 let allDo = letBinds |> List.forall (function SynBinding(kind=SynBindingKind.Do) -> true | _ -> false)
                                 // Code for potential future design change to allow functions-compiled-as-members in structs
                                 if allDo then 
-                                    errorR(Deprecated(FSComp.SR.tcStructsMayNotContainDoBindings(), (trimRangeToLine m)))
+                                    errorR(Deprecated(RichText.mkText (FSComp.SR.tcStructsMayNotContainDoBindings()), (trimRangeToLine m)))
                                 else
                                 // Code for potential future design change to allow functions-compiled-as-members in structs
                                     errorR(Error(FSComp.SR.tcStructsMayNotContainLetBindings(), (trimRangeToLine m)))
@@ -1466,7 +1464,7 @@ module MutRecBindingChecking =
                                 match TryFindIntrinsicMethInfo cenv.infoReader bind.Var.Range ad nm ty, 
                                       TryFindIntrinsicPropInfo cenv.infoReader bind.Var.Range ad nm ty with 
                                 | [], [] -> ()
-                                | _ -> errorR (Error(FSComp.SR.tcMemberAndLocalClassBindingHaveSameName nm, bind.Var.Range))
+                                | _ -> errorR (Error(FSComp.SR.tcMemberAndLocalClassBindingHaveSameName (RichText.mkMember nm), bind.Var.Range))
 
                             // Also add static entries to the envInstance if necessary 
                             let envInstance = (if isStatic then (binds, envInstance) ||> List.foldBack (fun b e -> AddLocalVal g cenv.tcSink scopem b.Var e) else env)
@@ -1603,7 +1601,7 @@ module MutRecBindingChecking =
                             collectedBinds.Add pgbrind
                             yield pgbrind ])
 
-        CheckRecursiveInlineGroup (List.ofSeq collectedBinds)
+        CheckRecursiveInlineGroup g (List.ofSeq collectedBinds)
         result
 
 
@@ -1787,7 +1785,7 @@ module MutRecBindingChecking =
         let modrefs = mvvs |> List.map p23
 
         if not (isNil modrefs) && modrefs |> List.forall (fun modref -> modref.IsNamespace) then 
-            errorR(Error(FSComp.SR.tcModuleAbbreviationForNamespace(fullDisplayTextOfModRef (List.head modrefs)), m))
+            errorR(Error(FSComp.SR.tcModuleAbbreviationForNamespace(richTextOfQualifiedModRef (List.head modrefs)), m))
 
         let modrefs = modrefs |> List.filter (fun mvv -> not mvv.IsNamespace)
 
@@ -1852,8 +1850,8 @@ module MutRecBindingChecking =
 
                 // Process the 'open' declarations                
                 let envForDecls =
-                    (envForDecls, opens) ||> List.fold (fun env (target, m, moduleRange, openDeclsRef) ->
-                        let env, openDecls = TcOpenDecl cenv m moduleRange env target
+                    (envForDecls, opens) ||> List.fold (fun env (target, _, moduleRange, openDeclsRef) ->
+                        let env, openDecls = TcOpenDecl cenv moduleRange env target
                         openDeclsRef.Value <- openDecls
                         env)
 
@@ -1939,7 +1937,7 @@ module MutRecBindingChecking =
             for extraTypar in allExtraGeneralizableTypars do 
                 if Zset.memberOf freeInInitialEnv extraTypar then
                     let ty = mkTyparTy extraTypar
-                    errorR(Error(FSComp.SR.tcNotSufficientlyGenericBecauseOfScope(NicePrint.prettyStringOfTy denv ty), extraTypar.Range))                                
+                    errorR(Error(FSComp.SR.tcNotSufficientlyGenericBecauseOfScope(NicePrint.prettyRichTextOfTy denv ty), extraTypar.Range))                                
 
         // Solve any type variables in any part of the overall type signature of the class whose
         // constraints involve generalized type variables.
@@ -2267,9 +2265,9 @@ module TyconConstraintInference =
                                failwith "unreachable"
                            | Some (ty, _) -> 
                                if isTyparTy g ty then 
-                                   errorR(Error(FSComp.SR.tcStructuralComparisonNotSatisfied1(tycon.DisplayName, NicePrint.prettyStringOfTy denv ty), tycon.Range)) 
+                                   errorR(Error(FSComp.SR.tcStructuralComparisonNotSatisfied1(richTextOfEntity tycon, NicePrint.prettyRichTextOfTy denv ty), tycon.Range)) 
                                else 
-                                   errorR(Error(FSComp.SR.tcStructuralComparisonNotSatisfied2(tycon.DisplayName, NicePrint.prettyStringOfTy denv ty), tycon.Range)) 
+                                   errorR(Error(FSComp.SR.tcStructuralComparisonNotSatisfied2(richTextOfEntity tycon, NicePrint.prettyRichTextOfTy denv ty), tycon.Range)) 
                        else
                            match structuralTypes |> List.tryFind (fst >> checkIfFieldTypeSupportsComparison tycon >> not) with
                            | None -> 
@@ -2280,9 +2278,9 @@ module TyconConstraintInference =
                                // PERF: this call to prettyStringOfTy is always being executed, even when the warning
                                // is not being reported (the normal case).
                                if isTyparTy g ty then 
-                                   warning(Error(FSComp.SR.tcNoComparisonNeeded1(tycon.DisplayName, NicePrint.prettyStringOfTy denv ty, tycon.DisplayName), tycon.Range)) 
+                                   warning(Error(FSComp.SR.tcNoComparisonNeeded1(richTextOfEntity tycon, NicePrint.prettyRichTextOfTy denv ty, richTextOfEntity tycon), tycon.Range)) 
                                else 
-                                   warning(Error(FSComp.SR.tcNoComparisonNeeded2(tycon.DisplayName, NicePrint.prettyStringOfTy denv ty, tycon.DisplayName), tycon.Range)) 
+                                   warning(Error(FSComp.SR.tcNoComparisonNeeded2(richTextOfEntity tycon, NicePrint.prettyRichTextOfTy denv ty, richTextOfEntity tycon), tycon.Range)) 
 
                                                       
                    res)
@@ -2390,9 +2388,9 @@ module TyconConstraintInference =
                                    failwith "unreachable"
                                | Some (ty, _) -> 
                                    if isTyparTy g ty then 
-                                       errorR(Error(FSComp.SR.tcStructuralEqualityNotSatisfied1(tycon.DisplayName, NicePrint.prettyStringOfTy denv ty), tycon.Range)) 
+                                       errorR(Error(FSComp.SR.tcStructuralEqualityNotSatisfied1(richTextOfEntity tycon, NicePrint.prettyRichTextOfTy denv ty), tycon.Range)) 
                                    else 
-                                       errorR(Error(FSComp.SR.tcStructuralEqualityNotSatisfied2(tycon.DisplayName, NicePrint.prettyStringOfTy denv ty), tycon.Range)) 
+                                       errorR(Error(FSComp.SR.tcStructuralEqualityNotSatisfied2(richTextOfEntity tycon, NicePrint.prettyRichTextOfTy denv ty), tycon.Range)) 
                        else
                            if AugmentTypeDefinitions.TyconIsCandidateForAugmentationWithEquals g tycon then 
                                match structuralTypes |> List.tryFind (fst >> checkIfFieldTypeSupportsEquality tycon >> not) with
@@ -2401,9 +2399,9 @@ module TyconConstraintInference =
                                    failwith "unreachable"
                                | Some (ty, _) -> 
                                    if isTyparTy g ty then 
-                                       warning(Error(FSComp.SR.tcNoEqualityNeeded1(tycon.DisplayName, NicePrint.prettyStringOfTy denv ty, tycon.DisplayName), tycon.Range)) 
+                                       warning(Error(FSComp.SR.tcNoEqualityNeeded1(richTextOfEntity tycon, NicePrint.prettyRichTextOfTy denv ty, richTextOfEntity tycon), tycon.Range)) 
                                    else 
-                                       warning(Error(FSComp.SR.tcNoEqualityNeeded2(tycon.DisplayName, NicePrint.prettyStringOfTy denv ty, tycon.DisplayName), tycon.Range)) 
+                                       warning(Error(FSComp.SR.tcNoEqualityNeeded2(richTextOfEntity tycon, NicePrint.prettyRichTextOfTy denv ty, richTextOfEntity tycon), tycon.Range)) 
 
                                                       
                    res)
@@ -2712,7 +2710,7 @@ module EstablishTypeDefinitionCores =
           | SynTypeDefnSimpleRepr.Record (_, fieldsAndSpreads, _) ->
               let tcField (SynField (fieldType = ty; range = m)) =
                   let tyR, _ = TcTypeAndRecover cenv NoNewTypars NoCheckCxs ItemOccurrence.UseInType WarnOnIWSAM.Yes env tpenv ty
-                  (tyR, m), ignore
+                  (tyR, m), ignore, ignore
   
               let tcSpread (SynTypeSpread (ty = ty; range = m)) =
                   let spreadSrcTy, _ = TcTypeAndRecover cenv NoNewTypars NoCheckCxs ItemOccurrence.UseInType WarnOnIWSAM.Yes env tpenv ty
@@ -2721,11 +2719,11 @@ module EstablishTypeDefinitionCores =
                       spreadSrcTys.Add spreadSrcTy
                       ResolveRecordOrClassFieldsOfType cenv.nameResolver m ad spreadSrcTy false
                       |> List.choose (function
-                          | Item.RecdField field -> Some (field.RecdField.Id.idText, (field.FieldType, m), ignore)
+                          | Item.RecdField field -> Some (field.RecdField.Id.idText, (field.FieldType, m), ignore, ignore)
                           | _ -> None)
                   else
                       match tryDestAnonRecdTy g spreadSrcTy with
-                      | ValueSome (anonInfo, tys) -> tys |> List.mapi (fun i ty -> (anonInfo.SortedNames[i], (ty, m), ignore))
+                      | ValueSome (anonInfo, tys) -> tys |> List.mapi (fun i ty -> (anonInfo.SortedNames[i], (ty, m), ignore, ignore))
                       | ValueNone -> []
   
               // We must apply the spread shadowing logic here
@@ -2827,8 +2825,8 @@ module EstablishTypeDefinitionCores =
             use _holder = TemporarilySuspendReportingTypecheckResultsToSink cenv.tcSink
             (env, shapes) ||> List.fold (fun env shape ->
                 match shape with
-                | MutRecShape.Open(MutRecDataForOpen(SynOpenDeclTarget.ModuleOrNamespace _ as target, openm, moduleRange, _)) ->
-                    let env, _ = TcOpenDecl cenv openm moduleRange env target
+                | MutRecShape.Open(MutRecDataForOpen(SynOpenDeclTarget.ModuleOrNamespace _ as target, _, moduleRange, _)) ->
+                    let env, _ = TcOpenDecl cenv moduleRange env target
                     env
                 | _ -> env))
 
@@ -3178,7 +3176,7 @@ module EstablishTypeDefinitionCores =
             if not isRootGenerated then 
                 let desig = theRootTypeWithRemapping.TypeProviderDesignation
                 let nm = theRootTypeWithRemapping.PUntaint((fun st -> string st.FullName), m)
-                error(Error(FSComp.SR.etErasedTypeUsedInGeneration(desig, nm), m))
+                error(Error(FSComp.SR.etErasedTypeUsedInGeneration(RichText.mkText desig, RichText.ofQualifiedTypeName nm), m))
 
             cenv.createsGeneratedProvidedTypes <- true
 
@@ -3219,7 +3217,7 @@ module EstablishTypeDefinitionCores =
                 if not isGenerated then 
                     let desig = st.TypeProviderDesignation
                     let nm = st.PUntaint((fun st -> string st.FullName), m)
-                    error(Error(FSComp.SR.etErasedTypeUsedInGeneration(desig, nm), m))
+                    error(Error(FSComp.SR.etErasedTypeUsedInGeneration(RichText.mkText desig, RichText.ofQualifiedTypeName nm), m))
 
                 // Embed the type into the module we're compiling
                 let cpath = eref.CompilationPath.NestedCompPath eref.LogicalName ModuleOrNamespaceKind.ModuleOrType
@@ -3361,7 +3359,7 @@ module EstablishTypeDefinitionCores =
                             | CompiledTypeRepr.ILAsmOpen _ -> ()
                             | CompiledTypeRepr.ILAsmNamed _ ->
                                 if tcref.CompiledRepresentationForNamedType.FullName = fullName then
-                                    warning(Error(FSComp.SR.chkAttributeAliased(fullName), tycon.Id.idRange))
+                                    warning(Error(FSComp.SR.chkAttributeAliased(richTextOfEntityRefName tcref fullName), tycon.Id.idRange))
                         | _ -> ()
 
                     // Check for attributes in unit-of-measure declarations
@@ -3378,7 +3376,7 @@ module EstablishTypeDefinitionCores =
                         let ftyvs = freeInTypeLeftToRight g false ty
                         let typars = tycon.Typars
                         if ftyvs.Length <> typars.Length then
-                            errorR(Deprecated(FSComp.SR.tcTypeAbbreviationHasTypeParametersMissingOnType(), tycon.Range))
+                            errorR(Deprecated(RichText.mkText (FSComp.SR.tcTypeAbbreviationHasTypeParametersMissingOnType()), tycon.Range))
 
                     if firstPass then
                         tycon.SetTypeAbbrev (Some ty)
@@ -3736,7 +3734,12 @@ module EstablishTypeDefinitionCores =
                             let tcField synField =
                                 let field = TcRecdUnionAndEnumDeclarations.TcNamedFieldDecl cenv envinner innerParent false tpenv addFixup synField |> Option.get
                                 let errorAmbiguousShadowing () = if firstPass then errorR (Duplicate ("field", field.Id.idText, field.Id.idRange))
-                                field, errorAmbiguousShadowing
+                                let infoExplicitShadowing () =
+                                    if firstPass then
+                                        let fmtedSpreadField = NicePrint.stringOfRecdField envinner.DisplayEnv cenv.infoReader thisTyconRef field
+                                        informationalWarning (Error (FSComp.SR.tcRecordExplicitFieldShadowsSpreadField fmtedSpreadField, field.Id.idRange))
+
+                                field, errorAmbiguousShadowing, infoExplicitShadowing
 
                             let tcSpread (SynTypeSpread (ty = ty; range = m)) =
                                 let mTy = ty.Range
@@ -3794,7 +3797,12 @@ module EstablishTypeDefinitionCores =
                                                 let fmtedSpreadSrcTy = NicePrint.stringOfTy envinner.DisplayEnv spreadSrcTy
                                                 warning (Error (FSComp.SR.tcRecordTypeDefinitionSpreadFieldShadowsExplicitField (fmtedSpreadField, fmtedSpreadSrcTy), m))
 
-                                            Some (fieldInfo.RecdField.Id.idText, recdField, warnAmbiguousShadowing)
+                                            let infoSpreadShadowing () =
+                                                let fmtedSpreadField = NicePrint.stringOfRecdField envinner.DisplayEnv cenv.infoReader fieldInfo.TyconRef recdField
+                                                let fmtedSpreadSrcTy = NicePrint.stringOfTy envinner.DisplayEnv spreadSrcTy
+                                                informationalWarning (Error (FSComp.SR.tcRecordTypeDefinitionSpreadFieldShadowsSpreadField (fmtedSpreadField, fmtedSpreadSrcTy), m))
+
+                                            Some (fieldInfo.RecdField.Id.idText, recdField, warnAmbiguousShadowing, infoSpreadShadowing)
 
                                         | Item.AnonRecdField (anonInfo, tys, fieldIndex, _) ->
                                             let fieldId =
@@ -3820,7 +3828,13 @@ module EstablishTypeDefinitionCores =
                                                 let fmtedSpreadSrcTy = NicePrint.stringOfTy envinner.DisplayEnv spreadSrcTy
                                                 warning (Error (FSComp.SR.tcRecordTypeDefinitionSpreadFieldShadowsExplicitField (fmtedSpreadField, fmtedSpreadSrcTy), m))
 
-                                            Some (fieldId.idText, field, warnAmbiguousShadowing)
+                                            let infoSpreadShadowing () =
+                                                let typars = tryAppTy g ty |> ValueOption.map (snd >> List.choose (tryDestTyparTy g >> ValueOption.toOption)) |> ValueOption.defaultValue []
+                                                let fmtedSpreadField = LayoutRender.showL (NicePrint.prettyLayoutOfMemberSig envinner.DisplayEnv ([], fieldId.idText, typars, [], ty))
+                                                let fmtedSpreadSrcTy = NicePrint.stringOfTy envinner.DisplayEnv spreadSrcTy
+                                                informationalWarning (Error (FSComp.SR.tcRecordTypeDefinitionSpreadFieldShadowsSpreadField (fmtedSpreadField, fmtedSpreadSrcTy), m))
+
+                                            Some (fieldId.idText, field, warnAmbiguousShadowing, infoSpreadShadowing)
 
                                         | _ -> None)
                                 elif not firstPass then
@@ -3920,17 +3934,16 @@ module EstablishTypeDefinitionCores =
 
                         let abstractSlots = 
                             [ for synValSig, memberFlags in slotsigs do 
-
-                                  let (SynValSig(range=m)) = synValSig
-
-                                  CheckMemberFlags None NewSlotsOK OverridesOK memberFlags m
-                                  
-                                  let slots = fst (TcAndPublishValSpec (cenv, envinner, containerInfo, ModuleOrMemberBinding, Some memberFlags, tpenv, synValSig))
-                                  // Multiple slots may be returned, e.g. for 
-                                  //    abstract P: int with get, set
-                                  
-                                  for slot in slots do 
-                                      yield mkLocalValRef slot ]
+                                  let (SynValSig(ident = (SynIdent(id, _)); range = m)) = synValSig
+                                  if id.idText <> "" then
+                                      CheckMemberFlags None NewSlotsOK OverridesOK memberFlags m
+                                      
+                                      let slots = fst (TcAndPublishValSpec (cenv, envinner, containerInfo, ModuleOrMemberBinding, Some memberFlags, tpenv, synValSig))
+                                      // Multiple slots may be returned, e.g. for 
+                                      //    abstract P: int with get, set
+                                      
+                                      for slot in slots do 
+                                          yield mkLocalValRef slot ]
 
                         let kind = 
                             match kind with 
@@ -4582,7 +4595,7 @@ module TcDeclarations =
 
                 | Exception exn ->
                     if inSig && List.isSingleton longPath then
-                        errorR(Deprecated(FSComp.SR.tcReservedSyntaxForAugmentation(), m))
+                        errorR(Deprecated(RichText.mkText (FSComp.SR.tcReservedSyntaxForAugmentation()), m))
                     ForceRaise (Exception exn)
             tcref
 
@@ -4630,18 +4643,18 @@ module TcDeclarations =
             elif isInSameModuleOrNamespace && not isInterfaceOrDelegateOrEnum then 
                 // For historical reasons we only give a warning for incorrect type parameters on intrinsic extensions
                 if nReqTypars <> synTypars.Length then 
-                    errorR(Error(FSComp.SR.tcDeclaredTypeParametersForExtensionDoNotMatchOriginal(tcref.DisplayNameWithStaticParametersAndUnderscoreTypars), m))
-                if not (checkTyparsForExtension()) then 
-                    warning(Error(FSComp.SR.tcDeclaredTypeParametersForExtensionDoNotMatchOriginal(tcref.DisplayNameWithStaticParametersAndUnderscoreTypars), m))
+                    errorR(Error(FSComp.SR.tcDeclaredTypeParametersForExtensionDoNotMatchOriginal(richTextOfEntityRefName tcref tcref.DisplayNameWithStaticParametersAndUnderscoreTypars), m))
+                if not (checkTyparsForExtension()) then
+                    warning(Error(FSComp.SR.tcDeclaredTypeParametersForExtensionDoNotMatchOriginal(richTextOfEntityRefName tcref tcref.DisplayNameWithStaticParametersAndUnderscoreTypars), m))
                 // Note we return 'reqTypars' for intrinsic extensions since we may only have given warnings
                 IntrinsicExtensionBinding, tcref, reqTypars
             else 
                 if isInSameModuleOrNamespace && isDelegateOrEnum then 
                     errorR(Error(FSComp.SR.tcMembersThatExtendInterfaceMustBePlacedInSeparateModule(), tcref.Range))
                 if nReqTypars <> synTypars.Length then 
-                    error(Error(FSComp.SR.tcDeclaredTypeParametersForExtensionDoNotMatchOriginal(tcref.DisplayNameWithStaticParametersAndUnderscoreTypars), m))
-                if not (checkTyparsForExtension()) then 
-                    errorR(Error(FSComp.SR.tcDeclaredTypeParametersForExtensionDoNotMatchOriginal(tcref.DisplayNameWithStaticParametersAndUnderscoreTypars), m))
+                    error(Error(FSComp.SR.tcDeclaredTypeParametersForExtensionDoNotMatchOriginal(richTextOfEntityRefName tcref tcref.DisplayNameWithStaticParametersAndUnderscoreTypars), m))
+                if not (checkTyparsForExtension()) then
+                    errorR(Error(FSComp.SR.tcDeclaredTypeParametersForExtensionDoNotMatchOriginal(richTextOfEntityRefName tcref tcref.DisplayNameWithStaticParametersAndUnderscoreTypars), m))
                 ExtrinsicExtensionBinding, tcref, declaredTypars
 
 
@@ -5302,7 +5315,7 @@ let rec TcSignatureElementNonMutRec (cenv: cenv) parent typeNames endm (env: TcE
 
         | SynModuleSigDecl.Open (target, m) -> 
             let scopem = unionRanges m.EndRange endm
-            let env, _openDecl = TcOpenDecl cenv m scopem env target
+            let env, _openDecl = TcOpenDecl cenv scopem env target
             return env
 
         | SynModuleSigDecl.Val (vspec, m) -> 
@@ -5362,7 +5375,7 @@ let rec TcSignatureElementNonMutRec (cenv: cenv) parent typeNames endm (env: TcE
             let modrefs = unfilteredModrefs |> List.filter (fun modref -> not modref.IsNamespace)
 
             if not (List.isEmpty unfilteredModrefs) && List.isEmpty modrefs then 
-                errorR(Error(FSComp.SR.tcModuleAbbreviationForNamespace(fullDisplayTextOfModRef (List.head unfilteredModrefs)), m))
+                errorR(Error(FSComp.SR.tcModuleAbbreviationForNamespace(richTextOfQualifiedModRef (List.head unfilteredModrefs)), m))
             
             if List.isEmpty modrefs then return env else
             modrefs |> List.iter (fun modref -> CheckEntityAttributes g modref m |> CommitOperationResult)        
@@ -5550,7 +5563,7 @@ let TcMutRecDefnsEscapeCheck (binds: MutRecShapes<_, _, _>) env =
     let checkTycon (tycon: Tycon) = 
         if not tycon.IsTypeAbbrev && Zset.contains tycon freeInEnv then 
             let nm = tycon.DisplayName
-            errorR(Error(FSComp.SR.tcTypeUsedInInvalidWay(nm, nm, nm), tycon.Range))
+            errorR(Error(FSComp.SR.tcTypeUsedInInvalidWay(richTextOfEntityName tycon nm, richTextOfEntityName tycon nm, richTextOfEntityName tycon nm), tycon.Range))
 
     binds |> MutRecShapes.iterTycons (fst >> Option.iter checkTycon) 
 
@@ -5559,7 +5572,7 @@ let TcMutRecDefnsEscapeCheck (binds: MutRecShapes<_, _, _>) env =
         for bind in binds do 
             if Zset.contains bind.Var freeInEnv then 
                 let nm = bind.Var.DisplayName 
-                errorR(Error(FSComp.SR.tcMemberUsedInInvalidWay(nm, nm, nm), bind.Var.Range))
+                errorR(Error(FSComp.SR.tcMemberUsedInInvalidWay(RichText.mkMember nm, RichText.mkMember nm, RichText.mkMember nm), bind.Var.Range))
 
     binds |> MutRecShapes.iterTyconsAndLets (snd >> checkBinds) checkBinds 
 
@@ -5722,7 +5735,7 @@ let rec TcModuleOrNamespaceElementNonMutRec (cenv: cenv) parent typeNames scopem
 
       | SynModuleDecl.Open (target, m) -> 
           let scopem = unionRanges m.EndRange scopem
-          let env, openDecls = TcOpenDecl cenv m scopem env target
+          let env, openDecls = TcOpenDecl cenv scopem env target
           let defns =
               match openDecls with
               | [] -> []
@@ -5999,7 +6012,7 @@ and TcModuleOrNamespaceElements cenv parent endm env xml mutRecNSInfo openDecls0
 
 let ApplyAssemblyLevelAutoOpenAttributeToTcEnv g amap (ccu: CcuThunk) scopem env (p, root) = 
     let warn() = 
-        warning(Error(FSComp.SR.tcAttributeAutoOpenWasIgnored(p, ccu.AssemblyName), scopem))
+        warning(Error(FSComp.SR.tcAttributeAutoOpenWasIgnored(RichText.mkModule p, RichText.mkText ccu.AssemblyName), scopem))
         [], env
     let p = splitNamespace p 
     match List.tryFrontAndBack p with
@@ -6331,7 +6344,7 @@ let CheckOneImplFile
                 match attrName with
                 | "System.Reflection.AssemblyFileVersionAttribute" //TODO compile error like c# compiler?
                 | "System.Reflection.AssemblyVersionAttribute" when not (isValid()) ->
-                    warning(Error(FSComp.SR.fscBadAssemblyVersion(attrName, version), range))
+                    warning(Error(FSComp.SR.fscBadAssemblyVersion(RichText.mkClass attrName, RichText.mkText version), range))
                 | _ -> ()
             | _ -> ())
 

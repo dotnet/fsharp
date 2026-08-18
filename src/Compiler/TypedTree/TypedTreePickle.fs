@@ -33,7 +33,7 @@ open FSharp.Compiler.TcGlobals
 let verbose = false
 #endif
 
-let ffailwith fileName str =
+let ffailwith (fileName: string) (str: string) =
     let msg = FSComp.SR.pickleErrorReadingWritingMetadata (fileName, str)
     System.Diagnostics.Debug.Assert(false, msg)
     failwith msg
@@ -2380,7 +2380,7 @@ let p_tyar_spec_data (x: Typar) st =
 let p_tyar_spec (x: Typar) st =
     //Disabled, workaround for bug 2721: if x.Rigidity <> TyparRigidity.Rigid then warning(Error(sprintf "p_tyar_spec: typar#%d is not rigid" x.Stamp, x.Range))
     if x.IsFromError then
-        warning (Error((0, "p_tyar_spec: from error"), x.Range))
+        warning (Error((0, RichText.mkText "p_tyar_spec: from error"), x.Range))
 
     p_osgn_decl st.otypars p_tyar_spec_data x st
 
@@ -3301,7 +3301,7 @@ and u_ValData st =
              | Some(a, _) -> a)
         val_type = x2
         val_stamp = newStamp ()
-        val_flags = ValFlags x4
+        val_flags = ValFlags.OfPickledBits x4
         val_opt_data =
             match x1z, x1a, x10, x14, x13, x15, x8, x13b, x12, x9 with
             | None, None, None, None, TAccess [], None, None, ParentNone, "", [] -> None

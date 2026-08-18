@@ -34,8 +34,11 @@
     <Compile Include="BreakpointLocationTests.fs" />
     <Compile Include="AssemblyReaderShim.fs" />
     <Compile Include="ModuleReaderCancellationTests.fs" />
+    <Compile Include="ModuleReaderNamespaceTests.fs" />
+    <Compile Include="ILBinaryReaderMemoryTests.fs" />
     <Compile Include="EditorTests.fs" />
     <Compile Include="Symbols.fs" />
+    <Compile Include="RecordConstructorTests.fs" />
     <Compile Include="TestDoubles.fs" />
     <Compile Include="ConsoleOnlyOptionsTests.fs" />
     <Compile Include="VisualStudioVersusConsoleContextTests.fs" />
@@ -57,6 +60,7 @@
     <Compile Include="RangeTests.fs" />
     <Compile Include="CompilerGlobalStateTests.fs" />
     <Compile Include="TooltipTests.fs" />
+    <Compile Include="XmlDocInheritanceTests.fs" />
     <Compile Include="TypeChecker\TypeCheckerRecoveryTests.fs" />
     <Compile Include="TokenizerTests.fs" />
     <Compile Include="QuickParseTests.fs" />
@@ -190,6 +194,14 @@
     <Compile Include="Tooltip\TooltipTests.Types.fs" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- ECMA-335 Edit-and-Continue metadata delta writer tests. See PR #TBD. -->
+    <Compile Include="DeltaMetadata\CodedIndexTests.fs" />
+    <Compile Include="DeltaMetadata\MetadataDeltaTestHelpers.fs" />
+    <Compile Include="DeltaMetadata\SrmReaderParityTests.fs" />
+    <Compile Include="DeltaMetadata\FSharpDeltaMetadataWriterTests.fs" />
+  </ItemGroup>
+
 	<ItemGroup>
 		<None Include="..\service\data\SyntaxTree\**\*.*" Exclude="@(Compile)">
 			<Link>SyntaxTreeTestSource\%(RecursiveDir)\%(Extension)\%(Filename)%(Extension)</Link>
@@ -200,6 +212,12 @@
 	<ProjectReference Include="..\..\src\Compiler\FSharp.Compiler.Service.fsproj">
 		<!-- If tests would use net10.0, the surface area changes because of different set of Assembly references -->
 		<SetTargetFramework>TargetFramework=netstandard2.0</SetTargetFramework>
+	</ProjectReference>
+	<!-- FSharp.Core is only transitive here, so the central pin does not reach it; pin it directly for the
+	     .NET Core inner build (net472 keeps resolving netstandard2.0, which lacks IAsyncDisposable). -->
+	<ProjectReference Include="..\..\src\FSharp.Core\FSharp.Core.fsproj"
+	                  Condition="'$(TargetFramework)' == '$(FSharpNetCoreProductTargetFramework)'">
+		<SetTargetFramework>TargetFramework=netstandard2.1</SetTargetFramework>
 	</ProjectReference>
     <ProjectReference Include="..\..\tests\FSharp.Test.Utilities\FSharp.Test.Utilities.fsproj" />
     <ProjectReference Include="..\service\data\CSharp_Analysis\CSharp_Analysis.csproj" />

@@ -109,13 +109,13 @@ let lexemeTrimRightToInt32 args lexbuf n =
 
 let checkExprOp (lexbuf:UnicodeLexing.Lexbuf) =
     if lexbuf.LexemeContains ':' then
-        deprecatedWithError (FSComp.SR.lexCharNotAllowedInOperatorNames(":")) lexbuf.LexemeRange
+        deprecatedWithError (FSComp.SR.lexCharNotAllowedInOperatorNames(RichText.mkOperator ":")) lexbuf.LexemeRange
     if lexbuf.LexemeContains '$' then
-        deprecatedWithError (FSComp.SR.lexCharNotAllowedInOperatorNames("$")) lexbuf.LexemeRange
+        deprecatedWithError (FSComp.SR.lexCharNotAllowedInOperatorNames(RichText.mkOperator "$")) lexbuf.LexemeRange
         
 let checkExprGreaterColonOp (lexbuf:UnicodeLexing.Lexbuf) =
     if lexbuf.LexemeContains '$' then
-        deprecatedWithError (FSComp.SR.lexCharNotAllowedInOperatorNames("$")) lexbuf.LexemeRange
+        deprecatedWithError (FSComp.SR.lexCharNotAllowedInOperatorNames(RichText.mkOperator "$")) lexbuf.LexemeRange
 
 let unexpectedChar lexbuf =
     LEX_FAILURE (FSComp.SR.lexUnexpectedChar(lexeme lexbuf))
@@ -754,6 +754,12 @@ rule token (args: LexArgs) (skip: bool) = parse
      { errorR(Error(FSComp.SR.lexInvalidIdentifier(), lexbuf.LexemeRange))
        Keywords.IdentifierToken args lexbuf "" }
 
+ | "#:" anystring
+     { let m = lexbuf.LexemeRange
+       shouldStartLine args lexbuf m (FSComp.SR.lexColonDirectiveMustBeFirst())
+       if not skip then WHITESPACE (LexCont.Token(args.ifdefStack, args.stringNest))
+       else endline LexerEndlineContinuation.Token args skip lexbuf }
+
  | ('#' anywhite* | "#line" anywhite+ ) digit+ anywhite* ('@'? "\"" [^'\n''\r''"']+ '"')? anywhite* newline
      {  let pos = lexbuf.EndPos
         if skip then
@@ -1007,7 +1013,7 @@ rule token (args: LexArgs) (skip: bool) = parse
    { // Treat shebangs like regular comments, but they are only allowed at the start of a file
        let m = lexbuf.LexemeRange
        let tok = LINE_COMMENT (LexCont.SingleLineComment(args.ifdefStack, args.stringNest, 1, m))
-       let tok = shouldStartFile args lexbuf m (0,FSComp.SR.lexHashBangMustBeFirstInFile()) tok
+       let tok = shouldStartFile args lexbuf m (0, RichText.mkText (FSComp.SR.lexHashBangMustBeFirstInFile())) tok
        if not skip then tok else singleLineComment (None,1,m,m,args) skip lexbuf }
 
 | "#light" anywhite* newline

@@ -16,18 +16,12 @@ module internal FSharp.Compiler.Features
 
 [<RequireQualifiedAccess>]
 type LanguageFeature =
-    | SingleUnderscorePattern
-    | WildCardInForLoop
-    | RelaxWhitespace
     | RelaxWhitespace2
     | NameOf
-    | ImplicitYield
-    | OpenTypeDeclaration
     | DotlessFloat32Literal
     | PackageManagement
     | FromEndSlicing
     | FixedIndexSlice3d4d
-    | AndBang
     | ResumableStateMachines
     | NullableOptionalInterop
     | DefaultInterfaceMemberConsumption
@@ -38,11 +32,8 @@ type LanguageFeature =
     | OverloadsForCustomOperations
     | ExpandedMeasurables
     | NullnessChecking
-    | StructActivePattern
-    | PrintfBinaryFormat
     | IndexerNotationWithoutDot
     | RefCellNotationInformationals
-    | UseBindingValueDiscard
     | UnionIsPropertiesVisible
     | NonVariablePatternsToRightOfAsPatterns
     | AttributesToRightOfModuleKeyword
@@ -103,6 +94,8 @@ type LanguageFeature =
     | ErrorOnInvalidDeclsInTypeDefinitions
     | AllowTypedLetUseAndBang
     | ReturnFromFinal
+    | MoreConcreteTiebreaker
+    | OverloadResolutionPriority
     | WarnWhenFunctionValueUsedAsInterpolatedStringArg
     | MethodOverloadsCache
     | ImplicitDIMCoverage
@@ -110,7 +103,9 @@ type LanguageFeature =
     | ExtensionConstraintSolutions
     | ExceptionFieldSerializationSupport
     | ErrorOnMissingSignatureAttribute
+    | RecordConstructorSyntax
     | NotNullIfNotNull
+    | DirectDelegateConstruction
     | AccessProtectedBaseFieldFromClosure
     | ImprovedImpliedArgumentNamesPartTwo
     | RecordSpreads
@@ -129,7 +124,7 @@ type LanguageVersion(versionText, ?disabledFeaturesArray: LanguageFeature array)
     static let languageVersion100 = 10.0m
     static let languageVersion110 = 11.0m
     static let previewVersion = 9999m // Language version when preview specified
-    static let defaultVersion = languageVersion100 // Language version when default specified
+    static let defaultVersion = languageVersion110 // Language version when default specified
     static let latestVersion = defaultVersion // Language version when latest specified
     static let latestMajorVersion = defaultVersion // Language version when latestmajor specified
 
@@ -152,19 +147,11 @@ type LanguageVersion(versionText, ?disabledFeaturesArray: LanguageFeature array)
     static let features =
         dict
             [
-                // F# 4.7
-                LanguageFeature.SingleUnderscorePattern, languageVersion47
-                LanguageFeature.WildCardInForLoop, languageVersion47
-                LanguageFeature.RelaxWhitespace, languageVersion47
-                LanguageFeature.ImplicitYield, languageVersion47
-
                 // F# 5.0
                 LanguageFeature.FixedIndexSlice3d4d, languageVersion50
                 LanguageFeature.DotlessFloat32Literal, languageVersion50
-                LanguageFeature.AndBang, languageVersion50
                 LanguageFeature.NullableOptionalInterop, languageVersion50
                 LanguageFeature.DefaultInterfaceMemberConsumption, languageVersion50
-                LanguageFeature.OpenTypeDeclaration, languageVersion50
                 LanguageFeature.PackageManagement, languageVersion50
                 LanguageFeature.WitnessPassing, languageVersion50
                 LanguageFeature.InterfacesWithMultipleGenericInstantiation, languageVersion50
@@ -177,11 +164,8 @@ type LanguageVersion(versionText, ?disabledFeaturesArray: LanguageFeature array)
                 LanguageFeature.OverloadsForCustomOperations, languageVersion60
                 LanguageFeature.ExpandedMeasurables, languageVersion60
                 LanguageFeature.ResumableStateMachines, languageVersion60
-                LanguageFeature.StructActivePattern, languageVersion60
-                LanguageFeature.PrintfBinaryFormat, languageVersion60
                 LanguageFeature.IndexerNotationWithoutDot, languageVersion60
                 LanguageFeature.RefCellNotationInformationals, languageVersion60
-                LanguageFeature.UseBindingValueDiscard, languageVersion60
                 LanguageFeature.NonVariablePatternsToRightOfAsPatterns, languageVersion60
                 LanguageFeature.AttributesToRightOfModuleKeyword, languageVersion60
                 LanguageFeature.DelegateTypeNameResolutionFix, languageVersion60
@@ -251,6 +235,8 @@ type LanguageVersion(versionText, ?disabledFeaturesArray: LanguageFeature array)
                 LanguageFeature.AllowAccessModifiersToAutoPropertiesGettersAndSetters, languageVersion100
                 LanguageFeature.ReturnFromFinal, languageVersion100
                 LanguageFeature.ErrorOnInvalidDeclsInTypeDefinitions, languageVersion100
+                LanguageFeature.MoreConcreteTiebreaker, previewVersion
+                LanguageFeature.OverloadResolutionPriority, previewVersion
 
                 // F# 11.0
                 // Put stabilized features here for F# 11.0 previews via .NET SDK preview channels
@@ -259,18 +245,22 @@ type LanguageVersion(versionText, ?disabledFeaturesArray: LanguageFeature array)
                 LanguageFeature.ExceptionFieldSerializationSupport, languageVersion110
                 LanguageFeature.NotNullIfNotNull, languageVersion110
                 LanguageFeature.ImprovedImpliedArgumentNamesPartTwo, languageVersion110
+                LanguageFeature.ImplicitDIMCoverage, languageVersion110
+                LanguageFeature.MethodOverloadsCache, languageVersion110 // Performance optimization for overload resolution
+                LanguageFeature.ErrorOnMissingSignatureAttribute, languageVersion110 // Turn FS3888 from warning into error
+                LanguageFeature.DirectDelegateConstruction, languageVersion110
+                LanguageFeature.AccessProtectedBaseFieldFromClosure, languageVersion110 // #5302: read a protected base field from a closure
+                LanguageFeature.RecordSpreads, languageVersion110
 
                 // Difference between languageVersion110 and preview - 11.0 gets turned on automatically by picking a preview .NET 11 SDK
                 // previewVersion is only when "preview" is specified explicitly in project files  and users also need a preview SDK
 
-                // F# preview (still preview in 10.0)
+                // F# preview
+                LanguageFeature.RecordConstructorSyntax, previewVersion // Allow constructing a record via its all-fields constructor, e.g. MyRecord(a, b)
+
+                // Unfinished features that still need work before they can be assigned a release language version.
                 LanguageFeature.FromEndSlicing, previewVersion // Unfinished features --- needs work
-                LanguageFeature.MethodOverloadsCache, previewVersion
-                LanguageFeature.ImplicitDIMCoverage, languageVersion110
                 LanguageFeature.ExtensionConstraintSolutions, previewVersion
-                LanguageFeature.ErrorOnMissingSignatureAttribute, previewVersion // Opt-in: turn FS3888 from warning into error
-                LanguageFeature.AccessProtectedBaseFieldFromClosure, previewVersion // #5302: read a protected base field from a closure
-                LanguageFeature.RecordSpreads, previewVersion
             ]
 
     static let defaultLanguageVersion = LanguageVersion("default")
@@ -365,18 +355,12 @@ type LanguageVersion(versionText, ?disabledFeaturesArray: LanguageFeature array)
     /// Get a string name for the given feature.
     static member GetFeatureString feature =
         match feature with
-        | LanguageFeature.SingleUnderscorePattern -> FSComp.SR.featureSingleUnderscorePattern ()
-        | LanguageFeature.WildCardInForLoop -> FSComp.SR.featureWildCardInForLoop ()
-        | LanguageFeature.RelaxWhitespace -> FSComp.SR.featureRelaxWhitespace ()
         | LanguageFeature.RelaxWhitespace2 -> FSComp.SR.featureRelaxWhitespace2 ()
         | LanguageFeature.NameOf -> FSComp.SR.featureNameOf ()
-        | LanguageFeature.ImplicitYield -> FSComp.SR.featureImplicitYield ()
-        | LanguageFeature.OpenTypeDeclaration -> FSComp.SR.featureOpenTypeDeclaration ()
         | LanguageFeature.DotlessFloat32Literal -> FSComp.SR.featureDotlessFloat32Literal ()
         | LanguageFeature.PackageManagement -> FSComp.SR.featurePackageManagement ()
         | LanguageFeature.FromEndSlicing -> FSComp.SR.featureFromEndSlicing ()
         | LanguageFeature.FixedIndexSlice3d4d -> FSComp.SR.featureFixedIndexSlice3d4d ()
-        | LanguageFeature.AndBang -> FSComp.SR.featureAndBang ()
         | LanguageFeature.NullnessChecking -> FSComp.SR.featureNullnessChecking ()
         | LanguageFeature.ResumableStateMachines -> FSComp.SR.featureResumableStateMachines ()
         | LanguageFeature.NullableOptionalInterop -> FSComp.SR.featureNullableOptionalInterop ()
@@ -387,11 +371,8 @@ type LanguageVersion(versionText, ?disabledFeaturesArray: LanguageFeature array)
         | LanguageFeature.StringInterpolation -> FSComp.SR.featureStringInterpolation ()
         | LanguageFeature.OverloadsForCustomOperations -> FSComp.SR.featureOverloadsForCustomOperations ()
         | LanguageFeature.ExpandedMeasurables -> FSComp.SR.featureExpandedMeasurables ()
-        | LanguageFeature.StructActivePattern -> FSComp.SR.featureStructActivePattern ()
-        | LanguageFeature.PrintfBinaryFormat -> FSComp.SR.featurePrintfBinaryFormat ()
         | LanguageFeature.IndexerNotationWithoutDot -> FSComp.SR.featureIndexerNotationWithoutDot ()
         | LanguageFeature.RefCellNotationInformationals -> FSComp.SR.featureRefCellNotationInformationals ()
-        | LanguageFeature.UseBindingValueDiscard -> FSComp.SR.featureDiscardUseValue ()
         | LanguageFeature.UnionIsPropertiesVisible -> FSComp.SR.featureUnionIsPropertiesVisible ()
         | LanguageFeature.NonVariablePatternsToRightOfAsPatterns -> FSComp.SR.featureNonVariablePatternsToRightOfAsPatterns ()
         | LanguageFeature.AttributesToRightOfModuleKeyword -> FSComp.SR.featureAttributesToRightOfModuleKeyword ()
@@ -459,6 +440,8 @@ type LanguageVersion(versionText, ?disabledFeaturesArray: LanguageFeature array)
         | LanguageFeature.ErrorOnInvalidDeclsInTypeDefinitions -> FSComp.SR.featureErrorOnInvalidDeclsInTypeDefinitions ()
         | LanguageFeature.AllowTypedLetUseAndBang -> FSComp.SR.featureAllowLetOrUseBangTypeAnnotationWithoutParens ()
         | LanguageFeature.ReturnFromFinal -> FSComp.SR.featureReturnFromFinal ()
+        | LanguageFeature.MoreConcreteTiebreaker -> FSComp.SR.featureMoreConcreteTiebreaker ()
+        | LanguageFeature.OverloadResolutionPriority -> FSComp.SR.featureOverloadResolutionPriority ()
         | LanguageFeature.WarnWhenFunctionValueUsedAsInterpolatedStringArg ->
             FSComp.SR.featureWarnWhenFunctionValueUsedAsInterpolatedStringArg ()
         | LanguageFeature.MethodOverloadsCache -> FSComp.SR.featureMethodOverloadsCache ()
@@ -467,7 +450,9 @@ type LanguageVersion(versionText, ?disabledFeaturesArray: LanguageFeature array)
         | LanguageFeature.ExtensionConstraintSolutions -> FSComp.SR.featureExtensionConstraintSolutions ()
         | LanguageFeature.ExceptionFieldSerializationSupport -> FSComp.SR.featureExceptionFieldSerializationSupport ()
         | LanguageFeature.ErrorOnMissingSignatureAttribute -> FSComp.SR.featureErrorOnMissingSignatureAttribute ()
+        | LanguageFeature.RecordConstructorSyntax -> FSComp.SR.featureRecordConstructorSyntax ()
         | LanguageFeature.NotNullIfNotNull -> FSComp.SR.featureNotNullIfNotNull ()
+        | LanguageFeature.DirectDelegateConstruction -> FSComp.SR.featureDirectDelegateConstruction ()
         | LanguageFeature.AccessProtectedBaseFieldFromClosure -> FSComp.SR.featureAccessProtectedBaseFieldFromClosure ()
         | LanguageFeature.ImprovedImpliedArgumentNamesPartTwo -> FSComp.SR.featureImprovedImpliedArgumentNamesPartTwo ()
         | LanguageFeature.RecordSpreads -> FSComp.SR.featureRecordSpreads ()

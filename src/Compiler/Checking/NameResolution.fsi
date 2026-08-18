@@ -106,7 +106,7 @@ type Item =
     /// CustomOperation(nm, helpText, methInfo)
     ///
     /// Used to indicate the availability or resolution of a custom query operation such as 'sortBy' or 'where' in computation expression syntax
-    | CustomOperation of string * (unit -> string option) * MethInfo option
+    | CustomOperation of string * (unit -> RichText option) * MethInfo option
 
     /// Represents the resolution of a name to a custom builder in the F# computation expression syntax
     | CustomBuilder of string * ValRef
