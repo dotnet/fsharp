@@ -13,7 +13,7 @@ module GuardedOrPatternComplexity =
     // contributes both a fail edge and a guard-false edge to the same residual decision state, which
     // the pattern-match compiler re-investigated along all 2^N paths, blowing up compile time, DLL
     // size and finally the stack. Join-point memoization compiles each distinct residual state once,
-    // making it linear while preserving exact runtime behaviour.
+    // making it polynomial (empirically ~cubic in N) while preserving exact runtime behaviour.
     let private guardedOrSource n =
         let disjuncts =
             [ for k in 1..n -> sprintf "    | (A p, E %d _)" k ]
