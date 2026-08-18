@@ -1304,7 +1304,8 @@ type ILAttributesStored private (metadataIndex: int32, reader: int32 -> ILAttrib
 
     static member CreateReader(idx: int32, f: int32 -> ILAttribute[]) = ILAttributesStored(idx, f, null)
 
-    static member CreateGiven(attrs: ILAttributes) = ILAttributesStored(-1, noReader, attrs.AsArray())
+    static member CreateGiven(attrs: ILAttributes) =
+        ILAttributesStored(-1, noReader, attrs.AsArray())
 
 let emptyILCustomAttrs = ILAttributes [||]
 
