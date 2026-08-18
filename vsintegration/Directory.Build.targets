@@ -14,11 +14,10 @@
     <PackageReference Include="System.Composition" PrivateAssets="all" ExcludeAssets="contentFiles;analyzers;native" />
     <PackageReference Include="System.Memory" PrivateAssets="all" ExcludeAssets="contentFiles;analyzers;native" />
     <PackageReference Include="System.Runtime.CompilerServices.Unsafe" PrivateAssets="all" ExcludeAssets="contentFiles;analyzers;native" />
-    <!-- Pinned to match Microsoft.VisualStudio.LanguageServices.ExternalAccess's transitive versions and avoid MSB3277 conflicts. -->
+    <!-- ServiceHub.Framework, RpcContracts and StreamJsonRpc are deliberately not pinned here: Roslyn's IDE
+         packages force their versions transitively, so re-pinning them is what triggers NU1109 on a Roslyn bump. -->
+    <!-- Validation pinned to match ExternalAccess's transitive version and avoid MSB3277 conflicts. -->
     <PackageReference Include="Microsoft.VisualStudio.Validation" PrivateAssets="all" ExcludeAssets="contentFiles;analyzers;native" />
-    <PackageReference Include="Microsoft.VisualStudio.RpcContracts" PrivateAssets="all" ExcludeAssets="contentFiles;analyzers;native" />
-    <PackageReference Include="Microsoft.ServiceHub.Framework" PrivateAssets="all" ExcludeAssets="contentFiles;analyzers;native" />
-    <PackageReference Include="StreamJsonRpc" PrivateAssets="all" ExcludeAssets="contentFiles;analyzers;native" />
   </ItemGroup>
 
   <!-- New VS does not allow embedded interop assemblies ... this turns off the target that turns it on -->
