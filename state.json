@@ -65,7 +65,7 @@
       "cats": []
     },
     "20244": {
-      "sha": "0b7b7d868d5e",
+      "sha": "7bc15aeb748a",
       "cats": [
         "Affects-Compiler-Output"
       ]
@@ -119,8 +119,10 @@
       "cats": []
     },
     "20071": {
-      "sha": "8d7c7bda385e",
-      "cats": []
+      "sha": "8898b0519232",
+      "cats": [
+        "Affects-Compiler-Output"
+      ]
     },
     "20031": {
       "sha": "b713d69480eb",
@@ -176,7 +178,7 @@
       "cats": []
     },
     "20278": {
-      "sha": "028ce9ecc954",
+      "sha": "609b475682e2",
       "cats": []
     },
     "20277": {
