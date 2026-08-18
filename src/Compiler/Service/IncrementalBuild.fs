@@ -1432,6 +1432,7 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
             enablePartialTypeChecking,
             dependencyProvider,
             parallelReferenceResolution,
+            shareImportedAssemblies,
             captureIdentifiersWhenParsing,
             getSource,
             useChangeNotifications
@@ -1518,6 +1519,7 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
                     |> Some
 
                 tcConfigB.parallelReferenceResolution <- parallelReferenceResolution
+                tcConfigB.shareImportedAssemblies <- shareImportedAssemblies
                 tcConfigB.captureIdentifiersWhenParsing <- captureIdentifiersWhenParsing
 
                 tcConfigB, sourceFilesNew

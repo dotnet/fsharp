@@ -645,6 +645,10 @@ type TcConfigBuilder =
 
         mutable parallelReferenceResolution: ParallelReferenceResolution
 
+        /// Whether the Entity graph imported from a referenced assembly may be shared with other projects
+        /// that resolve that assembly, and everything it can reach, to the same files
+        mutable shareImportedAssemblies: bool
+
         mutable captureIdentifiersWhenParsing: bool
 
         mutable typeCheckingConfig: TypeCheckingConfig
@@ -844,6 +848,7 @@ type TcConfigBuilder =
             xmlDocInfoLoader = None
             exiter = QuitProcessExiter
             parallelReferenceResolution = ParallelReferenceResolution.On
+            shareImportedAssemblies = false
             captureIdentifiersWhenParsing = false
             typeCheckingConfig =
                 {
@@ -1397,6 +1402,7 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
     member _.xmlDocInfoLoader = data.xmlDocInfoLoader
     member _.exiter = data.exiter
     member _.parallelReferenceResolution = data.parallelReferenceResolution
+    member _.shareImportedAssemblies = data.shareImportedAssemblies
     member _.captureIdentifiersWhenParsing = data.captureIdentifiersWhenParsing
     member _.typeCheckingConfig = data.typeCheckingConfig
     member _.dumpSignatureData = data.dumpSignatureData

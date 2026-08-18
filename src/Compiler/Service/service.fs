@@ -97,6 +97,7 @@ type FSharpChecker
         enableBackgroundItemKeyStoreAndSemanticClassification,
         enablePartialTypeChecking,
         parallelReferenceResolution,
+        shareImportedAssemblies,
         captureIdentifiersWhenParsing,
         getSource,
         useChangeNotifications,
@@ -117,6 +118,7 @@ type FSharpChecker
                 enableBackgroundItemKeyStoreAndSemanticClassification,
                 enablePartialTypeChecking,
                 parallelReferenceResolution,
+                shareImportedAssemblies,
                 captureIdentifiersWhenParsing,
                 getSource,
                 useChangeNotifications,
@@ -135,6 +137,7 @@ type FSharpChecker
                 enableBackgroundItemKeyStoreAndSemanticClassification,
                 enablePartialTypeChecking,
                 parallelReferenceResolution,
+                shareImportedAssemblies,
                 captureIdentifiersWhenParsing,
                 getSource,
                 useChangeNotifications
@@ -181,6 +184,7 @@ type FSharpChecker
             ?enableBackgroundItemKeyStoreAndSemanticClassification,
             ?enablePartialTypeChecking,
             ?parallelReferenceResolution: bool,
+            ?shareImportedAssemblies: bool,
             ?captureIdentifiersWhenParsing: bool,
             ?documentSource: DocumentSource,
             ?useTransparentCompiler: bool,
@@ -215,6 +219,8 @@ type FSharpChecker
         if keepAssemblyContents && enablePartialTypeChecking then
             invalidArg "enablePartialTypeChecking" "'keepAssemblyContents' and 'enablePartialTypeChecking' cannot be both enabled."
 
+        let shareImportedAssemblies = defaultArg shareImportedAssemblies false
+
         let parallelReferenceResolution = inferParallelReferenceResolution parallelReferenceResolution
 
         FSharpChecker(
@@ -228,6 +234,7 @@ type FSharpChecker
             enableBackgroundItemKeyStoreAndSemanticClassification,
             enablePartialTypeChecking,
             parallelReferenceResolution,
+            shareImportedAssemblies,
             captureIdentifiersWhenParsing,
             (match documentSource with
              | Some(DocumentSource.Custom f) -> Some f
@@ -330,6 +337,9 @@ type FSharpChecker
         braceMatchCache.Clear(utok)
         backgroundCompiler.ClearCaches()
         ClearAllILModuleReaderCache()
+        // Entries are weak, so live projects keep the ones they use and the rest go on their own, but
+        // "clear the caches" should mean it: after this nothing is held on any project's behalf.
+        FSharp.Compiler.CompilerImports.SharedImportedCcus.clear ()
 
     member ic.ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients() =
         use _ =
