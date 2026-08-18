@@ -204,7 +204,8 @@ type U = A | B
         |> asLibrary
         |> compile
         |> shouldFail
-        |> withErrorCode 3911
+        |> withErrorCode 3913
+        |> withErrorMessage "The 'ExtendedLayoutAttribute' cannot be applied to discriminated unions"
 
     [<Fact>]
     let ``ExtendedLayout on a struct union is rejected`` () =
@@ -219,7 +220,8 @@ type U = A of x: int | B of y: int
         |> asLibrary
         |> compile
         |> shouldFail
-        |> withErrorCode 3911
+        |> withErrorCode 3913
+        |> withErrorMessage "The 'ExtendedLayoutAttribute' cannot be applied to discriminated unions"
 
     [<Fact>]
     let ``ExtendedLayout on an enum is rejected`` () =

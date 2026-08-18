@@ -3604,6 +3604,12 @@ module EstablishTypeDefinitionCores =
             let recordExtendedLayoutAttributeCheck () =
                 if hasStructAttr then extendedLayoutAttributeCheck ()
                 else noExtendedLayoutAttributeCheck ()
+
+            // A discriminated union (including a [<Struct>] one) carries a case tag plus per-case fields,
+            // which is incompatible with the CStruct/CUnion field layout, so extended layout is never valid.
+            let unionExtendedLayoutAttributeCheck () =
+                if hasExtendedLayoutAttr then
+                    errorR (Error(FSComp.SR.tcExtendedLayoutCannotBeUsedOnUnions(), m))
                 
             let hiddenReprChecks hasRepr =
                  structLayoutAttributeCheck false
@@ -3701,7 +3707,7 @@ module EstablishTypeDefinitionCores =
                 | TyconCoreAbbrevThatIsReallyAUnion (hasMeasureAttr, envinner, id) (unionCaseName, _) ->
                           
                     structLayoutAttributeCheck false
-                    noExtendedLayoutAttributeCheck()
+                    unionExtendedLayoutAttributeCheck()
                     noAllowNullLiteralAttributeCheck()
 
                     let hasRQAAttribute = EntityHasWellKnownAttribute cenv.g WellKnownEntityAttributes.RequireQualifiedAccessAttribute tycon
@@ -3736,7 +3742,7 @@ module EstablishTypeDefinitionCores =
                     noAbstractClassAttributeCheck()
                     noAllowNullLiteralAttributeCheck()
                     structLayoutAttributeCheck false
-                    noExtendedLayoutAttributeCheck()
+                    unionExtendedLayoutAttributeCheck()
 
                     let hasRQAAttribute = EntityHasWellKnownAttribute cenv.g WellKnownEntityAttributes.RequireQualifiedAccessAttribute tycon
                     let unionCases = TcRecdUnionAndEnumDeclarations.TcUnionCaseDecls cenv envinner innerParent thisTy thisTyInst hasRQAAttribute tpenv addFixup unionCases
