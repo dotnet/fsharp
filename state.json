@@ -32,13 +32,6 @@
       "sha": "14b5b11a1318",
       "cats": []
     },
-    "20244": {
-      "sha": "da1d79e3b7be",
-      "cats": [
-        "Affects-Build-Infra",
-        "Affects-Compiler-Output"
-      ]
-    },
     "20243": {
       "sha": "f66d45b9520d",
       "cats": []
@@ -151,7 +144,19 @@
       ]
     },
     "20296": {
-      "sha": "ae78b62453b4",
+      "sha": "0a45380dcb05",
+      "cats": []
+    },
+    "20300": {
+      "sha": "93a120726dab",
+      "cats": []
+    },
+    "20299": {
+      "sha": "00f0fe652dfc",
+      "cats": []
+    },
+    "20298": {
+      "sha": "93b59f63834f",
       "cats": []
     }
   }
