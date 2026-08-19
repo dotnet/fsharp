@@ -88,26 +88,6 @@
     <SystemBuffersVersion>4.6.1</SystemBuffersVersion>
     <SystemMemoryVersion>4.6.3</SystemMemoryVersion>
     <SystemRuntimeCompilerServicesUnsafeVersion>6.1.2</SystemRuntimeCompilerServicesUnsafeVersion>
-    <!-- System.* packages from dotnet/runtime flow via Version.Details (darc). MSBuild 18.10 (fsc/fsi +
-         FSharp.Build.UnitTests) and Roslyn 5.11 (System.Composition, System.Diagnostics.DiagnosticSource) both
-         pull dotnet/runtime packages transitively at >= 10.0.10, in product/PR and source-build. CPM transitive
-         pinning needs the *central* pin to meet that floor, hence these ...CentralVersion properties. They don't
-         touch the darc-flowed $(System*Version) (authoritative for FCS's nuspec); the floor only raises, never downgrades. -->
-    <SystemSecurityCryptographyXmlCentralVersion>$(SystemSecurityCryptographyXmlVersion)</SystemSecurityCryptographyXmlCentralVersion>
-    <SystemCollectionsImmutableCentralVersion>$(SystemCollectionsImmutableVersion)</SystemCollectionsImmutableCentralVersion>
-    <SystemReflectionMetadataCentralVersion>$(SystemReflectionMetadataVersion)</SystemReflectionMetadataCentralVersion>
-    <SystemCompositionCentralVersion>$(SystemCompositionVersion)</SystemCompositionCentralVersion>
-    <SystemDiagnosticsDiagnosticSourceCentralVersion>$(SystemDiagnosticsDiagnosticSourceVersion)</SystemDiagnosticsDiagnosticSourceCentralVersion>
-  </PropertyGroup>
-
-  <PropertyGroup>
-    <!-- Floor for the MSBuild/Roslyn-pulled dotnet/runtime packages: 10.0.10 (Roslyn 5.11) also covers MSBuild's >= 10.0.9. -->
-    <SystemRuntimeCentralFloorVersion>10.0.10</SystemRuntimeCentralFloorVersion>
-    <SystemSecurityCryptographyXmlCentralVersion Condition="$([MSBuild]::VersionLessThan('$(SystemSecurityCryptographyXmlVersion)', '$(SystemRuntimeCentralFloorVersion)'))">$(SystemRuntimeCentralFloorVersion)</SystemSecurityCryptographyXmlCentralVersion>
-    <SystemCollectionsImmutableCentralVersion Condition="$([MSBuild]::VersionLessThan('$(SystemCollectionsImmutableVersion)', '$(SystemRuntimeCentralFloorVersion)'))">$(SystemRuntimeCentralFloorVersion)</SystemCollectionsImmutableCentralVersion>
-    <SystemReflectionMetadataCentralVersion Condition="$([MSBuild]::VersionLessThan('$(SystemReflectionMetadataVersion)', '$(SystemRuntimeCentralFloorVersion)'))">$(SystemRuntimeCentralFloorVersion)</SystemReflectionMetadataCentralVersion>
-    <SystemCompositionCentralVersion Condition="$([MSBuild]::VersionLessThan('$(SystemCompositionVersion)', '$(SystemRuntimeCentralFloorVersion)'))">$(SystemRuntimeCentralFloorVersion)</SystemCompositionCentralVersion>
-    <SystemDiagnosticsDiagnosticSourceCentralVersion Condition="$([MSBuild]::VersionLessThan('$(SystemDiagnosticsDiagnosticSourceVersion)', '$(SystemRuntimeCentralFloorVersion)'))">$(SystemRuntimeCentralFloorVersion)</SystemDiagnosticsDiagnosticSourceCentralVersion>
   </PropertyGroup>
 
   <PropertyGroup>

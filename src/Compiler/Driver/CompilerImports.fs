@@ -5,6 +5,7 @@
 module internal FSharp.Compiler.CompilerImports
 
 open System
+open System.Collections.Concurrent
 open System.Collections.Generic
 open System.Diagnostics
 open System.IO
@@ -1532,6 +1533,7 @@ and [<Sealed>] TcImports
                         ImportProvidedType = (fun ty -> ImportProvidedType (tcImports.GetImportMap()) m ty)
                         TryGetILModuleDef = (fun () -> Some ilModule)
                         TypeForwarders = CcuTypeForwarderTable.Empty
+                        CSharpStyleExtensionMembersCache = ConcurrentDictionary(1, 0)
                         XmlDocumentationInfo =
                             match tcConfig.xmlDocInfoLoader with
                             | Some xmlDocInfoLoader -> xmlDocInfoLoader.TryLoad(fileName)
@@ -2156,6 +2158,7 @@ and [<Sealed>] TcImports
                         UsesFSharp20PlusQuotations = minfo.usesQuotations
                         MemberSignatureEquality = (fun ty1 ty2 -> typeEquivAux EraseAll (tcImports.GetTcGlobals()) ty1 ty2)
                         TypeForwarders = ImportILAssemblyTypeForwarders(tcImports.GetImportMap, m, ilModule.GetRawTypeForwarders())
+                        CSharpStyleExtensionMembersCache = ConcurrentDictionary(1, 0)
 #if !NO_TYPEPROVIDERS
                         XmlDocumentationInfo =
                             match tcConfig.xmlDocInfoLoader with

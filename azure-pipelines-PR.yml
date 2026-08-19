@@ -835,6 +835,11 @@ stages:
           buildScript: dotnet build Oxpecker.slnx -c Release
           displayName: Oxpecker_Build
           expectLocalCore: true
+        - repo: Lanayx/Oxpecker
+          commit: cb7e4b83e3f2aba7ded46b17a36d1aea8c13c292
+          buildScript: dotnet build Oxpecker.Solid.slnx -c Release
+          displayName: Oxpecker_Solid_Build
+          expectLocalCore: true
         # Design-time provider packaging oracle. Pin d8aba70 (pre-workaround base of FSharp.Data.GraphQL#583):
         # it uses the bare IsFSharpDesignTimeProvider gesture, so the client pack drops the provider without this fix.
         # Linux-only: the $PWD local feed and the grep content assertion need bash. (nupkg entry names are stored
@@ -845,6 +850,12 @@ stages:
           displayName: FSharpDataGraphQL_DesignTimeProvider_Packaging
           useVmImage: $(LinuxMachineQueueName)
           usePool: $(DncEngPublicBuildPool)
+        # Chiron (chiron-6) exercises Aether 8.2.0 inline SRTP optics, reproducing the SDK 10.0.400 legacy inline-metadata
+        # regression (#20253, fixed by #20260): the miscompile throws NotSupportedException at run time, so run the tests.
+        - repo: xyncro/chiron
+          commit: 94cf9db1793a1bd0e6e0b69efadcfb37368a6428
+          buildScript: dotnet test tests/Chiron.Tests/Chiron.Tests.fsproj -c Release -p:AssetTargetFallback=net461 -p:RollForward=Major --filter FullyQualifiedName~Optic
+          displayName: Chiron_Aether_Inline_SRTP
         - repo: Thorium/Linq.Expression.Optimizer
           commit: 075e20da2712ede54b3314d5b69d6789ee68eb3d
           buildScript: dotnet test Linq.Expression.Optimizer.sln -c Release -bl

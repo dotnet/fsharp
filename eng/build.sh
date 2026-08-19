@@ -384,6 +384,9 @@ trap TrapAndReportError EXIT
 
 InitializeDotNetCli $restore
 
+# Apphosts (bootstrap fsc, testhost, etc.) resolve runtimes via DOTNET_ROOT, not PATH.
+export DOTNET_ROOT="$DOTNET_INSTALL_DIR"
+
 # Resolve product TFM from centralized source of truth if not overridden via --tfm
 if [[ "$tfm" == "" ]]; then
   tfm=$("$DOTNET_INSTALL_DIR/dotnet" msbuild "$scriptroot/TargetFrameworks.props" -getProperty:FSharpNetCoreProductTargetFramework 2>/dev/null | tr -d '[:space:]')
