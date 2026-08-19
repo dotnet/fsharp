@@ -88,26 +88,26 @@
     <SystemBuffersVersion>4.6.1</SystemBuffersVersion>
     <SystemMemoryVersion>4.6.3</SystemMemoryVersion>
     <SystemRuntimeCompilerServicesUnsafeVersion>6.1.2</SystemRuntimeCompilerServicesUnsafeVersion>
-    <!-- System.* packages from dotnet/runtime flow via Version.Details.xml / Version.Details.props (darc). -->
-    <!-- fsc/fsi and FSharp.Build.UnitTests consume MSBuild 18.10, which pulls these dotnet/runtime packages
-         transitively at >= 10.0.9 — in product/PR builds AND in source-build (which builds live MSBuild 18.10
-         too, hence the floor must apply there as well). CPM transitive pinning needs the *central* pin to meet
-         that floor, so define dedicated ...CentralVersion properties for eng/Packages.props. These do NOT touch
-         the darc-flowed $(System*Version) properties, which stay authoritative for FSharp.Compiler.Service's
-         shipped nuspec dependency metadata (FCS does not pull MSBuild, so it keeps the darc version). The floor
-         only raises when darc is below it; once darc flows >= 10.0.9 the darc version wins, so this never
-         freezes or downgrades the flow. -->
+    <!-- System.* packages from dotnet/runtime flow via Version.Details (darc). MSBuild 18.10 (fsc/fsi +
+         FSharp.Build.UnitTests) and Roslyn 5.11 (System.Composition, System.Diagnostics.DiagnosticSource) both
+         pull dotnet/runtime packages transitively at >= 10.0.10, in product/PR and source-build. CPM transitive
+         pinning needs the *central* pin to meet that floor, hence these ...CentralVersion properties. They don't
+         touch the darc-flowed $(System*Version) (authoritative for FCS's nuspec); the floor only raises, never downgrades. -->
     <SystemSecurityCryptographyXmlCentralVersion>$(SystemSecurityCryptographyXmlVersion)</SystemSecurityCryptographyXmlCentralVersion>
     <SystemCollectionsImmutableCentralVersion>$(SystemCollectionsImmutableVersion)</SystemCollectionsImmutableCentralVersion>
     <SystemReflectionMetadataCentralVersion>$(SystemReflectionMetadataVersion)</SystemReflectionMetadataCentralVersion>
+    <SystemCompositionCentralVersion>$(SystemCompositionVersion)</SystemCompositionCentralVersion>
+    <SystemDiagnosticsDiagnosticSourceCentralVersion>$(SystemDiagnosticsDiagnosticSourceVersion)</SystemDiagnosticsDiagnosticSourceCentralVersion>
   </PropertyGroup>
 
   <PropertyGroup>
-    <!-- Minimum central version the MSBuild-pulled dotnet/runtime packages must meet (see comment above). -->
-    <SystemRuntimeCentralFloorVersion>10.0.9</SystemRuntimeCentralFloorVersion>
+    <!-- Floor for the MSBuild/Roslyn-pulled dotnet/runtime packages: 10.0.10 (Roslyn 5.11) also covers MSBuild's >= 10.0.9. -->
+    <SystemRuntimeCentralFloorVersion>10.0.10</SystemRuntimeCentralFloorVersion>
     <SystemSecurityCryptographyXmlCentralVersion Condition="$([MSBuild]::VersionLessThan('$(SystemSecurityCryptographyXmlVersion)', '$(SystemRuntimeCentralFloorVersion)'))">$(SystemRuntimeCentralFloorVersion)</SystemSecurityCryptographyXmlCentralVersion>
     <SystemCollectionsImmutableCentralVersion Condition="$([MSBuild]::VersionLessThan('$(SystemCollectionsImmutableVersion)', '$(SystemRuntimeCentralFloorVersion)'))">$(SystemRuntimeCentralFloorVersion)</SystemCollectionsImmutableCentralVersion>
     <SystemReflectionMetadataCentralVersion Condition="$([MSBuild]::VersionLessThan('$(SystemReflectionMetadataVersion)', '$(SystemRuntimeCentralFloorVersion)'))">$(SystemRuntimeCentralFloorVersion)</SystemReflectionMetadataCentralVersion>
+    <SystemCompositionCentralVersion Condition="$([MSBuild]::VersionLessThan('$(SystemCompositionVersion)', '$(SystemRuntimeCentralFloorVersion)'))">$(SystemRuntimeCentralFloorVersion)</SystemCompositionCentralVersion>
+    <SystemDiagnosticsDiagnosticSourceCentralVersion Condition="$([MSBuild]::VersionLessThan('$(SystemDiagnosticsDiagnosticSourceVersion)', '$(SystemRuntimeCentralFloorVersion)'))">$(SystemRuntimeCentralFloorVersion)</SystemDiagnosticsDiagnosticSourceCentralVersion>
   </PropertyGroup>
 
   <PropertyGroup>
@@ -117,9 +117,10 @@
     <SystemReflectionEmitVersion>4.7.0</SystemReflectionEmitVersion>
 
     <!-- Shared version groups referenced by multiple PackageVersion entries in eng/Packages.props. -->
-    <!-- Shared pin for the editor packages in eng/Packages.props; must match 18.9.123 (resolved transitively
-         via Microsoft.VisualStudio.SDK 18.9.496). Full NU1109 rationale lives there, next to the 18.9.x pins. -->
-    <VisualStudioEditorPackagesVersion>18.9.123</VisualStudioEditorPackagesVersion>
+    <!-- Shared pin for the editor packages in eng/Packages.props; must match 18.9.179 (resolved transitively
+         via Microsoft.CodeAnalysis.EditorFeatures / .LanguageServices.ExternalAccess 5.11.0). Full NU1109
+         rationale lives there, next to the 18.9.x pins. -->
+    <VisualStudioEditorPackagesVersion>18.9.179</VisualStudioEditorPackagesVersion>
     <MicrosoftVisualStudioExtensibilityTestingVersion>0.1.800-beta</MicrosoftVisualStudioExtensibilityTestingVersion>
 
     <!-- Read by name by the Arcade SDK (tools/VisualStudio.targets injects it into VSIX projects), so it must
