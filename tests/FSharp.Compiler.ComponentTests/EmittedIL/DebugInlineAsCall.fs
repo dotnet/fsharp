@@ -1252,6 +1252,27 @@ let main _ =
         |> compileAndRun
         |> verifySequencePoints
 
+    // https://github.com/dotnet/fsharp/issues/20297
+    [<Fact>]
+    let ``SRTP 39 - Captured local function, callsite in a nested closure`` () =
+        FSharp """
+let f () =
+    let tee g (x: int) = g x; x
+    let addName (key: string) (v: string) = tee (fun x -> printfn "%s=%s" key v)
+    let inline addEnum (key: string) value = tee (fun x -> printfn "%s=%d" key (x + int value))
+    let pipeline v = addName "a" "n" >> addEnum "b" v
+    pipeline 1uy 41
+
+[<EntryPoint>]
+let main _ =
+    if f () = 41 then 0 else 1
+"""
+        |> withDebug
+        |> withNoOptimize
+        |> asExe
+        |> compileAndRun
+        |> verifySequencePoints
+
     [<Fact>]
     let ``Member 01 - Non-generic`` () =
         FSharp """
