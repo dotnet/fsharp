@@ -2357,9 +2357,15 @@ and MemberConstraintSolutionOfMethInfo css m minfo minst staticTyOpt =
     // to prevent unused parameter warning
     ignore css
 #endif
-    // Strip typar indirections when ExtensionConstraintSolutions enabled (C#-style extensions need concrete minst)
     let g = css.g
-    let minst = minst |> List.map (stripTyEqnsAndMeasureEqns g)
+    // C#-style (IL) extension solutions need a fully concrete method instantiation, so strip typar
+    // indirections from minst. Gate on ExtensionConstraintSolutions so feature-off witness solutions keep
+    // their prior (unstripped) form and emit byte-identical IL.
+    let minst =
+        if g.langVersion.SupportsFeature LanguageFeature.ExtensionConstraintSolutions then
+            minst |> List.map (stripTyEqnsAndMeasureEqns g)
+        else
+            minst
     match minfo with 
     | ILMeth(_, ilMeth, _) ->
        let mref = IL.mkRefToILMethod (ilMeth.DeclaringTyconRef.CompiledRepresentationForNamedType, ilMeth.RawMetadata)
