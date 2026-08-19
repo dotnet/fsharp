@@ -828,6 +828,7 @@ Microsoft.FSharp.Control.TaskModule: System.Threading.Tasks.Task`1[TResult] Map[
 Microsoft.FSharp.Control.TaskModule: System.Threading.Tasks.Task`1[T] CatchWith[T](Microsoft.FSharp.Core.FSharpFunc`2[System.Exception,T], System.Threading.Tasks.Task`1[T])
 Microsoft.FSharp.Control.TaskModule: System.Threading.Tasks.Task`1[Microsoft.FSharp.Core.Unit] ParallelDoLimit(Int32, System.Threading.CancellationToken, System.Collections.Generic.IEnumerable`1[Microsoft.FSharp.Core.FSharpFunc`2[System.Threading.CancellationToken,System.Threading.Tasks.Task`1[Microsoft.FSharp.Core.Unit]]])
 Microsoft.FSharp.Control.TaskModule: System.Threading.Tasks.Task`1[T[]] ParallelLimit[T](Int32, System.Threading.CancellationToken, System.Collections.Generic.IEnumerable`1[Microsoft.FSharp.Core.FSharpFunc`2[System.Threading.CancellationToken,System.Threading.Tasks.Task`1[T]]])
+Microsoft.FSharp.Control.TaskModule: System.Threading.Tasks.Task`1[T[]] Sequential[T](System.Threading.CancellationToken, System.Collections.Generic.IEnumerable`1[Microsoft.FSharp.Core.FSharpFunc`2[System.Threading.CancellationToken,System.Threading.Tasks.Task`1[T]]])
 Microsoft.FSharp.Control.TaskModule: System.Threading.Tasks.Task`1[T] Result[T](T)
 Microsoft.FSharp.Control.TaskStateMachineData`1[T]: T Result
 Microsoft.FSharp.Control.WebExtensions: Microsoft.FSharp.Control.FSharpAsync`1[Microsoft.FSharp.Core.Unit] AsyncDownloadFile(System.Net.WebClient, System.Uri, System.String)
