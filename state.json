@@ -5,8 +5,12 @@
       "cats": []
     },
     "20274": {
-      "sha": "026148d5ec5e",
-      "cats": []
+      "sha": "24f2fc956cd8",
+      "cats": [
+        "Affects-Bootstrap",
+        "Affects-Build-Infra",
+        "Scope-Review-Needed"
+      ]
     },
     "20273": {
       "sha": "84a158cd6131",
@@ -160,7 +164,7 @@
       "cats": []
     },
     "20294": {
-      "sha": "0279f13c7682",
+      "sha": "5610b5ca0314",
       "cats": []
     },
     "20301": {
