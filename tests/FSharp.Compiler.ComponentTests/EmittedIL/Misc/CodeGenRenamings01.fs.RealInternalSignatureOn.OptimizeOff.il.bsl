@@ -190,6 +190,42 @@
 
   } 
 
+  .class auto ansi serializable sealed nested assembly beforefieldinit 'Pipe #8 input at line 43@43'
+         extends class [FSharp.Core]Microsoft.FSharp.Core.OptimizedClosures/FSharpFunc`3<int32,int32,int32>
+  {
+    .field static assembly initonly class assembly/'Pipe #8 input at line 43@43' @_instance
+    .method assembly specialname rtspecialname instance void  .ctor() cil managed
+    {
+      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+      
+      .maxstack  8
+      IL_0000:  ldarg.0
+      IL_0001:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.OptimizedClosures/FSharpFunc`3<int32,int32,int32>::.ctor()
+      IL_0006:  ret
+    } 
+
+    .method public strict virtual instance int32 Invoke(int32 i, int32 j) cil managed
+    {
+      
+      .maxstack  8
+      IL_0000:  ldarg.1
+      IL_0001:  ldarg.2
+      IL_0002:  add
+      IL_0003:  ret
+    } 
+
+    .method private specialname rtspecialname static void  .cctor() cil managed
+    {
+      
+      .maxstack  10
+      IL_0000:  newobj     instance void assembly/'Pipe #8 input at line 43@43'::.ctor()
+      IL_0005:  stsfld     class assembly/'Pipe #8 input at line 43@43' assembly/'Pipe #8 input at line 43@43'::@_instance
+      IL_000a:  ret
+    } 
+
+  } 
+
   .field static assembly class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> alist@5
   .custom instance void [runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
   .field static assembly int32[] array@6
@@ -327,7 +363,9 @@
              int32 V_9,
              class [runtime]System.Tuple`4<int32,int32,int32,int32> V_10,
              class [runtime]System.Tuple`4<int32,int32,int32,int32> V_11,
-             int32 V_12)
+             int32 V_12,
+             int32[0...,0...] V_13,
+             int32[0...,0...] V_14)
     IL_0000:  ldc.i4.0
     IL_0001:  conv.i8
     IL_0002:  stloc.1
@@ -577,7 +615,16 @@
                                                                                                   int32,
                                                                                                   !!0)
     IL_022d:  nop
-    IL_022e:  ret
+    IL_022e:  ldc.i4.2
+    IL_022f:  ldc.i4.2
+    IL_0230:  ldsfld     class assembly/'Pipe #8 input at line 43@43' assembly/'Pipe #8 input at line 43@43'::@_instance
+    IL_0235:  call       !!0[0...,0...] [FSharp.Core]Microsoft.FSharp.Collections.Array2DModule::Initialize<int32>(int32,
+                                                                                                                   int32,
+                                                                                                                   class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,!!0>>)
+    IL_023a:  stloc.s    V_13
+    IL_023c:  ldloc.s    V_13
+    IL_023e:  stloc.s    V_14
+    IL_0240:  ret
   } 
 
   .property class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>
@@ -659,7 +706,6 @@
   } 
 
 } 
-
 
 
 

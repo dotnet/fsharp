@@ -53,7 +53,14 @@ module Array2D =
         if base1 = 0 && base2 = 0 then 
             zeroCreate length1 length2               
         else
+#if NET9_0_OR_GREATER
+            // Passing the array type rather than the element type lets trimming and AOT compilation
+            // see the concrete 'T[,] instantiation, so this overload carries no RequiresDynamicCode
+            // annotation.
+            (Array.CreateInstanceFromArrayType(typeof<'T[,]>, [|length1;length2|], [|base1;base2|]) :?> 'T[,])
+#else
             (Array.CreateInstance(typeof<'T>, [|length1;length2|], [|base1;base2|]) :?> 'T[,])
+#endif
 
     [<CompiledName("CreateBased")>]
     let createBased base1 base2 length1 length2 (initial:'T) = 
@@ -73,12 +80,21 @@ module Array2D =
         array
 
     [<CompiledName("Create")>]
-    let create length1 length2 (value:'T) = 
-        createBased 0 0 length1 length2 value
+    let create length1 length2 (value:'T) =
+        let array = zeroCreate length1 length2
+        for i = 0 to length1 - 1 do
+            for j = 0 to length2 - 1 do
+                array.[i, j] <- value
+        array
 
     [<CompiledName("Initialize")>]
-    let init length1 length2 initializer = 
-        initBased 0 0 length1 length2 initializer
+    let init length1 length2 initializer =
+        let array = zeroCreate length1 length2
+        let f = OptimizedClosures.FSharpFunc<_, _, _>.Adapt(initializer)
+        for i = 0 to length1 - 1 do
+            for j = 0 to length2 - 1 do
+                array.[i, j] <- f.Invoke(i, j)
+        array
 
     [<CompiledName("Iterate")>]
     let iter action array = 

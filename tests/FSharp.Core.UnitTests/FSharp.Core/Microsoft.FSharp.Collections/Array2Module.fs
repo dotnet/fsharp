@@ -187,8 +187,9 @@ type Array2Module() =
     [<Fact>]
     member this.Copy() =
         // integer array  
-        let intArr = Array2D.init 2 3 (fun i j -> i*100 + j)
+        let intArr = Array2D.initBased 3 7 2 3 (fun i j -> i*100 + j)
         let resultInt = Array2D.copy intArr 
+        if obj.ReferenceEquals(intArr, resultInt) then Assert.Fail()
         if resultInt <> intArr then Assert.Fail()
 
         
@@ -196,6 +197,13 @@ type Array2Module() =
         let strArr = Array2D.init 2 3 (fun i j -> i.ToString() + "-" + j.ToString())
         let resultStr = Array2D.copy strArr
         if resultStr <> strArr then Assert.Fail()
+
+        // Guards against rewriting copy as Array.Clone to escape its IL3050 warning: Clone would keep
+        // the runtime string[,] type and throw here, where copy allocates obj[,] and accepts the box.
+        let covariantSource = Array2D.create 1 1 "value" |> box |> unbox<obj[,]>
+        let covariantCopy = Array2D.copy covariantSource
+        covariantCopy.[0, 0] <- box 42
+        Assert.Equal(box 42, covariantCopy.[0, 0])
         
         // empty array     
         let eptArr = Array2D.create 0 0 1
@@ -225,7 +233,12 @@ type Array2Module() =
         let eptArr = Array2D.create 0 0 1
         let resultEpt = Array2D.create 0 0 1
         if resultEpt   <> eptArr  then Assert.Fail()
+        shouldBeEmpty resultEpt
   
+        // invalid arguments
+        CheckThrowsArgumentException (fun () -> Array2D.create -1 2 0 |> ignore)
+        CheckThrowsArgumentException (fun () -> Array2D.create 1 -2 0 |> ignore)
+
         ()  
 
     [<Fact>]
@@ -284,6 +297,14 @@ type Array2Module() =
         // string array 
         let strArr = Array2D.init 2 3 (fun i j -> i.ToString() + "-" + j.ToString())
         if strArr.[1,1] <> "1-1" then Assert.Fail()
+
+        // empty array
+        let eptArr = Array2D.init 0 0 (fun i j -> i + j)
+        shouldBeEmpty eptArr
+
+        // invalid arguments
+        CheckThrowsArgumentException (fun () -> Array2D.init -1 2 (fun i j -> i + j) |> ignore)
+        CheckThrowsArgumentException (fun () -> Array2D.init 1 -2 (fun i j -> i + j) |> ignore)
         () 
 
     [<Fact>]
@@ -409,10 +430,10 @@ type Array2Module() =
     [<Fact>]
     member this.Map() =
         // integer array  
-        let intArr = Array2D.init 2 3 (fun i j -> i*100 + j)
+        let intArr = Array2D.initBased 3 7 2 3 (fun i j -> i*100 + j)
         let funInt x = x.ToString()
         let resultInt = Array2D.map funInt intArr 
-        if resultInt <> (Array2D.init 2 3 (fun i j -> (i*100 + j).ToString())) then Assert.Fail()
+        if resultInt <> (Array2D.initBased 3 7 2 3 (fun i j -> (i*100 + j).ToString())) then Assert.Fail()
 
         
         // string array 
@@ -435,10 +456,12 @@ type Array2Module() =
     [<Fact>]
     member this.Mapi() =
         // integer array  
-        let intArr = Array2D.init 2 3 (fun i j -> i*100 + j)
-        let funInt x y z = x+y+z
-        let resultInt = Array2D.mapi funInt intArr 
-        if resultInt <> (Array2D.init 2 3 (fun i j -> i*100 + j + i + j)) then Assert.Fail()
+        let intArr = Array2D.initBased 3 7 2 3 (fun i j -> i*100 + j)
+        // Maps int -> string, so the result element type differs from the source and mapi has to
+        // allocate a new based array rather than reuse the input's.
+        let funIntToStr x y z = sprintf "%d,%d:%d" x y z
+        let resultInt = Array2D.mapi funIntToStr intArr
+        if resultInt <> (Array2D.initBased 3 7 2 3 (fun i j -> sprintf "%d,%d:%d" i j (i*100 + j))) then Assert.Fail()
 
         
         // string array 
@@ -449,8 +472,8 @@ type Array2Module() =
         
         // empty array     
         let eptArr = Array2D.create 0 0 1
-        let resultEpt = Array2D.mapi funInt eptArr
-        if resultEpt   <> Array2D.create 0 0 1  then Assert.Fail()
+        let resultEpt = Array2D.mapi funIntToStr eptArr
+        if resultEpt   <> Array2D.create 0 0 ""  then Assert.Fail()
 
         // null array
         let nullArr = null:string[,]    
