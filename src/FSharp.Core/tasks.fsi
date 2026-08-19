@@ -650,6 +650,24 @@ module Task =
     [<CompiledName("Sequential")>]
     val sequential: ct: CancellationToken -> computations: seq<CancellationToken -> Task<'T>> -> Task<'T[]>
 
+    /// <summary>Creates a task that executes each of the <c>computations</c> in sequence, returning <c>unit</c>.</summary>
+    /// <param name="ct">A cancellation token to pass to each task factory.</param>
+    /// <param name="computations">A sequence of unit task start functions accepting a <see cref="T:System.Threading.CancellationToken"/>.</param>
+    /// <returns>A task that runs all inputs in sequence and returns <c>unit</c>.</returns>
+    ///
+    /// <example id="task-sequentialdo-1">
+    /// <code lang="fsharp">
+    /// task {
+    ///     return!
+    ///         seq { for i in 1..10 -> fun _ct -> task { printfn "%d" i } }
+    ///         // NOTE numbers are guaranteed to be printed in order 1..10
+    ///         |> Task.sequentialDo CancellationToken.None
+    /// }
+    /// </code>
+    /// </example>
+    [<CompiledName("SequentialDo")>]
+    val sequentialDo: ct: CancellationToken -> computations: seq<CancellationToken -> Task<unit>> -> Task<unit>
+
 #if NETSTANDARD2_1 || NET
     /// <summary>Converts a <see cref="T:System.Threading.Tasks.ValueTask`1"/> to a <see cref="T:System.Threading.Tasks.Task`1"/>.</summary>
     ///

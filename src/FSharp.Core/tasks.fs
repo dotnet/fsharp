@@ -849,6 +849,13 @@ module Task =
             return results.Close()
         }
 
+    [<CompiledName("SequentialDo")>]
+    let sequentialDo (ct: CancellationToken) (computations: seq<CancellationToken -> Task<unit>>) : Task<unit> =
+        task {
+            for f in computations do
+                do! f ct
+        }
+
 #if NETSTANDARD2_1 || NET
     [<CompiledName("OfValueTask")>]
     let inline ofValueTask (valueTask: ValueTask<'T>) : Task<'T> =
