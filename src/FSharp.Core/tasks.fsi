@@ -585,19 +585,18 @@ module Task =
     val empty: Task<unit>
 
     /// <summary>Creates a task that runs all given tasks with at most <c>maxDegreeOfParallelism</c>
-    /// running concurrently and returns their results in order. Relative start and finish order per computation is not guaranteed.</summary>
-    ///
+    /// running concurrently and returns their results in order.
+    /// Relative start and finish order per computation is not guaranteed.</summary>
     /// <param name="maxDegreeOfParallelism">The maximum number of tasks to run concurrently.</param>
     /// <param name="ct">A cancellation token to pass to each task factory.</param>
     /// <param name="computations">A sequence of task start functions accepting a <see cref="T:System.Threading.CancellationToken"/>.</param>
-    ///
-    /// <returns>A task yielding the results of all input tasks in order.</returns>
+    /// <returns>A task yielding the results of all input tasks in the order supplied.</returns>
     ///
     /// <example id="task-parallellimit-1">
     /// <code lang="fsharp">
     /// open System.Threading
     /// let results =
-    ///     [for i in 1..10 do fun _ct -> Task.result (i * i)]
+    ///     seq { for i in 1..10 -> fun _ct -> Task.result (i * i) }
     ///     |> Task.parallelLimit 3 CancellationToken.None
     /// results.Result // evaluates to [| 1; 4; 9; 16; 25; 36; 49; 64; 81; 100 |]
     /// </code>
@@ -609,20 +608,19 @@ module Task =
         computations: seq<CancellationToken -> Task<'T>> ->
             Task<'T[]>
 
-    /// <summary>Creates a task that runs all given unit tasks
-    /// with at most <c>maxDegreeOfParallelism</c> running concurrently, discarding the results.</summary>
-    ///
+    /// <summary>Creates a task that runs the given unit tasks
+    /// with at most <c>maxDegreeOfParallelism</c> running concurrently.</summary>
+    /// <remarks>Note there is no guarantee of relative start or completion order per computation.</remarks>
     /// <param name="maxDegreeOfParallelism">The maximum number of tasks to run concurrently.</param>
     /// <param name="ct">A cancellation token to pass to each task factory.</param>
     /// <param name="computations">A sequence of unit task start functions accepting a <see cref="T:System.Threading.CancellationToken"/>.</param>
-    ///
     /// <returns>A task that runs all inputs with the specified parallelism limit and returns <c>unit</c>.</returns>
     ///
     /// <example id="task-paralleldolimit-1">
     /// <code lang="fsharp">
     /// open System.Threading
     /// do
-    ///     [for i in 1..10 do fun _ct -> task { printfn "%d" i }]
+    ///     seq { for i in 1..10 -> fun _ct -> task { printfn "%d" i } } // NOTE output order can vary
     ///     |> Task.parallelDoLimit 3 CancellationToken.None
     ///     |> _.Wait()
     /// </code>
