@@ -200,7 +200,7 @@ type private FSharpProjectOptionsReactor(checker: FSharpChecker) =
         cancellableTask {
             let! ct = CancellableTask.getCancellationToken ()
             let! fileStamp = document.GetTextVersionAsync(ct)
-            let textViewAndCaret () : (IVsTextView * Position) option = document.TryGetTextViewAndCaretPos()
+            let textViewAndCaret () : (IVsTextView * Position) voption = document.TryGetTextViewAndCaretPos()
 
             match singleFileCache.TryGetValue(document.Id) with
             | false, _ ->
@@ -210,7 +210,7 @@ type private FSharpProjectOptionsReactor(checker: FSharpChecker) =
                     let caret = textViewAndCaret ()
 
                     match caret with
-                    | None ->
+                    | ValueNone ->
                         checker.GetProjectOptionsFromScript(
                             document.FilePath,
                             sourceText.ToFSharpSourceText(),
@@ -219,7 +219,7 @@ type private FSharpProjectOptionsReactor(checker: FSharpChecker) =
                             userOpName = userOpName
                         )
 
-                    | Some(_, caret) ->
+                    | ValueSome(_, caret) ->
                         checker.GetProjectOptionsFromScript(
                             document.FilePath,
                             sourceText.ToFSharpSourceText(),
@@ -234,14 +234,12 @@ type private FSharpProjectOptionsReactor(checker: FSharpChecker) =
 
                 let otherOptions =
                     if project.IsFSharpMetadata then
-                        project.ProjectReferences
-                        |> Seq.map (fun x -> "-r:" + project.Solution.GetProject(x.ProjectId).OutputFilePath)
-                        |> Array.ofSeq
-                        |> Array.append (
-                            project.MetadataReferences.OfType<PortableExecutableReference>()
-                            |> Seq.map (fun x -> "-r:" + x.FilePath)
-                            |> Array.ofSeq
-                        )
+                        [|
+                            for x in project.ProjectReferences do
+                                yield "-r:" + project.Solution.GetProject(x.ProjectId).OutputFilePath
+                            for x in project.MetadataReferences.OfType<PortableExecutableReference>() do
+                                yield "-r:" + x.FilePath
+                        |]
                     else
                         [||]
 
@@ -284,9 +282,14 @@ type private FSharpProjectOptionsReactor(checker: FSharpChecker) =
                     | projectId, fileStamp, parsingOptions, projectOptions, _ ->
                         let subscription =
                             match textViewAndCaret () with
-                            | Some(textView, _) ->
-                                subscribeToTextViewEvents (textView, (Some onChangeCaretHandler), (Some onKillFocus), (Some onSetFocus))
-                            | None -> None
+                            | ValueSome(textView, _) ->
+                                subscribeToTextViewEvents (
+                                    textView,
+                                    (ValueSome onChangeCaretHandler),
+                                    (ValueSome onKillFocus),
+                                    (ValueSome onSetFocus)
+                                )
+                            | ValueNone -> ValueNone
 
                         (projectId, fileStamp, parsingOptions, projectOptions, subscription)
 
@@ -294,7 +297,7 @@ type private FSharpProjectOptionsReactor(checker: FSharpChecker) =
                     document.Id, // The key to the cache
                     (fun _ value -> addToCacheAndSubscribe value), // Function to add the cached value if the key does not exist
                     (fun _ _ value -> value), // Function to update the value if the key exists
-                    (document.Project, fileStamp, parsingOptions, projectOptions, None) // The value to add or update
+                    (document.Project, fileStamp, parsingOptions, projectOptions, ValueNone) // The value to add or update
                 )
                 |> ignore
 
@@ -303,7 +306,7 @@ type private FSharpProjectOptionsReactor(checker: FSharpChecker) =
             | true, (oldProject, oldFileStamp, parsingOptions, projectOptions, _) ->
                 if fileStamp <> oldFileStamp || isProjectInvalidated document.Project oldProject ct then
                     match singleFileCache.TryRemove(document.Id) with
-                    | true, (_, _, _, _, Some subscription) -> subscription.Dispose()
+                    | true, (_, _, _, _, ValueSome subscription) -> subscription.Dispose()
                     | _ -> ()
 
                     return! tryComputeOptionsBySingleScriptOrFile document userOpName
@@ -519,7 +522,7 @@ type private FSharpProjectOptionsReactor(checker: FSharpChecker) =
                     | true, (_, _, _, projectOptions, subscription) ->
                         lastSuccessfulCompilations.TryRemove(documentId.ProjectId) |> ignore
                         checker.ClearCache([ projectOptions ])
-                        subscription |> Option.iter (fun handler -> handler.Dispose())
+                        subscription |> ValueOption.iter (fun handler -> handler.Dispose())
                     | _ -> ()
         }
 
