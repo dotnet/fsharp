@@ -624,6 +624,24 @@ module Task =
         computations: seq<CancellationToken -> Task<unit>> ->
             Task<unit>
 
+    /// <summary>Creates a task that executes each of the <c>computations</c> in sequence,
+    /// returning an array of their results in order of the input sequence.</summary>
+    /// <param name="ct">A cancellation token to pass to each task factory.</param>
+    /// <param name="computations">A sequence of task start functions accepting a <see cref="T:System.Threading.CancellationToken"/>.</param>
+    /// <returns>A task yielding an array of the results of <c>computations</c> in the order they were supplied.</returns>
+    ///
+    /// <example id="task-sequential-1">
+    /// <code lang="fsharp">
+    /// task {
+    ///     return!
+    ///         seq { for i in 1..10 -> fun _ct -> Task.result (i * i) }
+    ///         |> Task.sequential CancellationToken.None
+    /// } // returns [| 1; 4; 9; 16; 25; 36; 49; 64; 81; 100 |]
+    /// </code>
+    /// </example>
+    [<CompiledName("Sequential")>]
+    val sequential: ct: CancellationToken -> computations: seq<CancellationToken -> Task<'T>> -> Task<'T[]>
+
 #if NETSTANDARD2_1 || NET
     /// <summary>Converts a <see cref="T:System.Threading.Tasks.ValueTask`1"/> to a <see cref="T:System.Threading.Tasks.Task`1"/>.</summary>
     ///

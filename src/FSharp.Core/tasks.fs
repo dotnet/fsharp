@@ -722,6 +722,7 @@ namespace Microsoft.FSharp.Control
 open System.Threading
 open System.Threading.Tasks
 open Microsoft.FSharp.Core
+open Microsoft.FSharp.Core.CompilerServices
 open Microsoft.FSharp.Collections
 open TaskBuilder
 open Microsoft.FSharp.Control.TaskBuilderExtensions
@@ -835,6 +836,18 @@ module Task =
         (computations: seq<CancellationToken -> Task<unit>>)
         : Task<unit> =
         parallelLimit maxDegreeOfParallelism ct computations |> ignore<unit[]>
+
+    [<CompiledName("Sequential")>]
+    let sequential (ct: CancellationToken) (computations: seq<CancellationToken -> Task<'T>>) : Task<'T[]> =
+        task {
+            let mutable results = ArrayCollector<'T>()
+
+            for f in computations do
+                let! result = f ct
+                results.Add result
+
+            return results.Close()
+        }
 
 #if NETSTANDARD2_1 || NET
     [<CompiledName("OfValueTask")>]
