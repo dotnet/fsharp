@@ -31,10 +31,14 @@ $net10Selected = $false
 foreach ($target in $assetsJson.targets.PSObject.Properties) {
     foreach ($package in $target.Value.PSObject.Properties) {
         if ($package.Name -like "FSharp.Core/*") {
-            $assetKeys = @()
-            if ($package.Value.runtime) { $assetKeys += @($package.Value.runtime.PSObject.Properties.Name) }
-            if ($package.Value.compile) { $assetKeys += @($package.Value.compile.PSObject.Properties.Name) }
-            if ($assetKeys -contains "lib/net10.0/FSharp.Core.dll") { $net10Selected = $true }
+            $compileKeys = if ($package.Value.compile) { @($package.Value.compile.PSObject.Properties.Name) } else { @() }
+            $runtimeKeys = if ($package.Value.runtime) { @($package.Value.runtime.PSObject.Properties.Name) } else { @() }
+            # FSharp.Core packs only lib/{tfm} (no ref/, no runtimes/), so compile and runtime resolve
+            # from the same folder; require both to be net10 - anything else means a fallback was chosen.
+            if (($compileKeys -contains "lib/net10.0/FSharp.Core.dll") -and
+                ($runtimeKeys -contains "lib/net10.0/FSharp.Core.dll")) {
+                $net10Selected = $true
+            }
         }
     }
 }
