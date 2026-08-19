@@ -71,14 +71,14 @@ type Project with
 
 type TextViewEventsHandler
     (
-        onChangeCaretHandler: (IVsTextView * int * int -> unit) option,
-        onKillFocus: (IVsTextView -> unit) option,
-        onSetFocus: (IVsTextView -> unit) option
+        onChangeCaretHandler: (IVsTextView * int * int -> unit) voption,
+        onKillFocus: (IVsTextView -> unit) voption,
+        onSetFocus: (IVsTextView -> unit) voption
     ) =
     interface IVsTextViewEvents with
         member this.OnChangeCaretLine(view: IVsTextView, newline: int, oldline: int) =
             onChangeCaretHandler
-            |> Option.iter (fun handler -> handler (view, newline, oldline))
+            |> ValueOption.iter (fun handler -> handler (view, newline, oldline))
 
         member this.OnChangeScrollInfo
             (_view: IVsTextView, _iBar: int, _iMinUnit: int, _iMaxUnits: int, _iVisibleUnits: int, _iFirstVisibleUnit: int)
@@ -86,14 +86,14 @@ type TextViewEventsHandler
             ()
 
         member this.OnKillFocus(view: IVsTextView) =
-            onKillFocus |> Option.iter (fun handler -> handler (view))
+            onKillFocus |> ValueOption.iter (fun handler -> handler (view))
 
         member this.OnSetBuffer(_view: IVsTextView, _buffer: IVsTextLines) = ()
 
         member this.OnSetFocus(view: IVsTextView) =
-            onSetFocus |> Option.iter (fun handler -> handler (view))
+            onSetFocus |> ValueOption.iter (fun handler -> handler (view))
 
-type ConnectionPointSubscription = System.IDisposable option
+type ConnectionPointSubscription = System.IDisposable voption
 
 // Usage example:
 //  If a handler is None, to not handle that event
@@ -108,16 +108,16 @@ let subscribeToTextViewEvents (textView: IVsTextView, onChangeCaretHandler, onKi
         let mutable cookie = 0u
 
         match cpContainer.FindConnectionPoint(ref riid) with
-        | null -> None
+        | null -> ValueNone
         | cp ->
-            Some(
+            ValueSome(
                 cp.Advise(handler, &cookie)
 
                 { new IDisposable with
                     member _.Dispose() = cp.Unadvise(cookie)
                 }
             )
-    | _ -> None
+    | _ -> ValueNone
 
 type Document with
 
@@ -129,7 +129,7 @@ type Document with
             | null -> None
             | languageServices -> languageServices.GetService<'T>() |> Some
 
-    member this.TryGetIVsTextView() : IVsTextView option =
+    member this.TryGetIVsTextView() : IVsTextView voption =
         match ServiceProvider.GlobalProvider.GetService(typeof<SVsTextManager>) with
         | :? IVsTextManager as textManager ->
             // Grab IVsRunningDocumentTable
@@ -140,20 +140,20 @@ type Document with
                     match Marshal.GetObjectForIUnknown docData with
                     | :? IVsTextBuffer as ivsTextBuffer ->
                         match textManager.GetActiveView(0, ivsTextBuffer) with
-                        | hr, vsTextView when ErrorHandler.Succeeded(hr) -> Some vsTextView
-                        | _ -> None
-                    | _ -> None
-                | _ -> None
-            | _ -> None
-        | _ -> None
+                        | hr, vsTextView when ErrorHandler.Succeeded(hr) -> ValueSome vsTextView
+                        | _ -> ValueNone
+                    | _ -> ValueNone
+                | _ -> ValueNone
+            | _ -> ValueNone
+        | _ -> ValueNone
 
-    member this.TryGetTextViewAndCaretPos() : (IVsTextView * Position) option =
+    member this.TryGetTextViewAndCaretPos() : (IVsTextView * Position) voption =
         match this.TryGetIVsTextView() with
-        | Some textView ->
+        | ValueSome textView ->
             match textView.GetCaretPos() with
-            | hr, line, column when ErrorHandler.Succeeded(hr) -> Some(textView, Position.fromZ line column)
-            | _ -> None
-        | None -> None
+            | hr, line, column when ErrorHandler.Succeeded(hr) -> ValueSome(textView, Position.fromZ line column)
+            | _ -> ValueNone
+        | ValueNone -> ValueNone
 
     member this.IsFSharpScript = isScriptFile this.FilePath
 
