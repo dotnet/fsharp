@@ -296,10 +296,10 @@ let ``Async.parallelLimit limits concurrency`` () =
 
 [<Fact>]
 let ``Async.parallelDoLimit runs all computations and returns unit`` () =
-    let results = System.Collections.Generic.List<int>()
+    let mutable count = 0
     seq {
         for i in 1..5 do
-            async { lock results (fun () -> results.Add(i)) } }
+            async { Interlocked.Increment &count |> ignore } }
     |> Async.parallelDoLimit 2
     |> Async.RunSynchronouslyImmediate
-    Assert.Equal(5, results.Count)
+    Assert.Equal(5, count)
