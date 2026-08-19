@@ -19,8 +19,12 @@ resources:
     type: git
     name: DevDiv/VS.Templates
     ref: refs/heads/main
-  # TODO(P0): provision an internal mirror of dotnet/fsharp and a matching service connection.
-  # Roslyn uses `internal/dotnet-roslyn` via the `dnceng-internal-code-access` endpoint.
+  # Internal mirror of dotnet/fsharp — confirmed to exist at
+  # https://dev.azure.com/dnceng/internal/_git/dotnet-fsharp (project `internal`, repo
+  # `dotnet-fsharp`). Reachable via the `dnceng-internal-code-access` service connection (same
+  # endpoint Roslyn uses for `internal/dotnet-roslyn`).
+  # TODO(P0): confirm the `dnceng-internal-code-access` service connection is authorized for this
+  # pipeline once it is registered.
   - repository: FSharpMirror
     endpoint: dnceng-internal-code-access
     type: git

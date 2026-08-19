@@ -29,9 +29,11 @@ team (as Roslyn did). The YAML here uses `# TODO(P0):` markers wherever a real v
 
 1. **DartLab + VS pipeline templates access** — the pipeline `extends`/references
    `DevDiv/DartLab.Templates` and `DevDiv/VS.Templates` (internal AzDO repos).
-2. **Internal source mirror** — an `internal/dotnet-fsharp` mirror reachable via a
-   `dnceng-internal-code-access` service connection (Roslyn uses `internal/dotnet-roslyn`). The
-   test machine checks out from this mirror, not from GitHub.
+2. **Internal source mirror** — the `dotnet/fsharp` mirror already exists at
+   [`dnceng/internal/dotnet-fsharp`](https://dev.azure.com/dnceng/internal/_git/dotnet-fsharp)
+   (referenced as `internal/dotnet-fsharp` via the `dnceng-internal-code-access` service
+   connection, the same endpoint Roslyn uses). Remaining: confirm that service connection is
+   authorized for this pipeline once it is registered.
 3. **VS-Platform test lab pool** + **1ES** onboarding for a new internal pipeline definition.
 4. **F# DevDiv area path / owner** for `templateContext` (Roslyn uses
    `mlinfraswat` / `DevDiv\NET Developer Experience\CSharp and VB IDE`).
@@ -63,8 +65,9 @@ Onboarding is the same shape Roslyn used. Ask for / decide:
 
 1. Read access for the F# pipeline's service identity to the internal AzDO repos
    `DevDiv/DartLab.Templates` and `DevDiv/VS.Templates`.
-2. An internal Git mirror of `dotnet/fsharp` (e.g. `internal/dotnet-fsharp`) and a
-   `dnceng-internal-code-access` service connection so the test machine can check it out.
+2. Confirm the `dnceng-internal-code-access` service connection (to the existing
+   `dnceng/internal/dotnet-fsharp` mirror) is authorized for this pipeline. The mirror itself
+   already exists — no new mirror needs to be created.
 3. Use of the `VS-Platform` test-lab pool for the new pipeline, and 1ES registration of
    `azure-pipelines-integration-dartlab.yml` as an internal pipeline.
 4. The F# `templateContext.owner` and `areaPath` to record against test results
