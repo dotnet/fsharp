@@ -80,28 +80,31 @@ stages:
     testAgentElevated: true
     preTestMachineConfigurationStepList:
     - checkout: none
-    # TODO(P0): only needed for the gate/end-state where the VS bootstrapper comes from a VS build
-    # resource. For the interim pinned-drop approach (hard-coded bootstrapper URI above), delete
-    # these two steps.
-    # - task: DownloadBuildArtifacts@1
-    #   displayName: Download Visual Studio build artifacts
-    #   inputs:
-    #     buildType: specific
-    #     project: $(resources.pipeline.VisualStudioBuildUnderTest.projectID)
-    #     definition: $(resources.pipeline.VisualStudioBuildUnderTest.pipelineID)
-    #     buildVersionToDownload: specific
-    #     buildId: $(resources.pipeline.VisualStudioBuildUnderTest.runID)
-    #     downloadType: specific
-    #     artifactName: BuildArtifacts
-    #     downloadPath: $(Pipeline.Workspace)\VisualStudioBuildUnderTest
-    # - task: PowerShell@2
-    #   name: SetProductsDropName
-    #   displayName: Set 'VisualStudio.BuildUnderTest.ProductsDropName'
-    #   inputs:
-    #     filePath: $(DartLab.Path)\Scripts\VisualStudio\Build\Get-VisualStudioDropName.ps1
-    #     arguments: -DropNamePrefix 'Products' -VstsDropUrlsJson '$(Pipeline.Workspace)\VisualStudioBuildUnderTest\BuildArtifacts\VstsDropUrls.json' -OutVariableName 'VisualStudio.BuildUnderTest.ProductsDropName'
+    # The VS build under test (declared as the VisualStudioBuildUnderTest pipeline resource in
+    # azure-pipelines-integration-dartlab.yml) provides the bootstrapper drop. These steps download
+    # its artifacts and compute VisualStudio.BuildUnderTest.ProductsDropName, which the '(default)'
+    # visualStudioBootstrapperURI above expands to. Mirrors dotnet/roslyn's stage.
+    # (For an interim pinned-drop approach — a hard-coded bootstrapper URI above — delete these two
+    # steps and drop the VisualStudioBuildUnderTest resource.)
+    - task: DownloadBuildArtifacts@1
+      displayName: Download Visual Studio build artifacts
+      inputs:
+        buildType: specific
+        project: $(resources.pipeline.VisualStudioBuildUnderTest.projectID)
+        definition: $(resources.pipeline.VisualStudioBuildUnderTest.pipelineID)
+        buildVersionToDownload: specific
+        buildId: $(resources.pipeline.VisualStudioBuildUnderTest.runID)
+        downloadType: specific
+        artifactName: BuildArtifacts
+        downloadPath: $(Pipeline.Workspace)\VisualStudioBuildUnderTest
+    - task: PowerShell@2
+      name: SetProductsDropName
+      displayName: Set 'VisualStudio.BuildUnderTest.ProductsDropName'
+      inputs:
+        filePath: $(DartLab.Path)\Scripts\VisualStudio\Build\Get-VisualStudioDropName.ps1
+        arguments: -DropNamePrefix 'Products' -VstsDropUrlsJson '$(Pipeline.Workspace)\VisualStudioBuildUnderTest\BuildArtifacts\VstsDropUrls.json' -OutVariableName 'VisualStudio.BuildUnderTest.ProductsDropName'
     deployAndRunTestsStepList:
-    # TODO(P0): check out the internal mirror (see azure-pipelines-integration-dartlab.yml resources).
+    # Check out the internal mirror (the FSharpMirror resource in the entry pipeline).
     - checkout: FSharpMirror
       fetchDepth: 1
       fetchTags: false

@@ -10,7 +10,21 @@ trigger: none
 pr: none
 
 resources:
+  pipelines:
+  # The VS build under test: DartLab installs the bootstrapper from this build's drop, so the
+  # installed VS matches what F# is inserted into. `trigger: true` runs this gate whenever a new VS
+  # build is produced. Roslyn uses `DD-CB-ReleaseVS`.
+  # TODO(P0): confirm with the DartLab/VS team which VS build pipeline F# should gate on (the VS
+  # release build that consumes the F# insertion). Keeping Roslyn's default as a starting point.
+  - pipeline: VisualStudioBuildUnderTest
+    source: DD-CB-ReleaseVS
+    trigger: true
   repositories:
+  # DartLab core (provides /DartLab/... templates, Scripts, etc.). Pinned to the Production tag.
+  - repository: DartLab
+    type: git
+    name: DevDiv/DartLab
+    ref: refs/tags/Production
   - repository: DartLabTemplates
     type: git
     name: DevDiv/DartLab.Templates
@@ -30,11 +44,6 @@ resources:
     type: git
     name: internal/dotnet-fsharp
     ref: $(Build.SourceBranch)
-  # TODO(P0): the VS build under test supplies the bootstrapper to install. Interim: omit this and
-  # hard-code `visualStudioBootstrapperURI` in stage.yml to a pinned int.main Products drop. End
-  # state: reference the VS build pipeline so this runs as a gate on the consuming VS build.
-  # - pipeline: VisualStudioBuildUnderTest
-  #   source: '<VS build pipeline name>'
 
 parameters:
   - name: prNumber
@@ -68,8 +77,10 @@ parameters:
     default: 1:0:0:0
 
 extends:
-  template: /DartLab/1ES/pipelines/ci/real-sign.yml@VSTemplates
+  # Matches Roslyn's current entry template (they moved off real-sign.yml to build.yml).
+  template: /DartLab/1ES/pipelines/ci/build.yml@VSTemplates
   parameters:
+    dartLabTemplatesRepositoryAlias: DartLab
     testStages:
     - template: /eng/pipelines/apex-integration/stage.yml@self
       parameters:
