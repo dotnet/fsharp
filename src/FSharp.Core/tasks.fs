@@ -797,13 +797,13 @@ module Task =
         (computations: seq<CancellationToken -> Task<'T>>)
         : Task<'T[]> =
         task {
-            use sem = new SemaphoreSlim(maxDegreeOfParallelism, maxDegreeOfParallelism)
+            let sem = new SemaphoreSlim(maxDegreeOfParallelism, maxDegreeOfParallelism)
 
-            return!
+            let allTask =
                 Task.WhenAll
                     [|
                         for f in computations ->
-                            task {
+                            backgroundTask {
                                 do! sem.WaitAsync ct
 
                                 try
@@ -812,6 +812,16 @@ module Task =
                                     sem.Release() |> Operators.ignore
                             }
                     |]
+
+            allTask.ContinueWith(
+                (fun (_: Task<'T[]>) -> sem.Dispose()),
+                CancellationToken.None,
+                TaskContinuationOptions.ExecuteSynchronously,
+                TaskScheduler.Default
+            )
+            |> Operators.ignore
+
+            return! allTask
         }
 
     [<CompiledName("ParallelDoLimit")>]
