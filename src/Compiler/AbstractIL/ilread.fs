@@ -4512,8 +4512,7 @@ let openMetadataReader
     let cacheTypeDefAsType =
         mkCacheGeneric reduceMemoryUsage inbase "TypeDefAsType" (getNumRows TableNames.TypeDef / 20 + 1)
 
-    let cacheTypeDefAsTypeRef =
-        mkCacheGeneric false inbase "TypeDefAsTypeRef" 0
+    let cacheTypeDefAsTypeRef = mkCacheGeneric false inbase "TypeDefAsTypeRef" 0
 
     let cacheMethodDefAsMethodData =
         mkCacheGeneric reduceMemoryUsage inbase "MethodDefAsMethodData" (getNumRows TableNames.Method / 20 + 1)
