@@ -280,9 +280,6 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue
             | Error exn -> return raise exn
         }
 
-    member this.GetAsync(key, computation: Async<_>) =
-        this.Get(key, async2 { return! computation }) |> Async2.toAsync
-
     member _.TryGet(key: 'TKey, predicate: 'TVersion -> bool) : 'TValue option =
         lock cache
         <| fun () ->
