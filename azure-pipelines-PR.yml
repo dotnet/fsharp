@@ -845,3 +845,8 @@ stages:
           displayName: FSharpDataGraphQL_DesignTimeProvider_Packaging
           useVmImage: $(LinuxMachineQueueName)
           usePool: $(DncEngPublicBuildPool)
+        - repo: Thorium/Linq.Expression.Optimizer
+          commit: 075e20da2712ede54b3314d5b69d6789ee68eb3d
+          buildScript: dotnet test Linq.Expression.Optimizer.sln -c Release -bl
+          displayName: LinqExpressionOptimizer_Test_Release
+          expectLocalCore: true
