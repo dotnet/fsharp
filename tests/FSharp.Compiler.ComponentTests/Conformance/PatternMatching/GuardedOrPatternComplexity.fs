@@ -94,7 +94,7 @@ let main _ =
 let (|E|_|) (n: int) (e: exn) = if e.Message = string n then Some() else None
 let f () =
     try failwith "1" with
-    | (E 1 | E 2 | E 3 | E 4 | E 5 | E 6 | E 7 | E 8) when System.DateTime.UtcNow.Ticks >= 0L -> 1
+    | (E 1 | E 2 | E 3 | E 4 | E 5 | E 6 | E 7 | E 8) when System.Environment.TickCount >= System.Int32.MinValue -> 1
     | _ -> reraise()
 """
         |> compiles
@@ -102,11 +102,10 @@ let f () =
     [<Fact>]
     let ``Issue 18425 - guarded shared-or with a byref-like clause target stays inline`` () =
         """module Test
-open System
 let (|E|_|) (n: int) (x: int) = if x = n then Some x else None
-let f (buffer: Span<int>) x =
+let f (buffer: byref<int>) x =
     match x with
-    | E 1 _ | E 2 _ | E 3 _ | E 4 _ | E 5 _ | E 6 _ | E 7 _ | E 8 _ when System.DateTime.UtcNow.Ticks >= 0L -> buffer.Length
+    | E 1 _ | E 2 _ | E 3 _ | E 4 _ | E 5 _ | E 6 _ | E 7 _ | E 8 _ when System.Environment.TickCount >= System.Int32.MinValue -> buffer
     | _ -> 0
 """
         |> compiles
