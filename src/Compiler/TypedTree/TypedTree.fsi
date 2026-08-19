@@ -3,6 +3,7 @@ module internal rec FSharp.Compiler.TypedTree
 
 open System
 open System.Diagnostics
+open System.Collections.Concurrent
 open System.Collections.Generic
 open System.Collections.Immutable
 open Internal.Utilities.Collections
@@ -4233,6 +4234,10 @@ type CcuData =
 
         /// The table of .NET CLI type forwarders for this assembly
         TypeForwarders: CcuTypeForwarderTable
+
+        /// C#-style extension members of this assembly's static classes, keyed by static class stamp.
+        /// Typed as obj because MethInfo is declared after this file.
+        CSharpStyleExtensionMembersCache: ConcurrentDictionary<Stamp, obj>
         XmlDocumentationInfo: XmlDocumentationInfo option
     }
 
