@@ -2075,10 +2075,11 @@ namespace Microsoft.FSharp.Control
         [<CompiledName("Empty")>]
         val empty: Async<unit>
 
-        /// <summary>Creates an asynchronous computation that executes all the given asynchronous computations, using at
-        /// most <c>maxDegreeOfParallelism</c> simultaneously, and returns their results as an array.<br/>
-        /// While the result order matches the input order, there is no guarantee of relative start or completion order per computation.</summary>
-        /// <param name="maxDegreeOfParallelism">The maximum number of computations to run concurrently.</param>
+        /// <summary>Creates an asynchronous computation that executes all the supplied asynchronous computations
+        /// with concurrency limited to at most <c>maxDegreeOfParallelism</c>,
+        /// and returns their results as an array in the same order as the inputs.</summary>
+        /// <remarks>While the result order matches the input order, the relative start and completion order of computations is arbitrary.</remarks>
+        /// <param name="maxDegreeOfParallelism">The maximum number of computations to run concurrently. Must be &gt; 0.</param>
         /// <param name="computations">A sequence of computations to be parallelized.</param>
         /// <returns>A computation that returns an array of results from the input computations in the same order they were supplied.</returns>
         ///
@@ -2094,10 +2095,10 @@ namespace Microsoft.FSharp.Control
         [<CompiledName("ParallelLimit")>]
         val parallelLimit: maxDegreeOfParallelism: int -> computations: seq<Async<'T>> -> Async<'T[]>
 
-        /// <summary>Creates an asynchronous computation that executes all the given unit asynchronous computations,
-        /// using at most <c>maxDegreeOfParallelism</c> simultaneously.</summary>
-        /// <remarks>Note there is no guarantee of relative start or completion order per computation.</remarks>
-        /// <param name="maxDegreeOfParallelism">The maximum number of computations to run concurrently.</param>
+        /// <summary>Creates an asynchronous computation that executes all the supplied asynchronous computations returning unit,
+        /// with concurrency limited to at most <c>maxDegreeOfParallelism</c>.</summary>
+        /// <remarks>The relative start and completion order of computations is arbitrary.</remarks>
+        /// <param name="maxDegreeOfParallelism">The maximum number of computations to run concurrently. Must be &gt; 0.</param>
         /// <param name="computations">A sequence of unit computations to be parallelized.</param>
         ///
         /// <returns>A computation that runs all inputs with limited parallelism and returns <c>unit</c>.</returns>
