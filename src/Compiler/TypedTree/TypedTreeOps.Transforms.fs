@@ -987,7 +987,7 @@ module internal Rewriting =
 
         let modulContentsR =
             MaybeLazy.Strict(
-                d.entity_modul_type.Value
+                d.ModuleOrNamespaceType
                 |> mapImmediateValsAndTycons (remapTyconToNonLocal ctxt tmenv) (remapValToNonLocal ctxt tmenv)
             )
 
