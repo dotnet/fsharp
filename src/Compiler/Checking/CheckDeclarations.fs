@@ -3572,16 +3572,16 @@ module EstablishTypeDefinitionCores =
                 // LayoutKind.Extended (value 1) must be set via ExtendedLayoutAttribute, not StructLayout: https://github.com/dotnet/runtime/issues/102727
                 let extendedLayoutKind = 1
                 match structLayoutAttr with
-                | Some kind when kind = extendedLayoutKind ->
-                    errorR (Error(FSComp.SR.tcInvalidStructLayoutExtendedKind(), m))
                 | Some kind ->
-                    if allowed then 
-                        if kind = explicitKind then
-                            warning(PossibleUnverifiableCode m)
-                    elif List.isEmpty (thisTyconRef.Typars) then
-                        errorR (Error(FSComp.SR.tcOnlyStructsCanHaveStructLayout(), m))
-                    else
-                        errorR (Error(FSComp.SR.tcGenericTypesCannotHaveStructLayout(), m))
+                    if not allowed then
+                        if List.isEmpty (thisTyconRef.Typars) then
+                            errorR (Error(FSComp.SR.tcOnlyStructsCanHaveStructLayout(), m))
+                        else
+                            errorR (Error(FSComp.SR.tcGenericTypesCannotHaveStructLayout(), m))
+                    elif kind = extendedLayoutKind then
+                        errorR (Error(FSComp.SR.tcInvalidStructLayoutExtendedKind(), m))
+                    elif kind = explicitKind then
+                        warning(PossibleUnverifiableCode m)
                 | None -> ()
 
             let extendedLayoutAttributeCheck () =

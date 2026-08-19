@@ -438,7 +438,6 @@ if Convert.ToString(prop, Globalization.CultureInfo.InvariantCulture) <> "B" the
         """
         ]
 
-
     // SOURCE=E_StructLayout_Extended.fs
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_StructLayout_Extended.fs"|])>]
     let ``E_StructLayout_Extended_fs`` compilation =

@@ -75,6 +75,18 @@ module CustomAttributes_ExtendedLayout =
             |> Seq.exists (fun ca -> customAttributeTypeName reader ca = "System.Runtime.InteropServices.ExtendedLayoutAttribute")
         Assert.True(preserved, "ExtendedLayoutAttribute should be preserved on the emitted type.")
 
+    let private expectRejected errorCode source =
+        FSharp source
+        |> asLibrary
+        |> compile
+        |> shouldFail
+        |> withErrorCode errorCode
+
+    let private expectRejectedWithMessage errorCode message source =
+        source
+        |> expectRejected errorCode
+        |> withErrorMessage message
+
     [<Fact>]
     let ``ExtendedLayout on a struct emits the 0x18 layout flag and preserves the attribute`` () =
         assertExtendedLayoutEmitted "CStructLike" """
@@ -103,7 +115,7 @@ type StructRecord = { X: int; Y: int }
 
     [<Fact>]
     let ``ExtendedLayout and StructLayout cannot be combined on a struct record`` () =
-        FSharp """
+        expectRejected 3910 """
 namespace Test
 
 open System.Runtime.InteropServices
@@ -111,10 +123,6 @@ open System.Runtime.InteropServices
 [<Struct; ExtendedLayout(ExtendedLayoutKind.CStruct); StructLayout(LayoutKind.Sequential)>]
 type BothOnRecord = { X: int }
 """
-        |> asLibrary
-        |> compile
-        |> shouldFail
-        |> withErrorCode 3910
 
     [<Fact>]
     let ``ExtendedLayout and StructLayout cannot be combined on the same type`` () =
@@ -137,7 +145,7 @@ type BothAttrs =
 
     [<Fact>]
     let ``ExtendedLayout on a class is rejected`` () =
-        FSharp """
+        expectRejectedWithMessage 3911 "Only structs may be given the 'ExtendedLayoutAttribute'" """
 namespace Test
 
 open System.Runtime.InteropServices
@@ -146,15 +154,10 @@ open System.Runtime.InteropServices
 type NotAStruct() =
     member _.X = 1
 """
-        |> asLibrary
-        |> compile
-        |> shouldFail
-        |> withErrorCode 3911
-        |> withErrorMessage "Only structs may be given the 'ExtendedLayoutAttribute'"
 
     [<Fact>]
     let ``ExtendedLayout on an interface is rejected`` () =
-        FSharp """
+        expectRejected 3911 """
 namespace Test
 
 open System.Runtime.InteropServices
@@ -163,14 +166,10 @@ open System.Runtime.InteropServices
 type IExtended =
     abstract M: unit -> int
 """
-        |> asLibrary
-        |> compile
-        |> shouldFail
-        |> withErrorCode 3911
 
     [<Fact>]
     let ``ExtendedLayout on a reference record is rejected`` () =
-        FSharp """
+        expectRejected 3911 """
 namespace Test
 
 open System.Runtime.InteropServices
@@ -178,14 +177,10 @@ open System.Runtime.InteropServices
 [<ExtendedLayout(ExtendedLayoutKind.CStruct)>]
 type R = { X: int }
 """
-        |> asLibrary
-        |> compile
-        |> shouldFail
-        |> withErrorCode 3911
 
     [<Fact>]
     let ``ExtendedLayout on a union is rejected`` () =
-        FSharp """
+        expectRejectedWithMessage 3913 "The 'ExtendedLayoutAttribute' cannot be applied to discriminated unions" """
 namespace Test
 
 open System.Runtime.InteropServices
@@ -193,15 +188,10 @@ open System.Runtime.InteropServices
 [<ExtendedLayout(ExtendedLayoutKind.CStruct)>]
 type U = A | B
 """
-        |> asLibrary
-        |> compile
-        |> shouldFail
-        |> withErrorCode 3913
-        |> withErrorMessage "The 'ExtendedLayoutAttribute' cannot be applied to discriminated unions"
 
     [<Fact>]
     let ``ExtendedLayout on a struct union is rejected`` () =
-        FSharp """
+        expectRejectedWithMessage 3913 "The 'ExtendedLayoutAttribute' cannot be applied to discriminated unions" """
 namespace Test
 
 open System.Runtime.InteropServices
@@ -209,15 +199,10 @@ open System.Runtime.InteropServices
 [<Struct; ExtendedLayout(ExtendedLayoutKind.CStruct)>]
 type U = A of x: int | B of y: int
 """
-        |> asLibrary
-        |> compile
-        |> shouldFail
-        |> withErrorCode 3913
-        |> withErrorMessage "The 'ExtendedLayoutAttribute' cannot be applied to discriminated unions"
 
     [<Fact>]
     let ``ExtendedLayout on an enum is rejected`` () =
-        FSharp """
+        expectRejected 3911 """
 namespace Test
 
 open System.Runtime.InteropServices
@@ -227,14 +212,10 @@ type E =
     | A = 0
     | B = 1
 """
-        |> asLibrary
-        |> compile
-        |> shouldFail
-        |> withErrorCode 3911
 
     [<Fact>]
     let ``ExtendedLayout on a delegate is rejected`` () =
-        FSharp """
+        expectRejected 3911 """
 namespace Test
 
 open System.Runtime.InteropServices
@@ -242,14 +223,10 @@ open System.Runtime.InteropServices
 [<ExtendedLayout(ExtendedLayoutKind.CStruct)>]
 type D = delegate of int -> int
 """
-        |> asLibrary
-        |> compile
-        |> shouldFail
-        |> withErrorCode 3911
 
     [<Fact>]
     let ``FieldOffset is not allowed on an ExtendedLayout struct`` () =
-        FSharp """
+        expectRejected 1211 """
 namespace Test
 
 open System.Runtime.InteropServices
@@ -260,8 +237,15 @@ type WithOffset =
         [<FieldOffset(0)>] val mutable X: int
     end
 """
-        |> asLibrary
-        |> compile
-        |> shouldFail
-        |> withErrorCode 1211
+
+    [<Fact>]
+    let ``StructLayout with the reserved extended-layout value on a non-struct reports the struct-only error`` () =
+        expectRejected 937 """
+namespace Test
+
+open System.Runtime.InteropServices
+
+[<StructLayout(enum<LayoutKind>(1))>]
+type U = A | B
+"""
 #endif
