@@ -51,25 +51,25 @@
       <Sha>0280f7f9457d50a46cd523ce0082807b5d70b236</Sha>
     </Dependency>
     <!-- Necessary for source-build. This allows the live version of the package to be used by source-build. -->
-    <Dependency Name="System.Collections.Immutable" Version="10.0.8">
+    <Dependency Name="System.Collections.Immutable" Version="10.0.10">
       <Uri>https://github.com/dotnet/runtime</Uri>
       <Sha>
       </Sha>
     </Dependency>
     <!-- Necessary for source-build. This allows the live version of the package to be used by source-build. -->
-    <Dependency Name="System.Composition" Version="10.0.8">
+    <Dependency Name="System.Composition" Version="10.0.10">
       <Uri>https://github.com/dotnet/runtime</Uri>
       <Sha>
       </Sha>
     </Dependency>
     <!-- Necessary for source-build. This allows the live version of the package to be used by source-build. -->
-    <Dependency Name="System.Diagnostics.DiagnosticSource" Version="10.0.8">
+    <Dependency Name="System.Diagnostics.DiagnosticSource" Version="10.0.10">
       <Uri>https://github.com/dotnet/runtime</Uri>
       <Sha>
       </Sha>
     </Dependency>
     <!-- Necessary for source-build. This allows the live version of the package to be used by source-build. -->
-    <Dependency Name="System.Reflection.Metadata" Version="10.0.8">
+    <Dependency Name="System.Reflection.Metadata" Version="10.0.10">
       <Uri>https://github.com/dotnet/runtime</Uri>
       <Sha>
       </Sha>
