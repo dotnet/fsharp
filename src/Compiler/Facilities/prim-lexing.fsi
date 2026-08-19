@@ -146,6 +146,8 @@ type internal LexBuffer<'Char> =
     /// True if the specified language feature is supported.
     member SupportsFeature: LanguageFeature -> bool
 
+    member SourceText: ISourceText
+
     /// Logs a recoverable error if a language feature is unsupported, at the specified range.
     member CheckLanguageFeatureAndRecover: LanguageFeature -> range -> unit
 

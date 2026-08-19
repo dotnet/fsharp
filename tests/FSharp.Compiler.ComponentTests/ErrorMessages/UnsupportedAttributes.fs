@@ -15,7 +15,7 @@ open System.Runtime.CompilerServices
 let f (w, [<CallerArgumentExpression "w">] x : string) = ()
 let [<ModuleInitializer>] g () = ()
 type C() =
-    member _.F (w, [<System.Runtime.CompilerServices.CallerArgumentExpression "w">] x : string) = ()
+
     [<System.Runtime.CompilerServices.ModuleInitializer>]
     member _.G() = ()
         """
@@ -24,24 +24,10 @@ type C() =
         |> shouldFail
         |> withResults [
             { Error = Warning 202
-              Range = { StartLine = 3
-                        StartColumn = 13
-                        EndLine = 3
-                        EndColumn = 41 }
-              Message =
-               "This attribute is currently unsupported by the F# compiler. Applying it will not achieve its intended effect." }
-            { Error = Warning 202
               Range = { StartLine = 4
                         StartColumn = 7
                         EndLine = 4
                         EndColumn = 24 }
-              Message =
-               "This attribute is currently unsupported by the F# compiler. Applying it will not achieve its intended effect." }
-            { Error = Warning 202
-              Range = { StartLine = 6
-                        StartColumn = 22
-                        EndLine = 6
-                        EndColumn = 82 }
               Message =
                "This attribute is currently unsupported by the F# compiler. Applying it will not achieve its intended effect." }
             { Error = Warning 202

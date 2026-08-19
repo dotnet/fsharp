@@ -158,6 +158,7 @@ module IncrementalBuildSyntaxTree =
                             ParseOneInputSourceText(tcConfig, lexResourceManager, fileName, isLastCompiland, diagnosticsLogger, sourceText)
                         | TextContainer.OnDisk ->
                             ParseOneInputFile(tcConfig, lexResourceManager, fileName, isLastCompiland, diagnosticsLogger, true)
+                            |> fst
 
                     fileParsed.Trigger fileName
 
@@ -271,7 +272,7 @@ type BoundModel private (
                         tcGlobals,
                         None,
                         TcResultsSink.WithSink sink,
-                        prevTcInfo.tcState, input )
+                        prevTcInfo.tcState, input, None )
                 |> Cancellable.toAsync
 
             fileChecked.Trigger fileName
