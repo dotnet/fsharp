@@ -498,7 +498,10 @@ module internal SharedImportedCcus =
         let rec walk n =
             if inside.Add n then
                 for r in snd assemblies[n] do
-                    if assemblies.ContainsKey r then walk r else outside.Add r |> ignore
+                    if assemblies.ContainsKey r then
+                        walk r
+                    else
+                        outside.Add r |> ignore
 
         walk root
         inside, outside
@@ -2221,9 +2224,7 @@ and [<Sealed>] TcImports
         // Multi-module assemblies are excluded from sharing, so a shared import can never need this
         let auxModuleLoader =
             match sharedContext with
-            | Some _ ->
-                fun scoref ->
-                    error (InternalError(sprintf "a shared ccu cannot load the auxiliary module %A" scoref, m))
+            | Some _ -> fun scoref -> error (InternalError(sprintf "a shared ccu cannot load the auxiliary module %A" scoref, m))
             | None -> tcImports.MkLoaderForMultiModuleILAssemblies ctok m
 
         // Meaningless in a ccu handed to other projects: SymbolHelpers.fileNameOfItem combines it with a
@@ -2303,8 +2304,7 @@ and [<Sealed>] TcImports
             ilModule.GetRawFSharpSignatureData(m, ilShortAssemName, fileName)
             |> List.map (fun (ccuName, (sigDataReader, sigDataReaderB)) ->
                 // One entry per ccu, because an assembly can carry several
-                let entry =
-                    shared |> Option.map (fun (key, ctx) -> key + "|fsharp|" + ccuName, ctx)
+                let entry = shared |> Option.map (fun (key, ctx) -> key + "|fsharp|" + ccuName, ctx)
 
                 let optDatas = Map.ofList optDataReaders
 
@@ -2345,10 +2345,8 @@ and [<Sealed>] TcImports
 #endif
                                 TryGetILModuleDef = ilModule.TryGetILModuleDef
                                 UsesFSharp20PlusQuotations = minfo.usesQuotations
-                                MemberSignatureEquality =
-                                    (fun ty1 ty2 -> typeEquivAux EraseAll (globalsOwner.GetTcGlobals()) ty1 ty2)
-                                TypeForwarders =
-                                    ImportILAssemblyTypeForwarders(amap, m, ilModule.GetRawTypeForwarders())
+                                MemberSignatureEquality = (fun ty1 ty2 -> typeEquivAux EraseAll (globalsOwner.GetTcGlobals()) ty1 ty2)
+                                TypeForwarders = ImportILAssemblyTypeForwarders(amap, m, ilModule.GetRawTypeForwarders())
                                 CSharpStyleExtensionMembersCache = ConcurrentDictionary(1, 0)
 #if !NO_TYPEPROVIDERS
                                 XmlDocumentationInfo =
@@ -2434,17 +2432,17 @@ and [<Sealed>] TcImports
                 | None -> ()
                 | Some data ->
 
-                let fixupThunk () =
-                    data.OptionalFixup(fun nm -> availableToOptionalCcu (tcImports.FindCcu(ctok, m, nm, lookupOnly = false)))
-                    |> ignore
+                    let fixupThunk () =
+                        data.OptionalFixup(fun nm -> availableToOptionalCcu (tcImports.FindCcu(ctok, m, nm, lookupOnly = false)))
+                        |> ignore
 
-                fixupThunk ()
+                    fixupThunk ()
 
-                for ccuThunk in data.FixupThunks do
-                    if ccuThunk.IsUnresolvedReference then
-                        tciLock.AcquireLock(fun tcitok ->
-                            RequireTcImportsLock(tcitok, ccuThunks)
-                            ccuThunks.Add(ccuThunk, fixupThunk)))
+                    for ccuThunk in data.FixupThunks do
+                        if ccuThunk.IsUnresolvedReference then
+                            tciLock.AcquireLock(fun tcitok ->
+                                RequireTcImportsLock(tcitok, ccuThunks)
+                                ccuThunks.Add(ccuThunk, fixupThunk)))
 #if !NO_TYPEPROVIDERS
             ccuRawDataAndInfos |> List.iter (fun (_, _, phase2) -> phase2 ())
 #endif
@@ -2571,10 +2569,12 @@ and [<Sealed>] TcImports
 
                 // A project's own output changes with every build, and phase2 adds provided namespaces into
                 // a type provider assembly's contents
-                if r.ProjectReference.IsNone
-                   && not isMultiModule
-                   && not (ambiguous.Contains name)
-                   && not (isTypeProviderAssembly data) then
+                if
+                    r.ProjectReference.IsNone
+                    && not isMultiModule
+                    && not (ambiguous.Contains name)
+                    && not (isTypeProviderAssembly data)
+                then
                     shareable.Add name |> ignore
 
             // A reference must resolve to what the key pins - this batch or the framework layer - or to
@@ -2697,9 +2697,11 @@ and [<Sealed>] TcImports
                 //
                 // Only with reduceMemoryUsage: without it TcImports disposal closes a memory-mapped reader,
                 // so a ccu outliving the project that imported it would read from a closed file.
-                if tcConfig.shareImportedAssemblies
-                   && importsBase.IsSome
-                   && tcConfig.reduceMemoryUsage = ReduceMemoryFlag.Yes then
+                if
+                    tcConfig.shareImportedAssemblies
+                    && importsBase.IsSome
+                    && tcConfig.reduceMemoryUsage = ReduceMemoryFlag.Yes
+                then
                     Some(sharedKeys resolved)
                 else
                     None
