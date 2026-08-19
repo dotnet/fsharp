@@ -3547,10 +3547,7 @@ module EstablishTypeDefinitionCores =
                 match attrs with
                 | EntityAttribInt g WellKnownEntityAttributes.StructLayoutAttribute v -> Some v
                 | _ -> None
-            let hasExtendedLayoutAttr =
-                match g.attrib_ExtendedLayoutAttribute_opt with
-                | Some attrib -> HasFSharpAttribute g attrib attrs
-                | None -> false
+            let hasExtendedLayoutAttr = hasFlag entityFlags WellKnownEntityAttributes.ExtendedLayoutAttribute
             let hasAllowNullLiteralAttr = hasFlag entityFlags WellKnownEntityAttributes.AllowNullLiteralAttribute_True
             let hasStructAttr = hasFlag entityFlags WellKnownEntityAttributes.StructAttribute
 
@@ -3572,9 +3569,7 @@ module EstablishTypeDefinitionCores =
                 
             let structLayoutAttributeCheck allowed = 
                 let explicitKind = int32 System.Runtime.InteropServices.LayoutKind.Explicit
-                // LayoutKind.Extended has enum value 1 in .NET 11+ (previously unused slot)
-                // It cannot be specified via StructLayoutAttribute - users must use ExtendedLayoutAttribute instead
-                // See: https://github.com/dotnet/runtime/issues/102727
+                // LayoutKind.Extended (value 1) must be set via ExtendedLayoutAttribute, not StructLayout: https://github.com/dotnet/runtime/issues/102727
                 let extendedLayoutKind = 1
                 match structLayoutAttr with
                 | Some kind when kind = extendedLayoutKind ->
@@ -3590,23 +3585,19 @@ module EstablishTypeDefinitionCores =
                 | None -> ()
 
             let extendedLayoutAttributeCheck () =
-                if hasExtendedLayoutAttr then
-                    // Check not combined with StructLayoutAttribute
-                    if structLayoutAttr.IsSome then
-                        errorR (Error(FSComp.SR.tcStructLayoutAndExtendedLayout(), m))
+                if hasExtendedLayoutAttr && structLayoutAttr.IsSome then
+                    errorR (Error(FSComp.SR.tcStructLayoutAndExtendedLayout(), m))
 
             let noExtendedLayoutAttributeCheck () =
                 if hasExtendedLayoutAttr then
                     errorR (Error(FSComp.SR.tcOnlyStructsCanHaveExtendedLayout(), m))
 
-            // Records become value types when marked [<Struct>]. Extended layout is valid on those
-            // (subject to the StructLayout conflict check); reference-typed records still reject it.
+            // A record is a value type only when marked [<Struct>]; reference records reject extended layout.
             let recordExtendedLayoutAttributeCheck () =
                 if hasStructAttr then extendedLayoutAttributeCheck ()
                 else noExtendedLayoutAttributeCheck ()
 
-            // A discriminated union (including a [<Struct>] one) carries a case tag plus per-case fields,
-            // which is incompatible with the CStruct/CUnion field layout, so extended layout is never valid.
+            // A union (even a [<Struct>] one) carries a tag plus per-case fields, so extended layout never applies.
             let unionExtendedLayoutAttributeCheck () =
                 if hasExtendedLayoutAttr then
                     errorR (Error(FSComp.SR.tcExtendedLayoutCannotBeUsedOnUnions(), m))
