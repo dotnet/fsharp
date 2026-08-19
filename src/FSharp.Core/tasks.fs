@@ -796,11 +796,11 @@ module Task =
         (ct: CancellationToken)
         (computations: seq<CancellationToken -> Task<'T>>)
         : Task<'T[]> =
-        task {
-            if maxDegreeOfParallelism < 1 then
-                System.String.Format(SR.GetString(SR.maxDegreeOfParallelismNotPositive), maxDegreeOfParallelism)
-                |> invalidArg (nameof maxDegreeOfParallelism)
+        if maxDegreeOfParallelism < 1 then
+            System.String.Format(SR.GetString(SR.maxDegreeOfParallelismNotPositive), maxDegreeOfParallelism)
+            |> invalidArg (nameof maxDegreeOfParallelism)
 
+        task {
             let sem = new SemaphoreSlim(maxDegreeOfParallelism, maxDegreeOfParallelism)
 
             let allTask =

@@ -340,14 +340,12 @@ module TaskModuleFunctionsTests =
 
     [<Fact>]
     let ``Task.parallelLimit raises ArgumentException for non-positive maxDegreeOfParallelism`` () : Task =
-        task {
-            let! ex =
-                Assert.ThrowsAsync<ArgumentException>(fun () ->
-                    [ fun (_: CancellationToken) -> Task.result 1 ]
-                    |> Task.parallelLimit 0 CancellationToken.None
-                    :> Task)
-            Assert.Equal("maxDegreeOfParallelism", ex.ParamName)
-        }
+        let ex =
+            Assert.Throws<ArgumentException>(fun () ->
+                [ fun (_: CancellationToken) -> Task.result 1 ]
+                |> Task.parallelLimit 0 CancellationToken.None
+                |> ignore<Task<int[]>)
+        Assert.Equal("maxDegreeOfParallelism", ex.ParamName)
 
     [<Fact>]
     let ``Task.parallelDoLimit runs all tasks and returns unit`` () : Task =
