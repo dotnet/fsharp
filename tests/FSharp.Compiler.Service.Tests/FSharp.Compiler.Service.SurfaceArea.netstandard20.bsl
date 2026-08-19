@@ -2156,7 +2156,7 @@ FSharp.Compiler.CodeAnalysis.FSharpCheckProjectResults: System.String[] Dependen
 FSharp.Compiler.CodeAnalysis.FSharpCheckProjectResults: System.String[] get_DependencyFiles()
 FSharp.Compiler.CodeAnalysis.FSharpChecker: Boolean UsesTransparentCompiler
 FSharp.Compiler.CodeAnalysis.FSharpChecker: Boolean get_UsesTransparentCompiler()
-FSharp.Compiler.CodeAnalysis.FSharpChecker: FSharp.Compiler.CodeAnalysis.FSharpChecker Create(Microsoft.FSharp.Core.FSharpOption`1[System.Int32], Microsoft.FSharp.Core.FSharpOption`1[System.Boolean], Microsoft.FSharp.Core.FSharpOption`1[System.Boolean], Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.CodeAnalysis.LegacyReferenceResolver], Microsoft.FSharp.Core.FSharpOption`1[Microsoft.FSharp.Core.FSharpFunc`2[System.Tuple`2[System.String,System.DateTime],Microsoft.FSharp.Core.FSharpOption`1[System.Tuple`3[System.Object,System.IntPtr,System.Int32]]]], Microsoft.FSharp.Core.FSharpOption`1[System.Boolean], Microsoft.FSharp.Core.FSharpOption`1[System.Boolean], Microsoft.FSharp.Core.FSharpOption`1[System.Boolean], Microsoft.FSharp.Core.FSharpOption`1[System.Boolean], Microsoft.FSharp.Core.FSharpOption`1[System.Boolean], Microsoft.FSharp.Core.FSharpOption`1[System.Boolean], Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.CodeAnalysis.DocumentSource], Microsoft.FSharp.Core.FSharpOption`1[System.Boolean], Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.CodeAnalysis.TransparentCompiler.CacheSizes])
+FSharp.Compiler.CodeAnalysis.FSharpChecker: FSharp.Compiler.CodeAnalysis.FSharpChecker Create(Microsoft.FSharp.Core.FSharpOption`1[System.Int32], Microsoft.FSharp.Core.FSharpOption`1[System.Boolean], Microsoft.FSharp.Core.FSharpOption`1[System.Boolean], Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.CodeAnalysis.LegacyReferenceResolver], Microsoft.FSharp.Core.FSharpOption`1[Microsoft.FSharp.Core.FSharpFunc`2[System.Tuple`2[System.String,System.DateTime],Microsoft.FSharp.Core.FSharpOption`1[System.Tuple`3[System.Object,System.IntPtr,System.Int32]]]], Microsoft.FSharp.Core.FSharpOption`1[System.Boolean], Microsoft.FSharp.Core.FSharpOption`1[System.Boolean], Microsoft.FSharp.Core.FSharpOption`1[System.Boolean], Microsoft.FSharp.Core.FSharpOption`1[System.Boolean], Microsoft.FSharp.Core.FSharpOption`1[System.Boolean], Microsoft.FSharp.Core.FSharpOption`1[System.Boolean], Microsoft.FSharp.Core.FSharpOption`1[System.Boolean], Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.CodeAnalysis.DocumentSource], Microsoft.FSharp.Core.FSharpOption`1[System.Boolean], Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.CodeAnalysis.TransparentCompiler.CacheSizes])
 FSharp.Compiler.CodeAnalysis.FSharpChecker: FSharp.Compiler.CodeAnalysis.FSharpChecker Instance
 FSharp.Compiler.CodeAnalysis.FSharpChecker: FSharp.Compiler.CodeAnalysis.FSharpChecker get_Instance()
 FSharp.Compiler.CodeAnalysis.FSharpChecker: FSharp.Compiler.CodeAnalysis.FSharpProjectOptions GetProjectOptionsFromCommandLineArgs(System.String, System.String[], Microsoft.FSharp.Core.FSharpOption`1[System.DateTime], Microsoft.FSharp.Core.FSharpOption`1[System.Boolean], Microsoft.FSharp.Core.FSharpOption`1[System.Boolean])
@@ -5667,7 +5667,6 @@ FSharp.Compiler.Symbols.FSharpMemberOrFunctionOrValue: Boolean EventIsStandard
 FSharp.Compiler.Symbols.FSharpMemberOrFunctionOrValue: Boolean HasGetterMethod
 FSharp.Compiler.Symbols.FSharpMemberOrFunctionOrValue: Boolean HasSetterMethod
 FSharp.Compiler.Symbols.FSharpMemberOrFunctionOrValue: Boolean HasSignatureFile
-FSharp.Compiler.Symbols.FSharpMemberOrFunctionOrValue: Boolean IsPropertyAccessor
 FSharp.Compiler.Symbols.FSharpMemberOrFunctionOrValue: Boolean IsActivePattern
 FSharp.Compiler.Symbols.FSharpMemberOrFunctionOrValue: Boolean IsBaseValue
 FSharp.Compiler.Symbols.FSharpMemberOrFunctionOrValue: Boolean IsCompilerGenerated
@@ -5690,6 +5689,7 @@ FSharp.Compiler.Symbols.FSharpMemberOrFunctionOrValue: Boolean IsModuleValueOrMe
 FSharp.Compiler.Symbols.FSharpMemberOrFunctionOrValue: Boolean IsMutable
 FSharp.Compiler.Symbols.FSharpMemberOrFunctionOrValue: Boolean IsOverrideOrExplicitInterfaceImplementation
 FSharp.Compiler.Symbols.FSharpMemberOrFunctionOrValue: Boolean IsProperty
+FSharp.Compiler.Symbols.FSharpMemberOrFunctionOrValue: Boolean IsPropertyAccessor
 FSharp.Compiler.Symbols.FSharpMemberOrFunctionOrValue: Boolean IsPropertyGetterMethod
 FSharp.Compiler.Symbols.FSharpMemberOrFunctionOrValue: Boolean IsPropertySetterMethod
 FSharp.Compiler.Symbols.FSharpMemberOrFunctionOrValue: Boolean IsRefCell
@@ -5703,7 +5703,6 @@ FSharp.Compiler.Symbols.FSharpMemberOrFunctionOrValue: Boolean get_EventIsStanda
 FSharp.Compiler.Symbols.FSharpMemberOrFunctionOrValue: Boolean get_HasGetterMethod()
 FSharp.Compiler.Symbols.FSharpMemberOrFunctionOrValue: Boolean get_HasSetterMethod()
 FSharp.Compiler.Symbols.FSharpMemberOrFunctionOrValue: Boolean get_HasSignatureFile()
-FSharp.Compiler.Symbols.FSharpMemberOrFunctionOrValue: Boolean get_IsPropertyAccessor()
 FSharp.Compiler.Symbols.FSharpMemberOrFunctionOrValue: Boolean get_IsActivePattern()
 FSharp.Compiler.Symbols.FSharpMemberOrFunctionOrValue: Boolean get_IsBaseValue()
 FSharp.Compiler.Symbols.FSharpMemberOrFunctionOrValue: Boolean get_IsCompilerGenerated()
@@ -5726,6 +5725,7 @@ FSharp.Compiler.Symbols.FSharpMemberOrFunctionOrValue: Boolean get_IsModuleValue
 FSharp.Compiler.Symbols.FSharpMemberOrFunctionOrValue: Boolean get_IsMutable()
 FSharp.Compiler.Symbols.FSharpMemberOrFunctionOrValue: Boolean get_IsOverrideOrExplicitInterfaceImplementation()
 FSharp.Compiler.Symbols.FSharpMemberOrFunctionOrValue: Boolean get_IsProperty()
+FSharp.Compiler.Symbols.FSharpMemberOrFunctionOrValue: Boolean get_IsPropertyAccessor()
 FSharp.Compiler.Symbols.FSharpMemberOrFunctionOrValue: Boolean get_IsPropertyGetterMethod()
 FSharp.Compiler.Symbols.FSharpMemberOrFunctionOrValue: Boolean get_IsPropertySetterMethod()
 FSharp.Compiler.Symbols.FSharpMemberOrFunctionOrValue: Boolean get_IsRefCell()
@@ -11332,8 +11332,8 @@ FSharp.Compiler.Text.TextTag+Tags: Int32 TypeParameter
 FSharp.Compiler.Text.TextTag+Tags: Int32 Union
 FSharp.Compiler.Text.TextTag+Tags: Int32 UnionCase
 FSharp.Compiler.Text.TextTag+Tags: Int32 UnknownEntity
-FSharp.Compiler.Text.TextTag+Tags: Int32 UnresolvedName
 FSharp.Compiler.Text.TextTag+Tags: Int32 UnknownType
+FSharp.Compiler.Text.TextTag+Tags: Int32 UnresolvedName
 FSharp.Compiler.Text.TextTag: Boolean Equals(FSharp.Compiler.Text.TextTag)
 FSharp.Compiler.Text.TextTag: Boolean Equals(FSharp.Compiler.Text.TextTag, System.Collections.IEqualityComparer)
 FSharp.Compiler.Text.TextTag: Boolean Equals(System.Object)
@@ -11371,8 +11371,8 @@ FSharp.Compiler.Text.TextTag: Boolean IsTypeParameter
 FSharp.Compiler.Text.TextTag: Boolean IsUnion
 FSharp.Compiler.Text.TextTag: Boolean IsUnionCase
 FSharp.Compiler.Text.TextTag: Boolean IsUnknownEntity
-FSharp.Compiler.Text.TextTag: Boolean IsUnresolvedName
 FSharp.Compiler.Text.TextTag: Boolean IsUnknownType
+FSharp.Compiler.Text.TextTag: Boolean IsUnresolvedName
 FSharp.Compiler.Text.TextTag: Boolean get_IsActivePatternCase()
 FSharp.Compiler.Text.TextTag: Boolean get_IsActivePatternResult()
 FSharp.Compiler.Text.TextTag: Boolean get_IsAlias()
@@ -11406,8 +11406,8 @@ FSharp.Compiler.Text.TextTag: Boolean get_IsTypeParameter()
 FSharp.Compiler.Text.TextTag: Boolean get_IsUnion()
 FSharp.Compiler.Text.TextTag: Boolean get_IsUnionCase()
 FSharp.Compiler.Text.TextTag: Boolean get_IsUnknownEntity()
-FSharp.Compiler.Text.TextTag: Boolean get_IsUnresolvedName()
 FSharp.Compiler.Text.TextTag: Boolean get_IsUnknownType()
+FSharp.Compiler.Text.TextTag: Boolean get_IsUnresolvedName()
 FSharp.Compiler.Text.TextTag: FSharp.Compiler.Text.TextTag ActivePatternCase
 FSharp.Compiler.Text.TextTag: FSharp.Compiler.Text.TextTag ActivePatternResult
 FSharp.Compiler.Text.TextTag: FSharp.Compiler.Text.TextTag Alias
@@ -11441,8 +11441,8 @@ FSharp.Compiler.Text.TextTag: FSharp.Compiler.Text.TextTag TypeParameter
 FSharp.Compiler.Text.TextTag: FSharp.Compiler.Text.TextTag Union
 FSharp.Compiler.Text.TextTag: FSharp.Compiler.Text.TextTag UnionCase
 FSharp.Compiler.Text.TextTag: FSharp.Compiler.Text.TextTag UnknownEntity
-FSharp.Compiler.Text.TextTag: FSharp.Compiler.Text.TextTag UnresolvedName
 FSharp.Compiler.Text.TextTag: FSharp.Compiler.Text.TextTag UnknownType
+FSharp.Compiler.Text.TextTag: FSharp.Compiler.Text.TextTag UnresolvedName
 FSharp.Compiler.Text.TextTag: FSharp.Compiler.Text.TextTag get_ActivePatternCase()
 FSharp.Compiler.Text.TextTag: FSharp.Compiler.Text.TextTag get_ActivePatternResult()
 FSharp.Compiler.Text.TextTag: FSharp.Compiler.Text.TextTag get_Alias()
@@ -11476,8 +11476,8 @@ FSharp.Compiler.Text.TextTag: FSharp.Compiler.Text.TextTag get_TypeParameter()
 FSharp.Compiler.Text.TextTag: FSharp.Compiler.Text.TextTag get_Union()
 FSharp.Compiler.Text.TextTag: FSharp.Compiler.Text.TextTag get_UnionCase()
 FSharp.Compiler.Text.TextTag: FSharp.Compiler.Text.TextTag get_UnknownEntity()
-FSharp.Compiler.Text.TextTag: FSharp.Compiler.Text.TextTag get_UnresolvedName()
 FSharp.Compiler.Text.TextTag: FSharp.Compiler.Text.TextTag get_UnknownType()
+FSharp.Compiler.Text.TextTag: FSharp.Compiler.Text.TextTag get_UnresolvedName()
 FSharp.Compiler.Text.TextTag: FSharp.Compiler.Text.TextTag+Tags
 FSharp.Compiler.Text.TextTag: Int32 GetHashCode()
 FSharp.Compiler.Text.TextTag: Int32 GetHashCode(System.Collections.IEqualityComparer)
