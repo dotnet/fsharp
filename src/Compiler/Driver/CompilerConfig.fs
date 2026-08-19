@@ -848,7 +848,7 @@ type TcConfigBuilder =
             xmlDocInfoLoader = None
             exiter = QuitProcessExiter
             parallelReferenceResolution = ParallelReferenceResolution.On
-            shareImportedAssemblies = false
+            shareImportedAssemblies = true
             captureIdentifiersWhenParsing = false
             typeCheckingConfig =
                 {
