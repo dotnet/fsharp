@@ -1258,9 +1258,8 @@ let main _ =
         FSharp """
 let f () =
     let tee g (x: int) = g x; x
-    let addName (key: string) (v: string) = tee (fun x -> printfn "%s=%s" key v)
-    let inline addEnum (key: string) value = tee (fun x -> printfn "%s=%d" key (x + int value))
-    let pipeline v = addName "a" "n" >> addEnum "b" v
+    let inline addEnum value = tee (fun x -> ignore (int value))
+    let pipeline v = id >> addEnum v
     pipeline 1uy 41
 
 [<EntryPoint>]
