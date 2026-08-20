@@ -4736,25 +4736,19 @@ and GetBindingOptimizationOrder cenv inlineDependenciesOnly preferLowArity (bind
     let visiting = HashSet<int>()
     let visited = HashSet<int>()
 
-    let visit idx =
-        let work = Stack<int * bool>()
-        work.Push((idx, false))
+    let rec visit idx =
+        if not (visited.Contains idx) then
+            if not (visiting.Contains idx) then
+                visiting.Add idx |> ignore
 
-        while work.Count > 0 do
-            let current, expanded = work.Pop()
+                cenv.stackGuard.Guard(fun () ->
+                    for depIdx in dependencyIndexes[idx] do
+                        if depIdx <> idx then
+                            visit depIdx)
 
-            if not (visited.Contains current) then
-                if expanded then
-                    visiting.Remove current |> ignore
-                    visited.Add current |> ignore
-                    ordered.Add current
-                elif not (visiting.Contains current) then
-                    visiting.Add current |> ignore
-                    work.Push((current, true))
-
-                    for depIdx in Array.rev dependencyIndexes[current] do
-                        if depIdx <> current && not (visited.Contains depIdx) && not (visiting.Contains depIdx) then
-                            work.Push((depIdx, false))
+                visiting.Remove idx |> ignore
+                visited.Add idx |> ignore
+                ordered.Add idx
 
     let rootOrder =
         [ 0 .. binds.Length - 1 ]
