@@ -38,15 +38,18 @@
   {
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationArgumentCountsAttribute::.ctor(int32[]) = ( 01 00 02 00 00 00 01 00 00 00 01 00 00 00 00 00 ) 
     
-    .maxstack  8
+    .maxstack  5
+    .locals init (!!T V_0)
     IL_0000:  ldarg.1
-    IL_0001:  ldc.i4     0x3e8
-    IL_0006:  ldarg.0
-    IL_0007:  tail.
-    IL_0009:  call       !!0 assembly::a@4<!!0>(!!0,
+    IL_0001:  stloc.0
+    IL_0002:  ldarg.1
+    IL_0003:  ldc.i4     0x3e8
+    IL_0008:  ldarg.0
+    IL_0009:  tail.
+    IL_000b:  call       !!0 assembly::a@4<!!0>(!!0,
                                                                              int32,
                                                                              !!0)
-    IL_000e:  ret
+    IL_0010:  ret
   } 
 
   .method public static int32  main(string[] _argv) cil managed

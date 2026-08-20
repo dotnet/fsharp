@@ -166,3 +166,19 @@ type SomeType =
        | Float f -> int64 f
 """
        |> assertCompiles
+
+   [<Fact>]
+   let ``Deep recursive inline expression compiles`` () =
+       let nestedExpression =
+           [ 1 .. 512 ]
+           |> List.fold (fun body _ -> $"if true then ({body}) else 0") "0"
+
+       FSharp $"""
+module DeepRecursiveInlineExpression
+
+let rec inline evaluate value =
+   {nestedExpression}
+
+let _ = evaluate 0
+"""
+       |> assertCompiles

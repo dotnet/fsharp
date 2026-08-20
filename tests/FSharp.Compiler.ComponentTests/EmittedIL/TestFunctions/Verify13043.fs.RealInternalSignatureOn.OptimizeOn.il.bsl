@@ -132,24 +132,30 @@
   {
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationArgumentCountsAttribute::.ctor(int32[]) = ( 01 00 02 00 00 00 01 00 00 00 01 00 00 00 00 00 ) 
     
-    .maxstack  8
+    .maxstack  4
+    .locals init (class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,bool> V_0)
     IL_0000:  ldarg.0
-    IL_0001:  ldarg.1
-    IL_0002:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> assembly::f@7(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,bool>,
+    IL_0001:  stloc.0
+    IL_0002:  ldarg.0
+    IL_0003:  ldarg.1
+    IL_0004:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> assembly::f@7(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,bool>,
                                                                                                               class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>)
-    IL_0007:  ret
+    IL_0009:  ret
   } 
 
   .method public static class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> dropWhileWithFunction(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,bool> condition, class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> list) cil managed
   {
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationArgumentCountsAttribute::.ctor(int32[]) = ( 01 00 02 00 00 00 01 00 00 00 01 00 00 00 00 00 ) 
     
-    .maxstack  8
+    .maxstack  4
+    .locals init (class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,bool> V_0)
     IL_0000:  ldarg.0
-    IL_0001:  ldarg.1
-    IL_0002:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> assembly::'f@26-1'(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,bool>,
+    IL_0001:  stloc.0
+    IL_0002:  ldarg.0
+    IL_0003:  ldarg.1
+    IL_0004:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> assembly::'f@26-1'(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,bool>,
                                                                                                                    class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>)
-    IL_0007:  ret
+    IL_0009:  ret
   } 
 
   .method public specialname static class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> get_matchResult() cil managed

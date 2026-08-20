@@ -4574,7 +4574,7 @@ and OptimizeBinding cenv isRec env (TBind(vref, expr, spBind)) =
         raise (ReportedError (Some exn))
           
 and OptimizeBindings cenv isRec env xs =
-    if isRec then
+    if isRec && xs |> List.exists (fun (TBind(vref, _, _)) -> vref.ShouldInline) then
         let xsArray = xs |> List.toArray
         let order = GetBindingOptimizationOrder cenv false true xs
 
@@ -4697,42 +4697,34 @@ and GetBindingOptimizationOrder cenv inlineDependenciesOnly preferLowArity (bind
         | Some _ -> depIdxs
 
     let rec addBindingDependencies depIdxs expr =
-        let addVals depIdxs vals =
-            vals
-            |> Seq.fold (fun depIdxs (v: Val) -> addDependency depIdxs v.Stamp) depIdxs
+        cenv.stackGuard.Guard(fun () ->
+            let addVals depIdxs vals =
+                vals
+                |> Seq.fold (fun depIdxs (v: Val) -> addDependency depIdxs v.Stamp) depIdxs
 
-        let rec addTraitSolutionDependencies depIdxs (traitInfo: TraitConstraintInfo) =
-            match traitInfo.Solution with
-            | Some(FSMethSln(_, vref, _, _)) -> addDependency depIdxs vref.Deref.Stamp
-            | Some(ClosedExprSln witnessExpr) -> addBindingDependencies depIdxs witnessExpr
-            | _ -> depIdxs
+            let fvs = freeInExpr (CollectLocalsWithStackGuard()) expr
 
-        let fvs = freeInExpr CollectLocalsNoCaching expr
+            let depIdxs =
+                let depIdxs = addVals depIdxs (fvs.FreeLocals |> Zset.elements)
+                addVals depIdxs (fvs.FreeTyvars.FreeTraitSolutions |> Zset.elements)
 
-        let depIdxs =
-            let depIdxs = addVals depIdxs (fvs.FreeLocals |> Zset.elements)
-            addVals depIdxs (fvs.FreeTyvars.FreeTraitSolutions |> Zset.elements)
-
-        let folder =
-            { ExprFolder0 with
-                exprIntercept =
-                    (fun _exprF noInterceptF depIdxs expr ->
-                        let depIdxs =
-                            match expr with
-                            | Expr.Val(vref, _, _) -> addDependency depIdxs vref.Deref.Stamp
-                            // Member-constraint calls can hide the real sibling dependency behind
-                            // a witness expression, so fold over the resolved witness as well.
-                            | Expr.Op(TOp.TraitCall traitInfo, _, args, m) ->
-                                let depIdxs = addTraitSolutionDependencies depIdxs traitInfo
-
-                                match ConstraintSolver.CodegenWitnessExprForTraitConstraint cenv.TcVal cenv.g cenv.amap m traitInfo args with
-                                | OkResult (_, Some witnessExpr) -> addBindingDependencies depIdxs witnessExpr
+            let folder =
+                { ExprFolder0 with
+                    exprIntercept =
+                        (fun _exprF noInterceptF depIdxs expr ->
+                            let depIdxs =
+                                match expr with
+                                // Member-constraint calls can hide the real sibling dependency behind
+                                // a witness expression, so fold over the resolved witness as well.
+                                | Expr.Op(TOp.TraitCall traitInfo, _, args, m) ->
+                                    match ConstraintSolver.CodegenWitnessExprForTraitConstraint cenv.TcVal cenv.g cenv.amap m traitInfo args with
+                                    | OkResult (_, Some witnessExpr) -> addBindingDependencies depIdxs witnessExpr
+                                    | _ -> depIdxs
                                 | _ -> depIdxs
-                            | _ -> depIdxs
 
-                        noInterceptF depIdxs expr) }
+                            noInterceptF depIdxs expr) }
 
-        FoldExpr folder depIdxs expr
+            FoldExpr folder depIdxs expr)
 
     let dependencyIndexes =
         binds
@@ -4744,18 +4736,25 @@ and GetBindingOptimizationOrder cenv inlineDependenciesOnly preferLowArity (bind
     let visiting = HashSet<int>()
     let visited = HashSet<int>()
 
-    let rec visit idx =
-        if not (visited.Contains idx) then
-            if not (visiting.Contains idx) then
-                visiting.Add idx |> ignore
+    let visit idx =
+        let work = Stack<int * bool>()
+        work.Push((idx, false))
 
-                for depIdx in dependencyIndexes[idx] do
-                    if depIdx <> idx then
-                        visit depIdx
+        while work.Count > 0 do
+            let current, expanded = work.Pop()
 
-                visiting.Remove idx |> ignore
-                visited.Add idx |> ignore
-                ordered.Add idx
+            if not (visited.Contains current) then
+                if expanded then
+                    visiting.Remove current |> ignore
+                    visited.Add current |> ignore
+                    ordered.Add current
+                elif not (visiting.Contains current) then
+                    visiting.Add current |> ignore
+                    work.Push((current, true))
+
+                    for depIdx in Array.rev dependencyIndexes[current] do
+                        if depIdx <> current && not (visited.Contains depIdx) && not (visiting.Contains depIdx) then
+                            work.Push((depIdx, false))
 
     let rootOrder =
         [ 0 .. binds.Length - 1 ]
