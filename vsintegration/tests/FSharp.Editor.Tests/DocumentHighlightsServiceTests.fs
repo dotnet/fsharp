@@ -3,7 +3,7 @@
 namespace FSharp.Editor.Tests
 
 open FSharp.Editor.Tests.Helpers
-open Microsoft.VisualStudio.FSharp.Editor.CancellableTasks
+open Internal.Utilities.Library
 
 module DocumentHighlightsServiceTests =
 
@@ -21,11 +21,8 @@ module DocumentHighlightsServiceTests =
             RoslynTestHelpers.CreateSolution(fileContents)
             |> RoslynTestHelpers.GetSingleDocument
 
-        let task =
-            FSharpDocumentHighlightsService.GetDocumentHighlights(document, caretPosition)
-            |> CancellableTask.start CancellationToken.None
-
-        task.Result
+        FSharpDocumentHighlightsService.GetDocumentHighlights(document, caretPosition)
+        |> Async2.RunSynchronously
 
     let private span sourceText isDefinition (startLine, startCol) (endLine, endCol) =
         let range =

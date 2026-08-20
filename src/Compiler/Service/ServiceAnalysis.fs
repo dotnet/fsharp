@@ -326,13 +326,11 @@ module UnusedOpens =
     /// Get the open statements whose contents are not referred to anywhere in the symbol uses.
     /// Async to allow cancellation.
     let getUnusedOpens (checkFileResults: FSharpCheckFileResults, getSourceLineStr: int -> string) : Async<range list> =
-        async {
-            use! _holder = Cancellable.UseToken()
-
+        async2 {
             if checkFileResults.OpenDeclarations.Length = 0 then
                 return []
             else
-                let! ct = Async.CancellationToken
+                let! ct = Async2.CancellationToken
                 let symbolUses = checkFileResults.GetAllUsesOfAllSymbolsInFile(ct)
                 let symbolUses = filterSymbolUses getSourceLineStr symbolUses
                 let symbolUses = splitSymbolUses symbolUses
@@ -343,6 +341,7 @@ module UnusedOpens =
                 else
                     return! filterOpenStatements symbolUses openStatements
         }
+        |> Async2.toAsync
 
 module SimplifyNames =
     type SimplifiableRange = { Range: range; RelativeName: string }
@@ -351,9 +350,9 @@ module SimplifyNames =
         (plid |> List.sumBy String.length) + plid.Length
 
     let getSimplifiableNames (checkFileResults: FSharpCheckFileResults, getSourceLineStr: int -> string) =
-        async {
+        async2 {
             let result = ResizeArray()
-            let! ct = Async.CancellationToken
+            let! ct = Async2.CancellationToken
 
             let symbolUses =
                 checkFileResults.GetAllUsesOfAllSymbolsInFile(ct)
@@ -430,6 +429,7 @@ module SimplifyNames =
 
             return (result :> seq<_>)
         }
+        |> Async2.toAsync
 
 module UnusedDeclarations =
     let isPotentiallyUnusedDeclaration (symbol: FSharpSymbol) : bool =
@@ -489,9 +489,10 @@ module UnusedDeclarations =
         |> Seq.map (fun (m, _) -> m)
 
     let getUnusedDeclarations (checkFileResults: FSharpCheckFileResults, isScriptFile: bool) =
-        async {
-            let! ct = Async.CancellationToken
+        async2 {
+            let! ct = Async2.CancellationToken
             let allSymbolUsesInFile = checkFileResults.GetAllUsesOfAllSymbolsInFile(ct)
             let unusedRanges = getUnusedDeclarationRanges allSymbolUsesInFile isScriptFile
             return unusedRanges
         }
+        |> Async2.toAsync

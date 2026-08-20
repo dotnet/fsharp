@@ -182,7 +182,7 @@ val CheckOneInput:
     tcSink: TcResultsSink *
     tcState: TcState *
     input: ParsedInput ->
-        Cancellable<(TcEnv * TopAttribs * CheckedImplFile option * ModuleOrNamespaceType) * TcState>
+        Async2<(TcEnv * TopAttribs * CheckedImplFile option * ModuleOrNamespaceType) * TcState>
 
 val CheckOneInputWithCallback:
     node: NodeToTypeCheck ->
@@ -195,7 +195,7 @@ val CheckOneInputWithCallback:
     tcState: TcState *
     input: ParsedInput *
     _skipImplIfSigExists: bool ->
-        Cancellable<Finisher<NodeToTypeCheck, TcState, PartialResult>>
+        Async2<Finisher<NodeToTypeCheck, TcState, PartialResult>>
 
 val AddCheckResultsToTcState:
     tcGlobals: TcGlobals *
@@ -250,4 +250,4 @@ val CheckOneInputAndFinish:
     tcSink: TcResultsSink *
     tcState: TcState *
     input: ParsedInput ->
-        Cancellable<(TcEnv * TopAttribs * CheckedImplFile list * ModuleOrNamespaceType list) * TcState>
+        Async2<(TcEnv * TopAttribs * CheckedImplFile list * ModuleOrNamespaceType list) * TcState>

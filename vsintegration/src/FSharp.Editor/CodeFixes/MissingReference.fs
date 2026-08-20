@@ -11,7 +11,7 @@ open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.CodeFixes
 open Microsoft.CodeAnalysis.CodeActions
 
-open CancellableTasks
+open Internal.Utilities.Library
 
 type private ReferenceType =
     | AddProjectRef of ProjectReference
@@ -36,7 +36,7 @@ type internal MissingReferenceCodeFixProvider() =
         CodeAction.Create(
             title,
             (fun cancellationToken ->
-                cancellableTask {
+                async2 {
                     let project = context.Document.Project
                     let solution = project.Solution
 
@@ -51,13 +51,13 @@ type internal MissingReferenceCodeFixProvider() =
                         let newReferences = references |> Seq.append [ metadataRef ]
                         return solution.WithProjectMetadataReferences(project.Id, newReferences)
                 }
-                |> CancellableTask.start cancellationToken)
+                |> Async2.startInThreadPool cancellationToken)
         )
 
     override _.FixableDiagnosticIds = ImmutableArray.Create "FS0074"
 
     override _.RegisterCodeFixesAsync context =
-        cancellableTask {
+        async2 {
             let solution = context.Document.Project.Solution
 
             let diagnostic = context.Diagnostics[0]
@@ -99,4 +99,4 @@ type internal MissingReferenceCodeFixProvider() =
                     | ValueNone -> ()
             | _ -> ()
         }
-        |> CancellableTask.startAsTask context.CancellationToken
+        |> Async2.startAsUnitTask context.CancellationToken

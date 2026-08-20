@@ -1,4 +1,4 @@
-﻿namespace Microsoft.VisualStudio.FSharp.Editor.DebugHelpers
+namespace Microsoft.VisualStudio.FSharp.Editor.DebugHelpers
 
 open System
 open System.Diagnostics
@@ -31,7 +31,7 @@ open Config
 open System.Diagnostics.Metrics
 open System.Text
 open Microsoft.VisualStudio.Threading
-open Microsoft.VisualStudio.FSharp.Editor.CancellableTasks
+open Internal.Utilities.Library
 
 module FSharpOutputPane =
 
@@ -121,7 +121,7 @@ module FSharpServiceTelemetry =
         ActivitySource.AddActivityListener(listener)
 
     let periodicallyDisplayMetrics =
-        cancellableTask {
+        async2 {
             use _ = CacheMetrics.ListenToAll()
             use _ = FSharp.Compiler.DiagnosticsLogger.StackGuardMetrics.Listen()
 

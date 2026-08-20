@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 namespace Microsoft.VisualStudio.FSharp.Editor
 
@@ -7,8 +7,7 @@ open Microsoft.CodeAnalysis.Text
 open FSharp.Compiler.CodeAnalysis
 open System.Runtime.InteropServices
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Editor
-open CancellableTasks.CancellableTaskBuilder
-open CancellableTasks
+open Internal.Utilities.Library
 
 [<Export(typeof<IFSharpBraceMatcher>)>]
 type internal FSharpBraceMatchingService [<ImportingConstructor>] () =
@@ -23,7 +22,7 @@ type internal FSharpBraceMatchingService [<ImportingConstructor>] () =
             userOpName: string,
             [<Optional; DefaultParameterValue(false)>] forFormatting: bool
         ) =
-        async {
+        async2 {
             let! matchedBraces = checker.MatchBraces(fileName, sourceText.ToFSharpSourceText(), parsingOptions, userOpName)
 
             let isPositionInRange range =
@@ -46,8 +45,6 @@ type internal FSharpBraceMatchingService [<ImportingConstructor>] () =
             asyncMaybe {
                 let! checker, _, parsingOptions, _ =
                     document.GetFSharpCompilationOptionsAsync(nameof (FSharpBraceMatchingService))
-                    |> CancellableTask.start cancellationToken
-                    |> Async.AwaitTask
                     |> liftAsync
 
                 let! sourceText = document.GetTextAsync(cancellationToken)
@@ -66,5 +63,5 @@ type internal FSharpBraceMatchingService [<ImportingConstructor>] () =
                 let! rightSpan = RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, right)
                 return FSharpBraceMatchingResult(leftSpan, rightSpan)
             }
-            |> Async.map Option.toNullable
-            |> RoslynHelpers.StartAsyncAsTask cancellationToken
+            |> Async2.map Option.toNullable
+            |> Async2.startAsTask cancellationToken

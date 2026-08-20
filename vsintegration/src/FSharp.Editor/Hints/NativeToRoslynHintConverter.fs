@@ -10,7 +10,7 @@ open Microsoft.VisualStudio.FSharp.Editor
 open Microsoft.CodeAnalysis
 open FSharp.Compiler.Text
 open Hints
-open CancellableTasks
+open Internal.Utilities.Library
 
 module NativeToRoslynHintConverter =
 
@@ -27,11 +27,11 @@ module NativeToRoslynHintConverter =
     let convert sourceText hint =
 
         let getDescriptionAsync (doc: Document) (ct: CancellationToken) =
-            cancellableTask {
+            async2 {
                 let! taggedText = hint.GetTooltip doc
                 return taggedText |> List.map nativeToRoslynText |> ImmutableArray.CreateRange
             }
-            |> CancellableTask.start ct
+            |> Async2.startAsTask ct
 
         let span = rangeToSpan hint.Range sourceText
         let displayParts = hint.Parts |> Seq.map nativeToRoslynText

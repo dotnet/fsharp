@@ -7,7 +7,7 @@ open System.ComponentModel.Composition
 open System.Threading.Tasks
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp.InlineHints
 open Microsoft.VisualStudio.FSharp.Editor
-open CancellableTasks
+open Internal.Utilities.Library
 
 // So the Roslyn interface is called IFSharpInlineHintsService
 // but our implementation is called just HintsService.
@@ -30,9 +30,7 @@ type internal FSharpInlayHintsService [<ImportingConstructor>] (settings: Editor
             if hintKinds.IsEmpty then
                 Task.FromResult ImmutableArray.Empty
             else
-                cancellableTask {
-                    let! cancellationToken = CancellableTask.getCancellationToken ()
-
+                async2 {
                     let! sourceText = document.GetTextAsync cancellationToken
                     let! nativeHints = HintService.getHintsForDocument sourceText document hintKinds textSpan userOpName
 
@@ -43,4 +41,4 @@ type internal FSharpInlayHintsService [<ImportingConstructor>] (settings: Editor
 
                     return roslynHints
                 }
-                |> CancellableTask.start cancellationToken
+                |> Async2.startAsTask cancellationToken

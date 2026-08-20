@@ -11,7 +11,7 @@ open Microsoft.CodeAnalysis.CodeActions
 open Microsoft.CodeAnalysis.CodeFixes
 open Microsoft.CodeAnalysis.Text
 
-open CancellableTasks
+open Internal.Utilities.Library
 
 [<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = CodeFix.RemoveExtraAttributeFromImplementation); Shared>]
 type internal RemoveExtraAttributeFromImplementationCodeFixProvider [<ImportingConstructor>] () =
@@ -84,7 +84,7 @@ type internal RemoveExtraAttributeFromImplementationCodeFixProvider [<ImportingC
     override _.FixableDiagnosticIds = ImmutableArray.Create "FS3888"
 
     override _.RegisterCodeFixesAsync context =
-        cancellableTask {
+        async2 {
             let document = context.Document
             let! sourceText = document.GetTextAsync(context.CancellationToken)
 
@@ -118,4 +118,4 @@ type internal RemoveExtraAttributeFromImplementationCodeFixProvider [<ImportingC
 
                         context.RegisterCodeFix(action, context.Diagnostics)
         }
-        |> CancellableTask.startAsTask context.CancellationToken
+        |> Async2.startAsUnitTask context.CancellationToken

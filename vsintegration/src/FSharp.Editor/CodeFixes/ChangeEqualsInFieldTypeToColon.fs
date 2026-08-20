@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 namespace Microsoft.VisualStudio.FSharp.Editor
 
@@ -11,7 +11,7 @@ open Microsoft.CodeAnalysis.CodeFixes
 
 open FSharp.Compiler.Text
 
-open CancellableTasks
+open Internal.Utilities.Library
 
 [<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = CodeFix.ChangeEqualsInFieldTypeToColon)>]
 type internal ChangeEqualsInFieldTypeToColonCodeFixProvider() =
@@ -20,7 +20,7 @@ type internal ChangeEqualsInFieldTypeToColonCodeFixProvider() =
     static let errorMessage = SR.UnexpectedEqualsInFieldExpectedColon()
 
     let isInRecord (document: Document) (range: range) =
-        cancellableTask {
+        async2 {
             let! parseResults = document.GetFSharpParseResultsAsync(nameof ChangeEqualsInFieldTypeToColonCodeFixProvider)
 
             return parseResults.IsPositionWithinRecordDefinition(range.Start)
@@ -39,7 +39,7 @@ type internal ChangeEqualsInFieldTypeToColonCodeFixProvider() =
 
     interface IFSharpCodeFixProvider with
         member _.GetCodeFixIfAppliesAsync context =
-            cancellableTask {
+            async2 {
                 let! spanText = context.GetSquigglyTextAsync()
 
                 if spanText <> "=" then

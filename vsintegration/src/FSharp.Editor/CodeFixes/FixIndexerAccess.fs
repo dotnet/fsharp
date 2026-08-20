@@ -10,7 +10,7 @@ open Microsoft.CodeAnalysis.CodeFixes
 
 open FSharp.Compiler.Diagnostics
 
-open CancellableTasks
+open Internal.Utilities.Library
 
 [<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = CodeFix.RemoveIndexerDotBeforeBracket); Shared>]
 type internal RemoveDotFromIndexerAccessOptInCodeFixProvider() =
@@ -27,7 +27,7 @@ type internal RemoveDotFromIndexerAccessOptInCodeFixProvider() =
 
     interface IFSharpCodeFixProvider with
         member _.GetCodeFixIfAppliesAsync context =
-            CancellableTask.singleton (
+            Async2.fromValue (
                 ValueSome
                     {
                         Name = CodeFix.RemoveIndexerDotBeforeBracket

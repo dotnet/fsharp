@@ -13,7 +13,7 @@ open Microsoft.CodeAnalysis.Text
 
 open FSharp.Compiler.Symbols
 
-open CancellableTasks
+open Internal.Utilities.Library
 
 [<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = CodeFix.AddMissingAttributeToSignature); Shared>]
 type internal AddMissingAttributeToSignatureCodeFixProvider [<ImportingConstructor>] () =
@@ -126,7 +126,7 @@ type internal AddMissingAttributeToSignatureCodeFixProvider [<ImportingConstruct
     override _.FixableDiagnosticIds = ImmutableArray.Create "FS3888"
 
     override _.RegisterCodeFixesAsync context =
-        cancellableTask {
+        async2 {
             let document = context.Document
             let! sourceText = document.GetTextAsync(context.CancellationToken)
 
@@ -228,4 +228,4 @@ type internal AddMissingAttributeToSignatureCodeFixProvider [<ImportingConstruct
                 | Some _
                 | None -> ()
         }
-        |> CancellableTask.startAsTask context.CancellationToken
+        |> Async2.startAsUnitTask context.CancellationToken

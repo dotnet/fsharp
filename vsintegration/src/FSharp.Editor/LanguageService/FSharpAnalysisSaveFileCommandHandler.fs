@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 namespace Microsoft.VisualStudio.FSharp.Editor
 
@@ -12,7 +12,7 @@ open Microsoft.VisualStudio.FSharp.Editor.DebugHelpers
 open Microsoft.VisualStudio.Text.Editor.Commanding.Commands
 open Microsoft.VisualStudio.Commanding
 open Microsoft.VisualStudio.Utilities
-open CancellableTasks
+open Internal.Utilities.Library
 open Microsoft.VisualStudio.FSharp.Editor.Telemetry
 
 // This causes re-analysis to happen when a F# document is saved.
@@ -51,7 +51,7 @@ type internal FSharpAnalysisSaveFileCommandHandler [<ImportingConstructor>] (ana
                         if document.Project.Language <> LanguageNames.FSharp then
                             ()
                         else
-                            cancellableTask {
+                            async2 {
                                 try
                                     let openDocIds = workspace.GetOpenDocumentIds()
 
@@ -92,7 +92,7 @@ type internal FSharpAnalysisSaveFileCommandHandler [<ImportingConstructor>] (ana
                                     TelemetryReporter.ReportFault(TelemetryEvents.AnalysisSaveFileHandler, e = ex)
                                     FSharpOutputPane.logException ex
                             }
-                            |> CancellableTask.startWithoutCancellation
+                            |> Async2.startAsTaskWithoutCancellation
                             |> ignore // fire and forget
 
             nextCommandHandler.Invoke()

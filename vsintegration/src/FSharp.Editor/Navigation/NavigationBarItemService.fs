@@ -9,7 +9,7 @@ open System.Threading.Tasks
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Editor
 
 open FSharp.Compiler.EditorServices
-open CancellableTasks
+open Internal.Utilities.Library
 
 type internal NavigationBarSymbolItem(text, glyph, spans, childItems) =
     inherit FSharpNavigationBarItem(text, glyph, spans, childItems)
@@ -21,9 +21,9 @@ type internal FSharpNavigationBarItemService [<ImportingConstructor>] () =
 
     interface IFSharpNavigationBarItemService with
         member _.GetItemsAsync(document, cancellationToken) : Task<IList<FSharpNavigationBarItem>> =
-            cancellableTask {
+            async2 {
 
-                let! cancellationToken = CancellableTask.getCancellationToken ()
+                let! cancellationToken = Async2.CancellationToken
 
                 let! parseResults = document.GetFSharpParseResultsAsync(nameof (FSharpNavigationBarItemService))
 
@@ -59,4 +59,4 @@ type internal FSharpNavigationBarItemService [<ImportingConstructor>] () =
                                 :> FSharpNavigationBarItem))
                         :> IList<_>
             }
-            |> CancellableTask.start cancellationToken
+            |> Async2.startInThreadPool cancellationToken

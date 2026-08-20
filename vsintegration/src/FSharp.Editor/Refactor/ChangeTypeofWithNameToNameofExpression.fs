@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 namespace Microsoft.VisualStudio.FSharp.Editor
 
@@ -15,7 +15,7 @@ open FSharp.Compiler.Syntax
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.CodeRefactorings
 open Microsoft.CodeAnalysis.CodeActions
-open CancellableTasks
+open Internal.Utilities.Library
 
 [<ExportCodeRefactoringProvider(FSharpConstants.FSharpLanguageName, Name = "ChangeTypeofWithNameToNameofExpression"); Shared>]
 type internal FSharpChangeTypeofWithNameToNameofExpressionRefactoring [<ImportingConstructor>] () =
@@ -28,8 +28,6 @@ type internal FSharpChangeTypeofWithNameToNameofExpressionRefactoring [<Importin
 
             let! parseResults =
                 document.GetFSharpParseResultsAsync(nameof (FSharpChangeTypeofWithNameToNameofExpressionRefactoring))
-                |> CancellableTask.start context.CancellationToken
-                |> Async.AwaitTask
                 |> liftAsync
 
             let selectionRange =
@@ -51,15 +49,15 @@ type internal FSharpChangeTypeofWithNameToNameofExpressionRefactoring [<Importin
                 CodeAction.Create(
                     title,
                     (fun (cancellationToken: CancellationToken) ->
-                        async {
-                            let! sourceText = context.Document.GetTextAsync(cancellationToken) |> Async.AwaitTask
+                        async2 {
+                            let! sourceText = context.Document.GetTextAsync(cancellationToken)
                             return context.Document.WithText(getChangedText sourceText)
                         }
-                        |> RoslynHelpers.StartAsyncAsTask(cancellationToken)),
+                        |> Async2.startAsTask cancellationToken),
                     title
                 )
 
             context.RegisterRefactoring(codeAction)
         }
-        |> Async.Ignore
-        |> RoslynHelpers.StartAsyncUnitAsTask(context.CancellationToken)
+        |> Async2.Ignore
+        |> Async2.startAsUnitTask context.CancellationToken
