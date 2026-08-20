@@ -401,6 +401,7 @@
     <Compile Include="Language\IndexedSetTests.fs" />
     <Compile Include="Language\UseBindingDisposalTests.fs" />
     <Compile Include="Language\RecordSpreadsTests.fs" />
+    <Compile Include="Language\RequireNamedArgumentTests.fs" />
     <Compile Include="Import\ImportTests.fs" />
     <Compile Include="ConstraintSolver\PrimitiveConstraints.fs" />
     <Compile Include="ConstraintSolver\MemberConstraints.fs" />

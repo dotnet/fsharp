@@ -99,6 +99,7 @@ type LanguageFeature =
     | AccessProtectedBaseFieldFromClosure
     | ImprovedImpliedArgumentNamesPartTwo
     | RecordSpreads
+    | RequireNamedArgument
 
 /// LanguageVersion management
 type LanguageVersion =
