@@ -898,6 +898,9 @@ let call (c: AnnotatedLib.FooImpl) = c.ViaSlot(1, 2)
 
     [<FactForNETCOREAPP>]
     let ``C# struct constructor - positional call is an error`` () =
+        // An imported (ILMeth) constructor's LogicalName is '.ctor'; the diagnostic must instead
+        // name the enclosing type 'S'. This is the path that exercises the constructor-name fix
+        // (an F# primary constructor already reports the type name, so it does not).
         FSharp """
 module Test
 let s = AnnotatedLib.S(1, 2)
@@ -907,6 +910,7 @@ let s = AnnotatedLib.S(1, 2)
         |> compile
         |> shouldFail
         |> withErrorCode 3910
+        |> withDiagnosticMessageMatches "The method 'S' requires named arguments"
         |> ignore
 
     [<FactForNETCOREAPP>]
