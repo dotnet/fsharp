@@ -10872,7 +10872,8 @@ and TcMethodApplication
 
     // FS-1095: enforce named-argument syntax for methods/constructors carrying RequireNamedArgumentAttribute
     // (recognised by full type name, any provenance). Accessors and curried applications have no named-argument
-    // form, so the attribute is a no-op there rather than making the member uncallable.
+    // form, so the attribute is a no-op there rather than making the member uncallable. (Computation-expression
+    // custom operations similarly lack a named form but are intentionally not exempted - a niche preview limitation.)
     if g.langVersion.SupportsFeature LanguageFeature.RequireNamedArgument
        && finalCalledMeth.AssociatedPropertyInfo.IsNone
        && finalCalledMeth.NumArgSets <= 1 then

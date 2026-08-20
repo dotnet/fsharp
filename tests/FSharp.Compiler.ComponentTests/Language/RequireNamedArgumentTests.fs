@@ -795,3 +795,148 @@ module Use =
         |> typecheck
         |> shouldSucceed
         |> ignore
+
+    // A separately compiled C# assembly exposing the attribute on an interface slot and on a class
+    // that implements it (the attribute is not Inherited, so the implementing method carries its own).
+    // Consuming it exercises the virtual/interface-slot MethInfo resolution path, distinct from a
+    // plain static or instance method.
+    let private csInterfaceLib =
+        CSharp """
+using System;
+using System.Runtime.CompilerServices;
+
+namespace System.Runtime.CompilerServices
+{
+    [AttributeUsage(AttributeTargets.Method, AllowMultiple = false, Inherited = false)]
+    public sealed class RequireNamedArgumentAttribute : Attribute { }
+}
+
+namespace AnnotatedLib
+{
+    public interface IFoo
+    {
+        [RequireNamedArgument]
+        int ViaSlot(int x, int y);
+    }
+
+    public class FooImpl : IFoo
+    {
+        [RequireNamedArgument]
+        public int ViaSlot(int x, int y) => x + y;
+    }
+}
+"""
+        |> asLibrary
+        |> withName "CsInterfaceLib"
+
+    // A separately compiled C# assembly exposing the attribute on a value-type (struct) constructor.
+    // Consuming it exercises the imported value-type constructor path, which differs from the
+    // synthesized default struct constructor.
+    let private csStructCtorLib =
+        CSharp """
+using System;
+using System.Runtime.CompilerServices;
+
+namespace System.Runtime.CompilerServices
+{
+    [AttributeUsage(AttributeTargets.Constructor, AllowMultiple = false, Inherited = false)]
+    public sealed class RequireNamedArgumentAttribute : Attribute { }
+}
+
+namespace AnnotatedLib
+{
+    public struct S
+    {
+        public int X;
+        public int Y;
+
+        [RequireNamedArgument]
+        public S(int x, int y) { X = x; Y = y; }
+    }
+}
+"""
+        |> asLibrary
+        |> withName "CsStructCtorLib"
+
+    [<FactForNETCOREAPP>]
+    let ``C# interface slot - positional call via the interface is an error`` () =
+        FSharp """
+module Test
+let call (i: AnnotatedLib.IFoo) = i.ViaSlot(1, 2)
+"""
+        |> withReferences [ csInterfaceLib ]
+        |> withLangVersionPreview
+        |> compile
+        |> shouldFail
+        |> withErrorCode 3910
+        |> ignore
+
+    [<FactForNETCOREAPP>]
+    let ``C# interface slot - named call via the interface succeeds`` () =
+        FSharp """
+module Test
+let call (i: AnnotatedLib.IFoo) = i.ViaSlot(x = 1, y = 2)
+"""
+        |> withReferences [ csInterfaceLib ]
+        |> withLangVersionPreview
+        |> compile
+        |> shouldSucceed
+        |> ignore
+
+    [<FactForNETCOREAPP>]
+    let ``C# class override - positional call on the concrete type is an error`` () =
+        FSharp """
+module Test
+let call (c: AnnotatedLib.FooImpl) = c.ViaSlot(1, 2)
+"""
+        |> withReferences [ csInterfaceLib ]
+        |> withLangVersionPreview
+        |> compile
+        |> shouldFail
+        |> withErrorCode 3910
+        |> ignore
+
+    [<FactForNETCOREAPP>]
+    let ``C# struct constructor - positional call is an error`` () =
+        FSharp """
+module Test
+let s = AnnotatedLib.S(1, 2)
+"""
+        |> withReferences [ csStructCtorLib ]
+        |> withLangVersionPreview
+        |> compile
+        |> shouldFail
+        |> withErrorCode 3910
+        |> ignore
+
+    [<FactForNETCOREAPP>]
+    let ``C# struct constructor - named call succeeds`` () =
+        FSharp """
+module Test
+let s = AnnotatedLib.S(x = 1, y = 2)
+"""
+        |> withReferences [ csStructCtorLib ]
+        |> withLangVersionPreview
+        |> compile
+        |> shouldSucceed
+        |> ignore
+
+    [<Fact>]
+    let ``Method group coerced to a delegate cannot smuggle a positional call`` () =
+        // A method-group-to-delegate conversion routes through method application, so enforcement
+        // must still fire - otherwise it would be a positional-call bypass. There is no named form
+        // for this coercion, so an annotated method simply cannot be used this way.
+        withPolyfill """
+namespace Test
+open System.Runtime.CompilerServices
+type C =
+    [<RequireNamedArgument>]
+    static member Ping(x: int) = x
+module Use =
+    let f = System.Func<int, int>(C.Ping)
+"""
+        |> withLangVersionPreview
+        |> typecheck
+        |> shouldFail
+        |> withErrorCode 3910
+        |> ignore
