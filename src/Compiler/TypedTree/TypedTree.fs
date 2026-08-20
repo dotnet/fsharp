@@ -618,18 +618,12 @@ type PublicPath =
 
     /// Compares against the flat form without building it
     member x.EqualsFullPath(path: string[]) =
-        let enclosing = x.EnclosingCompilationPath.MangledPath
+        let rec loop (path: string[]) name i accessPath =
+            match accessPath with
+            | [] -> i = path.Length - 1 && path[i] = name
+            | (nm, _) :: rest -> i < path.Length && path[i] = nm && loop path name (i + 1) rest
 
-        path.Length = List.length enclosing + 1
-        && path[path.Length - 1] = x.Name
-        && (let mutable i = 0
-            let mutable ok = true
-
-            for nm in enclosing do
-                if path[i] <> nm then ok <- false
-                i <- i + 1
-
-            ok)
+        loop path x.Name 0 x.EnclosingCompilationPath.AccessPath
 
     override x.Equals other =
         match other with
