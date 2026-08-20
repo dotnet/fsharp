@@ -1415,6 +1415,19 @@ let TryStorageForWitness (_g: TcGlobals) eenv (w: TraitWitnessInfo) =
     | true, storage -> Some storage
     | _ -> None
 
+/// Decide whether a failed trait-constraint resolution at code-generation time may be left as a
+/// deferred NotSupportedException placeholder rather than surfacing the failure as a compile error.
+/// This is only safe for a generic inline template (RFC FS-1043): unsolved typars in the trait's
+/// support or argument types mean the constraint is re-solved, and real IL emitted, at each concrete
+/// call site. A fully ground trait (only the return type is free, as in the neg116 shape) has no such
+/// second chance, so its failure must be reported at compile time exactly as it was before this RFC.
+let canDeferTraitResolution (g: TcGlobals) (traitInfo: TraitConstraintInfo) result =
+    match result with
+    | ErrorResult _ ->
+        g.langVersion.SupportsFeature LanguageFeature.ExtensionConstraintSolutions
+        && not (freeInTypes CollectTypars (traitInfo.SupportTypes @ traitInfo.CompiledObjectAndArgumentTypes)).FreeTypars.IsEmpty
+    | _ -> false
+
 let IsValRefIsDllImport g (vref: ValRef) =
     ValHasWellKnownAttribute g WellKnownValAttributes.DllImportAttribute vref.Deref
 
@@ -5840,17 +5853,18 @@ and GenTraitCall (cenv: cenv) cgbuf eenv (traitInfo: TraitConstraintInfo, argExp
         // the specific trait's witness is not found. Fall through to the constraint solver to resolve it.
         assert (not generateWitnesses || not cenv.options.alwaysInline)
 
+        let witnessResult =
+            ConstraintSolver.CodegenWitnessExprForTraitConstraint cenv.tcVal g cenv.amap m traitInfo argExprs
+
+        // A generic inline template whose constraint is still unsolved is re-solved at each concrete
+        // call site, so leaving the deferred NotSupportedException stub below is correct. A ground
+        // trait that fails resolution has no such second chance: fall back to the pre-RFC behaviour
+        // (CommitOperationResult surfaces the compile-time error) instead of emitting a runtime stub.
         let exprOpt =
-            match ConstraintSolver.CodegenWitnessExprForTraitConstraint cenv.tcVal g cenv.amap m traitInfo argExprs with
-            | OkResult(warns, res) ->
-                ReportWarnings warns
-                res
-            | ErrorResult(warns, _) ->
-                ReportWarnings warns
-                // Resolution may fail for generic inline code with unsolved constraints
-                // (e.g. rigid typars). The NotSupportedException stub below is emitted as
-                // fallback IL; inline functions resolve constraints at each call site.
+            if canDeferTraitResolution g traitInfo witnessResult then
                 None
+            else
+                CommitOperationResult witnessResult
 
         match exprOpt with
         | None ->
@@ -7862,18 +7876,16 @@ and ExprRequiresWitness cenv m expr =
 
     match expr with
     | Expr.Op(TOp.TraitCall(traitInfo), _, _, _) ->
-        match ConstraintSolver.CodegenWitnessExprForTraitConstraintWillRequireWitnessArgs cenv.tcVal g cenv.amap m traitInfo with
-        | OkResult(warns, res) ->
-            ReportWarnings warns
-            res
-        | ErrorResult(warns, _) ->
-            ReportWarnings warns
-            // Constraint resolution failed. This means either:
-            // - All support types are concrete but resolution still failed (shouldn't happen —
-            //   type-checking should have caught it), or
-            // - Support types contain unsolved typars so we genuinely don't know.
-            // Either way, return false → don't use witness path → fall back to dynamic invocation.
+        let witnessResult =
+            ConstraintSolver.CodegenWitnessExprForTraitConstraintWillRequireWitnessArgs cenv.tcVal g cenv.amap m traitInfo
+
+        // Mirror GenTraitCall: a ground trait that fails resolution is reported at compile time
+        // (CommitOperationResult), matching main; only a deferred generic inline template stays as
+        // a placeholder, for which no witness is required here.
+        if canDeferTraitResolution g traitInfo witnessResult then
             false
+        else
+            CommitOperationResult witnessResult
     | _ -> false
 
 /// Generate statically-resolved conditionals used for type-directed optimizations in FSharp.Core only.

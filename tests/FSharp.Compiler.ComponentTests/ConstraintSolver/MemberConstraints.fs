@@ -316,3 +316,39 @@ let main _ =
         |> asExe
         |> compileExeAndRun
         |> shouldSucceed
+
+    // Regression test for PR #19602 (RFC FS-1043).
+    // A NON-inline binding whose body contains an operator/SRTP trait constraint that no overload
+    // can satisfy must be REJECTED at compile time. On main / stock F# this is
+    // 'ilxgen error FS0041: No overloads match for method op_Multiply'. During FS-1043 work the
+    // IlxGen trait-call path began swallowing that ErrorResult and instead emitting a
+    // NotSupportedException dynamic-invocation stub, so the program compiled and threw
+    // 'Dynamic invocation of op_Multiply is not supported' at RUNTIME - a compile-error -> runtime-crash
+    // regression that also leaked at feature-OFF language versions. (This is the deleted neg116 shape:
+    // the staged operand '(1.0 - t) * p' defers the outer trait, which then generalizes into a free
+    // return typar 'a on a non-inline value.)
+    let private nonInlineUnsatisfiableOperatorSrtp = """
+module Neg116
+
+type Complex = unit
+
+type Polynomial () =
+    static member (*) (s: decimal, p: Polynomial) : Polynomial = failwith ""
+    static member (*) (s: Complex, p: Polynomial) : Polynomial = failwith ""
+
+module Foo =
+    let test t (p: Polynomial) = (1.0 - t) * p
+"""
+
+    [<Theory>]
+    [<InlineData("9.0")>]
+    [<InlineData("preview")>]
+    let ``Non-inline binding with unsatisfiable operator SRTP is rejected at compile time`` (langVersion: string) =
+        FSharp nonInlineUnsatisfiableOperatorSrtp
+        |> asLibrary
+        |> withLangVersion langVersion
+        |> compile
+        |> shouldFail
+        |> withErrorCode 41
+        |> withDiagnosticMessageMatches "op_Multiply"
+        |> ignore
