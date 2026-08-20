@@ -3,16 +3,15 @@
 namespace Microsoft.VisualStudio.FSharp.Editor
 
 open System.Composition
-open System.Collections.Concurrent
 open System.Collections.Immutable
 open System.Collections.Generic
+open System.Runtime.CompilerServices
 open System.Threading
 open System.Threading.Tasks
 
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Diagnostics
-open Microsoft.VisualStudio.LanguageServices
 
 open FSharp.Compiler.Diagnostics
 open CancellableTasks
@@ -25,45 +24,19 @@ type internal DiagnosticsType =
 
 type private CachedDiagnosticsEntry =
     {
-        TextVersion: VersionStamp
         ProjectVersion: VersionStamp
-        FilePath: string
         IsRemoveParensEnabled: bool
         Diagnostics: ImmutableArray<Diagnostic>
     }
 
 [<Export(typeof<IFSharpDocumentDiagnosticAnalyzer>); Shared>]
-type internal FSharpDocumentDiagnosticAnalyzer [<ImportingConstructor>] ([<Import(AllowDefault = true)>] workspace: VisualStudioWorkspace | null) =
+type internal FSharpDocumentDiagnosticAnalyzer [<ImportingConstructor>] () =
 
     let shouldProduceDiagnostics (document: Document) =
         document.Project.Solution.GetFSharpExtensionConfig().ShouldProduceDiagnostics()
 
-    static let cache =
-        ConcurrentDictionary<struct (DocumentId * DiagnosticsType), CachedDiagnosticsEntry>()
-
-    static let evictDocument (documentId: DocumentId) =
-        cache.TryRemove(struct (documentId, DiagnosticsType.Syntax)) |> ignore
-        cache.TryRemove(struct (documentId, DiagnosticsType.Semantic)) |> ignore
-
-    static let evictProject (projectId: ProjectId) =
-        for entry in cache do
-            let struct (documentId, _) = entry.Key
-
-            if documentId.ProjectId = projectId then
-                cache.TryRemove(entry.Key) |> ignore
-
-    do
-        match workspace with
-        | null -> ()
-        | workspace ->
-            workspace.WorkspaceChanged.Add(fun args ->
-                match args.Kind with
-                | WorkspaceChangeKind.DocumentRemoved when not (isNull args.DocumentId) -> evictDocument args.DocumentId
-                | WorkspaceChangeKind.ProjectRemoved when not (isNull args.ProjectId) -> evictProject args.ProjectId
-                | WorkspaceChangeKind.SolutionCleared
-                | WorkspaceChangeKind.SolutionRemoved -> cache.Clear()
-                | _ -> ()
-            )
+    static let syntaxCache = ConditionalWeakTable<Document, CachedDiagnosticsEntry>()
+    static let semanticCache = ConditionalWeakTable<Document, CachedDiagnosticsEntry>()
 
     static let diagnosticEqualityComparer =
         { new IEqualityComparer<FSharpDiagnostic> with
@@ -110,8 +83,6 @@ type internal FSharpDocumentDiagnosticAnalyzer [<ImportingConstructor>] ([<Impor
 
             let! ct = CancellableTask.getCancellationToken ()
 
-            let! textVersion = document.GetTextVersionAsync(ct)
-
             let! projectVersion =
                 match diagnosticType with
                 | DiagnosticsType.Syntax -> CancellableTask.singleton VersionStamp.Default
@@ -124,14 +95,15 @@ type internal FSharpDocumentDiagnosticAnalyzer [<ImportingConstructor>] ([<Impor
                 | DiagnosticsType.Syntax -> document.Project.IsFsharpRemoveParensEnabled
                 | DiagnosticsType.Semantic -> false
 
-            let cacheKey = struct (document.Id, diagnosticType)
+            let cache =
+                match diagnosticType with
+                | DiagnosticsType.Syntax -> syntaxCache
+                | DiagnosticsType.Semantic -> semanticCache
 
             let cached =
-                match cache.TryGetValue(cacheKey) with
+                match cache.TryGetValue document with
                 | true, cachedEntry when
-                    cachedEntry.TextVersion = textVersion
-                    && cachedEntry.ProjectVersion = projectVersion
-                    && cachedEntry.FilePath = filePath
+                    cachedEntry.ProjectVersion = projectVersion
                     && cachedEntry.IsRemoveParensEnabled = isRemoveParensEnabled
                     ->
                     ValueSome cachedEntry.Diagnostics
@@ -196,14 +168,16 @@ type internal FSharpDocumentDiagnosticAnalyzer [<ImportingConstructor>] ([<Impor
                         iab.AddRange unnecessaryParentheses
                         iab.ToImmutable()
 
-                cache.[cacheKey] <-
+                cache.Remove(document) |> ignore
+
+                cache.Add(
+                    document,
                     {
-                        TextVersion = textVersion
                         ProjectVersion = projectVersion
-                        FilePath = filePath
                         IsRemoveParensEnabled = isRemoveParensEnabled
                         Diagnostics = result
                     }
+                )
 
                 return result
         }
