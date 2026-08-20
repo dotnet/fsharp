@@ -131,6 +131,53 @@ type PrintfTests() =
         test "%+f" -0.0M        "+0.000000"
     
     [<Fact>]
+    member this.``sign flag - positive and negative zero - corner cases`` () =
+        test "%-10.3f" +0.0f    "0.000     "
+        test "%-10.3f" -0.0f
+#if NETCOREAPP
+                                "-0.000    "
+#else
+                                "0.000     "
+#endif
+        test "%-+10.3f" +0.0f   "+0.000    "
+        test "%-+10.3f" -0.0f
+#if NETCOREAPP
+                                "-0.000    "
+#else
+                                "+0.000    "
+#endif
+        test "%+020e" +0.0f     "+0000000.000000e+000"
+        test "%+020e" -0.0f
+#if NETCOREAPP
+                                "-0000000.000000e+000"   
+#else
+                                "+0000000.000000e+000"
+#endif
+        
+        test "%-10.3f" +0.0    "0.000     "
+        test "%-10.3f" -0.0
+#if NETCOREAPP
+                                "-0.000    "
+#else
+                                "0.000     "
+#endif
+        test "%-+10.3f" +0.0   "+0.000    "
+        test "%-+10.3f" -0.0
+#if NETCOREAPP
+                                "-0.000    "
+#else
+                                "+0.000    "
+#endif
+        test "%+020e" +0.0     "+0000000.000000e+000"
+        test "%+020e" -0.0
+#if NETCOREAPP
+                                "-0000000.000000e+000"   
+#else
+                                "+0000000.000000e+000"
+#endif
+        
+    
+    [<Fact>]
     member this.``sign flag - very small positive and negative numbers``() =
         test "%f"  -0.0000001
 #if NETCOREAPP
@@ -144,7 +191,7 @@ type PrintfTests() =
 #else
                                 "+0.000000"
 #endif
-
+        
         
         test "%f"  -0.0000001f
 #if NETCOREAPP
@@ -158,7 +205,7 @@ type PrintfTests() =
 #else
                                 "+0.000000"
 #endif
-      
+        
         test "%f"  -0.0000001M  "0.000000"
 
         test "%+f" -0.0000001M  "+0.000000"
