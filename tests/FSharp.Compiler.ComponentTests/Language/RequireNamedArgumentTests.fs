@@ -76,6 +76,9 @@ namespace AnnotatedLib
     {
         [RequireNamedArgument]
         public static int Add(int x, int y) => x + y;
+
+        [RequireNamedArgument]
+        public static int Scale(int x, int factor = 2) => x * factor;
     }
 }
 """
@@ -127,6 +130,14 @@ namespace AnnotatedLib
     {
         [RequireNamedArgument]
         public static int AddTo(this int self, int y) => self + y;
+
+        [RequireNamedArgument]
+        public static int SumTo(this int self, params int[] rest)
+        {
+            int s = self;
+            foreach (var r in rest) s += r;
+            return s;
+        }
     }
 }
 """
@@ -689,6 +700,96 @@ type C [<RequireNamedArgument>] (x: int, y: int) =
     member _.V = x + y
 module Use =
     let c = C(x = 1, y = 2)
+"""
+        |> withLangVersionPreview
+        |> typecheck
+        |> shouldSucceed
+        |> ignore
+
+    [<FactForNETCOREAPP>]
+    let ``C# extension method with ParamArray - positional call is an error`` () =
+        // The ParamArray-expanded caller args must be recognised as positional (they land in
+        // ParamArrayCallerArgs, not NumUnnamedCallerArgs), and the extension receiver must not count.
+        FSharp """
+module Test
+open AnnotatedLib
+let r = (1).SumTo(2, 3)
+"""
+        |> withReferences [ csExtensionLib ]
+        |> withLangVersionPreview
+        |> compile
+        |> shouldFail
+        |> withErrorCode 3910
+        |> ignore
+
+    [<FactForNETCOREAPP>]
+    let ``C# extension method with ParamArray - named array call succeeds`` () =
+        FSharp """
+module Test
+open AnnotatedLib
+let r = (1).SumTo(rest = [| 2; 3 |])
+"""
+        |> withReferences [ csExtensionLib ]
+        |> withLangVersionPreview
+        |> compile
+        |> shouldSucceed
+        |> ignore
+
+    [<FactForNETCOREAPP>]
+    let ``C# method with an optional parameter - positional call is an error`` () =
+        // The single positional caller arg (x) must trigger enforcement even though 'factor' is optional.
+        FSharp """
+module Test
+open AnnotatedLib
+let r = Api.Scale(5)
+"""
+        |> withReferences [ csAnnotatedLib ]
+        |> withLangVersionPreview
+        |> compile
+        |> shouldFail
+        |> withErrorCode 3910
+        |> ignore
+
+    [<FactForNETCOREAPP>]
+    let ``C# method with an optional parameter - named call omitting the optional succeeds`` () =
+        FSharp """
+module Test
+open AnnotatedLib
+let r = Api.Scale(x = 5)
+"""
+        |> withReferences [ csAnnotatedLib ]
+        |> withLangVersionPreview
+        |> compile
+        |> shouldSucceed
+        |> ignore
+
+    [<Fact>]
+    let ``Generic annotated method - the attribute survives instantiation`` () =
+        withPolyfill """
+namespace Test
+open System.Runtime.CompilerServices
+type C =
+    [<RequireNamedArgument>]
+    static member Id<'T>(value: 'T) = value
+module Use =
+    let r = C.Id(5)
+"""
+        |> withLangVersionPreview
+        |> typecheck
+        |> shouldFail
+        |> withErrorCode 3910
+        |> ignore
+
+    [<Fact>]
+    let ``Generic annotated method - named call succeeds`` () =
+        withPolyfill """
+namespace Test
+open System.Runtime.CompilerServices
+type C =
+    [<RequireNamedArgument>]
+    static member Id<'T>(value: 'T) = value
+module Use =
+    let r = C.Id(value = 5)
 """
         |> withLangVersionPreview
         |> typecheck

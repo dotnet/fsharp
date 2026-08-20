@@ -10870,11 +10870,9 @@ and TcMethodApplication
 
     TcAdhocChecksOnLibraryMethods cenv env isInstance finalCalledMeth finalCalledMethInfo objArgs mMethExpr mItem
 
-    // FS-1095: a method annotated with RequireNamedArgumentAttribute (recognised by full type name only, polyfill-style,
-    // regardless of provenance) must be called with named-argument syntax; positional caller args (including ParamArray
-    // expansions) are rejected, so a zero-argument call such as 'M()' is unaffected. Property/indexer accessors and
-    // curried applications have no named-argument form, so the attribute is a no-op there rather than making the member
-    // uncallable.
+    // FS-1095: enforce named-argument syntax for methods/constructors carrying RequireNamedArgumentAttribute
+    // (recognised by full type name, any provenance). Accessors and curried applications have no named-argument
+    // form, so the attribute is a no-op there rather than making the member uncallable.
     if g.langVersion.SupportsFeature LanguageFeature.RequireNamedArgument
        && finalCalledMeth.AssociatedPropertyInfo.IsNone
        && finalCalledMeth.NumArgSets <= 1 then
