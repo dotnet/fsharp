@@ -13,7 +13,8 @@
 		<PackageReference Include="Microsoft.VisualStudio.LanguageServer.Protocol" />
 		<!-- Pinned below the central versions: this LSP host targets the VS 17.x servicing baseline. -->
 		<PackageReference Include="Microsoft.VisualStudio.Threading" VersionOverride="17.12.21" />
-		<PackageReference Include="StreamJsonRpc" />
+		<!-- Direct dependency with no transitive floor and no central PackageVersion, so pin it explicitly. -->
+		<PackageReference Include="StreamJsonRpc" VersionOverride="2.26.10" />
 	</ItemGroup>
 
 	<ItemGroup>

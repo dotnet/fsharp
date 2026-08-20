@@ -10,6 +10,13 @@
     <NoWarn>$(NoWarn);NU1507</NoWarn>
   </PropertyGroup>
 
+  <!-- net10.0 ships in the FSharp.Core package only; in-repo .NET consumers keep binding netstandard2.1. -->
+  <ItemGroup Condition="'$(TargetFrameworkIdentifier)' == '.NETCoreApp' and '$(Configuration)' != 'Proto'">
+    <ProjectReference Update="@(ProjectReference)">
+      <SetTargetFramework Condition="'%(ProjectReference.Filename)' == 'FSharp.Core' and '%(ProjectReference.SetTargetFramework)' == ''">TargetFramework=netstandard2.1</SetTargetFramework>
+    </ProjectReference>
+  </ItemGroup>
+
   <!-- Disable R2R when building source-only and not targeting the current SDK bundled TFM. -->
   <PropertyGroup>
     <PublishReadyToRun Condition="'$(DotNetBuildSourceOnly)' == 'true' and

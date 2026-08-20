@@ -50,7 +50,7 @@ module ModuleReader =
             MethodAttributes.NewSlot |||
             MethodAttributes.SpecialName
 
-        let callingConv = Callconv(ILThisConvention.Instance, ILArgConvention.Default)
+        let callingConv = ILCallingConv.Instance
         let parameters = []
         let ret = mkILReturn ILType.Void
         let genericParams = []

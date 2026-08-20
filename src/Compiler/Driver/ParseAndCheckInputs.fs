@@ -6,6 +6,7 @@ module internal FSharp.Compiler.ParseAndCheckInputs
 open System
 open System.IO
 open System.Threading
+open System.Collections.Concurrent
 open System.Collections.Generic
 
 open FSharp.Compiler.Parser
@@ -1098,6 +1099,7 @@ let GetInitialTcState (m, ccuName, tcConfig: TcConfig, tcGlobals, tcImports: TcI
             Contents = ccuContents
             MemberSignatureEquality = typeEquivAux EraseAll tcGlobals
             TypeForwarders = CcuTypeForwarderTable.Empty
+            CSharpStyleExtensionMembersCache = ConcurrentDictionary(1, 0)
             XmlDocumentationInfo = None
         }
 
