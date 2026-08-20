@@ -342,7 +342,7 @@ type private FSharpProjectOptionsReactor(checker: FSharpChecker) =
                         previousCts.Cancel()
                         previousCts.Dispose()
 
-                    task {
+                    backgroundTask {
                         try
                             do! Task.Delay(500, debounceToken)
 
