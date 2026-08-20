@@ -248,4 +248,110 @@ open System.Runtime.InteropServices
 [<StructLayout(enum<LayoutKind>(1))>]
 type U = A | B
 """
+
+    [<Fact>]
+    let ``ExtendedLayout on a generic struct emits the 0x18 layout flag and preserves the attribute`` () =
+        // The IL type name of a generic type carries the backtick arity suffix.
+        assertExtendedLayoutEmitted "GenericStruct`1" """
+namespace Test
+
+open System.Runtime.InteropServices
+
+[<ExtendedLayout(ExtendedLayoutKind.CStruct)>]
+type GenericStruct<'T> =
+    struct
+        val mutable Value: 'T
+    end
+"""
+
+    // Reflection.Emit (used by FSI) has its own type-def path (ilreflect.fs), separate from the static
+    // metadata writer, so it is exercised directly here under both single- and multi-emit modes.
+    [<Theory>]
+    [<InlineData("--multiemit-")>]
+    [<InlineData("--multiemit+")>]
+    let ``FSI preserves the extended layout and attribute for a dynamically emitted struct`` (multiEmit: string) =
+        Fsx """
+open System
+open System.Reflection
+open System.Runtime.InteropServices
+
+[<ExtendedLayout(ExtendedLayoutKind.CUnion)>]
+type CUnionLike =
+    struct
+        val mutable X: int
+        val mutable Y: int
+    end
+
+if int (typeof<CUnionLike>.Attributes &&& TypeAttributes.LayoutMask) <> 0x18 then
+    failwith "Expected the 0x18 extended layout flag on the dynamically emitted type."
+
+let arg =
+    CustomAttributeData.GetCustomAttributes(typeof<CUnionLike>)
+    |> Seq.find (fun a -> a.AttributeType = typeof<ExtendedLayoutAttribute>)
+    |> fun a -> a.ConstructorArguments.[0]
+
+if Convert.ToInt32 arg.Value <> int ExtendedLayoutKind.CUnion then
+    failwith "Expected the CUnion extended layout kind to be preserved as the attribute argument."
+"""
+        |> withOptions [multiEmit]
+        |> eval
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``An extended layout struct can be consumed from a referenced F# assembly`` () =
+        // Consuming the type forces the metadata reader (ilread.fs) to decode the 0x18 layout flag back to Extended.
+        let producer =
+            FSharp """
+namespace Producer
+
+open System.Runtime.InteropServices
+
+[<Struct; ExtendedLayout(ExtendedLayoutKind.CStruct)>]
+type Point = { X: int; Y: int }
+"""
+            |> asLibrary
+            |> withName "ExtendedLayoutProducer"
+
+        FSharp """
+module Consumer
+
+open Producer
+
+let sum (p: Point) = p.X + p.Y
+"""
+        |> asLibrary
+        |> withReferences [producer]
+        |> compile
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``ExtendedLayout on a struct with no instance fields is rejected`` () =
+        // The runtime derives an extended-layout type's size from its fields, so an empty one would
+        // emit invalid metadata that fails to load. Reject it at compile time instead.
+        expectRejectedWithMessage 3914 "A struct with the 'ExtendedLayoutAttribute' must have at least one instance field" """
+namespace Test
+
+open System.Runtime.InteropServices
+
+[<ExtendedLayout(ExtendedLayoutKind.CStruct)>]
+type Empty =
+    struct
+    end
+"""
+
+    [<Fact>]
+    let ``ExtendedLayout on a struct with only static fields is rejected`` () =
+        // Static fields do not participate in the type's layout, so a struct with only static fields
+        // is empty as far as extended layout is concerned and must also be rejected.
+        expectRejectedWithMessage 3914 "A struct with the 'ExtendedLayoutAttribute' must have at least one instance field" """
+namespace Test
+
+open System.Runtime.InteropServices
+
+[<ExtendedLayout(ExtendedLayoutKind.CStruct)>]
+type OnlyStatic =
+    struct
+        [<DefaultValue>] static val mutable private X: int
+    end
+"""
 #endif

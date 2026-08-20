@@ -3980,6 +3980,12 @@ module EstablishTypeDefinitionCores =
                                     errorR (Error(FSComp.SR.tcStructTypesCannotContainAbstractMembers(), m)) 
                                   structLayoutAttributeCheck true
                                   extendedLayoutAttributeCheck()
+                                  // The runtime derives an extended-layout struct's size from its instance fields (C-struct/C-union
+                                  // rules), so an empty one would emit invalid metadata that fails to load. Static fields do not count.
+                                  if hasExtendedLayoutAttr
+                                     && not (List.exists (fun (f: RecdField) -> not f.IsStatic) userFields)
+                                     && List.isEmpty implicitStructFields then
+                                      errorR (Error(FSComp.SR.tcExtendedLayoutStructMustHaveInstanceField(), m))
 
                                   TFSharpStruct
                               | SynTypeDefnKind.Interface -> 

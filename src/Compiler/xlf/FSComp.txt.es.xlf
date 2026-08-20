@@ -1642,6 +1642,11 @@
         <target state="new">The 'ExtendedLayoutAttribute' cannot be applied to discriminated unions</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcExtendedLayoutStructMustHaveInstanceField">
+        <source>A struct with the 'ExtendedLayoutAttribute' must have at least one instance field</source>
+        <target state="new">A struct with the 'ExtendedLayoutAttribute' must have at least one instance field</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcInvalidStructReturn">
         <source>The use of '[&lt;Struct&gt;]' on values, functions and methods is only allowed on partial active pattern definitions</source>
         <target state="translated">El uso de "[&lt;Struct&gt;]" en valores, funciones y métodos solo se permite en definiciones de modelos activos parciales.</target>
