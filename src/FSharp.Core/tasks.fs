@@ -856,6 +856,10 @@ module Task =
                 do! f ct
         }
 
+    [<CompiledName("StartAsyncImmediate")>]
+    let startAsyncImmediate (ct: CancellationToken) (computation: Async<'T>) : Task<'T> =
+        Async.StartImmediateAsTask(computation, cancellationToken = ct)
+
 #if NETSTANDARD2_1 || NET
     [<CompiledName("OfValueTask")>]
     let inline ofValueTask (valueTask: ValueTask<'T>) : Task<'T> =
