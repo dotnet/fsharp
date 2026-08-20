@@ -2303,10 +2303,12 @@ module internal ExprRemapping =
             tcdR.entity_tycon_repr <- tcd.entity_tycon_repr |> remapTyconRepr ctxt tmenvinner2
             let typeAbbrevR = tcd.TypeAbbrev |> Option.map (remapType tmenvinner2)
             tcdR.entity_tycon_tcaug <- tcd.entity_tycon_tcaug |> remapTyconAug tmenvinner2
+
             tcdR.entity_modul_type <-
                 match tcd.entity_modul_type with
                 | null -> null
                 | ty -> MaybeLazy.Strict(ty.Force() |> mapImmediateValsAndTycons lookupTycon lookupVal)
+
             let exnInfoR = tcd.ExceptionInfo |> remapTyconExnInfo ctxt tmenvinner2
 
             match tcdR.entity_opt_data with
