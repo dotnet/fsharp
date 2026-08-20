@@ -658,11 +658,9 @@ module internal PrintfImpl =
     /// Contains functions to handle left/right and no justification case for numbers
     module GenericNumber =
         
-        let inline singleIsPositive n = n >= 0.0f
-        let inline doubleIsPositive n = n >= 0.0
-        let inline decimalIsPositive n = n >= 0.0M
+        let inline strIsNegative (str: string) = str.Length > 0 && str[0] = '-'
         
-        let isPositive (n: obj) =
+        let isPositive (n: obj) (nStr: string) =
             match n with 
             | :? int8 as n -> n >= 0y
             | :? uint8 -> true
@@ -674,9 +672,9 @@ module internal PrintfImpl =
             | :? uint64 -> true
             | :? nativeint as n -> n >= 0n
             | :? unativeint -> true
-            | :? single as n -> singleIsPositive n
-            | :? double as n -> doubleIsPositive n
-            | :? decimal as n -> decimalIsPositive n
+            | :? single -> not (strIsNegative nStr)
+            | :? double -> not (strIsNegative nStr)
+            | :? decimal -> not (strIsNegative nStr)
             | _ -> failwith "isPositive: unreachable"
 
         /// handles right justification when pad char = '0'
@@ -686,7 +684,7 @@ module internal PrintfImpl =
         let rightJustifyWithZeroAsPadChar (str: string) isNumber isPositive w (prefixForPositives: string) =
             Debug.Assert(prefixForPositives.Length = 0 || prefixForPositives.Length = 1)
             if isNumber then
-                if isPositive then
+                if isPositive str then
                     prefixForPositives + (if w = 0 then str else str.PadLeft(w - prefixForPositives.Length, '0')) // save space to 
                 else
                     if str.[0] = '-' then
@@ -700,12 +698,12 @@ module internal PrintfImpl =
         /// handler right justification when pad char = ' '
         let rightJustifyWithSpaceAsPadChar (str: string) isNumber isPositive w (prefixForPositives: string) =
             Debug.Assert(prefixForPositives.Length = 0 || prefixForPositives.Length = 1)
-            (if isNumber && isPositive then prefixForPositives + str else str).PadLeft(w, ' ')
+            (if isNumber && isPositive str then prefixForPositives + str else str).PadLeft(w, ' ')
         
         /// handles left justification with formatting with 'G'\'g' - either for decimals or with 'g'\'G' is explicitly set 
         let leftJustifyWithGFormat (str: string) isNumber isInteger isPositive w (prefixForPositives: string) padChar  =
             if isNumber then
-                let str = if isPositive then prefixForPositives + str else str
+                let str = if isPositive str then prefixForPositives + str else str
                 // NOTE: difference - for 'g' format we use isInt check to detect situations when '5.0' is printed as '5'
                 // in this case we need to override padding and always use ' ', otherwise we'll produce incorrect results
                 if isInteger then
@@ -717,20 +715,20 @@ module internal PrintfImpl =
 
         let leftJustifyWithNonGFormat (str: string) isNumber isPositive w (prefixForPositives: string) padChar  =
             if isNumber then
-                let str = if isPositive then prefixForPositives + str else str
+                let str = if isPositive str then prefixForPositives + str else str
                 str.PadRight(w, padChar)
             else
                 str.PadRight(w, ' ') // pad NaNs with ' ' 
         
         /// processes given string based depending on values isNumber\isPositive
         let noJustificationCore (str: string) isNumber isPositive prefixForPositives = 
-            if isNumber && isPositive then prefixForPositives + str
+            if isNumber && isPositive str then prefixForPositives + str
             else str
         
         /// noJustification handler for f: 'T -> string - basic integer types
         let noJustification (f: objnull -> string) (prefix: string) isUnsigned =
             if isUnsigned then
-                fun (v: objnull) -> noJustificationCore (f v) true true prefix
+                fun (v: objnull) -> noJustificationCore (f v) true (fun _ -> true) prefix
             else 
                 fun (v: objnull) -> noJustificationCore (f v) true (isPositive v) prefix
 
@@ -787,10 +785,10 @@ module internal PrintfImpl =
             if isUnsigned then
                 if isGFormat then
                     fun (w: int) (v: objnull) ->
-                        GenericNumber.leftJustifyWithGFormat (f v) true true true w prefix padChar
+                        GenericNumber.leftJustifyWithGFormat (f v) true true (fun _ -> true) w prefix padChar
                 else
                     fun (w: int) (v: objnull) ->
-                        GenericNumber.leftJustifyWithNonGFormat (f v) true true w prefix padChar
+                        GenericNumber.leftJustifyWithNonGFormat (f v) true (fun _ -> true) w prefix padChar
             else
                 if isGFormat then
                     fun (w: int) (v: objnull) ->
@@ -804,11 +802,11 @@ module internal PrintfImpl =
             if isUnsigned then
                 if padChar = '0' then
                     fun (w: int) (v: objnull) ->
-                        GenericNumber.rightJustifyWithZeroAsPadChar (f v) true true w prefixForPositives
+                        GenericNumber.rightJustifyWithZeroAsPadChar (f v) true (fun _ -> true) w prefixForPositives
                 else
                     Debug.Assert((padChar = ' '))
                     fun (w: int) (v: objnull) ->
-                        GenericNumber.rightJustifyWithSpaceAsPadChar (f v) true true w prefixForPositives
+                        GenericNumber.rightJustifyWithSpaceAsPadChar (f v) true (fun _ -> true) w prefixForPositives
             else
                 if padChar = '0' then
                     fun (w: int) (v: objnull) ->
@@ -869,9 +867,9 @@ module internal PrintfImpl =
         
         let rec toFormattedString fmt (v: obj) = 
             match v with
-            | :? single as n -> n.ToString(fmt, CultureInfo.InvariantCulture) |> fixupSign (GenericNumber.singleIsPositive n)
-            | :? double as n -> n.ToString(fmt, CultureInfo.InvariantCulture) |> fixupSign (GenericNumber.doubleIsPositive n)
-            | :? decimal as n -> n.ToString(fmt, CultureInfo.InvariantCulture) |> fixupSign (GenericNumber.decimalIsPositive n)
+            | :? single as n -> n.ToString(fmt, CultureInfo.InvariantCulture) //|> fixupSign (GenericNumber.singleIsPositive n)
+            | :? double as n -> n.ToString(fmt, CultureInfo.InvariantCulture) //|> fixupSign (GenericNumber.doubleIsPositive n)
+            | :? decimal as n -> n.ToString(fmt, CultureInfo.InvariantCulture) //|> fixupSign (GenericNumber.decimalIsPositive n)
             | _ -> failwith "toFormattedString: unreachable"
 
         let isNumber (x: obj) =
