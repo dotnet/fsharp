@@ -1415,12 +1415,11 @@ let TryStorageForWitness (_g: TcGlobals) eenv (w: TraitWitnessInfo) =
     | true, storage -> Some storage
     | _ -> None
 
-/// Decide whether a failed trait-constraint resolution at code-generation time may be left as a
-/// deferred NotSupportedException placeholder rather than surfacing the failure as a compile error.
-/// This is only safe for a generic inline template (RFC FS-1043): unsolved typars in the trait's
-/// support or argument types mean the constraint is re-solved, and real IL emitted, at each concrete
-/// call site. A fully ground trait (only the return type is free, as in the neg116 shape) has no such
-/// second chance, so its failure must be reported at compile time exactly as it was before this RFC.
+/// Whether a failed trait-constraint resolution at code-generation time may be left as a deferred
+/// NotSupportedException placeholder instead of surfacing as a compile error. Only safe for a generic
+/// inline template (RFC FS-1043): unsolved typars in the trait's support or argument types (not the
+/// return type) mean it is re-solved, and real IL emitted, at each concrete call site. A ground trait
+/// (neg116: only the return typar is free) has no second chance, so its failure must be reported now.
 let canDeferTraitResolution (g: TcGlobals) (traitInfo: TraitConstraintInfo) result =
     match result with
     | ErrorResult _ ->
@@ -5856,10 +5855,7 @@ and GenTraitCall (cenv: cenv) cgbuf eenv (traitInfo: TraitConstraintInfo, argExp
         let witnessResult =
             ConstraintSolver.CodegenWitnessExprForTraitConstraint cenv.tcVal g cenv.amap m traitInfo argExprs
 
-        // A generic inline template whose constraint is still unsolved is re-solved at each concrete
-        // call site, so leaving the deferred NotSupportedException stub below is correct. A ground
-        // trait that fails resolution has no such second chance: fall back to the pre-RFC behaviour
-        // (CommitOperationResult surfaces the compile-time error) instead of emitting a runtime stub.
+        // See canDeferTraitResolution: ground failures commit (compile error); only inline templates defer.
         let exprOpt =
             if canDeferTraitResolution g traitInfo witnessResult then
                 None
@@ -7879,9 +7875,7 @@ and ExprRequiresWitness cenv m expr =
         let witnessResult =
             ConstraintSolver.CodegenWitnessExprForTraitConstraintWillRequireWitnessArgs cenv.tcVal g cenv.amap m traitInfo
 
-        // Mirror GenTraitCall: a ground trait that fails resolution is reported at compile time
-        // (CommitOperationResult), matching main; only a deferred generic inline template stays as
-        // a placeholder, for which no witness is required here.
+        // Mirror GenTraitCall (see canDeferTraitResolution): ground failures commit, only inline templates defer.
         if canDeferTraitResolution g traitInfo witnessResult then
             false
         else
