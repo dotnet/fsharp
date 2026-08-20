@@ -456,7 +456,7 @@ type Entity =
         mutable entity_cpath: CompilationPath option
 
         /// Used during codegen to hold the ILX representation indicating how to access the type
-        mutable entity_il_repr_cache: cache<CompiledTypeRepr>
+        mutable entity_il_repr_cache: cache<CompiledTypeRepr> | null
 
         mutable entity_opt_data: EntityOptionalData option
     }
@@ -892,7 +892,7 @@ type TyconAugmentation =
         /// Properties, methods etc. in declaration order. The boolean flag for each indicates if the
         /// member is known to be an explicit interface implementation. This must be computed and
         /// saved prior to remapping assembly information.
-        tcaug_adhoc_list: ResizeArray<bool * ValRef>
+        mutable tcaug_adhoc_list: ResizeArray<bool * ValRef> | null
 
         /// Properties, methods etc. as lookup table
         mutable tcaug_adhoc: NameMultiMap<ValRef>
@@ -911,6 +911,12 @@ type TyconAugmentation =
     }
 
     static member Create: unit -> TyconAugmentation
+
+    /// Record a member in declaration order, allocating the list on first use
+    member AddAdhocMember: isExplicitImpl: bool * vref: ValRef -> unit
+
+    /// Members in declaration order, empty when the type has none
+    member AdhocMembers: (bool * ValRef) list
 
     member SetCompare: x: (ValRef * ValRef) -> unit
 
