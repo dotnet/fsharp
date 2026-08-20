@@ -12,13 +12,15 @@ pr: none
 resources:
   pipelines:
   # The VS build under test: DartLab installs the bootstrapper from this build's drop, so the
-  # installed VS matches what F# is inserted into. `trigger: true` runs this gate whenever a new VS
-  # build is produced. Roslyn uses `DD-CB-ReleaseVS`.
-  # TODO(P0): confirm with the DartLab/VS team which VS build pipeline F# should gate on (the VS
-  # release build that consumes the F# insertion). Keeping Roslyn's default as a starting point.
+  # installed VS matches what F# is inserted into. `trigger: none` means a new VS build does NOT
+  # auto-run this pipeline — it is started on demand by the `/pr-val` (or `/dart`) PR comment via
+  # .github/workflows/pr-validation.yml. When started that way the resource resolves to the latest
+  # DD-CB-ReleaseVS build, giving a recent matching VS.
+  # TODO(P0): confirm with the DartLab/VS team which VS build pipeline supplies the matching VS for
+  # F# (the VS release build that consumes the F# insertion). Keeping Roslyn's as a starting point.
   - pipeline: VisualStudioBuildUnderTest
     source: DD-CB-ReleaseVS
-    trigger: true
+    trigger: none
   repositories:
   # DartLab core (provides /DartLab/... templates, Scripts, etc.). Pinned to the Production tag.
   - repository: DartLab
