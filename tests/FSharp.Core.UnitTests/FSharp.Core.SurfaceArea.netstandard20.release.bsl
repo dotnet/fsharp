@@ -830,6 +830,7 @@ Microsoft.FSharp.Control.TaskModule: System.Threading.Tasks.Task`1[T[]] Parallel
 Microsoft.FSharp.Control.TaskModule: System.Threading.Tasks.Task`1[Microsoft.FSharp.Core.Unit] SequentialDo(System.Threading.CancellationToken, System.Collections.Generic.IEnumerable`1[Microsoft.FSharp.Core.FSharpFunc`2[System.Threading.CancellationToken,System.Threading.Tasks.Task`1[Microsoft.FSharp.Core.Unit]]])
 Microsoft.FSharp.Control.TaskModule: System.Threading.Tasks.Task`1[T[]] Sequential[T](System.Threading.CancellationToken, System.Collections.Generic.IEnumerable`1[Microsoft.FSharp.Core.FSharpFunc`2[System.Threading.CancellationToken,System.Threading.Tasks.Task`1[T]]])
 Microsoft.FSharp.Control.TaskModule: System.Threading.Tasks.Task`1[T] Result[T](T)
+Microsoft.FSharp.Control.TaskModule: System.Threading.Tasks.Task`1[T] StartAsyncImmediate[T](System.Threading.CancellationToken, Microsoft.FSharp.Control.FSharpAsync`1[T])
 Microsoft.FSharp.Control.TaskStateMachineData`1[T]: System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1[T] MethodBuilder
 Microsoft.FSharp.Control.TaskStateMachineData`1[T]: T Result
 Microsoft.FSharp.Control.WebExtensions: Microsoft.FSharp.Control.FSharpAsync`1[Microsoft.FSharp.Core.Unit] AsyncDownloadFile(System.Net.WebClient, System.Uri, System.String)

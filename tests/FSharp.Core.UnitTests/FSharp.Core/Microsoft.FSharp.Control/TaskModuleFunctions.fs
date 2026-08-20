@@ -301,6 +301,7 @@ module TaskModuleFunctionsTests =
         Assert.True t.IsCompletedSuccessfully
         Assert.Equal((), t.Result)
 
+
     [<Fact>]
     let ``Task.parallelLimit runs all tasks and collects results`` () : Task =
         task {
@@ -347,6 +348,7 @@ module TaskModuleFunctionsTests =
                 |> ignore<Task<int[]>>)
         Assert.Equal("maxDegreeOfParallelism", ex.ParamName)
 
+
     [<Fact>]
     let ``Task.parallelDoLimit runs all tasks and returns unit`` () : Task =
         task {
@@ -360,6 +362,7 @@ module TaskModuleFunctionsTests =
             do! Task.parallelDoLimit 2 cts.Token computations
             Assert.Equal(5, count)
         }
+
 
     [<Fact>]
     let ``Task.sequential runs all tasks in order and collects results`` () : Task =
@@ -399,6 +402,7 @@ module TaskModuleFunctionsTests =
             Assert.Equal(1, maxConcurrent)
         }
 
+
     [<Fact>]
     let ``Task.sequentialDo runs all tasks in order and returns unit`` () : Task =
         task {
@@ -431,6 +435,33 @@ module TaskModuleFunctionsTests =
             do! Task.sequentialDo cts.Token computations
             Assert.Equal(1, maxConcurrent)
         }
+
+
+    [<Fact>]
+    let ``Task.startAsyncImmediate flows result`` () : Task =
+        task {
+            use cts = new CancellationTokenSource()
+            let! result = Async.result 42 |> Task.startAsyncImmediate cts.Token
+            Assert.Equal(42, result)
+        }
+
+    [<Fact>]
+    let ``Task.startAsyncImmediate flows CancellationToken`` () : Task =
+        task {
+            use cts = new CancellationTokenSource()
+            let! capturedCt = Async.CancellationToken |> Task.startAsyncImmediate cts.Token 
+            Assert.Equal(cts.Token, capturedCt)
+        }
+
+    [<Fact>]
+    let ``Task.startAsyncImmediate cancellation cancels the task`` () =
+        use cts = new CancellationTokenSource()
+        let t =
+            async { do! Async.Sleep(30_000) }
+            |> Task.startAsyncImmediate cts.Token
+        cts.Cancel()
+        Assert.ThrowsAsync<TaskCanceledException>(fun () -> t :> Task).Result |> ignore
+        Assert.True t.IsCanceled
 
 #if NETSTANDARD2_1 || NET
     [<Fact>]

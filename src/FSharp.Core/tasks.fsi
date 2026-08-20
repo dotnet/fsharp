@@ -660,6 +660,29 @@ module Task =
     [<CompiledName("SequentialDo")>]
     val sequentialDo: ct: CancellationToken -> computations: seq<CancellationToken -> Task<unit>> -> Task<unit>
 
+    /// <summary>Starts the <c>computation</c> on the current thread, returning a <see cref="T:System.Threading.Tasks.Task`1"/>
+    /// that represents its result.</summary>
+    /// <remarks>The computation begins executing synchronously on the calling thread, offloading only at the point
+    /// where it first suspends (mirroring <see cref="M:Microsoft.FSharp.Control.FSharpAsync.StartImmediateAsTask``1(Microsoft.FSharp.Control.FSharpAsync{``0},Microsoft.FSharp.Core.FSharpOption{System.Threading.CancellationToken})"/>).
+    /// <c>ct</c> flows into the computation, so cancelling it cancels <c>computation</c>, and the resulting task observes
+    /// that cancellation.</remarks>
+    /// <param name="ct">A cancellation token to use for <c>computation</c>.</param>
+    /// <param name="computation">The async computation to start.</param>
+    /// <returns>A task representing the result of <c>computation</c>.</returns>
+    ///
+    /// <example id="task-startasyncimmediate-1">
+    /// <code lang="fsharp">
+    /// use cts = new CancellationTokenSource()
+    /// task {
+    ///     return!
+    ///         async { return 42 }
+    ///         |> Task.startAsyncImmediate cts.Token
+    /// } // returns 42
+    /// </code>
+    /// </example>
+    [<CompiledName("StartAsyncImmediate")>]
+    val startAsyncImmediate: ct: CancellationToken -> computation: Async<'T> -> Task<'T>
+
 #if NETSTANDARD2_1 || NET
     /// <summary>Converts a <see cref="T:System.Threading.Tasks.ValueTask`1"/> to a <see cref="T:System.Threading.Tasks.Task`1"/>.</summary>
     ///
