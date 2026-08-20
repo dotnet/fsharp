@@ -500,7 +500,7 @@ module WeakMap =
                 let value = valueFactory key
                 if shouldCache value then
 #if NETSTANDARD2_0
-                    try table.Add(key, value) with _ -> ()
+                    try table.Add(key, value) with | :? ArgumentException -> ()
 #else
                     table.TryAdd(key, value) |> ignore
 #endif
