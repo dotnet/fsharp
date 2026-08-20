@@ -2619,6 +2619,7 @@ and [<Sealed>] TcImports
                     tcConfig.pathMap,
                     tcConfig.langVersion,
                     tcConfig.realsig,
+                    tcConfig.emitHotReloadClassStateMachines,
                     tcConfig.compilationMode
                 )
 
