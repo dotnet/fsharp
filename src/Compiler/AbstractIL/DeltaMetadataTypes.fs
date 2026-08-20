@@ -6,18 +6,8 @@ open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.BinaryConstants
 open FSharp.Compiler.AbstractIL.ILDeltaHandles
 
-// ============================================================================
-// Definition keys
-// ============================================================================
-// Stable, content-based identifiers for metadata definitions. These are used to
-// correlate a definition across compiles/generations (e.g. baseline vs. fresh
-// compile) independently of row-id churn. Lifted from the hot-reload baseline
-// module: unlike the rest of that module (FSharpEmitBaseline, handle caches,
-// token maps, TypeReferenceKey, ...), these records carry no session state and
-// are pure structural identities over ILType/string data, so they belong beside
-// the *RowInfo contract types below rather than with baseline bookkeeping.
-
-/// <summary>Stable identifier for a method definition used when correlating baseline tokens.</summary>
+// Stable structural definition keys are shared by baseline capture and the writer.
+// Keeping them here prevents the metadata layer from depending on session state.
 type MethodDefinitionKey =
     {
         DeclaringType: string
@@ -27,14 +17,12 @@ type MethodDefinitionKey =
         ReturnType: ILType
     }
 
-/// <summary>Stable identifier for a method parameter (sequence number within a method).</summary>
 type ParameterDefinitionKey =
     {
         Method: MethodDefinitionKey
         SequenceNumber: int
     }
 
-/// <summary>Stable identifier for a field definition in the baseline assembly.</summary>
 type FieldDefinitionKey =
     {
         DeclaringType: string
@@ -42,7 +30,6 @@ type FieldDefinitionKey =
         FieldType: ILType
     }
 
-/// <summary>Stable identifier for a property definition (including indexer parameter shapes).</summary>
 type PropertyDefinitionKey =
     {
         DeclaringType: string
@@ -51,7 +38,6 @@ type PropertyDefinitionKey =
         IndexParameterTypes: ILType list
     }
 
-/// <summary>Stable identifier for an event definition in the baseline assembly.</summary>
 type EventDefinitionKey =
     {
         DeclaringType: string
@@ -59,8 +45,6 @@ type EventDefinitionKey =
         EventType: ILType option
     }
 
-/// Identifies the property or event a MethodSemantics row (getter/setter/add/remove) is
-/// associated with, plus the row id of that PropertyMap/EventMap-owned parent.
 type MethodSemanticsAssociation =
     | PropertyAssociation of PropertyDefinitionKey * rowId: int
     | EventAssociation of EventDefinitionKey * rowId: int

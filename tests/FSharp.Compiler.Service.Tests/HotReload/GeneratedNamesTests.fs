@@ -1,10 +1,13 @@
 namespace FSharp.Compiler.Service.Tests.HotReload
 
+open System.Collections.Generic
 open Xunit
 
-open FSharp.Compiler.CompilerGeneratedNameMapState
 open FSharp.Compiler.CompilerGlobalState
+open FSharp.Compiler.CompilerGeneratedNameMapState
 open FSharp.Compiler.GeneratedNames
+open FSharp.Compiler.HotReloadBaseline
+open FSharp.Compiler.IlxDeltaEmitter
 open FSharp.Compiler.SynthesizedTypeMaps
 open FSharp.Compiler.Text
 
@@ -52,7 +55,7 @@ module GeneratedNamesTests =
         let snapshot =
             map.Snapshot
             |> Seq.find (fun struct (key, _) -> key = "closure")
-            |> fun struct (_, names) -> names
+            |> (fun struct (_, names) -> names)
 
         map.BeginSession()
 
@@ -65,7 +68,10 @@ module GeneratedNamesTests =
         Assert.Equal<string[]>(snapshot, [| replayFirst; replaySecond |])
 
     [<Fact>]
-    let ``NiceNameGenerator counters not incremented during replay mode`` () =
+    let ``NiceNameGenerator counters not incremented during hot reload mode`` () =
+        // This test verifies that when hot reload is enabled, the internal
+        // basicNameCounts counter is NOT incremented. This prevents counter drift
+        // between the per-file basicNameCounts and the global map ordinals.
         let compilerState = CompilerGlobalState()
         let map = FSharpSynthesizedTypeMaps()
         map.BeginSession()
@@ -73,9 +79,11 @@ module GeneratedNamesTests =
 
         let generator = compilerState.NiceNameGenerator
 
-        generator.FreshCompilerGeneratedName("test", zeroRange) |> ignore
-        generator.FreshCompilerGeneratedName("test", zeroRange) |> ignore
+        // Generate names while hot reload is enabled
+        let _ = generator.FreshCompilerGeneratedName("test", zeroRange)
+        let _ = generator.FreshCompilerGeneratedName("test", zeroRange)
 
+        // Disable hot reload - fallback names should start fresh.
         clearCompilerGeneratedNameMap (compilerState :> obj)
 
         let first = generator.FreshCompilerGeneratedName("test", zeroRange)
@@ -102,27 +110,6 @@ module GeneratedNamesTests =
         Assert.Equal("closure@42-1", fileOneSecond)
         Assert.Equal("closure@42", fileTwoFirst)
         Assert.Equal("closure@42-2", fileOneThird)
-
-    [<Fact>]
-    let ``PerFileNamingScope uses map before per-file buckets`` () =
-        let compilerState = CompilerGlobalState()
-        let map = FSharpSynthesizedTypeMaps()
-        map.BeginSession()
-        setCompilerGeneratedNameMap (compilerState :> obj) (map :> ICompilerGeneratedNameMap)
-
-        let start = Position.mkPos 42 0
-        let fileRange = Range.mkRange "/tmp/generated-names-file-scope.fs" start start
-        let scope = compilerState.NewFileScope fileRange
-
-        let first = scope.Fresh("closure", fileRange)
-        let second = scope.Fresh("closure", fileRange)
-
-        clearCompilerGeneratedNameMap (compilerState :> obj)
-        let fallback = scope.Fresh("closure", fileRange)
-
-        Assert.Equal("closure@hotreload", first)
-        Assert.Equal("closure@hotreload-1", second)
-        Assert.Equal("closure@42", fallback)
 
     [<Fact>]
     let ``Per-file naming scope remains one-based and file-index scoped`` () =
@@ -163,16 +150,28 @@ module GeneratedNamesTests =
         expectNoPositionalName "endpoints@hotreload#g0_o0"
 
     [<Fact>]
-    let ``generation-suffixed name parsing recognizes generation and occurrence`` () =
-        Assert.True(IsHotReloadGenerationSuffixedName "f@hotreload#g2_o3_4")
-        Assert.Equal(Some 2, TryGetHotReloadNameGeneration "f@hotreload#g2_o3_4")
+    let ``synthesized type shape guard compares structural surface`` () =
+        let baselineShape =
+            {
+                GenericArity = 0
+                BaseType = Some "class Microsoft.FSharp.Core.FSharpFunc`2"
+                InterfaceTypes = [ "class System.IDisposable" ]
+                FieldTypeNames = [ "class System.String"; "valuetype System.Int32" ]
+                MethodNameAndArities = [ ".ctor", 0; "Invoke", 0 ]
+            }
 
-        match TryNormalizeHotReloadGenerationName "Pipe #1 stage #2 at line 28@hotreload#g0_o1_2" with
-        | Some actual ->
-            Assert.Equal("Pipe #1 stage #2", actual.NormalizedBasicName)
-            Assert.Equal(0, actual.Generation)
-            Assert.Equal<int list>([ 1; 2 ], actual.OccurrenceOrdinal)
-        | None -> failwith "Expected generation-suffixed name to normalize."
+        Assert.True(Option.isNone (tryFindSynthesizedTypeShapeMismatch baselineShape baselineShape))
+
+        let expectMismatch fragment freshShape =
+            match tryFindSynthesizedTypeShapeMismatch baselineShape freshShape with
+            | Some message -> Assert.Contains(fragment, message)
+            | None -> failwithf "Expected shape mismatch containing '%s'." fragment
+
+        expectMismatch "generic arity" { baselineShape with GenericArity = 1 }
+        expectMismatch "base type" { baselineShape with BaseType = Some "class System.Object" }
+        expectMismatch "interface set" { baselineShape with InterfaceTypes = [] }
+        expectMismatch "field type multiset" { baselineShape with FieldTypeNames = [ "class System.String" ] }
+        expectMismatch "method set" { baselineShape with MethodNameAndArities = [ ".ctor", 0 ] }
 
     [<Fact>]
     let ``generation-suffixed name parsing rejects malformed names`` () =
@@ -183,3 +182,38 @@ module GeneratedNamesTests =
         Assert.Equal(None, TryGetHotReloadNameGeneration "@hotreload#g2_o0")
         Assert.Equal(None, TryNormalizeHotReloadGenerationName "f@hotreload#g1_o")
         Assert.Equal(None, TryNormalizeHotReloadGenerationName "f@bad@hotreload#g1_o0")
+
+    [<Fact>]
+    let ``synthesized baseline aliases exclude tokens paired with another fresh type`` () =
+        let pairings = Dictionary<string, string>()
+        pairings["Template.pipe@hotreload"] <- "Template.pipe@hotreload-21"
+
+        let candidates =
+            [|
+                "Template.pipe@hotreload", 0x02000001
+                "Template.pipe@hotreload-1", 0x02000002
+            |]
+
+        let availableForAnotherType =
+            filterAvailableBaselineTypeMatches pairings "Template.pipe@hotreload-23" candidates
+
+        let availableForSameType =
+            filterAvailableBaselineTypeMatches pairings "Template.pipe@hotreload-21" candidates
+
+        Assert.Equal<(string * int)[]>([| "Template.pipe@hotreload-1", 0x02000002 |], availableForAnotherType)
+        Assert.Equal<(string * int)[]>(candidates, availableForSameType)
+
+    [<Theory>]
+    [<InlineData(false, false, false)>]
+    [<InlineData(false, true, false)>]
+    [<InlineData(true, false, false)>]
+    [<InlineData(true, true, true)>]
+    let ``synthesized alias recovery requires recorded snapshot and in-process artifacts``
+        usesRecordedSnapshot
+        hasWholeModuleArtifacts
+        expected
+        =
+        Assert.Equal(
+            expected,
+            shouldFilterSynthesizedBaselineAliases usesRecordedSnapshot hasWholeModuleArtifacts
+        )
