@@ -93,6 +93,32 @@ namespace AnnotatedLib
         |> asLibrary
         |> withName "CsWrongNamespaceLib"
 
+    // A separately compiled C# assembly exposing a C#-style extension method annotated with the attribute.
+    // Consuming it as value.Ext(...) exercises the ILMeth path for an extension member whose receiver is the
+    // implicit 'this' argument (which must not itself be treated as a positional caller argument).
+    let private csExtensionLib =
+        CSharp """
+using System;
+using System.Runtime.CompilerServices;
+
+namespace System.Runtime.CompilerServices
+{
+    [AttributeUsage(AttributeTargets.Method, AllowMultiple = false, Inherited = false)]
+    public sealed class RequireNamedArgumentAttribute : Attribute { }
+}
+
+namespace AnnotatedLib
+{
+    public static class Ext
+    {
+        [RequireNamedArgument]
+        public static int AddTo(this int self, int y) => self + y;
+    }
+}
+"""
+        |> asLibrary
+        |> withName "CsExtensionLib"
+
     [<Fact>]
     let ``Same compilation unit - positional call is an error`` () =
         withPolyfill """
@@ -387,6 +413,166 @@ type C =
 
 module Use =
     let r = C.Sum(rest = [| 1; 2; 3 |])
+"""
+        |> withLangVersionPreview
+        |> typecheck
+        |> shouldSucceed
+        |> ignore
+
+    [<Fact>]
+    let ``Overload resolution - positional call binds the unannotated overload and succeeds`` () =
+        // Enforcement happens after overload selection: the int overload is not annotated.
+        withPolyfill """
+namespace Test
+
+open System.Runtime.CompilerServices
+
+type C =
+    static member Add(x: int, y: int) = x + y
+    [<RequireNamedArgument>]
+    static member Add(x: string, y: string) = x + y
+
+module Use =
+    let r = C.Add(1, 2)
+"""
+        |> withLangVersionPreview
+        |> typecheck
+        |> shouldSucceed
+        |> ignore
+
+    [<Fact>]
+    let ``Overload resolution - positional call binds the annotated overload and is an error`` () =
+        withPolyfill """
+namespace Test
+
+open System.Runtime.CompilerServices
+
+type C =
+    static member Add(x: int, y: int) = x + y
+    [<RequireNamedArgument>]
+    static member Add(x: string, y: string) = x + y
+
+module Use =
+    let r = C.Add("a", "b")
+"""
+        |> withLangVersionPreview
+        |> typecheck
+        |> shouldFail
+        |> withErrorCode 3910
+        |> ignore
+
+    [<Fact>]
+    let ``F# extension member - positional call is an error`` () =
+        withPolyfill """
+namespace Test
+
+open System.Runtime.CompilerServices
+
+type C() =
+    member _.Value = 0
+
+[<AutoOpen>]
+module Extensions =
+    type C with
+        [<RequireNamedArgument>]
+        member _.Add(x: int, y: int) = x + y
+
+module Use =
+    let r = C().Add(1, 2)
+"""
+        |> withLangVersionPreview
+        |> typecheck
+        |> shouldFail
+        |> withErrorCode 3910
+        |> ignore
+
+    [<Fact>]
+    let ``F# extension member - named call succeeds`` () =
+        withPolyfill """
+namespace Test
+
+open System.Runtime.CompilerServices
+
+type C() =
+    member _.Value = 0
+
+[<AutoOpen>]
+module Extensions =
+    type C with
+        [<RequireNamedArgument>]
+        member _.Add(x: int, y: int) = x + y
+
+module Use =
+    let r = C().Add(x = 1, y = 2)
+"""
+        |> withLangVersionPreview
+        |> typecheck
+        |> shouldSucceed
+        |> ignore
+
+    [<FactForNETCOREAPP>]
+    let ``C# extension method - positional call is an error, receiver is not a positional argument`` () =
+        FSharp """
+module Test
+open AnnotatedLib
+let r = (1).AddTo(2)
+"""
+        |> withReferences [ csExtensionLib ]
+        |> withLangVersionPreview
+        |> compile
+        |> shouldFail
+        |> withErrorCode 3910
+        |> ignore
+
+    [<FactForNETCOREAPP>]
+    let ``C# extension method - named call succeeds`` () =
+        FSharp """
+module Test
+open AnnotatedLib
+let r = (1).AddTo(y = 2)
+"""
+        |> withReferences [ csExtensionLib ]
+        |> withLangVersionPreview
+        |> compile
+        |> shouldSucceed
+        |> ignore
+
+    [<Fact>]
+    let ``First-class use of an annotated method is an error`` () =
+        // Taking the method as a first-class value would bypass the named-argument requirement, so the
+        // synthesized application must still be rejected. This locks the behaviour as intentional.
+        withPolyfill """
+namespace Test
+
+open System.Runtime.CompilerServices
+
+type C =
+    [<RequireNamedArgument>]
+    static member Add(x: int, y: int) = x + y
+
+module Use =
+    let f = C.Add
+"""
+        |> withLangVersionPreview
+        |> typecheck
+        |> shouldFail
+        |> withErrorCode 3910
+        |> ignore
+
+    [<Fact>]
+    let ``Explicit lambda forwarding with named arguments succeeds`` () =
+        // The supported way to obtain a function value is to forward through named arguments explicitly.
+        withPolyfill """
+namespace Test
+
+open System.Runtime.CompilerServices
+
+type C =
+    [<RequireNamedArgument>]
+    static member Add(x: int, y: int) = x + y
+
+module Use =
+    let f x y = C.Add(x = x, y = y)
 """
         |> withLangVersionPreview
         |> typecheck
