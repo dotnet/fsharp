@@ -1285,8 +1285,8 @@ and p_ILBasicCallConv x st =
          | ILArgConvention.VarArg -> 5)
         st
 
-and p_ILCallConv (Callconv(x, y)) st =
-    p_tup2 p_ILHasThis p_ILBasicCallConv (x, y) st
+and p_ILCallConv (x: ILCallingConv) st =
+    p_tup2 p_ILHasThis p_ILBasicCallConv (x.ThisConv, x.BasicConv) st
 
 and p_ILCallSig x st =
     p_tup3 p_ILCallConv p_ILTypes p_ILType (x.CallingConv, x.ArgTypes, x.ReturnType) st
@@ -1316,7 +1316,7 @@ let u_ILHasThis st =
 
 let u_ILCallConv st =
     let a, b = u_tup2 u_ILHasThis u_ILBasicCallConv st
-    Callconv(a, b)
+    ILCallingConv.Create(a, b)
 
 let u_ILTypeRef st =
     let a, b, c = u_tup3 u_ILScopeRef u_strings u_string st
@@ -3301,7 +3301,7 @@ and u_ValData st =
              | Some(a, _) -> a)
         val_type = x2
         val_stamp = newStamp ()
-        val_flags = ValFlags x4
+        val_flags = ValFlags.OfPickledBits x4
         val_opt_data =
             match x1z, x1a, x10, x14, x13, x15, x8, x13b, x12, x9 with
             | None, None, None, None, TAccess [], None, None, ParentNone, "", [] -> None

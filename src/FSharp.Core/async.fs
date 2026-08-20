@@ -2254,7 +2254,7 @@ type Async =
     static member Await(task: Task) : Async<unit> =
         AwaitUnitTask true task
 
-#if NETSTANDARD2_1
+#if NETSTANDARD2_1 || NET
     static member Await(task: ValueTask<'T>) : Async<'T> =
         if task.IsCompletedSuccessfully then
             CreateReturnAsync(task.GetAwaiter().GetResult())
@@ -2266,6 +2266,20 @@ type Async =
             CreateReturnAsync(task.GetAwaiter().GetResult())
         else
             AwaitUnitTask true (task.AsTask())
+#endif
+
+    static member StartTaskImmediate(createTask: CancellationToken -> Task<'T>) : Async<'T> =
+        CreateBindAsync Async.CancellationToken (createTask >> Async.Await)
+
+    static member StartTaskImmediate(createTask: CancellationToken -> Task) : Async<unit> =
+        CreateBindAsync Async.CancellationToken (createTask >> Async.Await)
+
+#if NETSTANDARD2_1 || NET
+    static member StartTaskImmediate(createTask: CancellationToken -> ValueTask<'T>) : Async<'T> =
+        CreateBindAsync Async.CancellationToken (createTask >> Async.Await)
+
+    static member StartTaskImmediate(createTask: CancellationToken -> ValueTask) : Async<unit> =
+        CreateBindAsync Async.CancellationToken (createTask >> Async.Await)
 #endif
 
 module AsyncTaskLikeExtensions =
@@ -2295,6 +2309,16 @@ module AsyncTaskLikeExtensions =
                                 cont ((^Awaiter: (member GetResult: unit -> 'T) awaiter))
                             with e ->
                                 econt e))
+
+        [<NoEagerConstraintApplication>]
+        static member inline StartTaskImmediate< ^TaskLike, ^Awaiter, 'T
+            when ^TaskLike: (member GetAwaiter: unit -> ^Awaiter)
+            and ^Awaiter :> ICriticalNotifyCompletion
+            and ^Awaiter: (member get_IsCompleted: unit -> bool)
+            and ^Awaiter: (member GetResult: unit -> 'T)>
+            (createTask: CancellationToken -> ^TaskLike)
+            : Async<'T> =
+            CreateBindAsync Async.CancellationToken (createTask >> Async.Await)
 
 module CommonExtensions =
 

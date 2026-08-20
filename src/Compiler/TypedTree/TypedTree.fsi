@@ -3,6 +3,7 @@ module internal rec FSharp.Compiler.TypedTree
 
 open System
 open System.Diagnostics
+open System.Collections.Concurrent
 open System.Collections.Generic
 open System.Collections.Immutable
 open Internal.Utilities.Collections
@@ -104,7 +105,12 @@ type ValFlags =
         isGeneratedEventVal: bool ->
             ValFlags
 
-    new: flags: int64 -> ValFlags
+    /// Reconstruct flags from the F# binary metadata. PickledBits always writes
+    /// ValInline.InlinedDefinition (0x00) out as ValInline.Always (0x01), so zero inline bits
+    /// are never produced by a compiler that has this normalization. Any zero bits seen here
+    /// are therefore legacy metadata from compilers older than PR #19548, which used the same
+    /// 0x00 bits to mean ValInline.Always (ShouldInline=true), and must be imported as such.
+    static member OfPickledBits: bits: int64 -> ValFlags
 
     member WithIsCompilerGenerated: isCompGen: bool -> ValFlags
 
@@ -4228,6 +4234,10 @@ type CcuData =
 
         /// The table of .NET CLI type forwarders for this assembly
         TypeForwarders: CcuTypeForwarderTable
+
+        /// C#-style extension members of this assembly's static classes, keyed by static class stamp.
+        /// Typed as obj because MethInfo is declared after this file.
+        CSharpStyleExtensionMembersCache: ConcurrentDictionary<Stamp, obj>
         XmlDocumentationInfo: XmlDocumentationInfo option
     }
 

@@ -6864,7 +6864,7 @@ and GenSequenceExpr
     let cloref = IlxClosureRef(ilCloTypeRef, ilCloLambdas, ilCloAllFreeVars)
 
     let ilxCloSpec =
-        IlxClosureSpec.Create(cloref, GenGenericArgs m eenvouter.tyenv cloFreeTyvars, false)
+        IlxClosureSpec.Create(cloref, GenGenericArgs cenv m eenvouter.tyenv cloFreeTyvars, false)
 
     let formalClospec =
         IlxClosureSpec.Create(cloref, mkILFormalGenericArgs 0 ilCloGenericParams, false)
@@ -7106,8 +7106,10 @@ and GenStaticDelegateClosureTypeDefs
 and GenGenericParams cenv eenv tps =
     tps |> DropErasedTypars |> List.map (GenGenericParam cenv eenv)
 
-and GenGenericArgs m (tyenv: TypeReprEnv) tps =
-    tps |> DropErasedTypars |> List.map (fun c -> (mkILTyvarTy tyenv[c, m]))
+and GenGenericArgs cenv m (tyenv: TypeReprEnv) tps =
+    tps
+    |> DropErasedTypars
+    |> List.map (fun tp -> GenType cenv m tyenv (mkTyparTy tp))
 
 /// Generate a local type function contract class and implementation
 and GenClosureAsLocalTypeFunction cenv (cgbuf: CodeGenBuffer) eenv thisVars expr m =
@@ -7524,7 +7526,7 @@ and GetIlxClosureInfo cenv m boxity isLocalTypeFunc canUseStaticField thisVars e
 
     /// Compute the contract if it is a local type function
     let ilCloGenericFormals = GenGenericParams cenv eenvinner cloFreeTyvars
-    let ilCloGenericActuals = GenGenericArgs m eenvouter.tyenv cloFreeTyvars
+    let ilCloGenericActuals = GenGenericArgs cenv m eenvouter.tyenv cloFreeTyvars
 
     let useStaticField = canUseStaticField && (ilCloAllFreeVars.Length = 0)
 
@@ -7832,7 +7834,7 @@ and GenDelegateExpr cenv cgbuf eenvouter expr (TObjExprMethod(slotsig, _attribs,
         CountClosure()
 
         // Push the constructor for the delegee
-        let ctxtGenericArgsForDelegee = GenGenericArgs m eenvouter.tyenv cloFreeTyvars
+        let ctxtGenericArgsForDelegee = GenGenericArgs cenv m eenvouter.tyenv cloFreeTyvars
 
         if useStaticClosure then
             GenUnit cenv eenvouter m cgbuf
