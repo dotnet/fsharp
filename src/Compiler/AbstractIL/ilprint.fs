@@ -365,15 +365,15 @@ and output_bcc os bcc =
          | ILArgConvention.Default -> " "
          | ILArgConvention.VarArg -> "vararg ")
 
-and output_callconv os (Callconv(hasthis, cc)) =
+and output_callconv os (callconv: ILCallingConv) =
     output_string
         os
-        (match hasthis with
+        (match callconv.ThisConv with
          | ILThisConvention.Instance -> "instance "
          | ILThisConvention.InstanceExplicit -> "explicit "
          | ILThisConvention.Static -> "")
 
-    output_bcc os cc
+    output_bcc os callconv.BasicConv
 
 and goutput_dlocref env os (dref: ILType) =
     match dref with

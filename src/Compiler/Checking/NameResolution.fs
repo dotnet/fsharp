@@ -219,7 +219,7 @@ type Item =
     /// CustomOperation(nm, helpText, methInfo)
     ///
     /// Used to indicate the availability or resolution of a custom query operation such as 'sortBy' or 'where' in computation expression syntax
-    | CustomOperation of string * (unit -> string option) * MethInfo option
+    | CustomOperation of string * (unit -> RichText option) * MethInfo option
 
     /// Represents the resolution of a name to a custom builder in the F# computation expression syntax
     | CustomBuilder of string * ValRef
@@ -587,20 +587,9 @@ let GetTyconRefForExtensionMembers minfo (deref: Entity) amap m g =
         None
 
 /// Get the info for all the .NET-style extension members listed as static members in the type.
-let private GetCSharpStyleIndexedExtensionMembersForTyconRef (amap: Import.ImportMap) m  (tcrefOfStaticClass: TyconRef) =
+let private ComputeCSharpStyleExtensionMembers (amap: Import.ImportMap) m  (tcrefOfStaticClass: TyconRef) (importFailed: bool ref) =
     let g = amap.g
-
-    let isApplicable =
-        IsTyconRefUsedForCSharpStyleExtensionMembers g tcrefOfStaticClass ||
-
-        g.langVersion.SupportsFeature(LanguageFeature.CSharpExtensionAttributeNotRequired) &&
-        tcrefOfStaticClass.IsLocalRef &&
-        not tcrefOfStaticClass.IsTypeAbbrev
-
-    if not isApplicable then [] else
-
     let ty = generalizedTyconRef g tcrefOfStaticClass
-    let pri = NextExtensionMethodPriority()
 
     let methods =
         protectAssemblyExploration []
@@ -608,7 +597,6 @@ let private GetCSharpStyleIndexedExtensionMembersForTyconRef (amap: Import.Impor
 
     [ for minfo in methods do
         if IsMethInfoPlainCSharpStyleExtensionMember g m true minfo then
-            let ilExtMem = ILExtMem (tcrefOfStaticClass, minfo, pri)
             // The results are indexed by the TyconRef of the first 'this' argument, if any.
             // So we need to go and crack the type of the 'this' argument.
             //
@@ -620,9 +608,49 @@ let private GetCSharpStyleIndexedExtensionMembersForTyconRef (amap: Import.Impor
             // methods for tuple occur in C# code)
             let thisTyconRef = GetTyconRefForExtensionMembers minfo tcrefOfStaticClass.Deref amap m g
             match thisTyconRef with
-            | None -> ()
-            | Some (Some tcref) -> yield Choice1Of2(tcref, ilExtMem)
-            | Some None -> yield Choice2Of2 ilExtMem ]
+            | None -> importFailed.Value <- true
+            | Some thisTyconRefOpt -> yield (thisTyconRefOpt, minfo) ]
+
+let private GetCSharpStyleIndexedExtensionMembersForTyconRef (amap: Import.ImportMap) m (tcrefOfStaticClass: TyconRef) =
+    let g = amap.g
+
+    let isApplicable =
+        IsTyconRefUsedForCSharpStyleExtensionMembers g tcrefOfStaticClass ||
+
+        g.langVersion.SupportsFeature(LanguageFeature.CSharpExtensionAttributeNotRequired) &&
+        tcrefOfStaticClass.IsLocalRef &&
+        not tcrefOfStaticClass.IsTypeAbbrev
+
+    // Checked before touching the CCU or its cache, so a non-extension class costs nothing extra.
+    if not isApplicable then [] else
+
+    let shape =
+        // A local class is still gaining members while its own file is checked; only an imported one is
+        // immutable enough to share. The cache lives on the CCU, so it goes when the project does.
+        if tcrefOfStaticClass.IsLocalRef then
+            ComputeCSharpStyleExtensionMembers amap m tcrefOfStaticClass (ref false)
+        else
+            let cache = tcrefOfStaticClass.nlr.Ccu.Deref.CSharpStyleExtensionMembersCache
+            match cache.TryGetValue tcrefOfStaticClass.Stamp with
+            | true, shape -> shape :?> (TyconRef option * MethInfo) list
+            | _ ->
+                let importFailed = ref false
+                let shape = ComputeCSharpStyleExtensionMembers amap m tcrefOfStaticClass importFailed
+
+                if not importFailed.Value then
+                    cache.TryAdd(tcrefOfStaticClass.Stamp, (shape :> obj)) |> ignore
+
+                shape
+
+    if List.isEmpty shape then [] else
+
+    let pri = NextExtensionMethodPriority()
+
+    [ for thisTyconRefOpt, minfo in shape do
+        let ilExtMem = ILExtMem (tcrefOfStaticClass, minfo, pri)
+        match thisTyconRefOpt with
+        | Some tcref -> yield Choice1Of2(tcref, ilExtMem)
+        | None -> yield Choice2Of2 ilExtMem ]
 
 /// Query the declared properties of a type (including inherited properties)
 let IntrinsicPropInfosOfTypeInScope (infoReader: InfoReader) optFilter ad findFlag m ty =
@@ -704,7 +732,9 @@ let rec TrySelectExtensionMethInfoOfILExtMem m amap apparentTy (actualParent, mi
     | ProvidedMeth(amap,providedMeth,_,m) -> 
         ProvidedMeth(amap, providedMeth, Some pri,m) |> Some
 #endif
-    | DefaultStructCtor _ -> 
+    | DefaultStructCtor _ ->
+        None
+    | RecdCtor _ ->
         None
 
 /// Select from a list of extension methods
@@ -1010,7 +1040,7 @@ let CheckForDirectReferenceToGeneratedType (tcref: TyconRef, genOk, m) =
     match tcref.TypeReprInfo with
     | TProvidedTypeRepr info when not info.IsErased ->
         if IsGeneratedTypeDirectReference (info.ProvidedType, m) then
-            error (Error(FSComp.SR.etDirectReferenceToGeneratedTypeNotAllowed(tcref.DisplayName), m))
+            error (Error(FSComp.SR.etDirectReferenceToGeneratedTypeNotAllowed(richTextOfEntityRef tcref), m))
     |  _ -> ()
 
 /// This adds a new entity for a lazily discovered provided type into the TAST structure.
@@ -1374,7 +1404,6 @@ and private AddStaticPartsOfTyconRefToNameEnv bulkAddMode ownDefinition g amap m
         eUnindexedExtensionMembers = eUnindexedExtensionMembers }
 
 and private CanAutoOpenTyconRef (g: TcGlobals) (tcref: TyconRef) =
-    g.langVersion.SupportsFeature LanguageFeature.OpenTypeDeclaration &&
     not tcref.IsILTycon &&
     EntityHasWellKnownAttribute g WellKnownEntityAttributes.AutoOpenAttribute tcref.Deref &&
     tcref.Typars |> List.isEmpty
@@ -1499,7 +1528,8 @@ let rec AddModuleOrNamespaceRefsToNameEnv g amap m root ad nenv (modrefs: Module
 
     let nenv =
         (nenv, modrefs) ||> List.fold (fun nenv modref ->
-            if modref.IsModule && EntityHasWellKnownAttribute g WellKnownEntityAttributes.AutoOpenAttribute modref.Deref then
+            // Check attributes before forcing the type reading.
+            if EntityHasWellKnownAttribute g WellKnownEntityAttributes.AutoOpenAttribute modref.Deref && modref.IsModule then
                 AddModuleOrNamespaceContentsToNameEnv g amap ad m false nenv modref
             else
                 nenv)
@@ -2603,14 +2633,14 @@ let CheckForTypeLegitimacyAndMultipleGenericTypeAmbiguities
                 // plausible types have different arities
                 (tcrefs |> Seq.distinctBy (fun (_, tcref) -> tcref.Typars.Length) |> Seq.length > 1)  ->
             [ for resInfo, tcref in tcrefs do
-                let resInfo = resInfo.AddWarning (fun _typarChecker -> errorR(Error(FSComp.SR.nrTypeInstantiationNeededToDisambiguateTypesWithSameName(tcref.DisplayName, tcref.DisplayNameWithStaticParametersAndUnderscoreTypars), m)))
+                let resInfo = resInfo.AddWarning (fun _typarChecker -> errorR(Error(FSComp.SR.nrTypeInstantiationNeededToDisambiguateTypesWithSameName(richTextOfEntityRef tcref, richTextOfEntityRefName tcref tcref.DisplayNameWithStaticParametersAndUnderscoreTypars), m)))
                 yield (resInfo, tcref) ]
 
         | [(resInfo, tcref)] when  typeNameResInfo.StaticArgsInfo.HasNoStaticArgsInfo && ((tcref.Typars).Length - resInfo.EnclosingTypeInst.Length) > 0 && typeNameResInfo.ResolutionFlag = ResolveTypeNamesToTypeRefs ->
             let resInfo =
                 resInfo.AddWarning (fun (ResultTyparChecker typarChecker) ->
                     if not (typarChecker()) then
-                        warning(Error(FSComp.SR.nrTypeInstantiationIsMissingAndCouldNotBeInferred(tcref.DisplayName, tcref.DisplayNameWithStaticParametersAndUnderscoreTypars), m)))
+                        warning(Error(FSComp.SR.nrTypeInstantiationIsMissingAndCouldNotBeInferred(richTextOfEntityRef tcref, richTextOfEntityRefName tcref tcref.DisplayNameWithStaticParametersAndUnderscoreTypars), m)))
             [(resInfo, tcref)]
 
         | _ ->
@@ -3056,14 +3086,16 @@ let rec ResolveLongIdentInTypePrim (ncenv: NameResolver) nenv lookupKind (resInf
                             |> Array.sort
                             |> Array.map (fun s -> $"    %s{s}")
                             |> fun a -> System.String.Join("\n", a)
+                        let message =
+                            FSComp.SR.tcMultipleRecdTypeChoice(RichText.mkText candidates, richTextOfEntityRefName tcref resolvedTypeName, RichText.mkText overlappingNames)
                         if g.langVersion.SupportsFeature(LanguageFeature.WarningWhenMultipleRecdTypeChoice) then
-                            warning(Error(FSComp.SR.tcMultipleRecdTypeChoice(candidates, resolvedTypeName, overlappingNames), m))
+                            warning(Error(message, m))
                         else
-                            informationalWarning(Error(FSComp.SR.tcMultipleRecdTypeChoice(candidates, resolvedTypeName, overlappingNames), m))
+                            informationalWarning(Error(message, m))
                 | _ -> ()
-                FSComp.SR.undefinedNameFieldConstructorOrMemberWhenTypeIsKnown(tcref.DisplayNameWithStaticParametersAndUnderscoreTypars, s)
+                FSComp.SR.undefinedNameFieldConstructorOrMemberWhenTypeIsKnown(richTextOfEntityRefName tcref tcref.DisplayNameWithStaticParametersAndUnderscoreTypars, s)
             | ValueSome tcref ->
-                FSComp.SR.undefinedNameFieldConstructorOrMemberWhenTypeIsKnown(tcref.DisplayNameWithStaticParametersAndUnderscoreTypars, s)
+                FSComp.SR.undefinedNameFieldConstructorOrMemberWhenTypeIsKnown(richTextOfEntityRefName tcref tcref.DisplayNameWithStaticParametersAndUnderscoreTypars, s)
             | _ ->
                 FSComp.SR.undefinedNameFieldConstructorOrMember(s)
 
@@ -3481,7 +3513,7 @@ let rec ResolveExprLongIdentPrim sink (ncenv: NameResolver) first fullyQualified
 
 let ResolveExprLongIdent sink (ncenv: NameResolver) m ad nenv typeNameResInfo lid maybeAppliedArgExpr =
     match lid with
-    | [] -> raze (Error(FSComp.SR.nrInvalidExpression(textOfLid lid), m))
+    | [] -> raze (Error(FSComp.SR.nrInvalidExpression(RichText.mkText (textOfLid lid)), m))
     | id :: rest -> ResolveExprLongIdentPrim sink ncenv true OpenQualified m ad nenv typeNameResInfo id rest false maybeAppliedArgExpr
 
 //-------------------------------------------------------------------------
@@ -3745,7 +3777,7 @@ let SuggestTypeLongIdentInModuleOrNamespace depth (modref: ModuleOrNamespaceRef)
             if IsEntityAccessible amap m ad (modref.NestedTyconRef e) then
                 addToBuffer e.DisplayName
 
-    let errorTextF s = FSComp.SR.undefinedNameTypeIn(s, fullDisplayTextOfModRef modref)
+    let errorTextF s = FSComp.SR.undefinedNameTypeIn(s, richTextOfQualifiedModRef modref)
     UndefinedName(depth, errorTextF, id, suggestPossibleTypes)
 
 /// Resolve a long identifier representing a type in a module or namespace
@@ -4060,8 +4092,8 @@ let ResolveFieldPrim sink (ncenv: NameResolver) nenv ad ty (fldInfo: ExplicitOrS
                         for label in SuggestOtherLabelsOfSameRecordType g nenv ty id allFields do
                             addToBuffer label
 
-                    let typeName = NicePrint.minimalStringOfType nenv.eDisplayEnv ty
-                    let errorText = FSComp.SR.nrRecordDoesNotContainSuchLabel(typeName, id.idText)
+                    let typeName = NicePrint.minimalRichTextOfType nenv.eDisplayEnv ty
+                    let errorText = FSComp.SR.nrRecordDoesNotContainSuchLabel(typeName, RichText.mkUnresolvedName id.idText)
                     error(ErrorWithSuggestions(errorText, m, id.idText, suggestLabels))
                 else
                     Some (lookup())
@@ -4127,7 +4159,7 @@ let ResolveNestedField sink (ncenv: NameResolver) nenv ad recdTy lid =
         | ValueSome (anonInfo, tys) ->
             match anonInfo.SortedNames |> Array.tryFindIndex (fun x -> x = id.idText) with
             | Some index -> OneSuccess (Item.AnonRecdField (anonInfo, tys, index, m))
-            | _ -> raze (Error(FSComp.SR.nrRecordDoesNotContainSuchLabel(NicePrint.minimalStringOfType nenv.eDisplayEnv ty, id.idText), m))
+            | _ -> raze (Error(FSComp.SR.nrRecordDoesNotContainSuchLabel(NicePrint.minimalRichTextOfType nenv.eDisplayEnv ty, RichText.mkUnresolvedName id.idText), m))
         | _ ->
             let otherRecordFields ty =
                 let typeName = NicePrint.minimalStringOfType nenv.eDisplayEnv ty
@@ -4148,8 +4180,8 @@ let ResolveNestedField sink (ncenv: NameResolver) nenv ad recdTy lid =
                         for label in SuggestOtherLabelsOfSameRecordType g nenv ty id (otherRecordFields ty) do
                             addToBuffer label
 
-                    let typeName = NicePrint.minimalStringOfType nenv.eDisplayEnv ty
-                    let errorText = FSComp.SR.nrRecordDoesNotContainSuchLabel(typeName,id.idText)
+                    let typeName = NicePrint.minimalRichTextOfType nenv.eDisplayEnv ty
+                    let errorText = FSComp.SR.nrRecordDoesNotContainSuchLabel(typeName, RichText.mkUnresolvedName id.idText)
                     raze (ErrorWithSuggestions(errorText, m, id.idText, suggestLabels))
             else 
                 match Map.tryFind id.idText nenv.eFieldLabels with
@@ -4360,7 +4392,7 @@ let ResolveLongIdentAsExprAndComputeRange (sink: TcResultsSink) (ncenv: NameReso
 
     match item1, item with
     | Item.MethodGroup(name, minfos1, _), Item.MethodGroup(_, [], _) when not (isNil minfos1) ->
-        raze(Error(FSComp.SR.methodIsNotStatic name, wholem))
+        raze(Error(FSComp.SR.methodIsNotStatic (RichText.mkMethod name), wholem))
     | _ -> 
 
     // Fake idents e.g. 'Microsoft.FSharp.Core.None' have identical ranges for each part

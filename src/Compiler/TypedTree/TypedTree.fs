@@ -266,6 +266,17 @@ type ValFlags(flags: int64) =
         else
             bits
 
+    /// Reconstruct flags from the F# binary metadata. PickledBits always writes
+    /// ValInline.InlinedDefinition (0x00) out as ValInline.Always (0x01), so zero inline bits
+    /// are never produced by a compiler that has this normalization. Any zero bits seen here
+    /// are therefore legacy metadata from compilers older than PR #19548, which used the same
+    /// 0x00 bits to mean ValInline.Always (ShouldInline=true), and must be imported as such.
+    static member OfPickledBits(bits: int64) =
+        if bits &&& 0b00000000000000110000L = 0L then
+            ValFlags(bits ||| 0b00000000000000010000L)
+        else
+            ValFlags bits
+
 /// Represents the kind of a type parameter
 [<RequireQualifiedAccess (* ; StructuredFormatDisplay("{DebugText}") *) >]
 type TyparKind = 
@@ -508,11 +519,11 @@ type EntityFlags(flags: int64) =
 
 exception UndefinedName of 
     depth: int * 
-    error: (string -> string) * 
+    error: (RichText -> RichText) * 
     id: Ident * 
     suggestions: Suggestions
 
-exception InternalUndefinedItemRef of (string * string * string -> int * string) * string * string * string
+exception InternalUndefinedItemRef of (string * string * string -> int * RichText) * string * string * string
 
 [<CustomEquality;NoComparison>]
 type ModuleOrNamespaceKind = 
@@ -693,7 +704,7 @@ type Entity =
 
       /// Used during codegen to hold the ILX representation indicating how to access the type 
       // MUTABILITY: only for unpickle linkage and caching
-      mutable entity_il_repr_cache: CompiledTypeRepr cache
+      mutable entity_il_repr_cache: CompiledTypeRepr cache | null
 
       mutable entity_opt_data: EntityOptionalData option
     }
@@ -905,8 +916,12 @@ type Entity =
     member x.IsFSharpException = match x.ExceptionInfo with TExnNone -> false | _ -> true
 
     /// Demangle the module name, if FSharpModuleWithSuffix is used
-    member x.DemangledModuleOrNamespaceName =  
-          CompilationPath.DemangleEntityName x.LogicalName x.ModuleOrNamespaceType.ModuleOrNamespaceKind
+    member x.DemangledModuleOrNamespaceName =
+          // Check the suffix before reading the entity contents.
+          if x.LogicalName.EndsWithOrdinal FSharpModuleSuffix then
+              CompilationPath.DemangleEntityName x.LogicalName x.ModuleOrNamespaceType.ModuleOrNamespaceKind
+          else
+              x.LogicalName
     
     /// Get the type parameters for an entity that is a type declaration, otherwise return the empty list.
     ///
@@ -934,7 +949,15 @@ type Entity =
         | _ -> TAccess []
 
     /// Get the cache of the compiled ILTypeRef representation of this module or type.
-    member x.CompiledReprCache = x.entity_il_repr_cache
+    /// Allocated on first request rather than per entity: only codegen asks for it, so an analysis-only
+    /// host never pays for one.
+    member x.CompiledReprCache =
+        match x.entity_il_repr_cache with
+        | null ->
+            let c = newCache ()
+            x.entity_il_repr_cache <- c
+            c
+        | c -> c
 
     /// Get a blob of data indicating how this type is nested in other namespaces, modules or types.
     member x.PublicPath = x.entity_pubpath
@@ -1001,7 +1024,9 @@ type Entity =
     member x.CompilationPath = 
         match x.CompilationPathOpt with 
         | Some cpath -> cpath 
-        | None -> error(Error(FSComp.SR.tastTypeOrModuleNotConcrete(x.LogicalName), x.Range))
+        | None ->
+            let tag = if x.IsModuleOrNamespace then TextTag.Module else TextTag.Class
+            error(Error(FSComp.SR.tastTypeOrModuleNotConcrete(RichText.ofTag tag x.LogicalName), x.Range))
     
     /// Get a table of fields for all the F#-defined record, struct and class fields in this type definition, including
     /// static fields, 'val' declarations and hidden fields from the compilation of implicit class constructions.
@@ -1464,8 +1489,12 @@ type TyconAugmentation =
       /// Properties, methods etc. in declaration order. The boolean flag for each indicates if the
       /// member is known to be an explicit interface implementation. This must be computed and
       /// saved prior to remapping assembly information.
-      tcaug_adhoc_list: ResizeArray<bool * ValRef> 
-      
+      //
+      // Allocated on first member: there is one augmentation per entity, and nothing is ever added for
+      // an imported type.
+      mutable tcaug_adhoc_list: ResizeArray<bool * ValRef> | null
+
+
       /// Properties, methods etc. as lookup table
       mutable tcaug_adhoc: NameMultiMap<ValRef>
       
@@ -1481,6 +1510,24 @@ type TyconAugmentation =
       /// Set to true if the type is determined to be abstract 
       mutable tcaug_abstract: bool                       
     }
+
+    /// Record a member in declaration order, allocating the list on first use
+    member tcaug.AddAdhocMember(isExplicitImpl: bool, vref: ValRef) =
+        let list =
+            match tcaug.tcaug_adhoc_list with
+            | null ->
+                let l = ResizeArray()
+                tcaug.tcaug_adhoc_list <- l
+                l
+            | l -> l
+
+        list.Add(isExplicitImpl, vref)
+
+    /// Members in declaration order, empty when the type has none
+    member tcaug.AdhocMembers: (bool * ValRef) list =
+        match tcaug.tcaug_adhoc_list with
+        | null -> []
+        | l -> List.ofSeq l
 
     member tcaug.SetCompare x = tcaug.tcaug_compare <- Some x
 
@@ -1499,7 +1546,7 @@ type TyconAugmentation =
           tcaug_hash_and_equals_withc=None 
           tcaug_hasObjectGetHashCode=false 
           tcaug_adhoc=NameMultiMap.empty 
-          tcaug_adhoc_list=ResizeArray<_>() 
+          tcaug_adhoc_list=null
           tcaug_super=None
           tcaug_interfaces=[] 
           tcaug_closed=false 
@@ -5882,7 +5929,9 @@ type CcuData =
       
       /// The table of .NET CLI type forwarders for this assembly
       TypeForwarders: CcuTypeForwarderTable
-      
+
+      CSharpStyleExtensionMembersCache: ConcurrentDictionary<Stamp, obj>
+
       XmlDocumentationInfo: XmlDocumentationInfo option }
 
     [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
@@ -6206,8 +6255,9 @@ type Construct() =
         ModuleOrNamespaceType(mkind, QueueList.ofList vals, QueueList.ofList tycons)
 
     /// Create a new node for an empty module or namespace contents
-    static member NewEmptyModuleOrNamespaceType mkind = 
-        Construct.NewModuleOrNamespaceType mkind [] []
+    static member NewEmptyModuleOrNamespaceType mkind =
+        // Not via NewModuleOrNamespaceType: QueueList.ofList would build two more objects to hold nothing.
+        ModuleOrNamespaceType(mkind, QueueList.Empty, QueueList.Empty)
 
     static member NewEmptyFSharpTyconData kind =
         { fsobjmodel_cases = Construct.MakeUnionCases []
@@ -6295,7 +6345,7 @@ type Construct() =
             // Generated types get internal accessibility
             entity_pubpath = Some pubpath
             entity_cpath = Some cpath
-            entity_il_repr_cache = newCache()
+            entity_il_repr_cache = null
             entity_opt_data =
                 match kind, access with
                 | TyparKind.Type, TAccess [] -> None
@@ -6320,7 +6370,7 @@ type Construct() =
             entity_pubpath=cpath |> Option.map (fun (cp: CompilationPath) -> cp.NestedPublicPath id)
             entity_cpath=cpath
             entity_attribs=WellKnownEntityAttribs.Create(attribs)
-            entity_il_repr_cache = newCache()
+            entity_il_repr_cache = null
             entity_opt_data =
                 match xml, access with
                 | doc, TAccess [] when doc.IsEmpty -> None
@@ -6398,7 +6448,7 @@ type Construct() =
             entity_typars = LazyWithContext.NotLazy []
             entity_tycon_repr = TNoRepr
             entity_flags = EntityFlags(usesPrefixDisplay=false, isModuleOrNamespace=false, preEstablishedHasDefaultCtor=false, hasSelfReferentialCtor=false, isStructRecordOrUnionType=false)
-            entity_il_repr_cache = newCache()
+            entity_il_repr_cache = null
             entity_opt_data =
                 match doc, access, repr with
                 | doc, TAccess [], TExnNone when doc.IsEmpty -> None
@@ -6437,7 +6487,7 @@ type Construct() =
             entity_modul_type = mtyp
             entity_pubpath=cpath |> Option.map (fun (cp: CompilationPath) -> cp.NestedPublicPath (mkSynId m nm))
             entity_cpath = cpath
-            entity_il_repr_cache = newCache()
+            entity_il_repr_cache = null
             entity_opt_data =
                 match kind, doc, reprAccess, access with
                 | TyparKind.Type, doc, TAccess [], TAccess [] when doc.IsEmpty -> None

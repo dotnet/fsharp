@@ -13,6 +13,26 @@ Running all benchmarks:
 Running a specific benchmark:
 ```dotnet run -c Release --filter *ParsingCheckExpressionsFs*```
 
+## Namespace-import benchmarks (lazy ILPreNamespace)
+
+`NamespaceImportBenchmarks.fs` measures the effect of lazy namespace reading in the IL reader: a project
+that references large **non-F#** assemblies (the BCL) but opens only a few namespaces should read and
+retain less. F# assemblies are unpickled and do not exercise this path.
+
+Startup time + transient allocation (BDN, `MemoryDiagnoser`):
+```dotnet run -c Release --filter *NamespaceImportStartup*```
+`NarrowImport` opens one namespace (where laziness should pay off); `WideImport` opens many (control —
+should stay flat). Compare the `Mean` and `Allocated` columns across `main` and this branch.
+
+Retained (live-heap) memory — MemoryDiagnoser only sees allocation *during* an op, not what survives, so
+this is a separate standalone probe:
+```dotnet run -c Release -- retained-memory```
+It prints retained KB for Narrow and Wide. The win is un-opened namespaces never being *retained*, so
+compare `Narrow` retained across `main` and this branch (and Narrow-vs-Wide within a branch).
+
+To compare branches: build + run on `main`, note the numbers, `git checkout il-pre-namespace`, rebuild
+and re-run, diff. (The `BenchmarkComparison/` project automates historical before/after runs if preferred.)
+
 ## Sample results
 
 |                                 Method |        Job | UnrollFactor |           Mean |        Error |        StdDev |         Median |       Gen 0 |      Gen 1 |     Gen 2 |  Allocated |

@@ -422,6 +422,11 @@ $ code --diff {outFile} {expectedFile}
 
     let private fromFSharpDiagnostic (errors: FSharpDiagnostic[]) : (SourceCodeFileName * ErrorInfo) list =
         let toErrorInfo (e: FSharpDiagnostic) : SourceCodeFileName * ErrorInfo =
+            // Every diagnostic assertion in the test suite doubles as a check that classifying message
+            // parts doesn't change the message itself. See docs/rich-diagnostics.md.
+            if e.RichMessage.Text <> e.Message then
+                failwith $"Rich message text doesn't match the message.\nMessage: %A{e.Message}\nParts:\n%s{dumpRichText e.RichMessage}"
+
             let errorNumber = e.ErrorNumber
             let severity = e.Severity
             let error =
@@ -764,7 +769,7 @@ $ code --diff {outFile} {expectedFile}
     let asNetStandard20 (cUnit: CompilationUnit) : CompilationUnit =
         match cUnit with
         | FS fs -> FS { fs with TargetFramework = TargetFramework.NetStandard20 }
-        | CS _ -> failwith "References are not supported in CS"
+        | CS cs -> CS { cs with TargetFramework = TargetFramework.NetStandard20 }
         | IL _ ->  failwith "References are not supported in IL"
 
     let withPlatform (platform:ExecutionPlatform) (cUnit: CompilationUnit) : CompilationUnit =
@@ -2378,6 +2383,14 @@ $ code --diff {outFile} {expectedFile}
         match hash with
         | Some h -> h
         | None -> failwith "Implied signature hash returned 'None' which should not happen"
+
+    let withXmlDoc (cUnit: CompilationUnit) : CompilationUnit =
+        match cUnit with
+        | FS fs ->
+            let outputDir = fs.OutputDirectory |> Option.defaultWith createTemporaryDirectory
+            let xmlPath = Path.Combine(outputDir.FullName, (defaultArg fs.Name "output") + ".xml")
+            cUnit |> withOutputDirectory (Some outputDir) |> withOptions [ $"--doc:{xmlPath}" ]
+        | _ -> failwith "withXmlDoc is only supported for F#"
 
     /// Result type for CLI subprocess execution (runFsiProcess / runFscProcess).
     type ProcessResult = { ExitCode: int; StdOut: string; StdErr: string }

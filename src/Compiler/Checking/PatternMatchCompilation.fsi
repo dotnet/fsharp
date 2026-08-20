@@ -69,15 +69,15 @@ val internal CompilePattern:
         TType ->
         // result type
         TType ->
-            DecisionTree * DecisionTreeTarget list
+            DecisionTree * DecisionTreeTarget list * Bindings
 
 /// Exception raised when a pattern match is incomplete.
 /// Fields: isComputationExpression * (counterExample * isShownAsFieldPattern) option * range
-exception internal MatchIncomplete of bool * (string * bool) option * range
+exception internal MatchIncomplete of bool * (RichText * bool) option * range
 
 /// Wrapper that adds a for-loop hint to an existing MatchIncomplete diagnostic.
 exception internal MatchIncompleteForLoopHint of exn
 
 exception internal RuleNeverMatched of range
 
-exception internal EnumMatchIncomplete of bool * (string * bool) option * range
+exception internal EnumMatchIncomplete of bool * (RichText * bool) option * range

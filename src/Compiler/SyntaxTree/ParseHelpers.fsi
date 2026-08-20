@@ -124,9 +124,9 @@ val grabXmlDoc: parseState: IParseState * optAttributes: SynAttributeList list *
 val ParseAssemblyCodeType:
     s: string -> reportLibraryOnlyFeatures: bool -> langVersion: LanguageVersion -> m: range -> ILType
 
-val reportParseErrorAt: range -> (int * string) -> unit
+val reportParseErrorAt: range -> (int * RichText) -> unit
 
-val raiseParseErrorAt: range -> (int * string) -> 'a
+val raiseParseErrorAt: range -> (int * RichText) -> 'a
 
 val mkSynMemberDefnGetSet:
     parseState: IParseState ->
@@ -229,7 +229,7 @@ val mkDefnBindings:
     mWhole: range * BindingSet * attrs: SynAttributes * vis: SynAccess option * attrsm: range * mIn: range option ->
         SynModuleDecl list
 
-val idOfPat: parseState: IParseState -> m: range -> p: SynPat -> Ident
+val idOfPat: m: range -> p: SynPat -> Ident
 
 val checkForMultipleAugmentations: m: range -> a1: 'a list -> a2: 'a list -> 'a list
 
@@ -285,3 +285,33 @@ val mkSynField:
         SynField
 
 val leadingKeywordIsAbstract: SynLeadingKeyword -> bool
+
+val mkAbstractMember:
+    parseState: IParseState ->
+    attrs: SynAttributeList list ->
+    accessBeforeKeyword: SynAccess option ->
+    abstractMemberFlags: (SynMemberKind -> SynMemberFlags) * SynLeadingKeyword ->
+        accessBeforeId: SynAccess option ->
+        mInline: range option ->
+        id: SynIdent ->
+        typeParams: SynValTyparDecls ->
+        typeWithConstraints: SynType * SynValInfo ->
+            accessors: range option * (SynMemberKind * GetSetKeywords option * SynAccess option * SynAccess option) ->
+                SynMemberDefn list
+
+val mkMatchClauses:
+    patternAndGuard: SynPat * SynExpr option ->
+        patternResult: range option * SynExpr ->
+            mNextBar: range option ->
+            nextClauses: (range option -> SynMatchClause list * range) option ->
+            mLastOuter: range option ->
+                (range option -> SynMatchClause list * range)
+
+val mkMatchClausesRecoverMissingResult:
+    patternAndGuard: SynPat * SynExpr option ->
+        exprDebugString: string ->
+        mExpr: range option ->
+        mNextBar: range option ->
+        nextClauses: (range option -> SynMatchClause list * range) option ->
+        mLastOuter: range option ->
+            (range option -> SynMatchClause list * range)

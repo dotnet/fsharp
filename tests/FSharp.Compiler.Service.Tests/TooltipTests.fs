@@ -32,7 +32,7 @@ let testXmlDocFallbackToSigFileWhileInImplFile sigSource implSource (expectedCon
 
     let checkResult =
         checker.ParseAndCheckFileInProject("A.fs", 0, Map.find "A.fs" files, projectOptions)
-        |> Async.RunImmediate
+        |> Async.RunSynchronouslyImmediate
 
     match checkResult with
     | _, FSharpCheckFileAnswer.Succeeded(checkResults) ->
@@ -273,8 +273,8 @@ let testToolTipSquashing source =
 
     let checkResult =
         checker.ParseAndCheckFileInProject("A.fs", 0, Map.find "A.fs" files, projectOptions)
-        |> Async.RunImmediate
-        
+        |> Async.RunSynchronouslyImmediate
+
     match checkResult with
     | _, FSharpCheckFileAnswer.Succeeded(checkResults) ->
         // Get the tooltip for `bar`
@@ -291,8 +291,7 @@ let testToolTipSquashing source =
                                 | ToolTipElement.Group gr -> gr |> List.map (fun g -> g.MainDescription)
                                 | _ -> failwith "expected TooltipElement.Group")
                 |> List.concat
-                |> Array.concat
-                |> Array.sumBy (fun t -> if t.Tag = TextTag.LineBreak then 1 else 0)
+                |> List.sumBy (fun t -> t.Parts |> Array.sumBy (fun t -> if t.Tag = TextTag.LineBreak then 1 else 0))
             let squashedBreaks =
                 groupsSquashed
                 |> List.map
@@ -301,9 +300,8 @@ let testToolTipSquashing source =
                                 | ToolTipElement.Group gr -> gr |> List.map (fun g -> g.MainDescription)
                                 | _ -> failwith "expected TooltipElement.Group")
                 |> List.concat
-                |> Array.concat
-                |> Array.sumBy (fun t -> if t.Tag = TextTag.LineBreak then 1 else 0)
-                    
+                |> List.sumBy (fun t -> t.Parts |> Array.sumBy (fun t -> if t.Tag = TextTag.LineBreak then 1 else 0))
+
             Assert.True(breaks < squashedBreaks)
     | _ -> failwith "Expected checking to succeed."
 
@@ -380,7 +378,7 @@ let getMainDescriptionTags (ToolTipText(items)) =
     | _ -> failwith $"Expected single group in tooltip, got {items}"
 
 let assertNameTagInTooltip expectedTag expectedName (tooltip: ToolTipText) =
-    let tags = getMainDescriptionTags tooltip
+    let tags = (getMainDescriptionTags tooltip).Parts
     let found = tags |> Array.exists (fun t -> t.Tag = expectedTag && t.Text = expectedName)
     let desc = tags |> Array.map (fun t -> sprintf "(%A, %s)" t.Tag t.Text) |> String.concat ", "
     Assert.True(found, sprintf "Expected tag %A with text '%s' in tooltip, but found: %s" expectedTag expectedName desc)
@@ -893,8 +891,7 @@ let private renderAllGroups (ToolTipText elements) =
         match el with
         | ToolTipElement.Group items ->
             for item in items do
-                for line in item.MainDescription do
-                    sb.Append(line.Text) |> ignore
+                sb.Append(item.MainDescription.Text) |> ignore
                 sb.Append('\n') |> ignore
                 for line in item.XmlDoc |> (function FSharpXmlDoc.FromXmlText t -> t.UnprocessedLines |> Array.toList | _ -> []) do
                     sb.AppendLine(line) |> ignore

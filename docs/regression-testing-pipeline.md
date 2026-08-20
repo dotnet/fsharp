@@ -25,8 +25,8 @@ The regression testing logic is implemented as a reusable Azure DevOps template 
 1. **Build F# Compiler**: The `EndToEndBuildTests` job builds the F# compiler and publishes required artifacts
 2. **Matrix Execution**: For each library in the test matrix (running in parallel):
    - Checkout the third-party repository at a specific commit
-   - Install appropriate .NET SDK version using the repository's `global.json`
-   - Setup `Directory.Build.props` to import `UseLocalCompiler.Directory.Build.props`
+   - Pin `global.json` to the exact SDK that built the local compiler
+   - Inject `UseLocalCompiler.Directory.Build.props` via `CustomAfterDirectoryBuildProps`
    - Build the library using its standard build script
    - Publish MSBuild binary logs for analysis
 3. **Report Results**: Success/failure status is reported with build logs for diagnosis
@@ -68,8 +68,9 @@ To add a new library to the test matrix, update the template invocation in `azur
 Each test matrix entry requires:
 - **repo**: GitHub repository in `owner/name` format
 - **commit**: Specific commit SHA for reproducible results
-- **buildScript**: Build script to execute (e.g., `build.cmd`, `build.sh`)
+- **buildScript**: Build command to execute — a `dotnet ...` command or a script file (`build.cmd`/`build.sh`); `;;` separates commands run sequentially, fail-fast
 - **displayName**: Human-readable name for the job
+- **expectLocalCore** (optional): set `true` when the repo has projects that take the implicit `FSharp.Core`; the job then fails unless the locally built FSharp.Core is actually restored — a tripwire for a silently broken shim
 
 ## Pipeline Configuration
 
@@ -82,10 +83,10 @@ Regression tests run automatically as part of PR builds when:
 
 ### Build Environment
 
-- **OS**: Windows (using `$(WindowsMachineQueueName)`)
+- **OS**: Windows by default (`$(WindowsMachineQueueName)`); matrix entries can override to Linux. The scripts are OS-agnostic
 - **Pool**: Standard public build pool (`$(DncEngPublicBuildPool)`)
-- **Timeout**: 60 minutes per regression test job
-- **.NET SDK**: Automatically detects and installs SDK version from each repository's `global.json`
+- **Timeout**: 120 minutes per regression test job
+- **.NET SDK**: Each test repo's `global.json` is pinned to the SDK that built the local compiler, so `fsc.dll` and its host runtime line up
 
 ### Artifacts
 
@@ -108,26 +109,19 @@ When a regression test fails:
 
 ### Local Testing
 
-To test a library locally with your F# compiler build:
+To reproduce a regression locally, on any OS, without editing the library:
 
-1. Build the F# compiler: `.\Build.cmd -c Release -pack`
-
-2. In the third-party library directory, create a `Directory.Build.props`:
-   ```xml
-   <Project>
-     <Import Project="path/to/UseLocalCompiler.Directory.Build.props" />
-   </Project>
+1. Build the compiler and pack FSharp.Core in your `dotnet/fsharp` checkout: `./build.sh -c Release -pack` (`Build.cmd` on Windows).
+2. Clone the library at the failing commit and build it against your local build:
+   ```
+   git clone --recursive https://github.com/<owner>/<repo>.git TestRepo
+   cd TestRepo && git checkout <commit>
+   # If TestRepo's global.json pins a different SDK, align sdk.version with <fsharp-repo>/global.json
+   # (allowPrerelease: true, rollForward: disable) — the clone is disposable, as in CI.
+   dotnet fsi <fsharp-repo>/eng/scripts/BuildWithLocalFSharp.fsx --build-script '<the repo build command>'
    ```
 
-3. Update the `LocalFSharpCompilerPath` in `UseLocalCompiler.Directory.Build.props` to point to your F# repository.
-
-4. Set environment variables:
-   ```cmd
-   set LoadLocalFSharpBuild=true
-   set LocalFSharpCompilerConfiguration=Release
-   ```
-
-5. Run the library's build script.
+`BuildWithLocalFSharp.fsx` runs the same command CI runs, from the current directory, without touching the repo's sources. Add `--verify` to fail unless every project consumes the local FSharp.Core; the script header lists the other options. Because the local package keeps a fixed `-dev` version, the script evicts it from the global NuGet cache before each run so a rebuild is never served stale; pass `--nuget-packages <dir>` to use an isolated cache when running several builds concurrently or against a repo that redirects its packages folder.
 
 ## Best Practices
 
@@ -148,20 +142,7 @@ To test a library locally with your F# compiler build:
 
 ### UseLocalCompiler.Directory.Build.props
 
-This MSBuild props file configures projects to use the locally built F# compiler instead of the SDK version. Key settings:
-
-- `LocalFSharpCompilerPath`: Points to the F# compiler artifacts
-- `DotnetFscCompilerPath`: Path to the fsc.dll compiler
-- `DisableImplicitFSharpCoreReference`: Ensures local FSharp.Core is used
-
-### Path Handling
-
-The pipeline dynamically updates paths in the props file using PowerShell:
-```powershell
-$content -replace 'LocalFSharpCompilerPath.*MSBuildThisFileDirectory.*', 'LocalFSharpCompilerPath>$(Pipeline.Workspace)/FSharpCompiler<'
-```
-
-This ensures the correct path is used in the Azure DevOps environment.
+This MSBuild props file redirects projects to the locally built F# compiler (and, for the matrix, the locally built FSharp.Core) instead of the SDK version. It is organised into gates so it can be injected into unmodified repos as well as imported directly by in-repo tests — see the `Gate 1/2/3` comments in the file. Its companion `UseLocalCompiler.Directory.Build.targets` is injected via `CustomAfterDirectoryBuildTargets` (after the target repo's project body) so the local FSharp.Core version wins over the repo's own reference, whether implicit, an explicit `PackageReference Include`, a `PackageReference Update`, or a central `PackageVersion` (Central Package Management).
 
 ## Future Enhancements
 

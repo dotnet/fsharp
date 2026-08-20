@@ -40,6 +40,8 @@
     <FsLexOutputFolder>$(IntermediateOutputPath)$(TargetFramework)\</FsLexOutputFolder>
     <EnableDefaultEmbeddedResourceItems>false</EnableDefaultEmbeddedResourceItems>
     <Configurations>Debug;Release</Configurations>
+    <!-- FSComp.txt needs the classified accessors, which the SDK's FSharp.Build cannot generate -->
+    <UseBootstrappedFSharpBuildTasks>true</UseBootstrappedFSharpBuildTasks>
   </PropertyGroup>
 
   <!--  The FSharp.Compiler.Service dll provides a referencable public interface for tool builders -->
@@ -102,27 +104,31 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Compile Include="Utilities\NullHelpers.fs" />
     <EmbeddedText Include="FSComp.txt">
       <Link>FSComp.txt</Link>
+      <RichText>true</RichText>
     </EmbeddedText>
     <EmbeddedText Include="Interactive\FSIstrings.txt">
       <Link>FSIstrings.txt</Link>
+      <RichText>true</RichText>
     </EmbeddedText>
     <EmbeddedResource Include="FSStrings.resx">
       <Link>FSStrings.resx</Link>
       <LogicalName>FSStrings.resources</LogicalName>
     </EmbeddedResource>
+    <Compile Include="Utilities\NullHelpers.fs" CompileOrder="CompileFirst" />
+    <Compile Include="Utilities\sformat.fsi" CompileOrder="CompileFirst" />
+    <Compile Include="Utilities\sformat.fs" CompileOrder="CompileFirst" />
+    <Compile Include="Utilities\sr.fsi" CompileOrder="CompileFirst" />
+    <Compile Include="Utilities\sr.fs" CompileOrder="CompileFirst" />
+    <Compile Include="Facilities\RichText.fsi" CompileOrder="CompileFirst" />
+    <Compile Include="Facilities\RichText.fs" CompileOrder="CompileFirst" />
     <Compile Include="Utilities\Activity.fsi" />
     <Compile Include="Utilities\Activity.fs" />
 	<Compile Include="Utilities\Caches.fsi" />
     <Compile Include="Utilities\Caches.fs" />
     <Compile Include="Utilities\illib.fsi" />
     <Compile Include="Utilities\illib.fs" />
-    <Compile Include="Utilities\sformat.fsi" />
-    <Compile Include="Utilities\sformat.fs" />
-    <Compile Include="Utilities\sr.fsi" />
-    <Compile Include="Utilities\sr.fs" />
     <Compile Include="Utilities\ResizeArray.fsi" />
     <Compile Include="Utilities\ResizeArray.fs" />
     <Compile Include="Utilities\HashMultiMap.fsi" />
@@ -236,12 +242,26 @@
     <Compile Include="AbstractIL\ilbinary.fs" />
     <Compile Include="AbstractIL\ilread.fsi" />
     <Compile Include="AbstractIL\ilread.fs" />
-    <Compile Include="AbstractIL\EncMethodDebugInformation.fsi" />
-    <Compile Include="AbstractIL\EncMethodDebugInformation.fs" />
     <Compile Include="AbstractIL\ilwritepdb.fsi" />
     <Compile Include="AbstractIL\ilwritepdb.fs" />
+    <Compile Include="AbstractIL\EncMethodDebugInformation.fsi" />
+    <Compile Include="AbstractIL\EncMethodDebugInformation.fs" />
     <Compile Include="AbstractIL\ilwrite.fsi" />
     <Compile Include="AbstractIL\ilwrite.fs" />
+    <!-- ECMA-335 Edit-and-Continue metadata delta writer. See PR #TBD.
+         Placed after ilwrite.fs/.fsi (not immediately after ilwritepdb) because
+         IlxDeltaStreams.fs and DeltaMetadataTables.fs reuse ilwrite.fs's
+         markerForUnicodeBytes helper for #US heap encoding. -->
+    <Compile Include="AbstractIL\ILDeltaHandles.fs" />
+    <Compile Include="AbstractIL\ILMetadataHeaps.fs" />
+    <Compile Include="AbstractIL\IlxDeltaStreams.fs" />
+    <Compile Include="AbstractIL\DeltaMetadataEncoding.fs" />
+    <Compile Include="AbstractIL\DeltaMetadataTypes.fs" />
+    <Compile Include="AbstractIL\DeltaMetadataTables.fs" />
+    <Compile Include="AbstractIL\DeltaTableLayout.fs" />
+    <Compile Include="AbstractIL\DeltaIndexSizing.fs" />
+    <Compile Include="AbstractIL\DeltaMetadataSerializer.fs" />
+    <Compile Include="AbstractIL\FSharpDeltaMetadataWriter.fs" />
     <Compile Include="AbstractIL\ilreflect.fsi" />
     <Compile Include="AbstractIL\ilreflect.fs" />
     <Compile Include="SyntaxTree\PrettyNaming.fsi" />
@@ -276,6 +296,8 @@
     </None>
     <Compile Include="SyntaxTree\UnicodeLexing.fsi" />
     <Compile Include="SyntaxTree\UnicodeLexing.fs" />
+    <Compile Include="SyntaxTree\XmlDocIncludeExpander.fsi" />
+    <Compile Include="SyntaxTree\XmlDocIncludeExpander.fs" />
     <Compile Include="SyntaxTree\XmlDoc.fsi" />
     <Compile Include="SyntaxTree\XmlDoc.fs" />
     <Compile Include="SyntaxTree\SyntaxTrivia.fsi" />
@@ -389,6 +411,8 @@
     <Compile Include="Checking\MethodCalls.fs" />
     <Compile Include="Checking\PatternMatchCompilation.fsi" />
     <Compile Include="Checking\PatternMatchCompilation.fs" />
+    <Compile Include="Checking\OverloadResolutionRules.fsi" />
+    <Compile Include="Checking\OverloadResolutionRules.fs" />
     <Compile Include="Checking\OverloadResolutionCache.fsi" />
     <Compile Include="Checking\OverloadResolutionCache.fs" />
     <Compile Include="Checking\ConstraintSolver.fsi" />
@@ -451,6 +475,8 @@
     <Compile Include="CodeGen\EraseUnions.fs" />
     <Compile Include="CodeGen\IlxGen.fsi" />
     <Compile Include="CodeGen\IlxGen.fs" />
+    <Compile Include="CodeGen\ILBaselineReader.fs" />
+    <Compile Include="CodeGen\HotReloadBaseline.fs" />
     <Compile Include="Driver\FxResolver.fsi" />
     <Compile Include="Driver\FxResolver.fs" />
     <Compile Include="DependencyManager/AssemblyResolveHandler.fsi">
@@ -500,6 +526,10 @@
     <Compile Include="Driver\CompilerOptions.fs" />
     <Compile Include="Driver\OptimizeInputs.fsi" />
     <Compile Include="Driver\OptimizeInputs.fs" />
+    <Compile Include="Symbols\XmlDocSigParser.fsi" />
+    <Compile Include="Symbols\XmlDocSigParser.fs" />
+    <Compile Include="Symbols\XmlDocInheritance.fsi" />
+    <Compile Include="Symbols\XmlDocInheritance.fs" />
     <Compile Include="Driver\XmlDocFileWriter.fsi" />
     <Compile Include="Driver\XmlDocFileWriter.fs" />
     <Compile Include="Driver\BinaryResourceFormats.fsi" />

@@ -559,9 +559,11 @@ stages:
           steps:
           - checkout: self
             clean: true
-          - script: .\Build.cmd -c Release -pack
+          - script: .\Build.cmd -ci -c Release -pack
             env:
               NativeToolsOnMachine: true
+          - script: .\eng\common\dotnet.cmd fsi .\tests\AheadOfTime\NetPackage\VerifyNetPackage.fsx -- .\artifacts\packages\Release
+            displayName: Verify FSharp.Core package assets
           - script: .\tests\EndToEndBuildTests\EndToEndBuildTests.cmd -c Release
             displayName: End to end build tests
           
@@ -583,13 +585,19 @@ stages:
             condition: succeeded()
 
           - pwsh: |
-              # Stage UseLocalCompiler props and TargetFrameworks.props together
+              # Stage the props and the locally built FSharp.Core so regression jobs restore it the SDK way.
+              # Arcade packs FSharp.Core into a `Shipping` leaf whose parent varies by layout, so search for it.
               $stagingDir = "$(Build.SourcesDirectory)/UseLocalCompilerPropsStaging"
-              New-Item -ItemType Directory -Force -Path $stagingDir | Out-Null
+              $packsDir = Join-Path $stagingDir "library-packs"
+              New-Item -ItemType Directory -Force -Path $packsDir | Out-Null
               Copy-Item "$(Build.SourcesDirectory)/UseLocalCompiler.Directory.Build.props" -Destination $stagingDir
               Copy-Item "$(Build.SourcesDirectory)/eng/TargetFrameworks.props" -Destination $stagingDir
+              $core = Get-ChildItem "$(Build.SourcesDirectory)/artifacts/packages/Release" -Recurse -Filter "FSharp.Core.*.nupkg" |
+                Where-Object { $_.Name -notlike "*.symbols.nupkg" -and $_.Directory.Name -eq "Shipping" } | Select-Object -First 1
+              if (-not $core) { Write-Host "##[error]FSharp.Core.*.nupkg not found under artifacts/packages/Release/**/Shipping"; exit 1 }
+              Copy-Item $core.FullName -Destination $packsDir
               Write-Host "Staged files for UseLocalCompilerProps artifact:"
-              Get-ChildItem $stagingDir -Name
+              Get-ChildItem $stagingDir -Recurse -Name
             displayName: Stage UseLocalCompiler props files
 
           - task: PublishPipelineArtifact@1
@@ -749,35 +757,36 @@ stages:
           commit: bbe2dec4d0379b5d7d0480997858c30d442fbb42
           buildScript: dotnet build -bl
           displayName: UMX_Slow_Repro        
+          expectLocalCore: true
         - repo: fsprojects/FSharpPlus
-          commit: f614035b75922aba41ed6a36c2fc986a2171d2b8
+          commit: f42f81885111c652b08218e0880c264447ae56e4
           buildScript: build.cmd
           displayName: FSharpPlus_Windows
         - repo: fsprojects/FSharpPlus
-          commit: f614035b75922aba41ed6a36c2fc986a2171d2b8
+          commit: f42f81885111c652b08218e0880c264447ae56e4
           buildScript: build.sh
           displayName: FSharpPlus_Linux
           useVmImage: $(LinuxMachineQueueName)
           usePool: $(DncEngPublicBuildPool)
         - repo: fsprojects/FSharpPlus
-          commit: 2648efe
+          commit: f42f81885111c652b08218e0880c264447ae56e4
           buildScript: dotnet build tests/FSharpPlus.Tests/FSharpPlus.Tests.fsproj -c Release -bl
           displayName: FsharpPlus_NET10_Build_Lib_Tests
-         # remove this before merging
+          expectLocalCore: true
         - repo: fsprojects/FSharpPlus
-          commit: 2648efe
+          commit: f42f81885111c652b08218e0880c264447ae56e4
           buildScript: dotnet msbuild build.proj -t:Build;Test -bl
           displayName: FsharpPlus_NET10_Test_Debug
         - repo: fsprojects/FSharpPlus
-          commit: 2648efe
+          commit: f42f81885111c652b08218e0880c264447ae56e4
           buildScript: dotnet msbuild build.proj -t:Build;Test -p:Configuration=Release -bl
           displayName: FsharpPlus_NET10_Test_Release
         - repo: fsprojects/FSharpPlus
-          commit: 2648efe
+          commit: f42f81885111c652b08218e0880c264447ae56e4
           buildScript: dotnet msbuild build.proj -t:Build;AllDocs -bl
           displayName: FsharpPlus_NET10_Docs
         - repo: fsprojects/FSharpPlus
-          commit: 2648efe
+          commit: f42f81885111c652b08218e0880c264447ae56e4
           buildScript: build.sh
           displayName: FsharpPlus_Net10_Linux
           useVmImage: $(LinuxMachineQueueName)
@@ -814,10 +823,23 @@ stages:
           commit: 6ddc28d46f81447eacb241b96e16ce693b210c96
           buildScript: dotnet build Prime.sln --configuration Release
           displayName: Prime_Build
+          expectLocalCore: true
         - repo: bryanedds/Nu
           commit: e81e00a464b9d35d272f61708a1a0bfbf487b6d5
           buildScript: dotnet build Nu.sln --configuration Release
           displayName: Nu_Build
+          expectLocalCore: true
+        # Explicit FSharp.Core PackageReference mixed with one implicit test project; the trigger for #20059 (Lanayx/Oxpecker#20065).
+        - repo: Lanayx/Oxpecker
+          commit: cb7e4b83e3f2aba7ded46b17a36d1aea8c13c292
+          buildScript: dotnet build Oxpecker.slnx -c Release
+          displayName: Oxpecker_Build
+          expectLocalCore: true
+        - repo: Lanayx/Oxpecker
+          commit: cb7e4b83e3f2aba7ded46b17a36d1aea8c13c292
+          buildScript: dotnet build Oxpecker.Solid.slnx -c Release
+          displayName: Oxpecker_Solid_Build
+          expectLocalCore: true
         # Design-time provider packaging oracle. Pin d8aba70 (pre-workaround base of FSharp.Data.GraphQL#583):
         # it uses the bare IsFSharpDesignTimeProvider gesture, so the client pack drops the provider without this fix.
         # Linux-only: the $PWD local feed and the grep content assertion need bash. (nupkg entry names are stored
@@ -828,3 +850,14 @@ stages:
           displayName: FSharpDataGraphQL_DesignTimeProvider_Packaging
           useVmImage: $(LinuxMachineQueueName)
           usePool: $(DncEngPublicBuildPool)
+        # Chiron (chiron-6) exercises Aether 8.2.0 inline SRTP optics, reproducing the SDK 10.0.400 legacy inline-metadata
+        # regression (#20253, fixed by #20260): the miscompile throws NotSupportedException at run time, so run the tests.
+        - repo: xyncro/chiron
+          commit: 94cf9db1793a1bd0e6e0b69efadcfb37368a6428
+          buildScript: dotnet test tests/Chiron.Tests/Chiron.Tests.fsproj -c Release -p:AssetTargetFallback=net461 -p:RollForward=Major --filter FullyQualifiedName~Optic
+          displayName: Chiron_Aether_Inline_SRTP
+        - repo: Thorium/Linq.Expression.Optimizer
+          commit: 075e20da2712ede54b3314d5b69d6789ee68eb3d
+          buildScript: dotnet test Linq.Expression.Optimizer.sln -c Release -bl
+          displayName: LinqExpressionOptimizer_Test_Release
+          expectLocalCore: true

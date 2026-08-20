@@ -5,6 +5,7 @@
 module internal FSharp.Compiler.CompilerImports
 
 open System
+open System.Collections.Concurrent
 open System.Collections.Generic
 open System.Diagnostics
 open System.IO
@@ -1532,6 +1533,7 @@ and [<Sealed>] TcImports
                         ImportProvidedType = (fun ty -> ImportProvidedType (tcImports.GetImportMap()) m ty)
                         TryGetILModuleDef = (fun () -> Some ilModule)
                         TypeForwarders = CcuTypeForwarderTable.Empty
+                        CSharpStyleExtensionMembersCache = ConcurrentDictionary(1, 0)
                         XmlDocumentationInfo =
                             match tcConfig.xmlDocInfoLoader with
                             | Some xmlDocInfoLoader -> xmlDocInfoLoader.TryLoad(fileName)
@@ -1958,7 +1960,16 @@ and [<Sealed>] TcImports
             match providers with
             | [] ->
                 let typeName = !!typeof<TypeProviderAssemblyAttribute>.FullName
-                warning (Error(FSComp.SR.etHostingAssemblyFoundWithoutHosts (fileNameOfRuntimeAssembly, typeName), m))
+
+                warning (
+                    Error(
+                        FSComp.SR.etHostingAssemblyFoundWithoutHosts (
+                            RichText.mkText fileNameOfRuntimeAssembly,
+                            RichText.ofQualifiedTypeName typeName
+                        ),
+                        m
+                    )
+                )
             | _ ->
 
 #if DEBUG
@@ -2147,6 +2158,7 @@ and [<Sealed>] TcImports
                         UsesFSharp20PlusQuotations = minfo.usesQuotations
                         MemberSignatureEquality = (fun ty1 ty2 -> typeEquivAux EraseAll (tcImports.GetTcGlobals()) ty1 ty2)
                         TypeForwarders = ImportILAssemblyTypeForwarders(tcImports.GetImportMap, m, ilModule.GetRawTypeForwarders())
+                        CSharpStyleExtensionMembersCache = ConcurrentDictionary(1, 0)
 #if !NO_TYPEPROVIDERS
                         XmlDocumentationInfo =
                             match tcConfig.xmlDocInfoLoader with
@@ -2341,6 +2353,12 @@ and [<Sealed>] TcImports
             let! ccuinfos = phase2s |> runMethod
 
             if importsBase.IsSome then
+                let addConstraintSources (ia: ImportedAssembly) =
+                    // Only an F# assembly can carry a trait constraint to label.
+                    // Prevent force-reading of the whole assembly namespace tree for other assemblies.
+                    if ia.FSharpViewOfMetadata.IsFSharp then
+                        addConstraintSources ia
+
                 importsBase.Value.CcuTable.Values |> Seq.iter addConstraintSources
                 ccuTable.Values |> Seq.iter addConstraintSources
 

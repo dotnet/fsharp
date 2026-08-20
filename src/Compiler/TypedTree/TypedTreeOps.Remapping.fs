@@ -623,16 +623,40 @@ module internal SignatureOps =
             match entity1.IsNamespace, entity2.IsNamespace, entity1.IsModule, entity2.IsModule with
             | true, true, _, _ -> ()
             | true, _, _, true
-            | _, true, true, _ -> errorR (Error(FSComp.SR.tastNamespaceAndModuleWithSameNameInAssembly (textOfPath path2), entity2.Range))
+            | _, true, true, _ ->
+                errorR (Error(FSComp.SR.tastNamespaceAndModuleWithSameNameInAssembly (richTextOfPath path2), entity2.Range))
             | true, _, _, _
             | _, true, _, _ ->
-                errorR (Error(FSComp.SR.tastNamespaceAndTypeWithSameNameInAssembly (textOfPath path2, entity2.LogicalName), entity2.Range))
+                errorR (
+                    Error(
+                        FSComp.SR.tastNamespaceAndTypeWithSameNameInAssembly (
+                            richTextOfPath path2,
+                            richTextOfEntityName entity2 entity2.LogicalName
+                        ),
+                        entity2.Range
+                    )
+                )
             | false, false, false, false ->
-                errorR (Error(FSComp.SR.tastDuplicateTypeDefinitionInAssembly (entity2.LogicalName, textOfPath path), entity2.Range))
-            | false, false, true, true -> errorR (Error(FSComp.SR.tastTwoModulesWithSameNameInAssembly (textOfPath path2), entity2.Range))
+                errorR (
+                    Error(
+                        FSComp.SR.tastDuplicateTypeDefinitionInAssembly (
+                            richTextOfEntityName entity2 entity2.LogicalName,
+                            richTextOfPath path
+                        ),
+                        entity2.Range
+                    )
+                )
+            | false, false, true, true ->
+                errorR (Error(FSComp.SR.tastTwoModulesWithSameNameInAssembly (richTextOfPath path2), entity2.Range))
             | _ ->
                 errorR (
-                    Error(FSComp.SR.tastConflictingModuleAndTypeDefinitionInAssembly (entity2.LogicalName, textOfPath path), entity2.Range)
+                    Error(
+                        FSComp.SR.tastConflictingModuleAndTypeDefinitionInAssembly (
+                            richTextOfEntityName entity2 entity2.LogicalName,
+                            richTextOfPath path
+                        ),
+                        entity2.Range
+                    )
                 )
 
             entity1
@@ -2158,8 +2182,12 @@ module internal ExprRemapping =
                 |> Option.map (mapQuadruple (remapValRef tmenv, remapValRef tmenv, remapValRef tmenv, Option.map (remapValRef tmenv)))
             tcaug_adhoc = x.tcaug_adhoc |> NameMap.map (List.map (remapValRef tmenv))
             tcaug_adhoc_list =
-                x.tcaug_adhoc_list
-                |> ResizeArray.map (fun (flag, vref) -> (flag, remapValRef tmenv vref))
+                let remapped: ResizeArray<bool * ValRef> | null =
+                    match x.tcaug_adhoc_list with
+                    | null -> null
+                    | l -> l |> ResizeArray.map (fun (flag, vref) -> (flag, remapValRef tmenv vref))
+
+                remapped
             tcaug_super = x.tcaug_super |> Option.map (remapType tmenv)
             tcaug_interfaces = x.tcaug_interfaces |> List.map (map1Of3 (remapType tmenv))
         }

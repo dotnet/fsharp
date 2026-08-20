@@ -139,7 +139,7 @@ exception OverrideInExtrinsicAugmentation of range
 
 exception NonUniqueInferredAbstractSlot of TcGlobals * DisplayEnv * string * MethInfo * MethInfo * range
 
-exception StandardOperatorRedefinitionWarning of string * range
+exception StandardOperatorRedefinitionWarning of RichText * range
 
 exception InvalidInternalsVisibleToAssemblyName of badName: string * fileName: string option
 
@@ -478,7 +478,7 @@ let UnifyOverallType (cenv: cenv) (env: TcEnv) m overallTy actualTy =
             | TypeDirectedConversionUsed.No -> ()
 
             if AddCxTypeMustSubsumeTypeUndoIfFailed env.DisplayEnv cenv.css m reqdTy2 actualTy then
-                let reqdTyText, actualTyText, _cxs = NicePrint.minimalStringsOfTwoTypes env.DisplayEnv reqdTy actualTy
+                let reqdTyText, actualTyText, _cxs = NicePrint.minimalRichTextsOfTwoTypes env.DisplayEnv reqdTy actualTy
                 warning (Error(FSComp.SR.tcSubsumptionImplicitConversionUsed(actualTyText, reqdTyText), m))
             else
                 // report the error
@@ -726,10 +726,10 @@ let UnifyUnitType (cenv: cenv) (env: TcEnv) m ty expr =
             | ContextInfo.SequenceExpression seqTy ->
                 let liftedTy = mkSeqTy g ty
                 if typeEquiv g seqTy liftedTy then
-                    warning (Error (FSComp.SR.implicitlyDiscardedInSequenceExpression(NicePrint.prettyStringOfTy denv ty), m))
+                    warning (Error(FSComp.SR.implicitlyDiscardedInSequenceExpression(NicePrint.prettyRichTextOfTy denv ty), m))
                 else
                     if isListTy g ty || isArrayTy g ty || typeEquiv g seqTy ty then
-                        warning (Error (FSComp.SR.implicitlyDiscardedSequenceInSequenceExpression(NicePrint.prettyStringOfTy denv ty), m))
+                        warning (Error(FSComp.SR.implicitlyDiscardedSequenceInSequenceExpression(NicePrint.prettyRichTextOfTy denv ty), m))
                     else
                         reportImplicitlyDiscardError()
             | _ ->
@@ -1013,14 +1013,14 @@ let TcAddNullnessToType (warn: bool) (cenv: cenv) (env: TcEnv) nullness innerTyC
     let g = cenv.g
     if g.langFeatureNullness then
         if TypeNullNever g innerTyC then
-            let tyString = NicePrint.minimalStringOfType env.DisplayEnv innerTyC
-            errorR(Error(FSComp.SR.tcTypeDoesNotHaveAnyNull(tyString), m))
+            let tyText = NicePrint.minimalRichTextOfType env.DisplayEnv innerTyC
+            errorR(Error(FSComp.SR.tcTypeDoesNotHaveAnyNull(tyText), m))
 
         match tryAddNullnessToTy nullness innerTyC with
 
         | None ->
-            let tyString = NicePrint.minimalStringOfType env.DisplayEnv innerTyC
-            errorR(Error(FSComp.SR.tcTypeDoesNotHaveAnyNull(tyString), m))
+            let tyText = NicePrint.minimalRichTextOfType env.DisplayEnv innerTyC
+            errorR(Error(FSComp.SR.tcTypeDoesNotHaveAnyNull(tyText), m))
             innerTyC
 
         | Some innerTyCWithNull ->
@@ -1115,12 +1115,12 @@ let MakeMemberDataAndMangledNameForMemberVal(g, tcref, isExtrinsic, attrs, implS
         let displayName = ConvertValLogicalNameToDisplayNameCore logicalName
         // Check symbolic members. Expect valSynData implied arity to be [[2]].
         match SynInfo.AritiesOfArgs valSynData with
-        | [] | [0] -> warning(Error(FSComp.SR.memberOperatorDefinitionWithNoArguments displayName, m))
+        | [] | [0] -> warning(Error(FSComp.SR.memberOperatorDefinitionWithNoArguments (RichText.mkMember displayName), m))
         | n :: otherArgs ->
             let opTakesThreeArgs = IsLogicalTernaryOperator logicalName
-            if n<>2 && not opTakesThreeArgs then warning(Error(FSComp.SR.memberOperatorDefinitionWithNonPairArgument(displayName, n), m))
-            if n<>3 && opTakesThreeArgs then warning(Error(FSComp.SR.memberOperatorDefinitionWithNonTripleArgument(displayName, n), m))
-            if not (isNil otherArgs) then warning(Error(FSComp.SR.memberOperatorDefinitionWithCurriedArguments displayName, m))
+            if n<>2 && not opTakesThreeArgs then warning(Error(FSComp.SR.memberOperatorDefinitionWithNonPairArgument(RichText.mkMember displayName, n), m))
+            if n<>3 && opTakesThreeArgs then warning(Error(FSComp.SR.memberOperatorDefinitionWithNonTripleArgument(RichText.mkMember displayName, n), m))
+            if not (isNil otherArgs) then warning(Error(FSComp.SR.memberOperatorDefinitionWithCurriedArguments (RichText.mkMember displayName), m))
 
     if isExtrinsic && IsLogicalOpName id.idText then
         warning(Error(FSComp.SR.tcMemberOperatorDefinitionInExtrinsic(), id.idRange))
@@ -1200,7 +1200,7 @@ let PublishValueDefnMaybeInclCompilerGenerated (cenv: cenv) env inclCompilerGene
         let tcaug = vspec.MemberApparentEntity.TypeContents
         let vref = mkLocalValRef vspec
         tcaug.tcaug_adhoc <- NameMultiMap.add vspec.LogicalName vref tcaug.tcaug_adhoc
-        tcaug.tcaug_adhoc_list.Add (ValRefIsExplicitImpl g vref, vref)
+        tcaug.AddAdhocMember(ValRefIsExplicitImpl g vref, vref)
     | _ -> ()
 
 let PublishValueDefn cenv env declKind vspec =
@@ -1251,32 +1251,32 @@ let CheckForAbnormalOperatorNames (cenv: cenv) (idRange: range) coreDisplayName 
         match opName with
         | Relational ->
             if isMember then
-                warning(StandardOperatorRedefinitionWarning(FSComp.SR.tcInvalidMethodNameForRelationalOperator(opName, coreDisplayName), idRange))
+                warning(StandardOperatorRedefinitionWarning(FSComp.SR.tcInvalidMethodNameForRelationalOperator(RichText.mkOperator opName, RichText.mkMember coreDisplayName), idRange))
             else
-                warning(StandardOperatorRedefinitionWarning(FSComp.SR.tcInvalidOperatorDefinitionRelational opName, idRange))
+                warning(StandardOperatorRedefinitionWarning(FSComp.SR.tcInvalidOperatorDefinitionRelational(RichText.mkOperator opName), idRange))
         | Equality ->
             if isMember then
-                warning(StandardOperatorRedefinitionWarning(FSComp.SR.tcInvalidMethodNameForEquality(opName, coreDisplayName), idRange))
+                warning(StandardOperatorRedefinitionWarning(FSComp.SR.tcInvalidMethodNameForEquality(RichText.mkOperator opName, RichText.mkMember coreDisplayName), idRange))
             else
-                warning(StandardOperatorRedefinitionWarning(FSComp.SR.tcInvalidOperatorDefinitionEquality opName, idRange))
+                warning(StandardOperatorRedefinitionWarning(FSComp.SR.tcInvalidOperatorDefinitionEquality(RichText.mkOperator opName), idRange))
         | Control ->
             if isMember then
-                warning(StandardOperatorRedefinitionWarning(FSComp.SR.tcInvalidMemberName(opName, coreDisplayName), idRange))
+                warning(StandardOperatorRedefinitionWarning(FSComp.SR.tcInvalidMemberName(RichText.mkOperator opName, RichText.mkMember coreDisplayName), idRange))
             else
-                warning(StandardOperatorRedefinitionWarning(FSComp.SR.tcInvalidOperatorDefinition opName, idRange))
+                warning(StandardOperatorRedefinitionWarning(FSComp.SR.tcInvalidOperatorDefinition(RichText.mkOperator opName), idRange))
         | Indexer ->
             if not isMember then
-                error(StandardOperatorRedefinitionWarning(FSComp.SR.tcInvalidIndexOperatorDefinition opName, idRange))
+                error(StandardOperatorRedefinitionWarning(FSComp.SR.tcInvalidIndexOperatorDefinition(RichText.mkOperator opName), idRange))
         | FixedTypes ->
             if isMember then
-                warning(StandardOperatorRedefinitionWarning(FSComp.SR.tcInvalidMemberNameFixedTypes opName, idRange))
+                warning(StandardOperatorRedefinitionWarning(FSComp.SR.tcInvalidMemberNameFixedTypes(RichText.mkOperator opName), idRange))
         | Other -> ()
 
-let CheckInitProperties (g: TcGlobals) (minfo: MethInfo) methodName mItem =
+let CheckInitProperties (g: TcGlobals) (minfo: MethInfo) (methodName: string) mItem =
     if g.langVersion.SupportsFeature(LanguageFeature.InitPropertiesSupport) then
         // Check, whether this method has external init, emit an error diagnostic in this case.
         if minfo.HasExternalInit then
-            errorR (Error (FSComp.SR.tcSetterForInitOnlyPropertyCannotBeCalled1 methodName, mItem))
+            errorR (Error(FSComp.SR.tcSetterForInitOnlyPropertyCannotBeCalled1 (RichText.mkProperty methodName), mItem))
 
 let CheckRequiredProperties (g:TcGlobals) (env: TcEnv) (cenv: TcFileState) (minfo: MethInfo) finalAssignedItemSetters mMethExpr =
     // Make sure, if apparent type has any required properties, they all are in the `finalAssignedItemSetters`.
@@ -1310,7 +1310,7 @@ let CheckRequiredProperties (g:TcGlobals) (env: TcEnv) (cenv: TcFileState) (minf
                 |> List.filter (fun pinfo -> not (Set.contains pinfo.PropertyName setterPropNames))
             if missingProps.Length > 0 then
                 let details = NicePrint.multiLineStringOfPropInfos g cenv.amap mMethExpr env.DisplayEnv missingProps
-                errorR(Error(FSComp.SR.tcMissingRequiredMembers details, mMethExpr))
+                errorR(Error(FSComp.SR.tcMissingRequiredMembers (RichText.mkText details), mMethExpr))
 
 let private HasMethodImplNoInliningAttribute g attrs =
     match attrs with
@@ -1387,6 +1387,15 @@ let MakeAndPublishVal (cenv: cenv) env (altActualParent, inSig, declKind, valRec
             match altActualParent with
             | ParentNone -> errorR(Error(FSComp.SR.tcCompiledNameAttributeMisused(), m))
             | _ -> ()
+
+    // OverloadResolutionPriority not allowed on override members (only diagnosed when the feature is on)
+    match memberInfoOpt with
+    | Some (PrelimMemberInfo(memberInfo, _, _)) when
+            memberInfo.MemberFlags.IsOverrideOrExplicitImpl
+            && g.langVersion.SupportsFeature LanguageFeature.OverloadResolutionPriority ->
+        if attribsHaveValFlag g WellKnownValAttributes.OverloadResolutionPriorityAttribute attrs then
+            errorR(Error(FSComp.SR.tcOverloadResolutionPriorityOnOverride(), m))
+    | _ -> ()
 
     let compiledNameIsOnProp =
         match memberInfoOpt with
@@ -1589,7 +1598,7 @@ let ChooseCanonicalDeclaredTyparsAfterInference g denv declaredTypars m =
     declaredTypars |> List.iter (fun tp ->
       let ty = mkTyparTy tp
       if not (isAnyParTy g ty) then
-          error(Error(FSComp.SR.tcLessGenericBecauseOfAnnotation(tp.Name, NicePrint.prettyStringOfTy denv ty), tp.Range)))
+          error(Error(FSComp.SR.tcLessGenericBecauseOfAnnotation(RichText.mkTypeParameter tp.Name, NicePrint.prettyRichTextOfTy denv ty), tp.Range)))
 
     let declaredTypars = NormalizeDeclaredTyparsForEquiRecursiveInference g declaredTypars
 
@@ -1614,9 +1623,9 @@ let SetTyparRigid denv m (tp: Typar) =
     | None -> ()
     | Some ty ->
         if tp.IsCompilerGenerated then
-            errorR(Error(FSComp.SR.tcGenericParameterHasBeenConstrained(NicePrint.prettyStringOfTy denv ty), m))
+            errorR(Error(FSComp.SR.tcGenericParameterHasBeenConstrained(NicePrint.prettyRichTextOfTy denv ty), m))
         else
-            errorR(Error(FSComp.SR.tcTypeParameterHasBeenConstrained(NicePrint.prettyStringOfTy denv ty), tp.Range))
+            errorR(Error(FSComp.SR.tcTypeParameterHasBeenConstrained(NicePrint.prettyRichTextOfTy denv ty), tp.Range))
     tp.SetRigidity TyparRigidity.Rigid
 
 let GeneralizeVal (cenv: cenv) denv enclosingDeclaredTypars generalizedTyparsForThisBinding prelimVal =
@@ -1930,7 +1939,7 @@ let CheckRecdExprDuplicateFields (elems: Ident list) =
     elems |> List.iteri (fun i (uc1: Ident) ->
         elems |> List.iteri (fun j (uc2: Ident) ->
             if j > i && uc1.idText = uc2.idText then
-               errorR (Error(FSComp.SR.tcMultipleFieldsInRecord(uc1.idText), uc1.idRange))))
+               errorR (Error(FSComp.SR.tcMultipleFieldsInRecord(RichText.mkRecordField uc1.idText), uc1.idRange))))
 
 //-------------------------------------------------------------------------
 // Helpers to typecheck expressions and patterns
@@ -2002,7 +2011,7 @@ let BuildFieldMap (cenv: cenv) env isPartial ty (flds: (Ident * ExplicitOrSpread
                     CheckFSharpAttributes g fref2.PropertyAttribs ident.idRange |> CommitOperationResult
 
                     if showDeprecated then
-                        let diagnostic = Deprecated(FSComp.SR.nrRecordTypeNeedsQualifiedAccess(fref2.FieldName, fref2.Tycon.DisplayName) |> snd, m)
+                        let diagnostic = Deprecated(FSComp.SR.nrRecordTypeNeedsQualifiedAccess(RichText.mkRecordField fref2.FieldName, richTextOfEntity fref2.Tycon) |> snd, m)
                         if g.langVersion.SupportsFeature(LanguageFeature.ErrorOnDeprecatedRequireQualifiedAccess) then
                             errorR(diagnostic)
                         else
@@ -2032,7 +2041,7 @@ let ApplyUnionCaseOrExn (makerForUnionCase, makerForExnTag) m mItemIdent (cenv: 
 
     | Item.UnionCase(ucinfo, showDeprecated) ->
         if showDeprecated then
-            let diagnostic = Deprecated(FSComp.SR.nrUnionTypeNeedsQualifiedAccess(ucinfo.DisplayName, ucinfo.Tycon.DisplayName) |> snd, mItemIdent)
+            let diagnostic = Deprecated(FSComp.SR.nrUnionTypeNeedsQualifiedAccess(RichText.mkUnionCase ucinfo.DisplayName, richTextOfEntity ucinfo.Tycon) |> snd, mItemIdent)
             if g.langVersion.SupportsFeature(LanguageFeature.ErrorOnDeprecatedRequireQualifiedAccess) then
                 errorR(diagnostic)
             else
@@ -2297,7 +2306,7 @@ module GeneralizationHelpers =
         for tp in allDeclaredTypars do
             if Zset.memberOf freeInEnv tp then
                 let ty = mkTyparTy tp
-                error(Error(FSComp.SR.tcNotSufficientlyGenericBecauseOfScope(NicePrint.prettyStringOfTy denv ty), m))
+                error(Error(FSComp.SR.tcNotSufficientlyGenericBecauseOfScope(NicePrint.prettyRichTextOfTy denv ty), m))
 
         let generalizedTypars = CondenseTypars(cenv, denv, generalizedTypars, tauTy, m)
 
@@ -2571,7 +2580,7 @@ module BindingNormalization =
                             NormalizedBindingPat(pat, rhsExpr, valSynData, typars)
                         else
                             if isObjExprBinding = ObjExprBinding then
-                                errorR(Deprecated(FSComp.SR.tcObjectExpressionFormDeprecated(), m))
+                                errorR(Deprecated(RichText.mkText (FSComp.SR.tcObjectExpressionFormDeprecated()), m))
                             MakeNormalizedStaticOrValBinding cenv isObjExprBinding id vis typars args rhsExpr valSynData
                     | _ ->
                         error(Error(FSComp.SR.tcInvalidDeclaration(), m))
@@ -2767,7 +2776,7 @@ let TcValEarlyGeneralizationConsistencyCheck (cenv: cenv) (env: TcEnv) (v: Val, 
               let vTauTy = instType (mkTyparInst vTypars tinst) vTauTy
               if not (AddCxTypeEqualsTypeUndoIfFailed env.DisplayEnv cenv.css m tau vTauTy) then
                   let txt = buildString (fun buf -> NicePrint.outputQualifiedValSpec env.DisplayEnv cenv.infoReader buf (mkLocalValRef v))
-                  error(Error(FSComp.SR.tcInferredGenericTypeGivesRiseToInconsistency(v.DisplayName, txt), m)))
+                  error(Error(FSComp.SR.tcInferredGenericTypeGivesRiseToInconsistency(richTextOfValName g v, RichText.mkText txt), m)))
     | _ -> ()
 
 
@@ -2789,7 +2798,7 @@ let TcVal (cenv: cenv) env (tpenv: UnscopedTyparEnv) (vref: ValRef) instantiatio
         // Don't count compiler-generated refs (synthetic range) for FS1182
         if not m.IsSynthetic then v.SetHasBeenReferenced()
 
-        CheckValAccessible m env.eAccessRights vref
+        CheckValAccessible g m env.eAccessRights vref
 
         CheckValAttributes g vref m |> CommitOperationResult
 
@@ -2828,7 +2837,7 @@ let TcVal (cenv: cenv) env (tpenv: UnscopedTyparEnv) (vref: ValRef) instantiatio
                       // No explicit instantiation (the normal case)
                       | None ->
                           if ValHasWellKnownAttribute g WellKnownValAttributes.RequiresExplicitTypeArgumentsAttribute v then
-                               errorR(Error(FSComp.SR.tcFunctionRequiresExplicitTypeArguments(v.DisplayName), m))
+                               errorR(Error(FSComp.SR.tcFunctionRequiresExplicitTypeArguments(richTextOfValName g v), m))
 
                           match valRecInfo with
                           | ValInRecScope false ->
@@ -2844,7 +2853,7 @@ let TcVal (cenv: cenv) env (tpenv: UnscopedTyparEnv) (vref: ValRef) instantiatio
                       | Some(vrefFlags, checkTys) ->
                             let checkInst (tinst: TypeInst) =
                                 if not v.IsMember && not v.PermitsExplicitTypeInstantiation && not (List.isEmpty tinst) && not (List.isEmpty v.Typars) then
-                                    warning(Error(FSComp.SR.tcDoesNotAllowExplicitTypeArguments(v.DisplayName), m))
+                                    warning(Error(FSComp.SR.tcDoesNotAllowExplicitTypeArguments(richTextOfValName g v), m))
                             match valRecInfo with
                             | ValInRecScope false ->
                                 let vTypars, vTauTy = vref.GeneralizedType
@@ -3019,24 +3028,24 @@ let TcRuntimeTypeTest isCast isOperator (cenv: cenv) denv m tgtTy srcTy =
 
     if isErasedType g tgtTy then
         if isCast then
-            warning(Error(FSComp.SR.tcTypeCastErased(NicePrint.minimalStringOfType denv tgtTy, NicePrint.minimalStringOfType denv (stripTyEqnsWrtErasure EraseAll g tgtTy)), m))
+            warning(Error(FSComp.SR.tcTypeCastErased(NicePrint.minimalRichTextOfType denv tgtTy, NicePrint.minimalRichTextOfType denv (stripTyEqnsWrtErasure EraseAll g tgtTy)), m))
         else
-            error(Error(FSComp.SR.tcTypeTestErased(NicePrint.minimalStringOfType denv tgtTy, NicePrint.minimalStringOfType denv (stripTyEqnsWrtErasure EraseAll g tgtTy)), m))
+            error(Error(FSComp.SR.tcTypeTestErased(NicePrint.minimalRichTextOfType denv tgtTy, NicePrint.minimalRichTextOfType denv (stripTyEqnsWrtErasure EraseAll g tgtTy)), m))
     else
         let checkTrgtNullness = 
             match (srcTy,g),(tgtTy,g) with
             | (NullableRefType|NullTrueValue|NullableTypar), WithoutNullRefType when g.checkNullness && isCast -> 
-                let srcNice = NicePrint.minimalStringOfTypeWithNullness denv srcTy
-                let tgtNice = NicePrint.minimalStringOfTypeWithNullness denv tgtTy
-                warning(Error(FSComp.SR.tcDowncastFromNullableToWithoutNull(srcNice,tgtNice,tgtNice), m))
+                let srcNice = NicePrint.minimalRichTextOfTypeWithNullness denv srcTy
+                let tgtNice = NicePrint.minimalRichTextOfTypeWithNullness denv tgtTy
+                warning(Error(FSComp.SR.tcDowncastFromNullableToWithoutNull(srcNice, tgtNice, tgtNice), m))
                 false
             | (NullableRefType|NullTrueValue|NullableTypar), (NullableRefType|NullTrueValue|NullableTypar) -> not isCast //a type test (unlike type cast) will never return true for  null in the source, therefore adding |null to target does not help => keep the erasure warning
             | _ -> true
         for ety in getErasedTypes g tgtTy checkTrgtNullness do
             if isMeasureTy g ety then
-                warning(Error(FSComp.SR.tcTypeTestLosesMeasures(NicePrint.minimalStringOfType denv ety), m))
+                warning(Error(FSComp.SR.tcTypeTestLosesMeasures(NicePrint.minimalRichTextOfType denv ety), m))
             else
-                warning(Error(FSComp.SR.tcTypeTestLossy(NicePrint.minimalStringOfTypeWithNullness denv ety, NicePrint.minimalStringOfType denv (stripTyEqnsWrtErasure EraseAll g ety)), m))
+                warning(Error(FSComp.SR.tcTypeTestLossy(NicePrint.minimalRichTextOfTypeWithNullness denv ety, NicePrint.minimalRichTextOfType denv (stripTyEqnsWrtErasure EraseAll g ety)), m))
 
 ///  Checks, warnings and constraint assertions for upcasts
 let TcStaticUpcast (cenv: cenv) denv mSourceExpr mUpcastExpr tgtTy srcTy =
@@ -3186,7 +3195,7 @@ let private CheckFieldLiteralArg (finfo: ILFieldInfo) argExpr m =
         match stripDebugPoints argExpr with
         | Expr.Const (v, _, _) ->
             let literalValue = string v
-            error (Error(FSComp.SR.tcLiteralFieldAssignmentWithArg literalValue, m))
+            error (Error(FSComp.SR.tcLiteralFieldAssignmentWithArg (RichText.mkText literalValue), m))
         | _ ->
             error (Error(FSComp.SR.tcLiteralFieldAssignmentNoArg(), m))
     )
@@ -3349,7 +3358,7 @@ let AnalyzeArbitraryExprAsEnumerable (cenv: cenv) (env: TcEnv) localAlloc m expr
     let g = cenv.g
 
     let err k ty =
-        let txt = NicePrint.minimalStringOfType env.DisplayEnv ty
+        let txt = NicePrint.minimalRichTextOfType env.DisplayEnv ty
         let msg = if k then FSComp.SR.tcTypeCannotBeEnumerated txt else FSComp.SR.tcEnumTypeCannotBeEnumerated txt
         Exception(Error(msg, m))
 
@@ -4674,7 +4683,7 @@ and CheckIWSAM (cenv: cenv) (env: TcEnv) checkConstraints iwsam m tcref =
 
         if meths |> List.exists (fun meth -> not meth.IsInstance && meth.IsDispatchSlot && not meth.IsExtensionMember) then
             let tcref = tcrefOfAppTy g ty
-            warning(Error(FSComp.SR.tcUsingInterfaceWithStaticAbstractMethodAsType(tcref.DisplayNameWithStaticParametersAndUnderscoreTypars), m))
+            warning(Error(FSComp.SR.tcUsingInterfaceWithStaticAbstractMethodAsType(richTextOfEntityRefName tcref tcref.DisplayNameWithStaticParametersAndUnderscoreTypars), m))
 
 and TcLongIdentType kindOpt (cenv: cenv) newOk checkConstraints occ iwsam env tpenv synLongId =
     let (SynLongIdent(tc, _, _)) = synLongId
@@ -4769,7 +4778,7 @@ and CheckAnonRecdTypeDuplicateFields (elems: Ident array) =
     elems |> Array.iteri (fun i (uc1: Ident) ->
         elems |> Array.iteri (fun j (uc2: Ident) ->
             if j > i && uc1.idText = uc2.idText then
-               errorR(Error(FSComp.SR.tcAnonRecdTypeDuplicateFieldId(uc1.idText), uc1.idRange))))
+               errorR(Error(FSComp.SR.tcAnonRecdTypeDuplicateFieldId(RichText.mkRecordField uc1.idText), uc1.idRange))))
 
 and TcAnonRecdType (cenv: cenv) newOk checkConstraints occ env tpenv isStruct args m =
     let tupInfo = mkTupInfo isStruct
@@ -4866,7 +4875,7 @@ and TcTypeStaticConstant kindOpt tpenv c m =
 and TcTypeMeasurePower kindOpt (cenv: cenv) newOk checkConstraints occ env tpenv ty exponent m =
     match kindOpt with
     | Some TyparKind.Type ->
-        errorR(Error(FSComp.SR.tcUnexpectedSymbolInTypeExpression("^"), m))
+        errorR(Error(FSComp.SR.tcUnexpectedSymbolInTypeExpression(RichText.mkOperator "^"), m))
         NewErrorType (), tpenv
     | _ ->
         let ms, tpenv = TcMeasure cenv newOk checkConstraints occ env tpenv ty m
@@ -4988,7 +4997,7 @@ and TcTyparConstraints (cenv: cenv) newOk checkConstraints occ env tpenv synCons
 #if !NO_TYPEPROVIDERS
 and TcStaticConstantParameter (cenv: cenv) (env: TcEnv) tpenv kind (StripParenTypes v) idOpt container =
     let g = cenv.g
-    let fail() = error(Error(FSComp.SR.etInvalidStaticArgument(NicePrint.minimalStringOfType env.DisplayEnv kind), v.Range))
+    let fail() = error(Error(FSComp.SR.etInvalidStaticArgument(NicePrint.minimalRichTextOfType env.DisplayEnv kind), v.Range))
     let record ttype =
         match idOpt with
         | Some id ->
@@ -5075,16 +5084,16 @@ and CrackStaticConstantArgs (cenv: cenv) env tpenv (staticParameters: Tainted<Pr
          match indexedStaticParameters |> List.filter (fun (j, sp) -> j >= unnamedArgs.Length && n.idText = sp.PUntaint((fun sp -> sp.Name), m)) with
          | [] ->
              if staticParameters |> Array.exists (fun sp -> n.idText = sp.PUntaint((fun sp -> sp.Name), n.idRange)) then
-                 error (Error(FSComp.SR.etStaticParameterAlreadyHasValue n.idText, n.idRange))
+                 error (Error(FSComp.SR.etStaticParameterAlreadyHasValue (RichText.mkParameter n.idText), n.idRange))
              else
                  let availableNames =
                      staticParameters
                      |> Array.map (fun sp -> sp.PUntaint((fun sp -> sp.Name), n.idRange))
                      |> formatAvailableNames
 
-                 error (Error(FSComp.SR.etNoStaticParameterWithName (n.idText, availableNames), n.idRange))
+                 error (Error(FSComp.SR.etNoStaticParameterWithName(RichText.mkUnresolvedName n.idText, RichText.mkText availableNames), n.idRange))
          | [_] -> ()
-         | _ -> error (Error(FSComp.SR.etMultipleStaticParameterWithName n.idText, n.idRange))
+         | _ -> error (Error(FSComp.SR.etMultipleStaticParameterWithName(RichText.mkParameter n.idText), n.idRange))
 
     if staticParameters.Length < namedArgs.Length + unnamedArgs.Length then
         error (Error(FSComp.SR.etTooManyStaticParameters(staticParameters.Length, unnamedArgs.Length, namedArgs.Length), m))
@@ -5105,12 +5114,12 @@ and CrackStaticConstantArgs (cenv: cenv) env tpenv (staticParameters: Tainted<Pr
                 | [] ->
                     if sp.PUntaint((fun sp -> sp.IsOptional), m) then
                          match sp.PUntaint((fun sp -> sp.RawDefaultValue), m) with
-                         | null -> error (Error(FSComp.SR.etStaticParameterRequiresAValue (spName, containerName, containerName, spName), m))
+                         | null -> error (Error(FSComp.SR.etStaticParameterRequiresAValue (RichText.mkParameter spName, RichText.ofQualifiedTypeName containerName, RichText.ofQualifiedTypeName containerName, RichText.mkParameter spName), m))
                          | v -> v
                     else
-                      error (Error(FSComp.SR.etStaticParameterRequiresAValue (spName, containerName, containerName, spName), m))
+                      error (Error(FSComp.SR.etStaticParameterRequiresAValue (RichText.mkParameter spName, RichText.ofQualifiedTypeName containerName, RichText.ofQualifiedTypeName containerName, RichText.mkParameter spName), m))
                  | ps ->
-                      error (Error(FSComp.SR.etMultipleStaticParameterWithName spName, (fst (List.last ps)).idRange)))
+                      error (Error(FSComp.SR.etMultipleStaticParameterWithName (RichText.mkParameter spName), (fst (List.last ps)).idRange)))
 
     argsInStaticParameterOrderIncludingDefaults
 
@@ -5167,7 +5176,7 @@ and TcProvidedTypeApp (cenv: cenv) env tpenv tcref args m =
     //printfn "adding entity for provided type '%s', isDirectReferenceToGenerated = %b, isGenerated = %b" (st.PUntaint((fun st -> st.Name), m)) isDirectReferenceToGenerated isGenerated
     let isDirectReferenceToGenerated = isGenerated && IsGeneratedTypeDirectReference (providedTypeAfterStaticArguments, m)
     if isDirectReferenceToGenerated then
-        error(Error(FSComp.SR.etDirectReferenceToGeneratedTypeNotAllowed(tcref.DisplayName), m))
+        error(Error(FSComp.SR.etDirectReferenceToGeneratedTypeNotAllowed(richTextOfEntityRef tcref), m))
 
     // We put the type name check after the 'isDirectReferenceToGenerated' check because we need the 'isDirectReferenceToGenerated' error to be shown for generated types
     checkTypeName()
@@ -5386,10 +5395,10 @@ and TcPatLongIdentActivePatternCase warnOnUpper (cenv: cenv) (env: TcEnv) vFlags
             let caseName = apinfo.ActiveTags[idx]
             let msg =
                 match paramCount, returnCount with
-                | 0, 0 -> FSComp.SR.tcActivePatternArgsCountNotMatchNoArgsNoPat(caseName, caseName)
-                | 0, _ -> FSComp.SR.tcActivePatternArgsCountNotMatchOnlyPat(caseName)
-                | _, 0 -> FSComp.SR.tcActivePatternArgsCountNotMatchArgs(paramCount, caseName, fmtExprArgs paramCount)
-                | _, _ -> FSComp.SR.tcActivePatternArgsCountNotMatchArgsAndPat(paramCount, caseName, fmtExprArgs paramCount)
+                | 0, 0 -> FSComp.SR.tcActivePatternArgsCountNotMatchNoArgsNoPat(RichText.mkActivePatternCase caseName, RichText.mkActivePatternCase caseName)
+                | 0, _ -> FSComp.SR.tcActivePatternArgsCountNotMatchOnlyPat(RichText.mkActivePatternCase caseName)
+                | _, 0 -> FSComp.SR.tcActivePatternArgsCountNotMatchArgs(paramCount, RichText.mkActivePatternCase caseName, RichText.mkText (fmtExprArgs paramCount))
+                | _, _ -> FSComp.SR.tcActivePatternArgsCountNotMatchArgsAndPat(paramCount, RichText.mkActivePatternCase caseName, RichText.mkText (fmtExprArgs paramCount))
             error(Error(msg, m))
 
         let isUnsolvedTyparTy g ty = tryDestTyparTy g ty |> ValueOption.exists (fun typar -> not typar.IsSolved)
@@ -6547,7 +6556,7 @@ and TcExprTryFinally (cenv: cenv) overallTy env tpenv (synBodyExpr, synFinallyEx
     mkTryFinally g (bodyExpr, finallyExpr, mTryToLast, overallTy.Commit, spTry, spFinally), tpenv
 
 and TcExprJoinIn (cenv: cenv) overallTy env tpenv (synExpr1, mInToken, synExpr2, mAll) =
-    errorR(Error(FSComp.SR.parsUnfinishedExpression("in"), mInToken))
+    errorR(Error(FSComp.SR.parsUnfinishedExpression(RichText.mkKeyword "in"), mInToken))
     let _, _, tpenv = suppressErrorReporting (fun () -> TcExprOfUnknownType cenv env tpenv synExpr1)
     let _, _, tpenv = suppressErrorReporting (fun () -> TcExprOfUnknownType cenv env tpenv synExpr2)
     mkDefault(mAll, overallTy.Commit), tpenv
@@ -6724,7 +6733,7 @@ and TcIteratedLambdas (cenv: cenv) isFirst (env: TcEnv) overallTy takenNames tpe
 
         // See bug 5758: Non-monotonicity in inference: need to ensure that parameters are never inferred to have byref type, instead it is always declared
         byrefs |> Map.iter (fun _ (orig, v) ->
-            if not orig && isByrefTy g v.Type then errorR(Error(FSComp.SR.tcParameterInferredByref v.DisplayName, v.Range)))
+            if not orig && isByrefTy g v.Type then errorR(Error(FSComp.SR.tcParameterInferredByref (RichText.mkParameter v.DisplayName), v.Range)))
 
         mkMultiLambda m vspecs (bodyExpr, resultTy), tpenv
 
@@ -7033,7 +7042,7 @@ and TcNewExpr cenv env tpenv objTy mObjTyOpt superInit arg mWholeExprOrObjTy =
 
         mkCallCreateInstance g mWholeExprOrObjTy objTy, tpenv
     else
-        if not (isAppTy g objTy) && not (isAnyTupleTy g objTy) then error(Error(FSComp.SR.tcNamedTypeRequired(if superInit then "inherit" else "new"), mWholeExprOrObjTy))
+        if not (isAppTy g objTy) && not (isAnyTupleTy g objTy) then error(Error(FSComp.SR.tcNamedTypeRequired(RichText.mkKeyword (if superInit then "inherit" else "new")), mWholeExprOrObjTy))
         let item = ForceRaise (ResolveObjectConstructor cenv.nameResolver env.DisplayEnv mWholeExprOrObjTy ad objTy)
 
         TcCtorCall false cenv env tpenv (MustEqual objTy) objTy mObjTyOpt item superInit [arg] mWholeExprOrObjTy [] None
@@ -7083,7 +7092,7 @@ and TcCtorCall isNaked cenv env tpenv (overallTy: OverallTy) objTy mObjTyOpt ite
         TcNewDelegateThen cenv (MustEqual objTy) env tpenv mItem mWholeCall ty arg ExprAtomicFlag.NonAtomic delayed
 
     | _ ->
-        error(Error(FSComp.SR.tcSyntaxCanOnlyBeUsedToCreateObjectTypes(if superInit then "inherit" else "new"), mWholeCall))
+        error(Error(FSComp.SR.tcSyntaxCanOnlyBeUsedToCreateObjectTypes(RichText.mkKeyword (if superInit then "inherit" else "new")), mWholeCall))
 
 // Check a record construction expression
 and TcRecordConstruction (cenv: cenv) (overallTy: TType) isObjExpr env tpenv withExprInfoOpt (spreadSrcs : (Expr -> Expr) list) objTy fldsList m =
@@ -7096,7 +7105,7 @@ and TcRecordConstruction (cenv: cenv) (overallTy: TType) isObjExpr env tpenv wit
     // Types with implicit constructors can't use record or object syntax: all constructions must go through the implicit constructor
     let supportsObjectExpressionWithoutOverrides = isObjExpr && g.langVersion.SupportsFeature(LanguageFeature.AllowObjectExpressionWithoutOverrides)
     if not supportsObjectExpressionWithoutOverrides && tycon.MembersOfFSharpTyconByName |> NameMultiMap.existsInRange (fun v -> v.IsIncrClassConstructor) then
-        errorR(Error(FSComp.SR.tcConstructorRequiresCall(tycon.DisplayName), m))
+        errorR(Error(FSComp.SR.tcConstructorRequiresCall(richTextOfEntity tycon), m))
 
     let fspecs = tycon.TrueInstanceFieldsAsList
 
@@ -7117,7 +7126,15 @@ and TcRecordConstruction (cenv: cenv) (overallTy: TType) isObjExpr env tpenv wit
                         let fieldExpr, tpenv = TcExprFlex cenv flex false fty env tpenv fexpr
                         (fname, fieldExpr) :: checkedFields, tpenv)
                     |> Option.defaultWith (fun () ->
-                        error (Error(FSComp.SR.tcUndefinedField(fname, NicePrint.minimalStringOfType env.DisplayEnv objTy), m)))
+                        error (
+                            Error(
+                                FSComp.SR.tcUndefinedField(
+                                    RichText.mkUnresolvedName fname,
+                                    NicePrint.minimalRichTextOfType env.DisplayEnv objTy
+                                ),
+                                m
+                            )
+                        ))
 
                 tcFields checkedFields tpenv fields
 
@@ -7161,7 +7178,7 @@ and TcRecordConstruction (cenv: cenv) (overallTy: TType) isObjExpr env tpenv wit
     // Check all fields are bound
     fspecs |> List.iter (fun fspec ->
       if not (fldsList |> List.exists (fun (fname, _) -> fname = fspec.LogicalName)) then
-        error(Error(FSComp.SR.tcFieldRequiresAssignment(fspec.rfield_id.idText, fullDisplayTextOfTyconRef tcref), m)))
+        error(Error(FSComp.SR.tcFieldRequiresAssignment(RichText.mkRecordField fspec.rfield_id.idText, richTextOfQualifiedTyconRef tcref), m)))
 
     // Other checks (overlap with above check now clear)
     let ns1 = NameSet.ofList (List.map fst fldsList)
@@ -7176,7 +7193,7 @@ and TcRecordConstruction (cenv: cenv) (overallTy: TType) isObjExpr env tpenv wit
         // Don't emit the warning for nested field updates, because it does not really make sense.
         if oldFldsList.IsEmpty && not m.IsSynthetic then
             let enabledByLangFeature = g.langVersion.SupportsFeature LanguageFeature.WarningWhenCopyAndUpdateRecordChangesAllFields
-            warning(ErrorEnabledWithLanguageFeature(FSComp.SR.tcCopyAndUpdateRecordChangesAllFields(fullDisplayTextOfTyconRef tcref), m, enabledByLangFeature))
+            warning(ErrorEnabledWithLanguageFeature(FSComp.SR.tcCopyAndUpdateRecordChangesAllFields(richTextOfQualifiedTyconRef tcref), m, enabledByLangFeature))
 
     if not (Zset.subset ns1 ns2) then
         error (Error(FSComp.SR.tcExtraneousFieldsGivenValues(), m))
@@ -7281,15 +7298,15 @@ and FreshenObjExprAbstractSlot (cenv: cenv) (env: TcEnv) (implTy: TType) virtNam
                     addToBuffer x
 
             if containsNonAbstractMemberWithSameName then
-                errorR(ErrorWithSuggestions(FSComp.SR.tcMemberFoundIsNotAbstractOrVirtual(tcref.DisplayName, bindName), mBinding, bindName, suggestVirtualMembers))
+                errorR(ErrorWithSuggestions(FSComp.SR.tcMemberFoundIsNotAbstractOrVirtual(richTextOfEntityRef tcref, RichText.mkMember bindName), mBinding, bindName, suggestVirtualMembers))
             else
-                errorR(ErrorWithSuggestions(FSComp.SR.tcNoAbstractOrVirtualMemberFound bindName, mBinding, bindName, suggestVirtualMembers))
+                errorR(ErrorWithSuggestions(FSComp.SR.tcNoAbstractOrVirtualMemberFound (RichText.mkMember bindName), mBinding, bindName, suggestVirtualMembers))
 
         | [ (_, absSlot: MethInfo) ] ->
-            errorR(Error(FSComp.SR.tcArgumentArityMismatch(bindName, List.sum absSlot.NumArgs, arity, getSignature absSlot, getDetails absSlot), mBinding))
+            errorR(Error(FSComp.SR.tcArgumentArityMismatch(RichText.mkMember bindName, List.sum absSlot.NumArgs, arity, RichText.mkText (getSignature absSlot), RichText.mkText (getDetails absSlot)), mBinding))
 
         | (_, absSlot) :: _ ->
-            errorR(Error(FSComp.SR.tcArgumentArityMismatchOneOverload(bindName, List.sum absSlot.NumArgs, arity, getSignature absSlot, getDetails absSlot), mBinding))
+            errorR(Error(FSComp.SR.tcArgumentArityMismatchOneOverload(RichText.mkMember bindName, List.sum absSlot.NumArgs, arity, RichText.mkText (getSignature absSlot), RichText.mkText (getDetails absSlot)), mBinding))
 
         None
 
@@ -7668,7 +7685,7 @@ and TcFormatStringExpr cenv (overallTy: OverallTy) env m tpenv (fmtString: strin
 
         let _argTys, atyRequired, etyRequired, _percentATys, specifierLocations, _dotnetFormatString =
             try CheckFormatStrings.ParseFormatString m [m] g false false formatStringCheckContext normalizedString bty cty dty
-            with Failure errString -> error (Error(FSComp.SR.tcUnableToParseFormatString errString, m))
+            with Failure errString -> error (Error(FSComp.SR.tcUnableToParseFormatString (RichText.mkText errString), m))
 
         match cenv.tcSink.CurrentSink with
         | None -> ()
@@ -7904,7 +7921,7 @@ and TcInterpolatedStringExpr cenv (overallTy: OverallTy) env m tpenv (parts: Syn
         try
             CheckFormatStrings.ParseFormatString m stringFragmentRanges g true isFormattableString None printfFormatString printerArgTy printerResidueTy printerResultTy
         with Failure errString ->
-            error (Error(FSComp.SR.tcUnableToParseInterpolatedString errString, m))
+            error (Error(FSComp.SR.tcUnableToParseInterpolatedString (RichText.mkText errString), m))
 
     // Check the expressions filling the holes
     if argTys.Length <> synFillExprs.Length then
@@ -8002,7 +8019,7 @@ and TcConstExpr cenv (overallTy: OverallTy) env m tpenv c =
             let ad = env.eAccessRights
             match ResolveLongIdentAsModuleOrNamespace cenv.tcSink cenv.amap m true OpenQualified env.eNameResEnv ad (ident (modName, m)) [] false ShouldNotifySink.Yes with
             | Result []
-            | Exception _ -> error(Error(FSComp.SR.tcNumericLiteralRequiresModule modName, m))
+            | Exception _ -> error(Error(FSComp.SR.tcNumericLiteralRequiresModule (RichText.mkModule modName), m))
             | Result ((_, mref, _) :: _) ->
                 let expr =
                     try
@@ -8208,7 +8225,7 @@ and TcAnonRecdExpr cenv (overallTy: TType) env tpenv (isStruct, optOrigSynExpr, 
             | SynExprAnonRecordFieldOrSpread.Spread _ -> (* Spreads are allowed to shadow fields. *) None)
         |> List.countBy textOfLid
         |> List.iter (fun (label, count) ->
-            if count > 1 then error (Error (FSComp.SR.tcAnonRecdDuplicateFieldId(label), mWholeExpr)))
+            if count > 1 then error (Error(FSComp.SR.tcAnonRecdDuplicateFieldId(RichText.mkRecordField label), mWholeExpr)))
 
         TcCopyAndUpdateAnonRecdExpr cenv overallTy env tpenv (isStruct, orig, unsortedFieldIdsAndSynExprsGiven, mWholeExpr)
 
@@ -8737,13 +8754,13 @@ and Propagate (cenv: cenv) (overallTy: OverallTy) (env: TcEnv) tpenv (expr: Appl
                                     error (NotAFunctionButIndexer(denv, overallTy.Commit, vName, mExpr, mArg, false))
                                 match vName with
                                 | Some nm ->
-                                    error(Error(FSComp.SR.tcNotAFunctionButIndexerNamedIndexingNotYetEnabled(nm, nm), mExprAndArg))
+                                    error(Error(FSComp.SR.tcNotAFunctionButIndexerNamedIndexingNotYetEnabled(RichText.mkMember nm, RichText.mkMember nm), mExprAndArg))
                                 | _ ->
                                     error(Error(FSComp.SR.tcNotAFunctionButIndexerIndexingNotYetEnabled(), mExprAndArg))
                             else
                                 match vName with
                                 | Some nm ->
-                                    error(Error(FSComp.SR.tcNotAnIndexerNamedIndexingNotYetEnabled(nm), mExprAndArg))
+                                    error(Error(FSComp.SR.tcNotAnIndexerNamedIndexingNotYetEnabled(RichText.mkMember nm), mExprAndArg))
                                 | _ ->
                                     error(Error(FSComp.SR.tcNotAnIndexerIndexingNotYetEnabled(), mExprAndArg))
                         else
@@ -9174,8 +9191,8 @@ and TcItemThen (cenv: cenv) (overallTy: OverallTy) env tpenv (tinstEnclosing, it
         // 'delayed' is about to be dropped on the floor, first do rudimentary checking to get name resolutions in its body
         RecordNameAndTypeResolutionsDelayed cenv env tpenv delayed
         match usageTextOpt() with
-        | None -> error(Error(FSComp.SR.tcCustomOperationNotUsedCorrectly nm, mItemIdent))
-        | Some usageText -> error(Error(FSComp.SR.tcCustomOperationNotUsedCorrectly2(nm, usageText), mItemIdent))
+        | None -> error(Error(FSComp.SR.tcCustomOperationNotUsedCorrectly (RichText.mkMethod nm), mItemIdent))
+        | Some usageText -> error(Error(FSComp.SR.tcCustomOperationNotUsedCorrectly2(RichText.mkMethod nm, usageText), mItemIdent))
 
     // These items are not expected here - they are only used for reporting symbols from name resolution to language service
     | Item.ActivePatternCase _
@@ -9275,7 +9292,7 @@ and TcUnionCaseOrExnCaseOrActivePatternResultItemThen (cenv: cenv) overallTy env
                                 | Item.ExnCase tref -> Item.RecdField (RecdFieldInfo ([], RecdFieldRef (tref, id.idText)))
                                 | _ -> failwithf "Expecting union case or exception item, got: %O" item
                             CallNameResolutionSink cenv.tcSink (id.idRange, env.NameEnv, argItem, emptyTyparInst, ItemOccurrence.Use, ad)
-                        else error(Error(FSComp.SR.tcUnionCaseFieldCannotBeUsedMoreThanOnce(id.idText), id.idRange))
+                        else error(Error(FSComp.SR.tcUnionCaseFieldCannotBeUsedMoreThanOnce(RichText.mkRecordField id.idText), id.idRange))
                         currentIndex <- SEEN_NAMED_ARGUMENT
                     | None ->
                         // ambiguity may appear only when if argument is boolean\generic.
@@ -9299,13 +9316,13 @@ and TcUnionCaseOrExnCaseOrActivePatternResultItemThen (cenv: cenv) overallTy env
                         else
                             match item with
                             | Item.UnionCase(uci, _) ->
-                                error(Error(FSComp.SR.tcUnionCaseConstructorDoesNotHaveFieldWithGivenName(uci.DisplayName, id.idText), id.idRange))
+                                error(Error(FSComp.SR.tcUnionCaseConstructorDoesNotHaveFieldWithGivenName(RichText.mkUnionCase uci.DisplayName, RichText.mkUnresolvedName id.idText), id.idRange))
                             | Item.ExnCase tcref ->
-                                error(Error(FSComp.SR.tcExceptionConstructorDoesNotHaveFieldWithGivenName(tcref.DisplayName, id.idText), id.idRange))
+                                error(Error(FSComp.SR.tcExceptionConstructorDoesNotHaveFieldWithGivenName(richTextOfEntityRef tcref, RichText.mkUnresolvedName id.idText), id.idRange))
                             | Item.ActivePatternResult _ ->
                                 error(Error(FSComp.SR.tcActivePatternsDoNotHaveFields(), id.idRange))
                             | _ ->
-                                error(Error(FSComp.SR.tcConstructorDoesNotHaveFieldWithGivenName(id.idText), id.idRange))
+                                error(Error(FSComp.SR.tcConstructorDoesNotHaveFieldWithGivenName(RichText.mkUnresolvedName id.idText), id.idRange))
 
                 assert (Seq.forall (box >> ((<>) null) ) fittedArgs)
                 List.ofArray fittedArgs
@@ -9498,12 +9515,12 @@ and TcTraitItemThen (cenv: cenv) overallTy env objOpt traitInfo tpenv mItem dela
 
     match traitInfo.SupportTypes with
     | tys when tys.Length > 1 ->
-        error(Error (FSComp.SR.tcTraitHasMultipleSupportTypes(traitInfo.MemberDisplayNameCore), mItem))
+        error(Error(FSComp.SR.tcTraitHasMultipleSupportTypes(RichText.mkMember traitInfo.MemberDisplayNameCore), mItem))
     | _ -> ()
 
     match objOpt, traitInfo.MemberFlags.IsInstance with
-    | Some _, false -> error (Error (FSComp.SR.tcTraitIsStatic traitInfo.MemberDisplayNameCore, mItem))
-    | None, true -> error (Error (FSComp.SR.tcTraitIsNotStatic traitInfo.MemberDisplayNameCore, mItem))
+    | Some _, false -> error (Error(FSComp.SR.tcTraitIsStatic (RichText.mkMember traitInfo.MemberDisplayNameCore), mItem))
+    | None, true -> error (Error(FSComp.SR.tcTraitIsNotStatic (RichText.mkMember traitInfo.MemberDisplayNameCore), mItem))
     | _ -> ()
 
     // If this is an instance trait the object must be evaluated, just in case this is a first-class use of the trait, e.g.
@@ -9706,7 +9723,7 @@ and TcValueItemThen cenv overallTy env vref tpenv mItem mItemIdent afterResoluti
         if not (isNil otherDelayed) then error(Error(FSComp.SR.tcInvalidAssignment(), mStmt))
         UnifyTypes cenv env mStmt overallTy.Commit g.unit_ty
         vref.Deref.SetHasBeenReferenced()
-        CheckValAccessible mItemIdent env.AccessRights vref
+        CheckValAccessible g mItemIdent env.AccessRights vref
         CheckValAttributes g vref mItemIdent |> CommitOperationResult
         let vTy = vref.Type
         let vty2 =
@@ -9814,7 +9831,7 @@ and TcPropertyItemThen cenv overallTy env nm pinfos tpenv mItem mItemIdent after
             ExprAtomicFlag.Atomic, None, [mkSynUnit mItem], delayed, tpenv
 
     if not pinfo.IsStatic then
-        error (Error (FSComp.SR.tcPropertyIsNotStatic nm, mItemIdent))
+        error (Error(FSComp.SR.tcPropertyIsNotStatic (RichText.mkProperty nm), mItemIdent))
 
     match delayed with
     | DelayedSet(expr2, mStmt) :: otherDelayed ->
@@ -9830,21 +9847,21 @@ and TcPropertyItemThen cenv overallTy env nm pinfos tpenv mItem mItemIdent after
             let isByrefMethReturnSetter = meths |> List.exists (function _,Some pinfo -> isByrefTy g (pinfo.GetPropertyType(cenv.amap,mItem)) | _ -> false)
 
             if not isByrefMethReturnSetter then
-                errorR (Error (FSComp.SR.tcPropertyCannotBeSet1 nm, mItemIdent))
+                errorR (Error(FSComp.SR.tcPropertyCannotBeSet1 (RichText.mkProperty nm), mItemIdent))
 
             // x.P <- ... byref setter
-            if isNil meths then error (Error (FSComp.SR.tcPropertyIsNotReadable nm, mItemIdent))
+            if isNil meths then error (Error(FSComp.SR.tcPropertyIsNotReadable (RichText.mkProperty nm), mItemIdent))
             TcMethodApplicationThen cenv env overallTy None tpenv tyArgsOpt [] mItem mItemIdent nm ad NeverMutates true meths afterResolution NormalValUse args ExprAtomicFlag.Atomic staticTyOpt delayed
         else
             let args = if pinfo.IsIndexer then args else []
             if isNil meths then
-                errorR (Error (FSComp.SR.tcPropertyCannotBeSet1 nm, mItemIdent))
+                errorR (Error(FSComp.SR.tcPropertyCannotBeSet1 (RichText.mkProperty nm), mItemIdent))
             // Note: static calls never mutate a struct object argument
             TcMethodApplicationThen cenv env overallTy None tpenv tyArgsOpt [] mStmt mItemIdent nm ad NeverMutates true meths afterResolution NormalValUse (args@[expr2]) ExprAtomicFlag.NonAtomic staticTyOpt otherDelayed
     | _ ->
         // Static Property Get (possibly indexer)
         let meths = pinfos |> GettersOfPropInfos
-        if isNil meths then error (Error (FSComp.SR.tcPropertyIsNotReadable nm, mItemIdent))
+        if isNil meths then error (Error(FSComp.SR.tcPropertyIsNotReadable (RichText.mkProperty nm), mItemIdent))
         // Note: static calls never mutate a struct object argument
         TcMethodApplicationThen cenv env overallTy None tpenv tyArgsOpt [] mItem mItemIdent nm ad NeverMutates true meths afterResolution NormalValUse args ExprAtomicFlag.Atomic staticTyOpt delayed
 
@@ -9900,7 +9917,7 @@ and TcRecdFieldItemThen cenv overallTy env rfinfo tpenv mItem mItemIdent delayed
     let g = cenv.g
     let ad = env.eAccessRights
     CheckRecdFieldInfoAccessible cenv.amap mItemIdent ad rfinfo
-    if not rfinfo.IsStatic then error (Error (FSComp.SR.tcFieldIsNotStatic(rfinfo.DisplayName), mItemIdent))
+    if not rfinfo.IsStatic then error (Error(FSComp.SR.tcFieldIsNotStatic(RichText.mkRecordField rfinfo.DisplayName), mItemIdent))
     CheckRecdFieldInfoAttributes g rfinfo mItemIdent |> CommitOperationResult
     let fref = rfinfo.RecdFieldRef
     let fieldTy = rfinfo.FieldType
@@ -10022,7 +10039,7 @@ and TcLookupItemThen cenv overallTy env tpenv mObjExpr objExpr objExprTy delayed
             if pinfo.IsIndexer
             then GetMemberApplicationArgs delayed cenv env tpenv
             else ExprAtomicFlag.Atomic, None, [mkSynUnit mItem], delayed, tpenv
-        if pinfo.IsStatic then error (Error (FSComp.SR.tcPropertyIsStatic nm, mItemIdent))
+        if pinfo.IsStatic then error (Error(FSComp.SR.tcPropertyIsStatic (RichText.mkProperty nm), mItemIdent))
 
 
         match delayed with
@@ -10035,14 +10052,14 @@ and TcLookupItemThen cenv overallTy env tpenv mObjExpr objExpr objExprTy delayed
                 let meths = pinfos |> GettersOfPropInfos
                 let isByrefMethReturnSetter = meths |> List.exists (function _,Some pinfo -> isByrefTy g (pinfo.GetPropertyType(cenv.amap,mItem)) | _ -> false)
                 if not isByrefMethReturnSetter then
-                    errorR (Error (FSComp.SR.tcPropertyCannotBeSet1 nm, mItemIdent))
+                    errorR (Error(FSComp.SR.tcPropertyCannotBeSet1 (RichText.mkProperty nm), mItemIdent))
                 // x.P <- ... byref setter
-                if isNil meths then error (Error (FSComp.SR.tcPropertyIsNotReadable nm, mItemIdent))
+                if isNil meths then error (Error(FSComp.SR.tcPropertyIsNotReadable (RichText.mkProperty nm), mItemIdent))
                 TcMethodApplicationThen cenv env overallTy None tpenv tyArgsOpt objArgs mExprAndItem mItemIdent nm ad PossiblyMutates true meths afterResolution NormalValUse args atomicFlag None delayed
             else
 
                 if g.langVersion.SupportsFeature(LanguageFeature.RequiredPropertiesSupport) && pinfo.IsSetterInitOnly then
-                    errorR (Error (FSComp.SR.tcInitOnlyPropertyCannotBeSet1 nm, mItemIdent))
+                    errorR (Error(FSComp.SR.tcInitOnlyPropertyCannotBeSet1 (RichText.mkProperty nm), mItemIdent))
 
                 let args = if pinfo.IsIndexer then args else []
                 let mut = (if isStructTy g (tyOfExpr g objExpr) then DefinitelyMutates else PossiblyMutates)
@@ -10050,7 +10067,7 @@ and TcLookupItemThen cenv overallTy env tpenv mObjExpr objExpr objExprTy delayed
         | _ ->
             // Instance property getter
             let meths = GettersOfPropInfos pinfos
-            if isNil meths then error (Error (FSComp.SR.tcPropertyIsNotReadable nm, mItemIdent))
+            if isNil meths then error (Error(FSComp.SR.tcPropertyIsNotReadable (RichText.mkProperty nm), mItemIdent))
             TcMethodApplicationThen cenv env overallTy None tpenv tyArgsOpt objArgs mExprAndItem mItemIdent nm ad PossiblyMutates true meths afterResolution NormalValUse args atomicFlag None delayed
 
     | Item.RecdField rfinfo ->
@@ -10152,8 +10169,8 @@ and TcEventItemThen (cenv: cenv) overallTy env tpenv mItem mItemIdent mExprAndIt
     let nm = einfo.EventName
 
     match objDetails, einfo.IsStatic with
-    | Some _, true -> error (Error (FSComp.SR.tcEventIsStatic nm, mItemIdent))
-    | None, false -> error (Error (FSComp.SR.tcEventIsNotStatic nm, mItemIdent))
+    | Some _, true -> error (Error(FSComp.SR.tcEventIsStatic (RichText.mkEvent nm), mItemIdent))
+    | None, false -> error (Error(FSComp.SR.tcEventIsNotStatic (RichText.mkEvent nm), mItemIdent))
     | _ -> ()
 
     // The F# wrappers around events are null safe (impl is in FSharp.Core). Therefore, from an F# perspective, the type of the delegate can be considered Not Null.
@@ -10244,14 +10261,14 @@ and TcMethodApplicationThen
     // Give errors if some things couldn't be assigned
     if not (isNil attributeAssignedNamedItems) then
         let (CallerNamedArg(id, _)) = List.head attributeAssignedNamedItems
-        errorR(Error(FSComp.SR.tcNamedArgumentDidNotMatch(id.idText), id.idRange))
+        errorR(Error(FSComp.SR.tcNamedArgumentDidNotMatch(RichText.mkParameter id.idText), id.idRange))
 
     // Resolve the "delayed" lookups
     let exprTy = (tyOfExpr g expr)
 
     for problematicTy in GetDisallowedNullness g exprTy do
         let denv = env.DisplayEnv
-        warning(Error(FSComp.SR.tcDisallowedNullableApplication(methodName,NicePrint.minimalStringOfType denv problematicTy), m))
+        warning(Error(FSComp.SR.tcDisallowedNullableApplication(RichText.mkMethod methodName, NicePrint.minimalRichTextOfType denv problematicTy), m))
 
     PropagateThenTcDelayed cenv overallTy env tpenv mWholeExpr (MakeApplicableExprNoFlex cenv expr) exprTy atomicFlag delayed
 
@@ -10859,7 +10876,7 @@ and TcMethodApplication
     if not finalCalledMeth.IsIndexParamArraySetter &&
        not finalCalledMeth.IsIndexerSetter &&
        (finalCalledMeth.ArgSets |> List.existsi (fun i argSet -> argSet.UnnamedCalledArgs |> List.existsi (fun j ca -> ca.Position <> (i, j)))) then
-        errorR(Deprecated(FSComp.SR.tcUnnamedArgumentsDoNotFormPrefix(), mMethExpr))
+        errorR(Deprecated(RichText.mkText (FSComp.SR.tcUnnamedArgumentsDoNotFormPrefix()), mMethExpr))
 
     /// STEP 5. Build the argument list. Adjust for optional arguments, byref arguments and coercions.
 
@@ -10990,7 +11007,7 @@ and TcSetterArgExpr (cenv: cenv) env denv objExpr ad assignedSetter calledFromCo
             CheckPropInfoAttributes pinfo id.idRange  |> CommitOperationResult
 
             if g.langVersion.SupportsFeature(LanguageFeature.RequiredPropertiesSupport) && pinfo.IsSetterInitOnly && not calledFromConstructor then
-                errorR (Error (FSComp.SR.tcInitOnlyPropertyCannotBeSet1 pinfo.PropertyName, m))
+                errorR (Error(FSComp.SR.tcInitOnlyPropertyCannotBeSet1 (RichText.mkProperty pinfo.PropertyName), m))
 
             MethInfoChecks g cenv.amap true None [objExpr] ad m pminfo
             let calledArgTy = List.head (List.head (pminfo.GetParamTypes(cenv.amap, m, pminst)))
@@ -11642,7 +11659,7 @@ and TcNormalizedBinding declKind (cenv: cenv) env tpenv overallTy safeThisValOpt
                     errorR(Error(FSComp.SR.tcPartialActivePattern(), m))
                     
                 if Option.isSome memberFlagsOpt && not spatsL.IsEmpty then
-                    errorR(Error(FSComp.SR.tcInvalidActivePatternName(apinfo.LogicalName), m))
+                    errorR(Error(FSComp.SR.tcInvalidActivePatternName(RichText.mkActivePatternCase apinfo.LogicalName), m))
 
                 apinfo.ActiveTagsWithRanges |> List.iteri (fun i (_tag, tagRange) ->
                     let item = Item.ActivePatternResult(apinfo, apOverallTy, i, tagRange)
@@ -11714,8 +11731,7 @@ and TcNormalizedBinding declKind (cenv: cenv) env tpenv overallTy safeThisValOpt
                 checkLanguageFeatureAndRecover g.langVersion LanguageFeature.BooleanReturningAndReturnTypeDirectedPartialActivePattern mBinding
             | ActivePatternReturnKind.StructTypeWrapper when not isStructRetTy ->
                 checkLanguageFeatureAndRecover g.langVersion LanguageFeature.BooleanReturningAndReturnTypeDirectedPartialActivePattern mBinding
-            | ActivePatternReturnKind.StructTypeWrapper ->
-                checkLanguageFeatureAndRecover g.langVersion LanguageFeature.StructActivePattern mBinding
+            | ActivePatternReturnKind.StructTypeWrapper
             | ActivePatternReturnKind.RefTypeWrapper -> ()
 
             UnifyTypes cenv env mBinding (apinfo.ResultType g m activePatResTys apRetTy) apReturnTy
@@ -11957,7 +11973,7 @@ and TcAttributeEx canFail (cenv: cenv) (env: TcEnv) attrTgt attrEx (synAttr: Syn
         match canFail with
         | TcCanFail.IgnoreAllErrors | TcCanFail.IgnoreMemberResoutionError -> [], true
         | TcCanFail.ReportAllErrors ->
-            errorR(Error(FSComp.SR.tcGenericAttributesNotSupported(tcref.DisplayName), mAttr))
+            errorR(Error(FSComp.SR.tcGenericAttributesNotSupported(richTextOfEntityRef tcref), mAttr))
             [], false
     else
 
@@ -12023,7 +12039,7 @@ and TcAttributeEx canFail (cenv: cenv) (env: TcEnv) attrTgt attrEx (synAttr: Syn
                 let checkPropSetterAttribAccess m (pinfo: PropInfo) =
                     let setterMeth = pinfo.SetterMethod
                     if not <| IsTypeAndMethInfoAccessible cenv.amap m ad ad setterMeth then
-                        errorR(Error (FSComp.SR.tcPropertyCannotBeSetPrivateSetter(pinfo.PropertyName), m))                       
+                        errorR(Error(FSComp.SR.tcPropertyCannotBeSetPrivateSetter(RichText.mkProperty pinfo.PropertyName), m))                       
                         
                 let namedAttribArgMap =
                   attributeAssignedNamedItems |> List.map (fun (CallerNamedArg(id, CallerArg(callerArgTy, m, isOpt, callerArgExpr))) ->
@@ -12210,11 +12226,9 @@ and TcLetBinding (cenv: cenv) isUse env containerInfo declKind tpenv (synBinds, 
                 let tmp, _ = mkCompGenLocal m "patternInput" (generalizedTypars +-> tauTy)
 
                 if isUse then
-                    let isDiscarded = match checkedPat with TPat_wild _ -> true | _ -> false
-                    if not isDiscarded then
-                        errorR(Error(FSComp.SR.tcInvalidUseBinding(), m))
-                    else
-                        checkLanguageFeatureAndRecover g.langVersion LanguageFeature.UseBindingValueDiscard checkedPat.Range
+                    match checkedPat with
+                    | TPat_wild _ -> ()
+                    | _ -> errorR(Error(FSComp.SR.tcInvalidUseBinding(), m))
 
                 elif isFixed then
                     errorR(Error(FSComp.SR.tcInvalidUseBinding(), m))
@@ -12417,7 +12431,7 @@ and ApplyAbstractSlotInference (cenv: cenv) (envinner: TcEnv) (_: Val option) (a
                      | meths when methInfosEquivByNameAndSig meths -> meths
                      | [] ->
                          let raiseGenericArityMismatch() =
-                              let details = NicePrint.multiLineStringOfMethInfos cenv.infoReader m envinner.DisplayEnv slots
+                              let details = NicePrint.multiLineRichTextOfMethInfos cenv.infoReader m envinner.DisplayEnv slots
                               errorR(Error(FSComp.SR.tcOverrideArityMismatch details, memberId.idRange))
                               []
 
@@ -12512,7 +12526,7 @@ and ApplyAbstractSlotInference (cenv: cenv) (envinner: TcEnv) (_: Val option) (a
                let kIsGet = (k = SynMemberKind.PropertyGet)
 
                if not (if kIsGet then uniqueAbstractProp.HasGetter else uniqueAbstractProp.HasSetter) then
-                   error(Error(FSComp.SR.tcAbstractPropertyMissingGetOrSet(if kIsGet then "getter" else "setter"), memberId.idRange))
+                   error(Error(FSComp.SR.tcAbstractPropertyMissingGetOrSet(RichText.mkText (if kIsGet then "getter" else "setter")), memberId.idRange))
 
                let uniqueAbstractMeth = if kIsGet then uniqueAbstractProp.GetterMethod else uniqueAbstractProp.SetterMethod
 
@@ -13022,7 +13036,7 @@ and TcLetrecBinding
             | Some thisVal ->
                 reqdThisValTy, thisVal.Type, thisVal.Range
         if not (AddCxTypeEqualsTypeUndoIfFailed envRec.DisplayEnv cenv.css rangeForCheck actualThisValTy reqdThisValTy) then
-            errorR (Error(FSComp.SR.tcNonUniformMemberUse vspec.DisplayName, vspec.Range))
+            errorR (Error(FSComp.SR.tcNonUniformMemberUse (richTextOfValName g vspec), vspec.Range))
 
     let preGeneralizationRecBind =
         { RecBindingInfo = rbind.RecBindingInfo
@@ -13421,7 +13435,7 @@ and FixupLetrecBind (cenv: cenv) denv generalizedTyparsForRecursiveBlock (bind: 
 
 and unionGeneralizedTypars typarSets = List.foldBack (ListSet.unionFavourRight typarEq) typarSets []
 
-and CheckRecursiveInlineGroup (bindings: PreInitializationGraphEliminationBinding list) =
+and CheckRecursiveInlineGroup g (bindings: PreInitializationGraphEliminationBinding list) =
     let inlineBindings =
         bindings
         |> List.filter (fun pgrbind ->
@@ -13468,7 +13482,7 @@ and CheckRecursiveInlineGroup (bindings: PreInitializationGraphEliminationBindin
                 // via the FS1113/FS1114/FS1118 "not bound in optimization environment" cascade.
                 // This momentarily surfaces the binding as non-inline to the language service,
                 // which is acceptable because compilation already fails here with FS3890.
-                errorR(Error(FSComp.SR.tcRecursiveInlineNotAllowed(v.DisplayName), v.Range))
+                errorR(Error(FSComp.SR.tcRecursiveInlineNotAllowed(richTextOfValName g v), v.Range))
                 v.SetInlineInfo ValInline.Never
 
 and TcLetrecBindings overridesOK (cenv: cenv) env tpenv (binds, bindsm, scopem) =
@@ -13504,7 +13518,7 @@ and TcLetrecBindings overridesOK (cenv: cenv) env tpenv (binds, bindsm, scopem) 
     // Now that we know what we've generalized we can adjust the recursive references
     let vxbinds = vxbinds |> List.map (FixupLetrecBind cenv env.DisplayEnv generalizedTyparsForRecursiveBlock)
 
-    CheckRecursiveInlineGroup vxbinds
+    CheckRecursiveInlineGroup g vxbinds
 
     // Now eliminate any initialization graphs
     let binds =

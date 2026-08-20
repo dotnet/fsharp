@@ -7,6 +7,7 @@ open System.Collections.Generic
 open System.IO
 
 open Internal.Utilities
+open FSharp.Compiler.Text
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.Diagnostics
 open FSharp.Compiler.AbstractIL.BinaryConstants
@@ -694,7 +695,7 @@ let rec GenTypeDefPass1 enc cenv (tdef: ILTypeDef) =
     // Verify that the typedef contains fewer than maximumMethodsPerDotNetType
     let count = tdef.Methods.AsArray().Length
     if count > maximumMethodsPerDotNetType then
-        errorR(Error(FSComp.SR.tooManyMethodsInDotNetTypeWritingAssembly (tdef.Name, count, maximumMethodsPerDotNetType), rangeStartup))
+        errorR(Error(FSComp.SR.tooManyMethodsInDotNetTypeWritingAssembly (RichText.ofQualifiedTypeName tdef.Name, count, maximumMethodsPerDotNetType), rangeStartup))
 
     GenTypeDefsPass1 (enc@[tdef.Name]) cenv (tdef.NestedTypes.AsList())
 
@@ -837,10 +838,10 @@ let hasthisToByte hasthis =
      | ILThisConvention.InstanceExplicit -> e_IMAGE_CEE_CS_CALLCONV_INSTANCE_EXPLICIT
      | ILThisConvention.Static -> 0x00uy
 
-let callconvToByte ntypars (Callconv (hasthis, bcc)) =
-    hasthisToByte hasthis |||
+let callconvToByte ntypars (callconv: ILCallingConv) =
+    hasthisToByte callconv.ThisConv |||
     (if ntypars > 0 then e_IMAGE_CEE_CS_CALLCONV_GENERIC else 0x00uy) |||
-    (match bcc with
+    (match callconv.BasicConv with
     | ILArgConvention.FastCall -> e_IMAGE_CEE_CS_CALLCONV_FASTCALL
     | ILArgConvention.StdCall -> e_IMAGE_CEE_CS_CALLCONV_STDCALL
     | ILArgConvention.ThisCall -> e_IMAGE_CEE_CS_CALLCONV_THISCALL
@@ -3863,8 +3864,11 @@ type options =
      referenceAssemblyAttribOpt: ILAttribute option
      referenceAssemblySignatureHash : int option
      pathMap: PathMap
+     /// Hot reload baseline side channel: module-level CustomDebugInformation rows for
+     /// F#-owned records in the portable PDB. Empty for ordinary compiles.
+     moduleCustomDebugInfoRows: PdbModuleCustomDebugInfo list
      /// Per-method EnC CustomDebugInformation rows for the portable PDB writer, keyed by
-     /// IL method name. Empty for ordinary compiles, so flag-off output stays byte-identical.
+     /// IL method name. Empty for ordinary compiles.
      methodCustomDebugInfoRows: Map<string, PdbMethodCustomDebugInfo list> }
 
 let writeBinaryAux (stream: Stream, options: options, modul, normalizeAssemblyRefs) =
@@ -4028,7 +4032,15 @@ let writeBinaryAux (stream: Stream, options: options, modul, normalizeAssemblyRe
             match options.pdbfile, options.portablePDB with
             | Some _, true ->
                 let pdbInfo =
-                    generatePortablePdb options.embedAllSource options.embedSourceList options.sourceLink options.checksumAlgorithm pdbData options.pathMap options.methodCustomDebugInfoRows
+                    generatePortablePdb
+                        options.embedAllSource
+                        options.embedSourceList
+                        options.sourceLink
+                        options.checksumAlgorithm
+                        pdbData
+                        options.pathMap
+                        options.moduleCustomDebugInfoRows
+                        options.methodCustomDebugInfoRows
 
                 if options.embeddedPDB then
                     let uncompressedLength, contentId, stream, algorithmName, checkSum = pdbInfo
