@@ -41,10 +41,11 @@
       "cats": []
     },
     "20274": {
-      "sha": "3f31b9986cbc",
+      "sha": "45d3fb246612",
       "cats": [
         "Affects-Bootstrap",
         "Affects-Build-Infra",
+        "Affects-Compiler-Output",
         "Scope-Review-Needed"
       ]
     },
@@ -85,12 +86,8 @@
       "cats": []
     },
     "20121": {
-      "sha": "0321e9b135e2",
-      "cats": [
-        "Affects-Build-Infra",
-        "Affects-Compiler-Output",
-        "Scope-Review-Needed"
-      ]
+      "sha": "825f0453908d",
+      "cats": []
     },
     "20113": {
       "sha": "4b3e2af129b6",
