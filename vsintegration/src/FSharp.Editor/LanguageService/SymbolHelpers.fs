@@ -26,9 +26,7 @@ module internal SymbolHelpers =
             let userOpName = "getSymbolUsesOfSymbolAtLocationInDocument"
             let! ct = Async2.CancellationToken |> liftAsync
 
-            let! _, checkFileResults =
-                document.GetFSharpParseAndCheckResultsAsync(userOpName)
-                |> liftAsync
+            let! _, checkFileResults = document.GetFSharpParseAndCheckResultsAsync(userOpName) |> liftAsync
 
             let! defines, langVersion = document.GetFsharpParsingOptionsAsync(userOpName) |> liftAsync
 
@@ -93,7 +91,8 @@ module internal SymbolHelpers =
                     projects
                     |> Seq.map (fun (project, snapshot) ->
                         project.FindFSharpReferencesAsync(symbol, snapshot, onFound, "getSymbolUsesInProjects"))
-                    |> Async2.whenAll |> Async2.Ignore
+                    |> Async2.whenAll
+                    |> Async2.Ignore
 
                 TelemetryReporter.ReportSingleEvent(TelemetryEvents.GetSymbolUsesInProjectsFinished, props)
             }
@@ -114,7 +113,8 @@ module internal SymbolHelpers =
                 do!
                     symbolUses
                     |> Seq.map (fun symbolUse -> onFound currentDocument symbolUse.Range)
-                    |> Async2.whenAll |> Async2.Ignore
+                    |> Async2.whenAll
+                    |> Async2.Ignore
 
             | Some SymbolScope.SignatureAndImplementation ->
                 let otherFile = getOtherFile currentDocument.FilePath
@@ -172,8 +172,7 @@ module internal SymbolHelpers =
         async2 {
             let symbolUses = ConcurrentBag()
 
-            let onFound =
-                fun document range -> async2 { symbolUses.Add(document, range) }
+            let onFound = fun document range -> async2 { symbolUses.Add(document, range) }
 
             do! findSymbolUses symbolUse currentDocument checkFileResults onFound
 

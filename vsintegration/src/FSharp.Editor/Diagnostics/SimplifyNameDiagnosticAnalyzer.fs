@@ -41,8 +41,7 @@ type internal SimplifyNameDiagnosticAnalyzer [<ImportingConstructor>] () =
                 let! textVersion = document.GetTextVersionAsync(cancellationToken)
                 let textVersionHash = textVersion.GetHashCode()
 
-                let! lockObtained =
-                    guard.WaitAsync(DefaultTuning.PerDocumentSavedDataSlidingWindow, cancellationToken)
+                let! lockObtained = guard.WaitAsync(DefaultTuning.PerDocumentSavedDataSlidingWindow, cancellationToken)
 
                 do! Option.guard lockObtained
 

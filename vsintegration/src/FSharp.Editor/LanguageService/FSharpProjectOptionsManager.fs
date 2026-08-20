@@ -451,6 +451,7 @@ type private FSharpProjectOptionsReactor(checker: FSharpChecker) =
                                 reply.Reply ValueNone
                             elif document.Project.IsFSharpMiscellaneousOrMetadata then
                                 let! options = tryComputeOptionsBySingleScriptOrFile document userOpName
+
                                 if ct.IsCancellationRequested then
                                     reply.Reply ValueNone
                                 else

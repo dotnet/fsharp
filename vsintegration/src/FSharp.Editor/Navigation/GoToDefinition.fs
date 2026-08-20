@@ -799,7 +799,10 @@ type internal FSharpNavigation(metadataAsSource: FSharpMetadataAsSourceService, 
                 TelemetryReporter.ReportSingleEventWithDuration(TelemetryEvents.GoToDefinition, [||])
 
             let gtd = GoToDefinition(metadataAsSource)
-            let gtdTask = gtd.FindDefinitionAsync(initialDoc, position) |> Async2.startInThreadPool cancellationToken
+
+            let gtdTask =
+                gtd.FindDefinitionAsync(initialDoc, position)
+                |> Async2.startInThreadPool cancellationToken
 
             gtdTask.Wait()
 

@@ -613,9 +613,7 @@ type internal FSharpSignatureHelpProvider [<ImportingConstructor>] (serviceProvi
         ) =
         asyncMaybe {
 
-            let! parseResults, checkFileResults =
-                document.GetFSharpParseAndCheckResultsAsync("ProvideSignatureHelp")
-                |> liftAsync
+            let! parseResults, checkFileResults = document.GetFSharpParseAndCheckResultsAsync("ProvideSignatureHelp") |> liftAsync
 
             let! sourceText = document.GetTextAsync()
 

@@ -505,7 +505,7 @@ module Async2 =
                 true)
         )
 
-    let whenAll (computations: Async2<_> seq): Async2<'TResult array> =
+    let whenAll (computations: Async2<_> seq) : Async2<'TResult array> =
         async2 {
             let! ct = CancellationToken
             use lcts = CancellationTokenSource.CreateLinkedTokenSource ct
@@ -518,10 +518,7 @@ module Async2 =
                 return raise exn
         }
 
-    let inline map
-        ([<InlineIfLambda>] mapper: 'input -> 'output)
-        (computation: Async2<'input>)
-        =
+    let inline map ([<InlineIfLambda>] mapper: 'input -> 'output) (computation: Async2<'input>) =
         async2 {
             let! result = computation
             return mapper result

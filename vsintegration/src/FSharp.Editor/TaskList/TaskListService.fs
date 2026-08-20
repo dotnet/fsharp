@@ -20,8 +20,7 @@ type internal FSharpTaskListService [<ImportingConstructor>] () as this =
 
     let getDefinesAndLangVersion (doc: Microsoft.CodeAnalysis.Document) =
         async2 {
-            let! _, _, parsingOptions, _ =
-                doc.GetFSharpCompilationOptionsAsync(nameof (FSharpTaskListService))
+            let! _, _, parsingOptions, _ = doc.GetFSharpCompilationOptionsAsync(nameof (FSharpTaskListService))
 
             return CompilerEnvironment.GetConditionalDefinesForEditing parsingOptions, Some parsingOptions.LangVersionText
         }

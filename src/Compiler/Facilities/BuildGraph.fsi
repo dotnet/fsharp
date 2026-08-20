@@ -4,6 +4,7 @@ module internal FSharp.Compiler.BuildGraph
 
 open System.Globalization
 open Internal.Utilities.Library
+
 /// Contains helpers related to the build graph
 [<RequireQualifiedAccess>]
 module internal GraphNode =

@@ -39,8 +39,7 @@ module SignatureHelpProvider =
                 RoslynTestHelpers.CreateSolution(fileContents, options = project.Options)
                 |> RoslynTestHelpers.GetSingleDocument
 
-            let! parseResults, checkFileResults =
-                document.GetFSharpParseAndCheckResultsAsync("GetSignatureHelp")
+            let! parseResults, checkFileResults = document.GetFSharpParseAndCheckResultsAsync("GetSignatureHelp")
 
             let paramInfoLocations =
                 parseResults.FindParameterLocations(Position.fromZ caretLinePos.Line caretLineColumn).Value

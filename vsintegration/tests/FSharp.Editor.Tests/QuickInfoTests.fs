@@ -34,8 +34,7 @@ module QuickInfo =
                 RoslynTestHelpers.CreateSolution(code, extraFSharpProjectOtherOptions = [| "--realsig+" |])
                 |> RoslynTestHelpers.GetSingleDocument
 
-            let! _, _, _, tooltip =
-                FSharpAsyncQuickInfoSource.TryGetToolTip(document, caretPosition)
+            let! _, _, _, tooltip = FSharpAsyncQuickInfoSource.TryGetToolTip(document, caretPosition)
 
             return tooltip
         }
