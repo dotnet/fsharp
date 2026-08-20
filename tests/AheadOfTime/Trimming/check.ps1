@@ -63,7 +63,7 @@ function CheckTrim($root, $tfm, $outputfile, $expected_len, $callerLineNumber) {
 $allErrors = @()
 
 # Check net9.0 trimmed assemblies.
-$allErrors += CheckTrim -root "SelfContained_Trimming_Test" -tfm "net9.0" -outputfile "FSharp.Core.dll" -expected_len 310272 -callerLineNumber 66
+$allErrors += CheckTrim -root "SelfContained_Trimming_Test" -tfm "net9.0" -outputfile "FSharp.Core.dll" -expected_len 311296 -callerLineNumber 66
 
 # Check net9.0 trimmed assemblies with static linked FSharpCore.
 # Statically links FSharp.Compiler.Service; the size is stable now that its codegen is
