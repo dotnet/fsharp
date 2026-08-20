@@ -319,7 +319,7 @@ let main _ =
 
     // Regression for PR #19602 (RFC FS-1043): a non-inline binding with an unsatisfiable operator/SRTP
     // trait must fail at compile time (FS0041), not compile into a NotSupportedException stub that throws
-    // at runtime (which also leaked at feature-off langversions). Deleted neg116 shape: '(1.0 - t) * p'
+    // at runtime (which also leaked at feature-off langversions). The deleted neg116 shape '(1.0 - t) * p'
     // stages the outer trait into a free return typar on a non-inline value.
     let private nonInlineUnsatisfiableOperatorSrtp = """
 module Neg116
