@@ -12,6 +12,7 @@ open System.Threading.Tasks
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Diagnostics
+open Microsoft.VisualStudio.LanguageServices
 
 open FSharp.Compiler.Diagnostics
 open CancellableTasks
@@ -31,8 +32,8 @@ type private CachedDiagnosticsEntry =
         Diagnostics: ImmutableArray<Diagnostic>
     }
 
-[<Export(typeof<IFSharpDocumentDiagnosticAnalyzer>)>]
-type internal FSharpDocumentDiagnosticAnalyzer [<ImportingConstructor>] () =
+[<Export(typeof<IFSharpDocumentDiagnosticAnalyzer>); Shared>]
+type internal FSharpDocumentDiagnosticAnalyzer [<ImportingConstructor>] ([<Import(AllowDefault = true)>] workspace: VisualStudioWorkspace | null) =
 
     let shouldProduceDiagnostics (document: Document) =
         document.Project.Solution.GetFSharpExtensionConfig().ShouldProduceDiagnostics()
@@ -40,12 +41,29 @@ type internal FSharpDocumentDiagnosticAnalyzer [<ImportingConstructor>] () =
     static let cache =
         ConcurrentDictionary<struct (DocumentId * DiagnosticsType), CachedDiagnosticsEntry>()
 
-    static let evictRemovedDocuments (solution: Solution) =
+    static let evictDocument (documentId: DocumentId) =
+        cache.TryRemove(struct (documentId, DiagnosticsType.Syntax)) |> ignore
+        cache.TryRemove(struct (documentId, DiagnosticsType.Semantic)) |> ignore
+
+    static let evictProject (projectId: ProjectId) =
         for entry in cache do
             let struct (documentId, _) = entry.Key
 
-            if isNull (solution.GetDocument(documentId)) then
+            if documentId.ProjectId = projectId then
                 cache.TryRemove(entry.Key) |> ignore
+
+    do
+        match workspace with
+        | null -> ()
+        | workspace ->
+            workspace.WorkspaceChanged.Add(fun args ->
+                match args.Kind with
+                | WorkspaceChangeKind.DocumentRemoved when not (isNull args.DocumentId) -> evictDocument args.DocumentId
+                | WorkspaceChangeKind.ProjectRemoved when not (isNull args.ProjectId) -> evictProject args.ProjectId
+                | WorkspaceChangeKind.SolutionCleared
+                | WorkspaceChangeKind.SolutionRemoved -> cache.Clear()
+                | _ -> ()
+            )
 
     static let diagnosticEqualityComparer =
         { new IEqualityComparer<FSharpDiagnostic> with
@@ -105,8 +123,6 @@ type internal FSharpDocumentDiagnosticAnalyzer [<ImportingConstructor>] () =
                 match diagnosticType with
                 | DiagnosticsType.Syntax -> document.Project.IsFsharpRemoveParensEnabled
                 | DiagnosticsType.Semantic -> false
-
-            evictRemovedDocuments document.Project.Solution
 
             let cacheKey = struct (document.Id, diagnosticType)
 
