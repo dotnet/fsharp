@@ -2555,7 +2555,7 @@ let rec OptimizeExpr cenv (env: IncrementalOptimizationEnv) expr =
     | Expr.App (f, fty, tyargs, argsl, m) -> 
         match expr with
         | Expr.App(Expr.Val(vref, flags, _), fty, [ _ ], [ body ], _)
-            when valRefEq g vref g.cgh__runtimeAsync_vref ->
+            when valRefEq g vref g.cgh__runtimeAsyncReturn_vref ->
             let bodyR, bodyInfo = OptimizeExpr cenv env body
             Expr.App(Expr.Val(vref, flags, m), fty, tyargs, [ bodyR ], m),
             { bodyInfo with

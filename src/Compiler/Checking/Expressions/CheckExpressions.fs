@@ -8709,7 +8709,7 @@ and Propagate (cenv: cenv) (overallTy: OverallTy) (env: TcEnv) tpenv (expr: Appl
                 match expr.Expr with
                 | Expr.Val(vref, _, _)
                 | Expr.App(Expr.Val(vref, _, _), _, [ _ ], [], _)
-                    when valRefEq g vref g.cgh__runtimeAsync_vref -> true
+                    when valRefEq g vref g.cgh__runtimeAsyncReturn_vref -> true
                 | _ -> false
 
             match isRuntimeAsync, UnifyFunctionTypeUndoIfFailed cenv denv mExpr exprTy with
@@ -9028,10 +9028,10 @@ and TcApplicationThen (cenv: cenv) (overallTy: OverallTy) env tpenv mExprAndArg 
         let intrinsic =
             match leftExpr with
             | ApplicableExpr(expr=Expr.Val (vref, flags, m))
-                    when valRefEq g vref g.cgh__runtimeAsync_vref ->
+                    when valRefEq g vref g.cgh__runtimeAsyncReturn_vref ->
                     Some(vref, flags, m)
             | ApplicableExpr(expr=Expr.App (Expr.Val (vref, flags, m), _, [ _ ], [], _))
-                    when valRefEq g vref g.cgh__runtimeAsync_vref ->
+                    when valRefEq g vref g.cgh__runtimeAsyncReturn_vref ->
                     Some(vref, flags, m)
             | _ ->
                     None

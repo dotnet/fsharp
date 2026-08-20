@@ -21,7 +21,7 @@ let inline bindAwaiter
 type RuntimeTaskBuilder() =
     member inline _.Delay([<InlineIfLambda>] generator: unit -> 'T) : unit -> 'T = generator
     member inline _.Run([<InlineIfLambda>] code: unit -> 'T) : Task<'T> =
-        StateMachineHelpers.__runtimeAsync (code())
+        StateMachineHelpers.__runtimeAsyncReturn (code())
     member inline _.Zero() = ()
     member inline _.Return(value: 'T) = value
     member inline _.ReturnFrom(task: Task<'T>) = AsyncHelpers.Await task

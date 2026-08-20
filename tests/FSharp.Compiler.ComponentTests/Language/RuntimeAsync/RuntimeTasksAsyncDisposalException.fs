@@ -1,5 +1,5 @@
 // Minimal repro: suspending with AsyncHelpers.Await inside the *handler* of an
-// exception-handling region of a __runtimeAsync method. This is what `use` on an
+// exception-handling region of a __runtimeAsyncReturn method. This is what `use` on an
 // IAsyncDisposable lowers to (the DisposeAsync await sits in the finally).
 //
 // Today this compiles cleanly but terminates the process at execution
@@ -13,7 +13,7 @@ open System.Threading.Tasks
 open Microsoft.FSharp.Core.CompilerServices
 
 let run () : Task<int> =
-    StateMachineHelpers.__runtimeAsync (
+    StateMachineHelpers.__runtimeAsyncReturn (
         try
             1
         finally

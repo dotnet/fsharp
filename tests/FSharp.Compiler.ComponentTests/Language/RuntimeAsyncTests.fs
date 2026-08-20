@@ -12,21 +12,21 @@ open System.Runtime.CompilerServices
 open Microsoft.FSharp.Core.CompilerServices
 
 let add (x: int) (y: int) : Task<int> =
-    StateMachineHelpers.__runtimeAsync (
+    StateMachineHelpers.__runtimeAsyncReturn (
         AsyncHelpers.Await(Task.Delay(1))
         x + y)
 
 let rawBody () : Task<int> =
-    StateMachineHelpers.__runtimeAsync 1
+    StateMachineHelpers.__runtimeAsyncReturn 1
 
 type Calculator() =
     member _.Add(x: int, y: int) : Task<int> =
-        StateMachineHelpers.__runtimeAsync (
+        StateMachineHelpers.__runtimeAsyncReturn (
             AsyncHelpers.Await(Task.Delay(1))
             x + y)
 
     member _.AddRaw(x: int) : Task<int> =
-        StateMachineHelpers.__runtimeAsync (x + 1)
+        StateMachineHelpers.__runtimeAsyncReturn (x + 1)
 """
 
 let private runtimeAsyncRawSource = """
@@ -41,7 +41,7 @@ type RuntimeTaskBuilder() =
         generator
 
     member inline _.Run([<InlineIfLambda>] code: unit -> 'T) : Task<'T> =
-        StateMachineHelpers.__runtimeAsync (code())
+        StateMachineHelpers.__runtimeAsyncReturn (code())
 
     member inline _.Zero() = ()
 
@@ -78,46 +78,53 @@ type Calculator() =
 
 """
 
+#if NETCOREAPP
 [<Fact>]
 let ``runtime async requires preview language version`` () =
     FSharp """
+module RuntimeAsyncPreviewTest
+
 open System.Threading.Tasks
 open Microsoft.FSharp.Core.CompilerServices
 
 let f : Task<int> =
-    StateMachineHelpers.__runtimeAsync 1
+    StateMachineHelpers.__runtimeAsyncReturn 1
 """
-    |> typecheck
+    |> withFSharpCoreShippedNet
+    |> compile
     |> shouldFail
     |> withErrorCode 3350
 
 [<Fact>]
 let ``runtime async rejects non Task result carriers`` () =
     FSharp """
+module RuntimeAsyncCarrierTest
+
 open Microsoft.FSharp.Core.CompilerServices
 
 let f : string =
-    StateMachineHelpers.__runtimeAsync "result"
+    StateMachineHelpers.__runtimeAsyncReturn "result"
 """
     |> withLangVersionPreview
-    |> typecheck
+    |> withFSharpCoreShippedNet
+    |> compile
     |> shouldFail
     |> withErrorCode 1
 
 [<Fact>]
 let ``runtime async intrinsic does not capture user-defined same-named values`` () =
     FSharp """
-let __runtimeAsync value = value
-let result = __runtimeAsync 1
+let __runtimeAsyncReturn value = value
+let result = __runtimeAsyncReturn 1
 """
     |> typecheck
     |> shouldSucceed
 
-#if NETCOREAPP
 [<Fact>]
 let ``runtime async compiles functions and members`` () =
     FSharp runtimeAsyncSource
     |> withLangVersionPreview
+    |> withFSharpCoreShippedNet
     |> compile
     |> shouldSucceed
 
@@ -125,6 +132,7 @@ let ``runtime async compiles functions and members`` () =
 let ``runtime async combines awaited chunks without delegates`` () =
     FSharp runtimeAsyncRawSource
     |> withLangVersionPreview
+    |> withFSharpCoreShippedNet
     |> compile
     |> verifyILContains [
         "Task::Delay(int32)"
@@ -139,6 +147,7 @@ let ``runtime task builder fixture executes through runtime async`` () =
         SourceFromPath (Path.Combine(__SOURCE_DIRECTORY__, "RuntimeAsync", "RuntimeTasks.fs"))
     )
     |> withLangVersionPreview
+    |> withFSharpCoreShippedNet
     |> compileExeAndRun
     |> shouldSucceed
 
@@ -147,6 +156,7 @@ let ``runtime async direct intrinsic fixture executes`` () =
     Path.Combine(__SOURCE_DIRECTORY__, "RuntimeAsync", "RuntimeAsyncBasic.fs")
     |> FsFromPath
     |> withLangVersionPreview
+    |> withFSharpCoreShippedNet
     |> compileExeAndRun
     |> shouldSucceed
 
@@ -158,21 +168,21 @@ let ``runtime async suspension in exception region compiles (runtime execution i
     Path.Combine(__SOURCE_DIRECTORY__, "RuntimeAsync", "RuntimeTasksAsyncDisposalException.fs")
     |> FsFromPath
     |> withLangVersionPreview
-    |> compileExeAndRun
+    |> withFSharpCoreShippedNet
+    |> compile
     |> shouldSucceed
 
 #else
 [<Fact>]
-let ``runtime async reports unsupported target runtime`` () =
+let ``runtime async intrinsic is only available in the shipped net FSharp.Core`` () =
     FSharp """
 open System.Threading.Tasks
 open Microsoft.FSharp.Core.CompilerServices
 
 let f : Task<int> =
-    StateMachineHelpers.__runtimeAsync 1
+    StateMachineHelpers.__runtimeAsyncReturn 1
 """
-    |> withLangVersionPreview
     |> typecheck
     |> shouldFail
-    |> withErrorCode 3351
+    |> withErrorCode 39
 #endif

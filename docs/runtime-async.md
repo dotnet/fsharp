@@ -65,11 +65,12 @@ Known runtime restrictions (currently **not** diagnosed by the F# compiler):
 ## F# surface
 
 The source-level marker is the compiler intrinsic
-`Microsoft.FSharp.Core.CompilerServices.StateMachineHelpers.__runtimeAsync`,
+`Microsoft.FSharp.Core.CompilerServices.StateMachineHelpers.__runtimeAsyncReturn`,
+available from the `net10.0` FSharp.Core target,
 declared in `resumable.fsi` alongside the other compiler intrinsics:
 
 ```fsharp
-val __runtimeAsync<'T> : 'T -> System.Threading.Tasks.Task<'T>
+val __runtimeAsyncReturn<'T> : 'T -> System.Threading.Tasks.Task<'T>
 ```
 
 Its FSharp.Core implementation throws; the compiler consumes every
@@ -87,26 +88,26 @@ Typical forms:
 
 ```fsharp
 let add (x: int) (y: int) : Task<int> =
-    __runtimeAsync (
+    __runtimeAsyncReturn (
         let first = AsyncHelpers.Await (getTask x)
         first + y)
 
 type C() =
     member _.Add(x: int, y: int) : Task<int> =
-        __runtimeAsync (
+        __runtimeAsyncReturn (
             AsyncHelpers.Await (getTask x) + y)
 
 // Let-bound value (not a function): also supported.
-let answer : Task<int> = __runtimeAsync 42
+let answer : Task<int> = __runtimeAsyncReturn 42
 ```
 
-There is no implicit awaiting: the argument of `__runtimeAsync` is checked
+There is no implicit awaiting: the argument of `__runtimeAsyncReturn` is checked
 as the logical `'T` result, and flattening requires an explicit
 `AsyncHelpers.Await`.
 
 ## Type checking
 
-`__runtimeAsync` is an ordinary generic value in the typed tree; no new
+`__runtimeAsyncReturn` is an ordinary generic value in the typed tree; no new
 expression node or `Val` flag is added. Type checking special-cases its
 application in two places in `CheckExpressions.fs`:
 
@@ -121,7 +122,7 @@ application in two places in `CheckExpressions.fs`:
   the usual way. A non-`Task<'T>` declared return type therefore fails with
   the ordinary FS0001 type-mismatch error.
 
-User code that defines its own `__runtimeAsync` is unaffected: the intrinsic
+User code that defines its own `__runtimeAsyncReturn` is unaffected: the intrinsic
 is only recognised when the `ValRef` resolves (via `valRefEq`) to the
 FSharp.Core declaration.
 
@@ -136,7 +137,7 @@ nothing else in the typed tree records that a method is runtime-async.
 ## Code generation
 
 `IlxGen.fs` recognises the marker in three placements
-(`TryUnwrapRuntimeAsyncExpr`, which strips `DebugPoint` wrappers):
+(`TryUnwrapRuntimeAsyncReturnExpr`, which strips `DebugPoint` wrappers):
 
 1. **Method body** (`GenMethodForBinding`): the marker is unwrapped from the
    top of the method lambda body; the generated `ILMethodDef` gets
@@ -149,14 +150,14 @@ nothing else in the typed tree records that a method is runtime-async.
    `Invoke` method's IL body (`ILMethodBody.IsRuntimeAsync`).
    `EraseClosures.convIlxClosureDef` copies that flag onto the emitted
    method, again with `NoInlining`.
-3. **Any other expression position** (`GenRuntimeAsyncAsStartedTask`), e.g.
+3. **Any other expression position** (`GenRuntimeAsyncReturnAsStartedTask`), e.g.
    a `let`-bound value initializer: the marker application is wrapped in a
    fresh `fun () -> ...` lambda that is immediately applied to `unit` and
    regenerated. The lambda flows through the closure path (2), producing a
    generated runtime-async helper method whose call starts the task. This
    relies on `GenApp` never beta-reducing a lambda application (it always
    emits a closure plus an indirect call); see the comment at
-   `GenRuntimeAsyncAsStartedTask`.
+   `GenRuntimeAsyncReturnAsStartedTask`.
 
 A marker that ends up wrapped in anything other than `DebugPoint` at the top
 of a method or closure body is not detected there, but still reaches the
@@ -195,7 +196,7 @@ Tests live in `tests/FSharp.Compiler.ComponentTests/Language/RuntimeAsync*`:
 `RuntimeTaskBuilder.fs` is a quasi-synchronous builder aiming for feature
 parity with FSharp.Core's `task` builder: `Delay` is the identity on
 `unit -> 'T`, so all combinators are plain inline functions over delayed
-code; only `Run` introduces `__runtimeAsync` and returns `Task<'T>`.
+code; only `Run` introduces `__runtimeAsyncReturn` and returns `Task<'T>`.
 `Bind` lowers directly to `AsyncHelpers.Await` with SRTP fallbacks
 (`AwaitAwaiter`) for arbitrary task-likes, as do `ReturnFrom` and
 `MergeSources`. `MergeSources` awaits its sources sequentially, matching the

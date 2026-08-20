@@ -9,19 +9,19 @@ let private delayed value =
     Task.Delay(1).ContinueWith(fun (_: Task) -> value)
 
 let add (x: int) (y: int) : Task<int> =
-    StateMachineHelpers.__runtimeAsync (
+    StateMachineHelpers.__runtimeAsyncReturn (
         let first = AsyncHelpers.Await(delayed x)
         first + y)
 
 let lambdaAdd : int -> Task<int> =
     fun value ->
-        StateMachineHelpers.__runtimeAsync (
+        StateMachineHelpers.__runtimeAsyncReturn (
             let result = AsyncHelpers.Await(delayed value)
             result + 1)
 
 let makeAdder (offset: int) : int -> Task<int> =
     fun value ->
-        StateMachineHelpers.__runtimeAsync (
+        StateMachineHelpers.__runtimeAsyncReturn (
             let result = AsyncHelpers.Await(delayed value)
             result + offset)
 
@@ -35,16 +35,16 @@ let inline awaitAndAdd (value: int) =
     apply (fun current -> current + 1) result
 
 let addWithInline (value: int) : Task<int> =
-    StateMachineHelpers.__runtimeAsync (awaitAndAdd value)
+    StateMachineHelpers.__runtimeAsyncReturn (awaitAndAdd value)
 
 type Calculator() =
     member _.Add(x: int, y: int) : Task<int> =
-        StateMachineHelpers.__runtimeAsync (
+        StateMachineHelpers.__runtimeAsyncReturn (
             let first = AsyncHelpers.Await(delayed x)
             first + y)
 
     static member Double(value: int) : Task<int> =
-        StateMachineHelpers.__runtimeAsync (value * 2)
+        StateMachineHelpers.__runtimeAsyncReturn (value * 2)
 
 let private resultOf (task: Task<int>) =
     task.GetAwaiter().GetResult()

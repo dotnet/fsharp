@@ -885,7 +885,7 @@ type TcGlobals(
   let v_cgh__resumeAt_info         = makeIntrinsicValRef(fslib_MFStateMachineHelpers_nleref,                   "__resumeAt"                           , None                 , None          , [vara],     ([[v_int_ty]; [varaTy]], varaTy))
   let v_cgh__stateMachine_info     = makeIntrinsicValRef(fslib_MFStateMachineHelpers_nleref,                   "__stateMachine"                       , None                 , None          , [vara; varb],     ([[varaTy]], varbTy)) // inaccurate type but it doesn't matter for linking
   let v_cgh__resumableEntry_info   = makeIntrinsicValRef(fslib_MFStateMachineHelpers_nleref,                   "__resumableEntry"                     , None                 , None          , [vara],     ([[v_int_ty --> varaTy]; [v_unit_ty --> varaTy]], varaTy))
-  let v_cgh__runtimeAsync_info     = makeIntrinsicValRef(fslib_MFStateMachineHelpers_nleref,                   "__runtimeAsync"                       , None                 , None          , [vara],     ([[varaTy]], TType_app(v_task_tcr, [varaTy], v_knownWithoutNull))) // handled specially by the checker
+  let v_cgh__runtimeAsyncReturn_info = makeIntrinsicValRef(fslib_MFStateMachineHelpers_nleref,               "__runtimeAsyncReturn"                 , None                 , None          , [vara],     ([[varaTy]], TType_app(v_task_tcr, [varaTy], v_knownWithoutNull))) // handled specially by the checker
   let v_seq_to_array_info          = makeIntrinsicValRef(fslib_MFSeqModule_nleref,                             "toArray"                              , None                 , Some "ToArray", [varb],     ([[mkSeqTy varbTy]], mkArrayType 1 varbTy))
   let v_seq_to_list_info           = makeIntrinsicValRef(fslib_MFSeqModule_nleref,                             "toList"                               , None                 , Some "ToList" , [varb],     ([[mkSeqTy varbTy]], mkListTy varbTy))
   let v_seq_map_info               = makeIntrinsicValRef(fslib_MFSeqModule_nleref,                             "map"                                  , None                 , Some "Map"    , [vara;varb], ([[varaTy --> varbTy]; [mkSeqTy varaTy]], mkSeqTy varbTy))
@@ -1775,7 +1775,7 @@ type TcGlobals(
 
 
   member val cgh__stateMachine_vref = ValRefForIntrinsic v_cgh__stateMachine_info
-  member val cgh__runtimeAsync_vref = ValRefForIntrinsic v_cgh__runtimeAsync_info
+  member val cgh__runtimeAsyncReturn_vref = ValRefForIntrinsic v_cgh__runtimeAsyncReturn_info
   member val cgh__useResumableCode_vref = ValRefForIntrinsic v_cgh__useResumableCode_info
   member val cgh__debugPoint_vref = ValRefForIntrinsic v_cgh__debugPoint_info
   member val cgh__resumeAt_vref = ValRefForIntrinsic v_cgh__resumeAt_info
