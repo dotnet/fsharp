@@ -574,11 +574,14 @@ type Async2 =
             let! ct = Async2.CancellationToken
             let invocation = computation.Start ct
 
-            try
-                return! invocation
-            finally
-                if ct.IsCancellationRequested && invocation.Task.IsCanceled then
-                    compensation ()
+            invocation.Task.ContinueWith(
+                Action<Task<'T>>(fun _ -> compensation ()),
+                TaskContinuationOptions.OnlyOnCanceled
+                ||| TaskContinuationOptions.ExecuteSynchronously
+            )
+            |> ignore
+
+            return! invocation
         }
 
     static member StartChild(computation: Async2<'T>) : Async2<Async2<'T>> =
