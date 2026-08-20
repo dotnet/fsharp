@@ -890,14 +890,18 @@ type Entity =
     /// The logical contents of the entity when it is a module or namespace fragment.
     member x.ModuleOrNamespaceType =
         match x.entity_modul_type with
-        | null -> Construct.NewEmptyModuleOrNamespaceType ModuleOrType
-        | entity_modul_type -> entity_modul_type.Force()
+        | null -> x.entity_modul_type <- MaybeLazy.Strict (Construct.NewEmptyModuleOrNamespaceType ModuleOrType)
+        | _ -> ()
+        x.entity_modul_type
+        |> Unchecked.nonNull
+        |> _.Force()
 
     /// The logical contents of the entity when it is a type definition.
     member x.TypeContents =
         match x.entity_tycon_tcaug with
-        | null -> TyconAugmentation.Create()
-        | entity_tycon_tcaug -> entity_tycon_tcaug
+        | null -> x.entity_tycon_tcaug <- TyconAugmentation.Create()
+        | _ -> ()
+        !!x.entity_tycon_tcaug
 
     /// The kind of the type definition - is it a measure definition or a type definition?
     member x.TypeOrMeasureKind =
@@ -1555,7 +1559,7 @@ type TyconAugmentation =
 
     member tcaug.SetHasObjectGetHashCode b = tcaug.tcaug_hasObjectGetHashCode <- b
 
-    static member Create() =
+    static member Create() : TyconAugmentation =
         { tcaug_compare=None
           tcaug_compare_withc=None
           tcaug_equals=None
@@ -6370,7 +6374,7 @@ type Construct() =
             entity_attribs=WellKnownEntityAttribs.Empty // fetched on demand via est.fs API
             entity_typars= LazyWithContext.NotLazy []
             entity_tycon_repr = repr
-            entity_tycon_tcaug=TyconAugmentation.Create()
+            entity_tycon_tcaug= TyconAugmentation.Create()
             entity_modul_type = MaybeLazy.Lazy(InterruptibleLazy(fun _ -> ModuleOrNamespaceType(Namespace true, QueueList.ofList [], QueueList.ofList [])))
             // Generated types get internal accessibility
             entity_cpath = Some cpath
@@ -6510,7 +6514,7 @@ type Construct() =
             entity_attribs=WellKnownEntityAttribs.Empty // fixed up after
             entity_typars=typars
             entity_tycon_repr = TNoRepr
-            entity_tycon_tcaug=TyconAugmentation.Create()
+            entity_tycon_tcaug= TyconAugmentation.Create()
             entity_modul_type = mtyp
             entity_cpath = cpath
             entity_il_repr_cache = null
