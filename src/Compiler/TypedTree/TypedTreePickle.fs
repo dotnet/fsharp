@@ -1285,8 +1285,8 @@ and p_ILBasicCallConv x st =
          | ILArgConvention.VarArg -> 5)
         st
 
-and p_ILCallConv (Callconv(x, y)) st =
-    p_tup2 p_ILHasThis p_ILBasicCallConv (x, y) st
+and p_ILCallConv (x: ILCallingConv) st =
+    p_tup2 p_ILHasThis p_ILBasicCallConv (x.ThisConv, x.BasicConv) st
 
 and p_ILCallSig x st =
     p_tup3 p_ILCallConv p_ILTypes p_ILType (x.CallingConv, x.ArgTypes, x.ReturnType) st
@@ -1316,7 +1316,7 @@ let u_ILHasThis st =
 
 let u_ILCallConv st =
     let a, b = u_tup2 u_ILHasThis u_ILBasicCallConv st
-    Callconv(a, b)
+    ILCallingConv.Create(a, b)
 
 let u_ILTypeRef st =
     let a, b, c = u_tup3 u_ILScopeRef u_strings u_string st
@@ -2839,8 +2839,7 @@ and p_tcaug p st =
          p.tcaug_hash_and_equals_withc
          |> Option.map (fun (v1, v2, v3, _) -> (v1, v2, v3)),
          p.tcaug_equals,
-         (p.tcaug_adhoc_list
-          |> ResizeArray.toList
+         (p.AdhocMembers
           // Explicit impls of interfaces only get kept in the adhoc list
           // in order to get check the well-formedness of an interface.
           // Keeping them across assembly boundaries is not valid, because relinking their ValRefs
@@ -3201,7 +3200,10 @@ and u_tcaug st =
         tcaug_equals = b2
         // only used for code generation and checking - hence don't care about the values when reading back in
         tcaug_hasObjectGetHashCode = false
-        tcaug_adhoc_list = ResizeArray<_>(c |> List.map (fun (_, vref) -> (false, vref)))
+        tcaug_adhoc_list =
+            match c with
+            | [] -> null
+            | _ -> ResizeArray<_>(c |> List.map (fun (_, vref) -> (false, vref)))
         tcaug_adhoc = NameMultiMap.ofList c
         tcaug_interfaces = d
         tcaug_super = e

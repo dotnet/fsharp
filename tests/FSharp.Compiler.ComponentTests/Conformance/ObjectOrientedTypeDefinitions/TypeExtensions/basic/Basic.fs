@@ -256,7 +256,7 @@ module TypeExtensionsBasic =
     [<Theory; FileInlineData("TupleTypeExtension04.fs")>]
     let ``TupleTypeExtension04_fs`` compilation =
         // A tuple type extension of arity 8 (> 7) cannot be desugared to a flat System.Tuple<T1..T8>
-        // that unifies with a real 8-tuple (which uses a nested TRest slot), so it is rejected with FS3910.
+        // that unifies with a real 8-tuple (which uses a nested TRest slot), so it is rejected with FS3915.
         compilation
         |> getCompilation
         |> asExe
@@ -264,7 +264,7 @@ module TypeExtensionsBasic =
         |> typecheck
         |> shouldFail
         |> withDiagnostics [
-            (Error 3910, Line 9, Col 6, Line 9, Col 53, "Tuple type extensions are supported only for tuples of up to 7 elements, but this tuple type has 8 elements. Extensions of larger tuples are not supported.")
+            (Error 3915, Line 9, Col 6, Line 9, Col 53, "Tuple type extensions are supported only for tuples of up to 7 elements, but this tuple type has 8 elements. Extensions of larger tuples are not supported.")
         ]
 
     [<Fact>]

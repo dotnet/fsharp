@@ -2102,7 +2102,7 @@ match { A = 1; B = 2 } with
 | { f = () }
 """
 
-        VerifyCompletionList(fileContents, "| { f = ()", [ "A"; "B"; "C"; "D" ], [])
+        VerifyCompletionList(fileContents, "| { f = ()", [ "A"; "B" ], [ "C"; "D" ])
 
     [<Fact>]
     let ``issue #16260 [TO-BE-IMPROVED] operators are fumbling for now`` () =

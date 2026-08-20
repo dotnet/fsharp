@@ -42,6 +42,7 @@
     <Compile Include="Conformance\BasicGrammarElements\CustomAttributes\AttributeUsage\AttributeUsage.fs" />
     <Compile Include="Conformance\BasicGrammarElements\CustomAttributes\AttributeUsage\AttributeResolutionInRecursiveScopes.fs" />
     <Compile Include="Conformance\BasicGrammarElements\CustomAttributes\Basic\Basic.fs" />
+    <Compile Include="Conformance\BasicGrammarElements\CustomAttributes\Basic\ExtendedLayout.fs" />
     <Compile Include="Conformance\BasicGrammarElements\CustomAttributes\ImportedAttributes\ImportedAttributes.fs" />
     <Compile Include="Conformance\BasicGrammarElements\CustomAttributes\ArgumentsOfAllTypes\ArgumentsOfAllTypes.fs" />
     <Compile Include="Conformance\BasicGrammarElements\DelegateTypes\DelegateDefinition.fs" />
@@ -158,6 +159,7 @@
     <Compile Include="Conformance\PatternMatching\Simple\Simple.fs" />
     <Compile Include="Conformance\PatternMatching\Array\Array.fs" />
     <Compile Include="Conformance\PatternMatching\And\And.fs" />
+    <Compile Include="Conformance\PatternMatching\GuardedOrPatternComplexity.fs" />
     <Compile Include="Conformance\PatternMatching\As\As.fs" />
     <Compile Include="Conformance\PatternMatching\ConsList\ConsList.fs" />
     <Compile Include="Conformance\PatternMatching\DynamicTypeTest\DynamicTypeTest.fs" />
@@ -407,6 +409,7 @@
     <Compile Include="ConstraintSolver\PrimitiveConstraints.fs" />
     <Compile Include="ConstraintSolver\MemberConstraints.fs" />
     <Compile Include="ConstraintSolver\ObjInference.fs" />
+    <Compile Include="ConstraintSolver\TaskCETypeInference.fs" />
     <Compile Include="Interop\DeeplyNestedCSharpClasses.fs" />
     <Compile Include="Interop\DIMSlotCoverageTests.fs" />
     <Compile Include="Interop\SimpleInteropTests.fs" />
@@ -519,6 +522,7 @@
     <Compile Include="Miscellaneous\TestUtilities.fs" />
     <Compile Include="Miscellaneous\MigratedMisc.fs" />
     <Compile Include="Libraries\NativeInterop.fs" />
+    <Compile Include="Libraries\FSharpCoreShippedNet.fs" />
     <Compile Include="Signatures\TestHelpers.fs" />
     <Compile Include="Signatures\ModuleOrNamespaceTests.fs" />
     <Compile Include="Signatures\RecordTests.fs" />

@@ -591,20 +591,9 @@ let GetTyconRefForExtensionMembers minfo (deref: Entity) amap m g =
         None
 
 /// Get the info for all the .NET-style extension members listed as static members in the type.
-let private GetCSharpStyleIndexedExtensionMembersForTyconRef (amap: Import.ImportMap) m  (tcrefOfStaticClass: TyconRef) =
+let private ComputeCSharpStyleExtensionMembers (amap: Import.ImportMap) m  (tcrefOfStaticClass: TyconRef) (importFailed: bool ref) =
     let g = amap.g
-
-    let isApplicable =
-        IsTyconRefUsedForCSharpStyleExtensionMembers g tcrefOfStaticClass ||
-
-        g.langVersion.SupportsFeature(LanguageFeature.CSharpExtensionAttributeNotRequired) &&
-        tcrefOfStaticClass.IsLocalRef &&
-        not tcrefOfStaticClass.IsTypeAbbrev
-
-    if not isApplicable then [] else
-
     let ty = generalizedTyconRef g tcrefOfStaticClass
-    let pri = NextExtensionMethodPriority()
 
     let methods =
         protectAssemblyExploration []
@@ -612,7 +601,6 @@ let private GetCSharpStyleIndexedExtensionMembersForTyconRef (amap: Import.Impor
 
     [ for minfo in methods do
         if IsMethInfoPlainCSharpStyleExtensionMember g m true minfo then
-            let ilExtMem = ILExtMem (tcrefOfStaticClass, minfo, pri)
             // The results are indexed by the TyconRef of the first 'this' argument, if any.
             // So we need to go and crack the type of the 'this' argument.
             //
@@ -624,9 +612,49 @@ let private GetCSharpStyleIndexedExtensionMembersForTyconRef (amap: Import.Impor
             // methods for tuple occur in C# code)
             let thisTyconRef = GetTyconRefForExtensionMembers minfo tcrefOfStaticClass.Deref amap m g
             match thisTyconRef with
-            | None -> ()
-            | Some (Some tcref) -> yield Choice1Of2(tcref, ilExtMem)
-            | Some None -> yield Choice2Of2 ilExtMem ]
+            | None -> importFailed.Value <- true
+            | Some thisTyconRefOpt -> yield (thisTyconRefOpt, minfo) ]
+
+let private GetCSharpStyleIndexedExtensionMembersForTyconRef (amap: Import.ImportMap) m (tcrefOfStaticClass: TyconRef) =
+    let g = amap.g
+
+    let isApplicable =
+        IsTyconRefUsedForCSharpStyleExtensionMembers g tcrefOfStaticClass ||
+
+        g.langVersion.SupportsFeature(LanguageFeature.CSharpExtensionAttributeNotRequired) &&
+        tcrefOfStaticClass.IsLocalRef &&
+        not tcrefOfStaticClass.IsTypeAbbrev
+
+    // Checked before touching the CCU or its cache, so a non-extension class costs nothing extra.
+    if not isApplicable then [] else
+
+    let shape =
+        // A local class is still gaining members while its own file is checked; only an imported one is
+        // immutable enough to share. The cache lives on the CCU, so it goes when the project does.
+        if tcrefOfStaticClass.IsLocalRef then
+            ComputeCSharpStyleExtensionMembers amap m tcrefOfStaticClass (ref false)
+        else
+            let cache = tcrefOfStaticClass.nlr.Ccu.Deref.CSharpStyleExtensionMembersCache
+            match cache.TryGetValue tcrefOfStaticClass.Stamp with
+            | true, shape -> shape :?> (TyconRef option * MethInfo) list
+            | _ ->
+                let importFailed = ref false
+                let shape = ComputeCSharpStyleExtensionMembers amap m tcrefOfStaticClass importFailed
+
+                if not importFailed.Value then
+                    cache.TryAdd(tcrefOfStaticClass.Stamp, (shape :> obj)) |> ignore
+
+                shape
+
+    if List.isEmpty shape then [] else
+
+    let pri = NextExtensionMethodPriority()
+
+    [ for thisTyconRefOpt, minfo in shape do
+        let ilExtMem = ILExtMem (tcrefOfStaticClass, minfo, pri)
+        match thisTyconRefOpt with
+        | Some tcref -> yield Choice1Of2(tcref, ilExtMem)
+        | None -> yield Choice2Of2 ilExtMem ]
 
 /// Query the declared properties of a type (including inherited properties)
 let IntrinsicPropInfosOfTypeInScope (infoReader: InfoReader) optFilter ad findFlag m ty =

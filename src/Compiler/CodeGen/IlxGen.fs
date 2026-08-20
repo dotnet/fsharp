@@ -12379,6 +12379,8 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) : ILTypeRef option 
                             | _ -> ILTypeDefLayout.Auto, ILDefaultPInvokeEncoding.Ansi
 
                         match tycon.Attribs with
+                        | EntityAttrib g WellKnownEntityAttributes.ExtendedLayoutAttribute _ ->
+                            ILTypeDefLayout.Extended, ILDefaultPInvokeEncoding.Ansi
                         | EntityAttrib g WellKnownEntityAttributes.StructLayoutAttribute (Attrib(_,
                                                                                                  _,
                                                                                                  [ AttribInt32Arg layoutKind ],
@@ -12444,6 +12446,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) : ILTypeRef option 
                     match tdLayout with
                     | ILTypeDefLayout.Explicit _ -> List.iter validateExplicit ilFieldDefs
                     | ILTypeDefLayout.Sequential _ -> List.iter validateSequential ilFieldDefs
+                    | ILTypeDefLayout.Extended -> List.iter validateSequential ilFieldDefs // Extended layout manages field layout via the attribute; FieldOffset is not allowed
                     | _ -> ()
 
                     let tdef =

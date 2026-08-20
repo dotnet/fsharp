@@ -86,7 +86,7 @@ let CompilePatternForMatch
     =
     let g = cenv.g
 
-    let dtree, targets =
+    let dtree, targets, joins =
         CompilePattern
             g
             env.DisplayEnv
@@ -103,6 +103,7 @@ let CompilePatternForMatch
             resultTy
 
     mkAndSimplifyMatch DebugPointAtBinding.NoneAtInvisible mExpr mMatch resultTy dtree targets
+    |> mkLetsBind mMatch joins
 
 /// Invoke pattern match compilation
 let CompilePatternForMatchClauses (cenv: TcFileState) env mExpr mMatch warnOnUnused actionOnFailure inputExprOpt inputTy resultTy tclauses =

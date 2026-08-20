@@ -285,6 +285,7 @@ module internal AttributeHelpers =
             | [| "System"; "Runtime"; "InteropServices"; name |] ->
                 match name with
                 | "StructLayoutAttribute" -> WellKnownEntityAttributes.StructLayoutAttribute
+                | "ExtendedLayoutAttribute" -> WellKnownEntityAttributes.ExtendedLayoutAttribute
                 | "DllImportAttribute" -> WellKnownEntityAttributes.DllImportAttribute
                 | "ComVisibleAttribute" ->
                     decodeBoolAttribFlag

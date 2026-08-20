@@ -633,7 +633,7 @@ module CompilerAssertHelpers =
         let fileName = outputFilePath
         let arguments = ""
 #else
-        let fileName = "dotnet"
+        let fileName = initialConfig.DotNetExe
         let arguments = outputFilePath
 
         // Use the actual runtime version so framework resolution works on preview SDKs

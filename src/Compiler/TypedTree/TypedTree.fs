@@ -704,7 +704,7 @@ type Entity =
 
       /// Used during codegen to hold the ILX representation indicating how to access the type 
       // MUTABILITY: only for unpickle linkage and caching
-      mutable entity_il_repr_cache: CompiledTypeRepr cache
+      mutable entity_il_repr_cache: CompiledTypeRepr cache | null
 
       mutable entity_opt_data: EntityOptionalData option
     }
@@ -949,7 +949,15 @@ type Entity =
         | _ -> TAccess []
 
     /// Get the cache of the compiled ILTypeRef representation of this module or type.
-    member x.CompiledReprCache = x.entity_il_repr_cache
+    /// Allocated on first request rather than per entity: only codegen asks for it, so an analysis-only
+    /// host never pays for one.
+    member x.CompiledReprCache =
+        match x.entity_il_repr_cache with
+        | null ->
+            let c = newCache ()
+            x.entity_il_repr_cache <- c
+            c
+        | c -> c
 
     /// Get a blob of data indicating how this type is nested in other namespaces, modules or types.
     member x.PublicPath = x.entity_pubpath
@@ -1481,8 +1489,12 @@ type TyconAugmentation =
       /// Properties, methods etc. in declaration order. The boolean flag for each indicates if the
       /// member is known to be an explicit interface implementation. This must be computed and
       /// saved prior to remapping assembly information.
-      tcaug_adhoc_list: ResizeArray<bool * ValRef> 
-      
+      //
+      // Allocated on first member: there is one augmentation per entity, and nothing is ever added for
+      // an imported type.
+      mutable tcaug_adhoc_list: ResizeArray<bool * ValRef> | null
+
+
       /// Properties, methods etc. as lookup table
       mutable tcaug_adhoc: NameMultiMap<ValRef>
       
@@ -1498,6 +1510,24 @@ type TyconAugmentation =
       /// Set to true if the type is determined to be abstract 
       mutable tcaug_abstract: bool                       
     }
+
+    /// Record a member in declaration order, allocating the list on first use
+    member tcaug.AddAdhocMember(isExplicitImpl: bool, vref: ValRef) =
+        let list =
+            match tcaug.tcaug_adhoc_list with
+            | null ->
+                let l = ResizeArray()
+                tcaug.tcaug_adhoc_list <- l
+                l
+            | l -> l
+
+        list.Add(isExplicitImpl, vref)
+
+    /// Members in declaration order, empty when the type has none
+    member tcaug.AdhocMembers: (bool * ValRef) list =
+        match tcaug.tcaug_adhoc_list with
+        | null -> []
+        | l -> List.ofSeq l
 
     member tcaug.SetCompare x = tcaug.tcaug_compare <- Some x
 
@@ -1516,7 +1546,7 @@ type TyconAugmentation =
           tcaug_hash_and_equals_withc=None 
           tcaug_hasObjectGetHashCode=false 
           tcaug_adhoc=NameMultiMap.empty 
-          tcaug_adhoc_list=ResizeArray<_>() 
+          tcaug_adhoc_list=null
           tcaug_super=None
           tcaug_interfaces=[] 
           tcaug_closed=false 
@@ -5915,7 +5945,9 @@ type CcuData =
       
       /// The table of .NET CLI type forwarders for this assembly
       TypeForwarders: CcuTypeForwarderTable
-      
+
+      CSharpStyleExtensionMembersCache: ConcurrentDictionary<Stamp, obj>
+
       XmlDocumentationInfo: XmlDocumentationInfo option }
 
     [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
@@ -6329,7 +6361,7 @@ type Construct() =
             // Generated types get internal accessibility
             entity_pubpath = Some pubpath
             entity_cpath = Some cpath
-            entity_il_repr_cache = newCache()
+            entity_il_repr_cache = null
             entity_opt_data =
                 match kind, access with
                 | TyparKind.Type, TAccess [] -> None
@@ -6354,7 +6386,7 @@ type Construct() =
             entity_pubpath=cpath |> Option.map (fun (cp: CompilationPath) -> cp.NestedPublicPath id)
             entity_cpath=cpath
             entity_attribs=WellKnownEntityAttribs.Create(attribs)
-            entity_il_repr_cache = newCache()
+            entity_il_repr_cache = null
             entity_opt_data =
                 match xml, access with
                 | doc, TAccess [] when doc.IsEmpty -> None
@@ -6432,7 +6464,7 @@ type Construct() =
             entity_typars = LazyWithContext.NotLazy []
             entity_tycon_repr = TNoRepr
             entity_flags = EntityFlags(usesPrefixDisplay=false, isModuleOrNamespace=false, preEstablishedHasDefaultCtor=false, hasSelfReferentialCtor=false, isStructRecordOrUnionType=false)
-            entity_il_repr_cache = newCache()
+            entity_il_repr_cache = null
             entity_opt_data =
                 match doc, access, repr with
                 | doc, TAccess [], TExnNone when doc.IsEmpty -> None
@@ -6471,7 +6503,7 @@ type Construct() =
             entity_modul_type = mtyp
             entity_pubpath=cpath |> Option.map (fun (cp: CompilationPath) -> cp.NestedPublicPath (mkSynId m nm))
             entity_cpath = cpath
-            entity_il_repr_cache = newCache()
+            entity_il_repr_cache = null
             entity_opt_data =
                 match kind, doc, reprAccess, access with
                 | TyparKind.Type, doc, TAccess [], TAccess [] when doc.IsEmpty -> None

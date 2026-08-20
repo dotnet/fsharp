@@ -782,12 +782,16 @@ namespace Microsoft.FSharp.Control
         /// its result. Note exceptions are wrapped in <see cref="T:System.AggregateException"/>; for new
         /// code, prefer <c>Async.Await</c>, which surfaces single exceptions directly.</summary>
         /// <param name="task">The task to await.</param>
-        /// <remarks>If the task is canceled then <see cref="T:System.Threading.Tasks.TaskCanceledException"/> is raised. Note
+        /// <remarks>
+        /// <p>If the task is canceled then <see cref="T:System.Threading.Tasks.TaskCanceledException"/> is raised. Note
         /// that the task may be governed by a different cancellation token to the overall async computation
         /// where the AwaitTask occurs. In practice you should normally start the task with the
         /// cancellation token returned by <c>let! ct = Async.CancellationToken</c>, and catch
         /// any <see cref="T:System.Threading.Tasks.TaskCanceledException"/> at the point where the
-        /// overall async is started.
+        /// overall async is started.</p>
+        /// <p>For the common case where you are running a Task within an Asynchronous Computation,
+        /// see <c>StartTaskImmediate</c>, which surfaces the ambient <c>CancellationToken</c>
+        /// so that it can be passed to the Task being started.</p>
         /// </remarks>
         /// <category index="2">Awaiting Results</category>
         /// <example id="awaittask-1">
@@ -813,12 +817,15 @@ namespace Microsoft.FSharp.Control
         /// Note exceptions are wrapped in <see cref="T:System.AggregateException"/>; for new
         /// code, prefer <c>Async.Await</c>, which surfaces single exceptions directly.</summary>
         /// <param name="task">The task to await.</param>
-        /// <remarks>If the task is canceled then <see cref="T:System.Threading.Tasks.TaskCanceledException"/> is raised. Note
+        /// <remarks><p>If the task is canceled then <see cref="T:System.Threading.Tasks.TaskCanceledException"/> is raised. Note
         /// that the task may be governed by a different cancellation token to the overall async computation
         /// where the AwaitTask occurs. In practice you should normally start the task with the
         /// cancellation token returned by <c>let! ct = Async.CancellationToken</c>, and catch
         /// any <see cref="T:System.Threading.Tasks.TaskCanceledException"/> at the point where the
-        /// overall async is started.
+        /// overall async is started.</p>
+        /// <p>For the common case where you are running a Task within an Asynchronous Computation,
+        /// see <c>StartTaskImmediate</c>, which surfaces the ambient <c>CancellationToken</c>
+        /// so that it can be passed to the Task being started.</p>
         /// </remarks>
         /// <category index="2">Awaiting Results</category>
         /// <example id="awaittask-2">
@@ -856,6 +863,9 @@ namespace Microsoft.FSharp.Control
         /// typically tasks should be wired to the ambient cancellation token obtained via
         /// <c>let! ct = Async.CancellationToken</c>, catching <see cref="T:System.Threading.Tasks.TaskCanceledException"/>
         /// where the overall async is started.</p>
+        /// <p>For the common case where you are running a Task within an Asynchronous Computation,
+        /// see <c>StartTaskImmediate</c>, which surfaces the ambient <c>CancellationToken</c>
+        /// so that it can be passed to the Task being started.</p>
         /// </remarks>
         ///
         /// <category index="2">Awaiting Results</category>
@@ -893,6 +903,9 @@ namespace Microsoft.FSharp.Control
         /// typically tasks should be wired to the ambient cancellation token obtained via
         /// <c>let! ct = Async.CancellationToken</c>, catching <see cref="T:System.Threading.Tasks.TaskCanceledException"/>
         /// where the overall async is started.</p>
+        /// <p>For the common case where you are running a Task within an Asynchronous Computation,
+        /// see <c>StartTaskImmediate</c>, which surfaces the ambient <c>CancellationToken</c>
+        /// so that it can be passed to the Task being started.</p>
         /// </remarks>
         /// <category index="2">Awaiting Results</category>
         /// <example id="await-task-2">
@@ -929,6 +942,9 @@ namespace Microsoft.FSharp.Control
         /// typically tasks should be wired to the ambient cancellation token obtained via
         /// <c>let! ct = Async.CancellationToken</c>, catching <see cref="T:System.Threading.Tasks.TaskCanceledException"/>
         /// where the overall async is started.</p>
+        /// <p>For the common case where you are running a Task within an Asynchronous Computation,
+        /// see <c>StartTaskImmediate</c>, which surfaces the ambient <c>CancellationToken</c>
+        /// so that it can be passed to the Task being started.</p>
         /// </remarks>
         /// <category index="2">Awaiting Results</category>
         /// <example id="await-valuetask-1">
@@ -963,6 +979,9 @@ namespace Microsoft.FSharp.Control
         /// typically tasks should be wired to the ambient cancellation token obtained via
         /// <c>let! ct = Async.CancellationToken</c>, catching <see cref="T:System.Threading.Tasks.TaskCanceledException"/>
         /// where the overall async is started.</p>
+        /// <p>For the common case where you are running a Task within an Asynchronous Computation,
+        /// see <c>StartTaskImmediate</c>, which surfaces the ambient <c>CancellationToken</c>
+        /// so that it can be passed to the Task being started.</p>
         /// </remarks>
         /// <category index="2">Awaiting Results</category>
         /// <example id="await-valuetask-2">
@@ -983,6 +1002,79 @@ namespace Microsoft.FSharp.Control
         static member Await: task: ValueTask -> Async<unit>
 #endif
 
+        /// <summary>Creates an asynchronous computation that passes the ambient <c>Async.CancellationToken</c> to
+        /// <c>createTask</c>, and then awaits the resulting task, returning its result.</summary>
+        ///
+        /// <param name="createTask">A function that accepts a <c>CancellationToken</c> and returns a <c>Task&lt;'T&gt;</c>.</param>
+        ///
+        /// <remarks>The cancellation token of the enclosing async computation is automatically passed to
+        /// <c>createTask</c>, propagating cancellation naturally to the task without requiring manual token capture.
+        ///
+        /// The resulting task is awaited using <see cref="M:Microsoft.FSharp.Control.FSharpAsync.Await``1(System.Threading.Tasks.Task{``0})"/>;
+        /// exception unwrapping and cancellation handling are as per that overload.
+        /// </remarks>
+        /// <category index="0">Starting Async Computations</category>
+        /// <example id="startTaskImmediate-taskt-1">
+        /// <code lang="fsharp">
+        /// async {
+        ///     let! text = Async.StartTaskImmediate(fun ct -> File.ReadAllTextAsync("file.txt", ct))
+        ///     printfn "Content: %s" text
+        /// }
+        /// </code>
+        /// </example>
+        static member StartTaskImmediate: createTask: (CancellationToken -> Task<'T>) -> Async<'T>
+
+        /// <summary>Creates an asynchronous computation that passes the ambient <c>Async.CancellationToken</c> to
+        /// <c>createTask</c>, and then awaits the resulting task.</summary>
+        ///
+        /// <param name="createTask">A function that accepts a <c>CancellationToken</c> and returns a <c>Task</c>.</param>
+        ///
+        /// <remarks>The cancellation token of the enclosing async computation is automatically passed to
+        /// <c>createTask</c>, propagating cancellation naturally to the task without requiring manual token capture.
+        ///
+        /// The resulting task is awaited using <see cref="M:Microsoft.FSharp.Control.FSharpAsync.Await(System.Threading.Tasks.Task)"/>;
+        /// exception unwrapping and cancellation handling are as per that overload.
+        /// </remarks>
+        /// <category index="0">Starting Async Computations</category>
+        /// <example id="startTaskImmediate-task-1">
+        /// <code lang="fsharp">
+        /// async {
+        ///     do! Async.StartTaskImmediate(fun ct -> File.WriteAllTextAsync("file.txt", "hello", ct))
+        /// }
+        /// </code>
+        /// </example>
+        static member StartTaskImmediate: createTask: (CancellationToken -> Task) -> Async<unit>
+
+#if NETSTANDARD2_1 || NET
+        /// <summary>Creates an asynchronous computation that passes the ambient <c>Async.CancellationToken</c> to
+        /// <c>createTask</c>, and then awaits the resulting <c>ValueTask</c>, returning its result.</summary>
+        ///
+        /// <param name="createTask">A function that accepts a <c>CancellationToken</c> and returns a <c>ValueTask&lt;'T&gt;</c>.</param>
+        ///
+        /// <remarks>The cancellation token of the enclosing async computation is automatically passed to
+        /// <c>createTask</c>, propagating cancellation naturally to the task without requiring manual token capture.
+        ///
+        /// The resulting task is awaited using <see cref="M:Microsoft.FSharp.Control.FSharpAsync.Await``1(System.Threading.Tasks.ValueTask{``0})"/>;
+        /// exception unwrapping and cancellation handling are as per that overload.
+        /// </remarks>
+        /// <category index="0">Starting Async Computations</category>
+        static member StartTaskImmediate: createTask: (CancellationToken -> ValueTask<'T>) -> Async<'T>
+
+        /// <summary>Creates an asynchronous computation that passes the ambient <c>Async.CancellationToken</c> to
+        /// <c>createTask</c>, and then awaits the resulting <c>ValueTask</c>.</summary>
+        ///
+        /// <param name="createTask">A function that accepts a <c>CancellationToken</c> and returns a <c>ValueTask</c>.</param>
+        ///
+        /// <remarks>The cancellation token of the enclosing async computation is automatically passed to
+        /// <c>createTask</c>, propagating cancellation naturally to the task without requiring manual token capture.
+        ///
+        /// The resulting task is awaited using <see cref="M:Microsoft.FSharp.Control.FSharpAsync.Await(System.Threading.Tasks.ValueTask)"/>;
+        /// exception unwrapping and cancellation handling are as per that overload.
+        /// </remarks>
+        /// <category index="0">Starting Async Computations</category>
+        static member StartTaskImmediate: createTask: (CancellationToken -> ValueTask) -> Async<unit>
+
+#endif
         /// <summary>
         ///  Creates an asynchronous computation that will sleep for the given time. This is scheduled
         ///  using a System.Threading.Timer object. The operation will not block operating system threads
@@ -1286,7 +1378,11 @@ namespace Microsoft.FSharp.Control
             /// <summary>Creates an asynchronous computation that will wait for the given task-like value to complete and return
             /// its result.</summary>
             /// <param name="task">The task-like value to await.</param>
-            /// <remarks><p>The value must satisfy the GetAwaiter pattern: it must have a <c>GetAwaiter()</c> method
+            /// <remarks>
+            /// <p>For the common case where you are running a Task within an Asynchronous Computation,
+            /// see <c>StartTaskImmediate</c>, which surfaces the ambient <c>CancellationToken</c>
+            /// so that it can be passed to the Task being started.</p>
+            /// <p>The value must satisfy the GetAwaiter pattern: it must have a <c>GetAwaiter()</c> method
             /// returning an awaiter implementing <see cref="T:System.Runtime.CompilerServices.ICriticalNotifyCompletion"/>
             /// with <c>IsCompleted</c> and <c>GetResult()</c> members.</p>
             /// <p>Exceptions thrown by <c>GetResult()</c> are propagated directly.</p>
@@ -1325,6 +1421,53 @@ namespace Microsoft.FSharp.Control
             [<NoEagerConstraintApplication>]
             static member inline Await< ^TaskLike, ^Awaiter, 'T> :
                 task: ^TaskLike -> Async<'T>
+                    when ^TaskLike: (member GetAwaiter: unit -> ^Awaiter)
+                    and ^Awaiter :> ICriticalNotifyCompletion
+                    and ^Awaiter: (member get_IsCompleted: unit -> bool)
+                    and ^Awaiter: (member GetResult: unit -> 'T)
+
+            /// <summary>Creates an asynchronous computation that passes the ambient <c>Async.CancellationToken</c> to
+            /// <c>createTask</c>, and then awaits the resulting task-like value.</summary>
+            ///
+            /// <param name="createTask">A function that accepts a <c>CancellationToken</c> and returns a task-like value
+            /// satisfying the GetAwaiter pattern.</param>
+            ///
+            /// <remarks>The value returned by <c>createTask</c> must satisfy the GetAwaiter pattern: it must have a
+            /// <c>GetAwaiter()</c> method returning an awaiter implementing
+            /// <see cref="T:System.Runtime.CompilerServices.ICriticalNotifyCompletion"/>
+            /// with <c>IsCompleted</c> and <c>GetResult()</c> members.
+            ///
+            /// This overload uses statically resolved type parameters (SRTP) so it can accept factories returning
+            /// any task-like type, including <c>YieldAwaitable</c> (from <c>Task.Yield()</c>) and
+            /// <c>ConfiguredTaskAwaitable</c> (from <c>task.ConfigureAwait(false)</c>).
+            /// The specific overloads for <see cref="T:System.Threading.Tasks.Task`1"/>, <see cref="T:System.Threading.Tasks.Task"/>,
+            /// <see cref="T:System.Threading.Tasks.ValueTask`1"/> and <see cref="T:System.Threading.Tasks.ValueTask"/>
+            /// are preferred when the factory return type is known.
+            /// </remarks>
+            /// <category index="0">Starting Async Computations</category>
+            /// <example id="startTaskImmediate-tasklike-1">
+            /// <code lang="fsharp">
+            /// // Straightforward: factory returns Task&lt;string&gt;, which is handled by
+            /// // the specific Task&lt;'T&gt; overload of StartTaskImmediate (not this one).
+            /// let fetchPlain (url: string) =
+            ///     Async.StartTaskImmediate(fun ct ->
+            ///         httpClient.GetStringAsync(url, ct))   // returns Task&lt;string&gt;
+            ///
+            /// // Adding ConfigureAwait(false) to the mix yields a ConfiguredTaskAwaitable&lt;string&gt;,
+            /// // which has no specific overload — this SRTP overload handles it.
+            /// let fetchConfigured (url: string) =
+            ///     Async.StartTaskImmediate(fun ct ->
+            ///         httpClient.GetStringAsync(url, ct).ConfigureAwait(false))
+            ///
+            /// async {
+            ///     let! html = fetchConfigured "https://example.com"
+            ///     printfn $"Downloaded {html.Length} chars"
+            /// } |> Async.RunSynchronouslyImmediate
+            /// </code>
+            /// </example>
+            [<NoEagerConstraintApplication>]
+            static member inline StartTaskImmediate< ^TaskLike, ^Awaiter, 'T> :
+                createTask: (CancellationToken -> ^TaskLike) -> Async<'T>
                     when ^TaskLike: (member GetAwaiter: unit -> ^Awaiter)
                     and ^Awaiter :> ICriticalNotifyCompletion
                     and ^Awaiter: (member get_IsCompleted: unit -> bool)

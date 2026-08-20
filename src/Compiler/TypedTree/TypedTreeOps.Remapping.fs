@@ -2182,8 +2182,12 @@ module internal ExprRemapping =
                 |> Option.map (mapQuadruple (remapValRef tmenv, remapValRef tmenv, remapValRef tmenv, Option.map (remapValRef tmenv)))
             tcaug_adhoc = x.tcaug_adhoc |> NameMap.map (List.map (remapValRef tmenv))
             tcaug_adhoc_list =
-                x.tcaug_adhoc_list
-                |> ResizeArray.map (fun (flag, vref) -> (flag, remapValRef tmenv vref))
+                let remapped: ResizeArray<bool * ValRef> | null =
+                    match x.tcaug_adhoc_list with
+                    | null -> null
+                    | l -> l |> ResizeArray.map (fun (flag, vref) -> (flag, remapValRef tmenv vref))
+
+                remapped
             tcaug_super = x.tcaug_super |> Option.map (remapType tmenv)
             tcaug_interfaces = x.tcaug_interfaces |> List.map (map1Of3 (remapType tmenv))
         }

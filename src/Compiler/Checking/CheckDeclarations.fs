@@ -3552,7 +3552,9 @@ module EstablishTypeDefinitionCores =
                 match attrs with
                 | EntityAttribInt g WellKnownEntityAttributes.StructLayoutAttribute v -> Some v
                 | _ -> None
+            let hasExtendedLayoutAttr = hasFlag entityFlags WellKnownEntityAttributes.ExtendedLayoutAttribute
             let hasAllowNullLiteralAttr = hasFlag entityFlags WellKnownEntityAttributes.AllowNullLiteralAttribute_True
+            let hasStructAttr = hasFlag entityFlags WellKnownEntityAttributes.StructAttribute
 
             if hasAbstractAttr then 
                 tycon.TypeContents.tcaug_abstract <- true
@@ -3572,19 +3574,42 @@ module EstablishTypeDefinitionCores =
                 
             let structLayoutAttributeCheck allowed = 
                 let explicitKind = int32 System.Runtime.InteropServices.LayoutKind.Explicit
+                // LayoutKind.Extended (value 1) must be set via ExtendedLayoutAttribute, not StructLayout
+                let extendedLayoutKind = 1
                 match structLayoutAttr with
                 | Some kind ->
-                    if allowed then 
-                        if kind = explicitKind then
-                            warning(PossibleUnverifiableCode m)
-                    elif List.isEmpty (thisTyconRef.Typars) then
-                        errorR (Error(FSComp.SR.tcOnlyStructsCanHaveStructLayout(), m))
-                    else
-                        errorR (Error(FSComp.SR.tcGenericTypesCannotHaveStructLayout(), m))
+                    if not allowed then
+                        if List.isEmpty (thisTyconRef.Typars) then
+                            errorR (Error(FSComp.SR.tcOnlyStructsCanHaveStructLayout(), m))
+                        else
+                            errorR (Error(FSComp.SR.tcGenericTypesCannotHaveStructLayout(), m))
+                    elif kind = extendedLayoutKind then
+                        errorR (Error(FSComp.SR.tcInvalidStructLayoutExtendedKind(), m))
+                    elif kind = explicitKind then
+                        warning(PossibleUnverifiableCode m)
                 | None -> ()
+
+            let extendedLayoutAttributeCheck () =
+                if hasExtendedLayoutAttr && structLayoutAttr.IsSome then
+                    errorR (Error(FSComp.SR.tcStructLayoutAndExtendedLayout(), m))
+
+            let noExtendedLayoutAttributeCheck () =
+                if hasExtendedLayoutAttr then
+                    errorR (Error(FSComp.SR.tcOnlyStructsCanHaveExtendedLayout(), m))
+
+            // A record is a value type only when marked [<Struct>]; reference records reject extended layout.
+            let recordExtendedLayoutAttributeCheck () =
+                if hasStructAttr then extendedLayoutAttributeCheck ()
+                else noExtendedLayoutAttributeCheck ()
+
+            // A union (even a [<Struct>] one) carries a tag plus per-case fields, so extended layout never applies.
+            let unionExtendedLayoutAttributeCheck () =
+                if hasExtendedLayoutAttr then
+                    errorR (Error(FSComp.SR.tcExtendedLayoutCannotBeUsedOnUnions(), m))
                 
             let hiddenReprChecks hasRepr =
                  structLayoutAttributeCheck false
+                 noExtendedLayoutAttributeCheck()
                  if hasSealedAttr = Some false || (hasRepr && hasSealedAttr <> Some true && not (id.idText = "Unit" && g.compilingFSharpCore) ) then 
                     errorR(Error(FSComp.SR.tcRepresentationOfTypeHiddenBySignature(), m))
                  if hasAbstractAttr then 
@@ -3678,6 +3703,7 @@ module EstablishTypeDefinitionCores =
                 | TyconCoreAbbrevThatIsReallyAUnion (hasMeasureAttr, envinner, id) (unionCaseName, _) ->
                           
                     structLayoutAttributeCheck false
+                    unionExtendedLayoutAttributeCheck()
                     noAllowNullLiteralAttributeCheck()
 
                     let hasRQAAttribute = EntityHasWellKnownAttribute cenv.g WellKnownEntityAttributes.RequireQualifiedAccessAttribute tycon
@@ -3694,7 +3720,8 @@ module EstablishTypeDefinitionCores =
                         errorR (Error(FSComp.SR.tcAbbreviatedTypesCannotBeSealed(), m))
                     noAbstractClassAttributeCheck()
                     noAllowNullLiteralAttributeCheck()
-                    if hasMeasureableAttr then 
+                    noExtendedLayoutAttributeCheck()
+                    if hasMeasureableAttr then
                         let kind = if hasMeasureAttr then TyparKind.Measure else TyparKind.Type
                         let theTypeAbbrev, _ = TcTypeOrMeasureAndRecover (Some kind) cenv NoNewTypars CheckCxs ItemOccurrence.UseInType WarnOnIWSAM.No envinner tpenv rhsType
 
@@ -3711,6 +3738,7 @@ module EstablishTypeDefinitionCores =
                     noAbstractClassAttributeCheck()
                     noAllowNullLiteralAttributeCheck()
                     structLayoutAttributeCheck false
+                    unionExtendedLayoutAttributeCheck()
 
                     let hasRQAAttribute = EntityHasWellKnownAttribute cenv.g WellKnownEntityAttributes.RequireQualifiedAccessAttribute tycon
                     let unionCases = TcRecdUnionAndEnumDeclarations.TcUnionCaseDecls cenv envinner innerParent thisTy thisTyInst hasRQAAttribute tpenv addFixup unionCases
@@ -3727,6 +3755,7 @@ module EstablishTypeDefinitionCores =
                     noAbstractClassAttributeCheck()
                     noAllowNullLiteralAttributeCheck()
                     structLayoutAttributeCheck true  // these are allowed for records
+                    recordExtendedLayoutAttributeCheck()
 
                     let check pass =
                         let firstPass = pass = FirstPass
@@ -3884,6 +3913,7 @@ module EstablishTypeDefinitionCores =
                     noSealedAttributeCheck FSComp.SR.tcTypesAreAlwaysSealedAssemblyCode
                     noAllowNullLiteralAttributeCheck()
                     structLayoutAttributeCheck false
+                    noExtendedLayoutAttributeCheck()
                     noAbstractClassAttributeCheck()
                     (TAsmRepr s, None, NoSafeInitInfo), ignore
 
@@ -3954,17 +3984,26 @@ module EstablishTypeDefinitionCores =
                                   if not (isNil slotsigs) then 
                                     errorR (Error(FSComp.SR.tcStructTypesCannotContainAbstractMembers(), m)) 
                                   structLayoutAttributeCheck true
+                                  extendedLayoutAttributeCheck()
+                                  // The runtime derives an extended-layout struct's size from its instance fields (C-struct/C-union
+                                  // rules), so an empty one would emit invalid metadata that fails to load. Static fields do not count.
+                                  if hasExtendedLayoutAttr
+                                     && not (List.exists (fun (f: RecdField) -> not f.IsStatic) userFields)
+                                     && List.isEmpty implicitStructFields then
+                                      errorR (Error(FSComp.SR.tcExtendedLayoutStructMustHaveInstanceField(), m))
 
                                   TFSharpStruct
                               | SynTypeDefnKind.Interface -> 
                                   if hasSealedAttr = Some true then errorR (Error(FSComp.SR.tcInterfaceTypesCannotBeSealed(), m))
                                   structLayoutAttributeCheck false
+                                  noExtendedLayoutAttributeCheck()
                                   noAbstractClassAttributeCheck()
                                   allowNullLiteralAttributeCheck()
                                   noFieldsCheck userFields
                                   TFSharpInterface
                               | SynTypeDefnKind.Class -> 
                                   structLayoutAttributeCheck(not isIncrClass)
+                                  noExtendedLayoutAttributeCheck()
                                   allowNullLiteralAttributeCheck()
                                   for slot in abstractSlots do
                                       if not slot.IsInstanceMember then
@@ -3973,6 +4012,7 @@ module EstablishTypeDefinitionCores =
                               | SynTypeDefnKind.Delegate (ty, arity) -> 
                                   noSealedAttributeCheck FSComp.SR.tcTypesAreAlwaysSealedDelegate
                                   structLayoutAttributeCheck false
+                                  noExtendedLayoutAttributeCheck()
                                   noAllowNullLiteralAttributeCheck()
                                   noAbstractClassAttributeCheck()
                                   noFieldsCheck userFields
@@ -4044,6 +4084,7 @@ module EstablishTypeDefinitionCores =
                     let fieldTy, fields' = TcRecdUnionAndEnumDeclarations.TcEnumDecls cenv envinner tpenv innerParent thisTy decls
                     let kind = TFSharpEnum
                     structLayoutAttributeCheck false
+                    noExtendedLayoutAttributeCheck()
                     noSealedAttributeCheck FSComp.SR.tcTypesAreAlwaysSealedEnum
                     noAllowNullLiteralAttributeCheck()
                     let vid = ident("value__", m)

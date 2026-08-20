@@ -1201,7 +1201,7 @@ let PublishValueDefnMaybeInclCompilerGenerated (cenv: cenv) env inclCompilerGene
         let tcaug = vspec.MemberApparentEntity.TypeContents
         let vref = mkLocalValRef vspec
         tcaug.tcaug_adhoc <- NameMultiMap.add vspec.LogicalName vref tcaug.tcaug_adhoc
-        tcaug.tcaug_adhoc_list.Add (ValRefIsExplicitImpl g vref, vref)
+        tcaug.AddAdhocMember(ValRefIsExplicitImpl g vref, vref)
     | _ -> ()
 
 let PublishValueDefn cenv env declKind vspec =
