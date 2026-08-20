@@ -3569,7 +3569,7 @@ module EstablishTypeDefinitionCores =
                 
             let structLayoutAttributeCheck allowed = 
                 let explicitKind = int32 System.Runtime.InteropServices.LayoutKind.Explicit
-                // LayoutKind.Extended (value 1) must be set via ExtendedLayoutAttribute, not StructLayout: https://github.com/dotnet/runtime/issues/102727
+                // LayoutKind.Extended (value 1) must be set via ExtendedLayoutAttribute, not StructLayout
                 let extendedLayoutKind = 1
                 match structLayoutAttr with
                 | Some kind ->
