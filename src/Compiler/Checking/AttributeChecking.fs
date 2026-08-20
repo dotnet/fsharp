@@ -235,6 +235,21 @@ let MethInfoHasAttribute g m attribSpec minfo  =
                     (fun _ -> Some ())
         |> Option.isSome
 
+/// Check if a method has an attribute identified by its full compiled type name.
+/// Uses name-based (not type-identity) matching, mirroring TyconRefHasAttributeByName (RFC FS-1053):
+/// user code can define its own copy of such an attribute, so it must be honoured wherever it is
+/// declared - the runtime assembly, the same compilation unit, or any other assembly.
+let MethInfoHasAttributeByName m (attrFullName: string) minfo =
+    BindMethInfoAttributes m minfo
+        (fun ilAttribs -> ilAttribs.AsArray() |> Array.exists (isILAttribByName ([], attrFullName)))
+        (fun fsAttribs ->
+            fsAttribs
+            |> List.exists (fun (Attrib(tcref, _, _, _, _, _, _)) ->
+                match tcref.CompiledRepresentation with
+                | CompiledTypeRepr.ILAsmNamed(ilTypeRef, _, _) -> ilTypeRef.Enclosing.IsEmpty && ilTypeRef.Name = attrFullName
+                | CompiledTypeRepr.ILAsmOpen _ -> false))
+        (fun _provAttribs -> false)
+
 /// Bundles the IL flag, Val flag, and AttribInfo for a well-known attribute
 /// that can appear on method infos across metadata kinds.
 [<Struct; NoEquality; NoComparison>]

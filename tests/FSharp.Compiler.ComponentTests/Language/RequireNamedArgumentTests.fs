@@ -68,6 +68,31 @@ namespace AnnotatedLib
         |> asLibrary
         |> withName "CsAnnotatedLib"
 
+    // A separately compiled C# assembly whose annotated method carries a *different* attribute that merely
+    // shares the simple name RequireNamedArgumentAttribute but lives in another namespace. Recognition is by
+    // full type name, so this must NOT be treated as the well-known attribute.
+    let private csWrongNamespaceLib =
+        CSharp """
+using System;
+
+namespace MyApp
+{
+    [AttributeUsage(AttributeTargets.Method)]
+    public sealed class RequireNamedArgumentAttribute : Attribute { }
+}
+
+namespace AnnotatedLib
+{
+    public static class WrongApi
+    {
+        [MyApp.RequireNamedArgument]
+        public static int Add(int x, int y) => x + y;
+    }
+}
+"""
+        |> asLibrary
+        |> withName "CsWrongNamespaceLib"
+
     [<Fact>]
     let ``Same compilation unit - positional call is an error`` () =
         withPolyfill """
@@ -261,4 +286,109 @@ module Use =
         |> typecheck
         |> shouldFail
         |> withErrorCode 3910
+        |> ignore
+
+    [<Fact>]
+    let ``Mixed named and positional call is an error`` () =
+        // A single positional argument alongside a named one must still be rejected.
+        withPolyfill """
+namespace Test
+
+open System.Runtime.CompilerServices
+
+type C =
+    [<RequireNamedArgument>]
+    static member Add(x: int, y: int) = x + y
+
+module Use =
+    let r = C.Add(1, y = 2)
+"""
+        |> withLangVersionPreview
+        |> typecheck
+        |> shouldFail
+        |> withErrorCode 3910
+        |> ignore
+
+    [<Fact>]
+    let ``Same-named attribute in a different F# namespace is not recognised`` () =
+        // Recognition is by full type name: an attribute that only shares the simple name must be ignored.
+        FSharp """
+namespace MyApp
+
+open System
+
+[<AttributeUsage(AttributeTargets.Method)>]
+type RequireNamedArgumentAttribute() =
+    inherit Attribute()
+
+namespace Test
+
+open MyApp
+
+type C =
+    [<RequireNamedArgument>]
+    static member Add(x: int, y: int) = x + y
+
+module Use =
+    let r = C.Add(1, 2)
+"""
+        |> withLangVersionPreview
+        |> typecheck
+        |> shouldSucceed
+        |> ignore
+
+    [<FactForNETCOREAPP>]
+    let ``Same-named attribute from a different C# namespace is not recognised`` () =
+        FSharp """
+module Test
+open AnnotatedLib
+let r = WrongApi.Add(1, 2)
+"""
+        |> withReferences [ csWrongNamespaceLib ]
+        |> withLangVersionPreview
+        |> compile
+        |> shouldSucceed
+        |> ignore
+
+    [<Fact>]
+    let ``ParamArray positional arguments are an error`` () =
+        // Regression guard for the ParamArray hole: when every positional caller argument is captured by a
+        // ParamArray the unnamed-arg count is zero, so enforcement must also inspect ParamArrayCallerArgs.
+        withPolyfill """
+namespace Test
+
+open System
+open System.Runtime.CompilerServices
+
+type C =
+    [<RequireNamedArgument>]
+    static member Sum([<ParamArray>] rest: int[]) = Array.sum rest
+
+module Use =
+    let r = C.Sum(1, 2, 3)
+"""
+        |> withLangVersionPreview
+        |> typecheck
+        |> shouldFail
+        |> withErrorCode 3910
+        |> ignore
+
+    [<Fact>]
+    let ``ParamArray passed by name as an array succeeds`` () =
+        withPolyfill """
+namespace Test
+
+open System
+open System.Runtime.CompilerServices
+
+type C =
+    [<RequireNamedArgument>]
+    static member Sum([<ParamArray>] rest: int[]) = Array.sum rest
+
+module Use =
+    let r = C.Sum(rest = [| 1; 2; 3 |])
+"""
+        |> withLangVersionPreview
+        |> typecheck
+        |> shouldSucceed
         |> ignore

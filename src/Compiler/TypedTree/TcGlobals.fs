@@ -169,6 +169,8 @@ let tname_AsyncCallback = "System.AsyncCallback"
 let tname_IAsyncResult = "System.IAsyncResult"
 [<Literal>]
 let tname_IsByRefLikeAttribute = "System.Runtime.CompilerServices.IsByRefLikeAttribute"
+[<Literal>]
+let tname_RequireNamedArgumentAttribute = "System.Runtime.CompilerServices.RequireNamedArgumentAttribute"
 
 
 //-------------------------------------------------------------------------
@@ -1505,7 +1507,6 @@ type TcGlobals(
 
   member val attrib_ExtensionAttribute = findSysAttrib "System.Runtime.CompilerServices.ExtensionAttribute"
   member val attrib_DecimalConstantAttribute = findSysAttrib "System.Runtime.CompilerServices.DecimalConstantAttribute"
-  member val attrib_RequireNamedArgumentAttribute = findSysAttrib "System.Runtime.CompilerServices.RequireNamedArgumentAttribute"
   member val attribs_Unsupported = v_attribs_Unsupported
 
   member val attrib_CustomOperationAttribute               = mk_MFCore_attrib "CustomOperationAttribute"

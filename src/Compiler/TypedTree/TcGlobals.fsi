@@ -135,6 +135,9 @@ val internal tname_RuntimeArgumentHandle: string = "System.RuntimeArgumentHandle
 [<Literal>]
 val internal tname_IsByRefLikeAttribute: string = "System.Runtime.CompilerServices.IsByRefLikeAttribute"
 
+[<Literal>]
+val internal tname_RequireNamedArgumentAttribute: string = "System.Runtime.CompilerServices.RequireNamedArgumentAttribute"
+
 type internal TcGlobals =
 
     new:
@@ -365,8 +368,6 @@ type internal TcGlobals =
     member attrib_SecuritySafeCriticalAttribute: BuiltinAttribInfo
 
     member attrib_DecimalConstantAttribute: BuiltinAttribInfo
-
-    member attrib_RequireNamedArgumentAttribute: BuiltinAttribInfo
 
     member attrib_SystemObsolete: BuiltinAttribInfo
 

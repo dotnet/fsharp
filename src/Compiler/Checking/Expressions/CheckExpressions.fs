@@ -10872,18 +10872,15 @@ and TcMethodApplication
 
     // FS-1095: a method annotated with RequireNamedArgumentAttribute must be called using named-argument syntax.
     // The attribute is recognised by full type name only (polyfill), so it is honoured whether it originates from
-    // the runtime assembly, the same compilation unit, or a different assembly. Only positional (unnamed) caller
-    // arguments are rejected, so a zero-argument call such as 'M()' is unaffected.
-    if g.langVersion.SupportsFeature LanguageFeature.RequireNamedArgument &&
-       finalCalledMeth.TotalNumUnnamedCallerArgs > 0 &&
-       MethInfoHasWellKnownAttributeSpec
-           g
-           mItem
-           { ILFlag = WellKnownILAttributes.RequireNamedArgumentAttribute
-             ValFlag = WellKnownValAttributes.RequireNamedArgumentAttribute
-             AttribInfo = g.attrib_RequireNamedArgumentAttribute }
-           finalCalledMethInfo then
-        errorR(Error(FSComp.SR.tcMethodRequiresNamedArguments(RichText.mkMethod finalCalledMethInfo.LogicalName), mMethExpr))
+    // the runtime assembly, the same compilation unit, or a different assembly. Only positional caller arguments
+    // are rejected (including those expanded into a ParamArray), so a zero-argument call such as 'M()' is unaffected.
+    if g.langVersion.SupportsFeature LanguageFeature.RequireNamedArgument then
+        let hasPositionalCallerArgs =
+            finalCalledMeth.ArgSets
+            |> List.exists (fun argSet -> argSet.NumUnnamedCallerArgs > 0 || not (List.isEmpty argSet.ParamArrayCallerArgs))
+        if hasPositionalCallerArgs &&
+           MethInfoHasAttributeByName mItem tname_RequireNamedArgumentAttribute finalCalledMethInfo then
+            errorR(Error(FSComp.SR.tcMethodRequiresNamedArguments(RichText.mkMethod finalCalledMethInfo.LogicalName), mMethExpr))
 
     // Indexer setters: when index args are named, the remaining unnamed args'
     // position values won't form a prefix (the 'value' arg has a non-zero j).

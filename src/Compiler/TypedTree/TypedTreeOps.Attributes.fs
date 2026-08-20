@@ -165,7 +165,6 @@ module internal ILExtensions =
                 | "System.Runtime.CompilerServices.RequiredMemberAttribute" -> WellKnownILAttributes.RequiredMemberAttribute
                 | "System.Runtime.CompilerServices.OverloadResolutionPriorityAttribute" ->
                     WellKnownILAttributes.OverloadResolutionPriorityAttribute
-                | "System.Runtime.CompilerServices.RequireNamedArgumentAttribute" -> WellKnownILAttributes.RequireNamedArgumentAttribute
                 | _ -> WellKnownILAttributes.None
 
             elif name.StartsWith("Microsoft.FSharp.Core.") then
@@ -259,12 +258,7 @@ module internal AttributeHelpers =
             | Some(PubPath pp) -> struct (ValueNone, ValueSome pp)
             | None -> struct (ValueNone, ValueNone)
         else
-            // Same-compilation-unit (local) type in a normal compilation: resolve its full path via
-            // PublicPath (MangledPath + type name, the same shape as a non-local nlr.Path) so name-based
-            // well-known-attribute matching also covers attributes polyfilled in the current assembly.
-            match tcref.Deref.PublicPath with
-            | Some(PubPath pp) -> struct (ValueSome pp, ValueNone)
-            | None -> struct (ValueNone, ValueNone)
+            struct (ValueNone, ValueNone)
 
     /// Decode a bool-arg attribute and set the appropriate true/false flag.
     let inline decodeBoolAttribFlag (attrib: Attrib) trueFlag falseFlag defaultFlag =
@@ -583,7 +577,6 @@ module internal AttributeHelpers =
                 | "CallerLineNumberAttribute" -> WellKnownValAttributes.CallerLineNumberAttribute
                 | "MethodImplAttribute" -> WellKnownValAttributes.MethodImplAttribute
                 | "OverloadResolutionPriorityAttribute" -> WellKnownValAttributes.OverloadResolutionPriorityAttribute
-                | "RequireNamedArgumentAttribute" -> WellKnownValAttributes.RequireNamedArgumentAttribute
                 | _ -> WellKnownValAttributes.None
 
             | [| "System"; "Runtime"; "InteropServices"; name |] ->

@@ -1308,7 +1308,6 @@ type WellKnownILAttributes =
     | AttributeUsageAttribute = (1u <<< 24)
     | NotNullIfNotNullAttribute = (1u <<< 25)
     | OverloadResolutionPriorityAttribute = (1u <<< 26)
-    | RequireNamedArgumentAttribute = (1u <<< 27)
     | NotComputed = (1u <<< 31)
 
 type internal ILAttributesStoredRepr =
