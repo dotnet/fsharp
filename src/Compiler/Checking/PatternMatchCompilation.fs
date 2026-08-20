@@ -396,6 +396,17 @@ type Actives = Active list
 /// Represents an unresolved portion of pattern matching within a clause
 type Frontier = Frontier of ClauseNumber * Actives * ValMap<Expr>
 
+// Keep in sync with pathEq: equal keys may share one compiled residual state.
+let rec private frontierPathKey p =
+    match p with
+    | PathQuery(p, n) -> "Q" + string n + frontierPathKey p
+    | PathTuple(p, _, n) -> "T" + string n + frontierPathKey p
+    | PathRecd(p, _, _, n) -> "R" + string n + frontierPathKey p
+    | PathUnionConstr(p, _, _, n) -> "U" + string n + frontierPathKey p
+    | PathArray(p, _, i1, i2) -> "A" + string i1 + "_" + string i2 + frontierPathKey p
+    | PathExnConstr(p, _, n) -> "E" + string n + frontierPathKey p
+    | PathEmpty _ -> "."
+
 type InvestigationPoint = Investigation of ClauseNumber * DecisionTreeTest * Path
 
 // Note: actives must be a SortedDictionary
@@ -1128,9 +1139,101 @@ let CompilePatternBasic
         getDiscrimOfPattern g unit_tpinst
 
     // The main recursive loop of the pattern match compiler.
+
+    // Repeated states stay inline until the threshold, preserving ordinary match output.
+    let stackGuard = StackGuard("InvestigateFrontiers")
+    let joinPromotionThreshold = 32
+    let isThunkableTy ty = not (isByrefLikeTy g mExpr ty) && not (isByrefTy g ty)
+    let joinBindings = ResizeArray<Binding>()
+    let frontierMemo = Dictionary<string, int ref * Lazy<bool> * Lazy<Expr * TType>>()
+
+    // The full body includes clause targets, which may contain constructs that cannot move into a lambda.
+    let isLiftableJoinBody body =
+        let fvs = freeInExpr (CollectLocalsWithStackGuard()) body
+        not fvs.UsesUnboundRethrow
+        && not fvs.UsesMethodLocalConstructs
+        && not (fvs.ContainsILFieldAccess && exprReferencesProtectedILField amap body)
+        && isThunkableTy resultTy
+        && fvs.FreeLocals
+           |> Internal.Utilities.Collections.Zset.forall (fun v ->
+               v.ValReprInfo.IsSome
+               || (v.BaseOrThisInfo = NormalVal
+                   && isThunkableTy v.Type
+                   && not (IsGenericValWithGenericConstraints g v)
+                   && not v.IsMutable))
+
+    // Reference identities make key collisions conservative: distinct nodes never fuse.
+    let patternNodeId =
+        let ids = System.Collections.Generic.Dictionary<Pattern, int>(HashIdentity.Reference)
+        fun (pat: Pattern) ->
+            match ids.TryGetValue pat with
+            | true, v -> v
+            | _ ->
+                let v = ids.Count
+                ids[pat] <- v
+                v
+
+    let frontierActiveKey (Active(path, _, pat)) =
+        frontierPathKey path + "#" + string (patternNodeId pat)
+
+    let boundExprNodeId =
+        let ids = System.Collections.Generic.Dictionary<Expr, int>(HashIdentity.Reference)
+        fun (e: Expr) ->
+            match ids.TryGetValue e with
+            | true, v -> v
+            | _ ->
+                let v = ids.Count
+                ids[e] <- v
+                v
+
+    let rec boundExprKey (e: Expr) =
+        match stripDebugPoints e with
+        | Expr.Val(vref, _, _) -> "v" + string vref.Stamp
+        | Expr.Op(TOp.TupleFieldGet(_, j), _, [ arg ], _) -> "t" + string j + "(" + boundExprKey arg + ")"
+        | Expr.Op(TOp.ValFieldGet rfref, _, args, _) -> "r" + rfref.FieldName + "(" + String.concat "," (List.map boundExprKey args) + ")"
+        | Expr.Op(TOp.UnionCaseFieldGet(ucref, j), _, args, _) -> "u" + ucref.CaseName + "_" + string j + "(" + String.concat "," (List.map boundExprKey args) + ")"
+        | Expr.Op(TOp.Coerce, _, [ arg ], _) -> "c(" + boundExprKey arg + ")"
+        | _ -> "?" + string (boundExprNodeId e)
+
+    let frontierValMapKey (valMap: ValMap<Expr>) =
+        if valMap.IsEmpty then
+            ""
+        else
+            valMap.Contents
+            |> Seq.map (fun (KeyValue (stamp, boundExpr)) -> string stamp + "=" + boundExprKey boundExpr)
+            |> Seq.sort
+            |> String.concat ";"
+
+    let frontiersStateKey frontiers =
+        frontiers
+        |> List.map (fun (Frontier(i, actives, valMap)) ->
+            string i + ":" + String.concat "," (List.map frontierActiveKey actives) + "{" + frontierValMapKey valMap + "}")
+        |> String.concat "|"
+
+    // The match input stays in scope at the outer join binding; only tree-bound locals need parameters.
+    let capturedValsOfFrontiers frontiers =
+        let acc = System.Collections.Generic.Dictionary<Stamp, Val>()
+        let addFreeLocals (e: Expr) =
+            for v in Internal.Utilities.Collections.Zset.elements (freeInExpr CollectLocals e).FreeLocals do
+                if v.Stamp <> origInputVal.Stamp then acc[v.Stamp] <- v
+        for Frontier(_, actives, valMap) in frontiers do
+            for Active(_, subexpr, _) in actives do
+                addFreeLocals (GetSubExprOfInput subexpr)
+            for KeyValue(_, boundExpr) in valMap.Contents do
+                addFreeLocals boundExpr
+        acc.Values |> List.ofSeq |> List.sortBy (fun v -> v.Stamp)
+
+    let callJoinThunk (joinE: Expr) (joinThunkTy: TType) (caps: Val list) =
+        let targetParams = caps |> List.map (fun v -> fst (mkCompGenLocal mMatch "joinArg" v.Type))
+        let args = (targetParams |> List.map (exprForVal mMatch)) @ [mkUnit g mMatch]
+        let idx = matchBuilder.AddTarget(TTarget(targetParams, mkApps g ((joinE, joinThunkTy), [], args, mMatch), None))
+        TDSuccess(caps |> List.map (exprForVal mMatch), idx)
+
     let rec InvestigateFrontiers refuted frontiers =
         Cancellable.CheckAndThrow()
+        stackGuard.Guard(fun () -> InvestigateFrontiersImpl refuted frontiers)
 
+    and InvestigateFrontiersImpl refuted frontiers =
         match frontiers with
         | [] -> failwith "CompilePattern: compile - empty clauses: at least the final clause should always succeed"
         | Frontier (i, active, valMap) :: rest ->
@@ -1181,10 +1284,49 @@ let CompilePatternBasic
         | Some whenExpr ->
             let m = whenExpr.Range
             let whenExprWithBindings = mkLetsFromBindings m (mkInvisibleBinds vs2 es2) whenExpr
-            let failureTree = (InvestigateFrontiers (RefutedWhenClause :: refuted) rest)
+            let failureTree = investigateMemoized (RefutedWhenClause :: refuted) rest
             mkBoolSwitch m whenExprWithBindings successTree failureTree
 
         | None -> successTree
+
+    and investigateMemoized refuted frontiers =
+        if warnOnIncomplete then
+            InvestigateFrontiers refuted frontiers
+        else
+            let caps = capturedValsOfFrontiers frontiers
+            let key =
+                frontiersStateKey frontiers + "|CAP:" + (caps |> List.map (fun v -> string v.Stamp) |> String.concat ",")
+            match frontierMemo.TryGetValue key with
+            | true, (count, promotable, shared) ->
+                count.Value <- count.Value + 1
+                if (shared.IsValueCreated || count.Value > joinPromotionThreshold) && promotable.Value then
+                    let joinE, joinThunkTy = shared.Value
+                    callJoinThunk joinE joinThunkTy caps
+                else
+                    InvestigateFrontiers refuted frontiers
+            | _ ->
+                let subtree = InvestigateFrontiers refuted frontiers
+                let joinBody =
+                    lazy (mkAndSimplifyMatch DebugPointAtBinding.NoneAtInvisible mExpr mMatch resultTy subtree (matchBuilder.CloseTargets()))
+                let promotable =
+                    lazy
+                    (match subtree with TDSuccess _ -> false | _ -> true)
+                    && isLiftableJoinBody joinBody.Value
+                let shared =
+                    lazy
+                    let paramVals = caps |> List.map (fun v -> fst (mkCompGenLocal mMatch "joinCap" v.Type))
+                    let remap =
+                        { Remap.Empty with
+                            valRemap = ValMap.OfList (List.map2 (fun (c: Val) (p: Val) -> c, mkLocalValRef p) caps paramVals) }
+                    let body = remapExpr g CloneAll remap joinBody.Value
+                    let unitV, _ = mkCompGenLocal mMatch "unitArg" g.unit_ty
+                    let joinThunkTy = List.foldBack (fun (p: Val) acc -> mkFunTy g p.Type acc) paramVals (mkFunTy g g.unit_ty resultTy)
+                    let joinLam = mkLambdas g mMatch [] (paramVals @ [unitV]) (body, resultTy)
+                    let joinV, joinE = mkCompGenLocal mMatch "joinThunk" joinThunkTy
+                    joinBindings.Add(mkInvisibleBind joinV joinLam)
+                    (joinE, joinThunkTy)
+                frontierMemo[key] <- ref 1, promotable, shared
+                subtree
 
     /// Select the set of discriminators which we can handle in one test, or as a series of iterated tests,
     /// e.g. in the case of TPat_isinst. Ensure we only take at most one class of `TPat_query` at a time.
@@ -1340,7 +1482,7 @@ let CompilePatternBasic
 
                  let frontiers = frontiers |> List.collect (GenerateNewFrontiersAfterSuccessfulInvestigation taken inpExprOpt resPostBindOpt investigation)
 
-                 let tree = InvestigateFrontiers refuted frontiers
+                 let tree = investigateMemoized refuted frontiers
 
                  // Bind the resVar for the union case, if we have one
                  let tree =
@@ -1379,7 +1521,7 @@ let CompilePatternBasic
             | [] ->
                 None
             | _ ->
-                Some(InvestigateFrontiers refuted fallthroughPathFrontiers)
+                Some(investigateMemoized refuted fallthroughPathFrontiers)
 
     // Build a new frontier that represents the result of a successful investigation
     and GenerateNewFrontiersAfterSuccessfulInvestigation taken inpExprOpt resPostBindOpt investigation frontier =
@@ -1641,7 +1783,7 @@ let CompilePatternBasic
     if warnOnUnused then
         ReportUnusedTargets clauses dtree
 
-    dtree, matchBuilder.CloseTargets()
+    dtree, matchBuilder.CloseTargets(), List.ofSeq joinBindings
 
 // Three pattern constructs can cause significant code expansion in various combinations
 //   - Partial active patterns
@@ -1728,10 +1870,10 @@ let rec CompilePattern  g denv amap tcVal infoReader mExpr mMatch warnOnUnused a
 
         and doGroupWithAtMostOneProblematic group rest =
             // Compile the remaining clauses.
-            let decisionTree, targets = atMostOneProblematicClauseAtATime rest
+            let decisionTree, targets, joins = atMostOneProblematicClauseAtATime rest
 
             // Make the expression that represents the remaining cases of the pattern match.
-            let expr = mkAndSimplifyMatch DebugPointAtBinding.NoneAtInvisible mExpr mMatch resultTy decisionTree targets
+            let expr = mkLetsBind mMatch joins (mkAndSimplifyMatch DebugPointAtBinding.NoneAtInvisible mExpr mMatch resultTy decisionTree targets)
 
             // Make the clause that represents the remaining cases of the pattern match
             let clauseForRestOfMatch = MatchClause(TPat_wild mMatch, None, TTarget(List.empty, expr, None), mMatch)

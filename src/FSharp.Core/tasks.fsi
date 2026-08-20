@@ -93,7 +93,7 @@ type TaskBuilderBase =
     member inline TryWith:
         body: TaskCode<'TOverall, 'T> * catch: (exn -> TaskCode<'TOverall, 'T>) -> TaskCode<'TOverall, 'T>
 
-#if NETSTANDARD2_1
+#if NETSTANDARD2_1 || NET
     /// <summary>
     /// Specifies a unit of task code which binds to the resource implementing IAsyncDisposable and disposes it asynchronously
     /// </summary>
@@ -574,7 +574,7 @@ module Task =
     [<CompiledName("Empty")>]
     val empty: Task<unit>
 
-#if NETSTANDARD2_1
+#if NETSTANDARD2_1 || NET
     /// <summary>Converts a <see cref="T:System.Threading.Tasks.ValueTask`1"/> to a <see cref="T:System.Threading.Tasks.Task`1"/>.</summary>
     ///
     /// <param name="valueTask">The input value task.</param>
@@ -592,7 +592,7 @@ module Task =
     val inline ofValueTask: valueTask: ValueTask<'T> -> Task<'T>
 #endif
 
-#if NETSTANDARD2_1
+#if NETSTANDARD2_1 || NET
 /// <summary>Contains camelCase module-level functions for <see cref="T:System.Threading.Tasks.ValueTask`1"/> computations.</summary>
 ///
 /// <category index="1">Async Programming</category>

@@ -3,6 +3,7 @@ module internal rec FSharp.Compiler.TypedTree
 
 open System
 open System.Diagnostics
+open System.Collections.Concurrent
 open System.Collections.Generic
 open System.Collections.Immutable
 open Internal.Utilities.Collections
@@ -104,7 +105,12 @@ type ValFlags =
         isGeneratedEventVal: bool ->
             ValFlags
 
-    new: flags: int64 -> ValFlags
+    /// Reconstruct flags from the F# binary metadata. PickledBits always writes
+    /// ValInline.InlinedDefinition (0x00) out as ValInline.Always (0x01), so zero inline bits
+    /// are never produced by a compiler that has this normalization. Any zero bits seen here
+    /// are therefore legacy metadata from compilers older than PR #19548, which used the same
+    /// 0x00 bits to mean ValInline.Always (ShouldInline=true), and must be imported as such.
+    static member OfPickledBits: bits: int64 -> ValFlags
 
     member WithIsCompilerGenerated: isCompGen: bool -> ValFlags
 
@@ -450,7 +456,7 @@ type Entity =
         mutable entity_cpath: CompilationPath option
 
         /// Used during codegen to hold the ILX representation indicating how to access the type
-        mutable entity_il_repr_cache: cache<CompiledTypeRepr>
+        mutable entity_il_repr_cache: cache<CompiledTypeRepr> | null
 
         mutable entity_opt_data: EntityOptionalData option
     }
@@ -886,7 +892,7 @@ type TyconAugmentation =
         /// Properties, methods etc. in declaration order. The boolean flag for each indicates if the
         /// member is known to be an explicit interface implementation. This must be computed and
         /// saved prior to remapping assembly information.
-        tcaug_adhoc_list: ResizeArray<bool * ValRef>
+        mutable tcaug_adhoc_list: ResizeArray<bool * ValRef> | null
 
         /// Properties, methods etc. as lookup table
         mutable tcaug_adhoc: NameMultiMap<ValRef>
@@ -905,6 +911,12 @@ type TyconAugmentation =
     }
 
     static member Create: unit -> TyconAugmentation
+
+    /// Record a member in declaration order, allocating the list on first use
+    member AddAdhocMember: isExplicitImpl: bool * vref: ValRef -> unit
+
+    /// Members in declaration order, empty when the type has none
+    member AdhocMembers: (bool * ValRef) list
 
     member SetCompare: x: (ValRef * ValRef) -> unit
 
@@ -4228,6 +4240,10 @@ type CcuData =
 
         /// The table of .NET CLI type forwarders for this assembly
         TypeForwarders: CcuTypeForwarderTable
+
+        /// C#-style extension members of this assembly's static classes, keyed by static class stamp.
+        /// Typed as obj because MethInfo is declared after this file.
+        CSharpStyleExtensionMembersCache: ConcurrentDictionary<Stamp, obj>
         XmlDocumentationInfo: XmlDocumentationInfo option
     }
 
