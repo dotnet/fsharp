@@ -10870,17 +10870,23 @@ and TcMethodApplication
 
     TcAdhocChecksOnLibraryMethods cenv env isInstance finalCalledMeth finalCalledMethInfo objArgs mMethExpr mItem
 
-    // FS-1095: a method annotated with RequireNamedArgumentAttribute must be called using named-argument syntax.
-    // The attribute is recognised by full type name only (polyfill), so it is honoured whether it originates from
-    // the runtime assembly, the same compilation unit, or a different assembly. Only positional caller arguments
-    // are rejected (including those expanded into a ParamArray), so a zero-argument call such as 'M()' is unaffected.
-    if g.langVersion.SupportsFeature LanguageFeature.RequireNamedArgument then
+    // FS-1095: a method annotated with RequireNamedArgumentAttribute (recognised by full type name only, polyfill-style,
+    // regardless of provenance) must be called with named-argument syntax; positional caller args (including ParamArray
+    // expansions) are rejected, so a zero-argument call such as 'M()' is unaffected. Property/indexer accessors and
+    // curried applications have no named-argument form, so the attribute is a no-op there rather than making the member
+    // uncallable.
+    if g.langVersion.SupportsFeature LanguageFeature.RequireNamedArgument
+       && finalCalledMeth.AssociatedPropertyInfo.IsNone
+       && finalCalledMeth.NumArgSets <= 1 then
         let hasPositionalCallerArgs =
             finalCalledMeth.ArgSets
             |> List.exists (fun argSet -> argSet.NumUnnamedCallerArgs > 0 || not (List.isEmpty argSet.ParamArrayCallerArgs))
         if hasPositionalCallerArgs &&
            MethInfoHasAttributeByName mItem tname_RequireNamedArgumentAttribute finalCalledMethInfo then
-            errorR(Error(FSComp.SR.tcMethodRequiresNamedArguments(RichText.mkMethod finalCalledMethInfo.LogicalName), mMethExpr))
+            let calledName =
+                if finalCalledMethInfo.IsConstructor then finalCalledMethInfo.ApparentEnclosingTyconRef.DisplayName
+                else finalCalledMethInfo.LogicalName
+            errorR(Error(FSComp.SR.tcMethodRequiresNamedArguments(RichText.mkMethod calledName), mMethExpr))
 
     // Indexer setters: when index args are named, the remaining unnamed args'
     // position values won't form a prefix (the 'value' arg has a non-zero j).

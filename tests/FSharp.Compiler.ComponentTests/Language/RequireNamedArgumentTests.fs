@@ -27,8 +27,22 @@ type RequireNamedArgumentAttribute() =
     /// Build a single-compilation source that polyfills the attribute and then uses it.
     let private withPolyfill (extra: string) = FSharp(fsPolyfill + extra)
 
+    // A permissive polyfill that also targets constructors. The real Method-only BCL attribute
+    // warns when placed on a constructor, so a constructor scenario is only reachable through a
+    // user-defined polyfill that opts constructors in.
+    let private withPolyfillCtor (extra: string) =
+        FSharp("""
+namespace System.Runtime.CompilerServices
+
+open System
+
+[<AttributeUsage(AttributeTargets.Method ||| AttributeTargets.Constructor)>]
+type RequireNamedArgumentAttribute() =
+    inherit Attribute()
+""" + extra)
+
     // A separately compiled F# assembly that polyfills the attribute and exposes an annotated method.
-    // Consuming it exercises the FSMeth (cached Val flags) classification path for a *different assembly*.
+    // Consuming it exercises the FSMeth by-name attribute scan for a *different assembly*.
     let private fsAnnotatedLib =
         withPolyfill """
 namespace AnnotatedLib
@@ -43,7 +57,7 @@ type Api =
         |> withName "FsAnnotatedLib"
 
     // A separately compiled C# assembly that polyfills the attribute and exposes an annotated method.
-    // Consuming it exercises the ILMeth (cached IL flags) classification path - the same path the
+    // Consuming it exercises the ILMeth by-name attribute scan - the same path the
     // runtime-defined attribute would take once the BCL ships it.
     let private csAnnotatedLib =
         CSharp """
@@ -573,6 +587,108 @@ type C =
 
 module Use =
     let f x y = C.Add(x = x, y = y)
+"""
+        |> withLangVersionPreview
+        |> typecheck
+        |> shouldSucceed
+        |> ignore
+
+    [<Fact>]
+    let ``Indexer getter with the attribute on its accessor is not enforced`` () =
+        // Indexer access 'c.[i]' has no named-argument form, so the attribute is a no-op there
+        // rather than making the indexer uncallable.
+        withPolyfill """
+namespace Test
+open System.Runtime.CompilerServices
+type C() =
+    member _.Item with [<RequireNamedArgument>] get (i: int) = i * 2
+module Use =
+    let c = C()
+    let r = c.[1]
+"""
+        |> withLangVersionPreview
+        |> typecheck
+        |> shouldSucceed
+        |> ignore
+
+    [<Fact>]
+    let ``Indexer setter with the attribute on its accessor is not enforced`` () =
+        withPolyfill """
+namespace Test
+open System.Runtime.CompilerServices
+type C() =
+    let mutable store = 0
+    member _.Item with [<RequireNamedArgument>] set (i: int) (v: int) = store <- i + v
+module Use =
+    let c = C()
+    c.[1] <- 2
+"""
+        |> withLangVersionPreview
+        |> typecheck
+        |> shouldSucceed
+        |> ignore
+
+    [<Fact>]
+    let ``Property setter with the attribute on its accessor is not enforced`` () =
+        withPolyfill """
+namespace Test
+open System.Runtime.CompilerServices
+type C() =
+    let mutable store = 0
+    member _.P with [<RequireNamedArgument>] set (v: int) = store <- v
+module Use =
+    let c = C()
+    c.P <- 5
+"""
+        |> withLangVersionPreview
+        |> typecheck
+        |> shouldSucceed
+        |> ignore
+
+    [<Fact>]
+    let ``Curried member is not enforced because it has no named-argument form`` () =
+        // A curried member cannot be called with named-argument syntax at all, so enforcing the
+        // attribute would make it uncallable. The attribute is therefore a no-op on curried members.
+        withPolyfill """
+namespace Test
+open System.Runtime.CompilerServices
+type C =
+    [<RequireNamedArgument>]
+    static member Add (x: int) (y: int) = x + y
+module Use =
+    let r = C.Add 1 2
+"""
+        |> withLangVersionPreview
+        |> typecheck
+        |> shouldSucceed
+        |> ignore
+
+    [<Fact>]
+    let ``Constructor positional call is rejected and the diagnostic names the type`` () =
+        withPolyfillCtor """
+namespace Test
+open System.Runtime.CompilerServices
+type C [<RequireNamedArgument>] (x: int, y: int) =
+    member _.V = x + y
+module Use =
+    let c = C(1, 2)
+"""
+        |> withLangVersionPreview
+        |> typecheck
+        |> shouldFail
+        |> withErrorCode 3910
+        |> withDiagnosticMessageMatches "The method 'C' requires named arguments"
+        |> ignore
+
+    [<Fact>]
+    let ``Constructor named call succeeds`` () =
+        withPolyfillCtor """
+namespace Test
+open System.Runtime.CompilerServices
+type C [<RequireNamedArgument>] (x: int, y: int) =
+    member _.V = x + y
+module Use =
+    let c = C(x = 1, y = 2)
 """
         |> withLangVersionPreview
         |> typecheck
