@@ -537,7 +537,7 @@ type Async2 =
 
     static member StartAsTask(computation: Async2<_>, ?cancellationToken: CancellationToken) : Task<_> =
         let ct = defaultArg cancellationToken CancellationToken.None
-        Async2.startInThreadPool ct computation
+        Async2.startImmediate ct computation
 
     static member RunImmediate(computation: Async2<'T>, ?cancellationToken: CancellationToken) : 'T =
         let ct = defaultArg cancellationToken CancellationToken.None
