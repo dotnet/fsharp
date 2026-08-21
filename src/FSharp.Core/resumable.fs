@@ -111,7 +111,7 @@ module StateMachineHelpers =
         failwith
             "__stateMachine should always be guarded by __useResumableCode and only used in valid state machine implementations"
 
-#if NET10_0
+#if NET
     [<MethodImpl(MethodImplOptions.NoInlining)>]
     let __runtimeAsyncReturn (value: 'T) : Task<'T> =
         ignore value

@@ -194,7 +194,7 @@ module StateMachineHelpers =
         afterCode: AfterCode<'Data, 'Result> 
             -> 'Result
 
-#if NET10_0
+#if NET
     /// Marks an expression result for lowering as a .NET runtime-async method.
     /// This function is compiler-recognised and must not be called directly.
     [<MethodImpl(MethodImplOptions.NoInlining)>]
