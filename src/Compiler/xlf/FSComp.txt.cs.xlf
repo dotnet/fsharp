@@ -457,11 +457,6 @@
         <target state="new">Allow extension members to participate in SRTP constraint resolution</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureFixedIndexSlice3d4d">
-        <source>fixed-index slice 3d/4d</source>
-        <target state="translated">řez 3d/4d s pevným indexem</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureFromEndSlicing">
         <source>from-end slicing</source>
         <target state="translated">řez od konce</target>
