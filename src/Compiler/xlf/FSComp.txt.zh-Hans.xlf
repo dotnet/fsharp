@@ -492,11 +492,6 @@
         <target state="translated">诊断 3559 (推断出 obj 时发出警告)，信息级别，默认关闭</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureInitProperties">
-        <source>support for consuming init properties</source>
-        <target state="translated">支持使用 init 属性</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureInterfacesWithAbstractStaticMembers">
         <source>static abstract interface members</source>
         <target state="translated">静态抽象接口成员</target>
