@@ -482,11 +482,6 @@
         <target state="translated">expr[idx]-Notation zum Indizieren und Aufteilen</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureInformationalObjInferenceDiagnostic">
-        <source>Diagnostic 3559 (warn when obj inferred) at informational level, off by default</source>
-        <target state="translated">Diagnose 3559 (bei abgeleitetem Objekt warnen) auf Informationsebene, standardmäßig deaktiviert</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureInitProperties">
         <source>support for consuming init properties</source>
         <target state="translated">Unterstützung für die Nutzung von Initialisierungseigenschaften</target>

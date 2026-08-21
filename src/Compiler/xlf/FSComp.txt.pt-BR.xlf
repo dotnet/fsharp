@@ -482,11 +482,6 @@
         <target state="translated">notação expr[idx] para indexação e fatia</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureInformationalObjInferenceDiagnostic">
-        <source>Diagnostic 3559 (warn when obj inferred) at informational level, off by default</source>
-        <target state="translated">Diagnóstico 3559 (avisar quando obj inferido) no nível informativo, desativado por padrão</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureInitProperties">
         <source>support for consuming init properties</source>
         <target state="translated">suporte para consumir propriedades de inicialização</target>
