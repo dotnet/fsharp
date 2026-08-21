@@ -63,8 +63,10 @@
       "cats": []
     },
     "20294": {
-      "sha": "aa6714773151",
-      "cats": []
+      "sha": "6d75944d51c3",
+      "cats": [
+        "Affects-Test-Tooling"
+      ]
     },
     "20287": {
       "sha": "63df5b0fb83a",
