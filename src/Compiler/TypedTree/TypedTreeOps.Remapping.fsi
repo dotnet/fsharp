@@ -253,7 +253,7 @@ module internal ExprRemapping =
 
     val remapTyconRepr: RemapContext -> Remap -> TyconRepresentation -> TyconRepresentation
 
-    val remapTyconAug: Remap -> TyconAugmentation -> TyconAugmentation
+    val remapTyconAug: Remap -> TyconAugmentation | null -> TyconAugmentation | null
 
     val remapTyconExnInfo: RemapContext -> Remap -> ExceptionInfo -> ExceptionInfo
 

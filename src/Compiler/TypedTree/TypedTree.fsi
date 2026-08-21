@@ -444,10 +444,10 @@ type Entity =
         mutable entity_tycon_repr: TyconRepresentation
 
         /// The methods type properties of the type
-        mutable entity_tycon_tcaug: TyconAugmentation
+        mutable entity_tycon_tcaug: TyconAugmentation | null
 
         /// This field is used when the 'tycon' is really a module definition. It holds statically nested type definitions type nested modules
-        mutable entity_modul_type: MaybeLazy<ModuleOrNamespaceType>
+        mutable entity_modul_type: MaybeLazy<ModuleOrNamespaceType> | null
 
         /// The stable path to the type, e.g. Microsoft.FSharp.Core.FSharpFunc`2
         mutable entity_pubpath: PublicPath option

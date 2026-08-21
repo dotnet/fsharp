@@ -9,10 +9,6 @@
 
   <!-- directory locations -->
 
-  <PropertyGroup Condition="'$(OS)' != 'Unix' and '$(DisableAutoSetFscCompilerPath)' != 'true' and '$(Configuration)' != 'Proto' and '$(DOTNET_HOST_PATH)' != ''">
-    <DisableAutoSetFscCompilerPath>true</DisableAutoSetFscCompilerPath>
-  </PropertyGroup>
-
   <PropertyGroup Condition="'$(BUILDING_USING_DOTNET)' == 'true'">
     <DisableAutoSetFscCompilerPath>false</DisableAutoSetFscCompilerPath>
   </PropertyGroup>
@@ -108,6 +104,29 @@
     <FSharpPropsShim>$(ProtoOutputPath)\fsc\Microsoft.FSharp.NetSdk.props</FSharpPropsShim>
     <FSharpTargetsShim>$(ProtoOutputPath)\fsc\Microsoft.FSharp.NetSdk.targets</FSharpTargetsShim>
     <FSharpOverridesTargetsShim>$(ProtoOutputPath)\fsc\Microsoft.FSharp.Overrides.NetSdk.targets</FSharpOverridesTargetsShim>
+  </PropertyGroup>
+
+  <!--
+    Bootstrap fsc is framework-dependent. Launching artifacts/Bootstrap/fsc/fsc.exe directly only works when
+    DOTNET_ROOT points at the repo-local .dotnet install; VS/MSBuild does not set that, so the apphost looks
+    only at the machine-global runtimes and fails with exit code -2147450730 when the preview runtime is
+    missing there. Always invoke bootstrap fsc/fsi via the repo-local (or fallback) dotnet muxer + fsc.dll.
+  -->
+  <PropertyGroup Condition="'$(Configuration)' != 'Proto' AND '$(DisableCompilerRedirection)' != 'true' AND Exists('$(ProtoOutputPath)/fsc/fsc.dll')">
+    <DisableAutoSetFscCompilerPath>true</DisableAutoSetFscCompilerPath>
+
+    <!-- Prefer repo-local .dotnet so the host and the bootstrap runtime come from the same install. -->
+    <_FSharpRepoDotNetHost Condition="Exists('$(RepoRoot).dotnet/dotnet.exe')">$(RepoRoot).dotnet/dotnet.exe</_FSharpRepoDotNetHost>
+    <_FSharpRepoDotNetHost Condition="'$(_FSharpRepoDotNetHost)' == '' and Exists('$(RepoRoot).dotnet/dotnet')">$(RepoRoot).dotnet/dotnet</_FSharpRepoDotNetHost>
+    <_FSharpRepoDotNetHost Condition="'$(_FSharpRepoDotNetHost)' == '' and '$(DOTNET_HOST_PATH)' != ''">$(DOTNET_HOST_PATH)</_FSharpRepoDotNetHost>
+
+    <FscToolPath Condition="'$(_FSharpRepoDotNetHost)' != ''">$([System.IO.Path]::GetDirectoryName('$(_FSharpRepoDotNetHost)'))</FscToolPath>
+    <FscToolExe Condition="'$(_FSharpRepoDotNetHost)' != ''">$([System.IO.Path]::GetFileName('$(_FSharpRepoDotNetHost)'))</FscToolExe>
+    <DotnetFscCompilerPath Condition="'$(_FSharpRepoDotNetHost)' != ''">"$(ProtoOutputPath)/fsc/fsc.dll"</DotnetFscCompilerPath>
+
+    <FsiToolPath Condition="'$(_FSharpRepoDotNetHost)' != ''">$([System.IO.Path]::GetDirectoryName('$(_FSharpRepoDotNetHost)'))</FsiToolPath>
+    <FsiToolExe Condition="'$(_FSharpRepoDotNetHost)' != ''">$([System.IO.Path]::GetFileName('$(_FSharpRepoDotNetHost)'))</FsiToolExe>
+    <DotnetFsiCompilerPath Condition="'$(_FSharpRepoDotNetHost)' != '' and Exists('$(ProtoOutputPath)/fsc/fsi.dll')">"$(ProtoOutputPath)/fsc/fsi.dll"</DotnetFsiCompilerPath>
   </PropertyGroup>
 
   <!-- use this to enable good debugging in the Proto bootstrap compiler -->
