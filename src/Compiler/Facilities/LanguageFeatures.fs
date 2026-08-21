@@ -21,7 +21,6 @@ type LanguageFeature =
     | DotlessFloat32Literal
     | PackageManagement
     | FromEndSlicing
-    | FixedIndexSlice3d4d
     | ResumableStateMachines
     | NullableOptionalInterop
     | DefaultInterfaceMemberConsumption
@@ -148,7 +147,6 @@ type LanguageVersion(versionText, ?disabledFeaturesArray: LanguageFeature array)
         dict
             [
                 // F# 5.0
-                LanguageFeature.FixedIndexSlice3d4d, languageVersion50
                 LanguageFeature.DotlessFloat32Literal, languageVersion50
                 LanguageFeature.NullableOptionalInterop, languageVersion50
                 LanguageFeature.DefaultInterfaceMemberConsumption, languageVersion50
@@ -360,7 +358,6 @@ type LanguageVersion(versionText, ?disabledFeaturesArray: LanguageFeature array)
         | LanguageFeature.DotlessFloat32Literal -> FSComp.SR.featureDotlessFloat32Literal ()
         | LanguageFeature.PackageManagement -> FSComp.SR.featurePackageManagement ()
         | LanguageFeature.FromEndSlicing -> FSComp.SR.featureFromEndSlicing ()
-        | LanguageFeature.FixedIndexSlice3d4d -> FSComp.SR.featureFixedIndexSlice3d4d ()
         | LanguageFeature.NullnessChecking -> FSComp.SR.featureNullnessChecking ()
         | LanguageFeature.ResumableStateMachines -> FSComp.SR.featureResumableStateMachines ()
         | LanguageFeature.NullableOptionalInterop -> FSComp.SR.featureNullableOptionalInterop ()
