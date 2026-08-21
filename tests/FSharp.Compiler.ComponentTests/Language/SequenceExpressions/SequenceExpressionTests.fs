@@ -7,8 +7,8 @@ open Xunit
 open FSharp.Test.Compiler
 open FSharp.Test.ScriptHelpers
 
-// NOTE tests within this module utilize long-lived local state (caching a fsi session)
-// and hence rely on the assumption that individual Xunit tests within a given module are never run concurrently
+// Leverage caching/prevent concurrent mutation via long-lived fsiSession in module state
+[<TestClass(DisableParallelization = true)>]
 module SequenceExpression =
 
     let fsiSession = getSessionForEval [||] LangVersion.Preview

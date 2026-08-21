@@ -28,3 +28,15 @@ module XUnitSetup =
 /// see https://github.com/xunit/xunit/issues/1999#issuecomment-522635397
 [<CollectionDefinition(nameof NotThreadSafeResourceCollection, DisableParallelization = true)>]
 type NotThreadSafeResourceCollection() = class end
+
+namespace Xunit
+
+// Shim to be deleted when xunit dependency updates to >= 4
+[<System.AttributeUsage(System.AttributeTargets.Class, AllowMultiple = false, Inherited = true)>]
+type TestClassAttribute(DisableParallelization: bool) =
+    inherit System.Attribute()
+
+// Shim to be removed and replaced with direct usage of FactAttribute from xunit >= 4 when xunit dependency updates to >= 4
+[<System.AttributeUsage(System.AttributeTargets.Method, AllowMultiple = false, Inherited = true)>]
+type Fact4Attribute(DisableParallelization: bool) =
+    inherit FactAttribute()

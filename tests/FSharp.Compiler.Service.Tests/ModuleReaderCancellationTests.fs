@@ -1,4 +1,5 @@
-// NOTE These tests utilize mutable long-lived state/caching and hence rely on the assumption that individual Xunit tests within a given module are never run concurrently
+// Tests utilize caching in module state (checker) and `mutable` state
+[<Xunit.TestClass(DisableParallelization = true)>]
 module FSharp.Compiler.Service.Tests.ModuleReaderCancellationTests
 
 open System

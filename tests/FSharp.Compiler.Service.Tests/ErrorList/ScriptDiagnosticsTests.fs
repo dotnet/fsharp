@@ -1,3 +1,5 @@
+// TODO @T-Gro document reasoning for inhibiting parallelization
+[<Xunit.TestClass(DisableParallelization = true)>]
 module FSharp.Compiler.Service.Tests.ScriptDiagnosticsTests
 
 open System

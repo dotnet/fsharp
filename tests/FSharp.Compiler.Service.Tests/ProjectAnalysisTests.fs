@@ -3719,7 +3719,7 @@ let _ = MyType().DoNothing()
              { checker.GetProjectOptionsFromCommandLineArgs(projFileName, args) with SourceFiles = fileNames })
 
 // Uses TestTP (built locally) — no NuGet needed, deterministic.
-[<Fact>]
+[<Fact4(DisableParallelization = true)>] // Inhibit shared usage of Project25.checker module state
 let ``Test Project25 whole project errors`` () =
     let wholeProjectResults = Project25.checker.ParseAndCheckProject(Project25.options.Value) |> Async.RunSynchronouslyImmediate
 
@@ -3728,7 +3728,7 @@ let ``Test Project25 whole project errors`` () =
 
     wholeProjectResults.Diagnostics.Length |> shouldEqual 0
 
-[<Fact>]
+[<Fact4(DisableParallelization = true)>] // Inhibit shared usage of Project25.checker module state
 let ``Test Project25 symbol uses of type-provided members`` () =
     let wholeProjectResults = Project25.checker.ParseAndCheckProject(Project25.options.Value) |> Async.RunSynchronouslyImmediate
 
@@ -3787,7 +3787,7 @@ let ``Test Project25 symbol uses of type-provided members`` () =
         [| ("file1", ((5, 8), (5, 21))) // line 5: T().DoNothing
            ("file1", ((10, 8), (10, 26))) |] // line 10: MyType().DoNothing
 
-[<Fact>]
+[<Fact4(DisableParallelization = true)>] // Inhibit shared usage of Project25.checker module state
 let ``GetDeclarationLocation on a provided-ctor without DefinitionLocationAttribute returns DeclFound (regression #5538)`` () =
     let wholeProjectResults =
         Project25.checker.ParseAndCheckProject(Project25.options.Value)
@@ -5467,7 +5467,7 @@ let x = (1 = 3.0)
     let args = mkProjectCommandLineArgs (dllName, [])
     let options = { checker.GetProjectOptionsFromCommandLineArgs (projFileName, args) with SourceFiles = fileNames }
 
-[<Fact>]
+[<Fact4(DisableParallelization = true)>] // Avoid concurrent use of checker
 let ``Test diagnostics with line directives active`` () =
 
     let wholeProjectResults = checker.ParseAndCheckProject(ProjectLineDirectives.options) |> Async.RunSynchronouslyImmediate
@@ -5485,7 +5485,7 @@ let ``Test diagnostics with line directives active`` () =
         let m = e.Range in m.StartLine, m.EndLine, m.FileName ]
     |> shouldEqual [10, 10, "Test.fsy"]
 
-[<Fact>]
+[<Fact4(DisableParallelization = true)>] // Avoid concurrent use of checker
 let ``Test diagnostics with line directives ignored`` () =
 
     // If you pass hidden IDE flag --ignorelinedirectives, the diagnostics are reported w.r.t. the source
