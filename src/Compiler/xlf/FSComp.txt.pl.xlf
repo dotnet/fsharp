@@ -537,11 +537,6 @@
         <target state="translated">nameof</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureNestedCopyAndUpdate">
-        <source>Nested record field copy-and-update</source>
-        <target state="translated">Kopiowanie i aktualizowanie zagnieżdżonego pól rekordu</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureNonInlineLiteralsAsPrintfFormat">
         <source>String values marked as literals and IL constants as printf format</source>
         <target state="translated">Wartości ciągów oznaczone jako literały i stałe IL jako format printf</target>

@@ -537,11 +537,6 @@
         <target state="translated">nameof</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureNestedCopyAndUpdate">
-        <source>Nested record field copy-and-update</source>
-        <target state="translated">İç içe kayıt alanı kopyalama ve güncelleştirme</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureNonInlineLiteralsAsPrintfFormat">
         <source>String values marked as literals and IL constants as printf format</source>
         <target state="translated">Sabit değer olarak işaretlenen dize değerleri ve printf biçimi olarak IL sabitleri</target>
