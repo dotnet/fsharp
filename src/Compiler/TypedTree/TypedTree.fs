@@ -592,7 +592,7 @@ type CompilationPath =
 
     member x.SyntaxAccess = let (CompPath(_, access, _)) = x in access
 
-[<Struct; CustomEquality; NoComparison>]
+[<Struct; NoEquality; NoComparison>]
 type PublicPath =
     | PubPath of enclosing: CompilationPath * name: string
 
@@ -616,21 +616,6 @@ type PublicPath =
 
     member x.HasEmptyEnclosingPath = List.isEmpty x.EnclosingCompilationPath.AccessPath
 
-    /// Compares against the flat form without building it
-    member x.EqualsFullPath(path: string[]) =
-        let rec loop (path: string[]) name i accessPath =
-            match accessPath with
-            | [] -> i = path.Length - 1 && path[i] = name
-            | (nm, _) :: rest -> i < path.Length && path[i] = nm && loop path name (i + 1) rest
-
-        loop path x.Name 0 x.EnclosingCompilationPath.AccessPath
-
-    override x.Equals other =
-        match other with
-        | :? PublicPath as pp -> pp.Name = x.Name && x.EnclosingCompilationPath.MangledPath = pp.EnclosingCompilationPath.MangledPath
-        | _ -> false
-
-    override x.GetHashCode() = hash x.Name
 
 [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
 type EntityOptionalData =

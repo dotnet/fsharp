@@ -370,9 +370,9 @@ type CompilationPath =
 
 /// A public path records where a construct lives within the global namespace of a CCU.
 ///
-/// Equality is over the mangled path and the name only: derived equality would also compare the
-/// enclosing path's ILScopeRef and SyntaxAccess.
-[<Struct; CustomEquality; NoComparison>]
+/// Comparison goes through pubPathEq: derived equality would also compare the enclosing path's
+/// ILScopeRef and SyntaxAccess, besides boxing this struct.
+[<Struct; NoEquality; NoComparison>]
 type PublicPath =
     | PubPath of enclosing: CompilationPath * name: string
 
@@ -386,8 +386,6 @@ type PublicPath =
 
     member HasEmptyEnclosingPath: bool
 
-    /// Compares against the flat form without building it
-    member EqualsFullPath: path: string[] -> bool
 
 [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
 type EntityOptionalData =

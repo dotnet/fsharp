@@ -414,10 +414,20 @@ let nonLocalRefEq (NonLocalEntityRef(x1, y1) as smr1) (NonLocalEntityRef(x2, y2)
 let nonLocalRefDefinitelyNotEq (NonLocalEntityRef(_, y1)) (NonLocalEntityRef(_, y2)) = 
     not (arrayPathEq y1 y2)
 
-let pubPathEq (path1: PublicPath) (path2: PublicPath) = path1.Equals path2
+// A function rather than a member on PublicPath: the optimizer does not see through a struct member
+// call when inferring MightMakeCriticalTailcall, and this runs in tail position from fslibEntityRefEq.
+let pubPathEq (path1: PublicPath) (path2: PublicPath) =
+    let rec loop p1 p2 =
+        match p1, p2 with
+        | [], [] -> true
+        | (nm1, _) :: rest1, (nm2, _) :: rest2 -> nm1 = nm2 && loop rest1 rest2
+        | _ -> false
+
+    path1.Name = path2.Name
+    && loop path1.EnclosingCompilationPath.AccessPath path2.EnclosingCompilationPath.AccessPath
 
 let fslibRefEq (nlr1: NonLocalEntityRef) (path2: PublicPath) =
-    path2.EqualsFullPath nlr1.Path
+    arrayPathEq nlr1.Path path2.FullPath
 
 // Compare two EntityRef's for equality when compiling fslib (FSharp.Core.dll)
 //

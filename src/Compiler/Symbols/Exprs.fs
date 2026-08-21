@@ -1065,7 +1065,11 @@ module FSharpExprConvert =
                         |> Seq.filter (fun v -> 
                             (v.CompiledName g.CompilerGlobalState) = vName &&
                                 match v.TryDeclaringEntity with
-                                | Parent p -> p.PublicPath = enclosingEntity.PublicPath
+                                | Parent p ->
+                                    (match p.PublicPath, enclosingEntity.PublicPath with
+                                     | ValueSome pp1, ValueSome pp2 -> pubPathEq pp1 pp2
+                                     | ValueNone, ValueNone -> true
+                                     | _ -> false)
                                 | _ -> false 
                         ) |> List.ofSeq
                     match findModuleMemberByName with
