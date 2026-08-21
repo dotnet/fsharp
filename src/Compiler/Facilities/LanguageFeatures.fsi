@@ -22,7 +22,6 @@ type LanguageFeature =
     | OverloadsForCustomOperations
     | ExpandedMeasurables
     | NullnessChecking
-    | IndexerNotationWithoutDot
     | RefCellNotationInformationals
     | UnionIsPropertiesVisible
     | NonVariablePatternsToRightOfAsPatterns
@@ -115,9 +114,6 @@ type LanguageVersion =
 
     /// Has preview been explicitly specified
     member IsPreviewEnabled: bool
-
-    /// Has been explicitly specified as 4.6, 4.7 or 5.0
-    member IsExplicitlySpecifiedAs50OrBefore: unit -> bool
 
     /// Does the selected LanguageVersion support the specified feature
     member SupportsFeature: LanguageFeature -> bool
