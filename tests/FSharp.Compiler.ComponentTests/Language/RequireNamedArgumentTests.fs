@@ -944,3 +944,23 @@ module Use =
         |> shouldFail
         |> withErrorCode 3910
         |> ignore
+
+    [<FactForNETCOREAPP>]
+    let ``Local F# method annotated with an attribute imported from a referenced assembly is enforced`` () =
+        // Decouples attribute provenance from method declaration site: the annotated METHOD is local F#
+        // (same compilation unit) while the ATTRIBUTE TYPE is imported from a different (C#) assembly.
+        // This is the canonical scenario once the BCL ships the attribute and you annotate your own method.
+        FSharp """
+module Test
+open System.Runtime.CompilerServices
+type C =
+    [<RequireNamedArgument>]
+    static member Add(x: int, y: int) = x + y
+let r = C.Add(1, 2)
+"""
+        |> withReferences [ csAnnotatedLib ]
+        |> withLangVersionPreview
+        |> compile
+        |> shouldFail
+        |> withErrorCode 3910
+        |> ignore
