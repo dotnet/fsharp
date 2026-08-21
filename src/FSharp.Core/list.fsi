@@ -2075,7 +2075,7 @@ module List =
 
     /// <summary>Sorts the given list using the given comparison function.</summary>
     ///
-    /// <remarks>This is a stable sort, i.e. the original order of equal elements is preserved. This is an O(n log n) operation, where n is the length of the list.</remarks>
+    /// <include file="xmldoc/sort.xml" path="/sort/listStable/*"/>
     /// <param name="comparer">The function to compare the list elements.</param>
     /// <param name="list">The input list.</param>
     ///
@@ -2099,7 +2099,7 @@ module List =
 
     /// <summary>Sorts the given list using keys given by the given projection. Keys are compared using <see cref="M:Microsoft.FSharp.Core.Operators.compare"/>.</summary>
     ///
-    /// <remarks>This is a stable sort, i.e. the original order of equal elements is preserved. This is an O(n log n) operation, where n is the length of the list.</remarks>
+    /// <include file="xmldoc/sort.xml" path="/sort/listStable/*"/>
     /// <param name="projection">The function to transform the list elements into the type to be compared.</param>
     /// <param name="list">The input list.</param>
     ///
@@ -2118,7 +2118,7 @@ module List =
 
     /// <summary>Sorts the given list using <see cref="M:Microsoft.FSharp.Core.Operators.compare"/>.</summary>
     ///
-    /// <remarks>This is a stable sort, i.e. the original order of equal elements is preserved. This is an O(n log n) operation, where n is the length of the list.</remarks>
+    /// <include file="xmldoc/sort.xml" path="/sort/listStable/*"/>
     /// <param name="list">The input list.</param>
     ///
     /// <returns>The sorted list.</returns>
@@ -2159,7 +2159,7 @@ module List =
 
     /// <summary>Sorts the given list in descending order using keys given by the given projection. Keys are compared using <see cref="M:Microsoft.FSharp.Core.Operators.compare"/>.</summary>
     ///
-    /// <remarks>This is a stable sort, i.e. the original order of equal elements is preserved. This is an O(n log n) operation, where n is the length of the list.</remarks>
+    /// <include file="xmldoc/sort.xml" path="/sort/listStable/*"/>
     /// <param name="projection">The function to transform the list elements into the type to be compared.</param>
     /// <param name="list">The input list.</param>
     ///
@@ -2178,7 +2178,7 @@ module List =
 
     /// <summary>Sorts the given list in descending order using <see cref="M:Microsoft.FSharp.Core.Operators.compare"/>.</summary>
     ///
-    /// <remarks>This is a stable sort, i.e. the original order of equal elements is preserved. This is an O(n log n) operation, where n is the length of the list.</remarks>
+    /// <include file="xmldoc/sort.xml" path="/sort/listStable/*"/>
     /// <param name="list">The input list.</param>
     ///
     /// <returns>The sorted list.</returns>
