@@ -660,6 +660,15 @@ module internal PrintfImpl =
         
         let inline isStrNegative (str: string) = str.Length > 0 && str[0] = '-'
         
+        /// Check if the number is negative -- not with the number itself, but with the formatted ToString representation --
+        /// to ensure that we always agree with the runtime (.NET and .NET Framework differ at -0.0 for floats).
+        /// Single.IsPositive (and similar) would be the right choice, but it is not available in .NET Framework /
+        /// .NET Standard 2.0.
+        /// Additionally: behaviorally speaking, this is really only needed for single and double, at which point it's
+        /// just simpler to uniformly use the same approach for all number types, which also has the added bonus of
+        /// avoiding type tests (micro perf win! https://github.com/dotnet/fsharp/pull/18147#discussion_r3821830744)
+        /// See: https://github.com/dotnet/fsharp/issues/15557
+        /// and: https://github.com/dotnet/fsharp/issues/15558
         let isPositive (nStr: string) = not (isStrNegative nStr)
 
         /// handles right justification when pad char = '0'
