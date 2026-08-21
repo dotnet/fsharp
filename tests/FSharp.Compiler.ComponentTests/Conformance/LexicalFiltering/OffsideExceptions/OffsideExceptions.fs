@@ -229,7 +229,7 @@ module A
                       EndLine = 4
                       EndColumn = 6 }
             Message =
-             "Unexpected syntax or possible incorrect indentation: this token is offside of context started at position (3:5). Try indenting this further."
+             "Unexpected syntax or possible incorrect indentation: this token is offside of context started at position (3:5). Try indenting this further.\nTo continue using non-conforming indentation, pass the '--strict-indentation-' flag to the compiler, or set the language version to F# 7."
         } |> ignore
 
     [<Fact>]

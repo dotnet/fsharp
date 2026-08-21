@@ -108,7 +108,7 @@ module FsiCliTests =
     // third-party assembly (not in the shared framework) so that on .NET Core it resolves to a restored
     // package rather than the framework (which would emit NU1510 and skip real nuget resolution). FsCheck
     // fits: a real third-party library whose only dependency (FSharp.Core) is always cached and filtered
-    // from fsx resolution, centrally pinned (eng/Packages.props) and restored by FSharp.Core.UnitTests, so
+    // from fsx resolution, version-pinned in eng/Versions.props and restored by FSharp.Core.UnitTests, so
     // it restores offline-clean on both net472 and .NET Core. Read the exact pinned version baked into this
     // test assembly via AssemblyMetadata (see FSharp.Compiler.ComponentTests.fsproj) so the request never
     // drifts from the pin; keep the package id below in sync with that project.
@@ -121,7 +121,7 @@ module FsiCliTests =
             let m = a :?> System.Reflection.AssemblyMetadataAttribute
             if m.Key = "FsiRestoreTestPackageVersion" && not (System.String.IsNullOrWhiteSpace m.Value) then Some m.Value else None)
         |> Option.defaultWith (fun () ->
-            failwith "AssemblyMetadata 'FsiRestoreTestPackageVersion' is missing. It should be emitted by FSharp.Compiler.ComponentTests.fsproj from the central FsCheck PackageVersion.")
+            failwith "AssemblyMetadata 'FsiRestoreTestPackageVersion' is missing. It should be emitted by FSharp.Compiler.ComponentTests.fsproj from FsCheckVersion.")
 
     [<Fact>]
     let ``FSI quiet mode suppresses NuGet restore output from stdout`` () =

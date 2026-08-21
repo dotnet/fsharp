@@ -38,16 +38,6 @@ val rhs2: parseState: IParseState -> i: int -> j: int -> range
 
 val rhs: parseState: IParseState -> i: int -> range
 
-/// Peel a trailing printf specifier (e.g. "%d") off an interpolated-string literal that precedes a
-/// hole, returning the literal without it and the specifier text. '%%' is a literal escape.
-val peelTrailingPrintfSpecifier: litText: string -> string * string option
-
-/// Build the [String literal; FillExpr hole] pair for one interpolation hole, splitting the
-/// '{x,n}' alignment out of its tuple encoding and peeling a trailing printf specifier off the
-/// literal onto the hole.
-val mkInterpolatedStringFillParts:
-    litText: string * litRange: range * fill: (SynExpr * Ident option) -> SynInterpolatedStringPart list
-
 type LexerIfdefStackEntry =
     | IfDefIf
     | IfDefElse
@@ -115,14 +105,24 @@ type LexerContinuation =
 and LexCont = LexerContinuation
 
 val ParseAssemblyCodeInstructions:
-    s: string -> reportLibraryOnlyFeatures: bool -> langVersion: LanguageVersion -> m: range -> ILInstr[]
+    s: string ->
+    reportLibraryOnlyFeatures: bool ->
+    langVersion: LanguageVersion ->
+    strictIndentation: bool option ->
+    m: range ->
+        ILInstr[]
 
 val grabXmlDocAtRangeStart: parseState: IParseState * optAttributes: SynAttributeList list * range: range -> PreXmlDoc
 
 val grabXmlDoc: parseState: IParseState * optAttributes: SynAttributeList list * elemIdx: int -> PreXmlDoc
 
 val ParseAssemblyCodeType:
-    s: string -> reportLibraryOnlyFeatures: bool -> langVersion: LanguageVersion -> m: range -> ILType
+    s: string ->
+    reportLibraryOnlyFeatures: bool ->
+    langVersion: LanguageVersion ->
+    strictIndentation: bool option ->
+    m: range ->
+        ILType
 
 val reportParseErrorAt: range -> (int * string) -> unit
 
@@ -166,10 +166,10 @@ val exprFromParseError: e: SynExpr -> SynExpr
 val patFromParseError: e: SynPat -> SynPat
 
 val rebindRanges:
-    first: RecordBinding ->
-    fields: (RecordBinding * BlockSeparator option) list ->
+    first: (RecordFieldName * range option * SynExpr option) ->
+    fields: ((RecordFieldName * range option * SynExpr option) * BlockSeparator option) list ->
     lastSep: BlockSeparator option ->
-        SynExprRecordFieldOrSpread list
+        SynExprRecordField list
 
 val mkUnderscoreRecdField: m: range -> SynLongIdent * bool
 

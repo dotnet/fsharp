@@ -2,7 +2,6 @@ module FSharp.Compiler.Service.Tests.ParsedInputModuleTests
 
 open FSharp.Compiler.Service.Tests.Common
 open FSharp.Compiler.Syntax
-open FSharp.Compiler.SyntaxTreeOps
 open FSharp.Compiler.Text.Position
 open Xunit
 
@@ -28,11 +27,11 @@ let ``tryPick record definition test`` () =
         (pos0, parseTree)
         ||> ParsedInput.tryPick (fun _path node ->
             match node with
-            | SyntaxNode.SynTypeDefn(SynTypeDefn(typeRepr = SynTypeDefnRepr.Simple(SynTypeDefnSimpleRepr.Record(recordFieldsAndSpreads = fieldsAndSpreads), _))) -> Some fieldsAndSpreads
+            | SyntaxNode.SynTypeDefn(SynTypeDefn(typeRepr = SynTypeDefnRepr.Simple(SynTypeDefnSimpleRepr.Record(recordFields = fields), _))) -> Some fields
             | _ -> None)
 
     match fields with
-    | Some [ SynFieldOrSpread.Field (SynField (idOpt = Some id1)); SynFieldOrSpread.Field (SynField (idOpt = Some id2)) ] when id1.idText = "A" && id2.idText = "B" -> ()
+    | Some [ SynField (idOpt = Some id1); SynField (idOpt = Some id2) ] when id1.idText = "A" && id2.idText = "B" -> ()
     | _ -> failwith "Did not visit record definition"
 
 [<Fact>]
@@ -146,9 +145,9 @@ type Y =
         (pos0, parseTree)
         ||> ParsedInput.tryPick (fun _path node ->
             match node with
-            | SyntaxNode.SynTypeDefnSig(SynTypeDefnSig(typeRepr = SynTypeDefnSigRepr.Simple(SynTypeDefnSimpleRepr.Record(recordFieldsAndSpreads = fieldsAndSpreads), _))) ->
-                fieldsAndSpreads
-                |> List.choose (function SynFieldOrSpread.Field (SynField(idOpt = Some ident)) -> Some ident.idText | _ -> None)
+            | SyntaxNode.SynTypeDefnSig(SynTypeDefnSig(typeRepr = SynTypeDefnSigRepr.Simple(SynTypeDefnSimpleRepr.Record(recordFields = fields), _))) ->
+                fields
+                |> List.choose (function SynField(idOpt = Some ident) -> Some ident.idText | _ -> None)
                 |> String.concat ","
                 |> Some
             | _ -> None)

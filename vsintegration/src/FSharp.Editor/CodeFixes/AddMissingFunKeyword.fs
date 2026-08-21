@@ -52,7 +52,8 @@ type internal AddMissingFunKeywordCodeFixProvider [<ImportingConstructor>] () =
                     let! cancellationToken = CancellableTask.getCancellationToken ()
                     let document = context.Document
 
-                    let! defines, langVersion = document.GetFsharpParsingOptionsAsync(nameof AddMissingFunKeywordCodeFixProvider)
+                    let! defines, langVersion, strictIndentation =
+                        document.GetFsharpParsingOptionsAsync(nameof AddMissingFunKeywordCodeFixProvider)
 
                     let! sourceText = context.GetSourceTextAsync()
                     let adjustedPosition = adjustPosition sourceText context.Span
@@ -68,6 +69,7 @@ type internal AddMissingFunKeywordCodeFixProvider [<ImportingConstructor>] () =
                             false,
                             false,
                             Some langVersion,
+                            strictIndentation,
                             cancellationToken
                         )
                         |> ValueOption.ofOption

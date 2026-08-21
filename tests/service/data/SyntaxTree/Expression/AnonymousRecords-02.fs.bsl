@@ -7,11 +7,9 @@ ImplFile
           [Expr
              (AnonRecd
                 (false, None,
-                 [Field
-                    (SynExprAnonRecordField
-                       (SynLongIdent ([X], [], [None]), Some (1,5--1,6),
-                        Const (Int32 0, (1,7--1,8)), (1,3--1,8)), None)],
-                 (1,0--2,0), { OpeningBraceRange = (1,0--1,2) }), (1,0--2,0))],
+                 [(SynLongIdent ([X], [], [None]), Some (1,5--1,6),
+                   Const (Int32 0, (1,7--1,8)))], (1,0--2,0),
+                 { OpeningBraceRange = (1,0--1,2) }), (1,0--2,0))],
           PreXmlDocEmpty, [], None, (1,0--2,0), { LeadingKeyword = None })],
       (true, true), { ConditionalDirectives = []
                       WarnDirectives = []

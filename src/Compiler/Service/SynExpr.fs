@@ -1087,13 +1087,10 @@ module SynExpr =
             | SynExpr.InterpolatedString _, SynExpr.Sequential _
             | SynExpr.InterpolatedString _, SynExpr.Tuple(isStruct = false) -> true
 
-            // Removing the parens would let a trailing alignment or format be parsed as part of the hole,
-            // e.g. the ',-3' in '$"{(if b then 1 else 0),-3}"' becoming a tuple in the else branch.
             | SynExpr.InterpolatedString(contents = contents), Dangling.Problematic _ ->
                 contents
                 |> List.exists (function
-                    | SynInterpolatedStringPart.FillExpr(formatting = SynInterpolationFormatting.DotNet(alignment = Some _))
-                    | SynInterpolatedStringPart.FillExpr(formatting = SynInterpolationFormatting.DotNet(format = Some _)) -> true
+                    | SynInterpolatedStringPart.FillExpr(qualifiers = Some _) -> true
                     | _ -> false)
 
             // {| A = (1; 2) |}
@@ -1119,13 +1116,8 @@ module SynExpr =
                 let rec loop recordFields =
                     match recordFields with
                     | [] -> false
-                    | SynExprRecordFieldOrSpread.Field(
-                        field = SynExprRecordField(expr = Some(SynExpr.Paren(expr = Is inner))); blockSeparator = Some _) :: SynExprRecordFieldOrSpread.Field(SynExprRecordField(
-                                                                                                                                                                  fieldName = SynLongIdent(
-                                                                                                                                                                                  id = id :: _),
-                                                                                                                                                                              _),
-                                                                                                                                                              _) :: _ ->
-                        problematic inner.Range id.idRange
+                    | SynExprRecordField(expr = Some(SynExpr.Paren(expr = Is inner)); blockSeparator = Some _) :: SynExprRecordField(
+                        fieldName = SynLongIdent(id = id :: _), _) :: _ -> problematic inner.Range id.idRange
                     | _ :: recordFields -> loop recordFields
 
                 loop recordFields
@@ -1134,8 +1126,8 @@ module SynExpr =
                 let rec loop recordFields =
                     match recordFields with
                     | [] -> false
-                    | SynExprAnonRecordFieldOrSpread.Field(SynExprAnonRecordField(_, Some _equalsRange, SynExpr.Paren(expr = Is inner), _),
-                                                           _) :: next :: _ -> problematic inner.Range next.Range
+                    | (_, Some _blockSeparator, SynExpr.Paren(expr = Is inner)) :: (SynLongIdent(id = id :: _), _, _) :: _ ->
+                        problematic inner.Range id.idRange
                     | _ :: recordFields -> loop recordFields
 
                 loop recordFields

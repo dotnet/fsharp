@@ -19,6 +19,8 @@ module UncoveredOptions =
     [<InlineData("--compressmetadata-")>]
     [<InlineData("--checknulls+")>]
     [<InlineData("--checknulls-")>]
+    [<InlineData("--strict-indentation+")>]
+    [<InlineData("--strict-indentation-")>]
     [<InlineData("--quotations-debug+")>]
     [<InlineData("--quotations-debug-")>]
     [<InlineData("--tailcalls+")>]

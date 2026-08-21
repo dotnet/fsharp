@@ -1567,16 +1567,11 @@ type internal TypeCheckInfo
             allSymbols: unit -> AssemblySymbol list,
             options: FSharpCodeCompletionOptions
         ) =
-        let isSpread =
-            FindFirstNonWhitespacePosition lineStr (colAtEndOfNamesAndResidue - 1)
-            |> Option.exists (fun i ->
-                (i > 2 && lineStr[i - 3] <> '.' || i = 2)
-                && lineStr.AsSpan(i - 2).StartsWith("...".AsSpan()))
 
         // Are the last two chars (except whitespaces) = ".."
         let isLikeRangeOp =
             match FindFirstNonWhitespacePosition lineStr (colAtEndOfNamesAndResidue - 1) with
-            | Some x when not isSpread && x >= 1 && lineStr[x] = '.' && lineStr[x - 1] = '.' -> true
+            | Some x when x >= 1 && lineStr[x] = '.' && lineStr[x - 1] = '.' -> true
             | _ -> false
 
         // if last two chars are .. and we are not in range operator context - no completion
@@ -1606,7 +1601,7 @@ type internal TypeCheckInfo
                         |> Option.orElseWith (fun _ -> FindFirstNonWhitespacePosition lineStr (colAtEndOfNamesAndResidue - 1))
 
                     match lastPos with
-                    | Some p when not isSpread && lineStr[p] = '.' ->
+                    | Some p when lineStr[p] = '.' ->
                         match FindFirstNonWhitespacePosition lineStr (p - 1) with
                         | Some colAtEndOfNames ->
                             let colAtEndOfNames = colAtEndOfNames + 1 // convert 0-based to 1-based
@@ -1645,7 +1640,7 @@ type internal TypeCheckInfo
                         lastDotPos
                         |> Option.orElseWith (fun _ -> FindFirstNonWhitespacePosition lineStr (colAtEndOfNamesAndResidue - 1))
                     with
-                    | Some p when not isSpread && lineStr[p] = '.' ->
+                    | Some p when lineStr[p] = '.' ->
                         match FindFirstNonWhitespacePosition lineStr (p - 1) with
                         | Some colAtEndOfNames ->
                             let colAtEndOfNames = colAtEndOfNames + 1 // convert 0-based to 1-based
@@ -1974,44 +1969,6 @@ type internal TypeCheckInfo
 
             // No completion at '...: string'
             | Some(CompletionContext.RecordField(RecordContext.Declaration true)) -> None
-
-            // Completion at 'let r = { ...| }'
-            | Some(CompletionContext.RecordSpread RecordSpreadContext.Construction) ->
-                let envItems = getDeclaredItemsNotInRangeOpWithAllSymbols ()
-
-                envItems
-                |> Option.map (fun (items, denv, m) ->
-                    let items =
-                        [
-                            for completionItem in items do
-                                match completionItem.Item with
-                                | Item.Value vref when isRecdTy g vref.Type || isAnonRecdTy g vref.Type -> completionItem
-                                | _ -> ()
-                        ]
-
-                    items, denv, m)
-
-            // Completion at 'type R = { ...| }'
-            | Some(CompletionContext.RecordSpread RecordSpreadContext.Declaration) ->
-                let (nenv, ad), m = GetBestEnvForPos pos
-                let recordTycons = getRecordTyconsInScope g ncenv nenv ad m
-
-                let completionItems =
-                    [
-                        for tcref, item in recordTycons ->
-                            {
-                                ItemWithInst = ItemWithNoInst item
-                                Kind = CompletionItemKind.Other
-                                MinorPriority = 0
-                                IsOwnMember = false
-                                Type = Some tcref
-                                Unresolved = None
-                                CustomInsertText = ValueNone
-                                CustomDisplayText = ValueNone
-                            }
-                    ]
-
-                Some(completionItems, nenv.DisplayEnv, m)
 
             // Completion at ' SomeMethod( ... ) ' or ' [<SomeAttribute( ... )>] ' with named arguments
             | Some(CompletionContext.ParameterList(endPos, fields)) ->
@@ -2901,6 +2858,7 @@ type FSharpParsingOptions =
         DiagnosticOptions: FSharpDiagnosticOptions
         LangVersionText: string
         IsInteractive: bool
+        StrictIndentation: bool option
         CompilingFSharpCore: bool
         IsExe: bool
     }
@@ -2917,6 +2875,7 @@ type FSharpParsingOptions =
             DiagnosticOptions = FSharpDiagnosticOptions.Default
             LangVersionText = LanguageVersion.Default.VersionText
             IsInteractive = false
+            StrictIndentation = None
             CompilingFSharpCore = false
             IsExe = false
         }
@@ -2929,6 +2888,7 @@ type FSharpParsingOptions =
             DiagnosticOptions = tcConfig.diagnosticsOptions
             LangVersionText = tcConfig.langVersion.VersionText
             IsInteractive = isInteractive
+            StrictIndentation = tcConfig.strictIndentation
             CompilingFSharpCore = tcConfig.compilingFSharpCore
             IsExe = tcConfig.target.IsExe
         }
@@ -2941,6 +2901,7 @@ type FSharpParsingOptions =
             DiagnosticOptions = tcConfigB.diagnosticsOptions
             LangVersionText = tcConfigB.langVersion.VersionText
             IsInteractive = isInteractive
+            StrictIndentation = tcConfigB.strictIndentation
             CompilingFSharpCore = tcConfigB.compilingFSharpCore
             IsExe = tcConfigB.target.IsExe
         }
@@ -3052,8 +3013,8 @@ module internal ParseAndCheckFile =
         else
             (fun _ -> tokenizer.GetToken())
 
-    let createLexbuf langVersion sourceText =
-        UnicodeLexing.SourceTextAsLexbuf(true, LanguageVersion(langVersion), sourceText)
+    let createLexbuf langVersion strictIndentation sourceText =
+        UnicodeLexing.SourceTextAsLexbuf(true, LanguageVersion(langVersion), strictIndentation, sourceText)
 
     let matchBraces
         (
@@ -3073,7 +3034,7 @@ module internal ParseAndCheckFile =
 
         let matchingBraces = ResizeArray<_>()
 
-        usingLexbufForParsing (createLexbuf options.LangVersionText sourceText, fileName) (fun lexbuf ->
+        usingLexbufForParsing (createLexbuf options.LangVersionText options.StrictIndentation sourceText, fileName) (fun lexbuf ->
             let errHandler =
                 DiagnosticsHandler(false, fileName, options.DiagnosticOptions, suggestNamesForErrors, false)
 
@@ -3186,7 +3147,7 @@ module internal ParseAndCheckFile =
         use _ = UseBuildPhase BuildPhase.Parse
 
         let parseResult =
-            usingLexbufForParsing (createLexbuf options.LangVersionText sourceText, fileName) (fun lexbuf ->
+            usingLexbufForParsing (createLexbuf options.LangVersionText options.StrictIndentation sourceText, fileName) (fun lexbuf ->
 
                 let lexfun = createLexerFunction options lexbuf errHandler ct
 

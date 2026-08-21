@@ -1,8 +1,6 @@
 <Project>
   <!-- empty to prevent directory crawling -->
     <PropertyGroup>
-        <!-- Auxiliary/consumer-style projects keep their own inline package versions (not under repo CPM). -->
-        <ImportDirectoryPackagesProps>false</ImportDirectoryPackagesProps>
         <NuGetAudit>false</NuGetAudit>
     </PropertyGroup>
 

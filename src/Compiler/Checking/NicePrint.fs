@@ -1742,7 +1742,7 @@ module InfoMemberPrinting =
 
         let layout,paramLayouts =
             match denv.showCsharpCodeAnalysisAttributes, minfo with
-            | true, (ILMeth(_, mi, _) | MethInfoWithModifiedReturnType(ILMeth(_, mi, _), _)) ->
+            | true, ILMeth(_g,mi,_e) -> 
                 let methodLayout = 
                     // Render Method attributes and [return:..] attributes on separate lines above (@@) the method definition
                     PrintTypes.layoutCsharpCodeAnalysisIlAttributes denv (minfo.GetCustomAttrs()) (squareAngleL >> (@@)) layout

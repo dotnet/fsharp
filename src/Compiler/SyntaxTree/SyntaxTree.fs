@@ -317,11 +317,6 @@ type BlockSeparator = range * pos option
 
 type RecordFieldName = SynLongIdent * bool
 
-[<NoEquality; NoComparison; RequireQualifiedAccess>]
-type RecordBinding =
-    | Field of name: RecordFieldName * equalsRange: range option * declExpr: SynExpr option
-    | Spread of spread: SynExprSpread
-
 type ExprAtomicFlag =
     | Atomic = 0
     | NonAtomic = 1
@@ -546,7 +541,7 @@ type SynExpr =
     | AnonRecd of
         isStruct: bool *
         copyInfo: (SynExpr * BlockSeparator) option *
-        recordFields: SynExprAnonRecordFieldOrSpread list *
+        recordFields: (SynLongIdent * range option * SynExpr) list *
         range: range *
         trivia: SynExprAnonRecdTrivia
 
@@ -555,7 +550,7 @@ type SynExpr =
     | Record of
         baseInfo: (SynType * SynExpr * range * BlockSeparator option * range) option *
         copyInfo: (SynExpr * BlockSeparator) option *
-        recordFields: SynExprRecordFieldOrSpread list *
+        recordFields: SynExprRecordField list *
         range: range
 
     | New of isProtected: bool * targetType: SynType * expr: SynExpr * range: range
@@ -869,41 +864,18 @@ type SynExpr =
         | _ -> false
 
 [<NoEquality; NoComparison>]
-type SynTypeSpread = SynTypeSpread of spreadRange: range * ty: SynType * range: range
-
-[<NoEquality; NoComparison>]
-type SynExprSpread = SynExprSpread of spreadRange: range * expr: SynExpr * range: range
-
-[<NoEquality; NoComparison>]
-type SynExprRecordField = SynExprRecordField of fieldName: RecordFieldName * equalsRange: range option * expr: SynExpr option * range: range
-
-[<NoEquality; NoComparison; RequireQualifiedAccess>]
-type SynExprRecordFieldOrSpread =
-    | Field of field: SynExprRecordField * blockSeparator: BlockSeparator option
-    | Spread of spread: SynExprSpread * blockSeparator: BlockSeparator option
-
-[<NoEquality; NoComparison>]
-type SynExprAnonRecordField = SynExprAnonRecordField of fieldName: SynLongIdent * equalsRange: range option * expr: SynExpr * range: range
-
-[<NoEquality; NoComparison; RequireQualifiedAccess>]
-type SynExprAnonRecordFieldOrSpread =
-    | Field of field: SynExprAnonRecordField * blockSeparator: BlockSeparator option
-    | Spread of spread: SynExprSpread * blockSeparator: BlockSeparator option
-
-    member this.Range =
-        match this with
-        | SynExprAnonRecordFieldOrSpread.Field(SynExprAnonRecordField(_, _, _, m), _)
-        | SynExprAnonRecordFieldOrSpread.Spread(SynExprSpread(_, _, m), _) -> m
+type SynExprRecordField =
+    | SynExprRecordField of
+        fieldName: RecordFieldName *
+        equalsRange: range option *
+        expr: SynExpr option *
+        range: range *
+        blockSeparator: BlockSeparator option
 
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
 type SynInterpolatedStringPart =
     | String of value: string * range: range
-    | FillExpr of fillExpr: SynExpr * formatting: SynInterpolationFormatting
-
-[<NoEquality; NoComparison; RequireQualifiedAccess>]
-type SynInterpolationFormatting =
-    | DotNet of alignment: SynExpr option * format: Ident option
-    | Printf of specifier: string * range: range
+    | FillExpr of fillExpr: SynExpr * qualifiers: Ident option
 
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
 type SynSimplePat =
@@ -1291,7 +1263,7 @@ type SynTypeDefnSimpleRepr =
 
     | Enum of cases: SynEnumCase list * range: range
 
-    | Record of accessibility: SynAccess option * recordFieldsAndSpreads: SynFieldOrSpread list * range: range
+    | Record of accessibility: SynAccess option * recordFields: SynField list * range: range
 
     | General of
         kind: SynTypeDefnKind *
@@ -1323,11 +1295,6 @@ type SynTypeDefnSimpleRepr =
         | TypeAbbrev(range = m)
         | None(range = m) -> m
         | Exception t -> t.Range
-
-[<NoEquality; NoComparison; RequireQualifiedAccess>]
-type SynFieldOrSpread =
-    | Field of field: SynField
-    | Spread of spread: SynTypeSpread
 
 [<NoEquality; NoComparison>]
 type SynEnumCase =

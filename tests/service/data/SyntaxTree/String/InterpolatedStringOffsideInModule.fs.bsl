@@ -21,8 +21,7 @@ ImplFile
                       InterpolatedString
                         ([String ("
 ", (3,8--4,1));
-                          FillExpr
-                            (Const (Int32 0, (4,1--4,2)), DotNet (None, None));
+                          FillExpr (Const (Int32 0, (4,1--4,2)), None);
                           String ("", (4,2--4,4))], Regular, (3,8--4,4)),
                       (2,8--2,9), Yes (2,4--4,4),
                       { LeadingKeyword = Let (2,4--2,7)
