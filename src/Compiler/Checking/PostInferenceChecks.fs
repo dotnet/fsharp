@@ -803,12 +803,7 @@ let CheckMultipleInterfaceInstantiations cenv (ty:TType) (interfaces:TType list)
                     let ty2 = items[i2]
                     let tcRef1 = tcrefOfAppTy cenv.g ty1
                     match compareTypesWithRegardToTypeVariablesAndMeasures cenv.g cenv.amap m ty1 ty2 with
-                    | ExactlyEqual -> ()
                     | FeasiblyEqual ->
-                        match tryLanguageFeatureErrorOption cenv.g.langVersion LanguageFeature.InterfacesWithMultipleGenericInstantiation m with
-                        | None -> ()
-                        | Some exn -> exn
-
                         let typ1Str = NicePrint.minimalRichTextOfType cenv.denv ty1
                         let typ2Str = NicePrint.minimalRichTextOfType cenv.denv ty2
                         let tcRef1Name = richTextOfEntityRefName tcRef1 tcRef1.DisplayNameWithStaticParametersAndUnderscoreTypars
@@ -817,11 +812,8 @@ let CheckMultipleInterfaceInstantiations cenv (ty:TType) (interfaces:TType list)
                         else
                             let typStr = NicePrint.minimalRichTextOfType cenv.denv ty
                             Error(FSComp.SR.typrelInterfaceWithConcreteAndVariable(typStr, tcRef1Name, typ1Str, typ2Str), m)
-
-                    | NotEqual ->
-                        match tryLanguageFeatureErrorOption cenv.g.langVersion LanguageFeature.InterfacesWithMultipleGenericInstantiation m with
-                        | None -> ()
-                        | Some exn -> exn
+                    | ExactlyEqual
+                    | NotEqual -> ()
     }
     match Seq.tryHead errors with
     | None -> ()

@@ -1619,7 +1619,6 @@ featureLowerSimpleMappingsInComprehensionsToFastLoops,"Lowers [for x in xs -> f 
 3356,tcDuplicateExtensionMemberNames,"Extension members extending types with the same simple name '%s' but different fully qualified names cannot be defined in the same module. Consider defining these extensions in separate modules."
 3360,typrelInterfaceWithConcreteAndVariable,"'%s' cannot implement the interface '%s' with the two instantiations '%s' and '%s' because they may unify."
 3361,typrelInterfaceWithConcreteAndVariableObjectExpression,"You cannot implement the interface '%s' with the two instantiations '%s' and '%s' because they may unify."
-featureInterfacesWithMultipleGenericInstantiation,"interfaces with multiple generic instantiation"
 3362,tcLiteralFieldAssignmentWithArg,"Cannot assign '%s' to a value marked literal"
 3363,tcLiteralFieldAssignmentNoArg,"Cannot assign a value to another value marked literal"
 3364,tcInvalidUseOfReverseIndex,"Invalid use of reverse index in list expression."
