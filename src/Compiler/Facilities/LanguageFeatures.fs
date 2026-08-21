@@ -16,7 +16,6 @@ module internal FSharp.Compiler.Features
 
 [<RequireQualifiedAccess>]
 type LanguageFeature =
-    | RelaxWhitespace2
     | NameOf
     | DotlessFloat32Literal
     | PackageManagement
@@ -160,7 +159,6 @@ type LanguageVersion(versionText, ?disabledFeaturesArray: LanguageFeature array)
 
                 // F# 6.0
                 LanguageFeature.AdditionalTypeDirectedConversions, languageVersion60
-                LanguageFeature.RelaxWhitespace2, languageVersion60
                 LanguageFeature.OverloadsForCustomOperations, languageVersion60
                 LanguageFeature.ExpandedMeasurables, languageVersion60
                 LanguageFeature.ResumableStateMachines, languageVersion60
@@ -355,7 +353,6 @@ type LanguageVersion(versionText, ?disabledFeaturesArray: LanguageFeature array)
     /// Get a string name for the given feature.
     static member GetFeatureString feature =
         match feature with
-        | LanguageFeature.RelaxWhitespace2 -> FSComp.SR.featureRelaxWhitespace2 ()
         | LanguageFeature.NameOf -> FSComp.SR.featureNameOf ()
         | LanguageFeature.DotlessFloat32Literal -> FSComp.SR.featureDotlessFloat32Literal ()
         | LanguageFeature.PackageManagement -> FSComp.SR.featurePackageManagement ()
