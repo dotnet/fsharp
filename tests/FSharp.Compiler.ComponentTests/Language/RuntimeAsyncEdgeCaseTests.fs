@@ -8,7 +8,7 @@ module Language.RuntimeAsyncEdgeCaseTests
 //     pointed at concrete IL. Every asserted substring was captured from the PR's own fsc on the
 //     pinned net11 preview and normalized the way ILChecker does ([System.Runtime] -> [runtime]).
 //
-// IL facts that assert the *absence* of a token use direct StateMachineHelpers.__runtimeAsync
+// IL facts that assert the *absence* of a token use direct StateMachineHelpers.__runtimeAsyncReturn
 // sources (single async method, clean assembly), because ILChecker's NotPresent check is
 // assembly-scoped and the CE builder's own inline members legitimately contain `tail.`/`MoveNext`.
 // The CE `Run` lowers `do!`/`let!` to exactly this intrinsic form (see the execution facts).
@@ -27,7 +27,7 @@ let private runtimeAsyncDir = Path.Combine(__SOURCE_DIRECTORY__, "RuntimeAsync")
 let private builderPath = Path.Combine(runtimeAsyncDir, "RuntimeTaskBuilder.fs")
 
 // Builds a minimal direct-intrinsic compilation unit: the module header plus the opens every
-// StateMachineHelpers.__runtimeAsync body needs, then the supplied one-liner body. Used for the
+// StateMachineHelpers.__runtimeAsyncReturn body needs, then the supplied one-liner body. Used for the
 // shape / absence / undiagnosed-pattern assertions, which must run on a single-method assembly.
 let private directIntrinsicSource body =
     String.concat "\n" [
@@ -40,7 +40,10 @@ let private directIntrinsicSource body =
     ]
 
 let private compileDirect body =
-    FSharp(directIntrinsicSource body) |> withLangVersionPreview |> compile
+    FSharp(directIntrinsicSource body)
+    |> withFSharpCoreShippedNet
+    |> withLangVersionPreview
+    |> compile
 
 // ---- CE-builder sources (compiled against RuntimeTaskBuilder.fs, the hypothetical library) -------
 
@@ -80,6 +83,7 @@ let ``runtime async edge cases execute through the CE builder`` () =
     FsFromPath builderPath
     |> withAdditionalSourceFile (SourceFromPath (Path.Combine(runtimeAsyncDir, "RuntimeAsyncEdgeCases.fs")))
     |> withLangVersionPreview
+    |> withFSharpCoreShippedNet
     |> compileExeAndRun
     |> shouldSucceed
 
@@ -138,19 +142,19 @@ let private valueTaskAwaitBody = """
 // call line) shows the surrounding shape a runtime reviewer needs (arg load, no spill, no builder).
 [<Fact>]
 let ``ValueTask operand binds the non-generic Await (full body)`` () =
-    compileDirect "let f (vt: ValueTask) : Task<int> = StateMachineHelpers.__runtimeAsync (AsyncHelpers.Await(vt); 1)"
+    compileDirect "let f (vt: ValueTask) : Task<int> = StateMachineHelpers.__runtimeAsyncReturn (AsyncHelpers.Await(vt); 1)"
     |> verifyILContains [ valueTaskAwaitBody ]
     |> shouldSucceed
 
 [<Fact>]
 let ``Task<'T> operand binds the generic Await (full body)`` () =
-    compileDirect "let f (t: Task<int>) : Task<int> = StateMachineHelpers.__runtimeAsync (let x = AsyncHelpers.Await(t) in x + 1)"
+    compileDirect "let f (t: Task<int>) : Task<int> = StateMachineHelpers.__runtimeAsyncReturn (let x = AsyncHelpers.Await(t) in x + 1)"
     |> verifyILContains [ genericAwaitBody ]
     |> shouldSucceed
 
 [<Fact>]
 let ``suspension lowers to the full Await body with no compiler state machine`` () =
-    compileDirect "let f () : Task<int> = StateMachineHelpers.__runtimeAsync (AsyncHelpers.Await(Task.Delay(1)); 1)"
+    compileDirect "let f () : Task<int> = StateMachineHelpers.__runtimeAsyncReturn (AsyncHelpers.Await(Task.Delay(1)); 1)"
     |> verifyILContains [ simpleAwaitBody ]
     |> verifyILNotPresent [
         "AsyncTaskMethodBuilder"
@@ -163,6 +167,7 @@ let ``suspension lowers to the full Await body with no compiler state machine`` 
 let ``the CE builder lowers to Await with no state machine`` () =
     FsFromPath builderPath
     |> withAdditionalSourceFile (FsSource ceStateMachineSource)
+    |> withFSharpCoreShippedNet
     |> withLangVersionPreview
     |> compile
     |> verifyILContains [ "AsyncHelpers::Await<int32>(class [runtime]System.Threading.Tasks.Task`1<!!0>)" ]
@@ -197,7 +202,7 @@ let private tailPrefixBody = """
 
 [<Fact>]
 let ``runtime async currently emits a forbidden tail prefix (C1)`` () =
-    compileDirect "let f (g: int -> int) (x: int) : Task<int> = StateMachineHelpers.__runtimeAsync (AsyncHelpers.Await(Task.Delay(1)); g x)"
+    compileDirect "let f (g: int -> int) (x: int) : Task<int> = StateMachineHelpers.__runtimeAsyncReturn (AsyncHelpers.Await(Task.Delay(1)); g x)"
     |> verifyILContains [ tailPrefixBody ]
     |> shouldSucceed
 
@@ -286,7 +291,7 @@ let private ceDisposalHoist = """
 // MethodImplOptions.Async (0x2000) is a *method header* flag, not an IL instruction — neither the
 // ildasm we use nor the sequence-points decoder render it, so both the composed IL exhibit and the
 // sequence-points baseline show the lifted async body as an ordinary `outer@<line>` closure. This
-// reads it from metadata and pins the placement: the flag lands only on that lifted `__runtimeAsync`
+// reads it from metadata and pins the placement: the flag lands only on that lifted `__runtimeAsyncReturn`
 // body and never leaks onto the user's own `outer`/`helper` methods just because the async part is
 // written lexically inside `outer`. Empirically the lifted `Invoke` is 0x2008 (async + noinlining).
 let private assertAsyncFlagOnLiftedClosureOnly (md: MetadataReader) =
@@ -313,6 +318,7 @@ let ``composed CE body: await inside try, hoisted disposal, async flag on the li
     FsFromPath builderPath
     |> withAdditionalSourceFile (FsSource composedLayoutProgram)
     |> withLangVersionPreview
+    |> withFSharpCoreShippedNet
     |> compile
     |> shouldSucceed
     |> verifyILContains [ ceAwaitInsideTry; ceDisposalHoist ]
@@ -334,7 +340,7 @@ let helper x = x * 2
 let outer (n: int) : Task<int> =
     let inner y = y + helper n
     let baseline = inner 10
-    StateMachineHelpers.__runtimeAsync (
+    StateMachineHelpers.__runtimeAsyncReturn (
         let mutable total = baseline
         for i in 1 .. n do
             let d = AsyncHelpers.Await(Task.FromResult i)
@@ -347,6 +353,7 @@ let outer (n: int) : Task<int> =
 let ``composed runtime-async body: source-mapped IL (sequence points baseline)`` () =
     FSharp composedDirectProgram
     |> withLangVersionPreview
+    |> withFSharpCoreShippedNet
     |> withPortablePdb
     |> withNoOptimize
     |> compile
@@ -361,13 +368,13 @@ let ``composed runtime-async body: source-mapped IL (sequence points baseline)``
 // analogues at compile time (await-in-finally/catch; CS4007 for ref-struct; CS1988 for byref).
 [<Theory>]
 [<InlineData("await-in-finally",
-             "let f () : Task<int> = StateMachineHelpers.__runtimeAsync (try 1 finally AsyncHelpers.Await(Task.Delay(1)))")>] // runtime: fail-fast 0xC0000409 / SIGSEGV
+             "let f () : Task<int> = StateMachineHelpers.__runtimeAsyncReturn (try 1 finally AsyncHelpers.Await(Task.Delay(1)))")>] // runtime: fail-fast 0xC0000409 / SIGSEGV
 [<InlineData("await-in-catch",
-             "let f () : Task<int> = StateMachineHelpers.__runtimeAsync (try failwith \"boom\" with _ -> AsyncHelpers.Await(Task.Delay(1)); 7)")>] // runtime: crash
+             "let f () : Task<int> = StateMachineHelpers.__runtimeAsyncReturn (try failwith \"boom\" with _ -> AsyncHelpers.Await(Task.Delay(1)); 7)")>] // runtime: crash
 [<InlineData("refstruct-across-suspension",
-             "let f () : Task<int> = StateMachineHelpers.__runtimeAsync (let data = [| 10; 20; 30 |] in let span = ReadOnlySpan<int>(data) in AsyncHelpers.Await(Task.Delay(1)); span[0] + span[1] + span[2])")>] // runtime: IndexOutOfRangeException (C14)
+             "let f () : Task<int> = StateMachineHelpers.__runtimeAsyncReturn (let data = [| 10; 20; 30 |] in let span = ReadOnlySpan<int>(data) in AsyncHelpers.Await(Task.Delay(1)); span[0] + span[1] + span[2])")>] // runtime: IndexOutOfRangeException (C14)
 [<InlineData("byref-param-across-suspension",
-             "let f (x: byref<int>) : Task<int> = StateMachineHelpers.__runtimeAsync (AsyncHelpers.Await(Task.Delay(1)); x)")>] // byref read after suspension; C# gives CS1988
+             "let f (x: byref<int>) : Task<int> = StateMachineHelpers.__runtimeAsyncReturn (AsyncHelpers.Await(Task.Delay(1)); x)")>] // byref read after suspension; C# gives CS1988
 let ``contract-forbidden suspension pattern compiles with no diagnostic`` (_label: string) (body: string) =
     compileDirect body
     |> shouldSucceed

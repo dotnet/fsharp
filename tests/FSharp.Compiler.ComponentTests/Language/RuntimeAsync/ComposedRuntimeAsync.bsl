@@ -8,7 +8,7 @@ let helper x = x * 2
 let outer (n: int) : Task<int> =
     let inner y = y + helper n
     let baseline = inner 10
-    StateMachineHelpers.__runtimeAsync (
+    StateMachineHelpers.__runtimeAsyncReturn (
         let mutable total = baseline
         for i in 1 .. n do
             let d = AsyncHelpers.Await(Task.FromResult i)
@@ -36,7 +36,7 @@ M::outer
     IL_000a:  callvirt Invoke
     IL_000f:  stloc.1
 
-  (12,5-18,41)  StateMachineHelpers.__runtimeAsync ( let mutable total = baseline for i in 1 .. n do let d = AsyncHelpers.Await(Task.FromResult i) total <- total + d AsyncHelpers.Await(Task.Delay 1) if total > 0 then total else -1)
+  (12,5-18,41)  StateMachineHelpers.__runtimeAsyncReturn ( let mutable total = baseline for i in 1 .. n do let d = AsyncHelpers.Await(Task.FromResult i) total <- total + d AsyncHelpers.Await(Task.Delay 1) if total > 0 then total else -1)
     IL_0010:  ldarg.0
     IL_0011:  ldloc.1
     IL_0012:  newobj outer@12::.ctor
