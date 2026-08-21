@@ -62,7 +62,6 @@ type LanguageFeature =
     | ExtendedStringInterpolation
     | WarningWhenMultipleRecdTypeChoice
     | ImprovedImpliedArgumentNames
-    | DiagnosticForObjInference
     | ConstraintIntersectionOnFlexibleTypes
     | StaticLetInRecordsDusEmptyTypes
     | WarningWhenTailRecAttributeButNonTailRecUsage
@@ -197,7 +196,6 @@ type LanguageVersion(versionText, ?disabledFeaturesArray: LanguageFeature array)
                 LanguageFeature.ExtendedStringInterpolation, languageVersion80
                 LanguageFeature.WarningWhenMultipleRecdTypeChoice, languageVersion80
                 LanguageFeature.ImprovedImpliedArgumentNames, languageVersion80
-                LanguageFeature.DiagnosticForObjInference, languageVersion80
                 LanguageFeature.WarningWhenTailRecAttributeButNonTailRecUsage, languageVersion80
                 LanguageFeature.StaticLetInRecordsDusEmptyTypes, languageVersion80
                 LanguageFeature.ConstraintIntersectionOnFlexibleTypes, languageVersion80
@@ -403,8 +401,6 @@ type LanguageVersion(versionText, ?disabledFeaturesArray: LanguageFeature array)
         | LanguageFeature.ExtendedStringInterpolation -> FSComp.SR.featureExtendedStringInterpolation ()
         | LanguageFeature.WarningWhenMultipleRecdTypeChoice -> FSComp.SR.featureWarningWhenMultipleRecdTypeChoice ()
         | LanguageFeature.ImprovedImpliedArgumentNames -> FSComp.SR.featureImprovedImpliedArgumentNames ()
-        | LanguageFeature.DiagnosticForObjInference -> FSComp.SR.featureInformationalObjInferenceDiagnostic ()
-
         | LanguageFeature.StaticLetInRecordsDusEmptyTypes -> FSComp.SR.featureStaticLetInRecordsDusEmptyTypes ()
         | LanguageFeature.ConstraintIntersectionOnFlexibleTypes -> FSComp.SR.featureConstraintIntersectionOnFlexibleTypes ()
         | LanguageFeature.WarningWhenTailRecAttributeButNonTailRecUsage -> FSComp.SR.featureChkNotTailRecursive ()
