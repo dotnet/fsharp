@@ -707,11 +707,6 @@
         <target state="translated">Свойства теста союзного случая</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureTryWithInSeqExpressions">
-        <source>Support for try-with in sequence expressions</source>
-        <target state="translated">Поддержка try-with в выражениях последовательности</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureUnmanagedConstraintCsharpInterop">
         <source>Interop between C#'s and F#'s unmanaged generic constraint (emit additional modreq)</source>
         <target state="translated">Взаимодействие между универсальным ограничением "unmanaged" C# и F#(создание дополнительного modreq)</target>
@@ -5150,11 +5145,6 @@
       <trans-unit id="tcUseForInSequenceExpression">
         <source>The use of 'let! x = coll' in sequence expressions is not permitted. Use 'for x in coll' instead.</source>
         <target state="translated">Использование "let! x = coll" в выражениях последовательности не разрешается. Вместо этого используется "for x in coll".</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="tcTryIllegalInSequenceExpression">
-        <source>'try'/'with' cannot be used within sequence expressions</source>
-        <target state="translated">''try''/''with'' не могут использоваться внутри (within) выражений последовательностей</target>
         <note />
       </trans-unit>
       <trans-unit id="tcUseYieldBangForMultipleResults">
