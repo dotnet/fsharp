@@ -502,11 +502,6 @@
         <target state="translated">statik soyut arabirim üyeleri</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureInterfacesWithMultipleGenericInstantiation">
-        <source>interfaces with multiple generic instantiation</source>
-        <target state="translated">birden çok genel örnek oluşturma içeren arabirimler</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureLowerInterpolatedStringToConcat">
         <source>Optimizes interpolated strings in certain cases, by lowering to concatenation</source>
         <target state="translated">Birleştirmeye indirerek belirli durumlarda düz metin arasına kod eklenmiş dizeleri en iyi duruma getirir</target>

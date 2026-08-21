@@ -502,11 +502,6 @@
         <target state="translated">靜態抽象介面成員</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureInterfacesWithMultipleGenericInstantiation">
-        <source>interfaces with multiple generic instantiation</source>
-        <target state="translated">具有多個泛型具現化的介面</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureLowerInterpolatedStringToConcat">
         <source>Optimizes interpolated strings in certain cases, by lowering to concatenation</source>
         <target state="translated">在特定情況下，藉由降低為串連來最佳化差補字串</target>
