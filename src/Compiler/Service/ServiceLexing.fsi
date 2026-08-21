@@ -176,11 +176,8 @@ module FSharpTokenTag =
     /// Indicates the token is a `..`
     val DOT_DOT: int
 
-    /// Indicates the token is a `..^`
+    /// Indicates the token is a `..`
     val DOT_DOT_HAT: int
-
-    /// Indicates the token is a `...`
-    val DOT_DOT_DOT: int
 
     /// Indicates the token is a `..^`
     val INT32_DOT_DOT: int
@@ -327,7 +324,12 @@ type FSharpLineTokenizer =
 type FSharpSourceTokenizer =
 
     /// Create a tokenizer for a source file.
-    new: conditionalDefines: string list * fileName: string option * langVersion: string option -> FSharpSourceTokenizer
+    new:
+        conditionalDefines: string list *
+        fileName: string option *
+        langVersion: string option *
+        strictIndentation: bool option ->
+            FSharpSourceTokenizer
 
     /// Create a tokenizer for a line of this source file
     member CreateLineTokenizer: lineText: string -> FSharpLineTokenizer
@@ -498,7 +500,6 @@ type public FSharpTokenKind =
     | End
     | DotDot
     | DotDotHat
-    | DotDotDot
     | BarBar
     | Upcast
     | Downcast
@@ -579,6 +580,7 @@ type public FSharpLexer =
         text: ISourceText *
         tokenCallback: (FSharpToken -> unit) *
         ?langVersion: string *
+        ?strictIndentation: bool *
         ?filePath: string *
         ?conditionalDefines: string list *
         ?flags: FSharpLexerFlags *

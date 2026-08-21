@@ -197,6 +197,7 @@ type internal ImplementInterfaceCodeFixProvider [<ImportingConstructor>] () =
                         context.Document.FilePath,
                         defines,
                         langVersionOpt,
+                        parsingOptions.StrictIndentation,
                         cancellationToken
                     )
 
@@ -244,6 +245,7 @@ type internal ImplementInterfaceCodeFixProvider [<ImportingConstructor>] () =
                                 false,
                                 false,
                                 langVersionOpt,
+                                parsingOptions.StrictIndentation,
                                 cancellationToken
                             )
 

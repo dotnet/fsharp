@@ -44,7 +44,7 @@ let y = x
         |> compile
         |> shouldFail
         |> withSingleDiagnostic
-            (Error 58, Line 11, Col 1, Line 11, Col 4, "Unexpected syntax or possible incorrect indentation: this token is offside of context started at position (9:5). Try indenting this further.")
+            (Error 58, Line 11, Col 1, Line 11, Col 4, "Unexpected syntax or possible incorrect indentation: this token is offside of context started at position (9:5). Try indenting this further.\nTo continue using non-conforming indentation, pass the '--strict-indentation-' flag to the compiler, or set the language version to F# 7.")
 
 module ``Test compiler directives in FSI`` =
     [<Fact>]

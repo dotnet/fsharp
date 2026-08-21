@@ -35,6 +35,7 @@ module GoToDefinitionServiceTests =
                     false,
                     false,
                     langVersion,
+                    None,
                     System.Threading.CancellationToken.None
                 )
 

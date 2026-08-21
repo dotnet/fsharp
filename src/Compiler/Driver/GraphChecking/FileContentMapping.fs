@@ -1,4 +1,4 @@
-module internal rec FSharp.Compiler.GraphChecking.FileContentMapping
+﻿module internal rec FSharp.Compiler.GraphChecking.FileContentMapping
 
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.SyntaxTreeOps
@@ -127,13 +127,7 @@ let visitSynTypeDefn
             match simpleRepr with
             | SynTypeDefnSimpleRepr.Union(unionCases = unionCases) -> yield! List.collect visitSynUnionCase unionCases
             | SynTypeDefnSimpleRepr.Enum(cases = cases) -> yield! List.collect visitSynEnumCase cases
-            | SynTypeDefnSimpleRepr.Record(recordFieldsAndSpreads = fieldsAndSpreads) ->
-                yield!
-                    List.collect
-                        (function
-                        | SynFieldOrSpread.Field field -> visitSynField field
-                        | SynFieldOrSpread.Spread spread -> visitSynTypeSpread spread)
-                        fieldsAndSpreads
+            | SynTypeDefnSimpleRepr.Record(recordFields = recordFields) -> yield! List.collect visitSynField recordFields
             // This is only used in the typed tree
             // The parser doesn't construct this
             | SynTypeDefnSimpleRepr.General _
@@ -174,13 +168,7 @@ let visitSynTypeDefnSig
             match simpleRepr with
             | SynTypeDefnSimpleRepr.Union(unionCases = unionCases) -> yield! List.collect visitSynUnionCase unionCases
             | SynTypeDefnSimpleRepr.Enum(cases = cases) -> yield! List.collect visitSynEnumCase cases
-            | SynTypeDefnSimpleRepr.Record(recordFieldsAndSpreads = fieldsAndSpreads) ->
-                yield!
-                    List.collect
-                        (function
-                        | SynFieldOrSpread.Field field -> visitSynField field
-                        | SynFieldOrSpread.Spread spread -> visitSynTypeSpread spread)
-                        fieldsAndSpreads
+            | SynTypeDefnSimpleRepr.Record(recordFields = recordFields) -> yield! List.collect visitSynField recordFields
             // This is only used in the typed tree
             // The parser doesn't construct this
             | SynTypeDefnSimpleRepr.General _
@@ -215,8 +203,6 @@ let visitSynValSig (SynValSig(attributes = attributes; synType = synType; synExp
 
 let visitSynField (SynField(attributes = attributes; fieldType = fieldType)) =
     visitSynAttributes attributes @ visitSynType fieldType
-
-let visitSynTypeSpread (SynTypeSpread(ty = ty)) = visitSynType ty
 
 let visitSynMemberDefn (md: SynMemberDefn) : FileContentEntry list =
     [
@@ -400,19 +386,8 @@ let visitSynExpr (e: SynExpr) : FileContentEntry list =
             | SynExpr.AnonRecd(copyInfo = copyInfo; recordFields = recordFields) ->
                 let continuations =
                     match copyInfo with
-                    | None ->
-                        List.map
-                            (function
-                            | SynExprAnonRecordFieldOrSpread.Field(SynExprAnonRecordField(_, _, e, _), _)
-                            | SynExprAnonRecordFieldOrSpread.Spread(spread = SynExprSpread(expr = e)) -> visit e)
-                            recordFields
-                    | Some(cp, _) ->
-                        visit cp
-                        :: List.map
-                            (function
-                            | SynExprAnonRecordFieldOrSpread.Field(SynExprAnonRecordField(_, _, e, _), _)
-                            | SynExprAnonRecordFieldOrSpread.Spread(spread = SynExprSpread(expr = e)) -> visit e)
-                            recordFields
+                    | None -> List.map (fun (_, _, e) -> visit e) recordFields
+                    | Some(cp, _) -> visit cp :: List.map (fun (_, _, e) -> visit e) recordFields
 
                 Continuation.concatenate continuations continuation
             | SynExpr.ArrayOrList(exprs = exprs) ->
@@ -421,12 +396,9 @@ let visitSynExpr (e: SynExpr) : FileContentEntry list =
             | SynExpr.Record(baseInfo = baseInfo; copyInfo = copyInfo; recordFields = recordFields) ->
                 let fieldNodes =
                     [
-                        for fieldOrSpread in recordFields do
-                            match fieldOrSpread with
-                            | SynExprRecordFieldOrSpread.Field(SynExprRecordField(fieldName = (si, _); expr = expr), _) ->
-                                yield! visitSynLongIdent si
-                                yield! collectFromOption visitSynExpr expr
-                            | SynExprRecordFieldOrSpread.Spread(spread = SynExprSpread(expr = expr)) -> yield! visitSynExpr expr
+                        for SynExprRecordField(fieldName = (si, _); expr = expr) in recordFields do
+                            yield! visitSynLongIdent si
+                            yield! collectFromOption visitSynExpr expr
                     ]
 
                 match baseInfo, copyInfo with

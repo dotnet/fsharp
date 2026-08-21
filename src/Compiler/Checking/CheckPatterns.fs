@@ -498,18 +498,13 @@ and TcPatArrayOrList warnOnUpper cenv env vFlags patEnv ty isArray args m =
     phase2, acc
 
 and TcRecordPat warnOnUpper (cenv: cenv) env vFlags patEnv ty fieldPats m =
-    let idents =
-        let (|Last|) = List.last
-        fieldPats
-        |> List.map (fun (NamePatPairField (fieldName = SynLongIdent (id = Last fieldId))) -> fieldId)
-
-    let fieldPats =
+    let fieldPats = 
         fieldPats 
-        |> List.map (fun (NamePatPairField(fieldName = fieldLid; pat = pat)) ->
-            let path, fieldId = List.frontAndBack fieldLid.LongIdent
-            fieldId, ExplicitOrSpread.Explicit (path, pat))
+        |> List.map (fun (NamePatPairField(fieldName = fieldLid; pat = pat)) -> 
+            match fieldLid.LongIdent with
+            | [id] -> ([], id), pat
+            | lid -> List.frontAndBack lid, pat)
     
-    CheckRecdExprDuplicateFields idents
     match BuildFieldMap cenv env false ty fieldPats m with
     | None -> (fun _ -> TPat_error m), patEnv
     | Some(tinst, tcref, fldsmap, _fldsList) ->
@@ -525,14 +520,13 @@ and TcRecordPat warnOnUpper (cenv: cenv) env vFlags patEnv ty fieldPats m =
     let fieldPats, patEnvR =
         (patEnv, ftys) ||> List.mapFold (fun s (ty, fsp) ->
             match fldsmap.TryGetValue fsp.rfield_id.idText with
-            | true, ExplicitOrSpread.Explicit v ->
+            | true, v ->
                 let warnOnUpper =
                     if cenv.g.langVersion.SupportsFeature(LanguageFeature.DontWarnOnUppercaseIdentifiersInBindingPatterns) then
                         AllIdsOK
                     else
                         warnOnUpper
                 TcPat warnOnUpper cenv env None vFlags s ty v
-            | true, ExplicitOrSpread.Spread _ -> (* Unreachable. *) error (InternalError ("Spreads in patterns are not supported.", m))
             | _ -> (fun _ -> TPat_wild m), s)
 
     let phase2 values =

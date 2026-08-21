@@ -8,12 +8,10 @@ ImplFile
                 (Yes (3,0--3,20),
                  Record
                    (None, None,
-                    [Field
-                       (SynExprRecordField
-                          ((SynLongIdent ([A], [], [None]), true),
-                           Some (3,10--3,11),
-                           Some (Const (Int32 1, (3,12--3,13))), (3,8--3,13)),
-                        None)], (3,6--3,15)),
+                    [SynExprRecordField
+                       ((SynLongIdent ([A], [], [None]), true),
+                        Some (3,10--3,11), Some (Const (Int32 1, (3,12--3,13))),
+                        (3,8--3,13), None)], (3,6--3,15)),
                  [SynMatchClause
                     (Record
                        ([NamePatPairField

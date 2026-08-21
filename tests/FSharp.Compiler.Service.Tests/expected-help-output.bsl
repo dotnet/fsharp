@@ -128,6 +128,9 @@
                                          default)
 --define:<string>                        Define conditional compilation
                                          symbols (Short form: -d)
+--strict-indentation[+|-]                Override indentation rules implied
+                                         by the language version (off by
+                                         default)
 --always-inline[+|-]                     Always inline 'inline' functions
 
 

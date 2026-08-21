@@ -290,6 +290,7 @@ type internal FSharpSignatureHelpProvider [<ImportingConstructor>] (serviceProvi
             documentId: DocumentId,
             defines: string list,
             langVersion: string option,
+            strictIndentation: bool option,
             documentationBuilder: IDocumentationBuilder,
             sourceText: SourceText,
             caretPosition: int,
@@ -328,6 +329,7 @@ type internal FSharpSignatureHelpProvider [<ImportingConstructor>] (serviceProvi
                     false,
                     false,
                     langVersion,
+                    strictIndentation,
                     ct
                 )
 
@@ -605,6 +607,7 @@ type internal FSharpSignatureHelpProvider [<ImportingConstructor>] (serviceProvi
             document: Document,
             defines: string list,
             langVersion: string option,
+            strictIndentation: bool option,
             documentationBuilder: IDocumentationBuilder,
             caretPosition: int,
             triggerTypedChar: char option,
@@ -657,6 +660,7 @@ type internal FSharpSignatureHelpProvider [<ImportingConstructor>] (serviceProvi
                         document.Id,
                         defines,
                         langVersion,
+                        strictIndentation,
                         documentationBuilder,
                         sourceText,
                         caretPosition,
@@ -676,6 +680,7 @@ type internal FSharpSignatureHelpProvider [<ImportingConstructor>] (serviceProvi
                         document.Id,
                         defines,
                         langVersion,
+                        strictIndentation,
                         documentationBuilder,
                         sourceText,
                         caretPosition,
@@ -708,7 +713,7 @@ type internal FSharpSignatureHelpProvider [<ImportingConstructor>] (serviceProvi
 
         member _.GetItemsAsync(document, position, triggerInfo, cancellationToken) =
             asyncMaybe {
-                let defines, langVersion = document.GetFsharpParsingOptions()
+                let defines, langVersion, strictIndentation = document.GetFsharpParsingOptions()
 
                 let triggerTypedChar =
                     if
@@ -726,6 +731,7 @@ type internal FSharpSignatureHelpProvider [<ImportingConstructor>] (serviceProvi
                                 document,
                                 defines,
                                 Some langVersion,
+                                strictIndentation,
                                 documentationBuilder,
                                 position,
                                 triggerTypedChar,

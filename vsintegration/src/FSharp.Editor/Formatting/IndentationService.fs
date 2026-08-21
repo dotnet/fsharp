@@ -36,6 +36,7 @@ type internal FSharpIndentationService [<ImportingConstructor>] () =
                     filePath,
                     defines,
                     Some parsingOptions.LangVersionText,
+                    parsingOptions.StrictIndentation,
                     CancellationToken.None
                 )
 

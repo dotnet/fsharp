@@ -308,9 +308,6 @@ val mkSynBinding:
         trivia: SynBindingTrivia ->
             SynBinding
 
-val mkSynLetBangBinding:
-    mKeyword: range -> headPat: SynPat -> rhs: SynExpr -> debugPoint: DebugPointAtBinding -> mBind: range -> SynBinding
-
 val NonVirtualMemberFlags: k: SynMemberKind -> SynMemberFlags
 
 val CtorMemberFlags: SynMemberFlags

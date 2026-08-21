@@ -61,6 +61,7 @@ let main argv =
             Some(fileName),
             defines,
             None,
+            None,
             classifiedSpans,
             CancellationToken.None
         )

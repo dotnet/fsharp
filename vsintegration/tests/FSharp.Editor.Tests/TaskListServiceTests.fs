@@ -26,7 +26,7 @@ let assertTasks expectedTasks fileContents =
     let sourceText = doc.GetTextAsync().Result
 
     let t =
-        service.GetTaskListItems(doc, sourceText, [], (Some "preview"), descriptors, ct)
+        service.GetTaskListItems(doc, sourceText, [], (Some "preview"), None, descriptors, ct)
 
     let tasks = t |> Seq.map (fun t -> t.Message) |> List.ofSeq
     Assert.Equal<string list>(expectedTasks |> List.sort, tasks |> List.sort)

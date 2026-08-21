@@ -7,6 +7,9 @@ open FSharp.Compiler.Syntax
 open FSharp.Compiler.Text
 open FSharp.Compiler.TypedTree
 
+val GroupUpdatesToNestedFields:
+    fields: ((Ident list * Ident) * SynExpr option) list -> ((Ident list * Ident) * SynExpr option) list
+
 val TransformAstForNestedUpdates<'a> :
     cenv: TcFileState ->
     env: TcEnv ->
@@ -14,13 +17,11 @@ val TransformAstForNestedUpdates<'a> :
     lid: LongIdent ->
     exprBeingAssigned: SynExpr ->
     withExpr: SynExpr * (range * 'a) ->
-        (Ident list * Ident) * SynExpr
+        (Ident list * Ident) * SynExpr option
 
 val BindIdText: string
 
-val inline (|IsSimpleOrBoundExpr|_|): withExpr: SynExpr -> bool
+val inline (|IsSimpleOrBoundExpr|_|): withExprOpt: (SynExpr * BlockSeparator) option -> bool
 
 val BindOriginalRecdExpr:
     withExpr: SynExpr * BlockSeparator -> mkRecdExpr: ((SynExpr * BlockSeparator) option -> SynExpr) -> SynExpr
-
-val bindSrcIn: spreadSrcExpr: SynExpr -> ((SynExpr -> SynExpr) -> SynExpr)
