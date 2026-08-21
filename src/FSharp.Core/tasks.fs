@@ -802,9 +802,9 @@ module Task =
             |> invalidArg (nameof maxDegreeOfParallelism)
 
         task {
-            let sem = new SemaphoreSlim(maxDegreeOfParallelism, maxDegreeOfParallelism)
+            use sem = new SemaphoreSlim(maxDegreeOfParallelism, maxDegreeOfParallelism)
 
-            let allTask =
+            return!
                 Task.WhenAll
                     [|
                         for f in computations ->
@@ -817,16 +817,6 @@ module Task =
                                     sem.Release() |> Operators.ignore
                             }
                     |]
-
-            allTask.ContinueWith(
-                (fun (_: Task<'T[]>) -> sem.Dispose()),
-                CancellationToken.None,
-                TaskContinuationOptions.ExecuteSynchronously,
-                TaskScheduler.Default
-            )
-            |> Operators.ignore
-
-            return! allTask
         }
 
     [<CompiledName("ParallelDoLimit")>]
