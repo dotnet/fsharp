@@ -12,7 +12,6 @@ module MyModule =
     let test(x: int) = ()
 
 // Running in parallel is unstable with occasional System.IO.FileLoadException: Could not load file or assembly 'FSI-ASSEMBLY...
-[<RunTestCasesInSequence>]
 module FsiTests =
 
     let createFsiSession (useOneDynamicAssembly: bool) =

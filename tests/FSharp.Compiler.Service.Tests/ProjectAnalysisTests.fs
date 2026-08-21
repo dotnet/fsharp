@@ -3719,7 +3719,7 @@ let _ = MyType().DoNothing()
              { checker.GetProjectOptionsFromCommandLineArgs(projFileName, args) with SourceFiles = fileNames })
 
 // Uses TestTP (built locally) — no NuGet needed, deterministic.
-[<Fact; RunTestCasesInSequence>]
+[<Fact>]
 let ``Test Project25 whole project errors`` () =
     let wholeProjectResults = Project25.checker.ParseAndCheckProject(Project25.options.Value) |> Async.RunSynchronouslyImmediate
 
@@ -3728,7 +3728,7 @@ let ``Test Project25 whole project errors`` () =
 
     wholeProjectResults.Diagnostics.Length |> shouldEqual 0
 
-[<Fact; RunTestCasesInSequence>]
+[<Fact>]
 let ``Test Project25 symbol uses of type-provided members`` () =
     let wholeProjectResults = Project25.checker.ParseAndCheckProject(Project25.options.Value) |> Async.RunSynchronouslyImmediate
 
@@ -3787,7 +3787,7 @@ let ``Test Project25 symbol uses of type-provided members`` () =
         [| ("file1", ((5, 8), (5, 21))) // line 5: T().DoNothing
            ("file1", ((10, 8), (10, 26))) |] // line 10: MyType().DoNothing
 
-[<Fact; RunTestCasesInSequence>]
+[<Fact>]
 let ``GetDeclarationLocation on a provided-ctor without DefinitionLocationAttribute returns DeclFound (regression #5538)`` () =
     let wholeProjectResults =
         Project25.checker.ParseAndCheckProject(Project25.options.Value)
@@ -3828,7 +3828,7 @@ let ``GetDeclarationLocation on a provided-ctor without DefinitionLocationAttrib
     | FindDeclResult.ExternalDecl _ ->
         failwith "expected DeclFound for provided-ctor `T()`, got ExternalDecl"
 
-[<Fact; RunTestCasesInSequence>]
+[<Fact>]
 let ``GetDeclarationLocation on a provided-ctor invoked through the original provided name returns DeclFound (regression #5538)`` () =
     let wholeProjectResults =
         Project25.checker.ParseAndCheckProject(Project25.options.Value)
@@ -3865,7 +3865,7 @@ let ``GetDeclarationLocation on a provided-ctor invoked through the original pro
     | FindDeclResult.ExternalDecl _ ->
         failwith "expected DeclFound for provided-ctor `MyType()`, got ExternalDecl"
 
-[<Fact; RunTestCasesInSequence>]
+[<Fact>]
 let ``Test Project25 symbol uses of type-provided types`` () =
     let wholeProjectResults = Project25.checker.ParseAndCheckProject(Project25.options.Value) |> Async.RunSynchronouslyImmediate
 
@@ -3888,7 +3888,7 @@ let ``Test Project25 symbol uses of type-provided types`` () =
            ("file1", ((5, 8), (5, 9))) // line 5: let _ = >T<()  (T resolves to MyType)
            ("file1", ((10, 8), (10, 14))) |] // line 10: let _ = >MyType<()
 
-[<Fact; RunTestCasesInSequence>]
+[<Fact>]
 let ``Test Project25 symbol uses of fully-qualified records`` () =
     let wholeProjectResults = Project25.checker.ParseAndCheckProject(Project25.options.Value) |> Async.RunSynchronouslyImmediate
 
@@ -5467,7 +5467,7 @@ let x = (1 = 3.0)
     let args = mkProjectCommandLineArgs (dllName, [])
     let options = { checker.GetProjectOptionsFromCommandLineArgs (projFileName, args) with SourceFiles = fileNames }
 
-[<Fact; RunTestCasesInSequence>]
+[<Fact>]
 let ``Test diagnostics with line directives active`` () =
 
     let wholeProjectResults = checker.ParseAndCheckProject(ProjectLineDirectives.options) |> Async.RunSynchronouslyImmediate
@@ -5485,7 +5485,7 @@ let ``Test diagnostics with line directives active`` () =
         let m = e.Range in m.StartLine, m.EndLine, m.FileName ]
     |> shouldEqual [10, 10, "Test.fsy"]
 
-[<Fact; RunTestCasesInSequence>]
+[<Fact>]
 let ``Test diagnostics with line directives ignored`` () =
 
     // If you pass hidden IDE flag --ignorelinedirectives, the diagnostics are reported w.r.t. the source

@@ -28,8 +28,3 @@ module XUnitSetup =
 /// see https://github.com/xunit/xunit/issues/1999#issuecomment-522635397
 [<CollectionDefinition(nameof NotThreadSafeResourceCollection, DisableParallelization = true)>]
 type NotThreadSafeResourceCollection() = class end
-
-/// Mark test cases as not safe to run in parallel with other test cases of the same test collection.
-/// In case Xunit 3 enables internal parallelization of test collections.
-[<AttributeUsage(AttributeTargets.Class ||| AttributeTargets.Method, AllowMultiple = false)>]
-type RunTestCasesInSequenceAttribute() = inherit Attribute()

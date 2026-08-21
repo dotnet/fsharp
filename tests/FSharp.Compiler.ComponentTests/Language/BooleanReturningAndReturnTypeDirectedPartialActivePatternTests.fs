@@ -1,7 +1,7 @@
 ﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-// Because of shared fsi session.
-[<FSharp.Test.RunTestCasesInSequence>]
+// NOTE tests within this module utilize long-lived local state (caching a fsi session)
+// and hence rely on the assumption that individual Xunit tests within a given module are never run concurrently
 module Language.BooleanReturningAndReturnTypeDirectedPartialActivePatternTests
 
 open Xunit

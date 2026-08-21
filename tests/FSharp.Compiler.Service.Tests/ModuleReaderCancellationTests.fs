@@ -1,5 +1,4 @@
-// Sequential execution because of shared mutable state.
-[<FSharp.Test.RunTestCasesInSequence>]
+// NOTE These tests utilize mutable long-lived state/caching and hence rely on the assumption that individual Xunit tests within a given module are never run concurrently
 module FSharp.Compiler.Service.Tests.ModuleReaderCancellationTests
 
 open System

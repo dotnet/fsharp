@@ -1,4 +1,3 @@
-[<FSharp.Test.RunTestCasesInSequence>]
 module FSharp.Compiler.Service.Tests.ScriptDiagnosticsTests
 
 open System
