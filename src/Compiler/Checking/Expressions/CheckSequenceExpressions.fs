@@ -7,7 +7,6 @@ open FSharp.Compiler.CheckBasics
 open FSharp.Compiler.CheckExpressions
 open FSharp.Compiler.CheckExpressionsOps
 open FSharp.Compiler.ConstraintSolver
-open FSharp.Compiler.Features
 open FSharp.Compiler.NameResolution
 open FSharp.Compiler.PatternMatchCompilation
 open FSharp.Compiler.Syntax
