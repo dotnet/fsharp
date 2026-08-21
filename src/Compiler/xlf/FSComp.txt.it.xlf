@@ -1322,9 +1322,19 @@
         <target state="new">The type '{0}' is a subtype of '{1}' and will be ignored</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcAnonUnionMultipleNullCases">
+        <source>An anonymous union may only contain a single 'null' case.</source>
+        <target state="new">An anonymous union may only contain a single 'null' case.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcAnonUnionNullMustBeTrailing">
         <source>'null' may only appear as the last case of an outermost anonymous union, e.g. '(int | string | null)'.</source>
         <target state="new">'null' may only appear as the last case of an outermost anonymous union, e.g. '(int | string | null)'.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcAnonUnionNullNotAllowed">
+        <source>'null' cannot be applied to a standalone anonymous union {0}. Add 'null' as the last case of the outer union instead, e.g. '(int|string|null)'.</source>
+        <target state="new">'null' cannot be applied to a standalone anonymous union {0}. Add 'null' as the last case of the outer union instead, e.g. '(int|string|null)'.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcAnonUnionNullRequiresReferenceAncestor">

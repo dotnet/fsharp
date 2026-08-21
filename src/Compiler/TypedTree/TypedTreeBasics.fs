@@ -261,14 +261,13 @@ let inline (|CombinedNullness|_|) (nullnessNew: Nullness) (nullnessOrig: Nullnes
     let nullnessAfter = combineNullness nullnessOrig nullnessNew
     if nullnessEquiv nullnessAfter nullnessOrig then ValueNone else ValueSome nullnessAfter
 
-<<<<<<< HEAD
 let tryAddNullnessToTy nullnessNew (ty:TType) =
     let inline (|NullnessWouldChangeTo|_|) orig = (|CombinedNullness|_|) nullnessNew orig
     match ty with
     | TType_var (tp, NullnessWouldChangeTo after) -> Some (TType_var (tp, after))
     | TType_app (tcr, tinst, NullnessWouldChangeTo after) -> Some (TType_app (tcr, tinst, after))
     | TType_fun (d, r, NullnessWouldChangeTo after) -> Some (TType_fun (d, r, after))
-    | TType_anon_union _ -> None
+    | TType_anon_union (info, tys, NullnessWouldChangeTo after) -> Some (TType_anon_union (info, tys, after))
     | TType_var _
     | TType_app _
     | TType_fun _ -> Some ty
@@ -276,10 +275,7 @@ let tryAddNullnessToTy nullnessNew (ty:TType) =
     | TType_tuple _
     | TType_anon _
     | TType_forall _
-=======
-    | TType_anon_union _ -> None
     | TType_forall _ -> None
->>>>>>> f24b042b9 (Change naming of anonymous union type)
     | TType_measure _ -> None
 
 /// Matches a `TyconRef` whose definition is a struct/enum value type (which never carries outer nullness).
@@ -297,6 +293,7 @@ let addNullnessToTy (nullness: Nullness) (ty:TType) =
     | TType_app (StructTyconRef, _, _) -> ty
     | TType_app (tcr, tinst, NullnessWouldChangeTo after) -> TType_app (tcr, tinst, after)
     | TType_fun (d, r, NullnessWouldChangeTo after) -> TType_fun (d, r, after)
+    | TType_anon_union (info, tys, NullnessWouldChangeTo after) -> TType_anon_union (info, tys, after)
     | _ -> ty
 
 let rec stripTyparEqnsAux nullness0 canShortcut ty =
@@ -335,6 +332,7 @@ let replaceNullnessOfTy nullness (ty:TType) =
     | TType_var (tp, _) -> TType_var (tp, nullness)
     | TType_app (tcr, tinst, _) -> TType_app (tcr, tinst, nullness)
     | TType_fun (d, r, _) -> TType_fun (d, r, nullness)
+    | TType_anon_union (info, tys, _) -> TType_anon_union (info, tys, nullness)
     | sty -> sty
 
 /// Detect a use of a nominal type, including type abbreviations.

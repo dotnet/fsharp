@@ -150,6 +150,22 @@ module AnonymousUnionTypes =
         |> verifyCompileAndRun
         |> shouldSucceed
 
+    [<Theory; FileInlineData("AnonWithNullChain.fs")>]
+    let ``WithNullChain_fs`` compilation =
+        compilation
+        |> getCompilation
+        |> withLangVersionPreview
+        |> verifyCompileAndRun
+        |> shouldSucceed
+
+    [<Theory; FileInlineData("AnonWithNullHoist.fs")>]
+    let ``WithNullHoist_fs`` compilation =
+        compilation
+        |> getCompilation
+        |> withLangVersionPreview
+        |> verifyCompileAndRun
+        |> shouldSucceed
+
     [<Theory; FileInlineData("AnonBarLexing.fs")>]
     let ``BarLexing_fs`` compilation =
         compilation
@@ -192,8 +208,8 @@ module AnonymousUnionTypes =
             (Error 193, Line 7, Col 17, Line 7, Col 19, "The type 'List<'a>' is ambiguous with respect to the anonymous union type '(int list | string list)' - multiple union cases match")
         ]
 
-    [<Theory; FileInlineData("E_AnonSystemNullable.fs")>]
-    let ``E_SystemNullable_fs`` compilation =
+    [<Theory; FileInlineData("E_AnonSystemNullable1.fs")>]
+    let ``E_SystemNullable1_fs`` compilation =
         compilation
         |> getCompilation
         |> withLangVersionPreview
@@ -201,6 +217,17 @@ module AnonymousUnionTypes =
         |> shouldFail
         |> withDiagnostics [
             (Error 4501, Line 4, Col 8, Line 4, Col 37, "The type System.Nullable<'T> is not allowed in an anonymous union type. Consider adding null case instead.")
+        ]
+
+    [<Theory; FileInlineData("E_AnonSystemNullable2.fs")>]
+    let ``E_SystemNullable2_fs`` compilation =
+        compilation
+        |> getCompilation
+        |> withLangVersionPreview
+        |> verifyCompile
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 4501, Line 4, Col 15, Line 4, Col 44, "The type System.Nullable<'T> is not allowed in an anonymous union type. Consider adding null case instead.")
         ]
 
     [<Theory; FileInlineData("E_AnonWithNullPosition1.fs")>]
@@ -211,7 +238,7 @@ module AnonymousUnionTypes =
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
-            (Error 3260, Line 4, Col 9, Line 4, Col 26, "The type '(int | string)' does not support a nullness qualification.")
+            (Error 3260, Line 4, Col 9, Line 4, Col 26, "'null' cannot be applied to a standalone anonymous union (int | string). Add 'null' as the last case of the outer union instead, e.g. '(int|string|null)'.")
         ]
 
     [<Theory; FileInlineData("E_AnonWithNullPosition2.fs")>]
@@ -234,7 +261,7 @@ module AnonymousUnionTypes =
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
-            (Error 4502, Line 4, Col 9, Line 4, Col 20, "'null' may only appear as the last case of an outermost anonymous union, e.g. '(int | string | null)'.")
+            (Error 4502, Line 4, Col 8, Line 4, Col 25, "'null' may only appear as the last case of an outermost anonymous union, e.g. '(int | string | null)'.")
         ]
 
     [<Theory; FileInlineData("E_AnonWithNullPosition4.fs")>]
@@ -246,6 +273,17 @@ module AnonymousUnionTypes =
         |> shouldFail
         |> withDiagnostics [
             (Error 618, Line 4, Col 9, Line 4, Col 13, "Invalid literal in type")
+        ]
+
+    [<Theory; FileInlineData("E_AnonWithNullPosition5.fs")>]
+    let ``E_WithNullPosition5_fs`` compilation =
+        compilation
+        |> getCompilation
+        |> withLangVersionPreview
+        |> verifyCompile
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 3260, Line 5, Col 9, Line 5, Col 15, "'null' cannot be applied to a standalone anonymous union X. Add 'null' as the last case of the outer union instead, e.g. '(int|string|null)'.")
         ]
 
     [<Theory; FileInlineData("E_AnonWithNullRefTypeAncestor.fs")>]
@@ -278,9 +316,7 @@ module AnonymousUnionTypes =
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
-            (Error 4502, Line 4, Col 13, Line 4, Col 38, "'null' may only appear as the last case of an outermost anonymous union, e.g. '(int | string | null)'.");
-            (Warning 4500, Line 4, Col 8, Line 4, Col 45, "The type 'int' is a subtype of 'obj' and will be ignored");
-            (Warning 4500, Line 4, Col 8, Line 4, Col 45, "The type 'int16' is a subtype of 'obj' and will be ignored")
+            (Error 4502, Line 4, Col 8, Line 4, Col 45, "'null' may only appear as the last case of an outermost anonymous union, e.g. '(int | string | null)'.")
         ]
 
     [<Theory; FileInlineData("W_AnonPatternMatching.fs")>]

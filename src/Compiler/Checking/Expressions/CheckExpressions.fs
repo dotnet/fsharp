@@ -1016,6 +1016,10 @@ let TcAddNullnessToType (warn: bool) (cenv: cenv) (env: TcEnv) nullness innerTyC
             let tyText = NicePrint.minimalRichTextOfType env.DisplayEnv innerTyC
             errorR(Error(FSComp.SR.tcTypeDoesNotHaveAnyNull(tyText), m))
 
+        if isAnonUnionTy g innerTyC then
+            let tyText = NicePrint.minimalRichTextOfType env.DisplayEnv innerTyC
+            errorR(Error(FSComp.SR.tcAnonUnionNullNotAllowed(tyText), m))
+
         match tryAddNullnessToTy nullness innerTyC with
 
         | None ->
@@ -4974,13 +4978,14 @@ and TcAnonUnionTypeOr (cenv: cenv) env (tpenv: UnscopedTyparEnv) synCases m =
     // Helper method for eliminating duplicate types from lists of types that form a union type,
     // create a disjoint set of cases
     // taking into account that a subtype is a "duplicate" of its supertype.
-    let rec addToCases (pt: TType) (list: ResizeArray<TType>) =
+    let rec addToCases (pt: TType) (list: ResizeArray<TType>) (hasNullCase: bool ref) =
+        if (nullnessOfTy g pt).Evaluate() = NullnessInfo.WithNull then
+            // hoist nullness
+            hasNullCase := true
+        
         if isNullableTy g pt then
             // Error: System.Nullable cannot be a case of anon union
             error(Error(FSComp.SR.tcNullableNotAllowedInAnonymousUnion(), m))
-        elif (nullnessOfTy g pt).Evaluate() = NullnessInfo.WithNull then
-            // Error: Single case cannot be nullable
-            error(Error(FSComp.SR.tcAnonUnionNullMustBeTrailing(), m))
         elif not (Seq.exists (isObjTyAnyNullness g) list) then
             if isObjTyAnyNullness g pt then
                 // Warning: all existing types are subtypes of obj and will be ignored
@@ -4993,7 +4998,7 @@ and TcAnonUnionTypeOr (cenv: cenv) env (tpenv: UnscopedTyparEnv) synCases m =
             elif isAnonUnionTy g pt then
                 let otherUnsortedCases = tryUnsortedAnonUnionTyCases g pt |> ValueOption.defaultValue []
                 for otherCase in otherUnsortedCases
-                    do addToCases otherCase list
+                    do addToCases otherCase list hasNullCase
             else
                 let mutable shouldAdd = true
                 let mutable i = 0
@@ -5020,26 +5025,40 @@ and TcAnonUnionTypeOr (cenv: cenv) env (tpenv: UnscopedTyparEnv) synCases m =
                 NicePrint.stringOfTy env.DisplayEnv pt,
                 NicePrint.stringOfTy env.DisplayEnv cenv.g.obj_ty_noNulls), m))
 
+    let rec containsNestedWithNull ty =
+        match ty with
+        | SynType.Paren(inner, _) -> containsNestedWithNull inner
+        | SynType.WithNull _ -> true
+        | SynType.AnonUnion(cases, _) ->
+            cases |> List.exists (fun (SynAnonUnionCase(typ = caseTy)) -> containsNestedWithNull caseTy)
+        | _ -> false
+
     let createDisjointTypes synAnonUnionCases =
         let unionTypeCases = ResizeArray()
-        let mutable hasNullCase = false
+        let hasNullCase = ref false
         let n = List.length synAnonUnionCases
 
         synAnonUnionCases
         |> List.iteri (fun i case ->
             match case with
-            | SynAnonUnionCase (SynType.WithNull(innerTy, _, mWithNull, _), _, _) ->
+            | SynAnonUnionCase (SynType.WithNull(innerTy, _, _, _), _, _) ->
                 if i <> n - 1 then
                     // Error: "null" appearing anywhere but as the trailing case
-                    error(Error(FSComp.SR.tcAnonUnionNullMustBeTrailing(), mWithNull))
-                hasNullCase <- true
+                    error(Error(FSComp.SR.tcAnonUnionNullMustBeTrailing(), m))
+                hasNullCase := true
+                if containsNestedWithNull innerTy then
+                    // Error: "null" appearing nested in a single case
+                    error(Error(FSComp.SR.tcAnonUnionNullMustBeTrailing(), m))
                 let tyR, _ = TcTypeAndRecover cenv NoNewTypars CheckCxs ItemOccurrence.UseInType WarnOnIWSAM.Yes env tpenv innerTy
-                addToCases tyR unionTypeCases
+                addToCases tyR unionTypeCases hasNullCase
             | SynAnonUnionCase (ty, _, _) ->
+                if containsNestedWithNull ty then
+                    // Error: "null" appearing nested in a single case
+                    error(Error(FSComp.SR.tcAnonUnionNullMustBeTrailing(), m))
                 let tyR, _ = TcTypeAndRecover cenv NoNewTypars CheckCxs ItemOccurrence.UseInType WarnOnIWSAM.Yes env tpenv ty
-                addToCases tyR unionTypeCases)
+                addToCases tyR unionTypeCases hasNullCase)
 
-        Seq.toList unionTypeCases, hasNullCase
+        Seq.toList unionTypeCases, hasNullCase.Value
 
     let disjointCases, hasNullCase = createDisjointTypes synCases
 
