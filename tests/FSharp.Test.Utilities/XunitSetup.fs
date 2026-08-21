@@ -31,6 +31,8 @@ type NotThreadSafeResourceCollection() = class end
 
 namespace Xunit
 
+#nowarn "1182" // the DisableParallelization properties are unused as these are shims waiting for us to move to xunit3 >= 4 
+
 // Shim to be deleted when xunit dependency updates to >= 4
 [<System.AttributeUsage(System.AttributeTargets.Class, AllowMultiple = false, Inherited = true)>]
 type TestClassAttribute(DisableParallelization: bool) =
