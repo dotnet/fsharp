@@ -10870,22 +10870,11 @@ and TcMethodApplication
 
     TcAdhocChecksOnLibraryMethods cenv env isInstance finalCalledMeth finalCalledMethInfo objArgs mMethExpr mItem
 
-    // FS-1095: enforce named-argument syntax for methods/constructors carrying RequireNamedArgumentAttribute
-    // (recognised by full type name, any provenance). Accessors and curried applications have no named-argument
-    // form, so the attribute is a no-op there rather than making the member uncallable. (Computation-expression
-    // custom operations similarly lack a named form but are intentionally not exempted - a niche preview limitation.)
-    if g.langVersion.SupportsFeature LanguageFeature.RequireNamedArgument
-       && finalCalledMeth.AssociatedPropertyInfo.IsNone
-       && finalCalledMeth.NumArgSets <= 1 then
-        let hasPositionalCallerArgs =
-            finalCalledMeth.ArgSets
-            |> List.exists (fun argSet -> argSet.NumUnnamedCallerArgs > 0 || not (List.isEmpty argSet.ParamArrayCallerArgs))
-        if hasPositionalCallerArgs &&
-           MethInfoHasAttributeByName mItem tname_RequireNamedArgumentAttribute finalCalledMethInfo then
-            let calledName =
-                if finalCalledMethInfo.IsConstructor then finalCalledMethInfo.ApparentEnclosingTyconRef.DisplayName
-                else finalCalledMethInfo.LogicalName
-            errorR(Error(FSComp.SR.tcMethodRequiresNamedArguments(RichText.mkMethod calledName), mMethExpr))
+    // FS-1095: reject positional calls to a method/constructor carrying RequireNamedArgumentAttribute.
+    if g.langVersion.SupportsFeature LanguageFeature.RequireNamedArgument then
+        finalCalledMeth.TryGetRequireNamedArgumentViolationName mMethExpr
+        |> Option.iter (fun calledName ->
+            errorR(Error(FSComp.SR.tcMethodRequiresNamedArguments(RichText.mkMethod calledName), mMethExpr)))
 
     // Indexer setters: when index args are named, the remaining unnamed args'
     // position values won't form a prefix (the 'value' arg has a non-zero j).

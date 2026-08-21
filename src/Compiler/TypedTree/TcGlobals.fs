@@ -169,8 +169,6 @@ let tname_AsyncCallback = "System.AsyncCallback"
 let tname_IAsyncResult = "System.IAsyncResult"
 [<Literal>]
 let tname_IsByRefLikeAttribute = "System.Runtime.CompilerServices.IsByRefLikeAttribute"
-[<Literal>]
-let tname_RequireNamedArgumentAttribute = "System.Runtime.CompilerServices.RequireNamedArgumentAttribute"
 
 
 //-------------------------------------------------------------------------

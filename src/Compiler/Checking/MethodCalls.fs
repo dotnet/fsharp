@@ -802,6 +802,18 @@ type CalledMeth<'T>
 
     member x.NumArgSets = x.ArgSets.Length
 
+    member x.TryGetRequireNamedArgumentViolationName(m: range) : string option =
+        if
+            MethInfoHasWellKnownAttribute g m WellKnownILAttributes.RequireNamedArgumentAttribute WellKnownValAttributes.RequireNamedArgumentAttribute ValueNone x.Method
+            && x.AssociatedPropertyInfo.IsNone
+            && x.NumArgSets <= 1
+            && (x.TotalNumUnnamedCallerArgs > 0 || (x.ParamArrayCallerArgs |> Option.exists (fun args -> not (isNil args))))
+        then
+            let minfo = x.Method
+            Some(if minfo.IsConstructor then minfo.ApparentEnclosingTyconRef.DisplayName else minfo.LogicalName)
+        else
+            None
+
     member x.HasOptionalArgs = not (isNil x.UnnamedCalledOptArgs)
 
     member x.HasOutArgs = not (isNil x.UnnamedCalledOutArgs)

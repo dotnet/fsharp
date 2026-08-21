@@ -62,9 +62,6 @@ val TryFindMethInfoStringAttribute:
 
 val MethInfoHasAttribute: g: TcGlobals -> m: range -> attribSpec: BuiltinAttribInfo -> minfo: MethInfo -> bool
 
-/// Check if a method has an attribute identified by its full compiled type name (name-based matching).
-val MethInfoHasAttributeByName: m: range -> attrFullName: string -> minfo: MethInfo -> bool
-
 [<Struct; NoEquality; NoComparison>]
 type WellKnownMethAttribute =
     { ILFlag: WellKnownILAttributes
@@ -76,7 +73,7 @@ val MethInfoHasWellKnownAttribute:
     m: range ->
     ilFlag: WellKnownILAttributes ->
     valFlag: WellKnownValAttributes ->
-    attribSpec: BuiltinAttribInfo ->
+    attribSpec: BuiltinAttribInfo voption ->
     minfo: MethInfo ->
         bool
 

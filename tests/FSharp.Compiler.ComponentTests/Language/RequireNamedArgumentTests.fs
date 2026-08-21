@@ -6,13 +6,9 @@ open Xunit
 open FSharp.Test
 open FSharp.Test.Compiler
 
-/// FS-1095: a method annotated with System.Runtime.CompilerServices.RequireNamedArgumentAttribute
-/// must be called using named-argument syntax. The attribute is recognised by full type name only
-/// (polyfill), so it is honoured whether it originates from the same compilation unit, a different
-/// assembly, or (mechanically identically to a referenced assembly) the runtime assembly.
+/// FS-1095: RequireNamedArgumentAttribute (recognised by full type name) forces named-argument call syntax.
 module RequireNamedArgumentTests =
 
-    // F# polyfill of the attribute, prepended to the same-compilation-unit sources below.
     let private fsPolyfill =
         """
 namespace System.Runtime.CompilerServices
@@ -24,12 +20,9 @@ type RequireNamedArgumentAttribute() =
     inherit Attribute()
 """
 
-    /// Build a single-compilation source that polyfills the attribute and then uses it.
     let private withPolyfill (extra: string) = FSharp(fsPolyfill + extra)
 
-    // A permissive polyfill that also targets constructors. The real Method-only BCL attribute
-    // warns when placed on a constructor, so a constructor scenario is only reachable through a
-    // user-defined polyfill that opts constructors in.
+    // Permissive polyfill that also targets constructors (the real Method-only BCL attribute warns there).
     let private withPolyfillCtor (extra: string) =
         FSharp("""
 namespace System.Runtime.CompilerServices
@@ -41,8 +34,6 @@ type RequireNamedArgumentAttribute() =
     inherit Attribute()
 """ + extra)
 
-    // A separately compiled F# assembly that polyfills the attribute and exposes an annotated method.
-    // Consuming it exercises the FSMeth by-name attribute scan for a *different assembly*.
     let private fsAnnotatedLib =
         withPolyfill """
 namespace AnnotatedLib
@@ -56,9 +47,6 @@ type Api =
         |> asLibrary
         |> withName "FsAnnotatedLib"
 
-    // A separately compiled C# assembly that polyfills the attribute and exposes an annotated method.
-    // Consuming it exercises the ILMeth by-name attribute scan - the same path the
-    // runtime-defined attribute would take once the BCL ships it.
     let private csAnnotatedLib =
         CSharp """
 using System;
@@ -85,9 +73,6 @@ namespace AnnotatedLib
         |> asLibrary
         |> withName "CsAnnotatedLib"
 
-    // A separately compiled C# assembly whose annotated method carries a *different* attribute that merely
-    // shares the simple name RequireNamedArgumentAttribute but lives in another namespace. Recognition is by
-    // full type name, so this must NOT be treated as the well-known attribute.
     let private csWrongNamespaceLib =
         CSharp """
 using System;
@@ -110,9 +95,6 @@ namespace AnnotatedLib
         |> asLibrary
         |> withName "CsWrongNamespaceLib"
 
-    // A separately compiled C# assembly exposing a C#-style extension method annotated with the attribute.
-    // Consuming it as value.Ext(...) exercises the ILMeth path for an extension member whose receiver is the
-    // implicit 'this' argument (which must not itself be treated as a positional caller argument).
     let private csExtensionLib =
         CSharp """
 using System;
@@ -185,8 +167,6 @@ module Use =
 
     [<Fact>]
     let ``Zero-argument annotated method - unnamed call is allowed`` () =
-        // Regression guard: a call with no positional arguments must not be flagged, even when the
-        // method carries the attribute (the classic 'M()' false positive to avoid).
         withPolyfill """
 namespace Test
 
@@ -260,7 +240,6 @@ let r = Api.Add(x = 1, y = 2)
 
     [<Fact>]
     let ``Feature is off under non-preview langversion`` () =
-        // The enforcement is language-version gated: under 9.0 a positional call must still succeed.
         withPolyfill """
 namespace Test
 
@@ -341,7 +320,6 @@ module Use =
 
     [<Fact>]
     let ``Mixed named and positional call is an error`` () =
-        // A single positional argument alongside a named one must still be rejected.
         withPolyfill """
 namespace Test
 
@@ -362,7 +340,6 @@ module Use =
 
     [<Fact>]
     let ``Same-named attribute in a different F# namespace is not recognised`` () =
-        // Recognition is by full type name: an attribute that only shares the simple name must be ignored.
         FSharp """
 namespace MyApp
 
@@ -403,8 +380,6 @@ let r = WrongApi.Add(1, 2)
 
     [<Fact>]
     let ``ParamArray positional arguments are an error`` () =
-        // Regression guard for the ParamArray hole: when every positional caller argument is captured by a
-        // ParamArray the unnamed-arg count is zero, so enforcement must also inspect ParamArrayCallerArgs.
         withPolyfill """
 namespace Test
 
@@ -446,7 +421,6 @@ module Use =
 
     [<Fact>]
     let ``Overload resolution - positional call binds the unannotated overload and succeeds`` () =
-        // Enforcement happens after overload selection: the int overload is not annotated.
         withPolyfill """
 namespace Test
 
@@ -564,8 +538,6 @@ let r = (1).AddTo(y = 2)
 
     [<Fact>]
     let ``First-class use of an annotated method is an error`` () =
-        // Taking the method as a first-class value would bypass the named-argument requirement, so the
-        // synthesized application must still be rejected. This locks the behaviour as intentional.
         withPolyfill """
 namespace Test
 
@@ -586,7 +558,6 @@ module Use =
 
     [<Fact>]
     let ``Explicit lambda forwarding with named arguments succeeds`` () =
-        // The supported way to obtain a function value is to forward through named arguments explicitly.
         withPolyfill """
 namespace Test
 
@@ -606,8 +577,6 @@ module Use =
 
     [<Fact>]
     let ``Indexer getter with the attribute on its accessor is not enforced`` () =
-        // Indexer access 'c.[i]' has no named-argument form, so the attribute is a no-op there
-        // rather than making the indexer uncallable.
         withPolyfill """
 namespace Test
 open System.Runtime.CompilerServices
@@ -658,8 +627,6 @@ module Use =
 
     [<Fact>]
     let ``Curried member is not enforced because it has no named-argument form`` () =
-        // A curried member cannot be called with named-argument syntax at all, so enforcing the
-        // attribute would make it uncallable. The attribute is therefore a no-op on curried members.
         withPolyfill """
 namespace Test
 open System.Runtime.CompilerServices
@@ -708,8 +675,6 @@ module Use =
 
     [<FactForNETCOREAPP>]
     let ``C# extension method with ParamArray - positional call is an error`` () =
-        // The ParamArray-expanded caller args must be recognised as positional (they land in
-        // ParamArrayCallerArgs, not NumUnnamedCallerArgs), and the extension receiver must not count.
         FSharp """
 module Test
 open AnnotatedLib
@@ -737,7 +702,6 @@ let r = (1).SumTo(rest = [| 2; 3 |])
 
     [<FactForNETCOREAPP>]
     let ``C# method with an optional parameter - positional call is an error`` () =
-        // The single positional caller arg (x) must trigger enforcement even though 'factor' is optional.
         FSharp """
 module Test
 open AnnotatedLib
@@ -796,10 +760,6 @@ module Use =
         |> shouldSucceed
         |> ignore
 
-    // A separately compiled C# assembly exposing the attribute on an interface slot and on a class
-    // that implements it (the attribute is not Inherited, so the implementing method carries its own).
-    // Consuming it exercises the virtual/interface-slot MethInfo resolution path, distinct from a
-    // plain static or instance method.
     let private csInterfaceLib =
         CSharp """
 using System;
@@ -829,9 +789,6 @@ namespace AnnotatedLib
         |> asLibrary
         |> withName "CsInterfaceLib"
 
-    // A separately compiled C# assembly exposing the attribute on a value-type (struct) constructor.
-    // Consuming it exercises the imported value-type constructor path, which differs from the
-    // synthesized default struct constructor.
     let private csStructCtorLib =
         CSharp """
 using System;
@@ -898,9 +855,6 @@ let call (c: AnnotatedLib.FooImpl) = c.ViaSlot(1, 2)
 
     [<FactForNETCOREAPP>]
     let ``C# struct constructor - positional call is an error`` () =
-        // An imported (ILMeth) constructor's LogicalName is '.ctor'; the diagnostic must instead
-        // name the enclosing type 'S'. This is the path that exercises the constructor-name fix
-        // (an F# primary constructor already reports the type name, so it does not).
         FSharp """
 module Test
 let s = AnnotatedLib.S(1, 2)
@@ -927,9 +881,6 @@ let s = AnnotatedLib.S(x = 1, y = 2)
 
     [<Fact>]
     let ``Method group coerced to a delegate cannot smuggle a positional call`` () =
-        // A method-group-to-delegate conversion routes through method application, so enforcement
-        // must still fire - otherwise it would be a positional-call bypass. There is no named form
-        // for this coercion, so an annotated method simply cannot be used this way.
         withPolyfill """
 namespace Test
 open System.Runtime.CompilerServices
@@ -947,9 +898,6 @@ module Use =
 
     [<FactForNETCOREAPP>]
     let ``Local F# method annotated with an attribute imported from a referenced assembly is enforced`` () =
-        // Decouples attribute provenance from method declaration site: the annotated METHOD is local F#
-        // (same compilation unit) while the ATTRIBUTE TYPE is imported from a different (C#) assembly.
-        // This is the canonical scenario once the BCL ships the attribute and you annotate your own method.
         FSharp """
 module Test
 open System.Runtime.CompilerServices

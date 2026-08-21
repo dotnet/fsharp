@@ -235,21 +235,6 @@ let MethInfoHasAttribute g m attribSpec minfo  =
                     (fun _ -> Some ())
         |> Option.isSome
 
-/// Check if a method has an attribute identified by its full compiled type name.
-/// Uses name-based (not type-identity) matching, mirroring TyconRefHasAttributeByName (RFC FS-1053):
-/// user code can define its own copy of such an attribute, so it must be honoured wherever it is
-/// declared - the runtime assembly, the same compilation unit, or any other assembly.
-let MethInfoHasAttributeByName m (attrFullName: string) minfo =
-    BindMethInfoAttributes m minfo
-        (fun ilAttribs -> ilAttribs.AsArray() |> Array.exists (isILAttribByName ([], attrFullName)))
-        (fun fsAttribs ->
-            fsAttribs
-            |> List.exists (fun (Attrib(tcref, _, _, _, _, _, _)) ->
-                match tcref.CompiledRepresentation with
-                | CompiledTypeRepr.ILAsmNamed(ilTypeRef, _, _) -> ilTypeRef.Enclosing.IsEmpty && ilTypeRef.Name = attrFullName
-                | CompiledTypeRepr.ILAsmOpen _ -> false))
-        (fun _provAttribs -> false)
-
 /// Bundles the IL flag, Val flag, and AttribInfo for a well-known attribute
 /// that can appear on method infos across metadata kinds.
 [<Struct; NoEquality; NoComparison>]
@@ -258,9 +243,9 @@ type WellKnownMethAttribute =
       ValFlag: WellKnownValAttributes
       AttribInfo: BuiltinAttribInfo }
 
-/// Fast O(1) attribute check for ILMeth (cached IL flags) and FSMeth (cached Val flags).
-/// Falls back to MethInfoHasAttribute for provided methods.
-let rec MethInfoHasWellKnownAttribute g (m: range) (ilFlag: WellKnownILAttributes) (valFlag: WellKnownValAttributes) (attribSpec: BuiltinAttribInfo) (minfo: MethInfo) =
+/// O(1) cached-flag attribute check for ILMeth and FSMeth. Provided methods have no cached
+/// flags, so they fall back to a live scan when attribSpec is supplied, else return false.
+let rec MethInfoHasWellKnownAttribute g (m: range) (ilFlag: WellKnownILAttributes) (valFlag: WellKnownValAttributes) (attribSpec: BuiltinAttribInfo voption) (minfo: MethInfo) =
     match minfo with
     | ILMeth(_, ilMethInfo, _) -> ilMethInfo.RawMetadata.HasWellKnownAttribute(g, ilFlag)
     | FSMeth(_, _, vref, _) -> ValHasWellKnownAttribute g valFlag vref.Deref
@@ -268,12 +253,12 @@ let rec MethInfoHasWellKnownAttribute g (m: range) (ilFlag: WellKnownILAttribute
     | RecdCtor _ -> false
     | MethInfoWithModifiedReturnType(mi, _) -> MethInfoHasWellKnownAttribute g m ilFlag valFlag attribSpec mi
 #if !NO_TYPEPROVIDERS
-    | ProvidedMeth _ -> MethInfoHasAttribute g m attribSpec minfo
+    | ProvidedMeth _ -> attribSpec |> ValueOption.exists (fun spec -> MethInfoHasAttribute g m spec minfo)
 #endif
 
 /// Check if a MethInfo has a well-known attribute, using a bundled spec.
 let MethInfoHasWellKnownAttributeSpec (g: TcGlobals) (m: range) (spec: WellKnownMethAttribute) (minfo: MethInfo) =
-    MethInfoHasWellKnownAttribute g m spec.ILFlag spec.ValFlag spec.AttribInfo minfo
+    MethInfoHasWellKnownAttribute g m spec.ILFlag spec.ValFlag (ValueSome spec.AttribInfo) minfo
 
 let private reportObsoleteDiagnostic m diagnostic =
     match diagnostic with
