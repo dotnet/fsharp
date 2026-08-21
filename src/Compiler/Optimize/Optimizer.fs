@@ -663,7 +663,7 @@ let GetInfoForLocalValue cenv env (v: Val) m =
     match TryGetInfoForLocalValue cenv env v with
     | Some vval -> vval
     | None ->
-        if not v.IsDispatchSlot && v.ShouldInline then
+        if cenv.optimizing && not v.IsDispatchSlot && v.ShouldInline then
             errorR(Error(FSComp.SR.optValueMarkedInlineButWasNotBoundInTheOptEnv(richTextOfQualifiedValRef (mkLocalValRef v)), m))
         UnknownValInfo
 
@@ -3316,11 +3316,11 @@ and TryOptimizeVal cenv env (vOpt: ValRef option, shouldInline, inlineIfLambda, 
     | TupleValue _ | UnionCaseValue _ | RecdValue _ when shouldInline ->
         failwith "tuple, union and record values cannot be marked 'inline'"
 
-    | UnknownValue when shouldInline && cenv.settings.alwaysInline ->
+    | UnknownValue when shouldInline && cenv.settings.alwaysInline && cenv.optimizing ->
         warning(Error(FSComp.SR.optValueMarkedInlineHasUnexpectedValue(), m))
         None
 
-    | _ when shouldInline && cenv.settings.alwaysInline ->
+    | _ when shouldInline && cenv.settings.alwaysInline && cenv.optimizing ->
         warning(Error(FSComp.SR.optValueMarkedInlineCouldNotBeInlined(), m))
         None
 
@@ -3366,7 +3366,7 @@ and OptimizeVal cenv env expr (v: ValRef, m) =
            e, AddValEqualityInfo g m v einfo 
 
     | None ->
-       if cenv.settings.alwaysInline then
+       if cenv.optimizing && cenv.settings.alwaysInline then
            if v.ShouldInline then
                 match valInfoForVal.ValExprInfo with
                 | UnknownValue -> error(Error(FSComp.SR.optFailedToInlineValue(richTextOfValName g v.Deref), m))
@@ -4641,7 +4641,20 @@ and OptimizeBinding cenv isRec env (TBind(vref, expr, spBind)) =
         raise (ReportedError (Some exn))
           
 and OptimizeBindings cenv isRec env xs =
-    List.mapFold (OptimizeBinding cenv isRec) env xs
+    if isRec && xs |> List.exists (fun (TBind(vref, _, _)) -> vref.ShouldInline) then
+        let xsArray = xs |> List.toArray
+        let order = GetBindingOptimizationOrder cenv false true xs
+
+        let results, env =
+            (env, order)
+            ||> List.mapFold (fun env idx ->
+                let result, env = OptimizeBinding cenv isRec env xsArray[idx]
+                (idx, result), env)
+
+        let resultsByIndex = results |> Map.ofList
+        [ for idx in 0 .. xsArray.Length - 1 -> resultsByIndex[idx] ], env
+    else
+        List.mapFold (OptimizeBinding cenv isRec) env xs
     
 and OptimizeModuleExprWithSig cenv env mty def  = 
         let g = cenv.g
@@ -4731,11 +4744,102 @@ and OptimizeModuleExprWithSig cenv env mty def  =
 and mkValBind (bind: Binding) info =
     (mkLocalValRef bind.Var, info)
 
+and GetBindingOptimizationOrder cenv inlineDependenciesOnly preferLowArity (binds: Binding list) =
+    // Recursive binding groups are published to the optimizer incrementally as each binding is
+    // processed. If a caller is optimized before a later sibling it depends on, inline lookup can
+    // observe an incomplete optimization environment. Compute a dependency-first schedule for the
+    // recursive group, then restore source order after optimization.
+    let bindsArray = binds |> List.toArray
+
+    let bindIndexByStamp =
+        binds
+        |> List.mapi (fun idx bind -> bind.Var.Stamp, idx)
+        |> Map.ofList
+
+    let addDependency depIdxs stamp =
+        match bindIndexByStamp |> Map.tryFind stamp with
+        | Some depIdx when not inlineDependenciesOnly || bindsArray[depIdx].Var.ShouldInline ->
+            Set.add depIdx depIdxs
+        | None -> depIdxs
+        | Some _ -> depIdxs
+
+    let rec addBindingDependencies depIdxs expr =
+        cenv.stackGuard.Guard(fun () ->
+            let addVals depIdxs vals =
+                vals
+                |> Seq.fold (fun depIdxs (v: Val) -> addDependency depIdxs v.Stamp) depIdxs
+
+            let fvs = freeInExpr (CollectLocalsWithStackGuard()) expr
+
+            let depIdxs =
+                let depIdxs = addVals depIdxs (fvs.FreeLocals |> Zset.elements)
+                addVals depIdxs (fvs.FreeTyvars.FreeTraitSolutions |> Zset.elements)
+
+            let folder =
+                { ExprFolder0 with
+                    exprIntercept =
+                        (fun _exprF noInterceptF depIdxs expr ->
+                            let depIdxs =
+                                match expr with
+                                // Member-constraint calls can hide the real sibling dependency behind
+                                // a witness expression, so fold over the resolved witness as well.
+                                | Expr.Op(TOp.TraitCall traitInfo, _, args, m) ->
+                                    match ConstraintSolver.CodegenWitnessExprForTraitConstraint cenv.TcVal cenv.g cenv.amap m traitInfo args with
+                                    | OkResult (_, Some witnessExpr) -> addBindingDependencies depIdxs witnessExpr
+                                    | _ -> depIdxs
+                                | _ -> depIdxs
+
+                            noInterceptF depIdxs expr) }
+
+            FoldExpr folder depIdxs expr)
+
+    let dependencyIndexes =
+        binds
+        |> List.map (fun (TBind(_, expr, _)) ->
+            addBindingDependencies Set.empty expr |> Set.toArray)
+        |> List.toArray
+
+    let ordered = ResizeArray()
+    let visiting = HashSet<int>()
+    let visited = HashSet<int>()
+
+    let rec visit idx =
+        if not (visited.Contains idx) then
+            if not (visiting.Contains idx) then
+                visiting.Add idx |> ignore
+
+                cenv.stackGuard.Guard(fun () ->
+                    for depIdx in dependencyIndexes[idx] do
+                        if depIdx <> idx then
+                            visit depIdx)
+
+                visiting.Remove idx |> ignore
+                visited.Add idx |> ignore
+                ordered.Add idx
+
+    let rootOrder =
+        [ 0 .. binds.Length - 1 ]
+        |> (if preferLowArity then
+                List.sortBy (fun idx ->
+                    let arity =
+                        bindsArray[idx].Var.ValReprInfo
+                        |> Option.map (fun repr -> repr.TotalArgCount)
+                        |> Option.defaultValue 0
+
+                    arity, -idx)
+            else
+                id)
+
+    for idx in rootOrder do
+        visit idx
+
+    ordered |> Seq.toList
+
 and OptimizeModuleContents cenv (env, bindInfosColl) input = 
     match input with 
     | TMDefRec(isRec, opens, tycons, mbinds, m) -> 
         let env = if isRec then BindInternalValsToUnknown cenv (allValsOfModDef input) env else env
-        let mbindInfos, (env, bindInfosColl) = OptimizeModuleBindings cenv (env, bindInfosColl) mbinds
+        let mbindInfos, (env, bindInfosColl) = OptimizeModuleBindings cenv isRec (env, bindInfosColl) mbinds
         let mbinds, minfos = List.unzip mbindInfos
         let binds = minfos |> List.choose (function Choice1Of2 (x, _) -> Some x | _ -> None)
         let binfos = minfos |> List.choose (function Choice1Of2 (_, x) -> Some x | _ -> None)
@@ -4765,8 +4869,35 @@ and OptimizeModuleContents cenv (env, bindInfosColl) input =
         let (defs, info), (env, bindInfosColl) = OptimizeModuleDefs cenv (env, bindInfosColl) defs 
         (TMDefs defs, info), (env, bindInfosColl)
 
-and OptimizeModuleBindings cenv (env, bindInfosColl) xs =
-    List.mapFold (OptimizeModuleBinding cenv) (env, bindInfosColl) xs
+and OptimizeModuleBindings cenv isRec (env, bindInfosColl) xs =
+    let bindingGroup =
+        xs
+        |> List.map (function
+            | ModuleOrNamespaceBinding.Binding bind -> Some bind
+            | _ -> None)
+
+    let binds = bindingGroup |> List.choose id
+
+    if
+        isRec
+        && (bindingGroup |> List.forall Option.isSome)
+        && (binds |> List.exists (fun bind -> bind.Var.ShouldInline))
+    then
+        let xsArray = xs |> List.toArray
+        let preferLowArity = binds |> List.forall (fun bind -> bind.Var.IsMember)
+        let order = GetBindingOptimizationOrder cenv true preferLowArity binds
+
+        let results, (env, bindInfosColl) =
+            ((env, bindInfosColl), order)
+            ||> List.mapFold (fun state idx ->
+                let result, state = OptimizeModuleBinding cenv state xsArray[idx]
+                (idx, result), state)
+
+        let resultsByIndex = results |> Map.ofList
+        // Keep the emitted binding list in source order; only the optimization schedule changes.
+        [ for idx in 0 .. xsArray.Length - 1 -> resultsByIndex[idx] ], (env, bindInfosColl)
+    else
+        List.mapFold (OptimizeModuleBinding cenv) (env, bindInfosColl) xs
 
 and OptimizeModuleBinding cenv (env, bindInfosColl) x = 
     match x with
