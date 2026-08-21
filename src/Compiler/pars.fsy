@@ -5325,7 +5325,6 @@ atomicExpr:
   | UNDERSCORE DOT atomicExpr %prec dot_lambda
       { let mUnderscore  = rhs parseState 1
         let mDot  = rhs parseState 2
-        parseState.LexBuffer.CheckLanguageFeatureAndRecover LanguageFeature.AccessorFunctionShorthand (unionRanges mUnderscore  mDot )
         let expr, hpa = $3
         let trivia: SynExprDotLambdaTrivia = { UnderscoreRange = mUnderscore ; DotRange = mDot  }
         SynExpr.DotLambda(expr, unionRanges mUnderscore  expr.Range, trivia), false }
@@ -5335,7 +5334,6 @@ atomicExpr:
       { let mUnderscore = rhs parseState 1
         let mDot = rhs parseState 2
         let mWhole = unionRanges mUnderscore mDot
-        parseState.LexBuffer.CheckLanguageFeatureAndRecover LanguageFeature.AccessorFunctionShorthand mWhole
 
         let mExpr = mDot.EndRange
         if not $3 then reportParseErrorAt mDot (FSComp.SR.parsUnexpectedEndOfFileExpression())
