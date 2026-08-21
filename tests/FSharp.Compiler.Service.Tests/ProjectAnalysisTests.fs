@@ -574,7 +574,6 @@ let ``Test file explicit parse symbols`` () =
 
     let wholeProjectResults = checker.ParseAndCheckProject(Project1.options) |> Async.RunSynchronouslyImmediate
     let parseResults1 = checker.ParseFile(Project1.fileName1, Project1.fileSource1, Project1.parsingOptions)  |> Async.RunSynchronouslyImmediate
-
     let parseResults2 = checker.ParseFile(Project1.fileName2, Project1.fileSource2, Project1.parsingOptions)  |> Async.RunSynchronouslyImmediate
 
     let checkResults1 =
@@ -621,7 +620,6 @@ let ``Test file explicit parse all symbols`` () =
 
     let wholeProjectResults = checker.ParseAndCheckProject(Project1.options) |> Async.RunSynchronouslyImmediate
     let parseResults1 = checker.ParseFile(Project1.fileName1, Project1.fileSource1, Project1.parsingOptions) |> Async.RunSynchronouslyImmediate
-
     let parseResults2 = checker.ParseFile(Project1.fileName2, Project1.fileSource2, Project1.parsingOptions) |> Async.RunSynchronouslyImmediate
 
     let checkResults1 =
@@ -4884,7 +4882,6 @@ let ``Test project37 typeof and arrays in attribute constructor arguments`` () =
     let wholeProjectResults =
         checker.ParseAndCheckProject(Project37.options)
         |> Async.RunSynchronouslyImmediate
-
     let allSymbolsUses = wholeProjectResults.GetAllUsesOfAllSymbols()
     for su in allSymbolsUses do
         match su.Symbol with
@@ -4939,7 +4936,6 @@ let ``Test project37 DeclaringEntity`` () =
     let wholeProjectResults =
         checker.ParseAndCheckProject(Project37.options)
         |> Async.RunSynchronouslyImmediate
-
     let allSymbolsUses = wholeProjectResults.GetAllUsesOfAllSymbols()
     for sym in allSymbolsUses do
        match sym.Symbol with
@@ -5028,7 +5024,6 @@ let ``Test project38 abstract slot information`` () =
     let wholeProjectResults =
         checker.ParseAndCheckProject(Project38.options)
         |> Async.RunSynchronouslyImmediate
-
     let printAbstractSignature (s: FSharpAbstractSignature) =
         let printType (t: FSharpType) =
             hash t  |> ignore // smoke test to check hash code doesn't loop
@@ -5358,7 +5353,6 @@ let ``Test project42 to ensure cached checked results are invalidated`` () =
         FileSystem.OpenFileForWriteShim(Project42.fileName1).Write("""module File1""")
         try
             let checkedFile2Again = checker.ParseAndCheckFileInProject(Project42.fileName2, text2.GetHashCode(), text2, Project42.options) |> Async.RunSynchronouslyImmediate
-
             match checkedFile2Again with
             | _, FSharpCheckFileAnswer.Succeeded(checkedFile2AgainResults) ->
                 Assert.NotEmpty(checkedFile2AgainResults.Diagnostics) // this should contain errors as File1 does not contain the function `test()`
@@ -5900,7 +5894,6 @@ let checkContentAsScript content =
     let scriptFullPath = Path.Combine(tempDir, scriptName)
     let sourceText = SourceText.ofString content
     let projectOptions, _ = checker.GetProjectOptionsFromScript(scriptFullPath, sourceText, useSdkRefs = true, assumeDotNetFramework = false) |> Async.RunSynchronouslyImmediate
-
     let parseOptions, _ = checker.GetParsingOptionsFromProjectOptions projectOptions
     let parseResults = checker.ParseFile(scriptFullPath, sourceText, parseOptions) |> Async.RunSynchronouslyImmediate
     let checkResults = checker.CheckFileInProject(parseResults, scriptFullPath, 0, sourceText, projectOptions) |> Async.RunSynchronouslyImmediate

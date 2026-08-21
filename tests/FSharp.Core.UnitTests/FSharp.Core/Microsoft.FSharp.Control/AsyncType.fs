@@ -47,7 +47,7 @@ module Helpers =
         let completed = t.Wait(TimeSpan.FromSeconds 30.0)
         Assert.True(completed, "Task did not finish after waiting for 30 seconds.")
 
-    (* TEMP disabled Immediate re 20306
+    (* TEMP disabled Immediate re #20306
     let asyncWait immediate (a: Async<'T>): 'T =
         if immediate then Async.RunSynchronouslyImmediate a
         else Async.RunSynchronously a
