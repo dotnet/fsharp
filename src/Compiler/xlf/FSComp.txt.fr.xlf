@@ -492,11 +492,6 @@
         <target state="translated">Diagnostic 3559 (avertir lorsque obj déduit) au niveau informatif, désactivé par défaut</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureInitProperties">
-        <source>support for consuming init properties</source>
-        <target state="translated">prise en charge de la consommation des propriétés init</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureInterfacesWithAbstractStaticMembers">
         <source>static abstract interface members</source>
         <target state="translated">membres d’interface abstraite statiques</target>

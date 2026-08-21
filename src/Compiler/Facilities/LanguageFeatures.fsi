@@ -32,7 +32,6 @@ type LanguageFeature =
     | ReallyLongLists
     | ErrorOnDeprecatedRequireQualifiedAccess
     | RequiredPropertiesSupport
-    | InitPropertiesSupport
     | LowercaseDUWhenRequireQualifiedAccess
     | InterfacesWithAbstractStaticMembers
     | SelfTypeConstraints

@@ -492,11 +492,6 @@
         <target state="translated">Diagnostica 3559 (avviso in caso di oggetto dedotto) a livello informativo. Opzione disattivata per impostazione predefinita</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureInitProperties">
-        <source>support for consuming init properties</source>
-        <target state="translated">supporto per l'utilizzo delle proprietà init</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureInterfacesWithAbstractStaticMembers">
         <source>static abstract interface members</source>
         <target state="translated">membri dell'interfaccia astratta statica</target>
