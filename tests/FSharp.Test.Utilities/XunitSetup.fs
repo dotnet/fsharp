@@ -17,7 +17,14 @@ type FSharpTestAssemblyFixture() =
         log $"Server GC enabled: {Runtime.GCSettings.IsServerGC}"
         logConfig initialConfig
 
-/// Exclude from parallelization. Execute test cases in sequence and do not run any other collections at the same time.
+module XUnitSetup =
+
+    [<assembly: AssemblyFixture(typeof<FSharpTestAssemblyFixture>); CaptureConsole; CaptureTrace>]
+    do ()
+    
+/// Modules/Types included in this Collection (via `[<Collection(nameof NotThreadSafeResourceCollection>`)):
+/// 1. do not run concurrently with other tests or modules in the collection (typical behavior)
+/// 2. run entirely isolated from all other tests in a given test run (including ones not included in a Collection) due to `DisableParallelization = true`
 /// see https://github.com/xunit/xunit/issues/1999#issuecomment-522635397
 [<CollectionDefinition(nameof NotThreadSafeResourceCollection, DisableParallelization = true)>]
 type NotThreadSafeResourceCollection() = class end
@@ -26,8 +33,3 @@ type NotThreadSafeResourceCollection() = class end
 /// In case Xunit 3 enables internal parallelization of test collections.
 [<AttributeUsage(AttributeTargets.Class ||| AttributeTargets.Method, AllowMultiple = false)>]
 type RunTestCasesInSequenceAttribute() = inherit Attribute()
-
-module XUnitSetup =
-
-    [<assembly: AssemblyFixture(typeof<FSharpTestAssemblyFixture>); CaptureConsole; CaptureTrace>]
-    do ()
