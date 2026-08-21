@@ -8,6 +8,13 @@ open FSharp.Test.Compiler
 
 module AnonymousUnionTypes =
 
+    let verifyCompileAndRunNoOverlapWarning compilation =
+        compilation
+        |> withLangVersionPreview
+        |> asExe
+        |> withOptions ["--nowarn:988"; "--nowarn:4500"]
+        |> compileAndRun
+
     let verifyCompile compilation =
         compilation
         |> withLangVersionPreview
@@ -172,6 +179,14 @@ module AnonymousUnionTypes =
         |> getCompilation
         |> withLangVersionPreview
         |> verifyCompileAndRun
+        |> shouldSucceed
+
+    [<Theory; FileInlineData("AnonGenericAncestorRemap.fs")>]
+    let ``GenericAncestorRemap_fs`` compilation =
+        compilation
+        |> getCompilation
+        |> withLangVersionPreview
+        |> verifyCompileAndRunNoOverlapWarning
         |> shouldSucceed
 
     [<Theory; FileInlineData("E_AnonWildcard.fs")>]

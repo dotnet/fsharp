@@ -224,11 +224,17 @@ module internal TypeRemapping =
 
         | TType_anon_union(unionInfo, l, nullness) as ty ->
             let lR = remapTypesAux tyenv l
+            let commonAncestorTyR = remapTypeAux tyenv unionInfo.CommonAncestorTy
 
-            if lR === l then
+            if lR === l && commonAncestorTyR === unionInfo.CommonAncestorTy then
                 ty
             else
-                TType_anon_union(unionInfo, lR, nullness)
+                let unionInfoR =
+                    { unionInfo with
+                        CommonAncestorTy = commonAncestorTyR
+                    }
+
+                TType_anon_union(unionInfoR, lR, nullness)
 
         | TType_anon(anonInfo, l) as ty ->
             let tupInfoR = remapTupInfoAux tyenv anonInfo.TupInfo
