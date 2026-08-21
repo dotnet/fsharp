@@ -556,15 +556,6 @@ type ModuleOrNamespaceKind =
         | ModuleOrType -> 1
         | Namespace _ -> 2
 
-/// A public path records where a construct lives within the global namespace
-/// of a CCU.
-type PublicPath = 
-    | PubPath of string[] 
-    member x.EnclosingPath = 
-        let (PubPath pp) = x 
-        assert (pp.Length >= 1)
-        pp[0..pp.Length-2]
-
 /// Represents the specified visibility of the accessibility -- used to ensure IL visibility
 [<RequireQualifiedAccess>]
 type SyntaxAccess =
@@ -583,9 +574,7 @@ type CompilationPath =
 
     member x.MangledPath = List.map fst x.AccessPath
 
-    member x.NestedPublicPath (id: Ident) = PubPath(Array.append (Array.ofList x.MangledPath) [| id.idText |])
-
-    member x.ParentCompPath = 
+    member x.ParentCompPath =
         let a, _ = List.frontAndBack x.AccessPath
         CompPath(x.ILScopeRef, x.SyntaxAccess, a)
 
@@ -602,6 +591,31 @@ type CompilationPath =
         | _ -> nm
 
     member x.SyntaxAccess = let (CompPath(_, access, _)) = x in access
+
+[<Struct; NoEquality; NoComparison>]
+type PublicPath =
+    | PubPath of enclosing: CompilationPath * name: string
+
+    member x.EnclosingCompilationPath = let (PubPath(cp, _)) = x in cp
+
+    member x.Name = let (PubPath(_, nm)) = x in nm
+
+    member x.EnclosingPath: string[] = Array.ofList x.EnclosingCompilationPath.MangledPath
+
+    member x.FullPath: string[] =
+        let enclosing = x.EnclosingCompilationPath.MangledPath
+        let res = Array.zeroCreate (List.length enclosing + 1)
+        let mutable i = 0
+
+        for nm in enclosing do
+            res[i] <- nm
+            i <- i + 1
+
+        res[i] <- x.Name
+        res
+
+    member x.HasEmptyEnclosingPath = List.isEmpty x.EnclosingCompilationPath.AccessPath
+
 
 [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
 type EntityOptionalData =
@@ -693,12 +707,7 @@ type Entity =
       // when compiling fslib to fixup compiler forward references to internal items 
       mutable entity_modul_type: MaybeLazy<ModuleOrNamespaceType>     
 
-      /// The stable path to the type, e.g. Microsoft.FSharp.Core.FSharpFunc`2 
-      // REVIEW: it looks like entity_cpath subsumes this 
-      // MUTABILITY: only for unpickle linkage
-      mutable entity_pubpath: PublicPath option 
- 
-      /// The stable path to the type, e.g. Microsoft.FSharp.Core.FSharpFunc`2 
+      /// The stable path to the type, e.g. Microsoft.FSharp.Core.FSharpFunc`2
       // MUTABILITY: only for unpickle linkage
       mutable entity_cpath: CompilationPath option 
 
@@ -960,7 +969,10 @@ type Entity =
         | c -> c
 
     /// Get a blob of data indicating how this type is nested in other namespaces, modules or types.
-    member x.PublicPath = x.entity_pubpath
+    member x.PublicPath: PublicPath voption =
+        match x.entity_cpath with
+        | Some cpath -> ValueSome(PubPath(cpath, x.entity_logical_name))
+        | None -> ValueNone
 
     /// Get the value representing the accessibility of an F# type definition or module.
     member x.Accessibility =
@@ -1106,7 +1118,6 @@ type Entity =
           entity_tycon_repr= Unchecked.defaultof<_>
           entity_tycon_tcaug= Unchecked.defaultof<_>
           entity_modul_type= Unchecked.defaultof<_>
-          entity_pubpath = Unchecked.defaultof<_>
           entity_cpath = Unchecked.defaultof<_>
           entity_il_repr_cache = Unchecked.defaultof<_>
           entity_opt_data = Unchecked.defaultof<_>}
@@ -1125,8 +1136,7 @@ type Entity =
         x.entity_tycon_repr <- tg.entity_tycon_repr
         x.entity_tycon_tcaug <- tg.entity_tycon_tcaug
         x.entity_modul_type <- tg.entity_modul_type
-        x.entity_pubpath <- tg.entity_pubpath 
-        x.entity_cpath <- tg.entity_cpath 
+        x.entity_cpath <- tg.entity_cpath
         x.entity_il_repr_cache <- tg.entity_il_repr_cache 
         match tg.entity_opt_data with
         | Some tg ->
@@ -3271,9 +3281,9 @@ type Val =
     member x.PublicPath = 
         match x.TryDeclaringEntity with 
         | Parent eref -> 
-            match eref.PublicPath with 
-            | None -> None
-            | Some p -> Some(ValPubPath(p, x.GetLinkageFullKey()))
+            match eref.PublicPath with
+            | ValueNone -> None
+            | ValueSome p -> Some(ValPubPath(p, x.GetLinkageFullKey()))
         | ParentNone -> 
             None
 
@@ -3930,7 +3940,7 @@ type EntityRef =
     member x.CompiledReprCache = x.Deref.CompiledReprCache
 
     /// Get a blob of data indicating how this type is nested in other namespaces, modules or types.
-    member x.PublicPath: PublicPath option = x.Deref.PublicPath
+    member x.PublicPath: PublicPath voption = x.Deref.PublicPath
 
     /// Get the value representing the accessibility of an F# type definition or module.
     member x.Accessibility = x.Deref.Accessibility
@@ -6308,7 +6318,6 @@ type Construct() =
     static member NewProvidedTycon(resolutionEnvironment, st: Tainted<ProvidedType>, importProvidedType, isSuppressRelocate, m, ?access, ?cpath) = 
         let stamp = newStamp() 
         let name = st.PUntaint((fun st -> st.Name), m)
-        let id = ident (name, m)
         let kind = 
             let isMeasure = 
                 st.PApplyWithProvider((fun (st, provider) ->
@@ -6328,7 +6337,6 @@ type Construct() =
                 let enclosingName = GetFSharpPathToProvidedType(st, m)
                 CompPath(ilScopeRef, SyntaxAccess.Unknown, enclosingName |> List.map(fun id->id, ModuleOrNamespaceKind.Namespace true))
             | Some p -> p
-        let pubpath = cpath.NestedPublicPath id
 
         let repr = Construct.NewProvidedTyconRepr(resolutionEnvironment, st, importProvidedType, isSuppressRelocate, m)
 
@@ -6343,7 +6351,6 @@ type Construct() =
             entity_tycon_tcaug=TyconAugmentation.Create()
             entity_modul_type = MaybeLazy.Lazy(InterruptibleLazy(fun _ -> ModuleOrNamespaceType(Namespace true, QueueList.ofList [], QueueList.ofList [])))
             // Generated types get internal accessibility
-            entity_pubpath = Some pubpath
             entity_cpath = Some cpath
             entity_il_repr_cache = null
             entity_opt_data =
@@ -6367,7 +6374,6 @@ type Construct() =
             entity_typars=LazyWithContext.NotLazy []
             entity_tycon_repr = TNoRepr
             entity_tycon_tcaug=TyconAugmentation.Create()
-            entity_pubpath=cpath |> Option.map (fun (cp: CompilationPath) -> cp.NestedPublicPath id)
             entity_cpath=cpath
             entity_attribs=WellKnownEntityAttribs.Create(attribs)
             entity_il_repr_cache = null
@@ -6442,7 +6448,6 @@ type Construct() =
             entity_logical_name = id.idText
             entity_range = id.idRange
             entity_tycon_tcaug = TyconAugmentation.Create()
-            entity_pubpath = cpath |> Option.map (fun (cp: CompilationPath) -> cp.NestedPublicPath id)
             entity_modul_type = MaybeLazy.Strict (Construct.NewEmptyModuleOrNamespaceType ModuleOrType)
             entity_cpath = cpath
             entity_typars = LazyWithContext.NotLazy []
@@ -6485,7 +6490,6 @@ type Construct() =
             entity_tycon_repr = TNoRepr
             entity_tycon_tcaug=TyconAugmentation.Create()
             entity_modul_type = mtyp
-            entity_pubpath=cpath |> Option.map (fun (cp: CompilationPath) -> cp.NestedPublicPath (mkSynId m nm))
             entity_cpath = cpath
             entity_il_repr_cache = null
             entity_opt_data =
