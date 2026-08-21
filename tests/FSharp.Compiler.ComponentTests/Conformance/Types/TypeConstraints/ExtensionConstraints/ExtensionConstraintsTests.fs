@@ -949,10 +949,11 @@ Candidates:
  - member Mother.Hello: unit -> int")
         ]
 
-    [<Fact>]
+    [<FactForNETCOREAPP>]
     let ``Extension does not satisfy IWSAM constraint`` () =
         // M1: Extension (+) should NOT make a type satisfy IAdditionOperators.
         // SRTP extension solutions and interface implementations are orthogonal.
+        // IWSAM BCL type IAdditionOperators is only available on .NET 7+, so gate to NETCOREAPP.
         FSharp """
 module Test
 open System.Numerics
