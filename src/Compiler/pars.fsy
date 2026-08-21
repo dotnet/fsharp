@@ -4382,9 +4382,7 @@ declExpr:
       { SynExpr.While ($2 (rhs parseState 1)) }
 
   | WHILE_BANG whileExprCore 
-      { let mKeyword = rhs parseState 1
-        parseState.LexBuffer.CheckLanguageFeatureAndRecover LanguageFeature.WhileBang mKeyword
-        SynExpr.WhileBang ($2 mKeyword) }
+      { SynExpr.WhileBang ($2 (rhs parseState 1)) }
 
   | FOR forLoopBinder doToken typedSequentialExprBlock doneDeclEnd
       { let mFor = rhs parseState 1
