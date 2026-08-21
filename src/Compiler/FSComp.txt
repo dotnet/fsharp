@@ -1587,7 +1587,6 @@ featureLowercaseDUWhenRequireQualifiedAccess,"Allow lowercase DU when RequireQua
 featureMatchNotAllowedForUnionCaseWithNoData,"Pattern match discard is not allowed for union case that takes no data."
 featureCSharpExtensionAttributeNotRequired,"Allow implicit Extension attribute on declaring types, modules"
 featureErrorForNonVirtualMembersOverrides,"Raises errors for non-virtual members overrides"
-featureWarningWhenInliningMethodImplNoInlineMarkedFunction,"Raises warnings when 'let inline ... =' is used together with [<MethodImpl(MethodImplOptions.NoInlining)>] attribute. Function is not getting inlined."
 featureArithmeticInLiterals,"Arithmetic and logical operations in literals, enum definitions and attributes"
 featureErrorReportingOnStaticClasses,"Error reporting on static classes"
 featureTryWithInSeqExpressions,"Support for try-with in sequence expressions"
