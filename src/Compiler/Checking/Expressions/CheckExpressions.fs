@@ -4119,13 +4119,10 @@ let GetInstanceMemberThisVariable (vspec: Val, expr) =
         None
 
 /// c.atomicLeftMethExpr[idx] and atomicLeftExpr[idx] as applications give warnings
-let checkHighPrecedenceFunctionApplicationToList (g: TcGlobals) args atomicFlag exprRange =
+let checkHighPrecedenceFunctionApplicationToList args atomicFlag exprRange =
     match args, atomicFlag with
     | ([SynExpr.ArrayOrList (false, _, _)] | [SynExpr.ArrayOrListComputed (false, _, _)]), ExprAtomicFlag.Atomic ->
-        if g.langVersion.SupportsFeature LanguageFeature.IndexerNotationWithoutDot then
-            informationalWarning(Error(FSComp.SR.tcHighPrecedenceFunctionApplicationToListDeprecated(), exprRange))
-        elif not (g.langVersion.IsExplicitlySpecifiedAs50OrBefore()) then
-            informationalWarning(Error(FSComp.SR.tcHighPrecedenceFunctionApplicationToListReserved(), exprRange))
+        informationalWarning(Error(FSComp.SR.tcHighPrecedenceFunctionApplicationToListDeprecated(), exprRange))
     | _ -> ()
 
 /// Indicates whether a syntactic type is allowed to include new type variables
@@ -5617,8 +5614,7 @@ and TryTcStmt (cenv: cenv) env tpenv synExpr =
     let hasTypeUnit = TryUnifyUnitTypeWithoutWarning cenv env m ty
     hasTypeUnit, ty, expr, tpenv
 
-and CheckForAdjacentListExpression (cenv: cenv) synExpr hpa isInfix delayed (arg: SynExpr) =
-    let g = cenv.g
+and CheckForAdjacentListExpression synExpr hpa isInfix delayed (arg: SynExpr) =
     // func (arg)[arg2] gives warning that .[ must be used.
     match delayed with
     | DelayedApp (hpa2, isSugar2, _, arg2, _) :: _ when not isInfix && (hpa = ExprAtomicFlag.NonAtomic) && isAdjacentListExpr isSugar2 hpa2 (Some synExpr) arg2 ->
@@ -5626,23 +5622,14 @@ and CheckForAdjacentListExpression (cenv: cenv) synExpr hpa isInfix delayed (arg
 
         match arg with
         | SynExpr.Paren _ ->
-            if g.langVersion.SupportsFeature LanguageFeature.IndexerNotationWithoutDot then
-                warning(Error(FSComp.SR.tcParenThenAdjacentListArgumentNeedsAdjustment(), mWarning))
-            elif not (g.langVersion.IsExplicitlySpecifiedAs50OrBefore()) then
-                informationalWarning(Error(FSComp.SR.tcParenThenAdjacentListArgumentReserved(), mWarning))
+            warning(Error(FSComp.SR.tcParenThenAdjacentListArgumentNeedsAdjustment(), mWarning))
 
         | SynExpr.ArrayOrListComputed _
         | SynExpr.ArrayOrList _ ->
-            if g.langVersion.SupportsFeature LanguageFeature.IndexerNotationWithoutDot then
-                warning(Error(FSComp.SR.tcListThenAdjacentListArgumentNeedsAdjustment(), mWarning))
-            elif not (g.langVersion.IsExplicitlySpecifiedAs50OrBefore()) then
-                informationalWarning(Error(FSComp.SR.tcListThenAdjacentListArgumentReserved(), mWarning))
+            warning(Error(FSComp.SR.tcListThenAdjacentListArgumentNeedsAdjustment(), mWarning))
 
         | _ ->
-            if g.langVersion.SupportsFeature LanguageFeature.IndexerNotationWithoutDot then
-                warning(Error(FSComp.SR.tcOtherThenAdjacentListArgumentNeedsAdjustment(), mWarning))
-            elif not (g.langVersion.IsExplicitlySpecifiedAs50OrBefore()) then
-                informationalWarning(Error(FSComp.SR.tcOtherThenAdjacentListArgumentReserved(), mWarning))
+            warning(Error(FSComp.SR.tcOtherThenAdjacentListArgumentNeedsAdjustment(), mWarning))
 
     | _ -> ()
 
@@ -5650,8 +5637,6 @@ and CheckForAdjacentListExpression (cenv: cenv) synExpr hpa isInfix delayed (arg
 /// keep a stack of things on the right. This lets us recognize
 /// method applications and other item-based syntax.
 and TcExprThen (cenv: cenv) overallTy env tpenv isArg synExpr delayed =
-    let g = cenv.g
-
     let cachedExpression =
         env.eCachedImplicitYieldExpressions.FindAll synExpr.Range
         |> List.tryPick (fun (se, ty, e) ->
@@ -5701,7 +5686,7 @@ and TcExprThen (cenv: cenv) overallTy env tpenv isArg synExpr delayed =
 
             TcNonControlFlowExpr env <| fun env ->
 
-            CheckForAdjacentListExpression cenv synExpr hpa isInfix delayed arg
+            CheckForAdjacentListExpression synExpr hpa isInfix delayed arg
 
             TcExprThen cenv overallTy env tpenv false func ((DelayedApp (hpa, isInfix, Some func, arg, mFuncAndArg)) :: delayed)
 
@@ -5725,7 +5710,7 @@ and TcExprThen (cenv: cenv) overallTy env tpenv isArg synExpr delayed =
         // etc.
         | SynExpr.DotIndexedGet (expr1, IndexerArgs indexArgs, mDot, mWholeExpr) ->
             TcNonControlFlowExpr env <| fun env ->
-            if not isArg && g.langVersion.SupportsFeature LanguageFeature.IndexerNotationWithoutDot then
+            if not isArg then
                 informationalWarning(Error(FSComp.SR.tcIndexNotationDeprecated(), mDot))
             TcIndexerThen cenv env overallTy mWholeExpr mDot tpenv None expr1 indexArgs delayed
 
@@ -5734,8 +5719,7 @@ and TcExprThen (cenv: cenv) overallTy env tpenv isArg synExpr delayed =
         // etc.
         | SynExpr.DotIndexedSet (expr1, IndexerArgs indexArgs, expr3, mOfLeftOfSet, mDot, mWholeExpr) ->
             TcNonControlFlowExpr env <| fun env ->
-            if g.langVersion.SupportsFeature LanguageFeature.IndexerNotationWithoutDot then
-                warning(Error(FSComp.SR.tcIndexNotationDeprecated(), mDot))
+            warning(Error(FSComp.SR.tcIndexNotationDeprecated(), mDot))
             // Wrap in extra parens: like MakeDelayedSet,
             // but we don't actually want to delay it here.
             let setInfo = SynExpr.Paren (expr3, range0, None, expr3.Range), mOfLeftOfSet
@@ -8742,11 +8726,11 @@ and Propagate (cenv: cenv) (overallTy: OverallTy) (env: TcEnv) tpenv (expr: Appl
                 // expr[idx1..idx2]
                 | SynExpr.ArrayOrListComputed(false, _, _) ->
                     let isAdjacent = isAdjacentListExpr isSugar atomicFlag synLeftExprOpt synArg
-                    if isAdjacent && g.langVersion.SupportsFeature LanguageFeature.IndexerNotationWithoutDot then
+                    if isAdjacent then
                         // This is the non-error path
                         ()
                     else
-                        // This is the error path. The error we give depends on what's enabled.
+                        // This is the error path (reached only when the list is not adjacent).
                         //
                         // First, 'delayed' is about to be dropped on the floor, do rudimentary checking to get name resolutions in its body
                         RecordNameAndTypeResolutionsDelayed cenv env tpenv delayed
@@ -8754,29 +8738,10 @@ and Propagate (cenv: cenv) (overallTy: OverallTy) (env: TcEnv) tpenv (expr: Appl
                             match expr.Expr with
                             | Expr.Val (d, _, _) -> Some d.DisplayName
                             | _ -> None
-                        if isAdjacent then
-                            if IsIndexerType g cenv.amap expr.Type then
-                                if g.langVersion.IsExplicitlySpecifiedAs50OrBefore() then
-                                    error (NotAFunctionButIndexer(denv, overallTy.Commit, vName, mExpr, mArg, false))
-                                match vName with
-                                | Some nm ->
-                                    error(Error(FSComp.SR.tcNotAFunctionButIndexerNamedIndexingNotYetEnabled(RichText.mkMember nm, RichText.mkMember nm), mExprAndArg))
-                                | _ ->
-                                    error(Error(FSComp.SR.tcNotAFunctionButIndexerIndexingNotYetEnabled(), mExprAndArg))
-                            else
-                                match vName with
-                                | Some nm ->
-                                    error(Error(FSComp.SR.tcNotAnIndexerNamedIndexingNotYetEnabled(RichText.mkMember nm), mExprAndArg))
-                                | _ ->
-                                    error(Error(FSComp.SR.tcNotAnIndexerIndexingNotYetEnabled(), mExprAndArg))
+                        if IsIndexerType g cenv.amap expr.Type then
+                            error (NotAFunctionButIndexer(denv, overallTy.Commit, vName, mExpr, mArg, false))
                         else
-                            if IsIndexerType g cenv.amap expr.Type then
-                                let old = not (g.langVersion.SupportsFeature LanguageFeature.IndexerNotationWithoutDot)
-                                // NotAFunctionButIndexer uses overallTy (expected type) for the indexer suggestion message.
-                                error (NotAFunctionButIndexer(denv, overallTy.Commit, vName, mExpr, mArg, old))
-                            else
-                                // NotAFunction uses exprTy (actual type) to show "has type X, which does not accept arguments".
-                                error (NotAFunction(denv, exprTy, mExpr, mArg))
+                            error (NotAFunction(denv, exprTy, mExpr, mArg))
 
                 // f x  (where 'f' is not a function)
                 | _ ->
@@ -9027,7 +8992,7 @@ and TcApplicationThen (cenv: cenv) (overallTy: OverallTy) env tpenv mExprAndArg 
 
         // atomicLeftExpr[idx] unifying as application gives a warning
         if not isSugar then
-            checkHighPrecedenceFunctionApplicationToList g [synArg] atomicFlag mExprAndArg
+            checkHighPrecedenceFunctionApplicationToList [synArg] atomicFlag mExprAndArg
 
         match leftExpr with
         | ApplicableExpr(expr=NameOfExpr g _) when g.langVersion.SupportsFeature LanguageFeature.NameOf ->
@@ -9096,9 +9061,7 @@ and TcApplicationThen (cenv: cenv) (overallTy: OverallTy) env tpenv mExprAndArg 
         // leftExpr[idx]
         // leftExpr[idx] <- expr2
         | SynExpr.ArrayOrListComputed(false, IndexerArgs indexArgs, m)
-              when
-                isAdjacentListExpr isSugar atomicFlag synLeftExprOpt synArg &&
-                g.langVersion.SupportsFeature LanguageFeature.IndexerNotationWithoutDot ->
+              when isAdjacentListExpr isSugar atomicFlag synLeftExprOpt synArg ->
 
             let expandedIndexArgs = ExpandIndexArgs cenv synLeftExprOpt indexArgs
             let setInfo, delayed =
@@ -10253,7 +10216,7 @@ and TcMethodApplicationThen
     let mWholeExpr = (m, args) ||> List.fold (fun m arg -> unionRanges m arg.Range)
 
     // c.atomicLeftMethExpr[idx] as application gives a warning
-    checkHighPrecedenceFunctionApplicationToList g args atomicFlag mWholeExpr
+    checkHighPrecedenceFunctionApplicationToList args atomicFlag mWholeExpr
 
     // Work out if we know anything about the return type of the overall expression. If there are any delayed
     // lookups then we don't know anything.
