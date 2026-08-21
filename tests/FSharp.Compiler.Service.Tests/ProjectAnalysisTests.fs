@@ -3828,7 +3828,7 @@ let ``GetDeclarationLocation on a provided-ctor without DefinitionLocationAttrib
     | FindDeclResult.ExternalDecl _ ->
         failwith "expected DeclFound for provided-ctor `T()`, got ExternalDecl"
 
-[<Fact>]
+[<Fact4(DisableParallelization = true)>] // Inhibit shared usage of Project25.checker module state
 let ``GetDeclarationLocation on a provided-ctor invoked through the original provided name returns DeclFound (regression #5538)`` () =
     let wholeProjectResults =
         Project25.checker.ParseAndCheckProject(Project25.options.Value)
@@ -3865,7 +3865,7 @@ let ``GetDeclarationLocation on a provided-ctor invoked through the original pro
     | FindDeclResult.ExternalDecl _ ->
         failwith "expected DeclFound for provided-ctor `MyType()`, got ExternalDecl"
 
-[<Fact>]
+[<Fact4(DisableParallelization = true)>] // Inhibit shared usage of Project25.checker module state
 let ``Test Project25 symbol uses of type-provided types`` () =
     let wholeProjectResults = Project25.checker.ParseAndCheckProject(Project25.options.Value) |> Async.RunSynchronouslyImmediate
 
@@ -3888,7 +3888,7 @@ let ``Test Project25 symbol uses of type-provided types`` () =
            ("file1", ((5, 8), (5, 9))) // line 5: let _ = >T<()  (T resolves to MyType)
            ("file1", ((10, 8), (10, 14))) |] // line 10: let _ = >MyType<()
 
-[<Fact>]
+[<Fact4(DisableParallelization = true)>] // Inhibit shared usage of Project25.checker module state
 let ``Test Project25 symbol uses of fully-qualified records`` () =
     let wholeProjectResults = Project25.checker.ParseAndCheckProject(Project25.options.Value) |> Async.RunSynchronouslyImmediate
 
