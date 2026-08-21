@@ -737,11 +737,6 @@
         <target state="translated">Создает предупреждения, когда выражение копирования и обновления записи изменяет все поля записи.</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureWarningWhenInliningMethodImplNoInlineMarkedFunction">
-        <source>Raises warnings when 'let inline ... =' is used together with [&lt;MethodImpl(MethodImplOptions.NoInlining)&gt;] attribute. Function is not getting inlined.</source>
-        <target state="translated">Выдает предупреждения, когда используется параметр "let inline ... =" вместе с атрибутом [&lt;MethodImpl(MethodImplOptions.NoInlining)&gt;]. Функция не встраивается.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureWarningWhenMultipleRecdTypeChoice">
         <source>Raises warnings when multiple record type matches were found during name resolution because of overlapping field names.</source>
         <target state="translated">Выдает предупреждения, когда при разрешении имен обнаружено несколько совпадений типов записи из-за перекрывающихся имен полей.</target>

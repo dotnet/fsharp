@@ -737,11 +737,6 @@
         <target state="translated">Genera avvisi quando un'espressione di record di copia e aggiornamento modifica tutti i campi di un record.</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureWarningWhenInliningMethodImplNoInlineMarkedFunction">
-        <source>Raises warnings when 'let inline ... =' is used together with [&lt;MethodImpl(MethodImplOptions.NoInlining)&gt;] attribute. Function is not getting inlined.</source>
-        <target state="translated">Genera avvisi quando 'let inline ... =' viene usato insieme all'attributo [&lt;MethodImpl(MethodImplOptions.NoInlining)&gt;]. La funzione non viene resa inline.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureWarningWhenMultipleRecdTypeChoice">
         <source>Raises warnings when multiple record type matches were found during name resolution because of overlapping field names.</source>
         <target state="translated">Genera avvisi quando sono state trovate più corrispondenze del tipo di record durante la risoluzione dei nomi a causa di nomi di campi sovrapposti.</target>
