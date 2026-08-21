@@ -18,7 +18,8 @@ open FSharp.Compiler.TcGlobals
 type FormatItem = Simple of TType | FuncAndVal
 
 let copyAndFixupFormatTypar g m tp =
-    let _,_,tinst = FreshenAndFixupTypars g m TyparRigidity.Flexible [] [] [tp]
+    // traitCtxtNone: format string typars — unrelated to SRTP member constraints (audited for RFC FS-1043)
+    let _,_,tinst = FreshenAndFixupTypars g traitCtxtNone m TyparRigidity.Flexible [] [] [tp]
     List.head tinst
 
 let lowestDefaultPriority = 0 (* See comment on TyparConstraint.DefaultsTo *)

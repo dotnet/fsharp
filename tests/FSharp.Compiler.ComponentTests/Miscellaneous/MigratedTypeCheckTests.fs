@@ -358,12 +358,6 @@ let ``type check neg114`` () = singleNegTest ( "typecheck/sigs") "neg114"
 [<FactForDESKTOP>]
 let ``type check neg115`` () = singleNegTest ( "typecheck/sigs") "neg115"
 
-[<FactForDESKTOP(Skip = "Failing in new test framework")>]
-let ``type check neg116`` () = singleNegTest ( "typecheck/sigs") "neg116"
-
-[<FactForDESKTOP(Skip = "Failing in new test framework")>]
-let ``type check neg117`` () = singleNegTest ( "typecheck/sigs") "neg117"
-
 [<FactForDESKTOP>]
 let ``type check neg118`` () = singleNegTest ( "typecheck/sigs") "neg118"
 

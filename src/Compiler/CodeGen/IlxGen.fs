@@ -1415,6 +1415,18 @@ let TryStorageForWitness (_g: TcGlobals) eenv (w: TraitWitnessInfo) =
     | true, storage -> Some storage
     | _ -> None
 
+/// Whether a failed trait-constraint resolution at code-generation time may be left as a deferred
+/// NotSupportedException placeholder instead of surfacing as a compile error. Only safe for a generic
+/// inline template (RFC FS-1043): unsolved typars in the trait's support or argument types (not the
+/// return type) mean it is re-solved, and real IL emitted, at each concrete call site. A ground trait
+/// (neg116: only the return typar is free) has no second chance, so its failure must be reported now.
+let canDeferTraitResolution (g: TcGlobals) (traitInfo: TraitConstraintInfo) result =
+    match result with
+    | ErrorResult _ ->
+        g.langVersion.SupportsFeature LanguageFeature.ExtensionConstraintSolutions
+        && not (freeInTypes CollectTypars (traitInfo.SupportTypes @ traitInfo.CompiledObjectAndArgumentTypes)).FreeTypars.IsEmpty
+    | _ -> false
+
 let IsValRefIsDllImport g (vref: ValRef) =
     ValHasWellKnownAttribute g WellKnownValAttributes.DllImportAttribute vref.Deref
 
@@ -5871,8 +5883,15 @@ and GenTraitCall (cenv: cenv) cgbuf eenv (traitInfo: TraitConstraintInfo, argExp
         // the specific trait's witness is not found. Fall through to the constraint solver to resolve it.
         assert (not generateWitnesses || not cenv.options.alwaysInline)
 
+        let witnessResult =
+            ConstraintSolver.CodegenWitnessExprForTraitConstraint cenv.tcVal g cenv.amap m traitInfo argExprs
+
+        // See canDeferTraitResolution: ground failures commit (compile error); only inline templates defer.
         let exprOpt =
-            CommitOperationResult(ConstraintSolver.CodegenWitnessExprForTraitConstraint cenv.tcVal g cenv.amap m traitInfo argExprs)
+            if canDeferTraitResolution g traitInfo witnessResult then
+                None
+            else
+                CommitOperationResult witnessResult
 
         match exprOpt with
         | None ->
@@ -7387,20 +7406,32 @@ and GetIlxClosureFreeVars cenv m (thisVars: ValRef list) boxity eenv takenNames 
 
     let cloFreeTyvars = cloFreeTyvars.FreeTypars |> Zset.elements
 
-    // When generating witnesses, witness types may reference type variables that appear
-    // only in SRTP constraints of the captured type variables (e.g. 'b in 'a : (member M: unit -> 'b)).
-    // Include those so they are available when generating witness field types.
-    let cloFreeTyvars =
-        if ComputeGenerateWitnesses g eenv then
-            let extra =
-                GetTraitWitnessInfosOfTypars g 0 cloFreeTyvars
-                |> List.collect (fun w ->
-                    (freeInType CollectTyparsNoCaching (GenWitnessTy g w)).FreeTypars
-                    |> Zset.elements)
+    // Work out if the closure captures any witnesses.
+    // We need to do this BEFORE creating eenvinner because witness types
+    // may reference additional type variables not captured by the expression's
+    // free variables (e.g. from deeply nested SRTP on function types).
+    // Any extra typars found here must already be ambient in eenv.tyenv so
+    // that GenGenericArgs can resolve them at the closure instantiation site.
+    let cloWitnessInfos, cloFreeTyvars =
+        let generateWitnesses = ComputeGenerateWitnesses g eenv
 
-            (cloFreeTyvars @ extra) |> List.distinctBy (fun tp -> tp.Stamp)
+        if generateWitnesses then
+            let witnessInfos = GetTraitWitnessInfosOfTypars g 0 cloFreeTyvars
+
+            let witnessFreeTyvars =
+                witnessInfos
+                |> List.collect (fun w ->
+                    let ty = GenWitnessTy g w
+                    (freeInType CollectTyparsNoCaching ty).FreeTypars |> Zset.elements)
+
+            let extraTyvars =
+                witnessFreeTyvars
+                |> List.filter (fun tp -> not (cloFreeTyvars |> List.exists (fun tp2 -> tp.Stamp = tp2.Stamp)))
+                |> List.distinctBy (fun tp -> tp.Stamp)
+
+            witnessInfos, cloFreeTyvars @ extraTyvars
         else
-            cloFreeTyvars
+            [], cloFreeTyvars
 
     let eenvinner = eenv |> EnvForTypars cloFreeTyvars
 
@@ -7414,16 +7445,6 @@ and GetIlxClosureFreeVars cenv m (thisVars: ValRef list) boxity eenv takenNames 
     let eenvinner =
         eenvinner
         |> AddStorageForLocalVals g (thisVars |> List.map (fun v -> (v.Deref, Arg 0)))
-
-    // Work out if the closure captures any witnesses.
-    let cloWitnessInfos =
-        let generateWitnesses = ComputeGenerateWitnesses g eenvinner
-
-        if generateWitnesses then
-            // The 0 here represents that a closure doesn't reside within a generic class - there are no "enclosing class type parameters" to lop off.
-            GetTraitWitnessInfosOfTypars g 0 cloFreeTyvars
-        else
-            []
 
     // Captured witnesses get captured in free variable fields
     let ilCloWitnessFreeVars, ilCloWitnessStorage =
@@ -7899,8 +7920,14 @@ and ExprRequiresWitness cenv m expr =
 
     match expr with
     | Expr.Op(TOp.TraitCall(traitInfo), _, _, _) ->
-        ConstraintSolver.CodegenWitnessExprForTraitConstraintWillRequireWitnessArgs cenv.tcVal g cenv.amap m traitInfo
-        |> CommitOperationResult
+        let witnessResult =
+            ConstraintSolver.CodegenWitnessExprForTraitConstraintWillRequireWitnessArgs cenv.tcVal g cenv.amap m traitInfo
+
+        // Mirror GenTraitCall (see canDeferTraitResolution): ground failures commit, only inline templates defer.
+        if canDeferTraitResolution g traitInfo witnessResult then
+            false
+        else
+            CommitOperationResult witnessResult
     | _ -> false
 
 /// Generate statically-resolved conditionals used for type-directed optimizations in FSharp.Core only.
