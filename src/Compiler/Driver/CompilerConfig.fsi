@@ -515,6 +515,10 @@ type TcConfigBuilder =
 
         mutable parallelReferenceResolution: ParallelReferenceResolution
 
+        /// Whether the Entity graph imported from a referenced assembly may be shared with other projects
+        /// that resolve that assembly, and everything it can reach, to the same files
+        mutable shareImportedAssemblies: bool
+
         mutable captureIdentifiersWhenParsing: bool
 
         mutable typeCheckingConfig: TypeCheckingConfig
@@ -887,6 +891,8 @@ type TcConfig =
     member exiter: Exiter
 
     member parallelReferenceResolution: ParallelReferenceResolution
+
+    member shareImportedAssemblies: bool
 
     member captureIdentifiersWhenParsing: bool
 

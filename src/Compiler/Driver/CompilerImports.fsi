@@ -98,6 +98,15 @@ type ResolvedExtensionReference =
     | ResolvedExtensionReference of string * AssemblyReference list * Tainted<ITypeProvider> list
 #endif
 
+/// Holds the contents imported from a referenced assembly so that projects resolving that assembly, and
+/// everything it can reach, to the same files share one copy of its Entity graph. Switched on per checker
+/// by tcConfig.shareImportedAssemblies. Entries are weak, so nothing is retained on a project's behalf
+/// once that project is gone.
+module internal SharedImportedCcus =
+
+    /// Drops every entry, for FSharpChecker.ClearCaches
+    val clear: unit -> unit
+
 /// Represents a resolved imported binary
 [<RequireQualifiedAccess>]
 type ImportedBinary =
