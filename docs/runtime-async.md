@@ -45,11 +45,10 @@ call int32 AsyncHelpers::Await<int32>(Task<int32>)
 Known runtime restrictions (currently **not** diagnosed by the F# compiler):
 
 * `tail.` and `localloc` are forbidden.
-* suspension cannot occur inside exception-handling regions. Awaiting in a
-  `try` body now works on the current runtime; awaiting inside a `finally`
-  handler compiles and then terminates the process at execution
-  (`0xC0000409`). See `RuntimeTasksAsyncDisposalException.fs`, which is
-  compile-only for this reason.
+* generated suspension points cannot occur inside exception-handling regions.
+  Awaiting in a protected `try` body now works on the current runtime. Direct
+  intrinsic bodies rewrite suspending `catch`, filter, and `finally`
+  expressions so the suspension runs outside the EH region.
 
   C# avoids this by rewriting EH-region awaits at lowering time (see the
   Roslyn design doc): `try B finally { await x }` becomes
@@ -128,11 +127,12 @@ FSharp.Core declaration.
 
 ## Optimization
 
-`Optimizer.fs` preserves the marker application as-is, optimizing only its
-argument. The marked expression is forced to `HasEffect = true` and
-`UnknownValue`, so the optimizer never inlines, duplicates, or discards it.
-The marker therefore survives optimization as an ordinary `Expr.App` node;
-nothing else in the typed tree records that a method is runtime-async.
+`Optimizer.fs` preserves the marker application as-is, optimizing its
+argument and rewriting any suspending exception handlers in that argument.
+The marked expression is forced to `HasEffect = true` and `UnknownValue`, so
+the optimizer never inlines, duplicates, or discards it. The marker therefore
+survives optimization as an ordinary `Expr.App` node; nothing else in the
+typed tree records that a method is runtime-async.
 
 ## Code generation
 

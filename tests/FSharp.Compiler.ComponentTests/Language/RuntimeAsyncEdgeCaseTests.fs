@@ -253,8 +253,8 @@ let private ceAwaitInsideTry = """
         {
           IL_0039:  ldc.i4.1
           IL_003a:  call       class [System.Runtime]System.Threading.Tasks.Task [System.Runtime]System.Threading.Tasks.Task::Delay(int32)
-          IL_003f:  stloc.s    V_9
-          IL_0041:  ldloc.s    V_9
+          IL_003f:  stloc.s    V_8
+          IL_0041:  ldloc.s    V_8
           IL_0043:  call       void [System.Runtime]System.Runtime.CompilerServices.AsyncHelpers::Await(class [System.Runtime]System.Threading.Tasks.Task)
           IL_0048:  ldloc.0
           IL_0049:  ldc.i4.1
@@ -273,19 +273,19 @@ let private ceAwaitInsideTry = """
         }  // end handler
 """
 
-// (2) `use` disposal emitted AFTER the protected region: the builder hoists the awaited DisposeAsync
-// out of the finally — isinst IAsyncDisposable -> DisposeAsync() -> Await(ValueTask).
+// (2) `use` disposal emitted AFTER the protected region: the compiler rewrite hoists the awaited
+// DisposeAsync out of the finally — isinst IAsyncDisposable -> DisposeAsync() -> Await(ValueTask).
 let private ceDisposalHoist = """
-      IL_0089:  isinst     [System.Runtime]System.IAsyncDisposable
-      IL_008e:  stloc.s    V_12
-      IL_0090:  ldloc.s    V_12
-      IL_0092:  brfalse.s  IL_00a6
+      IL_0086:  isinst     [System.Runtime]System.IAsyncDisposable
+      IL_008b:  stloc.s    V_11
+      IL_008d:  ldloc.s    V_11
+      IL_008f:  brfalse.s  IL_00a3
 
-      IL_0094:  ldloc.s    V_12
-      IL_0096:  stloc.s    V_13
-      IL_0098:  ldloc.s    V_13
-      IL_009a:  callvirt   instance valuetype [System.Runtime]System.Threading.Tasks.ValueTask [System.Runtime]System.IAsyncDisposable::DisposeAsync()
-      IL_009f:  call       void [System.Runtime]System.Runtime.CompilerServices.AsyncHelpers::Await(valuetype [System.Runtime]System.Threading.Tasks.ValueTask)
+      IL_0091:  ldloc.s    V_11
+      IL_0093:  stloc.s    V_12
+      IL_0095:  ldloc.s    V_12
+      IL_0097:  callvirt   instance valuetype [System.Runtime]System.Threading.Tasks.ValueTask [System.Runtime]System.IAsyncDisposable::DisposeAsync()
+      IL_009c:  call       void [System.Runtime]System.Runtime.CompilerServices.AsyncHelpers::Await(valuetype [System.Runtime]System.Threading.Tasks.ValueTask)
 """
 
 // MethodImplOptions.Async (0x2000) is a *method header* flag, not an IL instruction — neither the
@@ -361,16 +361,23 @@ let ``composed runtime-async body: source-mapped IL (sequence points baseline)``
     |> verifySequencePointsBaseline composedDirectProgram (Path.Combine(runtimeAsyncDir, "ComposedRuntimeAsync.bsl"))
     |> withMetadataReader assertAsyncFlagOnLiftedClosureOnly
 
-
-// Each pattern is contract-forbidden but compiles with NO diagnostic today; docs/runtime-async.md
-// records them as known, currently-undiagnosed restrictions. Not executed here (the observed runtime
-// result is a hard process crash); the row comments record the observed symptom. C# rejects the
-// analogues at compile time (await-in-finally/catch; CS4007 for ref-struct; CS1988 for byref).
 [<Theory>]
 [<InlineData("await-in-finally",
-             "let f () : Task<int> = StateMachineHelpers.__runtimeAsyncReturn (try 1 finally AsyncHelpers.Await(Task.Delay(1)))")>] // runtime: fail-fast 0xC0000409 / SIGSEGV
+             "let f () : Task<int> = StateMachineHelpers.__runtimeAsyncReturn (try 1 finally AsyncHelpers.Await(Task.Delay(1))) in f().Result |> ignore")>]
 [<InlineData("await-in-catch",
-             "let f () : Task<int> = StateMachineHelpers.__runtimeAsyncReturn (try failwith \"boom\" with _ -> AsyncHelpers.Await(Task.Delay(1)); 7)")>] // runtime: crash
+             "let f () : Task<int> = StateMachineHelpers.__runtimeAsyncReturn (try failwith \"boom\" with _ -> AsyncHelpers.Await(Task.Delay(1)); 7) in f().Result |> ignore")>]
+let ``exception handling block suspensions compile and run correctly`` (_label: string) (body: string) =
+    FSharp(directIntrinsicSource body)
+    |> withFSharpCoreShippedNet
+    |> withLangVersionPreview
+    |> compileExeAndRun
+    |> shouldSucceed
+
+
+
+// These direct-intrinsic restrictions remain undiagnosed; exception handlers are rewritten before
+// code generation and are covered by the execution test above.
+[<Theory>]
 [<InlineData("refstruct-across-suspension",
              "let f () : Task<int> = StateMachineHelpers.__runtimeAsyncReturn (let data = [| 10; 20; 30 |] in let span = ReadOnlySpan<int>(data) in AsyncHelpers.Await(Task.Delay(1)); span[0] + span[1] + span[2])")>] // runtime: IndexOutOfRangeException (C14)
 [<InlineData("byref-param-across-suspension",

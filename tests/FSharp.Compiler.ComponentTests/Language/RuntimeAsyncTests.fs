@@ -161,15 +161,12 @@ let ``runtime async direct intrinsic fixture executes`` () =
     |> shouldSucceed
 
 [<Fact>]
-// Minimal repro: awaiting inside an exception-handling region. Compilation
-// succeeds, but executing the fixture currently terminates the process with
-// 0xC0000409 (suspension in EH regions is forbidden by the runtime contract).
-let ``runtime async suspension in exception region compiles (runtime execution is failing)`` () =
+let ``runtime async suspension in exception region executes`` () =
     Path.Combine(__SOURCE_DIRECTORY__, "RuntimeAsync", "RuntimeTasksAsyncDisposalException.fs")
     |> FsFromPath
     |> withLangVersionPreview
     |> withFSharpCoreShippedNet
-    |> compile
+    |> compileExeAndRun
     |> shouldSucceed
 
 #else

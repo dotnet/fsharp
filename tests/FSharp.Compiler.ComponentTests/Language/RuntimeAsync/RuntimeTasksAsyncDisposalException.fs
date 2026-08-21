@@ -1,11 +1,4 @@
-// Minimal repro: suspending with AsyncHelpers.Await inside the *handler* of an
-// exception-handling region of a __runtimeAsyncReturn method. This is what `use` on an
-// IAsyncDisposable lowers to (the DisposeAsync await sits in the finally).
-//
-// Today this compiles cleanly but terminates the process at execution
-// (0xC0000409), so the component test compiles this file without running it.
-// Awaiting in the try *body* with a plain finally works; awaiting inside the
-// finally itself does not.
+// Direct runtime-async calls must move suspension points out of exception handlers.
 module RuntimeAsyncAwaitInExceptionRegion
 
 open System.Runtime.CompilerServices
@@ -20,6 +13,36 @@ let run () : Task<int> =
             AsyncHelpers.Await(Task.Delay(1))
     )
 
+let runCatch () : Task<int> =
+    StateMachineHelpers.__runtimeAsyncReturn (
+        try
+            failwith "boom"
+        with
+        | _ ->
+            AsyncHelpers.Await(Task.Delay(1))
+            2
+    )
+
+let runFilter () : Task<int> =
+    StateMachineHelpers.__runtimeAsyncReturn (
+        try
+            try
+                raise (System.InvalidOperationException())
+            with
+            | :? System.InvalidOperationException when (AsyncHelpers.Await(Task.Delay(1)); false) ->
+                2
+        with
+        | :? System.InvalidOperationException -> 3
+    )
+
 [<EntryPoint>]
 let main _ =
-    if (run ()).GetAwaiter().GetResult() = 1 then 0 else 1
+    let first = run ()
+    let second = runCatch ()
+    let third = runFilter ()
+    let results =
+        [| first.GetAwaiter().GetResult()
+           second.GetAwaiter().GetResult()
+           third.GetAwaiter().GetResult() |]
+
+    if results = [| 1; 2; 3 |] then 0 else 1
