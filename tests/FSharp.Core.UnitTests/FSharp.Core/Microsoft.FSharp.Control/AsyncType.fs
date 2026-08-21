@@ -42,6 +42,11 @@ module AsyncType =
 
 module Helpers =
 
+    // Use a generous timeout to avoid flaky failures on loaded CI machines where the thread pool may be saturated.
+    let verifyTaskCompletion (t: Task) =
+        let completed = t.Wait(TimeSpan.FromSeconds 30.0)
+        Assert.True(completed, "Task did not finish after waiting for 30 seconds.")
+
     (* TEMP disabled Immediate re 20306
     let asyncWait immediate (a: Async<'T>): 'T =
         if immediate then Async.RunSynchronouslyImmediate a
@@ -67,11 +72,6 @@ type AsyncType() =
     [<VolatileField>]
     let mutable spinloop = true
         
-    // Use a generous timeout to avoid flaky failures on loaded CI machines where the thread pool may be saturated.
-    let waitForCompletion (t: Task) =
-        let result = t.Wait(TimeSpan.FromSeconds(30.0))
-        Assert.True(result, "Task did not finish after waiting for 30 seconds.")
-
     [<Theory; InlineData true; InlineData false>]
     member _.AsyncRunSynchronouslyReusesThreadPoolThread(immediate) =
         let run a = asyncWait immediate a
@@ -158,7 +158,7 @@ type AsyncType() =
         ignoreSynchCtx (fun () ->
             let computation = Async.Sleep(Timeout.Infinite)
             let result = TaskCompletionSource<string>()
-            use cts = new CancellationTokenSource(TimeSpan.FromSeconds(1.0)) // there's a long way from 1 sec to infinity, but it'll have to do.
+            use cts = new CancellationTokenSource(TimeSpan.FromSeconds 1.0) // there's a long way from 1 sec to infinity, but it'll have to do.
             Async.StartWithContinuations(computation,
                                             (fun _ -> result.TrySetResult("Ok")        |> ignore),
                                             (fun _ -> result.TrySetResult("Exception") |> ignore),
@@ -173,7 +173,7 @@ type AsyncType() =
         let s = "Hello tasks!"
         let a = async { return s }
         let t : Task<string> = Async.StartAsTask a
-        waitForCompletion t
+        verifyTaskCompletion t
         Assert.True(t.IsCompleted)
         Assert.AreEqual(s, t.Result)
 
@@ -231,7 +231,7 @@ type AsyncType() =
         innerTcs.SetResult ()
 
         try
-            waitForCompletion tcs.Task
+            verifyTaskCompletion tcs.Task
         with :? AggregateException as a ->
             match a.InnerException with
             | :? TaskCanceledException -> ()
@@ -284,7 +284,7 @@ type AsyncType() =
         Async.CancelDefaultToken ()
         let mutable exceptionThrown = false
         try
-            waitForCompletion t
+            verifyTaskCompletion t
         with e -> exceptionThrown <- true
         Assert.True(exceptionThrown)
         Assert.True(t.IsCanceled)
@@ -318,7 +318,7 @@ type AsyncType() =
         let s = "Hello tasks!"
         let a = async { return s }
         let t : Task<string> = Async.StartImmediateAsTask a
-        waitForCompletion t
+        verifyTaskCompletion t
         Assert.True(t.IsCompleted)
         Assert.AreEqual(s, t.Result)
 
@@ -327,7 +327,7 @@ type AsyncType() =
         let s = "Hello tasks!"
         let a = async { return s }
         let t = Async.StartImmediateAsTask a
-        waitForCompletion t
+        verifyTaskCompletion t
         Assert.True(t.IsCompleted)
         Assert.AreEqual(s, t.Result)
 
@@ -843,7 +843,7 @@ module AsyncTaskLikeAwaitTests =
             |> Async.StartAsTask
         Assert.False(t.IsCompleted, "Should not be done before TCS is set")
         tcs.SetResult 7
-        t.Wait(TimeSpan.FromSeconds 5.0) |> ignore
+        verifyTaskCompletion t
         Assert.Equal(7, t.Result)
 
     [<Fact>]
@@ -866,8 +866,8 @@ module AsyncTaskLikeAwaitTests =
                 asyncLocal.Value <- "completing-context" // if ExecutionContext is not propagated correctly to the continuation, it will see this
                 tcs.SetResult())
 
-        Assert.True(completion.Wait(TimeSpan.FromSeconds 5.), "Completion task hung?")
-        Assert.True(t.Wait(TimeSpan.FromSeconds 5.), "Awaited subject task hung?")
+        verifyTaskCompletion completion
+        verifyTaskCompletion t
         Assert.Equal("trace-id", t.Result) // Validate the chaining worked correctly
         Assert.Equal("root-context", asyncLocal.Value) // Root level context should be preserved
 
@@ -907,7 +907,7 @@ module AsyncTaskLikeAwaitTests =
             |> asyncWaitImm
         Assert.Equal(42, result)
 
-// Intentionally in same collection to mitigate potential flakiness due to concurrency re #20306 
+// Intentionally in same collection to rule out potential flakiness due to concurrency re #20306
 [<Collection(nameof FSharp.Test.NotThreadSafeResourceCollection)>]
 module AsyncStartTaskImmediateTaskLikeTests =
 
@@ -949,7 +949,7 @@ module AsyncStartTaskImmediateTaskLikeTests =
 
         Assert.Equal(cts.Token, capturedCt)
 
-// Intentionally in same collection to mitigate potential flakiness due to concurrency re #20306 
+// Intentionally in same collection to rule out potential flakiness due to concurrency re #20306
 [<Collection(nameof FSharp.Test.NotThreadSafeResourceCollection)>]
 module AsyncAwaitStackTraceTests =
 
