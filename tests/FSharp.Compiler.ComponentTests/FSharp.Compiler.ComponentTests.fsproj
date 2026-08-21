@@ -394,6 +394,7 @@
     <Compile Include="Language\CopyAndUpdateTests.fs" />
     <Compile Include="Language\ConstraintIntersectionTests.fs" />
     <Compile Include="Language\RuntimeAsyncTests.fs" />
+    <Compile Include="Language\RuntimeAsyncEdgeCaseTests.fs" />
     <Compile Include="Language\BooleanReturningAndReturnTypeDirectedPartialActivePatternTests.fs" />
     <Compile Include="Language\Nullness\NullableLibraryConstructsTests.fs" />
     <Compile Include="Language\Nullness\NullableCsharpImportTests.fs" />
