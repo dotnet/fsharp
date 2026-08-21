@@ -1,45 +1,205 @@
 {
   "prs": {
-    "20318": {"sha": "64f4cefb791e", "cats": []},
-    "20317": {"sha": "de9e98113aaf", "cats": []},
-    "20316": {"sha": "2ece21af5c8e", "cats": []},
-    "20315": {"sha": "5991a665f097", "cats": []},
-    "20314": {"sha": "b4c2ec1fdfef", "cats": []},
-    "20313": {"sha": "7d06ca7e983e", "cats": []},
-    "20312": {"sha": "24d77b728ded", "cats": []},
-    "20311": {"sha": "c489369b8208", "cats": []},
-    "20310": {"sha": "d5482ad730a8", "cats": []},
-    "20308": {"sha": "55e0fb47cb83", "cats": ["Affects-Test-Tooling"]},
-    "20307": {"sha": "043c07710b9e", "cats": []},
-    "20304": {"sha": "b97b1b9c8e2a", "cats": []},
-    "20302": {"sha": "2d8e3705fcea", "cats": []},
-    "20301": {"sha": "ecbc914dec79", "cats": []},
-    "20299": {"sha": "7c6aaf8a8da8", "cats": []},
-    "20298": {"sha": "93b59f63834f", "cats": []},
-    "20296": {"sha": "09a3cb1dbc83", "cats": []},
-    "20294": {"sha": "aa6714773151", "cats": []},
-    "20287": {"sha": "63df5b0fb83a", "cats": []},
-    "20285": {"sha": "238a6720a3b7", "cats": ["Affects-Bootstrap", "Affects-Compiler-Output"]},
-    "20275": {"sha": "145f8c0fba17", "cats": []},
-    "20274": {"sha": "c199150884df", "cats": ["Affects-Bootstrap", "Affects-Build-Infra", "Affects-Compiler-Output", "Scope-Review-Needed"]},
-    "20272": {"sha": "848677cf1784", "cats": []},
-    "20271": {"sha": "74c48722908b", "cats": []},
-    "20261": {"sha": "baf8d89e9cdc", "cats": []},
-    "20259": {"sha": "87e0434e3b11", "cats": []},
-    "20255": {"sha": "14b5b11a1318", "cats": []},
-    "20126": {"sha": "f1b77f5d1945", "cats": []},
-    "20121": {"sha": "825f0453908d", "cats": []},
-    "20113": {"sha": "b5b7fcb665ec", "cats": []},
-    "20111": {"sha": "8920977fb555", "cats": ["Affects-Compiler-Output"]},
-    "20102": {"sha": "184d5ab47a86", "cats": []},
-    "20031": {"sha": "b713d69480eb", "cats": ["Affects-Bootstrap", "Affects-Build-Infra", "Affects-Compiler-Output", "Affects-Test-Tooling"]},
-    "20030": {"sha": "98001b2e15d6", "cats": ["Affects-Build-Infra", "Affects-Compiler-Output"]},
-    "20027": {"sha": "56540495c995", "cats": ["Affects-Build-Infra", "Affects-Compiler-Output"]},
-    "20025": {"sha": "b60372859149", "cats": []},
-    "20016": {"sha": "88e64501a0db", "cats": ["Affects-Build-Infra", "Affects-Restore"]},
-    "19994": {"sha": "84c93dd77d47", "cats": []},
-    "19941": {"sha": "3ca5dd6038a5", "cats": ["Affects-Build-Infra", "Affects-Compiler-Output"]},
-    "19930": {"sha": "fdb49f9abb55", "cats": ["Affects-Build-Infra"]},
-    "19774": {"sha": "0e262c5de4cb", "cats": []}
+    "20318": {
+      "sha": "64f4cefb791e",
+      "cats": []
+    },
+    "20317": {
+      "sha": "de9e98113aaf",
+      "cats": []
+    },
+    "20316": {
+      "sha": "2ece21af5c8e",
+      "cats": []
+    },
+    "20315": {
+      "sha": "5991a665f097",
+      "cats": []
+    },
+    "20314": {
+      "sha": "b4c2ec1fdfef",
+      "cats": []
+    },
+    "20313": {
+      "sha": "7d06ca7e983e",
+      "cats": []
+    },
+    "20312": {
+      "sha": "24d77b728ded",
+      "cats": []
+    },
+    "20311": {
+      "sha": "c489369b8208",
+      "cats": []
+    },
+    "20310": {
+      "sha": "d5482ad730a8",
+      "cats": []
+    },
+    "20308": {
+      "sha": "9fc39e73b1cf",
+      "cats": []
+    },
+    "20307": {
+      "sha": "043c07710b9e",
+      "cats": []
+    },
+    "20304": {
+      "sha": "b97b1b9c8e2a",
+      "cats": []
+    },
+    "20302": {
+      "sha": "2d8e3705fcea",
+      "cats": []
+    },
+    "20301": {
+      "sha": "ecbc914dec79",
+      "cats": []
+    },
+    "20299": {
+      "sha": "7c6aaf8a8da8",
+      "cats": []
+    },
+    "20298": {
+      "sha": "93b59f63834f",
+      "cats": []
+    },
+    "20296": {
+      "sha": "09a3cb1dbc83",
+      "cats": []
+    },
+    "20294": {
+      "sha": "aa6714773151",
+      "cats": []
+    },
+    "20287": {
+      "sha": "63df5b0fb83a",
+      "cats": []
+    },
+    "20285": {
+      "sha": "238a6720a3b7",
+      "cats": [
+        "Affects-Bootstrap",
+        "Affects-Compiler-Output"
+      ]
+    },
+    "20275": {
+      "sha": "145f8c0fba17",
+      "cats": []
+    },
+    "20274": {
+      "sha": "c199150884df",
+      "cats": [
+        "Affects-Bootstrap",
+        "Affects-Build-Infra",
+        "Affects-Compiler-Output",
+        "Scope-Review-Needed"
+      ]
+    },
+    "20272": {
+      "sha": "848677cf1784",
+      "cats": []
+    },
+    "20271": {
+      "sha": "74c48722908b",
+      "cats": []
+    },
+    "20261": {
+      "sha": "baf8d89e9cdc",
+      "cats": []
+    },
+    "20259": {
+      "sha": "87e0434e3b11",
+      "cats": []
+    },
+    "20255": {
+      "sha": "14b5b11a1318",
+      "cats": []
+    },
+    "20126": {
+      "sha": "f1b77f5d1945",
+      "cats": []
+    },
+    "20121": {
+      "sha": "825f0453908d",
+      "cats": []
+    },
+    "20113": {
+      "sha": "b5b7fcb665ec",
+      "cats": []
+    },
+    "20111": {
+      "sha": "8920977fb555",
+      "cats": [
+        "Affects-Compiler-Output"
+      ]
+    },
+    "20102": {
+      "sha": "184d5ab47a86",
+      "cats": []
+    },
+    "20031": {
+      "sha": "b713d69480eb",
+      "cats": [
+        "Affects-Bootstrap",
+        "Affects-Build-Infra",
+        "Affects-Compiler-Output",
+        "Affects-Test-Tooling"
+      ]
+    },
+    "20030": {
+      "sha": "98001b2e15d6",
+      "cats": [
+        "Affects-Build-Infra",
+        "Affects-Compiler-Output"
+      ]
+    },
+    "20027": {
+      "sha": "56540495c995",
+      "cats": [
+        "Affects-Build-Infra",
+        "Affects-Compiler-Output"
+      ]
+    },
+    "20025": {
+      "sha": "b60372859149",
+      "cats": []
+    },
+    "20016": {
+      "sha": "88e64501a0db",
+      "cats": [
+        "Affects-Build-Infra",
+        "Affects-Restore"
+      ]
+    },
+    "19994": {
+      "sha": "84c93dd77d47",
+      "cats": []
+    },
+    "19941": {
+      "sha": "3ca5dd6038a5",
+      "cats": [
+        "Affects-Build-Infra",
+        "Affects-Compiler-Output"
+      ]
+    },
+    "19930": {
+      "sha": "fdb49f9abb55",
+      "cats": [
+        "Affects-Build-Infra"
+      ]
+    },
+    "19774": {
+      "sha": "0e262c5de4cb",
+      "cats": []
+    },
+    "20320": {
+      "sha": "0b27fc1706df",
+      "cats": []
+    },
+    "20319": {
+      "sha": "d633ce57b5a9",
+      "cats": []
+    }
   }
 }
