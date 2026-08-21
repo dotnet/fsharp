@@ -223,3 +223,49 @@ let main _ =
         |> asExe
         |> compileExeAndRun
         |> shouldSucceed
+
+    [<Fact>]
+    let ``Issue 20264 - inherited IL base method abstract check`` () =
+        // Regression test for https://github.com/dotnet/fsharp/issues/20264
+        // The FindByNameAndArity guard in CheckILBaseCall avoids exception-based control flow
+        // for the common case of inherited (non-declared) methods on external generic IL types.
+        // This test verifies actual behavior: non-abstract inherited calls are allowed,
+        // abstract inherited calls are still rejected with the proper diagnostic.
+        let csLib =
+            CSharp
+                """
+namespace External
+{
+    public abstract class BehaviorBase {
+        public abstract void AbstractDetaching();
+        public virtual void OnDetaching() { }
+    }
+    public class Behavior<T> : BehaviorBase { }
+}
+                """
+            |> withName "ExternalBehavior"
+
+        let fsLib =
+            FSharp
+                """
+module TestIssue20264
+
+open External
+
+type MyBehavior() =
+    inherit Behavior<int>()
+
+    override _.AbstractDetaching() = ()
+
+    member _.TestNonAbstract() =
+        base.OnDetaching()          // OK: inherited non-abstract
+
+    member _.TestAbstract() =
+        base.AbstractDetaching()    // Error: inherited abstract
+                """
+            |> withReferences [ csLib ]
+
+        fsLib
+        |> compile
+        |> shouldFail
+        |> withErrorCodes [ 1201 ]
