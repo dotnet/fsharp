@@ -59,7 +59,7 @@ exception FunctionExpected of DisplayEnv * TType * range
 
 exception NotAFunction of DisplayEnv * TType * range * range
 
-exception NotAFunctionButIndexer of DisplayEnv * TType * string option * range * range * bool
+exception NotAFunctionButIndexer of DisplayEnv * TType * string option * range * range
 
 exception Recursion of DisplayEnv * Ident * TType * TType * range
 
@@ -8739,7 +8739,7 @@ and Propagate (cenv: cenv) (overallTy: OverallTy) (env: TcEnv) tpenv (expr: Appl
                             | Expr.Val (d, _, _) -> Some d.DisplayName
                             | _ -> None
                         if IsIndexerType g cenv.amap expr.Type then
-                            error (NotAFunctionButIndexer(denv, overallTy.Commit, vName, mExpr, mArg, false))
+                            error (NotAFunctionButIndexer(denv, overallTy.Commit, vName, mExpr, mArg))
                         else
                             error (NotAFunction(denv, exprTy, mExpr, mArg))
 
