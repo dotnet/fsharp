@@ -4802,7 +4802,7 @@ type FsiEvaluationSession
         try
             let tcConfig = tcConfigP.Get(ctokStartup)
 
-            checker.FrameworkImportsCache.Get tcConfig |> Async.RunSynchronouslyImmediate
+            checker.FrameworkImportsCache.Get tcConfig |> Async.RunSynchronously // TEMP: NOT Immediate re #20306
         with e ->
             stopProcessingRecovery e range0
             failwithf "Error creating evaluation session: %A" e
@@ -4816,7 +4816,7 @@ type FsiEvaluationSession
                 unresolvedReferences,
                 fsiOptions.DependencyProvider
             )
-            |> Async.RunSynchronouslyImmediate
+            |> Async.RunSynchronously // TEMP: NOT Immediate re #20306
         with e ->
             stopProcessingRecovery e range0
             failwithf "Error creating evaluation session: %A" e

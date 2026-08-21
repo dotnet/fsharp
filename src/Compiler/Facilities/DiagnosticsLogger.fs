@@ -1019,7 +1019,7 @@ type StackGuard(name: string) =
                     Thread.CurrentThread.Name <- $"F# Extra Compilation Thread for {name} (depth {depthWhenJump})"
                     return f ()
                 }
-                |> Async.RunSynchronouslyImmediate
+                |> Async.RunSynchronously // TEMP: NOT Immediate re #20306
         finally
             depth.Value <- depth.Value - 1
 
