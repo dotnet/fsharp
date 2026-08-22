@@ -176,32 +176,29 @@ let ``the CE builder lowers to Await with no state machine`` () =
         "IAsyncStateMachine"
     ]
 
-// CONTRACT VIOLATION (finding C1): the tail-position function-value call is emitted with a `tail.`
-// prefix (IL_000d) inside a runtime-async body. The runtime-async contract forbids `tail.`, and
-// ilverify reports `TailRetType` on this exact method. Pinning the whole body makes the offending
-// prefix unambiguous; once IlxGen.CanTailcall learns about runtime-async the `IL_000d: tail.` line
-// must disappear and this expected body must be updated.
+// Runtime-async methods must not emit `.tail`. This body is the contract pin: a function-value call
+// in the runtime-async return position is normal (non-tail) so the runtime-async spec's TailRetType
+// requirement remains satisfied.
 let private tailPrefixBody = """
   .method public static class [System.Runtime]System.Threading.Tasks.Task`1<int32> 
           f(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,int32> g,
             int32 x) cil managed noinlining
   {
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationArgumentCountsAttribute::.ctor(int32[]) = ( 01 00 02 00 00 00 01 00 00 00 01 00 00 00 00 00 ) 
-    // Code size       21 (0x15)
+    // Code size       20 (0x14)
     .maxstack  8
     IL_0000:  ldc.i4.1
     IL_0001:  call       class [System.Runtime]System.Threading.Tasks.Task [System.Runtime]System.Threading.Tasks.Task::Delay(int32)
     IL_0006:  call       void [System.Runtime]System.Runtime.CompilerServices.AsyncHelpers::Await(class [System.Runtime]System.Threading.Tasks.Task)
     IL_000b:  ldarg.0
     IL_000c:  ldarg.1
-    IL_000d:  tail.
-    IL_000f:  callvirt   instance !1 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,int32>::Invoke(!0)
-    IL_0014:  ret
+    IL_000d:  callvirt   instance !1 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,int32>::Invoke(!0)
+    IL_0012:  ret
   } // end of method M::f
 """
 
 [<Fact>]
-let ``runtime async currently emits a forbidden tail prefix (C1)`` () =
+let ``runtime async avoids a forbidden tail prefix (C1)`` () =
     compileDirect "let f (g: int -> int) (x: int) : Task<int> = StateMachineHelpers.__runtimeAsyncReturn (AsyncHelpers.Await(Task.Delay(1)); g x)"
     |> verifyILContains [ tailPrefixBody ]
     |> shouldSucceed

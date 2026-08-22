@@ -1261,6 +1261,9 @@ and IlxGenEnv =
         /// Are we under the scope of a try, catch or finally? If so we can't tailcall. SEH = structured exception handling
         withinSEH: bool
 
+        /// We are generating a runtime-async method/closure body, which forbids tail prefixes.
+        inRuntimeAsyncMethod: bool
+
         /// Suppresses filter block emission inside finally/fault handlers (workaround for dotnet/runtime#112406).
         insideFinallyOrFaultHandler: bool
 
@@ -4695,6 +4698,7 @@ and GenApp (cenv: cenv) cgbuf eenv (f, fty, tyargs, curriedArgs, m) sequel =
                         isDllImport,
                         isSelfInit,
                         makesNoCriticalTailcalls,
+                        eenv.inRuntimeAsyncMethod,
                         cgbuf,
                         sequel
                     )
@@ -4825,6 +4829,7 @@ and CanTailcall
         isDllImport,
         isSelfInit,
         makesNoCriticalTailcalls,
+        inRuntimeAsyncMethod,
         cgbuf: CodeGenBuffer,
         sequel
     ) =
@@ -4832,6 +4837,7 @@ and CanTailcall
     // Can't tailcall with a struct object arg since it involves a byref
     // Can't tailcall with a .NET 2.0 generic constrained call since it involves a byref
     // Can't tailcall when there are pinned locals since the stack frame must remain alive
+    // Runtime-async methods forbid .tail according to the CLI spec.
     let hasPinnedLocals = cgbuf.HasPinnedLocals()
     let hasStackAllocatedLocals = cgbuf.HasStackAllocatedLocals()
 
@@ -4839,6 +4845,7 @@ and CanTailcall
         not hasStructObjArg
         && Option.isNone ccallInfo
         && not withinSEH
+        && not inRuntimeAsyncMethod
         && not hasByrefArg
         && not isDllImport
         && not isSelfInit
@@ -5043,7 +5050,7 @@ and GenIndirectCall cenv cgbuf eenv (funcTy, tyargs, curriedArgs, m) sequel =
         check ilxClosureApps
 
     let isTailCall =
-        CanTailcall(false, None, eenv.withinSEH, hasByrefArg, false, false, false, false, cgbuf, sequel)
+        CanTailcall(false, None, eenv.withinSEH, hasByrefArg, false, false, false, false, eenv.inRuntimeAsyncMethod, cgbuf, sequel)
 
     CountCallFuncInstructions()
 
@@ -5784,6 +5791,7 @@ and GenILCall
             isDllImport,
             false,
             makesNoCriticalTailcalls,
+            eenv.inRuntimeAsyncMethod,
             cgbuf,
             sequel
         )
@@ -7159,6 +7167,11 @@ and GenClosureAsLocalTypeFunction cenv (cgbuf: CodeGenBuffer) eenv thisVars expr
 
     let isRuntimeAsync, body = TryUnwrapRuntimeAsyncReturnExpr g body
 
+    let eenvinner =
+        { eenvinner with
+            inRuntimeAsyncMethod = isRuntimeAsync
+        }
+
     let ilCloBody =
         CodeGenMethodForExpr cenv cgbuf.mgbuf (entryPointInfo, cloinfo.cloName, eenvinner, 1, None, body, Return)
 
@@ -7214,6 +7227,11 @@ and GenClosureAsFirstClassFunction cenv (cgbuf: CodeGenBuffer) eenv thisVars m e
     let ilCloTypeRef = cloinfo.cloSpec.TypeRef
 
     let isRuntimeAsync, body = TryUnwrapRuntimeAsyncReturnExpr g body
+
+    let eenvinner =
+        { eenvinner with
+            inRuntimeAsyncMethod = isRuntimeAsync
+        }
 
     let ilCloBody =
         CodeGenMethodForExpr cenv cgbuf.mgbuf (entryPointInfo, cloinfo.cloName, eenvinner, 1, None, body, Return)
@@ -9935,7 +9953,9 @@ and GenMethodForBinding
             else
                 eenvForMeth
 
-        eenvForMeth
+        { eenvForMeth with
+            inRuntimeAsyncMethod = isRuntimeAsync
+        }
 
     let tailCallInfo =
         [
@@ -13083,6 +13103,7 @@ let GetEmptyIlxGenEnv (g: TcGlobals) ccu =
         innerVals = []
         sigToImplRemapInfo = [] (* "module remap info" *)
         withinSEH = false
+        inRuntimeAsyncMethod = false
         insideFinallyOrFaultHandler = false
         isInLoop = false
         initLocals = true
