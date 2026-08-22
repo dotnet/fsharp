@@ -12325,6 +12325,9 @@ and TcLetBinding (cenv: cenv) isUse env containerInfo declKind tpenv (synBinds, 
 
                 tmp, checkedPat
 
+        if isFixed then
+            patternInputTmp.SetIsFixed()
+
         // Add the bind "let patternInputTmp = rhsExpr" to the bodyExpr we get from mkPatBind
         let mkRhsBind (bodyExpr, bodyExprTy) =
             let letExpr = mkLet debugPoint m patternInputTmp rhsExpr bodyExpr

@@ -14,9 +14,7 @@ module Language.RuntimeAsyncEdgeCaseTests
 // The CE `Run` lowers `do!`/`let!` to exactly this intrinsic form (see the execution facts).
 //
 // The "undiagnosed forbidden pattern" facts below pin restrictions that docs/runtime-async.md
-// records as known and currently NOT diagnosed by the F# compiler (tail./localloc forbidden;
-// suspension forbidden inside EH regions; byref/byref-like locals not preservable across a
-// suspension). They compile clean today; the comments record the observed runtime outcome.
+// records as known and currently NOT diagnosed by the F# compiler (tail./localloc forbidden).
 
 open Xunit
 open FSharp.Test.Compiler
@@ -372,21 +370,26 @@ let ``exception handling block suspensions compile and run correctly`` (_label: 
 
 
 
-// These direct-intrinsic restrictions remain undiagnosed; exception handlers are rewritten before
-// code generation and are covered by the execution test above.
 [<Theory>]
-[<InlineData("refstruct-across-suspension",
-             "let f () : Task<int> = StateMachineHelpers.__runtimeAsyncReturn (let data = [| 10; 20; 30 |] in let span = ReadOnlySpan<int>(data) in AsyncHelpers.Await(Task.Delay(1)); span[0] + span[1] + span[2])")>] // runtime: IndexOutOfRangeException (C14)
+[<InlineData("refstruct-param-across-suspension",
+             "let f (span: ReadOnlySpan<int>) : Task<int> = StateMachineHelpers.__runtimeAsyncReturn (AsyncHelpers.Await(Task.Delay(1)); span[0] + span[1] + span[2])")>]
 [<InlineData("byref-param-across-suspension",
-             "let f (x: byref<int>) : Task<int> = StateMachineHelpers.__runtimeAsyncReturn (AsyncHelpers.Await(Task.Delay(1)); x)")>] // byref read after suspension; C# gives CS1988
-let ``contract-forbidden suspension pattern compiles with no diagnostic`` (_label: string) (body: string) =
+             "let f (x: byref<int>) : Task<int> = StateMachineHelpers.__runtimeAsyncReturn (AsyncHelpers.Await(Task.Delay(1)); x)")>]
+[<InlineData("pinned-local-across-suspension",
+             "let f (arr: int[]) : Task<int> = StateMachineHelpers.__runtimeAsyncReturn (use p = fixed arr in AsyncHelpers.Await(Task.Delay(1)); FSharp.NativeInterop.NativePtr.get p 0)")>]
+let ``non-preservable values after suspension are rejected`` (_label: string) (body: string) =
     compileDirect body
+    |> shouldFail
+    |> withErrorCode 3357
+
+[<Fact>]
+let ``non-preservable value not used after suspension is allowed`` () =
+    compileDirect
+        "let f (x: byref<int>) : Task<int> = StateMachineHelpers.__runtimeAsyncReturn (AsyncHelpers.Await(Task.Delay(1)); 1)"
     |> shouldSucceed
 
 [<Fact>]
-// Positive counterpart to the ref-struct row above: the same code through the CE builder IS rejected,
-// because the continuation lambda captures the ref-struct local (FS0406). The CE provides a safety
-// net that the delegate-free intrinsic does not.
+// The CE builder rejects a ref-struct local captured by its continuation lambda (FS0406).
 let ``ref struct across a suspension is rejected through the CE builder`` () =
     FsFromPath builderPath
     |> withAdditionalSourceFile (FsSource refStructAcrossAwaitCE)

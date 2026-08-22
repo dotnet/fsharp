@@ -1264,6 +1264,9 @@ and IlxGenEnv =
         /// We are generating a runtime-async method/closure body, which forbids tail prefixes.
         inRuntimeAsyncMethod: bool
 
+        /// Method parameters whose storage cannot be preserved across a runtime-async suspension.
+        runtimeAsyncMethodVars: ValRef list
+
         /// Inline method bodies are templates whose suspension calls are checked at their eventual use site.
         inInlineMethod: bool
 
@@ -2659,6 +2662,9 @@ let FeeFee (cenv: cenv) =
 let FeeFeeInstr (cenv: cenv) doc =
     I_seqpoint(ILDebugPoint.Create(document = doc, line = FeeFee cenv, column = 0, endLine = FeeFee cenv, endColumn = 0))
 
+let IsRuntimeAsyncNonPreservableVal (g: TcGlobals) (v: Val) =
+    v.IsFixed || isByrefTy g v.Type || isByrefLikeTy g v.Range v.Type
+
 /// Buffers for IL code generation
 type CodeGenBuffer(m: range, mgbuf: AssemblyBuilder, methodName, alreadyUsedArgs: int) =
 
@@ -2666,6 +2672,9 @@ type CodeGenBuffer(m: range, mgbuf: AssemblyBuilder, methodName, alreadyUsedArgs
     let locals = ResizeArray<(string * (Mark * Mark)) list * ILType * bool * bool>(10)
     let codebuf = ResizeArray<ILInstr>(200)
     let exnSpecs = ResizeArray<ILExceptionSpec>(10)
+    let runtimeAsyncTrackedLocals = HashSet<Stamp>()
+    let runtimeAsyncSuspendedLocals = HashSet<Stamp>()
+    let runtimeAsyncReportedLocals = HashSet<Stamp>()
 
     // Keep track of the current stack so we can spill stuff when we hit a "try" when some stuff
     // is on the stack.
@@ -2907,6 +2916,25 @@ type CodeGenBuffer(m: range, mgbuf: AssemblyBuilder, methodName, alreadyUsedArgs
     /// Check if any locals have been allocated as pinned/fixed
     member _.HasPinnedLocals() =
         locals |> Seq.exists (fun (_, _, isFixed, _) -> isFixed)
+
+    member _.TrackRuntimeAsyncLocal(vref: ValRef) =
+        runtimeAsyncTrackedLocals.Add(vref.Deref.Stamp) |> ignore
+
+    member _.MarkRuntimeAsyncSuspension(locals: ValRef list) =
+        for vref in locals do
+            runtimeAsyncSuspendedLocals.Add(vref.Deref.Stamp) |> ignore
+
+        for stamp in runtimeAsyncTrackedLocals do
+            runtimeAsyncSuspendedLocals.Add stamp |> ignore
+
+    member _.CheckRuntimeAsyncLocalUse(vref: ValRef) =
+        let stamp = vref.Deref.Stamp
+
+        if
+            runtimeAsyncSuspendedLocals.Contains stamp
+            && runtimeAsyncReportedLocals.Add stamp
+        then
+            errorR (Error(FSComp.SR.ilRuntimeAsyncLocalUsedAfterSuspension (RichText.mkText vref.Deref.LogicalName), vref.Deref.Range))
 
     member _.HasStackAllocatedLocals() = hasStackAllocatedLocals
 
@@ -5803,6 +5831,11 @@ and GenILCall
     then
         errorR (Error(FSComp.SR.ilRuntimeAsyncSuspensionOutsideRuntimeAsync (RichText.mkText ilMethRef.Name), m))
 
+    if IsRuntimeAsyncSuspensionMethod cenv.g ilMethRef then
+        eenv.runtimeAsyncMethodVars @ eenv.letBoundVars
+        |> List.filter (fun vref -> IsRuntimeAsyncNonPreservableVal cenv.g vref.Deref)
+        |> cgbuf.MarkRuntimeAsyncSuspension
+
     let tail =
         CanTailcall(
             hasStructObjArg,
@@ -5946,6 +5979,7 @@ and GenGetAddrOfRefCellField cenv cgbuf eenv (e, ty, m) sequel =
     GenSequel cenv eenv.cloc cgbuf sequel
 
 and GenGetValAddr cenv cgbuf eenv (v: ValRef, m) sequel =
+    cgbuf.CheckRuntimeAsyncLocalUse v
     let vspec = v.Deref
     let ilTy = GenTypeOfVal cenv eenv vspec
     let storage = StorageForValRef m v eenv
@@ -9977,6 +10011,11 @@ and GenMethodForBinding
 
         { eenvForMeth with
             inRuntimeAsyncMethod = isRuntimeAsync
+            runtimeAsyncMethodVars =
+                if isRuntimeAsync then
+                    methLambdaVars |> List.map mkLocalValRef
+                else
+                    []
             inInlineMethod = v.InlineInfo = ValInline.Always
         }
 
@@ -10430,6 +10469,7 @@ and GenBindings cenv cgbuf eenv binds stateVarFlagsOpt =
 //-------------------------------------------------------------------------
 
 and GenSetVal cenv cgbuf eenv (vref, e, m) sequel =
+    cgbuf.CheckRuntimeAsyncLocalUse vref
     let storage = StorageForValRef m vref eenv
     GetStoreValCtxt cgbuf eenv vref.Deref
     GenExpr cenv cgbuf eenv e Continue
@@ -10437,6 +10477,7 @@ and GenSetVal cenv cgbuf eenv (vref, e, m) sequel =
     GenUnitThenSequel cenv eenv m eenv.cloc cgbuf sequel
 
 and GenGetValRefAndSequel cenv cgbuf eenv m (v: ValRef) storeSequel =
+    cgbuf.CheckRuntimeAsyncLocalUse v
     let ty = v.Type
     GenGetStorageAndSequel cenv cgbuf eenv m (ty, GenType cenv m eenv.tyenv ty) (StorageForValRef m v eenv) storeSequel
 
@@ -10595,12 +10636,15 @@ and GenGetFreeVarForClosure cenv cgbuf eenv m (fv: Val) =
         CG.EmitInstr cgbuf (pop 1) (Push [ ilUnderlyingTy ]) (mkNormalLdobj ilUnderlyingTy)
 
 and GenGetLocalVal cenv cgbuf eenv m (vspec: Val) storeSequel =
+    cgbuf.CheckRuntimeAsyncLocalUse(mkLocalValRef vspec)
     GenGetStorageAndSequel cenv cgbuf eenv m (vspec.Type, GenTypeOfVal cenv eenv vspec) (StorageForVal m vspec eenv) storeSequel
 
 and GenGetLocalVRef cenv cgbuf eenv m (vref: ValRef) storeSequel =
+    cgbuf.CheckRuntimeAsyncLocalUse vref
     GenGetStorageAndSequel cenv cgbuf eenv m (vref.Type, GenTypeOfVal cenv eenv vref.Deref) (StorageForValRef m vref eenv) storeSequel
 
 and GenStoreVal cgbuf eenv m (vspec: Val) =
+    cgbuf.CheckRuntimeAsyncLocalUse(mkLocalValRef vspec)
     GenSetStorage vspec.Range cgbuf (StorageForVal m vspec eenv)
 
 and CanRealloc isFixed eenv ty i (_, ty2, isFixed2, canBeReallocd) =
@@ -10631,6 +10675,9 @@ and AllocLocal cenv cgbuf eenv compgen (v, ty, isFixed) (scopeMarks: Mark * Mark
 /// Decide storage for local value and if necessary allocate an ILLocal for it
 and AllocLocalVal cenv cgbuf v eenv repr scopeMarks =
     let g = cenv.g
+
+    if eenv.inRuntimeAsyncMethod && IsRuntimeAsyncNonPreservableVal g v then
+        cgbuf.TrackRuntimeAsyncLocal(mkLocalValRef v)
 
     let repr, eenv =
         let ty = v.Type
@@ -13127,6 +13174,7 @@ let GetEmptyIlxGenEnv (g: TcGlobals) ccu =
         sigToImplRemapInfo = [] (* "module remap info" *)
         withinSEH = false
         inRuntimeAsyncMethod = false
+        runtimeAsyncMethodVars = []
         inInlineMethod = false
         insideFinallyOrFaultHandler = false
         isInLoop = false

@@ -1554,6 +1554,7 @@ csTypeHasNullAsExtraValue,"The type '%s' supports 'null' but a non-null type is 
 3352,typrelInterfaceMemberNoMostSpecificImplementation,"Interface member '%s' does not have a most specific implementation."
 3353,fsiInvalidDirective,"Invalid directive '#%s %s'"
 3354,ilRuntimeAsyncSuspensionOutsideRuntimeAsync,"Runtime async suspension method '%s' may only be called from a runtime async method."
+3357,ilRuntimeAsyncLocalUsedAfterSuspension,"A byref, byref-like, or pinned local '%s' cannot be used after a runtime async suspension."
 useSdkRefs,"Use reference assemblies for .NET framework references when available (Enabled by default)."
 optsCheckNulls,"Enable nullness declarations and checks (%s by default)"
 fSharpBannerVersion,"%s for F# %s"

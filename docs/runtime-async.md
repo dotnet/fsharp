@@ -59,7 +59,8 @@ Known runtime restrictions (currently **not** diagnosed by the F# compiler):
   `try`, then restores a pending exception. This makes `use` on an
   `IAsyncDisposable` work under runtime async (`testUsingAsyncDisposableSync`
   executes).
-* Byref, byref-like, and pinned locals cannot be preserved across suspension.
+Byref, byref-like, and pinned locals that are used after a suspension are
+rejected with diagnostic FS3357.
 
 Calls to `AsyncHelpers` suspension methods emitted outside a runtime-async
 method are rejected during code generation. Explicitly `inline` method bodies
@@ -231,8 +232,8 @@ element-type propagation through `Bind` without an annotation, and unannotated
 
 ## Not yet implemented
 
-* Diagnostics for suspension in exception-handling regions, byref/byref-like
-  or pinned locals across suspension, `tail.`, and `localloc`.
+* Diagnostics for suspension in exception-handling regions, `tail.`, and
+  `localloc`.
 * Non-generic `Task` and `ValueTask`/`ValueTask<'T>` return shapes.
 * Any FSharp.Core builder (the test builder is test-only).
 * Compile-time enforcement that the marker was actually consumed before
