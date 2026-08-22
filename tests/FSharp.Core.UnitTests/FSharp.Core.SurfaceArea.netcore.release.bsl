@@ -1,5 +1,3 @@
-! AssemblyReference: System.Runtime.Numerics
-! AssemblyReference: netstandard
 Microsoft.FSharp.Collections.Array2DModule: Int32 Base1[T](T[,])
 Microsoft.FSharp.Collections.Array2DModule: Int32 Base2[T](T[,])
 Microsoft.FSharp.Collections.Array2DModule: Int32 Length1[T](T[,])
@@ -852,6 +850,7 @@ Microsoft.FSharp.Core.AllowNullLiteralAttribute: Boolean Value
 Microsoft.FSharp.Core.AllowNullLiteralAttribute: Boolean get_Value()
 Microsoft.FSharp.Core.AllowNullLiteralAttribute: Void .ctor()
 Microsoft.FSharp.Core.AllowNullLiteralAttribute: Void .ctor(Boolean)
+Microsoft.FSharp.Core.AllowOverloadOnReturnTypeAttribute: Void .ctor()
 Microsoft.FSharp.Core.AutoOpenAttribute: System.String Path
 Microsoft.FSharp.Core.AutoOpenAttribute: System.String get_Path()
 Microsoft.FSharp.Core.AutoOpenAttribute: Void .ctor()
@@ -1002,10 +1001,10 @@ Microsoft.FSharp.Core.CompilerServices.SetStateMachineMethodImpl`1[TData]: Void 
 Microsoft.FSharp.Core.CompilerServices.SetStateMachineMethodImpl`1[TData]: Void Invoke(Microsoft.FSharp.Core.CompilerServices.ResumableStateMachine`1[TData] ByRef, System.Runtime.CompilerServices.IAsyncStateMachine)
 Microsoft.FSharp.Core.CompilerServices.StateMachineHelpers: Boolean __useResumableCode[T]()
 Microsoft.FSharp.Core.CompilerServices.StateMachineHelpers: Microsoft.FSharp.Core.FSharpOption`1[System.Int32] __resumableEntry()
+Microsoft.FSharp.Core.CompilerServices.StateMachineHelpers: System.Threading.Tasks.Task`1[T] __runtimeAsyncReturn[T](T)
 Microsoft.FSharp.Core.CompilerServices.StateMachineHelpers: T __resumeAt[T](Int32)
 Microsoft.FSharp.Core.CompilerServices.StateMachineHelpers: TResult __stateMachine[TData,TResult](Microsoft.FSharp.Core.CompilerServices.MoveNextMethodImpl`1[TData], Microsoft.FSharp.Core.CompilerServices.SetStateMachineMethodImpl`1[TData], Microsoft.FSharp.Core.CompilerServices.AfterCode`2[TData,TResult])
 Microsoft.FSharp.Core.CompilerServices.StateMachineHelpers: Void __debugPoint(System.String)
-Microsoft.FSharp.Core.CompilerServices.StateMachineHelpers: System.Threading.Tasks.Task`1[T] __runtimeAsyncReturn[T](T)
 Microsoft.FSharp.Core.CompilerServices.TypeProviderAssemblyAttribute: System.String AssemblyName
 Microsoft.FSharp.Core.CompilerServices.TypeProviderAssemblyAttribute: System.String get_AssemblyName()
 Microsoft.FSharp.Core.CompilerServices.TypeProviderAssemblyAttribute: Void .ctor()

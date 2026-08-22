@@ -1,5 +1,3 @@
-! AssemblyReference: System.Runtime.Numerics
-! AssemblyReference: netstandard
 Microsoft.FSharp.Collections.Array2DModule: Int32 Base1[T](T[,])
 Microsoft.FSharp.Collections.Array2DModule: Int32 Base2[T](T[,])
 Microsoft.FSharp.Collections.Array2DModule: Int32 Length1[T](T[,])
@@ -677,9 +675,9 @@ Microsoft.FSharp.Control.FSharpAsync: Microsoft.FSharp.Control.FSharpAsync`1[T[]
 Microsoft.FSharp.Control.FSharpAsync: Microsoft.FSharp.Control.FSharpAsync`1[T[]] Parallel[T](System.Collections.Generic.IEnumerable`1[Microsoft.FSharp.Control.FSharpAsync`1[T]], Microsoft.FSharp.Core.FSharpOption`1[System.Int32])
 Microsoft.FSharp.Control.FSharpAsync: Microsoft.FSharp.Control.FSharpAsync`1[T[]] Sequential[T](System.Collections.Generic.IEnumerable`1[Microsoft.FSharp.Control.FSharpAsync`1[T]])
 Microsoft.FSharp.Control.FSharpAsync: Microsoft.FSharp.Control.FSharpAsync`1[T] AwaitEvent[TDel,T](Microsoft.FSharp.Control.IEvent`2[TDel,T], Microsoft.FSharp.Core.FSharpOption`1[Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Core.Unit,Microsoft.FSharp.Core.Unit]])
+Microsoft.FSharp.Control.FSharpAsync: Microsoft.FSharp.Control.FSharpAsync`1[T] AwaitTask[T](System.Threading.Tasks.Task`1[T])
 Microsoft.FSharp.Control.FSharpAsync: Microsoft.FSharp.Control.FSharpAsync`1[T] Await[T](System.Threading.Tasks.Task`1[T])
 Microsoft.FSharp.Control.FSharpAsync: Microsoft.FSharp.Control.FSharpAsync`1[T] Await[T](System.Threading.Tasks.ValueTask`1[T])
-Microsoft.FSharp.Control.FSharpAsync: Microsoft.FSharp.Control.FSharpAsync`1[T] AwaitTask[T](System.Threading.Tasks.Task`1[T])
 Microsoft.FSharp.Control.FSharpAsync: Microsoft.FSharp.Control.FSharpAsync`1[T] FromBeginEnd[TArg1,TArg2,TArg3,T](TArg1, TArg2, TArg3, Microsoft.FSharp.Core.FSharpFunc`2[System.Tuple`5[TArg1,TArg2,TArg3,System.AsyncCallback,System.Object],System.IAsyncResult], Microsoft.FSharp.Core.FSharpFunc`2[System.IAsyncResult,T], Microsoft.FSharp.Core.FSharpOption`1[Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Core.Unit,Microsoft.FSharp.Core.Unit]])
 Microsoft.FSharp.Control.FSharpAsync: Microsoft.FSharp.Control.FSharpAsync`1[T] FromBeginEnd[TArg1,TArg2,T](TArg1, TArg2, Microsoft.FSharp.Core.FSharpFunc`2[System.Tuple`4[TArg1,TArg2,System.AsyncCallback,System.Object],System.IAsyncResult], Microsoft.FSharp.Core.FSharpFunc`2[System.IAsyncResult,T], Microsoft.FSharp.Core.FSharpOption`1[Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Core.Unit,Microsoft.FSharp.Core.Unit]])
 Microsoft.FSharp.Control.FSharpAsync: Microsoft.FSharp.Control.FSharpAsync`1[T] FromBeginEnd[TArg1,T](TArg1, Microsoft.FSharp.Core.FSharpFunc`2[System.Tuple`3[TArg1,System.AsyncCallback,System.Object],System.IAsyncResult], Microsoft.FSharp.Core.FSharpFunc`2[System.IAsyncResult,T], Microsoft.FSharp.Core.FSharpOption`1[Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Core.Unit,Microsoft.FSharp.Core.Unit]])
@@ -852,6 +850,7 @@ Microsoft.FSharp.Core.AllowNullLiteralAttribute: Boolean Value
 Microsoft.FSharp.Core.AllowNullLiteralAttribute: Boolean get_Value()
 Microsoft.FSharp.Core.AllowNullLiteralAttribute: Void .ctor()
 Microsoft.FSharp.Core.AllowNullLiteralAttribute: Void .ctor(Boolean)
+Microsoft.FSharp.Core.AllowOverloadOnReturnTypeAttribute: Void .ctor()
 Microsoft.FSharp.Core.AutoOpenAttribute: System.String Path
 Microsoft.FSharp.Core.AutoOpenAttribute: System.String get_Path()
 Microsoft.FSharp.Core.AutoOpenAttribute: Void .ctor()
@@ -1002,10 +1001,10 @@ Microsoft.FSharp.Core.CompilerServices.SetStateMachineMethodImpl`1[TData]: Void 
 Microsoft.FSharp.Core.CompilerServices.SetStateMachineMethodImpl`1[TData]: Void Invoke(Microsoft.FSharp.Core.CompilerServices.ResumableStateMachine`1[TData] ByRef, System.Runtime.CompilerServices.IAsyncStateMachine)
 Microsoft.FSharp.Core.CompilerServices.StateMachineHelpers: Boolean __useResumableCode[T]()
 Microsoft.FSharp.Core.CompilerServices.StateMachineHelpers: Microsoft.FSharp.Core.FSharpOption`1[System.Int32] __resumableEntry()
+Microsoft.FSharp.Core.CompilerServices.StateMachineHelpers: System.Threading.Tasks.Task`1[T] __runtimeAsyncReturn[T](T)
 Microsoft.FSharp.Core.CompilerServices.StateMachineHelpers: T __resumeAt[T](Int32)
 Microsoft.FSharp.Core.CompilerServices.StateMachineHelpers: TResult __stateMachine[TData,TResult](Microsoft.FSharp.Core.CompilerServices.MoveNextMethodImpl`1[TData], Microsoft.FSharp.Core.CompilerServices.SetStateMachineMethodImpl`1[TData], Microsoft.FSharp.Core.CompilerServices.AfterCode`2[TData,TResult])
 Microsoft.FSharp.Core.CompilerServices.StateMachineHelpers: Void __debugPoint(System.String)
-Microsoft.FSharp.Core.CompilerServices.StateMachineHelpers: System.Threading.Tasks.Task`1[T] __runtimeAsyncReturn[T](T)
 Microsoft.FSharp.Core.CompilerServices.TypeProviderAssemblyAttribute: System.String AssemblyName
 Microsoft.FSharp.Core.CompilerServices.TypeProviderAssemblyAttribute: System.String get_AssemblyName()
 Microsoft.FSharp.Core.CompilerServices.TypeProviderAssemblyAttribute: Void .ctor()
@@ -1120,11 +1119,11 @@ Microsoft.FSharp.Core.ExtraTopLevelOperators: T PrintFormatToStringThenFail[T,TR
 Microsoft.FSharp.Core.ExtraTopLevelOperators: T PrintFormatToString[T](Microsoft.FSharp.Core.PrintfFormat`4[T,Microsoft.FSharp.Core.Unit,System.String,System.String])
 Microsoft.FSharp.Core.ExtraTopLevelOperators: T PrintFormatToTextWriter[T](System.IO.TextWriter, Microsoft.FSharp.Core.PrintfFormat`4[T,System.IO.TextWriter,Microsoft.FSharp.Core.Unit,Microsoft.FSharp.Core.Unit])
 Microsoft.FSharp.Core.ExtraTopLevelOperators: T PrintFormat[T](Microsoft.FSharp.Core.PrintfFormat`4[T,System.IO.TextWriter,Microsoft.FSharp.Core.Unit,Microsoft.FSharp.Core.Unit])
-Microsoft.FSharp.Core.ExtraTopLevelOperators: Void PrintValue[T](T)
-Microsoft.FSharp.Core.ExtraTopLevelOperators: Void PrintValueLine[T](T)
 Microsoft.FSharp.Core.ExtraTopLevelOperators: T SpliceExpression[T](Microsoft.FSharp.Quotations.FSharpExpr`1[T])
 Microsoft.FSharp.Core.ExtraTopLevelOperators: T SpliceUntypedExpression[T](Microsoft.FSharp.Quotations.FSharpExpr)
 Microsoft.FSharp.Core.ExtraTopLevelOperators: T[,] CreateArray2D[a,T](System.Collections.Generic.IEnumerable`1[a])
+Microsoft.FSharp.Core.ExtraTopLevelOperators: Void PrintValueLine[T](T)
+Microsoft.FSharp.Core.ExtraTopLevelOperators: Void PrintValue[T](T)
 Microsoft.FSharp.Core.FSharpChoice`2+Choice1Of2[T1,T2]: T1 Item
 Microsoft.FSharp.Core.FSharpChoice`2+Choice1Of2[T1,T2]: T1 get_Item()
 Microsoft.FSharp.Core.FSharpChoice`2+Choice2Of2[T1,T2]: T2 Item

@@ -81,4 +81,4 @@ module FSharp.Test.SurfaceArea
         verifyWith true (fun _ -> true) assembly baselinePath
 
     let verifyIgnoringAssemblyReferences assembly baselinePath : unit =
-        verifyWith false (fun line -> not (line.StartsWith("! AssemblyReference:", StringComparison.Ordinal))) assembly baselinePath
+        verifyWith true (fun line -> not (line.StartsWith("! AssemblyReference:", StringComparison.Ordinal))) assembly baselinePath
