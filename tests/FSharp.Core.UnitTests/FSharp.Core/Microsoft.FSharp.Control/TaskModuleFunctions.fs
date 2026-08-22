@@ -302,6 +302,167 @@ module TaskModuleFunctionsTests =
         Assert.Equal((), t.Result)
 
 
+    [<Fact>]
+    let ``Task.parallelLimit runs all tasks and collects results`` () : Task =
+        task {
+            use cts = new CancellationTokenSource()
+            let! results =
+                [for i in 1..5 do fun (ct: CancellationToken) ->
+                    Assert.Equal(cts.Token, ct)
+                    Task.result (i * i)]
+                |> Task.parallelLimit 2 cts.Token
+            Assert.Equal([| 1; 4; 9; 16; 25 |], results)
+        }
+
+    [<Fact>]
+    let ``Task.parallelLimit limits concurrency`` () : Task =
+        task {
+            use cts = new CancellationTokenSource()
+            let mutable concurrent = 0
+            let mutable maxConcurrent = 0
+            let lockObj = obj()
+            let computations =
+                [for _ in 1..10 ->
+                    fun (ct: CancellationToken) ->
+                        Assert.Equal(cts.Token, ct)
+                        task {
+                            let n =
+                                lock lockObj (fun () ->
+                                    concurrent <- concurrent + 1
+                                    if concurrent > maxConcurrent then maxConcurrent <- concurrent
+                                    concurrent)
+                            do! Task.Delay(1)
+                            lock lockObj (fun () -> concurrent <- concurrent - 1)
+                            return n
+                        }]
+            let! _ = Task.parallelLimit 3 cts.Token computations
+            Assert.True(maxConcurrent <= 3, $"max concurrent was {maxConcurrent}, expected <= 3")
+        }
+
+    [<Fact>]
+    let ``Task.parallelLimit raises ArgumentException for non-positive maxDegreeOfParallelism`` () =
+        let ex =
+            Assert.Throws<ArgumentException>(fun () ->
+                [ fun (_: CancellationToken) -> Task.result 1 ]
+                |> Task.parallelLimit 0 CancellationToken.None
+                |> ignore<Task<int[]>>)
+        Assert.Equal("maxDegreeOfParallelism", ex.ParamName)
+
+
+    [<Fact>]
+    let ``Task.parallelDoLimit runs all tasks and returns unit`` () : Task =
+        task {
+            use cts = new CancellationTokenSource()
+            let mutable count = 0
+            let computations =
+                [for _ in 1..5 ->
+                    fun (ct: CancellationToken) ->
+                        Assert.Equal(cts.Token, ct)
+                        task { Interlocked.Increment &count |> ignore }]
+            do! Task.parallelDoLimit 2 cts.Token computations
+            Assert.Equal(5, count)
+        }
+
+
+    [<Fact>]
+    let ``Task.sequential runs all tasks in order and collects results`` () : Task =
+        task {
+            use cts = new CancellationTokenSource()
+            let order = ResizeArray()
+            let! results =
+                [for i in 1..5 do
+                    fun (ct: CancellationToken) ->
+                        Assert.Equal(cts.Token, ct)
+                        task {
+                            order.Add i
+                            return i * i
+                        }]
+                |> Task.sequential cts.Token
+            Assert.Equal([| 1; 4; 9; 16; 25 |], results)
+            Assert.Equal<int seq>([ 1; 2; 3; 4; 5 ], order)
+        }
+
+    [<Fact>]
+    let ``Task.sequential runs computations one at a time`` () : Task =
+        task {
+            use cts = new CancellationTokenSource()
+            let mutable concurrent = 0
+            let mutable maxConcurrent = 0
+            let computations =
+                [for _ in 1..5 ->
+                    fun (_: CancellationToken) ->
+                        task {
+                            let n = Interlocked.Increment &concurrent
+                            if n > maxConcurrent then maxConcurrent <- n
+                            do! Task.Delay(1)
+                            Interlocked.Decrement &concurrent |> ignore
+                            return n
+                        }]
+            let! _ = Task.sequential cts.Token computations
+            Assert.Equal(1, maxConcurrent)
+        }
+
+
+    [<Fact>]
+    let ``Task.sequentialDo runs all tasks in order and returns unit`` () : Task =
+        task {
+            use cts = new CancellationTokenSource()
+            let order = ResizeArray()
+            let computations =
+                [for i in 1..5 do
+                    fun (ct: CancellationToken) ->
+                        Assert.Equal(cts.Token, ct)
+                        task { order.Add i }]
+            do! Task.sequentialDo cts.Token computations
+            Assert.Equal<int seq>([ 1; 2; 3; 4; 5 ], order)
+        }
+
+    [<Fact>]
+    let ``Task.sequentialDo runs computations one at a time`` () : Task =
+        task {
+            use cts = new CancellationTokenSource()
+            let mutable concurrent = 0
+            let mutable maxConcurrent = 0
+            let computations =
+                [for _ in 1..5 ->
+                    fun (_: CancellationToken) ->
+                        task {
+                            let n = Interlocked.Increment &concurrent
+                            if n > maxConcurrent then maxConcurrent <- n
+                            do! Task.Delay(1)
+                            Interlocked.Decrement &concurrent |> ignore
+                        }]
+            do! Task.sequentialDo cts.Token computations
+            Assert.Equal(1, maxConcurrent)
+        }
+
+
+    [<Fact>]
+    let ``Task.startAsyncImmediate flows result`` () : Task =
+        task {
+            use cts = new CancellationTokenSource()
+            let! result = Async.result 42 |> Task.startAsyncImmediate cts.Token
+            Assert.Equal(42, result)
+        }
+
+    [<Fact>]
+    let ``Task.startAsyncImmediate flows CancellationToken`` () : Task =
+        task {
+            use cts = new CancellationTokenSource()
+            let! capturedCt = Async.CancellationToken |> Task.startAsyncImmediate cts.Token 
+            Assert.Equal(cts.Token, capturedCt)
+        }
+
+    [<Fact>]
+    let ``Task.startAsyncImmediate cancellation cancels the task`` () =
+        use cts = new CancellationTokenSource()
+        let t =
+            async { do! Async.Sleep(30_000) }
+            |> Task.startAsyncImmediate cts.Token
+        cts.Cancel()
+        Assert.ThrowsAsync<TaskCanceledException>(fun () -> t :> Task).Result |> ignore
+        Assert.True t.IsCanceled
+
 #if NETSTANDARD2_1 || NET
     [<Fact>]
     let ``Task.ofValueTask converts ValueTask`` () =

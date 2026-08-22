@@ -379,19 +379,18 @@ namespace Microsoft.FSharp.Control
         ///            let! completor2 = childComputation2 |> Async.StartChild  
         ///            ... 
         ///            let! result1 = completor1 
-        ///            let! result2 = completor2 
+        ///            and! result2 = completor2 
         ///            ... }
         /// </code>
         ///
         /// When used in this way, each use of <c>StartChild</c> starts an instance of <c>childComputation</c> 
         /// and returns a completor object representing a computation to wait for the completion of the operation.
-        /// When executed, the completor awaits the completion of <c>childComputation</c>.</remarks>
+        /// When executed, the completor awaits the completion of <c>computation</c>.</remarks>
         ///
-        /// <param name="computation">The child computation.</param>
-        /// <param name="millisecondsTimeout">The timeout value in milliseconds.  If one is not provided
-        /// then the default value of -1 corresponding to <see cref="F:System.Threading.Timeout.Infinite"/>.</param>
+        /// <param name="computation">The computation to start.</param>
+        /// <param name="millisecondsTimeout">The optional timeout value in milliseconds.</param>
         ///
-        /// <returns>A new computation that waits for the input computation to finish.</returns>
+        /// <returns>A computation that waits for the child computation to be completed.</returns>
         ///
         /// <category index="0">Starting Async Computations</category>
         ///
@@ -415,13 +414,13 @@ namespace Microsoft.FSharp.Control
         ///                     return 2
         ///                  }),
         ///                 millisecondsTimeout = timeout)
-        ///
+        ///         do! Async.Sleep 500 // Or any other async activity
         ///         let! v1 = completor1
-        ///         let! v2 = completor2
+        ///         and! v2 = completor2
         ///         printfn $"Result: {v1 + v2}"
-        ///     } |> Async.RunSynchronously
+        ///     } |> Async.RunSynchronouslyImmediate
         /// </code>
-        /// Will throw a System.TimeoutException if called with a timeout less than 2000, otherwise will print "Result: 3".
+        /// Will throw a <c>System.TimeoutException</c> if called with a timeout under 2000, otherwise will print "Result: 3".
         /// </example>
         static member StartChild : computation:Async<'T> * ?millisecondsTimeout : int -> Async<Async<'T>>
                 
@@ -2074,3 +2073,41 @@ namespace Microsoft.FSharp.Control
         /// </example>
         [<CompiledName("Empty")>]
         val empty: Async<unit>
+
+        /// <summary>Creates an asynchronous computation that executes all the supplied asynchronous computations
+        /// with concurrency limited to at most <c>maxDegreeOfParallelism</c>,
+        /// and returns their results as an array in the same order as the inputs.</summary>
+        /// <remarks>While the result order matches the input order, the relative start and completion order of computations is arbitrary.</remarks>
+        /// <param name="maxDegreeOfParallelism">The maximum number of computations to run concurrently. Must be &gt; 0.</param>
+        /// <param name="computations">A sequence of computations to be parallelized.</param>
+        /// <returns>A computation that returns an array of results from the input computations in the same order they were supplied.</returns>
+        ///
+        /// <example id="async-parallellimit-1">
+        /// <code lang="fsharp">
+        /// let results =
+        ///     seq { for i in 1..10 -> async { return i * i } }
+        ///     |> Async.parallelLimit 3
+        ///     |> Async.RunSynchronouslyImmediate
+        /// results // evaluates to [| 1; 4; 9; 16; 25; 36; 49; 64; 81; 100 |]
+        /// </code>
+        /// </example>
+        [<CompiledName("ParallelLimit")>]
+        val parallelLimit: maxDegreeOfParallelism: int -> computations: seq<Async<'T>> -> Async<'T[]>
+
+        /// <summary>Creates an asynchronous computation that executes all the supplied asynchronous computations returning unit,
+        /// with concurrency limited to at most <c>maxDegreeOfParallelism</c>.</summary>
+        /// <remarks>The relative start and completion order of computations is arbitrary.</remarks>
+        /// <param name="maxDegreeOfParallelism">The maximum number of computations to run concurrently. Must be &gt; 0.</param>
+        /// <param name="computations">A sequence of unit computations to be parallelized.</param>
+        ///
+        /// <returns>A computation that runs all inputs with limited parallelism and returns <c>unit</c>.</returns>
+        ///
+        /// <example id="async-paralleldolimit-1">
+        /// <code lang="fsharp">
+        /// seq { for i in 1..10 -> async { printfn "%d" i } } // NOTE output order can vary
+        /// |> Async.parallelDoLimit 3
+        /// |> Async.RunSynchronouslyImmediate
+        /// </code>
+        /// </example>
+        [<CompiledName("ParallelDoLimit")>]
+        val parallelDoLimit: maxDegreeOfParallelism: int -> computations: seq<Async<unit>> -> Async<unit>
