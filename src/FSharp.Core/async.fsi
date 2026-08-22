@@ -379,19 +379,18 @@ namespace Microsoft.FSharp.Control
         ///            let! completor2 = childComputation2 |> Async.StartChild  
         ///            ... 
         ///            let! result1 = completor1 
-        ///            let! result2 = completor2 
+        ///            and! result2 = completor2 
         ///            ... }
         /// </code>
         ///
         /// When used in this way, each use of <c>StartChild</c> starts an instance of <c>childComputation</c> 
         /// and returns a completor object representing a computation to wait for the completion of the operation.
-        /// When executed, the completor awaits the completion of <c>childComputation</c>.</remarks>
+        /// When executed, the completor awaits the completion of <c>computation</c>.</remarks>
         ///
-        /// <param name="computation">The child computation.</param>
-        /// <param name="millisecondsTimeout">The timeout value in milliseconds.  If one is not provided
-        /// then the default value of -1 corresponding to <see cref="F:System.Threading.Timeout.Infinite"/>.</param>
+        /// <param name="computation">The computation to start.</param>
+        /// <param name="millisecondsTimeout">The optional timeout value in milliseconds.</param>
         ///
-        /// <returns>A new computation that waits for the input computation to finish.</returns>
+        /// <returns>A computation that waits for the child computation to be completed.</returns>
         ///
         /// <category index="0">Starting Async Computations</category>
         ///
@@ -415,13 +414,13 @@ namespace Microsoft.FSharp.Control
         ///                     return 2
         ///                  }),
         ///                 millisecondsTimeout = timeout)
-        ///
+        ///         do! Async.Sleep 500 // Or any other async activity
         ///         let! v1 = completor1
-        ///         let! v2 = completor2
+        ///         and! v2 = completor2
         ///         printfn $"Result: {v1 + v2}"
-        ///     } |> Async.RunSynchronously
+        ///     } |> Async.RunSynchronouslyImmediate
         /// </code>
-        /// Will throw a System.TimeoutException if called with a timeout less than 2000, otherwise will print "Result: 3".
+        /// Will throw a <c>System.TimeoutException</c> if called with a timeout under 2000, otherwise will print "Result: 3".
         /// </example>
         static member StartChild : computation:Async<'T> * ?millisecondsTimeout : int -> Async<Async<'T>>
                 
