@@ -1264,6 +1264,9 @@ and IlxGenEnv =
         /// We are generating a runtime-async method/closure body, which forbids tail prefixes.
         inRuntimeAsyncMethod: bool
 
+        /// Inline method bodies are templates whose suspension calls are checked at their eventual use site.
+        inInlineMethod: bool
+
         /// Suppresses filter block emission inside finally/fault handlers (workaround for dotnet/runtime#112406).
         insideFinallyOrFaultHandler: bool
 
@@ -3154,6 +3157,18 @@ let rec TryUnwrapRuntimeAsyncReturnExpr (g: TcGlobals) expr =
         | false, _ -> false, expr
     | Expr.App(Expr.Val(vref, _, _), _, [ _ ], [ body ], _) when IsRuntimeAsyncReturnVref g vref -> true, body
     | _ -> false, expr
+
+let private IsRuntimeAsyncSuspensionMethod (g: TcGlobals) (ilMethRef: ILMethodRef) =
+    let (TILObjectReprData(coreLibScope, _, _)) = g.system_Object_tcref.ILTyconInfo
+
+    ilMethRef.DeclaringTypeRef.Scope = coreLibScope
+    && ilMethRef.DeclaringTypeRef.FullName = "System.Runtime.CompilerServices.AsyncHelpers"
+    && ilMethRef.Name
+       |> function
+           | "Await"
+           | "AwaitAwaiter"
+           | "UnsafeAwaitAwaiter" -> true
+           | _ -> false
 
 //-------------------------------------------------------------------------
 // Generate expressions
@@ -5780,6 +5795,13 @@ and GenILCall
     let mustGenerateUnitAfterCall = isNil returnTys
     let makesNoCriticalTailcalls = (newobj || not virt) // Don't tailcall for 'newobj', or 'call' to IL code
     let hasStructObjArg = valu && ilMethRef.CallingConv.IsInstance
+
+    if
+        not eenv.inRuntimeAsyncMethod
+        && not eenv.inInlineMethod
+        && IsRuntimeAsyncSuspensionMethod cenv.g ilMethRef
+    then
+        errorR (Error(FSComp.SR.ilRuntimeAsyncSuspensionOutsideRuntimeAsync (RichText.mkText ilMethRef.Name), m))
 
     let tail =
         CanTailcall(
@@ -9955,6 +9977,7 @@ and GenMethodForBinding
 
         { eenvForMeth with
             inRuntimeAsyncMethod = isRuntimeAsync
+            inInlineMethod = v.InlineInfo = ValInline.Always
         }
 
     let tailCallInfo =
@@ -13104,6 +13127,7 @@ let GetEmptyIlxGenEnv (g: TcGlobals) ccu =
         sigToImplRemapInfo = [] (* "module remap info" *)
         withinSEH = false
         inRuntimeAsyncMethod = false
+        inInlineMethod = false
         insideFinallyOrFaultHandler = false
         isInLoop = false
         initLocals = true

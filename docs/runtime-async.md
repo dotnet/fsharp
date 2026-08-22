@@ -61,6 +61,10 @@ Known runtime restrictions (currently **not** diagnosed by the F# compiler):
   executes).
 * Byref, byref-like, and pinned locals cannot be preserved across suspension.
 
+Calls to `AsyncHelpers` suspension methods emitted outside a runtime-async
+method are rejected during code generation. Explicitly `inline` method bodies
+are treated as templates and checked at their eventual use site.
+
 ## F# surface
 
 The source-level marker is the compiler intrinsic

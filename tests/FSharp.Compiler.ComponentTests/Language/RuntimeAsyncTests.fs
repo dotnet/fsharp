@@ -96,6 +96,25 @@ let f : Task<int> =
     |> withErrorCode 3350
 
 [<Fact>]
+let ``runtime async suspension outside runtime async is rejected`` () =
+    FSharp """
+module RuntimeAsyncSuspensionContextTest
+
+open System.Threading.Tasks
+open System.Runtime.CompilerServices
+
+let f () =
+    AsyncHelpers.Await(Task.Delay(1))
+    AsyncHelpers.AwaitAwaiter(Task.Delay(1).GetAwaiter())
+    AsyncHelpers.UnsafeAwaitAwaiter(Task.Delay(1).GetAwaiter())
+"""
+    |> withLangVersionPreview
+    |> withFSharpCoreShippedNet
+    |> compile
+    |> shouldFail
+    |> withErrorCodes [ 3354; 3354; 3354 ]
+
+[<Fact>]
 let ``runtime async rejects non Task result carriers`` () =
     FSharp """
 module RuntimeAsyncCarrierTest
