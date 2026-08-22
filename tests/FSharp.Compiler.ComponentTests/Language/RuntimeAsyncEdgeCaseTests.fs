@@ -76,12 +76,15 @@ let f () : Task<int> =
 
 // ============================ execution (runtime behavior) ============================
 
-[<Fact>]
-let ``runtime async edge cases execute through the CE builder`` () =
+[<InlineData(false)>]
+[<InlineData(true)>]
+[<Theory>]
+let ``runtime async edge cases execute through the CE builder`` (optimize: bool) =
     FsFromPath builderPath
     |> withAdditionalSourceFile (SourceFromPath (Path.Combine(runtimeAsyncDir, "RuntimeAsyncEdgeCases.fs")))
     |> withLangVersionPreview
     |> withFSharpCoreShippedNet
+    |> withOptimization optimize
     |> compileExeAndRun
     |> shouldSucceed
 

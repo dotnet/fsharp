@@ -139,6 +139,12 @@ the optimizer never inlines, duplicates, or discards it. The marker therefore
 survives optimization as an ordinary `Expr.App` node; nothing else in the
 typed tree records that a method is runtime-async.
 
+Inline values whose bodies contain the marker or an `AsyncHelpers` suspension
+are recursively specialized at their call sites, including when optimization
+is disabled. The optimizer follows nested inline calls and does not create a
+generated helper method for the specialized suspension fragment, keeping every
+suspension in the eventual runtime-async method.
+
 ## Code generation
 
 `IlxGen.fs` recognises the marker in three placements

@@ -78,6 +78,23 @@ type Calculator() =
 
 """
 
+let private runtimeAsyncNestedInlineSource = """
+module RuntimeAsyncNestedInlineTest
+
+open System.Threading.Tasks
+open System.Runtime.CompilerServices
+open Microsoft.FSharp.Core.CompilerServices
+
+type InlineAwait =
+    static member inline Await1(task: Task<int>) = AsyncHelpers.Await task
+    static member inline Await2(task: Task<int>) = InlineAwait.Await1 task
+    static member inline AddOne(value: int) = value + 1
+    static member inline Await3(task: Task<int>) = InlineAwait.AddOne (InlineAwait.Await2 task)
+
+let f (task: Task<int>) : Task<int> =
+    StateMachineHelpers.__runtimeAsyncReturn (InlineAwait.Await3 task)
+"""
+
 #if NETCOREAPP
 [<Fact>]
 let ``runtime async requires preview language version`` () =
@@ -160,13 +177,25 @@ let ``runtime async combines awaited chunks without delegates`` () =
     |> shouldSucceed
 
 [<Fact>]
-let ``runtime task builder fixture executes through runtime async`` () =
+let ``runtime async specializes nested inline suspensions without optimization`` () =
+    FSharp runtimeAsyncNestedInlineSource
+    |> withLangVersionPreview
+    |> withFSharpCoreShippedNet
+    |> withNoOptimize
+    |> compile
+    |> verifyILContains [ "AsyncHelpers::Await<int32>(class [runtime]System.Threading.Tasks.Task`1<!!0>)" ]
+
+[<InlineData(false)>]
+[<InlineData(true)>]
+[<Theory>]
+let ``runtime task builder fixture executes through runtime async`` (optimize: bool) =
     FsFromPath (Path.Combine(__SOURCE_DIRECTORY__, "RuntimeAsync", "RuntimeTaskBuilder.fs"))
     |> withAdditionalSourceFile (
         SourceFromPath (Path.Combine(__SOURCE_DIRECTORY__, "RuntimeAsync", "RuntimeTasks.fs"))
     )
     |> withLangVersionPreview
     |> withFSharpCoreShippedNet
+    |> withOptimization optimize
     |> compileExeAndRun
     |> shouldSucceed
 
