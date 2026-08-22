@@ -108,7 +108,8 @@ module internal XmlDocSignatures =
 
         | TType_measure _ -> "?"
 
-        | TType_anon_union(_) -> failwith "unreachable" // always erased by stripTyEqnsAndMeasureEqns
+        // should never be reached, always erased by stripTyEqnsAndMeasureEqns
+        | TType_anon_union(info, _, _) -> typeEnc g (gtpsType, gtpsMethod) info.CommonAncestorTy
 
     and tyargsEnc g (gtpsType, gtpsMethod) args =
         match args with
