@@ -13,6 +13,7 @@ type LanguageFeature =
     | FromEndSlicing
     | FixedIndexSlice3d4d
     | ResumableStateMachines
+    | RuntimeAsync
     | NullableOptionalInterop
     | DefaultInterfaceMemberConsumption
     | WitnessPassing
