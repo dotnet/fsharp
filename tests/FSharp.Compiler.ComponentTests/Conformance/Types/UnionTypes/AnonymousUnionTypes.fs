@@ -433,6 +433,17 @@ module AnonymousUnionTypes =
             (Warning 4500, Line 4, Col 8, Line 4, Col 37, "The type 'string' is a subtype of 'System.IComparable' and will be ignored")
         ]
 
+    [<Theory; FileInlineData("W_AnonTypeInclusion5.fs")>]
+    let ``W_TypeInclusion5_fs`` compilation =
+        compilation
+        |> getCompilation
+        |> withLangVersionPreview
+        |> verifyCompile
+        |> shouldFail
+        |> withDiagnostics [
+            (Warning 4500, Line 5, Col 8, Line 5, Col 23, "The type 'int' is a subtype of 'int' and will be ignored")
+        ]
+
     [<Theory; FileInlineData("W_AnonUnitsOfMeasureOverlap.fs")>]
     let ``W_UnitsOfMeasureOverlap_fs`` compilation =
         compilation

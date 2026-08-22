@@ -5002,19 +5002,20 @@ and TcAnonUnionTypeOr (cenv: cenv) env (tpenv: UnscopedTyparEnv) synCases m =
             else
                 let mutable shouldAdd = true
                 let mutable i = 0
+                let ptS = stripMeasuresFromTy g pt
                 while i < list.Count && shouldAdd do
-                    let t = list.[i]
-                    if isSubTypeOf cenv.g cenv.amap m pt t then
+                    let tS = stripMeasuresFromTy g list.[i]
+                    if isSubTypeOf cenv.g cenv.amap m ptS tS then
                         // Warning: new type pt is a subtype of existing type t and will be ignored
                         warning(Error(FSComp.SR.tcAnonUnionCaseOverlap(
-                            NicePrint.stringOfTy env.DisplayEnv pt,
-                            NicePrint.stringOfTy env.DisplayEnv t), m))
+                            NicePrint.stringOfTy env.DisplayEnv ptS,
+                            NicePrint.stringOfTy env.DisplayEnv tS), m))
                         shouldAdd <- false
-                    elif isSuperTypeOf cenv.g cenv.amap m pt t then
+                    elif isSuperTypeOf cenv.g cenv.amap m ptS tS then
                         // Warning: existing type t is a subtype of new type pt and will be removed
                         warning(Error(FSComp.SR.tcAnonUnionCaseOverlap(
-                            NicePrint.stringOfTy env.DisplayEnv t,
-                            NicePrint.stringOfTy env.DisplayEnv pt), m))
+                            NicePrint.stringOfTy env.DisplayEnv tS,
+                            NicePrint.stringOfTy env.DisplayEnv ptS), m))
                         list.RemoveAt(i)
                         i <- i - 1 // redo this index
                     i <- i + 1
