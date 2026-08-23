@@ -47,16 +47,13 @@ module Helpers =
         let completed = t.Wait(TimeSpan.FromSeconds 30.0)
         Assert.True(completed, "Task did not finish after waiting for 30 seconds.")
 
-    (* TEMP disabled Immediate re #20306
     let asyncWait immediate (a: Async<'T>): 'T =
         if immediate then Async.RunSynchronouslyImmediate a
         else Async.RunSynchronously a
     let asyncWaitWithCt immediate (ct: CancellationToken) (a: Async<'T>): 'T =
         if immediate then Async.RunSynchronouslyImmediate(a, cancellationToken = ct)
         else Async.RunSynchronously(a, cancellationToken = ct)
-    *)
-    let asyncWait (_immediate: bool) (a: Async<'T>): 'T = Async.RunSynchronously a
-    let asyncWaitWithCt (_immediate: bool) (ct: CancellationToken) (a: Async<'T>): 'T = Async.RunSynchronously(a, cancellationToken = ct)
+
     let asyncWaitImm a = asyncWait true a
     let asyncWaitWithCtImm ct a = asyncWaitWithCt true ct a
 
@@ -907,7 +904,7 @@ module AsyncTaskLikeAwaitTests =
             |> asyncWaitImm
         Assert.Equal(42, result)
 
-// Intentionally in same collection to rule out potential flakiness due to concurrency re #20306
+// Intentionally in same collection to help rule out potential flakiness due to concurrency re #20306
 [<Collection(nameof FSharp.Test.NotThreadSafeResourceCollection)>]
 module AsyncStartTaskImmediateTaskLikeTests =
 
@@ -949,7 +946,7 @@ module AsyncStartTaskImmediateTaskLikeTests =
 
         Assert.Equal(cts.Token, capturedCt)
 
-// Intentionally in same collection to rule out potential flakiness due to concurrency re #20306
+// Intentionally in same collection to help rule out potential flakiness due to concurrency re #20306
 [<Collection(nameof FSharp.Test.NotThreadSafeResourceCollection)>]
 module AsyncAwaitStackTraceTests =
 

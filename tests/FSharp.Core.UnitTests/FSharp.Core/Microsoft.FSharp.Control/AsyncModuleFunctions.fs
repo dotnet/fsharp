@@ -22,10 +22,8 @@ let cancelWithToken (tcs: TaskCompletionSource<'T>) =
     ct
 #endif
 
-// TEMP disabled Immediate re #20306 // let asyncWait (a: Async<'T>): 'T = Async.RunSynchronouslyImmediate a
-// TEMP disabled Immediate re #20306 // let asyncWaitWithCt (ct: CancellationToken) (a: Async<'T>): 'T = Async.RunSynchronouslyImmediate(a, cancellationToken = ct)
-let asyncWait (a: Async<'T>): 'T = Async.RunSynchronously a
-let asyncWaitWithCt (ct: CancellationToken) (a: Async<'T>): 'T = Async.RunSynchronously(a, cancellationToken = ct)
+let asyncWait (a: Async<'T>): 'T = Async.RunSynchronouslyImmediate a
+let asyncWaitWithCt (ct: CancellationToken) (a: Async<'T>): 'T = Async.RunSynchronouslyImmediate(a, cancellationToken = ct)
 
 [<Fact>]
 let ``Async.result wraps value`` () =
