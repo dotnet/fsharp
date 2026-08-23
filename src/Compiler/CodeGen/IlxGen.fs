@@ -3100,7 +3100,7 @@ let CodeGenThen (cenv: cenv) mgbuf (entryPointInfo, methodName, eenv, alreadyUse
                 else
                     mkILLocal ty None
 
-            if isFixed && IsILTypeByref ty then { loc with IsPinned = true } else loc)
+            if isFixed then { loc with IsPinned = true } else loc)
 
     (ilLocals, maxStack, lab2pc, code, exnSpecs, localDebugSpecs, hasDebugPoints)
 
