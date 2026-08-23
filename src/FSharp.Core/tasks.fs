@@ -719,6 +719,7 @@ module LowPlusPriority =
 
 namespace Microsoft.FSharp.Control
 
+open System
 open System.Threading
 open System.Threading.Tasks
 open Microsoft.FSharp.Core
@@ -798,25 +799,46 @@ module Task =
         (computations: seq<CancellationToken -> Task<'T>>)
         : Task<'T[]> =
         if maxDegreeOfParallelism < 1 then
-            System.String.Format(SR.GetString(SR.maxDegreeOfParallelismNotPositive), maxDegreeOfParallelism)
+            String.Format(SR.GetString(SR.maxDegreeOfParallelismNotPositive), maxDegreeOfParallelism)
             |> invalidArg (nameof maxDegreeOfParallelism)
 
         task {
             use sem = new SemaphoreSlim(maxDegreeOfParallelism, maxDegreeOfParallelism)
+            use innerCts = CancellationTokenSource.CreateLinkedTokenSource ct
+            let exceptions = Collections.Concurrent.ConcurrentBag<exn>()
 
-            return!
+            let addException (e: exn) =
+                exceptions.Add e
+                innerCts.Cancel()
+
+            let! results =
                 Task.WhenAll
                     [|
                         for f in computations ->
                             backgroundTask {
-                                do! sem.WaitAsync ct
+                                do! sem.WaitAsync innerCts.Token
 
                                 try
-                                    return! f ct
+                                    try
+                                        let! result = f innerCts.Token
+                                        return ValueSome result
+                                    with
+                                    | :? OperationCanceledException when ct.IsCancellationRequested ->
+                                        return! Task.FromCanceled<ValueOption<'T>>(ct)
+                                    | :? OperationCanceledException when innerCts.Token.IsCancellationRequested ->
+                                        return ValueNone
+                                    | e ->
+                                        addException e
+                                        return ValueNone
                                 finally
                                     sem.Release() |> Operators.ignore
                             }
                     |]
+
+            match exceptions.ToArray() with
+            | [||] -> return [| for r in results do match r with ValueSome v -> v | ValueNone -> ( ) |]
+            | [| e |] -> return raise e
+            | innerExceptions -> return raise (AggregateException(innerExceptions))
         }
 
     [<CompiledName("ParallelDoLimit")>]

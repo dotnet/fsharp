@@ -308,7 +308,7 @@ module TaskModuleFunctionsTests =
             use cts = new CancellationTokenSource()
             let! results =
                 [for i in 1..5 do fun (ct: CancellationToken) ->
-                    Assert.Equal(cts.Token, ct)
+                    Assert.NotEqual(cts.Token, ct)
                     Task.result (i * i)]
                 |> Task.parallelLimit 2 cts.Token
             Assert.Equal([| 1; 4; 9; 16; 25 |], results)
@@ -324,7 +324,7 @@ module TaskModuleFunctionsTests =
             let computations =
                 [for _ in 1..10 ->
                     fun (ct: CancellationToken) ->
-                        Assert.Equal(cts.Token, ct)
+                        Assert.NotEqual(cts.Token, ct)
                         task {
                             let n =
                                 lock lockObj (fun () ->
@@ -348,6 +348,105 @@ module TaskModuleFunctionsTests =
                 |> ignore<Task<int[]>>)
         Assert.Equal("maxDegreeOfParallelism", ex.ParamName)
 
+    [<Fact>]
+    let ``Task.parallelLimit passes a linked CancellationToken to computations`` () : Task =
+        task {
+            use cts = new CancellationTokenSource()
+            let started = TaskCompletionSource<CancellationToken>()
+
+            let t =
+                [ fun (ct: CancellationToken) ->
+                    task {
+                        started.SetResult ct
+                        do! Task.Delay(30_000, ct)
+                        return 1
+                    } ]
+                |> Task.parallelLimit 1 cts.Token
+
+            let! childCt = started.Task
+            Assert.NotEqual(cts.Token, childCt)
+            cts.Cancel()
+            Assert.ThrowsAsync<TaskCanceledException>(fun () -> t :> Task).Result |> ignore
+            Assert.True childCt.IsCancellationRequested
+        }
+
+    [<Fact>]
+    let ``Task.parallelLimit cancels sibling computations when one fails`` () : Task =
+        task {
+            use cts = new CancellationTokenSource()
+            let siblingStarted = TaskCompletionSource<bool>()
+            let siblingCancelled = TaskCompletionSource<bool>()
+
+            let t =
+                [ fun (ct: CancellationToken) ->
+                    task {
+                        siblingStarted.SetResult true
+
+                        try
+                            do! Task.Delay(30_000, ct)
+                            return 1
+                        with
+                        | :? OperationCanceledException when ct.IsCancellationRequested ->
+                            siblingCancelled.TrySetResult true |> ignore
+                            return! Task.FromCanceled<int>(ct)
+                    }
+                  fun (_: CancellationToken) ->
+                    task {
+                        let! _ = siblingStarted.Task
+                        return invalidOp "boom"
+                    } ]
+                |> Task.parallelLimit 2 cts.Token
+
+            let! ex = Assert.ThrowsAsync<InvalidOperationException>(fun () -> t :> Task)
+            Assert.Equal("boom", ex.Message)
+            let! completed = Task.WhenAny(siblingCancelled.Task :> Task, Task.Delay(30_000))
+            Assert.Same(siblingCancelled.Task :> Task, completed)
+        }
+
+    [<Fact>]
+    let ``Task.parallelLimit with one failure throws the exception directly`` () : Task =
+        task {
+            use cts = new CancellationTokenSource()
+            let t =
+                [ fun (_: CancellationToken) -> Task.result 1
+                  fun (_: CancellationToken) -> Task.FromException<int>(InvalidOperationException "boom") ]
+                |> Task.parallelLimit 2 cts.Token
+
+            let! ex = Assert.ThrowsAsync<InvalidOperationException>(fun () -> t :> Task)
+            Assert.Equal("boom", ex.Message)
+        }
+
+    [<Fact>]
+    let ``Task.parallelLimit with multiple failures throws AggregateException`` () : Task =
+        task {
+            use cts = new CancellationTokenSource()
+            let firstStarted = TaskCompletionSource<bool>()
+            let secondStarted = TaskCompletionSource<bool>()
+            let releaseBoth = TaskCompletionSource<bool>()
+
+            let t =
+                [ fun (_: CancellationToken) ->
+                    task {
+                        firstStarted.SetResult true
+                        let! _ = releaseBoth.Task
+                        return raise (InvalidOperationException "boom1")
+                    }
+                  fun (_: CancellationToken) ->
+                    task {
+                        secondStarted.SetResult true
+                        let! _ = releaseBoth.Task
+                        return raise (ArgumentException "boom2")
+                    } ]
+                |> Task.parallelLimit 2 cts.Token
+
+            let! _ = Task.WhenAll(firstStarted.Task, secondStarted.Task)
+            releaseBoth.SetResult true
+
+            let! ex = Assert.ThrowsAsync<AggregateException>(fun () -> t :> Task)
+            Assert.Equal(2, ex.InnerExceptions.Count)
+            Assert.Contains(ex.InnerExceptions, fun e -> e :? InvalidOperationException && e.Message = "boom1")
+            Assert.Contains(ex.InnerExceptions, fun e -> e :? ArgumentException && e.Message = "boom2")
+        }
 
     [<Fact>]
     let ``Task.parallelDoLimit runs all tasks and returns unit`` () : Task =
@@ -357,7 +456,7 @@ module TaskModuleFunctionsTests =
             let computations =
                 [for _ in 1..5 ->
                     fun (ct: CancellationToken) ->
-                        Assert.Equal(cts.Token, ct)
+                        Assert.NotEqual(cts.Token, ct)
                         task { Interlocked.Increment &count |> ignore }]
             do! Task.parallelDoLimit 2 cts.Token computations
             Assert.Equal(5, count)
