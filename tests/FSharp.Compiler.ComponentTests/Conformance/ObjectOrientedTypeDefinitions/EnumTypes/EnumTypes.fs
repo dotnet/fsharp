@@ -10,6 +10,27 @@ module EnumTypes =
 
     // Error tests - should fail with expected error codes
 
+    [<Theory; FileInlineData("E_BitwiseOpsOnCharEnum.fs")>]
+    let ``E_BitwiseOpsOnCharEnum_fs`` compilation =
+        compilation
+        |> getCompilation
+        |> asExe
+        |> withLangVersionPreview
+        |> withOptions ["--test:ErrorRanges"]
+        |> typecheck
+        |> shouldFail
+        |> withErrorCodes [1; 1; 1]
+
+    // Before the ErrorOnBitwiseOpsOnNonIntegralEnums feature, this code typechecked (and failed at runtime).
+    [<Theory; FileInlineData("E_BitwiseOpsOnCharEnum.fs")>]
+    let ``E_BitwiseOpsOnCharEnum_fs - compat with langversion 10`` compilation =
+        compilation
+        |> getCompilation
+        |> asExe
+        |> withLangVersion10
+        |> typecheck
+        |> shouldSucceed
+
     [<Theory; FileInlineData("E_BoolUnderlyingType.fs")>]
     let ``E_BoolUnderlyingType_fs`` compilation =
         compilation
