@@ -264,8 +264,30 @@ module TaskModuleFunctionsTests =
     let ``Task.catch returns Error on exception (sync)`` () =
         let t = Task.FromException<int>(Exception "boom") |> Task.catch
         match t.Result with
-        | Error ex -> Assert.Equal("boom", ex.Message)
+        | Error ex ->
+            Assert.IsType<exn>(ex) |> ignore // We don't want an AggregateException
+            Assert.Equal("boom", ex.Message)
         | Ok _ -> failwith "unexpected success"
+
+    [<Fact>]
+    let ``Task.catch does not Unwrap an AggregateException with a single inner`` () =
+        let inner = exn "inner" 
+        let t = Task.FromException<int>(AggregateException("boom", inner)) |> Task.catch
+        match t.Result with
+        | Error (:? AggregateException as ex) ->
+            Assert.Equal(1, ex.InnerExceptions.Count)
+            Assert.Equal("boom (inner)", ex.Message)
+        | x -> failwith $"unexpected %A{x}"
+
+    [<Fact>]
+    let ``Task.catch does not Unwrap an AggregateException with multiple inners`` () =
+        let inner = exn "inner" 
+        let t = Task.FromException<int>(AggregateException("boom", inner, inner)) |> Task.catch
+        match t.Result with
+        | Error (:? AggregateException as ex) ->
+            Assert.Equal("boom (inner) (inner)", ex.Message)
+            Assert.Equal(2, ex.InnerExceptions.Count)
+        | x -> failwith $"unexpected %A{x}"
 
     [<Fact>]
     let ``Task.catch returns Error on exception (async)`` () : unit =
@@ -273,7 +295,9 @@ module TaskModuleFunctionsTests =
         let t = tcs.Task |> Task.catch
         tcs.SetException(Exception "boom")
         match t.Result with
-        | Error ex -> Assert.Equal("boom", ex.Message)
+        | Error ex ->
+            Assert.IsType<exn>(ex) |> ignore // We don't want an AggregateException
+            Assert.Equal("boom", ex.Message)
         | Ok _ -> failwith "unexpected success"
 
     [<Fact>]
@@ -366,7 +390,8 @@ module TaskModuleFunctionsTests =
             let! childCt = started.Task
             Assert.NotEqual(cts.Token, childCt)
             cts.Cancel()
-            Assert.ThrowsAsync<TaskCanceledException>(fun () -> t :> Task).Result |> ignore
+            let e = Assert.ThrowsAsync<TaskCanceledException>(fun () -> t :> Task).Result
+            Assert.NotEqual(cts.Token, e.CancellationToken)
             Assert.True childCt.IsCancellationRequested
         }
 
@@ -374,25 +399,24 @@ module TaskModuleFunctionsTests =
     let ``Task.parallelLimit cancels sibling computations when one fails`` () : Task =
         task {
             use cts = new CancellationTokenSource()
-            let siblingStarted = TaskCompletionSource<bool>()
-            let siblingCancelled = TaskCompletionSource<bool>()
+            let siblingStarted = TaskCompletionSource<unit>()
+            let siblingCancelled = TaskCompletionSource<unit>()
 
             let t =
                 [ fun (ct: CancellationToken) ->
                     task {
-                        siblingStarted.SetResult true
-
+                        siblingStarted.SetResult ()
                         try
                             do! Task.Delay(30_000, ct)
                             return 1
                         with
                         | :? OperationCanceledException when ct.IsCancellationRequested ->
-                            siblingCancelled.TrySetResult true |> ignore
+                            siblingCancelled.SetResult ()
                             return! Task.FromCanceled<int>(ct)
                     }
                   fun (_: CancellationToken) ->
                     task {
-                        let! _ = siblingStarted.Task
+                        do! siblingStarted.Task
                         return invalidOp "boom"
                     } ]
                 |> Task.parallelLimit 2 cts.Token
@@ -417,37 +441,34 @@ module TaskModuleFunctionsTests =
         }
 
     [<Fact>]
-    let ``Task.parallelLimit with multiple failures throws AggregateException`` () : Task =
+    let ``Task.parallelLimit with multiple failures yields first exception, not AggregateException`` () : Task =
         task {
-            use cts = new CancellationTokenSource()
-            let firstStarted = TaskCompletionSource<bool>()
-            let secondStarted = TaskCompletionSource<bool>()
-            let releaseBoth = TaskCompletionSource<bool>()
+            let firstStarted, secondStarted = TaskCompletionSource<unit>(), TaskCompletionSource<unit>()
+            let releaseBoth = TaskCompletionSource<unit>()
 
-            let t =
-                [ fun (_: CancellationToken) ->
+            let sut = Task.parallelLimit 2 CancellationToken.None [
+                fun (_: CancellationToken) ->
                     task {
-                        firstStarted.SetResult true
-                        let! _ = releaseBoth.Task
-                        return raise (InvalidOperationException "boom1")
+                        firstStarted.SetResult ()
+                        do! releaseBoth.Task
+                        return invalidOp "boom1"
                     }
-                  fun (_: CancellationToken) ->
+                fun (_: CancellationToken) ->
                     task {
-                        secondStarted.SetResult true
-                        let! _ = releaseBoth.Task
-                        return raise (ArgumentException "boom2")
+                        secondStarted.SetResult ()
+                        do! releaseBoth.Task
+                        return invalidArg "a" "boom2"
                     } ]
-                |> Task.parallelLimit 2 cts.Token
-
             let! _ = Task.WhenAll(firstStarted.Task, secondStarted.Task)
-            releaseBoth.SetResult true
+            releaseBoth.SetResult ()
 
-            let! ex = Assert.ThrowsAsync<AggregateException>(fun () -> t :> Task)
-            Assert.Equal(2, ex.InnerExceptions.Count)
-            Assert.Contains(ex.InnerExceptions, fun e -> e :? InvalidOperationException && e.Message = "boom1")
-            Assert.Contains(ex.InnerExceptions, fun e -> e :? ArgumentException && e.Message = "boom2")
+            match! Task.catch sut with
+            | Error (:? InvalidOperationException as e) ->
+                Assert.Equal("boom1", e.Message)
+            | x -> failwith $"unexpected %A{x}"
         }
 
+    
     [<Fact>]
     let ``Task.parallelDoLimit runs all tasks and returns unit`` () : Task =
         task {

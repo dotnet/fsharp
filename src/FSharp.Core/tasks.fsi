@@ -578,7 +578,11 @@ module Task =
 
     /// <summary>Creates a task that executes each of the <c>computations</c> in parallel with concurrency limited
     /// to at most <c>maxDegreeOfParallelism</c>, returning an array of their results in order of the input sequence.</summary>
-    /// <remarks>The relative start and completion order per computation is arbitrary.</remarks>
+    /// <remarks>
+    /// <p>The relative start and completion order per computation is arbitrary.</p>
+    /// <p>If any of the computations Fault, the governing CancellationToken of its siblings will be Canceled.</p>
+    /// <p>Where multiple computations Fault, a single exception is propagated.</p>
+    /// </remarks>
     /// <param name="maxDegreeOfParallelism">The maximum number of tasks to run concurrently. Must be &gt; 0.</param>
     /// <param name="ct">An outer cancellation token used to cancel the parallel request. Note the task factory methods will recieve a different token that can additionally be triggered if a sibling computation faults.</param>
     /// <param name="computations">A sequence of task start functions accepting a <see cref="T:System.Threading.CancellationToken"/>.</param>
@@ -602,7 +606,11 @@ module Task =
 
     /// <summary>Creates a task that executes the <c>computations</c> in parallel,
     /// with concurrency limited to at most <c>maxDegreeOfParallelism</c>.</summary>
-    /// <remarks>The relative start and completion order per computation is arbitrary.</remarks>
+    /// <remarks>
+    /// <p>The relative start and completion order per computation is arbitrary.</p>
+    /// <p>If any of the computations Fault, the governing CancellationToken of its siblings will be Canceled.</p>
+    /// <p>Where multiple computations Fault, a single exception is propagated.</p>
+    /// </remarks>
     /// <param name="maxDegreeOfParallelism">The maximum number of tasks to run concurrently. Must be &gt; 0.</param>
     /// <param name="ct">An outer cancellation token used to cancel the parallel request. Note the task factory methods will recieve a different token that can additionally be triggered if a sibling computation faults.</param>
     /// <param name="computations">A sequence of unit task start functions accepting a <see cref="T:System.Threading.CancellationToken"/>.</param>

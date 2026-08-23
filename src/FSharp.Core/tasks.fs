@@ -784,13 +784,22 @@ module Task =
                 try
                     return! task
                 with
-                | :? System.OperationCanceledException as e -> return! raise e
+                | :? OperationCanceledException as e -> return! raise e
                 | e -> return handler e
             }
 
     [<CompiledName("Catch")>]
     let catch (task: Task<'T>) : Task<Result<'T, exn>> =
         task |> map Ok |> catchWith Error
+
+    // Exception filter semantics; trigger a side effect without entering an actual with block
+    // avoids having to rethrow an exception that we won't be altering
+    let inline interceptNonCancellationExn ([<InlineIfLambda>] f) (e: exn) : bool =
+        match e with
+        | :? OperationCanceledException -> false
+        | _ ->
+            f ()
+            false
 
     [<CompiledName("ParallelLimit")>]
     let parallelLimit
@@ -805,40 +814,25 @@ module Task =
         task {
             use sem = new SemaphoreSlim(maxDegreeOfParallelism, maxDegreeOfParallelism)
             use innerCts = CancellationTokenSource.CreateLinkedTokenSource ct
-            let exceptions = Collections.Concurrent.ConcurrentBag<exn>()
+            let innerCt = innerCts.Token
 
-            let addException (e: exn) =
-                exceptions.Add e
-                innerCts.Cancel()
-
-            let! results =
+            return!
                 Task.WhenAll
                     [|
                         for f in computations ->
                             backgroundTask {
-                                do! sem.WaitAsync innerCts.Token
+                                do! sem.WaitAsync innerCt
 
                                 try
                                     try
-                                        let! result = f innerCts.Token
-                                        return ValueSome result
-                                    with
-                                    | :? OperationCanceledException when ct.IsCancellationRequested ->
-                                        return! Task.FromCanceled<ValueOption<'T>>(ct)
-                                    | :? OperationCanceledException when innerCts.Token.IsCancellationRequested ->
-                                        return ValueNone
-                                    | e ->
-                                        addException e
-                                        return ValueNone
+                                        return! f innerCt
+                                    with e when interceptNonCancellationExn (fun () -> innerCts.Cancel()) e ->
+                                        // We'll never get here as the filter always returns false
+                                        return Unchecked.defaultof<_>
                                 finally
                                     sem.Release() |> Operators.ignore
                             }
                     |]
-
-            match exceptions.ToArray() with
-            | [||] -> return [| for r in results do match r with ValueSome v -> v | ValueNone -> ( ) |]
-            | [| e |] -> return raise e
-            | innerExceptions -> return raise (AggregateException(innerExceptions))
         }
 
     [<CompiledName("ParallelDoLimit")>]
@@ -941,7 +935,7 @@ module ValueTask =
                     try
                         return! task
                     with
-                    | :? System.OperationCanceledException as e -> return! raise e
+                    | :? OperationCanceledException as e -> return! raise e
                     | e -> return handler e
                 }
 
