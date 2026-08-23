@@ -77,7 +77,7 @@ let rec TryAdjustHiddenVarNameToCompGenName (cenv: cenv) env (id: Ident) altName
 /// Bind the patterns used in a lambda. Not clear why we don't use TcPat.
 and TcSimplePat optionalArgsOK checkConstraints (cenv: cenv) ty env patEnv p (attribs: SynAttributes) =
     let g = cenv.g
-    let (TcPatLinearEnv(tpenv, names, takenNames)) = patEnv
+    let (TcPatLinearEnv(tpenv, names, takenNames, usesAP)) = patEnv
 
     match p with
     | SynSimplePat.Id (id, altNameRefCellOpt, isCompGen, isMemberThis, isOpt, m) ->
@@ -99,7 +99,7 @@ and TcSimplePat optionalArgsOK checkConstraints (cenv: cenv) ty env patEnv p (at
 
             let vFlags = TcPatValFlags (ValInline.Optional, permitInferTypars, noArgOrRetAttribs, false, None, isCompGen)
             let _, names, takenNames = TcPatBindingName cenv env id ty isMemberThis None None vFlags (names, takenNames)
-            let patEnvR = TcPatLinearEnv(tpenv, names, takenNames)
+            let patEnvR = TcPatLinearEnv(tpenv, names, takenNames, usesAP)
             id.idText, patEnvR
 
     | SynSimplePat.Typed (p, cty, m) ->
@@ -114,7 +114,7 @@ and TcSimplePat optionalArgsOK checkConstraints (cenv: cenv) ty env patEnv p (at
             UnifyTypes cenv env m ty optionalParamTy
         | _ -> UnifyTypes cenv env m ty ctyR
 
-        let patEnvR = TcPatLinearEnv(tpenv, names, takenNames)
+        let patEnvR = TcPatLinearEnv(tpenv, names, takenNames, usesAP)
 
         // Ensure the untyped typar name sticks
         match cty, ty with
@@ -169,17 +169,17 @@ and TcSimplePats (cenv: cenv) optionalArgsOK checkConstraints ty env patEnv synS
 
     let augmentTakenNamesFromFirstGroup (parsedData: SynPat list * bool) (patEnvOut: TcPatLinearEnv) : TcPatLinearEnv =
         match parsedData, patEnvOut with
-        | (pats ,true), TcPatLinearEnv(tpenvR, namesR, takenNamesR) ->
+        | (pats ,true), TcPatLinearEnv(tpenvR, namesR, takenNamesR, usesAPR) ->
             match pats with
             | pat :: _ ->
                 let extra = collectBoundIdTextsFromPat [] pat |> Set.ofList
-                TcPatLinearEnv(tpenvR, namesR, Set.union takenNamesR extra)
+                TcPatLinearEnv(tpenvR, namesR, Set.union takenNamesR extra, usesAPR)
             | _ -> patEnvOut
         | _ -> patEnvOut
 
     let bindCurriedGroup (synSimplePats: SynSimplePats) : string list * TcPatLinearEnv =
         let g = cenv.g
-        let (TcPatLinearEnv(tpenv, names, takenNames)) = patEnv
+        let (TcPatLinearEnv(tpenv, names, takenNames, usesAP)) = patEnv
         match synSimplePats with
         | SynSimplePats.SimplePats ([], _, m) ->
             // Unit "()" patterns in argument position become SynSimplePats.SimplePats([], _) in the
@@ -194,7 +194,7 @@ and TcSimplePats (cenv: cenv) optionalArgsOK checkConstraints ty env patEnv synS
             UnifyTypes cenv env m ty g.unit_ty
             let vFlags = TcPatValFlags (ValInline.Optional, permitInferTypars, noArgOrRetAttribs, false, None, true)
             let _, namesR, takenNamesR = TcPatBindingName cenv env id ty false None None vFlags (names, takenNames)
-            [ id.idText ], TcPatLinearEnv(tpenv, namesR, takenNamesR)
+            [ id.idText ], TcPatLinearEnv(tpenv, namesR, takenNamesR, usesAP)
         | SynSimplePats.SimplePats ([sp], _, _) ->
             // Single parameter: no tuple splitting, check directly
             let v, patEnv' = TcSimplePat optionalArgsOK checkConstraints cenv ty env patEnv sp []
@@ -221,7 +221,7 @@ and TcSimplePats (cenv: cenv) optionalArgsOK checkConstraints ty env patEnv synS
 and TcSimplePatsOfUnknownType (cenv: cenv) optionalArgsOK checkConstraints env tpenv (pat: SynPat) =
     let g = cenv.g
     let argTy = NewInferenceType g
-    let patEnv = TcPatLinearEnv (tpenv, NameMap.empty, Set.empty)
+    let patEnv = TcPatLinearEnv (tpenv, NameMap.empty, Set.empty, false)
     let spats, _ = SimplePatsOfPat cenv.synArgNameGenerator pat
     let names, patEnv = TcSimplePats cenv optionalArgsOK checkConstraints argTy env patEnv spats ([], false)
     names, patEnv, spats
@@ -314,16 +314,16 @@ and TcPat warnOnUpper (cenv: cenv) env valReprInfo vFlags (patEnv: TcPatLinearEn
 
     | SynPat.OptionalVal (id, m) ->
         errorR (Error (FSComp.SR.tcOptionalArgsOnlyOnMembers (), m))
-        let (TcPatLinearEnv(tpenv, names, takenNames)) = patEnv
+        let (TcPatLinearEnv(tpenv, names, takenNames, usesAP)) = patEnv
         let bindf, namesR, takenNamesR = TcPatBindingName cenv env id ty false None valReprInfo vFlags (names, takenNames)
-        let patEnvR = TcPatLinearEnv(tpenv, namesR, takenNamesR)
+        let patEnvR = TcPatLinearEnv(tpenv, namesR, takenNamesR, usesAP)
         (fun values -> TPat_as (TPat_wild m, bindf values, m)), patEnvR
 
     | SynPat.Typed (p, cty, m) ->
-        let (TcPatLinearEnv(tpenv, names, takenNames)) = patEnv
+        let (TcPatLinearEnv(tpenv, names, takenNames, usesAP)) = patEnv
         let ctyR, tpenvR = TcTypeAndRecover cenv NewTyparsOK CheckCxs ItemOccurrence.UseInType WarnOnIWSAM.Yes env tpenv cty
         UnifyTypes cenv env m ty ctyR
-        let patEnvR = TcPatLinearEnv(tpenvR, names, takenNames)
+        let patEnvR = TcPatLinearEnv(tpenvR, names, takenNames, usesAP)
         TcPat warnOnUpper cenv env valReprInfo vFlags patEnvR ty p
 
     | SynPat.Attrib (innerPat, attrs, _) ->
@@ -395,9 +395,9 @@ and TcConstPat warnOnUpper cenv env vFlags patEnv ty synConst m =
             (fun _ -> TPat_error m), patEnv
 
 and TcPatNamedAs warnOnUpper cenv env valReprInfo vFlags patEnv ty synInnerPat id isMemberThis vis m =
-    let (TcPatLinearEnv(tpenv, names, takenNames)) = patEnv
+    let (TcPatLinearEnv(tpenv, names, takenNames, usesAP)) = patEnv
     let bindf, namesR, takenNamesR = TcPatBindingName cenv env id ty isMemberThis vis valReprInfo vFlags (names, takenNames)
-    let patEnvR = TcPatLinearEnv(tpenv, namesR, takenNamesR)
+    let patEnvR = TcPatLinearEnv(tpenv, namesR, takenNamesR, usesAP)
     let innerPat, acc = TcPat warnOnUpper cenv env None vFlags patEnvR ty synInnerPat
     let phase2 values = TPat_as (innerPat values, bindf values, m)
     phase2, acc
@@ -418,18 +418,18 @@ and TcPatUnnamedAs warnOnUpper cenv env vFlags patEnv ty pat1 pat2 m =
     phase2, patEnvR
 
 and TcPatNamed warnOnUpper cenv env vFlags patEnv id ty isMemberThis vis valReprInfo m =
-    let (TcPatLinearEnv(tpenv, names, takenNames)) = patEnv
+    let (TcPatLinearEnv(tpenv, names, takenNames, usesAP)) = patEnv
     let bindf, namesR, takenNamesR = TcPatBindingName cenv env id ty isMemberThis vis valReprInfo vFlags (names, takenNames)
-    let patEnvR = TcPatLinearEnv(tpenv, namesR, takenNamesR)
+    let patEnvR = TcPatLinearEnv(tpenv, namesR, takenNamesR, usesAP)
     let pat', acc = TcPat warnOnUpper cenv env None vFlags patEnvR ty (SynPat.Wild m)
     let phase2 values = TPat_as (pat' values, bindf values, m)
     phase2, acc
 
 and TcPatIsInstance warnOnUpper cenv env valReprInfo vFlags patEnv srcTy synPat synTargetTy m =
-    let (TcPatLinearEnv(tpenv, names, takenNames)) = patEnv
+    let (TcPatLinearEnv(tpenv, names, takenNames, usesAP)) = patEnv
     let tgtTy, tpenv = TcTypeAndRecover cenv NewTyparsOKButWarnIfNotRigid CheckCxs ItemOccurrence.UseInType WarnOnIWSAM.Yes env tpenv synTargetTy
     TcRuntimeTypeTest false true cenv env.DisplayEnv m tgtTy srcTy
-    let patEnv = TcPatLinearEnv(tpenv, names, takenNames)
+    let patEnv = TcPatLinearEnv(tpenv, names, takenNames, usesAP)
     match synPat with
     | SynPat.IsInst(_, m) ->
         (fun _ -> TPat_isinst (srcTy, tgtTy, None, m)), patEnv
@@ -445,11 +445,11 @@ and TcPatAttributed warnOnUpper cenv env vFlags patEnv ty innerPat attrs =
     TcPat warnOnUpper cenv env None vFlags patEnv ty innerPat
 
 and TcPatOr warnOnUpper cenv env vFlags patEnv ty pat1 pat2 m =
-    let (TcPatLinearEnv(_, names, takenNames)) = patEnv
+    let (TcPatLinearEnv(_, names, takenNames, usesAP)) = patEnv
     let pat1R, patEnv1 = TcPat warnOnUpper cenv env None vFlags patEnv ty pat1
-    let (TcPatLinearEnv(tpenv, names1, takenNames1)) = patEnv1
-    let pat2R, patEnv2 = TcPat warnOnUpper cenv env None vFlags (TcPatLinearEnv(tpenv, names, takenNames)) ty pat2
-    let (TcPatLinearEnv(tpenv, names2, takenNames2)) = patEnv2
+    let (TcPatLinearEnv(tpenv, names1, takenNames1, usesAP1)) = patEnv1
+    let pat2R, patEnv2 = TcPat warnOnUpper cenv env None vFlags (TcPatLinearEnv(tpenv, names, takenNames, usesAP)) ty pat2
+    let (TcPatLinearEnv(tpenv, names2, takenNames2, usesAP2)) = patEnv2
 
     if takenNames1 <> takenNames2 then
         errorR (UnionPatternsBindDifferentNames m)
@@ -463,7 +463,7 @@ and TcPatOr warnOnUpper cenv env vFlags patEnv ty pat1 pat2 m =
 
     let namesR = NameMap.layer names1 names2
     let takenNamesR = Set.union takenNames1 takenNames2
-    let patEnvR = TcPatLinearEnv(tpenv, namesR, takenNamesR)
+    let patEnvR = TcPatLinearEnv(tpenv, namesR, takenNamesR, usesAP1 || usesAP2)
     let phase2 values = TPat_disjs ([pat1R values; pat2R (values.WithRightPath())], m)
     phase2, patEnvR
 
@@ -622,7 +622,7 @@ and TcPatLongIdent warnOnUpper cenv env ad valReprInfo vFlags (patEnv: TcPatLine
 /// Check a long identifier in a pattern that has been not been resolved to anything else and represents a new value, or nameof
 and TcPatLongIdentNewDef warnOnUpperForId warnOnUpper (cenv: cenv) env ad valReprInfo vFlags patEnv ty (vis, id, args, m) =
     let g = cenv.g
-    let (TcPatLinearEnv(tpenv, _, _)) = patEnv
+    let (TcPatLinearEnv(tpenv, _, _, _)) = patEnv
 
     match GetSynArgPatterns args with
     | [] ->
@@ -859,7 +859,7 @@ and TcPatLongIdentRecdField warnOnUpper cenv env vFlags patEnv ty (mLongId, rfin
 /// Check a long identifier that has been resolved to an F# value that is a literal
 and TcPatLongIdentLiteral warnOnUpper (cenv: cenv) env vFlags patEnv ty (mLongId, vref, args, m) =
     let g = cenv.g
-    let (TcPatLinearEnv(tpenv, _, _)) = patEnv
+    let (TcPatLinearEnv(tpenv, _, _, _)) = patEnv
 
     match vref.LiteralValue with
     | None -> error (Error(FSComp.SR.tcNonLiteralCannotBeUsedInPattern(), m))

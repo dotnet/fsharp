@@ -149,7 +149,7 @@ let TcImplicitCtorInfo_Phase2A(cenv: cenv, env, tpenv, tcref: TyconRef, vis, att
     for spat in spats do
       reportGeneratedPattern spat
 
-    let (TcPatLinearEnv(_, names, _)) = patEnv
+    let (TcPatLinearEnv(_, names, _, _)) = patEnv
         
     // Create the values with the given names 
     let _, vspecs = MakeAndPublishSimpleVals cenv env names
