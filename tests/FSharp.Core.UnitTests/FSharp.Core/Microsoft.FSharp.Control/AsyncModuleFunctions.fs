@@ -330,7 +330,8 @@ let ``Async.catch does not Unwrap an AggregateException with a single inner`` ()
     match sut |> Async.RunSynchronouslyImmediate with
     | Error (:? AggregateException as ex) ->
         Assert.Equal(1, ex.InnerExceptions.Count)
-        Assert.Equal("boom (inner)", ex.Message)
+        // on net48, Message renders as "boom", on others it's "boom (inner)"
+        Assert.True(ex.Message.StartsWith "boom", ex.Message) 
     | x -> failwith $"unexpected %A{x}"
 
 [<Fact>]

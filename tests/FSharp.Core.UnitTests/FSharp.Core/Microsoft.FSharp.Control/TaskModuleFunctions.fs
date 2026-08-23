@@ -276,7 +276,8 @@ module TaskModuleFunctionsTests =
         match t.Result with
         | Error (:? AggregateException as ex) ->
             Assert.Equal(1, ex.InnerExceptions.Count)
-            Assert.Equal("boom (inner)", ex.Message)
+            // on net48, Message renders as "boom", on others it's "boom (inner)"
+            Assert.True(ex.Message.StartsWith "boom", ex.Message) 
         | x -> failwith $"unexpected %A{x}"
 
     [<Fact>]
@@ -285,8 +286,9 @@ module TaskModuleFunctionsTests =
         let t = Task.FromException<int>(AggregateException("boom", inner, inner)) |> Task.catch
         match t.Result with
         | Error (:? AggregateException as ex) ->
-            Assert.Equal("boom (inner) (inner)", ex.Message)
             Assert.Equal(2, ex.InnerExceptions.Count)
+            // on net48, Message renders as "boom", on others it's "boom (inner) (inner)"
+            Assert.True(ex.Message.StartsWith "boom", ex.Message) 
         | x -> failwith $"unexpected %A{x}"
 
     [<Fact>]
