@@ -687,11 +687,6 @@
         <target state="translated">Właściwości testowe przypadku unii</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureTryWithInSeqExpressions">
-        <source>Support for try-with in sequence expressions</source>
-        <target state="translated">Obsługa instrukcji try-with w wyrażeniach sekwencji</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureUnmanagedConstraintCsharpInterop">
         <source>Interop between C#'s and F#'s unmanaged generic constraint (emit additional modreq)</source>
         <target state="translated">Międzyoperacyjnie między niezarządzanym ograniczeniem ogólnym języka C# i F# (emituj dodatkowe modreq)</target>
@@ -5120,11 +5115,6 @@
       <trans-unit id="tcUseForInSequenceExpression">
         <source>The use of 'let! x = coll' in sequence expressions is not permitted. Use 'for x in coll' instead.</source>
         <target state="translated">Używanie ciągu „let! x = coll” w wyrażeniach sekwencji jest niedozwolone. Zamiast tego użyj ciągu „for x in coll”.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="tcTryIllegalInSequenceExpression">
-        <source>'try'/'with' cannot be used within sequence expressions</source>
-        <target state="translated">Wyrażenia „try”/„with” nie mogą być używane w wyrażeniach sekwencji</target>
         <note />
       </trans-unit>
       <trans-unit id="tcUseYieldBangForMultipleResults">
