@@ -502,11 +502,6 @@
         <target state="translated">statyczne abstrakcyjne elementy członkowskie interfejsu</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureInterfacesWithMultipleGenericInstantiation">
-        <source>interfaces with multiple generic instantiation</source>
-        <target state="translated">interfejsy z wieloma ogólnymi wystąpieniami</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureLowerInterpolatedStringToConcat">
         <source>Optimizes interpolated strings in certain cases, by lowering to concatenation</source>
         <target state="translated">Optymalizuje ciągi interpolowane w niektórych przypadkach, obniżając do łączenia</target>
