@@ -390,9 +390,9 @@ module MemoryMappedFileExtensions =
             let length = int64 bytes.Length
 
             trymmf length (fun stream ->
-                let span = Span<byte>(stream.PositionPointer |> NativePtr.toVoidPtr, int length)
-                bytes.Span.CopyTo(span)
-                stream.Position <- stream.Position + length)
+                match MemoryMarshal.TryGetArray(bytes) with
+                | true, segment -> stream.Write(!!segment.Array, segment.Offset, segment.Count)
+                | false, _ -> stream.Write(bytes.ToArray(), 0, bytes.Length))
 
 [<RequireQualifiedAccess>]
 module internal FileSystemUtils =
