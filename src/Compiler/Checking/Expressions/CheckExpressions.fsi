@@ -37,7 +37,7 @@ exception FunctionExpected of DisplayEnv * TType * range
 
 exception NotAFunction of DisplayEnv * TType * range * range
 
-exception NotAFunctionButIndexer of DisplayEnv * TType * string option * range * range * bool
+exception NotAFunctionButIndexer of DisplayEnv * TType * string option * range * range
 
 exception Recursion of DisplayEnv * Ident * TType * TType * range
 
