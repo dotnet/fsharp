@@ -11,7 +11,6 @@ type LanguageFeature =
     | DotlessFloat32Literal
     | PackageManagement
     | FromEndSlicing
-    | FixedIndexSlice3d4d
     | ResumableStateMachines
     | NullableOptionalInterop
     | DefaultInterfaceMemberConsumption
