@@ -48,7 +48,6 @@ type LanguageFeature =
     | WarningWhenCopyAndUpdateRecordChangesAllFields
     | StaticMembersInInterfaces
     | NonInlineLiteralsAsPrintfFormat
-    | NestedCopyAndUpdate
     | ExtendedStringInterpolation
     | WarningWhenMultipleRecdTypeChoice
     | ImprovedImpliedArgumentNames
