@@ -53,7 +53,6 @@ type LanguageFeature =
     | WarningWhenCopyAndUpdateRecordChangesAllFields
     | StaticMembersInInterfaces
     | NonInlineLiteralsAsPrintfFormat
-    | NestedCopyAndUpdate
     | ExtendedStringInterpolation
     | WarningWhenMultipleRecdTypeChoice
     | ImprovedImpliedArgumentNames
@@ -181,7 +180,6 @@ type LanguageVersion(versionText, ?disabledFeaturesArray: LanguageFeature array)
                 LanguageFeature.WarningWhenCopyAndUpdateRecordChangesAllFields, languageVersion80
                 LanguageFeature.StaticMembersInInterfaces, languageVersion80
                 LanguageFeature.NonInlineLiteralsAsPrintfFormat, languageVersion80
-                LanguageFeature.NestedCopyAndUpdate, languageVersion80
                 LanguageFeature.ExtendedStringInterpolation, languageVersion80
                 LanguageFeature.WarningWhenMultipleRecdTypeChoice, languageVersion80
                 LanguageFeature.ImprovedImpliedArgumentNames, languageVersion80
@@ -379,7 +377,6 @@ type LanguageVersion(versionText, ?disabledFeaturesArray: LanguageFeature array)
             FSComp.SR.featureWarningWhenCopyAndUpdateRecordChangesAllFields ()
         | LanguageFeature.StaticMembersInInterfaces -> FSComp.SR.featureStaticMembersInInterfaces ()
         | LanguageFeature.NonInlineLiteralsAsPrintfFormat -> FSComp.SR.featureNonInlineLiteralsAsPrintfFormat ()
-        | LanguageFeature.NestedCopyAndUpdate -> FSComp.SR.featureNestedCopyAndUpdate ()
         | LanguageFeature.ExtendedStringInterpolation -> FSComp.SR.featureExtendedStringInterpolation ()
         | LanguageFeature.WarningWhenMultipleRecdTypeChoice -> FSComp.SR.featureWarningWhenMultipleRecdTypeChoice ()
         | LanguageFeature.ImprovedImpliedArgumentNames -> FSComp.SR.featureImprovedImpliedArgumentNames ()

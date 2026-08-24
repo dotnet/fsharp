@@ -527,11 +527,6 @@
         <target state="translated">nameof</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureNestedCopyAndUpdate">
-        <source>Nested record field copy-and-update</source>
-        <target state="translated">嵌套记录字段复制和更新</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureNonInlineLiteralsAsPrintfFormat">
         <source>String values marked as literals and IL constants as printf format</source>
         <target state="translated">标记为文本和 IL 常量的字符串值为 printf 格式</target>
