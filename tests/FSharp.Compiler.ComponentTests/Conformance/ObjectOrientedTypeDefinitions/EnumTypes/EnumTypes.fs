@@ -15,11 +15,14 @@ module EnumTypes =
         compilation
         |> getCompilation
         |> asExe
-        |> withLangVersionPreview
         |> withOptions ["--test:ErrorRanges"]
         |> typecheck
         |> shouldFail
-        |> withErrorCodes [1; 1; 1]
+        |> withDiagnostics [
+            (Error 1, Line 8, Col 17, Line 8, Col 27, "The type 'CharEnum' does not support the operator '|||'")
+            (Error 1, Line 9, Col 18, Line 9, Col 28, "The type 'CharEnum' does not support the operator '&&&'")
+            (Error 1, Line 10, Col 19, Line 10, Col 29, "The type 'CharEnum' does not support the operator '^^^'")
+        ]
 
     // Before the ErrorOnBitwiseOpsOnNonIntegralEnums feature, this code typechecked (and failed at runtime).
     [<Theory; FileInlineData("E_BitwiseOpsOnCharEnum.fs")>]

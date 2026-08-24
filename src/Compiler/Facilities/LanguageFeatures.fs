@@ -243,6 +243,7 @@ type LanguageVersion(versionText, ?disabledFeaturesArray: LanguageFeature array)
                 // Put stabilized features here for F# 11.0 previews via .NET SDK preview channels
                 LanguageFeature.WarnWhenFunctionValueUsedAsInterpolatedStringArg, languageVersion110
                 LanguageFeature.PreprocessorElif, languageVersion110
+                LanguageFeature.ErrorOnBitwiseOpsOnNonIntegralEnums, languageVersion110
                 LanguageFeature.ExceptionFieldSerializationSupport, languageVersion110
                 LanguageFeature.NotNullIfNotNull, languageVersion110
                 LanguageFeature.ImprovedImpliedArgumentNamesPartTwo, languageVersion110
@@ -262,7 +263,6 @@ type LanguageVersion(versionText, ?disabledFeaturesArray: LanguageFeature array)
                 // Unfinished features that still need work before they can be assigned a release language version.
                 LanguageFeature.FromEndSlicing, previewVersion // Unfinished features --- needs work
                 LanguageFeature.ExtensionConstraintSolutions, previewVersion
-                LanguageFeature.ErrorOnBitwiseOpsOnNonIntegralEnums, previewVersion
             ]
 
     static let defaultLanguageVersion = LanguageVersion("default")
