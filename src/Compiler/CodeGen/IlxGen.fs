@@ -31,6 +31,7 @@ open FSharp.Compiler.Features
 open FSharp.Compiler.Infos
 open FSharp.Compiler.Import
 open FSharp.Compiler.LowerStateMachines
+open FSharp.Compiler.RuntimeAsync
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.Syntax.PrettyNaming
 open FSharp.Compiler.SyntaxTreeOps
@@ -3167,31 +3168,6 @@ let ComputeDebugPointForBinding g bind =
         // Don't emit debug points for lambdas.
         | _, (Expr.Lambda _ | Expr.TyLambda _) -> false, None
         | DebugPointAtBinding.Yes m, _ -> false, Some m
-
-let IsRuntimeAsyncReturnVref (g: TcGlobals) (vref: ValRef) =
-    valRefEq g vref g.cgh__runtimeAsyncReturn_vref
-
-let rec TryUnwrapRuntimeAsyncReturnExpr (g: TcGlobals) expr =
-
-    match expr with
-    | Expr.DebugPoint(_, innerExpr) ->
-        match TryUnwrapRuntimeAsyncReturnExpr g innerExpr with
-        | true, body -> true, body
-        | false, _ -> false, expr
-    | Expr.App(Expr.Val(vref, _, _), _, [ _ ], [ body ], _) when IsRuntimeAsyncReturnVref g vref -> true, body
-    | _ -> false, expr
-
-let private IsRuntimeAsyncSuspensionMethod (g: TcGlobals) (ilMethRef: ILMethodRef) =
-    let (TILObjectReprData(coreLibScope, _, _)) = g.system_Object_tcref.ILTyconInfo
-
-    ilMethRef.DeclaringTypeRef.Scope = coreLibScope
-    && ilMethRef.DeclaringTypeRef.FullName = "System.Runtime.CompilerServices.AsyncHelpers"
-    && ilMethRef.Name
-       |> function
-           | "Await"
-           | "AwaitAwaiter"
-           | "UnsafeAwaitAwaiter" -> true
-           | _ -> false
 
 //-------------------------------------------------------------------------
 // Generate expressions

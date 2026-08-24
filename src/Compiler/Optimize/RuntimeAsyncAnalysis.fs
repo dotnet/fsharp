@@ -13,30 +13,7 @@ open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TypeRelations
 
-let IsRuntimeAsyncSuspensionExpr expr =
-    match stripExpr expr with
-    | Expr.Op(TOp.ILCall(_, _, _, _, _, _, _, ilMethodRef, _, _, _), _, _, _) ->
-        ilMethodRef.DeclaringTypeRef.FullName = "System.Runtime.CompilerServices.AsyncHelpers"
-        && ilMethodRef.Name
-           |> function
-               | "Await"
-               | "AwaitAwaiter"
-               | "UnsafeAwaitAwaiter" -> true
-               | _ -> false
-    | _ -> false
-
-let ExprContainsRuntimeAsyncSuspension expr =
-    let folder =
-        { ExprFolder0 with
-            exprIntercept =
-                fun _ noInterceptF acc expr ->
-                    if acc || IsRuntimeAsyncSuspensionExpr expr then
-                        true
-                    else
-                        noInterceptF acc expr
-        }
-
-    FoldExpr folder false expr
+open FSharp.Compiler.RuntimeAsync
 
 type private RuntimeAsyncFlowSummary =
     {
@@ -222,7 +199,7 @@ let private analyzeRuntimeAsyncExpr (g: TcGlobals) expr =
                     | Expr.TyLambda _ -> summary
                     | _ -> sequenceRuntimeAsyncFlowSummaries summary (analyzeExpr arg))
 
-            if IsRuntimeAsyncSuspensionExpr expr then
+            if IsRuntimeAsyncSuspensionExpr g expr then
                 addRuntimeAsyncSuspension argsSummary
             else
                 argsSummary
