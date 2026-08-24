@@ -7,8 +7,8 @@ open Xunit
 open FSharp.Test.Compiler
 open FSharp.Test.ScriptHelpers
 
-// Run sequentially because of shared fsiSession.
-[<FSharp.Test.RunTestCasesInSequence>]
+// Leverage caching/prevent concurrent mutation via long-lived fsiSession in module state
+[<TestClass(DisableParallelization = true)>]
 module SequenceExpression =
 
     let fsiSession = getSessionForEval [||] LangVersion.Preview
