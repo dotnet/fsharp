@@ -4,7 +4,6 @@ module internal FSharp.Compiler.CheckRecordSyntaxHelpers
 
 open System
 open FSharp.Compiler.CheckBasics
-open FSharp.Compiler.DiagnosticsLogger
 open FSharp.Compiler.NameResolution
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.SyntaxTreeOps
