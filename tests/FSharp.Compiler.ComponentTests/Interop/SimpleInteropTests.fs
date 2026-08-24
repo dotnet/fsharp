@@ -224,20 +224,15 @@ let main _ =
         |> compileExeAndRun
         |> shouldSucceed
 
+    // https://github.com/dotnet/fsharp/issues/20264
     [<Fact>]
-    let ``Issue 20264 - inherited IL base method abstract check`` () =
-        // Regression test for https://github.com/dotnet/fsharp/issues/20264
-        // The FindByNameAndArity guard in CheckILBaseCall avoids exception-based control flow
-        // for the common case of inherited (non-declared) methods on external generic IL types.
-        // This test verifies actual behavior: non-abstract inherited calls are allowed,
-        // abstract inherited calls are still rejected with the proper diagnostic.
+    let ``Issue 20264 - inherited non-abstract IL base method on generic type`` () =
         let csLib =
             CSharp
                 """
 namespace External
 {
     public abstract class BehaviorBase {
-        public abstract void AbstractDetaching();
         public virtual void OnDetaching() { }
     }
     public class Behavior<T> : BehaviorBase { }
@@ -245,27 +240,41 @@ namespace External
                 """
             |> withName "ExternalBehavior"
 
-        let fsLib =
-            FSharp
-                """
+        FSharp
+            """
 module TestIssue20264
-
 open External
-
 type MyBehavior() =
     inherit Behavior<int>()
+    member _.Test() = base.OnDetaching()
+            """
+        |> withReferences [ csLib ]
+        |> compile
+        |> shouldSucceed
 
-    override _.AbstractDetaching() = ()
-
-    member _.TestNonAbstract() =
-        base.OnDetaching()          // OK: inherited non-abstract
-
-    member _.TestAbstract() =
-        base.AbstractDetaching()    // Error: inherited abstract
+    [<Fact>]
+    let ``Issue 20264 - abstract IL base method on immediate generic type`` () =
+        let csLib =
+            CSharp
                 """
-            |> withReferences [ csLib ]
+namespace External
+{
+    public abstract class Behavior<T> {
+        public abstract void AbstractDetaching();
+    }
+}
+                """
+            |> withName "ExternalBehaviorAbstract"
 
-        fsLib
+        FSharp
+            """
+module TestIssue20264Abstract
+open External
+type MyBehavior() =
+    inherit Behavior<int>()
+    override _.AbstractDetaching() = base.AbstractDetaching()
+            """
+        |> withReferences [ csLib ]
         |> compile
         |> shouldFail
-        |> withErrorCodes [ 1201 ]
+        |> withErrorCode 1201
