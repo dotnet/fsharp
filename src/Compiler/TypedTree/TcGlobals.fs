@@ -11,6 +11,7 @@ module internal FSharp.Compiler.TcGlobals
 open System.Collections.Concurrent
 open System.Linq
 open System.Diagnostics
+open System.Runtime.CompilerServices
 
 open Internal.Utilities.Library
 open Internal.Utilities.Library.Extras
@@ -20,6 +21,7 @@ open FSharp.Compiler.Features
 open FSharp.Compiler.IO
 open FSharp.Compiler.Syntax.PrettyNaming
 open FSharp.Compiler.Text.FileIndex
+open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Range
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics
@@ -283,6 +285,20 @@ type TcGlobals(
   let v_mfe_tcr           = mk_MFCore_tcref fslibCcu "MatchFailureException"
 
   let mutable embeddedILTypeDefs = ConcurrentDictionary<string, ILTypeDef>()
+
+  // RFC FS-1043: compilation-scoped record of how the type-checker resolved built-in-operator SRTP
+  // constraints to extension members. Keyed by (operator logical name, support-type encoding, argument-type
+  // encoding); each entry keeps the (source range, solution-identity, solution) of every site that resolved
+  // that concrete key. The optimizer consults this to honor the checker's scope-aware decision when an
+  // inlined FSharp.Core operator arrives without a trait context. When one concrete key is resolved to two
+  // different extensions in two different scopes of the same file, the recorded ranges disambiguate which
+  // site is being replayed (see TryGetExtensionOperatorSolution), so opening/shadowing distinct same-signature
+  // extensions stays sound instead of falling back to an ambiguous file-global re-resolution.
+  // The outer ConditionalWeakTable partitions the record by the CCU being compiled so nothing leaks or
+  // cross-contaminates when a single shared (framework) TcGlobals serves many projects under FCS.
+  // Not serialized (consistent with traitCtxt): purely intra-compilation.
+  let extensionOperatorSolutions =
+      ConditionalWeakTable<CcuThunk, ConcurrentDictionary<struct(string * int64 list * int64 list), struct(range * string * TraitConstraintSln) list>>()
 
   let dummyAssemblyNameCarryingUsefulErrorInformation path typeName =
       FSComp.SR.tcGlobalsSystemTypeNotFound (String.concat "." path + "." + typeName)
@@ -1383,6 +1399,57 @@ type TcGlobals(
   /// Memoization table to help minimize the number of ILSourceDocument objects we create
   member _.memoize_file x = v_memoize_file.Apply x
 
+  /// RFC FS-1043: record how the type-checker resolved a built-in-operator SRTP constraint to an
+  /// extension member. 'identity' distinguishes the chosen extension and 'recordRange' the site that
+  /// chose it, so a second, different choice for the same concrete key in another scope is kept
+  /// alongside (rather than discarded) and later disambiguated by source position at replay.
+  /// Partitioned by the CCU being compiled so a shared framework TcGlobals cannot leak records across projects.
+  member _.RecordExtensionOperatorSolution(compilingCcu: CcuThunk, key: struct(string * int64 list * int64 list), recordRange: range, identity: string, sln: TraitConstraintSln) =
+      let table = extensionOperatorSolutions.GetValue(compilingCcu, fun _ -> ConcurrentDictionary(HashIdentity.Structural))
+      table.AddOrUpdate(
+          key,
+          [ struct(recordRange, identity, sln) ],
+          (fun _ existing ->
+              if existing |> List.exists (fun (struct(r, i, _)) -> equals r recordRange && i = identity) then existing
+              else struct(recordRange, identity, sln) :: existing))
+      |> ignore
+
+  /// RFC FS-1043: retrieve the checker's extension-member solution for a built-in-operator SRTP constraint
+  /// being replayed at 'replayRange', or None when unknown or ambiguous, scoped to the CCU being compiled.
+  /// Fast path: if a single extension resolved this concrete key across all recorded sites (single scope, or
+  /// the same extension reached transitively through inlining) it is unambiguous and returned directly.
+  /// Otherwise two different scopes chose different extensions: keep only records whose (operator-token) range
+  /// is contained in the replayed trait-call range and require them to agree; a synthetic/zero replay range
+  /// contains nothing and so degrades safely to None (file-global fallback) rather than guessing.
+  member _.TryGetExtensionOperatorSolution(compilingCcu: CcuThunk, key: struct(string * int64 list * int64 list), replayRange: range) : TraitConstraintSln option =
+      match extensionOperatorSolutions.TryGetValue compilingCcu with
+      | true, table ->
+          match table.TryGetValue key with
+          | true, (_ :: _ as entries) ->
+              let slnOfSingleIdentity records =
+                  match records |> List.map (fun (struct(_, i, _)) -> i) |> List.distinct with
+                  | [ _ ] -> let (struct(_, _, sln)) = List.head records in Some sln
+                  | _ -> None
+              match slnOfSingleIdentity entries with
+              | Some _ as r -> r
+              | None ->
+                  entries
+                  |> List.filter (fun (struct(r, _, _)) -> rangeContainsRange replayRange r)
+                  |> slnOfSingleIdentity
+          | _ -> None
+      | _ -> None
+
+  /// RFC FS-1043: drop all recorded extension-operator solutions for the CCU being compiled. FSI reuses one
+  /// session CcuThunk (and this sink) across submissions, and every EvalInteraction reuses the same dummy
+  /// file name and a fresh lexbuf, so two identical-layout submissions produce identical source ranges. The
+  /// range-based disambiguation cannot then tell an earlier submission's record from the current one, so a
+  /// stale entry could poison a later same-shaped submission. Each FSI fragment is its own compilation unit:
+  /// its records are made and replayed entirely within it, so clearing at the fragment boundary is sound and
+  /// prevents cross-submission contamination. Batch (fsc) compilation is a single unit with distinct file
+  /// names and never calls this.
+  member _.ClearExtensionOperatorSolutions(compilingCcu: CcuThunk) =
+      extensionOperatorSolutions.Remove(compilingCcu) |> ignore
+
   member val system_Array_ty = mkSysNonGenericTy sys "Array"
   member val system_Object_ty = mkSysNonGenericTy sys "Object"
   member val system_IDisposable_ty = mkSysNonGenericTy sys "IDisposable"
@@ -1518,6 +1585,7 @@ type TcGlobals(
   member val attrib_AutoOpenAttribute                      = mk_MFCore_attrib "AutoOpenAttribute"
   member val attrib_CompilationArgumentCountsAttribute     = mk_MFCore_attrib "CompilationArgumentCountsAttribute"
   member val attrib_CompilationMappingAttribute            = mk_MFCore_attrib "CompilationMappingAttribute"
+  member val attrib_AllowOverloadOnReturnTypeAttribute      = mk_MFCore_attrib "AllowOverloadOnReturnTypeAttribute"
   member val attrib_AllowNullLiteralAttribute              = mk_MFCore_attrib "AllowNullLiteralAttribute"
   member val attrib_EqualityConditionalOnAttribute         = mk_MFCore_attrib "EqualityConditionalOnAttribute"
   member val attrib_ComparisonConditionalOnAttribute       = mk_MFCore_attrib "ComparisonConditionalOnAttribute"

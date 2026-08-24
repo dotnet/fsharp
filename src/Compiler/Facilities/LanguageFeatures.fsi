@@ -90,6 +90,7 @@ type LanguageFeature =
     | MethodOverloadsCache
     | ImplicitDIMCoverage
     | PreprocessorElif
+    | ExtensionConstraintSolutions
     | ExceptionFieldSerializationSupport
     | ErrorOnMissingSignatureAttribute
     | RecordConstructorSyntax
