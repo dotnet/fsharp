@@ -31,7 +31,7 @@ SigFile
                  (8,5--8,23)), (8,0--8,23));
            NestedModule
              (SynComponentInfo
-                ([], None, [], [Tuple],
+                ([], None, [], Some (LongIdent (SynLongIdent ([Tuple], [], []))),
                  PreXmlDoc ((11,0), FSharp.Compiler.Xml.XmlDocCollector), false,
                  None, (11,0--11,12)), false,
               [Types
@@ -52,7 +52,8 @@ SigFile
                                 SynTyparDecl
                                   ([], SynTypar (T4, None, false), [],
                                    { AmpersandRanges = [] })], [],
-                               (13,14--13,31))), [], [Tuple],
+                               (13,14--13,31))), [],
+                         Some (LongIdent (SynLongIdent ([Tuple], [], [None]))),
                          PreXmlDoc ((13,4), FSharp.Compiler.Xml.XmlDocCollector),
                          true, None, (13,9--13,14)),
                       ObjectModel
@@ -224,7 +225,8 @@ SigFile
                 EqualsRange = Some (11,13--11,14) });
            NestedModule
              (SynComponentInfo
-                ([], None, [], [Choice],
+                ([], None, [],
+                 Some (LongIdent (SynLongIdent ([Choice], [], []))),
                  PreXmlDoc ((24,0), FSharp.Compiler.Xml.XmlDocCollector), false,
                  None, (24,0--24,13)), false,
               [Types
@@ -280,7 +282,8 @@ SigFile
                                 SynTyparDecl
                                   ([], SynTypar (T6, None, false), [],
                                    { AmpersandRanges = [] })], [],
-                               (29,15--29,40))), [], [Choice],
+                               (29,15--29,40))), [],
+                         Some (LongIdent (SynLongIdent ([Choice], [], [None]))),
                          PreXmlDoc ((27,4), FSharp.Compiler.Xml.XmlDocCollector),
                          true, None, (29,9--29,15)),
                       Simple
@@ -390,7 +393,8 @@ SigFile
                         Target = None
                         AppliesToGetterAndSetter = false
                         Range = (46,2--46,10) }]
-                    Range = (46,0--46,12) }], None, [], [Operators],
+                    Range = (46,0--46,12) }], None, [],
+                 Some (LongIdent (SynLongIdent ([Operators], [], []))),
                  PreXmlDoc ((46,0), FSharp.Compiler.Xml.XmlDocCollector), false,
                  None, (47,0--47,16)), false,
               [Types
@@ -402,7 +406,8 @@ SigFile
                               ([SynTyparDecl
                                   ([], SynTypar (T, None, false), [],
                                    { AmpersandRanges = [] })], [],
-                               (49,16--49,20))), [], [[,]],
+                               (49,16--49,20))), [],
+                         Some (LongIdent (SynLongIdent ([[,]], [], [None]))),
                          PreXmlDoc ((49,4), FSharp.Compiler.Xml.XmlDocCollector),
                          true, None, (49,9--49,16)),
                       Simple (None (49,9--61,26), (49,9--61,26)),

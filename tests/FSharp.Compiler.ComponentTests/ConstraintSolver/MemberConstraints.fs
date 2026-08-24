@@ -241,6 +241,26 @@ let inline inverse m =
         |> shouldSucceed
 
     [<Fact>]
+    let ``Extension binary operator does not report duplicate candidates`` () =
+        // Regression test: binary operators with same support type (e.g., list<_>) should not report duplicates
+        FSharp """
+open FSharp.Core.CompilerServices
+
+type List<'t> with
+    static member (<*>) (f: list<'T -> 'U>, x: list<'T>) : list<'U> =
+        let mutable coll = ListCollector<'U> ()
+        f |> List.iter (fun f ->
+            x |> List.iter (fun x ->
+                coll.Add (f x)))
+        coll.Close ()
+
+let result = [(+)] <*> [1;10] <*> [2;3]
+"""
+        |> withLangVersionPreview
+        |> typecheck
+        |> shouldSucceed
+
+    [<Fact>]
     let ``Nested inline SRTP with multiple overloads should not cause internal error`` () =
         // Regression test: unsolved type variables in trait constraint solutions during codegen
         // caused FS0073 "internal error: Undefined or unsolved type variable" when an inline
@@ -296,3 +316,133 @@ let main _ =
         |> asExe
         |> compileExeAndRun
         |> shouldSucceed
+
+    // Regression for PR #19602 (RFC FS-1043): a non-inline binding with an unsatisfiable operator/SRTP
+    // trait must fail at compile time (FS0041), not compile into a NotSupportedException stub that throws
+    // at runtime (which also leaked at feature-off langversions). The deleted neg116 shape '(1.0 - t) * p'
+    // stages the outer trait into a free return typar on a non-inline value.
+    let private nonInlineUnsatisfiableOperatorSrtp = """
+module Neg116
+
+type Complex = unit
+
+type Polynomial () =
+    static member (*) (s: decimal, p: Polynomial) : Polynomial = failwith ""
+    static member (*) (s: Complex, p: Polynomial) : Polynomial = failwith ""
+
+module Foo =
+    let test t (p: Polynomial) = (1.0 - t) * p
+"""
+
+    [<Theory>]
+    [<InlineData("9.0")>]
+    [<InlineData("preview")>]
+    let ``Non-inline binding with unsatisfiable operator SRTP is rejected at compile time`` (langVersion: string) =
+        FSharp nonInlineUnsatisfiableOperatorSrtp
+        |> asLibrary
+        |> withLangVersion langVersion
+        |> compile
+        |> shouldFail
+        |> withErrorCode 41
+        |> withDiagnosticMessageMatches "No overloads match"
+        |> withDiagnosticMessageMatches "op_Multiply"
+        |> ignore
+
+    // Regression for PR #19602 (RFC FS-1043): a return-type-directed multi-overload SRTP dispatch
+    // (FSharpPlus-style '(^a or ^b or ^c) : Transform') that no overload can satisfy must fail at
+    // compile time (FS0041), not compile into a NotSupportedException stub. Deleted neg117 shape.
+    let private returnDirectedMultiOverloadUnsatisfiableSrtp = """
+module Neg117
+
+#nowarn "64" // This construct causes code to be less generic than indicated by the type annotations.
+
+module TargetA =
+
+    [<RequireQualifiedAccess>]
+    type TransformerKind =
+        | A
+        | B
+
+    type M1 = int
+
+    type M2 = float
+
+    type Target() =
+
+        member __.TransformM1 (kind: TransformerKind) : M1[] option = [| 0 |] |> Some
+        member __.TransformM2 (kind: TransformerKind) : M2[] option = [| 1. |] |> Some
+
+    type TargetA =
+
+        static member instance : Target option = None
+
+        static member inline Transform(_: ^r, _: TargetA) = fun (kind:TransformerKind) -> TargetA.instance.Value.TransformM1 kind : ^r
+        static member inline Transform(_: ^r, _: TargetA) = fun (kind:TransformerKind) ->  TargetA.instance.Value.TransformM2 kind : ^r
+
+        static member inline Transform(kind: TransformerKind) =
+            let inline call2(a:^a, b:^b) = ((^a or ^b) : (static member Transform: _ * _ -> _) b, a)
+            let inline call (a: 'a) = fun (x: 'x) -> call2(a, Unchecked.defaultof<'r>) x : 'r
+            call Unchecked.defaultof<TargetA> kind
+
+    let inline Transform kind = TargetA.Transform kind
+
+module TargetB =
+    [<RequireQualifiedAccess>]
+    type TransformerKind =
+        | C
+        | D
+
+    type M1 = | M1
+
+    type M2 = | M2
+
+    type Target() =
+
+        member __.TransformM1 (kind: TransformerKind) = [| M1 |] |> Some
+        member __.TransformM2 (kind: TransformerKind) = [| M2 |] |> Some
+
+    type TargetB =
+
+        static member instance : Target option = None
+    
+        static member inline Transform(_: ^r, _: TargetB) = fun (kind:TransformerKind) -> TargetB.instance.Value.TransformM1 kind : ^r
+        static member inline Transform(_: ^r, _: TargetB) = fun (kind:TransformerKind) -> TargetB.instance.Value.TransformM2 kind : ^r
+
+        static member inline Transform(kind: TransformerKind) =
+            let inline call2(a:^a, b:^b) = ((^a or ^b) : (static member Transform: _ * _ -> _) b, a)
+            let inline call (a: 'a) = fun (x: 'x) -> call2(a, Unchecked.defaultof<'r>) x : 'r
+            call Unchecked.defaultof<TargetB> kind
+    let inline Transform kind = TargetB.Transform kind
+
+module Superpower =
+
+    type Transformer =
+        
+        static member inline Transform(_: ^f, _: TargetB.TargetB, _: Transformer) =
+            fun x -> TargetB.Transform x : ^f
+        
+        static member inline Transform(_: ^r, _: TargetA.TargetA, _: Transformer) =
+           fun x -> TargetA.Transform x : ^r
+
+        static member inline YeahTransform kind =
+            let inline call2(a:^a, b:^b, c: ^c) = ((^a or ^b or ^c) : (static member Transform: _ * _ * _ -> _) c, b, a)
+            let inline call (a: 'a) = fun (x: 'x) -> call2(a, Unchecked.defaultof<_>, Unchecked.defaultof<'r>) x : 'r
+            call Unchecked.defaultof<Transformer> kind 
+
+module Examples =
+    let a kind = Superpower.Transformer.YeahTransform kind : TargetA.M1[]
+"""
+
+    [<Theory>]
+    [<InlineData("9.0")>]
+    [<InlineData("preview")>]
+    let ``Return-directed multi-overload unsatisfiable SRTP is rejected at compile time`` (langVersion: string) =
+        FSharp returnDirectedMultiOverloadUnsatisfiableSrtp
+        |> asLibrary
+        |> withLangVersion langVersion
+        |> compile
+        |> shouldFail
+        |> withErrorCode 41
+        |> withDiagnosticMessageMatches "No overloads match"
+        |> withDiagnosticMessageMatches "Transform"
+        |> ignore

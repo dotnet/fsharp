@@ -11,7 +11,7 @@ open Xunit
 open System.Threading
 open System.Threading.Tasks
 
-// Cancels default token.
+// Test affects global state via Async.CancelDefaultToken
 [<Collection(nameof FSharp.Test.NotThreadSafeResourceCollection)>]
 module AsyncType =
 
@@ -40,6 +40,26 @@ module AsyncType =
 
         async { return () } |> expect Success
 
+module Helpers =
+
+    // Use a generous timeout to avoid flaky failures on loaded CI machines where the thread pool may be saturated.
+    let verifyTaskCompletion (t: Task) =
+        let completed = t.Wait(TimeSpan.FromSeconds 30.0)
+        Assert.True(completed, "Task did not finish after waiting for 30 seconds.")
+
+    let asyncWait immediate (a: Async<'T>): 'T =
+        if immediate then Async.RunSynchronouslyImmediate a
+        else Async.RunSynchronously a
+    let asyncWaitWithCt immediate (ct: CancellationToken) (a: Async<'T>): 'T =
+        if immediate then Async.RunSynchronouslyImmediate(a, cancellationToken = ct)
+        else Async.RunSynchronously(a, cancellationToken = ct)
+
+    let asyncWaitImm a = asyncWait true a
+    let asyncWaitWithCtImm ct a = asyncWaitWithCt true ct a
+
+open Helpers
+
+// Multiple tests affect global state via Async.CancelDefaultToken
 [<Collection(nameof FSharp.Test.NotThreadSafeResourceCollection)>]
 type AsyncType() =
 
@@ -49,25 +69,20 @@ type AsyncType() =
     [<VolatileField>]
     let mutable spinloop = true
         
-    // Use a generous timeout to avoid flaky failures on loaded CI machines where the thread pool may be saturated.
-    let waitForCompletion (t: Task) =
-        let result = t.Wait(TimeSpan.FromSeconds(30.0))
-        Assert.True(result, "Task did not finish after waiting for 30 seconds.")
-
-    [<Fact>]
-    member _.AsyncRunSynchronouslyReusesThreadPoolThread() =
+    [<Theory; InlineData true; InlineData false>]
+    member _.AsyncRunSynchronouslyReusesThreadPoolThread(immediate) =
+        let run a = asyncWait immediate a
         let action _ =
             async {
                 return
                     async { return Thread.CurrentThread.ManagedThreadId }
-                    |> Async.RunSynchronously
+                    |> run
             }
-        // This test needs approximately 1000 ThreadPool threads
-        // if Async.RunSynchronously doesn't reuse them.
+        // This test needs approximately 1000 ThreadPool threads (if Async.RunSynchronously[Immediate] doesn't reuse them)
         let usedThreads =
             Seq.init 1000 action
             |> Async.Parallel
-            |> Async.RunSynchronously
+            |> run
             |> Set.ofArray
         printfn $"RunSynchronously used {usedThreads.Count} threads. Environment.ProcessorCount is {Environment.ProcessorCount}."
         // Some arbitrary large number but in practice it should not use more threads than there are CPU cores.
@@ -82,7 +97,7 @@ type AsyncType() =
                 match sleepType with
                 | "int32"    -> Async.Sleep(10000000)
                 | "timespan" -> Async.Sleep(10000000.0 |> TimeSpan.FromMilliseconds)
-                | unknown    -> raise (NotImplementedException(unknown))
+                | unknown    -> failwith $"Unknown {unknown}"
             let mutable result = ""
             use cts = new CancellationTokenSource()
             Async.StartWithContinuations(computation,
@@ -91,7 +106,7 @@ type AsyncType() =
                                             (fun _ -> result <- "Cancel"),
                                             cts.Token)
             cts.Cancel()
-            Async.Sleep(1000) |> Async.RunSynchronously
+            Async.Sleep 1000 |> asyncWaitImm
             Assert.AreEqual("Cancel", result)
         )
 
@@ -104,7 +119,7 @@ type AsyncType() =
                 match sleepType with
                 | "int32"    -> Async.Sleep(10)
                 | "timespan" -> Async.Sleep(10.0 |> TimeSpan.FromMilliseconds)
-                | unknown    -> raise (NotImplementedException(unknown))
+                | unknown    -> failwith $"Unknown {unknown}"
             for i in 1..100 do
                 let mutable result = ""
                 use completedEvent = new ManualResetEvent(false)
@@ -129,24 +144,24 @@ type AsyncType() =
                 do! match sleepType with
                     | "int32"    -> Async.Sleep(-100)
                     | "timespan" -> Async.Sleep(-100.0 |> TimeSpan.FromMilliseconds)
-                    | unknown    -> raise (NotImplementedException(unknown))
+                    | unknown    -> failwith $"Unknown {unknown}"
                 failwith "Expected ArgumentOutOfRangeException"
             with
             | :? ArgumentOutOfRangeException -> ()
-        } |> Async.RunSynchronously
+        } |> asyncWaitImm
 
     [<Fact>]
     member _.AsyncSleepInfinitely() =
         ignoreSynchCtx (fun () ->
-            let computation = Async.Sleep(System.Threading.Timeout.Infinite)
+            let computation = Async.Sleep(Timeout.Infinite)
             let result = TaskCompletionSource<string>()
-            use cts = new CancellationTokenSource(TimeSpan.FromSeconds(1.0)) // there's a long way from 1 sec to infinity, but it'll have to do.
+            use cts = new CancellationTokenSource(TimeSpan.FromSeconds 1.0) // there's a long way from 1 sec to infinity, but it'll have to do.
             Async.StartWithContinuations(computation,
                                             (fun _ -> result.TrySetResult("Ok")        |> ignore),
                                             (fun _ -> result.TrySetResult("Exception") |> ignore),
                                             (fun _ -> result.TrySetResult("Cancel")    |> ignore),
                                             cts.Token)
-            let result = result.Task |> Async.AwaitTask |> Async.RunSynchronously
+            let result = result.Task |> Async.Await |> asyncWaitImm
             Assert.AreEqual("Cancel", result)
         )
 
@@ -155,8 +170,8 @@ type AsyncType() =
         let s = "Hello tasks!"
         let a = async { return s }
         let t : Task<string> = Async.StartAsTask a
-        waitForCompletion t
-        Assert.True (t.IsCompleted)
+        verifyTaskCompletion t
+        Assert.True(t.IsCompleted)
         Assert.AreEqual(s, t.Result)
 
     [<Fact>]
@@ -166,7 +181,7 @@ type AsyncType() =
         let doSpinloop () = while spinloop do ()
         let a = async {
             asyncStarted.Set()
-            cts.CancelAfter (100)
+            cts.CancelAfter(100)
             doSpinloop()
         }
 
@@ -179,7 +194,7 @@ type AsyncType() =
         // Should not finish, we don't eagerly mark the task done just because it's been signaled to cancel.
         try
             let result = t.Wait(1000)
-            Assert.False (result)
+            Assert.False(result)
         with :? AggregateException -> Assert.Fail "Task should not finish, yet"
 
         spinloop <- false
@@ -192,14 +207,14 @@ type AsyncType() =
             | :? TaskCanceledException -> ()
             | _ -> reraise()
 
-        Assert.True (t.IsCompleted, "Task is not completed")
+        Assert.True(t.IsCompleted, "Task is not completed")
 
 
     [<Fact>]
     member _.``AwaitTask ignores Async cancellation`` () =
         let cts = new CancellationTokenSource()
-        let tcs = new TaskCompletionSource<unit>()
-        let innerTcs = new TaskCompletionSource<unit>()
+        let tcs = TaskCompletionSource<unit>()
+        let innerTcs = TaskCompletionSource<unit>()
         let a = innerTcs.Task |> Async.AwaitTask
 
         Async.StartWithContinuations(a, tcs.SetResult, tcs.SetException, ignore >> tcs.SetCanceled, cts.Token)
@@ -207,18 +222,18 @@ type AsyncType() =
         cts.CancelAfter(100)
         try
             let result = tcs.Task.Wait(300)
-            Assert.False (result)
+            Assert.False(result)
         with :? AggregateException -> Assert.Fail "Should not finish, yet"
 
         innerTcs.SetResult ()
 
         try
-            waitForCompletion tcs.Task
+            verifyTaskCompletion tcs.Task
         with :? AggregateException as a ->
             match a.InnerException with
             | :? TaskCanceledException -> ()
             | _ -> reraise()
-        Assert.True (tcs.Task.IsCompleted, "Task is not completed")
+        Assert.True(tcs.Task.IsCompleted, "Task is not completed")
 
     [<Theory; InlineData(false); InlineData(true)>]
     member _.RunSynchronouslyCancellationWithDelayedResult(newAwait: bool) =
@@ -232,12 +247,12 @@ type AsyncType() =
 
         let cancelled =
             try
-                Async.RunSynchronously(a, cancellationToken = cts.Token) |> ignore
+                asyncWaitWithCtImm cts.Token a |> ignore
                 false
             with :? OperationCanceledException as o -> true
                  | _ -> false
 
-        Assert.True (cancelled, "Task is not cancelled")
+        Assert.True(cancelled, "Task is not cancelled")
 
     [<Fact>]
     member _.ExceptionPropagatesToTask () =
@@ -251,7 +266,7 @@ type AsyncType() =
             t.Wait()
         with
             e -> exceptionThrown <- true
-        Assert.True (t.IsFaulted)
+        Assert.True(t.IsFaulted)
         Assert.True(exceptionThrown)
 
     [<Fact>]
@@ -266,9 +281,9 @@ type AsyncType() =
         Async.CancelDefaultToken ()
         let mutable exceptionThrown = false
         try
-            waitForCompletion t
+            verifyTaskCompletion t
         with e -> exceptionThrown <- true
-        Assert.True (exceptionThrown)
+        Assert.True(exceptionThrown)
         Assert.True(t.IsCanceled)
 
     [<Fact>]
@@ -291,7 +306,7 @@ type AsyncType() =
         try
             t.Wait()
         with e -> exceptionThrown <- true
-        Assert.True (exceptionThrown)
+        Assert.True(exceptionThrown)
         Assert.True(t.IsCanceled)
         Assert.True(cancelled)
 
@@ -300,8 +315,8 @@ type AsyncType() =
         let s = "Hello tasks!"
         let a = async { return s }
         let t : Task<string> = Async.StartImmediateAsTask a
-        waitForCompletion t
-        Assert.True (t.IsCompleted)
+        verifyTaskCompletion t
+        Assert.True(t.IsCompleted)
         Assert.AreEqual(s, t.Result)
 
     [<Fact>]
@@ -309,8 +324,8 @@ type AsyncType() =
         let s = "Hello tasks!"
         let a = async { return s }
         let t = Async.StartImmediateAsTask a
-        waitForCompletion t
-        Assert.True (t.IsCompleted)
+        verifyTaskCompletion t
+        Assert.True(t.IsCompleted)
         Assert.AreEqual(s, t.Result)
 
 
@@ -325,7 +340,7 @@ type AsyncType() =
             t.Wait()
         with
             e -> exceptionThrown <- true
-        Assert.True (t.IsFaulted)
+        Assert.True(t.IsFaulted)
         Assert.True(exceptionThrown)
 
     [<Fact>]
@@ -340,7 +355,7 @@ type AsyncType() =
         try
             t.Wait()
         with e -> exceptionThrown <- true
-        Assert.True (exceptionThrown)
+        Assert.True(exceptionThrown)
         Assert.True(t.IsCanceled)
 
     [<Fact>]
@@ -363,7 +378,7 @@ type AsyncType() =
         try
             t.Wait()
         with e -> exceptionThrown <- true
-        Assert.True (exceptionThrown)
+        Assert.True(exceptionThrown)
         Assert.True(t.IsCanceled)
         Assert.True(cancelled)
 
@@ -375,8 +390,7 @@ type AsyncType() =
             let! s1 = t |> if newAwait then Async.Await else Async.AwaitTask
             return s = s1
         }
-        let ok = Async.RunSynchronously a
-        Assert.True ok
+        Assert.True(asyncWaitImm a)
 
     [<Theory; InlineData(false); InlineData(true)>]
     member _.AwaitTaskCancellation(newAwait: bool) =
@@ -388,8 +402,7 @@ type AsyncType() =
                 return false
             with :? OperationCanceledException -> return true
         }
-        let ok = Async.RunSynchronously a
-        Assert.True ok
+        Assert.True(asyncWaitImm a)
 
     [<Fact>]
     member _.AwaitCompletedTask() =
@@ -399,8 +412,7 @@ type AsyncType() =
             let threadIdAfter = Thread.CurrentThread.ManagedThreadId
             return threadIdBefore = threadIdAfter
         }
-        let ok = Async.RunSynchronously a
-        Assert.True ok
+        Assert.True(asyncWaitImm a)
 
     [<Theory; InlineData(false); InlineData(true)>]
     member _.AwaitTaskCancellationUntyped(newAwait: bool) =
@@ -412,8 +424,7 @@ type AsyncType() =
                 return false
             with :? OperationCanceledException -> return true
         }
-        let ok = Async.RunSynchronously a
-        Assert.True ok
+        Assert.True(asyncWaitImm a)
 
     [<Theory; InlineData(false); InlineData(true)>]
     member _.TaskAsyncValueException(newAwait: bool) =
@@ -423,8 +434,7 @@ type AsyncType() =
                 return false
             with e -> return true
         }
-        let ok = Async.RunSynchronously a
-        Assert.True ok
+        Assert.True(asyncWaitImm a)
 
     [<Theory; InlineData(false); InlineData(true)>]
     member _.TaskAsyncValueCancellation(newAwait: bool) =
@@ -457,8 +467,7 @@ type AsyncType() =
             do! t |> if newAwait then Async.Await else Async.AwaitTask
             return true
         }
-        let ok = Async.RunSynchronously a
-        Assert.True(hasBeenCalled && ok)
+        Assert.True(asyncWaitImm a && hasBeenCalled)
 
     [<Theory; InlineData(false); InlineData(true)>]
     member _.NonGenericTaskAsyncValueException(newAwait: bool) =
@@ -469,8 +478,7 @@ type AsyncType() =
                 return false
             with e -> return true
         }
-        let ok = Async.RunSynchronously a
-        Assert.True ok
+        Assert.True(asyncWaitImm a)
 
     [<Theory; InlineData(false); InlineData(true)>]
     member _.NonGenericTaskAsyncValueCancellation(newAwait: bool) =
@@ -499,7 +507,7 @@ type AsyncType() =
         let cts = new CancellationTokenSource()
         let token = cts.Token
         let mutable hasThrown = false
-        token.Register(fun () -> ewh.Set() |> ignore) |> ignore
+        token.Register(fun () -> ewh.Set()) |> ignore
         let a = async {
             try
                 while true do token.ThrowIfCancellationRequested()
@@ -519,7 +527,7 @@ type AsyncType() =
             return! loop(x+1)
         }
     
-        try Async.RunSynchronously (loop 0)
+        try asyncWait false (loop 0)
             hasThrown <- false
         with Failure "finish" -> 
             hasThrown <- true
@@ -561,8 +569,7 @@ type AsyncType() =
                 return false
             with :? AggregateException as ae -> return ae.InnerExceptions.Count = 2
         }
-        let ok = Async.RunSynchronously a
-        Assert.True ok
+        Assert.True(asyncWaitImm a)
 
     [<Theory; InlineData(false); InlineData(true)>]
     member _.``Await and AwaitTask(Task) valid AggregateException is surfaced``(newAwait) =
@@ -574,8 +581,7 @@ type AsyncType() =
                 return false
             with :? AggregateException as ae -> return ae.InnerExceptions.Count = 2
         }
-        let ok = Async.RunSynchronously a
-        Assert.True ok
+        Assert.True(asyncWaitImm a)
         
     (* Async.Await behavioral differences
     
@@ -591,8 +597,7 @@ type AsyncType() =
                 return false
             with :? AggregateException -> return true
         }
-        let ok = Async.RunSynchronously a
-        Assert.True ok
+        Assert.True(asyncWaitImm a)
 
     // ... whereas Async.Await(Task) surfaces the inner exception directly.
     [<Fact>]
@@ -604,8 +609,7 @@ type AsyncType() =
                 return false
             with :? ArgumentException as ae -> return ae.Message = "original"
         }
-        let ok = Async.RunSynchronously a
-        Assert.True ok
+        Assert.True(asyncWaitImm a)
 
     // Async.AwaitTask(Task<'T>) surfaces the wrapping AggregateException ...
     [<Fact>]
@@ -617,8 +621,7 @@ type AsyncType() =
                 return false
             with :? AggregateException -> return true
         }
-        let ok = Async.RunSynchronously a
-        Assert.True ok
+        Assert.True(asyncWaitImm a)
 
     // ... whereas Async.Await(Task<'T>) surfaces the inner exception directly.
     [<Fact>]
@@ -630,28 +633,87 @@ type AsyncType() =
                 return false
             with :? ArgumentException as ae -> return ae.Message = "original"
         }
-        let ok = Async.RunSynchronously a
-        Assert.True ok
+        Assert.True(asyncWaitImm a)
 
     (* Await(Task/Task<'T>) overloads happy path *)
     
     [<Fact>]
     member _.``Await(Task<'T>) happy path``() =
         let a = async {
-            let! v = Async.Await(System.Threading.Tasks.Task.FromResult(42))
+            let! v = Async.Await(Task.FromResult(42))
             return v = 42
         }
-        let ok = Async.RunSynchronously a
-        Assert.True ok
+        Assert.True(asyncWaitImm a)
 
     [<Fact>]
     member _.``Await(Task) happy path``() =
         let a = async {
-            do! Async.Await(System.Threading.Tasks.Task.CompletedTask)
+            do! Async.Await(Task.CompletedTask)
             return true
         }
-        let ok = Async.RunSynchronously a
-        Assert.True ok
+        Assert.True(asyncWaitImm a)
+
+    (* StartTaskImmediate(Task/Task<'T>) *)
+
+    [<Fact>]
+    member _.``StartTaskImmediate(Task<'T>) flows result``() =
+        let a = async {
+            let! v = Async.StartTaskImmediate(fun _ct -> Task.result 42)
+            return v = 42
+        }
+        Assert.True(asyncWaitImm a)
+
+    [<Fact>]
+    member _.``StartTaskImmediate(Task) happy path``() =
+        let mutable called = false
+        let a = async {
+            do! Async.StartTaskImmediate(fun _ct -> task { called <- true })
+        }
+        asyncWaitImm a
+        Assert.True called
+
+    [<Fact>]
+    member _.``StartTaskImmediate flows CancellationToken``() =
+        let cts = new CancellationTokenSource()
+        let mutable capturedCt = CancellationToken.None
+        let a = async {
+            do! Async.StartTaskImmediate(fun ct -> task { capturedCt <- ct })
+        }
+        asyncWaitWithCtImm cts.Token a
+        Assert.Equal(cts.Token, capturedCt)
+
+    [<Fact>]
+    member _.``StartTaskImmediate(Task<'T>) exception unwraps``() =
+        let tcs = TaskCompletionSource<int>()
+        tcs.SetException(ArgumentException "original")
+        let a = async {
+            try let! _ = Async.StartTaskImmediate(fun _ct -> tcs.Task)
+                return false
+            with :? ArgumentException as ae -> return ae.Message = "original"
+        }
+        Assert.True(asyncWaitImm a)
+
+    [<Fact>]
+    member _.``StartTaskImmediate(Task) exception unwraps``() =
+        let tcs = TaskCompletionSource<unit>()
+        tcs.SetException(ArgumentException "original")
+        let a = async {
+            try do! Async.StartTaskImmediate(fun _ct -> tcs.Task :> Task)
+                return false
+            with :? ArgumentException as ae -> return ae.Message = "original"
+        }
+        Assert.True(asyncWaitImm a)
+
+    [<Fact>]
+    member _.``StartTaskImmediate(Task<'T>) cancellation raises TaskCanceledException``() =
+        let tcs = TaskCompletionSource<int>()
+        tcs.SetCanceled()
+        let a = async {
+            try let! _ = Async.StartTaskImmediate(fun _ct -> tcs.Task)
+                return false
+            with :? TaskCanceledException -> return true
+        }
+        Assert.True(asyncWaitImm a)
 
 #if !NETFRAMEWORK
     (* Await(ValueTask and ValueTask<'T>) overloads coverage of mainline behaviors *)
@@ -662,8 +724,7 @@ type AsyncType() =
             do! Async.Await(ValueTask())
             return true
         }
-        let ok = Async.RunSynchronously a
-        Assert.True ok
+        Assert.True(asyncWaitImm a)
 
     [<Fact>]
     member _.``Await(ValueTask<'T>) happy path``() =
@@ -671,8 +732,7 @@ type AsyncType() =
             let! v = Async.Await(ValueTask<int>(42))
             return v = 42
         }
-        let ok = Async.RunSynchronously a
-        Assert.True ok
+        Assert.True(asyncWaitImm a)
 
     [<Fact>]
     member _.``Await(ValueTask) exception unwraps``() =
@@ -684,8 +744,7 @@ type AsyncType() =
                 return false
             with :? ArgumentException as ae -> return ae.Message = "original"
         }
-        let ok = Async.RunSynchronously a
-        Assert.True ok
+        Assert.True(asyncWaitImm a)
 
     [<Fact>]
     member _.``Await(ValueTask<'T>) exception unwraps``() =
@@ -696,10 +755,52 @@ type AsyncType() =
                 return false
             with :? ArgumentException as ae -> return ae.Message = "original"
         }
-        let ok = Async.RunSynchronously a
-        Assert.True ok
+        Assert.True(asyncWaitImm a)
+
+    (* StartTaskImmediate(ValueTask/ValueTask<'T>) *)
+
+    [<Fact>]
+    member _.``StartTaskImmediate(ValueTask<'T>) flows result``() =
+        let a = async {
+            let! v = Async.StartTaskImmediate(fun _ct -> ValueTask<int>(42))
+            return v = 42
+        }
+        Assert.True(asyncWaitImm a)
+
+    [<Fact>]
+    member _.``StartTaskImmediate(ValueTask) happy path``() =
+        let a = async {
+            do! Async.StartTaskImmediate(fun _ct -> ValueTask())
+            return true
+        }
+        Assert.True(asyncWaitImm a)
+
+    [<Fact>]
+    member _.``StartTaskImmediate(ValueTask<'T>) exception unwraps``() =
+        let tcs = TaskCompletionSource<int>()
+        tcs.SetException(ArgumentException "original")
+        let a = async {
+            try
+                let! _ = Async.StartTaskImmediate(fun _ct -> ValueTask<int>(tcs.Task))
+                return false
+            with :? ArgumentException as ae -> return ae.Message = "original"
+        }
+        Assert.True(asyncWaitImm a)
+
+    [<Fact>]
+    member _.``StartTaskImmediate(ValueTask) exception unwraps``() =
+        let tcs = TaskCompletionSource<unit>()
+        tcs.SetException(ArgumentException "original")
+        let a = async {
+            try
+                do! Async.StartTaskImmediate(fun _ct -> ValueTask(tcs.Task :> Task))
+                return false
+            with :? ArgumentException as ae -> return ae.Message = "original"
+        }
+        Assert.True(asyncWaitImm a)
 #endif
 
+// Intentionally in same collection to help rule out potential flakiness due to concurrency re #20306
 [<Collection(nameof FSharp.Test.NotThreadSafeResourceCollection)>]
 module AsyncTaskLikeAwaitTests =
 
@@ -713,20 +814,20 @@ module AsyncTaskLikeAwaitTests =
 
     [<Fact>]
     let ``Await(task-like) happy path with result``() =
-        let result =
+        let a =
             async {
-                let! v = Async.Await(MyTask(Task.FromResult 99))
+                let! v = Async.Await(MyTask(Task.FromResult 42))
                 return v
             }
-            |> Async.RunSynchronously
-        Assert.Equal(99, result)
+        Assert.Equal(42, asyncWaitImm a)
+        
 
     [<Fact>]
     let ``Await(task-like) happy path unit``() =
         async {
             do! Async.Await(MyUnitTask(Task.CompletedTask))
         }
-        |> Async.RunSynchronously
+        |> asyncWaitImm
 
     [<Fact>]
     let ``Await(task-like) deferred completion``() =
@@ -739,7 +840,7 @@ module AsyncTaskLikeAwaitTests =
             |> Async.StartAsTask
         Assert.False(t.IsCompleted, "Should not be done before TCS is set")
         tcs.SetResult 7
-        t.Wait(TimeSpan.FromSeconds 5.0) |> ignore
+        verifyTaskCompletion t
         Assert.Equal(7, t.Result)
 
     [<Fact>]
@@ -762,8 +863,8 @@ module AsyncTaskLikeAwaitTests =
                 asyncLocal.Value <- "completing-context" // if ExecutionContext is not propagated correctly to the continuation, it will see this
                 tcs.SetResult())
 
-        Assert.True(completion.Wait(TimeSpan.FromSeconds 5.), "Completion task hung?")
-        Assert.True(t.Wait(TimeSpan.FromSeconds 5.), "Awaited subject task hung?")
+        verifyTaskCompletion completion
+        verifyTaskCompletion t
         Assert.Equal("trace-id", t.Result) // Validate the chaining worked correctly
         Assert.Equal("root-context", asyncLocal.Value) // Root level context should be preserved
 
@@ -778,8 +879,7 @@ module AsyncTaskLikeAwaitTests =
                     return e.Message = "boom"
             }
         tcs.SetException(InvalidOperationException "boom")
-        let ok = Async.RunSynchronously a
-        Assert.True ok
+        Assert.True(asyncWaitImm a)
 
     [<Fact>]
     let ``Await(YieldAwaitable) yields and resumes``() =
@@ -790,7 +890,7 @@ module AsyncTaskLikeAwaitTests =
             do! Async.Await(Task.Yield())
             after <- true
         }
-        |> Async.RunSynchronously
+        |> asyncWaitImm
         Assert.True(before && after)
 
     [<Fact>]
@@ -801,9 +901,52 @@ module AsyncTaskLikeAwaitTests =
                 let! v = Async.Await(Task.FromResult(42).ConfigureAwait(false))
                 return v
             }
-            |> Async.RunSynchronously
+            |> asyncWaitImm
         Assert.Equal(42, result)
 
+// Intentionally in same collection to help rule out potential flakiness due to concurrency re #20306
+[<Collection(nameof FSharp.Test.NotThreadSafeResourceCollection)>]
+module AsyncStartTaskImmediateTaskLikeTests =
+
+    [<Fact>]
+    let ``StartTaskImmediate(YieldAwaitable factory) yields and resumes``() =
+        // Task.Yield() returns a struct YieldAwaitable — exercises the struct-awaiter SRTP path.
+        let mutable before, after = false, false
+
+        async {
+            before <- true
+            do! Async.StartTaskImmediate(fun _ -> Task.Yield())
+            after <- true
+        }
+        |> asyncWaitImm
+        Assert.True(before && after)
+
+    [<Fact>]
+    let ``StartTaskImmediate(ConfiguredTaskAwaitable factory) returns result``() =
+        // ConfigureAwait(false) returns a ConfiguredTaskAwaitable — a common real-world task-like.
+        let result =
+            async {
+                return! Async.StartTaskImmediate(fun _ -> Task.FromResult(42).ConfigureAwait(false))
+            }
+            |> asyncWaitImm
+        Assert.Equal(42, result)
+
+    [<Fact>]
+    let ``StartTaskImmediate flows CancellationToken``() =
+        // The factory receives the ambient cancellation token from the enclosing async.
+        let mutable capturedCt = CancellationToken.None
+        use cts = new CancellationTokenSource()
+
+        let a = async {
+            do! Async.StartTaskImmediate(fun ct ->
+                    capturedCt <- ct
+                    Task.CompletedTask.ConfigureAwait(false))
+        }
+        asyncWaitWithCtImm cts.Token a
+
+        Assert.Equal(cts.Token, capturedCt)
+
+// Intentionally in same collection to help rule out potential flakiness due to concurrency re #20306
 [<Collection(nameof FSharp.Test.NotThreadSafeResourceCollection)>]
 module AsyncAwaitStackTraceTests =
 
@@ -829,9 +972,9 @@ module AsyncAwaitStackTraceTests =
     // Run via StartImmediateAsTask + .Wait() and return the inner exception.
     // Using StartImmediateAsTask (not RunSynchronously) ensures that the async-layer
     // exception machinery goes through TaskCompletionSource.SetException, which preserves
-    // the stack trace rather than rethrowing synchronously and potentially truncating it.
+    // the stack trace rather than rethrowing synchronously and/or potentially truncating it.
     let runAndCaptureException (computation: Async<unit>) : exn =
-        // TODO swap in usage of Async.RunSynchronouslyImmediate
+        // TODO swap in usage of Async.RunSynchronouslyImmediate and add characterization of the stack trace behavior there as well
         let t = Async.StartImmediateAsTask computation
         let ae = Assert.Throws<AggregateException>(fun () -> t.Wait())
         ae.InnerException
@@ -888,5 +1031,6 @@ module AsyncAwaitStackTraceTests =
     let ``Await task-like via SRTP overload: all three levels visible in stack trace`` () =
         let e = runAndCaptureException (async { do! Async.Await(TaskWrapper(level2Task())) })
 
-        // 4 instead of 3 as current impl has an outer "at FSharp.Core.UnitTests.Control.AsyncAwaitStackTraceTests.e@836-9.Invoke(Tuple`3 tupledArg)
+        // 4 instead of 3 as current impl has an outer
+        //   at FSharp.Core.UnitTests.Control.AsyncAwaitStackTraceTests.e@836-9.Invoke(Tuple`3 tupledArg)
         checkTrace 4 e

@@ -7,7 +7,8 @@ SigFile
           [Types
              ([SynTypeDefnSig
                  (SynComponentInfo
-                    ([], None, [], [Foo],
+                    ([], None, [],
+                     Some (LongIdent (SynLongIdent ([Foo], [], [None]))),
                      PreXmlDoc ((4,0), FSharp.Compiler.Xml.XmlDocCollector),
                      false, None, (4,5--4,8)),
                   Simple
@@ -30,7 +31,8 @@ SigFile
                             Target = None
                             AppliesToGetterAndSetter = false
                             Range = (7,6--7,20) }]
-                        Range = (7,4--7,22) }], None, [], [Bang],
+                        Range = (7,4--7,22) }], None, [],
+                     Some (LongIdent (SynLongIdent ([Bang], [], [None]))),
                      PreXmlDoc ((7,4), FSharp.Compiler.Xml.XmlDocCollector),
                      false, None, (7,23--7,27)),
                   Simple

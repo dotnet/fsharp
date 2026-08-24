@@ -8,3 +8,4 @@ These are referenced from [agentic instructions](../../.github/instructions/) an
 
 - [`regression-fs0229-bstream-misalignment.md`](regression-fs0229-bstream-misalignment.md) — a conditional write with an unconditional read shifted the pickle B-stream, producing `FS0229` when reading older metadata.
 - [`regression-legacy-inline-metadata-dynamic-invocation.md`](regression-legacy-inline-metadata-dynamic-invocation.md) — a new inline-flag case reused a serialized bit pattern that already meant "required inline" in F# 5 binaries, breaking cross-assembly SRTP at runtime.
+- [`regression-sourcebuild-cpm-runtime-version-floor.md`](regression-sourcebuild-cpm-runtime-version-floor.md) — renaming the CPM runtime-package pins to computed `$(System*CentralVersion)` aliases with a floor defeated source-build's `$(System*Version)` override, causing prebuilt/`NU1109` failures in the VMR that fsharp CI could not see.

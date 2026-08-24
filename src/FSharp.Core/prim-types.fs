@@ -91,6 +91,11 @@ namespace Microsoft.FSharp.Core
         inherit Attribute()
         member _.Value = value
 
+    [<AttributeUsage (AttributeTargets.Method, AllowMultiple=false)>]
+    [<Sealed>]
+    type AllowOverloadOnReturnTypeAttribute() =
+        inherit Attribute()
+
     [<AttributeUsage (AttributeTargets.Property, AllowMultiple=false)>]  
     [<Sealed>]
     type CLIEventAttribute() = 
@@ -5556,6 +5561,9 @@ namespace Microsoft.FSharp.Core
 
             [<CompiledName("NonNullQuickPattern")>]
             let inline (|NonNullQuick|) (value : 'T | null when 'T : not null and 'T : not struct) = nonNull value
+
+            [<CompiledName("WithNull")>]
+            let inline withNull (value: 'T) : 'T | null = (# "" value : 'T | null #)
 
         module Checked = 
         
