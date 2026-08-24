@@ -526,37 +526,41 @@ type DefaultFileSystem() as this =
         if not useMemoryMappedFile then
             fileStream :> Stream
         else
-            let mmf =
-                if shouldShadowCopy then
-                    let mmf =
-                        MemoryMappedFile.CreateNew(
+            try
+                let mmf =
+                    if shouldShadowCopy then
+                        let mmf =
+                            MemoryMappedFile.CreateNew(
+                                null,
+                                length,
+                                MemoryMappedFileAccess.ReadWrite,
+                                MemoryMappedFileOptions.None,
+                                HandleInheritability.None
+                            )
+
+                        use stream = mmf.CreateViewStream(0L, length, MemoryMappedFileAccess.ReadWrite)
+                        fileStream.CopyTo(stream)
+                        fileStream.Dispose()
+                        mmf
+                    else
+                        MemoryMappedFile.CreateFromFile(
+                            fileStream,
                             null,
                             length,
-                            MemoryMappedFileAccess.ReadWrite,
-                            MemoryMappedFileOptions.None,
-                            HandleInheritability.None
+                            MemoryMappedFileAccess.Read,
+                            HandleInheritability.None,
+                            leaveOpen = false
                         )
 
-                    use stream = mmf.CreateViewStream(0L, length, MemoryMappedFileAccess.ReadWrite)
-                    fileStream.CopyTo(stream)
-                    fileStream.Dispose()
-                    mmf
-                else
-                    MemoryMappedFile.CreateFromFile(
-                        fileStream,
-                        null,
-                        length,
-                        MemoryMappedFileAccess.Read,
-                        HandleInheritability.None,
-                        leaveOpen = false
-                    )
+                let stream = new MemoryMappedStream(mmf, length)
 
-            let stream = new MemoryMappedStream(mmf, length)
+                if not stream.CanRead then
+                    invalidOp "Cannot read file"
 
-            if not stream.CanRead then
-                invalidOp "Cannot read file"
-
-            stream :> Stream
+                stream :> Stream
+            with _ ->
+                fileStream.Dispose()
+                reraise ()
 
     abstract OpenFileForWriteShim: filePath: string * ?fileMode: FileMode * ?fileAccess: FileAccess * ?fileShare: FileShare -> Stream
 
