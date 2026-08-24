@@ -28,9 +28,6 @@ type RequireNamedArgumentAttribute() =
     let private withPolyfillCtor (extra: string) =
         FSharp(fsPolyfillTargeting "AttributeTargets.Method ||| AttributeTargets.Constructor" + extra)
 
-    let private rejectsPositional cu =
-        cu |> withLangVersionPreview |> typecheck |> shouldFail |> withErrorCode 3910 |> ignore
-
     let private acceptsNamed cu =
         cu |> withLangVersionPreview |> typecheck |> shouldSucceed |> ignore
 
@@ -43,7 +40,10 @@ type RequireNamedArgumentAttribute() =
     let private requiresNamed (name: string) =
         $"The method '{name}' requires named arguments. Use named-argument syntax, e.g. 'MethodName(argumentName = value)'."
 
-    // Merge several positional call sites into one compile; count-exact (one FS3910 per listed method).
+    // Merge several call sites into one run; count-exact (one FS3910 per listed method, identified by name).
+    let private rejectsAll (methods: string list) cu =
+        cu |> withLangVersionPreview |> typecheck |> shouldFail |> withErrorMessages (List.map requiresNamed methods) |> ignore
+
     let private rejectsAllCompiled (methods: string list) cu =
         cu |> withLangVersionPreview |> compile |> shouldFail |> withErrorMessages (List.map requiresNamed methods) |> ignore
 
@@ -137,51 +137,91 @@ namespace AnnotatedLib
         |> asLibrary
         |> withName "CsExtensionLib"
 
-    [<Fact>]
-    let ``Same compilation unit - positional call is an error`` () =
-        withPolyfill """
+    // Shared same-compilation-unit surface: every annotated shape declared once, each member
+    // distinctly named so a merged FS3910 assertion pins the exact violating call site.
+    let private annotatedApi = """
 namespace Test
 
+open System
 open System.Runtime.CompilerServices
+open System.Runtime.InteropServices
 
-type C =
-    [<RequireNamedArgument>]
-    static member Add(x: int, y: int) = x + y
+type Api =
+    [<RequireNamedArgument>] static member Basic(x: int, y: int) = x + y
+    [<RequireNamedArgument>] static member Mixed(x: int, y: int) = x + y
+    [<RequireNamedArgument>] static member FirstClass(x: int, y: int) = x + y
+    [<RequireNamedArgument>] static member Zero() = 42
+    [<RequireNamedArgument>] static member Optional(x: int, [<Optional; DefaultParameterValue(0)>] y: int) = x + y
+    [<RequireNamedArgument>] static member Params([<ParamArray>] rest: int[]) = Array.sum rest
+    [<RequireNamedArgument>] static member Generic<'T>(value: 'T) = value
+    static member Overloaded(x: int, y: int) = x + y
+    [<RequireNamedArgument>] static member Overloaded(x: string, y: string) = x + y
 
-module Use =
-    let r = C.Add(1, 2)
+type IFace =
+    [<RequireNamedArgument>] abstract member ViaSlot: x: int * y: int -> int
+
+type Delegated =
+    [<RequireNamedArgument>] static member Ping(x: int) = x
+
+type Holder() =
+    member _.Value = 0
+
+[<AutoOpen>]
+module Extensions =
+    type Holder with
+        [<RequireNamedArgument>] member _.Ext(x: int, y: int) = x + y
+
+type IndexerGet() =
+    member _.Item with [<RequireNamedArgument>] get (i: int) = i * 2
+
+type IndexerSet() =
+    let mutable store = 0
+    member _.Item with [<RequireNamedArgument>] set (i: int) (v: int) = store <- i + v
+
+type PropertySet() =
+    let mutable store = 0
+    member _.P with [<RequireNamedArgument>] set (v: int) = store <- v
+
+type Curried =
+    [<RequireNamedArgument>] static member Add (x: int) (y: int) = x + y
 """
-        |> rejectsPositional
+
+    let private withZoo (extra: string) = withPolyfill (annotatedApi + extra)
 
     [<Fact>]
-    let ``Same compilation unit - named call succeeds`` () =
-        withPolyfill """
-namespace Test
-
-open System.Runtime.CompilerServices
-
-type C =
-    [<RequireNamedArgument>]
-    static member Add(x: int, y: int) = x + y
-
+    let ``Same compilation unit - positional and positional-like calls are all rejected`` () =
+        withZoo """
 module Use =
-    let r = C.Add(x = 1, y = 2)
+    let basic = Api.Basic(1, 2)
+    let mixed = Api.Mixed(1, y = 2)
+    let firstClass = Api.FirstClass
+    let optional = Api.Optional(1, 2)
+    let paramArray = Api.Params(1, 2, 3)
+    let generic = Api.Generic(5)
+    let overloaded = Api.Overloaded("a", "b")
+    let viaInterface (i: IFace) = i.ViaSlot(1, 2)
+    let ext = Holder().Ext(1, 2)
+    let asDelegate = System.Func<int, int>(Delegated.Ping)
 """
-        |> acceptsNamed
+        |> rejectsAll [ "Basic"; "Mixed"; "FirstClass"; "Optional"; "Params"; "Generic"; "Overloaded"; "ViaSlot"; "Ext"; "Ping" ]
 
     [<Fact>]
-    let ``Zero-argument annotated method - unnamed call is allowed`` () =
-        withPolyfill """
-namespace Test
-
-open System.Runtime.CompilerServices
-
-type C =
-    [<RequireNamedArgument>]
-    static member Ping() = 42
-
+    let ``Same compilation unit - named and non-applicable calls are all accepted`` () =
+        withZoo """
 module Use =
-    let r = C.Ping()
+    let basic = Api.Basic(x = 1, y = 2)
+    let zero = Api.Zero()
+    let optionalOmitted = Api.Optional(x = 1)
+    let paramArray = Api.Params(rest = [| 1; 2; 3 |])
+    let generic = Api.Generic(value = 5)
+    let overloadUnannotated = Api.Overloaded(1, 2)
+    let ext = Holder().Ext(x = 1, y = 2)
+    let lambdaForward x y = Api.Basic(x = x, y = y)
+    // attribute present but no named-argument form applies:
+    let indexerGet = IndexerGet().[1]
+    let indexerSet = let c = IndexerSet() in c.[1] <- 2
+    let propertySet = let c = PropertySet() in c.P <- 5
+    let curried = Curried.Add 1 2
 """
         |> acceptsNamed
 
@@ -247,72 +287,6 @@ module Use =
         |> ignore
 
     [<Fact>]
-    let ``Optional argument passed positionally is an error`` () =
-        withPolyfill """
-namespace Test
-
-open System.Runtime.CompilerServices
-open System.Runtime.InteropServices
-
-type C =
-    [<RequireNamedArgument>]
-    static member Add(x: int, [<Optional; DefaultParameterValue(0)>] y: int) = x + y
-
-module Use =
-    let positional = C.Add(1, 2)
-"""
-        |> rejectsPositional
-
-    [<Fact>]
-    let ``Optional argument may be omitted when the required argument is named`` () =
-        withPolyfill """
-namespace Test
-
-open System.Runtime.CompilerServices
-open System.Runtime.InteropServices
-
-type C =
-    [<RequireNamedArgument>]
-    static member Add(x: int, [<Optional; DefaultParameterValue(0)>] y: int) = x + y
-
-module Use =
-    let omitted = C.Add(x = 1)
-"""
-        |> acceptsNamed
-
-    [<Fact>]
-    let ``Interface method - positional call through the interface is an error`` () =
-        withPolyfill """
-namespace Test
-
-open System.Runtime.CompilerServices
-
-type I =
-    [<RequireNamedArgument>]
-    abstract member Add: x: int * y: int -> int
-
-module Use =
-    let f (i: I) = i.Add(1, 2)
-"""
-        |> rejectsPositional
-
-    [<Fact>]
-    let ``Mixed named and positional call is an error`` () =
-        withPolyfill """
-namespace Test
-
-open System.Runtime.CompilerServices
-
-type C =
-    [<RequireNamedArgument>]
-    static member Add(x: int, y: int) = x + y
-
-module Use =
-    let r = C.Add(1, y = 2)
-"""
-        |> rejectsPositional
-
-    [<Fact>]
     let ``Same-named attribute in a different F# namespace is not recognised`` () =
         FSharp """
 namespace MyApp
@@ -346,116 +320,6 @@ let r = WrongApi.Add(1, 2)
         |> withReferences [ csWrongNamespaceLib ]
         |> acceptsCompiled
 
-    [<Fact>]
-    let ``ParamArray positional arguments are an error`` () =
-        withPolyfill """
-namespace Test
-
-open System
-open System.Runtime.CompilerServices
-
-type C =
-    [<RequireNamedArgument>]
-    static member Sum([<ParamArray>] rest: int[]) = Array.sum rest
-
-module Use =
-    let r = C.Sum(1, 2, 3)
-"""
-        |> rejectsPositional
-
-    [<Fact>]
-    let ``ParamArray passed by name as an array succeeds`` () =
-        withPolyfill """
-namespace Test
-
-open System
-open System.Runtime.CompilerServices
-
-type C =
-    [<RequireNamedArgument>]
-    static member Sum([<ParamArray>] rest: int[]) = Array.sum rest
-
-module Use =
-    let r = C.Sum(rest = [| 1; 2; 3 |])
-"""
-        |> acceptsNamed
-
-    [<Fact>]
-    let ``Overload resolution - positional call binds the unannotated overload and succeeds`` () =
-        withPolyfill """
-namespace Test
-
-open System.Runtime.CompilerServices
-
-type C =
-    static member Add(x: int, y: int) = x + y
-    [<RequireNamedArgument>]
-    static member Add(x: string, y: string) = x + y
-
-module Use =
-    let r = C.Add(1, 2)
-"""
-        |> acceptsNamed
-
-    [<Fact>]
-    let ``Overload resolution - positional call binds the annotated overload and is an error`` () =
-        withPolyfill """
-namespace Test
-
-open System.Runtime.CompilerServices
-
-type C =
-    static member Add(x: int, y: int) = x + y
-    [<RequireNamedArgument>]
-    static member Add(x: string, y: string) = x + y
-
-module Use =
-    let r = C.Add("a", "b")
-"""
-        |> rejectsPositional
-
-    [<Fact>]
-    let ``F# extension member - positional call is an error`` () =
-        withPolyfill """
-namespace Test
-
-open System.Runtime.CompilerServices
-
-type C() =
-    member _.Value = 0
-
-[<AutoOpen>]
-module Extensions =
-    type C with
-        [<RequireNamedArgument>]
-        member _.Add(x: int, y: int) = x + y
-
-module Use =
-    let r = C().Add(1, 2)
-"""
-        |> rejectsPositional
-
-    [<Fact>]
-    let ``F# extension member - named call succeeds`` () =
-        withPolyfill """
-namespace Test
-
-open System.Runtime.CompilerServices
-
-type C() =
-    member _.Value = 0
-
-[<AutoOpen>]
-module Extensions =
-    type C with
-        [<RequireNamedArgument>]
-        member _.Add(x: int, y: int) = x + y
-
-module Use =
-    let r = C().Add(x = 1, y = 2)
-"""
-        |> acceptsNamed
-
     [<FactForNETCOREAPP>]
     let ``C# extension methods - positional calls are errors (receiver is not a positional argument)`` () =
         FSharp """
@@ -477,92 +341,6 @@ let paramArray = (1).SumTo(rest = [| 2; 3 |])
 """
         |> withReferences [ csExtensionLib ]
         |> acceptsCompiled
-
-    [<Fact>]
-    let ``First-class use of an annotated method is an error`` () =
-        withPolyfill """
-namespace Test
-
-open System.Runtime.CompilerServices
-
-type C =
-    [<RequireNamedArgument>]
-    static member Add(x: int, y: int) = x + y
-
-module Use =
-    let f = C.Add
-"""
-        |> rejectsPositional
-
-    [<Fact>]
-    let ``Explicit lambda forwarding with named arguments succeeds`` () =
-        withPolyfill """
-namespace Test
-
-open System.Runtime.CompilerServices
-
-type C =
-    [<RequireNamedArgument>]
-    static member Add(x: int, y: int) = x + y
-
-module Use =
-    let f x y = C.Add(x = x, y = y)
-"""
-        |> acceptsNamed
-
-    [<Fact>]
-    let ``Indexer getter with the attribute on its accessor is not enforced`` () =
-        withPolyfill """
-namespace Test
-open System.Runtime.CompilerServices
-type C() =
-    member _.Item with [<RequireNamedArgument>] get (i: int) = i * 2
-module Use =
-    let c = C()
-    let r = c.[1]
-"""
-        |> acceptsNamed
-
-    [<Fact>]
-    let ``Indexer setter with the attribute on its accessor is not enforced`` () =
-        withPolyfill """
-namespace Test
-open System.Runtime.CompilerServices
-type C() =
-    let mutable store = 0
-    member _.Item with [<RequireNamedArgument>] set (i: int) (v: int) = store <- i + v
-module Use =
-    let c = C()
-    c.[1] <- 2
-"""
-        |> acceptsNamed
-
-    [<Fact>]
-    let ``Property setter with the attribute on its accessor is not enforced`` () =
-        withPolyfill """
-namespace Test
-open System.Runtime.CompilerServices
-type C() =
-    let mutable store = 0
-    member _.P with [<RequireNamedArgument>] set (v: int) = store <- v
-module Use =
-    let c = C()
-    c.P <- 5
-"""
-        |> acceptsNamed
-
-    [<Fact>]
-    let ``Curried member is not enforced because it has no named-argument form`` () =
-        withPolyfill """
-namespace Test
-open System.Runtime.CompilerServices
-type C =
-    [<RequireNamedArgument>]
-    static member Add (x: int) (y: int) = x + y
-module Use =
-    let r = C.Add 1 2
-"""
-        |> acceptsNamed
 
     [<Fact>]
     let ``Constructor positional call is rejected and the diagnostic names the type`` () =
@@ -590,32 +368,6 @@ type C [<RequireNamedArgument>] (x: int, y: int) =
     member _.V = x + y
 module Use =
     let c = C(x = 1, y = 2)
-"""
-        |> acceptsNamed
-
-    [<Fact>]
-    let ``Generic annotated method - the attribute survives instantiation`` () =
-        withPolyfill """
-namespace Test
-open System.Runtime.CompilerServices
-type C =
-    [<RequireNamedArgument>]
-    static member Id<'T>(value: 'T) = value
-module Use =
-    let r = C.Id(5)
-"""
-        |> rejectsPositional
-
-    [<Fact>]
-    let ``Generic annotated method - named call succeeds`` () =
-        withPolyfill """
-namespace Test
-open System.Runtime.CompilerServices
-type C =
-    [<RequireNamedArgument>]
-    static member Id<'T>(value: 'T) = value
-module Use =
-    let r = C.Id(value = 5)
 """
         |> acceptsNamed
 
@@ -697,19 +449,6 @@ let s = AnnotatedLib.S(x = 1, y = 2)
 """
         |> withReferences [ csStructCtorLib ]
         |> acceptsCompiled
-
-    [<Fact>]
-    let ``Method group coerced to a delegate cannot smuggle a positional call`` () =
-        withPolyfill """
-namespace Test
-open System.Runtime.CompilerServices
-type C =
-    [<RequireNamedArgument>]
-    static member Ping(x: int) = x
-module Use =
-    let f = System.Func<int, int>(C.Ping)
-"""
-        |> rejectsPositional
 
     [<FactForNETCOREAPP>]
     let ``Local F# method annotated with an attribute imported from a referenced assembly is enforced`` () =
