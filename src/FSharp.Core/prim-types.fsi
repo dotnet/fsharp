@@ -292,6 +292,18 @@ namespace Microsoft.FSharp.Core
         /// <returns>LiteralAttribute</returns>
         new: unit -> LiteralAttribute
 
+    /// <summary>Adding this attribute to a method causes the return type to be considered during overload resolution.</summary>
+    ///
+    /// <category>Attributes</category>
+    [<AttributeUsage (AttributeTargets.Method, AllowMultiple=false)>]
+    [<Sealed>]
+    type AllowOverloadOnReturnTypeAttribute =
+        inherit Attribute
+
+        /// <summary>Creates an instance of the attribute</summary>
+        /// <returns>AllowOverloadOnReturnTypeAttribute</returns>
+        new: unit -> AllowOverloadOnReturnTypeAttribute
+
     /// <summary>Adding this attribute to a property with event type causes it to be compiled with as a CLI
     /// metadata event, through a syntactic translation to a pair of 'add_EventName' and 
     /// 'remove_EventName' methods.</summary>
@@ -1008,6 +1020,7 @@ namespace Microsoft.FSharp.Core.CompilerServices
     [<CompilerMessage("This type is for compiler use and should not be used directly", 1204, IsHidden = true)>]
     type SupportsWhenTEnum = class end
 
+#if !NET5_0_OR_GREATER
 namespace System.Diagnostics.CodeAnalysis
 
     open System
@@ -1046,6 +1059,8 @@ namespace System.Diagnostics.CodeAnalysis
         inherit Attribute
         new: DynamicallyAccessedMemberTypes -> DynamicallyAccessedMembersAttribute
         member MemberTypes: DynamicallyAccessedMemberTypes
+
+#endif
 
 namespace Microsoft.FSharp.Core
 
@@ -2606,6 +2621,7 @@ namespace Microsoft.FSharp.Core
       | Error of ErrorValue:'TError
 
 // These attributes only exist in .NET 8 and up.
+#if !NET8_0_OR_GREATER
 namespace System.Runtime.CompilerServices
     open System
     open Microsoft.FSharp.Core
@@ -2637,6 +2653,7 @@ namespace System.Runtime.CompilerServices
     type internal ScopedRefAttribute =
         inherit Attribute
         new: unit -> ScopedRefAttribute
+#endif
 
 namespace Microsoft.FSharp.Collections
 
@@ -2654,7 +2671,7 @@ namespace Microsoft.FSharp.Collections
     /// </remarks>
     ///
     /// <exclude />
-#if NETSTANDARD2_1_OR_GREATER
+#if NETSTANDARD2_1_OR_GREATER || NET
     [<System.Runtime.CompilerServices.CollectionBuilder(typeof<List>, "Create")>]
 #endif
     [<DefaultAugmentation(false)>]
@@ -2730,7 +2747,7 @@ namespace Microsoft.FSharp.Collections
     /// </remarks>
     and 'T list = List<'T>
 
-#if NETSTANDARD2_1_OR_GREATER
+#if NETSTANDARD2_1_OR_GREATER || NET
     /// <summary>Contains methods for compiler use related to lists.</summary>
     and [<CompilerMessage("This type is for compiler use and should not be used directly", 1204, IsHidden=true);
           Sealed;
@@ -5833,6 +5850,15 @@ namespace Microsoft.FSharp.Core
             /// <returns>The non-null value.</returns>
             [<CompiledName("NonNullQuickPattern")>]
             val inline (|NonNullQuick|) : value: 'T | null -> 'T when 'T : not null and 'T : not struct
+
+            /// <summary>Unsafely retypes the value from 'T to ('T | null), bypassing the 'not null' and 'not struct' constraints that F# otherwise requires in order to write ('T | null). This is an unsafe operation.</summary>
+            /// <remarks>This exists purely for interoperability with C# APIs that expose an unconstrained nullable generic, such as a method <c>T? M&lt;T&gt;()</c> or an interface member <c>T? GetValue&lt;T&gt;(int index)</c> where <c>T</c> has no <c>class</c> constraint and can therefore also be a struct. Without it such a signature cannot be implemented or consumed from F# without spurious FS3261 nullness warnings.
+            ///
+            /// It is unsafe precisely because it sidesteps those constraints. Unlike <see cref="M:Microsoft.FSharp.Core.Operators.WithNull``1(``0)"/> it adds no <c>not null</c> or <c>not struct</c> constraint, so the resulting ('T | null) can be formed even when <c>'T</c> is a struct, where <c>null</c> is not a representable value: there the annotation carries no runtime meaning and is erased, and assigning <c>null</c> to such a location yields <c>Unchecked.defaultof&lt;'T&gt;</c> rather than a true null. Use it only to satisfy an interop signature.</remarks>
+            /// <param name="value">The value.</param>
+            /// <returns>The same value, retyped as ('T | null).</returns>
+            [<CompiledName("WithNull")>]
+            val inline withNull<'T> : value: 'T -> 'T | null
 
         /// <summary>A module of comparison and equality operators that are statically resolved, but which are not fully generic and do not make structural comparison. Opening this
         /// module may make code that relies on structural or generic comparison no longer compile.</summary>

@@ -93,7 +93,7 @@ type TaskBuilderBase =
     member inline TryWith:
         body: TaskCode<'TOverall, 'T> * catch: (exn -> TaskCode<'TOverall, 'T>) -> TaskCode<'TOverall, 'T>
 
-#if NETSTANDARD2_1
+#if NETSTANDARD2_1 || NET
     /// <summary>
     /// Specifies a unit of task code which binds to the resource implementing IAsyncDisposable and disposes it asynchronously
     /// </summary>
@@ -119,9 +119,7 @@ type TaskBuilderBase =
 type TaskBuilder =
     inherit TaskBuilderBase
 
-    /// <summary>
-    /// The entry point for the dynamic implementation of the corresponding operation. Do not use directly, only used when executing quotations that involve tasks or other reflective execution of F# code.
-    /// </summary>
+    /// <include file="xmldoc/dynamic.xml" path="/dynamic/entryPoint/*"/>
     static member RunDynamic: code: TaskCode<'T, 'T> -> Task<'T>
 
     /// Hosts the task code in a state machine and starts the task.
@@ -134,9 +132,7 @@ type TaskBuilder =
 type BackgroundTaskBuilder =
     inherit TaskBuilderBase
 
-    /// <summary>
-    /// The entry point for the dynamic implementation of the corresponding operation. Do not use directly, only used when executing quotations that involve tasks or other reflective execution of F# code.
-    /// </summary>
+    /// <include file="xmldoc/dynamic.xml" path="/dynamic/entryPoint/*"/>
     static member RunDynamic: code: TaskCode<'T, 'T> -> Task<'T>
 
     /// <summary>
@@ -218,9 +214,7 @@ module LowPriority =
                 and ^Awaiter: (member get_IsCompleted: unit -> bool)
                 and ^Awaiter: (member GetResult: unit -> 'T)
 
-        /// <summary>
-        /// The entry point for the dynamic implementation of the corresponding operation. Do not use directly, only used when executing quotations that involve tasks or other reflective execution of F# code.
-        /// </summary>
+        /// <include file="xmldoc/dynamic.xml" path="/dynamic/entryPoint/*"/>
         [<NoEagerConstraintApplication>]
         static member inline BindDynamic< ^TaskLike, 'TResult1, 'TResult2, ^Awaiter, 'TOverall> :
             sm: byref<TaskStateMachine<'TOverall>> *
@@ -435,9 +429,7 @@ module HighPriority =
         /// </summary>
         member inline ReturnFrom: task: Task<'T> -> TaskCode<'T, 'T>
 
-        /// <summary>
-        /// The entry point for the dynamic implementation of the corresponding operation. Do not use directly, only used when executing quotations that involve tasks or other reflective execution of F# code.
-        /// </summary>
+        /// <include file="xmldoc/dynamic.xml" path="/dynamic/entryPoint/*"/>
         static member BindDynamic:
             sm: byref<TaskStateMachine<'TOverall>> *
             task: Task<'TResult1> *
@@ -582,7 +574,7 @@ module Task =
     [<CompiledName("Empty")>]
     val empty: Task<unit>
 
-#if NETSTANDARD2_1
+#if NETSTANDARD2_1 || NET
     /// <summary>Converts a <see cref="T:System.Threading.Tasks.ValueTask`1"/> to a <see cref="T:System.Threading.Tasks.Task`1"/>.</summary>
     ///
     /// <param name="valueTask">The input value task.</param>
@@ -600,7 +592,7 @@ module Task =
     val inline ofValueTask: valueTask: ValueTask<'T> -> Task<'T>
 #endif
 
-#if NETSTANDARD2_1
+#if NETSTANDARD2_1 || NET
 /// <summary>Contains camelCase module-level functions for <see cref="T:System.Threading.Tasks.ValueTask`1"/> computations.</summary>
 ///
 /// <category index="1">Async Programming</category>

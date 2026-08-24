@@ -14,6 +14,7 @@ open FSharp.Compiler.AttributeChecking
 open FSharp.Compiler.CompilerGlobalState
 open FSharp.Compiler.DelegateForwarding
 open FSharp.Compiler.DiagnosticsLogger
+open FSharp.Compiler.Features
 open FSharp.Compiler.Text.Range
 open FSharp.Compiler.Syntax.PrettyNaming
 open FSharp.Compiler.Syntax
@@ -428,6 +429,9 @@ type cenv =
       
       emitTailcalls: bool
       
+      /// Fallback trait context for resolving extension method constraints during optimization
+      traitCtxt: ITraitContext option
+
       /// cache methods with SecurityAttribute applied to them, to prevent unnecessary calls to ExistsInEntireHierarchyOfType
       casApplied: Dictionary<Stamp, bool>
 
@@ -479,7 +483,22 @@ type IncrementalOptimizationEnv =
 
       methEnv: MethodEnv
 
-      globalModuleInfos: LayeredMap<string, LazyModuleInfo>   
+      globalModuleInfos: LayeredMap<string, LazyModuleInfo>
+
+      /// Referenced CCUs collected via BindCcu, used for cross-assembly extension member resolution
+      referencedCcus: CcuThunk list
+
+      /// Signatures of earlier same-assembly implementation files, so extension members they declare are
+      /// visible to trait-witness generation for later files (batch path only — see OptimizeImplFile).
+      earlierImplFileSignatures: ModuleOrNamespaceType list
+
+      /// RFC FS-1043: the user call-site range when optimizing a debug inline-specialized body. The body is
+      /// copied with its definition-site ranges preserved (for step-into), so a built-in-operator trait node
+      /// inside it replays at the definition site, whereas the checker recorded its scope-aware extension
+      /// solution at this call site. When two scopes solve the same operator key with different extensions,
+      /// definition-site replay finds no match; this call site does, letting the correct extension be honored
+      /// instead of degrading to the throwing dynamic stub. None outside the debug-specialization path.
+      debugInlineCallSite: range option
     }
 
     static member Empty = 
@@ -491,7 +510,10 @@ type IncrementalOptimizationEnv =
           disableMethodSplitting = false
           localExternalVals = LayeredMap.Empty 
           globalModuleInfos = LayeredMap.Empty 
-          methEnv = { pipelineCount = 0 } }
+          methEnv = { pipelineCount = 0 }
+          referencedCcus = []
+          earlierImplFileSignatures = []
+          debugInlineCallSite = None }
 
     override x.ToString() = "<IncrementalOptimizationEnv>"
 
@@ -623,7 +645,9 @@ let BindTyparsToUnknown (tps: Typar list) env =
     List.fold (fun sofar arg -> BindTypar arg UnknownTypeValue sofar) env tps 
 
 let BindCcu (ccu: CcuThunk) mval env (_g: TcGlobals) = 
-    { env with globalModuleInfos=env.globalModuleInfos.Add(ccu.AssemblyName, mval) }
+    { env with
+        globalModuleInfos = env.globalModuleInfos.Add(ccu.AssemblyName, mval)
+        referencedCcus = ccu :: env.referencedCcus }
 
 /// Lookup information about values, without reporting values that are not bound yet
 let TryGetInfoForLocalValue cenv env (v: Val) =
@@ -3180,15 +3204,58 @@ and OptimizeTraitCall cenv env (traitInfo, args, m) =
 
     let g = cenv.g
 
+    // If the trait context is missing (e.g. from inlined FSharp.Core operators) and we have
+    // a fallback context from the current compilation unit, create a new trait info with it.
+    let traitInfoForResolution =
+        match traitInfo.TraitContext, cenv.traitCtxt with
+        | None, Some tc when g.langVersion.SupportsFeature LanguageFeature.ExtensionConstraintSolutions ->
+            let (TTrait(a, b, c, d, e, f, _, _)) = traitInfo
+            TTrait(a, b, c, d, e, f, ref None, Some tc)
+        | _ -> 
+            traitInfo
+
+    // RFC FS-1043: recovery for shadowed/duplicated built-in operators. The file-global context above is
+    // scope-blind and returns every same-signature extension in the compilation, so resolution is
+    // ambiguous and fails (which would emit a runtime NotSupportedException stub). In that case, replay
+    // the type-checker's scope-aware decision recorded during checking, which is authoritative.
+    let resolveWithRecordedSolution () =
+        if not (g.langVersion.SupportsFeature LanguageFeature.ExtensionConstraintSolutions) then None
+        else
+        match traitInfo.Solution with
+        | Some _ -> None
+        | None ->
+            // Try the trait node's own range first (matches the recorded call-site range on the fully-inlined
+            // optimize+ path). On the debug inline-specialization path the node keeps its definition-site range,
+            // which finds no record when two scopes solved the same key differently, so fall back to the user
+            // call site captured in the env — that range contains this scope's recorded solution.
+            let replayRanges =
+                match env.debugInlineCallSite with
+                | Some cs -> [ m; cs ]
+                | None -> [ m ]
+            let recorded =
+                replayRanges
+                |> List.tryPick (fun r -> ConstraintSolver.TryGetRecordedExtensionOperatorSolution g cenv.scope traitInfo r)
+            match recorded with
+            | Some sln ->
+                let (TTrait(a, b, c, d, e, f, _, h)) = traitInfo
+                let traitInfoWithSln = TTrait(a, b, c, d, e, f, ref (Some sln), h)
+                match ConstraintSolver.CodegenWitnessExprForTraitConstraint cenv.TcVal g cenv.amap m traitInfoWithSln args with
+                | OkResult(_, Some expr) -> Some(OptimizeExpr cenv env expr)
+                | _ -> None
+            | None -> None
+
     // Resolve the static overloading early (during the compulsory rewrite phase) so we can inline. 
-    match ConstraintSolver.CodegenWitnessExprForTraitConstraint cenv.TcVal g cenv.amap m traitInfo args with
+    match ConstraintSolver.CodegenWitnessExprForTraitConstraint cenv.TcVal g cenv.amap m traitInfoForResolution args with
 
     | OkResult (_, Some expr) -> OptimizeExpr cenv env expr
 
     // Resolution fails when optimizing generic code, ignore the failure
     | _ -> 
-        let argsR, arginfos = OptimizeExprsThenConsiderSplits cenv env args 
-        OptimizeExprOpFallback cenv env (TOp.TraitCall traitInfo, [], argsR, m) arginfos UnknownValue 
+        match resolveWithRecordedSolution () with
+        | Some result -> result
+        | None ->
+            let argsR, arginfos = OptimizeExprsThenConsiderSplits cenv env args 
+            OptimizeExprOpFallback cenv env (TOp.TraitCall traitInfo, [], argsR, m) arginfos UnknownValue 
 
 and CopyExprForInlining cenv isInlineIfLambda expr (m: range) = 
     let g = cenv.g
@@ -3659,12 +3726,12 @@ and TryInlineApplication cenv env finfo (valExpr: Expr) (tyargs: TType list, arg
                     | None ->
 
                     let existingTypes = defaultArg (Map.tryFind origLambdaId env.dontInline) []
-                    let env = { env with dontInline = Map.add origLambdaId (specLambdaTy :: existingTypes) env.dontInline }
+                    let env = { env with dontInline = Map.add origLambdaId (specLambdaTy :: existingTypes) env.dontInline; debugInlineCallSite = Some m }
                     let specLambdaR, _ = OptimizeExpr cenv env specLambda
                     cenv.specializedInlineVals.Add(origLambdaId, (specLambdaTy, specLambdaR))
                     specLambdaR
                 else
-                    let specLambdaR, _ = OptimizeExpr cenv { env with dontInline = Map.add origLambdaId [] env.dontInline } specLambda
+                    let specLambdaR, _ = OptimizeExpr cenv { env with dontInline = Map.add origLambdaId [] env.dontInline; debugInlineCallSite = Some m } specLambda
                     specLambdaR
 
             // Abstract the specialized lambda over its free typars so IlxGen emits a static
@@ -4746,7 +4813,15 @@ and OptimizeImplFileInternal cenv env isIncrementalFragment hidden implFile =
     env, implFileR, minfo, hidden
 
 /// Entry point
-let OptimizeImplFile (settings, ccu, tcGlobals, tcVal, importMap, optEnv, isIncrementalFragment,  emitTailcalls, hidden, mimpls) =
+let OptimizeImplFile (settings, ccu, tcGlobals: TcGlobals, tcVal, importMap, optEnv, isIncrementalFragment, emitTailcalls, hidden, mimpls: CheckedImplFile) =
+    let traitCtxt =
+        if tcGlobals.langVersion.SupportsFeature LanguageFeature.ExtensionConstraintSolutions then
+            // earlierImplFileSignatures fixes a cross-file extension operator falling back to FSharp.Core's
+            // dynamic operator (runtime NotSupportedException); see the field doc for why signatures are used.
+            Some(ConstraintSolver.CreateImplFileTraitContext tcGlobals [ mimpls.Contents ] optEnv.earlierImplFileSignatures optEnv.referencedCcus :> ITraitContext)
+        else
+            None
+
     let cenv = 
         { settings=settings
           scope=ccu 
@@ -4756,6 +4831,7 @@ let OptimizeImplFile (settings, ccu, tcGlobals, tcVal, importMap, optEnv, isIncr
           optimizing=true
           localInternalVals=Dictionary<Stamp, ValInfo>(10000)
           emitTailcalls=emitTailcalls
+          traitCtxt=traitCtxt
           casApplied=Dictionary<Stamp, bool>() 
           stackGuard = StackGuard("OptimizerStackGuardDepth")
           realsig = tcGlobals.realsig
@@ -4764,13 +4840,22 @@ let OptimizeImplFile (settings, ccu, tcGlobals, tcVal, importMap, optEnv, isIncr
           signatureHidingInfo = SignatureHidingInfo.Empty
         }
 
-    let env, _, _, _ as results = OptimizeImplFileInternal cenv optEnv isIncrementalFragment hidden mimpls
+    let env, implFileR, minfo, hidden = OptimizeImplFileInternal cenv optEnv isIncrementalFragment hidden mimpls
+
+    // Accumulate only in the batch path (isIncrementalFragment = false), where IlxGen binds each file's
+    // signature vals across files — matching these signatures. The incremental (FSI) path binds contents
+    // vals instead, so accumulating signatures there would make witnesses reference vals IlxGen never bound.
+    let env =
+        if not isIncrementalFragment && tcGlobals.langVersion.SupportsFeature LanguageFeature.ExtensionConstraintSolutions then
+            { env with earlierImplFileSignatures = mimpls.Signature :: optEnv.earlierImplFileSignatures }
+        else
+            env
 
     let optimizeDuringCodeGen disableMethodSplitting expr =
         let env = { env with disableMethodSplitting = env.disableMethodSplitting || disableMethodSplitting }
         OptimizeExpr cenv env expr |> fst
 
-    results, optimizeDuringCodeGen
+    (env, implFileR, minfo, hidden), optimizeDuringCodeGen
 
 
 /// Pickle to stable format for cross-module optimization data

@@ -1098,6 +1098,38 @@ module CancellableTasks =
                 return! Task.WhenAll (tasks)
             }
 
+        /// Runs the given tasks concurrently, but caps concurrent work to maxDegreeOfParallelism.
+        let inline whenAllThrottled maxDegreeOfParallelism (tasks: CancellableTask<'a> seq) =
+            cancellableTask {
+                let! ct = getCancellationToken ()
+                let semaphore = new SemaphoreSlim(maxDegreeOfParallelism: int)
+
+                let started =
+                    [|
+                        for task in tasks do
+                            backgroundTask {
+                                do! semaphore.WaitAsync(ct)
+
+                                try
+                                    return! start ct task
+                                finally
+                                    semaphore.Release() |> ignore
+                            }
+                    |]
+
+                let allTask = Task.WhenAll started
+
+                allTask.ContinueWith(
+                    (fun (_: Task<'a[]>) -> semaphore.Dispose()),
+                    CancellationToken.None,
+                    TaskContinuationOptions.ExecuteSynchronously,
+                    TaskScheduler.Default
+                )
+                |> ignore
+
+                return! allTask
+            }
+
         let inline whenAllTasks (tasks: CancellableTask seq) =
             cancellableTask {
                 let! ct = getCancellationToken ()

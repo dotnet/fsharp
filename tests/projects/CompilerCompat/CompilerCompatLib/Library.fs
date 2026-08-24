@@ -16,6 +16,28 @@ module Library =
     let processAnonymousRecord (record: {| X: int; Y: string |}) =
         sprintf "Processed: X=%d, Y=%s" record.X record.Y
 
+    // ---- RFC FS-1043 breaking change compat tests ----
+
+    /// Inline function with operator + literal (T4a)
+    let inline addOne x = x + 1
+    let addOneConcrete (x: int) : int = addOne x
+
+    /// Inline unary negate (T4b)
+    let inline negate x = -x
+    let negateConcrete (x: int) : int = negate x
+
+    /// Takes a function int -> int (T4c)
+    let applyToInt (f: int -> int) (x: int) = f x
+
+    /// Custom type with intrinsic operator (T5)
+    type Num = { V: int }
+        with static member (+) (a: Num, b: Num) = { V = a.V + b.V }
+
+    let inline addNums (a: Num) (b: Num) = a + b
+    let addNumsConcrete (a: Num) (b: Num) : Num = addNums a b
+
+
+
     /// Type with Sealed attribute for compatibility testing
     [<Sealed>]
     type SealedType() =
@@ -40,6 +62,36 @@ module Library =
     /// Function with ReflectedDefinition
     [<ReflectedDefinition>]
     let reflectedFunction x = x + 1
+
+    // ---- RFC FS-1043 extension operator compat tests ----
+
+    /// Type with NO intrinsic operators
+    type StringRep = { Value: string }
+
+    /// Extension operator on StringRep: repeat via (<*>)
+    type StringRep with
+        static member (<*>) (s: StringRep, n: int) =
+            { Value = System.String.Concat(System.Linq.Enumerable.Repeat(s.Value, n)) }
+
+    /// Inline SRTP function using the extension operator
+    let inline repeatRep (s: ^T) (n: int) =
+        (^T : (static member (<*>) : ^T * int -> ^T) (s, n))
+
+    /// Concrete wrapper (extension resolved at definition time)
+    let repeatRepConcrete (s: StringRep) (n: int) : StringRep = repeatRep s n
+
+    /// Extension operator on generic Wrapper
+    type Wrapper<'T> = { Inner: 'T }
+
+    type Wrapper<'T> with
+        static member (++) (a: Wrapper<'T>, b: Wrapper<'T>) = { Inner = a.Inner }
+
+    /// Inline SRTP function using generic extension operator
+    let inline mergeWrappers (a: ^T) (b: ^T) =
+        (^T : (static member (++) : ^T * ^T -> ^T) (a, b))
+
+    /// Concrete wrapper
+    let mergeWrappersConcrete (a: Wrapper<int>) (b: Wrapper<int>) : Wrapper<int> = mergeWrappers a b
 
     /// Literal string used as an attribute argument.
     /// Tests that Expr.Val in AttribExpr.source pickles/unpickles across compiler versions.
