@@ -1013,10 +1013,12 @@ type private BoundExprKey =
     | Coerce of BoundExprKey
     | Opaque of nodeId: int
 
+type private PatternNodeId = int
+
 [<NoComparison>]
 type private FrontierKey =
     { Clause: ClauseNumber
-      Actives: (PathKey list * int) list
+      Actives: (PathKey list * PatternNodeId) list
       Bound: (Stamp * BoundExprKey) list }
 
 /// Residual match states with equal keys compile to the same tree.
@@ -1033,11 +1035,11 @@ type private MemoEntry =
 
 /// Off for the throwaway diagnostics pass and for matches that cannot blow up in the first place.
 [<RequireQualifiedAccess>]
-type JoinPromotion =
+type private JoinPromotion =
     | Disabled
     | Enabled
 
-let CompilePatternBasic
+let private CompilePatternBasic
         (g: TcGlobals) denv amap tcVal infoReader mExpr mMatch
         warnOnUnused
         warnOnIncomplete
@@ -1245,7 +1247,7 @@ let CompilePatternBasic
             |> List.map (fun (Frontier(i, actives, valMap)) ->
                 { Clause = i
                   Actives = actives |> List.map (fun (Active(path, _, pat)) -> pathKey path, patternNodeId pat)
-                  Bound = valMap.Contents |> Map.toList |> List.map (fun (stamp, e) -> stamp, boundExprKey e) })
+                  Bound = [ for KeyValue(stamp, e) in valMap.Contents -> stamp, boundExprKey e ] })
           Captured = capturedVals |> List.map (fun (v: Val) -> v.Stamp) }
 
     // The match input stays in scope at the outer join binding; only tree-bound locals need parameters.
