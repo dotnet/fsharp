@@ -9,30 +9,24 @@ open FSharp.Test.Compiler
 /// FS-1095: RequireNamedArgumentAttribute (recognised by full type name) forces named-argument call syntax.
 module RequireNamedArgumentTests =
 
-    let private fsPolyfill =
-        """
+    let private fsPolyfillTargeting (targets: string) =
+        $"""
 namespace System.Runtime.CompilerServices
 
 open System
 
-[<AttributeUsage(AttributeTargets.Method)>]
+[<AttributeUsage({targets})>]
 type RequireNamedArgumentAttribute() =
     inherit Attribute()
 """
 
+    let private fsPolyfill = fsPolyfillTargeting "AttributeTargets.Method"
+
     let private withPolyfill (extra: string) = FSharp(fsPolyfill + extra)
 
-    // Permissive polyfill that also targets constructors (the real Method-only BCL attribute warns there).
+    // Permissive variant that also targets constructors (the real Method-only BCL attribute warns there).
     let private withPolyfillCtor (extra: string) =
-        FSharp("""
-namespace System.Runtime.CompilerServices
-
-open System
-
-[<AttributeUsage(AttributeTargets.Method ||| AttributeTargets.Constructor)>]
-type RequireNamedArgumentAttribute() =
-    inherit Attribute()
-""" + extra)
+        FSharp(fsPolyfillTargeting "AttributeTargets.Method ||| AttributeTargets.Constructor" + extra)
 
     let private rejectsPositional cu =
         cu |> withLangVersionPreview |> typecheck |> shouldFail |> withErrorCode 3910 |> ignore
@@ -59,18 +53,21 @@ type Api =
         |> asLibrary
         |> withName "FsAnnotatedLib"
 
-    let private csPolyfill = """
+    let private csPolyfillTargeting (targets: string) =
+        """
 using System;
 using System.Runtime.CompilerServices;
 
 namespace System.Runtime.CompilerServices
 {
-    [AttributeUsage(AttributeTargets.Method, AllowMultiple = false, Inherited = false)]
+    [AttributeUsage(""" + targets + """, AllowMultiple = false, Inherited = false)]
     public sealed class RequireNamedArgumentAttribute : Attribute { }
 }
 """
 
-    let private csharpWithPolyfill (extra: string) = CSharp(csPolyfill + extra)
+    let private csharpWithPolyfillTargeting (targets: string) (extra: string) = CSharp(csPolyfillTargeting targets + extra)
+
+    let private csharpWithPolyfill (extra: string) = csharpWithPolyfillTargeting "AttributeTargets.Method" extra
 
     let private csAnnotatedLib =
         csharpWithPolyfill """
@@ -672,16 +669,7 @@ namespace AnnotatedLib
         |> withName "CsInterfaceLib"
 
     let private csStructCtorLib =
-        CSharp """
-using System;
-using System.Runtime.CompilerServices;
-
-namespace System.Runtime.CompilerServices
-{
-    [AttributeUsage(AttributeTargets.Constructor, AllowMultiple = false, Inherited = false)]
-    public sealed class RequireNamedArgumentAttribute : Attribute { }
-}
-
+        csharpWithPolyfillTargeting "AttributeTargets.Constructor" """
 namespace AnnotatedLib
 {
     public struct S
