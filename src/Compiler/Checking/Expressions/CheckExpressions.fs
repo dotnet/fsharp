@@ -12272,7 +12272,12 @@ and TcLetBinding (cenv: cenv) isUse env containerInfo declKind tpenv (synBinds, 
         let valSchemes = NameMap.map (UseCombinedValReprInfo g declKind rhsExpr) prelimValSchemes2
         let values = MakeAndPublishVals cenv env (altActualParent, false, declKind, ValNotInRecScope, valSchemes, attrs, xmlDoc, literalValue)
         let checkedPat = tcPatPhase2 (TcPatPhase2Input (values, true))
-        let prelimRecValues = NameMap.map fst values
+        let prelimRecValues =
+            let prelimRecValues = NameMap.map fst values
+            if isFixed then
+                NameMap.map (fun (v: Val) -> v.SetIsPinning(); v) prelimRecValues
+            else
+                prelimRecValues
 
         // Now bind the r.h.s. to the l.h.s.
         let rhsExpr = mkTypeLambda m generalizedTypars (rhsExpr, tauTy)

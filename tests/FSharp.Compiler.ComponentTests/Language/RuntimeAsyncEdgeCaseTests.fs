@@ -374,17 +374,59 @@ let ``exception handling block suspensions compile and run correctly`` (_label: 
 
 
 [<Theory>]
+[<InlineData("byref-across-suspension-in-try-finally",
+             "let f (x: byref<int>) : Task<int> = StateMachineHelpers.__runtimeAsyncReturn (try AsyncHelpers.Await(Task.Delay(1)); 1 finally AsyncHelpers.Await(Task.FromResult(1)) + x)")>]
 [<InlineData("refstruct-across-suspension",
              "let f () : Task<int> = StateMachineHelpers.__runtimeAsyncReturn (let data = [| 10; 20; 30 |] in let span = ReadOnlySpan<int>(data) in AsyncHelpers.Await(Task.Delay(1)); span[0] + span[1] + span[2])")>]
 [<InlineData("byref-param-across-suspension",
              "let f (x: byref<int>) : Task<int> = StateMachineHelpers.__runtimeAsyncReturn (AsyncHelpers.Await(Task.Delay(1)); x)")>]
 [<InlineData("pinned-local-across-suspension",
-             "let f (arr: int[]) : Task<int> = StateMachineHelpers.__runtimeAsyncReturn (use p = fixed arr in AsyncHelpers.Await(Task.Delay(1)); FSharp.NativeInterop.NativePtr.get p 0)",
-             Skip = "TODO: Enable this test once the pinned local across suspension diagnostic is fixed")>]
+             "let f (arr: int[]) : Task<int> = StateMachineHelpers.__runtimeAsyncReturn (use p = fixed arr in AsyncHelpers.Await(Task.Delay(1)); FSharp.NativeInterop.NativePtr.get p 0)")>]
+[<InlineData("pinned-alias-across-suspension",
+             "let f (arr: int[]) : Task<int> = StateMachineHelpers.__runtimeAsyncReturn (use p = fixed arr in let q = p in AsyncHelpers.Await(Task.Delay(1)); FSharp.NativeInterop.NativePtr.get q 0)")>]
+[<InlineData("pinned-alias-chain-across-suspension",
+             "let f (arr: int[]) : Task<int> = StateMachineHelpers.__runtimeAsyncReturn (use p = fixed arr in let p1 = p in let p2 = p1 in AsyncHelpers.Await(Task.Delay(1)); FSharp.NativeInterop.NativePtr.get p2 0)")>]
+[<InlineData("pinned-mutable-alias-across-suspension",
+             "let f (arr: int[]) : Task<int> = StateMachineHelpers.__runtimeAsyncReturn (use p = fixed arr in let mutable p1 = p in AsyncHelpers.Await(Task.Delay(1)); FSharp.NativeInterop.NativePtr.get p1 0)")>]
+[<InlineData("pinned-tuple-alias-across-suspension",
+             "let f (arr: int[]) : Task<int> = StateMachineHelpers.__runtimeAsyncReturn (use p = fixed arr in let q = (p, 1) in AsyncHelpers.Await(Task.Delay(1)); FSharp.NativeInterop.NativePtr.get (fst q) 0)")>]
+[<InlineData("pinned-captured-lambda-across-suspension",
+             "let f (arr: int[]) : Task<int> = StateMachineHelpers.__runtimeAsyncReturn (use p = fixed arr in let q = fun () -> FSharp.NativeInterop.NativePtr.get p 0 in AsyncHelpers.Await(Task.Delay(1)); q())")>]
+[<InlineData("pinned-captured-delegate-across-suspension",
+             "let f (arr: int[]) : Task<int> = StateMachineHelpers.__runtimeAsyncReturn (use p = fixed arr in let q = System.Func<int>(fun () -> FSharp.NativeInterop.NativePtr.get p 0) in AsyncHelpers.Await(Task.Delay(1)); q.Invoke())",
+             Skip = "Known gap: pinned provenance is not propagated through captured delegates")>]
+[<InlineData("pinned-ref-cell-across-suspension",
+             "let f (arr: int[]) : Task<int> = StateMachineHelpers.__runtimeAsyncReturn (use p = fixed arr in let q = ref p in AsyncHelpers.Await(Task.Delay(1)); FSharp.NativeInterop.NativePtr.get q.Value 0)",
+             Skip = "Known gap: pinned provenance is not propagated through ref cells")>]
+[<InlineData("byref-across-loop-back-edge",
+             "let f (x: byref<int>) : Task<int> = StateMachineHelpers.__runtimeAsyncReturn (let mutable i = 0 in let _ = while i < 2 do (AsyncHelpers.Await(Task.Delay(1)); x <- x + 1; i <- i + 1) in 0)")>]
 let ``non-preservable values after suspension are rejected`` (_label: string) (body: string) =
     compileDirect body
     |> shouldFail
     |> withErrorCode 3917
+
+[<Fact>]
+let ``non-preservable value in an unrelated branch is allowed`` () =
+    compileDirect
+        "let f (x: int) : Task<int> = StateMachineHelpers.__runtimeAsyncReturn (let span = ReadOnlySpan<int>([| 1; 2; 3 |]) in if x > 0 then AsyncHelpers.Await(Task.Delay(1)); x else span[0] + span[1])"
+    |> shouldSucceed
+
+[<Fact>]
+let ``non-preservable value used before suspension is allowed`` () =
+    compileDirect
+        "let f () : Task<int> = StateMachineHelpers.__runtimeAsyncReturn (let span = ReadOnlySpan<int>([| 1; 2; 3 |]) in span[0] + AsyncHelpers.Await(Task.FromResult(1)))"
+    |> shouldSucceed
+
+[<Fact>]
+let ``non-preservable pinned value used before suspension is allowed`` () =
+    FSharp(directIntrinsicSource
+        "let f (arr: int[]) : Task<int> = StateMachineHelpers.__runtimeAsyncReturn (use p = fixed arr in let value = FSharp.NativeInterop.NativePtr.get p 0 in AsyncHelpers.Await(Task.Delay(1)); value)"
+    )
+    |> withFSharpCoreShippedNet
+    |> withLangVersionPreview
+    |> withNoWarn 9
+    |> compile
+    |> shouldSucceed
 
 [<Fact>]
 let ``non-preservable value not used after suspension is allowed`` () =

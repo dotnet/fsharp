@@ -138,6 +138,8 @@ type ValFlags =
 
     member IsFixed: bool
 
+    member IsPinning: bool
+
     member IsGeneratedEventVal: bool
 
     member IsIncrClassSpecialMember: bool
@@ -172,6 +174,8 @@ type ValFlags =
     member WithIsCompiledAsStaticPropertyWithoutField: ValFlags
 
     member WithIsFixed: ValFlags
+
+    member WithIsPinning: ValFlags
 
     member WithIsMemberOrModuleBinding: ValFlags
 
@@ -2074,6 +2078,8 @@ type Val =
 
     member SetIsFixed: unit -> unit
 
+    member SetIsPinning: unit -> unit
+
     member SetIsMemberOrModuleBinding: unit -> unit
 
     member SetLogicalName: nm: string -> unit
@@ -2234,6 +2240,9 @@ type Val =
 
     /// Indicates if the value is pinned/fixed
     member IsFixed: bool
+
+    /// Indicates if the value names a binding whose lifetime keeps a fixed value pinned
+    member IsPinning: bool
 
     /// Indicates if this is a constructor member generated from the de-sugaring of implicit constructor for a class type?
     member IsIncrClassConstructor: bool

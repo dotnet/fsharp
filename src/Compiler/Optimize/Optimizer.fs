@@ -15,6 +15,7 @@ open FSharp.Compiler.CompilerGlobalState
 open FSharp.Compiler.DelegateForwarding
 open FSharp.Compiler.DiagnosticsLogger
 open FSharp.Compiler.Features
+open FSharp.Compiler.RuntimeAsyncAnalysis
 open FSharp.Compiler.Text.Range
 open FSharp.Compiler.Syntax.PrettyNaming
 open FSharp.Compiler.Syntax
@@ -2519,30 +2520,6 @@ let shouldForceInlineInDebug cenv env (vref: ValRef) : bool =
 
     HasFrameLocalBody cenv env vref
 
-let private IsRuntimeAsyncSuspensionExpr expr =
-    match stripExpr expr with
-    | Expr.Op(TOp.ILCall(_, _, _, _, _, _, _, ilMethodRef, _, _, _), _, _, _) ->
-        ilMethodRef.DeclaringTypeRef.FullName = "System.Runtime.CompilerServices.AsyncHelpers"
-        && ilMethodRef.Name
-           |> function
-               | "Await"
-               | "AwaitAwaiter"
-               | "UnsafeAwaitAwaiter" -> true
-               | _ -> false
-    | _ -> false
-
-let private ExprContainsRuntimeAsyncSuspension expr =
-    let folder =
-        { ExprFolder0 with
-            exprIntercept =
-                fun _ noInterceptF acc expr ->
-                    if acc || IsRuntimeAsyncSuspensionExpr expr then
-                        true
-                    else
-                        noInterceptF acc expr }
-
-    FoldExpr folder false expr
-
 let rec private HasRuntimeAsyncFragmentBody cenv env visiting (vref: ValRef) =
     if List.exists ((=) vref.Stamp) visiting then
         false
@@ -2811,6 +2788,12 @@ let rec OptimizeExpr cenv (env: IncrementalOptimizationEnv) expr =
         | Expr.App(Expr.Val(vref, flags, _), fty, [ _ ], [ body ], _)
             when valRefEq g vref g.cgh__runtimeAsyncReturn_vref ->
             let bodyR, bodyInfo = OptimizeExpr cenv { env with runtimeAsyncContext = true } body
+            let reportedStamps = HashSet<Stamp>()
+
+            for v in GetRuntimeAsyncNonPreservableUses g bodyR do
+                if reportedStamps.Add v.Stamp then
+                    errorR(Error(FSComp.SR.ilRuntimeAsyncLocalUsedAfterSuspension(RichText.mkText v.DisplayName), v.Range))
+
             let bodyR = RewriteRuntimeAsyncExceptionHandlers cenv bodyR
             Expr.App(Expr.Val(vref, flags, m), fty, tyargs, [ bodyR ], m),
             { bodyInfo with
