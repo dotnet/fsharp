@@ -40,6 +40,13 @@ type RequireNamedArgumentAttribute() =
     let private acceptsCompiled cu =
         cu |> withLangVersionPreview |> compile |> shouldSucceed |> ignore
 
+    let private requiresNamed (name: string) =
+        $"The method '{name}' requires named arguments. Use named-argument syntax, e.g. 'MethodName(argumentName = value)'."
+
+    // Merge several positional call sites into one compile; count-exact (one FS3910 per listed method).
+    let private rejectsAllCompiled (methods: string list) cu =
+        cu |> withLangVersionPreview |> compile |> shouldFail |> withErrorMessages (List.map requiresNamed methods) |> ignore
+
     let private fsAnnotatedLib =
         withPolyfill """
 namespace AnnotatedLib
@@ -199,21 +206,23 @@ let r = Api.Add(x = 1, y = 2)
         |> acceptsCompiled
 
     [<FactForNETCOREAPP>]
-    let ``Different C# assembly (IL method) - positional call is an error`` () =
+    let ``C# assembly (IL methods) - positional calls are errors`` () =
         FSharp """
 module Test
 open AnnotatedLib
-let r = Api.Add(1, 2)
+let plain = Api.Add(1, 2)
+let optionalOmitted = Api.Scale(5)
 """
         |> withReferences [ csAnnotatedLib ]
-        |> rejectsCompiled
+        |> rejectsAllCompiled [ "Add"; "Scale" ]
 
     [<FactForNETCOREAPP>]
-    let ``Different C# assembly (IL method) - named call succeeds`` () =
+    let ``C# assembly (IL methods) - named calls succeed`` () =
         FSharp """
 module Test
 open AnnotatedLib
-let r = Api.Add(x = 1, y = 2)
+let plain = Api.Add(x = 1, y = 2)
+let optionalOmitted = Api.Scale(x = 5)
 """
         |> withReferences [ csAnnotatedLib ]
         |> acceptsCompiled
@@ -448,21 +457,23 @@ module Use =
         |> acceptsNamed
 
     [<FactForNETCOREAPP>]
-    let ``C# extension method - positional call is an error, receiver is not a positional argument`` () =
+    let ``C# extension methods - positional calls are errors (receiver is not a positional argument)`` () =
         FSharp """
 module Test
 open AnnotatedLib
-let r = (1).AddTo(2)
+let plain = (1).AddTo(2)
+let paramArray = (1).SumTo(2, 3)
 """
         |> withReferences [ csExtensionLib ]
-        |> rejectsCompiled
+        |> rejectsAllCompiled [ "AddTo"; "SumTo" ]
 
     [<FactForNETCOREAPP>]
-    let ``C# extension method - named call succeeds`` () =
+    let ``C# extension methods - named calls succeed`` () =
         FSharp """
 module Test
 open AnnotatedLib
-let r = (1).AddTo(y = 2)
+let plain = (1).AddTo(y = 2)
+let paramArray = (1).SumTo(rest = [| 2; 3 |])
 """
         |> withReferences [ csExtensionLib ]
         |> acceptsCompiled
@@ -582,46 +593,6 @@ module Use =
 """
         |> acceptsNamed
 
-    [<FactForNETCOREAPP>]
-    let ``C# extension method with ParamArray - positional call is an error`` () =
-        FSharp """
-module Test
-open AnnotatedLib
-let r = (1).SumTo(2, 3)
-"""
-        |> withReferences [ csExtensionLib ]
-        |> rejectsCompiled
-
-    [<FactForNETCOREAPP>]
-    let ``C# extension method with ParamArray - named array call succeeds`` () =
-        FSharp """
-module Test
-open AnnotatedLib
-let r = (1).SumTo(rest = [| 2; 3 |])
-"""
-        |> withReferences [ csExtensionLib ]
-        |> acceptsCompiled
-
-    [<FactForNETCOREAPP>]
-    let ``C# method with an optional parameter - positional call is an error`` () =
-        FSharp """
-module Test
-open AnnotatedLib
-let r = Api.Scale(5)
-"""
-        |> withReferences [ csAnnotatedLib ]
-        |> rejectsCompiled
-
-    [<FactForNETCOREAPP>]
-    let ``C# method with an optional parameter - named call omitting the optional succeeds`` () =
-        FSharp """
-module Test
-open AnnotatedLib
-let r = Api.Scale(x = 5)
-"""
-        |> withReferences [ csAnnotatedLib ]
-        |> acceptsCompiled
-
     [<Fact>]
     let ``Generic annotated method - the attribute survives instantiation`` () =
         withPolyfill """
@@ -686,31 +657,23 @@ namespace AnnotatedLib
         |> withName "CsStructCtorLib"
 
     [<FactForNETCOREAPP>]
-    let ``C# interface slot - positional call via the interface is an error`` () =
+    let ``C# interface - positional calls via the slot and the concrete type are errors`` () =
         FSharp """
 module Test
-let call (i: AnnotatedLib.IFoo) = i.ViaSlot(1, 2)
+let viaInterface (i: AnnotatedLib.IFoo) = i.ViaSlot(1, 2)
+let viaConcrete (c: AnnotatedLib.FooImpl) = c.ViaSlot(1, 2)
 """
         |> withReferences [ csInterfaceLib ]
-        |> rejectsCompiled
+        |> rejectsAllCompiled [ "ViaSlot"; "ViaSlot" ]
 
     [<FactForNETCOREAPP>]
-    let ``C# interface slot - named call via the interface succeeds`` () =
+    let ``C# interface - named call via the slot succeeds`` () =
         FSharp """
 module Test
 let call (i: AnnotatedLib.IFoo) = i.ViaSlot(x = 1, y = 2)
 """
         |> withReferences [ csInterfaceLib ]
         |> acceptsCompiled
-
-    [<FactForNETCOREAPP>]
-    let ``C# interface implementation - positional call on the concrete type is an error`` () =
-        FSharp """
-module Test
-let call (c: AnnotatedLib.FooImpl) = c.ViaSlot(1, 2)
-"""
-        |> withReferences [ csInterfaceLib ]
-        |> rejectsCompiled
 
     [<FactForNETCOREAPP>]
     let ``C# struct constructor - positional call is an error`` () =
