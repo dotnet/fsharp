@@ -332,11 +332,6 @@
         <target state="new">Support for better anonymous record parsing</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureBetterExceptionPrinting">
-        <source>automatic generation of 'Message' property for 'exception' declarations</source>
-        <target state="translated">'exception' 선언에 대한 'Message' 속성 자동 생성</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureBooleanReturningAndReturnTypeDirectedPartialActivePattern">
         <source>Boolean-returning and return-type-directed partial active patterns</source>
         <target state="translated">부울 반환 및 반환 형식 지향 부분 활성 패턴</target>
