@@ -13001,8 +13001,7 @@ and GenExnDef cenv mgbuf eenv m (exnc: Tycon) : ILTypeRef option =
                 yield! ilMethodDefsForProperties
 
                 if
-                    cenv.g.langVersion.SupportsFeature(LanguageFeature.BetterExceptionPrinting)
-                    && not (exnc.HasMember g "get_Message" [])
+                    not (exnc.HasMember g "get_Message" [])
                     && not (exnc.HasMember g "Message" [])
                     && not (fspecs |> List.exists (fun rf -> rf.DisplayNameCore = "Message"))
                 then
