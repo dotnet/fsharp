@@ -375,7 +375,7 @@ module TaskModuleFunctionsTests =
         Assert.Equal("maxDegreeOfParallelism", ex.ParamName)
 
     [<Fact>]
-    let ``Task.parallelLimit passes a linked CancellationToken to computations`` () : Task =
+    let ``Task.parallelLimit passes a linked CancellationToken to computations when DOP > 1 and > 1 computation`` () : Task =
         task {
             use cts = new CancellationTokenSource()
             let started = TaskCompletionSource<CancellationToken>()
@@ -386,8 +386,14 @@ module TaskModuleFunctionsTests =
                         started.SetResult ct
                         do! Task.Delay(30_000, ct)
                         return 1
-                    } ]
-                |> Task.parallelLimit 1 cts.Token
+                    }
+                  fun (ct: CancellationToken) ->
+                    task {
+                        started.SetResult ct
+                        do! Task.Delay(30_000, ct)
+                        return 2
+                    }]
+                |> Task.parallelLimit 2 cts.Token
 
             let! childCt = started.Task
             Assert.NotEqual(cts.Token, childCt)

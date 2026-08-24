@@ -792,49 +792,6 @@ module Task =
     let catch (task: Task<'T>) : Task<Result<'T, exn>> =
         task |> map Ok |> catchWith Error
 
-    [<CompiledName("ParallelLimit")>]
-    let parallelLimit
-        (maxDegreeOfParallelism: int)
-        (ct: CancellationToken)
-        (computations: seq<CancellationToken -> Task<'T>>)
-        : Task<'T[]> =
-        if maxDegreeOfParallelism < 1 then
-            String.Format(SR.GetString(SR.maxDegreeOfParallelismNotPositive), maxDegreeOfParallelism)
-            |> invalidArg (nameof maxDegreeOfParallelism)
-
-        task {
-            use sem = new SemaphoreSlim(maxDegreeOfParallelism, maxDegreeOfParallelism)
-            use innerCts = CancellationTokenSource.CreateLinkedTokenSource ct
-
-            return!
-                Task.WhenAll
-                    [|
-                        for f in computations ->
-                            backgroundTask {
-                                do! sem.WaitAsync innerCts.Token
-                                let mutable completed = false
-
-                                try
-                                    let! res = f innerCts.Token
-                                    completed <- true
-                                    return res
-                                finally
-                                    sem.Release() |> Operators.ignore
-
-                                    if not completed then
-                                        innerCts.Cancel()
-                            }
-                    |]
-        }
-
-    [<CompiledName("ParallelDoLimit")>]
-    let parallelDoLimit
-        (maxDegreeOfParallelism: int)
-        (ct: CancellationToken)
-        (computations: seq<CancellationToken -> Task<unit>>)
-        : Task<unit> =
-        parallelLimit maxDegreeOfParallelism ct computations |> ignore<unit[]>
-
     [<CompiledName("Sequential")>]
     let sequential (ct: CancellationToken) (computations: seq<CancellationToken -> Task<'T>>) : Task<'T[]> =
         task {
@@ -853,6 +810,55 @@ module Task =
             for f in computations do
                 do! f ct
         }
+
+    [<CompiledName("ParallelLimit")>]
+    let parallelLimit
+        (maxDegreeOfParallelism: int)
+        (ct: CancellationToken)
+        (computations: seq<CancellationToken -> Task<'T>>)
+        : Task<'T[]> =
+        if maxDegreeOfParallelism < 1 then
+            String.Format(SR.GetString(SR.maxDegreeOfParallelismNotPositive), maxDegreeOfParallelism)
+            |> invalidArg (nameof maxDegreeOfParallelism)
+        // materialize first so exceptions from enumeration can't trigger ObjectDisposedException
+        // from started children touching semaphore or innerCts
+        match Seq.toArray computations with
+        | [||] -> result [||]
+        | [| _ |] as req -> sequential ct req
+        | req when maxDegreeOfParallelism = 1 -> sequential ct req
+        | req ->
+            task {
+                use sem = new SemaphoreSlim(maxDegreeOfParallelism, maxDegreeOfParallelism)
+                use innerCts = CancellationTokenSource.CreateLinkedTokenSource ct
+
+                return!
+                    Task.WhenAll
+                        [|
+                            for f in req ->
+                                backgroundTask {
+                                    do! sem.WaitAsync innerCts.Token
+                                    let mutable completed = false
+
+                                    try
+                                        let! res = f innerCts.Token
+                                        completed <- true
+                                        return res
+                                    finally
+                                        sem.Release() |> Operators.ignore
+
+                                        if not completed then
+                                            innerCts.Cancel()
+                                }
+                        |]
+            }
+
+    [<CompiledName("ParallelDoLimit")>]
+    let parallelDoLimit
+        (maxDegreeOfParallelism: int)
+        (ct: CancellationToken)
+        (computations: seq<CancellationToken -> Task<unit>>)
+        : Task<unit> =
+        parallelLimit maxDegreeOfParallelism ct computations |> ignore<unit[]>
 
     [<CompiledName("StartAsyncImmediate")>]
     let startAsyncImmediate (ct: CancellationToken) (computation: Async<'T>) : Task<'T> =
