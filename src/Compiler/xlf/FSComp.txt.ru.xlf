@@ -487,11 +487,6 @@
         <target state="translated">expr[idx] для индексации и среза</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureInformationalObjInferenceDiagnostic">
-        <source>Diagnostic 3559 (warn when obj inferred) at informational level, off by default</source>
-        <target state="translated">Diagnostic 3559 (предупреждать при выводе obj) на информационном уровне, отключено по умолчанию</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureInitProperties">
         <source>support for consuming init properties</source>
         <target state="translated">поддержка использования свойств инициализации</target>
