@@ -34,6 +34,18 @@ type RequireNamedArgumentAttribute() =
     inherit Attribute()
 """ + extra)
 
+    let private rejectsPositional cu =
+        cu |> withLangVersionPreview |> typecheck |> shouldFail |> withErrorCode 3910 |> ignore
+
+    let private acceptsNamed cu =
+        cu |> withLangVersionPreview |> typecheck |> shouldSucceed |> ignore
+
+    let private rejectsCompiled cu =
+        cu |> withLangVersionPreview |> compile |> shouldFail |> withErrorCode 3910 |> ignore
+
+    let private acceptsCompiled cu =
+        cu |> withLangVersionPreview |> compile |> shouldSucceed |> ignore
+
     let private fsAnnotatedLib =
         withPolyfill """
 namespace AnnotatedLib
@@ -47,8 +59,7 @@ type Api =
         |> asLibrary
         |> withName "FsAnnotatedLib"
 
-    let private csAnnotatedLib =
-        CSharp """
+    let private csPolyfill = """
 using System;
 using System.Runtime.CompilerServices;
 
@@ -57,7 +68,12 @@ namespace System.Runtime.CompilerServices
     [AttributeUsage(AttributeTargets.Method, AllowMultiple = false, Inherited = false)]
     public sealed class RequireNamedArgumentAttribute : Attribute { }
 }
+"""
 
+    let private csharpWithPolyfill (extra: string) = CSharp(csPolyfill + extra)
+
+    let private csAnnotatedLib =
+        csharpWithPolyfill """
 namespace AnnotatedLib
 {
     public static class Api
@@ -96,16 +112,7 @@ namespace AnnotatedLib
         |> withName "CsWrongNamespaceLib"
 
     let private csExtensionLib =
-        CSharp """
-using System;
-using System.Runtime.CompilerServices;
-
-namespace System.Runtime.CompilerServices
-{
-    [AttributeUsage(AttributeTargets.Method, AllowMultiple = false, Inherited = false)]
-    public sealed class RequireNamedArgumentAttribute : Attribute { }
-}
-
+        csharpWithPolyfill """
 namespace AnnotatedLib
 {
     public static class Ext
@@ -140,11 +147,7 @@ type C =
 module Use =
     let r = C.Add(1, 2)
 """
-        |> withLangVersionPreview
-        |> typecheck
-        |> shouldFail
-        |> withErrorCode 3910
-        |> ignore
+        |> rejectsPositional
 
     [<Fact>]
     let ``Same compilation unit - named call succeeds`` () =
@@ -160,10 +163,7 @@ type C =
 module Use =
     let r = C.Add(x = 1, y = 2)
 """
-        |> withLangVersionPreview
-        |> typecheck
-        |> shouldSucceed
-        |> ignore
+        |> acceptsNamed
 
     [<Fact>]
     let ``Zero-argument annotated method - unnamed call is allowed`` () =
@@ -179,10 +179,7 @@ type C =
 module Use =
     let r = C.Ping()
 """
-        |> withLangVersionPreview
-        |> typecheck
-        |> shouldSucceed
-        |> ignore
+        |> acceptsNamed
 
     [<Fact>]
     let ``Different F# assembly - positional call is an error`` () =
@@ -192,11 +189,7 @@ open AnnotatedLib
 let r = Api.Add(1, 2)
 """
         |> withReferences [ fsAnnotatedLib ]
-        |> withLangVersionPreview
-        |> compile
-        |> shouldFail
-        |> withErrorCode 3910
-        |> ignore
+        |> rejectsCompiled
 
     [<Fact>]
     let ``Different F# assembly - named call succeeds`` () =
@@ -206,10 +199,7 @@ open AnnotatedLib
 let r = Api.Add(x = 1, y = 2)
 """
         |> withReferences [ fsAnnotatedLib ]
-        |> withLangVersionPreview
-        |> compile
-        |> shouldSucceed
-        |> ignore
+        |> acceptsCompiled
 
     [<FactForNETCOREAPP>]
     let ``Different C# assembly (IL method) - positional call is an error`` () =
@@ -219,11 +209,7 @@ open AnnotatedLib
 let r = Api.Add(1, 2)
 """
         |> withReferences [ csAnnotatedLib ]
-        |> withLangVersionPreview
-        |> compile
-        |> shouldFail
-        |> withErrorCode 3910
-        |> ignore
+        |> rejectsCompiled
 
     [<FactForNETCOREAPP>]
     let ``Different C# assembly (IL method) - named call succeeds`` () =
@@ -233,10 +219,7 @@ open AnnotatedLib
 let r = Api.Add(x = 1, y = 2)
 """
         |> withReferences [ csAnnotatedLib ]
-        |> withLangVersionPreview
-        |> compile
-        |> shouldSucceed
-        |> ignore
+        |> acceptsCompiled
 
     [<Fact>]
     let ``Feature is off under non-preview langversion`` () =
@@ -272,11 +255,7 @@ type C =
 module Use =
     let positional = C.Add(1, 2)
 """
-        |> withLangVersionPreview
-        |> typecheck
-        |> shouldFail
-        |> withErrorCode 3910
-        |> ignore
+        |> rejectsPositional
 
     [<Fact>]
     let ``Optional argument may be omitted when the required argument is named`` () =
@@ -293,10 +272,7 @@ type C =
 module Use =
     let omitted = C.Add(x = 1)
 """
-        |> withLangVersionPreview
-        |> typecheck
-        |> shouldSucceed
-        |> ignore
+        |> acceptsNamed
 
     [<Fact>]
     let ``Interface method - positional call through the interface is an error`` () =
@@ -312,11 +288,7 @@ type I =
 module Use =
     let f (i: I) = i.Add(1, 2)
 """
-        |> withLangVersionPreview
-        |> typecheck
-        |> shouldFail
-        |> withErrorCode 3910
-        |> ignore
+        |> rejectsPositional
 
     [<Fact>]
     let ``Mixed named and positional call is an error`` () =
@@ -332,11 +304,7 @@ type C =
 module Use =
     let r = C.Add(1, y = 2)
 """
-        |> withLangVersionPreview
-        |> typecheck
-        |> shouldFail
-        |> withErrorCode 3910
-        |> ignore
+        |> rejectsPositional
 
     [<Fact>]
     let ``Same-named attribute in a different F# namespace is not recognised`` () =
@@ -360,10 +328,7 @@ type C =
 module Use =
     let r = C.Add(1, 2)
 """
-        |> withLangVersionPreview
-        |> typecheck
-        |> shouldSucceed
-        |> ignore
+        |> acceptsNamed
 
     [<FactForNETCOREAPP>]
     let ``Same-named attribute from a different C# namespace is not recognised`` () =
@@ -373,10 +338,7 @@ open AnnotatedLib
 let r = WrongApi.Add(1, 2)
 """
         |> withReferences [ csWrongNamespaceLib ]
-        |> withLangVersionPreview
-        |> compile
-        |> shouldSucceed
-        |> ignore
+        |> acceptsCompiled
 
     [<Fact>]
     let ``ParamArray positional arguments are an error`` () =
@@ -393,11 +355,7 @@ type C =
 module Use =
     let r = C.Sum(1, 2, 3)
 """
-        |> withLangVersionPreview
-        |> typecheck
-        |> shouldFail
-        |> withErrorCode 3910
-        |> ignore
+        |> rejectsPositional
 
     [<Fact>]
     let ``ParamArray passed by name as an array succeeds`` () =
@@ -414,10 +372,7 @@ type C =
 module Use =
     let r = C.Sum(rest = [| 1; 2; 3 |])
 """
-        |> withLangVersionPreview
-        |> typecheck
-        |> shouldSucceed
-        |> ignore
+        |> acceptsNamed
 
     [<Fact>]
     let ``Overload resolution - positional call binds the unannotated overload and succeeds`` () =
@@ -434,10 +389,7 @@ type C =
 module Use =
     let r = C.Add(1, 2)
 """
-        |> withLangVersionPreview
-        |> typecheck
-        |> shouldSucceed
-        |> ignore
+        |> acceptsNamed
 
     [<Fact>]
     let ``Overload resolution - positional call binds the annotated overload and is an error`` () =
@@ -454,11 +406,7 @@ type C =
 module Use =
     let r = C.Add("a", "b")
 """
-        |> withLangVersionPreview
-        |> typecheck
-        |> shouldFail
-        |> withErrorCode 3910
-        |> ignore
+        |> rejectsPositional
 
     [<Fact>]
     let ``F# extension member - positional call is an error`` () =
@@ -479,11 +427,7 @@ module Extensions =
 module Use =
     let r = C().Add(1, 2)
 """
-        |> withLangVersionPreview
-        |> typecheck
-        |> shouldFail
-        |> withErrorCode 3910
-        |> ignore
+        |> rejectsPositional
 
     [<Fact>]
     let ``F# extension member - named call succeeds`` () =
@@ -504,10 +448,7 @@ module Extensions =
 module Use =
     let r = C().Add(x = 1, y = 2)
 """
-        |> withLangVersionPreview
-        |> typecheck
-        |> shouldSucceed
-        |> ignore
+        |> acceptsNamed
 
     [<FactForNETCOREAPP>]
     let ``C# extension method - positional call is an error, receiver is not a positional argument`` () =
@@ -517,11 +458,7 @@ open AnnotatedLib
 let r = (1).AddTo(2)
 """
         |> withReferences [ csExtensionLib ]
-        |> withLangVersionPreview
-        |> compile
-        |> shouldFail
-        |> withErrorCode 3910
-        |> ignore
+        |> rejectsCompiled
 
     [<FactForNETCOREAPP>]
     let ``C# extension method - named call succeeds`` () =
@@ -531,10 +468,7 @@ open AnnotatedLib
 let r = (1).AddTo(y = 2)
 """
         |> withReferences [ csExtensionLib ]
-        |> withLangVersionPreview
-        |> compile
-        |> shouldSucceed
-        |> ignore
+        |> acceptsCompiled
 
     [<Fact>]
     let ``First-class use of an annotated method is an error`` () =
@@ -550,11 +484,7 @@ type C =
 module Use =
     let f = C.Add
 """
-        |> withLangVersionPreview
-        |> typecheck
-        |> shouldFail
-        |> withErrorCode 3910
-        |> ignore
+        |> rejectsPositional
 
     [<Fact>]
     let ``Explicit lambda forwarding with named arguments succeeds`` () =
@@ -570,10 +500,7 @@ type C =
 module Use =
     let f x y = C.Add(x = x, y = y)
 """
-        |> withLangVersionPreview
-        |> typecheck
-        |> shouldSucceed
-        |> ignore
+        |> acceptsNamed
 
     [<Fact>]
     let ``Indexer getter with the attribute on its accessor is not enforced`` () =
@@ -586,10 +513,7 @@ module Use =
     let c = C()
     let r = c.[1]
 """
-        |> withLangVersionPreview
-        |> typecheck
-        |> shouldSucceed
-        |> ignore
+        |> acceptsNamed
 
     [<Fact>]
     let ``Indexer setter with the attribute on its accessor is not enforced`` () =
@@ -603,10 +527,7 @@ module Use =
     let c = C()
     c.[1] <- 2
 """
-        |> withLangVersionPreview
-        |> typecheck
-        |> shouldSucceed
-        |> ignore
+        |> acceptsNamed
 
     [<Fact>]
     let ``Property setter with the attribute on its accessor is not enforced`` () =
@@ -620,10 +541,7 @@ module Use =
     let c = C()
     c.P <- 5
 """
-        |> withLangVersionPreview
-        |> typecheck
-        |> shouldSucceed
-        |> ignore
+        |> acceptsNamed
 
     [<Fact>]
     let ``Curried member is not enforced because it has no named-argument form`` () =
@@ -636,10 +554,7 @@ type C =
 module Use =
     let r = C.Add 1 2
 """
-        |> withLangVersionPreview
-        |> typecheck
-        |> shouldSucceed
-        |> ignore
+        |> acceptsNamed
 
     [<Fact>]
     let ``Constructor positional call is rejected and the diagnostic names the type`` () =
@@ -668,10 +583,7 @@ type C [<RequireNamedArgument>] (x: int, y: int) =
 module Use =
     let c = C(x = 1, y = 2)
 """
-        |> withLangVersionPreview
-        |> typecheck
-        |> shouldSucceed
-        |> ignore
+        |> acceptsNamed
 
     [<FactForNETCOREAPP>]
     let ``C# extension method with ParamArray - positional call is an error`` () =
@@ -681,11 +593,7 @@ open AnnotatedLib
 let r = (1).SumTo(2, 3)
 """
         |> withReferences [ csExtensionLib ]
-        |> withLangVersionPreview
-        |> compile
-        |> shouldFail
-        |> withErrorCode 3910
-        |> ignore
+        |> rejectsCompiled
 
     [<FactForNETCOREAPP>]
     let ``C# extension method with ParamArray - named array call succeeds`` () =
@@ -695,10 +603,7 @@ open AnnotatedLib
 let r = (1).SumTo(rest = [| 2; 3 |])
 """
         |> withReferences [ csExtensionLib ]
-        |> withLangVersionPreview
-        |> compile
-        |> shouldSucceed
-        |> ignore
+        |> acceptsCompiled
 
     [<FactForNETCOREAPP>]
     let ``C# method with an optional parameter - positional call is an error`` () =
@@ -708,11 +613,7 @@ open AnnotatedLib
 let r = Api.Scale(5)
 """
         |> withReferences [ csAnnotatedLib ]
-        |> withLangVersionPreview
-        |> compile
-        |> shouldFail
-        |> withErrorCode 3910
-        |> ignore
+        |> rejectsCompiled
 
     [<FactForNETCOREAPP>]
     let ``C# method with an optional parameter - named call omitting the optional succeeds`` () =
@@ -722,10 +623,7 @@ open AnnotatedLib
 let r = Api.Scale(x = 5)
 """
         |> withReferences [ csAnnotatedLib ]
-        |> withLangVersionPreview
-        |> compile
-        |> shouldSucceed
-        |> ignore
+        |> acceptsCompiled
 
     [<Fact>]
     let ``Generic annotated method - the attribute survives instantiation`` () =
@@ -738,11 +636,7 @@ type C =
 module Use =
     let r = C.Id(5)
 """
-        |> withLangVersionPreview
-        |> typecheck
-        |> shouldFail
-        |> withErrorCode 3910
-        |> ignore
+        |> rejectsPositional
 
     [<Fact>]
     let ``Generic annotated method - named call succeeds`` () =
@@ -755,22 +649,10 @@ type C =
 module Use =
     let r = C.Id(value = 5)
 """
-        |> withLangVersionPreview
-        |> typecheck
-        |> shouldSucceed
-        |> ignore
+        |> acceptsNamed
 
     let private csInterfaceLib =
-        CSharp """
-using System;
-using System.Runtime.CompilerServices;
-
-namespace System.Runtime.CompilerServices
-{
-    [AttributeUsage(AttributeTargets.Method, AllowMultiple = false, Inherited = false)]
-    public sealed class RequireNamedArgumentAttribute : Attribute { }
-}
-
+        csharpWithPolyfill """
 namespace AnnotatedLib
 {
     public interface IFoo
@@ -822,11 +704,7 @@ module Test
 let call (i: AnnotatedLib.IFoo) = i.ViaSlot(1, 2)
 """
         |> withReferences [ csInterfaceLib ]
-        |> withLangVersionPreview
-        |> compile
-        |> shouldFail
-        |> withErrorCode 3910
-        |> ignore
+        |> rejectsCompiled
 
     [<FactForNETCOREAPP>]
     let ``C# interface slot - named call via the interface succeeds`` () =
@@ -835,23 +713,16 @@ module Test
 let call (i: AnnotatedLib.IFoo) = i.ViaSlot(x = 1, y = 2)
 """
         |> withReferences [ csInterfaceLib ]
-        |> withLangVersionPreview
-        |> compile
-        |> shouldSucceed
-        |> ignore
+        |> acceptsCompiled
 
     [<FactForNETCOREAPP>]
-    let ``C# class override - positional call on the concrete type is an error`` () =
+    let ``C# interface implementation - positional call on the concrete type is an error`` () =
         FSharp """
 module Test
 let call (c: AnnotatedLib.FooImpl) = c.ViaSlot(1, 2)
 """
         |> withReferences [ csInterfaceLib ]
-        |> withLangVersionPreview
-        |> compile
-        |> shouldFail
-        |> withErrorCode 3910
-        |> ignore
+        |> rejectsCompiled
 
     [<FactForNETCOREAPP>]
     let ``C# struct constructor - positional call is an error`` () =
@@ -874,10 +745,7 @@ module Test
 let s = AnnotatedLib.S(x = 1, y = 2)
 """
         |> withReferences [ csStructCtorLib ]
-        |> withLangVersionPreview
-        |> compile
-        |> shouldSucceed
-        |> ignore
+        |> acceptsCompiled
 
     [<Fact>]
     let ``Method group coerced to a delegate cannot smuggle a positional call`` () =
@@ -890,11 +758,7 @@ type C =
 module Use =
     let f = System.Func<int, int>(C.Ping)
 """
-        |> withLangVersionPreview
-        |> typecheck
-        |> shouldFail
-        |> withErrorCode 3910
-        |> ignore
+        |> rejectsPositional
 
     [<FactForNETCOREAPP>]
     let ``Local F# method annotated with an attribute imported from a referenced assembly is enforced`` () =
@@ -907,8 +771,4 @@ type C =
 let r = C.Add(1, 2)
 """
         |> withReferences [ csAnnotatedLib ]
-        |> withLangVersionPreview
-        |> compile
-        |> shouldFail
-        |> withErrorCode 3910
-        |> ignore
+        |> rejectsCompiled
