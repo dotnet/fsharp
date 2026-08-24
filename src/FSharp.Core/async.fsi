@@ -379,7 +379,7 @@ namespace Microsoft.FSharp.Control
         ///            let! completor2 = childComputation2 |> Async.StartChild  
         ///            ... 
         ///            let! result1 = completor1 
-        ///            and! result2 = completor2 
+        ///            let! result2 = completor2 
         ///            ... }
         /// </code>
         ///
@@ -416,7 +416,7 @@ namespace Microsoft.FSharp.Control
         ///                 millisecondsTimeout = timeout)
         ///         do! Async.Sleep 500 // Or any other async activity
         ///         let! v1 = completor1
-        ///         and! v2 = completor2
+        ///         let! v2 = completor2
         ///         printfn $"Result: {v1 + v2}"
         ///     } |> Async.RunSynchronouslyImmediate
         /// </code>
