@@ -60,7 +60,7 @@ Known runtime restrictions (currently **not** diagnosed by the F# compiler):
   `IAsyncDisposable` work under runtime async (`testUsingAsyncDisposableSync`
   executes).
 Byref, byref-like, and pinned locals that are used after a suspension are
-rejected with diagnostic FS3357.
+rejected with diagnostic FS3917.
 
 Calls to `AsyncHelpers` suspension methods emitted outside a runtime-async
 method are rejected during code generation. Explicitly `inline` method bodies

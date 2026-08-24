@@ -384,7 +384,7 @@ let ``exception handling block suspensions compile and run correctly`` (_label: 
 let ``non-preservable values after suspension are rejected`` (_label: string) (body: string) =
     compileDirect body
     |> shouldFail
-    |> withErrorCode 3357
+    |> withErrorCode 3917
 
 [<Fact>]
 let ``non-preservable value not used after suspension is allowed`` () =

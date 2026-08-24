@@ -129,7 +129,7 @@ let f () =
     |> withFSharpCoreShippedNet
     |> compile
     |> shouldFail
-    |> withErrorCodes [ 3354; 3354; 3354 ]
+    |> withErrorCodes [ 3916; 3916; 3916 ]
 
 [<Fact>]
 let ``runtime async rejects non Task result carriers`` () =
