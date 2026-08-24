@@ -2754,6 +2754,33 @@ type CodeGenBuffer(m: range, mgbuf: AssemblyBuilder, methodName, alreadyUsedArgs
 
         is |> List.iter codebuf.Add
 
+    member cgbuf.SpillToLocal(ty: ILType, canBeReallocd) =
+        let idx = cgbuf.AllocLocal([], ty, false, canBeReallocd)
+        cgbuf.EmitInstr(pop 1, Push0, mkStloc (uint16 idx))
+        idx, ty
+
+    member cgbuf.ReloadFromLocal(local: int * ILType) =
+        let idx, ty = local
+        cgbuf.EmitInstr(pop 0, Push [ ty ], mkLdloc (uint16 idx))
+
+    /// Run 'genCode' at an empty evaluation stack, restoring anything pending underneath afterwards.
+    /// 'localloc' is rejected by the JIT unless the stack holds nothing but its size argument.
+    member cgbuf.EmitLocallocCode(genCode: unit -> unit) =
+        match stack with
+        | _ :: _ when uninitializedThisOnStackCount = 0 ->
+            // false: genCode allocates its own locals, which must not reuse these still-live slots.
+            let pendingLocals = [ for ty in stack -> cgbuf.SpillToLocal(ty, false) ]
+            cgbuf.AssertEmptyStack()
+            genCode ()
+            let resultLocals = [ for ty in stack -> cgbuf.SpillToLocal(ty, true) ]
+
+            for local in List.rev pendingLocals do
+                cgbuf.ReloadFromLocal local
+
+            for local in List.rev resultLocals do
+                cgbuf.ReloadFromLocal local
+        | _ -> genCode ()
+
     member private _.EnsureNopBetweenDebugPoints() =
         // Always add a nop between debug points to help .NET get the stepping right
         // Don't do this after a FeeFee marker for hidden code
@@ -2777,12 +2804,7 @@ type CodeGenBuffer(m: range, mgbuf: AssemblyBuilder, methodName, alreadyUsedArgs
                 if uninitializedThisOnStackCount > 0 then
                     []
                 else
-                    [
-                        for ty in stack ->
-                            let idx = cgbuf.AllocLocal([], ty, false, true)
-                            cgbuf.EmitInstr(pop 1, Push0, mkStloc (uint16 idx))
-                            idx, ty
-                    ]
+                    [ for ty in stack -> cgbuf.SpillToLocal(ty, true) ]
 
             let attr = GenILSourceMarker g m
             let i = I_seqpoint attr
@@ -2804,8 +2826,8 @@ type CodeGenBuffer(m: range, mgbuf: AssemblyBuilder, methodName, alreadyUsedArgs
 
             anyDocument <- Some attr.Document
 
-            for idx, ty in List.rev spilled do
-                cgbuf.EmitInstr(pop 0, Push [ ty ], mkLdloc (uint16 idx))
+            for local in List.rev spilled do
+                cgbuf.ReloadFromLocal local
 
     // Emit FeeFee breakpoints for hidden code, see https://blogs.msdn.microsoft.com/jmstall/2005/06/19/line-hidden-and-0xfeefee-sequence-points/
     member cgbuf.EmitStartOfHiddenCode() =
@@ -2942,6 +2964,7 @@ type CodeGenBuffer(m: range, mgbuf: AssemblyBuilder, methodName, alreadyUsedArgs
 module CG =
     let EmitInstr (cgbuf: CodeGenBuffer) pops pushes i = cgbuf.EmitInstr(pops, pushes, i)
     let EmitInstrs (cgbuf: CodeGenBuffer) pops pushes is = cgbuf.EmitInstrs(pops, pushes, is)
+    let EmitLocallocCode (cgbuf: CodeGenBuffer) genCode = cgbuf.EmitLocallocCode genCode
     let EmitDebugPoint (cgbuf: CodeGenBuffer) m = cgbuf.EmitDebugPoint m
     let GenerateDelayMark (cgbuf: CodeGenBuffer) nm = cgbuf.GenerateDelayMark nm
     let SetMark (cgbuf: CodeGenBuffer) m1 m2 = cgbuf.SetMark(m1, m2)
@@ -5571,6 +5594,21 @@ and GenAsmCode cenv cgbuf eenv (il, tyargs, args, returnTys, m) sequel =
 
         CG.EmitInstr cgbuf (pop 1) Push0 I_ret
         GenSequelEndScopes cgbuf sequel
+
+    // 'localloc' must be emitted at an empty stack; see EmitLocallocCode.
+    | _, _, sequel, _ when
+        ilAfterInst |> List.contains I_localloc
+        && ilReturnTys |> List.forall (fun ty -> ty <> ILType.Void)
+        ->
+
+        CG.EmitLocallocCode cgbuf (fun () ->
+            GenExprs cenv cgbuf eenv args
+            CG.EmitInstrs cgbuf (pop args.Length) (Push ilReturnTys) ilAfterInst)
+
+        if isNil returnTys then
+            GenUnitThenSequel cenv eenv m eenv.cloc cgbuf sequel
+        else
+            GenSequel cenv eenv.cloc cgbuf sequel
 
     // 'throw' instructions are a bit of a problem - e.g. let x = (throw ...) in ... expects a value *)
     // to be left on the stack. But dead-code checking by some versions of the .NET verifier *)
@@ -12868,8 +12906,7 @@ and GenExnDef cenv mgbuf eenv m (exnc: Tycon) : ILTypeRef option =
                 yield! ilMethodDefsForProperties
 
                 if
-                    cenv.g.langVersion.SupportsFeature(LanguageFeature.BetterExceptionPrinting)
-                    && not (exnc.HasMember g "get_Message" [])
+                    not (exnc.HasMember g "get_Message" [])
                     && not (exnc.HasMember g "Message" [])
                     && not (fspecs |> List.exists (fun rf -> rf.DisplayNameCore = "Message"))
                 then
