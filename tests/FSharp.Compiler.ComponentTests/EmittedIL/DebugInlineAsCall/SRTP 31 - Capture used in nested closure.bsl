@@ -43,6 +43,23 @@ Test::main
     IL_000b:  ldc.i4.1
     IL_000c:  ret
 
+Test::<g>__debug@5
+  (4,22-4,24)  xs
+    IL_0000:  ldarg.0
+    IL_0001:  stloc.0
+
+  (4,28-4,57)  List.map (fun v -> v + int y)
+    IL_0002:  ldarg.1
+    IL_0003:  newobj Pipe #1 stage #1 at line 4@4-1::.ctor
+    IL_0008:  ldloc.0
+    IL_0009:  call ListModule::Map
+    IL_000e:  stloc.1
+
+  (4,61-4,69)  List.sum
+    IL_000f:  ldloc.1
+    IL_0010:  call Test::<sum>__debug@4-1
+    IL_0015:  ret
+
 Test::<sum>__debug@4
   <hidden>
     IL_0000:  ldarg.0
@@ -114,23 +131,6 @@ Test::<sum>__debug@4-1
     IL_002c:  brtrue.s IL_0017
     IL_002e:  ldloc.0
     IL_002f:  ret
-
-Test::<g>__debug@5
-  (4,22-4,24)  xs
-    IL_0000:  ldarg.0
-    IL_0001:  stloc.0
-
-  (4,28-4,57)  List.map (fun v -> v + int y)
-    IL_0002:  ldarg.1
-    IL_0003:  newobj Pipe #1 stage #1 at line 4@4-1::.ctor
-    IL_0008:  ldloc.0
-    IL_0009:  call ListModule::Map
-    IL_000e:  stloc.1
-
-  (4,61-4,69)  List.sum
-    IL_000f:  ldloc.1
-    IL_0010:  call Test::<sum>__debug@4-1
-    IL_0015:  ret
 
 g@4-1::Invoke
   (4,22-4,24)  xs
