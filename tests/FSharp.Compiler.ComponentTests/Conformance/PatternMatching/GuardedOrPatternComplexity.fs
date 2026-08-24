@@ -47,7 +47,8 @@ let main _ =
         guardedOrSource 24
         |> runsWith "r1=-1 r2=2000"
 
-    // 1MB is ~2x what this emits today; the refuted shared-target design emitted ~3MB here.
+    // Emits ~506KB today. Without promotion this input does not merely exceed the bound, it OOMs
+    // the compiler, so the exact constant is not load-bearing; the refuted shared-target design emitted ~3MB.
     [<Fact>]
     let ``Issue 18425 - promoted subtrees are shared by name, not copied`` () =
         guardedOrSource 32
