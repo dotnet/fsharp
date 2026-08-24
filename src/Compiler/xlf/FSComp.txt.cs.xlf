@@ -732,11 +732,6 @@
         <target state="translated">Vyvolá upozornění, pokud bylo během překladu názvů nalezeno více shod typu záznamu z důvodu překrývajících se názvů polí.</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureWhileBang">
-        <source>'while!' expression</source>
-        <target state="translated">Výraz „while!“</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureWitnessPassing">
         <source>witness passing for trait constraints in F# quotations</source>
         <target state="translated">Předávání kopie clusteru pro omezení vlastností v uvozovkách v jazyce F#</target>

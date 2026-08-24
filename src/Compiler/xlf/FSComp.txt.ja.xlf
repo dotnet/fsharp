@@ -732,11 +732,6 @@
         <target state="translated">フィールド名が重複しているため、名前解決中に複数のレコードの種類の一致が見つかった場合に警告を生成します。</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureWhileBang">
-        <source>'while!' expression</source>
-        <target state="translated">'while!' 式</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureWitnessPassing">
         <source>witness passing for trait constraints in F# quotations</source>
         <target state="translated">F# 引用での特性制約に対する監視の引き渡し</target>

@@ -732,11 +732,6 @@
         <target state="translated">Çakışan alan adları nedeniyle, ad çözümlemesi sırasında birden çok kayıt türü eşleşmesi olduğunda uyarı verir.</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureWhileBang">
-        <source>'while!' expression</source>
-        <target state="translated">'while!' ifadesi</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureWitnessPassing">
         <source>witness passing for trait constraints in F# quotations</source>
         <target state="translated">F# alıntılarındaki nitelik kısıtlamaları için tanık geçirme</target>

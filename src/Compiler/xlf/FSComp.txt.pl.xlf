@@ -732,11 +732,6 @@
         <target state="translated">Zgłasza ostrzeżenia, gdy znaleziono wiele dopasowań typów rekordów podczas rozpoznawania nazw z powodu nakładających się nazw pól.</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureWhileBang">
-        <source>'while!' expression</source>
-        <target state="translated">Wyrażenie „while!”</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureWitnessPassing">
         <source>witness passing for trait constraints in F# quotations</source>
         <target state="translated">monitor, który przekazuje ograniczenia cech języka F#</target>
