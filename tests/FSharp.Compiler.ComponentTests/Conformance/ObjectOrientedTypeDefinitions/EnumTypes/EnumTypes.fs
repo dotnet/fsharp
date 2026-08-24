@@ -19,12 +19,11 @@ module EnumTypes =
         |> typecheck
         |> shouldFail
         |> withDiagnostics [
-            (Error 1, Line 8, Col 17, Line 8, Col 27, "The type 'CharEnum' does not support the operator '|||'")
-            (Error 1, Line 9, Col 18, Line 9, Col 28, "The type 'CharEnum' does not support the operator '&&&'")
-            (Error 1, Line 10, Col 19, Line 10, Col 29, "The type 'CharEnum' does not support the operator '^^^'")
+            (Error 1, Line 6, Col 17, Line 6, Col 27, "The type 'CharEnum' does not support the operator '|||'")
+            (Error 1, Line 7, Col 18, Line 7, Col 28, "The type 'CharEnum' does not support the operator '&&&'")
+            (Error 1, Line 8, Col 19, Line 8, Col 29, "The type 'CharEnum' does not support the operator '^^^'")
         ]
 
-    // Before the ErrorOnBitwiseOpsOnNonIntegralEnums feature, this code typechecked (and failed at runtime).
     [<Theory; FileInlineData("E_BitwiseOpsOnCharEnum.fs")>]
     let ``E_BitwiseOpsOnCharEnum_fs - compat with langversion 10`` compilation =
         compilation
@@ -33,6 +32,25 @@ module EnumTypes =
         |> withLangVersion10
         |> typecheck
         |> shouldSucceed
+
+    [<Theory; FileInlineData("ExtensionBitwiseOrOnCharEnum.fs")>]
+    let ``ExtensionBitwiseOrOnCharEnum_fs - ExtensionConstraintSolutions`` compilation =
+        compilation
+        |> getCompilation
+        |> asExe
+        |> withLangVersionPreview
+        |> compileExeAndRun
+        |> shouldSucceed
+
+    [<Theory; FileInlineData("ExtensionBitwiseOrOnCharEnum.fs")>]
+    let ``ExtensionBitwiseOrOnCharEnum_fs - error without ExtensionConstraintSolutions`` compilation =
+        compilation
+        |> getCompilation
+        |> asExe
+        |> typecheck
+        |> shouldFail
+        |> withErrorCode 1
+        |> withDiagnosticMessageMatches "The type 'E' does not support the operator '\\|\\|\\|'"
 
     [<Theory; FileInlineData("E_BoolUnderlyingType.fs")>]
     let ``E_BoolUnderlyingType_fs`` compilation =
