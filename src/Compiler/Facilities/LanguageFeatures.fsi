@@ -6,7 +6,6 @@ module internal FSharp.Compiler.Features
 /// LanguageFeature enumeration
 [<RequireQualifiedAccess>]
 type LanguageFeature =
-    | RelaxWhitespace2
     | NameOf
     | DotlessFloat32Literal
     | PackageManagement
