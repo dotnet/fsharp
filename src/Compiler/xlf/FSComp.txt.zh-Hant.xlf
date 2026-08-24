@@ -492,11 +492,6 @@
         <target state="translated">診斷 3559 (推斷 obj 時的警告) 資訊層級，預設為關閉</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureInitProperties">
-        <source>support for consuming init properties</source>
-        <target state="translated">支援使用 init 屬性</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureInterfacesWithAbstractStaticMembers">
         <source>static abstract interface members</source>
         <target state="translated">靜態抽象介面成員</target>

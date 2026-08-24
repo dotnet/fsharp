@@ -492,11 +492,6 @@
         <target state="translated">情報レベルでの診断 3559 (obj 推論時に警告)、既定ではオフ</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureInitProperties">
-        <source>support for consuming init properties</source>
-        <target state="translated">init プロパティの使用のサポート</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureInterfacesWithAbstractStaticMembers">
         <source>static abstract interface members</source>
         <target state="translated">静的抽象インターフェイス メンバー</target>
