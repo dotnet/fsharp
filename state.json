@@ -123,8 +123,9 @@
       "cats": []
     },
     "20111": {
-      "sha": "d6e7cb779e21",
+      "sha": "eba8624bf1ce",
       "cats": [
+        "Affects-Bootstrap",
         "Affects-Compiler-Output"
       ]
     },
@@ -207,26 +208,6 @@
       "sha": "059b0f88aa02",
       "cats": []
     },
-    "20325": {
-      "sha": "ff0c4a10fc19",
-      "cats": []
-    },
-    "20324": {
-      "sha": "d64b68d4c264",
-      "cats": []
-    },
-    "20323": {
-      "sha": "2de3dcb25820",
-      "cats": []
-    },
-    "20329": {
-      "sha": "4bcf9bd380ca",
-      "cats": []
-    },
-    "20328": {
-      "sha": "bfbdca010f3a",
-      "cats": []
-    },
     "20327": {
       "sha": "59be3c8faf8d",
       "cats": []
@@ -237,22 +218,6 @@
     },
     "20330": {
       "sha": "f4e70c85c6d2",
-      "cats": []
-    },
-    "20334": {
-      "sha": "aa379cb66a18",
-      "cats": []
-    },
-    "20333": {
-      "sha": "de489683e3f3",
-      "cats": []
-    },
-    "20332": {
-      "sha": "194b8439e95c",
-      "cats": []
-    },
-    "20331": {
-      "sha": "17d32a5f87a6",
       "cats": []
     }
   }
