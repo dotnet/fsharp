@@ -1,7 +1,10 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 // Tests for camelCase functions in module Async
-module FSharp.Core.UnitTests.Controa.AsyncModuleFunctionsTestsl
+
+// Intentionally in same collection to help rule out potential flakiness due to concurrency re #20306
+[<Xunit.Collection(nameof FSharp.Test.NotThreadSafeResourceCollection)>]
+module FSharp.Core.UnitTests.Control.AsyncModuleFunctionsTests
 
 open System
 open System.Threading
@@ -20,7 +23,7 @@ let cancelWithToken (tcs: TaskCompletionSource<'T>) =
 #endif
 
 let asyncWait (a: Async<'T>): 'T = Async.RunSynchronouslyImmediate a
-let asyncWaitWithCt (ct: CancellationToken) (a: Async<'T>): 'T = Async.RunSynchronously(a, cancellationToken = ct)
+let asyncWaitWithCt (ct: CancellationToken) (a: Async<'T>): 'T = Async.RunSynchronouslyImmediate(a, cancellationToken = ct)
 
 [<Fact>]
 let ``Async.result wraps value`` () =

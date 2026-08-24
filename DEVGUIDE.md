@@ -371,6 +371,9 @@ First, ensure that `VisualFSharpDebug` is the startup project.
 
 Then, use the **f5** or **ctrl+f5** keyboard shortcuts to test your tooling changes. The former will debug a new instance of Visual Studio. The latter will launch a new instance of Visual Studio, but with your changes installed.
 
+> [!TIP]
+> If the F# extension fails to load when you F5 (because the Roslyn version in the repo is ahead of the one in your Visual Studio), launch VS with `.\start-vs-VisualFSharpSln.ps1` instead of opening the solution directly. It builds the extension against the Roslyn your VS actually ships, so you don't need an internal/nightly VS or a local Roslyn build. Requires VS with Roslyn 5.10 or newer.
+
 Alternatively, you can do this entirely via the command line if you prefer that:
 
 ```shell
