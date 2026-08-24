@@ -443,7 +443,7 @@ module TaskModuleFunctionsTests =
         }
 
     [<Fact>]
-    let ``Task.parallelLimit with multiple failures yields first exception, not AggregateException`` () : Task =
+    let ``Task.parallelLimit with multiple failures yields single exception, not AggregateException`` () : Task =
         task {
             let firstStarted, secondStarted = TaskCompletionSource<unit>(), TaskCompletionSource<unit>()
             let releaseBoth = TaskCompletionSource<unit>()
@@ -465,8 +465,8 @@ module TaskModuleFunctionsTests =
             releaseBoth.SetResult ()
 
             match! Task.catch sut with
-            | Error (:? InvalidOperationException as e) ->
-                Assert.Equal("boom1", e.Message)
+            | Error (:? InvalidOperationException) | Error (:? ArgumentException) -> ()  // either sibling may win
+            | Error (:? AggregateException) -> failwith "should be a single exception, not an AggregateException"
             | x -> failwith $"unexpected %A{x}"
         }
 

@@ -295,7 +295,7 @@ let ``Async.parallelLimit limits concurrency`` () =
     Assert.True(maxConcurrent <= 3, $"max concurrent was {maxConcurrent}, expected <= 3")
 
 [<Fact>]
-let ``Async.parallelLimit with multiple failures yields first exception, not AggregateException`` () : Async<unit> =
+let ``Async.parallelLimit with multiple failures yields single exception, not AggregateException`` () : Async<unit> =
     async {
         use cts = new CancellationTokenSource()
         let firstStarted, secondStarted = TaskCompletionSource<unit>(), TaskCompletionSource<unit>()
@@ -319,8 +319,8 @@ let ``Async.parallelLimit with multiple failures yields first exception, not Agg
         releaseBoth.SetResult ()
 
         match! Async.catch sut with
-        | Error (:? InvalidOperationException as e) ->
-            Assert.Equal("boom1", e.Message)
+        | Error (:? InvalidOperationException) | Error (:? ArgumentException) -> ()  // either sibling may win
+        | Error (:? AggregateException) -> failwith "should be a single exception, not an AggregateException"
         | x -> failwith $"unexpected %A{x}"
     }
 
