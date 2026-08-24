@@ -1635,6 +1635,7 @@ FSharp.Compiler.AbstractIL.IL+ILTypeDefLayout+Sequential: ILTypeDefLayoutInfo It
 FSharp.Compiler.AbstractIL.IL+ILTypeDefLayout+Sequential: ILTypeDefLayoutInfo get_Item()
 FSharp.Compiler.AbstractIL.IL+ILTypeDefLayout+Tags: Int32 Auto
 FSharp.Compiler.AbstractIL.IL+ILTypeDefLayout+Tags: Int32 Explicit
+FSharp.Compiler.AbstractIL.IL+ILTypeDefLayout+Tags: Int32 Extended
 FSharp.Compiler.AbstractIL.IL+ILTypeDefLayout+Tags: Int32 Sequential
 FSharp.Compiler.AbstractIL.IL+ILTypeDefLayout: Boolean Equals(ILTypeDefLayout)
 FSharp.Compiler.AbstractIL.IL+ILTypeDefLayout: Boolean Equals(ILTypeDefLayout, System.Collections.IEqualityComparer)
@@ -1642,17 +1643,21 @@ FSharp.Compiler.AbstractIL.IL+ILTypeDefLayout: Boolean Equals(System.Object)
 FSharp.Compiler.AbstractIL.IL+ILTypeDefLayout: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
 FSharp.Compiler.AbstractIL.IL+ILTypeDefLayout: Boolean IsAuto
 FSharp.Compiler.AbstractIL.IL+ILTypeDefLayout: Boolean IsExplicit
+FSharp.Compiler.AbstractIL.IL+ILTypeDefLayout: Boolean IsExtended
 FSharp.Compiler.AbstractIL.IL+ILTypeDefLayout: Boolean IsSequential
 FSharp.Compiler.AbstractIL.IL+ILTypeDefLayout: Boolean get_IsAuto()
 FSharp.Compiler.AbstractIL.IL+ILTypeDefLayout: Boolean get_IsExplicit()
+FSharp.Compiler.AbstractIL.IL+ILTypeDefLayout: Boolean get_IsExtended()
 FSharp.Compiler.AbstractIL.IL+ILTypeDefLayout: Boolean get_IsSequential()
 FSharp.Compiler.AbstractIL.IL+ILTypeDefLayout: FSharp.Compiler.AbstractIL.IL+ILTypeDefLayout+Explicit
 FSharp.Compiler.AbstractIL.IL+ILTypeDefLayout: FSharp.Compiler.AbstractIL.IL+ILTypeDefLayout+Sequential
 FSharp.Compiler.AbstractIL.IL+ILTypeDefLayout: FSharp.Compiler.AbstractIL.IL+ILTypeDefLayout+Tags
 FSharp.Compiler.AbstractIL.IL+ILTypeDefLayout: ILTypeDefLayout Auto
+FSharp.Compiler.AbstractIL.IL+ILTypeDefLayout: ILTypeDefLayout Extended
 FSharp.Compiler.AbstractIL.IL+ILTypeDefLayout: ILTypeDefLayout NewExplicit(ILTypeDefLayoutInfo)
 FSharp.Compiler.AbstractIL.IL+ILTypeDefLayout: ILTypeDefLayout NewSequential(ILTypeDefLayoutInfo)
 FSharp.Compiler.AbstractIL.IL+ILTypeDefLayout: ILTypeDefLayout get_Auto()
+FSharp.Compiler.AbstractIL.IL+ILTypeDefLayout: ILTypeDefLayout get_Extended()
 FSharp.Compiler.AbstractIL.IL+ILTypeDefLayout: Int32 CompareTo(ILTypeDefLayout)
 FSharp.Compiler.AbstractIL.IL+ILTypeDefLayout: Int32 CompareTo(System.Object)
 FSharp.Compiler.AbstractIL.IL+ILTypeDefLayout: Int32 CompareTo(System.Object, System.Collections.IComparer)
@@ -6892,7 +6897,7 @@ FSharp.Compiler.Syntax.SynByteStringKind: Int32 get_Tag()
 FSharp.Compiler.Syntax.SynByteStringKind: System.String ToString()
 FSharp.Compiler.Syntax.SynComponentInfo: Boolean get_preferPostfix()
 FSharp.Compiler.Syntax.SynComponentInfo: Boolean preferPostfix
-FSharp.Compiler.Syntax.SynComponentInfo: FSharp.Compiler.Syntax.SynComponentInfo NewSynComponentInfo(Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynAttributeList], Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Syntax.SynTyparDecls], Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynTypeConstraint], Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.Ident], FSharp.Compiler.Xml.PreXmlDoc, Boolean, Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Syntax.SynAccess], FSharp.Compiler.Text.Range)
+FSharp.Compiler.Syntax.SynComponentInfo: FSharp.Compiler.Syntax.SynComponentInfo NewSynComponentInfo(Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynAttributeList], Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Syntax.SynTyparDecls], Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynTypeConstraint], Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Syntax.SynType], FSharp.Compiler.Xml.PreXmlDoc, Boolean, Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Syntax.SynAccess], FSharp.Compiler.Text.Range)
 FSharp.Compiler.Syntax.SynComponentInfo: FSharp.Compiler.Text.Range Range
 FSharp.Compiler.Syntax.SynComponentInfo: FSharp.Compiler.Text.Range get_Range()
 FSharp.Compiler.Syntax.SynComponentInfo: FSharp.Compiler.Text.Range get_range()
@@ -6901,8 +6906,8 @@ FSharp.Compiler.Syntax.SynComponentInfo: FSharp.Compiler.Xml.PreXmlDoc get_xmlDo
 FSharp.Compiler.Syntax.SynComponentInfo: FSharp.Compiler.Xml.PreXmlDoc xmlDoc
 FSharp.Compiler.Syntax.SynComponentInfo: Int32 Tag
 FSharp.Compiler.Syntax.SynComponentInfo: Int32 get_Tag()
-FSharp.Compiler.Syntax.SynComponentInfo: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.Ident] get_longId()
-FSharp.Compiler.Syntax.SynComponentInfo: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.Ident] longId
+FSharp.Compiler.Syntax.SynComponentInfo: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.Ident] LongIdent
+FSharp.Compiler.Syntax.SynComponentInfo: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.Ident] get_LongIdent()
 FSharp.Compiler.Syntax.SynComponentInfo: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynAttributeList] attributes
 FSharp.Compiler.Syntax.SynComponentInfo: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynAttributeList] get_attributes()
 FSharp.Compiler.Syntax.SynComponentInfo: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynTypeConstraint] constraints
@@ -6911,6 +6916,8 @@ FSharp.Compiler.Syntax.SynComponentInfo: Microsoft.FSharp.Core.FSharpOption`1[FS
 FSharp.Compiler.Syntax.SynComponentInfo: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Syntax.SynAccess] get_accessibility()
 FSharp.Compiler.Syntax.SynComponentInfo: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Syntax.SynTyparDecls] get_typeParams()
 FSharp.Compiler.Syntax.SynComponentInfo: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Syntax.SynTyparDecls] typeParams
+FSharp.Compiler.Syntax.SynComponentInfo: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Syntax.SynType] get_synType()
+FSharp.Compiler.Syntax.SynComponentInfo: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Syntax.SynType] synType
 FSharp.Compiler.Syntax.SynComponentInfo: System.String ToString()
 FSharp.Compiler.Syntax.SynConst+Bool: Boolean Item
 FSharp.Compiler.Syntax.SynConst+Bool: Boolean get_Item()

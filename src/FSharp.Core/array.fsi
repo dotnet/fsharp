@@ -2432,8 +2432,7 @@ module Array =
 
     /// <summary>Sorts the elements of an array, returning a new array. Elements are compared using <see cref="M:Microsoft.FSharp.Core.Operators.compare"/>. </summary>
     ///
-    /// <remarks>This is not a stable sort, i.e. the original order of equal elements is not necessarily preserved.
-    /// For a stable sort, consider using <see cref="M:Microsoft.FSharp.Collections.SeqModule.Sort"/>. This is an O(n log n) operation, where n is the length of the array.</remarks>
+    /// <include file="xmldoc/sort.xml" path="/sort/arrayUnstable/*"/>
     ///
     /// <param name="array">The input array.</param>
     ///
@@ -2455,8 +2454,7 @@ module Array =
     /// <summary>Sorts the elements of an array, using the given projection for the keys and returning a new array.
     /// Elements are compared using <see cref="M:Microsoft.FSharp.Core.Operators.compare"/>.</summary>
     ///
-    /// <remarks>This is not a stable sort, i.e. the original order of equal elements is not necessarily preserved.
-    /// For a stable sort, consider using <see cref="M:Microsoft.FSharp.Collections.SeqModule.Sort"/>. This is an O(n log n) operation, where n is the length of the array.</remarks>
+    /// <include file="xmldoc/sort.xml" path="/sort/arrayUnstable/*"/>
     ///
     /// <param name="projection">The function to transform array elements into the type that is compared.</param>
     /// <param name="array">The input array.</param>
@@ -2478,8 +2476,7 @@ module Array =
 
     /// <summary>Sorts the elements of an array, using the given comparison function as the order, returning a new array.</summary>
     ///
-    /// <remarks>This is not a stable sort, i.e. the original order of equal elements is not necessarily preserved.
-    /// For a stable sort, consider using <see cref="M:Microsoft.FSharp.Collections.SeqModule.Sort"/>. This is an O(n log n) operation, where n is the length of the array.</remarks>
+    /// <include file="xmldoc/sort.xml" path="/sort/arrayUnstable/*"/>
     ///
     /// <param name="comparer">The function to compare pairs of array elements.</param>
     /// <param name="array">The input array.</param>
@@ -2507,8 +2504,7 @@ module Array =
     /// <summary>Sorts the elements of an array by mutating the array in-place, using the given projection for the keys.
     /// Elements are compared using <see cref="M:Microsoft.FSharp.Core.Operators.compare"/>.</summary>
     ///
-    /// <remarks>This is not a stable sort, i.e. the original order of equal elements is not necessarily preserved.
-    /// For a stable sort, consider using <see cref="M:Microsoft.FSharp.Collections.SeqModule.Sort"/>. This is an O(n log n) operation, modifying the array in place.</remarks>
+    /// <include file="xmldoc/sort.xml" path="/sort/arrayUnstableInPlace/*"/>
     ///
     /// <param name="projection">The function to transform array elements into the type that is compared.</param>
     /// <param name="array">The input array.</param>
@@ -2597,8 +2593,7 @@ module Array =
 
     /// <summary>Sorts the elements of an array, in descending order, returning a new array. Elements are compared using <see cref="M:Microsoft.FSharp.Core.Operators.compare"/>. </summary>
     ///
-    /// <remarks>This is not a stable sort, i.e. the original order of equal elements is not necessarily preserved.
-    /// For a stable sort, consider using <see cref="M:Microsoft.FSharp.Collections.SeqModule.Sort"/>. This is an O(n log n) operation, where n is the length of the array.</remarks>
+    /// <include file="xmldoc/sort.xml" path="/sort/arrayUnstable/*"/>
     ///
     /// <param name="array">The input array.</param>
     ///
@@ -2618,8 +2613,7 @@ module Array =
     /// <summary>Sorts the elements of an array, in descending order, using the given projection for the keys and returning a new array.
     /// Elements are compared using <see cref="M:Microsoft.FSharp.Core.Operators.compare"/>.</summary>
     ///
-    /// <remarks>This is not a stable sort, i.e. the original order of equal elements is not necessarily preserved.
-    /// For a stable sort, consider using <see cref="M:Microsoft.FSharp.Collections.SeqModule.Sort"/>. This is an O(n log n) operation, where n is the length of the array.</remarks>
+    /// <include file="xmldoc/sort.xml" path="/sort/arrayUnstable/*"/>
     ///
     /// <param name="projection">The function to transform array elements into the type that is compared.</param>
     /// <param name="array">The input array.</param>
@@ -4123,8 +4117,7 @@ module Array =
         /// the array comprised of the results <c>x</c> for each element where
         /// the function returns <c>Some(x)</c>.</summary>
         ///
-        /// <remarks>Performs the operation in parallel using <see cref="M:System.Threading.Tasks.Parallel.For" />.
-        /// The order in which the given function is applied to elements of the input array is not specified. This is an O(n) operation, where n is the length of the array.</remarks>
+        /// <include file="xmldoc/parallel.xml" path="/parallel/arrayUnordered/*"/>
         ///
         /// <param name="chooser">The function to generate options from the elements.</param>
         /// <param name="array">The input array.</param>
@@ -4190,8 +4183,7 @@ module Array =
         /// <summary>Build a new array whose elements are the results of applying the given function
         /// to each of the elements of the array.</summary>
         ///
-        /// <remarks>Performs the operation in parallel using <see cref="M:System.Threading.Tasks.Parallel.For" />.
-        /// The order in which the given function is applied to elements of the input array is not specified. This is an O(n) operation, where n is the length of the array.</remarks>
+        /// <include file="xmldoc/parallel.xml" path="/parallel/arrayUnordered/*"/>
         ///
         /// <param name="mapping"></param>
         /// <param name="array">The input array.</param>
@@ -4215,8 +4207,7 @@ module Array =
         /// to each of the elements of the array. The integer index passed to the
         /// function indicates the index of element being transformed.</summary>
         ///
-        /// <remarks>Performs the operation in parallel using <see cref="M:System.Threading.Tasks.Parallel.For" />.
-        /// The order in which the given function is applied to elements of the input array is not specified. This is an O(n) operation, where n is the length of the array.</remarks>
+        /// <include file="xmldoc/parallel.xml" path="/parallel/arrayUnordered/*"/>
         ///
         /// <param name="mapping"></param>
         /// <param name="array">The input array.</param>
@@ -4264,8 +4255,7 @@ module Array =
 
         /// <summary>Apply the given function to each element of the array. </summary>
         ///
-        /// <remarks>Performs the operation in parallel using <see cref="M:System.Threading.Tasks.Parallel.For" />.
-        /// The order in which the given function is applied to elements of the input array is not specified. This is an O(n) operation, where n is the length of the array.</remarks>
+        /// <include file="xmldoc/parallel.xml" path="/parallel/arrayUnordered/*"/>
         ///
         /// <param name="action"></param>
         /// <param name="array">The input array.</param>
@@ -4291,8 +4281,7 @@ module Array =
         /// <summary>Apply the given function to each element of the array. The integer passed to the
         /// function indicates the index of element.</summary>
         ///
-        /// <remarks>Performs the operation in parallel using <see cref="M:System.Threading.Tasks.Parallel.For" />.
-        /// The order in which the given function is applied to elements of the input array is not specified. This is an O(n) operation, where n is the length of the array.</remarks>
+        /// <include file="xmldoc/parallel.xml" path="/parallel/arrayUnordered/*"/>
         ///
         /// <param name="action"></param>
         /// <param name="array">The input array.</param>
@@ -4391,8 +4380,7 @@ module Array =
 
         /// <summary>Sorts the elements of an array in parallel, returning a new array. Elements are compared using <see cref="M:Microsoft.FSharp.Core.Operators.compare"/>. </summary>
         ///
-        /// <remarks>This is not a stable sort, i.e. the original order of equal elements is not necessarily preserved.
-        /// For a stable sort, consider using <see cref="M:Microsoft.FSharp.Collections.SeqModule.Sort"/>. This is an O(n log n) operation, where n is the length of the array.</remarks>
+        /// <include file="xmldoc/sort.xml" path="/sort/arrayUnstable/*"/>
         ///
         /// <param name="array">The input array.</param>
         ///
@@ -4414,8 +4402,7 @@ module Array =
         /// <summary>Sorts the elements of an array in parallel, using the given projection for the keys and returning a new array.
         /// Elements are compared using <see cref="M:Microsoft.FSharp.Core.Operators.compare"/>.</summary>
         ///
-        /// <remarks>This is not a stable sort, i.e. the original order of equal elements is not necessarily preserved.
-        /// For a stable sort, consider using <see cref="M:Microsoft.FSharp.Collections.SeqModule.Sort"/>. This is an O(n log n) operation, where n is the length of the array.</remarks>
+        /// <include file="xmldoc/sort.xml" path="/sort/arrayUnstable/*"/>
         ///
         /// <param name="projection">The function to transform array elements into the type that is compared.</param>
         /// <param name="array">The input array.</param>
@@ -4438,8 +4425,7 @@ module Array =
 
         /// <summary>Sorts the elements of an array in parallel, using the given comparison function as the order, returning a new array.</summary>
         ///
-        /// <remarks>This is not a stable sort, i.e. the original order of equal elements is not necessarily preserved.
-        /// For a stable sort, consider using <see cref="M:Microsoft.FSharp.Collections.SeqModule.Sort"/>. This is an O(n log n) operation, where n is the length of the array.</remarks>
+        /// <include file="xmldoc/sort.xml" path="/sort/arrayUnstable/*"/>
         ///
         /// <param name="comparer">The function to compare pairs of array elements.</param>
         /// <param name="array">The input array.</param>
@@ -4467,8 +4453,7 @@ module Array =
         /// <summary>Sorts the elements of an array by mutating the array in-place in parallel, using the given projection for the keys.
         /// Elements are compared using <see cref="M:Microsoft.FSharp.Core.Operators.compare"/>.</summary>
         ///
-        /// <remarks>This is not a stable sort, i.e. the original order of equal elements is not necessarily preserved.
-        /// For a stable sort, consider using <see cref="M:Microsoft.FSharp.Collections.SeqModule.Sort"/>. This is an O(n log n) operation, modifying the array in place.</remarks>
+        /// <include file="xmldoc/sort.xml" path="/sort/arrayUnstableInPlace/*"/>
         ///
         /// <param name="projection">The function to transform array elements into the type that is compared.</param>
         /// <param name="array">The input array.</param>
@@ -4533,8 +4518,7 @@ module Array =
 
         /// <summary>Sorts the elements of an array in parallel, in descending order, returning a new array. Elements are compared using <see cref="M:Microsoft.FSharp.Core.Operators.compare"/>. </summary>
         ///
-        /// <remarks>This is not a stable sort, i.e. the original order of equal elements is not necessarily preserved.
-        /// For a stable sort, consider using <see cref="M:Microsoft.FSharp.Collections.SeqModule.Sort"/>. This is an O(n log n) operation, where n is the length of the array.</remarks>
+        /// <include file="xmldoc/sort.xml" path="/sort/arrayUnstable/*"/>
         ///
         /// <param name="array">The input array.</param>
         ///
@@ -4554,8 +4538,7 @@ module Array =
         /// <summary>Sorts the elements of an array in parallel, in descending order, using the given projection for the keys and returning a new array.
         /// Elements are compared using <see cref="M:Microsoft.FSharp.Core.Operators.compare"/>.</summary>
         ///
-        /// <remarks>This is not a stable sort, i.e. the original order of equal elements is not necessarily preserved.
-        /// For a stable sort, consider using <see cref="M:Microsoft.FSharp.Collections.SeqModule.Sort"/>. This is an O(n log n) operation, where n is the length of the array.</remarks>
+        /// <include file="xmldoc/sort.xml" path="/sort/arrayUnstable/*"/>
         ///
         /// <param name="projection">The function to transform array elements into the type that is compared.</param>
         /// <param name="array">The input array.</param>

@@ -456,7 +456,7 @@ type Entity =
         mutable entity_cpath: CompilationPath option
 
         /// Used during codegen to hold the ILX representation indicating how to access the type
-        mutable entity_il_repr_cache: cache<CompiledTypeRepr>
+        mutable entity_il_repr_cache: cache<CompiledTypeRepr> | null
 
         mutable entity_opt_data: EntityOptionalData option
     }
@@ -892,7 +892,7 @@ type TyconAugmentation =
         /// Properties, methods etc. in declaration order. The boolean flag for each indicates if the
         /// member is known to be an explicit interface implementation. This must be computed and
         /// saved prior to remapping assembly information.
-        tcaug_adhoc_list: ResizeArray<bool * ValRef>
+        mutable tcaug_adhoc_list: ResizeArray<bool * ValRef> | null
 
         /// Properties, methods etc. as lookup table
         mutable tcaug_adhoc: NameMultiMap<ValRef>
@@ -911,6 +911,12 @@ type TyconAugmentation =
     }
 
     static member Create: unit -> TyconAugmentation
+
+    /// Record a member in declaration order, allocating the list on first use
+    member AddAdhocMember: isExplicitImpl: bool * vref: ValRef -> unit
+
+    /// Members in declaration order, empty when the type has none
+    member AdhocMembers: (bool * ValRef) list
 
     member SetCompare: x: (ValRef * ValRef) -> unit
 
@@ -1767,6 +1773,20 @@ type TraitWitnessInfo =
     /// Get the return type recorded in the member constraint.
     member ReturnType: TType option
 
+/// Non-generic marker interface for storing in TraitConstraintInfo.
+type ITraitContext = interface end
+
+/// Generic typed interface for trait context operations.
+type ITraitContext<'AccessRights, 'MethodInfo, 'InfoReader> =
+    inherit ITraitContext
+
+    /// Select extension methods relevant to solving a trait constraint
+    abstract SelectExtensionMethods:
+        traitInfo: TraitConstraintInfo * range: Text.range * infoReader: 'InfoReader -> (TType * 'MethodInfo) list
+
+    /// Get the accessibility domain for the trait context
+    abstract AccessRights: 'AccessRights
+
 /// The specification of a member constraint that must be solved
 [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
 type TraitConstraintInfo =
@@ -1781,7 +1801,8 @@ type TraitConstraintInfo =
         objAndArgTys: TTypes *
         returnTyOpt: TType option *
         source: string option ref *
-        solution: TraitConstraintSln option ref
+        solution: TraitConstraintSln option ref *
+        traitCtxt: ITraitContext option
 
     override ToString: unit -> string
 
@@ -1811,6 +1832,9 @@ type TraitConstraintInfo =
     /// Get or set the solution of the member constraint during inference
     member Solution: TraitConstraintSln option with get, set
 
+    /// Get the trait context (extension method scope) associated with this constraint
+    member TraitContext: ITraitContext option
+
     member CloneWithFreshSolution: unit -> TraitConstraintInfo
 
     /// The member kind is irrelevant to the logical properties of a trait. However it adjusts
@@ -1820,6 +1844,8 @@ type TraitConstraintInfo =
     member WithSupportTypes: TTypes -> TraitConstraintInfo
 
     member WithMemberName: string -> TraitConstraintInfo
+
+val traitCtxtNone: ITraitContext option
 
 /// Represents the solution of a member constraint during inference.
 [<NoEquality; NoComparison>]
