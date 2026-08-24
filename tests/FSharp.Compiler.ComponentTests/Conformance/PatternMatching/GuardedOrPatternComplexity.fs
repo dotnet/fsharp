@@ -47,6 +47,17 @@ let main _ =
         guardedOrSource 24
         |> runsWith "r1=-1 r2=2000"
 
+    // 1MB is ~2x what this emits today; the refuted shared-target design emitted ~3MB here.
+    [<Fact>]
+    let ``Issue 18425 - promoted subtrees are shared by name, not copied`` () =
+        guardedOrSource 32
+        |> FSharp
+        |> asExe
+        |> compile
+        |> shouldSucceed
+        |> withPeReader (fun pe -> pe.GetEntireImage().Length)
+        |> fun emitted -> Assert.True(emitted < 1_000_000, $"emitted assembly is {emitted} bytes")
+
     [<Fact>]
     let ``Issue 18425 - shared guard binding a variable at different positions is not over-fused`` () =
         """module Test
