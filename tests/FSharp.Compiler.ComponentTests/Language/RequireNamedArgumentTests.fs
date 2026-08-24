@@ -24,7 +24,7 @@ type RequireNamedArgumentAttribute() =
 
     let private withPolyfill (extra: string) = FSharp(fsPolyfill + extra)
 
-    // Permissive variant that also targets constructors (the real Method-only BCL attribute warns there).
+    // Variant that also targets constructors, so the constructor fixtures can apply it without an AttributeUsage error at the declaration.
     let private withPolyfillCtor (extra: string) =
         FSharp(fsPolyfillTargeting "AttributeTargets.Method ||| AttributeTargets.Constructor" + extra)
 

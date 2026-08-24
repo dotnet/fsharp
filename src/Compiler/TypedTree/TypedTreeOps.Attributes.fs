@@ -259,8 +259,8 @@ module internal AttributeHelpers =
             | Some(PubPath pp) -> struct (ValueNone, ValueSome pp)
             | None -> struct (ValueNone, ValueNone)
         else
-            // Resolve PublicPath for a local ref too, so a same-compilation-unit polyfill of a well-known
-            // BCL attribute is still classified by full type name (cf. the compilingFSharpCore branch above).
+            // Resolve PublicPath for a local ref too, so a same-compilation-unit definition of an
+            // attribute recognised by full type name is still classified (cf. the compilingFSharpCore branch above).
             match tcref.Deref.PublicPath with
             | Some(PubPath pp) -> struct (ValueSome pp, ValueNone)
             | None -> struct (ValueNone, ValueNone)
