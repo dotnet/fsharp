@@ -824,32 +824,35 @@ module Task =
         // from started children touching semaphore or innerCts
         match Seq.toArray computations with
         | [||] -> result [||]
-        | [| _ |] as req -> sequential ct req
-        | req when maxDegreeOfParallelism = 1 -> sequential ct req
+        | req when maxDegreeOfParallelism = 1 || req.Length = 1 -> sequential ct req
         | req ->
             task {
-                use sem = new SemaphoreSlim(maxDegreeOfParallelism, maxDegreeOfParallelism)
+                let mutable pos = -1
+                let res = Array.zeroCreate<'T> req.Length
+
                 use innerCts = CancellationTokenSource.CreateLinkedTokenSource ct
 
-                return!
-                    Task.WhenAll
-                        [|
-                            for f in req ->
-                                backgroundTask {
-                                    do! sem.WaitAsync innerCts.Token
-                                    let mutable completed = false
+                let worker () : Task<unit> =
+                    backgroundTask {
+                        let mutable index = Interlocked.Increment &pos
 
-                                    try
-                                        let! res = f innerCts.Token
-                                        completed <- true
-                                        return res
-                                    finally
-                                        sem.Release() |> Operators.ignore
+                        while index < req.Length && not innerCts.IsCancellationRequested do
+                            let mutable completed = false
 
-                                        if not completed then
-                                            innerCts.Cancel()
-                                }
-                        |]
+                            try
+                                let! r = req.[index] innerCts.Token
+                                completed <- true
+                                res[index] <- r
+                            finally
+                                if not completed then
+                                    innerCts.Cancel()
+
+                            index <- Interlocked.Increment &pos
+                    }
+
+                let workerCount = min maxDegreeOfParallelism req.Length
+                do! Task.WhenAll [| for _ in 1..workerCount -> worker () :> Task |]
+                return res
             }
 
     [<CompiledName("ParallelDoLimit")>]
