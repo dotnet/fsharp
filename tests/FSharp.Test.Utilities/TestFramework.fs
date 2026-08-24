@@ -286,13 +286,20 @@ let getMsbuildPropValue (xdoc: XDocument) (propName: string) =
         |> Seq.tryFind (fun el -> el.Name.LocalName = propName)
         |> function
             | Some el -> el.Value
-            | None -> failwithf "Property '%s' not found in Versions.props" propName
+            | None -> failwithf "Property '%s' not found" propName
 
 // Usage example:
 let versionsPropsDoc = loadVersionsProps ()
 let cscVersion = getMsbuildPropValue versionsPropsDoc "MicrosoftNetCompilersVersion"
 let ildasmVersion = getMsbuildPropValue versionsPropsDoc "MicrosoftNETCoreILDAsmVersion"
 let ilasmVersion = getMsbuildPropValue versionsPropsDoc "MicrosoftNETCoreILAsmVersion"
+
+/// The .NETCoreApp TFM shipped in the FSharp.Core NuGet package (deliberately lags the in-dev
+/// product TFM). Single source of truth: eng/TargetFrameworks.props.
+let fsharpCoreShippedNetTfm =
+    let path = repoRoot ++ "eng" ++ "TargetFrameworks.props"
+    if not (File.Exists path) then failwithf "TargetFrameworks.props file not found at %s" path
+    getMsbuildPropValue (XDocument.Load path) "FSharpCoreShippedNetTargetFramework"
 
 let config configurationName envVars =
 

@@ -6,7 +6,7 @@ ImplFile
          ([InterpolatedStringOffsideInModule], false, AnonModule,
           [NestedModule
              (SynComponentInfo
-                ([], None, [], [A],
+                ([], None, [], Some (LongIdent (SynLongIdent ([A], [], []))),
                  PreXmlDoc ((1,0), FSharp.Compiler.Xml.XmlDocCollector), false,
                  None, (1,0--1,8)), false,
               [Let

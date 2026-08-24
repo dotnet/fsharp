@@ -704,7 +704,7 @@ type Entity =
 
       /// Used during codegen to hold the ILX representation indicating how to access the type 
       // MUTABILITY: only for unpickle linkage and caching
-      mutable entity_il_repr_cache: CompiledTypeRepr cache
+      mutable entity_il_repr_cache: CompiledTypeRepr cache | null
 
       mutable entity_opt_data: EntityOptionalData option
     }
@@ -949,7 +949,15 @@ type Entity =
         | _ -> TAccess []
 
     /// Get the cache of the compiled ILTypeRef representation of this module or type.
-    member x.CompiledReprCache = x.entity_il_repr_cache
+    /// Allocated on first request rather than per entity: only codegen asks for it, so an analysis-only
+    /// host never pays for one.
+    member x.CompiledReprCache =
+        match x.entity_il_repr_cache with
+        | null ->
+            let c = newCache ()
+            x.entity_il_repr_cache <- c
+            c
+        | c -> c
 
     /// Get a blob of data indicating how this type is nested in other namespaces, modules or types.
     member x.PublicPath = x.entity_pubpath
@@ -1481,8 +1489,12 @@ type TyconAugmentation =
       /// Properties, methods etc. in declaration order. The boolean flag for each indicates if the
       /// member is known to be an explicit interface implementation. This must be computed and
       /// saved prior to remapping assembly information.
-      tcaug_adhoc_list: ResizeArray<bool * ValRef> 
-      
+      //
+      // Allocated on first member: there is one augmentation per entity, and nothing is ever added for
+      // an imported type.
+      mutable tcaug_adhoc_list: ResizeArray<bool * ValRef> | null
+
+
       /// Properties, methods etc. as lookup table
       mutable tcaug_adhoc: NameMultiMap<ValRef>
       
@@ -1498,6 +1510,24 @@ type TyconAugmentation =
       /// Set to true if the type is determined to be abstract 
       mutable tcaug_abstract: bool                       
     }
+
+    /// Record a member in declaration order, allocating the list on first use
+    member tcaug.AddAdhocMember(isExplicitImpl: bool, vref: ValRef) =
+        let list =
+            match tcaug.tcaug_adhoc_list with
+            | null ->
+                let l = ResizeArray()
+                tcaug.tcaug_adhoc_list <- l
+                l
+            | l -> l
+
+        list.Add(isExplicitImpl, vref)
+
+    /// Members in declaration order, empty when the type has none
+    member tcaug.AdhocMembers: (bool * ValRef) list =
+        match tcaug.tcaug_adhoc_list with
+        | null -> []
+        | l -> List.ofSeq l
 
     member tcaug.SetCompare x = tcaug.tcaug_compare <- Some x
 
@@ -1516,7 +1546,7 @@ type TyconAugmentation =
           tcaug_hash_and_equals_withc=None 
           tcaug_hasObjectGetHashCode=false 
           tcaug_adhoc=NameMultiMap.empty 
-          tcaug_adhoc_list=ResizeArray<_>() 
+          tcaug_adhoc_list=null
           tcaug_super=None
           tcaug_interfaces=[] 
           tcaug_closed=false 
@@ -2675,6 +2705,17 @@ type TraitWitnessInfo =
 
     override x.ToString() = "TraitWitnessInfo(" + x.MemberName + ")"
     
+/// Non-generic marker interface for storing in TraitConstraintInfo.
+/// The actual typed contract is ITraitContext<'AccessRights, 'MethodInfo, 'InfoReader>.
+type ITraitContext = interface end
+
+/// Generic typed interface for trait context operations.
+/// 'AccessRights = AccessorDomain, 'MethodInfo = MethInfo, 'InfoReader = InfoReader at use sites.
+type ITraitContext<'AccessRights, 'MethodInfo, 'InfoReader> =
+    inherit ITraitContext
+    abstract SelectExtensionMethods: traitInfo: TraitConstraintInfo * range: range * infoReader: 'InfoReader -> (TType * 'MethodInfo) list
+    abstract AccessRights: 'AccessRights
+
 /// The specification of a member constraint that must be solved 
 [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
 type TraitConstraintInfo = 
@@ -2689,7 +2730,8 @@ type TraitConstraintInfo =
         objAndArgTys: TTypes * 
         returnTyOpt: TType option * 
         source: string option ref * 
-        solution: TraitConstraintSln option ref 
+        solution: TraitConstraintSln option ref *
+        traitCtxt: ITraitContext option
 
     /// Get the types that may provide solutions for the traits
     member x.SupportTypes = (let (TTrait(tys = tys)) = x in tys)
@@ -2710,20 +2752,24 @@ type TraitConstraintInfo =
         with get() = (let (TTrait(solution = sln)) = x in sln.Value)
         and set v = (let (TTrait(solution = sln)) = x in sln.Value <- v)
 
+    member x.TraitContext = (let (TTrait(traitCtxt = tc)) = x in tc)
+
     member x.CloneWithFreshSolution() =
-        let (TTrait(a, b, c, d, e, f, sln)) = x
-        TTrait(a, b, c, d, e, f, ref sln.Value)
+        let (TTrait(a, b, c, d, e, f, sln, h)) = x
+        TTrait(a, b, c, d, e, f, ref sln.Value, h)
 
-    member x.WithMemberKind(kind) = (let (TTrait(a, b, c, d, e, f, g)) = x in TTrait(a, b, { c with MemberKind=kind }, d, e, f, g))
+    member x.WithMemberKind(kind) = (let (TTrait(a, b, c, d, e, f, g, h)) = x in TTrait(a, b, { c with MemberKind=kind }, d, e, f, g, h))
 
-    member x.WithSupportTypes(tys) = (let (TTrait(_, b, c, d, e, f, g)) = x in TTrait(tys, b, c, d, e, f, g))
+    member x.WithSupportTypes(tys) = (let (TTrait(_, b, c, d, e, f, g, h)) = x in TTrait(tys, b, c, d, e, f, g, h))
 
-    member x.WithMemberName(name) = (let (TTrait(a, _, c, d, e, f, g)) = x in TTrait(a, name, c, d, e, f, g))
+    member x.WithMemberName(name) = (let (TTrait(a, _, c, d, e, f, g, h)) = x in TTrait(a, name, c, d, e, f, g, h))
 
     [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
     member x.DebugText = x.ToString()
 
     override x.ToString() = "TTrait(" + x.MemberLogicalName + ")"
+
+let traitCtxtNone : ITraitContext option = None
     
 /// Represents the solution of a member constraint during inference.
 [<NoEquality; NoComparison (* ; StructuredFormatDisplay("{DebugText}") *) >]
@@ -6315,7 +6361,7 @@ type Construct() =
             // Generated types get internal accessibility
             entity_pubpath = Some pubpath
             entity_cpath = Some cpath
-            entity_il_repr_cache = newCache()
+            entity_il_repr_cache = null
             entity_opt_data =
                 match kind, access with
                 | TyparKind.Type, TAccess [] -> None
@@ -6340,7 +6386,7 @@ type Construct() =
             entity_pubpath=cpath |> Option.map (fun (cp: CompilationPath) -> cp.NestedPublicPath id)
             entity_cpath=cpath
             entity_attribs=WellKnownEntityAttribs.Create(attribs)
-            entity_il_repr_cache = newCache()
+            entity_il_repr_cache = null
             entity_opt_data =
                 match xml, access with
                 | doc, TAccess [] when doc.IsEmpty -> None
@@ -6418,7 +6464,7 @@ type Construct() =
             entity_typars = LazyWithContext.NotLazy []
             entity_tycon_repr = TNoRepr
             entity_flags = EntityFlags(usesPrefixDisplay=false, isModuleOrNamespace=false, preEstablishedHasDefaultCtor=false, hasSelfReferentialCtor=false, isStructRecordOrUnionType=false)
-            entity_il_repr_cache = newCache()
+            entity_il_repr_cache = null
             entity_opt_data =
                 match doc, access, repr with
                 | doc, TAccess [], TExnNone when doc.IsEmpty -> None
@@ -6457,7 +6503,7 @@ type Construct() =
             entity_modul_type = mtyp
             entity_pubpath=cpath |> Option.map (fun (cp: CompilationPath) -> cp.NestedPublicPath (mkSynId m nm))
             entity_cpath = cpath
-            entity_il_repr_cache = newCache()
+            entity_il_repr_cache = null
             entity_opt_data =
                 match kind, doc, reprAccess, access with
                 | TyparKind.Type, doc, TAccess [], TAccess [] when doc.IsEmpty -> None

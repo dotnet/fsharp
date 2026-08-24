@@ -98,19 +98,19 @@ module ResumableCode =
     /// Specifies resumable code which does nothing
     val inline Zero: unit -> ResumableCode<'Data, unit>
 
-    /// The dynamic implementation of the corresponding operation. This operation should not be used directly.
+    /// <include file="xmldoc/dynamic.xml" path="/dynamic/impl/*"/>
     val CombineDynamic: sm: byref<ResumableStateMachine<'Data>> * code1: ResumableCode<'Data, unit> * code2: ResumableCode<'Data, 'T> -> bool
 
-    /// The dynamic implementation of the corresponding operation. This operation should not be used directly.
+    /// <include file="xmldoc/dynamic.xml" path="/dynamic/impl/*"/>
     val WhileDynamic: sm: byref<ResumableStateMachine<'Data>> * condition: (unit -> bool) * body: ResumableCode<'Data, unit> -> bool
 
-    /// The dynamic implementation of the corresponding operation. This operation should not be used directly.
+    /// <include file="xmldoc/dynamic.xml" path="/dynamic/impl/*"/>
     val TryFinallyAsyncDynamic: sm: byref<ResumableStateMachine<'Data>> * body: ResumableCode<'Data, 'T> * compensation: ResumableCode<'Data,unit> -> bool
 
-    /// The dynamic implementation of the corresponding operation. This operation should not be used directly.
+    /// <include file="xmldoc/dynamic.xml" path="/dynamic/impl/*"/>
     val TryWithDynamic: sm: byref<ResumableStateMachine<'Data>> * body: ResumableCode<'Data, 'T> * handler: (exn -> ResumableCode<'Data, 'T>) -> bool
 
-    /// The dynamic implementation of the corresponding operation. This operation should not be used directly.
+    /// <include file="xmldoc/dynamic.xml" path="/dynamic/impl/*"/>
     val YieldDynamic: sm: byref<ResumableStateMachine<'Data>> -> bool
 
 /// Defines the implementation of the MoveNext method for a struct state machine.

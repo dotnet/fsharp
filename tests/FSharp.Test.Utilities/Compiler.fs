@@ -772,6 +772,15 @@ $ code --diff {outFile} {expectedFile}
         | CS cs -> CS { cs with TargetFramework = TargetFramework.NetStandard20 }
         | IL _ ->  failwith "References are not supported in IL"
 
+    /// Compile against the current BCL but reference the shipped .NETCoreApp FSharp.Core (e.g. net10.0)
+    /// instead of the netstandard2.1 build, so tests can exercise its .NETCoreApp-only surface.
+    /// Execution runs in a new process (dotnet app.dll) with that FSharp.Core copied beside the app;
+    /// external file references (withReferences) are not copied, so keep such snippets self-contained.
+    let withFSharpCoreShippedNet (cUnit: CompilationUnit) : CompilationUnit =
+        match cUnit with
+        | FS fs -> FS { fs with TargetFramework = TargetFramework.FSharpCoreShippedNet }
+        | CS _ | IL _ -> failwith "withFSharpCoreShippedNet is only supported for F# compilations"
+
     let withPlatform (platform:ExecutionPlatform) (cUnit: CompilationUnit) : CompilationUnit =
         match cUnit with
         | FS _ ->
@@ -1130,10 +1139,18 @@ $ code --diff {outFile} {expectedFile}
                         | SourceCodeFileKind.Fsx _ -> true
                         | _ -> false
                     | _ -> false
-                let output = CompilerAssert.ExecuteAndReturnResult (p, isFsx, s.Dependencies, false)
+                let useShippedNetFSharpCore =
+                    match s.Compilation with
+                    | FS fs -> fs.TargetFramework = TargetFramework.FSharpCoreShippedNet
+                    | _ -> false
+                if useShippedNetFSharpCore then
+                    File.Copy(TargetFrameworkUtil.shippedNetFSharpCorePath.Value, Path.Combine(Path.GetDirectoryName p, "FSharp.Core.dll"), overwrite = true)
+                let output = CompilerAssert.ExecuteAndReturnResult (p, isFsx, s.Dependencies, useShippedNetFSharpCore)
                 let executionResult = { s with Output = Some (ExecutionOutput output) }
                 match output.Outcome with
                 | Failure _ -> CompilationResult.Failure executionResult
+                // Shipped-net runs execute a new process, so surface a non-zero exit code as failure (in-process runs keep prior behaviour).
+                | ExitCode n when n <> 0 && useShippedNetFSharpCore -> CompilationResult.Failure executionResult
                 | _  -> CompilationResult.Success executionResult
 
     let compileAndRun = compile >> run
@@ -2414,3 +2431,19 @@ $ code --diff {outFile} {expectedFile}
     /// Run FSC as a subprocess with the given arguments. For CLI-level tests only (missing files, exit codes, etc.).
     let runFscProcess (args: string list) : ProcessResult =
         runToolProcess TestFramework.initialConfig.FSC args
+
+    /// Compile-and-run a compilation unit that depends on a FSharp.Core attribute
+    /// which may not yet be shipped in the SDK's NuGet package.
+    /// When the attribute is present, compiles and runs expecting success.
+    /// When absent, expects compilation failure with error 39 (undefined type).
+    let compileAndRunOrExpectMissingAttribute (fsharpCoreTypeName: string) (cu: CompilationUnit) =
+        if
+            not (
+                isNull (
+                    typeof<RequireQualifiedAccessAttribute>.Assembly.GetType(fsharpCoreTypeName)
+                )
+            )
+        then
+            cu |> compileAndRun |> shouldSucceed |> ignore
+        else
+            cu |> compile |> shouldFail |> withErrorCode 39 |> ignore
