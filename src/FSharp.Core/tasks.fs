@@ -792,15 +792,6 @@ module Task =
     let catch (task: Task<'T>) : Task<Result<'T, exn>> =
         task |> map Ok |> catchWith Error
 
-    // Exception filter semantics; trigger a side effect without entering an actual with block
-    // avoids having to rethrow an exception that we won't be altering
-    let inline interceptNonCancellationExn ([<InlineIfLambda>] f) (e: exn) : bool =
-        match e with
-        | :? OperationCanceledException -> false
-        | _ ->
-            f ()
-            false
-
     [<CompiledName("ParallelLimit")>]
     let parallelLimit
         (maxDegreeOfParallelism: int)
@@ -814,23 +805,24 @@ module Task =
         task {
             use sem = new SemaphoreSlim(maxDegreeOfParallelism, maxDegreeOfParallelism)
             use innerCts = CancellationTokenSource.CreateLinkedTokenSource ct
-            let innerCt = innerCts.Token
 
             return!
                 Task.WhenAll
                     [|
                         for f in computations ->
                             backgroundTask {
-                                do! sem.WaitAsync innerCt
+                                do! sem.WaitAsync innerCts.Token
+                                let mutable completed = false
 
                                 try
-                                    try
-                                        return! f innerCt
-                                    with e when interceptNonCancellationExn (fun () -> innerCts.Cancel()) e ->
-                                        // We'll never get here as the filter always returns false
-                                        return Unchecked.defaultof<_>
+                                    let! res = f innerCts.Token
+                                    completed <- true
+                                    return res
                                 finally
                                     sem.Release() |> Operators.ignore
+
+                                    if not completed then
+                                        innerCts.Cancel()
                             }
                     |]
         }
