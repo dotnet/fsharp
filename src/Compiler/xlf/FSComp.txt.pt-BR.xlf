@@ -747,11 +747,6 @@
         <target state="translated">Gera avisos quando várias correspondências de tipo de registro foram encontradas durante a resolução de nomes devido à sobreposição de nomes de campo.</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureWhileBang">
-        <source>'while!' expression</source>
-        <target state="translated">expressão "while!"</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureWitnessPassing">
         <source>witness passing for trait constraints in F# quotations</source>
         <target state="translated">Passagem de testemunha para restrições de característica nas citações do F#</target>
