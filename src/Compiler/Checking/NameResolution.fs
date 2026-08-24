@@ -351,24 +351,31 @@ type ExtensionMember =
 
    /// ILExtMem(declaringTyconRef, ilMetadata, pri)
    ///
-   /// IL-style extension member, backed by some kind of method with an [<Extension>] attribute
-   | ILExtMem of TyconRef * MethInfo * ExtensionMethodPriority
+   /// IL-style extension members, backed by methods with an [<Extension>] attribute. Methods extending
+   /// the same type via one 'open' are grouped: an 'open' of a class like Enumerable adds dozens of them.
+   | ILExtMem of TyconRef * MethInfo list * ExtensionMethodPriority
+
+   static member MethInfoHash(m: MethInfo) =
+       match m with
+       | ILMeth(_, ilmeth, _) -> LanguagePrimitives.PhysicalHash ilmeth.RawMetadata
+       | FSMeth(_, _, vref, _) -> valRefHash vref
+       | _ -> 0
+
+   /// Groups compare by identity, so members duplicated by several 'open's are de-duplicated per method.
+   static member MethInfoComparer =
+       HashIdentity.FromFunctions ExtensionMember.MethInfoHash MethInfo.MethInfosUseIdenticalDefinitions
 
    /// Check if two extension members refer to the same definition
    static member Equality g e1 e2 =
        match e1, e2 with
        | FSExtMem (vref1, _), FSExtMem (vref2, _) -> valRefEq g vref1 vref2
-       | ILExtMem (_, md1, _), ILExtMem (_, md2, _) -> MethInfo.MethInfosUseIdenticalDefinitions md1 md2
+       | ILExtMem (_, ms1, _), ILExtMem (_, ms2, _) -> LanguagePrimitives.PhysicalEquality ms1 ms2
        | _ -> false
 
    static member Hash e1 =
        match e1 with
        | FSExtMem(vref, _) -> valRefHash vref
-       | ILExtMem(_, m, _) ->
-           match m with
-           | ILMeth(_, ilmeth, _) -> LanguagePrimitives.PhysicalHash ilmeth.RawMetadata
-           | FSMeth(_, _, vref, _) -> valRefHash vref
-           | _ -> 0
+       | ILExtMem(_, ms, _) -> LanguagePrimitives.PhysicalHash ms
 
    static member Comparer g = HashIdentity.FromFunctions ExtensionMember.Hash (ExtensionMember.Equality g)
 
@@ -615,6 +622,38 @@ let private ComputeCSharpStyleExtensionMembers (amap: Import.ImportMap) m  (tcre
             | None -> importFailed.Value <- true
             | Some thisTyconRefOpt -> yield (thisTyconRefOpt, minfo) ]
 
+/// The grouped form is cached per static class, so every 'open' of it shares the method lists.
+let private GroupCSharpStyleExtensionMembers (members: (TyconRef option * MethInfo) list) =
+    let indexed = Dictionary<Stamp, TyconRef * ResizeArray<MethInfo>>()
+    let order = ResizeArray<Stamp>()
+    let unindexed = ResizeArray<MethInfo>()
+
+    for thisTyconRefOpt, minfo in members do
+        match thisTyconRefOpt with
+        | Some tcref ->
+            match indexed.TryGetValue tcref.Stamp with
+            | true, (_, acc) -> acc.Add minfo
+            | _ ->
+                let acc = ResizeArray()
+                acc.Add minfo
+                indexed[tcref.Stamp] <- (tcref, acc)
+                order.Add tcref.Stamp
+        | None -> unindexed.Add minfo
+
+    // The caller prepends when folding this shape, so the ungrouped code left one 'open's members in
+    // reverse read order; preserve it to keep the candidate order overload resolution sees.
+    let inline reversed (acc: ResizeArray<MethInfo>) =
+        acc |> Seq.fold (fun l minfo -> minfo :: l) []
+
+    [
+        for stamp in order do
+            let tcref, acc = indexed[stamp]
+            yield Some tcref, reversed acc
+
+        if unindexed.Count > 0 then
+            yield None, reversed unindexed
+    ]
+
 let private GetCSharpStyleIndexedExtensionMembersForTyconRef (amap: Import.ImportMap) m (tcrefOfStaticClass: TyconRef) =
     let g = amap.g
 
@@ -632,14 +671,16 @@ let private GetCSharpStyleIndexedExtensionMembersForTyconRef (amap: Import.Impor
         // A local class is still gaining members while its own file is checked; only an imported one is
         // immutable enough to share. The cache lives on the CCU, so it goes when the project does.
         if tcrefOfStaticClass.IsLocalRef then
-            ComputeCSharpStyleExtensionMembers amap m tcrefOfStaticClass (ref false)
+            GroupCSharpStyleExtensionMembers(ComputeCSharpStyleExtensionMembers amap m tcrefOfStaticClass (ref false))
         else
             let cache = tcrefOfStaticClass.nlr.Ccu.Deref.CSharpStyleExtensionMembersCache
             match cache.TryGetValue tcrefOfStaticClass.Stamp with
-            | true, shape -> shape :?> (TyconRef option * MethInfo) list
+            | true, shape -> shape :?> (TyconRef option * MethInfo list) list
             | _ ->
                 let importFailed = ref false
-                let shape = ComputeCSharpStyleExtensionMembers amap m tcrefOfStaticClass importFailed
+
+                let shape =
+                    GroupCSharpStyleExtensionMembers(ComputeCSharpStyleExtensionMembers amap m tcrefOfStaticClass importFailed)
 
                 if not importFailed.Value then
                     cache.TryAdd(tcrefOfStaticClass.Stamp, (shape :> obj)) |> ignore
@@ -650,8 +691,8 @@ let private GetCSharpStyleIndexedExtensionMembersForTyconRef (amap: Import.Impor
 
     let pri = NextExtensionMethodPriority()
 
-    [ for thisTyconRefOpt, minfo in shape do
-        let ilExtMem = ILExtMem (tcrefOfStaticClass, minfo, pri)
+    [ for thisTyconRefOpt, minfos in shape do
+        let ilExtMem = ILExtMem (tcrefOfStaticClass, minfos, pri)
         match thisTyconRefOpt with
         | Some tcref -> yield Choice1Of2(tcref, ilExtMem)
         | None -> yield Choice2Of2 ilExtMem ]
@@ -749,25 +790,31 @@ let SelectMethInfosFromExtMembers (infoReader: InfoReader) optFilter apparentTy 
     // This is hot under SRTP/extension-member-heavy code where many lookups miss entirely.
     if isNil extMemInfos then [] else
     let g = infoReader.g
-    // NOTE: multiple "open"'s push multiple duplicate values into eIndexedExtensionMembers
+    // NOTE: multiple "open"'s push multiple duplicate values into eIndexedExtensionMembers.
+    // Duplicate IL-backed methods arrive in distinct groups, so they are de-duplicated per method.
     let seen = HashSet(ExtensionMember.Comparer g)
+    let seenMeths = HashSet(ExtensionMember.MethInfoComparer)
     [
         for emem in extMemInfos do
-            if seen.Add emem then
-                match emem with
-                | FSExtMem (vref, pri) ->
+            match emem with
+            | FSExtMem (vref, pri) ->
+                if seen.Add emem then
                     match vref.MemberInfo with
                     | None -> ()
                     | Some membInfo ->
                         match TrySelectMemberVal g optFilter apparentTy (Some pri) membInfo vref with
                         | Some m -> yield m
                         | _ -> ()
-                | ILExtMem (actualParent, minfo, pri) when (match optFilter with None -> true | Some nm -> nm = minfo.LogicalName) ->
-                    // Make a reference to the type containing the extension members
-                    match TrySelectExtensionMethInfoOfILExtMem m infoReader.amap apparentTy (actualParent, minfo, pri) with 
-                    | Some minfo -> yield minfo
-                    | None -> ()
-                | _ -> ()
+            | ILExtMem (actualParent, minfos, pri) ->
+                for minfo in minfos do
+                    if (match optFilter with
+                        | None -> true
+                        | Some nm -> nm = minfo.LogicalName)
+                       && seenMeths.Add minfo then
+                        // Make a reference to the type containing the extension members
+                        match TrySelectExtensionMethInfoOfILExtMem m infoReader.amap apparentTy (actualParent, minfo, pri) with
+                        | Some minfo -> yield minfo
+                        | None -> ()
     ]
 
 /// Look up extension method infos for a single type from indexed extension members only.
