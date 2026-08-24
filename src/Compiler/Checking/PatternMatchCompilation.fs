@@ -983,7 +983,8 @@ let rec isPatternDisjunctive inpPat =
 // The algorithm
 //---------------------------------------------------------------------------
 
-/// Mirrors pathEq, but may be strictly finer (array length): a finer key only costs memo misses.
+/// Equal keys imply pathEq. Keeping the array length (as the string key did) makes this finer
+/// than pathEq, which only costs memo misses.
 [<RequireQualifiedAccess; NoComparison>]
 type private PathKey =
     | Query of Unique
@@ -1015,6 +1016,7 @@ type private BoundExprKey =
 
 type private PatternNodeId = int
 
+/// One clause's outstanding work: sub-terms still to be tested, plus what it has already bound.
 [<NoComparison>]
 type private FrontierKey =
     { Clause: ClauseNumber
@@ -1027,6 +1029,7 @@ type private MemoKey =
     { Frontiers: FrontierKey list
       Captured: Stamp list }
 
+/// Hits counts visits to one state; the thunk is built only once it is visited past the threshold.
 [<NoEquality; NoComparison>]
 type private MemoEntry =
     { mutable Hits: int
