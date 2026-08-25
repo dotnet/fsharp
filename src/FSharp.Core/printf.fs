@@ -657,23 +657,19 @@ module internal PrintfImpl =
     
     /// Contains functions to handle left/right and no justification case for numbers
     module GenericNumber =
-
-        let isPositive (n: obj) = 
-            match n with 
-            | :? int8 as n -> n >= 0y
-            | :? uint8 -> true
-            | :? int16 as n -> n >= 0s
-            | :? uint16 -> true
-            | :? int32 as n -> n >= 0
-            | :? uint32 -> true
-            | :? int64 as n -> n >= 0L
-            | :? uint64 -> true
-            | :? nativeint as n -> n >= 0n
-            | :? unativeint -> true
-            | :? single as n -> n >= 0.0f
-            | :? double as n -> n >= 0.0
-            | :? decimal as n -> n >= 0.0M
-            | _ -> failwith "isPositive: unreachable"
+        
+        let inline isStrNegative (str: string) = str.Length > 0 && str[0] = '-'
+        
+        /// Check if the number is negative -- not with the number itself, but with the formatted ToString representation --
+        /// to ensure that we always agree with the runtime (.NET and .NET Framework differ at -0.0 for floats).
+        /// Single.IsPositive (and similar) would be the right choice, but it is not available in .NET Framework /
+        /// .NET Standard 2.0.
+        /// Additionally: behaviorally speaking, this is really only needed for single and double, at which point it's
+        /// just simpler to uniformly use the same approach for all number types, which also has the added bonus of
+        /// avoiding type tests (micro perf win! https://github.com/dotnet/fsharp/pull/18147#discussion_r3821830744)
+        /// See: https://github.com/dotnet/fsharp/issues/15557
+        /// and: https://github.com/dotnet/fsharp/issues/15558
+        let isPositive (nStr: string) = not (isStrNegative nStr)
 
         /// handles right justification when pad char = '0'
         /// this case can be tricky:
@@ -728,7 +724,9 @@ module internal PrintfImpl =
             if isUnsigned then
                 fun (v: objnull) -> noJustificationCore (f v) true true prefix
             else 
-                fun (v: objnull) -> noJustificationCore (f v) true (isPositive v) prefix
+                fun (v: objnull) ->
+                    let vStr = f v
+                    noJustificationCore vStr true (isPositive vStr) prefix
 
     /// contains functions to handle left/right and no justification case for numbers
     module Integer =
@@ -790,17 +788,20 @@ module internal PrintfImpl =
             else
                 if isGFormat then
                     fun (w: int) (v: objnull) ->
-                        GenericNumber.leftJustifyWithGFormat (f v) true true (GenericNumber.isPositive v) w prefix padChar
+                        let vStr = f v
+                        GenericNumber.leftJustifyWithGFormat vStr true true (GenericNumber.isPositive vStr) w prefix padChar
                 else
                     fun (w: int) (v: objnull) ->
-                        GenericNumber.leftJustifyWithNonGFormat (f v) true (GenericNumber.isPositive v) w prefix padChar
+                        let vStr = f v
+                        GenericNumber.leftJustifyWithNonGFormat vStr true (GenericNumber.isPositive vStr) w prefix padChar
         
         /// Right justification handler for f: 'T -> string - basic integer types
         let rightJustify f (prefixForPositives: string) padChar isUnsigned =
             if isUnsigned then
                 if padChar = '0' then
                     fun (w: int) (v: objnull) ->
-                        GenericNumber.rightJustifyWithZeroAsPadChar (f v) true true w prefixForPositives
+                        let vStr = f v
+                        GenericNumber.rightJustifyWithZeroAsPadChar vStr true true w prefixForPositives
                 else
                     Debug.Assert((padChar = ' '))
                     fun (w: int) (v: objnull) ->
@@ -808,12 +809,14 @@ module internal PrintfImpl =
             else
                 if padChar = '0' then
                     fun (w: int) (v: objnull) ->
-                        GenericNumber.rightJustifyWithZeroAsPadChar (f v) true (GenericNumber.isPositive v) w prefixForPositives
+                        let vStr = f v
+                        GenericNumber.rightJustifyWithZeroAsPadChar vStr true (GenericNumber.isPositive vStr) w prefixForPositives
 
                 else
                     Debug.Assert((padChar = ' '))
                     fun (w: int) v ->
-                        GenericNumber.rightJustifyWithSpaceAsPadChar (f v) true (GenericNumber.isPositive v) w prefixForPositives
+                        let vStr = f v
+                        GenericNumber.rightJustifyWithSpaceAsPadChar vStr true (GenericNumber.isPositive vStr) w prefixForPositives
 
         /// Computes a new function from 'f' that wraps the basic conversion given
         /// by 'f' with padding for 0, spacing and justification, if the flags specify
@@ -850,7 +853,7 @@ module internal PrintfImpl =
             | _ -> invalidArg (nameof spec) "Invalid integer format"
     
     module FloatAndDecimal = 
-
+        
         let rec toFormattedString fmt (v: obj) = 
             match v with
             | :? single as n -> n.ToString(fmt, CultureInfo.InvariantCulture)
@@ -880,24 +883,29 @@ module internal PrintfImpl =
 
         let noJustification (prefixForPositives: string) = 
             fun (fmt: string) (v: obj) -> 
-                GenericNumber.noJustificationCore (toFormattedString fmt v) (isNumber v) (GenericNumber.isPositive v) prefixForPositives
+                let vStr = toFormattedString fmt v
+                GenericNumber.noJustificationCore vStr (isNumber v) (GenericNumber.isPositive vStr) prefixForPositives
     
         let leftJustify isGFormat (prefix: string) padChar = 
             if isGFormat then
                 fun (fmt: string) (w: int) (v: obj) ->
-                    GenericNumber.leftJustifyWithGFormat (toFormattedString fmt v) (isNumber v) (isInteger v) (GenericNumber.isPositive v) w prefix padChar
+                    let vStr = toFormattedString fmt v
+                    GenericNumber.leftJustifyWithGFormat vStr (isNumber v) (isInteger v) (GenericNumber.isPositive vStr) w prefix padChar
             else
                 fun (fmt: string) (w: int) (v: obj) ->
-                    GenericNumber.leftJustifyWithNonGFormat (toFormattedString fmt v) (isNumber v) (GenericNumber.isPositive v) w prefix padChar  
+                    let vStr = toFormattedString fmt v
+                    GenericNumber.leftJustifyWithNonGFormat vStr (isNumber v) (GenericNumber.isPositive vStr) w prefix padChar
 
         let rightJustify (prefixForPositives: string) padChar =
             if padChar = '0' then
                 fun (fmt: string) (w: int) (v: obj) ->
-                    GenericNumber.rightJustifyWithZeroAsPadChar (toFormattedString fmt v) (isNumber v) (GenericNumber.isPositive v) w prefixForPositives
+                    let vStr = toFormattedString fmt v
+                    GenericNumber.rightJustifyWithZeroAsPadChar vStr (isNumber v) (GenericNumber.isPositive vStr) w prefixForPositives
             else
                 Debug.Assert((padChar = ' '))
                 fun (fmt: string) (w: int) (v: obj) ->
-                    GenericNumber.rightJustifyWithSpaceAsPadChar (toFormattedString fmt v) (isNumber v) (GenericNumber.isPositive v) w prefixForPositives
+                    let vStr = toFormattedString fmt v
+                    GenericNumber.rightJustifyWithSpaceAsPadChar vStr (isNumber v) (GenericNumber.isPositive vStr) w prefixForPositives
 
         let withPadding (spec: FormatSpecifier) getFormat defaultFormat =
             let padChar, prefix = spec.GetPadAndPrefix true 
