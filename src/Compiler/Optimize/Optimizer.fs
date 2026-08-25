@@ -3265,8 +3265,7 @@ and CopyExprForInlining cenv isInlineIfLambda expr (m: range) =
         |> copyExpr g CloneAll
     else
         expr
-        |> copyExpr g CloneAllAndMarkExprValsAsCompilerGenerated
-        |> remarkExpr m
+        |> copyAndRemarkExpr g CloneAllAndMarkExprValsAsCompilerGenerated m
 
 /// Make optimization decisions once we know the optimization information
 /// for a value
@@ -3301,7 +3300,7 @@ and TryOptimizeVal cenv env (vOpt: ValRef option, shouldInline, inlineIfLambda, 
               Some(exprForValRef m vR)
 
     | ConstExprValue(_size, expr) ->
-        Some (remarkExpr m (copyExpr g CloneAllAndMarkExprValsAsCompilerGenerated expr))
+        Some (copyAndRemarkExpr g CloneAllAndMarkExprValsAsCompilerGenerated m expr)
 
     | CurriedLambdaValue (_, _, _, expr, _) when
             shouldInline && (cenv.settings.alwaysInline || Option.exists (shouldForceInlineInDebug cenv env) vOpt) ||

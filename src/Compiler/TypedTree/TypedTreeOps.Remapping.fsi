@@ -227,6 +227,10 @@ module internal ExprRemapping =
     /// Copy an entire expression using the given copying flags
     val copyExpr: TcGlobals -> ValCopyFlag -> Expr -> Expr
 
+    /// Copy an entire expression using the given copying flags, re-marking every node's range to the given
+    /// range in the same traversal. Equivalent to (copyExpr g flag e |> remarkExpr m) but avoids the second pass.
+    val copyAndRemarkExpr: TcGlobals -> ValCopyFlag -> range -> Expr -> Expr
+
     /// Copy an entire implementation file using the given copying flags
     val copyImplFile: TcGlobals -> ValCopyFlag -> CheckedImplFile -> CheckedImplFile
 

@@ -1642,9 +1642,39 @@ module internal ExprRemapping =
         tps', tmenvinner
 
     type RemapContext =
-        { g: TcGlobals; stackGuard: StackGuard }
+        {
+            g: TcGlobals
+            stackGuard: StackGuard
+            // When ValueSome m, this pass also re-marks every constructed expression node's range to m
+            // (fusing copyExpr with remarkExpr in a single traversal). See remarkExpr for the standalone form.
+            remark: range voption
+        }
 
-    let mkRemapContext g stackGuard = { g = g; stackGuard = stackGuard }
+    let mkRemapContext g stackGuard =
+        {
+            g = g
+            stackGuard = stackGuard
+            remark = ValueNone
+        }
+
+    /// When the remap context is remarking (fused copyExpr+remarkExpr), every constructed expression node
+    /// takes the target range m instead of its original range.
+    let inline remarkRange (ctxt: RemapContext) m =
+        match ctxt.remark with
+        | ValueNone -> m
+        | ValueSome mr -> mr
+
+    /// The debug-point erasure remarkExpr applies to loop/try TOps when re-marking inlined code.
+    let remarkOp (ctxt: RemapContext) op =
+        match ctxt.remark with
+        | ValueNone -> op
+        | ValueSome _ ->
+            match op with
+            | TOp.IntegerForLoop(_, _, style) -> TOp.IntegerForLoop(DebugPointAtFor.No, DebugPointAtInOrTo.No, style)
+            | TOp.While(_, marker) -> TOp.While(DebugPointAtWhile.No, marker)
+            | TOp.TryFinally _ -> TOp.TryFinally(DebugPointAtTry.No, DebugPointAtFinally.No)
+            | TOp.TryWith _ -> TOp.TryWith(DebugPointAtTry.No, DebugPointAtWith.No)
+            | _ -> op
 
     let rec remapAttribImpl ctxt tmenv (Attrib(tcref, kind, args, props, isGetOrSetAttr, targets, m)) =
         Attrib(
@@ -1765,25 +1795,30 @@ module internal ExprRemapping =
                 let tps', tmenvinner =
                     tmenvCopyRemapAndBindTypars (remapAttribs ctxt tmenv) tmenv tps
 
-                mkTypeLambda m tps' (remapExprImpl ctxt compgen tmenvinner b, remapType tmenvinner bodyTy)
+                mkTypeLambda (remarkRange ctxt m) tps' (remapExprImpl ctxt compgen tmenvinner b, remapType tmenvinner bodyTy)
 
             | Expr.TyChoose(tps, b, m) ->
                 let tps', tmenvinner =
                     tmenvCopyRemapAndBindTypars (remapAttribs ctxt tmenv) tmenv tps
 
-                Expr.TyChoose(tps', remapExprImpl ctxt compgen tmenvinner b, m)
+                Expr.TyChoose(tps', remapExprImpl ctxt compgen tmenvinner b, remarkRange ctxt m)
 
             | Expr.LetRec(binds, e, m, _) ->
                 let binds', tmenvinner = copyAndRemapAndBindBindings ctxt compgen tmenv binds
-                Expr.LetRec(binds', remapExprImpl ctxt compgen tmenvinner e, m, Construct.NewFreeVarsCache())
+                Expr.LetRec(binds', remapExprImpl ctxt compgen tmenvinner e, remarkRange ctxt m, Construct.NewFreeVarsCache())
 
             | Expr.Match(spBind, mExpr, pt, targets, m, ty) ->
+                let spBindR, mExprR, mR =
+                    match ctxt.remark with
+                    | ValueNone -> spBind, mExpr, m
+                    | ValueSome mr -> DebugPointAtBinding.NoneAtInvisible, mr, mr
+
                 primMkMatch (
-                    spBind,
-                    mExpr,
+                    spBindR,
+                    mExprR,
                     remapDecisionTree ctxt compgen tmenv pt,
                     targets |> Array.map (remapTarget ctxt compgen tmenv),
-                    m,
+                    mR,
                     remapType tmenv ty
                 )
 
@@ -1791,10 +1826,9 @@ module internal ExprRemapping =
                 let vr' = remapValRef tmenv vr
                 let vf' = remapValFlags tmenv vf
 
-                if vr === vr' && vf === vf' then
-                    expr
-                else
-                    Expr.Val(vr', vf', m)
+                match ctxt.remark with
+                | ValueNone when vr === vr' && vf === vf' -> expr
+                | _ -> Expr.Val(vr', vf', remarkRange ctxt m)
 
             | Expr.Quote(a, dataCell, isFromQueryExpression, m, ty) ->
                 remapQuoteExpr ctxt compgen tmenv (a, dataCell, isFromQueryExpression, m, ty)
@@ -1809,7 +1843,7 @@ module internal ExprRemapping =
                     remapExprImpl ctxt compgen tmenv basecall,
                     List.map (remapMethod ctxt compgen tmenvinner) overrides,
                     List.map (remapInterfaceImpl ctxt compgen tmenvinner) iimpls,
-                    m
+                    remarkRange ctxt m
                 )
 
             // Addresses of immutable field may "leak" across assembly boundaries - see CanTakeAddressOfRecdFieldRef below.
@@ -1825,10 +1859,14 @@ module internal ExprRemapping =
                 let tinst = remapTypes tmenv tinst
                 let arg = remapExprImpl ctxt compgen tmenv arg
 
+                // The introduced temporary keeps the original m (remarkExpr never re-marks Val definition ranges);
+                // the surrounding constructed expression nodes take the remark range.
+                let mNode = remarkRange ctxt m
+
                 let tmp, _ =
                     mkMutableCompGenLocal m WellKnownNames.CopyOfStruct (actualTyOfRecdFieldRef rfref tinst)
 
-                mkCompGenLet m tmp (mkRecdFieldGetViaExprAddr (arg, rfref, tinst, m)) (mkValAddr m readonly (mkLocalValRef tmp))
+                mkCompGenLet mNode tmp (mkRecdFieldGetViaExprAddr (arg, rfref, tinst, mNode)) (mkValAddr mNode readonly (mkLocalValRef tmp))
 
             | Expr.Op(TOp.UnionCaseFieldGetAddr(uref, cidx, readonly), tinst, [ arg ], m) when
                 not (uref.FieldByIndex(cidx).IsMutable)
@@ -1838,14 +1876,16 @@ module internal ExprRemapping =
                 let tinst = remapTypes tmenv tinst
                 let arg = remapExprImpl ctxt compgen tmenv arg
 
+                let mNode = remarkRange ctxt m
+
                 let tmp, _ =
                     mkMutableCompGenLocal m WellKnownNames.CopyOfStruct (actualTyOfUnionFieldRef uref cidx tinst)
 
                 mkCompGenLet
-                    m
+                    mNode
                     tmp
-                    (mkUnionCaseFieldGetProvenViaExprAddr (arg, uref, tinst, cidx, m))
-                    (mkValAddr m readonly (mkLocalValRef tmp))
+                    (mkUnionCaseFieldGetProvenViaExprAddr (arg, uref, tinst, cidx, mNode))
+                    (mkValAddr mNode readonly (mkLocalValRef tmp))
 
             | Expr.Op(op, tinst, args, m) -> remapOpExpr ctxt compgen tmenv (op, tinst, args, m) expr
 
@@ -1857,15 +1897,21 @@ module internal ExprRemapping =
                 // note that type instantiation typically resolve the static constraints here
                 mkStaticOptimizationExpr
                     ctxt.g
-                    (List.map (remapConstraint tmenv) cs, remapExprImpl ctxt compgen tmenv e2, remapExprImpl ctxt compgen tmenv e3, m)
+                    (List.map (remapConstraint tmenv) cs,
+                     remapExprImpl ctxt compgen tmenv e2,
+                     remapExprImpl ctxt compgen tmenv e3,
+                     remarkRange ctxt m)
 
             | Expr.Const(c, m, ty) ->
                 let ty' = remapType tmenv ty
-                if ty === ty' then expr else Expr.Const(c, m, ty')
+
+                match ctxt.remark with
+                | ValueNone when ty === ty' -> expr
+                | _ -> Expr.Const(c, remarkRange ctxt m, ty')
 
             | Expr.WitnessArg(traitInfo, m) ->
                 let traitInfoR = remapTraitInfo tmenv traitInfo
-                Expr.WitnessArg(traitInfoR, m)
+                Expr.WitnessArg(traitInfoR, remarkRange ctxt m)
 
     and remapLambaExpr (ctxt: RemapContext) (compgen: ValCopyFlag) (tmenv: Remap) (ctorThisValOpt, baseValOpt, vs, body, m, bodyTy) =
         let ctorThisValOptR, tmenv =
@@ -1877,7 +1923,7 @@ module internal ExprRemapping =
         let vsR, tmenv = copyAndRemapAndBindVals ctxt compgen tmenv vs
         let bodyR = remapExprImpl ctxt compgen tmenv body
         let bodyTyR = remapType tmenv bodyTy
-        Expr.Lambda(newUnique (), ctorThisValOptR, baseValOptR, vsR, bodyR, m, bodyTyR)
+        Expr.Lambda(newUnique (), ctorThisValOptR, baseValOptR, vsR, bodyR, remarkRange ctxt m, bodyTyR)
 
     and remapQuoteExpr (ctxt: RemapContext) (compgen: ValCopyFlag) (tmenv: Remap) (a, dataCell, isFromQueryExpression, m, ty) =
         let doData (typeDefs, argTypes, argExprs, res) =
@@ -1889,17 +1935,16 @@ module internal ExprRemapping =
             | Some(data1, data2) -> Some(doData data1, doData data2)
         // fix value of compgen for both original expression and pickled AST
         let compgen = fixValCopyFlagForQuotations compgen
-        Expr.Quote(remapExprImpl ctxt compgen tmenv a, ref data', isFromQueryExpression, m, remapType tmenv ty)
+        Expr.Quote(remapExprImpl ctxt compgen tmenv a, ref data', isFromQueryExpression, remarkRange ctxt m, remapType tmenv ty)
 
     and remapOpExpr (ctxt: RemapContext) (compgen: ValCopyFlag) (tmenv: Remap) (op, tinst, args, m) origExpr =
-        let opR = remapOp tmenv op
+        let opR = remapOp tmenv op |> remarkOp ctxt
         let tinstR = remapTypes tmenv tinst
         let argsR = remapExprs ctxt compgen tmenv args
 
-        if op === opR && tinst === tinstR && args === argsR then
-            origExpr
-        else
-            Expr.Op(opR, tinstR, argsR, m)
+        match ctxt.remark with
+        | ValueNone when op === opR && tinst === tinstR && args === argsR -> origExpr
+        | _ -> Expr.Op(opR, tinstR, argsR, remarkRange ctxt m)
 
     and remapAppExpr (ctxt: RemapContext) (compgen: ValCopyFlag) (tmenv: Remap) (e1, e1ty, tyargs, args, m) origExpr =
         let e1R = remapExprImpl ctxt compgen tmenv e1
@@ -1907,10 +1952,9 @@ module internal ExprRemapping =
         let tyargsR = remapTypes tmenv tyargs
         let argsR = remapExprs ctxt compgen tmenv args
 
-        if e1 === e1R && e1ty === e1tyR && tyargs === tyargsR && args === argsR then
-            origExpr
-        else
-            Expr.App(e1R, e1tyR, tyargsR, argsR, m)
+        match ctxt.remark with
+        | ValueNone when e1 === e1R && e1ty === e1tyR && tyargs === tyargsR && args === argsR -> origExpr
+        | _ -> Expr.App(e1R, e1tyR, tyargsR, argsR, remarkRange ctxt m)
 
     and remapTarget ctxt compgen tmenv (TTarget(vs, e, flags)) =
         let vsR, tmenvinner = copyAndRemapAndBindVals ctxt compgen tmenv vs
@@ -1923,7 +1967,7 @@ module internal ExprRemapping =
         | Expr.Let(bind, bodyExpr, m, _) ->
             let bindR, tmenvinner = copyAndRemapAndBindBinding ctxt compgen tmenv bind
             // tailcall for the linear position
-            remapLinearExpr ctxt compgen tmenvinner bodyExpr (contf << mkLetBind m bindR)
+            remapLinearExpr ctxt compgen tmenvinner bodyExpr (contf << mkLetBind (remarkRange ctxt m) bindR)
 
         | Expr.Sequential(expr1, expr2, dir, m) ->
             let expr1R = remapExprImpl ctxt compgen tmenv expr1
@@ -1935,15 +1979,19 @@ module internal ExprRemapping =
                 expr2
                 (contf
                  << (fun expr2R ->
-                     if expr1 === expr1R && expr2 === expr2R then
-                         expr
-                     else
-                         Expr.Sequential(expr1R, expr2R, dir, m)))
+                     match ctxt.remark with
+                     | ValueNone when expr1 === expr1R && expr2 === expr2R -> expr
+                     | _ -> Expr.Sequential(expr1R, expr2R, dir, remarkRange ctxt m)))
 
         | LinearMatchExpr(spBind, mExpr, dtree, tg1, expr2, m2, ty) ->
             let dtreeR = remapDecisionTree ctxt compgen tmenv dtree
             let tg1R = remapTarget ctxt compgen tmenv tg1
             let tyR = remapType tmenv ty
+
+            let spBindR, mExprR, m2R =
+                match ctxt.remark with
+                | ValueNone -> spBind, mExpr, m2
+                | ValueSome mr -> DebugPointAtBinding.NoneAtInvisible, mr, mr
             // tailcall for the linear position
             remapLinearExpr
                 ctxt
@@ -1951,10 +1999,10 @@ module internal ExprRemapping =
                 tmenv
                 expr2
                 (contf
-                 << (fun expr2R -> rebuildLinearMatchExpr (spBind, mExpr, dtreeR, tg1R, expr2R, m2, tyR)))
+                 << (fun expr2R -> rebuildLinearMatchExpr (spBindR, mExprR, dtreeR, tg1R, expr2R, m2R, tyR)))
 
         | LinearOpExpr(op, tyargs, argsFront, argLast, m) ->
-            let opR = remapOp tmenv op
+            let opR = remapOp tmenv op |> remarkOp ctxt
             let tinstR = remapTypes tmenv tyargs
             let argsFrontR = remapExprs ctxt compgen tmenv argsFront
             // tailcall for the linear position
@@ -1965,18 +2013,22 @@ module internal ExprRemapping =
                 argLast
                 (contf
                  << (fun argLastR ->
-                     if
+                     match ctxt.remark with
+                     | ValueNone when
                          op === opR
                          && tyargs === tinstR
                          && argsFront === argsFrontR
                          && argLast === argLastR
-                     then
+                         ->
                          expr
-                     else
-                         rebuildLinearOpExpr (opR, tinstR, argsFrontR, argLastR, m)))
+                     | _ -> rebuildLinearOpExpr (opR, tinstR, argsFrontR, argLastR, remarkRange ctxt m)))
 
         | Expr.DebugPoint(dpm, innerExpr) ->
-            remapLinearExpr ctxt compgen tmenv innerExpr (contf << (fun innerExprR -> Expr.DebugPoint(dpm, innerExprR)))
+            match ctxt.remark with
+            | ValueSome _ ->
+                // remarkExpr drops debug-point wrappers on inlined code
+                remapLinearExpr ctxt compgen tmenv innerExpr contf
+            | ValueNone -> remapLinearExpr ctxt compgen tmenv innerExpr (contf << (fun innerExprR -> Expr.DebugPoint(dpm, innerExprR)))
 
         | _ -> contf (remapExprImpl ctxt compgen tmenv expr)
 
@@ -2071,7 +2123,7 @@ module internal ExprRemapping =
                     TCase(testR, subTreeR))
 
             let dfltR = Option.map (remapDecisionTree ctxt compgen tmenv) dflt
-            TDSwitch(e1R, casesR, dfltR, m)
+            TDSwitch(e1R, casesR, dfltR, remarkRange ctxt m)
 
         | TDSuccess(es, n) -> TDSuccess(remapFlatExprs ctxt compgen tmenv es, n)
 
@@ -2092,7 +2144,13 @@ module internal ExprRemapping =
         List.map2 (remapAndRenameBind ctxt compgen tmenvinner) binds vsR
 
     and remapAndRenameBind ctxt compgen tmenvinner (TBind(_, repr, letSeqPtOpt)) vR =
-        TBind(vR, remapExprImpl ctxt compgen tmenvinner repr, letSeqPtOpt)
+        // This very deliberately drops the sequence points when re-marking inlined expressions (see remarkBind).
+        let letSeqPtOptR =
+            match ctxt.remark with
+            | ValueNone -> letSeqPtOpt
+            | ValueSome _ -> DebugPointAtBinding.NoneAtSticky
+
+        TBind(vR, remapExprImpl ctxt compgen tmenvinner repr, letSeqPtOptR)
 
     and remapMethod ctxt compgen tmenv (TObjExprMethod(slotsig, attribs, tps, vs, e, m)) =
         let attribs2 = attribs |> remapAttribs ctxt tmenv
@@ -2105,7 +2163,7 @@ module internal ExprRemapping =
             List.mapFold (copyAndRemapAndBindVals ctxt compgen) tmenvinner vs
 
         let e2 = remapExprImpl ctxt compgen tmenvinner2 e
-        TObjExprMethod(slotsig2, attribs2, tps2, vs2, e2, m)
+        TObjExprMethod(slotsig2, attribs2, tps2, vs2, e2, remarkRange ctxt m)
 
     and remapInterfaceImpl ctxt compgen tmenv (ty, overrides) =
         (remapType tmenv ty, List.map (remapMethod ctxt compgen tmenv) overrides)
@@ -2434,6 +2492,7 @@ module internal ExprRemapping =
             {
                 g = g
                 stackGuard = StackGuard("RemapExprStackGuardDepth")
+                remark = ValueNone
             }
 
         remapAttribImpl ctxt tmenv attrib
@@ -2443,6 +2502,7 @@ module internal ExprRemapping =
             {
                 g = g
                 stackGuard = StackGuard("RemapExprStackGuardDepth")
+                remark = ValueNone
             }
 
         remapExprImpl ctxt compgen tmenv expr
@@ -2452,6 +2512,7 @@ module internal ExprRemapping =
             {
                 g = g
                 stackGuard = StackGuard("RemapExprStackGuardDepth")
+                remark = ValueNone
             }
 
         remapPossibleForallTyImpl ctxt tmenv ty
@@ -2461,6 +2522,7 @@ module internal ExprRemapping =
             {
                 g = g
                 stackGuard = StackGuard("RemapExprStackGuardDepth")
+                remark = ValueNone
             }
 
         copyAndRemapAndBindModTy ctxt compgen Remap.Empty mtyp |> fst
@@ -2470,6 +2532,20 @@ module internal ExprRemapping =
             {
                 g = g
                 stackGuard = StackGuard("RemapExprStackGuardDepth")
+                remark = ValueNone
+            }
+
+        remapExprImpl ctxt compgen Remap.Empty e
+
+    /// Fused copyExpr + remarkExpr: copies the expression (cloning locals) while re-marking every
+    /// constructed node's range to m in a single traversal, avoiding a second full rebuild of the tree.
+    /// Produces output byte-identical to (copyExpr g compgen e |> remarkExpr m).
+    let copyAndRemarkExpr g compgen m e =
+        let ctxt =
+            {
+                g = g
+                stackGuard = StackGuard("RemapExprStackGuardDepth")
+                remark = ValueSome m
             }
 
         remapExprImpl ctxt compgen Remap.Empty e
@@ -2479,6 +2555,7 @@ module internal ExprRemapping =
             {
                 g = g
                 stackGuard = StackGuard("RemapExprStackGuardDepth")
+                remark = ValueNone
             }
 
         remapImplFile ctxt compgen Remap.Empty e |> fst
@@ -2488,6 +2565,7 @@ module internal ExprRemapping =
             {
                 g = g
                 stackGuard = StackGuard("RemapExprStackGuardDepth")
+                remark = ValueNone
             }
 
         remapExprImpl ctxt CloneAll (mkInstRemap tpinst) e
