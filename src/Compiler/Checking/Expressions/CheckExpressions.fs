@@ -2879,7 +2879,12 @@ let TcVal (cenv: cenv) env (tpenv: UnscopedTyparEnv) (vref: ValRef) instantiatio
 
                                 if tpTys.Length <> tinst.Length then error(Error(FSComp.SR.tcTypeParameterArityMismatch(tps.Length, tinst.Length), m))
 
-                                List.iter2 (UnifyTypes cenv env m) tpTys tinst
+                                let tyargPairs =
+                                    let pairs = List.zip tpTys tinst
+                                    if g.langVersion.SupportsFeature LanguageFeature.TypeArgumentDependencyOrdering then
+                                        reorderTyArgsByConstraintDependencies g pairs
+                                    else pairs
+                                tyargPairs |> List.iter (fun (formalTy, actualTy) -> UnifyTypes cenv env m formalTy actualTy)
 
                                 TcValEarlyGeneralizationConsistencyCheck cenv env (v, valRecInfo, tinst, vTy, vTauTy, m)
 

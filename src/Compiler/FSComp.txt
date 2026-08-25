@@ -1835,6 +1835,7 @@ featureImprovedImpliedArgumentNamesPartTwo,"Improved implied argument names with
 3906,tcRecordExplicitFieldShadowsSpreadField,"Explicit field '%s' shadows a field with the same name from an earlier spread."
 3907,tcRecordExprSpreadFieldShadowsSpreadField,"Spread field '%s' shadows a field with the same name from an earlier spread."
 featureRecordSpreads,"record type and expression spreads"
+featureTypeArgumentDependencyOrdering,"ordering explicit type arguments by their constraint dependencies"
 3908,xmlDocIncludeError,"XML documentation include error: %s"
 3908,xmlDocIncludeError2,"XML documentation include error: Unable to include XML fragment '%s' of file '%s' -- %s"
 3909,lexColonDirectiveMustBeFirst,"#: directives must start at the beginning of a line"

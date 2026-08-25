@@ -35,6 +35,8 @@
 
 ### Fixed
 
+* Explicit generic type arguments are now unified in constraint-dependency order, so a subtype constraint that references a later type parameter (e.g. `Register<'a, 'b when 'a :> I<'b>>` called as `<Foo, int>`) no longer fails with FS0001 when the argument implements the interface at several instantiations. ([Issue #20103](https://github.com/dotnet/fsharp/issues/20103), [PR #20342](https://github.com/dotnet/fsharp/pull/20342))
+
 ### Changed
 
 * Inline functions now keep SRTP constraints generic instead of eagerly resolving through weak resolution. This changes inferred types for some inline code — see [RFC FS-1043 compatibility section](https://github.com/fsharp/fslang-design/blob/main/RFCs/FS-1043-extension-members-for-operators-and-srtp-constraints.md) for details and workarounds.
