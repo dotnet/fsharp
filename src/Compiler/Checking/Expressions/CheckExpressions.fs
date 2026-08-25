@@ -2401,10 +2401,7 @@ let ComputeInlineFlag (memFlagsOption: SynMemberFlags option) isInline isMutable
         if isMutable || isCtorOrAbstractSlot() || hasNoCompilerInliningAttribute() || isExtern () then
             ValInline.Never, errorR
         elif HasMethodImplNoInliningAttribute g attrs then
-            ValInline.Never,
-                if g.langVersion.SupportsFeature LanguageFeature.WarningWhenInliningMethodImplNoInlineMarkedFunction
-                then warning
-                else ignore
+            ValInline.Never, warning
         elif isInline then
             ValInline.Always, ignore
         else
@@ -6903,7 +6900,6 @@ and TcIndexingThen cenv env overallTy mWholeExpr mDot tpenv setInfo synLeftExprO
 
         let info =
             if isArray then
-                let fixedIndex3d4dEnabled = g.langVersion.SupportsFeature LanguageFeature.FixedIndexSlice3d4d
                 let indexArgs = List.map (DecodeIndexArg cenv) indexArgs
                 match indexArgs, setInfo with
                 | [IndexArgItem _; IndexArgItem _], None                                        -> Some (indexOpPath, "GetArray2D", expandedIndexArgs)
@@ -6926,49 +6922,46 @@ and TcIndexingThen cenv env overallTy mWholeExpr mDot tpenv setInfo synLeftExprO
                 | [IndexArgRange _;IndexArgItem _], Some (expr3, _)                                 -> Some (sliceOpPath, "SetArraySlice2DFixed2", (expandedIndexArgs @ [expr3]))
                 | [IndexArgRange _;IndexArgRange _;IndexArgRange _], Some (expr3, _)                   -> Some (sliceOpPath, "SetArraySlice3D", (expandedIndexArgs @ [expr3]))
                 | [IndexArgRange _;IndexArgRange _;IndexArgRange _;IndexArgRange _], Some (expr3, _)     -> Some (sliceOpPath, "SetArraySlice4D", (expandedIndexArgs @ [expr3]))
-                | _ when fixedIndex3d4dEnabled ->
-                    match indexArgs, setInfo with
-                    | [IndexArgItem _;IndexArgRange _;IndexArgRange _], None                      -> Some (sliceOpPath, "GetArraySlice3DFixedSingle1", expandedIndexArgs)
-                    | [IndexArgRange _;IndexArgItem _;IndexArgRange _], None                      -> Some (sliceOpPath, "GetArraySlice3DFixedSingle2", expandedIndexArgs)
-                    | [IndexArgRange _;IndexArgRange _;IndexArgItem _], None                      -> Some (sliceOpPath, "GetArraySlice3DFixedSingle3", expandedIndexArgs)
-                    | [IndexArgItem _;IndexArgItem _;IndexArgRange _], None                      -> Some (sliceOpPath, "GetArraySlice3DFixedDouble1", expandedIndexArgs)
-                    | [IndexArgItem _;IndexArgRange _;IndexArgItem _], None                      -> Some (sliceOpPath, "GetArraySlice3DFixedDouble2", expandedIndexArgs)
-                    | [IndexArgRange _;IndexArgItem _;IndexArgItem _], None                      -> Some (sliceOpPath, "GetArraySlice3DFixedDouble3", expandedIndexArgs)
-                    | [IndexArgItem _;IndexArgRange _;IndexArgRange _;IndexArgRange _], None        -> Some (sliceOpPath, "GetArraySlice4DFixedSingle1", expandedIndexArgs)
-                    | [IndexArgRange _;IndexArgItem _;IndexArgRange _;IndexArgRange _], None        -> Some (sliceOpPath, "GetArraySlice4DFixedSingle2", expandedIndexArgs)
-                    | [IndexArgRange _;IndexArgRange _;IndexArgItem _;IndexArgRange _], None        -> Some (sliceOpPath, "GetArraySlice4DFixedSingle3", expandedIndexArgs)
-                    | [IndexArgRange _;IndexArgRange _;IndexArgRange _;IndexArgItem _], None        -> Some (sliceOpPath, "GetArraySlice4DFixedSingle4", expandedIndexArgs)
-                    | [IndexArgItem _;IndexArgItem _;IndexArgRange _;IndexArgRange _], None        -> Some (sliceOpPath, "GetArraySlice4DFixedDouble1", expandedIndexArgs)
-                    | [IndexArgItem _;IndexArgRange _;IndexArgItem _;IndexArgRange _], None        -> Some (sliceOpPath, "GetArraySlice4DFixedDouble2", expandedIndexArgs)
-                    | [IndexArgItem _;IndexArgRange _;IndexArgRange _;IndexArgItem _], None        -> Some (sliceOpPath, "GetArraySlice4DFixedDouble3", expandedIndexArgs)
-                    | [IndexArgRange _;IndexArgItem _;IndexArgItem _;IndexArgRange _], None        -> Some (sliceOpPath, "GetArraySlice4DFixedDouble4", expandedIndexArgs)
-                    | [IndexArgRange _;IndexArgItem _;IndexArgRange _;IndexArgItem _], None        -> Some (sliceOpPath, "GetArraySlice4DFixedDouble5", expandedIndexArgs)
-                    | [IndexArgRange _;IndexArgRange _;IndexArgItem _;IndexArgItem _], None        -> Some (sliceOpPath, "GetArraySlice4DFixedDouble6", expandedIndexArgs)
-                    | [IndexArgRange _;IndexArgItem _;IndexArgItem _;IndexArgItem _], None        -> Some (sliceOpPath, "GetArraySlice4DFixedTriple1", expandedIndexArgs)
-                    | [IndexArgItem _;IndexArgRange _;IndexArgItem _;IndexArgItem _], None        -> Some (sliceOpPath, "GetArraySlice4DFixedTriple2", expandedIndexArgs)
-                    | [IndexArgItem _;IndexArgItem _;IndexArgRange _;IndexArgItem _], None        -> Some (sliceOpPath, "GetArraySlice4DFixedTriple3", expandedIndexArgs)
-                    | [IndexArgItem _;IndexArgItem _;IndexArgItem _;IndexArgRange _], None        -> Some (sliceOpPath, "GetArraySlice4DFixedTriple4", expandedIndexArgs)
-                    | [IndexArgItem _;IndexArgRange _;IndexArgRange _], Some (expr3, _)               -> Some (sliceOpPath, "SetArraySlice3DFixedSingle1", (expandedIndexArgs @ [expr3]))
-                    | [IndexArgRange _;IndexArgItem _;IndexArgRange _], Some (expr3, _)               -> Some (sliceOpPath, "SetArraySlice3DFixedSingle2", (expandedIndexArgs @ [expr3]))
-                    | [IndexArgRange _;IndexArgRange _;IndexArgItem _], Some (expr3, _)               -> Some (sliceOpPath, "SetArraySlice3DFixedSingle3", (expandedIndexArgs @ [expr3]))
-                    | [IndexArgItem _;IndexArgItem _;IndexArgRange _], Some (expr3, _)               -> Some (sliceOpPath, "SetArraySlice3DFixedDouble1", (expandedIndexArgs @ [expr3]))
-                    | [IndexArgItem _;IndexArgRange _;IndexArgItem _], Some (expr3, _)               -> Some (sliceOpPath, "SetArraySlice3DFixedDouble2", (expandedIndexArgs @ [expr3]))
-                    | [IndexArgRange _;IndexArgItem _;IndexArgItem _], Some (expr3, _)               -> Some (sliceOpPath, "SetArraySlice3DFixedDouble3", (expandedIndexArgs @ [expr3]))
-                    | [IndexArgItem _;IndexArgRange _;IndexArgRange _;IndexArgRange _], Some (expr3, _) -> Some (sliceOpPath, "SetArraySlice4DFixedSingle1", expandedIndexArgs @ [expr3])
-                    | [IndexArgRange _;IndexArgItem _;IndexArgRange _;IndexArgRange _], Some (expr3, _) -> Some (sliceOpPath, "SetArraySlice4DFixedSingle2", expandedIndexArgs @ [expr3])
-                    | [IndexArgRange _;IndexArgRange _;IndexArgItem _;IndexArgRange _], Some (expr3, _) -> Some (sliceOpPath, "SetArraySlice4DFixedSingle3", expandedIndexArgs @ [expr3])
-                    | [IndexArgRange _;IndexArgRange _;IndexArgRange _;IndexArgItem _], Some (expr3, _) -> Some (sliceOpPath, "SetArraySlice4DFixedSingle4", expandedIndexArgs @ [expr3])
-                    | [IndexArgItem _;IndexArgItem _;IndexArgRange _;IndexArgRange _], Some (expr3, _) -> Some (sliceOpPath, "SetArraySlice4DFixedDouble1", expandedIndexArgs @ [expr3])
-                    | [IndexArgItem _;IndexArgRange _;IndexArgItem _;IndexArgRange _], Some (expr3, _) -> Some (sliceOpPath, "SetArraySlice4DFixedDouble2", expandedIndexArgs @ [expr3])
-                    | [IndexArgItem _;IndexArgRange _;IndexArgRange _;IndexArgItem _], Some (expr3, _) -> Some (sliceOpPath, "SetArraySlice4DFixedDouble3", expandedIndexArgs @ [expr3])
-                    | [IndexArgRange _;IndexArgItem _;IndexArgItem _;IndexArgRange _], Some (expr3, _) -> Some (sliceOpPath, "SetArraySlice4DFixedDouble4", expandedIndexArgs @ [expr3])
-                    | [IndexArgRange _;IndexArgItem _;IndexArgRange _;IndexArgItem _], Some (expr3, _) -> Some (sliceOpPath, "SetArraySlice4DFixedDouble5", expandedIndexArgs @ [expr3])
-                    | [IndexArgRange _;IndexArgRange _;IndexArgItem _;IndexArgItem _], Some (expr3, _) -> Some (sliceOpPath, "SetArraySlice4DFixedDouble6", expandedIndexArgs @ [expr3])
-                    | [IndexArgRange _;IndexArgItem _;IndexArgItem _;IndexArgItem _], Some (expr3, _) -> Some (sliceOpPath, "SetArraySlice4DFixedTriple1", expandedIndexArgs @ [expr3])
-                    | [IndexArgItem _;IndexArgRange _;IndexArgItem _;IndexArgItem _], Some (expr3, _) -> Some (sliceOpPath, "SetArraySlice4DFixedTriple2", expandedIndexArgs @ [expr3])
-                    | [IndexArgItem _;IndexArgItem _;IndexArgRange _;IndexArgItem _], Some (expr3, _) -> Some (sliceOpPath, "SetArraySlice4DFixedTriple3", expandedIndexArgs @ [expr3])
-                    | [IndexArgItem _;IndexArgItem _;IndexArgItem _;IndexArgRange _], Some (expr3, _) -> Some (sliceOpPath, "SetArraySlice4DFixedTriple4", expandedIndexArgs @ [expr3])
-                    | _ -> None
+                | [IndexArgItem _;IndexArgRange _;IndexArgRange _], None                      -> Some (sliceOpPath, "GetArraySlice3DFixedSingle1", expandedIndexArgs)
+                | [IndexArgRange _;IndexArgItem _;IndexArgRange _], None                      -> Some (sliceOpPath, "GetArraySlice3DFixedSingle2", expandedIndexArgs)
+                | [IndexArgRange _;IndexArgRange _;IndexArgItem _], None                      -> Some (sliceOpPath, "GetArraySlice3DFixedSingle3", expandedIndexArgs)
+                | [IndexArgItem _;IndexArgItem _;IndexArgRange _], None                      -> Some (sliceOpPath, "GetArraySlice3DFixedDouble1", expandedIndexArgs)
+                | [IndexArgItem _;IndexArgRange _;IndexArgItem _], None                      -> Some (sliceOpPath, "GetArraySlice3DFixedDouble2", expandedIndexArgs)
+                | [IndexArgRange _;IndexArgItem _;IndexArgItem _], None                      -> Some (sliceOpPath, "GetArraySlice3DFixedDouble3", expandedIndexArgs)
+                | [IndexArgItem _;IndexArgRange _;IndexArgRange _;IndexArgRange _], None        -> Some (sliceOpPath, "GetArraySlice4DFixedSingle1", expandedIndexArgs)
+                | [IndexArgRange _;IndexArgItem _;IndexArgRange _;IndexArgRange _], None        -> Some (sliceOpPath, "GetArraySlice4DFixedSingle2", expandedIndexArgs)
+                | [IndexArgRange _;IndexArgRange _;IndexArgItem _;IndexArgRange _], None        -> Some (sliceOpPath, "GetArraySlice4DFixedSingle3", expandedIndexArgs)
+                | [IndexArgRange _;IndexArgRange _;IndexArgRange _;IndexArgItem _], None        -> Some (sliceOpPath, "GetArraySlice4DFixedSingle4", expandedIndexArgs)
+                | [IndexArgItem _;IndexArgItem _;IndexArgRange _;IndexArgRange _], None        -> Some (sliceOpPath, "GetArraySlice4DFixedDouble1", expandedIndexArgs)
+                | [IndexArgItem _;IndexArgRange _;IndexArgItem _;IndexArgRange _], None        -> Some (sliceOpPath, "GetArraySlice4DFixedDouble2", expandedIndexArgs)
+                | [IndexArgItem _;IndexArgRange _;IndexArgRange _;IndexArgItem _], None        -> Some (sliceOpPath, "GetArraySlice4DFixedDouble3", expandedIndexArgs)
+                | [IndexArgRange _;IndexArgItem _;IndexArgItem _;IndexArgRange _], None        -> Some (sliceOpPath, "GetArraySlice4DFixedDouble4", expandedIndexArgs)
+                | [IndexArgRange _;IndexArgItem _;IndexArgRange _;IndexArgItem _], None        -> Some (sliceOpPath, "GetArraySlice4DFixedDouble5", expandedIndexArgs)
+                | [IndexArgRange _;IndexArgRange _;IndexArgItem _;IndexArgItem _], None        -> Some (sliceOpPath, "GetArraySlice4DFixedDouble6", expandedIndexArgs)
+                | [IndexArgRange _;IndexArgItem _;IndexArgItem _;IndexArgItem _], None        -> Some (sliceOpPath, "GetArraySlice4DFixedTriple1", expandedIndexArgs)
+                | [IndexArgItem _;IndexArgRange _;IndexArgItem _;IndexArgItem _], None        -> Some (sliceOpPath, "GetArraySlice4DFixedTriple2", expandedIndexArgs)
+                | [IndexArgItem _;IndexArgItem _;IndexArgRange _;IndexArgItem _], None        -> Some (sliceOpPath, "GetArraySlice4DFixedTriple3", expandedIndexArgs)
+                | [IndexArgItem _;IndexArgItem _;IndexArgItem _;IndexArgRange _], None        -> Some (sliceOpPath, "GetArraySlice4DFixedTriple4", expandedIndexArgs)
+                | [IndexArgItem _;IndexArgRange _;IndexArgRange _], Some (expr3, _)               -> Some (sliceOpPath, "SetArraySlice3DFixedSingle1", (expandedIndexArgs @ [expr3]))
+                | [IndexArgRange _;IndexArgItem _;IndexArgRange _], Some (expr3, _)               -> Some (sliceOpPath, "SetArraySlice3DFixedSingle2", (expandedIndexArgs @ [expr3]))
+                | [IndexArgRange _;IndexArgRange _;IndexArgItem _], Some (expr3, _)               -> Some (sliceOpPath, "SetArraySlice3DFixedSingle3", (expandedIndexArgs @ [expr3]))
+                | [IndexArgItem _;IndexArgItem _;IndexArgRange _], Some (expr3, _)               -> Some (sliceOpPath, "SetArraySlice3DFixedDouble1", (expandedIndexArgs @ [expr3]))
+                | [IndexArgItem _;IndexArgRange _;IndexArgItem _], Some (expr3, _)               -> Some (sliceOpPath, "SetArraySlice3DFixedDouble2", (expandedIndexArgs @ [expr3]))
+                | [IndexArgRange _;IndexArgItem _;IndexArgItem _], Some (expr3, _)               -> Some (sliceOpPath, "SetArraySlice3DFixedDouble3", (expandedIndexArgs @ [expr3]))
+                | [IndexArgItem _;IndexArgRange _;IndexArgRange _;IndexArgRange _], Some (expr3, _) -> Some (sliceOpPath, "SetArraySlice4DFixedSingle1", expandedIndexArgs @ [expr3])
+                | [IndexArgRange _;IndexArgItem _;IndexArgRange _;IndexArgRange _], Some (expr3, _) -> Some (sliceOpPath, "SetArraySlice4DFixedSingle2", expandedIndexArgs @ [expr3])
+                | [IndexArgRange _;IndexArgRange _;IndexArgItem _;IndexArgRange _], Some (expr3, _) -> Some (sliceOpPath, "SetArraySlice4DFixedSingle3", expandedIndexArgs @ [expr3])
+                | [IndexArgRange _;IndexArgRange _;IndexArgRange _;IndexArgItem _], Some (expr3, _) -> Some (sliceOpPath, "SetArraySlice4DFixedSingle4", expandedIndexArgs @ [expr3])
+                | [IndexArgItem _;IndexArgItem _;IndexArgRange _;IndexArgRange _], Some (expr3, _) -> Some (sliceOpPath, "SetArraySlice4DFixedDouble1", expandedIndexArgs @ [expr3])
+                | [IndexArgItem _;IndexArgRange _;IndexArgItem _;IndexArgRange _], Some (expr3, _) -> Some (sliceOpPath, "SetArraySlice4DFixedDouble2", expandedIndexArgs @ [expr3])
+                | [IndexArgItem _;IndexArgRange _;IndexArgRange _;IndexArgItem _], Some (expr3, _) -> Some (sliceOpPath, "SetArraySlice4DFixedDouble3", expandedIndexArgs @ [expr3])
+                | [IndexArgRange _;IndexArgItem _;IndexArgItem _;IndexArgRange _], Some (expr3, _) -> Some (sliceOpPath, "SetArraySlice4DFixedDouble4", expandedIndexArgs @ [expr3])
+                | [IndexArgRange _;IndexArgItem _;IndexArgRange _;IndexArgItem _], Some (expr3, _) -> Some (sliceOpPath, "SetArraySlice4DFixedDouble5", expandedIndexArgs @ [expr3])
+                | [IndexArgRange _;IndexArgRange _;IndexArgItem _;IndexArgItem _], Some (expr3, _) -> Some (sliceOpPath, "SetArraySlice4DFixedDouble6", expandedIndexArgs @ [expr3])
+                | [IndexArgRange _;IndexArgItem _;IndexArgItem _;IndexArgItem _], Some (expr3, _) -> Some (sliceOpPath, "SetArraySlice4DFixedTriple1", expandedIndexArgs @ [expr3])
+                | [IndexArgItem _;IndexArgRange _;IndexArgItem _;IndexArgItem _], Some (expr3, _) -> Some (sliceOpPath, "SetArraySlice4DFixedTriple2", expandedIndexArgs @ [expr3])
+                | [IndexArgItem _;IndexArgItem _;IndexArgRange _;IndexArgItem _], Some (expr3, _) -> Some (sliceOpPath, "SetArraySlice4DFixedTriple3", expandedIndexArgs @ [expr3])
+                | [IndexArgItem _;IndexArgItem _;IndexArgItem _;IndexArgRange _], Some (expr3, _) -> Some (sliceOpPath, "SetArraySlice4DFixedTriple4", expandedIndexArgs @ [expr3])
                 | _ -> None
 
             elif isString then

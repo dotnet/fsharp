@@ -297,11 +297,6 @@
         <target state="new">Access a protected base-class field from a closure inside a member</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureAccessorFunctionShorthand">
-        <source>underscore dot shorthand for accessor only function</source>
-        <target state="translated">접근자 전용 함수에 대한 밑줄 점 약어</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureAdditionalImplicitConversions">
         <source>additional type-directed conversions</source>
         <target state="translated">추가 형식-디렉션 변환</target>
@@ -335,11 +330,6 @@
       <trans-unit id="featureBetterAnonymousRecordParsing">
         <source>Support for better anonymous record parsing</source>
         <target state="new">Support for better anonymous record parsing</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="featureBetterExceptionPrinting">
-        <source>automatic generation of 'Message' property for 'exception' declarations</source>
-        <target state="translated">'exception' 선언에 대한 'Message' 속성 자동 생성</target>
         <note />
       </trans-unit>
       <trans-unit id="featureBooleanReturningAndReturnTypeDirectedPartialActivePattern">
@@ -457,11 +447,6 @@
         <target state="new">Allow extension members to participate in SRTP constraint resolution</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureFixedIndexSlice3d4d">
-        <source>fixed-index slice 3d/4d</source>
-        <target state="translated">고정 인덱스 슬라이스 3d/4d</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureFromEndSlicing">
         <source>from-end slicing</source>
         <target state="translated">끝에서부터 조각화</target>
@@ -485,11 +470,6 @@
       <trans-unit id="featureIndexerNotationWithoutDot">
         <source>expr[idx] notation for indexing and slicing</source>
         <target state="translated">인덱싱 및 슬라이싱을 위한 expr[idx] 표기법</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="featureInformationalObjInferenceDiagnostic">
-        <source>Diagnostic 3559 (warn when obj inferred) at informational level, off by default</source>
-        <target state="translated">정보 수준에서 진단 3559(개체 유추 시 경고), 기본적으로 꺼짐</target>
         <note />
       </trans-unit>
       <trans-unit id="featureInterfacesWithAbstractStaticMembers">
@@ -535,11 +515,6 @@
       <trans-unit id="featureNameOf">
         <source>nameof</source>
         <target state="translated">nameof</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="featureNestedCopyAndUpdate">
-        <source>Nested record field copy-and-update</source>
-        <target state="translated">중첩된 레코드 필드 복사 및 업데이트</target>
         <note />
       </trans-unit>
       <trans-unit id="featureNonInlineLiteralsAsPrintfFormat">
@@ -632,11 +607,6 @@
         <target state="translated">참조 셀과 관련된 정보 메시지</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureRelaxWhitespace2">
-        <source>whitespace relaxation v2</source>
-        <target state="translated">공백 relaxation v2</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureRequiredProperties">
         <source>support for required properties</source>
         <target state="translated">필수 속성 지원</target>
@@ -702,11 +672,6 @@
         <target state="translated">공용 구조체 사례 테스트 속성</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureTryWithInSeqExpressions">
-        <source>Support for try-with in sequence expressions</source>
-        <target state="translated">시퀀스 식에서 try-with 지원</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureUnmanagedConstraintCsharpInterop">
         <source>Interop between C#'s and F#'s unmanaged generic constraint (emit additional modreq)</source>
         <target state="translated">C#과 F#의 관리되지 않는 제네릭 제약 조건 간의 Interop(추가 modreq 내보내기)</target>
@@ -732,19 +697,9 @@
         <target state="translated">레코드 복사 및 업데이트 식이 레코드의 모든 필드를 변경할 때 경고를 발생합니다.</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureWarningWhenInliningMethodImplNoInlineMarkedFunction">
-        <source>Raises warnings when 'let inline ... =' is used together with [&lt;MethodImpl(MethodImplOptions.NoInlining)&gt;] attribute. Function is not getting inlined.</source>
-        <target state="translated">'let inline ... ='을(를) [&lt;MethodImpl(MethodImplOptions.NoInlining)&gt;] 특성과 함께 사용하는 경우 경고를 발생합니다. 함수가 인라인되지 않습니다.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureWarningWhenMultipleRecdTypeChoice">
         <source>Raises warnings when multiple record type matches were found during name resolution because of overlapping field names.</source>
         <target state="translated">필드 이름이 겹치므로 이름 확인 중에 레코드 유형 일치가 여러 개 발견되면 경고가 발생합니다.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="featureWhileBang">
-        <source>'while!' expression</source>
-        <target state="translated">'while!' 식</target>
         <note />
       </trans-unit>
       <trans-unit id="featureWitnessPassing">
@@ -5145,11 +5100,6 @@
       <trans-unit id="tcUseForInSequenceExpression">
         <source>The use of 'let! x = coll' in sequence expressions is not permitted. Use 'for x in coll' instead.</source>
         <target state="translated">'let! x = coll'은 시퀀스 식에 사용할 수 없습니다. 대신 'for x in coll'을 사용하세요.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="tcTryIllegalInSequenceExpression">
-        <source>'try'/'with' cannot be used within sequence expressions</source>
-        <target state="translated">'try'/'with'는 시퀀스 식 내에 사용할 수 없습니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcUseYieldBangForMultipleResults">
