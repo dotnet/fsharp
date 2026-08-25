@@ -774,7 +774,6 @@ type LexFilterImpl (
     // Undentation rules
     //--------------------------------------------------------------------------
 
-    let relaxWhitespace2 = lexbuf.SupportsFeature LanguageFeature.RelaxWhitespace2
 
     let tryPushCtxt strict ignoreIndent tokenTup (newCtxt: Context) =
         let rec undentationLimit strict stack =
@@ -809,7 +808,7 @@ type LexFilterImpl (
             // Otherwise the rule of 'match ... with' limited by 'match' (given RelaxWhitespace2)
             // will consider the CtxtMatch as the limiting context instead of allowing undentation until the parenthesis
             // Test here: Tests/FSharp.Compiler.ComponentTests/Conformance/LexicalFiltering/Basic/OffsideExceptions.fs, RelaxWhitespace2_AllowedBefore11
-            | _, (CtxtMatchClauses _ as ctxt1) :: CtxtMatch _ :: CtxtSeqBlock _ :: (CtxtParen ((BEGIN | LPAREN), _) as ctxt2) :: _ when relaxWhitespace2
+            | _, (CtxtMatchClauses _ as ctxt1) :: CtxtMatch _ :: CtxtSeqBlock _ :: (CtxtParen ((BEGIN | LPAREN), _) as ctxt2) :: _
                       -> if ctxt1.StartCol <= ctxt2.StartCol
                          then PositionWithColumn(ctxt1.StartPos, ctxt1.StartCol)
                          else PositionWithColumn(ctxt2.StartPos, ctxt2.StartCol)
@@ -831,8 +830,8 @@ type LexFilterImpl (
             | _, CtxtMatchClauses _ :: (CtxtTry _ as limitCtxt) :: _rest
                       -> PositionWithColumn(limitCtxt.StartPos, limitCtxt.StartCol)
 
-            // 'match ... with' limited by 'match' (given RelaxWhitespace2)
-            | _, CtxtMatchClauses _ :: (CtxtMatch _ as limitCtxt) :: _rest when relaxWhitespace2
+            // 'match ... with' limited by 'match'
+            | _, CtxtMatchClauses _ :: (CtxtMatch _ as limitCtxt) :: _rest
                       -> PositionWithColumn(limitCtxt.StartPos, limitCtxt.StartCol)
 
             // 'fun ->' places no limit until we hit a CtxtLetDecl etc... (Recursive)
@@ -854,7 +853,7 @@ type LexFilterImpl (
             // 'let x = { y =' limited by 'let'  (given RelaxWhitespace2) etc.
             // 'let x = {| y =' limited by 'let' (given RelaxWhitespace2) etc.
             // Test here: Tests/FSharp.Compiler.ComponentTests/Conformance/LexicalFiltering/Basic/OffsideExceptions.fs, RelaxWhitespace2
-            | _, CtxtSeqBlock _ :: CtxtParen (TokenLExprParen, _) :: rest when relaxWhitespace2
+            | _, CtxtSeqBlock _ :: CtxtParen (TokenLExprParen, _) :: rest
                       -> undentationLimit false rest
 
             // 'f ...{' places no limit until we hit a CtxtLetDecl etc...
@@ -1035,10 +1034,9 @@ type LexFilterImpl (
             if debug then dprintf "<-- popping Context(%A), stack = %A\n" h rest
             offsideStack <- rest
             // For CtxtMatchClauses, also pop the CtxtMatch, if present (we expect it always will be).
-            if relaxWhitespace2 then
-                match h, rest with
-                | CtxtMatchClauses _ , CtxtMatch _ :: _ -> popCtxt()
-                | _ -> ()
+            match h, rest with
+            | CtxtMatchClauses _, CtxtMatch _ :: _ -> popCtxt()
+            | _ -> ()
 
     let replaceCtxt p ctxt = popCtxt(); pushCtxt p ctxt
 
@@ -1502,7 +1500,7 @@ type LexFilterImpl (
             // ) = ...
             // ODUMMY is a context closer token, after its context is closed
             match token with
-            | ODUMMY TokenRExprParen -> relaxWhitespace2
+            | ODUMMY TokenRExprParen -> true
             | _ -> false
 
         // If you see a 'member' keyword while you are inside the body of another member, then it usually means there is a syntax error inside this method
@@ -2035,7 +2033,7 @@ type LexFilterImpl (
             insertToken (ODECLEND(getLastTokenEndRange (), false))
 
         | _, CtxtMatch offsidePos :: _
-                    when isSemiSemi || (if relaxWhitespace2OffsideRule || relaxWhitespace2 && isMatchBlockContinuator token then tokenStartCol + 1 else tokenStartCol) <= offsidePos.Column ->
+                    when isSemiSemi || (if relaxWhitespace2OffsideRule || isMatchBlockContinuator token then tokenStartCol + 1 else tokenStartCol) <= offsidePos.Column ->
             if debug then dprintf "offside from CtxtMatch\n"
             popCtxt()
             reprocess()
