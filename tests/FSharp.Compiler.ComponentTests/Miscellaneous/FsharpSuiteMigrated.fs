@@ -161,7 +161,7 @@ module TestFrameworkAdapter =
         |> ignore<CompilationResult>
     
 
-    let singleTestBuildAndRunAux folder bonusArgs mode = singleTestBuildAndRunAuxVersion folder bonusArgs mode LangVersion.Latest
+    let singleTestBuildAndRunAux folder bonusArgs mode : unit = singleTestBuildAndRunAuxVersion folder bonusArgs mode LangVersion.Latest ScriptSessionIsolation.Shared
     let singleTestBuildAndRunVersion folder mode version : unit = singleTestBuildAndRunAuxVersion folder [] mode version ScriptSessionIsolation.Shared
     let singleTestBuildAndRunVersionIsolated folder mode version : unit = singleTestBuildAndRunAuxVersion folder [] mode version ScriptSessionIsolation.Isolated
     let singleTestBuildAndRun folder mode : unit = singleTestBuildAndRunVersion folder mode LangVersion.Latest
