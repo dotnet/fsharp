@@ -211,6 +211,12 @@
       "cats": [
         "Affects-Build-Infra"
       ]
+    },
+    "20356": {
+      "sha": "bceab8a91b80",
+      "cats": [
+        "Affects-Compiler-Output"
+      ]
     }
   }
 }
