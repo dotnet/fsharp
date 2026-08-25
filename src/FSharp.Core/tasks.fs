@@ -824,19 +824,20 @@ module Task =
         // from started children touching semaphore or innerCts
         match Seq.toArray computations with
         | [||] -> result [||]
-        | req when maxDegreeOfParallelism = 1 || req.Length = 1 -> sequential ct req
+        | req when maxDegreeOfParallelism = 1 -> sequential ct req
+        | [| _ |] as req -> sequential ct req
         | req ->
             task {
-                let mutable pos = -1
+                let mutable pos = ref -1
                 let res = Array.zeroCreate<'T> req.Length
 
                 use innerCts = CancellationTokenSource.CreateLinkedTokenSource ct
 
-                let worker () : Task<unit> =
+                let worker () =
                     backgroundTask {
-                        let mutable index = Interlocked.Increment &pos
+                        let mutable index = Interlocked.Increment pos
 
-                        while index < req.Length && not innerCts.IsCancellationRequested do
+                        while index < req.Length do
                             let mutable completed = false
 
                             try
@@ -847,11 +848,14 @@ module Task =
                                 if not completed then
                                     innerCts.Cancel()
 
-                            index <- Interlocked.Increment &pos
+                            index <-
+                                if innerCts.IsCancellationRequested then
+                                    req.Length // break out (&& in while is not compiling)
+                                else
+                                    Interlocked.Increment pos
                     }
 
-                let workerCount = min maxDegreeOfParallelism req.Length
-                do! Task.WhenAll [| for _ in 1..workerCount -> worker () :> Task |]
+                do! Task.WhenAll [| for _ in 1 .. min req.Length maxDegreeOfParallelism -> worker () :> Task |]
                 return res
             }
 
