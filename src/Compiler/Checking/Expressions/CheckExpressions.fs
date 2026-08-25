@@ -2630,6 +2630,9 @@ module BindingNormalization =
             let paramNames = Some valSynData.SynValInfo.ArgNames
             let checkXmlDocs = cenv.diagnosticOptions.CheckXmlDocs
             let xmlDoc = xmlDoc.ToXmlDoc(checkXmlDocs, paramNames)
+            // Rotate [<return:...>] from the binding to the return value. This is done here rather than in
+            // the parser so that SynBinding.attributes keeps reporting the attributes where they were written.
+            let attrs, valSynData = SynInfo.RotateReturnAttributes attrs valSynData
             NormalizedBinding(vis, kind, isInline, isMutable, attrs, xmlDoc, typars, valSynData, pat, rhsExpr, mBinding, debugPoint)
 
 //-------------------------------------------------------------------------
@@ -11545,7 +11548,7 @@ and TcNormalizedBinding declKind (cenv: cenv) env tpenv overallTy safeThisValOpt
             attrs
 
         // [<return: X>] attributes are moved out of the binding's prefix and into
-        // SynValData.SynValInfo.retInfo by SynInfo.RotateReturnAttributes in mkSynBinding,
+        // SynValData.SynValInfo.retInfo by SynInfo.RotateReturnAttributes in BindingNormalization,
         // alongside any attributes on the return type annotation populated by InferSynReturnData.
         // Use that as the single source of truth.
         let valAttribs = TcAttrs attrTgt false attrs
