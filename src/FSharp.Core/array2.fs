@@ -6,12 +6,21 @@ open System
 open Microsoft.FSharp.Core
 open Microsoft.FSharp.Core.LanguagePrimitives.IntrinsicOperators
 open Microsoft.FSharp.Core.Operators.Checked
+#if NET9_0_OR_GREATER
+open System.Diagnostics.CodeAnalysis
+#endif
 
 #nowarn "3218" // mismatch of parameter name where 'count1' --> 'length1' would shadow function in module of same name
 
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 [<RequireQualifiedAccess>]
 module Array2D =
+
+#if NET9_0_OR_GREATER
+    [<Literal>]
+    let private nonZeroBasedRequiresDynamicCode =
+        "Arrays with a non-zero lower bound cannot be created in an AOT-compiled application. Use Array2D.zeroCreate, Array2D.create or Array2D.init instead."
+#endif
 
     let inline checkNonNull argName arg = 
         if isNull arg then
@@ -48,36 +57,54 @@ module Array2D =
         if length2 < 0 then invalidArgInputMustBeNonNegative "length2" length2 
         (# "newarr.multi 2 !0" type ('T) length1 length2 : 'T[,] #)
 
-    [<CompiledName("ZeroCreateBased")>]
-    let zeroCreateBased (base1:int) (base2:int) (length1:int) (length2:int) = 
+    // Not annotated: map, mapi and copy reach this through initBasedCore to preserve the bounds
+    // of their input, and must stay AOT-clean for the zero-based case. The public based entry
+    // points carry the annotation instead.
+    let private zeroCreateBasedCore (base1:int) (base2:int) (length1:int) (length2:int) : 'T[,] = 
         if base1 = 0 && base2 = 0 then 
             zeroCreate length1 length2               
         else
 #if NET9_0_OR_GREATER
-            // Passing the array type rather than the element type lets trimming and AOT compilation
-            // see the concrete 'T[,] instantiation, so this overload carries no RequiresDynamicCode
-            // annotation.
+            // Passing the array type rather than the element type keeps this overload free of
+            // RequiresDynamicCode. ILC cannot see the zero-base branch above, so the choice of
+            // overload, not that branch, is what keeps map/mapi/copy AOT-clean.
             (Array.CreateInstanceFromArrayType(typeof<'T[,]>, [|length1;length2|], [|base1;base2|]) :?> 'T[,])
 #else
             (Array.CreateInstance(typeof<'T>, [|length1;length2|], [|base1;base2|]) :?> 'T[,])
 #endif
 
-    [<CompiledName("CreateBased")>]
-    let createBased base1 base2 length1 length2 (initial:'T) = 
-        let array = (zeroCreateBased base1 base2 length1 length2 : 'T[,])
-        for i = base1 to base1 + length1 - 1 do 
-          for j = base2 to base2 + length2 - 1 do 
-            array.[i, j] <- initial
-        array
-
-    [<CompiledName("InitializeBased")>]
-    let initBased base1 base2 length1 length2 initializer = 
-        let array = (zeroCreateBased base1 base2 length1 length2 : 'T[,])
+    let private initBasedCore base1 base2 length1 length2 initializer : 'T[,] = 
+        let array = zeroCreateBasedCore base1 base2 length1 length2
         let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt(initializer)
         for i = base1 to base1 + length1 - 1 do 
           for j = base2 to base2 + length2 - 1 do 
             array.[i, j] <- f.Invoke(i, j)
         array
+
+#if NET9_0_OR_GREATER
+    [<RequiresDynamicCode(nonZeroBasedRequiresDynamicCode)>]
+#endif
+    [<CompiledName("ZeroCreateBased")>]
+    let zeroCreateBased (base1:int) (base2:int) (length1:int) (length2:int) : 'T[,] = 
+        zeroCreateBasedCore base1 base2 length1 length2
+
+#if NET9_0_OR_GREATER
+    [<RequiresDynamicCode(nonZeroBasedRequiresDynamicCode)>]
+#endif
+    [<CompiledName("CreateBased")>]
+    let createBased base1 base2 length1 length2 (initial:'T) = 
+        let array = (zeroCreateBasedCore base1 base2 length1 length2 : 'T[,])
+        for i = base1 to base1 + length1 - 1 do 
+          for j = base2 to base2 + length2 - 1 do 
+            array.[i, j] <- initial
+        array
+
+#if NET9_0_OR_GREATER
+    [<RequiresDynamicCode(nonZeroBasedRequiresDynamicCode)>]
+#endif
+    [<CompiledName("InitializeBased")>]
+    let initBased base1 base2 length1 length2 initializer : 'T[,] = 
+        initBasedCore base1 base2 length1 length2 initializer
 
     [<CompiledName("Create")>]
     let create length1 length2 (value:'T) =
@@ -122,18 +149,18 @@ module Array2D =
     [<CompiledName("Map")>]
     let map mapping array = 
         checkNonNull "array" array
-        initBased (base1 array) (base2 array) (length1 array) (length2 array) (fun i j -> mapping array.[i,j])
+        initBasedCore (base1 array) (base2 array) (length1 array) (length2 array) (fun i j -> mapping array.[i,j])
 
     [<CompiledName("MapIndexed")>]
     let mapi mapping array = 
         checkNonNull "array" array
         let f = OptimizedClosures.FSharpFunc<_, _, _, _>.Adapt(mapping)
-        initBased (base1 array) (base2 array) (length1 array) (length2 array) (fun i j -> f.Invoke(i, j, array.[i,j]))
+        initBasedCore (base1 array) (base2 array) (length1 array) (length2 array) (fun i j -> f.Invoke(i, j, array.[i,j]))
 
     [<CompiledName("Copy")>]
     let copy array = 
         checkNonNull "array" array
-        initBased (base1 array) (base2 array) (length1 array) (length2 array) (fun i j -> array.[i,j])
+        initBasedCore (base1 array) (base2 array) (length1 array) (length2 array) (fun i j -> array.[i,j])
         
     [<CompiledName("Rebase")>]
     let rebase array = 

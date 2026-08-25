@@ -790,3 +790,23 @@ type Array2Module() =
                                  [| 5.; 100.; 7.; 8. |];
                                  [| 9.; 100.; 11.; 12. |] |])
 
+
+#if NET9_0_OR_GREATER
+    // The based entry points carry RequiresDynamicCode so that consumers get IL3050 at their own
+    // call site; the zero-based ones must not, or every AOT publish warns again. Both directions
+    // are pinned here because only a Windows-only NativeAOT leg would otherwise catch a change.
+    [<Theory>]
+    [<InlineData("ZeroCreateBased", true)>]
+    [<InlineData("CreateBased", true)>]
+    [<InlineData("InitializeBased", true)>]
+    [<InlineData("ZeroCreate", false)>]
+    [<InlineData("Create", false)>]
+    [<InlineData("Initialize", false)>]
+    [<InlineData("Map", false)>]
+    [<InlineData("MapIndexed", false)>]
+    [<InlineData("Copy", false)>]
+    member this.RequiresDynamicCodeIsOnBasedApisOnly(name: string, expected: bool) =
+        let m = typeof<int option>.Assembly.GetType("Microsoft.FSharp.Collections.Array2DModule").GetMethod(name)
+        Assert.NotNull m
+        Assert.Equal(expected, m.IsDefined(typeof<System.Diagnostics.CodeAnalysis.RequiresDynamicCodeAttribute>, false))
+#endif

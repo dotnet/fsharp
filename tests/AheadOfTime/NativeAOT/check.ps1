@@ -6,9 +6,9 @@
 # NativeAOT analysis emits IL2026/IL2070/IL3050, TreatWarningsAsErrors turns them into errors,
 # and this publish fails.
 #
-# Array2D is guarded the same way: the FSharp.Core asset this resolves must not reach
-# Array.CreateInstance, which is [RequiresDynamicCode]. The app exercises the zero-based
-# operations and one based allocation, which is expected to throw PlatformNotSupportedException.
+# Array2D is guarded the same way: the zero-based operations must not reach Array.CreateInstance,
+# which is [RequiresDynamicCode]. The based allocation is annotated, so the app suppresses IL3050
+# at that one call site and asserts the PlatformNotSupportedException the annotation warns about.
 
 $ErrorActionPreference = "Stop"
 

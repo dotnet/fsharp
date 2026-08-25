@@ -17,6 +17,17 @@ let private sum (grid: int[,]) =
     grid |> Array2D.iteri (fun _ _ v -> total.Value <- total.Value + v)
     total.Value
 
+// Array2D.createBased is annotated RequiresDynamicCode, so this is the one call in the program
+// that has to suppress IL3050. Everything above it must publish clean.
+[<System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessage("Aot", "IL3050",
+    Justification = "Deliberately calls the unsupported API to assert it throws PlatformNotSupportedException under AOT.")>]
+let private createBasedThrows rows cols =
+    try
+        Array2D.createBased 1 2 rows cols 7 |> ignore
+        0
+    with :? PlatformNotSupportedException ->
+        1
+
 let run (argv: string[]) =
     // An empty argv means 3x4, but neither the optimizer nor ILC can prove that, so the
     // allocations cannot be folded to constants. The expected values below are the ones for an
@@ -50,11 +61,4 @@ let run (argv: string[]) =
     check "copy" (sum copied) 60
     check "copy.distinct" (if Object.ReferenceEquals(copied, table) then 1 else 0) 0
 
-    let based =
-        try
-            Array2D.createBased 1 2 rows cols 7 |> ignore
-            0
-        with :? PlatformNotSupportedException ->
-            1
-
-    check "createBased.throws" based 1
+    check "createBased.throws" (createBasedThrows rows cols) 1
