@@ -3,6 +3,8 @@
 module internal FSharp.Compiler.Infos
 
 open System
+open System.Collections.Generic
+open System.Runtime.CompilerServices
 open Internal.Utilities.Library
 open Internal.Utilities.Library.Extras
 open FSharp.Compiler
@@ -656,6 +658,56 @@ type ILMethInfo =
     member x.GetFSharpReturnType (amap, m, minst) =      
         x.GetCompiledReturnType(amap, m, minst)
         |> GetFSharpViewOfReturnType amap.g
+
+
+// Module-level, not a local closure, so cache hits in GetParamAttribs allocate nothing.
+let private ComputeILMethodParamAttribs g (ilMethInfo: ILMethInfo) amap m =
+    [ [ for p in ilMethInfo.ParamMetadata do
+         let attrs = p.CustomAttrs
+         let isParamArrayArg = p.CustomAttrsStored.HasWellKnownAttribute(g, WellKnownILAttributes.ParamArrayAttribute)
+         let reflArgInfo =
+             match attrs with
+             | ILAttribDecoded WellKnownILAttributes.ReflectedDefinitionAttribute ([ILAttribElem.Bool b ], _) ->  ReflectedArgInfo.Quote b
+             | ILAttribDecoded WellKnownILAttributes.ReflectedDefinitionAttribute _ -> ReflectedArgInfo.Quote false
+             | _ -> ReflectedArgInfo.None
+         let isOutArg = (p.IsOut && not p.IsIn)
+         let isInArg = (p.IsIn && not p.IsOut)
+         // Note: we get default argument values from VB and other .NET language metadata
+         let optArgInfo =  OptionalArgInfo.FromILParameter g amap m ilMethInfo.MetadataScope ilMethInfo.DeclaringTypeInst p
+
+         let isCallerLineNumberArg = p.CustomAttrsStored.HasWellKnownAttribute(g, WellKnownILAttributes.CallerLineNumberAttribute)
+         let isCallerFilePathArg = p.CustomAttrsStored.HasWellKnownAttribute(g, WellKnownILAttributes.CallerFilePathAttribute)
+         let isCallerMemberNameArg = p.CustomAttrsStored.HasWellKnownAttribute(g, WellKnownILAttributes.CallerMemberNameAttribute)
+
+         let callerInfo =
+            match isCallerLineNumberArg, isCallerFilePathArg, isCallerMemberNameArg with
+            | false, false, false -> NoCallerInfo
+            | true, false, false -> CallerLineNumber
+            | false, true, false -> CallerFilePath
+            | false, false, true -> CallerMemberName
+            | _, _, _ ->
+                // if multiple caller info attributes are specified, pick the "wrong" one here
+                // so that we get an error later
+                if p.Type.TypeRef.FullName = "System.Int32" then CallerFilePath
+                else CallerLineNumber
+
+         ParamAttribs(isParamArrayArg, isInArg, isOutArg, optArgInfo, callerInfo, reflArgInfo) ] ]
+
+// Extension view drops the object arg from ParamMetadata, so IsILExtensionMethod is part of the key.
+let private getILMethodParamAttribsTable =
+    WeakMap.getOrCreate (fun (amap: ImportMap) ->
+        MemoizationTable(
+            "ilMethodParamAttribs",
+            (fun (struct (ilMethInfo: ILMethInfo, m)) -> ComputeILMethodParamAttribs amap.g ilMethInfo amap m),
+            keyComparer =
+                { new IEqualityComparer<struct (ILMethInfo * range)> with
+                    member _.GetHashCode(struct (mi, _)) =
+                        RuntimeHelpers.GetHashCode mi.RawMetadata ^^^ (if mi.IsILExtensionMethod then 1 else 0)
+
+                    member _.Equals(struct (mi1, _), struct (mi2, _)) =
+                        mi1.IsILExtensionMethod = mi2.IsILExtensionMethod
+                        && mi1.RawMetadata === mi2.RawMetadata },
+            canMemoize = fun (struct (mi, _)) -> mi.DeclaringTypeInst.IsEmpty))
 
 
 /// Describes an F# use of a method
@@ -1335,39 +1387,10 @@ type MethInfo =
 #endif
 
     /// Get the parameter attributes of a method info, which get combined with the parameter names and types
-    member x.GetParamAttribs(amap, m) =
+    member x.GetParamAttribs(amap: ImportMap, m) =
         match x with
-        | ILMeth(g, ilMethInfo, _) ->
-            [ [ for p in ilMethInfo.ParamMetadata do
-                 let attrs = p.CustomAttrs
-                 let isParamArrayArg = p.CustomAttrsStored.HasWellKnownAttribute(g, WellKnownILAttributes.ParamArrayAttribute)
-                 let reflArgInfo =
-                     match attrs with
-                     | ILAttribDecoded WellKnownILAttributes.ReflectedDefinitionAttribute ([ILAttribElem.Bool b ], _) ->  ReflectedArgInfo.Quote b
-                     | ILAttribDecoded WellKnownILAttributes.ReflectedDefinitionAttribute _ -> ReflectedArgInfo.Quote false
-                     | _ -> ReflectedArgInfo.None
-                 let isOutArg = (p.IsOut && not p.IsIn)
-                 let isInArg = (p.IsIn && not p.IsOut)
-                 // Note: we get default argument values from VB and other .NET language metadata
-                 let optArgInfo =  OptionalArgInfo.FromILParameter g amap m ilMethInfo.MetadataScope ilMethInfo.DeclaringTypeInst p
-
-                 let isCallerLineNumberArg = p.CustomAttrsStored.HasWellKnownAttribute(g, WellKnownILAttributes.CallerLineNumberAttribute)
-                 let isCallerFilePathArg = p.CustomAttrsStored.HasWellKnownAttribute(g, WellKnownILAttributes.CallerFilePathAttribute)
-                 let isCallerMemberNameArg = p.CustomAttrsStored.HasWellKnownAttribute(g, WellKnownILAttributes.CallerMemberNameAttribute)
-
-                 let callerInfo =
-                    match isCallerLineNumberArg, isCallerFilePathArg, isCallerMemberNameArg with
-                    | false, false, false -> NoCallerInfo
-                    | true, false, false -> CallerLineNumber
-                    | false, true, false -> CallerFilePath
-                    | false, false, true -> CallerMemberName
-                    | _, _, _ ->
-                        // if multiple caller info attributes are specified, pick the "wrong" one here
-                        // so that we get an error later
-                        if p.Type.TypeRef.FullName = "System.Int32" then CallerFilePath
-                        else CallerLineNumber
-
-                 ParamAttribs(isParamArrayArg, isInArg, isOutArg, optArgInfo, callerInfo, reflArgInfo) ] ]
+        | ILMeth(_, ilMethInfo, _) ->
+            (getILMethodParamAttribsTable amap).Apply(struct (ilMethInfo, m))
 
         | FSMeth(g, _, vref, _) ->
             GetArgInfosOfMember x.IsCSharpStyleExtensionMember g vref

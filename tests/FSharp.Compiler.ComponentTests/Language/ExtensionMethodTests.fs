@@ -844,3 +844,16 @@ module CompiledExtensions =
             """
         |> compile
         |> shouldSucceed
+
+    [<Fact>]
+    let ``IL extension method used with both instance and static call syntax`` () =
+        Fsx
+            """
+open System.Linq
+let xs : System.Collections.Generic.IEnumerable<int> = Seq.ofList [ 1; 2; 3 ]
+let a = xs.Select(fun x -> x + 1) |> Seq.length
+let b = System.Linq.Enumerable.Select(xs, (fun x -> x + 1)) |> Seq.length
+if a <> b then failwith "unexpected"
+            """
+        |> compile
+        |> shouldSucceed
