@@ -1513,7 +1513,7 @@ notAFunctionButMaybeDeclaration,"This value is not a function and cannot be appl
 3251,chkNoFirstClassNameOf,"Using the 'nameof' operator as a first-class function value is not permitted."
 3252,tcIllegalByrefsInOpenTypeDeclaration,"Byref types are not allowed in an open type declaration."
 3260,tcTypeDoesNotHaveAnyNull,"The type '%s' does not support a nullness qualification."
-3260,tcAnonUnionNullNotAllowed,"'null' cannot be applied to a standalone anonymous union %s. Add 'null' as the last case of the outer union instead, e.g. '(int|string|null)'."
+3260,tcAnonUnionNullNotAllowed,"'null' cannot be applied to a parenthesized anonymous union. Write %s."
 #3261 reserved for ConstraintSolverNullnessWarningEquivWithTypes
 #3261 reserved for ConstraintSolverNullnessWarningWithTypes
 #3261 reserved for ConstraintSolverNullnessWarningWithType

@@ -253,7 +253,7 @@ module AnonymousUnionTypes =
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
-            (Error 3260, Line 4, Col 9, Line 4, Col 26, "'null' cannot be applied to a standalone anonymous union (int | string). Add 'null' as the last case of the outer union instead, e.g. '(int|string|null)'.")
+            (Error 3260, Line 4, Col 9, Line 4, Col 26, "'null' cannot be applied to a parenthesized anonymous union. Write (int | string | null).")
         ]
 
     [<Theory; FileInlineData("E_AnonWithNullPosition2.fs")>]
@@ -290,19 +290,8 @@ module AnonymousUnionTypes =
             (Error 618, Line 4, Col 9, Line 4, Col 13, "Invalid literal in type")
         ]
 
-    [<Theory; FileInlineData("E_AnonWithNullPosition5.fs")>]
-    let ``E_WithNullPosition5_fs`` compilation =
-        compilation
-        |> getCompilation
-        |> withLangVersionPreview
-        |> verifyCompile
-        |> shouldFail
-        |> withDiagnostics [
-            (Error 3260, Line 5, Col 9, Line 5, Col 15, "'null' cannot be applied to a standalone anonymous union X. Add 'null' as the last case of the outer union instead, e.g. '(int|string|null)'.")
-        ]
-
-    [<Theory; FileInlineData("E_AnonWithNullRefTypeAncestor.fs")>]
-    let ``E_WithNullRefTypeAncestor_fs`` compilation =
+    [<Theory; FileInlineData("E_AnonWithNullRefTypeAncestor1.fs")>]
+    let ``E_WithNullRefTypeAncestor1_fs`` compilation =
         compilation
         |> getCompilation
         |> withLangVersionPreview
@@ -310,6 +299,17 @@ module AnonymousUnionTypes =
         |> shouldFail
         |> withDiagnostics [
             (Error 4503, Line 4, Col 8, Line 4, Col 23, "The type 'System.ValueType' does not support 'null' because it is not a reference type. A null case may only be added to an anonymous union whose common type is a reference type.")
+        ]
+
+    [<Theory; FileInlineData("E_AnonWithNullRefTypeAncestor2.fs")>]
+    let ``E_WithNullRefTypeAncestor2_fs`` compilation =
+        compilation
+        |> getCompilation
+        |> withLangVersionPreview
+        |> verifyCompile
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 4503, Line 5, Col 9, Line 5, Col 15, "The type 'System.ValueType' does not support 'null' because it is not a reference type. A null case may only be added to an anonymous union whose common type is a reference type.")
         ]
 
     [<Theory; FileInlineData("E_AnonWithNullNested1.fs")>]

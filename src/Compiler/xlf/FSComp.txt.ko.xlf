@@ -1333,8 +1333,8 @@
         <note />
       </trans-unit>
       <trans-unit id="tcAnonUnionNullNotAllowed">
-        <source>'null' cannot be applied to a standalone anonymous union {0}. Add 'null' as the last case of the outer union instead, e.g. '(int|string|null)'.</source>
-        <target state="new">'null' cannot be applied to a standalone anonymous union {0}. Add 'null' as the last case of the outer union instead, e.g. '(int|string|null)'.</target>
+        <source>'null' cannot be applied to a parenthesized anonymous union. Write {0}.</source>
+        <target state="new">'null' cannot be applied to a parenthesized anonymous union. Write {0}.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcAnonUnionNullRequiresReferenceAncestor">
