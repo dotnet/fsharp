@@ -254,31 +254,30 @@ let combineNullness (nullnessOrig: Nullness) (nullnessNew: Nullness) =
 
 let nullnessEquiv (nullnessOrig: Nullness) (nullnessNew: Nullness) = LanguagePrimitives.PhysicalEquality nullnessOrig nullnessNew
 
+/// Matches only when combining `nullnessNew` into the original nullness actually changes it (physically).
+/// A failed match means "unchanged" — callers fall through and reuse the original TType.
+[<return: Struct>]
+let inline (|CombinedNullness|_|) (nullnessNew: Nullness) (nullnessOrig: Nullness) =
+    let nullnessAfter = combineNullness nullnessOrig nullnessNew
+    if nullnessEquiv nullnessAfter nullnessOrig then ValueNone else ValueSome nullnessAfter
+
 let tryAddNullnessToTy nullnessNew (ty:TType) = 
+    let inline (|NullnessWouldChangeTo|_|) orig = (|CombinedNullness|_|) nullnessNew orig
     match ty with
-    | TType_var (tp, nullnessOrig) -> 
-        let nullnessAfter = combineNullness nullnessOrig nullnessNew
-        if nullnessEquiv nullnessAfter nullnessOrig then
-            Some ty
-        else 
-            Some (TType_var (tp, nullnessAfter))
-    | TType_app (tcr, tinst, nullnessOrig) -> 
-        let nullnessAfter = combineNullness nullnessOrig nullnessNew
-        if nullnessEquiv nullnessAfter nullnessOrig then
-            Some ty
-        else 
-            Some (TType_app (tcr, tinst, nullnessAfter))
-    | TType_ucase _ -> None
-    | TType_tuple _ -> None
-    | TType_anon _ -> None
-    | TType_fun (d, r, nullnessOrig) ->
-        let nullnessAfter = combineNullness nullnessOrig nullnessNew
-        if nullnessEquiv nullnessAfter nullnessOrig then
-            Some ty
-        else 
-            Some (TType_fun (d, r, nullnessAfter))
-    | TType_forall _ -> None
+    | TType_var (tp, NullnessWouldChangeTo after) -> Some (TType_var (tp, after))
+    | TType_app (tcr, tinst, NullnessWouldChangeTo after) -> Some (TType_app (tcr, tinst, after))
+    | TType_fun (d, r, NullnessWouldChangeTo after) -> Some (TType_fun (d, r, after))
+    | TType_var _
+    | TType_app _
+    | TType_fun _ -> Some ty
+    | TType_ucase _
+    | TType_tuple _
+    | TType_anon _
+    | TType_forall _
     | TType_measure _ -> None
+
+/// Matches a `TyconRef` whose definition is a struct/enum value type (which never carries outer nullness).
+let inline (|StructTyconRef|_|) (tcref: TyconRef) = tcref.IsStructOrEnumTycon
 
 let addNullnessToTy (nullness: Nullness) (ty:TType) =
     match nullness with
@@ -286,15 +285,12 @@ let addNullnessToTy (nullness: Nullness) (ty:TType) =
     | Nullness.KnownFromConstructor -> ty
     | Nullness.Variable nv when nv.IsFullySolved && nv.TryEvaluate() = ValueSome NullnessInfo.WithoutNull -> ty
     | _ -> 
+    let inline (|NullnessWouldChangeTo|_|) orig = (|CombinedNullness|_|) nullness orig
     match ty with
-    | TType_var (tp, nullnessOrig) -> TType_var (tp, combineNullness nullnessOrig nullness)
-    | TType_app (tcr, tinst, nullnessOrig) -> 
-        let tycon = tcr.Deref
-        if tycon.IsStructRecordOrUnionTycon || tycon.IsStructOrEnumTycon then
-            ty
-        else 
-            TType_app (tcr, tinst, combineNullness nullnessOrig nullness)
-    | TType_fun (d, r, nullnessOrig) -> TType_fun (d, r, combineNullness nullnessOrig nullness)
+    | TType_var (tp, NullnessWouldChangeTo after) -> TType_var (tp, after)
+    | TType_app (StructTyconRef, _, _) -> ty
+    | TType_app (tcr, tinst, NullnessWouldChangeTo after) -> TType_app (tcr, tinst, after)
+    | TType_fun (d, r, NullnessWouldChangeTo after) -> TType_fun (d, r, after)
     | _ -> ty
 
 let rec stripTyparEqnsAux nullness0 canShortcut ty = 
