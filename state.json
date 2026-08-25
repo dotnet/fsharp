@@ -172,8 +172,11 @@
       "cats": []
     },
     "20338": {
-      "sha": "5cf546f97ffe",
-      "cats": []
+      "sha": "5cab4ecad281",
+      "cats": [
+        "Affects-Build-Infra",
+        "Affects-Test-Tooling"
+      ]
     },
     "20342": {
       "sha": "3ff71f46eeae",
@@ -181,6 +184,10 @@
     },
     "20340": {
       "sha": "b14a43b5500d",
+      "cats": []
+    },
+    "20348": {
+      "sha": "2a9e33aef0bf",
       "cats": []
     }
   }
