@@ -383,13 +383,13 @@ module TaskModuleFunctionsTests =
             let t =
                 [ fun (ct: CancellationToken) ->
                     task {
-                        started.SetResult ct
+                        started.TrySetResult ct |> ignore
                         do! Task.Delay(30_000, ct)
                         return 1
                     }
                   fun (ct: CancellationToken) ->
                     task {
-                        started.SetResult ct
+                        started.TrySetResult ct |> ignore
                         do! Task.Delay(30_000, ct)
                         return 2
                     }]
