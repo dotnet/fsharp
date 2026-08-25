@@ -56,6 +56,7 @@ type internal WellKnownEntityAttributes =
     | EditorBrowsableAttribute = (1uL <<< 46)
     | CompiledNameAttribute = (1uL <<< 47)
     | DebuggerDisplayAttribute = (1uL <<< 48)
+    | ExtendedLayoutAttribute = (1uL <<< 49)
     | NotComputed = (1uL <<< 63)
 
 /// Flags enum for well-known assembly-level attributes.

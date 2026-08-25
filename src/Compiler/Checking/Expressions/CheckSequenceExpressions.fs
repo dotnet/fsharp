@@ -7,7 +7,6 @@ open FSharp.Compiler.CheckBasics
 open FSharp.Compiler.CheckExpressions
 open FSharp.Compiler.CheckExpressionsOps
 open FSharp.Compiler.ConstraintSolver
-open FSharp.Compiler.Features
 open FSharp.Compiler.NameResolution
 open FSharp.Compiler.PatternMatchCompilation
 open FSharp.Compiler.Syntax
@@ -308,9 +307,6 @@ let TcSequenceExpression (cenv: TcFileState) env tpenv comp (overallTy: OverallT
             Some(mkLet spMatch inputExprMark matchv inputExpr matchExpr, tpenv)
 
         | SynExpr.TryWith(innerTry, withList, mTryToWith, _spTry, _spWith, trivia) ->
-            if not (g.langVersion.SupportsFeature(LanguageFeature.TryWithInSeqExpression)) then
-                error (Error(FSComp.SR.tcTryIllegalInSequenceExpression (), mTryToWith))
-
             let env = { env with eIsControlFlow = true }
 
             let tryExpr, tpenv =

@@ -1,4 +1,4 @@
-﻿[<AutoOpen>]
+[<AutoOpen>]
 module internal Microsoft.VisualStudio.FSharp.Editor.WorkspaceExtensions
 
 open System
@@ -703,7 +703,8 @@ type Project with
                     documents
                     |> Seq.map (fun doc ->
                         doc.FindFSharpReferencesAsync(symbol, projectSnapshot, (fun range -> onFound doc range), userOpName))
-                    |> CancellableTask.whenAll
+                    // Throttle to avoid launching a typecheck per document in the project all at once.
+                    |> CancellableTask.whenAllThrottled (max 1 Environment.ProcessorCount)
             else
                 for doc in documents do
                     do! doc.FindFSharpReferencesAsync(symbol, projectSnapshot, (onFound doc), userOpName)

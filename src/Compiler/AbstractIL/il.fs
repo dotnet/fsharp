@@ -2621,6 +2621,7 @@ type ILTypeDefLayout =
     | Auto
     | Sequential of ILTypeDefLayoutInfo
     | Explicit of ILTypeDefLayoutInfo (* REVIEW: add field info here *)
+    | Extended
 
 and ILTypeDefLayoutInfo =
     {
@@ -2734,6 +2735,9 @@ let convertLayout layout =
     | ILTypeDefLayout.Auto -> TypeAttributes.AutoLayout
     | ILTypeDefLayout.Sequential _ -> TypeAttributes.SequentialLayout
     | ILTypeDefLayout.Explicit _ -> TypeAttributes.ExplicitLayout
+    | ILTypeDefLayout.Extended ->
+        // Extended layout is represented by TypeAttributes value 0x18 (both Sequential and Explicit bits set)
+        enum<TypeAttributes> (0x18)
 
 let convertEncoding encoding =
     match encoding with

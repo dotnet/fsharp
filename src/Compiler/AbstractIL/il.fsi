@@ -1504,6 +1504,7 @@ type ILTypeDefLayout =
     | Auto
     | Sequential of ILTypeDefLayoutInfo
     | Explicit of ILTypeDefLayoutInfo
+    | Extended
 
 type internal ILTypeDefLayoutInfo =
     { Size: int32 option

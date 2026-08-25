@@ -6,7 +6,8 @@ ImplFile
           [Types
              ([SynTypeDefn
                  (SynComponentInfo
-                    ([], None, [], [A],
+                    ([], None, [],
+                     Some (LongIdent (SynLongIdent ([A], [], [None]))),
                      PreXmlDoc ((4,0), FSharp.Compiler.Xml.XmlDocCollector),
                      false, None, (4,5--4,6)),
                   Simple
@@ -23,7 +24,8 @@ ImplFile
            Types
              ([SynTypeDefn
                  (SynComponentInfo
-                    ([], None, [], [NestedType],
+                    ([], None, [],
+                     Some (LongIdent (SynLongIdent ([NestedType], [], [None]))),
                      PreXmlDoc ((6,4), FSharp.Compiler.Xml.XmlDocCollector),
                      false, None, (6,9--6,19)),
                   Simple
