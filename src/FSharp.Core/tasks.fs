@@ -724,6 +724,7 @@ open System.Threading
 open System.Threading.Tasks
 open Microsoft.FSharp.Core
 open Microsoft.FSharp.Core.CompilerServices
+open Microsoft.FSharp.Core.LanguagePrimitives.IntrinsicOperators
 open Microsoft.FSharp.Collections
 open TaskBuilder
 open Microsoft.FSharp.Control.TaskBuilderExtensions
@@ -824,20 +825,19 @@ module Task =
         // from started children touching semaphore or innerCts
         match Seq.toArray computations with
         | [||] -> result [||]
-        | req when maxDegreeOfParallelism = 1 -> sequential ct req
-        | [| _ |] as req -> sequential ct req
+        | req when maxDegreeOfParallelism = 1 || req.Length = 1 -> sequential ct req
         | req ->
             task {
-                let mutable pos = ref -1
+                let mutable pos = -1
                 let res = Array.zeroCreate<'T> req.Length
 
                 use innerCts = CancellationTokenSource.CreateLinkedTokenSource ct
 
                 let worker () =
                     backgroundTask {
-                        let mutable index = Interlocked.Increment pos
+                        let mutable index = Interlocked.Increment &pos
 
-                        while index < req.Length do
+                        while index < req.Length && not innerCts.IsCancellationRequested do
                             let mutable completed = false
 
                             try
@@ -848,11 +848,7 @@ module Task =
                                 if not completed then
                                     innerCts.Cancel()
 
-                            index <-
-                                if innerCts.IsCancellationRequested then
-                                    req.Length // break out (&& in while is not compiling)
-                                else
-                                    Interlocked.Increment pos
+                            index <- Interlocked.Increment &pos
                     }
 
                 do! Task.WhenAll [| for _ in 1 .. min req.Length maxDegreeOfParallelism -> worker () :> Task |]
