@@ -1,4 +1,4 @@
 // Anonymous Union Types
 // System.Nullable is not allowed in anonymous union
 
-let x: (float|(string|System.Nullable<int>)) = 42
+let x: (float|(string|System.Nullable<int>)) = 1.2

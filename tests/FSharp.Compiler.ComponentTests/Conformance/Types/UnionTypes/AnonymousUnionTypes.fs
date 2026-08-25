@@ -198,7 +198,6 @@ module AnonymousUnionTypes =
         |> shouldFail
         |> withDiagnostics [
             (Error 715, Line 4, Col 27, Line 4, Col 28, "Anonymous type variables are not permitted in this declaration")
-            (Error 35, Line 4, Col 6, Line 4, Col 23, "This construct is deprecated: This type abbreviation has one or more declared type parameters that do not appear in the type being abbreviated. Type abbreviations must use all declared type parameters in the type being abbreviated. Consider removing one or more type parameters, or use a concrete type definition that wraps an underlying type, such as 'type C<'a> = C of ...'.")
         ]
 
     [<Theory; FileInlineData("E_AnonTypeInference.fs")>]
