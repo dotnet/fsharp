@@ -230,6 +230,16 @@ let ``runtime task builder fixture executes through runtime async`` (optimize: b
     |> withFSharpCoreShippedNet
     |> withOptimization optimize
     |> compileExeAndRun
+
+[<Fact>]
+let ``runtime task AsyncLocal values propagate through runtime async`` () =
+    FsFromPath (Path.Combine(__SOURCE_DIRECTORY__, "RuntimeAsync", "RuntimeTaskBuilder.fs"))
+    |> withAdditionalSourceFile (
+        SourceFromPath (Path.Combine(__SOURCE_DIRECTORY__, "RuntimeAsync", "RuntimeAsyncAsyncLocal.fs"))
+    )
+    |> withLangVersionPreview
+    |> withFSharpCoreShippedNet
+    |> compileExeAndRun
     |> shouldSucceed
 
 [<Fact>]
