@@ -225,10 +225,10 @@ type TypeCheckingConfig =
         DumpGraph: bool
     }
 
-/// The parts of a TcConfig that change how dlls are imported into F# ccus. Every cache of an imported
-/// form keys on these, so a new import-affecting setting is added once, here.
+/// A field belongs here when two projects that differ in it cannot reuse one imported form. Every cache
+/// of an imported form keys on this, so a new one is added once, here.
 [<RequireQualifiedAccess>]
-type ImportConfig =
+type ImportReuseKey =
     { LangVersion: decimal
       CheckNullness: bool }
 
@@ -905,7 +905,7 @@ type TcConfig =
 
     member typeCheckingConfig: TypeCheckingConfig
 
-    member importConfig: ImportConfig
+    member importReuseKey: ImportReuseKey
 
     member dumpSignatureData: bool
 

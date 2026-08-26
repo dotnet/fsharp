@@ -462,7 +462,7 @@ module internal SharedImportedCcus =
             /// Hash over the file each assembly of the closure resolved to
             Closure: string
 
-            /// The layer the entry resolves through, and so the TcGlobals and ImportConfig import reads
+            /// The layer the entry resolves through, and so the TcGlobals import reads
             FrameworkStamp: int64
 
             /// Set where an assembly carries several F# ccus
@@ -1552,7 +1552,7 @@ and [<Sealed>] TcImports
     member _.Stamp = stamp
 
     /// The config this layer's ccus were imported under
-    member _.GetImportConfig ctok = (tcConfigP.Get ctok).importConfig
+    member _.GetImportReuseKey ctok = (tcConfigP.Get ctok).importReuseKey
 
     /// The layer a sharing key pins by stamp, and so the only one a shared ccu may close over
     member tcImports.KeyPinnedLayer =
@@ -2759,7 +2759,7 @@ and [<Sealed>] TcImports
                     tcConfig.shareImportedAssemblies
                     && importsBase.IsSome
                     && tcConfig.reduceMemoryUsage = ReduceMemoryFlag.Yes
-                    && importsBase.Value.GetImportConfig ctok = tcConfig.importConfig
+                    && importsBase.Value.GetImportReuseKey ctok = tcConfig.importReuseKey
                 then
                     Some(sharedKeys resolved)
                 else

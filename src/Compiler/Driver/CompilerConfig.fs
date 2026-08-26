@@ -446,7 +446,7 @@ type TypeCheckingConfig =
     }
 
 [<RequireQualifiedAccess>]
-type ImportConfig =
+type ImportReuseKey =
     {
         LangVersion: decimal
         CheckNullness: bool
@@ -1411,10 +1411,10 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
     member _.captureIdentifiersWhenParsing = data.captureIdentifiersWhenParsing
     member _.typeCheckingConfig = data.typeCheckingConfig
 
-    member _.importConfig =
+    member _.importReuseKey =
         {
-            ImportConfig.LangVersion = data.langVersion.SpecifiedVersion
-            ImportConfig.CheckNullness = data.checkNullness
+            ImportReuseKey.LangVersion = data.langVersion.SpecifiedVersion
+            ImportReuseKey.CheckNullness = data.checkNullness
         }
 
     member _.dumpSignatureData = data.dumpSignatureData
