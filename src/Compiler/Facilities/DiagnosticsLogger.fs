@@ -747,7 +747,7 @@ let rec Iterate2D f xs ys =
 
 /// Keep the warnings, propagate the error to the exception continuation.
 [<DebuggerHidden; DebuggerStepThrough>]
-let TryD f g =
+let inline TryD ([<InlineIfLambda>] f) g =
     match f () with
     | ErrorResult(warns, err) ->
         trackErrors {

@@ -408,7 +408,7 @@ val IterateIdxD: f: (int -> 'T -> OperationResult<unit>) -> xs: 'T list -> Opera
 /// Stop on first error. Accumulate warnings and continue.
 val Iterate2D: f: ('T -> 'b -> OperationResult<unit>) -> xs: 'T list -> ys: 'b list -> OperationResult<unit>
 
-val TryD: f: (unit -> OperationResult<'T>) -> g: (exn -> OperationResult<'T>) -> OperationResult<'T>
+val inline TryD: f: (unit -> OperationResult<'T>) -> g: (exn -> OperationResult<'T>) -> OperationResult<'T>
 
 val RepeatWhileD: nDeep: int -> body: (int -> OperationResult<bool>) -> OperationResult<unit>
 
