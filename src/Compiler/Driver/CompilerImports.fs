@@ -462,9 +462,10 @@ module internal SharedImportedCcus =
             /// Hash over the file each assembly of the closure resolved to
             Closure: string
 
-            /// The layer the entry resolves through
+            /// The layer the entry resolves through, and so the TcGlobals import reads
             FrameworkStamp: int64
 
+            /// Implied by FrameworkStamp today - the framework key covers it - but not by construction
             Config: ImportConfig
 
             /// Set where an assembly carries several F# ccus
