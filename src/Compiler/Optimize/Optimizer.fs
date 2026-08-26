@@ -4651,8 +4651,13 @@ and OptimizeBindings cenv isRec env xs =
                 let result, env = OptimizeBinding cenv isRec env xsArray[idx]
                 (idx, result), env)
 
-        let resultsByIndex = results |> Map.ofList
-        [ for idx in 0 .. xsArray.Length - 1 -> resultsByIndex[idx] ], env
+        // The order is a permutation of the indexes, so scatter the results back to source order.
+        let resultsByIndex = Array.zeroCreate xsArray.Length
+
+        for idx, result in results do
+            resultsByIndex[idx] <- result
+
+        List.ofArray resultsByIndex, env
     else
         List.mapFold (OptimizeBinding cenv isRec) env xs
     
@@ -4744,6 +4749,27 @@ and OptimizeModuleExprWithSig cenv env mty def  =
 and mkValBind (bind: Binding) info =
     (mkLocalValRef bind.Var, info)
 
+/// Cycle-tolerant depth-first post-order over dependency indexes: each node appears exactly
+/// once, after all of its dependencies. Nodes are marked on entry, so cyclic back-edges
+/// into nodes still being processed are skipped.
+and TopologicalPostOrder guard (dependencies: int array array) (roots: int list) =
+    let ordered = ResizeArray()
+    let visited = HashSet<int>()
+
+    let rec visit idx =
+        if visited.Add idx then
+            guard (fun () ->
+                for depIdx in dependencies[idx] do
+                    if depIdx <> idx then
+                        visit depIdx)
+
+            ordered.Add idx
+
+    for root in roots do
+        visit root
+
+    List.ofSeq ordered
+
 and GetBindingOptimizationOrder cenv inlineDependenciesOnly preferLowArity (binds: Binding list) =
     // Recursive binding groups are published to the optimizer incrementally as each binding is
     // processed. If a caller is optimized before a later sibling it depends on, inline lookup can
@@ -4799,24 +4825,6 @@ and GetBindingOptimizationOrder cenv inlineDependenciesOnly preferLowArity (bind
             addBindingDependencies Set.empty expr |> Set.toArray)
         |> List.toArray
 
-    let ordered = ResizeArray()
-    let visiting = HashSet<int>()
-    let visited = HashSet<int>()
-
-    let rec visit idx =
-        if not (visited.Contains idx) then
-            if not (visiting.Contains idx) then
-                visiting.Add idx |> ignore
-
-                cenv.stackGuard.Guard(fun () ->
-                    for depIdx in dependencyIndexes[idx] do
-                        if depIdx <> idx then
-                            visit depIdx)
-
-                visiting.Remove idx |> ignore
-                visited.Add idx |> ignore
-                ordered.Add idx
-
     let rootOrder =
         [ 0 .. binds.Length - 1 ]
         |> (if preferLowArity then
@@ -4830,10 +4838,7 @@ and GetBindingOptimizationOrder cenv inlineDependenciesOnly preferLowArity (bind
             else
                 id)
 
-    for idx in rootOrder do
-        visit idx
-
-    ordered |> Seq.toList
+    TopologicalPostOrder cenv.stackGuard.Guard dependencyIndexes rootOrder
 
 and OptimizeModuleContents cenv (env, bindInfosColl) input = 
     match input with 
@@ -4893,9 +4898,14 @@ and OptimizeModuleBindings cenv isRec (env, bindInfosColl) xs =
                 let result, state = OptimizeModuleBinding cenv state xsArray[idx]
                 (idx, result), state)
 
-        let resultsByIndex = results |> Map.ofList
+        // The order is a permutation of the indexes, so scatter the results back to source order.
+        let resultsByIndex = Array.zeroCreate xsArray.Length
+
+        for idx, result in results do
+            resultsByIndex[idx] <- result
+
         // Keep the emitted binding list in source order; only the optimization schedule changes.
-        [ for idx in 0 .. xsArray.Length - 1 -> resultsByIndex[idx] ], (env, bindInfosColl)
+        List.ofArray resultsByIndex, (env, bindInfosColl)
     else
         List.mapFold (OptimizeModuleBinding cenv) (env, bindInfosColl) xs
 
