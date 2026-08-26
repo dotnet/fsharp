@@ -296,7 +296,7 @@ let rec AdjustRequiredTypeForTypeDirectedConversions (infoReader: InfoReader) ad
     elif g.langVersion.SupportsFeature LanguageFeature.AdditionalTypeDirectedConversions && typeEquiv g g.float_ty reqdTy && typeEquiv g g.int32_ty actualTy then 
         g.int32_ty, TypeDirectedConversionUsed.Yes(warn TypeDirectedConversion.BuiltIn, false, false), None
 
-    elif g.langVersion.SupportsFeature LanguageFeature.NullableOptionalInterop && isMethodArg && isNullableTy g reqdTy && not (isNullableTy g actualTy) then 
+    elif isMethodArg && isNullableTy g reqdTy && not (isNullableTy g actualTy) then 
         let underlyingTy = destNullableTy g reqdTy
         // shortcut
         if typeEquiv g underlyingTy actualTy then
@@ -365,17 +365,13 @@ let AdjustCalledArgTypeForOptionals (infoReader: InfoReader) ad enforceNullableO
         match calledArg.OptArgInfo with
         // CSharpMethod(?x = arg), optional C#-style argument, may have nullable type
         | CallerSide _ ->
-            if g.langVersion.SupportsFeature LanguageFeature.NullableOptionalInterop then
+            let calledArgTy =
+                if isNullableTy g calledArgTy then
+                    destNullableTy g calledArgTy
+                else
+                    calledArgTy
 
-                let calledArgTy =
-                    if isNullableTy g calledArgTy then
-                        destNullableTy g calledArgTy
-                    else
-                        calledArgTy
-
-                mkOptionalTy g calledArgTy, TypeDirectedConversionUsed.No, None
-            else
-                calledArgTy, TypeDirectedConversionUsed.No, None
+            mkOptionalTy g calledArgTy, TypeDirectedConversionUsed.No, None
 
         // FSharpMethod(?x = arg), optional F#-style argument
         | CalleeSide ->
@@ -387,15 +383,11 @@ let AdjustCalledArgTypeForOptionals (infoReader: InfoReader) ad enforceNullableO
             AdjustCalledArgTypeForTypeDirectedConversionsAndAutoQuote infoReader ad callerArgTy calledArgTy calledArg m
     else
         match calledArg.OptArgInfo with 
-        // CSharpMethod(x = arg), non-optional C#-style argument, may have type Nullable<ty>. 
-        | NotOptional when not (g.langVersion.SupportsFeature LanguageFeature.NullableOptionalInterop) ->
-            AdjustCalledArgTypeForTypeDirectedConversionsAndAutoQuote infoReader ad callerArgTy calledArgTy calledArg m
-
         // The arg should have type ty. However for backwards compat, we also allow arg to have type Nullable<ty>
         | NotOptional 
         // CSharpMethod(x = arg), optional C#-style argument, may have type Nullable<ty>. 
         | CallerSide _ ->
-            if isNullableTy g calledArgTy && g.langVersion.SupportsFeature LanguageFeature.NullableOptionalInterop then 
+            if isNullableTy g calledArgTy then 
                 // If inference has worked out it's a nullable then use this
                 if isNullableTy g callerArgTy then
                     calledArgTy, TypeDirectedConversionUsed.No, None
@@ -1470,8 +1462,7 @@ let rec AdjustExprForTypeDirectedConversions tcVal (g: TcGlobals) amap infoReade
 
        mkCallToDoubleOperator g m actualTy expr
 
-   elif g.langVersion.SupportsFeature LanguageFeature.NullableOptionalInterop &&
-        isNullableTy g reqdTy && not (isNullableTy g actualTy) then
+   elif isNullableTy g reqdTy && not (isNullableTy g actualTy) then
 
        let underlyingTy = destNullableTy g reqdTy
        let adjustedExpr = AdjustExprForTypeDirectedConversions tcVal g amap infoReader ad underlyingTy actualTy m expr
@@ -1627,10 +1618,6 @@ let AdjustCallerArgForOptional tcVal tcFieldInit eCallerMemberName (infoReader: 
     let reflArgInfo = calledArg.ReflArgInfo
     let calledArgTy = calledArg.CalledArgumentType
     match calledArg.OptArgInfo with
-    | NotOptional when not (g.langVersion.SupportsFeature LanguageFeature.NullableOptionalInterop) ->
-        if isOptCallerArg then errorR(Error(FSComp.SR.tcFormalArgumentIsNotOptional(), m))
-        assignedArg
-
     // For non-nullable, non-optional arguments no conversion is needed.
     // We return precisely the assignedArg.  This also covers the case where there
     // can be a lingering permitted type mismatch between caller argument and called argument, 
