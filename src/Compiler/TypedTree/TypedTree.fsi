@@ -387,7 +387,6 @@ type PublicPath =
 
     member HasEmptyEnclosingPath: bool
 
-
 [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
 type EntityOptionalData =
     {
