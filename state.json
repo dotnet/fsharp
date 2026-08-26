@@ -15,8 +15,10 @@
       "cats": []
     },
     "20322": {
-      "sha": "a10a6dbb554f",
-      "cats": []
+      "sha": "7a650305e11a",
+      "cats": [
+        "Affects-Compiler-Output"
+      ]
     },
     "20319": {
       "sha": "0eb489e09b2a",
@@ -201,7 +203,7 @@
       ]
     },
     "20356": {
-      "sha": "bceab8a91b80",
+      "sha": "fdb88ab00b8e",
       "cats": [
         "Affects-Compiler-Output"
       ]
@@ -219,7 +221,7 @@
       "cats": []
     },
     "20359": {
-      "sha": "d7dae5f86e81",
+      "sha": "afeb95e49214",
       "cats": []
     }
   }
