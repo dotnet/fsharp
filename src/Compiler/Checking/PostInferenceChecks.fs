@@ -1358,15 +1358,17 @@ and CheckILBaseCall cenv env (ilMethRef, enclTypeInst, methInst, retTypes, tyarg
     // Disallow calls to abstract base methods on IL types.
     match tryTcrefOfAppTy g baseVal.Type with
     | ValueSome tcref when tcref.IsILTycon ->
-        try
-            let mdef =
-                match tcref.ILTyconInfo with
-                | TILObjectReprData(scoref, _, _) ->
-                    resolveILMethodRefWithRescope (rescopeILType scoref) tcref.ILTyconRawMetadata ilMethRef
+        match tcref.ILTyconInfo with
+        | TILObjectReprData(scoref, _, _) ->
+            if not (isNil (tcref.ILTyconRawMetadata.Methods.FindByNameAndArity(ilMethRef.Name, ilMethRef.ArgTypes.Length))) then
+                try
+                    let mdef =
+                        resolveILMethodRefWithRescope (rescopeILType scoref) tcref.ILTyconRawMetadata ilMethRef
 
-            if mdef.IsAbstract then
-                errorR(Error(FSComp.SR.tcCannotCallAbstractBaseMember(RichText.mkMethod mdef.Name), m))
-        with _ -> ()
+                    if mdef.IsAbstract then
+                        errorR(Error(FSComp.SR.tcCannotCallAbstractBaseMember(RichText.mkMethod mdef.Name), m))
+                with _ ->
+                    ()
     | _ -> ()
 
     CheckTypeInstNoByrefs cenv env m tyargs
