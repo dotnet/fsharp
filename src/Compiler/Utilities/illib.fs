@@ -458,8 +458,37 @@ module List =
 
         loop 0 xs
 
-    let lengthsEqAndForall2 p l1 l2 =
-        List.length l1 = List.length l2 && List.forall2 p l1 l2
+    let inline lengthsEqAndForall2 ([<InlineIfLambda>] p) l1 l2 =
+        // Single pass that applies `p` directly (rather than forwarding it to the non-inline
+        // `List.forall2`), so that under [<InlineIfLambda>] no closure is allocated for `p`.
+        // Returns true iff the lists have equal length and every pair satisfies `p`.
+        let mutable r1 = l1
+        let mutable r2 = l2
+        let mutable ok = true
+        let mutable go = true
+
+        while go do
+            match r1 with
+            | h1 :: t1 ->
+                match r2 with
+                | h2 :: t2 ->
+                    if p h1 h2 then
+                        r1 <- t1
+                        r2 <- t2
+                    else
+                        ok <- false
+                        go <- false
+                | [] ->
+                    ok <- false
+                    go <- false
+            | [] ->
+                match r2 with
+                | [] -> go <- false
+                | _ ->
+                    ok <- false
+                    go <- false
+
+        ok
 
     let rec findi n f l =
         match l with
@@ -482,7 +511,7 @@ module List =
         | h1 :: t1, h2 :: t2 -> h1 === h2 && checkq t1 t2
         | _ -> true
 
-    let mapq (f: 'T -> 'T) inp =
+    let inline mapq ([<InlineIfLambda>] f: 'T -> 'T) inp =
         assert not typeof<'T>.IsValueType
 
         match inp with
@@ -505,8 +534,27 @@ module List =
             else
                 [ h2a; h2b; h2c ]
         | _ ->
-            let res = List.map f inp
-            if checkq inp res then inp else res
+            // Apply `f` directly (rather than forwarding it to the non-inline `List.map`), so
+            // that under [<InlineIfLambda>] no closure is allocated for `f`. Identity preserving:
+            // the original `inp` instance is returned when every element is physically unchanged.
+            let mutable changed = false
+            let mutable acc = []
+            let mutable rest = inp
+            let mutable go = true
+
+            while go do
+                match rest with
+                | h :: t ->
+                    let h2 = f h
+
+                    if not (h === h2) then
+                        changed <- true
+
+                    acc <- h2 :: acc
+                    rest <- t
+                | [] -> go <- false
+
+            if changed then List.rev acc else inp
 
     let frontAndBack l =
         let rec loop acc l =

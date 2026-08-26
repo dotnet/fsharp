@@ -160,7 +160,7 @@ module internal List =
 
     val existsi: f: (int -> 'a -> bool) -> xs: 'a list -> bool
 
-    val lengthsEqAndForall2: p: ('a -> 'b -> bool) -> l1: 'a list -> l2: 'b list -> bool
+    val inline lengthsEqAndForall2: p: ('a -> 'b -> bool) -> l1: 'a list -> l2: 'b list -> bool
 
     val findi: n: int -> f: ('a -> bool) -> l: 'a list -> ('a * int) option
 
@@ -168,7 +168,7 @@ module internal List =
 
     val checkq: l1: 'a list -> l2: 'a list -> bool when 'a: not struct
 
-    val mapq: f: ('T -> 'T) -> inp: 'T list -> 'T list when 'T: not struct
+    val inline mapq: f: ('T -> 'T) -> inp: 'T list -> 'T list when 'T: not struct
 
     val frontAndBack: l: 'a list -> 'a list * 'a
 
