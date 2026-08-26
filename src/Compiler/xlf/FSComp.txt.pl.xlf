@@ -402,6 +402,11 @@
         <target state="translated">Zgłasza błędy w przypadku przesłonięć elementów innych niż wirtualne</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureErrorOnBitwiseOpsOnNonIntegralEnums">
+        <source>Error when bitwise operators are used on enums whose underlying type is not an integer type (e.g. char).</source>
+        <target state="new">Error when bitwise operators are used on enums whose underlying type is not an integer type (e.g. char).</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureErrorOnDeprecatedRequireQualifiedAccess">
         <source>give error on deprecated access of construct with RequireQualifiedAccess attribute</source>
         <target state="translated">wskazywanie błędu w przypadku przestarzałego dostępu do konstrukcji z atrybutem RequireQualifiedAccess</target>
