@@ -162,9 +162,9 @@ module internal ListInline =
     /// List.fold, but inline so the folder is inlined (InlineIfLambda) rather than allocated as a closure.
     val inline fold: [<InlineIfLambda>] folder: ('State -> 'T -> 'State) -> state: 'State -> list: 'T list -> 'State
 
-    val inline map: mapping: ('T -> 'U) -> list: 'T list -> 'U list
+    val inline map: [<InlineIfLambda>] mapping: ('T -> 'U) -> list: 'T list -> 'U list
 
-    val inline forall2: predicate: ('T1 -> 'T2 -> bool) -> list1: 'T1 list -> list2: 'T2 list -> bool
+    val inline forall2: [<InlineIfLambda>] predicate: ('T1 -> 'T2 -> bool) -> list1: 'T1 list -> list2: 'T2 list -> bool
 
 module internal List =
 
@@ -174,7 +174,7 @@ module internal List =
 
     val existsi: f: (int -> 'a -> bool) -> xs: 'a list -> bool
 
-    val inline lengthsEqAndForall2: p: ('a -> 'b -> bool) -> l1: 'a list -> l2: 'b list -> bool
+    val inline lengthsEqAndForall2: [<InlineIfLambda>] p: ('a -> 'b -> bool) -> l1: 'a list -> l2: 'b list -> bool
 
     val findi: n: int -> f: ('a -> bool) -> l: 'a list -> ('a * int) option
 
@@ -182,7 +182,7 @@ module internal List =
 
     val checkq: l1: 'a list -> l2: 'a list -> bool when 'a: not struct
 
-    val inline mapq: f: ('T -> 'T) -> inp: 'T list -> 'T list when 'T: not struct
+    val inline mapq: [<InlineIfLambda>] f: ('T -> 'T) -> inp: 'T list -> 'T list when 'T: not struct
 
     val frontAndBack: l: 'a list -> 'a list * 'a
 
