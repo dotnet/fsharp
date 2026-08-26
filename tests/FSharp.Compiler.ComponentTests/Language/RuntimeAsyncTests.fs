@@ -242,6 +242,15 @@ let ``runtime async direct intrinsic fixture executes`` () =
     |> shouldSucceed
 
 [<Fact>]
+let ``runtime async low level async enumerable fixture executes`` () =
+    Path.Combine(__SOURCE_DIRECTORY__, "RuntimeAsync", "RuntimeAsyncEnumerable.fs")
+    |> FsFromPath
+    |> withLangVersionPreview
+    |> withFSharpCoreShippedNet
+    |> compileExeAndRun
+    |> shouldSucceed
+
+[<Fact>]
 let ``runtime async suspension in exception region executes`` () =
     Path.Combine(__SOURCE_DIRECTORY__, "RuntimeAsync", "RuntimeTasksAsyncDisposalException.fs")
     |> FsFromPath
