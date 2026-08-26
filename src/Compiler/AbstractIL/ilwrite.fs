@@ -3071,14 +3071,13 @@ let SortTableRows tab (rows: GenericRow[]) =
         System.Diagnostics.Debug.Assert(n <= 0xFFFFFF, "metadata table exceeds the 2^24-1 RID limit")
         // Pack the key column per row into one int64: [Val:31 @ bit32][Tag:8 @ bit24][originalPos:24 @ bit0].
         // Sorting the int64[] then orders by (Val, Tag, pos) = a stable (Val, Tag) sort.
-        let keys = Array.zeroCreate n: int64[]
-        for i in 0 .. n - 1 do
-            let e = rows[i][col]
-            keys[i] <- ((int64 e.Val) <<< 32) ||| ((int64 e.Tag) <<< 24) ||| int64 i
+        let keys =
+            [| for i in 0 .. n - 1 ->
+                let e = rows[i][col]
+                ((int64 e.Val) <<< 32) ||| ((int64 e.Tag) <<< 24) ||| int64 i |]
+
         System.Array.Sort keys
-        let result = Array.zeroCreate n: GenericRow[]
-        for i in 0 .. n - 1 do
-            result[i] <- rows[int (keys[i] &&& 0xFFFFFFL)]
+        let result = [| for key in keys -> rows[int (key &&& 0xFFFFFFL)] |]
         result
 
 let GenModule (cenv : cenv) (modul: ILModuleDef) =
