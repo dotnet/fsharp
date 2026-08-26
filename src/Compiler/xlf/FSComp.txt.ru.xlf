@@ -477,11 +477,6 @@
         <target state="translated">статические абстрактные элементы интерфейса</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureInterfacesWithMultipleGenericInstantiation">
-        <source>interfaces with multiple generic instantiation</source>
-        <target state="translated">интерфейсы с множественным универсальным созданием экземпляра</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureLowerInterpolatedStringToConcat">
         <source>Optimizes interpolated strings in certain cases, by lowering to concatenation</source>
         <target state="translated">Оптимизирует интерполированные строки в определенных случаях путем понижения до объединения</target>

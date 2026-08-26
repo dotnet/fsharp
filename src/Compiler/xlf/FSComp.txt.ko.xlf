@@ -477,11 +477,6 @@
         <target state="translated">고정적인 추상 인터페이스 멤버</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureInterfacesWithMultipleGenericInstantiation">
-        <source>interfaces with multiple generic instantiation</source>
-        <target state="translated">여러 제네릭 인스턴스화가 포함된 인터페이스</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureLowerInterpolatedStringToConcat">
         <source>Optimizes interpolated strings in certain cases, by lowering to concatenation</source>
         <target state="translated">특정 경우에 보간된 문자열을 연결로 낮추어 최적화합니다.</target>

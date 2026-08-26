@@ -477,11 +477,6 @@
         <target state="translated">membres d’interface abstraite statiques</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureInterfacesWithMultipleGenericInstantiation">
-        <source>interfaces with multiple generic instantiation</source>
-        <target state="translated">interfaces avec plusieurs instanciations génériques</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureLowerInterpolatedStringToConcat">
         <source>Optimizes interpolated strings in certain cases, by lowering to concatenation</source>
         <target state="translated">Optimise des chaînes interpolées dans certains cas en réduisant la concaténation</target>

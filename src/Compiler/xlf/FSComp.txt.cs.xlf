@@ -477,11 +477,6 @@
         <target state="translated">statičtí abstraktní členové rozhraní</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureInterfacesWithMultipleGenericInstantiation">
-        <source>interfaces with multiple generic instantiation</source>
-        <target state="translated">rozhraní s vícenásobným obecným vytvářením instancí</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureLowerInterpolatedStringToConcat">
         <source>Optimizes interpolated strings in certain cases, by lowering to concatenation</source>
         <target state="translated">Optimalizuje v určitých případech interpolované řetězce snížením na zřetězení.</target>
