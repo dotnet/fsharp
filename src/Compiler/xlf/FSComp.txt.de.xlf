@@ -532,11 +532,6 @@
         <target state="new">honor the 'NotNullIfNotNull' attribute on a method's return value</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureNullableOptionalInterop">
-        <source>nullable optional interop</source>
-        <target state="translated">Interop, NULL-Werte zulassend, optional</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureNullnessChecking">
         <source>nullness checking</source>
         <target state="new">nullness checking</target>

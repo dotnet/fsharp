@@ -11,7 +11,6 @@ type LanguageFeature =
     | PackageManagement
     | FromEndSlicing
     | ResumableStateMachines
-    | NullableOptionalInterop
     | DefaultInterfaceMemberConsumption
     | WitnessPassing
     | AdditionalTypeDirectedConversions

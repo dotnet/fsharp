@@ -21,7 +21,6 @@ type LanguageFeature =
     | PackageManagement
     | FromEndSlicing
     | ResumableStateMachines
-    | NullableOptionalInterop
     | DefaultInterfaceMemberConsumption
     | WitnessPassing
     | AdditionalTypeDirectedConversions
@@ -139,7 +138,6 @@ type LanguageVersion(versionText, ?disabledFeaturesArray: LanguageFeature array)
             [
                 // F# 5.0
                 LanguageFeature.DotlessFloat32Literal, languageVersion50
-                LanguageFeature.NullableOptionalInterop, languageVersion50
                 LanguageFeature.DefaultInterfaceMemberConsumption, languageVersion50
                 LanguageFeature.PackageManagement, languageVersion50
                 LanguageFeature.WitnessPassing, languageVersion50
@@ -341,7 +339,6 @@ type LanguageVersion(versionText, ?disabledFeaturesArray: LanguageFeature array)
         | LanguageFeature.FromEndSlicing -> FSComp.SR.featureFromEndSlicing ()
         | LanguageFeature.NullnessChecking -> FSComp.SR.featureNullnessChecking ()
         | LanguageFeature.ResumableStateMachines -> FSComp.SR.featureResumableStateMachines ()
-        | LanguageFeature.NullableOptionalInterop -> FSComp.SR.featureNullableOptionalInterop ()
         | LanguageFeature.DefaultInterfaceMemberConsumption -> FSComp.SR.featureDefaultInterfaceMemberConsumption ()
         | LanguageFeature.WitnessPassing -> FSComp.SR.featureWitnessPassing ()
         | LanguageFeature.AdditionalTypeDirectedConversions -> FSComp.SR.featureAdditionalImplicitConversions ()
