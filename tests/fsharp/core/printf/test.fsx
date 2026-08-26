@@ -17,7 +17,7 @@ let report_failure (s : string) =
 
 // change this to true to run every test case
 // leave as false to randomly execute a subset of cases (this is a very expensive test area)
-let runEveryTest = false
+let runEveryTest = true
 if runEveryTest then stdout.WriteLine "Running every test. Set \"runEveryTest\" to false to reduce runtime"
 else stdout.WriteLine "Running a random subset of tests.  Set \"runEveryTest\" to true to run all tests"
 
