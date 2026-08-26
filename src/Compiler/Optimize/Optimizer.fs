@@ -3889,9 +3889,6 @@ and TryInlineApplication cenv env finfo (valExpr: Expr) (tyargs: TType list, arg
 
         if isApplicationPartialExpr then None else
 
-        // Inlining lambda 
-        let f2R = CopyExprForInlining cenv false f2 m
-
         // Optimizing arguments after inlining
 
         // REVIEW: this is a cheapshot way of optimizing the arg expressions as well without the restriction of recursive  
@@ -3900,7 +3897,17 @@ and TryInlineApplication cenv env finfo (valExpr: Expr) (tyargs: TType list, arg
 
         // Beta reduce. MakeApplicationAndBetaReduce g does all the hard work. 
         // Inlining: beta reducing 
-        let exprR = MakeApplicationAndBetaReduce g (f2R, f2ty, [tyargs], argsR, m)
+        // Generic lambda saturated by its type args: fuse the inlining copy with the type
+        // instantiation into one traversal (one val-clone) instead of copyExpr then instExpr.
+        let exprR =
+            match f2 with
+            | Expr.TyLambda(_, tyvs, body, _, bodyTy) when tyvs.Length = tyargs.Length ->
+                let tpinst = bindTypars tyvs tyargs emptyTyparInst
+                let bodyR = remapExpr g CloneAllAndMarkExprValsAsCompilerGenerated (mkInstRemap tpinst) body |> remarkExpr m
+                MakeApplicationAndBetaReduce g (bodyR, instType tpinst bodyTy, [], argsR, m)
+            | _ ->
+                let f2R = CopyExprForInlining cenv false f2 m
+                MakeApplicationAndBetaReduce g (f2R, f2ty, [tyargs], argsR, m)
         // Inlining: reoptimizing
         Some(OptimizeExpr cenv {env with dontInline = Map.add lambdaId [] env.dontInline} exprR)
           
