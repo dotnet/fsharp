@@ -1174,11 +1174,11 @@ let ResolveProvidedTypeNameInEntity (amap, m, typeName, modref: ModuleOrNamespac
     match modref.TypeReprInfo with
     | TProvidedNamespaceRepr(resolutionEnvironment, resolvers) ->
         match modref.Deref.PublicPath with
-        | Some(PubPath path) ->
+        | ValueSome pubpath ->
             resolvers
-            |> List.choose (fun r-> TryResolveProvidedType(r, m, path, typeName))
+            |> List.choose (fun r -> TryResolveProvidedType(r, m, pubpath.FullPath, typeName))
             |> List.map (fun st -> AddEntityForProvidedType (amap, modref, resolutionEnvironment, st, m))
-        | None -> []
+        | ValueNone -> []
 
     // We have a provided type, look up its nested types (populating them on-demand if necessary)
     | TProvidedTypeRepr info ->
