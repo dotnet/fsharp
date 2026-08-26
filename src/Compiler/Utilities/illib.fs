@@ -436,6 +436,29 @@ module Option =
 module internal ValueTuple =
     let inline map1Of2 ([<InlineIfLambda>] f) struct (a1, a2) = struct (f a1, a2)
 
+/// List combinators that inline the closure argument into a cursor loop, so a caller on a
+/// hot path allocates no closure even when the lambda captures per-call state.
+module ListInline =
+
+    let inline iter2 ([<InlineIfLambda>] action: 'T1 -> 'T2 -> unit) (list1: 'T1 list) (list2: 'T2 list) =
+        let mutable l1 = list1
+        let mutable l2 = list2
+
+        while not l1.IsEmpty && not l2.IsEmpty do
+            action l1.Head l2.Head
+            l1 <- l1.Tail
+            l2 <- l2.Tail
+
+    let inline exists ([<InlineIfLambda>] predicate: 'T -> bool) (list: 'T list) =
+        let mutable remaining = list
+        let mutable found = false
+
+        while not found && not remaining.IsEmpty do
+            found <- predicate remaining.Head
+            remaining <- remaining.Tail
+
+        found
+
 module List =
 
     let sortWithOrder (c: IComparer<'T>) elements =

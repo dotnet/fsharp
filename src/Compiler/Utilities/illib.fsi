@@ -152,6 +152,12 @@ module internal Option =
 
     val attempt: f: (unit -> 'T) -> 'T option
 
+module internal ListInline =
+
+    val inline iter2: action: ('T1 -> 'T2 -> unit) -> list1: 'T1 list -> list2: 'T2 list -> unit
+
+    val inline exists: predicate: ('T -> bool) -> list: 'T list -> bool
+
 module internal List =
 
     val sortWithOrder: c: IComparer<'T> -> elements: 'T list -> 'T list
