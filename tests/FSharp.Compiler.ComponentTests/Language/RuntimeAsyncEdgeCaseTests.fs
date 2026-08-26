@@ -97,7 +97,7 @@ let ``runtime async edge cases execute through the CE builder`` (optimize: bool)
 // `Await(Task); 1` — direct call to the non-generic Await overload, then push 1 and ret.
 let private simpleAwaitBody = """
   .method public static class [System.Runtime]System.Threading.Tasks.Task`1<int32> 
-          f() cil managed noinlining
+          f() cil managed noinlining async
   {
     // Code size       13 (0xd)
     .maxstack  8
@@ -113,7 +113,7 @@ let private simpleAwaitBody = """
 // into `add` with no spill local (optimized).
 let private genericAwaitBody = """
   .method public static class [System.Runtime]System.Threading.Tasks.Task`1<int32> 
-          f(class [System.Runtime]System.Threading.Tasks.Task`1<int32> t) cil managed noinlining
+          f(class [System.Runtime]System.Threading.Tasks.Task`1<int32> t) cil managed noinlining async
   {
     // Code size       9 (0x9)
     .maxstack  8
@@ -128,7 +128,7 @@ let private genericAwaitBody = """
 // `Await(ValueTask); 1` — the ValueTask (non-generic) Await overload bound by operand type.
 let private valueTaskAwaitBody = """
   .method public static class [System.Runtime]System.Threading.Tasks.Task`1<int32> 
-          f(valuetype [System.Runtime]System.Threading.Tasks.ValueTask vt) cil managed noinlining
+          f(valuetype [System.Runtime]System.Threading.Tasks.ValueTask vt) cil managed noinlining async
   {
     // Code size       8 (0x8)
     .maxstack  8
@@ -183,7 +183,7 @@ let ``the CE builder lowers to Await with no state machine`` () =
 let private tailPrefixBody = """
   .method public static class [System.Runtime]System.Threading.Tasks.Task`1<int32> 
           f(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,int32> g,
-            int32 x) cil managed noinlining
+            int32 x) cil managed noinlining async
   {
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationArgumentCountsAttribute::.ctor(int32[]) = ( 01 00 02 00 00 00 01 00 00 00 01 00 00 00 00 00 ) 
     // Code size       20 (0x14)
