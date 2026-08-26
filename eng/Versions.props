@@ -89,7 +89,12 @@
     <SystemBuffersVersion>4.6.1</SystemBuffersVersion>
     <SystemMemoryVersion>4.6.3</SystemMemoryVersion>
     <SystemRuntimeCompilerServicesUnsafeVersion>6.1.2</SystemRuntimeCompilerServicesUnsafeVersion>
-    <!-- System.* packages from dotnet/runtime are managed in Version.Details.xml / Version.Details.props for source-build. -->
+    <!-- System.* packages from dotnet/runtime are managed in Version.Details.xml / Version.Details.props for source-build.
+         These three are pinned above the darc-flowed 10.0.8 to satisfy the Microsoft.CodeAnalysis.* 5.11 package graph,
+         which requires >= 10.0.10 (otherwise NuGet reports NU1605 package downgrade, treated as an error on restore). -->
+    <SystemCollectionsImmutableVersion>10.0.10</SystemCollectionsImmutableVersion>
+    <SystemCompositionVersion>10.0.10</SystemCompositionVersion>
+    <SystemReflectionMetadataVersion>10.0.10</SystemReflectionMetadataVersion>
   </PropertyGroup>
 
   <PropertyGroup>
@@ -103,7 +108,7 @@
     <MicrosoftVisualStudioShellPackagesVersion>18.0.2188-preview.1</MicrosoftVisualStudioShellPackagesVersion>
     <VisualStudioProjectSystemPackagesVersion>18.0.1237-pre</VisualStudioProjectSystemPackagesVersion>
     <VisualStudioShellProjectsPackages>18.0.2077-preview.1</VisualStudioShellProjectsPackages>
-    <MicrosoftVisualStudioThreadingPackagesVersion>18.7.19</MicrosoftVisualStudioThreadingPackagesVersion>
+    <MicrosoftVisualStudioThreadingPackagesVersion>18.7.23</MicrosoftVisualStudioThreadingPackagesVersion>
   
     <!-- Roslyn packages. Rest is managed by maestro bot and is in the imported .Details.props file -->
     <MicrosoftCodeAnalysisTestResourcesProprietaryVersion>2.0.28</MicrosoftCodeAnalysisTestResourcesProprietaryVersion>
@@ -146,9 +151,9 @@
          (via Microsoft.VisualStudio.SDK 18.9.496), which are newer than the versions the Shell packages pull in.
          Pinning them avoids MSB3277 assembly version conflicts across the vsintegration projects. -->
     <MicrosoftVisualStudioValidationVersion>18.7.1</MicrosoftVisualStudioValidationVersion>
-    <MicrosoftVisualStudioRpcContractsVersion>18.9.453</MicrosoftVisualStudioRpcContractsVersion>
-    <MicrosoftServiceHubFrameworkVersion>4.10.128</MicrosoftServiceHubFrameworkVersion>
-    <StreamJsonRpcVersion>2.26.5</StreamJsonRpcVersion>
+    <MicrosoftVisualStudioRpcContractsVersion>18.9.918</MicrosoftVisualStudioRpcContractsVersion>
+    <MicrosoftServiceHubFrameworkVersion>4.10.147</MicrosoftServiceHubFrameworkVersion>
+    <StreamJsonRpcVersion>2.26.10</StreamJsonRpcVersion>
 
     <!-- Microsoft.VisualStudio.Shell.15.0 18.9.x references Microsoft.VisualStudio.SolutionPersistence at runtime but
          does not declare it as a NuGet dependency (it is expected to come from the VS install). The standalone VS unit
