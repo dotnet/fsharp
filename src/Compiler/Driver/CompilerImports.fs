@@ -462,11 +462,8 @@ module internal SharedImportedCcus =
             /// Hash over the file each assembly of the closure resolved to
             Closure: string
 
-            /// The layer the entry resolves through, and so the TcGlobals import reads
+            /// The layer the entry resolves through, and so the TcGlobals and ImportConfig import reads
             FrameworkStamp: int64
-
-            /// Implied by FrameworkStamp today - the framework key covers it - but not by construction
-            Config: ImportConfig
 
             /// Set where an assembly carries several F# ccus
             CcuName: SimpleAssemblyName option
@@ -560,12 +557,7 @@ module internal SharedImportedCcus =
 
     /// An assembly whose closure is not shareable gets no key: its entities, and the per-CCU caches they
     /// carry, can point into one project's copy of an unshared assembly.
-    let computeKeys
-        (frameworkStamp: int64)
-        (config: ImportConfig)
-        (assemblies: Dictionary<SimpleAssemblyName, AssemblyKeyInfo>)
-        isShareable
-        =
+    let computeKeys (frameworkStamp: int64) (assemblies: Dictionary<SimpleAssemblyName, AssemblyKeyInfo>) isShareable =
         let keys = Dictionary<SimpleAssemblyName, ShareableAssembly>(nameComparer)
 
         for KeyValue(name, assembly) in assemblies do
@@ -584,7 +576,6 @@ module internal SharedImportedCcus =
                             {
                                 Closure = Md5StringHasher.addStrings parts Md5StringHasher.empty
                                 FrameworkStamp = frameworkStamp
-                                Config = config
                                 CcuName = None
                             }
                         Closure = assembly.References
@@ -1559,6 +1550,9 @@ and [<Sealed>] TcImports
             | None -> ars)
 
     member _.Stamp = stamp
+
+    /// The config this layer's ccus were imported under
+    member _.GetImportConfig ctok = (tcConfigP.Get ctok).importConfig
 
     /// The layer a sharing key pins by stamp, and so the only one a shared ccu may close over
     member tcImports.KeyPinnedLayer =
@@ -2601,11 +2595,9 @@ and [<Sealed>] TcImports
             SharedImportedCcus.AssemblyFileId(r.resolvedPath + "|" + writeStamp)
 
         let sharedKeys (all: (AssemblyResolution * IRawFSharpAssemblyData) list) =
-            let tcConfig = tcConfigP.Get ctok
             let ic = StringComparer.OrdinalIgnoreCase
             let short (p: string) = Path.GetFileNameWithoutExtension p
 
-            // By stamp: FrameworkImportsCache already keys the layer on the same config
             let frameworkStamp =
                 match importsBase with
                 | Some b -> b.Stamp
@@ -2671,7 +2663,7 @@ and [<Sealed>] TcImports
                 if not (assemblies[name].References |> List.forall isPinnedByKey) then
                     shareable.Remove name |> ignore
 
-            SharedImportedCcus.computeKeys frameworkStamp tcConfig.importConfig assemblies shareable.Contains
+            SharedImportedCcus.computeKeys frameworkStamp assemblies shareable.Contains
 
         let contexts = ResizeArray<SharedImportedCcus.SharedImportContext>()
 
@@ -2760,10 +2752,14 @@ and [<Sealed>] TcImports
                 //
                 // Only with reduceMemoryUsage: without it TcImports disposal closes a memory-mapped reader,
                 // so a ccu outliving the project that imported it would read from a closed file.
+                //
+                // The config check is what makes the stamp enough to pin the config: a layer built under
+                // a different one means the framework key did not separate them, so stop rather than share
                 if
                     tcConfig.shareImportedAssemblies
                     && importsBase.IsSome
                     && tcConfig.reduceMemoryUsage = ReduceMemoryFlag.Yes
+                    && importsBase.Value.GetImportConfig ctok = tcConfig.importConfig
                 then
                     Some(sharedKeys resolved)
                 else
