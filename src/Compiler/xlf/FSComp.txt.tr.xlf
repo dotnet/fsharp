@@ -422,11 +422,6 @@
         <target state="translated">Statik sınıflarda hata bildirimi</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureEscapeBracesInFormattableString">
-        <source>Escapes curly braces before calling FormattableStringFactory.Create when interpolated string literal is typed as FormattableString</source>
-        <target state="translated">İçe eklenmiş dize sabit değerinin türü FormattableString olduğunda FormattableStringFactory.Create çağrılmadan önce küme ayraçlarını atlar</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureExpandedMeasurables">
         <source>more types support units of measure</source>
         <target state="translated">tür daha ölçü birimlerini destekler</target>

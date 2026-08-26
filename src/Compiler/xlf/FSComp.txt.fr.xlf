@@ -422,11 +422,6 @@
         <target state="translated">Rapport d’erreurs sur les classes statiques</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureEscapeBracesInFormattableString">
-        <source>Escapes curly braces before calling FormattableStringFactory.Create when interpolated string literal is typed as FormattableString</source>
-        <target state="translated">Échappe les accolades avant d’appeler FormattableStringFactory.Create lorsque le littéral de chaîne interpolé est tapé en tant que FormattableString.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureExpandedMeasurables">
         <source>more types support units of measure</source>
         <target state="translated">d'autres types prennent en charge les unités de mesure</target>

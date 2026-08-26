@@ -44,7 +44,6 @@ type LanguageFeature =
     | MatchNotAllowedForUnionCaseWithNoData
     | CSharpExtensionAttributeNotRequired
     | ErrorForNonVirtualMembersOverrides
-    | EscapeDotnetFormattableStrings
     | ArithmeticInLiterals
     | ErrorReportingOnStaticClasses
     | WarningWhenCopyAndUpdateRecordChangesAllFields
@@ -168,7 +167,6 @@ type LanguageVersion(versionText, ?disabledFeaturesArray: LanguageFeature array)
                 LanguageFeature.MatchNotAllowedForUnionCaseWithNoData, languageVersion80
                 LanguageFeature.CSharpExtensionAttributeNotRequired, languageVersion80
                 LanguageFeature.ErrorForNonVirtualMembersOverrides, languageVersion80
-                LanguageFeature.EscapeDotnetFormattableStrings, languageVersion80
                 LanguageFeature.ArithmeticInLiterals, languageVersion80
                 LanguageFeature.ErrorReportingOnStaticClasses, languageVersion80
                 LanguageFeature.WarningWhenCopyAndUpdateRecordChangesAllFields, languageVersion80
@@ -361,7 +359,6 @@ type LanguageVersion(versionText, ?disabledFeaturesArray: LanguageFeature array)
         | LanguageFeature.MatchNotAllowedForUnionCaseWithNoData -> FSComp.SR.featureMatchNotAllowedForUnionCaseWithNoData ()
         | LanguageFeature.CSharpExtensionAttributeNotRequired -> FSComp.SR.featureCSharpExtensionAttributeNotRequired ()
         | LanguageFeature.ErrorForNonVirtualMembersOverrides -> FSComp.SR.featureErrorForNonVirtualMembersOverrides ()
-        | LanguageFeature.EscapeDotnetFormattableStrings -> FSComp.SR.featureEscapeBracesInFormattableString ()
         | LanguageFeature.ArithmeticInLiterals -> FSComp.SR.featureArithmeticInLiterals ()
         | LanguageFeature.ErrorReportingOnStaticClasses -> FSComp.SR.featureErrorReportingOnStaticClasses ()
         | LanguageFeature.WarningWhenCopyAndUpdateRecordChangesAllFields ->

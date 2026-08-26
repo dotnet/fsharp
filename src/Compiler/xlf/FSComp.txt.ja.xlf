@@ -422,11 +422,6 @@
         <target state="translated">静的クラスに関するエラー報告</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureEscapeBracesInFormattableString">
-        <source>Escapes curly braces before calling FormattableStringFactory.Create when interpolated string literal is typed as FormattableString</source>
-        <target state="translated">挿入文字列リテラルが FormattableString として型指定されている場合は、FormattableStringFactory.Create を呼び出す前に波かっこをエスケープします</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureExpandedMeasurables">
         <source>more types support units of measure</source>
         <target state="translated">単位をサポートするその他の型</target>

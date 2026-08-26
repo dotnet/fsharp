@@ -422,11 +422,6 @@
         <target state="translated">報告靜態類別時發生錯誤</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureEscapeBracesInFormattableString">
-        <source>Escapes curly braces before calling FormattableStringFactory.Create when interpolated string literal is typed as FormattableString</source>
-        <target state="translated">當差補字串常值輸入為 FormattableString 時，在呼叫 FormattableStringFactory.Create 之前先逸出大括弧</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureExpandedMeasurables">
         <source>more types support units of measure</source>
         <target state="translated">更多支援測量單位的類型</target>

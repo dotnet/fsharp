@@ -422,11 +422,6 @@
         <target state="translated">정적 클래스에 대한 오류 보고</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureEscapeBracesInFormattableString">
-        <source>Escapes curly braces before calling FormattableStringFactory.Create when interpolated string literal is typed as FormattableString</source>
-        <target state="translated">보간된 문자열 리터럴이 FormattableString으로 형식화된 경우 FormattableStringFactory.Create를 호출하기 전에 중괄호를 이스케이프합니다.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureExpandedMeasurables">
         <source>more types support units of measure</source>
         <target state="translated">더 많은 형식이 측정 단위를 지원함</target>
