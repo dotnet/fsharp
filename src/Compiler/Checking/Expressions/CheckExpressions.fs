@@ -1274,11 +1274,10 @@ let CheckForAbnormalOperatorNames (cenv: cenv) (idRange: range) coreDisplayName 
                 warning(StandardOperatorRedefinitionWarning(FSComp.SR.tcInvalidMemberNameFixedTypes(RichText.mkOperator opName), idRange))
         | Other -> ()
 
-let CheckInitProperties (g: TcGlobals) (minfo: MethInfo) (methodName: string) mItem =
-    if g.langVersion.SupportsFeature(LanguageFeature.InitPropertiesSupport) then
-        // Check, whether this method has external init, emit an error diagnostic in this case.
-        if minfo.HasExternalInit then
-            errorR (Error(FSComp.SR.tcSetterForInitOnlyPropertyCannotBeCalled1 (RichText.mkProperty methodName), mItem))
+let CheckInitProperties (minfo: MethInfo) (methodName: string) mItem =
+    // Check, whether this method has external init, emit an error diagnostic in this case.
+    if minfo.HasExternalInit then
+        errorR (Error(FSComp.SR.tcSetterForInitOnlyPropertyCannotBeCalled1 (RichText.mkProperty methodName), mItem))
 
 let CheckRequiredProperties (g:TcGlobals) (env: TcEnv) (cenv: TcFileState) (minfo: MethInfo) finalAssignedItemSetters mMethExpr =
     // Make sure, if apparent type has any required properties, they all are in the `finalAssignedItemSetters`.
@@ -10056,7 +10055,7 @@ and TcLookupItemThen cenv overallTy env tpenv mObjExpr objExpr objExprTy delayed
         match minfos with
         | minfo :: _ ->
             // Check if we have properties with "init-only" setters, which we try to call after init is done.
-            CheckInitProperties g minfo methodName mItemIdent
+            CheckInitProperties minfo methodName mItemIdent
         | _ -> ()
 
 #if !NO_TYPEPROVIDERS
