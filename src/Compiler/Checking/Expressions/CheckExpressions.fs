@@ -9023,19 +9023,10 @@ and TcApplicationThen (cenv: cenv) (overallTy: OverallTy) env tpenv mExprAndArg 
         else
             None
 
-    let tryTcRuntimeAsyncApplication () =
-        let intrinsic =
-            match leftExpr with
-            | ApplicableExpr(expr=Expr.Val (RuntimeAsyncReturn g as vref, flags, m))
-            | ApplicableExpr(expr=Expr.App (Expr.Val (RuntimeAsyncReturn g as vref, flags, m), _, [ _ ], [], _)) ->
-                Some(vref, flags, m)
-            | _ ->
-                None
-
-        match intrinsic with
-        | None ->
-            None
-        | Some(vref, flags, m) ->
+    let (|RuntimeAsyncApplication|_|) =
+        function
+        | ApplicableExpr(expr=Expr.Val (RuntimeAsyncReturn g as vref, flags, m))
+        | ApplicableExpr(expr=Expr.App (Expr.Val (RuntimeAsyncReturn g as vref, flags, m), _, [ _ ], [], _)) ->
             checkLanguageFeatureAndRecover g.langVersion LanguageFeature.RuntimeAsync m
 
             let _, carrierTy = stripFunTy g exprTy
@@ -9053,7 +9044,7 @@ and TcApplicationThen (cenv: cenv) (overallTy: OverallTy) env tpenv mExprAndArg 
             let marker =
                 Expr.App(Expr.Val(vref, flags, m), vref.Type, markerTyargs, [ arg ], mExprAndArg)
 
-            Some(
+            ValueSome(
                 TcDelayed
                     cenv
                     overallTy
@@ -9065,13 +9056,17 @@ and TcApplicationThen (cenv: cenv) (overallTy: OverallTy) env tpenv mExprAndArg 
                     atomicFlag
                     delayed
             )
+        | _ ->
+            ValueNone
+
+    match leftExpr with
+    | RuntimeAsyncApplication result -> result
+    | _ ->
 
     // If the type of 'synArg' unifies as a function type, then this is a function application, otherwise
     // it is an error or a computation expression or indexer or delegate invoke
-    match tryTcRuntimeAsyncApplication (), UnifyFunctionTypeUndoIfFailed cenv denv mLeftExpr exprTy with
-    | Some result, _ ->
-        result
-    | None, ValueSome (domainTy, resultTy) ->
+    match UnifyFunctionTypeUndoIfFailed cenv denv mLeftExpr exprTy with
+    | ValueSome (domainTy, resultTy) ->
 
         // atomicLeftExpr[idx] unifying as application gives a warning
         if not isSugar then
@@ -9137,7 +9132,7 @@ and TcApplicationThen (cenv: cenv) (overallTy: OverallTy) env tpenv mExprAndArg 
             let exprAndArg, resultTy = buildApp cenv leftExpr resultTy arg mExprAndArg
             TcDelayed cenv overallTy env tpenv mExprAndArg exprAndArg resultTy atomicFlag delayed
 
-    | None, ValueNone ->
+    | ValueNone ->
         // Type-directed invocables
 
         match synArg with
