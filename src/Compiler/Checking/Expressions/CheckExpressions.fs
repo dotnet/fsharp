@@ -9026,16 +9026,11 @@ and TcApplicationThen (cenv: cenv) (overallTy: OverallTy) env tpenv mExprAndArg 
     let tryTcRuntimeAsyncApplication () =
         let intrinsic =
             match leftExpr with
-            | ApplicableExpr(expr=Expr.Val (vref, flags, m)) ->
-                    match vref with
-                    | RuntimeAsyncReturn g -> Some(vref, flags, m)
-                    | _ -> None
-            | ApplicableExpr(expr=Expr.App (Expr.Val (vref, flags, m), _, [ _ ], [], _)) ->
-                    match vref with
-                    | RuntimeAsyncReturn g -> Some(vref, flags, m)
-                    | _ -> None
+            | ApplicableExpr(expr=Expr.Val (RuntimeAsyncReturn g as vref, flags, m))
+            | ApplicableExpr(expr=Expr.App (Expr.Val (RuntimeAsyncReturn g as vref, flags, m), _, [ _ ], [], _)) ->
+                Some(vref, flags, m)
             | _ ->
-                    None
+                None
 
         match intrinsic with
         | None ->
