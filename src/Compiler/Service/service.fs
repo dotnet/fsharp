@@ -11,6 +11,7 @@ open FSharp.Compiler.Caches
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.CodeAnalysis.TransparentCompiler
 open FSharp.Compiler.CompilerConfig
+open FSharp.Compiler.CompilerImports
 open FSharp.Compiler.CompilerOptions
 open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.Driver
@@ -337,8 +338,7 @@ type FSharpChecker
         braceMatchCache.Clear(utok)
         backgroundCompiler.ClearCaches()
         ClearAllILModuleReaderCache()
-        // Entries are weak, but "clear the caches" should mean it
-        FSharp.Compiler.CompilerImports.SharedImportedCcus.clear ()
+        SharedImportedCcus.clear ()
 
     member ic.ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients() =
         use _ =

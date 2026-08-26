@@ -2579,12 +2579,16 @@ and [<Sealed>] TcImports
 
             List.distinct (List.ofSeq names), multiModule
 
+#if NO_TYPEPROVIDERS
+        let isTypeProviderAssembly (_: IRawFSharpAssemblyData) = false
+#else
         let isTypeProviderAssembly (data: IRawFSharpAssemblyData) =
             match data.TryGetILModuleDef() with
             | Some ilModule ->
                 ilModule.ManifestOfAssembly.CustomAttrs.AsList()
-                |> List.exists (fun a -> a.Method.DeclaringType.BasicQualifiedName.Contains "TypeProviderAssembly")
+                |> List.exists (TryDecodeTypeProviderAssemblyAttr >> Option.isSome)
             | None -> false
+#endif
 
         let fileIdentity (r: AssemblyResolution) : SharedImportedCcus.AssemblyFileId =
             let writeStamp =

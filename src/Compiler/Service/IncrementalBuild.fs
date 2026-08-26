@@ -487,14 +487,14 @@ type BoundModel private (
         )
 
 /// Global service state
-type FrameworkImportsCacheKey =
+type FrameworkImportsCacheKey = 
     | FrameworkImportsCacheKey of resolvedpath: string list * assemblyName: string * targetFrameworkDirectories: string list * fsharpBinaries: string * importConfig: ImportConfig
 
     interface ICacheKey<string, FrameworkImportsCacheKey> with
         member this.GetKey() =
             this |> function FrameworkImportsCacheKey(assemblyName=a;importConfig=c) -> if c.CheckNullness then a + "CheckNulls" else a
 
-        member this.GetLabel() =
+        member this.GetLabel() = 
             this |> function FrameworkImportsCacheKey(assemblyName=a;importConfig=c) -> if c.CheckNullness then a + "CheckNulls" else a
 
         member this.GetVersion() = this
