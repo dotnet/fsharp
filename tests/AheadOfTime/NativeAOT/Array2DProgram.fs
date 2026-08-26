@@ -12,7 +12,7 @@ let private sum (grid: int[,]) =
     grid |> Array2D.iteri (fun _ _ v -> total.Value <- total.Value + v)
     total.Value
 
-[<System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessage("Aot", "IL3050",
+[<System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessage("AOT", "IL3050",
     Justification = "Deliberately calls the unsupported API to assert it throws PlatformNotSupportedException under AOT.")>]
 let private createBasedThrows rows cols =
     try
