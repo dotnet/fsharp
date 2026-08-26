@@ -6,9 +6,7 @@ open System
 open Microsoft.FSharp.Core
 open Microsoft.FSharp.Core.LanguagePrimitives.IntrinsicOperators
 open Microsoft.FSharp.Core.Operators.Checked
-#if NET9_0_OR_GREATER
 open System.Diagnostics.CodeAnalysis
-#endif
 
 #nowarn "3218" // mismatch of parameter name where 'count1' --> 'length1' would shadow function in module of same name
 
@@ -16,11 +14,9 @@ open System.Diagnostics.CodeAnalysis
 [<RequireQualifiedAccess>]
 module Array2D =
 
-#if NET9_0_OR_GREATER
     [<Literal>]
     let private nonZeroBasedRequiresDynamicCode =
         "Arrays with a non-zero lower bound cannot be created in an AOT-compiled application. Use Array2D.zeroCreate, Array2D.create or Array2D.init instead."
-#endif
 
     let inline checkNonNull argName arg = 
         if isNull arg then
@@ -78,16 +74,12 @@ module Array2D =
             array.[i, j] <- f.Invoke(i, j)
         array
 
-#if NET9_0_OR_GREATER
     [<RequiresDynamicCode(nonZeroBasedRequiresDynamicCode)>]
-#endif
     [<CompiledName("ZeroCreateBased")>]
     let zeroCreateBased (base1:int) (base2:int) (length1:int) (length2:int) : 'T[,] = 
         zeroCreateBasedAux base1 base2 length1 length2
 
-#if NET9_0_OR_GREATER
     [<RequiresDynamicCode(nonZeroBasedRequiresDynamicCode)>]
-#endif
     [<CompiledName("CreateBased")>]
     let createBased base1 base2 length1 length2 (initial:'T) = 
         let array = (zeroCreateBasedAux base1 base2 length1 length2 : 'T[,])
@@ -96,9 +88,7 @@ module Array2D =
             array.[i, j] <- initial
         array
 
-#if NET9_0_OR_GREATER
     [<RequiresDynamicCode(nonZeroBasedRequiresDynamicCode)>]
-#endif
     [<CompiledName("InitializeBased")>]
     let initBased base1 base2 length1 length2 initializer : 'T[,] = 
         initBasedAux base1 base2 length1 length2 initializer
