@@ -152,6 +152,12 @@ module internal Option =
 
     val attempt: f: (unit -> 'T) -> 'T option
 
+module internal ListInline =
+
+    val inline map: mapping: ('T -> 'U) -> list: 'T list -> 'U list
+
+    val inline forall2: predicate: ('T1 -> 'T2 -> bool) -> list1: 'T1 list -> list2: 'T2 list -> bool
+
 module internal List =
 
     val sortWithOrder: c: IComparer<'T> -> elements: 'T list -> 'T list
