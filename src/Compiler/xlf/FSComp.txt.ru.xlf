@@ -572,11 +572,6 @@
         <target state="translated">предпочитать метод расширения вместо простого свойства</target>
         <note />
       </trans-unit>
-      <trans-unit id="featurePreferStringGetPinnableReference">
-        <source>prefer String.GetPinnableReference in fixed bindings</source>
-        <target state="translated">рекомендуется использовать String.GetPinnableReference в фиксированных привязках</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featurePreprocessorElif">
         <source>#elif preprocessor directive</source>
         <target state="new">#elif preprocessor directive</target>

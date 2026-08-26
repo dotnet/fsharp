@@ -49,7 +49,6 @@ type LanguageFeature =
     | UnmanagedConstraintCsharpInterop
     | ReuseSameFieldsInStructUnions
     | ExtendedFixedBindings
-    | PreferStringGetPinnableReference
     /// RFC-1137
     | PreferExtensionMethodOverPlainProperty
     | WarningIndexedPropertiesGetSetSameType

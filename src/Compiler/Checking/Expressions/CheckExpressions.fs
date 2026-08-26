@@ -11420,13 +11420,7 @@ and TcAndBuildFixedExpr (cenv: cenv) env (overallPatTy, fixedExpr, overallExprTy
             mkConvToNativeInt g ve mBinding)
 
     | ty when isStringTy g ty ->
-        let getPinnableRefCall =
-            if g.langVersion.SupportsFeature LanguageFeature.PreferStringGetPinnableReference then
-                tryBuildGetPinnableReferenceCall ()
-            else
-                None
-
-        match getPinnableRefCall with
+        match tryBuildGetPinnableReferenceCall () with
         | Some expr -> expr
         | None ->
             let charPtrTy = mkNativePtrTy g g.char_ty

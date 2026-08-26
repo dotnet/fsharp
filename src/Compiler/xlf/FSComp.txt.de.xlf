@@ -572,11 +572,6 @@
         <target state="translated">Erweiterungsmethode gegenüber plain-Eigenschaft bevorzugen</target>
         <note />
       </trans-unit>
-      <trans-unit id="featurePreferStringGetPinnableReference">
-        <source>prefer String.GetPinnableReference in fixed bindings</source>
-        <target state="translated">String.GetPinnableReference in festen Bindungen bevorzugen</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featurePreprocessorElif">
         <source>#elif preprocessor directive</source>
         <target state="new">#elif preprocessor directive</target>
