@@ -344,13 +344,6 @@ type ModuleOrNamespaceKind =
         /// If false, this namespace was implicitly constructed during type checking.
         isExplicit: bool
 
-/// A public path records where a construct lives within the global namespace
-/// of a CCU.
-type PublicPath =
-    | PubPath of string[]
-
-    member EnclosingPath: string[]
-
 /// Represents the specified visibility of the accessibility -- used to ensure IL visibility
 [<RequireQualifiedAccess>]
 type SyntaxAccess =
@@ -368,8 +361,6 @@ type CompilationPath =
 
     member NestedCompPath: n: string -> moduleKind: ModuleOrNamespaceKind -> CompilationPath
 
-    member NestedPublicPath: id: Ident -> PublicPath
-
     member AccessPath: (string * ModuleOrNamespaceKind) list
 
     member DemangledPath: string list
@@ -381,6 +372,24 @@ type CompilationPath =
     member ParentCompPath: CompilationPath
 
     member SyntaxAccess: SyntaxAccess
+
+/// A public path records where a construct lives within the global namespace of a CCU.
+///
+/// Comparison goes through pubPathEq: derived equality would also compare the enclosing path's
+/// ILScopeRef and SyntaxAccess, besides boxing this struct.
+[<Struct; NoEquality; NoComparison>]
+type PublicPath =
+    | PubPath of enclosing: CompilationPath * name: string
+
+    member EnclosingCompilationPath: CompilationPath
+
+    member Name: string
+
+    member EnclosingPath: string[]
+
+    member FullPath: string[]
+
+    member HasEmptyEnclosingPath: bool
 
 [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
 type EntityOptionalData =
@@ -452,9 +461,6 @@ type Entity =
 
         /// This field is used when the 'tycon' is really a module definition. It holds statically nested type definitions type nested modules
         mutable entity_modul_type: MaybeLazy<ModuleOrNamespaceType>
-
-        /// The stable path to the type, e.g. Microsoft.FSharp.Core.FSharpFunc`2
-        mutable entity_pubpath: PublicPath option
 
         /// The stable path to the type, e.g. Microsoft.FSharp.Core.FSharpFunc`2
         mutable entity_cpath: CompilationPath option
@@ -772,7 +778,7 @@ type Entity =
     member PreEstablishedHasDefaultConstructor: bool
 
     /// Get a blob of data indicating how this type is nested in other namespaces, modules or types.
-    member PublicPath: PublicPath option
+    member PublicPath: PublicPath voption
 
     /// The code location where the module, namespace or type is defined.
     member Range: range
@@ -2759,7 +2765,7 @@ type EntityRef =
     member PreEstablishedHasDefaultConstructor: bool
 
     /// Get a blob of data indicating how this type is nested in other namespaces, modules or types.
-    member PublicPath: PublicPath option
+    member PublicPath: PublicPath voption
 
     /// The code location where the module, namespace or type is defined.
     member Range: range

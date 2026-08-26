@@ -36,6 +36,8 @@
 
 ### Fixed
 
+* Bitwise operators (`|||`, `&&&`, `^^^`) on enums whose underlying type is not an integer type (e.g. `char`) are now a compile-time error (FS0001, consistent with `~~~`, `<<<`, `>>>`) instead of a runtime `NotSupportedException`. ([Issue #11785](https://github.com/dotnet/fsharp/issues/11785), [PR #20322](https://github.com/dotnet/fsharp/pull/20322))
+
 ### Changed
 
 * Inline functions now keep SRTP constraints generic instead of eagerly resolving through weak resolution. This changes inferred types for some inline code — see [RFC FS-1043 compatibility section](https://github.com/fsharp/fslang-design/blob/main/RFCs/FS-1043-extension-members-for-operators-and-srtp-constraints.md) for details and workarounds.

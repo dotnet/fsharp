@@ -1065,7 +1065,11 @@ module FSharpExprConvert =
                         |> Seq.filter (fun v -> 
                             (v.CompiledName g.CompilerGlobalState) = vName &&
                                 match v.TryDeclaringEntity with
-                                | Parent p -> p.PublicPath = enclosingEntity.PublicPath
+                                | Parent p ->
+                                    (match p.PublicPath, enclosingEntity.PublicPath with
+                                     | ValueSome pp1, ValueSome pp2 -> pubPathEq pp1 pp2
+                                     | ValueNone, ValueNone -> true
+                                     | _ -> false)
                                 | _ -> false 
                         ) |> List.ofSeq
                     match findModuleMemberByName with
@@ -1205,7 +1209,7 @@ module FSharpExprConvert =
                 let argCount = (List.sumBy List.length argTys)  + (if isStatic then 0 else 1)
                 let key = ValLinkageFullKey({ MemberParentMangledName=memberParentName; MemberIsOverride=false; LogicalName=logicalName; TotalArgCount= argCount }, Some linkageType)
 
-                let (PubPath p) = tcref.PublicPath.Value
+                let p = tcref.PublicPath.Value.FullPath
                 let enclosingNonLocalRef = mkNonLocalEntityRef tcref.nlr.Ccu p
                 let vref = mkNonLocalValRef enclosingNonLocalRef key
                 makeFSExpr isMember vref 
