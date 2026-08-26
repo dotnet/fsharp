@@ -79,6 +79,15 @@ module String =
             String(result)
 #endif
 
+#if NETSTANDARD2_1_OR_GREATER
+    // Cache SpanAction instance to avoid allocations
+    let private _mapiAction =
+        System.Buffers.SpanAction<char, struct (string * OptimizedClosures.FSharpFunc<int,char,char>)>(fun (result: Span<char>) (struct (str, mapping)) ->
+            for i = 0 to result.Length - 1 do
+                result[i] <- mapping.Invoke (i, str[i])
+        )
+#endif
+    
     [<CompiledName("MapIndexed")>]
     let mapi (mapping: int -> char -> char) (str: string) =
         let len = length str
@@ -86,16 +95,18 @@ module String =
         if len = 0 then
             String.Empty
         else
+#if NETSTANDARD2_1_OR_GREATER
+            let f = OptimizedClosures.FSharpFunc<_, _, _>.Adapt(mapping)
+            String.Create(len, struct (str, f), _mapiAction)
+#else
             let result = str.ToCharArray()
             let f = OptimizedClosures.FSharpFunc<_, _, _>.Adapt(mapping)
 
-            let mutable i = 0
-
-            while i < len do
-                result.[i] <- f.Invoke(i, result.[i])
-                i <- i + 1
+            for i = 0 to result.Length - 1 do
+                result[i] <- f.Invoke(i, result[i])
 
             String(result)
+#endif
 
     [<CompiledName("Filter")>]
     let filter (predicate: char -> bool) (str: string) =
