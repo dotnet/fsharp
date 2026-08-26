@@ -663,6 +663,9 @@ let GetInfoForLocalValue cenv env (v: Val) m =
     match TryGetInfoForLocalValue cenv env v with
     | Some vval -> vval
     | None ->
+        // Inside an inline body being prepared for export (not optimizing), a referenced inline val may
+        // legitimately be absent from the optimization environment here: it is exported as-is and
+        // resolved when the body gets inlined at the caller site. Only diagnose when optimizing for real.
         if cenv.optimizing && not v.IsDispatchSlot && v.ShouldInline then
             errorR(Error(FSComp.SR.optValueMarkedInlineButWasNotBoundInTheOptEnv(richTextOfQualifiedValRef (mkLocalValRef v)), m))
         UnknownValInfo
@@ -3316,6 +3319,8 @@ and TryOptimizeVal cenv env (vOpt: ValRef option, shouldInline, inlineIfLambda, 
     | TupleValue _ | UnionCaseValue _ | RecdValue _ when shouldInline ->
         failwith "tuple, union and record values cannot be marked 'inline'"
 
+    // No diagnostics when preparing an inline body for export: the reference is exported
+    // as-is and resolved at the expansion site, where the caller's environment is complete.
     | UnknownValue when shouldInline && cenv.settings.alwaysInline && cenv.optimizing ->
         warning(Error(FSComp.SR.optValueMarkedInlineHasUnexpectedValue(), m))
         None
@@ -3366,6 +3371,8 @@ and OptimizeVal cenv env expr (v: ValRef, m) =
            e, AddValEqualityInfo g m v einfo 
 
     | None ->
+       // As in GetInfoForLocalValue: a failed inline is only an error when optimizing for this
+       // site, not when the body is merely being prepared for export.
        if cenv.optimizing && cenv.settings.alwaysInline then
            if v.ShouldInline then
                 match valInfoForVal.ValExprInfo with
@@ -4531,6 +4538,8 @@ and OptimizeBinding cenv isRec env (TBind(vref, expr, spBind)) =
         
         let exprOptimized, einfo = 
             let env = if vref.IsCompilerGenerated && Option.isSome env.latestBoundId then env else {env with latestBoundId=Some vref.Id} 
+            // Bodies of inline bindings are prepared for export (optimized later, at the expansion
+            // site), which is why diagnostics depending on a complete environment are suppressed.
             let cenv = if vref.InlineInfo.ShouldInline then { cenv with optimizing=false} else cenv 
             let arityInfo = InferValReprInfoOfBinding g AllowTypeDirectedDetupling.No vref expr
             let exprOptimized, einfo = OptimizeLambdas (Some vref) cenv env arityInfo expr vref.Type 
@@ -4640,24 +4649,27 @@ and OptimizeBinding cenv isRec env (TBind(vref, expr, spBind)) =
         errorRecovery exn vref.Range 
         raise (ReportedError (Some exn))
           
+/// Optimize a group in the given dependency order, then restore source order.
+and OptimizeInDependencyOrder (xsArray: 'a array) order processOne state =
+    let results, state =
+        (state, order)
+        ||> List.mapFold (fun state idx ->
+            let result, state = processOne state xsArray[idx]
+            (idx, result), state)
+
+    // The order is a permutation of the indexes, so scatter the results back to source order.
+    let resultsByIndex = Array.zeroCreate xsArray.Length
+
+    for idx, result in results do
+        resultsByIndex[idx] <- result
+
+    List.ofArray resultsByIndex, state
+
 and OptimizeBindings cenv isRec env xs =
     if isRec && xs |> List.exists (fun (TBind(vref, _, _)) -> vref.ShouldInline) then
-        let xsArray = xs |> List.toArray
+        let xsArray = List.toArray xs
         let order = GetBindingOptimizationOrder cenv false true xs
-
-        let results, env =
-            (env, order)
-            ||> List.mapFold (fun env idx ->
-                let result, env = OptimizeBinding cenv isRec env xsArray[idx]
-                (idx, result), env)
-
-        // The order is a permutation of the indexes, so scatter the results back to source order.
-        let resultsByIndex = Array.zeroCreate xsArray.Length
-
-        for idx, result in results do
-            resultsByIndex[idx] <- result
-
-        List.ofArray resultsByIndex, env
+        OptimizeInDependencyOrder xsArray order (OptimizeBinding cenv isRec) env
     else
         List.mapFold (OptimizeBinding cenv isRec) env xs
     
@@ -4888,24 +4900,12 @@ and OptimizeModuleBindings cenv isRec (env, bindInfosColl) xs =
         && (bindingGroup |> List.forall Option.isSome)
         && (binds |> List.exists (fun bind -> bind.Var.ShouldInline))
     then
-        let xsArray = xs |> List.toArray
+        let xsArray = List.toArray xs
         let preferLowArity = binds |> List.forall (fun bind -> bind.Var.IsMember)
         let order = GetBindingOptimizationOrder cenv true preferLowArity binds
 
-        let results, (env, bindInfosColl) =
-            ((env, bindInfosColl), order)
-            ||> List.mapFold (fun state idx ->
-                let result, state = OptimizeModuleBinding cenv state xsArray[idx]
-                (idx, result), state)
-
-        // The order is a permutation of the indexes, so scatter the results back to source order.
-        let resultsByIndex = Array.zeroCreate xsArray.Length
-
-        for idx, result in results do
-            resultsByIndex[idx] <- result
-
         // Keep the emitted binding list in source order; only the optimization schedule changes.
-        List.ofArray resultsByIndex, (env, bindInfosColl)
+        OptimizeInDependencyOrder xsArray order (OptimizeModuleBinding cenv) (env, bindInfosColl)
     else
         List.mapFold (OptimizeModuleBinding cenv) (env, bindInfosColl) xs
 
