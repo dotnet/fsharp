@@ -139,3 +139,17 @@ let inline forall2Chained ([<InlineIfLambda>] p: string -> string -> bool) l1 l2
 let test (env: int) (a: string list) (b: string list) =
     forall2Chained (eqf env) a b
 """
+
+    // For this direct-apply shape, an instance `member inline` preserves InlineIfLambda through `<|`;
+    // the instance receiver does not cause closure allocation. (Forwarding to a non-inline callee is
+    // covered above - and that is the real cause of the closure a member/`<|` call site is sometimes
+    // blamed for: the lambda escaping into the callee, not the member or the pipe.)
+
+    [<Fact>]
+    let ``direct-apply inline instance member, back-piped with <| -> no closure`` () =
+        allocatesNoClosure
+            """
+type H() =
+    member inline _.M ([<InlineIfLambda>] f: unit -> int) = f ()
+let test (h: H) (env: int) = h.M <| (fun () -> env)
+"""
