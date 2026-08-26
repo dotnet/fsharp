@@ -126,3 +126,16 @@ let test (env: int) =
 let test (env: int) =
     applyDirect <| (fun () -> eqf env "a" "b" |> System.Convert.ToInt32)
 """
+
+    // InlineIfLambda chains: an inline HOF that delegates to another inline + InlineIfLambda
+    // combinator is still closure-free. This is what lets List.mapq / lengthsEqAndForall2 keep
+    // their elegant bodies and call the ListInline combinators without allocating.
+
+    [<Fact>]
+    let ``inline HOF delegating to another inline combinator -> no closure`` () =
+        allocatesNoClosure
+            """
+let inline forall2Chained ([<InlineIfLambda>] p: string -> string -> bool) l1 l2 = forall2Direct p l1 l2
+let test (env: int) (a: string list) (b: string list) =
+    forall2Chained (eqf env) a b
+"""

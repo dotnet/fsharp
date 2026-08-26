@@ -162,6 +162,10 @@ module internal ListInline =
     /// List.fold, but inline so the folder is inlined (InlineIfLambda) rather than allocated as a closure.
     val inline fold: [<InlineIfLambda>] folder: ('State -> 'T -> 'State) -> state: 'State -> list: 'T list -> 'State
 
+    val inline map: mapping: ('T -> 'U) -> list: 'T list -> 'U list
+
+    val inline forall2: predicate: ('T1 -> 'T2 -> bool) -> list1: 'T1 list -> list2: 'T2 list -> bool
+
 module internal List =
 
     val sortWithOrder: c: IComparer<'T> -> elements: 'T list -> 'T list
