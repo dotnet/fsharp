@@ -472,11 +472,6 @@
         <target state="translated">인덱싱 및 슬라이싱을 위한 expr[idx] 표기법</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureInitProperties">
-        <source>support for consuming init properties</source>
-        <target state="translated">init 속성 사용 지원</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureInterfacesWithAbstractStaticMembers">
         <source>static abstract interface members</source>
         <target state="translated">고정적인 추상 인터페이스 멤버</target>

@@ -472,11 +472,6 @@
         <target state="translated">expr[idx]-Notation zum Indizieren und Aufteilen</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureInitProperties">
-        <source>support for consuming init properties</source>
-        <target state="translated">Unterstützung für die Nutzung von Initialisierungseigenschaften</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureInterfacesWithAbstractStaticMembers">
         <source>static abstract interface members</source>
         <target state="translated">statische abstrakte Schnittstellenmitglieder</target>

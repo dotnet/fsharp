@@ -472,11 +472,6 @@
         <target state="translated">Notación para indexación y segmentación expr[idx]</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureInitProperties">
-        <source>support for consuming init properties</source>
-        <target state="translated">compatibilidad con el consumo de propiedades init</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureInterfacesWithAbstractStaticMembers">
         <source>static abstract interface members</source>
         <target state="translated">miembros de interfaz abstracta estática</target>
