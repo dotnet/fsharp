@@ -225,6 +225,13 @@ type TypeCheckingConfig =
         DumpGraph: bool
     }
 
+/// The parts of a TcConfig that change how dlls are imported into F# ccus. Every cache of an imported
+/// form keys on these, so a new import-affecting setting is added once, here.
+[<RequireQualifiedAccess>]
+type ImportConfig =
+    { LangVersion: decimal
+      CheckNullness: bool }
+
 [<NoEquality; NoComparison>]
 type TcConfigBuilder =
     {
@@ -515,8 +522,8 @@ type TcConfigBuilder =
 
         mutable parallelReferenceResolution: ParallelReferenceResolution
 
-        /// Whether the Entity graph imported from a referenced assembly may be shared with other projects
-        /// that resolve that assembly, and everything it can reach, to the same files
+        /// Whether an assembly's imported Entity graph may be shared with projects that resolve it, and
+        /// everything it can reach, to the same files
         mutable shareImportedAssemblies: bool
 
         mutable captureIdentifiersWhenParsing: bool
@@ -897,6 +904,8 @@ type TcConfig =
     member captureIdentifiersWhenParsing: bool
 
     member typeCheckingConfig: TypeCheckingConfig
+
+    member importConfig: ImportConfig
 
     member dumpSignatureData: bool
 

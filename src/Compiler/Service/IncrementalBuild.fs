@@ -487,15 +487,15 @@ type BoundModel private (
         )
 
 /// Global service state
-type FrameworkImportsCacheKey = 
-    | FrameworkImportsCacheKey of resolvedpath: string list * assemblyName: string * targetFrameworkDirectories: string list * fsharpBinaries: string * langVersion: decimal * checkNulls: bool
+type FrameworkImportsCacheKey =
+    | FrameworkImportsCacheKey of resolvedpath: string list * assemblyName: string * targetFrameworkDirectories: string list * fsharpBinaries: string * importConfig: ImportConfig
 
     interface ICacheKey<string, FrameworkImportsCacheKey> with
         member this.GetKey() =
-            this |> function FrameworkImportsCacheKey(assemblyName=a;checkNulls=c) -> if c then a + "CheckNulls" else a
+            this |> function FrameworkImportsCacheKey(assemblyName=a;importConfig=c) -> if c.CheckNullness then a + "CheckNulls" else a
 
-        member this.GetLabel() = 
-            this |> function FrameworkImportsCacheKey(assemblyName=a;checkNulls=c) -> if c then a + "CheckNulls" else a
+        member this.GetLabel() =
+            this |> function FrameworkImportsCacheKey(assemblyName=a;importConfig=c) -> if c.CheckNullness then a + "CheckNulls" else a
 
         member this.GetVersion() = this
         
@@ -532,8 +532,7 @@ type FrameworkImportsCache(size) =
                     tcConfig.primaryAssembly.Name,
                     tcConfig.GetTargetFrameworkDirectories(),
                     tcConfig.fsharpBinariesDir,
-                    tcConfig.langVersion.SpecifiedVersion,
-                    tcConfig.checkNullness)
+                    tcConfig.importConfig)
 
         let node =
             lock gate (fun () ->

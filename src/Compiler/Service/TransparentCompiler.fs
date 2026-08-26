@@ -614,8 +614,7 @@ type internal TransparentCompiler
                 tcConfig.primaryAssembly.Name,
                 tcConfig.GetTargetFrameworkDirectories(),
                 tcConfig.fsharpBinariesDir,
-                tcConfig.langVersion.SpecifiedVersion,
-                tcConfig.checkNullness
+                tcConfig.importConfig
             )
 
         caches.FrameworkImports.Get(

@@ -219,7 +219,7 @@ type FSharpChecker
         if keepAssemblyContents && enablePartialTypeChecking then
             invalidArg "enablePartialTypeChecking" "'keepAssemblyContents' and 'enablePartialTypeChecking' cannot be both enabled."
 
-        let shareImportedAssemblies = defaultArg shareImportedAssemblies false
+        let shareImportedAssemblies = defaultArg shareImportedAssemblies true
 
         let parallelReferenceResolution = inferParallelReferenceResolution parallelReferenceResolution
 
@@ -337,8 +337,7 @@ type FSharpChecker
         braceMatchCache.Clear(utok)
         backgroundCompiler.ClearCaches()
         ClearAllILModuleReaderCache()
-        // Entries are weak, so live projects keep the ones they use and the rest go on their own, but
-        // "clear the caches" should mean it: after this nothing is held on any project's behalf.
+        // Entries are weak, but "clear the caches" should mean it
         FSharp.Compiler.CompilerImports.SharedImportedCcus.clear ()
 
     member ic.ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients() =

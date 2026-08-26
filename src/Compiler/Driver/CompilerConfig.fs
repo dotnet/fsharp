@@ -445,6 +445,13 @@ type TypeCheckingConfig =
         DumpGraph: bool
     }
 
+[<RequireQualifiedAccess>]
+type ImportConfig =
+    {
+        LangVersion: decimal
+        CheckNullness: bool
+    }
+
 [<NoEquality; NoComparison>]
 type TcConfigBuilder =
     {
@@ -645,8 +652,6 @@ type TcConfigBuilder =
 
         mutable parallelReferenceResolution: ParallelReferenceResolution
 
-        /// Whether the Entity graph imported from a referenced assembly may be shared with other projects
-        /// that resolve that assembly, and everything it can reach, to the same files
         mutable shareImportedAssemblies: bool
 
         mutable captureIdentifiersWhenParsing: bool
@@ -1405,6 +1410,13 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
     member _.shareImportedAssemblies = data.shareImportedAssemblies
     member _.captureIdentifiersWhenParsing = data.captureIdentifiersWhenParsing
     member _.typeCheckingConfig = data.typeCheckingConfig
+
+    member _.importConfig =
+        {
+            ImportConfig.LangVersion = data.langVersion.SpecifiedVersion
+            ImportConfig.CheckNullness = data.checkNullness
+        }
+
     member _.dumpSignatureData = data.dumpSignatureData
     member _.realsig = data.realsig
     member _.compilationMode = data.compilationMode

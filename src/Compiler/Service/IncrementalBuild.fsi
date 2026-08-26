@@ -28,8 +28,7 @@ type internal FrameworkImportsCacheKey =
         assemblyName: string *
         targetFrameworkDirectories: string list *
         fsharpBinaries: string *
-        langVersion: decimal *
-        checkNulls: bool
+        importConfig: ImportConfig
 
     interface ICacheKey<string, FrameworkImportsCacheKey>
 
