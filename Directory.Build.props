@@ -10,9 +10,9 @@
     <RepoRoot Condition="'$(RepoRoot)' == ''">$(MSBuildThisFileDirectory)</RepoRoot>
     <AccelerateBuildsInVisualStudio>true</AccelerateBuildsInVisualStudio>
     <IgnoreMibc Condition="'$(IgnoreMibc)' == ''">$(DotNetBuildSourceOnly)</IgnoreMibc>
-    <!-- The MSBuild 18.10 packages (Microsoft.Build.Tasks.Core, Microsoft.Build.Utilities.Core, Microsoft.NET.StringTools)
-         declare via buildTransitive targets that they don't support net10.0 and emit a TFM-support warning.
-         F# targets net10.0, so under warnings-as-errors this fails the build; suppress the check repo-wide. -->
+    <!-- The MSBuild 18.10 packages emit a buildTransitive TFM-support warning for any TFM they don't list as
+         supported (e.g. net10.0, still used by the source-build product TFM via $(NetCurrent)). Under
+         warnings-as-errors that fails the build, so suppress the check repo-wide. -->
     <SuppressTfmSupportBuildWarnings>true</SuppressTfmSupportBuildWarnings>
     <!-- When building the .NET product, there's no need to publish Windows PDBs. Any conversion to Windows PDBs will be done during staging, if necessary. -->
     <PublishWindowsPdb Condition="'$(DotNetBuild)' == 'true'">false</PublishWindowsPdb>
