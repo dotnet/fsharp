@@ -166,6 +166,8 @@ module internal List =
 
     val splitChoose: select: ('a -> Choice<'b, 'c>) -> l: 'a list -> 'b list * 'c list
 
+    val checkq: l1: 'a list -> l2: 'a list -> bool when 'a: not struct
+
     val inline mapq: f: ('T -> 'T) -> inp: 'T list -> 'T list when 'T: not struct
 
     val frontAndBack: l: 'a list -> 'a list * 'a
