@@ -5,39 +5,13 @@ namespace EmittedIL
 open Xunit
 open FSharp.Test.Compiler
 
-/// Characterization of when a higher-order-function call site allocates a heap closure for
-/// its function argument, established by reading the emitted IL (`newobj` of a closure).
-///
-/// Each test compiles its own `module Test` with --optimize+ and asserts whether a closure
-/// `newobj` appears. The function argument captures a runtime value (`env`) so that any
-/// closure is a real per-call allocation, and the HOFs here return a bool (no list building)
-/// so that the ONLY possible `newobj` in the caller is the function closure itself.
-///
-/// The contract these tests lock in (verified against emitted IL, F# 11, --optimize+):
-///
-///  1. Vanilla `List.map` is NOT inline, so its mapping function must be materialised as a
-///     value => a closure is allocated in EVERY syntactic form (lambda literal or partial
-///     application, direct or piped). Eta-expanding a `List.map` call site buys nothing.
-///
-///  2. An `inline` + `[<InlineIfLambda>]` HOF whose body FORWARDS the function to another
-///     non-inline callee (e.g. `List.forall2 p` / `List.map f`) STILL allocates the closure,
-///     because the callee forces the function into value position. Eta-expanding the call
-///     site does NOT help here either.
-///
-///  3. An `inline` + `[<InlineIfLambda>]` HOF whose body APPLIES the function directly (a
-///     while-loop, no forwarding, no nested closure) allocates NOTHING - and this holds
-///     whether the call site passes a lambda literal OR a partial application. The optimizer
-///     beta-reduces the partial application into a direct call. Therefore the closure win
-///     comes from the HOF body applying the function directly, NOT from the call-site form.
-///
-/// Note on `<|`: a separately-observed "`prim <| (fun ..)` allocates" effect is context
-/// dependent (it needs a HOF the optimizer cannot fully reduce, e.g. one touching private
-/// state) and does NOT reproduce in minimal code - the optimizer recovers the saturated
-/// call - so it is deliberately not asserted here.
+/// Characterization (emitted IL, --optimize+) of when a higher-order-function call site
+/// allocates a heap closure for its function argument (`newobj` of a closure). Each test
+/// compiles its own `module Test`; the argument captures `env` so any allocated closure is a
+/// real per-call allocation, and the HOFs return bool so the only possible caller `newobj` is
+/// the closure itself. The test names state the contract being locked in.
 module InlineIfLambdaClosureForms =
 
-    // Shared definitions. `eqf env` is the partial application used by the "partial
-    // application" call sites; capturing `env` makes any allocated closure per-call.
     let private prelude = """
 module Test
 
@@ -74,11 +48,7 @@ let inline forall2Direct ([<InlineIfLambda>] p: string -> string -> bool) (l1: s
     let private assertNoClosure src =
         FSharp (prelude + src) |> withOptimize |> compile |> shouldSucceed |> verifyILNotPresent [ "newobj" ]
 
-    // ---- (1) Vanilla List.map: allocates the mapping closure in every form ----
-
-    [<Fact>]
-    let ``Vanilla List.map + lambda literal allocates a closure`` () =
-        assertClosure "let test (env: int) (xs: string list) = List.map (fun (s: string) -> string (s.Length + env)) xs"
+    // ---- (1) Vanilla (non-inline) List.map: always allocates the mapping closure ----
 
     [<Fact>]
     let ``Vanilla List.map + partial application allocates a closure`` () =

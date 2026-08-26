@@ -459,12 +459,9 @@ module List =
         loop 0 xs
 
     let inline lengthsEqAndForall2 ([<InlineIfLambda>] p) l1 l2 =
-        // Single pass that applies `p` directly (rather than forwarding it to the non-inline
-        // `List.forall2`), so that under [<InlineIfLambda>] no closure is allocated for `p`.
-        // Returns true iff the lists have equal length and every pair satisfies `p`.
+        // Apply `p` directly (not via the non-inline `List.forall2`) so [<InlineIfLambda>] allocates no closure for `p`.
         let mutable r1 = l1
         let mutable r2 = l2
-        let mutable ok = true
         let mutable go = true
 
         while go do
@@ -476,19 +473,11 @@ module List =
                         r1 <- t1
                         r2 <- t2
                     else
-                        ok <- false
                         go <- false
-                | [] ->
-                    ok <- false
-                    go <- false
-            | [] ->
-                match r2 with
                 | [] -> go <- false
-                | _ ->
-                    ok <- false
-                    go <- false
+            | [] -> go <- false
 
-        ok
+        List.isEmpty r1 && List.isEmpty r2
 
     let rec findi n f l =
         match l with
@@ -505,11 +494,6 @@ module List =
                 | Choice2Of2 sx -> ch acc1 (sx :: acc2) xs
 
         ch [] [] l
-
-    let rec checkq l1 l2 =
-        match l1, l2 with
-        | h1 :: t1, h2 :: t2 -> h1 === h2 && checkq t1 t2
-        | _ -> true
 
     let inline mapq ([<InlineIfLambda>] f: 'T -> 'T) inp =
         assert not typeof<'T>.IsValueType
@@ -534,9 +518,8 @@ module List =
             else
                 [ h2a; h2b; h2c ]
         | _ ->
-            // Apply `f` directly (rather than forwarding it to the non-inline `List.map`), so
-            // that under [<InlineIfLambda>] no closure is allocated for `f`. Identity preserving:
-            // the original `inp` instance is returned when every element is physically unchanged.
+            // Apply `f` directly (not via the non-inline `List.map`) so [<InlineIfLambda>] allocates no closure for `f`.
+            // Identity-preserving: returns the original `inp` when every element is physically unchanged.
             let mutable changed = false
             let mutable acc = []
             let mutable rest = inp
