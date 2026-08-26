@@ -89,6 +89,7 @@ type LanguageFeature =
     | AccessProtectedBaseFieldFromClosure
     | ImprovedImpliedArgumentNamesPartTwo
     | RecordSpreads
+    | ErrorOnBitwiseOpsOnNonIntegralEnums
 
 /// LanguageVersion management
 type LanguageVersion =
