@@ -170,23 +170,20 @@
       "cats": []
     },
     "20355": {
-      "sha": "0301a07cb8cf",
+      "sha": "d8e6673b1588",
       "cats": [
         "Affects-Build-Infra"
       ]
     },
     "20356": {
-      "sha": "fdb88ab00b8e",
+      "sha": "2127b6ce15cc",
       "cats": [
+        "Affects-Agent-Config",
         "Affects-Compiler-Output"
       ]
     },
-    "20362": {
-      "sha": "85a0fa1c2ec1",
-      "cats": []
-    },
     "20363": {
-      "sha": "ed67aaf61cda",
+      "sha": "7679c374c719",
       "cats": [
         "Affects-Compiler-Output"
       ]
@@ -229,6 +226,16 @@
     },
     "20375": {
       "sha": "d4aead071d14",
+      "cats": [
+        "Affects-Compiler-Output"
+      ]
+    },
+    "20377": {
+      "sha": "7f7db9417402",
+      "cats": []
+    },
+    "20378": {
+      "sha": "745d9842744e",
       "cats": [
         "Affects-Compiler-Output"
       ]
