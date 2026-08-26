@@ -102,7 +102,6 @@ type ResolvedExtensionReference =
 /// everything it can reach, to the same files. Entries are weak: nothing is retained on a project's behalf.
 module internal SharedImportedCcus =
 
-    /// For FSharpChecker.ClearCaches
     val clear: unit -> unit
 
 /// Represents a resolved imported binary

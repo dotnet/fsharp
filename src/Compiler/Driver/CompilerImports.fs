@@ -433,11 +433,9 @@ type AssemblyResolution =
 
 module internal SharedImportedCcus =
 
-    /// As TcImports keys assemblies: no path, extension or version
     type SimpleAssemblyName = string
 
-    /// ILAssemblyRef cannot serve: it does not separate one package's builds for different target
-    /// frameworks, which differ only in content.
+    /// ILAssemblyRef cannot serve: it does not separate one package's builds for different frameworks
     [<Struct; StructuralEquality; NoComparison>]
     type AssemblyFileId =
         | AssemblyFileId of text: string
@@ -454,8 +452,6 @@ module internal SharedImportedCcus =
             References: SimpleAssemblyName list
         }
 
-    /// Two projects meet at an entry only when every part of this agrees, which is when they would have
-    /// built the same thing.
     [<StructuralEquality; NoComparison>]
     type SharedCcuKey =
         {
@@ -472,7 +468,6 @@ module internal SharedImportedCcus =
     /// Weak: an entry is held by the projects using it, and holds the rest of its own closure
     let private cache = ConcurrentDictionary<SharedCcuKey, WeakReference<CcuThunk>>()
 
-    /// As TcImports compares them
     let private nameComparer = StringComparer.OrdinalIgnoreCase
 
     /// What a shared ccu may close over besides its own closure. Functions because TcImports comes later.
@@ -483,9 +478,8 @@ module internal SharedImportedCcus =
             XmlDoc: string -> XmlDocumentationInfo option
         }
 
-    /// What a shared ccu resolves through, in place of the TcImports of whichever project imported it
-    /// first: its own closure, then the framework layer - both pinned by its key. Holding those closure
-    /// ccus strongly is what lets the cache be weak.
+    /// What a shared ccu resolves through instead of the TcImports that first imported it: its own
+    /// closure, then the framework layer. Holding the closure strongly is what lets the cache be weak.
     type SharedImportContext(layer: FrameworkLayer, closure: SimpleAssemblyName list) =
 
         let refs = ConcurrentDictionary<SimpleAssemblyName, CcuThunk>(nameComparer)
@@ -502,7 +496,6 @@ module internal SharedImportedCcus =
                 member _.TryFindXmlDocumentationInfo assemblyName = layer.XmlDoc assemblyName
 
 #if !NO_TYPEPROVIDERS
-                // Type provider assemblies are never shared, so reaching these means that exclusion broke
                 member _.GetProvidedAssemblyInfo(_ctok, m, _assembly) =
                     error (InternalError("a shared ccu cannot import provided types", m))
 
@@ -519,13 +512,11 @@ module internal SharedImportedCcus =
 
         member _.GetImportMap() = importMap.Force()
 
-        /// Publishing before the closure is known would let another project take an entry that resolves
-        /// nothing
+        /// Publishing before the closure is known would hand another project an entry resolving nothing
         member _.HoldForPublication(key: SharedCcuKey, ccu: CcuThunk) = pending.Add(key, ccu)
 
         member _.Pending = pending
 
-    /// Absent where the assembly is not shareable, and the import stays private to its project
     type SharedImport =
         {
             Key: SharedCcuKey
@@ -538,8 +529,7 @@ module internal SharedImportedCcus =
             Closure: SimpleAssemblyName list
         }
 
-    /// The names walked to inside the batch, then those leaving it, which are framework assemblies the
-    /// key pins by stamp
+    /// Names walked to inside the batch, then those leaving it - framework assemblies the stamp pins
     let private closureOf (assemblies: Dictionary<SimpleAssemblyName, AssemblyKeyInfo>) root =
         let inside = HashSet<SimpleAssemblyName>(nameComparer)
         let outside = HashSet<SimpleAssemblyName>(nameComparer)
@@ -555,8 +545,8 @@ module internal SharedImportedCcus =
         walk root
         inside, outside
 
-    /// An assembly whose closure is not shareable gets no key: its entities, and the per-CCU caches they
-    /// carry, can point into one project's copy of an unshared assembly.
+    /// No key where the closure is not shareable: entities and their per-CCU caches would point into one
+    /// project's copy of an unshared assembly.
     let computeKeys (frameworkStamp: int64) (assemblies: Dictionary<SimpleAssemblyName, AssemblyKeyInfo>) isShareable =
         let keys = Dictionary<SimpleAssemblyName, ShareableAssembly>(nameComparer)
 
@@ -1404,8 +1394,8 @@ and [<Sealed>] TcImports
 
     let tciLock = TcImportsLock()
 
-    /// Identifies this instance in cache keys: an identity hash is neither unique nor stable, and
-    /// aliasing two import layers would silently mix their ccus
+    /// For cache keys: an identity hash is neither unique nor stable, and aliasing two layers would
+    /// silently mix their ccus
     let stamp = newStamp ()
 
     //---- Start protected by tciLock -------
@@ -1551,10 +1541,8 @@ and [<Sealed>] TcImports
 
     member _.Stamp = stamp
 
-    /// The config this layer's ccus were imported under
     member _.GetImportReuseKey ctok = (tcConfigP.Get ctok).importReuseKey
 
-    /// The layer a sharing key pins by stamp, and so the only one a shared ccu may close over
     member tcImports.KeyPinnedLayer =
         match importsBase with
         | Some b -> b
@@ -2267,21 +2255,18 @@ and [<Sealed>] TcImports
 
         let sharedContext = shared |> Option.map (fun s -> s.Context)
 
-        // Everything the ccu later resolves goes through this thunk, so it decides whether the ccu is
-        // bound to the importing project or to what the key pins
+        // Everything the ccu later resolves goes through this, so it decides what the ccu is bound to
         let amap =
             match sharedContext with
             | Some ctx -> ctx.GetImportMap
             | None -> tcImports.GetImportMap
 
-        // Multi-module assemblies are excluded from sharing, so a shared import can never need this
         let auxModuleLoader =
             match sharedContext with
             | Some _ -> fun scoref -> error (InternalError(sprintf "a shared ccu cannot load the auxiliary module %A" scoref, m))
             | None -> tcImports.MkLoaderForMultiModuleILAssemblies ctok m
 
-        // Meaningless in a ccu handed to other projects: SymbolHelpers.fileNameOfItem combines it with a
-        // relative path out of the assembly's metadata
+        // Meaningless in a shared ccu: SymbolHelpers.fileNameOfItem joins it with a path from metadata
         let sourceDir =
             match shared with
             | Some _ -> ""
@@ -2335,8 +2320,7 @@ and [<Sealed>] TcImports
 
         let sharedContext = shared |> Option.map (fun s -> s.Context)
 
-        // GetTcGlobals reaches the same object - the field is only set on the framework layer - but
-        // through a project's TcImports, which a cached ccu must not hold
+        // GetTcGlobals reaches the same object, but through a TcImports a cached ccu must not hold
         let globalsOwner = tcImports.KeyPinnedLayer
 
         let amap =
@@ -2486,7 +2470,6 @@ and [<Sealed>] TcImports
             // Relink
             ccuRawDataAndInfos
             |> List.iter (fun (dataOpt, _, _) ->
-                // A shared ccu was relinked by whichever project unpickled it, against the same closure.
                 match dataOpt with
                 | None -> ()
                 | Some data ->
@@ -2625,8 +2608,7 @@ and [<Sealed>] TcImports
                         References = refs
                     }
 
-                // A project's own output changes with every build, and phase2 adds provided namespaces into
-                // a type provider assembly's contents
+                // A project's own output changes every build; phase2 mutates a type provider's contents
                 if
                     r.ProjectReference.IsNone
                     && not isMultiModule
@@ -2636,8 +2618,7 @@ and [<Sealed>] TcImports
                     shareable.Add name |> ignore
 
             // A reference must resolve to what the key pins - this batch or the framework layer - or to
-            // nothing anywhere, which every sharer agrees about. One only an earlier batch of this project
-            // resolves would be keyed as unresolved while this project resolves it.
+            // nothing anywhere. One only an earlier batch resolves would be keyed as unresolved.
             let pinnedByKey = Dictionary<_, bool>(ic)
 
             let isPinnedByKey ref =
@@ -2677,7 +2658,6 @@ and [<Sealed>] TcImports
             let ilScopeRef = assemblyData.ILScopeRef
 
             // A project's own output can share a simple name with a package, so it is excluded here
-            // rather than left to the key table
             let shared =
                 match keys with
                 | Some keys when r.ProjectReference.IsNone ->
@@ -2746,15 +2726,12 @@ and [<Sealed>] TcImports
             let resolved = assemblyData |> Seq.choose id |> List.ofSeq
 
             let keys =
-                // A framework base exists only for project layers, which register their whole non-framework
-                // set at once; BuildFrameworkTcImports registers in three batches, and an entry from an
-                // early one could not resolve what the later ones bring.
+                // A framework base exists only for project layers, which register their whole set at once;
+                // BuildFrameworkTcImports uses three batches, and an early entry could not resolve the rest.
                 //
-                // Only with reduceMemoryUsage: without it TcImports disposal closes a memory-mapped reader,
-                // so a ccu outliving the project that imported it would read from a closed file.
+                // Only with reduceMemoryUsage: otherwise disposal closes the reader a surviving ccu needs.
                 //
-                // The config check is what makes the stamp enough to pin the config: a layer built under
-                // a different one means the framework key did not separate them, so stop rather than share
+                // The config check is what makes the stamp enough to pin the config
                 if
                     tcConfig.shareImportedAssemblies
                     && importsBase.IsSome
@@ -2771,8 +2748,7 @@ and [<Sealed>] TcImports
 
             let! ccuinfos = phase2s |> runMethod
 
-            // Everything is registered, so each entry can take its closure and be published; no import
-            // has been forced yet, so nothing can have resolved through a half-filled context
+            // Everything is registered and no import forced yet, so no entry can be taken half-filled
             for ctx in contexts do
                 if ctx.Pending.Count > 0 then
                     for name in ctx.Closure do

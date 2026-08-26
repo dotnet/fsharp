@@ -225,8 +225,7 @@ type TypeCheckingConfig =
         DumpGraph: bool
     }
 
-/// A field belongs here when two projects that differ in it cannot reuse one imported form. Every cache
-/// of an imported form keys on this, so a new one is added once, here.
+/// A field belongs here when two projects differing in it cannot reuse one imported form
 [<RequireQualifiedAccess>]
 type ImportReuseKey =
     { LangVersion: decimal
@@ -522,8 +521,6 @@ type TcConfigBuilder =
 
         mutable parallelReferenceResolution: ParallelReferenceResolution
 
-        /// Whether an assembly's imported Entity graph may be shared with projects that resolve it, and
-        /// everything it can reach, to the same files
         mutable shareImportedAssemblies: bool
 
         mutable captureIdentifiersWhenParsing: bool
