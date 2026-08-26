@@ -8,8 +8,8 @@ open FSharp.Test
 open FSharp.Test.Compiler
 open Xunit
 
-
-[<RunTestCasesInSequence>]
+// A single temp file (name in module state) undergoes diverse manipulations across various tests
+[<TestClass(DisableParallelization = true)>]
 module DeterministicTests =
 
     let commonOptions = ["--refonly";"--deterministic";"--nooptimizationdata"]

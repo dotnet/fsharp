@@ -205,7 +205,21 @@ type ReaderState =
         isimpletys: InputTable<TType>
         ifile: string
         iILModule: ILModuleDef option // the Abstract IL metadata for the DLL being read
+
+        // The pickled format has no table for these, so each is written out at every mention while a
+        // blob names very few distinct ones.
+        iilscopes: Dictionary<ILScopeRef, ILScopeRef>
+        iiltyperefs: Dictionary<ILTypeRef, ILTypeRef>
+        iilmethodrefs: Dictionary<ILMethodRef, ILMethodRef>
     }
+
+// A `HashSet` would fit better, but the member returning the instance it holds is netstandard2.1.
+let shareIL (table: Dictionary<'T, 'T>) (v: 'T) : 'T =
+    match table.TryGetValue v with
+    | true, existing -> existing
+    | _ ->
+        table[v] <- v
+        v
 
 let ufailwith st str = ffailwith st.ifile str
 
@@ -1066,6 +1080,9 @@ let unpickleObjWithDanglingCcus
             isimpletys = new_itbl "isimpletys (fake)" [||]
             ifile = file
             iILModule = ilModule
+            iilscopes = Dictionary<_, _>()
+            iiltyperefs = Dictionary<_, _>()
+            iilmethodrefs = Dictionary<_, _>()
         }
 
     let ccuNameTab = u_array u_encoded_ccuref st2
@@ -1126,6 +1143,9 @@ let unpickleObjWithDanglingCcus
                 isimpletys = simpletypTab
                 ifile = file
                 iILModule = ilModule
+                iilscopes = Dictionary<_, _>()
+                iiltyperefs = Dictionary<_, _>()
+                iilmethodrefs = Dictionary<_, _>()
             }
 
         let res = u st1
@@ -1231,7 +1251,7 @@ let u_ILScopeRef st =
         | _ -> ufailwith st "u_ILScopeRef"
 
     let res = rescopeILScopeRef st.iilscope res
-    res
+    shareIL st.iilscopes res
 
 let p_ILHasThis x st =
     p_byte
@@ -1320,7 +1340,8 @@ let u_ILCallConv st =
 
 let u_ILTypeRef st =
     let a, b, c = u_tup3 u_ILScopeRef u_strings u_string st
-    ILTypeRef.Create(a, b, c)
+    let res = ILTypeRef.Create(a, b, c)
+    shareIL st.iiltyperefs res
 
 let u_ILArrayShape =
     u_wrap ILArrayShape (u_list (u_tup2 (u_option u_int32) (u_option u_int32)))
@@ -1413,7 +1434,8 @@ let u_ILMethodRef st =
     let x1, x2, x3, x4, x5, x6 =
         u_tup6 u_ILTypeRef u_ILCallConv u_int u_string u_ILTypes u_ILType st
 
-    ILMethodRef.Create(x1, x2, x4, x3, x5, x6)
+    let res = ILMethodRef.Create(x1, x2, x4, x3, x5, x6)
+    shareIL st.iilmethodrefs res
 
 let u_ILFieldRef st =
     let x1, x2, x3 = u_tup3 u_ILTypeRef u_string u_ILType st
