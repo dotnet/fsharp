@@ -3,12 +3,7 @@
 // with `task {` replaced by `runtimeTask {`. Test names and bodies are kept as
 // close to the originals as possible.
 //
-// Tests that require suspending inside an exception-handling region are in the
-// "Known failing" section at the bottom and are NOT called from main: the .NET
-// runtime-async contract forbids suspension in EH regions, and depending on the
-// case this currently either loses the finally or terminates the process
-// (0xC0000409). `backgroundTask` tests have no runtimeTask equivalent and are
-// omitted.
+// `backgroundTask` tests have no runtimeTask equivalent and are omitted.
 
 module RuntimeTasks
 
@@ -355,12 +350,9 @@ let testNonBlocking () =
     continueToFinish.Set()
     t.Wait()
 
-// The knownFailing_* tests below suspend inside try/with in non-tail position
-// (or require synchronous start before the first suspension). Suspension in
-// exception-handling regions is forbidden by the runtime-async contract; these
-// compile but are not run from main.
+// Exception-handling and disposal coverage.
 
-let knownFailing_testCatching1 () =
+let testCatching1 () =
     let mutable x = 0
     let mutable y = 0
     let t =
@@ -381,7 +373,7 @@ let knownFailing_testCatching1 () =
     require (y = 1) "bailed after exn"
     require (x = 0) "ran past failure"
 
-let knownFailing_testCatching2 () =
+let testCatching2 () =
     let mutable x = 0
     let mutable y = 0
     let t =
@@ -402,7 +394,7 @@ let knownFailing_testCatching2 () =
     require (y = 1) "bailed after exn"
     require (x = 0) "ran past failure"
 
-let knownFailing_testCatchingInApplicative () =
+let testCatchingInApplicative () =
     let mutable x = 0
     let mutable y = 0
     let t =
@@ -427,7 +419,7 @@ let knownFailing_testCatchingInApplicative () =
     require (y = 1) "bailed after exn"
     require (x = 1) "exit too early"
 
-let knownFailing_testNestedCatching () =
+let testNestedCatching () =
     let mutable counter = 1
     let mutable caughtInner = 0
     let mutable caughtOuter = 0
@@ -589,7 +581,7 @@ let testForLoopSadPath () =
             }
         require (t.Result = 1) "wrong result"
 
-let knownFailing_testForLoopSadPathComplex () =
+let testForLoopSadPathComplex () =
     for i in 1 .. 5 do
         let mutable disposed = false
         let wrapList =
@@ -933,16 +925,7 @@ module Issue12184f =
         }
 
 // ---------------------------------------------------------------------------
-// Known failing: these tests suspend inside an exception-handling region
-// (try/finally or an `Using` finally that awaits an IAsyncDisposable), which
-// the runtime-async contract forbids. Today they either lose the finally or
-// terminate the process (0xC0000409), so they are compiled but not run.
-// RuntimeTasksAsyncDisposalException.fs keeps the minimal crash repro.
-//
-// A second group relies on synchronous (hot) start of the task body up to the
-// first suspension. On the current runtime build a runtime-async body does not
-// observably run before the returned Task is awaited, so these are not run
-// either.
+// Exception-handling and disposal coverage.
 // ---------------------------------------------------------------------------
 
 let knownDivergent_testNoDelay () =
@@ -956,7 +939,7 @@ let knownDivergent_testNoDelay () =
     require (x = 1) "first part didn't run yet"
     t.Wait()
 
-let knownFailing_testTryFinallyHappyPath () =
+let testTryFinallyHappyPath () =
     for i in 1 .. 5 do
         let mutable ran = false
         let t =
@@ -971,7 +954,7 @@ let knownFailing_testTryFinallyHappyPath () =
         t.Wait()
         require ran "never ran"
 
-let knownFailing_testTryFinallySadPath () =
+let testTryFinallySadPath () =
     for i in 1 .. 5 do
         let mutable ran = false
         let t =
@@ -990,7 +973,7 @@ let knownFailing_testTryFinallySadPath () =
         | _ -> ()
         require ran "never ran"
 
-let knownFailing_testTryFinallyCaught () =
+let testTryFinallyCaught () =
     for i in 1 .. 5 do
         let mutable ran = false
         let t =
@@ -1010,7 +993,7 @@ let knownFailing_testTryFinallyCaught () =
         require (t.Result = 2) "wrong return"
         require ran "never ran"
 
-let knownFailing_testUsing () =
+let testUsing () =
     for i in 1 .. 5 do
         let mutable disposed = false
         let t =
@@ -1023,7 +1006,7 @@ let knownFailing_testUsing () =
         t.Wait()
         require disposed "never disposed B"
 
-let knownFailing_testUsingFromTask () =
+let testUsingFromTask () =
     let mutable disposedInner = false
     let mutable disposed = false
     let t =
@@ -1043,7 +1026,7 @@ let knownFailing_testUsingFromTask () =
     t.Wait()
     require disposed "never disposed C"
 
-let knownFailing_testUsingSadPath () =
+let testUsingSadPath () =
     let mutable disposedInner = false
     let mutable disposed = false
     let t =
@@ -1088,7 +1071,123 @@ let testUsingAsyncDisposableSync () =
         require (disposed >= 1) "never disposed B"
         require (disposed <= 1) "too many dispose on B"
 
-let knownFailing_testExceptionThrownInFinally () =
+let testUsingAsyncDisposableAsync () =
+    for i in 1 .. 5 do
+        let mutable disposed = 0
+        let t =
+            runtimeTask {
+                use d =
+                    { new IAsyncDisposable with
+                        member _.DisposeAsync() =
+                            runtimeTask {
+                                do! Task.Delay(10)
+                                disposed <- disposed + 1
+                            }
+                            |> ValueTask }
+                require (disposed = 0) "disposed way early"
+                do! Task.Delay(100)
+                require (disposed = 0) "disposed kinda early"
+            }
+        t.Wait()
+        require (disposed >= 1) "never disposed B"
+        require (disposed <= 1) "too many dispose on B"
+
+let testUsingAsyncDisposableExnAsync () =
+    for i in 1 .. 5 do
+        let mutable disposed = 0
+        let t =
+            runtimeTask {
+                use d =
+                    { new IAsyncDisposable with
+                        member _.DisposeAsync() =
+                            runtimeTask {
+                                do! Task.Delay(10)
+                                disposed <- disposed + 1
+                            }
+                            |> ValueTask }
+                require (disposed = 0) "disposed way early"
+                failtest "oops"
+            }
+        try
+            t.Wait()
+        with
+        | :? AggregateException ->
+            require (disposed >= 1) "never disposed B"
+            require (disposed <= 1) "too many dispose on B"
+
+let testUsingAsyncDisposableExnSync () =
+    for i in 1 .. 5 do
+        let mutable disposed = 0
+        let t =
+            runtimeTask {
+                use d =
+                    { new IAsyncDisposable with
+                        member _.DisposeAsync() =
+                            runtimeTask {
+                                disposed <- disposed + 1
+                                do! Task.Delay(10)
+                            }
+                            |> ValueTask }
+                require (disposed = 0) "disposed way early"
+                failtest "oops"
+            }
+        try
+            t.Wait()
+        with
+        | :? AggregateException ->
+            require (disposed >= 1) "never disposed B"
+            require (disposed <= 1) "too many dispose on B"
+
+let testUsingAsyncDisposableDelayExnSync () =
+    for i in 1 .. 5 do
+        let mutable disposed = 0
+        let t =
+            runtimeTask {
+                use d =
+                    { new IAsyncDisposable with
+                        member _.DisposeAsync() =
+                            runtimeTask {
+                                disposed <- disposed + 1
+                                do! Task.Delay(10)
+                            }
+                            |> ValueTask }
+                require (disposed = 0) "disposed way early"
+                do! Task.Delay(10)
+                require (disposed = 0) "disposed kind of early"
+                failtest "oops"
+            }
+        try
+            t.Wait()
+        with
+        | :? AggregateException ->
+            require (disposed >= 1) "never disposed B"
+            require (disposed <= 1) "too many dispose on B"
+
+let testUsingBindAsyncDisposableSync () =
+    for i in 1 .. 5 do
+        let mutable disposed = 0
+        let t =
+            runtimeTask {
+                use! d =
+                    runtimeTask {
+                        do! Task.Delay(10)
+                        return
+                            { new IAsyncDisposable with
+                                member _.DisposeAsync() =
+                                    runtimeTask {
+                                        disposed <- disposed + 1
+                                    }
+                                    |> ValueTask }
+                    }
+                require (disposed = 0) "disposed way early"
+                do! Task.Delay(100)
+                require (disposed = 0) "disposed kinda early"
+            }
+        t.Wait()
+        require (disposed >= 1) "never disposed B"
+        require (disposed <= 1) "too many dispose on B"
+
+let testExceptionThrownInFinally () =
     for i in 1 .. 5 do
         use stepOutside = new SemaphoreSlim(0)
         use ranInitial = new ManualResetEventSlim()
@@ -1116,7 +1215,7 @@ let knownFailing_testExceptionThrownInFinally () =
         require ranNext.IsSet "didn't run next"
         require (ranFinally = 1) "didn't run finally exactly once"
 
-let knownFailing_test2ndExceptionThrownInFinally () =
+let test2ndExceptionThrownInFinally () =
     for i in 1 .. 5 do
         use ranInitial = new ManualResetEventSlim()
         use continueTask = new SemaphoreSlim(0)
@@ -1144,7 +1243,7 @@ let knownFailing_test2ndExceptionThrownInFinally () =
         require ranNext.IsSet "didn't run next"
         require (ranFinally = 1) "didn't run finally exactly once"
 
-let knownFailing_testTryFinallyOverReturnFromWithException () =
+let testTryFinallyOverReturnFromWithException () =
     let inner() =
         runtimeTask {
             do! Task.Yield()
@@ -1166,7 +1265,7 @@ let knownFailing_testTryFinallyOverReturnFromWithException () =
     | :? AggregateException -> ()
     require (m = 1) "didn't run finally"
 
-let knownFailing_testTryFinallyOverReturnFromWithoutException () =
+let testTryFinallyOverReturnFromWithoutException () =
     let inner() =
         runtimeTask {
             do! Task.Yield()
@@ -1272,6 +1371,10 @@ let main _ =
     testShortCircuitResult()
     testDelay()
     testNonBlocking()
+    testCatching1()
+    testCatching2()
+    testCatchingInApplicative()
+    testNestedCatching()
     testWhileLoopSync()
     testWhileLoopAsyncZeroIteration()
     testWhileLoopAsyncOneIteration()
@@ -1279,14 +1382,30 @@ let main _ =
     testForLoopA()
     testForLoopComplex()
     testForLoopSadPath()
+    testForLoopSadPathComplex()
     testFixedStackWhileLoop()
     testTypeInference()
     testNoStackOverflowWithImmediateResult()
     testNoStackOverflowWithYieldResult()
     testSmallTailRecursion()
     testTryOverReturnFrom()
+    testTryFinallyOverReturnFromWithException()
+    testTryFinallyOverReturnFromWithoutException()
     testAsyncsMixedWithTasks()
     testAsyncsMixedWithTasks_ShouldNotSwitchContext()
     testCustomAwaitable()
     testUsingAsyncDisposableSync()
+    testUsingAsyncDisposableAsync()
+    testUsingAsyncDisposableExnAsync()
+    testUsingAsyncDisposableExnSync()
+    testUsingAsyncDisposableDelayExnSync()
+    testUsingBindAsyncDisposableSync()
+    testTryFinallyHappyPath()
+    testTryFinallySadPath()
+    testTryFinallyCaught()
+    testUsing()
+    testUsingFromTask()
+    testUsingSadPath()
+    testExceptionThrownInFinally()
+    test2ndExceptionThrownInFinally()
     0

@@ -6,6 +6,7 @@ open Internal.Utilities.Collections
 open Internal.Utilities.Library.Extras
 open FSharp.Compiler 
 open FSharp.Compiler.DiagnosticsLogger
+open FSharp.Compiler.RuntimeAsync
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypedTreeOps
@@ -100,6 +101,16 @@ let DecideExpr cenv exprF noInterceptF z expr  =
         let z = CheckMethods z overrides 
         let z =  (z, iimpls) ||> List.fold CheckInterfaceImpl 
         z
+
+    // A __runtimeAsyncReturn application that does not end up at the top of a method or
+    // closure body is re-homed into a compiler-synthesized closure during code generation
+    // (GenRuntimeAsyncReturnAsStartedTask). Treat the argument as a lambda body so that its
+    // free mutable locals escape and are promoted to reference cells shared with the
+    // enclosing scope. When the application already is a lambda body this recomputes the
+    // same escapes, which is harmless.
+    | Expr.App (Expr.Val (RuntimeAsyncReturn g, _, _), _, _, [ body ], _) ->
+        let z = Zset.union z (DecideEscapes [] body)
+        exprF z body
 
     | Expr.Op (c, tyargs, args, _m) ->
         DecideExprOp exprF noInterceptF z expr (c, tyargs, args) 

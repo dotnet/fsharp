@@ -176,6 +176,14 @@ catch-all case (3), so compilation stays correct — the cost is an extra
 nested runtime-async helper method rather than marking the enclosing method
 directly.
 
+Case (3) re-homes the marker argument into a compiler-synthesized closure
+during code generation, *after* `LowerLocalMutables` has run. Without special
+handling, mutable locals used both in that body and in the enclosing scope
+would be copied into the closure by value, silently disconnecting the two
+copies. `LowerLocalMutables` therefore treats the marker argument as a lambda
+body (`DecideExpr`), promoting its free mutable locals to reference cells so
+the synthesized closure and the enclosing scope share them.
+
 ## Runtime capability check
 
 `InfoReader` gates `LanguageFeature.RuntimeAsync` on the target reference
