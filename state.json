@@ -14,12 +14,6 @@
       "sha": "ce1fb2dea623",
       "cats": []
     },
-    "20322": {
-      "sha": "7a650305e11a",
-      "cats": [
-        "Affects-Compiler-Output"
-      ]
-    },
     "20319": {
       "sha": "0eb489e09b2a",
       "cats": []
@@ -40,13 +34,6 @@
       "sha": "c7fdf41b25f6",
       "cats": []
     },
-    "20285": {
-      "sha": "2b7b6ab7f6ca",
-      "cats": [
-        "Affects-Bootstrap",
-        "Affects-Compiler-Output"
-      ]
-    },
     "20275": {
       "sha": "145f8c0fba17",
       "cats": []
@@ -58,10 +45,6 @@
         "Affects-Compiler-Output",
         "Scope-Review-Needed"
       ]
-    },
-    "20272": {
-      "sha": "939284db6717",
-      "cats": []
     },
     "20261": {
       "sha": "5b1a724e089c",
@@ -158,7 +141,7 @@
       "cats": []
     },
     "20338": {
-      "sha": "a1e14a30ff14",
+      "sha": "628c9d729a73",
       "cats": [
         "Affects-Build-Infra",
         "Affects-Test-Tooling"
@@ -209,20 +192,18 @@
       ]
     },
     "20362": {
-      "sha": "358df77ba47b",
-      "cats": []
-    },
-    "20361": {
-      "sha": "826ef2a66a0a",
-      "cats": []
-    },
-    "20360": {
-      "sha": "ee69aa8efff0",
+      "sha": "85a0fa1c2ec1",
       "cats": []
     },
     "20359": {
       "sha": "0b06dca3cf00",
       "cats": []
+    },
+    "20363": {
+      "sha": "ed67aaf61cda",
+      "cats": [
+        "Affects-Compiler-Output"
+      ]
     }
   }
 }
