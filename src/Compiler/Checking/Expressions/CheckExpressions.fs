@@ -9044,17 +9044,18 @@ and TcApplicationThen (cenv: cenv) (overallTy: OverallTy) env tpenv mExprAndArg 
 
             let _, carrierTy = stripFunTy g exprTy
 
-            // The intrinsic's signature is 'T -> Task<'T>, so the carrier is always Task<'T>.
-            let bodyResultTy =
+            let bodyResultTy, markerTyargs =
                 match stripTyEqns g carrierTy with
-                | AppTy g (_, [ resultTy ]) -> resultTy
-                | _ -> NewInferenceType g
+                | AppTy g (_, [ resultTy ]) -> resultTy, [ resultTy ]
+                | AppTy g (_, []) -> g.unit_ty, []
+                | AppTy g (_, _) -> error (InternalError("Unexpected runtime-async return carrier arity", m))
+                | _ -> error (InternalError("Unexpected runtime-async return carrier type", m))
 
             checkLanguageFeatureRuntimeAndRecover cenv.infoReader LanguageFeature.RuntimeAsync m
 
             let arg, tpenv = TcExprFlex2 cenv bodyResultTy env false tpenv synArg
             let marker =
-                Expr.App(Expr.Val(vref, flags, m), vref.Type, [ bodyResultTy ], [ arg ], mExprAndArg)
+                Expr.App(Expr.Val(vref, flags, m), vref.Type, markerTyargs, [ arg ], mExprAndArg)
 
             Some(
                 TcDelayed

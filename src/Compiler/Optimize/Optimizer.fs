@@ -2542,7 +2542,7 @@ and private ExprContainsRuntimeAsyncFragment cenv env visiting expr =
                     else
                         match stripExpr expr with
                         | Expr.App(Expr.Val(vref, _, _), _, _, _, _)
-                            when valRefEq cenv.g vref cenv.g.cgh__runtimeAsyncReturn_vref ->
+                            when IsRuntimeAsyncReturnVref cenv.g vref ->
                             true
                         | _ when IsRuntimeAsyncSuspensionExpr cenv.g expr ->
                             true
@@ -2643,8 +2643,8 @@ let rec OptimizeExpr cenv (env: IncrementalOptimizationEnv) expr =
 
     | Expr.App (f, fty, tyargs, argsl, m) -> 
         match expr with
-        | Expr.App(Expr.Val(vref, flags, _), fty, [ _ ], [ body ], _)
-            when valRefEq g vref g.cgh__runtimeAsyncReturn_vref ->
+        | Expr.App(Expr.Val(vref, flags, _), fty, _, [ body ], _)
+            when IsRuntimeAsyncReturnVref g vref ->
             let bodyR, bodyInfo = OptimizeExpr cenv { env with runtimeAsyncContext = true } body
             let reportedStamps = HashSet<Stamp>()
 

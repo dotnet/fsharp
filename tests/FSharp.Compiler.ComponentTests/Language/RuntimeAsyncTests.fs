@@ -165,6 +165,39 @@ let ``runtime async compiles functions and members`` () =
     |> shouldSucceed
 
 [<Fact>]
+let ``runtime async supports Task and ValueTask return intrinsics`` () =
+    FSharp """
+module RuntimeAsyncReturnShapesTest
+
+open System.Threading.Tasks
+open Microsoft.FSharp.Core.CompilerServices
+
+let taskResult () : Task<int> =
+    StateMachineHelpers.__runtimeAsyncReturn 1
+
+let valueTaskResult () : ValueTask<int> =
+    StateMachineHelpers.__runtimeAsyncReturnValueTask 1
+
+let taskUnit () : Task =
+    StateMachineHelpers.__runtimeAsyncReturnUnit ()
+
+let valueTaskUnit () : ValueTask =
+    StateMachineHelpers.__runtimeAsyncReturnValueTaskUnit ()
+
+[<EntryPoint>]
+let main _ =
+    taskUnit().Wait()
+    taskResult().Result |> ignore
+    valueTaskResult().Result |> ignore
+    valueTaskUnit().AsTask().Wait()
+    0
+"""
+    |> withLangVersionPreview
+    |> withFSharpCoreShippedNet
+    |> compileExeAndRun
+    |> shouldSucceed
+
+[<Fact>]
 let ``runtime async combines awaited chunks without delegates`` () =
     FSharp runtimeAsyncRawSource
     |> withLangVersionPreview

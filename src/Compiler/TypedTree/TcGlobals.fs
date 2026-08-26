@@ -410,6 +410,9 @@ type TcGlobals(
   let v_tcref_IObserver        = findSysTyconRef sys "IObserver`1"
   let v_fslib_IDelegateEvent_tcr = mk_MFControl_tcref fslibCcu "IDelegateEvent`1"
   let v_task_tcr                = findSysTyconRef ["System"; "Threading"; "Tasks"] "Task`1"
+  let v_task_nonGeneric_tcr     = findSysTyconRef ["System"; "Threading"; "Tasks"] "Task"
+  let v_valueTask_tcr            = findSysTyconRef ["System"; "Threading"; "Tasks"] "ValueTask`1"
+  let v_valueTask_nonGeneric_tcr = findSysTyconRef ["System"; "Threading"; "Tasks"] "ValueTask"
 
   let v_option_tcr_nice     = mk_MFCore_tcref fslibCcu "option`1"
   let v_valueoption_tcr_nice = mk_MFCore_tcref fslibCcu "voption`1"
@@ -902,6 +905,9 @@ type TcGlobals(
   let v_cgh__stateMachine_info     = makeIntrinsicValRef(fslib_MFStateMachineHelpers_nleref,                   "__stateMachine"                       , None                 , None          , [vara; varb],     ([[varaTy]], varbTy)) // inaccurate type but it doesn't matter for linking
   let v_cgh__resumableEntry_info   = makeIntrinsicValRef(fslib_MFStateMachineHelpers_nleref,                   "__resumableEntry"                     , None                 , None          , [vara],     ([[v_int_ty --> varaTy]; [v_unit_ty --> varaTy]], varaTy))
   let v_cgh__runtimeAsyncReturn_info = makeIntrinsicValRef(fslib_MFStateMachineHelpers_nleref,               "__runtimeAsyncReturn"                 , None                 , None          , [vara],     ([[varaTy]], TType_app(v_task_tcr, [varaTy], v_knownWithoutNull))) // handled specially by the checker
+  let v_cgh__runtimeAsyncReturnValueTask_info = makeIntrinsicValRef(fslib_MFStateMachineHelpers_nleref,      "__runtimeAsyncReturnValueTask"           , None                 , None          , [vara],     ([[varaTy]], TType_app(v_valueTask_tcr, [varaTy], v_knownWithoutNull))) // handled specially by the checker
+  let v_cgh__runtimeAsyncReturnUnit_info = makeIntrinsicValRef(fslib_MFStateMachineHelpers_nleref,           "__runtimeAsyncReturnUnit"                 , None                 , None          , [],        ([[v_unit_ty]], mkNonGenericTy v_task_nonGeneric_tcr)) // handled specially by the checker
+  let v_cgh__runtimeAsyncReturnValueTaskUnit_info = makeIntrinsicValRef(fslib_MFStateMachineHelpers_nleref, "__runtimeAsyncReturnValueTaskUnit"          , None                 , None          , [],        ([[v_unit_ty]], mkNonGenericTy v_valueTask_nonGeneric_tcr)) // handled specially by the checker
   let v_seq_to_array_info          = makeIntrinsicValRef(fslib_MFSeqModule_nleref,                             "toArray"                              , None                 , Some "ToArray", [varb],     ([[mkSeqTy varbTy]], mkArrayType 1 varbTy))
   let v_seq_to_list_info           = makeIntrinsicValRef(fslib_MFSeqModule_nleref,                             "toList"                               , None                 , Some "ToList" , [varb],     ([[mkSeqTy varbTy]], mkListTy varbTy))
   let v_seq_map_info               = makeIntrinsicValRef(fslib_MFSeqModule_nleref,                             "map"                                  , None                 , Some "Map"    , [vara;varb], ([[varaTy --> varbTy]; [mkSeqTy varaTy]], mkSeqTy varbTy))
@@ -1844,6 +1850,9 @@ type TcGlobals(
 
   member val cgh__stateMachine_vref = ValRefForIntrinsic v_cgh__stateMachine_info
   member val cgh__runtimeAsyncReturn_vref = ValRefForIntrinsic v_cgh__runtimeAsyncReturn_info
+  member val cgh__runtimeAsyncReturnValueTask_vref = ValRefForIntrinsic v_cgh__runtimeAsyncReturnValueTask_info
+  member val cgh__runtimeAsyncReturnUnit_vref = ValRefForIntrinsic v_cgh__runtimeAsyncReturnUnit_info
+  member val cgh__runtimeAsyncReturnValueTaskUnit_vref = ValRefForIntrinsic v_cgh__runtimeAsyncReturnValueTaskUnit_info
   member val cgh__useResumableCode_vref = ValRefForIntrinsic v_cgh__useResumableCode_info
   member val cgh__debugPoint_vref = ValRefForIntrinsic v_cgh__debugPoint_info
   member val cgh__resumeAt_vref = ValRefForIntrinsic v_cgh__resumeAt_info

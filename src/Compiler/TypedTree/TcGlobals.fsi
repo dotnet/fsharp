@@ -460,6 +460,12 @@ type internal TcGlobals =
 
     member cgh__runtimeAsyncReturn_vref: TypedTree.ValRef
 
+    member cgh__runtimeAsyncReturnValueTask_vref: TypedTree.ValRef
+
+    member cgh__runtimeAsyncReturnUnit_vref: TypedTree.ValRef
+
+    member cgh__runtimeAsyncReturnValueTaskUnit_vref: TypedTree.ValRef
+
     member cgh__useResumableCode_vref: TypedTree.ValRef
 
     member char_operator_info: IntrinsicValRef

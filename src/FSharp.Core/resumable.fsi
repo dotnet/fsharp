@@ -199,6 +199,15 @@ module StateMachineHelpers =
     /// This function is compiler-recognised and must not be called directly.
     [<MethodImpl(MethodImplOptions.NoInlining)>]
     val __runtimeAsyncReturn : 'T -> System.Threading.Tasks.Task<'T>
+
+    [<MethodImpl(MethodImplOptions.NoInlining)>]
+    val __runtimeAsyncReturnValueTask : 'T -> System.Threading.Tasks.ValueTask<'T>
+
+    [<MethodImpl(MethodImplOptions.NoInlining)>]
+    val __runtimeAsyncReturnUnit : unit -> System.Threading.Tasks.Task
+
+    [<MethodImpl(MethodImplOptions.NoInlining)>]
+    val __runtimeAsyncReturnValueTaskUnit : unit -> System.Threading.Tasks.ValueTask
 #endif
 
 /// <summary>Adding this attribute to the method adjusts the processing of some generic methods

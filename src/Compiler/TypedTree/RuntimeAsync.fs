@@ -10,6 +10,14 @@ open FSharp.Compiler.TypedTreeOps
 
 let IsRuntimeAsyncReturnVref (g: TcGlobals) (vref: ValRef) =
     valRefEq g vref g.cgh__runtimeAsyncReturn_vref
+    || valRefEq g vref g.cgh__runtimeAsyncReturnValueTask_vref
+    || valRefEq g vref g.cgh__runtimeAsyncReturnUnit_vref
+    || valRefEq g vref g.cgh__runtimeAsyncReturnValueTaskUnit_vref
+
+let IsRuntimeAsyncReturnUnitExpr (g: TcGlobals) expr =
+    match stripExpr expr with
+    | Expr.App(Expr.Val(vref, _, _), _, [], [ _ ], _) when IsRuntimeAsyncReturnVref g vref -> true
+    | _ -> false
 
 let rec TryUnwrapRuntimeAsyncReturnExpr (g: TcGlobals) expr =
     match expr with
@@ -17,7 +25,7 @@ let rec TryUnwrapRuntimeAsyncReturnExpr (g: TcGlobals) expr =
         match TryUnwrapRuntimeAsyncReturnExpr g innerExpr with
         | true, body -> true, body
         | false, _ -> false, expr
-    | Expr.App(Expr.Val(vref, _, _), _, [ _ ], [ body ], _) when IsRuntimeAsyncReturnVref g vref -> true, body
+    | Expr.App(Expr.Val(vref, _, _), _, _, [ body ], _) when IsRuntimeAsyncReturnVref g vref -> true, body
     | _ -> false, expr
 
 let IsRuntimeAsyncSuspensionMethod (g: TcGlobals) (ilMethRef: ILMethodRef) =

@@ -3316,7 +3316,7 @@ and GenExprAux (cenv: cenv) (cgbuf: CodeGenBuffer) eenv expr (sequel: sequel) =
             // application of local type functions with type parameters = measure types and body = local value - inline the body
             GenExpr cenv cgbuf eenv v sequel
 
-        | Expr.App(Expr.Val(vref, _, _), _, [ _ ], [ _ ], _) when IsRuntimeAsyncReturnVref g vref ->
+        | Expr.App(Expr.Val(vref, _, _), _, _, [ _ ], _) when IsRuntimeAsyncReturnVref g vref ->
             GenRuntimeAsyncReturnAsStartedTask cenv cgbuf eenv expr sequel
 
         | Expr.App(f, fty, tyargs, curriedArgs, m) -> GenApp cenv cgbuf eenv (f, fty, tyargs, curriedArgs, m) sequel
@@ -7201,6 +7201,7 @@ and GenClosureAsLocalTypeFunction cenv (cgbuf: CodeGenBuffer) eenv thisVars expr
 
         strip cloinfo.ilCloLambdas
 
+    let isRuntimeAsyncUnit = IsRuntimeAsyncReturnUnitExpr g body
     let isRuntimeAsync, body = TryUnwrapRuntimeAsyncReturnExpr g body
 
     let eenvinner =
@@ -7209,7 +7210,8 @@ and GenClosureAsLocalTypeFunction cenv (cgbuf: CodeGenBuffer) eenv thisVars expr
         }
 
     let ilCloBody =
-        CodeGenMethodForExpr cenv cgbuf.mgbuf (entryPointInfo, cloinfo.cloName, eenvinner, 1, None, body, Return)
+        let sequel = if isRuntimeAsyncUnit then discardAndReturnVoid else Return
+        CodeGenMethodForExpr cenv cgbuf.mgbuf (entryPointInfo, cloinfo.cloName, eenvinner, 1, None, body, sequel)
 
     let ilCloBody =
         if isRuntimeAsync then
@@ -7262,6 +7264,7 @@ and GenClosureAsFirstClassFunction cenv (cgbuf: CodeGenBuffer) eenv thisVars m e
 
     let ilCloTypeRef = cloinfo.cloSpec.TypeRef
 
+    let isRuntimeAsyncUnit = IsRuntimeAsyncReturnUnitExpr g body
     let isRuntimeAsync, body = TryUnwrapRuntimeAsyncReturnExpr g body
 
     let eenvinner =
@@ -7270,7 +7273,8 @@ and GenClosureAsFirstClassFunction cenv (cgbuf: CodeGenBuffer) eenv thisVars m e
         }
 
     let ilCloBody =
-        CodeGenMethodForExpr cenv cgbuf.mgbuf (entryPointInfo, cloinfo.cloName, eenvinner, 1, None, body, Return)
+        let sequel = if isRuntimeAsyncUnit then discardAndReturnVoid else Return
+        CodeGenMethodForExpr cenv cgbuf.mgbuf (entryPointInfo, cloinfo.cloName, eenvinner, 1, None, body, sequel)
 
     let ilCloBody =
         if isRuntimeAsync then
@@ -9931,6 +9935,8 @@ and GenMethodForBinding
             | h :: t -> [ h ], t, true
         | _ -> [], methLambdaVars, false
 
+    let isRuntimeAsyncUnit = IsRuntimeAsyncReturnUnitExpr g methLambdaBody
+
     let isRuntimeAsync, methLambdaBody =
         TryUnwrapRuntimeAsyncReturnExpr g methLambdaBody
 
@@ -10009,7 +10015,8 @@ and GenMethodForBinding
 
     // Discard the result on a 'void' return type. For a constructor just return 'void'
     let sequel =
-        if isUnitTy g returnTy then discardAndReturnVoid
+        if isRuntimeAsyncUnit then discardAndReturnVoid
+        elif isUnitTy g returnTy then discardAndReturnVoid
         elif isCtor then ReturnVoid
         else Return
 

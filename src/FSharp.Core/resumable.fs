@@ -117,6 +117,23 @@ module StateMachineHelpers =
         ignore value
 
         failwith "__runtimeAsyncReturn is a compiler intrinsic and should only be used in runtime-async method bodies"
+
+    [<MethodImpl(MethodImplOptions.NoInlining)>]
+    let __runtimeAsyncReturnValueTask (value: 'T) : ValueTask<'T> =
+        ignore value
+
+        failwith
+            "__runtimeAsyncReturnValueTask is a compiler intrinsic and should only be used in runtime-async method bodies"
+
+    [<MethodImpl(MethodImplOptions.NoInlining)>]
+    let __runtimeAsyncReturnUnit () : Task =
+        failwith
+            "__runtimeAsyncReturnUnit is a compiler intrinsic and should only be used in runtime-async method bodies"
+
+    [<MethodImpl(MethodImplOptions.NoInlining)>]
+    let __runtimeAsyncReturnValueTaskUnit () : ValueTask =
+        failwith
+            "__runtimeAsyncReturnValueTaskUnit is a compiler intrinsic and should only be used in runtime-async method bodies"
 #endif
 
 module ResumableCode =
