@@ -5522,7 +5522,7 @@ and TcExpr (cenv: cenv) ty (env: TcEnv) tpenv (synExpr: SynExpr) =
     let g = cenv.g
 
     // Guard the stack for deeply nested expressions
-    cenv.stackGuard.Guard <| fun () ->
+    cenv.stackGuard.Guard(fun () ->
 
     // Start an error recovery handler, and check for stack recursion depth, moving to a new stack if necessary.
     // Note the try/with can lead to tail-recursion problems for iterated constructs, e.g. let... in...
@@ -5535,7 +5535,7 @@ and TcExpr (cenv: cenv) ty (env: TcEnv) tpenv (synExpr: SynExpr) =
         // the type of the current expression with a type variable that indicates an error
         errorRecovery exn m
         SolveTypeAsError env.DisplayEnv cenv.css m ty.Commit
-        mkThrow m ty.Commit (mkOne g m), tpenv
+        mkThrow m ty.Commit (mkOne g m), tpenv)
 
 and TcExprNoRecover (cenv: cenv) (ty: OverallTy) (env: TcEnv) tpenv (synExpr: SynExpr) =
 

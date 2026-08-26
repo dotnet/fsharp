@@ -3167,10 +3167,9 @@ let ComputeDebugPointForBinding g bind =
 //-------------------------------------------------------------------------
 
 let rec GenExpr cenv cgbuf eenv (expr: Expr) sequel =
-    cenv.stackGuard.Guard
-    <| fun () ->
+    cenv.stackGuard.Guard(fun () ->
 
-        GenExprAux cenv cgbuf eenv expr sequel
+        GenExprAux cenv cgbuf eenv expr sequel)
 
 /// Process the debug point and check for alternative ways to generate this expression.
 /// Returns 'true' if the expression was processed by alternative means.

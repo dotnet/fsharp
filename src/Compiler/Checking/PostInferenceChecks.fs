@@ -1169,7 +1169,7 @@ and TryCheckResumableCodeConstructs cenv env expr : bool =
 and CheckExpr (cenv: cenv) (env: env) origExpr (ctxt: PermitByRefExpr) : Limit =
 
     // Guard the stack for deeply nested expressions
-    cenv.stackGuard.Guard <| fun () ->
+    cenv.stackGuard.Guard(fun () ->
 
     let g = cenv.g
 
@@ -1274,7 +1274,7 @@ and CheckExpr (cenv: cenv) (env: env) origExpr (ctxt: PermitByRefExpr) : Limit =
         NoLimit
 
     | Expr.Link _ ->
-        failwith "Unexpected reclink"
+        failwith "Unexpected reclink")
 
 and CheckQuoteExpr cenv env (ast, savedConv, m, ty) =
     let g = cenv.g

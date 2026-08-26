@@ -1745,8 +1745,7 @@ module internal ExprRemapping =
     and remapExprImpl (ctxt: RemapContext) (compgen: ValCopyFlag) (tmenv: Remap) expr =
 
         // Guard against stack overflow, moving to a whole new stack if necessary
-        ctxt.stackGuard.Guard
-        <| fun () ->
+        ctxt.stackGuard.Guard(fun () ->
 
             match expr with
 
@@ -1865,7 +1864,7 @@ module internal ExprRemapping =
 
             | Expr.WitnessArg(traitInfo, m) ->
                 let traitInfoR = remapTraitInfo tmenv traitInfo
-                Expr.WitnessArg(traitInfoR, m)
+                Expr.WitnessArg(traitInfoR, m))
 
     and remapLambaExpr (ctxt: RemapContext) (compgen: ValCopyFlag) (tmenv: Remap) (ctorThisValOpt, baseValOpt, vs, body, m, bodyTy) =
         let ctorThisValOptR, tmenv =
