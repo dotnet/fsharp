@@ -89,16 +89,7 @@
     <SystemBuffersVersion>4.6.1</SystemBuffersVersion>
     <SystemMemoryVersion>4.6.3</SystemMemoryVersion>
     <SystemRuntimeCompilerServicesUnsafeVersion>6.1.2</SystemRuntimeCompilerServicesUnsafeVersion>
-    <!-- System.* packages from dotnet/runtime are managed in Version.Details.xml / Version.Details.props for source-build.
-         These are pinned above the darc-flowed 10.0.8 to satisfy the Microsoft.CodeAnalysis.* 5.11 package graph, which
-         requires >= 10.0.10. Immutable/Composition/Reflection.Metadata otherwise trip NU1605 (package downgrade) on
-         restore; DiagnosticSource otherwise trips MSB3277 (a 10.0.8 vs 10.0.10 primary/transitive conflict) on the
-         net462 desktop build. Security.Cryptography.Xml is bumped with them to keep the runtime band coherent. -->
-    <SystemCollectionsImmutableVersion>10.0.10</SystemCollectionsImmutableVersion>
-    <SystemCompositionVersion>10.0.10</SystemCompositionVersion>
-    <SystemReflectionMetadataVersion>10.0.10</SystemReflectionMetadataVersion>
-    <SystemDiagnosticsDiagnosticSourceVersion>10.0.10</SystemDiagnosticsDiagnosticSourceVersion>
-    <SystemSecurityCryptographyXmlVersion>10.0.10</SystemSecurityCryptographyXmlVersion>
+    <!-- System.* packages from dotnet/runtime are managed in Version.Details.xml / Version.Details.props for source-build. -->
   </PropertyGroup>
 
   <PropertyGroup>
