@@ -576,6 +576,42 @@ module Task =
     [<CompiledName("Empty")>]
     val empty: Task<unit>
 
+    /// <summary>Creates a task that executes each of the <c>computations</c> in sequence,
+    /// returning an array of their results in order of the input sequence.</summary>
+    /// <param name="ct">A cancellation token to pass to each task factory.</param>
+    /// <param name="computations">A sequence of task start functions accepting a <see cref="T:System.Threading.CancellationToken"/>.</param>
+    /// <returns>A task yielding an array of the results of <c>computations</c> in the order they were supplied.</returns>
+    ///
+    /// <example id="task-sequential-1">
+    /// <code lang="fsharp">
+    /// task {
+    ///     return!
+    ///         seq { for i in 1..10 -> fun _ct -> Task.result (i * i) }
+    ///         |> Task.sequential CancellationToken.None
+    /// } // returns [| 1; 4; 9; 16; 25; 36; 49; 64; 81; 100 |]
+    /// </code>
+    /// </example>
+    [<CompiledName("Sequential")>]
+    val sequential: ct: CancellationToken -> computations: seq<CancellationToken -> Task<'T>> -> Task<'T[]>
+
+    /// <summary>Creates a task that executes each of the <c>computations</c> in sequence, returning <c>unit</c>.</summary>
+    /// <param name="ct">A cancellation token to pass to each task factory.</param>
+    /// <param name="computations">A sequence of unit task start functions accepting a <see cref="T:System.Threading.CancellationToken"/>.</param>
+    /// <returns>A task that runs all inputs in sequence and returns <c>unit</c>.</returns>
+    ///
+    /// <example id="task-sequentialdo-1">
+    /// <code lang="fsharp">
+    /// task {
+    ///     return!
+    ///         seq { for i in 1..10 -> fun _ct -> task { printfn "%d" i } }
+    ///         // NOTE numbers are guaranteed to be printed in order 1..10
+    ///         |> Task.sequentialDo CancellationToken.None
+    /// }
+    /// </code>
+    /// </example>
+    [<CompiledName("SequentialDo")>]
+    val sequentialDo: ct: CancellationToken -> computations: seq<CancellationToken -> Task<unit>> -> Task<unit>
+
     /// <summary>Creates a task that executes each of the <c>computations</c> in parallel with concurrency limited
     /// to at most <c>maxDegreeOfParallelism</c>, returning an array of their results in order of the input sequence.</summary>
     /// <remarks>
@@ -631,42 +667,6 @@ module Task =
         ct: CancellationToken ->
         computations: seq<CancellationToken -> Task<unit>> ->
             Task<unit>
-
-    /// <summary>Creates a task that executes each of the <c>computations</c> in sequence,
-    /// returning an array of their results in order of the input sequence.</summary>
-    /// <param name="ct">A cancellation token to pass to each task factory.</param>
-    /// <param name="computations">A sequence of task start functions accepting a <see cref="T:System.Threading.CancellationToken"/>.</param>
-    /// <returns>A task yielding an array of the results of <c>computations</c> in the order they were supplied.</returns>
-    ///
-    /// <example id="task-sequential-1">
-    /// <code lang="fsharp">
-    /// task {
-    ///     return!
-    ///         seq { for i in 1..10 -> fun _ct -> Task.result (i * i) }
-    ///         |> Task.sequential CancellationToken.None
-    /// } // returns [| 1; 4; 9; 16; 25; 36; 49; 64; 81; 100 |]
-    /// </code>
-    /// </example>
-    [<CompiledName("Sequential")>]
-    val sequential: ct: CancellationToken -> computations: seq<CancellationToken -> Task<'T>> -> Task<'T[]>
-
-    /// <summary>Creates a task that executes each of the <c>computations</c> in sequence, returning <c>unit</c>.</summary>
-    /// <param name="ct">A cancellation token to pass to each task factory.</param>
-    /// <param name="computations">A sequence of unit task start functions accepting a <see cref="T:System.Threading.CancellationToken"/>.</param>
-    /// <returns>A task that runs all inputs in sequence and returns <c>unit</c>.</returns>
-    ///
-    /// <example id="task-sequentialdo-1">
-    /// <code lang="fsharp">
-    /// task {
-    ///     return!
-    ///         seq { for i in 1..10 -> fun _ct -> task { printfn "%d" i } }
-    ///         // NOTE numbers are guaranteed to be printed in order 1..10
-    ///         |> Task.sequentialDo CancellationToken.None
-    /// }
-    /// </code>
-    /// </example>
-    [<CompiledName("SequentialDo")>]
-    val sequentialDo: ct: CancellationToken -> computations: seq<CancellationToken -> Task<unit>> -> Task<unit>
 
     /// <summary>Starts the <c>computation</c> on the current thread, returning a <see cref="T:System.Threading.Tasks.Task`1"/>
     /// that represents its result.</summary>

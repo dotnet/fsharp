@@ -19,7 +19,6 @@ open System.Threading
 open System.Threading.Tasks
 open Microsoft.FSharp.Core
 open Microsoft.FSharp.Core.CompilerServices
-open Microsoft.FSharp.Core.CompilerServices.StateMachineHelpers
 open Microsoft.FSharp.Core.LanguagePrimitives.IntrinsicOperators
 open Microsoft.FSharp.Collections
 
@@ -115,7 +114,7 @@ type TaskBuilderBase() =
 
                     let cont =
                         TaskResumptionFunc<'TOverall>(fun sm ->
-                            awaiter.GetResult() |> ignore
+                            awaiter.GetResult()
                             true)
 
                     // shortcut to continue immediately
@@ -284,7 +283,6 @@ open System.Runtime.CompilerServices
 open System.Threading.Tasks
 open Microsoft.FSharp.Core
 open Microsoft.FSharp.Core.CompilerServices
-open Microsoft.FSharp.Core.CompilerServices.StateMachineHelpers
 open Microsoft.FSharp.Core.LanguagePrimitives.IntrinsicOperators
 
 module LowPriority =
@@ -719,15 +717,13 @@ module LowPlusPriority =
 
 namespace Microsoft.FSharp.Control
 
-open System
 open System.Threading
 open System.Threading.Tasks
 open Microsoft.FSharp.Core
 open Microsoft.FSharp.Core.CompilerServices
 open Microsoft.FSharp.Core.LanguagePrimitives.IntrinsicOperators
 open Microsoft.FSharp.Collections
-open TaskBuilder
-open Microsoft.FSharp.Control.TaskBuilderExtensions
+open Microsoft.FSharp.Control.TaskBuilder
 open Microsoft.FSharp.Control.TaskBuilderExtensions.LowPriority
 open Microsoft.FSharp.Control.TaskBuilderExtensions.HighPriority
 
@@ -785,7 +781,7 @@ module Task =
                 try
                     return! task
                 with
-                | :? OperationCanceledException as e -> return! raise e
+                | :? System.OperationCanceledException as e -> return! raise e
                 | e -> return handler e
             }
 
@@ -819,7 +815,7 @@ module Task =
         (computations: seq<CancellationToken -> Task<'T>>)
         : Task<'T[]> =
         if maxDegreeOfParallelism < 1 then
-            String.Format(SR.GetString(SR.maxDegreeOfParallelismNotPositive), maxDegreeOfParallelism)
+            System.String.Format(SR.GetString(SR.maxDegreeOfParallelismNotPositive), maxDegreeOfParallelism)
             |> invalidArg (nameof maxDegreeOfParallelism)
         // materialize first so exceptions from enumeration can't trigger ObjectDisposedException
         // from started children touching semaphore or innerCts
@@ -936,7 +932,7 @@ module ValueTask =
                     try
                         return! task
                     with
-                    | :? OperationCanceledException as e -> return! raise e
+                    | :? System.OperationCanceledException as e -> return! raise e
                     | e -> return handler e
                 }
 
