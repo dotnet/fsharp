@@ -5,10 +5,6 @@
 # printf engine. If it regresses to printf, FSharp.Reflection becomes statically reachable,
 # NativeAOT analysis emits IL2026/IL2070/IL3050, TreatWarningsAsErrors turns them into errors,
 # and this publish fails.
-#
-# Array2D is guarded the same way: the zero-based operations must not reach Array.CreateInstance,
-# which is [RequiresDynamicCode]. The based allocation is annotated, so the app suppresses IL3050
-# at that one call site and asserts the PlatformNotSupportedException the annotation warns about.
 
 $ErrorActionPreference = "Stop"
 
@@ -23,18 +19,13 @@ if (-not ($LASTEXITCODE -eq 0)) {
     Write-Error "NativeAOT publish failed with exit code $LASTEXITCODE" -ErrorAction Stop
 }
 
-# Read both target frameworks back from the project instead of hardcoding them: the app targets
-# $(FSharpNetCoreProductTargetFramework) and FSharp.Core ships $(FSharpCoreShippedNetTargetFramework).
-# Passing -f: above would set TargetFramework as a global property and silently override the former.
+# Read the frameworks from the project; passing -f above would override TargetFramework globally.
 $props = dotnet msbuild "$root.fsproj" -getProperty:TargetFramework -getProperty:FSharpCoreShippedNetTargetFramework -nologo | ConvertFrom-Json
 $tfm = $props.Properties.TargetFramework
 $coreAsset = "lib/$($props.Properties.FSharpCoreShippedNetTargetFramework)/FSharp.Core.dll"
 
-# Prove this is a genuine dogfood: the consumer must resolve the locally-packed FSharp.Core's
-# shipped net asset, not the netstandard2.1 fallback. Assert on the *selected*
-# compile/runtime asset under "targets" (the "libraries" manifest lists every lib folder, so a
-# plain substring search would false-pass even when ns2.1 was chosen). Without this the test would
-# still succeed on the ns2.1 asset and the shipped net asset would go unexercised.
+# Assert on the selected compile/runtime asset, not the "libraries" manifest, which lists every
+# lib folder and would false-pass on the netstandard2.1 fallback.
 $assets = Join-Path $PSScriptRoot "obj/project.assets.json"
 $assetsJson = Get-Content $assets -Raw | ConvertFrom-Json
 $netAssetSelected = $false
@@ -43,8 +34,7 @@ foreach ($target in $assetsJson.targets.PSObject.Properties) {
         if ($package.Name -like "FSharp.Core/*") {
             $compileKeys = if ($package.Value.compile) { @($package.Value.compile.PSObject.Properties.Name) } else { @() }
             $runtimeKeys = if ($package.Value.runtime) { @($package.Value.runtime.PSObject.Properties.Name) } else { @() }
-            # FSharp.Core packs only lib/{tfm} (no ref/, no runtimes/), so compile and runtime resolve
-            # from the same folder; require both - anything else means a fallback was chosen.
+            # FSharp.Core packs only lib/{tfm}, so both must resolve there; anything else is a fallback.
             if (($compileKeys -contains $coreAsset) -and ($runtimeKeys -contains $coreAsset)) {
                 $netAssetSelected = $true
             }

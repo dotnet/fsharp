@@ -2,23 +2,16 @@ module Array2DProgram
 
 open System
 
-// A small grid program, run under NativeAOT so that the publish itself is the assertion.
-// check.ps1 explains which calls are guarded and why.
-
 let private check name (actual: int) (expected: int) =
     if actual <> expected then
         Console.WriteLine $"FAILED {name}: expected {expected} but got {actual}"
 
-// Summing through iteri gives every grid below an observable result. Without that, the optimizer
-// or ILC could drop an unused allocation and silently take the code this guards out of the
-// analyzed program.
+// Consume every grid, so ILC cannot drop the allocations this test exists to exercise.
 let private sum (grid: int[,]) =
     let total = ref 0
     grid |> Array2D.iteri (fun _ _ v -> total.Value <- total.Value + v)
     total.Value
 
-// Array2D.createBased is annotated RequiresDynamicCode, so this is the one call in the program
-// that has to suppress IL3050. Everything above it must publish clean.
 [<System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessage("Aot", "IL3050",
     Justification = "Deliberately calls the unsupported API to assert it throws PlatformNotSupportedException under AOT.")>]
 let private createBasedThrows rows cols =
@@ -29,9 +22,8 @@ let private createBasedThrows rows cols =
         1
 
 let run (argv: string[]) =
-    // An empty argv means 3x4, but neither the optimizer nor ILC can prove that, so the
-    // allocations cannot be folded to constants. The expected values below are the ones for an
-    // empty argv, so check.ps1 has to run the app without arguments.
+    // Derive the dimensions from argv, so ILC cannot constant-fold the allocations away.
+    // The expected values below assume check.ps1 runs the app with no arguments.
     let rows = 3 + argv.Length
     let cols = 4 + argv.Length
 

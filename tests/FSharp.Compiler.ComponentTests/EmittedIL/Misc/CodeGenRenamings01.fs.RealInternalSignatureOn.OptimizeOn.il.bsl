@@ -195,10 +195,10 @@
 
   } 
 
-  .class auto ansi serializable sealed nested assembly beforefieldinit clo@43
+  .class auto ansi serializable sealed nested assembly beforefieldinit clo@42
          extends class [FSharp.Core]Microsoft.FSharp.Core.OptimizedClosures/FSharpFunc`3<int32,int32,int32>
   {
-    .field static assembly initonly class assembly/clo@43 @_instance
+    .field static assembly initonly class assembly/clo@42 @_instance
     .method assembly specialname rtspecialname instance void  .ctor() cil managed
     {
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
@@ -224,8 +224,8 @@
     {
       
       .maxstack  10
-      IL_0000:  newobj     instance void assembly/clo@43::.ctor()
-      IL_0005:  stsfld     class assembly/clo@43 assembly/clo@43::@_instance
+      IL_0000:  newobj     instance void assembly/clo@42::.ctor()
+      IL_0005:  stsfld     class assembly/clo@42 assembly/clo@42::@_instance
       IL_000a:  ret
     } 
 
@@ -713,7 +713,7 @@
     IL_023e:  nop
     IL_023f:  ldc.i4.2
     IL_0240:  ldc.i4.2
-    IL_0241:  ldsfld     class assembly/clo@43 assembly/clo@43::@_instance
+    IL_0241:  ldsfld     class assembly/clo@42 assembly/clo@42::@_instance
     IL_0246:  call       !!0[0...,0...] [FSharp.Core]Microsoft.FSharp.Collections.Array2DModule::Initialize<int32>(int32,
                                                                                                                    int32,
                                                                                                                    class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,!!0>>)

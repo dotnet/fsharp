@@ -198,8 +198,7 @@ type Array2Module() =
         let resultStr = Array2D.copy strArr
         if resultStr <> strArr then Assert.Fail()
 
-        // Guards against rewriting copy as Array.Clone to escape its IL3050 warning: Clone would keep
-        // the runtime string[,] type and throw here, where copy allocates obj[,] and accepts the box.
+        // copy must return obj[,], not preserve the source's runtime string[,] type.
         let covariantSource = Array2D.create 1 1 "value" |> box |> unbox<obj[,]>
         let covariantCopy = Array2D.copy covariantSource
         covariantCopy.[0, 0] <- box 42
@@ -457,8 +456,6 @@ type Array2Module() =
     member this.Mapi() =
         // integer array  
         let intArr = Array2D.initBased 3 7 2 3 (fun i j -> i*100 + j)
-        // Maps int -> string, so the result element type differs from the source and mapi has to
-        // allocate a new based array rather than reuse the input's.
         let funIntToStr x y z = sprintf "%d,%d:%d" x y z
         let resultInt = Array2D.mapi funIntToStr intArr
         if resultInt <> (Array2D.initBased 3 7 2 3 (fun i j -> sprintf "%d,%d:%d" i j (i*100 + j))) then Assert.Fail()
@@ -792,9 +789,7 @@ type Array2Module() =
 
 
 #if NET9_0_OR_GREATER
-    // The based entry points carry RequiresDynamicCode so that consumers get IL3050 at their own
-    // call site; the zero-based ones must not, or every AOT publish warns again. Both directions
-    // are pinned here because only a Windows-only NativeAOT leg would otherwise catch a change.
+    // Only a Windows-only NativeAOT leg would otherwise catch a change to either direction.
     [<Theory>]
     [<InlineData("ZeroCreateBased", true)>]
     [<InlineData("CreateBased", true)>]

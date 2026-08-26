@@ -38,6 +38,5 @@ Array3D.get array3D 0 0 0 |> Array3D.set array3D 0 0 0
 (Array4D.length1 array4D, Array4D.length2 array4D, Array4D.length3 array4D, Array4D.length4 array4D) |> ignore
 Array4D.get array4D 0 0 0 0 |> Array4D.set array4D 0 0 0 0
 
-// Pins Array2DModule::Initialize, so a regression of Array2D.init back to a
-// based-array forwarder shows up here.
+// Array2D.init renaming, appended here rather than above to limit IL baseline churn.
 Array2D.init 2 2 (fun i j -> i + j) |> ignore
