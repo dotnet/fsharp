@@ -54,19 +54,30 @@ module String =
             for i = 0 to str.Length - 1 do
                 f.Invoke(i, str.[i])
 
+#if NETSTANDARD2_1_OR_GREATER
+    // Cache SpanAction instance to avoid allocations
+    let private _mapAction =
+        System.Buffers.SpanAction<char, struct (string * (char -> char))>(fun (result: Span<char>) (struct (str: string, mapping: char -> char)) ->
+            for i = 0 to result.Length - 1 do
+                result[i] <- mapping str[i]
+        )
+#endif
+    
     [<CompiledName("Map")>]
     let map (mapping: char -> char) (str: string) =
         if String.IsNullOrEmpty str then
             String.Empty
         else
+#if NETSTANDARD2_1_OR_GREATER
+            String.Create(str.Length, struct (str, mapping), _mapAction)
+#else
             let result = str.ToCharArray()
-            let mutable i = 0
-
-            for c in result do
-                result.[i] <- mapping c
-                i <- i + 1
-
+            
+            for i = 0 to result.Length - 1 do
+                result[i] <- mapping result[i]
+            
             String(result)
+#endif
 
     [<CompiledName("MapIndexed")>]
     let mapi (mapping: int -> char -> char) (str: string) =
