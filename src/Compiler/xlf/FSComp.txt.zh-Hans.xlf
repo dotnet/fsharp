@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
   <file datatype="xml" source-language="en" target-language="zh-Hans" original="../FSComp.resx">
     <body>
@@ -297,11 +297,6 @@
         <target state="new">Access a protected base-class field from a closure inside a member</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureAccessorFunctionShorthand">
-        <source>underscore dot shorthand for accessor only function</source>
-        <target state="translated">用于仅存取器函数的下划线点速记</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureAdditionalImplicitConversions">
         <source>additional type-directed conversions</source>
         <target state="translated">附加类型定向转换</target>
@@ -335,11 +330,6 @@
       <trans-unit id="featureBetterAnonymousRecordParsing">
         <source>Support for better anonymous record parsing</source>
         <target state="new">Support for better anonymous record parsing</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="featureBetterExceptionPrinting">
-        <source>automatic generation of 'Message' property for 'exception' declarations</source>
-        <target state="translated">自动生成“异常”声明的“消息”属性</target>
         <note />
       </trans-unit>
       <trans-unit id="featureBooleanReturningAndReturnTypeDirectedPartialActivePattern">
@@ -452,9 +442,9 @@
         <target state="translated">扩展字符串内插类似于 C# 原始字符串字面量。</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureFixedIndexSlice3d4d">
-        <source>fixed-index slice 3d/4d</source>
-        <target state="translated">固定索引切片 3d/4d</target>
+      <trans-unit id="featureExtensionConstraintSolutions">
+        <source>Allow extension members to participate in SRTP constraint resolution</source>
+        <target state="new">Allow extension members to participate in SRTP constraint resolution</target>
         <note />
       </trans-unit>
       <trans-unit id="featureFromEndSlicing">
@@ -482,24 +472,9 @@
         <target state="translated">用于索引和切片的 expr[idx] 表示法</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureInformationalObjInferenceDiagnostic">
-        <source>Diagnostic 3559 (warn when obj inferred) at informational level, off by default</source>
-        <target state="translated">诊断 3559 (推断出 obj 时发出警告)，信息级别，默认关闭</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="featureInitProperties">
-        <source>support for consuming init properties</source>
-        <target state="translated">支持使用 init 属性</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureInterfacesWithAbstractStaticMembers">
         <source>static abstract interface members</source>
         <target state="translated">静态抽象接口成员</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="featureInterfacesWithMultipleGenericInstantiation">
-        <source>interfaces with multiple generic instantiation</source>
-        <target state="translated">具有多个泛型实例化的接口</target>
         <note />
       </trans-unit>
       <trans-unit id="featureLowerInterpolatedStringToConcat">
@@ -535,11 +510,6 @@
       <trans-unit id="featureNameOf">
         <source>nameof</source>
         <target state="translated">nameof</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="featureNestedCopyAndUpdate">
-        <source>Nested record field copy-and-update</source>
-        <target state="translated">嵌套记录字段复制和更新</target>
         <note />
       </trans-unit>
       <trans-unit id="featureNonInlineLiteralsAsPrintfFormat">
@@ -632,11 +602,6 @@
         <target state="translated">与引用单元格相关的信息性消息</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureRelaxWhitespace2">
-        <source>whitespace relaxation v2</source>
-        <target state="translated">空格放空 v2</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureRequiredProperties">
         <source>support for required properties</source>
         <target state="translated">对所需属性的支持</target>
@@ -702,11 +667,6 @@
         <target state="translated">联合用例测试属性</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureTryWithInSeqExpressions">
-        <source>Support for try-with in sequence expressions</source>
-        <target state="translated">支持在序列表达式中试用</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureUnmanagedConstraintCsharpInterop">
         <source>Interop between C#'s and F#'s unmanaged generic constraint (emit additional modreq)</source>
         <target state="translated">C# 和 F# 的非托管泛型约束之间的互操作(发出额外的 modreq)</target>
@@ -732,19 +692,9 @@
         <target state="translated">复制和更新记录表达式更改记录的所有字段时引发警告。</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureWarningWhenInliningMethodImplNoInlineMarkedFunction">
-        <source>Raises warnings when 'let inline ... =' is used together with [&lt;MethodImpl(MethodImplOptions.NoInlining)&gt;] attribute. Function is not getting inlined.</source>
-        <target state="translated">当 "let inline ... =" 与 [&lt;MethodImpl(MethodImplOptions.NoInlining)&gt;] 属性一起使用时引发警告。函数未内联。</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureWarningWhenMultipleRecdTypeChoice">
         <source>Raises warnings when multiple record type matches were found during name resolution because of overlapping field names.</source>
         <target state="translated">在名称解析期间由于字段名称重叠而找到多个记录类型匹配项时引发警告。</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="featureWhileBang">
-        <source>'while!' expression</source>
-        <target state="translated">"while!" 表达式</target>
         <note />
       </trans-unit>
       <trans-unit id="featureWitnessPassing">
@@ -1632,6 +1582,21 @@
         <target state="translated">约束无效。有效的约束形式包括 \"'T :&gt; ISomeInterface\" (接口约束)和 \"SomeConstrainingType&lt;'T&gt;\" (自我约束)。请参阅 https://aka.ms/fsharp-type-constraints。</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcInvalidStructLayoutExtendedKind">
+        <source>LayoutKind value 1 (Extended) cannot be specified via StructLayoutAttribute. Use ExtendedLayoutAttribute instead.</source>
+        <target state="new">LayoutKind value 1 (Extended) cannot be specified via StructLayoutAttribute. Use ExtendedLayoutAttribute instead.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcExtendedLayoutCannotBeUsedOnUnions">
+        <source>The 'ExtendedLayoutAttribute' cannot be applied to discriminated unions</source>
+        <target state="new">The 'ExtendedLayoutAttribute' cannot be applied to discriminated unions</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcExtendedLayoutStructMustHaveInstanceField">
+        <source>A struct with the 'ExtendedLayoutAttribute' must have at least one instance field</source>
+        <target state="new">A struct with the 'ExtendedLayoutAttribute' must have at least one instance field</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcInvalidStructReturn">
         <source>The use of '[&lt;Struct&gt;]' on values, functions and methods is only allowed on partial active pattern definitions</source>
         <target state="translated">只允许在部分活动模式定义中对值、函数和方法使用 "[&lt;Struct&gt;]"</target>
@@ -1735,6 +1700,11 @@
       <trans-unit id="tcNullnessCheckingNotEnabled">
         <source>The 'nullness checking' language feature is not enabled. This use of a nullness checking construct will be ignored.</source>
         <target state="new">The 'nullness checking' language feature is not enabled. This use of a nullness checking construct will be ignored.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcOnlyStructsCanHaveExtendedLayout">
+        <source>Only structs may be given the 'ExtendedLayoutAttribute'</source>
+        <target state="new">Only structs may be given the 'ExtendedLayoutAttribute'</target>
         <note />
       </trans-unit>
       <trans-unit id="tcOtherThenAdjacentListArgumentNeedsAdjustment">
@@ -1900,6 +1870,11 @@
       <trans-unit id="tcStaticBindingInExtrinsicAugmentation">
         <source>Static bindings cannot be added to extrinsic augmentations. Consider using a 'static member' instead.</source>
         <target state="translated">无法将静态绑定添加到外部增强。请考虑改用 "static member"。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcStructLayoutAndExtendedLayout">
+        <source>The attributes 'StructLayoutAttribute' and 'ExtendedLayoutAttribute' cannot be used together on the same type</source>
+        <target state="new">The attributes 'StructLayoutAttribute' and 'ExtendedLayoutAttribute' cannot be used together on the same type</target>
         <note />
       </trans-unit>
       <trans-unit id="tcStructUnionMultiCaseFieldsSameType">
@@ -5120,11 +5095,6 @@
       <trans-unit id="tcUseForInSequenceExpression">
         <source>The use of 'let! x = coll' in sequence expressions is not permitted. Use 'for x in coll' instead.</source>
         <target state="translated">不允许在序列表达式中使用“let! x = coll”。请改用“for x in coll”。</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="tcTryIllegalInSequenceExpression">
-        <source>'try'/'with' cannot be used within sequence expressions</source>
-        <target state="translated">不能在序列表达式中使用“try”/“with”</target>
         <note />
       </trans-unit>
       <trans-unit id="tcUseYieldBangForMultipleResults">
@@ -9125,6 +9095,11 @@
       <trans-unit id="featureExceptionFieldSerializationSupport">
         <source>emit GetObjectData and field-restoring deserialization constructor for exception types</source>
         <target state="new">emit GetObjectData and field-restoring deserialization constructor for exception types</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcTupleTypeExtensionTooManyElements">
+        <source>Tuple type extensions are supported only for tuples of up to 7 elements, but this tuple type has {0} elements. Extensions of larger tuples are not supported.</source>
+        <target state="new">Tuple type extensions are supported only for tuples of up to 7 elements, but this tuple type has {0} elements. Extensions of larger tuples are not supported.</target>
         <note />
       </trans-unit>
     </body>

@@ -240,7 +240,8 @@ module NavigationImpl =
 
         and processTycon baseName synTypeDefn =
             let (SynTypeDefn(typeInfo = typeInfo; typeRepr = repr; members = membDefns; range = m)) = synTypeDefn
-            let (SynComponentInfo(longId = lid; accessibility = access)) = typeInfo
+            let lid = typeInfo.LongIdent
+            let (SynComponentInfo(accessibility = access)) = typeInfo
 
             let topMembers = processMembers membDefns NavigationEntityKind.Class |> snd
 
@@ -384,7 +385,9 @@ module NavigationImpl =
                         let mBody = rangeOfLid lid
                         createDecl (baseName, id, NavigationItemKind.Module, FSharpGlyph.Module, m, mBody, [], NavigationEntityKind.Namespace, false, None)
 
-                    | SynModuleDecl.NestedModule(moduleInfo = SynComponentInfo(longId = lid; accessibility = access); decls = decls; range = m) ->
+                    | SynModuleDecl.NestedModule(moduleInfo = compInfo; decls = decls; range = m) ->
+                        let lid = compInfo.LongIdent
+                        let (SynComponentInfo(accessibility = access)) = compInfo
                         // Find let bindings (for the right dropdown)
                         let nested = processNestedDeclarations decls
 
@@ -510,8 +513,9 @@ module NavigationImpl =
             processExnRepr baseName nested repr
 
         and processTycon baseName inp =
-            let (SynTypeDefnSig(typeInfo = SynComponentInfo(longId = lid; accessibility = access); typeRepr = repr; members = membDefns; range = m)) =
-                inp
+            let (SynTypeDefnSig(typeInfo = typeInfo; typeRepr = repr; members = membDefns; range = m)) = inp
+            let lid = typeInfo.LongIdent
+            let (SynComponentInfo(accessibility = access)) = typeInfo
 
             let topMembers = processSigMembers membDefns
 
@@ -611,7 +615,9 @@ module NavigationImpl =
                         let mBody = rangeOfLid lid
                         createDecl (baseName, id, NavigationItemKind.Module, FSharpGlyph.Module, m, mBody, [], NavigationEntityKind.Module, false, None)
 
-                    | SynModuleSigDecl.NestedModule(moduleInfo = SynComponentInfo(longId = lid; accessibility = access); moduleDecls = decls; range = m) ->
+                    | SynModuleSigDecl.NestedModule(moduleInfo = compInfo; moduleDecls = decls; range = m) ->
+                        let lid = compInfo.LongIdent
+                        let (SynComponentInfo(accessibility = access)) = compInfo
                         // Find let bindings (for the right dropdown)
                         let nested = processNestedSigDeclarations decls
 
@@ -809,8 +815,8 @@ module NavigateTo =
             addIdent NavigableItemKind.Exception id isSig container
             NavigableContainer.Container(NavigableContainerType.Exception, [ id.idText ], container)
 
-        let addComponentInfo containerType kind info isSig container =
-            let (SynComponentInfo(longId = lid)) = info
+        let addComponentInfo containerType kind (info: SynComponentInfo) isSig container =
+            let lid = info.LongIdent
             addLongIdent kind lid isSig container
 
             NavigableContainer.Container(containerType, pathOfLid lid, container)

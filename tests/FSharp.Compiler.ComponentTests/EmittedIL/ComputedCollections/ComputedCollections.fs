@@ -85,3 +85,9 @@ module ComputedCollections =
         compilation
         |> getCompilation
         |> verifyCompilation
+
+    [<Theory; FileInlineData("StructSeqCollectToList.fs", Realsig = BooleanOptions.Both, Optimize = BooleanOptions.True)>]
+    let ``StructSeqCollectToList_fs`` compilation =
+        compilation
+        |> getCompilation
+        |> verifyCompilation

@@ -63,6 +63,8 @@ let mkCallCollectorClose tcVal (g: TcGlobals) infoReader m collExpr =
 let LowerComputedListOrArraySeqExpr tcVal g amap m collectorTy overallSeqExpr =
     let infoReader = InfoReader(g, amap)
     let collVal, collExpr = mkMutableCompGenLocal m "@collector" collectorTy
+    // The seq<'T> element type that AddMany/AddManyAndClose expect for their argument.
+    let collectorSeqTy = mkSeqTy g (List.head (argsOfAppTy g collectorTy))
     //let collExpr = mkValAddr m false (mkLocalValRef collVal)
     let rec ConvertSeqExprCode isUninteresting isTailcall expr =
         match expr with
@@ -98,7 +100,9 @@ let LowerComputedListOrArraySeqExpr tcVal g amap m collectorTy overallSeqExpr =
                 let cleanupE = BuildDisposableCleanup tcVal g infoReader m v
                 let exprR = 
                     mkLet spBind m v resource
-                        (mkTryFinally g (bodyExprR, cleanupE, m, tyOfExpr g bodyExpr, DebugPointAtTry.No, DebugPointAtFinally.No))
+                        // The lowered body is a unit-typed collector call, so the try/finally result type is unit,
+                        // not the struct/ref body type (which would make the optimizer store a spurious default value).
+                        (mkTryFinally g (bodyExprR, cleanupE, m, g.unit_ty, DebugPointAtTry.No, DebugPointAtFinally.No))
                 Result.Ok (false, exprR)
             | Result.Error msg -> Result.Error msg
 
@@ -126,7 +130,8 @@ let LowerComputedListOrArraySeqExpr tcVal g amap m collectorTy overallSeqExpr =
                                     (callNonOverloadedILMethod g amap mIn "get_Current" inpEnumTy [enumve]))
                                     bodyExprR, mIn), 
                             cleanupE,
-                            mFor, tyOfExpr g bodyExpr, DebugPointAtTry.No, DebugPointAtFinally.No))
+                            // Lowered body is unit-typed; the try/finally result type must be unit.
+                            mFor, g.unit_ty, DebugPointAtTry.No, DebugPointAtFinally.No))
                     |> addForDebugPoint
                 Result.Ok (false, exprR)
             | Result.Error msg -> Result.Error msg
@@ -136,7 +141,8 @@ let LowerComputedListOrArraySeqExpr tcVal g amap m collectorTy overallSeqExpr =
             match resBody with 
             | Result.Ok (_, bodyExprR) ->
                 let exprR =
-                    mkTryFinally g (bodyExprR, compensation, m, tyOfExpr g bodyExpr, spTry, spFinally)
+                    // Lowered body is unit-typed; the try/finally result type must be unit.
+                    mkTryFinally g (bodyExprR, compensation, m, g.unit_ty, spTry, spFinally)
                 Result.Ok (false, exprR)
             | Result.Error msg -> Result.Error msg
 
@@ -201,6 +207,12 @@ let LowerComputedListOrArraySeqExpr tcVal g amap m collectorTy overallSeqExpr =
                 // printfn "FAILED - not worth compiling an unrecognized Seq.toList at %s " (stringOfRange m)
                 Result.Error ()
             else
+                // A struct sub-collection must be boxed to seq<'T> before being passed to AddMany/AddManyAndClose:
+                // BuildMethodCall does not coerce actuals, and struct->interface is not a free upcast (unlike ref subtypes).
+                let srcTy = tyOfExpr g arbitrarySeqExpr
+                let arbitrarySeqExpr =
+                    if typeEquiv g srcTy collectorSeqTy then arbitrarySeqExpr
+                    else mkCoerceExpr (arbitrarySeqExpr, collectorSeqTy, m, srcTy)
                 // If we're the final in a sequential chain then we can AddMany, Close and return
                 if isTailcall then 
                     let exprR = mkCallCollectorAddManyAndClose tcVal (g: TcGlobals) infoReader m collExpr arbitrarySeqExpr

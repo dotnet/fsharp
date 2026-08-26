@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
   <file datatype="xml" source-language="en" target-language="es" original="../FSComp.resx">
     <body>
@@ -297,11 +297,6 @@
         <target state="new">Access a protected base-class field from a closure inside a member</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureAccessorFunctionShorthand">
-        <source>underscore dot shorthand for accessor only function</source>
-        <target state="translated">forma abreviada de punto y guion bajo para la función de solo descriptor de acceso</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureAdditionalImplicitConversions">
         <source>additional type-directed conversions</source>
         <target state="translated">conversiones adicionales dirigidas a tipos</target>
@@ -335,11 +330,6 @@
       <trans-unit id="featureBetterAnonymousRecordParsing">
         <source>Support for better anonymous record parsing</source>
         <target state="new">Support for better anonymous record parsing</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="featureBetterExceptionPrinting">
-        <source>automatic generation of 'Message' property for 'exception' declarations</source>
-        <target state="translated">generación automática de la propiedad 'Message' para declaraciones 'exception'</target>
         <note />
       </trans-unit>
       <trans-unit id="featureBooleanReturningAndReturnTypeDirectedPartialActivePattern">
@@ -452,9 +442,9 @@
         <target state="translated">Interpolación de cadena extendida similar a los literales de cadena sin formato de C#.</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureFixedIndexSlice3d4d">
-        <source>fixed-index slice 3d/4d</source>
-        <target state="translated">segmento de índice fijo 3d/4d</target>
+      <trans-unit id="featureExtensionConstraintSolutions">
+        <source>Allow extension members to participate in SRTP constraint resolution</source>
+        <target state="new">Allow extension members to participate in SRTP constraint resolution</target>
         <note />
       </trans-unit>
       <trans-unit id="featureFromEndSlicing">
@@ -482,24 +472,9 @@
         <target state="translated">Notación para indexación y segmentación expr[idx]</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureInformationalObjInferenceDiagnostic">
-        <source>Diagnostic 3559 (warn when obj inferred) at informational level, off by default</source>
-        <target state="translated">Diagnóstico 3559 (advertir cuando se infiere el objeto) en el nivel informativo, desactivado de manera predeterminada</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="featureInitProperties">
-        <source>support for consuming init properties</source>
-        <target state="translated">compatibilidad con el consumo de propiedades init</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureInterfacesWithAbstractStaticMembers">
         <source>static abstract interface members</source>
         <target state="translated">miembros de interfaz abstracta estática</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="featureInterfacesWithMultipleGenericInstantiation">
-        <source>interfaces with multiple generic instantiation</source>
-        <target state="translated">interfaces con creación de instancias genéricas múltiples</target>
         <note />
       </trans-unit>
       <trans-unit id="featureLowerInterpolatedStringToConcat">
@@ -535,11 +510,6 @@
       <trans-unit id="featureNameOf">
         <source>nameof</source>
         <target state="translated">nameof</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="featureNestedCopyAndUpdate">
-        <source>Nested record field copy-and-update</source>
-        <target state="translated">Copia y actualización de campos de registro anidados</target>
         <note />
       </trans-unit>
       <trans-unit id="featureNonInlineLiteralsAsPrintfFormat">
@@ -632,11 +602,6 @@
         <target state="translated">mensajes informativos relacionados con las celdas de referencia</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureRelaxWhitespace2">
-        <source>whitespace relaxation v2</source>
-        <target state="translated">relajación de espacios en blanco v2</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureRequiredProperties">
         <source>support for required properties</source>
         <target state="translated">compatibilidad con las propiedades necesarias</target>
@@ -702,11 +667,6 @@
         <target state="translated">Propiedades de prueba de caso de unión</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureTryWithInSeqExpressions">
-        <source>Support for try-with in sequence expressions</source>
-        <target state="translated">Compatibilidad con try-with en expresiones secuenciales</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureUnmanagedConstraintCsharpInterop">
         <source>Interop between C#'s and F#'s unmanaged generic constraint (emit additional modreq)</source>
         <target state="translated">Interoperabilidad entre la restricción genérica no administrada de C# y F# (emitir modreq adicional)</target>
@@ -732,19 +692,9 @@
         <target state="translated">Emite advertencias cuando una expresión de copiar y actualizar registros cambia todos los campos de un registro.</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureWarningWhenInliningMethodImplNoInlineMarkedFunction">
-        <source>Raises warnings when 'let inline ... =' is used together with [&lt;MethodImpl(MethodImplOptions.NoInlining)&gt;] attribute. Function is not getting inlined.</source>
-        <target state="translated">Genera advertencias cuando se usa "let inline ... =" junto con el atributo [&lt;MethodImpl(MethodImplOptions.NoInlining)&gt;]. La función no se está insertando.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureWarningWhenMultipleRecdTypeChoice">
         <source>Raises warnings when multiple record type matches were found during name resolution because of overlapping field names.</source>
         <target state="translated">Genera advertencias cuando se encontraron varias coincidencias de tipo de registro durante la resolución de nombres debido a nombres de campo superpuestos.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="featureWhileBang">
-        <source>'while!' expression</source>
-        <target state="translated">expresión “while!”</target>
         <note />
       </trans-unit>
       <trans-unit id="featureWitnessPassing">
@@ -1632,6 +1582,21 @@
         <target state="translated">Restricción no válida. Los formularios de restricción válidos incluyen \"'T :&gt; ISomeInterface\" para restricciones de interfaz y \"SomeConstrainingType&lt;'T&gt;\" para restricciones propias. Ver https://aka.ms/fsharp-type-constraints.</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcInvalidStructLayoutExtendedKind">
+        <source>LayoutKind value 1 (Extended) cannot be specified via StructLayoutAttribute. Use ExtendedLayoutAttribute instead.</source>
+        <target state="new">LayoutKind value 1 (Extended) cannot be specified via StructLayoutAttribute. Use ExtendedLayoutAttribute instead.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcExtendedLayoutCannotBeUsedOnUnions">
+        <source>The 'ExtendedLayoutAttribute' cannot be applied to discriminated unions</source>
+        <target state="new">The 'ExtendedLayoutAttribute' cannot be applied to discriminated unions</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcExtendedLayoutStructMustHaveInstanceField">
+        <source>A struct with the 'ExtendedLayoutAttribute' must have at least one instance field</source>
+        <target state="new">A struct with the 'ExtendedLayoutAttribute' must have at least one instance field</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcInvalidStructReturn">
         <source>The use of '[&lt;Struct&gt;]' on values, functions and methods is only allowed on partial active pattern definitions</source>
         <target state="translated">El uso de "[&lt;Struct&gt;]" en valores, funciones y métodos solo se permite en definiciones de modelos activos parciales.</target>
@@ -1735,6 +1700,11 @@
       <trans-unit id="tcNullnessCheckingNotEnabled">
         <source>The 'nullness checking' language feature is not enabled. This use of a nullness checking construct will be ignored.</source>
         <target state="new">The 'nullness checking' language feature is not enabled. This use of a nullness checking construct will be ignored.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcOnlyStructsCanHaveExtendedLayout">
+        <source>Only structs may be given the 'ExtendedLayoutAttribute'</source>
+        <target state="new">Only structs may be given the 'ExtendedLayoutAttribute'</target>
         <note />
       </trans-unit>
       <trans-unit id="tcOtherThenAdjacentListArgumentNeedsAdjustment">
@@ -1900,6 +1870,11 @@
       <trans-unit id="tcStaticBindingInExtrinsicAugmentation">
         <source>Static bindings cannot be added to extrinsic augmentations. Consider using a 'static member' instead.</source>
         <target state="translated">No se pueden agregar enlaces estáticos a aumentos extrínsecos. Considere la posibilidad de usar un "miembro estático" en su lugar.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcStructLayoutAndExtendedLayout">
+        <source>The attributes 'StructLayoutAttribute' and 'ExtendedLayoutAttribute' cannot be used together on the same type</source>
+        <target state="new">The attributes 'StructLayoutAttribute' and 'ExtendedLayoutAttribute' cannot be used together on the same type</target>
         <note />
       </trans-unit>
       <trans-unit id="tcStructUnionMultiCaseFieldsSameType">
@@ -5120,11 +5095,6 @@
       <trans-unit id="tcUseForInSequenceExpression">
         <source>The use of 'let! x = coll' in sequence expressions is not permitted. Use 'for x in coll' instead.</source>
         <target state="translated">No se permite el uso de 'let! x = coll' en expresiones de secuencia. Use 'for x in coll' en su lugar.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="tcTryIllegalInSequenceExpression">
-        <source>'try'/'with' cannot be used within sequence expressions</source>
-        <target state="translated">No se puede usar 'try'/'with' en expresiones de secuencia.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcUseYieldBangForMultipleResults">
@@ -9125,6 +9095,11 @@
       <trans-unit id="featureExceptionFieldSerializationSupport">
         <source>emit GetObjectData and field-restoring deserialization constructor for exception types</source>
         <target state="new">emit GetObjectData and field-restoring deserialization constructor for exception types</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcTupleTypeExtensionTooManyElements">
+        <source>Tuple type extensions are supported only for tuples of up to 7 elements, but this tuple type has {0} elements. Extensions of larger tuples are not supported.</source>
+        <target state="new">Tuple type extensions are supported only for tuples of up to 7 elements, but this tuple type has {0} elements. Extensions of larger tuples are not supported.</target>
         <note />
       </trans-unit>
     </body>

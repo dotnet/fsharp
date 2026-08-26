@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
   <file datatype="xml" source-language="en" target-language="tr" original="../FSComp.resx">
     <body>
@@ -297,11 +297,6 @@
         <target state="new">Access a protected base-class field from a closure inside a member</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureAccessorFunctionShorthand">
-        <source>underscore dot shorthand for accessor only function</source>
-        <target state="translated">yalnızca erişimci işlevi için alt çizgi nokta kısaltma</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureAdditionalImplicitConversions">
         <source>additional type-directed conversions</source>
         <target state="translated">ek tür ile yönlendirilen dönüştürmeler</target>
@@ -335,11 +330,6 @@
       <trans-unit id="featureBetterAnonymousRecordParsing">
         <source>Support for better anonymous record parsing</source>
         <target state="new">Support for better anonymous record parsing</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="featureBetterExceptionPrinting">
-        <source>automatic generation of 'Message' property for 'exception' declarations</source>
-        <target state="translated">'exception' bildirimleri için 'Message' özelliğinin otomatik olarak oluşturulması</target>
         <note />
       </trans-unit>
       <trans-unit id="featureBooleanReturningAndReturnTypeDirectedPartialActivePattern">
@@ -452,9 +442,9 @@
         <target state="translated">C# ham sabit değerli dizeye benzer genişletilmiş dize ilişkilendirmesi.</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureFixedIndexSlice3d4d">
-        <source>fixed-index slice 3d/4d</source>
-        <target state="translated">sabit dizinli dilim 3d/4d</target>
+      <trans-unit id="featureExtensionConstraintSolutions">
+        <source>Allow extension members to participate in SRTP constraint resolution</source>
+        <target state="new">Allow extension members to participate in SRTP constraint resolution</target>
         <note />
       </trans-unit>
       <trans-unit id="featureFromEndSlicing">
@@ -482,24 +472,9 @@
         <target state="translated">Dizin oluşturma ve dilimleme için expr[idx] gösterimi</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureInformationalObjInferenceDiagnostic">
-        <source>Diagnostic 3559 (warn when obj inferred) at informational level, off by default</source>
-        <target state="translated">Tanılama 3559 (obj çıkarsanıldığında uyarı ver) bilgi düzeyinde, varsayılan olarak kapalı</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="featureInitProperties">
-        <source>support for consuming init properties</source>
-        <target state="translated">başlatma özelliklerini kullanma desteği</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureInterfacesWithAbstractStaticMembers">
         <source>static abstract interface members</source>
         <target state="translated">statik soyut arabirim üyeleri</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="featureInterfacesWithMultipleGenericInstantiation">
-        <source>interfaces with multiple generic instantiation</source>
-        <target state="translated">birden çok genel örnek oluşturma içeren arabirimler</target>
         <note />
       </trans-unit>
       <trans-unit id="featureLowerInterpolatedStringToConcat">
@@ -535,11 +510,6 @@
       <trans-unit id="featureNameOf">
         <source>nameof</source>
         <target state="translated">nameof</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="featureNestedCopyAndUpdate">
-        <source>Nested record field copy-and-update</source>
-        <target state="translated">İç içe kayıt alanı kopyalama ve güncelleştirme</target>
         <note />
       </trans-unit>
       <trans-unit id="featureNonInlineLiteralsAsPrintfFormat">
@@ -632,11 +602,6 @@
         <target state="translated">başvuru hücreleriyle ilgili bilgi mesajları</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureRelaxWhitespace2">
-        <source>whitespace relaxation v2</source>
-        <target state="translated">boşluk ilişkilendirme v2</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureRequiredProperties">
         <source>support for required properties</source>
         <target state="translated">gerekli özellikler için destek</target>
@@ -702,11 +667,6 @@
         <target state="translated">Birleşim durumu test özellikleri</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureTryWithInSeqExpressions">
-        <source>Support for try-with in sequence expressions</source>
-        <target state="translated">Dizi ifadelerinde try-with desteği</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureUnmanagedConstraintCsharpInterop">
         <source>Interop between C#'s and F#'s unmanaged generic constraint (emit additional modreq)</source>
         <target state="translated">C# ile F#' arasında yönetilmeyen genel kısıtlama (ek modreq yayın)</target>
@@ -732,19 +692,9 @@
         <target state="translated">Bir kopyalama ve güncelleştirme kayıt ifadesi bir kaydın tüm alanlarını değiştirdiğinde uyarı oluşturur.</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureWarningWhenInliningMethodImplNoInlineMarkedFunction">
-        <source>Raises warnings when 'let inline ... =' is used together with [&lt;MethodImpl(MethodImplOptions.NoInlining)&gt;] attribute. Function is not getting inlined.</source>
-        <target state="translated">[&lt;MethodImpl(MethodImplOptions.NoInlining)&gt;] özniteliği ile birlikte 'let inline ... =' kullanıldığında uyarı verir. İşlev satır içine alınmıyor.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureWarningWhenMultipleRecdTypeChoice">
         <source>Raises warnings when multiple record type matches were found during name resolution because of overlapping field names.</source>
         <target state="translated">Çakışan alan adları nedeniyle, ad çözümlemesi sırasında birden çok kayıt türü eşleşmesi olduğunda uyarı verir.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="featureWhileBang">
-        <source>'while!' expression</source>
-        <target state="translated">'while!' ifadesi</target>
         <note />
       </trans-unit>
       <trans-unit id="featureWitnessPassing">
@@ -1632,6 +1582,21 @@
         <target state="translated">Geçersiz kısıtlama. Geçerli kısıtlama formları arabirim kısıtlamaları için \"'T :&gt; ISomeInterface\" ve kendi kendine kısıtlamalar için \"SomeConstrainingType&lt;'T&gt;\" içerir. Bkz. https://aka.ms/fsharp-type-constraints.</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcInvalidStructLayoutExtendedKind">
+        <source>LayoutKind value 1 (Extended) cannot be specified via StructLayoutAttribute. Use ExtendedLayoutAttribute instead.</source>
+        <target state="new">LayoutKind value 1 (Extended) cannot be specified via StructLayoutAttribute. Use ExtendedLayoutAttribute instead.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcExtendedLayoutCannotBeUsedOnUnions">
+        <source>The 'ExtendedLayoutAttribute' cannot be applied to discriminated unions</source>
+        <target state="new">The 'ExtendedLayoutAttribute' cannot be applied to discriminated unions</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcExtendedLayoutStructMustHaveInstanceField">
+        <source>A struct with the 'ExtendedLayoutAttribute' must have at least one instance field</source>
+        <target state="new">A struct with the 'ExtendedLayoutAttribute' must have at least one instance field</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcInvalidStructReturn">
         <source>The use of '[&lt;Struct&gt;]' on values, functions and methods is only allowed on partial active pattern definitions</source>
         <target state="translated">Değerler, işlevler ve yöntemler üzerinde '[&lt;Struct&gt;]' kullanımına yalnızca kısmi etkin model tanımlarında izin verilir</target>
@@ -1735,6 +1700,11 @@
       <trans-unit id="tcNullnessCheckingNotEnabled">
         <source>The 'nullness checking' language feature is not enabled. This use of a nullness checking construct will be ignored.</source>
         <target state="new">The 'nullness checking' language feature is not enabled. This use of a nullness checking construct will be ignored.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcOnlyStructsCanHaveExtendedLayout">
+        <source>Only structs may be given the 'ExtendedLayoutAttribute'</source>
+        <target state="new">Only structs may be given the 'ExtendedLayoutAttribute'</target>
         <note />
       </trans-unit>
       <trans-unit id="tcOtherThenAdjacentListArgumentNeedsAdjustment">
@@ -1900,6 +1870,11 @@
       <trans-unit id="tcStaticBindingInExtrinsicAugmentation">
         <source>Static bindings cannot be added to extrinsic augmentations. Consider using a 'static member' instead.</source>
         <target state="translated">Statik bağlamalar dış genişletmelere eklenemez. Bunun yerine 'static member' kullanmayı düşünün.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcStructLayoutAndExtendedLayout">
+        <source>The attributes 'StructLayoutAttribute' and 'ExtendedLayoutAttribute' cannot be used together on the same type</source>
+        <target state="new">The attributes 'StructLayoutAttribute' and 'ExtendedLayoutAttribute' cannot be used together on the same type</target>
         <note />
       </trans-unit>
       <trans-unit id="tcStructUnionMultiCaseFieldsSameType">
@@ -5120,11 +5095,6 @@
       <trans-unit id="tcUseForInSequenceExpression">
         <source>The use of 'let! x = coll' in sequence expressions is not permitted. Use 'for x in coll' instead.</source>
         <target state="translated">Dizi ifadelerinde 'let! x = coll' kullanımına izin verilmez. Onun yerine 'for x in coll' kullanın.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="tcTryIllegalInSequenceExpression">
-        <source>'try'/'with' cannot be used within sequence expressions</source>
-        <target state="translated">Dizi ifadeleri içinde 'try'/'with' kullanılamaz</target>
         <note />
       </trans-unit>
       <trans-unit id="tcUseYieldBangForMultipleResults">
@@ -9125,6 +9095,11 @@
       <trans-unit id="featureExceptionFieldSerializationSupport">
         <source>emit GetObjectData and field-restoring deserialization constructor for exception types</source>
         <target state="new">emit GetObjectData and field-restoring deserialization constructor for exception types</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcTupleTypeExtensionTooManyElements">
+        <source>Tuple type extensions are supported only for tuples of up to 7 elements, but this tuple type has {0} elements. Extensions of larger tuples are not supported.</source>
+        <target state="new">Tuple type extensions are supported only for tuples of up to 7 elements, but this tuple type has {0} elements. Extensions of larger tuples are not supported.</target>
         <note />
       </trans-unit>
     </body>

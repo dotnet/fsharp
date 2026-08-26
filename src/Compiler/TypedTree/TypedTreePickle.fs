@@ -205,7 +205,21 @@ type ReaderState =
         isimpletys: InputTable<TType>
         ifile: string
         iILModule: ILModuleDef option // the Abstract IL metadata for the DLL being read
+
+        // The pickled format has no table for these, so each is written out at every mention while a
+        // blob names very few distinct ones.
+        iilscopes: Dictionary<ILScopeRef, ILScopeRef>
+        iiltyperefs: Dictionary<ILTypeRef, ILTypeRef>
+        iilmethodrefs: Dictionary<ILMethodRef, ILMethodRef>
     }
+
+// A `HashSet` would fit better, but the member returning the instance it holds is netstandard2.1.
+let shareIL (table: Dictionary<'T, 'T>) (v: 'T) : 'T =
+    match table.TryGetValue v with
+    | true, existing -> existing
+    | _ ->
+        table[v] <- v
+        v
 
 let ufailwith st str = ffailwith st.ifile str
 
@@ -1066,6 +1080,9 @@ let unpickleObjWithDanglingCcus
             isimpletys = new_itbl "isimpletys (fake)" [||]
             ifile = file
             iILModule = ilModule
+            iilscopes = Dictionary<_, _>()
+            iiltyperefs = Dictionary<_, _>()
+            iilmethodrefs = Dictionary<_, _>()
         }
 
     let ccuNameTab = u_array u_encoded_ccuref st2
@@ -1126,6 +1143,9 @@ let unpickleObjWithDanglingCcus
                 isimpletys = simpletypTab
                 ifile = file
                 iILModule = ilModule
+                iilscopes = Dictionary<_, _>()
+                iiltyperefs = Dictionary<_, _>()
+                iilmethodrefs = Dictionary<_, _>()
             }
 
         let res = u st1
@@ -1231,7 +1251,7 @@ let u_ILScopeRef st =
         | _ -> ufailwith st "u_ILScopeRef"
 
     let res = rescopeILScopeRef st.iilscope res
-    res
+    shareIL st.iilscopes res
 
 let p_ILHasThis x st =
     p_byte
@@ -1320,7 +1340,8 @@ let u_ILCallConv st =
 
 let u_ILTypeRef st =
     let a, b, c = u_tup3 u_ILScopeRef u_strings u_string st
-    ILTypeRef.Create(a, b, c)
+    let res = ILTypeRef.Create(a, b, c)
+    shareIL st.iiltyperefs res
 
 let u_ILArrayShape =
     u_wrap ILArrayShape (u_list (u_tup2 (u_option u_int32) (u_option u_int32)))
@@ -1413,7 +1434,8 @@ let u_ILMethodRef st =
     let x1, x2, x3, x4, x5, x6 =
         u_tup6 u_ILTypeRef u_ILCallConv u_int u_string u_ILTypes u_ILType st
 
-    ILMethodRef.Create(x1, x2, x4, x3, x5, x6)
+    let res = ILMethodRef.Create(x1, x2, x4, x3, x5, x6)
+    shareIL st.iilmethodrefs res
 
 let u_ILFieldRef st =
     let x1, x2, x3 = u_tup3 u_ILTypeRef u_string u_ILType st
@@ -2130,7 +2152,7 @@ let p_trait_sln sln st =
         p_byte 7 st
         p_tup4 p_ty (p_vref "trait") p_tys p_ty (a, b, c, d) st
 
-let p_trait (TTrait(a, b, c, d, e, _, f)) st =
+let p_trait (TTrait(a, b, c, d, e, _, f, _)) st =
     p_tup6 p_tys p_string p_MemberFlags p_tys (p_option p_ty) (p_option p_trait_sln) (a, b, c, d, e, f.Value) st
 
 let u_anonInfo_data st =
@@ -2171,7 +2193,7 @@ let u_trait st =
     let a, b, c, d, e, f =
         u_tup6 u_tys u_string u_MemberFlags u_tys (u_option u_ty) (u_option u_trait_sln) st
 
-    TTrait(a, b, c, d, e, ref None, ref f)
+    TTrait(a, b, c, d, e, ref None, ref f, None)
 
 let p_rational q st =
     p_int32 (GetNumerator q) st
@@ -2839,8 +2861,7 @@ and p_tcaug p st =
          p.tcaug_hash_and_equals_withc
          |> Option.map (fun (v1, v2, v3, _) -> (v1, v2, v3)),
          p.tcaug_equals,
-         (p.tcaug_adhoc_list
-          |> ResizeArray.toList
+         (p.AdhocMembers
           // Explicit impls of interfaces only get kept in the adhoc list
           // in order to get check the well-formedness of an interface.
           // Keeping them across assembly boundaries is not valid, because relinking their ValRefs
@@ -3201,7 +3222,10 @@ and u_tcaug st =
         tcaug_equals = b2
         // only used for code generation and checking - hence don't care about the values when reading back in
         tcaug_hasObjectGetHashCode = false
-        tcaug_adhoc_list = ResizeArray<_>(c |> List.map (fun (_, vref) -> (false, vref)))
+        tcaug_adhoc_list =
+            match c with
+            | [] -> null
+            | _ -> ResizeArray<_>(c |> List.map (fun (_, vref) -> (false, vref)))
         tcaug_adhoc = NameMultiMap.ofList c
         tcaug_interfaces = d
         tcaug_super = e

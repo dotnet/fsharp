@@ -1141,6 +1141,7 @@ type ILMetadataReader =
         seekReadMemberRefAsFieldSpec: MemberRefAsFspecIdx -> ILFieldSpec
         seekReadCustomAttr: CustomAttrIdx -> ILAttribute
         seekReadTypeRef: int -> ILTypeRef
+        seekReadTypeDefAsTypeRef: int -> ILTypeRef
         seekReadTypeRefAsType: TypeRefAsTypIdx -> ILType
         readBlobHeapAsPropertySig: BlobAsPropSigIdx -> ILThisConvention * ILType * ILTypes
         readBlobHeapAsFieldSig: BlobAsFieldSigIdx -> ILType
@@ -2064,6 +2065,8 @@ and typeLayoutOfFlags (ctxt: ILMetadataReader) mdv flags tidx =
         ILTypeDefLayout.Sequential(seekReadClassLayout ctxt mdv tidx)
     elif f = 0x00000010 then
         ILTypeDefLayout.Explicit(seekReadClassLayout ctxt mdv tidx)
+    elif f = 0x00000018 then
+        ILTypeDefLayout.Extended
     else
         ILTypeDefLayout.Auto
 
@@ -2136,6 +2139,8 @@ and typeDefReader ctxtH : ILTypeDefStored =
         let super = seekReadSuperType ctxt numTypars AsObject extendsIdx
         let layout = typeLayoutOfFlags ctxt mdv flags idx
 
+        // Only Explicit layout has per-field offsets in the FieldLayout metadata table.
+        // Sequential and Extended layouts don't use FieldLayout rows.
         let hasLayout =
             match layout with
             | ILTypeDefLayout.Explicit _ -> true
@@ -2356,7 +2361,10 @@ and seekReadTypeDefAsTypeUncached ctxtH (TypeDefAsTypIdx(boxity, ginst, idx)) =
     let ctxt = getHole ctxtH
     mkILTy boxity (ILTypeSpec.Create(seekReadTypeDefAsTypeRef ctxt idx, ginst))
 
-and seekReadTypeDefAsTypeRef (ctxt: ILMetadataReader) idx =
+and seekReadTypeDefAsTypeRef (ctxt: ILMetadataReader) idx = ctxt.seekReadTypeDefAsTypeRef idx
+
+and seekReadTypeDefAsTypeRefUncached ctxtH idx =
+    let (ctxt: ILMetadataReader) = getHole ctxtH
     let mdv = ctxt.mdfile.GetView()
 
     let enc =
@@ -4508,6 +4516,8 @@ let openMetadataReader
     let cacheTypeDefAsType =
         mkCacheGeneric reduceMemoryUsage inbase "TypeDefAsType" (getNumRows TableNames.TypeDef / 20 + 1)
 
+    let cacheTypeDefAsTypeRef = mkCacheGeneric false inbase "TypeDefAsTypeRef" 0
+
     let cacheMethodDefAsMethodData =
         mkCacheGeneric reduceMemoryUsage inbase "MethodDefAsMethodData" (getNumRows TableNames.Method / 20 + 1)
 
@@ -4579,6 +4589,7 @@ let openMetadataReader
             seekReadMemberRefAsFieldSpec = seekReadMemberRefAsFieldSpecUncached ctxtH
             seekReadCustomAttr = cacheCustomAttr (seekReadCustomAttrUncached ctxtH)
             seekReadTypeRef = cacheTypeRef (seekReadTypeRefUncached ctxtH)
+            seekReadTypeDefAsTypeRef = cacheTypeDefAsTypeRef (seekReadTypeDefAsTypeRefUncached ctxtH)
             readBlobHeapAsPropertySig = cacheBlobHeapAsPropertySig (readBlobHeapAsPropertySigUncached ctxtH)
             readBlobHeapAsFieldSig = cacheBlobHeapAsFieldSig (readBlobHeapAsFieldSigUncached ctxtH)
             readBlobHeapAsMethodSig = cacheBlobHeapAsMethodSig (readBlobHeapAsMethodSigUncached ctxtH)

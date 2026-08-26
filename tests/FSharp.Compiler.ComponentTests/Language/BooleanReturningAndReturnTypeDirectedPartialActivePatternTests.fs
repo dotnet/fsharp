@@ -1,7 +1,7 @@
 ﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-// Because of shared fsi session.
-[<FSharp.Test.RunTestCasesInSequence>]
+// Leverage caching/prevent concurrent mutation via long-lived fsiSession in module state
+[<Xunit.TestClass(DisableParallelization = true)>]
 module Language.BooleanReturningAndReturnTypeDirectedPartialActivePatternTests
 
 open Xunit

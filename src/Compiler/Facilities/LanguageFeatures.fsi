@@ -6,18 +6,15 @@ module internal FSharp.Compiler.Features
 /// LanguageFeature enumeration
 [<RequireQualifiedAccess>]
 type LanguageFeature =
-    | RelaxWhitespace2
     | NameOf
     | DotlessFloat32Literal
     | PackageManagement
     | FromEndSlicing
-    | FixedIndexSlice3d4d
     | ResumableStateMachines
     | NullableOptionalInterop
     | DefaultInterfaceMemberConsumption
     | WitnessPassing
     | AdditionalTypeDirectedConversions
-    | InterfacesWithMultipleGenericInstantiation
     | StringInterpolation
     | OverloadsForCustomOperations
     | ExpandedMeasurables
@@ -27,37 +24,29 @@ type LanguageFeature =
     | UnionIsPropertiesVisible
     | NonVariablePatternsToRightOfAsPatterns
     | AttributesToRightOfModuleKeyword
-    | BetterExceptionPrinting
     | DelegateTypeNameResolutionFix
     | ReallyLongLists
     | ErrorOnDeprecatedRequireQualifiedAccess
     | RequiredPropertiesSupport
-    | InitPropertiesSupport
     | LowercaseDUWhenRequireQualifiedAccess
     | InterfacesWithAbstractStaticMembers
     | SelfTypeConstraints
-    | AccessorFunctionShorthand
     | MatchNotAllowedForUnionCaseWithNoData
     | CSharpExtensionAttributeNotRequired
     | ErrorForNonVirtualMembersOverrides
-    | WarningWhenInliningMethodImplNoInlineMarkedFunction
     | EscapeDotnetFormattableStrings
     | ArithmeticInLiterals
     | ErrorReportingOnStaticClasses
-    | TryWithInSeqExpression
     | WarningWhenCopyAndUpdateRecordChangesAllFields
     | StaticMembersInInterfaces
     | NonInlineLiteralsAsPrintfFormat
-    | NestedCopyAndUpdate
     | ExtendedStringInterpolation
     | WarningWhenMultipleRecdTypeChoice
     | ImprovedImpliedArgumentNames
-    | DiagnosticForObjInference
     | ConstraintIntersectionOnFlexibleTypes
     | StaticLetInRecordsDusEmptyTypes
     | WarningWhenTailRecAttributeButNonTailRecUsage
     | UnmanagedConstraintCsharpInterop
-    | WhileBang
     | ReuseSameFieldsInStructUnions
     | ExtendedFixedBindings
     | PreferStringGetPinnableReference
@@ -91,6 +80,7 @@ type LanguageFeature =
     | MethodOverloadsCache
     | ImplicitDIMCoverage
     | PreprocessorElif
+    | ExtensionConstraintSolutions
     | ExceptionFieldSerializationSupport
     | ErrorOnMissingSignatureAttribute
     | RecordConstructorSyntax
