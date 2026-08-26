@@ -3316,8 +3316,7 @@ and GenExprAux (cenv: cenv) (cgbuf: CodeGenBuffer) eenv expr (sequel: sequel) =
             // application of local type functions with type parameters = measure types and body = local value - inline the body
             GenExpr cenv cgbuf eenv v sequel
 
-        | Expr.App(Expr.Val(vref, _, _), _, _, [ _ ], _) when IsRuntimeAsyncReturnVref g vref ->
-            GenRuntimeAsyncReturnAsStartedTask cenv cgbuf eenv expr sequel
+        | Expr.App(Expr.Val(RuntimeAsyncReturn g, _, _), _, _, [ _ ], _) -> GenRuntimeAsyncReturnAsStartedTask cenv cgbuf eenv expr sequel
 
         | Expr.App(f, fty, tyargs, curriedArgs, m) -> GenApp cenv cgbuf eenv (f, fty, tyargs, curriedArgs, m) sequel
 

@@ -2541,8 +2541,7 @@ and private ExprContainsRuntimeAsyncFragment cenv env visiting expr =
                         true
                     else
                         match stripExpr expr with
-                        | Expr.App(Expr.Val(vref, _, _), _, _, _, _)
-                            when IsRuntimeAsyncReturnVref cenv.g vref ->
+                        | Expr.App(Expr.Val(RuntimeAsyncReturn cenv.g, _, _), _, _, _, _) ->
                             true
                         | _ when IsRuntimeAsyncSuspensionExpr cenv.g expr ->
                             true
@@ -2643,8 +2642,7 @@ let rec OptimizeExpr cenv (env: IncrementalOptimizationEnv) expr =
 
     | Expr.App (f, fty, tyargs, argsl, m) -> 
         match expr with
-        | Expr.App(Expr.Val(vref, flags, _), fty, _, [ body ], _)
-            when IsRuntimeAsyncReturnVref g vref ->
+        | Expr.App(Expr.Val(RuntimeAsyncReturn g, _, _), fty, _, [ body ], _) ->
             let bodyR, bodyInfo = OptimizeExpr cenv { env with runtimeAsyncContext = true } body
             let reportedStamps = HashSet<Stamp>()
 
@@ -2653,7 +2651,7 @@ let rec OptimizeExpr cenv (env: IncrementalOptimizationEnv) expr =
                     errorR(Error(FSComp.SR.ilRuntimeAsyncLocalUsedAfterSuspension(RichText.mkText v.DisplayName), v.Range))
 
             let bodyR = RewriteRuntimeAsyncExceptionHandlers g bodyR
-            Expr.App(Expr.Val(vref, flags, m), fty, tyargs, [ bodyR ], m),
+            Expr.App(f, fty, tyargs, [ bodyR ], m),
             { bodyInfo with
                 HasEffect = true
                 Info = UnknownValue }
