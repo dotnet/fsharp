@@ -144,9 +144,11 @@ module String =
                 if len <= STACKALLOC_THRESHOLD then
                     Span<char>((NativePtr.toVoidPtr (NativePtr.stackalloc<char> STACKALLOC_THRESHOLD)), len)
                 else
+                    // Using the primitive, because array.fs is not yet in scope. It's safe: both len and count are positive.
                     Span(Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked len)
 #warnon "9"
 #else
+                    // same as above
                     Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked len
 #endif
             let mutable i = 0
