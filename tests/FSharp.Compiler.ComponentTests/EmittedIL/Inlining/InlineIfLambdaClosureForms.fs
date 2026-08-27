@@ -140,10 +140,12 @@ let test (env: int) (a: string list) (b: string list) =
     forall2Chained (eqf env) a b
 """
 
-    // For this direct-apply shape, an instance `member inline` preserves InlineIfLambda through `<|`;
-    // the instance receiver does not cause closure allocation. (Forwarding to a non-inline callee is
-    // covered above - and that is the real cause of the closure a member/`<|` call site is sometimes
-    // blamed for: the lambda escaping into the callee, not the member or the pipe.)
+    // A direct-apply instance `member inline` whose lambda does NOT escape keeps InlineIfLambda through
+    // `<|` - no closure. This does not generalise: once the lambda escapes (e.g. captured by a slow-path
+    // closure, as in StackGuard.Guard), `<|` defeats InlineIfLambda and materialises it UNCONDITIONALLY
+    // every call, whereas a method-call `Guard(fun ..)` keeps InlineIfLambda firing so the closure stays
+    // in the cold escape branch. That is a per-call placement/byte difference a newobj-presence check
+    // cannot see, so it is characterised by allocation measurement, not asserted here.
 
     [<Fact>]
     let ``direct-apply inline instance member, back-piped with <| -> no closure`` () =
