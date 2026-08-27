@@ -297,11 +297,6 @@
         <target state="new">Access a protected base-class field from a closure inside a member</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureAccessorFunctionShorthand">
-        <source>underscore dot shorthand for accessor only function</source>
-        <target state="translated">sintassi abbreviata del punto di sottolineatura solo per la funzione di accesso</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureAdditionalImplicitConversions">
         <source>additional type-directed conversions</source>
         <target state="translated">conversioni aggiuntive dirette ai tipi</target>
@@ -335,11 +330,6 @@
       <trans-unit id="featureBetterAnonymousRecordParsing">
         <source>Support for better anonymous record parsing</source>
         <target state="new">Support for better anonymous record parsing</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="featureBetterExceptionPrinting">
-        <source>automatic generation of 'Message' property for 'exception' declarations</source>
-        <target state="translated">generazione automatica della proprietà 'Messaggio' per le dichiarazioni 'eccezione'</target>
         <note />
       </trans-unit>
       <trans-unit id="featureBooleanReturningAndReturnTypeDirectedPartialActivePattern">
@@ -412,6 +402,11 @@
         <target state="translated">Genera errori per gli override dei membri non virtuali</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureErrorOnBitwiseOpsOnNonIntegralEnums">
+        <source>Error when bitwise operators are used on enums whose underlying type is not an integer type (e.g. char).</source>
+        <target state="new">Error when bitwise operators are used on enums whose underlying type is not an integer type (e.g. char).</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureErrorOnDeprecatedRequireQualifiedAccess">
         <source>give error on deprecated access of construct with RequireQualifiedAccess attribute</source>
         <target state="translated">errore durante l'accesso deprecato del costrutto con l'attributo RequireQualifiedAccess</target>
@@ -457,11 +452,6 @@
         <target state="new">Allow extension members to participate in SRTP constraint resolution</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureFixedIndexSlice3d4d">
-        <source>fixed-index slice 3d/4d</source>
-        <target state="translated">sezione a indice fisso 3D/4D</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureFromEndSlicing">
         <source>from-end slicing</source>
         <target state="translated">sezionamento dalla fine</target>
@@ -482,29 +472,9 @@
         <target state="new">Improved implied argument names with partial application</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureIndexerNotationWithoutDot">
-        <source>expr[idx] notation for indexing and slicing</source>
-        <target state="translated">Notazione expr[idx] per l'indicizzazione e il sezionamento</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="featureInformationalObjInferenceDiagnostic">
-        <source>Diagnostic 3559 (warn when obj inferred) at informational level, off by default</source>
-        <target state="translated">Diagnostica 3559 (avviso in caso di oggetto dedotto) a livello informativo. Opzione disattivata per impostazione predefinita</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="featureInitProperties">
-        <source>support for consuming init properties</source>
-        <target state="translated">supporto per l'utilizzo delle proprietà init</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureInterfacesWithAbstractStaticMembers">
         <source>static abstract interface members</source>
         <target state="translated">membri dell'interfaccia astratta statica</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="featureInterfacesWithMultipleGenericInstantiation">
-        <source>interfaces with multiple generic instantiation</source>
-        <target state="translated">interfacce con più creazioni di istanze generiche</target>
         <note />
       </trans-unit>
       <trans-unit id="featureLowerInterpolatedStringToConcat">
@@ -540,11 +510,6 @@
       <trans-unit id="featureNameOf">
         <source>nameof</source>
         <target state="translated">nameof</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="featureNestedCopyAndUpdate">
-        <source>Nested record field copy-and-update</source>
-        <target state="translated">Copia e aggiornamento campi record annidati</target>
         <note />
       </trans-unit>
       <trans-unit id="featureNonInlineLiteralsAsPrintfFormat">
@@ -637,11 +602,6 @@
         <target state="translated">messaggi informativi relativi alle celle di riferimento</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureRelaxWhitespace2">
-        <source>whitespace relaxation v2</source>
-        <target state="translated">uso meno restrittivo degli spazi vuoti v2</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureRequiredProperties">
         <source>support for required properties</source>
         <target state="translated">supporto per le proprietà obbligatorie</target>
@@ -707,11 +667,6 @@
         <target state="translated">Proprietà test case di unione</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureTryWithInSeqExpressions">
-        <source>Support for try-with in sequence expressions</source>
-        <target state="translated">Supporto per try-with nelle espressioni di sequenza</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureUnmanagedConstraintCsharpInterop">
         <source>Interop between C#'s and F#'s unmanaged generic constraint (emit additional modreq)</source>
         <target state="translated">Interoperabilità tra il vincolo generico non gestito di C# e di F# (crea un modreq aggiuntivo)</target>
@@ -737,19 +692,9 @@
         <target state="translated">Genera avvisi quando un'espressione di record di copia e aggiornamento modifica tutti i campi di un record.</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureWarningWhenInliningMethodImplNoInlineMarkedFunction">
-        <source>Raises warnings when 'let inline ... =' is used together with [&lt;MethodImpl(MethodImplOptions.NoInlining)&gt;] attribute. Function is not getting inlined.</source>
-        <target state="translated">Genera avvisi quando 'let inline ... =' viene usato insieme all'attributo [&lt;MethodImpl(MethodImplOptions.NoInlining)&gt;]. La funzione non viene resa inline.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureWarningWhenMultipleRecdTypeChoice">
         <source>Raises warnings when multiple record type matches were found during name resolution because of overlapping field names.</source>
         <target state="translated">Genera avvisi quando sono state trovate più corrispondenze del tipo di record durante la risoluzione dei nomi a causa di nomi di campi sovrapposti.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="featureWhileBang">
-        <source>'while!' expression</source>
-        <target state="translated">Espressione "while!"</target>
         <note />
       </trans-unit>
       <trans-unit id="featureWitnessPassing">
@@ -1567,11 +1512,6 @@
         <target state="translated">La sintassi 'expr1[expr2]' viene usata per l'indicizzazione. Provare ad aggiungere un'annotazione di tipo per abilitare l'indicizzazione oppure se la chiamata a una funzione aggiunge uno spazio, ad esempio 'expr1 [expr2]'.</target>
         <note />
       </trans-unit>
-      <trans-unit id="tcHighPrecedenceFunctionApplicationToListReserved">
-        <source>The syntax 'expr1[expr2]' is now reserved for indexing. See https://aka.ms/fsharp-index-notation. If calling a function, add a space between the function and argument, e.g. 'someFunction [expr]'.</source>
-        <target state="translated">La sintassi 'expr1[expr2]' è ora riservata per l'indicizzazione. Vedere https://aka.ms/fsharp-index-notation. Se si chiama una funzione, aggiungere uno spazio tra la funzione e l'argomento, ad esempio 'someFunction [expr]'.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="tcIllegalByrefsInOpenTypeDeclaration">
         <source>Byref types are not allowed in an open type declaration.</source>
         <target state="translated">I tipi byref non sono consentiti in una dichiarazione di tipo aperto.</target>
@@ -1672,11 +1612,6 @@
         <target state="translated">La sintassi '[expr1][expr2]' è ambigua se usata come argomento. Vedere https://aka.ms/fsharp-index-notation. Se si intende eseguire l'indicizzazione o il sezionamento, è necessario usare '(expr1). [expr2]' nella posizione dell'argomento. Se si chiama una funzione con più argomenti sottoposti a corsi, aggiungere uno spazio tra di essi, ad esempio 'someFunction [expr1] [expr2]'.</target>
         <note />
       </trans-unit>
-      <trans-unit id="tcListThenAdjacentListArgumentReserved">
-        <source>The syntax '[expr1][expr2]' is now reserved for indexing and is ambiguous when used as an argument. See https://aka.ms/fsharp-index-notation. If calling a function with multiple curried arguments, add a space between them, e.g. 'someFunction [expr1] [expr2]'.</source>
-        <target state="translated">La sintassi '[expr1][expr2]' è ora riservata per l'indicizzazione ed è ambigua quando usata come argomento. Vedere https://aka.ms/fsharp-index-notation. Se si chiama una funzione con più argomenti sottoposti a corsi, aggiungere uno spazio tra di essi, ad esempio 'someFunction [expr1] [expr2]'.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="tcLiteralAttributeCannotUseActivePattern">
         <source>A [&lt;Literal&gt;] declaration cannot use an active pattern for its identifier</source>
         <target state="translated">Una dichiarazione [&lt;Literal&gt;] non può usare un criterio attivo per il relativo identificatore</target>
@@ -1727,26 +1662,6 @@
         <target state="translated">Nessuna proprietà astratta statica trovata corrispondente all'override</target>
         <note />
       </trans-unit>
-      <trans-unit id="tcNotAFunctionButIndexerIndexingNotYetEnabled">
-        <source>This expression supports indexing, e.g. 'expr.[index]'. The syntax 'expr[index]' requires /langversion:preview. See https://aka.ms/fsharp-index-notation.</source>
-        <target state="translated">Questa espressione supporta l'indicizzazione, ad esempio 'expr.[index]'. La sintassi 'expr[index]' richiede/langversion:preview. Vedere https://aka.ms/fsharp-index-notation..</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="tcNotAFunctionButIndexerNamedIndexingNotYetEnabled">
-        <source>This value supports indexing, e.g. '{0}.[index]'. The syntax '{1}[index]' requires /langversion:preview. See https://aka.ms/fsharp-index-notation.</source>
-        <target state="translated">Questo valore supporta l'indicizzazione, ad esempio '{0}.[index]'. La sintassi '{1}[index]' richiede/langversion:preview. Vedere https://aka.ms/fsharp-index-notation.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="tcNotAnIndexerIndexingNotYetEnabled">
-        <source>This expression is not a function and does not support index notation.</source>
-        <target state="translated">Questa espressione non è una funzione e non supporta la notazione degli indici.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="tcNotAnIndexerNamedIndexingNotYetEnabled">
-        <source>The value '{0}' is not a function and does not support index notation.</source>
-        <target state="translated">Questo valore '{0}' non è una funzione e non supporta la notazione degli indici.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="tcNullableToStringOverride">
         <source>With nullness checking enabled, overrides of .ToString() method must return a non-nullable string. You can handle potential nulls via the built-in string function.</source>
         <target state="new">With nullness checking enabled, overrides of .ToString() method must return a non-nullable string. You can handle potential nulls via the built-in string function.</target>
@@ -1767,11 +1682,6 @@
         <target state="translated">La sintassi 'expr1[expr2]' è ambigua se usata come argomento. Vedere https://aka.ms/fsharp-index-notation. Se si intende eseguire l'indicizzazione o il sezionamento, è necessario usare 'expr1.[expr2]' nella posizione dell'argomento. Se si chiama una funzione con più argomenti sottoposti a corsi, aggiungere uno spazio tra di essi, ad esempio 'someFunction expr1 [expr2]'.</target>
         <note />
       </trans-unit>
-      <trans-unit id="tcOtherThenAdjacentListArgumentReserved">
-        <source>The syntax 'expr1[expr2]' is now reserved for indexing and is ambiguous when used as an argument. See https://aka.ms/fsharp-index-notation. If calling a function with multiple curried arguments, add a space between them, e.g. 'someFunction expr1 [expr2]'.</source>
-        <target state="translated">La sintassi 'expr1[expr2]' è ora riservata per l'indicizzazione ed è ambigua quando usata come argomento. Vedere https://aka.ms/fsharp-index-notation. Se si chiama una funzione con più argomenti sottoposti a corsi, aggiungere uno spazio tra di essi, ad esempio 'someFunction expr1 [expr2]'.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="tcOverloadResolutionPriorityOnOverride">
         <source>The 'OverloadResolutionPriorityAttribute' cannot be applied to an override member. Apply it to the original declaration instead.</source>
         <target state="new">The 'OverloadResolutionPriorityAttribute' cannot be applied to an override member. Apply it to the original declaration instead.</target>
@@ -1785,11 +1695,6 @@
       <trans-unit id="tcParenThenAdjacentListArgumentNeedsAdjustment">
         <source>The syntax '(expr1)[expr2]' is ambiguous when used as an argument. See https://aka.ms/fsharp-index-notation. If you intend indexing or slicing then you must use '(expr1).[expr2]' in argument position. If calling a function with multiple curried arguments, add a space between them, e.g. 'someFunction (expr1) [expr2]'.</source>
         <target state="translated">La sintassi '(expr1)[expr2]' è ambigua se usata come argomento. Vedere https://aka.ms/fsharp-index-notation. Se si intende eseguire l'indicizzazione o il sezionamento, è necessario usare '(expr1).[expr2]' nella posizione dell'argomento. Se si chiama una funzione con più argomenti sottoposti a corsi, aggiungere uno spazio tra di essi, ad esempio 'someFunction (expr1) [expr2]'.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="tcParenThenAdjacentListArgumentReserved">
-        <source>The syntax '(expr1)[expr2]' is now reserved for indexing and is ambiguous when used as an argument. See https://aka.ms/fsharp-index-notation. If calling a function with multiple curried arguments, add a space between them, e.g. 'someFunction (expr1) [expr2]'.</source>
-        <target state="translated">La sintassi '(expr1)[expr2]' è ora riservata per l'indicizzazione ed è ambigua quando usata come argomento. Vedere https://aka.ms/fsharp-index-notation. Se si chiama una funzione con più argomenti sottoposti a corsi, aggiungere uno spazio tra di essi, ad esempio 'someFunction (expr1) [expr2]'.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcPartialActivePattern">
@@ -5150,11 +5055,6 @@
       <trans-unit id="tcUseForInSequenceExpression">
         <source>The use of 'let! x = coll' in sequence expressions is not permitted. Use 'for x in coll' instead.</source>
         <target state="translated">L'utilizzo di 'let! x = coll' in espressioni sequenza non è consentito. Utilizzare invece 'for x in coll'.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="tcTryIllegalInSequenceExpression">
-        <source>'try'/'with' cannot be used within sequence expressions</source>
-        <target state="translated">Non è possibile usare 'try'/'with' in espressioni sequenza</target>
         <note />
       </trans-unit>
       <trans-unit id="tcUseYieldBangForMultipleResults">
@@ -8875,16 +8775,6 @@
       <trans-unit id="notAFunctionWithType">
         <source>This value is not a function and cannot be applied. It has type '{0}', which does not accept arguments.</source>
         <target state="new">This value is not a function and cannot be applied. It has type '{0}', which does not accept arguments.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="notAFunctionButMaybeIndexerWithName">
-        <source>This value is not a function and cannot be applied. Did you intend to access the indexer via '{0}.[index]'?</source>
-        <target state="translated">Questo valore non è una funzione e non può essere applicato. Si intendeva accedere all'indicizzatore tramite la sintassi '{0}.[index]'?</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="notAFunctionButMaybeIndexer">
-        <source>This expression is not a function and cannot be applied. Did you intend to access the indexer via 'expr.[index]'?</source>
-        <target state="translated">Questa espressione non è una funzione e non può essere applicata. Si intendeva accedere all'indicizzatore tramite la sintassi 'expr.[index]'?</target>
         <note />
       </trans-unit>
       <trans-unit id="notAFunctionButMaybeDeclaration">

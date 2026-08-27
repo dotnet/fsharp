@@ -309,7 +309,7 @@ let private compareArg (ctx: OverloadResolutionContext) (calledArg1: CalledArg) 
                 | ValueSome tcref1 when
                     tcref1.DisplayName = "Func"
                     && (match tcref1.PublicPath with
-                        | Some p -> p.EnclosingPath = [| "System" |]
+                        | ValueSome p -> p.EnclosingPath = [| "System" |]
                         | _ -> false)
                     && isDelegateTy g ty1
                     && isDelegateTy g ty2

@@ -297,11 +297,6 @@
         <target state="new">Access a protected base-class field from a closure inside a member</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureAccessorFunctionShorthand">
-        <source>underscore dot shorthand for accessor only function</source>
-        <target state="translated">yalnızca erişimci işlevi için alt çizgi nokta kısaltma</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureAdditionalImplicitConversions">
         <source>additional type-directed conversions</source>
         <target state="translated">ek tür ile yönlendirilen dönüştürmeler</target>
@@ -335,11 +330,6 @@
       <trans-unit id="featureBetterAnonymousRecordParsing">
         <source>Support for better anonymous record parsing</source>
         <target state="new">Support for better anonymous record parsing</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="featureBetterExceptionPrinting">
-        <source>automatic generation of 'Message' property for 'exception' declarations</source>
-        <target state="translated">'exception' bildirimleri için 'Message' özelliğinin otomatik olarak oluşturulması</target>
         <note />
       </trans-unit>
       <trans-unit id="featureBooleanReturningAndReturnTypeDirectedPartialActivePattern">
@@ -412,6 +402,11 @@
         <target state="translated">Sanal olmayan üyelerde geçersiz kılmalar için hatalar oluştur</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureErrorOnBitwiseOpsOnNonIntegralEnums">
+        <source>Error when bitwise operators are used on enums whose underlying type is not an integer type (e.g. char).</source>
+        <target state="new">Error when bitwise operators are used on enums whose underlying type is not an integer type (e.g. char).</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureErrorOnDeprecatedRequireQualifiedAccess">
         <source>give error on deprecated access of construct with RequireQualifiedAccess attribute</source>
         <target state="translated">RequireQualifiedAccess özniteliğine sahip yapının kullanım dışı erişiminde hata</target>
@@ -457,11 +452,6 @@
         <target state="new">Allow extension members to participate in SRTP constraint resolution</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureFixedIndexSlice3d4d">
-        <source>fixed-index slice 3d/4d</source>
-        <target state="translated">sabit dizinli dilim 3d/4d</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureFromEndSlicing">
         <source>from-end slicing</source>
         <target state="translated">uçtan dilimleme</target>
@@ -482,29 +472,9 @@
         <target state="new">Improved implied argument names with partial application</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureIndexerNotationWithoutDot">
-        <source>expr[idx] notation for indexing and slicing</source>
-        <target state="translated">Dizin oluşturma ve dilimleme için expr[idx] gösterimi</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="featureInformationalObjInferenceDiagnostic">
-        <source>Diagnostic 3559 (warn when obj inferred) at informational level, off by default</source>
-        <target state="translated">Tanılama 3559 (obj çıkarsanıldığında uyarı ver) bilgi düzeyinde, varsayılan olarak kapalı</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="featureInitProperties">
-        <source>support for consuming init properties</source>
-        <target state="translated">başlatma özelliklerini kullanma desteği</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureInterfacesWithAbstractStaticMembers">
         <source>static abstract interface members</source>
         <target state="translated">statik soyut arabirim üyeleri</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="featureInterfacesWithMultipleGenericInstantiation">
-        <source>interfaces with multiple generic instantiation</source>
-        <target state="translated">birden çok genel örnek oluşturma içeren arabirimler</target>
         <note />
       </trans-unit>
       <trans-unit id="featureLowerInterpolatedStringToConcat">
@@ -540,11 +510,6 @@
       <trans-unit id="featureNameOf">
         <source>nameof</source>
         <target state="translated">nameof</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="featureNestedCopyAndUpdate">
-        <source>Nested record field copy-and-update</source>
-        <target state="translated">İç içe kayıt alanı kopyalama ve güncelleştirme</target>
         <note />
       </trans-unit>
       <trans-unit id="featureNonInlineLiteralsAsPrintfFormat">
@@ -637,11 +602,6 @@
         <target state="translated">başvuru hücreleriyle ilgili bilgi mesajları</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureRelaxWhitespace2">
-        <source>whitespace relaxation v2</source>
-        <target state="translated">boşluk ilişkilendirme v2</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureRequiredProperties">
         <source>support for required properties</source>
         <target state="translated">gerekli özellikler için destek</target>
@@ -707,11 +667,6 @@
         <target state="translated">Birleşim durumu test özellikleri</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureTryWithInSeqExpressions">
-        <source>Support for try-with in sequence expressions</source>
-        <target state="translated">Dizi ifadelerinde try-with desteği</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureUnmanagedConstraintCsharpInterop">
         <source>Interop between C#'s and F#'s unmanaged generic constraint (emit additional modreq)</source>
         <target state="translated">C# ile F#' arasında yönetilmeyen genel kısıtlama (ek modreq yayın)</target>
@@ -737,19 +692,9 @@
         <target state="translated">Bir kopyalama ve güncelleştirme kayıt ifadesi bir kaydın tüm alanlarını değiştirdiğinde uyarı oluşturur.</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureWarningWhenInliningMethodImplNoInlineMarkedFunction">
-        <source>Raises warnings when 'let inline ... =' is used together with [&lt;MethodImpl(MethodImplOptions.NoInlining)&gt;] attribute. Function is not getting inlined.</source>
-        <target state="translated">[&lt;MethodImpl(MethodImplOptions.NoInlining)&gt;] özniteliği ile birlikte 'let inline ... =' kullanıldığında uyarı verir. İşlev satır içine alınmıyor.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureWarningWhenMultipleRecdTypeChoice">
         <source>Raises warnings when multiple record type matches were found during name resolution because of overlapping field names.</source>
         <target state="translated">Çakışan alan adları nedeniyle, ad çözümlemesi sırasında birden çok kayıt türü eşleşmesi olduğunda uyarı verir.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="featureWhileBang">
-        <source>'while!' expression</source>
-        <target state="translated">'while!' ifadesi</target>
         <note />
       </trans-unit>
       <trans-unit id="featureWitnessPassing">
@@ -1567,11 +1512,6 @@
         <target state="translated">Söz dizimi “expr1[expr2]” dizin oluşturma için kullanılıyor. Dizin oluşturmayı etkinleştirmek için bir tür ek açıklama eklemeyi düşünün veya bir işlev çağırıyorsanız bir boşluk ekleyin, örn. “expr1 [expr2]”.</target>
         <note />
       </trans-unit>
-      <trans-unit id="tcHighPrecedenceFunctionApplicationToListReserved">
-        <source>The syntax 'expr1[expr2]' is now reserved for indexing. See https://aka.ms/fsharp-index-notation. If calling a function, add a space between the function and argument, e.g. 'someFunction [expr]'.</source>
-        <target state="translated">Söz dizimi “expr1[expr2]” artık dizin oluşturmak için ayrılmıştır. https://aka.ms/fsharp-index-notation'a bakın. Bir işlev çağırıyorsanız, işlev ile bağımsız değişken arasına bir boşluk ekleyin, örn. “someFunction [expr]”.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="tcIllegalByrefsInOpenTypeDeclaration">
         <source>Byref types are not allowed in an open type declaration.</source>
         <target state="translated">Açık tür bildiriminde Byref türlerine izin verilmez.</target>
@@ -1672,11 +1612,6 @@
         <target state="translated">Söz dizimi “[expr1][expr2]”, bağımsız değişken olarak kullanıldığında belirsizdir. https://aka.ms/fsharp-index-notation'a bakın. Dizin oluşturmayı veya dilimlemeyi düşünüyorsanız, bağımsız değişken konumunda “(expr1).[expr2]” kullanmanız gerekir. Birden çok curry bağımsız değişkenli bir işlev çağırıyorsanız, aralarına bir boşluk ekleyin, örn. “someFunction [expr1] [expr2]” gibi bir boşluk ekleyin.</target>
         <note />
       </trans-unit>
-      <trans-unit id="tcListThenAdjacentListArgumentReserved">
-        <source>The syntax '[expr1][expr2]' is now reserved for indexing and is ambiguous when used as an argument. See https://aka.ms/fsharp-index-notation. If calling a function with multiple curried arguments, add a space between them, e.g. 'someFunction [expr1] [expr2]'.</source>
-        <target state="translated">Söz dizimi “[expr1][expr2]” artık dizin oluşturma için ayrılmıştır ve bağımsız değişken olarak kullanıldığında belirsizdir. https://aka.ms/fsharp-index-notation'a bakın. Birden çok curry bağımsız değişkenli bir işlev çağırıyorsanız, aralarına bir boşluk ekleyin, örn. “someFunction [expr1] [expr2]”.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="tcLiteralAttributeCannotUseActivePattern">
         <source>A [&lt;Literal&gt;] declaration cannot use an active pattern for its identifier</source>
         <target state="translated">Bir [&lt;Literal&gt;] bildirimi, tanımlayıcısı için aktif bir kalıp kullanamaz</target>
@@ -1727,26 +1662,6 @@
         <target state="translated">Bu geçersiz kılmaya karşılık gelen hiçbir statik soyut özellik bulunamadı</target>
         <note />
       </trans-unit>
-      <trans-unit id="tcNotAFunctionButIndexerIndexingNotYetEnabled">
-        <source>This expression supports indexing, e.g. 'expr.[index]'. The syntax 'expr[index]' requires /langversion:preview. See https://aka.ms/fsharp-index-notation.</source>
-        <target state="translated">Bu ifade dizin oluşturmayı destekler, örn. “expr.[index]”. Söz dizimi “expr.[index]” /langversion:preview gerektirir. https://aka.ms/fsharp-index-notation'a bakın.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="tcNotAFunctionButIndexerNamedIndexingNotYetEnabled">
-        <source>This value supports indexing, e.g. '{0}.[index]'. The syntax '{1}[index]' requires /langversion:preview. See https://aka.ms/fsharp-index-notation.</source>
-        <target state="translated">Bu değer dizin oluşturmayı destekler, örn. “{0}.[index]”. Söz dizimi “{1}[index]” /langversion:preview gerektirir. https://aka.ms/fsharp-index-notation'a bakın.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="tcNotAnIndexerIndexingNotYetEnabled">
-        <source>This expression is not a function and does not support index notation.</source>
-        <target state="translated">Bu ifade bir işlev değildir ve dizin gösterimini desteklemez.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="tcNotAnIndexerNamedIndexingNotYetEnabled">
-        <source>The value '{0}' is not a function and does not support index notation.</source>
-        <target state="translated">“{0}” değeri bir işlev değildir ve dizin gösterimini desteklemez.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="tcNullableToStringOverride">
         <source>With nullness checking enabled, overrides of .ToString() method must return a non-nullable string. You can handle potential nulls via the built-in string function.</source>
         <target state="new">With nullness checking enabled, overrides of .ToString() method must return a non-nullable string. You can handle potential nulls via the built-in string function.</target>
@@ -1767,11 +1682,6 @@
         <target state="translated">Söz dizimi “expr1[expr2]” artık dizin oluşturma için ayrılmıştır ve bağımsız değişken olarak kullanıldığında belirsizdir. https://aka.ms/fsharp-index-notation'a bakın. Dizin oluşturmayı veya dilimlemeyi düşünüyorsanız, bağımsız değişken konumunda “expr1.[expr2]” kullanmalısınız. Birden çok curry bağımsız değişkenli bir işlev çağırıyorsanız, aralarına bir boşluk ekleyin, örn. “someFunction expr1 [expr2]”.</target>
         <note />
       </trans-unit>
-      <trans-unit id="tcOtherThenAdjacentListArgumentReserved">
-        <source>The syntax 'expr1[expr2]' is now reserved for indexing and is ambiguous when used as an argument. See https://aka.ms/fsharp-index-notation. If calling a function with multiple curried arguments, add a space between them, e.g. 'someFunction expr1 [expr2]'.</source>
-        <target state="translated">Söz dizimi “expr1[expr2]” artık dizin oluşturma için ayrılmıştır ve bağımsız değişken olarak kullanıldığında belirsizdir. https://aka.ms/fsharp-index-notation'a bakın. Birden çok curry bağımsız değişkenli bir işlev çağırıyorsanız, aralarına bir boşluk ekleyin, örn. “someFunction expr1 [expr2]”.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="tcOverloadResolutionPriorityOnOverride">
         <source>The 'OverloadResolutionPriorityAttribute' cannot be applied to an override member. Apply it to the original declaration instead.</source>
         <target state="new">The 'OverloadResolutionPriorityAttribute' cannot be applied to an override member. Apply it to the original declaration instead.</target>
@@ -1785,11 +1695,6 @@
       <trans-unit id="tcParenThenAdjacentListArgumentNeedsAdjustment">
         <source>The syntax '(expr1)[expr2]' is ambiguous when used as an argument. See https://aka.ms/fsharp-index-notation. If you intend indexing or slicing then you must use '(expr1).[expr2]' in argument position. If calling a function with multiple curried arguments, add a space between them, e.g. 'someFunction (expr1) [expr2]'.</source>
         <target state="translated">Söz dizimi “(expr1)[expr2]” bağımsız değişken olarak kullanıldığında belirsizdir. https://aka.ms/fsharp-index-notation'a bakın. Dizin oluşturmayı veya dilimlemeyi düşünüyorsanız, bağımsız değişken konumunda “(expr1).[expr2]” kullanmalısınız. Birden çok curry bağımsız değişkenli bir işlev çağırıyorsanız, aralarına bir boşluk ekleyin, örn. “someFunction (expr1) [expr2]”.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="tcParenThenAdjacentListArgumentReserved">
-        <source>The syntax '(expr1)[expr2]' is now reserved for indexing and is ambiguous when used as an argument. See https://aka.ms/fsharp-index-notation. If calling a function with multiple curried arguments, add a space between them, e.g. 'someFunction (expr1) [expr2]'.</source>
-        <target state="translated">Söz dizimi “(expr1)[expr2]” artık dizin oluşturma için ayrılmıştır ve bağımsız değişken olarak kullanıldığında belirsizdir. https://aka.ms/fsharp-index-notation'a bakın. Birden çok curry bağımsız değişkenli bir işlev çağırıyorsanız, aralarına bir boşluk ekleyin, örn. “someFunction (expr1) [expr2]”.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcPartialActivePattern">
@@ -5150,11 +5055,6 @@
       <trans-unit id="tcUseForInSequenceExpression">
         <source>The use of 'let! x = coll' in sequence expressions is not permitted. Use 'for x in coll' instead.</source>
         <target state="translated">Dizi ifadelerinde 'let! x = coll' kullanımına izin verilmez. Onun yerine 'for x in coll' kullanın.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="tcTryIllegalInSequenceExpression">
-        <source>'try'/'with' cannot be used within sequence expressions</source>
-        <target state="translated">Dizi ifadeleri içinde 'try'/'with' kullanılamaz</target>
         <note />
       </trans-unit>
       <trans-unit id="tcUseYieldBangForMultipleResults">
@@ -8875,16 +8775,6 @@
       <trans-unit id="notAFunctionWithType">
         <source>This value is not a function and cannot be applied. It has type '{0}', which does not accept arguments.</source>
         <target state="new">This value is not a function and cannot be applied. It has type '{0}', which does not accept arguments.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="notAFunctionButMaybeIndexerWithName">
-        <source>This value is not a function and cannot be applied. Did you intend to access the indexer via '{0}.[index]'?</source>
-        <target state="translated">Bu değer, bir işlev değil ve uygulanamaz. Dizin oluşturucuya bunun yerine “{0}.[index]” üzerinden erişmeye mi çalışıyordunuz?</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="notAFunctionButMaybeIndexer">
-        <source>This expression is not a function and cannot be applied. Did you intend to access the indexer via 'expr.[index]'?</source>
-        <target state="translated">Bu ifade bir fonksiyon değildir ve uygulanamaz. Dizin oluşturucuya “expr.[index]” aracılığıyla mı erişmeyi düşündünüz?</target>
         <note />
       </trans-unit>
       <trans-unit id="notAFunctionButMaybeDeclaration">

@@ -803,12 +803,9 @@ let CheckMultipleInterfaceInstantiations cenv (ty:TType) (interfaces:TType list)
                     let ty2 = items[i2]
                     let tcRef1 = tcrefOfAppTy cenv.g ty1
                     match compareTypesWithRegardToTypeVariablesAndMeasures cenv.g cenv.amap m ty1 ty2 with
-                    | ExactlyEqual -> ()
+                    | ExactlyEqual
+                    | NotEqual -> ()
                     | FeasiblyEqual ->
-                        match tryLanguageFeatureErrorOption cenv.g.langVersion LanguageFeature.InterfacesWithMultipleGenericInstantiation m with
-                        | None -> ()
-                        | Some exn -> exn
-
                         let typ1Str = NicePrint.minimalRichTextOfType cenv.denv ty1
                         let typ2Str = NicePrint.minimalRichTextOfType cenv.denv ty2
                         let tcRef1Name = richTextOfEntityRefName tcRef1 tcRef1.DisplayNameWithStaticParametersAndUnderscoreTypars
@@ -817,11 +814,6 @@ let CheckMultipleInterfaceInstantiations cenv (ty:TType) (interfaces:TType list)
                         else
                             let typStr = NicePrint.minimalRichTextOfType cenv.denv ty
                             Error(FSComp.SR.typrelInterfaceWithConcreteAndVariable(typStr, tcRef1Name, typ1Str, typ2Str), m)
-
-                    | NotEqual ->
-                        match tryLanguageFeatureErrorOption cenv.g.langVersion LanguageFeature.InterfacesWithMultipleGenericInstantiation m with
-                        | None -> ()
-                        | Some exn -> exn
     }
     match Seq.tryHead errors with
     | None -> ()
@@ -1366,15 +1358,17 @@ and CheckILBaseCall cenv env (ilMethRef, enclTypeInst, methInst, retTypes, tyarg
     // Disallow calls to abstract base methods on IL types.
     match tryTcrefOfAppTy g baseVal.Type with
     | ValueSome tcref when tcref.IsILTycon ->
-        try
-            let mdef =
-                match tcref.ILTyconInfo with
-                | TILObjectReprData(scoref, _, _) ->
-                    resolveILMethodRefWithRescope (rescopeILType scoref) tcref.ILTyconRawMetadata ilMethRef
+        match tcref.ILTyconInfo with
+        | TILObjectReprData(scoref, _, _) ->
+            if not (isNil (tcref.ILTyconRawMetadata.Methods.FindByNameAndArity(ilMethRef.Name, ilMethRef.ArgTypes.Length))) then
+                try
+                    let mdef =
+                        resolveILMethodRefWithRescope (rescopeILType scoref) tcref.ILTyconRawMetadata ilMethRef
 
-            if mdef.IsAbstract then
-                errorR(Error(FSComp.SR.tcCannotCallAbstractBaseMember(RichText.mkMethod mdef.Name), m))
-        with _ -> ()
+                    if mdef.IsAbstract then
+                        errorR(Error(FSComp.SR.tcCannotCallAbstractBaseMember(RichText.mkMethod mdef.Name), m))
+                with _ ->
+                    ()
     | _ -> ()
 
     CheckTypeInstNoByrefs cenv env m tyargs

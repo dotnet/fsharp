@@ -596,8 +596,8 @@ module internal TypeTesters =
     /// Try to create a EntityRef suitable for accessing the given Entity from another assembly
     let tryRescopeEntity viewedCcu (entity: Entity) : EntityRef voption =
         match entity.PublicPath with
-        | Some pubpath -> ValueSome(ERefNonLocal(rescopePubPath viewedCcu pubpath))
-        | None -> ValueNone
+        | ValueSome pubpath -> ValueSome(ERefNonLocal(rescopePubPath viewedCcu pubpath))
+        | ValueNone -> ValueNone
 
     /// Try to create a ValRef suitable for accessing the given Val from another assembly
     let tryRescopeVal viewedCcu (entityRemap: Remap) (vspec: Val) : ValRef voption =
