@@ -112,6 +112,6 @@ Onboarding is the same shape Roslyn used. Ask for / decide:
    trusted by the `fsharp_pr_validation` GitHub environment and permitted to queue that pipeline
    (populates the `AZURE_CLIENT_ID` / `AZURE_TENANT_ID` / `AZURE_SUBSCRIPTION_ID` secrets).
 
-After that: fill in every `# TODO(P0):` marker, register the pipeline, and iterate to green. Then do
-plan P4 (retire the version overrides) and P5 (disable the public `WindowsApexIntegration` job).
+After that: fill in every `# TODO(P0):` marker, register the pipeline, and iterate to green.
+(The old public `WindowsApexIntegration` leg and its Roslyn-version overrides have already been removed.)
 
