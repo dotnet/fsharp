@@ -4783,35 +4783,54 @@ and TopologicalPostOrder guard (dependencies: int array array) (roots: int list)
     List.ofSeq ordered
 
 and GetBindingOptimizationOrder cenv inlineDependenciesOnly preferLowArity (binds: Binding list) =
-    // Recursive binding groups are published to the optimizer incrementally as each binding is
-    // processed. If a caller is optimized before a later sibling it depends on, inline lookup can
-    // observe an incomplete optimization environment. Compute a dependency-first schedule for the
-    // recursive group, then restore source order after optimization.
-    let bindsArray = binds |> List.toArray
+    GetGroupOptimizationOrder cenv inlineDependenciesOnly preferLowArity [
+        for bind in binds ->
+            let arity =
+                bind.Var.ValReprInfo
+                |> Option.map (fun repr -> repr.TotalArgCount)
+                |> Option.defaultValue 0
 
-    let bindIndexByStamp =
-        binds
-        |> List.mapi (fun idx bind -> bind.Var.Stamp, idx)
+            [ bind.Var ], arity, Choice1Of2 bind.Expr
+    ]
+
+/// Compute a dependency-first processing schedule for the elements of a recursive group: each
+/// element publishes its vals to the optimization environment only once processed, so a caller
+/// optimized before an element it depends on can observe an incomplete optimization environment.
+/// Elements are (vals defined, arity, dependency source): a binding defines its own val,
+/// a nested module defines every val in its contents.
+and GetGroupOptimizationOrder
+    cenv
+    inlineDependenciesOnly
+    preferLowArity
+    (elements: (Val list * int * Choice<Expr, ModuleOrNamespaceContents>) list)
+    =
+    let elemsArray = elements |> List.toArray
+
+    let elemIndexByStamp =
+        elements
+        |> List.indexed
+        |> List.collect (fun (idx, (definedVals, _, _)) ->
+            definedVals |> List.map (fun (v: Val) -> v.Stamp, idx))
         |> Map.ofList
 
-    let addDependency depIdxs stamp =
-        match bindIndexByStamp |> Map.tryFind stamp with
-        | Some depIdx when not inlineDependenciesOnly || bindsArray[depIdx].Var.ShouldInline ->
+    let addDependency depIdxs (v: Val) =
+        match elemIndexByStamp |> Map.tryFind v.Stamp with
+        | Some depIdx when not inlineDependenciesOnly || v.ShouldInline ->
             Set.add depIdx depIdxs
-        | None -> depIdxs
-        | Some _ -> depIdxs
+        | _ -> depIdxs
+
+    let addFreeVars depIdxs (fvs: FreeVars) =
+        let depIdxs =
+            (depIdxs, fvs.FreeLocals |> Zset.elements)
+            ||> Seq.fold (fun depIdxs v -> addDependency depIdxs v)
+
+        (depIdxs, fvs.FreeTyvars.FreeTraitSolutions |> Zset.elements)
+        ||> Seq.fold (fun depIdxs v -> addDependency depIdxs v)
 
     let rec addBindingDependencies depIdxs expr =
         cenv.stackGuard.Guard(fun () ->
-            let addVals depIdxs vals =
-                vals
-                |> Seq.fold (fun depIdxs (v: Val) -> addDependency depIdxs v.Stamp) depIdxs
-
-            let fvs = freeInExpr (CollectLocalsWithStackGuard()) expr
-
             let depIdxs =
-                let depIdxs = addVals depIdxs (fvs.FreeLocals |> Zset.elements)
-                addVals depIdxs (fvs.FreeTyvars.FreeTraitSolutions |> Zset.elements)
+                addFreeVars depIdxs (freeInExpr (CollectLocalsWithStackGuard()) expr)
 
             let folder =
                 { ExprFolder0 with
@@ -4832,20 +4851,21 @@ and GetBindingOptimizationOrder cenv inlineDependenciesOnly preferLowArity (bind
             FoldExpr folder depIdxs expr)
 
     let dependencyIndexes =
-        binds
-        |> List.map (fun (TBind(_, expr, _)) ->
-            addBindingDependencies Set.empty expr |> Set.toArray)
+        elements
+        |> List.map (fun (_, _, source) ->
+            (match source with
+             | Choice1Of2 expr -> addBindingDependencies Set.empty expr
+             // Note: trait-call witnesses inside nested module contents are not resolved here.
+             | Choice2Of2 mdef ->
+                 addFreeVars Set.empty (freeInModuleOrNamespace (CollectLocalsWithStackGuard()) mdef))
+            |> Set.toArray)
         |> List.toArray
 
     let rootOrder =
-        [ 0 .. binds.Length - 1 ]
+        [ 0 .. elements.Length - 1 ]
         |> (if preferLowArity then
                 List.sortBy (fun idx ->
-                    let arity =
-                        bindsArray[idx].Var.ValReprInfo
-                        |> Option.map (fun repr -> repr.TotalArgCount)
-                        |> Option.defaultValue 0
-
+                    let _, arity, _ = elemsArray[idx]
                     arity, -idx)
             else
                 id)
@@ -4887,22 +4907,34 @@ and OptimizeModuleContents cenv (env, bindInfosColl) input =
         (TMDefs defs, info), (env, bindInfosColl)
 
 and OptimizeModuleBindings cenv isRec (env, bindInfosColl) xs =
-    let bindingGroup =
+    let elements =
         xs
         |> List.map (function
-            | ModuleOrNamespaceBinding.Binding bind -> Some bind
-            | _ -> None)
+            | ModuleOrNamespaceBinding.Binding bind ->
+                let arity =
+                    bind.Var.ValReprInfo
+                    |> Option.map (fun repr -> repr.TotalArgCount)
+                    |> Option.defaultValue 0
 
-    let binds = bindingGroup |> List.choose id
+                [ bind.Var ], arity, Choice1Of2 bind.Expr
+            | ModuleOrNamespaceBinding.Module(_, def) ->
+                List.ofSeq (allValsOfModDef def), 0, Choice2Of2 def)
 
-    if
-        isRec
-        && (bindingGroup |> List.forall Option.isSome)
-        && (binds |> List.exists (fun bind -> bind.Var.ShouldInline))
-    then
+    let hasInlineVal =
+        elements
+        |> List.exists (fun (definedVals, _, _) ->
+            definedVals |> List.exists (fun (v: Val) -> v.ShouldInline))
+
+    if isRec && hasInlineVal then
         let xsArray = List.toArray xs
-        let preferLowArity = binds |> List.forall (fun bind -> bind.Var.IsMember)
-        let order = GetBindingOptimizationOrder cenv true preferLowArity binds
+
+        let preferLowArity =
+            xs
+            |> List.forall (function
+                | ModuleOrNamespaceBinding.Binding bind -> bind.Var.IsMember
+                | ModuleOrNamespaceBinding.Module _ -> true)
+
+        let order = GetGroupOptimizationOrder cenv true preferLowArity elements
 
         // Keep the emitted binding list in source order; only the optimization schedule changes.
         OptimizeInDependencyOrder xsArray order (OptimizeModuleBinding cenv) (env, bindInfosColl)
