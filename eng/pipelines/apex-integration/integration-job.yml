@@ -2,8 +2,8 @@
 # DartLab machine (at C:\Test\VisualStudio). SCAFFOLD — mirrors dotnet/roslyn's
 # eng/pipelines/test-integration-job.yml, reusing this repo's existing -testApex path.
 #
-# Because the installed VS MATCHES the repo's pins, the interim public-CI version overrides are
-# NOT used here (no eng/SetApexRoslynVersion.ps1 / FSHARP_APEX_ROSLYN_VERSION). Only the
+# Because the installed VS MATCHES the repo's pins, no Roslyn/System.* version override is needed
+# (the old public-CI FSHARP_APEX_ROSLYN_VERSION workaround has been removed). Only the
 # first-launch/registry prep and the /NoSigninPrompt launch arg from the public leg are reused.
 
 parameters:

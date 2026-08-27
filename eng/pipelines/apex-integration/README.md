@@ -82,12 +82,13 @@ team (as Roslyn did). The YAML here uses `# TODO(P0):` markers wherever a real v
   against the freshly installed VS; publish the TRX.
 - `../../eng/setup-pr-validation.ps1` — on the test machine, fetch + check out the PR's merge commit.
 
-## Once matching-VS runs are green
+## Interim public-CI workarounds (removed)
 
-The interim public-CI workarounds become unnecessary and should be retired (see plan P4):
-- `eng/SetApexRoslynVersion.ps1` and the `FSHARP_APEX_ROSLYN_VERSION` override group in
-  `eng/Versions.props`.
-Keep `eng/SetupVSHive.ps1` (first-launch/registry prep) and the `/NoSigninPrompt` launch argument.
+The old public-scout Apex leg (`WindowsApexIntegration` in `azure-pipelines-PR.yml`),
+`eng/SetApexRoslynVersion.ps1`, and the `FSHARP_APEX_ROSLYN_VERSION` override group in
+`eng/Versions.props` have been removed: DartLab installs a matching VS via bootstrapper, so the
+VSIX pins and the VS-under-test align by construction and no Roslyn version override is needed.
+`eng/SetupVSHive.ps1` (first-launch/registry prep) and the `/NoSigninPrompt` launch argument are kept.
 
 ## Concrete request to send to the DartLab / VS test team
 
