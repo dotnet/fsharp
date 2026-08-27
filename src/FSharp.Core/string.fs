@@ -101,12 +101,11 @@ module String =
         if len = 0 then
             String.Empty
         else
-#if NETSTANDARD2_1_OR_GREATER
             let f = OptimizedClosures.FSharpFunc<_, _, _>.Adapt(mapping)
+#if NETSTANDARD2_1_OR_GREATER
             String.Create(len, struct (str, f), _mapiAction)
 #else
             let result = str.ToCharArray()
-            let f = OptimizedClosures.FSharpFunc<_, _, _>.Adapt(mapping)
 
             for i = 0 to result.Length - 1 do
                 result[i] <- f.Invoke(i, result[i])
