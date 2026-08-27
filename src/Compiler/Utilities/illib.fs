@@ -463,21 +463,17 @@ module ListInline =
         let mutable go = true
 
         while go do
-            match r1 with
-            | h1 :: t1 ->
-                match r2 with
-                | h2 :: t2 ->
-                    if predicate h1 h2 then
-                        r1 <- t1
-                        r2 <- t2
-                    else
-                        result <- false
-                        go <- false
-                | [] -> invalidArg "list2" "The lists had different lengths."
-            | [] ->
-                match r2 with
-                | [] -> go <- false
-                | _ -> invalidArg "list2" "The lists had different lengths."
+            // A struct tuple keeps the match flat without the per-iteration heap allocation a reference tuple would add.
+            match struct (r1, r2) with
+            | struct (h1 :: t1, h2 :: t2) ->
+                if predicate h1 h2 then
+                    r1 <- t1
+                    r2 <- t2
+                else
+                    result <- false
+                    go <- false
+            | struct ([], []) -> go <- false
+            | _ -> invalidArg (nameof list2) "The lists had different lengths."
 
         result
 
