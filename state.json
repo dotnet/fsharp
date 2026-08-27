@@ -49,9 +49,8 @@
       "cats": []
     },
     "20111": {
-      "sha": "69200cc2ac45",
+      "sha": "a667944d22cd",
       "cats": [
-        "Affects-Bootstrap",
         "Affects-Compiler-Output"
       ]
     },
@@ -246,8 +245,16 @@
       "cats": []
     },
     "20383": {
-      "sha": "ab84d936444d",
+      "sha": "49543b49c18d",
       "cats": []
+    },
+    "20079": {
+      "sha": "8cf5f8a411d0",
+      "cats": [
+        "Affects-Build-Infra",
+        "Affects-Restore",
+        "Affects-Test-Tooling"
+      ]
     }
   }
 }
