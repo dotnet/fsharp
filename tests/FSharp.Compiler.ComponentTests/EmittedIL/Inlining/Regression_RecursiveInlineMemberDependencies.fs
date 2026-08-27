@@ -168,6 +168,36 @@ type SomeType =
        |> assertCompiles
 
    [<Fact>]
+   let ``Recursive group with nested module reorders let rec inline dependencies`` () =
+       FSharp """
+module rec MixedLetRec
+
+let consumer (x: int) = worker x
+
+module Separator =
+   let marker = 0
+
+let rec worker (x: int) : int = helper x
+and inline helper (x: int) : int = x + x
+"""
+       |> assertCompiles
+
+   [<Fact>]
+   let ``Recursive group member depends on inline value in later nested module`` () =
+       FSharp """
+module rec MixedGroup
+
+type Builder() =
+   member _.Run(x: int) = Helper.twice x
+
+module Helper =
+   let inline twice (x: int) = x + x
+
+let result = Builder().Run 21
+"""
+       |> assertCompiles
+
+   [<Fact>]
    let ``Deep recursive inline expression compiles`` () =
        let nestedExpression =
            [ 1 .. 512 ]
