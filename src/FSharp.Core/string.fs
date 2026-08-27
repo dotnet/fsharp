@@ -185,6 +185,27 @@ module String =
 
         res.ToString()
 
+#if NETSTANDARD2_1_OR_GREATER
+    let _replicateAction =
+        System.Buffers.SpanAction<char, string>(fun (target: Span<char>) (str: string) ->
+            let len = str.Length
+            let source = str.AsSpan()
+
+            // O(log(n)) performance loop:
+            // Copy first string, then keep copying what we already copied
+            // (i.e., doubling it) until we reach or pass the halfway point
+            source.CopyTo(target)
+            let mutable i = len
+            
+            while i * 2 < target.Length do
+                target.Slice(0, i).CopyTo(target.Slice(i, i))
+                i <- i * 2
+            
+            // finally, copy the remaining half, or less-then half
+            target.Slice(0, target.Length - i).CopyTo(target.Slice(i, target.Length - i))
+        )
+#endif
+    
     [<CompiledName("Replicate")>]
     let replicate (count: int) (str: string) =
         if count < 0 then
@@ -206,6 +227,9 @@ module String =
             | _ -> String.Concat(str, str, str, str)
 
         else
+#if NETSTANDARD2_1_OR_GREATER
+            String.Create(len * count, str, _replicateAction)
+#else
             // Using the primitive, because array.fs is not yet in scope. It's safe: both len and count are positive.
             let target =
                 Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked (len * count)
@@ -222,9 +246,10 @@ module String =
                 Array.Copy(target, 0, target, i, i)
                 i <- i * 2
 
-            // finally, copy the remain half, or less-then half
+            // finally, copy the remaining half, or less-then half
             Array.Copy(target, 0, target, i, target.Length - i)
             String(target)
+#endif
 
     [<CompiledName("ForAll")>]
     let forall predicate (str: string) =
