@@ -1,5 +1,5 @@
-// Sequential execution because of shared mutable state.
-[<FSharp.Test.RunTestCasesInSequence>]
+// Tests utilize caching in module state (checker) and `mutable` state
+[<Xunit.TestClass(DisableParallelization = true)>]
 module FSharp.Compiler.Service.Tests.ModuleReaderCancellationTests
 
 open System

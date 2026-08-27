@@ -574,7 +574,6 @@ let ``Test file explicit parse symbols`` () =
 
     let wholeProjectResults = checker.ParseAndCheckProject(Project1.options) |> Async.RunSynchronouslyImmediate
     let parseResults1 = checker.ParseFile(Project1.fileName1, Project1.fileSource1, Project1.parsingOptions)  |> Async.RunSynchronouslyImmediate
-
     let parseResults2 = checker.ParseFile(Project1.fileName2, Project1.fileSource2, Project1.parsingOptions)  |> Async.RunSynchronouslyImmediate
 
     let checkResults1 =
@@ -621,7 +620,6 @@ let ``Test file explicit parse all symbols`` () =
 
     let wholeProjectResults = checker.ParseAndCheckProject(Project1.options) |> Async.RunSynchronouslyImmediate
     let parseResults1 = checker.ParseFile(Project1.fileName1, Project1.fileSource1, Project1.parsingOptions) |> Async.RunSynchronouslyImmediate
-
     let parseResults2 = checker.ParseFile(Project1.fileName2, Project1.fileSource2, Project1.parsingOptions) |> Async.RunSynchronouslyImmediate
 
     let checkResults1 =
@@ -3721,7 +3719,7 @@ let _ = MyType().DoNothing()
              { checker.GetProjectOptionsFromCommandLineArgs(projFileName, args) with SourceFiles = fileNames })
 
 // Uses TestTP (built locally) — no NuGet needed, deterministic.
-[<Fact; RunTestCasesInSequence>]
+[<Fact4(DisableParallelization = true)>] // Inhibit shared usage of Project25.checker module state
 let ``Test Project25 whole project errors`` () =
     let wholeProjectResults = Project25.checker.ParseAndCheckProject(Project25.options.Value) |> Async.RunSynchronouslyImmediate
 
@@ -3730,7 +3728,7 @@ let ``Test Project25 whole project errors`` () =
 
     wholeProjectResults.Diagnostics.Length |> shouldEqual 0
 
-[<Fact; RunTestCasesInSequence>]
+[<Fact4(DisableParallelization = true)>] // Inhibit shared usage of Project25.checker module state
 let ``Test Project25 symbol uses of type-provided members`` () =
     let wholeProjectResults = Project25.checker.ParseAndCheckProject(Project25.options.Value) |> Async.RunSynchronouslyImmediate
 
@@ -3772,9 +3770,6 @@ let ``Test Project25 symbol uses of type-provided members`` () =
            ("ErasedWithConstructor.Provided.MyType.DoNothing", "file1", ((10, 8), (10, 26)), [ "member" ]) // line 10: let _ = >MyType().DoNothing<()
            ("TypeProviderTests", "file1", ((2, 7), (2, 24)), [ "module" ]) |] // line 2: module >TypeProviderTests<
 
-    printfn "actual =\n%A" allUses
-    printfn "expected =\n%A" expected
-
     allUses |> shouldBeEqualCollections expected
 
     // Verify the DoNothing method can be found and its uses tracked
@@ -3792,7 +3787,7 @@ let ``Test Project25 symbol uses of type-provided members`` () =
         [| ("file1", ((5, 8), (5, 21))) // line 5: T().DoNothing
            ("file1", ((10, 8), (10, 26))) |] // line 10: MyType().DoNothing
 
-[<Fact; RunTestCasesInSequence>]
+[<Fact4(DisableParallelization = true)>] // Inhibit shared usage of Project25.checker module state
 let ``GetDeclarationLocation on a provided-ctor without DefinitionLocationAttribute returns DeclFound (regression #5538)`` () =
     let wholeProjectResults =
         Project25.checker.ParseAndCheckProject(Project25.options.Value)
@@ -3833,7 +3828,7 @@ let ``GetDeclarationLocation on a provided-ctor without DefinitionLocationAttrib
     | FindDeclResult.ExternalDecl _ ->
         failwith "expected DeclFound for provided-ctor `T()`, got ExternalDecl"
 
-[<Fact; RunTestCasesInSequence>]
+[<Fact4(DisableParallelization = true)>] // Inhibit shared usage of Project25.checker module state
 let ``GetDeclarationLocation on a provided-ctor invoked through the original provided name returns DeclFound (regression #5538)`` () =
     let wholeProjectResults =
         Project25.checker.ParseAndCheckProject(Project25.options.Value)
@@ -3870,7 +3865,7 @@ let ``GetDeclarationLocation on a provided-ctor invoked through the original pro
     | FindDeclResult.ExternalDecl _ ->
         failwith "expected DeclFound for provided-ctor `MyType()`, got ExternalDecl"
 
-[<Fact; RunTestCasesInSequence>]
+[<Fact4(DisableParallelization = true)>] // Inhibit shared usage of Project25.checker module state
 let ``Test Project25 symbol uses of type-provided types`` () =
     let wholeProjectResults = Project25.checker.ParseAndCheckProject(Project25.options.Value) |> Async.RunSynchronouslyImmediate
 
@@ -3893,7 +3888,7 @@ let ``Test Project25 symbol uses of type-provided types`` () =
            ("file1", ((5, 8), (5, 9))) // line 5: let _ = >T<()  (T resolves to MyType)
            ("file1", ((10, 8), (10, 14))) |] // line 10: let _ = >MyType<()
 
-[<Fact; RunTestCasesInSequence>]
+[<Fact4(DisableParallelization = true)>] // Inhibit shared usage of Project25.checker module state
 let ``Test Project25 symbol uses of fully-qualified records`` () =
     let wholeProjectResults = Project25.checker.ParseAndCheckProject(Project25.options.Value) |> Async.RunSynchronouslyImmediate
 
@@ -4887,7 +4882,6 @@ let ``Test project37 typeof and arrays in attribute constructor arguments`` () =
     let wholeProjectResults =
         checker.ParseAndCheckProject(Project37.options)
         |> Async.RunSynchronouslyImmediate
-
     let allSymbolsUses = wholeProjectResults.GetAllUsesOfAllSymbols()
     for su in allSymbolsUses do
         match su.Symbol with
@@ -4942,7 +4936,6 @@ let ``Test project37 DeclaringEntity`` () =
     let wholeProjectResults =
         checker.ParseAndCheckProject(Project37.options)
         |> Async.RunSynchronouslyImmediate
-
     let allSymbolsUses = wholeProjectResults.GetAllUsesOfAllSymbols()
     for sym in allSymbolsUses do
        match sym.Symbol with
@@ -5031,7 +5024,6 @@ let ``Test project38 abstract slot information`` () =
     let wholeProjectResults =
         checker.ParseAndCheckProject(Project38.options)
         |> Async.RunSynchronouslyImmediate
-
     let printAbstractSignature (s: FSharpAbstractSignature) =
         let printType (t: FSharpType) =
             hash t  |> ignore // smoke test to check hash code doesn't loop
@@ -5361,7 +5353,6 @@ let ``Test project42 to ensure cached checked results are invalidated`` () =
         FileSystem.OpenFileForWriteShim(Project42.fileName1).Write("""module File1""")
         try
             let checkedFile2Again = checker.ParseAndCheckFileInProject(Project42.fileName2, text2.GetHashCode(), text2, Project42.options) |> Async.RunSynchronouslyImmediate
-
             match checkedFile2Again with
             | _, FSharpCheckFileAnswer.Succeeded(checkedFile2AgainResults) ->
                 Assert.NotEmpty(checkedFile2AgainResults.Diagnostics) // this should contain errors as File1 does not contain the function `test()`
@@ -5476,7 +5467,7 @@ let x = (1 = 3.0)
     let args = mkProjectCommandLineArgs (dllName, [])
     let options = { checker.GetProjectOptionsFromCommandLineArgs (projFileName, args) with SourceFiles = fileNames }
 
-[<Fact; RunTestCasesInSequence>]
+[<Fact4(DisableParallelization = true)>] // Avoid concurrent use of checker
 let ``Test diagnostics with line directives active`` () =
 
     let wholeProjectResults = checker.ParseAndCheckProject(ProjectLineDirectives.options) |> Async.RunSynchronouslyImmediate
@@ -5494,7 +5485,7 @@ let ``Test diagnostics with line directives active`` () =
         let m = e.Range in m.StartLine, m.EndLine, m.FileName ]
     |> shouldEqual [10, 10, "Test.fsy"]
 
-[<Fact; RunTestCasesInSequence>]
+[<Fact4(DisableParallelization = true)>] // Avoid concurrent use of checker
 let ``Test diagnostics with line directives ignored`` () =
 
     // If you pass hidden IDE flag --ignorelinedirectives, the diagnostics are reported w.r.t. the source
@@ -5903,7 +5894,6 @@ let checkContentAsScript content =
     let scriptFullPath = Path.Combine(tempDir, scriptName)
     let sourceText = SourceText.ofString content
     let projectOptions, _ = checker.GetProjectOptionsFromScript(scriptFullPath, sourceText, useSdkRefs = true, assumeDotNetFramework = false) |> Async.RunSynchronouslyImmediate
-
     let parseOptions, _ = checker.GetParsingOptionsFromProjectOptions projectOptions
     let parseResults = checker.ParseFile(scriptFullPath, sourceText, parseOptions) |> Async.RunSynchronouslyImmediate
     let checkResults = checker.CheckFileInProject(parseResults, scriptFullPath, 0, sourceText, projectOptions) |> Async.RunSynchronouslyImmediate

@@ -2,53 +2,53 @@
 <Dependencies>
   <Source Uri="https://github.com/dotnet/dotnet" Mapping="fsharp" Sha="7cdb217445905f3342bbb0266a4497b9a014389a" BarId="326717" />
   <ProductDependencies>
-    <Dependency Name="Microsoft.Build" Version="18.11.0-1.26417.9">
+    <Dependency Name="Microsoft.Build" Version="18.11.0-1.26423.1">
       <Uri>https://github.com/dotnet/msbuild</Uri>
-      <Sha>842fc358af70a4ef049ba4052dab78882af557ca</Sha>
+      <Sha>fb5f0fea347e65c046a49c6c124d59874d6bfa3e</Sha>
     </Dependency>
-    <Dependency Name="Microsoft.Build.Framework" Version="18.11.0-1.26417.9">
+    <Dependency Name="Microsoft.Build.Framework" Version="18.11.0-1.26423.1">
       <Uri>https://github.com/dotnet/msbuild</Uri>
-      <Sha>842fc358af70a4ef049ba4052dab78882af557ca</Sha>
+      <Sha>fb5f0fea347e65c046a49c6c124d59874d6bfa3e</Sha>
     </Dependency>
-    <Dependency Name="Microsoft.Build.Tasks.Core" Version="18.11.0-1.26417.9">
+    <Dependency Name="Microsoft.Build.Tasks.Core" Version="18.11.0-1.26423.1">
       <Uri>https://github.com/dotnet/msbuild</Uri>
-      <Sha>842fc358af70a4ef049ba4052dab78882af557ca</Sha>
+      <Sha>fb5f0fea347e65c046a49c6c124d59874d6bfa3e</Sha>
     </Dependency>
-    <Dependency Name="Microsoft.Build.Utilities.Core" Version="18.11.0-1.26417.9">
+    <Dependency Name="Microsoft.Build.Utilities.Core" Version="18.11.0-1.26423.1">
       <Uri>https://github.com/dotnet/msbuild</Uri>
-      <Sha>842fc358af70a4ef049ba4052dab78882af557ca</Sha>
+      <Sha>fb5f0fea347e65c046a49c6c124d59874d6bfa3e</Sha>
     </Dependency>
-    <Dependency Name="Microsoft.CodeAnalysis" Version="5.11.0-1.26415.2">
+    <Dependency Name="Microsoft.CodeAnalysis" Version="5.11.0-1.26423.6">
       <Uri>https://github.com/dotnet/roslyn</Uri>
-      <Sha>0280f7f9457d50a46cd523ce0082807b5d70b236</Sha>
+      <Sha>75901b60cccdcb56004d276c67f92f48f8f5c709</Sha>
     </Dependency>
-    <Dependency Name="Microsoft.CodeAnalysis.Features" Version="5.11.0-1.26415.2">
+    <Dependency Name="Microsoft.CodeAnalysis.Features" Version="5.11.0-1.26423.6">
       <Uri>https://github.com/dotnet/roslyn</Uri>
-      <Sha>0280f7f9457d50a46cd523ce0082807b5d70b236</Sha>
+      <Sha>75901b60cccdcb56004d276c67f92f48f8f5c709</Sha>
     </Dependency>
-    <Dependency Name="Microsoft.CodeAnalysis.EditorFeatures" Version="5.11.0-1.26415.2">
+    <Dependency Name="Microsoft.CodeAnalysis.EditorFeatures" Version="5.11.0-1.26423.6">
       <Uri>https://github.com/dotnet/roslyn</Uri>
-      <Sha>0280f7f9457d50a46cd523ce0082807b5d70b236</Sha>
+      <Sha>75901b60cccdcb56004d276c67f92f48f8f5c709</Sha>
     </Dependency>
-    <Dependency Name="Microsoft.CodeAnalysis.EditorFeatures.Text" Version="5.11.0-1.26415.2">
+    <Dependency Name="Microsoft.CodeAnalysis.EditorFeatures.Text" Version="5.11.0-1.26423.6">
       <Uri>https://github.com/dotnet/roslyn</Uri>
-      <Sha>0280f7f9457d50a46cd523ce0082807b5d70b236</Sha>
+      <Sha>75901b60cccdcb56004d276c67f92f48f8f5c709</Sha>
     </Dependency>
-    <Dependency Name="Microsoft.CodeAnalysis.CSharp" Version="5.11.0-1.26415.2">
+    <Dependency Name="Microsoft.CodeAnalysis.CSharp" Version="5.11.0-1.26423.6">
       <Uri>https://github.com/dotnet/roslyn</Uri>
-      <Sha>0280f7f9457d50a46cd523ce0082807b5d70b236</Sha>
+      <Sha>75901b60cccdcb56004d276c67f92f48f8f5c709</Sha>
     </Dependency>
-    <Dependency Name="Microsoft.CodeAnalysis.Compilers" Version="5.11.0-1.26415.2">
+    <Dependency Name="Microsoft.CodeAnalysis.Compilers" Version="5.11.0-1.26423.6">
       <Uri>https://github.com/dotnet/roslyn</Uri>
-      <Sha>0280f7f9457d50a46cd523ce0082807b5d70b236</Sha>
+      <Sha>75901b60cccdcb56004d276c67f92f48f8f5c709</Sha>
     </Dependency>
-    <Dependency Name="Microsoft.VisualStudio.LanguageServices" Version="5.11.0-1.26415.2">
+    <Dependency Name="Microsoft.VisualStudio.LanguageServices" Version="5.11.0-1.26423.6">
       <Uri>https://github.com/dotnet/roslyn</Uri>
-      <Sha>0280f7f9457d50a46cd523ce0082807b5d70b236</Sha>
+      <Sha>75901b60cccdcb56004d276c67f92f48f8f5c709</Sha>
     </Dependency>
-    <Dependency Name="Microsoft.VisualStudio.LanguageServices.ExternalAccess" Version="5.11.0-1.26415.2">
+    <Dependency Name="Microsoft.VisualStudio.LanguageServices.ExternalAccess" Version="5.11.0-1.26423.6">
       <Uri>https://github.com/dotnet/roslyn</Uri>
-      <Sha>0280f7f9457d50a46cd523ce0082807b5d70b236</Sha>
+      <Sha>75901b60cccdcb56004d276c67f92f48f8f5c709</Sha>
     </Dependency>
     <!-- Necessary for source-build. This allows the live version of the package to be used by source-build. -->
     <Dependency Name="System.Collections.Immutable" Version="10.0.10">
@@ -82,29 +82,29 @@
     </Dependency>
   </ProductDependencies>
   <ToolsetDependencies>
-    <Dependency Name="Microsoft.DotNet.Arcade.Sdk" Version="11.0.0-beta.26414.2">
+    <Dependency Name="Microsoft.DotNet.Arcade.Sdk" Version="11.0.0-beta.26421.2">
       <Uri>https://github.com/dotnet/arcade</Uri>
-      <Sha>09a0bcffb8286738e8679282171cd1ba548c8c52</Sha>
+      <Sha>51abc19095ae366ecb773826993966dc8a1063eb</Sha>
     </Dependency>
-    <Dependency Name="optimization.windows_nt-x64.MIBC.Runtime" Version="1.0.0-prerelease.26407.1">
+    <Dependency Name="optimization.windows_nt-x64.MIBC.Runtime" Version="1.0.0-prerelease.26420.2">
       <Uri>https://dev.azure.com/dnceng/internal/_git/dotnet-optimization</Uri>
-      <Sha>e960b77a63b94a4b7c1f077c2d325d003a461d2d</Sha>
+      <Sha>eb2e9a7ebf54cdb4bc0ade04a042a23ee1568a6f</Sha>
     </Dependency>
-    <Dependency Name="optimization.windows_nt-x86.MIBC.Runtime" Version="1.0.0-prerelease.26407.1">
+    <Dependency Name="optimization.windows_nt-x86.MIBC.Runtime" Version="1.0.0-prerelease.26420.2">
       <Uri>https://dev.azure.com/dnceng/internal/_git/dotnet-optimization</Uri>
-      <Sha>e960b77a63b94a4b7c1f077c2d325d003a461d2d</Sha>
+      <Sha>eb2e9a7ebf54cdb4bc0ade04a042a23ee1568a6f</Sha>
     </Dependency>
-    <Dependency Name="optimization.linux-x64.MIBC.Runtime" Version="1.0.0-prerelease.26407.1">
+    <Dependency Name="optimization.linux-x64.MIBC.Runtime" Version="1.0.0-prerelease.26420.2">
       <Uri>https://dev.azure.com/dnceng/internal/_git/dotnet-optimization</Uri>
-      <Sha>e960b77a63b94a4b7c1f077c2d325d003a461d2d</Sha>
+      <Sha>eb2e9a7ebf54cdb4bc0ade04a042a23ee1568a6f</Sha>
     </Dependency>
-    <Dependency Name="optimization.windows_nt-arm64.MIBC.Runtime" Version="1.0.0-prerelease.26407.1">
+    <Dependency Name="optimization.windows_nt-arm64.MIBC.Runtime" Version="1.0.0-prerelease.26420.2">
       <Uri>https://dev.azure.com/dnceng/internal/_git/dotnet-optimization</Uri>
-      <Sha>e960b77a63b94a4b7c1f077c2d325d003a461d2d</Sha>
+      <Sha>eb2e9a7ebf54cdb4bc0ade04a042a23ee1568a6f</Sha>
     </Dependency>
-    <Dependency Name="optimization.linux-arm64.MIBC.Runtime" Version="1.0.0-prerelease.26407.1">
+    <Dependency Name="optimization.linux-arm64.MIBC.Runtime" Version="1.0.0-prerelease.26420.2">
       <Uri>https://dev.azure.com/dnceng/internal/_git/dotnet-optimization</Uri>
-      <Sha>e960b77a63b94a4b7c1f077c2d325d003a461d2d</Sha>
+      <Sha>eb2e9a7ebf54cdb4bc0ade04a042a23ee1568a6f</Sha>
     </Dependency>
   </ToolsetDependencies>
 </Dependencies>

@@ -910,8 +910,7 @@ module GenerativeTypeProviderFallbackTest =
         begin
             let fileName = __SOURCE_DIRECTORY__ ++ @"../service/data/TestProject/TestProject.fs"
             let fileSource = FileSystem.OpenFileForReadShim(fileName).ReadAllText()
-            let fileParseResults, fileCheckAnswer = checker.ParseAndCheckFileInProject(fileName, 0, SourceText.ofString fileSource, optionsTestProject) |> Async.
-                                                                                                                                                               RunSynchronouslyImmediate
+            let fileParseResults, fileCheckAnswer = checker.ParseAndCheckFileInProject(fileName, 0, SourceText.ofString fileSource, optionsTestProject) |> Async.RunSynchronouslyImmediate
 
             let fileCheckResults =
                 match fileCheckAnswer with

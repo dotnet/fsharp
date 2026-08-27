@@ -297,11 +297,6 @@
         <target state="new">Access a protected base-class field from a closure inside a member</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureAccessorFunctionShorthand">
-        <source>underscore dot shorthand for accessor only function</source>
-        <target state="translated">アクセサー専用関数のアンダースコア ドット短縮形</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureAdditionalImplicitConversions">
         <source>additional type-directed conversions</source>
         <target state="translated">その他の型指定された変換</target>
@@ -335,11 +330,6 @@
       <trans-unit id="featureBetterAnonymousRecordParsing">
         <source>Support for better anonymous record parsing</source>
         <target state="new">Support for better anonymous record parsing</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="featureBetterExceptionPrinting">
-        <source>automatic generation of 'Message' property for 'exception' declarations</source>
-        <target state="translated">`exception` 宣言の `Message` プロパティの自動生成</target>
         <note />
       </trans-unit>
       <trans-unit id="featureBooleanReturningAndReturnTypeDirectedPartialActivePattern">
@@ -412,6 +402,11 @@
         <target state="translated">仮想メンバー以外のオーバーライドに対してエラーを発生させます</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureErrorOnBitwiseOpsOnNonIntegralEnums">
+        <source>Error when bitwise operators are used on enums whose underlying type is not an integer type (e.g. char).</source>
+        <target state="new">Error when bitwise operators are used on enums whose underlying type is not an integer type (e.g. char).</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureErrorOnDeprecatedRequireQualifiedAccess">
         <source>give error on deprecated access of construct with RequireQualifiedAccess attribute</source>
         <target state="translated">RequireQualifiedAccess 属性を持つコンストラクトの非推奨アクセスでエラーが発生しました</target>
@@ -452,9 +447,9 @@
         <target state="translated">C# の生文字列リテラルに似た拡張文字列補間。</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureFixedIndexSlice3d4d">
-        <source>fixed-index slice 3d/4d</source>
-        <target state="translated">固定インデックス スライス 3d/4d</target>
+      <trans-unit id="featureExtensionConstraintSolutions">
+        <source>Allow extension members to participate in SRTP constraint resolution</source>
+        <target state="new">Allow extension members to participate in SRTP constraint resolution</target>
         <note />
       </trans-unit>
       <trans-unit id="featureFromEndSlicing">
@@ -477,29 +472,9 @@
         <target state="new">Improved implied argument names with partial application</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureIndexerNotationWithoutDot">
-        <source>expr[idx] notation for indexing and slicing</source>
-        <target state="translated">インデックス作成とスライス用の expr[idx] 表記</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="featureInformationalObjInferenceDiagnostic">
-        <source>Diagnostic 3559 (warn when obj inferred) at informational level, off by default</source>
-        <target state="translated">情報レベルでの診断 3559 (obj 推論時に警告)、既定ではオフ</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="featureInitProperties">
-        <source>support for consuming init properties</source>
-        <target state="translated">init プロパティの使用のサポート</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureInterfacesWithAbstractStaticMembers">
         <source>static abstract interface members</source>
         <target state="translated">静的抽象インターフェイス メンバー</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="featureInterfacesWithMultipleGenericInstantiation">
-        <source>interfaces with multiple generic instantiation</source>
-        <target state="translated">複数のジェネリックのインスタンス化を含むインターフェイス</target>
         <note />
       </trans-unit>
       <trans-unit id="featureLowerInterpolatedStringToConcat">
@@ -535,11 +510,6 @@
       <trans-unit id="featureNameOf">
         <source>nameof</source>
         <target state="translated">nameof</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="featureNestedCopyAndUpdate">
-        <source>Nested record field copy-and-update</source>
-        <target state="translated">入れ子になったレコード フィールドの copy-and-update</target>
         <note />
       </trans-unit>
       <trans-unit id="featureNonInlineLiteralsAsPrintfFormat">
@@ -632,11 +602,6 @@
         <target state="translated">参照セルに関連する情報メッセージ</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureRelaxWhitespace2">
-        <source>whitespace relaxation v2</source>
-        <target state="translated">whitespace relaxation v2</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureRequiredProperties">
         <source>support for required properties</source>
         <target state="translated">必要なプロパティのサポート</target>
@@ -702,11 +667,6 @@
         <target state="translated">ユニオン ケースのテスト プロパティ</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureTryWithInSeqExpressions">
-        <source>Support for try-with in sequence expressions</source>
-        <target state="translated">シーケンス式内の try-with のサポート</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureUnmanagedConstraintCsharpInterop">
         <source>Interop between C#'s and F#'s unmanaged generic constraint (emit additional modreq)</source>
         <target state="translated">C# と F# のアンマネージド ジェネリック制約の間の相互運用 (追加の modreq を出力)</target>
@@ -732,19 +692,9 @@
         <target state="translated">copy-and-update レコード式によってレコードのすべてのフィールドが変更されたときに警告を表示します。</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureWarningWhenInliningMethodImplNoInlineMarkedFunction">
-        <source>Raises warnings when 'let inline ... =' is used together with [&lt;MethodImpl(MethodImplOptions.NoInlining)&gt;] attribute. Function is not getting inlined.</source>
-        <target state="translated">'let inline ... =' が [&lt;MethodImpl(MethodImplOptions.NoInlining)&gt;] 属性と一緒に使用されるときに警告を生成します。関数はインライン化されていません。</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureWarningWhenMultipleRecdTypeChoice">
         <source>Raises warnings when multiple record type matches were found during name resolution because of overlapping field names.</source>
         <target state="translated">フィールド名が重複しているため、名前解決中に複数のレコードの種類の一致が見つかった場合に警告を生成します。</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="featureWhileBang">
-        <source>'while!' expression</source>
-        <target state="translated">'while!' 式</target>
         <note />
       </trans-unit>
       <trans-unit id="featureWitnessPassing">
@@ -1562,11 +1512,6 @@
         <target state="translated">構文 'expr1[expr2]' はインデックス作成に使用されます。インデックスを有効にするために型の注釈を追加するか、関数を呼び出す場合には、'expr1 [expr2]' のようにスペースを入れます。</target>
         <note />
       </trans-unit>
-      <trans-unit id="tcHighPrecedenceFunctionApplicationToListReserved">
-        <source>The syntax 'expr1[expr2]' is now reserved for indexing. See https://aka.ms/fsharp-index-notation. If calling a function, add a space between the function and argument, e.g. 'someFunction [expr]'.</source>
-        <target state="translated">構文 'expr1[expr2]' はインデックス作成用に予約されています。https://aka.ms/fsharp-index-notation を参照してください。関数を呼び出す場合は、'someFunction [expr]' のように関数と引数の間にスペースを追加します。</target>
-        <note />
-      </trans-unit>
       <trans-unit id="tcIllegalByrefsInOpenTypeDeclaration">
         <source>Byref types are not allowed in an open type declaration.</source>
         <target state="translated">Byref 型は、オープン型宣言では使用できません。</target>
@@ -1667,11 +1612,6 @@
         <target state="translated">構文 '[expr1][expr2]' は引数として使用されている場合、あいまいです。https://aka.ms/fsharp-index-notation を参照してください。インデックス作成またはスライスを行う場合は、'(expr1).[expr2]' を引数の位置に使用する必要があります。複数のカリー化された引数を持つ関数を呼び出す場合は、'[expr1] [expr2]' のように間にスペースを追加します。</target>
         <note />
       </trans-unit>
-      <trans-unit id="tcListThenAdjacentListArgumentReserved">
-        <source>The syntax '[expr1][expr2]' is now reserved for indexing and is ambiguous when used as an argument. See https://aka.ms/fsharp-index-notation. If calling a function with multiple curried arguments, add a space between them, e.g. 'someFunction [expr1] [expr2]'.</source>
-        <target state="translated">構文 '[expr1][expr2]' はインデックス作成用に予約され、引数として使用するとあいまいになります。https://aka.ms/fsharp-index-notation を参照してください。複数のカリー化された引数を持つ関数を呼び出す場合は、それらの間にスペースを追加します (例: 'someFunction [expr1] [expr2]')。</target>
-        <note />
-      </trans-unit>
       <trans-unit id="tcLiteralAttributeCannotUseActivePattern">
         <source>A [&lt;Literal&gt;] declaration cannot use an active pattern for its identifier</source>
         <target state="translated">[&lt;Literal&gt;] 宣言では、その識別子に対してアクティブ パターンを使用することはできません</target>
@@ -1722,26 +1662,6 @@
         <target state="translated">このオーバーライドに対応する抽象プロパティが見つかりませんでした</target>
         <note />
       </trans-unit>
-      <trans-unit id="tcNotAFunctionButIndexerIndexingNotYetEnabled">
-        <source>This expression supports indexing, e.g. 'expr.[index]'. The syntax 'expr[index]' requires /langversion:preview. See https://aka.ms/fsharp-index-notation.</source>
-        <target state="translated">この式は、'expr. [index]' などのインデックスをサポートしています。構文 'expr[index]' には　/langversion:preview が必要です。https://aka.ms/fsharp-index-notation を参照してください。</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="tcNotAFunctionButIndexerNamedIndexingNotYetEnabled">
-        <source>This value supports indexing, e.g. '{0}.[index]'. The syntax '{1}[index]' requires /langversion:preview. See https://aka.ms/fsharp-index-notation.</source>
-        <target state="translated">この式は、 '{0}.[index]' などのインデックスをサポートしています。構文 '{1}[index]' には　/langversion:preview が必要です。https://aka.ms/fsharp-index-notation を参照してください。</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="tcNotAnIndexerIndexingNotYetEnabled">
-        <source>This expression is not a function and does not support index notation.</source>
-        <target state="translated">この式は関数ではなく、インデックス表記をサポートしていません。</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="tcNotAnIndexerNamedIndexingNotYetEnabled">
-        <source>The value '{0}' is not a function and does not support index notation.</source>
-        <target state="translated">値 '{0}' は関数ではなく、インデックス表記をサポートしていません。</target>
-        <note />
-      </trans-unit>
       <trans-unit id="tcNullableToStringOverride">
         <source>With nullness checking enabled, overrides of .ToString() method must return a non-nullable string. You can handle potential nulls via the built-in string function.</source>
         <target state="new">With nullness checking enabled, overrides of .ToString() method must return a non-nullable string. You can handle potential nulls via the built-in string function.</target>
@@ -1762,11 +1682,6 @@
         <target state="translated">構文 'expr1[expr2]' は引数として使用されている場合、あいまいです。https://aka.ms/fsharp-index-notation を参照してください。インデックス作成またはスライスを行う場合は、'expr1.[expr2]' を引数の位置に使用する必要があります。複数のカリー化された引数を持つ関数を呼び出す場合は、'expr1 [expr2]' のように間にスペースを追加します。</target>
         <note />
       </trans-unit>
-      <trans-unit id="tcOtherThenAdjacentListArgumentReserved">
-        <source>The syntax 'expr1[expr2]' is now reserved for indexing and is ambiguous when used as an argument. See https://aka.ms/fsharp-index-notation. If calling a function with multiple curried arguments, add a space between them, e.g. 'someFunction expr1 [expr2]'.</source>
-        <target state="translated">構文 'expr1[expr2]' は引数として使用されている場合、あいまいです。https://aka.ms/fsharp-index-notation を参照してください。複数のカリー化された引数を持つ関数を呼び出す場合には、'someFunction expr1 [expr2]' のように間にスペースを追加します。</target>
-        <note />
-      </trans-unit>
       <trans-unit id="tcOverloadResolutionPriorityOnOverride">
         <source>The 'OverloadResolutionPriorityAttribute' cannot be applied to an override member. Apply it to the original declaration instead.</source>
         <target state="new">The 'OverloadResolutionPriorityAttribute' cannot be applied to an override member. Apply it to the original declaration instead.</target>
@@ -1780,11 +1695,6 @@
       <trans-unit id="tcParenThenAdjacentListArgumentNeedsAdjustment">
         <source>The syntax '(expr1)[expr2]' is ambiguous when used as an argument. See https://aka.ms/fsharp-index-notation. If you intend indexing or slicing then you must use '(expr1).[expr2]' in argument position. If calling a function with multiple curried arguments, add a space between them, e.g. 'someFunction (expr1) [expr2]'.</source>
         <target state="translated">構文 '(expr1)[expr2]' は引数として使用されている場合、あいまいです。https://aka.ms/fsharp-index-notation を参照してください。インデックス作成またはスライスを行う場合は、'(expr1).[expr2]' を引数の位置に使用する必要があります。複数のカリー化された引数を持つ関数を呼び出す場合は、'someFunction (expr1) [expr2]' のように間にスペースを追加します。</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="tcParenThenAdjacentListArgumentReserved">
-        <source>The syntax '(expr1)[expr2]' is now reserved for indexing and is ambiguous when used as an argument. See https://aka.ms/fsharp-index-notation. If calling a function with multiple curried arguments, add a space between them, e.g. 'someFunction (expr1) [expr2]'.</source>
-        <target state="translated">構文 '(expr1)[expr2]' はインデックス作成に予約されているので、引数として使うとあいまいです。https://aka.ms/fsharp-index-notation を参照してください。複数のカリー化された引数を持つ関数を呼び出す場合には、'someFunction (expr1) [expr2]' のように間にスペースを追加します。</target>
         <note />
       </trans-unit>
       <trans-unit id="tcPartialActivePattern">
@@ -5145,11 +5055,6 @@
       <trans-unit id="tcUseForInSequenceExpression">
         <source>The use of 'let! x = coll' in sequence expressions is not permitted. Use 'for x in coll' instead.</source>
         <target state="translated">シーケンス式では 'let! x = coll' を使用できません。代わりに 'for x in coll' を使用してください。</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="tcTryIllegalInSequenceExpression">
-        <source>'try'/'with' cannot be used within sequence expressions</source>
-        <target state="translated">シーケンス式内には 'try'/'with' を使用できません</target>
         <note />
       </trans-unit>
       <trans-unit id="tcUseYieldBangForMultipleResults">
@@ -8872,16 +8777,6 @@
         <target state="new">This value is not a function and cannot be applied. It has type '{0}', which does not accept arguments.</target>
         <note />
       </trans-unit>
-      <trans-unit id="notAFunctionButMaybeIndexerWithName">
-        <source>This value is not a function and cannot be applied. Did you intend to access the indexer via '{0}.[index]'?</source>
-        <target state="translated">この値は関数ではないため、適用できません。{0}.[index] によってインデクサーにアクセスしようとしましたか?</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="notAFunctionButMaybeIndexer">
-        <source>This expression is not a function and cannot be applied. Did you intend to access the indexer via 'expr.[index]'?</source>
-        <target state="translated">この式は関数ではないため、適用できません。expr.[index] によってインデクサーにアクセスしようとしましたか?</target>
-        <note />
-      </trans-unit>
       <trans-unit id="notAFunctionButMaybeDeclaration">
         <source>This value is not a function and cannot be applied. Did you forget to terminate a declaration?</source>
         <target state="translated">この値は関数ではないため、適用できません。宣言を終結しましたか?</target>
@@ -9150,6 +9045,11 @@
       <trans-unit id="featureExceptionFieldSerializationSupport">
         <source>emit GetObjectData and field-restoring deserialization constructor for exception types</source>
         <target state="new">emit GetObjectData and field-restoring deserialization constructor for exception types</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcTupleTypeExtensionTooManyElements">
+        <source>Tuple type extensions are supported only for tuples of up to 7 elements, but this tuple type has {0} elements. Extensions of larger tuples are not supported.</source>
+        <target state="new">Tuple type extensions are supported only for tuples of up to 7 elements, but this tuple type has {0} elements. Extensions of larger tuples are not supported.</target>
         <note />
       </trans-unit>
     </body>

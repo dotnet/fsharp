@@ -2,6 +2,8 @@ namespace Microsoft.VisualStudio.FSharp.Editor
 
 open System
 open System.Runtime.Caching
+open System.Threading
+open System.Threading.Tasks
 open Microsoft.CodeAnalysis
 open Internal.Utilities.Library
 open Internal.Utilities.Library
@@ -25,15 +27,15 @@ type DocumentCache<'Value when 'Value: not struct>(name: string, ?cacheItemPolic
             let! ct = Async2.CancellationToken
             let! currentVersion = doc.GetTextVersionAsync ct
 
-            match cache.Get(doc.Id.ToString()) with
-            | null -> return ValueNone
-            | :? (VersionStamp * 'Value) as value ->
-                if fst value = currentVersion then
-                    return ValueSome(snd value)
-                else
-                    return ValueNone
-            | _ -> return ValueNone
-        }
+                match cache.Get(doc.Id.ToString()) with
+                | null -> return ValueNone
+                | :? (VersionStamp * 'Value) as value ->
+                    if fst value = currentVersion then
+                        return ValueSome(snd value)
+                    else
+                        return ValueNone
+                | _ -> return ValueNone
+            }
 
     member _.SetAsync(doc: Document, value: 'Value) =
         async2 {
@@ -41,6 +43,15 @@ type DocumentCache<'Value when 'Value: not struct>(name: string, ?cacheItemPolic
             let! currentVersion = doc.GetTextVersionAsync ct
             do cache.Set(doc.Id.ToString(), (currentVersion, value), policy)
         }
+
+    new(name: string, slidingExpirationSeconds: float) =
+        new DocumentCache<'Value>(name, CacheItemPolicy(SlidingExpiration = (TimeSpan.FromSeconds slidingExpirationSeconds)))
+
+    member _.TryGetValueAsync(doc: Document) : CancellableTask<'Value voption> =
+        fun ct -> tryGetCachedValueAsync (doc, cache, ct)
+
+    member _.SetAsync(doc: Document, value: 'Value) : CancellableTask<unit> =
+        fun ct -> setCacheValueAsync (doc, value, cache, policy, ct)
 
     interface IDisposable with
         member _.Dispose() = cache.Dispose()

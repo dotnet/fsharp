@@ -340,13 +340,6 @@ type ModuleOrNamespaceKind =
         /// If false, this namespace was implicitly constructed during type checking.
         isExplicit: bool
 
-/// A public path records where a construct lives within the global namespace
-/// of a CCU.
-type PublicPath =
-    | PubPath of string[]
-
-    member EnclosingPath: string[]
-
 /// Represents the specified visibility of the accessibility -- used to ensure IL visibility
 [<RequireQualifiedAccess>]
 type SyntaxAccess =
@@ -364,8 +357,6 @@ type CompilationPath =
 
     member NestedCompPath: n: string -> moduleKind: ModuleOrNamespaceKind -> CompilationPath
 
-    member NestedPublicPath: id: Ident -> PublicPath
-
     member AccessPath: (string * ModuleOrNamespaceKind) list
 
     member DemangledPath: string list
@@ -377,6 +368,24 @@ type CompilationPath =
     member ParentCompPath: CompilationPath
 
     member SyntaxAccess: SyntaxAccess
+
+/// A public path records where a construct lives within the global namespace of a CCU.
+///
+/// Comparison goes through pubPathEq: derived equality would also compare the enclosing path's
+/// ILScopeRef and SyntaxAccess, besides boxing this struct.
+[<Struct; NoEquality; NoComparison>]
+type PublicPath =
+    | PubPath of enclosing: CompilationPath * name: string
+
+    member EnclosingCompilationPath: CompilationPath
+
+    member Name: string
+
+    member EnclosingPath: string[]
+
+    member FullPath: string[]
+
+    member HasEmptyEnclosingPath: bool
 
 [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
 type EntityOptionalData =
@@ -448,9 +457,6 @@ type Entity =
 
         /// This field is used when the 'tycon' is really a module definition. It holds statically nested type definitions type nested modules
         mutable entity_modul_type: MaybeLazy<ModuleOrNamespaceType>
-
-        /// The stable path to the type, e.g. Microsoft.FSharp.Core.FSharpFunc`2
-        mutable entity_pubpath: PublicPath option
 
         /// The stable path to the type, e.g. Microsoft.FSharp.Core.FSharpFunc`2
         mutable entity_cpath: CompilationPath option
@@ -768,7 +774,7 @@ type Entity =
     member PreEstablishedHasDefaultConstructor: bool
 
     /// Get a blob of data indicating how this type is nested in other namespaces, modules or types.
-    member PublicPath: PublicPath option
+    member PublicPath: PublicPath voption
 
     /// The code location where the module, namespace or type is defined.
     member Range: range
@@ -1773,6 +1779,20 @@ type TraitWitnessInfo =
     /// Get the return type recorded in the member constraint.
     member ReturnType: TType option
 
+/// Non-generic marker interface for storing in TraitConstraintInfo.
+type ITraitContext = interface end
+
+/// Generic typed interface for trait context operations.
+type ITraitContext<'AccessRights, 'MethodInfo, 'InfoReader> =
+    inherit ITraitContext
+
+    /// Select extension methods relevant to solving a trait constraint
+    abstract SelectExtensionMethods:
+        traitInfo: TraitConstraintInfo * range: Text.range * infoReader: 'InfoReader -> (TType * 'MethodInfo) list
+
+    /// Get the accessibility domain for the trait context
+    abstract AccessRights: 'AccessRights
+
 /// The specification of a member constraint that must be solved
 [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
 type TraitConstraintInfo =
@@ -1787,7 +1807,8 @@ type TraitConstraintInfo =
         objAndArgTys: TTypes *
         returnTyOpt: TType option *
         source: string option ref *
-        solution: TraitConstraintSln option ref
+        solution: TraitConstraintSln option ref *
+        traitCtxt: ITraitContext option
 
     override ToString: unit -> string
 
@@ -1817,6 +1838,9 @@ type TraitConstraintInfo =
     /// Get or set the solution of the member constraint during inference
     member Solution: TraitConstraintSln option with get, set
 
+    /// Get the trait context (extension method scope) associated with this constraint
+    member TraitContext: ITraitContext option
+
     member CloneWithFreshSolution: unit -> TraitConstraintInfo
 
     /// The member kind is irrelevant to the logical properties of a trait. However it adjusts
@@ -1826,6 +1850,8 @@ type TraitConstraintInfo =
     member WithSupportTypes: TTypes -> TraitConstraintInfo
 
     member WithMemberName: string -> TraitConstraintInfo
+
+val traitCtxtNone: ITraitContext option
 
 /// Represents the solution of a member constraint during inference.
 [<NoEquality; NoComparison>]
@@ -2730,7 +2756,7 @@ type EntityRef =
     member PreEstablishedHasDefaultConstructor: bool
 
     /// Get a blob of data indicating how this type is nested in other namespaces, modules or types.
-    member PublicPath: PublicPath option
+    member PublicPath: PublicPath voption
 
     /// The code location where the module, namespace or type is defined.
     member Range: range

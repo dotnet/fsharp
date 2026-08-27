@@ -297,11 +297,6 @@
         <target state="new">Access a protected base-class field from a closure inside a member</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureAccessorFunctionShorthand">
-        <source>underscore dot shorthand for accessor only function</source>
-        <target state="translated">zkrácený tvar podtržítka pouze pro funkci přístupový objekt</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureAdditionalImplicitConversions">
         <source>additional type-directed conversions</source>
         <target state="translated">další převody orientované na typ</target>
@@ -335,11 +330,6 @@
       <trans-unit id="featureBetterAnonymousRecordParsing">
         <source>Support for better anonymous record parsing</source>
         <target state="new">Support for better anonymous record parsing</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="featureBetterExceptionPrinting">
-        <source>automatic generation of 'Message' property for 'exception' declarations</source>
-        <target state="translated">automatické generování vlastnosti Message pro deklarace exception</target>
         <note />
       </trans-unit>
       <trans-unit id="featureBooleanReturningAndReturnTypeDirectedPartialActivePattern">
@@ -412,6 +402,11 @@
         <target state="translated">Vyvolá chyby pro přepsání jiných než virtuálních členů</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureErrorOnBitwiseOpsOnNonIntegralEnums">
+        <source>Error when bitwise operators are used on enums whose underlying type is not an integer type (e.g. char).</source>
+        <target state="new">Error when bitwise operators are used on enums whose underlying type is not an integer type (e.g. char).</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureErrorOnDeprecatedRequireQualifiedAccess">
         <source>give error on deprecated access of construct with RequireQualifiedAccess attribute</source>
         <target state="translated">chyba při zastaralém přístupu konstruktoru s atributem RequireQualifiedAccess</target>
@@ -452,9 +447,9 @@
         <target state="translated">Rozšířená interpolace řetězců podobná nezpracovaným řetězcovým literálům jazyka C#.</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureFixedIndexSlice3d4d">
-        <source>fixed-index slice 3d/4d</source>
-        <target state="translated">řez 3d/4d s pevným indexem</target>
+      <trans-unit id="featureExtensionConstraintSolutions">
+        <source>Allow extension members to participate in SRTP constraint resolution</source>
+        <target state="new">Allow extension members to participate in SRTP constraint resolution</target>
         <note />
       </trans-unit>
       <trans-unit id="featureFromEndSlicing">
@@ -477,29 +472,9 @@
         <target state="new">Improved implied argument names with partial application</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureIndexerNotationWithoutDot">
-        <source>expr[idx] notation for indexing and slicing</source>
-        <target state="translated">Notace expr[idx] pro indexování a vytváření řezů</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="featureInformationalObjInferenceDiagnostic">
-        <source>Diagnostic 3559 (warn when obj inferred) at informational level, off by default</source>
-        <target state="translated">Diagnostika 3559 (upozornit při odvození objektu) na informační úrovni, vypnuto ve výchozím nastavení</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="featureInitProperties">
-        <source>support for consuming init properties</source>
-        <target state="translated">podpora využívání vlastností init</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureInterfacesWithAbstractStaticMembers">
         <source>static abstract interface members</source>
         <target state="translated">statičtí abstraktní členové rozhraní</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="featureInterfacesWithMultipleGenericInstantiation">
-        <source>interfaces with multiple generic instantiation</source>
-        <target state="translated">rozhraní s vícenásobným obecným vytvářením instancí</target>
         <note />
       </trans-unit>
       <trans-unit id="featureLowerInterpolatedStringToConcat">
@@ -535,11 +510,6 @@
       <trans-unit id="featureNameOf">
         <source>nameof</source>
         <target state="translated">nameof</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="featureNestedCopyAndUpdate">
-        <source>Nested record field copy-and-update</source>
-        <target state="translated">Kopírování a aktualizace pole vnořeného záznamu</target>
         <note />
       </trans-unit>
       <trans-unit id="featureNonInlineLiteralsAsPrintfFormat">
@@ -632,11 +602,6 @@
         <target state="translated">informační zprávy související s referenčními buňkami</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureRelaxWhitespace2">
-        <source>whitespace relaxation v2</source>
-        <target state="translated">relaxace whitespace v2</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureRequiredProperties">
         <source>support for required properties</source>
         <target state="translated">podpora požadovaných vlastností</target>
@@ -702,11 +667,6 @@
         <target state="translated">Vlastnosti testu případu sjednocení</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureTryWithInSeqExpressions">
-        <source>Support for try-with in sequence expressions</source>
-        <target state="translated">Podpora try-with ve výrazech pořadí</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureUnmanagedConstraintCsharpInterop">
         <source>Interop between C#'s and F#'s unmanaged generic constraint (emit additional modreq)</source>
         <target state="translated">Interoperabilita mezi neřízeným obecným omezením jazyka C# a F# (emitovat další modreq)</target>
@@ -732,19 +692,9 @@
         <target state="translated">Vyvolá upozornění, když výraz záznamu kopírování a aktualizace změní všechna pole záznamu.</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureWarningWhenInliningMethodImplNoInlineMarkedFunction">
-        <source>Raises warnings when 'let inline ... =' is used together with [&lt;MethodImpl(MethodImplOptions.NoInlining)&gt;] attribute. Function is not getting inlined.</source>
-        <target state="translated">Vyvolá upozornění, když se použije „let inline ... =“ společně s atributem [&lt;MethodImpl(MethodImplOptions.NoInlining)&gt;]. Funkce není vkládána.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureWarningWhenMultipleRecdTypeChoice">
         <source>Raises warnings when multiple record type matches were found during name resolution because of overlapping field names.</source>
         <target state="translated">Vyvolá upozornění, pokud bylo během překladu názvů nalezeno více shod typu záznamu z důvodu překrývajících se názvů polí.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="featureWhileBang">
-        <source>'while!' expression</source>
-        <target state="translated">Výraz „while!“</target>
         <note />
       </trans-unit>
       <trans-unit id="featureWitnessPassing">
@@ -1562,11 +1512,6 @@
         <target state="translated">Syntaxe expr1[expr2] se používá pro indexování. Pokud chcete povolit indexování, zvažte možnost přidat anotaci typu, nebo pokud voláte funkci, přidejte mezeru, třeba expr1 [expr2].</target>
         <note />
       </trans-unit>
-      <trans-unit id="tcHighPrecedenceFunctionApplicationToListReserved">
-        <source>The syntax 'expr1[expr2]' is now reserved for indexing. See https://aka.ms/fsharp-index-notation. If calling a function, add a space between the function and argument, e.g. 'someFunction [expr]'.</source>
-        <target state="translated">Syntaxe expr1[expr2] je teď vyhrazena pro indexování. Více informací: https://aka.ms/fsharp-index-notation. Pokud voláte funkci, přidejte mezi funkci a argument mezeru, třeba someFunction [expr].</target>
-        <note />
-      </trans-unit>
       <trans-unit id="tcIllegalByrefsInOpenTypeDeclaration">
         <source>Byref types are not allowed in an open type declaration.</source>
         <target state="translated">Typy Byref nejsou v deklaraci otevřeného typu povolené.</target>
@@ -1667,11 +1612,6 @@
         <target state="translated">Syntaxe [expr1][expr2] je při použití jako argument nejednoznačná. Více informací: https://aka.ms/fsharp-index-notation. Pokud plánujete indexování nebo vytváření řezů, musíte použít (expr1).[expr2] na pozici argumentu. Pokud voláte funkci s vícenásobnými curryfikovanými argumenty, přidejte mezi ně mezeru, třeba someFunction [expr1] [expr2].</target>
         <note />
       </trans-unit>
-      <trans-unit id="tcListThenAdjacentListArgumentReserved">
-        <source>The syntax '[expr1][expr2]' is now reserved for indexing and is ambiguous when used as an argument. See https://aka.ms/fsharp-index-notation. If calling a function with multiple curried arguments, add a space between them, e.g. 'someFunction [expr1] [expr2]'.</source>
-        <target state="translated">Syntaxe [expr1][expr2] je teď vyhrazena pro indexování a je při použití jako argument nejednoznačná. Více informací: https://aka.ms/fsharp-index-notation. Pokud voláte funkci s vícenásobnými curryfikovanými argumenty, přidejte mezi ně mezeru, třeba someFunction [expr1] [expr2].</target>
-        <note />
-      </trans-unit>
       <trans-unit id="tcLiteralAttributeCannotUseActivePattern">
         <source>A [&lt;Literal&gt;] declaration cannot use an active pattern for its identifier</source>
         <target state="translated">Deklarace [&lt;Literal&gt;] nemůže používat aktivní vzor jako svůj identifikátor.</target>
@@ -1722,26 +1662,6 @@
         <target state="translated">Nenašla se žádná statická abstraktní vlastnost, která by odpovídala tomuto přepsání.</target>
         <note />
       </trans-unit>
-      <trans-unit id="tcNotAFunctionButIndexerIndexingNotYetEnabled">
-        <source>This expression supports indexing, e.g. 'expr.[index]'. The syntax 'expr[index]' requires /langversion:preview. See https://aka.ms/fsharp-index-notation.</source>
-        <target state="translated">Tento výraz podporuje indexování, třeba expr.[index]. Syntaxe expr[index] vyžaduje /langversion:preview. Více informací: https://aka.ms/fsharp-index-notation</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="tcNotAFunctionButIndexerNamedIndexingNotYetEnabled">
-        <source>This value supports indexing, e.g. '{0}.[index]'. The syntax '{1}[index]' requires /langversion:preview. See https://aka.ms/fsharp-index-notation.</source>
-        <target state="translated">Tato hodnota podporuje indexování, třeba {0}.[index]. Syntaxe {1}[index] vyžaduje /langversion:preview. Více informací: https://aka.ms/fsharp-index-notation</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="tcNotAnIndexerIndexingNotYetEnabled">
-        <source>This expression is not a function and does not support index notation.</source>
-        <target state="translated">Tento výraz není funkce a nepodporuje zápis indexu.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="tcNotAnIndexerNamedIndexingNotYetEnabled">
-        <source>The value '{0}' is not a function and does not support index notation.</source>
-        <target state="translated">Hodnota {0} není funkce a nepodporuje zápis indexu.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="tcNullableToStringOverride">
         <source>With nullness checking enabled, overrides of .ToString() method must return a non-nullable string. You can handle potential nulls via the built-in string function.</source>
         <target state="new">With nullness checking enabled, overrides of .ToString() method must return a non-nullable string. You can handle potential nulls via the built-in string function.</target>
@@ -1762,11 +1682,6 @@
         <target state="translated">Syntaxe expr1[expr2] je při použití jako argument nejednoznačná. Více informací: https://aka.ms/fsharp-index-notation. Pokud plánujete indexování nebo vytváření řezů, musíte použít expr1.[expr2] na pozici argumentu. Pokud voláte funkci s vícenásobnými curryfikovanými argumenty, přidejte mezi ně mezeru, třeba someFunction expr1 [expr2].</target>
         <note />
       </trans-unit>
-      <trans-unit id="tcOtherThenAdjacentListArgumentReserved">
-        <source>The syntax 'expr1[expr2]' is now reserved for indexing and is ambiguous when used as an argument. See https://aka.ms/fsharp-index-notation. If calling a function with multiple curried arguments, add a space between them, e.g. 'someFunction expr1 [expr2]'.</source>
-        <target state="translated">Syntaxe expr1[expr2] je teď vyhrazena pro indexování a je při použití jako argument nejednoznačná. Více informací: https://aka.ms/fsharp-index-notation. Pokud voláte funkci s vícenásobnými curryfikovanými argumenty, přidejte mezi ně mezeru, třeba someFunction expr1 [expr2].</target>
-        <note />
-      </trans-unit>
       <trans-unit id="tcOverloadResolutionPriorityOnOverride">
         <source>The 'OverloadResolutionPriorityAttribute' cannot be applied to an override member. Apply it to the original declaration instead.</source>
         <target state="new">The 'OverloadResolutionPriorityAttribute' cannot be applied to an override member. Apply it to the original declaration instead.</target>
@@ -1780,11 +1695,6 @@
       <trans-unit id="tcParenThenAdjacentListArgumentNeedsAdjustment">
         <source>The syntax '(expr1)[expr2]' is ambiguous when used as an argument. See https://aka.ms/fsharp-index-notation. If you intend indexing or slicing then you must use '(expr1).[expr2]' in argument position. If calling a function with multiple curried arguments, add a space between them, e.g. 'someFunction (expr1) [expr2]'.</source>
         <target state="translated">Syntaxe (expr1)[expr2] je při použití jako argument nejednoznačná. Více informací: https://aka.ms/fsharp-index-notation. Pokud plánujete indexování nebo vytváření řezů, musíte použít (expr1).[expr2] na pozici argumentu. Pokud voláte funkci s vícenásobnými curryfikovanými argumenty, přidejte mezi ně mezeru, třeba someFunction (expr1) [expr2].</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="tcParenThenAdjacentListArgumentReserved">
-        <source>The syntax '(expr1)[expr2]' is now reserved for indexing and is ambiguous when used as an argument. See https://aka.ms/fsharp-index-notation. If calling a function with multiple curried arguments, add a space between them, e.g. 'someFunction (expr1) [expr2]'.</source>
-        <target state="translated">Syntaxe (expr1)[expr2] je teď pro indexování vyhrazená a je při použití jako argument nejednoznačná. Více informací: https://aka.ms/fsharp-index-notation. Pokud voláte funkci s vícenásobnými curryfikovanými argumenty, přidejte mezi ně mezeru, třeba someFunction (expr1) [expr2].</target>
         <note />
       </trans-unit>
       <trans-unit id="tcPartialActivePattern">
@@ -5145,11 +5055,6 @@
       <trans-unit id="tcUseForInSequenceExpression">
         <source>The use of 'let! x = coll' in sequence expressions is not permitted. Use 'for x in coll' instead.</source>
         <target state="translated">Použití notace let! x = coll ve výrazech pořadí není povolené. Použijte místo ní notaci for x in coll.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="tcTryIllegalInSequenceExpression">
-        <source>'try'/'with' cannot be used within sequence expressions</source>
-        <target state="translated">Výrazy try/with se u výrazů pořadí použít nedají.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcUseYieldBangForMultipleResults">
@@ -8872,16 +8777,6 @@
         <target state="new">This value is not a function and cannot be applied. It has type '{0}', which does not accept arguments.</target>
         <note />
       </trans-unit>
-      <trans-unit id="notAFunctionButMaybeIndexerWithName">
-        <source>This value is not a function and cannot be applied. Did you intend to access the indexer via '{0}.[index]'?</source>
-        <target state="translated">Tato hodnota není funkcí a nedá se použít. Nechtěli jste získat k indexeru přístup přes {0}.[index]?</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="notAFunctionButMaybeIndexer">
-        <source>This expression is not a function and cannot be applied. Did you intend to access the indexer via 'expr.[index]'?</source>
-        <target state="translated">Tento výraz není funkcí a nedá se použít. Nechtěli jste získat k indexeru přístup přes expr.[index]?</target>
-        <note />
-      </trans-unit>
       <trans-unit id="notAFunctionButMaybeDeclaration">
         <source>This value is not a function and cannot be applied. Did you forget to terminate a declaration?</source>
         <target state="translated">Tato hodnota není funkce a nedá se použít. Nezapomněli jste ukončit deklaraci?</target>
@@ -9150,6 +9045,11 @@
       <trans-unit id="featureExceptionFieldSerializationSupport">
         <source>emit GetObjectData and field-restoring deserialization constructor for exception types</source>
         <target state="new">emit GetObjectData and field-restoring deserialization constructor for exception types</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcTupleTypeExtensionTooManyElements">
+        <source>Tuple type extensions are supported only for tuples of up to 7 elements, but this tuple type has {0} elements. Extensions of larger tuples are not supported.</source>
+        <target state="new">Tuple type extensions are supported only for tuples of up to 7 elements, but this tuple type has {0} elements. Extensions of larger tuples are not supported.</target>
         <note />
       </trans-unit>
     </body>

@@ -37,7 +37,7 @@ exception FunctionExpected of DisplayEnv * TType * range
 
 exception NotAFunction of DisplayEnv * TType * range * range
 
-exception NotAFunctionButIndexer of DisplayEnv * TType * string option * range * range * bool
+exception NotAFunctionButIndexer of DisplayEnv * TType * string option * range * range
 
 exception Recursion of DisplayEnv * Ident * TType * TType * range
 
@@ -490,6 +490,7 @@ val CheckRecursiveInlineGroup: g: TcGlobals -> bindings: PreInitializationGraphE
 /// inference variables with the given rigidity.
 val FreshenObjectArgType:
     cenv: TcFileState ->
+    traitCtxt: ITraitContext option ->
     m: range ->
     rigid: TyparRigidity ->
     tcref: TyconRef ->

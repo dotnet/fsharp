@@ -1,4 +1,4 @@
-﻿[<AutoOpen>]
+[<AutoOpen>]
 module internal Microsoft.VisualStudio.FSharp.Editor.WorkspaceExtensions
 
 open System
