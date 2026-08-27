@@ -5,6 +5,7 @@ namespace CompilerOptions.Fsc
 
 open System
 open System.IO
+open System.Runtime.InteropServices
 open Xunit
 open FSharp.Test
 open FSharp.Test.Compiler

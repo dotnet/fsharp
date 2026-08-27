@@ -2,6 +2,7 @@ module FSharp.Compiler.Service.Tests.ParsedInputModuleTests
 
 open FSharp.Compiler.Service.Tests.Common
 open FSharp.Compiler.Syntax
+open FSharp.Compiler.SyntaxTreeOps
 open FSharp.Compiler.Text.Position
 open Xunit
 
@@ -27,11 +28,11 @@ let ``tryPick record definition test`` () =
         (pos0, parseTree)
         ||> ParsedInput.tryPick (fun _path node ->
             match node with
-            | SyntaxNode.SynTypeDefn(SynTypeDefn(typeRepr = SynTypeDefnRepr.Simple(SynTypeDefnSimpleRepr.Record(recordFields = fields), _))) -> Some fields
+            | SyntaxNode.SynTypeDefn(SynTypeDefn(typeRepr = SynTypeDefnRepr.Simple(SynTypeDefnSimpleRepr.Record(recordFieldsAndSpreads = fieldsAndSpreads), _))) -> Some fieldsAndSpreads
             | _ -> None)
 
     match fields with
-    | Some [ SynField (idOpt = Some id1); SynField (idOpt = Some id2) ] when id1.idText = "A" && id2.idText = "B" -> ()
+    | Some [ SynFieldOrSpread.Field (SynField (idOpt = Some id1)); SynFieldOrSpread.Field (SynField (idOpt = Some id2)) ] when id1.idText = "A" && id2.idText = "B" -> ()
     | _ -> failwith "Did not visit record definition"
 
 [<Fact>]
@@ -145,9 +146,9 @@ type Y =
         (pos0, parseTree)
         ||> ParsedInput.tryPick (fun _path node ->
             match node with
-            | SyntaxNode.SynTypeDefnSig(SynTypeDefnSig(typeRepr = SynTypeDefnSigRepr.Simple(SynTypeDefnSimpleRepr.Record(recordFields = fields), _))) ->
-                fields
-                |> List.choose (function SynField(idOpt = Some ident) -> Some ident.idText | _ -> None)
+            | SyntaxNode.SynTypeDefnSig(SynTypeDefnSig(typeRepr = SynTypeDefnSigRepr.Simple(SynTypeDefnSimpleRepr.Record(recordFieldsAndSpreads = fieldsAndSpreads), _))) ->
+                fieldsAndSpreads
+                |> List.choose (function SynFieldOrSpread.Field (SynField(idOpt = Some ident)) -> Some ident.idText | _ -> None)
                 |> String.concat ","
                 |> Some
             | _ -> None)
@@ -196,8 +197,8 @@ module N =
         (mkPos 6 28, parseTree)
         ||> ParsedInput.tryPick (fun _path node ->
             match node with
-            | SyntaxNode.SynModule(SynModuleDecl.NestedModule(moduleInfo = SynComponentInfo(longId = longIdent))) ->
-                Some(longIdent |> List.map (fun ident -> ident.idText))
+            | SyntaxNode.SynModule(SynModuleDecl.NestedModule(moduleInfo = compInfo)) ->
+                Some(compInfo.LongIdent |> List.map (fun ident -> ident.idText))
             | _ -> None)
 
     Assert.Equal(Some ["N"], ``module``)
@@ -218,8 +219,8 @@ module N =
         (mkPos 7 30, parseTree)
         ||> ParsedInput.tryPick (fun _path node ->
             match node with
-            | SyntaxNode.SynModule(SynModuleDecl.NestedModule(moduleInfo = SynComponentInfo(longId = longIdent))) ->
-                Some(longIdent |> List.map (fun ident -> ident.idText))
+            | SyntaxNode.SynModule(SynModuleDecl.NestedModule(moduleInfo = compInfo)) ->
+                Some(compInfo.LongIdent |> List.map (fun ident -> ident.idText))
             | _ -> None)
 
     Assert.Equal(Some ["N"], ``module``)
@@ -240,8 +241,8 @@ module N =
         (mkPos 6 28, parseTree)
         ||> ParsedInput.tryPickLast (fun _path node ->
             match node with
-            | SyntaxNode.SynModule(SynModuleDecl.NestedModule(moduleInfo = SynComponentInfo(longId = longIdent))) ->
-                Some(longIdent |> List.map (fun ident -> ident.idText))
+            | SyntaxNode.SynModule(SynModuleDecl.NestedModule(moduleInfo = compInfo)) ->
+                Some(compInfo.LongIdent |> List.map (fun ident -> ident.idText))
             | _ -> None)
 
     Assert.Equal(Some ["P"], ``module``)
@@ -262,8 +263,8 @@ module N =
         (mkPos 7 30, parseTree)
         ||> ParsedInput.tryPickLast (fun _path node ->
             match node with
-            | SyntaxNode.SynModule(SynModuleDecl.NestedModule(moduleInfo = SynComponentInfo(longId = longIdent))) ->
-                Some(longIdent |> List.map (fun ident -> ident.idText))
+            | SyntaxNode.SynModule(SynModuleDecl.NestedModule(moduleInfo = compInfo)) ->
+                Some(compInfo.LongIdent |> List.map (fun ident -> ident.idText))
             | _ -> None)
 
     Assert.Equal(Some ["P"], ``module``)
@@ -286,7 +287,7 @@ module N =
         (mkPos 6 28, parseTree)
         ||> ParsedInput.exists (fun _path node ->
             match node with
-            | SyntaxNode.SynModule(SynModuleDecl.NestedModule(moduleInfo = SynComponentInfo(longId = longIdent))) ->
+            | SyntaxNode.SynModule(SynModuleDecl.NestedModule(moduleInfo = _compInfo)) ->
                 start <- node.Range.StartLine, node.Range.StartColumn
                 true
             | _ -> false)
@@ -312,7 +313,7 @@ module N =
         (mkPos 7 30, parseTree)
         ||> ParsedInput.exists (fun _path node ->
             match node with
-            | SyntaxNode.SynModule(SynModuleDecl.NestedModule(moduleInfo = SynComponentInfo(longId = longIdent))) ->
+            | SyntaxNode.SynModule(SynModuleDecl.NestedModule(moduleInfo = _compInfo)) ->
                 start <- node.Range.StartLine, node.Range.StartColumn
                 true
             | _ -> false)
@@ -337,8 +338,8 @@ module N =
         |> ParsedInput.tryNode (mkPos 6 28)
         |> Option.bind (fun (node, _path) ->
             match node with
-            | SyntaxNode.SynModule(SynModuleDecl.NestedModule(moduleInfo = SynComponentInfo(longId = longIdent))) ->
-                Some(longIdent |> List.map (fun ident -> ident.idText))
+            | SyntaxNode.SynModule(SynModuleDecl.NestedModule(moduleInfo = compInfo)) ->
+                Some(compInfo.LongIdent |> List.map (fun ident -> ident.idText))
             | _ -> None)
 
     Assert.Equal(Some ["P"], ``module``)
@@ -379,9 +380,10 @@ module Q =
         ([], parseTree)
         ||> ParsedInput.fold (fun acc _path node ->
             match node with
-            | SyntaxNode.SynModuleOrNamespace(SynModuleOrNamespace(longId = longIdent))
-            | SyntaxNode.SynModule(SynModuleDecl.NestedModule(moduleInfo = SynComponentInfo(longId = longIdent))) ->
+            | SyntaxNode.SynModuleOrNamespace(SynModuleOrNamespace(longId = longIdent)) ->
                 (longIdent |> List.map (fun ident -> ident.idText)) :: acc
+            | SyntaxNode.SynModule(SynModuleDecl.NestedModule(moduleInfo = compInfo)) ->
+                (compInfo.LongIdent |> List.map (fun ident -> ident.idText)) :: acc
             | _ -> acc)
 
     Assert.Equal<string list list>(
@@ -408,9 +410,10 @@ module Q =
         ([], parseTree)
         ||> ParsedInput.foldWhile (fun acc _path node ->
             match node with
-            | SyntaxNode.SynModuleOrNamespace(SynModuleOrNamespace(longId = longIdent))
-            | SyntaxNode.SynModule(SynModuleDecl.NestedModule(moduleInfo = SynComponentInfo(longId = longIdent))) ->
+            | SyntaxNode.SynModuleOrNamespace(SynModuleOrNamespace(longId = longIdent)) ->
                 Some((longIdent |> List.map (fun ident -> ident.idText)) :: acc)
+            | SyntaxNode.SynModule(SynModuleDecl.NestedModule(moduleInfo = compInfo)) ->
+                Some((compInfo.LongIdent |> List.map (fun ident -> ident.idText)) :: acc)
             | _ -> Some acc)
 
     Assert.Equal<string list list>(
@@ -439,9 +442,10 @@ module Q =
             if posGt node.Range.Start (mkPos 7 0) then None
             else
                 match node with
-                | SyntaxNode.SynModuleOrNamespace(SynModuleOrNamespace(longId = longIdent))
-                | SyntaxNode.SynModule(SynModuleDecl.NestedModule(moduleInfo = SynComponentInfo(longId = longIdent))) ->
+                | SyntaxNode.SynModuleOrNamespace(SynModuleOrNamespace(longId = longIdent)) ->
                     Some((longIdent |> List.map (fun ident -> ident.idText)) :: acc)
+                | SyntaxNode.SynModule(SynModuleDecl.NestedModule(moduleInfo = compInfo)) ->
+                    Some((compInfo.LongIdent |> List.map (fun ident -> ident.idText)) :: acc)
                 | _ -> Some acc)
 
     Assert.Equal<string list list>(

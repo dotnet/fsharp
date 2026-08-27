@@ -366,10 +366,10 @@ let mkNestedValRef (cref: EntityRef) (v: Val) : ValRef =
         mkNonLocalValRefPreResolved v nlr key
 
 /// From Ref_private to Ref_nonlocal when exporting data.
-let rescopePubPathToParent viewedCcu (PubPath p) = NonLocalEntityRef(viewedCcu, p[0..p.Length-2])
+let rescopePubPathToParent viewedCcu (pp: PublicPath) = NonLocalEntityRef(viewedCcu, pp.EnclosingPath)
 
 /// From Ref_private to Ref_nonlocal when exporting data.
-let rescopePubPath viewedCcu (PubPath p) = NonLocalEntityRef(viewedCcu, p)
+let rescopePubPath viewedCcu (pp: PublicPath) = NonLocalEntityRef(viewedCcu, pp.FullPath)
 
 //---------------------------------------------------------------------------
 // Equality between TAST items.
@@ -414,10 +414,20 @@ let nonLocalRefEq (NonLocalEntityRef(x1, y1) as smr1) (NonLocalEntityRef(x2, y2)
 let nonLocalRefDefinitelyNotEq (NonLocalEntityRef(_, y1)) (NonLocalEntityRef(_, y2)) = 
     not (arrayPathEq y1 y2)
 
-let pubPathEq (PubPath path1) (PubPath path2) = arrayPathEq path1 path2
+// A function rather than a member on PublicPath: the optimizer does not see through a struct member
+// call when inferring MightMakeCriticalTailcall, and this runs in tail position from fslibEntityRefEq.
+let pubPathEq (path1: PublicPath) (path2: PublicPath) =
+    let rec loop p1 p2 =
+        match p1, p2 with
+        | [], [] -> true
+        | (nm1, _) :: rest1, (nm2, _) :: rest2 -> nm1 = nm2 && loop rest1 rest2
+        | _ -> false
 
-let fslibRefEq (nlr1: NonLocalEntityRef) (PubPath path2) =
-    arrayPathEq nlr1.Path path2
+    path1.Name = path2.Name
+    && loop path1.EnclosingCompilationPath.AccessPath path2.EnclosingCompilationPath.AccessPath
+
+let fslibRefEq (nlr1: NonLocalEntityRef) (path2: PublicPath) =
+    arrayPathEq nlr1.Path path2.FullPath
 
 // Compare two EntityRef's for equality when compiling fslib (FSharp.Core.dll)
 //
@@ -430,12 +440,12 @@ let fslibEntityRefEq fslibCcu (eref1: EntityRef) (eref2: EntityRef) =
     | ERefNonLocal nlr1, ERefLocal x2
     | ERefLocal x2, ERefNonLocal nlr1 ->
         ccuEq nlr1.Ccu fslibCcu &&
-        match x2.PublicPath with 
-        | Some pp2 -> fslibRefEq nlr1 pp2
-        | None -> false
+        match x2.PublicPath with
+        | ValueSome pp2 -> fslibRefEq nlr1 pp2
+        | ValueNone -> false
     | ERefLocal e1, ERefLocal e2 ->
-        match e1.PublicPath, e2.PublicPath with 
-        | Some pp1, Some pp2 -> pubPathEq pp1 pp2
+        match e1.PublicPath, e2.PublicPath with
+        | ValueSome pp1, ValueSome pp2 -> pubPathEq pp1 pp2
         | _ -> false
     | _ -> false
 

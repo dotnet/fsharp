@@ -33,7 +33,7 @@ open FSharp.Compiler.TcGlobals
 let verbose = false
 #endif
 
-let ffailwith fileName str =
+let ffailwith (fileName: string) (str: string) =
     let msg = FSComp.SR.pickleErrorReadingWritingMetadata (fileName, str)
     System.Diagnostics.Debug.Assert(false, msg)
     failwith msg
@@ -200,12 +200,27 @@ type ReaderState =
         ivals: NodeInTable<ValData, Val>
         ianoninfos: NodeInTable<AnonRecdTypeInfo, AnonRecdTypeInfo>
         istrings: InputTable<string>
-        ipubpaths: InputTable<PublicPath>
+        ipubpaths: InputTable<string[]>
         inlerefs: InputTable<NonLocalEntityRef>
+        itcrefs: EntityRef array
         isimpletys: InputTable<TType>
         ifile: string
         iILModule: ILModuleDef option // the Abstract IL metadata for the DLL being read
+
+        // The pickled format has no table for these, so each is written out at every mention while a
+        // blob names very few distinct ones.
+        iilscopes: Dictionary<ILScopeRef, ILScopeRef>
+        iiltyperefs: Dictionary<ILTypeRef, ILTypeRef>
+        iilmethodrefs: Dictionary<ILMethodRef, ILMethodRef>
     }
+
+// A `HashSet` would fit better, but the member returning the instance it holds is netstandard2.1.
+let shareIL (table: Dictionary<'T, 'T>) (v: 'T) : 'T =
+    match table.TryGetValue v with
+    | true, existing -> existing
+    | _ ->
+        table[v] <- v
+        v
 
 let ufailwith st str = ffailwith st.ifile str
 
@@ -855,12 +870,12 @@ let p_ccuref s st = p_int (encode_ccuref st.occus s) st
 // References to public items in this module
 // A huge number of these occur in pickled F# data, so make them unique
 let decode_pubpath st stringTab a =
-    PubPath(Array.map (lookup_string st stringTab) a)
+    Array.map (lookup_string st stringTab) a
 
 let u_encoded_pubpath = u_array u_int
 let u_pubpath st = lookup_uniq st st.ipubpaths (u_int st)
 
-let encode_pubpath stringTab pubpathTab (PubPath a) =
+let encode_pubpath stringTab pubpathTab (a: string[]) =
     encode_uniq pubpathTab (Array.map (encode_string stringTab) a)
 
 let p_encoded_pubpath = p_array p_int
@@ -875,7 +890,6 @@ let decode_nleref st ccuTab stringTab (a, b) =
 
 let lookup_nleref st nlerefTab x = lookup_uniq st nlerefTab x
 let u_encoded_nleref = u_tup2 u_int (u_array u_int)
-let u_nleref st = lookup_uniq st st.inlerefs (u_int st)
 
 let encode_nleref ccuTab stringTab nlerefTab thisCcu (nleref: NonLocalEntityRef) =
 #if !NO_TYPEPROVIDERS
@@ -883,7 +897,7 @@ let encode_nleref ccuTab stringTab nlerefTab thisCcu (nleref: NonLocalEntityRef)
     // References to these nodes _do_ appear in F# assembly metadata, because they may be public.
     let nleref =
         match nleref.Deref.PublicPath with
-        | Some pubpath when nleref.Deref.IsProvidedGeneratedTycon ->
+        | ValueSome pubpath when nleref.Deref.IsProvidedGeneratedTycon ->
             if verbose then
                 dprintfn "remapping pickled reference to provider-generated type %s" nleref.Deref.DisplayNameWithStaticParameters
 
@@ -1062,10 +1076,14 @@ let unpickleObjWithDanglingCcus
                     .Create(AnonRecdTypeInfo.NewUnlinked, (fun osgn tg -> osgn.Link tg), (fun osgn -> osgn.IsLinked), "ianoninfos", 0)
             istrings = new_itbl "istrings (fake)" [||]
             inlerefs = new_itbl "inlerefs (fake)" [||]
+            itcrefs = [||]
             ipubpaths = new_itbl "ipubpaths (fake)" [||]
             isimpletys = new_itbl "isimpletys (fake)" [||]
             ifile = file
             iILModule = ilModule
+            iilscopes = Dictionary<_, _>()
+            iiltyperefs = Dictionary<_, _>()
+            iilmethodrefs = Dictionary<_, _>()
         }
 
     let ccuNameTab = u_array u_encoded_ccuref st2
@@ -1123,9 +1141,13 @@ let unpickleObjWithDanglingCcus
                 istrings = stringTab
                 ipubpaths = pubpathTab
                 inlerefs = nlerefTab
+                itcrefs = Array.zeroCreate nlerefTab.itbl_rows.Length
                 isimpletys = simpletypTab
                 ifile = file
                 iILModule = ilModule
+                iilscopes = Dictionary<_, _>()
+                iiltyperefs = Dictionary<_, _>()
+                iilmethodrefs = Dictionary<_, _>()
             }
 
         let res = u st1
@@ -1231,7 +1253,7 @@ let u_ILScopeRef st =
         | _ -> ufailwith st "u_ILScopeRef"
 
     let res = rescopeILScopeRef st.iilscope res
-    res
+    shareIL st.iilscopes res
 
 let p_ILHasThis x st =
     p_byte
@@ -1285,8 +1307,8 @@ and p_ILBasicCallConv x st =
          | ILArgConvention.VarArg -> 5)
         st
 
-and p_ILCallConv (Callconv(x, y)) st =
-    p_tup2 p_ILHasThis p_ILBasicCallConv (x, y) st
+and p_ILCallConv (x: ILCallingConv) st =
+    p_tup2 p_ILHasThis p_ILBasicCallConv (x.ThisConv, x.BasicConv) st
 
 and p_ILCallSig x st =
     p_tup3 p_ILCallConv p_ILTypes p_ILType (x.CallingConv, x.ArgTypes, x.ReturnType) st
@@ -1316,11 +1338,12 @@ let u_ILHasThis st =
 
 let u_ILCallConv st =
     let a, b = u_tup2 u_ILHasThis u_ILBasicCallConv st
-    Callconv(a, b)
+    ILCallingConv.Create(a, b)
 
 let u_ILTypeRef st =
     let a, b, c = u_tup3 u_ILScopeRef u_strings u_string st
-    ILTypeRef.Create(a, b, c)
+    let res = ILTypeRef.Create(a, b, c)
+    shareIL st.iiltyperefs res
 
 let u_ILArrayShape =
     u_wrap ILArrayShape (u_list (u_tup2 (u_option u_int32) (u_option u_int32)))
@@ -1413,7 +1436,8 @@ let u_ILMethodRef st =
     let x1, x2, x3, x4, x5, x6 =
         u_tup6 u_ILTypeRef u_ILCallConv u_int u_string u_ILTypes u_ILType st
 
-    ILMethodRef.Create(x1, x2, x4, x3, x5, x6)
+    let res = ILMethodRef.Create(x1, x2, x4, x3, x5, x6)
+    shareIL st.iilmethodrefs res
 
 let u_ILFieldRef st =
     let x1, x2, x3 = u_tup3 u_ILTypeRef u_string u_ILType st
@@ -1944,7 +1968,17 @@ let u_tcref st =
 
     match tag with
     | 0 -> u_local_item_ref st.ientities st |> ERefLocal
-    | 1 -> u_nleref st |> ERefNonLocal
+    | 1 ->
+        let idx = u_int st
+        let nleref = lookup_uniq st st.inlerefs idx
+        let cached = st.itcrefs[idx]
+
+        if obj.ReferenceEquals(cached, null) then
+            let tcref = ERefNonLocal nleref
+            st.itcrefs[idx] <- tcref
+            tcref
+        else
+            cached
     | _ -> ufailwith st "u_tcref"
 
 let u_ucref st =
@@ -2130,7 +2164,7 @@ let p_trait_sln sln st =
         p_byte 7 st
         p_tup4 p_ty (p_vref "trait") p_tys p_ty (a, b, c, d) st
 
-let p_trait (TTrait(a, b, c, d, e, _, f)) st =
+let p_trait (TTrait(a, b, c, d, e, _, f, _)) st =
     p_tup6 p_tys p_string p_MemberFlags p_tys (p_option p_ty) (p_option p_trait_sln) (a, b, c, d, e, f.Value) st
 
 let u_anonInfo_data st =
@@ -2171,7 +2205,7 @@ let u_trait st =
     let a, b, c, d, e, f =
         u_tup6 u_tys u_string u_MemberFlags u_tys (u_option u_ty) (u_option u_trait_sln) st
 
-    TTrait(a, b, c, d, e, ref None, ref f)
+    TTrait(a, b, c, d, e, ref None, ref f, None)
 
 let p_rational q st =
     p_int32 (GetNumerator q) st
@@ -2380,7 +2414,7 @@ let p_tyar_spec_data (x: Typar) st =
 let p_tyar_spec (x: Typar) st =
     //Disabled, workaround for bug 2721: if x.Rigidity <> TyparRigidity.Rigid then warning(Error(sprintf "p_tyar_spec: typar#%d is not rigid" x.Stamp, x.Range))
     if x.IsFromError then
-        warning (Error((0, "p_tyar_spec: from error"), x.Range))
+        warning (Error((0, RichText.mkText "p_tyar_spec: from error"), x.Range))
 
     p_osgn_decl st.otypars p_tyar_spec_data x st
 
@@ -2796,7 +2830,11 @@ and p_entity_spec_data (x: Entity) st =
     p_string x.entity_logical_name st
     p_option p_string x.EntityCompiledName st
     p_range x.entity_range st
-    p_option p_pubpath x.entity_pubpath st
+    let pubPathOpt =
+        match x.PublicPath with
+        | ValueSome pubpath -> Some pubpath.FullPath
+        | ValueNone -> None
+    p_option p_pubpath pubPathOpt st
     p_access x.Accessibility st
     p_access x.TypeReprAccessibility st
     p_attribs (x.entity_attribs.AsList()) st
@@ -2839,8 +2877,7 @@ and p_tcaug p st =
          p.tcaug_hash_and_equals_withc
          |> Option.map (fun (v1, v2, v3, _) -> (v1, v2, v3)),
          p.tcaug_equals,
-         (p.tcaug_adhoc_list
-          |> ResizeArray.toList
+         (p.AdhocMembers
           // Explicit impls of interfaces only get kept in the adhoc list
           // in order to get check the well-formedness of an interface.
           // Keeping them across assembly boundaries is not valid, because relinking their ValRefs
@@ -3126,7 +3163,7 @@ and u_rfield_table st =
     Construct.MakeRecdFieldsTable(u_list u_recdfield_spec st)
 
 and u_entity_spec_data st : Entity =
-    let x1, x2a, x2b, x2c, x3, (x4a, x4b), x6, x7f, x8, x9, _x10, x10b, x11, x12, x13, x14, x15 =
+    let x1, x2a, x2b, x2c, _x3, (x4a, x4b), x6, x7f, x8, x9, _x10, x10b, x11, x12, x13, x14, x15 =
         u_tup17
             u_tyar_specs
             u_string
@@ -3155,7 +3192,6 @@ and u_entity_spec_data st : Entity =
         entity_stamp = newStamp ()
         entity_logical_name = x2a
         entity_range = x2c
-        entity_pubpath = x3
         entity_attribs = WellKnownEntityAttribs.Create(x6)
         entity_tycon_repr = x7
         entity_tycon_tcaug = x9
@@ -3201,7 +3237,10 @@ and u_tcaug st =
         tcaug_equals = b2
         // only used for code generation and checking - hence don't care about the values when reading back in
         tcaug_hasObjectGetHashCode = false
-        tcaug_adhoc_list = ResizeArray<_>(c |> List.map (fun (_, vref) -> (false, vref)))
+        tcaug_adhoc_list =
+            match c with
+            | [] -> null
+            | _ -> ResizeArray<_>(c |> List.map (fun (_, vref) -> (false, vref)))
         tcaug_adhoc = NameMultiMap.ofList c
         tcaug_interfaces = d
         tcaug_super = e
@@ -3301,7 +3340,7 @@ and u_ValData st =
              | Some(a, _) -> a)
         val_type = x2
         val_stamp = newStamp ()
-        val_flags = ValFlags x4
+        val_flags = ValFlags.OfPickledBits x4
         val_opt_data =
             match x1z, x1a, x10, x14, x13, x15, x8, x13b, x12, x9 with
             | None, None, None, None, TAccess [], None, None, ParentNone, "", [] -> None

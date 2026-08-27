@@ -252,7 +252,7 @@ module internal Utilities =
 
     let reportError m =
         let report errorType err msg =
-            let error = err, msg
+            let error = err, RichText.mkText msg
 
             match errorType with
             | ErrorReportType.Warning -> warning (Error(error, m))
@@ -326,7 +326,7 @@ type ILMultiInMemoryAssemblyEmitEnv
         asmName
 
     /// Convert an ILAssemblyRef to a dynamic System.Type given the dynamic emit context
-    let convResolveAssemblyRef (asmref: ILAssemblyRef) qualifiedName =
+    let convResolveAssemblyRef (asmref: ILAssemblyRef) (tref: ILTypeRef) =
         let assembly =
             match resolveAssemblyRef asmref with
             | Some(Choice1Of2 path) ->
@@ -339,27 +339,44 @@ type ILMultiInMemoryAssemblyEmitEnv
                 let asmName = convAssemblyRef asmref
                 FileSystem.AssemblyLoader.AssemblyLoad asmName
 
-        let typT = assembly.GetType qualifiedName
+        let typT = assembly.GetType tref.BasicQualifiedName
 
         match typT with
-        | null -> error (Error(FSComp.SR.itemNotFoundDuringDynamicCodeGen ("type", qualifiedName, asmref.QualifiedName), range0))
+        | null ->
+            error (
+                Error(
+                    FSComp.SR.itemNotFoundDuringDynamicCodeGen (
+                        RichText.mkText "type",
+                        richTextOfILTypeRef tref,
+                        RichText.mkText asmref.QualifiedName
+                    ),
+                    range0
+                )
+            )
         | res -> res
 
     /// Convert an Abstract IL type reference to System.Type
     let convTypeRefAux (tref: ILTypeRef) =
-        let qualifiedName =
-            (String.concat "+" (tref.Enclosing @ [ tref.Name ])).Replace(",", @"\,")
-
         match tref.Scope with
-        | ILScopeRef.Assembly asmref -> convResolveAssemblyRef asmref qualifiedName
+        | ILScopeRef.Assembly asmref -> convResolveAssemblyRef asmref tref
         | ILScopeRef.Module _
         | ILScopeRef.Local ->
-            let typT = Type.GetType qualifiedName
+            let typT = Type.GetType tref.BasicQualifiedName
 
             match typT with
-            | null -> error (Error(FSComp.SR.itemNotFoundDuringDynamicCodeGen ("type", qualifiedName, "<emitted>"), range0))
+            | null ->
+                error (
+                    Error(
+                        FSComp.SR.itemNotFoundDuringDynamicCodeGen (
+                            RichText.mkText "type",
+                            richTextOfILTypeRef tref,
+                            RichText.mkText "<emitted>"
+                        ),
+                        range0
+                    )
+                )
             | res -> res
-        | ILScopeRef.PrimaryAssembly -> convResolveAssemblyRef ilg.primaryAssemblyRef qualifiedName
+        | ILScopeRef.PrimaryAssembly -> convResolveAssemblyRef ilg.primaryAssemblyRef tref
 
     /// Convert an ILTypeRef to a dynamic System.Type given the dynamic emit context
     let convTypeRef (tref: ILTypeRef) =
@@ -385,7 +402,14 @@ type ILMultiInMemoryAssemblyEmitEnv
         match res with
         | null ->
             error (
-                Error(FSComp.SR.itemNotFoundDuringDynamicCodeGen ("type", tspec.TypeRef.QualifiedName, tspec.Scope.QualifiedName), range0)
+                Error(
+                    FSComp.SR.itemNotFoundDuringDynamicCodeGen (
+                        RichText.mkText "type",
+                        richTextOfILTypeRef tspec.TypeRef,
+                        RichText.mkText tspec.Scope.QualifiedName
+                    ),
+                    range0
+                )
             )
         | _ -> res
 
@@ -1941,6 +1965,8 @@ type internal FsiDynamicCompiler
                 referenceAssemblyAttribOpt = None
                 referenceAssemblySignatureHash = None
                 pathMap = tcConfig.pathMap
+                moduleCustomDebugInfoRows = []
+                methodCustomDebugInfoRows = Map.empty
             }
 
         let assemblyBytes, pdbBytes = WriteILBinaryInMemory(opts, ilxMainModule, id)
@@ -2224,7 +2250,8 @@ type internal FsiDynamicCompiler
             ApplyAllOptimizations(
                 tcConfig,
                 tcGlobals,
-                LightweightTcValForUsingInBuildMethodCall tcGlobals,
+                // traitCtxtNone: FSI codegen — SRTP constraints already resolved, no TcEnv available (audited for RFC FS-1043)
+                LightweightTcValForUsingInBuildMethodCall tcGlobals traitCtxtNone,
                 outfile,
                 importMap,
                 isIncrementalFragment,
@@ -2286,6 +2313,12 @@ type internal FsiDynamicCompiler
         let tcState = istate.tcState
         let ilxGenerator = istate.ilxGenerator
         let tcConfig = TcConfig.Create(tcConfigB, validate = false)
+
+        // RFC FS-1043: each FSI fragment is its own compilation unit but shares the session CcuThunk, so the
+        // extension-operator solution sink must be reset per fragment. Otherwise identical-layout submissions
+        // (same dummy file name, same ranges) leave stale entries that the range-based disambiguation cannot
+        // tell apart from the current fragment, poisoning a later same-shaped submission.
+        tcGlobals.ClearExtensionOperatorSolutions(tcState.Ccu)
 
         let eagerFormat (diag: PhasedDiagnostic) = diag.EagerlyFormatCore true
 
@@ -2802,7 +2835,7 @@ type internal FsiDynamicCompiler
                         )
                     with
                     | Null ->
-                        let err =
+                        let number, message =
                             fsiOptions.DependencyProvider.CreatePackageManagerUnknownError(
                                 tcConfigB.compilerToolPaths,
                                 outputDir,
@@ -2811,7 +2844,7 @@ type internal FsiDynamicCompiler
                                 reportError m
                             )
 
-                        errorR (Error(err, m))
+                        errorR (Error((number, message), m))
                         istate
                     | NonNull dependencyManager ->
                         let directive d =
@@ -3042,7 +3075,7 @@ type internal FsiDynamicCompiler
             )
 
             if IsCompilerGeneratedName name then
-                invalidArg "name" (FSComp.SR.lexhlpIdentifiersContainingAtSymbolReserved () |> snd)
+                invalidArg "name" (FSComp.SR.lexhlpIdentifiersContainingAtSymbolReserved () |> snd).Text
 
             let istate, tys = importReflectionType istate (value.GetType())
             let ty = List.head tys
@@ -3146,7 +3179,14 @@ type internal FsiDynamicCompiler
             GetInitialTcState(rangeStdin0, ccuName, tcConfig, tcGlobals, tcImports, tcEnv, openDecls0)
 
         let ilxGenerator =
-            CreateIlxAssemblyGenerator(tcConfig, tcImports, tcGlobals, (LightweightTcValForUsingInBuildMethodCall tcGlobals), tcState.Ccu)
+            // traitCtxtNone: FSI codegen — SRTP constraints already resolved, no TcEnv available (audited for RFC FS-1043)
+            CreateIlxAssemblyGenerator(
+                tcConfig,
+                tcImports,
+                tcGlobals,
+                (LightweightTcValForUsingInBuildMethodCall tcGlobals traitCtxtNone),
+                tcState.Ccu
+            )
 
         {
             optEnv = optEnv0
@@ -3590,7 +3630,6 @@ type FsiStdinLexerProvider
         UnicodeLexing.FunctionAsLexbuf(
             true,
             tcConfigB.langVersion,
-            tcConfigB.strictIndentation,
             (fun (buf: char[], start, len) ->
                 //fprintf fsiConsoleOutput.Out "Calling ReadLine\n"
                 let inputOption =
@@ -3669,15 +3708,13 @@ type FsiStdinLexerProvider
 
     // Create a new lexer to read an "included" script file
     member _.CreateIncludedScriptLexer(sourceFileName, reader, diagnosticsLogger) =
-        let lexbuf =
-            UnicodeLexing.StreamReaderAsLexbuf(true, tcConfigB.langVersion, tcConfigB.strictIndentation, reader)
+        let lexbuf = UnicodeLexing.StreamReaderAsLexbuf(true, tcConfigB.langVersion, reader)
 
         CreateLexerForLexBuffer(sourceFileName, lexbuf, diagnosticsLogger)
 
     // Create a new lexer to read a string
     member _.CreateStringLexer(sourceFileName, source, diagnosticsLogger) =
-        let lexbuf =
-            UnicodeLexing.StringAsLexbuf(true, tcConfigB.langVersion, tcConfigB.strictIndentation, source)
+        let lexbuf = UnicodeLexing.StringAsLexbuf(true, tcConfigB.langVersion, source)
 
         CreateLexerForLexBuffer(sourceFileName, lexbuf, diagnosticsLogger)
 
@@ -3798,7 +3835,7 @@ type FsiInteractionProcessor
 
     let runhDirective diagnosticsLogger ctok istate source =
         let lexbuf =
-            UnicodeLexing.StringAsLexbuf(true, tcConfigB.langVersion, tcConfigB.strictIndentation, $"<@@ {source} @@>")
+            UnicodeLexing.StringAsLexbuf(true, tcConfigB.langVersion, $"<@@ {source} @@>")
 
         let tokenizer =
             fsiStdinLexerProvider.CreateBufferLexer("hdummy.fsx", lexbuf, diagnosticsLogger)
@@ -3878,7 +3915,13 @@ type FsiInteractionProcessor
             | "show" -> fsiConsolePrompt.ShowPrompt <- true
             | "hide" -> fsiConsolePrompt.ShowPrompt <- false
             | "skip" -> fsiConsolePrompt.SkipNext()
-            | _ -> error (Error((FSComp.SR.fsiInvalidDirective ("prompt", String.concat " " [ showPrompt ])), m))
+            | _ ->
+                error (
+                    Error(
+                        (FSComp.SR.fsiInvalidDirective (RichText.mkKeyword "prompt", RichText.mkText (String.concat " " [ showPrompt ]))),
+                        m
+                    )
+                )
 
             istate, Completed None
 
@@ -3945,13 +3988,13 @@ type FsiInteractionProcessor
             match args with
             | [] -> fsiOptions.ShowHelp(m)
             | [ arg ] -> runhDirective diagnosticsLogger ctok istate arg
-            | _ -> warning (Error((FSComp.SR.fsiInvalidDirective ("help", String.concat " " args)), m))
+            | _ -> warning (Error((FSComp.SR.fsiInvalidDirective (RichText.mkKeyword "help", RichText.mkText (String.concat " " args))), m))
 
             istate, Completed None
 
         | ParsedHashDirective(c, hashArguments, m) ->
             let arg = (parsedHashDirectiveArguments hashArguments tcConfigB.langVersion)
-            warning (Error((FSComp.SR.fsiInvalidDirective (c, String.concat " " arg)), m))
+            warning (Error((FSComp.SR.fsiInvalidDirective (RichText.mkKeyword c, RichText.mkText (String.concat " " arg))), m))
             istate, Completed None
 
     /// Most functions return a step status - this decides whether to continue and propagates the
@@ -4361,8 +4404,7 @@ type FsiInteractionProcessor
         use _ = UseDiagnosticsLogger diagnosticsLogger
         use _scope = SetCurrentUICultureForThread fsiOptions.FsiLCID
 
-        let lexbuf =
-            UnicodeLexing.StringAsLexbuf(true, tcConfigB.langVersion, tcConfigB.strictIndentation, sourceText)
+        let lexbuf = UnicodeLexing.StringAsLexbuf(true, tcConfigB.langVersion, sourceText)
 
         let tokenizer =
             fsiStdinLexerProvider.CreateBufferLexer(scriptFileName, lexbuf, diagnosticsLogger)
@@ -4383,8 +4425,7 @@ type FsiInteractionProcessor
         use _unwind2 = UseDiagnosticsLogger diagnosticsLogger
         use _scope = SetCurrentUICultureForThread fsiOptions.FsiLCID
 
-        let lexbuf =
-            UnicodeLexing.StringAsLexbuf(true, tcConfigB.langVersion, tcConfigB.strictIndentation, sourceText)
+        let lexbuf = UnicodeLexing.StringAsLexbuf(true, tcConfigB.langVersion, sourceText)
 
         let tokenizer =
             fsiStdinLexerProvider.CreateBufferLexer(scriptFileName, lexbuf, diagnosticsLogger)
@@ -4761,7 +4802,7 @@ type FsiEvaluationSession
         try
             let tcConfig = tcConfigP.Get(ctokStartup)
 
-            checker.FrameworkImportsCache.Get tcConfig |> Async.RunImmediate
+            checker.FrameworkImportsCache.Get tcConfig |> Async.RunSynchronouslyImmediate
         with e ->
             stopProcessingRecovery e range0
             failwithf "Error creating evaluation session: %A" e
@@ -4775,7 +4816,7 @@ type FsiEvaluationSession
                 unresolvedReferences,
                 fsiOptions.DependencyProvider
             )
-            |> Async.RunImmediate
+            |> Async.RunSynchronouslyImmediate
         with e ->
             stopProcessingRecovery e range0
             failwithf "Error creating evaluation session: %A" e

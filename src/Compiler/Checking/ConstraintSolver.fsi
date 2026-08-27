@@ -16,6 +16,9 @@ open FSharp.Compiler.Text
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeOps
 
+/// Concrete ITraitContext used throughout the compiler.
+type TraitContext = ITraitContext<AccessorDomain, MethInfo, InfoReader>
+
 /// Information about the context of a type equation.
 [<RequireQualifiedAccess>]
 type ContextInfo =
@@ -89,7 +92,8 @@ type OverloadResolutionFailure =
     | PossibleCandidates of
         methodName: string *
         candidates: OverloadInformation list *  // methodNames may be different (with operators?), this is refactored from original logic to assemble overload failure message
-        cx: TraitConstraintInfo option
+        cx: TraitConstraintInfo option *
+        incomparableConcreteness: OverloadResolutionRules.IncomparableConcretenessInfo option
 
 /// Represents known information prior to checking an expression or pattern, e.g. it's expected type
 type OverallTy =
@@ -155,7 +159,7 @@ exception ConstraintSolverNullnessWarningWithTypes of
 
 exception ConstraintSolverNullnessWarningWithType of DisplayEnv * TType * NullnessInfo * range * range
 
-exception ConstraintSolverNullnessWarning of string * range * range
+exception ConstraintSolverNullnessWarning of RichText * range * range
 
 exception ConstraintSolverNullnessWarningOnDotAccess of
     DisplayEnv *
@@ -165,7 +169,7 @@ exception ConstraintSolverNullnessWarningOnDotAccess of
     objExprRange: range *
     mMethod: range
 
-exception ConstraintSolverError of string * range * range
+exception ConstraintSolverError of RichText * range * range
 
 exception ErrorFromApplyingDefault of
     tcGlobals: TcGlobals *
@@ -236,9 +240,13 @@ type ConstraintSolverState =
         PostInferenceChecksFinal: ResizeArray<unit -> unit>
 
         WarnWhenUsingWithoutNullOnAWithNullTarget: string option
+
+        /// RFC FS-1043: the CCU currently being compiled, used to scope the optimizer-replay cache of
+        /// extension-member solutions to built-in-operator SRTP constraints.
+        CompilingCcu: CcuThunk option
     }
 
-    static member New: TcGlobals * ImportMap * InfoReader * TcValF -> ConstraintSolverState
+    static member New: TcGlobals * ImportMap * InfoReader * TcValF * CcuThunk option -> ConstraintSolverState
 
     /// Add a post-inference check to run at the end of inference
     member PushPostInferenceCheck: preDefaults: bool * check: (unit -> unit) -> unit
@@ -380,3 +388,19 @@ val ChooseTyparSolutionAndSolve: ConstraintSolverState -> DisplayEnv -> Typar ->
 val IsApplicableMethApprox: TcGlobals -> ImportMap -> range -> MethInfo -> TType -> bool
 
 val CanonicalizePartialInferenceProblem: ConstraintSolverState -> DisplayEnv -> range -> Typars -> unit
+
+val CanonicalizePartialInferenceProblemForExtensions: ConstraintSolverState -> DisplayEnv -> range -> Typars -> unit
+
+/// Create an ITraitContext from implementation file contents for use during optimization/codegen.
+/// earlierSignatures carries the signatures of preceding same-assembly files so their extension
+/// members are visible to trait-witness generation using the same val identity code generation binds.
+val CreateImplFileTraitContext:
+    TcGlobals -> ModuleOrNamespaceContents list -> ModuleOrNamespaceType list -> CcuThunk list -> TraitContext
+
+/// RFC FS-1043: optimizer hook returning the checker-recorded, unambiguous extension solution for a
+/// built-in-operator SRTP constraint (see ConstraintSolver.fs for the replay rationale), or None.
+val TryGetRecordedExtensionOperatorSolution:
+    g: TcGlobals -> compilingCcu: CcuThunk -> traitInfo: TraitConstraintInfo -> m: range -> TraitConstraintSln option
+
+val SolveTyparsEqualTypes:
+    g: TcGlobals -> css: ConstraintSolverState -> m: range -> typars: TypeInst -> tys: TypeInst -> unit

@@ -86,11 +86,12 @@ module TestFrameworkAdapter =
         match version with 
         | LangVersion.V80 -> "8.0",bonusArgs
         | LangVersion.V90 -> "9.0",bonusArgs
+        | LangVersion.V10 -> "10.0",bonusArgs
         | LangVersion.Preview -> "preview",bonusArgs
         | LangVersion.Latest  -> "latest", bonusArgs
 
 
-    let singleTestBuildAndRunAuxVersion (folder:string) bonusArgs mode langVersion sessionIsolation = 
+    let singleTestBuildAndRunAuxVersion (folder:string) bonusArgs mode langVersion sessionIsolation =
         let absFolder = Path.Combine(baseFolder,folder)
         let supportedNames, files = 
             match mode with 
@@ -161,9 +162,10 @@ module TestFrameworkAdapter =
     
 
     let singleTestBuildAndRunAux folder bonusArgs mode = singleTestBuildAndRunAuxVersion folder bonusArgs mode LangVersion.Latest
-    let singleTestBuildAndRunVersion folder mode version = singleTestBuildAndRunAuxVersion folder [] mode version
-    let singleTestBuildAndRun folder mode = singleTestBuildAndRunVersion folder mode LangVersion.Latest ScriptSessionIsolation.Shared
-    let singleTestBuildAndRunIsolated folder mode = singleTestBuildAndRunVersion folder mode LangVersion.Latest ScriptSessionIsolation.Isolated
+    let singleTestBuildAndRunVersion folder mode version : unit = singleTestBuildAndRunAuxVersion folder [] mode version ScriptSessionIsolation.Shared
+    let singleTestBuildAndRunVersionIsolated folder mode version : unit = singleTestBuildAndRunAuxVersion folder [] mode version ScriptSessionIsolation.Isolated
+    let singleTestBuildAndRun folder mode : unit = singleTestBuildAndRunVersion folder mode LangVersion.Latest
+    let singleTestBuildAndRunIsolated folder mode : unit = singleTestBuildAndRunVersionIsolated folder mode LangVersion.Latest
 
     let singleVersionedNegTestAux folder bonusArgs version testName =
         singleTestBuildAndRunAuxVersion folder bonusArgs  (NEG_TEST_BUILD testName) version ScriptSessionIsolation.Shared

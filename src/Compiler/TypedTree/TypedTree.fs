@@ -266,6 +266,17 @@ type ValFlags(flags: int64) =
         else
             bits
 
+    /// Reconstruct flags from the F# binary metadata. PickledBits always writes
+    /// ValInline.InlinedDefinition (0x00) out as ValInline.Always (0x01), so zero inline bits
+    /// are never produced by a compiler that has this normalization. Any zero bits seen here
+    /// are therefore legacy metadata from compilers older than PR #19548, which used the same
+    /// 0x00 bits to mean ValInline.Always (ShouldInline=true), and must be imported as such.
+    static member OfPickledBits(bits: int64) =
+        if bits &&& 0b00000000000000110000L = 0L then
+            ValFlags(bits ||| 0b00000000000000010000L)
+        else
+            ValFlags bits
+
 /// Represents the kind of a type parameter
 [<RequireQualifiedAccess (* ; StructuredFormatDisplay("{DebugText}") *) >]
 type TyparKind = 
@@ -508,11 +519,11 @@ type EntityFlags(flags: int64) =
 
 exception UndefinedName of 
     depth: int * 
-    error: (string -> string) * 
+    error: (RichText -> RichText) * 
     id: Ident * 
     suggestions: Suggestions
 
-exception InternalUndefinedItemRef of (string * string * string -> int * string) * string * string * string
+exception InternalUndefinedItemRef of (string * string * string -> int * RichText) * string * string * string
 
 [<CustomEquality;NoComparison>]
 type ModuleOrNamespaceKind = 
@@ -545,15 +556,6 @@ type ModuleOrNamespaceKind =
         | ModuleOrType -> 1
         | Namespace _ -> 2
 
-/// A public path records where a construct lives within the global namespace
-/// of a CCU.
-type PublicPath = 
-    | PubPath of string[] 
-    member x.EnclosingPath = 
-        let (PubPath pp) = x 
-        assert (pp.Length >= 1)
-        pp[0..pp.Length-2]
-
 /// Represents the specified visibility of the accessibility -- used to ensure IL visibility
 [<RequireQualifiedAccess>]
 type SyntaxAccess =
@@ -572,9 +574,7 @@ type CompilationPath =
 
     member x.MangledPath = List.map fst x.AccessPath
 
-    member x.NestedPublicPath (id: Ident) = PubPath(Array.append (Array.ofList x.MangledPath) [| id.idText |])
-
-    member x.ParentCompPath = 
+    member x.ParentCompPath =
         let a, _ = List.frontAndBack x.AccessPath
         CompPath(x.ILScopeRef, x.SyntaxAccess, a)
 
@@ -591,6 +591,31 @@ type CompilationPath =
         | _ -> nm
 
     member x.SyntaxAccess = let (CompPath(_, access, _)) = x in access
+
+[<Struct; NoEquality; NoComparison>]
+type PublicPath =
+    | PubPath of enclosing: CompilationPath * name: string
+
+    member x.EnclosingCompilationPath = let (PubPath(cp, _)) = x in cp
+
+    member x.Name = let (PubPath(_, nm)) = x in nm
+
+    member x.EnclosingPath: string[] = Array.ofList x.EnclosingCompilationPath.MangledPath
+
+    member x.FullPath: string[] =
+        let enclosing = x.EnclosingCompilationPath.MangledPath
+        let res = Array.zeroCreate (List.length enclosing + 1)
+        let mutable i = 0
+
+        for nm in enclosing do
+            res[i] <- nm
+            i <- i + 1
+
+        res[i] <- x.Name
+        res
+
+    member x.HasEmptyEnclosingPath = List.isEmpty x.EnclosingCompilationPath.AccessPath
+
 
 [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
 type EntityOptionalData =
@@ -682,18 +707,13 @@ type Entity =
       // when compiling fslib to fixup compiler forward references to internal items 
       mutable entity_modul_type: MaybeLazy<ModuleOrNamespaceType>     
 
-      /// The stable path to the type, e.g. Microsoft.FSharp.Core.FSharpFunc`2 
-      // REVIEW: it looks like entity_cpath subsumes this 
-      // MUTABILITY: only for unpickle linkage
-      mutable entity_pubpath: PublicPath option 
- 
-      /// The stable path to the type, e.g. Microsoft.FSharp.Core.FSharpFunc`2 
+      /// The stable path to the type, e.g. Microsoft.FSharp.Core.FSharpFunc`2
       // MUTABILITY: only for unpickle linkage
       mutable entity_cpath: CompilationPath option 
 
       /// Used during codegen to hold the ILX representation indicating how to access the type 
       // MUTABILITY: only for unpickle linkage and caching
-      mutable entity_il_repr_cache: CompiledTypeRepr cache
+      mutable entity_il_repr_cache: CompiledTypeRepr cache | null
 
       mutable entity_opt_data: EntityOptionalData option
     }
@@ -905,8 +925,12 @@ type Entity =
     member x.IsFSharpException = match x.ExceptionInfo with TExnNone -> false | _ -> true
 
     /// Demangle the module name, if FSharpModuleWithSuffix is used
-    member x.DemangledModuleOrNamespaceName =  
-          CompilationPath.DemangleEntityName x.LogicalName x.ModuleOrNamespaceType.ModuleOrNamespaceKind
+    member x.DemangledModuleOrNamespaceName =
+          // Check the suffix before reading the entity contents.
+          if x.LogicalName.EndsWithOrdinal FSharpModuleSuffix then
+              CompilationPath.DemangleEntityName x.LogicalName x.ModuleOrNamespaceType.ModuleOrNamespaceKind
+          else
+              x.LogicalName
     
     /// Get the type parameters for an entity that is a type declaration, otherwise return the empty list.
     ///
@@ -934,10 +958,21 @@ type Entity =
         | _ -> TAccess []
 
     /// Get the cache of the compiled ILTypeRef representation of this module or type.
-    member x.CompiledReprCache = x.entity_il_repr_cache
+    /// Allocated on first request rather than per entity: only codegen asks for it, so an analysis-only
+    /// host never pays for one.
+    member x.CompiledReprCache =
+        match x.entity_il_repr_cache with
+        | null ->
+            let c = newCache ()
+            x.entity_il_repr_cache <- c
+            c
+        | c -> c
 
     /// Get a blob of data indicating how this type is nested in other namespaces, modules or types.
-    member x.PublicPath = x.entity_pubpath
+    member x.PublicPath: PublicPath voption =
+        match x.entity_cpath with
+        | Some cpath -> ValueSome(PubPath(cpath, x.entity_logical_name))
+        | None -> ValueNone
 
     /// Get the value representing the accessibility of an F# type definition or module.
     member x.Accessibility =
@@ -1001,7 +1036,9 @@ type Entity =
     member x.CompilationPath = 
         match x.CompilationPathOpt with 
         | Some cpath -> cpath 
-        | None -> error(Error(FSComp.SR.tastTypeOrModuleNotConcrete(x.LogicalName), x.Range))
+        | None ->
+            let tag = if x.IsModuleOrNamespace then TextTag.Module else TextTag.Class
+            error(Error(FSComp.SR.tastTypeOrModuleNotConcrete(RichText.ofTag tag x.LogicalName), x.Range))
     
     /// Get a table of fields for all the F#-defined record, struct and class fields in this type definition, including
     /// static fields, 'val' declarations and hidden fields from the compilation of implicit class constructions.
@@ -1081,7 +1118,6 @@ type Entity =
           entity_tycon_repr= Unchecked.defaultof<_>
           entity_tycon_tcaug= Unchecked.defaultof<_>
           entity_modul_type= Unchecked.defaultof<_>
-          entity_pubpath = Unchecked.defaultof<_>
           entity_cpath = Unchecked.defaultof<_>
           entity_il_repr_cache = Unchecked.defaultof<_>
           entity_opt_data = Unchecked.defaultof<_>}
@@ -1100,8 +1136,7 @@ type Entity =
         x.entity_tycon_repr <- tg.entity_tycon_repr
         x.entity_tycon_tcaug <- tg.entity_tycon_tcaug
         x.entity_modul_type <- tg.entity_modul_type
-        x.entity_pubpath <- tg.entity_pubpath 
-        x.entity_cpath <- tg.entity_cpath 
+        x.entity_cpath <- tg.entity_cpath
         x.entity_il_repr_cache <- tg.entity_il_repr_cache 
         match tg.entity_opt_data with
         | Some tg ->
@@ -1464,8 +1499,12 @@ type TyconAugmentation =
       /// Properties, methods etc. in declaration order. The boolean flag for each indicates if the
       /// member is known to be an explicit interface implementation. This must be computed and
       /// saved prior to remapping assembly information.
-      tcaug_adhoc_list: ResizeArray<bool * ValRef> 
-      
+      //
+      // Allocated on first member: there is one augmentation per entity, and nothing is ever added for
+      // an imported type.
+      mutable tcaug_adhoc_list: ResizeArray<bool * ValRef> | null
+
+
       /// Properties, methods etc. as lookup table
       mutable tcaug_adhoc: NameMultiMap<ValRef>
       
@@ -1481,6 +1520,24 @@ type TyconAugmentation =
       /// Set to true if the type is determined to be abstract 
       mutable tcaug_abstract: bool                       
     }
+
+    /// Record a member in declaration order, allocating the list on first use
+    member tcaug.AddAdhocMember(isExplicitImpl: bool, vref: ValRef) =
+        let list =
+            match tcaug.tcaug_adhoc_list with
+            | null ->
+                let l = ResizeArray()
+                tcaug.tcaug_adhoc_list <- l
+                l
+            | l -> l
+
+        list.Add(isExplicitImpl, vref)
+
+    /// Members in declaration order, empty when the type has none
+    member tcaug.AdhocMembers: (bool * ValRef) list =
+        match tcaug.tcaug_adhoc_list with
+        | null -> []
+        | l -> List.ofSeq l
 
     member tcaug.SetCompare x = tcaug.tcaug_compare <- Some x
 
@@ -1499,7 +1556,7 @@ type TyconAugmentation =
           tcaug_hash_and_equals_withc=None 
           tcaug_hasObjectGetHashCode=false 
           tcaug_adhoc=NameMultiMap.empty 
-          tcaug_adhoc_list=ResizeArray<_>() 
+          tcaug_adhoc_list=null
           tcaug_super=None
           tcaug_interfaces=[] 
           tcaug_closed=false 
@@ -2658,6 +2715,17 @@ type TraitWitnessInfo =
 
     override x.ToString() = "TraitWitnessInfo(" + x.MemberName + ")"
     
+/// Non-generic marker interface for storing in TraitConstraintInfo.
+/// The actual typed contract is ITraitContext<'AccessRights, 'MethodInfo, 'InfoReader>.
+type ITraitContext = interface end
+
+/// Generic typed interface for trait context operations.
+/// 'AccessRights = AccessorDomain, 'MethodInfo = MethInfo, 'InfoReader = InfoReader at use sites.
+type ITraitContext<'AccessRights, 'MethodInfo, 'InfoReader> =
+    inherit ITraitContext
+    abstract SelectExtensionMethods: traitInfo: TraitConstraintInfo * range: range * infoReader: 'InfoReader -> (TType * 'MethodInfo) list
+    abstract AccessRights: 'AccessRights
+
 /// The specification of a member constraint that must be solved 
 [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
 type TraitConstraintInfo = 
@@ -2672,7 +2740,8 @@ type TraitConstraintInfo =
         objAndArgTys: TTypes * 
         returnTyOpt: TType option * 
         source: string option ref * 
-        solution: TraitConstraintSln option ref 
+        solution: TraitConstraintSln option ref *
+        traitCtxt: ITraitContext option
 
     /// Get the types that may provide solutions for the traits
     member x.SupportTypes = (let (TTrait(tys = tys)) = x in tys)
@@ -2693,20 +2762,24 @@ type TraitConstraintInfo =
         with get() = (let (TTrait(solution = sln)) = x in sln.Value)
         and set v = (let (TTrait(solution = sln)) = x in sln.Value <- v)
 
+    member x.TraitContext = (let (TTrait(traitCtxt = tc)) = x in tc)
+
     member x.CloneWithFreshSolution() =
-        let (TTrait(a, b, c, d, e, f, sln)) = x
-        TTrait(a, b, c, d, e, f, ref sln.Value)
+        let (TTrait(a, b, c, d, e, f, sln, h)) = x
+        TTrait(a, b, c, d, e, f, ref sln.Value, h)
 
-    member x.WithMemberKind(kind) = (let (TTrait(a, b, c, d, e, f, g)) = x in TTrait(a, b, { c with MemberKind=kind }, d, e, f, g))
+    member x.WithMemberKind(kind) = (let (TTrait(a, b, c, d, e, f, g, h)) = x in TTrait(a, b, { c with MemberKind=kind }, d, e, f, g, h))
 
-    member x.WithSupportTypes(tys) = (let (TTrait(_, b, c, d, e, f, g)) = x in TTrait(tys, b, c, d, e, f, g))
+    member x.WithSupportTypes(tys) = (let (TTrait(_, b, c, d, e, f, g, h)) = x in TTrait(tys, b, c, d, e, f, g, h))
 
-    member x.WithMemberName(name) = (let (TTrait(a, _, c, d, e, f, g)) = x in TTrait(a, name, c, d, e, f, g))
+    member x.WithMemberName(name) = (let (TTrait(a, _, c, d, e, f, g, h)) = x in TTrait(a, name, c, d, e, f, g, h))
 
     [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
     member x.DebugText = x.ToString()
 
     override x.ToString() = "TTrait(" + x.MemberLogicalName + ")"
+
+let traitCtxtNone : ITraitContext option = None
     
 /// Represents the solution of a member constraint during inference.
 [<NoEquality; NoComparison (* ; StructuredFormatDisplay("{DebugText}") *) >]
@@ -3224,9 +3297,9 @@ type Val =
     member x.PublicPath = 
         match x.TryDeclaringEntity with 
         | Parent eref -> 
-            match eref.PublicPath with 
-            | None -> None
-            | Some p -> Some(ValPubPath(p, x.GetLinkageFullKey()))
+            match eref.PublicPath with
+            | ValueNone -> None
+            | ValueSome p -> Some(ValPubPath(p, x.GetLinkageFullKey()))
         | ParentNone -> 
             None
 
@@ -3883,7 +3956,7 @@ type EntityRef =
     member x.CompiledReprCache = x.Deref.CompiledReprCache
 
     /// Get a blob of data indicating how this type is nested in other namespaces, modules or types.
-    member x.PublicPath: PublicPath option = x.Deref.PublicPath
+    member x.PublicPath: PublicPath voption = x.Deref.PublicPath
 
     /// Get the value representing the accessibility of an F# type definition or module.
     member x.Accessibility = x.Deref.Accessibility
@@ -5882,7 +5955,9 @@ type CcuData =
       
       /// The table of .NET CLI type forwarders for this assembly
       TypeForwarders: CcuTypeForwarderTable
-      
+
+      CSharpStyleExtensionMembersCache: ConcurrentDictionary<Stamp, obj>
+
       XmlDocumentationInfo: XmlDocumentationInfo option }
 
     [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
@@ -6206,8 +6281,9 @@ type Construct() =
         ModuleOrNamespaceType(mkind, QueueList.ofList vals, QueueList.ofList tycons)
 
     /// Create a new node for an empty module or namespace contents
-    static member NewEmptyModuleOrNamespaceType mkind = 
-        Construct.NewModuleOrNamespaceType mkind [] []
+    static member NewEmptyModuleOrNamespaceType mkind =
+        // Not via NewModuleOrNamespaceType: QueueList.ofList would build two more objects to hold nothing.
+        ModuleOrNamespaceType(mkind, QueueList.Empty, QueueList.Empty)
 
     static member NewEmptyFSharpTyconData kind =
         { fsobjmodel_cases = Construct.MakeUnionCases []
@@ -6258,7 +6334,6 @@ type Construct() =
     static member NewProvidedTycon(resolutionEnvironment, st: Tainted<ProvidedType>, importProvidedType, isSuppressRelocate, m, ?access, ?cpath) = 
         let stamp = newStamp() 
         let name = st.PUntaint((fun st -> st.Name), m)
-        let id = ident (name, m)
         let kind = 
             let isMeasure = 
                 st.PApplyWithProvider((fun (st, provider) ->
@@ -6278,7 +6353,6 @@ type Construct() =
                 let enclosingName = GetFSharpPathToProvidedType(st, m)
                 CompPath(ilScopeRef, SyntaxAccess.Unknown, enclosingName |> List.map(fun id->id, ModuleOrNamespaceKind.Namespace true))
             | Some p -> p
-        let pubpath = cpath.NestedPublicPath id
 
         let repr = Construct.NewProvidedTyconRepr(resolutionEnvironment, st, importProvidedType, isSuppressRelocate, m)
 
@@ -6293,9 +6367,8 @@ type Construct() =
             entity_tycon_tcaug=TyconAugmentation.Create()
             entity_modul_type = MaybeLazy.Lazy(InterruptibleLazy(fun _ -> ModuleOrNamespaceType(Namespace true, QueueList.ofList [], QueueList.ofList [])))
             // Generated types get internal accessibility
-            entity_pubpath = Some pubpath
             entity_cpath = Some cpath
-            entity_il_repr_cache = newCache()
+            entity_il_repr_cache = null
             entity_opt_data =
                 match kind, access with
                 | TyparKind.Type, TAccess [] -> None
@@ -6317,10 +6390,9 @@ type Construct() =
             entity_typars=LazyWithContext.NotLazy []
             entity_tycon_repr = TNoRepr
             entity_tycon_tcaug=TyconAugmentation.Create()
-            entity_pubpath=cpath |> Option.map (fun (cp: CompilationPath) -> cp.NestedPublicPath id)
             entity_cpath=cpath
             entity_attribs=WellKnownEntityAttribs.Create(attribs)
-            entity_il_repr_cache = newCache()
+            entity_il_repr_cache = null
             entity_opt_data =
                 match xml, access with
                 | doc, TAccess [] when doc.IsEmpty -> None
@@ -6392,13 +6464,12 @@ type Construct() =
             entity_logical_name = id.idText
             entity_range = id.idRange
             entity_tycon_tcaug = TyconAugmentation.Create()
-            entity_pubpath = cpath |> Option.map (fun (cp: CompilationPath) -> cp.NestedPublicPath id)
             entity_modul_type = MaybeLazy.Strict (Construct.NewEmptyModuleOrNamespaceType ModuleOrType)
             entity_cpath = cpath
             entity_typars = LazyWithContext.NotLazy []
             entity_tycon_repr = TNoRepr
             entity_flags = EntityFlags(usesPrefixDisplay=false, isModuleOrNamespace=false, preEstablishedHasDefaultCtor=false, hasSelfReferentialCtor=false, isStructRecordOrUnionType=false)
-            entity_il_repr_cache = newCache()
+            entity_il_repr_cache = null
             entity_opt_data =
                 match doc, access, repr with
                 | doc, TAccess [], TExnNone when doc.IsEmpty -> None
@@ -6435,9 +6506,8 @@ type Construct() =
             entity_tycon_repr = TNoRepr
             entity_tycon_tcaug=TyconAugmentation.Create()
             entity_modul_type = mtyp
-            entity_pubpath=cpath |> Option.map (fun (cp: CompilationPath) -> cp.NestedPublicPath (mkSynId m nm))
             entity_cpath = cpath
-            entity_il_repr_cache = newCache()
+            entity_il_repr_cache = null
             entity_opt_data =
                 match kind, doc, reprAccess, access with
                 | TyparKind.Type, doc, TAccess [], TAccess [] when doc.IsEmpty -> None

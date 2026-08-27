@@ -41,6 +41,42 @@ let z : unit =
         |> shouldSucceed
 
     [<Fact>]
+    let ``Delegate construction quotations are unaffected by the direct delegate optimization`` () =
+        Fsx """
+open System
+open FSharp.Quotations.Patterns
+
+let handlerCurried (x: int) (y: int) : unit = ()
+
+type C(k: int) =
+    member _.AddC (x: int) (y: int) : unit = ignore k
+
+let check (label: string) (target: string) (expr: Quotations.Expr) =
+    match expr with
+    | NewDelegate(dty, _, _) when dty = typeof<Action<int, int>> -> ()
+    | e -> failwithf "%s: expected NewDelegate of Action<int,int>, got %A" label e
+    if not ((string expr).Contains target) then
+        failwithf "%s: expected the quotation to reference target '%s', got %A" label target expr
+
+let o = C(1)
+
+// non-eta-expanded known function
+check "nonEta" "handlerCurried" <@ Action<int, int>(handlerCurried) @>
+// eta-expanded known function
+check "etaCurried" "handlerCurried" <@ Action<int, int>(fun a b -> handlerCurried a b) @>
+// non-eta-expanded instance method
+check "instanceNonEta" "AddC" <@ Action<int, int>(o.AddC) @>
+// eta-expanded instance method
+check "instanceEta" "AddC" <@ Action<int, int>(fun a b -> o.AddC a b) @>
+
+printfn "ok"
+        """
+        |> asExe
+        |> withLangVersionPreview
+        |> compileAndRun
+        |> shouldSucceed
+
+    [<Fact>]
     let ``Quotation on decimal literal compiles and runs`` () =
         FSharp """
 open Microsoft.FSharp.Quotations.DerivedPatterns

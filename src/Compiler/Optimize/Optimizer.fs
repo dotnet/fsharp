@@ -12,7 +12,9 @@ open FSharp.Compiler
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AttributeChecking
 open FSharp.Compiler.CompilerGlobalState
+open FSharp.Compiler.DelegateForwarding
 open FSharp.Compiler.DiagnosticsLogger
+open FSharp.Compiler.Features
 open FSharp.Compiler.Text.Range
 open FSharp.Compiler.Syntax.PrettyNaming
 open FSharp.Compiler.Syntax
@@ -427,6 +429,9 @@ type cenv =
       
       emitTailcalls: bool
       
+      /// Fallback trait context for resolving extension method constraints during optimization
+      traitCtxt: ITraitContext option
+
       /// cache methods with SecurityAttribute applied to them, to prevent unnecessary calls to ExistsInEntireHierarchyOfType
       casApplied: Dictionary<Stamp, bool>
 
@@ -435,6 +440,9 @@ type cenv =
       realsig: bool
 
       specializedInlineVals: HashMultiMap<Stamp, TType * Expr>
+
+      /// Cache for 'HasFrameLocalBody'
+      frameLocalVals: Dictionary<Stamp, bool>
 
       signatureHidingInfo: SignatureHidingInfo
     }
@@ -475,7 +483,22 @@ type IncrementalOptimizationEnv =
 
       methEnv: MethodEnv
 
-      globalModuleInfos: LayeredMap<string, LazyModuleInfo>   
+      globalModuleInfos: LayeredMap<string, LazyModuleInfo>
+
+      /// Referenced CCUs collected via BindCcu, used for cross-assembly extension member resolution
+      referencedCcus: CcuThunk list
+
+      /// Signatures of earlier same-assembly implementation files, so extension members they declare are
+      /// visible to trait-witness generation for later files (batch path only — see OptimizeImplFile).
+      earlierImplFileSignatures: ModuleOrNamespaceType list
+
+      /// RFC FS-1043: the user call-site range when optimizing a debug inline-specialized body. The body is
+      /// copied with its definition-site ranges preserved (for step-into), so a built-in-operator trait node
+      /// inside it replays at the definition site, whereas the checker recorded its scope-aware extension
+      /// solution at this call site. When two scopes solve the same operator key with different extensions,
+      /// definition-site replay finds no match; this call site does, letting the correct extension be honored
+      /// instead of degrading to the throwing dynamic stub. None outside the debug-specialization path.
+      debugInlineCallSite: range option
     }
 
     static member Empty = 
@@ -487,7 +510,10 @@ type IncrementalOptimizationEnv =
           disableMethodSplitting = false
           localExternalVals = LayeredMap.Empty 
           globalModuleInfos = LayeredMap.Empty 
-          methEnv = { pipelineCount = 0 } }
+          methEnv = { pipelineCount = 0 }
+          referencedCcus = []
+          earlierImplFileSignatures = []
+          debugInlineCallSite = None }
 
     override x.ToString() = "<IncrementalOptimizationEnv>"
 
@@ -619,22 +645,27 @@ let BindTyparsToUnknown (tps: Typar list) env =
     List.fold (fun sofar arg -> BindTypar arg UnknownTypeValue sofar) env tps 
 
 let BindCcu (ccu: CcuThunk) mval env (_g: TcGlobals) = 
-    { env with globalModuleInfos=env.globalModuleInfos.Add(ccu.AssemblyName, mval) }
+    { env with
+        globalModuleInfos = env.globalModuleInfos.Add(ccu.AssemblyName, mval)
+        referencedCcus = ccu :: env.referencedCcus }
 
-/// Lookup information about values 
-let GetInfoForLocalValue cenv env (v: Val) m = 
-    // Abstract slots do not have values 
-    if v.IsDispatchSlot then UnknownValInfo 
+/// Lookup information about values, without reporting values that are not bound yet
+let TryGetInfoForLocalValue cenv env (v: Val) =
+    // Abstract slots do not have values
+    if v.IsDispatchSlot then None
     else
         match cenv.localInternalVals.TryGetValue v.Stamp with
-        | true, res -> res
-        | _ ->
-            match env.localExternalVals.TryFind v.Stamp with 
-            | Some vval -> vval
-            | None -> 
-                if v.ShouldInline then
-                    errorR(Error(FSComp.SR.optValueMarkedInlineButWasNotBoundInTheOptEnv(fullDisplayTextOfValRef (mkLocalValRef v)), m))
-                UnknownValInfo 
+        | true, res -> Some res
+        | _ -> env.localExternalVals.TryFind v.Stamp
+
+/// Lookup information about values
+let GetInfoForLocalValue cenv env (v: Val) m =
+    match TryGetInfoForLocalValue cenv env v with
+    | Some vval -> vval
+    | None ->
+        if not v.IsDispatchSlot && v.ShouldInline then
+            errorR(Error(FSComp.SR.optValueMarkedInlineButWasNotBoundInTheOptEnv(richTextOfQualifiedValRef (mkLocalValRef v)), m))
+        UnknownValInfo
 
 let TryGetInfoForCcu env (ccu: CcuThunk) = env.globalModuleInfos.TryFind(ccu.AssemblyName)
 
@@ -681,13 +712,19 @@ let GetInfoForNonLocalVal cenv env (vref: ValRef) =
     else 
         UnknownValInfo
 
-let GetInfoForVal cenv env m (vref: ValRef) =  
-    let res = 
+let GetInfoForVal cenv env m (vref: ValRef) =
+    let res =
         if vref.IsLocalRef then
             GetInfoForLocalValue cenv env vref.binding m
         else
             GetInfoForNonLocalVal cenv env vref
     res
+
+let TryGetInfoForVal cenv env (vref: ValRef) =
+    if vref.IsLocalRef then
+        TryGetInfoForLocalValue cenv env vref.binding
+    else
+        Some(GetInfoForNonLocalVal cenv env vref)
 
 
 let IsPartialExpr cenv env m x =
@@ -761,7 +798,7 @@ let MakeValueInfoForValue g m vref vinfo =
 #if DEBUG
     let rec check x = 
         match x with 
-        | ValValue (vref2, detail) -> if valRefEq g vref vref2 then error(Error(FSComp.SR.optRecursiveValValue(showL(exprValueInfoL g vinfo)), m)) else check detail
+        | ValValue (vref2, detail) -> if valRefEq g vref vref2 then error(Error(FSComp.SR.optRecursiveValValue(RichText.mkText (showL(exprValueInfoL g vinfo))), m)) else check detail
         | SizeValue (_n, detail) -> check detail
         | _ -> ()
     check vinfo
@@ -1707,7 +1744,7 @@ and OpHasEffect context g m op tyargs =
     | TOp.ExnFieldSet _
     | TOp.Coerce
     | TOp.Reraise
-    | TOp.IntegerForLoop _ 
+    | TOp.IntegerForLoop _
     | TOp.While _
     | TOp.TryWith _ (* conservative *)
     | TOp.TryFinally _ (* conservative *)
@@ -1722,6 +1759,43 @@ and OpHasEffect context g m op tyargs =
 let effectContextOf (cenv: cenv) =
     if cenv.optimizing then EffectContext.Emit else EffectContext.InlineBody
 
+/// Prevent the optimizer from inlining a recognized direct-delegate forwarding target into the delegate
+/// body: inlining would dissolve the call before IlxGen can point the delegate at it, making the emitted
+/// form depend on the target's size (locally, and through a referenced assembly's optimization data).
+/// Mandatory inlining of 'inline' values takes precedence via OptimizeVal.
+let AddDirectDelegateTargetToDontInlineSet cenv env (slotsig: SlotSig) tmvs body m =
+    let g = cenv.g
+
+    if
+        g.langVersion.SupportsFeature Features.LanguageFeature.DirectDelegateConstruction
+        && cenv.optimizing
+        && cenv.settings.InlineLambdas
+    then
+        let exprHasEffect = ExprHasEffect (effectContextOf cenv)
+    
+        // Normalize the elided unit parameter of a zero-parameter Invoke (e.g. System.Action) exactly as
+        // IlxGen will before it runs the recognizer
+        let tmvs, body =
+            if slotsig.FormalParams |> List.forall List.isEmpty then
+                BindUnitVars g (tmvs, [], body)
+            else
+                tmvs, body
+
+        match classifyForwardingTarget exprHasEffect g tmvs body with
+        | DirectDelegateForwardingTargetCandidate.FSharpVal(vref, valUseFlags, _, leadingArgs) when
+            // ValReprInfo.IsSome mirrors IlxGen's Method-storage requirement. Witnesses are not knowable
+            // here; over-suppressing a witness-requiring target only costs an inline in a closure body.
+            vref.ValReprInfo.IsSome
+            && (fsharpValDirectlyBindable exprHasEffect g tmvs leadingArgs vref valUseFlags false)
+                .IsSome
+            ->
+            match (GetInfoForVal cenv env m vref).ValExprInfo with
+            | StripLambdaValue(lambdaId, _, _, _, _) ->
+                { env with dontInline = Map.add lambdaId [] env.dontInline }
+            | _ -> env
+        | _ -> env
+    else
+        env
 
 let TryEliminateBinding cenv _env bind e2 _m =
     let g = cenv.g
@@ -2388,11 +2462,57 @@ let shouldForceInlineMembersInDebug (g: TcGlobals) (tcref: EntityRef) =
     | true, modRef -> tyconRefEq g tcref modRef 
     | _ -> false
 
-let shouldForceInlineInDebug (g: TcGlobals) (vref: ValRef) : bool =
+/// 'localloc' storage is released when the method executing it returns, so anything derived from
+/// it dangles at that method's callsite.
+let instrIsFrameLocal instr =
+    match instr with
+    | I_localloc -> true
+    | _ -> false
+
+/// The FSharp.Core values expanding to frame-local IL are marked [<NoDynamicInvocation>] and so are
+/// always inlined. A user 'inline' function wrapping one inherits the property but not the
+/// attribute - the callee is already inlined into the recorded body, leaving only its IL - so
+/// recover it from the body and propagate it through further wrappers.
+/// See https://github.com/dotnet/fsharp/issues/20063.
+let rec HasFrameLocalBody cenv env (vref: ValRef) =
+    let stamp = vref.Stamp
+
+    match cenv.frameLocalVals.TryGetValue stamp with
+    | true, res -> res
+    | _ ->
+        // Values bound within the body being walked have no info yet, but the walk covers them anyway.
+        match TryGetInfoForVal cenv env vref |> Option.map (fun info -> stripValue info.ValExprInfo) with
+        | Some(CurriedLambdaValue (_, _, _, body, _)) ->
+            cenv.frameLocalVals[stamp] <- false // Break cycles while the body is inspected
+            let res = ExprIsFrameLocal cenv env body
+            cenv.frameLocalVals[stamp] <- res
+            res
+
+        | _ -> false
+
+and ExprIsFrameLocal cenv env expr =
+    let folder =
+        { ExprFolder0 with
+            exprIntercept =
+                fun _recurseF noInterceptF acc expr ->
+                    if acc then acc else
+
+                    match expr with
+                    | Expr.Op (TOp.ILAsm (instrs, _), _, _, _) when List.exists instrIsFrameLocal instrs -> true
+                    | Expr.Val (vref, _, _) when vref.ShouldInline -> HasFrameLocalBody cenv env vref
+                    | _ -> noInterceptF acc expr }
+
+    FoldExpr folder false expr
+
+let shouldForceInlineInDebug cenv env (vref: ValRef) : bool =
+    let g = cenv.g
+
     ValHasWellKnownAttribute g WellKnownValAttributes.NoDynamicInvocationAttribute_True vref.Deref ||
     ValHasWellKnownAttribute g WellKnownValAttributes.NoDynamicInvocationAttribute_False vref.Deref ||
 
-    vref.HasDeclaringEntity && shouldForceInlineMembersInDebug g vref.DeclaringEntity
+    (vref.HasDeclaringEntity && shouldForceInlineMembersInDebug g vref.DeclaringEntity) ||
+
+    HasFrameLocalBody cenv env vref
 
 /// Optimize/analyze an expression
 let rec OptimizeExpr cenv (env: IncrementalOptimizationEnv) expr =
@@ -2441,11 +2561,16 @@ let rec OptimizeExpr cenv (env: IncrementalOptimizationEnv) expr =
             MightMakeCriticalTailcall=false
             Info=UnknownValue }
 
-    | Expr.Obj (_, ty, basev, createExpr, overrides, iimpls, m) -> 
-        match expr with 
-        | NewDelegateExpr g (lambdaId, vsl, body, _, remake) -> 
+    | Expr.Obj (_, ty, basev, createExpr, overrides, iimpls, m) ->
+        match expr with
+        | NewDelegateExpr g (lambdaId, vsl, body, _, remake) ->
+            let env =
+                match overrides with
+                | [ TObjExprMethod(slotsig, _, _, _, _, mMeth) ] ->
+                    AddDirectDelegateTargetToDontInlineSet cenv env slotsig vsl body mMeth
+                | _ -> env
             OptimizeNewDelegateExpr cenv env (lambdaId, vsl, body, remake)
-        | _ -> 
+        | _ ->
             OptimizeObjectExpr cenv env (ty, basev, createExpr, overrides, iimpls, m)
 
     | Expr.Op (op, tyargs, args, m) -> 
@@ -2579,19 +2704,7 @@ and MakeOptimizedSystemStringConcatCall cenv env m args =
 
     let args = optimizeArgs args []
 
-    let expr =
-        match args with
-        | [ arg ] ->
-            arg
-        | [ arg1; arg2 ] -> 
-            mkStaticCall_String_Concat2 g m arg1 arg2
-        | [ arg1; arg2; arg3 ] ->
-            mkStaticCall_String_Concat3 g m arg1 arg2 arg3
-        | [ arg1; arg2; arg3; arg4 ] ->
-            mkStaticCall_String_Concat4 g m arg1 arg2 arg3 arg4
-        | args ->
-            let arg = mkArray (g.string_ty, args, m)
-            mkStaticCall_String_Concat_Array g m arg
+    let expr = mkStringConcat (g, m, args)
 
     match expr with
     | Expr.Op(TOp.ILCall(_, _, _, _, _, _, _, ilMethRef, _, _, _) as op, tyargs, args, m) 
@@ -3091,15 +3204,58 @@ and OptimizeTraitCall cenv env (traitInfo, args, m) =
 
     let g = cenv.g
 
+    // If the trait context is missing (e.g. from inlined FSharp.Core operators) and we have
+    // a fallback context from the current compilation unit, create a new trait info with it.
+    let traitInfoForResolution =
+        match traitInfo.TraitContext, cenv.traitCtxt with
+        | None, Some tc when g.langVersion.SupportsFeature LanguageFeature.ExtensionConstraintSolutions ->
+            let (TTrait(a, b, c, d, e, f, _, _)) = traitInfo
+            TTrait(a, b, c, d, e, f, ref None, Some tc)
+        | _ -> 
+            traitInfo
+
+    // RFC FS-1043: recovery for shadowed/duplicated built-in operators. The file-global context above is
+    // scope-blind and returns every same-signature extension in the compilation, so resolution is
+    // ambiguous and fails (which would emit a runtime NotSupportedException stub). In that case, replay
+    // the type-checker's scope-aware decision recorded during checking, which is authoritative.
+    let resolveWithRecordedSolution () =
+        if not (g.langVersion.SupportsFeature LanguageFeature.ExtensionConstraintSolutions) then None
+        else
+        match traitInfo.Solution with
+        | Some _ -> None
+        | None ->
+            // Try the trait node's own range first (matches the recorded call-site range on the fully-inlined
+            // optimize+ path). On the debug inline-specialization path the node keeps its definition-site range,
+            // which finds no record when two scopes solved the same key differently, so fall back to the user
+            // call site captured in the env — that range contains this scope's recorded solution.
+            let replayRanges =
+                match env.debugInlineCallSite with
+                | Some cs -> [ m; cs ]
+                | None -> [ m ]
+            let recorded =
+                replayRanges
+                |> List.tryPick (fun r -> ConstraintSolver.TryGetRecordedExtensionOperatorSolution g cenv.scope traitInfo r)
+            match recorded with
+            | Some sln ->
+                let (TTrait(a, b, c, d, e, f, _, h)) = traitInfo
+                let traitInfoWithSln = TTrait(a, b, c, d, e, f, ref (Some sln), h)
+                match ConstraintSolver.CodegenWitnessExprForTraitConstraint cenv.TcVal g cenv.amap m traitInfoWithSln args with
+                | OkResult(_, Some expr) -> Some(OptimizeExpr cenv env expr)
+                | _ -> None
+            | None -> None
+
     // Resolve the static overloading early (during the compulsory rewrite phase) so we can inline. 
-    match ConstraintSolver.CodegenWitnessExprForTraitConstraint cenv.TcVal g cenv.amap m traitInfo args with
+    match ConstraintSolver.CodegenWitnessExprForTraitConstraint cenv.TcVal g cenv.amap m traitInfoForResolution args with
 
     | OkResult (_, Some expr) -> OptimizeExpr cenv env expr
 
     // Resolution fails when optimizing generic code, ignore the failure
     | _ -> 
-        let argsR, arginfos = OptimizeExprsThenConsiderSplits cenv env args 
-        OptimizeExprOpFallback cenv env (TOp.TraitCall traitInfo, [], argsR, m) arginfos UnknownValue 
+        match resolveWithRecordedSolution () with
+        | Some result -> result
+        | None ->
+            let argsR, arginfos = OptimizeExprsThenConsiderSplits cenv env args 
+            OptimizeExprOpFallback cenv env (TOp.TraitCall traitInfo, [], argsR, m) arginfos UnknownValue 
 
 and CopyExprForInlining cenv isInlineIfLambda expr (m: range) = 
     let g = cenv.g
@@ -3148,7 +3304,7 @@ and TryOptimizeVal cenv env (vOpt: ValRef option, shouldInline, inlineIfLambda, 
         Some (remarkExpr m (copyExpr g CloneAllAndMarkExprValsAsCompilerGenerated expr))
 
     | CurriedLambdaValue (_, _, _, expr, _) when
-            shouldInline && (cenv.settings.alwaysInline || Option.exists (shouldForceInlineInDebug cenv.g) vOpt) ||
+            shouldInline && (cenv.settings.alwaysInline || Option.exists (shouldForceInlineInDebug cenv env) vOpt) ||
             inlineIfLambda && cenv.settings.alwaysInline ->
         let fvs = freeInExpr CollectLocals expr
         if usesMethodLocalConstructsOrProtectedField cenv fvs expr then
@@ -3213,11 +3369,11 @@ and OptimizeVal cenv env expr (v: ValRef, m) =
        if cenv.settings.alwaysInline then
            if v.ShouldInline then
                 match valInfoForVal.ValExprInfo with
-                | UnknownValue -> error(Error(FSComp.SR.optFailedToInlineValue(v.DisplayName), m))
-                | _ -> warning(Error(FSComp.SR.optFailedToInlineValue(v.DisplayName), m))
+                | UnknownValue -> error(Error(FSComp.SR.optFailedToInlineValue(richTextOfValName g v.Deref), m))
+                | _ -> warning(Error(FSComp.SR.optFailedToInlineValue(richTextOfValName g v.Deref), m))
 
            if v.InlineIfLambda then
-               warning(Error(FSComp.SR.optFailedToInlineSuggestedValue(v.DisplayName), m))
+               warning(Error(FSComp.SR.optFailedToInlineSuggestedValue(richTextOfValName g v.Deref), m))
 
        expr, (AddValEqualityInfo g m v 
                     { Info=valInfoForVal.ValExprInfo 
@@ -3503,7 +3659,7 @@ and TryInlineApplication cenv env finfo (valExpr: Expr) (tyargs: TType list, arg
     let g = cenv.g
 
     match cenv.settings.alwaysInline, stripExpr valExpr with
-    | false, Expr.Val(vref, _, _) when vref.ShouldInline && not (shouldForceInlineInDebug cenv.g vref) ->
+    | false, Expr.Val(vref, _, _) when vref.ShouldInline && not (shouldForceInlineInDebug cenv env vref) ->
         let hasNoTraits =
             let tps, _ = tryDestForallTy g vref.Type
             GetTraitConstraintInfosOfTypars g tps |> List.isEmpty
@@ -3539,11 +3695,11 @@ and TryInlineApplication cenv env finfo (valExpr: Expr) (tyargs: TType list, arg
             let specLambda = MakeApplicationAndBetaReduce g (f2R, origLambdaTy, [tyargs], [], m)
             let specLambdaTy = tyOfExpr g specLambda
 
-            // Typars that flow in from the enclosing scope when tyargs are non-concrete.
-            // specLambdaTy is closed over the vref's typars after beta-reduction, so its free
-            // typars are exactly the ones carried in by tyargs.
+            // Typars that flow in from the enclosing scope when tyargs are non-concrete. A tyarg can reach
+            // only the body, and typars left unabstracted below are erased to 'object'.
             let freeTypars =
-                (freeInType CollectTyparsNoCaching specLambdaTy).FreeTypars
+                (freeInExpr CollectTyparsAndLocalsNoCaching specLambda).FreeTyvars.FreeTypars
+                |> Zset.union (freeInType CollectTyparsNoCaching specLambdaTy).FreeTypars
                 |> Zset.elements
 
             let allTyargsAreConcrete = List.isEmpty freeTypars
@@ -3570,12 +3726,12 @@ and TryInlineApplication cenv env finfo (valExpr: Expr) (tyargs: TType list, arg
                     | None ->
 
                     let existingTypes = defaultArg (Map.tryFind origLambdaId env.dontInline) []
-                    let env = { env with dontInline = Map.add origLambdaId (specLambdaTy :: existingTypes) env.dontInline }
+                    let env = { env with dontInline = Map.add origLambdaId (specLambdaTy :: existingTypes) env.dontInline; debugInlineCallSite = Some m }
                     let specLambdaR, _ = OptimizeExpr cenv env specLambda
                     cenv.specializedInlineVals.Add(origLambdaId, (specLambdaTy, specLambdaR))
                     specLambdaR
                 else
-                    let specLambdaR, _ = OptimizeExpr cenv { env with dontInline = Map.add origLambdaId [] env.dontInline } specLambda
+                    let specLambdaR, _ = OptimizeExpr cenv { env with dontInline = Map.add origLambdaId [] env.dontInline; debugInlineCallSite = Some m } specLambda
                     specLambdaR
 
             // Abstract the specialized lambda over its free typars so IlxGen emits a static
@@ -3586,6 +3742,27 @@ and TryInlineApplication cenv env finfo (valExpr: Expr) (tyargs: TType list, arg
             // closure path, so keep the closure compilation for that case.
             let freeTyparsNeedWitnesses =
                 GetTraitWitnessInfosOfTypars g 0 freeTypars |> List.isEmpty |> not
+
+            // A static method would resolve values captured from the enclosing method against the caller's
+            // storage, so lift them into a leading argument group. The closure form captures them itself.
+            let specLambdaRFvs = freeInExpr CollectLocals specLambdaR
+
+            let capturedVals =
+                specLambdaRFvs.FreeLocals
+                |> Zset.elements
+                |> List.filter (fun v -> not v.IsCompiledAsTopLevel)
+
+            let capturedArgGroups = if List.isEmpty capturedVals then [] else [ capturedVals ]
+
+            // Captured values are passed by value, so writes to a mutable local would be lost -
+            // LowerLocalMutables promotes those to reference cells only after this loop. 'base' calls and
+            // protected fields cannot leave their member at all.
+            let cannotLiftCapturedVals =
+                usesMethodLocalConstructsOrProtectedField cenv specLambdaRFvs specLambdaR
+                || capturedVals |> List.exists (fun v -> v.IsMutable)
+
+            if not (List.isEmpty capturedVals) && cannotLiftCapturedVals then
+                Some(MakeApplicationAndBetaReduce g (specLambdaR, specLambdaTy, [], argsR, m), info) else
 
             let debugValName = $"<{vref.LogicalName}>__debug"
 
@@ -3614,10 +3791,11 @@ and TryInlineApplication cenv env finfo (valExpr: Expr) (tyargs: TType list, arg
             // a method with flattened arguments rather than a closure that wraps args in Tuple<>.
             // Closure path (witnesses needed, no byref): keep the body as-is; witnesses from the
             // enclosing scope flow through the closure, so no typar abstraction is needed.
-            let debugValTy, debugValBody, valReprInfo, typeInstForCall =
+            let debugValTy, debugValBody, valReprInfo, typeInstForCall, capturedArgs =
                 if not freeTyparsNeedWitnesses then
-                    let ty = mkForallTyIfNeeded freeTypars specLambdaTy
-                    let body = mkTypeLambda m freeTypars (specLambdaR, specLambdaTy)
+                    let liftedBody, liftedTy = mkMultiLambdasCore g m capturedArgGroups (specLambdaR, specLambdaTy)
+                    let ty = mkForallTyIfNeeded freeTypars liftedTy
+                    let body = mkTypeLambda m freeTypars (liftedBody, liftedTy)
                     let argInfos, retInfo =
                         match vref.ValReprInfo with
                         | Some(ValReprInfo(_, argInfos, retInfo)) -> argInfos, retInfo
@@ -3625,17 +3803,20 @@ and TryInlineApplication cenv env finfo (valExpr: Expr) (tyargs: TType list, arg
                             let (ValReprInfo(_, a, r)) =
                                 InferValReprInfoOfExpr g AllowTypeDirectedDetupling.No specLambdaTy [] [] specLambdaR
                             a, r
-                    let reprInfo = ValReprInfo(ValReprInfo.InferTyparInfo freeTypars, argInfos, retInfo)
-                    ty, body, Some reprInfo, [List.map mkTyparTy freeTypars]
+                    let capturedArgInfos =
+                        capturedArgGroups
+                        |> List.map (List.map (fun (v: Val) -> { ValReprInfo.unnamedTopArg1 with Name = Some v.Id }))
+                    let reprInfo = ValReprInfo(ValReprInfo.InferTyparInfo freeTypars, capturedArgInfos @ argInfos, retInfo)
+                    ty, body, Some reprInfo, [List.map mkTyparTy freeTypars], List.map (mkRefTupledVars g m) capturedArgGroups
                 else
-                    specLambdaTy, specLambdaR, None, []
+                    specLambdaTy, specLambdaR, None, [], []
 
             let debugVal =
                 Construct.NewVal(debugValName, m, None, debugValTy, Immutable, true, valReprInfo, taccessPublic, ValNotInRecScope, None,
                     NormalVal, [], ValInline.InlinedDefinition, XmlDoc.Empty, true, false, false, false, false, false, None,
                     ParentNone)
 
-            let callExpr = mkApps g ((exprForVal m debugVal, debugValTy), typeInstForCall, argsR, m)
+            let callExpr = mkApps g ((exprForVal m debugVal, debugValTy), typeInstForCall, capturedArgs @ argsR, m)
             Some(mkCompGenLet m debugVal debugValBody callExpr, info)
 
         | _ -> None
@@ -4444,7 +4625,7 @@ and OptimizeBinding cenv isRec env (TBind(vref, expr, spBind)) =
             // excluded, as they are expanded transitively when the outer member is inlined.
             let fvs = freeInExpr CollectLocals exprOptimized
             if fvs.FreeLocals |> Zset.exists (fun v -> not v.ShouldInline && not (canAccessFromEverywhere v.Accessibility)) then
-                errorR(Error(FSComp.SR.optValueMarkedInlineButIncomplete(vref.DisplayName), vref.Range))
+                errorR(Error(FSComp.SR.optValueMarkedInlineButIncomplete(richTextOfValName g vref), vref.Range))
         
         let env = BindInternalLocalVal cenv vref (mkValInfo einfo vref) env
 
@@ -4632,7 +4813,15 @@ and OptimizeImplFileInternal cenv env isIncrementalFragment hidden implFile =
     env, implFileR, minfo, hidden
 
 /// Entry point
-let OptimizeImplFile (settings, ccu, tcGlobals, tcVal, importMap, optEnv, isIncrementalFragment,  emitTailcalls, hidden, mimpls) =
+let OptimizeImplFile (settings, ccu, tcGlobals: TcGlobals, tcVal, importMap, optEnv, isIncrementalFragment, emitTailcalls, hidden, mimpls: CheckedImplFile) =
+    let traitCtxt =
+        if tcGlobals.langVersion.SupportsFeature LanguageFeature.ExtensionConstraintSolutions then
+            // earlierImplFileSignatures fixes a cross-file extension operator falling back to FSharp.Core's
+            // dynamic operator (runtime NotSupportedException); see the field doc for why signatures are used.
+            Some(ConstraintSolver.CreateImplFileTraitContext tcGlobals [ mimpls.Contents ] optEnv.earlierImplFileSignatures optEnv.referencedCcus :> ITraitContext)
+        else
+            None
+
     let cenv = 
         { settings=settings
           scope=ccu 
@@ -4642,20 +4831,31 @@ let OptimizeImplFile (settings, ccu, tcGlobals, tcVal, importMap, optEnv, isIncr
           optimizing=true
           localInternalVals=Dictionary<Stamp, ValInfo>(10000)
           emitTailcalls=emitTailcalls
+          traitCtxt=traitCtxt
           casApplied=Dictionary<Stamp, bool>() 
           stackGuard = StackGuard("OptimizerStackGuardDepth")
           realsig = tcGlobals.realsig
           specializedInlineVals = HashMultiMap(HashIdentity.Structural, true)
+          frameLocalVals = Dictionary<Stamp, bool>()
           signatureHidingInfo = SignatureHidingInfo.Empty
         }
 
-    let env, _, _, _ as results = OptimizeImplFileInternal cenv optEnv isIncrementalFragment hidden mimpls
+    let env, implFileR, minfo, hidden = OptimizeImplFileInternal cenv optEnv isIncrementalFragment hidden mimpls
+
+    // Accumulate only in the batch path (isIncrementalFragment = false), where IlxGen binds each file's
+    // signature vals across files — matching these signatures. The incremental (FSI) path binds contents
+    // vals instead, so accumulating signatures there would make witnesses reference vals IlxGen never bound.
+    let env =
+        if not isIncrementalFragment && tcGlobals.langVersion.SupportsFeature LanguageFeature.ExtensionConstraintSolutions then
+            { env with earlierImplFileSignatures = mimpls.Signature :: optEnv.earlierImplFileSignatures }
+        else
+            env
 
     let optimizeDuringCodeGen disableMethodSplitting expr =
         let env = { env with disableMethodSplitting = env.disableMethodSplitting || disableMethodSplitting }
         OptimizeExpr cenv env expr |> fst
 
-    results, optimizeDuringCodeGen
+    (env, implFileR, minfo, hidden), optimizeDuringCodeGen
 
 
 /// Pickle to stable format for cross-module optimization data

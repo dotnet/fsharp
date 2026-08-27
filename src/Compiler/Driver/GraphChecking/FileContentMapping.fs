@@ -1,4 +1,4 @@
-﻿module internal rec FSharp.Compiler.GraphChecking.FileContentMapping
+module internal rec FSharp.Compiler.GraphChecking.FileContentMapping
 
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.SyntaxTreeOps
@@ -60,7 +60,9 @@ let visitSynModuleDecl (decl: SynModuleDecl) : FileContentEntry list =
         | SynModuleDecl.Open(target = SynOpenDeclTarget.Type(typeName, _)) -> yield! visitSynType typeName
         | SynModuleDecl.Attributes(attributes, _) -> yield! List.collect visitSynAttributeList attributes
         | SynModuleDecl.Expr(expr, _) -> yield! visitSynExpr expr
-        | SynModuleDecl.NestedModule(moduleInfo = SynComponentInfo(longId = [ ident ]; attributes = attributes); decls = decls) ->
+        | SynModuleDecl.NestedModule(moduleInfo = compInfo; decls = decls) when compInfo.LongIdent.Length = 1 ->
+            let ident = compInfo.LongIdent.Head
+            let (SynComponentInfo(attributes = attributes)) = compInfo
             yield! visitSynAttributes attributes
             yield FileContentEntry.NestedModule(ident.idText, List.collect visitSynModuleDecl decls)
         | SynModuleDecl.NestedModule _ -> () // A nested module cannot have multiple identifiers. This will already be a parse error, but we could be working with recovered syntax tree
@@ -84,7 +86,9 @@ let visitSynModuleSigDecl (md: SynModuleSigDecl) =
         | SynModuleSigDecl.Open(target = SynOpenDeclTarget.ModuleOrNamespace(longId, _)) ->
             yield FileContentEntry.OpenStatement(synLongIdentToPath false longId)
         | SynModuleSigDecl.Open(target = SynOpenDeclTarget.Type(typeName, _)) -> yield! visitSynType typeName
-        | SynModuleSigDecl.NestedModule(moduleInfo = SynComponentInfo(longId = [ ident ]; attributes = attributes); moduleDecls = decls) ->
+        | SynModuleSigDecl.NestedModule(moduleInfo = compInfo; moduleDecls = decls) when compInfo.LongIdent.Length = 1 ->
+            let ident = compInfo.LongIdent.Head
+            let (SynComponentInfo(attributes = attributes)) = compInfo
             yield! visitSynAttributes attributes
             yield FileContentEntry.NestedModule(ident.idText, List.collect visitSynModuleSigDecl decls)
         | SynModuleSigDecl.NestedModule _ -> () // A nested module cannot have multiple identifiers. This will already be a parse error, but we could be working with recovered syntax tree
@@ -112,12 +116,12 @@ let visitSynUnionCase (SynUnionCase(attributes = attributes; caseType = caseType
 
 let visitSynEnumCase (SynEnumCase(attributes = attributes)) = visitSynAttributes attributes
 
-let visitSynTypeDefn
-    (SynTypeDefn(
-        typeInfo = SynComponentInfo(attributes = attributes; longId = longId; typeParams = typeParams; constraints = constraints)
-        typeRepr = typeRepr
-        members = members))
-    : FileContentEntry list =
+let visitSynTypeDefn (SynTypeDefn(typeInfo = typeInfo; typeRepr = typeRepr; members = members)) : FileContentEntry list =
+    let (SynComponentInfo(attributes = attributes; typeParams = typeParams; constraints = constraints)) =
+        typeInfo
+
+    let longId = typeInfo.LongIdent
+
     [
         yield! visitSynAttributes attributes
         yield! collectFromOption visitSynTyparDecls typeParams
@@ -127,7 +131,13 @@ let visitSynTypeDefn
             match simpleRepr with
             | SynTypeDefnSimpleRepr.Union(unionCases = unionCases) -> yield! List.collect visitSynUnionCase unionCases
             | SynTypeDefnSimpleRepr.Enum(cases = cases) -> yield! List.collect visitSynEnumCase cases
-            | SynTypeDefnSimpleRepr.Record(recordFields = recordFields) -> yield! List.collect visitSynField recordFields
+            | SynTypeDefnSimpleRepr.Record(recordFieldsAndSpreads = fieldsAndSpreads) ->
+                yield!
+                    List.collect
+                        (function
+                        | SynFieldOrSpread.Field field -> visitSynField field
+                        | SynFieldOrSpread.Spread spread -> visitSynTypeSpread spread)
+                        fieldsAndSpreads
             // This is only used in the typed tree
             // The parser doesn't construct this
             | SynTypeDefnSimpleRepr.General _
@@ -153,12 +163,12 @@ let visitSynTypeDefn
         yield! List.collect visitSynMemberDefn members
     ]
 
-let visitSynTypeDefnSig
-    (SynTypeDefnSig(
-        typeInfo = SynComponentInfo(attributes = attributes; longId = longId; typeParams = typeParams; constraints = constraints)
-        typeRepr = typeRepr
-        members = members))
-    =
+let visitSynTypeDefnSig (SynTypeDefnSig(typeInfo = typeInfo; typeRepr = typeRepr; members = members)) =
+    let (SynComponentInfo(attributes = attributes; typeParams = typeParams; constraints = constraints)) =
+        typeInfo
+
+    let longId = typeInfo.LongIdent
+
     [
         yield! visitSynAttributes attributes
         yield! collectFromOption visitSynTyparDecls typeParams
@@ -168,7 +178,13 @@ let visitSynTypeDefnSig
             match simpleRepr with
             | SynTypeDefnSimpleRepr.Union(unionCases = unionCases) -> yield! List.collect visitSynUnionCase unionCases
             | SynTypeDefnSimpleRepr.Enum(cases = cases) -> yield! List.collect visitSynEnumCase cases
-            | SynTypeDefnSimpleRepr.Record(recordFields = recordFields) -> yield! List.collect visitSynField recordFields
+            | SynTypeDefnSimpleRepr.Record(recordFieldsAndSpreads = fieldsAndSpreads) ->
+                yield!
+                    List.collect
+                        (function
+                        | SynFieldOrSpread.Field field -> visitSynField field
+                        | SynFieldOrSpread.Spread spread -> visitSynTypeSpread spread)
+                        fieldsAndSpreads
             // This is only used in the typed tree
             // The parser doesn't construct this
             | SynTypeDefnSimpleRepr.General _
@@ -203,6 +219,8 @@ let visitSynValSig (SynValSig(attributes = attributes; synType = synType; synExp
 
 let visitSynField (SynField(attributes = attributes; fieldType = fieldType)) =
     visitSynAttributes attributes @ visitSynType fieldType
+
+let visitSynTypeSpread (SynTypeSpread(ty = ty)) = visitSynType ty
 
 let visitSynMemberDefn (md: SynMemberDefn) : FileContentEntry list =
     [
@@ -386,8 +404,19 @@ let visitSynExpr (e: SynExpr) : FileContentEntry list =
             | SynExpr.AnonRecd(copyInfo = copyInfo; recordFields = recordFields) ->
                 let continuations =
                     match copyInfo with
-                    | None -> List.map (fun (_, _, e) -> visit e) recordFields
-                    | Some(cp, _) -> visit cp :: List.map (fun (_, _, e) -> visit e) recordFields
+                    | None ->
+                        List.map
+                            (function
+                            | SynExprAnonRecordFieldOrSpread.Field(SynExprAnonRecordField(_, _, e, _), _)
+                            | SynExprAnonRecordFieldOrSpread.Spread(spread = SynExprSpread(expr = e)) -> visit e)
+                            recordFields
+                    | Some(cp, _) ->
+                        visit cp
+                        :: List.map
+                            (function
+                            | SynExprAnonRecordFieldOrSpread.Field(SynExprAnonRecordField(_, _, e, _), _)
+                            | SynExprAnonRecordFieldOrSpread.Spread(spread = SynExprSpread(expr = e)) -> visit e)
+                            recordFields
 
                 Continuation.concatenate continuations continuation
             | SynExpr.ArrayOrList(exprs = exprs) ->
@@ -396,9 +425,12 @@ let visitSynExpr (e: SynExpr) : FileContentEntry list =
             | SynExpr.Record(baseInfo = baseInfo; copyInfo = copyInfo; recordFields = recordFields) ->
                 let fieldNodes =
                     [
-                        for SynExprRecordField(fieldName = (si, _); expr = expr) in recordFields do
-                            yield! visitSynLongIdent si
-                            yield! collectFromOption visitSynExpr expr
+                        for fieldOrSpread in recordFields do
+                            match fieldOrSpread with
+                            | SynExprRecordFieldOrSpread.Field(SynExprRecordField(fieldName = (si, _); expr = expr), _) ->
+                                yield! visitSynLongIdent si
+                                yield! collectFromOption visitSynExpr expr
+                            | SynExprRecordFieldOrSpread.Spread(spread = SynExprSpread(expr = expr)) -> yield! visitSynExpr expr
                     ]
 
                 match baseInfo, copyInfo with

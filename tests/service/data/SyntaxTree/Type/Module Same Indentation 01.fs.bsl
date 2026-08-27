@@ -7,7 +7,8 @@ ImplFile
           [Types
              ([SynTypeDefn
                  (SynComponentInfo
-                    ([], None, [], [A],
+                    ([], None, [],
+                     Some (LongIdent (SynLongIdent ([A], [], [None]))),
                      PreXmlDoc ((4,0), FSharp.Compiler.Xml.XmlDocCollector),
                      false, None, (4,5--4,6)),
                   Simple
@@ -43,7 +44,7 @@ ImplFile
                     WithKeyword = None })], (4,0--6,21));
            NestedModule
              (SynComponentInfo
-                ([], None, [], [B],
+                ([], None, [], Some (LongIdent (SynLongIdent ([B], [], []))),
                  PreXmlDoc ((8,0), FSharp.Compiler.Xml.XmlDocCollector), false,
                  None, (8,0--8,8)), false,
               [Let
@@ -65,18 +66,21 @@ ImplFile
            Types
              ([SynTypeDefn
                  (SynComponentInfo
-                    ([], None, [], [C],
+                    ([], None, [],
+                     Some (LongIdent (SynLongIdent ([C], [], [None]))),
                      PreXmlDoc ((11,0), FSharp.Compiler.Xml.XmlDocCollector),
                      false, None, (11,5--11,6)),
                   Simple
                     (Record
                        (None,
-                        [SynField
-                           ([], false, Some Field,
-                            LongIdent (SynLongIdent ([int], [], [None])), false,
-                            PreXmlDoc ((12,6), FSharp.Compiler.Xml.XmlDocCollector),
-                            None, (12,6--12,16), { LeadingKeyword = None
-                                                   MutableKeyword = None })],
+                        [Field
+                           (SynField
+                              ([], false, Some Field,
+                               LongIdent (SynLongIdent ([int], [], [None])),
+                               false,
+                               PreXmlDoc ((12,6), FSharp.Compiler.Xml.XmlDocCollector),
+                               None, (12,6--12,16), { LeadingKeyword = None
+                                                      MutableKeyword = None }))],
                         (12,4--12,18)), (12,4--12,18)), [], None, (11,5--12,18),
                   { LeadingKeyword = Type (11,0--11,4)
                     EqualsRange = Some (11,7--11,8)

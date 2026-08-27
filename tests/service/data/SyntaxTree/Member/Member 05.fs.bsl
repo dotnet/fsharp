@@ -6,7 +6,8 @@ ImplFile
           [Types
              ([SynTypeDefn
                  (SynComponentInfo
-                    ([], None, [], [T],
+                    ([], None, [],
+                     Some (LongIdent (SynLongIdent ([T], [], [None]))),
                      PreXmlDoc ((3,0), FSharp.Compiler.Xml.XmlDocCollector),
                      false, None, (3,5--3,6)),
                   ObjectModel
@@ -113,5 +114,4 @@ ImplFile
         CodeComments = [] }, set []))
 
 (6,4)-(6,6) parse error Unexpected syntax or possible incorrect indentation: this token is offside of context started at position (5:11). Try indenting this further.
-To continue using non-conforming indentation, pass the '--strict-indentation-' flag to the compiler, or set the language version to F# 7.
 (6,4)-(6,6) parse error Expecting expression

@@ -765,27 +765,17 @@ module SynInfo =
     /// arity-info return position (`SynValInfo.retInfo`). Without this, downstream code that
     /// reads `Val.Attribs` would incorrectly see them alongside method-targeted attributes
     /// (see issues #17904 and #19020).
-    let RotateReturnAttributes (attrs: SynAttributes) (valSynData: SynValData) : SynAttributes * SynValData =
+    ///
+    /// This is a lowering step, applied while normalizing a binding for checking rather than in
+    /// the parser, so `SynBinding.attributes` keeps reporting the attributes where they were
+    /// written. Tools reading the untyped tree (formatters, analyzers, source generators) depend
+    /// on that.
+    let RotateReturnAttributes (attrs: SynAttribute list) (valSynData: SynValData) : SynAttribute list * SynValData =
         // Fast path: avoid all allocation when there's nothing to rotate (the common case).
-        let hasReturn =
-            attrs
-            |> List.exists (fun lst -> lst.Attributes |> List.exists isReturnTargetedAttribute)
-
-        if not hasReturn then
+        if not (List.exists isReturnTargetedAttribute attrs) then
             attrs, valSynData
         else
-            let mutable returnTargeted = []
-
-            let newAttrs =
-                attrs
-                |> List.choose (fun lst ->
-                    let ret, kept = lst.Attributes |> List.partition isReturnTargetedAttribute
-                    returnTargeted <- returnTargeted @ ret
-
-                    if List.isEmpty kept then
-                        None
-                    else
-                        Some { lst with Attributes = kept })
+            let returnTargeted, kept = attrs |> List.partition isReturnTargetedAttribute
 
             let (SynValData(memFlags, SynValInfo(args, SynArgInfo(retAttrs, opt, retId)), thisIdOpt)) =
                 valSynData
@@ -796,7 +786,7 @@ module SynInfo =
                     Range = (List.head returnTargeted).Range
                 }
 
-            newAttrs, SynValData(memFlags, SynValInfo(args, SynArgInfo(retList :: retAttrs, opt, retId)), thisIdOpt)
+            kept, SynValData(memFlags, SynValInfo(args, SynArgInfo(retList :: retAttrs, opt, retId)), thisIdOpt)
 
 let mkSynBindingRhs staticOptimizations rhsExpr mRhs retInfo =
     let rhsExpr =
@@ -817,11 +807,31 @@ let mkSynBinding
     let info =
         SynInfo.InferSynValData(memberFlagsOpt, Some headPat, Option.map snd retInfo, origRhsExpr)
 
-    let attrs, info = SynInfo.RotateReturnAttributes attrs info
-
     let rhsExpr, retTyOpt = mkSynBindingRhs staticOptimizations origRhsExpr mRhs retInfo
     let mBind = unionRangeWithXmlDoc xmlDoc mBind
     SynBinding(vis, SynBindingKind.Normal, isInline, isMutable, attrs, xmlDoc, info, headPat, retTyOpt, rhsExpr, mBind, spBind, trivia)
+
+/// A compiler-generated `let!` binding, as produced while desugaring computation expressions: the
+/// usual binding defaults with the leading keyword marked as `let!` at mKeyword.
+let mkSynLetBangBinding mKeyword headPat rhs debugPoint mBind =
+    SynBinding(
+        accessibility = None,
+        kind = SynBindingKind.Normal,
+        isInline = false,
+        isMutable = false,
+        attributes = [],
+        xmlDoc = PreXmlDoc.Empty,
+        valData = SynInfo.emptySynValData,
+        headPat = headPat,
+        returnInfo = None,
+        expr = rhs,
+        range = mBind,
+        debugPoint = debugPoint,
+        trivia =
+            { SynBindingTrivia.Zero with
+                LeadingKeyword = SynLeadingKeyword.LetBang mKeyword
+            }
+    )
 
 let NonVirtualMemberFlags k : SynMemberFlags =
     {
@@ -978,13 +988,24 @@ let rec synExprContainsError inpExpr =
             (match origExpr with
              | Some(e, _) -> walkExpr e
              | None -> false)
-            || walkExprs (List.map (fun (_, _, e) -> e) flds)
+            || walkExprs (
+                List.map
+                    (function
+                    | SynExprAnonRecordFieldOrSpread.Field(SynExprAnonRecordField(_, _, e, _), _)
+                    | SynExprAnonRecordFieldOrSpread.Spread(spread = SynExprSpread(expr = e)) -> e)
+                    flds
+            )
 
         | SynExpr.Record(_, origExpr, fs, _) ->
             (match origExpr with
              | Some(e, _) -> walkExpr e
              | None -> false)
-            || (let flds = fs |> List.choose (fun (SynExprRecordField(expr = v)) -> v)
+            || (let flds =
+                    fs
+                    |> List.choose (function
+                        | SynExprRecordFieldOrSpread.Field(SynExprRecordField(expr = v), _) -> v
+                        | SynExprRecordFieldOrSpread.Spread(SynExprSpread(expr = e), _) -> Some e)
+
                 walkExprs flds)
 
         | SynExpr.ObjExpr(bindings = bs; members = ms; extraImpls = is) ->

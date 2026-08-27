@@ -37,7 +37,7 @@ exception FunctionExpected of DisplayEnv * TType * range
 
 exception NotAFunction of DisplayEnv * TType * range * range
 
-exception NotAFunctionButIndexer of DisplayEnv * TType * string option * range * range * bool
+exception NotAFunctionButIndexer of DisplayEnv * TType * string option * range * range
 
 exception Recursion of DisplayEnv * Ident * TType * TType * range
 
@@ -117,7 +117,7 @@ exception OverrideInExtrinsicAugmentation of range
 
 exception NonUniqueInferredAbstractSlot of TcGlobals * DisplayEnv * string * MethInfo * MethInfo * range
 
-exception StandardOperatorRedefinitionWarning of string * range
+exception StandardOperatorRedefinitionWarning of RichText * range
 
 exception InvalidInternalsVisibleToAssemblyName of badName: string * fileName: string option
 
@@ -484,12 +484,13 @@ val FixupLetrecBind:
 
 /// Detect recursive 'inline' bindings within a recursive binding group and
 /// emit FS3890. Mutates inline info to suppress downstream cascades.
-val CheckRecursiveInlineGroup: bindings: PreInitializationGraphEliminationBinding list -> unit
+val CheckRecursiveInlineGroup: g: TcGlobals -> bindings: PreInitializationGraphEliminationBinding list -> unit
 
 /// Produce a fresh view of an object type, e.g. 'List<T>' becomes 'List<?>' for new
 /// inference variables with the given rigidity.
 val FreshenObjectArgType:
     cenv: TcFileState ->
+    traitCtxt: ITraitContext option ->
     m: range ->
     rigid: TyparRigidity ->
     tcref: TyconRef ->
@@ -907,15 +908,21 @@ val UnifyTupleTypeAndInferCharacteristics:
     'T list ->
         TupInfo * TTypes
 
+/// Helper used to check for duplicate fields in records.
+val CheckRecdExprDuplicateFields: elems: Ident list -> unit
+
 /// Helper used to check both record expressions and record patterns
 val BuildFieldMap:
     cenv: TcFileState ->
     env: TcEnv ->
     isPartial: bool ->
     ty: TType ->
-    flds: ((Ident list * Ident) * 'T) list ->
+    flds: (Ident * ExplicitOrSpread<Ident list * 'Explicit, 'Spread>) list ->
     m: range ->
-        (TypeInst * TyconRef * Map<string, 'T> * (string * 'T) list) option
+        (TypeInst *
+        TyconRef *
+        Map<string, ExplicitOrSpread<'Explicit, 'Spread>> *
+        (string * ExplicitOrSpread<'Explicit, 'Spread>) list) option
 
 /// Check a long identifier 'Case' or 'Case argsR' that has been resolved to an active pattern case
 val TcPatLongIdentActivePatternCase:

@@ -1190,68 +1190,24 @@ let f (r: {| A: int; C: int |}) =
         | _ -> failwith "Symbol was not FSharpField"
 
     [<Fact>]
-    let ``Nested copy-and-update 01`` () =
-        checkFieldUsage "Zoo" "RecordA`1" ((4, 44), (4, 47)) """
+    let ``Nested copy-and-update`` () =
+        let cases =
+            [ "Zoo", ((4, 44), (4, 47))
+              "Foo", ((4, 48), (4, 51))
+              "Zoo", ((4, 57), (4, 60))
+              "Zoo", ((4, 61), (4, 64))
+              "Bar", ((4, 65), (4, 68))
+              "Zoo", ((4, 74), (4, 77))
+              "Bar", ((4, 78), (4, 81))
+              "Foo", ((4, 87), (4, 90)) ]
+
+        """
 type RecordA<'a> = { Foo: 'a; Bar: int; Zoo: RecordA<'a> }
 
-let nestedFunc (a: RecordA<int>) = { a with Zo{caret}o.Foo = 1; Zoo.Zoo.Bar = 2; Zoo.Bar = 3; Foo = 4 }
+let nestedFunc (a: RecordA<int>) = { a with Zo{caret1}o.Fo{caret2}o = 1; Z{caret3}oo.Zo{caret4}o.B{caret5}ar = 2; Z{caret6}oo.B{caret7}ar = 3; Fo{caret8}o = 4 }
 """
-
-    [<Fact>]
-    let ``Nested copy-and-update 02`` () =
-        checkFieldUsage "Foo" "RecordA`1" ((4, 48), (4, 51)) """
-type RecordA<'a> = { Foo: 'a; Bar: int; Zoo: RecordA<'a> }
-
-let nestedFunc (a: RecordA<int>) = { a with Zoo.Fo{caret}o = 1; Zoo.Zoo.Bar = 2; Zoo.Bar = 3; Foo = 4 }
-"""
-
-    [<Fact>]
-    let ``Nested copy-and-update 03`` () =
-        checkFieldUsage "Zoo" "RecordA`1" ((4, 57), (4, 60)) """
-type RecordA<'a> = { Foo: 'a; Bar: int; Zoo: RecordA<'a> }
-
-let nestedFunc (a: RecordA<int>) = { a with Zoo.Foo = 1; Z{caret}oo.Zoo.Bar = 2; Zoo.Bar = 3; Foo = 4 }
-"""
-
-    [<Fact>]
-    let ``Nested copy-and-update 04`` () =
-        checkFieldUsage "Zoo" "RecordA`1" ((4, 61), (4, 64)) """
-type RecordA<'a> = { Foo: 'a; Bar: int; Zoo: RecordA<'a> }
-
-let nestedFunc (a: RecordA<int>) = { a with Zoo.Foo = 1; Zoo.Zo{caret}o.Bar = 2; Zoo.Bar = 3; Foo = 4 }
-"""
-
-    [<Fact>]
-    let ``Nested copy-and-update 05`` () =
-        checkFieldUsage "Bar" "RecordA`1" ((4, 65), (4, 68)) """
-type RecordA<'a> = { Foo: 'a; Bar: int; Zoo: RecordA<'a> }
-
-let nestedFunc (a: RecordA<int>) = { a with Zoo.Foo = 1; Zoo.Zoo.B{caret}ar = 2; Zoo.Bar = 3; Foo = 4 }
-"""
-
-    [<Fact>]
-    let ``Nested copy-and-update 06`` () =
-        checkFieldUsage "Zoo" "RecordA`1" ((4, 74), (4, 77)) """
-type RecordA<'a> = { Foo: 'a; Bar: int; Zoo: RecordA<'a> }
-
-let nestedFunc (a: RecordA<int>) = { a with Zoo.Foo = 1; Zoo.Zoo.Bar = 2; Z{caret}oo.Bar = 3; Foo = 4 }
-"""
-
-    [<Fact>]
-    let ``Nested copy-and-update 07`` () =
-        checkFieldUsage "Bar" "RecordA`1" ((4, 78), (4, 81)) """
-type RecordA<'a> = { Foo: 'a; Bar: int; Zoo: RecordA<'a> }
-
-let nestedFunc (a: RecordA<int>) = { a with Zoo.Foo = 1; Zoo.Zoo.Bar = 2; Zoo.B{caret}ar = 3; Foo = 4 }
-"""
-
-    [<Fact>]
-    let ``Nested copy-and-update 08`` () =
-        checkFieldUsage "Foo" "RecordA`1" ((4, 87), (4, 90)) """
-type RecordA<'a> = { Foo: 'a; Bar: int; Zoo: RecordA<'a> }
-
-let nestedFunc (a: RecordA<int>) = { a with Zoo.Foo = 1; Zoo.Zoo.Bar = 2; Zoo.Bar = 3; Fo{caret}o = 4 }
-"""
+        |> SourceContext.extractOrderedMarkedSources
+        |> List.iter2 (fun (name, range) source -> checkFieldUsage name "RecordA`1" range source) cases
 
 module ComputationExpressions =
     [<Fact>]
@@ -1703,6 +1659,96 @@ let result = 1 -.- 2
 
         Assert.Equal(3, rangeLength)
 
+module TupleTypeExtensions =
+    /// Verifies that GetAllUsesOfAllSymbolsInFile returns only symbols from the original source,
+    /// not synthetic AST nodes created for tuple type extensions like 'type ('T1 * 'T2) with ...'.
+    [<Fact>]
+    let ``Tuple type extension symbols match original source`` () =
+        let _, checkResults =
+            getParseAndCheckResults
+                """
+module Test
+
+type ('T1 * 'T2) with
+    member this.Swap() = (snd this, fst this)
+"""
+
+        let allSymbolUses = checkResults.GetAllUsesOfAllSymbolsInFile() |> Seq.toList
+
+        // Get all symbol ranges - none should have synthetic ranges
+        let symbolRanges =
+            allSymbolUses
+            |> List.map (fun su -> su.Symbol.DisplayName, su.Range)
+
+        // Verify no symbols are reported from synthetic ranges
+        for (name, range) in symbolRanges do
+            Assert.False(range.IsSynthetic, $"Symbol '{name}' has synthetic range {range}")
+
+    [<Fact>]
+    let ``Struct tuple type extension symbols match original source`` () =
+        let _, checkResults =
+            getParseAndCheckResults
+                """
+module Test
+
+type struct ('T1 * 'T2) with
+    member this.Swap() = struct (snd this, fst this)
+"""
+
+        let allSymbolUses = checkResults.GetAllUsesOfAllSymbolsInFile() |> Seq.toList
+
+        // Verify no symbols are reported from synthetic ranges
+        for symbolUse in allSymbolUses do
+            Assert.False(symbolUse.Range.IsSynthetic, $"Symbol '{symbolUse.Symbol.DisplayName}' has synthetic range {symbolUse.Range}")
+
+    [<Fact>]
+    let ``Tuple type extension does not leak tuple type symbol`` () =
+        let _, checkResults =
+            getParseAndCheckResults
+                """
+module Test
+
+type ('T1 * 'T2) with
+    member this.First = fst this
+"""
+
+        let typeSymbolUses =
+            checkResults.GetAllUsesOfAllSymbolsInFile()
+            |> Seq.filter (fun su -> su.Symbol :? FSharpEntity)
+            |> Seq.map (fun su -> su.Symbol.DisplayName, su.Range.StartLine, su.Range.StartColumn)
+            |> Seq.toList
+
+        // Verify no synthetic tuple type symbols (containing '*') appear
+        let syntheticTupleSymbols =
+            typeSymbolUses
+            |> List.filter (fun (name, _, _) -> name.Contains("*"))
+
+        Assert.True(List.isEmpty syntheticTupleSymbols, $"Found unexpected synthetic tuple type symbols: {syntheticTupleSymbols}")
+
+    [<Fact>]
+    let ``Multiple tuple type extensions symbols are all non-synthetic`` () =
+        let _, checkResults =
+            getParseAndCheckResults
+                """
+module Test
+
+type ('T1 * 'T2) with
+    member this.Swap() = (snd this, fst this)
+
+type struct ('A * 'B * 'C) with
+    member this.First = let (a, _, _) = this in a
+"""
+
+        let allSymbolUses = checkResults.GetAllUsesOfAllSymbolsInFile() |> Seq.toList
+
+        // All symbols should come from non-synthetic source locations
+        let syntheticSymbols =
+            allSymbolUses
+            |> List.filter (fun su -> su.Range.IsSynthetic)
+            |> List.map (fun su -> su.Symbol.DisplayName)
+
+        Assert.True(List.isEmpty syntheticSymbols, $"Found symbols with synthetic ranges: {syntheticSymbols}")
+
 
 module NestedCopyAndUpdateSink =
 
@@ -1772,3 +1818,60 @@ type Outer = { I1: Inner1; I2: Inner2 }
 let o = { I1 = { A = 1; B = 2 }; I2 = { C = 3 } }
 let o2 = { o with Outer.I1.A = 10; Outer.I1.B = 20; Outer.I2.C = 30 }
 """
+
+module RecordSpreads =
+    open FSharp.Compiler.EditorServices
+
+    [<Fact>]
+    let ``spread - spread operator is not classified as a record field`` () =
+        let _, checkResults =
+            getParseAndCheckResultsPreview """
+type R1 = { A : int; B : int }
+type R2 = { ...R1; C : int }
+"""
+        let items = checkResults.GetSemanticClassification(None, RelatedSymbolUseKind.All)
+        let badItems =
+            items
+            |> Array.filter (fun i ->
+                i.Type = SemanticClassificationType.RecordField
+                && i.Range.StartLine = 3
+                && i.Range.StartColumn < 15
+                && i.Range.EndColumn > 12)
+        if badItems.Length > 0 then
+            failwith $"Expected the '...' spread operator to NOT be classified as RecordField, but found: %A{badItems |> Array.map (fun i -> getRangeCoords i.Range)}"
+
+    [<Fact>]
+    let ``spread - GetSymbolUseAtLocation range excludes leading spread operator`` () =
+        let _, checkResults =
+            getParseAndCheckResultsPreview """
+type R1 = { A : int; B : int }
+let r1 = { A = 1; B = 2 }
+let r2 = { ...r1; C = 3 }
+"""
+        let line4 = "let r2 = { ...r1; C = 3 }"
+        match checkResults.GetSymbolUseAtLocation(4, 16, line4, [ "r1" ]) with
+        | None -> failwith "Expected to resolve symbol 'r1' inside the spread '...r1'."
+        | Some su ->
+            let spreadUse =
+                checkResults.GetUsesOfSymbolInFile(su.Symbol)
+                |> Array.find (fun u -> not u.IsFromDefinition)
+            if getRangeCoords su.Range <> getRangeCoords spreadUse.Range then
+                failwith $"GetSymbolUseAtLocation range %A{getRangeCoords su.Range} should match GetUsesOfSymbolInFile range %A{getRangeCoords spreadUse.Range} (no leading '...')."
+
+    [<Fact>]
+    let ``spread - GetSymbolUseAtLocation range excludes leading spread operator, anonymous`` () =
+        let _, checkResults =
+            getParseAndCheckResultsPreview """
+type R1 = { A : int; B : int }
+let r1 = { A = 1; B = 2 }
+let r2 = {| ...r1; C = 3 |}
+"""
+        let line4 = "let r2 = {| ...r1; C = 3 |}"
+        match checkResults.GetSymbolUseAtLocation(4, 17, line4, [ "r1" ]) with
+        | None -> failwith "Expected to resolve symbol 'r1' inside the spread '...r1'."
+        | Some su ->
+            let spreadUse =
+                checkResults.GetUsesOfSymbolInFile(su.Symbol)
+                |> Array.find (fun u -> not u.IsFromDefinition)
+            if getRangeCoords su.Range <> getRangeCoords spreadUse.Range then
+                failwith $"GetSymbolUseAtLocation range %A{getRangeCoords su.Range} should match GetUsesOfSymbolInFile range %A{getRangeCoords spreadUse.Range} (no leading '...')."

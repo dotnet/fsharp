@@ -1567,11 +1567,16 @@ type internal TypeCheckInfo
             allSymbols: unit -> AssemblySymbol list,
             options: FSharpCodeCompletionOptions
         ) =
+        let isSpread =
+            FindFirstNonWhitespacePosition lineStr (colAtEndOfNamesAndResidue - 1)
+            |> Option.exists (fun i ->
+                (i > 2 && lineStr[i - 3] <> '.' || i = 2)
+                && lineStr.AsSpan(i - 2).StartsWith("...".AsSpan()))
 
         // Are the last two chars (except whitespaces) = ".."
         let isLikeRangeOp =
             match FindFirstNonWhitespacePosition lineStr (colAtEndOfNamesAndResidue - 1) with
-            | Some x when x >= 1 && lineStr[x] = '.' && lineStr[x - 1] = '.' -> true
+            | Some x when not isSpread && x >= 1 && lineStr[x] = '.' && lineStr[x - 1] = '.' -> true
             | _ -> false
 
         // if last two chars are .. and we are not in range operator context - no completion
@@ -1601,7 +1606,7 @@ type internal TypeCheckInfo
                         |> Option.orElseWith (fun _ -> FindFirstNonWhitespacePosition lineStr (colAtEndOfNamesAndResidue - 1))
 
                     match lastPos with
-                    | Some p when lineStr[p] = '.' ->
+                    | Some p when not isSpread && lineStr[p] = '.' ->
                         match FindFirstNonWhitespacePosition lineStr (p - 1) with
                         | Some colAtEndOfNames ->
                             let colAtEndOfNames = colAtEndOfNames + 1 // convert 0-based to 1-based
@@ -1640,7 +1645,7 @@ type internal TypeCheckInfo
                         lastDotPos
                         |> Option.orElseWith (fun _ -> FindFirstNonWhitespacePosition lineStr (colAtEndOfNamesAndResidue - 1))
                     with
-                    | Some p when lineStr[p] = '.' ->
+                    | Some p when not isSpread && lineStr[p] = '.' ->
                         match FindFirstNonWhitespacePosition lineStr (p - 1) with
                         | Some colAtEndOfNames ->
                             let colAtEndOfNames = colAtEndOfNames + 1 // convert 0-based to 1-based
@@ -1969,6 +1974,44 @@ type internal TypeCheckInfo
 
             // No completion at '...: string'
             | Some(CompletionContext.RecordField(RecordContext.Declaration true)) -> None
+
+            // Completion at 'let r = { ...| }'
+            | Some(CompletionContext.RecordSpread RecordSpreadContext.Construction) ->
+                let envItems = getDeclaredItemsNotInRangeOpWithAllSymbols ()
+
+                envItems
+                |> Option.map (fun (items, denv, m) ->
+                    let items =
+                        [
+                            for completionItem in items do
+                                match completionItem.Item with
+                                | Item.Value vref when isRecdTy g vref.Type || isAnonRecdTy g vref.Type -> completionItem
+                                | _ -> ()
+                        ]
+
+                    items, denv, m)
+
+            // Completion at 'type R = { ...| }'
+            | Some(CompletionContext.RecordSpread RecordSpreadContext.Declaration) ->
+                let (nenv, ad), m = GetBestEnvForPos pos
+                let recordTycons = getRecordTyconsInScope g ncenv nenv ad m
+
+                let completionItems =
+                    [
+                        for tcref, item in recordTycons ->
+                            {
+                                ItemWithInst = ItemWithNoInst item
+                                Kind = CompletionItemKind.Other
+                                MinorPriority = 0
+                                IsOwnMember = false
+                                Type = Some tcref
+                                Unresolved = None
+                                CustomInsertText = ValueNone
+                                CustomDisplayText = ValueNone
+                            }
+                    ]
+
+                Some(completionItems, nenv.DisplayEnv, m)
 
             // Completion at ' SomeMethod( ... ) ' or ' [<SomeAttribute( ... )>] ' with named arguments
             | Some(CompletionContext.ParameterList(endPos, fields)) ->
@@ -2349,7 +2392,7 @@ type internal TypeCheckInfo
 
                 let tip = PrintUtilities.squashToWidth width tip
 
-                let tip = LayoutRender.toArray tip
+                let tip = LayoutRender.toRichText tip
                 ToolTipText.ToolTipText [ ToolTipElement.Single(tip, FSharpXmlDoc.None) ]
 
             | [] ->
@@ -2372,7 +2415,7 @@ type internal TypeCheckInfo
                             for line in lines ->
                                 let tip = wordL (TaggedText.tagStringLiteral line)
                                 let tip = PrintUtilities.squashToWidth width tip
-                                let tip = LayoutRender.toArray tip
+                                let tip = LayoutRender.toRichText tip
                                 ToolTipElement.Single(tip, FSharpXmlDoc.None)
                         ]
 
@@ -2698,8 +2741,8 @@ type internal TypeCheckInfo
                                     None
                                 else
                                     match tr.TypeReprInfo, tr.PublicPath with
-                                    | TILObjectRepr(TILObjectReprData(ILScopeRef.Assembly assemblyRef, _, _)), Some(PubPath parts) ->
-                                        let fullName = parts |> String.concat "."
+                                    | TILObjectRepr(TILObjectReprData(ILScopeRef.Assembly assemblyRef, _, _)), ValueSome pubpath ->
+                                        let fullName = pubpath.FullPath |> String.concat "."
                                         Some(FindDeclResult.ExternalDecl(assemblyRef.Name, FindDeclExternalSymbol.Type fullName))
                                     | _ -> None
                             | _ -> None
@@ -2858,7 +2901,6 @@ type FSharpParsingOptions =
         DiagnosticOptions: FSharpDiagnosticOptions
         LangVersionText: string
         IsInteractive: bool
-        StrictIndentation: bool option
         CompilingFSharpCore: bool
         IsExe: bool
     }
@@ -2875,7 +2917,6 @@ type FSharpParsingOptions =
             DiagnosticOptions = FSharpDiagnosticOptions.Default
             LangVersionText = LanguageVersion.Default.VersionText
             IsInteractive = false
-            StrictIndentation = None
             CompilingFSharpCore = false
             IsExe = false
         }
@@ -2888,7 +2929,6 @@ type FSharpParsingOptions =
             DiagnosticOptions = tcConfig.diagnosticsOptions
             LangVersionText = tcConfig.langVersion.VersionText
             IsInteractive = isInteractive
-            StrictIndentation = tcConfig.strictIndentation
             CompilingFSharpCore = tcConfig.compilingFSharpCore
             IsExe = tcConfig.target.IsExe
         }
@@ -2901,7 +2941,6 @@ type FSharpParsingOptions =
             DiagnosticOptions = tcConfigB.diagnosticsOptions
             LangVersionText = tcConfigB.langVersion.VersionText
             IsInteractive = isInteractive
-            StrictIndentation = tcConfigB.strictIndentation
             CompilingFSharpCore = tcConfigB.compilingFSharpCore
             IsExe = tcConfigB.target.IsExe
         }
@@ -2921,7 +2960,7 @@ module internal ParseAndCheckFile =
             //    the formatting of types in it may change (for example, 'a to obj)
             //
             // So we'll create a diagnostic later, but cache the FormatCore message now
-            diagnostic.Exception.Data["CachedFormatCore"] <- diagnostic.FormatCore(flatErrors, suggestNamesForErrors)
+            diagnostic.Exception.Data["CachedFormatCore"] <- diagnostic.FormatRichCore(flatErrors, suggestNamesForErrors)
             diagnosticsCollector.Add(diagnostic)
 
             if diagnostic.Severity = FSharpDiagnosticSeverity.Error then
@@ -3013,8 +3052,8 @@ module internal ParseAndCheckFile =
         else
             (fun _ -> tokenizer.GetToken())
 
-    let createLexbuf langVersion strictIndentation sourceText =
-        UnicodeLexing.SourceTextAsLexbuf(true, LanguageVersion(langVersion), strictIndentation, sourceText)
+    let createLexbuf langVersion sourceText =
+        UnicodeLexing.SourceTextAsLexbuf(true, LanguageVersion(langVersion), sourceText)
 
     let matchBraces
         (
@@ -3034,7 +3073,7 @@ module internal ParseAndCheckFile =
 
         let matchingBraces = ResizeArray<_>()
 
-        usingLexbufForParsing (createLexbuf options.LangVersionText options.StrictIndentation sourceText, fileName) (fun lexbuf ->
+        usingLexbufForParsing (createLexbuf options.LangVersionText sourceText, fileName) (fun lexbuf ->
             let errHandler =
                 DiagnosticsHandler(false, fileName, options.DiagnosticOptions, suggestNamesForErrors, false)
 
@@ -3147,7 +3186,7 @@ module internal ParseAndCheckFile =
         use _ = UseBuildPhase BuildPhase.Parse
 
         let parseResult =
-            usingLexbufForParsing (createLexbuf options.LangVersionText options.StrictIndentation sourceText, fileName) (fun lexbuf ->
+            usingLexbufForParsing (createLexbuf options.LangVersionText sourceText, fileName) (fun lexbuf ->
 
                 let lexfun = createLexerFunction options lexbuf errHandler ct
 
@@ -3471,7 +3510,7 @@ type FSharpCheckFileResults
                     match Tokenization.FSharpKeywords.KeywordsDescriptionLookup kw with
                     | None -> ()
                     | Some kwDescription ->
-                        let kwText = kw |> TaggedText.tagKeyword |> wordL |> LayoutRender.toArray
+                        let kwText = kw |> TaggedText.tagKeyword |> wordL |> LayoutRender.toRichText
                         yield ToolTipElement.Single(kwText, FSharpXmlDoc.FromXmlText(Xml.XmlDoc([| kwDescription |], range0)))
             ]
 
@@ -3907,7 +3946,8 @@ type FSharpCheckProjectResults
         let optEnv0 = GetInitialOptimizationEnv(tcImports, tcGlobals)
         let tcConfig = getTcConfig ()
         let isIncrementalFragment = false
-        let tcVal = LightweightTcValForUsingInBuildMethodCall tcGlobals
+        // traitCtxtNone: checker results API — post-typecheck, SRTP constraints already resolved (audited for RFC FS-1043)
+        let tcVal = LightweightTcValForUsingInBuildMethodCall tcGlobals traitCtxtNone
 
         let optimizedImpls, _optimizationData, _ =
             ApplyAllOptimizations(tcConfig, tcGlobals, tcVal, outfile, importMap, isIncrementalFragment, optEnv0, thisCcu, mimpls)

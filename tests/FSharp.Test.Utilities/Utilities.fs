@@ -71,23 +71,19 @@ type FactForNETCOREAPPSkipOnSignedBuildAttribute() as this =
 // This file mimics how Roslyn handles their compilation references for compilation testing
 module Utilities =
 
+    // TODO when FSharp.Core package dep moves to a 11.x that includes RunSynchronouslyImmediate, remove shimming
     type Async with
-        static member RunImmediate (computation: Async<'T>, ?cancellationToken) =
-            let cancellationToken = defaultArg cancellationToken Async.DefaultCancellationToken
-            let ts = TaskCompletionSource<'T>()
-            let task = ts.Task
-            Async.StartWithContinuations(
-                computation,
-                (fun k -> ts.SetResult k),
-                (fun exn -> ts.SetException exn),
-                (fun _ -> ts.SetCanceled()),
-                cancellationToken)
-            task.Result
+        static member RunSynchronouslyImmediate (computation: Async<'T>, ?cancellationToken) =
+            let tcs = TaskCompletionSource<'T>()
+            Async.StartWithContinuations(computation, tcs.SetResult, tcs.SetException, tcs.SetException, ?cancellationToken = cancellationToken)
+            // Synchronously block waiting for the result (i.e. even if continuations run on another thread, caller thread will be blocked)
+            tcs.Task.GetAwaiter().GetResult() // GetResult() unpacks the AggregateException that .Result would present
 
     [<RequireQualifiedAccess>]
     type TargetFramework =
         | NetStandard20
         | Current
+        | FSharpCoreShippedNet
 
     let private getResourceStream name =
         let assembly = typeof<TargetFramework>.GetTypeInfo().Assembly
@@ -267,23 +263,48 @@ An error occurred getting netcoreapp references (compare the output of `dotnet -
                 NetStandard20.References.systemDynamicRuntimeRef.Value,
                 NetStandard20.References.systemCollectionsImmutableRef.Value)
 
+        // The shipped .NETCoreApp FSharp.Core asset (e.g. net10.0) lives beside the netstandard ones in the artifacts tree.
+        let shippedNetFSharpCorePath =
+            lazy (
+                let coreArtifactRoot = Path.GetDirectoryName(Path.GetDirectoryName(config.FSCOREDLLPATH))
+                let path = Path.Combine(coreArtifactRoot, fsharpCoreShippedNetTfm, "FSharp.Core.dll")
+                if not (File.Exists path) then
+                    failwith $"Shipped .NETCoreApp FSharp.Core not found at {path}. Build FSharp.Core for {fsharpCoreShippedNetTfm} first."
+                path)
+
+        let private toPEs files =
+            files
+            |> Seq.map (fun x -> PortableExecutableReference.CreateFromFile(x))
+            |> ImmutableArray.CreateRange
+
         let currentReferences =
             getNetCoreAppReferences
 
         let currentReferencesAsPEs =
-            getNetCoreAppReferences
-            |> Seq.map (fun x -> PortableExecutableReference.CreateFromFile(x))
-            |> ImmutableArray.CreateRange
+            toPEs currentReferences
+
+        // Reuse the Current reference set (identical framework refs) and swap only FSharp.Core - avoids a second dotnet build.
+        let private shippedNetReferences =
+            lazy (
+                let isFSharpCore (r: string) = String.Equals(Path.GetFileName r, "FSharp.Core.dll", StringComparison.OrdinalIgnoreCase)
+                if not (Array.exists isFSharpCore currentReferences) then
+                    failwith "No FSharp.Core.dll found in the Current reference set to swap for the shipped .NETCoreApp asset."
+                currentReferences |> Array.map (fun r -> if isFSharpCore r then shippedNetFSharpCorePath.Value else r))
+
+        let private shippedNetReferencesAsPEs =
+            lazy toPEs shippedNetReferences.Value
 
         let getReferences tf =
             match tf with
                 | TargetFramework.NetStandard20 -> netStandard20References.Value
                 | TargetFramework.Current -> currentReferencesAsPEs
+                | TargetFramework.FSharpCoreShippedNet -> shippedNetReferencesAsPEs.Value
 
         let getFileReferences tf =
             match tf with
                 | TargetFramework.NetStandard20 -> netStandard20Files.Value |> Seq.toArray
                 | TargetFramework.Current -> currentReferences
+                | TargetFramework.FSharpCoreShippedNet -> shippedNetReferences.Value
 
 
 module internal FSharpProjectSnapshotSerialization =

@@ -131,11 +131,12 @@ module ExtendedData =
 
 open ExtendedData
 
-type FSharpDiagnostic(m: range, severity: FSharpDiagnosticSeverity, defaultSeverity: FSharpDiagnosticSeverity, message: string, subcategory: string, errorNum: int, numberPrefix: string, extendedData: IFSharpDiagnosticExtendedData option) =
+type FSharpDiagnostic(m: range, severity: FSharpDiagnosticSeverity, defaultSeverity: FSharpDiagnosticSeverity, message: RichText, subcategory: string, errorNum: int, numberPrefix: string, extendedData: IFSharpDiagnosticExtendedData option) =
     member _.Range = m
     member _.Severity = severity
     member _.DefaultSeverity = defaultSeverity
-    member _.Message = message
+    member _.Message = message.Text
+    member _.RichMessage = message
     member _.Subcategory = subcategory
     member _.ErrorNumber = errorNum
     member _.ErrorNumberPrefix = numberPrefix
@@ -168,7 +169,7 @@ type FSharpDiagnostic(m: range, severity: FSharpDiagnosticSeverity, defaultSever
             | FSharpDiagnosticSeverity.Error -> "error"
             | FSharpDiagnosticSeverity.Info -> "info"
             | FSharpDiagnosticSeverity.Hidden -> "hidden"
-        sprintf "%s (%d,%d)-(%d,%d) %s %s %s" fileName s.Line (s.Column + 1) e.Line (e.Column + 1) subcategory severity message
+        sprintf "%s (%d,%d)-(%d,%d) %s %s %s" fileName s.Line (s.Column + 1) e.Line (e.Column + 1) subcategory severity message.Text
 
     /// Decompose a warning or error into parts: position, severity, message, error number
     static member CreateFromException(diagnostic: PhasedDiagnostic, suggestNames: bool, flatErrors: bool, symbolEnv: SymbolEnv option) =
@@ -228,8 +229,8 @@ type FSharpDiagnostic(m: range, severity: FSharpDiagnosticSeverity, defaultSever
 
         let msg =
              match diagnostic.Exception.Data["CachedFormatCore"] with
-             | :? string as message -> message
-             | _ -> diagnostic.FormatCore(flatErrors, suggestNames)
+             | :? RichText as message -> message
+             | _ -> diagnostic.FormatRichCore(flatErrors, suggestNames)
 
         let errorNum = diagnostic.Number
         let m = match diagnostic.Range with Some m -> m.ApplyLineDirectives() | None -> range0
@@ -239,7 +240,12 @@ type FSharpDiagnostic(m: range, severity: FSharpDiagnosticSeverity, defaultSever
 
     static member NormalizeErrorString(text) = NormalizeErrorString(text)
     
-    static member Create(severity, message, number, range, ?numberPrefix, ?subcategory) =
+    static member Create(severity, message: string, number, range, ?numberPrefix, ?subcategory) =
+        let subcategory = defaultArg subcategory BuildPhaseSubcategory.TypeCheck
+        let numberPrefix = defaultArg numberPrefix "FS"
+        FSharpDiagnostic(range, severity, severity, RichText.mkText message, subcategory, number, numberPrefix, None)
+
+    static member Create(severity, message: RichText, number, range, ?numberPrefix, ?subcategory) =
         let subcategory = defaultArg subcategory BuildPhaseSubcategory.TypeCheck
         let numberPrefix = defaultArg numberPrefix "FS"
         FSharpDiagnostic(range, severity, severity, message, subcategory, number, numberPrefix, None)

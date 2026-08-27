@@ -320,6 +320,9 @@ type MethInfo =
     /// Describes a use of a pseudo-method corresponding to the default constructor for a .NET struct type
     | DefaultStructCtor of tcGlobals: TcGlobals * structTy: TType
 
+    /// Describes a use of the compiler-synthesized all-fields constructor of an F# record type
+    | RecdCtor of tcGlobals: TcGlobals * recdTy: TType
+
 #if !NO_TYPEPROVIDERS
     /// Describes a use of a method backed by provided metadata
     | ProvidedMeth of
@@ -429,6 +432,9 @@ type MethInfo =
     /// Indicates if this is an IL method.
     member IsILMethod: bool
 
+    /// Indicates if the method has the AllowOverloadOnReturnType attribute.
+    member HasAllowOverloadOnReturnType: bool
+
     /// Indicates if the method is a get_IsABC union case tester implied by a union case definition
     member IsUnionCaseTester: bool
 
@@ -522,6 +528,9 @@ type MethInfo =
 
     /// Get custom attributes for method (only applicable for IL methods)
     member GetCustomAttrs: unit -> ILAttributes
+
+    /// Returns 0 if the attribute is not present.
+    member GetOverloadResolutionPriority: unit -> int
 
     /// Get the parameter attributes of a method info, which get combined with the parameter names and types
     member GetParamAttribs: amap: ImportMap * m: range -> ParamAttribs list list

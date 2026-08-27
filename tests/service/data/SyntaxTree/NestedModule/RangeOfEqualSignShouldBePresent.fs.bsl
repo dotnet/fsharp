@@ -6,7 +6,7 @@ ImplFile
          ([RangeOfEqualSignShouldBePresent], false, AnonModule,
           [NestedModule
              (SynComponentInfo
-                ([], None, [], [X],
+                ([], None, [], Some (LongIdent (SynLongIdent ([X], [], []))),
                  PreXmlDoc ((2,0), FSharp.Compiler.Xml.XmlDocCollector), false,
                  None, (2,0--2,8)), false,
               [Expr (Const (Unit, (3,4--3,6)), (3,4--3,6))], false, (2,0--3,6),

@@ -19,16 +19,15 @@ module QuotationRendering =
 
     let private fsiSession = getSessionForEval [||] LangVersion.Preview
 
-    let private quoteShouldRender (name: string) (quoteExpr: string) =
-        let result =
-            Fsx (sprintf "printfn \"%%A\" %s" quoteExpr)
-            |> evalInSharedSession fsiSession
-            |> shouldSucceed
+    let private renderFsx source =
+        let result = Fsx source |> evalInSharedSession fsiSession |> shouldSucceed
+
         match result.RunOutput with
-        | Some (EvalOutput e) ->
-            checkBaseline (e.StdOut |> normalizeNewlines) (Path.Combine(baselineDir, name + ".bsl"))
-        | _ ->
-            failwith "Expected eval output from shared FSI session."
+        | Some(EvalOutput e) -> e.StdOut |> normalizeNewlines
+        | _ -> failwith "Expected eval output from shared FSI session."
+
+    let private quoteShouldRender (name: string) (quoteExpr: string) =
+        checkBaseline (renderFsx (sprintf "printfn \"%%A\" %s" quoteExpr)) (Path.Combine(baselineDir, name + ".bsl"))
 
     [<Fact>]
     let EmptyString () =
@@ -58,3 +57,39 @@ module QuotationRendering =
     [<Fact>]
     let Decimal () =
         quoteShouldRender "Decimal" """<@ fun (x: decimal) -> match x with 1m -> "a" | _ -> "b" @>"""
+
+    // FS-1073: a positional record-constructor call must quote identically to record syntax. Both lower to
+    // the same NewRecord node before quotation translation, so the quotation contains no constructor call -
+    // it renders exactly like { A = 1; B = 2 }.
+    [<Fact>]
+    let RecordConstructor () =
+        let source = """
+type R = { A: int; B: int }
+let viaCtor = <@ R(1, 2) @>
+let viaRecord = <@ { A = 1; B = 2 } @>
+System.Console.WriteLine(viaCtor.ToString())
+System.Console.WriteLine(viaCtor.ToString() = viaRecord.ToString())
+"""
+        checkBaseline (renderFsx source) (Path.Combine(baselineDir, "RecordConstructor.bsl"))
+
+    let private renderGuardedOrQuote quoteExpr =
+        renderFsx (
+            "let (|E|_|) (n: int) (x: int) = if x = n then Some x else None\n"
+            + "let (|A|_|) (x: int) = if x % 2 = 0 then Some (x / 2) else None\n"
+            + "let g (p: int) = p > 1000\n"
+            + sprintf "printfn \"%%A\" %s" quoteExpr
+        )
+
+    [<Theory>]
+    [<InlineData(6, false)>]
+    [<InlineData(8, true)>]
+    let ``Issue 18425 - guarded shared-or shares quotations only above the threshold`` disjunctCount expectJoin =
+        let patterns = [ 1..disjunctCount ] |> List.map (sprintf "E %d _") |> String.concat " | "
+        let rendered = renderGuardedOrQuote (sprintf "<@ fun (x: int) -> match x with (%s) when g 0 -> 1 | _ -> 0 @>" patterns)
+        if expectJoin then Assert.Contains("joinThunk", rendered) else Assert.DoesNotContain("joinThunk", rendered)
+
+    [<Fact>]
+    let ``Issue 18425 - shared join threads a bound pattern variable through the tuple or-pattern`` () =
+        let patterns = [ 1..8 ] |> List.map (sprintf "(A p, E %d _)") |> String.concat " | "
+        let rendered = renderGuardedOrQuote (sprintf "<@ fun (a: int) (b: int) -> match a, b with %s when g p -> p | _ -> 0 @>" patterns)
+        Assert.Contains("joinThunk", rendered)

@@ -23,19 +23,19 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.Test.Apex.VisualStudio" Version="$(MicrosoftTestApexVisualStudioVersion)" />
-    <PackageReference Include="MSTest.TestAdapter" Version="$(MSTestVersion)" />
-    <PackageReference Include="MSTest.TestFramework" Version="$(MSTestVersion)" />
+    <PackageReference Include="Microsoft.Test.Apex.VisualStudio" />
+    <PackageReference Include="MSTest.TestAdapter" />
+    <PackageReference Include="MSTest.TestFramework" />
     <!--
       Resolves MSB3277: Microsoft.Test.Apex.VisualStudio references System.Diagnostics.DiagnosticSource
       10.0.0.8, but the only copy in the package graph is 5.0.0 (pulled transitively via
       MSTest -> Testing.Extensions.Telemetry -> ApplicationInsights). RAR cannot unify to a version
       that is not present, so no binding redirect is generated and testhost would ship only v5.
-      Referencing 10.0.8 (assembly 10.0.0.8, matching Apex) makes it primary: the conflict is genuinely
-      resolved, a 5->10 redirect is generated, and the correct assembly is deployed. Version is pinned
-      explicitly (not the repo's 10.0.2) because it must match Apex's required 10.0.0.8.
+      Referencing it explicitly makes it primary: the conflict is genuinely resolved, a 5->10 redirect
+      is generated, and the correct assembly is deployed. The version comes from central package
+      management ($(SystemDiagnosticsDiagnosticSourceVersion), currently 10.0.10 >= Apex's 10.0.0.8).
     -->
-    <PackageReference Include="System.Diagnostics.DiagnosticSource" Version="10.0.8" />
+    <PackageReference Include="System.Diagnostics.DiagnosticSource" />
   </ItemGroup>
 
 </Project>

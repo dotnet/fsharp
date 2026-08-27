@@ -14,11 +14,17 @@ open Internal.Utilities.Library
 open FSharp.Compiler.AbstractIL.Diagnostics
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.DiagnosticsLogger
+open FSharp.Compiler.Text
 open FSharp.Compiler.IO
 open FSharp.Compiler.Text.Range
 open FSharp.Core.Printf
 
 let codeLabelOrder = ComparisonIdentity.Structural<ILCodeLabel>
+
+let richTextOfILTypeRef (tref: ILTypeRef) =
+    tref.Enclosing @ [ tref.Name ]
+    |> List.map RichText.ofQualifiedTypeName
+    |> RichText.concatWith (RichText.mkPunctuation "+")
 
 // Convert the output of convCustomAttr
 let wrapCustomAttr setCustomAttr (cinfo, bytes) = setCustomAttr (cinfo, bytes)
@@ -473,7 +479,7 @@ type cenv =
 
     override x.ToString() = "<cenv>"
 
-let convResolveAssemblyRef (cenv: cenv) (asmref: ILAssemblyRef) qualifiedName =
+let convResolveAssemblyRef (cenv: cenv) (asmref: ILAssemblyRef) (tref: ILTypeRef) =
     let assembly =
         match cenv.resolveAssemblyRef asmref with
         | Some(Choice1Of2 path) ->
@@ -486,10 +492,20 @@ let convResolveAssemblyRef (cenv: cenv) (asmref: ILAssemblyRef) qualifiedName =
             let asmName = convAssemblyRef asmref
             FileSystem.AssemblyLoader.AssemblyLoad asmName
 
-    let typT = assembly.GetType qualifiedName
+    let typT = assembly.GetType tref.BasicQualifiedName
 
     match typT with
-    | null -> error (Error(FSComp.SR.itemNotFoundDuringDynamicCodeGen ("type", qualifiedName, asmref.QualifiedName), range0))
+    | null ->
+        error (
+            Error(
+                FSComp.SR.itemNotFoundDuringDynamicCodeGen (
+                    RichText.mkText "type",
+                    richTextOfILTypeRef tref,
+                    RichText.mkText asmref.QualifiedName
+                ),
+                range0
+            )
+        )
     | res -> res
 
 /// Convert an Abstract IL type reference to Reflection.Emit System.Type value.
@@ -500,19 +516,26 @@ let convResolveAssemblyRef (cenv: cenv) (asmref: ILAssemblyRef) qualifiedName =
 // [ns]            , name -> ns+name
 // [ns;typeA;typeB], name -> ns+typeA+typeB+name
 let convTypeRefAux (cenv: cenv) (tref: ILTypeRef) =
-    let qualifiedName =
-        (String.concat "+" (tref.Enclosing @ [ tref.Name ])).Replace(",", @"\,")
-
     match tref.Scope with
-    | ILScopeRef.Assembly asmref -> convResolveAssemblyRef cenv asmref qualifiedName
+    | ILScopeRef.Assembly asmref -> convResolveAssemblyRef cenv asmref tref
     | ILScopeRef.Module _
     | ILScopeRef.Local ->
-        let typT = Type.GetType qualifiedName
+        let typT = Type.GetType tref.BasicQualifiedName
 
         match typT with
-        | null -> error (Error(FSComp.SR.itemNotFoundDuringDynamicCodeGen ("type", qualifiedName, "<emitted>"), range0))
+        | null ->
+            error (
+                Error(
+                    FSComp.SR.itemNotFoundDuringDynamicCodeGen (
+                        RichText.mkText "type",
+                        richTextOfILTypeRef tref,
+                        RichText.mkText "<emitted>"
+                    ),
+                    range0
+                )
+            )
         | res -> res
-    | ILScopeRef.PrimaryAssembly -> convResolveAssemblyRef cenv cenv.ilg.primaryAssemblyRef qualifiedName
+    | ILScopeRef.PrimaryAssembly -> convResolveAssemblyRef cenv cenv.ilg.primaryAssemblyRef tref
 
 /// The (local) emitter env (state). Some of these fields are effectively global accumulators
 /// and could be placed as hash tables in the global environment.
@@ -671,15 +694,15 @@ let envPopEntryPts emEnv =
 // convCallConv
 //----------------------------------------------------------------------------
 
-let convCallConv (Callconv(hasThis, basic)) =
+let convCallConv (callConv: ILCallingConv) =
     let ccA =
-        match hasThis with
+        match callConv.ThisConv with
         | ILThisConvention.Static -> CallingConventions.Standard
         | ILThisConvention.InstanceExplicit -> CallingConventions.ExplicitThis
         | ILThisConvention.Instance -> CallingConventions.HasThis
 
     let ccB =
-        match basic with
+        match callConv.BasicConv with
         | ILArgConvention.Default -> enum 0
         | ILArgConvention.CDecl -> enum 0
         | ILArgConvention.StdCall -> enum 0
@@ -705,7 +728,16 @@ let rec convTypeSpec cenv emEnv preferCreated (tspec: ILTypeSpec) =
 
     match res with
     | Null ->
-        error (Error(FSComp.SR.itemNotFoundDuringDynamicCodeGen ("type", tspec.TypeRef.QualifiedName, tspec.Scope.QualifiedName), range0))
+        error (
+            Error(
+                FSComp.SR.itemNotFoundDuringDynamicCodeGen (
+                    RichText.mkText "type",
+                    richTextOfILTypeRef tspec.TypeRef,
+                    RichText.mkText tspec.Scope.QualifiedName
+                ),
+                range0
+            )
+        )
     | NonNull res -> res
 
 and convTypeAux cenv emEnv preferCreated ty =
@@ -837,10 +869,10 @@ let queryableTypeGetField _emEnv (parentT: Type) (fref: ILFieldRef) =
         error (
             Error(
                 FSComp.SR.itemNotFoundInTypeDuringDynamicCodeGen (
-                    "field",
-                    fref.Name,
-                    fref.DeclaringTypeRef.FullName,
-                    fref.DeclaringTypeRef.Scope.QualifiedName
+                    RichText.mkText "field",
+                    RichText.mkMember fref.Name,
+                    RichText.ofQualifiedTypeName fref.DeclaringTypeRef.FullName,
+                    RichText.mkText fref.DeclaringTypeRef.Scope.QualifiedName
                 ),
                 range0
             )
@@ -1046,10 +1078,10 @@ let convMethodRef cenv emEnv (parentTI: Type) (mref: ILMethodRef) =
         error (
             Error(
                 FSComp.SR.itemNotFoundInTypeDuringDynamicCodeGen (
-                    "method",
-                    mref.Name,
-                    parentTI.FullName |> string,
-                    parentTI.Assembly.FullName |> string
+                    RichText.mkText "method",
+                    RichText.mkMember mref.Name,
+                    RichText.ofQualifiedTypeName (parentTI.FullName |> string),
+                    RichText.mkText (parentTI.Assembly.FullName |> string)
                 ),
                 range0
             )
@@ -1092,10 +1124,10 @@ let queryableTypeGetConstructor cenv emEnv (parentT: Type) (mref: ILMethodRef) =
         error (
             Error(
                 FSComp.SR.itemNotFoundInTypeDuringDynamicCodeGen (
-                    "constructor",
-                    mref.Name,
-                    parentT.FullName |> string,
-                    parentT.Assembly.FullName |> string
+                    RichText.mkText "constructor",
+                    RichText.mkMember mref.Name,
+                    RichText.ofQualifiedTypeName (parentT.FullName |> string),
+                    RichText.mkText (parentT.Assembly.FullName |> string)
                 ),
                 range0
             )
@@ -1132,10 +1164,10 @@ let convConstructorSpec cenv emEnv (mspec: ILMethodSpec) =
         error (
             Error(
                 FSComp.SR.itemNotFoundInTypeDuringDynamicCodeGen (
-                    "constructor",
-                    "",
-                    parentTI.FullName |> string,
-                    parentTI.Assembly.FullName |> string
+                    RichText.mkText "constructor",
+                    RichText.mkMember "",
+                    RichText.ofQualifiedTypeName (parentTI.FullName |> string),
+                    RichText.mkText (parentTI.Assembly.FullName |> string)
                 ),
                 range0
             )
@@ -2106,6 +2138,7 @@ let typeAttributesOfTypeLayout cenv emEnv x =
     | ILTypeDefLayout.Auto -> None
     | ILTypeDefLayout.Explicit p -> (attr 0x02 p)
     | ILTypeDefLayout.Sequential p -> (attr 0x00 p)
+    | ILTypeDefLayout.Extended -> None // No StructLayoutAttribute needed; user's ExtendedLayoutAttribute is preserved
 
 //----------------------------------------------------------------------------
 // buildTypeDefPass1 cenv

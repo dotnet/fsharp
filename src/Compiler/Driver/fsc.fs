@@ -393,7 +393,12 @@ let TryFindVersionAttribute g attrib attribName attribs deterministic =
     match AttributeHelpers.TryFindStringAttribute g attrib attribs with
     | Some versionString ->
         if deterministic && versionString.Contains("*") then
-            errorR (Error(FSComp.SR.fscAssemblyWildcardAndDeterminism (attribName, versionString), rangeStartup))
+            errorR (
+                Error(
+                    FSComp.SR.fscAssemblyWildcardAndDeterminism (RichText.mkClass attribName, RichText.mkText versionString),
+                    rangeStartup
+                )
+            )
 
         try
             Some(parseILVersion versionString)
@@ -594,7 +599,7 @@ let main1
     // Import basic assemblies
     let tcGlobals, frameworkTcImports =
         TcImports.BuildFrameworkTcImports(foundationalTcConfigP, sysRes, otherRes)
-        |> Async.RunImmediate
+        |> Async.RunSynchronouslyImmediate
 
     let ilSourceDocs =
         [
@@ -642,7 +647,7 @@ let main1
 
     let tcImports =
         TcImports.BuildNonFrameworkTcImports(tcConfigP, frameworkTcImports, otherRes, knownUnresolved, dependencyProvider)
-        |> Async.RunImmediate
+        |> Async.RunSynchronouslyImmediate
 
     // register tcImports to be disposed in future
     disposables.Register tcImports
@@ -837,7 +842,8 @@ let main3
             ApplyAllOptimizations(
                 tcConfig,
                 tcGlobals,
-                (LightweightTcValForUsingInBuildMethodCall tcGlobals),
+                // traitCtxtNone: post-typecheck codegen — SRTP constraints already resolved, no TcEnv available (audited for RFC FS-1043)
+                (LightweightTcValForUsingInBuildMethodCall tcGlobals traitCtxtNone),
                 outfile,
                 importMap,
                 false,
@@ -956,9 +962,15 @@ let main4
     ReportTime tcConfig "TAST -> IL"
     use _ = UseBuildPhase BuildPhase.IlxGen
 
-    // Create the Abstract IL generator
+    // traitCtxtNone: post-typecheck codegen — SRTP constraints already resolved, no TcEnv available (audited for RFC FS-1043)
     let ilxGenerator =
-        CreateIlxAssemblyGenerator(tcConfig, tcImports, tcGlobals, (LightweightTcValForUsingInBuildMethodCall tcGlobals), generatedCcu)
+        CreateIlxAssemblyGenerator(
+            tcConfig,
+            tcImports,
+            tcGlobals,
+            (LightweightTcValForUsingInBuildMethodCall tcGlobals traitCtxtNone),
+            generatedCcu
+        )
 
     let codegenBackend =
         (if Option.isSome dynamicAssemblyCreator then
@@ -1149,6 +1161,8 @@ let main6
                             referenceAssemblyAttribOpt = referenceAssemblyAttribOpt
                             referenceAssemblySignatureHash = refAssemblySignatureHash
                             pathMap = tcConfig.pathMap
+                            moduleCustomDebugInfoRows = []
+                            methodCustomDebugInfoRows = Map.empty
                         },
                         ilxMainModule,
                         normalizeAssemblyRefs
@@ -1180,6 +1194,8 @@ let main6
                             referenceAssemblyAttribOpt = None
                             referenceAssemblySignatureHash = None
                             pathMap = tcConfig.pathMap
+                            moduleCustomDebugInfoRows = []
+                            methodCustomDebugInfoRows = Map.empty
                         },
                         ilxMainModule,
                         normalizeAssemblyRefs

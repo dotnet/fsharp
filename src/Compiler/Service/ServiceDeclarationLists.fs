@@ -38,14 +38,14 @@ open FSharp.Compiler.TypedTreeOps
 type ToolTipElementData = 
     {
       Symbol: FSharpSymbol option
-      MainDescription: TaggedText[]
+      MainDescription: RichText
       XmlDoc: FSharpXmlDoc
-      TypeMapping: TaggedText[] list
-      Remarks: TaggedText[] option
+      TypeMapping: RichText list
+      Remarks: RichText option
       ParamName : string option }
 
-    static member internal Create(layout, xml, ?typeMapping, ?paramName, ?remarks, ?symbol) = 
-        { MainDescription=layout; XmlDoc=xml; TypeMapping=defaultArg typeMapping []; ParamName=paramName; Remarks=remarks; Symbol = symbol }
+    static member internal Create(mainDescription, xml, ?typeMapping, ?paramName, ?remarks, ?symbol) = 
+        { MainDescription=mainDescription; XmlDoc=xml; TypeMapping=defaultArg typeMapping []; ParamName=paramName; Remarks=remarks; Symbol = symbol }
 
 /// A single data tip display element
 [<RequireQualifiedAccess>]
@@ -58,8 +58,8 @@ type ToolTipElement =
     /// An error occurred formatting this element
     | CompositionError of errorText: string
 
-    static member Single(layout, xml, ?typeMapping, ?paramName, ?remarks, ?symbol) = 
-        Group [ ToolTipElementData.Create(layout, xml, ?typeMapping=typeMapping, ?paramName=paramName, ?remarks=remarks, ?symbol = symbol) ]
+    static member Single(mainDescription, xml, ?typeMapping, ?paramName, ?remarks, ?symbol) = 
+        Group [ ToolTipElementData.Create(mainDescription, xml, ?typeMapping=typeMapping, ?paramName=paramName, ?remarks=remarks, ?symbol = symbol) ]
 
 /// Information for building a data tip box.
 type ToolTipText = 
@@ -102,7 +102,7 @@ module DeclarationListHelpers =
     /// Generate the structured tooltip for a method info
     let FormatOverloadsToList (infoReader: InfoReader) m denv (item: ItemWithInst) minfos symbol (width: int option) : ToolTipElement =
         ToolTipFault |> Option.iter (fun msg -> 
-           let exn = Error((0, msg), range0)
+           let exn = Error((0, RichText.mkText msg), range0)
            let ph = PhasedDiagnostic.Create(exn, BuildPhase.TypeCheck, FSharpDiagnosticSeverity.Error)
            simulateError ph)
         
@@ -112,9 +112,9 @@ module DeclarationListHelpers =
                 let xml = GetXmlCommentForMethInfoItem infoReader m item.Item minfo
                 let tpsL = FormatTyparMapping denv prettyTyparInst
                 let layout = PrintUtilities.squashToWidth width layout
-                let layout = toArray layout
-                let tpsL = List.map toArray tpsL
-                ToolTipElementData.Create(layout, xml, tpsL, ?symbol = symbol) ]
+                let mainDescription = toRichText layout
+                let typeMapping = List.map toRichText tpsL
+                ToolTipElementData.Create(mainDescription, xml, typeMapping, ?symbol = symbol) ]
  
         ToolTipElement.Group layouts
         
@@ -143,17 +143,16 @@ module DeclarationListHelpers =
                           member x.Equals(item1, item2) = nullSafeEquality item1 item2 (fun item1 item2 -> fullDisplayTextOfModRef item1 = fullDisplayTextOfModRef item2)
                           member x.GetHashCode item = hash item.Stamp  }
 
-    let OutputFullName displayFullName ppF fnF r = 
+    let OutputFullName displayFullName hasPubPath fnF r =
       // Only display full names in quick info, not declaration lists or method lists
-      if not displayFullName then 
-        match ppF r with 
-        | None -> emptyL
-        | Some _ -> wordL (tagText (FSComp.SR.typeInfoFullName())) ^^ RightL.colon ^^ (fnF r)
+      if not displayFullName then
+        if hasPubPath r then wordL (tagText (FSComp.SR.typeInfoFullName())) ^^ RightL.colon ^^ (fnF r)
+        else emptyL
       else emptyL
 
-    let pubpathOfValRef (v: ValRef) = v.PublicPath        
+    let hasPubPathValRef (v: ValRef) = v.PublicPath.IsSome
 
-    let pubpathOfTyconRef (x: TyconRef) = x.PublicPath
+    let hasPubPathTyconRef (x: TyconRef) = x.PublicPath.IsSome
 
     /// Output the quick info information of a language item
     let rec FormatItemDescriptionToToolTipElement displayFullName (infoReader: InfoReader) ad m denv (item: ItemWithInst) symbol (width: int option) = 
@@ -169,13 +168,13 @@ module DeclarationListHelpers =
 
         | Item.Value vref | Item.CustomBuilder (_, vref) ->            
             let prettyTyparInst, resL = layoutQualifiedValOrMember denv infoReader item.TyparInstantiation vref
-            let remarks = OutputFullName displayFullName pubpathOfValRef fullDisplayTextOfValRefAsLayout vref
+            let remarks = OutputFullName displayFullName hasPubPathValRef fullDisplayTextOfValRefAsLayout vref
             let tpsL = FormatTyparMapping denv prettyTyparInst
-            let tpsL = List.map toArray tpsL
+            let typeMapping = List.map toRichText tpsL
             let resL = PrintUtilities.squashToWidth width resL
-            let resL = toArray resL
-            let remarks = toArray remarks
-            ToolTipElement.Single(resL, xml, tpsL, remarks=remarks, ?symbol = symbol)
+            let mainDescription = toRichText resL
+            let remarks = toRichText remarks
+            ToolTipElement.Single(mainDescription, xml, typeMapping, remarks=remarks, ?symbol = symbol)
 
         // Union tags (constructors)
         | Item.UnionCase(ucinfo, _) -> 
@@ -191,8 +190,8 @@ module DeclarationListHelpers =
                 (if List.isEmpty recd then emptyL else layoutUnionCases denv infoReader ucinfo.TyconRef recd ^^ WordL.arrow) ^^
                 layoutType denv unionTy
             let layout = PrintUtilities.squashToWidth width layout
-            let layout = toArray layout
-            ToolTipElement.Single (layout, xml, ?symbol = symbol)
+            let mainDescription = toRichText layout
+            ToolTipElement.Single (mainDescription, xml, ?symbol = symbol)
 
         // Active pattern tag inside the declaration (result)             
         | Item.ActivePatternResult(apinfo, ty, idx, _) ->
@@ -203,8 +202,8 @@ module DeclarationListHelpers =
                 RightL.colon ^^
                 layoutType denv ty
             let layout = PrintUtilities.squashToWidth width layout
-            let layout = toArray layout
-            ToolTipElement.Single (layout, xml, ?symbol = symbol)
+            let mainDescription = toRichText layout
+            ToolTipElement.Single (mainDescription, xml, ?symbol = symbol)
 
         // Active pattern tags 
         | Item.ActivePatternCase apref -> 
@@ -212,7 +211,7 @@ module DeclarationListHelpers =
             let vTauTy = v.TauType
             // REVIEW: use _cxs here
             let (prettyTyparInst, prettyTy), _cxs = PrettyTypes.PrettifyInstAndType denv.g (item.TyparInstantiation, vTauTy)
-            let remarks = OutputFullName displayFullName pubpathOfValRef fullDisplayTextOfValRefAsLayout v
+            let remarks = OutputFullName displayFullName hasPubPathValRef fullDisplayTextOfValRefAsLayout v
             let layout =
                 wordL (tagText (FSComp.SR.typeInfoActiveRecognizer())) ^^
                 wordL (tagActivePatternCase apref.DisplayName |> mkNav v.DefinitionRange) ^^
@@ -222,19 +221,19 @@ module DeclarationListHelpers =
 
             let tpsL = FormatTyparMapping denv prettyTyparInst
 
-            let layout = toArray layout
-            let tpsL = List.map toArray tpsL
-            let remarks = toArray remarks
-            ToolTipElement.Single (layout, xml, tpsL, remarks=remarks, ?symbol = symbol)
+            let mainDescription = toRichText layout
+            let typeMapping = List.map toRichText tpsL
+            let remarks = toRichText remarks
+            ToolTipElement.Single (mainDescription, xml, typeMapping, remarks=remarks, ?symbol = symbol)
 
         // F# exception names
         | Item.ExnCase ecref -> 
             let layout = layoutExnDef denv infoReader ecref
             let layout = PrintUtilities.squashToWidth width layout
-            let remarks = OutputFullName displayFullName pubpathOfTyconRef fullDisplayTextOfExnRefAsLayout ecref
-            let layout = toArray layout
-            let remarks = toArray remarks
-            ToolTipElement.Single (layout, xml, remarks=remarks, ?symbol = symbol)
+            let remarks = OutputFullName displayFullName hasPubPathTyconRef fullDisplayTextOfExnRefAsLayout ecref
+            let mainDescription = toRichText layout
+            let remarks = toRichText remarks
+            ToolTipElement.Single (mainDescription, xml, remarks=remarks, ?symbol = symbol)
 
         | Item.RecdField rfinfo when rfinfo.TyconRef.IsFSharpException ->
             let ty, _ = PrettyTypes.PrettifyType g rfinfo.FieldType
@@ -245,8 +244,8 @@ module DeclarationListHelpers =
                 RightL.colon ^^
                 layoutType denv ty
             let layout = PrintUtilities.squashToWidth width layout
-            let layout = toArray layout
-            ToolTipElement.Single (layout, xml, paramName = id, ?symbol = symbol)
+            let mainDescription = toRichText layout
+            ToolTipElement.Single (mainDescription, xml, paramName = id, ?symbol = symbol)
 
         // F# record field names
         | Item.RecdField rfinfo ->
@@ -264,8 +263,8 @@ module DeclarationListHelpers =
                     | Some lit -> try WordL.equals ^^  layoutConst denv.g ty lit with _ -> emptyL
                 )
             let layout = PrintUtilities.squashToWidth width layout
-            let layout = toArray layout
-            ToolTipElement.Single (layout, xml, ?symbol = symbol)
+            let mainDescription = toRichText layout
+            ToolTipElement.Single (mainDescription, xml, ?symbol = symbol)
 
         | Item.UnionCaseField (ucinfo, fieldIndex) ->
             let rfield = ucinfo.UnionCase.GetFieldByIndex(fieldIndex)
@@ -277,8 +276,8 @@ module DeclarationListHelpers =
                 RightL.colon ^^
                 layoutType denv fieldTy
             let layout = PrintUtilities.squashToWidth width layout
-            let layout = toArray layout
-            ToolTipElement.Single (layout, xml, paramName = id.idText, ?symbol = symbol)
+            let mainDescription = toRichText layout
+            ToolTipElement.Single (mainDescription, xml, paramName = id.idText, ?symbol = symbol)
 
         // Not used
         | Item.NewDef id -> 
@@ -286,8 +285,8 @@ module DeclarationListHelpers =
                 wordL (tagText (FSComp.SR.typeInfoPatternVariable())) ^^
                 wordL (tagUnknownEntity id.idText)
             let layout = PrintUtilities.squashToWidth width layout
-            let layout = toArray layout
-            ToolTipElement.Single (layout, xml, ?symbol = symbol)
+            let mainDescription = toRichText layout
+            ToolTipElement.Single (mainDescription, xml, ?symbol = symbol)
 
         // .NET fields
         | Item.ILField finfo ->
@@ -306,8 +305,8 @@ module DeclarationListHelpers =
                         try layoutConst denv.g (finfo.FieldType(infoReader.amap, m)) (CheckExpressions.TcFieldInit m v) with _ -> emptyL
                 )
             let layout = PrintUtilities.squashToWidth width layout
-            let layout = toArray layout
-            ToolTipElement.Single (layout, xml, ?symbol = symbol)
+            let mainDescription = toRichText layout
+            ToolTipElement.Single (mainDescription, xml, ?symbol = symbol)
 
         // .NET events
         | Item.Event einfo ->
@@ -321,15 +320,15 @@ module DeclarationListHelpers =
                 RightL.colon ^^
                 layoutType denv eventTy
             let layout = PrintUtilities.squashToWidth width layout
-            let layout = toArray layout
-            ToolTipElement.Single (layout, xml, ?symbol = symbol)
+            let mainDescription = toRichText layout
+            ToolTipElement.Single (mainDescription, xml, ?symbol = symbol)
 
         // F# and .NET properties
         | Item.Property(info = pinfo :: _) -> 
             let layout = prettyLayoutOfPropInfoFreeStyle  g amap m denv pinfo
             let layout = PrintUtilities.squashToWidth width layout
-            let layout = toArray layout
-            ToolTipElement.Single (layout, xml, ?symbol = symbol)
+            let mainDescription = toRichText layout
+            ToolTipElement.Single (mainDescription, xml, ?symbol = symbol)
 
         // Custom operations in queries
         | Item.CustomOperation (customOpName, usageText, Some minfo) -> 
@@ -342,7 +341,7 @@ module DeclarationListHelpers =
                 RightL.colon ^^
                 (
                     match usageText() with
-                    | Some t -> wordL (tagText t)
+                    | Some t -> wordL (tagText t.Text)
                     | None ->
                         let argTys = ParamNameAndTypesOfUnaryCustomOperation g minfo |> List.map (fun (ParamNameAndType(_, ty)) -> ty)
                         let argTys, _ = PrettyTypes.PrettifyTypes g argTys 
@@ -355,8 +354,8 @@ module DeclarationListHelpers =
                 wordL (tagMethod minfo.DisplayName)
 
             let layout = PrintUtilities.squashToWidth width layout
-            let layout = toArray layout
-            ToolTipElement.Single (layout, xml, ?symbol = symbol)
+            let mainDescription = toRichText layout
+            ToolTipElement.Single (mainDescription, xml, ?symbol = symbol)
 
         // F# constructors and methods
         | Item.CtorGroup(_, minfos) 
@@ -373,8 +372,8 @@ module DeclarationListHelpers =
                layoutType denv delFuncTy ^^
                RightL.rightParen
            let layout = PrintUtilities.squashToWidth width layout
-           let layout = toArray layout
-           ToolTipElement.Single(layout, xml, ?symbol = symbol)
+           let mainDescription = toRichText layout
+           ToolTipElement.Single(mainDescription, xml, ?symbol = symbol)
 
         // Types.
         | Item.Types(_, TType_app(tcref, _, _) :: _)
@@ -388,23 +387,23 @@ module DeclarationListHelpers =
                             showDocumentation = false  }
             let layout = layoutTyconDefn denv infoReader ad m (* width *) tcref.Deref
             let layout = PrintUtilities.squashToWidth width layout
-            let remarks = OutputFullName displayFullName pubpathOfTyconRef fullDisplayTextOfTyconRefAsLayout tcref
-            let layout = toArray layout
-            let remarks = toArray remarks
-            ToolTipElement.Single (layout, xml, remarks=remarks, ?symbol = symbol)
+            let remarks = OutputFullName displayFullName hasPubPathTyconRef fullDisplayTextOfTyconRefAsLayout tcref
+            let mainDescription = toRichText layout
+            let remarks = toRichText remarks
+            ToolTipElement.Single (mainDescription, xml, remarks=remarks, ?symbol = symbol)
 
         // Type variables
         | Item.TypeVar (_, typar) ->
             let layout = prettyLayoutOfTypar denv typar
             let layout = PrintUtilities.squashToWidth width layout
-            ToolTipElement.Single (toArray layout, xml, ?symbol = symbol)
+            ToolTipElement.Single (toRichText layout, xml, ?symbol = symbol)
 
         // Traits
         | Item.Trait traitInfo ->
             let denv = { denv with shortConstraints = false}
             let layout = prettyLayoutOfTrait denv traitInfo
             let layout = PrintUtilities.squashToWidth width layout
-            ToolTipElement.Single (toArray layout, xml, ?symbol = symbol)
+            ToolTipElement.Single (toRichText layout, xml, ?symbol = symbol)
 
         // F# Modules and namespaces
         | Item.ModuleOrNamespaces(modref :: _ as modrefs) -> 
@@ -435,21 +434,21 @@ module DeclarationListHelpers =
                     (
                         if not (List.isEmpty namesToAdd) then
                             SepL.lineBreak ^^
-                            List.fold ( fun s (i, txt) ->
+                            List.fold ( fun s (i, txt: string) ->
                                 s ^^
                                 SepL.lineBreak ^^
-                                wordL (tagText ((if i = 0 then FSComp.SR.typeInfoFromFirst else FSComp.SR.typeInfoFromNext) txt))
+                                wordL (tagText (if i = 0 then FSComp.SR.typeInfoFromFirst txt else FSComp.SR.typeInfoFromNext txt))
                             ) emptyL namesToAdd 
                         else 
                             emptyL
                     )
                 let layout = PrintUtilities.squashToWidth width layout
-                let layout = toArray layout
-                ToolTipElement.Single (layout, xml, ?symbol = symbol)
+                let mainDescription = toRichText layout
+                ToolTipElement.Single (mainDescription, xml, ?symbol = symbol)
             else
                 let layout = PrintUtilities.squashToWidth width layout
-                let layout = toArray layout
-                ToolTipElement.Single (layout, xml, ?symbol = symbol)
+                let mainDescription = toRichText layout
+                ToolTipElement.Single (mainDescription, xml, ?symbol = symbol)
 
         | Item.AnonRecdField(anon, argTys, i, _) -> 
             let argTy = argTys[i]
@@ -461,8 +460,8 @@ module DeclarationListHelpers =
                 RightL.colon ^^
                 layoutType denv argTy
             let layout = PrintUtilities.squashToWidth width layout
-            let layout = toArray layout
-            ToolTipElement.Single (layout, FSharpXmlDoc.None, ?symbol = symbol)
+            let mainDescription = toRichText layout
+            ToolTipElement.Single (mainDescription, FSharpXmlDoc.None, ?symbol = symbol)
             
         // Named parameters
         | Item.OtherName (ident = Some id; argType = argTy) -> 
@@ -473,8 +472,8 @@ module DeclarationListHelpers =
                 RightL.colon ^^
                 layoutType denv argTy
             let layout = PrintUtilities.squashToWidth width layout
-            let layout = toArray layout
-            ToolTipElement.Single (layout, xml, paramName = id.idText, ?symbol = symbol)
+            let mainDescription = toRichText layout
+            ToolTipElement.Single (mainDescription, xml, paramName = id.idText, ?symbol = symbol)
             
         | Item.SetterArg (_, item) -> 
             FormatItemDescriptionToToolTipElement displayFullName infoReader ad m denv (ItemWithNoInst item) symbol width
@@ -526,7 +525,7 @@ module DeclarationListHelpers =
 
 /// Represents one parameter for one method (or other item) in a group.
 [<Sealed>]
-type MethodGroupItemParameter(name: string, canonicalTypeTextForSorting: string, display: TaggedText[], isOptional: bool) = 
+type MethodGroupItemParameter(name: string, canonicalTypeTextForSorting: string, display: RichText, isOptional: bool) = 
 
     /// The name of the parameter.
     member _.ParameterName = name
@@ -558,7 +557,7 @@ module internal DescriptionListsImpl =
 
     let PrettyParamOfRecdField g denv (f: RecdField) =
         let display = prettyLayoutOfType denv f.FormalType
-        let display = toArray display
+        let display = toRichText display
         MethodGroupItemParameter(
           name = f.DisplayNameCore,
           canonicalTypeTextForSorting = printCanonicalizedTypeName g denv f.FormalType,
@@ -572,7 +571,7 @@ module internal DescriptionListsImpl =
                 initial.Display 
             else 
                 let display = layoutOfParamData denv (ParamData(false, false, false, NotOptional, NoCallerInfo, Some f.Id, ReflectedArgInfo.None, f.FormalType)) 
-                toArray display
+                toRichText display
 
         MethodGroupItemParameter(
           name=initial.ParameterName,
@@ -582,7 +581,7 @@ module internal DescriptionListsImpl =
 
     let ParamOfParamData g denv (ParamData(_isParamArrayArg, _isInArg, _isOutArg, optArgInfo, _callerInfo, nmOpt, _reflArgInfo, pty) as paramData) =
         let display = layoutOfParamData denv paramData
-        let display = toArray display
+        let display = toRichText display
         MethodGroupItemParameter(
           name = (match nmOpt with None -> "" | Some pn -> pn.idText),
           canonicalTypeTextForSorting = printCanonicalizedTypeName g denv pty,
@@ -629,7 +628,7 @@ module internal DescriptionListsImpl =
         let prettyParams = 
           (paramInfo, prettyParamTys, prettyParamTysL) |||> List.map3 (fun (nm, isOptArg, paramPrefix) tauTy tyL -> 
             let display = paramPrefix ^^ tyL
-            let display = toArray display
+            let display = toRichText display
             MethodGroupItemParameter(
               name = nm,
               canonicalTypeTextForSorting = printCanonicalizedTypeName g denv tauTy,
@@ -649,7 +648,7 @@ module internal DescriptionListsImpl =
         let parameters = 
             (prettyParamTys, prettyParamTysL)
             ||> List.map2 (fun paramTy tyL ->
-                let display = toArray tyL
+                let display = toRichText tyL
                 MethodGroupItemParameter(
                     name = "",
                     canonicalTypeTextForSorting = printCanonicalizedTypeName g denv paramTy,
@@ -676,7 +675,7 @@ module internal DescriptionListsImpl =
                     let spName = sp.PUntaint((fun sp -> sp.Name), m)
                     let spOpt = sp.PUntaint((fun sp -> sp.IsOptional), m)
                     let display = (if spOpt then SepL.questionMark else emptyL) ^^ wordL (tagParameter spName) ^^ RightL.colon ^^ spKind
-                    let display = toArray display
+                    let display = toRichText display
                     MethodGroupItemParameter(
                       name = spName,
                       canonicalTypeTextForSorting = showL spKind,
@@ -1023,7 +1022,7 @@ type DeclarationListItem(textInDeclList: string, textInCode: string, fullName: s
     member _.Description = 
         match kind, info with
         | CompletionItemKind.SuggestedName, _ ->
-            ToolTipText [ ToolTipElement.Single ([| tagText (FSComp.SR.suggestedName()) |], FSharpXmlDoc.None) ]
+            ToolTipText [ ToolTipElement.Single (RichText.mkText (FSComp.SR.suggestedName()), FSharpXmlDoc.None) ]
         | _, Choice1Of2 (items: CompletionItem list, infoReader, ad, m, denv) -> 
             ToolTipText(items |> List.map (fun x -> FormatStructuredDescriptionOfItem true infoReader ad m denv x.ItemWithInst None None))
         | _, Choice2Of2 result -> 
@@ -1272,7 +1271,7 @@ type DeclarationListInfo(declarations: DeclarationListItem[], isForType: bool, i
 // Note: instances of this type do not hold any references to any compiler resources.
 [<Sealed; NoEquality; NoComparison>]
 type MethodGroupItem(description: ToolTipText, xmlDoc: FSharpXmlDoc,
-                           returnType: TaggedText[], parameters: MethodGroupItemParameter[],
+                           returnType: RichText, parameters: MethodGroupItemParameter[],
                            hasParameters: bool, hasParamArrayArg: bool, staticParameters: MethodGroupItemParameter[]) = 
 
     /// The description representation for the method (or other item)
@@ -1365,10 +1364,10 @@ type MethodGroup( name: string, unsortedMethods: MethodGroupItem[] ) =
 #endif
                             | _ -> true
 
-                        let prettyRetTyL = toArray prettyRetTyL
+                        let returnType = toRichText prettyRetTyL
                         MethodGroupItem(
                           description = description,
-                          returnType = prettyRetTyL,
+                          returnType = returnType,
                           xmlDoc = GetXmlCommentForItem infoReader m flatItem,
                           parameters = (prettyParams |> Array.ofList),
                           hasParameters = hasStaticParameters,

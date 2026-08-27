@@ -13,6 +13,7 @@ open System.Runtime.ExceptionServices
 open System.Threading
 open System.Threading.Tasks
 open Microsoft.FSharp.Core
+open Microsoft.FSharp.Core.CompilerServices
 open Microsoft.FSharp.Core.LanguagePrimitives.IntrinsicOperators
 open Microsoft.FSharp.Control
 open Microsoft.FSharp.Collections
@@ -896,6 +897,22 @@ module AsyncPrimitives =
                 ccont = (fun cexn -> ctxt.PostWithTrampoline syncCtxt (fun () -> ctxt.ccont cexn))
             )
 
+    [<DebuggerHidden>]
+    let StartWithContinuations cancellationToken (computation: Async<'T>) cont econt ccont =
+        let trampolineHolder = TrampolineHolder()
+
+        trampolineHolder.ExecuteWithTrampoline(fun () ->
+            let ctxt =
+                AsyncActivation.Create
+                    cancellationToken
+                    trampolineHolder
+                    (cont >> fake)
+                    (econt >> fake)
+                    (ccont >> fake)
+
+            computation.Invoke ctxt)
+        |> unfake
+
     [<Sealed>]
     [<AutoSerializable(false)>]
     type SuspendedAsync<'T>(ctxt: AsyncActivation<'T>) =
@@ -1096,7 +1113,7 @@ module AsyncPrimitives =
 
     /// Run the asynchronous workflow and wait for its result.
     [<DebuggerHidden>]
-    let QueueAsyncAndWaitForResultSynchronously (token: CancellationToken) computation timeout =
+    let QueueAsyncAndWaitForResultSynchronously computation (token: CancellationToken) timeout =
         let token, innerCTS =
             // If timeout is provided, we govern the async by our own CTS, to cancel
             // when execution times out. Otherwise, the user-supplied token governs the async.
@@ -1138,31 +1155,24 @@ module AsyncPrimitives =
             res.Commit()
 
     [<DebuggerHidden>]
-    let RunImmediate (cancellationToken: CancellationToken) computation =
-        use resultCell = new ResultCell<AsyncResult<_>>()
-        let trampolineHolder = TrampolineHolder()
+    let RunSynchronouslyImmediate<'T> computation (cancellationToken: CancellationToken) =
+        let tcs = TaskCompletionSource<'T>()
 
-        trampolineHolder.ExecuteWithTrampoline(fun () ->
-            let ctxt =
-                AsyncActivation.Create
-                    cancellationToken
-                    trampolineHolder
-                    (fun res -> resultCell.RegisterResult(AsyncResult.Ok res, reuseThread = true))
-                    (fun edi -> resultCell.RegisterResult(AsyncResult.Error edi, reuseThread = true))
-                    (fun exn -> resultCell.RegisterResult(AsyncResult.Canceled exn, reuseThread = true))
-
-            computation.Invoke ctxt)
-        |> unfake
-
-        let res = resultCell.TryWaitForResultSynchronously().Value
-        res.Commit()
+        StartWithContinuations
+            cancellationToken
+            computation
+            tcs.SetResult
+            (fun edi -> tcs.SetException edi.SourceException)
+            tcs.SetException
+        // Synchronously block waiting for the result (i.e. even if continuations run on another thread, caller thread will be blocked)
+        tcs.Task.GetAwaiter().GetResult() // GetResult() unpacks the AggregateException that .Result would present
 
     [<DebuggerHidden>]
-    let RunSynchronously cancellationToken (computation: Async<'T>) timeout =
-        // Reuse the current ThreadPool thread if possible.
+    let RunSynchronouslyBackgroundThreadPool (computation: Async<'T>) cancellationToken timeout =
+        // Run inline only where it's guaranteed to be safe
         match SynchronizationContext.Current, Thread.CurrentThread.IsThreadPoolThread, timeout with
-        | null, true, None -> RunImmediate cancellationToken computation
-        | _ -> QueueAsyncAndWaitForResultSynchronously cancellationToken computation timeout
+        | null, true, None -> RunSynchronouslyImmediate computation cancellationToken // best stacktrace in case of exception
+        | _ -> QueueAsyncAndWaitForResultSynchronously computation cancellationToken timeout // less useful stack traces
 
     [<DebuggerHidden>]
     let Start cancellationToken (computation: Async<unit>) =
@@ -1172,22 +1182,6 @@ module AsyncPrimitives =
             (fun edi -> edi.ThrowAny()) // raise exception in child
             (fun _ -> fake ()) // ignore cancellation in child
             computation
-        |> unfake
-
-    [<DebuggerHidden>]
-    let StartWithContinuations cancellationToken (computation: Async<'T>) cont econt ccont =
-        let trampolineHolder = TrampolineHolder()
-
-        trampolineHolder.ExecuteWithTrampoline(fun () ->
-            let ctxt =
-                AsyncActivation.Create
-                    cancellationToken
-                    trampolineHolder
-                    (cont >> fake)
-                    (econt >> fake)
-                    (ccont >> fake)
-
-            computation.Invoke ctxt)
         |> unfake
 
     [<DebuggerHidden>]
@@ -1210,16 +1204,30 @@ module AsyncPrimitives =
 
         task
 
+    // Used by Async.Await path to elide egregious AggregateException wrapping
+    [<DebuggerHidden>]
+    let UnwrapExn (exn: AggregateException) =
+        if exn.InnerExceptions.Count = 1 then
+            exn.InnerExceptions[0]
+        else
+            exn
+
     // Call the appropriate continuation on completion of a task
     [<DebuggerHidden>]
-    let OnTaskCompleted (completedTask: Task<'T>) (ctxt: AsyncActivation<'T>) =
+    let OnTaskCompleted unwrap (completedTask: Task<'T>) (ctxt: AsyncActivation<'T>) =
         assert completedTask.IsCompleted
 
         if completedTask.IsCanceled then
             let edi = ExceptionDispatchInfo.Capture(TaskCanceledException completedTask)
             ctxt.econt edi
         elif completedTask.IsFaulted then
-            let edi = ExceptionDispatchInfo.RestoreOrCapture completedTask.Exception
+            let e =
+                if unwrap then
+                    UnwrapExn completedTask.Exception
+                else
+                    completedTask.Exception
+
+            let edi = ExceptionDispatchInfo.RestoreOrCapture e
             ctxt.econt edi
         else
             ctxt.cont completedTask.Result
@@ -1229,14 +1237,20 @@ module AsyncPrimitives =
     // the overall async (they may be governed by different cancellation tokens, or
     // the task may not have a cancellation token at all).
     [<DebuggerHidden>]
-    let OnUnitTaskCompleted (completedTask: Task) (ctxt: AsyncActivation<unit>) =
+    let OnUnitTaskCompleted unwrap (completedTask: Task) (ctxt: AsyncActivation<unit>) =
         assert completedTask.IsCompleted
 
         if completedTask.IsCanceled then
             let edi = ExceptionDispatchInfo.Capture(TaskCanceledException(completedTask))
             ctxt.econt edi
         elif completedTask.IsFaulted then
-            let edi = ExceptionDispatchInfo.RestoreOrCapture completedTask.Exception
+            let e =
+                if unwrap then
+                    UnwrapExn completedTask.Exception
+                else
+                    completedTask.Exception
+
+            let edi = ExceptionDispatchInfo.RestoreOrCapture e
             ctxt.econt edi
         else
             ctxt.cont ()
@@ -1246,10 +1260,10 @@ module AsyncPrimitives =
     // completing the task. This will install a new trampoline on that thread and continue the
     // execution of the async there.
     [<DebuggerHidden>]
-    let AttachContinuationToTask (task: Task<'T>) (ctxt: AsyncActivation<'T>) =
+    let AttachContinuationToTask unwrap (task: Task<'T>) (ctxt: AsyncActivation<'T>) =
         task.ContinueWith(
             Action<Task<'T>>(fun completedTask ->
-                ctxt.trampolineHolder.ExecuteWithTrampoline(fun () -> OnTaskCompleted completedTask ctxt)
+                ctxt.trampolineHolder.ExecuteWithTrampoline(fun () -> OnTaskCompleted unwrap completedTask ctxt)
                 |> unfake),
             TaskContinuationOptions.ExecuteSynchronously
         )
@@ -1261,15 +1275,35 @@ module AsyncPrimitives =
     // completing the task. This will install a new trampoline on that thread and continue the
     // execution of the async there.
     [<DebuggerHidden>]
-    let AttachContinuationToUnitTask (task: Task) (ctxt: AsyncActivation<unit>) =
+    let AttachContinuationToUnitTask unwrap (task: Task) (ctxt: AsyncActivation<unit>) =
         task.ContinueWith(
             Action<Task>(fun completedTask ->
-                ctxt.trampolineHolder.ExecuteWithTrampoline(fun () -> OnUnitTaskCompleted completedTask ctxt)
+                ctxt.trampolineHolder.ExecuteWithTrampoline(fun () -> OnUnitTaskCompleted unwrap completedTask ctxt)
                 |> unfake),
             TaskContinuationOptions.ExecuteSynchronously
         )
         |> ignore
         |> fake
+
+    let AwaitTask unwrap (task: Task<'T>) =
+        MakeAsyncWithCancelCheck(fun ctxt ->
+            if task.IsCompleted then
+                // Run synchronously without installing new trampoline
+                OnTaskCompleted unwrap task ctxt
+            else
+                // Continue asynchronously, via syncContext if necessary, installing new trampoline
+                let ctxt = DelimitSyncContext ctxt
+                ctxt.ProtectCode(fun () -> AttachContinuationToTask unwrap task ctxt))
+
+    let AwaitUnitTask unwrap (task: Task) =
+        MakeAsyncWithCancelCheck(fun ctxt ->
+            if task.IsCompleted then
+                // Continue synchronously without installing new trampoline
+                OnUnitTaskCompleted unwrap task ctxt
+            else
+                // Continue asynchronously, via syncContext if necessary, installing new trampoline
+                let ctxt = DelimitSyncContext ctxt
+                ctxt.ProtectCode(fun () -> AttachContinuationToUnitTask unwrap task ctxt))
 
     /// Removes a registration places on a cancellation token
     let DisposeCancellationRegistration (registration: byref<CancellationTokenRegistration option>) =
@@ -1511,7 +1545,13 @@ type Async =
             | Some token when not token.CanBeCanceled -> timeout, token
             | Some token -> None, token
 
-        RunSynchronously cancellationToken computation timeout
+        RunSynchronouslyBackgroundThreadPool computation cancellationToken timeout
+
+    static member RunSynchronouslyImmediate(computation: Async<'T>, ?cancellationToken: CancellationToken) =
+        let cancellationToken =
+            defaultArg cancellationToken defaultCancellationTokenSource.Token
+
+        RunSynchronouslyImmediate computation cancellationToken
 
     static member Start(computation, ?cancellationToken) =
         let cancellationToken =
@@ -2203,24 +2243,82 @@ type Async =
         CreateWhenCancelledAsync compensation computation
 
     static member AwaitTask(task: Task<'T>) : Async<'T> =
-        MakeAsyncWithCancelCheck(fun ctxt ->
-            if task.IsCompleted then
-                // Run synchronously without installing new trampoline
-                OnTaskCompleted task ctxt
-            else
-                // Continue asynchronously, via syncContext if necessary, installing new trampoline
-                let ctxt = DelimitSyncContext ctxt
-                ctxt.ProtectCode(fun () -> AttachContinuationToTask task ctxt))
+        AwaitTask false task
 
     static member AwaitTask(task: Task) : Async<unit> =
-        MakeAsyncWithCancelCheck(fun ctxt ->
-            if task.IsCompleted then
-                // Continue synchronously without installing new trampoline
-                OnUnitTaskCompleted task ctxt
-            else
-                // Continue asynchronously, via syncContext if necessary, installing new trampoline
-                let ctxt = DelimitSyncContext ctxt
-                ctxt.ProtectCode(fun () -> AttachContinuationToUnitTask task ctxt))
+        AwaitUnitTask false task
+
+    static member Await(task: Task<'T>) : Async<'T> =
+        AwaitTask true task
+
+    static member Await(task: Task) : Async<unit> =
+        AwaitUnitTask true task
+
+#if NETSTANDARD2_1 || NET
+    static member Await(task: ValueTask<'T>) : Async<'T> =
+        if task.IsCompletedSuccessfully then
+            CreateReturnAsync(task.GetAwaiter().GetResult())
+        else
+            AwaitTask true (task.AsTask())
+
+    static member Await(task: ValueTask) : Async<unit> =
+        if task.IsCompletedSuccessfully then
+            CreateReturnAsync(task.GetAwaiter().GetResult())
+        else
+            AwaitUnitTask true (task.AsTask())
+#endif
+
+    static member StartTaskImmediate(createTask: CancellationToken -> Task<'T>) : Async<'T> =
+        CreateBindAsync Async.CancellationToken (createTask >> Async.Await)
+
+    static member StartTaskImmediate(createTask: CancellationToken -> Task) : Async<unit> =
+        CreateBindAsync Async.CancellationToken (createTask >> Async.Await)
+
+#if NETSTANDARD2_1 || NET
+    static member StartTaskImmediate(createTask: CancellationToken -> ValueTask<'T>) : Async<'T> =
+        CreateBindAsync Async.CancellationToken (createTask >> Async.Await)
+
+    static member StartTaskImmediate(createTask: CancellationToken -> ValueTask) : Async<unit> =
+        CreateBindAsync Async.CancellationToken (createTask >> Async.Await)
+#endif
+
+module AsyncTaskLikeExtensions =
+
+    type Async with
+
+        [<NoEagerConstraintApplication>]
+        static member inline Await< ^TaskLike, ^Awaiter, 'T
+            when ^TaskLike: (member GetAwaiter: unit -> ^Awaiter)
+            and ^Awaiter :> ICriticalNotifyCompletion
+            and ^Awaiter: (member get_IsCompleted: unit -> bool)
+            and ^Awaiter: (member GetResult: unit -> 'T)>
+            (task: ^TaskLike)
+            : Async<'T> =
+            Async.FromContinuations(fun (cont, econt, _ccont) ->
+                let mutable awaiter = (^TaskLike: (member GetAwaiter: unit -> ^Awaiter) task)
+
+                if (^Awaiter: (member get_IsCompleted: unit -> bool) awaiter) then
+                    try
+                        cont ((^Awaiter: (member GetResult: unit -> 'T) awaiter))
+                    with e ->
+                        econt e
+                else
+                    (awaiter :> ICriticalNotifyCompletion)
+                        .OnCompleted(fun () ->
+                            try
+                                cont ((^Awaiter: (member GetResult: unit -> 'T) awaiter))
+                            with e ->
+                                econt e))
+
+        [<NoEagerConstraintApplication>]
+        static member inline StartTaskImmediate< ^TaskLike, ^Awaiter, 'T
+            when ^TaskLike: (member GetAwaiter: unit -> ^Awaiter)
+            and ^Awaiter :> ICriticalNotifyCompletion
+            and ^Awaiter: (member get_IsCompleted: unit -> bool)
+            and ^Awaiter: (member GetResult: unit -> 'T)>
+            (createTask: CancellationToken -> ^TaskLike)
+            : Async<'T> =
+            CreateBindAsync Async.CancellationToken (createTask >> Async.Await)
 
 module CommonExtensions =
 
@@ -2355,3 +2453,45 @@ module WebExtensions =
                 start = (fun userToken -> this.DownloadFileAsync(address, fileName, userToken)),
                 result = (fun _ -> ())
             )
+
+[<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
+module Async =
+
+    [<CompiledName("Result")>]
+    let inline result (value: 'T) : Async<'T> =
+        async.Return value
+
+    [<CompiledName("Map")>]
+    let inline map ([<InlineIfLambda>] mapping: 'T -> 'U) (computation: Async<'T>) : Async<'U> =
+        async.Bind(computation, mapping >> async.Return)
+
+    [<CompiledName("Bind")>]
+    let inline bind ([<InlineIfLambda>] binder: 'T -> Async<'U>) (computation: Async<'T>) : Async<'U> =
+        async.Bind(computation, binder)
+
+    [<CompiledName("Ignore")>]
+    [<RequiresExplicitTypeArguments>]
+    let inline ignore<'T> (computation: Async<'T>) : Async<unit> =
+        Async.Ignore computation
+
+    [<CompiledName("CatchWith")>]
+    let catchWith (handler: exn -> 'T) (computation: Async<'T>) : Async<'T> =
+        async {
+            try
+                return! computation
+            with e ->
+                return handler e
+        }
+
+    [<CompiledName("Catch")>]
+    let catch (computation: Async<'T>) : Async<Result<'T, exn>> =
+        async {
+            try
+                let! v = computation
+                return Result.Ok v
+            with e ->
+                return Result.Error e
+        }
+
+    [<CompiledName("Empty")>]
+    let empty: Async<unit> = async.Zero()

@@ -38,6 +38,16 @@ val rhs2: parseState: IParseState -> i: int -> j: int -> range
 
 val rhs: parseState: IParseState -> i: int -> range
 
+/// Peel a trailing printf specifier (e.g. "%d") off an interpolated-string literal that precedes a
+/// hole, returning the literal without it and the specifier text. '%%' is a literal escape.
+val peelTrailingPrintfSpecifier: litText: string -> string * string option
+
+/// Build the [String literal; FillExpr hole] pair for one interpolation hole, splitting the
+/// '{x,n}' alignment out of its tuple encoding and peeling a trailing printf specifier off the
+/// literal onto the hole.
+val mkInterpolatedStringFillParts:
+    litText: string * litRange: range * fill: (SynExpr * Ident option) -> SynInterpolatedStringPart list
+
 type LexerIfdefStackEntry =
     | IfDefIf
     | IfDefElse
@@ -105,28 +115,18 @@ type LexerContinuation =
 and LexCont = LexerContinuation
 
 val ParseAssemblyCodeInstructions:
-    s: string ->
-    reportLibraryOnlyFeatures: bool ->
-    langVersion: LanguageVersion ->
-    strictIndentation: bool option ->
-    m: range ->
-        ILInstr[]
+    s: string -> reportLibraryOnlyFeatures: bool -> langVersion: LanguageVersion -> m: range -> ILInstr[]
 
 val grabXmlDocAtRangeStart: parseState: IParseState * optAttributes: SynAttributeList list * range: range -> PreXmlDoc
 
 val grabXmlDoc: parseState: IParseState * optAttributes: SynAttributeList list * elemIdx: int -> PreXmlDoc
 
 val ParseAssemblyCodeType:
-    s: string ->
-    reportLibraryOnlyFeatures: bool ->
-    langVersion: LanguageVersion ->
-    strictIndentation: bool option ->
-    m: range ->
-        ILType
+    s: string -> reportLibraryOnlyFeatures: bool -> langVersion: LanguageVersion -> m: range -> ILType
 
-val reportParseErrorAt: range -> (int * string) -> unit
+val reportParseErrorAt: range -> (int * RichText) -> unit
 
-val raiseParseErrorAt: range -> (int * string) -> 'a
+val raiseParseErrorAt: range -> (int * RichText) -> 'a
 
 val mkSynMemberDefnGetSet:
     parseState: IParseState ->
@@ -166,10 +166,10 @@ val exprFromParseError: e: SynExpr -> SynExpr
 val patFromParseError: e: SynPat -> SynPat
 
 val rebindRanges:
-    first: (RecordFieldName * range option * SynExpr option) ->
-    fields: ((RecordFieldName * range option * SynExpr option) * BlockSeparator option) list ->
+    first: RecordBinding ->
+    fields: (RecordBinding * BlockSeparator option) list ->
     lastSep: BlockSeparator option ->
-        SynExprRecordField list
+        SynExprRecordFieldOrSpread list
 
 val mkUnderscoreRecdField: m: range -> SynLongIdent * bool
 
@@ -229,7 +229,7 @@ val mkDefnBindings:
     mWhole: range * BindingSet * attrs: SynAttributes * vis: SynAccess option * attrsm: range * mIn: range option ->
         SynModuleDecl list
 
-val idOfPat: parseState: IParseState -> m: range -> p: SynPat -> Ident
+val idOfPat: m: range -> p: SynPat -> Ident
 
 val checkForMultipleAugmentations: m: range -> a1: 'a list -> a2: 'a list -> 'a list
 
@@ -285,3 +285,33 @@ val mkSynField:
         SynField
 
 val leadingKeywordIsAbstract: SynLeadingKeyword -> bool
+
+val mkAbstractMember:
+    parseState: IParseState ->
+    attrs: SynAttributeList list ->
+    accessBeforeKeyword: SynAccess option ->
+    abstractMemberFlags: (SynMemberKind -> SynMemberFlags) * SynLeadingKeyword ->
+        accessBeforeId: SynAccess option ->
+        mInline: range option ->
+        id: SynIdent ->
+        typeParams: SynValTyparDecls ->
+        typeWithConstraints: SynType * SynValInfo ->
+            accessors: range option * (SynMemberKind * GetSetKeywords option * SynAccess option * SynAccess option) ->
+                SynMemberDefn list
+
+val mkMatchClauses:
+    patternAndGuard: SynPat * SynExpr option ->
+        patternResult: range option * SynExpr ->
+            mNextBar: range option ->
+            nextClauses: (range option -> SynMatchClause list * range) option ->
+            mLastOuter: range option ->
+                (range option -> SynMatchClause list * range)
+
+val mkMatchClausesRecoverMissingResult:
+    patternAndGuard: SynPat * SynExpr option ->
+        exprDebugString: string ->
+        mExpr: range option ->
+        mNextBar: range option ->
+        nextClauses: (range option -> SynMatchClause list * range) option ->
+        mLastOuter: range option ->
+            (range option -> SynMatchClause list * range)

@@ -163,6 +163,8 @@ module internal ILExtensions =
                 | "System.Runtime.CompilerServices.CompilerFeatureRequiredAttribute" ->
                     WellKnownILAttributes.CompilerFeatureRequiredAttribute
                 | "System.Runtime.CompilerServices.RequiredMemberAttribute" -> WellKnownILAttributes.RequiredMemberAttribute
+                | "System.Runtime.CompilerServices.OverloadResolutionPriorityAttribute" ->
+                    WellKnownILAttributes.OverloadResolutionPriorityAttribute
                 | _ -> WellKnownILAttributes.None
 
             elif name.StartsWith("Microsoft.FSharp.Core.") then
@@ -183,6 +185,7 @@ module internal ILExtensions =
                     WellKnownILAttributes.SetsRequiredMembersAttribute
                 | "System.ObsoleteAttribute" -> WellKnownILAttributes.ObsoleteAttribute
                 | "System.Diagnostics.CodeAnalysis.ExperimentalAttribute" -> WellKnownILAttributes.ExperimentalAttribute
+                | "System.Diagnostics.CodeAnalysis.NotNullIfNotNullAttribute" -> WellKnownILAttributes.NotNullIfNotNullAttribute
                 | "System.AttributeUsageAttribute" -> WellKnownILAttributes.AttributeUsageAttribute
                 | _ -> WellKnownILAttributes.None
 
@@ -252,8 +255,8 @@ module internal AttributeHelpers =
                 struct (ValueSome nlr.Path, ValueNone)
         elif g.compilingFSharpCore then
             match tcref.Deref.PublicPath with
-            | Some(PubPath pp) -> struct (ValueNone, ValueSome pp)
-            | None -> struct (ValueNone, ValueNone)
+            | ValueSome pubpath -> struct (ValueNone, ValueSome pubpath.FullPath)
+            | ValueNone -> struct (ValueNone, ValueNone)
         else
             struct (ValueNone, ValueNone)
 
@@ -282,6 +285,7 @@ module internal AttributeHelpers =
             | [| "System"; "Runtime"; "InteropServices"; name |] ->
                 match name with
                 | "StructLayoutAttribute" -> WellKnownEntityAttributes.StructLayoutAttribute
+                | "ExtendedLayoutAttribute" -> WellKnownEntityAttributes.ExtendedLayoutAttribute
                 | "DllImportAttribute" -> WellKnownEntityAttributes.DllImportAttribute
                 | "ComVisibleAttribute" ->
                     decodeBoolAttribFlag
@@ -573,6 +577,7 @@ module internal AttributeHelpers =
                 | "CallerFilePathAttribute" -> WellKnownValAttributes.CallerFilePathAttribute
                 | "CallerLineNumberAttribute" -> WellKnownValAttributes.CallerLineNumberAttribute
                 | "MethodImplAttribute" -> WellKnownValAttributes.MethodImplAttribute
+                | "OverloadResolutionPriorityAttribute" -> WellKnownValAttributes.OverloadResolutionPriorityAttribute
                 | _ -> WellKnownValAttributes.None
 
             | [| "System"; "Runtime"; "InteropServices"; name |] ->
@@ -590,6 +595,11 @@ module internal AttributeHelpers =
             | [| "System"; "Diagnostics"; name |] ->
                 match name with
                 | "ConditionalAttribute" -> WellKnownValAttributes.ConditionalAttribute
+                | _ -> WellKnownValAttributes.None
+
+            | [| "System"; "Diagnostics"; "CodeAnalysis"; name |] ->
+                match name with
+                | "NotNullIfNotNullAttribute" -> WellKnownValAttributes.NotNullIfNotNullAttribute
                 | _ -> WellKnownValAttributes.None
 
             | [| "System"; name |] ->
@@ -1668,7 +1678,7 @@ module internal DebugPrint =
 
     and auxTraitL env (ttrait: TraitConstraintInfo) =
 #if DEBUG
-        let (TTrait(tys, nm, memFlags, argTys, retTy, _, _)) = ttrait
+        let (TTrait(tys, nm, memFlags, argTys, retTy, _, _, _)) = ttrait
 
         match global_g with
         | None -> wordL (tagText "<no global g>")

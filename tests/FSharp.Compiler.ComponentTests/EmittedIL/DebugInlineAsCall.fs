@@ -2,6 +2,7 @@ namespace EmittedIL
 
 open System.Diagnostics
 open System.Runtime.CompilerServices
+open FSharp.Test
 open Xunit
 open FSharp.Test.Compiler
 
@@ -1076,6 +1077,202 @@ let main _ =
         |> verifySequencePoints
 
     [<Fact>]
+    let ``SRTP 30 - Capture of enclosing local`` () =
+        FSharp """
+let f () =
+    let x = 42
+    let inline g y = x + int y
+    g 1uy
+
+[<EntryPoint>]
+let main _ =
+    if f () = 43 then 0 else 1
+"""
+        |> withDebug
+        |> withNoOptimize
+        |> asExe
+        |> compileAndRun
+        |> verifySequencePoints
+
+    [<Fact>]
+    let ``SRTP 31 - Capture used in nested closure`` () =
+        FSharp """
+let f () =
+    let xs = [ 1; 2; 3 ]
+    let inline g y = xs |> List.map (fun v -> v + int y) |> List.sum
+    g 1uy
+
+[<EntryPoint>]
+let main _ =
+    if f () = 9 then 0 else 1
+"""
+        |> withDebug
+        |> withNoOptimize
+        |> asExe
+        |> compileAndRun
+        |> verifySequencePoints
+
+    [<Fact>]
+    let ``SRTP 32 - Capture of mutable local`` () =
+        // A captured mutable local cannot be passed by value, so the body is inlined at the callsite.
+        FSharp """
+let f () =
+    let mutable x = 10
+    let inline g y = x <- x + int y
+    g 5uy
+    x
+
+[<EntryPoint>]
+let main _ =
+    if f () = 15 then 0 else 1
+"""
+        |> withDebug
+        |> withNoOptimize
+        |> asExe
+        |> compileAndRun
+        |> verifySequencePoints
+
+    [<Fact>]
+    let ``SRTP 33 - Capture of this`` () =
+        FSharp """
+type C(n: int) =
+    member _.M(b: byte) =
+        let inline g y = n + int y
+        g b
+
+[<EntryPoint>]
+let main _ =
+    if C(42).M(5uy) = 47 then 0 else 1
+"""
+        |> withDebug
+        |> withNoOptimize
+        |> asExe
+        |> compileAndRun
+        |> verifySequencePoints
+
+    [<Fact>]
+    let ``SRTP 34 - Capture of enclosing inline function parameter`` () =
+        FSharp """
+let inline outer (a: int) =
+    let inline g y = a + int y
+    g 1uy
+
+[<EntryPoint>]
+let main _ =
+    if outer 42 = 43 then 0 else 1
+"""
+        |> withDebug
+        |> withNoOptimize
+        |> asExe
+        |> compileAndRun
+        |> verifySequencePoints
+
+    [<Fact>]
+    let ``SRTP 35 - Capture of enclosing inline function parameter - Different assembly`` () =
+        let library =
+            FSharp """
+module MyLib
+
+let inline outer (a: int) =
+    let inline g y = a + int y
+    g 1uy
+"""
+            |> withDebug
+            |> withNoOptimize
+            |> asLibrary
+
+        FSharp """
+open MyLib
+
+[<EntryPoint>]
+let main _ =
+    if outer 42 = 43 then 0 else 1
+"""
+        |> withDebug
+        |> withNoOptimize
+        |> withReferences [library]
+        |> asExe
+        |> compileAndRun
+        |> verifySequencePoints
+
+    [<Fact>]
+    let ``SRTP 36 - Capture at two instantiations`` () =
+        FSharp """
+let f () =
+    let x = 100
+    let inline g y = x + int y
+    g 1uy + g 2s
+
+[<EntryPoint>]
+let main _ =
+    if f () = 203 then 0 else 1
+"""
+        |> withDebug
+        |> withNoOptimize
+        |> asExe
+        |> compileAndRun
+        |> verifySequencePoints
+
+    [<Fact>]
+    let ``SRTP 37 - Captured value with enclosing typar`` () =
+        FSharp """
+let f<'a> (v: 'a) =
+    let xs = [ v; v ]
+    let inline g y = List.length xs + int y
+    g 1uy
+
+[<EntryPoint>]
+let main _ =
+    if f "a" = 3 && f 1 = 3 && f 1.5 = 3 && f System.DateTime.Now = 3 then 0 else 1
+"""
+        |> withDebug
+        |> withNoOptimize
+        |> asExe
+        |> compileAndRun
+        |> verifySequencePoints
+
+    [<Fact>]
+    let ``SRTP 38 - Free typar only in body`` () =
+        FSharp """
+let inline mk< 'T, ^U when ^U : (static member op_Explicit: ^U -> int) > (y: ^U) : obj =
+    let arr : 'T[] = Array.zeroCreate (int y)
+    box arr
+
+let outer<'a> () = mk<'a, byte> 3uy
+
+[<EntryPoint>]
+let main _ =
+    match outer<System.DateTime> () with
+    | :? (System.DateTime[]) as a when a.Length = 3 -> 0
+    | o -> printfn "Unexpected %s" (o.GetType().FullName); 1
+"""
+        |> withDebug
+        |> withNoOptimize
+        |> asExe
+        |> compileAndRun
+        |> verifySequencePoints
+
+    // https://github.com/dotnet/fsharp/issues/20297
+    [<Fact>]
+    let ``SRTP 39 - Captured local function, callsite in a nested closure`` () =
+        FSharp """
+let f () =
+    let tee g (x: int) = g x; x
+    let inline addEnum value = tee (fun x -> ignore (int value))
+    let pipeline v = id >> addEnum v
+    pipeline 1uy 41
+
+[<EntryPoint>]
+let main _ =
+    if f () = 41 then 0 else 1
+"""
+        |> withDebug
+        |> withNoOptimize
+        |> asExe
+        |> compileAndRun
+        |> verifySequencePoints
+
+    [<Fact>]
     let ``Member 01 - Non-generic`` () =
         FSharp """
 type T() =
@@ -1594,4 +1791,109 @@ let main _ =
         |> compile
         |> shouldSucceed
         |> verifyILNotPresent ["call       int32 Test::apply(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,int32>,"]
+
+    // https://github.com/dotnet/fsharp/issues/20063
+    [<FactForNETCOREAPP>]
+    let ``Stackalloc 01 - Debug`` () =
+        FSharp """
+open System
+open FSharp.NativeInterop
+#nowarn 9
+
+let inline stackalloc n = Span<char>(NativePtr.stackalloc<char> n |> NativePtr.toVoidPtr, n)
+
+[<EntryPoint>]
+let main _ =
+    let b = stackalloc 3
+    b[0] <- 'a'
+    b[1] <- 'b'
+    b[2] <- 'c'
+    if String b = "abc" then 0 else 1
+"""
+        |> withDebug
+        |> withNoOptimize
+        |> asExe
+        |> compileAndRun
+        |> verifySequencePoints
+
+    [<FactForNETCOREAPP>]
+    let ``Stackalloc 02 - Nested wrappers`` () =
+        FSharp """
+open System
+open FSharp.NativeInterop
+#nowarn 9
+
+let inline alloc n : nativeptr<char> = NativePtr.stackalloc<char> n
+let inline stackalloc n = Span<char>(alloc n |> NativePtr.toVoidPtr, n)
+
+[<EntryPoint>]
+let main _ =
+    let b = stackalloc 2
+    b[0] <- 'a'
+    b[1] <- 'b'
+    if String b = "ab" then 0 else 1
+"""
+        |> withDebug
+        |> withNoOptimize
+        |> asExe
+        |> compileAndRun
+        |> verifySequencePoints
+
+    [<FactForNETCOREAPP>]
+    let ``Stackalloc 03 - Different assembly`` () =
+        let library =
+            FSharp """
+module MyLib
+
+open System
+open FSharp.NativeInterop
+#nowarn 9
+
+let inline alloc n : nativeptr<char> = NativePtr.stackalloc<char> n
+let inline stackalloc n = Span<char>(alloc n |> NativePtr.toVoidPtr, n)
+"""
+            |> withDebug
+            |> withNoOptimize
+            |> asLibrary
+            |> withName "Lib"
+
+        FSharp """
+open System
+open MyLib
+
+[<EntryPoint>]
+let main _ =
+    let b = stackalloc 2
+    b[0] <- 'a'
+    b[1] <- 'b'
+    if String b = "ab" then 0 else 1
+"""
+        |> withDebug
+        |> withNoOptimize
+        |> withReferences [library]
+        |> asExe
+        |> compileAndRun
+        |> verifySequencePoints
+
+    [<FactForNETCOREAPP>]
+    let ``Stackalloc 04 - Only the wrappers are force inlined`` () =
+        FSharp """
+open System
+open FSharp.NativeInterop
+#nowarn 9
+
+let inline stackalloc n = Span<char>(NativePtr.stackalloc<char> n |> NativePtr.toVoidPtr, n)
+let inline fill (b: Span<char>) c = b.Fill c
+
+[<EntryPoint>]
+let main _ =
+    let b = stackalloc 2
+    fill b 'a'
+    if String b = "aa" then 0 else 1
+"""
+        |> withDebug
+        |> withNoOptimize
+        |> asExe
+        |> compileAndRun
+        |> verifySequencePoints
 
