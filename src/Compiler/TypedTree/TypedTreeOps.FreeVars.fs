@@ -260,7 +260,7 @@ module internal FreeTypeVars =
             acc
 
     and accFreeInTyparConstraints opts cxs acc =
-        List.foldBack (accFreeInTyparConstraint opts) cxs acc
+        ListInline.foldBack (accFreeInTyparConstraint opts) cxs acc
 
     and accFreeInTyparConstraint opts tpc acc =
         match tpc with
@@ -375,7 +375,7 @@ module internal FreeTypeVars =
         accFreeInTyparConstraints opts v emptyFreeTyvars
 
     let accFreeInTypars opts tps acc =
-        List.foldBack (accFreeTyparRef opts) tps acc
+        ListInline.foldBack (accFreeTyparRef opts) tps acc
 
     let rec addFreeInModuleTy (mtyp: ModuleOrNamespaceType) acc =
         QueueList.foldBack
