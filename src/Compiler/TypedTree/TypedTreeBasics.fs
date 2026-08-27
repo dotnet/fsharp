@@ -426,8 +426,17 @@ let pubPathEq (path1: PublicPath) (path2: PublicPath) =
     path1.Name = path2.Name
     && loop path1.EnclosingCompilationPath.AccessPath path2.EnclosingCompilationPath.AccessPath
 
+// Compares nlr1.Path against path2 without materializing path2.FullPath: the enclosing access path is
+// walked as a list while the reference path is indexed as an array, so this stays O(N) and allocation-free.
 let fslibRefEq (nlr1: NonLocalEntityRef) (path2: PublicPath) =
-    arrayPathEq nlr1.Path path2.FullPath
+    let path1 = nlr1.Path
+
+    let rec loop i lst =
+        match lst with
+        | [] -> i = path1.Length - 1 && path1[i] = path2.Name
+        | (nm, _) :: rest -> i < path1.Length && path1[i] = nm && loop (i + 1) rest
+
+    loop 0 path2.EnclosingCompilationPath.AccessPath
 
 // Struct (non-allocating) variants of |ERefLocal|ERefNonLocal|, for the hot fslib-compile equality below.
 [<return: Struct>]
