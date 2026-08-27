@@ -179,7 +179,7 @@ type Exception with
 
         | NotAFunction(_, _, mfun, _) -> Some mfun
 
-        | NotAFunctionButIndexer(_, _, _, mfun, _, _) -> Some mfun
+        | NotAFunctionButIndexer(_, _, _, mfun, _) -> Some mfun
 
         | IllegalFileNameChar _ -> Some rangeCmdArgs
 
@@ -1092,15 +1092,10 @@ type Exception with
 
         | InterfaceNotRevealed(denv, intfTy, _) -> os.Append(InterfaceNotRevealedE(), NicePrint.minimalRichTextOfType denv intfTy)
 
-        | NotAFunctionButIndexer(_, _, name, _, _, old) ->
-            if old then
-                match name with
-                | Some name -> os.Append(FSComp.SR.notAFunctionButMaybeIndexerWithName (RichText.mkLocal name))
-                | _ -> os.Append(FSComp.SR.notAFunctionButMaybeIndexer ())
-            else
-                match name with
-                | Some name -> os.Append(FSComp.SR.notAFunctionButMaybeIndexerWithName2 (RichText.mkLocal name))
-                | _ -> os.Append(FSComp.SR.notAFunctionButMaybeIndexer2 ())
+        | NotAFunctionButIndexer(_, _, name, _, _) ->
+            match name with
+            | Some name -> os.Append(FSComp.SR.notAFunctionButMaybeIndexerWithName2 (RichText.mkLocal name))
+            | _ -> os.Append(FSComp.SR.notAFunctionButMaybeIndexer2 ())
 
         | NotAFunction(denv, ty, _, marg) ->
             if marg.StartColumn = 0 then

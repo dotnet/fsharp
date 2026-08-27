@@ -25,12 +25,10 @@ type LanguageFeature =
     | DefaultInterfaceMemberConsumption
     | WitnessPassing
     | AdditionalTypeDirectedConversions
-    | InterfacesWithMultipleGenericInstantiation
     | StringInterpolation
     | OverloadsForCustomOperations
     | ExpandedMeasurables
     | NullnessChecking
-    | IndexerNotationWithoutDot
     | RefCellNotationInformationals
     | UnionIsPropertiesVisible
     | NonVariablePatternsToRightOfAsPatterns
@@ -39,7 +37,6 @@ type LanguageFeature =
     | ReallyLongLists
     | ErrorOnDeprecatedRequireQualifiedAccess
     | RequiredPropertiesSupport
-    | InitPropertiesSupport
     | LowercaseDUWhenRequireQualifiedAccess
     | InterfacesWithAbstractStaticMembers
     | SelfTypeConstraints
@@ -100,6 +97,7 @@ type LanguageFeature =
     | AccessProtectedBaseFieldFromClosure
     | ImprovedImpliedArgumentNamesPartTwo
     | RecordSpreads
+    | ErrorOnBitwiseOpsOnNonIntegralEnums
 
 /// LanguageVersion management
 type LanguageVersion(versionText, ?disabledFeaturesArray: LanguageFeature array) =
@@ -144,7 +142,6 @@ type LanguageVersion(versionText, ?disabledFeaturesArray: LanguageFeature array)
                 LanguageFeature.DefaultInterfaceMemberConsumption, languageVersion50
                 LanguageFeature.PackageManagement, languageVersion50
                 LanguageFeature.WitnessPassing, languageVersion50
-                LanguageFeature.InterfacesWithMultipleGenericInstantiation, languageVersion50
                 LanguageFeature.NameOf, languageVersion50
                 LanguageFeature.StringInterpolation, languageVersion50
 
@@ -153,7 +150,6 @@ type LanguageVersion(versionText, ?disabledFeaturesArray: LanguageFeature array)
                 LanguageFeature.OverloadsForCustomOperations, languageVersion60
                 LanguageFeature.ExpandedMeasurables, languageVersion60
                 LanguageFeature.ResumableStateMachines, languageVersion60
-                LanguageFeature.IndexerNotationWithoutDot, languageVersion60
                 LanguageFeature.RefCellNotationInformationals, languageVersion60
                 LanguageFeature.NonVariablePatternsToRightOfAsPatterns, languageVersion60
                 LanguageFeature.AttributesToRightOfModuleKeyword, languageVersion60
@@ -163,7 +159,6 @@ type LanguageVersion(versionText, ?disabledFeaturesArray: LanguageFeature array)
                 LanguageFeature.ReallyLongLists, languageVersion70
                 LanguageFeature.ErrorOnDeprecatedRequireQualifiedAccess, languageVersion70
                 LanguageFeature.RequiredPropertiesSupport, languageVersion70
-                LanguageFeature.InitPropertiesSupport, languageVersion70
                 LanguageFeature.LowercaseDUWhenRequireQualifiedAccess, languageVersion70
                 LanguageFeature.InterfacesWithAbstractStaticMembers, languageVersion70
                 LanguageFeature.SelfTypeConstraints, languageVersion70
@@ -224,6 +219,7 @@ type LanguageVersion(versionText, ?disabledFeaturesArray: LanguageFeature array)
                 // Put stabilized features here for F# 11.0 previews via .NET SDK preview channels
                 LanguageFeature.WarnWhenFunctionValueUsedAsInterpolatedStringArg, languageVersion110
                 LanguageFeature.PreprocessorElif, languageVersion110
+                LanguageFeature.ErrorOnBitwiseOpsOnNonIntegralEnums, languageVersion110
                 LanguageFeature.ExceptionFieldSerializationSupport, languageVersion110
                 LanguageFeature.NotNullIfNotNull, languageVersion110
                 LanguageFeature.ImprovedImpliedArgumentNamesPartTwo, languageVersion110
@@ -297,11 +293,6 @@ type LanguageVersion(versionText, ?disabledFeaturesArray: LanguageFeature array)
     member _.WithDisabledFeatures(disabled: LanguageFeature array) = LanguageVersion(versionText, disabled)
 
     /// Has preview been explicitly specified
-    member _.IsExplicitlySpecifiedAs50OrBefore() =
-        let v = getVersionFromString versionText
-        v <> 0.0m && v <= 5.0m
-
-    /// Has preview been explicitly specified
     member _.IsPreviewEnabled = specified = previewVersion
 
     /// Is the selected LanguageVersion valid
@@ -347,11 +338,9 @@ type LanguageVersion(versionText, ?disabledFeaturesArray: LanguageFeature array)
         | LanguageFeature.DefaultInterfaceMemberConsumption -> FSComp.SR.featureDefaultInterfaceMemberConsumption ()
         | LanguageFeature.WitnessPassing -> FSComp.SR.featureWitnessPassing ()
         | LanguageFeature.AdditionalTypeDirectedConversions -> FSComp.SR.featureAdditionalImplicitConversions ()
-        | LanguageFeature.InterfacesWithMultipleGenericInstantiation -> FSComp.SR.featureInterfacesWithMultipleGenericInstantiation ()
         | LanguageFeature.StringInterpolation -> FSComp.SR.featureStringInterpolation ()
         | LanguageFeature.OverloadsForCustomOperations -> FSComp.SR.featureOverloadsForCustomOperations ()
         | LanguageFeature.ExpandedMeasurables -> FSComp.SR.featureExpandedMeasurables ()
-        | LanguageFeature.IndexerNotationWithoutDot -> FSComp.SR.featureIndexerNotationWithoutDot ()
         | LanguageFeature.RefCellNotationInformationals -> FSComp.SR.featureRefCellNotationInformationals ()
         | LanguageFeature.UnionIsPropertiesVisible -> FSComp.SR.featureUnionIsPropertiesVisible ()
         | LanguageFeature.NonVariablePatternsToRightOfAsPatterns -> FSComp.SR.featureNonVariablePatternsToRightOfAsPatterns ()
@@ -360,7 +349,6 @@ type LanguageVersion(versionText, ?disabledFeaturesArray: LanguageFeature array)
         | LanguageFeature.ReallyLongLists -> FSComp.SR.featureReallyLongList ()
         | LanguageFeature.ErrorOnDeprecatedRequireQualifiedAccess -> FSComp.SR.featureErrorOnDeprecatedRequireQualifiedAccess ()
         | LanguageFeature.RequiredPropertiesSupport -> FSComp.SR.featureRequiredProperties ()
-        | LanguageFeature.InitPropertiesSupport -> FSComp.SR.featureInitProperties ()
         | LanguageFeature.LowercaseDUWhenRequireQualifiedAccess -> FSComp.SR.featureLowercaseDUWhenRequireQualifiedAccess ()
         | LanguageFeature.InterfacesWithAbstractStaticMembers -> FSComp.SR.featureInterfacesWithAbstractStaticMembers ()
         | LanguageFeature.SelfTypeConstraints -> FSComp.SR.featureSelfTypeConstraints ()
@@ -427,6 +415,7 @@ type LanguageVersion(versionText, ?disabledFeaturesArray: LanguageFeature array)
         | LanguageFeature.AccessProtectedBaseFieldFromClosure -> FSComp.SR.featureAccessProtectedBaseFieldFromClosure ()
         | LanguageFeature.ImprovedImpliedArgumentNamesPartTwo -> FSComp.SR.featureImprovedImpliedArgumentNamesPartTwo ()
         | LanguageFeature.RecordSpreads -> FSComp.SR.featureRecordSpreads ()
+        | LanguageFeature.ErrorOnBitwiseOpsOnNonIntegralEnums -> FSComp.SR.featureErrorOnBitwiseOpsOnNonIntegralEnums ()
 
     /// Get a version string associated with the given feature.
     static member GetFeatureVersionString feature =
