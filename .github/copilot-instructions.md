@@ -58,3 +58,15 @@ New diagnostic → update `src/Compiler/FSComp.txt`
 API surface change → `TEST_UPDATE_BSL=1 dotnet test tests/FSharp.Compiler.Service.Tests --filter "SurfaceAreaTest" -c Release`
 After code changes → `dotnet fantomas .`
 When fully done → write release notes (see skill)
+
+## Pull requests
+
+Push topic branches to `dotnet/fsharp` directly (maintainers have push access); never to a personal fork. Every PR's head repository must be `dotnet/fsharp`, not a fork.
+
+"Stacked PRs" means GitHub's **native Stacks** feature, not a hand-built chain of PRs that merely target each other's branches:
+1. Open each layer as an ordinary PR, bottom to top — the bottom targets `main`, each higher one targets the branch below it.
+2. Then **register** them as a stack via the Stacks REST API (bottom to top):
+   `gh api --method POST repos/dotnet/fsharp/stacks -F 'pull_requests[]=<bottom>' -F 'pull_requests[]=<top>'`
+   Verify with `gh api repos/dotnet/fsharp/stacks/<n>`.
+
+Native stacks require every member's head branch to live in `dotnet/fsharp` (no fork heads). Auto-merge is not supported on stacked PRs — the stack's cascading merge replaces it.
