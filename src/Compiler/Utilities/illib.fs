@@ -465,14 +465,14 @@ module ListInline =
         while go do
             // A struct tuple keeps the match flat without the per-iteration heap allocation a reference tuple would add.
             match struct (r1, r2) with
-            | struct (h1 :: t1, h2 :: t2) ->
+            | h1 :: t1, h2 :: t2 ->
                 if predicate h1 h2 then
                     r1 <- t1
                     r2 <- t2
                 else
                     result <- false
                     go <- false
-            | struct ([], []) -> go <- false
+            | [], [] -> go <- false
             | _ -> invalidArg (nameof list2) "The lists had different lengths."
 
         result
