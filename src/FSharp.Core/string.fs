@@ -8,6 +8,7 @@ open Microsoft.FSharp.Core.LanguagePrimitives.IntrinsicOperators
 open Microsoft.FSharp.Core.Operators
 open Microsoft.FSharp.Core.Operators.Checked
 open Microsoft.FSharp.Collections
+open Microsoft.FSharp.NativeInterop
 open Microsoft.FSharp.Primitives.Basics
 
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
@@ -18,7 +19,12 @@ module String =
     /// and is equal to 80_000 / sizeof<char>
     [<Literal>]
     let LOH_CHAR_THRESHOLD = 40_000
-
+    
+#if NETSTANDARD2_1_OR_GREATER
+    [<Literal>]
+    let STACKALLOC_THRESHOLD = 512
+#endif
+    
     [<CompiledName("Length")>]
     let length (str: string) =
         if isNull str then 0 else str.Length
@@ -108,8 +114,11 @@ module String =
             String(result)
 #endif
 
+    // let inline filterBuildString (source: string, target: Span<char>, predicate: char -> bool) =
+    
     [<CompiledName("Filter")>]
     let filter (predicate: char -> bool) (str: string) =
+        
         let len = length str
 
         if len = 0 then
@@ -129,16 +138,30 @@ module String =
             res.ToString()
 
         else
-            // Must do it this way, since array.fs is not yet in scope, but this is safe
-            let target = Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked len
+            
+            let target =
+#if NETSTANDARD2_1_OR_GREATER
+#nowarn "9"
+                if len <= STACKALLOC_THRESHOLD then
+                    Span<char>((NativePtr.toVoidPtr (NativePtr.stackalloc<char> STACKALLOC_THRESHOLD)), len)
+                else
+                    Span(Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked len)
+#warnon "9"
+#else
+                    Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked len
+#endif
             let mutable i = 0
 
             for c in str do
                 if predicate c then
                     target.[i] <- c
                     i <- i + 1
-
+            
+#if NETSTANDARD2_1_OR_GREATER
+            String(target.Slice(0, i))
+#else
             String(target, 0, i)
+#endif
 
     [<CompiledName("Collect")>]
     let collect (mapping: char -> string) (str: string) =
