@@ -249,6 +249,59 @@ module Determinism
         finally
             try Directory.Delete(tempRoot, true) with _ -> ()
 
+    /// Positional coverage for #20389: renaming a public member at any distance from the end of the
+    /// compile order must change the reference-assembly MVID. Distances >= 33 (files 1..8 of 40) were
+    /// previously zeroed out by the truncating `(acc <<< 1)` fold; every distance must now change it.
+    [<InlineData 1>]
+    [<InlineData 5>]
+    [<InlineData 8>]
+    [<InlineData 11>]
+    [<InlineData 20>]
+    [<InlineData 33>]
+    [<InlineData 39>]
+    [<TheoryForNETCOREAPP>]
+    let ``Reference assembly MVID changes for a public rename at any distance from the end`` (distanceFromEnd: int) =
+        let tempRoot =
+            Path.Combine(Path.GetTempPath(), "fsharp-ref-mvid-dist-" + Guid.NewGuid().ToString("N"))
+        try
+            let fileCount = 40
+            let renameAt = fileCount - distanceFromEnd + 1
+
+            let before = writeModules (Path.Combine(tempRoot, "before")) fileCount renameAt (sprintf "value%02d" renameAt)
+            let after = writeModules (Path.Combine(tempRoot, "after")) fileCount renameAt (sprintf "renamedValue%02d" renameAt)
+
+            let refBefore = compileRefAssemblyOfFiles (Path.Combine(tempRoot, "outBefore")) before
+            let refAfter = compileRefAssemblyOfFiles (Path.Combine(tempRoot, "outAfter")) after
+
+            Assert.NotEqual(readMvid refBefore, readMvid refAfter)
+        finally
+            try Directory.Delete(tempRoot, true) with _ -> ()
+
+    /// End-to-end guard for #20389: the reference assembly for an early-file rename must actually
+    /// export the renamed member (and not the old name) - the public surface really changed, which is
+    /// exactly what MSBuild's CopyRefAssembly must observe via the MVID.
+    [<FactForNETCOREAPP>]
+    let ``Reference assembly for an early-file rename exports the renamed member`` () =
+        let tempRoot =
+            Path.Combine(Path.GetTempPath(), "fsharp-ref-mvid-export-" + Guid.NewGuid().ToString("N"))
+        try
+            let fileCount = 40
+            let after = writeModules (Path.Combine(tempRoot, "after")) fileCount 1 "renamedValue01"
+            let refAfter = compileRefAssemblyOfFiles (Path.Combine(tempRoot, "outAfter")) after
+
+            use peReader = new PEReader(File.OpenRead refAfter)
+            let reader = peReader.GetMetadataReader()
+
+            let methodNames =
+                reader.MethodDefinitions
+                |> Seq.map (fun h -> reader.GetString((reader.GetMethodDefinition h).Name))
+                |> Set.ofSeq
+
+            Assert.Contains("renamedValue01", methodNames)
+            Assert.DoesNotContain("value01", methodNames)
+        finally
+            try Directory.Delete(tempRoot, true) with _ -> ()
+
     // Regression test for https://github.com/dotnet/fsharp/issues/19751
     // Two separate fsc processes needed to detect randomized String.GetHashCode seeds.
     [<FactForNETCOREAPP>]
