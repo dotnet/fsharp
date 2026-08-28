@@ -18,7 +18,7 @@ module internal HashingPrimitives =
 
     type Hash = int64
 
-    /// FNV-1a 32-bit over UTF-16 code units – deterministic across processes
+    /// FNV-1a 64-bit over UTF-16 code units – deterministic across processes
     /// (unlike String.GetHashCode which is randomized in .NET 6+).
     let hashStableString (s: string) : Hash =
         let mutable h = 0xCBF29CE484222325UL
