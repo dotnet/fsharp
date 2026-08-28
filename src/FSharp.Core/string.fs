@@ -243,7 +243,7 @@ module String =
                 Array.Copy(target, 0, target, i, i)
                 i <- i * 2
 
-            // finally, copy the remaining half, or less-then half
+            // finally, copy the remaining half, or less-than half
             Array.Copy(target, 0, target, i, target.Length - i)
             String(target)
 #endif
