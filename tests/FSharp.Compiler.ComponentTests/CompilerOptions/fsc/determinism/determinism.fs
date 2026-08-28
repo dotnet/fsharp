@@ -166,6 +166,89 @@ module Determinism
         let reader = peReader.GetMetadataReader()
         reader.GetGuid(reader.GetModuleDefinition().Mvid)
 
+    /// As compileRefAssembly, but for a multi-file compilation.
+    let private compileRefAssemblyOfFiles (workDir: string) (sourceFiles: string list) : string =
+        Directory.CreateDirectory workDir |> ignore
+        let outDll = Path.Combine(workDir, "Out.dll")
+        let outRef = Path.Combine(workDir, "Out.ref.dll")
+        let defaultOpts = CompilerAssert.DefaultProjectOptions(TargetFramework.Current).OtherOptions
+        let result = runFscProcess [
+            yield "--target:library"
+            yield "--deterministic+"
+            // As a Debug build compiles. With optimizations on, the embedded optimization
+            // data changes when a member is renamed and `optDataHash` - a SHA over those
+            // resources, and not truncated - carries that into the MVID, masking the
+            // truncated per-file signature hash below.
+            yield "--optimize-"
+            yield! (defaultOpts |> Array.toList)
+            yield $"--refout:{outRef}"
+            yield $"-o:{outDll}"
+            yield! sourceFiles
+        ]
+        if result.ExitCode <> 0 then
+            failwithf "fsc exit %d\nstdout:%s\nstderr:%s" result.ExitCode result.StdOut result.StdErr
+        outRef
+
+    /// `fileCount` single-module files, where the public member in file `renameAt` (1-based)
+    /// is called `memberName` instead of the default. Everything else is identical.
+    let private writeModules (dir: string) (fileCount: int) (renameAt: int) (memberName: string) =
+        Directory.CreateDirectory dir |> ignore
+        [ for i in 1 .. fileCount ->
+            let path = Path.Combine(dir, sprintf "File%02d.fs" i)
+            let name = if i = renameAt then memberName else sprintf "value%02d" i
+            File.WriteAllText(path, sprintf "module M%02d\n\nlet %s (x: int) : int = x + %d\n" i name i)
+            path ]
+
+    /// Renaming a public member changes the assembly's public API, so it has to change the
+    /// reference assembly's MVID - otherwise MSBuild's CopyRefAssembly sees an unchanged MVID,
+    /// skips the copy, and every downstream project keeps compiling against the old surface.
+    ///
+    /// It does not, for a Debug (`--optimize-`) compilation, if the file is far enough from
+    /// the end of the compilation order.
+    /// `calculateSignatureHashOfFiles` folds the per-file signature hashes with
+    /// `combineHash acc y = (acc <<< 1) + y + 631` over `type Hash = int` (TypeHashing.fs), so
+    /// unrolled the accumulator is `sum over i of (y_i + 631) * pown 2 (N - i)`. In 32-bit
+    /// arithmetic file i contributes exactly zero once `N - i >= 32`.
+    ///
+    /// Latent since #15325; only observable since #19751 made the hash deterministic across
+    /// processes - before that every compile produced a fresh MVID, so the copy always happened.
+    [<FactForNETCOREAPP>]
+    let ``Reference assembly MVID changes when a public member is renamed in an early file`` () =
+        let tempRoot =
+            Path.Combine(Path.GetTempPath(), "fsharp-ref-mvid-position-" + Guid.NewGuid().ToString("N"))
+        try
+            let fileCount = 40
+
+            let before = writeModules (Path.Combine(tempRoot, "before")) fileCount 1 "value01"
+            let after = writeModules (Path.Combine(tempRoot, "after")) fileCount 1 "renamedValue01"
+
+            let refBefore = compileRefAssemblyOfFiles (Path.Combine(tempRoot, "outBefore")) before
+            let refAfter = compileRefAssemblyOfFiles (Path.Combine(tempRoot, "outAfter")) after
+
+            Assert.NotEqual(readMvid refBefore, readMvid refAfter)
+        finally
+            try Directory.Delete(tempRoot, true) with _ -> ()
+
+    /// Control for the test above: the identical rename in the LAST file is picked up. This is
+    /// what makes the failure positional rather than "renames are ignored" - and it fails too
+    /// if the harness itself stops discriminating.
+    [<FactForNETCOREAPP>]
+    let ``Reference assembly MVID changes when a public member is renamed in the last file`` () =
+        let tempRoot =
+            Path.Combine(Path.GetTempPath(), "fsharp-ref-mvid-position-" + Guid.NewGuid().ToString("N"))
+        try
+            let fileCount = 40
+
+            let before = writeModules (Path.Combine(tempRoot, "before")) fileCount fileCount "value40"
+            let after = writeModules (Path.Combine(tempRoot, "after")) fileCount fileCount "renamedValue40"
+
+            let refBefore = compileRefAssemblyOfFiles (Path.Combine(tempRoot, "outBefore")) before
+            let refAfter = compileRefAssemblyOfFiles (Path.Combine(tempRoot, "outAfter")) after
+
+            Assert.NotEqual(readMvid refBefore, readMvid refAfter)
+        finally
+            try Directory.Delete(tempRoot, true) with _ -> ()
+
     // Regression test for https://github.com/dotnet/fsharp/issues/19751
     // Two separate fsc processes needed to detect randomized String.GetHashCode seeds.
     [<FactForNETCOREAPP>]
