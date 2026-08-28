@@ -41,7 +41,6 @@ type LanguageFeature =
     | NonInlineLiteralsAsPrintfFormat
     | ExtendedStringInterpolation
     | WarningWhenMultipleRecdTypeChoice
-    | ImprovedImpliedArgumentNames
     | ConstraintIntersectionOnFlexibleTypes
     | StaticLetInRecordsDusEmptyTypes
     | WarningWhenTailRecAttributeButNonTailRecUsage
