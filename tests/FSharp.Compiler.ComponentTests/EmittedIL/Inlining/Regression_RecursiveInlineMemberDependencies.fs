@@ -198,6 +198,25 @@ let result = Builder().Run 21
        |> assertCompiles
 
    [<Fact>]
+   let ``Trait-witness dependency into later nested module compiles`` () =
+           FSharp """
+module rec TraitWitnessOnlyEdge
+
+type User() =
+   member _.Run() =
+       let inline invoke (x: ^T) =
+           (^T: (static member DoIt: ^T -> int) x)
+
+       invoke (Helpers.Intersp())
+
+module Helpers =
+   type Intersp() =
+       static member inline DoIt(x: Intersp) = 42
+"""
+        |> assertCompiles
+
+
+   [<Fact>]
    let ``Deep recursive inline expression compiles`` () =
        let nestedExpression =
            [ 1 .. 512 ]
