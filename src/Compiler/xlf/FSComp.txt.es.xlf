@@ -642,11 +642,6 @@
         <target state="translated">Permitir enlaces let estáticos en tipos de clase de unión, registro, estructura y no incremental</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureStaticMembersInInterfaces">
-        <source>Static members in interfaces</source>
-        <target state="translated">Miembros estáticos en interfaces</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureStringInterpolation">
         <source>string interpolation</source>
         <target state="translated">interpolación de cadena</target>
