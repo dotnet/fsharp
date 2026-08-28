@@ -11,6 +11,8 @@ open Microsoft.FSharp.Collections
 open Microsoft.FSharp.NativeInterop
 open Microsoft.FSharp.Primitives.Basics
 
+#nowarn "9" // Uses of this construct may result in the generation of unverifiable .NET IL code
+
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 [<RequireQualifiedAccess>]
 module String =
@@ -113,8 +115,6 @@ module String =
             String(result)
 #endif
 
-    // let inline filterBuildString (source: string, target: Span<char>, predicate: char -> bool) =
-    
     [<CompiledName("Filter")>]
     let filter (predicate: char -> bool) (str: string) =
         
@@ -140,13 +140,11 @@ module String =
             
             let target =
 #if NETSTANDARD2_1_OR_GREATER
-#nowarn "9"
                 if len <= STACKALLOC_THRESHOLD then
                     Span<char>((NativePtr.toVoidPtr (NativePtr.stackalloc<char> STACKALLOC_THRESHOLD)), len)
                 else
                     // Using the primitive, because array.fs is not yet in scope. It's safe: both len and count are positive.
                     Span(Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked len)
-#warnon "9"
 #else
                     // same as above
                     Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked len
