@@ -485,7 +485,7 @@ let private moreConcreteRule: TiebreakRule =
 let private nullableOptionalInteropRule: TiebreakRule =
     {
         Id = TiebreakRuleId.NullableOptionalInterop
-        RequiredFeature = Some LanguageFeature.NullableOptionalInterop
+        RequiredFeature = None
         Compare =
             fun ctx (struct (candidate, _, _)) (struct (other, _, _)) ->
                 let args1 = candidate.AllCalledArgs |> List.concat
