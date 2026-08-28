@@ -16,7 +16,6 @@ module internal FSharp.Compiler.Features
 
 [<RequireQualifiedAccess>]
 type LanguageFeature =
-    | NameOf
     | DotlessFloat32Literal
     | PackageManagement
     | FromEndSlicing
@@ -142,7 +141,6 @@ type LanguageVersion(versionText, ?disabledFeaturesArray: LanguageFeature array)
                 LanguageFeature.DefaultInterfaceMemberConsumption, languageVersion50
                 LanguageFeature.PackageManagement, languageVersion50
                 LanguageFeature.WitnessPassing, languageVersion50
-                LanguageFeature.NameOf, languageVersion50
                 LanguageFeature.StringInterpolation, languageVersion50
 
                 // F# 6.0
@@ -328,7 +326,6 @@ type LanguageVersion(versionText, ?disabledFeaturesArray: LanguageFeature array)
     /// Get a string name for the given feature.
     static member GetFeatureString feature =
         match feature with
-        | LanguageFeature.NameOf -> FSComp.SR.featureNameOf ()
         | LanguageFeature.DotlessFloat32Literal -> FSComp.SR.featureDotlessFloat32Literal ()
         | LanguageFeature.PackageManagement -> FSComp.SR.featurePackageManagement ()
         | LanguageFeature.FromEndSlicing -> FSComp.SR.featureFromEndSlicing ()
