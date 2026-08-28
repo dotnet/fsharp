@@ -4650,7 +4650,8 @@ and OptimizeBinding cenv isRec env (TBind(vref, expr, spBind)) =
         raise (ReportedError (Some exn))
           
 /// Optimize a group in the given dependency order, then restore source order.
-and OptimizeInDependencyOrder (xsArray: 'a array) order processOne state =
+and OptimizeInDependencyOrder xs order processOne state =
+    let xsArray = List.toArray xs
     let results, state =
         (state, order)
         ||> List.mapFold (fun state idx ->
@@ -4658,7 +4659,7 @@ and OptimizeInDependencyOrder (xsArray: 'a array) order processOne state =
             (idx, result), state)
 
     // The order is a permutation of the indexes, so scatter the results back to source order.
-    let resultsByIndex = Array.zeroCreate xsArray.Length
+    let resultsByIndex = Array.zeroCreate xs.Length
 
     for idx, result in results do
         resultsByIndex[idx] <- result
@@ -4667,9 +4668,8 @@ and OptimizeInDependencyOrder (xsArray: 'a array) order processOne state =
 
 and OptimizeBindings cenv isRec env xs =
     if isRec && xs |> List.exists (fun (TBind(vref, _, _)) -> vref.ShouldInline) then
-        let xsArray = List.toArray xs
         let order = GetBindingOptimizationOrder cenv false true xs
-        OptimizeInDependencyOrder xsArray order (OptimizeBinding cenv isRec) env
+        OptimizeInDependencyOrder xs order (OptimizeBinding cenv isRec) env
     else
         List.mapFold (OptimizeBinding cenv isRec) env xs
     
@@ -4907,38 +4907,46 @@ and OptimizeModuleContents cenv (env, bindInfosColl) input =
         (TMDefs defs, info), (env, bindInfosColl)
 
 and OptimizeModuleBindings cenv isRec (env, bindInfosColl) xs =
-    let elements =
-        xs
-        |> List.map (function
-            | ModuleOrNamespaceBinding.Binding bind ->
-                let arity =
-                    bind.Var.ValReprInfo
-                    |> Option.map (fun repr -> repr.TotalArgCount)
-                    |> Option.defaultValue 0
+    let (|DependencyOrder|_|) =
+        function
+        | [] | [ _ ] -> None
+        | xs when isRec ->
+            let elements =
+                xs
+                |> List.map (function
+                    | ModuleOrNamespaceBinding.Binding bind ->
+                        let arity =
+                            bind.Var.ValReprInfo
+                            |> Option.map (fun repr -> repr.TotalArgCount)
+                            |> Option.defaultValue 0
 
-                [ bind.Var ], arity, Choice1Of2 bind.Expr
-            | ModuleOrNamespaceBinding.Module(_, def) ->
-                List.ofSeq (allValsOfModDef def), 0, Choice2Of2 def)
+                        [ bind.Var ], arity, Choice1Of2 bind.Expr
+                    | ModuleOrNamespaceBinding.Module(_, def) ->
+                        List.ofSeq (allValsOfModDef def), 0, Choice2Of2 def)
 
-    let hasInlineVal =
-        elements
-        |> List.exists (fun (definedVals, _, _) ->
-            definedVals |> List.exists (fun (v: Val) -> v.ShouldInline))
+            let hasInlineVal =
+                elements
+                |> List.exists (fun (definedVals, _, _) ->
+                    definedVals |> List.exists (fun (v: Val) -> v.ShouldInline))
 
-    if isRec && hasInlineVal then
-        let xsArray = List.toArray xs
+            if hasInlineVal then
+                let preferLowArity =
+                    xs
+                    |> List.forall (function
+                        | ModuleOrNamespaceBinding.Binding bind -> bind.Var.IsMember
+                        | ModuleOrNamespaceBinding.Module _ -> true)
 
-        let preferLowArity =
-            xs
-            |> List.forall (function
-                | ModuleOrNamespaceBinding.Binding bind -> bind.Var.IsMember
-                | ModuleOrNamespaceBinding.Module _ -> true)
+                let order = GetGroupOptimizationOrder cenv true preferLowArity elements
+                Some order
+            else 
+                None
+        | _ -> None
 
-        let order = GetGroupOptimizationOrder cenv true preferLowArity elements
-
+    match xs with
+    | DependencyOrder order ->
         // Keep the emitted binding list in source order; only the optimization schedule changes.
-        OptimizeInDependencyOrder xsArray order (OptimizeModuleBinding cenv) (env, bindInfosColl)
-    else
+        OptimizeInDependencyOrder xs order (OptimizeModuleBinding cenv) (env, bindInfosColl)
+    | _ ->
         List.mapFold (OptimizeModuleBinding cenv) (env, bindInfosColl) xs
 
 and OptimizeModuleBinding cenv (env, bindInfosColl) x = 
