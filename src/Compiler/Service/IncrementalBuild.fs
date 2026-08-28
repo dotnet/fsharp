@@ -488,14 +488,14 @@ type BoundModel private (
 
 /// Global service state
 type FrameworkImportsCacheKey = 
-    | FrameworkImportsCacheKey of resolvedpath: string list * assemblyName: string * targetFrameworkDirectories: string list * fsharpBinaries: string * langVersion: decimal * checkNulls: bool
+    | FrameworkImportsCacheKey of resolvedpath: string list * assemblyName: string * targetFrameworkDirectories: string list * fsharpBinaries: string * importReuseKey: ImportReuseKey
 
     interface ICacheKey<string, FrameworkImportsCacheKey> with
         member this.GetKey() =
-            this |> function FrameworkImportsCacheKey(assemblyName=a;checkNulls=c) -> if c then a + "CheckNulls" else a
+            this |> function FrameworkImportsCacheKey(assemblyName=a;importReuseKey=c) -> if c.CheckNullness then a + "CheckNulls" else a
 
         member this.GetLabel() = 
-            this |> function FrameworkImportsCacheKey(assemblyName=a;checkNulls=c) -> if c then a + "CheckNulls" else a
+            this |> function FrameworkImportsCacheKey(assemblyName=a;importReuseKey=c) -> if c.CheckNullness then a + "CheckNulls" else a
 
         member this.GetVersion() = this
         
@@ -532,8 +532,7 @@ type FrameworkImportsCache(size) =
                     tcConfig.primaryAssembly.Name,
                     tcConfig.GetTargetFrameworkDirectories(),
                     tcConfig.fsharpBinariesDir,
-                    tcConfig.langVersion.SpecifiedVersion,
-                    tcConfig.checkNullness)
+                    tcConfig.importReuseKey)
 
         let node =
             lock gate (fun () ->
@@ -1432,6 +1431,7 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
             enablePartialTypeChecking,
             dependencyProvider,
             parallelReferenceResolution,
+            shareImportedAssemblies,
             captureIdentifiersWhenParsing,
             getSource,
             useChangeNotifications
@@ -1518,6 +1518,7 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
                     |> Some
 
                 tcConfigB.parallelReferenceResolution <- parallelReferenceResolution
+                tcConfigB.shareImportedAssemblies <- shareImportedAssemblies
                 tcConfigB.captureIdentifiersWhenParsing <- captureIdentifiersWhenParsing
 
                 tcConfigB, sourceFilesNew
