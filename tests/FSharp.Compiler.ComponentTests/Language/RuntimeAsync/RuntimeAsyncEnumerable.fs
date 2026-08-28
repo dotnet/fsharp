@@ -16,7 +16,8 @@ type CounterEnumerator(count: int) =
         StateMachineHelpers.__runtimeAsyncReturnValueTask (
             AsyncHelpers.Await(Task.Delay(1))
             current <- current + 1
-            current < count)
+            current < count
+        )
 
     interface IAsyncEnumerator<int> with
         member _.Current = current
@@ -40,9 +41,12 @@ let objectExpressionEnumerable count : IAsyncEnumerable<int> =
                     StateMachineHelpers.__runtimeAsyncReturnValueTask (
                         AsyncHelpers.Await(Task.Delay(100))
                         current <- current + 1
-                        current < count)
+                        current < count
+                    )
 
-                member _.DisposeAsync() = ValueTask() } }
+                member _.DisposeAsync() = ValueTask()
+            }
+    }
 
 let collect (enumerable: IAsyncEnumerable<int>) : Task<int[]> =
     StateMachineHelpers.__runtimeAsyncReturn (
@@ -55,7 +59,8 @@ let collect (enumerable: IAsyncEnumerable<int>) : Task<int[]> =
             hasNext <- AsyncHelpers.Await(enumerator.MoveNextAsync())
 
         AsyncHelpers.Await(enumerator.DisposeAsync())
-        Seq.toArray values)
+        Seq.toArray values
+    )
 
 let collectWithTaskCe (enumerable: IAsyncEnumerable<int>) =
     task {
@@ -73,13 +78,19 @@ let collectWithTaskCe (enumerable: IAsyncEnumerable<int>) =
 let main _ =
     let expected = [| 0; 1; 2 |]
     let classEnumerable = CounterEnumerable(3) :> IAsyncEnumerable<int>
-    let classValues = collect classEnumerable |> fun task -> task.GetAwaiter().GetResult()
-    let taskValues, elapsed =
-        collectWithTaskCe (objectExpressionEnumerable 3) |> fun task -> task.GetAwaiter().GetResult()
 
-    if classValues = expected
-       && taskValues = expected
-       && elapsed >= TimeSpan.FromMilliseconds(300.) then
+    let classValues =
+        collect classEnumerable |> fun task -> task.GetAwaiter().GetResult()
+
+    let taskValues, elapsed =
+        collectWithTaskCe (objectExpressionEnumerable 3)
+        |> fun task -> task.GetAwaiter().GetResult()
+
+    if
+        classValues = expected
+        && taskValues = expected
+        && elapsed >= TimeSpan.FromMilliseconds(300.)
+    then
         0
     else
         1

@@ -9,7 +9,9 @@ open System.Runtime.CompilerServices
 open Microsoft.FSharp.Core.CompilerServices
 open RuntimeTaskBuilder.RuntimeTask
 
-let private delayed v = Task.Delay(1).ContinueWith(fun (_: Task) -> v)
+let private delayed v =
+    Task.Delay(1).ContinueWith(fun (_: Task) -> v)
+
 let private resultOf (t: Task<'T>) = t.GetAwaiter().GetResult()
 
 // locals: a normal local is hoisted by the JIT and preserved across a suspension.
@@ -25,14 +27,18 @@ let loopsAcrossAwait () : Task<int * int> =
     runtimeTask {
         let mutable whileAcc = 0
         let mutable i = 0
+
         while i < 3 do
             let! x = delayed 1
             whileAcc <- whileAcc + x
             i <- i + 1
+
         let mutable forAcc = 0
+
         for x in [ 1; 2; 3 ] do
             let! y = delayed x
             forAcc <- forAcc + y
+
         return (whileAcc, forAcc)
     }
 
@@ -80,7 +86,11 @@ let useAsyncDisposable (sink: int ref) : Task<int> =
 [<EntryPoint>]
 let main _ =
     let mutable failures = 0
-    let check name cond = if not cond then eprintfn "FAILED: %s" name; failures <- failures + 1
+
+    let check name cond =
+        if not cond then
+            eprintfn "FAILED: %s" name
+            failures <- failures + 1
 
     check "normalLocalAcross" (resultOf (normalLocalAcross ()) = 42)
     let (whileAcc, forAcc) = resultOf (loopsAcrossAwait ())
@@ -90,8 +100,12 @@ let main _ =
     check "awaitValueTask" (resultOf (awaitValueTask ()) = 42)
 
     let threw =
-        try resultOf (exnAfterAwait ()) |> ignore; false
-        with _ -> true
+        try
+            resultOf (exnAfterAwait ()) |> ignore
+            false
+        with _ ->
+            true
+
     check "exnAfterAwait propagates" threw
 
     let sink = ref 0

@@ -11,7 +11,9 @@ let private preservesValueAcrossAwait () =
     runtimeTask {
         context.Value <- "before"
         do! Task.Delay(1)
-        if context.Value <> "before" then failwith "AsyncLocal value was not preserved across await"
+
+        if context.Value <> "before" then
+            failwith "AsyncLocal value was not preserved across await"
     }
 
 let private propagatesValueToNestedRuntimeTask () =
@@ -24,7 +26,8 @@ let private propagatesValueToNestedRuntimeTask () =
                 return context.Value
             }
 
-        if nestedValue <> "parent" then failwith "AsyncLocal value was not propagated to nested runtimeTask"
+        if nestedValue <> "parent" then
+            failwith "AsyncLocal value was not propagated to nested runtimeTask"
     }
 
 let private isolatesChildTaskChanges () =
@@ -36,20 +39,27 @@ let private isolatesChildTaskChanges () =
                 context.Value <- "child"
                 context.Value)
 
-        if childValue <> "child" then failwith "AsyncLocal child value was not set"
-        if context.Value <> "parent" then failwith "AsyncLocal child change leaked to parent"
+        if childValue <> "child" then
+            failwith "AsyncLocal child value was not set"
+
+        if context.Value <> "parent" then
+            failwith "AsyncLocal child change leaked to parent"
     }
 
 [<EntryPoint>]
 let main _ =
     context.Value <- "main"
-    [| preservesValueAcrossAwait()
-       propagatesValueToNestedRuntimeTask()
-       isolatesChildTaskChanges() |]
+
+    [|
+        preservesValueAcrossAwait ()
+        propagatesValueToNestedRuntimeTask ()
+        isolatesChildTaskChanges ()
+    |]
     |> Task.WhenAll
     |> _.Result
     |> ignore
 
-    if context.Value <> "main" then failwith "AsyncLocal value was not preserved after all tasks completed"
+    if context.Value <> "main" then
+        failwith "AsyncLocal value was not preserved after all tasks completed"
 
     0

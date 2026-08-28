@@ -6,53 +6,69 @@ open System.Threading.Tasks
 open Microsoft.FSharp.Control
 open Microsoft.FSharp.Core.CompilerServices
 
-type RuntimeTask<'T> = unit -> 'T
-
 let inline bindAwaiter
     ([<InlineIfLambda>] getAwaiter: unit -> 'Awaiter)
     ([<InlineIfLambda>] getResult: 'Awaiter -> 'T)
     ([<InlineIfLambda>] continuation: 'T -> 'U)
     =
-    let awaiter = getAwaiter()
+    let awaiter = getAwaiter ()
     AsyncHelpers.AwaitAwaiter awaiter
     let result = getResult awaiter
     continuation result
 
 type RuntimeTaskBuilder() =
-    member inline _.Delay([<InlineIfLambda>] generator: unit -> 'T) : unit -> 'T = generator
-    member inline _.Run([<InlineIfLambda>] code: unit -> 'T) : Task<'T> =
-        StateMachineHelpers.__runtimeAsyncReturn (code())
+    member inline _.Delay([<InlineIfLambda>] generator: unit -> 'T) = generator
+
+    member inline _.Run([<InlineIfLambda>] code) =
+        StateMachineHelpers.__runtimeAsyncReturn (code ())
+
     member inline _.Zero() = ()
-    member inline _.Return(value: 'T) = value
+
+    member inline _.Return(value) = value
+
     member inline _.ReturnFrom(task: Task<'T>) = AsyncHelpers.Await task
     member inline _.ReturnFrom(task: Task) = AsyncHelpers.Await task
     member inline _.ReturnFrom(task: ValueTask<'T>) = AsyncHelpers.Await task
     member inline _.ReturnFrom(task: ValueTask) = AsyncHelpers.Await task
-    member inline _.ReturnFrom(computation: Async<'T>) = AsyncHelpers.Await(Async.StartImmediateAsTask computation)
+
+    member inline _.ReturnFrom(computation: Async<'T>) =
+        AsyncHelpers.Await(Async.StartImmediateAsTask computation)
+
     member inline _.Bind(task: Task, [<InlineIfLambda>] continuation: unit -> 'U) =
         AsyncHelpers.Await task
-        continuation()
-    member inline _.Bind(task: Task<'T>, [<InlineIfLambda>] continuation: 'T -> 'U) =
-        continuation (AsyncHelpers.Await task)
-    member inline _.Bind(code: struct ('T1 * 'T2), [<InlineIfLambda>] continuation: struct ('T1 * 'T2) -> 'U) =
-        continuation code
-    member inline _.Bind(computation: RuntimeTask<'T>, [<InlineIfLambda>] continuation: 'T -> 'U) =
-        continuation (computation ())
+        continuation ()
+
+    member inline _.Bind(task: Task<'T>, [<InlineIfLambda>] continuation: 'T -> 'U) = continuation (AsyncHelpers.Await task)
+
+    member inline _.Bind(code: struct ('T1 * 'T2), [<InlineIfLambda>] continuation: struct ('T1 * 'T2) -> 'U) = continuation code
+
     member inline _.Bind(task: ValueTask, [<InlineIfLambda>] continuation: unit -> 'U) =
         AsyncHelpers.Await task
-        continuation()
-    member inline _.Bind(task: ValueTask<'T>, [<InlineIfLambda>] continuation: 'T -> 'U) =
-        continuation (AsyncHelpers.Await task)
+        continuation ()
+
+    member inline _.Bind(task: ValueTask<'T>, [<InlineIfLambda>] continuation: 'T -> 'U) = continuation (AsyncHelpers.Await task)
+
     member inline _.Bind(computation: Async<'T>, [<InlineIfLambda>] continuation: 'T -> 'U) =
         continuation (AsyncHelpers.Await(Async.StartImmediateAsTask computation))
+
     member inline _.Combine(first, [<InlineIfLambda>] second) =
-        first()
-        second()
-    member inline _.Combine(first: unit, [<InlineIfLambda>] second: unit -> 'T) = second()
+        first ()
+        second ()
+
+    member inline _.Combine(first: unit, [<InlineIfLambda>] second: unit -> 'T) = second ()
+
     member inline _.TryWith([<InlineIfLambda>] body: unit -> 'T, [<InlineIfLambda>] handler: exn -> 'T) =
-        try body() with error -> handler error
+        try
+            body ()
+        with error ->
+            handler error
+
     member inline _.TryFinally([<InlineIfLambda>] body: unit -> 'T, [<InlineIfLambda>] compensation: unit -> unit) =
-        try body() finally compensation()
+        try
+            body ()
+        finally
+            compensation ()
+
     member inline _.Using(resource, [<InlineIfLambda>] body) =
         try
             body resource
@@ -63,64 +79,86 @@ type RuntimeTaskBuilder() =
             | _ -> ()
 
     member inline _.While(guard: unit -> bool, [<InlineIfLambda>] body: unit -> unit) =
-        while guard() do body()
+        while guard () do
+            body ()
+
     member inline _.For(sequence: seq<'T>, [<InlineIfLambda>] body: 'T -> unit) =
-        for item in sequence do body item
+        for item in sequence do
+            body item
+
     member inline _.MergeSources(left: Task<'T1>, right: Task<'T2>) =
         struct (AsyncHelpers.Await left, AsyncHelpers.Await right)
+
     member inline _.MergeSources(left: ValueTask<'T1>, right: ValueTask<'T2>) =
         struct (AsyncHelpers.Await left, AsyncHelpers.Await right)
+
     member inline _.MergeSources(left: Task<'T1>, right: ValueTask<'T2>) =
         struct (AsyncHelpers.Await left, AsyncHelpers.Await right)
+
     member inline _.MergeSources(left: ValueTask<'T1>, right: Task<'T2>) =
         struct (AsyncHelpers.Await left, AsyncHelpers.Await right)
+
     member inline _.MergeSources(left: Task<'T1>, right: Async<'T2>) =
         struct (AsyncHelpers.Await left, AsyncHelpers.Await(Async.StartImmediateAsTask right))
+
     member inline _.MergeSources(left: Async<'T1>, right: Task<'T2>) =
         struct (AsyncHelpers.Await(Async.StartImmediateAsTask left), AsyncHelpers.Await right)
+
     member inline _.MergeSources(left: Async<'T1>, right: Async<'T2>) =
         struct (AsyncHelpers.Await(Async.StartImmediateAsTask left), AsyncHelpers.Await(Async.StartImmediateAsTask right))
+
     member inline _.MergeSources(left: Async<'T1>, right: ValueTask<'T2>) =
         struct (AsyncHelpers.Await(Async.StartImmediateAsTask left), AsyncHelpers.Await right)
+
     member inline _.MergeSources(left: ValueTask<'T1>, right: Async<'T2>) =
         struct (AsyncHelpers.Await left, AsyncHelpers.Await(Async.StartImmediateAsTask right))
+
     member inline _.MergeSources(left: YieldAwaitable, right: Task<'T2>) =
         AsyncHelpers.AwaitAwaiter(left.GetAwaiter())
         struct ((), AsyncHelpers.Await right)
+
     member inline _.MergeSources(left: Task<'T1>, right: YieldAwaitable) =
         let leftResult = AsyncHelpers.Await left
         AsyncHelpers.AwaitAwaiter(right.GetAwaiter())
         struct (leftResult, ())
+
     member inline _.MergeSources(left: YieldAwaitable, right: ValueTask<'T2>) =
         AsyncHelpers.AwaitAwaiter(left.GetAwaiter())
         struct ((), AsyncHelpers.Await right)
+
     member inline _.MergeSources(left: ValueTask<'T1>, right: YieldAwaitable) =
         let leftResult = AsyncHelpers.Await left
         AsyncHelpers.AwaitAwaiter(right.GetAwaiter())
         struct (leftResult, ())
+
     member inline _.MergeSources(left: YieldAwaitable, right: Async<'T2>) =
         AsyncHelpers.AwaitAwaiter(left.GetAwaiter())
         struct ((), AsyncHelpers.Await(Async.StartImmediateAsTask right))
+
     member inline _.MergeSources(left: Async<'T1>, right: YieldAwaitable) =
         let leftResult = AsyncHelpers.Await(Async.StartImmediateAsTask left)
         AsyncHelpers.AwaitAwaiter(right.GetAwaiter())
         struct (leftResult, ())
+
     member inline _.MergeSources(left: YieldAwaitable, right: struct ('T2 * 'T3)) =
         AsyncHelpers.AwaitAwaiter(left.GetAwaiter())
         struct ((), right)
+
     member inline _.MergeSources(left: struct ('T1 * 'T2), right: YieldAwaitable) =
         AsyncHelpers.AwaitAwaiter(right.GetAwaiter())
         struct (left, ())
-    member inline _.MergeSources(left: Task<'T1>, right: struct ('T2 * 'T3)) =
-        struct (AsyncHelpers.Await left, right)
-    member inline _.MergeSources(left: ValueTask<'T1>, right: struct ('T2 * 'T3)) =
-        struct (AsyncHelpers.Await left, right)
+
+    member inline _.MergeSources(left: Task<'T1>, right: struct ('T2 * 'T3)) = struct (AsyncHelpers.Await left, right)
+
+    member inline _.MergeSources(left: ValueTask<'T1>, right: struct ('T2 * 'T3)) = struct (AsyncHelpers.Await left, right)
+
     member inline _.MergeSources(left: Async<'T1>, right: struct ('T2 * 'T3)) =
         struct (AsyncHelpers.Await(Async.StartImmediateAsTask left), right)
-    member inline _.MergeSources(left: struct ('T1 * 'T2), right: Task<'T3>) =
-        struct (left, AsyncHelpers.Await right)
-    member inline _.MergeSources(left: struct ('T1 * 'T2), right: ValueTask<'T3>) =
-        struct (left, AsyncHelpers.Await right)
+
+    member inline _.MergeSources(left: struct ('T1 * 'T2), right: Task<'T3>) = struct (left, AsyncHelpers.Await right)
+
+    member inline _.MergeSources(left: struct ('T1 * 'T2), right: ValueTask<'T3>) = struct (left, AsyncHelpers.Await right)
+
     member inline _.MergeSources(left: struct ('T1 * 'T2), right: Async<'T3>) =
         struct (left, AsyncHelpers.Await(Async.StartImmediateAsTask right))
 
