@@ -3863,7 +3863,7 @@ type options =
      dumpDebugInfo: bool
      referenceAssemblyOnly: bool
      referenceAssemblyAttribOpt: ILAttribute option
-     referenceAssemblySignatureHash : int option
+     referenceAssemblySignatureHash : int64 option
      pathMap: PathMap
      /// Hot reload baseline side channel: module-level CustomDebugInformation rows for
      /// F#-owned records in the portable PDB. Empty for ordinary compiles.
