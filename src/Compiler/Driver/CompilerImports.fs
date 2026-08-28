@@ -15,6 +15,7 @@ open System.Reflection
 open Internal.Utilities
 open Internal.Utilities.Collections
 open Internal.Utilities.FSharpEnvironment
+open Internal.Utilities.Hashing
 open Internal.Utilities.Library
 open Internal.Utilities.Library.Extras
 
@@ -429,6 +430,176 @@ type AssemblyResolution =
 
             this.ilAssemblyRef <- Some assemblyRef
             assemblyRef
+
+module internal SharedImportedCcus =
+
+    type SimpleAssemblyName = string
+
+    /// ILAssemblyRef cannot serve: it does not separate one package's builds for different frameworks
+    [<Struct; StructuralEquality; NoComparison>]
+    type AssemblyFileId =
+        | AssemblyFileId of text: string
+
+        member this.Text =
+            match this with
+            | AssemblyFileId text -> text
+
+    type AssemblyKeyInfo =
+        {
+            File: AssemblyFileId
+
+            /// Its references and its type-forwarder targets, which is all a facade can reach
+            References: SimpleAssemblyName list
+        }
+
+    [<StructuralEquality; NoComparison>]
+    type SharedCcuKey =
+        {
+            /// Hash over the file each assembly of the closure resolved to
+            Closure: string
+
+            /// The layer the entry resolves through, and so the TcGlobals import reads
+            FrameworkStamp: int64
+
+            /// Set where an assembly carries several F# ccus
+            CcuName: SimpleAssemblyName option
+        }
+
+    /// Weak: an entry is held by the projects using it, and holds the rest of its own closure
+    let private cache = ConcurrentDictionary<SharedCcuKey, WeakReference<CcuThunk>>()
+
+    let private nameComparer = StringComparer.OrdinalIgnoreCase
+
+    /// What a shared ccu may close over besides its own closure. Functions because TcImports comes later.
+    type FrameworkLayer =
+        {
+            Globals: unit -> TcGlobals
+            Resolve: CompilationThreadToken * range * ILAssemblyRef -> CcuResolutionResult
+            XmlDoc: string -> XmlDocumentationInfo option
+        }
+
+    /// What a shared ccu resolves through instead of the TcImports that first imported it: its own
+    /// closure, then the framework layer. Holding the closure strongly is what lets the cache be weak.
+    type SharedImportContext(layer: FrameworkLayer, closure: SimpleAssemblyName list) =
+
+        let refs = ConcurrentDictionary<SimpleAssemblyName, CcuThunk>(nameComparer)
+
+        let pending = ResizeArray<SharedCcuKey * CcuThunk>()
+
+        let loader =
+            { new AssemblyLoader with
+                member _.FindCcuFromAssemblyRef(ctok, m, ilAssemblyRef: ILAssemblyRef) =
+                    match refs.TryGetValue ilAssemblyRef.Name with
+                    | true, ccu -> ResolvedCcu ccu
+                    | _ -> layer.Resolve(ctok, m, ilAssemblyRef)
+
+                member _.TryFindXmlDocumentationInfo assemblyName = layer.XmlDoc assemblyName
+
+#if !NO_TYPEPROVIDERS
+                member _.GetProvidedAssemblyInfo(_ctok, m, _assembly) =
+                    error (InternalError("a shared ccu cannot import provided types", m))
+
+                member _.RecordGeneratedTypeRoot _root =
+                    error (InternalError("a shared ccu cannot record a generated type root", range0))
+#endif
+            }
+
+        let importMap = lazy ImportMap(layer.Globals(), loader)
+
+        member _.Closure = closure
+
+        member _.AddClosureRef(name: SimpleAssemblyName, ccu: CcuThunk) = refs[name] <- ccu
+
+        member _.GetImportMap() = importMap.Force()
+
+        /// Publishing before the closure is known would hand another project an entry resolving nothing
+        member _.HoldForPublication(key: SharedCcuKey, ccu: CcuThunk) = pending.Add(key, ccu)
+
+        member _.Pending = pending
+
+    type SharedImport =
+        {
+            Key: SharedCcuKey
+            Context: SharedImportContext
+        }
+
+    type ShareableAssembly =
+        {
+            Key: SharedCcuKey
+            Closure: SimpleAssemblyName list
+        }
+
+    /// Names walked to inside the batch, then those leaving it - framework assemblies the stamp pins
+    let private closureOf (assemblies: Dictionary<SimpleAssemblyName, AssemblyKeyInfo>) root =
+        let inside = HashSet<SimpleAssemblyName>(nameComparer)
+        let outside = HashSet<SimpleAssemblyName>(nameComparer)
+
+        let rec walk n =
+            if inside.Add n then
+                for r in assemblies[n].References do
+                    if assemblies.ContainsKey r then
+                        walk r
+                    else
+                        outside.Add r |> ignore
+
+        walk root
+        inside, outside
+
+    /// No key where the closure is not shareable: entities and their per-CCU caches would point into one
+    /// project's copy of an unshared assembly.
+    let computeKeys (frameworkStamp: int64) (assemblies: Dictionary<SimpleAssemblyName, AssemblyKeyInfo>) isShareable =
+        let keys = Dictionary<SimpleAssemblyName, ShareableAssembly>(nameComparer)
+
+        for KeyValue(name, assembly) in assemblies do
+            let inside, outside = closureOf assemblies name
+
+            if Seq.forall isShareable inside then
+                let parts =
+                    Seq.append
+                        (inside |> Seq.map (fun n -> n + "|" + assemblies[n].File.Text))
+                        (outside |> Seq.map (fun r -> "unresolved:" + r))
+                    |> Seq.sort
+
+                keys[name] <-
+                    {
+                        Key =
+                            {
+                                Closure = Md5StringHasher.addStrings parts Md5StringHasher.empty
+                                FrameworkStamp = frameworkStamp
+                                CcuName = None
+                            }
+                        Closure = assembly.References
+                    }
+
+        keys
+
+    let private tryGet (key: SharedCcuKey) =
+        match cache.TryGetValue key with
+        | true, wr ->
+            match wr.TryGetTarget() with
+            | true, ccu -> Some ccu
+            | _ ->
+                cache.TryRemove key |> ignore
+                None
+        | _ -> None
+
+    /// `build` is not called on a hit, which is what lets the F# path skip unpickling entirely
+    let getOrBuild (entry: SharedImport option) (build: unit -> CcuThunk) =
+        match entry with
+        | None -> build ()
+        | Some entry ->
+            match tryGet entry.Key with
+            | Some ccu -> ccu
+            | None ->
+                let ccu = build ()
+                entry.Context.HoldForPublication(entry.Key, ccu)
+                ccu
+
+    /// Last writer wins: two projects importing at once each keep the ccu they built, both consistent
+    let add (key: SharedCcuKey) (ccu: CcuThunk) =
+        cache[key] <- WeakReference<CcuThunk> ccu
+
+    let clear () = cache.Clear()
 
 type ImportedBinary =
     {
@@ -1223,6 +1394,10 @@ and [<Sealed>] TcImports
 
     let tciLock = TcImportsLock()
 
+    /// For cache keys: an identity hash is neither unique nor stable, and aliasing two layers would
+    /// silently mix their ccus
+    let stamp = newStamp ()
+
     //---- Start protected by tciLock -------
     let mutable resolutions = initialResolutions
     let mutable dllInfos: ImportedBinary list = []
@@ -1363,6 +1538,15 @@ and [<Sealed>] TcImports
             match importsBase with
             | Some importsBase -> importsBase.AllAssemblyResolutions() @ ars
             | None -> ars)
+
+    member _.Stamp = stamp
+
+    member _.GetImportReuseKey ctok = (tcConfigP.Get ctok).importReuseKey
+
+    member tcImports.KeyPinnedLayer =
+        match importsBase with
+        | Some b -> b
+        | None -> tcImports
 
     member tcImports.TryFindDllInfo(ctok: CompilationThreadToken, m, assemblyName, lookupOnly) =
         CheckDisposed()
@@ -2059,27 +2243,49 @@ and [<Sealed>] TcImports
     // Compact Framework binaries must use this. However it is not
     // clear when else it is required, e.g. for Mono.
 
-    member tcImports.PrepareToImportReferencedILAssembly(ctok, m, fileName, dllinfo: ImportedBinary) =
+    member tcImports.PrepareToImportReferencedILAssembly
+        (ctok, m, fileName, dllinfo: ImportedBinary, ?shared: SharedImportedCcus.SharedImport)
+        =
         CheckDisposed()
         let tcConfig = tcConfigP.Get ctok
         assert dllinfo.RawMetadata.TryGetILModuleDef().IsSome
         let ilModule = dllinfo.RawMetadata.TryGetILModuleDef().Value
         let ilScopeRef = dllinfo.ILScopeRef
-        let auxModuleLoader = tcImports.MkLoaderForMultiModuleILAssemblies ctok m
         let invalidateCcu = Event<_>()
 
-        let ccu =
+        let sharedContext = shared |> Option.map (fun s -> s.Context)
+
+        // Everything the ccu later resolves goes through this, so it decides what the ccu is bound to
+        let amap =
+            match sharedContext with
+            | Some ctx -> ctx.GetImportMap
+            | None -> tcImports.GetImportMap
+
+        let auxModuleLoader =
+            match sharedContext with
+            | Some _ -> fun scoref -> error (InternalError(sprintf "a shared ccu cannot load the auxiliary module %A" scoref, m))
+            | None -> tcImports.MkLoaderForMultiModuleILAssemblies ctok m
+
+        // Meaningless in a shared ccu: SymbolHelpers.fileNameOfItem joins it with a path from metadata
+        let sourceDir =
+            match shared with
+            | Some _ -> ""
+            | None -> tcConfig.implicitIncludeDir
+
+        let importFresh () =
             ImportILAssembly(
-                tcImports.GetImportMap,
+                amap,
                 m,
                 auxModuleLoader,
                 tcConfig.xmlDocInfoLoader,
                 ilScopeRef,
-                tcConfig.implicitIncludeDir,
+                sourceDir,
                 Some fileName,
                 ilModule,
                 invalidateCcu.Publish
             )
+
+        let ccu = SharedImportedCcus.getOrBuild shared importFresh
 
         let ccuinfo =
             {
@@ -2107,8 +2313,20 @@ and [<Sealed>] TcImports
 
         phase2
 
-    member tcImports.PrepareToImportReferencedFSharpAssembly(ctok, m, fileName, dllinfo: ImportedBinary) =
+    member tcImports.PrepareToImportReferencedFSharpAssembly
+        (ctok, m, fileName, dllinfo: ImportedBinary, ?shared: SharedImportedCcus.SharedImport)
+        =
         CheckDisposed()
+
+        let sharedContext = shared |> Option.map (fun s -> s.Context)
+
+        // GetTcGlobals reaches the same object, but through a TcImports a cached ccu must not hold
+        let globalsOwner = tcImports.KeyPinnedLayer
+
+        let amap =
+            match sharedContext with
+            | Some ctx -> ctx.GetImportMap
+            | None -> tcImports.GetImportMap
 #if !NO_TYPEPROVIDERS
         let tcConfig = tcConfigP.Get ctok
 #endif
@@ -2122,54 +2340,69 @@ and [<Sealed>] TcImports
         let ccuRawDataAndInfos =
             ilModule.GetRawFSharpSignatureData(m, ilShortAssemName, fileName)
             |> List.map (fun (ccuName, (sigDataReader, sigDataReaderB)) ->
-                let data =
-                    GetSignatureData(fileName, ilScopeRef, ilModule.TryGetILModuleDef(), sigDataReader, sigDataReaderB)
+                let entry =
+                    shared
+                    |> Option.map (fun s ->
+                        { s with
+                            Key = { s.Key with CcuName = Some ccuName }
+                        })
 
                 let optDatas = Map.ofList optDataReaders
-
-                let minfo: PickledCcuInfo = data.RawData
-                let mspec = minfo.mspec
-
-                if mspec.DisplayName = "FSharp.Core" then
-                    updateSeqTypeIsPrefix mspec
 
 #if !NO_TYPEPROVIDERS
                 let invalidateCcu = Event<_>()
 #endif
 
-                let codeDir = minfo.compileTimeWorkingDir
+                // None on a hit: nothing is left to relink, and the signature data is never read
+                let mutable dataOpt = None
 
-                // note: for some fields we fix up this information later
-                let ccuData: CcuData =
-                    {
-                        ILScopeRef = ilScopeRef
-                        Stamp = newStamp ()
-                        FileName = Some fileName
-                        QualifiedName = Some(ilScopeRef.QualifiedName)
-                        SourceCodeDirectory = codeDir
-                        IsFSharp = true
-                        Contents = mspec
+                let importFresh () =
+                    let data =
+                        GetSignatureData(fileName, ilScopeRef, ilModule.TryGetILModuleDef(), sigDataReader, sigDataReaderB)
+
+                    let minfo: PickledCcuInfo = data.RawData
+                    let mspec = minfo.mspec
+
+                    // Fixes up the unpickled contents, so a hit gets it too
+                    if mspec.DisplayName = "FSharp.Core" then
+                        updateSeqTypeIsPrefix mspec
+
+                    let codeDir = minfo.compileTimeWorkingDir
+
+                    // note: for some fields we fix up this information later
+                    let ccuData: CcuData =
+                        {
+                            ILScopeRef = ilScopeRef
+                            Stamp = newStamp ()
+                            FileName = Some fileName
+                            QualifiedName = Some(ilScopeRef.QualifiedName)
+                            SourceCodeDirectory = codeDir
+                            IsFSharp = true
+                            Contents = mspec
 #if !NO_TYPEPROVIDERS
-                        InvalidateEvent = invalidateCcu.Publish
-                        IsProviderGenerated = false
-                        ImportProvidedType = (fun ty -> ImportProvidedType (tcImports.GetImportMap()) m ty)
+                            InvalidateEvent = invalidateCcu.Publish
+                            IsProviderGenerated = false
+                            ImportProvidedType = (fun ty -> ImportProvidedType (amap ()) m ty)
 #endif
-                        TryGetILModuleDef = ilModule.TryGetILModuleDef
-                        UsesFSharp20PlusQuotations = minfo.usesQuotations
-                        MemberSignatureEquality = (fun ty1 ty2 -> typeEquivAux EraseAll (tcImports.GetTcGlobals()) ty1 ty2)
-                        TypeForwarders = ImportILAssemblyTypeForwarders(tcImports.GetImportMap, m, ilModule.GetRawTypeForwarders())
-                        CSharpStyleExtensionMembersCache = ConcurrentDictionary(1, 0)
+                            TryGetILModuleDef = ilModule.TryGetILModuleDef
+                            UsesFSharp20PlusQuotations = minfo.usesQuotations
+                            MemberSignatureEquality = (fun ty1 ty2 -> typeEquivAux EraseAll (globalsOwner.GetTcGlobals()) ty1 ty2)
+                            TypeForwarders = ImportILAssemblyTypeForwarders(amap, m, ilModule.GetRawTypeForwarders())
+                            CSharpStyleExtensionMembersCache = ConcurrentDictionary(1, 0)
 #if !NO_TYPEPROVIDERS
-                        XmlDocumentationInfo =
-                            match tcConfig.xmlDocInfoLoader with
-                            | Some xmlDocInfoLoader -> xmlDocInfoLoader.TryLoad(fileName)
-                            | _ -> None
+                            XmlDocumentationInfo =
+                                match tcConfig.xmlDocInfoLoader with
+                                | Some xmlDocInfoLoader -> xmlDocInfoLoader.TryLoad(fileName)
+                                | _ -> None
 #else
-                        XmlDocumentationInfo = None
+                            XmlDocumentationInfo = None
 #endif
-                    }
+                        }
 
-                let ccu = CcuThunk.Create(ccuName, ccuData)
+                    dataOpt <- Some data
+                    CcuThunk.Create(ccuName, ccuData)
+
+                let ccu = SharedImportedCcus.getOrBuild entry importFresh
 
                 let optdata =
                     InterruptibleLazy(fun _ ->
@@ -2228,7 +2461,7 @@ and [<Sealed>] TcImports
 #else
                     ()
 #endif
-                data, ccuinfo, phase2)
+                dataOpt, ccuinfo, phase2)
 
         // Register all before relinking to cope with mutually-referential ccus
         ccuRawDataAndInfos |> List.iter (p23 >> tcImports.RegisterCcu)
@@ -2236,18 +2469,22 @@ and [<Sealed>] TcImports
         let phase2 () =
             // Relink
             ccuRawDataAndInfos
-            |> List.iter (fun (data, _, _) ->
-                let fixupThunk () =
-                    data.OptionalFixup(fun nm -> availableToOptionalCcu (tcImports.FindCcu(ctok, m, nm, lookupOnly = false)))
-                    |> ignore
+            |> List.iter (fun (dataOpt, _, _) ->
+                match dataOpt with
+                | None -> ()
+                | Some data ->
 
-                fixupThunk ()
+                    let fixupThunk () =
+                        data.OptionalFixup(fun nm -> availableToOptionalCcu (tcImports.FindCcu(ctok, m, nm, lookupOnly = false)))
+                        |> ignore
 
-                for ccuThunk in data.FixupThunks do
-                    if ccuThunk.IsUnresolvedReference then
-                        tciLock.AcquireLock(fun tcitok ->
-                            RequireTcImportsLock(tcitok, ccuThunks)
-                            ccuThunks.Add(ccuThunk, fixupThunk)))
+                    fixupThunk ()
+
+                    for ccuThunk in data.FixupThunks do
+                        if ccuThunk.IsUnresolvedReference then
+                            tciLock.AcquireLock(fun tcitok ->
+                                RequireTcImportsLock(tcitok, ccuThunks)
+                                ccuThunks.Add(ccuThunk, fixupThunk)))
 #if !NO_TYPEPROVIDERS
             ccuRawDataAndInfos |> List.iter (fun (_, _, phase2) -> phase2 ())
 #endif
@@ -2258,6 +2495,15 @@ and [<Sealed>] TcImports
 
     // NOTE: When used in the Language Service this can cause the transitive checking of projects. Hence it must be cancellable.
     member tcImports.RegisterAndImportReferencedAssemblies(ctok, nms: AssemblyResolution list) =
+        let frameworkLayer: SharedImportedCcus.FrameworkLayer =
+            let layer = tcImports.KeyPinnedLayer
+
+            {
+                Globals = layer.GetTcGlobals
+                Resolve = fun (ctok, m, aref) -> layer.FindCcuFromAssemblyRef(ctok, m, aref)
+                XmlDoc = layer.TryFindXmlDocumentationInfo
+            }
+
         let tryGetAssemblyData (r: AssemblyResolution) =
             async2 {
                 CheckDisposed()
@@ -2290,11 +2536,142 @@ and [<Sealed>] TcImports
                     return None
             }
 
-        let registerDll (r: AssemblyResolution, assemblyData: IRawFSharpAssemblyData) =
+        /// Also reports a multi-module assembly, whose auxiliary modules need the importing project
+        let reachableAssemblyNames self (data: IRawFSharpAssemblyData) =
+            let names = ResizeArray<SharedImportedCcus.SimpleAssemblyName>()
+            names.Add self
+
+            for aref in data.ILAssemblyRefs do
+                names.Add aref.Name
+
+            let mutable multiModule = false
+
+            match data.TryGetILModuleDef() |> Option.bind (fun ilModule -> ilModule.Manifest) with
+            | Some manifest ->
+                for e in manifest.ExportedTypes.AsList() do
+                    match e.ScopeRef with
+                    | ILScopeRef.Assembly aref -> names.Add aref.Name
+                    | ILScopeRef.Module _ -> multiModule <- true
+                    | _ -> ()
+            | None -> ()
+
+            List.distinct (List.ofSeq names), multiModule
+
+#if NO_TYPEPROVIDERS
+        let isTypeProviderAssembly (_: IRawFSharpAssemblyData) = false
+#else
+        let isTypeProviderAssembly (data: IRawFSharpAssemblyData) =
+            match data.TryGetILModuleDef() with
+            | Some ilModule ->
+                ilModule.ManifestOfAssembly.CustomAttrs.AsList()
+                |> List.exists (TryDecodeTypeProviderAssemblyAttr >> Option.isSome)
+            | None -> false
+#endif
+
+        let fileIdentity (r: AssemblyResolution) : SharedImportedCcus.AssemblyFileId =
+            let writeStamp =
+                try
+                    string (FileSystem.GetLastWriteTimeShim r.resolvedPath).Ticks
+                with _ ->
+                    "nostamp"
+
+            SharedImportedCcus.AssemblyFileId(r.resolvedPath + "|" + writeStamp)
+
+        let sharedKeys (all: (AssemblyResolution * IRawFSharpAssemblyData) list) =
+            let ic = StringComparer.OrdinalIgnoreCase
+            let short (p: string) = Path.GetFileNameWithoutExtension p
+
+            let frameworkStamp =
+                match importsBase with
+                | Some b -> b.Stamp
+                | None -> 0L
+
+            // Two resolutions claiming one name would key whichever was seen last, so neither is shared
+            let ambiguous =
+                all
+                |> List.countBy (fun (r, _) -> short r.resolvedPath)
+                |> List.choose (fun (name, n) -> if n > 1 then Some name else None)
+                |> fun names -> HashSet<_>(names, ic)
+
+            let assemblies =
+                Dictionary<SharedImportedCcus.SimpleAssemblyName, SharedImportedCcus.AssemblyKeyInfo>(ic)
+
+            let shareable = HashSet<_>(ic)
+
+            for r, data in all do
+                let name = short r.resolvedPath
+                let refs, isMultiModule = reachableAssemblyNames name data
+
+                assemblies[name] <-
+                    {
+                        File = fileIdentity r
+                        References = refs
+                    }
+
+                // A project's own output changes every build; phase2 mutates a type provider's contents
+                if
+                    r.ProjectReference.IsNone
+                    && not isMultiModule
+                    && not (ambiguous.Contains name)
+                    && not (isTypeProviderAssembly data)
+                then
+                    shareable.Add name |> ignore
+
+            // A reference must resolve to what the key pins - this batch or the framework layer - or to
+            // nothing anywhere. One only an earlier batch resolves would be keyed as unresolved.
+            let pinnedByKey = Dictionary<_, bool>(ic)
+
+            let isPinnedByKey ref =
+                match pinnedByKey.TryGetValue ref with
+                | true, v -> v
+                | _ ->
+                    let resolvesIn (t: TcImports) =
+                        match t.FindCcu(ctok, range0, ref, lookupOnly = true) with
+                        | ResolvedCcu _ -> true
+                        | UnresolvedCcu _ -> false
+
+                    let v =
+                        assemblies.ContainsKey ref
+                        || (match importsBase with
+                            | Some b -> resolvesIn b
+                            | None -> false)
+                        || not (resolvesIn tcImports)
+
+                    pinnedByKey[ref] <- v
+                    v
+
+            for name in List.ofSeq shareable do
+                if not (assemblies[name].References |> List.forall isPinnedByKey) then
+                    shareable.Remove name |> ignore
+
+            SharedImportedCcus.computeKeys frameworkStamp assemblies shareable.Contains
+
+        let contexts = ResizeArray<SharedImportedCcus.SharedImportContext>()
+
+        let registerDll
+            (keys: Dictionary<SharedImportedCcus.SimpleAssemblyName, SharedImportedCcus.ShareableAssembly> option)
+            (r: AssemblyResolution, assemblyData: IRawFSharpAssemblyData)
+            =
             let m = r.originalReference.Range
             let fileName = r.resolvedPath
             let ilShortAssemName = assemblyData.ShortAssemblyName
             let ilScopeRef = assemblyData.ILScopeRef
+
+            // A project's own output can share a simple name with a package, so it is excluded here
+            let shared =
+                match keys with
+                | Some keys when r.ProjectReference.IsNone ->
+                    match keys.TryGetValue(Path.GetFileNameWithoutExtension fileName) with
+                    | true, shareable ->
+                        let ctx = SharedImportedCcus.SharedImportContext(frameworkLayer, shareable.Closure)
+
+                        contexts.Add ctx
+
+                        let import: SharedImportedCcus.SharedImport = { Key = shareable.Key; Context = ctx }
+
+                        Some import
+                    | _ -> None
+                | _ -> None
 
             if tcImports.IsAlreadyRegistered ilShortAssemName then
 
@@ -2322,14 +2699,14 @@ and [<Sealed>] TcImports
                     if assemblyData.HasAnyFSharpSignatureDataAttribute then
                         if not assemblyData.HasMatchingFSharpSignatureDataAttribute then
                             errorR (Error(FSComp.SR.buildDifferentVersionMustRecompile fileName, m))
-                            tcImports.PrepareToImportReferencedILAssembly(ctok, m, fileName, dllinfo)
+                            tcImports.PrepareToImportReferencedILAssembly(ctok, m, fileName, dllinfo, ?shared = shared)
                         else
                             try
-                                tcImports.PrepareToImportReferencedFSharpAssembly(ctok, m, fileName, dllinfo)
+                                tcImports.PrepareToImportReferencedFSharpAssembly(ctok, m, fileName, dllinfo, ?shared = shared)
                             with e ->
                                 error (Error(FSComp.SR.buildErrorOpeningBinaryFile (fileName, e.Message), m))
                     else
-                        tcImports.PrepareToImportReferencedILAssembly(ctok, m, fileName, dllinfo)
+                        tcImports.PrepareToImportReferencedILAssembly(ctok, m, fileName, dllinfo, ?shared = shared)
 
                 async2 { return phase2 () }
 
@@ -2346,11 +2723,41 @@ and [<Sealed>] TcImports
             let! assemblyData = nms |> List.map tryGetAssemblyData |> runMethod
 
             // Preserve determinicstic order of references, because types from later assemblies may shadow earlier ones.
-            let phase2s = assemblyData |> Seq.choose id |> Seq.map registerDll |> List.ofSeq
+            let resolved = assemblyData |> Seq.choose id |> List.ofSeq
+
+            let keys =
+                // A framework base exists only for project layers, which register their whole set at once;
+                // BuildFrameworkTcImports uses three batches, and an early entry could not resolve the rest.
+                //
+                // Only with reduceMemoryUsage: otherwise disposal closes the reader a surviving ccu needs.
+                //
+                // The config check is what makes the stamp enough to pin the config
+                if
+                    tcConfig.shareImportedAssemblies
+                    && importsBase.IsSome
+                    && tcConfig.reduceMemoryUsage = ReduceMemoryFlag.Yes
+                    && importsBase.Value.GetImportReuseKey ctok = tcConfig.importReuseKey
+                then
+                    Some(sharedKeys resolved)
+                else
+                    None
+
+            let phase2s = resolved |> List.map (registerDll keys)
 
             fixupOrphanCcus ()
 
             let! ccuinfos = phase2s |> runMethod
+
+            // Everything is registered and no import forced yet, so no entry can be taken half-filled
+            for ctx in contexts do
+                if ctx.Pending.Count > 0 then
+                    for name in ctx.Closure do
+                        match tcImports.FindCcu(ctok, range0, name, lookupOnly = true) with
+                        | ResolvedCcu ccu -> ctx.AddClosureRef(name, ccu)
+                        | UnresolvedCcu _ -> ()
+
+                    for key, ccu in ctx.Pending do
+                        SharedImportedCcus.add key ccu
 
             if importsBase.IsSome then
                 let addConstraintSources (ia: ImportedAssembly) =
