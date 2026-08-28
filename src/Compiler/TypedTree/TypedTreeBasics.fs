@@ -422,8 +422,24 @@ let pubPathEq (path1: PublicPath) (path2: PublicPath) =
     path1.Name = path2.Name
     && loop path1.EnclosingCompilationPath.AccessPath path2.EnclosingCompilationPath.AccessPath
 
+// Compares nlr1.Path against path2 without materializing path2.FullPath: the enclosing access path is
+// walked as a list while the reference path is indexed as an array, so this stays O(N) and allocation-free.
 let fslibRefEq (nlr1: NonLocalEntityRef) (path2: PublicPath) =
-    arrayPathEq nlr1.Path path2.FullPath
+    let path1 = nlr1.Path
+
+    let rec loop i lst =
+        match lst with
+        | [] -> i = path1.Length - 1 && path1[i] = path2.Name
+        | (nm, _) :: rest -> i < path1.Length && path1[i] = nm && loop (i + 1) rest
+
+    loop 0 path2.EnclosingCompilationPath.AccessPath
+
+// Struct (non-allocating) variants of |ERefLocal|ERefNonLocal|, for the hot fslib-compile equality below.
+[<return: Struct>]
+let inline (|LocalEref|_|) (x: EntityRef) = if x.IsLocalRef then ValueSome x.ResolvedTarget else ValueNone
+
+[<return: Struct>]
+let inline (|NonLocalEref|_|) (x: EntityRef) = if x.IsLocalRef then ValueNone else ValueSome x.nlr
 
 // Compare two EntityRef's for equality when compiling fslib (FSharp.Core.dll)
 //
@@ -433,17 +449,24 @@ let fslibRefEq (nlr1: NonLocalEntityRef) (path2: PublicPath) =
 // equality comparison techniques are needed when compiling fslib itself.
 let fslibEntityRefEq fslibCcu (eref1: EntityRef) (eref2: EntityRef) =
     match eref1, eref2 with 
-    | ERefNonLocal nlr1, ERefLocal x2
-    | ERefLocal x2, ERefNonLocal nlr1 ->
+    | NonLocalEref nlr1, LocalEref x2
+    | LocalEref x2, NonLocalEref nlr1 ->
         ccuEq nlr1.Ccu fslibCcu &&
         match x2.PublicPath with
         | ValueSome pp2 -> fslibRefEq nlr1 pp2
         | ValueNone -> false
-    | ERefLocal e1, ERefLocal e2 ->
+    | LocalEref e1, LocalEref e2 ->
         match e1.PublicPath, e2.PublicPath with
         | ValueSome pp1, ValueSome pp2 -> pubPathEq pp1 pp2
         | _ -> false
     | _ -> false
+
+// Struct (non-allocating) variants of |VRefLocal|VRefNonLocal|, for the hot fslib-compile equality below.
+[<return: Struct>]
+let inline (|LocalVref|_|) (x: ValRef) = if x.IsLocalRef then ValueSome x.ResolvedTarget else ValueNone
+
+[<return: Struct>]
+let inline (|NonLocalVref|_|) (x: ValRef) = if x.IsLocalRef then ValueNone else ValueSome x.nlr
 
 // Compare two ValRef's for equality when compiling fslib (FSharp.Core.dll)
 //
@@ -451,10 +474,10 @@ let fslibEntityRefEq fslibCcu (eref1: EntityRef) (eref2: EntityRef) =
 // This breaks certain invariants that hold elsewhere, because they dereference to point to 
 // Val's from signatures rather than Val's from implementations. This means backup, alternative 
 // equality comparison techniques are needed when compiling fslib itself.
-let fslibValRefEq fslibCcu vref1 vref2 =
+let fslibValRefEq fslibCcu (vref1: ValRef) (vref2: ValRef) =
     match vref1, vref2 with 
-    | VRefNonLocal nlr1, VRefLocal x2
-    | VRefLocal x2, VRefNonLocal nlr1 ->
+    | NonLocalVref nlr1, LocalVref x2
+    | LocalVref x2, NonLocalVref nlr1 ->
         ccuEq nlr1.Ccu fslibCcu &&
         match x2.PublicPath with 
         | Some (ValPubPath(pp2, nm2)) -> 
@@ -467,7 +490,7 @@ let fslibValRefEq fslibCcu vref1 vref2 =
         | _ -> 
             false
     // Note: I suspect this private-to-private reference comparison is not needed
-    | VRefLocal e1, VRefLocal e2 ->
+    | LocalVref e1, LocalVref e2 ->
         match e1.PublicPath, e2.PublicPath with 
         | Some (ValPubPath(pp1, nm1)), Some (ValPubPath(pp2, nm2)) -> 
             pubPathEq pp1 pp2 && 
