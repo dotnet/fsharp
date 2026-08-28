@@ -133,7 +133,7 @@ module Async2Implementation =
         val mutable TailCallSource: TaskCompletionSource<'t> option
 
         [<DefaultValue(false)>]
-        val mutable Awaited: bool
+        val mutable IsNested: bool
 
         [<DefaultValue(false)>]
         val mutable CancellationToken: CancellationToken
@@ -150,11 +150,11 @@ module Async2Implementation =
         [<DefaultValue(false)>]
         val mutable StateMachine: 'm
 
-        member ts.Start(ct, awaited, ?tailCallSource) =
+        member ts.Start(ct, isNested, ?tailCallSource) =
             let mutable copy = ts
             let mutable data = Async2Data()
             data.CancellationToken <- ct
-            data.Awaited <- awaited
+            data.IsNested <- isNested
             data.TailCallSource <- tailCallSource
             data.MethodBuilder <- AsyncTaskMethodBuilder<'t>.Create()
             copy.StateMachine.Data <- data
@@ -175,8 +175,8 @@ module Async2Implementation =
             member ts.TailCall(ct, tc) = ts.Start(ct, true, tc) |> ignore
 
     type Async2Dynamic<'t, 'm when 'm :> IAsyncStateMachine and 'm :> IAsync2StateMachine<'t>>(getCopy: bool -> 'm) =
-        member ts.GetCopy(awaited) =
-            Async2(StateMachine = getCopy awaited) :> Async2<_>
+        member ts.GetCopy(isNested) =
+            Async2(StateMachine = getCopy isNested) :> Async2<_>
 
         interface Async2<'t> with
             member ts.Start ct = ts.GetCopy(false).Start(ct)
@@ -204,7 +204,7 @@ module Async2Implementation =
 
         let inline maybeBounce () =
             Async2Code(fun sm ->
-                if sm.Data.Awaited && Trampoline.Current.ShouldBounce then
+                if sm.Data.IsNested && Trampoline.Current.ShouldBounce then
                     let __stack_yield_fin = ResumableCode.Yield().Invoke(&sm)
 
                     if not __stack_yield_fin then
@@ -306,8 +306,8 @@ module Async2Implementation =
                 else
                     Immediate state
 
-            let resumptionInfo awaited =
-                let initialState = if awaited then maybeBounce Running else Immediate Running
+            let resumptionInfo isNested =
+                let initialState = if isNested then maybeBounce Running else Immediate Running
 
                 { new Async2ResumptionDynamicInfo<'T>(initialResumptionFunc, ResumptionData = initialState) with
                     member info.MoveNext(sm) =
@@ -354,7 +354,7 @@ module Async2Implementation =
                         sm.Data.MethodBuilder.SetStateMachine(state)
                 }
 
-            Async2Dynamic<_, _>(fun awaited -> Async2StateMachine(ResumptionDynamicInfo = resumptionInfo awaited))
+            Async2Dynamic<_, _>(fun isNested -> Async2StateMachine(ResumptionDynamicInfo = resumptionInfo isNested))
 
         member inline _.Run(code: Async2Code<'T, 'T>) : Async2<'T> =
             if __useResumableCode then
