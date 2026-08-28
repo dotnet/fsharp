@@ -79,6 +79,17 @@ module Named =
         |> withErrorCode 30
         |> withDiagnosticMessageMatches "Value restriction: The value 'g' has an inferred generic function type"
 
+    [<Theory; FileInlineData("E_ActivePatternInLetBindingTupleNotGeneralized.fs")>]
+    let ``Named - E_ActivePatternInLetBindingTupleNotGeneralized_fs`` compilation =
+        compilation
+        |> getCompilation
+        |> asFs
+        |> typecheck
+        |> shouldFail
+        |> withErrorCodes [30; 30; 30; 30]
+        |> withDiagnosticMessageMatches "Value restriction: The value 'h' has an inferred generic function type"
+        |> withDiagnosticMessageMatches "Value restriction: The value 'h2' has an inferred generic function type"
+
     // This test was automatically generated (moved from FSharpQA suite - Conformance/PatternMatching/Named)
     [<Theory; FileInlineData("activePatterns01.fs")>]
     let ``Named - activePatterns01_fs - --test:ErrorRanges`` compilation =
