@@ -1,4 +1,4 @@
-// #Conformance #SignatureFiles 
+// #Conformance #SignatureFiles
 
 
 // Check FSI signature files for abstract slots
@@ -11,7 +11,7 @@ type Foo() =
 type Bar() =
     inherit Foo()
     override this.AbstractMethod () = 2
-    
+
 let t = new Foo()
 if t.AbstractMethod() <> 1 then exit 1
 

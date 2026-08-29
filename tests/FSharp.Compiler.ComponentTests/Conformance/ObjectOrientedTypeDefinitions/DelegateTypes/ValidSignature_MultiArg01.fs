@@ -1,4 +1,4 @@
-// #Conformance #ObjectOrientedTypes #Delegates 
+// #Conformance #ObjectOrientedTypes #Delegates
 // Delegate taking multiple arguments
 // Declaration is in the form: typ * ... * typ -> typ
 //<Expects status="success"></Expects>

@@ -19,7 +19,7 @@ let f2 db db2 =
         for i in db do
         let x = i,i
         for j in db do
-        let y = 
+        let y =
             match (x,j) with
             | _,_ -> x,j
         join k in db2 on (i=k)
@@ -71,9 +71,9 @@ type Customer(name) =
     member this.Name = name
     override this.Equals(obj) = match obj with | :? Customer as c1 -> this.Name = c1.Name | _ -> false
     interface System.IComparable with
-        override this.CompareTo(obj) = 
-            match obj with 
-            | :? Customer as c1 -> if this.Name = c1.Name then 0 else 1 
+        override this.CompareTo(obj) =
+            match obj with
+            | :? Customer as c1 -> if this.Name = c1.Name then 0 else 1
             | _ -> -1
 let cdb1 = [Customer("Jeff"); Customer("Annie"); Customer("Britta"); Customer("Troy"); Customer("Abed"); Customer("Pierce")].AsQueryable()
 let cdb2 = [Customer("Jeff"); Customer("Annie"); Customer("Britta"); Customer("Troy"); Customer("Abed")].AsQueryable()

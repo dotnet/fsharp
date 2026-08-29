@@ -1,6 +1,6 @@
 open Prelude
 
-module BaseCallByref = 
+module BaseCallByref =
     type Incrementor(z) =
         abstract member Increment : int byref * int byref -> unit
         default this.Increment(i : int byref,j : int byref) =

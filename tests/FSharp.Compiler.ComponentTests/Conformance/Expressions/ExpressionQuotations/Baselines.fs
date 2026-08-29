@@ -18,9 +18,9 @@ open FSharp.Test.Compiler
 open System.IO
 
 module Baselines =
-    
+
     let private basePath = Path.Combine(__SOURCE_DIRECTORY__, "Baselines")
-    
+
     /// Create QuoteUtils.fs as a library CompilationUnit
     let private getQuoteUtilsLib () =
         let source = File.ReadAllText(Path.Combine(basePath, "QuoteUtils.fs"))
@@ -61,7 +61,7 @@ module Baselines =
         |> ignore
 
     // ========================================
-    // Tests requiring QuoteUtils.dll  
+    // Tests requiring QuoteUtils.dll
     // ========================================
 
     [<Fact>]

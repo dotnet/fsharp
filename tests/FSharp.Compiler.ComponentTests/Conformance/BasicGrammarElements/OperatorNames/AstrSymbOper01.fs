@@ -1,4 +1,4 @@
-// #Conformance #BasicGrammarElements #Operators 
+// #Conformance #BasicGrammarElements #Operators
 
 
 // Verify you can create a function named '*' without

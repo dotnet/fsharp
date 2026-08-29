@@ -1,4 +1,4 @@
-// #Regression #Diagnostics 
+// #Regression #Diagnostics
 // Regression test for FSHARP1.0:4579
 // The following code should not give any error/warning
 //<Expects status="success"></Expects>

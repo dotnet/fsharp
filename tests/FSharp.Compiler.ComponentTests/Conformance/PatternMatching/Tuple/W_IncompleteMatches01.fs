@@ -1,10 +1,10 @@
-// #Regression #Conformance #PatternMatching #Tuples 
+// #Regression #Conformance #PatternMatching #Tuples
 
 
 // Verify warnings for incomplete pattern matches
 
 
-let test() = 
+let test() =
     function
     | 1, _
     | 2, _

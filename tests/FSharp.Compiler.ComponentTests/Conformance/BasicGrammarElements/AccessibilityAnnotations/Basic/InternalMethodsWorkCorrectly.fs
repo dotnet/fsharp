@@ -1,4 +1,4 @@
-// #Conformance #DeclarationElements #Accessibility 
+// #Conformance #DeclarationElements #Accessibility
 
 
 module internal InternalModule =
@@ -9,7 +9,7 @@ module internal InternalModule =
     type internal InternalClass (x : string) =
         let m_innards = x
         member internal this.InternalMethod_GetDevoweledString() = deVowelStr m_innards
-        
+
 module testModule =
 
     let startingValue = InternalModule.initialString
@@ -18,6 +18,6 @@ module testModule =
     let internal x = new InternalModule.InternalClass(startingValue)
 
     let result = x.InternalMethod_GetDevoweledString()
-    
+
     if result <> InternalModule.deVowelStr startingValue then failwith "Failed: 1"
 

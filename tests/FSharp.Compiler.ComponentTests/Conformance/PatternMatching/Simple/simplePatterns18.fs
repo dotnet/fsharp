@@ -1,4 +1,4 @@
-// #Conformance #PatternMatching 
+// #Conformance #PatternMatching
 
 
 // Pattern match a short unicode literal
@@ -12,7 +12,7 @@ type Suit =
 let spade, club, heart, diamond = '\u2660', '\u2663', '\u2665', '\u2666'
 
 let getSuit c =
-    match c with 
+    match c with
     | '\u2660' -> Some(Spade)
     | '\u2663' -> Some(Club)
     | '\u2665' -> Some(Heart)
