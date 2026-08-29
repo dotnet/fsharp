@@ -257,6 +257,14 @@
     "20394": {
       "sha": "628273bec9f5",
       "cats": []
+    },
+    "20396": {
+      "sha": "7f5e5f64a48a",
+      "cats": [
+        "Affects-Build-Infra",
+        "Affects-Compiler-Output",
+        "Affects-Restore"
+      ]
     }
   }
 }
