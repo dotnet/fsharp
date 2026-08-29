@@ -8,25 +8,25 @@ open Microsoft.Win32
 open Microsoft.VisualStudio.Shell.Interop
 open Microsoft.VisualStudio.OLE.Interop
 
-module internal AssemblyAttributes = 
+module internal AssemblyAttributes =
     [<assembly:ComVisible(true)>]
     do()
 
 module internal Guids =
-    
+
     // FSI Session command set
-    let guidInteractiveCommands         = Microsoft.VisualStudio.VSConstants.VsStd11 
+    let guidInteractiveCommands         = Microsoft.VisualStudio.VSConstants.VsStd11
     let cmdIDSessionInterrupt           = int Microsoft.VisualStudio.VSConstants.VSStd11CmdID.InteractiveSessionInterrupt
     let cmdIDSessionRestart             = int Microsoft.VisualStudio.VSConstants.VSStd11CmdID.InteractiveSessionRestart
 
     let guidFsiConsoleCmdSet            = Guid("0E455B35-F2EB-431b-A0BE-B268D8A7D17F")
     let cmdIDAttachDebugger             = 0x104
     let cmdIDDetachDebugger             = 0x105
-    let cmdIDFsiConsoleContextMenu      = 0x2100 
-   
+    let cmdIDFsiConsoleContextMenu      = 0x2100
+
     // Command set for SendToInteractive
     // some commands moved to VS Shell
-    let guidInteractiveShell            = Microsoft.VisualStudio.VSConstants.VsStd11 
+    let guidInteractiveShell            = Microsoft.VisualStudio.VSConstants.VsStd11
     let cmdIDSendSelection              = int Microsoft.VisualStudio.VSConstants.VSStd11CmdID.ExecuteSelectionInInteractive
     let cmdIDSendLine                   = int Microsoft.VisualStudio.VSConstants.VSStd11CmdID.ExecuteLineInInteractive
 
@@ -49,9 +49,9 @@ module internal Guids =
     // FSI Package command set
     let guidFsiPackageCmdSet            = Guid("0be3b0d7-4fc2-45bf-a168-957e8a8834d0")
     let cmdIDLaunchFsiToolWindow        = 0x101
-    
+
     let nameFsiLanguageService          = "FSharpInteractive"                           // see Package registration attribute
-    
+
     let guidFsharpLanguageService       = Guid("BC6DD5A5-D4D6-4dab-A00D-A51242DBAF1B")  // The F# source file lang service
 
     [<Literal>]
@@ -61,8 +61,8 @@ module internal Util =
     /// Utility function to create an instance of a class from the local registry. [From Iron Python].
     let CreateObject (globalProvider:System.IServiceProvider) (classType:Type,interfaceType:Type) =
         // Follows IronPython sample. See ConsoleWindow.CreateObject
-        let localRegistry = globalProvider.GetService(typeof<SLocalRegistry>) :?> ILocalRegistry   
-        let mutable interfaceGuid = interfaceType.GUID    
+        let localRegistry = globalProvider.GetService(typeof<SLocalRegistry>) :?> ILocalRegistry
+        let mutable interfaceGuid = interfaceType.GUID
         let res,interfacePointer = localRegistry.CreateInstance(classType.GUID, null, &interfaceGuid,uint32 CLSCTX.CLSCTX_INPROC_SERVER)
         Microsoft.VisualStudio.ErrorHandler.ThrowOnFailure(res) |> ignore
         if interfacePointer = IntPtr.Zero then
@@ -113,7 +113,7 @@ module internal Util =
         let debugInfoEnabled (args : string) =
             // FSI default is --debug:pdbonly, so disabling must be explicit
             match lastIndexOfPattern args @"(--|/)debug-" with
-            | -1 -> true 
+            | -1 -> true
             | idxDisabled ->
                 // check if it's enabled by later args
                 let afterDisabled = args.Substring(idxDisabled + 5)
@@ -126,7 +126,7 @@ module internal Util =
         let optimizationsEnabled (args : string) =
             // FSI default is --optimize+, so disabling must be explicit
             match lastIndexOfPattern args @"(--|/)optimize-" with
-            | -1 -> true 
+            | -1 -> true
             | idxDisabled ->
                 // check if it's enabled by later args
                 let afterDisabled = args.Substring(idxDisabled + 5)
@@ -136,7 +136,7 @@ module internal Util =
 // History buffer.
 // For now, follows the cmd.exe model.
 type internal HistoryBuffer() =
-    let lines   = new System.Collections.Generic.List<string>()    
+    let lines   = new System.Collections.Generic.List<string>()
     let mutable pointer = 0
     member this.Add(text:string)        = lines.Add(text); pointer <- lines.Count
     member this.CycleUp(text:string)    = if pointer-1 >= 0 then

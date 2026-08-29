@@ -17,7 +17,7 @@ open Util
 open System.ComponentModel
 open Microsoft.VisualStudio.FSharp.Interactive.Session
 
-module internal ContentType = 
+module internal ContentType =
     [<Export>]
     [<Name(Guids.fsiContentTypeName)>]
     [<BaseDefinition("code")>]
@@ -28,7 +28,7 @@ module internal ContentType =
 [<CLSCompliant(false)>]
 [<ClassInterface(ClassInterfaceType.AutoDual)>]
 [<Guid("4489e9de-6ac1-3cd6-bff8-a904fd0e82d4")>]
-type FsiPropertyPage() = 
+type FsiPropertyPage() =
     inherit DialogPage()
 
     [<ResourceCategory(SRProperties.FSharpInteractiveMisc)>]
@@ -90,15 +90,15 @@ type internal FsiMethods() =
 // FsiSource
 type internal FsiSource(service:LanguageService, textLines:IVsTextLines, colorizer:Colorizer) =
     inherit Source(service, textLines, colorizer)
-    override this.GetCommentFormat() = 
+    override this.GetCommentFormat() =
         let mutable info = new CommentInfo()
         info.BlockEnd<-"(*"
         info.BlockStart<-"*)"
         info.UseLineComments<-true
         info.LineStart <- "//"
-        info 
+        info
     override this.CreateCompletionSet() =
-        (new FsiCompletionSet(this.LanguageService.GetImageList(), this) :> CompletionSet)        
+        (new FsiCompletionSet(this.LanguageService.GetImageList(), this) :> CompletionSet)
     override source.OnCommand(textView, command, ch) =
         base.OnCommand(textView, command, ch)
     override this.Completion(textView:IVsTextView,info:TokenInfo,reason:ParseReason) =
@@ -110,7 +110,7 @@ type internal FsiScanner(buffer:IVsTextLines) =
         override this.ScanTokenAndProvideInfoAboutIt(tokenInfo:TokenInfo,state:byref<int>) = false
             // Implementing a scanner with TokenTriggers could start intellisense calls, e.g. on DOT.
 
-type internal FsiAuthoringScope(sessions:FsiSessions option,readOnlySpanGetter:unit -> TextSpan) = 
+type internal FsiAuthoringScope(sessions:FsiSessions option,readOnlySpanGetter:unit -> TextSpan) =
     inherit AuthoringScope()
     override this.GetDataTipText(line:int,col:int,span:byref<TextSpan>) =
         span <- new TextSpan()
@@ -119,7 +119,7 @@ type internal FsiAuthoringScope(sessions:FsiSessions option,readOnlySpanGetter:u
     override this.GetDeclarations(_snapshot,line:int,col:int,info:TokenInfo,reason:ParseReason) =
         (new FsiDeclarations() :> Declarations)
 
-    override this.GetMethods(line:int,col:int,name:string) = 
+    override this.GetMethods(line:int,col:int,name:string) =
         new FsiMethods() :> Methods
 
     override this.Goto(cmd      : VSConstants.VSStd97CmdID,
@@ -132,10 +132,10 @@ type internal FsiAuthoringScope(sessions:FsiSessions option,readOnlySpanGetter:u
 
 type internal FsiViewFilter(mgr:CodeWindowManager,view:IVsTextView) =
     inherit ViewFilter(mgr,view)
-    let isShowMemberList guidCmdGroup nCmdId = (guidCmdGroup = VSConstants.VSStd2K)&& (nCmdId = (uint32 VSConstants.VSStd2KCmdID.SHOWMEMBERLIST))    
-    let isCompleteWord   guidCmdGroup nCmdId = (guidCmdGroup = VSConstants.VSStd2K)&& (nCmdId = (uint32 VSConstants.VSStd2KCmdID.COMPLETEWORD))    
+    let isShowMemberList guidCmdGroup nCmdId = (guidCmdGroup = VSConstants.VSStd2K)&& (nCmdId = (uint32 VSConstants.VSStd2KCmdID.SHOWMEMBERLIST))
+    let isCompleteWord   guidCmdGroup nCmdId = (guidCmdGroup = VSConstants.VSStd2K)&& (nCmdId = (uint32 VSConstants.VSStd2KCmdID.COMPLETEWORD))
     override this.Dispose() = base.Dispose()
-    override this.QueryCommandStatus(guidCmdGroup:byref<Guid>,nCmdId:uint32) =        
+    override this.QueryCommandStatus(guidCmdGroup:byref<Guid>,nCmdId:uint32) =
         if isShowMemberList guidCmdGroup nCmdId || isCompleteWord guidCmdGroup nCmdId  then
             int32 (OLECMDF.OLECMDF_SUPPORTED ||| OLECMDF.OLECMDF_ENABLED)
         else
@@ -156,12 +156,12 @@ type internal FsiViewFilter(mgr:CodeWindowManager,view:IVsTextView) =
                                   tokenInfo,
                                   ParseReason.CompleteWord)
             true
-        else            
+        else
             base.HandlePreExec(&guidCmdGroup, nCmdId, nCmdexecopt, pvaIn, pvaOut) // pass down
 
 module internal Helpers =
     let FsiKeyword =
-        { new IVsColorableItem with 
+        { new IVsColorableItem with
             member x.GetDefaultColors(piForeground, piBackground) =
                 piForeground.[0] <- COLORINDEX.CI_BLUE
                 piBackground.[0] <- COLORINDEX.CI_USERTEXT_BK
@@ -176,10 +176,10 @@ module internal Helpers =
                 VSConstants.S_OK }
 
 [<Guid(Guids.guidFsiLanguageService)>]
-type internal FsiLanguageService() = 
+type internal FsiLanguageService() =
     inherit LanguageService()
 
-    let mutable preferences        = null : LanguagePreferences     
+    let mutable preferences        = null : LanguagePreferences
     let mutable scanner            = null : IScanner
     let mutable sessions           = None : Session.FsiSessions option
     let mutable readOnlySpanGetter = (fun () -> new TextSpan())
@@ -187,7 +187,7 @@ type internal FsiLanguageService() =
     let readOnlySpan() = readOnlySpanGetter() // do not eta-contract, readOnlySpanGetter is mutable.
     member this.ReadOnlySpanGetter with set x = readOnlySpanGetter <- x
     member this.Sessions with set x = sessions <- Some x
-    
+
     override this.GetLanguagePreferences() =
         if isNull preferences then
             preferences <- new LanguagePreferences(this.Site,
@@ -196,26 +196,26 @@ type internal FsiLanguageService() =
             preferences.Init()
         preferences.EnableCodeSense <- false
         preferences
-        
+
     override this.GetScanner(buffer:IVsTextLines) =
         if isNull scanner then
             scanner <- (new FsiScanner(buffer) :> IScanner)
         scanner
-        
+
     override this.ParseSource(req:ParseRequest) =
         (new FsiAuthoringScope(sessions,readOnlySpan) :> AuthoringScope)
-                
+
     override this.Name = "FSharpInteractive" // LINK: see ProvidePackage attribute on the package.
-    
+
     override this.GetFormatFilterList() = ""
 
-    // Reading MPF sources suggest this is called by codeWinMan.OnNewView(textView) to install a ViewFilter on the TextView.    
+    // Reading MPF sources suggest this is called by codeWinMan.OnNewView(textView) to install a ViewFilter on the TextView.
     override this.CreateViewFilter(mgr:CodeWindowManager,newView:IVsTextView) = new FsiViewFilter(mgr,newView) :> ViewFilter
 
     override this.GetItemCount count =
         count <- 1
         VSConstants.S_OK
-        
+
     override this.GetColorableItem(index, colorableItem) =
         colorableItem <- Helpers.FsiKeyword
         VSConstants.S_OK

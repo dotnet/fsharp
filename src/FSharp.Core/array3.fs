@@ -9,7 +9,7 @@ open Microsoft.FSharp.Core.Operators.Checked
 [<RequireQualifiedAccess>]
 module Array3D =
 
-    let inline checkNonNull argName arg = 
+    let inline checkNonNull argName arg =
         if isNull arg then
             nullArg argName
 
@@ -29,7 +29,7 @@ module Array3D =
     let set (array: 'T[,,]) index1 index2 index3 value = array.[index1,index2,index3] <- value
 
     [<CompiledName("ZeroCreate")>]
-    let zeroCreate length1 length2 length3 = 
+    let zeroCreate length1 length2 length3 =
         if length1 < 0 then invalidArgInputMustBeNonNegative "n1" length1
         if length2 < 0 then invalidArgInputMustBeNonNegative "n2" length2
         if length3 < 0 then invalidArgInputMustBeNonNegative "n3" length3
@@ -38,19 +38,19 @@ module Array3D =
     [<CompiledName("Create")>]
     let create length1 length2 length3 (initial:'T) =
         let arr = (zeroCreate length1 length2 length3 : 'T[,,])
-        for i = 0 to length1 - 1 do 
-          for j = 0 to length2 - 1 do 
-            for k = 0 to length3 - 1 do 
+        for i = 0 to length1 - 1 do
+          for j = 0 to length2 - 1 do
+            for k = 0 to length3 - 1 do
               arr.[i,j,k] <- initial
         arr
 
     [<CompiledName("Initialize")>]
-    let init length1 length2 length3 initializer = 
+    let init length1 length2 length3 initializer =
         let arr = (zeroCreate length1 length2 length3 : 'T[,,])
         let f = OptimizedClosures.FSharpFunc<_,_,_,_>.Adapt(initializer)
-        for i = 0 to length1 - 1 do 
-          for j = 0 to length2 - 1 do 
-            for k = 0 to length3 - 1 do 
+        for i = 0 to length1 - 1 do
+          for j = 0 to length2 - 1 do
+            for k = 0 to length3 - 1 do
               arr.[i,j,k] <- f.Invoke(i, j, k)
         arr
 
@@ -60,9 +60,9 @@ module Array3D =
         let len1 = length1 array
         let len2 = length2 array
         let len3 = length3 array
-        for i = 0 to len1 - 1 do 
-          for j = 0 to len2 - 1 do 
-            for k = 0 to len3 - 1 do 
+        for i = 0 to len1 - 1 do
+          for j = 0 to len2 - 1 do
+            for k = 0 to len3 - 1 do
               action array.[i,j,k]
 
     [<CompiledName("Map")>]
@@ -72,9 +72,9 @@ module Array3D =
         let len2 = length2 array
         let len3 = length3 array
         let res = (zeroCreate len1 len2 len3 : 'b[,,])
-        for i = 0 to len1 - 1 do 
-          for j = 0 to len2 - 1 do 
-            for k = 0 to len3 - 1 do 
+        for i = 0 to len1 - 1 do
+          for j = 0 to len2 - 1 do
+            for k = 0 to len3 - 1 do
               res.[i,j,k] <-  mapping array.[i,j,k]
         res
 
@@ -85,10 +85,10 @@ module Array3D =
         let len2 = length2 array
         let len3 = length3 array
         let f = OptimizedClosures.FSharpFunc<_,_,_,_,_>.Adapt(action)
-        for i = 0 to len1 - 1 do 
-          for j = 0 to len2 - 1 do 
-            for k = 0 to len3 - 1 do 
-              f.Invoke(i, j, k, array.[i,j,k]) 
+        for i = 0 to len1 - 1 do
+          for j = 0 to len2 - 1 do
+            for k = 0 to len3 - 1 do
+              f.Invoke(i, j, k, array.[i,j,k])
 
     [<CompiledName("MapIndexed")>]
     let mapi mapping array =
@@ -98,9 +98,9 @@ module Array3D =
         let len3 = length3 array
         let res = (zeroCreate len1 len2 len3 : 'b[,,])
         let f = OptimizedClosures.FSharpFunc<_,_,_,_,_>.Adapt(mapping)
-        for i = 0 to len1 - 1 do 
-          for j = 0 to len2 - 1 do 
-            for k = 0 to len3 - 1 do 
+        for i = 0 to len1 - 1 do
+          for j = 0 to len2 - 1 do
+            for k = 0 to len3 - 1 do
               res.[i,j,k] <- f.Invoke(i, j, k, array.[i,j,k])
         res
 
@@ -121,7 +121,7 @@ module Array4D =
     let length4 (array: 'T[,,,]) = (# "ldlen.multi 4 3" array : int #)
 
     [<CompiledName("ZeroCreate")>]
-    let zeroCreate length1 length2 length3 length4 = 
+    let zeroCreate length1 length2 length3 length4 =
         if length1 < 0 then invalidArgInputMustBeNonNegative "n1" length1
         if length2 < 0 then invalidArgInputMustBeNonNegative "n2" length2
         if length3 < 0 then invalidArgInputMustBeNonNegative "n3" length3
@@ -131,21 +131,21 @@ module Array4D =
     [<CompiledName("Create")>]
     let create length1 length2 length3 length4 (initial:'T) =
         let arr = (zeroCreate length1 length2 length3 length4 : 'T[,,,])
-        for i = 0 to length1 - 1 do 
-          for j = 0 to length2 - 1 do 
-            for k = 0 to length3 - 1 do 
-              for m = 0 to length4 - 1 do 
+        for i = 0 to length1 - 1 do
+          for j = 0 to length2 - 1 do
+            for k = 0 to length3 - 1 do
+              for m = 0 to length4 - 1 do
                 arr.[i,j,k,m] <- initial
         arr
 
     [<CompiledName("Initialize")>]
-    let init length1 length2 length3 length4 initializer = 
-        let arr = (zeroCreate length1 length2 length3 length4 : 'T[,,,]) 
+    let init length1 length2 length3 length4 initializer =
+        let arr = (zeroCreate length1 length2 length3 length4 : 'T[,,,])
         let f = OptimizedClosures.FSharpFunc<_,_,_,_,_>.Adapt(initializer)
-        for i = 0 to length1 - 1 do 
-          for j = 0 to length2 - 1 do 
-            for k = 0 to length3 - 1 do 
-              for m = 0 to length4 - 1 do 
+        for i = 0 to length1 - 1 do
+          for j = 0 to length2 - 1 do
+            for k = 0 to length3 - 1 do
+              for m = 0 to length4 - 1 do
                 arr.[i,j,k,m] <- f.Invoke(i, j, k, m)
         arr
 

@@ -1,13 +1,13 @@
 // Copyright (c) Microsoft Corporation. All Rights Reserved. See License.txt in the project root for license information.
-  
+
 //-------------------------------------------------------------------------
 // Defines the typed abstract syntax trees used throughout the F# compiler.
-//------------------------------------------------------------------------- 
+//-------------------------------------------------------------------------
 
 module internal FSharp.Compiler.TypedTreeBasics
 
 open Internal.Utilities.Library
-open FSharp.Compiler.AbstractIL.IL 
+open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.CompilerGlobalState
 open FSharp.Compiler.Text
 open FSharp.Compiler.Syntax
@@ -19,8 +19,8 @@ assert (sizeof<EntityFlags> = 8)
 assert (sizeof<TyparFlags> = 4)
 #endif
 
-/// Metadata on values (names of arguments etc.) 
-module ValReprInfo = 
+/// Metadata on values (names of arguments etc.)
+module ValReprInfo =
 
     let unnamedTopArg1: ArgReprInfo = { Attribs = WellKnownValAttribs.Empty; Name = None; OtherRange = None }
 
@@ -82,7 +82,7 @@ let mkRawRefTupleTy tys = TType_tuple (tupInfoRef, tys)
 let mkRawStructTupleTy tys = TType_tuple (tupInfoStruct, tys)
 
 //---------------------------------------------------------------------------
-// Equality relations on locally defined things 
+// Equality relations on locally defined things
 //---------------------------------------------------------------------------
 
 let typarEq (tp1: Typar) (tp2: Typar) = (tp1.Stamp = tp2.Stamp)
@@ -94,11 +94,11 @@ let typarRefEq (tp1: Typar) (tp2: Typar) = (tp1 === tp2)
 let valEq (v1: Val) (v2: Val) = (v1 === v2)
 
 /// Equality on CCU references, implemented as reference equality except when unresolved
-let ccuEq (ccu1: CcuThunk) (ccu2: CcuThunk) = 
-    (ccu1 === ccu2) || 
-    (if ccu1.IsUnresolvedReference || ccu2.IsUnresolvedReference then 
+let ccuEq (ccu1: CcuThunk) (ccu2: CcuThunk) =
+    (ccu1 === ccu2) ||
+    (if ccu1.IsUnresolvedReference || ccu2.IsUnresolvedReference then
         ccu1.AssemblyName = ccu2.AssemblyName
-     else 
+     else
         ccu1.Contents === ccu2.Contents)
 
 /// For dereferencing in the middle of a pattern
@@ -112,20 +112,20 @@ let mkRecdFieldRef tcref f = RecdFieldRef(tcref, f)
 
 let mkUnionCaseRef tcref c = UnionCaseRef(tcref, c)
 
-let ERefLocal x: EntityRef = { binding=x; nlr=Unchecked.defaultof<_> }      
+let ERefLocal x: EntityRef = { binding=x; nlr=Unchecked.defaultof<_> }
 
-let ERefNonLocal x: EntityRef = { binding=Unchecked.defaultof<_>; nlr=x }      
+let ERefNonLocal x: EntityRef = { binding=Unchecked.defaultof<_>; nlr=x }
 
-let ERefNonLocalPreResolved x xref: EntityRef = { binding=x; nlr=xref }      
+let ERefNonLocalPreResolved x xref: EntityRef = { binding=x; nlr=xref }
 
-let (|ERefLocal|ERefNonLocal|) (x: EntityRef) = 
-    match box x.nlr with 
+let (|ERefLocal|ERefNonLocal|) (x: EntityRef) =
+    match box x.nlr with
     | null -> ERefLocal x.binding
     | _ -> ERefNonLocal x.nlr
 
 //--------------------------------------------------------------------------
 // Construct local references
-//-------------------------------------------------------------------------- 
+//--------------------------------------------------------------------------
 
 let mkLocalTyconRef x = ERefLocal x
 
@@ -139,27 +139,27 @@ let mkNonLocalTyconRef nleref id = ERefNonLocal (mkNestedNonLocalEntityRef nlere
 let mkNonLocalTyconRefPreResolved x nleref id =
     ERefNonLocalPreResolved x (mkNestedNonLocalEntityRef nleref id)
 
-type EntityRef with 
+type EntityRef with
 
-    member tcref.NestedTyconRef (x: Entity) = 
-        match tcref with 
+    member tcref.NestedTyconRef (x: Entity) =
+        match tcref with
         | ERefLocal _ -> mkLocalTyconRef x
         | ERefNonLocal nlr -> mkNonLocalTyconRefPreResolved x nlr x.LogicalName
 
     member tcref.RecdFieldRefInNestedTycon tycon (id: Ident) = RecdFieldRef (tcref.NestedTyconRef tycon, id.idText)
 
 /// Make a reference to a union case for type in a module or namespace
-let mkModuleUnionCaseRef (modref: ModuleOrNamespaceRef) tycon uc = 
+let mkModuleUnionCaseRef (modref: ModuleOrNamespaceRef) tycon uc =
     (modref.NestedTyconRef tycon).MakeNestedUnionCaseRef uc
 
-let VRefLocal x: ValRef = { binding=x; nlr=Unchecked.defaultof<_> }      
+let VRefLocal x: ValRef = { binding=x; nlr=Unchecked.defaultof<_> }
 
-let VRefNonLocal x: ValRef = { binding=Unchecked.defaultof<_>; nlr=x }      
+let VRefNonLocal x: ValRef = { binding=Unchecked.defaultof<_>; nlr=x }
 
-let VRefNonLocalPreResolved x xref: ValRef = { binding=x; nlr=xref }      
+let VRefNonLocalPreResolved x xref: ValRef = { binding=x; nlr=xref }
 
-let (|VRefLocal|VRefNonLocal|) (x: ValRef) = 
-    match box x.nlr with 
+let (|VRefLocal|VRefNonLocal|) (x: ValRef) =
+    match box x.nlr with
     | null -> VRefLocal x.binding
     | _ -> VRefNonLocal x.nlr
 
@@ -167,13 +167,13 @@ let mkNonLocalValRef mp id = VRefNonLocal {EnclosingEntity = ERefNonLocal mp; It
 
 let mkNonLocalValRefPreResolved x mp id = VRefNonLocalPreResolved x {EnclosingEntity = ERefNonLocal mp; ItemKey=id }
 
-let ccuOfValRef vref =  
-    match vref with 
+let ccuOfValRef vref =
+    match vref with
     | VRefLocal _ -> None
     | VRefNonLocal nlr -> Some nlr.Ccu
 
-let ccuOfTyconRef eref =  
-    match eref with 
+let ccuOfTyconRef eref =
+    match eref with
     | ERefLocal _ -> None
     | ERefNonLocal nlr -> Some nlr.Ccu
 
@@ -189,14 +189,14 @@ let KnownWithNull = Nullness.Known NullnessInfo.WithNull
 
 let KnownWithoutNull = Nullness.Known NullnessInfo.WithoutNull
 
-let mkTyparTy (tp:Typar) = 
-    match tp.Kind with 
+let mkTyparTy (tp:Typar) =
+    match tp.Kind with
     | TyparKind.Type -> tp.AsType KnownWithoutNull
     | TyparKind.Measure -> TType_measure (Measure.Var tp)
 
 // For fresh type variables clear the StaticReq when copying because the requirement will be re-established through the
 // process of type inference.
-let copyTypar clearStaticReq (tp: Typar) = 
+let copyTypar clearStaticReq (tp: Typar) =
     let optData = tp.typar_opt_data |> Option.map (fun tg -> { typar_il_name = tg.typar_il_name; typar_xmldoc = tg.typar_xmldoc; typar_constraints = tg.typar_constraints; typar_attribs = tg.typar_attribs; typar_is_contravariant = tg.typar_is_contravariant; typar_declared_name = tg.typar_declared_name })
     let flags = if clearStaticReq then tp.typar_flags.WithStaticReq(TyparStaticReq.None) else tp.typar_flags
     Typar.New { typar_id = tp.typar_id
@@ -205,40 +205,40 @@ let copyTypar clearStaticReq (tp: Typar) =
                 typar_solution = tp.typar_solution
                 typar_astype = Unchecked.defaultof<_>
                 // Be careful to clone the mutable optional data too
-                typar_opt_data = optData } 
+                typar_opt_data = optData }
 
 let copyTypars clearStaticReq tps = List.map (copyTypar clearStaticReq) tps
 
 //--------------------------------------------------------------------------
 // Inference variables
-//-------------------------------------------------------------------------- 
-    
-let tryShortcutSolvedUnitPar canShortcut (r: Typar) = 
+//--------------------------------------------------------------------------
+
+let tryShortcutSolvedUnitPar canShortcut (r: Typar) =
     if r.Kind = TyparKind.Type then failwith "tryShortcutSolvedUnitPar: kind=type"
     match r.Solution with
-    | Some (TType_measure unt) -> 
-        if canShortcut then 
-            match unt with 
-            | Measure.Var r2 -> 
+    | Some (TType_measure unt) ->
+        if canShortcut then
+            match unt with
+            | Measure.Var r2 ->
                match r2.Solution with
                | None -> ()
-               | Some _ as soln -> 
+               | Some _ as soln ->
                   r.typar_solution <- soln
-            | _ -> () 
+            | _ -> ()
         unt
-    | _ -> 
+    | _ ->
         failwith "tryShortcutSolvedUnitPar: unsolved"
-      
-let rec stripUnitEqnsAux canShortcut unt = 
-    match unt with 
+
+let rec stripUnitEqnsAux canShortcut unt =
+    match unt with
     | Measure.Var r when r.IsSolved -> stripUnitEqnsAux canShortcut (tryShortcutSolvedUnitPar canShortcut r)
     | _ -> unt
 
-let combineNullness (nullnessOrig: Nullness) (nullnessNew: Nullness) = 
+let combineNullness (nullnessOrig: Nullness) (nullnessNew: Nullness) =
     match nullnessOrig, nullnessNew with
-    | Nullness.Variable _, Nullness.Known NullnessInfo.WithoutNull -> 
+    | Nullness.Variable _, Nullness.Known NullnessInfo.WithoutNull ->
         nullnessOrig
-    | _ -> 
+    | _ ->
         match nullnessOrig.Evaluate() with
         | NullnessInfo.WithoutNull -> nullnessNew
         | NullnessInfo.AmbivalentToNull ->
@@ -246,7 +246,7 @@ let combineNullness (nullnessOrig: Nullness) (nullnessNew: Nullness) =
             | NullnessInfo.WithoutNull -> nullnessOrig
             | NullnessInfo.AmbivalentToNull -> nullnessOrig
             | NullnessInfo.WithNull -> nullnessNew
-        | NullnessInfo.WithNull -> 
+        | NullnessInfo.WithNull ->
             match nullnessNew.Evaluate() with
             | NullnessInfo.WithoutNull -> nullnessOrig
             | NullnessInfo.AmbivalentToNull -> nullnessNew
@@ -261,7 +261,7 @@ let inline (|CombinedNullness|_|) (nullnessNew: Nullness) (nullnessOrig: Nullnes
     let nullnessAfter = combineNullness nullnessOrig nullnessNew
     if nullnessEquiv nullnessAfter nullnessOrig then ValueNone else ValueSome nullnessAfter
 
-let tryAddNullnessToTy nullnessNew (ty:TType) = 
+let tryAddNullnessToTy nullnessNew (ty:TType) =
     let inline (|NullnessWouldChangeTo|_|) orig = (|CombinedNullness|_|) nullnessNew orig
     match ty with
     | TType_var (tp, NullnessWouldChangeTo after) -> Some (TType_var (tp, after))
@@ -284,7 +284,7 @@ let addNullnessToTy (nullness: Nullness) (ty:TType) =
     | Nullness.Known NullnessInfo.WithoutNull -> ty
     | Nullness.KnownFromConstructor -> ty
     | Nullness.Variable nv when nv.IsFullySolved && nv.TryEvaluate() = ValueSome NullnessInfo.WithoutNull -> ty
-    | _ -> 
+    | _ ->
     let inline (|NullnessWouldChangeTo|_|) orig = (|CombinedNullness|_|) nullness orig
     match ty with
     | TType_var (tp, NullnessWouldChangeTo after) -> TType_var (tp, after)
@@ -293,30 +293,30 @@ let addNullnessToTy (nullness: Nullness) (ty:TType) =
     | TType_fun (d, r, NullnessWouldChangeTo after) -> TType_fun (d, r, after)
     | _ -> ty
 
-let rec stripTyparEqnsAux nullness0 canShortcut ty = 
-    match ty with 
-    | TType_var (r, nullness) -> 
+let rec stripTyparEqnsAux nullness0 canShortcut ty =
+    match ty with
+    | TType_var (r, nullness) ->
         match r.Solution with
-        | Some soln -> 
-            if canShortcut then 
-                match soln with 
+        | Some soln ->
+            if canShortcut then
+                match soln with
                 // We avoid shortcutting when there are additional constraints on the type variable we're trying to cut out
                 // This is only because IterType likes to walk _all_ the constraints _everywhere_ in a type, including
                 // those attached to _solved_ type variables. In an ideal world this would never be needed - see the notes
                 // on IterType.
-                | TType_var (r2, nullness2) when r2.Constraints.IsEmpty -> 
-                   match nullness2.Evaluate() with 
-                   | NullnessInfo.WithoutNull -> 
+                | TType_var (r2, nullness2) when r2.Constraints.IsEmpty ->
+                   match nullness2.Evaluate() with
+                   | NullnessInfo.WithoutNull ->
                        match r2.Solution with
                        | None -> ()
-                       | Some _ as soln2 -> 
+                       | Some _ as soln2 ->
                           r.typar_solution <- soln2
                    | _ -> ()
-                | _ -> () 
+                | _ -> ()
             stripTyparEqnsAux (combineNullness nullness0 nullness) canShortcut soln
-        | None -> 
+        | None ->
             addNullnessToTy nullness0 ty
-    | TType_measure unt -> 
+    | TType_measure unt ->
         TType_measure (stripUnitEqnsAux canShortcut unt)
     | _ -> addNullnessToTy nullness0 ty
 
@@ -354,10 +354,10 @@ let mkLocalEntityRef (v: Entity) = ERefLocal v
 
 let mkNonLocalCcuRootEntityRef ccu (x: Entity) = mkNonLocalTyconRefPreResolved x (mkNonLocalEntityRef ccu [| |]) x.LogicalName
 
-let mkNestedValRef (cref: EntityRef) (v: Val) : ValRef = 
-    match cref with 
+let mkNestedValRef (cref: EntityRef) (v: Val) : ValRef =
+    match cref with
     | ERefLocal _ -> mkLocalValRef v
-    | ERefNonLocal nlr -> 
+    | ERefNonLocal nlr ->
         let key = v.GetLinkageFullKey()
         mkNonLocalValRefPreResolved v nlr key
 
@@ -371,43 +371,43 @@ let rescopePubPath viewedCcu (pp: PublicPath) = NonLocalEntityRef(viewedCcu, pp.
 // Equality between TAST items.
 //---------------------------------------------------------------------------
 
-let valRefInThisAssembly compilingFSharpCore (x: ValRef) = 
-    match x with 
+let valRefInThisAssembly compilingFSharpCore (x: ValRef) =
+    match x with
     | VRefLocal _ -> true
     | VRefNonLocal _ -> compilingFSharpCore
 
-let tyconRefUsesLocalXmlDoc compilingFSharpCore (x: TyconRef) = 
-    match x with 
+let tyconRefUsesLocalXmlDoc compilingFSharpCore (x: TyconRef) =
+    match x with
     | ERefLocal _ -> true
     | ERefNonLocal _ ->
 #if !NO_TYPEPROVIDERS
         match x.TypeReprInfo with
         | TProvidedTypeRepr _ -> true
-        | _ -> 
+        | _ ->
 #endif
         compilingFSharpCore
-    
-let entityRefInThisAssembly compilingFSharpCore (x: EntityRef) = 
-    match x with 
+
+let entityRefInThisAssembly compilingFSharpCore (x: EntityRef) =
+    match x with
     | ERefLocal _ -> true
     | ERefNonLocal _ -> compilingFSharpCore
 
 let arrayPathEq (y1: string[]) (y2: string[]) =
-    let len1 = y1.Length 
-    let len2 = y2.Length 
-    (len1 = len2) && 
-    (let rec loop i = (i >= len1) || (y1[i] = y2[i] && loop (i+1)) 
+    let len1 = y1.Length
+    let len2 = y2.Length
+    (len1 = len2) &&
+    (let rec loop i = (i >= len1) || (y1[i] = y2[i] && loop (i+1))
      loop 0)
 
-let nonLocalRefEq (NonLocalEntityRef(x1, y1) as smr1) (NonLocalEntityRef(x2, y2) as smr2) = 
+let nonLocalRefEq (NonLocalEntityRef(x1, y1) as smr1) (NonLocalEntityRef(x2, y2) as smr2) =
     smr1 === smr2 || (ccuEq x1 x2 && arrayPathEq y1 y2)
 
 /// This predicate tests if non-local resolution paths are definitely known to resolve
-/// to different entities. All references with different named paths always resolve to 
-/// different entities. Two references with the same named paths may resolve to the same 
+/// to different entities. All references with different named paths always resolve to
+/// different entities. Two references with the same named paths may resolve to the same
 /// entities even if they reference through different CCUs, because one reference
 /// may be forwarded to another via a .NET TypeForwarder.
-let nonLocalRefDefinitelyNotEq (NonLocalEntityRef(_, y1)) (NonLocalEntityRef(_, y2)) = 
+let nonLocalRefDefinitelyNotEq (NonLocalEntityRef(_, y1)) (NonLocalEntityRef(_, y2)) =
     not (arrayPathEq y1 y2)
 
 // A function rather than a member on PublicPath: the optimizer does not see through a struct member
@@ -444,11 +444,11 @@ let inline (|NonLocalEref|_|) (x: EntityRef) = if x.IsLocalRef then ValueNone el
 // Compare two EntityRef's for equality when compiling fslib (FSharp.Core.dll)
 //
 // Compiler-internal references to items in fslib are Ref_nonlocals even when compiling fslib.
-// This breaks certain invariants that hold elsewhere, because they dereference to point to 
-// Entity's from signatures rather than Entity's from implementations. This means backup, alternative 
+// This breaks certain invariants that hold elsewhere, because they dereference to point to
+// Entity's from signatures rather than Entity's from implementations. This means backup, alternative
 // equality comparison techniques are needed when compiling fslib itself.
 let fslibEntityRefEq fslibCcu (eref1: EntityRef) (eref2: EntityRef) =
-    match eref1, eref2 with 
+    match eref1, eref2 with
     | NonLocalEref nlr1, LocalEref x2
     | LocalEref x2, NonLocalEref nlr1 ->
         ccuEq nlr1.Ccu fslibCcu &&
@@ -471,62 +471,62 @@ let inline (|NonLocalVref|_|) (x: ValRef) = if x.IsLocalRef then ValueNone else 
 // Compare two ValRef's for equality when compiling fslib (FSharp.Core.dll)
 //
 // Compiler-internal references to items in fslib are Ref_nonlocals even when compiling fslib.
-// This breaks certain invariants that hold elsewhere, because they dereference to point to 
-// Val's from signatures rather than Val's from implementations. This means backup, alternative 
+// This breaks certain invariants that hold elsewhere, because they dereference to point to
+// Val's from signatures rather than Val's from implementations. This means backup, alternative
 // equality comparison techniques are needed when compiling fslib itself.
 let fslibValRefEq fslibCcu (vref1: ValRef) (vref2: ValRef) =
-    match vref1, vref2 with 
+    match vref1, vref2 with
     | NonLocalVref nlr1, LocalVref x2
     | LocalVref x2, NonLocalVref nlr1 ->
         ccuEq nlr1.Ccu fslibCcu &&
-        match x2.PublicPath with 
-        | Some (ValPubPath(pp2, nm2)) -> 
+        match x2.PublicPath with
+        | Some (ValPubPath(pp2, nm2)) ->
             // Note: this next line is just comparing the values by name, and not even the partial linkage data
             // This relies on the fact that the compiler doesn't use any references to
             // entities in fslib that are overloaded, or, if they are overloaded, then value identity
             // is not significant
             nlr1.ItemKey.PartialKey = nm2.PartialKey &&
             fslibRefEq nlr1.EnclosingEntity.nlr pp2
-        | _ -> 
+        | _ ->
             false
     // Note: I suspect this private-to-private reference comparison is not needed
     | LocalVref e1, LocalVref e2 ->
-        match e1.PublicPath, e2.PublicPath with 
-        | Some (ValPubPath(pp1, nm1)), Some (ValPubPath(pp2, nm2)) -> 
-            pubPathEq pp1 pp2 && 
+        match e1.PublicPath, e2.PublicPath with
+        | Some (ValPubPath(pp1, nm1)), Some (ValPubPath(pp2, nm2)) ->
+            pubPathEq pp1 pp2 &&
             (nm1 = nm2)
         | _ -> false
     | _ -> false
-  
+
 /// Primitive routine to compare two EntityRef's for equality
 /// This takes into account the possibility that they may have type forwarders
-let primEntityRefEq compilingFSharpCore fslibCcu (x: EntityRef) (y: EntityRef) = 
+let primEntityRefEq compilingFSharpCore fslibCcu (x: EntityRef) (y: EntityRef) =
     x === y ||
-    
+
     if x.IsResolved && y.IsResolved && not compilingFSharpCore then
-        x.ResolvedTarget === y.ResolvedTarget 
+        x.ResolvedTarget === y.ResolvedTarget
     elif not x.IsLocalRef && not y.IsLocalRef &&
         (// Two tcrefs with identical paths are always equal
-         nonLocalRefEq x.nlr y.nlr || 
+         nonLocalRefEq x.nlr y.nlr ||
          // The tcrefs may have forwarders. If they may possibly be equal then resolve them to get their canonical references
          // and compare those using pointer equality.
-         (not (nonLocalRefDefinitelyNotEq x.nlr y.nlr) && 
+         (not (nonLocalRefDefinitelyNotEq x.nlr y.nlr) &&
             match x.TryDeref with
             | ValueSome v1 -> match y.TryDeref with ValueSome v2 -> v1 === v2 | _ -> false
             | _ -> match y.TryDeref with ValueNone -> true | _ -> false)) then
         true
     else
-        compilingFSharpCore && fslibEntityRefEq fslibCcu x y  
+        compilingFSharpCore && fslibEntityRefEq fslibCcu x y
 
 /// Primitive routine to compare two UnionCaseRef's for equality
-let primUnionCaseRefEq compilingFSharpCore fslibCcu (UnionCaseRef(tcr1, c1) as uc1) (UnionCaseRef(tcr2, c2) as uc2) = 
+let primUnionCaseRefEq compilingFSharpCore fslibCcu (UnionCaseRef(tcr1, c1) as uc1) (UnionCaseRef(tcr2, c2) as uc2) =
     uc1 === uc2 || (primEntityRefEq compilingFSharpCore fslibCcu tcr1 tcr2 && c1 = c2)
 
 /// Primitive routine to compare two ValRef's for equality. On the whole value identity is not particularly
 /// significant in F#. However it is significant for
-///    (a) Active Patterns 
-///    (b) detecting uses of "special known values" from FSharp.Core.dll, such as 'seq' 
-///        and quotation splicing 
+///    (a) Active Patterns
+///    (b) detecting uses of "special known values" from FSharp.Core.dll, such as 'seq'
+///        and quotation splicing
 ///
 /// Note this routine doesn't take type forwarding into account
 let primValRefEq compilingFSharpCore fslibCcu (x: ValRef) (y: ValRef) =
@@ -543,29 +543,29 @@ let primValRefEq compilingFSharpCore fslibCcu (x: ValRef) (y: ValRef) =
 // pubpath/cpath mess
 //---------------------------------------------------------------------------
 
-let fullCompPathOfModuleOrNamespace (m: ModuleOrNamespace) = 
+let fullCompPathOfModuleOrNamespace (m: ModuleOrNamespace) =
     let (CompPath(scoref, sa, cpath)) = m.CompilationPath
     CompPath(scoref, sa, cpath@[(m.LogicalName, m.ModuleOrNamespaceType.ModuleOrNamespaceKind)])
 
 // Can cpath2 be accessed given a right to access cpath1. That is, is cpath2 a nested type or namespace of cpath1. Note order of arguments.
 let inline canAccessCompPathFrom (CompPath(scoref1, _, cpath1)) (CompPath(scoref2, _, cpath2)) =
-    let rec loop p1 p2 = 
-        match p1, p2 with 
+    let rec loop p1 p2 =
+        match p1, p2 with
         | (a1, k1) :: rest1, (a2, k2) :: rest2 -> (a1=a2) && (k1=k2) && loop rest1 rest2
-        | [], _ -> true 
+        | [], _ -> true
         | _ -> false // cpath1 is longer
     loop cpath1 cpath2 &&
     (scoref1 = scoref2)
 
 let canAccessFromOneOf cpaths cpathTest =
-    cpaths |> List.exists (fun cpath -> canAccessCompPathFrom cpath cpathTest) 
+    cpaths |> List.exists (fun cpath -> canAccessCompPathFrom cpath cpathTest)
 
-let canAccessFrom (TAccess x) cpath = 
+let canAccessFrom (TAccess x) cpath =
     x |> List.forall (fun cpath1 -> canAccessCompPathFrom cpath1 cpath)
 
 let canAccessFromEverywhere (TAccess x) = x.IsEmpty
 let canAccessFromSomewhere (TAccess _) = true
-let isLessAccessible (TAccess aa) (TAccess bb) = 
+let isLessAccessible (TAccess aa) (TAccess bb) =
     not (aa |> List.forall(fun a -> bb |> List.exists (fun b -> canAccessCompPathFrom a b)))
 
 /// Given (newPath, oldPath) replace oldPath by newPath in the TAccess.
@@ -573,7 +573,7 @@ let accessSubstPaths (newPath, oldPath) (TAccess paths) =
     let subst cpath = if cpath=oldPath then newPath else cpath
     TAccess (List.map subst paths)
 
-let compPathOfCcu (ccu: CcuThunk) = CompPath(ccu.ILScopeRef, SyntaxAccess.Unknown, []) 
+let compPathOfCcu (ccu: CcuThunk) = CompPath(ccu.ILScopeRef, SyntaxAccess.Unknown, [])
 let taccessPublic = TAccess []
 let compPathInternal = CompPath(ILScopeRef.Local, SyntaxAccess.Internal, [])
 let taccessInternal = TAccess [compPathInternal]

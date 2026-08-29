@@ -99,7 +99,7 @@ type internal FSharpFile = {
         Source: FSharpSource
         Flags: bool * bool
     }
- 
+
 // This module is only here to contain the SyntaxTree type as to avoid ambiguity with the module FSharp.Compiler.Syntax.
 [<AutoOpen>]
 module IncrementalBuildSyntaxTree =
@@ -258,7 +258,7 @@ type BoundModel private (
             use _ = new CompilationGlobalsScope(diagnosticsLogger, BuildPhase.TypeCheck)
 
             beforeFileChecked.Trigger fileName
-                    
+
             ApplyMetaCommandsFromInputToTcConfig (tcConfig, input, !! Path.GetDirectoryName(fileName), tcImports.DependencyProvider) |> ignore
             let sink = TcResultsSinkImpl(tcGlobals)
             let hadParseErrors = not (Array.isEmpty parseErrors)
@@ -345,12 +345,12 @@ type BoundModel private (
                     |> Seq.iter (fun (m, item, _kind) ->
                         if not m.IsSynthetic then
                             builder.Write(m, item))
-                    
+
                     let semanticClassification = sResolutions.GetSemanticClassification(tcGlobals, tcImports.GetImportMap(), sink.GetFormatSpecifierLocations(), None, RelatedSymbolUseKind.All)
-                    
+
                     let sckBuilder = SemanticClassificationKeyStoreBuilder()
                     sckBuilder.WriteAll semanticClassification
-                    
+
                     let res = builder.TryBuildAndReset(), sckBuilder.TryBuildAndReset()
                     res
                 else
@@ -391,7 +391,7 @@ type BoundModel private (
                 // For skipped implementation sources do full type check only when requested.
                 GraphNode.FromResult tcInfo, tcInfoExtras
             | _ ->
-                // start computing extras, so that typeCheckNode can be GC'd quickly 
+                // start computing extras, so that typeCheckNode can be GC'd quickly
                 startComputingFullTypeCheck |> Async.Catch |> Async.Ignore |> Async.Start
                 getTcInfo typeCheckNode, tcInfoExtras
 
@@ -408,16 +408,16 @@ type BoundModel private (
     member _.TcImports = tcImports
 
     member this.TryPeekTcInfo() = this.TcInfo.TryPeekValue() |> ValueOption.toOption
-    
-    member this.TryPeekTcInfoWithExtras() = 
+
+    member this.TryPeekTcInfoWithExtras() =
         (this.TcInfo.TryPeekValue(), this.TcInfoExtras.TryPeekValue())
         ||> ValueOption.map2 (fun a b -> a, b)
         |> ValueOption.toOption
-    
+
     member this.GetOrComputeTcInfo = this.TcInfo.GetOrComputeValue
-    
+
     member this.GetOrComputeTcInfoExtras = this.TcInfoExtras.GetOrComputeValue
-    
+
     member this.GetOrComputeTcInfoWithExtras() = async {
         let! tcInfo = this.TcInfo.GetOrComputeValue()
         let! tcInfoExtras = this.TcInfoExtras.GetOrComputeValue()
@@ -487,18 +487,18 @@ type BoundModel private (
         )
 
 /// Global service state
-type FrameworkImportsCacheKey = 
+type FrameworkImportsCacheKey =
     | FrameworkImportsCacheKey of resolvedpath: string list * assemblyName: string * targetFrameworkDirectories: string list * fsharpBinaries: string * importReuseKey: ImportReuseKey
 
     interface ICacheKey<string, FrameworkImportsCacheKey> with
         member this.GetKey() =
             this |> function FrameworkImportsCacheKey(assemblyName=a;importReuseKey=c) -> if c.CheckNullness then a + "CheckNulls" else a
 
-        member this.GetLabel() = 
+        member this.GetLabel() =
             this |> function FrameworkImportsCacheKey(assemblyName=a;importReuseKey=c) -> if c.CheckNullness then a + "CheckNulls" else a
 
         member this.GetVersion() = this
-        
+
 /// Represents a cache of 'framework' references that can be shared between multiple incremental builds
 type FrameworkImportsCache(size) =
 
@@ -557,7 +557,7 @@ type FrameworkImportsCache(size) =
         let node = this.GetNode(tcConfig, frameworkDLLs, nonFrameworkResolutions)
         let! tcGlobals, frameworkTcImports = node.GetOrComputeValue()
 
-        // If the tcGlobals was loaded from a different project, langVersion and realsig may be different 
+        // If the tcGlobals was loaded from a different project, langVersion and realsig may be different
         // for each cached project.  So here we create a new tcGlobals, with the existing framework values
         // and updated realsig and langversion
         let tcGlobals =
@@ -681,15 +681,15 @@ module IncrementalBuilderHelpers =
 
     // Link all the assemblies together and produce the input typecheck accumulator
     let CombineImportedAssembliesTask (
-        assemblyName, 
-        tcConfig: TcConfig, 
-        tcConfigP, 
-        tcGlobals, 
-        frameworkTcImports, 
-        nonFrameworkResolutions, 
-        unresolvedReferences, 
-        dependencyProvider, 
-        loadClosureOpt: LoadClosure option, 
+        assemblyName,
+        tcConfig: TcConfig,
+        tcConfigP,
+        tcGlobals,
+        frameworkTcImports,
+        nonFrameworkResolutions,
+        unresolvedReferences,
+        dependencyProvider,
+        loadClosureOpt: LoadClosure option,
         basicDependencies,
         keepAssemblyContents,
         keepAllBackgroundResolutions,
@@ -1009,19 +1009,19 @@ module IncrementalBuilderStateHelpers =
     let createFinalizeBoundModelGraphNode (initialState: IncrementalBuilderInitialState) (boundModels: GraphNode<BoundModel> seq) =
         GraphNode(async {
             use _ = Activity.start "GetCheckResultsAndImplementationsForProject" [|Activity.Tags.project, initialState.outfile|]
-            let! result = 
-                FinalizeTypeCheckTask 
-                    initialState.tcConfig 
+            let! result =
+                FinalizeTypeCheckTask
+                    initialState.tcConfig
                     initialState.tcGlobals
                     initialState.enablePartialTypeChecking
-                    initialState.assemblyName 
-                    initialState.outfile 
+                    initialState.assemblyName
+                    initialState.outfile
                     boundModels
             return result, DateTime.UtcNow
         })
 
     let computeStampedFileNames (initialState: IncrementalBuilderInitialState) (state: IncrementalBuilderState) (cache: TimeStampCache) =
-        let slots = 
+        let slots =
             if initialState.useChangeNotifications then
                 state.slots
             else
@@ -1115,7 +1115,7 @@ type IncrementalBuilderState with
                     SyntaxTree(initialState.tcConfig, initialState.fileParsed, initialState.lexResourceManager, sourceFile, hasSignature)
             ]
 
-        let boundModels = 
+        let boundModels =
             syntaxTrees
             |> Seq.scan createBoundModelGraphNode initialBoundModel
 
@@ -1204,7 +1204,7 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
 
     let semaphore = new SemaphoreSlim(1,1)
 
-    let mutable currentState = state 
+    let mutable currentState = state
 
     let setCurrentState state cache (ct: CancellationToken) =
         async {
@@ -1238,10 +1238,10 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
     member _.ImportsInvalidatedByTypeProvider = importsInvalidatedByTypeProvider.Publish
 #endif
 
-    member _.IsReferencesInvalidated = 
+    member _.IsReferencesInvalidated =
         // fast path
         if initialState.isImportsInvalidated then true
-        else 
+        else
             computeStampedReferencedAssemblies initialState currentState true (TimeStampCache(defaultTimeStamp)) |> ignore
             initialState.isImportsInvalidated
 
@@ -1307,7 +1307,7 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
         do! checkFileTimeStamps cache
         let! result = evalUpToTargetSlot currentState (slotOfFile - 1)
         match result with
-        | Some (boundModel, timestamp) -> 
+        | Some (boundModel, timestamp) ->
             let! _ = boundModel.GetOrComputeTcInfoExtras()
             let projectTimeStamp = builder.GetLogicalTimeStampForFileInProject(slotOfFile)
             return PartialCheckResults(boundModel, timestamp, projectTimeStamp)
@@ -1398,11 +1398,11 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
 
     member builder.NotifyFileChanged(fileName, timeStamp) =
         async {
-            let slotOfFile = builder.GetSlotOfFileName fileName        
+            let slotOfFile = builder.GetSlotOfFileName fileName
             let cache = TimeStampCache defaultTimeStamp
             let! ct = Async.CancellationToken
             do! setCurrentState
-                    { currentState with 
+                    { currentState with
                         slots = currentState.slots |> List.updateAt slotOfFile (currentState.slots[slotOfFile].Notify timeStamp) }
                     cache ct
         }
@@ -1621,7 +1621,7 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
 
             let defaultTimeStamp = DateTime.UtcNow
 
-            let! initialBoundModel, initialErrors = 
+            let! initialBoundModel, initialErrors =
                 CombineImportedAssembliesTask(
                     assemblyName,
                     tcConfig,

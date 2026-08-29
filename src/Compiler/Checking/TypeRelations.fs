@@ -46,7 +46,7 @@ let getTypeSubsumptionCache =
             | CompilationMode.OneOff -> Caches.CacheOptions.getDefault HashIdentity.Structural |> Caches.CacheOptions.withNoEviction
             | _ -> { Caches.CacheOptions.getDefault HashIdentity.Structural with TotalCapacity = 65536; HeadroomPercentage = 75 }
         new Caches.Cache<TTypeCacheKey, bool>(options, "typeSubsumptionCache")
-    Extras.WeakMap.getOrCreate factory     
+    Extras.WeakMap.getOrCreate factory
 
 /// Implements a :> b without coercion based on finalized (no type variable) types
 // Note: This relation is approximate and not part of the language specification.
@@ -200,14 +200,14 @@ let ChooseTyparSolutionAndRange (g: TcGlobals) amap (tp:Typar) =
              match tpc with
              | TyparConstraint.CoercesTo(x, m) ->
                  join m x, m
-             | TyparConstraint.SimpleChoice(_, m) -> 
+             | TyparConstraint.SimpleChoice(_, m) ->
                  errorR(Error(FSComp.SR.typrelCannotResolveAmbiguityInPrintf(), m))
                  (maxTy, isRefined), m
              | TyparConstraint.SupportsNull m ->
                  ((addNullnessToTy KnownWithNull maxTy), isRefined), m
-             | TyparConstraint.SupportsComparison m -> 
+             | TyparConstraint.SupportsComparison m ->
                  join m g.mk_IComparable_ty, m
-             | TyparConstraint.IsEnum(_, m) -> 
+             | TyparConstraint.IsEnum(_, m) ->
                  errorR(Error(FSComp.SR.typrelCannotResolveAmbiguityInEnum(), m))
                  (maxTy, isRefined), m
              | TyparConstraint.IsDelegate(_, _, m) ->
@@ -354,10 +354,10 @@ let FindUniqueFeasibleSupertype g amap m ty1 ty2 =
     let n2 = nullnessOfTy g ty2
     let nullify t = addNullnessToTy n2 t
 
-    let supertypes = 
-        Option.toList (GetSuperTypeOfType g amap m ty2) @ 
+    let supertypes =
+        Option.toList (GetSuperTypeOfType g amap m ty2) @
         (GetImmediateInterfacesOfType SkipUnrefInterfaces.Yes g amap m ty2)
 
-    supertypes 
+    supertypes
     |> List.tryFind (TypeFeasiblySubsumesType 0 g amap m ty1 NoCoerce)
     |> Option.map nullify
