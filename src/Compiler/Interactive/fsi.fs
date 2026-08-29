@@ -988,11 +988,19 @@ type internal FsiCommandLineOptions(fsi: FsiEvaluationSessionHostConfig, argv: s
     let mutable fsiServerOutputCodePage = None
     let mutable fsiLCID = None
 
+    /// Set by --fsi-server-jsonrpc. The host submits interactions over a named pipe rather than
+    /// through standard input, and reads structured results rather than parsing the output text.
+    let mutable fsiServerJsonRpcPipe = ""
+
     // internal options
     let mutable probeToSeeIfConsoleWorks = true
     let mutable peekAheadOnConsoleToPermitTyping = true
 
-    let isInteractiveServer () = fsiServerName <> ""
+    let isJsonRpcServer () = fsiServerJsonRpcPipe <> ""
+
+    // Both server modes are driven by a host rather than a user at a console, so neither one uses
+    // the console reader.
+    let isInteractiveServer () = fsiServerName <> "" || isJsonRpcServer ()
     let recordExplicitArg arg = explicitArgs <- explicitArgs @ [ arg ]
 
     let executableFileNameWithoutExtension =
@@ -1074,6 +1082,7 @@ type internal FsiCommandLineOptions(fsi: FsiEvaluationSessionHostConfig, argv: s
                 [ // Make internal fsi-server* options. Do not print in the help. They are used by VFSI.
                     CompilerOption("fsi-server-report-references", "", OptionString(fun s -> writeReferencesAndExit <- Some s), None, None)
                     CompilerOption("fsi-server", "", OptionString(fun s -> fsiServerName <- s), None, None) // "FSI server mode on given named channel");
+                    CompilerOption("fsi-server-jsonrpc", "", OptionString(fun s -> fsiServerJsonRpcPipe <- s), None, None) // "FSI server mode speaking JSON-RPC over the given named pipe"
                     CompilerOption("fsi-server-input-codepage", "", OptionInt(fun n -> fsiServerInputCodePage <- Some(n)), None, None) // " Set the input codepage for the console");
                     CompilerOption("fsi-server-output-codepage", "", OptionInt(fun n -> fsiServerOutputCodePage <- Some(n)), None, None) // " Set the output codepage for the console");
                     CompilerOption(
@@ -1385,6 +1394,13 @@ type internal FsiCommandLineOptions(fsi: FsiEvaluationSessionHostConfig, argv: s
 
     member _.IsInteractiveServer = isInteractiveServer ()
 
+    /// True when the host drives this session over JSON-RPC. Interactions then arrive on the
+    /// control channel instead of standard input, and no prompt is written to the output.
+    ///
+    /// The pipe name itself is not surfaced here: the server lives in the process entry point,
+    /// which reads it from the command line directly.
+    member _.IsJsonRpcServer = isJsonRpcServer ()
+
     member _.ProbeToSeeIfConsoleWorks = probeToSeeIfConsoleWorks
 
     member _.EnableConsoleKeyProcessing = enableConsoleKeyProcessing
@@ -1477,7 +1493,10 @@ type internal FsiConsolePrompt(fsiOptions: FsiCommandLineOptions, fsiConsoleOutp
     // A prompt gets "printed ahead" at start up. Tells users to start type while initialisation completes.
     // A prompt can be skipped by "silent directives", e.g. ones sent to FSI by VS.
     let mutable dropPrompt = 0
-    let mutable showPrompt = true
+
+    // A host driving the session over JSON-RPC learns when an interaction finished from the
+    // response to its request, so a prompt in the output stream would be noise.
+    let mutable showPrompt = not fsiOptions.IsJsonRpcServer
 
     // NOTE: SERVER-PROMPT is not user displayed, rather it's a prefix that code elsewhere
     // uses to identify the prompt, see service\FsPkgs\FSharp.VS.FSI\fsiSessionToolWindow.fs
@@ -5104,7 +5123,9 @@ type FsiEvaluationSession
         // We later switch to doing interaction-by-interaction processing on the "event loop" thread
         let ctokRun = AssumeCompilationThreadWithoutEvidence()
 
-        if fsiOptions.IsInteractiveServer then
+        // The legacy server channel carries interrupt requests only. A JSON-RPC host carries them
+        // on its own connection, and starts that server from the process entry point.
+        if fsiOptions.IsInteractiveServer && not fsiOptions.IsJsonRpcServer then
             SpawnInteractiveServer(fsi, fsiOptions, fsiConsoleOutput)
 
         use _ = UseBuildPhase BuildPhase.Interactive
@@ -5123,7 +5144,11 @@ type FsiEvaluationSession
                 | _ -> ())
 
             fsiInteractionProcessor.LoadInitialFiles(ctokRun, diagnosticsLogger)
-            fsiInteractionProcessor.StartStdinReadAndProcessThread(tcConfigB.diagnosticsOptions, diagnosticsLogger)
+
+            // A JSON-RPC host submits interactions on the control channel, which leaves standard
+            // input to the script being run.
+            if not fsiOptions.IsJsonRpcServer then
+                fsiInteractionProcessor.StartStdinReadAndProcessThread(tcConfigB.diagnosticsOptions, diagnosticsLogger)
 
             DriveFsiEventLoop(fsi, fsiInterruptController, fsiConsoleOutput)
 

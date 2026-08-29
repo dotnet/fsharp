@@ -116,6 +116,10 @@
     <PackageVersion Include="System.Reflection.Metadata" Version="$(SystemReflectionMetadataVersion)" />
     <PackageVersion Include="System.Runtime.CompilerServices.Unsafe" Version="$(SystemRuntimeCompilerServicesUnsafeVersion)" />
     <PackageVersion Include="System.Security.Cryptography.Xml" Version="$(SystemSecurityCryptographyXmlVersion)" />
+    <!-- The JSON-RPC transport of the F# Interactive server mode and of the interactive window.
+         Pinned to the version Roslyn's packages already force into vsintegration, so that the two
+         agree and a Roslyn bump does not turn into a downgrade conflict. -->
+    <PackageVersion Include="StreamJsonRpc" Version="2.26.10" />
     <PackageVersion Include="xunit.v3.assert" Version="$(XunitVersion)" />
     <PackageVersion Include="xunit.v3.common" Version="$(XunitVersion)" />
     <PackageVersion Include="xunit.v3.extensibility.core" Version="$(XunitVersion)" />
