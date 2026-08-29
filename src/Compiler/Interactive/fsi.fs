@@ -988,8 +988,6 @@ type internal FsiCommandLineOptions(fsi: FsiEvaluationSessionHostConfig, argv: s
     let mutable fsiServerOutputCodePage = None
     let mutable fsiLCID = None
 
-    /// Set by --fsi-server-jsonrpc. The host submits interactions over a named pipe rather than
-    /// through standard input, and reads structured results rather than parsing the output text.
     let mutable fsiServerJsonRpcPipe = ""
 
     // internal options
@@ -998,8 +996,7 @@ type internal FsiCommandLineOptions(fsi: FsiEvaluationSessionHostConfig, argv: s
 
     let isJsonRpcServer () = fsiServerJsonRpcPipe <> ""
 
-    // Both server modes are driven by a host rather than a user at a console, so neither one uses
-    // the console reader.
+    // Neither server mode has a user at a console, so neither uses the console reader.
     let isInteractiveServer () = fsiServerName <> "" || isJsonRpcServer ()
     let recordExplicitArg arg = explicitArgs <- explicitArgs @ [ arg ]
 
@@ -1394,11 +1391,8 @@ type internal FsiCommandLineOptions(fsi: FsiEvaluationSessionHostConfig, argv: s
 
     member _.IsInteractiveServer = isInteractiveServer ()
 
-    /// True when the host drives this session over JSON-RPC. Interactions then arrive on the
-    /// control channel instead of standard input, and no prompt is written to the output.
-    ///
-    /// The pipe name itself is not surfaced here: the server lives in the process entry point,
-    /// which reads it from the command line directly.
+    /// The pipe name is not surfaced: the server lives in the process entry point, which reads it
+    /// from the command line directly.
     member _.IsJsonRpcServer = isJsonRpcServer ()
 
     member _.ProbeToSeeIfConsoleWorks = probeToSeeIfConsoleWorks
@@ -1494,8 +1488,7 @@ type internal FsiConsolePrompt(fsiOptions: FsiCommandLineOptions, fsiConsoleOutp
     // A prompt can be skipped by "silent directives", e.g. ones sent to FSI by VS.
     let mutable dropPrompt = 0
 
-    // A host driving the session over JSON-RPC learns when an interaction finished from the
-    // response to its request, so a prompt in the output stream would be noise.
+    // A JSON-RPC host learns an interaction finished from the response to its request.
     let mutable showPrompt = not fsiOptions.IsJsonRpcServer
 
     // NOTE: SERVER-PROMPT is not user displayed, rather it's a prefix that code elsewhere
@@ -5123,8 +5116,8 @@ type FsiEvaluationSession
         // We later switch to doing interaction-by-interaction processing on the "event loop" thread
         let ctokRun = AssumeCompilationThreadWithoutEvidence()
 
-        // The legacy server channel carries interrupt requests only. A JSON-RPC host carries them
-        // on its own connection, and starts that server from the process entry point.
+        // The JSON-RPC server carries interrupts on its own connection and is started by the
+        // process entry point.
         if fsiOptions.IsInteractiveServer && not fsiOptions.IsJsonRpcServer then
             SpawnInteractiveServer(fsi, fsiOptions, fsiConsoleOutput)
 
@@ -5145,8 +5138,7 @@ type FsiEvaluationSession
 
             fsiInteractionProcessor.LoadInitialFiles(ctokRun, diagnosticsLogger)
 
-            // A JSON-RPC host submits interactions on the control channel, which leaves standard
-            // input to the script being run.
+            // Interactions arrive on the control channel, leaving stdin to the script.
             if not fsiOptions.IsJsonRpcServer then
                 fsiInteractionProcessor.StartStdinReadAndProcessThread(tcConfigB.diagnosticsOptions, diagnosticsLogger)
 
