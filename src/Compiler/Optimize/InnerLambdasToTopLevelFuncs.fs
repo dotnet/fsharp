@@ -201,9 +201,9 @@ let IsMandatoryNonTopLevel g (f: Val) =
 module Pass1_DetermineTLRAndArities =
 
     let GetMaxNumArgsAtUses xinfo f =
-       match Zmap.tryFind f xinfo.Uses with
-       | None       -> 0 (* no call sites *)
-       | Some sites ->
+       match xinfo.Uses.TryGetValue f with
+       | false, _   -> 0 (* no call sites *)
+       | true, sites ->
            sites |> List.map (fun (_accessors, _tinst, args) -> List.length args) |> List.max
 
     let SelectTLRVals amap g xinfo f e =
