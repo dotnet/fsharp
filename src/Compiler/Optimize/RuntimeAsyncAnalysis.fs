@@ -7,13 +7,115 @@ open Internal.Utilities.Library
 open Internal.Utilities.Library.Extras
 
 open FSharp.Compiler
+open FSharp.Compiler.DiagnosticsLogger
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.Text
 open FSharp.Compiler.TypedTree
+open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TypeRelations
 
 open FSharp.Compiler.RuntimeAsync
+
+let rec private hasRuntimeAsyncFragmentBody (g: TcGlobals) (getLambdaBody: ValRef -> Expr option) visiting (vref: ValRef) =
+    if List.exists ((=) vref.Stamp) visiting then
+        false
+    else
+        match getLambdaBody vref with
+        | Some body -> exprContainsRuntimeAsyncFragment g getLambdaBody (vref.Stamp :: visiting) body
+        | None -> false
+
+and private exprContainsRuntimeAsyncFragment (g: TcGlobals) (getLambdaBody: ValRef -> Expr option) visiting expr =
+    let folder =
+        { ExprFolder0 with
+            exprIntercept =
+                fun _ noInterceptF acc expr ->
+                    if acc then
+                        true
+                    else
+                        match stripExpr expr with
+                        | Expr.App(Expr.Val(RuntimeAsyncReturn g, _, _), _, _, _, _) -> true
+                        | _ when IsRuntimeAsyncSuspensionExpr g expr -> true
+                        | Expr.Val(vref, _, _) when vref.ShouldInline || vref.IsLocalRef ->
+                            hasRuntimeAsyncFragmentBody g getLambdaBody visiting vref
+                        | _ -> noInterceptF acc expr
+        }
+
+    FoldExpr folder false expr
+
+let ExprContainsRuntimeAsyncFragment (g: TcGlobals) (getLambdaBody: ValRef -> Expr option) expr =
+    exprContainsRuntimeAsyncFragment g getLambdaBody [] expr
+
+let ShouldForceRuntimeAsyncInline (g: TcGlobals) runtimeAsyncContext (getLambdaBody: ValRef -> Expr option) (vref: ValRef) inlineBody =
+    if runtimeAsyncContext && vref.InlineIfLambda && not vref.ShouldInline then
+        true
+    elif not (vref.ShouldInline || vref.IsLocalRef) then
+        false
+    else
+        match inlineBody with
+        | Some body -> ExprContainsRuntimeAsyncFragment g getLambdaBody body
+        | None -> hasRuntimeAsyncFragmentBody g getLambdaBody [] vref
+
+let ShouldForceRuntimeAsyncApplication
+    (g: TcGlobals)
+    runtimeAsyncContext
+    (getLambdaBody: ValRef -> Expr option)
+    (vref: ValRef)
+    inlineBody
+    args
+    =
+    ShouldForceRuntimeAsyncInline g runtimeAsyncContext getLambdaBody vref inlineBody
+    || ((vref.ShouldInline || vref.InlineIfLambda)
+        && List.exists (ExprContainsRuntimeAsyncFragment g getLambdaBody) args)
+    || (runtimeAsyncContext
+        && vref.ShouldInline
+        && List.exists
+            (fun arg ->
+                match stripExpr arg with
+                | Expr.Lambda _
+                | Expr.TyLambda _ -> true
+                | _ -> false)
+            args)
+
+let InlineRuntimeAsyncLambdaArgument (g: TcGlobals) (isRuntimeAsyncFragment: Expr -> bool) expr =
+    let inlineBinding (boundVal: Val) boundExpr body =
+        let rwenv =
+            {
+                PreIntercept =
+                    Some(fun _ expr ->
+                        match stripExpr expr with
+                        | Expr.Val(vref, _, _) when valEq boundVal vref.Deref -> Some(copyExpr g CloneAll boundExpr)
+                        | _ -> None)
+                PreInterceptBinding = None
+                PostTransform = fun _ -> None
+                RewriteQuotations = false
+                StackGuard = StackGuard("InlineRuntimeAsyncLambdaArgument")
+            }
+
+        RewriteExpr rwenv body
+
+    let rwenv =
+        {
+            PreIntercept =
+                Some(fun cont expr ->
+                    match stripExpr expr with
+                    | Expr.Let(TBind(boundVal, boundExpr, _), body, _, _) when
+                        boundVal.InlineIfLambda
+                        || ((match stripExpr boundExpr with
+                             | Expr.Lambda _
+                             | Expr.TyLambda _ -> true
+                             | _ -> false)
+                            && isRuntimeAsyncFragment boundExpr)
+                        ->
+                        Some(cont (inlineBinding boundVal boundExpr body))
+                    | _ -> None)
+            PreInterceptBinding = None
+            PostTransform = fun _ -> None
+            RewriteQuotations = false
+            StackGuard = StackGuard("InlineRuntimeAsyncLambdaArgument")
+        }
+
+    RewriteExpr rwenv expr
 
 type private RuntimeAsyncFlowSummary =
     {

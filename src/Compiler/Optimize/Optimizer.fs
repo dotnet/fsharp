@@ -2522,62 +2522,6 @@ let shouldForceInlineInDebug cenv env (vref: ValRef) : bool =
 
     HasFrameLocalBody cenv env vref
 
-let rec private HasRuntimeAsyncFragmentBody cenv env visiting (vref: ValRef) =
-    if List.exists ((=) vref.Stamp) visiting then
-        false
-    else
-        match TryGetInfoForVal cenv env vref |> Option.map (fun info -> stripValue info.ValExprInfo) with
-        | Some(CurriedLambdaValue (_, _, _, body, _)) ->
-            ExprContainsRuntimeAsyncFragment cenv env (vref.Stamp :: visiting) body
-        | _ ->
-            false
-
-and private ExprContainsRuntimeAsyncFragment cenv env visiting expr =
-    let folder =
-        { ExprFolder0 with
-            exprIntercept =
-                fun _ noInterceptF acc expr ->
-                    if acc then
-                        true
-                    else
-                        match stripExpr expr with
-                        | Expr.App(Expr.Val(RuntimeAsyncReturn cenv.g, _, _), _, _, _, _) ->
-                            true
-                        | _ when IsRuntimeAsyncSuspensionExpr cenv.g expr ->
-                            true
-                        | Expr.Val(vref, _, _) when vref.ShouldInline || vref.IsLocalRef ->
-                            HasRuntimeAsyncFragmentBody cenv env visiting vref
-                        | _ ->
-                            noInterceptF acc expr }
-
-    FoldExpr folder false expr
-
-let private ShouldForceRuntimeAsyncInline cenv env (vref: ValRef) (finfo: Summary<ExprValueInfo>) =
-    if env.runtimeAsyncContext && vref.InlineIfLambda && not vref.ShouldInline then
-        true
-    elif not (vref.ShouldInline || vref.IsLocalRef) then
-        false
-    else
-        match stripValue finfo.Info with
-        | CurriedLambdaValue (_, _, _, body, _) ->
-            ExprContainsRuntimeAsyncFragment cenv env [ vref.Stamp ] body
-        | _ ->
-            HasRuntimeAsyncFragmentBody cenv env [] vref
-
-let private ShouldForceRuntimeAsyncApplication cenv env vref finfo args =
-    ShouldForceRuntimeAsyncInline cenv env vref finfo
-    || ((vref.ShouldInline || vref.InlineIfLambda)
-        && List.exists (ExprContainsRuntimeAsyncFragment cenv env []) args)
-    || (env.runtimeAsyncContext
-        && vref.ShouldInline
-        && List.exists
-            (fun arg ->
-                match stripExpr arg with
-                | Expr.Lambda _
-                | Expr.TyLambda _ -> true
-                | _ -> false)
-            args)
-
 /// Optimize/analyze an expression
 let rec OptimizeExpr cenv (env: IncrementalOptimizationEnv) expr =
     cenv.stackGuard.Guard <| fun () ->
@@ -2878,47 +2822,6 @@ and OptimizeExprOp cenv env (op, tyargs, args, m) =
     | _ -> 
         // Reductions
         OptimizeExprOpReductions cenv env (op, tyargs, args, m)
-
-and InlineRuntimeAsyncLambdaArgument cenv env expr =
-    let g = cenv.g
-    let inlineBinding (boundVal: Val) boundExpr body =
-        let rwenv =
-            { PreIntercept =
-                Some(fun _ expr ->
-                    match stripExpr expr with
-                    | Expr.Val(vref, _, _) when valEq boundVal vref.Deref ->
-                        Some(copyExpr g CloneAll boundExpr)
-                    | _ ->
-                        None)
-              PreInterceptBinding = None
-              PostTransform = fun _ -> None
-              RewriteQuotations = false
-              StackGuard = StackGuard("InlineRuntimeAsyncLambdaArgument") }
-
-        RewriteExpr rwenv body
-
-    let rwenv =
-        { PreIntercept =
-            Some(fun cont expr ->
-                match stripExpr expr with
-                | Expr.Let(TBind(boundVal, boundExpr, _), body, _, _)
-                    when boundVal.InlineIfLambda
-                         || ((match stripExpr boundExpr with
-                              | Expr.Lambda _
-                              | Expr.TyLambda _ ->
-                                  true
-                              | _ ->
-                                  false)
-                             && ExprContainsRuntimeAsyncFragment cenv env [] boundExpr) ->
-                    Some(cont (inlineBinding boundVal boundExpr body))
-                | _ ->
-                    None)
-          PreInterceptBinding = None
-          PostTransform = fun _ -> None
-          RewriteQuotations = false
-          StackGuard = StackGuard("InlineRuntimeAsyncLambdaArgument") }
-
-    RewriteExpr rwenv expr
 
 and OptimizeExprOpReductions cenv env (op, tyargs, args, m) =
     let argsR, arginfos = OptimizeExprsThenConsiderSplits cenv env args
@@ -3774,14 +3677,37 @@ and TryDevirtualizeApplication cenv env (f, tyargs, args, m) =
 /// Attempt to inline an application of a known value at callsites
 and TryInlineApplication cenv env finfo (valExpr: Expr) (tyargs: TType list, args: Expr list, m) =
     let g = cenv.g
+    let getRuntimeAsyncLambdaBody (vref: ValRef) =
+        TryGetInfoForVal cenv env vref
+        |> Option.map (fun info -> stripValue info.ValExprInfo)
+        |> Option.bind (function
+            | CurriedLambdaValue (_, _, _, body, _) -> Some body
+            | _ -> None)
+
+    let inlineBody =
+        match stripValue finfo.Info with
+        | CurriedLambdaValue (_, _, _, body, _) -> Some body
+        | _ -> None
+
+    let containsRuntimeAsyncFragment = ExprContainsRuntimeAsyncFragment g getRuntimeAsyncLambdaBody
+    let mustInlineRuntimeAsync =
+        match stripExpr valExpr with
+        | Expr.Val(vref, _, _) ->
+            ShouldForceRuntimeAsyncApplication
+                g
+                env.runtimeAsyncContext
+                getRuntimeAsyncLambdaBody
+                vref
+                inlineBody
+                args
+        | _ -> false
 
     match cenv.settings.alwaysInline, stripExpr valExpr with
     | alwaysInline, Expr.Val(vref, _, _)
-        when ShouldForceRuntimeAsyncApplication cenv env vref finfo args
+        when mustInlineRuntimeAsync
              || (not alwaysInline
                  && vref.ShouldInline
                  && not (shouldForceInlineInDebug cenv env vref)) ->
-        let mustInlineRuntimeAsync = ShouldForceRuntimeAsyncApplication cenv env vref finfo args
         let hasNoTraits =
             let tps, _ = tryDestForallTy g vref.Type
             GetTraitConstraintInfosOfTypars g tps |> List.isEmpty
@@ -3913,7 +3839,7 @@ and TryInlineApplication cenv env finfo (valExpr: Expr) (tyargs: TType list, arg
                     match reduced with
                     | Expr.Let(bind, body, _, _) -> fst (TryEliminateLet cenv env bind body m)
                     | _ -> reduced
-                let reduced = InlineRuntimeAsyncLambdaArgument cenv env reduced
+                let reduced = InlineRuntimeAsyncLambdaArgument g containsRuntimeAsyncFragment reduced
                 let reduced =
                     if ExprContainsRuntimeAsyncSuspension g reduced then
                         fst (OptimizeExpr cenv { env with runtimeAsyncContext = true } reduced)
@@ -3953,7 +3879,7 @@ and TryInlineApplication cenv env finfo (valExpr: Expr) (tyargs: TType list, arg
                         match reduced with
                         | Expr.Let(bind, body, _, _) -> fst (TryEliminateLet cenv env bind body m)
                         | _ -> reduced
-                    let reduced = InlineRuntimeAsyncLambdaArgument cenv env reduced
+                    let reduced = InlineRuntimeAsyncLambdaArgument g containsRuntimeAsyncFragment reduced
                     let reduced =
                         if ExprContainsRuntimeAsyncSuspension g reduced then
                             fst (OptimizeExpr cenv { env with runtimeAsyncContext = true } reduced)
