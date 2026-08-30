@@ -11,14 +11,8 @@ open Microsoft.VisualStudio.InteractiveWindow
 module internal ResultRendering =
 
     let formatDiagnostic (diagnostic: FSharp.Compiler.Interactive.Protocol.DiagnosticInfo) =
-        sprintf
-            "%s(%d,%d): %s FS%04d: %s"
-            diagnostic.fileName
-            diagnostic.startLine
-            (diagnostic.startColumn + 1)
-            diagnostic.severity
-            diagnostic.errorNumber
-            diagnostic.message
+        $"{diagnostic.fileName}({diagnostic.startLine},{diagnostic.startColumn + 1}): "
+        + $"{diagnostic.severity} FS%04d{diagnostic.errorNumber}: {diagnostic.message}"
 
 /// Connects the interactive window to an F# Interactive session.
 [<Sealed>]
