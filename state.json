@@ -37,8 +37,10 @@
       "cats": []
     },
     "20121": {
-      "sha": "825f0453908d",
-      "cats": []
+      "sha": "4c01e88c3356",
+      "cats": [
+        "Affects-Design-Time"
+      ]
     },
     "20113": {
       "sha": "b5b7fcb665ec",
@@ -264,6 +266,18 @@
         "Affects-Build-Infra",
         "Affects-Compiler-Output",
         "Affects-Restore"
+      ]
+    },
+    "20399": {
+      "sha": "21874a8b532f",
+      "cats": [
+        "Affects-Agent-Config"
+      ]
+    },
+    "20398": {
+      "sha": "378bd116d7a2",
+      "cats": [
+        "Affects-Agent-Config"
       ]
     }
   }
