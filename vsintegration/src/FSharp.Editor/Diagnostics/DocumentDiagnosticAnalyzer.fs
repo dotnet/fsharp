@@ -1,7 +1,8 @@
-// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 namespace Microsoft.VisualStudio.FSharp.Editor
 
+open System
 open System.Composition
 open System.Collections.Immutable
 open System.Collections.Generic
@@ -22,8 +23,12 @@ type internal DiagnosticsType =
     | Syntax
     | Semantic
 
-type private CachedDiagnosticsEntry =
+[<NoComparison; NoEquality>]
+type private CachedDiagnostics =
     {
+        /// Diagnostic locations embed it, so a rename that keeps the DocumentId must still invalidate.
+        FilePath: string
+        TextVersion: VersionStamp
         ProjectVersion: VersionStamp
         IsRemoveParensEnabled: bool
         Diagnostics: ImmutableArray<Diagnostic>
@@ -35,8 +40,13 @@ type internal FSharpDocumentDiagnosticAnalyzer [<ImportingConstructor>] () =
     let shouldProduceDiagnostics (document: Document) =
         document.Project.Solution.GetFSharpExtensionConfig().ShouldProduceDiagnostics()
 
-    static let syntaxCache = ConditionalWeakTable<Document, CachedDiagnosticsEntry>()
-    static let semanticCache = ConditionalWeakTable<Document, CachedDiagnosticsEntry>()
+    // DocumentId keys survive solution snapshots, and holding them weakly means a document dropped from the
+    // solution takes its cached diagnostics with it, so no eviction pass is needed on the request path.
+    static let syntaxCache = ConditionalWeakTable<DocumentId, CachedDiagnostics>()
+    static let semanticCache = ConditionalWeakTable<DocumentId, CachedDiagnostics>()
+
+    // ConditionalWeakTable has no atomic replace on .NET Framework, and Remove + Add races with a concurrent pass.
+    static let cacheGate = obj ()
 
     static let diagnosticEqualityComparer =
         { new IEqualityComparer<FSharpDiagnostic> with
@@ -85,8 +95,11 @@ type internal FSharpDocumentDiagnosticAnalyzer [<ImportingConstructor>] () =
 
             let! projectVersion =
                 match diagnosticType with
-                | DiagnosticsType.Syntax -> CancellableTask.singleton VersionStamp.Default
+                // Syntax diagnostics depend on the parsing options (defines, langversion), which the project version covers.
+                | DiagnosticsType.Syntax -> CancellableTask.singleton document.Project.Version
                 | DiagnosticsType.Semantic -> (fun ct -> document.Project.GetDependentVersionAsync(ct))
+
+            let! textVersion = document.GetTextVersionAsync(ct)
 
             let filePath = document.FilePath
 
@@ -101,9 +114,11 @@ type internal FSharpDocumentDiagnosticAnalyzer [<ImportingConstructor>] () =
                 | DiagnosticsType.Semantic -> semanticCache
 
             let cached =
-                match cache.TryGetValue document with
+                match cache.TryGetValue document.Id with
                 | true, cachedEntry when
-                    cachedEntry.ProjectVersion = projectVersion
+                    String.Equals(cachedEntry.FilePath, filePath, StringComparison.Ordinal)
+                    && cachedEntry.TextVersion = textVersion
+                    && cachedEntry.ProjectVersion = projectVersion
                     && cachedEntry.IsRemoveParensEnabled = isRemoveParensEnabled
                     ->
                     ValueSome cachedEntry.Diagnostics
@@ -117,15 +132,15 @@ type internal FSharpDocumentDiagnosticAnalyzer [<ImportingConstructor>] () =
 
                 let errors = HashSet<FSharpDiagnostic>(diagnosticEqualityComparer)
 
-                let! parseResults = document.GetFSharpParseResultsAsync("GetDiagnostics")
-
                 match diagnosticType with
                 | DiagnosticsType.Syntax ->
+                    let! parseResults = document.GetFSharpParseResultsAsync("GetDiagnostics")
+
                     for diagnostic in parseResults.Diagnostics do
                         errors.Add(diagnostic) |> ignore
 
                 | DiagnosticsType.Semantic ->
-                    let! _, checkResults = document.GetFSharpParseAndCheckResultsAsync("GetDiagnostics")
+                    let! parseResults, checkResults = document.GetFSharpParseAndCheckResultsAsync("GetDiagnostics")
 
                     for diagnostic in checkResults.Diagnostics do
                         errors.Add(diagnostic) |> ignore
@@ -168,16 +183,18 @@ type internal FSharpDocumentDiagnosticAnalyzer [<ImportingConstructor>] () =
                         iab.AddRange unnecessaryParentheses
                         iab.ToImmutable()
 
-                cache.Remove(document) |> ignore
-
-                cache.Add(
-                    document,
+                let entry =
                     {
+                        FilePath = filePath
+                        TextVersion = textVersion
                         ProjectVersion = projectVersion
                         IsRemoveParensEnabled = isRemoveParensEnabled
                         Diagnostics = result
                     }
-                )
+
+                lock cacheGate (fun () ->
+                    cache.Remove document.Id |> ignore
+                    cache.Add(document.Id, entry))
 
                 return result
         }
