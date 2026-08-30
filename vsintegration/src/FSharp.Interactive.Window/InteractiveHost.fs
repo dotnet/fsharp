@@ -232,7 +232,7 @@ type internal InteractiveHostClient(clientProcessId: int) =
             argument.IndexOf(" ", StringComparison.Ordinal) >= 0
             && not (argument.StartsWith("\"", StringComparison.Ordinal))
         then
-            "\"" + argument + "\""
+            $"\"{argument}\""
         else
             argument
 
@@ -248,7 +248,7 @@ type internal InteractiveHostClient(clientProcessId: int) =
             addSwitch argument
 
         addSwitch "--nologo"
-        addSwitch ("--fsi-server-jsonrpc:" + pipeName)
+        addSwitch $"--fsi-server-jsonrpc:{pipeName}"
         addSwitch $"--fsi-server-output-codepage:{Encoding.UTF8.CodePage}"
         addSwitch $"--fsi-server-input-codepage:{Encoding.UTF8.CodePage}"
         addSwitch $"--fsi-server-lcid:{options.UICultureLcid}"
@@ -293,7 +293,8 @@ type internal InteractiveHostClient(clientProcessId: int) =
 
     let startAsync (options: InteractiveHostOptions) (cancellationToken: CancellationToken) =
         task {
-            let pipeName = "FSharpInteractive." + Guid.NewGuid().ToString "N"
+            let sessionId = Guid.NewGuid().ToString "N"
+            let pipeName = $"FSharpInteractive.{sessionId}"
 
             match createStartInfo options pipeName with
             | Result.Error message -> return Result.Error message
