@@ -17,7 +17,9 @@ open Microsoft.VisualStudio.Utilities
 
 open Microsoft.VisualStudio.FSharp.Interactive.Session
 
-module internal InteractiveWindowGuids =
+/// Identities the window is registered and addressed by. Public so that they are declared once and
+/// referenced, rather than repeated by every component that needs them.
+module InteractiveWindowGuids =
 
     /// Visual Studio persists the window's place in the layout under this, so it must not change
     /// once shipped.
@@ -26,8 +28,10 @@ module internal InteractiveWindowGuids =
 
     let ToolWindowId = Guid ToolWindowIdString
 
-    let FSharpLanguageServiceId = Guid "BC6DD5A5-D4D6-4dab-A00D-A51242DBAF1B"
+    let FSharpLanguageServiceId = Guids.guidFsharpLanguageService
 
+    /// FSharp.Editor declares this too, but it sits above this project and cannot be referenced
+    /// from here, so the name is repeated rather than shared.
     [<Literal>]
     let FSharpContentTypeName = "F#"
 
@@ -64,8 +68,8 @@ type internal FSharpVsInteractiveWindowProvider
     [<ImportingConstructor>]
     (windowFactory: IVsInteractiveWindowFactory, contentTypeRegistry: IContentTypeRegistryService) =
 
-    let mutable window: IVsInteractiveWindow = null
-    let mutable evaluator: FSharpInteractiveEvaluator option = None
+    let mutable window: IVsInteractiveWindow | null = null
+    let mutable evaluator: FSharpInteractiveEvaluator voption = ValueNone
 
     let captionFor (platform: InteractiveHostPlatform) =
         $"{VFSIstrings.SR.fsharpInteractive ()} ({platform.Description})"
@@ -81,7 +85,7 @@ type internal FSharpVsInteractiveWindowProvider
     member this.Create(instanceId: int) =
         let host = new InteractiveHostClient(Process.GetCurrentProcess().Id)
         let created = new FSharpInteractiveEvaluator(host, currentOptions, setCaption)
-        evaluator <- Some created
+        evaluator <- ValueSome created
 
         window <-
             windowFactory.Create(
@@ -115,7 +119,7 @@ type internal FSharpVsInteractiveWindowProvider
         this.Open(0, focus = false) |> ignore
 
         evaluator
-        |> Option.iter (fun evaluator -> evaluator.SetNextSubmissionOrigin(sourcePath, startLine))
+        |> ValueOption.iter _.SetNextSubmissionOrigin(sourcePath, startLine)
 
         window.InteractiveWindow.SubmitAsync [| text |] |> ignore
 

@@ -11,8 +11,7 @@ open Microsoft.VisualStudio.InteractiveWindow
 module internal ResultRendering =
 
     let formatDiagnostic (diagnostic: FSharp.Compiler.Interactive.Protocol.DiagnosticInfo) =
-        $"{diagnostic.fileName}({diagnostic.startLine},{diagnostic.startColumn + 1}): "
-        + $"{diagnostic.severity} FS%04d{diagnostic.errorNumber}: {diagnostic.message}"
+        $"{diagnostic.fileName}({diagnostic.startLine},{diagnostic.startColumn + 1}): {diagnostic.severity} FS%04d{diagnostic.errorNumber}: {diagnostic.message}"
 
 /// Connects the interactive window to an F# Interactive session.
 [<Sealed>]
@@ -23,16 +22,16 @@ type internal FSharpInteractiveEvaluator
         onPlatformChanged: InteractiveHostPlatform -> unit
     ) =
 
-    let mutable currentWindow: IInteractiveWindow = null
-    let mutable outputSubscription: IDisposable = null
-    let mutable errorSubscription: IDisposable = null
-    let mutable exitedSubscription: IDisposable = null
+    let mutable currentWindow: IInteractiveWindow | null = null
+    let mutable outputSubscription: IDisposable | null = null
+    let mutable errorSubscription: IDisposable | null = null
+    let mutable exitedSubscription: IDisposable | null = null
     let mutable disposed = false
-    let mutable requestedPlatform: InteractiveHostPlatform option = None
+    let mutable requestedPlatform: InteractiveHostPlatform voption = ValueNone
 
     // The window submits text without saying where it came from, so an editor command records the
     // origin here for the submission it is about to make. Both run on the UI thread.
-    let mutable nextSubmissionOrigin: (string * int) option = None
+    let mutable nextSubmissionOrigin: struct (string * int) voption = ValueNone
 
     // Output arrives on the threads pumping the session's console streams, so it goes through the
     // window's writers rather than its editing operations, which belong to the UI thread.
@@ -55,8 +54,8 @@ type internal FSharpInteractiveEvaluator
         let options = getOptions ()
 
         match requestedPlatform with
-        | Some platform -> { options with Platform = platform }
-        | None -> options
+        | ValueSome platform -> { options with Platform = platform }
+        | ValueNone -> options
 
     let reportDiagnostics (result: FSharp.Compiler.Interactive.Protocol.ExecutionResult) =
         match result.diagnostics with
@@ -99,19 +98,19 @@ type internal FSharpInteractiveEvaluator
 
     member _.CurrentPlatform =
         match requestedPlatform with
-        | Some platform -> platform
-        | None -> (getOptions ()).Platform
+        | ValueSome platform -> platform
+        | ValueNone -> (getOptions ()).Platform
 
-    member _.RequestPlatform platform = requestedPlatform <- Some platform
+    member _.RequestPlatform platform = requestedPlatform <- ValueSome platform
 
     /// Attribute the next submission to a file and line, so that its diagnostics land on the user's
     /// own source rather than on the submission.
     member _.SetNextSubmissionOrigin(sourcePath: string, startLine: int) =
         nextSubmissionOrigin <-
             if String.IsNullOrEmpty sourcePath then
-                None
+                ValueNone
             else
-                Some(sourcePath, startLine)
+                ValueSome(struct (sourcePath, startLine))
 
     member _.EvaluatingProcessId = host.EvaluatingProcessId
 
@@ -165,12 +164,12 @@ type internal FSharpInteractiveEvaluator
                     return ExecutionResult true
                 else
                     let origin = nextSubmissionOrigin
-                    nextSubmissionOrigin <- None
+                    nextSubmissionOrigin <- ValueNone
 
                     let submit code =
                         match origin with
-                        | Some(sourcePath, startLine) -> host.ExecuteAsync(code, sourcePath, startLine)
-                        | None -> host.ExecuteAsync code
+                        | ValueSome(struct (sourcePath, startLine)) -> host.ExecuteAsync(code, sourcePath, startLine)
+                        | ValueNone -> host.ExecuteAsync code
 
                     match! submit (SubmissionAnalysis.withTerminator text) with
                     | Result.Error message ->
