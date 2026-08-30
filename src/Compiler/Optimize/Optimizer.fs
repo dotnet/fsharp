@@ -4649,7 +4649,8 @@ and OptimizeBinding cenv isRec env (TBind(vref, expr, spBind)) =
         errorRecovery exn vref.Range 
         raise (ReportedError (Some exn))
           
-/// Optimize a group in the given dependency order, then restore source order.
+/// Optimize a group in dependency order, then restore source order so downstream consumers retain
+/// the original binding layout.
 and OptimizeInDependencyOrder xs order processOne state =
     let xsArray = List.toArray xs
     let results, state =
@@ -4761,6 +4762,7 @@ and OptimizeModuleExprWithSig cenv env mty def  =
 and mkValBind (bind: Binding) info =
     (mkLocalValRef bind.Var, info)
 
+/// Used before optimization to publish dependencies before a binding that may inline them.
 /// Cycle-tolerant depth-first post-order over dependency indexes: each node appears exactly
 /// once, after all of its dependencies. Nodes are marked on entry, so cyclic back-edges
 /// into nodes still being processed are skipped.
@@ -4782,6 +4784,7 @@ and TopologicalPostOrder guard (dependencies: int array array) (roots: int list)
 
     List.ofSeq ordered
 
+/// Route recursive bindings through the dependency scheduler so inline callers see optimized siblings.
 and GetBindingOptimizationOrder cenv inlineDependenciesOnly preferLowArity (binds: Binding list) =
     GetGroupOptimizationOrder cenv inlineDependenciesOnly preferLowArity [
         for bind in binds ->
