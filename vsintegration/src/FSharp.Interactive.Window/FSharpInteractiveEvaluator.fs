@@ -119,7 +119,9 @@ type internal FSharpInteractiveEvaluator
                 unsubscribe errorSubscription
                 unsubscribe exitedSubscription
 
-                if not (isNull window) then
+                match window with
+                | null -> ()
+                | _ ->
                     outputSubscription <- host.OutputReceived.Subscribe write
                     errorSubscription <- host.ErrorOutputReceived.Subscribe writeError
                     exitedSubscription <- host.ProcessExited.Subscribe reportSessionExit
@@ -180,12 +182,10 @@ type internal FSharpInteractiveEvaluator
             match currentWindow with
             | null -> "> "
             | window ->
-                let buffer = window.CurrentLanguageBuffer
-
-                if not (isNull buffer) && buffer.CurrentSnapshot.LineCount > 1 then
-                    "- "
-                else
-                    "> "
+                match window.CurrentLanguageBuffer with
+                | null -> "> "
+                | buffer when buffer.CurrentSnapshot.LineCount > 1 -> "- "
+                | _ -> "> "
 
     interface IDisposable with
         member _.Dispose() =
