@@ -164,11 +164,14 @@
     <ProjectReference Include="$(FSharpSourcesRoot)\Compiler\FSharp.Compiler.Service.fsproj" />
     <ProjectReference Include="..\FSharp.UIResources\FSharp.UIResources.csproj" />
     <ProjectReference Include="..\FSharp.VS.FSI\FSharp.VS.FSI.fsproj" />
+    <ProjectReference Include="..\FSharp.Interactive.Window\FSharp.Interactive.Window.fsproj" />
   </ItemGroup>
 
   <ItemGroup>
     <Reference Include="PresentationCore" />
     <Reference Include="PresentationFramework" />
+    <!-- MenuCommandService, the base of the command service the package registers commands on. -->
+    <Reference Include="System.Design" />
     <Reference Include="System.Runtime.Caching" />
     <Reference Include="System.Windows.Forms" />
     <Reference Include="System.Xaml" />
