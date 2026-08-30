@@ -187,4 +187,4 @@ module internal SubmissionAnalysis =
                 | _ -> true
 
     let withTerminator (text: string) =
-        if endsWithTerminator text then text else text + "\n;;"
+        if endsWithTerminator text then text else $"{text}\n;;"
