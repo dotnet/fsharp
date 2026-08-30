@@ -87,7 +87,7 @@ module internal SubmissionAnalysis =
             /// Outside strings and comments.
             OpenBrackets: int
             InsideMultiLineConstruct: bool
-            LastToken: string option
+            LastToken: string voption
             EndsWithTerminator: bool
         }
 
@@ -99,11 +99,11 @@ module internal SubmissionAnalysis =
 
         let mutable state = FSharpTokenizerLexState.Initial
         let mutable openBrackets = 0
-        let mutable lastToken = None
+        let mutable lastToken = ValueNone
 
         let scanLine (line: string) (record: bool) =
             let lineTokenizer = tokenizer.CreateLineTokenizer line
-            let mutable firstColor = None
+            let mutable firstColor = ValueNone
             let mutable scanning = true
 
             while scanning do
@@ -112,7 +112,7 @@ module internal SubmissionAnalysis =
                     state <- nextState
 
                     if firstColor.IsNone then
-                        firstColor <- Some token.ColorClass
+                        firstColor <- ValueSome token.ColorClass
 
                     if record then
                         match token.ColorClass with
@@ -121,7 +121,7 @@ module internal SubmissionAnalysis =
                         | FSharpTokenColorKind.String ->
                             // A literal ends a submission as a number would, but its contents are
                             // not code: brackets and terminators inside it must not count.
-                            lastToken <- Some "\"\""
+                            lastToken <- ValueSome "\"\""
                         | _ ->
                             let value =
                                 if token.LeftColumn >= 0 && token.LeftColumn + token.FullMatchedLength <= line.Length then
@@ -135,7 +135,7 @@ module internal SubmissionAnalysis =
                                 elif closing.Contains value then
                                     openBrackets <- openBrackets - 1
 
-                                lastToken <- Some value
+                                lastToken <- ValueSome value
                 | None, nextState ->
                     state <- nextState
                     scanning <- false
@@ -151,9 +151,9 @@ module internal SubmissionAnalysis =
         // part of that construct.
         let insideMultiLineConstruct =
             match scanLine probeIdentifier false with
-            | Some FSharpTokenColorKind.String
-            | Some FSharpTokenColorKind.Comment
-            | Some FSharpTokenColorKind.InactiveCode -> true
+            | ValueSome FSharpTokenColorKind.String
+            | ValueSome FSharpTokenColorKind.Comment
+            | ValueSome FSharpTokenColorKind.InactiveCode -> true
             | _ -> false
 
         {
@@ -162,8 +162,8 @@ module internal SubmissionAnalysis =
             LastToken = lastToken
             EndsWithTerminator =
                 match lastToken with
-                | Some token -> String.Equals(token, ";;", StringComparison.Ordinal)
-                | None -> false
+                | ValueSome token -> String.Equals(token, ";;", StringComparison.Ordinal)
+                | ValueNone -> false
         }
 
     let endsWithTerminator (text: string) = (scan text).EndsWithTerminator
@@ -183,7 +183,7 @@ module internal SubmissionAnalysis =
                 false
             else
                 match scanned.LastToken with
-                | Some token when continuationTokens.Contains token -> false
+                | ValueSome token when continuationTokens.Contains token -> false
                 | _ -> true
 
     let withTerminator (text: string) =
