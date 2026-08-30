@@ -11,7 +11,8 @@
         "FSharp_Shim_Present": "true",
         "FSharpPreferAnyCpuTools": "true",
         "Fsc_NetFramework_ToolPath": "$(FSharpCompilerPathForDebuggingLocally)",
-        "Fsc_NetFramework_AnyCpu_ToolExe": "fscAnyCpu.exe"
+        "Fsc_NetFramework_AnyCpu_ToolExe": "fscAnyCpu.exe",
+        "FSHARP_INTERACTIVE_PATH": "$(FSharpInteractivePathForDebuggingLocally)"
       }
     }
   }
