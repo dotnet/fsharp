@@ -3,6 +3,7 @@
 namespace Microsoft.VisualStudio.FSharp.Interactive
 
 open System
+open System.Collections.Generic
 
 open FSharp.Compiler.Tokenization
 
@@ -12,9 +13,11 @@ open FSharp.Compiler.Tokenization
 /// type check.
 module internal SubmissionAnalysis =
 
+    let private ordinalSet (items: string seq) = HashSet<string>(items, StringComparer.Ordinal)
+
     /// Tokens after which more input is always expected.
     let private continuationTokens =
-        set
+        ordinalSet
             [
                 "="
                 "->"
@@ -73,9 +76,9 @@ module internal SubmissionAnalysis =
                 "->>"
             ]
 
-    let private opening = set [ "("; "["; "{"; "[|"; "[<"; "{|" ]
+    let private opening = ordinalSet [ "("; "["; "{"; "[|"; "[<"; "{|" ]
 
-    let private closing = set [ ")"; "]"; "}"; "|]"; ">]"; "|}" ]
+    let private closing = ordinalSet [ ")"; "]"; "}"; "|]"; ">]"; "|}" ]
 
     let private tokenizer = FSharpSourceTokenizer([], Some "stdin.fsx", None)
 
@@ -157,7 +160,10 @@ module internal SubmissionAnalysis =
             OpenBrackets = openBrackets
             InsideMultiLineConstruct = insideMultiLineConstruct
             LastToken = lastToken
-            EndsWithTerminator = (lastToken = Some ";;")
+            EndsWithTerminator =
+                match lastToken with
+                | Some token -> String.Equals(token, ";;", StringComparison.Ordinal)
+                | None -> false
         }
 
     let endsWithTerminator (text: string) = (scan text).EndsWithTerminator
