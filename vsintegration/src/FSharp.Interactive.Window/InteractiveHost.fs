@@ -38,11 +38,11 @@ type InteractiveHostPlatform =
         let name = name.Trim()
         let is candidate = String.Equals(name, candidate, StringComparison.OrdinalIgnoreCase)
 
-        if is "core" || is "net" then Some NetCore
-        elif is "64" || is "framework64" then Some NetFramework64
-        elif is "32" || is "framework32" then Some NetFramework32
-        elif is "arm64" then Some NetFrameworkArm64
-        else None
+        if is "core" || is "net" then ValueSome NetCore
+        elif is "64" || is "framework64" then ValueSome NetFramework64
+        elif is "32" || is "framework32" then ValueSome NetFramework32
+        elif is "arm64" then ValueSome NetFrameworkArm64
+        else ValueNone
 
 type InteractiveHostOptions =
     {
