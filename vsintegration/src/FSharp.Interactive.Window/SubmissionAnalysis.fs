@@ -175,16 +175,12 @@ module internal SubmissionAnalysis =
             // The window submits an empty one to start a session.
             true
         else
-            let scanned = scan text
-
-            if scanned.EndsWithTerminator then
-                true
-            elif scanned.InsideMultiLineConstruct || scanned.OpenBrackets > 0 then
-                false
-            else
-                match scanned.LastToken with
-                | ValueSome token when continuationTokens.Contains token -> false
-                | _ -> true
+            match scan text with
+            | { EndsWithTerminator = true } -> true
+            | { InsideMultiLineConstruct = true } -> false
+            | scanned when scanned.OpenBrackets > 0 -> false
+            | { LastToken = ValueSome token } -> not (continuationTokens.Contains token)
+            | _ -> true
 
     let withTerminator (text: string) =
         if endsWithTerminator text then text else $"{text}\n;;"
