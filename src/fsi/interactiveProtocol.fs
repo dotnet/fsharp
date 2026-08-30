@@ -76,7 +76,7 @@ type ExecuteRequest =
         /// with <c>startLine</c> this makes diagnostics point at the user's own source rather than
         /// at a position within the submission.
         /// </summary>
-        sourcePath: string
+        sourcePath: string | null
 
         startLine: System.Nullable<int>
     }
@@ -87,7 +87,7 @@ type ExecuteFileRequest = { path: string }
 [<CLIMutable>]
 type SetPathsRequest =
     {
-        includePaths: string[]
+        includePaths: string[] | null
         workingDirectory: string
     }
 
@@ -124,8 +124,8 @@ type ExecutionResult =
         success: bool
 
         cancelled: bool
-        diagnostics: DiagnosticInfo[]
-        ``exception``: ExceptionInfo
+        diagnostics: DiagnosticInfo[] | null
+        ``exception``: ExceptionInfo | null
 
         /// Reported after every interaction so that the host can keep its own view of the session
         /// in step with one that changed directory.
