@@ -18,6 +18,17 @@ type internal SendToInteractiveKind =
     | Selection
     | Line
 
+/// The shell delivers both send-to-interactive commands in the same group, so recognising one
+/// means checking the group and the identifier together.
+[<AutoOpen>]
+module private InteractiveCommand =
+
+    let (|SendSelection|SendLine|NotOurs|) (group: Guid, commandId: uint32) =
+        if group <> VSConstants.VsStd11 then NotOurs
+        elif commandId = uint32 VSConstants.VSStd11CmdID.ExecuteSelectionInInteractive then SendSelection
+        elif commandId = uint32 VSConstants.VSStd11CmdID.ExecuteLineInInteractive then SendLine
+        else NotOurs
+
 /// The text an editor command sends, and where it came from.
 type internal EditorSubmission =
     {
@@ -91,34 +102,35 @@ type internal FSharpInteractiveCommandFilter
     interface IOleCommandTarget with
 
         member _.Exec(pguidCmdGroup, nCmdId, nCmdexecopt, pvaIn, pvaOut) =
-            if pguidCmdGroup = VSConstants.VsStd11
-               && nCmdId = uint32 VSConstants.VSStd11CmdID.ExecuteSelectionInInteractive then
+            match pguidCmdGroup, nCmdId with
+            | SendSelection ->
                 send Selection
                 VSConstants.S_OK
-            elif pguidCmdGroup = VSConstants.VsStd11
-                 && nCmdId = uint32 VSConstants.VSStd11CmdID.ExecuteLineInInteractive then
+            | SendLine ->
                 send Line
                 VSConstants.S_OK
-            else
+            | NotOurs ->
                 match nextTarget with
                 | null -> VSConstants.E_FAIL
                 | target -> target.Exec(&pguidCmdGroup, nCmdId, nCmdexecopt, pvaIn, pvaOut)
 
         member _.QueryStatus(pguidCmdGroup, cCmds, prgCmds, pCmdText) =
-            if pguidCmdGroup = VSConstants.VsStd11 then
+            match pguidCmdGroup with
+            | group when group = VSConstants.VsStd11 ->
                 for i in 0 .. int cCmds - 1 do
-                    if prgCmds[i].cmdID = uint32 VSConstants.VSStd11CmdID.ExecuteSelectionInInteractive then
-                        prgCmds[i].cmdf <- uint32 (OLECMDF.OLECMDF_SUPPORTED ||| OLECMDF.OLECMDF_ENABLED)
-                    elif prgCmds[i].cmdID = uint32 VSConstants.VSStd11CmdID.ExecuteLineInInteractive then
+                    match group, prgCmds[i].cmdID with
+                    | SendSelection -> prgCmds[i].cmdf <- uint32 (OLECMDF.OLECMDF_SUPPORTED ||| OLECMDF.OLECMDF_ENABLED)
+                    | SendLine ->
                         prgCmds[i].cmdf <-
                             uint32 (
                                 OLECMDF.OLECMDF_SUPPORTED
                                 ||| OLECMDF.OLECMDF_ENABLED
                                 ||| OLECMDF.OLECMDF_DEFHIDEONCTXTMENU
                             )
+                    | NotOurs -> ()
 
                 VSConstants.S_OK
-            else
+            | _ ->
                 match nextTarget with
                 | null -> VSConstants.E_FAIL
                 | target -> target.QueryStatus(&pguidCmdGroup, cCmds, prgCmds, pCmdText)

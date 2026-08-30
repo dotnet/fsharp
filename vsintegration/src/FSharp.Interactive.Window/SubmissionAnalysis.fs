@@ -80,6 +80,11 @@ module internal SubmissionAnalysis =
 
     let private closing = ordinalSet [ ")"; "]"; "}"; "|]"; ">]"; "|}" ]
 
+    let private (|Opening|Closing|Ordinary|) token =
+        if opening.Contains token then Opening
+        elif closing.Contains token then Closing
+        else Ordinary
+
     let private tokenizer = FSharpSourceTokenizer([], Some "stdin.fsx", None)
 
     type private Scan =
@@ -130,10 +135,10 @@ module internal SubmissionAnalysis =
                                     ""
 
                             if not (String.IsNullOrWhiteSpace value) then
-                                if opening.Contains value then
-                                    openBrackets <- openBrackets + 1
-                                elif closing.Contains value then
-                                    openBrackets <- openBrackets - 1
+                                match value with
+                                | Opening -> openBrackets <- openBrackets + 1
+                                | Closing -> openBrackets <- openBrackets - 1
+                                | Ordinary -> ()
 
                                 lastToken <- ValueSome value
                 | None, nextState ->

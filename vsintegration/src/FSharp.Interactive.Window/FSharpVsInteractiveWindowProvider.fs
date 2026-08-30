@@ -44,10 +44,11 @@ module internal InteractiveHostOptionsFactory =
         | directory -> directory
 
     let currentPlatform () =
-        if SessionsProperties.fsiUseNetCore then NetCore
-        elif RuntimeInformation.ProcessArchitecture = Architecture.Arm64 then NetFrameworkArm64
-        elif SessionsProperties.useAnyCpuVersion then NetFramework64
-        else NetFramework32
+        match SessionsProperties.fsiUseNetCore, RuntimeInformation.ProcessArchitecture with
+        | true, _ -> NetCore
+        | _, Architecture.Arm64 -> NetFrameworkArm64
+        | _ when SessionsProperties.useAnyCpuVersion -> NetFramework64
+        | _ -> NetFramework32
 
     let create platform =
         {
