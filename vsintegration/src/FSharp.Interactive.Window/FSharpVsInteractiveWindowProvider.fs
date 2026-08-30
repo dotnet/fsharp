@@ -68,7 +68,7 @@ type internal FSharpVsInteractiveWindowProvider
     let mutable evaluator: FSharpInteractiveEvaluator option = None
 
     let captionFor (platform: InteractiveHostPlatform) =
-        sprintf "%s (%s)" (VFSIstrings.SR.fsharpInteractive ()) platform.Description
+        $"{VFSIstrings.SR.fsharpInteractive ()} ({platform.Description})"
 
     let setCaption platform =
         match box window with
