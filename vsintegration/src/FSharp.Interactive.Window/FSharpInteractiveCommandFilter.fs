@@ -49,7 +49,7 @@ module internal EditorSubmission =
         let text = span.GetText()
 
         if String.IsNullOrWhiteSpace text then
-            None
+            ValueNone
         else
             let sourcePath =
                 match documentFactory.TryGetTextDocument view.TextBuffer with
@@ -65,7 +65,7 @@ module internal EditorSubmission =
                     view.Caret.MoveTo start |> ignore
                     view.Selection.Clear()
 
-            Some
+            ValueSome
                 {
                     Text = text
                     SourcePath = sourcePath
@@ -80,8 +80,8 @@ type internal FSharpInteractiveCommandFilter
 
     let send kind =
         match EditorSubmission.read documentFactory view kind with
-        | None -> ()
-        | Some submission -> provider.SubmitFromEditor(submission.Text, submission.SourcePath, submission.StartLine)
+        | ValueNone -> ()
+        | ValueSome submission -> provider.SubmitFromEditor(submission.Text, submission.SourcePath, submission.StartLine)
 
     member _.AttachToViewAdapter(viewAdapter: IVsTextView) =
         match viewAdapter.AddCommandFilter this with
