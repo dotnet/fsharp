@@ -229,7 +229,7 @@ type FsiServerHarness
         let deadline = DateTime.UtcNow + defaultArg timeout (TimeSpan.FromSeconds 30.0)
 
         let rec wait () =
-            if this.StandardOutput.Contains text then true
+            if this.StandardOutput.Contains(text, StringComparison.Ordinal) then true
             elif DateTime.UtcNow > deadline then false
             else
                 Thread.Sleep 50
@@ -331,10 +331,10 @@ let diagnostics (result: ExecutionResult) =
     | items -> items
 
 let errors result =
-    diagnostics result |> Array.filter (fun d -> d.severity = "error")
+    diagnostics result |> Array.filter (fun d -> String.Equals(d.severity, "error", StringComparison.Ordinal))
 
 let warnings result =
-    diagnostics result |> Array.filter (fun d -> d.severity = "warning")
+    diagnostics result |> Array.filter (fun d -> String.Equals(d.severity, "warning", StringComparison.Ordinal))
 
 let succeeded (result: ExecutionResult) = result.success
 
