@@ -3,7 +3,6 @@
 namespace Microsoft.VisualStudio.FSharp.Interactive
 
 open System
-open System.Globalization
 open System.Threading.Tasks
 
 open Microsoft.VisualStudio.InteractiveWindow
@@ -87,14 +86,7 @@ type internal FSharpInteractiveEvaluator
         | subscription -> subscription.Dispose()
 
     let reportSessionExit exitCode =
-        writeErrorLine (
-            String.Format(
-                CultureInfo.CurrentCulture,
-                "{0} (exit code {1})",
-                VFSIstrings.SR.sessionTerminationDetected (),
-                exitCode
-            )
-        )
+        writeErrorLine $"{VFSIstrings.SR.sessionTerminationDetected()} (exit code {exitCode})"
 
     member _.CurrentPlatform =
         match requestedPlatform with
