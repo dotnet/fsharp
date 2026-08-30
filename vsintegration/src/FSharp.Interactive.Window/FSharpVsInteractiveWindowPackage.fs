@@ -31,20 +31,20 @@ module internal InteractiveWindowPackageGuids =
 type internal FSharpVsInteractiveWindowPackage() as this =
     inherit AsyncPackage()
 
-    let mutable provider: FSharpVsInteractiveWindowProvider option = None
+    let mutable provider: FSharpVsInteractiveWindowProvider voption = ValueNone
 
     let getProvider () =
         match provider with
-        | Some provider -> Some provider
-        | None ->
+        | ValueSome provider -> ValueSome provider
+        | ValueNone ->
             match this.GetService(typeof<SComponentModel>) with
             | :? IComponentModel as components ->
                 let resolved =
                     components.DefaultExportProvider.GetExportedValue<FSharpVsInteractiveWindowProvider>()
 
-                provider <- Some resolved
-                Some resolved
-            | _ -> None
+                provider <- ValueSome resolved
+                ValueSome resolved
+            | _ -> ValueNone
 
     member _.Provider = getProvider ()
 
@@ -57,9 +57,9 @@ type internal FSharpVsInteractiveWindowPackage() as this =
         member _.CreateToolWindow(toolWindowType: byref<Guid>, id: uint32) =
             if toolWindowType = InteractiveWindowGuids.ToolWindowId then
                 match getProvider () with
-                | Some provider ->
+                | ValueSome provider ->
                     provider.Create(int id) |> ignore
                     VSConstants.S_OK
-                | None -> VSConstants.E_FAIL
+                | ValueNone -> VSConstants.E_FAIL
             else
                 VSConstants.E_FAIL
