@@ -45,9 +45,6 @@ type internal FSharpDocumentDiagnosticAnalyzer [<ImportingConstructor>] () =
     static let syntaxCache = ConditionalWeakTable<DocumentId, CachedDiagnostics>()
     static let semanticCache = ConditionalWeakTable<DocumentId, CachedDiagnostics>()
 
-    // ConditionalWeakTable has no atomic replace on .NET Framework, and Remove + Add races with a concurrent pass.
-    static let cacheGate = obj ()
-
     static let diagnosticEqualityComparer =
         { new IEqualityComparer<FSharpDiagnostic> with
 
@@ -192,7 +189,8 @@ type internal FSharpDocumentDiagnosticAnalyzer [<ImportingConstructor>] () =
                         Diagnostics = result
                     }
 
-                lock cacheGate (fun () ->
+                // net472 has no ConditionalWeakTable.AddOrUpdate, and Remove + Add races with a concurrent pass.
+                lock cache (fun () ->
                     cache.Remove document.Id |> ignore
                     cache.Add(document.Id, entry))
 
