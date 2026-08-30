@@ -35,15 +35,14 @@ type InteractiveHostPlatform =
         | NetFrameworkArm64 -> "arm64"
 
     static member TryParse(name: string) =
-        match name.Trim().ToLowerInvariant() with
-        | "core"
-        | "net" -> Some NetCore
-        | "64"
-        | "framework64" -> Some NetFramework64
-        | "32"
-        | "framework32" -> Some NetFramework32
-        | "arm64" -> Some NetFrameworkArm64
-        | _ -> None
+        let name = name.Trim()
+        let is candidate = String.Equals(name, candidate, StringComparison.OrdinalIgnoreCase)
+
+        if is "core" || is "net" then Some NetCore
+        elif is "64" || is "framework64" then Some NetFramework64
+        elif is "32" || is "framework32" then Some NetFramework32
+        elif is "arm64" then Some NetFrameworkArm64
+        else None
 
 type InteractiveHostOptions =
     {
@@ -120,17 +119,17 @@ module internal FsiLocator =
                 let host = hostFor path
 
                 if File.Exists host then
-                    Some(Result.Ok(host, [ "exec"; path ]))
+                    ValueSome(Result.Ok(host, [ "exec"; path ]))
                 else
-                    Some(Result.Error(VFSIstrings.SR.couldNotFindFsiExe host))
+                    ValueSome(Result.Error(VFSIstrings.SR.couldNotFindFsiExe host))
             else
-                Some(Result.Ok(path, []))
-        | _ -> None
+                ValueSome(Result.Ok(path, []))
+        | _ -> ValueNone
 
     let locate (options: InteractiveHostOptions) =
         match tryOverride () with
-        | Some result -> result
-        | None ->
+        | ValueSome result -> result
+        | ValueNone ->
 
         match options.Platform with
         | NetCore ->
@@ -196,7 +195,7 @@ type internal InteractiveHostClient(clientProcessId: int) =
 
     let stateLock = obj ()
     let startGate = new SemaphoreSlim(1, 1)
-    let mutable current: RemoteSession option = None
+    let mutable current: RemoteSession voption = ValueNone
     let mutable disposed = false
 
     let outputReceived = Event<string>()
@@ -228,7 +227,11 @@ type internal InteractiveHostClient(clientProcessId: int) =
         thread.Start()
 
     let quoteIfNeeded (argument: string) =
-        if argument.Contains " " && not (argument.StartsWith "\"") then
+        // .NET Framework has no Contains overload taking a comparison, hence IndexOf.
+        if
+            argument.IndexOf(" ", StringComparison.Ordinal) >= 0
+            && not (argument.StartsWith("\"", StringComparison.Ordinal))
+        then
             "\"" + argument + "\""
         else
             argument
@@ -340,8 +343,8 @@ type internal InteractiveHostClient(clientProcessId: int) =
                     let wasCurrent =
                         lock stateLock (fun () ->
                             match current with
-                            | Some running when obj.ReferenceEquals(running, remote) ->
-                                current <- None
+                            | ValueSome running when obj.ReferenceEquals(running, remote) ->
+                                current <- ValueNone
                                 true
                             | _ -> false)
 
@@ -367,8 +370,7 @@ type internal InteractiveHostClient(clientProcessId: int) =
                 // most often an fsi too old to know the protocol option.
                 let detail =
                     if session.HasExited then
-                        $"{startInfo.FileName} exited with code {session.ExitCode} before the session was established. "
-                        + $"If it does not support '--fsi-server-jsonrpc', set {FsiLocator.OverrideVariable} to an fsi that does."
+                        $"{startInfo.FileName} exited with code {session.ExitCode} before the session was established. If it does not support '--fsi-server-jsonrpc', set {FsiLocator.OverrideVariable} to an fsi that does."
                     else
                         e.Message
 
@@ -383,16 +385,16 @@ type internal InteractiveHostClient(clientProcessId: int) =
     member _.ProcessExited = processExited.Publish
 
     member _.IsRunning =
-        lock stateLock (fun () -> current |> Option.exists (fun session -> session.IsAlive))
+        lock stateLock (fun () -> current |> ValueOption.exists (fun session -> session.IsAlive))
 
     member _.EvaluatingProcessId =
-        lock stateLock (fun () -> current |> Option.map (fun session -> session.EvaluatingProcessId))
+        lock stateLock (fun () -> current |> ValueOption.map (fun session -> session.EvaluatingProcessId))
 
     member _.Initialization =
-        lock stateLock (fun () -> current |> Option.map (fun session -> session.Initialization))
+        lock stateLock (fun () -> current |> ValueOption.map (fun session -> session.Initialization))
 
     member private _.TryCurrent() =
-        lock stateLock (fun () -> current |> Option.filter (fun session -> session.IsAlive))
+        lock stateLock (fun () -> current |> ValueOption.filter (fun session -> session.IsAlive))
 
     /// Starting is serialised: two callers arriving together would each launch an fsi, and one of
     /// the two would be killed moments later having done nothing but start up.
@@ -401,32 +403,32 @@ type internal InteractiveHostClient(clientProcessId: int) =
 
         task {
             match this.TryCurrent() with
-            | Some running -> return Result.Ok running
-            | None ->
+            | ValueSome running -> return Result.Ok running
+            | ValueNone ->
                 do! startGate.WaitAsync cancellationToken
 
                 try
                     match this.TryCurrent() with
-                    | Some running -> return Result.Ok running
-                    | None ->
+                    | ValueSome running -> return Result.Ok running
+                    | ValueNone ->
                         match! startAsync options cancellationToken with
                         | Result.Error message -> return Result.Error message
                         | Result.Ok started ->
                             let previous =
                                 lock stateLock (fun () ->
                                     if disposed then
-                                        None
+                                        ValueNone
                                     else
                                         let previous = current
-                                        current <- Some started
-                                        Some previous)
+                                        current <- ValueSome started
+                                        ValueSome previous)
 
                             match previous with
-                            | None ->
+                            | ValueNone ->
                                 started.Dispose()
                                 return Result.Error "The interactive window was closed while the session was starting."
-                            | Some previous ->
-                                previous |> Option.iter (fun session -> session.Dispose())
+                            | ValueSome previous ->
+                                previous |> ValueOption.iter (fun session -> session.Dispose())
                                 return Result.Ok started
                 finally
                     startGate.Release() |> ignore
@@ -436,18 +438,18 @@ type internal InteractiveHostClient(clientProcessId: int) =
         let previous =
             lock stateLock (fun () ->
                 let previous = current
-                current <- None
+                current <- ValueNone
                 previous)
 
-        previous |> Option.iter (fun session -> session.Dispose())
+        previous |> ValueOption.iter (fun session -> session.Dispose())
 
         this.EnsureStartedAsync(options, ?cancellationToken = cancellationToken)
 
     member private this.InvokeAsync(method: string, parameters: obj, cancellationToken) =
         task {
             match this.TryCurrent() with
-            | None -> return Result.Error "No F# Interactive session is running."
-            | Some session ->
+            | ValueNone -> return Result.Error "No F# Interactive session is running."
+            | ValueSome session ->
                 try
                     let! result =
                         session.Rpc.InvokeWithParameterObjectAsync<ExecutionResult>(method, parameters, cancellationToken)
@@ -488,8 +490,8 @@ type internal InteractiveHostClient(clientProcessId: int) =
     member this.InterruptAsync() =
         task {
             match this.TryCurrent() with
-            | None -> return false
-            | Some session ->
+            | ValueNone -> return false
+            | ValueSome session ->
                 try
                     let! result = session.Rpc.InvokeAsync<InterruptResult>(Methods.Interrupt)
                     return result.interrupted
@@ -503,8 +505,8 @@ type internal InteractiveHostClient(clientProcessId: int) =
                 lock stateLock (fun () ->
                     disposed <- true
                     let previous = current
-                    current <- None
+                    current <- ValueNone
                     previous)
 
-            previous |> Option.iter (fun session -> session.Dispose())
+            previous |> ValueOption.iter (fun session -> session.Dispose())
             startGate.Dispose()

@@ -124,7 +124,7 @@ type internal FSharpInteractiveCommandFilter
                 VSConstants.E_FAIL
 
 [<Export(typeof<IWpfTextViewCreationListener>)>]
-[<ContentType("F#")>]
+[<ContentType(InteractiveWindowGuids.FSharpContentTypeName)>]
 [<TextViewRole(PredefinedTextViewRoles.PrimaryDocument)>]
 type internal FSharpInteractiveCommandFilterProvider
     [<ImportingConstructor>]
