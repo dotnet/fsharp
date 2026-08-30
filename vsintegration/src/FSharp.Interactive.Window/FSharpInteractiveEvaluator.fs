@@ -152,11 +152,10 @@ type internal FSharpInteractiveEvaluator
             task {
                 let! started = ensureSessionAsync ()
 
-                if not started then
-                    return ExecutionResult false
-                elif String.IsNullOrWhiteSpace text then
-                    return ExecutionResult true
-                else
+                match started, String.IsNullOrWhiteSpace text with
+                | false, _ -> return ExecutionResult false
+                | true, true -> return ExecutionResult true
+                | true, false ->
                     let origin = nextSubmissionOrigin
                     nextSubmissionOrigin <- ValueNone
 
