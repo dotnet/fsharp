@@ -87,7 +87,7 @@ type internal FSharpVsInteractiveWindowProvider
         let created = new FSharpInteractiveEvaluator(host, currentOptions, setCaption)
         evaluator <- ValueSome created
 
-        window <-
+        let toolWindow =
             windowFactory.Create(
                 InteractiveWindowGuids.ToolWindowId,
                 instanceId,
@@ -96,32 +96,36 @@ type internal FSharpVsInteractiveWindowProvider
                 __VSCREATETOOLWIN.CTW_fForceCreate
             )
 
-        window.SetLanguage(
+        window <- toolWindow
+
+        toolWindow.SetLanguage(
             InteractiveWindowGuids.FSharpLanguageServiceId,
             contentTypeRegistry.GetContentType InteractiveWindowGuids.FSharpContentTypeName
         )
 
-        let interactiveWindow = window.InteractiveWindow
+        let interactiveWindow = toolWindow.InteractiveWindow
         interactiveWindow.TextView.Closed.Add(fun _ -> (created :> IDisposable).Dispose())
         interactiveWindow.InitializeAsync() |> ignore
-        window
+        toolWindow
 
     member this.Open(instanceId: int, focus: bool) =
-        if isNull (box window) then
-            this.Create instanceId |> ignore
+        let toolWindow =
+            match window with
+            | null -> this.Create instanceId
+            | existing -> existing
 
-        window.Show focus
-        window
+        toolWindow.Show focus
+        toolWindow
 
     /// Send text an editor command picked up, showing the window without taking focus from the
     /// document the user is still typing in.
     member this.SubmitFromEditor(text: string, sourcePath: string, startLine: int) =
-        this.Open(0, focus = false) |> ignore
+        let toolWindow = this.Open(0, focus = false)
 
         evaluator
         |> ValueOption.iter _.SetNextSubmissionOrigin(sourcePath, startLine)
 
-        window.InteractiveWindow.SubmitAsync [| text |] |> ignore
+        toolWindow.InteractiveWindow.SubmitAsync [| text |] |> ignore
 
     member _.Window = window
 

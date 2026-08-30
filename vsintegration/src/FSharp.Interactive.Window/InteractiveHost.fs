@@ -99,7 +99,7 @@ module internal FsiLocator =
             else
                 "dotnet"
 
-        let rec search (directory: DirectoryInfo) =
+        let rec search (directory: DirectoryInfo | null) =
             match directory with
             | null -> findDotnetHost ()
             | directory ->
