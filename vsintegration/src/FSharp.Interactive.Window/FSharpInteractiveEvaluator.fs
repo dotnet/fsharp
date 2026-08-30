@@ -63,13 +63,13 @@ type internal FSharpInteractiveEvaluator
             for diagnostic in diagnostics do
                 writeErrorLine (ResultRendering.formatDiagnostic diagnostic)
 
-        match box result.``exception`` with
+        match result.``exception`` with
         | null -> ()
-        | _ ->
-            writeErrorLine result.``exception``.message
+        | failure ->
+            writeErrorLine failure.message
 
-            if not (String.IsNullOrWhiteSpace result.``exception``.stackTrace) then
-                writeErrorLine result.``exception``.stackTrace
+            if not (String.IsNullOrWhiteSpace failure.stackTrace) then
+                writeErrorLine failure.stackTrace
 
     let ensureSessionAsync () =
         task {
@@ -80,7 +80,7 @@ type internal FSharpInteractiveEvaluator
                 return false
         }
 
-    let unsubscribe (subscription: IDisposable) =
+    let unsubscribe (subscription: IDisposable | null) =
         match subscription with
         | null -> ()
         | subscription -> subscription.Dispose()
@@ -177,14 +177,15 @@ type internal FSharpInteractiveEvaluator
         member _.FormatClipboard() = null
 
         member _.GetPrompt() =
-            if
-                not (isNull currentWindow)
-                && not (isNull currentWindow.CurrentLanguageBuffer)
-                && currentWindow.CurrentLanguageBuffer.CurrentSnapshot.LineCount > 1
-            then
-                "- "
-            else
-                "> "
+            match currentWindow with
+            | null -> "> "
+            | window ->
+                let buffer = window.CurrentLanguageBuffer
+
+                if not (isNull buffer) && buffer.CurrentSnapshot.LineCount > 1 then
+                    "- "
+                else
+                    "> "
 
     interface IDisposable with
         member _.Dispose() =

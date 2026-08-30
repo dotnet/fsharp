@@ -76,7 +76,7 @@ module internal EditorSubmission =
 type internal FSharpInteractiveCommandFilter
     (provider: FSharpVsInteractiveWindowProvider, documentFactory: ITextDocumentFactoryService, view: ITextView) as this =
 
-    let mutable nextTarget: IOleCommandTarget = null
+    let mutable nextTarget: IOleCommandTarget | null = null
 
     let send kind =
         match EditorSubmission.read documentFactory view kind with
@@ -99,10 +99,10 @@ type internal FSharpInteractiveCommandFilter
                  && nCmdId = uint32 VSConstants.VSStd11CmdID.ExecuteLineInInteractive then
                 send Line
                 VSConstants.S_OK
-            elif not (isNull nextTarget) then
-                nextTarget.Exec(&pguidCmdGroup, nCmdId, nCmdexecopt, pvaIn, pvaOut)
             else
-                VSConstants.E_FAIL
+                match nextTarget with
+                | null -> VSConstants.E_FAIL
+                | target -> target.Exec(&pguidCmdGroup, nCmdId, nCmdexecopt, pvaIn, pvaOut)
 
         member _.QueryStatus(pguidCmdGroup, cCmds, prgCmds, pCmdText) =
             if pguidCmdGroup = VSConstants.VsStd11 then
@@ -118,10 +118,10 @@ type internal FSharpInteractiveCommandFilter
                             )
 
                 VSConstants.S_OK
-            elif not (isNull nextTarget) then
-                nextTarget.QueryStatus(&pguidCmdGroup, cCmds, prgCmds, pCmdText)
             else
-                VSConstants.E_FAIL
+                match nextTarget with
+                | null -> VSConstants.E_FAIL
+                | target -> target.QueryStatus(&pguidCmdGroup, cCmds, prgCmds, pCmdText)
 
 [<Export(typeof<IWpfTextViewCreationListener>)>]
 [<ContentType(InteractiveWindowGuids.FSharpContentTypeName)>]
