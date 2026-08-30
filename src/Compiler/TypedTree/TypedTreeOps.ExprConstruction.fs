@@ -1055,9 +1055,7 @@ module internal TypeTesters =
         | ValueSome tcref -> tcref.Deref.IsStructRecordOrUnionTycon
         | _ -> false
 
-    let isStructTyconRef (tcref: TyconRef) =
-        let tycon = tcref.Deref
-        tycon.IsStructRecordOrUnionTycon || tycon.IsStructOrEnumTycon
+    let isStructTyconRef (tcref: TyconRef) = tcref.IsStructOrEnumTycon
 
     let isStructTy g ty =
         match tryTcrefOfAppTy g ty with

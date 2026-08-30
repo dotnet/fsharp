@@ -8104,14 +8104,13 @@ and GenDecisionTreeAndTargets cenv cgbuf stackAtTargets eenv tree targets sequel
         (IntMap.empty ())
         sequel
         (fun targetInfos ->
-            let sortedTargetInfos =
-                targetInfos
-                |> Seq.sortBy (fun (KeyValue(targetIdx, _)) -> targetIdx)
-                |> Seq.filter (fun (KeyValue(_, (_, isTargetPostponed))) -> isTargetPostponed)
-                |> Seq.map (fun (KeyValue(_, (targetInfo, _))) -> targetInfo)
-                |> List.ofSeq
+            // targetInfos is an IntMap; IntMap.fold visits keys in descending order, so prepending
+            // yields ascending directly - no sort (old Seq.sortBy was redundant) and no List.rev.
+            let postponedTargetInfos =
+                (targetInfos, [])
+                ||> IntMap.fold (fun _ (targetInfo, isTargetPostponed) acc -> if isTargetPostponed then targetInfo :: acc else acc)
 
-            GenPostponedDecisionTreeTargets cenv cgbuf sortedTargetInfos stackAtTargets sequel contf)
+            GenPostponedDecisionTreeTargets cenv cgbuf postponedTargetInfos stackAtTargets sequel contf)
 
 and GenPostponedDecisionTreeTargets cenv cgbuf targetInfos stackAtTargets sequel contf =
     match targetInfos with
