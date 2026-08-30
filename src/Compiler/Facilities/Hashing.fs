@@ -60,11 +60,11 @@ module internal Md5Hasher =
     /// a byte array the size of the input string on every call.
     let hashStringInto (s: string) (destination: Span<byte>) =
         let encoding = System.Text.Encoding.UTF8
-        let maxByteCount = encoding.GetMaxByteCount(s.Length)
-        let rented = System.Buffers.ArrayPool<byte>.Shared.Rent(maxByteCount)
+        let byteCount = encoding.GetByteCount(s)
+        let rented = System.Buffers.ArrayPool<byte>.Shared.Rent(byteCount)
 
         try
-            let byteCount = encoding.GetBytes(s, 0, s.Length, rented, 0)
+            encoding.GetBytes(s, 0, s.Length, rented, 0) |> ignore
 #if NETSTANDARD2_0
             let hash = md5.Value.ComputeHash(rented, 0, byteCount)
             hash.CopyTo(destination)
