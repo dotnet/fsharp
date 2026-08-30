@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information. -->
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Library</OutputType>
+    <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
+    <OtherFlags>$(OtherFlags) --subsystemversion:6.00</OtherFlags>
+    <TolerateUnusedBindings>true</TolerateUnusedBindings>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- The protocol types, shared with F# Interactive so that the two ends cannot drift apart.
+         Roslyn does the same with an assembly both sides reference; fsi exposes no public surface
+         to reference, so the source is shared instead. -->
+    <Compile Include="$(FSharpSourcesRoot)\fsi\interactiveProtocol.fs">
+      <Link>interactiveProtocol.fs</Link>
+    </Compile>
+    <Compile Include="InteractiveHost.fs" />
+    <Compile Include="SubmissionAnalysis.fs" />
+    <Compile Include="FSharpInteractiveEvaluator.fs" />
+    <Compile Include="FSharpVsInteractiveWindowProvider.fs" />
+    <Compile Include="FSharpVsInteractiveWindowPackage.fs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="$(FSharpSourcesRoot)\FSharp.Core\FSharp.Core.fsproj" />
+    <ProjectReference Include="$(FSharpSourcesRoot)\Compiler\FSharp.Compiler.Service.fsproj" />
+    <!-- For the resource strings the existing F# Interactive window already localises. They move
+         here when that window is retired. -->
+    <ProjectReference Include="..\FSharp.VS.FSI\FSharp.VS.FSI.fsproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.VisualStudio.InteractiveWindow" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
+    <PackageReference Include="Microsoft.VisualStudio.Editor" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
+    <!-- Hosts the interactive window as a Visual Studio tool window. -->
+    <PackageReference Include="Microsoft.VisualStudio.VsInteractiveWindow" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
+    <PackageReference Include="Microsoft.VisualStudio.Shell.15.0" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
+    <PackageReference Include="Microsoft.VisualStudio.ComponentModelHost" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
+    <!-- Visual Studio loads StreamJsonRpc itself, and Roslyn's packages force its version here, so
+         the reference is compile-time only. -->
+    <PackageReference Include="StreamJsonRpc" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <AssemblyAttribute Include="Microsoft.VisualStudio.Shell.ProvideCodeBaseAttribute">
+      <AssemblyName>FSharp.Interactive.Window</AssemblyName>
+      <Version>$(VSAssemblyVersion)</Version>
+      <CodeBase>$PackageFolder$\FSharp.Interactive.Window.dll</CodeBase>
+    </AssemblyAttribute>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="PresentationCore" />
+    <Reference Include="PresentationFramework" />
+    <Reference Include="WindowsBase" />
+    <Reference Include="System.ComponentModel.Composition" />
+  </ItemGroup>
+
+</Project>
