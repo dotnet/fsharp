@@ -111,7 +111,7 @@ type FsiServerHarness
             locateFsi (defaultArg fsiDirectory (fsiOutputDirectory ()))
 
         let serverSwitches =
-            defaultArg serverSwitches (fun pipeName -> [ $"--fsi-server-jsonrpc:{pipeName}" ])
+            defaultArg serverSwitches (fun pipeName -> [ $"{CommandLine.ServerOption}{pipeName}" ])
 
         let arguments =
             [
