@@ -6,6 +6,28 @@ open System
 open System.Threading.Tasks
 
 open Microsoft.VisualStudio.InteractiveWindow
+open Microsoft.VisualStudio.Text
+
+/// The windows currently evaluating F#.
+///
+/// The interactive window package records itself in the properties of the buffers it creates for
+/// input, but not in those it creates for output, and it replaces the output buffer on every reset.
+/// So an output buffer can only be recognised by asking the windows we know about which buffer is
+/// theirs right now.
+module internal FSharpInteractiveWindows =
+
+    let private windows = ResizeArray<IInteractiveWindow>()
+
+    let add (window: IInteractiveWindow) =
+        lock windows (fun () ->
+            if not (windows.Contains window) then
+                windows.Add window)
+
+    let remove (window: IInteractiveWindow) =
+        lock windows (fun () -> windows.Remove window |> ignore)
+
+    let ownsOutputBuffer (buffer: ITextBuffer) =
+        lock windows (fun () -> windows |> Seq.exists (fun window -> obj.ReferenceEquals(window.OutputBuffer, buffer)))
 
 module internal ResultRendering =
 
@@ -121,7 +143,8 @@ type internal FSharpInteractiveEvaluator
 
                 match window with
                 | null -> ()
-                | _ ->
+                | window ->
+                    FSharpInteractiveWindows.add window
                     outputSubscription <- host.OutputReceived.Subscribe write
                     errorSubscription <- host.ErrorOutputReceived.Subscribe writeError
                     exitedSubscription <- host.ProcessExited.Subscribe reportSessionExit
@@ -190,6 +213,11 @@ type internal FSharpInteractiveEvaluator
         member _.Dispose() =
             if not disposed then
                 disposed <- true
+
+                match currentWindow with
+                | null -> ()
+                | window -> FSharpInteractiveWindows.remove window
+
                 unsubscribe outputSubscription
                 unsubscribe errorSubscription
                 unsubscribe exitedSubscription

@@ -13,6 +13,13 @@ open Microsoft.VisualStudio.Utilities
 
 open FSharp.Compiler.Tokenization
 
+[<AutoOpen>]
+module private InteractiveContentTypes =
+
+    /// The window package names its output buffers this, whatever language the session speaks.
+    [<Literal>]
+    let OutputContentTypeName = "Interactive Output"
+
 /// Lexical colour for text the editor's semantic classification never sees: the window's input,
 /// which belongs to no project, and its output, where the value printer speaks F# signature syntax.
 ///
@@ -45,13 +52,30 @@ type internal FSharpInteractiveClassifier(buffer: ITextBuffer, registry: IClassi
         | FSharpTokenColorKind.InactiveCode -> ValueSome excluded
         | _ -> ValueNone
 
+    // Both interactive content types are shared with every language the window package hosts, and
+    // ownership cannot be settled when the classifier is built: the buffer is handed to us before
+    // the window has finished claiming it. So it is asked again on each request until it is known.
+    let mutable ours = ValueNone
+
+    let isOurs () =
+        match ours with
+        | ValueSome known -> known
+        | ValueNone ->
+            let known =
+                match InteractiveWindowExtensions.GetInteractiveWindow buffer with
+                | null -> FSharpInteractiveWindows.ownsOutputBuffer buffer
+                | window -> window.Evaluator :? FSharpInteractiveEvaluator
+
+            if known then ours <- ValueSome true
+            known
+
     let changed = Event<EventHandler<ClassificationChangedEventArgs>, ClassificationChangedEventArgs>()
 
     // When lines are coloured independently an edit invalidates only the lines it touched; when
     // state is carried, an edit can open or close a string or comment and recolour everything after.
     do
         buffer.Changed.Add(fun args ->
-            if args.Changes.Count > 0 then
+            if args.Changes.Count > 0 && isOurs () then
                 let snapshot = args.After
                 let start = snapshot.GetLineFromPosition(args.Changes[0].NewPosition).Start
 
@@ -71,6 +95,10 @@ type internal FSharpInteractiveClassifier(buffer: ITextBuffer, registry: IClassi
         member _.GetClassificationSpans(span: SnapshotSpan) =
             let snapshot = span.Snapshot
             let result = List<ClassificationSpan>()
+
+            if not (isOurs ()) then
+                result :> IList<_>
+            else
 
             let firstLine =
                 if carriesStateAcrossLines then
@@ -108,34 +136,18 @@ type internal FSharpInteractiveClassifier(buffer: ITextBuffer, registry: IClassi
 
             result :> IList<_>
 
-module private OwnBuffer =
-
-    /// Both content types are shared with every language hosted in an interactive window, so a
-    /// buffer counts as ours only when the window it belongs to evaluates F#.
-    let isOurs (buffer: ITextBuffer) =
-        match InteractiveWindowExtensions.GetInteractiveWindow buffer with
-        | null -> false
-        | window -> window.Evaluator :? FSharpInteractiveEvaluator
-
-    let classifierFor buffer registry carriesStateAcrossLines : IClassifier | null =
-        if isOurs buffer then
-            buffer.Properties.GetOrCreateSingletonProperty(fun () ->
-                FSharpInteractiveClassifier(buffer, registry, carriesStateAcrossLines))
-        else
-            null
-
 [<Export(typeof<IClassifierProvider>)>]
 [<ContentType(InteractiveWindowGuids.FSharpContentTypeName)>]
 type internal FSharpInteractiveInputClassifierProvider [<ImportingConstructor>] (registry: IClassificationTypeRegistryService) =
 
     interface IClassifierProvider with
         member _.GetClassifier buffer =
-            OwnBuffer.classifierFor buffer registry true
+            buffer.Properties.GetOrCreateSingletonProperty(fun () -> FSharpInteractiveClassifier(buffer, registry, true))
 
 [<Export(typeof<IClassifierProvider>)>]
-[<ContentType("Interactive Output")>]
+[<ContentType(OutputContentTypeName)>]
 type internal FSharpInteractiveOutputClassifierProvider [<ImportingConstructor>] (registry: IClassificationTypeRegistryService) =
 
     interface IClassifierProvider with
         member _.GetClassifier buffer =
-            OwnBuffer.classifierFor buffer registry false
+            buffer.Properties.GetOrCreateSingletonProperty(fun () -> FSharpInteractiveClassifier(buffer, registry, false))
