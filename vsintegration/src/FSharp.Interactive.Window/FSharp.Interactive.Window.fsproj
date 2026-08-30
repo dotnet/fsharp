@@ -10,6 +10,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <InternalsVisibleTo Include="FSharp.Editor" />
+  </ItemGroup>
+
+  <ItemGroup>
     <!-- The protocol types, shared with F# Interactive so that the two ends cannot drift apart.
          Roslyn does the same with an assembly both sides reference; fsi exposes no public surface
          to reference, so the source is shared instead. -->
@@ -21,6 +25,7 @@
     <Compile Include="FSharpInteractiveEvaluator.fs" />
     <Compile Include="FSharpVsInteractiveWindowProvider.fs" />
     <Compile Include="FSharpVsInteractiveWindowPackage.fs" />
+    <Compile Include="FSharpInteractiveCommandFilter.fs" />
   </ItemGroup>
 
   <ItemGroup>
