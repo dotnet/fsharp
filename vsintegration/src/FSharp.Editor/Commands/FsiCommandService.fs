@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 namespace Microsoft.VisualStudio.FSharp.Editor
 
@@ -45,10 +45,10 @@ type internal FsiCommandFilter(serviceProvider: System.IServiceProvider) =
             then
                 Hooks.OnMLSend fsiPackage.Value FsiEditorSendAction.DebugSelection null null
                 VSConstants.S_OK
-            elif not (isNull nextTarget) then
-                nextTarget.Exec(&pguidCmdGroup, nCmdId, nCmdexecopt, pvaIn, pvaOut)
             else
-                VSConstants.E_FAIL
+                match nextTarget with
+                | null -> VSConstants.E_FAIL
+                | target -> target.Exec(&pguidCmdGroup, nCmdId, nCmdexecopt, pvaIn, pvaOut)
 
         member x.QueryStatus(pguidCmdGroup, cCmds, prgCmds, pCmdText) =
             if pguidCmdGroup = Guids.guidInteractive then
@@ -62,10 +62,10 @@ type internal FsiCommandFilter(serviceProvider: System.IServiceProvider) =
                             prgCmds.[i].cmdf <- uint32 (OLECMDF.OLECMDF_SUPPORTED ||| OLECMDF.OLECMDF_ENABLED)
 
                 VSConstants.S_OK
-            elif not (isNull nextTarget) then
-                nextTarget.QueryStatus(&pguidCmdGroup, cCmds, prgCmds, pCmdText)
             else
-                VSConstants.E_FAIL
+                match nextTarget with
+                | null -> VSConstants.E_FAIL
+                | target -> target.QueryStatus(&pguidCmdGroup, cCmds, prgCmds, pCmdText)
 
 [<Export(typeof<IWpfTextViewCreationListener>)>]
 [<ContentType(FSharpConstants.FSharpContentTypeName)>]
