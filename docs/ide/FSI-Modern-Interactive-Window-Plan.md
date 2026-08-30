@@ -45,9 +45,10 @@ Still to do before the window can be opened in Visual Studio:
   process id in the handshake, so the attach no longer has to guess which process to target.
 
 Everything from Phase 3 onwards (IntelliSense in the input buffer) is untouched, with one
-exception: the input buffer has lexical colour from a tokenizer-based classifier scoped to the
-window's own buffers. Phase 3 replaces it with the editor's semantic classification when submissions
-become workspace documents. One protocol gap
+exception: the input and output buffers have lexical colour from a tokenizer-based classifier
+scoped to the window's own buffers. Phase 3 replaces the input half with the editor's semantic
+classification when submissions become workspace documents; the output half stays lexical, since
+output is not a program. One protocol gap
 belongs to that phase: an execution result reports the working directory but not the references and
 opens the session has accumulated. F# can get further than C# without them, because the IDE resolves
 script references itself through `GetProjectOptionsFromScript` rather than from a response file, but
