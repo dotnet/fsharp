@@ -24,6 +24,12 @@
     <Compile Include="$(FSharpSourcesRoot)\fsi\interactiveProtocol.fs">
       <Link>interactiveProtocol.fs</Link>
     </Compile>
+    <!-- The submission rule belongs to the Visual Studio window, but depends only on the compiler's
+         tokenizer, so it is exercised here rather than needing a Windows-only test host. -->
+    <Compile Include="$(MSBuildThisFileDirectory)..\..\vsintegration\src\FSharp.Interactive.Window\SubmissionAnalysis.fs">
+      <Link>SubmissionAnalysis.fs</Link>
+    </Compile>
+    <Compile Include="SubmissionAnalysisTests.fs" />
     <Compile Include="FsiServerHarness.fs" />
     <Compile Include="FsiJsonRpcServerTests.fs" />
   </ItemGroup>
