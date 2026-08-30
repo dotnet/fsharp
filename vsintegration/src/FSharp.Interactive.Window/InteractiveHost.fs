@@ -83,7 +83,55 @@ module internal FsiLocator =
 
         Path.Combine(programFiles, "dotnet", "dotnet.exe")
 
+    /// Names an F# Interactive to run instead of the one the platform would resolve to.
+    ///
+    /// The protocol needs an fsi that understands `--fsi-server-jsonrpc`. The extension does not
+    /// carry one, and the fsi resolved from an installed SDK is only as new as that SDK, so a build
+    /// of fsi from this repository has to be named explicitly until the option ships.
+    [<Literal>]
+    let OverrideVariable = "FSHARP_INTERACTIVE_PATH"
+
+    /// A build of fsi from a repository runs on the .NET that repository provisions, which is often
+    /// newer than any machine-wide install, so look for that host beside it before falling back.
+    let private hostFor (fsiPath: string) =
+        let executable =
+            if Environment.OSVersion.Platform = PlatformID.Win32NT then
+                "dotnet.exe"
+            else
+                "dotnet"
+
+        let rec search (directory: DirectoryInfo) =
+            match directory with
+            | null -> findDotnetHost ()
+            | directory ->
+                let candidate = Path.Combine(directory.FullName, ".dotnet", executable)
+
+                if File.Exists candidate then
+                    candidate
+                else
+                    search directory.Parent
+
+        search (DirectoryInfo(Path.GetDirectoryName fsiPath))
+
+    let private tryOverride () =
+        match Environment.GetEnvironmentVariable OverrideVariable with
+        | path when not (String.IsNullOrWhiteSpace path) && File.Exists path ->
+            if Path.GetExtension(path).Equals(".dll", StringComparison.OrdinalIgnoreCase) then
+                let host = hostFor path
+
+                if File.Exists host then
+                    Some(Result.Ok(host, [ "exec"; path ]))
+                else
+                    Some(Result.Error(VFSIstrings.SR.couldNotFindFsiExe host))
+            else
+                Some(Result.Ok(path, []))
+        | _ -> None
+
     let locate (options: InteractiveHostOptions) =
+        match tryOverride () with
+        | Some result -> result
+        | None ->
+
         match options.Platform with
         | NetCore ->
             let host = findDotnetHost ()
@@ -315,9 +363,15 @@ type internal InteractiveHostClient(clientProcessId: int) =
                 with _ ->
                     ()
 
+                // A session that exits before the handshake usually rejected the command line —
+                // most often an fsi too old to know the protocol option.
                 let detail =
                     if session.HasExited then
-                        sprintf "%s (exit code %d)" e.Message session.ExitCode
+                        sprintf
+                            "%s exited with code %d before the session was established. If it does not support '--fsi-server-jsonrpc', set %s to an fsi that does."
+                            startInfo.FileName
+                            session.ExitCode
+                            FsiLocator.OverrideVariable
                     else
                         e.Message
 
