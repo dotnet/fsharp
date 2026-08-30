@@ -13,10 +13,13 @@ open Microsoft.VisualStudio.Utilities
 
 open FSharp.Compiler.Tokenization
 
-/// Lexical colour for the window's input, which is not part of any project the editor's semantic
-/// classification could see. A submission is at most a screenful, so each request tokenizes the
-/// buffer from the top rather than keeping token state.
-type internal FSharpInteractiveClassifier(buffer: ITextBuffer, registry: IClassificationTypeRegistryService) =
+/// Lexical colour for text the editor's semantic classification never sees: the window's input,
+/// which belongs to no project, and its output, where the value printer speaks F# signature syntax.
+///
+/// Input carries lexer state across lines, because a submission is one fragment of code and small.
+/// Output is neither: it grows for the life of the session and interleaves printed values with
+/// whatever the code wrote to the console, so each line is coloured on its own.
+type internal FSharpInteractiveClassifier(buffer: ITextBuffer, registry: IClassificationTypeRegistryService, carriesStateAcrossLines: bool) =
 
     let tokenizer = FSharpSourceTokenizer([], Some "stdin.fsx", None)
 
@@ -44,14 +47,21 @@ type internal FSharpInteractiveClassifier(buffer: ITextBuffer, registry: IClassi
 
     let changed = Event<EventHandler<ClassificationChangedEventArgs>, ClassificationChangedEventArgs>()
 
-    // An edit can open or close a string or comment, changing the colour of everything after it.
+    // When lines are coloured independently an edit invalidates only the lines it touched; when
+    // state is carried, an edit can open or close a string or comment and recolour everything after.
     do
         buffer.Changed.Add(fun args ->
             if args.Changes.Count > 0 then
                 let snapshot = args.After
                 let start = snapshot.GetLineFromPosition(args.Changes[0].NewPosition).Start
-                let invalidated = SnapshotSpan(start, SnapshotPoint(snapshot, snapshot.Length))
-                changed.Trigger(null, ClassificationChangedEventArgs invalidated))
+
+                let last =
+                    if carriesStateAcrossLines then
+                        SnapshotPoint(snapshot, snapshot.Length)
+                    else
+                        snapshot.GetLineFromPosition(min args.Changes[args.Changes.Count - 1].NewEnd snapshot.Length).End
+
+                changed.Trigger(null, ClassificationChangedEventArgs(SnapshotSpan(start, last))))
 
     interface IClassifier with
 
@@ -61,9 +71,20 @@ type internal FSharpInteractiveClassifier(buffer: ITextBuffer, registry: IClassi
         member _.GetClassificationSpans(span: SnapshotSpan) =
             let snapshot = span.Snapshot
             let result = List<ClassificationSpan>()
+
+            let firstLine =
+                if carriesStateAcrossLines then
+                    0
+                else
+                    snapshot.GetLineNumberFromPosition span.Start.Position
+
+            let lastLine = snapshot.GetLineNumberFromPosition span.End.Position
             let mutable state = FSharpTokenizerLexState.Initial
 
-            for lineNumber in 0 .. snapshot.LineCount - 1 do
+            for lineNumber in firstLine..lastLine do
+                if not carriesStateAcrossLines then
+                    state <- FSharpTokenizerLexState.Initial
+
                 let line = snapshot.GetLineFromLineNumber lineNumber
                 let text = line.GetText()
                 let lineTokenizer = tokenizer.CreateLineTokenizer text
@@ -87,16 +108,34 @@ type internal FSharpInteractiveClassifier(buffer: ITextBuffer, registry: IClassi
 
             result :> IList<_>
 
-/// Serves the classifier for the interactive window's own buffers and no others: a buffer in a
-/// document gets its colour from the project the document belongs to.
+module private OwnBuffer =
+
+    /// Both content types are shared with every language hosted in an interactive window, so a
+    /// buffer counts as ours only when the window it belongs to evaluates F#.
+    let isOurs (buffer: ITextBuffer) =
+        match InteractiveWindowExtensions.GetInteractiveWindow buffer with
+        | null -> false
+        | window -> window.Evaluator :? FSharpInteractiveEvaluator
+
+    let classifierFor buffer registry carriesStateAcrossLines : IClassifier | null =
+        if isOurs buffer then
+            buffer.Properties.GetOrCreateSingletonProperty(fun () ->
+                FSharpInteractiveClassifier(buffer, registry, carriesStateAcrossLines))
+        else
+            null
+
 [<Export(typeof<IClassifierProvider>)>]
 [<ContentType(InteractiveWindowGuids.FSharpContentTypeName)>]
-type internal FSharpInteractiveClassifierProvider [<ImportingConstructor>] (registry: IClassificationTypeRegistryService) =
+type internal FSharpInteractiveInputClassifierProvider [<ImportingConstructor>] (registry: IClassificationTypeRegistryService) =
 
     interface IClassifierProvider with
-        member _.GetClassifier(buffer: ITextBuffer) =
-            match InteractiveWindowExtensions.GetInteractiveWindow buffer with
-            | null -> null
-            | _ ->
-                buffer.Properties.GetOrCreateSingletonProperty(fun () -> FSharpInteractiveClassifier(buffer, registry))
-                :> IClassifier | null
+        member _.GetClassifier buffer =
+            OwnBuffer.classifierFor buffer registry true
+
+[<Export(typeof<IClassifierProvider>)>]
+[<ContentType("Interactive Output")>]
+type internal FSharpInteractiveOutputClassifierProvider [<ImportingConstructor>] (registry: IClassificationTypeRegistryService) =
+
+    interface IClassifierProvider with
+        member _.GetClassifier buffer =
+            OwnBuffer.classifierFor buffer registry false
