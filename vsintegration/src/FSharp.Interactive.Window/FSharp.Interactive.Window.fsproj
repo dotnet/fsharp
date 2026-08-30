@@ -25,6 +25,7 @@
     <Compile Include="SubmissionAnalysis.fs" />
     <Compile Include="FSharpInteractiveEvaluator.fs" />
     <Compile Include="FSharpVsInteractiveWindowProvider.fs" />
+    <Compile Include="FSharpInteractiveClassifier.fs" />
     <Compile Include="FSharpVsInteractiveWindowPackage.fs" />
     <Compile Include="FSharpInteractiveCommandFilter.fs" />
   </ItemGroup>
