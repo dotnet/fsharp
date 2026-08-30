@@ -12,10 +12,10 @@ open Xunit
 open Microsoft.VisualStudio.FSharp.Interactive
 
 let private assertComplete text =
-    Assert.True(SubmissionAnalysis.isComplete text, sprintf "expected a complete submission: <<%s>>" text)
+    Assert.True(SubmissionAnalysis.isComplete text, $"expected a complete submission: <<{text}>>")
 
 let private assertIncomplete text =
-    Assert.False(SubmissionAnalysis.isComplete text, sprintf "expected an incomplete submission: <<%s>>" text)
+    Assert.False(SubmissionAnalysis.isComplete text, $"expected an incomplete submission: <<{text}>>")
 
 [<Fact>]
 let ``an explicit terminator always submits`` () =

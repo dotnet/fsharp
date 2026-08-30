@@ -246,9 +246,9 @@ type internal InteractiveHostClient(clientProcessId: int) =
 
         addSwitch "--nologo"
         addSwitch ("--fsi-server-jsonrpc:" + pipeName)
-        addSwitch (sprintf "--fsi-server-output-codepage:%d" Encoding.UTF8.CodePage)
-        addSwitch (sprintf "--fsi-server-input-codepage:%d" Encoding.UTF8.CodePage)
-        addSwitch (sprintf "--fsi-server-lcid:%d" options.UICultureLcid)
+        addSwitch $"--fsi-server-output-codepage:{Encoding.UTF8.CodePage}"
+        addSwitch $"--fsi-server-input-codepage:{Encoding.UTF8.CodePage}"
+        addSwitch $"--fsi-server-lcid:{options.UICultureLcid}"
 
         // A command-line fragment holding any number of switches, so it goes on unquoted and before
         // the switches the window insists on for debugging.
@@ -367,11 +367,8 @@ type internal InteractiveHostClient(clientProcessId: int) =
                 // most often an fsi too old to know the protocol option.
                 let detail =
                     if session.HasExited then
-                        sprintf
-                            "%s exited with code %d before the session was established. If it does not support '--fsi-server-jsonrpc', set %s to an fsi that does."
-                            startInfo.FileName
-                            session.ExitCode
-                            FsiLocator.OverrideVariable
+                        $"{startInfo.FileName} exited with code {session.ExitCode} before the session was established. "
+                        + $"If it does not support '--fsi-server-jsonrpc', set {FsiLocator.OverrideVariable} to an fsi that does."
                     else
                         e.Message
 
