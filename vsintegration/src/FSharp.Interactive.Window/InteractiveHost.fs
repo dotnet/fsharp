@@ -35,15 +35,14 @@ type InteractiveHostPlatform =
         | NetFrameworkArm64 -> "arm64"
 
     static member TryParse(name: string) =
-        match name.Trim().ToLowerInvariant() with
-        | "core"
-        | "net" -> ValueSome NetCore
-        | "64"
-        | "framework64" -> ValueSome NetFramework64
-        | "32"
-        | "framework32" -> ValueSome NetFramework32
-        | "arm64" -> ValueSome NetFrameworkArm64
-        | _ -> ValueNone
+        let name = name.Trim()
+        let is candidate = String.Equals(name, candidate, StringComparison.OrdinalIgnoreCase)
+
+        if is "core" || is "net" then ValueSome NetCore
+        elif is "64" || is "framework64" then ValueSome NetFramework64
+        elif is "32" || is "framework32" then ValueSome NetFramework32
+        elif is "arm64" then ValueSome NetFrameworkArm64
+        else ValueNone
 
 type InteractiveHostOptions =
     {
