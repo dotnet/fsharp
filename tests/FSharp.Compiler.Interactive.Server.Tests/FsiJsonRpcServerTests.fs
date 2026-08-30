@@ -66,15 +66,15 @@ let ``initialize reports the session process`` () =
 let ``requests before initialize are refused`` () =
     withSession (fun session ->
         match session.RequestExpectingError(Methods.Execute, FsiServerHarness.ExecuteParams "1 + 1") with
-        | None -> failwith "the session accepted an interaction before the handshake"
-        | Some code -> Assert.Equal(-32000, code))
+        | ValueNone -> failwith "the session accepted an interaction before the handshake"
+        | ValueSome code -> Assert.Equal(-32000, code))
 
 [<Fact>]
 let ``unknown methods are refused`` () =
     withInitializedSession (fun session ->
         match session.RequestExpectingError("fsi/doesNotExist", obj ()) with
-        | None -> failwith "the session accepted an unknown method"
-        | Some code -> Assert.Equal(-32601, code))
+        | ValueNone -> failwith "the session accepted an unknown method"
+        | ValueSome code -> Assert.Equal(-32601, code))
 
 [<Fact>]
 let ``only the protocol's own methods are reachable`` () =
@@ -83,8 +83,8 @@ let ``only the protocol's own methods are reachable`` () =
         // closed the execution queue would let a host silently stop the session from ever running
         // another interaction.
         match session.RequestExpectingError("Complete", obj ()) with
-        | None -> failwith "the session accepted a method that is not part of the protocol"
-        | Some code -> Assert.Equal(-32601, code)
+        | ValueNone -> failwith "the session accepted a method that is not part of the protocol"
+        | ValueSome code -> Assert.Equal(-32601, code)
 
         let result = session.Execute "1 + 1"
         Assert.True(succeeded result, describe session result))
@@ -202,7 +202,7 @@ let ``reports an escaping exception`` () =
 
         Assert.False(succeeded result, describe session result)
         Assert.Empty(errors result)
-        Assert.Equal(Some "boom", exceptionMessage result))
+        Assert.Equal(ValueSome "boom", exceptionMessage result))
 
 [<Fact>]
 let ``does not report an exception for a compilation failure`` () =
@@ -212,7 +212,7 @@ let ``does not report an exception for a compilation failure`` () =
         let result = session.Execute "1 + \"text\""
 
         Assert.NotEmpty(errors result)
-        Assert.Equal(None, exceptionMessage result))
+        Assert.Equal(ValueNone, exceptionMessage result))
 
 [<Fact>]
 let ``keeps serving after a failed interaction`` () =

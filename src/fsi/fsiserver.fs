@@ -88,12 +88,12 @@ let private toExecutionResult (outcome: Choice<FsiValue option, exn>) (diagnosti
 
     let failure =
         match outcome with
-        | Choice1Of2 _ -> None
+        | Choice1Of2 _ -> ValueNone
         // When the interaction failed to compile, the diagnostics already say everything there is
         // to say. The exception raised to stop processing carries no more information, and a host
         // that reported it alongside them would be saying the same thing twice.
-        | Choice2Of2 _ when hasErrors -> None
-        | Choice2Of2 e -> Some e
+        | Choice2Of2 _ when hasErrors -> ValueNone
+        | Choice2Of2 e -> ValueSome e
 
     {
         success = not hasErrors && failure.IsNone && not cancelled
@@ -101,7 +101,7 @@ let private toExecutionResult (outcome: Choice<FsiValue option, exn>) (diagnosti
         diagnostics = diagnostics |> Array.map toDiagnosticInfo
         ``exception`` =
             match failure with
-            | Some e ->
+            | ValueSome e ->
                 {
                     ``type`` = e.GetType().FullName
                     message = e.Message
@@ -110,7 +110,7 @@ let private toExecutionResult (outcome: Choice<FsiValue option, exn>) (diagnosti
                         | null -> ""
                         | trace -> trace
                 }
-            | None -> Unchecked.defaultof<ExceptionInfo>
+            | ValueNone -> Unchecked.defaultof<ExceptionInfo>
         workingDirectory = Directory.GetCurrentDirectory()
     }
 
@@ -486,4 +486,3 @@ let internal tryGetPipeName (argv: string[]) =
             if String.IsNullOrWhiteSpace name then None else Some name
         else
             None)
-    |> ValueOption.ofOption

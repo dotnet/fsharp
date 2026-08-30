@@ -224,20 +224,20 @@ type FsiServerHarness(?extraArguments: string list, ?workingDirectory: string) =
         // the type this classifies on is found by descending through causes, not just one level.
         let rec classify (e: exn) =
             match e with
-            | :? RemoteMethodNotFoundException -> Some -32601
-            | :? RemoteInvocationException as remote -> Some remote.ErrorCode
+            | :? RemoteMethodNotFoundException -> ValueSome -32601
+            | :? RemoteInvocationException as remote -> ValueSome remote.ErrorCode
             | _ ->
                 match e.InnerException with
-                | null -> None
+                | null -> ValueNone
                 | inner -> classify inner
 
         try
             this.Request<ExecutionResult>(method, parameters) |> ignore
-            None
+            ValueNone
         with e ->
             match classify e with
-            | Some code -> Some code
-            | None -> raise e
+            | ValueSome code -> ValueSome code
+            | ValueNone -> raise e
 
     /// Perform the handshake every host makes before submitting anything.
     member this.Initialize(?clientProcessId: int) =
@@ -305,8 +305,8 @@ let succeeded (result: ExecutionResult) = result.success
 
 let exceptionMessage (result: ExecutionResult) =
     match box result.``exception`` with
-    | null -> None
-    | _ -> Some result.``exception``.message
+    | null -> ValueNone
+    | _ -> ValueSome result.``exception``.message
 
 /// Render a result for a failure message.
 let describeResult (result: ExecutionResult) =
@@ -318,8 +318,8 @@ let describeResult (result: ExecutionResult) =
 
     let exceptionText =
         match exceptionMessage result with
-        | Some message -> message
-        | None -> "<none>"
+        | ValueSome message -> message
+        | ValueNone -> "<none>"
 
     let outcome =
         $"success={result.success} cancelled={result.cancelled} workingDirectory={result.workingDirectory}"
