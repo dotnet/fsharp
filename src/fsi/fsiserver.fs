@@ -486,3 +486,4 @@ let internal tryGetPipeName (argv: string[]) =
             if String.IsNullOrWhiteSpace name then None else Some name
         else
             None)
+    |> ValueOption.ofOption
