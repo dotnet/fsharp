@@ -346,8 +346,17 @@ type internal FSharpPackage() as this =
                     let! commandService = this.GetServiceAsync(typeof<IMenuCommandService>)
                     let commandService = commandService :?> OleMenuCommandService
 
-                    // FSI-LINKAGE-POINT: sited init
-                    FSharp.Interactive.Hooks.fsiConsoleWindowPackageInitializeSited (this :> Package) commandService
+                    // The "F# Interactive" command opens the window built on the interactive window
+                    // package rather than the legacy tool window.
+                    let interactiveWindow =
+                        exportProvider.GetExport<FSharp.Interactive.FSharpVsInteractiveWindowProvider>().Value
+
+                    let openInteractiveWindow =
+                        CommandID(FSharp.Interactive.Guids.guidFsiPackageCmdSet, int FSharp.Interactive.Guids.cmdIDLaunchFsiToolWindow)
+
+                    commandService.AddCommand(
+                        MenuCommand((fun _ _ -> interactiveWindow.Open(0, focus = true) |> ignore), openInteractiveWindow)
+                    )
                 }
                 |> CancellableTask.startAsTask cancellationToken)
         )

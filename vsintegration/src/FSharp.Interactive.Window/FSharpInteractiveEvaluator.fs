@@ -36,6 +36,10 @@ type internal FSharpInteractiveEvaluator
     let mutable disposed = false
     let mutable requestedPlatform: InteractiveHostPlatform option = None
 
+    // The window submits text without saying where it came from, so an editor command records the
+    // origin here for the submission it is about to make. Both run on the UI thread.
+    let mutable nextSubmissionOrigin: (string * int) option = None
+
     // Output arrives on the threads pumping the session's console streams, so it goes through the
     // window's writers rather than its editing operations, which belong to the UI thread.
     let write (text: string) =
@@ -106,6 +110,15 @@ type internal FSharpInteractiveEvaluator
 
     member _.RequestPlatform platform = requestedPlatform <- Some platform
 
+    /// Attribute the next submission to a file and line, so that its diagnostics land on the user's
+    /// own source rather than on the submission.
+    member _.SetNextSubmissionOrigin(sourcePath: string, startLine: int) =
+        nextSubmissionOrigin <-
+            if String.IsNullOrEmpty sourcePath then
+                None
+            else
+                Some(sourcePath, startLine)
+
     member _.EvaluatingProcessId = host.EvaluatingProcessId
 
     member _.Host = host
@@ -157,7 +170,15 @@ type internal FSharpInteractiveEvaluator
                 elif String.IsNullOrWhiteSpace text then
                     return ExecutionResult true
                 else
-                    match! host.ExecuteAsync(SubmissionAnalysis.withTerminator text) with
+                    let origin = nextSubmissionOrigin
+                    nextSubmissionOrigin <- None
+
+                    let submit code =
+                        match origin with
+                        | Some(sourcePath, startLine) -> host.ExecuteAsync(code, sourcePath, startLine)
+                        | None -> host.ExecuteAsync code
+
+                    match! submit (SubmissionAnalysis.withTerminator text) with
                     | Result.Error message ->
                         writeErrorLine message
                         return ExecutionResult false

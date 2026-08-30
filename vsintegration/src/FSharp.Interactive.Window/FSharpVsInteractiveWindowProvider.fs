@@ -109,6 +109,16 @@ type internal FSharpVsInteractiveWindowProvider
         window.Show focus
         window
 
+    /// Send text an editor command picked up, showing the window without taking focus from the
+    /// document the user is still typing in.
+    member this.SubmitFromEditor(text: string, sourcePath: string, startLine: int) =
+        this.Open(0, focus = false) |> ignore
+
+        evaluator
+        |> Option.iter (fun evaluator -> evaluator.SetNextSubmissionOrigin(sourcePath, startLine))
+
+        window.InteractiveWindow.SubmitAsync [| text |] |> ignore
+
     member _.Window = window
 
     member _.Evaluator = evaluator
