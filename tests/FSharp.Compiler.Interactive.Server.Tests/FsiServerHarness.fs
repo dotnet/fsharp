@@ -105,7 +105,7 @@ type FsiServerHarness(?extraArguments: string list, ?workingDirectory: string) =
             [
                 yield! leadingArguments
                 "--nologo"
-                $"--fsi-server-jsonrpc:{pipeName}"
+                $"{CommandLine.ServerOption}{pipeName}"
                 yield! defaultArg extraArguments []
             ]
 

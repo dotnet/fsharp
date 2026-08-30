@@ -249,7 +249,7 @@ type internal InteractiveHostClient(clientProcessId: int) =
             addSwitch argument
 
         addSwitch "--nologo"
-        addSwitch $"--fsi-server-jsonrpc:{pipeName}"
+        addSwitch $"{CommandLine.ServerOption}{pipeName}"
         addSwitch $"--fsi-server-output-codepage:{Encoding.UTF8.CodePage}"
         addSwitch $"--fsi-server-input-codepage:{Encoding.UTF8.CodePage}"
         addSwitch $"--fsi-server-lcid:{options.UICultureLcid}"

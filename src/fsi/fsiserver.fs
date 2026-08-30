@@ -49,10 +49,6 @@ open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.Interactive.Protocol
 open FSharp.Compiler.Interactive.Shell
 
-/// The name of the command line option that turns on this server.
-[<Literal>]
-let internal JsonRpcServerOption = "--fsi-server-jsonrpc:"
-
 /// File name reported for interactions that the host did not attribute to a source file.
 [<Literal>]
 let private DefaultInteractionName = "stdin.fsx"
@@ -480,8 +476,8 @@ let internal startOnBackgroundThread
 let internal tryGetPipeName (argv: string[]) =
     argv
     |> Array.tryPick (fun arg ->
-        if arg.StartsWith(JsonRpcServerOption, StringComparison.Ordinal) then
-            let name = arg.Substring(JsonRpcServerOption.Length).Trim('"')
+        if arg.StartsWith(CommandLine.ServerOption, StringComparison.Ordinal) then
+            let name = arg.Substring(CommandLine.ServerOption.Length).Trim('"')
 
             if String.IsNullOrWhiteSpace name then None else Some name
         else
