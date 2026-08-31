@@ -589,7 +589,7 @@ exception NonRigidTypar of displayEnv: DisplayEnv * string option * range * TTyp
 exception AbortForFailedMemberConstraintResolution
 
 /// This is used internally in method overload resolution
-let IgnoreFailedMemberConstraintResolution f1 f2 =
+let inline IgnoreFailedMemberConstraintResolution ([<InlineIfLambda>] f1) f2 =
     TryD 
         f1
         (function

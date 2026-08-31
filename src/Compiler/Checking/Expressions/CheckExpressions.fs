@@ -5522,7 +5522,7 @@ and TcExpr (cenv: cenv) ty (env: TcEnv) tpenv (synExpr: SynExpr) =
     let g = cenv.g
 
     // Guard the stack for deeply nested expressions
-    cenv.stackGuard.Guard <| fun () ->
+    cenv.stackGuard.Guard(fun () ->
 
     // Start an error recovery handler, and check for stack recursion depth, moving to a new stack if necessary.
     // Note the try/with can lead to tail-recursion problems for iterated constructs, e.g. let... in...
@@ -5535,7 +5535,7 @@ and TcExpr (cenv: cenv) ty (env: TcEnv) tpenv (synExpr: SynExpr) =
         // the type of the current expression with a type variable that indicates an error
         errorRecovery exn m
         SolveTypeAsError env.DisplayEnv cenv.css m ty.Commit
-        mkThrow m ty.Commit (mkOne g m), tpenv
+        mkThrow m ty.Commit (mkOne g m), tpenv)
 
 and TcExprNoRecover (cenv: cenv) (ty: OverallTy) (env: TcEnv) tpenv (synExpr: SynExpr) =
 
@@ -9316,16 +9316,10 @@ and TcUnionCaseOrExnCaseOrActivePatternResultItemThen (cenv: cenv) overallTy env
                 // This is where the constructor expects arguments but is not applied to arguments, hence build a lambda
                 numArgTys,
                 (fun () ->
-                    let argNamesIfFeatureEnabled =
-                        if g.langVersion.SupportsFeature LanguageFeature.ImprovedImpliedArgumentNames then
-                            argNames
-                        else
-                            []
-
                     let vs, args =
                         argTys
                         |> List.mapi (fun i ty ->
-                            let argName = argNamesIfFeatureEnabled |> List.tryItem i |> Option.map (fun x -> x.idText) |> Option.defaultWith (fun () -> "arg" + string i)
+                            let argName = argNames |> List.tryItem i |> Option.map (fun x -> x.idText) |> Option.defaultWith (fun () -> "arg" + string i)
                             mkCompGenLocal mItem argName ty)
                         |> List.unzip
 
@@ -10511,13 +10505,7 @@ and TcMethodApplication_CheckArguments
     let denv = env.DisplayEnv
     match curriedCallerArgsOpt with
     | None ->
-        let curriedArgTys, curriedArgNamesIfFeatureEnabled, returnTy =
-            let paramNamesIfFeatureEnabled (g: TcGlobals) (meth: MethInfo) =
-                if g.langVersion.SupportsFeature LanguageFeature.ImprovedImpliedArgumentNames then
-                    meth.GetParamNames()
-                else
-                    []
-
+        let curriedArgTys, curriedArgNames, returnTy =
             match candidates with
             // "single named item" rule. This is where we have a single accessible method
             //      member x.M(arg1, ..., argN)
@@ -10529,21 +10517,21 @@ and TcMethodApplication_CheckArguments
             // to their default values (for optionals) and be part of the return tuple (for out args).
             | [calledMeth] ->
                 let curriedArgTys, returnTy = UnifyMatchingSimpleArgumentTypes cenv env exprTy.Commit calledMeth mMethExpr mItem
-                curriedArgTys, paramNamesIfFeatureEnabled g calledMeth, MustEqual returnTy
+                curriedArgTys, calledMeth.GetParamNames(), MustEqual returnTy
             | _ ->
                 let domainTy, returnTy = UnifyFunctionTypeAndRecover None cenv denv mMethExpr exprTy.Commit
                 let argTys = if isUnitTy g domainTy then [] else tryDestRefTupleTy g domainTy
                 // Only apply this rule if a candidate method exists with this number of arguments
                 let argTys, argNames =
                     match candidates |> List.tryFind (CalledMethHasSingleArgumentGroupOfThisLength argTys.Length) with
-                    | Some meth -> argTys, paramNamesIfFeatureEnabled g meth
+                    | Some meth -> argTys, meth.GetParamNames()
                     | None -> [domainTy], [[None]]
                 [argTys], argNames, MustEqual returnTy
 
         let lambdaVarsAndExprs =
             curriedArgTys
             |> List.mapiSquared (fun i j ty ->
-                let argName = curriedArgNamesIfFeatureEnabled |> List.tryItem i |> Option.bind (List.tryItem j) |> Option.flatten |> Option.defaultWith (fun () -> "arg" + string i + string j)
+                let argName = curriedArgNames |> List.tryItem i |> Option.bind (List.tryItem j) |> Option.flatten |> Option.defaultWith (fun () -> "arg" + string i + string j)
                 mkCompGenLocal mMethExpr argName ty)
 
         let unnamedCurriedCallerArgs = lambdaVarsAndExprs |> List.mapSquared (fun (_, e) -> CallerArg(tyOfExpr g e, e.Range, false, e))
@@ -11386,13 +11374,7 @@ and TcAndBuildFixedExpr (cenv: cenv) env (overallPatTy, fixedExpr, overallExprTy
             mkConvToNativeInt g ve mBinding)
 
     | ty when isStringTy g ty ->
-        let getPinnableRefCall =
-            if g.langVersion.SupportsFeature LanguageFeature.PreferStringGetPinnableReference then
-                tryBuildGetPinnableReferenceCall ()
-            else
-                None
-
-        match getPinnableRefCall with
+        match tryBuildGetPinnableReferenceCall () with
         | Some expr -> expr
         | None ->
             let charPtrTy = mkNativePtrTy g g.char_ty

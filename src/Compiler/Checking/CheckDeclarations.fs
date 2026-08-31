@@ -515,13 +515,8 @@ module TcRecdUnionAndEnumDeclarations =
 
         CheckNamespaceModuleOrTypeName g id
 
-        if g.langVersion.SupportsFeature(LanguageFeature.LowercaseDUWhenRequireQualifiedAccess) then
-
-            if not (String.isLeadingIdentifierCharacterUpperCase name) && not hasRQAAttribute && name <> opNameCons && name <> opNameNil then
-                errorR(NotUpperCaseConstructorWithoutRQA(id.idRange))
-        else
-            if not (String.isLeadingIdentifierCharacterUpperCase name) && name <> opNameCons && name <> opNameNil then
-                errorR(NotUpperCaseConstructor(id.idRange))
+        if not (String.isLeadingIdentifierCharacterUpperCase name) && not hasRQAAttribute && name <> opNameCons && name <> opNameNil then
+            errorR(NotUpperCaseConstructorWithoutRQA(id.idRange))
 
     let private CheckUnionDuplicateFields (elems: Ident list) =
         elems |> List.iteri (fun i (uc1: Ident) -> 
