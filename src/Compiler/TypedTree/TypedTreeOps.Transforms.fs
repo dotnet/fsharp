@@ -746,8 +746,7 @@ module internal Rewriting =
     and rewriteBinds env binds = List.map (rewriteBind env) binds
 
     and RewriteExpr env expr =
-        env.StackGuard.Guard
-        <| fun () ->
+        env.StackGuard.Guard(fun () ->
             match expr with
             | LinearOpExpr _
             | LinearMatchExpr _
@@ -760,7 +759,7 @@ module internal Rewriting =
                     | Some expr -> expr
                     | None -> rewriteExprStructure env expr
 
-                postRewriteExpr env expr
+                postRewriteExpr env expr)
 
     and preRewriteExpr env expr =
         match env.PreIntercept with
