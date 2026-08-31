@@ -35,11 +35,9 @@ module internal CopilotSymbolQuery =
     let private UserOpName = "CopilotSymbolContext"
 
     let private fsharpDocuments (solution: Solution) =
-        seq {
-            for project in solution.Projects do
-                if project.Language = FSharpConstants.FSharpLanguageName then
-                    yield! project.Documents
-        }
+        solution.Projects
+        |> Seq.where (fun project -> project.Language = FSharpConstants.FSharpLanguageName)
+        |> Seq.collect _.Documents
 
     let describe (item: NavigableItem) (document: Document) =
         let container =
@@ -57,19 +55,28 @@ module internal CopilotSymbolQuery =
         cancellableTask {
             let! ct = CancellableTask.getCancellationToken ()
             let tryMatch = cache.CreateMatcherFor searchText
-            let hits = ResizeArray()
 
-            for document in fsharpDocuments solution do
-                ct.ThrowIfCancellationRequested()
-                let! items = cache.GetNavigableItems document
+            let matchesIn (document: Document) =
+                cancellableTask {
+                    ct.ThrowIfCancellationRequested()
+                    let! items = cache.GetNavigableItems document
 
-                for item in items do
-                    match tryMatch item with
-                    | ValueSome patternMatch -> hits.Add(struct (patternMatch.Kind, item, document))
-                    | ValueNone -> ()
+                    return
+                        items
+                        |> Seq.chooseV (fun item ->
+                            tryMatch item
+                            |> ValueOption.map (fun patternMatch -> struct (patternMatch.Kind, item, document)))
+                }
+
+            let! hits =
+                fsharpDocuments solution
+                |> Seq.map matchesIn
+                // Throttle to avoid launching a parse per document in the solution all at once.
+                |> CancellableTask.whenAllThrottled (max 1 Environment.ProcessorCount)
 
             return
                 hits
+                |> Seq.collect id
                 |> Seq.sortBy (fun (struct (kind, item: NavigableItem, document: Document)) ->
                     document.IsFSharpSignatureFile, kind, item.Name.Length)
                 |> Seq.distinctBy (fun (struct (_, item, _)) -> CopilotSymbolMapping.fullyQualifiedName item)
@@ -83,15 +90,29 @@ module internal CopilotSymbolQuery =
     let declarationsOf (cache: FSharpNavigableItemsCache) (solution: Solution) (fullyQualifiedName: string) =
         cancellableTask {
             let! ct = CancellableTask.getCancellationToken ()
-            let hits = ResizeArray()
 
-            for document in fsharpDocuments solution do
-                ct.ThrowIfCancellationRequested()
-                let! items = cache.GetNavigableItems document
+            let matchesIn (document: Document) =
+                cancellableTask {
+                    ct.ThrowIfCancellationRequested()
+                    let! items = cache.GetNavigableItems document
 
-                for item in items do
-                    if String.Equals(CopilotSymbolMapping.fullyQualifiedName item, fullyQualifiedName, StringComparison.Ordinal) then
-                        hits.Add(struct (item, document))
+                    return
+                        items
+                        |> Seq.chooseV (fun item ->
+                            if
+                                String.Equals(CopilotSymbolMapping.fullyQualifiedName item, fullyQualifiedName, StringComparison.Ordinal)
+                            then
+                                ValueSome struct (item, document)
+                            else
+                                ValueNone)
+                }
+
+            let! hits =
+                fsharpDocuments solution
+                |> Seq.map matchesIn
+                // Throttle to avoid launching a parse per document in the solution all at once.
+                |> CancellableTask.whenAllThrottled (max 1 Environment.ProcessorCount)
+                |> CancellableTask.map (Seq.collect id)
 
             let implementations =
                 hits
@@ -117,7 +138,7 @@ module internal CopilotSymbolQuery =
                 Array.init sourceText.Lines.Count (fun line -> sourceText.Lines[line].ToString())
 
             let scopes = Structure.getOutliningRanges sourceLines parseResults.ParseTree
-            let firstLine, lastLine = CopilotSymbolSnippets.definitionLines scopes item
+            let struct (firstLine, lastLine) = CopilotSymbolSnippets.definitionLines scopes item
 
             let firstLine = max 1 firstLine
             let lastLine = min sourceText.Lines.Count lastLine
@@ -132,9 +153,9 @@ module internal CopilotSymbolQuery =
         cancellableTask {
             let! declarations = declarationsOf cache solution fullyQualifiedName
 
-            match Array.tryHead declarations with
-            | None -> return ValueNone
-            | Some(struct (first, _)) ->
+            match Array.tryHeadV declarations with
+            | ValueNone -> return ValueNone
+            | ValueSome(struct (first, _)) ->
                 let snippets = ResizeArray()
                 let locations = ResizeArray()
 
@@ -163,7 +184,7 @@ module internal CopilotSymbolQuery =
                         Audience = (ServiceAudience.PublicSdk ||| ServiceAudience.Local))>]
 type internal FSharpCopilotContextProvider
     [<ImportingConstructor>]
-    (cache: FSharpNavigableItemsCache, [<Import(AllowDefault = true)>] workspace: VisualStudioWorkspace) =
+    (cache: FSharpNavigableItemsCache, [<Import(AllowDefault = true)>] workspace: VisualStudioWorkspace | null) =
 
     static let moniker =
         ServiceMoniker(FSharpConstants.copilotSymbolProviderName, Version CopilotDescriptors.CurrentContextProviderVersion)
@@ -235,7 +256,7 @@ type internal FSharpCopilotContextProvider
                     :> IReadOnlyCollection<CopilotQueriedMention>
         }
 
-    let fullyQualifiedNameOf (inputs: IReadOnlyDictionary<string, CopilotValue>) =
+    let fullyQualifiedNameOf (inputs: IReadOnlyDictionary<string, CopilotValue> | null) =
         match inputs with
         | null -> ValueNone
         | inputs ->
@@ -295,9 +316,9 @@ type internal FSharpCopilotContextProvider
                     let solution = workspace.CurrentSolution
                     let! declarations = CopilotSymbolQuery.declarationsOf cache solution fullyQualifiedName
 
-                    match Array.tryHead declarations with
-                    | None -> return false
-                    | Some(struct (item, document)) ->
+                    match Array.tryHeadV declarations with
+                    | ValueNone -> return false
+                    | ValueSome(struct (item, document)) ->
                         let! sourceText = document.GetTextAsync ct
 
                         match RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, item.Range) with
