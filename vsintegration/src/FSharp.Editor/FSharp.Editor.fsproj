@@ -24,6 +24,11 @@
       <GenerateSource>true</GenerateSource>
       <GeneratedModuleName>Microsoft.VisualStudio.FSharp.Editor.SR</GeneratedModuleName>
     </EmbeddedResource>
+    <!-- Backs the numeric resource IDs (100, 101, 6000, 6001, 6008-6014) that FSharpPackage's
+         Provide* registration attributes in LanguageService.fs resolve against this assembly. -->
+    <EmbeddedResource Include="VSPackage.resx">
+      <ManifestResourceName>VSPackage</ManifestResourceName>
+    </EmbeddedResource>
      <EmbeddedText Include="$(MSBuildThisFileDirectory)..\..\..\src\LegacyMSBuildResolver\LegacyResolver.txt">
       <Link>LegacyResolver.txt</Link>
     </EmbeddedText>
