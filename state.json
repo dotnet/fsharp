@@ -1,7 +1,7 @@
 {
   "prs": {
     "20405": {
-      "sha": "21bc623a48a4",
+      "sha": "f1aae987a23e",
       "cats": [
         "Affects-Compiler-Output"
       ]
@@ -33,17 +33,17 @@
       ]
     },
     "20398": {
-      "sha": "365acf991513",
+      "sha": "52bc7a0ca940",
       "cats": [
         "Affects-Agent-Config"
       ]
     },
     "20396": {
-      "sha": "02f94fdb50f5",
+      "sha": "fde33b01960d",
       "cats": [
         "Affects-Build-Infra",
-        "Affects-Compiler-Output",
-        "Affects-Restore"
+        "Affects-Restore",
+        "Affects-Test-Tooling"
       ]
     },
     "20394": {
@@ -184,10 +184,8 @@
       "cats": []
     },
     "20121": {
-      "sha": "8e08f1996987",
-      "cats": [
-        "Affects-Design-Time"
-      ]
+      "sha": "193a85e14f49",
+      "cats": []
     },
     "20113": {
       "sha": "b5b7fcb665ec",
@@ -265,6 +263,19 @@
     "19774": {
       "sha": "0e262c5de4cb",
       "cats": []
+    },
+    "20409": {
+      "sha": "db075eec00f2",
+      "cats": [
+        "Affects-Build-Infra",
+        "Affects-Restore"
+      ]
+    },
+    "20408": {
+      "sha": "02168978ee83",
+      "cats": [
+        "Affects-Build-Infra"
+      ]
     }
   }
 }
