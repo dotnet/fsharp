@@ -11,8 +11,8 @@ open Microsoft.CodeAnalysis.Text
 open FSharp.Editor.Tests.Helpers
 open Microsoft.CodeAnalysis
 open Microsoft.IO
-open Microsoft.VisualStudio.FSharp.Editor.CancellableTasks
 open FSharp.Test
+open Internal.Utilities.Library
 
 module SignatureHelpProvider =
     let private DefaultDocumentationProvider =
@@ -27,8 +27,7 @@ module SignatureHelpProvider =
     let filePath = "C:\\test.fs"
 
     let GetSignatureHelp (project: FSharpProject) (fileName: string) (caretPosition: int) =
-        async {
-            let! ct = Async.CancellationToken
+        async2 {
             let triggerChar = None
             let fileContents = File.ReadAllText(fileName)
             let sourceText = SourceText.From(fileContents)
@@ -40,14 +39,12 @@ module SignatureHelpProvider =
                 RoslynTestHelpers.CreateSolution(fileContents, options = project.Options)
                 |> RoslynTestHelpers.GetSingleDocument
 
-            let parseResults, checkFileResults =
-                document.GetFSharpParseAndCheckResultsAsync("GetSignatureHelp")
-                |> CancellableTask.runSynchronously ct
+            let! parseResults, checkFileResults = document.GetFSharpParseAndCheckResultsAsync("GetSignatureHelp")
 
             let paramInfoLocations =
                 parseResults.FindParameterLocations(Position.fromZ caretLinePos.Line caretLineColumn).Value
 
-            let triggered =
+            let! triggered =
                 FSharpSignatureHelpProvider.ProvideMethodsAsyncAux(
                     caretLinePos,
                     caretLineColumn,
@@ -59,14 +56,12 @@ module SignatureHelpProvider =
                     triggerChar,
                     EditorOptions()
                 )
-                |> Async.RunSynchronously
 
             return triggered
         }
-        |> Async.RunSynchronously
 
     let GetCompletionTypeNames (project: FSharpProject) (fileName: string) (caretPosition: int) =
-        let sigHelp = GetSignatureHelp project fileName caretPosition
+        let sigHelp = GetSignatureHelp project fileName caretPosition |> Async2.RunImmediate
 
         match sigHelp with
         | None -> [||]
@@ -106,7 +101,7 @@ module SignatureHelpProvider =
 
         let parseResults, checkFileResults =
             document.GetFSharpParseAndCheckResultsAsync("assertSignatureHelpForMethodCalls")
-            |> CancellableTask.runSynchronouslyWithoutCancellation
+            |> Async2.RunSynchronously
 
         let actual =
             let paramInfoLocations =
@@ -127,7 +122,7 @@ module SignatureHelpProvider =
                         triggerChar,
                         EditorOptions()
                     )
-                    |> Async.RunSynchronously
+                    |> Async2.RunSynchronously
 
                 checker.ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients()
 
@@ -154,7 +149,7 @@ module SignatureHelpProvider =
 
         let parseResults, checkFileResults =
             document.GetFSharpParseAndCheckResultsAsync("assertSignatureHelpForFunctionApplication")
-            |> CancellableTask.runSynchronouslyWithoutCancellation
+            |> Async2.RunSynchronously
 
         let adjustedColumnInSource =
             let rec loop pos =
@@ -184,7 +179,7 @@ module SignatureHelpProvider =
                 filePath,
                 EditorOptions()
             )
-            |> Async.RunSynchronously
+            |> Async2.RunSynchronously
 
         checker.ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients()
 
@@ -502,7 +497,7 @@ M.f
 
         let parseResults, checkFileResults =
             document.GetFSharpParseAndCheckResultsAsync("function application in single pipeline with no additional args")
-            |> CancellableTask.runSynchronouslyWithoutCancellation
+            |> Async2.RunSynchronously
 
         let adjustedColumnInSource =
             let rec loop ch pos =
@@ -527,7 +522,7 @@ M.f
                 filePath,
                 EditorOptions()
             )
-            |> Async.RunSynchronously
+            |> Async2.RunSynchronously
 
         checker.ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients()
 

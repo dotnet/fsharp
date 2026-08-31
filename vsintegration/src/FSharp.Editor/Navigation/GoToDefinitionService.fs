@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 namespace Microsoft.VisualStudio.FSharp.Editor
 
@@ -9,7 +9,7 @@ open FSharp.Compiler.Text.Range
 
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Editor
-open CancellableTasks
+open Internal.Utilities.Library
 open System.Collections.Generic
 
 [<Export(typeof<IFSharpGoToDefinitionService>)>]
@@ -19,12 +19,12 @@ type internal FSharpGoToDefinitionService [<ImportingConstructor>] (metadataAsSo
     interface IFSharpGoToDefinitionService with
         /// Invoked with Peek Definition.
         member _.FindDefinitionsAsync(document: Document, position: int, _cancellationToken: CancellationToken) =
-            cancellableTask {
+            async2 {
                 let navigation = FSharpNavigation(metadataAsSource, document, rangeStartup)
                 let! res = navigation.FindDefinitionsAsync(position)
                 return (res :> IEnumerable<_>)
             }
-            |> CancellableTask.startWithoutCancellation
+            |> Async2.startAsTaskWithoutCancellation
 
         /// Invoked with Go to Definition.
         /// Try to navigate to the definition of the symbol at the symbolRange in the originDocument

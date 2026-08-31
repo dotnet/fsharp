@@ -1,6 +1,8 @@
-﻿namespace Microsoft.VisualStudio.FSharp.Editor
+namespace Microsoft.VisualStudio.FSharp.Editor
 
 open System.Composition
+open System.Threading
+
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.Symbols
 open FSharp.Compiler.Text
@@ -8,7 +10,7 @@ open FSharp.Compiler.Text
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.CodeRefactorings
 open Microsoft.CodeAnalysis.CodeActions
-open CancellableTasks
+open Internal.Utilities.Library
 
 [<ExportCodeRefactoringProvider(FSharpConstants.FSharpLanguageName, Name = "AddReturnType"); Shared>]
 type internal AddReturnType [<ImportingConstructor>] () =
@@ -55,17 +57,17 @@ type internal AddReturnType [<ImportingConstructor>] () =
             let textChange = TextChange(textSpan, $": {inferredType} ")
             sourceText.WithChanges(textChange)
 
-        let codeActionFunc =
-            cancellableTask {
-                let! cancellationToken = CancellableTask.getCancellationToken ()
-                let! sourceText = context.Document.GetTextAsync(cancellationToken)
-                let changedText = getChangedText sourceText
-
-                let newDocument = context.Document.WithText(changedText)
-                return newDocument
-            }
-
-        let codeAction = CodeAction.Create(title, codeActionFunc, title)
+        let codeAction =
+            CodeAction.Create(
+                title,
+                (fun (cancellationToken: CancellationToken) ->
+                    async2 {
+                        let! sourceText = context.Document.GetTextAsync(cancellationToken)
+                        return context.Document.WithText(getChangedText sourceText)
+                    }
+                    |> Async2.startAsTask cancellationToken),
+                title
+            )
 
         do context.RegisterRefactoring(codeAction)
 
@@ -75,7 +77,7 @@ type internal AddReturnType [<ImportingConstructor>] () =
         | _ -> None
 
     override _.ComputeRefactoringsAsync context =
-        cancellableTask {
+        async2 {
             try
                 let document = context.Document
                 let position = context.Span.Start
@@ -121,4 +123,4 @@ type internal AddReturnType [<ImportingConstructor>] () =
                 // Just return without offering any refactorings.
                 return ()
         }
-        |> CancellableTask.startAsTask context.CancellationToken
+        |> Async2.startAsUnitTask context.CancellationToken

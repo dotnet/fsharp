@@ -13,7 +13,7 @@ open System.Runtime.Caching
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Diagnostics
 open FSharp.Compiler.EditorServices
 open FSharp.Compiler.Text
-open CancellableTasks
+open Internal.Utilities.Library
 
 type private PerDocumentSavedData =
     {
@@ -41,10 +41,7 @@ type internal SimplifyNameDiagnosticAnalyzer [<ImportingConstructor>] () =
                 let! textVersion = document.GetTextVersionAsync(cancellationToken)
                 let textVersionHash = textVersion.GetHashCode()
 
-                let! lockObtained =
-                    guard.WaitAsync(DefaultTuning.PerDocumentSavedDataSlidingWindow, cancellationToken)
-                    |> Async.AwaitTask
-                    |> liftAsync
+                let! lockObtained = guard.WaitAsync(DefaultTuning.PerDocumentSavedDataSlidingWindow, cancellationToken)
 
                 do! Option.guard lockObtained
 
@@ -58,16 +55,18 @@ type internal SimplifyNameDiagnosticAnalyzer [<ImportingConstructor>] () =
 
                         let! _, checkResults =
                             document.GetFSharpParseAndCheckResultsAsync(nameof (SimplifyNameDiagnosticAnalyzer))
-                            |> CancellableTask.start cancellationToken
-                            |> Async.AwaitTask
                             |> liftAsync
 
                         let! result =
-                            SimplifyNames.getSimplifiableNames (
-                                checkResults,
-                                fun lineNumber -> sourceText.Lines.[Line.toZ lineNumber].ToString()
-                            )
-                            |> liftAsync
+                            async2 {
+                                let! r =
+                                    SimplifyNames.getSimplifiableNames (
+                                        checkResults,
+                                        fun lineNumber -> sourceText.Lines.[Line.toZ lineNumber].ToString()
+                                    )
+
+                                return Some r
+                            }
 
                         let mutable diag = ResizeArray()
 
@@ -101,5 +100,5 @@ type internal SimplifyNameDiagnosticAnalyzer [<ImportingConstructor>] () =
                 finally
                     guard.Release() |> ignore
             }
-            |> Async.map (Option.defaultValue ImmutableArray.Empty)
-            |> RoslynHelpers.StartAsyncAsTask cancellationToken
+            |> Async2.map (Option.defaultValue ImmutableArray.Empty)
+            |> Async2.startAsTask cancellationToken

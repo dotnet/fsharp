@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 namespace Microsoft.VisualStudio.FSharp.Editor
 
@@ -21,7 +21,7 @@ open FSharp.Compiler.EditorServices
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.Text
 open FSharp.Compiler.Tokenization
-open CancellableTasks
+open Internal.Utilities.Library
 
 module Logger = Microsoft.VisualStudio.FSharp.Editor.Logger
 
@@ -152,8 +152,8 @@ type internal FSharpCompletionProvider
             genBodyForOverriddenMeth: bool
         ) =
 
-        cancellableTask {
-            let! ct = CancellableTask.getCancellationToken ()
+        async2 {
+            let! ct = Async2.CancellationToken
 
             let! parseResults, checkFileResults = document.GetFSharpParseAndCheckResultsAsync("ProvideCompletionsAsyncAux")
 
@@ -316,11 +316,11 @@ type internal FSharpCompletionProvider
         )
 
     override _.ProvideCompletionsAsync(context: Completion.CompletionContext) =
-        cancellableTask {
+        async2 {
             use _logBlock =
                 Logger.LogBlockMessage context.Document.Name LogEditorFunctionId.Completion_ProvideCompletionsAsync
 
-            let! ct = CancellableTask.getCancellationToken ()
+            let! ct = Async2.CancellationToken
 
             let document = context.Document
 
@@ -368,7 +368,7 @@ type internal FSharpCompletionProvider
                 context.AddItems results
 
         }
-        |> CancellableTask.startAsTask context.CancellationToken
+        |> Async2.startAsUnitTask context.CancellationToken
 
     override _.GetDescriptionAsync
         (document: Document, completionItem: Completion.CompletionItem, _cancellationToken: CancellationToken)
@@ -406,7 +406,7 @@ type internal FSharpCompletionProvider
             | false, _ -> Task.FromResult(CompletionDescription.Empty)
 
     override _.GetChangeAsync(document, item, _, cancellationToken) : Task<CompletionChange> =
-        cancellableTask {
+        async2 {
             use _logBlock =
                 Logger.LogBlockMessage document.Name LogEditorFunctionId.Completion_GetChangeAsync
 
@@ -494,4 +494,4 @@ type internal FSharpCompletionProvider
 
                     return CompletionChange.Create(TextChange(fullChangingSpan, changedText)).WithNewPosition(Nullable(changedSpan.End))
         }
-        |> CancellableTask.start cancellationToken
+        |> Async2.startInThreadPool cancellationToken

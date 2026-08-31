@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 namespace Microsoft.VisualStudio.FSharp.Editor
 
@@ -11,7 +11,7 @@ open Microsoft.CodeAnalysis.CodeFixes
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.Text
 
-open CancellableTasks
+open Internal.Utilities.Library
 
 [<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = CodeFix.ConvertCSharpLambdaToFSharpLambda); Shared>]
 type internal ConvertCSharpLambdaToFSharpLambdaCodeFixProvider [<ImportingConstructor>] () =
@@ -33,8 +33,8 @@ type internal ConvertCSharpLambdaToFSharpLambdaCodeFixProvider [<ImportingConstr
 
     interface IFSharpCodeFixProvider with
         member _.GetCodeFixIfAppliesAsync context =
-            cancellableTask {
-                let! cancellationToken = CancellableTask.getCancellationToken ()
+            async2 {
+                let! cancellationToken = Async2.CancellationToken
 
                 let! parseResults = context.Document.GetFSharpParseResultsAsync(nameof ConvertCSharpLambdaToFSharpLambdaCodeFixProvider)
                 let! sourceText = context.Document.GetTextAsync(cancellationToken)

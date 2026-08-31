@@ -1190,11 +1190,11 @@ type Generic1InGeneric1<'T>() =
             (fun verifier -> verifier.VerifyIL [
             """
 .class public abstract auto ansi sealed Test
-       extends [runtime]System.Object
+   extends [runtime]System.Object
 {
   .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 07 00 00 00 00 00 ) 
   .class auto ansi serializable nested public beforefieldinit Generic1InGeneric1`1<T>
-         extends [runtime]System.Object
+     extends [runtime]System.Object
   {
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 03 00 00 00 00 00 ) 
     .class auto ansi serializable sealed nested assembly beforefieldinit clo@7<T,A>
@@ -1235,29 +1235,29 @@ type Generic1InGeneric1<'T>() =
         IL_0011:  ret
       } 
 
-    } 
+} 
 
-    .method public specialname rtspecialname instance void  .ctor() cil managed
-    {
-      
-      .maxstack  8
-      IL_0000:  ldarg.0
-      IL_0001:  callvirt   instance void [runtime]System.Object::.ctor()
-      IL_0006:  ldarg.0
-      IL_0007:  pop
-      IL_0008:  ret
-    } 
+.method public specialname rtspecialname instance void  .ctor() cil managed
+{
+  
+  .maxstack  8
+  IL_0000:  ldarg.0
+  IL_0001:  callvirt   instance void [runtime]System.Object::.ctor()
+  IL_0006:  ldarg.0
+  IL_0007:  pop
+  IL_0008:  ret
+} 
 
-    .method public hidebysig instance class [runtime]System.Threading.Tasks.Task`1<int32> Run() cil managed
-    {
-      
-      .maxstack  8
-      IL_0000:  ldarg.0
-      IL_0001:  ldc.i4.3
-      IL_0002:  call       class [runtime]System.Threading.Tasks.Task`1<!!0> [runtime]System.Threading.Tasks.Task::FromResult<int32>(!!0)
-      IL_0007:  callvirt   instance class [runtime]System.Threading.Tasks.Task`1<!!0> class Test/Generic1InGeneric1`1<!T>::run<int32>(class [runtime]System.Threading.Tasks.Task`1<!!0>)
-      IL_000c:  ret
-    } 
+.method public hidebysig instance class [runtime]System.Threading.Tasks.Task`1<int32> Run() cil managed
+{
+  
+  .maxstack  8
+  IL_0000:  ldarg.0
+  IL_0001:  ldc.i4.3
+  IL_0002:  call       class [runtime]System.Threading.Tasks.Task`1<!!0> [runtime]System.Threading.Tasks.Task::FromResult<int32>(!!0)
+  IL_0007:  callvirt   instance class [runtime]System.Threading.Tasks.Task`1<!!0> class Test/Generic1InGeneric1`1<!T>::run<int32>(class [runtime]System.Threading.Tasks.Task`1<!!0>)
+  IL_000c:  ret
+} 
 
     .method assembly hidebysig instance class [runtime]System.Threading.Tasks.Task`1<!!A> run<A>(class [runtime]System.Threading.Tasks.Task`1<!!A> computation) cil managed
     {

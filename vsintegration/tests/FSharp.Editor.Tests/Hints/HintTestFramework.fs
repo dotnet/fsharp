@@ -3,13 +3,12 @@
 namespace FSharp.Editor.Tests.Hints
 
 open Microsoft.CodeAnalysis
-open Microsoft.CodeAnalysis.Text
 open Microsoft.VisualStudio.FSharp.Editor
 open Microsoft.VisualStudio.FSharp.Editor.Hints
 open Hints
 open FSharp.Editor.Tests.Helpers
 open System.Threading
-open Microsoft.VisualStudio.FSharp.Editor.CancellableTasks
+open Internal.Utilities.Library
 
 module HintTestFramework =
 
@@ -37,25 +36,21 @@ module HintTestFramework =
         }
 
     let getHints (document: Document) hintKinds =
-        let task =
-            cancellableTask {
-                let! ct = CancellableTask.getCancellationToken ()
+        let sourceText = document.GetTextAsync(CancellationToken.None).Result
+        let span = Text.TextSpan(0, sourceText.Length)
 
-                let getTooltip hint =
-                    async {
-                        let! roslynTexts = hint.GetTooltip document
-                        return roslynTexts |> Seq.map (fun roslynText -> roslynText.Text) |> String.concat ""
-                    }
+        let hints =
+            HintService.getHintsForDocument sourceText document hintKinds span "test"
+            |> Async2.RunSynchronously
 
-                let! sourceText = document.GetTextAsync ct |> Async.AwaitTask
-                let textSpan = TextSpan(0, sourceText.Length)
-                let! hints = HintService.getHintsForDocument sourceText document hintKinds textSpan "test" ct
-                let! tooltips = hints |> Seq.map getTooltip |> Async.Parallel
-                return tooltips |> Seq.zip hints |> Seq.map convert
-            }
-            |> CancellableTask.start CancellationToken.None
+        let getTooltip hint =
+            hint.GetTooltip document
+            |> Async2.RunSynchronously
+            |> Seq.map (fun roslynText -> roslynText.Text)
+            |> String.concat ""
 
-        task.Result
+        let tooltips = hints |> Seq.map getTooltip |> Seq.toArray
+        tooltips |> Seq.zip hints |> Seq.map convert
 
     let getTypeHints document =
         getHints document (set [ HintKind.TypeHint ])

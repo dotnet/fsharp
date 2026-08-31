@@ -5,6 +5,7 @@ namespace FSharp.Compiler.CodeAnalysis
 open System
 open System.IO
 open FSharp.Compiler.Text
+open Internal.Utilities.Library
 
 [<RequireQualifiedAccess>]
 type internal TextContainer =
@@ -26,7 +27,7 @@ type internal FSharpSource =
     abstract TimeStamp: DateTime
 
     /// Gets the internal text container. Text may be on-disk, in a stream, or a source text.
-    abstract GetTextContainer: unit -> Async<TextContainer>
+    abstract GetTextContainer: unit -> Async2<TextContainer>
 
     /// Creates a FSharpSource from disk. Only used internally.
     static member internal CreateFromFile: filePath: string -> FSharpSource

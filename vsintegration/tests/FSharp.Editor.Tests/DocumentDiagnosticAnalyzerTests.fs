@@ -8,30 +8,30 @@ open Microsoft.VisualStudio.FSharp.Editor
 open FSharp.Editor.Tests.Helpers
 open FSharp.Test
 open System.Threading
-open Microsoft.VisualStudio.FSharp.Editor.CancellableTasks
+open Internal.Utilities.Library
 
 type DocumentDiagnosticAnalyzerTests() =
     let startMarker = "(*start*)"
     let endMarker = "(*end*)"
 
     member private _.getDiagnostics(fileContents: string, ?additionalFlags) =
-        let task =
-            cancellableTask {
-                let document =
-                    RoslynTestHelpers.CreateSolution(fileContents, ?extraFSharpProjectOtherOptions = additionalFlags)
-                    |> RoslynTestHelpers.GetSingleDocument
+        let document =
+            RoslynTestHelpers.CreateSolution(fileContents, ?extraFSharpProjectOtherOptions = additionalFlags)
+            |> RoslynTestHelpers.GetSingleDocument
 
-                let! syntacticDiagnostics = FSharpDocumentDiagnosticAnalyzer.GetDiagnostics(document, DiagnosticsType.Syntax)
-                let! semanticDiagnostics = FSharpDocumentDiagnosticAnalyzer.GetDiagnostics(document, DiagnosticsType.Semantic)
-                return syntacticDiagnostics.AddRange(semanticDiagnostics)
-            }
-            |> CancellableTask.start CancellationToken.None
+        let syntacticDiagnostics =
+            FSharpDocumentDiagnosticAnalyzer.GetDiagnostics(document, DiagnosticsType.Syntax)
+            |> Async2.RunSynchronously
 
-        task.Result
+        let semanticDiagnostics =
+            FSharpDocumentDiagnosticAnalyzer.GetDiagnostics(document, DiagnosticsType.Semantic)
+            |> Async2.RunSynchronously
+
+        syntacticDiagnostics.AddRange(semanticDiagnostics)
 
     member private _.getSyntaxAndSemantic(fileContents: string) =
         let task =
-            cancellableTask {
+            async2 {
                 let document =
                     RoslynTestHelpers.CreateSolution(fileContents)
                     |> RoslynTestHelpers.GetSingleDocument
@@ -40,7 +40,7 @@ type DocumentDiagnosticAnalyzerTests() =
                 let! semantic = FSharpDocumentDiagnosticAnalyzer.GetDiagnostics(document, DiagnosticsType.Semantic)
                 return Seq.toArray syntactic, Seq.toArray semantic
             }
-            |> CancellableTask.start CancellationToken.None
+            |> Async2.startAsTask CancellationToken.None
 
         task.Result
 

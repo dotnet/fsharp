@@ -14,7 +14,7 @@ open Microsoft.VisualStudio.FSharp.Editor.SymbolHelpers
 open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.Tokenization.FSharpKeywords
 
-open CancellableTasks
+open Internal.Utilities.Library
 
 [<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = CodeFix.FSharpRenameParamToMatchSignature); Shared>]
 type internal RenameParamToMatchSignatureCodeFixProvider [<ImportingConstructor>] () =
@@ -36,7 +36,7 @@ type internal RenameParamToMatchSignatureCodeFixProvider [<ImportingConstructor>
 
     interface IFSharpCodeFixProvider with
         member _.GetCodeFixIfAppliesAsync context =
-            cancellableTask {
+            async2 {
                 let! sourceText = context.GetSourceTextAsync()
 
                 let suggestionOpt = getSuggestion context.Diagnostics[0]

@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 namespace Microsoft.VisualStudio.FSharp.Editor
 
@@ -10,7 +10,7 @@ open Microsoft.CodeAnalysis.CodeFixes
 
 open FSharp.Compiler.EditorServices
 
-open CancellableTasks
+open Internal.Utilities.Library
 
 [<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = CodeFix.MakeDeclarationMutable); Shared>]
 type internal MakeDeclarationMutableCodeFixProvider [<ImportingConstructor>] () =
@@ -24,7 +24,7 @@ type internal MakeDeclarationMutableCodeFixProvider [<ImportingConstructor>] () 
 
     interface IFSharpCodeFixProvider with
         member _.GetCodeFixIfAppliesAsync context =
-            cancellableTask {
+            async2 {
                 let document = context.Document
 
                 if isSignatureFile document.FilePath then

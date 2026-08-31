@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 namespace Microsoft.VisualStudio.FSharp.Editor
 
@@ -16,14 +16,14 @@ open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Editor.Implementation.Debuggin
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Position
-open CancellableTasks
+open Internal.Utilities.Library
 
 [<Export(typeof<IFSharpBreakpointResolutionService>)>]
 type internal FSharpBreakpointResolutionService [<ImportingConstructor>] () =
 
     static member GetBreakpointLocation(document: Document, textSpan: TextSpan) =
-        cancellableTask {
-            let! ct = CancellableTask.getCancellationToken ()
+        async2 {
+            let! ct = Async2.CancellationToken
 
             let! sourceText = document.GetTextAsync(ct)
 
@@ -50,7 +50,7 @@ type internal FSharpBreakpointResolutionService [<ImportingConstructor>] () =
         member _.ResolveBreakpointAsync
             (document: Document, textSpan: TextSpan, cancellationToken: CancellationToken)
             : Task<FSharpBreakpointResolutionResult> =
-            cancellableTask {
+            async2 {
                 let! range = FSharpBreakpointResolutionService.GetBreakpointLocation(document, textSpan)
 
                 match range with
@@ -63,7 +63,7 @@ type internal FSharpBreakpointResolutionService [<ImportingConstructor>] () =
                     | ValueNone -> return Unchecked.defaultof<_>
                     | ValueSome span -> return FSharpBreakpointResolutionResult.CreateSpanResult(document, span)
             }
-            |> CancellableTask.start cancellationToken
+            |> Async2.startInThreadPool cancellationToken
 
         // FSROSLYNTODO: enable placing breakpoints by when user supplies fully-qualified function names
         member _.ResolveBreakpointsAsync(_, _, _) : Task<IEnumerable<FSharpBreakpointResolutionResult>> =

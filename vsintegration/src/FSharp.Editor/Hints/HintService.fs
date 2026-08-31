@@ -9,8 +9,8 @@ open Microsoft.CodeAnalysis.Text
 open Microsoft.VisualStudio.FSharp.Editor
 open FSharp.Compiler.Symbols
 open Hints
-open CancellableTasks
 open Microsoft.VisualStudio.FSharp.Editor.Telemetry
+open Internal.Utilities.Library
 
 module HintService =
 
@@ -40,7 +40,7 @@ module HintService =
         Seq.concat hints
 
     let getHintsForDocument (sourceText: SourceText) (document: Document) hintKinds (textSpan: TextSpan) userOpName =
-        cancellableTask {
+        async2 {
             if isSignatureFile document.FilePath then
                 return List.empty
             else
@@ -62,7 +62,7 @@ module HintService =
                             [| ("hints.kinds", hintKindsSerialized); ("cacheHit", false) |]
                         )
 
-                    let! cancellationToken = CancellableTask.getCancellationToken ()
+                    let! cancellationToken = Async2.CancellationToken
                     let! parseResults, checkResults = document.GetFSharpParseAndCheckResultsAsync userOpName
 
                     let nativeHints =
@@ -75,7 +75,7 @@ module HintService =
 
                     return nativeHints
         }
-        |> CancellableTask.map (
+        |> Async2.map (
             List.filter (fun hint ->
                 let hintSpan = RoslynHelpers.FSharpRangeToTextSpan(sourceText, hint.Range)
                 textSpan.IntersectsWith hintSpan)
