@@ -873,26 +873,33 @@ module internal ExprFreeVars =
     let accFreevarsInTycon opts tcref acc =
         accFreeTyvars opts accFreeTycon tcref acc
 
-    let accFreevarsInVal opts v acc = accFreeTyvars opts accFreeInVal v acc
-
     let accFreeVarsInTraitSln opts tys acc =
         accFreeTyvars opts accFreeInTraitSln tys acc
 
     let accFreeVarsInTraitInfo opts tys acc =
         accFreeTyvars opts accFreeInTrait tys acc
 
+    let inline accFreeTyvarsInVal opts v ftyvs =
+        if opts.collectInTypes then
+            accFreeInVal opts v ftyvs
+        else
+            ftyvs
+
     let boundLocalVal opts v fvs =
         if not opts.includeLocals then
             fvs
         else
-            let fvs = accFreevarsInVal opts v fvs
+            let ftyvs = accFreeTyvarsInVal opts v fvs.FreeTyvars
 
-            if not (Zset.contains v fvs.FreeLocals) then
-                fvs
-            else
+            if Zset.contains v fvs.FreeLocals then
                 { fvs with
+                    FreeTyvars = ftyvs
                     FreeLocals = Zset.remove v fvs.FreeLocals
                 }
+            elif ftyvs === fvs.FreeTyvars then
+                fvs
+            else
+                { fvs with FreeTyvars = ftyvs }
 
     let boundProtect fvs =
         if fvs.UsesMethodLocalConstructs || fvs.ContainsILFieldAccess then
@@ -943,14 +950,13 @@ module internal ExprFreeVars =
         if opts.canCache then tryGetCacheValue cache else ValueNone
 
     let accFreeLocalVal opts v fvs =
-        if not opts.includeLocals then
-            fvs
-        else if Zset.contains v fvs.FreeLocals then
+        if not opts.includeLocals || Zset.contains v fvs.FreeLocals then
             fvs
         else
-            let fvs = accFreevarsInVal opts v fvs
+            let ftyvs = accFreeTyvarsInVal opts v fvs.FreeTyvars
 
             { fvs with
+                FreeTyvars = ftyvs
                 FreeLocals = Zset.add v fvs.FreeLocals
             }
 
