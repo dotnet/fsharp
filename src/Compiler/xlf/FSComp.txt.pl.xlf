@@ -562,11 +562,6 @@
         <target state="translated">preferuj metodę rozszerzenia nad zwykłą właściwością</target>
         <note />
       </trans-unit>
-      <trans-unit id="featurePreferStringGetPinnableReference">
-        <source>prefer String.GetPinnableReference in fixed bindings</source>
-        <target state="translated">preferuj element String.GetPinnableReference w stałych powiązaniach</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featurePreprocessorElif">
         <source>#elif preprocessor directive</source>
         <target state="new">#elif preprocessor directive</target>
