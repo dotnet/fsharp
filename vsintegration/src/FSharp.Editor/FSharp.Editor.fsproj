@@ -94,6 +94,9 @@
     <Compile Include="Navigation\NavigateToSearchService.fs" />
     <Compile Include="Navigation\FindUsagesService.fs" />
     <Compile Include="Navigation\FindDefinitionService.fs" />
+    <Compile Include="Copilot\CopilotSymbolMapping.fs" />
+    <Compile Include="Copilot\CopilotSymbolSnippets.fs" />
+    <Compile Include="Copilot\CopilotContextProvider.fs" />
     <Compile Include="QuickInfo\WpfFactories.fs" />
     <Compile Include="QuickInfo\Views.fs" />
     <Compile Include="QuickInfo\QuickInfoProvider.fs" />
@@ -179,6 +182,7 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.CodeAnalysis.EditorFeatures.Text" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
     <PackageReference Include="Microsoft.CodeAnalysis.EditorFeatures" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
+    <PackageReference Include="Microsoft.VisualStudio.Copilot" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
     <PackageReference Include="Microsoft.VisualStudio.LanguageServices.ExternalAccess" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
     <PackageReference Include="Microsoft.VisualStudio.ProjectSystem" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
     <PackageReference Include="Microsoft.VisualStudio.ProjectSystem.Managed" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
