@@ -299,6 +299,12 @@
     "20404": {
       "sha": "5c2abe3dd95a",
       "cats": []
+    },
+    "20405": {
+      "sha": "8e5caf5741a1",
+      "cats": [
+        "Affects-Compiler-Output"
+      ]
     }
   }
 }
