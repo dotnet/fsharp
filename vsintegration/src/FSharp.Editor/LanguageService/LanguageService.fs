@@ -3,9 +3,11 @@
 namespace rec Microsoft.VisualStudio.FSharp.Editor
 
 open System
+open System.Collections.Generic
 open System.ComponentModel.Design
 open System.Runtime.InteropServices
 open System.Threading
+open System.Threading.Tasks
 open System.IO
 open System.Collections.Immutable
 open Microsoft.CodeAnalysis
@@ -285,6 +287,14 @@ type internal FSharpSettingsFactory [<Composition.ImportingConstructor>] (settin
 [<ProvideLanguageExtension(typeof<FSharpLanguageService>, ".fsx")>]
 [<ProvideLanguageExtension(typeof<FSharpLanguageService>, ".fsscript")>]
 [<ProvideBraceCompletion(FSharpConstants.FSharpLanguageName)>]
+// Load the package as soon as a solution contains an F# project, so Object Browser and Class View
+// list F# projects even when only C# files have been opened.
+[<ProvideUIContextRule(Guids.solutionHasFSharpProjectIdString,
+                       name = "F# project in solution",
+                       expression = "FSharpProject",
+                       termNames = [| "FSharpProject" |],
+                       termValues = [| "SolutionHasProjectCapability:FSharp" |])>]
+[<ProvideAutoLoad(Guids.solutionHasFSharpProjectIdString, PackageAutoLoadFlags.BackgroundLoad)>]
 [<ProvideLanguageService(languageService = typeof<FSharpLanguageService>,
                          strLanguageName = FSharpConstants.FSharpLanguageName,
                          languageResourceID = 100,
@@ -315,10 +325,16 @@ type internal FSharpPackage() as this =
 
     let mutable solutionEventsOpt = None
 
+    let mutable objectBrowserLibrary = ValueNone
+    let mutable objectBrowserCookie = 0u
+
+    let loadedSiblingLanguages = HashSet<string>(StringComparer.Ordinal)
+    let mutable siblingLoadSubscription: IDisposable voption = ValueNone
+
     // FSI-LINKAGE-POINT: unsited init
     do FSharp.Interactive.Hooks.fsiConsoleWindowPackageCtorUnsited (this :> Package)
 
-#if DEBUG
+#if DEBUG1
     let flushTelemetry = DebugHelpers.FSharpServiceTelemetry.otelExport ()
 
     override this.Dispose(disposing: bool) =
@@ -409,7 +425,11 @@ type internal FSharpPackage() as this =
         )
 
 #if DEBUG
-    override _.RegisterOnAfterPackageLoadedAsyncWork(afterPackageLoadedTasks: PackageLoadTasks) =
+    override this.RegisterOnAfterPackageLoadedAsyncWork(afterPackageLoadedTasks: PackageLoadTasks) =
+        // The base task is what calls RegisterObjectBrowserLibraryManager; without it Debug builds
+        // would silently have no Object Browser.
+        base.RegisterOnAfterPackageLoadedAsyncWork(afterPackageLoadedTasks)
+
         afterPackageLoadedTasks.AddTask(
             false,
             fun _ _ ->
@@ -420,6 +440,86 @@ type internal FSharpPackage() as this =
                 }
         )
 #endif
+
+    /// The other managed languages register their Object Browser libraries when their packages
+    /// load, which normally takes opening one of their files. Nudge those packages awake for the
+    /// languages present in the solution, so a browse from an F# session lists C#/VB projects too.
+    /// Must be called on the main thread.
+    member private this.LoadSiblingLanguagePackages(workspace: VisualStudioWorkspace) =
+        match this.GetService(typeof<SVsShell>) with
+        | :? IVsShell as shell ->
+            let loadIfPresent (language: string) (packageIdString: string) =
+                if
+                    not (loadedSiblingLanguages.Contains language)
+                    && workspace.CurrentSolution.Projects
+                       |> Seq.exists (fun project -> project.Language = language)
+                then
+                    let mutable packageGuid = Guid packageIdString
+                    let mutable package = Unchecked.defaultof<IVsPackage>
+
+                    if ErrorHandler.Succeeded(shell.LoadPackage(&packageGuid, &package)) then
+                        loadedSiblingLanguages.Add language |> ignore
+
+            loadIfPresent LanguageNames.CSharp Guids.roslynCSharpPackageIdString
+            loadIfPresent LanguageNames.VisualBasic Guids.roslynVisualBasicPackageIdString
+        | _ -> ()
+
+    /// Object Browser and Class View. The base package calls these on the main thread after load,
+    /// and skips them in command line mode.
+    override this.RegisterObjectBrowserLibraryManager() =
+        match this.GetService(typeof<SVsObjectManager>) with
+        | :? IVsObjectManager2 as objectManager ->
+            let workspace =
+                this.ComponentModel.DefaultExportProvider.GetExportedValue<VisualStudioWorkspace>()
+
+            let library = new FSharpObjectBrowserLibrary(workspace, Guids.fsharpLibraryId)
+            let mutable cookie = 0u
+
+            if ErrorHandler.Succeeded(objectManager.RegisterSimpleLibrary(library, &cookie)) then
+                objectBrowserLibrary <- ValueSome library
+                objectBrowserCookie <- cookie
+            else
+                (library :> IDisposable).Dispose()
+
+            this.LoadSiblingLanguagePackages workspace
+
+            // This package can auto-load before the solution's C#/VB projects reach the workspace;
+            // catch the ones that arrive later.
+            siblingLoadSubscription <-
+                ValueSome(
+                    workspace.WorkspaceChanged.Subscribe(fun args ->
+                        match args.Kind with
+                        | WorkspaceChangeKind.SolutionAdded
+                        | WorkspaceChangeKind.ProjectAdded ->
+                            ThreadHelper.JoinableTaskFactory.RunAsync(fun () ->
+                                task {
+                                    do! ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync()
+                                    this.LoadSiblingLanguagePackages workspace
+                                }
+                                :> Task)
+                            |> ignore
+                        | _ -> ())
+                )
+        | _ -> ()
+
+    override this.UnregisterObjectBrowserLibraryManager() =
+        match siblingLoadSubscription with
+        | ValueSome subscription -> subscription.Dispose()
+        | ValueNone -> ()
+
+        siblingLoadSubscription <- ValueNone
+
+        if objectBrowserCookie <> 0u then
+            match this.GetService(typeof<SVsObjectManager>) with
+            | :? IVsObjectManager2 as objectManager -> objectManager.UnregisterLibrary objectBrowserCookie |> ignore
+            | _ -> ()
+
+        match objectBrowserLibrary with
+        | ValueSome library -> (library :> IDisposable).Dispose()
+        | ValueNone -> ()
+
+        objectBrowserLibrary <- ValueNone
+        objectBrowserCookie <- 0u
 
     override _.RoslynLanguageName = FSharpConstants.FSharpLanguageName
     (*override this.CreateWorkspace() = this.ComponentModel.GetService<VisualStudioWorkspaceImpl>() *)
