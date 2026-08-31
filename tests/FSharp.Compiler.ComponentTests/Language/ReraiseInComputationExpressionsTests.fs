@@ -19,6 +19,14 @@ let throwIt () = raise (Original "boom")
 let handled = ref Unchecked.defaultof<exn>
 """
 
+// The compiled snippet targets whatever runtime this test host itself runs under (TargetFramework.Current),
+// and string.Contains(string, StringComparison) isn't in the netfx BCL the Desktop jobs compile against.
+#if NETCOREAPP
+let private containsThrowItFrame = """e.StackTrace.Contains("throwIt", StringComparison.Ordinal)"""
+#else
+let private containsThrowItFrame = """e.StackTrace.Contains("throwIt")"""
+#endif
+
 /// Runs a computation that rethrows, then asserts the original exception instance and its original
 /// throw site both survived the round trip.
 let private assertingRethrow declarations body =
@@ -35,7 +43,7 @@ let main _ =
     | None -> failwith "expected an exception"
     | Some e ->
         if not (Object.ReferenceEquals(e, handled.Value)) then failwith "expected the original exception instance"
-        if not (e.StackTrace.Contains("throwIt", StringComparison.Ordinal)) then failwith $"expected the original stack trace, got: {{e.StackTrace}}"
+        if not ({containsThrowItFrame}) then failwith $"expected the original stack trace, got: {{e.StackTrace}}"
         0
 """
     |> FSharp
