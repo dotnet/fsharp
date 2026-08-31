@@ -114,6 +114,36 @@
         <target state="translated">'{0}' を再帰的にする</target>
         <note />
       </trans-unit>
+      <trans-unit id="ObjectBrowserAssembly">
+        <source>Assembly</source>
+        <target state="new">Assembly</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ObjectBrowserBaseTypes">
+        <source>Base Types</source>
+        <target state="new">Base Types</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ObjectBrowserMemberOf">
+        <source>Member of {0}</source>
+        <target state="new">Member of {0}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ObjectBrowserPending">
+        <source>(analyzing...)</source>
+        <target state="new">(analyzing...)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ObjectBrowserProject">
+        <source>Project</source>
+        <target state="new">Project</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ObjectBrowserProjectReferences">
+        <source>Project References</source>
+        <target state="new">Project References</target>
+        <note />
+      </trans-unit>
       <trans-unit id="PrefixValueNameWithUnderscore">
         <source>Prefix '{0}' with underscore</source>
         <target state="translated">アンダースコアが含まれているプレフィックス '{0}'</target>
