@@ -422,11 +422,6 @@
         <target state="translated">Vytváření sestav chyb u statických tříd</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureEscapeBracesInFormattableString">
-        <source>Escapes curly braces before calling FormattableStringFactory.Create when interpolated string literal is typed as FormattableString</source>
-        <target state="translated">Uvede složené závorky před voláním formattableStringFactory.Create, pokud je interpolovaný řetězcový literál zadán jako FormattableString.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureExpandedMeasurables">
         <source>more types support units of measure</source>
         <target state="translated">více typů podporuje měrné jednotky</target>
