@@ -1564,7 +1564,7 @@ and private AddPartsOfTyconRefToNameEnv bulkAddMode ownDefinition (g: TcGlobals)
                         let ty = generalizedTyconRef g tcref
                         isClassTy g ty ||
                         isStructTy g ty ||
-                        (g.langVersion.SupportsFeature LanguageFeature.DelegateTypeNameResolutionFix && isDelegateTy g ty))
+                        isDelegateTy g ty)
 
             if mayHaveConstruction then
                 tab.AddOrModify (tcref.DisplayName, (fun prev ->
