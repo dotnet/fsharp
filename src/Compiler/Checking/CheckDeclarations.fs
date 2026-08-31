@@ -6098,6 +6098,7 @@ let emptyTcEnv g =
       eLambdaArgInfos = []
       eIsControlFlow = false
       eInObjectExpr = false
+      eCaughtExceptionVal = ValueNone
       eCachedImplicitYieldExpressions = HashMultiMap(HashIdentity.Structural, useConcurrentDictionary = true)
       eUseBoundValStamps = Set.empty }
 
