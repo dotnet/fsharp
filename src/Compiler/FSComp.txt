@@ -1574,7 +1574,6 @@ featureErrorOnDeprecatedRequireQualifiedAccess,"give error on deprecated access 
 featureInterfacesWithAbstractStaticMembers,"static abstract interface members"
 featureSelfTypeConstraints,"self type constraints"
 featureRequiredProperties,"support for required properties"
-featureLowercaseDUWhenRequireQualifiedAccess,"Allow lowercase DU when RequireQualifiedAccess attribute"
 featureMatchNotAllowedForUnionCaseWithNoData,"Pattern match discard is not allowed for union case that takes no data."
 featureCSharpExtensionAttributeNotRequired,"Allow implicit Extension attribute on declaring types, modules"
 featureErrorForNonVirtualMembersOverrides,"Raises errors for non-virtual members overrides"
