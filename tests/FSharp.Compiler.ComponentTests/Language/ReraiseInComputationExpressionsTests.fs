@@ -100,14 +100,16 @@ module Rethrowing =
     [<Fact>]
     let ``task return reraise`` () =
         assertingRethrow "" """
-        (task {
-            try
-                throwIt ()
-                return 0
-            with e ->
-                handled.Value <- e
-                return reraise ()
-         }).GetAwaiter().GetResult()
+        let t =
+            task {
+                try
+                    throwIt ()
+                    return 0
+                with e ->
+                    handled.Value <- e
+                    return reraise ()
+            }
+        t.GetAwaiter().GetResult()
         |> ignore"""
 
     [<Fact>]
@@ -213,15 +215,17 @@ module Rethrowing =
     [<Fact>]
     let ``task reraise after a bind in the handler`` () =
         assertingRethrow "" """
-        (task {
-            try
-                throwIt ()
-                return 0
-            with e ->
-                handled.Value <- e
-                do! System.Threading.Tasks.Task.Delay 1
-                return reraise ()
-         }).GetAwaiter().GetResult()
+        let t =
+            task {
+                try
+                    throwIt ()
+                    return 0
+                with e ->
+                    handled.Value <- e
+                    do! System.Threading.Tasks.Task.Delay 1
+                    return reraise ()
+            }
+        t.GetAwaiter().GetResult()
         |> ignore"""
 
     [<Fact>]
