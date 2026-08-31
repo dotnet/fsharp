@@ -372,5 +372,22 @@ Use live (unsaved) buffers for analysis</value>
     <value>{0} in {1}
 {2}</value>
     <comment>Tooltip of an F# declaration in the Copilot Chat "#" picker, as Copilot shows a C# one. {0} is the kind of declaration (Class, Method, Field...), {1} the file name, {2} the declaration's name.</comment>
+  <data name="ObjectBrowserProjectReferences" xml:space="preserve">
+    <value>Project References</value>
+  </data>
+  <data name="ObjectBrowserBaseTypes" xml:space="preserve">
+    <value>Base Types</value>
+  </data>
+  <data name="ObjectBrowserPending" xml:space="preserve">
+    <value>(analyzing...)</value>
+  </data>
+  <data name="ObjectBrowserProject" xml:space="preserve">
+    <value>Project</value>
+  </data>
+  <data name="ObjectBrowserAssembly" xml:space="preserve">
+    <value>Assembly</value>
+  </data>
+  <data name="ObjectBrowserMemberOf" xml:space="preserve">
+    <value>Member of {0}</value>
   </data>
 </root>

@@ -3,6 +3,7 @@
 namespace rec Microsoft.VisualStudio.FSharp.Editor
 
 open System
+open System.Collections.Generic
 open System.ComponentModel.Design
 open System.Runtime.InteropServices
 open System.Threading
@@ -11,8 +12,6 @@ open System.IO
 open System.Collections.Immutable
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Options
-open Microsoft.ServiceHub.Framework
-open Microsoft.VisualStudio.Copilot
 open FSharp.Compiler
 open FSharp.Compiler.CodeAnalysis
 open FSharp.NativeInterop
@@ -23,7 +22,6 @@ open Microsoft.VisualStudio.LanguageServices.Implementation.LanguageService
 open Microsoft.VisualStudio.LanguageServices.Implementation.ProjectSystem
 open Microsoft.VisualStudio.Shell
 open Microsoft.VisualStudio.Shell.Interop
-open Microsoft.VisualStudio.Shell.ServiceBroker
 open Microsoft.VisualStudio.Text.Outlining
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp
 open Microsoft.CodeAnalysis.Host.Mef
@@ -57,15 +55,6 @@ type internal RoamingProfileStorageLocation(keyName: string) =
 type internal FSharpWorkspaceServiceFactory
     [<Composition.ImportingConstructor>]
     (editorOptions: EditorOptions, metadataAsSourceService: FSharpMetadataAsSourceService) =
-
-    static do
-        FSharp.Compiler.Caches.EvictionProcessor.Error.Add(fun ex ->
-            ThreadHelper.JoinableTaskFactory.RunAsync(fun () ->
-                task {
-                    do! ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync()
-                    System.Runtime.ExceptionServices.ExceptionDispatchInfo.Capture(ex).Throw()
-                })
-            |> ignore)
 
     let tryGetMetadataSnapshot (workspace: VisualStudioWorkspace) (path, timeStamp) =
         try
@@ -299,6 +288,14 @@ type internal FSharpSettingsFactory [<Composition.ImportingConstructor>] (settin
 [<ProvideLanguageExtension(typeof<FSharpLanguageService>, ".fsx")>]
 [<ProvideLanguageExtension(typeof<FSharpLanguageService>, ".fsscript")>]
 [<ProvideBraceCompletion(FSharpConstants.FSharpLanguageName)>]
+// Load the package as soon as a solution contains an F# project, so Object Browser and Class View
+// list F# projects even when only C# files have been opened.
+[<ProvideUIContextRule(Guids.solutionHasFSharpProjectIdString,
+                       name = "F# project in solution",
+                       expression = "FSharpProject",
+                       termNames = [| "FSharpProject" |],
+                       termValues = [| "SolutionHasProjectCapability:FSharp" |])>]
+[<ProvideAutoLoad(Guids.solutionHasFSharpProjectIdString, PackageAutoLoadFlags.BackgroundLoad)>]
 [<ProvideLanguageService(languageService = typeof<FSharpLanguageService>,
                          strLanguageName = FSharpConstants.FSharpLanguageName,
                          languageResourceID = 100,
@@ -329,10 +326,16 @@ type internal FSharpPackage() as this =
 
     let mutable solutionEventsOpt = None
 
+    let mutable objectBrowserLibrary = ValueNone
+    let mutable objectBrowserCookie = 0u
+
+    let loadedSiblingLanguages = HashSet<string>(StringComparer.Ordinal)
+    let mutable siblingLoadSubscription: IDisposable voption = ValueNone
+
     // FSI-LINKAGE-POINT: unsited init
     do FSharp.Interactive.Hooks.fsiConsoleWindowPackageCtorUnsited (this :> Package)
 
-#if DEBUG
+#if DEBUG1
     let flushTelemetry = DebugHelpers.FSharpServiceTelemetry.otelExport ()
 
     override this.Dispose(disposing: bool) =
@@ -423,8 +426,9 @@ type internal FSharpPackage() as this =
         )
 
 #if DEBUG
-    override _.RegisterOnAfterPackageLoadedAsyncWork(afterPackageLoadedTasks: PackageLoadTasks) =
-        // The base schedules LoadComponentsInBackgroundAfterSolutionFullyLoadedAsync, which registers Copilot.
+    override this.RegisterOnAfterPackageLoadedAsyncWork(afterPackageLoadedTasks: PackageLoadTasks) =
+        // The base task is what calls RegisterObjectBrowserLibraryManager; without it Debug builds
+        // would silently have no Object Browser.
         base.RegisterOnAfterPackageLoadedAsyncWork(afterPackageLoadedTasks)
 
         afterPackageLoadedTasks.AddTask(
@@ -438,48 +442,85 @@ type internal FSharpPackage() as this =
         )
 #endif
 
-    member private this.RegisterCopilotContextProviderAsync(cancellationToken: CancellationToken) : Task =
-        task {
-            try
-                // Copilot's registration part blocks on the main thread while MEF constructs it, so a background
-                // request deadlocks against the Git provider's request for it on the main thread at solution open.
-                do! this.JoinableTaskFactory.SwitchToMainThreadAsync(alwaysYield = true, cancellationToken = cancellationToken)
+    /// The other managed languages register their Object Browser libraries when their packages
+    /// load, which normally takes opening one of their files. Nudge those packages awake for the
+    /// languages present in the solution, so a browse from an F# session lists C#/VB projects too.
+    /// Must be called on the main thread.
+    member private this.LoadSiblingLanguagePackages(workspace: VisualStudioWorkspace) =
+        match this.GetService(typeof<SVsShell>) with
+        | :? IVsShell as shell ->
+            let loadIfPresent (language: string) (packageIdString: string) =
+                if
+                    not (loadedSiblingLanguages.Contains language)
+                    && workspace.CurrentSolution.Projects
+                       |> Seq.exists (fun project -> project.Language = language)
+                then
+                    let mutable packageGuid = Guid packageIdString
+                    let mutable package = Unchecked.defaultof<IVsPackage>
 
-                let! container = this.GetServiceAsync(typeof<SVsBrokeredServiceContainer>)
+                    if ErrorHandler.Succeeded(shell.LoadPackage(&packageGuid, &package)) then
+                        loadedSiblingLanguages.Add language |> ignore
 
-                match container with
-                | :? IBrokeredServiceContainer as container ->
-                    // The Interactions service also serves ICopilotRegistrationService.
-                    let! registration =
-                        container
-                            .GetFullAccessServiceBroker()
-                            .GetProxyAsync<ICopilotRegistrationService>(CopilotDescriptors.InteractionService, cancellationToken)
+            loadIfPresent LanguageNames.CSharp Guids.roslynCSharpPackageIdString
+            loadIfPresent LanguageNames.VisualBasic Guids.roslynVisualBasicPackageIdString
+        | _ -> ()
 
-                    use registration = registration
+    /// Object Browser and Class View. The base package calls these on the main thread after load,
+    /// and skips them in command line mode.
+    override this.RegisterObjectBrowserLibraryManager() =
+        match this.GetService(typeof<SVsObjectManager>) with
+        | :? IVsObjectManager2 as objectManager ->
+            let workspace =
+                this.ComponentModel.DefaultExportProvider.GetExportedValue<VisualStudioWorkspace>()
 
-                    match registration with
-                    | null -> ()
-                    | registration ->
-                        let moniker =
-                            ServiceMoniker(
-                                FSharpConstants.copilotSymbolProviderName,
-                                Version CopilotDescriptors.CurrentContextProviderVersion
-                            )
+            let library = new FSharpObjectBrowserLibrary(workspace, Guids.fsharpLibraryId)
+            let mutable cookie = 0u
 
-                        do! registration.RegisterContextProviderAsync(moniker, cancellationToken)
-                | _ -> ()
-            with ex when not (ex :? OperationCanceledException) ->
-                DebugHelpers.FSharpOutputPane.logExceptionWithContext (ex, "Registering the Copilot context provider")
-        }
+            if ErrorHandler.Succeeded(objectManager.RegisterSimpleLibrary(library, &cookie)) then
+                objectBrowserLibrary <- ValueSome library
+                objectBrowserCookie <- cookie
+            else
+                (library :> IDisposable).Dispose()
 
-    override this.LoadComponentsInBackgroundAfterSolutionFullyLoadedAsync(cancellationToken) : Task =
-        let baseComponents =
-            base.LoadComponentsInBackgroundAfterSolutionFullyLoadedAsync(cancellationToken)
+            this.LoadSiblingLanguagePackages workspace
 
-        task {
-            do! baseComponents
-            do! this.RegisterCopilotContextProviderAsync(cancellationToken)
-        }
+            // This package can auto-load before the solution's C#/VB projects reach the workspace;
+            // catch the ones that arrive later.
+            siblingLoadSubscription <-
+                ValueSome(
+                    workspace.WorkspaceChanged.Subscribe(fun args ->
+                        match args.Kind with
+                        | WorkspaceChangeKind.SolutionAdded
+                        | WorkspaceChangeKind.ProjectAdded ->
+                            ThreadHelper.JoinableTaskFactory.RunAsync(fun () ->
+                                task {
+                                    do! ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync()
+                                    this.LoadSiblingLanguagePackages workspace
+                                }
+                                :> Task)
+                            |> ignore
+                        | _ -> ())
+                )
+        | _ -> ()
+
+    override this.UnregisterObjectBrowserLibraryManager() =
+        match siblingLoadSubscription with
+        | ValueSome subscription -> subscription.Dispose()
+        | ValueNone -> ()
+
+        siblingLoadSubscription <- ValueNone
+
+        if objectBrowserCookie <> 0u then
+            match this.GetService(typeof<SVsObjectManager>) with
+            | :? IVsObjectManager2 as objectManager -> objectManager.UnregisterLibrary objectBrowserCookie |> ignore
+            | _ -> ()
+
+        match objectBrowserLibrary with
+        | ValueSome library -> (library :> IDisposable).Dispose()
+        | ValueNone -> ()
+
+        objectBrowserLibrary <- ValueNone
+        objectBrowserCookie <- 0u
 
     override _.RoslynLanguageName = FSharpConstants.FSharpLanguageName
     (*override this.CreateWorkspace() = this.ComponentModel.GetService<VisualStudioWorkspaceImpl>() *)
