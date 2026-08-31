@@ -10,10 +10,9 @@ open System.Threading.Tasks
 open System.IO
 open System.Collections.Immutable
 open Microsoft.CodeAnalysis
+open Microsoft.CodeAnalysis.ExternalAccess.FSharp
+open Microsoft.CodeAnalysis.Host.Mef
 open Microsoft.CodeAnalysis.Options
-open FSharp.Compiler
-open FSharp.Compiler.CodeAnalysis
-open FSharp.NativeInterop
 open Microsoft.ServiceHub.Framework
 open Microsoft.VisualStudio
 open Microsoft.VisualStudio.Copilot
@@ -25,12 +24,13 @@ open Microsoft.VisualStudio.Shell
 open Microsoft.VisualStudio.Shell.Interop
 open Microsoft.VisualStudio.Shell.ServiceBroker
 open Microsoft.VisualStudio.Text.Outlining
-open Microsoft.CodeAnalysis.ExternalAccess.FSharp
-open Microsoft.CodeAnalysis.Host.Mef
-open Microsoft.VisualStudio.FSharp.Editor.Telemetry
-open CancellableTasks
-open FSharp.Compiler.Text
 open Microsoft.VisualStudio.Editor
+open Microsoft.VisualStudio.FSharp.Editor.Telemetry
+open FSharp.Compiler
+open FSharp.Compiler.CodeAnalysis
+open FSharp.NativeInterop
+open FSharp.Compiler.Text
+open CancellableTasks
 
 #nowarn "9" // NativePtr.toNativeInt
 #nowarn "57" // Experimental stuff

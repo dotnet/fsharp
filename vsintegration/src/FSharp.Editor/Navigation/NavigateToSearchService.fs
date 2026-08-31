@@ -7,8 +7,9 @@ open System.IO
 open System.Composition
 open System.Collections.Immutable
 open System.Collections.Concurrent
-open System.Threading.Tasks
 open System.Globalization
+open System.Linq
+open System.Threading.Tasks
 
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Navigation
@@ -26,14 +27,16 @@ type internal FSharpNavigableItemsCache
     [<ImportingConstructor>]
     (patternMatcherFactory: IPatternMatcherFactory, [<Import(AllowDefault = true)>] workspace: VisualStudioWorkspace) =
 
-    let cache = ConcurrentDictionary<DocumentId, VersionStamp * NavigableItem array>()
+    let cache =
+        ConcurrentDictionary<DocumentId, struct (VersionStamp * NavigableItem array)>()
 
     do
-        if workspace <> null then
-            workspace.WorkspaceChanged.Add
-            <| fun e ->
+        match workspace with
+        | null -> ()
+        | workspace ->
+            workspace.WorkspaceChanged.Add(fun e ->
                 if e.NewSolution.Id <> e.OldSolution.Id then
-                    cache.Clear()
+                    cache.Clear())
 
     member _.GetNavigableItems(document: Document) =
         cancellableTask {
@@ -41,11 +44,11 @@ type internal FSharpNavigableItemsCache
             let! currentVersion = document.GetTextVersionAsync(ct)
 
             match cache.TryGetValue document.Id with
-            | true, (version, items) when version = currentVersion -> return items
+            | true, struct (version, items) when version = currentVersion -> return items
             | _ ->
                 let! parseResults = document.GetFSharpParseResultsAsync(nameof (FSharpNavigableItemsCache))
                 let items = NavigateTo.GetNavigableItems parseResults.ParseTree
-                cache[document.Id] <- currentVersion, items
+                cache[document.Id] <- struct (currentVersion, items)
                 return items
         }
 
@@ -162,7 +165,7 @@ type internal FSharpNavigateToSearchService [<ImportingConstructor>] (itemsCache
             let! items = getNavigableItems document
 
             let processed =
-                [|
+                seq {
                     for item in items do
                         let contains = kinds.Contains(navigateToItemKindToRoslynKind item.Kind)
                         let patternMatch = tryMatch item
@@ -192,9 +195,9 @@ type internal FSharpNavigateToSearchService [<ImportingConstructor>] (itemsCache
                                         )
                                     )
                         | _ -> ()
-                |]
+                }
 
-            return processed
+            return processed |> Seq.toImmutableArray
         }
 
     interface IFSharpNavigateToSearchService with
@@ -204,31 +207,17 @@ type internal FSharpNavigateToSearchService [<ImportingConstructor>] (itemsCache
             cancellableTask {
                 let tryMatch = createMatcherFor searchPattern
 
-                let tasks =
-                    [|
-                        for doc in project.Documents do
-                            yield processDocument tryMatch kinds doc
-                    |]
+                let! results =
+                    project.Documents
+                    |> Seq.map (processDocument tryMatch kinds)
+                    |> CancellableTask.whenAll
 
-                let! results = CancellableTask.whenAll tasks
-
-                let results' = ImmutableArray.CreateBuilder()
-
-                for navResults in results do
-                    for navResult in navResults do
-                        results'.Add navResult
-
-                return results'.ToImmutable()
-
+                return results |> Seq.collect _.AsEnumerable() |> Seq.toImmutableArray
             }
             |> CancellableTask.start cancellationToken
 
         member _.SearchDocumentAsync(document: Document, searchPattern, kinds, cancellationToken) =
-            cancellableTask {
-                let! result = processDocument (createMatcherFor searchPattern) kinds document
-                return Array.toImmutableArray result
-            }
-            |> CancellableTask.start cancellationToken
+            processDocument (createMatcherFor searchPattern) kinds document cancellationToken
 
         member _.KindsProvided = kindsProvided
 
