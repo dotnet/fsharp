@@ -3865,7 +3865,7 @@ let CheckAndRewriteObjectCtor g env (ctorLambdaExpr: Expr) =
 
 /// Post-typechecking normalizations to enforce semantic constraints
 /// lazy and, lazy or, rethrow, address-of
-let buildApp (cenv: cenv) expr resultTy arg m =
+let buildApp (cenv: cenv) env expr resultTy arg m =
     let g = cenv.g
     match expr, arg with
 
@@ -3884,7 +3884,15 @@ let buildApp (cenv: cenv) expr resultTy arg m =
          when valRefEq g vref g.reraise_vref ->
 
         // exprTy is of type: "unit -> 'a". Break it and store the 'a type here, used later as return type.
-        MakeApplicableExprNoFlex cenv (mkCompGenSequential m arg (mkReraise m resultTy)), resultTy
+        let rethrowExpr =
+            match env.eCaughtExceptionVal with
+            | ValueSome exnVal when typeEquiv g exnVal.Type g.exn_ty ->
+                let tcVal = LightweightTcValForUsingInBuildMethodCall g env.TraitContext
+                mkThrowUsingEDICapture cenv.infoReader tcVal m resultTy (exprForVal m exnVal)
+            | _ ->
+                mkReraise m resultTy
+
+        MakeApplicableExprNoFlex cenv (mkCompGenSequential m arg rethrowExpr), resultTy
 
     // Special rules for NativePtr.ofByRef to generalize result.
     // See RFC FS-1053.md
@@ -6293,6 +6301,15 @@ and TcExprMatchLambda (cenv: cenv) overallTy env tpenv (isExnMatch, mFunction, c
     CallExprHasTypeSink cenv.tcSink (m, env.NameEnv, overallTy.Commit, env.AccessRights)
     let envinner = KeepFamilyRegionForClosure cenv.g env
     let envinner = { envinner with eIsControlFlow = true }
+
+    // A 'function' with an exception match is how a computation expression 'try ... with' hands its handler to the
+    // builder. 'reraise()' in the clause bodies rethrows this lambda's argument, since IL 'rethrow' is not valid there.
+    let envinner =
+        if isExnMatch && cenv.g.langVersion.SupportsFeature LanguageFeature.ReraiseInComputationExpressions then
+            { envinner with eCaughtExceptionVal = ValueSome idv1 }
+        else
+            envinner
+
     let idv2, matchExpr, tpenv = TcAndPatternCompileMatchClauses m mFunction (if isExnMatch then Throw else ThrowIncompleteMatchException) cenv None domainTy (MustConvertTo (false, resultTy)) envinner tpenv clauses
     let overallExpr = mkMultiLambda m [idv1] ((mkLet spMatch m idv2 idve1 matchExpr), resultTy)
     overallExpr, tpenv
@@ -6526,8 +6543,11 @@ and TcExprTryWith (cenv: cenv) overallTy env tpenv (synBodyExpr, synWithClauses,
             let oneExpr =  SynExpr.Const (SynConst.Int32 1, m)
             SynMatchClause(pat, synWhenExprOpt, oneExpr, m, DebugPointAtTarget.No, trivia))
 
-    let checkedFilterClauses, tpenv = TcMatchClauses cenv g.exn_ty (MustEqual g.int_ty) env tpenv filterClauses
-    let checkedHandlerClauses, tpenv = TcMatchClauses cenv g.exn_ty overallTy env tpenv synWithClauses
+    // A real handler rethrows through IL 'rethrow', not through the exception of any enclosing computation expression handler.
+    let envHandler = { env with eCaughtExceptionVal = ValueNone }
+
+    let checkedFilterClauses, tpenv = TcMatchClauses cenv g.exn_ty (MustEqual g.int_ty) envHandler tpenv filterClauses
+    let checkedHandlerClauses, tpenv = TcMatchClauses cenv g.exn_ty overallTy envHandler tpenv synWithClauses
     let v1, filterExpr = CompilePatternForMatchClauses cenv env mWithToLast mWithToLast true FailFilter None g.exn_ty g.int_ty checkedFilterClauses
     let v2, handlerExpr = CompilePatternForMatchClauses cenv env mWithToLast mWithToLast true Rethrow None g.exn_ty overallTy.Commit checkedHandlerClauses
     mkTryWith g (bodyExpr, v1, filterExpr, v2, handlerExpr, mTryToLast, overallTy.Commit, spTry, spWith), tpenv
@@ -6966,7 +6986,7 @@ and TcIndexingThen cenv env overallTy mWholeExpr mDot tpenv setInfo synLeftExprO
             let f, fty, tpenv = TcExprOfUnknownType cenv env tpenv operPath
             let domainTy, resultTy = UnifyFunctionType (Some mWholeExpr) cenv env.DisplayEnv mWholeExpr fty
             UnifyTypes cenv env mWholeExpr domainTy exprTy
-            let f', resultTy = buildApp cenv (MakeApplicableExprNoFlex cenv f) resultTy expr mWholeExpr
+            let f', resultTy = buildApp cenv env (MakeApplicableExprNoFlex cenv f) resultTy expr mWholeExpr
             let delayed = List.foldBack (fun idx acc -> DelayedApp(ExprAtomicFlag.Atomic, true, None, idx, mWholeExpr) :: acc) indexArgs delayed // atomic, otherwise no ar.[1] <- xyz
             Some (PropagateThenTcDelayed cenv overallTy env tpenv mWholeExpr f' resultTy ExprAtomicFlag.Atomic delayed )
 
@@ -9046,7 +9066,7 @@ and TcApplicationThen (cenv: cenv) (overallTy: OverallTy) env tpenv mExprAndArg 
 
                 TcExprFlex2 cenv domainTy env false tpenv synArg
 
-            let exprAndArg, resultTy = buildApp cenv leftExpr resultTy arg mExprAndArg
+            let exprAndArg, resultTy = buildApp cenv env leftExpr resultTy arg mExprAndArg
             TcDelayed cenv overallTy env tpenv mExprAndArg exprAndArg resultTy atomicFlag delayed
 
     | ValueNone ->

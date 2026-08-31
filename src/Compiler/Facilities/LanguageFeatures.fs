@@ -93,6 +93,7 @@ type LanguageFeature =
     | ImprovedImpliedArgumentNamesPartTwo
     | RecordSpreads
     | ErrorOnBitwiseOpsOnNonIntegralEnums
+    | ReraiseInComputationExpressions
 
 /// LanguageVersion management
 type LanguageVersion(versionText, ?disabledFeaturesArray: LanguageFeature array) =
@@ -225,6 +226,7 @@ type LanguageVersion(versionText, ?disabledFeaturesArray: LanguageFeature array)
 
                 // F# preview
                 LanguageFeature.RecordConstructorSyntax, previewVersion // Allow constructing a record via its all-fields constructor, e.g. MyRecord(a, b)
+                LanguageFeature.ReraiseInComputationExpressions, previewVersion
 
                 // Unfinished features that still need work before they can be assigned a release language version.
                 LanguageFeature.FromEndSlicing, previewVersion // Unfinished features --- needs work
@@ -401,6 +403,7 @@ type LanguageVersion(versionText, ?disabledFeaturesArray: LanguageFeature array)
         | LanguageFeature.ImprovedImpliedArgumentNamesPartTwo -> FSComp.SR.featureImprovedImpliedArgumentNamesPartTwo ()
         | LanguageFeature.RecordSpreads -> FSComp.SR.featureRecordSpreads ()
         | LanguageFeature.ErrorOnBitwiseOpsOnNonIntegralEnums -> FSComp.SR.featureErrorOnBitwiseOpsOnNonIntegralEnums ()
+        | LanguageFeature.ReraiseInComputationExpressions -> FSComp.SR.featureReraiseInComputationExpressions ()
 
     /// Get a version string associated with the given feature.
     static member GetFeatureVersionString feature =

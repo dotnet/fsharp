@@ -582,6 +582,11 @@
         <target state="translated">필수 속성 지원</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureReraiseInComputationExpressions">
+        <source>calls to 'reraise' in the 'with' handler of a try-with in a computation expression</source>
+        <target state="new">calls to 'reraise' in the 'with' handler of a try-with in a computation expression</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureResumableStateMachines">
         <source>resumable state machines</source>
         <target state="translated">다시 시작 가능한 상태 시스템</target>

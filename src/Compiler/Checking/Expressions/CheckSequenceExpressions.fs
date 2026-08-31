@@ -7,6 +7,7 @@ open FSharp.Compiler.CheckBasics
 open FSharp.Compiler.CheckExpressions
 open FSharp.Compiler.CheckExpressionsOps
 open FSharp.Compiler.ConstraintSolver
+open FSharp.Compiler.Features
 open FSharp.Compiler.NameResolution
 open FSharp.Compiler.PatternMatchCompilation
 open FSharp.Compiler.Syntax
@@ -313,6 +314,18 @@ let TcSequenceExpression (cenv: TcFileState) env tpenv comp (overallTy: OverallT
                 let inner, tpenv = tcSequenceExprBody env genOuterTy tpenv innerTry
                 mkSeqDelayedExpr mTryToWith inner, tpenv
 
+            // The handler runs outside any IL exception frame, so 'reraise()' in a clause rethrows this value instead.
+            let caughtVal =
+                if g.langVersion.SupportsFeature LanguageFeature.ReraiseInComputationExpressions then
+                    ValueSome(fst (mkCompGenLocal mTryToWith (cenv.synArgNameGenerator.New()) g.exn_ty))
+                else
+                    ValueNone
+
+            let envTry =
+                { env with
+                    eCaughtExceptionVal = caughtVal
+                }
+
             // Compile the pattern twice, once as a filter with all succeeding targets returning "1", and once as a proper catch block.
             let clauses, tpenv =
                 (tpenv, withList)
@@ -324,7 +337,7 @@ let TcSequenceExpression (cenv: TcFileState) env tpenv comp (overallTy: OverallT
                             TcTrueMatchClause.No
 
                     let patR, condR, vspecs, envinner, tpenv =
-                        TcMatchPattern cenv g.exn_ty env tpenv pat cond isTrueMatchClause
+                        TcMatchPattern cenv g.exn_ty envTry tpenv pat cond isTrueMatchClause
 
                     let envinner =
                         match sp with
@@ -350,8 +363,19 @@ let TcSequenceExpression (cenv: TcFileState) env tpenv comp (overallTy: OverallT
             let v2, handlerExpr =
                 CompilePatternForMatchClauses cenv env withRange withRange true FailFilter None g.exn_ty genOuterTy handlers
 
-            let filterLambda = mkLambda filterExpr.Range v1 (filterExpr, genOuterTy)
-            let handlerLambda = mkLambda handlerExpr.Range v2 (handlerExpr, genOuterTy)
+            // Bound in whichever lambda a 'reraise()' rethrows it from - the 'when' guards are shared between them -
+            // so that everything else keeps the exact expression shape sequence expression lowering recognises.
+            let bindCaughtExn (v: Val) bodyExpr =
+                match caughtVal with
+                | ValueSome caughtVal when (freeInExpr CollectLocals bodyExpr).FreeLocals.Contains caughtVal ->
+                    mkInvisibleLet withRange caughtVal (exprForVal withRange v) bodyExpr
+                | _ -> bodyExpr
+
+            let filterLambda =
+                mkLambda filterExpr.Range v1 (bindCaughtExn v1 filterExpr, genOuterTy)
+
+            let handlerLambda =
+                mkLambda handlerExpr.Range v2 (bindCaughtExn v2 handlerExpr, genOuterTy)
 
             let combinatorExpr =
                 mkSeqTryWith cenv env mTryToWith genOuterTy tryExpr filterLambda handlerLambda

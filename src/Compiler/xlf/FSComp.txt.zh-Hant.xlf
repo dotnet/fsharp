@@ -582,6 +582,11 @@
         <target state="translated">對所需屬性的支援</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureReraiseInComputationExpressions">
+        <source>calls to 'reraise' in the 'with' handler of a try-with in a computation expression</source>
+        <target state="new">calls to 'reraise' in the 'with' handler of a try-with in a computation expression</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureResumableStateMachines">
         <source>resumable state machines</source>
         <target state="translated">可繼續的狀態機器</target>
