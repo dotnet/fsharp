@@ -35,7 +35,7 @@ let main _ =
     | None -> failwith "expected an exception"
     | Some e ->
         if not (Object.ReferenceEquals(e, handled.Value)) then failwith "expected the original exception instance"
-        if not (e.StackTrace.Contains "throwIt") then failwith $"expected the original stack trace, got: {{e.StackTrace}}"
+        if not (e.StackTrace.Contains("throwIt", StringComparison.Ordinal)) then failwith $"expected the original stack trace, got: {{e.StackTrace}}"
         0
 """
     |> FSharp
@@ -179,6 +179,113 @@ module Rethrowing =
         }
         |> Seq.toList
         |> ignore"""
+
+    [<Fact>]
+    let ``list comprehension`` () =
+        assertingRethrow "" """
+        [ try
+              throwIt ()
+              yield 1
+          with e ->
+              handled.Value <- e
+              yield reraise () ]
+        |> ignore"""
+
+    [<Fact>]
+    let ``array comprehension`` () =
+        assertingRethrow "" """
+        [| try
+               throwIt ()
+               yield 1
+           with e ->
+               handled.Value <- e
+               yield reraise () |]
+        |> ignore"""
+
+    [<Fact>]
+    let ``task reraise after a bind in the handler`` () =
+        assertingRethrow "" """
+        (task {
+            try
+                throwIt ()
+                return 0
+            with e ->
+                handled.Value <- e
+                do! System.Threading.Tasks.Task.Delay 1
+                return reraise ()
+         }).GetAwaiter().GetResult()
+        |> ignore"""
+
+    [<Fact>]
+    let ``reraise inside a for loop in the handler`` () =
+        assertingRethrow "" """
+        async {
+            try
+                throwIt ()
+            with e ->
+                handled.Value <- e
+                for _ in 1..3 do
+                    reraise ()
+        }
+        |> Async.RunSynchronously"""
+
+    [<Fact>]
+    let ``reraise inside a while loop in the handler`` () =
+        assertingRethrow "" """
+        async {
+            try
+                throwIt ()
+            with e ->
+                handled.Value <- e
+                while true do
+                    reraise ()
+        }
+        |> Async.RunSynchronously"""
+
+    [<Fact>]
+    let ``try-with inside a for loop`` () =
+        assertingRethrow "" """
+        async {
+            for _ in 1..1 do
+                try
+                    throwIt ()
+                with e ->
+                    handled.Value <- e
+                    reraise ()
+        }
+        |> Async.RunSynchronously"""
+
+    [<Fact>]
+    let ``try-with inside a for loop in a seq comprehension`` () =
+        assertingRethrow "" """
+        seq {
+            for _ in 1..1 do
+                try
+                    throwIt ()
+                    yield 1
+                with e ->
+                    handled.Value <- e
+                    yield reraise ()
+        }
+        |> Seq.toList
+        |> ignore"""
+
+    /// 'reraise ()' binds to the nearest lexically enclosing handler, so a closure written in the handler
+    /// still rethrows the caught exception even when invoked after the computation has completed.
+    [<Fact>]
+    let ``closure escaping the handler still rethrows the caught exception`` () =
+        assertingRethrow "" """
+        let rethrow =
+            async {
+                try
+                    throwIt ()
+                    return (fun () -> 1)
+                with e ->
+                    handled.Value <- e
+                    return (fun () -> reraise ())
+            }
+            |> Async.RunSynchronously
+        rethrow () |> ignore"""
 
     [<Fact>]
     let ``custom builder`` () =
@@ -353,6 +460,8 @@ module Quotations =
     [<Fact>]
     let ``handler containing reraise can be quoted`` () =
         """
+module Test
+
 let q =
     <@
         async {
@@ -362,14 +471,8 @@ let q =
                 return reraise ()
         }
     @>
-
-[<EntryPoint>]
-let main _ =
-    if isNull (box q) then failwith "expected a quotation"
-    0
 """
         |> FSharp
-        |> asExe
         |> withLangVersionPreview
-        |> compileAndRun
+        |> compile
         |> shouldSucceed

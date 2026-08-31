@@ -1049,30 +1049,22 @@ let mkThrowUsingEDICapture (infoReader: InfoReader) tcVal m resultTy exnExpr =
     let g = infoReader.g
     let amap = infoReader.amap
 
-    let findMethInfo ty isInstance name (sigTys: TType list) =
+    let findMethInfo ty isInstance name (paramTys: TType list) retTy =
         TryFindIntrinsicMethInfo infoReader m AccessorDomain.AccessibleFromEverywhere name ty
         |> List.tryFind (fun methInfo ->
-            methInfo.IsInstance = isInstance &&
-            (
-                match methInfo.GetParamTypes(amap, m, []) with
-                | [] -> false
-                | argTysList ->
-                    let argTys = (argTysList |> List.reduce (@)) @ [ methInfo.GetFSharpReturnType (amap, m, []) ]
-                    if argTys.Length <> sigTys.Length then
-                        false
-                    else
-                        (argTys, sigTys)
-                        ||> List.forall2 (typeEquiv g)
-            )
-        )
+            methInfo.IsInstance = isInstance
+            && (match methInfo.GetParamTypes(amap, m, []) with
+                | [ argTys ] -> List.lengthsEqAndForall2 (typeEquiv g) argTys paramTys
+                | _ -> false)
+            && typeEquiv g (methInfo.GetFSharpReturnType(amap, m, [])) retTy)
 
     let ediCaptureMethInfo, ediThrowMethInfo =
         // EDI.Capture: exn -> EDI
         g.system_ExceptionDispatchInfo_ty
-        |> Option.bind (fun ty -> findMethInfo ty false "Capture" [ g.exn_ty; ty ]),
+        |> Option.bind (fun ty -> findMethInfo ty false "Capture" [ g.exn_ty ] ty),
         // edi.Throw: unit -> unit
         g.system_ExceptionDispatchInfo_ty
-        |> Option.bind (fun ty -> findMethInfo ty true "Throw" [ g.unit_ty ])
+        |> Option.bind (fun ty -> findMethInfo ty true "Throw" [] g.unit_ty)
 
     match ediCaptureMethInfo, ediThrowMethInfo with
     | Some ediCaptureMethInfo, Some ediThrowMethInfo ->
