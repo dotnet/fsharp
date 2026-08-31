@@ -32,6 +32,8 @@
     <Compile Include="QuickInfoTests.fs" />
     <Compile Include="TaskListServiceTests.fs" />
     <Compile Include="NavigateToSearchServiceTests.fs" />
+    <Compile Include="ObjectBrowserNavInfoTests.fs" />
+    <Compile Include="ObjectBrowserListTests.fs" />
     <Compile Include="CodeFixes\CodeFixTestFramework.fs" />
     <Compile Include="CodeFixes\AddInstanceMemberParameterTests.fs" />
     <Compile Include="CodeFixes\ConvertToAnonymousRecordTests.fs" />

@@ -169,6 +169,36 @@ Enter 键行为；
         <target state="translated">使 "{0}" 递归</target>
         <note />
       </trans-unit>
+      <trans-unit id="ObjectBrowserAssembly">
+        <source>Assembly</source>
+        <target state="new">Assembly</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ObjectBrowserBaseTypes">
+        <source>Base Types</source>
+        <target state="new">Base Types</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ObjectBrowserMemberOf">
+        <source>Member of {0}</source>
+        <target state="new">Member of {0}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ObjectBrowserPending">
+        <source>(analyzing...)</source>
+        <target state="new">(analyzing...)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ObjectBrowserProject">
+        <source>Project</source>
+        <target state="new">Project</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ObjectBrowserProjectReferences">
+        <source>Project References</source>
+        <target state="new">Project References</target>
+        <note />
+      </trans-unit>
       <trans-unit id="PerformancePageKeywords">
         <source>F# Project and Caching Performance Options;
 Enable in-memory cross project references;
