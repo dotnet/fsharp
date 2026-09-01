@@ -24,17 +24,14 @@ type LanguageFeature =
     | UnionIsPropertiesVisible
     | NonVariablePatternsToRightOfAsPatterns
     | AttributesToRightOfModuleKeyword
-    | DelegateTypeNameResolutionFix
     | ReallyLongLists
     | ErrorOnDeprecatedRequireQualifiedAccess
     | RequiredPropertiesSupport
-    | LowercaseDUWhenRequireQualifiedAccess
     | InterfacesWithAbstractStaticMembers
     | SelfTypeConstraints
     | MatchNotAllowedForUnionCaseWithNoData
     | CSharpExtensionAttributeNotRequired
     | ErrorForNonVirtualMembersOverrides
-    | EscapeDotnetFormattableStrings
     | ArithmeticInLiterals
     | ErrorReportingOnStaticClasses
     | WarningWhenCopyAndUpdateRecordChangesAllFields
@@ -42,14 +39,12 @@ type LanguageFeature =
     | NonInlineLiteralsAsPrintfFormat
     | ExtendedStringInterpolation
     | WarningWhenMultipleRecdTypeChoice
-    | ImprovedImpliedArgumentNames
     | ConstraintIntersectionOnFlexibleTypes
     | StaticLetInRecordsDusEmptyTypes
     | WarningWhenTailRecAttributeButNonTailRecUsage
     | UnmanagedConstraintCsharpInterop
     | ReuseSameFieldsInStructUnions
     | ExtendedFixedBindings
-    | PreferStringGetPinnableReference
     /// RFC-1137
     | PreferExtensionMethodOverPlainProperty
     | WarningIndexedPropertiesGetSetSameType

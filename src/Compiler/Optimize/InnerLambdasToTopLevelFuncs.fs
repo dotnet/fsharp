@@ -1127,7 +1127,7 @@ module Pass4_RewriteAssembly =
     /// At free vals, fixup 0-call if it is an arity-met constant.
     /// Other cases rewrite structurally.
     let rec TransExpr (penv: RewriteContext) (z: RewriteState) expr: Expr * RewriteState =
-        penv.stackGuard.Guard <| fun () ->
+        penv.stackGuard.Guard(fun () ->
 
         match expr with
         // Use TransLinearExpr with a rebuild-continuation for some forms to avoid stack overflows on large terms 
@@ -1230,7 +1230,7 @@ module Pass4_RewriteAssembly =
             error(Error(FSComp.SR.tlrUnexpectedTExpr(),m))
 
         | Expr.WitnessArg (_witnessInfo, _m) ->
-            expr, z
+            expr, z)
 
     /// Walk over linear structured terms in tail-recursive loop, using a continuation 
     /// to represent the rebuild-the-term stack 
