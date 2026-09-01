@@ -3,7 +3,6 @@
 namespace Microsoft.VisualStudio.FSharp.Editor
 
 open System
-open System.Text.RegularExpressions
 
 /// A compiler-synthesized closure class such as `outer@47-1` names the binding it was lifted out of
 /// and the line that binding was written on.
@@ -40,9 +39,6 @@ type internal ParsedFrame =
 /// Turns the name a debug engine reports for a stack frame back into the F# construct it came from.
 [<RequireQualifiedAccess>]
 module internal FSharpStackFrameNameParser =
-
-    let private closureSuffix =
-        Regex(@"^(?<name>.+)@(?<line>\d+)(?:-(?<ordinal>\d+))?$", RegexOptions.Compiled ||| RegexOptions.CultureInvariant)
 
     let private startupCodePrefix = "<StartupCode$"
 
@@ -85,22 +81,47 @@ module internal FSharpStackFrameNameParser =
                 GenericArity = arity
             }
 
-    let private parseClosureOrigin (segment: string) =
-        let m = closureSuffix.Match segment
-
-        if m.Success then
-            ValueSome
-                {
-                    EnclosingName = m.Groups.["name"].Value
-                    Line = Int32.Parse(m.Groups.["line"].Value)
-                    Ordinal =
-                        if m.Groups.["ordinal"].Success then
-                            ValueSome(Int32.Parse(m.Groups.["ordinal"].Value))
-                        else
-                            ValueNone
-                }
-        else
+    /// Reads `digits` spanning [start, stop), rejecting an empty or non-numeric run.
+    let private digitsIn (segment: string) start stop =
+        if start >= stop then
             ValueNone
+        else
+
+            let mutable value = 0
+            let mutable i = start
+
+            while i < stop && Char.IsDigit segment.[i] do
+                value <- value * 10 + int segment.[i] - int '0'
+                i <- i + 1
+
+            if i = stop then ValueSome value else ValueNone
+
+    /// Matches `enclosingName@line` and `enclosingName@line-ordinal`, the shapes the compiler gives
+    /// the classes it lifts closures, local functions and computation-expression bodies into.
+    let private parseClosureOrigin (segment: string) =
+        let at = segment.LastIndexOf '@'
+
+        if at <= 0 || at = segment.Length - 1 then
+            ValueNone
+        else
+
+            let origin line ordinal =
+                ValueSome
+                    {
+                        EnclosingName = segment.Substring(0, at)
+                        Line = line
+                        Ordinal = ordinal
+                    }
+
+            match segment.IndexOf('-', at + 1) with
+            | -1 ->
+                match digitsIn segment (at + 1) segment.Length with
+                | ValueSome line -> origin line ValueNone
+                | ValueNone -> ValueNone
+            | dash ->
+                match digitsIn segment (at + 1) dash, digitsIn segment (dash + 1) segment.Length with
+                | ValueSome line, ValueSome ordinal -> origin line (ValueSome ordinal)
+                | _ -> ValueNone
 
     let private isActivePattern (name: string) =
         name.Length > 2
@@ -109,8 +130,8 @@ module internal FSharpStackFrameNameParser =
 
     let private activePatternCases (name: string) =
         name.Trim('|').Split('|')
-        |> Array.filter (fun case -> not (String.IsNullOrEmpty case))
-        |> List.ofArray
+        |> Seq.filter (fun case -> not (String.IsNullOrEmpty case))
+        |> Seq.toList
 
     let private classifyMember (segment: string) =
         if isActivePattern segment then
@@ -141,8 +162,8 @@ module internal FSharpStackFrameNameParser =
 
             let segments =
                 name.Split([| '.'; '+' |])
-                |> Array.filter (fun segment -> not (String.IsNullOrEmpty segment))
-                |> List.ofArray
+                |> Seq.filter (fun segment -> not (String.IsNullOrEmpty segment))
+                |> Seq.toList
 
             match segments with
             | [] -> ValueNone
@@ -161,21 +182,22 @@ module internal FSharpStackFrameNameParser =
 
                 let closureIndex =
                     segments
-                    |> List.tryFindIndexBack (fun segment -> (parseClosureOrigin segment).IsSome)
+                    |> List.tryFindIndexBackV (fun segment -> (parseClosureOrigin segment).IsSome)
 
                 match constructorMember, isStartupCode, closureIndex with
                 | ValueSome constructorMember, _, _ -> frame segments constructorMember
                 | ValueNone, true, _ ->
                     let declaringModule =
                         segments
-                        |> List.filter (fun segment -> not (segment.StartsWith(startupCodePrefix, StringComparison.Ordinal)))
-                        |> List.map _.TrimStart('$')
-                        |> List.filter (fun segment ->
+                        |> Seq.filter (fun segment -> not (segment.StartsWith(startupCodePrefix, StringComparison.Ordinal)))
+                        |> Seq.map _.TrimStart('$')
+                        |> Seq.filter (fun segment ->
                             not (String.IsNullOrEmpty segment)
                             && not (segment.EndsWith("@", StringComparison.Ordinal)))
+                        |> Seq.toList
 
                     frame declaringModule FrameStartupCode
-                | ValueNone, false, Some i ->
+                | ValueNone, false, ValueSome i ->
                     let origin = (parseClosureOrigin segments.[i]).Value
                     frame (List.truncate i segments) (FrameClosureBody origin)
-                | ValueNone, false, None -> frame (List.truncate (segments.Length - 1) segments) (classifyMember (List.last segments))
+                | ValueNone, false, ValueNone -> frame (List.truncate (segments.Length - 1) segments) (classifyMember (List.last segments))
