@@ -32,7 +32,6 @@ type LanguageFeature =
     | ArithmeticInLiterals
     | ErrorReportingOnStaticClasses
     | WarningWhenCopyAndUpdateRecordChangesAllFields
-    | StaticMembersInInterfaces
     | NonInlineLiteralsAsPrintfFormat
     | ExtendedStringInterpolation
     | WarningWhenMultipleRecdTypeChoice

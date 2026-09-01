@@ -607,11 +607,6 @@
         <target state="translated">Autoriser les liaisons let statiques dans les types union, record, struct et classes non incrémentielles</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureStaticMembersInInterfaces">
-        <source>Static members in interfaces</source>
-        <target state="translated">Membres statiques dans les interfaces</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureStringInterpolation">
         <source>string interpolation</source>
         <target state="translated">interpolation de chaîne</target>

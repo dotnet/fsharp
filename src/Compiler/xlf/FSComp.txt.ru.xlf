@@ -607,11 +607,6 @@
         <target state="translated">Разрешить статические привязки "let" в типах union, record, struct, non-incremental-class</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureStaticMembersInInterfaces">
-        <source>Static members in interfaces</source>
-        <target state="translated">Статические элементы в интерфейсах</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureStringInterpolation">
         <source>string interpolation</source>
         <target state="translated">интерполяция строк</target>

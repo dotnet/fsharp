@@ -42,7 +42,6 @@ type LanguageFeature =
     | ArithmeticInLiterals
     | ErrorReportingOnStaticClasses
     | WarningWhenCopyAndUpdateRecordChangesAllFields
-    | StaticMembersInInterfaces
     | NonInlineLiteralsAsPrintfFormat
     | ExtendedStringInterpolation
     | WarningWhenMultipleRecdTypeChoice
@@ -159,7 +158,6 @@ type LanguageVersion(versionText, ?disabledFeaturesArray: LanguageFeature array)
                 LanguageFeature.ArithmeticInLiterals, languageVersion80
                 LanguageFeature.ErrorReportingOnStaticClasses, languageVersion80
                 LanguageFeature.WarningWhenCopyAndUpdateRecordChangesAllFields, languageVersion80
-                LanguageFeature.StaticMembersInInterfaces, languageVersion80
                 LanguageFeature.NonInlineLiteralsAsPrintfFormat, languageVersion80
                 LanguageFeature.ExtendedStringInterpolation, languageVersion80
                 LanguageFeature.WarningWhenMultipleRecdTypeChoice, languageVersion80
@@ -341,7 +339,6 @@ type LanguageVersion(versionText, ?disabledFeaturesArray: LanguageFeature array)
         | LanguageFeature.ErrorReportingOnStaticClasses -> FSComp.SR.featureErrorReportingOnStaticClasses ()
         | LanguageFeature.WarningWhenCopyAndUpdateRecordChangesAllFields ->
             FSComp.SR.featureWarningWhenCopyAndUpdateRecordChangesAllFields ()
-        | LanguageFeature.StaticMembersInInterfaces -> FSComp.SR.featureStaticMembersInInterfaces ()
         | LanguageFeature.NonInlineLiteralsAsPrintfFormat -> FSComp.SR.featureNonInlineLiteralsAsPrintfFormat ()
         | LanguageFeature.ExtendedStringInterpolation -> FSComp.SR.featureExtendedStringInterpolation ()
         | LanguageFeature.WarningWhenMultipleRecdTypeChoice -> FSComp.SR.featureWarningWhenMultipleRecdTypeChoice ()
