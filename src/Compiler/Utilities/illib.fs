@@ -257,6 +257,16 @@ module Array =
 
             if eq then inp else res
 
+    let inline tryPick ([<InlineIfLambda>] chooser: 'T -> 'U option) (arr: 'T[]) =
+        let mutable res = None
+        let mutable i = 0
+
+        while res.IsNone && i < arr.Length do
+            res <- chooser arr[i]
+            i <- i + 1
+
+        res
+
     let lengthsEqAndForall2 p l1 l2 =
         Array.length l1 = Array.length l2 && Array.forall2 p l1 l2
 
