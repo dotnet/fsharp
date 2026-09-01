@@ -104,6 +104,7 @@ module internal SignatureOps =
             tpinst = emptyTyparInst
             tyconRefRemap = TyconRefMap.OfList mrpi.RepackagedEntities
             removeTraitSolutions = false
+            ccuRebind = None
         }
 
     //--------------------------------------------------------------------------
@@ -698,7 +699,9 @@ module internal SignatureOps =
     // accessed via non local references.
     //--------------------------------------------------------------------------
 
-    let MakeExportRemapping viewedCcu (mspec: ModuleOrNamespace) =
+    /// Carried from the start, not added to the result: tryRescopeVal below rewrites the types inside each
+    /// ValLinkageFullKey through the accumulated remapping.
+    let MakeExportRemappingWith ccuRebind viewedCcu (mspec: ModuleOrNamespace) =
 
         let accEntityRemap (entity: Entity) acc =
             match tryRescopeEntity viewedCcu entity with
@@ -722,9 +725,17 @@ module internal SignatureOps =
         let entities = allEntitiesOfModuleOrNamespaceTy mty
         let vs = allValsOfModuleOrNamespaceTy mty
         // Remap the entities first so we can correctly remap the types in the signatures of the ValLinkageFullKey's in the value references
-        let acc = List.foldBack accEntityRemap entities Remap.Empty
+        let start =
+            { Remap.Empty with
+                ccuRebind = ccuRebind
+            }
+
+        let acc = List.foldBack accEntityRemap entities start
         let allRemap = List.foldBack accValRemap vs acc
         allRemap
+
+    let MakeExportRemapping viewedCcu mspec =
+        MakeExportRemappingWith None viewedCcu mspec
 
     let updateSeqTypeIsPrefix (fsharpCoreMSpec: ModuleOrNamespace) =
         let findModuleOrNamespace (name: string) (entity: Entity) =
@@ -1663,6 +1674,9 @@ module internal ExprRemapping =
             // This lets an auto-quoted (WithValue) copy of a recursive-value use receive the inferred type
             // arguments that AdjustAndForgetUsesOfRecValue inserts at the letrec point. See issue #20379.
             keepRecursiveValLinks: bool
+
+            /// Set only when the remapped tree is leaving the assembly it was checked in. See remapAccess.
+            rescopeAccessTo: ILScopeRef option
         }
 
     let mkRemapContext g stackGuard =
@@ -1670,6 +1684,7 @@ module internal ExprRemapping =
             g = g
             stackGuard = stackGuard
             keepRecursiveValLinks = false
+            rescopeAccessTo = None
         }
 
     /// Detect an Expr.Link that stands for a use of a recursive *function* value which is still within its
@@ -1692,9 +1707,34 @@ module internal ExprRemapping =
             | ValNotInRecScope -> false
         | _ -> false
 
+    let mkRemapContextLeavingAssembly g stackGuard rescopeAccessTo =
+        {
+            g = g
+            stackGuard = stackGuard
+            keepRecursiveValLinks = false
+            rescopeAccessTo = Some rescopeAccessTo
+        }
+
+    let remapCompPath (ctxt: RemapContext) (CompPath(scoref, _, path) as cpath) =
+        match ctxt.rescopeAccessTo with
+        | None -> cpath
+        // p_cpath does not write the syntactic access and u_cpath rebuilds it as Unknown
+        | Some ilScopeRef -> CompPath(rescopeILScopeRef ilScopeRef scoref, SyntaxAccess.Unknown, path)
+
+    /// ILScopeRef.Local names the assembly being compiled, so a consumer reading a tree that still said
+    /// Local would take its `internal` for its own. u_ILScopeRef does this for the pickled form.
+    let remapAccess (ctxt: RemapContext) access =
+        match ctxt.rescopeAccessTo, access with
+        | None, _
+        | _, TAccess [] -> access
+        | Some ilScopeRef, TAccess paths ->
+            paths
+            |> List.map (fun (CompPath(scoref, _, path)) -> CompPath(rescopeILScopeRef ilScopeRef scoref, SyntaxAccess.Unknown, path))
+            |> TAccess
+
     let rec remapAttribImpl ctxt tmenv (Attrib(tcref, kind, args, props, isGetOrSetAttr, targets, m)) =
         Attrib(
-            remapTyconRef tmenv.tyconRefRemap tcref,
+            remapOrRebindTyconRef tmenv tcref,
             remapAttribKind tmenv kind,
             args |> List.map (remapAttribExpr ctxt tmenv),
             props
@@ -1744,6 +1784,7 @@ module internal ExprRemapping =
                 | Some dd ->
                     Some
                         { dd with
+                            val_access = dd.val_access |> remapAccess ctxt
                             val_declaring_entity = declaringEntityR
                             val_repr_info = reprInfoR
                             val_member_info = memberInfoR
@@ -1755,7 +1796,7 @@ module internal ExprRemapping =
     and remapParentRef tyenv p =
         match p with
         | ParentNone -> ParentNone
-        | Parent x -> Parent(x |> remapTyconRef tyenv.tyconRefRemap)
+        | Parent x -> Parent(x |> remapOrRebindTyconRef tyenv)
 
     and mapImmediateValsAndTycons ft fv (x: ModuleOrNamespaceType) =
         let vals = x.AllValsAndMembers |> QueueList.map fv
@@ -2039,13 +2080,13 @@ module internal ExprRemapping =
 
     and remapOp tmenv op =
         match op with
-        | TOp.Recd(ctor, tcref) -> TOp.Recd(ctor, remapTyconRef tmenv.tyconRefRemap tcref)
-        | TOp.UnionCaseTagGet tcref -> TOp.UnionCaseTagGet(remapTyconRef tmenv.tyconRefRemap tcref)
+        | TOp.Recd(ctor, tcref) -> TOp.Recd(ctor, remapOrRebindTyconRef tmenv tcref)
+        | TOp.UnionCaseTagGet tcref -> TOp.UnionCaseTagGet(remapOrRebindTyconRef tmenv tcref)
         | TOp.UnionCase ucref -> TOp.UnionCase(remapUnionCaseRef tmenv.tyconRefRemap ucref)
         | TOp.UnionCaseProof ucref -> TOp.UnionCaseProof(remapUnionCaseRef tmenv.tyconRefRemap ucref)
-        | TOp.ExnConstr ec -> TOp.ExnConstr(remapTyconRef tmenv.tyconRefRemap ec)
-        | TOp.ExnFieldGet(ec, n) -> TOp.ExnFieldGet(remapTyconRef tmenv.tyconRefRemap ec, n)
-        | TOp.ExnFieldSet(ec, n) -> TOp.ExnFieldSet(remapTyconRef tmenv.tyconRefRemap ec, n)
+        | TOp.ExnConstr ec -> TOp.ExnConstr(remapOrRebindTyconRef tmenv ec)
+        | TOp.ExnFieldGet(ec, n) -> TOp.ExnFieldGet(remapOrRebindTyconRef tmenv ec, n)
+        | TOp.ExnFieldSet(ec, n) -> TOp.ExnFieldSet(remapOrRebindTyconRef tmenv ec, n)
         | TOp.ValFieldSet rfref -> TOp.ValFieldSet(remapRecdFieldRef tmenv.tyconRefRemap rfref)
         | TOp.ValFieldGet rfref -> TOp.ValFieldGet(remapRecdFieldRef tmenv.tyconRefRemap rfref)
         | TOp.ValFieldGetAddr(rfref, readonly) -> TOp.ValFieldGetAddr(remapRecdFieldRef tmenv.tyconRefRemap rfref, readonly)
@@ -2165,6 +2206,7 @@ module internal ExprRemapping =
 
     and remapRecdField ctxt tmenv x =
         { x with
+            rfield_access = x.rfield_access |> remapAccess ctxt
             rfield_type = x.rfield_type |> remapPossibleForallTyImpl ctxt tmenv
             rfield_pattribs = x.rfield_pattribs |> remapAttribs ctxt tmenv
             rfield_fattribs = x.rfield_fattribs |> remapAttribs ctxt tmenv
@@ -2177,6 +2219,7 @@ module internal ExprRemapping =
 
     and remapUnionCase ctxt tmenv (x: UnionCase) =
         { x with
+            Accessibility = x.Accessibility |> remapAccess ctxt
             FieldTable = x.FieldTable |> remapRecdFields ctxt tmenv
             ReturnType = x.ReturnType |> remapType tmenv
             Attribs = x.Attribs |> remapAttribs ctxt tmenv
@@ -2216,7 +2259,7 @@ module internal ExprRemapping =
                     ProvidedType =
                         info.ProvidedType.PApplyNoFailure(fun st ->
                             let ctxt =
-                                st.Context.RemapTyconRefs(unbox >> remapTyconRef tmenv.tyconRefRemap >> box >> (!!))
+                                st.Context.RemapTyconRefs(unbox >> remapOrRebindTyconRef tmenv >> box >> (!!))
 
                             ProvidedType.ApplyContext(st, ctxt))
                 }
@@ -2250,7 +2293,7 @@ module internal ExprRemapping =
 
     and remapTyconExnInfo ctxt tmenv inp =
         match inp with
-        | TExnAbbrevRepr x -> TExnAbbrevRepr(remapTyconRef tmenv.tyconRefRemap x)
+        | TExnAbbrevRepr x -> TExnAbbrevRepr(remapOrRebindTyconRef tmenv x)
         | TExnFresh x -> TExnFresh(remapRecdFields ctxt tmenv x)
         | TExnAsmRepr _
         | TExnNone -> inp
@@ -2274,7 +2317,7 @@ module internal ExprRemapping =
             }
 
         { x with
-            ApparentEnclosingEntity = x.ApparentEnclosingEntity |> remapTyconRef tmenv.tyconRefRemap
+            ApparentEnclosingEntity = x.ApparentEnclosingEntity |> remapOrRebindTyconRef tmenv
             ImplementedSlotSigs = x.ImplementedSlotSigs |> List.map (remapSlotSig (remapAttribs ctxt tmenv) tmenv)
         }
 
@@ -2434,7 +2477,7 @@ module internal ExprRemapping =
         opens
         |> List.map (fun od ->
             { od with
-                Modules = od.Modules |> List.map (remapTyconRef tmenv.tyconRefRemap)
+                Modules = od.Modules |> List.map (remapOrRebindTyconRef tmenv)
                 Types = od.Types |> List.map (remapType tmenv)
             })
 
@@ -2486,52 +2529,27 @@ module internal ExprRemapping =
     // Entry points
 
     let remapAttrib g tmenv attrib =
-        let ctxt =
-            {
-                g = g
-                stackGuard = StackGuard("RemapExprStackGuardDepth")
-                keepRecursiveValLinks = false
-            }
+        let ctxt = mkRemapContext g (StackGuard("RemapExprStackGuardDepth"))
 
         remapAttribImpl ctxt tmenv attrib
 
     let remapExpr g (compgen: ValCopyFlag) (tmenv: Remap) expr =
-        let ctxt =
-            {
-                g = g
-                stackGuard = StackGuard("RemapExprStackGuardDepth")
-                keepRecursiveValLinks = false
-            }
+        let ctxt = mkRemapContext g (StackGuard("RemapExprStackGuardDepth"))
 
         remapExprImpl ctxt compgen tmenv expr
 
     let remapPossibleForallTy g tmenv ty =
-        let ctxt =
-            {
-                g = g
-                stackGuard = StackGuard("RemapExprStackGuardDepth")
-                keepRecursiveValLinks = false
-            }
+        let ctxt = mkRemapContext g (StackGuard("RemapExprStackGuardDepth"))
 
         remapPossibleForallTyImpl ctxt tmenv ty
 
     let copyModuleOrNamespaceType g compgen mtyp =
-        let ctxt =
-            {
-                g = g
-                stackGuard = StackGuard("RemapExprStackGuardDepth")
-                keepRecursiveValLinks = false
-            }
+        let ctxt = mkRemapContext g (StackGuard("RemapExprStackGuardDepth"))
 
         copyAndRemapAndBindModTy ctxt compgen Remap.Empty mtyp |> fst
 
     let copyExpr g compgen e =
-        let ctxt =
-            {
-                g = g
-                stackGuard = StackGuard("RemapExprStackGuardDepth")
-                keepRecursiveValLinks = false
-            }
+        let ctxt = mkRemapContext g (StackGuard("RemapExprStackGuardDepth"))
 
         remapExprImpl ctxt compgen Remap.Empty e
 
@@ -2540,31 +2558,19 @@ module internal ExprRemapping =
     /// the inferred type arguments applied later by AdjustAndForgetUsesOfRecValue. See issue #20379.
     let copyExprKeepingRecursiveValLinks g compgen e =
         let ctxt =
-            {
-                g = g
-                stackGuard = StackGuard("RemapExprStackGuardDepth")
+            { mkRemapContext g (StackGuard("RemapExprStackGuardDepth")) with
                 keepRecursiveValLinks = true
             }
 
         remapExprImpl ctxt compgen Remap.Empty e
 
     let copyImplFile g compgen e =
-        let ctxt =
-            {
-                g = g
-                stackGuard = StackGuard("RemapExprStackGuardDepth")
-                keepRecursiveValLinks = false
-            }
+        let ctxt = mkRemapContext g (StackGuard("RemapExprStackGuardDepth"))
 
         remapImplFile ctxt compgen Remap.Empty e |> fst
 
     let instExpr g tpinst e =
-        let ctxt =
-            {
-                g = g
-                stackGuard = StackGuard("RemapExprStackGuardDepth")
-                keepRecursiveValLinks = false
-            }
+        let ctxt = mkRemapContext g (StackGuard("RemapExprStackGuardDepth"))
 
         remapExprImpl ctxt CloneAll (mkInstRemap tpinst) e
 
