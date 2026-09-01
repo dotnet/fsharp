@@ -314,7 +314,7 @@ type internal BackgroundCompiler
                                 let! ilReaderOpt = delayedReader.TryGetILModuleReader()
 
                                 match ilReaderOpt with
-                                | Some ilReader ->
+                                | ValueSome ilReader ->
                                     let ilModuleDef, ilAsmRefs = ilReader.ILModuleDef, ilReader.ILAssemblyRefs
                                     let data = RawFSharpAssemblyData(ilModuleDef, ilAsmRefs) :> IRawFSharpAssemblyData
                                     return ProjectAssemblyDataResult.Available data

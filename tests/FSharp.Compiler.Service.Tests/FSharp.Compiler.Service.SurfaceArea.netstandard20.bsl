@@ -2065,7 +2065,7 @@ FSharp.Compiler.Cancellable: Void CheckAndThrow()
 FSharp.Compiler.Cancellable: Void TryCheckAndThrow()
 FSharp.Compiler.CodeAnalysis.DelayedILModuleReader: System.String OutputFile
 FSharp.Compiler.CodeAnalysis.DelayedILModuleReader: System.String get_OutputFile()
-FSharp.Compiler.CodeAnalysis.DelayedILModuleReader: Void .ctor(System.String, Microsoft.FSharp.Core.FSharpFunc`2[System.Threading.CancellationToken,Microsoft.FSharp.Core.FSharpOption`1[System.IO.Stream]])
+FSharp.Compiler.CodeAnalysis.DelayedILModuleReader: Void .ctor(System.String, Microsoft.FSharp.Core.FSharpFunc`2[System.Threading.CancellationToken,Microsoft.FSharp.Core.FSharpValueOption`1[System.IO.Stream]])
 FSharp.Compiler.CodeAnalysis.DocumentSource+Custom: Microsoft.FSharp.Core.FSharpFunc`2[System.String,Microsoft.FSharp.Control.FSharpAsync`1[Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.ISourceText]]] Item
 FSharp.Compiler.CodeAnalysis.DocumentSource+Custom: Microsoft.FSharp.Core.FSharpFunc`2[System.String,Microsoft.FSharp.Control.FSharpAsync`1[Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.ISourceText]]] get_Item()
 FSharp.Compiler.CodeAnalysis.DocumentSource+Tags: Int32 Custom
