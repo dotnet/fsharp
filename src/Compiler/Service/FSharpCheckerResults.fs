@@ -68,7 +68,7 @@ type DocumentSource =
 type DelayedILModuleReader =
     val private name: string
     val private gate: obj
-    val mutable private getStream: (CancellationToken -> Stream option)
+    val mutable private getStream: (CancellationToken -> Stream voption)
     val mutable private result: ILModuleReader | null
 
     new(name, getStream) =
@@ -94,10 +94,8 @@ type DelayedILModuleReader =
                         match this.result with
                         | null ->
                             try
-                                let streamOpt = this.getStream ct
-
-                                match streamOpt with
-                                | Some stream ->
+                                match this.getStream ct with
+                                | ValueSome stream ->
                                     let ilReaderOptions: ILReaderOptions =
                                         {
                                             pdbDirPath = None
@@ -109,14 +107,14 @@ type DelayedILModuleReader =
                                     let ilReader = OpenILModuleReaderFromStream this.name stream ilReaderOptions
                                     this.result <- ilReader
                                     this.getStream <- Unchecked.defaultof<_> // clear out the function so we do not hold onto anything
-                                    Some ilReader
-                                | _ -> None
+                                    ValueSome ilReader
+                                | _ -> ValueNone
                             with ex ->
                                 Trace.TraceInformation("FCS: Unable to get an ILModuleReader: {0}", ex)
-                                None
-                        | result -> Some result)
+                                ValueNone
+                        | result -> ValueSome result)
             }
-        | result -> cancellable.Return(Some result)
+        | result -> cancellable.Return(ValueSome result)
 
 [<RequireQualifiedAccess; NoComparison; CustomEquality>]
 type FSharpReferencedProject =
