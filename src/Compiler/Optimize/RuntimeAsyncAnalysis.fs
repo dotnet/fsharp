@@ -78,16 +78,80 @@ let ShouldForceRuntimeAsyncApplication
             args)
 
 let InlineRuntimeAsyncLambdaArgument (g: TcGlobals) (isRuntimeAsyncFragment: Expr -> bool) expr =
+    let rec stripLambdaDebugPoints expr =
+        match expr with
+        | Expr.DebugPoint(_, innerExpr) ->
+            match stripDebugPoints innerExpr with
+            | Expr.Lambda _
+            | Expr.TyLambda _ -> stripLambdaDebugPoints innerExpr
+            | _ -> expr
+        | Expr.Lambda(unique, ctorThisValOpt, baseValOpt, valParams, bodyExpr, m, overallType) ->
+            match bodyExpr with
+            | Expr.DebugPoint(_, innerExpr) ->
+                match stripDebugPoints innerExpr with
+                | Expr.Lambda _
+                | Expr.TyLambda _ ->
+                    Expr.Lambda(unique, ctorThisValOpt, baseValOpt, valParams, stripLambdaDebugPoints bodyExpr, m, overallType)
+                | _ -> expr
+            | _ -> expr
+        | Expr.TyLambda(unique, typeParams, bodyExpr, m, overallType) ->
+            match bodyExpr with
+            | Expr.DebugPoint(_, innerExpr) ->
+                match stripDebugPoints innerExpr with
+                | Expr.Lambda _
+                | Expr.TyLambda _ -> Expr.TyLambda(unique, typeParams, stripLambdaDebugPoints bodyExpr, m, overallType)
+                | _ -> expr
+            | _ -> expr
+        | _ -> expr
+
+    let rec betaReduceLambdaApplication expr =
+        let rec apply f fty tyargs args m =
+            match args with
+            | [] -> None
+            | firstArg :: rest ->
+                let f = stripLambdaDebugPoints f
+
+                match f with
+                | Expr.Let(bind, body, mLet, _) -> apply body (tyOfExpr g body) tyargs args m |> Option.map (mkLetBind mLet bind)
+                | Expr.Lambda(_, _, _, valParams, _, _, _) when valParams.Length = 1 && not rest.IsEmpty ->
+                    let reduced = MakeApplicationAndBetaReduce g (f, fty, [ tyargs ], [ firstArg ], m)
+
+                    match reduced with
+                    | Expr.Let(bind, body, mLet, _) ->
+                        match apply body (tyOfExpr g body) [] rest m with
+                        | Some bodyR -> Some(mkLetBind mLet bind bodyR)
+                        | None -> Some(mkAppsAux g reduced (tyOfExpr g reduced) [] rest m)
+                    | _ -> Some reduced
+                | Expr.Lambda _
+                | Expr.TyLambda _ -> Some(MakeApplicationAndBetaReduce g (f, fty, [ tyargs ], args, m))
+                | _ -> None
+
+        match stripDebugPoints expr with
+        | Expr.App(f, fty, tyargs, args, m) -> apply f fty tyargs args m
+        | _ -> None
+
     let inlineBinding (boundVal: Val) boundExpr body =
         let rwenv =
             {
                 PreIntercept =
                     Some(fun _ expr ->
-                        match stripExpr expr with
-                        | Expr.Val(vref, _, _) when valEq boundVal vref.Deref -> Some(copyExpr g CloneAll boundExpr)
-                        | _ -> None)
+                        match betaReduceLambdaApplication expr with
+                        | Some reduced -> Some reduced
+                        | None ->
+                            match stripExpr expr with
+                            | Expr.App(f, _, tyargs, args, m) ->
+                                match stripDebugPoints f with
+                                | Expr.Val(vref, _, _) when valEq boundVal vref.Deref ->
+                                    Some(
+                                        MakeApplicationAndBetaReduce
+                                            g
+                                            (copyExpr g CloneAll boundExpr, tyOfExpr g boundExpr, [ tyargs ], args, m)
+                                    )
+                                | _ -> None
+                            | Expr.Val(vref, _, _) when valEq boundVal vref.Deref -> Some(copyExpr g CloneAll boundExpr)
+                            | _ -> None)
                 PreInterceptBinding = None
-                PostTransform = fun _ -> None
+                PostTransform = betaReduceLambdaApplication
                 RewriteQuotations = false
                 StackGuard = StackGuard("InlineRuntimeAsyncLambdaArgument")
             }
@@ -110,7 +174,7 @@ let InlineRuntimeAsyncLambdaArgument (g: TcGlobals) (isRuntimeAsyncFragment: Exp
                         Some(cont (inlineBinding boundVal boundExpr body))
                     | _ -> None)
             PreInterceptBinding = None
-            PostTransform = fun _ -> None
+            PostTransform = betaReduceLambdaApplication
             RewriteQuotations = false
             StackGuard = StackGuard("InlineRuntimeAsyncLambdaArgument")
         }

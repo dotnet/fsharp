@@ -3690,6 +3690,17 @@ and TryInlineApplication cenv env finfo (valExpr: Expr) (tyargs: TType list, arg
         | _ -> None
 
     let containsRuntimeAsyncFragment = ExprContainsRuntimeAsyncFragment g getRuntimeAsyncLambdaBody
+    let reoptimizeRuntimeAsync reduced =
+        let reduced = InlineRuntimeAsyncLambdaArgument g containsRuntimeAsyncFragment reduced
+
+        let reduced =
+            if containsRuntimeAsyncFragment reduced then
+                fst (OptimizeExpr cenv { env with runtimeAsyncContext = true } reduced)
+            else
+                reduced
+
+        InlineRuntimeAsyncLambdaArgument g containsRuntimeAsyncFragment reduced
+
     let mustInlineRuntimeAsync =
         match stripExpr valExpr with
         | Expr.Val(vref, _, _) ->
@@ -3839,12 +3850,7 @@ and TryInlineApplication cenv env finfo (valExpr: Expr) (tyargs: TType list, arg
                     match reduced with
                     | Expr.Let(bind, body, _, _) -> fst (TryEliminateLet cenv env bind body m)
                     | _ -> reduced
-                let reduced = InlineRuntimeAsyncLambdaArgument g containsRuntimeAsyncFragment reduced
-                let reduced =
-                    if ExprContainsRuntimeAsyncSuspension g reduced then
-                        fst (OptimizeExpr cenv { env with runtimeAsyncContext = true } reduced)
-                    else
-                        reduced
+                let reduced = reoptimizeRuntimeAsync reduced
                 Some(reduced, info)
             else
 
@@ -3879,12 +3885,7 @@ and TryInlineApplication cenv env finfo (valExpr: Expr) (tyargs: TType list, arg
                         match reduced with
                         | Expr.Let(bind, body, _, _) -> fst (TryEliminateLet cenv env bind body m)
                         | _ -> reduced
-                    let reduced = InlineRuntimeAsyncLambdaArgument g containsRuntimeAsyncFragment reduced
-                    let reduced =
-                        if ExprContainsRuntimeAsyncSuspension g reduced then
-                            fst (OptimizeExpr cenv { env with runtimeAsyncContext = true } reduced)
-                        else
-                            reduced
+                    let reduced = reoptimizeRuntimeAsync reduced
                     Some(reduced, info)
                 else
                     // Static method path (no witnesses needed): abstract over free typars so IlxGen emits

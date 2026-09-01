@@ -198,6 +198,131 @@ let main _ =
     |> shouldSucceed
 
 [<Fact>]
+let ``runtime async supports inlining of a lambda`` () =
+    FSharp """
+module RuntimeAsyncInlineLambdaTest
+
+open System.Threading.Tasks
+open System.Runtime.CompilerServices
+open Microsoft.FSharp.Core.CompilerServices.StateMachineHelpers
+
+let inline makeFragment () =
+    fun x ->
+        AsyncHelpers.Await (Task.Delay 1000)
+        printfn "Hello from async function with input: %d" x
+
+let inline consume([<InlineIfLambda>] f) =
+    __runtimeAsyncReturn(f 42)
+
+[<EntryPoint>]
+let main _ =
+    consume (makeFragment()) |> _.Result |> ignore
+    0
+"""
+    |> withLangVersionPreview
+    |> withFSharpCoreShippedNet
+    |> compileExeAndRun
+    |> shouldSucceed
+
+[<Fact>]
+let ``runtime async supports inlining of a multi argument lambda`` () =
+    FSharp """
+module RuntimeAsyncInlineMultiArgumentLambdaTest
+
+open System.Threading.Tasks
+open System.Runtime.CompilerServices
+open Microsoft.FSharp.Core.CompilerServices.StateMachineHelpers
+
+let inline makeFragment () =
+    fun x y ->
+        AsyncHelpers.Await (Task.Delay 1)
+        x + y
+
+let inline consume([<InlineIfLambda>] f) =
+    __runtimeAsyncReturn(f 40 2)
+
+[<EntryPoint>]
+let main _ =
+    if (consume (makeFragment())).Result <> 42 then 1 else 0
+"""
+    |> withLangVersionPreview
+    |> withFSharpCoreShippedNet
+    |> compileExeAndRun
+    |> shouldSucceed
+
+[<Fact>]
+let ``runtime async fuses suspension in inline returned closures`` () =
+    FSharp """
+module RuntimeAsyncInlineReturnedClosureTest
+
+open System
+open System.Threading.Tasks
+open System.Runtime.CompilerServices
+open Microsoft.FSharp.Core.CompilerServices
+
+type Code = obj -> unit
+
+type Builder() =
+    member inline _.Delay([<InlineIfLambda>] generator: unit -> Code) : Code =
+        fun state -> generator() state
+
+    member inline _.Zero() : Code =
+        fun _ -> ()
+
+    member inline _.Yield(_: int) : Code =
+        fun _ -> ()
+
+    member inline _.Bind(task: Task, [<InlineIfLambda>] continuation: unit -> Code) : Code =
+        fun state ->
+            AsyncHelpers.Await task
+            continuation() state
+
+    member inline _.Combine(first: Code, [<InlineIfLambda>] second: Code) : Code =
+        fun state ->
+            first state
+            second state
+
+    member inline _.Run([<InlineIfLambda>] code: Code) : Task =
+        StateMachineHelpers.__runtimeAsyncReturnUnit (code null)
+
+[<EntryPoint>]
+let main _ =
+    let builder = Builder()
+    builder {
+        yield 1
+        do! Task.Delay(1)
+    }
+    |> _.Wait()
+    0
+"""
+    |> withLangVersionPreview
+    |> withFSharpCoreShippedNet
+    |> compileExeAndRun
+    |> shouldSucceed
+
+[<Fact>]
+let ``runtime async ignores unreachable suspension`` () =
+    FSharp """
+module RuntimeAsyncUnreachableSuspensionTest
+
+open System.Threading.Tasks
+open System.Runtime.CompilerServices
+
+let f () =
+    if false then
+        AsyncHelpers.Await (Task.Delay 1)
+
+[<EntryPoint>]
+let main _ =
+    f ()
+    0
+"""
+    |> withLangVersionPreview
+    |> withFSharpCoreShippedNet
+    |> compileExeAndRun
+    |> shouldSucceed
+
+[<Fact>]
 let ``runtime async combines awaited chunks without delegates`` () =
     FSharp runtimeAsyncRawSource
     |> withLangVersionPreview
