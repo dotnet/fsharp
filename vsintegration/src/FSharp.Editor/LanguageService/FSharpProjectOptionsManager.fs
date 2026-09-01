@@ -46,7 +46,7 @@ module private FSharpProjectOptionsHelpers =
 
             member site.CompilationBinOutputPath =
                 site.CompilationOptions
-                |> Array.tryPick (fun s -> if s.StartsWith("-o:") then Some s.[3..] else None)
+                |> Array.tryPickV (fun s -> if s.StartsWith("-o:") then ValueSome s.[3..] else ValueNone)
 
             member _.ProjectFileName = project.FilePath
             member _.AdviseProjectSiteChanges(_, _) = ()
