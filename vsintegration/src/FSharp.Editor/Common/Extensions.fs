@@ -603,6 +603,23 @@ module List =
         | [] -> ValueNone
         | h :: t -> if predicate h then ValueSome h else tryFindV predicate t
 
+    let inline tryFindIndexV ([<InlineIfLambda>] predicate) list =
+        let rec loop i rest =
+            match rest with
+            | [] -> ValueNone
+            | h :: t -> if predicate h then ValueSome i else loop (i + 1) t
+
+        loop 0 list
+
+    /// Walks forward keeping the last match, so it stays tail-recursive on long lists.
+    let inline tryFindIndexBackV ([<InlineIfLambda>] predicate) list =
+        let rec loop i last rest =
+            match rest with
+            | [] -> last
+            | h :: t -> loop (i + 1) (if predicate h then ValueSome i else last) t
+
+        loop 0 ValueNone list
+
 [<RequireQualifiedAccess>]
 module Exception =
 

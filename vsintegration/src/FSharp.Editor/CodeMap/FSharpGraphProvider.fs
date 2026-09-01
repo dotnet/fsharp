@@ -91,15 +91,29 @@ type internal FSharpGraphProvider() =
 
         SourceLocation(Uri(range.FileName), Position(range.StartLine - 1, range.StartColumn), Position(range.EndLine - 1, range.EndColumn))
 
-    let tryResolve (frameName: string) (assemblyName: string) =
+    /// Checks every reported assembly concurrently, each one exactly once for the whole stack.
+    /// The Progression action handler returns void, so the platform moves on to the next pipeline
+    /// step as soon as it returns - the graph must be complete by then, hence the single wait here.
+    let resolveAll (context: ActionContext) (framesByAssembly: (string * ParsedFrame list) list) =
         use cancellation = new CancellationTokenSource(resolutionTimeout)
+        use _ = context.Cancelled.Subscribe(fun _ -> cancellation.Cancel())
 
         try
-            FSharpCallStackResolver.tryResolveFrameName workspace.Value assemblyName frameName cancellation.Token
-            |> Async.AwaitTask
+            framesByAssembly
+            |> List.map (fun (assemblyName, frames) ->
+                FSharpCallStackResolver.tryResolveMany workspace.Value assemblyName frames
+                |> CancellableTask.start cancellation.Token
+                |> Async.AwaitTask)
+            |> Async.Parallel
             |> Async.RunSynchronously
-        with _ ->
-            ValueNone
+            |> Array.toList
+        with
+        | :? OperationCanceledException -> reraise ()
+        | e ->
+            Trace.WriteLine $"[FSharpCodeMap] resolution failed: {e.Message}"
+
+            framesByAssembly
+            |> List.map (fun (_, frames) -> frames |> List.map (fun _ -> ValueNone))
 
     /// The synthesized parts of a frame name (`helperTwo@42.Invoke`) make ugly node labels even
     /// when full resolution fails; the parsed shape always yields a better one.
@@ -117,51 +131,66 @@ type internal FSharpGraphProvider() =
         | FrameStaticConstructor
         | FrameActivePattern _ -> ValueNone
 
-    let resolveNode (graph: Graph) (frameNode: GraphNode) =
-        match frameOf frameNode with
-        | ValueNone -> false
-        | ValueSome(assemblyName, functionName) ->
-            match FSharpStackFrameNameParser.parse functionName with
-            | ValueNone -> false
-            | ValueSome parsed ->
-                friendlyLabel parsed
-                |> ValueOption.iter (fun label -> frameNode.Label <- label)
+    let attachResolvedMethod (graph: Graph) (frameNode: GraphNode) (resolved: ResolvedFrame) =
+        let label =
+            match resolved.MemberName with
+            | ValueSome name -> name
+            | ValueNone -> String.Join(".", resolved.EntityPath)
 
-                match tryResolve functionName assemblyName with
-                | ValueNone -> false
-                | ValueSome resolved ->
-                    let label =
-                        match resolved.MemberName with
-                        | ValueSome name -> name
-                        | ValueNone -> String.Join(".", resolved.EntityPath)
+        let methodNode =
+            graph.Nodes.GetOrCreate(resolvedNodeId resolved, label, CodeNodeCategories.Method)
 
-                    let methodNode =
-                        graph.Nodes.GetOrCreate(resolvedNodeId resolved, label, CodeNodeCategories.Method)
+        methodNode.SetValue(CodeNodeProperties.SourceLocation, sourceLocationOf resolved)
+        |> ignore
 
-                    methodNode.SetValue(CodeNodeProperties.SourceLocation, sourceLocationOf resolved)
-                    |> ignore
-
-                    CallStackMethodNode(frameNode).ReferencesMethodNode <- MethodNode methodNode
-                    true
+        CallStackMethodNode(frameNode).ReferencesMethodNode <- MethodNode methodNode
 
     let resolveCallStack (context: ActionContext) =
         let graph = context.Graph
-        let mutable seen = 0
+
+        // Read the graph before touching it: resolving a frame adds nodes to the very collection
+        // `GetByCategory` enumerates.
+        let candidates =
+            [
+                for frameNode in graph.Nodes.GetByCategory [| callStackMethodCategory |] do
+                    match frameOf frameNode with
+                    | ValueNone -> ()
+                    | ValueSome(assemblyName, functionName) ->
+                        match FSharpStackFrameNameParser.parse functionName with
+                        | ValueNone -> ()
+                        | ValueSome parsed -> yield assemblyName, frameNode, parsed
+            ]
+
+        for _, frameNode, parsed in candidates do
+            friendlyLabel parsed |> ValueOption.iter (fun label -> frameNode.Label <- label)
+
+        let byAssembly =
+            candidates
+            |> List.groupBy (fun (assemblyName, _, _) -> assemblyName)
+            |> List.map (fun (assemblyName, group) -> assemblyName, group |> List.map (fun (_, frameNode, parsed) -> frameNode, parsed))
+
+        let resolutions =
+            byAssembly
+            |> List.map (fun (assemblyName, group) -> assemblyName, group |> List.map snd)
+            |> resolveAll context
+
         let mutable resolvedCount = 0
 
-        for frameNode in graph.Nodes.GetByCategory [| callStackMethodCategory |] |> Seq.toArray do
-            try
-                seen <- seen + 1
+        for (_, group), results in List.zip byAssembly resolutions do
+            for (frameNode, _), resolved in List.zip group results do
+                match resolved with
+                | ValueNone -> ()
+                | ValueSome resolved ->
+                    try
+                        attachResolvedMethod graph frameNode resolved
+                        context.AddHandled frameNode
+                        resolvedCount <- resolvedCount + 1
+                    with e ->
+                        // An unresolvable frame is expected - it stays a grey unresolved node, and
+                        // one bad frame must not abandon the rest of the stack.
+                        Trace.WriteLine $"[FSharpCodeMap] frame failed: {e.Message}"
 
-                if resolveNode graph frameNode then
-                    resolvedCount <- resolvedCount + 1
-                    context.AddHandled frameNode
-            with e ->
-                // An unresolvable frame is expected - it stays a grey unresolved node, and one bad
-                // frame must not abandon the rest of the stack.
-                Trace.WriteLine $"[FSharpCodeMap] frame failed: {e.Message}"
-
-        Trace.WriteLine $"[FSharpCodeMap] ResolveCallStack: {resolvedCount}/{seen} F# frames resolved"
+        Trace.WriteLine $"[FSharpCodeMap] ResolveCallStack: {resolvedCount}/{candidates.Length} F# frames resolved"
 
     interface IProvider with
         member _.Schema = schema
