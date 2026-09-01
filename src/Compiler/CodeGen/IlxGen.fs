@@ -1972,7 +1972,7 @@ let GenPossibleILDebugRange (cenv: cenv) m =
 //--------------------------------------------------------------------------
 
 let HashRangeSorted (ht: IDictionary<_, int * _>) =
-    seq { for KeyValue(_k, v) in ht -> v } |> Seq.sortBy fst |> Seq.map snd
+    [ for KeyValue(_k, v) in ht -> v ] |> List.sortBy fst |> List.map snd
 
 let MergeOptions m o1 o2 =
     match o1, o2 with
@@ -2075,9 +2075,9 @@ type TypeDefBuilder(tdef: ILTypeDef, tdefDiscards) =
         tdef.With(
             methods = mkILMethods (sortByKey gmethods),
             fields = mkILFields (sortByKey gfields),
-            properties = mkILProperties [ yield! tdef.Properties.AsList(); yield! HashRangeSorted gproperties ],
+            properties = mkILProperties (tdef.Properties.AsList() @ HashRangeSorted gproperties),
             events = mkILEvents (sortByKey gevents),
-            nestedTypes = mkILTypeDefs [ yield! tdef.NestedTypes.AsList(); yield! gnested.Close(g) ],
+            nestedTypes = mkILTypeDefs (tdef.NestedTypes.AsList() @ gnested.Close(g)),
             customAttrs = storeILCustomAttrs attrs
         )
 
@@ -12291,16 +12291,8 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) : ILTypeRef option 
                     | _ -> ()
                 ]
 
-            let ilMethods =
-                [
-                    yield! methodDefs
-                    yield! augmentOverrideMethodDefs
-                    yield! abstractMethodDefs
-                ]
-
-            let ilProperties =
-                mkILProperties [ yield! ilPropertyDefsForFields; yield! abstractPropDefs ]
-
+            let ilMethods = methodDefs @ augmentOverrideMethodDefs @ abstractMethodDefs
+            let ilProperties = mkILProperties (ilPropertyDefsForFields @ abstractPropDefs)
             let ilEvents = mkILEvents abstractEventDefs
             let ilFields = mkILFields ilFieldDefs
 
