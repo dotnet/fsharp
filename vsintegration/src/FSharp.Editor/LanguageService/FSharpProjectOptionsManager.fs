@@ -27,7 +27,7 @@ open Microsoft.VisualStudio.TextManager.Interop
 [<AutoOpen>]
 module private FSharpProjectOptionsHelpers =
 
-    let mapCpsProjectToSite (project: Project, cpsCommandLineOptions: IDictionary<ProjectId, string[] * string[]>) =
+    let mapCpsProjectToSite (project: Project, cpsCommandLineOptions: IDictionary<ProjectId, struct (string[] * string[])>) =
         let sourcePaths, referencePaths, options =
             match cpsCommandLineOptions.TryGetValue(project.Id) with
             | true, (sourcePaths, options) -> sourcePaths, [||], options
@@ -105,10 +105,13 @@ module private FSharpProjectOptionsHelpers =
 type private FSharpProjectOptionsMessage =
     | TryGetOptionsByDocument of
         Document *
-        AsyncReplyChannel<(FSharpParsingOptions * FSharpProjectOptions) voption> *
+        AsyncReplyChannel<struct (FSharpParsingOptions * FSharpProjectOptions) voption> *
         CancellationToken *
         userOpName: string
-    | TryGetOptionsByProject of Project * AsyncReplyChannel<(FSharpParsingOptions * FSharpProjectOptions) voption> * CancellationToken
+    | TryGetOptionsByProject of
+        Project *
+        AsyncReplyChannel<struct (FSharpParsingOptions * FSharpProjectOptions) voption> *
+        CancellationToken
     | ClearOptions of ProjectId
     | ClearSingleFileOptionsCache of DocumentId
 
@@ -117,12 +120,13 @@ type private FSharpProjectOptionsReactor(checker: FSharpChecker) =
     let cancellationTokenSource = new CancellationTokenSource()
 
     // Store command line options
-    let commandLineOptions = ConcurrentDictionary<ProjectId, string[] * string[]>()
+    let commandLineOptions =
+        ConcurrentDictionary<ProjectId, struct (string[] * string[])>()
 
     let legacyProjectSites = ConcurrentDictionary<ProjectId, IProjectSite>()
 
     let cache =
-        ConcurrentDictionary<ProjectId, Project * FSharpParsingOptions * FSharpProjectOptions>()
+        ConcurrentDictionary<ProjectId, struct (Project * FSharpParsingOptions * FSharpProjectOptions)>()
 
     let singleFileCache =
         ConcurrentDictionary<DocumentId, Project * VersionStamp * FSharpParsingOptions * FSharpProjectOptions * ConnectionPointSubscription>()
@@ -298,7 +302,7 @@ type private FSharpProjectOptionsReactor(checker: FSharpChecker) =
                 )
                 |> ignore
 
-                return ValueSome(parsingOptions, projectOptions)
+                return ValueSome struct (parsingOptions, projectOptions)
 
             | true, (oldProject, oldFileStamp, parsingOptions, projectOptions, _) ->
                 if fileStamp <> oldFileStamp || isProjectInvalidated document.Project oldProject ct then
@@ -308,7 +312,7 @@ type private FSharpProjectOptionsReactor(checker: FSharpChecker) =
 
                     return! tryComputeOptionsBySingleScriptOrFile document userOpName
                 else
-                    return ValueSome(parsingOptions, projectOptions)
+                    return ValueSome struct (parsingOptions, projectOptions)
         }
 
     let tryGetProjectSite (project: Project) =
@@ -342,7 +346,7 @@ type private FSharpProjectOptionsReactor(checker: FSharpChecker) =
                         if referencedProject.Language = FSharpConstants.FSharpLanguageName then
                             match! tryComputeOptions referencedProject with
                             | ValueNone -> canBail <- true
-                            | ValueSome(_, projectOptions) ->
+                            | ValueSome struct (_, projectOptions) ->
                                 referencedProjects.Add(
                                     FSharpReferencedProject.FSharpReference(referencedProject.OutputFilePath, projectOptions)
                                 )
@@ -413,7 +417,7 @@ type private FSharpProjectOptionsReactor(checker: FSharpChecker) =
                                 let options =
                                     projectsToClearCache
                                     |> Seq.map (fun pair ->
-                                        let _, _, projectOptions = pair.Value
+                                        let struct (_, _, projectOptions) = pair.Value
                                         projectOptions)
 
                                 checker.ClearCache(options, userOpName = "tryComputeOptions")
@@ -427,16 +431,16 @@ type private FSharpProjectOptionsReactor(checker: FSharpChecker) =
 
                             let parsingOptions, _ = checker.GetParsingOptionsFromProjectOptions(projectOptions)
 
-                            cache.[projectId] <- (project, parsingOptions, projectOptions)
+                            cache.[projectId] <- struct (project, parsingOptions, projectOptions)
 
-                            return ValueSome(parsingOptions, projectOptions)
+                            return ValueSome struct (parsingOptions, projectOptions)
 
-            | true, (oldProject, parsingOptions, projectOptions) ->
+            | true, struct (oldProject, parsingOptions, projectOptions) ->
                 if isProjectInvalidated oldProject project ct then
                     cache.TryRemove(projectId) |> ignore
                     return! tryComputeOptions project ct
                 else
-                    return ValueSome(parsingOptions, projectOptions)
+                    return ValueSome struct (parsingOptions, projectOptions)
         }
 
     let loop (agent: MailboxProcessor<FSharpProjectOptionsMessage>) =
@@ -508,7 +512,7 @@ type private FSharpProjectOptionsReactor(checker: FSharpChecker) =
 
                 | FSharpProjectOptionsMessage.ClearOptions(projectId) ->
                     match cache.TryRemove(projectId) with
-                    | true, (_, _, projectOptions) ->
+                    | true, struct (_, _, projectOptions) ->
                         lastSuccessfulCompilations.TryRemove(projectId) |> ignore
                         checker.ClearCache([ projectOptions ])
                     | _ -> ()
@@ -539,7 +543,7 @@ type private FSharpProjectOptionsReactor(checker: FSharpChecker) =
         agent.Post(FSharpProjectOptionsMessage.ClearSingleFileOptionsCache(documentId))
 
     member _.SetCommandLineOptions(projectId, sourcePaths, options) =
-        commandLineOptions.[projectId] <- (sourcePaths, options)
+        commandLineOptions.[projectId] <- struct (sourcePaths, options)
 
     member _.SetLegacyProjectSite(projectId, projectSite) =
         legacyProjectSites.[projectId] <- projectSite
