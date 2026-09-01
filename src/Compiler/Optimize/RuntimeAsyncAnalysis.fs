@@ -47,14 +47,19 @@ let ExprContainsRuntimeAsyncFragment (g: TcGlobals) (getLambdaBody: ValRef -> Ex
     exprContainsRuntimeAsyncFragment g getLambdaBody [] expr
 
 let ShouldForceRuntimeAsyncInline (g: TcGlobals) runtimeAsyncContext (getLambdaBody: ValRef -> Expr option) (vref: ValRef) inlineBody =
-    if runtimeAsyncContext && vref.InlineIfLambda && not vref.ShouldInline then
+    let containsRuntimeAsyncFragment =
+        match inlineBody with
+        | Some body -> ExprContainsRuntimeAsyncFragment g getLambdaBody body
+        | None -> hasRuntimeAsyncFragmentBody g getLambdaBody [] vref
+
+    if containsRuntimeAsyncFragment then
+        true
+    elif runtimeAsyncContext && vref.InlineIfLambda && not vref.ShouldInline then
         true
     elif not (vref.ShouldInline || vref.IsLocalRef) then
         false
     else
-        match inlineBody with
-        | Some body -> ExprContainsRuntimeAsyncFragment g getLambdaBody body
-        | None -> hasRuntimeAsyncFragmentBody g getLambdaBody [] vref
+        hasRuntimeAsyncFragmentBody g getLambdaBody [] vref
 
 let ShouldForceRuntimeAsyncApplication
     (g: TcGlobals)
@@ -78,6 +83,14 @@ let ShouldForceRuntimeAsyncApplication
             args)
 
 let InlineRuntimeAsyncLambdaArgument (g: TcGlobals) (isRuntimeAsyncFragment: Expr -> bool) expr =
+    let rec isLambdaExpression expr =
+        match stripExpr expr with
+        | Expr.DebugPoint(_, innerExpr)
+        | Expr.Let(_, innerExpr, _, _) -> isLambdaExpression innerExpr
+        | Expr.Lambda _
+        | Expr.TyLambda _ -> true
+        | _ -> false
+
     let rec stripLambdaDebugPoints expr =
         match expr with
         | Expr.DebugPoint(_, innerExpr) ->
@@ -165,11 +178,7 @@ let InlineRuntimeAsyncLambdaArgument (g: TcGlobals) (isRuntimeAsyncFragment: Exp
                     match stripExpr expr with
                     | Expr.Let(TBind(boundVal, boundExpr, _), body, _, _) when
                         boundVal.InlineIfLambda
-                        || ((match stripExpr boundExpr with
-                             | Expr.Lambda _
-                             | Expr.TyLambda _ -> true
-                             | _ -> false)
-                            && isRuntimeAsyncFragment boundExpr)
+                        || (isLambdaExpression boundExpr && isRuntimeAsyncFragment boundExpr)
                         ->
                         Some(cont (inlineBinding boundVal boundExpr body))
                     | _ -> None)

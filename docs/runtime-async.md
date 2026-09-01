@@ -152,7 +152,8 @@ method.
 
 After specialization, lambda arguments are substituted and their applications
 are beta-reduced before and after runtime-async reoptimization. This includes
-debug-point-wrapped lambdas, curried applications, and multi-argument lambdas.
+debug-point-wrapped lambdas, compiler-generated `let` wrappers, curried
+applications, and multi-argument lambdas.
 That step is required for computation-expression shapes where `Bind` returns a
 closure containing `Await`, and later `Combine`/`Delay` calls apply that closure.
 Dead branches eliminated by optimization do not reach code generation and do
