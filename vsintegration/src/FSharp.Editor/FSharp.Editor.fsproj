@@ -94,6 +94,9 @@
     <Compile Include="Navigation\NavigateToSearchService.fs" />
     <Compile Include="Navigation\FindUsagesService.fs" />
     <Compile Include="Navigation\FindDefinitionService.fs" />
+    <Compile Include="CodeMap\FSharpStackFrameNameParser.fs" />
+    <Compile Include="CodeMap\FSharpCallStackResolver.fs" />
+    <Compile Include="CodeMap\FSharpGraphProvider.fs" />
     <Compile Include="QuickInfo\WpfFactories.fs" />
     <Compile Include="QuickInfo\Views.fs" />
     <Compile Include="QuickInfo\QuickInfoProvider.fs" />
@@ -183,6 +186,22 @@
     <PackageReference Include="Microsoft.VisualStudio.ProjectSystem" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
     <PackageReference Include="Microsoft.VisualStudio.ProjectSystem.Managed" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
     <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Condition="'$(Configuration)' == 'Debug'" />
+  </ItemGroup>
+
+  <!-- The Progression assemblies backing Code Map ship only inside Visual Studio; they have no NuGet package. -->
+  <ItemGroup>
+    <Reference Include="Microsoft.VisualStudio.Progression.Interfaces">
+      <HintPath>$(MSBuildExtensionsPath)\..\Common7\IDE\CommonExtensions\Microsoft\Architecture Tools\GraphProviderPackage\Microsoft.VisualStudio.Progression.Interfaces.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Microsoft.VisualStudio.Progression.CodeSchema">
+      <HintPath>$(MSBuildExtensionsPath)\..\Common7\IDE\CommonExtensions\Microsoft\Architecture Tools\GraphProviderPackage\Microsoft.VisualStudio.Progression.CodeSchema.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Microsoft.VisualStudio.GraphModel">
+      <HintPath>$(MSBuildExtensionsPath)\..\Common7\IDE\PublicAssemblies\Microsoft.VisualStudio.GraphModel.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
   </ItemGroup>
 
   <ItemGroup>
