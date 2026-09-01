@@ -1388,7 +1388,7 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                     member _.CompilationReferences = x.CompilationReferences
                     member _.CompilationBinOutputPath = 
                         let outputPath = x.GetCurrentOutputAssembly()
-                        if String.IsNullOrWhiteSpace(outputPath) then None else Some(outputPath)
+                        if String.IsNullOrWhiteSpace(outputPath) then ValueNone else ValueSome(outputPath)
 
                     member _.Description = 
                         match sourcesAndFlags with
@@ -1431,7 +1431,7 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                     member _.CompilationSourceFiles = sourceFiles
                     member _.CompilationOptions = options
                     member _.CompilationReferences = refs
-                    member _.CompilationBinOutputPath = if String.IsNullOrWhiteSpace(outputPath) then None else Some(outputPath)
+                    member _.CompilationBinOutputPath = if String.IsNullOrWhiteSpace(outputPath) then ValueNone else ValueSome(outputPath)
                     member _.ProjectFileName = projFileName
                     member _.BuildErrorReporter 
                         with get() = staticBuildErrorReporter
