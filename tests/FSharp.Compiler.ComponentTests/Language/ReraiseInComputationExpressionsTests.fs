@@ -109,7 +109,8 @@ module Rethrowing =
                     handled.Value <- e
                     return reraise ()
             }
-        t.GetAwaiter().GetResult()
+        let awaiter = t.GetAwaiter()
+        awaiter.GetResult()
         |> ignore"""
 
     [<Fact>]
@@ -225,7 +226,8 @@ module Rethrowing =
                     do! System.Threading.Tasks.Task.Delay 1
                     return reraise ()
             }
-        t.GetAwaiter().GetResult()
+        let awaiter = t.GetAwaiter()
+        awaiter.GetResult()
         |> ignore"""
 
     [<Fact>]
