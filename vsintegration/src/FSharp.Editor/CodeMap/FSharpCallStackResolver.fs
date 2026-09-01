@@ -3,7 +3,6 @@
 namespace Microsoft.VisualStudio.FSharp.Editor
 
 open System
-open System.Threading
 
 open Microsoft.CodeAnalysis
 
@@ -39,7 +38,7 @@ module internal FSharpCallStackResolver =
     /// explicit interface implementation puts the interface name inside the member name. Both are
     /// undone by trying every split of the path, longest entity path first.
     let private entityPathCandidates (path: FramePathSegment list) (memberName: string voption) =
-        [
+        seq {
             for split in List.length path .. -1 .. 1 do
                 let entityNames = path |> List.truncate split |> List.map _.Name
                 let trailing = path |> List.skip split |> List.map _.Name
@@ -50,15 +49,15 @@ module internal FSharpCallStackResolver =
                     | ValueNone, [] -> ValueNone
                     | ValueNone, trailing -> ValueSome(String.Join(".", trailing))
 
-                yield entityNames, qualifiedMember
+                yield struct (entityNames, qualifiedMember)
 
                 let unsuffixed =
                     entityNames
                     |> List.map (fun name -> stripModuleSuffix name |> ValueOption.defaultValue name)
 
                 if unsuffixed <> entityNames then
-                    yield unsuffixed, qualifiedMember
-        ]
+                    yield struct (unsuffixed, qualifiedMember)
+        }
 
     let private memberName frameMember =
         match frameMember with
@@ -91,7 +90,7 @@ module internal FSharpCallStackResolver =
         |> Seq.filter (fun m ->
             m.GenericParameters.Count = frame.MethodGenericArity
             || frame.MethodGenericArity = 0)
-        |> Seq.tryHead
+        |> Seq.tryHeadV
 
     /// A closure is compiled to its own class, so nothing in the assembly signature carries its name.
     /// Report the enclosing declaration instead - the nearest one starting at or above the line the
@@ -100,68 +99,69 @@ module internal FSharpCallStackResolver =
         entity.TryGetMembersFunctionsAndValues()
         |> Seq.filter (fun m -> m.DeclarationLocation.StartLine <= origin.Line)
         |> Seq.sortByDescending _.DeclarationLocation.StartLine
-        |> Seq.tryHead
+        |> Seq.tryHeadV
 
     let private tryResolveInProject (frame: ParsedFrame) (signature: FSharpAssemblySignature) =
         let requested = memberName frame.Member
 
         entityPathCandidates frame.Path requested
-        |> Seq.tryPick (fun (entityPath, qualifiedMember) ->
+        |> Seq.tryPickV (fun struct (entityPath, qualifiedMember) ->
             match signature.FindEntityByPath entityPath with
-            | None -> None
+            | None -> ValueNone
             | Some entity ->
                 match frame.Member, qualifiedMember with
-                | FrameStartupCode, _ -> Some(entity.DeclarationLocation, entityPath, ValueNone)
+                | FrameStartupCode, _ -> ValueSome(entity.DeclarationLocation, entityPath, ValueNone)
                 | FrameClosureBody origin, _ ->
                     let enclosing =
                         match qualifiedMember with
                         | ValueSome name ->
                             tryFindMember frame name entity
-                            |> Option.orElseWith (fun () -> tryFindEnclosingDeclaration origin entity)
+                            |> ValueOption.orElseWith (fun () -> tryFindEnclosingDeclaration origin entity)
                         | ValueNone -> tryFindEnclosingDeclaration origin entity
 
                     enclosing
-                    |> Option.map (fun m -> m.DeclarationLocation, entityPath, ValueSome m.CompiledName)
+                    |> ValueOption.map (fun m -> m.DeclarationLocation, entityPath, ValueSome m.CompiledName)
                 | _, ValueSome name ->
                     tryFindMember frame name entity
-                    |> Option.map (fun m -> m.DeclarationLocation, entityPath, ValueSome m.CompiledName)
-                | _, ValueNone -> None)
+                    |> ValueOption.map (fun m -> m.DeclarationLocation, entityPath, ValueSome m.CompiledName)
+                | _, ValueNone -> ValueNone)
 
-    /// Maps a parsed frame back to the source it was written in, searching only the projects that
-    /// produced the module the debugger reported.
-    let tryResolve (workspace: Workspace) (assemblyName: string) (frame: ParsedFrame) =
+    let private projectsProducing (workspace: Workspace) (assemblyName: string) =
+        workspace.CurrentSolution.Projects
+        |> Seq.filter (fun p ->
+            p.IsFSharp
+            && String.Equals(p.AssemblyName, assemblyName, StringComparison.OrdinalIgnoreCase))
+
+    /// Maps parsed frames back to the source they were written in, searching only the projects that
+    /// produced the module the debugger reported. Frames are resolved as a batch so a project is
+    /// checked once for the whole stack rather than once per frame.
+    let tryResolveMany (workspace: Workspace) (assemblyName: string) (frames: ParsedFrame list) =
         cancellableTask {
-            let projects =
-                workspace.CurrentSolution.Projects
-                |> Seq.filter (fun p ->
-                    p.IsFSharp
-                    && String.Equals(p.AssemblyName, assemblyName, StringComparison.OrdinalIgnoreCase))
+            let resolved = Array.create (List.length frames) ValueNone
 
-            let mutable resolved = ValueNone
-
-            for project in projects do
-                if resolved.IsNone then
+            for project in projectsProducing workspace assemblyName do
+                if resolved |> Array.exists _.IsNone then
                     let! checker, _, _, options = project.GetFSharpCompilationOptionsAsync()
                     let! results = checker.ParseAndCheckProject(options)
 
-                    match tryResolveInProject frame results.AssemblySignature with
-                    | Some(declarationRange, entityPath, resolvedMember) ->
-                        resolved <-
-                            ValueSome
-                                {
-                                    DeclarationRange = declarationRange
-                                    Project = project
-                                    EntityPath = entityPath
-                                    MemberName = resolvedMember
-                                }
-                    | None -> ()
+                    frames
+                    |> List.iteri (fun i frame ->
+                        if resolved.[i].IsNone then
+                            resolved.[i] <-
+                                tryResolveInProject frame results.AssemblySignature
+                                |> ValueOption.map (fun (declarationRange, entityPath, resolvedMember) ->
+                                    {
+                                        DeclarationRange = declarationRange
+                                        Project = project
+                                        EntityPath = entityPath
+                                        MemberName = resolvedMember
+                                    }))
 
-            return resolved
+            return List.ofArray resolved
         }
 
-    let tryResolveFrameName (workspace: Workspace) (assemblyName: string) (frameName: string) (cancellationToken: CancellationToken) =
-        match FSharpStackFrameNameParser.parse frameName with
-        | ValueNone -> System.Threading.Tasks.Task.FromResult ValueNone
-        | ValueSome frame ->
-            tryResolve workspace assemblyName frame
-            |> CancellableTask.start cancellationToken
+    let tryResolve (workspace: Workspace) (assemblyName: string) (frame: ParsedFrame) =
+        cancellableTask {
+            let! resolved = tryResolveMany workspace assemblyName [ frame ]
+            return List.head resolved
+        }
