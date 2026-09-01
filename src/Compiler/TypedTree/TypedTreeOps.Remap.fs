@@ -136,6 +136,9 @@ module internal TypeRemapping =
 
             /// Remove existing trait solutions?
             removeTraitSolutions: bool
+
+            /// Set only while a tree is rebuilt for another project to read.
+            ccuRebind: (CcuThunk -> CcuThunk) option
         }
 
     let emptyRemap =
@@ -144,6 +147,7 @@ module internal TypeRemapping =
             tyconRefRemap = emptyTyconRefRemap
             valRemap = ValMap.Empty
             removeTraitSolutions = false
+            ccuRebind = None
         }
 
     type Remap with
@@ -159,12 +163,36 @@ module internal TypeRemapping =
         }
 
     let isRemapEmpty remap =
-        isNil remap.tpinst && remap.tyconRefRemap.IsEmpty && remap.valRemap.IsEmpty
+        isNil remap.tpinst
+        && remap.tyconRefRemap.IsEmpty
+        && remap.valRemap.IsEmpty
+        && remap.ccuRebind.IsNone
 
     let rec instTyparRef tpinst ty tp =
         match tpinst with
         | [] -> ty
         | (tpR, tyR) :: t -> if typarEq tp tpR then tyR else instTyparRef t ty tp
+
+    let rebindTyconRef (tyenv: Remap) (tcref: TyconRef) =
+        match tyenv.ccuRebind, tcref with
+        | Some rebind, ERefNonLocal(NonLocalEntityRef(ccu, path)) ->
+            let ccuR = rebind ccu
+
+            // Reference identity, not ccuEq: the thunk is still delayed here, and ccuEq calls an
+            // unresolved thunk equal to anything of the same name
+            if obj.ReferenceEquals(ccu, ccuR) then
+                tcref
+            else
+                ERefNonLocal(NonLocalEntityRef(ccuR, path))
+        | _ -> tcref
+
+    /// Table first: a reference it rewrites is one of the project's own, already where it needs to be.
+    let remapOrRebindTyconRef (tyenv: Remap) tcref =
+        match tyenv.tyconRefRemap.TryFind tcref with
+        | Some tcrefR -> tcrefR
+        // A field test rather than a call that returns its argument, for the remaps that never rebind
+        | None when tyenv.ccuRebind.IsNone -> tcref
+        | None -> rebindTyconRef tyenv tcref
 
     let remapTyconRef (tcmap: TyconRefMap<_>) tcref =
         match tcmap.TryFind tcref with
@@ -195,21 +223,31 @@ module internal TypeRemapping =
             match tyenv.tyconRefRemap.TryFind tcref with
             | Some tcrefR -> TType_app(tcrefR, remapTypesAux tyenv tinst, flags)
             | None ->
-                match tinst with
-                | [] -> ty // optimization to avoid re-allocation of TType_app node in the common case
-                | _ ->
-                    // avoid reallocation on idempotent
+                // instType reaches here on every generic instantiation and never rebinds
+                match tyenv.ccuRebind with
+                | None ->
+                    match tinst with
+                    | [] -> ty // optimization to avoid re-allocation of TType_app node in the common case
+                    | _ ->
+                        // avoid reallocation on idempotent
+                        let tinstR = remapTypesAux tyenv tinst
+
+                        if tinst === tinstR then
+                            ty
+                        else
+                            TType_app(tcref, tinstR, flags)
+                | Some _ ->
+                    let tcrefR = rebindTyconRef tyenv tcref
                     let tinstR = remapTypesAux tyenv tinst
 
-                    if tinst === tinstR then
+                    if tinst === tinstR && tcref === tcrefR then
                         ty
                     else
-                        TType_app(tcref, tinstR, flags)
+                        TType_app(tcrefR, tinstR, flags)
 
         | TType_ucase(UnionCaseRef(tcref, n), tinst) ->
-            match tyenv.tyconRefRemap.TryFind tcref with
-            | Some tcrefR -> TType_ucase(UnionCaseRef(tcrefR, n), remapTypesAux tyenv tinst)
-            | None -> TType_ucase(UnionCaseRef(tcref, n), remapTypesAux tyenv tinst)
+            // Rebuilt either way, so unlike the cases around it nothing is kept by telling them apart
+            TType_ucase(UnionCaseRef(remapOrRebindTyconRef tyenv tcref, n), remapTypesAux tyenv tinst)
 
         | TType_anon(anonInfo, l) as ty ->
             let tupInfoR = remapTupInfoAux tyenv anonInfo.TupInfo
@@ -250,7 +288,14 @@ module internal TypeRemapping =
         | Measure.Const(entityRef, m) ->
             match tyenv.tyconRefRemap.TryFind entityRef with
             | Some tcref -> Measure.Const(tcref, m)
-            | None -> unt
+            | None when tyenv.ccuRebind.IsNone -> unt
+            | None ->
+                let tcrefR = rebindTyconRef tyenv entityRef
+
+                if entityRef === tcrefR then
+                    unt
+                else
+                    Measure.Const(tcrefR, m)
         | Measure.Prod(u1, u2, m) -> Measure.Prod(remapMeasureAux tyenv u1, remapMeasureAux tyenv u2, m)
         | Measure.RationalPower(u, q) -> Measure.RationalPower(remapMeasureAux tyenv u, q)
         | Measure.Inv u -> Measure.Inv(remapMeasureAux tyenv u)
@@ -389,7 +434,7 @@ module internal TypeRemapping =
 
     and remapNonLocalValRef tyenv (nlvref: NonLocalValOrMemberRef) =
         let eref = nlvref.EnclosingEntity
-        let erefR = remapTyconRef tyenv.tyconRefRemap eref
+        let erefR = remapOrRebindTyconRef tyenv eref
         let vlink = nlvref.ItemKey
         let vlinkR = remapValLinkage tyenv vlink
 
@@ -464,6 +509,7 @@ module internal TypeRemapping =
             tpinst = tpinst
             valRemap = ValMap.Empty
             removeTraitSolutions = false
+            ccuRebind = None
         }
 
     // entry points for "typar -> TType" instantiation
