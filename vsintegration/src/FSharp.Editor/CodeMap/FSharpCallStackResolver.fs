@@ -17,7 +17,13 @@ type internal ResolvedFrame =
     {
         DeclarationRange: range
         Project: Project
-        EntityPath: string list
+        EntityPath: string array
+        /// The enclosing namespace only – containing modules and types go into `TypeChain` instead,
+        /// matching how the metadata provider identifies nested types.
+        Namespace: string voption
+        /// Compiled type names outermost-first, each with its generic arity; the last one declares
+        /// the member.
+        TypeChain: struct (string * int) array
         MemberName: string voption
     }
 
@@ -37,25 +43,34 @@ module internal FSharpCallStackResolver =
     /// A frame name flattens namespaces, modules and nested types into one dotted path, and an
     /// explicit interface implementation puts the interface name inside the member name. Both are
     /// undone by trying every split of the path, longest entity path first.
-    let private entityPathCandidates (path: FramePathSegment list) (memberName: string voption) =
+    /// `FindEntityByPath` looks entities up by their mangled names, so a generic segment must keep
+    /// its arity suffix (`Box`1`), which the frame parser split off.
+    let private mangledName (segment: FramePathSegment) =
+        if segment.GenericArity = 0 then
+            segment.Name
+        else
+            $"{segment.Name}`{segment.GenericArity}"
+
+    let private entityPathCandidates (path: FramePathSegment array) (memberName: string voption) =
         seq {
-            for split in List.length path .. -1 .. 1 do
-                let entityNames = path |> List.truncate split |> List.map _.Name
-                let trailing = path |> List.skip split |> List.map _.Name
+            for split in path.Length .. -1 .. 1 do
+                let entityNames = path |> Seq.truncate split |> Seq.map mangledName |> Seq.toArray
+                let trailing = path |> Seq.skip split |> Seq.map _.Name |> Seq.toArray
 
                 let qualifiedMember =
-                    match memberName, trailing with
-                    | ValueSome name, trailing -> ValueSome(String.Join(".", [ yield! trailing; yield name ]))
-                    | ValueNone, [] -> ValueNone
-                    | ValueNone, trailing -> ValueSome(String.Join(".", trailing))
+                    match memberName with
+                    | ValueSome name -> ValueSome(String.Join(".", [| yield! trailing; yield name |]))
+                    | ValueNone when trailing.Length = 0 -> ValueNone
+                    | ValueNone -> ValueSome(String.Join(".", trailing))
 
                 yield struct (entityNames, qualifiedMember)
 
-                let unsuffixed =
-                    entityNames
-                    |> List.map (fun name -> stripModuleSuffix name |> ValueOption.defaultValue name)
+                // Only worth a second candidate when a segment actually carries the suffix.
+                if entityNames |> Array.exists (stripModuleSuffix >> ValueOption.isSome) then
+                    let unsuffixed =
+                        entityNames
+                        |> Array.map (fun name -> stripModuleSuffix name |> ValueOption.defaultValue name)
 
-                if unsuffixed <> entityNames then
                     yield struct (unsuffixed, qualifiedMember)
         }
 
@@ -101,16 +116,36 @@ module internal FSharpCallStackResolver =
         |> Seq.sortByDescending _.DeclarationLocation.StartLine
         |> Seq.tryHeadV
 
+    let private stripArity (compiledName: string) =
+        match compiledName.IndexOf '`' with
+        | -1 -> compiledName
+        | i -> compiledName.Substring(0, i)
+
+    /// Compiled type names from the outermost type or module down to `entity`, with generic arities.
+    let private typeChainOf (entity: FSharpEntity) =
+        let rec walk (entity: FSharpEntity) chain =
+            let chain =
+                struct (stripArity entity.CompiledName, entity.GenericParameters.Count) :: chain
+
+            match entity.DeclaringEntity with
+            | Some parent when not parent.IsNamespace -> walk parent chain
+            | _ -> chain
+
+        walk entity [] |> Array.ofList
+
     let private tryResolveInProject (frame: ParsedFrame) (signature: FSharpAssemblySignature) =
         let requested = memberName frame.Member
 
         entityPathCandidates frame.Path requested
         |> Seq.tryPickV (fun struct (entityPath, qualifiedMember) ->
-            match signature.FindEntityByPath entityPath with
+            match signature.FindEntityByPath(List.ofArray entityPath) with
             | None -> ValueNone
             | Some entity ->
+                let resolved (location: range) memberName =
+                    ValueSome(location, entityPath, entity, memberName)
+
                 match frame.Member, qualifiedMember with
-                | FrameStartupCode, _ -> ValueSome(entity.DeclarationLocation, entityPath, ValueNone)
+                | FrameStartupCode, _ -> resolved entity.DeclarationLocation ValueNone
                 | FrameClosureBody origin, _ ->
                     let enclosing =
                         match qualifiedMember with
@@ -120,10 +155,10 @@ module internal FSharpCallStackResolver =
                         | ValueNone -> tryFindEnclosingDeclaration origin entity
 
                     enclosing
-                    |> ValueOption.map (fun m -> m.DeclarationLocation, entityPath, ValueSome m.CompiledName)
+                    |> ValueOption.bind (fun m -> resolved m.DeclarationLocation (ValueSome m.CompiledName))
                 | _, ValueSome name ->
                     tryFindMember frame name entity
-                    |> ValueOption.map (fun m -> m.DeclarationLocation, entityPath, ValueSome m.CompiledName)
+                    |> ValueOption.bind (fun m -> resolved m.DeclarationLocation (ValueSome m.CompiledName))
                 | _, ValueNone -> ValueNone)
 
     let private projectsProducing (workspace: Workspace) (assemblyName: string) =
@@ -135,9 +170,9 @@ module internal FSharpCallStackResolver =
     /// Maps parsed frames back to the source they were written in, searching only the projects that
     /// produced the module the debugger reported. Frames are resolved as a batch so a project is
     /// checked once for the whole stack rather than once per frame.
-    let tryResolveMany (workspace: Workspace) (assemblyName: string) (frames: ParsedFrame list) =
+    let tryResolveMany (workspace: Workspace) (assemblyName: string) (frames: ParsedFrame array) =
         cancellableTask {
-            let resolved = Array.create (List.length frames) ValueNone
+            let resolved = Array.create frames.Length ValueNone
 
             for project in projectsProducing workspace assemblyName do
                 if resolved |> Array.exists _.IsNone then
@@ -145,23 +180,28 @@ module internal FSharpCallStackResolver =
                     let! results = checker.ParseAndCheckProject(options)
 
                     frames
-                    |> List.iteri (fun i frame ->
+                    |> Array.iteri (fun i frame ->
                         if resolved.[i].IsNone then
                             resolved.[i] <-
                                 tryResolveInProject frame results.AssemblySignature
-                                |> ValueOption.map (fun (declarationRange, entityPath, resolvedMember) ->
+                                |> ValueOption.map (fun (declarationRange, entityPath, entity, resolvedMember) ->
                                     {
                                         DeclarationRange = declarationRange
                                         Project = project
                                         EntityPath = entityPath
+                                        Namespace =
+                                            match entity.Namespace with
+                                            | Some ns when not (String.IsNullOrEmpty ns) -> ValueSome ns
+                                            | _ -> ValueNone
+                                        TypeChain = typeChainOf entity
                                         MemberName = resolvedMember
                                     }))
 
-            return List.ofArray resolved
+            return resolved
         }
 
     let tryResolve (workspace: Workspace) (assemblyName: string) (frame: ParsedFrame) =
         cancellableTask {
-            let! resolved = tryResolveMany workspace assemblyName [ frame ]
-            return List.head resolved
+            let! resolved = tryResolveMany workspace assemblyName [| frame |]
+            return Array.head resolved
         }
