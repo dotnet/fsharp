@@ -7,6 +7,9 @@ open System.ComponentModel.Composition
 open System.Diagnostics
 open System.IO
 open System.Threading
+open System.Threading.Tasks
+
+open FSharp.Compiler.Syntax
 
 open Microsoft.VisualStudio.ComponentModelHost
 open Microsoft.VisualStudio.LanguageServices
@@ -18,6 +21,8 @@ open Microsoft.VisualStudio.GraphModel.Schemas
 open Microsoft.VisualStudio.Progression
 open Microsoft.VisualStudio.Progression.CodeSchema.Api
 
+open CancellableTasks
+
 /// Resolves the F# frames of a debugger call stack shown on a Code Map. The debugger contributes
 /// `CodeSchema_CallStackMethod` nodes carrying nothing but the module and the mangled frame name;
 /// without a provider claiming them they stay unresolved and carry no source location.
@@ -27,8 +32,6 @@ open Microsoft.VisualStudio.Progression.CodeSchema.Api
                  IntellisenseType = "{BC6DD5A5-D4D6-4dab-A00D-A51242DBAF1B}",
                  ProjectCapability = "FSharp")>]
 type internal FSharpGraphProvider() =
-
-    let callStackMethodCategory = "CodeSchema_CallStackMethod"
 
     /// The frame resolution runs on a Progression worker, so a project that is slow to check must
     /// leave the node unresolved rather than stall the whole map.
@@ -61,29 +64,47 @@ type internal FSharpGraphProvider() =
 
             ValueSome(Path.GetFileNameWithoutExtension modulePath, functionName)
 
+    /// Builds the same node identity Roslyn's `GraphNodeIdCreation.GetIdForMemberAsync` produced,
+    /// so a frame resolved here fuses with the node the metadata provider creates for the same
+    /// method: a nested type becomes `Type=(Name=… ParentType=…)`, a generic one carries
+    /// `GenericParameterCount`, and only a top-level non-generic type collapses to a plain string.
+    let rec private typePartial (chain: struct (string * int) array) upTo (nodeName: GraphNodeIdName) =
+        let struct (name, arity) = chain.[upTo]
+
+        if upTo = 0 && arity = 0 then
+            GraphNodeId.GetPartial(nodeName, name)
+        else
+            let partials =
+                [|
+                    GraphNodeId.GetPartial(Microsoft.VisualStudio.Progression.CodeSchema.CodeQualifiedName.Name, name)
+                    if arity > 0 then
+                        GraphNodeId.GetPartial(CodeGraphNodeIdName.GenericParameterCountIdentifier, string arity)
+                    if upTo > 0 then
+                        typePartial chain (upTo - 1) CodeGraphNodeIdName.ParentType
+                |]
+
+            let value: obj =
+                if partials.Length > 1 then
+                    GraphNodeIdCollection(false, partials)
+                else
+                    GraphNodeId.GetNested partials
+
+            GraphNodeId.GetPartial(nodeName, value)
+
     let resolvedNodeId (resolved: ResolvedFrame) =
-        let assembly =
+        [|
             match resolved.Project.OutputFilePath with
-            | null -> GraphNodeId.Empty
+            | null -> ()
             | path -> GraphNodeId.GetPartial(CodeGraphNodeIdName.Assembly, Uri(path))
-
-        let ``namespace``, typeName =
-            match resolved.EntityPath with
-            | [] -> "", ""
-            | path -> String.Join(".", path |> List.truncate (path.Length - 1)), List.last path
-
-        [
-            if assembly <> GraphNodeId.Empty then
-                assembly
-            if not (String.IsNullOrEmpty ``namespace``) then
-                GraphNodeId.GetPartial(CodeGraphNodeIdName.Namespace, ``namespace``)
-            if not (String.IsNullOrEmpty typeName) then
-                GraphNodeId.GetPartial(CodeGraphNodeIdName.Type, typeName)
+            match resolved.Namespace with
+            | ValueSome ns -> GraphNodeId.GetPartial(CodeGraphNodeIdName.Namespace, ns)
+            | ValueNone -> ()
+            if resolved.TypeChain.Length > 0 then
+                typePartial resolved.TypeChain (resolved.TypeChain.Length - 1) CodeGraphNodeIdName.Type
             match resolved.MemberName with
             | ValueSome name -> GraphNodeId.GetPartial(CodeGraphNodeIdName.Member, name)
             | ValueNone -> ()
-        ]
-        |> Array.ofList
+        |]
         |> GraphNodeId.GetNested
 
     let sourceLocationOf (resolved: ResolvedFrame) =
@@ -92,50 +113,59 @@ type internal FSharpGraphProvider() =
         SourceLocation(Uri(range.FileName), Position(range.StartLine - 1, range.StartColumn), Position(range.EndLine - 1, range.EndColumn))
 
     /// Checks every reported assembly concurrently, each one exactly once for the whole stack.
-    /// The Progression action handler returns void, so the platform moves on to the next pipeline
-    /// step as soon as it returns - the graph must be complete by then, hence the single wait here.
-    let resolveAll (context: ActionContext) (framesByAssembly: (string * ParsedFrame list) list) =
-        use cancellation = new CancellationTokenSource(resolutionTimeout)
-        use _ = context.Cancelled.Subscribe(fun _ -> cancellation.Cancel())
+    /// `ActionManager` runs the action on a `JobQueue` worker, so blocking here never reaches the
+    /// UI - but the handler returns void and the platform continues into the next pipeline step the
+    /// moment it does, so the graph has to be complete before we return.
+    let resolveAll (context: ActionContext) (framesByAssembly: struct (string * ParsedFrame array) array) =
+        cancellableTask {
+            let! ambient = CancellableTask.getCancellationToken ()
+            use cancellation = CancellationTokenSource.CreateLinkedTokenSource ambient
+            cancellation.CancelAfter resolutionTimeout
+            use _ = context.Cancelled.Subscribe(fun _ -> cancellation.Cancel())
 
-        try
-            framesByAssembly
-            |> List.map (fun (assemblyName, frames) ->
-                FSharpCallStackResolver.tryResolveMany workspace.Value assemblyName frames
-                |> CancellableTask.start cancellation.Token
-                |> Async.AwaitTask)
-            |> Async.Parallel
-            |> Async.RunSynchronously
-            |> Array.toList
-        with
-        | :? OperationCanceledException -> reraise ()
-        | e ->
-            Trace.WriteLine $"[FSharpCodeMap] resolution failed: {e.Message}"
+            try
+                let resolveEverything =
+                    framesByAssembly
+                    |> Seq.map (fun struct (assemblyName, frames) ->
+                        FSharpCallStackResolver.tryResolveMany workspace.Value assemblyName frames)
+                    |> CancellableTask.whenAllThrottled (max 1 Environment.ProcessorCount)
 
-            framesByAssembly
-            |> List.map (fun (_, frames) -> frames |> List.map (fun _ -> ValueNone))
+                return! resolveEverything cancellation.Token
+            with e when not (e :? OperationCanceledException) ->
+                Trace.WriteLine $"[FSharpCodeMap] resolution failed: {e.Message}"
 
-    /// The synthesized parts of a frame name (`helperTwo@42.Invoke`) make ugly node labels even
-    /// when full resolution fails; the parsed shape always yields a better one.
+                return
+                    framesByAssembly
+                    |> Array.map (fun struct (_, frames) -> frames |> Array.map (fun _ -> ValueNone))
+        }
+
+    /// The synthesized parts of a frame name (`helperTwo@42.Invoke`, `op_PlusBangPlus`) make ugly
+    /// node labels even when full resolution fails; the parsed shape always yields a better one.
     let friendlyLabel (frame: ParsedFrame) =
         match frame.Member with
         | FrameClosureBody origin -> ValueSome origin.EnclosingName
         | FramePropertyGetter name
         | FramePropertySetter name -> ValueSome name
+        | FrameMethod name when PrettyNaming.IsLogicalOpName name ->
+            ValueSome $"({PrettyNaming.ConvertValLogicalNameToDisplayNameCore name})"
         | FrameStartupCode ->
             match frame.Path with
-            | [] -> ValueNone
-            | path -> ValueSome (List.last path).Name
+            | [||] -> ValueNone
+            | path -> ValueSome (Array.last path).Name
         | FrameMethod _
         | FrameConstructor
         | FrameStaticConstructor
         | FrameActivePattern _ -> ValueNone
 
+    /// Mirrors what the built-in C#/VB resolver does for a frame it recognises: create the method
+    /// node, give it a source location, and link the frame to it - all inside a graph transaction.
     let attachResolvedMethod (graph: Graph) (frameNode: GraphNode) (resolved: ResolvedFrame) =
         let label =
             match resolved.MemberName with
             | ValueSome name -> name
             | ValueNone -> String.Join(".", resolved.EntityPath)
+
+        use transaction = new GraphTransactionScope()
 
         let methodNode =
             graph.Nodes.GetOrCreate(resolvedNodeId resolved, label, CodeNodeCategories.Method)
@@ -143,58 +173,77 @@ type internal FSharpGraphProvider() =
         methodNode.SetValue(CodeNodeProperties.SourceLocation, sourceLocationOf resolved)
         |> ignore
 
-        CallStackMethodNode(frameNode).ReferencesMethodNode <- MethodNode methodNode
+        CodeSchemaHelper.GetOrCreateLink<CallStackMethodReferencesMethodLink>(graph, frameNode.Id, methodNode.Id, String.Empty)
+        |> ignore
+
+        transaction.Complete()
 
     let resolveCallStack (context: ActionContext) =
-        let graph = context.Graph
+        cancellableTask {
+            let graph = context.Graph
 
-        // Read the graph before touching it: resolving a frame adds nodes to the very collection
-        // `GetByCategory` enumerates.
-        let candidates =
-            [
-                for frameNode in graph.Nodes.GetByCategory [| callStackMethodCategory |] do
-                    match frameOf frameNode with
-                    | ValueNone -> ()
-                    | ValueSome(assemblyName, functionName) ->
-                        match FSharpStackFrameNameParser.parse functionName with
+            // The platform hands the frame nodes in as the action's input; a node another provider
+            // already claimed is excluded. Snapshot before resolution starts mutating the graph.
+            let candidates =
+                [|
+                    for frameNode in context.UnhandledInputNodes() do
+                        match frameOf frameNode with
                         | ValueNone -> ()
-                        | ValueSome parsed -> yield assemblyName, frameNode, parsed
-            ]
+                        | ValueSome(assemblyName, functionName) ->
+                            match FSharpStackFrameNameParser.parse functionName with
+                            | ValueNone -> ()
+                            | ValueSome parsed -> yield assemblyName, frameNode, parsed
+                |]
 
-        for _, frameNode, parsed in candidates do
-            friendlyLabel parsed |> ValueOption.iter (fun label -> frameNode.Label <- label)
+            if candidates.Length > 0 then
+                use labelling = new GraphTransactionScope()
 
-        let byAssembly =
-            candidates
-            |> List.groupBy (fun (assemblyName, _, _) -> assemblyName)
-            |> List.map (fun (assemblyName, group) -> assemblyName, group |> List.map (fun (_, frameNode, parsed) -> frameNode, parsed))
+                for _, frameNode, parsed in candidates do
+                    friendlyLabel parsed |> ValueOption.iter (fun label -> frameNode.Label <- label)
 
-        let resolutions =
-            byAssembly
-            |> List.map (fun (assemblyName, group) -> assemblyName, group |> List.map snd)
-            |> resolveAll context
+                labelling.Complete()
 
-        let mutable resolvedCount = 0
+            let byAssembly =
+                candidates
+                |> Array.groupBy (fun (assemblyName, _, _) -> assemblyName)
+                |> Array.map (fun (assemblyName, group) ->
+                    assemblyName, group |> Array.map (fun (_, frameNode, parsed) -> frameNode, parsed))
 
-        for (_, group), results in List.zip byAssembly resolutions do
-            for (frameNode, _), resolved in List.zip group results do
-                match resolved with
-                | ValueNone -> ()
-                | ValueSome resolved ->
-                    try
-                        attachResolvedMethod graph frameNode resolved
-                        context.AddHandled frameNode
-                        resolvedCount <- resolvedCount + 1
-                    with e ->
-                        // An unresolvable frame is expected - it stays a grey unresolved node, and
-                        // one bad frame must not abandon the rest of the stack.
-                        Trace.WriteLine $"[FSharpCodeMap] frame failed: {e.Message}"
+            let! resolutions =
+                byAssembly
+                |> Array.map (fun (assemblyName, group) -> struct (assemblyName, group |> Array.map snd))
+                |> resolveAll context
 
-        Trace.WriteLine $"[FSharpCodeMap] ResolveCallStack: {resolvedCount}/{candidates.Length} F# frames resolved"
+            let mutable resolvedCount = 0
+
+            for (_, group), results in Array.zip byAssembly resolutions do
+                for (frameNode, _), resolved in Array.zip group results do
+                    match resolved with
+                    | ValueNone -> ()
+                    | ValueSome resolved ->
+                        try
+                            attachResolvedMethod graph frameNode resolved
+                            context.AddHandled frameNode
+                            resolvedCount <- resolvedCount + 1
+                        with e ->
+                            // An unresolvable frame is expected - it stays a grey unresolved node, and
+                            // one bad frame must not abandon the rest of the stack.
+                            Trace.WriteLine $"[FSharpCodeMap] frame failed: {e.Message}"
+
+            Trace.WriteLine $"[FSharpCodeMap] ResolveCallStack: {resolvedCount}/{candidates.Length} F# frames resolved"
+        }
 
     interface IProvider with
         member _.Schema = schema
 
         member _.Initialize(_serviceProvider: IServiceProvider) =
             Trace.WriteLine "[FSharpCodeMap] FSharpGraphProvider.Initialize"
-            Actions.ResolveCallStack.ActionHandlers.Add(ActionHandler(resolveCallStack))
+
+            // The handler contract is synchronous: `ActionManager` runs it on a `JobQueue` worker
+            // and continues into the next pipeline step the moment it returns, so the graph must be
+            // complete by then. `JoinableTaskFactory.Run` is the same blocking bridge the built-in
+            // C#/VB provider uses for this action.
+            Actions.ResolveCallStack.ActionHandlers.Add(
+                ActionHandler(fun context ->
+                    ThreadHelper.JoinableTaskFactory.Run(fun () -> resolveCallStack context CancellationToken.None :> Task))
+            )
