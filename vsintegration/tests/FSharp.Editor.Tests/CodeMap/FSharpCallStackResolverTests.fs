@@ -27,6 +27,13 @@ let moduleFunction (a: int) (b: string) = ()
 
 let pipelineLambda (xs: int list) =
     xs |> List.map (fun x -> x * 2)
+
+type Box<'T>(value: 'T) =
+    member _.Unwrap() = value
+
+module Outer =
+    module Inner =
+        let deepest () = 3
 """
 
 /// The resolver reports declaration ranges, so expectations are pinned to the source line a
@@ -62,6 +69,9 @@ let frames: obj[] list =
         [| "Sample.Library.CollisionModule.helper"; "let helper" |]
         // a lambda has no signature entity of its own, so it reports the binding containing it
         [| "Sample.Library.pipelineLambda@18.Invoke"; "let pipelineLambda" |]
+        // the entity index stores mangled names, so the generic arity must survive the lookup
+        [| "Sample.Library.Box`1.Unwrap"; "member _.Unwrap" |]
+        [| "Sample.Library.Outer.Inner.deepest"; "let deepest" |]
     ]
 
 [<Theory>]
@@ -75,6 +85,20 @@ let ``Frame resolves to the declaring source line`` (frameName: string) (snippet
 [<InlineData("Sample.Library.noSuchFunction")>]
 [<InlineData("Some.Other.Assembly.thing")>]
 let ``Unknown frames stay unresolved`` (frameName: string) = Assert.True((resolve frameName).IsNone)
+
+[<Fact>]
+let ``Resolved identity separates namespace from the type chain`` () =
+    match resolve "Sample.Library.Outer.Inner.deepest" with
+    | ValueNone -> failwith "expected the nested-module frame to resolve"
+    | ValueSome resolved ->
+        Assert.Equal(ValueSome "Sample", resolved.Namespace)
+        Assert.Equal<struct (string * int)>([| struct ("Library", 0); struct ("Outer", 0); struct ("Inner", 0) |], resolved.TypeChain)
+
+[<Fact>]
+let ``Generic type carries its arity in the type chain`` () =
+    match resolve "Sample.Library.Box`1.Unwrap" with
+    | ValueNone -> failwith "expected the generic-type frame to resolve"
+    | ValueSome resolved -> Assert.Equal<struct (string * int)>([| struct ("Library", 0); struct ("Box", 1) |], resolved.TypeChain)
 
 [<Fact>]
 let ``Frames from another assembly are not resolved`` () =
