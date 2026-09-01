@@ -17,9 +17,9 @@ implemented, not an aspirational design. The .NET design is still evolving:
   how C# lowers `await` (including the exception-handling hoisting described below)
 
 The implementation targets functions, lambdas, and members returning
-`System.Threading.Tasks.Task<'T>`. A computation-expression builder exists in
-the component tests and works for a subset of the surface, but is not part of
-FSharp.Core.
+`System.Threading.Tasks.Task<'T>`, `Task`, `ValueTask<'T>`, or `ValueTask`. A
+computation-expression builder exists in the component tests and works for a
+subset of the surface, but is not part of FSharp.Core.
 
 ## Runtime contract
 
@@ -27,13 +27,14 @@ Runtime-async methods are CIL methods marked with
 `MethodImplOptions.Async` (`0x2000`). The runtime, rather than a compiler
 generated state machine and method builder, owns suspension and resumption.
 
-Only the generic return shape `System.Threading.Tasks.Task<'T>` is supported.
-Non-generic `Task` and `ValueTask`/`ValueTask<'T>` returns are not.
+The compiler provides a return intrinsic for each of these carrier shapes:
+generic and non-generic `Task`, and generic and non-generic `ValueTask`.
 
 Suspension is explicit, via `System.Runtime.CompilerServices.AsyncHelpers`:
 
 * `Await` for `Task`, `ValueTask`, and configured awaitables
-* `AwaitAwaiter` for awaiters (used by the test builder's SRTP `Bind`)
+* `AwaitAwaiter` and `UnsafeAwaitAwaiter` for awaiters (used by the test
+  builder's SRTP `Bind`)
 
 The compiler emits the adjacent IL sequence the runtime specification expects:
 
@@ -68,18 +69,21 @@ are treated as templates and checked at their eventual use site.
 
 ## F# surface
 
-The source-level marker is the compiler intrinsic
-`Microsoft.FSharp.Core.CompilerServices.StateMachineHelpers.__runtimeAsyncReturn`,
-available from the `net10.0` FSharp.Core target,
-declared in `resumable.fsi` alongside the other compiler intrinsics:
+The source-level markers are compiler intrinsics on
+`Microsoft.FSharp.Core.CompilerServices.StateMachineHelpers`, available from
+the `net10.0` FSharp.Core target and declared in `resumable.fsi` alongside the
+other compiler intrinsics:
 
 ```fsharp
 val __runtimeAsyncReturn<'T> : 'T -> System.Threading.Tasks.Task<'T>
+val __runtimeAsyncReturnValueTask<'T> : 'T -> System.Threading.Tasks.ValueTask<'T>
+val __runtimeAsyncReturnUnit : unit -> System.Threading.Tasks.Task
+val __runtimeAsyncReturnValueTaskUnit : unit -> System.Threading.Tasks.ValueTask
 ```
 
-Its FSharp.Core implementation throws; the compiler consumes every
-occurrence before code generation, so the body is never executed. It is
-marked `NoInlining` so a missed consumption does not silently fold into a
+Their FSharp.Core implementations throw; the compiler consumes every
+occurrence before code generation, so those bodies are never executed. They
+are marked `NoInlining` so a missed consumption does not silently fold into a
 caller.
 
 The feature is gated on `langversion:preview`
@@ -105,30 +109,28 @@ type C() =
 let answer : Task<int> = __runtimeAsyncReturn 42
 ```
 
-There is no implicit awaiting: the argument of `__runtimeAsyncReturn` is checked
-as the logical `'T` result, and flattening requires an explicit
+There is no implicit awaiting: the argument of a generic return marker is
+checked as the logical `'T` result, and flattening requires an explicit
 `AsyncHelpers.Await`.
 
 ## Type checking
 
-`__runtimeAsyncReturn` is an ordinary generic value in the typed tree; no new
-expression node or `Val` flag is added. Type checking special-cases its
-application in two places in `CheckExpressions.fs`:
+The return intrinsics are ordinary values in the typed tree; no new expression
+node or `Val` flag is added. Type checking special-cases their applications in
+two places in `CheckExpressions.fs`:
 
 * `Propagate` skips function-type propagation for the intrinsic so the
   argument is not checked against a function domain.
 * `TcApplicationThen` (`tryTcRuntimeAsyncApplication`) recognises the
   intrinsic (possibly type-applied), gates the language feature and runtime
-  capability, extracts the result type `'T` from the intrinsic's own
-  instantiated signature `'T -> Task<'T>`, and checks the argument against
-  `'T` with `TcExprFlex2`. The result type of the application is `Task<'T>`,
-  which unifies with the declared return type of the enclosing binding in
-  the usual way. A non-`Task<'T>` declared return type therefore fails with
-  the ordinary FS0001 type-mismatch error.
+  capability, extracts the result carrier and argument type from the
+  intrinsic's instantiated signature, and checks the argument with
+  `TcExprFlex2`. The result carrier then unifies with the declared return
+  type of the enclosing binding in the usual way.
 
-User code that defines its own `__runtimeAsyncReturn` is unaffected: the intrinsic
-is only recognised when the `ValRef` resolves (via `valRefEq`) to the
-FSharp.Core declaration.
+User code that defines its own same-named marker is unaffected: the intrinsic is
+only recognised when the `ValRef` resolves (via `valRefEq`) to the FSharp.Core
+declaration.
 
 ## Optimization
 
@@ -139,15 +141,26 @@ the optimizer never inlines, duplicates, or discards it. The marker therefore
 survives optimization as an ordinary `Expr.App` node; nothing else in the
 typed tree records that a method is runtime-async.
 
-Inline values whose bodies contain the marker or an `AsyncHelpers` suspension
-are recursively specialized at their call sites, including when optimization
-is disabled. The optimizer follows nested inline calls and does not create a
-generated helper method for the specialized suspension fragment, keeping every
-suspension in the eventual runtime-async method.
+Inline values whose bodies contain a return marker or an `AsyncHelpers`
+suspension are recursively specialized at their call sites, including when
+optimization is disabled. The analysis follows inline and local values with a
+cycle guard, and `InlineIfLambda` arguments are forced through when the caller
+is already in a runtime-async context. The optimizer follows nested inline
+calls and does not create a generated helper method for the specialized
+suspension fragment, keeping every suspension in the eventual runtime-async
+method.
+
+After specialization, lambda arguments are substituted and their applications
+are beta-reduced before and after runtime-async reoptimization. This includes
+debug-point-wrapped lambdas, curried applications, and multi-argument lambdas.
+That step is required for computation-expression shapes where `Bind` returns a
+closure containing `Await`, and later `Combine`/`Delay` calls apply that closure.
+Dead branches eliminated by optimization do not reach code generation and do
+not produce a suspension-outside-runtime-async diagnostic.
 
 ## Code generation
 
-`IlxGen.fs` recognises the marker in three placements
+`IlxGen.fs` recognises the return-marker family in three placements
 (`TryUnwrapRuntimeAsyncReturnExpr`, which strips `DebugPoint` wrappers):
 
 1. **Method body** (`GenMethodForBinding`): the marker is unwrapped from the
@@ -184,6 +197,12 @@ copies. `LowerLocalMutables` therefore treats the marker argument as a lambda
 body (`DecideExpr`), promoting its free mutable locals to reference cells so
 the synthesized closure and the enclosing scope share them.
 
+`InvokeFast` is not a separate runtime-async path. It is the closure-erasure
+shape for an indirect call with multiple arguments. Fragment substitution and
+beta reduction happen before closure erasure; if a suspending fragment survives
+until an indirect `InvokeFast` call, it is still outside a runtime-async method
+and is rejected by code generation.
+
 ## Runtime capability check
 
 `InfoReader` gates `LanguageFeature.RuntimeAsync` on the target reference
@@ -207,6 +226,9 @@ Tests live in `tests/FSharp.Compiler.ComponentTests/Language/RuntimeAsync*`:
 * Execution tests (`RuntimeAsyncBasic.fs`, `RuntimeTasks.fs` with the shared
   `RuntimeTaskBuilder.fs`) run with `compileExeAndRun`, so they compile with
   the compiler under test and execute on the host runtime.
+* Inline-fragment tests cover single- and multi-argument lambdas, returned
+  closures composed through `Bind`/`Combine`/`Delay`, and suspension in a
+  branch that is eliminated before code generation.
 * `RuntimeTasksAsyncDisposalException.fs` documents the known
   EH-region-suspension crash: it is compiled but not executed.
 
@@ -244,11 +266,19 @@ Two `task {}` inference behaviors are not matched by the overload set:
 element-type propagation through `Bind` without an annotation, and unannotated
 `return! failwith ...` (both need explicit annotations in the port).
 
+### Unsupported inline-fragment positions
+
+An inline fragment that escapes as a first-class value, is passed to a
+non-inline function, or is dynamically dispatched cannot be preserved as a
+runtime-async suspension fragment. If the suspension remains in the generated
+non-runtime-async method, code generation reports FS3916 rather than emitting
+an unsafe closure. Fragments in statically eliminated branches do not trigger
+this diagnostic.
+
 ## Not yet implemented
 
 * Diagnostics for suspension in exception-handling regions, `tail.`, and
   `localloc`.
-* Non-generic `Task` and `ValueTask`/`ValueTask<'T>` return shapes.
 * Any FSharp.Core builder (the test builder is test-only).
 * Compile-time enforcement that the marker was actually consumed before
   code generation (a missed marker throws only when its FSharp.Core stub is
