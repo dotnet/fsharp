@@ -376,12 +376,32 @@ let ``runtime async direct intrinsic fixture executes`` () =
     |> compileExeAndRun
     |> shouldSucceed
 
-[<Fact>]
-let ``runtime async low level async enumerable fixture executes`` () =
-    Path.Combine(__SOURCE_DIRECTORY__, "RuntimeAsync", "RuntimeAsyncEnumerable.fs")
+[<InlineData(false)>]
+[<InlineData(true)>]
+[<Theory>]
+let ``runtime async low level async enumerable fixture executes`` (optimize: bool) =
+    Path.Combine(__SOURCE_DIRECTORY__, "RuntimeAsync", "RuntimeAsyncEnumerableLowLevel.fs")
     |> FsFromPath
     |> withLangVersionPreview
     |> withFSharpCoreShippedNet
+    |> withOptimization optimize
+    |> compileExeAndRun
+    |> shouldSucceed
+
+[<InlineData(false)>]
+[<InlineData(true)>]
+[<Theory>]
+let ``runtime async enumerable builder fixture executes`` (optimize: bool) =
+    FsFromPath (Path.Combine(__SOURCE_DIRECTORY__, "RuntimeAsync", "RuntimeTaskBuilder.fs"))
+    |> withAdditionalSourceFile (
+        SourceFromPath (Path.Combine(__SOURCE_DIRECTORY__, "RuntimeAsync", "RuntimeAsyncEnumerable.fs"))
+    )
+    |> withAdditionalSourceFile (
+        SourceFromPath (Path.Combine(__SOURCE_DIRECTORY__, "RuntimeAsync", "RuntimeAsyncEnumerableTests.fs"))
+    )
+    |> withLangVersionPreview
+    |> withFSharpCoreShippedNet
+    |> withOptimization optimize
     |> compileExeAndRun
     |> shouldSucceed
 

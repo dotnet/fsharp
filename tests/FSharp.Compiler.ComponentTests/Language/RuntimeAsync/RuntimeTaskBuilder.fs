@@ -6,6 +6,8 @@ open System.Threading.Tasks
 open Microsoft.FSharp.Control
 open Microsoft.FSharp.Core.CompilerServices
 
+type RuntimeTask<'T> = unit -> 'T
+
 let inline bindAwaiter
     ([<InlineIfLambda>] getAwaiter: unit -> 'Awaiter)
     ([<InlineIfLambda>] getResult: 'Awaiter -> 'T)

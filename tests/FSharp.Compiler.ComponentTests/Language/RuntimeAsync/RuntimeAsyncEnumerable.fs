@@ -2,95 +2,331 @@ module RuntimeAsyncEnumerable
 
 open System
 open System.Collections.Generic
-open System.Diagnostics
 open System.Runtime.CompilerServices
 open System.Threading
+open System.Threading.Channels
 open System.Threading.Tasks
+open System.Threading.Tasks.Sources
 open Microsoft.FSharp.Control
 open Microsoft.FSharp.Core.CompilerServices
+open Microsoft.FSharp.Core.CompilerServices.StateMachineHelpers
+open RuntimeTaskBuilder
 
-type CounterEnumerator(count: int) =
-    let mutable current = -1
+[<NoComparison>]
+type AsyncSequenceEvent<'t> =
+    | Item of 't
+    | Completed
+    | Faulted of exn
 
-    member private _.MoveNextCore() : ValueTask<bool> =
-        StateMachineHelpers.__runtimeAsyncReturnValueTask (
-            AsyncHelpers.Await(Task.Delay(1))
-            current <- current + 1
-            current < count
-        )
+type AsyncManualResetSignal<'t>() =
+    let mutable source = ManualResetValueTaskSourceCore<'t>()
+    do source.RunContinuationsAsynchronously <- true
 
-    interface IAsyncEnumerator<int> with
+    member this.WaitAsync() = ValueTask<'t>(this, source.Version)
+    member _.SetResult value = source.SetResult value
+    member _.Reset() = source.Reset()
+
+    interface IValueTaskSource<'t> with
+        member _.GetResult(token) = source.GetResult(token)
+        member _.GetStatus(token) = source.GetStatus(token)
+        member _.OnCompleted(continuation, state, token, flags) =
+            source.OnCompleted(continuation, state, token, flags)
+
+[<NoComparison>]
+type AsyncSequenceState<'T> = {
+    MoveNextRequest: AsyncManualResetSignal<unit>
+    ItemResponse: AsyncManualResetSignal<AsyncSequenceEvent<'T>>
+    CancellationToken: CancellationToken
+}
+
+module AsyncSequenceState =
+    let publishItem state item = state.ItemResponse.SetResult(Item item)
+    let publishCompleted state = state.ItemResponse.SetResult(Completed)
+    let create cancellationToken =
+        {
+            MoveNextRequest = AsyncManualResetSignal<unit>()
+            ItemResponse = AsyncManualResetSignal<AsyncSequenceEvent<'T>>()
+            CancellationToken = cancellationToken
+        }
+
+
+type AsyncSeqEnumerator<'T>(state: AsyncSequenceState<'T>) =
+    let mutable current = Unchecked.defaultof<'T>
+    let mutable moveNextInProgress = 0
+
+    interface IAsyncEnumerator<'T> with
         member _.Current = current
-        member this.MoveNextAsync() = this.MoveNextCore()
-        member _.DisposeAsync() = ValueTask()
 
-type CounterEnumerable(count: int) =
-    interface IAsyncEnumerable<int> with
-        member _.GetAsyncEnumerator(_cancellationToken: CancellationToken) =
-            CounterEnumerator(count) :> IAsyncEnumerator<int>
+        member this.MoveNextAsync() =
+            if Interlocked.Exchange(&moveNextInProgress, 1) = 1 then
+                invalidOp "MoveNextAsync cannot be called concurrently."
 
-let objectExpressionEnumerable count : IAsyncEnumerable<int> =
-    { new IAsyncEnumerable<int> with
-        member _.GetAsyncEnumerator(_cancellationToken: CancellationToken) =
-            let mutable current = -1
+            __runtimeAsyncReturnValueTask<bool>(
+                try
+                    state.MoveNextRequest.SetResult()
 
-            { new IAsyncEnumerator<int> with
-                member _.Current = current
+                    match AsyncHelpers.Await(state.ItemResponse.WaitAsync()) with
+                    | Item value ->
+                        current <- value
+                        true
+                    | Completed ->
+                        current <- Unchecked.defaultof<'T>
+                        false
+                    | Faulted error ->
+                        raise error
+                finally
+                    state.ItemResponse.Reset()
+                    Interlocked.Exchange(&moveNextInProgress, 0) |> ignore
+            )
 
-                member _.MoveNextAsync() : ValueTask<bool> =
-                    StateMachineHelpers.__runtimeAsyncReturnValueTask (
-                        AsyncHelpers.Await(Task.Delay(100))
-                        current <- current + 1
-                        current < count
-                    )
+        member this.DisposeAsync() = ValueTask.CompletedTask
 
-                member _.DisposeAsync() = ValueTask()
-            }
-    }
+type AsyncSequenceBody<'T> = AsyncSequenceState<'T> -> unit
 
-let collect (enumerable: IAsyncEnumerable<int>) : Task<int[]> =
-    StateMachineHelpers.__runtimeAsyncReturn (
-        let enumerator = enumerable.GetAsyncEnumerator(CancellationToken.None)
-        let values = ResizeArray<int>()
-        let mutable hasNext = AsyncHelpers.Await(enumerator.MoveNextAsync())
+type AsyncSeqBuilder() =
+    member inline _.Delay([<InlineIfLambda>] generator: unit -> AsyncSequenceBody<'T>) : AsyncSequenceBody<'T> =
+        fun state -> generator() state
 
-        while hasNext do
-            values.Add enumerator.Current
-            hasNext <- AsyncHelpers.Await(enumerator.MoveNextAsync())
+    member inline _.Run([<InlineIfLambda>] code: AsyncSequenceBody<'T>) : IAsyncEnumerable<'T> =
+        let getEnumerator ct =
+            let state = AsyncSequenceState.create ct
 
-        AsyncHelpers.Await(enumerator.DisposeAsync())
-        Seq.toArray values
-    )
+            let runProducer () =
+                __runtimeAsyncReturnUnit(
+                    AsyncHelpers.Await(state.MoveNextRequest.WaitAsync())
+                    state.MoveNextRequest.Reset()
+                    code(state)
+                    state.ItemResponse.SetResult(Completed)
+                )
+            Task.Run<_>(runProducer) |> ignore
+            AsyncSeqEnumerator<'T>(state)
 
-let collectWithTaskCe (enumerable: IAsyncEnumerable<int>) =
-    task {
-        use enumerator = enumerable.GetAsyncEnumerator(CancellationToken.None)
-        let values = ResizeArray<int>()
-        let stopwatch = Stopwatch.StartNew()
+        { new IAsyncEnumerable<'T> with
+            member _.GetAsyncEnumerator(cancellationToken: CancellationToken) = getEnumerator cancellationToken }
 
-        while! enumerator.MoveNextAsync() do
-            values.Add enumerator.Current
+    member inline _.Zero() : AsyncSequenceBody<'T> =
+        fun _ -> ()
 
-        return Seq.toArray values, stopwatch.Elapsed
-    }
+    member inline _.Return(_: unit) : AsyncSequenceBody<'T> =
+        fun _ -> ()
 
-[<EntryPoint>]
-let main _ =
-    let expected = [| 0; 1; 2 |]
-    let classEnumerable = CounterEnumerable(3) :> IAsyncEnumerable<int>
+    member inline _.ReturnFrom(task: Task) : AsyncSequenceBody<'T> =
+        fun _ -> AsyncHelpers.Await task
 
-    let classValues =
-        collect classEnumerable |> fun task -> task.GetAwaiter().GetResult()
+    member inline _.ReturnFrom(task: Task<'U>) : AsyncSequenceBody<'T> =
+        fun _ -> AsyncHelpers.Await task |> ignore
 
-    let taskValues, elapsed =
-        collectWithTaskCe (objectExpressionEnumerable 3)
-        |> fun task -> task.GetAwaiter().GetResult()
+    member inline _.ReturnFrom(task: ValueTask) : AsyncSequenceBody<'T> =
+        fun _ -> AsyncHelpers.Await task
 
-    if
-        classValues = expected
-        && taskValues = expected
-        && elapsed >= TimeSpan.FromMilliseconds(300.)
-    then
-        0
-    else
-        1
+    member inline _.ReturnFrom(task: ValueTask<'U>) : AsyncSequenceBody<'T> =
+        fun _ -> AsyncHelpers.Await task |> ignore
+
+    member inline _.ReturnFrom(computation: Async<'U>) : AsyncSequenceBody<'T> =
+        fun _ -> AsyncHelpers.Await(Async.StartImmediateAsTask computation) |> ignore
+
+    member inline _.ReturnFrom(computation: RuntimeTask<'U>) : AsyncSequenceBody<'T> =
+        fun _ -> computation() |> ignore
+
+    member inline _.Bind(task: Task, [<InlineIfLambda>] continuation: unit -> AsyncSequenceBody<'T>) : AsyncSequenceBody<'T> =
+        fun state ->
+            AsyncHelpers.Await task
+            continuation() state
+
+    member inline _.Bind(task: Task<'U>, [<InlineIfLambda>] continuation: 'U -> AsyncSequenceBody<'T>) : AsyncSequenceBody<'T> =
+        fun state ->
+            continuation (AsyncHelpers.Await task) state
+
+    member inline _.Bind(task: ValueTask, [<InlineIfLambda>] continuation: unit -> AsyncSequenceBody<'T>) : AsyncSequenceBody<'T> =
+        fun state ->
+            AsyncHelpers.Await task
+            continuation() state
+
+    member inline _.Bind(task: ValueTask<'U>, [<InlineIfLambda>] continuation: 'U -> AsyncSequenceBody<'T>) : AsyncSequenceBody<'T> =
+        fun state ->
+            continuation (AsyncHelpers.Await task) state
+
+    member inline _.Bind(computation: Async<'U>, [<InlineIfLambda>] continuation: 'U -> AsyncSequenceBody<'T>) : AsyncSequenceBody<'T> =
+        fun state ->
+            continuation (AsyncHelpers.Await(Async.StartImmediateAsTask computation)) state
+
+    member inline _.Bind(computation: RuntimeTask<'U>, [<InlineIfLambda>] continuation: 'U -> AsyncSequenceBody<'T>) : AsyncSequenceBody<'T> =
+        fun state ->
+            continuation (computation()) state
+
+    member inline _.Bind(
+        values: struct ('U1 * 'U2),
+        [<InlineIfLambda>] continuation: struct ('U1 * 'U2) -> AsyncSequenceBody<'T>
+    ) : AsyncSequenceBody<'T> =
+        fun state -> continuation values state
+
+    member inline _.Combine(
+        first: AsyncSequenceBody<'T>,
+        [<InlineIfLambda>] second: AsyncSequenceBody<'T>
+    ) : AsyncSequenceBody<'T> =
+        fun state ->
+            first state
+            second state
+
+    member inline _.TryWith(
+        [<InlineIfLambda>] body: AsyncSequenceBody<'T>,
+        [<InlineIfLambda>] handler: exn -> AsyncSequenceBody<'T>
+    ) : AsyncSequenceBody<'T> =
+        fun state ->
+            try
+                body state
+            with error ->
+                handler error state
+
+    member inline _.TryFinally(
+        [<InlineIfLambda>] body: AsyncSequenceBody<'T>,
+        [<InlineIfLambda>] compensation: unit -> unit
+    ) : AsyncSequenceBody<'T> =
+        fun state ->
+            try
+                body state
+            finally
+                compensation()
+
+    member inline _.Using(
+        resource: 'Resource,
+        [<InlineIfLambda>] body: 'Resource -> AsyncSequenceBody<'T>
+    ) : AsyncSequenceBody<'T> =
+        fun state ->
+            try
+                body resource state
+            finally
+                match box resource with
+                | :? IAsyncDisposable as disposable -> AsyncHelpers.Await(disposable.DisposeAsync())
+                | :? IDisposable as disposable -> disposable.Dispose()
+                | _ -> ()
+
+    member inline _.While(
+        guard: unit -> bool,
+        [<InlineIfLambda>] body: AsyncSequenceBody<'T>
+    ) : AsyncSequenceBody<'T> =
+        fun state ->
+            while guard() do
+                body state
+
+    member inline _.For(
+        sequence: seq<'U>,
+        [<InlineIfLambda>] body: 'U -> AsyncSequenceBody<'T>
+    ) : AsyncSequenceBody<'T> =
+        fun state ->
+            for item in sequence do
+                body item state
+
+    member inline _.For(
+        sequence: IAsyncEnumerable<'U>,
+        [<InlineIfLambda>] body: 'U -> AsyncSequenceBody<'T>
+    ) : AsyncSequenceBody<'T> =
+        fun state ->
+            let innerEnumerator = sequence.GetAsyncEnumerator(state.CancellationToken)
+
+            try
+                let mutable hasNextItem = AsyncHelpers.Await(innerEnumerator.MoveNextAsync())
+
+                while hasNextItem do
+                    let value = innerEnumerator.Current
+                    body value state
+                    hasNextItem <- AsyncHelpers.Await(innerEnumerator.MoveNextAsync())
+            finally
+                AsyncHelpers.Await(innerEnumerator.DisposeAsync())
+
+    member inline _.Yield(value: 'T) : AsyncSequenceBody<'T> =
+        fun state ->
+            AsyncSequenceState.publishItem state value
+            AsyncHelpers.Await(state.MoveNextRequest.WaitAsync())
+            state.MoveNextRequest.Reset()
+
+    member inline _.YieldFrom(sequence: seq<'T>) : AsyncSequenceBody<'T> =
+        fun state ->
+            for value in sequence do
+                AsyncSequenceState.publishItem state value
+                AsyncHelpers.Await(state.MoveNextRequest.WaitAsync())
+                state.MoveNextRequest.Reset()
+
+    member inline _.YieldFrom(sequence: IAsyncEnumerable<'T>) : AsyncSequenceBody<'T> =
+        fun state ->
+            let innerEnumerator = sequence.GetAsyncEnumerator(state.CancellationToken)
+
+            try
+                while AsyncHelpers.Await(innerEnumerator.MoveNextAsync()) do
+                    let value = innerEnumerator.Current
+                    AsyncSequenceState.publishItem state value
+                    AsyncHelpers.Await(state.MoveNextRequest.WaitAsync())
+                    state.MoveNextRequest.Reset()
+            finally
+                AsyncHelpers.Await(innerEnumerator.DisposeAsync())
+
+
+module AsyncSeqAwaitableExtensions =
+    let inline awaitTaskLike
+        ([<InlineIfLambda>] getAwaiter: unit -> 'Awaiter)
+        ([<InlineIfLambda>] getResult: 'Awaiter -> 'T)
+        =
+        let awaiter = getAwaiter()
+        AsyncHelpers.AwaitAwaiter awaiter
+        getResult awaiter
+
+    type AsyncSeqBuilder with
+        [<NoEagerConstraintApplication>]
+        member inline _.Bind< ^TaskLike, ^Awaiter, 'U, 'T
+            when ^TaskLike: (member GetAwaiter: unit -> ^Awaiter)
+            and ^Awaiter :> ICriticalNotifyCompletion
+            and ^Awaiter: (member get_IsCompleted: unit -> bool)
+            and ^Awaiter: (member GetResult: unit -> 'U)>
+            (task: ^TaskLike, [<InlineIfLambda>] continuation: 'U -> AsyncSequenceBody<'T>)
+            : AsyncSequenceBody<'T> =
+            fun state ->
+                let result =
+                    awaitTaskLike
+                        (fun () -> (^TaskLike: (member GetAwaiter: unit -> ^Awaiter) task))
+                        (fun awaiter -> (^Awaiter: (member GetResult: unit -> 'U) awaiter))
+
+                continuation result state
+
+        [<NoEagerConstraintApplication>]
+        member inline _.ReturnFrom< ^TaskLike, ^Awaiter, 'U, 'T
+            when ^TaskLike: (member GetAwaiter: unit -> ^Awaiter)
+            and ^Awaiter :> ICriticalNotifyCompletion
+            and ^Awaiter: (member get_IsCompleted: unit -> bool)
+            and ^Awaiter: (member GetResult: unit -> 'U)>
+            (task: ^TaskLike)
+            : AsyncSequenceBody<'T> =
+            fun _ ->
+                awaitTaskLike
+                    (fun () -> (^TaskLike: (member GetAwaiter: unit -> ^Awaiter) task))
+                    (fun awaiter -> (^Awaiter: (member GetResult: unit -> 'U) awaiter))
+                |> ignore
+
+        [<NoEagerConstraintApplication>]
+        member inline _.MergeSources< ^TaskLike1, ^TaskLike2, ^Awaiter1, ^Awaiter2, 'U1, 'U2
+            when ^TaskLike1: (member GetAwaiter: unit -> ^Awaiter1)
+            and ^TaskLike2: (member GetAwaiter: unit -> ^Awaiter2)
+            and ^Awaiter1 :> ICriticalNotifyCompletion
+            and ^Awaiter2 :> ICriticalNotifyCompletion
+            and ^Awaiter1: (member get_IsCompleted: unit -> bool)
+            and ^Awaiter1: (member GetResult: unit -> 'U1)
+            and ^Awaiter2: (member get_IsCompleted: unit -> bool)
+            and ^Awaiter2: (member GetResult: unit -> 'U2)>
+            (left: ^TaskLike1, right: ^TaskLike2)
+            : struct ('U1 * 'U2) =
+            let awaitLeft () =
+                awaitTaskLike
+                    (fun () -> (^TaskLike1: (member GetAwaiter: unit -> ^Awaiter1) left))
+                    (fun awaiter -> (^Awaiter1: (member GetResult: unit -> 'U1) awaiter))
+
+            let awaitRight () =
+                awaitTaskLike
+                    (fun () -> (^TaskLike2: (member GetAwaiter: unit -> ^Awaiter2) right))
+                    (fun awaiter -> (^Awaiter2: (member GetResult: unit -> 'U2) awaiter))
+
+            struct (awaitLeft(), awaitRight())
+
+open AsyncSeqAwaitableExtensions
+
+[<AutoOpen>]
+module AsyncSeq =
+    let asyncSeq = AsyncSeqBuilder()
