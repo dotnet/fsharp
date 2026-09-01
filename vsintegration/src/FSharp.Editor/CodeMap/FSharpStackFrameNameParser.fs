@@ -4,6 +4,8 @@ namespace Microsoft.VisualStudio.FSharp.Editor
 
 open System
 
+open FSharp.Compiler.Syntax
+
 /// A compiler-synthesized closure class such as `outer@47-1` names the binding it was lifted out of
 /// and the line that binding was written on.
 [<Struct>]
@@ -31,7 +33,7 @@ type internal ParsedFrame =
     {
         /// Declaring path, outermost first. Namespace, module and nested type segments are
         /// indistinguishable in a frame name, so consumers must try several splits.
-        Path: FramePathSegment list
+        Path: FramePathSegment array
         Member: FrameMember
         MethodGenericArity: int
     }
@@ -123,18 +125,13 @@ module internal FSharpStackFrameNameParser =
                 | ValueSome line, ValueSome ordinal -> origin line (ValueSome ordinal)
                 | _ -> ValueNone
 
-    let private isActivePattern (name: string) =
-        name.Length > 2
-        && name.StartsWith("|", StringComparison.Ordinal)
-        && name.EndsWith("|", StringComparison.Ordinal)
-
     let private activePatternCases (name: string) =
         name.Trim('|').Split('|')
         |> Seq.filter (fun case -> not (String.IsNullOrEmpty case))
         |> Seq.toList
 
     let private classifyMember (segment: string) =
-        if isActivePattern segment then
+        if PrettyNaming.IsActivePatternName segment then
             FrameActivePattern(activePatternCases segment)
         elif segment.StartsWith("get_", StringComparison.Ordinal) then
             FramePropertyGetter(segment.Substring 4)
@@ -163,26 +160,27 @@ module internal FSharpStackFrameNameParser =
             let segments =
                 name.Split([| '.'; '+' |])
                 |> Seq.filter (fun segment -> not (String.IsNullOrEmpty segment))
-                |> Seq.toList
+                |> Seq.toArray
 
             match segments with
-            | [] -> ValueNone
+            | [||] -> ValueNone
             | segments ->
-                let frame path frameMember =
+                // Flexible so the branches below can pass either the segment array or a filtered seq.
+                let frame (path: #seq<string>) frameMember =
                     ValueSome
                         {
-                            Path = path |> List.map parseSegment
+                            Path = path |> Seq.map parseSegment |> Seq.toArray
                             Member = frameMember
                             MethodGenericArity = methodGenericArity
                         }
 
                 let isStartupCode =
                     segments
-                    |> List.exists (fun segment -> segment.StartsWith(startupCodePrefix, StringComparison.Ordinal))
+                    |> Array.exists (fun segment -> segment.StartsWith(startupCodePrefix, StringComparison.Ordinal))
 
                 let closureIndex =
                     segments
-                    |> List.tryFindIndexBackV (fun segment -> (parseClosureOrigin segment).IsSome)
+                    |> Array.tryFindIndexBackV (fun segment -> (parseClosureOrigin segment).IsSome)
 
                 match constructorMember, isStartupCode, closureIndex with
                 | ValueSome constructorMember, _, _ -> frame segments constructorMember
@@ -194,10 +192,9 @@ module internal FSharpStackFrameNameParser =
                         |> Seq.filter (fun segment ->
                             not (String.IsNullOrEmpty segment)
                             && not (segment.EndsWith("@", StringComparison.Ordinal)))
-                        |> Seq.toList
 
                     frame declaringModule FrameStartupCode
                 | ValueNone, false, ValueSome i ->
                     let origin = (parseClosureOrigin segments.[i]).Value
-                    frame (List.truncate i segments) (FrameClosureBody origin)
-                | ValueNone, false, ValueNone -> frame (List.truncate (segments.Length - 1) segments) (classifyMember (List.last segments))
+                    frame (Seq.truncate i segments) (FrameClosureBody origin)
+                | ValueNone, false, ValueNone -> frame (Seq.truncate (segments.Length - 1) segments) (classifyMember (Array.last segments))

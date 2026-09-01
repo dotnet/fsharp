@@ -172,11 +172,14 @@
   <ItemGroup>
     <Reference Include="PresentationCore" />
     <Reference Include="PresentationFramework" />
+    <Reference Include="System.ComponentModel.Composition" />
     <Reference Include="System.Runtime.Caching" />
+    <!-- GraphTransactionScope has a System.Transactions.Transaction overload, so the whole ctor
+         group needs this reference even though the Code Map provider uses the parameterless one. -->
+    <Reference Include="System.Transactions" />
     <Reference Include="System.Windows.Forms" />
     <Reference Include="System.Xaml" />
     <Reference Include="WindowsBase" />
-    <Reference Include="System.ComponentModel.Composition" />
   </ItemGroup>
 
   <ItemGroup>

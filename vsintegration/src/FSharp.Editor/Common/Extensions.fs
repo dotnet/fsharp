@@ -527,6 +527,24 @@ module Array =
 
         loop 0
 
+    let inline tryFindIndexV ([<InlineIfLambda>] predicate) (array: _[]) =
+
+        let rec loop i =
+            if i >= array.Length then ValueNone
+            else if predicate array.[i] then ValueSome i
+            else loop (i + 1)
+
+        loop 0
+
+    let inline tryFindIndexBackV ([<InlineIfLambda>] predicate) (array: _[]) =
+
+        let rec loop i =
+            if i < 0 then ValueNone
+            else if predicate array.[i] then ValueSome i
+            else loop (i - 1)
+
+        loop (array.Length - 1)
+
     let inline chooseV ([<InlineIfLambda>] chooser: 'T -> 'U voption) (array: 'T[]) =
 
         let mutable i = 0
