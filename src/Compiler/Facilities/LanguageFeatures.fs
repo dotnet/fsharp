@@ -21,7 +21,6 @@ type LanguageFeature =
     | FromEndSlicing
     | ResumableStateMachines
     | RuntimeAsync
-    | NullableOptionalInterop
     | DefaultInterfaceMemberConsumption
     | WitnessPassing
     | AdditionalTypeDirectedConversions
@@ -321,7 +320,6 @@ type LanguageVersion(versionText, ?disabledFeaturesArray: LanguageFeature array)
         | LanguageFeature.NullnessChecking -> FSComp.SR.featureNullnessChecking ()
         | LanguageFeature.ResumableStateMachines -> FSComp.SR.featureResumableStateMachines ()
         | LanguageFeature.RuntimeAsync -> FSComp.SR.featureRuntimeAsync ()
-        | LanguageFeature.NullableOptionalInterop -> FSComp.SR.featureNullableOptionalInterop ()
         | LanguageFeature.DefaultInterfaceMemberConsumption -> FSComp.SR.featureDefaultInterfaceMemberConsumption ()
         | LanguageFeature.WitnessPassing -> FSComp.SR.featureWitnessPassing ()
         | LanguageFeature.AdditionalTypeDirectedConversions -> FSComp.SR.featureAdditionalImplicitConversions ()

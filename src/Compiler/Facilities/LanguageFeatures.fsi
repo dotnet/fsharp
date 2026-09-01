@@ -11,7 +11,6 @@ type LanguageFeature =
     | FromEndSlicing
     | ResumableStateMachines
     | RuntimeAsync
-    | NullableOptionalInterop
     | DefaultInterfaceMemberConsumption
     | WitnessPassing
     | AdditionalTypeDirectedConversions
