@@ -422,11 +422,6 @@
         <target state="translated">静的クラスに関するエラー報告</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureEscapeBracesInFormattableString">
-        <source>Escapes curly braces before calling FormattableStringFactory.Create when interpolated string literal is typed as FormattableString</source>
-        <target state="translated">挿入文字列リテラルが FormattableString として型指定されている場合は、FormattableStringFactory.Create を呼び出す前に波かっこをエスケープします</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureExpandedMeasurables">
         <source>more types support units of measure</source>
         <target state="translated">単位をサポートするその他の型</target>
@@ -455,11 +450,6 @@
       <trans-unit id="featureImplicitDIMCoverage">
         <source>Implicit dispatch slot coverage for default interface member implementations</source>
         <target state="new">Implicit dispatch slot coverage for default interface member implementations</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="featureImprovedImpliedArgumentNames">
-        <source>Improved implied argument names</source>
-        <target state="translated">暗黙的な引数名の改善</target>
         <note />
       </trans-unit>
       <trans-unit id="featureImprovedImpliedArgumentNamesPartTwo">
@@ -560,11 +550,6 @@
       <trans-unit id="featurePreferExtensionMethodOverPlainProperty">
         <source>prefer extension method over plain property</source>
         <target state="translated">plain プロパティよりも拡張メソッドを優先する</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="featurePreferStringGetPinnableReference">
-        <source>prefer String.GetPinnableReference in fixed bindings</source>
-        <target state="translated">固定バインドで String.GetPinnableReference を優先する</target>
         <note />
       </trans-unit>
       <trans-unit id="featurePreprocessorElif">

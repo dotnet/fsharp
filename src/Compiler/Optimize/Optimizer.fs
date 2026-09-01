@@ -2516,7 +2516,7 @@ let shouldForceInlineInDebug cenv env (vref: ValRef) : bool =
 
 /// Optimize/analyze an expression
 let rec OptimizeExpr cenv (env: IncrementalOptimizationEnv) expr =
-    cenv.stackGuard.Guard <| fun () ->
+    cenv.stackGuard.Guard(fun () ->
 
     let g = cenv.g
 
@@ -2636,7 +2636,7 @@ let rec OptimizeExpr cenv (env: IncrementalOptimizationEnv) expr =
           FunctionSize = 1
           HasEffect = false  
           MightMakeCriticalTailcall=false
-          Info=UnknownValue }
+          Info=UnknownValue })
 
 /// Optimize/analyze an object expression
 and OptimizeObjectExpr cenv env (ty, baseValOpt, basecall, overrides, iimpls, m) =

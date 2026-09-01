@@ -422,11 +422,6 @@
         <target state="translated">Statik sınıflarda hata bildirimi</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureEscapeBracesInFormattableString">
-        <source>Escapes curly braces before calling FormattableStringFactory.Create when interpolated string literal is typed as FormattableString</source>
-        <target state="translated">İçe eklenmiş dize sabit değerinin türü FormattableString olduğunda FormattableStringFactory.Create çağrılmadan önce küme ayraçlarını atlar</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureExpandedMeasurables">
         <source>more types support units of measure</source>
         <target state="translated">tür daha ölçü birimlerini destekler</target>
@@ -455,11 +450,6 @@
       <trans-unit id="featureImplicitDIMCoverage">
         <source>Implicit dispatch slot coverage for default interface member implementations</source>
         <target state="new">Implicit dispatch slot coverage for default interface member implementations</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="featureImprovedImpliedArgumentNames">
-        <source>Improved implied argument names</source>
-        <target state="translated">Geliştirilmiş örtük bağımsız değişken adları</target>
         <note />
       </trans-unit>
       <trans-unit id="featureImprovedImpliedArgumentNamesPartTwo">
@@ -560,11 +550,6 @@
       <trans-unit id="featurePreferExtensionMethodOverPlainProperty">
         <source>prefer extension method over plain property</source>
         <target state="translated">Basit özellik yerine genişletme yöntemini tercih edin</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="featurePreferStringGetPinnableReference">
-        <source>prefer String.GetPinnableReference in fixed bindings</source>
-        <target state="translated">sabit bağlamalarda String.GetPinnableReference tercih edin</target>
         <note />
       </trans-unit>
       <trans-unit id="featurePreprocessorElif">

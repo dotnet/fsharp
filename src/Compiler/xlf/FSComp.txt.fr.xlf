@@ -422,11 +422,6 @@
         <target state="translated">Rapport d’erreurs sur les classes statiques</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureEscapeBracesInFormattableString">
-        <source>Escapes curly braces before calling FormattableStringFactory.Create when interpolated string literal is typed as FormattableString</source>
-        <target state="translated">Échappe les accolades avant d’appeler FormattableStringFactory.Create lorsque le littéral de chaîne interpolé est tapé en tant que FormattableString.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureExpandedMeasurables">
         <source>more types support units of measure</source>
         <target state="translated">d'autres types prennent en charge les unités de mesure</target>
@@ -455,11 +450,6 @@
       <trans-unit id="featureImplicitDIMCoverage">
         <source>Implicit dispatch slot coverage for default interface member implementations</source>
         <target state="new">Implicit dispatch slot coverage for default interface member implementations</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="featureImprovedImpliedArgumentNames">
-        <source>Improved implied argument names</source>
-        <target state="translated">Noms d’arguments implicites améliorés</target>
         <note />
       </trans-unit>
       <trans-unit id="featureImprovedImpliedArgumentNamesPartTwo">
@@ -560,11 +550,6 @@
       <trans-unit id="featurePreferExtensionMethodOverPlainProperty">
         <source>prefer extension method over plain property</source>
         <target state="translated">préférer la méthode d’extension à la propriété simple</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="featurePreferStringGetPinnableReference">
-        <source>prefer String.GetPinnableReference in fixed bindings</source>
-        <target state="translated">préférez String.GetPinnableReference dans les liaisons fixes</target>
         <note />
       </trans-unit>
       <trans-unit id="featurePreprocessorElif">
