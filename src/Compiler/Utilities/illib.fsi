@@ -158,6 +158,12 @@ module internal ListInline =
 
     val inline forall2: [<InlineIfLambda>] predicate: ('T1 -> 'T2 -> bool) -> list1: 'T1 list -> list2: 'T2 list -> bool
 
+    val inline exists: [<InlineIfLambda>] predicate: ('T -> bool) -> list: 'T list -> bool
+
+    val inline forall: [<InlineIfLambda>] predicate: ('T -> bool) -> list: 'T list -> bool
+
+    val inline tryFind: [<InlineIfLambda>] predicate: ('T -> bool) -> list: 'T list -> 'T option
+
 module internal List =
 
     val sortWithOrder: c: IComparer<'T> -> elements: 'T list -> 'T list

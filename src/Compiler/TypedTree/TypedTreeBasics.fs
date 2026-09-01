@@ -539,10 +539,10 @@ let inline canAccessCompPathFrom (CompPath(scoref1, _, cpath1)) (CompPath(scoref
     (scoref1 = scoref2)
 
 let canAccessFromOneOf cpaths cpathTest =
-    cpaths |> List.exists (fun cpath -> canAccessCompPathFrom cpath cpathTest) 
+    cpaths |> ListInline.exists (fun cpath -> canAccessCompPathFrom cpath cpathTest)
 
 let canAccessFrom (TAccess x) cpath = 
-    x |> List.forall (fun cpath1 -> canAccessCompPathFrom cpath1 cpath)
+    x |> ListInline.forall (fun cpath1 -> canAccessCompPathFrom cpath1 cpath)
 
 let canAccessFromEverywhere (TAccess x) = x.IsEmpty
 let canAccessFromSomewhere (TAccess _) = true
