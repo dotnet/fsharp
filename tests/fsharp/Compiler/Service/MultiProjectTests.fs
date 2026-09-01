@@ -40,7 +40,7 @@ namespace CSharpTest
                 cs.Emit(ms, cancellationToken = ct) |> ignore
                 ms.Position <- 0L
                 ms :> Stream
-                |> Some
+                |> ValueSome
 
         let stamp = DateTime.UtcNow
         let csRefProj = FSharpReferencedProject.PEReference((fun () -> stamp), DelayedILModuleReader("""Z:\csharp_test.dll""", getStream))
