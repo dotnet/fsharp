@@ -3,6 +3,7 @@
 namespace FSharp.Compiler.CodeAnalysis
 
 open System
+open System.Collections.Concurrent
 open System.Collections.Generic
 open System.Collections.Immutable
 open System.Diagnostics
@@ -17,6 +18,7 @@ open FSharp.Compiler.CheckBasics
 open FSharp.Compiler.CheckDeclarations
 open FSharp.Compiler.CompilerConfig
 open FSharp.Compiler.CompilerDiagnostics
+open FSharp.Compiler.CompilerGlobalState
 open FSharp.Compiler.CompilerImports
 open FSharp.Compiler.CompilerOptions
 open FSharp.Compiler.CreateILModule
@@ -492,10 +494,10 @@ type FrameworkImportsCacheKey =
 
     interface ICacheKey<string, FrameworkImportsCacheKey> with
         member this.GetKey() =
-            this |> function FrameworkImportsCacheKey(assemblyName=a;importReuseKey=c) -> if c.CheckNullness then a + "CheckNulls" else a
+            this |> function FrameworkImportsCacheKey(assemblyName=a;importReuseKey=c) -> if c.ImportsNullness then a + "CheckNulls" else a
 
         member this.GetLabel() = 
-            this |> function FrameworkImportsCacheKey(assemblyName=a;importReuseKey=c) -> if c.CheckNullness then a + "CheckNulls" else a
+            this |> function FrameworkImportsCacheKey(assemblyName=a;importReuseKey=c) -> if c.ImportsNullness then a + "CheckNulls" else a
 
         member this.GetVersion() = this
         
@@ -557,31 +559,11 @@ type FrameworkImportsCache(size) =
         let node = this.GetNode(tcConfig, frameworkDLLs, nonFrameworkResolutions)
         let! tcGlobals, frameworkTcImports = node.GetOrComputeValue()
 
-        // If the tcGlobals was loaded from a different project, langVersion and realsig may be different 
+        // If the tcGlobals was loaded from a different project, langVersion and realsig may be different
         // for each cached project.  So here we create a new tcGlobals, with the existing framework values
         // and updated realsig and langversion
         let tcGlobals =
-            if tcGlobals.langVersion <> tcConfig.langVersion
-                || tcGlobals.realsig <> tcConfig.realsig then
-                    TcGlobals(
-                        tcGlobals.compilingFSharpCore,
-                        tcGlobals.ilg,
-                        tcGlobals.fslibCcu,
-                        tcGlobals.directoryToResolveRelativePaths,
-                        tcGlobals.isInteractive,
-                        tcGlobals.checkNullness,
-                        tcGlobals.useReflectionFreeCodeGen,
-                        tcGlobals.tryFindSysTypeCcuHelper,
-                        tcGlobals.emitDebugInfoInQuotations,
-                        tcGlobals.noDebugAttributes,
-                        tcGlobals.pathMap,
-                        tcConfig.langVersion,
-                        tcConfig.realsig,
-                        tcConfig.compilationMode
-                    )
-
-            else
-                tcGlobals
+            tcGlobals.WithLanguageSettings(tcConfig.langVersion, tcConfig.realsig, tcConfig.compilationMode)
 
         return tcGlobals, frameworkTcImports, nonFrameworkResolutions, unresolved
       }
@@ -633,13 +615,100 @@ module Utilities =
 /// as a cross-assembly reference.  Note the assembly has not been generated on disk, so this is
 /// a virtualized view of the assembly contents as computed by background checking.
 [<Sealed>]
-type RawFSharpAssemblyDataBackedByLanguageService (tcConfig, tcGlobals, generatedCcu: CcuThunk, outfile, topAttrs, assemblyName, ilAssemRef) =
+type RawFSharpAssemblyDataBackedByLanguageService (tcConfig, tcGlobals: TcGlobals, generatedCcu: CcuThunk, outfile, topAttrs, assemblyName, ilAssemRef, referencedCcuNames: string list option) =
 
-    let exportRemapping = MakeExportRemapping generatedCcu generatedCcu.Contents
-
+    // Nothing may ever ask for the bytes, and building them walks the whole signature
     let sigData =
-        let _sigDataAttributes, sigDataResources = EncodeSignatureData(tcConfig, tcGlobals, exportRemapping, generatedCcu, outfile, true)
-        GetResourceNameAndSignatureDataFuncs sigDataResources
+        lazy
+            let exportRemapping = MakeExportRemapping generatedCcu generatedCcu.Contents
+
+            let _sigDataAttributes, sigDataResources =
+                EncodeSignatureData(tcConfig, tcGlobals, exportRemapping, generatedCcu, outfile, true)
+
+            GetResourceNameAndSignatureDataFuncs sigDataResources
+
+    let stamp = newStamp ()
+
+    /// As WriteSignatureData computes it, and here so a bad path fails where the project is built.
+    let sourceCodeDirectory =
+        if String.IsNullOrEmpty tcConfig.implicitIncludeDir then
+            ""
+        else
+            tcConfig.implicitIncludeDir
+            |> FileSystem.GetFullPathShim
+            |> Internal.Utilities.PathMap.applyDir tcGlobals.pathMap
+
+    /// Nothing evicts, and past the cap a reader still gets a correct tree without keeping it.
+    let maxBoundCopies = 8
+
+    /// Each copy with what its non-local names were bound to. Readers sharing one agree on every assembly
+    /// it mentions, which is why one of their TcGlobals serves below.
+    let boundCopies = ResizeArray<CcuThunk * (string * CcuThunk * bool) list>()
+
+    /// What u_ccuref does to pickled names, done to the tree directly.
+    let bindTree (readerTcGlobals: TcGlobals) (resolve: string -> CcuThunk option) =
+        let boundTo = Dictionary<string, CcuThunk * bool>(StringComparer.OrdinalIgnoreCase)
+
+        // The thunk may still be delayed, so the reference is taken rather than fixed up. A name the
+        // reader does not have keeps ours: it has no second copy to disagree with.
+        let ccuRebind =
+            Some(fun (ccu: CcuThunk) ->
+                match boundTo.TryGetValue ccu.AssemblyName with
+                | true, (already, _) -> already
+                | _ ->
+                    let entry =
+                        match resolve ccu.AssemblyName with
+                        | Some readers -> readers, true
+                        | None -> ccu, false
+
+                    boundTo[ccu.AssemblyName] <- entry
+                    fst entry)
+
+        let viewedCcu = CcuThunk.CreateDelayed assemblyName
+
+        let ilScopeRef = ILScopeRef.Assembly ilAssemRef
+
+        let remapping =
+            MakeExportRemappingWith ccuRebind viewedCcu generatedCcu.Contents
+
+        let contents =
+            ApplyExportRemappingToEntityLeavingAssembly tcGlobals remapping ilScopeRef generatedCcu.Contents
+            |> PruneExportedSignatureInPlace
+
+        let ccuData: CcuData =
+            {
+                ILScopeRef = ilScopeRef
+                Stamp = newStamp ()
+                FileName = Some outfile
+                QualifiedName = Some ilScopeRef.QualifiedName
+                SourceCodeDirectory = sourceCodeDirectory
+                IsFSharp = true
+                Contents = contents
+#if !NO_TYPEPROVIDERS
+                InvalidateEvent = (Event<string>()).Publish
+                IsProviderGenerated = false
+                // Unreachable: such a project reports its assembly data as unavailable
+                ImportProvidedType = (fun _ -> error (InternalError("a shared project reference cannot import provided types", range0)))
+#endif
+                // No reader behind a project reference, so nothing can be disposed under a consumer
+                TryGetILModuleDef = (fun () -> None)
+                UsesFSharp20PlusQuotations = generatedCcu.UsesFSharp20PlusQuotations
+                // The reader's: linkage keys are matched against its entities through here
+                MemberSignatureEquality = (fun ty1 ty2 -> typeEquivAux EraseAll readerTcGlobals ty1 ty2)
+                // As GetRawTypeForwarders does for the pickled path
+                TypeForwarders = CcuTypeForwarderTable.Empty
+                XmlDocumentationInfo = None
+                CSharpStyleExtensionMembersCache = ConcurrentDictionary(1, 0)
+            }
+
+        viewedCcu.Fixup(CcuThunk.Create(assemblyName, ccuData))
+
+        // Sorted, so two builds of the same tree give lists that compare element-wise
+        let bindings =
+            [ for KeyValue(name, (ccu, wasResolved)) in boundTo -> name, ccu, wasResolved ]
+            |> List.sortWith (fun (a, _, _) (b, _, _) -> String.CompareOrdinal(a, b))
+
+        viewedCcu, bindings
 
     let autoOpenAttrs, ivtAttrs =
         let mutable autoOpen = []
@@ -659,11 +728,59 @@ type RawFSharpAssemblyDataBackedByLanguageService (tcConfig, tcGlobals, generate
 
         List.rev autoOpen, List.rev ivt
 
+    interface IImportedProjectCcu with
+        member _.Stamp = stamp
+
+        member _.ReferencedCcuNames = defaultArg referencedCcuNames []
+
+        member _.GetCcu(callerTcGlobals: TcGlobals, resolve) =
+            let matches (_, bindings) =
+                bindings
+                |> List.forall (fun (name, ccu, wasResolved) ->
+                    match resolve name, wasResolved with
+                    | Some ccuR, true -> obj.ReferenceEquals(ccuR, ccu)
+                    | None, false -> true
+                    | _ -> false)
+
+            // Matching and building take the reader's own lock, so neither may run while this is held
+            let existingCopy () =
+                lock boundCopies (fun () -> boundCopies.ToArray()) |> Array.tryFind matches
+
+            match existingCopy () with
+            | Some(ccu, _) -> ccu
+            | None ->
+                let ccu, bindings = bindTree callerTcGlobals resolve
+
+                // Check and publish in one step, and not with the check above: it resolves through the reader
+                let sameBindings (other: (string * CcuThunk * bool) list) =
+                    List.length other = List.length bindings
+                    && List.forall2
+                        (fun (n1: string, c1: CcuThunk, r1) (n2: string, c2: CcuThunk, r2) ->
+                            String.Equals(n1, n2, StringComparison.OrdinalIgnoreCase)
+                            && obj.ReferenceEquals(c1, c2)
+                            && r1 = r2)
+                        other
+                        bindings
+
+                lock boundCopies (fun () ->
+                    match boundCopies |> Seq.tryFind (snd >> sameBindings) with
+                    | Some(shared, _) -> shared
+                    | None ->
+                        if boundCopies.Count < maxBoundCopies then
+                            boundCopies.Add((ccu, bindings))
+
+                        ccu)
+
+        member _.CanBeTaken =
+            referencedCcuNames.IsSome
+            // Such a project gives a consumer no ccu at all, so taking it would change what compiles
+            && tcConfig.GenerateSignatureData
+
     interface IRawFSharpAssemblyData with
         member _.GetAutoOpenAttributes() = autoOpenAttrs
         member _.GetInternalsVisibleToAttributes() =  ivtAttrs
         member _.TryGetILModuleDef() = None
-        member _.GetRawFSharpSignatureData(_m, _ilShortAssemName, _filename) = sigData
+        member _.GetRawFSharpSignatureData(_m, _ilShortAssemName, _filename) = sigData.Force()
         member _.GetRawFSharpOptimizationData(_m, _ilShortAssemName, _filename) = [ ]
         member _.GetRawTypeForwarders() = mkILExportedTypes []  // TODO: cross-project references with type forwarders
         member _.ShortAssemblyName = assemblyName
@@ -866,7 +983,14 @@ module IncrementalBuilderHelpers =
                         if tcState.CreatesGeneratedProvidedTypes || hasTypeProviderAssemblyAttrib then
                             ProjectAssemblyDataResult.Unavailable true
                         else
-                            ProjectAssemblyDataResult.Available (RawFSharpAssemblyDataBackedByLanguageService (tcConfig, tcGlobals, generatedCcu, outfile, topAttrs, assemblyName, ilAssemRef) :> IRawFSharpAssemblyData)
+                            let referencedCcuNames =
+                                computedBoundModels
+                                |> Seq.tryHead
+                                |> Option.map (fun boundModel ->
+                                    boundModel.TcImports.GetCcusInDeclOrder()
+                                    |> List.map (fun ccu -> ccu.AssemblyName))
+
+                            ProjectAssemblyDataResult.Available (RawFSharpAssemblyDataBackedByLanguageService (tcConfig, tcGlobals, generatedCcu, outfile, topAttrs, assemblyName, ilAssemRef, referencedCcuNames) :> IRawFSharpAssemblyData)
                     with exn ->
                         errorRecoveryNoRange exn
                         ProjectAssemblyDataResult.Unavailable true

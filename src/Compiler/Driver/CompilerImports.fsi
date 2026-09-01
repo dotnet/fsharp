@@ -104,6 +104,21 @@ module internal SharedImportedCcus =
 
     val clear: unit -> unit
 
+/// A project's contents already imported, for a reader to bind against its own ccus
+type IImportedProjectCcu =
+
+    /// Names this build, which a key pins instead of a file
+    abstract Stamp: int64
+
+    /// Every ccu this project imports. A reader binds the taken ones among them before binding this one.
+    abstract ReferencedCcuNames: string list
+
+    abstract CanBeTaken: bool
+
+    /// A copy of the tree with its non-local references re-pointed through `resolve`, as unpickling would
+    /// have done. Readers resolving every name alike share a copy.
+    abstract GetCcu: callerTcGlobals: TcGlobals * resolve: (string -> CcuThunk option) -> CcuThunk
+
 /// Represents a resolved imported binary
 [<RequireQualifiedAccess>]
 type ImportedBinary =
