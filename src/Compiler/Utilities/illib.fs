@@ -446,14 +446,7 @@ module ListInline =
 
     /// As `List.map`.
     let inline map ([<InlineIfLambda>] mapping: 'T -> 'U) (list: 'T list) =
-        let mutable acc = []
-        let mutable rest = list
-
-        while not (List.isEmpty rest) do
-            acc <- mapping (List.head rest) :: acc
-            rest <- List.tail rest
-
-        List.rev acc
+        [ for x in list -> mapping x ]
 
     /// As `List.forall2` (raising `ArgumentException` when the lists have different lengths).
     let inline forall2 ([<InlineIfLambda>] predicate: 'T1 -> 'T2 -> bool) (list1: 'T1 list) (list2: 'T2 list) =
