@@ -214,3 +214,11 @@ let ``A pipeline stage is labelled by the function it runs in`` () =
     CallStackSample.pipelineLambdas () |> ignore
 
     Assert.StartsWith("pipelineLambdas@", labelOf "Pipe #1 stage")
+
+[<Fact>]
+let ``A delegate call resolves`` () =
+    assertScenarioResolves CallStackSample.delegateCall
+
+[<Fact>]
+let ``An event handler resolves`` () =
+    assertScenarioResolves CallStackSample.eventHandler
