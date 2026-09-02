@@ -7,7 +7,7 @@ open TestBaseClass
 
 type DerivedClass() = class
     inherit BaseClass()
-        
+
     member x.SomeMethod2() = BaseClass().ProtectedInstance()
     static member AnotherMethod2() = BaseClass().ProtectedInstance()
 

@@ -143,17 +143,16 @@ module DeclarationListHelpers =
                           member x.Equals(item1, item2) = nullSafeEquality item1 item2 (fun item1 item2 -> fullDisplayTextOfModRef item1 = fullDisplayTextOfModRef item2)
                           member x.GetHashCode item = hash item.Stamp  }
 
-    let OutputFullName displayFullName ppF fnF r = 
+    let OutputFullName displayFullName hasPubPath fnF r =
       // Only display full names in quick info, not declaration lists or method lists
-      if not displayFullName then 
-        match ppF r with 
-        | None -> emptyL
-        | Some _ -> wordL (tagText (FSComp.SR.typeInfoFullName())) ^^ RightL.colon ^^ (fnF r)
+      if not displayFullName then
+        if hasPubPath r then wordL (tagText (FSComp.SR.typeInfoFullName())) ^^ RightL.colon ^^ (fnF r)
+        else emptyL
       else emptyL
 
-    let pubpathOfValRef (v: ValRef) = v.PublicPath        
+    let hasPubPathValRef (v: ValRef) = v.PublicPath.IsSome
 
-    let pubpathOfTyconRef (x: TyconRef) = x.PublicPath
+    let hasPubPathTyconRef (x: TyconRef) = x.PublicPath.IsSome
 
     /// Output the quick info information of a language item
     let rec FormatItemDescriptionToToolTipElement displayFullName (infoReader: InfoReader) ad m denv (item: ItemWithInst) symbol (width: int option) = 
@@ -169,7 +168,7 @@ module DeclarationListHelpers =
 
         | Item.Value vref | Item.CustomBuilder (_, vref) ->            
             let prettyTyparInst, resL = layoutQualifiedValOrMember denv infoReader item.TyparInstantiation vref
-            let remarks = OutputFullName displayFullName pubpathOfValRef fullDisplayTextOfValRefAsLayout vref
+            let remarks = OutputFullName displayFullName hasPubPathValRef fullDisplayTextOfValRefAsLayout vref
             let tpsL = FormatTyparMapping denv prettyTyparInst
             let typeMapping = List.map toRichText tpsL
             let resL = PrintUtilities.squashToWidth width resL
@@ -212,7 +211,7 @@ module DeclarationListHelpers =
             let vTauTy = v.TauType
             // REVIEW: use _cxs here
             let (prettyTyparInst, prettyTy), _cxs = PrettyTypes.PrettifyInstAndType denv.g (item.TyparInstantiation, vTauTy)
-            let remarks = OutputFullName displayFullName pubpathOfValRef fullDisplayTextOfValRefAsLayout v
+            let remarks = OutputFullName displayFullName hasPubPathValRef fullDisplayTextOfValRefAsLayout v
             let layout =
                 wordL (tagText (FSComp.SR.typeInfoActiveRecognizer())) ^^
                 wordL (tagActivePatternCase apref.DisplayName |> mkNav v.DefinitionRange) ^^
@@ -231,7 +230,7 @@ module DeclarationListHelpers =
         | Item.ExnCase ecref -> 
             let layout = layoutExnDef denv infoReader ecref
             let layout = PrintUtilities.squashToWidth width layout
-            let remarks = OutputFullName displayFullName pubpathOfTyconRef fullDisplayTextOfExnRefAsLayout ecref
+            let remarks = OutputFullName displayFullName hasPubPathTyconRef fullDisplayTextOfExnRefAsLayout ecref
             let mainDescription = toRichText layout
             let remarks = toRichText remarks
             ToolTipElement.Single (mainDescription, xml, remarks=remarks, ?symbol = symbol)
@@ -388,7 +387,7 @@ module DeclarationListHelpers =
                             showDocumentation = false  }
             let layout = layoutTyconDefn denv infoReader ad m (* width *) tcref.Deref
             let layout = PrintUtilities.squashToWidth width layout
-            let remarks = OutputFullName displayFullName pubpathOfTyconRef fullDisplayTextOfTyconRefAsLayout tcref
+            let remarks = OutputFullName displayFullName hasPubPathTyconRef fullDisplayTextOfTyconRefAsLayout tcref
             let mainDescription = toRichText layout
             let remarks = toRichText remarks
             ToolTipElement.Single (mainDescription, xml, remarks=remarks, ?symbol = symbol)

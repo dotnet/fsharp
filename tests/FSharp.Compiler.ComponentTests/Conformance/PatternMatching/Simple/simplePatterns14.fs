@@ -1,10 +1,10 @@
-// #Conformance #PatternMatching 
+// #Conformance #PatternMatching
 
 
-let result = 
+let result =
     match 42 with
     | _  -> true
 
 if result <> true then exit 1
 
-exit 0    
+exit 0

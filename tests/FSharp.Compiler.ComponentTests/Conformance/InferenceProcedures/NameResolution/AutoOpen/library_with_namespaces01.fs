@@ -1,4 +1,4 @@
-// #Conformance #TypeInference #Attributes #ReqNOMT 
+// #Conformance #TypeInference #Attributes #ReqNOMT
 
 
 namespace XX.YY.ZZ
@@ -16,7 +16,7 @@ namespace XX.YY
                   end
       type G2<'a> = class
                     end
- 
+
 namespace XX
       type T1 = decimal []
       type C1() = class

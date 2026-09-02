@@ -7,7 +7,7 @@ module TestStructParam =
 
     let f (x:byref<R>) = &x.z
 
-    let test() = 
+    let test() =
         let mutable r = { z = 1 }
         let addr = &f &r
         addr <- addr + 1

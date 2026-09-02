@@ -60,7 +60,7 @@ let f3 () =
         |> withDiagnostics [
             (Error 3350, Line 11, Col 16, Line 11, Col 42, "Feature 'Allow let! and use! type annotations without requiring parentheses' is not available in F# 9.0. Please use language version 10.0 or greater.")
         ]
-        
+
     [<Fact>]
     let ``Version 9.0: Allow CE return! and type annotations don't to play well together needing parentheses``() =
         FSharp """
@@ -92,7 +92,7 @@ let f1() =
         |> withDiagnostics [
             (Error 3350, Line 16, Col 17, Line 16, Col 43, "Feature 'Allow let! and use! type annotations without requiring parentheses' is not available in F# 9.0. Please use language version 10.0 or greater.")
         ]
-        
+
     [<Fact>]
     let ``Preview: Allow CE return and type annotations to play well together without needing parentheses``() =
         FSharp """
@@ -234,9 +234,9 @@ let x = lb {1; 2; if true then 3;}
     [<Theory>]
     [<InlineData("10.0","BindReturn")>]
     [<InlineData("10.0","WithoutBindReturn")>]
-    [<InlineData("8.0","BindReturn")>]   
-    [<InlineData("8.0","WithoutBindReturn")>]  
-    let ``A CE with BindReturn and Zero can omit else in an if-then return`` (langVersion, bindReturnName) = 
+    [<InlineData("8.0","BindReturn")>]
+    [<InlineData("8.0","WithoutBindReturn")>]
+    let ``A CE with BindReturn and Zero can omit else in an if-then return`` (langVersion, bindReturnName) =
         let code = $"""
 type Builder () =
     member inline __.Return (x: 'T) = Seq.singleton x
@@ -255,8 +255,8 @@ let _pythags = seqbuilder {{
         |> typecheck
         |> shouldSucceed
 
-    [<Fact>] 
-    let ``A CE with BindReturn and Zero can work without Return if flow control is not used`` () = 
+    [<Fact>]
+    let ``A CE with BindReturn and Zero can work without Return if flow control is not used`` () =
         let code = $"""
 type Builder () =
     member inline __.Bind (p: seq<'T>, rest: 'T->seq<'U>) = Seq.collect rest p
@@ -269,7 +269,7 @@ let _pythags = seqbuilder {{
   let! z = seq [5;10]  
   return (z,z) }} """
         code
-        |> FSharp     
+        |> FSharp
         |> typecheck
         |> shouldSucceed
 
@@ -319,7 +319,7 @@ let run r2 r3 =
         |> withDiagnostics [
             (Error 3345, Line 18, Col 9, Line 18, Col 13, "use! may not be combined with and!")
         ]
-        
+
     [<Fact>]
     let ``multiple use! may not be combined with and!`` () =
         Fsx """
@@ -350,7 +350,7 @@ let run r2 r3 =
         |> withDiagnostics [
             (Error 3345, Line 18, Col 9, Line 18, Col 13, "use! may not be combined with and!")
         ]
-        
+
     [<Fact>]
     let ``multiple use! may not be combined with multiple and!`` () =
         Fsx """
@@ -419,7 +419,7 @@ let run r2 r3 =
         |> withDiagnostics [
             (Error 708, Line 23, Col 9, Line 23, Col 13, "This control construct may only be used if the computation expression builder defines a 'Bind' method")
         ]
-    
+
     [<Fact>]
     let ``This control construct may only be used if the computation expression builder defines a 'Using' method`` () =
         Fsx """
@@ -454,7 +454,7 @@ let run r2 r3 =
         |> withDiagnostics [
             (Error 708, Line 23, Col 9, Line 23, Col 13, "This control construct may only be used if the computation expression builder defines a 'Using' method")
         ]
-    
+
     [<Fact>]
     let ``do! expressions may not be used in queries`` () =
         Fsx """
@@ -469,7 +469,7 @@ query {
         |> withDiagnostics [
             (Error 3143, Line 3, Col 5, Line 3, Col 8, "'let!', 'use!' and 'do!' expressions may not be used in queries")
         ]
-        
+
     [<Fact>]
     let ``let! expressions may not be used in queries`` () =
         Fsx """
@@ -484,7 +484,7 @@ query {
         |> withDiagnostics [
             (Error 3143, Line 3, Col 5, Line 3, Col 9, "'let!', 'use!' and 'do!' expressions may not be used in queries")
         ]
-            
+
     [<Fact>]
     let ``let!, and! expressions may not be used in queries`` () =
         Fsx """
@@ -500,7 +500,7 @@ query {
         |> withDiagnostics [
             (Error 3143, Line 3, Col 5, Line 3, Col 9, "'let!', 'use!' and 'do!' expressions may not be used in queries")
         ]
-        
+
     [<Fact>]
     let ``use! expressions may not be used in queries`` () =
         Fsx """
@@ -529,9 +529,9 @@ query {
         |> typecheck
         |> shouldFail
         |> withDiagnostics [
-            (Error 3143, Line 4, Col 5, Line 4, Col 8, "'let!', 'use!' and 'do!' expressions may not be used in queries")  
+            (Error 3143, Line 4, Col 5, Line 4, Col 8, "'let!', 'use!' and 'do!' expressions may not be used in queries")
         ]
-        
+
     [<Fact>]
     let ``let! expressions may not be used in queries(SynExpr.Sequential)`` () =
         Fsx """
@@ -547,7 +547,7 @@ query {
         |> withDiagnostics [
             (Error 3143, Line 4, Col 5, Line 4, Col 9, "'let!', 'use!' and 'do!' expressions may not be used in queries")
         ]
-        
+
     [<Fact>]
     let ``let!, and! expressions may not be used in queries(SynExpr.Sequential)`` () =
         Fsx """
@@ -564,7 +564,7 @@ query {
         |> withDiagnostics [
             (Error 3143, Line 4, Col 5, Line 4, Col 9, "'let!', 'use!' and 'do!' expressions may not be used in queries")
         ]
-        
+
     [<Fact>]
     let ``use! expressions may not be used in queries(SynExpr.Sequential)`` () =
         Fsx """
@@ -631,7 +631,7 @@ let run r2 r3 =
         |> withDiagnostics [
             (Error 750, Line 3, Col 5, Line 3, Col 11, "This construct may only be used within computation expressions")
         ]
-        
+
     [<Fact>]
     let ``This control construct may only be used if the computation expression builder defines a 'Yield' method`` () =
         Fsx """
@@ -649,7 +649,7 @@ let f3 =
         |> withDiagnostics [
             (Error 708, Line 5, Col 13, Line 5, Col 18, "This control construct may only be used if the computation expression builder defines a 'Yield' method")
         ]
-        
+
     [<Fact>]
     let ``This control construct may only be used if the computation expression builder defines a 'YieldFrom' method`` () =
         Fsx """
@@ -667,7 +667,7 @@ let f3 =
         |> withDiagnostics [
             (Error 708, Line 5, Col 13, Line 5, Col 19, "This control construct may only be used if the computation expression builder defines a 'YieldFrom' method")
         ]
-    
+
 
     [<Fact>]
     let ``This control construct may only be used if the computation expression builder defines a 'Return' method`` () =
@@ -704,7 +704,7 @@ let run r2 r3 =
         |> withDiagnostics [
             (Error 708, Line 24, Col 19, Line 24, Col 25, "This control construct may only be used if the computation expression builder defines a 'Return' method")
         ]
-        
+
 
     [<Fact>]
     let ``This control construct may only be used if the computation expression builder defines a 'ReturnFrom' method`` () =
@@ -740,7 +740,7 @@ let run r2 r3 =
         |> shouldFail
         |> withDiagnostics [
             (Error 708, Line 24, Col 19, Line 24, Col 26, "This control construct may only be used if the computation expression builder defines a 'ReturnFrom' method")
-        ]        
+        ]
 
     [<Fact>]
     let ``This control construct may only be used if the computation expression builder defines a 'Combine' method`` () =
@@ -779,7 +779,7 @@ let run r2 r3 =
         |> withDiagnostics [
             (Error 708, Line 27, Col 9, Line 27, Col 15, "This control construct may only be used if the computation expression builder defines a 'Combine' method")
         ]
-        
+
     [<Fact>]
     let ``Sequence2 This control construct may only be used if the computation expression builder defines a 'Combine' method`` () =
         Fsx """
@@ -822,7 +822,7 @@ let run (r2: Result<int, string>) (r3: Result<int, string>) =
         |> withDiagnostics [
             (Error 708, Line 32, Col 9, Line 32, Col 15, "This control construct may only be used if the computation expression builder defines a 'Combine' method")
         ]
-        
+
     [<Fact>]
     let ``Sequence 5 This control construct may only be used if the computation expression builder defines a 'Combine' method`` () =
         Fsx """
@@ -865,7 +865,7 @@ let run (r2: Result<int, string>) (r3: Result<int, string>) =
         |> withDiagnostics [
             (Error 708, Line 32, Col 9, Line 32, Col 16, "This control construct may only be used if the computation expression builder defines a 'Combine' method")
         ]
-    
+
     [<Fact>]
     let ``Sequence 7 This control construct may only be used if the computation expression builder defines a 'Combine' method`` () =
         Fsx """
@@ -908,8 +908,8 @@ let run (r2: Result<int, string>) (r3: Result<int, string>) =
         |> shouldFail
         |> withDiagnostics [
             (Error 708, Line 33, Col 9, Line 33, Col 16, "This control construct may only be used if the computation expression builder defines a 'Combine' method")
-        ]    
-    
+        ]
+
     [<Fact>]
     let ``Sequence 8 This control construct may only be used if the computation expression builder defines a 'Combine' method`` () =
         Fsx """
@@ -953,7 +953,7 @@ let run (r2: Result<int, string>) (r3: Result<int, string>) =
         |> withDiagnostics [
             (Error 708, Line 33, Col 9, Line 33, Col 16, "This control construct may only be used if the computation expression builder defines a 'Combine' method")
         ]
-    
+
     [<Fact>]
     let ``Sequence 9 This control construct may only be used if the computation expression builder defines a 'Combine' method`` () =
         Fsx """
@@ -1042,7 +1042,7 @@ let run (r2: Result<int, string>) (r3: Result<int, string>) =
         |> withDiagnostics [
             (Error 708, Line 34, Col 9, Line 34, Col 15, "This control construct may only be used if the computation expression builder defines a 'Combine' method")
         ]
-        
+
     [<Fact>]
     let ``Sequence 4 This control construct may only be used if the computation expression builder defines a 'Combine' method`` () =
         Fsx """
@@ -1086,7 +1086,7 @@ let run (r2: Result<int, string>) (r3: Result<int, string>) =
         |> shouldFail
         |> withDiagnostics [
             (Error 708, Line 34, Col 9, Line 34, Col 14, "This control construct may only be used if the computation expression builder defines a 'Combine' method")
-        ]        
+        ]
     [<Fact>]
     let ``Sequence 6 This control construct may only be used if the computation expression builder defines a 'Combine' method`` () =
         Fsx """
@@ -1235,7 +1235,7 @@ module Test =
         |> withDiagnostics [
             (Error 708, Line 25, Col 7, Line 26, Col 13, "This control construct may only be used if the computation expression builder defines a 'Combine' method")
         ]
-        
+
     [<Fact>]
     let ``Sequence 13 This control construct may only be used if the computation expression builder defines a 'Combine' method`` () =
         Fsx """
@@ -1395,7 +1395,7 @@ let x18mutable =
             (Error 3147, Line 13, Col 20, Line 13, Col 23, "This 'let' definition may not be used in a query. Only simple value definitions may be used in queries.")
             (Error 3147, Line 20, Col 21, Line 20, Col 22, "This 'let' definition may not be used in a query. Only simple value definitions may be used in queries.")
         ]
-        
+
     [<Fact>]
     let ``Fix resumable and non-resumable CE error ranges`` () =
         FSharp """
@@ -1427,7 +1427,7 @@ is not compatible with type
 'TaskCode<int,int>' 
 ")
         ]
-        
+
     [<Fact>]
     let ``Fix resumable and non-resumable CE error ranges 2`` () =
         FSharp """
@@ -1465,8 +1465,8 @@ but here has type
 'int' 
 but here has type
 'string' ")
-        ]        
-    
+        ]
+
     [<Fact>]
     let ``Fix resumable and non-resumable CE error ranges 3`` () =
         FSharp """
@@ -1493,7 +1493,7 @@ is not compatible with type
 'TaskCode<IList<string>,IList<string>>' 
 ")
         ]
-        
+
     [<Fact>]
     let ``Fix resumable and non-resumable CE error ranges 4`` () =
         FSharp """
@@ -1523,7 +1523,7 @@ is not compatible with type
 'TaskCode<int64,int64>' 
 ")
         ]
-        
+
     [<Fact>]
     let ``Version 9.0: and! with type annotations requires parentheses`` () =
         FSharp """
@@ -1580,7 +1580,7 @@ let testParallel3() =
             (Error 3350, Line 43, Col 17, Line 43, Col 20, "Feature 'Allow let! and use! type annotations without requiring parentheses' is not available in F# 9.0. Please use language version 10.0 or greater.");
             (Error 3350, Line 44, Col 17, Line 44, Col 20, "Feature 'Allow let! and use! type annotations without requiring parentheses' is not available in F# 9.0. Please use language version 10.0 or greater.")
         ]
-        
+
     [<Fact>]
     let ``Preview: and! with type annotations works without parentheses`` () =
         FSharp """
@@ -2247,7 +2247,7 @@ but here has type
     [<Theory; FileInlineData("tailcalls.fsx")>]
     let ``tail call methods work`` compilation =
         compilation
-         |> getCompilation 
+         |> getCompilation
          |> asFsx
          |> runFsi
          |> shouldSucceed
@@ -2255,7 +2255,7 @@ but here has type
     [<Theory; FileInlineData("coroutines.fsx")>]
     let ``YieldFromFinal works in coroutines`` compilation =
         compilation
-         |> getCompilation 
+         |> getCompilation
          |> asFsx
          |> runFsi
          |> shouldSucceed
@@ -2399,7 +2399,7 @@ let foo() =
         """
         |> typecheck
         |> shouldSucceed
-        
+
     // https://github.com/dotnet/fsharp/issues/19457: a let!/use!/do!-headed RHS of a plain 'let'
     // inside a CE now runs as a nested computation. The following tests pin both compilation and the
     // runtime values (scoping in particular).

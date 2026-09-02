@@ -12,7 +12,7 @@ type One = One
 type Int = Int of int
 type IntPair = IntPair of int * int
 type IntPear = | IntPear : Fst: int * Snd: int -> IntPear
-type BigUnion = 
+type BigUnion =
   | A1 of int
   | A2 of int
   | A3 of int
@@ -23,27 +23,27 @@ type BigUnion =
   | A8 of int
   | A9 of int
 
-type BigEnum = 
-  | E1 
-  | E2 
-  | E3 
-  | E4 
-  | E5 
-  | E6 
-  | E7 
-  | E8 
-  | E9 
+type BigEnum =
+  | E1
+  | E2
+  | E3
+  | E4
+  | E5
+  | E6
+  | E7
+  | E8
+  | E9
 
 type Bool = True | False
 type IntOption = Nothing | Something : Item: int  -> IntOption
 type OptionalInt = SOME of int | NONE
 type Index = Index_A of int | Index_B of int
 
-type GenericUnion<'T,'U> = 
-    | Nothing 
+type GenericUnion<'T,'U> =
+    | Nothing
     | Something of 'T * 'U
-    | SomethingElse of 'T 
-    | SomethingElseAgain of 'T 
+    | SomethingElse of 'T
+    | SomethingElseAgain of 'T
 
 type Discr3_0_0_0 = Discr3_0_0_0_A | Discr3_0_0_0_B | Discr3_0_0_0_C
 type Discr3_0_1_0 = Discr3_0_1_0_A | Discr3_0_1_0_B of int | Discr3_0_0_0_C

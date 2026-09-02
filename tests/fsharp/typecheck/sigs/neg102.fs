@@ -14,7 +14,7 @@ module FS0025 =
 
     let f3 = function
         | EnumABC.A -> "A"
-    
+
     let f4 = function
         | EnumABC.A -> "A"
         | EnumABC.B -> "B"

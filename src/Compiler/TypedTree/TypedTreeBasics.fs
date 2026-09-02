@@ -254,31 +254,30 @@ let combineNullness (nullnessOrig: Nullness) (nullnessNew: Nullness) =
 
 let nullnessEquiv (nullnessOrig: Nullness) (nullnessNew: Nullness) = LanguagePrimitives.PhysicalEquality nullnessOrig nullnessNew
 
+/// Matches only when combining `nullnessNew` into the original nullness actually changes it (physically).
+/// A failed match means "unchanged" — callers fall through and reuse the original TType.
+[<return: Struct>]
+let inline (|CombinedNullness|_|) (nullnessNew: Nullness) (nullnessOrig: Nullness) =
+    let nullnessAfter = combineNullness nullnessOrig nullnessNew
+    if nullnessEquiv nullnessAfter nullnessOrig then ValueNone else ValueSome nullnessAfter
+
 let tryAddNullnessToTy nullnessNew (ty:TType) = 
+    let inline (|NullnessWouldChangeTo|_|) orig = (|CombinedNullness|_|) nullnessNew orig
     match ty with
-    | TType_var (tp, nullnessOrig) -> 
-        let nullnessAfter = combineNullness nullnessOrig nullnessNew
-        if nullnessEquiv nullnessAfter nullnessOrig then
-            Some ty
-        else 
-            Some (TType_var (tp, nullnessAfter))
-    | TType_app (tcr, tinst, nullnessOrig) -> 
-        let nullnessAfter = combineNullness nullnessOrig nullnessNew
-        if nullnessEquiv nullnessAfter nullnessOrig then
-            Some ty
-        else 
-            Some (TType_app (tcr, tinst, nullnessAfter))
-    | TType_ucase _ -> None
-    | TType_tuple _ -> None
-    | TType_anon _ -> None
-    | TType_fun (d, r, nullnessOrig) ->
-        let nullnessAfter = combineNullness nullnessOrig nullnessNew
-        if nullnessEquiv nullnessAfter nullnessOrig then
-            Some ty
-        else 
-            Some (TType_fun (d, r, nullnessAfter))
-    | TType_forall _ -> None
+    | TType_var (tp, NullnessWouldChangeTo after) -> Some (TType_var (tp, after))
+    | TType_app (tcr, tinst, NullnessWouldChangeTo after) -> Some (TType_app (tcr, tinst, after))
+    | TType_fun (d, r, NullnessWouldChangeTo after) -> Some (TType_fun (d, r, after))
+    | TType_var _
+    | TType_app _
+    | TType_fun _ -> Some ty
+    | TType_ucase _
+    | TType_tuple _
+    | TType_anon _
+    | TType_forall _
     | TType_measure _ -> None
+
+/// Matches a `TyconRef` whose definition is a struct/enum value type (which never carries outer nullness).
+let inline (|StructTyconRef|_|) (tcref: TyconRef) = tcref.IsStructOrEnumTycon
 
 let addNullnessToTy (nullness: Nullness) (ty:TType) =
     match nullness with
@@ -286,15 +285,12 @@ let addNullnessToTy (nullness: Nullness) (ty:TType) =
     | Nullness.KnownFromConstructor -> ty
     | Nullness.Variable nv when nv.IsFullySolved && nv.TryEvaluate() = ValueSome NullnessInfo.WithoutNull -> ty
     | _ -> 
+    let inline (|NullnessWouldChangeTo|_|) orig = (|CombinedNullness|_|) nullness orig
     match ty with
-    | TType_var (tp, nullnessOrig) -> TType_var (tp, combineNullness nullnessOrig nullness)
-    | TType_app (tcr, tinst, nullnessOrig) -> 
-        let tycon = tcr.Deref
-        if tycon.IsStructRecordOrUnionTycon || tycon.IsStructOrEnumTycon then
-            ty
-        else 
-            TType_app (tcr, tinst, combineNullness nullnessOrig nullness)
-    | TType_fun (d, r, nullnessOrig) -> TType_fun (d, r, combineNullness nullnessOrig nullness)
+    | TType_var (tp, NullnessWouldChangeTo after) -> TType_var (tp, after)
+    | TType_app (StructTyconRef, _, _) -> ty
+    | TType_app (tcr, tinst, NullnessWouldChangeTo after) -> TType_app (tcr, tinst, after)
+    | TType_fun (d, r, NullnessWouldChangeTo after) -> TType_fun (d, r, after)
     | _ -> ty
 
 let rec stripTyparEqnsAux nullness0 canShortcut ty = 
@@ -366,10 +362,10 @@ let mkNestedValRef (cref: EntityRef) (v: Val) : ValRef =
         mkNonLocalValRefPreResolved v nlr key
 
 /// From Ref_private to Ref_nonlocal when exporting data.
-let rescopePubPathToParent viewedCcu (PubPath p) = NonLocalEntityRef(viewedCcu, p[0..p.Length-2])
+let rescopePubPathToParent viewedCcu (pp: PublicPath) = NonLocalEntityRef(viewedCcu, pp.EnclosingPath)
 
 /// From Ref_private to Ref_nonlocal when exporting data.
-let rescopePubPath viewedCcu (PubPath p) = NonLocalEntityRef(viewedCcu, p)
+let rescopePubPath viewedCcu (pp: PublicPath) = NonLocalEntityRef(viewedCcu, pp.FullPath)
 
 //---------------------------------------------------------------------------
 // Equality between TAST items.
@@ -414,10 +410,36 @@ let nonLocalRefEq (NonLocalEntityRef(x1, y1) as smr1) (NonLocalEntityRef(x2, y2)
 let nonLocalRefDefinitelyNotEq (NonLocalEntityRef(_, y1)) (NonLocalEntityRef(_, y2)) = 
     not (arrayPathEq y1 y2)
 
-let pubPathEq (PubPath path1) (PubPath path2) = arrayPathEq path1 path2
+// A function rather than a member on PublicPath: the optimizer does not see through a struct member
+// call when inferring MightMakeCriticalTailcall, and this runs in tail position from fslibEntityRefEq.
+let pubPathEq (path1: PublicPath) (path2: PublicPath) =
+    let rec loop p1 p2 =
+        match p1, p2 with
+        | [], [] -> true
+        | (nm1, _) :: rest1, (nm2, _) :: rest2 -> nm1 = nm2 && loop rest1 rest2
+        | _ -> false
 
-let fslibRefEq (nlr1: NonLocalEntityRef) (PubPath path2) =
-    arrayPathEq nlr1.Path path2
+    path1.Name = path2.Name
+    && loop path1.EnclosingCompilationPath.AccessPath path2.EnclosingCompilationPath.AccessPath
+
+// Compares nlr1.Path against path2 without materializing path2.FullPath: the enclosing access path is
+// walked as a list while the reference path is indexed as an array, so this stays O(N) and allocation-free.
+let fslibRefEq (nlr1: NonLocalEntityRef) (path2: PublicPath) =
+    let path1 = nlr1.Path
+
+    let rec loop i lst =
+        match lst with
+        | [] -> i = path1.Length - 1 && path1[i] = path2.Name
+        | (nm, _) :: rest -> i < path1.Length && path1[i] = nm && loop (i + 1) rest
+
+    loop 0 path2.EnclosingCompilationPath.AccessPath
+
+// Struct (non-allocating) variants of |ERefLocal|ERefNonLocal|, for the hot fslib-compile equality below.
+[<return: Struct>]
+let inline (|LocalEref|_|) (x: EntityRef) = if x.IsLocalRef then ValueSome x.ResolvedTarget else ValueNone
+
+[<return: Struct>]
+let inline (|NonLocalEref|_|) (x: EntityRef) = if x.IsLocalRef then ValueNone else ValueSome x.nlr
 
 // Compare two EntityRef's for equality when compiling fslib (FSharp.Core.dll)
 //
@@ -427,17 +449,24 @@ let fslibRefEq (nlr1: NonLocalEntityRef) (PubPath path2) =
 // equality comparison techniques are needed when compiling fslib itself.
 let fslibEntityRefEq fslibCcu (eref1: EntityRef) (eref2: EntityRef) =
     match eref1, eref2 with 
-    | ERefNonLocal nlr1, ERefLocal x2
-    | ERefLocal x2, ERefNonLocal nlr1 ->
+    | NonLocalEref nlr1, LocalEref x2
+    | LocalEref x2, NonLocalEref nlr1 ->
         ccuEq nlr1.Ccu fslibCcu &&
-        match x2.PublicPath with 
-        | Some pp2 -> fslibRefEq nlr1 pp2
-        | None -> false
-    | ERefLocal e1, ERefLocal e2 ->
-        match e1.PublicPath, e2.PublicPath with 
-        | Some pp1, Some pp2 -> pubPathEq pp1 pp2
+        match x2.PublicPath with
+        | ValueSome pp2 -> fslibRefEq nlr1 pp2
+        | ValueNone -> false
+    | LocalEref e1, LocalEref e2 ->
+        match e1.PublicPath, e2.PublicPath with
+        | ValueSome pp1, ValueSome pp2 -> pubPathEq pp1 pp2
         | _ -> false
     | _ -> false
+
+// Struct (non-allocating) variants of |VRefLocal|VRefNonLocal|, for the hot fslib-compile equality below.
+[<return: Struct>]
+let inline (|LocalVref|_|) (x: ValRef) = if x.IsLocalRef then ValueSome x.ResolvedTarget else ValueNone
+
+[<return: Struct>]
+let inline (|NonLocalVref|_|) (x: ValRef) = if x.IsLocalRef then ValueNone else ValueSome x.nlr
 
 // Compare two ValRef's for equality when compiling fslib (FSharp.Core.dll)
 //
@@ -445,10 +474,10 @@ let fslibEntityRefEq fslibCcu (eref1: EntityRef) (eref2: EntityRef) =
 // This breaks certain invariants that hold elsewhere, because they dereference to point to 
 // Val's from signatures rather than Val's from implementations. This means backup, alternative 
 // equality comparison techniques are needed when compiling fslib itself.
-let fslibValRefEq fslibCcu vref1 vref2 =
+let fslibValRefEq fslibCcu (vref1: ValRef) (vref2: ValRef) =
     match vref1, vref2 with 
-    | VRefNonLocal nlr1, VRefLocal x2
-    | VRefLocal x2, VRefNonLocal nlr1 ->
+    | NonLocalVref nlr1, LocalVref x2
+    | LocalVref x2, NonLocalVref nlr1 ->
         ccuEq nlr1.Ccu fslibCcu &&
         match x2.PublicPath with 
         | Some (ValPubPath(pp2, nm2)) -> 
@@ -461,7 +490,7 @@ let fslibValRefEq fslibCcu vref1 vref2 =
         | _ -> 
             false
     // Note: I suspect this private-to-private reference comparison is not needed
-    | VRefLocal e1, VRefLocal e2 ->
+    | LocalVref e1, LocalVref e2 ->
         match e1.PublicPath, e2.PublicPath with 
         | Some (ValPubPath(pp1, nm1)), Some (ValPubPath(pp2, nm2)) -> 
             pubPathEq pp1 pp2 && 

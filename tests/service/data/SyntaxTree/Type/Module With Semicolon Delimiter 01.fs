@@ -1,7 +1,7 @@
 // Expected: Depends on verbose syntax rules
 module Module
 
-type TypeA = 
+type TypeA =
     | A;;
-    module ModuleAfterDelimiter = 
+    module ModuleAfterDelimiter =
         let x = 1

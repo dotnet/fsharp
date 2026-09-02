@@ -1,4 +1,4 @@
-// #Regression #Conformance #ApplicationExpressions 
+// #Regression #Conformance #ApplicationExpressions
 
 
 // Before check-in 11472, assert(false) had a special treatment (used to throw an AssertionFailure exception)

@@ -3066,23 +3066,27 @@ and GetModuleAsRow (cenv: cenv) (modul: ILModuleDef) =
            Guid 0 |]
 
 
-let rowElemCompare (e1: RowElement) (e2: RowElement) =
-    let c = compare e1.Val e2.Val
-    if c <> 0 then c else
-    compare e1.Tag e2.Tag
-
 let TableRequiresSorting tab =
     List.memAssoc tab sortedTableInfo
 
 let SortTableRows tab (rows: GenericRow[]) =
     assert (TableRequiresSorting tab)
     let col = List.assoc tab sortedTableInfo
-    rows
-        // This needs to be a stable sort, so we use List.sortWith
-        |> Array.toList
-        |> List.sortWith (fun r1 r2 -> rowElemCompare r1[col] r2[col])
-        |> Array.ofList
-        //|> Array.map SharedRow
+    let n = rows.Length
+    if n <= 1 then
+        rows
+    else
+        System.Diagnostics.Debug.Assert(n <= 0xFFFFFF, "metadata table exceeds the 2^24-1 RID limit")
+        // Pack the key column per row into one int64: [Val:31 @ bit32][Tag:8 @ bit24][originalPos:24 @ bit0].
+        // Sorting the int64[] then orders by (Val, Tag, pos) = a stable (Val, Tag) sort.
+        let keys =
+            [| for i in 0 .. n - 1 ->
+                let e = rows[i][col]
+                ((int64 e.Val) <<< 32) ||| ((int64 e.Tag) <<< 24) ||| int64 i |]
+
+        System.Array.Sort keys
+        let result = [| for key in keys -> rows[int (key &&& 0xFFFFFFL)] |]
+        result
 
 let GenModule (cenv : cenv) (modul: ILModuleDef) =
     let midx = AddUnsharedRow cenv TableNames.Module (GetModuleAsRow cenv modul)

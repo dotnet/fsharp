@@ -1,4 +1,4 @@
-// #Regression #Conformance #LexicalAnalysis 
+// #Regression #Conformance #LexicalAnalysis
 
 // Regression test for FSHARP1.0:1561
 // Verify that (**) does not leave the lexer in a comment state

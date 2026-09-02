@@ -1,4 +1,4 @@
-// #Regression #Conformance #ObjectOrientedTypes #Classes 
+// #Regression #Conformance #ObjectOrientedTypes #Classes
 // Regression for FSHARP:6039
 // Abstract classes cannot have multiple constructors
 
@@ -14,7 +14,7 @@ type MyType(x:int, s:string) =
 type A(x:int, s:string) =
     inherit MyType(x,s) with
         override this.Foo x = x + 1
-        
+
 let t = A(1, "a")
 let r = if t.X = 1 && t.S = "a" then 0 else 1
 

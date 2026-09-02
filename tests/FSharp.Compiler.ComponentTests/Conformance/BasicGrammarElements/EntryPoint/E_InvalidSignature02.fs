@@ -1,4 +1,4 @@
-// #Regression #NoMT #EntryPoint 
+// #Regression #NoMT #EntryPoint
 
 
 // Verify error when signature for the [<EntryPoint>] doesn't
