@@ -17,9 +17,9 @@ implemented, not an aspirational design. The .NET design is still evolving:
   how C# lowers `await` (including the exception-handling hoisting described below)
 
 The implementation targets functions, lambdas, and members returning
-`System.Threading.Tasks.Task<'T>`, `Task`, `ValueTask<'T>`, or `ValueTask`. A
-computation-expression builder exists in the component tests and works for a
-subset of the surface, but is not part of FSharp.Core.
+`System.Threading.Tasks.Task<'T>`, `Task`, `ValueTask<'T>`, or `ValueTask`.
+Inline computation-expression builders can use the feature, but no such
+builder is currently part of FSharp.Core.
 
 ## Runtime contract
 
@@ -33,8 +33,8 @@ generic and non-generic `Task`, and generic and non-generic `ValueTask`.
 Suspension is explicit, via `System.Runtime.CompilerServices.AsyncHelpers`:
 
 * `Await` for `Task`, `ValueTask`, and configured awaitables
-* `AwaitAwaiter` and `UnsafeAwaitAwaiter` for awaiters (used by the test
-  builder's SRTP `Bind`)
+* `AwaitAwaiter` and `UnsafeAwaitAwaiter` for awaiters (used by SRTP
+  awaitable bindings)
 
 The compiler emits the adjacent IL sequence the runtime specification expects:
 
@@ -48,18 +48,17 @@ Known runtime restrictions (currently **not** diagnosed by the F# compiler):
 * `tail.` and `localloc` are forbidden.
 * generated suspension points cannot occur inside exception-handling regions.
   Awaiting in a protected `try` body now works on the current runtime. Direct
-  intrinsic bodies rewrite suspending `catch`, filter, and `finally`
-  expressions so the suspension runs outside the EH region.
+  intrinsic bodies rewrite suspending `try/with` handlers and filters, and
+  `try/finally` compensations, so the suspension runs outside the EH region.
 
   C# avoids this by rewriting EH-region awaits at lowering time (see the
   Roslyn design doc): `try B finally { await x }` becomes
   `try B catch-all { pend e }`, then `await x` outside the region, then
-  rethrow the pending exception. The test `RuntimeTaskBuilder.Using`
-  prototypes this pattern in F# source: it captures the body result/exception
-  in a `Choice`, runs `DisposeAsync` (possibly suspending) *outside* the
-  `try`, then restores a pending exception. This makes `use` on an
-  `IAsyncDisposable` work under runtime async (`testUsingAsyncDisposableSync`
-  executes).
+  rethrow the pending exception. The compiler applies the same transformation
+  to a suspending compensation: it captures the body result or exception,
+  runs `DisposeAsync` (possibly suspending) *outside* the `try`, then restores
+  the pending exception. This makes `use` on an `IAsyncDisposable` work under
+  runtime async.
 Byref, byref-like, and pinned locals that are used after a suspension are
 rejected with diagnostic FS3917.
 
@@ -225,59 +224,39 @@ probe of the *reference* assemblies; it does not prove the *executing* host
 JIT supports runtime-async. Compiling against new reference assemblies and
 running on an older runtime is not a supported configuration.
 
-## Test infrastructure
+## Computation-expression usage
 
-Tests live in `tests/FSharp.Compiler.ComponentTests/Language/RuntimeAsync*`:
+The feature is usable from an inline computation-expression builder. A
+task-like builder can keep `Delay` and its other combinators synchronous and
+inline; `Run` introduces the return marker:
 
-* The component test project sets `<Features>runtime-async=on</Features>`
-  (the .NET runtime opt-in), as does the project template in
-  `FSharp.Test.Utilities` used by `compileExeAndRun`.
-* Type-check tests assert the preview gate (3350) and the unsupported-runtime
-  gate (3351, on non-.NET-Core targets).
-* IL tests verify direct `AsyncHelpers.Await` calls appear without
-  intervening delegates.
-* Execution tests (`RuntimeAsyncBasic.fs`, `RuntimeTasks.fs` with the shared
-  `RuntimeTaskBuilder.fs`) run with `compileExeAndRun`, so they compile with
-  the compiler under test and execute on the host runtime.
-* Inline-fragment tests cover single- and multi-argument lambdas, returned
-  closures composed through `Bind`/`Combine`/`Delay`, and suspension in a
-  branch that is eliminated before code generation.
-* `RuntimeTasksAsyncDisposalException.fs` documents the known
-  EH-region-suspension crash: it is compiled but not executed.
+```fsharp
+type RuntimeTaskBuilder() =
+    member inline _.Delay([<InlineIfLambda>] generator: unit -> 'T) = generator
+    member inline _.Run([<InlineIfLambda>] code: unit -> 'T) =
+        __runtimeAsyncReturn (code ())
+    member inline _.Bind(task: Task<'T>, [<InlineIfLambda>] continuation: 'T -> 'U) =
+        continuation (AsyncHelpers.Await task)
+```
 
-### Test builder
+`Bind`, `ReturnFrom`, and `MergeSources` can use `Await` for known
+`Task`/`ValueTask` types and SRTP awaiter operations for arbitrary task-like
+values. `MergeSources` awaits its already-started sources sequentially.
+`Async<'T>` can be adapted with `Async.StartImmediateAsTask`.
 
-`RuntimeTaskBuilder.fs` is a quasi-synchronous builder aiming for feature
-parity with FSharp.Core's `task` builder: `Delay` is the identity on
-`unit -> 'T`, so all combinators are plain inline functions over delayed
-code; only `Run` introduces `__runtimeAsyncReturn` and returns `Task<'T>`.
-`Bind` lowers directly to `AsyncHelpers.Await` with SRTP fallbacks
-(`AwaitAwaiter`) for arbitrary task-likes, as do `ReturnFrom` and
-`MergeSources`. `MergeSources` awaits its sources sequentially, matching the
-task builder — concurrency comes from the sources being hot tasks.
-`Async<'T>` binds via `Async.StartImmediateAsTask`, matching `task {}`'s
-current-thread semantics.
+An async-sequence builder can use the same pattern to produce
+`IAsyncEnumerable<'T>`. Its `Run` creates a producer that is started when
+`GetAsyncEnumerator` is called. A `ManualResetValueTaskSourceCore` handshake
+makes enumeration pull-driven: `yield` publishes one item and waits for the
+next `MoveNextAsync` request. `yield!` and `for` can consume synchronous or
+asynchronous enumerables, and nested async enumerables receive the caller's
+cancellation token. A single active `MoveNextAsync` is enforced. A builder may
+also hand off directly between compatible producers for `YieldFromFinal`,
+avoiding a second enumeration handshake.
 
-`RuntimeTasks.fs` ports the TaskBuilder test suite
-(`tests/FSharp.Core.UnitTests/.../Tasks.fs`) test-for-test with
-`task {` replaced by `runtimeTask {`. Tests that hit the known runtime-async
-restrictions or divergences are kept in the file with `knownFailing_` /
-`knownDivergent_` prefixes, compiled but not run:
-
-* suspension in `try/finally`, or in `try/with` in non-tail position
-  (forbidden by the runtime contract; crashes with `0xC0000409` or loses the
-  finally);
-* `use`/`use!` whose disposal awaits an `IAsyncDisposable` (the `Using`
-  compensation suspends in a `finally`);
-* tests requiring synchronous (hot) start of the body before the first
-  suspension — on the current runtime build the body is not observably run
-  before the returned `Task` is awaited;
-* `SynchronizationContext` capture: with a sync context installed, the task
-  completes without the body observably running.
-
-Two `task {}` inference behaviors are not matched by the overload set:
-element-type propagation through `Bind` without an annotation, and unannotated
-`return! failwith ...` (both need explicit annotations in the port).
+These builders are examples rather than FSharp.Core APIs. Applications can
+define their own inline builders over the same intrinsics, subject to the
+runtime-async restrictions and inline-fragment rules described above.
 
 ### Unsupported inline-fragment positions
 
@@ -290,9 +269,14 @@ this diagnostic.
 
 ## Not yet implemented
 
-* Diagnostics for suspension in exception-handling regions, `tail.`, and
-  `localloc`.
-* Any FSharp.Core builder (the test builder is test-only).
+* Complete diagnostics for runtime restrictions. The optimizer rewrites
+  suspending `try/with` handlers and filters, and `try/finally` compensations,
+  so they execute outside exception-handling regions. There is no general
+  diagnostic for runtime-contract violations in other generated or imported
+  shapes, and `localloc` has no dedicated diagnostic. Runtime-async methods
+  suppress `tail.` emission rather than reporting it.
+* A builder in FSharp.Core; builders using the feature are currently
+  application/library code.
 * Compile-time enforcement that the marker was actually consumed before
   code generation (a missed marker throws only when its FSharp.Core stub is
   reached at run time, or produces invalid IL as described above).
