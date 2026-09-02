@@ -1,4 +1,4 @@
-// #Conformance #PatternMatching 
+// #Conformance #PatternMatching
 
 
 let sumArray array =
@@ -9,7 +9,7 @@ let sumArray array =
     | [|x; y; z|]    -> x + y + z
     | [|w; x; y; z|] -> w + x + y + z
     | _ -> failwith "too large"
-    
+
 if sumArray [| |]       <> 0 then exit 1
 if sumArray [|1|]       <> 1 then exit 1
 if sumArray [|1;2|]     <> 3 then exit 1

@@ -1,4 +1,4 @@
-// #Conformance #LexFilter #Precedence 
+// #Conformance #LexFilter #Precedence
 
 
 // Verify high precedence applications. That is, if no space is between the function

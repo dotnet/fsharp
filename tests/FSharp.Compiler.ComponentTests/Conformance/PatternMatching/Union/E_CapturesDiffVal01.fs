@@ -1,4 +1,4 @@
-// #Regression #Conformance #PatternMatching #Unions 
+// #Regression #Conformance #PatternMatching #Unions
 
 
 // Verify error if two pattern match clauses match

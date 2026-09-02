@@ -1,4 +1,4 @@
-// #Regression #Conformance #ObjectOrientedTypes #InterfacesAndImplementations 
+// #Regression #Conformance #ObjectOrientedTypes #InterfacesAndImplementations
 // Regression test for FSHARP1.0:3748
 // Now we emit an error.
 
@@ -15,11 +15,11 @@ type Dog() =
      member x.Action = [("bites", fun () -> printfn "ouch")]
      /// type checker passes but compiler reports
      /// error FS0193: internal error: Method 'get_Name' in type 'MyDog' from assembly 'FSI-ASSEMBLY, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null' does not have an implementation.
-     /// Please build a small example that reproduces this problem and report it to fsbugs@microsoft.com. 
+     /// Please build a small example that reproduces this problem and report it to fsbugs@microsoft.com.
 
 type MyDog() =
-   inherit Dog() 
+   inherit Dog()
     /// Not sure if this is useful for anything but I'm dutifully reporting.
-    /// internal error: tcref_of_stripped_typ (Failure) 
+    /// internal error: tcref_of_stripped_typ (Failure)
     /// Please build a small example that reproduces this problem and report it to fsbugs@microsoft.com
 

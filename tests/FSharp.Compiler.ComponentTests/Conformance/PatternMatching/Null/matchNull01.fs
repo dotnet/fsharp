@@ -1,9 +1,9 @@
-// #Conformance #PatternMatching 
+// #Conformance #PatternMatching
 
 
 // Verify ability to match against null
 
-let isNull x = 
+let isNull x =
     match x with
     | null -> true
     | _    -> false

@@ -1,4 +1,4 @@
-// #Regression #Conformance #LexicalAnalysis 
+// #Regression #Conformance #LexicalAnalysis
 // Verify the compiler now allows the (""") token
 // Part of FSB 1684
 

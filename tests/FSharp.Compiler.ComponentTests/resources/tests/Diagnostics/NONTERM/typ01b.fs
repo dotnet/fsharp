@@ -1,4 +1,4 @@
-// #Regression #Diagnostics 
+// #Regression #Diagnostics
 // Regression test for FSHARP1.0:2467
 //<Expects status="notin">NONTERM</Expects>
 //<Expects id="FS3565" status="error">Expecting type</Expects>

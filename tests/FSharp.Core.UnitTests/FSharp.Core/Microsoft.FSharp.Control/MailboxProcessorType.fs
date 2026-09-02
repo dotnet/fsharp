@@ -10,9 +10,9 @@ open System.Threading
 open System.Threading.Tasks
 open Xunit
 
-type Message = 
-    | Increment of int 
-    | Fetch of AsyncReplyChannel<int> 
+type Message =
+    | Increment of int
+    | Fetch of AsyncReplyChannel<int>
     | Reset
 
 /// Bundles thread information into a type for testing StartImmediate
@@ -31,9 +31,9 @@ type MailboxProcessorType() =
         let mailbox =
             new MailboxProcessor<Message>(fun inbox ->
                     let rec loop n =
-                         async { 
+                         async {
                             let! msg = inbox.Receive()
-                                 
+
                             // Sleep 100ms - to validate timing out later
                             do! Async.Sleep(100)
 
@@ -41,7 +41,7 @@ type MailboxProcessorType() =
                             | Increment m -> return! loop (n + m)
                             | Reset       -> return! loop 0
                             | Fetch chan  -> do chan.Reply(n)
-                                             return! loop n 
+                                             return! loop n
                             ()
                         }
                     loop 0
@@ -60,7 +60,7 @@ type MailboxProcessorType() =
         mailbox.Post(Reset)
         mailbox.Post(Increment(1))
         let result = mailbox.TryPostAndReply(fun chan -> Fetch chan)
-        match result with 
+        match result with
         | Some(1) -> ()
         | None    -> Assert.Fail("Timed out")
         | _       -> Assert.Fail("Did not reply with expected value.")
@@ -71,7 +71,7 @@ type MailboxProcessorType() =
         mailbox.Post(Reset)
         mailbox.Post(Increment(1))
         let result = mailbox.TryPostAndReply(fun chan -> Fetch chan)
-        match result with 
+        match result with
         | None    -> ()
         | _       -> Assert.Fail("Replied with a value, expected to time out.")
 
@@ -82,10 +82,10 @@ type MailboxProcessorType() =
         let mutable result = None
         use mre1 = new ManualResetEventSlim(false)
         use mre2 = new ManualResetEventSlim(false)
-    
+
         // https://github.com/dotnet/fsharp/issues/3337
         let cts = new CancellationTokenSource ()
-    
+
         let addMsg msg =
             match result with
             | Some text ->
@@ -94,7 +94,7 @@ type MailboxProcessorType() =
             | None ->
                 //printfn "got none, setting %s" msg
                 result <- Some msg
-    
+
         let mb =
             MailboxProcessor.Start (
                 fun inbox -> async {
@@ -104,16 +104,16 @@ type MailboxProcessorType() =
                                 addMsg "Disposed"
                                 mre2.Set()
                         }
-    
+
                     while true do
                         let! (msg : int) = inbox.Receive()
                         addMsg (sprintf "Received %i" msg)
                         mre1.Set()
                 }, cancellationToken = cts.Token)
-    
+
         mb.Post(1)
         mre1.Wait()
-    
+
         cts.Cancel()
         mre2.Wait()
 
@@ -124,10 +124,10 @@ type MailboxProcessorType() =
         let mutable result = None
         use mre1 = new ManualResetEventSlim(false)
         use mre2 = new ManualResetEventSlim(false)
-    
+
         // https://github.com/dotnet/fsharp/issues/3337
         use cts = new CancellationTokenSource ()
-    
+
         let addMsg msg =
             match result with
             | Some text ->
@@ -136,7 +136,7 @@ type MailboxProcessorType() =
             | None ->
                 //printfn "got none, setting %s" msg
                 result <- Some msg
-    
+
         let mb =
             MailboxProcessor.Start (
                 fun inbox -> async {
@@ -146,16 +146,16 @@ type MailboxProcessorType() =
                                 addMsg "Disposed"
                                 mre2.Set()
                         }
-    
+
                     while true do
                         let! (msg : int) = inbox.Receive(100000)
                         addMsg (sprintf "Received %i" msg)
                         mre1.Set()
                 }, cancellationToken = cts.Token)
-    
+
         mb.Post(1)
         mre1.Wait()
-    
+
         cts.Cancel()
         mre2.Wait()
 
@@ -412,7 +412,7 @@ type MailboxProcessorType() =
     member this.Dispose() =
 
         // No unit test actually hit the Dispose method for the Mailbox...
-        let test() = 
+        let test() =
             use mailbox = getSimpleMailbox()
 
             mailbox.Start()
@@ -442,7 +442,7 @@ type MailboxProcessorType() =
         let badAsync (mbox:MailboxProcessor<AsyncReplyChannel<int>>) = async {
             try
               printfn "bad async working..."
-              let! result = mbox.PostAndAsyncReply id // <- got stuck in here forever 
+              let! result = mbox.PostAndAsyncReply id // <- got stuck in here forever
               printfn "%d" result
             finally
               printfn "bad async exited - that's what we want" // <- we never got here
@@ -459,8 +459,8 @@ type MailboxProcessorType() =
         |> Async.Parallel
         |> Async.Ignore
         |> fun x -> Async.Start(x, cancel.Token)
-        System.Threading.Thread.Sleep(5000) // cancellation after 500 pause for 5 seconds 
-        if not gotGood || not gotBad then 
+        System.Threading.Thread.Sleep(5000) // cancellation after 500 pause for 5 seconds
+        if not gotGood || not gotBad then
             failwith <| sprintf "Expected both good and bad async's to be cancelled afterMailbox should not fail!  gotGood: %A, gotBad: %A" gotGood gotBad
 
     [<Fact>]
@@ -468,7 +468,7 @@ type MailboxProcessorType() =
         /// Gets the current thread's ID and name
         let getThreadInfo () =
             let currentThread = Thread.CurrentThread
-            
+
             { Id = currentThread.ManagedThreadId
               Name = currentThread.Name }
 
@@ -484,7 +484,7 @@ type MailboxProcessorType() =
         let mailbox = MailboxProcessor<StartImmediateMessage>.StartImmediate(fun inbox -> async{
             // Get the MailboxProcessor's thread immediately after starting it
             let threadInfo = getThreadInfo ()
-            
+
             // Block until a single message is received
             let! message = inbox.Receive()
 
@@ -513,7 +513,7 @@ module MailboxProcessorType =
         let tcs = TaskCompletionSource<_>()
         use mailbox =
             new MailboxProcessor<Message>(fun inbox -> async {
-                do! 
+                do!
                     inbox.TryScan( function
                         | Reset -> async { tcs.SetResult "Reset processed" } |> Some
                         | _ -> None)
@@ -534,7 +534,7 @@ module MailboxProcessorType =
         use mailbox =
             new MailboxProcessor<Message>(fun inbox ->
                 let rec loop i = async {
-                    match!                     
+                    match!
                         inbox.TryScan( function
                             | Reset -> async { tcs.SetResult i } |> Some
                             | _ -> None)
@@ -547,8 +547,8 @@ module MailboxProcessorType =
         mailbox.DefaultTimeout <- 10
         mailbox.Start()
 
-        let iteration = 
-            task { 
+        let iteration =
+            task {
                 for i in 1 .. 100 do
                     mailbox.Post(Increment 1)
                     do! Task.Delay 10
@@ -571,7 +571,7 @@ module MailboxProcessorType =
     let ``Disposed MailboxProcessor does not throw on Post`` () =
         task {
             let step = ordered()
-      
+
             let cts = new CancellationTokenSource()
             let mb =
                 MailboxProcessor.Start( (fun inbox ->

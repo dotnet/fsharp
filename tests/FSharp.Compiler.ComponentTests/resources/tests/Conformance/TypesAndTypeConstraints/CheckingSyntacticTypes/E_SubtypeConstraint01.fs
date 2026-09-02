@@ -1,4 +1,4 @@
-// #Regression #Conformance #TypeConstraints 
+// #Regression #Conformance #TypeConstraints
 // Verify error if subtype constraint is not met
 //<Expects id="FS0001" status="error">The type 'Animal' is not compatible with the type 'Dog'</Expects>
 

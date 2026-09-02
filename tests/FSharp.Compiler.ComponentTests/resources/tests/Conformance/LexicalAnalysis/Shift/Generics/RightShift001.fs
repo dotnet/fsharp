@@ -1,4 +1,4 @@
-// #Regression #Conformance #LexicalAnalysis 
+// #Regression #Conformance #LexicalAnalysis
 // Regression test for FSharp1.0#1076
 // Usage of >> and .
 // No spaces between >> and .

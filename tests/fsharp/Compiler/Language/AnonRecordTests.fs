@@ -31,7 +31,7 @@ let sAnon = StructClass<struct {| S: int |}>()
             """
 type RefClass<'a when 'a : not struct>() = class end
 let rAnon = RefClass<struct {| R: int |}>()
-            """ 
+            """
             FSharpDiagnosticSeverity.Error
             1
             (3, 13, 3, 42)

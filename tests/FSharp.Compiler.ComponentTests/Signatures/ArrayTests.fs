@@ -36,7 +36,7 @@ let ``jagged array 1`` () =
     assertSingleSignatureBinding
         "let a : array<array<array<array<array<int>>>>> = failwith \"todo\""
         "val a: int array array array array array"
-        
+
 [<Fact>]
 let ``jagged array 2`` () =
     assertSingleSignatureBinding

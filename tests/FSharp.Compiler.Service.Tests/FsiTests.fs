@@ -661,7 +661,7 @@ module FsiTests =
         | Choice2Of2 e ->
             printfn "exception: %A" e
             raise e
-            
+
     [<Fact>]
     let ``LineDirectivesWork`` () =
         use fsiSession = createFsiSession false

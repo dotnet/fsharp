@@ -1,9 +1,9 @@
-// #Regression #Conformance #DeclarationElements #MemberDefinitions #Overloading 
+// #Regression #Conformance #DeclarationElements #MemberDefinitions #Overloading
 // Regression test for FSHARP1.0:1600
 // New tiebreaker for method overloading
 // Rule #3: methods have same # of args and each arg type subsumes the other
 
-module M4 = 
+module M4 =
     type A() = class
                end
 

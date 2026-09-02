@@ -15,7 +15,7 @@ module NullConstraintTests =
 
 module DefaultValueTests =
 
-    module StructExamples = 
+    module StructExamples =
         [<Struct>]
         type C1 =
             [<DefaultValue>]
@@ -36,7 +36,7 @@ module DefaultValueTests =
             [<DefaultValue>]
             val mutable Whoops : int -> int // This gave an error in F# 4.5 and we expect it to continue to give an error
 
-    module ClassExamples = 
+    module ClassExamples =
 
         type C4a =
             [<DefaultValue>]
