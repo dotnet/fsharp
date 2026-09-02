@@ -15,7 +15,7 @@ module Regression_RecursiveInlineMemberDependencies =
 
    [<Fact>]
    let ``Inline members that depend on sibling member access compile`` () =
-       FSharp """
+        FSharp """
 module MemberAccessDependencyRepro
 
 type ValidationBuilder() =
@@ -30,7 +30,7 @@ type ValidationBuilder() =
 let inline run (builder: ValidationBuilder) =
    builder.Bind(1, fun x -> x + 1)
 """
-       |> assertCompiles
+        |> assertCompiles
 
    [<Fact>]
    let ``Trait-witness inline overload consumers compile`` () =
@@ -199,22 +199,40 @@ let result = Builder().Run 21
 
    [<Fact>]
    let ``Trait-witness dependency into later nested module compiles`` () =
-           FSharp """
+            FSharp """
 module rec TraitWitnessOnlyEdge
 
 type User() =
    member _.Run() =
-       let inline invoke (x: ^T) =
-           (^T: (static member DoIt: ^T -> int) x)
+      let inline invoke (x: ^T) =
+         (^T: (static member DoIt: ^T -> int) x)
 
-       invoke (Helpers.Intersp())
+      invoke (Helpers.Intersp())
 
 module Helpers =
    type Intersp() =
-       static member inline DoIt(x: Intersp) = 42
+      static member inline DoIt(x: Intersp) = 42
 """
-        |> assertCompiles
+         |> assertCompiles
 
+   [<Fact>]
+   let ``Unresolved trait-witness dependency from nested module compiles`` () =
+       FSharp """
+module rec NestedTraitWitnessOnlyEdge
+
+module Helpers =
+   type Intersp() =
+      static member inline DoIt(x: Intersp) = 42
+
+module Consumer =
+   type User() =
+      member _.Run() =
+         let inline invoke (x: ^T) =
+            (^T: (static member DoIt: ^T -> int) x)
+
+         invoke (Helpers.Intersp())
+"""
+       |> assertCompiles
 
    [<Fact>]
    let ``Deep recursive inline expression compiles`` () =

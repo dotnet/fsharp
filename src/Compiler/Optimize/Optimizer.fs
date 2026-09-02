@@ -4829,6 +4829,16 @@ and GetGroupOptimizationOrder
             Set.add depIdx depIdxs
         | _ -> depIdxs
 
+    let inlineDependencyIndexes =
+        if inlineDependenciesOnly then
+            elements
+            |> List.mapi (fun idx (definedVals, _, _) ->
+                if definedVals |> List.exists (fun (v: Val) -> v.ShouldInline) then Some idx else None)
+            |> List.choose id
+            |> Set.ofList
+        else
+            Set.empty
+
     let addFreeVars depIdxs (fvs: FreeVars) =
         let depIdxs =
             (depIdxs, fvs.FreeLocals |> Zset.elements)
@@ -4837,7 +4847,7 @@ and GetGroupOptimizationOrder
         (depIdxs, fvs.FreeTyvars.FreeTraitSolutions |> Zset.elements)
         ||> Seq.fold (fun depIdxs v -> addDependency depIdxs v)
 
-    let rec addBindingDependencies depIdxs expr =
+    let rec addBindingDependencies includeUnresolvedTraitDependencies depIdxs expr =
         cenv.stackGuard.Guard(fun () ->
             let depIdxs =
                 addFreeVars depIdxs (freeInExpr (CollectLocalsWithStackGuard()) expr)
@@ -4851,8 +4861,14 @@ and GetGroupOptimizationOrder
                                 // Member-constraint calls can hide the real sibling dependency behind
                                 // a witness expression, so fold over the resolved witness as well.
                                 | Expr.Op(TOp.TraitCall traitInfo, _, args, m) ->
-                                    match ConstraintSolver.CodegenWitnessExprForTraitConstraint cenv.TcVal cenv.g cenv.amap m traitInfo args with
-                                    | OkResult (_, Some witnessExpr) -> addBindingDependencies depIdxs witnessExpr
+                                    let depIdxs =
+                                        match ConstraintSolver.CodegenWitnessExprForTraitConstraint cenv.TcVal cenv.g cenv.amap m traitInfo args with
+                                        | OkResult (_, Some witnessExpr) -> addBindingDependencies includeUnresolvedTraitDependencies depIdxs witnessExpr
+                                        | _ -> depIdxs
+
+                                    match traitInfo.Solution with
+                                    | Some (FSMethSln(_, vref, _, _)) -> addDependency depIdxs vref.Deref
+                                    | _ when includeUnresolvedTraitDependencies -> Set.union depIdxs inlineDependencyIndexes
                                     | _ -> depIdxs
                                 | _ -> depIdxs
 
@@ -4860,14 +4876,29 @@ and GetGroupOptimizationOrder
 
             FoldExpr folder depIdxs expr)
 
+    let rec addModuleOrNamespaceDependencies depIdxs mdef =
+        match mdef with
+        | TMDefRec(_, _, _, mbinds, _) ->
+            (depIdxs, mbinds)
+            ||> List.fold addModuleOrNamespaceBindingDependencies
+        | TMDefLet(bind, _) -> addBindingDependencies true depIdxs bind.Expr
+        | TMDefDo(expr, _) -> addBindingDependencies true depIdxs expr
+        | TMDefOpens _ -> depIdxs
+        | TMDefs defs ->
+            (depIdxs, defs)
+            ||> List.fold addModuleOrNamespaceDependencies
+
+    and addModuleOrNamespaceBindingDependencies depIdxs mbind =
+        match mbind with
+        | ModuleOrNamespaceBinding.Binding bind -> addBindingDependencies true depIdxs bind.Expr
+        | ModuleOrNamespaceBinding.Module(_, def) -> addModuleOrNamespaceDependencies depIdxs def
+
     let dependencyIndexes =
         elements
         |> List.map (fun (_, _, source) ->
             (match source with
-             | Choice1Of2 expr -> addBindingDependencies Set.empty expr
-             // Note: trait-call witnesses inside nested module contents are not resolved here.
-             | Choice2Of2 mdef ->
-                 addFreeVars Set.empty (freeInModuleOrNamespace (CollectLocalsWithStackGuard()) mdef))
+             | Choice1Of2 expr -> addBindingDependencies false Set.empty expr
+             | Choice2Of2 mdef -> addModuleOrNamespaceDependencies Set.empty mdef)
             |> Set.toArray)
         |> List.toArray
 
