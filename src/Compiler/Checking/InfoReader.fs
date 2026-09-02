@@ -1032,8 +1032,6 @@ type InfoReader(g: TcGlobals, amap: ImportMap) as this =
     member _.TryFindUnimplementedStaticAbstractMemberOfType (m: range) (interfaceTy: TType) : string option =
         if not (isInterfaceTy g interfaceTy) then
             None
-        elif not (g.langVersion.SupportsFeature LanguageFeature.InterfacesWithAbstractStaticMembers) then
-            None
         else
             unimplementedStaticAbstractMemberCache.Apply(((None, AccessibleFromSomewhere, AllowMultiIntfInstantiations.Yes), m, interfaceTy))
 
