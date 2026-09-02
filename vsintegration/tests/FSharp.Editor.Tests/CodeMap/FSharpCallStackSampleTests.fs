@@ -29,7 +29,11 @@ let private resolveFrame (struct (frameName: string, line: int)) =
             { frame with
                 SourcePosition =
                     if line > 0 then
-                        ValueSome(struct (document.FilePath, line))
+                        ValueSome
+                            {
+                                File = document.FilePath
+                                Line = line
+                            }
                     else
                         ValueNone
             }
@@ -164,7 +168,7 @@ let ``A property getter resolves as a property`` () =
             | _, ValueSome resolved when resolved.Kind = ResolvedProperty -> Some resolved
             | _ -> None)
 
-    Assert.Equal(ValueSome "Computed", accessor.DisplayName)
+    Assert.Equal("Computed", accessor.DisplayName)
 
 [<Fact>]
 let ``A property setter resolves as a property`` () =
@@ -177,7 +181,7 @@ let ``A property setter resolves as a property`` () =
             | _, ValueSome resolved when resolved.Kind = ResolvedProperty -> Some resolved
             | _ -> None)
 
-    Assert.Equal(ValueSome "Tuned", accessor.DisplayName)
+    Assert.Equal("Tuned", accessor.DisplayName)
 
 /// The label a closure node carries. A named binding reads well on its own; a computation-expression
 /// body or a pipeline stage is named by a phrase the compiler invented, so it takes the enclosing
@@ -197,20 +201,16 @@ let private labelOf (contains: string) =
 [<Fact>]
 let ``A closure lifted from a named binding is labelled with that name`` () =
     CallStackSample.nestedClosures () |> ignore
-    Assert.Equal(ValueSome "inner", labelOf "inner@")
+    Assert.Equal("inner", labelOf "inner@")
 
 [<Fact>]
 let ``An async body is labelled by the function that opened it`` () =
     CallStackSample.asyncBody () |> ignore
 
-    match labelOf "Pipe #1 input at line" with
-    | ValueNone -> failwith "the async body resolved without a label"
-    | ValueSome label -> Assert.StartsWith("asyncBody@", label)
+    Assert.StartsWith("asyncBody@", labelOf "Pipe #1 input at line")
 
 [<Fact>]
 let ``A pipeline stage is labelled by the function it runs in`` () =
     CallStackSample.pipelineLambdas () |> ignore
 
-    match labelOf "Pipe #1 stage" with
-    | ValueNone -> failwith "the pipeline stage resolved without a label"
-    | ValueSome label -> Assert.StartsWith("pipelineLambdas@", label)
+    Assert.StartsWith("pipelineLambdas@", labelOf "Pipe #1 stage")

@@ -19,6 +19,10 @@ type internal ClosureOrigin =
 [<Struct>]
 type internal FramePathSegment = { Name: string; GenericArity: int }
 
+/// Where a debug engine says a frame is executing. Lines are 1-based, as FCS ranges are.
+[<Struct>]
+type internal SourcePosition = { File: string; Line: int }
+
 type internal FrameMember =
     | FrameMethod of name: string
     | FrameConstructor
@@ -36,10 +40,10 @@ type internal ParsedFrame =
         Path: FramePathSegment array
         Member: FrameMember
         MethodGenericArity: int
-        /// The file and line the debugger resolved for this frame, which the provider fills in - the
-        /// name alone locates nothing for module initialization (`$Demo.$Demo` names the file) and
-        /// lies for a state machine's closure, which the compiler numbers from line 1.
-        SourcePosition: struct (string * int) voption
+        /// The position the debugger resolved for this frame, which the provider fills in - the name
+        /// alone locates nothing for module initialization (`$Demo.$Demo` names the file) and lies
+        /// for a state machine's closure, which the compiler numbers from line 1.
+        SourcePosition: SourcePosition voption
     }
 
 /// Turns the name a debug engine reports for a stack frame back into the F# construct it came from.

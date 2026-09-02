@@ -55,7 +55,12 @@ let private resolveStartupAt (snippet: string) =
     | ValueSome frame ->
         resolveParsed
             { frame with
-                SourcePosition = ValueSome(struct (document.FilePath, lineOf snippet))
+                SourcePosition =
+                    ValueSome
+                        {
+                            File = document.FilePath
+                            Line = lineOf snippet
+                        }
             }
 
 /// Frame names whose path the resolver has to take apart, rather than constructs a scenario would
@@ -151,7 +156,7 @@ let ``Module initialization resolves to the binding on the line`` () =
     match resolveStartupAt "let initialized" with
     | ValueNone -> failwith "expected the module initializer to resolve"
     | ValueSome resolved ->
-        Assert.Equal(ValueSome "initialized", resolved.DisplayName)
+        Assert.Equal("initialized", resolved.DisplayName)
         Assert.Equal(lineOf "let initialized", resolved.DeclarationRange.StartLine)
 
 /// A private `static let` runs in its type's static constructor and never reaches the assembly
@@ -161,7 +166,7 @@ let ``A private static let resolves to its type's static constructor`` () =
     match resolveStartupAt "static let staticState" with
     | ValueNone -> failwith "expected the static initializer to resolve"
     | ValueSome resolved ->
-        Assert.Equal(ValueSome "Initialized", resolved.DisplayName)
+        Assert.Equal("Initialized", resolved.DisplayName)
         Assert.Equal(ValueSome ".cctor", resolved.MemberName)
         Assert.True resolved.Modifiers.IsStatic
         Assert.True resolved.Modifiers.IsConstructor
