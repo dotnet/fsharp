@@ -6,7 +6,7 @@ val test2: string -> unit
 
 val iRejectNulls: string -> string
 
-[<Class>] 
+[<Class>]
 type GenericContainer<'T when 'T:not null and 'T:not struct> =
 
     member GetNull : unit -> ('T|null)

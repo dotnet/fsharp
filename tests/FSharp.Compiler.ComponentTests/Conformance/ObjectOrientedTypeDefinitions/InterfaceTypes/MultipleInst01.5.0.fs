@@ -1,10 +1,10 @@
-// #Conformance #ObjectOrientedTypes #InterfacesAndImplementations 
+// #Conformance #ObjectOrientedTypes #InterfacesAndImplementations
 
 type IA<'a> =
-    interface 
+    interface
         //abstract X : unit -> 'a
     end
 
-type C() = 
+type C() =
     interface IA<int>
     interface IA<string>

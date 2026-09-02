@@ -1,11 +1,11 @@
-// #Conformance #DeclarationElements #MemberDefinitions #MethodsAndProperties 
+// #Conformance #DeclarationElements #MemberDefinitions #MethodsAndProperties
 
 
 // Testing instance methods on record types
-type Person = 
+type Person =
     {
-        Name : string; 
-        DateOfBirth : System.DateTime; 
+        Name : string;
+        DateOfBirth : System.DateTime;
     }
     member this.DoStuff param1 param2 = param1 + param2 + 42
     override this.ToString() = this.Name + "+DOB"

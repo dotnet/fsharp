@@ -1,10 +1,10 @@
-// #Conformance #DeclarationElements #MemberDefinitions #NamedArguments 
+// #Conformance #DeclarationElements #MemberDefinitions #NamedArguments
 
 
 type Foo() =
     static member DoStuff (a, b, c, d:string) = a + b + c + d.Length
     static member DoStuff2 (a:'a) : 'a list = []
-    
+
 let r = Foo.DoStuff(a=1, b=2, c=3, d="foo")
 if r <> 9 then exit 1
 

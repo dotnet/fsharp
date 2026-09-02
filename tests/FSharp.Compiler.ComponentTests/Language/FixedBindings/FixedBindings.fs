@@ -16,7 +16,7 @@ module FixedBindingsTests =
             (Warning 9, Line 5, Col 9, Line 5, Col 12, """Uses of this construct may result in the generation of unverifiable .NET IL code. This warning can be disabled using '--nowarn:9' or '#nowarn "9"'.""")
             (Warning 9, Line 6, Col 5, Line 6, Col 18, """Uses of this construct may result in the generation of unverifiable .NET IL code. This warning can be disabled using '--nowarn:9' or '#nowarn "9"'.""")
         ]
-        
+
     [<Fact>]
     let ``Pin naked array`` () =
         FsFromPath (__SOURCE_DIRECTORY__ ++ "PinNakedArray.fs")
@@ -28,7 +28,7 @@ module FixedBindingsTests =
             (Warning 9, Line 5, Col 9, Line 5, Col 12, """Uses of this construct may result in the generation of unverifiable .NET IL code. This warning can be disabled using '--nowarn:9' or '#nowarn "9"'.""")
             (Warning 9, Line 6, Col 5, Line 6, Col 18, """Uses of this construct may result in the generation of unverifiable .NET IL code. This warning can be disabled using '--nowarn:9' or '#nowarn "9"'.""")
         ]
-        
+
     [<Fact>]
     let ``Pin naked array with mismatching type`` () =
         FsFromPath (__SOURCE_DIRECTORY__ ++ "PinNakedArrayWithMismatchingType.fs")
@@ -43,7 +43,7 @@ but given a
     'nativeptr<byte>'    
 The type 'int' does not match the type 'byte'""")
         ]
-        
+
     [<Fact>]
     let ``Pin naked string with mismatching type`` () =
         FsFromPath (__SOURCE_DIRECTORY__ ++ "PinNakedStringWithMismatchingType.fs")
@@ -58,7 +58,7 @@ but given a
     'nativeptr<byte>'    
 The type 'char' does not match the type 'byte'""")
         ]
-        
+
     [<Fact>]
     let ``Pin naked Tuple -- illegal`` () =
         FsFromPath (__SOURCE_DIRECTORY__ ++ "PinNakedTuple.fs")
@@ -69,7 +69,7 @@ The type 'char' does not match the type 'byte'""")
             (Warning 9, Line 5, Col 9, Line 5, Col 12, """Uses of this construct may result in the generation of unverifiable .NET IL code. This warning can be disabled using '--nowarn:9' or '#nowarn "9"'.""")
             (Error 3207, Line 5, Col 9, Line 5, Col 12, """Invalid use of 'fixed'. 'fixed' may only be used in a declaration of the form 'use x = fixed expr' where the expression is one of the following: an array, the address of an array element, a string, a byref, an inref, or a type implementing GetPinnableReference()""")
         ]
-        
+
     [<Fact>]
     let ``Pin naked ValueTuple -- illegal`` () =
         FsFromPath (__SOURCE_DIRECTORY__ ++ "PinNakedValueTuple.fs")
@@ -80,7 +80,7 @@ The type 'char' does not match the type 'byte'""")
             (Warning 9, Line 5, Col 9, Line 5, Col 12, """Uses of this construct may result in the generation of unverifiable .NET IL code. This warning can be disabled using '--nowarn:9' or '#nowarn "9"'.""")
             (Error 3207, Line 5, Col 9, Line 5, Col 12, """Invalid use of 'fixed'. 'fixed' may only be used in a declaration of the form 'use x = fixed expr' where the expression is one of the following: an array, the address of an array element, a string, a byref, an inref, or a type implementing GetPinnableReference()""")
         ]
-        
+
     [<Fact>]
     let ``Pin naked discriminated union -- illegal`` () =
         FsFromPath (__SOURCE_DIRECTORY__ ++ "PinNakedDU.fs")
@@ -91,7 +91,7 @@ The type 'char' does not match the type 'byte'""")
             (Warning 9, Line 7, Col 9, Line 7, Col 12, """Uses of this construct may result in the generation of unverifiable .NET IL code. This warning can be disabled using '--nowarn:9' or '#nowarn "9"'.""")
             (Error 3207, Line 7, Col 9, Line 7, Col 12, """Invalid use of 'fixed'. 'fixed' may only be used in a declaration of the form 'use x = fixed expr' where the expression is one of the following: an array, the address of an array element, a string, a byref, an inref, or a type implementing GetPinnableReference()""")
         ]
-        
+
     [<Fact>]
     let ``Pin naked struct discriminated union -- illegal`` () =
         FsFromPath (__SOURCE_DIRECTORY__ ++ "PinNakedStructDU.fs")
@@ -102,7 +102,7 @@ The type 'char' does not match the type 'byte'""")
             (Warning 9, Line 8, Col 9, Line 8, Col 12, """Uses of this construct may result in the generation of unverifiable .NET IL code. This warning can be disabled using '--nowarn:9' or '#nowarn "9"'.""")
             (Error 3207, Line 8, Col 9, Line 8, Col 12, """Invalid use of 'fixed'. 'fixed' may only be used in a declaration of the form 'use x = fixed expr' where the expression is one of the following: an array, the address of an array element, a string, a byref, an inref, or a type implementing GetPinnableReference()""")
         ]
-        
+
     [<Fact>]
     let ``Pin address of array element`` () =
         FsFromPath (__SOURCE_DIRECTORY__ ++ "PinAddressOfArrayElement.fs")
@@ -114,7 +114,7 @@ The type 'char' does not match the type 'byte'""")
             (Warning 9, Line 5, Col 9, Line 5, Col 12, """Uses of this construct may result in the generation of unverifiable .NET IL code. This warning can be disabled using '--nowarn:9' or '#nowarn "9"'.""")
             (Warning 9, Line 6, Col 5, Line 6, Col 18, """Uses of this construct may result in the generation of unverifiable .NET IL code. This warning can be disabled using '--nowarn:9' or '#nowarn "9"'.""")
         ]
-        
+
     [<Fact>]
     let ``Pin address of record field`` () =
         FsFromPath (__SOURCE_DIRECTORY__ ++ "PinAddressOfRecordField.fs")
@@ -126,7 +126,7 @@ The type 'char' does not match the type 'byte'""")
             (Warning 9, Line 7, Col 9, Line 7, Col 12, """Uses of this construct may result in the generation of unverifiable .NET IL code. This warning can be disabled using '--nowarn:9' or '#nowarn "9"'.""")
             (Warning 9, Line 8, Col 5, Line 8, Col 18, """Uses of this construct may result in the generation of unverifiable .NET IL code. This warning can be disabled using '--nowarn:9' or '#nowarn "9"'.""")
         ]
-        
+
     [<Fact>]
     let ``Pin address of explicit field on this`` () =
         FsFromPath (__SOURCE_DIRECTORY__ ++ "PinAddressOfExplicitFieldOnThis.fs")
@@ -149,7 +149,7 @@ The type 'char' does not match the type 'byte'""")
             (Warning 9, Line 5, Col 9, Line 5, Col 12, """Uses of this construct may result in the generation of unverifiable .NET IL code. This warning can be disabled using '--nowarn:9' or '#nowarn "9"'.""")
             (Error 3207, Line 5, Col 9, Line 5, Col 12, """Invalid use of 'fixed'. 'fixed' may only be used in a declaration of the form 'use x = fixed expr' where the expression is one of the following: an array, the address of an array element, a string, a byref, an inref, or a type implementing GetPinnableReference()""")
         ]
-        
+
 
     [<Fact>]
     let ``Pin naked int - illegal`` () =
@@ -172,7 +172,7 @@ The type 'char' does not match the type 'byte'""")
             (Warning 9, Line 5, Col 9, Line 5, Col 12, """Uses of this construct may result in the generation of unverifiable .NET IL code. This warning can be disabled using '--nowarn:9' or '#nowarn "9"'.""")
             (Error 3207, Line 5, Col 9, Line 5, Col 12, """Invalid use of 'fixed'. 'fixed' may only be used in a declaration of the form 'use x = fixed expr' where the expression is one of the following: an array, the address of an array element, a string, a byref, an inref, or a type implementing GetPinnableReference()""")
         ]
-        
+
     [<Fact>]
     let ``Pin generic with unmanaged - illegal`` () =
         FsFromPath (__SOURCE_DIRECTORY__ ++ "PinGenericWithUnmanagedConstraint.fs")
@@ -198,7 +198,7 @@ module ExtendedFixedBindings =
             (Warning 9, Line 5, Col 9, Line 5, Col 12, """Uses of this construct may result in the generation of unverifiable .NET IL code. This warning can be disabled using '--nowarn:9' or '#nowarn "9"'.""")
             (Warning 9, Line 6, Col 5, Line 6, Col 18, """Uses of this construct may result in the generation of unverifiable .NET IL code. This warning can be disabled using '--nowarn:9' or '#nowarn "9"'.""")
         ]
-        
+
     [<Theory>]
     [<InlineData("preview")>]
     let ``Pin int inref parameter`` langVersion =
@@ -211,7 +211,7 @@ module ExtendedFixedBindings =
             (Warning 9, Line 5, Col 9, Line 5, Col 12, """Uses of this construct may result in the generation of unverifiable .NET IL code. This warning can be disabled using '--nowarn:9' or '#nowarn "9"'.""")
             (Warning 9, Line 6, Col 5, Line 6, Col 18, """Uses of this construct may result in the generation of unverifiable .NET IL code. This warning can be disabled using '--nowarn:9' or '#nowarn "9"'.""")
         ]
-        
+
     [<Theory>]
     [<InlineData("preview")>]
     let ``Pin int outref parameter`` langVersion =
@@ -224,7 +224,7 @@ module ExtendedFixedBindings =
             (Warning 9, Line 5, Col 9, Line 5, Col 12, """Uses of this construct may result in the generation of unverifiable .NET IL code. This warning can be disabled using '--nowarn:9' or '#nowarn "9"'.""")
             (Warning 9, Line 6, Col 5, Line 6, Col 18, """Uses of this construct may result in the generation of unverifiable .NET IL code. This warning can be disabled using '--nowarn:9' or '#nowarn "9"'.""")
         ]
-        
+
     [<Theory>]
     [<InlineData("preview")>]
     let ``Pin address of explicit field on this with default constructor class syntax`` langVersion =
@@ -239,7 +239,7 @@ module ExtendedFixedBindings =
             (Warning 9, Line 8, Col 13, Line 8, Col 16, """Uses of this construct may result in the generation of unverifiable .NET IL code. This warning can be disabled using '--nowarn:9' or '#nowarn "9"'.""")
             (Warning 9, Line 9, Col 9, Line 9, Col 22, """Uses of this construct may result in the generation of unverifiable .NET IL code. This warning can be disabled using '--nowarn:9' or '#nowarn "9"'.""")
         ]
-        
+
     [<Theory>]
     [<InlineData("preview")>]
     let ``Pin int byref local variable`` langVersion =
@@ -267,7 +267,7 @@ module ExtendedFixedBindings =
             (Warning 9, Line 7, Col 5, Line 7, Col 18, """Uses of this construct may result in the generation of unverifiable .NET IL code. This warning can be disabled using '--nowarn:9' or '#nowarn "9"'.""")
         ]
 #endif
-    
+
     [<Theory>]
     [<InlineData("preview")>]
     let ``Pin custom struct byref type without GetPinnableReference method - illegal`` langVersion =
@@ -293,7 +293,7 @@ module ExtendedFixedBindings =
                         (Warning 9, Line 9, Col 9, Line 9, Col 12, """Uses of this construct may result in the generation of unverifiable .NET IL code. This warning can be disabled using '--nowarn:9' or '#nowarn "9"'.""")
                         (Warning 9, Line 10, Col 5, Line 10, Col 18, """Uses of this construct may result in the generation of unverifiable .NET IL code. This warning can be disabled using '--nowarn:9' or '#nowarn "9"'.""")
                     ]
-    
+
     [<Theory>]
     [<InlineData("preview")>]
     let ``Pin type with method GetPinnableReference : unit -> inref<T>`` langVersion =
@@ -306,7 +306,7 @@ module ExtendedFixedBindings =
             (Warning 9, Line 9, Col 9, Line 9, Col 12, """Uses of this construct may result in the generation of unverifiable .NET IL code. This warning can be disabled using '--nowarn:9' or '#nowarn "9"'.""")
             (Warning 9, Line 10, Col 5, Line 10, Col 18, """Uses of this construct may result in the generation of unverifiable .NET IL code. This warning can be disabled using '--nowarn:9' or '#nowarn "9"'.""")
         ]
-        
+
     [<Theory>]
     [<InlineData("preview")>]
     let ``Pin type with extension method GetPinnableReference : unit -> byref<T>`` langVersion =
@@ -319,7 +319,7 @@ module ExtendedFixedBindings =
             (Warning 9, Line 13, Col 9, Line 13, Col 12, """Uses of this construct may result in the generation of unverifiable .NET IL code. This warning can be disabled using '--nowarn:9' or '#nowarn "9"'.""")
             (Warning 9, Line 14, Col 5, Line 14, Col 18, """Uses of this construct may result in the generation of unverifiable .NET IL code. This warning can be disabled using '--nowarn:9' or '#nowarn "9"'.""")
         ]
-        
+
     [<Theory>]
     [<InlineData("preview")>]
     let ``Pin type with method GetPinnableReference with parameters - illegal`` langVersion =
@@ -358,7 +358,7 @@ module ExtendedFixedBindings =
             (Warning 9, Line 11, Col 9, Line 11, Col 12, """Uses of this construct may result in the generation of unverifiable .NET IL code. This warning can be disabled using '--nowarn:9' or '#nowarn "9"'.""")
             (Warning 9, Line 12, Col 5, Line 12, Col 18, """Uses of this construct may result in the generation of unverifiable .NET IL code. This warning can be disabled using '--nowarn:9' or '#nowarn "9"'.""")
         ]
-        
+
     [<Theory>]
     [<InlineData("preview")>]
     let ``Pin type with private method GetPinnableReference - illegal`` langVersion =
@@ -400,7 +400,7 @@ but given a
     'nativeptr<char>'    
 The type 'int' does not match the type 'char'")
         ]
-        
+
     [<Theory>]
     [<InlineData("preview")>]
     let ``Pin type with mismatching extension GetPinnableReference return type`` langVersion =

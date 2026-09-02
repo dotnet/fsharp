@@ -1,4 +1,4 @@
-// #NoMT #CodeGen #Interop 
+// #NoMT #CodeGen #Interop
 
 
 // Verify the ability to put attributes on let-bindings
@@ -14,7 +14,7 @@ let (a, b) = (1,2)
 // This syntax is no longer allowed, attributes can only be applied to whole pattern rather than its elements separately.
 // Related test is placed under Conformance\DeclarationElements\LetBindings\Basic
 
-let ([<System.Obsolete()>] venus, earth, [<System.Obsolete()>] mars) = 
+let ([<System.Obsolete()>] venus, earth, [<System.Obsolete()>] mars) =
         ("too hot","just right", "too cold")
 *)
 
@@ -53,5 +53,5 @@ try
 *)
 
 with
-| e -> printfn "Unhandled Exception: %s" e.Message 
+| e -> printfn "Unhandled Exception: %s" e.Message
        raise (Exception($"Oops: {e}"))

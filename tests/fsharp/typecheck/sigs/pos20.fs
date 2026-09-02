@@ -1,6 +1,6 @@
 // test covering https://github.com/Microsoft/visualfsharp/issues/276
 
-open FSharp.Data.UnitSystems.SI.UnitSymbols 
+open FSharp.Data.UnitSystems.SI.UnitSymbols
 
 [<Struct>]
 type S1 =
@@ -8,7 +8,7 @@ type S1 =
 
 [<Struct>]
 type S2 =
-  val X: int<m> 
+  val X: int<m>
 
 let f (x : 'T when 'T: unmanaged and 'T: struct) = printfn "%A" x
 

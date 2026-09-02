@@ -1,4 +1,4 @@
-// #Regression #Diagnostics 
+// #Regression #Diagnostics
 // Negative test for signature errors
 
 // This test used to be part of the FSHARP suite (fsharp\typecheck\sigs\neg04.ml)
@@ -14,6 +14,6 @@ module M
 type GrowingArray<'a> = System.Collections.Generic.List<'a>
 let nextPrime (sofar : GrowingArray<int>) n = failwith "nyi"
 let primes = Seq.unfold
-                 (fun (soFar,n) -> 
-                    let next = nextPrime soFar n in 
+                 (fun (soFar,n) ->
+                    let next = nextPrime soFar n in
                     Some(next, (soFar.Add(n), next+1)))

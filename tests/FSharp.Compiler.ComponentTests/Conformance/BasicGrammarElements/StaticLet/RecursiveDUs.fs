@@ -2,13 +2,13 @@ module rec Test
 
 
 [<RequireQualifiedAccess>]
-type DuA = 
+type DuA =
     | A1
     | B of DuB
     | C of DuC
 
     static do printfn "DuA init"
-    static let allVals = 
+    static let allVals =
         printfn "DuA allVals access"
         seq {yield DuA.A1.ToString();yield! DuB.AllValues; yield! DuC.AllValues}
     static member AllValues = allVals
@@ -20,7 +20,7 @@ type DuB =
     | C of DuC
 
     static do printfn "DuB init"
-    static let allVals = 
+    static let allVals =
         printfn "DuB allVals access"
         seq {yield DuB.B1.ToString();yield! DuA.AllValues; yield! DuC.AllValues}
     static member AllValues = allVals
@@ -32,7 +32,7 @@ type DuC =
     | B of DuB
 
     static do printfn "DuC init"
-    static let allVals = 
+    static let allVals =
         printfn "DuC allVals access"
         seq {yield DuC.C1.ToString();yield! DuA.AllValues; yield! DuB.AllValues}
     static member AllValues = allVals

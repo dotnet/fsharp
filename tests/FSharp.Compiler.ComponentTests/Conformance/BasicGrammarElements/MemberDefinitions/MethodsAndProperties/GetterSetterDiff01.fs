@@ -1,4 +1,4 @@
-// #Conformance #DeclarationElements #MemberDefinitions #MethodsAndProperties 
+// #Conformance #DeclarationElements #MemberDefinitions #MethodsAndProperties
 
 
 // Verify if parameters to getter and setter are different
@@ -7,10 +7,10 @@ let mutable a, b, c = 0, false, ""
 
 type Foo() =
 
-    member this.Item with get (x : int, y : bool) = 
+    member this.Item with get (x : int, y : bool) =
                                         a <- x; b <- y; 42
-                       and  set (z : string, y : bool, x : int) (arg : float) = 
-                                        a <- x; b <- y; c <- z; 
+                       and  set (z : string, y : bool, x : int) (arg : float) =
+                                        a <- x; b <- y; c <- z;
                                         if arg <> 12.34 then failwith "Failed: 1"
 
 if (a, b, c) <> (0, false, "") then failwith "Failed: 2"

@@ -1,4 +1,4 @@
-// #Regression #Conformance #TypeInference 
+// #Regression #Conformance #TypeInference
 // Regression test for FSHARP1.0:2364
 // Clashing union case label and property
 //<Expects id="FS0023" span="(14,17-14,27)" status="notin">The member 'ClashingID' cannot be defined because the name 'ClashingID' clashes with the union case 'ClashingID' in this type or module</Expects>

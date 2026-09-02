@@ -1,4 +1,4 @@
-// #Regression #Conformance #DeclarationElements #Accessibility 
+// #Regression #Conformance #DeclarationElements #Accessibility
 // Verify error associated with more accessible base class than super class
 
 

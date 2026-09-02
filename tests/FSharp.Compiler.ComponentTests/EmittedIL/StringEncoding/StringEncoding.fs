@@ -8,17 +8,17 @@ open FSharp.Test.Compiler
 module StringEncoding =
 
     //
-    // What we are doing is is really making sure that strings in F# assemblies are 
+    // What we are doing is is really making sure that strings in F# assemblies are
     // encoded according to the specifications (which are, essentially, "do what C#
     // does even if the C# is not fully ECMA compliant")
-    // 
+    //
     // Using the Normalize(...) method is just an indirect way to test this. The direct verification
     // would have been something like:
     // - compile F# code with strings (UNICODE 0x0000 -> 0xffff)
     // - open assembly with binary editor
     // - look at the encoding
     // - make sure the trailing byte is set to 0/1 accordingly.
-    // 
+    //
     // Note: to keep the execution time within a reasonable limit, we only consider the range 0x0000 - 0x0123
     //       (if you look at the code you'll see that nothing really interesting happens after 0xff... so the
     //       odds of screwing up there are really small and unlikely to happen)

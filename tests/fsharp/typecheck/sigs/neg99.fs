@@ -2,7 +2,7 @@ namespace CrashFSC
 
 open System
 
-// debatable code, but it was the minimalist example I could come up 
+// debatable code, but it was the minimalist example I could come up
 // with after analysis in the original project
 module OhOh =
 
@@ -11,14 +11,14 @@ module OhOh =
         static member inline op_Explicit (MyByte x): double = double x
 
         static member inline op_Explicit (x: int64): MyByte = MyByte (byte x)
-        static member inline op_Explicit (x: float): MyByte = MyByte (byte x)        
+        static member inline op_Explicit (x: float): MyByte = MyByte (byte x)
         static member inline op_Explicit (MyByte x): 'a = failwith "cannot convert"
-        
+
     /// testing testing
     let inline ( !>>> ) (a: ^a) min: ^b option =
-        if a < (^b : (static member op_Explicit: ^b -> ^a) min)  
+        if a < (^b : (static member op_Explicit: ^b -> ^a) min)
             then None
-        else    
+        else
             Some (^b : (static member op_Explicit: ^a -> ^b) a)
 
     let inline crashMe (a: ^a) min =

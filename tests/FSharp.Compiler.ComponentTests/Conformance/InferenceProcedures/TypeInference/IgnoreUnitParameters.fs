@@ -1,4 +1,4 @@
-// #Regression #TypeInference 
+// #Regression #TypeInference
 // Regression test for https://github.com/Microsoft/visualfsharp/issues/1749
 // Type Inference
 // Explicit program entry point: [<EntryPoint>]
@@ -12,14 +12,14 @@ let run4 (f:System.Func<_>) = f.Invoke()
 let mutable exitCode = 0
 
 [<EntryPoint>]
-let main (argsz:string []) = 
-  
+let main (argsz:string []) =
+
     let a = run1 (fun () -> "hello world")
     let a' = run1 (fun _ -> "hello world")
     let a'' = run1 (fun x -> "hello world")
 
 
-    if a <> a' || a' <> a'' then 
+    if a <> a' || a' <> a'' then
         exitCode <- 1
         failwith "bug in a"
 

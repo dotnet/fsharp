@@ -1,4 +1,4 @@
-// #Conformance #DeclarationElements #MemberDefinitions #MethodsAndProperties 
+// #Conformance #DeclarationElements #MemberDefinitions #MethodsAndProperties
 // Verify you can define properties with the get and set keyword
 
 let mutable lastUsed = ("", 0)
@@ -9,14 +9,14 @@ type Foo =
 
     static member WriteOnly with set  x = lastUsed <- ("WriteOnly", x)
 
-    static member ReadWrite1 
+    static member ReadWrite1
         with get () = lastUsed <- ("ReadWrite1", 0); 3
         and  set  x = lastUsed <- ("ReadWrite1", x)
 
-    static member ReadWrite2 
+    static member ReadWrite2
         with set  x = lastUsed <- ("ReadWrite2", x)
         and  get () = lastUsed <- ("ReadWrite2", 0); 4
- 
+
 if Foo.ReadOnly1 <> 1           then failwith "Failed: 1"
 if lastUsed <> ("ReadOnly1", 0) then failwith "Failed: 2"
 

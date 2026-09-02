@@ -1,4 +1,4 @@
-// #Regression #Conformance #PatternMatching #Arrays 
+// #Regression #Conformance #PatternMatching #Arrays
 
 
 // Verify ability to match a list, array, or record with trailing semicolon
@@ -18,11 +18,11 @@ if List.length list2 <> 4 then exit 1
 // ----------------------------------------
 
 let array1 = [| 1;2;3;4; |]
-let array2 = [| 
+let array2 = [|
         5;
         6;
         7;
-        8; 
+        8;
     |]
 
 if Array.length array1 <> 4 then exit 1
@@ -57,7 +57,7 @@ let isList2 x =
     match x with
     | [5; 6; 7; 8;] -> true
     | _             -> false
-    
+
 if not (isList1 list1) then exit 1
 if not (isList2 list2) then exit 1
 
@@ -76,7 +76,7 @@ let isArray2 x =
     match x with
     | [| 5; 6; 7; 8; |] -> true
     | _                 -> false
-    
+
 if not (isArray1 array1) then exit 1
 if not (isArray2 array2) then exit 1
 
@@ -90,12 +90,12 @@ let isRecord1 x =
       } -> true
     | _ -> false
 
-let isRecord2 x = 
+let isRecord2 x =
     match x with
     | { label1 = 2; label2 = 3; } -> true
     | _                           -> false
-    
-    
+
+
 if not (isRecord1 record1) then exit 1
 if not (isRecord2 record2) then exit 1
 

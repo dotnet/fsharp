@@ -1,4 +1,4 @@
-// #Regression #Conformance #ObjectOrientedTypes #InterfacesAndImplementations 
+// #Regression #Conformance #ObjectOrientedTypes #InterfacesAndImplementations
 // Regression test for FSHARP1.0:3748
 // This code used to compile and then throw at runtime
 // Now we emit an error.

@@ -2,7 +2,7 @@
 module Module
 
 type MyType =
-    module InvalidModule = 
+    module InvalidModule =
         let helper = 10
-    
+
     type InvalidType = string

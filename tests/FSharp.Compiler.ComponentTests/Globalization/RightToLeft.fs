@@ -1,4 +1,4 @@
-﻿// #Globalization 
+﻿// #Globalization
 
 
 // Here's some right-to-left text in a comment...

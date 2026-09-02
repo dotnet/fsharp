@@ -1,9 +1,9 @@
-// #Conformance #DeclarationElements #MemberDefinitions #MethodsAndProperties 
+// #Conformance #DeclarationElements #MemberDefinitions #MethodsAndProperties
 
 
 // Verify creating a property named Item creates an indexer
 
-type Foo() = 
+type Foo() =
     member this.Item (x : decimal) = 42
 
 
