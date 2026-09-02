@@ -848,7 +848,12 @@ module Task =
                             index <- Interlocked.Increment &pos
                     }
 
+                // Awaits completion of all workers (whether through success, cancellation or faulting)
                 do! Task.WhenAll [| for _ in 1 .. min req.Length maxDegreeOfParallelism -> worker () :> Task |]
+                // Where cancellation was requested on the outer ct, but none of the inners saw and/or honored it by throwing TCE,
+                // res may only be partially complete so we certainly can't return it
+                // we instead yield a TaskCanceledException to honor standard Task Cancellation semantics
+                innerCts.Token.ThrowIfCancellationRequested()
                 return res
             }
 

@@ -329,6 +329,79 @@ module TaskModuleFunctionsTests =
 
 
     [<Fact>]
+    let ``Task.sequential runs all tasks in order and collects results`` () : Task =
+        task {
+            use cts = new CancellationTokenSource()
+            let order = ResizeArray()
+            let! results =
+                [for i in 1..5 do
+                    fun (ct: CancellationToken) ->
+                        Assert.Equal(cts.Token, ct)
+                        task {
+                            order.Add i
+                            return i * i
+                        }]
+                |> Task.sequential cts.Token
+            Assert.Equal([| 1; 4; 9; 16; 25 |], results)
+            Assert.Equal<int seq>([ 1; 2; 3; 4; 5 ], order)
+        }
+
+    [<Fact>]
+    let ``Task.sequential runs computations one at a time`` () : Task =
+        task {
+            use cts = new CancellationTokenSource()
+            let mutable concurrent = 0
+            let mutable maxConcurrent = 0
+            let computations =
+                [for _ in 1..5 ->
+                    fun (_: CancellationToken) ->
+                        task {
+                            let n = Interlocked.Increment &concurrent
+                            if n > maxConcurrent then maxConcurrent <- n
+                            do! Task.Delay(1)
+                            Interlocked.Decrement &concurrent |> ignore
+                            return n
+                        }]
+            let! _ = Task.sequential cts.Token computations
+            Assert.Equal(1, maxConcurrent)
+        }
+
+
+    [<Fact>]
+    let ``Task.sequentialDo runs all tasks in order and returns unit`` () : Task =
+        task {
+            use cts = new CancellationTokenSource()
+            let order = ResizeArray()
+            let computations =
+                [for i in 1..5 do
+                    fun (ct: CancellationToken) ->
+                        Assert.Equal(cts.Token, ct)
+                        task { order.Add i }]
+            do! Task.sequentialDo cts.Token computations
+            Assert.Equal<int seq>([ 1; 2; 3; 4; 5 ], order)
+        }
+
+    [<Fact>]
+    let ``Task.sequentialDo runs computations one at a time`` () : Task =
+        task {
+            use cts = new CancellationTokenSource()
+            let mutable concurrent = 0
+            let mutable maxConcurrent = 0
+            let computations =
+                [for _ in 1..5 ->
+                    fun (_: CancellationToken) ->
+                        task {
+                            let n = Interlocked.Increment &concurrent
+                            if n > maxConcurrent then maxConcurrent <- n
+                            do! Task.Delay(1)
+                            Interlocked.Decrement &concurrent |> ignore
+                        }]
+            do! Task.sequentialDo cts.Token computations
+            Assert.Equal(1, maxConcurrent)
+        }
+
+    
+    [<Fact>]
     let ``Task.parallelLimit runs all tasks and collects results`` () : Task =
         task {
             use cts = new CancellationTokenSource()
@@ -420,6 +493,35 @@ module TaskModuleFunctionsTests =
             Assert.Equal(cts.Token, e.CancellationToken)
         }
 
+
+    [<Fact>]
+    let ``Task.parallelLimit throws TaskCanceledException when ct is cancelled, even if work does not honor it`` () : Task = task {
+        let waitForChildStarted = TaskCompletionSource<unit>()
+        let waitForUnpause = TaskCompletionSource<unit>()
+        // Note DOP 1 or single computation are treated as sequential
+        // That implies they are passed the outer CancellationToken and entrusted to do the right thing
+        // Hence these more complex semantics would not apply without a second computation and DOP > 1
+        let work = seq {
+            fun (ct: CancellationToken) -> task {
+                waitForChildStarted.SetResult ()
+                do! waitForUnpause.Task
+                // Validate we heard about the cancellation
+                Assert.True(ct.IsCancellationRequested)
+                // ... but don't honor it (... but sibling workers may do so they should not rely on us to ThrowIfCancellationRequested etc)
+                return 1
+            }
+            fun (_: CancellationToken) -> Task.result 2
+        }
+
+        use cts = new CancellationTokenSource()
+        let t = work |> Task.parallelLimit 2 cts.Token
+        do! waitForChildStarted.Task
+        cts.Cancel()
+        waitForUnpause.SetResult()
+
+        do! Assert.ThrowsAsync<OperationCanceledException>(fun () -> t :> Task) |> Task.ignore<OperationCanceledException>
+    }
+
     [<Fact>]
     let ``Task.parallelLimit cancels sibling computations when one fails`` () : Task =
         task {
@@ -493,7 +595,6 @@ module TaskModuleFunctionsTests =
             | x -> failwith $"unexpected %A{x}"
         }
 
-    
     [<Fact>]
     let ``Task.parallelDoLimit runs all tasks and returns unit`` () : Task =
         task {
@@ -507,80 +608,6 @@ module TaskModuleFunctionsTests =
             do! Task.parallelDoLimit 2 cts.Token computations
             Assert.Equal(5, count)
         }
-
-
-    [<Fact>]
-    let ``Task.sequential runs all tasks in order and collects results`` () : Task =
-        task {
-            use cts = new CancellationTokenSource()
-            let order = ResizeArray()
-            let! results =
-                [for i in 1..5 do
-                    fun (ct: CancellationToken) ->
-                        Assert.Equal(cts.Token, ct)
-                        task {
-                            order.Add i
-                            return i * i
-                        }]
-                |> Task.sequential cts.Token
-            Assert.Equal([| 1; 4; 9; 16; 25 |], results)
-            Assert.Equal<int seq>([ 1; 2; 3; 4; 5 ], order)
-        }
-
-    [<Fact>]
-    let ``Task.sequential runs computations one at a time`` () : Task =
-        task {
-            use cts = new CancellationTokenSource()
-            let mutable concurrent = 0
-            let mutable maxConcurrent = 0
-            let computations =
-                [for _ in 1..5 ->
-                    fun (_: CancellationToken) ->
-                        task {
-                            let n = Interlocked.Increment &concurrent
-                            if n > maxConcurrent then maxConcurrent <- n
-                            do! Task.Delay(1)
-                            Interlocked.Decrement &concurrent |> ignore
-                            return n
-                        }]
-            let! _ = Task.sequential cts.Token computations
-            Assert.Equal(1, maxConcurrent)
-        }
-
-
-    [<Fact>]
-    let ``Task.sequentialDo runs all tasks in order and returns unit`` () : Task =
-        task {
-            use cts = new CancellationTokenSource()
-            let order = ResizeArray()
-            let computations =
-                [for i in 1..5 do
-                    fun (ct: CancellationToken) ->
-                        Assert.Equal(cts.Token, ct)
-                        task { order.Add i }]
-            do! Task.sequentialDo cts.Token computations
-            Assert.Equal<int seq>([ 1; 2; 3; 4; 5 ], order)
-        }
-
-    [<Fact>]
-    let ``Task.sequentialDo runs computations one at a time`` () : Task =
-        task {
-            use cts = new CancellationTokenSource()
-            let mutable concurrent = 0
-            let mutable maxConcurrent = 0
-            let computations =
-                [for _ in 1..5 ->
-                    fun (_: CancellationToken) ->
-                        task {
-                            let n = Interlocked.Increment &concurrent
-                            if n > maxConcurrent then maxConcurrent <- n
-                            do! Task.Delay(1)
-                            Interlocked.Decrement &concurrent |> ignore
-                        }]
-            do! Task.sequentialDo cts.Token computations
-            Assert.Equal(1, maxConcurrent)
-        }
-
 
     [<Fact>]
     let ``Task.startAsyncImmediate flows result`` () : Task =
