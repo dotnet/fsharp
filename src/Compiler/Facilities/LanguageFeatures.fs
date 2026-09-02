@@ -34,7 +34,6 @@ type LanguageFeature =
     | ReallyLongLists
     | ErrorOnDeprecatedRequireQualifiedAccess
     | RequiredPropertiesSupport
-    | InterfacesWithAbstractStaticMembers
     | SelfTypeConstraints
     | MatchNotAllowedForUnionCaseWithNoData
     | CSharpExtensionAttributeNotRequired
@@ -148,7 +147,6 @@ type LanguageVersion(versionText, ?disabledFeaturesArray: LanguageFeature array)
                 LanguageFeature.ReallyLongLists, languageVersion70
                 LanguageFeature.ErrorOnDeprecatedRequireQualifiedAccess, languageVersion70
                 LanguageFeature.RequiredPropertiesSupport, languageVersion70
-                LanguageFeature.InterfacesWithAbstractStaticMembers, languageVersion70
                 LanguageFeature.SelfTypeConstraints, languageVersion70
 
                 // F# 8.0
@@ -330,7 +328,6 @@ type LanguageVersion(versionText, ?disabledFeaturesArray: LanguageFeature array)
         | LanguageFeature.ReallyLongLists -> FSComp.SR.featureReallyLongList ()
         | LanguageFeature.ErrorOnDeprecatedRequireQualifiedAccess -> FSComp.SR.featureErrorOnDeprecatedRequireQualifiedAccess ()
         | LanguageFeature.RequiredPropertiesSupport -> FSComp.SR.featureRequiredProperties ()
-        | LanguageFeature.InterfacesWithAbstractStaticMembers -> FSComp.SR.featureInterfacesWithAbstractStaticMembers ()
         | LanguageFeature.SelfTypeConstraints -> FSComp.SR.featureSelfTypeConstraints ()
         | LanguageFeature.MatchNotAllowedForUnionCaseWithNoData -> FSComp.SR.featureMatchNotAllowedForUnionCaseWithNoData ()
         | LanguageFeature.CSharpExtensionAttributeNotRequired -> FSComp.SR.featureCSharpExtensionAttributeNotRequired ()
