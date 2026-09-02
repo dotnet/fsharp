@@ -1129,7 +1129,6 @@ parsNonAtomicType,"The use of the type syntax 'int C' and 'C  <int>' is not perm
 1248,lexTooManyLBracesInTripleQuote,"The interpolated triple quoted string literal does not start with enough '$' characters to allow this many consecutive opening braces as content."
 1249,lexUnmatchedRBracesInTripleQuote,"The interpolated string contains unmatched closing braces."
 1250,lexTooManyPercentsInTripleQuote,"The interpolated triple quoted string literal does not start with enough '$' characters to allow this many consecutive '%%' characters."
-1251,lexExtendedStringInterpolationNotSupported,"Extended string interpolation is not supported in this version of F#."
 1252,lexInvalidCharLiteralInString,"'%s' is not a valid character literal.\nNote: Currently the value is wrapped around byte range to '%s'. In a future F# version this warning will be promoted to an error."
 1253,lexByteArrayOutisdeAscii,"This byte array literal contains %d non-ASCII characters. All characters should be < 128y."
 # reshapedmsbuild.fs
@@ -1579,7 +1578,6 @@ featureArithmeticInLiterals,"Arithmetic and logical operations in literals, enum
 featureErrorReportingOnStaticClasses,"Error reporting on static classes"
 featureWarningWhenCopyAndUpdateRecordChangesAllFields,"Raises warnings when an copy-and-update record expression changes all fields of a record."
 featureNonInlineLiteralsAsPrintfFormat,"String values marked as literals and IL constants as printf format"
-featureExtendedStringInterpolation,"Extended string interpolation similar to C# raw string literals."
 featureWarningWhenMultipleRecdTypeChoice,"Raises warnings when multiple record type matches were found during name resolution because of overlapping field names."
 featureConstraintIntersectionOnFlexibleTypes,"Constraint intersection on flexible types"
 featureChkNotTailRecursive,"Raises warnings if a member or function has the 'TailCall' attribute, but is not being used in a tail recursive way."

@@ -432,11 +432,6 @@
         <target state="translated">liaisons fixes étendues pour byref et GetPinnableReference</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureExtendedStringInterpolation">
-        <source>Extended string interpolation similar to C# raw string literals.</source>
-        <target state="translated">Interpolation de chaîne étendue similaire aux littéraux de chaîne brute C#.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureExtensionConstraintSolutions">
         <source>Allow extension members to participate in SRTP constraint resolution</source>
         <target state="new">Allow extension members to participate in SRTP constraint resolution</target>
@@ -780,11 +775,6 @@
       <trans-unit id="lexColonDirectiveMustBeFirst">
         <source>#: directives must start at the beginning of a line</source>
         <target state="new">#: directives must start at the beginning of a line</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="lexExtendedStringInterpolationNotSupported">
-        <source>Extended string interpolation is not supported in this version of F#.</source>
-        <target state="translated">L'interpolation de chaîne étendue n'est pas prise en charge dans cette version de F#.</target>
         <note />
       </trans-unit>
       <trans-unit id="lexHashElifAfterElse">
