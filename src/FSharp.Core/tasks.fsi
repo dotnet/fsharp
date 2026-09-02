@@ -620,7 +620,9 @@ module Task =
     /// <p>Where multiple computations Fault, a single exception is propagated.</p>
     /// </remarks>
     /// <param name="maxDegreeOfParallelism">The maximum number of tasks to run concurrently. Must be &gt; 0.</param>
-    /// <param name="ct">An outer cancellation token used to cancel the parallel request. Note the task factory methods will recieve a different token that can additionally be triggered if a sibling computation faults.</param>
+    /// <param name="ct">An outer cancellation token used to cancel the parallel request.
+    /// When multiple tasks can run concurrently, task factories receive a linked token that is also canceled if a sibling faults;
+    /// otherwise they receive <c>ct</c> directly.</param>
     /// <param name="computations">A sequence of task start functions accepting a <see cref="T:System.Threading.CancellationToken"/>.</param>
     /// <returns>A task yielding an array of the results of <c>computations</c> in the order they were supplied.</returns>
     ///
@@ -648,7 +650,9 @@ module Task =
     /// <p>Where multiple computations Fault, a single exception is propagated.</p>
     /// </remarks>
     /// <param name="maxDegreeOfParallelism">The maximum number of tasks to run concurrently. Must be &gt; 0.</param>
-    /// <param name="ct">An outer cancellation token used to cancel the parallel request. Note the task factory methods will recieve a different token that can additionally be triggered if a sibling computation faults.</param>
+    /// <param name="ct">An outer cancellation token used to cancel the parallel request.
+    /// When multiple tasks can run concurrently, task factories receive a linked token that is also canceled if a sibling faults;
+    /// otherwise they receive <c>ct</c> directly.</param>
     /// <param name="computations">A sequence of unit task start functions accepting a <see cref="T:System.Threading.CancellationToken"/>.</param>
     /// <returns>A task that runs all inputs with the specified parallelism limit and returns <c>unit</c>.</returns>
     ///
