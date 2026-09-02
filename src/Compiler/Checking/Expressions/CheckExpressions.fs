@@ -8693,12 +8693,12 @@ and Propagate (cenv: cenv) (overallTy: OverallTy) (env: TcEnv) tpenv (expr: Appl
         | DelayedApp (atomicFlag, isSugar, synLeftExprOpt, synArg, mExprAndArg) :: delayedList' ->
             let denv = env.DisplayEnv
 
-            let isRuntimeAsync = TryGetRuntimeAsyncReturnFunction g expr.Expr |> Option.isSome
+            match expr.Expr with
+            | RuntimeAsyncReturnFunction g _  -> ()
+            | _ ->
 
-            match isRuntimeAsync, UnifyFunctionTypeUndoIfFailed cenv denv mExpr exprTy with
-            | true, _ ->
-                ()
-            | false, ValueSome (_, resultTy) ->
+            match UnifyFunctionTypeUndoIfFailed cenv denv mExpr exprTy with
+            | ValueSome (_, resultTy) ->
 
                 // We add tag parameter to the return type for "&x" and 'NativePtr.toByRef'
                 // See RFC FS-1053.md
@@ -8711,7 +8711,7 @@ and Propagate (cenv: cenv) (overallTy: OverallTy) (env: TcEnv) tpenv (expr: Appl
 
                 propagate isAddrOf delayedList' mExprAndArg resultTy
 
-            | false, _ ->
+            | _ ->
                 let mArg = synArg.Range
                 match synArg with
                 // async { ... }
@@ -8990,11 +8990,7 @@ and TcApplicationThen (cenv: cenv) (overallTy: OverallTy) env tpenv mExprAndArg 
 
     let (|RuntimeAsyncApplication|_|) =
         function
-        | ApplicableExpr(expr=runtimeAsyncFunction)
-            when TryGetRuntimeAsyncReturnFunction g runtimeAsyncFunction |> Option.isSome ->
-            match TryGetRuntimeAsyncReturnFunction g runtimeAsyncFunction with
-            | None -> ValueNone
-            | Some(vref, flags, m) ->
+        | ApplicableExpr(expr = (RuntimeAsyncReturnFunction g (vref, flags, m))) ->
             checkLanguageFeatureAndRecover g.langVersion LanguageFeature.RuntimeAsync m
 
             let _, carrierTy = stripFunTy g exprTy

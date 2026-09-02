@@ -19,7 +19,7 @@ type RuntimeAsyncBoundary =
 
 val TryGetRuntimeAsyncReturn: g: TcGlobals -> expr: Expr -> RuntimeAsyncReturnInfo option
 
-val TryGetRuntimeAsyncReturnFunction: g: TcGlobals -> expr: Expr -> (ValRef * ValUseFlag * range) option
+val (|RuntimeAsyncReturnFunction|_|) : g: TcGlobals -> expr: Expr -> (ValRef * ValUseFlag * range) voption
 
 val IsRuntimeAsyncSuspensionMethod: g: TcGlobals -> ilMethRef: ILMethodRef -> bool
 

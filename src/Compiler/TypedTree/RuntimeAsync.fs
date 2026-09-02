@@ -39,11 +39,11 @@ let rec TryGetRuntimeAsyncReturn (g: TcGlobals) expr =
             }
     | _ -> None
 
-let TryGetRuntimeAsyncReturnFunction (g: TcGlobals) expr =
+let (|RuntimeAsyncReturnFunction|_|) (g: TcGlobals) expr =
     match stripExpr expr with
-    | Expr.Val(RuntimeAsyncReturn g as value, flags, m) -> Some(value, flags, m)
-    | Expr.App(Expr.Val(RuntimeAsyncReturn g as value, flags, m), _, [ _ ], [], _) -> Some(value, flags, m)
-    | _ -> None
+    | Expr.Val(RuntimeAsyncReturn g as value, flags, m)
+    | Expr.App(Expr.Val(RuntimeAsyncReturn g as value, flags, m), _, [ _ ], [], _) -> ValueSome(value, flags, m)
+    | _ -> ValueNone
 
 let IsRuntimeAsyncSuspensionMethod (g: TcGlobals) (ilMethRef: ILMethodRef) =
     let (TILObjectReprData(coreLibScope, _, _)) = g.system_Object_tcref.ILTyconInfo
