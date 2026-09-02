@@ -312,3 +312,35 @@ let ``A method that raises an event stays a method`` () =
         Assert.Equal(ResolvedMethod, resolved.Kind)
         Assert.DoesNotContain(PropertyGet, resolved.Traits)
         Assert.DoesNotContain(PropertySet, resolved.Traits)
+
+/// A file's module-level bindings and the `static let` of a type declared in it all run in the one
+/// `<StartupCode$…>.$File.$File()` method the compiler writes per file. The debugger reports the same
+/// frame name for every one of them, so the line is the only thing that tells them apart - and two
+/// different lines must not resolve to the same identity.
+[<Fact>]
+let ``Two initializers in one startup method resolve to different identities`` () =
+    let identityOf snippet =
+        match resolveStartupAt snippet with
+        | ValueNone -> failwith $"expected the line of %s{snippet} to resolve"
+        | ValueSome resolved -> resolved
+
+    let moduleInitializer = identityOf "let initialized"
+    let staticInitializer = identityOf "static let staticState"
+
+    Assert.True(
+        moduleInitializer.DisplayName <> staticInitializer.DisplayName,
+        $"both initializers were named %s{moduleInitializer.DisplayName}"
+    )
+
+    Assert.True(
+        moduleInitializer.MemberName <> staticInitializer.MemberName,
+        $"both initializers claim the member %A{moduleInitializer.MemberName}"
+    )
+
+    Assert.True(
+        moduleInitializer.TypeChain <> staticInitializer.TypeChain,
+        $"both initializers claim the type chain %A{moduleInitializer.TypeChain}"
+    )
+
+    Assert.DoesNotContain(Constructor, moduleInitializer.Traits)
+    Assert.Contains(Constructor, staticInitializer.Traits)
