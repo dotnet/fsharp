@@ -27,6 +27,69 @@ module Named =
         |> typecheck
         |> shouldSucceed
 
+    [<Theory; FileInlineData("ActivePatternInLetBindingWithGenericRhs.fs")>]
+    let ``Named - ActivePatternInLetBindingWithGenericRhs_fs`` compilation =
+        compilation
+        |> getCompilation
+        |> asExe
+        |> compileExeAndRun
+        |> shouldSucceed
+
+    [<Theory; FileInlineData("ActivePatternInLetBindingBindsValue.fs")>]
+    let ``Named - ActivePatternInLetBindingBindsValue_fs`` compilation =
+        compilation
+        |> getCompilation
+        |> asExe
+        |> compileExeAndRun
+        |> shouldSucceed
+
+    [<Theory; FileInlineData("ActivePatternInLetBindingLocalScope.fs")>]
+    let ``Named - ActivePatternInLetBindingLocalScope_fs`` compilation =
+        compilation
+        |> getCompilation
+        |> asExe
+        |> compileExeAndRun
+        |> shouldSucceed
+
+    [<Theory; FileInlineData("ActivePatternInLetBindingTuplePattern.fs")>]
+    let ``Named - ActivePatternInLetBindingTuplePattern_fs`` compilation =
+        compilation
+        |> getCompilation
+        |> asExe
+        |> compileExeAndRun
+        |> shouldSucceed
+
+    [<Theory; FileInlineData("PartialActivePatternInLetBinding.fs")>]
+    let ``Named - PartialActivePatternInLetBinding_fs`` compilation =
+        compilation
+        |> getCompilation
+        |> asFs
+        |> withOptions ["--test:ErrorRanges"]
+        |> typecheck
+        |> shouldFail
+        |> withSingleDiagnostic (Warning 25, Line 5, Col 5, Line 5, Col 8, "Incomplete pattern matches on this expression.")
+
+    [<Theory; FileInlineData("E_ActivePatternInLetBindingValueRestriction.fs")>]
+    let ``Named - E_ActivePatternInLetBindingValueRestriction_fs`` compilation =
+        compilation
+        |> getCompilation
+        |> asFs
+        |> typecheck
+        |> shouldFail
+        |> withErrorCode 30
+        |> withDiagnosticMessageMatches "Value restriction: The value 'g' has an inferred generic function type"
+
+    [<Theory; FileInlineData("E_ActivePatternInLetBindingTupleNotGeneralized.fs")>]
+    let ``Named - E_ActivePatternInLetBindingTupleNotGeneralized_fs`` compilation =
+        compilation
+        |> getCompilation
+        |> asFs
+        |> typecheck
+        |> shouldFail
+        |> withErrorCodes [30; 30; 30; 30]
+        |> withDiagnosticMessageMatches "Value restriction: The value 'h' has an inferred generic function type"
+        |> withDiagnosticMessageMatches "Value restriction: The value 'h2' has an inferred generic function type"
+
     // This test was automatically generated (moved from FSharpQA suite - Conformance/PatternMatching/Named)
     [<Theory; FileInlineData("activePatterns01.fs")>]
     let ``Named - activePatterns01_fs - --test:ErrorRanges`` compilation =
