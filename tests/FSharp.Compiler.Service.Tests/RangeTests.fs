@@ -13,7 +13,7 @@ let ``withStartEnd Test`` () =
     let r = withStartEnd newStart newEnd z
     r.Start |> shouldEqual newStart
     r.End |> shouldEqual newEnd
-    
+
 [<Fact>]
 let ``withStart Test`` () =
     let z = range0
@@ -36,7 +36,7 @@ let ``shiftStart Test`` () =
     let r = shiftStart lineDelta columnDelta z
     r.Start.Column |> shouldEqual (z.StartColumn + columnDelta)
     r.Start.Line |> shouldEqual (z.StartLine + lineDelta)
-    
+
 [<Fact>]
 let ``shiftEnd Test`` () =
     let z = range0

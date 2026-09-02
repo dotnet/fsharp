@@ -201,18 +201,18 @@ module FSharpResidentCompiler =
                 None
 #endif
 
-module Driver = 
-    let main argv = 
-        let inline hasArgument name args = 
+module Driver =
+    let main argv =
+        let inline hasArgument name args =
             args |> Array.exists (fun x -> x = ("--" + name) || x = ("/" + name))
-        let inline stripArgument name args = 
+        let inline stripArgument name args =
             args |> Array.filter (fun x -> x <> ("--" + name) && x <> ("/" + name))
 
         // Check for --pause as the very first step so that a compiler can be attached here.
-        if hasArgument "pause" argv then 
+        if hasArgument "pause" argv then
             System.Console.WriteLine("Press any key to continue...")
             System.Console.ReadKey() |> ignore
-      
+
 #if RESIDENT_COMPILER
         if hasArgument "resident" argv then 
             let argv = stripArgument "resident" argv
@@ -225,13 +225,13 @@ module Driver =
                 let errors, exitCode = FSharpChecker.Create().Compile (argv)  |> Async.RunSynchronously
                 for error in errors do eprintfn "%s" (error.ToString())
                 exitCode
-#endif        
+#endif
         else
             let errors, exitCode = FSharpChecker.Create().Compile (argv) |> Async.RunSynchronously
             for error in errors do eprintfn "%s" (error.ToString())
             exitCode
 
-[<Dependency("FSharp.Compiler",LoadHint.Always)>] 
+[<Dependency("FSharp.Compiler",LoadHint.Always)>]
 do ()
 
 [<EntryPoint>]
@@ -239,8 +239,8 @@ let main(argv) =
     System.Runtime.GCSettings.LatencyMode <- System.Runtime.GCLatencyMode.Batch
     use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind BuildPhase.Parameter
 
-    try 
-        Driver.main(Array.append [| "fsc.exe" |] argv); 
-    with e -> 
-        errorRecovery e FSharp.Compiler.Range.range0; 
+    try
+        Driver.main(Array.append [| "fsc.exe" |] argv);
+    with e ->
+        errorRecovery e FSharp.Compiler.Range.range0;
         1

@@ -334,13 +334,13 @@ type ProvidedTypeDefinition =
     member AddDefinitionLocation: line:int * column:int * filePath:string -> unit
 
     /// Suppress Object entries in intellisense menus in instances of this provided type
-    member HideObjectMethods: bool 
+    member HideObjectMethods: bool
 
     /// Disallows the use of the null literal.
     member NonNullable: bool
 
     /// Get a flag indicating if the ProvidedTypeDefinition is erased
-    member IsErased: bool 
+    member IsErased: bool
 
     /// Get or set a flag indicating if the ProvidedTypeDefinition has type-relocation suppressed
     [<Experimental("SuppressRelocation is a workaround and likely to be removed")>]
@@ -396,13 +396,13 @@ type ProvidedAssembly =
 
 /// Represents the context for which code is to be generated. Normally you should not need to use this directly.
 [<Class>]
-type ProvidedTypesContext = 
-        
-    /// Try to find the given target assembly in the context
-    member TryBindAssemblyNameToTarget: aref: AssemblyName -> Choice<Assembly, exn> 
+type ProvidedTypesContext =
 
     /// Try to find the given target assembly in the context
-    member TryBindSimpleAssemblyNameToTarget: assemblyName: string  -> Choice<Assembly, exn> 
+    member TryBindAssemblyNameToTarget: aref: AssemblyName -> Choice<Assembly, exn>
+
+    /// Try to find the given target assembly in the context
+    member TryBindSimpleAssemblyNameToTarget: assemblyName: string  -> Choice<Assembly, exn>
 
     /// Get the list of referenced assemblies determined by the type provider configuration
     member ReferencedAssemblyPaths: string list
@@ -444,17 +444,17 @@ type TypeProviderForNamespaces =
     /// <param name="config"> Type provider config. </param>
     /// <param name="namespaceName"> Name of namespace. </param>
     /// <param name="types"> Provided type definitions. </param>
-    ///               
+    ///
     /// <param name="sourceAssemblies">
     ///    Optionally specify the design-time assemblies available to use as a basis for authoring provided types.
     ///    The transitive dependencies of these assemblies are also included. By default
     ///    Assembly.GetCallingAssembly() and its transitive dependencies are used.
     /// </param>
-    ///               
+    ///
     /// <param name="assemblyReplacementMap">
     ///    Optionally specify a map of assembly names from source model to referenced assemblies.
     /// </param>
-    ///               
+    ///
     /// <param name="addDefaultProbingLocation">
     ///    Optionally specify that the location of the type provider design-time component should be used to resolve failing assembly resolutions.
     ///    This flag or an equivalent call to RegisterProbingFolder is generally needed for any type provider design-time components loaded into .NET Core tooling.
@@ -468,11 +468,11 @@ type TypeProviderForNamespaces =
     ///    The transitive dependencies of these assemblies are also included. By default
     ///    Assembly.GetCallingAssembly() and its transitive dependencies are used.
     /// </param>
-    ///               
+    ///
     /// <param name="assemblyReplacementMap">
     ///    Optionally specify a map of assembly names from source model to referenced assemblies.
     /// </param>
-    ///               
+    ///
     /// <param name="addDefaultProbingLocation">
     ///    Optionally specify that the location of the type provider design-time component should be used to resolve failing assembly resolutions.
     ///    This flag or an equivalent call to RegisterProbingFolder is generally needed for any type provider design-time components loaded into .NET Core tooling.
@@ -518,7 +518,7 @@ type TypeProviderForNamespaces =
     member Disposing: IEvent<EventHandler,EventArgs>
 
     /// The context for which code is eventually to be generated. You should not normally
-    /// need to use this property directly, as translation from the compiler-hosted context to 
+    /// need to use this property directly, as translation from the compiler-hosted context to
     /// the design-time context will normally be performed automatically.
     member TargetContext: ProvidedTypesContext
 
@@ -554,7 +554,6 @@ module internal AssemblyReader =
     module Reader =
 
         type ILModuleReader = class end
-    
+
         val GetWeakReaderCache : unit -> System.Collections.Concurrent.ConcurrentDictionary<string * string, DateTime * WeakReference<ILModuleReader>>
         val GetStrongReaderCache : unit -> System.Collections.Concurrent.ConcurrentDictionary<string * string, DateTime * int * ILModuleReader>
-    

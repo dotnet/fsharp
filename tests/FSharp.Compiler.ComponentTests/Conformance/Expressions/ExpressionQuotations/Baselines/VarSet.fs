@@ -1,4 +1,4 @@
-// #Regression #Conformance #Quotations 
+// #Regression #Conformance #Quotations
 // Regression for FSHARP1.0:5752
 open Microsoft.FSharp.Quotations
 open Microsoft.FSharp.Quotations.Patterns

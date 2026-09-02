@@ -1,4 +1,4 @@
-// #Conformance #DataExpressions #ComputationExpressions 
+// #Conformance #DataExpressions #ComputationExpressions
 // Verify the ability to define computation expression methods and
 // that they get called as part of a custom workflow builder.
 
@@ -15,20 +15,20 @@ type WorkflowBuilder() =
     member this.CombineCalledWith = Seq.toArray m_combineCalledWith
 
     member this.For(elements : seq<'item>, loopBody : 'item -> unit) =
-        
+
         elements
         |> Seq.iter (fun item -> printfn "%d: %A" m_loopedElements.Count item
                                  m_loopedElements.Add(sprintf "%A" item)
                                  let _ = loopBody item
                                  ())
-                                 
+
     member this.Combine(firstPart : unit, secondPart : 'a) =
        m_combineCalledWith.Add(sprintf "%A" secondPart)
        secondPart
-        
+
     member this.Delay (f : unit -> 'a) =
         f()
-        
+
     member this.Zero() = ()
 
 let workflow = new WorkflowBuilder()
@@ -51,19 +51,19 @@ if result <> () then printfn "failed"; exit 1
 
 if workflow.CombineCalledWith <> [| "()"; "()" |] then printfn "failed"; exit 1
 
-if workflow.LoopedElements <> 
+if workflow.LoopedElements <>
     [|
-        "1"; 
-            "\"world\""; "\"universe\""; 
-            "Int 1"; 
-                "Char 'a'"; "Char 'b'"; 
+        "1";
+            "\"world\""; "\"universe\"";
+            "Int 1";
+                "Char 'a'"; "Char 'b'";
             "Int 2";
-                "Char 'a'"; "Char 'b'"; 
-        "2"; 
-            "\"world\""; "\"universe\""; 
-                "Int 1"; 
-                    "Char 'a'"; "Char 'b'"; 
-                "Int 2"; 
+                "Char 'a'"; "Char 'b'";
+        "2";
+            "\"world\""; "\"universe\"";
+                "Int 1";
+                    "Char 'a'"; "Char 'b'";
+                "Int 2";
                     "Char 'a'"; "Char 'b'" |] then printfn "failed"; exit 1
 
 printfn "Succeeded"

@@ -1,4 +1,4 @@
-// #Regression #Conformance #LexicalAnalysis 
+// #Regression #Conformance #LexicalAnalysis
 
 
 //<Expects id="FS0010" status="error">Unexpected keyword 'type' in binding</Expects>

@@ -1,4 +1,4 @@
-// #Regression #Conformance #DeclarationElements #ObjectConstructors 
+// #Regression #Conformance #DeclarationElements #ObjectConstructors
 // FSB 1749, Interfaces should not allow implicit construction pattern. Bad codegen.
 
 //<Expects id="FS0866" status="error" span="(8,6)">Interfaces cannot contain definitions of object constructors$</Expects>

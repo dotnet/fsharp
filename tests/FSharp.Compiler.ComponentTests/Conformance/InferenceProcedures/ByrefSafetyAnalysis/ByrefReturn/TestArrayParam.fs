@@ -4,7 +4,7 @@ module TestArrayParam =
 
     let f (x:int[]) = &x.[0]
 
-    let test() = 
+    let test() =
         let r = [| 1 |]
         let addr = &f r
         addr <- addr + 1

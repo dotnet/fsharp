@@ -1,4 +1,4 @@
-// #Regression #Conformance #SyntacticSugar 
+// #Regression #Conformance #SyntacticSugar
 
 
 // Verify error using a 1D slice if only a 2D version added
@@ -12,7 +12,7 @@ type Foo<'a>() =
     let mutable m_lastUB2 : 'a option = None
 
 
-    member this.GetSlice(lb1, ub1, lb2, ub2) = 
+    member this.GetSlice(lb1, ub1, lb2, ub2) =
         m_lastLB1 <- lb1
         m_lastUB1 <- ub1
         m_lastLB2 <- lb2

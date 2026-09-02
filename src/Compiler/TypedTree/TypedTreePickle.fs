@@ -202,6 +202,7 @@ type ReaderState =
         istrings: InputTable<string>
         ipubpaths: InputTable<string[]>
         inlerefs: InputTable<NonLocalEntityRef>
+        itcrefs: EntityRef array
         isimpletys: InputTable<TType>
         ifile: string
         iILModule: ILModuleDef option // the Abstract IL metadata for the DLL being read
@@ -889,7 +890,6 @@ let decode_nleref st ccuTab stringTab (a, b) =
 
 let lookup_nleref st nlerefTab x = lookup_uniq st nlerefTab x
 let u_encoded_nleref = u_tup2 u_int (u_array u_int)
-let u_nleref st = lookup_uniq st st.inlerefs (u_int st)
 
 let encode_nleref ccuTab stringTab nlerefTab thisCcu (nleref: NonLocalEntityRef) =
 #if !NO_TYPEPROVIDERS
@@ -1076,6 +1076,7 @@ let unpickleObjWithDanglingCcus
                     .Create(AnonRecdTypeInfo.NewUnlinked, (fun osgn tg -> osgn.Link tg), (fun osgn -> osgn.IsLinked), "ianoninfos", 0)
             istrings = new_itbl "istrings (fake)" [||]
             inlerefs = new_itbl "inlerefs (fake)" [||]
+            itcrefs = [||]
             ipubpaths = new_itbl "ipubpaths (fake)" [||]
             isimpletys = new_itbl "isimpletys (fake)" [||]
             ifile = file
@@ -1140,6 +1141,7 @@ let unpickleObjWithDanglingCcus
                 istrings = stringTab
                 ipubpaths = pubpathTab
                 inlerefs = nlerefTab
+                itcrefs = Array.zeroCreate nlerefTab.itbl_rows.Length
                 isimpletys = simpletypTab
                 ifile = file
                 iILModule = ilModule
@@ -1966,7 +1968,17 @@ let u_tcref st =
 
     match tag with
     | 0 -> u_local_item_ref st.ientities st |> ERefLocal
-    | 1 -> u_nleref st |> ERefNonLocal
+    | 1 ->
+        let idx = u_int st
+        let nleref = lookup_uniq st st.inlerefs idx
+        let cached = st.itcrefs[idx]
+
+        if obj.ReferenceEquals(cached, null) then
+            let tcref = ERefNonLocal nleref
+            st.itcrefs[idx] <- tcref
+            tcref
+        else
+            cached
     | _ -> ufailwith st "u_tcref"
 
 let u_ucref st =

@@ -12,17 +12,17 @@ let bigSizeCheck testable = Check.One({ Config.QuickThrowOnFailure with StartSiz
 
 /// helper function that creates labeled FsCheck properties for equality comparisons
 let consistency name sqs ls arr =
-    (sqs = arr) |@ (sprintf  "Seq.%s = '%A', Array.%s = '%A'" name sqs name arr) .&. 
+    (sqs = arr) |@ (sprintf  "Seq.%s = '%A', Array.%s = '%A'" name sqs name arr) .&.
     (ls  = arr) |@ (sprintf "List.%s = '%A', Array.%s = '%A'" name ls name arr)
 
-let consistencyIncludingParallel name sqs ls arr paraArr = 
+let consistencyIncludingParallel name sqs ls arr paraArr =
     consistency name sqs ls arr .&.
     (paraArr = arr) |@ (sprintf "Parallel.%s = '%A', Array.%s = '%A'" name paraArr name arr)
 
 let allPairs<'a when 'a : equality> (xs : list<'a>) (xs2 : list<'a>) =
     let s = xs |> Seq.allPairs xs2 |> Seq.toArray
     let l = xs |> List.allPairs xs2  |> List.toArray
-    let a = xs |> List.toArray |> Array.allPairs (List.toArray xs2)    
+    let a = xs |> List.toArray |> Array.allPairs (List.toArray xs2)
     consistency "allPairs" s l a
 
 [<Fact>]
@@ -90,7 +90,7 @@ let choose<'a when 'a : equality> (xs : 'a []) f  =
     let l = xs |> List.ofArray |> List.choose f |> List.toArray
     let a = xs |> Array.choose f
     let pa = xs |> Array.Parallel.choose f
-    
+
     consistencyIncludingParallel "contains" s l a pa
 
 [<Fact>]
@@ -101,10 +101,10 @@ let ``choose is consistent`` () =
 
 let chunkBySize<'a when 'a : equality> (xs : 'a []) size =
     let ls = List.ofArray xs
-    if size <= 0 then 
+    if size <= 0 then
         Prop.throws<ArgumentException,_> (lazy Seq.chunkBySize size xs) .&.
         Prop.throws<ArgumentException,_> (lazy Array.chunkBySize size xs) .&.
-        Prop.throws<ArgumentException,_> (lazy List.chunkBySize size ls) 
+        Prop.throws<ArgumentException,_> (lazy List.chunkBySize size ls)
     else
         let s = xs |> Seq.chunkBySize size |> Seq.map Seq.toArray |> Seq.toArray
         let l = ls |> List.chunkBySize size |> Seq.map Seq.toArray |> Seq.toArray
@@ -146,7 +146,7 @@ let ``compareWith is consistent`` () =
     smallerSizeCheck compareWith<int>
     smallerSizeCheck compareWith<string>
     smallerSizeCheck compareWith<float>
-        
+
 let concat<'a when 'a : equality> (xs : 'a [][]) =
     let s = xs |> Seq.concat |> Seq.toArray
     let l = xs |> List.ofArray |> List.map List.ofArray |> List.concat |> List.toArray
@@ -174,7 +174,7 @@ let ``countBy is consistent`` () =
 let distinct<'a when 'a : comparison> (xs : 'a []) =
     let s = xs |> Seq.distinct |> Seq.toArray
     let l = xs |> List.ofArray |> List.distinct |> List.toArray
-    let a = xs |> Array.distinct 
+    let a = xs |> Array.distinct
     consistency "distinct" s l a
 
 [<Fact>]
@@ -186,7 +186,7 @@ let ``distinct is consistent`` () =
 let distinctBy<'a when 'a : equality> (xs : 'a []) f =
     let s = xs |> Seq.distinctBy f |> Seq.toArray
     let l = xs |> List.ofArray |> List.distinctBy f |> List.toArray
-    let a = xs |> Array.distinctBy f 
+    let a = xs |> Array.distinctBy f
     consistency "distinctBy" s l a
 
 [<Fact>]
@@ -244,14 +244,14 @@ let ``exists is consistent`` () =
     smallerSizeCheck exists<string>
     smallerSizeCheck exists<NormalFloat>
 
-let exists2<'a when 'a : equality> (xs':('a*'a) []) f =    
+let exists2<'a when 'a : equality> (xs':('a*'a) []) f =
     let xs = Array.map fst xs'
     let xs2 = Array.map snd xs'
     let s = runAndCheckErrorType (fun () -> Seq.exists2 f xs xs2)
     let l = runAndCheckErrorType (fun () -> List.exists2 f (List.ofSeq xs) (List.ofSeq xs2))
     let a = runAndCheckErrorType (fun () -> Array.exists2 f (Array.ofSeq xs) (Array.ofSeq xs2))
     consistency "exists2" s l a
-    
+
 [<Fact>]
 let ``exists2 is consistent for collections with equal length`` () =
     smallerSizeCheck exists2<int>
@@ -392,14 +392,14 @@ let ``forall is consistent`` () =
     smallerSizeCheck forall<string>
     smallerSizeCheck forall<NormalFloat>
 
-let forall2<'a when 'a : equality> (xs':('a*'a) []) f =    
+let forall2<'a when 'a : equality> (xs':('a*'a) []) f =
     let xs = Array.map fst xs'
     let xs2 = Array.map snd xs'
     let s = runAndCheckErrorType (fun () -> Seq.forall2 f xs xs2)
     let l = runAndCheckErrorType (fun () -> List.forall2 f (List.ofSeq xs) (List.ofSeq xs2))
     let a = runAndCheckErrorType (fun () -> Array.forall2 f (Array.ofSeq xs) (Array.ofSeq xs2))
     consistency "forall2" s l a
-    
+
 [<Fact>]
 let ``forall2 is consistent for collections with equal length`` () =
     smallerSizeCheck forall2<int>
@@ -612,7 +612,7 @@ let map2<'a when 'a : equality> (xs' : ('a*'a) []) f' =
     let l = List.map2 f (xs |> List.ofArray) (xs2 |> List.ofArray)
     let a = Array.map2 f xs xs2
 
-    let xs = Seq.toList xs'    
+    let xs = Seq.toList xs'
     Seq.toArray s = a && List.toArray l = a &&
       list |> Seq.toList = (xs @ xs @ xs)
 
@@ -697,7 +697,7 @@ let mapi2<'a when 'a : equality> (xs' : ('a*'a) []) f' =
     let l = List.mapi2 f (xs |> List.ofArray) (xs2 |> List.ofArray)
     let a = Array.mapi2 f xs xs2
 
-    let xs = Seq.toList xs'    
+    let xs = Seq.toList xs'
     Seq.toArray s = a && List.toArray l = a &&
       list |> Seq.toList = (xs @ xs @ xs) &&
       (Seq.toList indices = [0..xs.Length-1] @ [0..xs.Length-1] @ [0..xs.Length-1])
@@ -733,7 +733,7 @@ let ``maxBy is consistent`` () =
     smallerSizeCheck maxBy<int>
     smallerSizeCheck maxBy<string>
     smallerSizeCheck maxBy<NormalFloat>
- 
+
 let min<'a when 'a : comparison> (xs : 'a []) =
     let s = runAndCheckIfAnyError (fun () -> xs |> Seq.min)
     let l = runAndCheckIfAnyError (fun () -> xs |> List.ofArray |> List.min)
@@ -857,8 +857,8 @@ let ``partitionWith heterogeneous is consistent for Set`` () =
 
 let permute<'a when 'a : comparison> (xs' : list<int*'a>) =
     let xs = List.map snd xs'
- 
-    let permutations = 
+
+    let permutations =
         List.map fst xs'
         |> List.indexed
         |> List.sortBy snd
@@ -894,8 +894,8 @@ let ``pick is consistent`` () =
 let reduce<'a when 'a : equality> (xs : 'a []) f =
     let s = runAndCheckErrorType (fun () -> xs |> Seq.reduce f)
     let l = runAndCheckErrorType (fun () -> xs |> List.ofArray |> List.reduce f)
-    let a = runAndCheckErrorType (fun () -> xs |> Array.reduce f)   
-    consistency "reduce" s l a 
+    let a = runAndCheckErrorType (fun () -> xs |> Array.reduce f)
+    consistency "reduce" s l a
 
 [<Fact>]
 let ``reduce is consistent`` () =
@@ -1030,7 +1030,7 @@ let ``sortBy actually sorts (but is inconsistent in regards of stability)`` () =
     smallerSizeCheck sortBy<NormalFloat,int>
 
 let sortWith<'a,'b when 'a : comparison and 'b : comparison> (xs : 'a []) =
-    let f x y = 
+    let f x y =
         if x = y then 0 else
         if x = Unchecked.defaultof<_> && y <> Unchecked.defaultof<_> then -1 else
         if y = Unchecked.defaultof<_> && x <> Unchecked.defaultof<_> then 1 else
@@ -1107,12 +1107,12 @@ let ``sumBy is consistent`` () =
 
 let splitAt<'a when 'a : equality> (xs : 'a []) index =
     let ls = List.ofArray xs
-    if index < 0 then 
+    if index < 0 then
         Prop.throws<ArgumentException,_> (lazy List.splitAt index ls) .&.
-        Prop.throws<ArgumentException,_> (lazy Array.splitAt index xs) 
+        Prop.throws<ArgumentException,_> (lazy Array.splitAt index xs)
     elif index > xs.Length then
         Prop.throws<InvalidOperationException,_> (lazy List.splitAt index ls) .&.
-        Prop.throws<InvalidOperationException,_> (lazy Array.splitAt index xs) 
+        Prop.throws<InvalidOperationException,_> (lazy Array.splitAt index xs)
     else
         // no seq version
         let l = run (fun () -> ls |> List.splitAt index |> fun (a,b) -> List.toArray a,List.toArray b)
@@ -1127,10 +1127,10 @@ let ``splitAt is consistent`` () =
 
 let splitInto<'a when 'a : equality> (xs : 'a []) count =
     let ls = List.ofArray xs
-    if count < 1 then 
+    if count < 1 then
         Prop.throws<ArgumentException,_> (lazy List.splitInto count ls) .&.
         Prop.throws<ArgumentException,_> (lazy Array.splitInto count xs) .&.
-        Prop.throws<ArgumentException,_> (lazy Seq.splitInto count xs) 
+        Prop.throws<ArgumentException,_> (lazy Seq.splitInto count xs)
     else
         let s = run (fun () -> xs |> Seq.splitInto count |> Seq.map Seq.toArray |> Seq.toArray)
         let l = run (fun () -> ls |> List.splitInto count |> Seq.map Seq.toArray |> Seq.toArray)
@@ -1293,7 +1293,7 @@ let ``tryPick is consistent`` () =
 let unfold<'a,'b when 'b : equality> f (start:'a) =
     let f() =
         let mutable c = 0
-        fun x -> 
+        fun x ->
             if c > 100 then None else // prevent infinity seqs
             c <- c + 1
             f x
@@ -1316,24 +1316,24 @@ let ``unfold is consistent full`` () =
     smallerSizeCheck unfold<float,string>
 #endif
 
-let unzip<'a when 'a : equality> (xs:('a*'a) []) =       
+let unzip<'a when 'a : equality> (xs:('a*'a) []) =
     // no seq version
     let l = runAndCheckErrorType (fun () -> List.unzip (List.ofSeq xs) |> fun (a,b) -> List.toArray a, List.toArray b)
     let a = runAndCheckErrorType (fun () -> Array.unzip xs)
     l = a
-    
+
 [<Fact>]
 let ``unzip is consistent`` () =
     smallerSizeCheck unzip<int>
     smallerSizeCheck unzip<string>
     smallerSizeCheck unzip<NormalFloat>
 
-let unzip3<'a when 'a : equality> (xs:('a*'a*'a) []) =       
+let unzip3<'a when 'a : equality> (xs:('a*'a*'a) []) =
     // no seq version
     let l = runAndCheckErrorType (fun () -> List.unzip3 (List.ofSeq xs) |> fun (a,b,c) -> List.toArray a, List.toArray b, List.toArray c)
     let a = runAndCheckErrorType (fun () -> Array.unzip3 xs)
     l = a
-    
+
 [<Fact>]
 let ``unzip3 is consistent`` () =
     smallerSizeCheck unzip3<int>
@@ -1354,7 +1354,7 @@ let ``where is consistent`` () =
 
 let windowed<'a when 'a : equality> (xs : 'a []) windowSize =
     let ls = List.ofArray xs
-    if windowSize < 1 then 
+    if windowSize < 1 then
         Prop.throws<ArgumentException,_> (lazy   Seq.windowed windowSize xs) .&.
         Prop.throws<ArgumentException,_> (lazy Array.windowed windowSize xs) .&.
         Prop.throws<ArgumentException,_> (lazy  List.windowed windowSize ls)
@@ -1370,7 +1370,7 @@ let ``windowed is consistent`` () =
     smallerSizeCheck windowed<string>
     smallerSizeCheck windowed<NormalFloat>
 
-let zip<'a when 'a : equality> (xs':('a*'a) []) =    
+let zip<'a when 'a : equality> (xs':('a*'a) []) =
     let xs = Array.map fst xs'
     let xs2 = Array.map snd xs'
     let s = runAndCheckErrorType (fun () -> Seq.zip xs xs2 |> Seq.toArray)
@@ -1378,14 +1378,14 @@ let zip<'a when 'a : equality> (xs':('a*'a) []) =
     let a = runAndCheckErrorType (fun () -> Array.zip xs xs2)
     let pa = runAndCheckErrorType (fun () -> Array.Parallel.zip xs xs2)
     consistencyIncludingParallel "zip" s l a pa
-    
+
 [<Fact>]
 let ``zip is consistent for collections with equal length`` () =
     smallerSizeCheck zip<int>
     smallerSizeCheck zip<string>
     smallerSizeCheck zip<NormalFloat>
 
-let zip3<'a when 'a : equality> (xs':('a*'a*'a) []) =    
+let zip3<'a when 'a : equality> (xs':('a*'a*'a) []) =
     let xs = Array.map (fun (x,y,z) -> x) xs'
     let xs2 = Array.map (fun (x,y,z) -> y) xs'
     let xs3 = Array.map (fun (x,y,z) -> z) xs'
@@ -1393,7 +1393,7 @@ let zip3<'a when 'a : equality> (xs':('a*'a*'a) []) =
     let l = runAndCheckErrorType (fun () -> List.zip3 (List.ofSeq xs) (List.ofSeq xs2) (List.ofSeq xs3) |> List.toArray)
     let a = runAndCheckErrorType (fun () -> Array.zip3 (Array.ofSeq xs) (Array.ofSeq xs2) (Array.ofSeq xs3))
     consistency "zip3" s l a
-    
+
 [<Fact>]
 let ``zip3 is consistent for collections with equal length`` () =
     smallerSizeCheck zip3<int>
@@ -1401,7 +1401,7 @@ let ``zip3 is consistent for collections with equal length`` () =
     smallerSizeCheck zip3<NormalFloat>
 
 
-module ArrayParallelVsArray = 
+module ArrayParallelVsArray =
     let sort<'a when 'a : comparison> (xs : 'a []) =
         let a = xs |> Array.sort
         let pa = xs |> Array.Parallel.sort
@@ -1432,7 +1432,7 @@ module ArrayParallelVsArray =
         bigSizeCheck sortBy<NormalFloat,int>
 
     let sortWith<'a,'b when 'a : comparison and 'b : comparison> (xs : 'a []) =
-        let f x y = 
+        let f x y =
             if x = y then 0 else
             if x = Unchecked.defaultof<_> && y <> Unchecked.defaultof<_> then -1 else
             if y = Unchecked.defaultof<_> && x <> Unchecked.defaultof<_> then 1 else

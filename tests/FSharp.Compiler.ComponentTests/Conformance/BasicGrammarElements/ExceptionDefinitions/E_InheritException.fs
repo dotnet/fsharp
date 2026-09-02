@@ -1,4 +1,4 @@
-// #Regression #Conformance #TypesAndModules #Exceptions 
+// #Regression #Conformance #TypesAndModules #Exceptions
 // Verify error when trying to inherit from F# exception types
 
 

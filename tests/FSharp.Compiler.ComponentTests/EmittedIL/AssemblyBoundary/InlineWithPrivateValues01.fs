@@ -1,4 +1,4 @@
-// #Regression #CodeGen #Optimizations #Assemblies 
+// #Regression #CodeGen #Optimizations #Assemblies
 // Regression for Dev10:850602
 // Previously a premature optimization was causing the call to isContaining to access private data of the record type in an invalid way
 // It caused illegal IL and FieldAccessExceptions at runtime

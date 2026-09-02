@@ -5,7 +5,7 @@ open System.Security.Permissions
 
 type T() =
     abstract TestBase : unit -> int
-    default x.TestBase() = 
+    default x.TestBase() =
 #if PASS1
         1
 #else
@@ -27,5 +27,5 @@ type T() =
 #else
         2
 #endif
- 
+
 type U() = class inherit T() end

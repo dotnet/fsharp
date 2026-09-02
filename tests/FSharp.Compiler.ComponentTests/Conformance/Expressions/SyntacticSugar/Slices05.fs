@@ -1,9 +1,9 @@
-// #Conformance #SyntacticSugar 
+// #Conformance #SyntacticSugar
 // Verify array slicing for 3D arrays
 
 /// Augment the existing Array2D type with Array2D and Array slicing
-module Extensions = 
-    type ``[,,]``<'T> with 
+module Extensions =
+    type ``[,,]``<'T> with
         // Slice 2D from 3D
         member q.GetSlice(x : int, y1 : int option, y2 : int option, z1 : int option, z2 : int option) = array2D [| [| 1.0 |] |]
         member q.GetSlice(x1 : int option, x2 : int option, y : int, z1 : int option, z2 : int option) = array2D [| [| 1.0 |] |]
@@ -33,61 +33,61 @@ module Extensions =
 
 open Extensions
 
-let array3D () = Array3D.zeroCreate 1 1 1 
+let array3D () = Array3D.zeroCreate 1 1 1
 let x : double [,,] = array3D ()
 
 // fix the first index - getting
 let y1 = x.[1,*,1..4]
 let y2 = x.[1,1..4,*]
 let y3 = x.[1,1..3,*]
-let z0 = x.[1,*,1..4]  
-let z1 = x.[1,1,1..4]  
-let z2 = x.[1,*,1..]  
-let z2b = x.[1,1,1..]  
-let z3 = x.[1,1,..4]  
-let z3b = x.[1,*,..4]  
-let z4 : double[] = x.[1,1..,1] 
-let z4b : double[,] = x.[1,1..,*] 
-let z5 : double[] = x.[1,..4,1] 
-let z5b : double[,] = x.[1,..4,*] 
-let z6 : double[] = x.[1,1..4,1] 
-let z6b : double[,] = x.[1,1..4,*] 
-let z7 : double = x.[0,0,0] 
+let z0 = x.[1,*,1..4]
+let z1 = x.[1,1,1..4]
+let z2 = x.[1,*,1..]
+let z2b = x.[1,1,1..]
+let z3 = x.[1,1,..4]
+let z3b = x.[1,*,..4]
+let z4 : double[] = x.[1,1..,1]
+let z4b : double[,] = x.[1,1..,*]
+let z5 : double[] = x.[1,..4,1]
+let z5b : double[,] = x.[1,..4,*]
+let z6 : double[] = x.[1,1..4,1]
+let z6b : double[,] = x.[1,1..4,*]
+let z7 : double = x.[0,0,0]
 
 // fix the second index - getting
 let qy1 = x.[*,1,1..4]
 let qy2 = x.[1..4,1,*]
 let qy3 = x.[1..3,1,*]
-let qz0 = x.[*,1,1..4]  
-let qz1 = x.[1,1,1..4]  
-let qz2 = x.[*,1,1..]  
-let qz2b = x.[1,1,1..]  
-let qz3 = x.[1,1,..4]  
-let qz3b = x.[*,1,..4]  
-let qz4 : double[] = x.[1..,1,1] 
-let qz4b : double[,] = x.[1..,1,*] 
-let qz5 : double[] = x.[..4,1,1] 
-let qz5b : double[,] = x.[..4,1,*] 
-let qz6 : double[] = x.[1..4,1,1] 
-let qz6b : double[,] = x.[1..4,1,*] 
-let qz7 : double = x.[0,0,0] 
+let qz0 = x.[*,1,1..4]
+let qz1 = x.[1,1,1..4]
+let qz2 = x.[*,1,1..]
+let qz2b = x.[1,1,1..]
+let qz3 = x.[1,1,..4]
+let qz3b = x.[*,1,..4]
+let qz4 : double[] = x.[1..,1,1]
+let qz4b : double[,] = x.[1..,1,*]
+let qz5 : double[] = x.[..4,1,1]
+let qz5b : double[,] = x.[..4,1,*]
+let qz6 : double[] = x.[1..4,1,1]
+let qz6b : double[,] = x.[1..4,1,*]
+let qz7 : double = x.[0,0,0]
 
 // fix the third index - getting
 let zqy1 = x.[*,1..4,1]
 let zqy2 = x.[1..4,*,1]
 let zqy3 = x.[1..3,*,1]
-let zqz0 = x.[*,1..4,1]  
-let zqz1 = x.[1,1..4,1]  
-let zqz2 = x.[*,1..,1]  
-let zqz2b = x.[1,1..,1]  
-let zqz3 = x.[1,..4,1]  
-let zqz3b = x.[*,..4,1]  
-let zqz4 : double[] = x.[1..,1,1] 
-let zqz4b : double[,] = x.[1..,*,1] 
-let zqz5 : double[] = x.[..4,1,1] 
-let zqz5b : double[,] = x.[..4,*,1] 
-let zqz6 : double[] = x.[1..4,1,1] 
-let zqz6b : double[,] = x.[1..4,*,1] 
+let zqz0 = x.[*,1..4,1]
+let zqz1 = x.[1,1..4,1]
+let zqz2 = x.[*,1..,1]
+let zqz2b = x.[1,1..,1]
+let zqz3 = x.[1,..4,1]
+let zqz3b = x.[*,..4,1]
+let zqz4 : double[] = x.[1..,1,1]
+let zqz4b : double[,] = x.[1..,*,1]
+let zqz5 : double[] = x.[..4,1,1]
+let zqz5b : double[,] = x.[..4,*,1]
+let zqz6 : double[] = x.[1..4,1,1]
+let zqz6b : double[,] = x.[1..4,*,1]
 let zqz7 : double = x.[0,0,0]
 let zqz8 : double[,] = x.[[1;2], *, 1]
 let zqz9 = x.[System.DateTime.Now, *, 1]
@@ -100,9 +100,9 @@ x.[1,1,1..4] <-  [| 1.0;2.0 |]
 x.[1,1,1..]  <-  [| 1.0;2.0 |]
 x.[1,1,..4]  <-  [| 1.0;2.0 |]
 x.[1,1..,1] <-  [| 1.0;2.0 |]
-x.[1,..4,1] <-  [| 1.0;2.0 |] 
+x.[1,..4,1] <-  [| 1.0;2.0 |]
 x.[1,1..4,1]  <-  [| 1.0;2.0 |]
-x.[0,0,0] <- 1.0 
+x.[0,0,0] <- 1.0
 x.[1,*,..4]  <- array2D [ [1.0;2.0] ]
 x.[1,1..,*]   <- array2D [ [1.0;2.0] ]
 x.[1,..4,*]   <- array2D [ [1.0;2.0] ]
@@ -116,9 +116,9 @@ x.[1,1,1..4] <-  [| 1.0;2.0 |]
 x.[1,1,1..]  <-  [| 1.0;2.0 |]
 x.[1,1,..4]  <-  [| 1.0;2.0 |]
 x.[1..,1,1] <-  [| 1.0;2.0 |]
-x.[..4,1,1] <-  [| 1.0;2.0 |] 
+x.[..4,1,1] <-  [| 1.0;2.0 |]
 x.[1..4,1,1]  <-  [| 1.0;2.0 |]
-x.[0,0,0] <- 1.0 
+x.[0,0,0] <- 1.0
 x.[*,1,..4]  <- array2D [ [1.0;2.0] ]
 x.[1..,1,*]   <- array2D [ [1.0;2.0] ]
 x.[..4,1,*]   <- array2D [ [1.0;2.0] ]
@@ -132,9 +132,9 @@ x.[1,1..4,1] <-  [| 1.0;2.0 |]
 x.[1,1..,1]  <-  [| 1.0;2.0 |]
 x.[1,..4,1]  <-  [| 1.0;2.0 |]
 x.[1..,1,1] <-  [| 1.0;2.0 |]
-x.[..4,1,1] <-  [| 1.0;2.0 |] 
+x.[..4,1,1] <-  [| 1.0;2.0 |]
 x.[1..4,1,1]  <-  [| 1.0;2.0 |]
-x.[0,0,0] <- 1.0 
+x.[0,0,0] <- 1.0
 x.[*,..4,1]  <- array2D [ [1.0;2.0] ]
 x.[1..,*,1]   <- array2D [ [1.0;2.0] ]
 x.[..4,*,1]   <- array2D [ [1.0;2.0] ]

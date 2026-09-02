@@ -1,4 +1,4 @@
-// #Regression #Conformance #LexicalAnalysis 
+// #Regression #Conformance #LexicalAnalysis
 // Reserved identifiers and keywords
 // Also cover regression test for FSHARP1.0:5367 (keyword 'virtual')
 

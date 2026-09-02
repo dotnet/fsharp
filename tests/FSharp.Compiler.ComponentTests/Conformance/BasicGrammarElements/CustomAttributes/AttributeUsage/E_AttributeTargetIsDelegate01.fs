@@ -3,11 +3,11 @@ open System
 [<AttributeUsage(AttributeTargets.Class)>]
 type CustomClassAttribute() =
     inherit Attribute()
-    
+
 [<AttributeUsage(AttributeTargets.Struct)>]
 type CustomStructAttribute() =
     inherit Attribute()
-    
+
 [<AttributeUsage(AttributeTargets.Interface)>]
 type CustomInterfaceAttribute() =
     inherit Attribute()

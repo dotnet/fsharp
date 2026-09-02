@@ -1,4 +1,4 @@
-// #Regression #Conformance #TypeInference #TypeConstraints 
+// #Regression #Conformance #TypeInference #TypeConstraints
 
 
 // Verify error associated with open type variable

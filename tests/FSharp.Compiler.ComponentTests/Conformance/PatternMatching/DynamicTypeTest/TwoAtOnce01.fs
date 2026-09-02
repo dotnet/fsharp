@@ -1,17 +1,17 @@
-// #Conformance #PatternMatching #TypeTests 
+// #Conformance #PatternMatching #TypeTests
 
 
 // Perform multiple dynamic type tests at once
 
 let printCode x y =
     match box x, box y with
-    | (:? int as ix), (:? int as iy) 
+    | (:? int as ix), (:? int as iy)
         -> sprintf "%d-%d" ix iy
-    | (:? string as sx), (:? string as sy) 
+    | (:? string as sx), (:? string as sy)
         -> sprintf "%s-%s" sx sy
-    | (:? int as ix), (:? string as sy) 
+    | (:? int as ix), (:? string as sy)
         -> sprintf "%d-%s" ix sy
-    | (:? string as sx), (:? int as iy) 
+    | (:? string as sx), (:? int as iy)
         -> sprintf "%s-%d" sx iy
     | _ -> ""
 
