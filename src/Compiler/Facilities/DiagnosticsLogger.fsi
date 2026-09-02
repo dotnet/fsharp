@@ -408,7 +408,7 @@ val IterateIdxD: f: (int -> 'T -> OperationResult<unit>) -> xs: 'T list -> Opera
 /// Stop on first error. Accumulate warnings and continue.
 val Iterate2D: f: ('T -> 'b -> OperationResult<unit>) -> xs: 'T list -> ys: 'b list -> OperationResult<unit>
 
-val TryD: f: (unit -> OperationResult<'T>) -> g: (exn -> OperationResult<'T>) -> OperationResult<'T>
+val inline TryD: f: (unit -> OperationResult<'T>) -> g: (exn -> OperationResult<'T>) -> OperationResult<'T>
 
 val RepeatWhileD: nDeep: int -> body: (int -> OperationResult<bool>) -> OperationResult<unit>
 
@@ -473,9 +473,16 @@ module internal StackGuardMetrics =
 type StackGuard =
     new: name: string -> StackGuard
 
+    member EnterGuard: unit -> unit
+
+    member ExitGuard: unit -> unit
+
+    /// The rare slow path: run the continuation on a fresh thread with a bigger stack.
+    member RunOnNewStack: f: (unit -> 'T) * memberName: string * path: string * line: int -> 'T
+
     /// Execute the new function, on a new thread if necessary
-    member Guard:
-        f: (unit -> 'T) *
+    member inline Guard:
+        [<InlineIfLambda>] f: (unit -> 'T) *
         [<CallerMemberName; Optional; DefaultParameterValue("")>] memberName: string *
         [<CallerFilePath; Optional; DefaultParameterValue("")>] path: string *
         [<CallerLineNumber; Optional; DefaultParameterValue(0)>] line: int ->
