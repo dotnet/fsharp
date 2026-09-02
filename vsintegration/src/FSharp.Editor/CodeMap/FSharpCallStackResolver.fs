@@ -3,9 +3,11 @@
 namespace Microsoft.VisualStudio.FSharp.Editor
 
 open System
+open System.Collections.Generic
 
 open Microsoft.CodeAnalysis
 
+open FSharp.Compiler.EditorServices
 open FSharp.Compiler.Symbols
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.Text
@@ -316,12 +318,41 @@ module internal FSharpCallStackResolver =
                     Measure
             ]
 
+    /// The line of the type or module that owns a source line. An entity's own range covers nothing
+    /// but its name, so a line inside a member body belongs to no entity and a line in the blank
+    /// space, doc comment or attributes between two declarations belongs to both by proximity -
+    /// which is how a static initializer came to be answered with the generic type above it. The
+    /// parse tree has the range of each declaration in full, so the line is answered by the
+    /// innermost declaration that actually contains it, and trivia, contained by none, is answered
+    /// by the declaration below it, which is what the trivia was written for.
+    let private declarationOwning (shape: NavigationItems) line =
+        let declarations =
+            shape.Declarations
+            |> Array.map _.Declaration
+            // A namespace is no entity of its own and its range spans the whole file.
+            |> Array.filter (fun d -> d.Kind <> NavigationItemKind.Namespace)
+
+        let containing =
+            declarations
+            |> Array.filter (fun d -> d.Range.StartLine <= line && line <= d.Range.EndLine)
+            // The innermost one: a module's range spans every type written inside it.
+            |> Array.sortByDescending _.Range.StartLine
+            |> Array.tryHeadV
+
+        let below () =
+            declarations
+            |> Array.filter (fun d -> d.Range.StartLine > line)
+            |> Array.sortBy _.Range.StartLine
+            |> Array.tryHeadV
+
+        containing |> ValueOption.orElseWith below |> ValueOption.map _.Range
+
     /// A `<StartupCode$…>.$Demo.$Demo` frame names the file, not the construct: its path is useless,
     /// but the debugger reports the source line the initializer is running. Resolve by that position -
     /// the public binding written on the line (`initialized`), else the type or module whose static
     /// initializer owns it (`Initialized`); private `static let` bindings are absent from the public
     /// signature, so the enclosing entity is the closest honest name.
-    let private tryResolveByPosition (position: SourcePosition) (signature: FSharpAssemblySignature) =
+    let private tryResolveByPosition (position: SourcePosition) (declaration: range) (signature: FSharpAssemblySignature) =
         let sameFile (r: range) =
             String.Equals(r.FileName, position.File, StringComparison.OrdinalIgnoreCase)
 
@@ -357,11 +388,14 @@ module internal FSharpCallStackResolver =
                     DisplayName = m.DisplayName
                 }
         | ValueNone ->
+            // The declaration's own entity: the outermost one written inside its range, since
+            // anything nested starts further down.
             entities
             |> Seq.filter (fun entity ->
                 sameFile entity.DeclarationLocation
-                && entity.DeclarationLocation.StartLine <= position.Line)
-            |> Seq.sortByDescending (fun entity -> entity.DeclarationLocation.StartLine)
+                && declaration.StartLine <= entity.DeclarationLocation.StartLine
+                && entity.DeclarationLocation.StartLine <= declaration.EndLine)
+            |> Seq.sortBy (fun entity -> entity.DeclarationLocation.StartLine)
             |> Seq.tryHeadV
             |> ValueOption.map (fun entity ->
                 // A private `static let` runs in the type's static constructor; naming that as the
@@ -449,11 +483,14 @@ module internal FSharpCallStackResolver =
 
     /// Module initialization names the file rather than a construct, so only the debugger's position
     /// places it; everything else is found by name.
-    let private tryResolveInProject (frame: ParsedFrame) (signature: FSharpAssemblySignature) =
+    let private tryResolveInProject (frame: ParsedFrame) shapeOf (signature: FSharpAssemblySignature) =
         match frame.Member with
         | FrameStartupCode ->
             frame.SourcePosition
-            |> ValueOption.bind (fun position -> tryResolveByPosition position signature)
+            |> ValueOption.bind (fun position ->
+                shapeOf position.File
+                |> ValueOption.bind (fun shape -> declarationOwning shape position.Line)
+                |> ValueOption.bind (fun declaration -> tryResolveByPosition position declaration signature))
         | _ -> tryResolveByName frame signature
 
     let private projectsProducing (workspace: Workspace) (assemblyName: string) =
@@ -474,11 +511,36 @@ module internal FSharpCallStackResolver =
                     let! checker, _, _, options = project.GetFSharpCompilationOptionsAsync()
                     let! results = checker.ParseAndCheckProject(options)
 
+                    // Only a startup frame is placed by its line rather than its name, and only that
+                    // needs the shape of the file it landed in.
+                    let shapes = Dictionary<string, NavigationItems>(StringComparer.OrdinalIgnoreCase)
+
+                    for file in
+                        frames
+                        |> Seq.choose (fun frame ->
+                            match frame.Member, frame.SourcePosition with
+                            | FrameStartupCode, ValueSome position -> Some position.File
+                            | _ -> None)
+                        |> Seq.distinct do
+                        match
+                            project.Documents
+                            |> Seq.tryFind (fun d -> String.Equals(d.FilePath, file, StringComparison.OrdinalIgnoreCase))
+                        with
+                        | None -> ()
+                        | Some document ->
+                            let! parseResults = document.GetFSharpParseResultsAsync "FSharpCallStackResolver"
+                            shapes.[file] <- Navigation.getNavigation parseResults.ParseTree
+
+                    let shapeOf file =
+                        match shapes.TryGetValue file with
+                        | true, shape -> ValueSome shape
+                        | _ -> ValueNone
+
                     frames
                     |> Array.iteri (fun i frame ->
                         if resolved.[i].IsNone then
                             resolved.[i] <-
-                                tryResolveInProject frame results.AssemblySignature
+                                tryResolveInProject frame shapeOf results.AssemblySignature
                                 |> ValueOption.map (fun resolution ->
                                     {
                                         DeclarationRange = resolution.Range
