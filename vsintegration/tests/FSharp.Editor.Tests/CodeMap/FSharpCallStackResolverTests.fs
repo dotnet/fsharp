@@ -20,8 +20,8 @@ let private source = CallStackSample.sourceText ()
 
 /// The resolver reports declaration ranges, so expectations are pinned to the source line a
 /// construct is written on rather than to a hard-coded number.
-let private lineOf (snippet: string) =
-    let lines = source.Replace("\r\n", "\n").Split('\n')
+let private lineIn (text: string) (snippet: string) =
+    let lines = text.Replace("\r\n", "\n").Split('\n')
 
     match
         lines
@@ -29,6 +29,8 @@ let private lineOf (snippet: string) =
     with
     | ValueSome i -> i + 1
     | ValueNone -> failwith $"snippet not found in the sample: %s{snippet}"
+
+let private lineOf = lineIn source
 
 let private solution = lazy RoslynTestHelpers.CreateSolution source
 
@@ -205,3 +207,97 @@ let ``A line is answered with the type it is in, not the one before it`` (snippe
 [<Fact>]
 let ``A startup frame with no position stays unresolved`` () =
     Assert.True (resolveParsed (startupFrame ())).IsNone
+
+/// A generic type, then the blank line, doc comment and attribute belonging to the type after it.
+/// Those lines are inside no entity: FCS reports an entity's own line and its members' lines, and
+/// nothing claims the trivia between two declarations.
+[<Literal>]
+let private TypesSeparatedByTrivia =
+    """
+namespace Shipped
+
+open System
+
+module Helpers =
+    let sink (scenario: string) = scenario.Length
+
+type Box<'T>(value: 'T) =
+    member _.Unwrap() = Helpers.sink "generic type member"
+
+/// Doc comment belonging to Initialized.
+[<Sealed>]
+type Initialized(seed: int) =
+    static let staticState = Helpers.sink "static constructor"
+    let state = Helpers.sink "constructor" + seed
+
+    member _.State = state
+    static member StaticState = staticState
+"""
+
+let private resolveStartupIn (text: string) (snippet: string) =
+    let solution = RoslynTestHelpers.CreateSolution text
+    let project = solution.Projects |> Seq.exactlyOne
+    let document = project.Documents |> Seq.exactlyOne
+
+    let frame =
+        { startupFrame () with
+            SourcePosition =
+                ValueSome
+                    {
+                        File = document.FilePath
+                        Line = lineIn text snippet
+                    }
+        }
+
+    FSharpCallStackResolver.tryResolve solution.Workspace project.AssemblyName frame
+    |> CancellableTask.runSynchronouslyWithoutCancellation
+
+/// The demo's static initializer reached the map labelled `Box` - the generic type declared above
+/// `Initialized`, which has no static constructor at all. Every line from the one after `Box`'s last
+/// member down to `Initialized`'s own is a line the answer must not be `Box` on.
+[<Theory>]
+[<InlineData("/// Doc comment belonging to Initialized.", "Initialized")>]
+[<InlineData("[<Sealed>]", "Initialized")>]
+[<InlineData("static let staticState", "Initialized")>]
+[<InlineData("let state = Helpers.sink \"constructor\"", "Initialized")>]
+let ``Trivia between two types is answered with the type below it`` (snippet: string) (expected: string) =
+    match resolveStartupIn TypesSeparatedByTrivia snippet with
+    | ValueNone -> failwith $"expected the line of %s{snippet} to resolve"
+    | ValueSome resolved -> Assert.Equal(expected, resolved.DisplayName)
+
+/// The blank line between `Box`'s last member and `Initialized`'s doc comment, addressed by number
+/// because it holds nothing to search for.
+[<Fact>]
+let ``The blank line between two types is answered with the type below it`` () =
+    let blank = lineIn TypesSeparatedByTrivia "member _.Unwrap" + 1
+
+    let solution = RoslynTestHelpers.CreateSolution TypesSeparatedByTrivia
+    let project = solution.Projects |> Seq.exactlyOne
+    let document = project.Documents |> Seq.exactlyOne
+
+    let frame =
+        { startupFrame () with
+            SourcePosition =
+                ValueSome
+                    {
+                        File = document.FilePath
+                        Line = blank
+                    }
+        }
+
+    match
+        FSharpCallStackResolver.tryResolve solution.Workspace project.AssemblyName frame
+        |> CancellableTask.runSynchronouslyWithoutCancellation
+    with
+    | ValueNone -> failwith "expected the blank line to resolve"
+    | ValueSome resolved -> Assert.Equal("Initialized", resolved.DisplayName)
+
+/// A line that is a member's own is answered with that member, not with the type around it.
+[<Theory>]
+[<InlineData("member _.Unwrap", "Unwrap")>]
+[<InlineData("type Initialized", "``.ctor``")>]
+[<InlineData("static member StaticState", "StaticState")>]
+let ``A member's own line is answered with the member`` (snippet: string) (expected: string) =
+    match resolveStartupIn TypesSeparatedByTrivia snippet with
+    | ValueNone -> failwith $"expected the line of %s{snippet} to resolve"
+    | ValueSome resolved -> Assert.Equal(expected, resolved.DisplayName)
