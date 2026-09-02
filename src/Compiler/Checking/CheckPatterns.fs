@@ -628,8 +628,7 @@ and TcPatLongIdentNewDef warnOnUpperForId warnOnUpper (cenv: cenv) env ad valRep
     | [] ->
         TcPat warnOnUpperForId cenv env valReprInfo vFlags patEnv ty (mkSynPatVar vis id)
 
-    | [arg]
-        when g.langVersion.SupportsFeature LanguageFeature.NameOf && IsNameOf cenv env ad m id ->
+    | [arg] when IsNameOf cenv env ad m id ->
         match TcNameOfExpr cenv env tpenv (ConvSynPatToSynExpr arg) with
         | Expr.Const(Const.String s, m, _) ->
             // Record the resolution of the `nameof` usage so that we can classify it correctly later.

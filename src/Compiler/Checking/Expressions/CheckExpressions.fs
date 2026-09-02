@@ -5872,7 +5872,7 @@ and TcAdjustExprForTypeDirectedConversions (cenv: cenv) (overallTy: OverallTy) a
     let g = cenv.g
 
     match overallTy with
-    | MustConvertTo (isMethodArg, reqdTy) when g.langVersion.SupportsFeature LanguageFeature.AdditionalTypeDirectedConversions || (g.langVersion.SupportsFeature LanguageFeature.NullableOptionalInterop && isMethodArg) ->
+    | MustConvertTo (isMethodArg, reqdTy) when g.langVersion.SupportsFeature LanguageFeature.AdditionalTypeDirectedConversions || isMethodArg ->
         let tcVal = LightweightTcValForUsingInBuildMethodCall g env.TraitContext
         AdjustExprForTypeDirectedConversions tcVal g cenv.amap cenv.infoReader env.AccessRights reqdTy actualTy m expr
     | _ ->
@@ -8992,7 +8992,7 @@ and TcApplicationThen (cenv: cenv) (overallTy: OverallTy) env tpenv mExprAndArg 
             checkHighPrecedenceFunctionApplicationToList [synArg] atomicFlag mExprAndArg
 
         match leftExpr with
-        | ApplicableExpr(expr=NameOfExpr g _) when g.langVersion.SupportsFeature LanguageFeature.NameOf ->
+        | ApplicableExpr(expr=NameOfExpr g _) ->
             let replacementExpr = TcNameOfExpr cenv env tpenv synArg
             TcDelayed cenv overallTy env tpenv mExprAndArg (ApplicableExpr(cenv, replacementExpr, true, None)) g.string_ty ExprAtomicFlag.Atomic delayed
         | _ ->
@@ -9722,7 +9722,7 @@ and TcValueItemThen cenv overallTy env vref tpenv mItem mItemIdent afterResoluti
         //   - it isn't a VSlotDirectCall (uses of base values do not take type arguments
         // Allow `nameof<'T>` for a generic parameter
         match vref with
-        | _ when isNameOfValRef g vref && g.langVersion.SupportsFeature LanguageFeature.NameOf ->
+        | _ when isNameOfValRef g vref ->
             // Record the resolution of the `nameof` usage so that we can classify it correctly later.
             do
                 match afterResolution with
@@ -12544,7 +12544,7 @@ and ApplyAbstractSlotInference (cenv: cenv) (envinner: TcEnv) (_: Val option) (a
 
        [], declaredTypars
 
-and CheckForNonAbstractInterface (g: TcGlobals) declKind tcref (memberFlags: SynMemberFlags) isMemberStatic m =
+and CheckForNonAbstractInterface declKind tcref (memberFlags: SynMemberFlags) isMemberStatic m =
     if isInterfaceTyconRef tcref then
         if memberFlags.MemberKind = SynMemberKind.ClassConstructor then
             error(Error(FSComp.SR.tcStaticInitializersIllegalInInterface(), m))
@@ -12552,11 +12552,8 @@ and CheckForNonAbstractInterface (g: TcGlobals) declKind tcref (memberFlags: Syn
             error(Error(FSComp.SR.tcObjectConstructorsIllegalInInterface(), m))
         elif memberFlags.IsOverrideOrExplicitImpl then
             error(Error(FSComp.SR.tcMemberOverridesIllegalInInterface(), m))
-        elif not (declKind = ExtrinsicExtensionBinding || memberFlags.IsDispatchSlot) then
-            if not isMemberStatic then
-                error(Error(FSComp.SR.tcConcreteMembersIllegalInInterface(), m))
-            else
-                checkLanguageFeatureAndRecover g.langVersion LanguageFeature.StaticMembersInInterfaces m
+        elif not (declKind = ExtrinsicExtensionBinding || memberFlags.IsDispatchSlot) && not isMemberStatic then
+            error(Error(FSComp.SR.tcConcreteMembersIllegalInInterface(), m))
 
 //-------------------------------------------------------------------------
 // TcLetrecBindings - AnalyzeAndMakeAndPublishRecursiveValue s
@@ -12602,7 +12599,7 @@ and AnalyzeRecursiveStaticMemberOrValDecl
              memberFlags.IsOverrideOrExplicitImpl ->
 
            CheckMemberFlags intfSlotTyOpt newslotsOK overridesOK memberFlags id.idRange
-           CheckForNonAbstractInterface g declKind tcref memberFlags true id.idRange
+           CheckForNonAbstractInterface declKind tcref memberFlags true id.idRange
 
            let isExtrinsic = (declKind = ExtrinsicExtensionBinding)
            let tcrefObjTy, enclosingDeclaredTypars, renaming, _, _ = FreshenObjectArgType cenv envinner.TraitContext mBinding TyparRigidity.WillBeRigid tcref isExtrinsic declaredTyconTypars
@@ -12624,7 +12621,7 @@ and AnalyzeRecursiveStaticMemberOrValDecl
         assert (Option.isNone intfSlotTyOpt)
 
         CheckMemberFlags None newslotsOK overridesOK memberFlags id.idRange
-        CheckForNonAbstractInterface g declKind tcref memberFlags true id.idRange
+        CheckForNonAbstractInterface declKind tcref memberFlags true id.idRange
 
         if memberFlags.MemberKind = SynMemberKind.Constructor && tcref.Deref.IsFSharpException then
             error(Error(FSComp.SR.tcConstructorsDisallowedInExceptionAugmentation(), id.idRange))
@@ -12729,7 +12726,7 @@ and AnalyzeRecursiveInstanceMemberDecl
          let argsAndRetTy = NewInferenceType g
          UnifyTypes cenv envinner mBinding ty (mkFunTy g thisTy argsAndRetTy)
 
-         CheckForNonAbstractInterface g declKind tcref memberFlags false memberId.idRange
+         CheckForNonAbstractInterface declKind tcref memberFlags false memberId.idRange
 
          // Determine if a uniquely-identified-override exists based on the information
          // at the member signature. If so, we know the type of this member, and the full slotsig
