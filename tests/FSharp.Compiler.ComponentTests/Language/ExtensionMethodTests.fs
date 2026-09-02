@@ -855,5 +855,5 @@ let a = xs.Select(fun x -> x + 1) |> Seq.length
 let b = System.Linq.Enumerable.Select(xs, (fun x -> x + 1)) |> Seq.length
 if a <> b then failwith "unexpected"
             """
-        |> compile
+        |> compileExeAndRun
         |> shouldSucceed
