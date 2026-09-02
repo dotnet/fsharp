@@ -76,23 +76,20 @@ type internal FSharpGraphProvider() =
 
             componentModel.GetService<VisualStudioWorkspace>()
 
-    /// The debugger encodes the frame's module and mangled name into the node id; `CallStackMethodNode`
-    /// is the schema's own reader for it. The module Uri is relative (`ClassLibrary.dll`) for
-    /// workspace assemblies and absolute for external ones.
-    let frameOf (node: GraphNode) =
-        let frame = CallStackMethodNode node
-
-        match frame.Module, frame.FunctionName with
-        | null, _ -> ValueNone
-        | _, (null | "") -> ValueNone
-        | moduleUri, functionName ->
+    /// The assembly the debugger named as the frame's module, which it leaves empty on accessors and
+    /// on module initialization. The Uri is relative (`ClassLibrary.dll`) for workspace assemblies
+    /// and absolute for external ones.
+    let moduleAssemblyOf (frame: CallStackMethodNode) =
+        match frame.Module with
+        | null -> ValueNone
+        | moduleUri ->
             let modulePath =
                 if moduleUri.IsAbsoluteUri then
                     moduleUri.LocalPath
                 else
                     moduleUri.OriginalString
 
-            ValueSome(Path.GetFileNameWithoutExtension modulePath, functionName)
+            ValueSome(Path.GetFileNameWithoutExtension modulePath)
 
     /// The source position the debugger already resolved for a frame - the only usable anchor for a
     /// startup frame, whose name (`$Demo.$Demo`) points at the file rather than the construct.
@@ -315,70 +312,51 @@ type internal FSharpGraphProvider() =
             let parsedFrames =
                 [|
                     for frameNode in context.UnhandledInputNodes() do
-                        match FSharpStackFrameNameParser.parse (CallStackMethodNode frameNode).FunctionName with
+                        let frame = CallStackMethodNode frameNode
+
+                        match FSharpStackFrameNameParser.parse frame.FunctionName with
                         | ValueNone -> ()
                         | ValueSome parsed ->
-                            let position = frameSourcePosition frameNode
+                            let facts =
+                                {
+                                    Frame =
+                                        { parsed with
+                                            SourcePosition = frameSourcePosition frameNode
+                                        }
+                                    ModuleAssembly = moduleAssemblyOf frame
+                                }
 
-                            yield
-                                frameNode,
-                                { parsed with
-                                    SourcePosition = position
-                                },
-                                position
+                            yield frameNode, facts, FSharpCallStackPlan.decide assemblyNameForFile facts
                 |]
 
-            // FSharp.Core's own async/task/seq plumbing - `MoveNext`, `Invoke`, `ResumableStateMachine` -
-            // rides the real stack, and the SourceLink it ships with stops the debugger folding it into
-            // External Code the way it folds the BCL.
-            let isFSharpCoreFrame (frameNode: GraphNode) (position: struct (string * int) voption) =
-                match frameOf frameNode with
-                | ValueSome(name, _) -> String.Equals(name, "FSharp.Core", StringComparison.OrdinalIgnoreCase)
-                | ValueNone ->
-                    match position with
-                    | ValueSome position -> position.File.IndexOf("FSharp.Core", StringComparison.OrdinalIgnoreCase) >= 0
-                    | ValueNone -> false
-
-            // Frames we can resolve: F# code in the workspace, addressed by the assembly the module Uri
-            // names or, when it is empty, the project the debugger's source position points into.
-            let candidates =
+            // The pipeline's `ResolveUnresolvedNodesStep` calls `MarkAsExternal` on every unresolved
+            // frame whose `IsExternal` is set, collapsing it into the map's External Code group rather
+            // than giving it a node of its own.
+            let external =
                 [|
-                    for frameNode, parsed, position in parsedFrames do
-                        if not (isFSharpCoreFrame frameNode position) then
-                            let assemblyName =
-                                match frameOf frameNode with
-                                | ValueSome(name, _) -> ValueSome name
-                                | ValueNone -> position |> ValueOption.bind (fun position -> assemblyNameForFile position.File)
-
-                            match assemblyName with
-                            | ValueNone -> ()
-                            | ValueSome assemblyName -> yield assemblyName, frameNode, parsed
-                |]
-
-            // Marking those frames external is how the pipeline is told to fold them away: its
-            // `ResolveUnresolvedNodesStep` calls `MarkAsExternal` on every unresolved frame whose
-            // `IsExternal` is set, collapsing it into the map's External Code group instead of giving
-            // it a node of its own. Relabelling them would be pointless - that same step replaces the
-            // node, and the label with it, for anything left unresolved.
-            let core =
-                [|
-                    for frameNode, _, position in parsedFrames do
-                        if isFSharpCoreFrame frameNode position then
+                    for frameNode, _, action in parsedFrames do
+                        if action = FoldAsExternalCode then
                             frameNode
                 |]
 
-            if core.Length > 0 then
+            if external.Length > 0 then
                 use marking = new GraphTransactionScope()
 
-                for frameNode in core do
+                for frameNode in external do
                     CallStackMethodNode(frameNode).IsExternal <- true
 
                 marking.Complete()
 
             let byAssembly =
-                candidates
-                |> Seq.groupBy (fun (assemblyName, _, _) -> assemblyName)
-                |> Seq.map (fun (assemblyName, group) -> assemblyName, group |> Seq.map (fun (_, frameNode, parsed) -> frameNode, parsed))
+                [|
+                    for frameNode, facts, action in parsedFrames do
+                        match action with
+                        | ResolveIn assembly -> yield assembly, frameNode, facts.Frame
+                        | FoldAsExternalCode
+                        | LeaveUnresolved -> ()
+                |]
+                |> Seq.groupBy (fun (assembly, _, _) -> assembly)
+                |> Seq.map (fun (assembly, group) -> assembly, group |> Seq.map (fun (_, frameNode, frame) -> frameNode, frame))
                 |> Seq.toArray
 
             let! resolutions =
