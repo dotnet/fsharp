@@ -96,6 +96,7 @@
     <Compile Include="Navigation\FindDefinitionService.fs" />
     <Compile Include="CodeMap\FSharpStackFrameNameParser.fs" />
     <Compile Include="CodeMap\FSharpCallStackResolver.fs" />
+    <Compile Include="CodeMap\FSharpCallStackPlan.fs" />
     <Compile Include="QuickInfo\WpfFactories.fs" />
     <Compile Include="QuickInfo\Views.fs" />
     <Compile Include="QuickInfo\QuickInfoProvider.fs" />
