@@ -1583,7 +1583,6 @@ featureExtendedStringInterpolation,"Extended string interpolation similar to C# 
 featureWarningWhenMultipleRecdTypeChoice,"Raises warnings when multiple record type matches were found during name resolution because of overlapping field names."
 featureConstraintIntersectionOnFlexibleTypes,"Constraint intersection on flexible types"
 featureChkNotTailRecursive,"Raises warnings if a member or function has the 'TailCall' attribute, but is not being used in a tail recursive way."
-featureExtendedFixedBindings,"extended fixed bindings for byref and GetPinnableReference"
 featurePreferExtensionMethodOverPlainProperty,"prefer extension method over plain property"
 featureWarningIndexedPropertiesGetSetSameType,"Indexed properties getter and setter must have the same type"
 featureChkTailCallAttrOnNonRec,"Raises warnings if the 'TailCall' attribute is used on non-recursive functions."

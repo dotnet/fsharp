@@ -427,11 +427,6 @@
         <target state="translated">více typů podporuje měrné jednotky</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureExtendedFixedBindings">
-        <source>extended fixed bindings for byref and GetPinnableReference</source>
-        <target state="translated">rozšířené pevné vazby pro byref a GetPinnableReference</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureExtendedStringInterpolation">
         <source>Extended string interpolation similar to C# raw string literals.</source>
         <target state="translated">Rozšířená interpolace řetězců podobná nezpracovaným řetězcovým literálům jazyka C#.</target>

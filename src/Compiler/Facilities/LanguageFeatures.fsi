@@ -40,7 +40,6 @@ type LanguageFeature =
     | WarningWhenTailRecAttributeButNonTailRecUsage
     | UnmanagedConstraintCsharpInterop
     | ReuseSameFieldsInStructUnions
-    | ExtendedFixedBindings
     /// RFC-1137
     | PreferExtensionMethodOverPlainProperty
     | WarningIndexedPropertiesGetSetSameType
