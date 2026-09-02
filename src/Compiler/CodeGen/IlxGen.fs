@@ -3315,7 +3315,7 @@ and GenExprAux (cenv: cenv) (cgbuf: CodeGenBuffer) eenv expr (sequel: sequel) =
             // application of local type functions with type parameters = measure types and body = local value - inline the body
             GenExpr cenv cgbuf eenv v sequel
 
-        | Expr.App(Expr.Val(RuntimeAsyncReturn g, _, _), _, _, [ _ ], _) -> GenRuntimeAsyncReturnAsStartedTask cenv cgbuf eenv expr sequel
+        | Expr.App _ when TryGetRuntimeAsyncReturn g expr |> Option.isSome -> GenRuntimeAsyncReturnAsStartedTask cenv cgbuf eenv expr sequel
 
         | Expr.App(f, fty, tyargs, curriedArgs, m) -> GenApp cenv cgbuf eenv (f, fty, tyargs, curriedArgs, m) sequel
 
@@ -7199,8 +7199,10 @@ and GenClosureAsLocalTypeFunction cenv (cgbuf: CodeGenBuffer) eenv thisVars expr
 
         strip cloinfo.ilCloLambdas
 
-    let isRuntimeAsyncUnit = IsRuntimeAsyncReturnUnitExpr g body
-    let isRuntimeAsync, body = TryUnwrapRuntimeAsyncReturnExpr g body
+    let isRuntimeAsync, isRuntimeAsyncUnit, body =
+        match TryGetRuntimeAsyncReturn g body with
+        | Some info -> true, List.isEmpty info.TypeArgs, info.Body
+        | None -> false, false, body
 
     let eenvinner =
         { eenvinner with
@@ -7262,8 +7264,10 @@ and GenClosureAsFirstClassFunction cenv (cgbuf: CodeGenBuffer) eenv thisVars m e
 
     let ilCloTypeRef = cloinfo.cloSpec.TypeRef
 
-    let isRuntimeAsyncUnit = IsRuntimeAsyncReturnUnitExpr g body
-    let isRuntimeAsync, body = TryUnwrapRuntimeAsyncReturnExpr g body
+    let isRuntimeAsync, isRuntimeAsyncUnit, body =
+        match TryGetRuntimeAsyncReturn g body with
+        | Some info -> true, List.isEmpty info.TypeArgs, info.Body
+        | None -> false, false, body
 
     let eenvinner =
         { eenvinner with
@@ -9932,10 +9936,10 @@ and GenMethodForBinding
             | h :: t -> [ h ], t, true
         | _ -> [], methLambdaVars, false
 
-    let isRuntimeAsyncUnit = IsRuntimeAsyncReturnUnitExpr g methLambdaBody
-
-    let isRuntimeAsync, methLambdaBody =
-        TryUnwrapRuntimeAsyncReturnExpr g methLambdaBody
+    let isRuntimeAsync, isRuntimeAsyncUnit, methLambdaBody =
+        match TryGetRuntimeAsyncReturn g methLambdaBody with
+        | Some info -> true, List.isEmpty info.TypeArgs, info.Body
+        | None -> false, false, methLambdaBody
 
     let nonUnitNonSelfMethodVars, body =
         BindUnitVars cenv.g (nonSelfMethodVars, paramInfos, methLambdaBody)

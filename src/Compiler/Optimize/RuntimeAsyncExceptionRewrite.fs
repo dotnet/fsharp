@@ -5,6 +5,7 @@ module internal FSharp.Compiler.RuntimeAsyncExceptionRewrite
 open FSharp.Compiler
 open FSharp.Compiler.DiagnosticsLogger
 open FSharp.Compiler.RuntimeAsync
+open FSharp.Compiler.RuntimeAsyncAnalysis
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.TypedTree
@@ -28,20 +29,18 @@ let private RuntimeAsyncFilterCondition m resultTy filter thenExpr elseExpr =
     let decisionTree = TDSwitch(filter, [ matchCase ], Some defaultCase, m)
     matchBuilder.Close(decisionTree, m, resultTy)
 
-let private IsRuntimeAsyncExceptionHandler (g: TcGlobals) expr =
+let private IsRuntimeAsyncExceptionHandler (analyzer: RuntimeAsyncAnalyzer) expr =
     match stripExpr expr with
-    | TryFinallyExpr(_, _, _, _, compensation, _) -> ExprContainsRuntimeAsyncSuspension g compensation
-    | TryWithExpr(_, _, _, _, _, filter, _, handler, _) ->
-        ExprContainsRuntimeAsyncSuspension g filter
-        || ExprContainsRuntimeAsyncSuspension g handler
+    | TryFinallyExpr(_, _, _, _, compensation, _) -> analyzer.ContainsSuspension compensation
+    | TryWithExpr(_, _, _, _, _, filter, _, handler, _) -> analyzer.ContainsSuspension filter || analyzer.ContainsSuspension handler
     | _ -> false
 
-let private ExprContainsRuntimeAsyncExceptionHandler (g: TcGlobals) expr =
+let private ExprContainsRuntimeAsyncExceptionHandler (analyzer: RuntimeAsyncAnalyzer) expr =
     let folder =
         { ExprFolder0 with
             exprIntercept =
                 fun _ noInterceptF acc expr ->
-                    if acc || IsRuntimeAsyncExceptionHandler g expr then
+                    if acc || IsRuntimeAsyncExceptionHandler analyzer expr then
                         true
                     else
                         noInterceptF acc expr
@@ -50,6 +49,8 @@ let private ExprContainsRuntimeAsyncExceptionHandler (g: TcGlobals) expr =
     FoldExpr folder false expr
 
 let RewriteRuntimeAsyncExceptionHandlers (g: TcGlobals) expr =
+    let analyzer = RuntimeAsyncAnalyzer(g, fun _ -> None)
+
     let rewriteCapturedException m resultTy body buildResult =
         let choiceTy = RuntimeAsyncChoiceTy g resultTy
         let resultVal, _ = mkCompGenLocal m "__runtimeAsyncResult" choiceTy
@@ -85,7 +86,7 @@ let RewriteRuntimeAsyncExceptionHandlers (g: TcGlobals) expr =
 
     let postTransform expr =
         match expr with
-        | TryFinallyExpr(_, _, resultTy, body, compensation, m) when IsRuntimeAsyncExceptionHandler g expr ->
+        | TryFinallyExpr(_, _, resultTy, body, compensation, m) when IsRuntimeAsyncExceptionHandler analyzer expr ->
             Some(
                 rewriteCapturedException m resultTy body (fun bodySucceeded bodyValue exceptionValue ->
                     let result =
@@ -99,7 +100,7 @@ let RewriteRuntimeAsyncExceptionHandlers (g: TcGlobals) expr =
 
                     mkCompGenSequential m compensation result)
             )
-        | TryWithExpr(_, _, resultTy, body, filterVal, filter, handlerVal, handler, m) when IsRuntimeAsyncExceptionHandler g expr ->
+        | TryWithExpr(_, _, resultTy, body, filterVal, filter, handlerVal, handler, m) when IsRuntimeAsyncExceptionHandler analyzer expr ->
             Some(
                 rewriteCapturedException m resultTy body (fun bodySucceeded bodyValue exceptionExpr ->
                     let filter =
@@ -117,7 +118,7 @@ let RewriteRuntimeAsyncExceptionHandlers (g: TcGlobals) expr =
             )
         | _ -> None
 
-    if ExprContainsRuntimeAsyncExceptionHandler g expr then
+    if ExprContainsRuntimeAsyncExceptionHandler analyzer expr then
         RewriteExpr
             {
                 PreIntercept = None

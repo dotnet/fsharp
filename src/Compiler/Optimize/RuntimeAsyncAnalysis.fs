@@ -6,6 +6,8 @@ open Internal.Utilities.Collections
 open Internal.Utilities.Library
 open Internal.Utilities.Library.Extras
 
+open System.Collections.Generic
+
 open FSharp.Compiler
 open FSharp.Compiler.DiagnosticsLogger
 open FSharp.Compiler.TcGlobals
@@ -17,40 +19,92 @@ open FSharp.Compiler.TypeRelations
 
 open FSharp.Compiler.RuntimeAsync
 
-let rec private hasRuntimeAsyncFragmentBody (g: TcGlobals) (getLambdaBody: ValRef -> Expr option) visiting (vref: ValRef) =
-    if List.exists ((=) vref.Stamp) visiting then
-        false
-    else
-        match getLambdaBody vref with
-        | Some body -> exprContainsRuntimeAsyncFragment g getLambdaBody (vref.Stamp :: visiting) body
-        | None -> false
+type RuntimeAsyncAnalyzer(g: TcGlobals, getLambdaBody: ValRef -> Expr option) =
+    let expressionCache = Dictionary<Expr, bool>(HashIdentity.Reference)
+    let suspensionCache = Dictionary<Expr, bool>(HashIdentity.Reference)
+    let valueCache = Dictionary<Stamp, bool>()
+    let visitingValues = HashSet<Stamp>()
 
-and private exprContainsRuntimeAsyncFragment (g: TcGlobals) (getLambdaBody: ValRef -> Expr option) visiting expr =
-    let folder =
-        { ExprFolder0 with
-            exprIntercept =
-                fun _ noInterceptF acc expr ->
-                    if acc then
-                        true
-                    else
-                        match stripExpr expr with
-                        | Expr.App(Expr.Val(RuntimeAsyncReturn g, _, _), _, _, _, _) -> true
-                        | _ when IsRuntimeAsyncSuspensionExpr g expr -> true
-                        | Expr.Val(vref, _, _) when vref.ShouldInline || vref.IsLocalRef ->
-                            hasRuntimeAsyncFragmentBody g getLambdaBody visiting vref
-                        | _ -> noInterceptF acc expr
-        }
+    let rec containsValue (vref: ValRef) =
+        match valueCache.TryGetValue vref.Stamp with
+        | true, result -> result, true
+        | _ when visitingValues.Contains vref.Stamp -> false, false
+        | _ ->
+            visitingValues.Add vref.Stamp |> ignore
 
-    FoldExpr folder false expr
+            let result, complete =
+                match getLambdaBody vref with
+                | Some body -> containsExpression body
+                | None -> false, true
 
-let ExprContainsRuntimeAsyncFragment (g: TcGlobals) (getLambdaBody: ValRef -> Expr option) expr =
-    exprContainsRuntimeAsyncFragment g getLambdaBody [] expr
+            visitingValues.Remove vref.Stamp |> ignore
 
-let ShouldForceRuntimeAsyncInline (g: TcGlobals) runtimeAsyncContext (getLambdaBody: ValRef -> Expr option) (vref: ValRef) inlineBody =
+            if complete then
+                valueCache[vref.Stamp] <- result
+
+            result, complete
+
+    and containsExpression expr =
+        match expressionCache.TryGetValue expr with
+        | true, result -> result, true
+        | _ ->
+            let mutable complete = true
+
+            let folder =
+                { ExprFolder0 with
+                    exprIntercept =
+                        fun _ noInterceptF acc expr ->
+                            if acc then
+                                true
+                            else
+                                match TryGetRuntimeAsyncBoundary g expr with
+                                | Some _ -> true
+                                | None ->
+                                    match stripExpr expr with
+                                    | Expr.Val(vref, _, _) when vref.ShouldInline || vref.IsLocalRef ->
+                                        let result, valueComplete = containsValue vref
+
+                                        if not valueComplete then
+                                            complete <- false
+
+                                        result
+                                    | _ -> noInterceptF acc expr
+                }
+
+            let result = FoldExpr folder false expr
+
+            if complete then
+                expressionCache[expr] <- result
+
+            result, complete
+
+    member _.ContainsFragment expr = containsExpression expr |> fst
+
+    member _.ContainsSuspension expr =
+        match suspensionCache.TryGetValue expr with
+        | true, result -> result
+        | _ ->
+            let folder =
+                { ExprFolder0 with
+                    exprIntercept =
+                        fun _ noInterceptF acc expr ->
+                            if acc then
+                                true
+                            else
+                                match TryGetRuntimeAsyncBoundary g expr with
+                                | Some(RuntimeAsyncBoundary.Suspension _) -> true
+                                | _ -> noInterceptF acc expr
+                }
+
+            let result = FoldExpr folder false expr
+            suspensionCache[expr] <- result
+            result
+
+let ShouldForceRuntimeAsyncInline (analyzer: RuntimeAsyncAnalyzer) runtimeAsyncContext (vref: ValRef) inlineBody =
     let containsRuntimeAsyncFragment =
         match inlineBody with
-        | Some body -> ExprContainsRuntimeAsyncFragment g getLambdaBody body
-        | None -> hasRuntimeAsyncFragmentBody g getLambdaBody [] vref
+        | Some body -> analyzer.ContainsFragment body
+        | None -> analyzer.ContainsFragment(exprForValRef vref.Range vref)
 
     if containsRuntimeAsyncFragment then
         true
@@ -59,19 +113,12 @@ let ShouldForceRuntimeAsyncInline (g: TcGlobals) runtimeAsyncContext (getLambdaB
     elif not (vref.ShouldInline || vref.IsLocalRef) then
         false
     else
-        hasRuntimeAsyncFragmentBody g getLambdaBody [] vref
+        analyzer.ContainsFragment(exprForValRef vref.Range vref)
 
-let ShouldForceRuntimeAsyncApplication
-    (g: TcGlobals)
-    runtimeAsyncContext
-    (getLambdaBody: ValRef -> Expr option)
-    (vref: ValRef)
-    inlineBody
-    args
-    =
-    ShouldForceRuntimeAsyncInline g runtimeAsyncContext getLambdaBody vref inlineBody
+let ShouldForceRuntimeAsyncApplication (analyzer: RuntimeAsyncAnalyzer) runtimeAsyncContext (vref: ValRef) inlineBody args =
+    ShouldForceRuntimeAsyncInline analyzer runtimeAsyncContext vref inlineBody
     || ((vref.ShouldInline || vref.InlineIfLambda)
-        && List.exists (ExprContainsRuntimeAsyncFragment g getLambdaBody) args)
+        && List.exists analyzer.ContainsFragment args)
     || (runtimeAsyncContext
         && vref.ShouldInline
         && List.exists
@@ -244,7 +291,17 @@ let private TryGetRuntimeAsyncNonPreservableAlias (g: TcGlobals) expr =
     | _ -> None
 
 let private analyzeRuntimeAsyncExpr (g: TcGlobals) expr =
+    let cache = Dictionary<Expr, RuntimeAsyncFlowSummary>(HashIdentity.Reference)
+
     let rec analyzeExpr expr =
+        match cache.TryGetValue expr with
+        | true, summary -> summary
+        | _ ->
+            let summary = analyzeExprCore expr
+            cache[expr] <- summary
+            summary
+
+    and analyzeExprCore expr =
         match stripExpr expr with
         | Expr.Const _
         | Expr.Val _

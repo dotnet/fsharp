@@ -159,10 +159,22 @@ closure containing `Await`, and later `Combine`/`Delay` calls apply that closure
 Dead branches eliminated by optimization do not reach code generation and do
 not produce a suspension-outside-runtime-async diagnostic.
 
+Runtime-async boundary recognition is centralized in
+`TypedTree/RuntimeAsync.fs`. The `RuntimeAsyncBoundary` type distinguishes a
+return marker from a suspension call, and consumers use the shared
+recognizers rather than matching typed-tree shapes independently.
+
+The optimizer uses a context-local `RuntimeAsyncAnalyzer`. It memoizes
+completed expression results by reference identity and inline-value results by
+value stamp, with a visiting set for recursive inline-value graphs. The cache
+is not global: optimizer environments can provide different inline bodies, and
+optimization creates new expression trees. Context-dependent decisions such as
+`runtimeAsyncContext` remain outside the cached facts.
+
 ## Code generation
 
-`IlxGen.fs` recognises the return-marker family in three placements
-(`TryUnwrapRuntimeAsyncReturnExpr`, which strips `DebugPoint` wrappers):
+`IlxGen.fs` recognises the return-marker family in three placements through the
+shared runtime-async boundary contract, which strips `DebugPoint` wrappers:
 
 1. **Method body** (`GenMethodForBinding`): the marker is unwrapped from the
    top of the method lambda body; the generated `ILMethodDef` gets

@@ -2584,10 +2584,10 @@ let rec OptimizeExpr cenv (env: IncrementalOptimizationEnv) expr =
     | Expr.Op (op, tyargs, args, m) -> 
         OptimizeExprOp cenv env (op, tyargs, args, m)
 
-    | Expr.App (f, fty, tyargs, argsl, m) -> 
-        match expr with
-        | Expr.App(Expr.Val(RuntimeAsyncReturn g, _, _), fty, _, [ body ], _) ->
-            let bodyR, bodyInfo = OptimizeExpr cenv { env with runtimeAsyncContext = true } body
+    | Expr.App (f, fty, tyargs, argsl, m) ->
+        match TryGetRuntimeAsyncReturn g expr with
+        | Some info ->
+            let bodyR, bodyInfo = OptimizeExpr cenv { env with runtimeAsyncContext = true } info.Body
             let reportedStamps = HashSet<Stamp>()
 
             for v in GetRuntimeAsyncNonPreservableUses g bodyR do
@@ -2599,20 +2599,23 @@ let rec OptimizeExpr cenv (env: IncrementalOptimizationEnv) expr =
             { bodyInfo with
                 HasEffect = true
                 Info = UnknownValue }
-        | DelegateInvokeExpr g (delInvokeRef, delInvokeTy, tyargs, delExpr, delInvokeArg, m) ->
-            OptimizeFSharpDelegateInvoke cenv env (delInvokeRef, delExpr, delInvokeTy, tyargs, delInvokeArg, m) 
-        | _ -> 
-        let attempt = 
-            if IsDebugPipeRightExpr cenv expr then
-                Some (OptimizeDebugPipeRights cenv env expr)
-            else None
-        match attempt with
-        | Some res -> res
         | None ->
-        // eliminate uses of query
-        match TryDetectQueryQuoteAndRun cenv expr with 
-        | Some newExpr -> OptimizeExpr cenv env newExpr
-        | None -> OptimizeApplication cenv env (f, fty, tyargs, argsl, m) 
+            match expr with
+            | DelegateInvokeExpr g (delInvokeRef, delInvokeTy, tyargs, delExpr, delInvokeArg, m) ->
+                OptimizeFSharpDelegateInvoke cenv env (delInvokeRef, delExpr, delInvokeTy, tyargs, delInvokeArg, m)
+            | _ ->
+                let attempt =
+                    if IsDebugPipeRightExpr cenv expr then
+                        Some(OptimizeDebugPipeRights cenv env expr)
+                    else
+                        None
+
+                match attempt with
+                | Some res -> res
+                | None ->
+                    match TryDetectQueryQuoteAndRun cenv expr with
+                    | Some newExpr -> OptimizeExpr cenv env newExpr
+                    | None -> OptimizeApplication cenv env (f, fty, tyargs, argsl, m)
 
     | Expr.Lambda (_lambdaId, _, _, argvs, _body, m, bodyTy) -> 
         let valReprInfo = ValReprInfo ([], [argvs |> List.map (fun _ -> ValReprInfo.unnamedTopArg1)], ValReprInfo.unnamedRetVal)
@@ -3689,7 +3692,8 @@ and TryInlineApplication cenv env finfo (valExpr: Expr) (tyargs: TType list, arg
         | CurriedLambdaValue (_, _, _, body, _) -> Some body
         | _ -> None
 
-    let containsRuntimeAsyncFragment = ExprContainsRuntimeAsyncFragment g getRuntimeAsyncLambdaBody
+    let runtimeAsyncAnalyzer = RuntimeAsyncAnalyzer(g, getRuntimeAsyncLambdaBody)
+    let containsRuntimeAsyncFragment = runtimeAsyncAnalyzer.ContainsFragment
     let reoptimizeRuntimeAsync reduced =
         let reduced = InlineRuntimeAsyncLambdaArgument g containsRuntimeAsyncFragment reduced
 
@@ -3705,9 +3709,8 @@ and TryInlineApplication cenv env finfo (valExpr: Expr) (tyargs: TType list, arg
         match stripExpr valExpr with
         | Expr.Val(vref, _, _) ->
             ShouldForceRuntimeAsyncApplication
-                g
+                runtimeAsyncAnalyzer
                 env.runtimeAsyncContext
-                getRuntimeAsyncLambdaBody
                 vref
                 inlineBody
                 args

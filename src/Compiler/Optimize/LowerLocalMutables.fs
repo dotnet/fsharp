@@ -102,21 +102,17 @@ let DecideExpr cenv exprF noInterceptF z expr  =
         let z =  (z, iimpls) ||> List.fold CheckInterfaceImpl 
         z
 
-    // A __runtimeAsyncReturn application that does not end up at the top of a method or
-    // closure body is re-homed into a compiler-synthesized closure during code generation
-    // (GenRuntimeAsyncReturnAsStartedTask). Treat the argument as a lambda body so that its
-    // free mutable locals escape and are promoted to reference cells shared with the
-    // enclosing scope. When the application already is a lambda body this recomputes the
-    // same escapes, which is harmless.
-    | Expr.App (Expr.Val (RuntimeAsyncReturn g, _, _), _, _, [ body ], _) ->
-        let z = Zset.union z (DecideEscapes [] body)
-        exprF z body
-
     | Expr.Op (c, tyargs, args, _m) ->
         DecideExprOp exprF noInterceptF z expr (c, tyargs, args) 
 
-    | _ -> 
-        noInterceptF z expr
+    | _ ->
+        match TryGetRuntimeAsyncReturn g expr with
+        | Some info ->
+            let z = Zset.union z (DecideEscapes [] info.Body)
+            exprF z info.Body
+        | None ->
+            noInterceptF z expr
+
 
 /// Find all the mutable locals that escape a binding
 let DecideBinding cenv z (TBind(v, expr, _m) as bind) = 
@@ -206,5 +202,4 @@ let TransformImplFile g amap implFile =
                 PostTransform = (fun _ -> None)
                 RewriteQuotations = true
                 StackGuard = StackGuard("AutoboxRewriteStackGuardDepth") } 
-
 

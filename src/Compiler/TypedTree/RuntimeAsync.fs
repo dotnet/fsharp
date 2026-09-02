@@ -8,25 +8,42 @@ open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeOps
 
+type RuntimeAsyncReturnInfo =
+    {
+        Value: ValRef
+        Flags: ValUseFlag
+        Body: Expr
+        TypeArgs: TType list
+    }
+
+type RuntimeAsyncBoundary =
+    | ReturnMarker of RuntimeAsyncReturnInfo
+    | Suspension of ILMethodRef
+
 let (|RuntimeAsyncReturn|_|) (g: TcGlobals) (vref: ValRef) =
     valRefEq g vref g.cgh__runtimeAsyncReturn_vref
     || valRefEq g vref g.cgh__runtimeAsyncReturnValueTask_vref
     || valRefEq g vref g.cgh__runtimeAsyncReturnUnit_vref
     || valRefEq g vref g.cgh__runtimeAsyncReturnValueTaskUnit_vref
 
-let IsRuntimeAsyncReturnUnitExpr (g: TcGlobals) expr =
-    match stripExpr expr with
-    | Expr.App(Expr.Val(RuntimeAsyncReturn g, _, _), _, [], [ _ ], _) -> true
-    | _ -> false
-
-let rec TryUnwrapRuntimeAsyncReturnExpr (g: TcGlobals) expr =
+let rec TryGetRuntimeAsyncReturn (g: TcGlobals) expr =
     match expr with
-    | Expr.DebugPoint(_, innerExpr) ->
-        match TryUnwrapRuntimeAsyncReturnExpr g innerExpr with
-        | true, body -> true, body
-        | false, _ -> false, expr
-    | Expr.App(Expr.Val(RuntimeAsyncReturn g, _, _), _, _, [ body ], _) -> true, body
-    | _ -> false, expr
+    | Expr.DebugPoint(_, innerExpr) -> TryGetRuntimeAsyncReturn g innerExpr
+    | Expr.App(Expr.Val(RuntimeAsyncReturn g as value, flags, _), _, typeArgs, [ body ], _) ->
+        Some
+            {
+                Value = value
+                Flags = flags
+                Body = body
+                TypeArgs = typeArgs
+            }
+    | _ -> None
+
+let TryGetRuntimeAsyncReturnFunction (g: TcGlobals) expr =
+    match stripExpr expr with
+    | Expr.Val(RuntimeAsyncReturn g as value, flags, m) -> Some(value, flags, m)
+    | Expr.App(Expr.Val(RuntimeAsyncReturn g as value, flags, m), _, [ _ ], [], _) -> Some(value, flags, m)
+    | _ -> None
 
 let IsRuntimeAsyncSuspensionMethod (g: TcGlobals) (ilMethRef: ILMethodRef) =
     let (TILObjectReprData(coreLibScope, _, _)) = g.system_Object_tcref.ILTyconInfo
@@ -45,15 +62,11 @@ let IsRuntimeAsyncSuspensionExpr (g: TcGlobals) expr =
     | Expr.Op(TOp.ILCall(_, _, _, _, _, _, _, ilMethodRef, _, _, _), _, _, _) -> IsRuntimeAsyncSuspensionMethod g ilMethodRef
     | _ -> false
 
-let ExprContainsRuntimeAsyncSuspension (g: TcGlobals) expr =
-    let folder =
-        { ExprFolder0 with
-            exprIntercept =
-                fun _ noInterceptF acc expr ->
-                    if acc || IsRuntimeAsyncSuspensionExpr g expr then
-                        true
-                    else
-                        noInterceptF acc expr
-        }
-
-    FoldExpr folder false expr
+let TryGetRuntimeAsyncBoundary (g: TcGlobals) expr =
+    match TryGetRuntimeAsyncReturn g expr with
+    | Some info -> Some(RuntimeAsyncBoundary.ReturnMarker info)
+    | None ->
+        match stripExpr expr with
+        | Expr.Op(TOp.ILCall(_, _, _, _, _, _, _, ilMethodRef, _, _, _), _, _, _) when IsRuntimeAsyncSuspensionMethod g ilMethodRef ->
+            Some(RuntimeAsyncBoundary.Suspension ilMethodRef)
+        | _ -> None

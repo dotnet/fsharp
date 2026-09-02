@@ -8691,11 +8691,7 @@ and Propagate (cenv: cenv) (overallTy: OverallTy) (env: TcEnv) tpenv (expr: Appl
         | DelayedApp (atomicFlag, isSugar, synLeftExprOpt, synArg, mExprAndArg) :: delayedList' ->
             let denv = env.DisplayEnv
 
-            let isRuntimeAsync =
-                match expr.Expr with
-                | Expr.Val(RuntimeAsyncReturn g, _, _)
-                | Expr.App(Expr.Val(RuntimeAsyncReturn g, _, _), _, [ _ ], [], _) -> true
-                | _ -> false
+            let isRuntimeAsync = TryGetRuntimeAsyncReturnFunction g expr.Expr |> Option.isSome
 
             match isRuntimeAsync, UnifyFunctionTypeUndoIfFailed cenv denv mExpr exprTy with
             | true, _ ->
@@ -8992,8 +8988,11 @@ and TcApplicationThen (cenv: cenv) (overallTy: OverallTy) env tpenv mExprAndArg 
 
     let (|RuntimeAsyncApplication|_|) =
         function
-        | ApplicableExpr(expr=Expr.Val (RuntimeAsyncReturn g as vref, flags, m))
-        | ApplicableExpr(expr=Expr.App (Expr.Val (RuntimeAsyncReturn g as vref, flags, m), _, [ _ ], [], _)) ->
+        | ApplicableExpr(expr=runtimeAsyncFunction)
+            when TryGetRuntimeAsyncReturnFunction g runtimeAsyncFunction |> Option.isSome ->
+            match TryGetRuntimeAsyncReturnFunction g runtimeAsyncFunction with
+            | None -> ValueNone
+            | Some(vref, flags, m) ->
             checkLanguageFeatureAndRecover g.langVersion LanguageFeature.RuntimeAsync m
 
             let _, carrierTy = stripFunTy g exprTy
