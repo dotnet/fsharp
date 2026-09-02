@@ -84,7 +84,7 @@
       ]
     },
     "20396": {
-      "sha": "fde33b01960d",
+      "sha": "93efea84dd6f",
       "cats": [
         "Affects-Build-Infra",
         "Affects-Restore",
@@ -170,11 +170,9 @@
       "cats": []
     },
     "20274": {
-      "sha": "ab7da65cb4f5",
+      "sha": "72605fcc5ecb",
       "cats": [
-        "Affects-Bootstrap",
-        "Affects-Compiler-Output",
-        "Scope-Review-Needed"
+        "Affects-Compiler-Output"
       ]
     },
     "20261": {
@@ -194,7 +192,7 @@
       "cats": []
     },
     "20111": {
-      "sha": "08b129be7a5f",
+      "sha": "9a65d0ccbe9f",
       "cats": [
         "Affects-Compiler-Output"
       ]
@@ -295,6 +293,14 @@
     "20432": {
       "sha": "907324bf6293",
       "cats": []
+    },
+    "20235": {
+      "sha": "bc8e74c558a3",
+      "cats": [
+        "Affects-Bootstrap",
+        "Affects-Compiler-Output",
+        "Affects-Test-Tooling"
+      ]
     }
   }
 }
