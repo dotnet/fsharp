@@ -27,7 +27,6 @@ type private CodeSchemaProperties = Microsoft.VisualStudio.Progression.CodeSchem
 type private CodeQualifiedName = Microsoft.VisualStudio.Progression.CodeSchema.CodeQualifiedName
 type private ProgressionNodeCategories = Microsoft.VisualStudio.Progression.CodeSchema.NodeCategories
 type private ProgressionLinkCategories = Microsoft.VisualStudio.Progression.LinkCategories
-type private CodeSchemaLinkCategories = Microsoft.VisualStudio.Progression.CodeSchema.LinkCategories
 
 /// The code schema was shaped for C# and VB, so it has nowhere to record that a frame came from a
 /// module, a union, an active pattern or an inline function. A property carries its own schema, so
@@ -118,31 +117,6 @@ type internal FSharpGraphProvider() =
             | "" -> None
             | file -> Some { File = file; Line = frame.StartLine })
         |> FSharpCallStackPlan.positionOf
-
-    /// The map's edges are drawn by the pipeline's `BuildResultLinks`, which walks the `Calls` links
-    /// between frame nodes. A frame is taken off the map by re-pointing its caller at its callee -
-    /// marking the method external only greys it, because what the pipeline folds into External Code
-    /// it decides in its first step, before this handler ever runs.
-    let liftFrameOutOfChain (graph: Graph) (frameNode: GraphNode) =
-        let callsLinks (links: GraphLink seq) sideOf =
-            links
-            |> Seq.filter (fun link -> link.HasCategory CodeSchemaLinkCategories.Calls && isFrameNode (sideOf link))
-            |> Seq.toArray
-
-        let toCallee = callsLinks frameNode.OutgoingLinks (fun link -> link.Target)
-        let fromCallers = callsLinks frameNode.IncomingLinks (fun link -> link.Source)
-
-        for callerLink in fromCallers do
-            for calleeLink in toCallee do
-                graph.Links.GetOrCreate(callerLink.Source, calleeLink.Target, String.Empty, CodeSchemaLinkCategories.Calls)
-                |> ignore
-
-            graph.Links.Remove callerLink |> ignore
-
-        for calleeLink in toCallee do
-            graph.Links.Remove calleeLink |> ignore
-
-        graph.Nodes.Remove frameNode |> ignore
 
     /// A startup frame carries no module, so its owning assembly is read from the project the source
     /// file belongs to instead.
@@ -361,10 +335,12 @@ type internal FSharpGraphProvider() =
                 |]
 
             // FSharp.Core's plumbing sits in the middle of the stack, where the pipeline folds nothing:
-            // what goes into External Code it decides in its first step, from the debugger's own
-            // Just My Code state, and these frames carry SourceLink so the debugger counts them as
-            // ours. Taking them out of the frame chain is what removes them - the caller is re-pointed
-            // at the callee, so `pipelineLambdas` links straight to the lambda it ran.
+            // what goes into External Code it decides in its first step, from the debugger's own Just
+            // My Code state, and these frames carry SourceLink so the debugger counts them as ours.
+            // Marking them external is all that can be done from here - it greys them rather than
+            // removing them. Taking them out of the frame chain instead, by re-pointing the caller at
+            // the callee, breaks opening the map, so the graph is left with the shape the pipeline
+            // gave it.
             let external =
                 [|
                     for methodNode, _, action in parsedFrames do
@@ -373,20 +349,12 @@ type internal FSharpGraphProvider() =
                 |]
 
             if external.Length > 0 then
-                use folding = new GraphTransactionScope()
+                use marking = new GraphTransactionScope()
 
                 for methodNode in external do
-                    try
-                        for frame in framesOf methodNode |> Seq.toArray do
-                            liftFrameOutOfChain graph frame
+                    CallStackMethodNode(methodNode).IsExternal <- true
 
-                        graph.Nodes.Remove methodNode |> ignore
-                    with e ->
-                        // Nothing here is worth a broken map: a frame left in place is only noise.
-                        CallStackMethodNode(methodNode).IsExternal <- true
-                        Trace.WriteLine $"[FSharpCodeMap] could not fold a FSharp.Core frame: {e.Message}"
-
-                folding.Complete()
+                marking.Complete()
 
             let byAssembly =
                 [|
