@@ -344,3 +344,17 @@ let ``Two initializers in one startup method resolve to different identities`` (
 
     Assert.DoesNotContain(Constructor, moduleInitializer.Traits)
     Assert.Contains(Constructor, staticInitializer.Traits)
+
+/// `Fired` is the event, `Fire` beside it the method that raises it. The compiler exposes an
+/// `[<CLIEvent>]` through a getter as well as through `add_`/`remove_`, so the member found by name
+/// carries both `IsProperty` and `IsEvent` - and whichever of the two is answered, it is an event.
+[<Theory>]
+[<InlineData("Fired")>]
+[<InlineData("get_Fired")>]
+[<InlineData("Fired.get")>]
+let ``The event itself resolves as an event`` (member': string) =
+    match resolve $"%s{Sample}.Publisher.%s{member'}" with
+    | ValueNone -> failwith $"expected %s{member'} to resolve"
+    | ValueSome resolved ->
+        Assert.Equal(ResolvedEvent, resolved.Kind)
+        Assert.Equal(lineOf "member _.Fired", resolved.DeclarationRange.StartLine)
