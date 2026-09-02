@@ -1,10 +1,10 @@
-// #Regression #NoMT #FSI 
+// #Regression #NoMT #FSI
 
 
 // Regression test for FSHARP1.0:1564 - Parsing difference in FSI between redirection and loading with #directives
 
 let failures = ref false
-let report_failure () = 
+let report_failure () =
   printfn " NO"; failures.contents <- true
 let test s b = printfn s;  if b then printfn " OK" else report_failure()
 
@@ -14,7 +14,7 @@ let test s b = printfn s;  if b then printfn " OK" else report_failure()
 #types
 #r "System.Windows.Forms.dll"
 
-let test2 x = 
+let test2 x =
   match x with
   | 1 -> true
 

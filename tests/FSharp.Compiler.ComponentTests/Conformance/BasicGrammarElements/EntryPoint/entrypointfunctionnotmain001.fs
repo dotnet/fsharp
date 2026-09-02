@@ -1,4 +1,4 @@
-// #Regression #NoMT #EntryPoint 
+// #Regression #NoMT #EntryPoint
 // Regression test for FSHARP1.0:1793
 // Explicit program entry point: [<EntryPoint>]
 // Entry point function does not have to be called 'main'
@@ -7,7 +7,7 @@
 
 
 module M =
-    let func (a : string []) = 
+    let func (a : string []) =
         if(a.Length=0) then 0 else 1
 
     [<EntryPoint>]

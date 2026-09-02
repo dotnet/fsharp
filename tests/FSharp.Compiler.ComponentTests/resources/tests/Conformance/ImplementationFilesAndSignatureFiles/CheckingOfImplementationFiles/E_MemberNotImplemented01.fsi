@@ -1,4 +1,4 @@
-// #Regression #Conformance #SignatureFiles 
+// #Regression #Conformance #SignatureFiles
 // Regression test for FSharp1.0:5628
 // Title: incorrect signature check: implementation file missing implementation of method declared in signature file
 

@@ -1,4 +1,4 @@
-// #Regression #Conformance #DataExpressions #Sequences 
+// #Regression #Conformance #DataExpressions #Sequences
 // Regression test for FSHARP1.0:4365
 // Mistake in generation of code for disposal in "match" sequence expressions
 //<Expects status="success"></Expects>

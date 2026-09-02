@@ -86,7 +86,9 @@ type PrelimVal1 =
 
 type UnscopedTyparEnv = UnscopedTyparEnv of NameMap<Typar>
 
-type TcPatLinearEnv = TcPatLinearEnv of tpenv: UnscopedTyparEnv * names: NameMap<PrelimVal1> * takenNames: Set<string>
+/// Represents the context flowed left-to-right through pattern checking.
+/// 'usesActivePattern' is true if an active pattern occurs in the pattern; see TcLetBinding.
+type TcPatLinearEnv = TcPatLinearEnv of tpenv: UnscopedTyparEnv * names: NameMap<PrelimVal1> * takenNames: Set<string> * usesActivePattern: bool
 
 /// Translation of patterns is split into three phases. The first collects names.
 /// The second is run after val_specs have been created for those names and inference

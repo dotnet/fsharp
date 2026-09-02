@@ -117,15 +117,15 @@ module Vector3StructRecordGeneric =
     let inline dot (v1: Vector3StructRecordGeneric<single>) (v2: Vector3StructRecordGeneric<single>) =
         v1.x * v2.x + v1.y * v2.y + v1.z * v2.z
 
-type HiddenRecord = 
-    private { x : int } 
+type HiddenRecord =
+    private { x : int }
     member this.X = this.x
 
-type HiddenUnion = 
+type HiddenUnion =
     private A of int | B of string
     member this.X = match this with A x -> x | B s -> s.Length
 
-type internal Foo private () = 
+type internal Foo private () =
     static member FooMethod() = ()
 
 [<System.Runtime.CompilerServices.InternalsVisibleToAttribute("lib3")>]
@@ -144,7 +144,7 @@ type StructInt32 =
     static member inline InlineWrite(value, x: StructInt32 byref) =
         x.Value <- value;
 
-module PeverifyTest = 
+module PeverifyTest =
     // The test here is simply to peverify the code
     let ``StaticWriteResultANewValue`` () =
         let mutable v = StructInt32(3);

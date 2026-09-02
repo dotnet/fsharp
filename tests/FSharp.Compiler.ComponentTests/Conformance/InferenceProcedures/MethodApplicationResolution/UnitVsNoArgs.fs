@@ -1,4 +1,4 @@
-// #Conformance #TypeInference 
+// #Conformance #TypeInference
 
 
 // Verify the difference between 'unit' and 'no args'

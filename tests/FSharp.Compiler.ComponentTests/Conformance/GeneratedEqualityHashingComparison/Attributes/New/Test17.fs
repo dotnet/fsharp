@@ -1,9 +1,9 @@
-// #Regression #Conformance #TypesAndModules #GeneratedEqualityAndHashing #Attributes 
+// #Regression #Conformance #TypesAndModules #GeneratedEqualityAndHashing #Attributes
 //<Expects status="error" span="(14,17-14,19)" id="FS0001">The type 'R' does not support the 'equality' constraint because it has the 'NoEquality' attribute$</Expects>
 //<Expects status="error" span="(15,12-15,14)" id="FS0001">The type 'R' does not support the 'equality' constraint because it has the 'NoEquality' attribute$</Expects>
 //<Expects status="error" span="(16,12-16,14)" id="FS0001">The type 'R' does not support the 'comparison' constraint\. For example, it does not support the 'System\.IComparable' interface$</Expects>
 
-module M17 = 
+module M17 =
   [<ReferenceEquality()>]
   (* [<StructuralComparison(true)>] *)
   [<NoEquality>]

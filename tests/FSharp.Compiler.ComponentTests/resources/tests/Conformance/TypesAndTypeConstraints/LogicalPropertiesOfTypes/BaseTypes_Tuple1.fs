@@ -1,4 +1,4 @@
-// #Regression #Conformance #TypeConstraints  #ReqNOMT 
+// #Regression #Conformance #TypeConstraints  #ReqNOMT
 // Regression test for FSHARP1.0:5091
 // "CLR4 Tuple.Create<_>(x) leads to error 'type x is not compatible with type x'"
 // "System.Tuple.Create<_>(1) should return a tuple type, not an int"

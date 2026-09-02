@@ -3,6 +3,20 @@
      eng/Versions.props / eng/Version.Details.props. Manually-pinned, single-use packages carry
      their literal version here directly (no indirection through eng/Versions.props). -->
 <Project>
+  <!-- Evaluate these after source-build has replaced the darc versions with the live runtime package version.
+       Defining the aliases in Versions.props freezes the pre-override value and can cause CPM downgrades or
+       prebuilt package usage. The floor only affects normal builds whose flowed version is below MSBuild's
+       minimum; source-build's live version wins when it is newer. -->
+  <PropertyGroup>
+    <SystemRuntimeCentralFloorVersion>10.0.9</SystemRuntimeCentralFloorVersion>
+    <SystemSecurityCryptographyXmlCentralVersion>$(SystemSecurityCryptographyXmlVersion)</SystemSecurityCryptographyXmlCentralVersion>
+    <SystemCollectionsImmutableCentralVersion>$(SystemCollectionsImmutableVersion)</SystemCollectionsImmutableCentralVersion>
+    <SystemReflectionMetadataCentralVersion>$(SystemReflectionMetadataVersion)</SystemReflectionMetadataCentralVersion>
+    <SystemSecurityCryptographyXmlCentralVersion Condition="'$(SystemSecurityCryptographyXmlVersion)' != '' and $([MSBuild]::VersionLessThan('$(SystemSecurityCryptographyXmlVersion)', '$(SystemRuntimeCentralFloorVersion)'))">$(SystemRuntimeCentralFloorVersion)</SystemSecurityCryptographyXmlCentralVersion>
+    <SystemCollectionsImmutableCentralVersion Condition="'$(SystemCollectionsImmutableVersion)' != '' and $([MSBuild]::VersionLessThan('$(SystemCollectionsImmutableVersion)', '$(SystemRuntimeCentralFloorVersion)'))">$(SystemRuntimeCentralFloorVersion)</SystemCollectionsImmutableCentralVersion>
+    <SystemReflectionMetadataCentralVersion Condition="'$(SystemReflectionMetadataVersion)' != '' and $([MSBuild]::VersionLessThan('$(SystemReflectionMetadataVersion)', '$(SystemRuntimeCentralFloorVersion)'))">$(SystemRuntimeCentralFloorVersion)</SystemReflectionMetadataCentralVersion>
+  </PropertyGroup>
+
   <ItemGroup>
     <!-- Optimization data (MIBC) — referenced via @(MIBCPackage) in Directory.Build.targets -->
     <PackageVersion Include="optimization.windows_nt-x86.mibc.runtime" Version="$(optimizationwindows_ntx86MIBCRuntimeVersion)" />

@@ -1,18 +1,18 @@
-// #Regression #Conformance #TypesAndModules #Unions 
+// #Regression #Conformance #TypesAndModules #Unions
 // Implicitly implemented Equals should not throw
 // Regression test for FSHARP1.0:1633
 // Unions
 
 
-type M = 
+type M =
   | A of string
 
 let a = A("Hello")
 
-let e = 
+let e =
     try
        let _ = a.Equals(a)            // compare to itself
-       let _ = a.Equals("")           // compare to another string			
+       let _ = a.Equals("")           // compare to another string
        let _ = a.Equals(10)           // compare to a different type [==> should not throw!]
        0
     with

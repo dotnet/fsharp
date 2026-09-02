@@ -1,13 +1,13 @@
-// #Regression #Conformance #TypeInference 
+// #Regression #Conformance #TypeInference
 
 
 // bug 3246
 
-type r1 =  
+type r1 =
     { x : int }
-    static member Empty = { x = 3 } 
-   
-and r2 = 
+    static member Empty = { x = 3 }
+
+and r2 =
     { x : int }
     static member Empty = { x = 3 }
 

@@ -515,13 +515,8 @@ module TcRecdUnionAndEnumDeclarations =
 
         CheckNamespaceModuleOrTypeName g id
 
-        if g.langVersion.SupportsFeature(LanguageFeature.LowercaseDUWhenRequireQualifiedAccess) then
-
-            if not (String.isLeadingIdentifierCharacterUpperCase name) && not hasRQAAttribute && name <> opNameCons && name <> opNameNil then
-                errorR(NotUpperCaseConstructorWithoutRQA(id.idRange))
-        else
-            if not (String.isLeadingIdentifierCharacterUpperCase name) && name <> opNameCons && name <> opNameNil then
-                errorR(NotUpperCaseConstructor(id.idRange))
+        if not (String.isLeadingIdentifierCharacterUpperCase name) && not hasRQAAttribute && name <> opNameCons && name <> opNameNil then
+            errorR(NotUpperCaseConstructorWithoutRQA(id.idRange))
 
     let private CheckUnionDuplicateFields (elems: Ident list) =
         elems |> List.iteri (fun i (uc1: Ident) -> 
@@ -2698,7 +2693,7 @@ module EstablishTypeDefinitionCores =
               | Some pat ->
                   let ctorArgNames, patEnv, _ = TcSimplePatsOfUnknownType cenv true NoCheckCxs env tpenv pat
 
-                  let (TcPatLinearEnv(_, names, _)) = patEnv
+                  let (TcPatLinearEnv(_, names, _, _)) = patEnv
 
                   for arg in ctorArgNames do
                       let ty = names[arg].Type
@@ -3928,7 +3923,7 @@ module EstablishTypeDefinitionCores =
                               if tycon.IsFSharpStructOrEnumTycon then
                                   let ctorArgNames, patEnv, _ = TcSimplePatsOfUnknownType cenv true CheckCxs envinner tpenv pat
 
-                                  let (TcPatLinearEnv(_, names, _)) = patEnv
+                                  let (TcPatLinearEnv(_, names, _, _)) = patEnv
 
                                   for arg in ctorArgNames do
                                       let ty = names[arg].Type

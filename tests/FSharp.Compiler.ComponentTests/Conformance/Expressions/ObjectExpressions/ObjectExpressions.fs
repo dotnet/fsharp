@@ -22,7 +22,7 @@ let x = { new _ with member this.MyMember() = 42 }
          |> withDiagnostics [
              (Error 772, Line 5, Col 11, Line 5, Col 16, "'new' must be used with a named type")
          ]
-         
+
     [<Fact>]
     let ``Object expression can not implement a class class end`` () =
         Fsx """
@@ -36,7 +36,7 @@ let implementer = { new Class()  }
          |> withDiagnostics [
              (Error 738, Line 4, Col 19, Line 4, Col 35, "Invalid object expression. Objects without overrides or interfaces should use the expression form 'new Type(args)' without braces.")
          ]
-         
+
     [<Fact>]
     let ``Object expression can not implement a class without members`` () =
         Fsx """
@@ -51,7 +51,7 @@ let implementer = { new Class()  }
          |> withDiagnostics [
              (Error 738, Line 5, Col 19, Line 5, Col 35, "Invalid object expression. Objects without overrides or interfaces should use the expression form 'new Type(args)' without braces.")
          ]
-  
+
     [<Fact>]
     let ``Object expression implementing an interface without members`` () =
         Fsx """
@@ -85,7 +85,7 @@ type MyClass() = class end
          |> withLangVersion90
          |> typecheck
          |> shouldSucceed
-         
+
     [<Fact>]
     let ``Object expression can construct an abstract class(missing with...) and also implement interfaces with and without abstract members.`` () =
         Fsx """
@@ -105,7 +105,7 @@ type MyClass() = class end
          |> withLangVersion90
          |> typecheck
          |> shouldSucceed
-         
+
     [<Fact>]
     let ``Object expression can construct an abstract class(missing with... and interface in the next line) and also implement interfaces with and without abstract members.`` () =
         Fsx """
@@ -126,7 +126,7 @@ type MyClass() = class end
          |> withLangVersion90
          |> typecheck
          |> shouldSucceed
-         
+
     [<Fact>]
     let ``Verifies that the object expression built type has the interface.`` () =
         Fsx """
@@ -149,7 +149,7 @@ let expr = { new MyClass() interface IFirst }
          |> withStdOutContainsAllInOrder [
            "It works"
         ]
-         
+
     [<Fact>]
     let ``Parameterized object expression implementing an interface with members`` () =
         Fsx """
@@ -172,7 +172,7 @@ let implSomeDU someDu =
          |> withLangVersion90
          |> typecheck
          |> shouldSucceed
-         
+
     [<Fact>]
     let ``Object expression cannot implement an abstract class having no abstract members.`` () =
         Fsx """
@@ -192,8 +192,8 @@ let foo2 = { new Foo() with member __.ToString() = base.ToString() }
          |> withDiagnostics [
                 (Error 738, Line 5, Col 11, Line 5, Col 24, "Invalid object expression. Objects without overrides or interfaces should use the expression form 'new Type(args)' without braces.");
                 (Error 759, Line 7, Col 12, Line 7, Col 21, "Instances of this type cannot be created since it has been marked abstract or not all methods have been given implementations. Consider using an object expression '{ new ... with ... }' instead.")
-         ]         
-    
+         ]
+
     [<Fact>]
     let ``Object expression can not implement an abstract class having no abstract members`` () =
         Fsx """
@@ -209,7 +209,7 @@ let res = { new AbstractClass() }
          |> withDiagnostics [
              (Error 738, Line 6, Col 11, Line 6, Col 34, "Invalid object expression. Objects without overrides or interfaces should use the expression form 'new Type(args)' without braces.")
          ]
-         
+
     [<Fact>]
     let ``Object expression can not implement an abstract class having abstract members with default implementation`` () =
         Fsx """
@@ -241,7 +241,7 @@ let res = { new AbstractClass() with
          |> withLangVersion90
          |> typecheck
          |> shouldSucceed
-         
+
     [<Fact>]
     let ``Object expression can not implement an abstract class having abstract members`` () =
         Fsx """
@@ -259,7 +259,7 @@ let res = { new AbstractClass() }
             (Error 365, Line 7, Col 11, Line 7, Col 34, "No implementation was given for 'abstract AbstractClass.M: unit -> unit'");
             (Error 738, Line 7, Col 11, Line 7, Col 34, "Invalid object expression. Objects without overrides or interfaces should use the expression form 'new Type(args)' without braces.")
          ]
-      
+
     [<Fact>]
     let ``Object expression can implement an abstract class and interface having no abstract members.`` () =
         Fsx """
@@ -297,8 +297,8 @@ let res = { new MyClass() }
          |> withDiagnostics [
             (Error 365, Line 11, Col 11, Line 11, Col 28, "No implementation was given for 'abstract MyClass.M: unit -> unit'");
             (Error 738, Line 11, Col 11, Line 11, Col 28, "Invalid object expression. Objects without overrides or interfaces should use the expression form 'new Type(args)' without braces.")
-         ] 
-         
+         ]
+
     [<Fact>]
     let ``C# abstract class with protected constructor can not be implemented by F# object expression`` () =
 
@@ -337,7 +337,7 @@ let res = { new Animal() }
         |> withDiagnostics [
             (Error 738, Line 5, Col 11, Line 5, Col 27, "Invalid object expression. Objects without overrides or interfaces should use the expression form 'new Type(args)' without braces.")
         ]
-        
+
     [<Fact>]
     let ``C# abstract class with protected constructor and abstract method and default implementation can be implemented by F# object expression unless the abstract method is implemented.`` () =
         let csharp =
@@ -378,7 +378,7 @@ let res = { new Animal() }
             (Error 365, Line 5, Col 11, Line 5, Col 27, "No implementation was given for 'Animal.M() : unit'");
             (Error 738, Line 5, Col 11, Line 5, Col 27, "Invalid object expression. Objects without overrides or interfaces should use the expression form 'new Type(args)' without braces.")
         ]
-        
+
     [<Fact>]
     let ``C# abstract class with protected constructor and abstract method can not be implemented by F# object expression unless the abstract method is implemented.`` () =
         let csharp =
@@ -467,7 +467,7 @@ let f() = { new BaseHashtable<_,_>(2) with
          |> withDiagnostics [
              (Error 359, Line 10, Col 11, Line 13, Col 12, "More than one override implements 'Next: StrongToWeakEntry<'a> array -> int when 'a: not struct'")
          ]
-         
+
     [<Fact>]
     let ``Object expression cannot implement an interface when it contains a method with no types that can refer to the type for which the implementation is being used`` () =
         Fsx """
@@ -547,7 +547,7 @@ let implementer() =
          |> withLangVersion90
          |> typecheck
          |> shouldSucceed
-         
+
     [<Fact>]
     let ``Object expression implementing an interface`` () =
         Fsx """
@@ -587,7 +587,7 @@ let objExpr =
             (Error 17, Line 8, Col 18, Line 8, Col 25, "The member 'Execute: unit -> unit' does not have the correct type to override the corresponding abstract method. Non-static member is expected.");
             (Error 783, Line 7, Col 11, Line 7, Col 21, "At least one override did not correctly implement its corresponding abstract member")
          ]
-        
+
     [<FactForNETCOREAPP>]
     let ``Produce an error when one leaves keyword "static" when implementing IWSAM in an object expression`` () =
         Fsx """
@@ -609,7 +609,7 @@ let _ =
             (Error 3860, Line 7, Col 11, Line 7, Col 21, "Object expressions cannot implement interfaces with static abstract members or declare static members.");
             (Error 3860, Line 8, Col 23, Line 8, Col 30, "Object expressions cannot implement interfaces with static abstract members or declare static members.")
          ]
-         
+
     [<FactForNETCOREAPP>]
     let ``Produce an error when one leaves keyword "static" when implementing multiple IWSAM in an object expression`` () =
         Fsx """
@@ -632,7 +632,7 @@ let _ =
             (Error 3860, Line 8, Col 23, Line 8, Col 30, "Object expressions cannot implement interfaces with static abstract members or declare static members.");
             (Error 3860, Line 9, Col 23, Line 9, Col 31, "Object expressions cannot implement interfaces with static abstract members or declare static members.")
          ]
-         
+
     [<FactForNETCOREAPP>]
     let ``Produce an error when one leaves keyword "static" when implementing static and not static members in an object expression`` () =
         Fsx """
@@ -659,7 +659,7 @@ let _ =
             (Error 3860, Line 10, Col 23, Line 10, Col 30, "Object expressions cannot implement interfaces with static abstract members or declare static members.");
             (Error 3860, Line 12, Col 23, Line 12, Col 31, "Object expressions cannot implement interfaces with static abstract members or declare static members.");
          ]
-         
+
     [<FactForNETCOREAPP>]
     let ``No error when implementing only instance members from IWSAM in an object expression`` () =
         Fsx """
@@ -680,7 +680,7 @@ consoleLogger.Log("Hello World")
          |> compile
          |> shouldFail
          |> withSingleDiagnostic (Error 3860, Line 7, Col 11, Line 7, Col 18, "Object expressions cannot implement interfaces with static abstract members or declare static members.")
-         
+
     [<FactForNETCOREAPP>]
     let ``No error when implementing only instance members from IWSAM(Interface attribute) in an object expression`` () =
         Fsx """
@@ -702,7 +702,7 @@ consoleLogger.Log("Hello World")
          |> compile
          |> shouldFail
          |> withSingleDiagnostic (Error 3860, Line 8, Col 11, Line 8, Col 18, "Object expressions cannot implement interfaces with static abstract members or declare static members.")
-         
+
     [<FactForNETCOREAPP>]
     let ``No error when implementing only instance members from a type(Interface attribute) in an object expression`` () =
         Fsx """
@@ -750,7 +750,7 @@ Please restrict it to one of the following:
             (Error 358, Line 8, Col 19, Line 8, Col 29, "The override for 'Overloaded: string -> bool' was ambiguous")
             (Error 783, Line 7, Col 11, Line 7, Col 19, "At least one override did not correctly implement its corresponding abstract member")
         ]
-    
+
 module AllowObjectExpressionWithoutOverrides =
     [<Fact>]
     let ``Object expression can implement a class class end`` () =
@@ -761,7 +761,7 @@ let implementer = { new Class()  }
         """
          |> typecheck
          |> shouldSucceed
-         
+
     [<Fact>]
     let ``Object expression can implement a class without members`` () =
         Fsx """
@@ -786,7 +786,7 @@ let x = { new _ with member this.MyMember() = 42 }
          |> withDiagnostics [
              (Error 772, Line 5, Col 11, Line 5, Col 16, "'new' must be used with a named type")
          ]
-         
+
     [<Fact>]
     let ``Verifies that the object expression built type has the interface`` () =
         Fsx """
@@ -808,7 +808,7 @@ let expr = { new MyClass() }
          |> withStdOutContainsAllInOrder [
            "It works"
         ]
-         
+
     [<Fact>]
     let ``Object expression implementing an interface without members`` () =
         Fsx """
@@ -818,7 +818,7 @@ let implementer() ={ new IFirst  }
         """
          |> typecheck
          |> shouldSucceed
-         
+
     [<Fact>]
     let ``Object expression can implement an abstract class having abstract members with default implementation`` () =
         Fsx """
@@ -845,7 +845,7 @@ let res = { new AbstractClass() with
         """
          |> typecheck
          |> shouldSucceed
-         
+
     [<Fact>]
     let ``Object expression can implement an abstract class with a protected constructor`` () =
         Fsx """
@@ -859,7 +859,7 @@ let res = { new AbstractClass() }
         |> withStdOutContainsAllInOrder [
             "AbstractClass constructor"
         ]
-        
+
     [<Fact>]
     let ``Object expression can not implement an abstract class having abstract members, unless the abstract members are implemented`` () =
         Fsx """
@@ -888,7 +888,7 @@ let foo2 = { new Foo() with member __.ToString() = base.ToString() }
         """
          |> typecheck
          |> shouldSucceed
-         
+
     [<Fact>]
     let ``Object expression can not implement an abstract class and interface having no abstract members`` () =
         Fsx """
@@ -904,7 +904,7 @@ type MyClass() = class end
         """
          |> typecheck
          |> shouldSucceed
-         
+
     [<Fact>]
     let ``Object expression can implement an abstract class having no abstract members. But trying to instantiate an abstract class will fail`` () =
         Fsx """
@@ -920,7 +920,7 @@ let foo1 = new Foo()
          |> withDiagnostics [
              (Error 759, Line 7, Col 12, Line 7, Col 21, "Instances of this type cannot be created since it has been marked abstract or not all methods have been given implementations. Consider using an object expression '{ new ... with ... }' instead.")
          ]
-         
+
     [<Fact>]
     let ``Object expression shows error when object expression does not implement all abstract members of the abstract class`` () =
         Fsx """
@@ -939,7 +939,7 @@ let res = { new MyClass() }
          |> shouldFail
          |> withDiagnostics [
              (Error 365, Line 11, Col 11, Line 11, Col 28, "No implementation was given for 'abstract MyClass.M: unit -> unit'")
-         ]  
+         ]
 
     [<Fact>]
     let ``C# abstract class with protected constructor can be implemented by F# object expression`` () =
@@ -975,7 +975,7 @@ let res = { new Animal() }
         fsharp
         |> compile
         |> shouldSucceed
-        
+
     [<Fact>]
     let ``C# abstract class with protected constructor and abstract method can not be implemented by F# object expression unless the abstract method is implemented`` () =
 
@@ -1015,4 +1015,3 @@ let res = { new Animal() }
         |> withDiagnostics [
             (Error 365, Line 5, Col 11, Line 5, Col 27, "No implementation was given for 'Animal.M() : unit'")
         ]
-         

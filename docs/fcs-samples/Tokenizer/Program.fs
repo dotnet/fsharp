@@ -16,7 +16,7 @@ let tokenizeLines (lines:string[]) =
         | None, nstate -> state := nstate }
       yield n, parseLine() |> List.ofSeq ]
 
-let tokenizedLines = 
+let tokenizedLines =
   tokenizeLines
     [| "// Sets the hello world variable"
        "let hello = \"Hello world\" " |]

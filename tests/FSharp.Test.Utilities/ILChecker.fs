@@ -81,7 +81,7 @@ module ILChecker =
         let stripManagedResources (text: string) =
             let result = Regex.Replace(text, "\.mresource public .*\r?\n{\s*}\r?\n", "", RegexOptions.Multiline)
             result
-        
+
         // This lets the same test be used when targeting both netfx and netcore.
         let unifyNetStandardVersions (text: string) = text.Replace(".ver 2:0:0:0", ".ver 2:1:0:0")
 

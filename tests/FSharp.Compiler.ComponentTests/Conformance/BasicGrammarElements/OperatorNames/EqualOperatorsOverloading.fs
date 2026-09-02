@@ -1,4 +1,4 @@
-// #Regression #Conformance #BasicGrammarElements #Operators 
+// #Regression #Conformance #BasicGrammarElements #Operators
 
 
 // FSB 3993, Operator overloading of == and != is inconsistent
@@ -10,5 +10,5 @@ type Test(x: int) =
 
 let a, b = Test(1), Test(2)
 
-let _ = ( a == b ) 
+let _ = ( a == b )
 let _ = ( a != b )

@@ -1,11 +1,11 @@
-// #Conformance #DeclarationElements #MemberDefinitions #NamedArguments 
+// #Conformance #DeclarationElements #MemberDefinitions #NamedArguments
 
 
 type Foo() =
-    static member MethodWithNamedArgs (one:int, two:int, three:float, four:float) = 
+    static member MethodWithNamedArgs (one:int, two:int, three:float, four:float) =
         let onetwo = (one |> float) + (two * two |> float)
         onetwo + three ** 3.0 + four ** 4.0
-        
+
 let r1 = Foo.MethodWithNamedArgs(1, 2, 3.0, 4.0)
 let r2 = Foo.MethodWithNamedArgs(1, 2, 3.0, four=4.0)
 let r3 = Foo.MethodWithNamedArgs(1, 2, three=3.0, four=4.0)

@@ -163,7 +163,7 @@ let ``GetMethodsAsSymbols should return all overloads of a method as FSharpSymbo
              ("Concat", [("arg0", "obj"); ("arg1", "obj"); ("arg2", "obj"); ("arg3", "obj")]);
 #endif
              ("Concat", [("str0", "string"); ("str1", "string"); ("str2", "string"); ("str3", "string")])]
-        
+
         results |> shouldEqual expected
 
     | None -> failwith "No symbols returned"
@@ -1212,18 +1212,18 @@ let getBreakpointLocations (input: string) (parseResult: FSharpParseFileResults)
     let positions = [ for i,line in Seq.indexed lines do for j, c in Seq.indexed line do yield Position.mkPos (Line.fromZ i) j, line ]
     [ for pos, line in positions do
         match parseResult.ValidateBreakpointLocation pos with
-        | Some r -> 
-            let text = 
+        | Some r ->
+            let text =
                 [ if r.StartLine = r.EndLine then
                       lines[r.StartLine-1][r.StartColumn..r.EndColumn-1]
                   else
                       lines[r.StartLine-1][r.StartColumn..]
-                      for l in r.StartLine..r.EndLine-2 do 
+                      for l in r.StartLine..r.EndLine-2 do
                             lines[l]
                       lines[r.EndLine-1][..r.EndColumn-1] ]
                 |> String.concat "$"
             ((pos.Line, pos.Column), (r.StartLine, r.StartColumn, r.EndLine, r.EndColumn, text))
-        | None -> 
+        | None ->
             ()]
 
 [<Fact>]
@@ -1313,7 +1313,7 @@ let f () =
     let parseResult, typeCheckResults = parseAndCheckScript(file, input)
     let results = getBreakpointLocations input parseResult
     printfn "%A" results
-    results |> shouldEqual 
+    results |> shouldEqual
         [((3, 0), (3, 5, 3, 8, "[1]")); ((3, 1), (3, 5, 3, 8, "[1]"));
          ((3, 2), (3, 5, 3, 8, "[1]")); ((3, 3), (3, 5, 3, 8, "[1]"));
          ((3, 4), (3, 5, 3, 8, "[1]")); ((3, 5), (3, 5, 3, 8, "[1]"));
@@ -1372,7 +1372,7 @@ let f () =
          ((6, 14), (6, 7, 6, 17, "List.unzip")); ((6, 15), (6, 7, 6, 17, "List.unzip"));
          ((6, 16), (6, 7, 6, 17, "List.unzip"))]
 
-    
+
 [<Fact>]
 let ``ValidateBreakpointLocation tests for pipe3`` () =
     let input =
@@ -1386,7 +1386,7 @@ let f () =
     let parseResult, typeCheckResults = parseAndCheckScript(file, input)
     let results = getBreakpointLocations input parseResult
     printfn "%A" results
-    results |> shouldEqual 
+    results |> shouldEqual
         [((3, 0), (3, 5, 3, 8, "[1]")); ((3, 1), (3, 5, 3, 8, "[1]"));
          ((3, 2), (3, 5, 3, 8, "[1]")); ((3, 3), (3, 5, 3, 8, "[1]"));
          ((3, 4), (3, 5, 3, 8, "[1]")); ((3, 5), (3, 5, 3, 8, "[1]"));
@@ -1471,7 +1471,7 @@ let bodyWrapper () =
     // on line 4 and 5, and the ones actually on the interior text of the lambda.
     //
     // This is correct
-    results |> shouldEqual 
+    results |> shouldEqual
         [((3, 0), (3, 3, 5, 10, "id (fun (A(b,c)) ->$        let x = 1$        x)"));
          ((3, 1), (3, 3, 5, 10, "id (fun (A(b,c)) ->$        let x = 1$        x)"));
          ((3, 2), (3, 3, 5, 10, "id (fun (A(b,c)) ->$        let x = 1$        x)"));
@@ -1529,7 +1529,7 @@ let bodyWrapper (a, b, c) = a || b && c"""
     // on line 4 and 5, and the ones actually on the interior text of the lambda.
     //
     // This is correct
-    results |> shouldEqual 
+    results |> shouldEqual
         [((2, 0), (2, 28, 2, 29, "a")); ((2, 1), (2, 28, 2, 29, "a"));
          ((2, 2), (2, 28, 2, 29, "a")); ((2, 3), (2, 28, 2, 29, "a"));
          ((2, 4), (2, 28, 2, 29, "a")); ((2, 5), (2, 28, 2, 29, "a"));
@@ -1571,7 +1571,7 @@ module M =
     // on line 4 and 5, and the ones actually on the interior text of the lambda.
     //
     // This is correct
-    results |> shouldEqual 
+    results |> shouldEqual
             [((2, 0), (2, 14, 2, 16, "()")); ((2, 1), (2, 14, 2, 16, "()"));
              ((2, 2), (2, 14, 2, 16, "()")); ((2, 3), (2, 14, 2, 16, "()"));
              ((2, 4), (2, 14, 2, 16, "()")); ((2, 5), (2, 14, 2, 16, "()"));
@@ -1993,7 +1993,7 @@ let hasRecordType (recordTypeName: string) (symbolUses: FSharpSymbolUse list) =
         | _ -> false
     )
     |> fun exists -> Assert.True(exists, $"Record type {recordTypeName} not found.")
-    
+
 [<Fact>]
 let ``Record fields are completed via type name usage`` () =
     let parseResults, checkResults =
@@ -2024,7 +2024,7 @@ let x =
                 EndColumn = 13
                 LastDotPos = Some 13
                 PartialIdent = ""
-                QualifyingIdents = [ "Entry" ] 
+                QualifyingIdents = [ "Entry" ]
             },
             fun _ -> List.empty
         )
@@ -2060,7 +2060,7 @@ module Module2 =
                 EndColumn = 13
                 LastDotPos = Some 13
                 PartialIdent = ""
-                QualifyingIdents = [ "Module1" ] 
+                QualifyingIdents = [ "Module1" ]
             },
             fun _ -> List.empty
         )
@@ -2097,7 +2097,7 @@ module Module2 =
                 EndColumn = 8
                 LastDotPos = Some 8
                 PartialIdent = ""
-                QualifyingIdents = [ "R1" ] 
+                QualifyingIdents = [ "R1" ]
             },
             fun _ -> List.empty
         )
@@ -2129,7 +2129,7 @@ module Module2 =
                 EndColumn = 16
                 LastDotPos = Some 16
                 PartialIdent = ""
-                QualifyingIdents = [ "Module1"; "R1" ] 
+                QualifyingIdents = [ "Module1"; "R1" ]
             },
             fun _ -> List.empty
         )
@@ -2201,7 +2201,7 @@ let rUpdate =
 """
 
     assertHasItemWithNames ["Field1"; "Field2"] info
-    
+
 [<Fact>]
 let ``No record field completion after '=' with missing value in first binding (after =;)`` () =
     let info = Checker.getCompletionInfo """

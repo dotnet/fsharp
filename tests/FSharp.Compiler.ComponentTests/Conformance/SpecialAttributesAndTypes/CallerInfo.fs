@@ -9,7 +9,7 @@ open FSharp.Test.Compiler
 
 module CallerInfo =
 
-    let private csharpLib = 
+    let private csharpLib =
         CSharp """
 using System;
 using System.Reflection;
@@ -541,7 +541,7 @@ module Program =
         |> compileAndRun
         |> shouldSucceed
 
-    // Note: ViaInteractive.fsx tests are not migrated because they require FSI 
-    // execution with platform-specific path checks that don't translate well 
+    // Note: ViaInteractive.fsx tests are not migrated because they require FSI
+    // execution with platform-specific path checks that don't translate well
     // to in-memory compilation. The CallerInfo functionality is already covered
     // by the other tests above.

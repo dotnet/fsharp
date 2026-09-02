@@ -1,4 +1,4 @@
-// #NoMono #NoMT #CodeGen #EmittedIL #Sequences   
+// #NoMono #NoMT #CodeGen #EmittedIL #Sequences
 module SeqExpressionSteppingTest7 // Regression test for FSHARP1.0:4454
 // "Stepping into sequence expression pops up a dialog trying to located an unknown file"
 let mutable r = 0
@@ -69,7 +69,7 @@ let testSimpleForEachIntLoopDownWithTwoStatements (start, stop) =
        System.Console.WriteLine("{0}", x)
        System.Console.WriteLine("{0}", x)
 
-let ListExpressionSteppingTest7 () = 
+let ListExpressionSteppingTest7 () =
     [ for x in 1..4 do
             printfn "hello"
             yield x ]

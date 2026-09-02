@@ -1,4 +1,4 @@
-// #Conformance #DeclarationElements #MemberDefinitions #NamedArguments 
+// #Conformance #DeclarationElements #MemberDefinitions #NamedArguments
 
 
 // Test that all types exposed in the base class library have 'named params'

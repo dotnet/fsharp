@@ -1,7 +1,7 @@
-// #Regression #Conformance #DeclarationElements #Attributes 
+// #Regression #Conformance #DeclarationElements #Attributes
 
 [<assembly:System.Reflection.AssemblyVersion("1.2.3")>]
-do 
+do
     ()
 
 let asm = System.Reflection.Assembly.GetExecutingAssembly().GetName()

@@ -21,7 +21,7 @@ module XUnitSetup =
 
     [<assembly: AssemblyFixture(typeof<FSharpTestAssemblyFixture>); CaptureConsole; CaptureTrace>]
     do ()
-    
+
 /// Modules/Types included in this Collection (via `[<Collection(nameof NotThreadSafeResourceCollection>`)):
 /// 1. do not run concurrently with other tests or modules in the collection (typical behavior)
 /// 2. run entirely isolated from all other tests in a given test run (including ones not included in a Collection) due to `DisableParallelization = true`
@@ -31,7 +31,7 @@ type NotThreadSafeResourceCollection() = class end
 
 namespace Xunit
 
-#nowarn "1182" // the DisableParallelization properties are unused as these are shims waiting for us to move to xunit3 >= 4 
+#nowarn "1182" // the DisableParallelization properties are unused as these are shims waiting for us to move to xunit3 >= 4
 
 // Shim to be deleted when xunit dependency updates to >= 4
 [<System.AttributeUsage(System.AttributeTargets.Class, AllowMultiple = false, Inherited = true)>]

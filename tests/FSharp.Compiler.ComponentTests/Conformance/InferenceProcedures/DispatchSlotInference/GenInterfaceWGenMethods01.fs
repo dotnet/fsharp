@@ -1,4 +1,4 @@
-// #Regression #Conformance #TypeInference 
+// #Regression #Conformance #TypeInference
 // FSHARP1.0:1445. See also FSHARP1.0:4721
 // Failure when generating code for generic interface with generic method
 

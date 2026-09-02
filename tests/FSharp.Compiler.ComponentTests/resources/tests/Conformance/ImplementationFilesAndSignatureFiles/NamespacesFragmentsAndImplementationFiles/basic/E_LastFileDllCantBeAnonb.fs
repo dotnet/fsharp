@@ -1,4 +1,4 @@
-// #Regression #Conformance #SignatureFiles #Namespaces 
+// #Regression #Conformance #SignatureFiles #Namespaces
 // Normally this would produce a warning, but
 // since this compiles an EXE one shouldn't be emitted.
 

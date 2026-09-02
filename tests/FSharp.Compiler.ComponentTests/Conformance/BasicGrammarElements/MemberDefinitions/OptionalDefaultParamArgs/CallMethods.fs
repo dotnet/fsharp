@@ -6,7 +6,7 @@ open System
 let checkMethod (f:'a->'a) value (defaultFun:unit->'a) defaultValue =
     let result = f value
     if result <> value then printfn "normal case failed for type %s. Expected %A <> %A" typeof<'a>.Name value result; exit 1
-    let result = defaultFun() 
+    let result = defaultFun()
     if defaultFun() <> defaultValue then printf "default case failed for type %s. Expected %A <> %A" typeof<'a>.Name defaultValue result; exit 1
 
 do checkMethod (fun v -> Class.Method1 (v)) 1y       (fun () -> Class.Method1 ()) 42y
