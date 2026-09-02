@@ -301,3 +301,14 @@ let ``A member's own line is answered with the member`` (snippet: string) (expec
     match resolveStartupIn TypesSeparatedByTrivia snippet with
     | ValueNone -> failwith $"expected the line of %s{snippet} to resolve"
     | ValueSome resolved -> Assert.Equal(expected, resolved.DisplayName)
+
+/// `Fire` raises an event; it is not one, and it is not a property either. Only the `add_`/`remove_`
+/// accessors beside it are events, and a stack that goes through both must tell them apart.
+[<Fact>]
+let ``A method that raises an event stays a method`` () =
+    match resolve $"%s{Sample}.Publisher.Fire" with
+    | ValueNone -> failwith "expected Fire to resolve"
+    | ValueSome resolved ->
+        Assert.Equal(ResolvedMethod, resolved.Kind)
+        Assert.DoesNotContain(PropertyGet, resolved.Traits)
+        Assert.DoesNotContain(PropertySet, resolved.Traits)
