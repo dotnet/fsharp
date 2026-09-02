@@ -12,12 +12,23 @@ namespace FSharp.Compiler.Interactive.Protocol
 
 /// Method names. Both ends use these rather than repeating string literals.
 module Methods =
-    let [<Literal>] Initialize = "fsi/initialize"
-    let [<Literal>] Execute = "fsi/execute"
-    let [<Literal>] ExecuteFile = "fsi/executeFile"
-    let [<Literal>] SetPaths = "fsi/setPaths"
-    let [<Literal>] Interrupt = "fsi/interrupt"
-    let [<Literal>] Shutdown = "fsi/shutdown"
+    [<Literal>]
+    let Initialize = "fsi/initialize"
+
+    [<Literal>]
+    let Execute = "fsi/execute"
+
+    [<Literal>]
+    let ExecuteFile = "fsi/executeFile"
+
+    [<Literal>]
+    let SetPaths = "fsi/setPaths"
+
+    [<Literal>]
+    let Interrupt = "fsi/interrupt"
+
+    [<Literal>]
+    let Shutdown = "fsi/shutdown"
 
 [<CLIMutable>]
 type InitializeRequest =

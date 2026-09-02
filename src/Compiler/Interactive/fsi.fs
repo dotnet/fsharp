@@ -997,7 +997,9 @@ type internal FsiCommandLineOptions(fsi: FsiEvaluationSessionHostConfig, argv: s
     let isJsonRpcServer () = fsiServerJsonRpcPipe <> ""
 
     // Neither server mode has a user at a console, so neither uses the console reader.
-    let isInteractiveServer () = fsiServerName <> "" || isJsonRpcServer ()
+    let isInteractiveServer () =
+        fsiServerName <> "" || isJsonRpcServer ()
+
     let recordExplicitArg arg = explicitArgs <- explicitArgs @ [ arg ]
 
     let executableFileNameWithoutExtension =
