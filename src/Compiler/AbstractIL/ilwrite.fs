@@ -1669,6 +1669,13 @@ type CodeBuffer =
         codebuf.EmitInt32 0xdeadbeef
 
     member codebuf.RecordReqdBrFixups i tgs =
+        // Fixups are prepended at the current code position while the stream is emitted linearly, so the
+        // recorded fixupLoc is strictly increasing across calls. This means codebuf.reqdBrFixups ends up in
+        // strictly descending fixupLoc order, which applyBrFixups relies on (it uses List.rev instead of sorting).
+        // Assert the invariant here at its source rather than re-sorting defensively later.
+        match codebuf.reqdBrFixups with
+        | (_, prevLoc, _) :: _ -> System.Diagnostics.Debug.Assert(codebuf.code.Position > prevLoc, "RecordReqdBrFixups: fixupLoc must be strictly increasing")
+        | [] -> ()
         codebuf.reqdBrFixups <- (i, codebuf.code.Position, tgs) :: codebuf.reqdBrFixups
         // Write a special value in that we check later when applying the fixup
         // Value is 0x11 {deadbbbb}* where 11 is for the instruction and deadbbbb is for each target
