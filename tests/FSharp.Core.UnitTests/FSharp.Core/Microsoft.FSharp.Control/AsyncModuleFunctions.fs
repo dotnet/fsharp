@@ -266,6 +266,33 @@ let ``Async.empty returns unit`` () =
     
 
 [<Fact>]
+let ``Async.sequentialDo runs all tasks in order and returns unit`` () : Task =
+    task {
+        let order = ResizeArray()
+        let computations = [for i in 1..5 do async { order.Add i }]
+        do! Async.sequentialDo computations
+        Assert.Equal<int seq>([ 1; 2; 3; 4; 5 ], order)
+    }
+
+[<Fact>]
+let ``Async.sequentialDo runs computations one at a time`` () : Task =
+    task {
+        let mutable concurrent = 0
+        let mutable maxConcurrent = 0
+        let computations =
+            [for _ in 1..5 ->
+                async {
+                    let n = Interlocked.Increment &concurrent
+                    if n > maxConcurrent then maxConcurrent <- n
+                    do! Async.Sleep 1
+                    Interlocked.Decrement &concurrent |> ignore
+                }]
+        do! Async.sequentialDo computations
+        Assert.Equal(1, maxConcurrent)
+    }
+
+
+[<Fact>]
 let ``Async.parallelLimit runs all computations`` () =
     let results =
         [for i in 1..5 do async { return i * i }]

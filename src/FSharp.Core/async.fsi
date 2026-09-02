@@ -2074,6 +2074,20 @@ namespace Microsoft.FSharp.Control
         [<CompiledName("Empty")>]
         val empty: Async<unit>
 
+        /// <summary>Creates an asynchronous computation that executes each of the <c>computations</c> in sequence, returning <c>unit</c>.</summary>
+        /// <param name="computations">A sequence of unit computations to be executed in sequence.</param>
+        /// <returns>A computation that runs all inputs in sequence and returns <c>unit</c>.</returns>
+        /// <example id="async-sequentialdo-1">
+        /// <code lang="fsharp">
+        /// // NOTE numbers are guaranteed to be printed in order 1..10
+        /// seq { for i in 1..10 -> async { printfn "%d" i } }
+        /// |> Async.sequentialDo
+        /// |> Async.RunSynchronouslyImmediate
+        /// </code>
+        /// </example>
+        [<CompiledName("SequentialDo")>]
+        val sequentialDo: computations: seq<Async<unit>> -> Async<unit>
+
         /// <summary>Creates an asynchronous computation that executes all the supplied asynchronous computations
         /// with concurrency limited to at most <c>maxDegreeOfParallelism</c>,
         /// and returns their results as an array in the same order as the inputs.</summary>
