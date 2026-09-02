@@ -180,6 +180,9 @@ let InlineRuntimeAsyncLambdaArgument (g: TcGlobals) (isRuntimeAsyncFragment: Exp
                         boundVal.InlineIfLambda
                         || (isLambdaExpression boundExpr && isRuntimeAsyncFragment boundExpr)
                         ->
+                        if not boundVal.InlineIfLambda then
+                            boundVal.SetInlineIfLambda()
+
                         Some(cont (inlineBinding boundVal boundExpr body))
                     | _ -> None)
             PreInterceptBinding = None

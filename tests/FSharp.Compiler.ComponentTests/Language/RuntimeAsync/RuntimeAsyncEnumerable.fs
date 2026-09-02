@@ -12,7 +12,7 @@ open Microsoft.FSharp.Core.CompilerServices
 open Microsoft.FSharp.Core.CompilerServices.StateMachineHelpers
 open RuntimeTaskBuilder
 
-[<NoComparison>]
+[<NoComparison; NoEquality>]
 type AsyncSequenceEvent<'t> =
     | Item of 't
     | Completed
@@ -32,11 +32,12 @@ type AsyncManualResetSignal<'t>() =
         member _.OnCompleted(continuation, state, token, flags) =
             source.OnCompleted(continuation, state, token, flags)
 
-[<NoComparison>]
+[<NoComparison; NoEquality>]
 type AsyncSequenceState<'T> = {
     MoveNextRequest: AsyncManualResetSignal<unit>
     ItemResponse: AsyncManualResetSignal<AsyncSequenceEvent<'T>>
     CancellationToken: CancellationToken
+    KickOff: bool
 }
 
 module AsyncSequenceState =
@@ -47,6 +48,7 @@ module AsyncSequenceState =
             MoveNextRequest = AsyncManualResetSignal<unit>()
             ItemResponse = AsyncManualResetSignal<AsyncSequenceEvent<'T>>()
             CancellationToken = cancellationToken
+            KickOff = true
         }
 
 
@@ -81,6 +83,18 @@ type AsyncSeqEnumerator<'T>(state: AsyncSequenceState<'T>) =
 
         member this.DisposeAsync() = ValueTask.CompletedTask
 
+type AsyncEnumerable<'T>(runProducer: AsyncSequenceState<'T> -> Task<unit>) =
+    let getEnumerator ct =
+        let state = AsyncSequenceState.create ct
+        Task.Run<_>(fun () -> runProducer state) |> ignore
+        AsyncSeqEnumerator<'T>(state)
+
+    member _.RunProducer(state: AsyncSequenceState<'T>) = runProducer state
+
+    interface IAsyncEnumerable<'T> with
+        member _.GetAsyncEnumerator(cancellationToken: CancellationToken) =
+            getEnumerator cancellationToken
+
 type AsyncSequenceBody<'T> = AsyncSequenceState<'T> -> unit
 
 type AsyncSeqBuilder() =
@@ -88,21 +102,19 @@ type AsyncSeqBuilder() =
         fun state -> generator() state
 
     member inline _.Run([<InlineIfLambda>] code: AsyncSequenceBody<'T>) : IAsyncEnumerable<'T> =
-        let getEnumerator ct =
-            let state = AsyncSequenceState.create ct
-
-            let runProducer () =
-                __runtimeAsyncReturnUnit(
+        let runProducer state =
+            __runtimeAsyncReturn(
+                // wait for kick off.
+                if state.KickOff then
                     AsyncHelpers.Await(state.MoveNextRequest.WaitAsync())
                     state.MoveNextRequest.Reset()
-                    code(state)
-                    state.ItemResponse.SetResult(Completed)
-                )
-            Task.Run<_>(runProducer) |> ignore
-            AsyncSeqEnumerator<'T>(state)
 
-        { new IAsyncEnumerable<'T> with
-            member _.GetAsyncEnumerator(cancellationToken: CancellationToken) = getEnumerator cancellationToken }
+                code state
+
+                if state.KickOff then AsyncSequenceState.publishCompleted state
+            )
+
+        AsyncEnumerable(runProducer)
 
     member inline _.Zero() : AsyncSequenceBody<'T> =
         fun _ -> ()
@@ -225,12 +237,9 @@ type AsyncSeqBuilder() =
             let innerEnumerator = sequence.GetAsyncEnumerator(state.CancellationToken)
 
             try
-                let mutable hasNextItem = AsyncHelpers.Await(innerEnumerator.MoveNextAsync())
-
-                while hasNextItem do
+                while AsyncHelpers.Await(innerEnumerator.MoveNextAsync()) do
                     let value = innerEnumerator.Current
                     body value state
-                    hasNextItem <- AsyncHelpers.Await(innerEnumerator.MoveNextAsync())
             finally
                 AsyncHelpers.Await(innerEnumerator.DisposeAsync())
 
@@ -260,6 +269,13 @@ type AsyncSeqBuilder() =
             finally
                 AsyncHelpers.Await(innerEnumerator.DisposeAsync())
 
+    member inline this.YieldFromFinal(sequence: IAsyncEnumerable<'T>) : AsyncSequenceBody<'T> =
+        match sequence with
+        | :? AsyncEnumerable<'T> as asyncSeq ->
+            fun state ->
+                AsyncHelpers.Await (asyncSeq.RunProducer { state with KickOff = false })
+        | _ ->
+            this.YieldFrom sequence
 
 module AsyncSeqAwaitableExtensions =
     let inline awaitTaskLike

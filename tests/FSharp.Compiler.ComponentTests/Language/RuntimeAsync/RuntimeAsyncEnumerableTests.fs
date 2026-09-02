@@ -237,6 +237,20 @@ let private testConcurrentMoveNext () =
         assertTrue "concurrent MoveNext result" firstMoveResult
     }
 
+let testTailRecursion () =
+    runtimeTask {
+        let rec loop n =
+            asyncSeq {
+                if n > 0 then
+                    if n % 10000 = 0 then
+                        do! Task.Delay 1 // simulate some async work
+                    yield n
+                    yield! loop (n - 1)
+            }
+        let! values = collect (loop 100_000)
+        assertEqual "tail recursion" [| for i in 100_000 .. -1 .. 1 -> i |] values
+    }
+
 let runTests () =
     let tests : (string * Task<unit>) list =
         [ "basic sequence", testBasicSequence ()
@@ -249,7 +263,8 @@ let runTests () =
           "yield!", testYieldFrom ()
           "async for loop", testForAsyncEnumerable ()
           "pull-driven enumeration", testPullDrivenEnumeration ()
-          "concurrent MoveNext", testConcurrentMoveNext () ]
+          "concurrent MoveNext", testConcurrentMoveNext ()
+          "tail recursion", testTailRecursion () ]
 
     runtimeTask {
         for name, test in tests do
