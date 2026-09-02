@@ -352,7 +352,8 @@ let evaluateSession (argv: string[]) =
         // Serve the host on a background thread, leaving this thread to Run() and the event loop
         // that interactions are evaluated on.
         match jsonRpcPipeName with
-        | Some pipeName -> FSharp.Compiler.Interactive.Server.startOnBackgroundThread fsiSession fsiConfig pipeName Console.Out Console.Error
+        | Some pipeName ->
+            FSharp.Compiler.Interactive.Server.startOnBackgroundThread fsiSession fsiConfig pipeName Console.Out Console.Error
         | None -> ()
 
         // Start the session
