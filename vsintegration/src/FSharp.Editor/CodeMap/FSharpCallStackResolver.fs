@@ -170,6 +170,9 @@ module internal FSharpCallStackResolver =
         |> Seq.filter (fun m ->
             m.GenericParameters.Count = frame.MethodGenericArity
             || frame.MethodGenericArity = 0)
+        // The signature carries an `[<CLIEvent>]` twice, as the event and as the getter behind it,
+        // and both answer to the same compiled name. The event is the one that says what it is.
+        |> Seq.sortByDescending _.IsEvent
         |> Seq.tryHeadV
 
     /// The name the compiler gave the closure class, which is unique within its declaring entity and
@@ -225,11 +228,13 @@ module internal FSharpCallStackResolver =
 
         walk entity [] |> Array.ofList
 
+    /// An `[<CLIEvent>]` is a property as well - the getter behind it is how the event is read - so
+    /// the event has to be asked about first or every event answers as a property.
     let private kindOf (m: FSharpMemberOrFunctionOrValue) =
-        if m.IsProperty || m.IsPropertyGetterMethod || m.IsPropertySetterMethod then
-            ResolvedProperty
-        elif m.IsEventAddMethod || m.IsEventRemoveMethod then
+        if m.IsEvent || m.IsEventAddMethod || m.IsEventRemoveMethod then
             ResolvedEvent
+        elif m.IsProperty || m.IsPropertyGetterMethod || m.IsPropertySetterMethod then
+            ResolvedProperty
         else
             ResolvedMethod
 
