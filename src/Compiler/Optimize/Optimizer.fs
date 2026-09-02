@@ -2540,6 +2540,8 @@ let rec OptimizeExpr cenv (env: IncrementalOptimizationEnv) expr =
 
     let env = { env with disableMethodSplitting = env.disableMethodSplitting || isStateMachineE }
 
+    let runtimeAsyncReturn = TryGetRuntimeAsyncReturn g expr
+
     match expr with
     // treat the common linear cases to avoid stack overflows, using an explicit continuation 
     | LinearOpExpr _
@@ -2584,38 +2586,37 @@ let rec OptimizeExpr cenv (env: IncrementalOptimizationEnv) expr =
     | Expr.Op (op, tyargs, args, m) -> 
         OptimizeExprOp cenv env (op, tyargs, args, m)
 
-    | Expr.App (f, fty, tyargs, argsl, m) ->
-        match TryGetRuntimeAsyncReturn g expr with
-        | Some info ->
-            let bodyR, bodyInfo = OptimizeExpr cenv { env with runtimeAsyncContext = true } info.Body
-            let reportedStamps = HashSet<Stamp>()
+    | Expr.App (f, fty, tyargs, _, m) when runtimeAsyncReturn.IsSome ->
+        let info = runtimeAsyncReturn.Value
+        let bodyR, bodyInfo = OptimizeExpr cenv { env with runtimeAsyncContext = true } info.Body
+        let reportedStamps = HashSet<Stamp>()
 
-            for v in GetRuntimeAsyncNonPreservableUses g bodyR do
-                if reportedStamps.Add v.Stamp then
-                    errorR(Error(FSComp.SR.ilRuntimeAsyncLocalUsedAfterSuspension(RichText.mkText v.DisplayName), v.Range))
+        for v in GetRuntimeAsyncNonPreservableUses g bodyR do
+            if reportedStamps.Add v.Stamp then
+                errorR(Error(FSComp.SR.ilRuntimeAsyncLocalUsedAfterSuspension(RichText.mkText v.DisplayName), v.Range))
 
-            let bodyR = RewriteRuntimeAsyncExceptionHandlers g bodyR
-            Expr.App(f, fty, tyargs, [ bodyR ], m),
-            { bodyInfo with
-                HasEffect = true
-                Info = UnknownValue }
+        let bodyR = RewriteRuntimeAsyncExceptionHandlers g bodyR
+        Expr.App(f, fty, tyargs, [ bodyR ], m),
+        { bodyInfo with
+            HasEffect = true
+            Info = UnknownValue }
+
+    | Expr.App (f, fty, tyargs, argsl, m) -> 
+        match expr with
+        | DelegateInvokeExpr g (delInvokeRef, delInvokeTy, tyargs, delExpr, delInvokeArg, m) ->
+            OptimizeFSharpDelegateInvoke cenv env (delInvokeRef, delExpr, delInvokeTy, tyargs, delInvokeArg, m) 
+        | _ -> 
+        let attempt = 
+            if IsDebugPipeRightExpr cenv expr then
+                Some (OptimizeDebugPipeRights cenv env expr)
+            else None
+        match attempt with
+        | Some res -> res
         | None ->
-            match expr with
-            | DelegateInvokeExpr g (delInvokeRef, delInvokeTy, tyargs, delExpr, delInvokeArg, m) ->
-                OptimizeFSharpDelegateInvoke cenv env (delInvokeRef, delExpr, delInvokeTy, tyargs, delInvokeArg, m)
-            | _ ->
-                let attempt =
-                    if IsDebugPipeRightExpr cenv expr then
-                        Some(OptimizeDebugPipeRights cenv env expr)
-                    else
-                        None
-
-                match attempt with
-                | Some res -> res
-                | None ->
-                    match TryDetectQueryQuoteAndRun cenv expr with
-                    | Some newExpr -> OptimizeExpr cenv env newExpr
-                    | None -> OptimizeApplication cenv env (f, fty, tyargs, argsl, m)
+        // eliminate uses of query
+        match TryDetectQueryQuoteAndRun cenv expr with 
+        | Some newExpr -> OptimizeExpr cenv env newExpr
+        | None -> OptimizeApplication cenv env (f, fty, tyargs, argsl, m) 
 
     | Expr.Lambda (_lambdaId, _, _, argvs, _body, m, bodyTy) -> 
         let valReprInfo = ValReprInfo ([], [argvs |> List.map (fun _ -> ValReprInfo.unnamedTopArg1)], ValReprInfo.unnamedRetVal)
@@ -3272,6 +3273,7 @@ and OptimizeTraitCall cenv env (traitInfo, args, m) =
     match ConstraintSolver.CodegenWitnessExprForTraitConstraint cenv.TcVal g cenv.amap m traitInfoForResolution args with
 
     | OkResult (_, Some expr) -> OptimizeExpr cenv env expr
+
     // Resolution fails when optimizing generic code, ignore the failure
     | _ -> 
         match resolveWithRecordedSolution () with
@@ -3752,6 +3754,13 @@ and TryInlineApplication cenv env finfo (valExpr: Expr) (tyargs: TType list, arg
 
         let argsR = args |> List.map (OptimizeExpr cenv argEnv >> fst)
         let info = { TotalSize = 1; FunctionSize = 1; HasEffect = true; MightMakeCriticalTailcall = false; Info = UnknownValue }
+        let reduceRuntimeAsyncApplication specLambdaR specLambdaTy =
+            let reduced = MakeApplicationAndBetaReduce g (specLambdaR, specLambdaTy, [], argsR, m)
+            let reduced =
+                match reduced with
+                | Expr.Let(bind, body, _, _) -> fst (TryEliminateLet cenv env bind body m)
+                | _ -> reduced
+            Some(reoptimizeRuntimeAsync reduced, info)
 
         if canCallDirectly then
             Some(mkApps g ((exprForValRef m vref, vref.Type), [tyargs], argsR, m), info)
@@ -3759,12 +3768,10 @@ and TryInlineApplication cenv env finfo (valExpr: Expr) (tyargs: TType list, arg
 
         let origFinfo = GetInfoForVal cenv env m vref
         let lambdaInfo =
-            match stripValue finfo.Info with
-            | CurriedLambdaValue _ as info -> Some info
-            | _ ->
-                match stripValue origFinfo.ValExprInfo with
-                | CurriedLambdaValue _ as info -> Some info
-                | _ -> None
+            match stripValue finfo.Info, stripValue origFinfo.ValExprInfo with
+            | (CurriedLambdaValue _ as info), _
+            | _, (CurriedLambdaValue _ as info) -> Some info
+            | _ -> None
 
         match lambdaInfo with
         | Some(CurriedLambdaValue(origLambdaId, _, _, origLambda, origLambdaTy)) ->
@@ -3848,13 +3855,7 @@ and TryInlineApplication cenv env finfo (valExpr: Expr) (tyargs: TType list, arg
                 || capturedVals |> List.exists (fun v -> v.IsMutable)
 
             if not (List.isEmpty capturedVals) && cannotLiftCapturedVals then
-                let reduced = MakeApplicationAndBetaReduce g (specLambdaR, specLambdaTy, [], argsR, m)
-                let reduced =
-                    match reduced with
-                    | Expr.Let(bind, body, _, _) -> fst (TryEliminateLet cenv env bind body m)
-                    | _ -> reduced
-                let reduced = reoptimizeRuntimeAsync reduced
-                Some(reduced, info)
+                reduceRuntimeAsyncApplication specLambdaR specLambdaTy
             else
 
             let debugValName = $"<{vref.LogicalName}>__debug"
@@ -3883,13 +3884,7 @@ and TryInlineApplication cenv env finfo (valExpr: Expr) (tyargs: TType list, arg
                 None
             else
                 if mustInlineRuntimeAsync then
-                    let reduced = MakeApplicationAndBetaReduce g (specLambdaR, specLambdaTy, [], argsR, m)
-                    let reduced =
-                        match reduced with
-                        | Expr.Let(bind, body, _, _) -> fst (TryEliminateLet cenv env bind body m)
-                        | _ -> reduced
-                    let reduced = reoptimizeRuntimeAsync reduced
-                    Some(reduced, info)
+                    reduceRuntimeAsyncApplication specLambdaR specLambdaTy
                 else
                     // Static method path (no witnesses needed): abstract over free typars so IlxGen emits
                     // a method with flattened arguments rather than a closure that wraps args in Tuple<>.
