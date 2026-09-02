@@ -261,10 +261,7 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
                   let m = sigTypar.Range
                   
                   let check =
-                      if g.langVersion.SupportsFeature LanguageFeature.InterfacesWithAbstractStaticMembers then
-                          implTypar.StaticReq = TyparStaticReq.HeadType && sigTypar.StaticReq = TyparStaticReq.None
-                      else
-                          implTypar.StaticReq <> sigTypar.StaticReq
+                      implTypar.StaticReq = TyparStaticReq.HeadType && sigTypar.StaticReq = TyparStaticReq.None
                   if check then
                       errorR (Error(FSComp.SR.typrelSigImplNotCompatibleCompileTimeRequirementsDiffer(), m))
                 

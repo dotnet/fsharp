@@ -1824,10 +1824,9 @@ let NewByRefKindInferenceType (g: TcGlobals) m =
 let NewInferenceTypes g l = l |> List.map (fun _ -> NewInferenceType g) 
 
 let FreshenTypar (g: TcGlobals) rigid (tp: Typar) =
-    let clearStaticReq = g.langVersion.SupportsFeature LanguageFeature.InterfacesWithAbstractStaticMembers
-    let staticReq = if clearStaticReq then TyparStaticReq.None else tp.StaticReq
+    ignore g
     let dynamicReq = if rigid = TyparRigidity.Rigid then TyparDynamicReq.Yes else TyparDynamicReq.No
-    NewCompGenTypar (tp.Kind, rigid, staticReq, dynamicReq, false)
+    NewCompGenTypar (tp.Kind, rigid, TyparStaticReq.None, dynamicReq, false)
 
 // QUERY: should 'rigid' ever really be 'true'? We set this when we know
 // we are going to have to generalize a typar, e.g. when implementing a 

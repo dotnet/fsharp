@@ -109,10 +109,9 @@ let NewErrorType () =
     mkTyparTy (NewErrorTypar ())
 
 let FreshenTypar (g: TcGlobals) rigid (tp: Typar) =
-    let clearStaticReq = g.langVersion.SupportsFeature LanguageFeature.InterfacesWithAbstractStaticMembers
-    let staticReq = if clearStaticReq then TyparStaticReq.None else tp.StaticReq
+    ignore g
     let dynamicReq = if rigid = TyparRigidity.Rigid then TyparDynamicReq.Yes else TyparDynamicReq.No
-    NewCompGenTypar (tp.Kind, rigid, staticReq, dynamicReq, false)
+    NewCompGenTypar (tp.Kind, rigid, TyparStaticReq.None, dynamicReq, false)
 
 // QUERY: should 'rigid' ever really be 'true'? We set this when we know
 // we are going to have to generalize a typar, e.g. when implementing a 
@@ -706,18 +705,10 @@ let SubstMeasure (r: Typar) ms =
     | Some _ -> error(InternalError("already solved", r.Range))
 
 let rec TransactStaticReq (csenv: ConstraintSolverEnv) (trace: OptionalTrace) (tpr: Typar) req = 
-    let m = csenv.m
-    let g = csenv.g
-
-    // Prior to feature InterfacesWithAbstractStaticMembers the StaticReq must match the
-    // declared StaticReq. With feature InterfacesWithAbstractStaticMembers it is inferred
-    // from the finalized constraints on the type variable.
-    if not (g.langVersion.SupportsFeature LanguageFeature.InterfacesWithAbstractStaticMembers) && tpr.Rigidity.ErrorIfUnified && tpr.StaticReq <> req then
-        ErrorD(ConstraintSolverError(RichText.mkText (FSComp.SR.csTypeCannotBeResolvedAtCompileTime(tpr.Name)), m, m)) 
-    else
-        let orig = tpr.StaticReq
-        trace.Exec (fun () -> tpr.SetStaticReq req) (fun () -> tpr.SetStaticReq orig)
-        CompleteD
+    ignore csenv
+    let orig = tpr.StaticReq
+    trace.Exec (fun () -> tpr.SetStaticReq req) (fun () -> tpr.SetStaticReq orig)
+    CompleteD
 
 and SolveTypStaticReqTypar (csenv: ConstraintSolverEnv) trace req (tpr: Typar) =
     let orig = tpr.StaticReq
@@ -1099,13 +1090,6 @@ and SolveTypMeetsTyparConstraints (csenv: ConstraintSolverEnv) ndeep m2 trace ty
 
         // Propagate static requirements from 'tp' to 'ty' 
         do! SolveTypStaticReq csenv trace r.StaticReq ty
-
-        if not (g.langVersion.SupportsFeature LanguageFeature.InterfacesWithAbstractStaticMembers) then
-            // Propagate static requirements from 'tp' to 'ty'
-            //
-            // If IWSAMs are not supported then this is done on a per-type-variable basis when constraints
-            // are applied - see other calls to SolveTypStaticReq
-            do! SolveTypStaticReq csenv trace r.StaticReq ty
 
         // Solve constraints on 'tp' w.r.t. 'ty' 
         for e in r.Constraints do
@@ -1841,11 +1825,6 @@ and SolveMemberConstraint (csenv: ConstraintSolverEnv) ignoreUnresolvedOverload 
                 | [ty], h :: _ -> do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace h ty 
                 | _ -> do! ErrorD (ConstraintSolverError(RichText.mkText (FSComp.SR.csExpectedArguments()), m, m2))
 
-            // Trait calls are only supported on pseudo type (variables)
-            if not (g.langVersion.SupportsFeature LanguageFeature.InterfacesWithAbstractStaticMembers) then
-                for e in supportTys do
-                    do! SolveTypStaticReq csenv trace TyparStaticReq.HeadType e
-
             // SRTP constraints on rigid type parameters do not need to be solved
             let isRigid =
                 supportTys |> List.forall (fun ty ->
@@ -2288,8 +2267,6 @@ and SolveMemberConstraint (csenv: ConstraintSolverEnv) ignoreUnresolvedOverload 
 
 and AddUnsolvedMemberConstraint csenv ndeep m2 trace permitWeakResolution ignoreUnresolvedOverload traitInfo errors =
     trackErrors {
-        let g = csenv.g
-
         let nm = traitInfo.MemberLogicalName
         let supportTypars = GetTyparSupportOfMemberConstraint csenv traitInfo
         let frees = GetFreeTyparsOfMemberConstraint csenv traitInfo
@@ -2297,10 +2274,9 @@ and AddUnsolvedMemberConstraint csenv ndeep m2 trace permitWeakResolution ignore
         // Trait calls are only supported on pseudo type (variables) unless supported by IWSAM constraints
         //
         // SolveTypStaticReq is applied here if IWSAMs are supported
-        if g.langVersion.SupportsFeature LanguageFeature.InterfacesWithAbstractStaticMembers then
-            for supportTypar in supportTypars do
-                if not (SupportTypeOfMemberConstraintIsSolved csenv traitInfo supportTypar) then
-                    do! SolveTypStaticReqTypar csenv trace TyparStaticReq.HeadType supportTypar
+        for supportTypar in supportTypars do
+            if not (SupportTypeOfMemberConstraintIsSolved csenv traitInfo supportTypar) then
+                do! SolveTypStaticReqTypar csenv trace TyparStaticReq.HeadType supportTypar
 
         // If there's nothing left to learn then raise the errors.
         // Note: we should likely call MemberConstraintIsReadyForResolution here when permitWeakResolution=false but for stability
@@ -2511,20 +2487,16 @@ and GetNominalSupportOfMemberConstraint csenv nm traitInfo =
             (supportTy, supportTy) ]
 
 and SupportTypeHasInterfaceWithMatchingStaticAbstractMember (csenv: ConstraintSolverEnv) (traitInfo: TraitConstraintInfo) (supportTyPar: Typar) =
-    let g = csenv.g
     let m = csenv.m
     let infoReader = csenv.InfoReader
 
-    if g.langVersion.SupportsFeature LanguageFeature.InterfacesWithAbstractStaticMembers then
-        let mutable found = false
-        for cx in supportTyPar.Constraints do
-            match cx with
-            | TyparConstraint.CoercesTo(interfaceTy, _) when infoReader.IsInterfaceTypeWithMatchingStaticAbstractMember m traitInfo.MemberLogicalName AccessibleFromSomeFSharpCode interfaceTy ->
-                found <- true
-            | _ -> ()
-        found
-    else
-        false
+    let mutable found = false
+    for cx in supportTyPar.Constraints do
+        match cx with
+        | TyparConstraint.CoercesTo(interfaceTy, _) when infoReader.IsInterfaceTypeWithMatchingStaticAbstractMember m traitInfo.MemberLogicalName AccessibleFromSomeFSharpCode interfaceTy ->
+            found <- true
+        | _ -> ()
+    found
 
 and SupportTypeOfMemberConstraintIsSolved (csenv: ConstraintSolverEnv) (traitInfo: TraitConstraintInfo) supportTypar =
     SupportTypeHasInterfaceWithMatchingStaticAbstractMember csenv traitInfo supportTypar
@@ -2800,7 +2772,6 @@ and EliminateRedundantConstraints csenv cxs acc =
 and AddConstraint (csenv: ConstraintSolverEnv) ndeep m2 trace tp newConstraint  =
     let denv = csenv.DisplayEnv
     let m = csenv.m
-    let g = csenv.g
 
     let existingConstraints = tp.Constraints
 
@@ -2810,7 +2781,7 @@ and AddConstraint (csenv: ConstraintSolverEnv) ndeep m2 trace tp newConstraint  
     
         let mutable impliedByExistingConstraints = CheckConstraintsImplication csenv existingConstraints newConstraint
 
-        // When InterfacesWithAbstractStaticMembers enabled, retry constraint consistency and implication when one of the constraints is known to have
+        // Retry constraint consistency and implication when one of the constraints is known to have
         // a single support type, and the other has two support types.
         //    (T1 : static member Foo: int)
         // and the constraint we're adding is this:
@@ -2819,8 +2790,7 @@ and AddConstraint (csenv: ConstraintSolverEnv) ndeep m2 trace tp newConstraint  
         // Then the only logical solution is ?inf = T1 = T2.  So just enforce this and try again.
         if
             not impliedByExistingConstraints &&
-            (IsRigid csenv tp || tp.Rigidity.WarnIfMissingConstraint) &&
-            g.langVersion.SupportsFeature LanguageFeature.InterfacesWithAbstractStaticMembers
+            (IsRigid csenv tp || tp.Rigidity.WarnIfMissingConstraint)
         then
             do! EnforceConstraintSetConsistency csenv ndeep m2 trace true allCxs 0 allCxs
             impliedByExistingConstraints <- CheckConstraintsImplication csenv existingConstraints newConstraint
@@ -3195,8 +3165,7 @@ and SolveTypeChoice (csenv: ConstraintSolverEnv) ndeep m2 trace ty choiceTys =
         match tryDestTyparTy g ty with
         | ValueSome destTypar ->
             // SolveTypStaticReq is applied here if IWSAMs are supported
-            if g.langVersion.SupportsFeature LanguageFeature.InterfacesWithAbstractStaticMembers then
-                do! SolveTypStaticReq csenv trace TyparStaticReq.HeadType ty
+            do! SolveTypStaticReq csenv trace TyparStaticReq.HeadType ty
 
             return! AddConstraint csenv ndeep m2 trace destTypar (TyparConstraint.SimpleChoice(choiceTys, m))
         | _ ->
@@ -4192,18 +4161,16 @@ let UnifyUniqueOverloading
 
 /// Re-assess the staticness of the type parameters. Necessary prior to assessing generalization.
 let UpdateStaticReqOfTypar (denv: DisplayEnv) css m (trace: OptionalTrace) (typar: Typar) =
-    let g = denv.g
     let csenv = MakeConstraintSolverEnv ContextInfo.NoContext css m denv
     trackErrors {
-        if g.langVersion.SupportsFeature LanguageFeature.InterfacesWithAbstractStaticMembers then
-            for cx in typar.Constraints do
-                match cx with
-                | TyparConstraint.MayResolveMember(traitInfo,_) ->
-                    for supportTy in traitInfo.SupportTypes do
-                        do! SolveTypStaticReq csenv trace TyparStaticReq.HeadType supportTy
-                | TyparConstraint.SimpleChoice _ ->
-                        do! SolveTypStaticReqTypar csenv trace TyparStaticReq.HeadType typar
-                | _ -> ()
+        for cx in typar.Constraints do
+            match cx with
+            | TyparConstraint.MayResolveMember(traitInfo,_) ->
+                for supportTy in traitInfo.SupportTypes do
+                    do! SolveTypStaticReq csenv trace TyparStaticReq.HeadType supportTy
+            | TyparConstraint.SimpleChoice _ ->
+                    do! SolveTypStaticReqTypar csenv trace TyparStaticReq.HeadType typar
+            | _ -> ()
     } |> RaiseOperationResult
 
 /// Remove the global constraints related to generalized type variables
