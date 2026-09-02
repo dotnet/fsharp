@@ -41,7 +41,7 @@
       "cats": []
     },
     "20409": {
-      "sha": "80d555bce8c7",
+      "sha": "28f13e714c7f",
       "cats": [
         "Affects-Build-Infra",
         "Affects-Restore"
@@ -96,9 +96,10 @@
       "cats": []
     },
     "20393": {
-      "sha": "7431037de2ac",
+      "sha": "84d67703e567",
       "cats": [
-        "Affects-Build-Infra"
+        "Affects-Build-Infra",
+        "Affects-Compiler-Output"
       ]
     },
     "20392": {
@@ -169,7 +170,7 @@
       "cats": []
     },
     "20274": {
-      "sha": "6be833e197ff",
+      "sha": "ab7da65cb4f5",
       "cats": [
         "Affects-Bootstrap",
         "Affects-Compiler-Output",
