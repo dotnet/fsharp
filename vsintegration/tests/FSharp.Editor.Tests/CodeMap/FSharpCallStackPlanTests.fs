@@ -98,3 +98,26 @@ let ``FSharp.Core is recognised whatever its casing`` () =
     facts "Whatever.Thing" (ValueSome "fsharp.core") ValueNone
     |> decide
     |> fun action -> Assert.Equal(FoldAsExternalCode, action)
+
+/// The pipeline removes neither nodes nor links, so a map accumulates them and one method node ends
+/// up claimed by frames from several runs. Guessing between them once gave a static initializer the
+/// name of whichever type sat above a stale line.
+[<Fact>]
+let ``A position claimed by one frame is used`` () =
+    let position = { File = ProjectFile; Line = 168 }
+    Assert.Equal(ValueSome position, FSharpCallStackPlan.positionOf [ position ])
+
+[<Fact>]
+let ``Frames agreeing on a position are used`` () =
+    let position = { File = ProjectFile; Line = 168 }
+
+    Assert.Equal(ValueSome position, FSharpCallStackPlan.positionOf [ position; position ])
+
+[<Fact>]
+let ``Frames disagreeing about the line yield no position`` () =
+    FSharpCallStackPlan.positionOf [ { File = ProjectFile; Line = 168 }; { File = ProjectFile; Line = 164 } ]
+    |> fun position -> Assert.True position.IsNone
+
+[<Fact>]
+let ``A frame nothing claims yields no position`` () =
+    Assert.True (FSharpCallStackPlan.positionOf []).IsNone
