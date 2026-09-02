@@ -7677,11 +7677,6 @@
         <target state="translated">在此计算表达式中，不能与“use”、“try/with”、“try/finally”、“if/then/else”或“match”运算符一起使用自定义运算</target>
         <note />
       </trans-unit>
-      <trans-unit id="tcCustomOperationMayNotBeOverloaded">
-        <source>The custom operation '{0}' refers to a method which is overloaded. The implementations of custom operations may not be overloaded.</source>
-        <target state="translated">自定义运算“{0}”引用了重载的方法。自定义运算的实现不能进行重载。</target>
-        <note />
-      </trans-unit>
       <trans-unit id="tcIfThenElseMayNotBeUsedWithinQueries">
         <source>An if/then/else expression may not be used within queries. Consider using either an if/then expression, or use a sequence expression instead.</source>
         <target state="translated">if/then/else 表达式不能在查询中使用。请考虑使用 if/then 表达式，或改用序列表达式。</target>

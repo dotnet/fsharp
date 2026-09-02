@@ -7677,11 +7677,6 @@
         <target state="translated">Une opération personnalisée ne peut pas être utilisée en association avec les opérateurs 'use', 'try/with', 'try/finally', 'if/then/else' ou 'match' dans cette expression de calcul</target>
         <note />
       </trans-unit>
-      <trans-unit id="tcCustomOperationMayNotBeOverloaded">
-        <source>The custom operation '{0}' refers to a method which is overloaded. The implementations of custom operations may not be overloaded.</source>
-        <target state="translated">L'opération personnalisée '{0}' fait référence à une méthode surchargée. Les implémentations d'opérations personnalisées ne peuvent pas être surchargées.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="tcIfThenElseMayNotBeUsedWithinQueries">
         <source>An if/then/else expression may not be used within queries. Consider using either an if/then expression, or use a sequence expression instead.</source>
         <target state="translated">Les expressions if/then/else ne peuvent pas être utilisées au sein des requêtes. Utilisez soit une expression if/then, soit une expression de séquence.</target>
