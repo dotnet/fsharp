@@ -168,5 +168,5 @@ let ``A private static let resolves to its type's static constructor`` () =
     | ValueSome resolved ->
         Assert.Equal("Initialized", resolved.DisplayName)
         Assert.Equal(ValueSome ".cctor", resolved.MemberName)
-        Assert.True resolved.Modifiers.IsStatic
-        Assert.True resolved.Modifiers.IsConstructor
+        Assert.Contains(Static, resolved.Traits)
+        Assert.Contains(Constructor, resolved.Traits)

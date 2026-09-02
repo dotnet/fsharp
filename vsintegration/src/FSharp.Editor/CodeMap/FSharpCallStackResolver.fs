@@ -18,62 +18,35 @@ type internal ResolvedFrameKind =
     | ResolvedProperty
     | ResolvedEvent
 
-/// The modifiers the Properties pane and the map's styles read off a node. Anything the frame does
-/// not genuinely have stays `false` rather than being guessed.
-type internal ResolvedFrameModifiers =
-    {
-        IsPublic: bool
-        IsInternal: bool
-        IsPrivate: bool
-        IsStatic: bool
-        IsGeneric: bool
-        IsConstructor: bool
-        IsOperator: bool
-        IsExtension: bool
-        IsAbstract: bool
-        IsCompilerGenerated: bool
-        IsPropertyGet: bool
-        IsPropertySet: bool
-        // Facts the code schema has no place for, because it was shaped for C# and VB.
-        IsModule: bool
-        IsUnion: bool
-        IsRecord: bool
-        IsException: bool
-        IsMeasure: bool
-        IsActivePattern: bool
-        IsUnionCaseTester: bool
-        IsFunction: bool
-        IsInline: bool
-        IsMutable: bool
-        IsLifted: bool
-    }
-
-    static member None =
-        {
-            IsPublic = false
-            IsInternal = false
-            IsPrivate = false
-            IsStatic = false
-            IsGeneric = false
-            IsConstructor = false
-            IsOperator = false
-            IsExtension = false
-            IsAbstract = false
-            IsCompilerGenerated = false
-            IsPropertyGet = false
-            IsPropertySet = false
-            IsModule = false
-            IsUnion = false
-            IsRecord = false
-            IsException = false
-            IsMeasure = false
-            IsActivePattern = false
-            IsUnionCaseTester = false
-            IsFunction = false
-            IsInline = false
-            IsMutable = false
-            IsLifted = false
-        }
+/// Something true of a frame that the Properties pane shows and the map's styles can filter on. A
+/// frame carries the traits it genuinely has and nothing else, so there is no way to spell "it is
+/// not a constructor" - and no way to leave a field of a wide record accidentally set.
+type internal FrameTrait =
+    | Public
+    | Internal
+    | Private
+    | Static
+    | Generic
+    | Constructor
+    | Operator
+    | Extension
+    | Abstract
+    | CompilerGenerated
+    | PropertyGet
+    | PropertySet
+    // Traits the code schema has no place for, because it was shaped for C# and VB.
+    | Module
+    | Union
+    | Record
+    | Exception
+    | Measure
+    | ActivePattern
+    | UnionCaseTester
+    | Function
+    | Inline
+    | Mutable
+    /// The frame came from a compiler-generated closure class rather than from a name the user wrote.
+    | Lifted
 
 /// Where a stack frame was written, together with the identity the Code Map needs to fuse the
 /// node with the ones its metadata provider produces.
@@ -89,7 +62,7 @@ type internal ResolvedFrame =
         TypeChain: struct (string * int) array
         MemberName: string voption
         Kind: ResolvedFrameKind
-        Modifiers: ResolvedFrameModifiers
+        Traits: Set<FrameTrait>
         /// The source name, which for an operator or an active pattern reads very differently from
         /// the compiled one the node is identified by.
         DisplayName: string
@@ -104,7 +77,7 @@ type private Resolution =
         Entity: FSharpEntity
         MemberName: string voption
         Kind: ResolvedFrameKind
-        Modifiers: ResolvedFrameModifiers
+        Traits: Set<FrameTrait>
         DisplayName: string
     }
 
@@ -263,55 +236,85 @@ module internal FSharpCallStackResolver =
         | Some entity -> entity.IsFSharpUnion, entity.IsFSharpRecord, entity.IsFSharpExceptionDeclaration
         | None -> false, false, false
 
-    /// `lifted` marks a frame that came from a closure class rather than from a name the user wrote.
-    let private modifiersOf lifted (m: FSharpMemberOrFunctionOrValue) =
+    let private isInline (m: FSharpMemberOrFunctionOrValue) =
+        match m.InlineAnnotation with
+        | FSharpInlineAnnotation.AlwaysInline
+        | FSharpInlineAnnotation.AggressiveInline -> true
+        | _ -> false
+
+    let private traitsOf (m: FSharpMemberOrFunctionOrValue) =
         let isUnion, isRecord, isException = declaringKind m
 
-        {
-            IsPublic = m.Accessibility.IsPublic
-            IsInternal = m.Accessibility.IsInternal
-            IsPrivate = m.Accessibility.IsPrivate
-            // A module-level function compiles to a static method even though F# has no `static`
-            // keyword for it, so instance membership is the honest test.
-            IsStatic = not m.IsInstanceMember
-            IsGeneric = m.GenericParameters.Count > 0
-            IsConstructor = m.IsConstructor
-            IsOperator = PrettyNaming.IsLogicalOpName m.CompiledName
-            IsExtension = m.IsExtensionMember
-            IsAbstract = m.IsDispatchSlot
-            IsCompilerGenerated = m.IsCompilerGenerated
-            IsPropertyGet = m.IsPropertyGetterMethod
-            IsPropertySet = m.IsPropertySetterMethod
-            IsModule = false
-            IsUnion = isUnion
-            IsRecord = isRecord
-            IsException = isException
-            IsMeasure = false
-            IsActivePattern = m.IsActivePattern
-            IsUnionCaseTester = m.IsUnionCaseTester
-            IsFunction = m.IsFunction
-            IsInline =
-                match m.InlineAnnotation with
-                | FSharpInlineAnnotation.AlwaysInline
-                | FSharpInlineAnnotation.AggressiveInline -> true
-                | _ -> false
-            IsMutable = m.IsMutable
-            IsLifted = lifted
-        }
+        set
+            [
+                if m.Accessibility.IsPublic then
+                    Public
+                if m.Accessibility.IsInternal then
+                    Internal
+                if m.Accessibility.IsPrivate then
+                    Private
+                // A module-level function compiles to a static method even though F# has no `static`
+                // keyword for it, so instance membership is the honest test.
+                if not m.IsInstanceMember then
+                    Static
+                if m.GenericParameters.Count > 0 then
+                    Generic
+                if m.IsConstructor then
+                    Constructor
+                if PrettyNaming.IsLogicalOpName m.CompiledName then
+                    Operator
+                if m.IsExtensionMember then
+                    Extension
+                if m.IsDispatchSlot then
+                    Abstract
+                if m.IsCompilerGenerated then
+                    CompilerGenerated
+                if m.IsPropertyGetterMethod then
+                    PropertyGet
+                if m.IsPropertySetterMethod then
+                    PropertySet
+                if isUnion then
+                    Union
+                if isRecord then
+                    Record
+                if isException then
+                    Exception
+                if m.IsActivePattern then
+                    ActivePattern
+                if m.IsUnionCaseTester then
+                    UnionCaseTester
+                if m.IsFunction then
+                    Function
+                if isInline m then
+                    Inline
+                if m.IsMutable then
+                    Mutable
+            ]
 
-    let private entityModifiers (entity: FSharpEntity) =
-        { ResolvedFrameModifiers.None with
-            IsPublic = entity.Accessibility.IsPublic
-            IsInternal = entity.Accessibility.IsInternal
-            IsPrivate = entity.Accessibility.IsPrivate
-            IsStatic = entity.IsFSharpModule
-            IsGeneric = entity.GenericParameters.Count > 0
-            IsModule = entity.IsFSharpModule
-            IsUnion = entity.IsFSharpUnion
-            IsRecord = entity.IsFSharpRecord
-            IsException = entity.IsFSharpExceptionDeclaration
-            IsMeasure = entity.IsMeasure
-        }
+    let private entityTraits (entity: FSharpEntity) =
+        set
+            [
+                if entity.Accessibility.IsPublic then
+                    Public
+                if entity.Accessibility.IsInternal then
+                    Internal
+                if entity.Accessibility.IsPrivate then
+                    Private
+                if entity.IsFSharpModule then
+                    Static
+                if entity.GenericParameters.Count > 0 then
+                    Generic
+                if entity.IsFSharpModule then
+                    Module
+                if entity.IsFSharpUnion then
+                    Union
+                if entity.IsFSharpRecord then
+                    Record
+                if entity.IsFSharpExceptionDeclaration then
+                    Exception
+                if entity.IsMeasure then
+                    Measure
+            ]
 
     /// A `<StartupCode$…>.$Demo.$Demo` frame names the file, not the construct: its path is useless,
     /// but the debugger reports the source line the initializer is running. Resolve by that position -
@@ -350,7 +353,7 @@ module internal FSharpCallStackResolver =
                     Entity = entity
                     MemberName = ValueSome m.CompiledName
                     Kind = kindOf m
-                    Modifiers = modifiersOf false m
+                    Traits = traitsOf m
                     DisplayName = m.DisplayName
                 }
         | ValueNone ->
@@ -369,11 +372,7 @@ module internal FSharpCallStackResolver =
                     Entity = entity
                     MemberName = ValueSome ".cctor"
                     Kind = ResolvedMethod
-                    Modifiers =
-                        { entityModifiers entity with
-                            IsStatic = true
-                            IsConstructor = true
-                        }
+                    Traits = entityTraits entity |> Set.add Static |> Set.add Constructor
                     DisplayName = entity.DisplayName
                 })
 
@@ -393,18 +392,13 @@ module internal FSharpCallStackResolver =
         // so neither its name nor the debugger places it. It is still the user's binding by name, and
         // leaving it unresolved would put a bare `Invoke` on the map, so it falls back to the
         // declaration that contains it.
-        let struct (host, hostName, modifiers, anchor) =
+        let struct (host, hostName, traits, anchor) =
             match enclosing with
-            | ValueSome m -> struct (m.DeclarationLocation, m.DisplayName, modifiersOf true m, line)
+            | ValueSome m -> struct (m.DeclarationLocation, m.DisplayName, traitsOf m |> Set.add Lifted, line)
             | ValueNone ->
                 let host = entity.DeclarationLocation
 
-                struct (host,
-                        entity.DisplayName,
-                        { entityModifiers entity with
-                            IsLifted = true
-                        },
-                        host.StartLine)
+                struct (host, entity.DisplayName, entityTraits entity |> Set.add Lifted, host.StartLine)
 
         // `outer`, `inner` and `work` name a real binding and read well on their own. A synthesized
         // name - `Pipe #1 input at line 97` for a computation expression body or a pipeline stage -
@@ -424,7 +418,7 @@ module internal FSharpCallStackResolver =
                 Entity = entity
                 MemberName = ValueSome(closureIdentity origin)
                 Kind = ResolvedMethod
-                Modifiers = modifiers
+                Traits = traits
                 DisplayName = displayName
             }
 
@@ -436,7 +430,7 @@ module internal FSharpCallStackResolver =
                 Entity = entity
                 MemberName = ValueSome m.CompiledName
                 Kind = kindOf m
-                Modifiers = modifiersOf false m
+                Traits = traitsOf m
                 DisplayName = m.DisplayName
             })
 
@@ -493,7 +487,7 @@ module internal FSharpCallStackResolver =
                                         TypeChain = typeChainOf resolution.Entity
                                         MemberName = resolution.MemberName
                                         Kind = resolution.Kind
-                                        Modifiers = resolution.Modifiers
+                                        Traits = resolution.Traits
                                         DisplayName = resolution.DisplayName
                                     }))
 
