@@ -94,11 +94,14 @@ type internal FSharpGraphProvider() =
     let isFrameNode (node: GraphNode) =
         node.HasCategory ProgressionNodeCategories.CallStackFrame
 
-    /// Every frame that claims this method node, which in an accumulated map is more than one.
-    let framesOf (methodNode: GraphNode) =
+    /// The links by which frames claim this method node - one per frame, and in an accumulated map
+    /// that is more than one.
+    let frameLinksOf (methodNode: GraphNode) =
         methodNode.IncomingLinks
         |> Seq.filter (fun link -> link.HasCategory ProgressionLinkCategories.References && isFrameNode link.Source)
-        |> Seq.map _.Source
+
+    let framesOf (methodNode: GraphNode) =
+        frameLinksOf methodNode |> Seq.map _.Source
 
     /// The source position the debugger resolved for a frame - the only usable anchor for a startup
     /// frame, whose name (`$Demo.$Demo`) points at the file rather than the construct.
@@ -280,6 +283,11 @@ type internal FSharpGraphProvider() =
         | ResolvedProperty -> methodNode.AddCategory CodeNodeCategories.Property |> ignore
         | ResolvedEvent -> methodNode.AddCategory CodeNodeCategories.Event |> ignore
 
+        // The declaration, which is what a frame with no file of its own is left with. Where the
+        // frame does name a file, `AddSourceLocations` overwrites this with the line that was
+        // executing - a call stack navigates to the call, not to the declaration - and it writes
+        // once per node for the life of the map, guarded by the category it adds. The C# resolver
+        // sets the declaration here and is overwritten the same way.
         let location = sourceLocationOf resolved
         methodNode.SetValue(CodeNodeProperties.SourceLocation, location) |> ignore
 
@@ -334,27 +342,45 @@ type internal FSharpGraphProvider() =
                             yield frameNode, facts, FSharpCallStackPlan.decide assemblyNameForFile facts
                 |]
 
-            // FSharp.Core's plumbing sits in the middle of the stack, where the pipeline folds nothing:
-            // what goes into External Code it decides in its first step, from the debugger's own Just
-            // My Code state, and these frames carry SourceLink so the debugger counts them as ours.
-            // Marking them external is all that can be done from here - it greys them rather than
-            // removing them. Taking them out of the frame chain instead, by re-pointing the caller at
-            // the callee, breaks opening the map, so the graph is left with the shape the pipeline
-            // gave it.
-            let external =
+            // What the debug engine handed us, before anything is resolved. A position here belongs to
+            // the PDB of the running build, while the resolver reads the file the workspace has open:
+            // when the two disagree the answer is a construct on the same line of a different version
+            // of the source, and this line is the only place that shows it.
+            for methodNode, facts, action in parsedFrames do
+                let position =
+                    match facts.Frame.SourcePosition with
+                    | ValueNone -> "no position"
+                    | ValueSome position -> $"{Path.GetFileName position.File}:{position.Line}"
+
+                Trace.WriteLine $"[FSharpCodeMap] {CallStackMethodNode(methodNode).FunctionName} at {position} -> {action}"
+
+            // FSharp.Core's plumbing is external code that Just My Code did not filter out: it ships
+            // with SourceLink, so the debugger counts it as ours and the pipeline's first step keeps
+            // its frames.
+            //
+            // What folds a frame away is reaching no method node from it. `BuildResultLinks` walks
+            // the chain of `Calls` links and draws one link per frame that reaches one, joining the
+            // ends of a run of frames that do not by a single indirect link it labels "External
+            // Code" - the same link it draws over everything else the debugger folded. So the whole
+            // operation is cutting the frame loose from its method node: the chain of `Calls` links
+            // keeps the exact shape the pipeline gave it, nothing here creates or re-points a link,
+            // and the hop over FSharp.Core is drawn by the code that draws every other hop. What is
+            // left behind - the method node and the grey one the pipeline will pair with it - is in
+            // no `CallStack*Call` link and so is not in the result graph.
+            let foldedAway =
                 [|
                     for methodNode, _, action in parsedFrames do
                         if action = FoldAsExternalCode then
-                            methodNode
+                            yield! frameLinksOf methodNode
                 |]
 
-            if external.Length > 0 then
-                use marking = new GraphTransactionScope()
+            if foldedAway.Length > 0 then
+                use folding = new GraphTransactionScope()
 
-                for methodNode in external do
-                    CallStackMethodNode(methodNode).IsExternal <- true
+                for link in foldedAway do
+                    graph.Links.Remove link |> ignore
 
-                marking.Complete()
+                folding.Complete()
 
             let byAssembly =
                 [|
