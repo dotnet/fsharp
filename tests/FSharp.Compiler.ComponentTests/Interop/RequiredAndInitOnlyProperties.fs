@@ -16,7 +16,7 @@ module ``Required and init-only properties`` =
 
     }""" |> withCSharpLanguageVersion CSharpLanguageVersion.Preview |> withName "csLib"
 
-    let csharpBaseClass = 
+    let csharpBaseClass =
         CSharp """
     namespace RequiredAndInitOnlyProperties
     {
@@ -29,7 +29,7 @@ module ``Required and init-only properties`` =
 
     }""" |> withCSharpLanguageVersion CSharpLanguageVersion.Preview |> withName "csLib"
 
-    let csharpRBaseClass = 
+    let csharpRBaseClass =
         CSharp """
     namespace RequiredAndInitOnlyProperties
     {
@@ -98,7 +98,7 @@ let main _ =
         |> withReferences [csharpLib]
         |> compileAndRun
         |> shouldSucceed
-    
+
     [<FactForNETCOREAPP>]
     let ``F# can change set property via calling an explicit setter`` () =
 

@@ -1,4 +1,4 @@
-// #Regression #Conformance #SignatureFiles #Namespaces 
+// #Regression #Conformance #SignatureFiles #Namespaces
 // Regression tests for FSHARP1.0:2737
 // Miscellaneous negative tests - the positive tests listed
 // in the bug are already part of the FSHARP suite.

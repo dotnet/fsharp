@@ -1,5 +1,5 @@
-// #Regression #Conformance #Quotations 
-// Regression for FSHARP1.0:6007 
+// #Regression #Conformance #Quotations
+// Regression for FSHARP1.0:6007
 // Enums were causing ArgumentExceptions when quoted
 // Use an enum from C# (int based and non-int based)
 

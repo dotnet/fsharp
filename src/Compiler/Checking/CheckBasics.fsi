@@ -214,8 +214,14 @@ type TcPatPhase2Input =
 
     member WithRightPath: unit -> TcPatPhase2Input
 
-/// Represents the context flowed left-to-right through pattern checking
-type TcPatLinearEnv = TcPatLinearEnv of tpenv: UnscopedTyparEnv * names: NameMap<PrelimVal1> * takenNames: Set<string>
+/// Represents the context flowed left-to-right through pattern checking.
+/// 'usesActivePattern' is true if an active pattern occurs in the pattern; see TcLetBinding.
+type TcPatLinearEnv =
+    | TcPatLinearEnv of
+        tpenv: UnscopedTyparEnv *
+        names: NameMap<PrelimVal1> *
+        takenNames: Set<string> *
+        usesActivePattern: bool
 
 /// Represents the flags passed to TcPat regarding the binding location
 type TcPatValFlags =

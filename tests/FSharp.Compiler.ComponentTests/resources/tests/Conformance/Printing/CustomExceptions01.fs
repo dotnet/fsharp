@@ -1,4 +1,4 @@
-// #Regression #NoMT #Printing 
+// #Regression #NoMT #Printing
 
 
 // Test for FSharp1.0:4045 - exception printing adds Exception to name of exn constructor

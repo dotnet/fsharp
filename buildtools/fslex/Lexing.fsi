@@ -12,10 +12,10 @@ open System.Collections.Generic
 /// Position information stored for lexing tokens
 [<Struct>]
 type Position =
-    { 
+    {
       /// The file name for the position
       pos_fname: string
-      
+
       /// The line number for the position
       pos_lnum: int
 

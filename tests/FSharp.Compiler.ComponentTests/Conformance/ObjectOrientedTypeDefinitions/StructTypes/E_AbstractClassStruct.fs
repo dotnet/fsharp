@@ -1,4 +1,4 @@
-// #Regression #Conformance #ObjectOrientedTypes #Structs 
+// #Regression #Conformance #ObjectOrientedTypes #Structs
 
 
 // Verify error when both AbstractClassAttribute and StructAttribute are on the same type.
@@ -8,12 +8,12 @@
 type StructPoint =
     val mutable m_x : float
     val mutable m_y : float
-    
+
     new (x : float, y : float) = { m_x = x; m_y = y }
-    
+
     member this.X with get() = this.m_x
                   and  set x = this.m_x <- x
-    member this.Y with get() = this.m_y 
+    member this.Y with get() = this.m_y
                   and  set x = this.m_y <- x
 
 exit 1

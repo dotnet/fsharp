@@ -7,7 +7,7 @@ type GenericTestNameRecursive() =
 
     static do GenericTestNameRecursive().Test()
 
-    member __.Test() = 
+    member __.Test() =
         let mutable x = 0uy
         testValue "unused" 0 &x
         check "vruoer3rv" x 3uy

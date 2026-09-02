@@ -1,4 +1,4 @@
-// #NoMT #CompilerOptions 
+// #NoMT #CompilerOptions
 
 
 namespace N

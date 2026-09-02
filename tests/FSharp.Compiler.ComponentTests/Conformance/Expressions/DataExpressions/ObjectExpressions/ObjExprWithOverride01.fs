@@ -1,4 +1,4 @@
-// #Regression #Conformance #DataExpressions #ObjectConstructors 
+// #Regression #Conformance #DataExpressions #ObjectConstructors
 
 // FSharp1.0:6424 - Object expressions fail to check override of final method (from method impl)
 

@@ -1,9 +1,9 @@
-// #Conformance #Quotations 
+// #Conformance #Quotations
 open Microsoft.FSharp.Quotations
 open Microsoft.FSharp.Quotations.Patterns
 open QuoteUtils
 
-type t = { Name : string; Age : int } 
+type t = { Name : string; Age : int }
 let q = <@ let x = { Name = "Bob"; Age = 10; } in x @>
 let q' = Expr.NewRecord(typeof<t>, [Expr.Value("Bob"); Expr.Value(10)])
 

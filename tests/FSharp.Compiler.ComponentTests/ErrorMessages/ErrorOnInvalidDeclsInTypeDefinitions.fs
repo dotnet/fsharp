@@ -22,7 +22,7 @@ type IFace =
             |> withDiagnostics [
                 (Error 58, Line 6, Col 5, Line 6, Col 11, "Modules cannot be nested inside types. Define modules at module or namespace level.")
             ]
-            
+
         [<Fact>]
         let ``Version10: Error when module is inside interface verbose syntax``() =
             Fsx """
@@ -43,7 +43,7 @@ type IFace =
                 (Error 10, Line 7, Col 9, Line 7, Col 15, "Unexpected keyword 'module' in member definition");
                 (Error 10, Line 9, Col 5, Line 9, Col 8, "Incomplete structured construct at or before this point in definition. Expected incomplete structured construct at or before this point or other token.")
             ]
-            
+
         [<Fact>]
         let ``Error when module is inside interface verbose syntax``() =
             Fsx """
@@ -64,7 +64,7 @@ type IFace =
                 (Error 10, Line 7, Col 9, Line 7, Col 15, "Unexpected keyword 'module' in member definition");
                 (Error 10, Line 9, Col 5, Line 9, Col 8, "Incomplete structured construct at or before this point in definition. Expected incomplete structured construct at or before this point or other token.")
             ]
-            
+
         [<Fact>]
         let ``No Error when module is inside interface``() =
             Fsx """
@@ -96,7 +96,7 @@ type C () =
             |> withDiagnostics [
                 (Error 58, Line 6, Col 5, Line 6, Col 11, "Modules cannot be nested inside types. Define modules at module or namespace level.")
             ]
-            
+
         [<Fact>]
         let ``No Error when module is inside class``() =
             Fsx """
@@ -110,7 +110,7 @@ type C () =
             |> withLangVersion90
             |> typecheck
             |> shouldSucceed
-        
+
 
     module ``Module inside class with constructor`` =
         [<Fact>]
@@ -197,7 +197,7 @@ type R =
             |> withDiagnostics [
                 (Error 58, Line 6, Col 5, Line 6, Col 11, "Modules cannot be nested inside types. Define modules at module or namespace level.")
             ]
-            
+
         [<Fact>]
         let ``No Error when module is inside record``() =
             Fsx """
@@ -231,7 +231,7 @@ type MyStruct =
             |> withDiagnostics [
                 (Error 58, Line 8, Col 5, Line 8, Col 11, "Modules cannot be nested inside types. Define modules at module or namespace level.")
             ]
-            
+
         [<Fact>]
         let ``No Error when module is inside struct``() =
             Fsx """
@@ -264,7 +264,7 @@ type MyDelegate = delegate of int * int -> int
             |> withDiagnostics [
                 (Error 58, Line 5, Col 5, Line 5, Col 11, "Modules cannot be nested inside types. Define modules at module or namespace level.")
             ]
-            
+
         [<Fact>]
         let ``No Error when module appears after delegate``() =
             Fsx """
@@ -332,7 +332,7 @@ type ClassWithStatic() =
             |> withDiagnostics [
                 (Error 58, Line 7, Col 5, Line 7, Col 11, "Modules cannot be nested inside types. Define modules at module or namespace level.")
             ]
-            
+
         [<Fact>]
         let ``No Error when module appears after static members``() =
             Fsx """
@@ -364,7 +364,7 @@ type A =
                 (Error 58, Line 6, Col 5, Line 6, Col 14, "Exceptions must be defined at module level, not inside types.");
                 (Error 10, Line 6, Col 5, Line 6, Col 14, "Unexpected keyword 'exception' in member definition")
             ]
-            
+
         [<Fact>]
         let ``No Error when exception is inside type``() =
             Fsx """
@@ -380,7 +380,7 @@ type A =
             |> withDiagnostics [
                 (Error 10, Line 6, Col 5, Line 6, Col 14, "Unexpected keyword 'exception' in member definition")
             ]
-    
+
     module ``Open inside type`` =
         [<Fact>]
         let ``Error when open declaration is inside type``() =
@@ -398,7 +398,7 @@ type A =
                 (Error 58, Line 6, Col 5, Line 6, Col 9, "'open' declarations must appear at module level, not inside types.")
                 (Error 10, Line 6, Col 5, Line 6, Col 9, "Unexpected keyword 'open' in member definition")
             ]
-            
+
         [<Fact>]
         let ``No Error when open declaration is inside type``() =
             Fsx """
@@ -414,7 +414,7 @@ type A =
             |> withDiagnostics [
                 (Error 10, Line 6, Col 5, Line 6, Col 9, "Unexpected keyword 'open' in member definition")
             ]
-    
+
     module ``Type inside type`` =
         [<Fact>]
         let ``Error when type is nested inside another type``() =
@@ -432,7 +432,7 @@ type OuterType =
             |> withDiagnostics [
                 (Error 58, Line 7, Col 5, Line 7, Col 9, "Nested type definitions are not allowed. Types must be defined at module or namespace level.")
             ]
-    
+
         [<Fact>]
         let ``No Error when type is nested inside another type``() =
             Fsx """
@@ -446,7 +446,7 @@ type OuterType =
             |> withLangVersion90
             |> typecheck
             |> shouldSucceed
-    
+
     module ``Multiple invalid constructs`` =
         [<Fact>]
         let ``Error for all invalid nested constructs in single type``() =
@@ -470,7 +470,7 @@ type MultiTest =
                 (Error 58, Line 9, Col 5, Line 9, Col 14, "Exceptions must be defined at module level, not inside types.")
                 (Error 58, Line 10, Col 5, Line 10, Col 9, "'open' declarations must appear at module level, not inside types.")
             ]
-            
+
         [<Fact>]
         let ``No Error for all invalid nested constructs in single type``() =
             Fsx """
@@ -508,7 +508,7 @@ type B =
                 (Error 58, Line 7, Col 5, Line 7, Col 11, "Modules cannot be nested inside types. Define modules at module or namespace level.")
                 (Error 58, Line 8, Col 5, Line 8, Col 11, "Modules cannot be nested inside types. Define modules at module or namespace level.")
             ]
-            
+
         [<Fact>]
         let ``No Error for each module inside type``() =
             Fsx """
@@ -523,7 +523,7 @@ type B =
             |> withLangVersion90
             |> typecheck
             |> shouldSucceed
-    
+
     module ``Deeply nested invalid constructs`` =
         [<Fact>]
         let ``Error for invalid constructs in deeply nested context``() =
@@ -548,7 +548,7 @@ module InnerModule =
                 (Error 58, Line 10, Col 13, Line 10, Col 19, "Modules cannot be nested inside types. Define modules at module or namespace level.")
                 (Error 58, Line 12, Col 13, Line 12, Col 22, "Exceptions must be defined at module level, not inside types.")
             ]
-            
+
         [<Fact>]
         let ``No Error for invalid constructs in deeply nested context``() =
             Fsx """
@@ -567,7 +567,7 @@ module InnerModule =
             |> withLangVersion90
             |> typecheck
             |> shouldSucceed
-    
+
     module ``Abstract class with invalid constructs`` =
         [<Fact>]
         let ``Error for invalid constructs in abstract class``() =
@@ -587,7 +587,7 @@ type AbstractBase() =
                 (Error 58, Line 7, Col 5, Line 7, Col 11, "Modules cannot be nested inside types. Define modules at module or namespace level.")
                 (Error 58, Line 8, Col 5, Line 8, Col 9, "Nested type definitions are not allowed. Types must be defined at module or namespace level.")
             ]
-            
+
         [<Fact>]
         let ``No Error for invalid constructs in abstract class``() =
             Fsx """
@@ -602,7 +602,7 @@ type AbstractBase() =
             |> withLangVersion90
             |> typecheck
             |> shouldSucceed
-    
+
     module ``Type augmentation with invalid constructs`` =
         [<Fact>]
         let ``Error for module in type augmentation``() =
@@ -624,7 +624,7 @@ type Original with
                 (Error 10, Line 8, Col 5, Line 8, Col 11, "Unexpected keyword 'module' in type definition. Expected incomplete structured construct at or before this point, 'end' or other token.")
                 (Error 10, Line 10, Col 1, Line 10, Col 13, "Incomplete structured construct at or before this point in implementation file")
             ]
-            
+
         [<Fact>]
         let ``No Error for module in type augmentation``() =
             Fsx """
@@ -644,7 +644,7 @@ type Original with
                 (Error 10, Line 8, Col 5, Line 8, Col 11, "Unexpected keyword 'module' in type definition. Expected incomplete structured construct at or before this point, 'end' or other token.");
                 (Error 10, Line 10, Col 1, Line 10, Col 13, "Incomplete structured construct at or before this point in implementation file")
             ]
-    
+
     module ``Do binding with invalid constructs`` =
         [<Fact>]
         let ``Error for invalid constructs after do binding``() =
@@ -665,8 +665,8 @@ type TypeWithDo() =
                 (Error 58, Line 7, Col 5, Line 7, Col 11, "Modules cannot be nested inside types. Define modules at module or namespace level.")
                 (Error 58, Line 8, Col 5, Line 8, Col 9, "'open' declarations must appear at module level, not inside types.")
             ]
-    
-    
+
+
         [<Fact>]
         let ``No Error for invalid constructs after do binding``() =
             Fsx """
@@ -681,7 +681,7 @@ type TypeWithDo() =
             |> withLangVersion90
             |> typecheck
             |> shouldSucceed
-    
+
     module ``Inherit with invalid constructs`` =
         [<Fact>]
         let ``Error for invalid constructs after inherit``() =
@@ -700,7 +700,7 @@ type Derived() =
             |> withDiagnostics [
                 (Error 58, Line 8, Col 5, Line 8, Col 11, "Modules cannot be nested inside types. Define modules at module or namespace level.")
             ]
-            
+
         [<Fact>]
         let ``No Error for invalid constructs after inherit``() =
             Fsx """
@@ -715,7 +715,7 @@ type Derived() =
             |> withLangVersion90
             |> typecheck
             |> shouldSucceed
-    
+
     module ``Valid module placement`` =
         [<Fact>]
         let ``No Error for modules at correct level``() =
@@ -735,7 +735,7 @@ module ValidModule3 =
             |> withLangVersion10
             |> typecheck
             |> shouldSucceed
-            
+
         [<Fact>]
         let ``No Error for modules at correct level 2``() =
             Fsx """
@@ -768,7 +768,7 @@ type ClassWithLet() =
             |> withLangVersion10
             |> typecheck
             |> shouldSucceed
-            
+
         [<Fact>]
         let ``No Error for let bindings inside class 2``() =
             Fsx """
@@ -794,7 +794,7 @@ module B = begin end  // Same column as type, not nested
             |> withLangVersion10
             |> typecheck
             |> shouldSucceed
-            
+
         [<Fact>]
         let ``No Error for modules at same indentation as type 2``() =
             Fsx """

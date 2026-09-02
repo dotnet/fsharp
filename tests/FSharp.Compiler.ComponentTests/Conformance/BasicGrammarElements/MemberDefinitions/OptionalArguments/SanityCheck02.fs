@@ -1,4 +1,4 @@
-// #Conformance #DeclarationElements #MemberDefinitions #OptionalArguments 
+// #Conformance #DeclarationElements #MemberDefinitions #OptionalArguments
 
 
 // Test optional parameters with prim types, obj types, disc unions, option types, ref types, mutable types, etc.
@@ -18,18 +18,18 @@ type Foo() =
     member this.Obj = m_objType
     member this.DU = m_duType
     member this.ILO = m_ilo
-   
+
     member this.MegaOptParams (?prim:float, ?obj:string, ?du:People, ?ilo:int list option, ?x:int) =
         let getArg (x:'a option) def:'a =
-            match x with 
+            match x with
             | Some(value) -> value
             | None        -> def
-            
+
         m_primType  <- getArg prim 100.0
         m_objType   <- getArg obj ""
         m_duType    <- getArg du (Jane(Joe(0)))
         m_ilo       <- getArg ilo (Some([1..10]))
-        
+
 let test = new Foo()
 
 // Verify initial values for properties

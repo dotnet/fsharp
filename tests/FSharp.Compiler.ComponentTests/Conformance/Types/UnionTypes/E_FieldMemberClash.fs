@@ -13,7 +13,7 @@ type MyDU =
     member this.Item2 = 3
     member this.V3 = 'x'
 
-type MyDU2 = 
+type MyDU2 =
     | Case1 of int
     with
     member this.Item = ""

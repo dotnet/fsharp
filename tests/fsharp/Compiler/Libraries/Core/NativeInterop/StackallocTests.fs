@@ -22,7 +22,7 @@ module ``Stackalloc Tests`` =
             NativeInterop.NativePtr.set data i now
         for i = 0 to 99 do
             Assert.areEqual (NativeInterop.NativePtr.get data i) now
-                 
+
         let later = now.AddDays 1.
         for i = 0 to 99 do
             let datai = NativeInterop.NativePtr.toByRef (NativeInterop.NativePtr.add data i)
@@ -34,10 +34,10 @@ module ``Stackalloc Tests`` =
     [<Fact>]
     let ``Stackalloc of enum``() =
         let data = NativeInterop.NativePtr.stackalloc<E> 10
-        
+
         for i = 0 to 9 do
             NativeInterop.NativePtr.set data i (if (i % 2)=0 then E.A else E.B)
-        
+
         for i = 0 to 9 do
             let expected = if (i % 2) = 0 then E.A else E.B
             Assert.areEqual (NativeInterop.NativePtr.get data i) expected
@@ -45,7 +45,7 @@ module ``Stackalloc Tests`` =
         for i = 0 to 9 do
             let datai = NativeInterop.NativePtr.toByRef (NativeInterop.NativePtr.add data i)
             datai <- (if (i % 2)=1 then E.A else E.B)
-        
+
         for i = 0 to 9 do
             let datai = NativeInterop.NativePtr.toByRef (NativeInterop.NativePtr.add data i)
             let expected = if (i % 2)=1 then E.A else E.B
@@ -101,17 +101,17 @@ let _ = NativeInterop.NativePtr.stackalloc<System.EventHandler> 1
     [<Fact>]
     let ``Stackalloc of int``() =
         let data = NativeInterop.NativePtr.stackalloc<int> 100
-           
+
         for i = 0 to 99 do
             NativeInterop.NativePtr.set data i (i*i)
-                
+
         for i = 0 to 99 do
             Assert.areEqual (NativeInterop.NativePtr.get data i) (i*i)
-        
+
         for i = 0 to 99 do
             let datai = NativeInterop.NativePtr.toByRef (NativeInterop.NativePtr.add data i)
             datai <- 1-i
-            
+
         for i = 0 to 99 do
             let datai = NativeInterop.NativePtr.toByRef (NativeInterop.NativePtr.add data i)
             Assert.areEqual datai (1-i)
@@ -128,7 +128,7 @@ let _ = NativeInterop.NativePtr.stackalloc<System.EventHandler> 1
         for i = 0 to 99 do
             let datai = NativeInterop.NativePtr.toByRef (NativeInterop.NativePtr.add data i)
             datai <- int64 (1-i)
-         
+
         for i = 0 to 99 do
             let datai = NativeInterop.NativePtr.toByRef (NativeInterop.NativePtr.add data i)
             Assert.areEqual datai (int64 (1-i))
@@ -166,17 +166,17 @@ let _ = NativeInterop.NativePtr.stackalloc<R> 1
             1
             (6, 9, 6, 43)
             "A generic construct requires that the type 'R' is an unmanaged type"
-            
+
     [<Fact>]
     let ``Stackalloc zero-size``() =
         // Regression test for FSHARP1.0:
         // stackalloc<System.DateTime> 0
-            
+
         // check stackalloc 0 -- ok
         let data = NativeInterop.NativePtr.stackalloc<System.DateTime> 0
-                        
+
         // The returned pointer is undefined
         // No allocation should happen
         let _ = NativeInterop.NativePtr.toNativeInt data
-                        
+
         ()

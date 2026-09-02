@@ -1,4 +1,4 @@
-// #Regression #Conformance #LexicalAnalysis #Constants 
+// #Regression #Conformance #LexicalAnalysis #Constants
 // Verify error when parsing invalid IEEE64 value
 // Regression from TFS 715348
 
