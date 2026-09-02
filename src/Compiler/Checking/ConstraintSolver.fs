@@ -704,16 +704,15 @@ let SubstMeasure (r: Typar) ms =
     | None -> r.typar_solution <- Some (TType_measure ms)
     | Some _ -> error(InternalError("already solved", r.Range))
 
-let rec TransactStaticReq (csenv: ConstraintSolverEnv) (trace: OptionalTrace) (tpr: Typar) req = 
-    ignore csenv
+let rec TransactStaticReq (trace: OptionalTrace) (tpr: Typar) req = 
     let orig = tpr.StaticReq
     trace.Exec (fun () -> tpr.SetStaticReq req) (fun () -> tpr.SetStaticReq orig)
     CompleteD
 
-and SolveTypStaticReqTypar (csenv: ConstraintSolverEnv) trace req (tpr: Typar) =
+and SolveTypStaticReqTypar trace req (tpr: Typar) =
     let orig = tpr.StaticReq
     let req2 = JoinTyparStaticReq req orig
-    if orig <> req2 then TransactStaticReq csenv trace tpr req2 else CompleteD
+    if orig <> req2 then TransactStaticReq trace tpr req2 else CompleteD
 
 and SolveTypStaticReq (csenv: ConstraintSolverEnv) trace req ty =
     match req with 
@@ -725,11 +724,11 @@ and SolveTypStaticReq (csenv: ConstraintSolverEnv) trace req ty =
             let vs = ListMeasureVarOccsWithNonZeroExponents ms
             trackErrors {
                 for tpr, _ in vs do 
-                    do! SolveTypStaticReqTypar csenv trace req tpr
+                    do! SolveTypStaticReqTypar trace req tpr
             }
         | _ -> 
             match tryAnyParTy csenv.g ty with
-            | ValueSome tpr -> SolveTypStaticReqTypar csenv trace req tpr
+            | ValueSome tpr -> SolveTypStaticReqTypar trace req tpr
             | ValueNone -> CompleteD
       
 let TransactDynamicReq (trace: OptionalTrace) (tpr: Typar) req = 
@@ -2276,7 +2275,7 @@ and AddUnsolvedMemberConstraint csenv ndeep m2 trace permitWeakResolution ignore
         // SolveTypStaticReq is applied here if IWSAMs are supported
         for supportTypar in supportTypars do
             if not (SupportTypeOfMemberConstraintIsSolved csenv traitInfo supportTypar) then
-                do! SolveTypStaticReqTypar csenv trace TyparStaticReq.HeadType supportTypar
+                do! SolveTypStaticReqTypar trace TyparStaticReq.HeadType supportTypar
 
         // If there's nothing left to learn then raise the errors.
         // Note: we should likely call MemberConstraintIsReadyForResolution here when permitWeakResolution=false but for stability
@@ -4169,7 +4168,7 @@ let UpdateStaticReqOfTypar (denv: DisplayEnv) css m (trace: OptionalTrace) (typa
                 for supportTy in traitInfo.SupportTypes do
                     do! SolveTypStaticReq csenv trace TyparStaticReq.HeadType supportTy
             | TyparConstraint.SimpleChoice _ ->
-                    do! SolveTypStaticReqTypar csenv trace TyparStaticReq.HeadType typar
+                    do! SolveTypStaticReqTypar trace TyparStaticReq.HeadType typar
             | _ -> ()
     } |> RaiseOperationResult
 
