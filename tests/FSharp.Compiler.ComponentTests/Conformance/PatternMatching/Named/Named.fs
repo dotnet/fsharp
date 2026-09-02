@@ -148,12 +148,12 @@ module Named =
     [<Theory; FileInlineData("discUnion01.fs")>]
     let ``Named - discUnion01_fs - --test:ErrorRanges`` compilation =
         compilation
-        |> getCompilation 
+        |> getCompilation
         |> asFs
         |> withOptions ["--test:ErrorRanges"]
         |> typecheck
         |> shouldSucceed
-        
+
     // This test was automatically generated (moved from FSharpQA suite - Conformance/PatternMatching/Named)
     [<Theory; FileInlineData("discUnion02.fs")>]
     let ``Named - _DiscUnion01_fs - --test:ErrorRanges`` compilation =
@@ -168,7 +168,7 @@ module Named =
     [<Theory; FileInlineData("E_ActivePatternHasNoFields.fs")>]
     let ``Named - E_ActivePatternHasNoFields_fs - --test:ErrorRanges`` compilation =
         compilation
-        |> getCompilation 
+        |> getCompilation
         |> asFs
         |> withOptions ["--test:ErrorRanges"]
         |> typecheck
@@ -299,7 +299,7 @@ but here has type
     [<Theory; FileInlineData("E_ActivePatternUnconstrained01.fs")>]
     let ``Named - E_ActivePatternUnconstrained01_fs - --test:ErrorRanges`` compilation =
         compilation
-        |> getCompilation 
+        |> getCompilation
         |> asFs
         |> withOptions ["--test:ErrorRanges"]
         |> typecheck
@@ -309,7 +309,7 @@ but here has type
             (Warning 20, Line 14, Col 1, Line 14, Col 5, "The result of this expression has type 'int' and is implicitly ignored. Consider using 'ignore' to discard this value explicitly, e.g. 'expr |> ignore', or 'let' to bind the result to a name, e.g. 'let result = expr'.")
             (Error 1210, Line 7, Col 6, Line 7, Col 16, "Active pattern '|A1|A2|A3|' has a result type containing type variables that are not determined by the input. The common cause is a when a result case is not mentioned, e.g. 'let (|A|B|) (x:int) = A x'. This can be fixed with a type constraint, e.g. 'let (|A|B|) (x:int) : Choice<int,unit> = A x'")
         ]
-        
+
     // This test was automatically generated (moved from FSharpQA suite - Conformance/PatternMatching/Named)
     [<Theory; FileInlineData("E_Error_LetRec01.fs")>]
     let ``Named - E_Error_LetRec01_fs - --test:ErrorRanges`` compilation =
@@ -390,7 +390,7 @@ but here has type
     [<Theory; FileInlineData("E_Error_NonParam02.fs")>]
     let ``Named - E_Error_NonParam02_fs - --test:ErrorRanges`` compilation =
         compilation
-        |> getCompilation 
+        |> getCompilation
         |> asFs
         |> withOptions ["--test:ErrorRanges"]
         |> typecheck
@@ -402,7 +402,7 @@ but here has type
 but here has type
     'string'    ")
         ]
-        
+
     // This test was automatically generated (moved from FSharpQA suite - Conformance/PatternMatching/Named)
     [<Theory; FileInlineData("E_Error_NonParam03.fs")>]
     let ``Named - E_Error_NonParam03_fs - --test:ErrorRanges`` compilation =
@@ -621,7 +621,7 @@ but here has type
     [<Theory; FileInlineData("RecursiveActivePats.fs")>]
     let ``Named - RecursiveActivePats_fs - --test:ErrorRanges`` compilation =
         compilation
-        |> getCompilation 
+        |> getCompilation
         |> asFs
         |> withOptions ["--test:ErrorRanges"]
         |> typecheck

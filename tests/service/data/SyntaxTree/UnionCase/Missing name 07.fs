@@ -2,6 +2,6 @@ module Module
 
 type U =
     | A
-    | of 
+    | of
     | C
     | D

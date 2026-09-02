@@ -1,4 +1,4 @@
-// #Conformance #Quotations 
+// #Conformance #Quotations
 open Microsoft.FSharp.Quotations
 open Microsoft.FSharp.Quotations.Patterns
 open QuoteUtils
@@ -13,7 +13,7 @@ let q' = Expr.Application(
             ),
             Expr.Value("arg1")
           )
-          
+
 let r1 = verify q (|Application|_|) "Let (f,
      Lambda (g,
              Lambda (x,

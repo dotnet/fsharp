@@ -1,4 +1,4 @@
-// #Regression #Attributes #Assemblies 
+// #Regression #Attributes #Assemblies
 // Verify ability to put wildcards in assembly version
 
 open System

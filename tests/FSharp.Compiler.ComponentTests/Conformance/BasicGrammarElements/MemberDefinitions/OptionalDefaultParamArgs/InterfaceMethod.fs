@@ -1,10 +1,10 @@
-﻿// #Conformance #DeclarationElements #MemberDefinitions #OptionalDefaultParameterValueArguments 
+﻿// #Conformance #DeclarationElements #MemberDefinitions #OptionalDefaultParameterValueArguments
 
 open System.Runtime.InteropServices
 open System
 
 // test that only default parameters at interfaces have effect.
-type MyFace = 
+type MyFace =
     abstract Test : [<Optional;DefaultParameterValue(4)>] i:int-> int
 
 type Impl() =

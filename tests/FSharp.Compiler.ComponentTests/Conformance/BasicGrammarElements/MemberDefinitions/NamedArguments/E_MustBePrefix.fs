@@ -1,4 +1,4 @@
-// #Regression #Conformance #DeclarationElements #MemberDefinitions #NamedArguments 
+// #Regression #Conformance #DeclarationElements #MemberDefinitions #NamedArguments
 // Verify warning when named arguments do not form _prefix_ of unnamed arguments.
 
 

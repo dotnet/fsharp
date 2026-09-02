@@ -649,7 +649,7 @@ $ code --diff {outFile} {expectedFile}
 
     let withLangVersion10 (cUnit: CompilationUnit) : CompilationUnit =
         withOptionsHelper [ "--langversion:10.0" ] "withLangVersion10 is only supported on F#" cUnit
-        
+
     let withLangVersion11 (cUnit: CompilationUnit) : CompilationUnit =
         withOptionsHelper [ "--langversion:11.0" ] "withLangVersion11 is only supported on F#" cUnit
 
@@ -1205,7 +1205,7 @@ $ code --diff {outFile} {expectedFile}
             evalFSharp fs script
         | _ -> failwith "Script evaluation is only supported for F#."
 
-    let internal sessionCache = 
+    let internal sessionCache =
         Collections.Concurrent.ConcurrentDictionary<Set<string> * LangVersion, FSharpScript>()
 
     let internal createSessionWithShadowedExit args version =
@@ -1215,12 +1215,12 @@ $ code --diff {outFile} {expectedFile}
 
     let getIsolatedSessionForEval args version =
         createSessionWithShadowedExit args version
-    
+
     let getSessionForEval args version =
         let key = Set args, version
         match sessionCache.TryGetValue(key) with
         | true, script -> script
-        | _ -> 
+        | _ ->
             let script = createSessionWithShadowedExit args version
             sessionCache.TryAdd(key, script) |> ignore
             script
@@ -2036,7 +2036,7 @@ $ code --diff {outFile} {expectedFile}
                 | Some (ExecutionOutput {Outcome = Failure ex }) ->
                     failwithf $"Eval or Execution has failed (expected to succeed): %A{ex}\n{diagnostics}"
                 | _ ->
-                    
+
                     failwithf $"Operation failed (expected to succeed).\n{diagnostics} \n OUTPUTs: %A{r.Output}"
 
         let shouldFail (result: CompilationResult) : CompilationResult =
@@ -2261,10 +2261,10 @@ $ code --diff {outFile} {expectedFile}
                 let m = Regex(pattern, RegexOptions.Multiline).Match(input)
                 if m.Success then
                     m.Index
-                else 
+                else
                     -1
             | MatchStyle.Standard ->
-                input.IndexOf(pattern) 
+                input.IndexOf(pattern)
 
         let private checkOutputInOrderCore matchStyle (category: string) (substrings: string list) (selector: ExecutionOutput -> string) (result: CompilationResult) : CompilationResult =
             match result.RunOutput with

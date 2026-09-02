@@ -53,7 +53,7 @@ if FailingInlinedHelper.repro 42 <> 42 then failwith "unexpected result"
         |> shouldSucceed
 
     [<Fact>] // https://github.com/dotnet/fsharp/issues/13067
-    let ``Local function with a flexible type``() = 
+    let ``Local function with a flexible type``() =
         """
 task {
     let m1 f s = Seq.map f s
@@ -72,7 +72,7 @@ task {
         |> shouldSucceed
 
     [<Fact>] // https://github.com/dotnet/fsharp/issues/14806
-    let ``Explicit returns types + constraints on generics``() = 
+    let ``Explicit returns types + constraints on generics``() =
         """
 module Foo
 
@@ -94,10 +94,10 @@ run()
 """
         |> verifyOptimizedAndRun
         |> shouldSucceed
-        
+
 
     [<Fact>] // https://github.com/dotnet/fsharp/issues/14807
-    let ``let _ = null``() = 
+    let ``let _ = null``() =
         """
 module TestProject1
 
@@ -140,7 +140,7 @@ for i in 1 .. 100 do
         |> shouldSucceed
 
     [<Fact>] // https://github.com/dotnet/fsharp/issues/16068
-    let ``Decision tree with 32+ binds with nested expression is not getting splitted and state machine is successfully statically compiles``() = 
+    let ``Decision tree with 32+ binds with nested expression is not getting splitted and state machine is successfully statically compiles``() =
         FSharp """
 module Testing
 

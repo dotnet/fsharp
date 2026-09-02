@@ -1,4 +1,4 @@
-// #Regression #Conformance #DeclarationElements #InterfacesAndImplementations 
+// #Regression #Conformance #DeclarationElements #InterfacesAndImplementations
 
 
 // FS1 2504, Generic interface instantiated with unit

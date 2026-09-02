@@ -7,7 +7,7 @@ module A =
     let a (x: AT) =
         match! x with _ -> ()
     let b (x: int) =
-        match! x with _ -> ()    
+        match! x with _ -> ()
 
 module B =
     let a (x: AT) = async {

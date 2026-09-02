@@ -1,4 +1,4 @@
-// #Regression #Conformance #SignatureFiles 
+// #Regression #Conformance #SignatureFiles
 // Test you get an error if you specify an .fsi file but not the corresponding .fs file.
 
 //<Expects id="FS0240" status="error" span="(6,1)">The signature file 'E_MissingSourceFile01' does not have a corresponding implementation file\. If an implementation file exists then check the 'module' and 'namespace' declarations in the signature and implementation files match</Expects>
@@ -11,7 +11,7 @@ open Microsoft.FSharp.Core
 
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 /// Delayed computations.
-module Lazy = 
+module Lazy =
 
     type 'a t = Lazy<'a>
 

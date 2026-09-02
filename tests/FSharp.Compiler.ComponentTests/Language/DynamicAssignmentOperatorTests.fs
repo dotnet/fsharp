@@ -11,7 +11,7 @@ module DynamicAssignmentOperatorTests =
     [<Theory>]
     [<InlineData("8.0")>]
     [<InlineData("preview")>]
-    let ``Implementing dynamic assignment operator does not produce a warning`` version = 
+    let ``Implementing dynamic assignment operator does not produce a warning`` version =
         Fsx """
         type T = T with
             static member inline (?<-) (f, x, y) = f x y

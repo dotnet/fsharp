@@ -1,7 +1,7 @@
-// #Regression #Conformance #TypesAndModules #GeneratedEqualityAndHashing #Attributes 
+// #Regression #Conformance #TypesAndModules #GeneratedEqualityAndHashing #Attributes
 //<Expects status="error" span="(8,8-8,9)" id="FS0379">The 'StructuralComparison' attribute must be used in conjunction with the 'StructuralEquality' attribute$</Expects>
 
-module M12 = 
+module M12 =
   //[<ReferenceEquality(false)>]
   [<StructuralComparison>]
   (* [<StructuralEquality(true)>] *)

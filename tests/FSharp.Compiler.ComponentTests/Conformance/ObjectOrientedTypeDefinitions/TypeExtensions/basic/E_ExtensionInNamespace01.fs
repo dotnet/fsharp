@@ -1,4 +1,4 @@
-// #Regression #Conformance #ObjectOrientedTypes #TypeExtensions 
+// #Regression #Conformance #ObjectOrientedTypes #TypeExtensions
 // Verify error associated with placing type extensions
 // inside namespaces. (They must only be placed in modules.)
 

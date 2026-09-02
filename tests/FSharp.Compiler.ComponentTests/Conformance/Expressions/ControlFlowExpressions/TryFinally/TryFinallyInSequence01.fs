@@ -1,4 +1,4 @@
-// #Regression #Sequences #Conformance #ControlFlow #Exceptions 
+// #Regression #Sequences #Conformance #ControlFlow #Exceptions
 // Test issue 4234. The behavior here differs from the equivalent C# but that's ok. Just make sure if it changes we notice.
 
 let mutable result = ""

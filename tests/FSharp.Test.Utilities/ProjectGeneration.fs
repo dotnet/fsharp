@@ -365,7 +365,7 @@ type SyntheticProject =
                 UnresolvedReferences = None
                 OriginalLoadReferences = []
                 Stamp = None }
-       
+
         OptionsCache.GetOrAdd(key, factory).Value
 
 

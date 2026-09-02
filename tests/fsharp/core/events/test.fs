@@ -1,4 +1,4 @@
-// #Regression #Conformance #Events #Regression #Interop 
+// #Regression #Conformance #Events #Regression #Interop
 
 
 module Test
@@ -6,11 +6,11 @@ module Test
 let mutable failures = []
 let report_failure s =  failures <- failures @ [s]
 let test s b = stderr.Write(s:string);  if b then stderr.WriteLine " OK" else stderr.WriteLine " NO"; report_failure s
-let check s b1 b2 = 
-   stderr.Write(s:string);  
-   if b1 = b2 then 
-       stderr.WriteLine " OK" 
-   else 
+let check s b1 b2 =
+   stderr.Write(s:string);
+   if b1 = b2 then
+       stderr.WriteLine " OK"
+   else
        printfn ", FAILED: expected %A, got %A" b2 b1;
        report_failure s
 
@@ -19,17 +19,17 @@ open System.Drawing
 open System.ComponentModel
 open System.Windows.Forms
 
-module EventTest2 = 
+module EventTest2 =
 
-    type SomeComponent() = 
+    type SomeComponent() =
         let ev1 = new Event<string>()
         let ev2 = new Event<EventArgs>()
-        [<CLIEvent>]    
+        [<CLIEvent>]
         member x.SomeEvent = ev1.Publish
-        [<CLIEvent>]    
+        [<CLIEvent>]
         member x.Paint = ev2.Publish
         member x.Fire() = ev1.Trigger("hello"); ev2.Trigger(new EventArgs())
-    
+
     let mk() = new SomeComponent()
     let fire (c:SomeComponent) = c.Fire()
 
@@ -48,85 +48,85 @@ module AbstractEventTests =
 
     type ChannelChangedHandler = delegate of obj * int -> unit
 
-    type C() =  
+    type C() =
         let channelChanged = new Event<ChannelChangedHandler,_>()
 
         static let defaultChannelChanged = new Event<ChannelChangedHandler,_>()
 
-        [<CLIEvent>]    
+        [<CLIEvent>]
         member self.ChannelChanged = channelChanged.Publish
 
         member self.ChangeChannel(n) = channelChanged.Trigger(self,n)
 
-        [<CLIEvent>]    
+        [<CLIEvent>]
         static member DefaultChannelChanged = defaultChannelChanged.Publish
 
         static member ChangeDefaultChannel(n) = defaultChannelChanged.Trigger(null,n)
 
 
 
-    type I =  
-        [<CLIEvent>]    
+    type I =
+        [<CLIEvent>]
         abstract member ChannelChanged : IEvent<ChannelChangedHandler,int>
 
 
-    type ImplI() =  
+    type ImplI() =
         let channelChanged = new Event<ChannelChangedHandler,_>()
         member self.ChangeChannel(n) = channelChanged.Trigger(self,n)
-        interface I with 
-            [<CLIEvent>]    
+        interface I with
+            [<CLIEvent>]
             member self.ChannelChanged = channelChanged.Publish
 
 
-    type FrameworkImplI() =  
+    type FrameworkImplI() =
         let channelChanged = new Event<System.ComponentModel.PropertyChangedEventHandler,_>()
         member self.ChangeChannel(n) = channelChanged.Trigger(self,n)
-        interface System.ComponentModel.INotifyPropertyChanged with 
-            [<CLIEvent>]    
+        interface System.ComponentModel.INotifyPropertyChanged with
+            [<CLIEvent>]
             override self.PropertyChanged = channelChanged.Publish
 
 
     [<AbstractClass>]
-    type Base() =  
-        [<CLIEvent>]    
+    type Base() =
+        [<CLIEvent>]
         abstract member ChannelChanged : IEvent<ChannelChangedHandler,int>
 
 
-    type Derived() =  
+    type Derived() =
         inherit Base()
         let channelChanged = new Event<ChannelChangedHandler,_>()
         member self.ChangeChannel(n) = channelChanged.Trigger(self,n)
-        [<CLIEvent>]    
+        [<CLIEvent>]
         override self.ChannelChanged = channelChanged.Publish
 
-    let ObjectImplI() =  
+    let ObjectImplI() =
         let channelChanged = new Event<ChannelChangedHandler,_>()
-        channelChanged.Trigger, 
-        { new I with 
-            [<CLIEvent>]    
+        channelChanged.Trigger,
+        { new I with
+            [<CLIEvent>]
             member self.ChannelChanged = channelChanged.Publish }
 
 
-    let ObjectFrameworkImplI() =  
+    let ObjectFrameworkImplI() =
         let channelChanged = new Event<System.ComponentModel.PropertyChangedEventHandler,_>()
         channelChanged.Trigger,
-        { new System.ComponentModel.INotifyPropertyChanged with 
-            [<CLIEvent>]    
+        { new System.ComponentModel.INotifyPropertyChanged with
+            [<CLIEvent>]
             override self.PropertyChanged = channelChanged.Publish }
 
 
-    let ObjectDerived() =  
+    let ObjectDerived() =
         let channelChanged = new Event<ChannelChangedHandler,_>()
-        channelChanged.Trigger, 
+        channelChanged.Trigger,
         { new Base() with
-              [<CLIEvent>]    
+              [<CLIEvent>]
               override self.ChannelChanged = channelChanged.Publish }
 
 
 
 
-    let test(ev:IEvent<ChannelChangedHandler,_>, change) = 
-        let r = ref 0 
+    let test(ev:IEvent<ChannelChangedHandler,_>, change) =
+        let r = ref 0
         let h1 = ChannelChangedHandler(fun sender channel -> r := channel)
         ev.AddHandler(h1)
         change(3)
@@ -135,7 +135,7 @@ module AbstractEventTests =
         change(4)
         check "02374enw2" !r 3
 
-        let r = ref 0 
+        let r = ref 0
         let h1 = ChannelChangedHandler(fun sender channel -> r := channel)
         let h2 = ChannelChangedHandler(fun sender channel -> r := channel+1)
         ev.AddHandler(h1)
@@ -163,85 +163,85 @@ module AbstractEventTests =
     test(ev3,d.ChangeChannel)
     test(ev4,impl.ChangeChannel)
 
-module EventCombinators = 
+module EventCombinators =
 
     type ChannelChangedHandler = delegate of obj * int -> unit
 
-    module Observable = 
-        let catch (e: IObservable<'T>) = 
-            { new IObservable<_> with  
-                member __.Subscribe(o:IObserver<_>) = 
-                    e.Subscribe({ new IObserver<_> with  
+    module Observable =
+        let catch (e: IObservable<'T>) =
+            { new IObservable<_> with
+                member __.Subscribe(o:IObserver<_>) =
+                    e.Subscribe({ new IObserver<_> with
                                       member x.OnNext(v) = o.OnNext(Choice1Of2 v)
                                       member x.OnError(e) = o.OnNext(Choice2Of2 e)
                                       member x.OnCompleted() = o.OnCompleted() }) }
-                                
-        let empty () = 
-            { new IObservable<_> with  
-                member __.Subscribe(o:IObserver<_>) = o.OnCompleted(); { new System.IDisposable with 
+
+        let empty () =
+            { new IObservable<_> with
+                member __.Subscribe(o:IObserver<_>) = o.OnCompleted(); { new System.IDisposable with
                                                                             member __.Dispose() = () }  }
-                                
-        let error f (e: IObservable<'T>) = 
-                    e.Subscribe({ new IObserver<'T> with  
+
+        let error f (e: IObservable<'T>) =
+                    e.Subscribe({ new IObserver<'T> with
                                       member x.OnNext(v) = ()
                                       member x.OnError(e) = f e
-                                      member x.OnCompleted() = () }) 
+                                      member x.OnCompleted() = () })
                          |> ignore
-                         
-        let completed f (e: IObservable<'T>) = 
-                    e.Subscribe({ new IObserver<'T> with  
+
+        let completed f (e: IObservable<'T>) =
+                    e.Subscribe({ new IObserver<'T> with
                                       member x.OnNext(v) = ()
                                       member x.OnError(e) = ()
-                                      member x.OnCompleted() = f () }) 
+                                      member x.OnCompleted() = f () })
                          |> ignore
-                         
-        let fail () = 
-            { new IObservable<_> with  
-                member __.Subscribe(o:IObserver<_>) = 
-                              o.OnError( Failure "fail"); 
-                              { new System.IDisposable with 
+
+        let fail () =
+            { new IObservable<_> with
+                member __.Subscribe(o:IObserver<_>) =
+                              o.OnError( Failure "fail");
+                              { new System.IDisposable with
                                       member __.Dispose() = () }  }
 
         // Observers should ignore subsequent failures
-        let failTwice () = 
-            { new IObservable<_> with  
-                member __.Subscribe(o:IObserver<_>) = 
-                              o.OnError( Failure "fail1"); 
-                              o.OnError( Failure "fail2"); 
-                              { new System.IDisposable with 
+        let failTwice () =
+            { new IObservable<_> with
+                member __.Subscribe(o:IObserver<_>) =
+                              o.OnError( Failure "fail1");
+                              o.OnError( Failure "fail2");
+                              { new System.IDisposable with
                                       member __.Dispose() = () }  }
 
-    type C() =  
+    type C() =
         let channelChanged = new Event<ChannelChangedHandler,_>()
 
         static let defaultChannelChanged = new Event<ChannelChangedHandler,_>()
 
-        [<CLIEvent>]    
+        [<CLIEvent>]
         member self.ChannelChanged = channelChanged.Publish
 
         member self.ChangeChannel(n) = channelChanged.Trigger(self,n)
 
-        [<CLIEvent>]    
+        [<CLIEvent>]
         static member DefaultChannelChanged = defaultChannelChanged.Publish
 
         static member ChangeDefaultChannel(n) = defaultChannelChanged.Trigger(null,n)
 
-    module TestListen = 
+    module TestListen =
         let c1 = C()
-       
-        let result = ref 0 
+
+        let result = ref 0
         c1.ChannelChanged |> Observable.add (fun x -> result := x)
         c1.ChangeChannel(6)
         check "e89e0jrweoi1" !result 6
         c1.ChannelChanged |> Observable.add (fun x -> result := x + 1)
         c1.ChangeChannel(6)
         check "e89e0jrweoi2" !result 7
-    
-    module TestChoose = 
-        let c2 = C()
-       
 
-        let result = ref 0 
+    module TestChoose =
+        let c2 = C()
+
+
+        let result = ref 0
         c2.ChannelChanged |> Observable.choose (fun x -> None) |> Observable.add (fun x -> result := x)
         c2.ChangeChannel(6)
         check "e89e0jrweoi3" !result 0
@@ -250,40 +250,40 @@ module EventCombinators =
         c2.ChangeChannel(6)
         check "e89e0jrweoi4d" !result 1
 
-    
+
         c2.ChannelChanged |> Observable.choose (fun x -> failwith "bad choice") |> Observable.error (fun e -> result := e.Message.Length)
         c2.ChangeChannel(6)
         check "e89e0jrweoi4e" !result (String.length "bad choice")
-    
+
         result := 0
         Observable.empty() |> Observable.completed (fun e -> result := 101 )
         check "e89e0jrweoi4f" !result 101
-    
+
         result := 0
         Observable.empty() |> Observable.choose (fun x -> Some 1) |> Observable.completed (fun e -> result := 101 )
         check "e89e0jrweoi4g" !result 101
-    
-        result := 0 
+
+        result := 0
         Observable.fail() |> Observable.choose (fun x -> Some 1) |> Observable.completed (fun e -> result := 101 )
         // completed should not be called on error
         check "e89e0jrweoi4g" !result 0
-    
-        result := 0 
+
+        result := 0
         Observable.fail() |> Observable.choose (fun x -> Some 1) |> Observable.error (fun e -> result := 101 )
         // OnError should be called on error
         check "e89e0jrweoi4g" !result 101
-    
-        result := 0 
+
+        result := 0
         Observable.failTwice() |> Observable.choose (fun x -> Some 1) |> Observable.error (fun e -> result := 101 )
         // subsequent errors should be ignored
         check "e89e0jrweoi4g" !result 101
-    
 
-    module TestFilter = 
+
+    module TestFilter =
         let c2 = C()
-       
 
-        let result = ref 0 
+
+        let result = ref 0
         c2.ChannelChanged |> Observable.filter (fun x -> false) |> Observable.add (fun x -> result := x)
         c2.ChangeChannel(6)
         check "e89e0jrweoi5" !result 0
@@ -291,12 +291,12 @@ module EventCombinators =
         c2.ChannelChanged |> Observable.filter (fun x -> true) |> Observable.add (fun x -> result := x)
         c2.ChangeChannel(6)
         check "e89e0jrweoi6" !result 6
-    
+
 
         c2.ChannelChanged |> Observable.filter (fun x -> failwith "bad choice") |> Observable.error (fun e -> result := e.Message.Length)
         c2.ChangeChannel(6)
         check "e89e0jrweoi4h" !result (String.length "bad choice")
-    
+
         result := 0
         Observable.empty() |> Observable.filter (fun x -> false) |> Observable.completed (fun e -> result := 101 )
         check "e89e0jrweoi4i" !result 101
@@ -314,9 +314,9 @@ module EventCombinators =
         // completed should not be called on error
         check "e89e0jrweoi4jC" !result 0
 
-    module TestMap = 
+    module TestMap =
         let c2 = C()
-       
+
 
         let result = ref ""
         c2.ChannelChanged |> Observable.map string |> Observable.add (fun x -> result := x)
@@ -326,8 +326,8 @@ module EventCombinators =
         c2.ChannelChanged |> Observable.map (fun x -> string (x + 1)) |> Observable.add (fun x -> result := x)
         c2.ChangeChannel(6)
         check "e89e0jrweoi8" !result "7"
-    
-    
+
+
 
         c2.ChannelChanged |> Observable.map (fun x -> failwith "bad choice") |> Observable.error (fun e -> result := e.Message)
         c2.ChangeChannel(6)
@@ -345,12 +345,12 @@ module EventCombinators =
         Observable.failTwice() |> Observable.map (fun x -> x + 1) |> Observable.completed (fun e -> result := !result + "101" )
         // completed should not be called on error
         check "e89e0jrweoi4jD" !result ""
-    
-    
-    module TestMerge = 
+
+
+    module TestMerge =
         let c2 = C()
         let c3 = C()
-       
+
 
         let result = ref 0
         (c2.ChannelChanged,c3.ChannelChanged) ||> Observable.merge |> Observable.add (fun x -> result := x)
@@ -369,18 +369,18 @@ module EventCombinators =
         (Observable.fail(), Observable.fail()) ||> Observable.merge |> Observable.error (fun e -> result := !result + 101 )
         // should only get one error signal
         check "e89e0jrweoi4n" !result 101
-    
+
         result := 0
         (Observable.failTwice(), Observable.failTwice()) ||> Observable.merge |> Observable.error (fun e -> result := !result + 101 )
         // should only get one error signal
         check "e89e0jrweoi4n" !result 101
-    
+
         result := 0
         (Observable.failTwice(), Observable.failTwice()) ||> Observable.merge |> Observable.completed (fun e -> result := !result + 101 )
         // completed should not be called on error
         check "e89e0jrweoi4nX" !result 0
-    
-    module TestPairwise = 
+
+    module TestPairwise =
         let c2 = C()
 
         let result = ref (0,0)
@@ -391,7 +391,7 @@ module EventCombinators =
         check "e89e0jrweoi12" !result (6,7)
         c2.ChangeChannel(8)
         check "e89e0jrweoi13" !result (7,8)
-    
+
         result := (0,0)
         Observable.failTwice() |> Observable.pairwise |> Observable.error (fun e -> result := (fst !result + 101, snd !result + 102) )
         check "e89e0jrweoi4jA" !result (101,102)
@@ -405,13 +405,13 @@ module EventCombinators =
         Observable.fail() |> Observable.pairwise |> Observable.completed (fun e -> result := (10,11))
         check "e89e0jrweoi4jA2" !result (0,0)
 
-    
-    module TestPartition = 
+
+    module TestPartition =
         let c2 = C()
 
         let resulta = ref 0
         let resultb = ref 0
-        let c2a, c2b = c2.ChannelChanged |> Observable.partition (fun x -> x < 2) 
+        let c2a, c2b = c2.ChannelChanged |> Observable.partition (fun x -> x < 2)
         c2a |> Observable.add (fun x -> resulta := x)
         c2b |> Observable.add (fun x -> resultb := x)
         c2.ChangeChannel(6)
@@ -430,13 +430,13 @@ module EventCombinators =
         c2.ChannelChanged |> Observable.partition (fun x -> failwith "bad choice") |> fst |> Observable.error (fun e -> resulta := e.Message.Length)
         c2.ChangeChannel(6)
         check "e89e0jrweoi4a" !resulta (String.length "bad choice")
-    
+
         c2.ChannelChanged |> Observable.partition (fun x -> failwith "bad choice2") |> snd |> Observable.error (fun e -> resultb := e.Message.Length)
         c2.ChangeChannel(6)
         check "e89e0jrweoi4b" !resultb (String.length "bad choice2")
-    
-    
-    module TestScan = 
+
+
+    module TestScan =
         let c2 = C()
 
         let result = ref 0
@@ -468,12 +468,12 @@ module CheckEventMembersAreNotMoreGeneric =
    type T() =
       [<CLIEvent>]
       member x.Event = Event<_>().Publish
-    
+
    (T().Event : IEvent<obj>) |> ignore // this was previously giving an error saying "one type parameter expected"
 
 
-module CLIEventIsInBaseType_FSHarp_1_0_6381 = 
-    module ActualRepro = 
+module CLIEventIsInBaseType_FSHarp_1_0_6381 =
+    module ActualRepro =
         type IBase =
             abstract BaseProp : string
             [<CLIEvent>]
@@ -489,7 +489,7 @@ module CLIEventIsInBaseType_FSHarp_1_0_6381 =
                 printfn "%s" z.BaseProp   // ok
                 z.SettingChanged |> Event.add(fun x -> printfn "%d" x)  // compiler went boom
 
-    module GenericCase = 
+    module GenericCase =
         type IBase<'T> =
             abstract BaseProp : string
             [<CLIEvent>]
@@ -518,7 +518,7 @@ module EventWithNonPublicDelegateTypes_DevDiv271288 =
 
     // Same as above, "public" instead of "internal"
     module WithPublic =
-        type public RequestFinishedDelegate = delegate of obj * unit -> unit 
+        type public RequestFinishedDelegate = delegate of obj * unit -> unit
         let private requestFinishedEvent = Event<RequestFinishedDelegate, unit>()
         let _ =
             let p = requestFinishedEvent.Publish
@@ -534,8 +534,8 @@ module EventWithNonPublicDelegateTypes_DevDiv271288 =
             use s = p.Subscribe(fun (_,_) -> printfn "called EventWithNonPublicDelegateTypes_DevDiv271288.AnotherVariation: OK")
             requestFinishedEvent.Trigger( null, ((), ()) )
 
-let _ = 
-  if failures.Length > 0 then (printfn "Tests Failed: %A" failures; exit 1) 
-  else (stdout.WriteLine "Test Passed"; 
-        printf "TEST PASSED OK"; 
+let _ =
+  if failures.Length > 0 then (printfn "Tests Failed: %A" failures; exit 1)
+  else (stdout.WriteLine "Test Passed";
+        printf "TEST PASSED OK";
         exit 0)

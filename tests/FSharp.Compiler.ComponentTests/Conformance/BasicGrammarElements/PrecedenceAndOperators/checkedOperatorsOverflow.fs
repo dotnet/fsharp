@@ -1,21 +1,21 @@
 open System
 open Operators.Checked
 
-let testOverflow op overflowArg = 
-    try 
-        let r = op overflowArg 
+let testOverflow op overflowArg =
+    try
+        let r = op overflowArg
         printfn "%A" overflowArg
         failwith "Failed: 1"
     with
         | :? OverflowException -> ()
 
 // Because there's no way to overflow nativeint/unativeint on 64bit since they won't accept bigint
-let testOverflow2 op overflowArg = 
+let testOverflow2 op overflowArg =
     if System.IntPtr.Size = 8 then         // we cannot use System.Environment.Is64BitProcess because this could be targeting 2.0
-        () 
+        ()
     else
-        try 
-            let r = op overflowArg 
+        try
+            let r = op overflowArg
             printfn "%A" overflowArg
             failwith "Failed: 2"
         with
@@ -61,7 +61,7 @@ testOverflow uint32 -4294967296L
 testOverflow uint64 -18446744073709551616.0f
 testOverflow2 unativeint -4294967296L
 
-// nativeint/unativeint don't support strings, char will throw FormatException if str.length > 1 so no overflow 
+// nativeint/unativeint don't support strings, char will throw FormatException if str.length > 1 so no overflow
 
 testOverflow byte "256"
 testOverflow int "2147483649"
