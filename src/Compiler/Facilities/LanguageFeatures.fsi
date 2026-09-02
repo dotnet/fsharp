@@ -14,7 +14,6 @@ type LanguageFeature =
     | WitnessPassing
     | AdditionalTypeDirectedConversions
     | StringInterpolation
-    | OverloadsForCustomOperations
     | ExpandedMeasurables
     | NullnessChecking
     | RefCellNotationInformationals

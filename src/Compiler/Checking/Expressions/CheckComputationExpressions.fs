@@ -50,8 +50,6 @@ type ComputationExpressionContext<'a> =
         tpenv: UnscopedTyparEnv
         customOperationMethodsIndexedByKeyword:
             IDictionary<string, list<string * bool * bool * bool * bool * bool * bool * option<string> * MethInfo>>
-        customOperationMethodsIndexedByMethodName:
-            IDictionary<string, list<string * bool * bool * bool * bool * bool * bool * option<string> * MethInfo>>
         sourceMethInfo: 'a list
         builderValName: string
         ad: AccessorDomain
@@ -271,14 +269,8 @@ let getCustomOperationMethods (cenv: TcFileState) (env: TcEnv) ad mBuilderVal bu
 
 /// Decide if the identifier represents a use of a custom query operator
 let tryGetDataForCustomOperation (nm: Ident) ceenv =
-    let isOpDataCountAllowed opDatas =
-        match opDatas with
-        | [ _ ] -> true
-        | _ :: _ -> ceenv.cenv.g.langVersion.SupportsFeature LanguageFeature.OverloadsForCustomOperations
-        | _ -> false
-
     match ceenv.customOperationMethodsIndexedByKeyword.TryGetValue nm.idText with
-    | true, opDatas when isOpDataCountAllowed opDatas ->
+    | true, opDatas ->
         for opData in opDatas do
             let (opName,
                  maintainsVarSpaceUsingBind,
@@ -288,7 +280,7 @@ let tryGetDataForCustomOperation (nm: Ident) ceenv =
                  isLikeJoin,
                  isLikeGroupJoin,
                  _joinConditionWord,
-                 methInfo) =
+                 _methInfo) =
                 opData
 
             if
@@ -299,15 +291,7 @@ let tryGetDataForCustomOperation (nm: Ident) ceenv =
             then
                 errorR (Error(FSComp.SR.tcCustomOperationInvalid (RichText.mkMethod opName), nm.idRange))
 
-            if not (ceenv.cenv.g.langVersion.SupportsFeature LanguageFeature.OverloadsForCustomOperations) then
-                match ceenv.customOperationMethodsIndexedByMethodName.TryGetValue methInfo.LogicalName with
-                | true, [ _ ] -> ()
-                | _ -> errorR (Error(FSComp.SR.tcCustomOperationMayNotBeOverloaded (RichText.mkMethod nm.idText), nm.idRange))
-
         Some opDatas
-    | true, opData :: _ ->
-        errorR (Error(FSComp.SR.tcCustomOperationMayNotBeOverloaded (RichText.mkMethod nm.idText), nm.idRange))
-        Some [ opData ]
     | _ -> None
 
 let isCustomOperation ceenv nm =
@@ -551,22 +535,15 @@ let tryExpectedArgCountForCustomOperator ceenv (nm: Ident) =
                 | None -> -1
                 | Some argInfos -> List.length argInfos)
 
-        // Prior to 'OverloadsForCustomOperations' we count exact arguments.
-        //
-        // With 'OverloadsForCustomOperations' we don't compute an exact expected argument count
-        // if any arguments are optional, out or ParamArray.
         let isSpecial =
-            if ceenv.cenv.g.langVersion.SupportsFeature LanguageFeature.OverloadsForCustomOperations then
-                argInfosForOverloads
-                |> List.exists (fun info ->
-                    match info with
-                    | None -> false
-                    | Some args ->
-                        args
-                        |> List.exists (fun (ParamAttribs(isParamArrayArg, _isInArg, isOutArg, optArgInfo, _callerInfo, _reflArgInfo)) ->
-                            isParamArrayArg || isOutArg || optArgInfo.IsOptional))
-            else
-                false
+            argInfosForOverloads
+            |> List.exists (fun info ->
+                match info with
+                | None -> false
+                | Some args ->
+                    args
+                    |> List.exists (fun (ParamAttribs(isParamArrayArg, _isInArg, isOutArg, optArgInfo, _callerInfo, _reflArgInfo)) ->
+                        isParamArrayArg || isOutArg || optArgInfo.IsOptional))
 
         if not isSpecial && nums |> List.forall (fun v -> v >= 0 && v = nums[0]) then
             Some(max (nums[0] - 1) 0) // drop the computation context argument
@@ -2558,7 +2535,7 @@ and ConsumeCustomOpClauses
                     let argCountsMatch =
                         match expectedArgCount with
                         | Some n -> n = args.Length
-                        | None -> ceenv.cenv.g.langVersion.SupportsFeature LanguageFeature.OverloadsForCustomOperations
+                        | None -> true
 
                     if argCountsMatch then
                         // Check for the [<ProjectionParameter>] attribute on each argument position
@@ -3037,26 +3014,9 @@ let TcComputationExpression (cenv: TcFileState) env (overallTy: OverallTy) tpenv
         | _ -> CustomOperationsMode.Allowed
 
     let customOperationMethodsIndexedByKeyword =
-        if cenv.g.langVersion.SupportsFeature LanguageFeature.OverloadsForCustomOperations then
-            customOperationMethods
-            |> Seq.groupBy (fun (nm, _, _, _, _, _, _, _, _) -> nm)
-            |> Seq.map (fun (nm, group) -> (nm, Seq.toList group))
-        else
-            customOperationMethods
-            |> Seq.groupBy (fun (nm, _, _, _, _, _, _, _, _) -> nm)
-            |> Seq.map (fun (nm, group) -> (nm, Seq.toList group))
-        |> dict
-
-    // Check for duplicates by method name (keywords and method names must be 1:1)
-    let customOperationMethodsIndexedByMethodName =
-        if cenv.g.langVersion.SupportsFeature LanguageFeature.OverloadsForCustomOperations then
-            customOperationMethods
-            |> Seq.groupBy (fun (_, _, _, _, _, _, _, _, methInfo) -> methInfo.LogicalName)
-            |> Seq.map (fun (nm, group) -> (nm, Seq.toList group))
-        else
-            customOperationMethods
-            |> Seq.groupBy (fun (_, _, _, _, _, _, _, _, methInfo) -> methInfo.LogicalName)
-            |> Seq.map (fun (nm, group) -> (nm, Seq.toList group))
+        customOperationMethods
+        |> Seq.groupBy (fun (nm, _, _, _, _, _, _, _, _) -> nm)
+        |> Seq.map (fun (nm, group) -> (nm, Seq.toList group))
         |> dict
 
     // If there are no 'yield' in the computation expression, and the builder supports 'Yield',
@@ -3078,7 +3038,6 @@ let TcComputationExpression (cenv: TcFileState) env (overallTy: OverallTy) tpenv
             env = env
             tpenv = tpenv
             customOperationMethodsIndexedByKeyword = customOperationMethodsIndexedByKeyword
-            customOperationMethodsIndexedByMethodName = customOperationMethodsIndexedByMethodName
             sourceMethInfo = sourceMethInfo
             builderValName = builderValName
             ad = ad
