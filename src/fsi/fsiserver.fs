@@ -281,8 +281,10 @@ type internal FsiRpcTarget
 
         let directives = ResizeArray()
 
-        if not (String.IsNullOrWhiteSpace request.workingDirectory)
-           && Directory.Exists request.workingDirectory then
+        if
+            not (String.IsNullOrWhiteSpace request.workingDirectory)
+            && Directory.Exists request.workingDirectory
+        then
             // Two different notions of "current directory" have to agree here. The directive moves
             // the compiler's, which is what relative #load and #r resolve against; the process one
             // is what the running script sees when it opens a file by relative path.
@@ -362,7 +364,9 @@ let private runServer
     let target =
         FsiRpcTarget(fsiSession, fsiConfig, outWriter, errorWriter, shutdownRequested)
 
-    use rpc = new JsonRpc(new HeaderDelimitedMessageHandler(pipe, new JsonMessageFormatter()))
+    use rpc =
+        new JsonRpc(new HeaderDelimitedMessageHandler(pipe, new JsonMessageFormatter()))
+
     rpc.AddLocalRpcTarget(target, JsonRpcTargetOptions(NotifyClientOfEvents = false, AllowNonPublicInvocation = false))
     rpc.StartListening()
 
