@@ -14,5 +14,3 @@ Before editing a file on disk, `document_check_dirty` it. An unsaved VS buffer i
 `build_*` compiles whichever configuration the IDE has active, and `solution_set_configuration` changes it for the user's next manual build too — read `solution_get_configuration` before assuming `Debug`.
 
 `project_add_file` appends without a position, so it cannot place a new `<Compile Include>` correctly in an order-sensitive F# project: add those to the `.fsproj` by hand.
-
-Tests have no IDE path — the `vs` server exposes no Test Explorer tools (https://github.com/Corsinvest/cv4vs-agents/issues/192), so they run through `dotnet test` as described above.
