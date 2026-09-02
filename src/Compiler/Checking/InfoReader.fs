@@ -921,10 +921,12 @@ type InfoReader(g: TcGlobals, amap: ImportMap) as this =
     /// Check if the given language feature is supported by the runtime.
     member _.IsLanguageFeatureRuntimeSupported langFeature =
         match langFeature with
-        // Both default and static interface method consumption features are tied to the runtime support of DIMs.
+        // Default interface method consumption is tied to the runtime support of DIMs.
         | LanguageFeature.DefaultInterfaceMemberConsumption -> isRuntimeFeatureDefaultImplementationsOfInterfacesSupported.Value
-        | LanguageFeature.InterfacesWithAbstractStaticMembers -> isRuntimeFeatureVirtualStaticsInInterfacesSupported.Value
         | _ -> true
+
+    /// Check if the target runtime supports static abstract members in interfaces (VirtualStaticsInInterfaces).
+    member _.IsRuntimeSupportForVirtualStaticsInInterfaces = isRuntimeFeatureVirtualStaticsInInterfacesSupported.Value
             
     /// Get the declared constructors of any F# type
     member infoReader.GetIntrinsicConstructorInfosOfTypeAux m origTy metadataTy = 
