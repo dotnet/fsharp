@@ -37,6 +37,7 @@
          the workspace the resolver reads. -->
     <EmbeddedResource Include="CodeMap\CallStackSample.fs" />
     <Compile Include="CodeMap\FSharpStackFrameNameParserTests.fs" />
+    <Compile Include="CodeMap\FSharpCallStackPlanTests.fs" />
     <Compile Include="CodeMap\FSharpCallStackResolverTests.fs" />
     <Compile Include="CodeMap\FSharpCallStackSampleTests.fs" />
     <Compile Include="CodeFixes\CodeFixTestFramework.fs" />
