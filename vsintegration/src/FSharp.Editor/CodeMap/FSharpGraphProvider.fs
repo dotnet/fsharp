@@ -252,7 +252,7 @@ type internal FSharpGraphProvider() =
 
     /// Mirrors what the built-in C#/VB resolver does for a frame it recognises: create the method
     /// node, give it a source location, and link the frame to it - all inside a graph transaction.
-    let attachResolvedMethod (graph: Graph) (frameNode: GraphNode) (resolved: ResolvedFrame) =
+    let attachResolvedMethod (graph: Graph) (frameNode: GraphNode) keepsDeclaration (resolved: ResolvedFrame) =
         // The compiled name identifies the node, but the source name is what reads well: an operator
         // is `(>=>)`, not `op_GreaterEqualsGreater`, and a constructor is its type, not `.ctor`.
         let typeName () =
@@ -283,13 +283,20 @@ type internal FSharpGraphProvider() =
         | ResolvedProperty -> methodNode.AddCategory CodeNodeCategories.Property |> ignore
         | ResolvedEvent -> methodNode.AddCategory CodeNodeCategories.Event |> ignore
 
-        // The declaration, which is what a frame with no file of its own is left with. Where the
-        // frame does name a file, `AddSourceLocations` overwrites this with the line that was
-        // executing - a call stack navigates to the call, not to the declaration - and it writes
-        // once per node for the life of the map, guarded by the category it adds. The C# resolver
-        // sets the declaration here and is overwritten the same way.
+        // The declaration. Where the frame names a file, `AddSourceLocations` overwrites this with
+        // the line that was executing - a call stack navigates to the call, not to the declaration -
+        // and it writes once per node for the life of the map, guarded by the category it adds. The
+        // C# resolver sets the declaration here and is overwritten the same way.
+        //
+        // A startup frame is the exception: the line the debugger reports for it is the source
+        // range of a method the compiler wrote for the whole file, which lands on the blank line
+        // above the type whose initializer is running. The declaration is the only place it can
+        // navigate to, so the category is added here and the platform leaves it alone.
         let location = sourceLocationOf resolved
         methodNode.SetValue(CodeNodeProperties.SourceLocation, location) |> ignore
+
+        if keepsDeclaration then
+            methodNode.AddCategory CodeNodeCategories.SourceLocation |> ignore
 
         // `SourceLocation` alone lands navigation on the start of the line; the identifier location
         // is the one carrying the column, so the caret reaches the declaration itself.
@@ -371,12 +378,30 @@ type internal FSharpGraphProvider() =
             // and the hop over FSharp.Core is drawn by the code that draws every other hop. What is
             // left behind - the method node and the grey one the pipeline will pair with it - is in
             // no `CallStack*Call` link and so is not in the result graph.
+            //
+            // The whole graph is walked for this, not only the nodes handed to this action: the
+            // pipeline remembers every method node it has seen for the rest of the debug session and
+            // hands a provider only the new ones, while the frame links are rebuilt on every stop.
+            // Folding only what was handed over folds each FSharp.Core frame once per session and
+            // leaves it standing every time after.
             let foldedAway =
-                [|
-                    for methodNode, _, action in parsedFrames do
+                let byModule =
+                    graph.Nodes.GetByCategory ProgressionNodeCategories.CallStackMethod
+                    |> Seq.filter (fun methodNode ->
+                        FSharpCallStackPlan.isFSharpCoreModule (moduleAssemblyOf (CallStackMethodNode methodNode)))
+
+                let byDecision =
+                    parsedFrames
+                    |> Seq.choose (fun (methodNode, _, action) ->
                         if action = FoldAsExternalCode then
-                            yield! frameLinksOf methodNode
-                |]
+                            Some methodNode
+                        else
+                            None)
+
+                Seq.append byModule byDecision
+                |> Seq.distinct
+                |> Seq.collect frameLinksOf
+                |> Seq.toArray
 
             if foldedAway.Length > 0 then
                 use folding = new GraphTransactionScope()
@@ -407,12 +432,17 @@ type internal FSharpGraphProvider() =
             let mutable resolvedCount = 0
 
             for (_, group), results in Seq.zip byAssembly resolutions do
-                for (frameNode, _), resolved in Seq.zip group results do
+                for (frameNode, frame), resolved in Seq.zip group results do
                     match resolved with
                     | ValueNone -> ()
                     | ValueSome resolved ->
+                        let keepsDeclaration =
+                            match frame.Member with
+                            | FrameStartupCode -> true
+                            | _ -> false
+
                         try
-                            attachResolvedMethod graph frameNode resolved
+                            attachResolvedMethod graph frameNode keepsDeclaration resolved
                             context.AddHandled frameNode
                             resolvedCount <- resolvedCount + 1
                         with e ->

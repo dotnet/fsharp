@@ -222,3 +222,26 @@ let ``A delegate call resolves`` () =
 [<Fact>]
 let ``An event handler resolves`` () =
     assertScenarioResolves CallStackSample.eventHandler
+
+/// An event is never on a stack: F# reads `p.Fired` by building an `IEvent` over the `add_`/`remove_`
+/// accessors rather than by calling the getter, and those hold no user code. The handler is what
+/// the scenario puts on the stack, and it is the only frame there from this file.
+[<Fact>]
+let ``An event handler is the only frame of its scenario`` () =
+    CallStackSample.eventHandler () |> ignore
+
+    let own =
+        CallStackSample.frames ()
+        |> Array.map (fun (struct (frameName, _)) -> frameName)
+        |> Array.filter (fun name -> name.Contains "Publisher" || name.Contains "eventHandler")
+
+    Assert.All(own, fun name -> Assert.DoesNotContain("Fired", name))
+    Assert.Contains(own, fun name -> name.Contains "eventHandler@")
+
+/// The outer task is resumed after `let!` by the inner one completing, so its body is on the stack
+/// as a continuation of its own - the only way a task shows on the map beyond its innermost body,
+/// since the function that built it is parked on another thread.
+[<Fact>]
+let ``A task continuation is labelled by the binding it was written in`` () =
+    CallStackSample.taskBody () |> ignore
+    Assert.Equal("outer", labelOf "outer@")

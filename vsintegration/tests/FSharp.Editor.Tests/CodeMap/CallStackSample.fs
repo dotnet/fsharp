@@ -167,11 +167,10 @@ let asyncBody () =
     }
     |> Async.RunSynchronously
 
-/// Two levels on purpose. The debugger reconstructs a logical async stack by walking continuations,
-/// so the inner body is reached from the outer one through `let!` - a continuation it can follow and
-/// the pipeline can draw as an indirect link. The last hop out, `GetResult`, is a blocking wait
-/// rather than an await: whoever is parked on it is on another thread, and no continuation leads
-/// back there.
+/// Two levels, and a stop in each. The inner body runs on a thread-pool thread; the outer one is
+/// resumed after `let!` by the inner task completing, so its frame is a continuation too. The last
+/// hop out, `GetResult`, is a blocking wait rather than an await: whoever is parked on it is on
+/// another thread, and no continuation leads back there - `taskBody` itself is never on the stack.
 let taskBody () =
     let inner () =
         task {
@@ -182,7 +181,7 @@ let taskBody () =
     let outer =
         task {
             let! value = inner ()
-            return value
+            return value + sink "task continuation"
         }
 
     outer.GetAwaiter().GetResult()
@@ -233,6 +232,9 @@ let delegateCall () =
 type Publisher() =
     let fired = Event<int>()
 
+    /// An event is never a frame a debugger stops in. F# reads `p.Fired` by building an `IEvent`
+    /// over `add_Fired`/`remove_Fired` rather than by calling the getter, C# subscribes through the
+    /// same accessors, and those hold no user code. What reaches the stack is the handler.
     [<CLIEvent>]
     member _.Fired = fired.Publish
 
