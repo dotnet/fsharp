@@ -192,8 +192,9 @@
       "cats": []
     },
     "20111": {
-      "sha": "9a65d0ccbe9f",
+      "sha": "e83a149b149f",
       "cats": [
+        "Affects-Bootstrap",
         "Affects-Compiler-Output"
       ]
     },
