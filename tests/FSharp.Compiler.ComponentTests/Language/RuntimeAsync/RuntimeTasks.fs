@@ -386,10 +386,6 @@ let testDelay () =
     require (x = 0) "task already ran"
     t.Wait()
 
-// KNOWN DIVERGENCE: moved to the known-failing section; the current runtime
-// build does not run a runtime-async body synchronously up to its first real
-// suspension, so "first part didn't run yet" fails.
-
 let testNonBlocking () =
     let allowContinue = new SemaphoreSlim(0)
     let continueToFinish = new ManualResetEventSlim(false)
@@ -741,7 +737,7 @@ let testForLoopSadPathComplex () =
         require caught "didn't catch exception"
         require disposed "never disposed A"
 
-let knownFailing_testExceptionAttachedToTaskWithoutAwait () =
+let testExceptionAttachedToTaskWithoutAwait () =
     for i in 1..5 do
         let mutable ranA = false
         let mutable ranB = false
@@ -776,7 +772,7 @@ let knownFailing_testExceptionAttachedToTaskWithoutAwait () =
         require catcher.Result "didn't catch"
         require caught "didn't catch"
 
-let knownFailing_testExceptionAttachedToTaskWithAwait () =
+let testExceptionAttachedToTaskWithAwait () =
     for i in 1..5 do
         let mutable ranA = false
         let mutable ranB = false
@@ -837,7 +833,7 @@ let testFixedStackWhileLoop () =
         t.Wait()
         require (t.Result = BIG) "didn't get to big number"
 
-let knownFailing_testFixedStackForLoop () = // needs investigation: code after a suspending for loop is not run
+let testFixedStackForLoop () = // needs investigation: code after a suspending for loop is not run
     for i in 1..100 do
         let mutable ran = false
 
@@ -1512,7 +1508,7 @@ let testCustomAwaitable () =
 
     require (t3.Result = 42) "custom awaitable merge sources"
 
-let knownFailing_testTaskUsesSyncContext () = // task completes without the body observably running when a SynchronizationContext is installed
+let testTaskUsesSyncContext () = // task completes without the body observably running when a SynchronizationContext is installed
     for i in 1..5 do
         let mutable ran = false
         let mutable posted = false
@@ -1591,6 +1587,7 @@ let main _ =
     testForLoopSadPath ()
     testForLoopSadPathComplex ()
     testFixedStackWhileLoop ()
+    testFixedStackForLoop ()
     testTypeInference ()
     testNoStackOverflowWithImmediateResult ()
     testNoStackOverflowWithYieldResult ()
@@ -1615,4 +1612,7 @@ let main _ =
     testUsingSadPath ()
     testExceptionThrownInFinally ()
     test2ndExceptionThrownInFinally ()
+    testTaskUsesSyncContext ()
+    testExceptionAttachedToTaskWithoutAwait ()
+    testExceptionAttachedToTaskWithAwait ()
     0
