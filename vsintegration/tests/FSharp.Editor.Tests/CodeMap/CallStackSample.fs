@@ -143,14 +143,25 @@ let asyncBody () =
     }
     |> Async.RunSynchronously
 
+/// Two levels on purpose. The debugger reconstructs a logical async stack by walking continuations,
+/// so the inner body is reached from the outer one through `let!` - a continuation it can follow and
+/// the pipeline can draw as an indirect link. The last hop out, `GetResult`, is a blocking wait
+/// rather than an await: whoever is parked on it is on another thread, and no continuation leads
+/// back there.
 let taskBody () =
-    let work =
+    let inner () =
         task {
             do! Task.Delay 1
             return sink "task body"
         }
 
-    work.GetAwaiter().GetResult()
+    let outer =
+        task {
+            let! value = inner ()
+            return value
+        }
+
+    outer.GetAwaiter().GetResult()
 
 let seqBody () =
     seq {
