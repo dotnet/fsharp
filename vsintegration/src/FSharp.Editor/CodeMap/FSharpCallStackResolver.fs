@@ -81,7 +81,6 @@ type internal ResolvedFrame =
     {
         DeclarationRange: range
         Project: Project
-        EntityPath: string array
         /// The enclosing namespace only – containing modules and types go into `TypeChain` instead,
         /// matching how the metadata provider identifies nested types.
         Namespace: string voption
@@ -93,7 +92,20 @@ type internal ResolvedFrame =
         Modifiers: ResolvedFrameModifiers
         /// The source name, which for an operator or an active pattern reads very differently from
         /// the compiled one the node is identified by.
-        DisplayName: string voption
+        DisplayName: string
+    }
+
+/// What one resolution strategy found. `tryResolveMany` is what turns it into a `ResolvedFrame`,
+/// because only it knows which project the signature came from.
+[<NoEquality; NoComparison>]
+type private Resolution =
+    {
+        Range: range
+        Entity: FSharpEntity
+        MemberName: string voption
+        Kind: ResolvedFrameKind
+        Modifiers: ResolvedFrameModifiers
+        DisplayName: string
     }
 
 [<RequireQualifiedAccess>]
@@ -208,7 +220,7 @@ module internal FSharpCallStackResolver =
         | ValueSome _ -> origin.Line
         | ValueNone ->
             match frame.SourcePosition with
-            | ValueSome(struct (_, line)) -> line
+            | ValueSome position -> position.Line
             | ValueNone -> origin.Line
 
     let private stripArity (compiledName: string) =
@@ -306,9 +318,9 @@ module internal FSharpCallStackResolver =
     /// the public binding written on the line (`initialized`), else the type or module whose static
     /// initializer owns it (`Initialized`); private `static let` bindings are absent from the public
     /// signature, so the enclosing entity is the closest honest name.
-    let private tryResolveByPosition (fileName: string) (line: int) (signature: FSharpAssemblySignature) =
+    let private tryResolveByPosition (position: SourcePosition) (signature: FSharpAssemblySignature) =
         let sameFile (r: range) =
-            String.Equals(r.FileName, fileName, StringComparison.OrdinalIgnoreCase)
+            String.Equals(r.FileName, position.File, StringComparison.OrdinalIgnoreCase)
 
         let rec flatten (entity: FSharpEntity) =
             seq {
@@ -325,109 +337,130 @@ module internal FSharpCallStackResolver =
             |> Seq.collect (fun entity ->
                 entity.TryGetMembersFunctionsAndValues()
                 |> Seq.map (fun m -> struct (entity, m)))
-            |> Seq.filter (fun struct (_, m) -> sameFile m.DeclarationLocation && m.DeclarationLocation.StartLine = line)
+            |> Seq.filter (fun struct (_, m) ->
+                sameFile m.DeclarationLocation
+                && m.DeclarationLocation.StartLine = position.Line)
             |> Seq.tryHeadV
 
         match bindingOnLine with
         | ValueSome(struct (entity, m)) ->
-            ValueSome(m.DeclarationLocation, [||], entity, ValueSome m.CompiledName, kindOf m, modifiersOf false m, ValueSome m.DisplayName)
+            ValueSome
+                {
+                    Range = m.DeclarationLocation
+                    Entity = entity
+                    MemberName = ValueSome m.CompiledName
+                    Kind = kindOf m
+                    Modifiers = modifiersOf false m
+                    DisplayName = m.DisplayName
+                }
         | ValueNone ->
             entities
             |> Seq.filter (fun entity ->
                 sameFile entity.DeclarationLocation
-                && entity.DeclarationLocation.StartLine <= line)
+                && entity.DeclarationLocation.StartLine <= position.Line)
             |> Seq.sortByDescending (fun entity -> entity.DeclarationLocation.StartLine)
             |> Seq.tryHeadV
             |> ValueOption.map (fun entity ->
                 // A private `static let` runs in the type's static constructor; naming that as the
                 // enclosing type is honest, and marking it a static ctor gives it the ctor glyph
                 // instead of a class one and keeps it distinct from the instance ctor's `.ctor` node.
-                let modifiers =
-                    { entityModifiers entity with
-                        IsStatic = true
-                        IsConstructor = true
-                    }
+                {
+                    Range = entity.DeclarationLocation
+                    Entity = entity
+                    MemberName = ValueSome ".cctor"
+                    Kind = ResolvedMethod
+                    Modifiers =
+                        { entityModifiers entity with
+                            IsStatic = true
+                            IsConstructor = true
+                        }
+                    DisplayName = entity.DisplayName
+                })
 
-                entity.DeclarationLocation, [||], entity, ValueSome ".cctor", ResolvedMethod, modifiers, ValueSome entity.DisplayName)
+    /// A closure has no entity of its own, so it is placed by the declaration that contains it, and
+    /// identified by the compiler's own `name@line` - which keeps nested and sibling closures apart.
+    let private resolveClosure (frame: ParsedFrame) origin (entity: FSharpEntity) qualifiedMember =
+        let line = closureLine frame origin entity
 
+        let enclosing =
+            match qualifiedMember with
+            | ValueSome name ->
+                tryFindMember frame name entity
+                |> ValueOption.orElseWith (fun () -> tryFindDeclarationAbove line entity)
+            | ValueNone -> tryFindDeclarationAbove line entity
+
+        // A `task` builder's resumption thunk is numbered from line 1 and carries no sequence points,
+        // so neither its name nor the debugger places it. It is still the user's binding by name, and
+        // leaving it unresolved would put a bare `Invoke` on the map, so it falls back to the
+        // declaration that contains it.
+        let struct (host, hostName, modifiers, anchor) =
+            match enclosing with
+            | ValueSome m -> struct (m.DeclarationLocation, m.DisplayName, modifiersOf true m, line)
+            | ValueNone ->
+                let host = entity.DeclarationLocation
+
+                struct (host,
+                        entity.DisplayName,
+                        { entityModifiers entity with
+                            IsLifted = true
+                        },
+                        host.StartLine)
+
+        // `outer`, `inner` and `work` name a real binding and read well on their own. A synthesized
+        // name - `Pipe #1 input at line 97` for a computation expression body or a pipeline stage -
+        // names nothing, and the function the body belongs to may be absent from the stack entirely:
+        // an `async` block runs from FSharp.Core, so nothing else on the map says `asyncBody`. Taking
+        // the enclosing declaration alone would collide with that function's own node where it *is*
+        // on the stack, as a pipeline's is, so the line comes with it.
+        let displayName =
+            if origin.EnclosingName.IndexOf ' ' >= 0 then
+                $"%s{hostName}@%d{anchor}"
+            else
+                origin.EnclosingName
+
+        ValueSome
+            {
+                Range = Range.mkRange host.FileName (Position.mkPos anchor 0) (Position.mkPos anchor 0)
+                Entity = entity
+                MemberName = ValueSome(closureIdentity origin)
+                Kind = ResolvedMethod
+                Modifiers = modifiers
+                DisplayName = displayName
+            }
+
+    let private resolveMember (frame: ParsedFrame) (entity: FSharpEntity) name =
+        tryFindMember frame name entity
+        |> ValueOption.map (fun m ->
+            {
+                Range = m.DeclarationLocation
+                Entity = entity
+                MemberName = ValueSome m.CompiledName
+                Kind = kindOf m
+                Modifiers = modifiersOf false m
+                DisplayName = m.DisplayName
+            })
+
+    /// A frame name flattens the declaring path, so the entity it names is found by trying every
+    /// split of that path; within the entity it is the frame's own shape that says what to look for.
+    let private tryResolveByName (frame: ParsedFrame) (signature: FSharpAssemblySignature) =
+        entityPathCandidates frame.Path (memberName frame.Member)
+        |> Seq.tryPickV (fun struct (entityPath, qualifiedMember) ->
+            match signature.FindEntityByPath(List.ofArray entityPath) with
+            | None -> ValueNone
+            | Some entity ->
+                match frame.Member, qualifiedMember with
+                | FrameClosureBody origin, _ -> resolveClosure frame origin entity qualifiedMember
+                | _, ValueSome name -> resolveMember frame entity name
+                | _, ValueNone -> ValueNone)
+
+    /// Module initialization names the file rather than a construct, so only the debugger's position
+    /// places it; everything else is found by name.
     let private tryResolveInProject (frame: ParsedFrame) (signature: FSharpAssemblySignature) =
-        match frame.Member, frame.SourcePosition with
-        | FrameStartupCode, ValueSome(struct (file, line)) -> tryResolveByPosition file line signature
-        | FrameStartupCode, ValueNone -> ValueNone
-        | _ ->
-
-            let requested = memberName frame.Member
-
-            entityPathCandidates frame.Path requested
-            |> Seq.tryPickV (fun struct (entityPath, qualifiedMember) ->
-                match signature.FindEntityByPath(List.ofArray entityPath) with
-                | None -> ValueNone
-                | Some entity ->
-                    let resolvedMember lifted (m: FSharpMemberOrFunctionOrValue) =
-                        ValueSome(
-                            m.DeclarationLocation,
-                            entityPath,
-                            entity,
-                            ValueSome m.CompiledName,
-                            kindOf m,
-                            modifiersOf lifted m,
-                            ValueSome m.DisplayName
-                        )
-
-                    match frame.Member, qualifiedMember with
-                    | FrameClosureBody origin, _ ->
-                        let line = closureLine frame origin entity
-
-                        let enclosing =
-                            match qualifiedMember with
-                            | ValueSome name ->
-                                tryFindMember frame name entity
-                                |> ValueOption.orElseWith (fun () -> tryFindDeclarationAbove line entity)
-                            | ValueNone -> tryFindDeclarationAbove line entity
-
-                        // A `task` builder's resumption thunk is numbered from line 1 and carries no
-                        // sequence points, so neither its name nor the debugger places it. It is still
-                        // the user's binding by name, and leaving it unresolved would put a bare
-                        // `Invoke` on the map, so it falls back to the declaration that contains it.
-                        let struct (host, hostName, modifiers, anchor) =
-                            match enclosing with
-                            | ValueSome m -> struct (m.DeclarationLocation, m.DisplayName, modifiersOf true m, line)
-                            | ValueNone ->
-                                let host = entity.DeclarationLocation
-
-                                struct (host,
-                                        entity.DisplayName,
-                                        { entityModifiers entity with
-                                            IsLifted = true
-                                        },
-                                        host.StartLine)
-
-                        // `outer`, `inner` and `work` name a real binding and read well on their own.
-                        // A synthesized name - `Pipe #1 input at line 97` for a computation expression
-                        // body or a pipeline stage - names nothing, and the function the body belongs to
-                        // may be absent from the stack entirely: an `async` block runs from FSharp.Core,
-                        // so nothing else on the map says `asyncBody`. Taking the enclosing declaration
-                        // alone would collide with that function's own node where it *is* on the stack,
-                        // as a pipeline's is, so the line comes with it.
-                        let displayName =
-                            if origin.EnclosingName.IndexOf ' ' >= 0 then
-                                $"%s{hostName}@%d{anchor}"
-                            else
-                                origin.EnclosingName
-
-                        // A closure has no entity of its own, but it is still a distinct frame: the
-                        // compiler's own `name@line` keeps nested and sibling closures apart.
-                        ValueSome(
-                            Range.mkRange host.FileName (Position.mkPos anchor 0) (Position.mkPos anchor 0),
-                            entityPath,
-                            entity,
-                            ValueSome(closureIdentity origin),
-                            ResolvedMethod,
-                            modifiers,
-                            ValueSome displayName
-                        )
-                    | _, ValueSome name -> tryFindMember frame name entity |> ValueOption.bind (resolvedMember false)
-                    | _, ValueNone -> ValueNone)
+        match frame.Member with
+        | FrameStartupCode ->
+            frame.SourcePosition
+            |> ValueOption.bind (fun position -> tryResolveByPosition position signature)
+        | _ -> tryResolveByName frame signature
 
     let private projectsProducing (workspace: Workspace) (assemblyName: string) =
         workspace.CurrentSolution.Projects
@@ -452,19 +485,17 @@ module internal FSharpCallStackResolver =
                         if resolved.[i].IsNone then
                             resolved.[i] <-
                                 tryResolveInProject frame results.AssemblySignature
-                                |> ValueOption.map
-                                    (fun (declarationRange, entityPath, entity, resolvedMember, kind, modifiers, displayName) ->
-                                        {
-                                            DeclarationRange = declarationRange
-                                            Project = project
-                                            EntityPath = entityPath
-                                            Namespace = namespaceOf entity
-                                            TypeChain = typeChainOf entity
-                                            MemberName = resolvedMember
-                                            Kind = kind
-                                            Modifiers = modifiers
-                                            DisplayName = displayName
-                                        }))
+                                |> ValueOption.map (fun resolution ->
+                                    {
+                                        DeclarationRange = resolution.Range
+                                        Project = project
+                                        Namespace = namespaceOf resolution.Entity
+                                        TypeChain = typeChainOf resolution.Entity
+                                        MemberName = resolution.MemberName
+                                        Kind = resolution.Kind
+                                        Modifiers = resolution.Modifiers
+                                        DisplayName = resolution.DisplayName
+                                    }))
 
             return resolved
         }

@@ -113,7 +113,7 @@ type internal FSharpGraphProvider() =
                 match frame.FileName with
                 | null
                 | "" -> ValueNone
-                | file -> ValueSome(struct (file, frame.StartLine))
+                | file -> ValueSome { File = file; Line = frame.StartLine }
             else
                 ValueNone)
 
@@ -261,10 +261,7 @@ type internal FSharpGraphProvider() =
             if resolved.Modifiers.IsConstructor then
                 typeName () |> ValueOption.defaultValue ".ctor"
             else
-                match resolved.DisplayName, resolved.MemberName with
-                | ValueSome display, _ when not (String.IsNullOrEmpty display) -> display
-                | _, ValueSome name -> name
-                | _ -> String.Join(".", resolved.EntityPath)
+                resolved.DisplayName
 
         use transaction = new GraphTransactionScope()
 
@@ -339,7 +336,7 @@ type internal FSharpGraphProvider() =
                 | ValueSome(name, _) -> String.Equals(name, "FSharp.Core", StringComparison.OrdinalIgnoreCase)
                 | ValueNone ->
                     match position with
-                    | ValueSome(struct (file, _)) -> file.IndexOf("FSharp.Core", StringComparison.OrdinalIgnoreCase) >= 0
+                    | ValueSome position -> position.File.IndexOf("FSharp.Core", StringComparison.OrdinalIgnoreCase) >= 0
                     | ValueNone -> false
 
             // Frames we can resolve: F# code in the workspace, addressed by the assembly the module Uri
@@ -351,9 +348,7 @@ type internal FSharpGraphProvider() =
                             let assemblyName =
                                 match frameOf frameNode with
                                 | ValueSome(name, _) -> ValueSome name
-                                | ValueNone ->
-                                    position
-                                    |> ValueOption.bind (fun (struct (file, _)) -> assemblyNameForFile file)
+                                | ValueNone -> position |> ValueOption.bind (fun position -> assemblyNameForFile position.File)
 
                             match assemblyName with
                             | ValueNone -> ()
