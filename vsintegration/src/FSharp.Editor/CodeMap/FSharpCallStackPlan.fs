@@ -43,15 +43,24 @@ module internal FSharpCallStackPlan =
         | _ -> ValueNone
 
     /// FSharp.Core ships with SourceLink, so the debugger has source for its frames and does not fold
-    /// them into External Code the way it folds the BCL. They are recognised by the module the frame
-    /// names, or - when it names none - by the file the debugger placed it in.
-    let private isFSharpCore (facts: FrameFacts) =
-        match facts.ModuleAssembly with
+    /// them into External Code the way it folds the BCL.
+    ///
+    /// The module alone settles it, which is what lets a frame be folded whose name the parser could
+    /// not take apart: an unreadable name is no reason to leave `MoveNext` standing on the map.
+    let isFSharpCoreModule (moduleAssembly: string voption) =
+        match moduleAssembly with
         | ValueSome assembly -> String.Equals(assembly, FSharpCore, StringComparison.OrdinalIgnoreCase)
-        | ValueNone ->
-            match facts.Frame.SourcePosition with
-            | ValueSome position -> position.File.IndexOf(FSharpCore, StringComparison.OrdinalIgnoreCase) >= 0
-            | ValueNone -> false
+        | ValueNone -> false
+
+    /// The debugger leaves some frames without a module, and SourceLink puts FSharp.Core's own source
+    /// path on those instead.
+    let private isFSharpCore (facts: FrameFacts) =
+        if isFSharpCoreModule facts.ModuleAssembly then
+            true
+        else
+            match facts.ModuleAssembly, facts.Frame.SourcePosition with
+            | ValueNone, ValueSome position -> position.File.IndexOf(FSharpCore, StringComparison.OrdinalIgnoreCase) >= 0
+            | _ -> false
 
     /// `assemblyForFile` answers which project's assembly a source file belongs to, which is the only
     /// thing this decision needs from the workspace - and the only way to address a frame whose module

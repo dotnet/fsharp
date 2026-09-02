@@ -33,33 +33,57 @@ let sourceText () =
 [<Literal>]
 let private SampleType = "FSharp.Editor.Tests.CodeMap.CallStackSample"
 
+[<Literal>]
+let private FSharpCore = "FSharp.Core"
+
 let mutable private lastFrames: struct (string * int) array = [||]
+let mutable private lastPlumbingFrames: string array = [||]
 
 /// The frames of the scenario that ran last, innermost first: the name the runtime reports and the
 /// line it sits on, which is what a debug engine hands the provider.
 let frames () = lastFrames
 
-/// Every scenario funnels here, so one call captures exactly the stack that scenario built. Frames
-/// from outside this file - the test runner, FSharp.Core's own plumbing - are dropped, leaving the
-/// shapes the provider has to resolve.
+/// The frames of that same stack that belong to FSharp.Core: the plumbing a pipeline, a computation
+/// expression or an event runs through. Every one of them has to be folded off the map rather than
+/// resolved, and there are more of them than the names suggest - `List.map` alone contributes two.
+let plumbingFrames () = lastPlumbingFrames
+
+/// Every scenario funnels here, so one call captures exactly the stack that scenario built: the
+/// shapes the provider has to resolve, and beside them the FSharp.Core plumbing it has to fold away.
 let sink (scenario: string) =
+    let declarationOf (frame: StackFrame) =
+        match frame.GetMethod() with
+        | null -> ValueNone
+        | method ->
+            match method.DeclaringType with
+            | null -> ValueNone
+            | declaringType ->
+                match declaringType.FullName with
+                | null -> ValueNone
+                | fullName -> ValueSome(struct (declaringType, $"{fullName}.{method.Name}"))
+
+    let stack = StackTrace(true).GetFrames()
+
     lastFrames <-
-        StackTrace(true).GetFrames()
+        stack
         |> Array.choose (fun frame ->
-            match frame.GetMethod() with
-            | null -> None
-            | method ->
-                match method.DeclaringType with
-                | null -> None
-                | declaringType ->
-                    match declaringType.FullName with
-                    | null -> None
-                    | fullName when
-                        fullName = SampleType
-                        || fullName.StartsWith(SampleType + "+", StringComparison.Ordinal)
-                        ->
-                        Some(struct ($"{fullName}.{method.Name}", frame.GetFileLineNumber()))
-                    | _ -> None)
+            match declarationOf frame with
+            | ValueSome(struct (declaringType, name)) when
+                declaringType.FullName = SampleType
+                || declaringType.FullName.StartsWith(SampleType + "+", StringComparison.Ordinal)
+                ->
+                Some(struct (name, frame.GetFileLineNumber()))
+            | _ -> None)
+
+    lastPlumbingFrames <-
+        stack
+        |> Array.choose (fun frame ->
+            match declarationOf frame with
+            | ValueSome(struct (declaringType, name)) when
+                String.Equals(declaringType.Assembly.GetName().Name, FSharpCore, StringComparison.Ordinal)
+                ->
+                Some name
+            | _ -> None)
 
     scenario.Length
 
