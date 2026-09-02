@@ -201,37 +201,38 @@ type internal FSharpGraphProvider() =
 
     /// The modifiers the Properties pane shows and the map's styles can filter on. Only the flags
     /// that hold are written, so a node carries no misleading `false`s.
-    let describeModifiers (node: GraphNode) (modifiers: ResolvedFrameModifiers) =
-        let set (property: GraphProperty) value =
-            if value then
+    /// The graph properties a trait sets. A lifted frame sets two: `IsAnonymous` is how the built-in
+    /// provider marks a C# lambda, and the map's styles key off it.
+    let propertiesOf =
+        function
+        | Public -> [ CodeSchemaProperties.IsPublic ]
+        | Internal -> [ CodeSchemaProperties.IsInternal ]
+        | Private -> [ CodeSchemaProperties.IsPrivate ]
+        | Static -> [ CodeSchemaProperties.IsStatic ]
+        | Generic -> [ CodeSchemaProperties.IsGeneric ]
+        | Constructor -> [ CodeSchemaProperties.IsConstructor ]
+        | Operator -> [ CodeSchemaProperties.IsOperator ]
+        | Extension -> [ CodeSchemaProperties.IsExtension ]
+        | Abstract -> [ CodeSchemaProperties.IsAbstract ]
+        | CompilerGenerated -> [ CodeSchemaProperties.IsCompilerGenerated ]
+        | PropertyGet -> [ CodeSchemaProperties.IsPropertyGet ]
+        | PropertySet -> [ CodeSchemaProperties.IsPropertySet ]
+        | Lifted -> [ CodeSchemaProperties.IsAnonymous; FSharpGraphSchema.IsLifted ]
+        | Module -> [ FSharpGraphSchema.IsModule ]
+        | Union -> [ FSharpGraphSchema.IsUnion ]
+        | Record -> [ FSharpGraphSchema.IsRecord ]
+        | Exception -> [ FSharpGraphSchema.IsException ]
+        | Measure -> [ FSharpGraphSchema.IsMeasure ]
+        | ActivePattern -> [ FSharpGraphSchema.IsActivePattern ]
+        | UnionCaseTester -> [ FSharpGraphSchema.IsUnionCaseTester ]
+        | Function -> [ FSharpGraphSchema.IsFunction ]
+        | Inline -> [ FSharpGraphSchema.IsInline ]
+        | Mutable -> [ FSharpGraphSchema.IsMutable ]
+
+    let describeTraits (node: GraphNode) traits =
+        for frameTrait in traits do
+            for property in propertiesOf frameTrait do
                 node.SetValue(property, true) |> ignore
-
-        set CodeSchemaProperties.IsPublic modifiers.IsPublic
-        set CodeSchemaProperties.IsInternal modifiers.IsInternal
-        set CodeSchemaProperties.IsPrivate modifiers.IsPrivate
-        set CodeSchemaProperties.IsStatic modifiers.IsStatic
-        set CodeSchemaProperties.IsGeneric modifiers.IsGeneric
-        set CodeSchemaProperties.IsConstructor modifiers.IsConstructor
-        set CodeSchemaProperties.IsOperator modifiers.IsOperator
-        set CodeSchemaProperties.IsExtension modifiers.IsExtension
-        set CodeSchemaProperties.IsAbstract modifiers.IsAbstract
-        set CodeSchemaProperties.IsCompilerGenerated modifiers.IsCompilerGenerated
-        set CodeSchemaProperties.IsPropertyGet modifiers.IsPropertyGet
-        set CodeSchemaProperties.IsPropertySet modifiers.IsPropertySet
-        // The built-in provider marks C# lambdas this way, and the map styles key off it.
-        set CodeSchemaProperties.IsAnonymous modifiers.IsLifted
-
-        set FSharpGraphSchema.IsModule modifiers.IsModule
-        set FSharpGraphSchema.IsUnion modifiers.IsUnion
-        set FSharpGraphSchema.IsRecord modifiers.IsRecord
-        set FSharpGraphSchema.IsException modifiers.IsException
-        set FSharpGraphSchema.IsMeasure modifiers.IsMeasure
-        set FSharpGraphSchema.IsActivePattern modifiers.IsActivePattern
-        set FSharpGraphSchema.IsUnionCaseTester modifiers.IsUnionCaseTester
-        set FSharpGraphSchema.IsFunction modifiers.IsFunction
-        set FSharpGraphSchema.IsInline modifiers.IsInline
-        set FSharpGraphSchema.IsMutable modifiers.IsMutable
-        set FSharpGraphSchema.IsLifted modifiers.IsLifted
 
     /// `CallStackEntry` belongs to the Architecture Explorer, not to a schema this provider can
     /// reference, so it is looked up by id in whichever schema the map document already carries.
@@ -255,7 +256,7 @@ type internal FSharpGraphProvider() =
                 ValueSome name
 
         let label =
-            if resolved.Modifiers.IsConstructor then
+            if resolved.Traits.Contains Constructor then
                 typeName () |> ValueOption.defaultValue ".ctor"
             else
                 resolved.DisplayName
@@ -266,7 +267,7 @@ type internal FSharpGraphProvider() =
         // only follows a link whose target carries `Method`, and the next step declares every frame
         // without one unresolved - replacing the node and the label with `get`, `set` or `$Demo`.
         // What the member really is rides along as a category beside `Method`, plus the accessor
-        // flags `describeModifiers` sets, which is how C# frames render a property getter too.
+        // traits `describeTraits` writes, which is how C# frames render a property getter too.
         let methodNode =
             graph.Nodes.GetOrCreate(resolvedNodeId resolved, label, CodeNodeCategories.Method)
 
@@ -283,7 +284,7 @@ type internal FSharpGraphProvider() =
         methodNode.SetValue(CodeNodeProperties.IdentifierSourceLocation, location)
         |> ignore
 
-        describeModifiers methodNode resolved.Modifiers
+        describeTraits methodNode resolved.Traits
 
         // The built-in resolver dispatches on this, so a node that does not carry it reads as
         // language-less to anything walking the map later.
