@@ -2033,9 +2033,8 @@ type CodegenFileScope private () =
 // Buffers for compiling modules. The entire assembly gets compiled via an AssemblyBuilder
 //--------------------------------------------------------------------------
 
-/// If the method is a straight-line initializer (an IL body with no locals, no exception handlers
-/// and no control flow other than a single trailing 'ret'), return its instructions without the
-/// 'ret', together with the required evaluation stack depth.
+/// The instructions (without the trailing 'ret') and stack depth of a straight-line initializer:
+/// no locals, no exception handlers, no control flow.
 let private tryGetStraightLineInitInstrs (md: ILMethodDef) =
     match md.Body with
     | MethodBody.IL il ->
@@ -2069,8 +2068,7 @@ let private tryGetStraightLineInitInstrs (md: ILMethodDef) =
             None
     | _ -> None
 
-/// Prepend the instructions of a straight-line static initializer to another .cctor,
-/// producing the single .cctor permitted by IL.
+/// Prepend a straight-line static initializer to another .cctor.
 let private mergeCctorInitInstrs instrs maxStack (target: ILMethodDef) =
     let merged = prependInstrsToMethod instrs target
 
@@ -2147,11 +2145,9 @@ type TypeDefBuilder(tdef: ILTypeDef, tdefDiscards) =
             | None -> false
 
         if not discard then
-            // IL permits a single .cctor per type, but two code paths can each contribute one:
-            // union erasure emits a .cctor initializing nullary-case singleton fields, and the static
-            // bindings of a generic type are compiled into a .cctor member (for a non-generic type they
-            // run from the file initializer instead). Merge the straight-line singleton initializer into
-            // the other .cctor, so it runs first, rather than emitting a duplicate (issue #19445).
+            // Union erasure emits a .cctor for nullary-case singleton fields, and a generic type's
+            // static bindings are compiled into a .cctor member. IL permits only one: merge the
+            // singleton initializer into the other .cctor, so it runs first (issue #19445).
             let merged =
                 ilMethodDef.Name = ".cctor"
                 && match ResizeArray.tryFindIndexi (fun _ (_, md: ILMethodDef) -> md.Name = ".cctor") gmethods with

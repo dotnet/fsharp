@@ -373,8 +373,7 @@ match U<int>.A with
         |> ignore
 
     // https://github.com/dotnet/fsharp/issues/19445
-    // The static initializer of the singleton case field must run before user static initializers,
-    // so 'static member val X : U<'T> = A' observes the initialized singleton of its instantiation.
+    // The singleton case field must be initialized before user static bindings run.
     [<Fact>]
     let ``Issue_19445_StaticMemberValReadsNullaryCaseSingleton`` () =
         let source = """
