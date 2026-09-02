@@ -18,8 +18,29 @@ module List =
         if isNull arg then
             nullArg argName
 
-    let inline indexNotFound () =
+    [<CompilerMessage("This function is for use by compiled F# code and should not be used directly",
+                      1204,
+                      IsHidden = true)>]
+    let indexNotFound () =
         raise (KeyNotFoundException(SR.GetString(SR.keyNotFoundAlt)))
+
+    [<CompilerMessage("This function is for use by compiled F# code and should not be used directly",
+                      1204,
+                      IsHidden = true)>]
+    let emptyListError () =
+        invalidArg "list" (SR.GetString(SR.inputListWasEmpty))
+
+    [<CompilerMessage("This function is for use by compiled F# code and should not be used directly",
+                      1204,
+                      IsHidden = true)>]
+    let differentLengthLists (arg1: string) (arg2: string) (diff: int) =
+        invalidArgDifferentListLength arg1 arg2 diff
+
+    [<CompilerMessage("This function is for use by compiled F# code and should not be used directly",
+                      1204,
+                      IsHidden = true)>]
+    let listsDifferentLengths () =
+        invalidArg "list2" (SR.GetString(SR.listsHadDifferentLengths))
 
     [<CompiledName("Length")>]
     let length (list: 'T list) =
@@ -242,32 +263,28 @@ module List =
         result
 
     [<CompiledName("Iterate2")>]
-    let iter2 action list1 list2 =
-        let f = OptimizedClosures.FSharpFunc<_, _, _>.Adapt(action)
-
+    let inline iter2 ([<InlineIfLambda>] action) list1 list2 =
         let rec loop list1 list2 =
             match list1, list2 with
             | [], [] -> ()
             | h1 :: t1, h2 :: t2 ->
-                f.Invoke(h1, h2)
+                action h1 h2
                 loop t1 t2
-            | [], xs2 -> invalidArgDifferentListLength "list1" "list2" xs2.Length
-            | xs1, [] -> invalidArgDifferentListLength "list2" "list1" xs1.Length
+            | [], xs2 -> differentLengthLists "list1" "list2" xs2.Length
+            | xs1, [] -> differentLengthLists "list2" "list1" xs1.Length
 
         loop list1 list2
 
     [<CompiledName("IterateIndexed2")>]
-    let iteri2 action list1 list2 =
-        let f = OptimizedClosures.FSharpFunc<_, _, _, _>.Adapt(action)
-
+    let inline iteri2 ([<InlineIfLambda>] action) list1 list2 =
         let rec loop n list1 list2 =
             match list1, list2 with
             | [], [] -> ()
             | h1 :: t1, h2 :: t2 ->
-                f.Invoke(n, h1, h2)
+                action n h1 h2
                 loop (n + 1) t1 t2
-            | [], xs2 -> invalidArgDifferentListLength "list1" "list2" xs2.Length
-            | xs1, [] -> invalidArgDifferentListLength "list2" "list1" xs1.Length
+            | [], xs2 -> differentLengthLists "list1" "list2" xs2.Length
+            | xs1, [] -> differentLengthLists "list2" "list1" xs1.Length
 
         loop 0 list1 list2
 
@@ -284,26 +301,22 @@ module List =
         Microsoft.FSharp.Primitives.Basics.List.map2 mapping list1 list2
 
     [<CompiledName("Fold")>]
-    let fold<'T, 'State> folder (state: 'State) (list: 'T list) =
-        match list with
-        | [] -> state
-        | _ ->
-            let f = OptimizedClosures.FSharpFunc<_, _, _>.Adapt(folder)
-            let mutable acc = state
+    let inline fold<'T, 'State> ([<InlineIfLambda>] folder: 'State -> 'T -> 'State) (state: 'State) (list: 'T list) =
+        let mutable acc = state
 
-            for x in list do
-                acc <- f.Invoke(acc, x)
+        for x in list do
+            acc <- folder acc x
 
-            acc
+        acc
 
     [<CompiledName("Pairwise")>]
     let pairwise (list: 'T list) =
         Microsoft.FSharp.Primitives.Basics.List.pairwise list
 
     [<CompiledName("Reduce")>]
-    let reduce reduction list =
+    let inline reduce ([<InlineIfLambda>] reduction) list =
         match list with
-        | [] -> invalidArg "list" (SR.GetString(SR.inputListWasEmpty))
+        | [] -> emptyListError ()
         | h :: t -> fold reduction h t
 
     [<CompiledName("Scan")>]
@@ -315,15 +328,18 @@ module List =
         [ value ]
 
     [<CompiledName("Fold2")>]
-    let fold2<'T1, 'T2, 'State> folder (state: 'State) (list1: 'T1 list) (list2: 'T2 list) =
-        let f = OptimizedClosures.FSharpFunc<_, _, _, _>.Adapt(folder)
-
+    let inline fold2<'T1, 'T2, 'State>
+        ([<InlineIfLambda>] folder: 'State -> 'T1 -> 'T2 -> 'State)
+        (state: 'State)
+        (list1: 'T1 list)
+        (list2: 'T2 list)
+        =
         let rec loop acc list1 list2 =
             match list1, list2 with
             | [], [] -> acc
-            | h1 :: t1, h2 :: t2 -> loop (f.Invoke(acc, h1, h2)) t1 t2
-            | [], xs2 -> invalidArgDifferentListLength "list1" "list2" xs2.Length
-            | xs1, [] -> invalidArgDifferentListLength "list2" "list1" xs1.Length
+            | h1 :: t1, h2 :: t2 -> loop (folder acc h1 h2) t1 t2
+            | [], xs2 -> differentLengthLists "list1" "list2" xs2.Length
+            | xs1, [] -> differentLengthLists "list2" "list1" xs1.Length
 
         loop state list1 list2
 
@@ -428,28 +444,34 @@ module List =
         | [], xs2 -> invalidArgDifferentListLength "list1" "list2" xs2.Length
         | xs1, [] -> invalidArgDifferentListLength "list2" "list1" xs1.Length
 
-    let rec forall2aux (f: OptimizedClosures.FSharpFunc<_, _, _>) list1 list2 =
-        match list1, list2 with
-        | [], [] -> true
-        | h1 :: t1, h2 :: t2 -> f.Invoke(h1, h2) && forall2aux f t1 t2
-        | [], xs2 -> invalidArgDifferentListLength "list1" "list2" xs2.Length
-        | xs1, [] -> invalidArgDifferentListLength "list2" "list1" xs1.Length
-
     [<CompiledName("ForAll2")>]
-    let forall2 predicate list1 list2 =
-        match list1, list2 with
-        | [], [] -> true
-        | _ ->
-            let f = OptimizedClosures.FSharpFunc<_, _, _>.Adapt(predicate)
-            forall2aux f list1 list2
+    let inline forall2 ([<InlineIfLambda>] predicate) list1 list2 =
+        let rec loop list1 list2 =
+            match list1, list2 with
+            | [], [] -> true
+            | h1 :: t1, h2 :: t2 -> predicate h1 h2 && loop t1 t2
+            | [], xs2 -> differentLengthLists "list1" "list2" xs2.Length
+            | xs1, [] -> differentLengthLists "list2" "list1" xs1.Length
+
+        loop list1 list2
 
     [<CompiledName("ForAll")>]
-    let forall predicate list =
-        Microsoft.FSharp.Primitives.Basics.List.forall predicate list
+    let inline forall ([<InlineIfLambda>] predicate) list =
+        let rec loop list =
+            match list with
+            | [] -> true
+            | h :: t -> predicate h && loop t
+
+        loop list
 
     [<CompiledName("Exists")>]
-    let exists predicate list =
-        Microsoft.FSharp.Primitives.Basics.List.exists predicate list
+    let inline exists ([<InlineIfLambda>] predicate) list =
+        let rec loop list =
+            match list with
+            | [] -> false
+            | h :: t -> predicate h || loop t
+
+        loop list
 
     [<CompiledName("Contains")>]
     let inline contains value source =
@@ -463,29 +485,24 @@ module List =
 
         contains value source
 
-    let rec exists2aux (f: OptimizedClosures.FSharpFunc<_, _, _>) list1 list2 =
-        match list1, list2 with
-        | [], [] -> false
-        | h1 :: t1, h2 :: t2 -> f.Invoke(h1, h2) || exists2aux f t1 t2
-        | _ -> invalidArg "list2" (SR.GetString(SR.listsHadDifferentLengths))
-
     [<CompiledName("Exists2")>]
-    let rec exists2 predicate list1 list2 =
-        match list1, list2 with
-        | [], [] -> false
-        | _ ->
-            let f = OptimizedClosures.FSharpFunc<_, _, _>.Adapt(predicate)
-            exists2aux f list1 list2
+    let inline exists2 ([<InlineIfLambda>] predicate) list1 list2 =
+        let rec loop list1 list2 =
+            match list1, list2 with
+            | [], [] -> false
+            | h1 :: t1, h2 :: t2 -> predicate h1 h2 || loop t1 t2
+            | _ -> listsDifferentLengths ()
+
+        loop list1 list2
 
     [<CompiledName("Find")>]
-    let rec find predicate list =
-        match list with
-        | [] -> indexNotFound ()
-        | h :: t ->
-            if predicate h then
-                h
-            else
-                find predicate t
+    let inline find ([<InlineIfLambda>] predicate) list =
+        let rec loop list =
+            match list with
+            | [] -> indexNotFound ()
+            | h :: t -> if predicate h then h else loop t
+
+        loop list
 
     [<CompiledName("TryFind")>]
     let rec tryFind predicate list =
@@ -508,22 +525,28 @@ module List =
         |> Microsoft.FSharp.Primitives.Basics.Array.tryFindBack predicate
 
     [<CompiledName("TryPick")>]
-    let rec tryPick chooser list =
-        match list with
-        | [] -> None
-        | h :: t ->
-            match chooser h with
-            | None -> tryPick chooser t
-            | r -> r
+    let inline tryPick ([<InlineIfLambda>] chooser) list =
+        let rec loop list =
+            match list with
+            | [] -> None
+            | h :: t ->
+                match chooser h with
+                | None -> loop t
+                | r -> r
+
+        loop list
 
     [<CompiledName("Pick")>]
-    let rec pick chooser list =
-        match list with
-        | [] -> indexNotFound ()
-        | h :: t ->
-            match chooser h with
-            | None -> pick chooser t
-            | Some r -> r
+    let inline pick ([<InlineIfLambda>] chooser) list =
+        let rec loop list =
+            match list with
+            | [] -> indexNotFound ()
+            | h :: t ->
+                match chooser h with
+                | None -> loop t
+                | Some r -> r
+
+        loop list
 
     [<CompiledName("Filter")>]
     let filter predicate list =
@@ -627,10 +650,13 @@ module List =
             loop count list
 
     [<CompiledName("SkipWhile")>]
-    let rec skipWhile predicate list =
-        match list with
-        | head :: tail when predicate head -> skipWhile predicate tail
-        | _ -> list
+    let inline skipWhile ([<InlineIfLambda>] predicate) list =
+        let rec loop list =
+            match list with
+            | head :: tail when predicate head -> loop tail
+            | _ -> list
+
+        loop list
 
     [<CompiledName("SortWith")>]
     let sortWith comparer list =
@@ -685,7 +711,7 @@ module List =
         Seq.ofList list
 
     [<CompiledName("FindIndex")>]
-    let findIndex predicate list =
+    let inline findIndex ([<InlineIfLambda>] predicate) list =
         let rec loop n list =
             match list with
             | [] -> indexNotFound ()

@@ -15,6 +15,22 @@ open Microsoft.FSharp.Collections
 [<RequireQualifiedAccess>]
 module List = 
 
+    /// <summary>This function is for use by compiled F# code and should not be used directly.</summary>
+    [<CompilerMessage("This function is for use by compiled F# code and should not be used directly", 1204, IsHidden = true)>]
+    val indexNotFound: unit -> 'T
+
+    /// <summary>This function is for use by compiled F# code and should not be used directly.</summary>
+    [<CompilerMessage("This function is for use by compiled F# code and should not be used directly", 1204, IsHidden = true)>]
+    val emptyListError: unit -> 'T
+
+    /// <summary>This function is for use by compiled F# code and should not be used directly.</summary>
+    [<CompilerMessage("This function is for use by compiled F# code and should not be used directly", 1204, IsHidden = true)>]
+    val differentLengthLists: arg1: string -> arg2: string -> diff: int -> 'T
+
+    /// <summary>This function is for use by compiled F# code and should not be used directly.</summary>
+    [<CompilerMessage("This function is for use by compiled F# code and should not be used directly", 1204, IsHidden = true)>]
+    val listsDifferentLengths: unit -> 'T
+
     /// <summary>Returns a new list that contains all pairings of elements from two lists.</summary>
     ///
     /// <param name="list1">The first input list.</param>
@@ -624,7 +640,7 @@ module List =
     /// </code>
     /// </example>
     [<CompiledName("Exists")>]
-    val exists: predicate:('T -> bool) -> list:'T list -> bool
+    val inline exists: predicate:('T -> bool) -> list:'T list -> bool
 
     /// <summary>Tests if any pair of corresponding elements of the lists satisfies the given predicate.</summary>
     ///
@@ -654,7 +670,7 @@ module List =
     /// </code>
     /// </example>
     [<CompiledName("Exists2")>]
-    val exists2: predicate:('T1 -> 'T2 -> bool) -> list1:'T1 list -> list2:'T2 list -> bool
+    val inline exists2: predicate:('T1 -> 'T2 -> bool) -> list1:'T1 list -> list2:'T2 list -> bool
 
     /// <summary>Returns the first element for which the given function returns True.
     /// Raises <c>KeyNotFoundException</c> if no such element exists.</summary>
@@ -682,7 +698,7 @@ module List =
     ///
     /// <remarks>This is an O(n) operation in the worst case, where n is the length of the list.</remarks>
     [<CompiledName("Find")>]
-    val find: predicate:('T -> bool) -> list:'T list -> 'T
+    val inline find: predicate:('T -> bool) -> list:'T list -> 'T
 
     /// <summary>Returns the last element for which the given function returns True.
     /// Raises <c>KeyNotFoundException</c> if no such element exists.</summary>
@@ -739,7 +755,7 @@ module List =
     ///
     /// <remarks>This is an O(n) operation in the worst case, where n is the length of the list.</remarks>
     [<CompiledName("FindIndex")>]
-    val findIndex: predicate:('T -> bool) -> list:'T list -> int
+    val inline findIndex: predicate:('T -> bool) -> list:'T list -> int
 
     /// <summary>Returns the index of the last element in the list
     /// that satisfies the given predicate.
@@ -841,7 +857,7 @@ module List =
     ///
     /// <remarks>This is an O(n) operation, where n is the length of the list.</remarks>
     [<CompiledName("Fold")>]
-    val fold<'T,'State> : folder:('State -> 'T -> 'State) -> state:'State -> list:'T list -> 'State
+    val inline fold<'T,'State> : folder:('State -> 'T -> 'State) -> state:'State -> list:'T list -> 'State
 
     /// <summary>Applies a function to corresponding elements of two collections, threading an accumulator argument
     /// through the computation. The collections must have identical sizes.
@@ -873,7 +889,7 @@ module List =
     ///
     /// <remarks>This is an O(n) operation, where n is the length of the lists.</remarks>
     [<CompiledName("Fold2")>]
-    val fold2<'T1,'T2,'State> : folder:('State -> 'T1 -> 'T2 -> 'State) -> state:'State -> list1:'T1 list -> list2:'T2 list -> 'State
+    val inline fold2<'T1,'T2,'State> : folder:('State -> 'T1 -> 'T2 -> 'State) -> state:'State -> list1:'T1 list -> list2:'T2 list -> 'State
 
     /// <summary>Applies a function to each element of the collection, starting from the end, threading an accumulator argument
     /// through the computation. If the input function is <c>f</c> and the elements are <c>i0...iN</c> then 
@@ -989,7 +1005,7 @@ module List =
     /// </code>
     /// </example>
     [<CompiledName("ForAll")>]
-    val forall: predicate:('T -> bool) -> list:'T list -> bool
+    val inline forall: predicate:('T -> bool) -> list:'T list -> bool
 
     /// <summary>Tests if all corresponding elements of the collection satisfy the given predicate pairwise.</summary>
     ///
@@ -1036,7 +1052,7 @@ module List =
     /// Throws <c>ArgumentException</c>.
     /// </example>
     [<CompiledName("ForAll2")>]
-    val forall2: predicate:('T1 -> 'T2 -> bool) -> list1:'T1 list -> list2:'T2 list -> bool
+    val inline forall2: predicate:('T1 -> 'T2 -> bool) -> list1:'T1 list -> list2:'T2 list -> bool
 
     /// <summary>Applies a key-generating function to each element of a list and yields a list of 
     /// unique keys. Each unique key contains a list of all elements that match 
@@ -1239,7 +1255,7 @@ module List =
     ///
     /// <remarks>This is an O(n) operation, where n is the length of the lists.</remarks>
     [<CompiledName("Iterate2")>]
-    val iter2: action:('T1 -> 'T2 -> unit) -> list1:'T1 list -> list2:'T2 list -> unit
+    val inline iter2: action:('T1 -> 'T2 -> unit) -> list1:'T1 list -> list2:'T2 list -> unit
 
     /// <summary>Applies the given function to each element of the collection. The integer passed to the
     /// function indicates the index of the element.</summary>
@@ -1292,7 +1308,7 @@ module List =
     ///
     /// <remarks>This is an O(n) operation, where n is the length of the lists.</remarks>
     [<CompiledName("IterateIndexed2")>]
-    val iteri2: action:(int -> 'T1 -> 'T2 -> unit) -> list1:'T1 list -> list2:'T2 list -> unit
+    val inline iteri2: action:(int -> 'T1 -> 'T2 -> unit) -> list1:'T1 list -> list2:'T2 list -> unit
 
     /// <summary>Returns the last element of the list.</summary>
     ///
@@ -1816,7 +1832,7 @@ module List =
     ///
     /// <remarks>This is an O(n) operation in the worst case, where n is the length of the list.</remarks>
     [<CompiledName("Pick")>]
-    val pick: chooser:('T -> 'U option) -> list:'T list -> 'U
+    val inline pick: chooser:('T -> 'U option) -> list:'T list -> 'U
 
     /// <summary>Returns a list with all elements permuted according to the
     /// specified permutation.</summary>
@@ -1865,7 +1881,7 @@ module List =
     /// Evaluates to <c>1342</c>, by computing <c>((1 * 10 + 3) * 10 + 4) * 10 + 2</c>
     /// </example>
     [<CompiledName("Reduce")>]
-    val reduce: reduction:('T -> 'T -> 'T) -> list:'T list -> 'T
+    val inline reduce: reduction:('T -> 'T -> 'T) -> list:'T list -> 'T
 
     /// <summary>Applies a function to each element of the collection, starting from the end, threading an accumulator argument
     /// through the computation. If the input function is <c>f</c> and the elements are <c>i0...iN</c> then computes 
@@ -2071,7 +2087,7 @@ module List =
     ///
     /// <remarks>This is an O(n) operation in the worst case, where n is the length of the list.</remarks>
     [<CompiledName("SkipWhile")>]
-    val skipWhile: predicate:('T -> bool) -> list:'T list -> 'T list
+    val inline skipWhile: predicate:('T -> bool) -> list:'T list -> 'T list
 
     /// <summary>Sorts the given list using the given comparison function.</summary>
     ///
@@ -2482,7 +2498,7 @@ module List =
     ///
     /// <remarks>This is an O(n) operation in the worst case, where n is the length of the list.</remarks>
     [<CompiledName("TryPick")>]
-    val tryPick: chooser:('T -> 'U option) -> list:'T list -> 'U option
+    val inline tryPick: chooser:('T -> 'U option) -> list:'T list -> 'U option
 
     /// <summary>Returns the first element for which the given function returns True.
     /// Return None if no such element exists.</summary>

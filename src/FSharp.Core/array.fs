@@ -20,8 +20,17 @@ module Array =
         if isNull arg then
             nullArg argName
 
-    let inline indexNotFound () =
+    [<CompilerMessage("This function is for use by compiled F# code and should not be used directly",
+                      1204,
+                      IsHidden = true)>]
+    let indexNotFound () =
         raise (KeyNotFoundException(SR.GetString(SR.keyNotFoundAlt)))
+
+    [<CompilerMessage("This function is for use by compiled F# code and should not be used directly",
+                      1204,
+                      IsHidden = true)>]
+    let differentLengthArrays (arg1: string) (len1: int) (arg2: string) (len2: int) =
+        invalidArgDifferentArrayLength arg1 len1 arg2 len2
 
     [<CompiledName("Length")>]
     let length (array: _ array) =
@@ -350,16 +359,15 @@ module Array =
         res
 
     [<CompiledName("Iterate2")>]
-    let iter2 action (array1: 'T array) (array2: 'U array) =
+    let inline iter2 ([<InlineIfLambda>] action) (array1: 'T array) (array2: 'U array) =
         checkNonNull "array1" array1
         checkNonNull "array2" array2
-        let f = OptimizedClosures.FSharpFunc<_, _, _>.Adapt(action)
 
         if array1.Length <> array2.Length then
-            invalidArgDifferentArrayLength "array1" array1.Length "array2" array2.Length
+            differentLengthArrays "array1" array1.Length "array2" array2.Length
 
         for i = 0 to array1.Length - 1 do
-            f.Invoke(array1.[i], array2.[i])
+            action array1.[i] array2.[i]
 
     [<CompiledName("DistinctBy")>]
     let distinctBy projection (array: 'T array) =
@@ -432,24 +440,22 @@ module Array =
         res
 
     [<CompiledName("IterateIndexed")>]
-    let iteri action (array: 'T array) =
+    let inline iteri ([<InlineIfLambda>] action) (array: 'T array) =
         checkNonNull "array" array
-        let f = OptimizedClosures.FSharpFunc<_, _, _>.Adapt(action)
 
         for i = 0 to array.Length - 1 do
-            f.Invoke(i, array.[i])
+            action i array.[i]
 
     [<CompiledName("IterateIndexed2")>]
-    let iteri2 action (array1: 'T array) (array2: 'U array) =
+    let inline iteri2 ([<InlineIfLambda>] action) (array1: 'T array) (array2: 'U array) =
         checkNonNull "array1" array1
         checkNonNull "array2" array2
-        let f = OptimizedClosures.FSharpFunc<_, _, _, _>.Adapt(action)
 
         if array1.Length <> array2.Length then
-            invalidArgDifferentArrayLength "array1" array1.Length "array2" array2.Length
+            differentLengthArrays "array1" array1.Length "array2" array2.Length
 
         for i = 0 to array1.Length - 1 do
-            f.Invoke(i, array1.[i], array2.[i])
+            action i array1.[i] array2.[i]
 
     [<CompiledName("MapIndexed")>]
     let mapi (mapping: int -> 'T -> 'U) (array: 'T array) =
@@ -497,22 +503,21 @@ module Array =
         state
 
     [<CompiledName("Exists2")>]
-    let exists2 predicate (array1: _ array) (array2: _ array) =
+    let inline exists2 ([<InlineIfLambda>] predicate) (array1: _ array) (array2: _ array) =
         checkNonNull "array1" array1
         checkNonNull "array2" array2
-        let f = OptimizedClosures.FSharpFunc<_, _, _>.Adapt(predicate)
         let len1 = array1.Length
 
         if len1 <> array2.Length then
-            invalidArgDifferentArrayLength "array1" array1.Length "array2" array2.Length
+            differentLengthArrays "array1" array1.Length "array2" array2.Length
 
         let rec loop i =
-            i < len1 && (f.Invoke(array1.[i], array2.[i]) || loop (i + 1))
+            i < len1 && (predicate array1.[i] array2.[i] || loop (i + 1))
 
         loop 0
 
     [<CompiledName("ForAll")>]
-    let forall (predicate: 'T -> bool) (array: 'T array) =
+    let inline forall ([<InlineIfLambda>] predicate: 'T -> bool) (array: 'T array) =
         checkNonNull "array" array
         let len = array.Length
 
@@ -522,17 +527,16 @@ module Array =
         loop 0
 
     [<CompiledName("ForAll2")>]
-    let forall2 predicate (array1: _ array) (array2: _ array) =
+    let inline forall2 ([<InlineIfLambda>] predicate) (array1: _ array) (array2: _ array) =
         checkNonNull "array1" array1
         checkNonNull "array2" array2
-        let f = OptimizedClosures.FSharpFunc<_, _, _>.Adapt(predicate)
         let len1 = array1.Length
 
         if len1 <> array2.Length then
-            invalidArgDifferentArrayLength "array1" array1.Length "array2" array2.Length
+            differentLengthArrays "array1" array1.Length "array2" array2.Length
 
         let rec loop i =
-            i >= len1 || (f.Invoke(array1.[i], array2.[i]) && loop (i + 1))
+            i >= len1 || (predicate array1.[i] array2.[i] && loop (i + 1))
 
         loop 0
 
@@ -594,7 +598,7 @@ module Array =
             groupByRefType projection array
 
     [<CompiledName("Pick")>]
-    let pick chooser (array: _ array) =
+    let inline pick ([<InlineIfLambda>] chooser) (array: _ array) =
         checkNonNull "array" array
 
         let rec loop i =
@@ -608,7 +612,7 @@ module Array =
         loop 0
 
     [<CompiledName("TryPick")>]
-    let tryPick chooser (array: _ array) =
+    let inline tryPick ([<InlineIfLambda>] chooser) (array: _ array) =
         checkNonNull "array" array
 
         let rec loop i =
@@ -1159,7 +1163,7 @@ module Array =
         scatterPartitioned isChoice1 results1 results2 count1
 
     [<CompiledName("Find")>]
-    let find predicate (array: _ array) =
+    let inline find ([<InlineIfLambda>] predicate) (array: _ array) =
         checkNonNull "array" array
 
         let rec loop i =
@@ -1212,9 +1216,15 @@ module Array =
         | resLen -> Microsoft.FSharp.Primitives.Basics.Array.subUnchecked i resLen array
 
     [<CompiledName("FindBack")>]
-    let findBack predicate (array: _ array) =
+    let inline findBack ([<InlineIfLambda>] predicate) (array: _ array) =
         checkNonNull "array" array
-        Microsoft.FSharp.Primitives.Basics.Array.findBack predicate array
+
+        let rec loop i =
+            if i < 0 then indexNotFound ()
+            elif predicate array.[i] then array.[i]
+            else loop (i - 1)
+
+        loop (array.Length - 1)
 
     [<CompiledName("TryFindBack")>]
     let tryFindBack predicate (array: _ array) =
@@ -1222,9 +1232,15 @@ module Array =
         Microsoft.FSharp.Primitives.Basics.Array.tryFindBack predicate array
 
     [<CompiledName("FindIndexBack")>]
-    let findIndexBack predicate (array: _ array) =
+    let inline findIndexBack ([<InlineIfLambda>] predicate) (array: _ array) =
         checkNonNull "array" array
-        Microsoft.FSharp.Primitives.Basics.Array.findIndexBack predicate array
+
+        let rec loop i =
+            if i < 0 then indexNotFound ()
+            elif predicate array.[i] then i
+            else loop (i - 1)
+
+        loop (array.Length - 1)
 
     [<CompiledName("TryFindIndexBack")>]
     let tryFindIndexBack predicate (array: _ array) =
@@ -1395,67 +1411,67 @@ module Array =
         res
 
     [<CompiledName("Fold")>]
-    let fold<'T, 'State> (folder: 'State -> 'T -> 'State) (state: 'State) (array: 'T array) =
+    let inline fold<'T, 'State> ([<InlineIfLambda>] folder: 'State -> 'T -> 'State) (state: 'State) (array: 'T array) =
         checkNonNull "array" array
-        let f = OptimizedClosures.FSharpFunc<_, _, _>.Adapt(folder)
         let mutable state = state
 
         for i = 0 to array.Length - 1 do
-            state <- f.Invoke(state, array.[i])
+            state <- folder state array.[i]
 
         state
 
     [<CompiledName("FoldBack")>]
-    let foldBack<'T, 'State> (folder: 'T -> 'State -> 'State) (array: 'T array) (state: 'State) =
+    let inline foldBack<'T, 'State>
+        ([<InlineIfLambda>] folder: 'T -> 'State -> 'State)
+        (array: 'T array)
+        (state: 'State)
+        =
         checkNonNull "array" array
-        let f = OptimizedClosures.FSharpFunc<_, _, _>.Adapt(folder)
         let mutable res = state
 
         for i = array.Length - 1 downto 0 do
-            res <- f.Invoke(array.[i], res)
+            res <- folder array.[i] res
 
         res
 
     [<CompiledName("FoldBack2")>]
-    let foldBack2<'T1, 'T2, 'State> folder (array1: 'T1 array) (array2: 'T2 array) (state: 'State) =
+    let inline foldBack2<'T1, 'T2, 'State>
+        ([<InlineIfLambda>] folder: 'T1 -> 'T2 -> 'State -> 'State)
+        (array1: 'T1 array)
+        (array2: 'T2 array)
+        (state: 'State)
+        =
         checkNonNull "array1" array1
         checkNonNull "array2" array2
-        let f = OptimizedClosures.FSharpFunc<_, _, _, _>.Adapt(folder)
         let mutable res = state
         let len = array1.Length
 
         if len <> array2.Length then
-            invalidArgDifferentArrayLength "array1" len "array2" array2.Length
+            differentLengthArrays "array1" len "array2" array2.Length
 
         for i = len - 1 downto 0 do
-            res <- f.Invoke(array1.[i], array2.[i], res)
+            res <- folder array1.[i] array2.[i] res
 
         res
 
     [<CompiledName("Fold2")>]
-    let fold2<'T1, 'T2, 'State> folder (state: 'State) (array1: 'T1 array) (array2: 'T2 array) =
+    let inline fold2<'T1, 'T2, 'State>
+        ([<InlineIfLambda>] folder: 'State -> 'T1 -> 'T2 -> 'State)
+        (state: 'State)
+        (array1: 'T1 array)
+        (array2: 'T2 array)
+        =
         checkNonNull "array1" array1
         checkNonNull "array2" array2
-        let f = OptimizedClosures.FSharpFunc<_, _, _, _>.Adapt(folder)
         let mutable state = state
 
         if array1.Length <> array2.Length then
-            invalidArgDifferentArrayLength "array1" array1.Length "array2" array2.Length
+            differentLengthArrays "array1" array1.Length "array2" array2.Length
 
         for i = 0 to array1.Length - 1 do
-            state <- f.Invoke(state, array1.[i], array2.[i])
+            state <- folder state array1.[i] array2.[i]
 
         state
-
-    let foldSubRight f (array: _ array) start fin acc =
-        checkNonNull "array" array
-        let f = OptimizedClosures.FSharpFunc<_, _, _>.Adapt(f)
-        let mutable res = acc
-
-        for i = fin downto start do
-            res <- f.Invoke(array.[i], res)
-
-        res
 
     let scanSubLeft f initState (array: _ array) start fin =
         checkNonNull "array" array
@@ -1494,30 +1510,34 @@ module Array =
             init (array.Length - 1) (fun i -> array.[i], array.[i + 1])
 
     [<CompiledName("Reduce")>]
-    let reduce reduction (array: _ array) =
+    let inline reduce ([<InlineIfLambda>] reduction) (array: _ array) =
         checkNonNull "array" array
         let len = array.Length
 
         if len = 0 then
             invalidArg "array" LanguagePrimitives.ErrorStrings.InputArrayEmptyString
         else
-            let f = OptimizedClosures.FSharpFunc<_, _, _>.Adapt(reduction)
             let mutable res = array.[0]
 
             for i = 1 to array.Length - 1 do
-                res <- f.Invoke(res, array.[i])
+                res <- reduction res array.[i]
 
             res
 
     [<CompiledName("ReduceBack")>]
-    let reduceBack reduction (array: _ array) =
+    let inline reduceBack ([<InlineIfLambda>] reduction) (array: _ array) =
         checkNonNull "array" array
         let len = array.Length
 
         if len = 0 then
             invalidArg "array" LanguagePrimitives.ErrorStrings.InputArrayEmptyString
         else
-            foldSubRight reduction array 0 (len - 2) array.[len - 1]
+            let mutable res = array.[len - 1]
+
+            for i = len - 2 downto 0 do
+                res <- reduction array.[i] res
+
+            res
 
     [<CompiledName("SortInPlaceWith")>]
     let sortInPlaceWith comparer (array: 'T array) =
@@ -1596,7 +1616,7 @@ module Array =
         Seq.toArray source
 
     [<CompiledName("FindIndex")>]
-    let findIndex predicate (array: _ array) =
+    let inline findIndex ([<InlineIfLambda>] predicate) (array: _ array) =
         checkNonNull "array" array
         let len = array.Length
 
