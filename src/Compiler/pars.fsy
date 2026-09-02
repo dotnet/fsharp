@@ -1985,18 +1985,14 @@ abstractMemberFlags:
 
   | STATIC ABSTRACT
       { let mWhole = rhs2 parseState 1 2
-        parseState.LexBuffer.CheckLanguageFeatureAndRecover LanguageFeature.InterfacesWithAbstractStaticMembers mWhole
-        if parseState.LexBuffer.SupportsFeature LanguageFeature.InterfacesWithAbstractStaticMembers then
-            warning(Error(FSComp.SR.tcUsingInterfacesWithStaticAbstractMethods(), mWhole))
+        warning(Error(FSComp.SR.tcUsingInterfacesWithStaticAbstractMethods(), mWhole))
         let mStatic = rhs parseState 1
         let mAbstract = rhs parseState 2
         AbstractMemberFlags false, SynLeadingKeyword.StaticAbstract(mStatic, mAbstract) }
 
   | STATIC ABSTRACT MEMBER
       { let mWhole = rhs2 parseState 1 2
-        parseState.LexBuffer.CheckLanguageFeatureAndRecover LanguageFeature.InterfacesWithAbstractStaticMembers mWhole
-        if parseState.LexBuffer.SupportsFeature LanguageFeature.InterfacesWithAbstractStaticMembers then
-            warning(Error(FSComp.SR.tcUsingInterfacesWithStaticAbstractMethods(), mWhole))
+        warning(Error(FSComp.SR.tcUsingInterfacesWithStaticAbstractMethods(), mWhole))
         let mStatic = rhs parseState 1
         let mAbstract = rhs parseState 2
         let mMember = rhs parseState 3
