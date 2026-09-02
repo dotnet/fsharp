@@ -48,6 +48,7 @@ let otherProjects =
         "tests/FSharp.Core.UnitTests/FSharp.Core.UnitTests.fsproj",                          2,     "all"
         "tests/FSharp.Compiler.Service.Tests/FSharp.Compiler.Service.Tests.fsproj",          2,     "all"
         "tests/FSharp.Compiler.Private.Scripting.UnitTests/FSharp.Compiler.Private.Scripting.UnitTests.fsproj", 2, "all"
+        "tests/FSharp.Compiler.Interactive.Server.Tests/FSharp.Compiler.Interactive.Server.Tests.fsproj",   2,     "coreclr"
         "tests/fsharp/FSharpSuite.Tests.fsproj",                                             3,     "desktop"
     ]
 
