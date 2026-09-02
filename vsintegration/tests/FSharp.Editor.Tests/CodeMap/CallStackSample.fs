@@ -184,6 +184,32 @@ type Worker(seed: int) =
 
     static member StaticEntry() = sink "static member"
 
+/// A delegate call reaches the lambda through `Invoke` on a generated type, so the frame the
+/// debugger reports for the body is a closure rather than anything the user named.
+type Callback = delegate of int -> int
+
+let throughDelegate (callback: Callback) = callback.Invoke 1
+
+let delegateCall () =
+    throughDelegate (Callback(fun _ -> sink "delegate call"))
+
+/// An event adds a second indirection: the handler runs through `MulticastDelegate.Invoke`, and the
+/// accessors the compiler writes for `[<CLIEvent>]` are the only `add_`/`remove_` frames F# produces.
+type Publisher() =
+    let fired = Event<int>()
+
+    [<CLIEvent>]
+    member _.Fired = fired.Publish
+
+    member _.Fire() = fired.Trigger 1
+
+let eventHandler () =
+    let publisher = Publisher()
+    let mutable result = 0
+    publisher.Fired.Add(fun _ -> result <- sink "event handler")
+    publisher.Fire()
+    result
+
 type IRunner =
     abstract Run: string -> int
 
@@ -191,8 +217,13 @@ type Runner() =
     interface IRunner with
         member _.Run _name = sink "interface implementation"
 
+/// Declared immediately before `Initialized` on purpose: a frame in one of these two types must be
+/// answered with the type it is actually in. Reading a stale line once answered a frame in
+/// `Initialized` with `Box`, because `Box` is the nearest declaration above the wrong line.
 type Box<'T>(_value: 'T) =
-    member _.Unwrap() = sink "generic type member"
+    member _.Unwrap() =
+        // Nothing is declared on the line below, so a frame there can only be placed by its type.
+        sink "generic type member"
 
 type Initialized(seed: int) =
     /// Private, and so absent from the assembly signature: a frame landing on this line can only be

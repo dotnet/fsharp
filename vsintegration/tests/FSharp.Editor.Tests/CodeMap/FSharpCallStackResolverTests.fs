@@ -46,22 +46,24 @@ let private resolve (frameName: string) =
 
 /// A `<StartupCode$…>` frame names the file rather than the construct, so the line the debugger
 /// reports is the only anchor. The provider reads it off the frame node and fills it in here.
-let private resolveStartupAt (snippet: string) =
-    let solution = solution.Value
-    let document = solution.Projects |> Seq.exactlyOne |> _.Documents |> Seq.exactlyOne
-
+let private startupFrame () =
     match FSharpStackFrameNameParser.parse $"<StartupCode$Sample>.$%s{Sample}" with
     | ValueNone -> failwith "the startup frame did not parse"
-    | ValueSome frame ->
-        resolveParsed
-            { frame with
-                SourcePosition =
-                    ValueSome
-                        {
-                            File = document.FilePath
-                            Line = lineOf snippet
-                        }
-            }
+    | ValueSome frame -> frame
+
+let private resolveStartupAt (snippet: string) =
+    let document =
+        solution.Value.Projects |> Seq.exactlyOne |> _.Documents |> Seq.exactlyOne
+
+    resolveParsed
+        { startupFrame () with
+            SourcePosition =
+                ValueSome
+                    {
+                        File = document.FilePath
+                        Line = lineOf snippet
+                    }
+        }
 
 /// Frame names whose path the resolver has to take apart, rather than constructs a scenario would
 /// exercise anyway: a module renamed by a collision, modules nested three deep, a generic type.
@@ -112,6 +114,19 @@ let ``The debug engine's spelling of a setter resolves as a property`` () =
     | ValueSome resolved ->
         Assert.Equal(ResolvedProperty, resolved.Kind)
         Assert.Equal(lineOf "member _.Tuned", resolved.DeclarationRange.StartLine)
+
+/// The accessors the compiler writes for `[<CLIEvent>]` are the only `add_`/`remove_` frames F#
+/// produces, and no scenario can stop inside one - they contain no user code. They are what makes a
+/// node an event rather than a method.
+[<Theory>]
+[<InlineData("add_Fired")>]
+[<InlineData("remove_Fired")>]
+let ``An event accessor resolves as an event`` (accessor: string) =
+    match resolve $"%s{Sample}.Publisher.%s{accessor}" with
+    | ValueNone -> failwith $"expected %s{accessor} to resolve"
+    | ValueSome resolved ->
+        Assert.Equal(ResolvedEvent, resolved.Kind)
+        Assert.Equal(lineOf "member _.Fired", resolved.DeclarationRange.StartLine)
 
 [<Fact>]
 let ``Sibling closures stay distinct nodes`` () =
@@ -170,3 +185,23 @@ let ``A private static let resolves to its type's static constructor`` () =
         Assert.Equal(ValueSome ".cctor", resolved.MemberName)
         Assert.Contains(Static, resolved.Traits)
         Assert.Contains(Constructor, resolved.Traits)
+
+/// `Box` is declared immediately before `Initialized`, so "the nearest declaration above the line"
+/// is only the right answer while the line itself is right. A line read off a frame belonging to a
+/// different run put a frame from `Initialized` several lines higher, and the nearest declaration
+/// above *there* is `Box` - which is how a static initializer came to be labelled `Box` on a map.
+/// Both sides of that boundary are pinned here.
+[<Theory>]
+[<InlineData("sink \"generic type member\"", "Box")>]
+[<InlineData("static let staticState", "Initialized")>]
+let ``A line is answered with the type it is in, not the one before it`` (snippet: string) (expected: string) =
+    match resolveStartupAt snippet with
+    | ValueNone -> failwith $"expected the line of %s{snippet} to resolve"
+    | ValueSome resolved -> Assert.Equal(expected, resolved.DisplayName)
+
+/// Module initialization is named after its file rather than after any construct, so a frame with
+/// no line has nothing to resolve to. That is what frames disagreeing now leaves behind, and a grey
+/// node is the honest answer where guessing produced `Box`.
+[<Fact>]
+let ``A startup frame with no position stays unresolved`` () =
+    Assert.True (resolveParsed (startupFrame ())).IsNone
