@@ -31,7 +31,7 @@ match "foo" with
     let getCaseUsages source line =
          let fileName, options = mkTestFileAndOptions [| |]
          let _, checkResults = parseAndCheckFile fileName source options
-          
+
          checkResults.GetAllUsesOfAllSymbolsInFile()
          |> Array.ofSeq
          |> Array.filter (fun su -> su.Range.StartLine = line && su.Symbol :? FSharpActivePatternCase)
@@ -201,7 +201,7 @@ module Mod1 =
        let func2 () = ()
 """
         let fileName, options = mkTestFileAndOptions [| |]
-        let _, checkResults = parseAndCheckFile fileName source options  
+        let _, checkResults = parseAndCheckFile fileName source options
 
         let mod1 = checkResults.PartialAssemblySignature.FindEntityByPath ["Ns1"; "Mod1"] |> Option.get
         let mod2 = checkResults.PartialAssemblySignature.FindEntityByPath ["Ns1"; "Mod1"; "Mod2"] |> Option.get
@@ -221,7 +221,7 @@ module Mod2 =
     let func2 () = ()
 """
          let fileName, options = mkTestFileAndOptions [| |]
-         let _, checkResults = parseAndCheckFile fileName source options  
+         let _, checkResults = parseAndCheckFile fileName source options
 
          let mod1 = checkResults.PartialAssemblySignature.FindEntityByPath ["Mod1"] |> Option.get
          let mod2 = checkResults.PartialAssemblySignature.FindEntityByPath ["Mod1"; "Mod2"] |> Option.get
@@ -354,7 +354,7 @@ open System
 """
         findSymbolUseByName "IDisposable" checkResults |> ignore
 
-    
+
     [<Fact>]
     let ``Interface 04 - Type arg`` () =
         let _, checkResults = getParseAndCheckResults """
@@ -475,9 +475,9 @@ let tester2: int Group = []
     [<InlineData 2>]
     [<InlineData 6>]
     [<InlineData 32>]
-    let ``FsharpType.Format default to arrayNd shorthands for multidimensional arrays`` rank = 
+    let ``FsharpType.Format default to arrayNd shorthands for multidimensional arrays`` rank =
             let commas = System.String(',', rank - 1)
-            let _, checkResults = getParseAndCheckResults $""" let myArr : int[{commas}] = Unchecked.defaultOf<_>"""  
+            let _, checkResults = getParseAndCheckResults $""" let myArr : int[{commas}] = Unchecked.defaultOf<_>"""
             let symbolUse = findSymbolUseByName "myArr" checkResults
             match symbolUse.Symbol  with
             | :? FSharpMemberOrFunctionOrValue as v ->
@@ -543,7 +543,7 @@ let f2 b1 b2 b3 b4 b5 =
     g b4
     g b5.
 """
-        let symbolTypes = 
+        let symbolTypes =
             ["a1", Some "unit"
              "a2", Some "unit"
              "a3", Some "unit"
@@ -615,7 +615,7 @@ module FSharpMemberOrFunctionOrValue =
         match su.Symbol with
         | :? FSharpMemberOrFunctionOrValue as mfv when mfv.IsProperty -> Some (mfv, su.Range)
         | _ -> None
-    
+
     [<Fact>]
     let ``Both Set and Get symbols are present`` () =
         let context, checkResults = Checker.getCheckedResolveContext """
@@ -716,7 +716,7 @@ type internal SR{caret} () =
                                         and set (b) = swallowResourceText <- b
     // END BOILERPLATE
 """
-        let context = { context with Names = [""] } // Override the context to get the extra symbols 
+        let context = { context with Names = [""] } // Override the context to get the extra symbols
         let symbols = checkResults.GetSymbolUses(context) |> List.map _.Symbol
         match symbols with
         | [ :? FSharpMemberOrFunctionOrValue as cctor
@@ -770,7 +770,7 @@ type Foo() =
             Assert.True mfv.IsPropertySetterMethod
             assertRange (6, 16) (6, 21) mfv.SignatureLocation.Value
         | symbols -> failwith $"Unexpected symbols, got %A{symbols}"
-        
+
     [<Fact>]
     let ``Property with set/get has property symbol`` () =
         let symbolUses = Checker.getSymbolUses """
@@ -1123,7 +1123,7 @@ let f (x: {| A: int |}) =
                 | _ -> false)
 
         Assert.Equal(2, getSymbolUses.Length)
-        
+
     [<Fact>]
     let ``Anonymous anon record copy-and-update symbols usage`` () =
         let _, checkResults = getParseAndCheckResults """
@@ -1140,7 +1140,7 @@ let f (x: {| A: int |}) =
                 | _ -> false)
 
         Assert.Equal(2, getSymbolUses.Length)
-        
+
     [<Fact>]
     let ``Anonymous record copy-and-update symbols usages`` () =
         let _, checkResults = getParseAndCheckResults """
@@ -1159,7 +1159,7 @@ let f (r: {| A: int; C: int |}) =
                 | _ -> false)
 
         Assert.Equal(4, getSymbolUses.Length)
-        
+
     [<Fact>]
     let ``Anonymous anon record copy-and-update symbols usages`` () =
         let _, checkResults = getParseAndCheckResults """
@@ -1401,7 +1401,7 @@ type T() =
             )
 
         Assert.False hasPropertySymbols
-        
+
     [<Fact>]
     let ``CLIEvent is recognized as event`` () =
         let symbolUse = Checker.getSymbolUse """
@@ -1610,7 +1610,7 @@ let f (x: byref<int>) = x <- 42
                 $"Expected parameter TypeDefinition.IsByRef = true for byref<int>, got entity: %s{paramTy.TypeDefinition.DisplayName}"
             )
         | symbol -> failwith $"Expected FSharpMemberOrFunctionOrValue but got %A{symbol}"
-        
+
 module OperatorsWithDots =
     // https://github.com/dotnet/fsharp/issues/14057
     [<Fact>]
@@ -1658,6 +1658,96 @@ let result = 1 -.- 2
         let rangeLength = range.EndColumn - range.StartColumn
 
         Assert.Equal(3, rangeLength)
+
+module TupleTypeExtensions =
+    /// Verifies that GetAllUsesOfAllSymbolsInFile returns only symbols from the original source,
+    /// not synthetic AST nodes created for tuple type extensions like 'type ('T1 * 'T2) with ...'.
+    [<Fact>]
+    let ``Tuple type extension symbols match original source`` () =
+        let _, checkResults =
+            getParseAndCheckResults
+                """
+module Test
+
+type ('T1 * 'T2) with
+    member this.Swap() = (snd this, fst this)
+"""
+
+        let allSymbolUses = checkResults.GetAllUsesOfAllSymbolsInFile() |> Seq.toList
+
+        // Get all symbol ranges - none should have synthetic ranges
+        let symbolRanges =
+            allSymbolUses
+            |> List.map (fun su -> su.Symbol.DisplayName, su.Range)
+
+        // Verify no symbols are reported from synthetic ranges
+        for (name, range) in symbolRanges do
+            Assert.False(range.IsSynthetic, $"Symbol '{name}' has synthetic range {range}")
+
+    [<Fact>]
+    let ``Struct tuple type extension symbols match original source`` () =
+        let _, checkResults =
+            getParseAndCheckResults
+                """
+module Test
+
+type struct ('T1 * 'T2) with
+    member this.Swap() = struct (snd this, fst this)
+"""
+
+        let allSymbolUses = checkResults.GetAllUsesOfAllSymbolsInFile() |> Seq.toList
+
+        // Verify no symbols are reported from synthetic ranges
+        for symbolUse in allSymbolUses do
+            Assert.False(symbolUse.Range.IsSynthetic, $"Symbol '{symbolUse.Symbol.DisplayName}' has synthetic range {symbolUse.Range}")
+
+    [<Fact>]
+    let ``Tuple type extension does not leak tuple type symbol`` () =
+        let _, checkResults =
+            getParseAndCheckResults
+                """
+module Test
+
+type ('T1 * 'T2) with
+    member this.First = fst this
+"""
+
+        let typeSymbolUses =
+            checkResults.GetAllUsesOfAllSymbolsInFile()
+            |> Seq.filter (fun su -> su.Symbol :? FSharpEntity)
+            |> Seq.map (fun su -> su.Symbol.DisplayName, su.Range.StartLine, su.Range.StartColumn)
+            |> Seq.toList
+
+        // Verify no synthetic tuple type symbols (containing '*') appear
+        let syntheticTupleSymbols =
+            typeSymbolUses
+            |> List.filter (fun (name, _, _) -> name.Contains("*"))
+
+        Assert.True(List.isEmpty syntheticTupleSymbols, $"Found unexpected synthetic tuple type symbols: {syntheticTupleSymbols}")
+
+    [<Fact>]
+    let ``Multiple tuple type extensions symbols are all non-synthetic`` () =
+        let _, checkResults =
+            getParseAndCheckResults
+                """
+module Test
+
+type ('T1 * 'T2) with
+    member this.Swap() = (snd this, fst this)
+
+type struct ('A * 'B * 'C) with
+    member this.First = let (a, _, _) = this in a
+"""
+
+        let allSymbolUses = checkResults.GetAllUsesOfAllSymbolsInFile() |> Seq.toList
+
+        // All symbols should come from non-synthetic source locations
+        let syntheticSymbols =
+            allSymbolUses
+            |> List.filter (fun su -> su.Range.IsSynthetic)
+            |> List.map (fun su -> su.Symbol.DisplayName)
+
+        Assert.True(List.isEmpty syntheticSymbols, $"Found symbols with synthetic ranges: {syntheticSymbols}")
 
 
 module NestedCopyAndUpdateSink =

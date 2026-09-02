@@ -1,18 +1,21 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 // Tests for camelCase functions in module Async
-module FSharp.Core.UnitTests.Controa.AsyncModuleFunctionsTestsl
+
+// Intentionally in same collection to help rule out potential flakiness due to concurrency re #20306
+[<Xunit.Collection(nameof FSharp.Test.NotThreadSafeResourceCollection)>]
+module FSharp.Core.UnitTests.Control.AsyncModuleFunctionsTests
 
 open System
 open System.Threading
 open System.Threading.Tasks
 open Xunit
 
-#if NETFRAMEWORK // Polyfill for netstandard2.0 
+#if NETFRAMEWORK // Polyfill for netstandard2.0
 let cancelWithToken (tcs: TaskCompletionSource<'T>) =
     tcs.SetCanceled() // No CT overload available
     CancellationToken.None // so exception won't reference one
-#else    
+#else
 let cancelWithToken (tcs: TaskCompletionSource<'T>) =
     let ct = CancellationToken true
     tcs.SetCanceled ct
@@ -20,7 +23,7 @@ let cancelWithToken (tcs: TaskCompletionSource<'T>) =
 #endif
 
 let asyncWait (a: Async<'T>): 'T = Async.RunSynchronouslyImmediate a
-let asyncWaitWithCt (ct: CancellationToken) (a: Async<'T>): 'T = Async.RunSynchronously(a, cancellationToken = ct)
+let asyncWaitWithCt (ct: CancellationToken) (a: Async<'T>): 'T = Async.RunSynchronouslyImmediate(a, cancellationToken = ct)
 
 [<Fact>]
 let ``Async.result wraps value`` () =
@@ -79,13 +82,13 @@ let ``Async.bind propagates incoming exception (sync)`` () =
     let a = async { return failwith "boom" } |> Async.bind Async.result
     let e = Assert.Throws<exn>(fun () -> a |> asyncWait |> ignore)
     Assert.Equal("boom", e.Message)
-    
+
 [<Fact>]
 let ``Async.bind propagates binder exception as Fault (async)`` () =
     let a = Async.result 5 |> Async.bind (fun x -> async { failwith $"boom {x}"})
     let e = Assert.Throws<exn>(fun () -> asyncWait a)
     Assert.Equal("boom 5", e.Message)
-        
+
 [<Fact>]
 let ``Async.bind propagates Cancellation (sync)`` () =
     let ct = CancellationToken true
@@ -118,7 +121,7 @@ let ``Async.ignore discards result (async)`` () =
     let t = async { return! tcs.Task |> Async.AwaitTask } |> Async.ignore<int> |> Async.StartAsTask
     tcs.SetResult 42
     Assert.Equal((), t.Result)
-    
+
 [<Fact>]
 let ``Async.ignore propagates incoming exception (sync)`` () =
     let a = async { return failwith "boom" : int } |> Async.ignore<int>

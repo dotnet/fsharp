@@ -78,7 +78,7 @@ module AssemblyResolver =
         )
 #endif
 
-type ExecutionOutcome = 
+type ExecutionOutcome =
     | NoExitCode
     | ExitCode of int
     | Failure of exn
@@ -366,8 +366,8 @@ module CompilerAssertHelpers =
 
         use capture = new TestConsole.ExecutionCapture()
         let outcome =
-            try 
-                match entryPoint.Invoke(Unchecked.defaultof<obj>, args) with 
+            try
+                match entryPoint.Invoke(Unchecked.defaultof<obj>, args) with
                 | :? int as rc -> ExitCode rc
                 | _ -> NoExitCode
             with
@@ -392,6 +392,8 @@ module CompilerAssertHelpers =
         inherit MarshalByRefObject()
 
         member x.ExecuteTestCase assemblyPath isFsx =
+            // Set console streams for the AppDomain.
+            TestConsole.install()
             let assembly = Assembly.LoadFrom assemblyPath
             executeAssemblyEntryPoint assembly isFsx
 
@@ -419,7 +421,7 @@ module CompilerAssertHelpers =
         eprintf $"{errors}"
 
         testCaseDomain.remove_AssemblyResolve handler
-        
+
         outcome, output, errors
 
 #endif
@@ -507,7 +509,7 @@ module CompilerAssertHelpers =
                 | FSharpDiagnosticSeverity.Hidden-> $"Hidden {errN}"
                 | FSharpDiagnosticSeverity.Info -> $"Information {errN}"
             $"""({errorType}, Line {range.StartLine}, Col {range.StartColumn}, Line {range.EndLine}, Col {range.EndColumn}, "{message}")""".Replace("\r\n", "\n")
-        
+
         let errors =
             errors
             |> Array.filter (fun error -> if ignoreWarnings then error.Severity <> FSharpDiagnosticSeverity.Warning && error.Severity <> FSharpDiagnosticSeverity.Info else true)
@@ -517,7 +519,7 @@ module CompilerAssertHelpers =
             errors
             |> Array.map (fun info ->
                 (info.Severity, info.ErrorNumber, (info.StartLine - libAdjust, info.StartColumn + 1, info.EndLine - libAdjust, info.EndColumn + 1), info.Message))
-        
+
         let checkEqual k a b =
            if a <> b then
                failwithf $"Mismatch in %s{k}, expected '%A{a}', got '%A{b}'.\nAll errors:\n%s{errorsAsStr}"
@@ -689,12 +691,12 @@ type CompilerAssert private () =
             if errors.Length > 0 then
                 Assert.Fail (sprintf "Compile had errors: %A" errors)
             let debugInfoFile = outputFilePath + ".debuginfo"
-            if not (File.Exists expectedFile) then 
+            if not (File.Exists expectedFile) then
                 File.Copy(debugInfoFile, expectedFile)
                 failwith $"debug info expected file {expectedFile} didn't exist, now copied over"
             let debugInfo = File.ReadAllLines(debugInfoFile)
             let expected = File.ReadAllLines(expectedFile)
-            if debugInfo <> expected then 
+            if debugInfo <> expected then
                 File.Copy(debugInfoFile, expectedFile, overwrite=true)
                 failwith $"""debug info mismatch
 Expected is in {expectedFile}
@@ -734,7 +736,7 @@ Updated automatically, please check diffs in your pull request, changes must be 
         returnCompilation cmpl (defaultArg ignoreWarnings false)
 
     static member ExecuteAndReturnResult (outputFilePath: string, isFsx: bool, deps: string list, newProcess: bool) =
-        let outcome, output, errors = 
+        let outcome, output, errors =
             if not newProcess then
                 executeBuiltApp outputFilePath deps isFsx
             else
@@ -756,7 +758,7 @@ Updated automatically, please check diffs in your pull request, changes must be 
         compileCompilation ignoreWarnings cmpl (fun ((errors, _, outputFilePath), deps) ->
             assertErrors 0 ignoreWarnings errors [||]
             beforeExecute outputFilePath deps
-            if newProcess then 
+            if newProcess then
                 executeBuiltAppNewProcess outputFilePath
             else
                 executeBuiltApp outputFilePath deps false
@@ -772,7 +774,7 @@ Updated automatically, please check diffs in your pull request, changes must be 
 
     static member ExecutionHasOutput(cmpl: Compilation, expectedOutput: string) =
         let _, output, _ = CompilerAssert.ExecuteAux(cmpl, newProcess = true)
-        Assert.Equal(expectedOutput, output)  
+        Assert.Equal(expectedOutput, output)
 
     static member Pass (source: string) =
         let parseResults, fileAnswer = checker.ParseAndCheckFileInProject("test.fs", 0, SourceText.ofString source, defaultProjectOptions TargetFramework.Current) |> Async.RunSynchronouslyImmediate
@@ -845,7 +847,7 @@ Updated automatically, please check diffs in your pull request, changes must be 
                 if options |> Array.contains "--test:ContinueAfterParseFailure" then
                     [| yield! parseResults.Diagnostics
                        match fileAnswer with
-                       | FSharpCheckFileAnswer.Succeeded(tcResults) -> yield! tcResults.Diagnostics 
+                       | FSharpCheckFileAnswer.Succeeded(tcResults) -> yield! tcResults.Diagnostics
                        | _ -> () |]
                 else parseResults.Diagnostics
             else
@@ -988,10 +990,10 @@ Updated automatically, please check diffs in your pull request, changes must be 
         compileExeAndRunWithOptions [||] (SourceCodeFileKind.Create("test.fs", source))
 
     static member CompileLibraryAndVerifyILWithOptions(options, (source: SourceCodeFileKind), (f: ILVerifier -> unit)) =
-        compileLibraryAndVerifyILWithOptions options source f 
+        compileLibraryAndVerifyILWithOptions options source f
 
     static member CompileLibraryAndVerifyILWithOptions(options, (source: string), (f: ILVerifier -> unit)) =
-        compileLibraryAndVerifyILWithOptions options (SourceCodeFileKind.Create("test.fs", source)) f 
+        compileLibraryAndVerifyILWithOptions options (SourceCodeFileKind.Create("test.fs", source)) f
 
     static member CompileLibraryAndVerifyDebugInfoWithOptions(options, (expectedFile: string), (source: SourceCodeFileKind)) =
         compileLibraryAndVerifyDebugInfoWithOptions options expectedFile source
@@ -1013,7 +1015,7 @@ Updated automatically, please check diffs in your pull request, changes must be 
         // FSI may change these via --preferreduilang option, and the change persists
         // in the static GraphNode.culture which affects async computations in other tests
         let originalUICulture = CultureInfo.CurrentUICulture
-        let originalGraphNodeCulture = GraphNode.culture     
+        let originalGraphNodeCulture = GraphNode.culture
         try
             use outStream = new StringWriter()
             use errStream = new StringWriter()

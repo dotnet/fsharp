@@ -1,4 +1,4 @@
-// #Regression #Conformance #Quotations 
+// #Regression #Conformance #Quotations
 // Regression test for FSHARP1.0:5649
 // Title: Reflected 'try..with' has inverted conditional branches
 
@@ -12,7 +12,7 @@ exception E0
 exception E1
 
 let q = <@
-            try 0 with 
+            try 0 with
             | E0 -> 1
             | E1 -> 2
         @>

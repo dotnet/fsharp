@@ -1,4 +1,4 @@
-// #Conformance #DeclarationElements #LetBindings #ActivePatterns 
+// #Conformance #DeclarationElements #LetBindings #ActivePatterns
 
 
 let (|A|B|) x = if x < 0 then A else B
@@ -12,7 +12,7 @@ let _ =
     match 10 with
     | A -> failwith "Failed: 2"
     | B -> printfn "Great!"
-    
+
 
 
 let (|DT|) (x:System.DateTime) = (x.Date, x.TimeOfDay)
@@ -20,6 +20,6 @@ let (|DT|) (x:System.DateTime) = (x.Date, x.TimeOfDay)
 let maxit a b =
     match a, b with
     | DT (ar, ai), DT (br, bi) -> max ar br
-    
+
 let result = maxit System.DateTime.Now System.DateTime.Now
 if result.Date <> System.DateTime.Now.Date then failwith "Failed: 3"

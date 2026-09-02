@@ -18,7 +18,7 @@ module ``PreComputedTupleConstructor Tests`` =
         // Regression test for FSHARP1.0:5113
         // MT DCR: Reflection.FSharpValue.PreComputeTupleConstructor fails when executed for NetFx 2.0 by a Dev10 compiler
 
-        let testDelegate = fun () -> 
+        let testDelegate = fun () ->
             Reflection.FSharpValue.PreComputeTupleConstructor(typeof<int * string>) [| box "text"; box 12; |] |> ignore
 
         Assert.Throws<System.InvalidCastException> testDelegate |> ignore

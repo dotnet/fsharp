@@ -280,7 +280,7 @@ module internal FreeTypeVars =
         | TyparConstraint.AllowsRefStruct _
         | TyparConstraint.RequiresDefaultConstructor _ -> acc
 
-    and accFreeInTrait opts (TTrait(tys, _, _, argTys, retTy, _, sln)) acc =
+    and accFreeInTrait opts (TTrait(tys, _, _, argTys, retTy, _, sln, _)) acc =
         Option.foldBack
             (accFreeInTraitSln opts)
             sln.Value
@@ -427,7 +427,7 @@ module internal FreeTypeVars =
         | TyparConstraint.IsReferenceType _
         | TyparConstraint.RequiresDefaultConstructor _ -> acc
 
-    and accFreeInTraitLeftToRight g cxFlag thruFlag acc (TTrait(tys, _, _, argTys, retTy, _, _)) =
+    and accFreeInTraitLeftToRight g cxFlag thruFlag acc (TTrait(tys, _, _, argTys, retTy, _, _, _)) =
         let acc = accFreeInTypesLeftToRight g cxFlag thruFlag acc tys
         let acc = accFreeInTypesLeftToRight g cxFlag thruFlag acc argTys
         let acc = Option.fold (accFreeInTypeLeftToRight g cxFlag thruFlag) acc retTy
@@ -632,7 +632,7 @@ module internal MemberRepresentation =
 
         /// Get the key associated with the member constraint.
         member traitInfo.GetWitnessInfo() =
-            let (TTrait(tys, nm, memFlags, objAndArgTys, rty, _, _)) = traitInfo
+            let (TTrait(tys, nm, memFlags, objAndArgTys, rty, _, _, _)) = traitInfo
             TraitWitnessInfo(tys, nm, memFlags, objAndArgTys, rty)
 
     /// Get information about the trait constraints for a set of typars.
@@ -1313,18 +1313,20 @@ module internal MemberRepresentation =
     let layoutOfPath p =
         sepListL SepL.dot (List.map (tagNamespace >> wordL) p)
 
-    let fullNameOfParentOfPubPath pp =
-        match pp with
-        | PubPath([| _ |]) -> ValueNone
-        | pp -> ValueSome(textOfPath pp.EnclosingPath)
+    let fullNameOfParentOfPubPath (pp: PublicPath) =
+        if pp.HasEmptyEnclosingPath then
+            ValueNone
+        else
+            ValueSome(textOfPath pp.EnclosingPath)
 
-    let fullNameOfParentOfPubPathAsLayout pp =
-        match pp with
-        | PubPath([| _ |]) -> ValueNone
-        | pp -> ValueSome(layoutOfPath (Array.toList pp.EnclosingPath))
+    let fullNameOfParentOfPubPathAsLayout (pp: PublicPath) =
+        if pp.HasEmptyEnclosingPath then
+            ValueNone
+        else
+            ValueSome(layoutOfPath pp.EnclosingCompilationPath.MangledPath)
 
-    let fullNameOfPubPath (PubPath p) = textOfPath p
-    let fullNameOfPubPathAsLayout (PubPath p) = layoutOfPath (Array.toList p)
+    let fullNameOfPubPath (pp: PublicPath) = textOfPath pp.FullPath
+    let fullNameOfPubPathAsLayout (pp: PublicPath) = layoutOfPath (Array.toList pp.FullPath)
 
     let fullNameOfParentOfNonLocalEntityRef (nlr: NonLocalEntityRef) =
         if nlr.Path.Length < 2 then
@@ -1342,16 +1344,16 @@ module internal MemberRepresentation =
         match eref with
         | ERefLocal x ->
             match x.PublicPath with
-            | None -> ValueNone
-            | Some ppath -> fullNameOfParentOfPubPath ppath
+            | ValueNone -> ValueNone
+            | ValueSome ppath -> fullNameOfParentOfPubPath ppath
         | ERefNonLocal nlr -> fullNameOfParentOfNonLocalEntityRef nlr
 
     let fullNameOfParentOfEntityRefAsLayout eref =
         match eref with
         | ERefLocal x ->
             match x.PublicPath with
-            | None -> ValueNone
-            | Some ppath -> fullNameOfParentOfPubPathAsLayout ppath
+            | ValueNone -> ValueNone
+            | ValueSome ppath -> fullNameOfParentOfPubPathAsLayout ppath
         | ERefNonLocal nlr -> fullNameOfParentOfNonLocalEntityRefAsLayout nlr
 
     let fullNameOfEntityRef nmF xref =
@@ -1529,8 +1531,8 @@ module internal MemberRepresentation =
         match tcref with
         | ERefLocal _ ->
             (match tcref.PublicPath with
-             | None -> [||]
-             | Some pp -> pp.EnclosingPath)
+             | ValueNone -> [||]
+             | ValueSome pp -> pp.EnclosingPath)
         | ERefNonLocal nlr -> nlr.EnclosingMangledPath
 
     /// generates a name like 'System.IComparable<System.Int32>.Get'

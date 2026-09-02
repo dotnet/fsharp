@@ -16,7 +16,7 @@ let ``fsc help text is displayed correctly`` () =
      builder.showBanner <- false                     // We don't need the banner
      builder.TurnWarningOff(rangeCmdArgs, "75")      // We are going to use a test only flag
      builder.bufferWidth <- Some 80                  // Fixed width 80
- 
+
      let expectedHelp = File.ReadAllText $"{__SOURCE_DIRECTORY__}/expected-help-output.bsl"
 
      let blocks = GetCoreFscCompilerOptions builder

@@ -1,9 +1,9 @@
-// #Regression #Conformance #TypeInference 
+// #Regression #Conformance #TypeInference
 // Regression tests for FSHARP1.0:1348, FSHARP1.0:2949,FSHARP1.0:4927,FSHARP1.0:
 // Overloads that differ for the return type only are not allowed (in general)
 
 [<AbstractClass>]
-type T() = 
+type T() =
     abstract X : unit -> decimal
     abstract X : unit -> int
 

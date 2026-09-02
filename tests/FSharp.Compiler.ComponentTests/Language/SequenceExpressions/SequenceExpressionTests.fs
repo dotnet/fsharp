@@ -7,8 +7,8 @@ open Xunit
 open FSharp.Test.Compiler
 open FSharp.Test.ScriptHelpers
 
-// Run sequentially because of shared fsiSession.
-[<FSharp.Test.RunTestCasesInSequence>]
+// Leverage caching/prevent concurrent mutation via long-lived fsiSession in module state
+[<TestClass(DisableParallelization = true)>]
 module SequenceExpression =
 
     let fsiSession = getSessionForEval [||] LangVersion.Preview
@@ -498,7 +498,7 @@ let typedSeq =
         """
         |> withLangVersion80
         |> typecheck
-        |> shouldFail    
+        |> shouldFail
         |> withDiagnosticMessageMatches "This expression returns a value of type 'int' but is implicitly discarded."
         |> withDiagnosticMessageMatches "If you intended to use the expression as a value in the sequence then use an explicit 'yield'."
 
@@ -549,7 +549,7 @@ let typedSeq =
         |> withErrorCode 30
         |> withDiagnosticMessageMatches "Value restriction: The value 'typedSeq' has an inferred generic type"
         |> withDiagnosticMessageMatches "val typedSeq: '_a seq"
- 
+
     [<Fact>]
     let ``yield may only be used within list, array, and sequence expressions``() =
         Fsx """
@@ -562,7 +562,7 @@ let f2 = yield! [ 3; 4 ]
             (Error 747, Line 2, Col 10, Line 2, Col 15, "This construct may only be used within list, array and sequence expressions, e.g. expressions of the form 'seq { ... }', '[ ... ]' or '[| ... |]'. These use the syntax 'for ... in ... do ... yield...' to generate elements");
             (Error 747, Line 3, Col 10, Line 3, Col 16, "This construct may only be used within list, array and sequence expressions, e.g. expressions of the form 'seq { ... }', '[ ... ]' or '[| ... |]'. These use the syntax 'for ... in ... do ... yield...' to generate elements")
         ]
-    
+
     [<Fact>]
     let ``return may only be used within list, array, and sequence expressions``() =
         Fsx """
@@ -596,7 +596,7 @@ let c = [ { 1;10 } ]
             (Error 740, Line 5, Col 12, Line 5, Col 20, "Invalid record, sequence or computation expression. Sequence expressions should be of the form 'seq { ... }'")
             (Error 740, Line 6, Col 11, Line 6, Col 19, "Invalid record, sequence or computation expression. Sequence expressions should be of the form 'seq { ... }'")
         ]
-    
+
     [<Fact>]
     let ``Sequence(SynExpr.Sequential) expressions should be of the form 'seq { ... } lang version preview``() =
         Fsx """
@@ -690,7 +690,7 @@ let c = [ { 1;10 } ]
         |> withLangVersion90
         |> typecheck
         |> shouldSucceed
-    
+
     // SOURCE=SequenceExpressions01.fs 	# SequenceExpressions01.fs
     [<Theory; FileInlineData("SequenceExpressions01.fs")>]
     let ``SequenceExpressions01 lang version preview`` compilation =
@@ -700,7 +700,7 @@ let c = [ { 1;10 } ]
         |> withLangVersion10
         |> typecheck
         |> shouldSucceed
-        
+
     [<Fact>]
     let ``Version 9.0: Allow SE yield and type annotations don't play well together needing parentheses``() =
         FSharp """
@@ -723,7 +723,7 @@ let f1() =
         |> withDiagnostics [
             (Error 3350, Line 7, Col 15, Line 7, Col 22, "Feature 'Allow let! and use! type annotations without requiring parentheses' is not available in F# 9.0. Please use language version 10.0 or greater.")
         ]
-        
+
     [<Fact>]
     let ``Preview: Allow SE yield and type annotations to play well together without needing parentheses``() =
         FSharp """
@@ -745,7 +745,7 @@ let f1() =
         |> ignoreWarnings
         |> compileAndRun
         |> shouldSucceed
-        
+
     [<Fact>]
     let ``Version 9.0: Allow SE yield! and type annotations don't play well together needing parentheses``() =
         FSharp """
@@ -768,7 +768,7 @@ let f1() =
         |> withDiagnostics [
             (Error 3350, Line 7, Col 16, Line 7, Col 32, "Feature 'Allow let! and use! type annotations without requiring parentheses' is not available in F# 9.0. Please use language version 10.0 or greater.")
         ]
-                
+
     [<Fact>]
     let ``Preview: Allow SE yield! and type annotations to play well together without needing parentheses``() =
         FSharp """

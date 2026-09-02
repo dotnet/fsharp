@@ -133,7 +133,7 @@ let main _args =
         |> compileAndRun
         |> shouldSucceed
         |> verifyOutputContains [|": false";"x: true";"xyz: true"|]
-        |> verifyIL 
+        |> verifyIL
             ["callvirt   instance valuetype [System.Collections]System.Collections.Generic.Dictionary`2/AlternateLookup`1<!0,!1,!!0> class [System.Collections]System.Collections.Generic.Dictionary`2<string,int32>::GetAlternateLookup<valuetype [runtime]System.ReadOnlySpan`1<char>>()"]
 
     [<FactForNETCOREAPP>]
@@ -155,7 +155,7 @@ let main _args =
     [<Xunit.InlineData("async"," |> Async.RunSynchronously")>]
     [<TheoryForNETCOREAPP>]
     let ``Ref structs in generics - builders`` (build:string) (getter:string) =
-        
+
         FSharp $$$"""module Foo
 open System
 
@@ -183,8 +183,8 @@ let main _args =
         |> compileAndRun
         |> shouldSucceed
         |> verifyOutputContains [|"1";"System.Action`1[System.ReadOnlySpan`1[System.Int32]]"|]
-        |> verifyIL  
-               [ if build = "task" then 
+        |> verifyIL
+               [ if build = "task" then
                     "valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<class [runtime]System.Action`1<valuetype [runtime]System.ReadOnlySpan`1<int32>>>>"
                  else "[FSharp.Core]Microsoft.FSharp.Control.FSharpAsync`1<class [runtime]System.Action`1<valuetype [runtime]System.ReadOnlySpan`1<int32>>>>" ]
 
@@ -208,7 +208,7 @@ let processRecord (recd:MyRecordFullOfWrongStuff<Span<Span<Uri>>>) =
         |> withLangVersion10
         |> typecheck
         |> shouldFail
-        |> withDiagnostics 
+        |> withDiagnostics
                 [ Error 412, Line 7, Col 7, Line 7, Col 12, "A type instantiation involves a byref type. This is not permitted by the rules of Common IL."
                   Error 437, Line 6, Col 6, Line 6, Col 30, "A type would store a byref typed value. This is not permitted by Common IL."
                   Error 412, Line 8, Col 7, Line 8, Col 12, "A type instantiation involves a byref type. This is not permitted by the rules of Common IL."
@@ -218,4 +218,4 @@ let processRecord (recd:MyRecordFullOfWrongStuff<Span<Span<Uri>>>) =
                   Error 412, Line 13, Col 5, Line 13, Col 22, "A type instantiation involves a byref type. This is not permitted by the rules of Common IL."
                   Error 412, Line 13, Col 5, Line 13, Col 16, "A type instantiation involves a byref type. This is not permitted by the rules of Common IL."
                   Error 412, Line 13, Col 5, Line 13, Col 9, "A type instantiation involves a byref type. This is not permitted by the rules of Common IL."]
-                  
+

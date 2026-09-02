@@ -1,4 +1,4 @@
-// #Conformance #DataExpressions 
+// #Conformance #DataExpressions
 // Verify the ability to use custom types in range expressions
 // All it needs is a Zero property and a member (+)
 

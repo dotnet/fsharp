@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 module internal FSharp.Compiler.CheckBasics
 
@@ -13,7 +13,9 @@ open FSharp.Compiler.AccessibilityLogic
 open FSharp.Compiler.CompilerGlobalState
 open FSharp.Compiler.ConstraintSolver
 open FSharp.Compiler.DiagnosticsLogger
+open FSharp.Compiler.Features
 open FSharp.Compiler.InfoReader
+open FSharp.Compiler.Infos
 open FSharp.Compiler.NameResolution
 open FSharp.Compiler.PatternMatchCompilation
 open FSharp.Compiler.Syntax
@@ -57,7 +59,8 @@ type ExplicitTyparInfo =
     | ExplicitTyparInfo of
         rigidCopyOfDeclaredTypars: Typars *
         declaredTypars: Typars *
-        infer: bool
+        infer: bool *
+        hasExplicitTyparDecls: bool
 
 type ArgAndRetAttribs = ArgAndRetAttribs of Attribs list list * Attribs
 
@@ -83,7 +86,9 @@ type PrelimVal1 =
 
 type UnscopedTyparEnv = UnscopedTyparEnv of NameMap<Typar>
 
-type TcPatLinearEnv = TcPatLinearEnv of tpenv: UnscopedTyparEnv * names: NameMap<PrelimVal1> * takenNames: Set<string>
+/// Represents the context flowed left-to-right through pattern checking.
+/// 'usesActivePattern' is true if an active pattern occurs in the pattern; see TcLetBinding.
+type TcPatLinearEnv = TcPatLinearEnv of tpenv: UnscopedTyparEnv * names: NameMap<PrelimVal1> * takenNames: Set<string> * usesActivePattern: bool
 
 /// Translation of patterns is split into three phases. The first collects names.
 /// The second is run after val_specs have been created for those names and inference
@@ -255,6 +260,23 @@ type TcEnv =
 
     member tenv.AccessRights = tenv.eAccessRights
 
+    /// Makes this environment available in a form that can be stored into a trait during solving.
+    /// The context is only ever consumed when extension members may solve SRTP constraints
+    /// (LanguageFeature.ExtensionConstraintSolutions). Capturing it otherwise would retain the
+    /// heavy TcEnv (name-resolution env + module accumulator) on every generalized, unsolved
+    /// trait constraint for no benefit, so return None when the feature is off.
+    member tenv.TraitContext =
+        if tenv.eNameResEnv.DisplayEnv.g.langVersion.SupportsFeature LanguageFeature.ExtensionConstraintSolutions then
+            Some (tenv :> ITraitContext)
+        else
+            None
+
+    interface ITraitContext<AccessorDomain, MethInfo, InfoReader> with
+        member tenv.SelectExtensionMethods(traitInfo, m, infoReader) =
+            SelectExtensionMethInfosForTrait(traitInfo, m, tenv.eNameResEnv, infoReader)
+
+        member tenv.AccessRights = tenv.eAccessRights
+
     override tenv.ToString() = "TcEnv(...)"
 
 /// Represents the compilation environment for typechecking a single file in an assembly.
@@ -352,7 +374,8 @@ type TcFileState =
 
         let niceNameGen = NiceNameGenerator()
         let infoReader = InfoReader(g, amap)
-        let instantiationGenerator m tpsorig = FreshenTypars g m tpsorig
+        // traitCtxtNone: NameResolver construction - trait context flows separately through TcEnv during actual resolution (audited for RFC FS-1043)
+        let instantiationGenerator m tpsorig = FreshenTypars g traitCtxtNone m tpsorig
         let nameResolver = NameResolver(g, amap, infoReader, instantiationGenerator)
         { g = g
           amap = amap
@@ -361,7 +384,7 @@ type TcFileState =
           createsGeneratedProvidedTypes = false
           thisCcu = thisCcu
           isScript = isScript
-          css = ConstraintSolverState.New(g, amap, infoReader, tcVal)
+          css = ConstraintSolverState.New(g, amap, infoReader, tcVal, Some thisCcu)
           infoReader = infoReader
           tcSink = tcSink
           nameResolver = nameResolver

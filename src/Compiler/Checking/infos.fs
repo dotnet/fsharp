@@ -461,14 +461,12 @@ type ILTypeInfo =
             let metadataTy = convertToTypeWithMetadataIfPossible g ty
             assert (isILAppTy g metadataTy)
             let metadataTyconRef = tcrefOfAppTy g metadataTy
-            let (TILObjectReprData(scoref, enc, tdef)) = metadataTyconRef.ILTyconInfo
-            let metadataILTypeRef = mkRefForNestedILTypeDef scoref (enc, tdef)
-            ILTypeInfo(g, ty, metadataILTypeRef, tdef)
+            let (TILObjectReprData(_, _, tdef)) = metadataTyconRef.ILTyconInfo
+            ILTypeInfo(g, ty, metadataTyconRef.CompiledRepresentationForNamedType, tdef)
         elif isILAppTy g ty then
             let tcref = tcrefOfAppTy g ty
-            let (TILObjectReprData(scoref, enc, tdef)) = tcref.ILTyconInfo
-            let tref = mkRefForNestedILTypeDef scoref (enc, tdef)
-            ILTypeInfo(g, ty, tref, tdef)
+            let (TILObjectReprData(_, _, tdef)) = tcref.ILTyconInfo
+            ILTypeInfo(g, ty, tcref.CompiledRepresentationForNamedType, tdef)
         else
             failwith ("ILTypeInfo.FromType - no IL metadata for type" + Environment.StackTrace)
 
@@ -1007,6 +1005,18 @@ type MethInfo =
         | MethInfoWithModifiedReturnType(mi, _) -> mi.IsILMethod
         | _ -> false
 
+    /// Indicates if the method has the AllowOverloadOnReturnType attribute.
+    member x.HasAllowOverloadOnReturnType =
+        match x with
+        | ILMeth(g, ilmeth, _) -> TryFindILAttribute g.attrib_AllowOverloadOnReturnTypeAttribute ilmeth.RawMetadata.CustomAttrs
+        | FSMeth(g, _, vref, _) -> HasFSharpAttribute g g.attrib_AllowOverloadOnReturnTypeAttribute vref.Attribs
+        | MethInfoWithModifiedReturnType(mi, _) -> mi.HasAllowOverloadOnReturnType
+        | DefaultStructCtor _ -> false
+        | RecdCtor _ -> false
+#if !NO_TYPEPROVIDERS
+        | ProvidedMeth _ -> false
+#endif
+
     /// Check if this method is an explicit implementation of an interface member
     member x.IsFSharpExplicitInterfaceImplementation =
         match x with
@@ -1421,9 +1431,11 @@ type MethInfo =
             let tcref =  tcrefOfAppTy g x.ApparentEnclosingAppType
             let formalEnclosingTyparsOrig = tcref.Typars
             let formalEnclosingTypars = copyTypars false formalEnclosingTyparsOrig
-            let _, formalEnclosingTyparTys = FixupNewTypars m [] [] formalEnclosingTyparsOrig formalEnclosingTypars
+            // traitCtxtNone: slot signature computation — structural matching, not SRTP constraint solving (audited for RFC FS-1043)
+            let _, formalEnclosingTyparTys = FixupNewTypars traitCtxtNone m [] [] formalEnclosingTyparsOrig formalEnclosingTypars
             let formalMethTypars = copyTypars false x.FormalMethodTypars
-            let _, formalMethTyparTys = FixupNewTypars m formalEnclosingTypars formalEnclosingTyparTys x.FormalMethodTypars formalMethTypars
+            // traitCtxtNone: slot signature computation — structural matching, not SRTP constraint solving (audited for RFC FS-1043)
+            let _, formalMethTyparTys = FixupNewTypars traitCtxtNone m formalEnclosingTypars formalEnclosingTyparTys x.FormalMethodTypars formalMethTypars
 
             let formalRetTy, formalParams =
                 match x with

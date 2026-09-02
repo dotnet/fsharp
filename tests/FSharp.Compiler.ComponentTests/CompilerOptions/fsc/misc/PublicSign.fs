@@ -5,6 +5,7 @@ namespace CompilerOptions.Fsc
 
 open System
 open System.IO
+open System.Runtime.InteropServices
 open Xunit
 open FSharp.Test
 open FSharp.Test.Compiler
@@ -26,7 +27,7 @@ let x = 42
 
         // Resolve the path to sha1full.snk relative to this source file's directory
         // Path: tests/FSharp.Compiler.ComponentTests/CompilerOptions/fsc/misc -> tests/fsharp/core/signedtests/sha1full.snk
-        let snkPath: string = 
+        let snkPath: string =
             Path.Combine(__SOURCE_DIRECTORY__, "..", "..", "..", "..", "fsharp", "core", "signedtests", "sha1full.snk")
 
         // Compile with --publicsign+ and --keyfile to exercise the Offset 8 code path
@@ -41,7 +42,7 @@ let x = 42
         result |> shouldSucceed |> ignore
 
         // Safely extract the output DLL path using pattern matching
-        let outputDll: string = 
+        let outputDll: string =
             match result.OutputPath with
             | Some path -> path
             | None -> failwith "Compilation did not produce an output DLL"
@@ -64,10 +65,10 @@ let x = 42
             else
                 let mutable found = false
                 for i in 0 .. (data.Length - magic.Length) do
-                    if not found && 
-                       data.[i] = magic.[0] && 
-                       data.[i + 1] = magic.[1] && 
-                       data.[i + 2] = magic.[2] && 
+                    if not found &&
+                       data.[i] = magic.[0] &&
+                       data.[i + 1] = magic.[1] &&
+                       data.[i + 2] = magic.[2] &&
                        data.[i + 3] = magic.[3] then
                         found <- true
                 found

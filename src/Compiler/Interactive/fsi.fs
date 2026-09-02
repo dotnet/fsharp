@@ -2250,7 +2250,8 @@ type internal FsiDynamicCompiler
             ApplyAllOptimizations(
                 tcConfig,
                 tcGlobals,
-                LightweightTcValForUsingInBuildMethodCall tcGlobals,
+                // traitCtxtNone: FSI codegen — SRTP constraints already resolved, no TcEnv available (audited for RFC FS-1043)
+                LightweightTcValForUsingInBuildMethodCall tcGlobals traitCtxtNone,
                 outfile,
                 importMap,
                 isIncrementalFragment,
@@ -2312,6 +2313,12 @@ type internal FsiDynamicCompiler
         let tcState = istate.tcState
         let ilxGenerator = istate.ilxGenerator
         let tcConfig = TcConfig.Create(tcConfigB, validate = false)
+
+        // RFC FS-1043: each FSI fragment is its own compilation unit but shares the session CcuThunk, so the
+        // extension-operator solution sink must be reset per fragment. Otherwise identical-layout submissions
+        // (same dummy file name, same ranges) leave stale entries that the range-based disambiguation cannot
+        // tell apart from the current fragment, poisoning a later same-shaped submission.
+        tcGlobals.ClearExtensionOperatorSolutions(tcState.Ccu)
 
         let eagerFormat (diag: PhasedDiagnostic) = diag.EagerlyFormatCore true
 
@@ -3172,7 +3179,14 @@ type internal FsiDynamicCompiler
             GetInitialTcState(rangeStdin0, ccuName, tcConfig, tcGlobals, tcImports, tcEnv, openDecls0)
 
         let ilxGenerator =
-            CreateIlxAssemblyGenerator(tcConfig, tcImports, tcGlobals, (LightweightTcValForUsingInBuildMethodCall tcGlobals), tcState.Ccu)
+            // traitCtxtNone: FSI codegen — SRTP constraints already resolved, no TcEnv available (audited for RFC FS-1043)
+            CreateIlxAssemblyGenerator(
+                tcConfig,
+                tcImports,
+                tcGlobals,
+                (LightweightTcValForUsingInBuildMethodCall tcGlobals traitCtxtNone),
+                tcState.Ccu
+            )
 
         {
             optEnv = optEnv0

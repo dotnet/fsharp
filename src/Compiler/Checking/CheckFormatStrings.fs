@@ -18,7 +18,8 @@ open FSharp.Compiler.TcGlobals
 type FormatItem = Simple of TType | FuncAndVal
 
 let copyAndFixupFormatTypar g m tp =
-    let _,_,tinst = FreshenAndFixupTypars g m TyparRigidity.Flexible [] [] [tp]
+    // traitCtxtNone: format string typars — unrelated to SRTP member constraints (audited for RFC FS-1043)
+    let _,_,tinst = FreshenAndFixupTypars g traitCtxtNone m TyparRigidity.Flexible [] [] [tp]
     List.head tinst
 
 let lowestDefaultPriority = 0 (* See comment on TyparConstraint.DefaultsTo *)
@@ -244,8 +245,6 @@ let parseFormatStringInternal
     // there are no accurate intra-string ranges available for exact error message locations within the string.
     // The 'm' range passed as an input is however accurate and covers the whole string.
     //
-    let escapeFormatStringEnabled = g.langVersion.SupportsFeature Features.LanguageFeature.EscapeDotnetFormattableStrings
-
     let fmt, fragments, delimLen =
         match context with
         | Some context when fragRanges.Length > 0 ->
@@ -264,7 +263,7 @@ let parseFormatStringInternal
         | _ ->
             // Don't muck with the fmt when there is no source code context to go get the original
             // source code (i.e. when compiling or background checking)
-            (if escapeFormatStringEnabled then escapeDotnetFormatString fmt else fmt), [ (0, 1, m) ], 1
+            escapeDotnetFormatString fmt, [ (0, 1, m) ], 1
 
     let len = fmt.Length
 

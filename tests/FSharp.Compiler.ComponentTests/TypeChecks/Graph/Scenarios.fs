@@ -14,13 +14,18 @@ type Scenario =
     {
         Name: string
         Files: FileInScenario list
+        CompilerOptions: string list
     }
 
     override x.ToString() = x.Name
 
 let private scenario name files =
     let files = files |> List.mapi (fun idx f -> f idx)
-    { Name = name; Files = files }
+    { Name = name; Files = files; CompilerOptions = [] }
+
+let private scenarioWithOptions name options files =
+    let files = files |> List.mapi (fun idx f -> f idx)
+    { Name = name; Files = files; CompilerOptions = options }
 
 let private sourceFile fileName content (dependencies: Set<int>) =
     fun idx ->
@@ -1325,11 +1330,43 @@ module Dissolve =
 """
                     (set [| 0; 1 |])
             ]
+        // Tuple type extensions (RFC FS-1043) are desugared by DesugarTupleTypeExtensionCompInfo
+        // during type-checking, which happens AFTER this dependency graph is built. The graph
+        // builder therefore sees the raw SynComponentInfo (synType = Some (SynType.Tuple ...),
+        // LongIdent = []). Unlike a nominal type extension, a tuple extension has no LongId to key
+        // on, so the only thing that links a consumer to the declaring file is the `open`. This
+        // scenario pins that a consumer which opens the tuple-extension module depends on it, so
+        // graph-based checking orders the declaring file before the consumer. The tuple-extension
+        // syntax is preview-only, so this scenario compiles with --langversion:preview.
+        scenarioWithOptions
+            "Tuple type extension links consumer to declaring file via open"
+            [ "--langversion:preview" ]
+            [
+                sourceFile
+                    "A.fs"
+                    """
+module A
+
+type (int * int) with
+    static member inline (+++) ((a, b), (c, d)) = (a + c, b + d)
+"""
+                    Set.empty
+                sourceFile
+                    "B.fs"
+                    """
+module B
+
+open A
+
+let add () = (1, 2) +++ (3, 4)
+"""
+                    (set [| 0 |])
+            ]
     ]
 
 
 // Implementation given before signature file. This scenario will not compile, but is supported.
-// Produced graph should have a necessary dependecy to trigger expected errors. 
+// Produced graph should have a necessary dependecy to trigger expected errors.
 let internal misorderedScenario =
     scenario
         "Signature file follows implementation"

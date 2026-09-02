@@ -4,42 +4,42 @@ open System
 open System.Diagnostics
 
 [<AttributeUsage(AttributeTargets.Method)>]
-type MethodOnlyAttribute() = 
+type MethodOnlyAttribute() =
    inherit Attribute()
 
-type TestClass() = 
+type TestClass() =
 
    [<MethodOnly>] // Should fail
-   static let val1 = "someValue" 
+   static let val1 = "someValue"
 
    [<MethodOnly>]  // Should fail
    static let rec val2 = "someValue"
 
    [<MethodOnly>] // Should fail
-   static let rec val3 = "someValue" 
+   static let rec val3 = "someValue"
    and [<MethodOnly>] val4 = "someValue" // Should fail
 
    [<MethodOnly>] // Should fail
-   let val5 = "someValue" 
+   let val5 = "someValue"
 
    [<MethodOnly>]  // Should fail
    let i, j, k = (1, 2, 3)
 
    [<MethodOnly>] // Should fail
-   let val5 = nameof(MethodOnlyAttribute) 
+   let val5 = nameof(MethodOnlyAttribute)
 
    [<MethodOnly>] // Should fail
-   let rec val6 = nameof(val5) 
+   let rec val6 = nameof(val5)
 
    [<MethodOnly>] // Should fail
-   let ``val7`` = "someValue" 
+   let ``val7`` = "someValue"
 
    [<MethodOnly>]  // Should fail
    let rec val8 = 0
    and [<MethodOnly>] val9 = [] // Should fail
- 
+
    [<MethodOnly>] // Should fail
-   let (a :: _) = [] 
+   let (a :: _) = []
 
    [<MethodOnly>]  // Should fail
    let (d, e) as foo = 1, 2

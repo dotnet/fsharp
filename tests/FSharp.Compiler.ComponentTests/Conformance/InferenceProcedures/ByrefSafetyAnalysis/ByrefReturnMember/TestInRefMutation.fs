@@ -1,6 +1,6 @@
 open Prelude
 
-module TestInRefMutation = 
+module TestInRefMutation =
     [<Struct>]
     type TestMut =
 
@@ -17,5 +17,5 @@ module TestInRefMutation =
         let x = TestMut()
         //testIn (&x)
         testAction (&x)
-        x            
+        x
     test()

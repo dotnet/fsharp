@@ -7,7 +7,7 @@ type StaticNonGenericTestNameRecursiveInClass() =
 
     static do StaticNonGenericTestNameRecursiveInClass.Test()
 
-    static member Test() = 
+    static member Test() =
         let mutable x = 0uy
         testValue  0 &x
         check "vruoer3rvvrebae" x 3uy

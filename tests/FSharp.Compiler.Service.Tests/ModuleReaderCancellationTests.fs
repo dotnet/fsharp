@@ -1,5 +1,5 @@
-// Sequential execution because of shared mutable state.
-[<FSharp.Test.RunTestCasesInSequence>]
+// Tests utilize caching in module state (checker) and `mutable` state
+[<Xunit.TestClass(DisableParallelization = true)>]
 module FSharp.Compiler.Service.Tests.ModuleReaderCancellationTests
 
 open System
@@ -54,7 +54,7 @@ module ModuleReader =
         let parameters = []
         let ret = mkILReturn ILType.Void
         let genericParams = []
-        let customAttrs = mkILCustomAttrs [] 
+        let customAttrs = mkILCustomAttrs []
 
         let implAttributes = MethodImplAttributes.Managed
         let body = InterruptibleLazy.FromValue MethodBody.NotAvailable

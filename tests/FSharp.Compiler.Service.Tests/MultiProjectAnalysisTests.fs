@@ -128,7 +128,7 @@ let u = Case1 3
 
 [<Fact>]
 let ``Test multi project 1 basic`` () =
-    
+
     let wholeProjectResults = checker.ParseAndCheckProject(MultiProject1.options) |> Async.RunSynchronouslyImmediate
 
     [ for x in wholeProjectResults.AssemblySignature.Entities -> x.DisplayName ] |> shouldEqual ["MultiProject1"]
@@ -821,21 +821,21 @@ module GenerativeTypeProviderFallbackTest =
 
     [<Fact>]
     let ``In-memory cross-project references to projects using generative type provides should fallback to on-disk references`` () =
-            
+
         // The type provider and its dependency are compiled as part of the solution build
         let csDLL = __SOURCE_DIRECTORY__ + $"/../../artifacts/bin/TestTP/{testBuildConfiguration}/netstandard2.0/CSharp_Analysis.dll"
         let tpDLL = __SOURCE_DIRECTORY__ + $"/../../artifacts/bin/TestTP/{testBuildConfiguration}/netstandard2.0/TestTP.dll"
         // These two projects should have been built before the test executes
-        if not (File.Exists csDLL) then 
+        if not (File.Exists csDLL) then
             failwith $"expect {csDLL} to exist"
-        if not (File.Exists tpDLL) then 
+        if not (File.Exists tpDLL) then
             failwith $"expect {tpDLL} to exist"
         // Dedicated checker to isolate type-provider tests from shared state races.
         let checker = FSharpChecker.Create(useTransparentCompiler = CompilerAssertHelpers.UseTransparentCompiler)
-        let optionsTestProject = 
+        let optionsTestProject =
             {       ProjectFileName = __SOURCE_DIRECTORY__ ++ @"../service/data/TestProject/TestProject.fsproj"
                     ProjectId = None
-                    SourceFiles = 
+                    SourceFiles =
                         [|  __SOURCE_DIRECTORY__ ++ @"../service/data/TestProject/TestProject.fs" |]
                     Stamp = None
                     OtherOptions =
@@ -910,8 +910,7 @@ module GenerativeTypeProviderFallbackTest =
         begin
             let fileName = __SOURCE_DIRECTORY__ ++ @"../service/data/TestProject/TestProject.fs"
             let fileSource = FileSystem.OpenFileForReadShim(fileName).ReadAllText()
-            let fileParseResults, fileCheckAnswer = checker.ParseAndCheckFileInProject(fileName, 0, SourceText.ofString fileSource, optionsTestProject) |> Async.
-                                                                                                                                                               RunSynchronouslyImmediate
+            let fileParseResults, fileCheckAnswer = checker.ParseAndCheckFileInProject(fileName, 0, SourceText.ofString fileSource, optionsTestProject) |> Async.RunSynchronouslyImmediate
 
             let fileCheckResults =
                 match fileCheckAnswer with
@@ -941,19 +940,19 @@ module GenerativeTypeProviderFallbackTest =
 
             printfn "Parse Diagnostics (TestProject2 without compiled TestProject): %A" fileParseResults.Diagnostics
             printfn "Check Diagnostics (TestProject2 without compiled TestProject): %A" fileCheckResults.Diagnostics
-            fileCheckResults.Diagnostics 
-                |> Array.exists (fun diag -> 
+            fileCheckResults.Diagnostics
+                |> Array.exists (fun diag ->
                      diag.Severity = FSharpDiagnosticSeverity.Error &&
                      diag.Message.Contains("TestProject.dll"))
                 |> shouldEqual true
         end
 
-        // Do the same check with an in-memory reference to TestProject where TestProject exists 
+        // Do the same check with an in-memory reference to TestProject where TestProject exists
         // compiled to disk.  In this case, we expect no error, because even though TestProject uses a generative
         // type provider, the in-memory cross-reference is ignored and an on-disk reference is used instead.
         begin
             let testProjectCompiledOutput = __SOURCE_DIRECTORY__ ++ @"../service/data/TestProject/netstandard2.0/TestProject.dll"
-            if not (File.Exists testProjectCompiledOutput) then 
+            if not (File.Exists testProjectCompiledOutput) then
                 failwith $"expect {testProjectCompiledOutput} to exist"
             let options = optionsTestProject2 testProjectCompiledOutput
             let fileName = __SOURCE_DIRECTORY__ ++ @"../service/data/TestProject2/TestProject2.fs"

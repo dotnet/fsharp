@@ -1,4 +1,4 @@
-// #Regression #Conformance #TypeInference #Attributes 
+// #Regression #Conformance #TypeInference #Attributes
 // Verify an error if not fully-qualifying discriminated union
 // when marked with RequireQualifiedAccess
 
