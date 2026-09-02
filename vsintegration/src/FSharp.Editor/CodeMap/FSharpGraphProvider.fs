@@ -328,7 +328,11 @@ type internal FSharpGraphProvider() =
                         let frame = CallStackMethodNode frameNode
 
                         match FSharpStackFrameNameParser.parse frame.FunctionName with
-                        | ValueNone -> ()
+                        | ValueNone ->
+                            // A name we cannot take apart is still a name we can place, and
+                            // FSharp.Core's belongs off the map whether or not it reads.
+                            if FSharpCallStackPlan.isFSharpCoreModule (moduleAssemblyOf frame) then
+                                yield frameNode, ValueNone, FoldAsExternalCode
                         | ValueSome parsed ->
                             let facts =
                                 {
@@ -339,7 +343,7 @@ type internal FSharpGraphProvider() =
                                     ModuleAssembly = moduleAssemblyOf frame
                                 }
 
-                            yield frameNode, facts, FSharpCallStackPlan.decide assemblyNameForFile facts
+                            yield frameNode, ValueSome facts, FSharpCallStackPlan.decide assemblyNameForFile facts
                 |]
 
             // What the debug engine handed us, before anything is resolved. A position here belongs to
@@ -348,7 +352,7 @@ type internal FSharpGraphProvider() =
             // of the source, and this line is the only place that shows it.
             for methodNode, facts, action in parsedFrames do
                 let position =
-                    match facts.Frame.SourcePosition with
+                    match facts |> ValueOption.bind _.Frame.SourcePosition with
                     | ValueNone -> "no position"
                     | ValueSome position -> $"{Path.GetFileName position.File}:{position.Line}"
 
@@ -385,10 +389,11 @@ type internal FSharpGraphProvider() =
             let byAssembly =
                 [|
                     for frameNode, facts, action in parsedFrames do
-                        match action with
-                        | ResolveIn assembly -> yield assembly, frameNode, facts.Frame
-                        | FoldAsExternalCode
-                        | LeaveUnresolved -> ()
+                        match action, facts with
+                        | ResolveIn assembly, ValueSome facts -> yield assembly, frameNode, facts.Frame
+                        | ResolveIn _, ValueNone
+                        | FoldAsExternalCode, _
+                        | LeaveUnresolved, _ -> ()
                 |]
                 |> Seq.groupBy (fun (assembly, _, _) -> assembly)
                 |> Seq.map (fun (assembly, group) -> assembly, group |> Seq.map (fun (_, frameNode, frame) -> frameNode, frame))

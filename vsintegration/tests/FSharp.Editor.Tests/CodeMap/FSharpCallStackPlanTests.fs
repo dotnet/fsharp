@@ -4,6 +4,7 @@
 /// of the frame alone, and the workspace reaches it only as "which assembly owns this file".
 module FSharp.Editor.Tests.CodeMap.FSharpCallStackPlanTests
 
+open System
 open Xunit
 open Microsoft.VisualStudio.FSharp.Editor
 
@@ -121,3 +122,83 @@ let ``Frames disagreeing about the line yield no position`` () =
 [<Fact>]
 let ``A frame nothing claims yields no position`` () =
     Assert.True (FSharpCallStackPlan.positionOf []).IsNone
+
+/// The FSharp.Core frames a scenario actually put on the stack, taken from the runtime rather than
+/// written down here: what the plumbing of a pipeline or a computation expression is made of is
+/// FSharp.Core's business and changes with it.
+let private plumbingOf (scenario: unit -> int) =
+    scenario () |> ignore
+    CallStackSample.plumbingFrames ()
+
+/// A frame the parser rejects is a frame the provider never builds facts for, so nothing folds it
+/// and it stands on the map as a bare `Map`, `Invoke` or `MoveNext`. Both halves are asserted: the
+/// name reads, and the decision is to fold.
+let private assertEveryFrameFolds (frames: string array) =
+    Assert.NotEmpty frames
+
+    for name in frames do
+        match FSharpStackFrameNameParser.parse name with
+        | ValueNone -> failwith $"the parser rejects this FSharp.Core frame, so nothing folds it: %s{name}"
+        | ValueSome frame ->
+            {
+                Frame = frame
+                ModuleAssembly = ValueSome "FSharp.Core"
+            }
+            |> decide
+            |> fun action -> Assert.Equal(FoldAsExternalCode, action)
+
+/// One `List.map` is two frames - `ListModule.Map` and the `Primitives.Basics.List.map` it calls -
+/// and both reached the map as their own nodes, `Map` above `map`. How many of them survive depends
+/// on how FSharp.Core was optimized, so both are named here rather than counted; the debugger spells
+/// them with the type arguments it resolved, the runtime without.
+[<Theory>]
+[<InlineData("Microsoft.FSharp.Collections.ListModule.Map")>]
+[<InlineData("Microsoft.FSharp.Collections.ListModule.Map<int, int>")>]
+[<InlineData("Microsoft.FSharp.Primitives.Basics.List.map")>]
+[<InlineData("Microsoft.FSharp.Primitives.Basics.List.map<int, int>")>]
+let ``Both halves of a List.map fold into External Code`` (name: string) =
+    facts name (ValueSome "FSharp.Core") ValueNone
+    |> decide
+    |> fun action -> Assert.Equal(FoldAsExternalCode, action)
+
+[<Fact>]
+let ``Every FSharp.Core frame of a pipeline folds into External Code`` () =
+    assertEveryFrameFolds (plumbingOf CallStackSample.pipelineLambdas)
+
+/// The other shapes FSharp.Core reaches a stack in: a trampolined continuation and a closure the
+/// compiler numbered from inside `<StartupCode$FSharp-Core>`; a generated state machine reached
+/// through an explicitly implemented `IEnumerator.MoveNext`; a subscription reached through an
+/// explicitly implemented `IObserver.OnNext`.
+[<Fact>]
+let ``Every FSharp.Core frame of an async body folds into External Code`` () =
+    assertEveryFrameFolds (plumbingOf CallStackSample.asyncBody)
+
+[<Fact>]
+let ``Every FSharp.Core frame of a task body folds into External Code`` () =
+    assertEveryFrameFolds (plumbingOf CallStackSample.taskBody)
+
+[<Fact>]
+let ``Every FSharp.Core frame of a seq body folds into External Code`` () =
+    assertEveryFrameFolds (plumbingOf CallStackSample.seqBody)
+
+[<Fact>]
+let ``Every FSharp.Core frame of an event handler folds into External Code`` () =
+    assertEveryFrameFolds (plumbingOf CallStackSample.eventHandler)
+
+/// The module settles it on its own, so a name too mangled to read is still folded rather than left
+/// standing. This is what the provider falls back to when the parser returns nothing.
+[<Theory>]
+[<InlineData("FSharp.Core")>]
+[<InlineData("fsharp.core")>]
+let ``An FSharp.Core module folds whatever its frame name`` (assembly: string) =
+    Assert.True(FSharpCallStackPlan.isFSharpCoreModule (ValueSome assembly))
+
+[<Theory>]
+[<InlineData("ClassLibrary")>]
+[<InlineData("FSharp.Core.Extra")>]
+let ``Another module does not fold`` (assembly: string) =
+    Assert.False(FSharpCallStackPlan.isFSharpCoreModule (ValueSome assembly))
+
+[<Fact>]
+let ``No module does not fold on its own`` () =
+    Assert.False(FSharpCallStackPlan.isFSharpCoreModule ValueNone)
