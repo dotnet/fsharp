@@ -96,7 +96,6 @@
     <Compile Include="Navigation\FindDefinitionService.fs" />
     <Compile Include="CodeMap\FSharpStackFrameNameParser.fs" />
     <Compile Include="CodeMap\FSharpCallStackResolver.fs" />
-    <Compile Include="CodeMap\FSharpGraphProvider.fs" />
     <Compile Include="QuickInfo\WpfFactories.fs" />
     <Compile Include="QuickInfo\Views.fs" />
     <Compile Include="QuickInfo\QuickInfoProvider.fs" />
@@ -191,20 +190,33 @@
     <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Condition="'$(Configuration)' == 'Debug'" />
   </ItemGroup>
 
-  <!-- The Progression assemblies backing Code Map ship only inside Visual Studio; they have no NuGet package. -->
-  <ItemGroup>
+  <!-- The Progression assemblies backing Code Map ship only inside Visual Studio and have no NuGet
+       package. $(MSBuildExtensionsPath) reaches the IDE only when the IDE is doing the building -
+       under `dotnet build` it resolves into the SDK - so the Code Map provider is compiled where
+       they are present and left out where they are not. The frame parser and the call stack
+       resolver, which carry the language knowledge and the tests, never reference them. -->
+  <PropertyGroup>
+    <VisualStudioIdeDirectory>$(MSBuildExtensionsPath)\..\Common7\IDE\</VisualStudioIdeDirectory>
+    <VisualStudioIdeDirectory Condition="!Exists('$(VisualStudioIdeDirectory)') AND '$(DevEnvDir)' != ''">$(DevEnvDir)</VisualStudioIdeDirectory>
+    <ProgressionAssemblyDirectory>$(VisualStudioIdeDirectory)CommonExtensions\Microsoft\Architecture Tools\GraphProviderPackage\</ProgressionAssemblyDirectory>
+    <HasProgressionAssemblies Condition="Exists('$(ProgressionAssemblyDirectory)Microsoft.VisualStudio.Progression.Interfaces.dll')">true</HasProgressionAssemblies>
+  </PropertyGroup>
+
+  <ItemGroup Condition="'$(HasProgressionAssemblies)' == 'true'">
     <Reference Include="Microsoft.VisualStudio.Progression.Interfaces">
-      <HintPath>$(MSBuildExtensionsPath)\..\Common7\IDE\CommonExtensions\Microsoft\Architecture Tools\GraphProviderPackage\Microsoft.VisualStudio.Progression.Interfaces.dll</HintPath>
+      <HintPath>$(ProgressionAssemblyDirectory)Microsoft.VisualStudio.Progression.Interfaces.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="Microsoft.VisualStudio.Progression.CodeSchema">
-      <HintPath>$(MSBuildExtensionsPath)\..\Common7\IDE\CommonExtensions\Microsoft\Architecture Tools\GraphProviderPackage\Microsoft.VisualStudio.Progression.CodeSchema.dll</HintPath>
+      <HintPath>$(ProgressionAssemblyDirectory)Microsoft.VisualStudio.Progression.CodeSchema.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="Microsoft.VisualStudio.GraphModel">
-      <HintPath>$(MSBuildExtensionsPath)\..\Common7\IDE\PublicAssemblies\Microsoft.VisualStudio.GraphModel.dll</HintPath>
+      <HintPath>$(VisualStudioIdeDirectory)PublicAssemblies\Microsoft.VisualStudio.GraphModel.dll</HintPath>
       <Private>False</Private>
     </Reference>
+    <!-- Nothing compiles against the provider, so it goes last rather than beside the two files it uses. -->
+    <Compile Include="CodeMap\FSharpGraphProvider.fs" />
   </ItemGroup>
 
   <ItemGroup>

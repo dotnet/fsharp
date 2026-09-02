@@ -32,8 +32,13 @@
     <Compile Include="QuickInfoTests.fs" />
     <Compile Include="TaskListServiceTests.fs" />
     <Compile Include="NavigateToSearchServiceTests.fs" />
+    <Compile Include="CodeMap\CallStackSample.fs" />
+    <!-- Compiled so the tests can run its scenarios, embedded so they can hand the very same text to
+         the workspace the resolver reads. -->
+    <EmbeddedResource Include="CodeMap\CallStackSample.fs" />
     <Compile Include="CodeMap\FSharpStackFrameNameParserTests.fs" />
     <Compile Include="CodeMap\FSharpCallStackResolverTests.fs" />
+    <Compile Include="CodeMap\FSharpCallStackSampleTests.fs" />
     <Compile Include="CodeFixes\CodeFixTestFramework.fs" />
     <Compile Include="CodeFixes\AddInstanceMemberParameterTests.fs" />
     <Compile Include="CodeFixes\ConvertToAnonymousRecordTests.fs" />
