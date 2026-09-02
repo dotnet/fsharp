@@ -13,7 +13,7 @@ module CompilerWarnOn =
     [<Theory; FileInlineData("warnon01.fs")>]
     let ``warnon - warnon01_fs - --warnon:1182 --test:ErrorRanges`` compilation =
         compilation
-        |> getCompilation 
+        |> getCompilation
         |> asFsx
         |> withOptions ["--warnon:1182"; "--test:ErrorRanges"]
         |> compile
@@ -27,7 +27,7 @@ module CompilerWarnOn =
     [<Theory; FileInlineData("warnon01.fs")>]
     let ``warnon - warnon01_fs - --warnon:NU0001;FS1182;NU0001 --test:ErrorRanges`` compilation =
         compilation
-        |> getCompilation 
+        |> getCompilation
         |> asFsx
         |> withOptions ["--warnon:NU0001;FS1182;NU0001"; "--test:ErrorRanges"]
         |> compile

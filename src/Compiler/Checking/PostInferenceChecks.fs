@@ -1169,7 +1169,7 @@ and TryCheckResumableCodeConstructs cenv env expr : bool =
 and CheckExpr (cenv: cenv) (env: env) origExpr (ctxt: PermitByRefExpr) : Limit =
 
     // Guard the stack for deeply nested expressions
-    cenv.stackGuard.Guard <| fun () ->
+    cenv.stackGuard.Guard(fun () ->
 
     let g = cenv.g
 
@@ -1274,7 +1274,7 @@ and CheckExpr (cenv: cenv) (env: env) origExpr (ctxt: PermitByRefExpr) : Limit =
         NoLimit
 
     | Expr.Link _ ->
-        failwith "Unexpected reclink"
+        failwith "Unexpected reclink")
 
 and CheckQuoteExpr cenv env (ast, savedConv, m, ty) =
     let g = cenv.g
@@ -1358,15 +1358,17 @@ and CheckILBaseCall cenv env (ilMethRef, enclTypeInst, methInst, retTypes, tyarg
     // Disallow calls to abstract base methods on IL types.
     match tryTcrefOfAppTy g baseVal.Type with
     | ValueSome tcref when tcref.IsILTycon ->
-        try
-            let mdef =
-                match tcref.ILTyconInfo with
-                | TILObjectReprData(scoref, _, _) ->
-                    resolveILMethodRefWithRescope (rescopeILType scoref) tcref.ILTyconRawMetadata ilMethRef
+        match tcref.ILTyconInfo with
+        | TILObjectReprData(scoref, _, _) ->
+            if not (isNil (tcref.ILTyconRawMetadata.Methods.FindByNameAndArity(ilMethRef.Name, ilMethRef.ArgTypes.Length))) then
+                try
+                    let mdef =
+                        resolveILMethodRefWithRescope (rescopeILType scoref) tcref.ILTyconRawMetadata ilMethRef
 
-            if mdef.IsAbstract then
-                errorR(Error(FSComp.SR.tcCannotCallAbstractBaseMember(RichText.mkMethod mdef.Name), m))
-        with _ -> ()
+                    if mdef.IsAbstract then
+                        errorR(Error(FSComp.SR.tcCannotCallAbstractBaseMember(RichText.mkMethod mdef.Name), m))
+                with _ ->
+                    ()
     | _ -> ()
 
     CheckTypeInstNoByrefs cenv env m tyargs

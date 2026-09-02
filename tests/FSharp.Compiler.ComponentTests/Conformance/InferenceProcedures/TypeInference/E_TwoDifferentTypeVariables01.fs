@@ -1,4 +1,4 @@
-// #Regression #TypeInference 
+// #Regression #TypeInference
 // Regression test for FSHARP1.0:4758
 // Type Inference
 // Check Method Disambiguation When User Generic Variable Get Instantiated By Overload Resolution
@@ -14,19 +14,19 @@ type Three = | Three
 type Four = | Four
 
 // An unsealed type
-type C() = 
+type C() =
     member x.P = 1
-    
+
 type C1 =
     static member M<'a>(x:'a,y:'a) = One
 
 type C2 =
     static member M<'a,'b>(x:'a,y:'b) = Two
 
-type C3 =    
+type C3 =
     static member M<'a>(x:'a,y:int) = Three
 
-type C4 =    
+type C4 =
     static member M<'a>(x:'a,y:C) = Four
 
 type C12 =
@@ -61,8 +61,8 @@ type C1234 =
     static member M<'a>(x:'a,y:C) = Four
 
 module M1 =
-// Errors    
+// Errors
     let gB13    (x:'a) (y:'b) = C13.M(x,y)           // expect: ambiguity error (and note: both would instantiate 'a or 'b)
-    let gB24    (x:'a) (y:'b) = C24.M(x,y) = Four    // expect: ambiguity error 
+    let gB24    (x:'a) (y:'b) = C24.M(x,y) = Four    // expect: ambiguity error
     let gC13    (x:'a) (y:'b) = C13.M<'a>(x,y)       // expect: ambiguity error (and note: both would instantiate 'a or 'b)
     let gD13    (x:'a) (y:'b) = C13.M<_>(x,y)        // expect: ambiguity error (and note: both would instantiate 'a or 'b)

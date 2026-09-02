@@ -1,4 +1,4 @@
-// #Regression #Conformance #TypeInference #TypeConstraints 
+// #Regression #Conformance #TypeInference #TypeConstraints
 
 
 // Verify that type functions need to be declared explicitly

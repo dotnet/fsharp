@@ -1171,8 +1171,7 @@ let rec TryTranslateComputationExpression
 
     let cenv = ceenv.cenv
 
-    cenv.stackGuard.Guard
-    <| fun () ->
+    cenv.stackGuard.Guard(fun () ->
 
         match comp with
 
@@ -2488,7 +2487,7 @@ let rec TryTranslateComputationExpression
 
             Some(translatedCtxt yieldOrReturnCall)
 
-        | _ -> None
+        | _ -> None)
 
 and ConsumeCustomOpClauses
     (ceenv: ComputationExpressionContext<'a>)
@@ -2896,8 +2895,7 @@ and isSimpleExpr ceenv comp =
 
 and TranslateComputationExpression (ceenv: ComputationExpressionContext<'a>) firstTry q varSpace comp translatedCtxt =
 
-    ceenv.cenv.stackGuard.Guard
-    <| fun () ->
+    ceenv.cenv.stackGuard.Guard(fun () ->
         match TryTranslateComputationExpression ceenv firstTry q varSpace comp translatedCtxt with
         | Some e -> e
         | None ->
@@ -3000,7 +2998,7 @@ and TranslateComputationExpression (ceenv: ComputationExpressionContext<'a>) fir
                                         SynExprSequentialTrivia.Zero
                                     )
 
-                            translatedCtxt fillExpr)
+                            translatedCtxt fillExpr))
 
 /// Used for all computation expressions except sequence expressions
 let TcComputationExpression (cenv: TcFileState) env (overallTy: OverallTy) tpenv (mWhole, interpExpr: Expr, builderTy, comp: SynExpr) =

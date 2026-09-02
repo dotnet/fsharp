@@ -38,7 +38,7 @@ let f (b:int) = b.PlusOne()
         |> withLangVersion80
         |> compile
         |> shouldSucceed
-        
+
     [<Fact>]
     let ``Extension method without toplevel attribute on recursive type`` () =
         Fsx
@@ -57,7 +57,7 @@ let f (b:int) = b.PlusOne()
         |> withLangVersion80
         |> compile
         |> shouldSucceed
-    
+
     [<Fact>]
     let ``F# CSharpStyleExtensionMethod consumed in C#`` () =
         let fsharp =
@@ -134,7 +134,7 @@ namespace Consumer
             |> withReferences [ fsharp ]
 
         csharp |> compile |> shouldSucceed
-    
+
     [<Fact>]
     let ``F# CSharpStyleExtensionMethod defined in top level module with attribute consumed in C#`` () =
         let fsharp =
@@ -222,7 +222,7 @@ namespace Consumer
     """
            |> withLangVersion80
            |> withName "FSLib"
-        
+
         let csharp =
             CSharp """
     namespace Consumer
@@ -241,7 +241,7 @@ namespace Consumer
 
             |> withName "CSLib"
             |> withReferences [ fsharp ]
-        
+
         csharp |> compile |> shouldSucceed
 
     [<Fact>]
@@ -255,7 +255,7 @@ namespace Consumer
     """
            |> withLangVersion80
            |> withName "FSLib"
-        
+
         let csharp =
             CSharp """
     namespace Consumer
@@ -274,7 +274,7 @@ namespace Consumer
 
             |> withName "CSLib"
             |> withReferences [ fsharp ]
-        
+
         csharp |> compile |> shouldSucceed
 
     [<Fact>]
@@ -289,7 +289,7 @@ namespace Consumer
     """
            |> withLangVersion80
            |> withName "FSLib"
-        
+
         let csharp =
             CSharp """
     namespace Consumer
@@ -308,9 +308,9 @@ namespace Consumer
 
             |> withName "CSLib"
             |> withReferences [ fsharp ]
-        
+
         csharp |> compile |> shouldSucceed
-    
+
     [<Fact>]
     let ``Recursive toplevel named module without Extension attribute and top level let binding with Extension attribute`` () =
         let fsharp =
@@ -322,7 +322,7 @@ namespace Consumer
     """
            |> withLangVersion80
            |> withName "FSLib"
-        
+
         let csharp =
             CSharp """
     namespace Consumer
@@ -341,7 +341,7 @@ namespace Consumer
 
             |> withName "CSLib"
             |> withReferences [ fsharp ]
-        
+
         csharp |> compile |> shouldSucceed
 
     [<Fact>]
@@ -357,7 +357,7 @@ type Bar =
     """
            |> withLangVersion80
            |> withName "FSLib"
-        
+
         let csharp =
             CSharp """
     namespace Consumer
@@ -375,9 +375,9 @@ type Bar =
     """
             |> withName "CSLib"
             |> withReferences [ fsharp ]
-        
+
         csharp |> compile |> shouldSucceed
-    
+
     [<Fact>]
     let ``Recursive named module with type with CSharp style extension can be consumed in CSharp`` () =
         let fsharp =
@@ -390,7 +390,7 @@ type Bar =
     """
             |> withLangVersion80
             |> withName "FSLib"
-        
+
         let csharp =
             CSharp """
     namespace Consumer
@@ -408,7 +408,7 @@ type Bar =
     """
             |> withName "CSLib"
             |> withReferences [ fsharp ]
-        
+
         csharp |> compile |> shouldSucceed
 
     [<Fact>]
@@ -441,7 +441,7 @@ type Bar =
            |> withLangVersion80
            |> withAdditionalSourceFile implementation
            |> withName "FSLib"
-        
+
         let csharp =
             CSharp """
     namespace Consumer
@@ -459,7 +459,7 @@ type Bar =
     """
             |> withName "CSLib"
             |> withReferences [ fsharp ]
-        
+
         csharp |> compile |> shouldSucceed
 
     [<Fact>]
@@ -492,7 +492,7 @@ type Bar =
            |> withLangVersion80
            |> withAdditionalSourceFile implementation
            |> withName "FSLib"
-        
+
         let csharp =
             CSharp """
     namespace Consumer
@@ -510,7 +510,7 @@ type Bar =
     """
             |> withName "CSLib"
             |> withReferences [ fsharp ]
-        
+
         csharp |> compile |> shouldSucceed
 
     [<Fact>]
@@ -527,7 +527,7 @@ type Bar =
     """
            |> withLangVersion80
            |> withName "FSLib"
-        
+
         let csharp =
             CSharp """
     namespace Consumer
@@ -546,7 +546,7 @@ type Bar =
 
             |> withName "CSLib"
             |> withReferences [ fsharp ]
-        
+
         csharp |> compile |> shouldSucceed
 
     [<Fact>]
@@ -569,7 +569,7 @@ namespace CSharpLib {
 }
     """
             |> withName "CSLib"
-        
+
         let fsharp =
             FSharp """
 module Module
@@ -585,9 +585,9 @@ module M =
            |> withLangVersion80
            |> withName "FSLib"
            |> withReferences [ csharp ]
-        
+
         fsharp |> compile |> shouldSucceed
-        
+
     [<Fact>]
     let ``F# CSharpStyleExtensionMethod consumed in F#`` () =
         let producer =

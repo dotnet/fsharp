@@ -9,7 +9,7 @@ let q1 = // no errors
                 select d
     }
 
-let q2 = 
+let q2 =
     query {
         for d in [1..10] do
             where (d > 3)

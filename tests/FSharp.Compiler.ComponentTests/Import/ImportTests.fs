@@ -12,7 +12,7 @@ module ImportTests =
     // ========================================
     // Basic C# Library Reference Test
     // ========================================
-    
+
     [<Fact>]
     let ``Basic - F# can reference C# library`` () =
         let csLib =
@@ -26,7 +26,7 @@ namespace MyLib
 }
 """
             |> withName "csLib"
-        
+
         FSharp """
 module Module1
 
@@ -42,7 +42,7 @@ let answer = Class1.GetAnswer()
     // ========================================
     // C# Conversion Operators Tests
     // ========================================
-    
+
     [<Fact>]
     let ``Conversion operators - F# can use C# implicit and explicit conversion operators`` () =
         let csLib =
@@ -59,7 +59,7 @@ namespace CSharpTypes
 }
 """
             |> withName "csConversion"
-        
+
         FSharp """
 module ConversionTest
 
@@ -73,14 +73,14 @@ let check () = ('a', 2.0, 1, 1uy) = p
         |> shouldSucceed
         |> ignore
 
-    // Note: The negative test "Conversion operators - F# error when C# type does not support conversion" 
+    // Note: The negative test "Conversion operators - F# error when C# type does not support conversion"
     // was not migrated because the test framework's typecheck with C# references has limitations
     // that cause the C# library to not be properly linked for failure scenarios.
 
     // ========================================
     // Multiple Implicit/Explicit Operators Tests
     // ========================================
-    
+
     [<Fact>]
     let ``Multiple implicit operators - F# can use C# generic types with multiple op_Implicit`` () =
         let csLib =
@@ -96,7 +96,7 @@ namespace Yadda
 }
 """
             |> withName "csImplicitOps"
-        
+
         FSharp """
 module MultipleImplicitOperatorsFromCS01
 let inline impl< ^a, ^b when ^a : (static member op_Implicit : ^a -> ^b)> arg =
@@ -130,7 +130,7 @@ namespace Yadda
 }
 """
             |> withName "csExplicitOps"
-        
+
         FSharp """
 module MultipleExplicitOperatorsFromCS01
 let inline expl< ^a, ^b when ^a : (static member op_Explicit : ^a -> ^b)> arg =
@@ -159,7 +159,7 @@ let b3 = new Blah<int list,string list>()
     // Migrated from: tests/fsharpqa/Source/Import/em_csharp_*.fs
     // Regression tests for FSHARP1.0:1494 - F# can import C# extension methods
     // ========================================
-    
+
     [<Fact>]
     let ``Extension methods - F# can call C# extension method on struct with void return`` () =
         // Migrated from em_csharp_struct_void.fs
@@ -173,7 +173,7 @@ public static class ExtMethods
 }
 """
             |> withName "csExtStructVoid"
-        
+
         FSharp """
 module M
 let s = S()
@@ -198,7 +198,7 @@ public static class ExtMethods
 }
 """
             |> withName "csExtStructNonvoid"
-        
+
         FSharp """
 module M
 let s = S()
@@ -223,7 +223,7 @@ public static class ExtMethods
 }
 """
             |> withName "csExtStructParams"
-        
+
         FSharp """
 module M
 let s = S()
@@ -248,7 +248,7 @@ public static class ExtMethods
 }
 """
             |> withName "csExtClassVoid"
-        
+
         FSharp """
 module M
 
@@ -278,7 +278,7 @@ public static class ExtMethods
 }
 """
             |> withName "csExtClassNonvoid"
-        
+
         FSharp """
 module M
 
@@ -308,7 +308,7 @@ public static class ExtMethods
 }
 """
             |> withName "csExtClassParams"
-        
+
         FSharp """
 module M
 
@@ -330,7 +330,7 @@ t.M4([|1.0M; -2.0M|]) |> ignore
     // Migrated from: tests/fsharpqa/Source/Import/em_csharp_on_fsharp_1.fs, em_csharp_on_fsharp_2.fs
     // Feature test for Bug51669 - F# can import C# extension methods on F# types
     // ========================================
-    
+
     [<Fact>]
     let ``Extension methods on F# types - C# extensions work on F# class type (FooA)`` () =
         // Migrated from em_csharp_on_fsharp_1.fs
@@ -341,7 +341,7 @@ namespace BaseEmFs
 type FooA() = class end
 """
             |> withName "fsBaseA"
-        
+
         let csLib =
             CSharp """
 using BaseEmFs;
@@ -358,7 +358,7 @@ namespace EmLibCs
 """
             |> withName "csEmLibCsA"
             |> withReferences [fsLib]
-        
+
         FSharp """
 module M
 
@@ -387,7 +387,7 @@ type FooB(x:int) =
     member this.Value = x
 """
             |> withName "fsBaseB"
-        
+
         let csLib =
             CSharp """
 using BaseEmFs;
@@ -404,7 +404,7 @@ namespace EmLibCs
 """
             |> withName "csEmLibCsB"
             |> withReferences [fsLib]
-        
+
         FSharp """
 module M
 
@@ -425,7 +425,7 @@ foo.M3B(5) |> ignore
     // ========================================
     // Static Field Assignment Test
     // ========================================
-    
+
     [<Fact>]
     let ``Static field assignment - F# can assign to a static field imported from C#`` () =
         let csLib =
@@ -436,7 +436,7 @@ public static class C
 }
 """
             |> withName "csStaticClass"
-        
+
         FSharp """
 module StaticFieldTest
 
@@ -453,7 +453,7 @@ let check () = (before = 1.2M && C.d = -3.4M)
     // ========================================
     // InternalsVisibleTo Tests
     // ========================================
-    
+
     [<Fact>]
     let ``InternalsVisibleTo - F# can access C# internal types and members with IVT`` () =
         let csLib =
@@ -473,7 +473,7 @@ internal class Calc
 }
 """
             |> withName "csInternalsLib"
-        
+
         FSharp """
 module InternalsConsumerTest
 
@@ -494,7 +494,7 @@ let test () =
     // ========================================
     // FamAndAssembly (private protected) Test
     // ========================================
-    
+
     [<Fact>]
     let ``FamAndAssembly - F# can access private protected member with IVT`` () =
         // Migrated from: FamAndAssembly.fs
@@ -513,7 +513,7 @@ public class Accessibility
 }
 """
             |> withName "csAccessibilityTests"
-        
+
         FSharp """
 namespace NS
 
@@ -541,7 +541,7 @@ public class Accessibility
 }
 """
             |> withName "csAccessibilityNoIVT"
-        
+
         FSharp """
 namespace NS
 
@@ -579,7 +579,7 @@ public class Accessibility
 }
 """
             |> withName "csAccessibilityFamOrAssembly"
-        
+
         FSharp """
 namespace NS
 
@@ -608,7 +608,7 @@ public class Accessibility
 }
 """
             |> withName "csAccessibilityFamOrAssemblyNoIVT"
-        
+
         FSharp """
 namespace NS
 
@@ -626,7 +626,7 @@ type T() =
     // ========================================
     // Iterate Over Collections Test
     // ========================================
-    
+
     [<Fact>]
     let ``Iterate over collections - StringDictionary entries work correctly`` () =
         FSharp """
@@ -650,7 +650,7 @@ for de in strDict do
     // ========================================
     // Accessing Record Fields from Other Assembly
     // ========================================
-    
+
     [<Fact>]
     let ``Accessing record fields - F# can access record fields from other assembly`` () =
         let fsLib =
@@ -660,7 +660,7 @@ module InfoLib
 type Info = { Name : string; DoB: System.DateTime; mutable Age : int }
 """
             |> withName "fsRecordLib"
-        
+
         FSharp """
 module RecordTest
 
@@ -687,7 +687,7 @@ let updateAge () =
     // ========================================
     // F# Module/Namespace Reference Tests
     // ========================================
-    
+
     [<Fact>]
     let ``F# module reference - DLL can reference DLL`` () =
         let fsLib =
@@ -699,7 +699,7 @@ type x () =
         with set ((x:decimal,y:decimal)) = verificationX <- (x = 1M && y= -2M)
 """
             |> withName "fsReference1"
-        
+
         FSharp """
 module M2
 
@@ -722,7 +722,7 @@ module M =
     type T = string
 """
             |> withName "fsReference5ns"
-        
+
         FSharp """
 module Reference5aTest
 open N.M
@@ -737,7 +737,7 @@ let foo : T = ""
     // ========================================
     // Reference Exe Test
     // ========================================
-    
+
     [<Fact>]
     let ``Reference exe - F# can reference an executable assembly`` () =
         let fsExe =
@@ -751,7 +751,7 @@ let main args = f 1
 """
             |> withName "fsReferenceExe"
             |> asExe
-        
+
         FSharp """
 module RefExeTest
 let x = M.f 1
@@ -765,7 +765,7 @@ let x = M.f 1
     // ========================================
     // Line Directive from C# Test
     // ========================================
-    
+
     [<Fact>]
     let ``Line directive from C# - CallerLineNumber and CallerFilePath work from F#`` () =
         let csLib =
@@ -790,7 +790,7 @@ namespace ClassLibrary1
 }
 """
             |> withName "csLineDirective"
-        
+
         FSharp """
 module LineDirectiveTest
 
@@ -848,7 +848,7 @@ let answer = Class1.GetAnswer()
     // Original: PRECMD="$FSC_PIPE --target:library reference5ns.fs" SCFLAGS="--target:library -r:reference5ns.dll"
     // Regression for FSHARP1.0:3200
     // ========================================
-    
+
     [<Theory>]
     [<InlineData("library", "library")>]
     [<InlineData("library", "exe")>]
@@ -920,8 +920,8 @@ module M =
 """
             |> asLibrary
             |> withName "reference1ns"
-        
-        // Note: Script tests with #r directives that reference in-memory assemblies 
+
+        // Note: Script tests with #r directives that reference in-memory assemblies
         // work differently. We test the compile-time behavior instead.
         FSharp """
 module Reference4aTest

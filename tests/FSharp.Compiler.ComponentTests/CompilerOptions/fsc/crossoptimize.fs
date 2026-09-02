@@ -11,7 +11,7 @@ open FSharp.Test.Compiler
 //# Sanity check - simply check that the option is valid
 module crossoptimize =
 
-    //  SOURCE=crossoptimize.fs SCFLAGS="--crossoptimize" 
+    //  SOURCE=crossoptimize.fs SCFLAGS="--crossoptimize"
     [<InlineData("--crossoptimize")>]
     [<InlineData("--crossoptimize+")>]
     [<InlineData("--crossoptimize-")>]

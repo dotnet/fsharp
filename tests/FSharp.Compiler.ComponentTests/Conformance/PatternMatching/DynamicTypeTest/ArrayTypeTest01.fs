@@ -1,4 +1,4 @@
-// #Conformance #PatternMatching #TypeTests 
+// #Conformance #PatternMatching #TypeTests
 
 
 // Verify ability to specify an integer array in a dynamic type test

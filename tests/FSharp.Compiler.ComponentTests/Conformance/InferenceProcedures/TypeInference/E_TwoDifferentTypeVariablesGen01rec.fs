@@ -1,4 +1,4 @@
-// #Regression #TypeInference 
+// #Regression #TypeInference
 // Regression test for FSHARP1.0:4776 (see also 4758)
 // Type Inference
 // Check Method Disambiguation When User Generic Variable Get Instantiated By Overload Resolution
@@ -10,19 +10,19 @@ type Three = | Three
 type Four = | Four
 
 // An unsealed type
-type C() = 
+type C() =
     member x.P = 1
-    
+
 type C1 =
     static member M<'a>(x:'a,y:'a) = One
 
 type C2 =
     static member M<'a,'b>(x:'a,y:'b) = Two
 
-type C3 =    
+type C3 =
     static member M<'a>(x:'a,y:int) = Three
 
-type C4 =    
+type C4 =
     static member M<'a>(x:'a,y:C) = Four
 
 type C12 =
@@ -56,7 +56,7 @@ type C1234 =
     static member M<'a>(x:'a,y:int) = Three
     static member M<'a>(x:'a,y:C) = Four
 
- 
+
 module M0Rec =
 
     let rec      gB4<'a,'b> (x:'a) (y:'b) = C4.M(x,y)  = Four       // expect: error

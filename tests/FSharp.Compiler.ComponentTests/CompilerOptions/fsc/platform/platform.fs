@@ -9,11 +9,11 @@ open FSharp.Test.Compiler
 module Platform =
 
     // This test was automatically generated (moved from FSharpQA suite - CompilerOptions/fsc/platform)
-    
+
     [<Theory; FileInlineData("error_16.fs")>]
     let ``platform - error_16_fs - --target:library --platform:anycpu32bitpreferred`` compilation =
         compilation
-        |> getCompilation 
+        |> getCompilation
         |> asFs
         |> withOptions ["--target:library"; "--platform:anycpu32bitpreferred"]
         |> compile
@@ -23,11 +23,11 @@ module Platform =
         |> ignore
 
     // This test was automatically generated (moved from FSharpQA suite - CompilerOptions/fsc/platform)
-    
+
     [<Theory; FileInlineData("error_01.fs")>]
     let ``platform - error_01_fs - --PLATFORM:anycpu`` compilation =
         compilation
-        |> getCompilation 
+        |> getCompilation
         |> asFsx
         |> withOptions ["--PLATFORM:anycpu"]
         |> compile
@@ -37,11 +37,11 @@ module Platform =
         |> ignore
 
     // This test was automatically generated (moved from FSharpQA suite - CompilerOptions/fsc/platform)
-    
+
     [<Theory; FileInlineData("error_02.fs")>]
     let ``platform - error_02_fs - --PlatForm:anycpu`` compilation =
         compilation
-        |> getCompilation 
+        |> getCompilation
         |> asFsx
         |> withOptions ["--PlatForm:anycpu"]
         |> compile
@@ -51,11 +51,11 @@ module Platform =
         |> ignore
 
     // This test was automatically generated (moved from FSharpQA suite - CompilerOptions/fsc/platform)
-    
+
     [<Theory; FileInlineData("error_03.fs")>]
     let ``platform - error_03_fs - --platform:ITANIUM`` compilation =
         compilation
-        |> getCompilation 
+        |> getCompilation
         |> asFsx
         |> withOptions ["--platform:ITANIUM"]
         |> compile
@@ -65,11 +65,11 @@ module Platform =
         |> ignore
 
     // This test was automatically generated (moved from FSharpQA suite - CompilerOptions/fsc/platform)
-    
+
     [<Theory; FileInlineData("error_04.fs")>]
     let ``platform - error_04_fs - --platform:ANYCPU`` compilation =
         compilation
-        |> getCompilation 
+        |> getCompilation
         |> asFsx
         |> withOptions ["--platform:ANYCPU"]
         |> compile
@@ -79,11 +79,11 @@ module Platform =
         |> ignore
 
     // This test was automatically generated (moved from FSharpQA suite - CompilerOptions/fsc/platform)
-    
+
     [<Theory; FileInlineData("error_05.fs")>]
     let ``platform - error_05_fs - --platform:X86`` compilation =
         compilation
-        |> getCompilation 
+        |> getCompilation
         |> asFsx
         |> withOptions ["--platform:X86"]
         |> compile
@@ -93,11 +93,11 @@ module Platform =
         |> ignore
 
     // This test was automatically generated (moved from FSharpQA suite - CompilerOptions/fsc/platform)
-    
+
     [<Theory; FileInlineData("error_06.fs")>]
     let ``platform - error_06_fs - --platform:X64`` compilation =
         compilation
-        |> getCompilation 
+        |> getCompilation
         |> asFsx
         |> withOptions ["--platform:X64"]
         |> compile
@@ -107,11 +107,11 @@ module Platform =
         |> ignore
 
     // This test was automatically generated (moved from FSharpQA suite - CompilerOptions/fsc/platform)
-    
+
     [<Theory; FileInlineData("error_07.fs")>]
     let ``platform - error_07_fs - --platform:IA64`` compilation =
         compilation
-        |> getCompilation 
+        |> getCompilation
         |> asFsx
         |> withOptions ["--platform:IA64"]
         |> compile
@@ -121,11 +121,11 @@ module Platform =
         |> ignore
 
     // This test was automatically generated (moved from FSharpQA suite - CompilerOptions/fsc/platform)
-    
+
     [<Theory; FileInlineData("error_08.fs")>]
     let ``platform - error_08_fs - --platform:i386`` compilation =
         compilation
-        |> getCompilation 
+        |> getCompilation
         |> asFsx
         |> withOptions ["--platform:i386"]
         |> compile
@@ -135,11 +135,11 @@ module Platform =
         |> ignore
 
     // This test was automatically generated (moved from FSharpQA suite - CompilerOptions/fsc/platform)
-    
+
     [<Theory; FileInlineData("error_09.fs")>]
     let ``platform - error_09_fs - --platform:AMD64`` compilation =
         compilation
-        |> getCompilation 
+        |> getCompilation
         |> asFsx
         |> withOptions ["--platform:AMD64"]
         |> compile
@@ -149,11 +149,11 @@ module Platform =
         |> ignore
 
     // This test was automatically generated (moved from FSharpQA suite - CompilerOptions/fsc/platform)
-    
+
     [<Theory; FileInlineData("error_10.fs")>]
     let ``platform - error_10_fs - --platform:PPC`` compilation =
         compilation
-        |> getCompilation 
+        |> getCompilation
         |> asFsx
         |> withOptions ["--platform:PPC"]
         |> compile
@@ -163,11 +163,11 @@ module Platform =
         |> ignore
 
     // This test was automatically generated (moved from FSharpQA suite - CompilerOptions/fsc/platform)
-    
+
     [<Theory; FileInlineData("error_15.fs")>]
     let ``platform - error_15_fs - --platform:ARM`` compilation =
         compilation
-        |> getCompilation 
+        |> getCompilation
         |> asFsx
         |> withOptions ["--platform:ARM"]
         |> compile
@@ -177,11 +177,11 @@ module Platform =
         |> ignore
 
     // This test was automatically generated (moved from FSharpQA suite - CompilerOptions/fsc/platform)
-    
+
     [<Theory; FileInlineData("error_11.fs")>]
     let ``platform - error_11_fs - --platform-:anycpu`` compilation =
         compilation
-        |> getCompilation 
+        |> getCompilation
         |> asFsx
         |> withOptions ["--platform-:anycpu"]
         |> compile
@@ -191,11 +191,11 @@ module Platform =
         |> ignore
 
     // This test was automatically generated (moved from FSharpQA suite - CompilerOptions/fsc/platform)
-    
+
     [<Theory; FileInlineData("error_12.fs")>]
     let ``platform - error_12_fs - --PLATFORM+:anycpu`` compilation =
         compilation
-        |> getCompilation 
+        |> getCompilation
         |> asFsx
         |> withOptions ["--PLATFORM+:anycpu"]
         |> compile
@@ -205,11 +205,11 @@ module Platform =
         |> ignore
 
     // This test was automatically generated (moved from FSharpQA suite - CompilerOptions/fsc/platform)
-    
+
     [<Theory; FileInlineData("error_13.fs")>]
     let ``platform - error_13_fs - ---platform:anycpu`` compilation =
         compilation
-        |> getCompilation 
+        |> getCompilation
         |> asFsx
         |> withOptions ["---platform:anycpu"]
         |> compile

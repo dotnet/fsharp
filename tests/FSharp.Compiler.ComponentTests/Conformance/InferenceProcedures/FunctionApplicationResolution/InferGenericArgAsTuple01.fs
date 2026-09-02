@@ -1,4 +1,4 @@
-// #Conformance #TypeInference #ApplicationExpressions 
+// #Conformance #TypeInference #ApplicationExpressions
 
 
 // Verify we can infer generic type args to be a tuple without adding

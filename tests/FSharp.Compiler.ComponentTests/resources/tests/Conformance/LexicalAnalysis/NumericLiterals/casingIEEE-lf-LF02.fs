@@ -1,4 +1,4 @@
-// #Conformance #LexicalAnalysis #Constants 
+// #Conformance #LexicalAnalysis #Constants
 // Number type specifier are not case-sensitive
 // IEEE32/IEEE64 - lf vs LF
 // verify that xint can be specified either with '0x' or '0X'

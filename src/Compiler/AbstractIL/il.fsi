@@ -1262,6 +1262,8 @@ type ILMethodDefs =
 
     member FindByName: string -> ILMethodDef list
 
+    member internal FindByNameAndArity: string * int -> ILMethodDef list
+
     member TryFindInstanceByNameAndCallingSignature: string * ILCallingSignature -> ILMethodDef option
 
 /// Field definitions.

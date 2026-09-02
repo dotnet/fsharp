@@ -4,6 +4,6 @@ module Module
 type ClassWithMembers() =
     member _.Method1() = 1
     member _.Method2() = 2
-    
-    module InvalidModule = 
+
+    module InvalidModule =
         let helper = 10

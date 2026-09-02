@@ -1,10 +1,10 @@
-// #Conformance #DeclarationElements #Events #ReqNOMT 
+// #Conformance #DeclarationElements #Events #ReqNOMT
 
 
 // Sanity check events based on the new library changes
 
 type Fruit (shelfLife : int) =
-    
+
      let mutable m_age = 0
 
      let expireEvent = new Event<int * int>()
@@ -13,7 +13,7 @@ type Fruit (shelfLife : int) =
           m_age <- m_age + x
           if m_age > shelfLife then
               expireEvent.Trigger((m_age, shelfLife))
-     
+
      member this.OnExpire = expireEvent.Publish
 
 
@@ -40,7 +40,7 @@ pear.OnExpire.Add(fun (age, shelfLife) -> x <- age; y <- shelfLife)
 let mutable a = 0
 let mutable b = 0
 
-pear.OnExpire 
+pear.OnExpire
 |> Event.map (fun (age, shelfLife) -> (-age, -shelfLife))          // Invert values
 |> Event.filter (fun (age, shelfLife) -> age < -80)                // Ignore all apples > 100 old
 |> Event.add (fun (age, shelfLife) -> a <- age; b <- shelfLife) // When triggered set a and bs values.
