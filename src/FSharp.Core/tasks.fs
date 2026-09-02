@@ -820,6 +820,7 @@ module Task =
         // materialize first so exceptions from enumeration can't trigger ObjectDisposedException
         // from started children touching semaphore or innerCts
         match Seq.toArray computations with
+        | _ when ct.IsCancellationRequested -> Task.FromCanceled<'T[]> ct
         | [||] -> result [||]
         | req when maxDegreeOfParallelism = 1 || req.Length = 1 -> sequential ct req
         | req ->

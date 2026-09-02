@@ -403,6 +403,23 @@ module TaskModuleFunctionsTests =
             Assert.True childCt.IsCancellationRequested
         }
 
+    [<Theory; InlineData true; InlineData false>]
+    let ``Task.parallelLimit throws TaskCanceledException when ct is already cancelled`` empty : Task =
+        task {
+            let work =
+                if empty then []
+                // Guard against any regressions if guard removed and e.g. body yields zeroCreate'd results
+                else [ fun (_: CancellationToken) -> Task.result 1
+                       fun (_: CancellationToken) -> Task.result 2 ]
+
+            use cts = new CancellationTokenSource()
+            cts.Cancel()
+            let t = work |> Task.parallelLimit 2 cts.Token
+
+            let! e = Assert.ThrowsAsync<TaskCanceledException>(fun () -> t :> Task)
+            Assert.Equal(cts.Token, e.CancellationToken)
+        }
+
     [<Fact>]
     let ``Task.parallelLimit cancels sibling computations when one fails`` () : Task =
         task {
