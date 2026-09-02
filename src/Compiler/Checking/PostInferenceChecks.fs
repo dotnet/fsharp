@@ -398,7 +398,7 @@ let rec CheckTypeDeep (cenv: cenv) (visitTy, visitTyconRefOpt, visitAppTyOpt, vi
 
         if tcref.CanDeref && tcref.IsILTycon && tinst.Length = tcref.ILTyconRawMetadata.GenericParams.Length then
             (tinst,tcref.ILTyconRawMetadata.GenericParams)
-            ||> ListInline.iter2 (fun ty ilGenericParam ->
+            ||> ListInline.iter2Truncating (fun ty ilGenericParam ->
                 let typeInstParent = IlGenericInst(tcref, ilGenericParam)
                 CheckTypeDeep cenv f g env typeInstParent ty)
         else
@@ -710,7 +710,7 @@ let CheckTypeAux permitByRefLike (cenv: cenv) env m ty onInnerByrefError =
             if tcref.CanDeref then
                 let typars = tcref.Typars
                 if typars.Length = tinst.Length then
-                    (typars, tinst) ||> ListInline.iter2 (fun typar typeArg -> CheckInterfaceTypeArgForUnimplementedStaticAbstractMembers cenv m typar typeArg)
+                    (typars, tinst) ||> ListInline.iter2Truncating (fun typar typeArg -> CheckInterfaceTypeArgForUnimplementedStaticAbstractMembers cenv m typar typeArg)
 
         let visitTraitSolution info =
             match info with

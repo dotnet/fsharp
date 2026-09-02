@@ -152,9 +152,14 @@ module internal Option =
 
     val attempt: f: (unit -> 'T) -> 'T option
 
+/// List combinators that inline the closure argument into a cursor loop, so a caller on a
+/// hot path allocates no closure even when the lambda captures per-call state.
 module internal ListInline =
 
-    val inline iter2: action: ('T1 -> 'T2 -> unit) -> list1: 'T1 list -> list2: 'T2 list -> unit
+    /// Applies the action to matching elements of the two lists, stopping at the end of the
+    /// shorter list. Unlike `List.iter2`, a length mismatch is silently truncated rather than
+    /// raising, so callers must guarantee equal lengths themselves when that matters.
+    val inline iter2Truncating: action: ('T1 -> 'T2 -> unit) -> list1: 'T1 list -> list2: 'T2 list -> unit
 
     val inline exists: predicate: ('T -> bool) -> list: 'T list -> bool
 
