@@ -165,6 +165,26 @@ let frames: obj[] list =
             "GateCSample.Library.outer@10 :: closure inner@20"
         |]
 
+        // the debug engine formats differently from metadata: instantiations in angle brackets,
+        // a constructor as `Type.Type`, an accessor as a trailing `.get`/`.set` segment, and a
+        // trailing `T` on generic closure classes
+        [|
+            "ClassLibrary.Demo.genericFunction<int>"
+            "ClassLibrary.Demo :: method genericFunction <1>"
+        |]
+        [|
+            "ClassLibrary.Box<System.String>.Unwrap"
+            "ClassLibrary.Box`1 :: method Unwrap"
+        |]
+        [| "ClassLibrary.Initialized.Initialized"; "ClassLibrary.Initialized :: ctor" |]
+        [| "ClassLibrary.Worker.Computed.get"; "ClassLibrary.Worker :: get Computed" |]
+        [| "ClassLibrary.Worker.Tuned.set"; "ClassLibrary.Worker :: set Tuned" |]
+        [|
+            "ClassLibrary.Demo.helperTwo@42T<int>.Invoke"
+            "ClassLibrary.Demo :: closure helperTwo@42"
+        |]
+        [| "M.f@10T.Invoke"; "M :: closure f@10" |]
+
         // constructors
         [|
             "GateCSample.Library.SampleClass..ctor"
@@ -243,6 +263,48 @@ let frames: obj[] list =
         [|
             "GateCSample.Library.SampleClass..ctor(Int32 seed)"
             "GateCSample.Library.SampleClass :: ctor"
+        |]
+
+        // Captured verbatim from a Code Map's DGML - these are the frames the debug engine really
+        // produced for the demo, and each one is a shape that once reached the map unresolved.
+        [| "<StartupCode$ClassLibrary>.$Demo.$Demo"; "Demo.Demo :: startupcode" |]
+        [|
+            "ClassLibrary.Demo.work@107-3.Invoke"
+            "ClassLibrary.Demo :: closure work@107-3"
+        |]
+
+        // a computation-expression body or pipeline stage is named by a phrase, spaces and all
+        [|
+            "ClassLibrary.Demo.Pipe #1 input at line 97@99-1.Invoke"
+            "ClassLibrary.Demo :: closure Pipe #1 input at line 97@99-1"
+        |]
+        [|
+            "ClassLibrary.Demo.Pipe #1 stage #3 at line 26@26.Invoke"
+            "ClassLibrary.Demo :: closure Pipe #1 stage #3 at line 26@26"
+        |]
+
+        // FSharp.Core's async/task/seq plumbing. Nothing resolves these - they are marked external so
+        // the map folds them away - but they must still parse, because a frame that does not parse is
+        // never seen by the provider and so reaches the map as a bare `Invoke` or `MoveNext`.
+        [|
+            "<StartupCode$FSharp-Core>.$Async.Sleep@1814-3.Invoke"
+            "Async.Sleep@1814-3.Invoke :: startupcode"
+        |]
+        [|
+            "<StartupCode$FSharp-Core>.$Tasks.resumptionInfo@159<int>.MoveNext"
+            "Tasks.resumptionInfo@159`1.MoveNext :: startupcode"
+        |]
+        [|
+            "Microsoft.FSharp.Core.CompilerServices.ResumableStateMachine<Microsoft.FSharp.Control.TaskStateMachineData<int>>.System.Runtime.CompilerServices.IAsyncStateMachine.MoveNext"
+            "Microsoft.FSharp.Core.CompilerServices.ResumableStateMachine`1.System.Runtime.CompilerServices.IAsyncStateMachine :: method MoveNext"
+        |]
+        [|
+            "Microsoft.FSharp.Collections.ListModule.Map<int, int>"
+            "Microsoft.FSharp.Collections.ListModule :: method Map <2>"
+        |]
+        [|
+            "Microsoft.FSharp.Primitives.Basics.List.map<int, int>"
+            "Microsoft.FSharp.Primitives.Basics.List :: method map <2>"
         |]
     ]
 
