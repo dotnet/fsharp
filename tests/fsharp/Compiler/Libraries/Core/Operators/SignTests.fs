@@ -33,7 +33,7 @@ module ``Sign Tests`` =
         Assert.areEqual (sign -1.0) -1    // double
         Assert.areEqual (sign -1.0m) -1   // decimal
 
-    // #Regression #Libraries #Operators 
+    // #Regression #Libraries #Operators
     // Test sign function on unsigned primitives, should get error.
 
     [<Fact>]

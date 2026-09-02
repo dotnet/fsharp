@@ -1,4 +1,4 @@
-// #Regression #Conformance #ObjectOrientedTypes #Enums 
+// #Regression #Conformance #ObjectOrientedTypes #Enums
 
 
 // FSB 1744, 'value__' is reserved and cannot be a name of enum element

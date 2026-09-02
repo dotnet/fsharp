@@ -2693,7 +2693,7 @@ module EstablishTypeDefinitionCores =
               | Some pat ->
                   let ctorArgNames, patEnv, _ = TcSimplePatsOfUnknownType cenv true NoCheckCxs env tpenv pat
 
-                  let (TcPatLinearEnv(_, names, _)) = patEnv
+                  let (TcPatLinearEnv(_, names, _, _)) = patEnv
 
                   for arg in ctorArgNames do
                       let ty = names[arg].Type
@@ -3923,7 +3923,7 @@ module EstablishTypeDefinitionCores =
                               if tycon.IsFSharpStructOrEnumTycon then
                                   let ctorArgNames, patEnv, _ = TcSimplePatsOfUnknownType cenv true CheckCxs envinner tpenv pat
 
-                                  let (TcPatLinearEnv(_, names, _)) = patEnv
+                                  let (TcPatLinearEnv(_, names, _, _)) = patEnv
 
                                   for arg in ctorArgNames do
                                       let ty = names[arg].Type

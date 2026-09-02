@@ -10,7 +10,7 @@ open System.IO
 open System.Text
 open System.Text.RegularExpressions
 
-// VS namespaces 
+// VS namespaces
 open Microsoft.VisualStudio
 open Microsoft.VisualStudio.Shell
 open Microsoft.VisualStudio.Shell.Interop
@@ -24,7 +24,7 @@ open UnitTests.TestLib.Utils.Asserts
 open UnitTests.TestLib.Utils.FilesystemHelpers
 open UnitTests.TestLib.ProjectSystem
 
-type UpToDate() = 
+type UpToDate() =
     inherit TheTests()
 
     [<Fact(Skip = "Bug https://github.com/dotnet/fsharp/issues/17330")>]
@@ -332,13 +332,13 @@ type UpToDate() =
     member public this.UTDOptionsFlags () =
         this.MakeProjectAndDo(["file1.fs"], [], "", (fun project ->
             let configNameDebugx86 = ConfigCanonicalName("Debug", "x86")
-            let debugConfigx86 = project.ConfigProvider.GetProjectConfiguration(configNameDebugx86)            
-            let buildableConfig = 
+            let debugConfigx86 = project.ConfigProvider.GetProjectConfiguration(configNameDebugx86)
+            let buildableConfig =
                 match debugConfigx86.get_BuildableProjectCfg() with
                 | 0, bc -> bc
                 | _ -> failwith "get_BuildableProjectCfg failed"
 
-            let testFlag flag expected =            
+            let testFlag flag expected =
                 let supported = Array.zeroCreate<int> 1
                 let ready = Array.zeroCreate<int> 1
                 buildableConfig.QueryStartUpToDateCheck(flag, supported, ready) |> ignore
@@ -360,13 +360,13 @@ type UpToDate() =
                 </PropertyGroup>
             ", (fun project ->
             let configNameDebugx86 = ConfigCanonicalName("Debug", "x86")
-            let debugConfigx86 = project.ConfigProvider.GetProjectConfiguration(configNameDebugx86)            
-            let buildableConfig = 
+            let debugConfigx86 = project.ConfigProvider.GetProjectConfiguration(configNameDebugx86)
+            let buildableConfig =
                 match debugConfigx86.get_BuildableProjectCfg() with
                 | 0, bc -> bc
                 | _ -> failwith "get_BuildableProjectCfg failed"
 
-            let testFlag flag expected =            
+            let testFlag flag expected =
                 let supported = Array.zeroCreate<int> 1
                 let ready = Array.zeroCreate<int> 1
                 buildableConfig.QueryStartUpToDateCheck(flag, supported, ready) |> ignore
@@ -380,7 +380,7 @@ type UpToDate() =
             |> List.iter (fun (flag, expected) -> testFlag flag expected)
           ))
 
-type ``UpToDate PreserveNewest`` () = 
+type ``UpToDate PreserveNewest`` () =
 
     [<Fact>]
     member public this.IsUpToDatePreserveNewest () =
@@ -389,7 +389,7 @@ type ``UpToDate PreserveNewest`` () =
             let logs = ref []
             let outputPanel = VsMocks.vsOutputWindowPane(logs)
             let logger = OutputWindowLogger((fun () -> true), outputPanel)
-        
+
             let tryTimestamp (path: string) (_l: OutputWindowLogger) =
                 let toN = function Some d -> Nullable<_>(d) | None -> Nullable<_>()
                 match path with
@@ -399,7 +399,7 @@ type ``UpToDate PreserveNewest`` () =
 
             let u = ProjectConfig.IsUpToDatePreserveNewest(logger, (Func<_,_,_>(tryTimestamp)), input, output)
             u, !logs
-            
+
         let now = System.DateTime.UtcNow
         let before = now.AddHours(-1.0)
 
@@ -428,5 +428,5 @@ type ``UpToDate PreserveNewest`` () =
             logs
             |> List.exists (fun s -> s.Contains("animatedlogo.gif") && s.Contains("stale"))
             |> Assert.True
-            
-        ()        
+
+        ()

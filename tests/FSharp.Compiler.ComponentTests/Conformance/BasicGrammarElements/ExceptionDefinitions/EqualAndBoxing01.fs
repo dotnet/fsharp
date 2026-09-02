@@ -1,4 +1,4 @@
-// #Regression #Conformance #TypesAndModules #Exceptions 
+// #Regression #Conformance #TypesAndModules #Exceptions
 // Regression test for FSHARP1.0:5535
 // Exception type
 exception E of int

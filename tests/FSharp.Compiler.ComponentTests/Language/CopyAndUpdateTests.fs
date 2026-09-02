@@ -19,7 +19,7 @@ let t2 x = { x with D.B = "a"; D.B = "b" }
     |> withDiagnostics [
         Error 668, Line 6, Col 34, Line 6, Col 41, "The field 'B' appears multiple times in this record expression or pattern"
     ]
-    
+
 [<Fact>]
 let ``Cannot update the same field appears multiple times in nested copy-and-update``() =
     FSharp """
@@ -35,7 +35,7 @@ let t2 x = { x with D.B = "a"; D.B = "b"; D.B = "c" }
         Error 668, Line 6, Col 34, Line 6, Col 41, "The field 'B' appears multiple times in this record expression or pattern"
         Error 668, Line 6, Col 45, Line 6, Col 52, "The field 'B' appears multiple times in this record expression or pattern"
     ]
-    
+
 [<Fact>]
 let ``Cannot update the same field appears multiple times in nested copy-and-update 2``() =
     FSharp """

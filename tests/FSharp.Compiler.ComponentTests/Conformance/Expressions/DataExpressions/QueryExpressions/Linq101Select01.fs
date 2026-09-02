@@ -6,7 +6,7 @@ open System.Linq
 
 let numbers = [ 5; 4; 1; 3; 9; 8; 6; 7; 2; 0 ]
 
-// Select - Simple 1 
+// Select - Simple 1
 let numsPlusOne =
     query {
         for n in numbers do
@@ -62,7 +62,7 @@ if productInfos.[0] <> ("Chai", "Beverages", 18.0000M) then printfn "productInfo
 
 // Select - Filtered
 let digits = strings
-let lowNums = 
+let lowNums =
     query {
         for n in numbers do
         where (n < 5)

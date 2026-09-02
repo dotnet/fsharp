@@ -1,4 +1,4 @@
-// #Regression #NoMT #CompilerOptions #NoMono 
+// #Regression #NoMT #CompilerOptions #NoMono
 // Regression test for FSharp1.0:5189
 // Title: Make missing transitive references with --standalone a warning instead of an error
 // Note: A reference to PresentationFramework.dll is needed for compilation.

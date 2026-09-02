@@ -9,7 +9,7 @@ let iq = System.Linq.Queryable.AsQueryable([1;2;3;4;5])
 let q4 (ds : seq<int>) =
     query {
         for i in ds do
-        let x = 
+        let x =
             match (i % 2) with
             | 0 -> i
             | _ -> i * i

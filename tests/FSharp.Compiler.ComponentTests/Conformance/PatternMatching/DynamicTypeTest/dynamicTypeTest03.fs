@@ -1,4 +1,4 @@
-// #Regression #Conformance #PatternMatching #TypeTests 
+// #Regression #Conformance #PatternMatching #TypeTests
 // FSB 1034, Downcasting for interface types
 // This test verifies that dynamic type test patterns work on objects which cannot
 // statically be checked if they implement the interface. (For example, A implements IFoo and IBar
@@ -16,15 +16,15 @@ type IAges = interface
 type Car(modelYear : int) =
     let mutable m_miles = 0
     let Odometer = m_miles
-    
+
     interface IAge with
         member this.Age = 2008 - modelYear
     interface IAges with
         member this.GrowOlder x = m_miles <- m_miles + x
-    
+
 type Person(yearBorn : int) =
     let mutable m_yearsOld = 2008 - yearBorn
-    
+
     interface IAge with
         member this.Age = m_yearsOld
 
@@ -48,7 +48,7 @@ let totalAge (iAgeList : IAge list) = iAgeList |> List.map (fun iage -> iage.Age
 let rec ageOneYear (l:IAge list) =
     match l with
     | (:? IAges as agingThing) :: tl -> agingThing.GrowOlder 1
-                                        ageOneYear tl 
+                                        ageOneYear tl
     | hd :: tl -> ageOneYear tl
     | [] -> ()
 
@@ -60,4 +60,4 @@ ageOneYear myStuff
 if totalAge myStuff <> 31 then exit 2
 
 exit 0
-    
+

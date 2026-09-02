@@ -1,4 +1,4 @@
-// #Conformance #SignatureFiles #Namespaces 
+// #Conformance #SignatureFiles #Namespaces
 // Verify no warning for a single-file compile
 //<Expects status="notin">namespace</Expects>
 //<Expects status="notin">module</Expects>

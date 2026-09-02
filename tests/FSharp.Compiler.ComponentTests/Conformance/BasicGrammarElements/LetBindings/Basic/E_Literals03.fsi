@@ -1,4 +1,4 @@
-// #Regression #Conformance #DeclarationElements #LetBindings 
+// #Regression #Conformance #DeclarationElements #LetBindings
 //<Expects status="error" span="(6,5)" id="FS0034"></Expects>
 //<Expects status="error" span="(9,5)" id="FS0034"></Expects>
 

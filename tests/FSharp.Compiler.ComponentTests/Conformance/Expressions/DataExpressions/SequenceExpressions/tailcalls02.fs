@@ -1,4 +1,4 @@
-// #Regression #Conformance #DataExpressions #Sequences 
+// #Regression #Conformance #DataExpressions #Sequences
 // Regression test for FSHARP1.0:4135
 // We want to make sure that this call succeeds (typically if tail calls are not enabled,
 // this would yield an out of memory)

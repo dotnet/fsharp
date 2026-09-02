@@ -1,4 +1,4 @@
-// #Regression #TypeInference 
+// #Regression #TypeInference
 // Regression test for FSHARP1.0:4758
 // Type Inference
 // Check Warnings When Variables Instantiated To Int

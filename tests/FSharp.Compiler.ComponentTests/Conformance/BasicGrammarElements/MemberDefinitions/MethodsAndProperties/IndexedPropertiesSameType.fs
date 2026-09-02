@@ -4,7 +4,7 @@ type MyIndexerClass() =
     member x.Indexer1
         with get (index: int): string = ""
         and set (index: int) (value: float) = ()
-    
+
     member x.Indexer2
         with get (index) = 1
         and set (index) (value: float) = ()
@@ -29,9 +29,9 @@ type GenericIndexer<'indexerArgs,'indexerOutput,'indexerInput>() =
     member this.LastArgs  = m_lastArgs
     member this.LastInput = m_lastInput
 
-    member this.Item with get (args : 'indexerArgs) = 
+    member this.Item with get (args : 'indexerArgs) =
                                                 m_lastArgs <- args;
                                                 Unchecked.defaultof<'indexerOutput>
-                     and  set (args : 'indexerArgs) (input : 'indexerInput) = 
+                     and  set (args : 'indexerArgs) (input : 'indexerInput) =
                                                 m_lastArgs  <- args
                                                 m_lastInput <- input
