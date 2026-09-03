@@ -1,4 +1,4 @@
-// #Regression #Conformance #ObjectOrientedTypes #InterfacesAndImplementations 
+// #Regression #Conformance #ObjectOrientedTypes #InterfacesAndImplementations
 // Regression test for FSHARP1.0:4943
 // interface implementations in object expressions leave object this type under constrained (was: unverifiable code when implementing an interface)
 //<Expects status="success"></Expects>

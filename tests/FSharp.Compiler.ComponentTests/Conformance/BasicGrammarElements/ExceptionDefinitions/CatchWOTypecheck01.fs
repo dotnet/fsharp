@@ -1,11 +1,11 @@
-// #Conformance #TypesAndModules #Exceptions 
+// #Conformance #TypesAndModules #Exceptions
 
 
 // Verify you can catch an F# exceptions can be caught via pattern matching (and not a dynamic type check).
 
 exception NumIsOddException of int * string
 
-let half x = 
+let half x =
     if x % 2 = 0 then
         x / 2
     else

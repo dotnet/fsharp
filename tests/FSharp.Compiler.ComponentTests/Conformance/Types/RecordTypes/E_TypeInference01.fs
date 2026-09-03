@@ -1,4 +1,4 @@
-// #Regression #Conformance #TypesAndModules #Records 
+// #Regression #Conformance #TypesAndModules #Records
 // Verify appropriate error with ambiguous record inference
 // Regression test for FSHARP1.0:2780
 

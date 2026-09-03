@@ -1,7 +1,7 @@
 
 module Neg49
 
-module Example1 = 
+module Example1 =
     let rec X = X // expect an error
 
 module Example2 =

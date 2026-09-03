@@ -316,9 +316,9 @@ module LetUseBangTests =
         |> asExe
         |> compile
         |> withDiagnostics [
-            (Error 750, Line 3, Col 13, Line 3, Col 17, 
+            (Error 750, Line 3, Col 13, Line 3, Col 17,
                 "This construct may only be used within computation expressions");
-            (Error 748, Line 4, Col 13, Line 4, Col 20, 
+            (Error 748, Line 4, Col 13, Line 4, Col 20,
                 "This construct may only be used within computation expressions. To return a value from an ordinary function simply write the expression without 'return'.")
         ]
 

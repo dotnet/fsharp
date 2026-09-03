@@ -1,6 +1,6 @@
 namespace Foo
 [<CompilationRepresentation(CompilationRepresentationFlags.UseNullAsTrueValue)>]
-type DU = 
+type DU =
  | A
  | B of string
  with
@@ -8,7 +8,7 @@ type DU =
 
 namespace Foo2
 [<CompilationRepresentation(CompilationRepresentationFlags.UseNullAsTrueValue)>]
-type DU = 
+type DU =
  | A
  | B of string
  with

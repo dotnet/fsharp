@@ -63,22 +63,22 @@ module private Impl =
         let expected = toArray expected
         let actual = toArray actual
 
-        match expected, actual with 
+        match expected, actual with
         |   (:? Array as a1), (:? Array as a2) ->
-                if a1.Rank > 1 then failwith "Rank > 1 not supported"                
+                if a1.Rank > 1 then failwith "Rank > 1 not supported"
                 if a2.Rank > 1 then false
                 else
                     let lb = a1.GetLowerBound(0)
                     let ub = a1.GetUpperBound(0)
                     if lb <> a2.GetLowerBound(0) || ub <> a2.GetUpperBound(0) then false
                     else
-                        seq {lb..ub} |> Seq.forall(fun i -> equals (a1.GetValue(i)) (a2.GetValue(i)))    
+                        seq {lb..ub} |> Seq.forall(fun i -> equals (a1.GetValue(i)) (a2.GetValue(i)))
         |   _ ->
                 Object.Equals(expected, actual)
 
-    /// Special treatment of float and float32 to get a somewhat meaningful error message 
+    /// Special treatment of float and float32 to get a somewhat meaningful error message
     /// (otherwise, the missing precision leads to different values that are close together looking the same)
-    let floatStr (flt1: obj) (flt2: obj)  = 
+    let floatStr (flt1: obj) (flt2: obj)  =
         match flt1, flt2 with
         | :? float as flt1, (:? float as flt2) ->
             flt1.ToString("R"), flt2.ToString("R")
@@ -93,7 +93,7 @@ type Assert =
 
     static member AreEqual(expected : obj, actual : obj, message : string) =
         if not (Impl.equals expected actual) then
-            let message = 
+            let message =
                 let (exp, act) = Impl.floatStr expected actual
                 sprintf "%s: Expected %s but got %s" message exp act
 
@@ -110,7 +110,7 @@ type Assert =
     /// between 80-bit (dotnet, RyuJIT) and 64-bit (x86, Legacy JIT) floating point calculations
     static member AreNearEqual(expected: float, actual: float) =
         let delta = 1.0e-15
-        let message = 
+        let message =
             let ((e, a)) = Impl.floatStr expected actual
             sprintf "Are near equal: expected %s, but got %s (with delta: %f)" e a delta
 
@@ -120,12 +120,12 @@ type Assert =
 
     static member Fail(message : string) = Exception(message) |> raise
 
-    static member Fail() = Assert.Fail("") 
+    static member Fail() = Assert.Fail("")
 
     static member Fail(message : string, args : obj[]) = Assert.Fail(String.Format(message,args))
 
 type CollectionAssert =
-    static member AreEqual(expected, actual) = 
+    static member AreEqual(expected, actual) =
         Assert.AreEqual(expected, actual)
 
 /// Disposable type to implement a simple resolve handler that searches the currently loaded assemblies to see if the requested assembly is already loaded.

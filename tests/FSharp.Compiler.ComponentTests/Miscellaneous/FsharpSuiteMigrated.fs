@@ -7,19 +7,19 @@ open System.IO
 open Xunit
 open FSharp.Test
 open FSharp.Test.Compiler
-open FSharp.Test.ScriptHelpers 
+open FSharp.Test.ScriptHelpers
 
 
 
-module Configuration = 
+module Configuration =
     let supportedNames = set ["testlib.fsi";"testlib.fs";"test.fsi";"test.fs";"test2.fsi";"test2.fs";"test.fsx";"test2.fsx"]
 
 [<RequireQualifiedAccess>]
 type ScriptSessionIsolation = Shared | Isolated
 
-module ScriptRunner = 
+module ScriptRunner =
     open Internal.Utilities.Library
-    
+
     let private getOrCreateEngine(args,version) sessionIsolation =
         match sessionIsolation with
         | ScriptSessionIsolation.Isolated ->
@@ -27,8 +27,8 @@ module ScriptRunner =
         | ScriptSessionIsolation.Shared ->
             getSessionForEval args version
 
-    let defaultDefines = 
-        [ 
+    let defaultDefines =
+        [
 #if NETCOREAPP
           "NETCOREAPP"
 #endif
@@ -36,7 +36,7 @@ module ScriptRunner =
 
     let runScriptFile version sessionIsolation (cu:CompilationUnit) =
         let cu  = cu |> withDefines defaultDefines
-        match cu with 
+        match cu with
         | FS fsSource ->
             use capture = new TestConsole.ExecutionCapture()
             let engine = getOrCreateEngine (fsSource.Options |> Array.ofList,version) sessionIsolation
@@ -47,7 +47,7 @@ module ScriptRunner =
                 if capture.OutText |> TestFramework.outputPassed then
                     res
                 else
-                    failwith $"Results looked correct, but 'TEST PASSED OK' was not printed."       
+                    failwith $"Results looked correct, but 'TEST PASSED OK' was not printed."
 
         | _ ->
             printfn $"Cannot process %A{cu}"
@@ -55,35 +55,35 @@ module ScriptRunner =
 
 /// This test file was created by porting over (slower) FsharpSuite.Tests
 /// In order to minimize human error, the test definitions have been copy-pasted and this adapter provides implementations of the test functions
-module TestFrameworkAdapter = 
+module TestFrameworkAdapter =
     open FSharp.Test.Compiler.Assertions.TextBasedDiagnosticAsserts
 
-    type ExecutionMode = 
-        | FSC_DEBUG 
-        | FSC_OPTIMIZED 
+    type ExecutionMode =
+        | FSC_DEBUG
+        | FSC_OPTIMIZED
         | FSI
         | COMPILED_EXE_APP
         | NEG_TEST_BUILD of testName:string
 
-    let baseFolder = Path.Combine(__SOURCE_DIRECTORY__,"..","..","fsharp") |> Path.GetFullPath      
+    let baseFolder = Path.Combine(__SOURCE_DIRECTORY__,"..","..","fsharp") |> Path.GetFullPath
 
     let diffNegativeBaseline (cr:CompilationUnit) absFolder testName _version  =
         let expectedFiles = Directory.GetFiles(absFolder, testName + ".*")
-        let baselines = 
+        let baselines =
             [ for f in expectedFiles do
                 match Path.GetExtension(f) with
                 | ".bsl" -> cr, f
                 | ".vsbsl" -> cr |> withOptions ["--test:ContinueAfterParseFailure"], f
                 | _ -> () ]
         [ for compilationUnit,baseline in baselines do
-            compilationUnit       
+            compilationUnit
             |> typecheck
             |> withResultsMatchingFile baseline ]
         |> List.head
-            
 
-    let adjustVersion version bonusArgs = 
-        match version with 
+
+    let adjustVersion version bonusArgs =
+        match version with
         | LangVersion.V80 -> "8.0",bonusArgs
         | LangVersion.V90 -> "9.0",bonusArgs
         | LangVersion.V10 -> "10.0",bonusArgs
@@ -93,10 +93,10 @@ module TestFrameworkAdapter =
 
     let singleTestBuildAndRunAuxVersion (folder:string) bonusArgs mode langVersion sessionIsolation =
         let absFolder = Path.Combine(baseFolder,folder)
-        let supportedNames, files = 
-            match mode with 
-            | NEG_TEST_BUILD testName -> 
-                let nameSet = 
+        let supportedNames, files =
+            match mode with
+            | NEG_TEST_BUILD testName ->
+                let nameSet =
                     Configuration.supportedNames
                         .Add(testName+".fsx")
                         .Add(testName+".fs")
@@ -105,18 +105,18 @@ module TestFrameworkAdapter =
                 let files = Directory.GetFiles(absFolder,"*.fs*") |> Array.filter(fun n -> nameSet.Contains(Path.GetFileName(n)))
                 nameSet, files
             | _ -> Configuration.supportedNames, Directory.GetFiles(absFolder,"test*.fs*")
-     
-        let mainFile,otherFiles = 
+
+        let mainFile,otherFiles =
             match files.Length with
             | 1 -> files |> Array.exactlyOne, [||]
-            | _ -> 
-                let mainFile,dependencies = 
-                    files 
-                    |> Array.filter (fun n -> supportedNames.Contains(Path.GetFileName(n))) 
+            | _ ->
+                let mainFile,dependencies =
+                    files
+                    |> Array.filter (fun n -> supportedNames.Contains(Path.GetFileName(n)))
                      // Convention in older FsharpSuite: test2 goes last, longer names like testlib before test, .fsi before .fs on equal filenames
-                    |> Array.sortBy (fun n -> n.Contains("test2"), -n.IndexOf('.'), n.EndsWith(".fsi") |> not)                  
-                    |> Array.splitAt 1        
-                 
+                    |> Array.sortBy (fun n -> n.Contains("test2"), -n.IndexOf('.'), n.EndsWith(".fsi") |> not)
+                    |> Array.splitAt 1
+
                 mainFile[0],dependencies
 
         let version,bonusArgs = adjustVersion langVersion bonusArgs
@@ -124,42 +124,42 @@ module TestFrameworkAdapter =
         FsFromPath mainFile
         |> withAdditionalSourceFiles [for f in otherFiles -> SourceFromPath f]
         |> withLangVersion version
-        |> fun cu -> 
+        |> fun cu ->
             match mode with
-            | FSC_DEBUG | FSC_OPTIMIZED | FSI | COMPILED_EXE_APP -> 
-                cu 
-                |> ignoreWarnings 
-                |> withOptions (["--nowarn:0988;3370"] @ bonusArgs) 
-            | NEG_TEST_BUILD _ -> 
-                cu |> 
-                withOptions (["--vserrors";"--maxerrors:10000";"--warnaserror";"--warn:3";"--nowarn:20;21;1178;52"] @ bonusArgs) 
-        |> fun cu -> 
+            | FSC_DEBUG | FSC_OPTIMIZED | FSI | COMPILED_EXE_APP ->
+                cu
+                |> ignoreWarnings
+                |> withOptions (["--nowarn:0988;3370"] @ bonusArgs)
+            | NEG_TEST_BUILD _ ->
+                cu |>
+                withOptions (["--vserrors";"--maxerrors:10000";"--warnaserror";"--warn:3";"--nowarn:20;21;1178;52"] @ bonusArgs)
+        |> fun cu ->
             match mode with
-            | FSC_DEBUG -> 
-                cu 
-                |> withDebug 
-                |> withNoOptimize  
+            | FSC_DEBUG ->
+                cu
+                |> withDebug
+                |> withNoOptimize
                 |> ScriptRunner.runScriptFile langVersion sessionIsolation
-                |> shouldSucceed 
-            | FSC_OPTIMIZED -> 
-                cu 
-                |> withOptimize 
-                |> withNoDebug 
+                |> shouldSucceed
+            | FSC_OPTIMIZED ->
+                cu
+                |> withOptimize
+                |> withNoDebug
                 |> ScriptRunner.runScriptFile langVersion sessionIsolation
-                |> shouldSucceed 
-            | FSI -> 
-                cu 
+                |> shouldSucceed
+            | FSI ->
+                cu
                 |> ScriptRunner.runScriptFile langVersion sessionIsolation
-                |> shouldSucceed 
-            | COMPILED_EXE_APP -> 
-                cu 
-                |> withDefines ("TESTS_AS_APP" :: ScriptRunner.defaultDefines) 
-                |> compileExeAndRun 
-                |> shouldSucceed 
+                |> shouldSucceed
+            | COMPILED_EXE_APP ->
+                cu
+                |> withDefines ("TESTS_AS_APP" :: ScriptRunner.defaultDefines)
+                |> compileExeAndRun
+                |> shouldSucceed
             | NEG_TEST_BUILD testName -> diffNegativeBaseline (cu |> withName mainFile) absFolder testName langVersion
-            
+
         |> ignore<CompilationResult>
-    
+
 
     let singleTestBuildAndRunAux folder bonusArgs mode = singleTestBuildAndRunAuxVersion folder bonusArgs mode LangVersion.Latest
     let singleTestBuildAndRunVersion folder mode version : unit = singleTestBuildAndRunAuxVersion folder [] mode version ScriptSessionIsolation.Shared
@@ -169,6 +169,6 @@ module TestFrameworkAdapter =
 
     let singleVersionedNegTestAux folder bonusArgs version testName =
         singleTestBuildAndRunAuxVersion folder bonusArgs  (NEG_TEST_BUILD testName) version ScriptSessionIsolation.Shared
-    let singleVersionedNegTest (folder:string)  (version:LangVersion) (testName:string) = 
+    let singleVersionedNegTest (folder:string)  (version:LangVersion) (testName:string) =
         singleVersionedNegTestAux folder [] version testName
     let singleNegTest folder testName = singleVersionedNegTest folder LangVersion.Latest testName

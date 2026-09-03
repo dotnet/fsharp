@@ -3,19 +3,19 @@ module Neg125
 // Variation on test case mentioned in https://github.com/dotnet/fsharp/pull/6805#issuecomment-580368303
 //
 // See also pos35.fs
-// 
+//
 // This removes ^output as a type selector for the witness, and no longer passes a dummy ^output
 //
 // This means that when both ^witnesses and ^input are known, the overload determining the ^output still can't be determined,
 // and overload resolution failures are reported
-module Negative_SelectOverloadedWitnessBasedOnReturnTypeWithoutOutputTypeSelectAndWithoutPassingDummyArgument = 
+module Negative_SelectOverloadedWitnessBasedOnReturnTypeWithoutOutputTypeSelectAndWithoutPassingDummyArgument =
     open System
     open System.Numerics
     let _uint8max = bigint (uint32 Byte.MaxValue)
     let _uint16max = bigint (uint32 UInt16.MaxValue)
     let _uint32max = bigint UInt32.MaxValue
     let _uint64max = bigint UInt64.MaxValue
-    type witnesses = 
+    type witnesses =
       static member inline convert_witness (x : bigint) = int (uint32 (x &&& _uint32max))
       static member inline convert_witness (x : bigint) = int64 (uint64 (x &&& _uint64max))
       static member inline convert_witness (x : bigint) = x

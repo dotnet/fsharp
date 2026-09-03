@@ -17,7 +17,7 @@ module Null =
         |> typecheck
         |> shouldFail
         |> withSingleDiagnostic (Error 43, Line 14, Col 7, Line 14, Col 11, "The type 'Foo' does not have 'null' as a proper value")
-        
+
     // This test was automatically generated (moved from FSharpQA suite - Conformance/PatternMatching/Null)
     [<Theory; FileInlineData("matchNull01.fs")>]
     let ``Null - matchNull01_fs - --test:ErrorRanges`` compilation =

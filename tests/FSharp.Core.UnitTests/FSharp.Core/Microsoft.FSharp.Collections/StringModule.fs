@@ -23,7 +23,7 @@ type StringModule() =
     [<Fact>]
     member _.Concat() =
         /// This tests the three paths of String.concat w.r.t. array, list, seq
-        let execTest f expected arg = 
+        let execTest f expected arg =
             let r1 = f (List.toSeq arg)
             Assert.AreEqual(expected, r1)
 
@@ -72,10 +72,10 @@ type StringModule() =
         let e2 = String.map (fun c -> c + char 1) "abcde"
         Assert.AreEqual("bcdef", e2)
 
-        let e3 = String.map (fun c -> c) null 
+        let e3 = String.map (fun c -> c) null
         Assert.AreEqual("", e3)
 
-        let e4 = String.map (fun c -> c) String.Empty 
+        let e4 = String.map (fun c -> c) String.Empty
         Assert.AreEqual("", e4)
 
         let e5 = String.map (fun _ -> 'B') "A"
@@ -110,16 +110,16 @@ type StringModule() =
         let e4 = String.mapi (fun i c -> char(int c + i)) "hello"
         Assert.AreEqual("hfnos", e4)
 
-        let e5 = String.mapi (fun _ c -> c) null 
+        let e5 = String.mapi (fun _ c -> c) null
         Assert.AreEqual("", e5)
 
-        let e6 = String.mapi (fun _ c -> c) String.Empty 
+        let e6 = String.mapi (fun _ c -> c) String.Empty
         Assert.AreEqual("", e6)
 
-        let e7 = String.mapi (fun _ _ -> failwith "should not fail") null 
+        let e7 = String.mapi (fun _ _ -> failwith "should not fail") null
         Assert.AreEqual("", e7)
 
-        let e8 = String.mapi (fun i _ -> if i = 1 then failwith "should not fail" else char i) "X" 
+        let e8 = String.mapi (fun i _ -> if i = 1 then failwith "should not fail" else char i) "X"
         Assert.AreEqual("\u0000", e8)
 
         // side-effect and "order of operation" test
@@ -133,7 +133,7 @@ type StringModule() =
         let e1 = String.filter (fun c -> true) "Taradiddle"
         Assert.AreEqual("Taradiddle", e1)
 
-        let e2 = String.filter (fun c -> true) null 
+        let e2 = String.filter (fun c -> true) null
         Assert.AreEqual("", e2)
 
         let e3 = String.filter Char.IsUpper "How Vexingly Quick Daft Zebras Jump!"
@@ -157,7 +157,7 @@ type StringModule() =
         let e2 = String.collect (fun c -> null) "hello"
         Assert.AreEqual("", e2)
 
-        let e3 = String.collect (fun c -> "") null 
+        let e3 = String.collect (fun c -> "") null
         Assert.AreEqual("", e3)
 
     [<Fact>]
@@ -174,7 +174,7 @@ type StringModule() =
         CheckThrowsArgumentException(fun () -> String.init -1 (fun c -> "") |> ignore)
 
     [<Fact>]
-    member _.Replicate() = 
+    member _.Replicate() =
         let e1 = String.replicate 0 "Snickersnee"
         Assert.AreEqual("", e1)
 
@@ -214,7 +214,7 @@ type StringModule() =
         CheckThrowsArgumentException(fun () -> String.replicate -1 "foo" |> ignore)
 
     [<Fact>]
-    member _.Forall() = 
+    member _.Forall() =
         let e1 = String.forall (fun c -> true) ""
         Assert.AreEqual(true, e1)
 
@@ -230,11 +230,11 @@ type StringModule() =
         let e5 = String.forall (fun c -> true) (String.replicate 1000000 "x")
         Assert.AreEqual(true, e5)
 
-        let e6 = String.forall (fun c -> false) null 
+        let e6 = String.forall (fun c -> false) null
         Assert.AreEqual(true, e6)
 
     [<Fact>]
-    member _.Exists() = 
+    member _.Exists() =
         let e1 = String.exists (fun c -> true) ""
         Assert.AreEqual(false, e1)
 
@@ -251,7 +251,7 @@ type StringModule() =
         Assert.AreEqual(false, e5)
 
     [<Fact>]
-    member _.Length() = 
+    member _.Length() =
         let e1 = String.length ""
         Assert.AreEqual(0, e1)
 
@@ -262,7 +262,7 @@ type StringModule() =
         Assert.AreEqual(0, e3)
 
     [<Fact>]
-    member _.``Slicing with both index reverse behaves as expected``()  = 
+    member _.``Slicing with both index reverse behaves as expected``()  =
         let str = "abcde"
 
         Assert.AreEqual(str.[^3..^1], str.[1..3])
@@ -273,8 +273,8 @@ type StringModule() =
 
         Assert.AreEqual(str.[^1], 'd')
 
-    [<Fact>] 
-    member _.SlicingUnboundedEnd() = 
+    [<Fact>]
+    member _.SlicingUnboundedEnd() =
         let str = "123456"
 
         Assert.AreEqual(str.[-1..], str)
@@ -285,9 +285,9 @@ type StringModule() =
         Assert.AreEqual(str.[6..], (""))
         Assert.AreEqual(str.[7..], (""))
 
-    
-    [<Fact>] 
-    member _.SlicingUnboundedStart() = 
+
+    [<Fact>]
+    member _.SlicingUnboundedStart() =
         let str = "123456"
 
         Assert.AreEqual(str.[..(-1)], (""))
@@ -328,7 +328,7 @@ type StringModule() =
 
 
     [<Fact>]
-    member _.SlicingEmptyString() = 
+    member _.SlicingEmptyString() =
 
         let empty = ""
         Assert.AreEqual(empty.[*], (""))
@@ -340,9 +340,9 @@ type StringModule() =
 
 
     [<Fact>]
-    member _.SlicingOutOfBounds() = 
+    member _.SlicingOutOfBounds() =
         let str = "123456"
-       
+
         Assert.AreEqual(str.[..6], "123456")
         Assert.AreEqual(str.[6..], (""))
 

@@ -17,7 +17,7 @@ open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.EditorServices
 open Xunit
 
-type UsingMSBuild()  = 
+type UsingMSBuild()  =
     inherit LanguageServiceBaseTests()
 
     //GoToDefinitionSuccess Helper Function
@@ -28,10 +28,10 @@ type UsingMSBuild()  =
         let identifier = (GetIdentifierAtCursor file).Value |> fst //use marker to get the identifier
         let result = GotoDefinitionAtCursor file
         CheckGotoDefnResult
-            (GotoDefnSuccess identifier definitionCode) 
+            (GotoDefnSuccess identifier definitionCode)
             file
-            result 
-    
+            result
+
     member private this.VerifyGotoDefnSuccessForNonIdentifierAtStartOfMarker(fileContents : string, marker: string, pos : int * int, ?extraRefs) =
         let (_, _, file) = this.CreateSingleFileProject(fileContents, ?references = extraRefs)
         MoveCursorToStartOfMarker (file, marker)
@@ -41,10 +41,10 @@ type UsingMSBuild()  =
         let line = GetLineNumber file (result.Span.iStartLine + 1)
         printfn "Actual line:%s, actual pos:%A" line actualPos
         Assert.Equal(pos, actualPos)
-                    
+
     //GoToDefinitionFail Helper Function
     member private this.VerifyGoToDefnFailAtStartOfMarker(fileContents : string,  marker :string,?addtlRefAssy : string list) =
-        
+
         this.VerifyGoToDefnFailAtStartOfMarker(
             fileContents = fileContents,
             marker = marker,
@@ -74,20 +74,20 @@ type UsingMSBuild()  =
         let result = GotoDefinitionAtCursor file
         if not result.Success then
             CheckGotoDefnResult
-                GotoDefnFailure 
+                GotoDefnFailure
                 file
                 result
         else
             CheckGotoDefnResult
-                (GotoDefnSuccess identifier definitionCode) 
-                file 
-                result 
-    
+                (GotoDefnSuccess identifier definitionCode)
+                file
+                result
 
 
-    
 
-           
+
+
+
 
 
     /// run a GotoDefinition test where the expected result is a file that we
@@ -132,13 +132,13 @@ type UsingMSBuild()  =
 
     /// exp = (<expected line>, <expected identifier>) option
     member this.GotoDefinitionTestWithSimpleFile (startLoc : string)(exp : (string * string) option) : unit =
-        this.SolutionGotoDefinitionTestWithSimpleFile startLoc exp 
+        this.SolutionGotoDefinitionTestWithSimpleFile startLoc exp
 
 
 
 
 
-    member internal this.GotoDefinitionTestWithMarkup (lines : string list) =      
+    member internal this.GotoDefinitionTestWithMarkup (lines : string list) =
       let origins = Dictionary<string, int*int>()
       let targets = Dictionary<string, int*int>()
       let lines =
@@ -153,11 +153,11 @@ type UsingMSBuild()  =
                         cont <- false
                     else
                         let c = s.[index]
-                        let nextIndex = s.IndexOf(c, index+1) 
+                        let nextIndex = s.IndexOf(c, index+1)
                         let marker = s.Substring(index+1, nextIndex - (index+1))
-                        if c = '$' then 
+                        if c = '$' then
                             origins.Add(marker, (lineNo+1,index+1)) // caret positions are 1-based, but...
-                        else 
+                        else
                             targets.Add(marker, (lineNo,index)) // ...spans are 0-based. Argh. Thank you, Salsa!
                         builder.Remove(index, nextIndex - index + 1) |> ignore
                 yield builder.ToString()
@@ -174,14 +174,14 @@ type UsingMSBuild()  =
           |   Some (span,text) ->
                   match targets.TryGetValue(marker) with
                   |   false, _ ->  Assert.Fail(sprintf "%s: unexpected definition found" marker)
-                  |   true, (line1, col1) -> 
-                          Assert.True(span.iStartIndex = col1 && span.iStartLine = line1, 
+                  |   true, (line1, col1) ->
+                          Assert.True(span.iStartIndex = col1 && span.iStartLine = line1,
                                 sprintf "%s: wrong definition found expected %d %d but found %d %d %s" marker line1 col1 span.iStartLine span.iStartIndex text )
 
-    
+
     /// exp = (<expected line>, <expected identifier>) option
     member internal this.SolutionGotoDefinitionTestWithSimpleFile (startLoc : string)(exp : (string * string) option) : unit =
-      let lines = 
+      let lines =
         [
           ""
           "let _ = 3"
@@ -340,7 +340,7 @@ type UsingMSBuild()  =
           "  let rec ``let`` = (*loc-74*)"
           "    function 0 -> 1"
           "           | n -> n * ``let`` (n - 1) (*loc-75*)"
-          "let id77 = 0"  
+          "let id77 = 0"
           "type C ="
           "  val id77 (*loc-77*) : int"
         ]
@@ -349,10 +349,10 @@ type UsingMSBuild()  =
 
 
 
-    member internal this.SolutionGotoDefinitionTestWithLines lines (startLoc : string)(exp : (string * string) option) : unit =        
+    member internal this.SolutionGotoDefinitionTestWithLines lines (startLoc : string)(exp : (string * string) option) : unit =
       // The test itself
       let (_, _, file) = this.CreateSingleFileProject(lines)
-      let fnm = 
+      let fnm =
         GetNameOfOpenFile file
         |> Path.GetFileName
       MoveCursorToStartOfMarker (file, startLoc)
@@ -371,9 +371,9 @@ type UsingMSBuild()  =
       this.GotoDefinitionCheckResultAgainstAnotherFile proj exp res
 
     member this.GotoDefinitionFixupFilename (x : GotoDefnResult) : GotoDefnResult =
-      if x.Success then 
-        GotoDefnResult.MakeSuccess(Path.GetFileName x.Url, x.Span) 
-      else 
+      if x.Success then
+        GotoDefnResult.MakeSuccess(Path.GetFileName x.Url, x.Span)
+      else
         GotoDefnResult.MakeError(x.ErrorDescription)
 
     // the format of the comments for each test displays the desired behaviour,
@@ -474,14 +474,14 @@ type UsingMSBuild()  =
       let n = s.IndexOf '$'
       let s = s.Remove (n, 1)
       match (QuickParse.GetCompleteIdentifierIsland tolerate s n, exp) with
-      | (Some (s1, _, _), Some s2) -> 
+      | (Some (s1, _, _), Some s2) ->
         printfn "%s" "Received result, as expected."
         Assert.Equal (s1, s2)
-      | (None,         None)    -> 
+      | (None,         None)    ->
         printfn "%s" "Received no result, as expected."
-      | (Some _,       None)    -> 
+      | (Some _,       None)    ->
         Assert.Fail("Received result, but none was expected!")
-      | (None,         Some _)  -> 
+      | (None,         Some _)  ->
         Assert.Fail("Expected result, but didn't receive one!")
 
 
@@ -494,12 +494,12 @@ type UsingMSBuild()  =
 
 
 
-        
-       
+
+
 
 
 
 
 // Context project system
-type UsingProjectSystem() = 
+type UsingProjectSystem() =
     inherit UsingMSBuild(VsOpts = LanguageServiceExtension.ProjectSystemTestFlavour)

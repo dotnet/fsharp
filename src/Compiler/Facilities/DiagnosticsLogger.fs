@@ -747,7 +747,7 @@ let rec Iterate2D f xs ys =
 
 /// Keep the warnings, propagate the error to the exception continuation.
 [<DebuggerHidden; DebuggerStepThrough>]
-let TryD f g =
+let inline TryD ([<InlineIfLambda>] f) g =
     match f () with
     | ErrorResult(warns, err) ->
         trackErrors {
@@ -995,33 +995,43 @@ type StackGuard(name: string) =
 #endif
 
     [<DebuggerHidden; DebuggerStepThrough>]
-    member _.Guard
+    member _.EnterGuard() = depth.Value <- depth.Value + 1
+
+    [<DebuggerHidden; DebuggerStepThrough>]
+    member _.ExitGuard() = depth.Value <- depth.Value - 1
+
+    [<DebuggerHidden; DebuggerStepThrough>]
+    member _.RunOnNewStack(f: unit -> 'T, memberName: string, path: string, line: int) : 'T =
+        let fileName = System.IO.Path.GetFileName(path)
+        let depthWhenJump = depth.Value
+
+        StackGuardMetrics.countJump memberName $"{fileName}:{line}" depthWhenJump
+
+        async {
+            do! Async.SwitchToNewThread()
+            Thread.CurrentThread.Name <- $"F# Extra Compilation Thread for {name} (depth {depthWhenJump})"
+            return f ()
+        }
+        |> Async.RunSynchronouslyImmediate
+
+    [<DebuggerHidden; DebuggerStepThrough>]
+    member inline this.Guard
         (
-            f,
+            [<InlineIfLambda>] f: unit -> 'T,
             [<CallerMemberName; Optional; DefaultParameterValue("")>] memberName: string,
             [<CallerFilePath; Optional; DefaultParameterValue("")>] path: string,
             [<CallerLineNumber; Optional; DefaultParameterValue(0)>] line: int
-        ) =
+        ) : 'T =
 
-        depth.Value <- depth.Value + 1
+        this.EnterGuard()
 
         try
             if StackGuard.IsStackSufficient() then
                 f ()
             else
-                let fileName = System.IO.Path.GetFileName(path)
-                let depthWhenJump = depth.Value
-
-                StackGuardMetrics.countJump memberName $"{fileName}:{line}" depthWhenJump
-
-                async {
-                    do! Async.SwitchToNewThread()
-                    Thread.CurrentThread.Name <- $"F# Extra Compilation Thread for {name} (depth {depthWhenJump})"
-                    return f ()
-                }
-                |> Async.RunSynchronouslyImmediate
+                this.RunOnNewStack(f, memberName, path, line)
         finally
-            depth.Value <- depth.Value - 1
+            this.ExitGuard()
 
     [<DebuggerHidden; DebuggerStepThrough>]
     member x.GuardCancellable(original: Cancellable<'T>) =

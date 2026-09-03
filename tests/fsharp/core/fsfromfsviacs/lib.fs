@@ -46,7 +46,7 @@ type OptionalParameterTests =
     static member MethodWithOptionalParam<'T>(?value : 'T) = value
     static member MethodWithOptionalParams<'T>(?value1 : 'T, ?value2 : int) = (value1, value2)
 
-    static member FSharpMethodThatConsumesOptionalParams() = 
+    static member FSharpMethodThatConsumesOptionalParams() =
         let _ = OptionalParameterTests.MethodWithOptionalParams<int>()
         let _ = OptionalParameterTests.MethodWithOptionalParams<int>(42)
         let _ = OptionalParameterTests.MethodWithOptionalParams<int>(value2 = 42)
@@ -90,34 +90,34 @@ module NestedStructUnionsTests =
     type U2 = U2 of U1 * U1
 
 
-    let testPattern1(u2:U2) = 
+    let testPattern1(u2:U2) =
         match u2 with
         | U2(u1a,u1b) ->
-            match u1a, u1b with 
+            match u1a, u1b with
             | U1(dt1,s1), U1(dt2,s2)  -> (dt1 = dt2) && (s1 = "a") && (s2 = "b")
 
-    let testPattern2(u2:U2) = 
+    let testPattern2(u2:U2) =
         match u2 with
         | U2(U1(dt1,s1),U1(dt2,s2)) -> (dt1 = dt2) && (s1 = "a") && (s2 = "b")
 
-    let testPattern3(u2:U2) = 
+    let testPattern3(u2:U2) =
         match u2 with
-        | U2(U1(dt1,"a"),U1(dt2,"b")) -> (dt1 = dt2) 
+        | U2(U1(dt1,"a"),U1(dt2,"b")) -> (dt1 = dt2)
 
 
-    let testPattern1mut(u2:U2) = 
+    let testPattern1mut(u2:U2) =
         let mutable u2 = u2
         match u2 with
         | U2(u1a,u1b) ->
-            match u1a, u1b with 
+            match u1a, u1b with
             | U1(dt1,s1), U1(dt2,s2)  -> (dt1 = dt2) && (s1 = "a") && (s2 = "b")
 
-    let testPattern2mut(u2:U2) = 
+    let testPattern2mut(u2:U2) =
         let mutable u2 = u2
         match u2 with
         | U2(U1(dt1,s1),U1(dt2,s2)) -> (dt1 = dt2) && (s1 = "a") && (s2 = "b")
 
-    let testPattern3mut(u2:U2) = 
+    let testPattern3mut(u2:U2) =
         let mutable u2 = u2
         match u2 with
-        | U2(U1(dt1,"a"),U1(dt2,"b")) -> (dt1 = dt2) 
+        | U2(U1(dt1,"a"),U1(dt2,"b")) -> (dt1 = dt2)

@@ -256,14 +256,14 @@ module internal AttributeHelpers =
                 struct (ValueSome nlr.Path, ValueNone)
         elif g.compilingFSharpCore then
             match tcref.Deref.PublicPath with
-            | Some(PubPath pp) -> struct (ValueNone, ValueSome pp)
-            | None -> struct (ValueNone, ValueNone)
+            | ValueSome pubpath -> struct (ValueNone, ValueSome pubpath.FullPath)
+            | ValueNone -> struct (ValueNone, ValueNone)
         else
             // Resolve PublicPath for a local ref too, so a same-compilation-unit definition of an
             // attribute recognised by full type name is still classified (cf. the compilingFSharpCore branch above).
             match tcref.Deref.PublicPath with
-            | Some(PubPath pp) -> struct (ValueSome pp, ValueNone)
-            | None -> struct (ValueNone, ValueNone)
+            | ValueSome pubpath -> struct (ValueSome pubpath.FullPath, ValueNone)
+            | ValueNone -> struct (ValueNone, ValueNone)
 
     /// Decode a bool-arg attribute and set the appropriate true/false flag.
     let inline decodeBoolAttribFlag (attrib: Attrib) trueFlag falseFlag defaultFlag =

@@ -1,4 +1,4 @@
-// #Regression #Conformance #PatternMatching #ActivePatterns 
+// #Regression #Conformance #PatternMatching #ActivePatterns
 
 
 // Verify error cases for restrictions on active pattern parameters.
@@ -11,7 +11,7 @@ let rec (|MCAP|MCAP2|) (times : int) (ip : string) =
     | 0 -> MCAP (ip + "!")
     | 1 -> MCAP2(ip + ".")
     | x -> (|MCAP|MCAP2|) (times - 1) (ip + "-")
-    
+
 let _ = match "" with MCAP  0 "!"   -> ()  | _ -> exit 1
 
 exit 1

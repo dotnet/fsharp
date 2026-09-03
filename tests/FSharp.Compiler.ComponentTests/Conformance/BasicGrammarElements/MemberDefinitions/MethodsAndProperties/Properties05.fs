@@ -1,4 +1,4 @@
-// #Conformance #DeclarationElements #MemberDefinitions #MethodsAndProperties 
+// #Conformance #DeclarationElements #MemberDefinitions #MethodsAndProperties
 
 
 // Verify you can declare an indexer from an interface
@@ -33,12 +33,12 @@ if (t :> IAmReadOnly).ROValue <> 42 then failwith "Failed: 2"
 if ROCalled <> true then failwith "Failed: 3"
 
 if WOCalled <> false then failwith "Failed: 4"
-(t :> IAmWriteOnly).WOValue <- 4 
+(t :> IAmWriteOnly).WOValue <- 4
 if WOCalled <> true then failwith "Failed: 5"
 
 if RWRCalled <> false then failwith "Failed: 6"
 if RWWCalled <> false then failwith "Failed: 7"
 if (t :> IAmReadWrite).RWValue <> 42 then failwith "Failed: 8"
-(t :> IAmReadWrite).RWValue <- 4 
+(t :> IAmReadWrite).RWValue <- 4
 if RWRCalled <> true then failwith "Failed: 9"
 if RWWCalled <> true then failwith "Failed: 10"
