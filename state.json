@@ -359,6 +359,18 @@
     "20442": {
       "sha": "007b3f58e8e4",
       "cats": []
+    },
+    "20444": {
+      "sha": "b12cb3628a92",
+      "cats": []
+    },
+    "20443": {
+      "sha": "7bdad08719c7",
+      "cats": [
+        "Affects-Build-Infra",
+        "Affects-Compiler-Output",
+        "Affects-Restore"
+      ]
     }
   }
 }
