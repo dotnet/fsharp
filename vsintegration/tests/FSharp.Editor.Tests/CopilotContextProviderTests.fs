@@ -70,6 +70,25 @@ let twice x = x * 2
     let ``search finds a declaration by its fully qualified name`` (pattern: string, expected: string) =
         Assert.Contains(expected, search pattern)
 
+    [<Theory>]
+    [<InlineData("Widgets.Counter", true)>]
+    [<InlineData("Widgets.Counte", false)>]
+    [<InlineData("Widgets.CounterX", false)>]
+    [<InlineData("WidgetsXCounter", false)>]
+    [<InlineData("Counter", false)>]
+    [<InlineData("", false)>]
+    let ``a name matches only the declaration it spells out`` (candidate: string, expected: bool) =
+        let item =
+            CopilotSymbolQuery.search cache solution "Counter"
+            |> run
+            |> Array.pick (fun (struct (item, _)) ->
+                if CopilotSymbolMapping.fullyQualifiedName item = "Widgets.Counter" then
+                    Some item
+                else
+                    None)
+
+        Assert.Equal(expected, CopilotSymbolMapping.hasFullyQualifiedName candidate item)
+
     [<Fact>]
     let ``search reports each declaration once`` () =
         let names = search "Counter"
