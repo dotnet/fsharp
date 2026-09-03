@@ -146,7 +146,12 @@ module internal {1} =
                 File.WriteAllText(rootedPath sourcePath, body.ToString())
                 printMessage "Done: %s" sourcePath
                 Some(sourcePath)
-        with e ->
+        with
+        | TaskFailed ->
+            // failTask already logged the error via this.Log.LogError; logging again here would
+            // duplicate the diagnostic, so just propagate the failure.
+            None
+        | e ->
             // Log via MSBuild's error reporting (never Console) and keep the diagnostic scoped to the
             // original, unrooted relative resx path. The exception text itself can also embed the
             // rooted path (e.g. a FileNotFoundException naming the file it tried to load), so it must

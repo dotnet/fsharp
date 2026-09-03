@@ -17,6 +17,7 @@ open BuildTaskTestHelpers
 /// single, process-wide Environment.CurrentDirectory. Each test runs two task instances concurrently,
 /// each wired to its own project directory/environment/build engine, while the process current directory
 /// points at a third, unrelated "decoy" directory that must remain untouched.
+[<Collection(nameof FSharp.Test.NotThreadSafeResourceCollection)>]
 type FileTaskEnvironmentTests() =
 
     /// Points Environment.CurrentDirectory at a fresh decoy directory for the duration of `body`, then
@@ -425,5 +426,49 @@ type FileTaskEnvironmentTests() =
             // surface the rooted task project directory the file was actually loaded from.
             Assert.Contains(relativeResx, error.Message)
             Assert.DoesNotContain(directory.FullName, error.Message)
+        finally
+            disposeTaskEnvironment environment
+
+    [<Fact>]
+    member _.``FSharpEmbedResXSource logs exactly one MSBuild error for a data element missing its name attribute``
+        ()
+        =
+        let environment, directory = createTaskEnvironmentInTemporaryDirectory ()
+
+        try
+            let relativeResx = "MissingName.resx"
+
+            // Well-formed XML, but the `<data>` element lacks the required `name` attribute, which
+            // fails via `failTask` (shared with FSharpEmbedResourceText) rather than an XML parse error.
+            File.WriteAllText(
+                Path.Combine(directory.FullName, relativeResx),
+                "<?xml version=\"1.0\" encoding=\"utf-8\"?><root><data><value>Oops</value></data></root>"
+            )
+
+            let embeddedResource = TaskItem(relativeResx) :> ITaskItem
+            embeddedResource.SetMetadata("GenerateSource", "true")
+
+            let engine = MockEngine()
+
+            let task =
+                FSharpEmbedResXSource(
+                    BuildEngine = engine,
+                    EmbeddedResource = [| embeddedResource |],
+                    IntermediateOutputPath = "obj"
+                )
+
+            assignTaskEnvironment (task :> IMultiThreadableTask) environment
+
+            let result = task.Execute()
+
+            // failTask already logs the error and raises TaskFailed; the catch in generateSource must
+            // not log a second error for this exception, so exactly one error is expected, and it must
+            // not contain a duplicated stack trace (which only the general-exception branch would emit).
+            Assert.False result
+            let error = Assert.Single(engine.Errors)
+            Assert.Contains("Missing resource name", error.Message)
+            Assert.DoesNotContain("An exception occurred when processing", error.Message)
+            Assert.DoesNotContain("TaskFailed", error.Message)
+            Assert.DoesNotContain("   at ", error.Message)
         finally
             disposeTaskEnvironment environment
