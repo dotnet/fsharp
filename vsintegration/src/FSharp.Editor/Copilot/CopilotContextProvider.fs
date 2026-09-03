@@ -99,9 +99,7 @@ module internal CopilotSymbolQuery =
                     return
                         items
                         |> Seq.chooseV (fun item ->
-                            if
-                                String.Equals(CopilotSymbolMapping.fullyQualifiedName item, fullyQualifiedName, StringComparison.Ordinal)
-                            then
+                            if CopilotSymbolMapping.hasFullyQualifiedName fullyQualifiedName item then
                                 ValueSome struct (item, document)
                             else
                                 ValueNone)
