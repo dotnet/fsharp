@@ -249,9 +249,9 @@ module internal FreeTypeVars =
         // Bound type vars form a recursively-referential set due to constraints, e.g. A: I<B>, B: I<A>
         // So collect up free vars in all constraints first, then bind all variables
         let acc =
-            List.foldBack (fun (tp: Typar) acc -> accFreeInTyparConstraints opts tp.Constraints acc) tps acc
+            ListInline.foldBack (fun (tp: Typar) acc -> accFreeInTyparConstraints opts tp.Constraints acc) tps acc
 
-        List.foldBack
+        ListInline.foldBack
             (fun tp acc ->
                 { acc with
                     FreeTypars = Zset.remove tp acc.FreeTypars
@@ -357,7 +357,7 @@ module internal FreeTypeVars =
         | TupInfo.Const _ -> acc
 
     and accFreeInMeasure opts unt acc =
-        List.foldBack (fun (tp, _) acc -> accFreeTyparRef opts tp acc) (ListMeasureVarOccsWithNonZeroExponents unt) acc
+        ListInline.foldBack (fun (tp, _) acc -> accFreeTyparRef opts tp acc) (ListMeasureVarOccsWithNonZeroExponents unt) acc
 
     and accFreeInTypes opts tys acc =
         match tys with
@@ -403,10 +403,10 @@ module internal FreeTypeVars =
     let rec boundTyparsLeftToRight g cxFlag thruFlag acc tps =
         // Bound type vars form a recursively-referential set due to constraints, e.g. A: I<B>, B: I<A>
         // So collect up free vars in all constraints first, then bind all variables
-        List.fold (fun acc (tp: Typar) -> accFreeInTyparConstraintsLeftToRight g cxFlag thruFlag acc tp.Constraints) tps acc
+        ListInline.fold (fun acc (tp: Typar) -> accFreeInTyparConstraintsLeftToRight g cxFlag thruFlag acc tp.Constraints) tps acc
 
     and accFreeInTyparConstraintsLeftToRight g cxFlag thruFlag acc cxs =
-        List.fold (accFreeInTyparConstraintLeftToRight g cxFlag thruFlag) acc cxs
+        ListInline.fold (fun acc cx -> accFreeInTyparConstraintLeftToRight g cxFlag thruFlag acc cx) acc cxs
 
     and accFreeInTyparConstraintLeftToRight g cxFlag thruFlag acc tpc =
         match tpc with
@@ -470,7 +470,7 @@ module internal FreeTypeVars =
 
         | TType_measure unt ->
             let mvars = ListMeasureVarOccsWithNonZeroExponents unt
-            List.foldBack (fun (tp, _) acc -> accFreeTyparRefLeftToRight g cxFlag thruFlag acc tp) mvars acc
+            ListInline.foldBack (fun (tp, _) acc -> accFreeTyparRefLeftToRight g cxFlag thruFlag acc tp) mvars acc
 
     and accFreeInTupInfoLeftToRight _g _cxFlag _thruFlag acc unt =
         match unt with

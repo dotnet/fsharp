@@ -466,6 +466,17 @@ module ListInline =
 
             state
 
+    /// List.fold, but inline so the folder is inlined (InlineIfLambda) rather than allocated as a closure.
+    let inline fold ([<InlineIfLambda>] folder: 'State -> 'T -> 'State) (state: 'State) (list: 'T list) =
+        let mutable state = state
+        let mutable rest = list
+
+        while not rest.IsEmpty do
+            state <- folder state rest.Head
+            rest <- rest.Tail
+
+        state
+
 module List =
 
     let sortWithOrder (c: IComparer<'T>) elements =
