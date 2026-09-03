@@ -15,6 +15,7 @@
       <Link>XunitSetup.fs</Link>
     </Compile>
     <Compile Include="WriteCodeFragmentTests.fs" />
+    <Compile Include="BuildTaskTestHelpers.fs" />
     <Compile Include="MapSourceRootsTests.fs" />
   </ItemGroup>
 

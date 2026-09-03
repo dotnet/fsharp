@@ -11,38 +11,6 @@ open FSharp.Test
 
 #nowarn "1182" //Unused arguments
 
-type MockEngine() =
-    member val Errors = ResizeArray() with get
-    member val Warnings = ResizeArray() with get
-    member val Custom = ResizeArray() with get
-    member val Messages = ResizeArray() with get
-
-    interface IBuildEngine with
-
-        member _.BuildProjectFile(projectFileName: string, targetNames: string [], globalProperties: System.Collections.IDictionary, targetOutputs: System.Collections.IDictionary): bool =
-            failwith "Not Implemented"
-
-        member _.ColumnNumberOfTaskNode: int = 0
-
-        member _.ContinueOnError = true
-
-        member _.LineNumberOfTaskNode: int = 0
-
-        member this.LogCustomEvent(e: CustomBuildEventArgs): unit =
-            this.Custom.Add e
-            failwith "Not Implemented"
-
-        member this.LogErrorEvent(e: BuildErrorEventArgs): unit =
-            this.Errors.Add e
-
-        member this.LogMessageEvent(e: BuildMessageEventArgs): unit =
-            this.Messages.Add e
-
-        member this.LogWarningEvent(e: BuildWarningEventArgs): unit =
-            this.Warnings.Add e
-
-        member _.ProjectFileOfTaskNode: string = ""
-
 type SourceRoot =
     SourceRoot of
         path: string *
