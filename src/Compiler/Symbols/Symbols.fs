@@ -763,7 +763,7 @@ type FSharpEntity(cenv: SymbolEnv, entity: EntityRef, tyargs: TType list) =
 
     new(cenv: SymbolEnv, tcref: TyconRef) =
         // traitCtxtNone: IDE symbol API — type freshening for display, not constraint solving (audited for RFC FS-1043)
-        let _, _, tyargs = FreshenTypeInst cenv.g traitCtxtNone range0 (tcref.Typars)
+        let _, _, tyargs = FreshenTypeInst traitCtxtNone range0 (tcref.Typars)
         FSharpEntity(cenv, tcref, tyargs)
 
     member _.Entity = entity

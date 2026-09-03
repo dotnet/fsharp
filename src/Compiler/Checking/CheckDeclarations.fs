@@ -3783,7 +3783,7 @@ module EstablishTypeDefinitionCores =
                                     let spreadSrcTy =
                                         tryAppTy g spreadSrcTy
                                         |> ValueOption.map (fun (tcref, tinst) ->
-                                            let _, _, newTinst = FreshenTypeInst g traitCtxtNone m tcref.Typars
+                                            let _, _, newTinst = FreshenTypeInst traitCtxtNone m tcref.Typars
                                             SolveTyparsEqualTypes g cenv.css m newTinst tinst
                                             TType_app (tcref, newTinst, g.knownWithoutNull))
                                         |> ValueOption.defaultValue spreadSrcTy
