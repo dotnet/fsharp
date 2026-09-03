@@ -3,6 +3,8 @@
 /// Translates F# navigable items into the shapes the Copilot chat "#" mention picker understands.
 module internal Microsoft.VisualStudio.FSharp.Editor.CopilotSymbolMapping
 
+open System
+
 open Microsoft.VisualStudio.Copilot
 open Microsoft.VisualStudio.Imaging
 
@@ -55,3 +57,18 @@ let fullyQualifiedName (item: NavigableItem) =
     match item.Container.FullName with
     | "" -> item.Name
     | container -> $"{container}.{item.Name}"
+
+/// Answers what comparing against `fullyQualifiedName` would, without building the dotted path -
+/// a solution-wide scan asks this of every declaration it walks past.
+let hasFullyQualifiedName (candidate: string) (item: NavigableItem) =
+    let candidate = candidate.AsSpan()
+    let container = item.Container.FullName
+    let name = item.Name.AsSpan()
+
+    if container.Length = 0 then
+        candidate.Equals(name, StringComparison.Ordinal)
+    else
+        candidate.Length = container.Length + 1 + name.Length
+        && candidate[container.Length] = '.'
+        && candidate.Slice(0, container.Length).Equals(container.AsSpan(), StringComparison.Ordinal)
+        && candidate.Slice(container.Length + 1).Equals(name, StringComparison.Ordinal)
