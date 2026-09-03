@@ -744,12 +744,30 @@ type public Fsc(taskEnvironment: TaskEnvironment) as this =
         if defaultToolPath = "" then
             raise (new System.InvalidOperationException(FSBuild.SR.toolpathUnknown ()))
 
-        fsc.TaskEnvironment.GetAbsolutePath(System.IO.Path.Combine(defaultToolPath, fsc.ToolExe)).Value
+        fsc.NormalizePathToTool(System.IO.Path.Combine(defaultToolPath, fsc.ToolExe))
 
     override fsc.LogToolCommand(message: string) =
         fsc.Log.LogMessageFromText(message, MessageImportance.Normal) |> ignore
 
     member internal fsc.InternalGenerateFullPathToTool() = fsc.GenerateFullPathToTool() // expose for unit testing
+
+    // MSBuild's ToolTask.ComputePathToTool can hand a relative base ToolPath straight to the derived
+    // ExecuteTool, and ProcessStartInfo.FileName then resolves it against the host process current
+    // directory rather than the child WorkingDirectory. Route every path that reaches base.ExecuteTool
+    // (and the eager GenerateFullPathToTool computation) through this so a relative path with directory
+    // components is rooted against this task's TaskEnvironment. A bare filename is left untouched so the
+    // normal PATH lookup keeps working; ComputePathToTool has usually already expanded it by this point.
+    member private fsc.NormalizePathToTool(pathToTool: string) : string =
+        if
+            String.IsNullOrEmpty pathToTool
+            || System.IO.Path.IsPathRooted pathToTool
+            || String.IsNullOrEmpty(System.IO.Path.GetDirectoryName pathToTool)
+        then
+            pathToTool
+        else
+            fsc.TaskEnvironment.GetAbsolutePath(pathToTool).Value
+
+    member internal fsc.InternalNormalizePathToTool(pathToTool: string) = fsc.NormalizePathToTool(pathToTool) // expose for unit testing
 
     member internal _.BaseExecuteTool(pathToTool, responseFileCommands, commandLineCommands) = // F# does not allow protected members to be captured by lambdas, this is the standard workaround
         base.ExecuteTool(pathToTool, responseFileCommands, commandLineCommands)
@@ -765,6 +783,9 @@ type public Fsc(taskEnvironment: TaskEnvironment) as this =
         if skipCompilerExecution then
             0
         else
+            // Normalize once so both the plain base call and the HostObject baseCallDelegate below run
+            // against a project-directory-rooted tool path rather than one resolved against the host CWD.
+            let pathToTool = fsc.NormalizePathToTool pathToTool
             let host = box fsc.HostObject
 
             match host with

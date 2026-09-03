@@ -339,12 +339,30 @@ type public Fsi(taskEnvironment: TaskEnvironment) as this =
         if toolPath = "" then
             raise (new System.InvalidOperationException(FSBuild.SR.toolpathUnknown ()))
 
-        fsi.TaskEnvironment.GetAbsolutePath(System.IO.Path.Combine(toolPath, fsi.ToolExe)).Value
+        fsi.NormalizePathToTool(System.IO.Path.Combine(toolPath, fsi.ToolExe))
 
     override fsi.LogToolCommand(message: string) =
         fsi.Log.LogMessageFromText(message, MessageImportance.Normal) |> ignore
 
     member internal fsi.InternalGenerateFullPathToTool() = fsi.GenerateFullPathToTool() // expose for unit testing
+
+    // MSBuild's ToolTask.ComputePathToTool can hand a relative base ToolPath straight to the derived
+    // ExecuteTool, and ProcessStartInfo.FileName then resolves it against the host process current
+    // directory rather than the child WorkingDirectory. Route every path that reaches base.ExecuteTool
+    // (and the eager GenerateFullPathToTool computation) through this so a relative path with directory
+    // components is rooted against this task's TaskEnvironment. A bare filename is left untouched so the
+    // normal PATH lookup keeps working; ComputePathToTool has usually already expanded it by this point.
+    member private fsi.NormalizePathToTool(pathToTool: string) : string =
+        if
+            String.IsNullOrEmpty pathToTool
+            || System.IO.Path.IsPathRooted pathToTool
+            || String.IsNullOrEmpty(System.IO.Path.GetDirectoryName pathToTool)
+        then
+            pathToTool
+        else
+            fsi.TaskEnvironment.GetAbsolutePath(pathToTool).Value
+
+    member internal fsi.InternalNormalizePathToTool(pathToTool: string) = fsi.NormalizePathToTool(pathToTool) // expose for unit testing
 
     member internal _.BaseExecuteTool(pathToTool, responseFileCommands, commandLineCommands) = // F# does not allow protected members to be captured by lambdas, this is the standard workaround
         base.ExecuteTool(pathToTool, responseFileCommands, commandLineCommands)
@@ -360,6 +378,9 @@ type public Fsi(taskEnvironment: TaskEnvironment) as this =
         if skipCompilerExecution then
             0
         else
+            // Normalize once so both the plain base call and the HostObject baseCallDelegate below run
+            // against a project-directory-rooted tool path rather than one resolved against the host CWD.
+            let pathToTool = fsi.NormalizePathToTool pathToTool
             let host = box fsi.HostObject
 
             match host with

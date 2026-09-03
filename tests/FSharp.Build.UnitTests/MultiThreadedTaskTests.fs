@@ -49,6 +49,9 @@ module private FscFsiTestHooks =
     let executeTool (task: obj) : int =
         invoke task "InternalExecuteTool" [| box ""; box ""; box "" |] :?> int
 
+    let normalizePathToTool (task: obj) (pathToTool: string) : string =
+        invoke task "InternalNormalizePathToTool" [| box pathToTool |] :?> string
+
 /// Verifies that the FSharp.Build tasks which are multithread-safe (their outputs depend only on
 /// their inputs and on an injected TaskEnvironment, with no reliance on ambient process state such
 /// as the current directory or environment variables) are marked directly with
@@ -190,3 +193,35 @@ type FscFsiMultiThreadedTaskTests() =
 
         Assert.Contains("--secondflag", secondHost.Flags)
         Assert.DoesNotContain("--firstflag", secondHost.Flags)
+
+    [<Fact>]
+    member _.``Fsc roots a relative pathToTool against its injected project directory``() =
+        // MSBuild's ToolTask.ComputePathToTool can hand a relative base ToolPath straight to the
+        // derived ExecuteTool, and ProcessStartInfo.FileName then resolves it against the host
+        // current directory rather than the child WorkingDirectory. The production normalization must
+        // root such a relative path (with directory components) against this task's project directory.
+        BuildTaskTestHelpers.withTaskEnvironment (fun environment directory ->
+            let fsc = Fsc(environment)
+            let relative = Path.Combine("tools", "fsc.exe")
+
+            let normalized = FscFsiTestHooks.normalizePathToTool fsc relative
+
+            Assert.True(Path.IsPathRooted normalized, $"expected rooted path, got '{normalized}'")
+            Assert.Equal(Path.Combine(directory.FullName, relative), normalized)
+
+            // A bare filename must be left untouched so the OS/ComputePathToTool PATH lookup still works.
+            Assert.Equal("fsc.exe", FscFsiTestHooks.normalizePathToTool fsc "fsc.exe"))
+
+    [<Fact>]
+    member _.``Fsi roots a relative pathToTool against its injected project directory``() =
+        BuildTaskTestHelpers.withTaskEnvironment (fun environment directory ->
+            let fsi = Fsi(environment)
+            let relative = Path.Combine("tools", "fsi.exe")
+
+            let normalized = FscFsiTestHooks.normalizePathToTool fsi relative
+
+            Assert.True(Path.IsPathRooted normalized, $"expected rooted path, got '{normalized}'")
+            Assert.Equal(Path.Combine(directory.FullName, relative), normalized)
+
+            // A bare filename must be left untouched so the OS/ComputePathToTool PATH lookup still works.
+            Assert.Equal("fsi.exe", FscFsiTestHooks.normalizePathToTool fsi "fsi.exe"))

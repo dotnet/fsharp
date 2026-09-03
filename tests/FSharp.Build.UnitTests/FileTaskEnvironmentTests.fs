@@ -64,6 +64,19 @@ type FileTaskEnvironmentTests() =
                 body environmentA directoryA environmentB directoryB
                 Assert.Empty(Directory.GetFiles(decoyDirectory.FullName, "*", SearchOption.AllDirectories))))
 
+    /// Counts non-overlapping occurrences of `needle` in `text`. Used to prove that an absolute input
+    /// path survives diagnostic scrubbing in the exception body (not just the message prefix), which a
+    /// blind project-directory strip would corrupt.
+    let countOccurrences (needle: string) (text: string) =
+        let mutable count = 0
+        let mutable index = text.IndexOf(needle, StringComparison.Ordinal)
+
+        while index >= 0 do
+            count <- count + 1
+            index <- text.IndexOf(needle, index + needle.Length, StringComparison.Ordinal)
+
+        count
+
     [<Fact>]
     member _.``WriteCodeFragment writes relative to each task's TaskEnvironment, not the process current directory``
         ()
@@ -434,6 +447,120 @@ type FileTaskEnvironmentTests() =
             Assert.DoesNotContain("An exception occurred when processing", error.Message)
             Assert.DoesNotContain("TaskFailed", error.Message)
             Assert.DoesNotContain("   at ", error.Message))
+
+    [<Fact>]
+    member _.``FSharpEmbedResXSource keeps a relative resx input relative in diagnostics and never leaks the project directory``
+        ()
+        =
+        withTaskEnvironment (fun environment directory ->
+            // The resx does not exist on disk, so XDocument.Load throws a FileNotFoundException whose
+            // text embeds the rooted absolute path it actually tried to open. The diagnostic must be
+            // restored to the original relative input, with no trace of the rooted project directory.
+            let relativeResx = "Missing.resx"
+
+            let embeddedResource = TaskItem(relativeResx) :> ITaskItem
+            embeddedResource.SetMetadata("GenerateSource", "true")
+
+            let engine = MockEngine()
+
+            let task =
+                FSharpEmbedResXSource(
+                    BuildEngine = engine,
+                    EmbeddedResource = [| embeddedResource |],
+                    IntermediateOutputPath = "obj"
+                )
+
+            assignTaskEnvironment (task :> IMultiThreadableTask) environment
+
+            Assert.False(task.Execute())
+            let error = Assert.Single(engine.Errors)
+
+            Assert.Contains(relativeResx, error.Message)
+            Assert.DoesNotContain(directory.FullName, error.Message))
+
+    [<Fact>]
+    member _.``FSharpEmbedResXSource preserves an absolute resx input beneath the project directory in diagnostics``
+        ()
+        =
+        withTaskEnvironment (fun environment directory ->
+            // An absolute input that happens to live beneath the project directory must survive intact:
+            // a blind project-directory strip would corrupt the rooted path embedded in the exception
+            // body back into a bogus relative path. Restoration by exact rooted-value replacement is a
+            // no-op here (rooted value == original), so the full absolute path is preserved everywhere.
+            let absoluteResx = Path.Combine(directory.FullName, "AbsentUnderProject.resx")
+
+            let embeddedResource = TaskItem(absoluteResx) :> ITaskItem
+            embeddedResource.SetMetadata("GenerateSource", "true")
+
+            let engine = MockEngine()
+
+            let task =
+                FSharpEmbedResXSource(
+                    BuildEngine = engine,
+                    EmbeddedResource = [| embeddedResource |],
+                    IntermediateOutputPath = "obj"
+                )
+
+            assignTaskEnvironment (task :> IMultiThreadableTask) environment
+
+            Assert.False(task.Execute())
+            let error = Assert.Single(engine.Errors)
+
+            // Present in the message prefix AND preserved in the (FileNotFoundException) body, proving
+            // the absolute path was not stripped down to a relative fragment.
+            Assert.Contains(absoluteResx, error.Message)
+            Assert.True(countOccurrences absoluteResx error.Message >= 2, error.Message))
+
+    [<Fact>]
+    member _.``FSharpEmbedResourceText keeps a relative input relative in diagnostics and never leaks the project directory``
+        ()
+        =
+        withTaskEnvironment (fun environment directory ->
+            // The .txt does not exist, so File.ReadAllLines throws a FileNotFoundException naming the
+            // rooted absolute path. The diagnostic must surface only the original relative input.
+            let relativeText = "Missing.txt"
+
+            let engine = MockEngine()
+
+            let task =
+                FSharpEmbedResourceText(
+                    BuildEngine = engine,
+                    EmbeddedText = [| TaskItem(relativeText) :> ITaskItem |],
+                    IntermediateOutputPath = "obj"
+                )
+
+            assignTaskEnvironment (task :> IMultiThreadableTask) environment
+
+            Assert.False(task.Execute())
+            let error = Assert.Single(engine.Errors)
+
+            Assert.Contains(relativeText, error.Message)
+            Assert.DoesNotContain(directory.FullName, error.Message))
+
+    [<Fact>]
+    member _.``FSharpEmbedResourceText preserves an absolute input beneath the project directory in diagnostics``
+        ()
+        =
+        withTaskEnvironment (fun environment directory ->
+            let absoluteText = Path.Combine(directory.FullName, "AbsentUnderProject.txt")
+
+            let engine = MockEngine()
+
+            let task =
+                FSharpEmbedResourceText(
+                    BuildEngine = engine,
+                    EmbeddedText = [| TaskItem(absoluteText) :> ITaskItem |],
+                    IntermediateOutputPath = "obj"
+                )
+
+            assignTaskEnvironment (task :> IMultiThreadableTask) environment
+
+            Assert.False(task.Execute())
+            let error = Assert.Single(engine.Errors)
+
+            // Preserved in both the prefix and the (FileNotFoundException) body, unstripped.
+            Assert.Contains(absoluteText, error.Message)
+            Assert.True(countOccurrences absoluteText error.Message >= 2, error.Message))
 
     [<Fact>]
     member _.``SubstituteText reads and writes relative to each task's TaskEnvironment, not the process current directory``

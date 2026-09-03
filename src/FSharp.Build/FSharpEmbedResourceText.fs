@@ -27,18 +27,22 @@ type FSharpEmbedResourceText(taskEnvironment: TaskEnvironment) as this =
         _taskEnvironment.GetAbsolutePath(path).Value
 
     // The framework exceptions thrown by File/Directory/stream APIs embed the rooted absolute path
-    // that was actually passed to them. Strip the task's rooted project directory back out so that
-    // logged diagnostics only ever surface the original, unrooted relative paths.
-    let hideRootedPaths (message: string) =
-        let projectDirectory = _taskEnvironment.ProjectDirectory.Value
+    // that was actually passed to them. Restore each such rooted value back to the original path string
+    // the task was given, so logged diagnostics surface the caller's own paths. When the original was
+    // already absolute the rooted value equals it and the replacement is a no-op, so an absolute input
+    // (even one beneath the project directory) is preserved verbatim rather than corrupted.
+    let restoreOriginalPaths (message: string) (originalPaths: string list) =
+        (message, originalPaths)
+        ||> List.fold (fun (message: string) original ->
+            if System.String.IsNullOrEmpty original then
+                message
+            else
+                let rooted = _taskEnvironment.GetAbsolutePath(original).Value
 
-        if System.String.IsNullOrEmpty projectDirectory then
-            message
-        else
-            message
-                .Replace(projectDirectory + string Path.DirectorySeparatorChar, "")
-                .Replace(projectDirectory + string Path.AltDirectorySeparatorChar, "")
-                .Replace(projectDirectory, "")
+                if System.String.IsNullOrEmpty rooted then
+                    message
+                else
+                    message.Replace(rooted, original))
 
     let PrintErr (fileName, line, msg) =
         this.Log.LogError(null, null, null, fileName, line, 0, 0, 0, msg, Array.empty)
@@ -421,6 +425,12 @@ open Printf
 
     let generateResxAndSource (item: ITaskItem) =
         let fileName = item.ItemSpec
+        let justFileName = Path.GetFileNameWithoutExtension(fileName) // .txt
+
+        // Computed before the try so they are in scope in the exception handler for path restoration.
+        let outFileName = Path.Combine(_outputPath, justFileName + ".fs")
+        let outFileSignatureName = Path.Combine(_outputPath, justFileName + ".fsi")
+        let outXmlFileName = Path.Combine(_outputPath, justFileName + ".resx")
 
         try
             let printMessage fmt = Printf.ksprintf this.Log.LogMessage fmt
@@ -430,8 +440,6 @@ open Printf
             let richText =
                 System.String.Equals(item.GetMetadata "RichText", "true", System.StringComparison.OrdinalIgnoreCase)
 
-            let justFileName = Path.GetFileNameWithoutExtension(fileName) // .txt
-
             if justFileName |> Seq.exists (System.Char.IsLetterOrDigit >> not) then
                 Err(
                     fileName,
@@ -440,10 +448,6 @@ open Printf
                         "The file name '%s' is not allowed; only letters and digits can be used, as the file name also becomes the namespace for the SR class"
                         justFileName
                 )
-
-            let outFileName = Path.Combine(_outputPath, justFileName + ".fs")
-            let outFileSignatureName = Path.Combine(_outputPath, justFileName + ".fsi")
-            let outXmlFileName = Path.Combine(_outputPath, justFileName + ".resx")
 
             let condition1 = File.Exists(rootedPath outFileName)
             let condition2 = condition1 && File.Exists(rootedPath outXmlFileName)
@@ -720,7 +724,15 @@ open Printf
                 printMessage "Done %s" outFileName
                 Some(fileName, outFileSignatureName, outFileName, outXmlFileName)
         with e ->
-            PrintErr(fileName, 0, sprintf "An exception occurred when processing '%s'\n%s" fileName (hideRootedPaths (e.ToString())))
+            PrintErr(
+                fileName,
+                0,
+                sprintf
+                    "An exception occurred when processing '%s'\n%s"
+                    fileName
+                    (restoreOriginalPaths (e.ToString()) [ fileName; outFileName; outFileSignatureName; outXmlFileName ])
+            )
+
             None
 
     new() = FSharpEmbedResourceText(TaskEnvironment.Fallback)

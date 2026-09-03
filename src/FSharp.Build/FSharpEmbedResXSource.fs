@@ -26,18 +26,22 @@ type FSharpEmbedResXSource(taskEnvironment: TaskEnvironment) as this =
         _taskEnvironment.GetAbsolutePath(path).Value
 
     // The framework exceptions thrown by File/stream/XDocument APIs embed the rooted absolute path
-    // that was actually passed to them. Strip the task's rooted project directory back out so that
-    // logged diagnostics only ever surface the original, unrooted relative paths.
-    let hideRootedPaths (message: string) =
-        let projectDirectory = _taskEnvironment.ProjectDirectory.Value
+    // that was actually passed to them. Restore each such rooted value back to the original path string
+    // the task was given, so logged diagnostics surface the caller's own paths. When the original was
+    // already absolute the rooted value equals it and the replacement is a no-op, so an absolute input
+    // (even one beneath the project directory) is preserved verbatim rather than corrupted.
+    let restoreOriginalPaths (message: string) (originalPaths: string list) =
+        (message, originalPaths)
+        ||> List.fold (fun (message: string) original ->
+            if String.IsNullOrEmpty original then
+                message
+            else
+                let rooted = _taskEnvironment.GetAbsolutePath(original).Value
 
-        if String.IsNullOrEmpty projectDirectory then
-            message
-        else
-            message
-                .Replace(projectDirectory + string Path.DirectorySeparatorChar, "")
-                .Replace(projectDirectory + string Path.AltDirectorySeparatorChar, "")
-                .Replace(projectDirectory, "")
+                if String.IsNullOrEmpty rooted then
+                    message
+                else
+                    message.Replace(rooted, original))
 
     let failTask fmt =
         Printf.ksprintf
@@ -63,10 +67,12 @@ module internal {1} =
         "    let GetObject(name:System.String) : System.Object = ResourceManager.GetObject(name, CultureInfo.CurrentUICulture)"
 
     let generateSource (resx: string) (fullModuleName: string) (generateLegacy: bool) (generateLiteral: bool) =
+        let justFileName = Path.GetFileNameWithoutExtension(resx)
+        // Computed before the try so it is in scope in the exception handler for path restoration.
+        let sourcePath = Path.Combine(_outputPath, justFileName + ".fs")
+
         try
             let printMessage fmt = Printf.ksprintf this.Log.LogMessage fmt
-            let justFileName = Path.GetFileNameWithoutExtension(resx)
-            let sourcePath = Path.Combine(_outputPath, justFileName + ".fs")
 
             // simple up-to-date check
             if
@@ -153,10 +159,14 @@ module internal {1} =
             None
         | e ->
             // Log via MSBuild's error reporting (never Console) and keep the diagnostic scoped to the
-            // original, unrooted relative resx path. The exception text itself can also embed the
-            // rooted path (e.g. a FileNotFoundException naming the file it tried to load), so it must
-            // be scrubbed via hideRootedPaths too, mirroring FSharpEmbedResourceText's approach.
-            this.Log.LogError(sprintf "An exception occurred when processing '%s': %s" resx (hideRootedPaths (e.ToString())))
+            // caller's own resx path. The exception text itself can also embed the rooted path (e.g. a
+            // FileNotFoundException naming the file it tried to load), so the rooted values for both the
+            // resx input and the generated source path are restored to the originals the task was given,
+            // mirroring FSharpEmbedResourceText's approach.
+            this.Log.LogError(
+                sprintf "An exception occurred when processing '%s': %s" resx (restoreOriginalPaths (e.ToString()) [ resx; sourcePath ])
+            )
+
             None
 
     new() = FSharpEmbedResXSource(TaskEnvironment.Fallback)
