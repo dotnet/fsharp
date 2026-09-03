@@ -117,11 +117,19 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
+  <!--
+    Only the strings the Visual Studio shell resolves on FSharpPackage's behalf belong here.
+    The shell goes through SVsResourceManager, which looks up the numeric ID against the fixed
+    basename "VSPackage" in the package assembly, so this file must embed as VSPackage.resources
+    (see ManifestResourceName in FSharp.Editor.fsproj). Strings the managed option-page code looks
+    up itself - the *PageKeywords named as the last argument of each ProvideLanguageEditorOptionPage
+    - come from the assembly's default resource set and stay in FSharp.Editor.resx.
+  -->
   <!-- FSharpPackage's own display name, resolved via ProvideLanguageService's languageResourceID. -->
   <data name="100" xml:space="preserve">
     <value>F#</value>
   </data>
-  <!-- File-type name shown for FSharpEditorFactory, resolved via ProvideEditorFactory's nameResourceID. -->
+  <!-- File-type name shown for FSharpEditorFactory, resolved via ProvideEditorFactory's nameResourceID. Same wording as FSharp.ProjectSystem.FSharp's 5011. -->
   <data name="101" xml:space="preserve">
     <value>F# Source File</value>
   </data>
