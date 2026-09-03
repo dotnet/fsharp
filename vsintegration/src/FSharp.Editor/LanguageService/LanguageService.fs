@@ -419,30 +419,35 @@ type internal FSharpPackage() as this =
             false,
             fun _ cancellationToken ->
                 task {
-                    let! container = this.GetServiceAsync(typeof<SVsBrokeredServiceContainer>)
+                    try
+                        let! container = this.GetServiceAsync(typeof<SVsBrokeredServiceContainer>)
 
-                    match container with
-                    | :? IBrokeredServiceContainer as container ->
-                        // The Interactions service also serves the registration interface. It is absent when
-                        // GitHub Copilot is not installed, in which case the proxy is null and F# stays out of the picker.
-                        let! registration =
-                            container
-                                .GetFullAccessServiceBroker()
-                                .GetProxyAsync<ICopilotRegistrationService>(CopilotDescriptors.InteractionService, cancellationToken)
+                        match container with
+                        | :? IBrokeredServiceContainer as container ->
+                            // The Interactions service also serves the registration interface. It is absent when
+                            // GitHub Copilot is not installed, in which case the proxy is null and F# stays out of the picker.
+                            let! registration =
+                                container
+                                    .GetFullAccessServiceBroker()
+                                    .GetProxyAsync<ICopilotRegistrationService>(CopilotDescriptors.InteractionService, cancellationToken)
 
-                        use registration = registration
+                            use registration = registration
 
-                        match registration with
-                        | null -> ()
-                        | registration ->
-                            let moniker =
-                                ServiceMoniker(
-                                    FSharpConstants.copilotSymbolProviderName,
-                                    Version CopilotDescriptors.CurrentContextProviderVersion
-                                )
+                            match registration with
+                            | null -> ()
+                            | registration ->
+                                let moniker =
+                                    ServiceMoniker(
+                                        FSharpConstants.copilotSymbolProviderName,
+                                        Version CopilotDescriptors.CurrentContextProviderVersion
+                                    )
 
-                            do! registration.RegisterContextProviderAsync(moniker, cancellationToken)
-                    | _ -> ()
+                                do! registration.RegisterContextProviderAsync(moniker, cancellationToken)
+                        | _ -> ()
+                    // Package load runs its tasks back to back on one loop, so a Copilot failure - a contract
+                    // version the installed build does not serve, say - must not take the F# package down with it.
+                    with ex when not (ex :? OperationCanceledException) ->
+                        DebugHelpers.FSharpOutputPane.logExceptionWithContext (ex, "Registering the Copilot context provider")
                 }
                 :> Task
         )

@@ -3,6 +3,8 @@
 /// Widens the identifier range of a navigable item to the declaration a reader would recognise.
 module internal Microsoft.VisualStudio.FSharp.Editor.CopilotSymbolSnippets
 
+open System
+
 open FSharp.Compiler.EditorServices
 
 /// A module scope can span a whole file, which is more than a chat prompt can usefully carry.
@@ -10,7 +12,7 @@ open FSharp.Compiler.EditorServices
 let MaxSnippetLines = 200
 
 /// Inclusive, 1-based line bounds of the declaration `item` names, including its doc comment.
-let definitionLines (scopes: Structure.ScopeRange seq) (item: NavigableItem) =
+let definitionLines (sourceLines: string array) (scopes: Structure.ScopeRange seq) (item: NavigableItem) =
     let declarationLine = item.Range.StartLine
 
     // A construct's outlining range reaches back over the doc comment in front of it, so it is the
@@ -34,5 +36,18 @@ let definitionLines (scopes: Structure.ScopeRange seq) (item: NavigableItem) =
         match widest with
         | ValueSome scope -> scope.Range.StartLine, scope.Range.EndLine
         | ValueNone -> declarationLine, item.Range.EndLine
+
+    // Outlining reports a doc comment only once it spans several lines, so a one-line "///" in front of
+    // a declaration is invisible to the scopes above.
+    let isDocComment line =
+        sourceLines[line - 1].TrimStart().StartsWith("///", StringComparison.Ordinal)
+
+    let rec docCommentStart line =
+        if line > 1 && isDocComment (line - 1) then
+            docCommentStart (line - 1)
+        else
+            line
+
+    let firstLine = docCommentStart firstLine
 
     struct (firstLine, min lastLine (firstLine + MaxSnippetLines - 1))
