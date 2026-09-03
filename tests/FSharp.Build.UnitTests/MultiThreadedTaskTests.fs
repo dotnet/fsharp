@@ -21,6 +21,7 @@ type MultiThreadedTaskTests() =
             yield [| typeof<GenerateILLinkSubstitutions> |]
             yield [| typeof<FSharpEmbedResourceText> |]
             yield [| typeof<FSharpEmbedResXSource> |]
+            yield [| typeof<SubstituteText> |]
         }
 
     [<Theory>]

@@ -472,3 +472,99 @@ type FileTaskEnvironmentTests() =
             Assert.DoesNotContain("   at ", error.Message)
         finally
             disposeTaskEnvironment environment
+
+    [<Fact>]
+    member _.``SubstituteText reads and writes relative to each task's TaskEnvironment, not the process current directory``
+        ()
+        =
+        withDecoyCurrentDirectory (fun decoyDirectory ->
+            let environmentA, directoryA = createTaskEnvironmentInTemporaryDirectory ()
+            let environmentB, directoryB = createTaskEnvironmentInTemporaryDirectory ()
+
+            try
+                // Both instances share the exact same relative source/target names; only the
+                // TaskEnvironment each is wired to (and therefore the project directory the paths are
+                // rooted against) differs.
+                let relativeIntermediate = Path.Combine("obj", "Debug")
+                let relativeSource = "Source.txt"
+
+                File.WriteAllText(Path.Combine(directoryA.FullName, relativeSource), "Hello from A. Token: PLACEHOLDER")
+                File.WriteAllText(Path.Combine(directoryB.FullName, relativeSource), "Hello from B. Token: PLACEHOLDER")
+
+                let makeTask (environment: TaskEnvironment) =
+                    let embeddedResource = TaskItem(relativeSource) :> ITaskItem
+                    embeddedResource.SetMetadata("IntermediateTargetPath", relativeIntermediate)
+                    embeddedResource.SetMetadata("Pattern1", "PLACEHOLDER")
+                    embeddedResource.SetMetadata("Replacement1", "REPLACED")
+
+                    let task =
+                        SubstituteText(BuildEngine = MockEngine(), EmbeddedResources = [| embeddedResource |])
+
+                    assignTaskEnvironment (task :> IMultiThreadableTask) environment
+                    task
+
+                let taskA = makeTask environmentA
+                let taskB = makeTask environmentB
+
+                let successA, successB =
+                    runConcurrently (fun () -> taskA.Execute()) (fun () -> taskB.Execute())
+
+                Assert.True successA
+                Assert.True successB
+
+                let expectedItemSpec = Path.Combine(relativeIntermediate, "Source.txt")
+
+                // The copied item's ItemSpec must remain the original, unrooted relative value, and is
+                // identical for both instances since both were configured with identical inputs.
+                Assert.Equal(expectedItemSpec, taskA.CopiedFiles.[0].ItemSpec)
+                Assert.Equal(expectedItemSpec, taskB.CopiedFiles.[0].ItemSpec)
+
+                let targetPathA = Path.Combine(directoryA.FullName, expectedItemSpec)
+                let targetPathB = Path.Combine(directoryB.FullName, expectedItemSpec)
+
+                Assert.True(File.Exists targetPathA, sprintf "Expected substituted file at %s" targetPathA)
+                Assert.True(File.Exists targetPathB, sprintf "Expected substituted file at %s" targetPathB)
+
+                let contentsA = File.ReadAllText targetPathA
+                let contentsB = File.ReadAllText targetPathB
+
+                Assert.Equal("Hello from A. Token: REPLACED", contentsA)
+                Assert.Equal("Hello from B. Token: REPLACED", contentsB)
+
+                Assert.Empty(Directory.GetFiles(decoyDirectory.FullName, "*", SearchOption.AllDirectories))
+            finally
+                disposeTaskEnvironment environmentA
+                disposeTaskEnvironment environmentB)
+
+    [<Fact>]
+    member _.``SubstituteText swallows a missing source file but still records the computed target ItemSpec``
+        ()
+        =
+        let environment, _directory = createTaskEnvironmentInTemporaryDirectory ()
+
+        try
+            // Deliberately do not create "Missing.txt" on disk: File.ReadAllText must throw, and the
+            // existing broad catch must swallow it, preserving Execute=true.
+            let embeddedResource = TaskItem("Missing.txt") :> ITaskItem
+            embeddedResource.SetMetadata("IntermediateTargetPath", "obj")
+            embeddedResource.SetMetadata("Pattern1", "PLACEHOLDER")
+            embeddedResource.SetMetadata("Replacement1", "REPLACED")
+
+            let task =
+                SubstituteText(BuildEngine = MockEngine(), EmbeddedResources = [| embeddedResource |])
+
+            assignTaskEnvironment (task :> IMultiThreadableTask) environment
+
+            let result = task.Execute()
+
+            let expectedItemSpec = Path.Combine("obj", "Missing.txt")
+
+            // Existing semantics (preserved unchanged): Execute still reports success, the item is
+            // still recorded in CopiedFiles, and its ItemSpec was already rewritten to the computed
+            // target before the (swallowed) I/O failure, even though nothing was ever written.
+            Assert.True result
+            let copiedItem = Assert.Single(task.CopiedFiles)
+            Assert.Equal(expectedItemSpec, copiedItem.ItemSpec)
+            Assert.False(File.Exists(Path.Combine(_directory.FullName, expectedItemSpec)))
+        finally
+            disposeTaskEnvironment environment

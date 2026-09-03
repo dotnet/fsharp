@@ -7,11 +7,26 @@ open System.IO
 open Microsoft.Build.Framework
 open Microsoft.Build.Utilities
 
-type SubstituteText() =
+[<MSBuildMultiThreadableTask>]
+type SubstituteText(taskEnvironment: TaskEnvironment) =
     inherit Task()
 
     let mutable copiedFiles = new ResizeArray<ITaskItem>()
     let mutable embeddedResources: ITaskItem[] = [||]
+    let mutable _taskEnvironment = taskEnvironment
+
+    // Every File/Directory API consuming a (possibly relative) path must go through this so paths
+    // are resolved against this task instance's TaskEnvironment rather than the ambient process
+    // current directory. Original relative strings are preserved for item.ItemSpec.
+    let rootedPath (path: string) =
+        _taskEnvironment.GetAbsolutePath(path).Value
+
+    new() = SubstituteText(TaskEnvironment.Fallback)
+
+    interface IMultiThreadableTask with
+        member _.TaskEnvironment
+            with get () = _taskEnvironment
+            and set (value) = _taskEnvironment <- value
 
     [<Required>]
     member _.EmbeddedResources
@@ -61,7 +76,7 @@ type SubstituteText() =
                             item.ItemSpec <- targetPath
 
                             // Transform file
-                            let mutable contents = File.ReadAllText(sourcePath)
+                            let mutable contents = File.ReadAllText(rootedPath sourcePath)
 
                             if not (String.IsNullOrWhiteSpace(pattern1)) then
                                 let replacement = item.GetMetadata("Replacement1")
@@ -73,10 +88,10 @@ type SubstituteText() =
 
                             let directory = Path.GetDirectoryName(targetPath)
 
-                            if not (Directory.Exists(directory)) then
-                                Directory.CreateDirectory(directory) |> ignore
+                            if not (Directory.Exists(rootedPath directory)) then
+                                Directory.CreateDirectory(rootedPath directory) |> ignore
 
-                            File.WriteAllText(targetPath, contents)
+                            File.WriteAllText(rootedPath targetPath, contents)
                         with _ ->
                             ()
 
