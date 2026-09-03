@@ -17,9 +17,15 @@ open Internal.Utilities
 //The goal is to have the most common/important flags available via the Fsi class, and the
 //rest can be "backdoored" through the .OtherFlags property.
 
-type public Fsi() as this =
+[<MSBuildMultiThreadableTask>]
+type public Fsi(taskEnvironment: TaskEnvironment) as this =
 
     inherit ToolTask()
+
+    // Route every ambient-environment lookup (current directory, environment variables) through this
+    // task instance's TaskEnvironment. Assign the inherited ToolTask.TaskEnvironment first so the
+    // eager toolPath binding below resolves against it rather than shared process state.
+    do this.TaskEnvironment <- taskEnvironment
 
     let mutable capturedArguments: string list = [] // list of individual args, to pass to HostObject Compile()
     let mutable capturedFilenames: string list = [] // list of individual source filenames, to pass to HostObject Compile()
@@ -51,7 +57,11 @@ type public Fsi() as this =
             with _ ->
                 None
 
-        match FSharpEnvironment.BinFolderOfDefaultFSharpCompiler(locationOfThisDll) with
+        match
+            FSharpEnvironment.BinFolderOfDefaultFSharpCompilerUsingEnvironment
+                (fun name -> this.TaskEnvironment.GetEnvironmentVariable name)
+                locationOfThisDll
+        with
         | Some s -> s
         | None -> ""
 
@@ -160,6 +170,10 @@ type public Fsi() as this =
 
     let textOutput =
         lazy System.Collections.Generic.Queue<_>(defaultArg bufferLimit 1024)
+
+    // Public parameterless constructor for explicit callers and for MSBuild's LoadedType, which
+    // otherwise prefers the single-TaskEnvironment constructor. Falls back to the ambient environment.
+    new() = Fsi(TaskEnvironment.Fallback)
 
     override this.LogEventsFromTextOutput(line, msgImportance) =
         if this.CaptureTextOutput then
@@ -325,7 +339,7 @@ type public Fsi() as this =
         if toolPath = "" then
             raise (new System.InvalidOperationException(FSBuild.SR.toolpathUnknown ()))
 
-        System.IO.Path.Combine(toolPath, fsi.ToolExe)
+        fsi.TaskEnvironment.GetAbsolutePath(System.IO.Path.Combine(toolPath, fsi.ToolExe)).Value
 
     override fsi.LogToolCommand(message: string) =
         fsi.Log.LogMessageFromText(message, MessageImportance.Normal) |> ignore

@@ -16,9 +16,15 @@ open Internal.Utilities
 //The goal is to have the most common/important flags available via the Fsc class, and the
 //rest can be "backdoored" through the .OtherFlags property.
 
-type public Fsc() as this =
+[<MSBuildMultiThreadableTask>]
+type public Fsc(taskEnvironment: TaskEnvironment) as this =
 
     inherit ToolTask()
+
+    // Route every ambient-environment lookup (current directory, environment variables) through this
+    // task instance's TaskEnvironment. Assign the inherited ToolTask.TaskEnvironment first so the
+    // eager defaultToolPath binding below resolves against it rather than shared process state.
+    do this.TaskEnvironment <- taskEnvironment
 
     let mutable baseAddress: string | null = null
     let mutable capturedArguments: string list = [] // list of individual args, to pass to HostObject Compile()
@@ -79,7 +85,11 @@ type public Fsc() as this =
             with _ ->
                 None
 
-        match FSharpEnvironment.BinFolderOfDefaultFSharpCompiler(locationOfThisDll) with
+        match
+            FSharpEnvironment.BinFolderOfDefaultFSharpCompilerUsingEnvironment
+                (fun name -> this.TaskEnvironment.GetEnvironmentVariable name)
+                locationOfThisDll
+        with
         | Some s -> s
         | None -> ""
 
@@ -375,6 +385,10 @@ type public Fsc() as this =
             builder.AppendSwitch("--refonly")
 
         builder
+
+    // Public parameterless constructor for explicit callers and for MSBuild's LoadedType, which
+    // otherwise prefers the single-TaskEnvironment constructor. Falls back to the ambient environment.
+    new() = Fsc(TaskEnvironment.Fallback)
 
     // --baseaddress
     member _.BaseAddress
@@ -730,7 +744,7 @@ type public Fsc() as this =
         if defaultToolPath = "" then
             raise (new System.InvalidOperationException(FSBuild.SR.toolpathUnknown ()))
 
-        System.IO.Path.Combine(defaultToolPath, fsc.ToolExe)
+        fsc.TaskEnvironment.GetAbsolutePath(System.IO.Path.Combine(defaultToolPath, fsc.ToolExe)).Value
 
     override fsc.LogToolCommand(message: string) =
         fsc.Log.LogMessageFromText(message, MessageImportance.Normal) |> ignore

@@ -28,6 +28,13 @@ module internal FSharpEnvironment =
     //     - default F# binaries directory in (project system) Project.fs
     val BinFolderOfDefaultFSharpCompiler: probePoint: string option -> string option
 
+    // As BinFolderOfDefaultFSharpCompiler, but the FSHARP_COMPILER_BIN lookup is parameterized over
+    // the given environment-variable accessor rather than reading the ambient process environment.
+    // This lets multi-threadable MSBuild tasks resolve the compiler location against their own
+    // TaskEnvironment instead of shared process state. All other fallback behavior is identical.
+    val BinFolderOfDefaultFSharpCompilerUsingEnvironment:
+        getEnvironmentVariable: (string -> string | null) -> probePoint: string option -> string option
+
     val toolingCompatiblePaths: unit -> string list
 
     val searchToolPaths: path: string option -> compilerToolPaths: seq<string> -> seq<string>

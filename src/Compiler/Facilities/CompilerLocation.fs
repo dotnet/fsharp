@@ -67,12 +67,12 @@ module internal FSharpEnvironment =
     //     - default F# binaries directory in service.fs (REVIEW: check this)
     //     - default location of fsi.exe in FSharp.VS.FSI.dll (REVIEW: check this)
     //     - default F# binaries directory in (project system) Project.fs
-    let BinFolderOfDefaultFSharpCompiler (probePoint: string option) =
+    let BinFolderOfDefaultFSharpCompilerUsingEnvironment (getEnvironmentVariable: string -> string | null) (probePoint: string option) =
         // Check for an app.config setting to redirect the default compiler location
         // Like fsharp-compiler-location
         try
             // We let you set FSHARP_COMPILER_BIN. I've rarely seen this used and its not documented in the install instructions.
-            match Environment.GetEnvironmentVariable("FSHARP_COMPILER_BIN") with
+            match getEnvironmentVariable "FSHARP_COMPILER_BIN" with
             | result when not (String.IsNullOrWhiteSpace result) -> Some !!result
             | _ ->
                 let safeExists f =
@@ -95,6 +95,10 @@ module internal FSharpEnvironment =
                     | Some path -> Some path
         with e ->
             None
+
+    // Reads the FSHARP_COMPILER_BIN override from the ambient process environment.
+    let BinFolderOfDefaultFSharpCompiler (probePoint: string option) =
+        BinFolderOfDefaultFSharpCompilerUsingEnvironment Environment.GetEnvironmentVariable probePoint
 
     // Specify the tooling-compatible fragments of a path such as:
     //     typeproviders/fsharp41/net461/MyProvider.DesignTime.dll
