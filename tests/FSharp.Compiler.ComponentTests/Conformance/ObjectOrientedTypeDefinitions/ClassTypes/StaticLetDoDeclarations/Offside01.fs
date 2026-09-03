@@ -1,4 +1,4 @@
-// #Regression #Conformance #ObjectOrientedTypes #Classes #LetBindings 
+// #Regression #Conformance #ObjectOrientedTypes #Classes #LetBindings
 // Offside rule for static let
 // We should start counting from the 'static' not from 'let'
 // Regression test for FSHARP1.0:2042

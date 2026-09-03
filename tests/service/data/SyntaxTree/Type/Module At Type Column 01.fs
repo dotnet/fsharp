@@ -1,7 +1,7 @@
 // Expected: No warning - same indentation level
 module Module
 
-type A = 
+type A =
     | A of int
 type B = B
 module C =

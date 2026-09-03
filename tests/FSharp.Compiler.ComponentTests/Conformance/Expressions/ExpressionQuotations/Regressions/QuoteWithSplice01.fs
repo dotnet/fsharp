@@ -1,4 +1,4 @@
-// #Regression #Conformance #Quotations 
+// #Regression #Conformance #Quotations
 // Regression for Dev10:844084
 // Previously the second quote would leave the op_Splice operator in the quoted tree
 
@@ -14,8 +14,8 @@ let x1 = "Call (None, op_PipeRight,
 
 let y1 = "Application (Lambda (value, Call (None, Sin, [value])), Value (1.0))"
 
-exit <| if (x.Replace("\r\n", "\n") = x1.Replace("\r\n", "\n")) && (y.Replace("\r\n", "\n") = y1.Replace("\r\n", "\n")) then 
-                                      0 
+exit <| if (x.Replace("\r\n", "\n") = x1.Replace("\r\n", "\n")) && (y.Replace("\r\n", "\n") = y1.Replace("\r\n", "\n")) then
+                                      0
                                 else
                                       if(x.Replace("\r\n", "\n") <> x1.Replace("\r\n", "\n")) then
                                           printfn "Expected:"
@@ -24,7 +24,7 @@ exit <| if (x.Replace("\r\n", "\n") = x1.Replace("\r\n", "\n")) && (y.Replace("\
                                           printfn "Actual:"
                                           printfn "========="
                                           printfn "%s" x
-                                      if(y.Replace("\r\n", "\n") <> y1.Replace("\r\n", "\n")) then    
+                                      if(y.Replace("\r\n", "\n") <> y1.Replace("\r\n", "\n")) then
                                           printfn "Expected:"
                                           printfn "========="
                                           printfn "%s" y1

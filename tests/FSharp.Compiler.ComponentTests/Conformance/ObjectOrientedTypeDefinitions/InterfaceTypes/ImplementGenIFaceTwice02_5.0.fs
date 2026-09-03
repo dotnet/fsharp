@@ -1,4 +1,4 @@
-// #Regression #Conformance #ObjectOrientedTypes #InterfacesAndImplementations 
+// #Regression #Conformance #ObjectOrientedTypes #InterfacesAndImplementations
 type IFoo<'a> =
     interface
         abstract DoStuff : unit -> string

@@ -1,4 +1,4 @@
-// #Regression #Diagnostics 
+// #Regression #Diagnostics
 // Used to be regression test for FSHARP1.0:1185
 // to be compiled with --warnaserror+
 //<Expects id="FS0554" span="(9,13-9,20)" status="error">Invalid declaration syntax</Expects>

@@ -18,7 +18,7 @@ module ExplicitObjectConstructors =
         |> ignore
 
     // This test was automatically generated (moved from FSharpQA suite - Conformance/ClassTypes/ExplicitObjectConstructors)
-    
+
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"WithAttribute01.fs"|])>]
     let ``WithAttribute01_fs`` compilation =
         compilation
@@ -31,7 +31,7 @@ module ExplicitObjectConstructors =
         |> ignore
 
     // This test was automatically generated (moved from FSharpQA suite - Conformance/ClassTypes/ExplicitObjectConstructors)
-    
+
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"WithAttribute02.fs"|])>]
     let ``WithAttribute02_fs`` compilation =
         compilation

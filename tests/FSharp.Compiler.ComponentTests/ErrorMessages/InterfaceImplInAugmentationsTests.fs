@@ -119,8 +119,8 @@ namespace OuterRec.InnerNonRec
         |> withSingleDiagnostic (Warning 69, Line 9, Col 19, Line 9, Col 37,
                                  """Interface implementations should normally be given on the initial declaration of a type. Interface implementations in augmentations may lead to accessing static bindings before they are initialized, though only if the interface implementation is invoked during initialization of the static data, and in turn access the static data. You may remove this warning using '#nowarn "69"' if you have checked this is not the case.""")
 
- 
-   
+
+
     [<Fact>]
     let ``Type in non-rec ns should give a warning when augmented externally even when the same file has a recursive (but different) ns``() =
         FSharp """
@@ -151,4 +151,3 @@ type System.Random with
         |> withSingleDiagnostic (Error 909, Line 3, Col 15, Line 3, Col 33,
                                  """All implemented interfaces should be declared on the initial declaration of the type""")
 
- 

@@ -1,4 +1,4 @@
-// #Regression #NoMT #EntryPoint 
+// #Regression #NoMT #EntryPoint
 // Regression test for FSHARP1.0:1304
 // Explicit program entry point: [<EntryPoint>]
 // 'main' function invoked with no arguments

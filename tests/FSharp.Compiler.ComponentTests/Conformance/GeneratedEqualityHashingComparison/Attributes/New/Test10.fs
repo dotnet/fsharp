@@ -1,7 +1,7 @@
-// #Regression #Conformance #TypesAndModules #GeneratedEqualityAndHashing #Attributes 
+// #Regression #Conformance #TypesAndModules #GeneratedEqualityAndHashing #Attributes
 //<Expects status="error" span="(8,8-8,9)" id="FS0381">A type cannot have both the 'ReferenceEquality' and 'StructuralEquality' or 'StructuralComparison' attributes$</Expects>
 
-module M10 = 
+module M10 =
   [<ReferenceEquality>]
   [<StructuralComparison>]
   [<StructuralEquality>]
