@@ -18,7 +18,12 @@
 /// behave as they do at the console. Interactions are queued onto a single worker so that they run
 /// in the order they arrived, while requests that must not wait behind them — an interrupt above
 /// all — are served as they arrive.
-module internal FSharp.Compiler.Interactive.Server
+///
+/// Not `module internal`: `FsiRpcTarget` needs its members to be genuinely public IL, and under
+/// `--realsig-` a member's own accessibility is capped by its enclosing module's, so an internal
+/// module would take that away no matter what the type itself declares. Everything else here goes
+/// back to `private`/`internal` explicitly instead of inheriting it from the module.
+module FSharp.Compiler.Interactive.Server
 
 open System
 open System.Collections.Concurrent
@@ -37,7 +42,7 @@ open FSharp.Compiler.Interactive.Shell
 
 /// The name of the command line option that turns on this server.
 [<Literal>]
-let JsonRpcServerOption = "--fsi-server-jsonrpc:"
+let internal JsonRpcServerOption = "--fsi-server-jsonrpc:"
 
 /// File name reported for interactions that the host did not attribute to a source file.
 [<Literal>]
@@ -138,8 +143,13 @@ type private ExecutionQueue() =
 ///
 /// Everything that evaluates code goes onto the execution queue and completes its task when the
 /// interaction finishes, which leaves StreamJsonRpc free to dispatch an interrupt in the meantime.
+///
+/// Public, not `internal`: AddLocalRpcTarget discovers `[<JsonRpcMethod>]` members by reflecting
+/// over the instance it is handed, and under `--realsig-` a member's own IL visibility is capped by
+/// its enclosing scope's, so an internal type (or an internal module around a public one) would
+/// take away the public visibility that reflection needs regardless of what the members declare.
 [<Sealed>]
-type internal FsiRpcTarget
+type FsiRpcTarget
     (
         fsiSession: FsiEvaluationSession,
         fsiConfig: FsiEvaluationSessionHostConfig,
@@ -391,7 +401,7 @@ let private runServer
 
 /// Start the server on a background thread and return, leaving the caller's thread free to drive
 /// the event loop. Mirrors how a console session spawns its standard input reader.
-let startOnBackgroundThread
+let internal startOnBackgroundThread
     (fsiSession: FsiEvaluationSession)
     (fsiConfig: FsiEvaluationSessionHostConfig)
     (pipeName: string)
@@ -417,7 +427,7 @@ let startOnBackgroundThread
     thread.Start()
 
 /// Recognise `--fsi-server-jsonrpc:<pipe name>` in a command line, returning the pipe name.
-let tryGetPipeName (argv: string[]) =
+let internal tryGetPipeName (argv: string[]) =
     argv
     |> Array.tryPick (fun arg ->
         if arg.StartsWith(JsonRpcServerOption, StringComparison.Ordinal) then
