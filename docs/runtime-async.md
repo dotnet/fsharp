@@ -155,6 +155,15 @@ debug-point-wrapped lambdas, compiler-generated `let` wrappers, curried
 applications, and multi-argument lambdas.
 That step is required for computation-expression shapes where `Bind` returns a
 closure containing `Await`, and later `Combine`/`Delay` calls apply that closure.
+
+When runtime-async specialization is forced in a debug build, the builder
+combinator is copied with its definition-site debug ranges remarked before
+arguments are substituted. User continuation arguments keep their own ranges,
+so `let!`, `do!`, `yield`, and other
+computation-expression statements remain associated with the source that
+authored them without exposing the implementation ranges of `Run`, `Bind`,
+`Combine`, or `Yield`.
+
 Dead branches eliminated by optimization do not reach code generation and do
 not produce a suspension-outside-runtime-async diagnostic.
 
@@ -200,6 +209,22 @@ of a method or closure body is not detected there, but still reaches the
 catch-all case (3), so compilation stays correct — the cost is an extra
 nested runtime-async helper method rather than marking the enclosing method
 directly.
+
+## Debug stepping and call stacks
+
+The compiler emits ordinary Portable PDB sequence points for runtime-async
+methods. It does not emit `StateMachineMethod` or async state-machine stepping
+records because runtime-async methods have no compiler-generated `MoveNext`
+method. Forced inlining therefore preserves user computation-expression
+sequence points in the generated runtime-async method while remapping the
+inlined builder implementation ranges.
+
+Suspension, continuation mapping, and reconstruction of logical async call
+stacks are owned by the runtime and debugger through the `Async` method
+implementation flag and the runtime-async debug information contract. Missing
+logical frames after a continuation cannot be repaired by inventing F# state
+machine metadata; such cases must be validated against the target runtime and
+tracked with the runtime/debugger implementation.
 
 Case (3) re-homes the marker argument into a compiler-synthesized closure
 during code generation, *after* `LowerLocalMutables` has run. Without special

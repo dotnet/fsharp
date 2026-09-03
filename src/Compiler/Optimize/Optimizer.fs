@@ -3827,6 +3827,12 @@ and TryInlineApplication cenv env finfo (valExpr: Expr) (tyargs: TType list, arg
                             specLambda
                     specLambdaR
 
+            let specLambdaR =
+                if mustInlineRuntimeAsync then
+                    remarkExpr m specLambdaR
+                else
+                    specLambdaR
+
             // Abstract the specialized lambda over its free typars so IlxGen emits a static
             // method with flattened arguments. The alternative closure form (valReprInfo = None)
             // wraps args in a reference Tuple<>, which cannot hold byrefs and fails to load at

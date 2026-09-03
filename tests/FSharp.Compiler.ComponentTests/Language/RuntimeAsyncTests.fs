@@ -406,6 +406,42 @@ let ``runtime async enumerable builder fixture executes`` (optimize: bool) =
     |> shouldSucceed
 
 [<Fact>]
+let ``runtime async enumerable CE debug points stay at call sites`` () =
+    let source =
+        """module RuntimeAsyncEnumerableDebug
+open System.Threading.Tasks
+open RuntimeAsyncEnumerable
+
+let first () =
+    asyncSeq {
+        do! Task.Delay 1
+        yield 1
+    }
+
+let second () =
+    asyncSeq {
+        do! Task.Delay 1
+        yield 2
+    }
+"""
+
+    FsFromPath (Path.Combine(__SOURCE_DIRECTORY__, "RuntimeAsync", "RuntimeTaskBuilder.fs"))
+    |> withAdditionalSourceFile (
+        SourceFromPath (Path.Combine(__SOURCE_DIRECTORY__, "RuntimeAsync", "RuntimeAsyncEnumerable.fs"))
+    )
+    |> withAdditionalSourceFile (FsSourceWithFileName "RuntimeAsyncEnumerableDebug.fs" source)
+    |> withLangVersionPreview
+    |> withFSharpCoreShippedNet
+    |> withPortablePdb
+    |> withNoOptimize
+    |> compile
+    |> shouldSucceed
+    |> verifyPdb [
+        VerifyRuntimeAsyncMethodSequencePointsInSource("RuntimeAsyncEnumerableDebug.fs", 6, 8)
+        VerifyRuntimeAsyncMethodSequencePointsInSource("RuntimeAsyncEnumerableDebug.fs", 12, 14)
+    ]
+
+[<Fact>]
 let ``runtime async suspension in exception region executes`` () =
     Path.Combine(__SOURCE_DIRECTORY__, "RuntimeAsync", "RuntimeTasksAsyncDisposalException.fs")
     |> FsFromPath
