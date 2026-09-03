@@ -187,7 +187,6 @@ module Structure =
         }
 
     type LineNumber = int
-    type LineStr = ReadOnlyMemory<char>
 
     type CommentType =
         | SingleLine
@@ -205,14 +204,14 @@ module Structure =
     [<NoComparison>]
     type CommentList =
         {
-            Lines: ResizeArray<LineNumber * LineStr>
+            Lines: ResizeArray<LineNumber>
             Type: CommentType
         }
 
-        static member New ty lineStr =
+        static member New ty lineNum =
             {
                 Type = ty
-                Lines = ResizeArray [ lineStr ]
+                Lines = ResizeArray [ lineNum ]
             }
 
     /// Returns outlining ranges for given parsed input.
@@ -837,20 +836,18 @@ module Structure =
                 if lineNum = lines.Length then
                     state
                 else
-                    let lineStr = lines[lineNum]
-
-                    match commentTypeOf (lineStr.Span.TrimStart()), currentComment with
+                    match commentTypeOf (lines[lineNum].Span.TrimStart()), currentComment with
                     | ValueSome commentType, Some comment ->
                         loop
                             (if comment.Type = commentType && lineNum = lastLineNum + 1 then
-                                 comment.Lines.Add(lineNum, lineStr)
+                                 comment.Lines.Add lineNum
                                  lineNum, currentComment, result
                              else
-                                 let comments = CommentList.New commentType (lineNum, lineStr)
+                                 let comments = CommentList.New commentType lineNum
                                  lineNum, Some comments, comment :: result)
                             (lineNum + 1)
                     | ValueSome commentType, None ->
-                        let comments = CommentList.New commentType (lineNum, lineStr)
+                        let comments = CommentList.New commentType lineNum
                         loop (lineNum, Some comments, result) (lineNum + 1)
                     | ValueNone, Some comment -> loop (lineNum, None, comment :: result) (lineNum + 1)
                     | ValueNone, None -> loop (lineNum, None, result) (lineNum + 1)
@@ -866,11 +863,10 @@ module Structure =
             comments
             |> Seq.filter (fun comment -> comment.Lines.Count > 1)
             |> Seq.map (fun comment ->
-                let lines = comment.Lines
-                let startLine, startStr = lines[0]
-                let endLine, endStr = lines[lines.Count - 1]
-                let startCol = startStr.Span.IndexOf '/'
-                let endCol = endStr.Span.TrimEnd().Length
+                let startLine = comment.Lines[0]
+                let endLine = comment.Lines[comment.Lines.Count - 1]
+                let startCol = lines[startLine].Span.IndexOf '/'
+                let endCol = lines[endLine].Span.TrimEnd().Length
 
                 let scopeType =
                     match comment.Type with
