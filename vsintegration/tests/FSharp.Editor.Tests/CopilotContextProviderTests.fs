@@ -36,6 +36,9 @@ let describeShape shape =
     match shape with
     | Circle r -> $"circle {r}"
     | Square s -> $"square {s}"
+
+/// Twice the value.
+let twice x = x * 2
 """
 
     let solution = RoslynTestHelpers.CreateSolution fileContents
@@ -92,6 +95,14 @@ let describeShape shape =
         Assert.Contains("value <- value + 1", context.Snippet)
         Assert.DoesNotContain("type Counter", context.Snippet)
 
+    [<Fact>]
+    let ``a one-line declaration keeps its doc comment`` () =
+        let context = contextOf "Widgets.twice"
+
+        Assert.Contains("Twice the value.", context.Snippet)
+        Assert.Contains("let twice x", context.Snippet)
+        Assert.DoesNotContain("describeShape", context.Snippet)
+
     [<Theory>]
     [<InlineData("Widgets.Counter", CopilotSymbolContextType.Class)>]
     [<InlineData("Widgets.Counter.Bump", CopilotSymbolContextType.Method)>]
@@ -105,6 +116,7 @@ let describeShape shape =
     let ``a context points back at the source it was taken from`` () =
         let context = contextOf "Widgets.Counter"
         let location = Assert.Single<SnippetLocation> context.SnippetLocations
+        let document = solution.Projects |> Seq.exactlyOne |> _.Documents |> Seq.exactlyOne
 
-        Assert.Equal("C:\\test.fs", location.FilePath)
+        Assert.Equal(document.FilePath, location.FilePath)
         Assert.Equal(context.Snippet.Length, location.Span.Length)
