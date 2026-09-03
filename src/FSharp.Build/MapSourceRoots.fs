@@ -37,6 +37,7 @@ module Utilities =
 /// The <c>MappedPath</c> is either the path (ItemSpec) itself, when <see cref="Deterministic"/> is false,
 /// or a calculated deterministic source path (starting with prefix '/_/', '/_1/', etc.), otherwise.
 /// </remarks>
+[<MSBuildMultiThreadableTask>]
 type MapSourceRoots() =
     inherit Task()
 

@@ -17,6 +17,7 @@
     <Compile Include="WriteCodeFragmentTests.fs" />
     <Compile Include="BuildTaskTestHelpers.fs" />
     <Compile Include="MapSourceRootsTests.fs" />
+    <Compile Include="MultiThreadedTaskTests.fs" />
   </ItemGroup>
 
   <ItemGroup>
