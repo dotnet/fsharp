@@ -1,4 +1,4 @@
-// #Conformance #LexicalAnalysis #Operators 
+// #Conformance #LexicalAnalysis #Operators
 
 
 let mutable m : string = ""
@@ -6,12 +6,12 @@ let mutable m : string = ""
 let (?) (o:obj) (s:string) : (int -> int -> string) =
     m <- s
     fun a b -> sprintf "called with %d %d" a b
-    
-    
+
+
 let test() =
-    let s = "Hello" ? ("Contain" + "s") 10 10    
+    let s = "Hello" ? ("Contain" + "s") 10 10
     s
-    
+
 let res1 = test()
 let res2 =  m
 

@@ -59,7 +59,7 @@ exception FunctionExpected of DisplayEnv * TType * range
 
 exception NotAFunction of DisplayEnv * TType * range * range
 
-exception NotAFunctionButIndexer of DisplayEnv * TType * string option * range * range * bool
+exception NotAFunctionButIndexer of DisplayEnv * TType * string option * range * range
 
 exception Recursion of DisplayEnv * Ident * TType * TType * range
 
@@ -434,7 +434,9 @@ type CheckedBindingInfo =
        debugPoint: DebugPointAtBinding *
        isCompilerGenerated: bool *
        literalValue: Const option *
-       isFixed: bool
+       isFixed: bool *
+       /// True if the pattern of the binding uses an active pattern; see TcLetBinding
+       patternUsesActivePattern: bool
 
     member x.Expr = let (CheckedBindingInfo(rhsExprChecked=expr)) = x in expr
 
@@ -1273,11 +1275,10 @@ let CheckForAbnormalOperatorNames (cenv: cenv) (idRange: range) coreDisplayName 
                 warning(StandardOperatorRedefinitionWarning(FSComp.SR.tcInvalidMemberNameFixedTypes(RichText.mkOperator opName), idRange))
         | Other -> ()
 
-let CheckInitProperties (g: TcGlobals) (minfo: MethInfo) (methodName: string) mItem =
-    if g.langVersion.SupportsFeature(LanguageFeature.InitPropertiesSupport) then
-        // Check, whether this method has external init, emit an error diagnostic in this case.
-        if minfo.HasExternalInit then
-            errorR (Error(FSComp.SR.tcSetterForInitOnlyPropertyCannotBeCalled1 (RichText.mkProperty methodName), mItem))
+let CheckInitProperties (minfo: MethInfo) (methodName: string) mItem =
+    // Check, whether this method has external init, emit an error diagnostic in this case.
+    if minfo.HasExternalInit then
+        errorR (Error(FSComp.SR.tcSetterForInitOnlyPropertyCannotBeCalled1 (RichText.mkProperty methodName), mItem))
 
 let CheckRequiredProperties (g:TcGlobals) (env: TcEnv) (cenv: TcFileState) (minfo: MethInfo) finalAssignedItemSetters mMethExpr =
     // Make sure, if apparent type has any required properties, they all are in the `finalAssignedItemSetters`.
@@ -2630,6 +2631,9 @@ module BindingNormalization =
             let paramNames = Some valSynData.SynValInfo.ArgNames
             let checkXmlDocs = cenv.diagnosticOptions.CheckXmlDocs
             let xmlDoc = xmlDoc.ToXmlDoc(checkXmlDocs, paramNames)
+            // Rotate [<return:...>] from the binding to the return value. This is done here rather than in
+            // the parser so that SynBinding.attributes keeps reporting the attributes where they were written.
+            let attrs, valSynData = SynInfo.RotateReturnAttributes attrs valSynData
             NormalizedBinding(vis, kind, isInline, isMutable, attrs, xmlDoc, typars, valSynData, pat, rhsExpr, mBinding, debugPoint)
 
 //-------------------------------------------------------------------------
@@ -4121,13 +4125,10 @@ let GetInstanceMemberThisVariable (vspec: Val, expr) =
         None
 
 /// c.atomicLeftMethExpr[idx] and atomicLeftExpr[idx] as applications give warnings
-let checkHighPrecedenceFunctionApplicationToList (g: TcGlobals) args atomicFlag exprRange =
+let checkHighPrecedenceFunctionApplicationToList args atomicFlag exprRange =
     match args, atomicFlag with
     | ([SynExpr.ArrayOrList (false, _, _)] | [SynExpr.ArrayOrListComputed (false, _, _)]), ExprAtomicFlag.Atomic ->
-        if g.langVersion.SupportsFeature LanguageFeature.IndexerNotationWithoutDot then
-            informationalWarning(Error(FSComp.SR.tcHighPrecedenceFunctionApplicationToListDeprecated(), exprRange))
-        elif not (g.langVersion.IsExplicitlySpecifiedAs50OrBefore()) then
-            informationalWarning(Error(FSComp.SR.tcHighPrecedenceFunctionApplicationToListReserved(), exprRange))
+        informationalWarning(Error(FSComp.SR.tcHighPrecedenceFunctionApplicationToListDeprecated(), exprRange))
     | _ -> ()
 
 /// Indicates whether a syntactic type is allowed to include new type variables
@@ -5322,7 +5323,7 @@ and ConvSynPatToSynExpr synPat =
 /// Check a long identifier 'Case' or 'Case argsR' that has been resolved to an active pattern case
 and TcPatLongIdentActivePatternCase warnOnUpper (cenv: cenv) (env: TcEnv) vFlags patEnv ty (mLongId, item, apref, args, m) =
     let g = cenv.g
-    let (TcPatLinearEnv(tpenv, names, takenNames)) = patEnv
+    let (TcPatLinearEnv(tpenv, names, takenNames, _)) = patEnv
     let (APElemRef (apinfo, vref, idx, isStructRetTy)) = apref
 
     let cenv =
@@ -5460,7 +5461,7 @@ and TcPatLongIdentActivePatternCase warnOnUpper (cenv: cenv) (env: TcEnv) vFlags
 
     let activePatExpr, tpenv = PropagateThenTcDelayed cenv (MustEqual activePatType) env tpenv m vExpr vExprTy ExprAtomicFlag.NonAtomic delayed
 
-    let patEnvR = TcPatLinearEnv(tpenv, names, takenNames)
+    let patEnvR = TcPatLinearEnv(tpenv, names, takenNames, true)
 
     if idx >= activePatResTys.Length then error(Error(FSComp.SR.tcInvalidIndexIntoActivePatternArray(), m))
     let argTy = List.item idx activePatResTys
@@ -5528,7 +5529,7 @@ and TcExpr (cenv: cenv) ty (env: TcEnv) tpenv (synExpr: SynExpr) =
     let g = cenv.g
 
     // Guard the stack for deeply nested expressions
-    cenv.stackGuard.Guard <| fun () ->
+    cenv.stackGuard.Guard(fun () ->
 
     // Start an error recovery handler, and check for stack recursion depth, moving to a new stack if necessary.
     // Note the try/with can lead to tail-recursion problems for iterated constructs, e.g. let... in...
@@ -5541,7 +5542,7 @@ and TcExpr (cenv: cenv) ty (env: TcEnv) tpenv (synExpr: SynExpr) =
         // the type of the current expression with a type variable that indicates an error
         errorRecovery exn m
         SolveTypeAsError env.DisplayEnv cenv.css m ty.Commit
-        mkThrow m ty.Commit (mkOne g m), tpenv
+        mkThrow m ty.Commit (mkOne g m), tpenv)
 
 and TcExprNoRecover (cenv: cenv) (ty: OverallTy) (env: TcEnv) tpenv (synExpr: SynExpr) =
 
@@ -5619,8 +5620,7 @@ and TryTcStmt (cenv: cenv) env tpenv synExpr =
     let hasTypeUnit = TryUnifyUnitTypeWithoutWarning cenv env m ty
     hasTypeUnit, ty, expr, tpenv
 
-and CheckForAdjacentListExpression (cenv: cenv) synExpr hpa isInfix delayed (arg: SynExpr) =
-    let g = cenv.g
+and CheckForAdjacentListExpression synExpr hpa isInfix delayed (arg: SynExpr) =
     // func (arg)[arg2] gives warning that .[ must be used.
     match delayed with
     | DelayedApp (hpa2, isSugar2, _, arg2, _) :: _ when not isInfix && (hpa = ExprAtomicFlag.NonAtomic) && isAdjacentListExpr isSugar2 hpa2 (Some synExpr) arg2 ->
@@ -5628,23 +5628,14 @@ and CheckForAdjacentListExpression (cenv: cenv) synExpr hpa isInfix delayed (arg
 
         match arg with
         | SynExpr.Paren _ ->
-            if g.langVersion.SupportsFeature LanguageFeature.IndexerNotationWithoutDot then
-                warning(Error(FSComp.SR.tcParenThenAdjacentListArgumentNeedsAdjustment(), mWarning))
-            elif not (g.langVersion.IsExplicitlySpecifiedAs50OrBefore()) then
-                informationalWarning(Error(FSComp.SR.tcParenThenAdjacentListArgumentReserved(), mWarning))
+            warning(Error(FSComp.SR.tcParenThenAdjacentListArgumentNeedsAdjustment(), mWarning))
 
         | SynExpr.ArrayOrListComputed _
         | SynExpr.ArrayOrList _ ->
-            if g.langVersion.SupportsFeature LanguageFeature.IndexerNotationWithoutDot then
-                warning(Error(FSComp.SR.tcListThenAdjacentListArgumentNeedsAdjustment(), mWarning))
-            elif not (g.langVersion.IsExplicitlySpecifiedAs50OrBefore()) then
-                informationalWarning(Error(FSComp.SR.tcListThenAdjacentListArgumentReserved(), mWarning))
+            warning(Error(FSComp.SR.tcListThenAdjacentListArgumentNeedsAdjustment(), mWarning))
 
         | _ ->
-            if g.langVersion.SupportsFeature LanguageFeature.IndexerNotationWithoutDot then
-                warning(Error(FSComp.SR.tcOtherThenAdjacentListArgumentNeedsAdjustment(), mWarning))
-            elif not (g.langVersion.IsExplicitlySpecifiedAs50OrBefore()) then
-                informationalWarning(Error(FSComp.SR.tcOtherThenAdjacentListArgumentReserved(), mWarning))
+            warning(Error(FSComp.SR.tcOtherThenAdjacentListArgumentNeedsAdjustment(), mWarning))
 
     | _ -> ()
 
@@ -5652,8 +5643,6 @@ and CheckForAdjacentListExpression (cenv: cenv) synExpr hpa isInfix delayed (arg
 /// keep a stack of things on the right. This lets us recognize
 /// method applications and other item-based syntax.
 and TcExprThen (cenv: cenv) overallTy env tpenv isArg synExpr delayed =
-    let g = cenv.g
-
     let cachedExpression =
         env.eCachedImplicitYieldExpressions.FindAll synExpr.Range
         |> List.tryPick (fun (se, ty, e) ->
@@ -5703,7 +5692,7 @@ and TcExprThen (cenv: cenv) overallTy env tpenv isArg synExpr delayed =
 
             TcNonControlFlowExpr env <| fun env ->
 
-            CheckForAdjacentListExpression cenv synExpr hpa isInfix delayed arg
+            CheckForAdjacentListExpression synExpr hpa isInfix delayed arg
 
             TcExprThen cenv overallTy env tpenv false func ((DelayedApp (hpa, isInfix, Some func, arg, mFuncAndArg)) :: delayed)
 
@@ -5727,7 +5716,7 @@ and TcExprThen (cenv: cenv) overallTy env tpenv isArg synExpr delayed =
         // etc.
         | SynExpr.DotIndexedGet (expr1, IndexerArgs indexArgs, mDot, mWholeExpr) ->
             TcNonControlFlowExpr env <| fun env ->
-            if not isArg && g.langVersion.SupportsFeature LanguageFeature.IndexerNotationWithoutDot then
+            if not isArg then
                 informationalWarning(Error(FSComp.SR.tcIndexNotationDeprecated(), mDot))
             TcIndexerThen cenv env overallTy mWholeExpr mDot tpenv None expr1 indexArgs delayed
 
@@ -5736,8 +5725,7 @@ and TcExprThen (cenv: cenv) overallTy env tpenv isArg synExpr delayed =
         // etc.
         | SynExpr.DotIndexedSet (expr1, IndexerArgs indexArgs, expr3, mOfLeftOfSet, mDot, mWholeExpr) ->
             TcNonControlFlowExpr env <| fun env ->
-            if g.langVersion.SupportsFeature LanguageFeature.IndexerNotationWithoutDot then
-                warning(Error(FSComp.SR.tcIndexNotationDeprecated(), mDot))
+            warning(Error(FSComp.SR.tcIndexNotationDeprecated(), mDot))
             // Wrap in extra parens: like MakeDelayedSet,
             // but we don't actually want to delay it here.
             let setInfo = SynExpr.Paren (expr3, range0, None, expr3.Range), mOfLeftOfSet
@@ -5889,7 +5877,7 @@ and TcAdjustExprForTypeDirectedConversions (cenv: cenv) (overallTy: OverallTy) a
     let g = cenv.g
 
     match overallTy with
-    | MustConvertTo (isMethodArg, reqdTy) when g.langVersion.SupportsFeature LanguageFeature.AdditionalTypeDirectedConversions || (g.langVersion.SupportsFeature LanguageFeature.NullableOptionalInterop && isMethodArg) ->
+    | MustConvertTo (isMethodArg, reqdTy) when g.langVersion.SupportsFeature LanguageFeature.AdditionalTypeDirectedConversions || isMethodArg ->
         let tcVal = LightweightTcValForUsingInBuildMethodCall g env.TraitContext
         AdjustExprForTypeDirectedConversions tcVal g cenv.amap cenv.infoReader env.AccessRights reqdTy actualTy m expr
     | _ ->
@@ -6703,8 +6691,8 @@ and TcIteratedLambdas (cenv: cenv) isFirst (env: TcEnv) overallTy takenNames tpe
             |> Option.map fst
             |> Option.defaultValue []
             
-        let vs, TcPatLinearEnv (tpenv, names, takenNames) =
-            cenv.TcSimplePats cenv isMember CheckCxs domainTy env (TcPatLinearEnv (tpenv, Map.empty, takenNames)) synSimplePats (parsedPatterns, isFirst)
+        let vs, TcPatLinearEnv (tpenv, names, takenNames, _) =
+            cenv.TcSimplePats cenv isMember CheckCxs domainTy env (TcPatLinearEnv (tpenv, Map.empty, takenNames, false)) synSimplePats (parsedPatterns, isFirst)
 
         let envinner, _, vspecMap = MakeAndPublishSimpleValsForMergedScope cenv env m names
         let byrefs = vspecMap |> Map.map (fun _ v -> isByrefTy g v.Type, v)
@@ -7364,7 +7352,7 @@ and TcObjectExprBinding (cenv: cenv) (env: TcEnv) implTy tpenv (absSlotInfo, bin
         | _ ->
             mkFunTy cenv.g implTy (NewInferenceType cenv.g)
 
-    let CheckedBindingInfo(inlineFlag, bindingAttribs, _, _, ExplicitTyparInfo(_, declaredTypars, _, _), nameToPrelimValSchemeMap, rhsExpr, _, _, m, _, _, _, _), tpenv =
+    let CheckedBindingInfo(inlineFlag, bindingAttribs, _, _, ExplicitTyparInfo(_, declaredTypars, _, _), nameToPrelimValSchemeMap, rhsExpr, _, _, m, _, _, _, _, _), tpenv =
         let explicitTyparInfo, tpenv = TcNonrecBindingTyparDecls cenv env tpenv bind
         TcNormalizedBinding ObjectExpressionOverrideBinding cenv env tpenv bindingTy None NoSafeInitInfo ([], explicitTyparInfo) bind
 
@@ -8740,41 +8728,22 @@ and Propagate (cenv: cenv) (overallTy: OverallTy) (env: TcEnv) tpenv (expr: Appl
                 // expr[idx1..idx2]
                 | SynExpr.ArrayOrListComputed(false, _, _) ->
                     let isAdjacent = isAdjacentListExpr isSugar atomicFlag synLeftExprOpt synArg
-                    if isAdjacent && g.langVersion.SupportsFeature LanguageFeature.IndexerNotationWithoutDot then
+                    if isAdjacent then
                         // This is the non-error path
                         ()
                     else
-                        // This is the error path. The error we give depends on what's enabled.
-                        //
-                        // First, 'delayed' is about to be dropped on the floor, do rudimentary checking to get name resolutions in its body
+                        // 'delayed' is about to be dropped on the floor, do rudimentary checking to get name resolutions in its body
                         RecordNameAndTypeResolutionsDelayed cenv env tpenv delayed
                         let vName =
                             match expr.Expr with
                             | Expr.Val (d, _, _) -> Some d.DisplayName
                             | _ -> None
-                        if isAdjacent then
-                            if IsIndexerType g cenv.amap expr.Type then
-                                if g.langVersion.IsExplicitlySpecifiedAs50OrBefore() then
-                                    error (NotAFunctionButIndexer(denv, overallTy.Commit, vName, mExpr, mArg, false))
-                                match vName with
-                                | Some nm ->
-                                    error(Error(FSComp.SR.tcNotAFunctionButIndexerNamedIndexingNotYetEnabled(RichText.mkMember nm, RichText.mkMember nm), mExprAndArg))
-                                | _ ->
-                                    error(Error(FSComp.SR.tcNotAFunctionButIndexerIndexingNotYetEnabled(), mExprAndArg))
-                            else
-                                match vName with
-                                | Some nm ->
-                                    error(Error(FSComp.SR.tcNotAnIndexerNamedIndexingNotYetEnabled(RichText.mkMember nm), mExprAndArg))
-                                | _ ->
-                                    error(Error(FSComp.SR.tcNotAnIndexerIndexingNotYetEnabled(), mExprAndArg))
+                        if IsIndexerType g cenv.amap expr.Type then
+                            // NotAFunctionButIndexer uses overallTy (expected type) for the indexer suggestion message.
+                            error (NotAFunctionButIndexer(denv, overallTy.Commit, vName, mExpr, mArg))
                         else
-                            if IsIndexerType g cenv.amap expr.Type then
-                                let old = not (g.langVersion.SupportsFeature LanguageFeature.IndexerNotationWithoutDot)
-                                // NotAFunctionButIndexer uses overallTy (expected type) for the indexer suggestion message.
-                                error (NotAFunctionButIndexer(denv, overallTy.Commit, vName, mExpr, mArg, old))
-                            else
-                                // NotAFunction uses exprTy (actual type) to show "has type X, which does not accept arguments".
-                                error (NotAFunction(denv, exprTy, mExpr, mArg))
+                            // NotAFunction uses exprTy (actual type) to show "has type X, which does not accept arguments".
+                            error (NotAFunction(denv, exprTy, mExpr, mArg))
 
                 // f x  (where 'f' is not a function)
                 | _ ->
@@ -9025,10 +8994,10 @@ and TcApplicationThen (cenv: cenv) (overallTy: OverallTy) env tpenv mExprAndArg 
 
         // atomicLeftExpr[idx] unifying as application gives a warning
         if not isSugar then
-            checkHighPrecedenceFunctionApplicationToList g [synArg] atomicFlag mExprAndArg
+            checkHighPrecedenceFunctionApplicationToList [synArg] atomicFlag mExprAndArg
 
         match leftExpr with
-        | ApplicableExpr(expr=NameOfExpr g _) when g.langVersion.SupportsFeature LanguageFeature.NameOf ->
+        | ApplicableExpr(expr=NameOfExpr g _) ->
             let replacementExpr = TcNameOfExpr cenv env tpenv synArg
             TcDelayed cenv overallTy env tpenv mExprAndArg (ApplicableExpr(cenv, replacementExpr, true, None)) g.string_ty ExprAtomicFlag.Atomic delayed
         | _ ->
@@ -9094,9 +9063,7 @@ and TcApplicationThen (cenv: cenv) (overallTy: OverallTy) env tpenv mExprAndArg 
         // leftExpr[idx]
         // leftExpr[idx] <- expr2
         | SynExpr.ArrayOrListComputed(false, IndexerArgs indexArgs, m)
-              when
-                isAdjacentListExpr isSugar atomicFlag synLeftExprOpt synArg &&
-                g.langVersion.SupportsFeature LanguageFeature.IndexerNotationWithoutDot ->
+              when isAdjacentListExpr isSugar atomicFlag synLeftExprOpt synArg ->
 
             let expandedIndexArgs = ExpandIndexArgs cenv synLeftExprOpt indexArgs
             let setInfo, delayed =
@@ -9356,16 +9323,10 @@ and TcUnionCaseOrExnCaseOrActivePatternResultItemThen (cenv: cenv) overallTy env
                 // This is where the constructor expects arguments but is not applied to arguments, hence build a lambda
                 numArgTys,
                 (fun () ->
-                    let argNamesIfFeatureEnabled =
-                        if g.langVersion.SupportsFeature LanguageFeature.ImprovedImpliedArgumentNames then
-                            argNames
-                        else
-                            []
-
                     let vs, args =
                         argTys
                         |> List.mapi (fun i ty ->
-                            let argName = argNamesIfFeatureEnabled |> List.tryItem i |> Option.map (fun x -> x.idText) |> Option.defaultWith (fun () -> "arg" + string i)
+                            let argName = argNames |> List.tryItem i |> Option.map (fun x -> x.idText) |> Option.defaultWith (fun () -> "arg" + string i)
                             mkCompGenLocal mItem argName ty)
                         |> List.unzip
 
@@ -9766,7 +9727,7 @@ and TcValueItemThen cenv overallTy env vref tpenv mItem mItemIdent afterResoluti
         //   - it isn't a VSlotDirectCall (uses of base values do not take type arguments
         // Allow `nameof<'T>` for a generic parameter
         match vref with
-        | _ when isNameOfValRef g vref && g.langVersion.SupportsFeature LanguageFeature.NameOf ->
+        | _ when isNameOfValRef g vref ->
             // Record the resolution of the `nameof` usage so that we can classify it correctly later.
             do
                 match afterResolution with
@@ -10011,7 +9972,7 @@ and TcLookupItemThen cenv overallTy env tpenv mObjExpr objExpr objExprTy delayed
         match minfos with
         | minfo :: _ ->
             // Check if we have properties with "init-only" setters, which we try to call after init is done.
-            CheckInitProperties g minfo methodName mItemIdent
+            CheckInitProperties minfo methodName mItemIdent
         | _ -> ()
 
 #if !NO_TYPEPROVIDERS
@@ -10251,7 +10212,7 @@ and TcMethodApplicationThen
     let mWholeExpr = (m, args) ||> List.fold (fun m arg -> unionRanges m arg.Range)
 
     // c.atomicLeftMethExpr[idx] as application gives a warning
-    checkHighPrecedenceFunctionApplicationToList g args atomicFlag mWholeExpr
+    checkHighPrecedenceFunctionApplicationToList args atomicFlag mWholeExpr
 
     // Work out if we know anything about the return type of the overall expression. If there are any delayed
     // lookups then we don't know anything.
@@ -10551,13 +10512,7 @@ and TcMethodApplication_CheckArguments
     let denv = env.DisplayEnv
     match curriedCallerArgsOpt with
     | None ->
-        let curriedArgTys, curriedArgNamesIfFeatureEnabled, returnTy =
-            let paramNamesIfFeatureEnabled (g: TcGlobals) (meth: MethInfo) =
-                if g.langVersion.SupportsFeature LanguageFeature.ImprovedImpliedArgumentNames then
-                    meth.GetParamNames()
-                else
-                    []
-
+        let curriedArgTys, curriedArgNames, returnTy =
             match candidates with
             // "single named item" rule. This is where we have a single accessible method
             //      member x.M(arg1, ..., argN)
@@ -10569,21 +10524,21 @@ and TcMethodApplication_CheckArguments
             // to their default values (for optionals) and be part of the return tuple (for out args).
             | [calledMeth] ->
                 let curriedArgTys, returnTy = UnifyMatchingSimpleArgumentTypes cenv env exprTy.Commit calledMeth mMethExpr mItem
-                curriedArgTys, paramNamesIfFeatureEnabled g calledMeth, MustEqual returnTy
+                curriedArgTys, calledMeth.GetParamNames(), MustEqual returnTy
             | _ ->
                 let domainTy, returnTy = UnifyFunctionTypeAndRecover None cenv denv mMethExpr exprTy.Commit
                 let argTys = if isUnitTy g domainTy then [] else tryDestRefTupleTy g domainTy
                 // Only apply this rule if a candidate method exists with this number of arguments
                 let argTys, argNames =
                     match candidates |> List.tryFind (CalledMethHasSingleArgumentGroupOfThisLength argTys.Length) with
-                    | Some meth -> argTys, paramNamesIfFeatureEnabled g meth
+                    | Some meth -> argTys, meth.GetParamNames()
                     | None -> [domainTy], [[None]]
                 [argTys], argNames, MustEqual returnTy
 
         let lambdaVarsAndExprs =
             curriedArgTys
             |> List.mapiSquared (fun i j ty ->
-                let argName = curriedArgNamesIfFeatureEnabled |> List.tryItem i |> Option.bind (List.tryItem j) |> Option.flatten |> Option.defaultWith (fun () -> "arg" + string i + string j)
+                let argName = curriedArgNames |> List.tryItem i |> Option.bind (List.tryItem j) |> Option.flatten |> Option.defaultWith (fun () -> "arg" + string i + string j)
                 mkCompGenLocal mMethExpr argName ty)
 
         let unnamedCurriedCallerArgs = lambdaVarsAndExprs |> List.mapSquared (fun (_, e) -> CallerArg(tyOfExpr g e, e.Range, false, e))
@@ -11278,7 +11233,7 @@ and TcMatchPattern (cenv: cenv) inputTy env tpenv (synPat: SynPat) (synWhenExprO
         | TcTrueMatchClause.Yes -> WarnOnUpperUnionCaseLabel
         | TcTrueMatchClause.No -> WarnOnUpperVariablePatterns
 
-    let patf', TcPatLinearEnv (tpenv, names, _) = cenv.TcPat warnOnUpperFlag cenv env None (TcPatValFlags (ValInline.Optional, permitInferTypars, noArgOrRetAttribs, false, None, false)) (TcPatLinearEnv (tpenv, Map.empty, Set.empty)) inputTy synPat
+    let patf', TcPatLinearEnv (tpenv, names, _, _) = cenv.TcPat warnOnUpperFlag cenv env None (TcPatValFlags (ValInline.Optional, permitInferTypars, noArgOrRetAttribs, false, None, false)) (TcPatLinearEnv (tpenv, Map.empty, Set.empty, false)) inputTy synPat
     let envinner, values, vspecMap = MakeAndPublishSimpleValsForMergedScope cenv env m names
 
     let whenExprOpt, tpenv =
@@ -11426,13 +11381,7 @@ and TcAndBuildFixedExpr (cenv: cenv) env (overallPatTy, fixedExpr, overallExprTy
             mkConvToNativeInt g ve mBinding)
 
     | ty when isStringTy g ty ->
-        let getPinnableRefCall =
-            if g.langVersion.SupportsFeature LanguageFeature.PreferStringGetPinnableReference then
-                tryBuildGetPinnableReferenceCall ()
-            else
-                None
-
-        match getPinnableRefCall with
+        match tryBuildGetPinnableReferenceCall () with
         | Some expr -> expr
         | None ->
             let charPtrTy = mkNativePtrTy g g.char_ty
@@ -11550,7 +11499,7 @@ and TcNormalizedBinding declKind (cenv: cenv) env tpenv overallTy safeThisValOpt
             attrs
 
         // [<return: X>] attributes are moved out of the binding's prefix and into
-        // SynValData.SynValInfo.retInfo by SynInfo.RotateReturnAttributes in mkSynBinding,
+        // SynValData.SynValInfo.retInfo by SynInfo.RotateReturnAttributes in BindingNormalization,
         // alongside any attributes on the return type annotation populated by InferSynReturnData.
         // Use that as the single source of truth.
         let valAttribs = TcAttrs attrTgt false attrs
@@ -11641,8 +11590,8 @@ and TcNormalizedBinding declKind (cenv: cenv) env tpenv overallTy safeThisValOpt
         let prelimValReprInfo = TranslateSynValInfo cenv mBinding (TcAttributes cenv env) valSynInfo
 
         // Check the pattern of the l.h.s. of the binding
-        let tcPatPhase2, TcPatLinearEnv (tpenv, nameToPrelimValSchemeMap, _) =
-            cenv.TcPat AllIdsOK cenv envinner (Some prelimValReprInfo) (TcPatValFlags (inlineFlag, explicitTyparInfo, argAndRetAttribs, isMutable, vis, isCompGen)) (TcPatLinearEnv (tpenv, NameMap.empty, Set.empty)) overallPatTy pat
+        let tcPatPhase2, TcPatLinearEnv (tpenv, nameToPrelimValSchemeMap, _, patternUsesActivePattern) =
+            cenv.TcPat AllIdsOK cenv envinner (Some prelimValReprInfo) (TcPatValFlags (inlineFlag, explicitTyparInfo, argAndRetAttribs, isMutable, vis, isCompGen)) (TcPatLinearEnv (tpenv, NameMap.empty, Set.empty, false)) overallPatTy pat
 
         // Add active pattern result names to the environment
         let apinfoOpt =
@@ -11763,7 +11712,7 @@ and TcNormalizedBinding declKind (cenv: cenv) env tpenv overallTy safeThisValOpt
         if supportEnforceAttributeTargets then
             TcAttributeTargetsOnLetBindings { cenv with tcSink = TcResultsSink.NoSink } env attrs overallPatTy overallExprTy (not declaredTypars.IsEmpty) isClassLetBinding
 
-        CheckedBindingInfo(inlineFlag, valAttribs, xmlDoc, tcPatPhase2, explicitTyparInfo, nameToPrelimValSchemeMap, rhsExprChecked, argAndRetAttribs, overallPatTy, mBinding, debugPoint, isCompGen, literalValue, isFixed), tpenv
+        CheckedBindingInfo(inlineFlag, valAttribs, xmlDoc, tcPatPhase2, explicitTyparInfo, nameToPrelimValSchemeMap, rhsExprChecked, argAndRetAttribs, overallPatTy, mBinding, debugPoint, isCompGen, literalValue, isFixed, patternUsesActivePattern), tpenv
 
 // Note:
 // - Let bound values can only have attributes that uses AttributeTargets.Field ||| AttributeTargets.Property ||| AttributeTargets.ReturnValue
@@ -12161,7 +12110,7 @@ and TcLetBinding (cenv: cenv) isUse env containerInfo declKind tpenv (synBinds, 
             checkedBinds
             |> List.fold
                 (fun (nonExt, ext) tbinfo ->
-                    let (CheckedBindingInfo(inlineFlag, _, _, _, explicitTyparInfo, _, _, _, tauTy, _, _, _, _, _)) =
+                    let (CheckedBindingInfo(inlineFlag, _, _, _, explicitTyparInfo, _, _, _, tauTy, _, _, _, _, _, _)) =
                         tbinfo
 
                     let (ExplicitTyparInfo(_, declaredTypars, _, _)) = explicitTyparInfo
@@ -12185,14 +12134,18 @@ and TcLetBinding (cenv: cenv) isUse env containerInfo declKind tpenv (synBinds, 
 
     // Generalize the bindings...
     ((id, env, tpenv), checkedBinds) ||> List.fold (fun (buildExpr, env, tpenv) tbinfo ->
-        let (CheckedBindingInfo(inlineFlag, attrs, xmlDoc, tcPatPhase2, explicitTyparInfo, nameToPrelimValSchemeMap, rhsExpr, _, tauTy, m, debugPoint, _, literalValue, isFixed)) = tbinfo
+        let (CheckedBindingInfo(inlineFlag, attrs, xmlDoc, tcPatPhase2, explicitTyparInfo, nameToPrelimValSchemeMap, rhsExpr, _, tauTy, m, debugPoint, _, literalValue, isFixed, patternUsesActivePattern)) = tbinfo
         let enclosingDeclaredTypars = []
         let (ExplicitTyparInfo(_, declaredTypars, canInferTypars, hasExplicitTyparDecls)) = explicitTyparInfo
         let allDeclaredTypars = enclosingDeclaredTypars @ declaredTypars
         let generalizedTypars, prelimValSchemes2 =
             let canInferTypars = GeneralizationHelpers. ComputeCanInferExtraGeneralizableTypars (containerInfo.ParentRef, canInferTypars, None)
 
-            let maxInferredTypars = freeInTypeLeftToRight g false tauTy
+            // A binding whose pattern uses an active pattern evaluates it, so it is checked like
+            // 'match rhsExpr with pat -> ...' and is not generalized (see issue #16856).
+            let maxInferredTypars =
+                if patternUsesActivePattern then []
+                else freeInTypeLeftToRight g false tauTy
 
             let generalizedTypars =
                 if isNil maxInferredTypars && isNil allDeclaredTypars then
@@ -12395,7 +12348,7 @@ and ApplyTypesFromArgumentPatterns (cenv: cenv, env, optionalArgsOK, ty, m, tpen
         let domainTy, resultTy = UnifyFunctionType None cenv env.DisplayEnv m ty
         // We apply the type information from the patterns by type checking the
         // "simple" patterns against 'domainTyR'. They get re-typechecked later.
-        ignore (cenv.TcSimplePats cenv optionalArgsOK CheckCxs domainTy env (TcPatLinearEnv (tpenv, Map.empty, Set.empty)) pushedPat ([], false))
+        ignore (cenv.TcSimplePats cenv optionalArgsOK CheckCxs domainTy env (TcPatLinearEnv (tpenv, Map.empty, Set.empty, false)) pushedPat ([], false))
         ApplyTypesFromArgumentPatterns (cenv, env, optionalArgsOK, resultTy, m, tpenv, NormalizedBindingRhs (morePushedPats, retInfoOpt, e), memberFlagsOpt)
 
 /// Check if the type annotations and inferred type information in a value give a
@@ -12596,7 +12549,7 @@ and ApplyAbstractSlotInference (cenv: cenv) (envinner: TcEnv) (_: Val option) (a
 
        [], declaredTypars
 
-and CheckForNonAbstractInterface (g: TcGlobals) declKind tcref (memberFlags: SynMemberFlags) isMemberStatic m =
+and CheckForNonAbstractInterface declKind tcref (memberFlags: SynMemberFlags) isMemberStatic m =
     if isInterfaceTyconRef tcref then
         if memberFlags.MemberKind = SynMemberKind.ClassConstructor then
             error(Error(FSComp.SR.tcStaticInitializersIllegalInInterface(), m))
@@ -12604,11 +12557,8 @@ and CheckForNonAbstractInterface (g: TcGlobals) declKind tcref (memberFlags: Syn
             error(Error(FSComp.SR.tcObjectConstructorsIllegalInInterface(), m))
         elif memberFlags.IsOverrideOrExplicitImpl then
             error(Error(FSComp.SR.tcMemberOverridesIllegalInInterface(), m))
-        elif not (declKind = ExtrinsicExtensionBinding || memberFlags.IsDispatchSlot) then
-            if not isMemberStatic then
-                error(Error(FSComp.SR.tcConcreteMembersIllegalInInterface(), m))
-            else
-                checkLanguageFeatureAndRecover g.langVersion LanguageFeature.StaticMembersInInterfaces m
+        elif not (declKind = ExtrinsicExtensionBinding || memberFlags.IsDispatchSlot) && not isMemberStatic then
+            error(Error(FSComp.SR.tcConcreteMembersIllegalInInterface(), m))
 
 //-------------------------------------------------------------------------
 // TcLetrecBindings - AnalyzeAndMakeAndPublishRecursiveValue s
@@ -12654,7 +12604,7 @@ and AnalyzeRecursiveStaticMemberOrValDecl
              memberFlags.IsOverrideOrExplicitImpl ->
 
            CheckMemberFlags intfSlotTyOpt newslotsOK overridesOK memberFlags id.idRange
-           CheckForNonAbstractInterface g declKind tcref memberFlags true id.idRange
+           CheckForNonAbstractInterface declKind tcref memberFlags true id.idRange
 
            let isExtrinsic = (declKind = ExtrinsicExtensionBinding)
            let tcrefObjTy, enclosingDeclaredTypars, renaming, _, _ = FreshenObjectArgType cenv envinner.TraitContext mBinding TyparRigidity.WillBeRigid tcref isExtrinsic declaredTyconTypars
@@ -12676,7 +12626,7 @@ and AnalyzeRecursiveStaticMemberOrValDecl
         assert (Option.isNone intfSlotTyOpt)
 
         CheckMemberFlags None newslotsOK overridesOK memberFlags id.idRange
-        CheckForNonAbstractInterface g declKind tcref memberFlags true id.idRange
+        CheckForNonAbstractInterface declKind tcref memberFlags true id.idRange
 
         if memberFlags.MemberKind = SynMemberKind.Constructor && tcref.Deref.IsFSharpException then
             error(Error(FSComp.SR.tcConstructorsDisallowedInExceptionAugmentation(), id.idRange))
@@ -12781,7 +12731,7 @@ and AnalyzeRecursiveInstanceMemberDecl
          let argsAndRetTy = NewInferenceType g
          UnifyTypes cenv envinner mBinding ty (mkFunTy g thisTy argsAndRetTy)
 
-         CheckForNonAbstractInterface g declKind tcref memberFlags false memberId.idRange
+         CheckForNonAbstractInterface declKind tcref memberFlags false memberId.idRange
 
          // Determine if a uniquely-identified-override exists based on the information
          // at the member signature. If so, we know the type of this member, and the full slotsig
@@ -13239,7 +13189,7 @@ and TcIncrementalLetRecGeneralization cenv scopem
                     newGeneralizableBindings
                     |> List.fold
                         (fun (nonExt, ext) pgrbind ->
-                            let (CheckedBindingInfo(inlineFlag, _, _, _, _, _, _, _, _, _, _, _, _, _)) =
+                            let (CheckedBindingInfo(inlineFlag, _, _, _, _, _, _, _, _, _, _, _, _, _, _)) =
                                 pgrbind.CheckedBinding
 
                             let support = TcLetrecComputeSupportForBinding cenv pgrbind
@@ -13283,7 +13233,7 @@ and TcLetrecComputeAndGeneralizeGenericTyparsForBinding cenv denv freeInEnv (pgr
 
     let rbinfo = pgrbind.RecBindingInfo
     let vspec = rbinfo.Val
-    let (CheckedBindingInfo(inlineFlag, _, _, _, _, _, expr, _, _, m, _, _, _, _)) = pgrbind.CheckedBinding
+    let (CheckedBindingInfo(inlineFlag, _, _, _, _, _, expr, _, _, m, _, _, _, _, _)) = pgrbind.CheckedBinding
     let (ExplicitTyparInfo(rigidCopyOfDeclaredTypars, declaredTypars, _, _)) = rbinfo.ExplicitTyparInfo
     let allDeclaredTypars = rbinfo.EnclosingDeclaredTypars @ declaredTypars
 
@@ -13323,7 +13273,7 @@ and TcLetrecGeneralizeBinding cenv denv generalizedTypars (pgrbind: PreGeneraliz
 
     let g = cenv.g
     let (RecursiveBindingInfo(_, _, enclosingDeclaredTypars, _, vspec, explicitTyparInfo, prelimValReprInfo, memberInfoOpt, _, _, _, vis, _, declKind)) = pgrbind.RecBindingInfo
-    let (CheckedBindingInfo(inlineFlag, _, _, _, _, _, expr, argAttribs, _, _, _, isCompGen, _, isFixed)) = pgrbind.CheckedBinding
+    let (CheckedBindingInfo(inlineFlag, _, _, _, _, _, expr, argAttribs, _, _, _, isCompGen, _, isFixed, _)) = pgrbind.CheckedBinding
 
     if isFixed then
         errorR(Error(FSComp.SR.tcFixedNotAllowed(), expr.Range))

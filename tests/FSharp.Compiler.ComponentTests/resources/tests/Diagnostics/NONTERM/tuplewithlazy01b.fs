@@ -1,4 +1,4 @@
-// #Regression #Diagnostics 
+// #Regression #Diagnostics
 // Regression test for DevDiv:64339
 // Note that the bug still repros in CHK/DBG bits - we will knownfail it
 //<Expects status="error" span="(8,25-8,29)" id="FS0010">Unexpected keyword 'lazy' in pattern$</Expects>

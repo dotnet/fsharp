@@ -13,13 +13,13 @@ open FSharp.Test.ProjectGeneration.Helpers
 type Occurrence = Definition | InType | Use
 
 let deriveOccurrence (su:FSharpSymbolUse) =
-    if su.IsFromDefinition 
+    if su.IsFromDefinition
     then Definition
     elif su.IsFromType
     then InType
     elif su.IsFromUse
     then Use
-    else failwith $"Unexpected type of occurrence (for this test), symbolUse = {su}" 
+    else failwith $"Unexpected type of occurrence (for this test), symbolUse = {su}"
 
 // =============================================================================
 // Test Helpers - Reduce boilerplate in single-file find-references tests
@@ -97,12 +97,12 @@ let createProject() = SyntheticProject.Create(impFile())
 [<Fact>]
 let ``Finding usage of type via GetUsesOfSymbolInFile should also find it's constructors`` () =
     createProject().Workflow
-        {        
+        {
             checkFile "First" (fun (typeCheckResult: FSharpCheckFileResults) ->
-             
+
                 let symbolUse = typeCheckResult.GetSymbolUseAtLocation(7, 11, "type MyType() =", ["MyType"]).Value
-                let references = 
-                    typeCheckResult.GetUsesOfSymbolInFile(symbolUse.Symbol) 
+                let references =
+                    typeCheckResult.GetUsesOfSymbolInFile(symbolUse.Symbol)
                     |> Array.sortBy (fun su -> su.Range.StartLine)
                     |> Array.map (fun su -> su.Range.StartLine, su.Range.StartColumn, su.Range.EndColumn, deriveOccurrence su)
 
@@ -111,7 +111,7 @@ let ``Finding usage of type via GetUsesOfSymbolInFile should also find it's cons
                        8,25,31,InType
                        10,8,14,Use
                        11,12,18,Use
-                    |],references)  )           
+                    |],references)  )
         }
 
 
@@ -662,8 +662,8 @@ type internal SomeType() =
             (this :> IInterface1).Property1
         """
 
-        SyntheticProject.Create( 
-            { sourceFile "First" [] with Source = source1 }, 
+        SyntheticProject.Create(
+            { sourceFile "First" [] with Source = source1 },
             { sourceFile "Second" [] with Source = source2 } )
 
     let property1Locations() = [
@@ -882,65 +882,65 @@ let use1 = Thing + 1
         ]
 
 module OrPatternSymbolResolution =
-    
+
     /// https://github.com/dotnet/fsharp/issues/5546
     /// In SynPat.Or patterns (e.g., | x | x), both bindings were incorrectly marked
     /// as Binding occurrences. The second (and subsequent) occurrences should be Use.
     [<Fact>]
     let ``Or pattern second binding is classified as Use not Binding`` () =
         SyntheticProject.Create(
-            { sourceFile "OrPattern" [] with 
+            { sourceFile "OrPattern" [] with
                 ExtraSource = "let test input = match input with | x | x -> x" })
-            .Workflow {        
+            .Workflow {
                 checkFile "OrPattern" (fun (typeCheckResult: FSharpCheckFileResults) ->
                     // Get all symbol uses for the variable 'x'
                     let allSymbols = typeCheckResult.GetAllUsesOfAllSymbolsInFile()
-                    
+
                     // Find the uses of 'x' in the pattern
-                    let xUses = 
-                        allSymbols 
+                    let xUses =
+                        allSymbols
                         |> Seq.filter (fun su -> su.Symbol.DisplayName = "x")
                         |> Seq.sortBy (fun su -> su.Range.StartLine, su.Range.StartColumn)
                         |> Seq.toArray
-                    
+
                     // Should have 3 occurrences: first binding (Def), second binding (Use), and usage in body (Use)
                     Assert.True(xUses.Length >= 2, $"Expected at least 2 uses of 'x', got {xUses.Length}")
-                    
+
                     // First occurrence should be definition
                     Assert.True(xUses.[0].IsFromDefinition, "First 'x' in Or pattern should be a definition")
-                    
+
                     // Second occurrence should be use, not definition (#5546)
                     Assert.True(xUses.[1].IsFromUse, "Second 'x' in Or pattern should be a use, not a definition"))
             }
 
 module EventHandlerSyntheticSymbols =
-    
+
     /// https://github.com/dotnet/fsharp/issues/4136
     /// Events with [<CLIEvent>] generate synthetic 'handler' values that should not
     /// appear in GetAllUsesOfAllSymbolsInFile results.
     [<Fact>]
     let ``Event handler synthetic symbols are filtered from references`` () =
         SyntheticProject.Create(
-            { sourceFile "EventTest" [] with 
+            { sourceFile "EventTest" [] with
                 ExtraSource = "open System\ntype MyClass() =\n    let event = new Event<EventHandler, EventArgs>()\n    [<CLIEvent>]\n    member this.SelectionChanged = event.Publish" })
-            .Workflow {        
+            .Workflow {
                 checkFile "EventTest" (fun (typeCheckResult: FSharpCheckFileResults) ->
                     let allSymbols = typeCheckResult.GetAllUsesOfAllSymbolsInFile()
-                    
+
                     // Check that no synthetic 'handler' values are exposed
-                    let handlerUses = 
-                        allSymbols 
+                    let handlerUses =
+                        allSymbols
                         |> Seq.filter (fun su -> su.Symbol.DisplayName = "handler")
                         |> Seq.toArray
-                    
+
                     // The synthetic 'handler' argument should be filtered out
-                    Assert.True(handlerUses.Length = 0, 
+                    Assert.True(handlerUses.Length = 0,
                         $"Expected no 'handler' symbols (synthetic event handler values should be filtered), got {handlerUses.Length}"))
             }
 
 /// https://github.com/dotnet/fsharp/issues/15290
 module RecordCopyAndUpdate =
-    
+
     [<Fact>]
     let ``Find references of record type includes copy-and-update`` () =
         let source = """
@@ -953,7 +953,7 @@ type R = { M: Model }
         testFindAllRefs source "Model" (fun ranges ->
             expectLinesInclude [3; 5; 7] ranges
             expectMinRefs 3 ranges)
-    
+
     [<Fact>]
     let ``Find references of record type includes copy-and-update with nested fields`` () =
         let source = """
@@ -966,7 +966,7 @@ let o2 = { o with I.X = 2 }
 
 /// https://github.com/dotnet/fsharp/issues/16621
 module UnionCaseTesters =
-    
+
     [<Fact>]
     let ``Find references of union case includes tester usage`` () =
         let source = """
@@ -1033,7 +1033,7 @@ type Shape =
 
 /// https://github.com/dotnet/fsharp/issues/14902
 module AdditionalConstructors =
-    
+
     [<Fact>]
     let ``Find references of type includes all constructor usages`` () =
         let source = """
@@ -1060,8 +1060,8 @@ let a = MyClass()
 let b = MyClass(5)
 """
         checkAllSymbols source (fun _ allUses ->
-            let additionalCtorDef = 
-                allUses 
+            let additionalCtorDef =
+                allUses
                 |> Seq.tryFind (fun su -> su.IsFromDefinition && su.Range.StartLine = 4 && su.Range.StartColumn = 4)
             Assert.True(additionalCtorDef.IsSome, "Should find additional constructor at (4,4)")
             match additionalCtorDef.Value.Symbol with
@@ -1070,7 +1070,7 @@ let b = MyClass(5)
             | _ -> Assert.Fail("Expected FSharpMemberOrFunctionOrValue"))
 
 module ExternalDllOptimization =
-    
+
     /// Issue #10227: Optimize Find All References for external DLL symbols
     [<Fact>]
     let ``Find references to external DLL symbol works correctly`` () =
@@ -1089,7 +1089,7 @@ let copied = System.String.Copy myString
                     let usesInFile = result.GetUsesOfSymbolInFile(symbol)
                     Assert.True(usesInFile.Length >= 2, $"Expected at least 2 uses, found {usesInFile.Length}"))
             }
-    
+
     [<Fact>]
     let ``External symbol has assembly information`` () =
         let source = """
@@ -1147,7 +1147,7 @@ let arr = [| "a"; "b"; "c" |]
 let first = arr.First()
 """
         checkAllSymbols source (fun _ allUses ->
-            let firstUses = 
+            let firstUses =
                 allUses
                 |> Seq.filter (fun su -> su.Symbol.DisplayName = "First")
                 |> Seq.toArray
@@ -1160,7 +1160,7 @@ let first = arr.First()
 
 /// https://github.com/dotnet/fsharp/issues/5545
 module SAFEBookstoreSymbols =
-    
+
     [<Fact>]
     let ``Find references of DU type inside module finds all usages in same file`` () =
         let source = """
@@ -1185,7 +1185,7 @@ let handleMsg (m: WishlistMsg) =
                     expectLinesInclude [7; 11] ranges  // Type def + at least one usage
                     expectMinRefs 3 ranges)
             }
-    
+
     [<Fact>]
     let ``Find references of DU type in database pattern`` () =
         let source = """

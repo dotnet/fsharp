@@ -774,7 +774,6 @@ type LexFilterImpl (
     // Undentation rules
     //--------------------------------------------------------------------------
 
-    //let indexerNotationWithoutDot = lexbuf.SupportsFeature LanguageFeature.IndexerNotationWithoutDot
 
     let tryPushCtxt strict ignoreIndent tokenTup (newCtxt: Context) =
         let rec undentationLimit strict stack =

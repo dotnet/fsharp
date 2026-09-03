@@ -1,4 +1,4 @@
-// #Regression #Conformance #LexicalAnalysis 
+// #Regression #Conformance #LexicalAnalysis
 
 
 // Verify error with malformed long unicode escape sequences

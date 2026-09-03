@@ -1,4 +1,4 @@
-// #Regression #Conformance #DeclarationElements #Accessibility #Overloading 
+// #Regression #Conformance #DeclarationElements #Accessibility #Overloading
 // Regression test for FSHARP1.0:4485
 // Visibility decl on interface implementation
 
@@ -13,7 +13,7 @@ type Foo1() = class
                interface IFoo with
                   member this.M1(x) = ()
              end
-             
+
 type Foo2() = class
                interface IFoo with
                   member public this.M1(x) = ()         // err

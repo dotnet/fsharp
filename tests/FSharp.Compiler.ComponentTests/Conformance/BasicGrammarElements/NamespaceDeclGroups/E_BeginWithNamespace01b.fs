@@ -1,4 +1,4 @@
-// #Regression #Conformance #TypesAndModules #Namespaces 
+// #Regression #Conformance #TypesAndModules #Namespaces
 // Regression test for FSHARP1.0:5354
 // Namespace fragment warning should not underlines the entire file in blue
 

@@ -1,4 +1,4 @@
-// #Conformance #ObjectOrientedTypes #Delegates 
+// #Conformance #ObjectOrientedTypes #Delegates
 // Delegate returning a function value
 // Declaration is in the form: typ -> (typ -> ... -> typ -> typ)
 //<Expects status="success"></Expects>

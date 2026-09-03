@@ -1,4 +1,4 @@
-// #Regression #Conformance #DataExpressions 
+// #Regression #Conformance #DataExpressions
 // Verify list literals have their type based on the first element of the list.
 // (Regression for FSB 1180)
 

@@ -5,6 +5,6 @@ type Base() = class end
 
 type Derived() =
     inherit Base()
-    
-    module InvalidModule = 
+
+    module InvalidModule =
         let x = 2

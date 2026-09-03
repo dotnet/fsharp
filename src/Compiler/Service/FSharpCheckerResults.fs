@@ -2741,8 +2741,8 @@ type internal TypeCheckInfo
                                     None
                                 else
                                     match tr.TypeReprInfo, tr.PublicPath with
-                                    | TILObjectRepr(TILObjectReprData(ILScopeRef.Assembly assemblyRef, _, _)), Some(PubPath parts) ->
-                                        let fullName = parts |> String.concat "."
+                                    | TILObjectRepr(TILObjectReprData(ILScopeRef.Assembly assemblyRef, _, _)), ValueSome pubpath ->
+                                        let fullName = pubpath.FullPath |> String.concat "."
                                         Some(FindDeclResult.ExternalDecl(assemblyRef.Name, FindDeclExternalSymbol.Type fullName))
                                     | _ -> None
                             | _ -> None

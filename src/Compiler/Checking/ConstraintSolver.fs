@@ -452,8 +452,14 @@ let IsCharOrStringType g ty = isCharTy g ty || isStringTy g ty
 /// Checks the argument type for a built-in solution to an op_Addition, op_Subtraction or op_Modulus constraint.
 let IsAddSubModType nm g ty = IsNumericOrIntegralEnumType g ty || (nm = "op_Addition" && IsCharOrStringType g ty) || (nm = "op_Subtraction" && isCharTy g ty)
 
-/// Checks the argument type for a built-in solution to a bitwise operator constraint
-let IsBitwiseOpType g ty = IsIntegerOrIntegerEnumTy g ty || (isEnumTy g ty)
+/// Checks the argument type for a built-in solution to a bitwise operator constraint.
+///
+/// Enums whose underlying type is not an integer type (e.g. 'char') have no runtime
+/// implementation of the bitwise operators (see issue #11785) and so are only accepted
+/// for compatibility with language versions predating the ErrorOnBitwiseOpsOnNonIntegralEnums feature.
+let IsBitwiseOpType (g: TcGlobals) ty =
+    IsIntegerOrIntegerEnumTy g ty
+    || (isEnumTy g ty && not (g.langVersion.SupportsFeature LanguageFeature.ErrorOnBitwiseOpsOnNonIntegralEnums))
 
 /// Check the other type in a built-in solution for a binary operator.
 /// For weak resolution, require a relevant primitive on one side.
@@ -583,7 +589,7 @@ exception NonRigidTypar of displayEnv: DisplayEnv * string option * range * TTyp
 exception AbortForFailedMemberConstraintResolution
 
 /// This is used internally in method overload resolution
-let IgnoreFailedMemberConstraintResolution f1 f2 =
+let inline IgnoreFailedMemberConstraintResolution ([<InlineIfLambda>] f1) f2 =
     TryD 
         f1
         (function

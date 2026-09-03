@@ -48,10 +48,10 @@ type FauxHostObject() =
     interface ITaskHost
         // no members
 
-type Build() = 
+type Build() =
     (* Asserts ----------------------------------------------------------------------------- *)
     let AssertEqual expected actual =
-        if expected<>actual then 
+        if expected<>actual then
             let message = sprintf "Expected\n%A\nbut got\n%A" expected actual
             printfn "%s" message
             Assert.Fail(message)
@@ -63,7 +63,7 @@ type Build() =
         let tool = new FSharp.Build.Fsc()
         printfn "By the way, the registry or app.config tool path is %s" tool.ToolPath
         tool.CodePage <- "65001"
-        AssertEqual "65001" tool.CodePage 
+        AssertEqual "65001" tool.CodePage
         let cmd = tool.InternalGenerateResponseFileCommands()
         printfn "cmd=\"%s\"" cmd
         AssertEqual ("--codepage:65001" + Environment.NewLine +
@@ -109,7 +109,7 @@ type Build() =
         let tool = new FSharp.Build.Fsc()
         tool.DefineConstants <- [| MakeTaskItem "FOO=3"
                                    MakeTaskItem "BAR=4" |]
-        AssertEqual 2 tool.DefineConstants.Length 
+        AssertEqual 2 tool.DefineConstants.Length
         let cmd = tool.InternalGenerateResponseFileCommands()
         printfn "cmd=\"%s\"" cmd
         AssertEqual ("--define:FOO=3" + Environment.NewLine +
@@ -169,7 +169,7 @@ type Build() =
     member public this.TestVersionFile() =
         let tool = new FSharp.Build.Fsc()
         tool.VersionFile <- "src/version"
-        AssertEqual "src/version" tool.VersionFile 
+        AssertEqual "src/version" tool.VersionFile
         let cmd = tool.InternalGenerateResponseFileCommands()
         printfn "cmd=\"%s\"" cmd
         AssertEqual ("--optimize+" + Environment.NewLine +
@@ -184,7 +184,7 @@ type Build() =
     member public this.TestDocumentationFile() =
         let tool = new FSharp.Build.Fsc()
         tool.DocumentationFile <- "foo.xml"
-        AssertEqual "foo.xml" tool.DocumentationFile 
+        AssertEqual "foo.xml" tool.DocumentationFile
         let cmd = tool.InternalGenerateResponseFileCommands()
         printfn "cmd=\"%s\"" cmd
         AssertEqual ("--doc:foo.xml" + Environment.NewLine +
@@ -199,7 +199,7 @@ type Build() =
     member public this.TestGenerateInterfaceFile() =
         let tool = new FSharp.Build.Fsc()
         tool.GenerateInterfaceFile <- "foo.fsi"
-        AssertEqual "foo.fsi" tool.GenerateInterfaceFile 
+        AssertEqual "foo.fsi" tool.GenerateInterfaceFile
         let cmd = tool.InternalGenerateResponseFileCommands()
         printfn "cmd=\"%s\"" cmd
         AssertEqual ("--sig:foo.fsi" + Environment.NewLine +
@@ -214,7 +214,7 @@ type Build() =
     member public this.TestKeyFile() =
         let tool = new FSharp.Build.Fsc()
         tool.KeyFile <- "key.txt"
-        AssertEqual "key.txt" tool.KeyFile 
+        AssertEqual "key.txt" tool.KeyFile
         let cmd = tool.InternalGenerateResponseFileCommands()
         printfn "cmd=\"%s\"" cmd
         AssertEqual ("--keyfile:key.txt" + Environment.NewLine +
@@ -229,7 +229,7 @@ type Build() =
     member public this.TestNoFramework() =
         let tool = new FSharp.Build.Fsc()
         tool.NoFramework <- true
-        AssertEqual true tool.NoFramework 
+        AssertEqual true tool.NoFramework
         let cmd = tool.InternalGenerateResponseFileCommands()
         printfn "cmd=\"%s\"" cmd
         AssertEqual ("--noframework" + Environment.NewLine +
@@ -244,7 +244,7 @@ type Build() =
     member public this.TestOptimize() =
         let tool = new FSharp.Build.Fsc()
         tool.Optimize <- false
-        AssertEqual false tool.Optimize 
+        AssertEqual false tool.Optimize
         let cmd = tool.InternalGenerateResponseFileCommands()
         printfn "cmd=\"%s\"" cmd
         AssertEqual ("--optimize-" + Environment.NewLine +
@@ -273,7 +273,7 @@ type Build() =
     member public this.TestOtherFlags() =
         let tool = new FSharp.Build.Fsc()
         tool.OtherFlags <- "--yadda yadda"
-        AssertEqual "--yadda yadda" tool.OtherFlags 
+        AssertEqual "--yadda yadda" tool.OtherFlags
         let cmd = tool.InternalGenerateResponseFileCommands()
         printfn "cmd=\"%s\"" cmd
         AssertEqual ("--optimize+" + Environment.NewLine +
@@ -289,7 +289,7 @@ type Build() =
     member public this.TestOutputAssembly() =
         let tool = new FSharp.Build.Fsc()
         tool.OutputAssembly <- "oUt.dll"
-        AssertEqual "oUt.dll" tool.OutputAssembly 
+        AssertEqual "oUt.dll" tool.OutputAssembly
         let cmd = tool.InternalGenerateResponseFileCommands()
         printfn "cmd=\"%s\"" cmd
         AssertEqual ("-o:oUt.dll" + Environment.NewLine +
@@ -304,7 +304,7 @@ type Build() =
     member public this.TestPdbFile() =
         let tool = new FSharp.Build.Fsc()
         tool.PdbFile <- "out.pdb"
-        AssertEqual "out.pdb" tool.PdbFile 
+        AssertEqual "out.pdb" tool.PdbFile
         let cmd = tool.InternalGenerateResponseFileCommands()
         printfn "cmd=\"%s\"" cmd
         AssertEqual ("--optimize+" + Environment.NewLine +
@@ -319,7 +319,7 @@ type Build() =
     member public this.TestPlatform1() =
         let tool = new FSharp.Build.Fsc()
         tool.Platform <- "x64"
-        AssertEqual "x64" tool.Platform 
+        AssertEqual "x64" tool.Platform
         let cmd = tool.InternalGenerateResponseFileCommands()
         printfn "cmd=\"%s\"" cmd
         AssertEqual ("--optimize+" + Environment.NewLine +
@@ -334,7 +334,7 @@ type Build() =
     member public this.TestPlatform3() =
         let tool = new FSharp.Build.Fsc()
         tool.Platform <- "x86"
-        AssertEqual "x86" tool.Platform 
+        AssertEqual "x86" tool.Platform
         let cmd = tool.InternalGenerateResponseFileCommands()
         printfn "cmd=\"%s\"" cmd
         AssertEqual ("--optimize+" + Environment.NewLine +
@@ -350,7 +350,7 @@ type Build() =
         let tool = new FSharp.Build.Fsc()
         let dll = "c:\\sd\\staging\\tools\\xunit\\xunit.core.dll"
         tool.References <- [| MakeTaskItem dll |]
-        AssertEqual 1 tool.References.Length 
+        AssertEqual 1 tool.References.Length
         let cmd = tool.InternalGenerateResponseFileCommands()
         printfn "cmd=\"%s\"" cmd
         AssertEqual ("--optimize+" + Environment.NewLine +
@@ -366,7 +366,7 @@ type Build() =
         let tool = new FSharp.Build.Fsc()
         let path = "c:\\sd\\staging\\tools\\xunit\\;c:\\Foo"
         tool.ReferencePath <- path
-        AssertEqual path tool.ReferencePath 
+        AssertEqual path tool.ReferencePath
         let cmd = tool.InternalGenerateResponseFileCommands()
         printfn "cmd=\"%s\"" cmd
         AssertEqual ("--optimize+" + Environment.NewLine +
@@ -382,7 +382,7 @@ type Build() =
         let tool = new FSharp.Build.Fsc()
         let path = "c:\\program files;c:\\sd\\staging\\tools\\xunit;c:\\Foo"
         tool.ReferencePath <- path
-        AssertEqual path tool.ReferencePath 
+        AssertEqual path tool.ReferencePath
         let cmd = tool.InternalGenerateResponseFileCommands()
         printfn "cmd=\"%s\"" cmd
         AssertEqual ("--optimize+" + Environment.NewLine +
@@ -397,7 +397,7 @@ type Build() =
     member public this.TestResources() =
         let tool = new FSharp.Build.Fsc()
         tool.Resources <- [| MakeTaskItem "Foo.resources" |]
-        AssertEqual 1 tool.Resources.Length 
+        AssertEqual 1 tool.Resources.Length
         let cmd = tool.InternalGenerateResponseFileCommands()
         printfn "cmd=\"%s\"" cmd
         AssertEqual ("--optimize+" + Environment.NewLine +
@@ -414,7 +414,7 @@ type Build() =
         let src = "foo.fs"
         let iti = MakeTaskItem src
         tool.Sources <- [| iti; iti |]
-        AssertEqual 2 tool.Sources.Length 
+        AssertEqual 2 tool.Sources.Length
         let cmd = tool.InternalGenerateResponseFileCommands()
         printfn "cmd=\"%s\"" cmd
         AssertEqual ("--optimize+" + Environment.NewLine +
@@ -431,7 +431,7 @@ type Build() =
     member public this.TestTargetType1() =
         let tool = new FSharp.Build.Fsc()
         tool.TargetType <- "Library"
-        AssertEqual "Library" tool.TargetType 
+        AssertEqual "Library" tool.TargetType
         let cmd = tool.InternalGenerateResponseFileCommands()
         printfn "cmd=\"%s\"" cmd
         AssertEqual ("--optimize+" + Environment.NewLine +
@@ -446,7 +446,7 @@ type Build() =
     member public this.TestTargetType2() =
         let tool = new FSharp.Build.Fsc()
         tool.TargetType <- "Winexe"
-        AssertEqual "Winexe" tool.TargetType 
+        AssertEqual "Winexe" tool.TargetType
         let cmd = tool.InternalGenerateResponseFileCommands()
         printfn "cmd=\"%s\"" cmd
         AssertEqual ("--optimize+" + Environment.NewLine +
@@ -461,7 +461,7 @@ type Build() =
     member public this.TestTargetType3() =
         let tool = new FSharp.Build.Fsc()
         tool.TargetType <- "Module"
-        AssertEqual "Module" tool.TargetType 
+        AssertEqual "Module" tool.TargetType
         let cmd = tool.InternalGenerateResponseFileCommands()
         printfn "cmd=\"%s\"" cmd
         AssertEqual ("--optimize+" + Environment.NewLine +
@@ -512,7 +512,7 @@ type Build() =
                      "--flaterrors" + Environment.NewLine +
                      "--highentropyva-" + Environment.NewLine +
                      "--nocopyfsharpcore")
-                    cmd 
+                    cmd
 
     [<Fact>]
     member public this.TestHighEntropyVA() =
@@ -525,7 +525,7 @@ type Build() =
                      "--flaterrors" + Environment.NewLine +
                      "--highentropyva+" + Environment.NewLine +
                      "--nocopyfsharpcore")
-                    cmd 
+                    cmd
 
     [<Fact>]
     member public this.TestSubsystemVersion() =
@@ -539,7 +539,7 @@ type Build() =
                      "--subsystemversion:6.02" + Environment.NewLine +
                      "--highentropyva-" + Environment.NewLine +
                      "--nocopyfsharpcore")
-                    cmd 
+                    cmd
 
     [<Fact>]
     member public this.TestAllCombo() =
@@ -553,7 +553,7 @@ type Build() =
         tool.VersionFile <- "src/version"
         tool.DocumentationFile <- "foo.xml"
         tool.GenerateInterfaceFile <- "foo.fsi"
-        tool.KeyFile <- "key.txt" 
+        tool.KeyFile <- "key.txt"
         tool.NoFramework <- true
         tool.Optimize <- true
         tool.Tailcalls <- true
@@ -575,7 +575,7 @@ type Build() =
         let cmd = tool.InternalGenerateResponseFileCommands()
         printfn "cmd=\"%s\"" cmd
 
-        let expected = 
+        let expected =
             "-o:out.dll" + Environment.NewLine +
             "--codepage:65001" + Environment.NewLine +
             "-g" + Environment.NewLine +
@@ -636,7 +636,7 @@ type Build() =
             "--resource:MyRes.resources"
             "--resource:OtherRes.resources"
             "--versionfile:src/version"
-            "-r:ref.dll" 
+            "-r:ref.dll"
             "-r:C:\\Program Files\\SpacesPath.dll"  // note no internal quotes
             "--lib:c:\\foo,c:\\bar"
             "--target:exe"
@@ -653,7 +653,7 @@ type Build() =
             "--yadda:yadda"
             "--other:internal quote" // note stripped internal quotes
             "blah" |]
-        AssertEqual expectedFlags hostObject.Flags 
+        AssertEqual expectedFlags hostObject.Flags
         let expectedSources = [| "foo.fs"; "C:\\Program Files\\spaces.fs" |]
         AssertEqual expectedSources hostObject.Sources
 

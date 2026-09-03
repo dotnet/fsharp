@@ -1,4 +1,4 @@
-// #Regression #Conformance #ObjectOrientedTypes #Classes 
+// #Regression #Conformance #ObjectOrientedTypes #Classes
 // FSB 1272, New-ing a sub class with unimplemented abstract members should not be allowed.
 
 //<Expects id="FS0759" status="error" span="(18,9)">Instances of this type cannot be created since it has been marked abstract or not all methods have been given implementations\. Consider using an object expression '{ new \.\.\. with \.\.\. }' instead</Expects>

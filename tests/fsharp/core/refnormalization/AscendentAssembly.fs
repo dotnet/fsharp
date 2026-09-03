@@ -2,5 +2,5 @@ namespace AscendentAssembly
 
 module Ascendent =
 
-    let hello () = 
+    let hello () =
         DependentAssembly.Say.hello "Ascendent"

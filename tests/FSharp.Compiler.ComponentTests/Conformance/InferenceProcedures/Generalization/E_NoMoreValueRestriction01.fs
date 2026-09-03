@@ -1,4 +1,4 @@
-// #Regression #Conformance #TypeInference 
+// #Regression #Conformance #TypeInference
 // Verify error if you only specify some, but not all, type args
 //<Expects span="(8,11-8,14)" status="error" id="FS0001">This expression was expected to have type    'char'    but here has type    'float32'</Expects>
 

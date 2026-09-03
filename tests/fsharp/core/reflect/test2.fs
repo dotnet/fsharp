@@ -1,15 +1,15 @@
-// #Conformance #Reflection #Unions #Tuples 
+// #Conformance #Reflection #Unions #Tuples
 module Test2
 #nowarn "44"
 
 let failures = ref []
 
-let report_failure (s : string) = 
+let report_failure (s : string) =
     stderr.Write" NO: "
     stderr.WriteLine s
     failures := !failures @ [s]
 
-let test (s : string) b = 
+let test (s : string) b =
     stderr.Write(s)
     if b then stderr.WriteLine " OK"
     else report_failure (s)
@@ -22,43 +22,43 @@ open Test
 
 open Microsoft.FSharp.Reflection
 
-module NewTests = 
+module NewTests =
 
     let (|C|) (c:UnionCaseInfo) = c.Name, c.GetFields()
     let (|M|) (c:System.Reflection.MethodInfo) = c.Name, c.MemberType
     let (|P|) (c:System.Reflection.PropertyInfo) = c.Name, c.MemberType
     let (|String|_|) (v:obj) = match v with :? string as s -> Some(s) | _ -> None
     let (|Int|_|) (v:obj) = match v with :? int as s -> Some(s) | _ -> None
-    let showAll = 
+    let showAll =
 #if NETCOREAPP
         true
 #else
-        System.Reflection.BindingFlags.Public ||| System.Reflection.BindingFlags.NonPublic 
+        System.Reflection.BindingFlags.Public ||| System.Reflection.BindingFlags.NonPublic
 #endif
-    do test "ncwowe932aq" (FSharpType.IsUnion (typeof<PublicUnionType1>)) 
-    do test "ncwowe932aw" (FSharpType.IsUnion (XX("1","2").GetType())) 
+    do test "ncwowe932aq" (FSharpType.IsUnion (typeof<PublicUnionType1>))
+    do test "ncwowe932aw" (FSharpType.IsUnion (XX("1","2").GetType()))
     do test "ncwowe932ae" (FSharpType.IsUnion ((XX2 "1").GetType()))
-    do test "ncwowe932ar" (FSharpType.IsRecord (typeof<PublicRecordType1>)) 
-    do test "ncwowe932at" (FSharpType.IsRecord (typeof<PublicRecordType2<int>>)) 
-    do test "ncwowe932at" (FSharpType.IsRecord (typeof<PublicRecordType3WithCLIMutable<int>>)) 
+    do test "ncwowe932ar" (FSharpType.IsRecord (typeof<PublicRecordType1>))
+    do test "ncwowe932at" (FSharpType.IsRecord (typeof<PublicRecordType2<int>>))
+    do test "ncwowe932at" (FSharpType.IsRecord (typeof<PublicRecordType3WithCLIMutable<int>>))
     do test "ncwowe932at" (not (FSharpType.IsFunction (typeof<PublicRecordType3WithCLIMutable<int>>)) )
     do test "ncwowe932at" (not (FSharpType.IsExceptionRepresentation (typeof<PublicRecordType3WithCLIMutable<int>>)) )
     do test "ncwowe932at" (not (FSharpType.IsUnion (typeof<PublicRecordType3WithCLIMutable<int>>)) )
 
-    
-    do test "ncwowe932ay" (FSharpType.IsFunction (typeof<(int -> int)>)) 
+
+    do test "ncwowe932ay" (FSharpType.IsFunction (typeof<(int -> int)>))
     do test "ncwowe932au" (FSharpType.IsFunction ( (fun x -> x).GetType()))
     do test "ncwowe932ai" (FSharpType.IsExceptionRepresentation (typeof< MatchFailureException>))
 
-    do test "ncwowe932a1" (not (FSharpType.IsExceptionRepresentation (typeof<int * int>))) 
-    do test "ncwowe932a2" (not (FSharpType.IsFunction (typeof<int * int>))) 
-    do test "ncwowe932a3" (not (FSharpType.IsUnion (typeof<int * int>))) 
-    do test "ncwowe932a4" (not (FSharpType.IsUnion (typeof<PublicRecordType1>))) 
-    do test "ncwowe932a5" (not (FSharpType.IsRecord (typeof<PublicUnionType1>))) 
-    do test "ncwowe932a6" (not (FSharpType.IsRecord (typeof<int * int>))) 
-    do test "ncwowe932a7" (not (FSharpType.IsFunction (typeof<int * int>))) 
-    do test "ncwowe932a8" (not (FSharpType.IsUnion (typeof<int * int>))) 
-    
+    do test "ncwowe932a1" (not (FSharpType.IsExceptionRepresentation (typeof<int * int>)))
+    do test "ncwowe932a2" (not (FSharpType.IsFunction (typeof<int * int>)))
+    do test "ncwowe932a3" (not (FSharpType.IsUnion (typeof<int * int>)))
+    do test "ncwowe932a4" (not (FSharpType.IsUnion (typeof<PublicRecordType1>)))
+    do test "ncwowe932a5" (not (FSharpType.IsRecord (typeof<PublicUnionType1>)))
+    do test "ncwowe932a6" (not (FSharpType.IsRecord (typeof<int * int>)))
+    do test "ncwowe932a7" (not (FSharpType.IsFunction (typeof<int * int>)))
+    do test "ncwowe932a8" (not (FSharpType.IsUnion (typeof<int * int>)))
+
 
     do test "ncwowe932a" (match FSharpType.GetUnionCases (typeof<PublicUnionType1>) with [| C("X",[| _ |]); C("XX",[|_; _|]) |] -> true | _ -> false)
     do test "ncwowe932gb" (match FSharpType.GetUnionCases (typeof<PublicUnionType2>) with [| C("X2",[||]); C("XX2",[|_|]) |]-> true | _ -> false)
@@ -116,7 +116,7 @@ module NewTests =
 
 
     let UCI (ty,i) = FSharpType.GetUnionCases(ty).[i]
-    
+
     do test "ncqmkee32ao1" (FSharpValue.PreComputeUnionConstructor(UCI(typeof<PublicUnionType1>, 0)) [| box "1" |] = box (X "1"))
     do test "ncqmkee32ao2" (FSharpValue.PreComputeUnionConstructor(UCI(typeof<PublicUnionType1>, 1)) [| box "1"; box "2" |] = box (XX ("1","2")))
     do test "ncqmkee32ao3" (FSharpValue.PreComputeUnionConstructor(UCI(typeof<PublicUnionType2>, 0)) [|  |] = box X2)
@@ -139,7 +139,7 @@ module NewTests =
     do test "ncqmkee33h9" (FSharpValue.PreComputeTupleConstructor(typeof<string * string * string * string * string * string * string * string * string * string * string * string * string * string * string * string>) [| box "1"; box "2"; box "3"; box "4"; box "5"; box "6"; box "7"; box "8"; box "9"; box "10"; box "11"; box "12"; box "13"; box "14"; box "15"; box "16"|] = box ("1","2","3","4","5","6","7","8","9","10","11","12","13","14","15","16"))
 
     let badarg f = try ignore(f()); false with :? System.ArgumentException -> true
-    
+
     do test "mcwowe932a" (badarg (fun () -> FSharpType.GetUnionCases (typeof<InternalUnionType1>)))
     do test "mcwowe932gb" (badarg (fun () -> FSharpType.GetUnionCases (typeof<InternalUnionType2>)))
     do test "mcwowe932w" (badarg (fun () -> FSharpType.GetUnionCases (typeof<InternalUnionType3<int>>)))
@@ -153,7 +153,7 @@ module NewTests =
     do test "mcqmkee32ap" (badarg (fun () ->  FSharpValue.PreComputeUnionReader (FSharpType.GetUnionCases(typeof<InternalUnionType1>).[0])))
     do test "mcqmkee32aq" (badarg (fun () ->  FSharpValue.PreComputeUnionReader (FSharpType.GetUnionCases(typeof<InternalUnionType2>).[1])))
     do test "mcqmkee32ar" (badarg (fun () ->  FSharpValue.PreComputeUnionReader (FSharpType.GetUnionCases(typeof<InternalUnionType2>).[0])))
-    
+
     do test "mcqmkee32ao1" (badarg (fun () -> FSharpValue.PreComputeUnionReader(UCI(typeof<InternalUnionType1>, 0))))
     do test "mcqmkee32ao2" (badarg (fun () -> FSharpValue.PreComputeUnionReader(UCI(typeof<InternalUnionType1>, 1))))
     do test "mcqmkee32ao3" (badarg (fun () -> FSharpValue.PreComputeUnionReader(UCI(typeof<InternalUnionType2>, 0))))
@@ -206,7 +206,7 @@ module NewTests =
 
 
         let UCI (ty,i) = FSharpType.GetUnionCases(ty).[i]
-        
+
         do test "ncqmkee32ao1" (FSharpValue.PreComputeUnionConstructor(UCI(typeof<PublicUnionType1>, 0),showAll) [| box "1" |] = box (X "1"))
         do test "ncqmkee32ao2" (FSharpValue.PreComputeUnionConstructor(UCI(typeof<PublicUnionType1>, 1),showAll) [| box "1"; box "2" |] = box (XX ("1","2")))
         do test "ncqmkee32ao3" (FSharpValue.PreComputeUnionConstructor(UCI(typeof<PublicUnionType2>, 0),showAll) [|  |] = box X2)
@@ -216,7 +216,7 @@ module NewTests =
         do test "ncqmkee32ao7" (FSharpValue.PreComputeRecordConstructor(typeof<PublicRecordType1>,showAll) [| box 1; |] = box {r1a = 1 })
         do test "ncqmkee32ao8a" (FSharpValue.PreComputeRecordConstructor(typeof<string PublicRecordType2>,showAll) [| box "1"; box 1 |] = box {r2b = "1"; r2a = 1 })
         do test "ncqmkee32ao8b" (FSharpValue.PreComputeRecordConstructor(typeof<PublicRecordType3WithCLIMutable<string>>,showAll) [| box "1"; box 1 |] = box {r3b = "1"; r3a = 1 })
-        do test "ncqmkee32ao8c" (typeof<PublicRecordType3WithCLIMutable<string>>.GetConstructor([| |]) <> null) 
+        do test "ncqmkee32ao8c" (typeof<PublicRecordType3WithCLIMutable<string>>.GetConstructor([| |]) <> null)
 
     open System.Reflection
     do printfn "%A" (FSharpType.GetUnionCases (typeof<InternalUnionType1>, showAll))
@@ -231,7 +231,7 @@ module NewTests =
 
 
     let UCI2 (ty,i) = FSharpType.GetUnionCases(ty, showAll).[i]
-    
+
     do test "qcqmkee32ao" (match FSharpValue.PreComputeUnionReader (UCI2(typeof<InternalUnionType1>, 1),showAll) (box (InternalXX ("1","2"))) with [| String("1");String("2") |] -> true | _ -> false)
     do test "qcqmkee32ap" (match FSharpValue.PreComputeUnionReader (UCI2(typeof<InternalUnionType1>, 0),showAll) (box (InternalX "1")) with [| String("1") |] -> true | _ -> false)
     do test "qcqmkee32aq" (match FSharpValue.PreComputeUnionReader (UCI2(typeof<InternalUnionType2>, 1),showAll) (box (InternalXX2 "1")) with [| String("1") |] -> true | _ -> false)
@@ -260,22 +260,22 @@ module TwoCasedUnionWithNullAsTrueValueAnnotation =
         with _ -> false
     test "TwoCasedUnionWithNullAsTrueValueAnnotation" result
 
-module TEst = 
+module TEst =
 
-  type token = 
+  type token =
    | X
    | DOUBLELITERAL  of (System.Double)
    | DECIMALLITERAL of (System.Decimal)
    | Y              of (int)
    | INTEGERLITERAL
-   | VARNAME       
-   | QNAME          of (string)   
+   | VARNAME
+   | QNAME          of (string)
   let tok2 = (X:token)
   let _   = printfn "%A" tok2
 
 
   let printany x = (printf "%A" x;stderr.Write "\n")
-    
+
   let _ = printany (1    : int)
   let _ = printany (true : bool)
   let _ = printany (27.3 : float)
@@ -286,7 +286,7 @@ module TEst =
       rr_strs = ["skdf";"kshkshfskhf"];
       rr_thunk = fun () -> ()}
   let _ = printany rrv
-    
+
   let _ = printany ["Lists";"have";"special";"treatment";"hence";"this";"test";"case"]
   let _ = printany []
   let _ = printany (Some "options likewise")
@@ -300,7 +300,7 @@ module TEst =
   let _ = printany printany (* =) *)
 
 
-module DynamicCall = 
+module DynamicCall =
     open System
     open System.Reflection
 
@@ -314,7 +314,7 @@ module DynamicCall =
     let genericCallMethod = typeof<Test.Marker>.DeclaringType.GetMethod "call"
     let callMethod = genericCallMethod.MakeGenericMethod [| typeof<Object> |]
 
-    try 
+    try
        callMethod.Invoke (null, [| Object () |]) |> ignore
        failwith "expected an exception"
     with :? TargetInvocationException as ex ->
@@ -327,12 +327,12 @@ module DynamicCall =
 let RUN() = !failures
 #else
 let aa =
-  match !failures with 
-  | [] -> 
+  match !failures with
+  | [] ->
       stdout.WriteLine "Test Passed"
       printf "TEST PASSED OK" ;
       exit 0
-  | _ -> 
+  | _ ->
       stdout.WriteLine "Test Failed"
       exit 1
 #endif

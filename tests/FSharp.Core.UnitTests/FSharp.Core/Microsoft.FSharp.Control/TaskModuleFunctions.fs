@@ -10,12 +10,12 @@ open Xunit
 
 module TaskModuleFunctionsTests =
 
-#if NETFRAMEWORK // Polyfill for netstandard2.0 
+#if NETFRAMEWORK // Polyfill for netstandard2.0
     type Task<'T> with member x.IsCompletedSuccessfully = x.Status = TaskStatus.RanToCompletion
     let cancelWithToken (tcs: TaskCompletionSource<'T>) =
         tcs.SetCanceled() // No CT overload available
         CancellationToken.None // so exception won't reference one
-#else    
+#else
     let cancelWithToken (tcs: TaskCompletionSource<'T>) =
         let ct = CancellationToken true
         tcs.SetCanceled ct
@@ -26,7 +26,7 @@ module TaskModuleFunctionsTests =
     let ``Task.result wraps value`` () =
         let t = Task.result 42
         Assert.Equal(42, t.Result)
-        
+
 
     [<Fact>]
     let ``Task.map transforms value (sync)`` () =
@@ -55,7 +55,7 @@ module TaskModuleFunctionsTests =
         tcs.SetException(Exception "boom")
         let! e = Assert.ThrowsAsync<exn>(fun () -> t).Result
         Assert.Equal("boom", e.Message)
-            
+
     [<Fact>]
     let ``Task.map propagates mapper exception as Fault (sync)`` () =
         let t = Task.result () |> Task.map (fun () -> failwith "boom")
@@ -101,7 +101,7 @@ module TaskModuleFunctionsTests =
         Assert.False t.IsCompleted
         tcs.SetResult 21
         Assert.Equal(42, t.Result)
-    
+
     [<Fact>]
     let ``Task.bind propagates incoming exception (sync)`` () =
         let t = Task.FromException<int>(Exception "boom") |> Task.bind (fun x -> Task.result (x * 2))
@@ -115,13 +115,13 @@ module TaskModuleFunctionsTests =
         tcs.SetException(Exception "boom")
         let e = Assert.ThrowsAsync<exn>(fun () -> t).Result
         Assert.Equal("boom", e.Message)
-            
+
     [<Fact>]
     let ``Task.bind propagates binder exception as Fault (sync)`` () =
         let t = Task.result () |> Task.bind (fun () -> failwith "boom")
         let e = Assert.ThrowsAsync<exn>(fun () -> t).Result
         Assert.Equal("boom", e.Message)
-        
+
     [<Fact>]
     let ``Task.bind propagates binder exception as Fault (async)`` () =
         let tcs = TaskCompletionSource<unit>()
@@ -147,7 +147,7 @@ module TaskModuleFunctionsTests =
         Assert.Equal(ct, e.CancellationToken)
         Assert.True t.IsCanceled
 
-    
+
     [<Fact>]
     let ``Task.ignore discards result (sync)`` () : unit =
         let t = Task.result 42 |> Task.ignore<int>
@@ -162,7 +162,7 @@ module TaskModuleFunctionsTests =
         tcs.SetResult 42
         Assert.True t.IsCompletedSuccessfully
         t.Result : unit
-        
+
     [<Fact>]
     let ``Task.ignore propagates incoming exception (sync)`` () =
         let t = Task.FromException<int>(Exception "boom") |> Task.ignore<int>
@@ -196,7 +196,7 @@ module TaskModuleFunctionsTests =
         Assert.Equal(ct, e.CancellationToken)
         Assert.True t.IsCanceled
 
-    
+
     [<Fact>]
     let ``Task.catchWith recovers from exception (sync)`` () =
         let source = Task.FromException<int>(Exception "boom")
@@ -247,7 +247,7 @@ module TaskModuleFunctionsTests =
         Assert.Equal(ct, e.CancellationToken)
         Assert.True t.IsCanceled
 
-    
+
     [<Fact>]
     let ``Task.catch returns Ok on success (sync)`` () : unit=
         let t = Task.result 42 |> Task.catch

@@ -2,10 +2,10 @@
 
 module Lib
 
-let inline RequireM< ^Witnesses, ^T when (^Witnesses or ^T): (static member M : ^T -> string) > (x: ^T) : string = 
+let inline RequireM< ^Witnesses, ^T when (^Witnesses or ^T): (static member M : ^T -> string) > (x: ^T) : string =
     ((^Witnesses or ^T): (static member M : ^T -> string) x)
 
-type C(p:int) = 
+type C(p:int) =
     member x.P = p
 
 type Witnesses() =

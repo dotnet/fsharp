@@ -1,4 +1,4 @@
-// #Regression #Conformance #DeclarationElements #Accessibility 
+// #Regression #Conformance #DeclarationElements #Accessibility
 // Regression test for FSHARP1.0:4679
 //<Expects status="success"></Expects>
 module M

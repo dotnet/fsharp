@@ -60,7 +60,6 @@ type NameResolver(g: TcGlobals,
     member nr.g = g
     member nr.amap = amap
     member nr.InfoReader = infoReader
-    member nr.languageSupportsNameOf = g.langVersion.SupportsFeature LanguageFeature.NameOf
 
 //-------------------------------------------------------------------------
 // Helpers for unionconstrs and recdfields
@@ -1174,11 +1173,11 @@ let ResolveProvidedTypeNameInEntity (amap, m, typeName, modref: ModuleOrNamespac
     match modref.TypeReprInfo with
     | TProvidedNamespaceRepr(resolutionEnvironment, resolvers) ->
         match modref.Deref.PublicPath with
-        | Some(PubPath path) ->
+        | ValueSome pubpath ->
             resolvers
-            |> List.choose (fun r-> TryResolveProvidedType(r, m, path, typeName))
+            |> List.choose (fun r -> TryResolveProvidedType(r, m, pubpath.FullPath, typeName))
             |> List.map (fun st -> AddEntityForProvidedType (amap, modref, resolutionEnvironment, st, m))
-        | None -> []
+        | ValueNone -> []
 
     // We have a provided type, look up its nested types (populating them on-demand if necessary)
     | TProvidedTypeRepr info ->
@@ -1564,7 +1563,7 @@ and private AddPartsOfTyconRefToNameEnv bulkAddMode ownDefinition (g: TcGlobals)
                         let ty = generalizedTyconRef g tcref
                         isClassTy g ty ||
                         isStructTy g ty ||
-                        (g.langVersion.SupportsFeature LanguageFeature.DelegateTypeNameResolutionFix && isDelegateTy g ty))
+                        isDelegateTy g ty)
 
             if mayHaveConstruction then
                 tab.AddOrModify (tcref.DisplayName, (fun prev ->
@@ -3468,15 +3467,6 @@ let rec ResolveExprLongIdentPrim sink (ncenv: NameResolver) first fullyQualified
 
     let lookupKind = LookupKind.Expr LookupIsInstance.No
 
-    let canSuggestThisItem (item:Item) =
-        // All items can be suggested except nameof when it comes from FSharp.Core.dll and the nameof feature is not enabled
-        match item with
-        | Item.Value v ->
-            let isNameOfOperator = valRefEq ncenv.g ncenv.g.nameof_vref v
-            if isNameOfOperator && not (ncenv.g.langVersion.SupportsFeature LanguageFeature.NameOf) then false
-            else true
-        | _ -> true
-
     if first && id.idText = MangledGlobalName then
         match rest with
         | [] ->
@@ -3515,15 +3505,7 @@ let rec ResolveExprLongIdentPrim sink (ncenv: NameResolver) first fullyQualified
 
                 | true, res ->
                     let fresh = ResolveUnqualifiedItem ncenv nenv m res
-                    match fresh with
-                    | Item.Value value ->
-                        let isNameOfOperator = valRefEq ncenv.g ncenv.g.nameof_vref value
-                        if isNameOfOperator && not ncenv.languageSupportsNameOf then
-                            // Do not resolve `nameof` if the feature is unsupported, even if it is FSharp.Core
-                            None
-                         else
-                            Some (emptyEnclosingTypeInst, fresh, rest)
-                    | _ -> Some (emptyEnclosingTypeInst, fresh, rest)
+                    Some (emptyEnclosingTypeInst, fresh, rest)
                 | _ ->
                     None
 
@@ -3574,8 +3556,7 @@ let rec ResolveExprLongIdentPrim sink (ncenv: NameResolver) first fullyQualified
 
                     let suggestNamesAndTypes (addToBuffer: string -> unit) =
                         for e in nenv.eUnqualifiedItems do
-                            if canSuggestThisItem e.Value then
-                                addToBuffer e.Value.DisplayName
+                            addToBuffer e.Value.DisplayName
 
                         for e in nenv.TyconsByDemangledNameAndArity fullyQualified do
                             if IsEntityAccessible ncenv.amap m ad e.Value then
@@ -3671,8 +3652,7 @@ let rec ResolveExprLongIdentPrim sink (ncenv: NameResolver) first fullyQualified
                                 addToBuffer tcref.DisplayName
 
                         for KeyValue(_,item) in nenv.eUnqualifiedItems do
-                            if canSuggestThisItem item then
-                                addToBuffer item.DisplayName
+                            addToBuffer item.DisplayName
 
                       match innerSearch with
                       | Exception (UndefinedName(0, _, id1, suggestionsF)) when equals id.idRange id1.idRange ->
@@ -4739,9 +4719,7 @@ let IsUnionCaseUnseen ad g amap m allowObsolete (ucref: UnionCaseRef) =
 
 let ItemIsUnseen ad g amap m allowObsolete item =
     match item with
-    | Item.Value x -> 
-        let isUnseenNameOfOperator = valRefEq g g.nameof_vref x && not (g.langVersion.SupportsFeature LanguageFeature.NameOf)
-        isUnseenNameOfOperator || IsValUnseen ad g m allowObsolete x
+    | Item.Value x -> IsValUnseen ad g m allowObsolete x
     | Item.UnionCase(x, _) -> IsUnionCaseUnseen ad g amap m allowObsolete x.UnionCaseRef
     | Item.ExnCase x -> IsTyconUnseen ad g amap m allowObsolete x
     | Item.ILField finfo -> not allowObsolete && ILFieldInfoIsUnseen finfo

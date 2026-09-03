@@ -1,5 +1,5 @@
 ﻿// #Regression #AccessorModifiers #Module
-// Regression test for DevDiv:175204 
+// Regression test for DevDiv:175204
 // It should be possible to access internal modules
 //<Expects status="success"></Expects>
 

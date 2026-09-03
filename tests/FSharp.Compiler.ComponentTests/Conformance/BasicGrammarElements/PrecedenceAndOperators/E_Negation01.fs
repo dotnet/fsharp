@@ -1,4 +1,4 @@
-// #Regression #Conformance #BasicGrammarElements #Operators 
+// #Regression #Conformance #BasicGrammarElements #Operators
 module M
 
 // Verify errors when trying to negate unsigned values

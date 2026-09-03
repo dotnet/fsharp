@@ -9,5 +9,5 @@ type MyPlainEnum =
 
 
 let methods = typeof<MyPlainEnum>.GetMethods(System.Reflection.BindingFlags.Static)
-    
+
 printfn "%i" (methods.Length)
