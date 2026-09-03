@@ -368,6 +368,15 @@ let private runServer
         new JsonRpc(new HeaderDelimitedMessageHandler(pipe, new JsonMessageFormatter()))
 
     rpc.AddLocalRpcTarget(target, JsonRpcTargetOptions(NotifyClientOfEvents = false, AllowNonPublicInvocation = false))
+
+    // Diagnostic breadcrumb: a host that gets "method not found" against a target that plainly
+    // declares the method has almost certainly loaded a second, different copy of this library, so
+    // its identity here is worth more than the rest of the trace.
+    errorWriter.WriteLine(
+        sprintf "FSI-SERVER: StreamJsonRpc %O from %s" (typeof<JsonRpc>.Assembly.GetName().Version) typeof<JsonRpc>.Assembly.Location
+    )
+
+    errorWriter.Flush()
     rpc.StartListening()
 
     // Either the host goes away or it asks to stop. Both end the session.
