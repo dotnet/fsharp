@@ -62,19 +62,28 @@ type FSharpEmbedResXSource(taskEnvironment: TaskEnvironment) as this =
     // root. Rooted forms are de-duplicated and applied longest first so a shorter rooted path that is a
     // prefix of a longer one cannot partially rewrite it.
     let restoreOriginalPaths (message: string) (originalPaths: string list) =
-        // Compute the rooted and canonicalized absolute forms of one original. Absolute originals yield
-        // nothing: rooting is a no-op for them and rewriting an absolute caller path (even into its own
-        // canonical form) would corrupt it. The whole computation is guarded so that building a
-        // diagnostic can never itself throw for a pathological path (e.g. characters the framework Path
-        // APIs reject on .NET Framework); such an original is simply left unrestored.
+        // Compute the rooted and canonicalized absolute forms of one original. Always ask the
+        // TaskEnvironment to root the path rather than second-guessing with Path.IsPathRooted: on Windows
+        // a partially qualified input such as '\foo' (root-relative) or 'C:foo' (drive-relative) is
+        // reported as rooted yet the framework still expands it against the project directory, so skipping
+        // those would leak the expanded rooted form. GetAbsolutePath echoes the caller's own string back
+        // unchanged only when it was already fully qualified; that case yields nothing, because rewriting
+        // an already-absolute caller path (even into its own canonical form) would corrupt it. Any other
+        // result differs from the original and is mapped back exactly as for a plain relative path. The
+        // whole computation is guarded so that building a diagnostic can never itself throw for a
+        // pathological path (e.g. characters the framework Path APIs reject on .NET Framework); such an
+        // original is simply left unrestored.
         let rootedFormsOf (original: string) =
             try
-                if String.IsNullOrEmpty original || Path.IsPathRooted original then
+                if String.IsNullOrEmpty original then
                     []
                 else
                     let rooted = _taskEnvironment.GetAbsolutePath(original).Value
 
-                    if String.IsNullOrEmpty rooted then
+                    // Treat the path as already fully qualified only when rooting was a no-op under the
+                    // platform path comparison; otherwise it (including a Windows partially qualified
+                    // input) is restored just like a relative path.
+                    if String.IsNullOrEmpty rooted || String.Equals(rooted, original, pathComparison) then
                         []
                     else
                         // GetCanonicalForm is internal to Microsoft.Build.Framework, so reproduce the

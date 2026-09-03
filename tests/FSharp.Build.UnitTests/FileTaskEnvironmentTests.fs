@@ -4,6 +4,7 @@ namespace FSharp.Build.UnitTests
 
 open System
 open System.IO
+open System.Runtime.InteropServices
 open System.Threading
 open System.Threading.Tasks
 open Microsoft.Build.Framework
@@ -76,6 +77,22 @@ type FileTaskEnvironmentTests() =
             index <- text.IndexOf(needle, index + needle.Length, StringComparison.Ordinal)
 
         count
+
+    /// Windows partially qualified inputs - root-relative ('\foo') and drive-relative ('C:foo') - are
+    /// reported as rooted by Path.IsPathRooted yet TaskEnvironment still expands them against the project
+    /// directory. Asserts a failing task's single diagnostic keeps the caller's original spelling and
+    /// leaks neither the expanded rooted form nor the project directory.
+    let assertPartiallyQualifiedDiagnostic
+        (environment: TaskEnvironment)
+        (projectDirectory: string)
+        (original: string)
+        (message: string)
+        =
+        let rooted = environment.GetAbsolutePath(original).Value
+
+        Assert.Contains(original, message)
+        Assert.DoesNotContain(rooted, message)
+        Assert.DoesNotContain(projectDirectory, message)
 
     [<Fact>]
     member _.``WriteCodeFragment writes relative to each task's TaskEnvironment, not the process current directory``
@@ -575,6 +592,39 @@ type FileTaskEnvironmentTests() =
             Assert.DoesNotContain(directory.FullName, error.Message))
 
     [<Fact>]
+    member _.``FSharpEmbedResXSource restores a Windows partially qualified resx input and never leaks the expanded rooted form``
+        ()
+        =
+        // Windows-only: a leading '\' or 'C:' is an ordinary file name character on Unix, so these shapes
+        // only carry partial-qualification meaning on Windows.
+        if RuntimeInformation.IsOSPlatform OSPlatform.Windows then
+            withTaskEnvironment (fun environment directory ->
+                // A root-relative ('\Missing.resx') and a drive-relative ('C:Missing.resx') input are both
+                // reported as rooted by Path.IsPathRooted, yet GetAbsolutePath still expands them against
+                // the project directory before XDocument.Load throws its FileNotFoundException. The
+                // diagnostic must be restored to the caller's own partially qualified spelling, never the
+                // expanded rooted form (nor, for the drive-relative case, the project directory).
+                for original in [ @"\Missing.resx"; @"C:Missing.resx" ] do
+                    let embeddedResource = TaskItem(original) :> ITaskItem
+                    embeddedResource.SetMetadata("GenerateSource", "true")
+
+                    let engine = MockEngine()
+
+                    let task =
+                        FSharpEmbedResXSource(
+                            BuildEngine = engine,
+                            EmbeddedResource = [| embeddedResource |],
+                            IntermediateOutputPath = "obj"
+                        )
+
+                    assignTaskEnvironment (task :> IMultiThreadableTask) environment
+
+                    Assert.False(task.Execute())
+                    let error = Assert.Single(engine.Errors)
+
+                    assertPartiallyQualifiedDiagnostic environment directory.FullName original error.Message)
+
+    [<Fact>]
     member _.``FSharpEmbedResourceText keeps a relative input relative in diagnostics and never leaks the project directory``
         ()
         =
@@ -714,6 +764,35 @@ type FileTaskEnvironmentTests() =
             // that the canonicalized project root was fully restored to the caller's spelling.
             Assert.Equal(expected, actual)
             Assert.DoesNotContain(directory.FullName, actual))
+
+    [<Fact>]
+    member _.``FSharpEmbedResourceText restores a Windows partially qualified input and never leaks the expanded rooted form``
+        ()
+        =
+        // Windows-only: a leading '\' or 'C:' is an ordinary file name character on Unix.
+        if RuntimeInformation.IsOSPlatform OSPlatform.Windows then
+            withTaskEnvironment (fun environment directory ->
+                // A root-relative ('\Missing.txt') and a drive-relative ('C:Missing.txt') input are both
+                // reported as rooted by Path.IsPathRooted, yet GetAbsolutePath still expands them against
+                // the project directory before File.ReadAllLines throws naming the expanded path. The
+                // diagnostic must surface the caller's original partially qualified spelling, never the
+                // expanded rooted form (nor, for the drive-relative case, the project directory).
+                for original in [ @"\Missing.txt"; @"C:Missing.txt" ] do
+                    let engine = MockEngine()
+
+                    let task =
+                        FSharpEmbedResourceText(
+                            BuildEngine = engine,
+                            EmbeddedText = [| TaskItem(original) :> ITaskItem |],
+                            IntermediateOutputPath = "obj"
+                        )
+
+                    assignTaskEnvironment (task :> IMultiThreadableTask) environment
+
+                    Assert.False(task.Execute())
+                    let error = Assert.Single(engine.Errors)
+
+                    assertPartiallyQualifiedDiagnostic environment directory.FullName original error.Message)
 
     [<Fact>]
     member _.``SubstituteText reads and writes relative to each task's TaskEnvironment, not the process current directory``
