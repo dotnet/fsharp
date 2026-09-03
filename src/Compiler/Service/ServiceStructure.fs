@@ -192,10 +192,14 @@ module Structure =
         | SingleLine
         | XmlDoc
 
-    /// Determine if a line is a single line or xml documentation comment.
-    /// Kept at module scope: a local recursive function capturing a `ReadOnlySpan<char>`-typed
-    /// helper as a closure field would need to instantiate `FSharpFunc<ReadOnlySpan<char>, _>`,
-    /// which the CLR disallows for byref-like type arguments (FS0412).
+    /// <summary>
+    /// Determines if a line is a single line or xml documentation comment.
+    /// </summary>
+    /// <remarks>
+    /// Kept at module scope: a local recursive function capturing a <see cref="T:System.ReadOnlySpan`1"/>-typed
+    /// helper as a closure field would need to instantiate <see cref="T:Microsoft.FSharp.Core.FSharpFunc`2"/>
+    /// over it, which the CLR disallows for byref-like type arguments (FS0412).
+    /// </remarks>
     let commentTypeOf (line: ReadOnlySpan<char>) =
         if line.StartsWithOrdinal("///") then ValueSome XmlDoc
         elif line.StartsWithOrdinal("//") then ValueSome SingleLine
@@ -670,7 +674,7 @@ module Structure =
                     | r :: rest, last :: _ when
                         r.StartLine = last.EndLine + 1
                         || sourceLines[last.EndLine .. r.StartLine - 2]
-                           |> Array.forall (fun line -> line.Span.IsWhiteSpace())
+                           |> Array.forall _.Span.IsWhiteSpace()
                         ->
                         loop rest res (r :: currentBulk)
                     | r :: rest, _ -> loop rest (currentBulk :: res) [ r ]
