@@ -223,4 +223,10 @@
     <ProjectReference Include="..\service\data\CSharp_Analysis\CSharp_Analysis.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- FSharp.Compiler.Service's PackageReference to System.Memory (for ReadOnlySpan/ReadOnlyMemory) is only
+         transitive here, so the SetTargetFramework override above does not carry it in on net472; pin it directly. -->
+    <PackageReference Include="System.Memory" />
+  </ItemGroup>
+
 </Project>
