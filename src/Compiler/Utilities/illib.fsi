@@ -68,6 +68,48 @@ module internal PervasiveAutoOpens =
 
         member inline IndexOfOrdinal: value: string * startIndex: int * count: int -> int
 
+    [<AbstractClass; Sealed; Extension>]
+    type ReadOnlySpanCharExtensions =
+
+        [<Extension>]
+        static member inline StartsWithOrdinal: str : ReadOnlySpan<char> * value: ReadOnlySpan<char> -> bool
+
+        [<Extension>]
+        static member inline StartsWithOrdinal: str : ReadOnlySpan<char> * value: string -> bool
+
+        [<Extension>]
+        static member inline EndsWithOrdinal: str : ReadOnlySpan<char> * value: ReadOnlySpan<char> -> bool
+
+        [<Extension>]
+        static member inline EndsWithOrdinal: str : ReadOnlySpan<char> * value: string -> bool
+
+        [<Extension>]
+        static member inline EndsWithOrdinalIgnoreCase: str : ReadOnlySpan<char> * value: ReadOnlySpan<char> -> bool
+
+        [<Extension>]
+        static member inline EndsWithOrdinalIgnoreCase: str : ReadOnlySpan<char> * value: string -> bool
+
+        [<Extension>]
+        static member IndexOf: str : ReadOnlySpan<char> * value: char -> int
+
+        [<Extension>]
+        static member inline IndexOfOrdinal: str : ReadOnlySpan<char> * value: ReadOnlySpan<char> -> int
+
+        [<Extension>]
+        static member inline IndexOfOrdinal: str : ReadOnlySpan<char> * value: string -> int
+
+        [<Extension>]
+        static member inline IndexOfOrdinal: str : ReadOnlySpan<char> * value: ReadOnlySpan<char> * startIndex: int -> int
+
+        [<Extension>]
+        static member inline IndexOfOrdinal: str : ReadOnlySpan<char> * value: string * startIndex: int -> int
+
+        [<Extension>]
+        static member inline IndexOfOrdinal: str : ReadOnlySpan<char> * value: ReadOnlySpan<char> * startIndex: int * count: int -> int
+
+        [<Extension>]
+        static member inline IndexOfOrdinal: str : ReadOnlySpan<char> * value: string * startIndex: int * count: int -> int
+
     type Async with
 
         /// Runs the computation synchronously, always starting on the current thread.
