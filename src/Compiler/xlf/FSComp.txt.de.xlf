@@ -492,11 +492,6 @@
         <target state="translated">Zeichenfolgenwerte, die als Literale und IL-Konstanten als printf-Format markiert sind</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureNonVariablePatternsToRightOfAsPatterns">
-        <source>non-variable patterns to the right of 'as' patterns</source>
-        <target state="translated">Nicht-Variablenmuster rechts neben as-Mustern</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureNotNullIfNotNull">
         <source>honor the 'NotNullIfNotNull' attribute on a method's return value</source>
         <target state="new">honor the 'NotNullIfNotNull' attribute on a method's return value</target>
