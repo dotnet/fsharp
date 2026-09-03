@@ -19,6 +19,8 @@ type MultiThreadedTaskTests() =
             yield [| typeof<MapSourceRoots> |]
             yield [| typeof<WriteCodeFragment> |]
             yield [| typeof<GenerateILLinkSubstitutions> |]
+            yield [| typeof<FSharpEmbedResourceText> |]
+            yield [| typeof<FSharpEmbedResXSource> |]
         }
 
     [<Theory>]

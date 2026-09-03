@@ -11,12 +11,34 @@ open Microsoft.Build.Utilities
 /// the task has already emitted the error message.
 exception TaskFailed
 
-type FSharpEmbedResourceText() as this =
+[<MSBuildMultiThreadableTask>]
+type FSharpEmbedResourceText(taskEnvironment: TaskEnvironment) as this =
     inherit Task()
     let mutable _embeddedText: ITaskItem[] = [||]
     let mutable _generatedSource: ITaskItem[] = [||]
     let mutable _generatedResx: ITaskItem[] = [||]
     let mutable _outputPath: string = ""
+    let mutable _taskEnvironment = taskEnvironment
+
+    // Every File/Directory/stream API consuming a (possibly relative) path must go through this so
+    // paths are resolved against this task instance's TaskEnvironment rather than the ambient process
+    // current directory. Original relative strings are preserved for messages and output items.
+    let rootedPath (path: string) =
+        _taskEnvironment.GetAbsolutePath(path).Value
+
+    // The framework exceptions thrown by File/Directory/stream APIs embed the rooted absolute path
+    // that was actually passed to them. Strip the task's rooted project directory back out so that
+    // logged diagnostics only ever surface the original, unrooted relative paths.
+    let hideRootedPaths (message: string) =
+        let projectDirectory = _taskEnvironment.ProjectDirectory.Value
+
+        if System.String.IsNullOrEmpty projectDirectory then
+            message
+        else
+            message
+                .Replace(projectDirectory + string Path.DirectorySeparatorChar, "")
+                .Replace(projectDirectory + string Path.AltDirectorySeparatorChar, "")
+                .Replace(projectDirectory, "")
 
     let PrintErr (fileName, line, msg) =
         this.Log.LogError(null, null, null, fileName, line, 0, 0, 0, msg, Array.empty)
@@ -423,24 +445,28 @@ open Printf
             let outFileSignatureName = Path.Combine(_outputPath, justFileName + ".fsi")
             let outXmlFileName = Path.Combine(_outputPath, justFileName + ".resx")
 
-            let condition1 = File.Exists(outFileName)
-            let condition2 = condition1 && File.Exists(outXmlFileName)
-            let condition3 = condition2 && File.Exists(fileName)
+            let condition1 = File.Exists(rootedPath outFileName)
+            let condition2 = condition1 && File.Exists(rootedPath outXmlFileName)
+            let condition3 = condition2 && File.Exists(rootedPath fileName)
 
             let condition4 =
                 condition3
-                && (File.GetLastWriteTimeUtc(fileName) <= File.GetLastWriteTimeUtc(outFileName))
+                && (File.GetLastWriteTimeUtc(rootedPath fileName)
+                    <= File.GetLastWriteTimeUtc(rootedPath outFileName))
 
             let condition5 =
                 condition4
-                && (File.GetLastWriteTimeUtc(fileName) <= File.GetLastWriteTimeUtc(outXmlFileName))
+                && (File.GetLastWriteTimeUtc(rootedPath fileName)
+                    <= File.GetLastWriteTimeUtc(rootedPath outXmlFileName))
 
             // A generated file does not record whether it was generated with RichText, so the flag has
             // to be recovered from the open the generator emits for it, or an existing file would be
             // taken as up-to-date after the flag changed
             let condition6 =
                 condition5
-                && (richText = (File.ReadLines(outFileName) |> Seq.truncate 40 |> Seq.contains richTextOpen))
+                && (richText = (File.ReadLines(rootedPath outFileName)
+                                |> Seq.truncate 40
+                                |> Seq.contains richTextOpen))
 
             if condition6 then
                 printMessage "Skipping generation of %s and %s from %s since up-to-date" outFileName outXmlFileName fileName
@@ -462,7 +488,7 @@ open Printf
                 printMessage "Reading %s" fileName
 
                 let lines =
-                    File.ReadAllLines(fileName)
+                    File.ReadAllLines(rootedPath fileName)
                     |> Array.mapi (fun i s -> i, s) // keep line numbers
                     |> Array.filter (fun (_i, s) -> not (s.StartsWith "#")) // filter out comments
 
@@ -508,9 +534,9 @@ open Printf
                     allStrs.Add(str, (line, ident))
 
                 printMessage "Generating %s" outFileName
-                use outStream = File.Create outFileName
+                use outStream = File.Create(rootedPath outFileName)
                 use out = new StreamWriter(outStream)
-                use outSignatureStream = File.Create outFileSignatureName
+                use outSignatureStream = File.Create(rootedPath outFileSignatureName)
                 use outSignature = new StreamWriter(outSignatureStream)
                 fprintfn out "// This is a generated file; the original input is '%s'" fileName
                 fprintfn outSignature "// This is a generated file; the original input is '%s'" fileName
@@ -689,13 +715,20 @@ open Printf
                     xnc.AppendChild(xd.CreateTextNode netFormatString) |> ignore
                     xd.LastChild.AppendChild xn |> ignore)
 
-                use outXmlStream = File.Create outXmlFileName
+                use outXmlStream = File.Create(rootedPath outXmlFileName)
                 xd.Save outXmlStream
                 printMessage "Done %s" outFileName
                 Some(fileName, outFileSignatureName, outFileName, outXmlFileName)
         with e ->
-            PrintErr(fileName, 0, sprintf "An exception occurred when processing '%s'\n%s" fileName (e.ToString()))
+            PrintErr(fileName, 0, sprintf "An exception occurred when processing '%s'\n%s" fileName (hideRootedPaths (e.ToString())))
             None
+
+    new() = FSharpEmbedResourceText(TaskEnvironment.Fallback)
+
+    interface IMultiThreadableTask with
+        member _.TaskEnvironment
+            with get () = _taskEnvironment
+            and set (value) = _taskEnvironment <- value
 
     [<Required>]
     member _.EmbeddedText

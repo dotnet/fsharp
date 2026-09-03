@@ -10,12 +10,20 @@ open System.Xml.Linq
 open Microsoft.Build.Framework
 open Microsoft.Build.Utilities
 
-type FSharpEmbedResXSource() as this =
+[<MSBuildMultiThreadableTask>]
+type FSharpEmbedResXSource(taskEnvironment: TaskEnvironment) as this =
     inherit Task()
     let mutable _embeddedText: ITaskItem[] = [||]
     let mutable _generatedSource: ITaskItem[] = [||]
     let mutable _outputPath: string = ""
     let mutable _targetFramework: string = ""
+    let mutable _taskEnvironment = taskEnvironment
+
+    // Every File/Directory/stream/XDocument API consuming a (possibly relative) path must go through
+    // this so paths are resolved against this task instance's TaskEnvironment rather than the ambient
+    // process current directory. Original relative strings are preserved for messages and output items.
+    let rootedPath (path: string) =
+        _taskEnvironment.GetAbsolutePath(path).Value
 
     let failTask fmt =
         Printf.ksprintf
@@ -48,9 +56,10 @@ module internal {1} =
 
             // simple up-to-date check
             if
-                File.Exists(resx)
-                && File.Exists(sourcePath)
-                && File.GetLastWriteTimeUtc(resx) <= File.GetLastWriteTimeUtc(sourcePath)
+                File.Exists(rootedPath resx)
+                && File.Exists(rootedPath sourcePath)
+                && File.GetLastWriteTimeUtc(rootedPath resx)
+                   <= File.GetLastWriteTimeUtc(rootedPath sourcePath)
             then
                 printMessage "Skipping generation: '%s' since it is up-to-date." sourcePath
                 Some(sourcePath)
@@ -82,7 +91,7 @@ module internal {1} =
                 let body =
                     let xname = XName.op_Implicit
 
-                    XDocument.Load(resx).Descendants(xname "data")
+                    XDocument.Load(rootedPath resx).Descendants(xname "data")
                     |> Seq.fold
                         (fun (sb: StringBuilder) (node: XElement) ->
                             let name =
@@ -120,12 +129,21 @@ module internal {1} =
                             sb.AppendLine().Append(commentBody).AppendLine(accessorBody))
                         sb
 
-                File.WriteAllText(sourcePath, body.ToString())
+                File.WriteAllText(rootedPath sourcePath, body.ToString())
                 printMessage "Done: %s" sourcePath
                 Some(sourcePath)
         with e ->
-            printf "An exception occurred when processing '%s'\n%s" resx (e.ToString())
+            // Log via MSBuild's error reporting (never Console) and keep the diagnostic scoped to the
+            // original, unrooted relative resx path so rooted paths never leak into build output.
+            this.Log.LogError(sprintf "An exception occurred when processing '%s': %s" resx e.Message)
             None
+
+    new() = FSharpEmbedResXSource(TaskEnvironment.Fallback)
+
+    interface IMultiThreadableTask with
+        member _.TaskEnvironment
+            with get () = _taskEnvironment
+            and set (value) = _taskEnvironment <- value
 
     [<Required>]
     member _.EmbeddedResource
