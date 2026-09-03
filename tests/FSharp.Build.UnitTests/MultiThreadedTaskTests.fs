@@ -5,7 +5,6 @@ namespace FSharp.Build.UnitTests
 open System
 open System.IO
 open System.Collections.Generic
-open System.Reflection
 open System.Threading
 open System.Threading.Tasks
 open Microsoft.Build.Framework
@@ -35,11 +34,10 @@ type FauxHostObject() =
 /// InternalsVisibleTo to VisualFSharp.UnitTests, so this assembly reaches them via reflection.
 module private FscFsiTestHooks =
 
-    let private instanceFlags =
-        BindingFlags.Instance ||| BindingFlags.Public ||| BindingFlags.NonPublic
-
     let private invoke (task: obj) (name: string) (args: obj[]) =
-        let m = task.GetType().GetMethod(name, instanceFlags)
+        let m =
+            FSharp.Test.ReflectionHelper.getPrivateInstanceMethod name (task.GetType())
+
         m.Invoke(task, args)
 
     let fullPathToTool (task: obj) : string =
@@ -97,12 +95,25 @@ type FscFsiMultiThreadedTaskTests() =
 
         environment, compilerBin
 
-    [<Fact>]
-    member _.``Fsc and Fsi resolve tool path against distinct injected compiler-bin environments``() =
-        let fscEnvironment, fscBin = environmentWithCompilerBin ()
-        let fsiEnvironment, fsiBin = environmentWithCompilerBin ()
+    /// Creates two compiler-bin TaskEnvironments, runs `body` against both, and disposes them afterwards.
+    /// Nested try/finally guarantees the first environment is disposed even if the second fails to construct,
+    /// and that both are disposed (second then first) once `body` completes.
+    static let withCompilerBinEnvironmentPair body =
+        let environmentA, binA = environmentWithCompilerBin ()
 
         try
+            let environmentB, binB = environmentWithCompilerBin ()
+
+            try
+                body environmentA binA environmentB binB
+            finally
+                BuildTaskTestHelpers.disposeTaskEnvironment environmentB
+        finally
+            BuildTaskTestHelpers.disposeTaskEnvironment environmentA
+
+    [<Fact>]
+    member _.``Fsc and Fsi resolve tool path against distinct injected compiler-bin environments``() =
+        withCompilerBinEnvironmentPair (fun fscEnvironment fscBin fsiEnvironment fsiBin ->
             // Constructing with the environment must route the eager compiler-bin lookup through it,
             // which requires assigning TaskEnvironment before the defaultToolPath binding runs.
             let fsc = Fsc(fscEnvironment)
@@ -122,17 +133,11 @@ type FscFsiMultiThreadedTaskTests() =
             Assert.Equal(Path.GetFullPath fsiBin, Path.GetDirectoryName fsiPath)
 
             // The two injected environments are distinct, so the resolved directories differ.
-            Assert.NotEqual<string>(Path.GetDirectoryName fscPath, Path.GetDirectoryName fsiPath)
-        finally
-            BuildTaskTestHelpers.disposeTaskEnvironment fscEnvironment
-            BuildTaskTestHelpers.disposeTaskEnvironment fsiEnvironment
+            Assert.NotEqual<string>(Path.GetDirectoryName fscPath, Path.GetDirectoryName fsiPath))
 
     [<Fact>]
     member _.``Two Fsc tasks resolve tool paths against their own injected compiler-bin environments``() =
-        let firstEnvironment, firstBin = environmentWithCompilerBin ()
-        let secondEnvironment, secondBin = environmentWithCompilerBin ()
-
-        try
+        withCompilerBinEnvironmentPair (fun firstEnvironment firstBin secondEnvironment secondBin ->
             let first = Fsc(firstEnvironment)
             let second = Fsc(secondEnvironment)
 
@@ -141,10 +146,7 @@ type FscFsiMultiThreadedTaskTests() =
 
             Assert.Equal(Path.GetFullPath firstBin, Path.GetDirectoryName firstPath)
             Assert.Equal(Path.GetFullPath secondBin, Path.GetDirectoryName secondPath)
-            Assert.NotEqual<string>(firstPath, secondPath)
-        finally
-            BuildTaskTestHelpers.disposeTaskEnvironment firstEnvironment
-            BuildTaskTestHelpers.disposeTaskEnvironment secondEnvironment
+            Assert.NotEqual<string>(firstPath, secondPath))
 
     [<Fact>]
     member _.``Two concurrent Fsc tasks route flags and sources to their own host objects``() =

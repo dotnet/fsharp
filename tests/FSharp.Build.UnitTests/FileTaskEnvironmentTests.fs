@@ -54,68 +54,67 @@ type FileTaskEnvironmentTests() =
 
         taskA.Result, taskB.Result
 
+    /// Composes the isolation scaffolding shared by every paired isolation fact: points the process
+    /// current directory at a fresh decoy (withDecoyCurrentDirectory), creates and disposes a pair of
+    /// temporary-directory-rooted TaskEnvironments (withTaskEnvironmentPair), and, after `body` runs,
+    /// asserts the decoy directory received no writes (proving no task fell back to ambient process state).
+    let withIsolatedTaskEnvironmentPair body =
+        withDecoyCurrentDirectory (fun decoyDirectory ->
+            withTaskEnvironmentPair (fun environmentA directoryA environmentB directoryB ->
+                body environmentA directoryA environmentB directoryB
+                Assert.Empty(Directory.GetFiles(decoyDirectory.FullName, "*", SearchOption.AllDirectories))))
+
     [<Fact>]
     member _.``WriteCodeFragment writes relative to each task's TaskEnvironment, not the process current directory``
         ()
         =
-        withDecoyCurrentDirectory (fun decoyDirectory ->
-            let environmentA, directoryA = createTaskEnvironmentInTemporaryDirectory ()
-            let environmentB, directoryB = createTaskEnvironmentInTemporaryDirectory ()
+        withIsolatedTaskEnvironmentPair (fun environmentA directoryA environmentB directoryB ->
+            let makeTask (attributeName: string) (environment: TaskEnvironment) =
+                let attribute = TaskItem(attributeName) :> ITaskItem
 
-            try
-                let makeTask (attributeName: string) (environment: TaskEnvironment) =
-                    let attribute = TaskItem(attributeName) :> ITaskItem
+                let task =
+                    WriteCodeFragment(
+                        BuildEngine = MockEngine(),
+                        Language = "F#",
+                        AssemblyAttributes = [| attribute |],
+                        OutputFile = (TaskItem("Generated.fs") :> ITaskItem)
+                    )
 
-                    let task =
-                        WriteCodeFragment(
-                            BuildEngine = MockEngine(),
-                            Language = "F#",
-                            AssemblyAttributes = [| attribute |],
-                            OutputFile = (TaskItem("Generated.fs") :> ITaskItem)
-                        )
+                assignTaskEnvironment (task :> IMultiThreadableTask) environment
+                task
 
-                    assignTaskEnvironment (task :> IMultiThreadableTask) environment
-                    task
+            let taskA = makeTask "AssemblyMetadataA" environmentA
+            let taskB = makeTask "AssemblyMetadataB" environmentB
 
-                let taskA = makeTask "AssemblyMetadataA" environmentA
-                let taskB = makeTask "AssemblyMetadataB" environmentB
+            let successA, successB =
+                runConcurrently (fun () -> taskA.Execute()) (fun () -> taskB.Execute())
 
-                let successA, successB =
-                    runConcurrently (fun () -> taskA.Execute()) (fun () -> taskB.Execute())
+            Assert.True successA
+            Assert.True successB
 
-                Assert.True successA
-                Assert.True successB
+            let pathA = Path.Combine(directoryA.FullName, "Generated.fs")
+            let pathB = Path.Combine(directoryB.FullName, "Generated.fs")
 
-                let pathA = Path.Combine(directoryA.FullName, "Generated.fs")
-                let pathB = Path.Combine(directoryB.FullName, "Generated.fs")
+            Assert.True(File.Exists pathA, sprintf "Expected generated file at %s" pathA)
+            Assert.True(File.Exists pathB, sprintf "Expected generated file at %s" pathB)
 
-                Assert.True(File.Exists pathA, sprintf "Expected generated file at %s" pathA)
-                Assert.True(File.Exists pathB, sprintf "Expected generated file at %s" pathB)
+            let contentsA = File.ReadAllText pathA
+            let contentsB = File.ReadAllText pathB
 
-                let contentsA = File.ReadAllText pathA
-                let contentsB = File.ReadAllText pathB
+            Assert.Contains("AssemblyMetadataA", contentsA)
+            Assert.Contains("AssemblyMetadataB", contentsB)
+            Assert.DoesNotContain("AssemblyMetadataB", contentsA)
+            Assert.DoesNotContain("AssemblyMetadataA", contentsB)
 
-                Assert.Contains("AssemblyMetadataA", contentsA)
-                Assert.Contains("AssemblyMetadataB", contentsB)
-                Assert.DoesNotContain("AssemblyMetadataB", contentsA)
-                Assert.DoesNotContain("AssemblyMetadataA", contentsB)
-
-                // The output item's ItemSpec must remain the original, unrooted relative value.
-                Assert.Equal("Generated.fs", taskA.OutputFile.ItemSpec)
-                Assert.Equal("Generated.fs", taskB.OutputFile.ItemSpec)
-
-                Assert.Empty(Directory.GetFiles(decoyDirectory.FullName, "*", SearchOption.AllDirectories))
-            finally
-                disposeTaskEnvironment environmentA
-                disposeTaskEnvironment environmentB)
+            // The output item's ItemSpec must remain the original, unrooted relative value.
+            Assert.Equal("Generated.fs", taskA.OutputFile.ItemSpec)
+            Assert.Equal("Generated.fs", taskB.OutputFile.ItemSpec))
 
     [<Fact>]
     member _.``WriteCodeFragment preserves its OutputDirectory quirk while rooting the write against TaskEnvironment``
         ()
         =
-        let environment, directory = createTaskEnvironmentInTemporaryDirectory ()
-
-        try
+        withTaskEnvironment (fun environment directory ->
             let attribute = TaskItem("SomeAttribute") :> ITaskItem
 
             let task =
@@ -137,248 +136,217 @@ type FileTaskEnvironmentTests() =
             Assert.True(File.Exists writtenPath, sprintf "Expected generated file at %s" writtenPath)
             Assert.False(File.Exists(Path.Combine(directory.FullName, "SubDir", "Generated2.fs")))
 
-            Assert.Equal(Path.Combine("SubDir", "Generated2.fs"), task.OutputFile.ItemSpec)
-        finally
-            disposeTaskEnvironment environment
+            Assert.Equal(Path.Combine("SubDir", "Generated2.fs"), task.OutputFile.ItemSpec))
 
     [<Fact>]
     member _.``GenerateILLinkSubstitutions writes relative to each task's TaskEnvironment, not the process current directory``
         ()
         =
-        withDecoyCurrentDirectory (fun decoyDirectory ->
-            let environmentA, directoryA = createTaskEnvironmentInTemporaryDirectory ()
-            let environmentB, directoryB = createTaskEnvironmentInTemporaryDirectory ()
+        withIsolatedTaskEnvironmentPair (fun environmentA directoryA environmentB directoryB ->
+            let relativeIntermediateA = Path.Combine("obj", "DebugA")
+            let relativeIntermediateB = Path.Combine("obj", "DebugB")
 
-            try
-                let relativeIntermediateA = Path.Combine("obj", "DebugA")
-                let relativeIntermediateB = Path.Combine("obj", "DebugB")
+            let makeTask (assemblyName: string) (relativeIntermediate: string) (environment: TaskEnvironment) =
+                let task =
+                    GenerateILLinkSubstitutions(
+                        BuildEngine = MockEngine(),
+                        AssemblyName = assemblyName,
+                        IntermediateOutputPath = relativeIntermediate
+                    )
 
-                let makeTask (assemblyName: string) (relativeIntermediate: string) (environment: TaskEnvironment) =
-                    let task =
-                        GenerateILLinkSubstitutions(
-                            BuildEngine = MockEngine(),
-                            AssemblyName = assemblyName,
-                            IntermediateOutputPath = relativeIntermediate
-                        )
+                assignTaskEnvironment (task :> IMultiThreadableTask) environment
+                task
 
-                    assignTaskEnvironment (task :> IMultiThreadableTask) environment
-                    task
+            let taskA = makeTask "AssemblyA" relativeIntermediateA environmentA
+            let taskB = makeTask "AssemblyB" relativeIntermediateB environmentB
 
-                let taskA = makeTask "AssemblyA" relativeIntermediateA environmentA
-                let taskB = makeTask "AssemblyB" relativeIntermediateB environmentB
+            let successA, successB =
+                runConcurrently (fun () -> taskA.Execute()) (fun () -> taskB.Execute())
 
-                let successA, successB =
-                    runConcurrently (fun () -> taskA.Execute()) (fun () -> taskB.Execute())
+            Assert.True successA
+            Assert.True successB
 
-                Assert.True successA
-                Assert.True successB
+            let expectedItemSpecA = Path.Combine(relativeIntermediateA, "ILLink.Substitutions.xml")
+            let expectedItemSpecB = Path.Combine(relativeIntermediateB, "ILLink.Substitutions.xml")
 
-                let expectedItemSpecA = Path.Combine(relativeIntermediateA, "ILLink.Substitutions.xml")
-                let expectedItemSpecB = Path.Combine(relativeIntermediateB, "ILLink.Substitutions.xml")
+            // The generated item's ItemSpec must remain the original, unrooted relative value, and its
+            // LogicalName metadata must be unchanged.
+            Assert.Equal(expectedItemSpecA, taskA.GeneratedItems.[0].ItemSpec)
+            Assert.Equal(expectedItemSpecB, taskB.GeneratedItems.[0].ItemSpec)
+            Assert.Equal("ILLink.Substitutions.xml", taskA.GeneratedItems.[0].GetMetadata("LogicalName"))
+            Assert.Equal("ILLink.Substitutions.xml", taskB.GeneratedItems.[0].GetMetadata("LogicalName"))
 
-                // The generated item's ItemSpec must remain the original, unrooted relative value, and its
-                // LogicalName metadata must be unchanged.
-                Assert.Equal(expectedItemSpecA, taskA.GeneratedItems.[0].ItemSpec)
-                Assert.Equal(expectedItemSpecB, taskB.GeneratedItems.[0].ItemSpec)
-                Assert.Equal("ILLink.Substitutions.xml", taskA.GeneratedItems.[0].GetMetadata("LogicalName"))
-                Assert.Equal("ILLink.Substitutions.xml", taskB.GeneratedItems.[0].GetMetadata("LogicalName"))
+            let pathA = Path.Combine(directoryA.FullName, expectedItemSpecA)
+            let pathB = Path.Combine(directoryB.FullName, expectedItemSpecB)
 
-                let pathA = Path.Combine(directoryA.FullName, expectedItemSpecA)
-                let pathB = Path.Combine(directoryB.FullName, expectedItemSpecB)
+            Assert.True(File.Exists pathA, sprintf "Expected generated file at %s" pathA)
+            Assert.True(File.Exists pathB, sprintf "Expected generated file at %s" pathB)
 
-                Assert.True(File.Exists pathA, sprintf "Expected generated file at %s" pathA)
-                Assert.True(File.Exists pathB, sprintf "Expected generated file at %s" pathB)
+            let contentsA = File.ReadAllText pathA
+            let contentsB = File.ReadAllText pathB
 
-                let contentsA = File.ReadAllText pathA
-                let contentsB = File.ReadAllText pathB
-
-                Assert.Contains("AssemblyA", contentsA)
-                Assert.Contains("AssemblyB", contentsB)
-                Assert.DoesNotContain("AssemblyB", contentsA)
-                Assert.DoesNotContain("AssemblyA", contentsB)
-
-                Assert.Empty(Directory.GetFiles(decoyDirectory.FullName, "*", SearchOption.AllDirectories))
-            finally
-                disposeTaskEnvironment environmentA
-                disposeTaskEnvironment environmentB)
+            Assert.Contains("AssemblyA", contentsA)
+            Assert.Contains("AssemblyB", contentsB)
+            Assert.DoesNotContain("AssemblyB", contentsA)
+            Assert.DoesNotContain("AssemblyA", contentsB))
 
     [<Fact>]
     member _.``FSharpEmbedResourceText generates .fs, .fsi and .resx relative to each task's TaskEnvironment, not the process current directory``
         ()
         =
-        withDecoyCurrentDirectory (fun decoyDirectory ->
-            let environmentA, directoryA = createTaskEnvironmentInTemporaryDirectory ()
-            let environmentB, directoryB = createTaskEnvironmentInTemporaryDirectory ()
+        withIsolatedTaskEnvironmentPair (fun environmentA directoryA environmentB directoryB ->
+            // Both instances share the exact same relative paths; only the TaskEnvironment each is
+            // wired to (and therefore the project directory the paths are rooted against) differs.
+            let relativeIntermediate = Path.Combine("obj", "Debug")
+            let relativeText = "Strings.txt"
 
-            try
-                // Both instances share the exact same relative paths; only the TaskEnvironment each is
-                // wired to (and therefore the project directory the paths are rooted against) differs.
-                let relativeIntermediate = Path.Combine("obj", "Debug")
-                let relativeText = "Strings.txt"
+            Directory.CreateDirectory(Path.Combine(directoryA.FullName, relativeIntermediate))
+            |> ignore
 
-                Directory.CreateDirectory(Path.Combine(directoryA.FullName, relativeIntermediate))
-                |> ignore
+            Directory.CreateDirectory(Path.Combine(directoryB.FullName, relativeIntermediate))
+            |> ignore
 
-                Directory.CreateDirectory(Path.Combine(directoryB.FullName, relativeIntermediate))
-                |> ignore
+            File.WriteAllText(Path.Combine(directoryA.FullName, relativeText), "greeting,\"Hello from A\"\n")
+            File.WriteAllText(Path.Combine(directoryB.FullName, relativeText), "greeting,\"Hello from B\"\n")
 
-                File.WriteAllText(Path.Combine(directoryA.FullName, relativeText), "greeting,\"Hello from A\"\n")
-                File.WriteAllText(Path.Combine(directoryB.FullName, relativeText), "greeting,\"Hello from B\"\n")
+            let makeTask (environment: TaskEnvironment) =
+                let task =
+                    FSharpEmbedResourceText(
+                        BuildEngine = MockEngine(),
+                        EmbeddedText = [| TaskItem(relativeText) :> ITaskItem |],
+                        IntermediateOutputPath = relativeIntermediate
+                    )
 
-                let makeTask (environment: TaskEnvironment) =
-                    let task =
-                        FSharpEmbedResourceText(
-                            BuildEngine = MockEngine(),
-                            EmbeddedText = [| TaskItem(relativeText) :> ITaskItem |],
-                            IntermediateOutputPath = relativeIntermediate
-                        )
+                assignTaskEnvironment (task :> IMultiThreadableTask) environment
+                task
 
-                    assignTaskEnvironment (task :> IMultiThreadableTask) environment
-                    task
+            let taskA = makeTask environmentA
+            let taskB = makeTask environmentB
 
-                let taskA = makeTask environmentA
-                let taskB = makeTask environmentB
+            let successA, successB =
+                runConcurrently (fun () -> taskA.Execute()) (fun () -> taskB.Execute())
 
-                let successA, successB =
-                    runConcurrently (fun () -> taskA.Execute()) (fun () -> taskB.Execute())
+            Assert.True successA
+            Assert.True successB
 
-                Assert.True successA
-                Assert.True successB
+            let expectedSignatureItemSpec = Path.Combine(relativeIntermediate, "Strings.fsi")
+            let expectedSourceItemSpec = Path.Combine(relativeIntermediate, "Strings.fs")
+            let expectedResxItemSpec = Path.Combine(relativeIntermediate, "Strings.resx")
 
-                let expectedSignatureItemSpec = Path.Combine(relativeIntermediate, "Strings.fsi")
-                let expectedSourceItemSpec = Path.Combine(relativeIntermediate, "Strings.fs")
-                let expectedResxItemSpec = Path.Combine(relativeIntermediate, "Strings.resx")
+            // The generated items' ItemSpecs must remain the original, unrooted relative values, and
+            // are identical for both instances since both were configured with identical inputs.
+            let itemSpecs (source: ITaskItem[]) = source |> Array.map (fun item -> item.ItemSpec)
+            let expectedSourceItemSpecs = [| expectedSignatureItemSpec; expectedSourceItemSpec |]
 
-                // The generated items' ItemSpecs must remain the original, unrooted relative values, and
-                // are identical for both instances since both were configured with identical inputs.
-                let itemSpecs (source: ITaskItem[]) = source |> Array.map (fun item -> item.ItemSpec)
-                let expectedSourceItemSpecs = [| expectedSignatureItemSpec; expectedSourceItemSpec |]
+            Assert.Equal<string[]>(expectedSourceItemSpecs, itemSpecs taskA.GeneratedSource)
+            Assert.Equal<string[]>(expectedSourceItemSpecs, itemSpecs taskB.GeneratedSource)
+            Assert.Equal(expectedResxItemSpec, taskA.GeneratedResx.[0].ItemSpec)
+            Assert.Equal(expectedResxItemSpec, taskB.GeneratedResx.[0].ItemSpec)
 
-                Assert.Equal<string[]>(expectedSourceItemSpecs, itemSpecs taskA.GeneratedSource)
-                Assert.Equal<string[]>(expectedSourceItemSpecs, itemSpecs taskB.GeneratedSource)
-                Assert.Equal(expectedResxItemSpec, taskA.GeneratedResx.[0].ItemSpec)
-                Assert.Equal(expectedResxItemSpec, taskB.GeneratedResx.[0].ItemSpec)
+            let sourcePathA = Path.Combine(directoryA.FullName, expectedSourceItemSpec)
+            let sourcePathB = Path.Combine(directoryB.FullName, expectedSourceItemSpec)
+            let resxPathA = Path.Combine(directoryA.FullName, expectedResxItemSpec)
+            let resxPathB = Path.Combine(directoryB.FullName, expectedResxItemSpec)
 
-                let sourcePathA = Path.Combine(directoryA.FullName, expectedSourceItemSpec)
-                let sourcePathB = Path.Combine(directoryB.FullName, expectedSourceItemSpec)
-                let resxPathA = Path.Combine(directoryA.FullName, expectedResxItemSpec)
-                let resxPathB = Path.Combine(directoryB.FullName, expectedResxItemSpec)
+            for path in
+                [
+                    sourcePathA
+                    sourcePathB
+                    resxPathA
+                    resxPathB
+                    Path.Combine(directoryA.FullName, expectedSignatureItemSpec)
+                    Path.Combine(directoryB.FullName, expectedSignatureItemSpec)
+                ] do
+                Assert.True(File.Exists path, sprintf "Expected generated file at %s" path)
 
-                for path in
-                    [
-                        sourcePathA
-                        sourcePathB
-                        resxPathA
-                        resxPathB
-                        Path.Combine(directoryA.FullName, expectedSignatureItemSpec)
-                        Path.Combine(directoryB.FullName, expectedSignatureItemSpec)
-                    ] do
-                    Assert.True(File.Exists path, sprintf "Expected generated file at %s" path)
+            let sourceContentsA = File.ReadAllText sourcePathA
+            let sourceContentsB = File.ReadAllText sourcePathB
+            let resxContentsA = File.ReadAllText resxPathA
+            let resxContentsB = File.ReadAllText resxPathB
 
-                let sourceContentsA = File.ReadAllText sourcePathA
-                let sourceContentsB = File.ReadAllText sourcePathB
-                let resxContentsA = File.ReadAllText resxPathA
-                let resxContentsB = File.ReadAllText resxPathB
+            Assert.Contains("Hello from A", sourceContentsA)
+            Assert.Contains("Hello from B", sourceContentsB)
+            Assert.DoesNotContain("Hello from B", sourceContentsA)
+            Assert.DoesNotContain("Hello from A", sourceContentsB)
 
-                Assert.Contains("Hello from A", sourceContentsA)
-                Assert.Contains("Hello from B", sourceContentsB)
-                Assert.DoesNotContain("Hello from B", sourceContentsA)
-                Assert.DoesNotContain("Hello from A", sourceContentsB)
-
-                Assert.Contains("Hello from A", resxContentsA)
-                Assert.Contains("Hello from B", resxContentsB)
-                Assert.DoesNotContain("Hello from B", resxContentsA)
-                Assert.DoesNotContain("Hello from A", resxContentsB)
-
-                Assert.Empty(Directory.GetFiles(decoyDirectory.FullName, "*", SearchOption.AllDirectories))
-            finally
-                disposeTaskEnvironment environmentA
-                disposeTaskEnvironment environmentB)
+            Assert.Contains("Hello from A", resxContentsA)
+            Assert.Contains("Hello from B", resxContentsB)
+            Assert.DoesNotContain("Hello from B", resxContentsA)
+            Assert.DoesNotContain("Hello from A", resxContentsB))
 
     [<Fact>]
     member _.``FSharpEmbedResXSource loads each relative resx and writes a generated .fs relative to each task's TaskEnvironment, not the process current directory``
         ()
         =
-        withDecoyCurrentDirectory (fun decoyDirectory ->
-            let environmentA, directoryA = createTaskEnvironmentInTemporaryDirectory ()
-            let environmentB, directoryB = createTaskEnvironmentInTemporaryDirectory ()
+        withIsolatedTaskEnvironmentPair (fun environmentA directoryA environmentB directoryB ->
+            // Both instances share the exact same relative paths; only the TaskEnvironment each is
+            // wired to (and therefore the project directory the paths are rooted against) differs.
+            let relativeIntermediate = Path.Combine("obj", "Debug")
+            let relativeResx = "Resource.resx"
 
-            try
-                // Both instances share the exact same relative paths; only the TaskEnvironment each is
-                // wired to (and therefore the project directory the paths are rooted against) differs.
-                let relativeIntermediate = Path.Combine("obj", "Debug")
-                let relativeResx = "Resource.resx"
+            let resxContent (value: string) =
+                sprintf
+                    "<?xml version=\"1.0\" encoding=\"utf-8\"?><root><data name=\"Greeting\"><value>%s</value></data></root>"
+                    value
 
-                let resxContent (value: string) =
-                    sprintf
-                        "<?xml version=\"1.0\" encoding=\"utf-8\"?><root><data name=\"Greeting\"><value>%s</value></data></root>"
-                        value
+            Directory.CreateDirectory(Path.Combine(directoryA.FullName, relativeIntermediate))
+            |> ignore
 
-                Directory.CreateDirectory(Path.Combine(directoryA.FullName, relativeIntermediate))
-                |> ignore
+            Directory.CreateDirectory(Path.Combine(directoryB.FullName, relativeIntermediate))
+            |> ignore
 
-                Directory.CreateDirectory(Path.Combine(directoryB.FullName, relativeIntermediate))
-                |> ignore
+            File.WriteAllText(Path.Combine(directoryA.FullName, relativeResx), resxContent "Hello from A")
+            File.WriteAllText(Path.Combine(directoryB.FullName, relativeResx), resxContent "Hello from B")
 
-                File.WriteAllText(Path.Combine(directoryA.FullName, relativeResx), resxContent "Hello from A")
-                File.WriteAllText(Path.Combine(directoryB.FullName, relativeResx), resxContent "Hello from B")
+            let makeTask (environment: TaskEnvironment) =
+                let embeddedResource = TaskItem(relativeResx) :> ITaskItem
+                embeddedResource.SetMetadata("GenerateSource", "true")
 
-                let makeTask (environment: TaskEnvironment) =
-                    let embeddedResource = TaskItem(relativeResx) :> ITaskItem
-                    embeddedResource.SetMetadata("GenerateSource", "true")
+                let task =
+                    FSharpEmbedResXSource(
+                        BuildEngine = MockEngine(),
+                        EmbeddedResource = [| embeddedResource |],
+                        IntermediateOutputPath = relativeIntermediate
+                    )
 
-                    let task =
-                        FSharpEmbedResXSource(
-                            BuildEngine = MockEngine(),
-                            EmbeddedResource = [| embeddedResource |],
-                            IntermediateOutputPath = relativeIntermediate
-                        )
+                assignTaskEnvironment (task :> IMultiThreadableTask) environment
+                task
 
-                    assignTaskEnvironment (task :> IMultiThreadableTask) environment
-                    task
+            let taskA = makeTask environmentA
+            let taskB = makeTask environmentB
 
-                let taskA = makeTask environmentA
-                let taskB = makeTask environmentB
+            let successA, successB =
+                runConcurrently (fun () -> taskA.Execute()) (fun () -> taskB.Execute())
 
-                let successA, successB =
-                    runConcurrently (fun () -> taskA.Execute()) (fun () -> taskB.Execute())
+            Assert.True successA
+            Assert.True successB
 
-                Assert.True successA
-                Assert.True successB
+            let expectedSourceItemSpec = Path.Combine(relativeIntermediate, "Resource.fs")
 
-                let expectedSourceItemSpec = Path.Combine(relativeIntermediate, "Resource.fs")
+            // The generated item's ItemSpec must remain the original, unrooted relative value, and is
+            // identical for both instances since both were configured with identical inputs.
+            Assert.Equal(expectedSourceItemSpec, taskA.GeneratedSource.[0].ItemSpec)
+            Assert.Equal(expectedSourceItemSpec, taskB.GeneratedSource.[0].ItemSpec)
 
-                // The generated item's ItemSpec must remain the original, unrooted relative value, and is
-                // identical for both instances since both were configured with identical inputs.
-                Assert.Equal(expectedSourceItemSpec, taskA.GeneratedSource.[0].ItemSpec)
-                Assert.Equal(expectedSourceItemSpec, taskB.GeneratedSource.[0].ItemSpec)
+            let sourcePathA = Path.Combine(directoryA.FullName, expectedSourceItemSpec)
+            let sourcePathB = Path.Combine(directoryB.FullName, expectedSourceItemSpec)
 
-                let sourcePathA = Path.Combine(directoryA.FullName, expectedSourceItemSpec)
-                let sourcePathB = Path.Combine(directoryB.FullName, expectedSourceItemSpec)
+            Assert.True(File.Exists sourcePathA, sprintf "Expected generated file at %s" sourcePathA)
+            Assert.True(File.Exists sourcePathB, sprintf "Expected generated file at %s" sourcePathB)
 
-                Assert.True(File.Exists sourcePathA, sprintf "Expected generated file at %s" sourcePathA)
-                Assert.True(File.Exists sourcePathB, sprintf "Expected generated file at %s" sourcePathB)
+            let contentsA = File.ReadAllText sourcePathA
+            let contentsB = File.ReadAllText sourcePathB
 
-                let contentsA = File.ReadAllText sourcePathA
-                let contentsB = File.ReadAllText sourcePathB
-
-                Assert.Contains("Hello from A", contentsA)
-                Assert.Contains("Hello from B", contentsB)
-                Assert.DoesNotContain("Hello from B", contentsA)
-                Assert.DoesNotContain("Hello from A", contentsB)
-
-                Assert.Empty(Directory.GetFiles(decoyDirectory.FullName, "*", SearchOption.AllDirectories))
-            finally
-                disposeTaskEnvironment environmentA
-                disposeTaskEnvironment environmentB)
+            Assert.Contains("Hello from A", contentsA)
+            Assert.Contains("Hello from B", contentsB)
+            Assert.DoesNotContain("Hello from B", contentsA)
+            Assert.DoesNotContain("Hello from A", contentsB))
 
     [<Fact>]
     member _.``FSharpEmbedResXSource logs exactly one MSBuild error and writes no console output for malformed XML``
         ()
         =
-        let environment, directory = createTaskEnvironmentInTemporaryDirectory ()
-
-        try
+        withTaskEnvironment (fun environment directory ->
             let relativeResx = "Malformed.resx"
 
             File.WriteAllText(
@@ -425,17 +393,13 @@ type FileTaskEnvironmentTests() =
             // The diagnostic must name the original, unrooted relative resx input, and must never
             // surface the rooted task project directory the file was actually loaded from.
             Assert.Contains(relativeResx, error.Message)
-            Assert.DoesNotContain(directory.FullName, error.Message)
-        finally
-            disposeTaskEnvironment environment
+            Assert.DoesNotContain(directory.FullName, error.Message))
 
     [<Fact>]
     member _.``FSharpEmbedResXSource logs exactly one MSBuild error for a data element missing its name attribute``
         ()
         =
-        let environment, directory = createTaskEnvironmentInTemporaryDirectory ()
-
-        try
+        withTaskEnvironment (fun environment directory ->
             let relativeResx = "MissingName.resx"
 
             // Well-formed XML, but the `<data>` element lacks the required `name` attribute, which
@@ -469,80 +433,67 @@ type FileTaskEnvironmentTests() =
             Assert.Contains("Missing resource name", error.Message)
             Assert.DoesNotContain("An exception occurred when processing", error.Message)
             Assert.DoesNotContain("TaskFailed", error.Message)
-            Assert.DoesNotContain("   at ", error.Message)
-        finally
-            disposeTaskEnvironment environment
+            Assert.DoesNotContain("   at ", error.Message))
 
     [<Fact>]
     member _.``SubstituteText reads and writes relative to each task's TaskEnvironment, not the process current directory``
         ()
         =
-        withDecoyCurrentDirectory (fun decoyDirectory ->
-            let environmentA, directoryA = createTaskEnvironmentInTemporaryDirectory ()
-            let environmentB, directoryB = createTaskEnvironmentInTemporaryDirectory ()
+        withIsolatedTaskEnvironmentPair (fun environmentA directoryA environmentB directoryB ->
+            // Both instances share the exact same relative source/target names; only the
+            // TaskEnvironment each is wired to (and therefore the project directory the paths are
+            // rooted against) differs.
+            let relativeIntermediate = Path.Combine("obj", "Debug")
+            let relativeSource = "Source.txt"
 
-            try
-                // Both instances share the exact same relative source/target names; only the
-                // TaskEnvironment each is wired to (and therefore the project directory the paths are
-                // rooted against) differs.
-                let relativeIntermediate = Path.Combine("obj", "Debug")
-                let relativeSource = "Source.txt"
+            File.WriteAllText(Path.Combine(directoryA.FullName, relativeSource), "Hello from A. Token: PLACEHOLDER")
+            File.WriteAllText(Path.Combine(directoryB.FullName, relativeSource), "Hello from B. Token: PLACEHOLDER")
 
-                File.WriteAllText(Path.Combine(directoryA.FullName, relativeSource), "Hello from A. Token: PLACEHOLDER")
-                File.WriteAllText(Path.Combine(directoryB.FullName, relativeSource), "Hello from B. Token: PLACEHOLDER")
+            let makeTask (environment: TaskEnvironment) =
+                let embeddedResource = TaskItem(relativeSource) :> ITaskItem
+                embeddedResource.SetMetadata("IntermediateTargetPath", relativeIntermediate)
+                embeddedResource.SetMetadata("Pattern1", "PLACEHOLDER")
+                embeddedResource.SetMetadata("Replacement1", "REPLACED")
 
-                let makeTask (environment: TaskEnvironment) =
-                    let embeddedResource = TaskItem(relativeSource) :> ITaskItem
-                    embeddedResource.SetMetadata("IntermediateTargetPath", relativeIntermediate)
-                    embeddedResource.SetMetadata("Pattern1", "PLACEHOLDER")
-                    embeddedResource.SetMetadata("Replacement1", "REPLACED")
+                let task =
+                    SubstituteText(BuildEngine = MockEngine(), EmbeddedResources = [| embeddedResource |])
 
-                    let task =
-                        SubstituteText(BuildEngine = MockEngine(), EmbeddedResources = [| embeddedResource |])
+                assignTaskEnvironment (task :> IMultiThreadableTask) environment
+                task
 
-                    assignTaskEnvironment (task :> IMultiThreadableTask) environment
-                    task
+            let taskA = makeTask environmentA
+            let taskB = makeTask environmentB
 
-                let taskA = makeTask environmentA
-                let taskB = makeTask environmentB
+            let successA, successB =
+                runConcurrently (fun () -> taskA.Execute()) (fun () -> taskB.Execute())
 
-                let successA, successB =
-                    runConcurrently (fun () -> taskA.Execute()) (fun () -> taskB.Execute())
+            Assert.True successA
+            Assert.True successB
 
-                Assert.True successA
-                Assert.True successB
+            let expectedItemSpec = Path.Combine(relativeIntermediate, "Source.txt")
 
-                let expectedItemSpec = Path.Combine(relativeIntermediate, "Source.txt")
+            // The copied item's ItemSpec must remain the original, unrooted relative value, and is
+            // identical for both instances since both were configured with identical inputs.
+            Assert.Equal(expectedItemSpec, taskA.CopiedFiles.[0].ItemSpec)
+            Assert.Equal(expectedItemSpec, taskB.CopiedFiles.[0].ItemSpec)
 
-                // The copied item's ItemSpec must remain the original, unrooted relative value, and is
-                // identical for both instances since both were configured with identical inputs.
-                Assert.Equal(expectedItemSpec, taskA.CopiedFiles.[0].ItemSpec)
-                Assert.Equal(expectedItemSpec, taskB.CopiedFiles.[0].ItemSpec)
+            let targetPathA = Path.Combine(directoryA.FullName, expectedItemSpec)
+            let targetPathB = Path.Combine(directoryB.FullName, expectedItemSpec)
 
-                let targetPathA = Path.Combine(directoryA.FullName, expectedItemSpec)
-                let targetPathB = Path.Combine(directoryB.FullName, expectedItemSpec)
+            Assert.True(File.Exists targetPathA, sprintf "Expected substituted file at %s" targetPathA)
+            Assert.True(File.Exists targetPathB, sprintf "Expected substituted file at %s" targetPathB)
 
-                Assert.True(File.Exists targetPathA, sprintf "Expected substituted file at %s" targetPathA)
-                Assert.True(File.Exists targetPathB, sprintf "Expected substituted file at %s" targetPathB)
+            let contentsA = File.ReadAllText targetPathA
+            let contentsB = File.ReadAllText targetPathB
 
-                let contentsA = File.ReadAllText targetPathA
-                let contentsB = File.ReadAllText targetPathB
-
-                Assert.Equal("Hello from A. Token: REPLACED", contentsA)
-                Assert.Equal("Hello from B. Token: REPLACED", contentsB)
-
-                Assert.Empty(Directory.GetFiles(decoyDirectory.FullName, "*", SearchOption.AllDirectories))
-            finally
-                disposeTaskEnvironment environmentA
-                disposeTaskEnvironment environmentB)
+            Assert.Equal("Hello from A. Token: REPLACED", contentsA)
+            Assert.Equal("Hello from B. Token: REPLACED", contentsB))
 
     [<Fact>]
     member _.``SubstituteText swallows a missing source file but still records the computed target ItemSpec``
         ()
         =
-        let environment, _directory = createTaskEnvironmentInTemporaryDirectory ()
-
-        try
+        withTaskEnvironment (fun environment _directory ->
             // Deliberately do not create "Missing.txt" on disk: File.ReadAllText must throw, and the
             // existing broad catch must swallow it, preserving Execute=true.
             let embeddedResource = TaskItem("Missing.txt") :> ITaskItem
@@ -565,6 +516,4 @@ type FileTaskEnvironmentTests() =
             Assert.True result
             let copiedItem = Assert.Single(task.CopiedFiles)
             Assert.Equal(expectedItemSpec, copiedItem.ItemSpec)
-            Assert.False(File.Exists(Path.Combine(_directory.FullName, expectedItemSpec)))
-        finally
-            disposeTaskEnvironment environment
+            Assert.False(File.Exists(Path.Combine(_directory.FullName, expectedItemSpec))))
