@@ -40,7 +40,7 @@ let definitionLines (sourceLines: string array) (scopes: Structure.ScopeRange se
     // Outlining reports a doc comment only once it spans several lines, so a one-line "///" in front of
     // a declaration is invisible to the scopes above.
     let isDocComment line =
-        sourceLines[line - 1].TrimStart().StartsWith("///", StringComparison.Ordinal)
+        sourceLines[line - 1].AsSpan().TrimStart().StartsWith("///".AsSpan(), StringComparison.Ordinal)
 
     let rec docCommentStart line =
         if line > 1 && isDocComment (line - 1) then
