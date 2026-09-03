@@ -526,6 +526,50 @@ stages:
             continueOnError: true
             condition: failed()
 
+        # LinuxMT
+        - job: LinuxMT
+          pool:
+            name: $(DncEngPublicBuildPool)
+            demands: ImageOverride -equals $(LinuxMachineQueueName)
+          timeoutInMinutes: 120
+          variables:
+          - name: _SignType
+            value: Test
+          steps:
+          - checkout: self
+            clean: true
+          - script: ./eng/cibuild.sh --configuration $(_BuildConfig) --testcoreclr --mt true
+            displayName: Build / Test with MSBuild multithreaded
+          - task: PublishTestResults@2
+            displayName: Publish Test Results
+            inputs:
+              testResultsFormat: 'XUnit'
+              testRunTitle: Linux MT
+              testResultsFiles: '*.xml'
+              mergeTestResults: true
+              searchFolder: '$(Build.SourcesDirectory)/artifacts/TestResults/$(_BuildConfig)'
+            continueOnError: true
+            condition: succeededOrFailed()
+          - task: PublishBuildArtifacts@1
+            displayName: Publish Test Logs
+            inputs:
+              PathtoPublish: '$(Build.SourcesDirectory)/artifacts/TestResults/$(_BuildConfig)'
+              ArtifactName: 'Linux MT $(_BuildConfig) test logs'
+              publishLocation: Container
+            continueOnError: true
+            condition: failed()
+          - script: dotnet build $(Build.SourcesDirectory)/eng/DumpPackageRoot/DumpPackageRoot.csproj
+            displayName: Dump NuGet cache contents
+            condition: failed()
+          - task: PublishBuildArtifacts@1
+            displayName: Publish NuGet cache contents
+            inputs:
+              PathtoPublish: '$(Build.SourcesDirectory)/artifacts/NugetPackageRootContents'
+              ArtifactName: 'NuGetPackageContents Linux-mt'
+              publishLocation: Container
+            continueOnError: true
+            condition: failed()
+
         # MacOS (split into 2 batches; batch 3 is desktop-only FSharpSuite)
         - job: MacOS
           strategy:
