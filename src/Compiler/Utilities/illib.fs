@@ -469,6 +469,33 @@ module ListInline =
 
         result
 
+    /// As `List.exists`.
+    let inline exists ([<InlineIfLambda>] predicate: 'T -> bool) (list: 'T list) =
+        let rec loop list =
+            match list with
+            | [] -> false
+            | head :: tail -> predicate head || loop tail
+
+        loop list
+
+    /// As `List.forall`.
+    let inline forall ([<InlineIfLambda>] predicate: 'T -> bool) (list: 'T list) =
+        let rec loop list =
+            match list with
+            | [] -> true
+            | head :: tail -> predicate head && loop tail
+
+        loop list
+
+    /// As `List.tryFind`.
+    let inline tryFind ([<InlineIfLambda>] predicate: 'T -> bool) (list: 'T list) =
+        let rec loop list =
+            match list with
+            | [] -> None
+            | head :: tail -> if predicate head then Some head else loop tail
+
+        loop list
+
 module List =
 
     let sortWithOrder (c: IComparer<'T>) elements =

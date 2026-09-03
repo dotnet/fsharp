@@ -487,7 +487,7 @@ module internal AttributeHelpers =
         (flag: 'Flag)
         (attribs: Attribs)
         : Attrib option =
-        attribs |> List.tryFind (fun attrib -> classify g attrib &&& flag <> none)
+        attribs |> ListInline.tryFind (fun attrib -> classify g attrib &&& flag <> none)
 
     /// Shared combinator: check if any attrib in a list matches a flag via a classify function.
     let inline internal attribsHaveFlag
@@ -497,7 +497,7 @@ module internal AttributeHelpers =
         (flag: 'Flag)
         (attribs: Attribs)
         : bool =
-        attribs |> List.exists (fun attrib -> classify g attrib &&& flag <> none)
+        attribs |> ListInline.exists (fun attrib -> classify g attrib &&& flag <> none)
 
     /// Compute well-known attribute flags for an Entity's Attrib list.
     let computeEntityWellKnownFlags (g: TcGlobals) (attribs: Attribs) : WellKnownEntityAttributes =
