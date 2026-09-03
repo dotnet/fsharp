@@ -1305,10 +1305,9 @@ let ILFieldStaticChecks g amap infoReader ad m (finfo : ILFieldInfo) =
     CheckILFieldInfoAccessible g amap m ad finfo
     if not finfo.IsStatic then error (Error(FSComp.SR.tcFieldIsNotStatic(RichText.mkField finfo.FieldName), m))
 
-    // Static IL interfaces fields are not supported in lower F# versions.
-    if isInterfaceTy g finfo.ApparentEnclosingType then    
-        checkLanguageFeatureRuntimeAndRecover infoReader LanguageFeature.DefaultInterfaceMemberConsumption m
-        checkLanguageFeatureAndRecover g.langVersion LanguageFeature.DefaultInterfaceMemberConsumption m
+    // Static IL interface fields require target-runtime support for default interface members.
+    if isInterfaceTy g finfo.ApparentEnclosingType then
+        checkRuntimeSupportForDefaultInterfaceMembersAndRecover infoReader m
 
     CheckILFieldAttributes g finfo m
 

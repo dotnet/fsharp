@@ -3942,10 +3942,9 @@ and ResolveOverloading
     match calledMethOpt with 
     | Some calledMeth ->
     
-        // Static IL interfaces methods are not supported in lower F# versions.
+        // Static IL interface methods require target-runtime support for default interface members.
         if calledMeth.Method.IsILMethod && not calledMeth.Method.IsInstance && isInterfaceTy g calledMeth.Method.ApparentEnclosingType then
-            checkLanguageFeatureRuntimeAndRecover csenv.InfoReader LanguageFeature.DefaultInterfaceMemberConsumption m
-            checkLanguageFeatureAndRecover g.langVersion LanguageFeature.DefaultInterfaceMemberConsumption m
+            checkRuntimeSupportForDefaultInterfaceMembersAndRecover csenv.InfoReader m
 
         calledMethOpt, 
         trackErrors {
