@@ -2719,7 +2719,7 @@ typeConstraint:
      { SynTypeConstraint.WhereTyparSupportsNull($1, lhs parseState) }
 
   | typar COLON IDENT NULL
-      { if $3 <> "not" then reportParseErrorAt (rhs parseState 3) (FSComp.SR.parsUnexpectedIdentifier($3 + " (2)"))
+      { if $3 <> "not" then reportParseErrorAt (rhs parseState 3) (FSComp.SR.parsUnexpectedIdentifier($3))
         let trivia : SynTypeConstraintWhereTyparNotSupportsNullTrivia = { ColonRange = rhs parseState 2; NotRange = rhs parseState 3 }
         SynTypeConstraint.WhereTyparNotSupportsNull($1, lhs parseState, trivia) }
 
@@ -2741,14 +2741,15 @@ typeConstraint:
        | "enum" ->
            let _ltm, _gtm, args, _commas, mWhole = $4
            SynTypeConstraint.WhereTyparIsEnum($1, args, unionRanges $1.Range mWhole)
-       | nm -> raiseParseErrorAt (rhs parseState 3) (FSComp.SR.parsUnexpectedIdentifier(nm + " (3)")) }
+       | nm -> raiseParseErrorAt (rhs parseState 3) (FSComp.SR.parsUnexpectedIdentifier(nm)) }
 
   | typar COLON IDENT
      { match $3 with
        | "comparison" -> SynTypeConstraint.WhereTyparIsComparable($1, lhs parseState)
        | "equality" -> SynTypeConstraint.WhereTyparIsEquatable($1, lhs parseState)
        | "unmanaged" -> SynTypeConstraint.WhereTyparIsUnmanaged($1, lhs parseState)
-       | nm -> raiseParseErrorAt (rhs parseState 3) (FSComp.SR.parsUnexpectedIdentifier(nm + " (4)")) }
+       | "enum" -> raiseParseErrorAt (rhs parseState 3) (FSComp.SR.tcInvalidEnumConstraint())
+       | nm -> raiseParseErrorAt (rhs parseState 3) (FSComp.SR.parsUnexpectedIdentifier(nm)) }
 
   | appTypeWithoutNull
      { SynTypeConstraint.WhereSelfConstrained($1, lhs parseState) }
