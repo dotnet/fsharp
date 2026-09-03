@@ -272,15 +272,7 @@ let tryGetDataForCustomOperation (nm: Ident) ceenv =
     match ceenv.customOperationMethodsIndexedByKeyword.TryGetValue nm.idText with
     | true, opDatas ->
         for opData in opDatas do
-            let (opName,
-                 maintainsVarSpaceUsingBind,
-                 maintainsVarSpace,
-                 _allowInto,
-                 isLikeZip,
-                 isLikeJoin,
-                 isLikeGroupJoin,
-                 _joinConditionWord,
-                 _methInfo) =
+            let (opName, maintainsVarSpaceUsingBind, maintainsVarSpace, _, isLikeZip, isLikeJoin, isLikeGroupJoin, _, _) =
                 opData
 
             if
