@@ -36,7 +36,7 @@ let (=>) (source: string) (expectedRanges: (Range * Range) list) =
     let ast = parseSourceCode(fileName, source)
     try
         let actual =
-            getOutliningRanges (lines |> Array.map (fun line -> line.AsMemory())) ast
+            getOutliningRanges (lines |> Array.map _.AsMemory()) ast
             |> Seq.filter (fun sr -> sr.Range.StartLine <> sr.Range.EndLine)
             |> Seq.map (fun sr -> getRange sr.Range, getRange sr.CollapseRange)
             |> Seq.sort
@@ -152,7 +152,7 @@ module MyModule =       // 2
     type Color =        // 7
         { Red: int
           Green: int
-          Blue: int 
+          Blue: int
         }
 
         interface IDisposable with      // 13
@@ -164,7 +164,7 @@ module MyModule =       // 2
         type RecordColor =              // 19
             { Red: int
               Green: int
-              Blue: int 
+              Blue: int
             }
 
             interface IDisposable with  // 25
@@ -190,31 +190,31 @@ module MyModule =       // 2
 [<Fact>]
 let ``open statements``() =
     """
-open M             
-open N             
-                   
-module M =         
-    let x = 1      
-                   
-    open M         
-    open N         
-                   
-    module M =     
-        open M     
-                   
-        let x = 1  
-                   
-    module M =     
-        open M     
-        open N     
-        let x = 1  
-                   
-open M             
-open N             
-open H             
-                   
-open G             
-open H              
+open M
+open N
+
+module M =
+    let x = 1
+
+    open M
+    open N
+
+    module M =
+        open M
+
+        let x = 1
+
+    module M =
+        open M
+        open N
+        let x = 1
+
+open M
+open N
+open H
+
+open G
+open H
 """
     => [ (2, 0, 3, 6), (2, 0, 3, 6)
          (5, 0, 19, 17), (5, 8, 19, 17)
@@ -227,28 +227,28 @@ open H
 [<Fact>]
 let ``hash directives``() =
     """
-#r @"a"   
-#r "b"    
-          
-#r "c"    
-          
-#r "d"    
-#r "e"    
-let x = 1 
-          
-#r "f"    
-#r "g"    
-#load "x" 
-#r "y"    
-          
-#load "a" 
-      "b" 
-      "c" 
-          
-#load "a" 
-      "b" 
-      "c" 
-#r "d"     
+#r @"a"
+#r "b"
+
+#r "c"
+
+#r "d"
+#r "e"
+let x = 1
+
+#r "f"
+#r "g"
+#load "x"
+#r "y"
+
+#load "a"
+      "b"
+      "c"
+
+#load "a"
+      "b"
+      "c"
+#r "d"
 """
     => [ (2, 3, 8, 6), (2, 3, 8, 6)
          (11, 3, 23, 6), (11, 3, 23, 6) ]
@@ -326,7 +326,7 @@ seq {              // 2
 [<Fact>]
 let ``list``() =
     """
-let _ = 
+let _ =
     [ 1; 2
       3 ]
 """
@@ -383,7 +383,7 @@ finally       // 5
 let ``if - then - else``() =
     """
 if true then
-    let f x = 
+    let f x =
         ()
     ()
 else
@@ -449,7 +449,7 @@ for x = 100 downto 10 do
 [<Fact>]
 let ``for each``() =
     """
-for x in 0 .. 100 -> 
+for x in 0 .. 100 ->
             ()
             ()
 """
@@ -468,7 +468,7 @@ let ``tuple``() =
 [<Fact>]
 let ``do!``() =
     """
-do! 
+do!
     printfn "allo"
     printfn "allo"
 """
@@ -478,10 +478,10 @@ do!
 let ``cexpr yield yield!``() =
     """
 cexpr{
-    yield! 
+    yield!
         cexpr{
-                    yield 
-                                
+                    yield
+
                         10
                 }
     }
@@ -660,7 +660,7 @@ let ``Abstract members`` () =
 type T() =
     abstract Foo:
         int
-    
+
     [<Foo>]
     abstract Foo:
         int
