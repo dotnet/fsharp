@@ -160,11 +160,18 @@ type FsiServerHarness(?extraArguments: string list, ?workingDirectory: string) =
         rpc.StartListening()
         rpc
 
+    /// On failure, fold in what the session itself printed — the only way to see, say, which
+    /// StreamJsonRpc the session actually loaded if a request comes back "method not found"
+    /// against a target that plainly declares it.
     let await (work: Task<'T>) (timeout: TimeSpan) =
-        if not (work.Wait timeout) then
-            failwith "The session did not answer in time."
+        try
+            if not (work.Wait timeout) then
+                failwith "The session did not answer in time."
 
-        work.Result
+            work.Result
+        with e ->
+            let output, error = lock outputLock (fun () -> standardOutput.ToString(), standardError.ToString())
+            raise (Exception($"{e.Message}\n-- stdout --\n{output}-- stderr --\n{error}", e))
 
     member _.StandardOutput = lock outputLock (fun () -> standardOutput.ToString())
 
@@ -211,22 +218,22 @@ type FsiServerHarness(?extraArguments: string list, ?workingDirectory: string) =
     /// An unknown method surfaces as its own exception type rather than as a reported error, so it
     /// is mapped back to the code the specification gives it.
     member this.RequestExpectingError(method: string, parameters: obj) =
-        let classify (e: exn) =
+        // `await` folds diagnostic text into a wrapping exception on any failure (see above), so
+        // the type this classifies on is found by descending through causes, not just one level.
+        let rec classify (e: exn) =
             match e with
             | :? RemoteMethodNotFoundException -> Some -32601
             | :? RemoteInvocationException as remote -> Some remote.ErrorCode
-            | _ -> None
+            | _ ->
+                match e.InnerException with
+                | null -> None
+                | inner -> classify inner
 
         try
             this.Request<ExecutionResult>(method, parameters) |> ignore
             None
         with e ->
-            let reported =
-                match e with
-                | :? AggregateException as aggregate -> classify aggregate.InnerException
-                | e -> classify e
-
-            match reported with
+            match classify e with
             | Some code -> Some code
             | None -> raise e
 
