@@ -7,6 +7,7 @@ open System.Collections.Generic
 open System.Collections.Concurrent
 open System.Diagnostics
 open System.IO
+open System.Linq
 open System.Threading
 open System.Threading.Tasks
 open System.Runtime.CompilerServices
@@ -111,6 +112,54 @@ module internal PervasiveAutoOpens =
 
         member inline x.IndexOfOrdinal(value: string, startIndex, count) =
             x.IndexOf(value, startIndex, count, StringComparison.Ordinal)
+
+    [<AbstractClass; Sealed>]
+    type ReadOnlySpanCharExtensions =
+
+        static member inline StartsWithOrdinal(str: ReadOnlySpan<char>, value: ReadOnlySpan<char>) =
+            str.StartsWith(value, StringComparison.Ordinal)
+
+        static member inline StartsWithOrdinal(str: ReadOnlySpan<char>, value: string) =
+            str.StartsWith(value.AsSpan(), StringComparison.Ordinal)
+
+        static member inline EndsWithOrdinal(str: ReadOnlySpan<char>, value: ReadOnlySpan<char>) =
+            str.EndsWith(value, StringComparison.Ordinal)
+
+        static member inline EndsWithOrdinal(str: ReadOnlySpan<char>, value: string) =
+            str.EndsWith(value.AsSpan(), StringComparison.Ordinal)
+
+        static member inline EndsWithOrdinalIgnoreCase(str: ReadOnlySpan<char>, value: ReadOnlySpan<char>) =
+            str.EndsWith(value, StringComparison.OrdinalIgnoreCase)
+
+        static member inline EndsWithOrdinalIgnoreCase(str: ReadOnlySpan<char>, value: string) =
+            str.EndsWith(value.AsSpan(), StringComparison.OrdinalIgnoreCase)
+
+        static member IndexOf(str: ReadOnlySpan<char>, value: char) =
+            let mutable index = -1
+            let mutable i = 0
+
+            while i < str.Length && index = -1 do
+                if str[i] = value then index <- i else i <- i + 1
+
+            index
+
+        static member inline IndexOfOrdinal(str: ReadOnlySpan<char>, value: ReadOnlySpan<char>) =
+            str.IndexOf(value, StringComparison.Ordinal)
+
+        static member inline IndexOfOrdinal(str: ReadOnlySpan<char>, value: string) =
+            str.IndexOf(value.AsSpan(), StringComparison.Ordinal)
+
+        static member inline IndexOfOrdinal(str: ReadOnlySpan<char>, value: ReadOnlySpan<char>, startIndex) =
+            str.Slice(startIndex).IndexOf(value, StringComparison.Ordinal)
+
+        static member inline IndexOfOrdinal(str: ReadOnlySpan<char>, value: string, startIndex) =
+            str.Slice(startIndex).IndexOf(value.AsSpan(), StringComparison.Ordinal)
+
+        static member inline IndexOfOrdinal(str: ReadOnlySpan<char>, value: ReadOnlySpan<char>, startIndex, count) =
+            str.Slice(startIndex, count).IndexOf(value, StringComparison.Ordinal)
+
+        static member inline IndexOfOrdinal(str: ReadOnlySpan<char>, value: string, startIndex, count) =
+            str.Slice(startIndex, count).IndexOf(value.AsSpan(), StringComparison.Ordinal)
 
     /// Get an initialization hole
     let getHole (r: _ ref) =

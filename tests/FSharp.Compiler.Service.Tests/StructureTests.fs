@@ -1,5 +1,6 @@
 module FSharp.Compiler.Service.Tests.StructureTests
 
+open System
 open System.IO
 open Xunit
 open FSharp.Compiler.EditorServices.Structure
@@ -35,7 +36,7 @@ let (=>) (source: string) (expectedRanges: (Range * Range) list) =
     let ast = parseSourceCode(fileName, source)
     try
         let actual =
-            getOutliningRanges lines ast
+            getOutliningRanges (lines |> Array.map (fun line -> line.AsMemory())) ast
             |> Seq.filter (fun sr -> sr.Range.StartLine <> sr.Range.EndLine)
             |> Seq.map (fun sr -> getRange sr.Range, getRange sr.CollapseRange)
             |> Seq.sort
