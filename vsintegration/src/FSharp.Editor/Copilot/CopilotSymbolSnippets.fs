@@ -12,7 +12,7 @@ open FSharp.Compiler.EditorServices
 let MaxSnippetLines = 200
 
 /// Inclusive, 1-based line bounds of the declaration `item` names, including its doc comment.
-let definitionLines (sourceLines: string array) (scopes: Structure.ScopeRange seq) (item: NavigableItem) =
+let definitionLines (sourceLines: ReadOnlyMemory<char> array) (scopes: Structure.ScopeRange seq) (item: NavigableItem) =
     let declarationLine = item.Range.StartLine
 
     // A construct's outlining range reaches back over the doc comment in front of it, so it is the
@@ -40,7 +40,7 @@ let definitionLines (sourceLines: string array) (scopes: Structure.ScopeRange se
     // Outlining reports a doc comment only once it spans several lines, so a one-line "///" in front of
     // a declaration is invisible to the scopes above.
     let isDocComment line =
-        sourceLines[line - 1].AsSpan().TrimStart().StartsWith("///".AsSpan(), StringComparison.Ordinal)
+        sourceLines[line - 1].Span.TrimStart().StartsWith("///".AsSpan(), StringComparison.Ordinal)
 
     let rec docCommentStart line =
         if line > 1 && isDocComment (line - 1) then
