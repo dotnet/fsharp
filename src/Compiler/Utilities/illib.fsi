@@ -72,43 +72,46 @@ module internal PervasiveAutoOpens =
     type ReadOnlySpanCharExtensions =
 
         [<Extension>]
-        static member inline StartsWithOrdinal: str : ReadOnlySpan<char> * value: ReadOnlySpan<char> -> bool
+        static member inline StartsWithOrdinal: str: ReadOnlySpan<char> * value: ReadOnlySpan<char> -> bool
 
         [<Extension>]
-        static member inline StartsWithOrdinal: str : ReadOnlySpan<char> * value: string -> bool
+        static member inline StartsWithOrdinal: str: ReadOnlySpan<char> * value: string -> bool
 
         [<Extension>]
-        static member inline EndsWithOrdinal: str : ReadOnlySpan<char> * value: ReadOnlySpan<char> -> bool
+        static member inline EndsWithOrdinal: str: ReadOnlySpan<char> * value: ReadOnlySpan<char> -> bool
 
         [<Extension>]
-        static member inline EndsWithOrdinal: str : ReadOnlySpan<char> * value: string -> bool
+        static member inline EndsWithOrdinal: str: ReadOnlySpan<char> * value: string -> bool
 
         [<Extension>]
-        static member inline EndsWithOrdinalIgnoreCase: str : ReadOnlySpan<char> * value: ReadOnlySpan<char> -> bool
+        static member inline EndsWithOrdinalIgnoreCase: str: ReadOnlySpan<char> * value: ReadOnlySpan<char> -> bool
 
         [<Extension>]
-        static member inline EndsWithOrdinalIgnoreCase: str : ReadOnlySpan<char> * value: string -> bool
+        static member inline EndsWithOrdinalIgnoreCase: str: ReadOnlySpan<char> * value: string -> bool
 
         [<Extension>]
-        static member IndexOf: str : ReadOnlySpan<char> * value: char -> int
+        static member IndexOf: str: ReadOnlySpan<char> * value: char -> int
 
         [<Extension>]
-        static member inline IndexOfOrdinal: str : ReadOnlySpan<char> * value: ReadOnlySpan<char> -> int
+        static member inline IndexOfOrdinal: str: ReadOnlySpan<char> * value: ReadOnlySpan<char> -> int
 
         [<Extension>]
-        static member inline IndexOfOrdinal: str : ReadOnlySpan<char> * value: string -> int
+        static member inline IndexOfOrdinal: str: ReadOnlySpan<char> * value: string -> int
 
         [<Extension>]
-        static member inline IndexOfOrdinal: str : ReadOnlySpan<char> * value: ReadOnlySpan<char> * startIndex: int -> int
+        static member inline IndexOfOrdinal:
+            str: ReadOnlySpan<char> * value: ReadOnlySpan<char> * startIndex: int -> int
 
         [<Extension>]
-        static member inline IndexOfOrdinal: str : ReadOnlySpan<char> * value: string * startIndex: int -> int
+        static member inline IndexOfOrdinal: str: ReadOnlySpan<char> * value: string * startIndex: int -> int
 
         [<Extension>]
-        static member inline IndexOfOrdinal: str : ReadOnlySpan<char> * value: ReadOnlySpan<char> * startIndex: int * count: int -> int
+        static member inline IndexOfOrdinal:
+            str: ReadOnlySpan<char> * value: ReadOnlySpan<char> * startIndex: int * count: int -> int
 
         [<Extension>]
-        static member inline IndexOfOrdinal: str : ReadOnlySpan<char> * value: string * startIndex: int * count: int -> int
+        static member inline IndexOfOrdinal:
+            str: ReadOnlySpan<char> * value: string * startIndex: int * count: int -> int
 
     type Async with
 
