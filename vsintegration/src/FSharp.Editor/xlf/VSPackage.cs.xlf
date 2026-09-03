@@ -4,52 +4,52 @@
     <body>
       <trans-unit id="100">
         <source>F#</source>
-        <target state="new">F#</target>
+        <target state="translated">F#</target>
         <note />
       </trans-unit>
       <trans-unit id="101">
         <source>F# Source File</source>
-        <target state="new">F# Source File</target>
+        <target state="translated">Zdrojový soubor F#</target>
         <note />
       </trans-unit>
       <trans-unit id="6000">
         <source>F# Tools</source>
-        <target state="new">F# Tools</target>
+        <target state="translated">Nástroje F#</target>
         <note />
       </trans-unit>
       <trans-unit id="6001">
         <source>F# Interactive</source>
-        <target state="new">F# Interactive</target>
+        <target state="translated">F# Interactive</target>
         <note />
       </trans-unit>
       <trans-unit id="6008">
         <source>IntelliSense</source>
-        <target state="new">IntelliSense</target>
+        <target state="translated">IntelliSense</target>
         <note />
       </trans-unit>
       <trans-unit id="6009">
         <source>QuickInfo</source>
-        <target state="new">QuickInfo</target>
+        <target state="translated">Stručné informace</target>
         <note />
       </trans-unit>
       <trans-unit id="6010">
         <source>Code Fixes</source>
-        <target state="new">Code Fixes</target>
+        <target state="translated">Opravy kódu</target>
         <note />
       </trans-unit>
       <trans-unit id="6011">
         <source>Performance</source>
-        <target state="new">Performance</target>
+        <target state="translated">Výkon</target>
         <note />
       </trans-unit>
       <trans-unit id="6012">
         <source>Advanced</source>
-        <target state="new">Advanced</target>
+        <target state="translated">Upřesnit</target>
         <note />
       </trans-unit>
       <trans-unit id="6014">
         <source>Formatting</source>
-        <target state="new">Formatting</target>
+        <target state="translated">Formátování</target>
         <note />
       </trans-unit>
     </body>
