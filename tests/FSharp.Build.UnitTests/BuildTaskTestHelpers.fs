@@ -27,7 +27,6 @@ type MockEngine() =
 
         member this.LogCustomEvent(e: CustomBuildEventArgs): unit =
             this.Custom.Add e
-            failwith "Not Implemented"
 
         member this.LogErrorEvent(e: BuildErrorEventArgs): unit =
             this.Errors.Add e
