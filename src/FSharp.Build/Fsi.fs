@@ -349,13 +349,16 @@ type public Fsi(taskEnvironment: TaskEnvironment) as this =
     // MSBuild's ToolTask.ComputePathToTool can hand a relative base ToolPath straight to the derived
     // ExecuteTool, and ProcessStartInfo.FileName then resolves it against the host process current
     // directory rather than the child WorkingDirectory. Route every path that reaches base.ExecuteTool
-    // (and the eager GenerateFullPathToTool computation) through this so a relative path with directory
-    // components is rooted against this task's TaskEnvironment. A bare filename is left untouched so the
-    // normal PATH lookup keeps working; ComputePathToTool has usually already expanded it by this point.
+    // (and the eager GenerateFullPathToTool computation) through this so a path with directory
+    // components is rooted against this task's TaskEnvironment. Only two shapes are left untouched: a
+    // null/empty value, and a true bare filename (no directory component), which preserves the OS/PATH
+    // lookup that ComputePathToTool relies on. Everything else - including Windows root-relative
+    // (\tools\fsi.exe) and drive-relative (C:tools\fsi.exe) forms, which Path.IsPathRooted reports as
+    // rooted yet still resolve against ambient process state - is sent through GetAbsolutePath so it is
+    // anchored to this task's project directory rather than the host current directory.
     member private fsi.NormalizePathToTool(pathToTool: string) : string =
         if
             String.IsNullOrEmpty pathToTool
-            || System.IO.Path.IsPathRooted pathToTool
             || String.IsNullOrEmpty(System.IO.Path.GetDirectoryName pathToTool)
         then
             pathToTool

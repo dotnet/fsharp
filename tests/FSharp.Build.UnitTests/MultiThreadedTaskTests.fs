@@ -5,6 +5,7 @@ namespace FSharp.Build.UnitTests
 open System
 open System.IO
 open System.Collections.Generic
+open System.Runtime.InteropServices
 open System.Threading
 open System.Threading.Tasks
 open Microsoft.Build.Framework
@@ -210,7 +211,27 @@ type FscFsiMultiThreadedTaskTests() =
             Assert.Equal(Path.Combine(directory.FullName, relative), normalized)
 
             // A bare filename must be left untouched so the OS/ComputePathToTool PATH lookup still works.
-            Assert.Equal("fsc.exe", FscFsiTestHooks.normalizePathToTool fsc "fsc.exe"))
+            Assert.Equal("fsc.exe", FscFsiTestHooks.normalizePathToTool fsc "fsc.exe")
+
+            // Any path with a directory component must be routed through GetAbsolutePath, matching the
+            // environment's own rooting exactly - even the Windows-only root-relative (\tools\fsc.exe)
+            // and drive-relative (C:tools\fsc.exe) forms that Path.IsPathRooted reports as rooted yet
+            // still bind to ambient process state. These shapes are only meaningful on Windows (on Unix
+            // a backslash is an ordinary filename character), so guard them accordingly.
+            if RuntimeInformation.IsOSPlatform OSPlatform.Windows then
+                let rootRelative = @"\tools\fsc.exe"
+
+                Assert.Equal(
+                    environment.GetAbsolutePath(rootRelative).Value,
+                    FscFsiTestHooks.normalizePathToTool fsc rootRelative
+                )
+
+                let driveRelative = @"C:tools\fsc.exe"
+
+                Assert.Equal(
+                    environment.GetAbsolutePath(driveRelative).Value,
+                    FscFsiTestHooks.normalizePathToTool fsc driveRelative
+                ))
 
     [<Fact>]
     member _.``Fsi roots a relative pathToTool against its injected project directory``() =
@@ -224,4 +245,21 @@ type FscFsiMultiThreadedTaskTests() =
             Assert.Equal(Path.Combine(directory.FullName, relative), normalized)
 
             // A bare filename must be left untouched so the OS/ComputePathToTool PATH lookup still works.
-            Assert.Equal("fsi.exe", FscFsiTestHooks.normalizePathToTool fsi "fsi.exe"))
+            Assert.Equal("fsi.exe", FscFsiTestHooks.normalizePathToTool fsi "fsi.exe")
+
+            // Windows root-relative and drive-relative tool paths must also be rooted through
+            // GetAbsolutePath rather than escaped by an IsPathRooted check (guarded: Windows-only).
+            if RuntimeInformation.IsOSPlatform OSPlatform.Windows then
+                let rootRelative = @"\tools\fsi.exe"
+
+                Assert.Equal(
+                    environment.GetAbsolutePath(rootRelative).Value,
+                    FscFsiTestHooks.normalizePathToTool fsi rootRelative
+                )
+
+                let driveRelative = @"C:tools\fsi.exe"
+
+                Assert.Equal(
+                    environment.GetAbsolutePath(driveRelative).Value,
+                    FscFsiTestHooks.normalizePathToTool fsi driveRelative
+                ))

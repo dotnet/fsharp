@@ -26,23 +26,83 @@ type FSharpEmbedResourceText(taskEnvironment: TaskEnvironment) as this =
     let rootedPath (path: string) =
         _taskEnvironment.GetAbsolutePath(path).Value
 
-    // The framework exceptions thrown by File/Directory/stream APIs embed the rooted absolute path
-    // that was actually passed to them. Restore each such rooted value back to the original path string
-    // the task was given, so logged diagnostics surface the caller's own paths. When the original was
-    // already absolute the rooted value equals it and the replacement is a no-op, so an absolute input
-    // (even one beneath the project directory) is preserved verbatim rather than corrupted.
-    let restoreOriginalPaths (message: string) (originalPaths: string list) =
-        (message, originalPaths)
-        ||> List.fold (fun (message: string) original ->
-            if System.String.IsNullOrEmpty original then
-                message
-            else
-                let rooted = _taskEnvironment.GetAbsolutePath(original).Value
+    // Ordinal path comparison on Unix (case-sensitive file systems) and ordinal-ignore-case on Windows,
+    // matching how each platform compares the paths the framework embeds in its exception text.
+    let pathComparison =
+        if System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform System.Runtime.InteropServices.OSPlatform.Windows then
+            System.StringComparison.OrdinalIgnoreCase
+        else
+            System.StringComparison.Ordinal
 
-                if System.String.IsNullOrEmpty rooted then
-                    message
+    // netstandard2.0 has no String.Replace(string, string, StringComparison) overload, so replace every
+    // occurrence by hand under an explicit comparison rather than assuming an unavailable overload exists.
+    let replaceOrdinal (source: string) (oldValue: string) (newValue: string) =
+        if System.String.IsNullOrEmpty oldValue then
+            source
+        else
+            let builder = System.Text.StringBuilder()
+            let mutable searchStart = 0
+            let mutable matchIndex = source.IndexOf(oldValue, searchStart, pathComparison)
+
+            while matchIndex >= 0 do
+                builder.Append(source, searchStart, matchIndex - searchStart).Append(newValue)
+                |> ignore
+
+                searchStart <- matchIndex + oldValue.Length
+                matchIndex <- source.IndexOf(oldValue, searchStart, pathComparison)
+
+            builder.Append(source, searchStart, source.Length - searchStart).ToString()
+
+    // The framework exceptions thrown by File/Directory/stream APIs embed an absolute path derived from
+    // the (possibly relative) path the task passed in. GetAbsolutePath only prepends the project
+    // directory - it does not collapse dot segments - but the framework APIs canonicalize before they
+    // throw (e.g. 'sub/../Missing.txt' surfaces as '<project>/Missing.txt'). So for each original path
+    // restore BOTH the raw rooted form and its canonicalized form back to the original spelling the task
+    // was given, so the logged diagnostic surfaces the caller's own path and never leaks the project
+    // root. Rooted forms are de-duplicated and applied longest first so a shorter rooted path that is a
+    // prefix of a longer one cannot partially rewrite it.
+    let restoreOriginalPaths (message: string) (originalPaths: string list) =
+        // Compute the rooted and canonicalized absolute forms of one original. Absolute originals yield
+        // nothing: rooting is a no-op for them and rewriting an absolute caller path (even into its own
+        // canonical form) would corrupt it. The whole computation is guarded so that building a
+        // diagnostic can never itself throw for a pathological path (e.g. characters the framework Path
+        // APIs reject on .NET Framework); such an original is simply left unrestored.
+        let rootedFormsOf (original: string) =
+            try
+                if System.String.IsNullOrEmpty original || Path.IsPathRooted original then
+                    []
                 else
-                    message.Replace(rooted, original))
+                    let rooted = _taskEnvironment.GetAbsolutePath(original).Value
+
+                    if System.String.IsNullOrEmpty rooted then
+                        []
+                    else
+                        // GetCanonicalForm is internal to Microsoft.Build.Framework, so reproduce the
+                        // canonicalization the framework applies with Path.GetFullPath. 'rooted' is already
+                        // absolute, so this collapses dot segments without consulting the ambient current
+                        // directory, keeping the task multithread-safe.
+                        let canonical =
+                            try
+                                Path.GetFullPath rooted
+                            with _ ->
+                                rooted
+
+                        [
+                            (rooted, original)
+                            if not (System.String.IsNullOrEmpty canonical) then
+                                (canonical, original)
+                        ]
+            with _ ->
+                []
+
+        let replacements =
+            originalPaths
+            |> List.collect rootedFormsOf
+            |> List.distinct
+            |> List.sortByDescending (fun (rooted, _) -> rooted.Length)
+
+        (message, replacements)
+        ||> List.fold (fun message (rooted, original) -> replaceOrdinal message rooted original)
 
     let PrintErr (fileName, line, msg) =
         this.Log.LogError(null, null, null, fileName, line, 0, 0, 0, msg, Array.empty)
@@ -425,14 +485,22 @@ open Printf
 
     let generateResxAndSource (item: ITaskItem) =
         let fileName = item.ItemSpec
-        let justFileName = Path.GetFileNameWithoutExtension(fileName) // .txt
 
-        // Computed before the try so they are in scope in the exception handler for path restoration.
-        let outFileName = Path.Combine(_outputPath, justFileName + ".fs")
-        let outFileSignatureName = Path.Combine(_outputPath, justFileName + ".fsi")
-        let outXmlFileName = Path.Combine(_outputPath, justFileName + ".resx")
+        // The catch below sanitizes every original path this call touches. Seed it with the input and
+        // extend it once the derived output paths exist, so path derivation stays inside the try - a
+        // malformed fileName then throws GetFileNameWithoutExtension/Path.Combine through the same
+        // handler instead of escaping it - while the handler still knows every path to sanitize even if
+        // derivation itself failed.
+        let originalPaths = ResizeArray<string>()
+        originalPaths.Add fileName
 
         try
+            let justFileName = Path.GetFileNameWithoutExtension(fileName) // .txt
+            let outFileName = Path.Combine(_outputPath, justFileName + ".fs")
+            let outFileSignatureName = Path.Combine(_outputPath, justFileName + ".fsi")
+            let outXmlFileName = Path.Combine(_outputPath, justFileName + ".resx")
+            originalPaths.AddRange [ outFileName; outFileSignatureName; outXmlFileName ]
+
             let printMessage fmt = Printf.ksprintf this.Log.LogMessage fmt
 
             // Opt in with <RichText>true</RichText> on the EmbeddedText item. Only assemblies that can
@@ -730,12 +798,18 @@ open Printf
                 sprintf
                     "An exception occurred when processing '%s'\n%s"
                     fileName
-                    (restoreOriginalPaths (e.ToString()) [ fileName; outFileName; outFileSignatureName; outXmlFileName ])
+                    (restoreOriginalPaths (e.ToString()) (List.ofSeq originalPaths))
             )
 
             None
 
     new() = FSharpEmbedResourceText(TaskEnvironment.Fallback)
+
+    // Test hook: exercises the diagnostic path restoration in isolation so its longest-first,
+    // dot-segment-canonicalizing behavior can be pinned deterministically. FSharp.Build only grants
+    // InternalsVisibleTo to VisualFSharp.UnitTests, so other test assemblies reach this by reflection.
+    member internal _.InternalRestoreOriginalPaths(message: string, originalPaths: string[]) =
+        restoreOriginalPaths message (List.ofArray originalPaths)
 
     interface IMultiThreadableTask with
         member _.TaskEnvironment

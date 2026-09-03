@@ -512,6 +512,69 @@ type FileTaskEnvironmentTests() =
             Assert.True(countOccurrences absoluteResx error.Message >= 2, error.Message))
 
     [<Fact>]
+    member _.``FSharpEmbedResXSource restores a dot-segment relative resx input and never leaks the project directory``
+        ()
+        =
+        withTaskEnvironment (fun environment directory ->
+            // GetAbsolutePath only prepends the project directory, so the rooted path still carries the
+            // 'sub/..' segments; XDocument.Load then hands them to the framework, whose FileNotFoundException
+            // embeds the *canonicalized* absolute path ('<project>/Missing.resx'). Restoring only the raw
+            // rooted form would miss that and leak the project root, so both forms must map back to the
+            // caller's original relative spelling.
+            let relativeResx = Path.Combine("sub", "..", "Missing.resx")
+
+            let embeddedResource = TaskItem(relativeResx) :> ITaskItem
+            embeddedResource.SetMetadata("GenerateSource", "true")
+
+            let engine = MockEngine()
+
+            let task =
+                FSharpEmbedResXSource(
+                    BuildEngine = engine,
+                    EmbeddedResource = [| embeddedResource |],
+                    IntermediateOutputPath = "obj"
+                )
+
+            assignTaskEnvironment (task :> IMultiThreadableTask) environment
+
+            Assert.False(task.Execute())
+            let error = Assert.Single(engine.Errors)
+
+            // The original dot-segment spelling survives, and the canonicalized project root never leaks.
+            Assert.Contains(relativeResx, error.Message)
+            Assert.DoesNotContain(directory.FullName, error.Message))
+
+    [<Fact>]
+    member _.``FSharpEmbedResXSource handles an invalid path input inside its protected handler``() =
+        withTaskEnvironment (fun environment directory ->
+            // A '|' is rejected by the framework Path APIs on .NET Framework, where path derivation
+            // (GetFileNameWithoutExtension/Path.Combine) throws; on .NET Core it is a valid-but-missing
+            // filename whose later load throws. Because derivation stays inside the task's try, both are
+            // caught: Execute reports failure (never propagates), the diagnostic names the caller's own
+            // input, and the project directory never leaks.
+            let invalidResx = "in|valid.resx"
+
+            let embeddedResource = TaskItem(invalidResx) :> ITaskItem
+            embeddedResource.SetMetadata("GenerateSource", "true")
+
+            let engine = MockEngine()
+
+            let task =
+                FSharpEmbedResXSource(
+                    BuildEngine = engine,
+                    EmbeddedResource = [| embeddedResource |],
+                    IntermediateOutputPath = "obj"
+                )
+
+            assignTaskEnvironment (task :> IMultiThreadableTask) environment
+
+            Assert.False(task.Execute())
+            let error = Assert.Single(engine.Errors)
+
+            Assert.Contains(invalidResx, error.Message)
+            Assert.DoesNotContain(directory.FullName, error.Message))
+
+    [<Fact>]
     member _.``FSharpEmbedResourceText keeps a relative input relative in diagnostics and never leaks the project directory``
         ()
         =
@@ -561,6 +624,96 @@ type FileTaskEnvironmentTests() =
             // Preserved in both the prefix and the (FileNotFoundException) body, unstripped.
             Assert.Contains(absoluteText, error.Message)
             Assert.True(countOccurrences absoluteText error.Message >= 2, error.Message))
+
+    [<Fact>]
+    member _.``FSharpEmbedResourceText restores a dot-segment relative input and never leaks the project directory``
+        ()
+        =
+        withTaskEnvironment (fun environment directory ->
+            // File.ReadAllLines canonicalizes 'sub/../Missing.txt' before throwing, so its
+            // FileNotFoundException names '<project>/Missing.txt', not the raw rooted 'sub/..' form. Both
+            // must be restored to the caller's original spelling with no project-directory leak.
+            let relativeText = Path.Combine("sub", "..", "Missing.txt")
+
+            let engine = MockEngine()
+
+            let task =
+                FSharpEmbedResourceText(
+                    BuildEngine = engine,
+                    EmbeddedText = [| TaskItem(relativeText) :> ITaskItem |],
+                    IntermediateOutputPath = "obj"
+                )
+
+            assignTaskEnvironment (task :> IMultiThreadableTask) environment
+
+            Assert.False(task.Execute())
+            let error = Assert.Single(engine.Errors)
+
+            Assert.Contains(relativeText, error.Message)
+            Assert.DoesNotContain(directory.FullName, error.Message))
+
+    [<Fact>]
+    member _.``FSharpEmbedResourceText handles an invalid path input inside its protected handler``() =
+        withTaskEnvironment (fun environment directory ->
+            // A '|' is rejected by the framework Path APIs on .NET Framework (path derivation throws) and
+            // is a valid-but-missing filename on .NET Core (where it instead trips the letters-and-digits
+            // file name guard). Either way the failure is handled inside the task's try - proving path
+            // derivation stayed inside it - so Execute fails without propagating, every diagnostic names
+            // the caller's input, and none leaks the project directory. The number of diagnostics differs
+            // by framework (the guard on .NET Core also raises through the shared catch), so assert over
+            // the whole set rather than a single error.
+            let invalidText = "in|valid.txt"
+
+            let engine = MockEngine()
+
+            let task =
+                FSharpEmbedResourceText(
+                    BuildEngine = engine,
+                    EmbeddedText = [| TaskItem(invalidText) :> ITaskItem |],
+                    IntermediateOutputPath = "obj"
+                )
+
+            assignTaskEnvironment (task :> IMultiThreadableTask) environment
+
+            Assert.False(task.Execute())
+            Assert.NotEmpty(engine.Errors)
+
+            for error in engine.Errors do
+                Assert.DoesNotContain(directory.FullName, error.Message)
+
+            Assert.Contains(engine.Errors, (fun error -> error.Message.Contains invalidText)))
+
+    [<Fact>]
+    member _.``FSharpEmbedResourceText restores the longest rooted path first so overlapping prefixes are not corrupted``
+        ()
+        =
+        withTaskEnvironment (fun environment directory ->
+            // Prefix-overlap oracle. 'shortOriginal' roots to '<project>/p', a path-boundary prefix of the
+            // *canonicalized* form of 'longOriginal' ('<project>/p/deeper'). Replacing the shorter rooted
+            // form first would rewrite '<project>/p/deeper' into 'p/deeper', silently dropping the caller's
+            // dot-segment spelling; restoring the longest rooted form first yields the exact original. This
+            // exercises the private restoration directly (reachable only by reflection from this assembly).
+            let shortOriginal = "p"
+            let longOriginal = Path.Combine("p", "deeper", "..", "deeper")
+
+            // The framework canonicalizes before it throws, so the exception embeds the collapsed form.
+            let canonicalLong = Path.GetFullPath(environment.GetAbsolutePath(longOriginal).Value)
+
+            let task = FSharpEmbedResourceText(environment)
+
+            let message = $"Could not find a part of the path '{canonicalLong}'."
+            let expected = $"Could not find a part of the path '{longOriginal}'."
+
+            let restore =
+                FSharp.Test.ReflectionHelper.getPrivateInstanceMethod "InternalRestoreOriginalPaths" (task.GetType())
+
+            let actual =
+                restore.Invoke(task, [| box message; box [| shortOriginal; longOriginal |] |]) :?> string
+
+            // Exact match proves the overlapping short prefix did not partially rewrite the long path and
+            // that the canonicalized project root was fully restored to the caller's spelling.
+            Assert.Equal(expected, actual)
+            Assert.DoesNotContain(directory.FullName, actual))
 
     [<Fact>]
     member _.``SubstituteText reads and writes relative to each task's TaskEnvironment, not the process current directory``
