@@ -400,18 +400,30 @@ type FileTaskEnvironmentTests() =
             assignTaskEnvironment (task :> IMultiThreadableTask) environment
 
             let originalConsoleOut = Console.Out
+            let originalConsoleError = Console.Error
             use capturedConsoleOut = new StringWriter()
+            use capturedConsoleError = new StringWriter()
             Console.SetOut capturedConsoleOut
+            Console.SetError capturedConsoleError
 
             let result =
                 try
                     task.Execute()
                 finally
                     Console.SetOut originalConsoleOut
+                    Console.SetError originalConsoleError
 
+            // Execute must fail without throwing (Execute=false), and without emitting any output
+            // via Console.Out/Console.Error, since only MSBuild's own error reporting is permitted.
             Assert.False result
-            Assert.Equal(1, engine.Errors.Count)
-            Assert.Contains(relativeResx, engine.Errors.[0].Message)
             Assert.Equal("", capturedConsoleOut.ToString())
+            Assert.Equal("", capturedConsoleError.ToString())
+
+            let error = Assert.Single(engine.Errors)
+
+            // The diagnostic must name the original, unrooted relative resx input, and must never
+            // surface the rooted task project directory the file was actually loaded from.
+            Assert.Contains(relativeResx, error.Message)
+            Assert.DoesNotContain(directory.FullName, error.Message)
         finally
             disposeTaskEnvironment environment

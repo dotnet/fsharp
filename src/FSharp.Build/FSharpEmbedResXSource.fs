@@ -25,6 +25,20 @@ type FSharpEmbedResXSource(taskEnvironment: TaskEnvironment) as this =
     let rootedPath (path: string) =
         _taskEnvironment.GetAbsolutePath(path).Value
 
+    // The framework exceptions thrown by File/stream/XDocument APIs embed the rooted absolute path
+    // that was actually passed to them. Strip the task's rooted project directory back out so that
+    // logged diagnostics only ever surface the original, unrooted relative paths.
+    let hideRootedPaths (message: string) =
+        let projectDirectory = _taskEnvironment.ProjectDirectory.Value
+
+        if String.IsNullOrEmpty projectDirectory then
+            message
+        else
+            message
+                .Replace(projectDirectory + string Path.DirectorySeparatorChar, "")
+                .Replace(projectDirectory + string Path.AltDirectorySeparatorChar, "")
+                .Replace(projectDirectory, "")
+
     let failTask fmt =
         Printf.ksprintf
             (fun msg ->
@@ -134,8 +148,10 @@ module internal {1} =
                 Some(sourcePath)
         with e ->
             // Log via MSBuild's error reporting (never Console) and keep the diagnostic scoped to the
-            // original, unrooted relative resx path so rooted paths never leak into build output.
-            this.Log.LogError(sprintf "An exception occurred when processing '%s': %s" resx e.Message)
+            // original, unrooted relative resx path. The exception text itself can also embed the
+            // rooted path (e.g. a FileNotFoundException naming the file it tried to load), so it must
+            // be scrubbed via hideRootedPaths too, mirroring FSharpEmbedResourceText's approach.
+            this.Log.LogError(sprintf "An exception occurred when processing '%s': %s" resx (hideRootedPaths (e.ToString())))
             None
 
     new() = FSharpEmbedResXSource(TaskEnvironment.Fallback)
