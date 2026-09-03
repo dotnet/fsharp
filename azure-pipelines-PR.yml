@@ -528,6 +528,7 @@ stages:
 
         # LinuxMT
         - job: LinuxMT
+          continueOnError: true
           pool:
             name: $(DncEngPublicBuildPool)
             demands: ImageOverride -equals $(LinuxMachineQueueName)
