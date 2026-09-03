@@ -1894,11 +1894,11 @@ let FreshenPossibleForallTy g traitCtxt m rigid ty =
     else
         // tps may be have been equated to other tps in equi-recursive type inference and units-of-measure type inference. Normalize them here
         let origTypars = NormalizeDeclaredTyparsForEquiRecursiveInference g origTypars
-        let tps, renaming, tinst = CopyAndFixupTypars g traitCtxt m rigid origTypars
+        let tps, renaming, tinst = CopyAndFixupTypars traitCtxt m rigid origTypars
         origTypars, tps, tinst, instType renaming tau
 
 let FreshenTyconRef2 (g: TcGlobals) (traitCtxt: ITraitContext option) m (tcref: TyconRef) =
-    let tps, renaming, tinst = FreshenTypeInst g traitCtxt m (tcref.Typars)
+    let tps, renaming, tinst = FreshenTypeInst traitCtxt m (tcref.Typars)
     tps, renaming, tinst, TType_app (tcref, tinst, g.knownWithoutNull)
 
 /// Given a abstract method, which may be a generic method, freshen the type in preparation
@@ -1925,7 +1925,7 @@ let FreshenAbstractSlot g (traitCtxt: ITraitContext option) amap m synTyparDecls
         let ttps = absMethInfo.GetFormalTyparsOfDeclaringType()
         let ttinst = argsOfAppTy g absMethInfo.ApparentEnclosingType
         let rigid = if typarsFromAbsSlotAreRigid then TyparRigidity.Rigid else TyparRigidity.Flexible
-        FreshenAndFixupTypars g traitCtxt m rigid ttps ttinst fmtps
+        FreshenAndFixupTypars traitCtxt m rigid ttps ttinst fmtps
 
     // Work out the required type of the member
     let argTysFromAbsSlot = argTys |> List.mapSquared (instType typarInstFromAbsSlot)
@@ -3379,7 +3379,7 @@ let AnalyzeArbitraryExprAsEnumerable (cenv: cenv) (env: TcEnv) localAlloc m expr
         | Exception exn -> Exception exn
         | Result getEnumeratorMethInfo ->
 
-        let getEnumeratorMethInst = FreshenMethInfo g env.TraitContext m getEnumeratorMethInfo
+        let getEnumeratorMethInst = FreshenMethInfo env.TraitContext m getEnumeratorMethInfo
         let getEnumeratorRetTy = getEnumeratorMethInfo.GetFSharpReturnType(cenv.amap, m, getEnumeratorMethInst)
         if hasArgs getEnumeratorMethInfo getEnumeratorMethInst then err true tyToSearchForGetEnumeratorAndItem else
 
@@ -3387,7 +3387,7 @@ let AnalyzeArbitraryExprAsEnumerable (cenv: cenv) (env: TcEnv) localAlloc m expr
         | Exception exn -> Exception exn
         | Result moveNextMethInfo ->
 
-        let moveNextMethInst = FreshenMethInfo g env.TraitContext m moveNextMethInfo
+        let moveNextMethInst = FreshenMethInfo env.TraitContext m moveNextMethInfo
         let moveNextRetTy = moveNextMethInfo.GetFSharpReturnType(cenv.amap, m, moveNextMethInst)
         if not (typeEquiv g g.bool_ty moveNextRetTy) then err false getEnumeratorRetTy else
         if hasArgs moveNextMethInfo moveNextMethInst then err false getEnumeratorRetTy else
@@ -3396,7 +3396,7 @@ let AnalyzeArbitraryExprAsEnumerable (cenv: cenv) (env: TcEnv) localAlloc m expr
         | Exception exn -> Exception exn
         | Result getCurrentMethInfo ->
 
-        let getCurrentMethInst = FreshenMethInfo g env.TraitContext m getCurrentMethInfo
+        let getCurrentMethInst = FreshenMethInfo env.TraitContext m getCurrentMethInfo
         if hasArgs getCurrentMethInfo getCurrentMethInst then err false getEnumeratorRetTy else
         let enumElemTy = getCurrentMethInfo.GetFSharpReturnType(cenv.amap, m, getCurrentMethInst)
 
@@ -10451,7 +10451,7 @@ and TcMethodApplication_UniqueOverloadInference
     let arityFilteredCandidates = candidateMethsAndProps
 
     let makeOneCalledMeth (minfo: MethInfo, pinfoOpt, usesParamArrayConversion) =
-        let minst = FreshenMethInfo g env.TraitContext mItem minfo
+        let minst = FreshenMethInfo env.TraitContext mItem minfo
         let callerTyArgs =
             match tyArgsOpt with
             | Some tyargs -> minfo.AdjustUserTypeInstForFSharpStyleIndexedExtensionMembers tyargs
@@ -10470,7 +10470,7 @@ and TcMethodApplication_UniqueOverloadInference
             else
                 minfo
     
-        CalledMeth<SynExpr>(cenv.infoReader, Some(env.NameEnv), isCheckingAttributeCall, FreshenMethInfo g env.TraitContext, mMethExpr, ad, minfo, minst, callerTyArgs, pinfoOpt, callerObjArgTys, callerArgs, usesParamArrayConversion, true, objTyOpt, staticTyOpt)
+        CalledMeth<SynExpr>(cenv.infoReader, Some(env.NameEnv), isCheckingAttributeCall, FreshenMethInfo env.TraitContext, mMethExpr, ad, minfo, minst, callerTyArgs, pinfoOpt, callerObjArgTys, callerArgs, usesParamArrayConversion, true, objTyOpt, staticTyOpt)
 
     let preArgumentTypeCheckingCalledMethGroup =
         [ for minfo, pinfoOpt in arityFilteredCandidates do
@@ -10744,7 +10744,7 @@ and TcMethodApplication
                     else
                         minfo
 
-                CalledMeth<Expr>(cenv.infoReader, Some(env.NameEnv), isCheckingAttributeCall, FreshenMethInfo g env.TraitContext, mMethExpr, ad, minfo, minst, callerTyArgs, pinfoOpt, callerObjArgTys, callerArgs, usesParamArrayConversion, true, objTyOpt, staticTyOpt))
+                CalledMeth<Expr>(cenv.infoReader, Some(env.NameEnv), isCheckingAttributeCall, FreshenMethInfo env.TraitContext, mMethExpr, ad, minfo, minst, callerTyArgs, pinfoOpt, callerObjArgTys, callerArgs, usesParamArrayConversion, true, objTyOpt, staticTyOpt))
 
         // Commit unassociated constraints prior to member overload resolution where there is ambiguity
         // about the possible target of the call.
@@ -11313,7 +11313,7 @@ and TcAndBuildFixedExpr (cenv: cenv) env (overallPatTy, fixedExpr, overallExprTy
         | Some mInfo ->
             checkLanguageFeatureAndRecover g.langVersion LanguageFeature.ExtendedFixedBindings mBinding
 
-            let mInst = FreshenMethInfo g env.TraitContext mBinding mInfo
+            let mInst = FreshenMethInfo env.TraitContext mBinding mInfo
             let pinnableReference, actualRetTy = BuildPossiblyConditionalMethodCall cenv env NeverMutates mBinding false mInfo NormalValUse mInst [ fixedExpr ] [] None
 
             let elemTy = destByrefTy g actualRetTy

@@ -108,8 +108,7 @@ let NewErrorTypar () =
 let NewErrorType () =
     mkTyparTy (NewErrorTypar ())
 
-let FreshenTypar (g: TcGlobals) rigid (tp: Typar) =
-    ignore g
+let FreshenTypar rigid (tp: Typar) =
     let dynamicReq = if rigid = TyparRigidity.Rigid then TyparDynamicReq.Yes else TyparDynamicReq.No
     NewCompGenTypar (tp.Kind, rigid, TyparStaticReq.None, dynamicReq, false)
 
@@ -118,19 +117,19 @@ let FreshenTypar (g: TcGlobals) rigid (tp: Typar) =
 // abstract generic method slot. But we later check the generalization 
 // condition anyway, so we could get away with a non-rigid typar. This 
 // would sort of be cleaner, though give errors later. 
-let FreshenAndFixupTypars g (traitCtxt: ITraitContext option) m rigid fctps tinst tpsorig =
-    let tps = tpsorig |> List.map (FreshenTypar g rigid)
+let FreshenAndFixupTypars (traitCtxt: ITraitContext option) m rigid fctps tinst tpsorig =
+    let tps = tpsorig |> List.map (FreshenTypar rigid)
     let renaming, tinst = FixupNewTypars traitCtxt m fctps tinst tpsorig tps
     tps, renaming, tinst
 
-let FreshenTypeInst g traitCtxt m tpsorig =
-    FreshenAndFixupTypars g traitCtxt m TyparRigidity.Flexible [] [] tpsorig
+let FreshenTypeInst traitCtxt m tpsorig =
+    FreshenAndFixupTypars traitCtxt m TyparRigidity.Flexible [] [] tpsorig
 
-let FreshMethInst g traitCtxt m fctps tinst tpsorig =
-    FreshenAndFixupTypars g traitCtxt m TyparRigidity.Flexible fctps tinst tpsorig
+let FreshMethInst traitCtxt m fctps tinst tpsorig =
+    FreshenAndFixupTypars traitCtxt m TyparRigidity.Flexible fctps tinst tpsorig
 
-let FreshenMethInfo g traitCtxt m (minfo: MethInfo) =
-    let _, _, tpTys = FreshMethInst g traitCtxt m (minfo.GetFormalTyparsOfDeclaringType()) minfo.DeclaringTypeInst minfo.FormalMethodTypars
+let FreshenMethInfo traitCtxt m (minfo: MethInfo) =
+    let _, _, tpTys = FreshMethInst traitCtxt m (minfo.GetFormalTyparsOfDeclaringType()) minfo.DeclaringTypeInst minfo.FormalMethodTypars
     tpTys
 
 //-------------------------------------------------------------------------
@@ -2194,9 +2193,9 @@ and SolveMemberConstraint (csenv: ConstraintSolverEnv) ignoreUnresolvedOverload 
                                                     Unnamed = [ (argTys |> List.map (fun argTy -> CallerArg(argTy, m, false, dummyExpr))) ]
                                                     Named = [ [ ] ]
                                                 }
-                                            let minst = FreshenMethInfo g traitCtxt m minfo
+                                            let minst = FreshenMethInfo traitCtxt m minfo
                                             let objtys = minfo.GetObjArgTypes(amap, m, minst)
-                                            Some(CalledMeth<Expr>(csenv.InfoReader, None, false, FreshenMethInfo g traitCtxt, m, traitAD, minfo, minst, minst, None, objtys, callerArgs, false, false, None, Some staticTy)))
+                                            Some(CalledMeth<Expr>(csenv.InfoReader, None, false, FreshenMethInfo traitCtxt, m, traitAD, minfo, minst, minst, None, objtys, callerArgs, false, false, None, Some staticTy)))
 
                             // RFC FS-1043 miscompile guard. When overload resolution against a rigid support type
                             // fails (at the definition site of a consuming inline function, where the support type
@@ -4428,7 +4427,7 @@ let CodegenWitnessesForTyparInst tcVal g amap m typars tyargs =
         let css = CreateCodegenState tcVal g amap
         let csenv = MakeConstraintSolverEnv ContextInfo.NoContext css m (DisplayEnv.Empty g)
         // traitCtxtNone: codegen witness generation — constraints already resolved at this point (audited for RFC FS-1043)
-        let ftps, _renaming, tinst = FreshenTypeInst g traitCtxtNone m typars
+        let ftps, _renaming, tinst = FreshenTypeInst traitCtxtNone m typars
         let traitInfos = GetTraitConstraintInfosOfTypars g ftps
         let! _res = SolveTyparsEqualTypesAux csenv 0 m NoTrace tinst tyargs
         return GenWitnessArgs amap g m traitInfos
@@ -4660,7 +4659,7 @@ let IsApplicableMethApprox g amap m (minfo: MethInfo) availObjTy =
               WarnWhenUsingWithoutNullOnAWithNullTarget = None
               CompilingCcu = None }
         let csenv = MakeConstraintSolverEnv ContextInfo.NoContext css m (DisplayEnv.Empty g)
-        let minst = FreshenMethInfo g traitCtxtNone m minfo
+        let minst = FreshenMethInfo traitCtxtNone m minfo
         match minfo.GetObjArgTypes(amap, m, minst) with
         | [reqdObjTy] -> 
             let reqdObjTy = if isByrefTy g reqdObjTy then destByrefTy g reqdObjTy else reqdObjTy // This is to support byref extension methods.

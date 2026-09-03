@@ -24,8 +24,8 @@ let TryAllowFlexibleNullnessInControlFlow isFirst (g: TcGlobals.TcGlobals) ty =
     | true, true, ValueSome tp -> tp.SetSupportsNullFlex(true)
     | _ -> ()
 
-let CopyAndFixupTypars g traitCtxt m rigid tpsorig =
-    FreshenAndFixupTypars g traitCtxt m rigid [] [] tpsorig
+let CopyAndFixupTypars traitCtxt m rigid tpsorig =
+    FreshenAndFixupTypars traitCtxt m rigid [] [] tpsorig
 
 let FreshenPossibleForallTy g traitCtxt m rigid ty =
     let origTypars, tau = tryDestForallTy g ty
@@ -35,7 +35,7 @@ let FreshenPossibleForallTy g traitCtxt m rigid ty =
     else
         // tps may be have been equated to other tps in equi-recursive type inference and units-of-measure type inference. Normalize them here
         let origTypars = NormalizeDeclaredTyparsForEquiRecursiveInference g origTypars
-        let tps, renaming, tinst = CopyAndFixupTypars g traitCtxt m rigid origTypars
+        let tps, renaming, tinst = CopyAndFixupTypars traitCtxt m rigid origTypars
         origTypars, tps, tinst, instType renaming tau
 
 /// simplified version of TcVal used in calls to BuildMethodCall (typrelns.fs)

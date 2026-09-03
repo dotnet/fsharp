@@ -17,26 +17,26 @@ open FSharp.Compiler.TcGlobals
 
 type FormatItem = Simple of TType | FuncAndVal
 
-let copyAndFixupFormatTypar g m tp =
+let copyAndFixupFormatTypar m tp =
     // traitCtxtNone: format string typars — unrelated to SRTP member constraints (audited for RFC FS-1043)
-    let _,_,tinst = FreshenAndFixupTypars g traitCtxtNone m TyparRigidity.Flexible [] [] [tp]
+    let _,_,tinst = FreshenAndFixupTypars traitCtxtNone m TyparRigidity.Flexible [] [] [tp]
     List.head tinst
 
 let lowestDefaultPriority = 0 (* See comment on TyparConstraint.DefaultsTo *)
 
-let mkFlexibleFormatTypar g m tys dfltTy =
+let mkFlexibleFormatTypar m tys dfltTy =
     let tp = Construct.NewTypar (TyparKind.Type, TyparRigidity.Rigid, SynTypar(mkSynId m "fmt",TyparStaticReq.HeadType,true),false,TyparDynamicReq.Yes,[],false,false)
     tp.SetConstraints [ TyparConstraint.SimpleChoice (tys,m); TyparConstraint.DefaultsTo (lowestDefaultPriority,dfltTy,m)]
-    copyAndFixupFormatTypar g m tp
+    copyAndFixupFormatTypar m tp
 
 let mkFlexibleIntFormatTypar (g: TcGlobals) m =
-    mkFlexibleFormatTypar g m [ g.byte_ty; g.int16_ty; g.int32_ty; g.int64_ty;  g.sbyte_ty; g.uint16_ty; g.uint32_ty; g.uint64_ty;g.nativeint_ty;g.unativeint_ty; ] g.int_ty
+    mkFlexibleFormatTypar m [ g.byte_ty; g.int16_ty; g.int32_ty; g.int64_ty;  g.sbyte_ty; g.uint16_ty; g.uint32_ty; g.uint64_ty;g.nativeint_ty;g.unativeint_ty; ] g.int_ty
 
 let mkFlexibleDecimalFormatTypar (g: TcGlobals) m =
-    mkFlexibleFormatTypar g m [ g.decimal_ty ] g.decimal_ty
+    mkFlexibleFormatTypar m [ g.decimal_ty ] g.decimal_ty
 
 let mkFlexibleFloatFormatTypar (g: TcGlobals) m =
-    mkFlexibleFormatTypar g m [ g.float_ty; g.float32_ty; g.decimal_ty ] g.float_ty
+    mkFlexibleFormatTypar m [ g.float_ty; g.float32_ty; g.decimal_ty ] g.float_ty
 
 let stringFormatTy (g: TcGlobals) =
     if g.checkNullness && g.langFeatureNullness then g.string_ty_ambivalent else g.string_ty

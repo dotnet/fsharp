@@ -739,13 +739,13 @@ val NewInferenceTypes: TcGlobals -> 'T list -> TType list
 /// each and ensure that the constraints on the new type variables are adjusted.
 ///
 /// Returns the inference type variables as a list of types.
-val FreshenTypars: g: TcGlobals -> traitCtxt: ITraitContext option -> range -> Typars -> TType list
+val FreshenTypars: traitCtxt: ITraitContext option -> range -> Typars -> TType list
 
 /// Given a method, which may be generic, make new inference type variables for
 /// its generic parameters, and ensure that the constraints the new type variables are adjusted.
 ///
 /// Returns the inference type variables as a list of types.
-val FreshenMethInfo: g: TcGlobals -> traitCtxt: ITraitContext option -> range -> MethInfo -> TType list
+val FreshenMethInfo: traitCtxt: ITraitContext option -> range -> MethInfo -> TType list
 
 /// Select extension method infos that are relevant to solving a trait constraint.
 val SelectExtensionMethInfosForTrait:
@@ -760,7 +760,6 @@ val SelectExtensionMethInfosForTrait:
 ///   2. the instantiation mapping old type parameters to inference variables
 ///   3. the inference type variables as a list of types.
 val FreshenAndFixupTypars:
-    g: TcGlobals ->
     traitCtxt: ITraitContext option ->
     m: range ->
     rigid: TyparRigidity ->
@@ -777,7 +776,6 @@ val FreshenAndFixupTypars:
 ///   2. the instantiation mapping old type parameters to inference variables
 ///   3. the inference type variables as a list of types.
 val FreshenTypeInst:
-    g: TcGlobals ->
     traitCtxt: ITraitContext option ->
     m: range ->
     tpsorig: Typar list ->

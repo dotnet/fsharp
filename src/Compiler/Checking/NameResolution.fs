@@ -1823,8 +1823,7 @@ let NewByRefKindInferenceType (g: TcGlobals) m =
 
 let NewInferenceTypes g l = l |> List.map (fun _ -> NewInferenceType g) 
 
-let FreshenTypar (g: TcGlobals) rigid (tp: Typar) =
-    ignore g
+let FreshenTypar rigid (tp: Typar) =
     let dynamicReq = if rigid = TyparRigidity.Rigid then TyparDynamicReq.Yes else TyparDynamicReq.No
     NewCompGenTypar (tp.Kind, rigid, TyparStaticReq.None, dynamicReq, false)
 
@@ -1833,26 +1832,26 @@ let FreshenTypar (g: TcGlobals) rigid (tp: Typar) =
 // abstract generic method slot. But we later check the generalization 
 // condition anyway, so we could get away with a non-rigid typar. This 
 // would sort of be cleaner, though give errors later. 
-let FreshenAndFixupTypars g (traitCtxt: ITraitContext option) m rigid fctps tinst tpsorig =
-    let tps = tpsorig |> List.map (FreshenTypar g rigid)
+let FreshenAndFixupTypars (traitCtxt: ITraitContext option) m rigid fctps tinst tpsorig =
+    let tps = tpsorig |> List.map (FreshenTypar rigid)
     let renaming, tinst = FixupNewTypars traitCtxt m fctps tinst tpsorig tps
     tps, renaming, tinst
 
-let FreshenTypeInst g traitCtxt m tpsorig =
-    FreshenAndFixupTypars g traitCtxt m TyparRigidity.Flexible [] [] tpsorig
+let FreshenTypeInst traitCtxt m tpsorig =
+    FreshenAndFixupTypars traitCtxt m TyparRigidity.Flexible [] [] tpsorig
 
-let FreshMethInst g traitCtxt m fctps tinst tpsorig =
-    FreshenAndFixupTypars g traitCtxt m TyparRigidity.Flexible fctps tinst tpsorig
+let FreshMethInst traitCtxt m fctps tinst tpsorig =
+    FreshenAndFixupTypars traitCtxt m TyparRigidity.Flexible fctps tinst tpsorig
 
-let FreshenTypars g traitCtxt m tpsorig =
+let FreshenTypars traitCtxt m tpsorig =
     match tpsorig with 
     | [] -> []
     | _ -> 
-        let _, _, tpTys = FreshenTypeInst g traitCtxt m tpsorig
+        let _, _, tpTys = FreshenTypeInst traitCtxt m tpsorig
         tpTys
 
-let FreshenMethInfo g traitCtxt m (minfo: MethInfo) =
-    let _, _, tpTys = FreshMethInst g traitCtxt m (minfo.GetFormalTyparsOfDeclaringType()) minfo.DeclaringTypeInst minfo.FormalMethodTypars
+let FreshenMethInfo traitCtxt m (minfo: MethInfo) =
+    let _, _, tpTys = FreshMethInst traitCtxt m (minfo.GetFormalTyparsOfDeclaringType()) minfo.DeclaringTypeInst minfo.FormalMethodTypars
     tpTys
 
 /// Select extension method infos that are relevant to solving a trait constraint.
@@ -3548,7 +3547,7 @@ let rec ResolveExprLongIdentPrim sink (ncenv: NameResolver) first fullyQualified
                     match tyconSearch () with
                     | Result((resInfo, tcref) :: _) ->
                         // traitCtxtNone: type freshening for name resolution result — SRTP solving happens later in ConstraintSolver (audited for RFC FS-1043)
-                        let _, _, tyargs = FreshenTypeInst ncenv.g traitCtxtNone m (tcref.Typars)
+                        let _, _, tyargs = FreshenTypeInst traitCtxtNone m (tcref.Typars)
                         let item = Item.Types(id.idText, [TType_app(tcref, tyargs, ncenv.g.knownWithoutNull)])
                         success (resInfo, item)
                     | _ ->
@@ -3924,7 +3923,7 @@ let ResolveTypeLongIdentInTyconRef sink (ncenv: NameResolver) nenv typeNameResIn
     ResolutionInfo.SendEntityPathToSink(sink, ncenv, nenv, ItemOccurrence.Use, ad, resInfo, ResultTyparChecker(fun () -> true))
 
     // traitCtxtNone: type freshening for name resolution result — SRTP solving happens later in ConstraintSolver (audited for RFC FS-1043)
-    let _, tinst, tyargs = FreshenTypeInst ncenv.g traitCtxtNone m (tcref.Typars)
+    let _, tinst, tyargs = FreshenTypeInst traitCtxtNone m (tcref.Typars)
     let item = Item.Types(tcref.DisplayName, [TType_app(tcref, tyargs, ncenv.g.knownWithoutNull)])
     CallNameResolutionSink sink (rangeOfLid lid, nenv, item, tinst, ItemOccurrence.UseInType, ad)
 
@@ -4088,7 +4087,7 @@ let ResolveTypeLongIdentAux sink (ncenv: NameResolver) occurrence fullyQualified
         ResolutionInfo.SendEntityPathToSink(sink, ncenv, nenv, ItemOccurrence.UseInType, ad, resInfo, ResultTyparChecker(fun () -> true))
 
         // traitCtxtNone: type freshening for name resolution result — SRTP solving happens later in ConstraintSolver (audited for RFC FS-1043)
-        let _, tinst, tyargs = FreshenTypeInst ncenv.g traitCtxtNone m (tcref.Typars)
+        let _, tinst, tyargs = FreshenTypeInst traitCtxtNone m (tcref.Typars)
         let item = Item.Types(tcref.DisplayName, [TType_app(tcref, tyargs, ncenv.g.knownWithoutNull)])
         CallNameResolutionSink sink (m, nenv, item, tinst, occurrence, ad)
 
