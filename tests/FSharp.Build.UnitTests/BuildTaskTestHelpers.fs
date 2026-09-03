@@ -2,6 +2,7 @@
 
 namespace FSharp.Build.UnitTests
 
+open System.Reflection
 open Microsoft.Build.Framework
 
 #nowarn "1182" //Unused arguments
@@ -52,3 +53,16 @@ module BuildTaskTestHelpers =
     /// model, mirroring how MSBuild wires up IMultiThreadableTask.TaskEnvironment before Execute().
     let assignTaskEnvironment (task: IMultiThreadableTask) (environment: TaskEnvironment) =
         task.TaskEnvironment <- environment
+
+    /// TaskEnvironment.Dispose(), which releases the thread-local working-directory override held by
+    /// a TaskEnvironment created via CreateWithProjectDirectoryAndEnvironment, is `internal` in
+    /// Microsoft.Build.Framework: TaskEnvironment does not implement IDisposable, so `use`/`Dispose()`
+    /// aren't available from this assembly. Reflection is the only way to invoke it deterministically
+    /// rather than leaving cleanup to the finalizer.
+    let private taskEnvironmentDisposeMethod =
+        typeof<TaskEnvironment>.GetMethod("Dispose", BindingFlags.NonPublic ||| BindingFlags.Instance)
+
+    /// Deterministically disposes a TaskEnvironment created by createTaskEnvironmentInTemporaryDirectory.
+    /// Callers must invoke this (typically in a `finally` block) for every such environment.
+    let disposeTaskEnvironment (environment: TaskEnvironment) =
+        taskEnvironmentDisposeMethod.Invoke(environment, null) |> ignore

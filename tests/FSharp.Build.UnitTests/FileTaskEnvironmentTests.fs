@@ -32,7 +32,8 @@ type FileTaskEnvironmentTests() =
             Environment.CurrentDirectory <- originalCurrentDirectory
 
     /// Starts both executions on the thread pool and releases them together via a Barrier, so neither
-    /// execution can complete before both have started, then waits for both to finish.
+    /// execution can complete before both have started, then waits for both to finish. Bounded by a
+    /// timeout so that a deadlock in the code under test fails the test instead of hanging forever.
     let runConcurrently (executeA: unit -> bool) (executeB: unit -> bool) =
         let barrier = new Barrier(2)
 
@@ -43,7 +44,13 @@ type FileTaskEnvironmentTests() =
 
         let taskA = runOne executeA
         let taskB = runOne executeB
-        Task.WaitAll(taskA, taskB)
+
+        let tasks: System.Threading.Tasks.Task[] =
+            [| taskA :> System.Threading.Tasks.Task; taskB :> System.Threading.Tasks.Task |]
+
+        let completed = Task.WaitAll(tasks, TimeSpan.FromSeconds 30.0)
+        Assert.True(completed, "Concurrent task executions did not complete within the timeout; possible deadlock.")
+
         taskA.Result, taskB.Result
 
     [<Fact>]
@@ -54,76 +61,84 @@ type FileTaskEnvironmentTests() =
             let environmentA, directoryA = createTaskEnvironmentInTemporaryDirectory ()
             let environmentB, directoryB = createTaskEnvironmentInTemporaryDirectory ()
 
-            let makeTask (attributeName: string) (environment: TaskEnvironment) =
-                let attribute = TaskItem(attributeName) :> ITaskItem
+            try
+                let makeTask (attributeName: string) (environment: TaskEnvironment) =
+                    let attribute = TaskItem(attributeName) :> ITaskItem
 
-                let task =
-                    WriteCodeFragment(
-                        BuildEngine = MockEngine(),
-                        Language = "F#",
-                        AssemblyAttributes = [| attribute |],
-                        OutputFile = (TaskItem("Generated.fs") :> ITaskItem)
-                    )
+                    let task =
+                        WriteCodeFragment(
+                            BuildEngine = MockEngine(),
+                            Language = "F#",
+                            AssemblyAttributes = [| attribute |],
+                            OutputFile = (TaskItem("Generated.fs") :> ITaskItem)
+                        )
 
-                assignTaskEnvironment (task :> IMultiThreadableTask) environment
-                task
+                    assignTaskEnvironment (task :> IMultiThreadableTask) environment
+                    task
 
-            let taskA = makeTask "AssemblyMetadataA" environmentA
-            let taskB = makeTask "AssemblyMetadataB" environmentB
+                let taskA = makeTask "AssemblyMetadataA" environmentA
+                let taskB = makeTask "AssemblyMetadataB" environmentB
 
-            let successA, successB =
-                runConcurrently (fun () -> taskA.Execute()) (fun () -> taskB.Execute())
+                let successA, successB =
+                    runConcurrently (fun () -> taskA.Execute()) (fun () -> taskB.Execute())
 
-            Assert.True successA
-            Assert.True successB
+                Assert.True successA
+                Assert.True successB
 
-            let pathA = Path.Combine(directoryA.FullName, "Generated.fs")
-            let pathB = Path.Combine(directoryB.FullName, "Generated.fs")
+                let pathA = Path.Combine(directoryA.FullName, "Generated.fs")
+                let pathB = Path.Combine(directoryB.FullName, "Generated.fs")
 
-            Assert.True(File.Exists pathA, sprintf "Expected generated file at %s" pathA)
-            Assert.True(File.Exists pathB, sprintf "Expected generated file at %s" pathB)
+                Assert.True(File.Exists pathA, sprintf "Expected generated file at %s" pathA)
+                Assert.True(File.Exists pathB, sprintf "Expected generated file at %s" pathB)
 
-            let contentsA = File.ReadAllText pathA
-            let contentsB = File.ReadAllText pathB
+                let contentsA = File.ReadAllText pathA
+                let contentsB = File.ReadAllText pathB
 
-            Assert.Contains("AssemblyMetadataA", contentsA)
-            Assert.Contains("AssemblyMetadataB", contentsB)
-            Assert.DoesNotContain("AssemblyMetadataB", contentsA)
-            Assert.DoesNotContain("AssemblyMetadataA", contentsB)
+                Assert.Contains("AssemblyMetadataA", contentsA)
+                Assert.Contains("AssemblyMetadataB", contentsB)
+                Assert.DoesNotContain("AssemblyMetadataB", contentsA)
+                Assert.DoesNotContain("AssemblyMetadataA", contentsB)
 
-            // The output item's ItemSpec must remain the original, unrooted relative value.
-            Assert.Equal("Generated.fs", taskA.OutputFile.ItemSpec)
-            Assert.Equal("Generated.fs", taskB.OutputFile.ItemSpec)
+                // The output item's ItemSpec must remain the original, unrooted relative value.
+                Assert.Equal("Generated.fs", taskA.OutputFile.ItemSpec)
+                Assert.Equal("Generated.fs", taskB.OutputFile.ItemSpec)
 
-            Assert.Empty(Directory.GetFiles(decoyDirectory.FullName, "*", SearchOption.AllDirectories)))
+                Assert.Empty(Directory.GetFiles(decoyDirectory.FullName, "*", SearchOption.AllDirectories))
+            finally
+                disposeTaskEnvironment environmentA
+                disposeTaskEnvironment environmentB)
 
     [<Fact>]
     member _.``WriteCodeFragment preserves its OutputDirectory quirk while rooting the write against TaskEnvironment``
         ()
         =
         let environment, directory = createTaskEnvironmentInTemporaryDirectory ()
-        let attribute = TaskItem("SomeAttribute") :> ITaskItem
 
-        let task =
-            WriteCodeFragment(
-                BuildEngine = MockEngine(),
-                Language = "F#",
-                AssemblyAttributes = [| attribute |],
-                OutputDirectory = (TaskItem("SubDir") :> ITaskItem),
-                OutputFile = (TaskItem("Generated2.fs") :> ITaskItem)
-            )
+        try
+            let attribute = TaskItem("SomeAttribute") :> ITaskItem
 
-        assignTaskEnvironment (task :> IMultiThreadableTask) environment
+            let task =
+                WriteCodeFragment(
+                    BuildEngine = MockEngine(),
+                    Language = "F#",
+                    AssemblyAttributes = [| attribute |],
+                    OutputDirectory = (TaskItem("SubDir") :> ITaskItem),
+                    OutputFile = (TaskItem("Generated2.fs") :> ITaskItem)
+                )
 
-        Assert.True(task.Execute())
+            assignTaskEnvironment (task :> IMultiThreadableTask) environment
 
-        // Existing quirk (preserved unchanged): the file is written using OutputFile.ItemSpec alone,
-        // ignoring OutputDirectory, even though OutputDirectory is folded into the returned OutputFile item.
-        let writtenPath = Path.Combine(directory.FullName, "Generated2.fs")
-        Assert.True(File.Exists writtenPath, sprintf "Expected generated file at %s" writtenPath)
-        Assert.False(File.Exists(Path.Combine(directory.FullName, "SubDir", "Generated2.fs")))
+            Assert.True(task.Execute())
 
-        Assert.Equal(Path.Combine("SubDir", "Generated2.fs"), task.OutputFile.ItemSpec)
+            // Existing quirk (preserved unchanged): the file is written using OutputFile.ItemSpec alone,
+            // ignoring OutputDirectory, even though OutputDirectory is folded into the returned OutputFile item.
+            let writtenPath = Path.Combine(directory.FullName, "Generated2.fs")
+            Assert.True(File.Exists writtenPath, sprintf "Expected generated file at %s" writtenPath)
+            Assert.False(File.Exists(Path.Combine(directory.FullName, "SubDir", "Generated2.fs")))
+
+            Assert.Equal(Path.Combine("SubDir", "Generated2.fs"), task.OutputFile.ItemSpec)
+        finally
+            disposeTaskEnvironment environment
 
     [<Fact>]
     member _.``GenerateILLinkSubstitutions writes relative to each task's TaskEnvironment, not the process current directory``
@@ -133,51 +148,55 @@ type FileTaskEnvironmentTests() =
             let environmentA, directoryA = createTaskEnvironmentInTemporaryDirectory ()
             let environmentB, directoryB = createTaskEnvironmentInTemporaryDirectory ()
 
-            let relativeIntermediateA = Path.Combine("obj", "DebugA")
-            let relativeIntermediateB = Path.Combine("obj", "DebugB")
+            try
+                let relativeIntermediateA = Path.Combine("obj", "DebugA")
+                let relativeIntermediateB = Path.Combine("obj", "DebugB")
 
-            let makeTask (assemblyName: string) (relativeIntermediate: string) (environment: TaskEnvironment) =
-                let task =
-                    GenerateILLinkSubstitutions(
-                        BuildEngine = MockEngine(),
-                        AssemblyName = assemblyName,
-                        IntermediateOutputPath = relativeIntermediate
-                    )
+                let makeTask (assemblyName: string) (relativeIntermediate: string) (environment: TaskEnvironment) =
+                    let task =
+                        GenerateILLinkSubstitutions(
+                            BuildEngine = MockEngine(),
+                            AssemblyName = assemblyName,
+                            IntermediateOutputPath = relativeIntermediate
+                        )
 
-                assignTaskEnvironment (task :> IMultiThreadableTask) environment
-                task
+                    assignTaskEnvironment (task :> IMultiThreadableTask) environment
+                    task
 
-            let taskA = makeTask "AssemblyA" relativeIntermediateA environmentA
-            let taskB = makeTask "AssemblyB" relativeIntermediateB environmentB
+                let taskA = makeTask "AssemblyA" relativeIntermediateA environmentA
+                let taskB = makeTask "AssemblyB" relativeIntermediateB environmentB
 
-            let successA, successB =
-                runConcurrently (fun () -> taskA.Execute()) (fun () -> taskB.Execute())
+                let successA, successB =
+                    runConcurrently (fun () -> taskA.Execute()) (fun () -> taskB.Execute())
 
-            Assert.True successA
-            Assert.True successB
+                Assert.True successA
+                Assert.True successB
 
-            let expectedItemSpecA = Path.Combine(relativeIntermediateA, "ILLink.Substitutions.xml")
-            let expectedItemSpecB = Path.Combine(relativeIntermediateB, "ILLink.Substitutions.xml")
+                let expectedItemSpecA = Path.Combine(relativeIntermediateA, "ILLink.Substitutions.xml")
+                let expectedItemSpecB = Path.Combine(relativeIntermediateB, "ILLink.Substitutions.xml")
 
-            // The generated item's ItemSpec must remain the original, unrooted relative value, and its
-            // LogicalName metadata must be unchanged.
-            Assert.Equal(expectedItemSpecA, taskA.GeneratedItems.[0].ItemSpec)
-            Assert.Equal(expectedItemSpecB, taskB.GeneratedItems.[0].ItemSpec)
-            Assert.Equal("ILLink.Substitutions.xml", taskA.GeneratedItems.[0].GetMetadata("LogicalName"))
-            Assert.Equal("ILLink.Substitutions.xml", taskB.GeneratedItems.[0].GetMetadata("LogicalName"))
+                // The generated item's ItemSpec must remain the original, unrooted relative value, and its
+                // LogicalName metadata must be unchanged.
+                Assert.Equal(expectedItemSpecA, taskA.GeneratedItems.[0].ItemSpec)
+                Assert.Equal(expectedItemSpecB, taskB.GeneratedItems.[0].ItemSpec)
+                Assert.Equal("ILLink.Substitutions.xml", taskA.GeneratedItems.[0].GetMetadata("LogicalName"))
+                Assert.Equal("ILLink.Substitutions.xml", taskB.GeneratedItems.[0].GetMetadata("LogicalName"))
 
-            let pathA = Path.Combine(directoryA.FullName, expectedItemSpecA)
-            let pathB = Path.Combine(directoryB.FullName, expectedItemSpecB)
+                let pathA = Path.Combine(directoryA.FullName, expectedItemSpecA)
+                let pathB = Path.Combine(directoryB.FullName, expectedItemSpecB)
 
-            Assert.True(File.Exists pathA, sprintf "Expected generated file at %s" pathA)
-            Assert.True(File.Exists pathB, sprintf "Expected generated file at %s" pathB)
+                Assert.True(File.Exists pathA, sprintf "Expected generated file at %s" pathA)
+                Assert.True(File.Exists pathB, sprintf "Expected generated file at %s" pathB)
 
-            let contentsA = File.ReadAllText pathA
-            let contentsB = File.ReadAllText pathB
+                let contentsA = File.ReadAllText pathA
+                let contentsB = File.ReadAllText pathB
 
-            Assert.Contains("AssemblyA", contentsA)
-            Assert.Contains("AssemblyB", contentsB)
-            Assert.DoesNotContain("AssemblyB", contentsA)
-            Assert.DoesNotContain("AssemblyA", contentsB)
+                Assert.Contains("AssemblyA", contentsA)
+                Assert.Contains("AssemblyB", contentsB)
+                Assert.DoesNotContain("AssemblyB", contentsA)
+                Assert.DoesNotContain("AssemblyA", contentsB)
 
-            Assert.Empty(Directory.GetFiles(decoyDirectory.FullName, "*", SearchOption.AllDirectories)))
+                Assert.Empty(Directory.GetFiles(decoyDirectory.FullName, "*", SearchOption.AllDirectories))
+            finally
+                disposeTaskEnvironment environmentA
+                disposeTaskEnvironment environmentB)
