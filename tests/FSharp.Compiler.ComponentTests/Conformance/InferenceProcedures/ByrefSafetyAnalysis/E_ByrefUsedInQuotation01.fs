@@ -1,4 +1,4 @@
-// #Regression #Conformance #TypeInference #ByRef 
+// #Regression #Conformance #TypeInference #ByRef
 // Attempt to use a byref in a quotation
 
 

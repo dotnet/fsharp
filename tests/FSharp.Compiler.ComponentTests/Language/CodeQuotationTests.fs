@@ -96,11 +96,11 @@ match expr with
         |> shouldSucceed
 
     // Tests for issues #11131 and #15648 - anonymous record field ordering
-    // Note: The fix is in FSharp.Core/Linq.fs - these tests verify that queries 
+    // Note: The fix is in FSharp.Core/Linq.fs - these tests verify that queries
     // with anonymous records work correctly regardless of field order.
     // The expression tree structure tests are in FSharp.Core.UnitTests which directly
     // references the modified FSharp.Core.
-    
+
     [<Fact>]
     let ``Anonymous records with both field orders produce equivalent results - issue 11131 and 15648`` () =
         Fsx """

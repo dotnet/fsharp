@@ -2,10 +2,10 @@ open Prelude
 
 module TestOneArgumentOutRef =
 
-    type C() = 
+    type C() =
         static member M (x:outref<int>) = &x
 
-    let test() = 
+    let test() =
         let mutable r1 = 1
         let addr = &C.M (&r1)
         addr <- addr + 1

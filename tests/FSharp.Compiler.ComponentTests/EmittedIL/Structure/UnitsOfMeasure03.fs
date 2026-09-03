@@ -1,7 +1,7 @@
-// #NoMT #CodeGen #Interop 
+// #NoMT #CodeGen #Interop
 
 
-// Verify types which are generic WRT a unit of measure are exposed as 
+// Verify types which are generic WRT a unit of measure are exposed as
 // standard .NET types (no funny business!)
 
 namespace Test
@@ -16,10 +16,10 @@ type sprocket
 type PointG0<[<Measure>] 'a>(x : float<'a>, y : float<'a>) =
     member this.X = x
     member this.Y = y
-    
+
 type PointWidget(x, y) =
     inherit PointG0<widget>(x, y)
-    
+
 // Generic with regard to a unit of measure AND a typearg
 type PointG2<[<Measure>] 'm, 'a, 'b>() =
     inherit PointG0<'m>(0.0<_>, 0.0<_>)
@@ -53,7 +53,7 @@ module Tester =
         System.Reflection.Assembly.GetExecutingAssembly()
         |> getType "Test.PointG2`2"
         |> (fun (ty : Type) -> if not ty.IsGenericType then failwith "Error: Should be generic!")
-        
+
     with
-    | e -> printfn "Unhandled Exception: %s" e.Message 
+    | e -> printfn "Unhandled Exception: %s" e.Message
            raise (Exception($"Oops: {e}"))

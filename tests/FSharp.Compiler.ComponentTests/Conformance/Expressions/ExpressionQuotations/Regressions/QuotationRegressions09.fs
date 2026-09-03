@@ -1,4 +1,4 @@
-// #Regression #Conformance #Quotations 
+// #Regression #Conformance #Quotations
 // Regression test for FSHARP1.0:3999 - Issue with quotations over <- operator inside type constructor
 
 open System
@@ -17,7 +17,7 @@ type Test() =
 let t = Test()
 
 // no exception and no compile time error
-// let-declaration-in-a-class 
+// let-declaration-in-a-class
 type Test2() =
    let mutable z = 50
    do printfn "%A" <@ z <- 5 @>
@@ -43,7 +43,7 @@ let t4 = Test4()
 
 // This does not compile anymore (and it is covered in neg63 under fsharp suite)
 //no exception:
-//let Test3() = 
+//let Test3() =
 //   let mutable z = 50
 //   do printfn "%A" <@ z <- 1  @>
 //      printf "\n"

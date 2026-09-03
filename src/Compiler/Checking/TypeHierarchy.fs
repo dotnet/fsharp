@@ -234,19 +234,21 @@ type AllowMultiIntfInstantiations = Yes | No
 let FoldHierarchyOfTypeAux followInterfaces allowMultiIntfInst skipUnref visitor g amap m ty acc =
     let rec loop ndeep ty (visitedTycon, visited: TyconRefMultiMap<_>, acc as state) =
 
+        let tcrefOpt = tryTcrefOfAppTy g ty
+
         let seenThisTycon = 
-            match tryTcrefOfAppTy g ty with
+            match tcrefOpt with
             | ValueSome tcref -> Set.contains tcref.Stamp visitedTycon
             | _ -> false
 
         // Do not visit the same type twice. Could only be doing this if we've seen this tycon
-        if seenThisTycon && ListInline.exists (typeEquiv g ty) (visited.Find (tcrefOfAppTy g ty)) then state else
+        if seenThisTycon && (match tcrefOpt with ValueSome tcref -> ListInline.exists (typeEquiv g ty) (visited.Find tcref) | ValueNone -> false) then state else
 
         // Do not visit the same tycon twice, e.g. I<int> and I<string>, collect I<int> only, unless directed to allow this
         if seenThisTycon && allowMultiIntfInst = AllowMultiIntfInstantiations.No then state else
 
         let state =
-            match tryTcrefOfAppTy g ty with
+            match tcrefOpt with
             | ValueSome tcref ->
                 let visitedTycon = Set.add tcref.Stamp visitedTycon
                 visitedTycon, visited.Add (tcref, ty), acc

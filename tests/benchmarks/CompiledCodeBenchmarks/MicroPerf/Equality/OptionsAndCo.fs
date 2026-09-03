@@ -8,38 +8,38 @@ type OptionsAndCo() =
 
     let numbers = Array.init 1000 id
 
-    let createOption x = 
+    let createOption x =
         match x with
         | x when x % 2 = 0 -> Some x
         | _ -> None
 
-    let createValueOption x = 
+    let createValueOption x =
         match x with
         | x when x % 2 = 0 -> ValueSome x
         | _ -> ValueNone
 
-    let createResult x = 
+    let createResult x =
         match x with
         | x when x % 2 = 0 -> Ok x
         | x -> Error x
 
-    let createNullable x = 
+    let createNullable x =
         match x with
         | x when x % 2 = 0 -> Nullable x
         | _ -> Nullable 42
 
     [<Benchmark>]
-    member _.Option() = 
+    member _.Option() =
         numbers |> Array.countBy createOption
 
     [<Benchmark>]
-    member _.ValueOption() = 
+    member _.ValueOption() =
         numbers |> Array.countBy createValueOption
 
     [<Benchmark>]
-    member _.Result() = 
+    member _.Result() =
         numbers |> Array.countBy createResult
 
     [<Benchmark>]
-    member _.Nullable() = 
+    member _.Nullable() =
         numbers |> Array.countBy createNullable

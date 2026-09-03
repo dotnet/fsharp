@@ -1,11 +1,11 @@
-// #Regression #Misc 
+// #Regression #Misc
 // This used to be a warning, now it's an error
 //<Expects status="error" span="(10,18-10,25)" id="FS0640">A parameter with attributes must also be given a name, e\.g\. '\[<Attribute>\] Name : Type'$</Expects>
 
-type Doc() = 
+type Doc() =
     inherit System.Attribute()
 
-type IFoo = 
+type IFoo =
     interface
         abstract Method1 : [<Doc>] int * [<Doc>] unit -> unit
         abstract Method2 : [<Doc>] p1:int * [<Doc>] p2:unit -> unit

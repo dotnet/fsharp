@@ -201,9 +201,9 @@ let IsMandatoryNonTopLevel g (f: Val) =
 module Pass1_DetermineTLRAndArities =
 
     let GetMaxNumArgsAtUses xinfo f =
-       match Zmap.tryFind f xinfo.Uses with
-       | None       -> 0 (* no call sites *)
-       | Some sites ->
+       match xinfo.Uses.TryGetValue f with
+       | false, _   -> 0 (* no call sites *)
+       | true, sites ->
            sites |> List.map (fun (_accessors, _tinst, args) -> List.length args) |> List.max
 
     let SelectTLRVals amap g xinfo f e =
@@ -1127,7 +1127,7 @@ module Pass4_RewriteAssembly =
     /// At free vals, fixup 0-call if it is an arity-met constant.
     /// Other cases rewrite structurally.
     let rec TransExpr (penv: RewriteContext) (z: RewriteState) expr: Expr * RewriteState =
-        penv.stackGuard.Guard <| fun () ->
+        penv.stackGuard.Guard(fun () ->
 
         match expr with
         // Use TransLinearExpr with a rebuild-continuation for some forms to avoid stack overflows on large terms 
@@ -1230,7 +1230,7 @@ module Pass4_RewriteAssembly =
             error(Error(FSComp.SR.tlrUnexpectedTExpr(),m))
 
         | Expr.WitnessArg (_witnessInfo, _m) ->
-            expr, z
+            expr, z)
 
     /// Walk over linear structured terms in tail-recursive loop, using a continuation 
     /// to represent the rebuild-the-term stack 

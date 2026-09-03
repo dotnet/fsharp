@@ -1,4 +1,4 @@
-// #Regression #Conformance #TypeInference #ByRef 
+// #Regression #Conformance #TypeInference #ByRef
 module MyModule
 open System
 

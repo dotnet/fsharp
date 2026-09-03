@@ -3,7 +3,7 @@
 
 module TestLibModule
 
-module ValAttributesDifferent = 
+module ValAttributesDifferent =
    [<System.ObsoleteAttribute("Text identical in both")>]
    val x1 : int
 
@@ -16,7 +16,7 @@ module ValAttributesDifferent =
    [<System.ObsoleteAttribute("Attribute is in signature but not implementation")>]
    val x4 : int
 
-module TyconAttributesDifferent = 
+module TyconAttributesDifferent =
    [<System.ObsoleteAttribute("Text identical in both")>]
    type C1 = A | B
 
@@ -29,50 +29,50 @@ module TyconAttributesDifferent =
    [<System.ObsoleteAttribute("Attribute is in signature but not implementation")>]
    type C4 = A | B
 
-module ModuleAttributesDifferent = 
+module ModuleAttributesDifferent =
    [<System.ObsoleteAttribute("Text identical in both")>]
-   module M1 = 
+   module M1 =
        val x : int
 
    [<System.ObsoleteAttribute("Text differs in signature")>]
-   module M2 = 
+   module M2 =
        val x : int
 
    //[<System.ObsoleteAttribute("Attribute is in implementation but not signature")>]
-   module M3 = 
+   module M3 =
        val x : int
 
    [<System.ObsoleteAttribute("Attribute is in signature but not implementation")>]
-   module M4 = 
+   module M4 =
        val x : int
 
-module UnionCaseAttributesDifferent = 
+module UnionCaseAttributesDifferent =
    // expect no warning, and attribute to be in compiled code
-   type U1 =    
+   type U1 =
        | [<System.ObsoleteAttribute("Text identical in both")>]
          A of int
        | B of string
 
    // expect warning, and attribute from signature to be included
-   type U2 =    
+   type U2 =
        | [<System.ObsoleteAttribute("Text differs in signature")>]
          A of int
        | B of string
 
    // expect no warning, and attribute to be in compiled code
-   type U3 =    
+   type U3 =
        // [<System.ObsoleteAttribute("Attribute is in implementation but not signature")>]
        | A of int
        | B of string
 
    // expect no warning, and attribute to be in compiled code
-   type U4 =    
+   type U4 =
        | [<System.ObsoleteAttribute("Attribute is in signature but not implementation")>]
          A of int
        | B of string
 
-module ParamAttributesDifferent = 
-   
+module ParamAttributesDifferent =
+
    // identical in signature and implementation
    val x1 : [<System.CLSCompliantAttribute(true)>] p : int -> int
 
@@ -85,8 +85,8 @@ module ParamAttributesDifferent =
    // in signature but not implementation
    val x4 : [<System.CLSCompliantAttribute(true)>] p : int -> int
 
-module TypeParamAttributesDifferent = 
-   
+module TypeParamAttributesDifferent =
+
    // identical in signature and implementation
    val x1< [<System.CLSCompliantAttribute(true)>] 'T> : 'T -> 'T
 
@@ -99,12 +99,12 @@ module TypeParamAttributesDifferent =
    // in signature but not implementation
    val x4< [<System.CLSCompliantAttribute(true)>] 'T> : 'T -> 'T
 
-type ThisLibAssembly 
+type ThisLibAssembly
 
 
 
 #if !NETSTANDARD
-module Bug719 = 
+module Bug719 =
 
     open System.Runtime.InteropServices
 

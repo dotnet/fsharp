@@ -15,7 +15,7 @@ module Extensions =
             match this with
             | BinaryOp (_, e2) ->
                 e2.Foobar2
-            | EndOp -> 
+            | EndOp ->
                 count <- count + 1
                 ()
 

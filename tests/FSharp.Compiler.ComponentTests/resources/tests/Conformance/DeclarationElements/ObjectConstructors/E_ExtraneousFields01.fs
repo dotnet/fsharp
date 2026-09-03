@@ -1,4 +1,4 @@
-// #Regression #Conformance #DeclarationElements #ObjectConstructors 
+// #Regression #Conformance #DeclarationElements #ObjectConstructors
 // Regression test for dev10 bug 840657
 // Field "Z" has a default value, and we should not allow it to be set via an object expression
 //<Expects id="FS0765" span="(10,10-10,27)" status="error">Extraneous fields have been given values</Expects>

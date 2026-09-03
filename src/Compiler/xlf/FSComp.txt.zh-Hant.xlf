@@ -362,11 +362,6 @@
         <target state="translated">預設介面成員使用</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureDelegateTypeNameResolutionFix">
-        <source>fix to resolution of delegate type names, see https://github.com/dotnet/fsharp/issues/10228</source>
-        <target state="translated">修正委派類型名稱的解析，請參閱 https://github.com/dotnet/fsharp/issues/10228</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureDeprecatePlacesWhereSeqCanBeOmitted">
         <source>Deprecate places where 'seq' can be omitted</source>
         <target state="new">Deprecate places where 'seq' can be omitted</target>
@@ -427,11 +422,6 @@
         <target state="translated">報告靜態類別時發生錯誤</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureEscapeBracesInFormattableString">
-        <source>Escapes curly braces before calling FormattableStringFactory.Create when interpolated string literal is typed as FormattableString</source>
-        <target state="translated">當差補字串常值輸入為 FormattableString 時，在呼叫 FormattableStringFactory.Create 之前先逸出大括弧</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureExpandedMeasurables">
         <source>more types support units of measure</source>
         <target state="translated">更多支援測量單位的類型</target>
@@ -462,11 +452,6 @@
         <target state="new">Implicit dispatch slot coverage for default interface member implementations</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureImprovedImpliedArgumentNames">
-        <source>Improved implied argument names</source>
-        <target state="translated">改良的隱含引數名稱</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureImprovedImpliedArgumentNamesPartTwo">
         <source>Improved implied argument names with partial application</source>
         <target state="new">Improved implied argument names with partial application</target>
@@ -492,11 +477,6 @@
         <target state="new">Lowers [for x in xs -&gt; f x] and [|for x in xs -&gt; f x|] to fast loops when xs is a list or an array, respectively.</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureLowercaseDUWhenRequireQualifiedAccess">
-        <source>Allow lowercase DU when RequireQualifiedAccess attribute</source>
-        <target state="translated">RequireQualifiedAccess 屬性時允許小寫 DU</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureMatchNotAllowedForUnionCaseWithNoData">
         <source>Pattern match discard is not allowed for union case that takes no data.</source>
         <target state="translated">不接受資料的聯集案例不允許模式比對捨棄。</target>
@@ -505,11 +485,6 @@
       <trans-unit id="featureMoreConcreteTiebreaker">
         <source>Use 'most concrete' tiebreaker for overload resolution when methods differ only by type parameter concreteness.</source>
         <target state="new">Use 'most concrete' tiebreaker for overload resolution when methods differ only by type parameter concreteness.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="featureNameOf">
-        <source>nameof</source>
-        <target state="translated">nameof</target>
         <note />
       </trans-unit>
       <trans-unit id="featureNonInlineLiteralsAsPrintfFormat">
@@ -525,11 +500,6 @@
       <trans-unit id="featureNotNullIfNotNull">
         <source>honor the 'NotNullIfNotNull' attribute on a method's return value</source>
         <target state="new">honor the 'NotNullIfNotNull' attribute on a method's return value</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="featureNullableOptionalInterop">
-        <source>nullable optional interop</source>
-        <target state="translated">可為 Null 的選擇性 Interop</target>
         <note />
       </trans-unit>
       <trans-unit id="featureNullnessChecking">
@@ -570,11 +540,6 @@
       <trans-unit id="featurePreferExtensionMethodOverPlainProperty">
         <source>prefer extension method over plain property</source>
         <target state="translated">偏好延伸模組方法勝於純文字屬性</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="featurePreferStringGetPinnableReference">
-        <source>prefer String.GetPinnableReference in fixed bindings</source>
-        <target state="translated">在固定繫結中優先使用 String.GetPinnableReference</target>
         <note />
       </trans-unit>
       <trans-unit id="featurePreprocessorElif">
@@ -640,11 +605,6 @@
       <trans-unit id="featureStaticLetInRecordsDusEmptyTypes">
         <source>Allow static let bindings in union, record, struct, non-incremental-class types</source>
         <target state="translated">允許在等位、記錄、結構、非累加類別類型中使用靜態 let 繫結</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="featureStaticMembersInInterfaces">
-        <source>Static members in interfaces</source>
-        <target state="translated">介面中的靜態成員</target>
         <note />
       </trans-unit>
       <trans-unit id="featureStringInterpolation">
@@ -1093,8 +1053,8 @@
         <note />
       </trans-unit>
       <trans-unit id="optsUnrecognizedLanguageFeature">
-        <source>Unrecognized language feature name: '{0}'. Use a valid feature name such as 'NameOf' or 'StringInterpolation'.</source>
-        <target state="new">Unrecognized language feature name: '{0}'. Use a valid feature name such as 'NameOf' or 'StringInterpolation'.</target>
+        <source>Unrecognized language feature name: '{0}'. Use a valid feature name such as 'StringInterpolation' or 'FromEndSlicing'.</source>
+        <target state="new">Unrecognized language feature name: '{0}'. Use a valid feature name such as 'StringInterpolation' or 'FromEndSlicing'.</target>
         <note />
       </trans-unit>
       <trans-unit id="optsUnrecognizedLanguageVersion">

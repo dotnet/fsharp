@@ -1,4 +1,4 @@
-// #Regression #Conformance #ObjectOrientedTypes #Enums 
+// #Regression #Conformance #ObjectOrientedTypes #Enums
 // Regression test for FSHARP1.0:5535
 // Enum type
 type E = | A = 1y
