@@ -138,7 +138,9 @@ module internal CopilotSymbolQuery =
                 Array.init sourceText.Lines.Count (fun line -> sourceText.Lines[line].ToString())
 
             let scopes = Structure.getOutliningRanges sourceLines parseResults.ParseTree
-            let struct (firstLine, lastLine) = CopilotSymbolSnippets.definitionLines scopes item
+
+            let struct (firstLine, lastLine) =
+                CopilotSymbolSnippets.definitionLines sourceLines scopes item
 
             let firstLine = max 1 firstLine
             let lastLine = min sourceText.Lines.Count lastLine
@@ -243,9 +245,9 @@ type internal FSharpCopilotContextProvider
             | text -> ValueSome text
         | _ -> ValueNone
 
-    let queryMentions (query: CopilotMentionQuery) =
+    let mentionsFor (searchText: string voption) =
         cancellableTask {
-            match workspace, searchTextOf query with
+            match workspace, searchText with
             | null, _
             | _, ValueNone -> return noMentions
             | workspace, ValueSome searchText ->
@@ -304,7 +306,7 @@ type internal FSharpCopilotContextProvider
 
     interface ICopilotMentionQueryable with
         member _.QueryMentionAsync(query, cancellationToken) : Task<IReadOnlyCollection<CopilotQueriedMention>> =
-            queryMentions query |> CancellableTask.start cancellationToken
+            mentionsFor (searchTextOf query) |> CancellableTask.start cancellationToken
 
         member _.NavigateToMentionableAsync(mention, cancellationToken) : Task<bool> =
             match workspace, fullyQualifiedNameOf mention.Inputs with
@@ -334,15 +336,15 @@ type internal FSharpCopilotContextProvider
                 |> CancellableTask.start cancellationToken
 
     // Copilot's own picker providers answer through the batch interface, one result collection per query.
+    // Each distinct search text scans the solution once, and the scans run side by side.
     interface ICopilotMentionBatchQueryable with
         member _.QueryMentionBatchAsync(queries, cancellationToken) : Task<IReadOnlyList<IReadOnlyCollection<CopilotQueriedMention>>> =
             cancellableTask {
-                let results = ResizeArray queries.Count
+                let searchTexts = queries |> Seq.map searchTextOf |> Seq.toArray
+                let distinct = Array.distinct searchTexts
+                let! mentions = distinct |> Array.map mentionsFor |> CancellableTask.whenAll
+                let byText = Array.zip distinct mentions |> dict
 
-                for query in queries do
-                    let! mentions = queryMentions query
-                    results.Add mentions
-
-                return results :> IReadOnlyList<IReadOnlyCollection<CopilotQueriedMention>>
+                return searchTexts |> Array.map (fun text -> byText[text]) :> IReadOnlyList<IReadOnlyCollection<CopilotQueriedMention>>
             }
             |> CancellableTask.start cancellationToken
