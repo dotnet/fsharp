@@ -25,26 +25,6 @@ open FSharp.Compiler.Interactive.Protocol
 /// of a session pays for the type checker warming up.
 let private defaultTimeout = TimeSpan.FromSeconds 120.0
 
-/// Locate the fsi built by this repository, alongside the test assembly's own output.
-///
-/// Test output lives at `<artifacts>/bin/<project>/<configuration>/<framework>`, and fsi is its
-/// sibling at `<artifacts>/bin/fsi/<configuration>/<framework>`.
-let private locateFsi () =
-    let baseDirectory =
-        DirectoryInfo(AppContext.BaseDirectory.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar))
-
-    let framework = baseDirectory.Name
-    let configuration = baseDirectory.Parent.Name
-    let binDirectory = baseDirectory.Parent.Parent.Parent
-
-    let fsi =
-        Path.Combine(binDirectory.FullName, "fsi", configuration, framework, "fsi.dll")
-
-    if not (File.Exists fsi) then
-        failwithf "Could not find the fsi under test at '%s'. Build src/fsi first." fsi
-
-    fsi
-
 /// Prefer the .NET host this repository provisions, so that the session runs on the same runtime
 /// as the rest of the build.
 let private locateDotnetHost () =
@@ -67,6 +47,37 @@ let private locateDotnetHost () =
 
     search (DirectoryInfo(AppContext.BaseDirectory))
 
+/// Locate the fsi built by this repository, alongside the test assembly's own output, and how to
+/// launch it.
+///
+/// Test output lives at `<artifacts>/bin/<project>/<configuration>/<framework>`, and fsi is its
+/// sibling at `<artifacts>/bin/fsi/<configuration>/<framework>`. net472's fsi is a native
+/// executable that runs directly; every other framework's is a managed dll run under the dotnet
+/// host — the same split `InteractiveHost.fs` makes for the window.
+let private locateFsi () =
+    let baseDirectory =
+        DirectoryInfo(AppContext.BaseDirectory.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar))
+
+    let framework = baseDirectory.Name
+    let configuration = baseDirectory.Parent.Name
+    let binDirectory = baseDirectory.Parent.Parent.Parent
+    let fsiDirectory = Path.Combine(binDirectory.FullName, "fsi", configuration, framework)
+
+    if framework = "net472" then
+        let fsi = Path.Combine(fsiDirectory, "fsi.exe")
+
+        if not (File.Exists fsi) then
+            failwithf "Could not find the fsi under test at '%s'. Build src/fsi first." fsi
+
+        fsi, []
+    else
+        let fsi = Path.Combine(fsiDirectory, "fsi.dll")
+
+        if not (File.Exists fsi) then
+            failwithf "Could not find the fsi under test at '%s'. Build src/fsi first." fsi
+
+        locateDotnetHost (), [ fsi ]
+
 /// A running session, plus everything needed to talk to it and to explain a failure.
 [<Sealed>]
 type FsiServerHarness(?extraArguments: string list, ?workingDirectory: string) =
@@ -75,32 +86,40 @@ type FsiServerHarness(?extraArguments: string list, ?workingDirectory: string) =
     let standardError = StringBuilder()
     let outputLock = obj ()
 
+    /// .NET Framework has no `ProcessStartInfo.ArgumentList`, so the command line is built by hand
+    /// on every target — one fewer thing that differs between fsi's two hosting flavors.
+    let quoteIfNeeded (argument: string) =
+        if
+            argument.IndexOf(" ", StringComparison.Ordinal) >= 0
+            && not (argument.StartsWith("\"", StringComparison.Ordinal))
+        then
+            "\"" + argument + "\""
+        else
+            argument
+
     let startInfo =
+        let fsiHost, leadingArguments = locateFsi ()
+
         let arguments =
             [
-                locateFsi ()
+                yield! leadingArguments
                 "--nologo"
                 "--fsi-server-jsonrpc:" + pipeName
                 yield! defaultArg extraArguments []
             ]
 
-        let startInfo =
-            ProcessStartInfo(
-                FileName = locateDotnetHost (),
-                UseShellExecute = false,
-                CreateNoWindow = true,
-                RedirectStandardInput = true,
-                RedirectStandardOutput = true,
-                RedirectStandardError = true,
-                StandardOutputEncoding = Encoding.UTF8,
-                StandardErrorEncoding = Encoding.UTF8,
-                WorkingDirectory = defaultArg workingDirectory (Path.GetTempPath())
-            )
-
-        for argument in arguments do
-            startInfo.ArgumentList.Add argument
-
-        startInfo
+        ProcessStartInfo(
+            FileName = fsiHost,
+            Arguments = String.Join(" ", arguments |> List.map quoteIfNeeded),
+            UseShellExecute = false,
+            CreateNoWindow = true,
+            RedirectStandardInput = true,
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
+            StandardOutputEncoding = Encoding.UTF8,
+            StandardErrorEncoding = Encoding.UTF8,
+            WorkingDirectory = defaultArg workingDirectory (Path.GetTempPath())
+        )
 
     let session = new Process(StartInfo = startInfo)
 
