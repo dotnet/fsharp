@@ -11,8 +11,17 @@ open Microsoft.Build.Utilities
 /// <summary>
 /// MSBuild task that generates ILLink.Substitutions.xml file to remove F# metadata resources during IL linking.
 /// </summary>
-type GenerateILLinkSubstitutions() =
+[<MSBuildMultiThreadableTask>]
+type GenerateILLinkSubstitutions(taskEnvironment: TaskEnvironment) =
     inherit Task()
+    let mutable _taskEnvironment = taskEnvironment
+
+    new() = GenerateILLinkSubstitutions(TaskEnvironment.Fallback)
+
+    interface IMultiThreadableTask with
+        member _.TaskEnvironment
+            with get () = _taskEnvironment
+            and set (value) = _taskEnvironment <- value
 
     /// <summary>
     /// Assembly name to use when generating resource names to be removed.
@@ -79,8 +88,13 @@ type GenerateILLinkSubstitutions() =
             let outputFileName =
                 Path.Combine(this.IntermediateOutputPath, "ILLink.Substitutions.xml")
 
-            Directory.CreateDirectory(this.IntermediateOutputPath) |> ignore
-            File.WriteAllText(outputFileName, xmlContent)
+            let rootedIntermediateOutputPath =
+                _taskEnvironment.GetAbsolutePath(this.IntermediateOutputPath)
+
+            let rootedOutputFileName = _taskEnvironment.GetAbsolutePath(outputFileName)
+
+            Directory.CreateDirectory(rootedIntermediateOutputPath.Value) |> ignore
+            File.WriteAllText(rootedOutputFileName.Value, xmlContent)
 
             // Create a TaskItem for the generated file
             let item = TaskItem(outputFileName) :> ITaskItem

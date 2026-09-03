@@ -18,6 +18,7 @@
     <Compile Include="BuildTaskTestHelpers.fs" />
     <Compile Include="MapSourceRootsTests.fs" />
     <Compile Include="MultiThreadedTaskTests.fs" />
+    <Compile Include="FileTaskEnvironmentTests.fs" />
   </ItemGroup>
 
   <ItemGroup>

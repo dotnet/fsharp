@@ -17,6 +17,8 @@ type MultiThreadedTaskTests() =
         seq {
             yield [| typeof<CreateFSharpManifestResourceName> |]
             yield [| typeof<MapSourceRoots> |]
+            yield [| typeof<WriteCodeFragment> |]
+            yield [| typeof<GenerateILLinkSubstitutions> |]
         }
 
     [<Theory>]
