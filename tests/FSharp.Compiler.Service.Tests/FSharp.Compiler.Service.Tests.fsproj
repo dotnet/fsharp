@@ -223,9 +223,11 @@
     <ProjectReference Include="..\service\data\CSharp_Analysis\CSharp_Analysis.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
+  <ItemGroup Condition="'$(TargetFramework)' == 'net472'">
     <!-- FSharp.Compiler.Service's PackageReference to System.Memory (for ReadOnlySpan/ReadOnlyMemory) is only
-         transitive here, so the SetTargetFramework override above does not carry it in on net472; pin it directly. -->
+         transitive here, so the SetTargetFramework override above does not carry it in on net472; pin it directly.
+         Not needed on the .NET Core inner build: there System.Memory ships with the framework and NuGet's
+         package-pruning check (NU1510) errors on an explicit reference to it. -->
     <PackageReference Include="System.Memory" />
   </ItemGroup>
 
