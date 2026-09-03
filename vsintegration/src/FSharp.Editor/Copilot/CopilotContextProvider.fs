@@ -132,8 +132,7 @@ module internal CopilotSymbolQuery =
             let! sourceText = document.GetTextAsync ct
             let! parseResults = document.GetFSharpParseResultsAsync UserOpName
 
-            let sourceLines =
-                Array.init sourceText.Lines.Count (fun line -> sourceText.Lines[line].ToString())
+            let sourceLines = sourceText.GetLinesAsMemory()
 
             let scopes = Structure.getOutliningRanges sourceLines parseResults.ParseTree
 
