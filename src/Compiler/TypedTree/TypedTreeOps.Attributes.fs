@@ -681,13 +681,15 @@ module internal AttributeHelpers =
 
         flags
 
-    let private ensureValFlags (g: TcGlobals) (v: Val) : WellKnownValAttribs =
-        let wa = v.ValAttribs
-
+    let inline private ensureValFlags
+        (g: TcGlobals)
+        (wa: WellKnownValAttribs)
+        ([<InlineIfLambda>] setAttribs: WellKnownValAttribs -> unit)
+        : WellKnownValAttribs =
         if wa.NeedsCompute then
             let attribs = wa.AsList()
             let computed = WellKnownValAttribs(attribs, computeValWellKnownFlags g attribs)
-            v.SetValAttribs computed
+            setAttribs computed
             computed
         else
             wa
@@ -736,22 +738,11 @@ module internal AttributeHelpers =
 
     /// Check if an ArgReprInfo has a specific well-known attribute, computing and caching flags if needed.
     let ArgReprInfoHasWellKnownAttribute (g: TcGlobals) (flag: WellKnownValAttributes) (argInfo: ArgReprInfo) : bool =
-        let wa = argInfo.Attribs
-
-        let wa =
-            if wa.NeedsCompute then
-                let attribs = wa.AsList()
-                let computed = WellKnownValAttribs(attribs, computeValWellKnownFlags g attribs)
-                argInfo.Attribs <- computed
-                computed
-            else
-                wa
-
-        wa.HasWellKnownAttribute flag
+        (ensureValFlags g argInfo.Attribs (fun attribs -> argInfo.Attribs <- attribs)).HasWellKnownAttribute flag
 
     /// Check if a Val has a specific well-known attribute, computing and caching flags if needed.
     let ValHasWellKnownAttribute (g: TcGlobals) (flag: WellKnownValAttributes) (v: Val) : bool =
-        (ensureValFlags g v).HasWellKnownAttribute flag
+        (ensureValFlags g v.ValAttribs (fun attribs -> v.SetValAttribs attribs)).HasWellKnownAttribute flag
 
     /// Query a three-state bool attribute on an entity. Returns bool option.
     let EntityTryGetBoolAttribute
@@ -774,7 +765,7 @@ module internal AttributeHelpers =
         (falseFlag: WellKnownValAttributes)
         (v: Val)
         : bool option =
-        let wa = ensureValFlags g v
+        let wa = ensureValFlags g v.ValAttribs (fun attribs -> v.SetValAttribs attribs)
 
         if not (wa.HasWellKnownAttribute(trueFlag ||| falseFlag)) then
             Option.None
