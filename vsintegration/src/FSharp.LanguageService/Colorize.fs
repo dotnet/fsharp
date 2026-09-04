@@ -24,11 +24,11 @@ open FSharp.Compiler.Tokenization
 /// Maintain a two-way lookup of lexstate to colorstate
 /// In practice this table will be quite small. All of F# only uses 38 distinct LexStates.
 //
-// Note: DEPRECATED CODE ONLY ACTIVE IN UNIT TESTING VIA "UNROSLYNIZED" UNIT TESTS 
+// Note: DEPRECATED CODE ONLY ACTIVE IN UNIT TESTING VIA "UNROSLYNIZED" UNIT TESTS
 //
 // Note: Tests using this code should either be adjusted to test the corresponding feature in
-// FSharp.Editor, or deleted.  However, the tests may be exercising underlying F# Compiler 
-// functionality and thus have considerable value, they should ony be deleted if we are sure this 
+// FSharp.Editor, or deleted.  However, the tests may be exercising underlying F# Compiler
+// functionality and thus have considerable value, they should ony be deleted if we are sure this
 // is not the case.
 //
 module internal ColorStateLookup_DEPRECATED =
@@ -78,11 +78,11 @@ module internal ColorStateLookup_DEPRECATED =
 //      - SetLineText() is called one line at a time.
 //      - An instance of FSharpScanner_DEPRECATED is associated with exactly one buffer (IVsTextLines).
 //
-// Note: DEPRECATED CODE ONLY ACTIVE IN UNIT TESTING VIA "UNROSLYNIZED" UNIT TESTS. 
+// Note: DEPRECATED CODE ONLY ACTIVE IN UNIT TESTING VIA "UNROSLYNIZED" UNIT TESTS.
 //
 // Note: Tests using this code should either be adjusted to test the corresponding feature in
-// FSharp.Editor, or deleted.  However, the tests may be exercising underlying F# Compiler 
-// functionality and thus have considerable value, they should ony be deleted if we are sure this 
+// FSharp.Editor, or deleted.  However, the tests may be exercising underlying F# Compiler
+// functionality and thus have considerable value, they should ony be deleted if we are sure this
 // is not the case.
 //
 type internal FSharpScanner_DEPRECATED(makeLineTokenizer : string -> FSharpLineTokenizer) =
@@ -124,17 +124,17 @@ type internal FSharpScanner_DEPRECATED(makeLineTokenizer : string -> FSharpLineT
     /// Scan a token from a line. This should only be used in cases where color information is irrelevant.
     /// Used by GetFullLineInfo (and only thus in a small workaround in GetDeclarations) and GetTokenInformationAt (thus GetF1KeywordString).
     member ws.ScanTokenWithDetails (lexState: _ ref) =
-        let colorInfoOption, newLexState = lineTokenizer.ScanToken(lexState.Value)
+        let struct (colorInfoOption, newLexState) = lineTokenizer.ScanToken(lexState.Value)
         lexState.Value <- newLexState
         colorInfoOption
 
     /// Scan a token from a line and write information about it into the tokeninfo object.
     member ws.ScanTokenAndProvideInfoAboutIt(_line, tokenInfo:TokenInfo, lexState: _ ref) =
-        let colorInfoOption, newLexState = lineTokenizer.ScanToken(!lexState)
+        let struct (colorInfoOption, newLexState) = lineTokenizer.ScanToken(!lexState)
         lexState.Value <- newLexState
         match colorInfoOption with
-        | None -> false
-        | Some colorInfo ->
+        | ValueNone -> false
+        | ValueSome colorInfo ->
             let color = colorInfo.ColorClass
             tokenInfo.Trigger <- enum (int32 colorInfo.FSharpTokenTriggerClass) // cast one enum to another
             tokenInfo.StartIndex <- colorInfo.LeftColumn
@@ -174,11 +174,11 @@ type internal FSharpScanner_DEPRECATED(makeLineTokenizer : string -> FSharpLineT
 /// Implement the MPF Colorizer functionality.
 ///   onClose is a method to call when shutting down the colorizer.
 //
-// Note: DEPRECATED CODE ONLY ACTIVE IN UNIT TESTING VIA "UNROSLYNIZED" UNIT TESTS. 
+// Note: DEPRECATED CODE ONLY ACTIVE IN UNIT TESTING VIA "UNROSLYNIZED" UNIT TESTS.
 //
 // Note: Tests using this code should either be adjusted to test the corresponding feature in
-// FSharp.Editor, or deleted.  However, the tests may be exercising underlying F# Compiler 
-// functionality and thus have considerable value, they should ony be deleted if we are sure this 
+// FSharp.Editor, or deleted.  However, the tests may be exercising underlying F# Compiler
+// functionality and thus have considerable value, they should ony be deleted if we are sure this
 // is not the case.
 //
 type internal FSharpColorizer_DEPRECATED
@@ -259,10 +259,10 @@ type internal FSharpColorizer_DEPRECATED
         scanner.SetLineText lineText
         let rec tokens() =
             seq { match scanner.ScanTokenWithDetails(refState) with
-                  | Some tok ->
+                  | ValueSome tok ->
                       yield tok
                       yield! tokens()
-                  | None -> () }
+                  | ValueNone -> () }
         tokens() |> Array.ofSeq
 
     member private c.GetColorInfo(line,lineText,length,lastColorState) =
@@ -342,8 +342,8 @@ type internal FSharpColorizer_DEPRECATED
 
         let rec searchForToken () =
             match scanner.ScanTokenWithDetails lexState with
-            |   None -> None
-            |   Some ti as result ->
+            | ValueNone -> ValueNone
+            | ValueSome ti as result ->
                 if col >= ti.LeftColumn && col <= ti.RightColumn then
                     result
                 else
@@ -357,11 +357,11 @@ type internal FSharpColorizer_DEPRECATED
 
 /// Implements IVsColorableItem and IVsMergeableUIItem, for colored text items
 //
-// Note: DEPRECATED CODE ONLY ACTIVE IN UNIT TESTING VIA "UNROSLYNIZED" UNIT TESTS. 
+// Note: DEPRECATED CODE ONLY ACTIVE IN UNIT TESTING VIA "UNROSLYNIZED" UNIT TESTS.
 //
 // Note: Tests using this code should either be adjusted to test the corresponding feature in
-// FSharp.Editor, or deleted.  However, the tests may be exercising underlying F# Compiler 
-// functionality and thus have considerable value, they should ony be deleted if we are sure this 
+// FSharp.Editor, or deleted.  However, the tests may be exercising underlying F# Compiler
+// functionality and thus have considerable value, they should ony be deleted if we are sure this
 // is not the case.
 //
 type internal FSharpColorableItem_DEPRECATED(canonicalName: string, displayName : Lazy<string>, foreground, background) =
