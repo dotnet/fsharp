@@ -282,13 +282,7 @@ and TcPatAndRecover warnOnUpper cenv (env: TcEnv) valReprInfo (vFlags: TcPatValF
 ///    the second-phase function in terms of a List.map from names to actual
 ///    value specifications.
 and TcPat warnOnUpper (cenv: cenv) env valReprInfo vFlags (patEnv: TcPatLinearEnv) ty synPat =
-    let g = cenv.g
     let ad = env.AccessRights
-
-    match synPat with
-    | SynPat.As (_, SynPat.Named _, _) -> ()
-    | SynPat.As (_, _, m) -> checkLanguageFeatureAndRecover g.langVersion LanguageFeature.NonVariablePatternsToRightOfAsPatterns m
-    | _ -> ()
 
     match synPat with
     | SynPat.Const (synConst, m) ->

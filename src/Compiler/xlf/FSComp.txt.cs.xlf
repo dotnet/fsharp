@@ -492,11 +492,6 @@
         <target state="translated">Řetězcové hodnoty označené jako literály a konstanty IL jako formát printf</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureNonVariablePatternsToRightOfAsPatterns">
-        <source>non-variable patterns to the right of 'as' patterns</source>
-        <target state="translated">neproměnné vzory napravo od vzorů typu „jako“</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureNotNullIfNotNull">
         <source>honor the 'NotNullIfNotNull' attribute on a method's return value</source>
         <target state="new">honor the 'NotNullIfNotNull' attribute on a method's return value</target>
