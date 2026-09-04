@@ -2,6 +2,42 @@
 
   <Import Project="Version.Details.props" />
 
+  <!-- Local (non-CI) workaround: the Roslyn/MSBuild package versions that flow in via Maestro
+       run ahead of what ships in the currently-released Visual Studio, which makes a locally-built
+       F# VSIX fail to load (assembly version skew, see https://github.com/dotnet/fsharp/issues/18766).
+       For local builds we pin these back to the last VS-compatible versions across the whole repo, so
+       there is no NU1605 downgrade between vsintegration projects and the src projects they reference.
+       CI keeps the Maestro-provided versions. Override AFTER the import so these win over the eager
+       XxxVersion aliases; do NOT edit Version.Details.props (it is Maestro auto-generated). -->
+  <PropertyGroup Condition="'$(ContinuousIntegrationBuild)' != 'true'">
+    <!-- dotnet-msbuild dependencies -->
+    <MicrosoftBuildPackageVersion>18.8.0-preview-26275-09</MicrosoftBuildPackageVersion>
+    <MicrosoftBuildFrameworkPackageVersion>18.8.0-preview-26275-09</MicrosoftBuildFrameworkPackageVersion>
+    <MicrosoftBuildTasksCorePackageVersion>18.8.0-preview-26275-09</MicrosoftBuildTasksCorePackageVersion>
+    <MicrosoftBuildUtilitiesCorePackageVersion>18.8.0-preview-26275-09</MicrosoftBuildUtilitiesCorePackageVersion>
+    <MicrosoftBuildVersion>18.8.0-preview-26275-09</MicrosoftBuildVersion>
+    <MicrosoftBuildFrameworkVersion>18.8.0-preview-26275-09</MicrosoftBuildFrameworkVersion>
+    <MicrosoftBuildTasksCoreVersion>18.8.0-preview-26275-09</MicrosoftBuildTasksCoreVersion>
+    <MicrosoftBuildUtilitiesCoreVersion>18.8.0-preview-26275-09</MicrosoftBuildUtilitiesCoreVersion>
+    <!-- dotnet-roslyn dependencies -->
+    <MicrosoftCodeAnalysisPackageVersion>5.8.0-1.26307.1</MicrosoftCodeAnalysisPackageVersion>
+    <MicrosoftCodeAnalysisCompilersPackageVersion>5.8.0-1.26307.1</MicrosoftCodeAnalysisCompilersPackageVersion>
+    <MicrosoftCodeAnalysisCSharpPackageVersion>5.8.0-1.26307.1</MicrosoftCodeAnalysisCSharpPackageVersion>
+    <MicrosoftCodeAnalysisEditorFeaturesPackageVersion>5.8.0-1.26307.1</MicrosoftCodeAnalysisEditorFeaturesPackageVersion>
+    <MicrosoftCodeAnalysisEditorFeaturesTextPackageVersion>5.8.0-1.26307.1</MicrosoftCodeAnalysisEditorFeaturesTextPackageVersion>
+    <MicrosoftCodeAnalysisExternalAccessFSharpPackageVersion>5.8.0-1.26307.1</MicrosoftCodeAnalysisExternalAccessFSharpPackageVersion>
+    <MicrosoftCodeAnalysisFeaturesPackageVersion>5.8.0-1.26307.1</MicrosoftCodeAnalysisFeaturesPackageVersion>
+    <MicrosoftVisualStudioLanguageServicesPackageVersion>5.8.0-1.26307.1</MicrosoftVisualStudioLanguageServicesPackageVersion>
+    <MicrosoftCodeAnalysisVersion>5.8.0-1.26307.1</MicrosoftCodeAnalysisVersion>
+    <MicrosoftCodeAnalysisCompilersVersion>5.8.0-1.26307.1</MicrosoftCodeAnalysisCompilersVersion>
+    <MicrosoftCodeAnalysisCSharpVersion>5.8.0-1.26307.1</MicrosoftCodeAnalysisCSharpVersion>
+    <MicrosoftCodeAnalysisEditorFeaturesVersion>5.8.0-1.26307.1</MicrosoftCodeAnalysisEditorFeaturesVersion>
+    <MicrosoftCodeAnalysisEditorFeaturesTextVersion>5.8.0-1.26307.1</MicrosoftCodeAnalysisEditorFeaturesTextVersion>
+    <MicrosoftCodeAnalysisExternalAccessFSharpVersion>5.8.0-1.26307.1</MicrosoftCodeAnalysisExternalAccessFSharpVersion>
+    <MicrosoftCodeAnalysisFeaturesVersion>5.8.0-1.26307.1</MicrosoftCodeAnalysisFeaturesVersion>
+    <MicrosoftVisualStudioLanguageServicesVersion>5.8.0-1.26307.1</MicrosoftVisualStudioLanguageServicesVersion>
+  </PropertyGroup>
+
   <!-- Arcade features-->
   <PropertyGroup>
     <UsingToolXUnit>false</UsingToolXUnit>
