@@ -419,7 +419,7 @@ type DisposablesTracker() =
     let items = Stack<IDisposable>()
 
     /// Register some items to dispose
-    member _.Register (i:#IDisposable | null) =
+    member _.Register (i:#IDisposable | null) = 
         match box i with
         | null -> ()
         | _ -> items.Push (!!i)
@@ -498,11 +498,6 @@ module WeakMap =
             | true, value -> value
             | false, _ ->
                 let value = valueFactory key
-                if shouldCache value then
-                    // TODO: FCS ships netstandard2.0 only right now; switch to table.TryAdd once a newer TFM ships.
-                    try
-                        table.Add(key, value)
-                    with :? ArgumentException ->
-                        ()
-
+                if shouldCache value then 
+                    try table.Add(key, value) with _ -> ()
                 value

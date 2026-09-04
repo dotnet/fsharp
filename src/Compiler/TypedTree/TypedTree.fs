@@ -890,18 +890,14 @@ type Entity =
     /// The logical contents of the entity when it is a module or namespace fragment.
     member x.ModuleOrNamespaceType =
         match x.entity_modul_type with
-        | null -> x.entity_modul_type <- MaybeLazy.Strict (Construct.NewEmptyModuleOrNamespaceType ModuleOrType)
-        | _ -> ()
-        x.entity_modul_type
-        |> Unchecked.nonNull
-        |> _.Force()
+        | null -> Entity.EmptyModuleOrNamespaceType
+        | modulType -> modulType.Force()
 
     /// The logical contents of the entity when it is a type definition.
     member x.TypeContents =
         match x.entity_tycon_tcaug with
-        | null -> x.entity_tycon_tcaug <- TyconAugmentation.Create()
-        | _ -> ()
-        !!x.entity_tycon_tcaug
+        | null -> TyconAugmentation.Empty
+        | tcaug -> tcaug
 
     /// The kind of the type definition - is it a measure definition or a type definition?
     member x.TypeOrMeasureKind =
@@ -1116,6 +1112,11 @@ type Entity =
         | ValueSome x -> NameMap.tryFind n x.CasesTable.CasesByName
         | ValueNone -> None
 
+
+    /// Stands in for the contents of an entity that was never linked, so that a broken mid-edit
+    /// file still classifies instead of crashing. Never reachable from a successfully checked entity.
+    static member val EmptyModuleOrNamespaceType =
+        ModuleOrNamespaceType(ModuleOrType, QueueList.Empty, QueueList.Empty)
 
     /// Create a new entity with empty, unlinked data. Only used during unpickling of F# metadata.
     static member NewUnlinked() : Entity =
@@ -1554,6 +1555,10 @@ type TyconAugmentation =
           tcaug_interfaces=[]
           tcaug_closed=false
           tcaug_abstract=false }
+
+    /// Stands in for the augmentation of an entity that was never linked, so that a broken mid-edit
+    /// file still classifies instead of crashing. Never reachable from a successfully checked entity.
+    static member val Empty = TyconAugmentation.Create()
 
     [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
     member x.DebugText = x.ToString()
@@ -6351,7 +6356,7 @@ type Construct() =
             entity_attribs=WellKnownEntityAttribs.Empty // fetched on demand via est.fs API
             entity_typars= LazyWithContext.NotLazy []
             entity_tycon_repr = repr
-            entity_tycon_tcaug= TyconAugmentation.Create()
+            entity_tycon_tcaug=TyconAugmentation.Create()
             entity_modul_type = MaybeLazy.Lazy(InterruptibleLazy(fun _ -> ModuleOrNamespaceType(Namespace true, QueueList.ofList [], QueueList.ofList [])))
             // Generated types get internal accessibility
             entity_cpath = Some cpath
@@ -6491,7 +6496,7 @@ type Construct() =
             entity_attribs=WellKnownEntityAttribs.Empty // fixed up after
             entity_typars=typars
             entity_tycon_repr = TNoRepr
-            entity_tycon_tcaug= TyconAugmentation.Create()
+            entity_tycon_tcaug=TyconAugmentation.Create()
             entity_modul_type = mtyp
             entity_cpath = cpath
             entity_il_repr_cache = null
@@ -6580,7 +6585,7 @@ type Construct() =
         orig |> Construct.NewModifiedTycon (fun d ->
             match d.entity_modul_type with
             | null -> d
-            | entity_modul_type -> { d with entity_modul_type = MaybeLazy.Strict (f (entity_modul_type.Force())) })
+            | modulType -> { d with entity_modul_type = MaybeLazy.Strict (f (modulType.Force())) })
 
     /// Create a Val based on an existing one using the function 'f'.
     /// We require that we be given the parent for the new Val.
