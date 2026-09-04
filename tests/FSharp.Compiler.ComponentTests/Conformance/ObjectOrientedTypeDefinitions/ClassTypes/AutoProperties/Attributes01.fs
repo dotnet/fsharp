@@ -3,7 +3,7 @@
 type MyA() = inherit System.Attribute()
 
 type A(x) =
-    [<MyA>] 
+    [<MyA>]
     member val Property = x with get, set
     [<CompiledName("Hi")>]
     member val Property2 = x with get, set

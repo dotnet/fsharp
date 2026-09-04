@@ -1,4 +1,4 @@
-// #Regression #Conformance #TypeConstraints 
+// #Regression #Conformance #TypeConstraints
 // Regression test for FSHARP1.0:1419
 // Tokens beginning with # should not match greedily with directives
 // The only case where we are still a bit confused is #light, which is missing in
@@ -15,7 +15,7 @@ type r() = class
 type U() = class
     inherit r()
     end
-    
+
 type u() = class
     inherit U()
     end

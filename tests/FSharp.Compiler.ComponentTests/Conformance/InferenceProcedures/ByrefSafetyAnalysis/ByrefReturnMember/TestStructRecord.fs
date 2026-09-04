@@ -6,4 +6,4 @@ module TestStructRecord =
         { Link: string }
 
     let link item =
-        { item with Link = "" } 
+        { item with Link = "" }

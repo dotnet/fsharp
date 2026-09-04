@@ -2,7 +2,7 @@
 module Test
 
 type Gaussian1D =
-   class 
+   class
       member x.Foot with get() = failwith ""
    end
 
@@ -18,8 +18,8 @@ module AccessingProtectedMembersFromUnderLambdas = begin
         let h = new System.EventHandler(fun _ _ -> (a.GetSchemaSerializable() |> ignore)) in // should give error
         // check that protected members from the surrounding context can be used
         // in the arguments to an object constructor.
-        let obj = { new System.Collections.ArrayList( (a.GetSchemaSerializable() |> ignore; 3)) with 
-                       member x.ToString() = "" 
+        let obj = { new System.Collections.ArrayList( (a.GetSchemaSerializable() |> ignore; 3)) with
+                       member x.ToString() = ""
                     end } in
         ()
     end
@@ -31,7 +31,7 @@ type C(x) =
    member y.Z = x
 
 module ImplicitClassCOnstructionMayNotUseExplicitCOnstruction_Bug_1341_FSharp_1_0 = begin
-    type s = class 
+    type s = class
      new () = {}
     end
 

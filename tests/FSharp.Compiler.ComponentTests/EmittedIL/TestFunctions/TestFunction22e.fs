@@ -1,4 +1,4 @@
-// #NoMono #NoMT #CodeGen #EmittedIL 
+// #NoMono #NoMT #CodeGen #EmittedIL
 
 while true do
    System.Console.WriteLine()

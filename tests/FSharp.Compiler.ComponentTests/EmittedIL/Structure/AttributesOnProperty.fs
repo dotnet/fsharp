@@ -10,8 +10,8 @@ type C(x:int) =
    let mutable m_value = x
 
    [<AttrOnProperty>]
-   member this.ReadWrite 
-        with get() = m_value 
+   member this.ReadWrite
+        with get() = m_value
         and  set x = m_value <- x
 
 open CodeGenHelper
@@ -23,5 +23,5 @@ try
     |> should haveAttribute "AttrOnProperty"
 
 with
-| e -> printfn "Unhandled Exception: %s" e.Message 
+| e -> printfn "Unhandled Exception: %s" e.Message
        raise (Exception($"Oops: {e}"))

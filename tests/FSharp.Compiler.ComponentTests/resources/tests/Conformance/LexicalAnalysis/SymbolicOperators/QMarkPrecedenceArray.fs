@@ -1,4 +1,4 @@
-// #Conformance #LexicalAnalysis #Operators 
+// #Conformance #LexicalAnalysis #Operators
 
 
 let mutable m : string = ""
@@ -6,12 +6,12 @@ let mutable m : string = ""
 let (?) (o:obj) (s:string) : string array =
     m <- s
     [| "Index0" |]
-    
-    
+
+
 let test() =
     let s = "Hello" ? Contains.[0]
     s
-    
+
 let res1 = test()
 let res2 =  m
 

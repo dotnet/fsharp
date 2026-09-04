@@ -114,7 +114,7 @@ module NumericLiterals =
         |> ignore
 
     // This test was automatically generated (moved from FSharpQA suite - Conformance/LexicalAnalysis/NumericLiterals)
-    
+
     [<Theory; Directory(__SOURCE_DIRECTORY__ + "/../../resources/tests/Conformance/LexicalAnalysis/NumericLiterals", Includes=[|"E_enumNegativeLiterals009.fs"|])>]
     let ``NumericLiterals - E_enumNegativeLiterals009_fs - --test:ErrorRanges`` compilation =
         compilation

@@ -16,7 +16,7 @@ let rec viaActivePattern (a:int) =
         else
             viaActivePattern (a - 1)
     with
-    | RecoverableException e -> 
+    | RecoverableException e ->
         let x = struct(a,a,a,a)
         let y = struct(x,a,x)
         y.GetHashCode() + e.GetHashCode()
@@ -26,9 +26,9 @@ let rec viaActivePattern (a:int) =
 [<EntryPoint>]
 let main (args:string[]) =
     let iterations = 4096
-    try 
+    try
         viaActivePattern iterations
     with
-    | ex -> 
+    | ex ->
         printf "%s" (ex.GetType().ToString())
         0

@@ -1,4 +1,4 @@
-// #Conformance #SyntacticSugar #ReqNOMT 
+// #Conformance #SyntacticSugar #ReqNOMT
 
 
 // Verify 2D slices.  Note that in F# you (currently?) cannot
@@ -8,14 +8,14 @@ let toSquare (jagged : 'a[][]) : 'a[,] =
     if jagged = null then         raise <| new System.ArgumentNullException()
     if jagged.Length = 0 then     raise <| new System.ArgumentException()
     if jagged.[0].Length = 0 then raise <| new System.ArgumentException()
-    
+
     let cols = jagged.Length
     let rows = jagged.[0].Length
-    
+
     let square = Array2D.create cols rows (Unchecked.defaultof<'a>)
     // Copy the contents over
     Array.iteri
-        (fun yIdx row -> 
+        (fun yIdx row ->
             Array.iteri
                 (fun xIdx value -> square.[yIdx, xIdx] <- value)
                 row

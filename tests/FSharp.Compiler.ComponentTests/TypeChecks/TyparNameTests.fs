@@ -161,7 +161,7 @@ type One.GenericType<'DeclaredType> with
     member x.Print () = printfn "%A" x.Value
     """
 
-        let result =         
+        let result =
             one |> withAdditionalSourceFile two
             |> typecheckProject false CompilerAssertHelpers.UseTransparentCompiler
 

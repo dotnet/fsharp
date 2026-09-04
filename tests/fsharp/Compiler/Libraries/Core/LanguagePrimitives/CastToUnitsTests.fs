@@ -7,7 +7,7 @@ open FSharp.Test
 
 
 module ``Cast to Units Tests`` =
-    
+
     [<Fact>]
     let ``Casting to Measures should compile``() =
         CompilerAssert.PassWithOptions [| |]

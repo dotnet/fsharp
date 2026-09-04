@@ -2350,7 +2350,7 @@ module internal ConstantEvaluation =
             | UncheckedDefaultOfExpr g _
             | SizeOfExpr g _
             | TypeOfExpr g _ -> true
-            | NameOfExpr g _ when g.langVersion.SupportsFeature LanguageFeature.NameOf -> true
+            | NameOfExpr g _ -> true
             // All others are not simple constant expressions
             | _ -> false
 
