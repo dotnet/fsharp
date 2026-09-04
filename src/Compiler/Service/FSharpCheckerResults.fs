@@ -68,22 +68,22 @@ type DocumentSource =
 type DelayedILModuleReader =
     val private name: string
     val private gate: obj
-    val mutable private getStream: (CancellationToken -> Stream option)
-    val mutable private result: ILModuleReader
+    val mutable private getStream: (CancellationToken -> Stream voption)
+    val mutable private result: ILModuleReader | null
 
     new(name, getStream) =
         {
             name = name
             gate = obj ()
             getStream = getStream
-            result = Unchecked.defaultof<_>
+            result = null
         }
 
     member this.OutputFile = this.name
 
     member this.TryGetILModuleReader() =
         // fast path
-        match box this.result with
+        match this.result with
         | null ->
             cancellable {
                 let! ct = Cancellable.token ()
@@ -91,13 +91,11 @@ type DelayedILModuleReader =
                 return
                     lock this.gate (fun () ->
                         // see if we have a result or not after the lock so we do not evaluate the stream more than once
-                        match box this.result with
+                        match this.result with
                         | null ->
                             try
-                                let streamOpt = this.getStream ct
-
-                                match streamOpt with
-                                | Some stream ->
+                                match this.getStream ct with
+                                | ValueSome stream ->
                                     let ilReaderOptions: ILReaderOptions =
                                         {
                                             pdbDirPath = None
@@ -109,14 +107,14 @@ type DelayedILModuleReader =
                                     let ilReader = OpenILModuleReaderFromStream this.name stream ilReaderOptions
                                     this.result <- ilReader
                                     this.getStream <- Unchecked.defaultof<_> // clear out the function so we do not hold onto anything
-                                    Some ilReader
-                                | _ -> None
+                                    ValueSome ilReader
+                                | _ -> ValueNone
                             with ex ->
                                 Trace.TraceInformation("FCS: Unable to get an ILModuleReader: {0}", ex)
-                                None
-                        | _ -> Some this.result)
+                                ValueNone
+                        | result -> ValueSome result)
             }
-        | _ -> cancellable.Return(Some this.result)
+        | result -> cancellable.Return(ValueSome result)
 
 [<RequireQualifiedAccess; NoComparison; CustomEquality>]
 type FSharpReferencedProject =
