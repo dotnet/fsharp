@@ -180,9 +180,7 @@ module internal {1} =
                     | "false" -> false
                     | _ -> failTask "Expected boolean value for '%s' found '%s'" metadataName value
 
-            let mutable success = true
-
-            let generatedSource =
+            let generationResults =
                 [|
                     for item in this.EmbeddedResource do
                         if getBooleanMetadata "GenerateSource" false item then
@@ -195,12 +193,12 @@ module internal {1} =
                             let generateLegacy = getBooleanMetadata "GenerateLegacyCode" false item
                             let generateLiteral = getBooleanMetadata "GenerateLiterals" true item
 
-                            match generateSource item.ItemSpec moduleName generateLegacy generateLiteral with
-                            | Some(source) -> yield TaskItem(source) :> ITaskItem
-                            | None -> success <- false
+                            yield
+                                generateSource item.ItemSpec moduleName generateLegacy generateLiteral
+                                |> Option.map (fun source -> TaskItem(source) :> ITaskItem)
                 |]
 
-            _generatedSource <- generatedSource
-            success && not this.Log.HasLoggedErrors
+            _generatedSource <- generationResults |> Array.choose id
+            Array.forall Option.isSome generationResults && not this.Log.HasLoggedErrors
         with TaskFailed ->
             false

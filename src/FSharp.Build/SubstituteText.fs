@@ -68,20 +68,21 @@ type SubstituteText() =
                             item.ItemSpec <- targetPath
 
                             // Transform file
-                            let mutable contents = File.ReadAllText(taskEnvironment.RootedPath sourcePath)
+                            let replaceFromMetadata pattern replacementName (contents: string) =
+                                match String.IsNullOrWhiteSpace pattern with
+                                | true -> contents
+                                | false -> contents.Replace(pattern, item.GetMetadata replacementName)
 
-                            if not (String.IsNullOrWhiteSpace(pattern1)) then
-                                let replacement = item.GetMetadata("Replacement1")
-                                contents <- contents.Replace(pattern1, replacement)
-
-                            if not (String.IsNullOrWhiteSpace(pattern2)) then
-                                let replacement = item.GetMetadata("Replacement2")
-                                contents <- contents.Replace(pattern2, replacement)
+                            let contents =
+                                File.ReadAllText(taskEnvironment.RootedPath sourcePath)
+                                |> replaceFromMetadata pattern1 "Replacement1"
+                                |> replaceFromMetadata pattern2 "Replacement2"
 
                             let directory = Path.GetDirectoryName(targetPath)
+                            let rootedDirectory = taskEnvironment.RootedPath directory
 
-                            if not (Directory.Exists(taskEnvironment.RootedPath directory)) then
-                                Directory.CreateDirectory(taskEnvironment.RootedPath directory) |> ignore
+                            if not (Directory.Exists rootedDirectory) then
+                                Directory.CreateDirectory rootedDirectory |> ignore
 
                             File.WriteAllText(taskEnvironment.RootedPath targetPath, contents)
                         with _ ->

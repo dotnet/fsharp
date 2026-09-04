@@ -19,10 +19,10 @@ module internal TaskEnvironmentPaths =
 
     // ProcessStartInfo resolves relative tool paths against the host process current directory.
     let normalizePathToTool (taskEnvironment: TaskEnvironment) (pathToTool: string) =
-        if String.IsNullOrEmpty(Path.GetDirectoryName pathToTool) then
-            pathToTool
-        else
-            taskEnvironment.GetAbsolutePath(pathToTool).Value
+        match Path.GetDirectoryName pathToTool with
+        | null
+        | "" -> pathToTool
+        | _ -> taskEnvironment.GetAbsolutePath(pathToTool).Value
 
     let defaultCompilerToolPath (taskEnvironment: TaskEnvironment) (taskType: Type) =
         let probePoint =

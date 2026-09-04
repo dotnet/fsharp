@@ -432,41 +432,33 @@ open Printf
                         justFileName
                 )
 
-            let condition1 = File.Exists rootedOut
-            let condition2 = condition1 && File.Exists rootedXml
-            let condition3 = condition2 && File.Exists rootedInput
-
-            let condition4 =
-                condition3
-                && (File.GetLastWriteTimeUtc rootedInput <= File.GetLastWriteTimeUtc rootedOut)
-
-            let condition5 =
-                condition4
-                && (File.GetLastWriteTimeUtc rootedInput <= File.GetLastWriteTimeUtc rootedXml)
-
             // A generated file does not record whether it was generated with RichText, so the flag has
             // to be recovered from the open the generator emits for it, or an existing file would be
             // taken as up-to-date after the flag changed
-            let condition6 =
-                condition5
-                && (richText = (File.ReadLines rootedOut |> Seq.truncate 40 |> Seq.contains richTextOpen))
+            let failedCondition =
+                [|
+                    fun () -> File.Exists rootedOut
+                    fun () -> File.Exists rootedXml
+                    fun () -> File.Exists rootedInput
+                    fun () -> File.GetLastWriteTimeUtc rootedInput <= File.GetLastWriteTimeUtc rootedOut
+                    fun () -> File.GetLastWriteTimeUtc rootedInput <= File.GetLastWriteTimeUtc rootedXml
+                    fun () -> richText = (File.ReadLines rootedOut |> Seq.truncate 40 |> Seq.contains richTextOpen)
+                |]
+                |> Array.tryFindIndex (fun condition -> not (condition ()))
+                |> Option.map ((+) 1)
 
-            if condition6 then
+            match failedCondition with
+            | None ->
                 printMessage "Skipping generation of %s and %s from %s since up-to-date" outFileName outXmlFileName fileName
 
                 Some(fileName, outFileSignatureName, outFileName, outXmlFileName)
-            else
+            | Some failedCondition ->
                 printMessage
                     "Generating %s and %s from %s, because condition %d is false, see FSharpEmbedResourceText.fs in the F# source"
                     outFileName
                     outXmlFileName
                     fileName
-                    (if not condition1 then 1
-                     elif not condition2 then 2
-                     elif not condition3 then 3
-                     elif not condition4 then 4
-                     elif not condition5 then 5
-                     else 6)
+                    failedCondition
 
                 printMessage "Reading %s" fileName
 
