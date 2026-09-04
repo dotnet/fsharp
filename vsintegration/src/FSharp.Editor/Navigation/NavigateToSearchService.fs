@@ -7,8 +7,9 @@ open System.IO
 open System.Composition
 open System.Collections.Immutable
 open System.Collections.Concurrent
-open System.Threading.Tasks
 open System.Globalization
+open System.Linq
+open System.Threading.Tasks
 
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Navigation
@@ -19,33 +20,70 @@ open Microsoft.VisualStudio.Text.PatternMatching
 open FSharp.Compiler.EditorServices
 open CancellableTasks
 
-[<Export(typeof<IFSharpNavigateToSearchService>); Shared>]
-type internal FSharpNavigateToSearchService
+/// Parse-tree navigable items per document, cached on the document's text version.
+/// Shared by NavigateTo and by the Copilot chat mention provider.
+[<Export; Shared>]
+type internal FSharpNavigableItemsCache
     [<ImportingConstructor>]
     (patternMatcherFactory: IPatternMatcherFactory, [<Import(AllowDefault = true)>] workspace: VisualStudioWorkspace) =
 
-    let cache = ConcurrentDictionary<DocumentId, VersionStamp * NavigableItem array>()
+    let cache =
+        ConcurrentDictionary<DocumentId, struct (VersionStamp * NavigableItem array)>()
 
     do
-        if workspace <> null then
-            workspace.WorkspaceChanged.Add
-            <| fun e ->
+        match workspace with
+        | null -> ()
+        | workspace ->
+            workspace.WorkspaceChanged.Add(fun e ->
                 if e.NewSolution.Id <> e.OldSolution.Id then
-                    cache.Clear()
+                    cache.Clear())
 
-    let getNavigableItems (document: Document) =
+    member _.GetNavigableItems(document: Document) =
         cancellableTask {
             let! ct = CancellableTask.getCancellationToken ()
             let! currentVersion = document.GetTextVersionAsync(ct)
 
             match cache.TryGetValue document.Id with
-            | true, (version, items) when version = currentVersion -> return items
+            | true, struct (version, items) when version = currentVersion -> return items
             | _ ->
-                let! parseResults = document.GetFSharpParseResultsAsync(nameof (FSharpNavigateToSearchService))
+                let! parseResults = document.GetFSharpParseResultsAsync(nameof (FSharpNavigableItemsCache))
                 let items = NavigateTo.GetNavigableItems parseResults.ParseTree
-                cache[document.Id] <- currentVersion, items
+                cache[document.Id] <- struct (currentVersion, items)
                 return items
         }
+
+    member _.CreateMatcherFor(searchPattern: string) =
+        let patternMatcher =
+            patternMatcherFactory.CreatePatternMatcher(
+                searchPattern,
+                PatternMatcherCreationOptions(
+                    cultureInfo = CultureInfo.CurrentUICulture,
+                    flags = PatternMatcherCreationFlags.AllowFuzzyMatching,
+                    containerSplitCharacters = [ '.' ]
+                )
+            )
+
+        fun (item: NavigableItem) ->
+            // PatternMatcher will not match operators and some backtick escaped identifiers.
+            // To handle them, we fall back to simple substring match.
+            let name = item.Name
+
+            if item.NeedsBackticks then
+                match name.IndexOf(searchPattern, StringComparison.CurrentCultureIgnoreCase) with
+                | i when i > 0 -> ValueSome(PatternMatch(PatternMatchKind.Substring, false, false))
+                | 0 when name.Length = searchPattern.Length -> ValueSome(PatternMatch(PatternMatchKind.Exact, false, false))
+                | 0 -> ValueSome(PatternMatch(PatternMatchKind.Prefix, false, false))
+                | _ -> ValueNone
+            else
+                // full name with dots allows for path matching, e.g.
+                // "f.c.so.elseif" will match "Fantomas.Core.SyntaxOak.ElseIfNode"
+                patternMatcher.TryMatch $"{item.Container.FullName}.{name}"
+                |> ValueOption.ofNullable
+
+[<Export(typeof<IFSharpNavigateToSearchService>); Shared>]
+type internal FSharpNavigateToSearchService [<ImportingConstructor>] (itemsCache: FSharpNavigableItemsCache) =
+
+    let getNavigableItems (document: Document) = itemsCache.GetNavigableItems document
 
     let kindsProvided =
         ImmutableHashSet.Create(
@@ -115,33 +153,8 @@ type internal FSharpNavigateToSearchService
         | PatternMatchKind.Fuzzy -> FSharpNavigateToMatchKind.Fuzzy
         | _ -> FSharpNavigateToMatchKind.None
 
-    let createMatcherFor searchPattern =
-        let patternMatcher =
-            patternMatcherFactory.CreatePatternMatcher(
-                searchPattern,
-                PatternMatcherCreationOptions(
-                    cultureInfo = CultureInfo.CurrentUICulture,
-                    flags = PatternMatcherCreationFlags.AllowFuzzyMatching,
-                    containerSplitCharacters = [ '.' ]
-                )
-            )
-
-        fun (item: NavigableItem) ->
-            // PatternMatcher will not match operators and some backtick escaped identifiers.
-            // To handle them, we fall back to simple substring match.
-            let name = item.Name
-
-            if item.NeedsBackticks then
-                match name.IndexOf(searchPattern, StringComparison.CurrentCultureIgnoreCase) with
-                | i when i > 0 -> ValueSome(PatternMatch(PatternMatchKind.Substring, false, false))
-                | 0 when name.Length = searchPattern.Length -> ValueSome(PatternMatch(PatternMatchKind.Exact, false, false))
-                | 0 -> ValueSome(PatternMatch(PatternMatchKind.Prefix, false, false))
-                | _ -> ValueNone
-            else
-                // full name with dots allows for path matching, e.g.
-                // "f.c.so.elseif" will match "Fantomas.Core.SyntaxOak.ElseIfNode"
-                patternMatcher.TryMatch $"{item.Container.FullName}.{name}"
-                |> ValueOption.ofNullable
+    let createMatcherFor (searchPattern: string) =
+        itemsCache.CreateMatcherFor searchPattern
 
     let processDocument (tryMatch: NavigableItem -> PatternMatch voption) (kinds: IImmutableSet<string>) (document: Document) =
         cancellableTask {
@@ -152,7 +165,7 @@ type internal FSharpNavigateToSearchService
             let! items = getNavigableItems document
 
             let processed =
-                [|
+                seq {
                     for item in items do
                         let contains = kinds.Contains(navigateToItemKindToRoslynKind item.Kind)
                         let patternMatch = tryMatch item
@@ -182,9 +195,9 @@ type internal FSharpNavigateToSearchService
                                         )
                                     )
                         | _ -> ()
-                |]
+                }
 
-            return processed
+            return processed |> Seq.toImmutableArray
         }
 
     interface IFSharpNavigateToSearchService with
@@ -194,31 +207,17 @@ type internal FSharpNavigateToSearchService
             cancellableTask {
                 let tryMatch = createMatcherFor searchPattern
 
-                let tasks =
-                    [|
-                        for doc in project.Documents do
-                            yield processDocument tryMatch kinds doc
-                    |]
+                let! results =
+                    project.Documents
+                    |> Seq.map (processDocument tryMatch kinds)
+                    |> CancellableTask.whenAll
 
-                let! results = CancellableTask.whenAll tasks
-
-                let results' = ImmutableArray.CreateBuilder()
-
-                for navResults in results do
-                    for navResult in navResults do
-                        results'.Add navResult
-
-                return results'.ToImmutable()
-
+                return results |> Seq.collect _.AsEnumerable() |> Seq.toImmutableArray
             }
             |> CancellableTask.start cancellationToken
 
         member _.SearchDocumentAsync(document: Document, searchPattern, kinds, cancellationToken) =
-            cancellableTask {
-                let! result = processDocument (createMatcherFor searchPattern) kinds document
-                return Array.toImmutableArray result
-            }
-            |> CancellableTask.start cancellationToken
+            processDocument (createMatcherFor searchPattern) kinds document cancellationToken
 
         member _.KindsProvided = kindsProvided
 
