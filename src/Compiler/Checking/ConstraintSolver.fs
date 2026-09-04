@@ -3317,7 +3317,13 @@ and CanMemberSigsMatchUpToCheck
             if minst.Length <> uminst.Length then 
                 return! ErrorD(Error(FSComp.SR.csTypeInstantiationLengthMismatch(), m))
             else
-                let! usesTDC1 = MapCombineTDC2D unifyTypes minst uminst
+                let! usesTDC1 =
+                    let tyargPairs =
+                        let pairs = List.zip minst uminst
+                        if g.langVersion.SupportsFeature LanguageFeature.TypeArgumentDependencyOrdering then
+                            reorderTyArgsByConstraintDependencies g pairs
+                        else pairs
+                    tyargPairs |> MapCombineTDCD (fun (formalTy, callerTy) -> unifyTypes formalTy callerTy)
                 let! usesTDC2 =
                     if not (permitOptArgs || isNil unnamedCalledOptArgs) then 
                         ErrorD(Error(FSComp.SR.csOptionalArgumentNotPermittedHere(), m)) 
