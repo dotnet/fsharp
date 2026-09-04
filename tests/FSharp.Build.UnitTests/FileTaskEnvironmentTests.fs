@@ -26,13 +26,6 @@ type private PathExpectation =
     | PreservedAbsolute
     | PartiallyQualified
 
-type private PathScenario =
-    {
-        Name: string
-        Input: DirectoryInfo -> string
-        Expectation: PathExpectation
-    }
-
 [<Collection(nameof FSharp.Test.NotThreadSafeResourceCollection)>]
 type FileTaskEnvironmentTests() =
 
@@ -61,7 +54,7 @@ type FileTaskEnvironmentTests() =
         finally
             Environment.CurrentDirectory <- original
 
-    let runConcurrently (executeA: unit -> bool) (executeB: unit -> bool) =
+    let runConcurrently scenario (executeA: unit -> bool) (executeB: unit -> bool) =
         use barrier = new Barrier(2)
 
         let run (execute: unit -> bool) : System.Threading.Tasks.Task<bool> =
@@ -78,11 +71,8 @@ type FileTaskEnvironmentTests() =
             "Concurrent task executions timed out; possible deadlock."
         )
 
-        taskA.Result, taskB.Result
-
-    let assertConcurrentSuccess scenario (successA, successB) =
-        Assert.True(successA, $"{scenario}: task A failed")
-        Assert.True(successB, $"{scenario}: task B failed")
+        Assert.True(taskA.Result, $"{scenario}: task A failed")
+        Assert.True(taskB.Result, $"{scenario}: task B failed")
 
     let withIsolatedTaskEnvironmentPair body =
         withDecoyCurrentDirectory (fun decoy ->
@@ -138,41 +128,16 @@ type FileTaskEnvironmentTests() =
 
         count 0 0
 
-    let pathScenarios extension =
+    let pathScenarios extension (directory: DirectoryInfo) =
         [
-            {
-                Name = "relative"
-                Input = fun _ -> $"Missing{extension}"
-                Expectation = Restored
-            }
-            {
-                Name = "absolute beneath project"
-                Input = fun directory -> Path.Combine(directory.FullName, $"AbsentUnderProject{extension}")
-                Expectation = PreservedAbsolute
-            }
-            {
-                Name = "dot segment"
-                Input = fun _ -> Path.Combine("sub", "..", $"Missing{extension}")
-                Expectation = Restored
-            }
-            {
-                Name = "invalid path"
-                Input = fun _ -> $"in|valid{extension}"
-                Expectation = Restored
-            }
+            "relative", $"Missing{extension}", Restored
+            "absolute beneath project", Path.Combine(directory.FullName, $"AbsentUnderProject{extension}"), PreservedAbsolute
+            "dot segment", Path.Combine("sub", "..", $"Missing{extension}"), Restored
+            "invalid path", $"in|valid{extension}", Restored
 
             if RuntimeInformation.IsOSPlatform OSPlatform.Windows then
-                {
-                    Name = "Windows root relative"
-                    Input = fun _ -> $@"\Missing{extension}"
-                    Expectation = PartiallyQualified
-                }
-
-                {
-                    Name = "Windows drive relative"
-                    Input = fun _ -> $@"C:Missing{extension}"
-                    Expectation = PartiallyQualified
-                }
+                "Windows root relative", $@"\Missing{extension}", PartiallyQualified
+                "Windows drive relative", $@"C:Missing{extension}", PartiallyQualified
         ]
 
     [<Fact>]
@@ -190,8 +155,7 @@ type FileTaskEnvironmentTests() =
             let taskA = makeTask "AssemblyMetadataA" environmentA
             let taskB = makeTask "AssemblyMetadataB" environmentB
             let scenario = "WriteCodeFragment isolates relative output paths per task"
-            runConcurrently taskA.Execute taskB.Execute
-            |> assertConcurrentSuccess scenario
+            runConcurrently scenario taskA.Execute taskB.Execute
 
             let check (directory: DirectoryInfo) own other (task: WriteCodeFragment) =
                 let path = Path.Combine(directory.FullName, "Generated.fs")
@@ -238,8 +202,7 @@ type FileTaskEnvironmentTests() =
             let taskA = makeTask "AssemblyA" intermediateA environmentA
             let taskB = makeTask "AssemblyB" intermediateB environmentB
             let scenario = "GenerateILLinkSubstitutions isolates relative output paths per task"
-            runConcurrently taskA.Execute taskB.Execute
-            |> assertConcurrentSuccess scenario
+            runConcurrently scenario taskA.Execute taskB.Execute
 
             let check
                 (directory: DirectoryInfo)
@@ -285,8 +248,7 @@ type FileTaskEnvironmentTests() =
 
                 let taskA = createResourceTask kind environmentA (MockEngine()) input intermediate
                 let taskB = createResourceTask kind environmentB (MockEngine()) input intermediate
-                runConcurrently (fun () -> executeResourceTask taskA) (fun () -> executeResourceTask taskB)
-                |> assertConcurrentSuccess scenario
+                runConcurrently scenario (fun () -> executeResourceTask taskA) (fun () -> executeResourceTask taskB)
 
                 let expectedSpecs, contentSpecs =
                     match taskA, taskB with
@@ -373,22 +335,21 @@ type FileTaskEnvironmentTests() =
     member _.``Resource task diagnostics preserve every input path shape``() =
         for kind in [ Resx; Text ] do
             withTaskEnvironment (fun environment directory ->
-                for pathCase in pathScenarios (extension kind) do
-                    let scenario = $"{kindName kind}: {pathCase.Name}"
-                    let input = pathCase.Input directory
+                for name, input, expectation in pathScenarios (extension kind) directory do
+                    let scenario = $"{kindName kind}: {name}"
                     let engine = MockEngine()
                     let task = createResourceTask kind environment engine input "obj"
 
                     Assert.False(executeResourceTask task, scenario)
                     Assert.NotEmpty engine.Errors
 
-                    if kind <> Text || pathCase.Name <> "invalid path" then
+                    if kind <> Text || name <> "invalid path" then
                         Assert.True(engine.Errors.Count = 1, $"{scenario}: expected one error, got {engine.Errors.Count}")
 
                     let message = engine.Errors |> Seq.map _.Message |> String.concat Environment.NewLine
                     assertContains scenario input message
 
-                    match pathCase.Expectation with
+                    match expectation with
                     | PreservedAbsolute ->
                         Assert.True(
                             countOccurrences input message >= 2,
@@ -435,8 +396,7 @@ type FileTaskEnvironmentTests() =
 
             let taskA, taskB = makeTask environmentA, makeTask environmentB
             let scenario = "SubstituteText isolates relative input and output paths per task"
-            runConcurrently taskA.Execute taskB.Execute
-            |> assertConcurrentSuccess scenario
+            runConcurrently scenario taskA.Execute taskB.Execute
 
             let expectedItemSpec = Path.Combine(intermediate, input)
 

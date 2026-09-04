@@ -5,9 +5,8 @@ namespace FSharp.Build.UnitTests
 open Microsoft.Build.Framework
 open FSharp.Test.ReflectionHelper
 
-#nowarn "1182" //Unused arguments
+#nowarn "1182"
 
-/// A minimal IBuildEngine shared across FSharp.Build task tests, capturing logged events.
 type MockEngine() =
     member val Errors = ResizeArray() with get
     member val Warnings = ResizeArray() with get
