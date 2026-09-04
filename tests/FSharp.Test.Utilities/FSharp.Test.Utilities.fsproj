@@ -40,6 +40,7 @@
     <Compile Include="FileInlineDataAttribute.fs" />
     <Compile Include="ReflectionHelper.fs" />
     <Compile Include="SurfaceArea.fs" />
+    <Compile Include="FnGuard.fs" />
     <Compile Include="XunitSetup.fs" />
   </ItemGroup>
 

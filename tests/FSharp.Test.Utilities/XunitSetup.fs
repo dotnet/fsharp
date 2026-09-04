@@ -19,6 +19,9 @@ type FSharpTestAssemblyFixture() =
 
 module XUnitSetup =
 
+    // FnGuardTestFramework (see FnGuard.fs) only customizes discovery, so AssemblyFixture,
+    // CaptureConsole/Trace and the whole stock runner chain still apply.
+    [<assembly: TestFramework(typeof<FnGuardTestFramework>)>]
     [<assembly: AssemblyFixture(typeof<FSharpTestAssemblyFixture>); CaptureConsole; CaptureTrace>]
     do ()
 
