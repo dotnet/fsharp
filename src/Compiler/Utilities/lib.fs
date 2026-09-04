@@ -499,9 +499,10 @@ module WeakMap =
             | false, _ ->
                 let value = valueFactory key
                 if shouldCache value then
-#if NETSTANDARD2_0
-                    try table.Add(key, value) with | :? ArgumentException -> ()
-#else
-                    table.TryAdd(key, value) |> ignore
-#endif
+                    // TODO: FCS ships netstandard2.0 only right now; switch to table.TryAdd once a newer TFM ships.
+                    try
+                        table.Add(key, value)
+                    with :? ArgumentException ->
+                        ()
+
                 value
