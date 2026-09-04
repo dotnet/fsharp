@@ -83,6 +83,7 @@
     <Compile Include="EditorFormattingServiceTests.fs" />
     <Compile Include="RoslynSourceTextTests.fs" />
     <Compile Include="SemanticClassificationServiceTests.fs" />
+    <Compile Include="BlockStructureServiceTests.fs" />
     <Compile Include="SyntacticColorizationServiceTests.fs" />
     <Compile Include="DocumentHighlightsServiceTests.fs" />
   </ItemGroup>

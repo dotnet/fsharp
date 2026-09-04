@@ -627,7 +627,9 @@ type internal FSharpProjectOptionsManager(checker: FSharpChecker, workspace: Wor
         match reactor.TryGetCachedOptionsByProjectId(documentId.ProjectId) with
         | Some(_, parsingOptions, _) -> parsingOptions
         | _ ->
+            // ParseFile takes the last entry of SourceFiles as the last compiland; with none it throws.
             { FSharpParsingOptions.Default with
+                SourceFiles = [| path |]
                 IsInteractive = CompilerEnvironment.IsScriptFile path
             }
 
