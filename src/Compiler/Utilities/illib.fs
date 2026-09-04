@@ -436,6 +436,36 @@ module Option =
 module internal ValueTuple =
     let inline map1Of2 ([<InlineIfLambda>] f) struct (a1, a2) = struct (f a1, a2)
 
+module ListInline =
+    /// List.exists, but inline so the predicate is inlined (InlineIfLambda) rather than allocated as a closure.
+    let inline exists ([<InlineIfLambda>] predicate: 'T -> bool) (list: 'T list) =
+        let mutable rest = list
+        let mutable result = false
+
+        while not result && not rest.IsEmpty do
+            result <- predicate rest.Head
+            rest <- rest.Tail
+
+        result
+
+    /// List.foldBack, but inline so the folder is inlined (InlineIfLambda). Folds lengths up to 5 directly; longer lists use an array, staying stack-safe like List.foldBack.
+    let inline foldBack ([<InlineIfLambda>] folder: 'T -> 'State -> 'State) (list: 'T list) (state: 'State) =
+        match list with
+        | [] -> state
+        | [ h ] -> folder h state
+        | [ h1; h2 ] -> folder h1 (folder h2 state)
+        | [ h1; h2; h3 ] -> folder h1 (folder h2 (folder h3 state))
+        | [ h1; h2; h3; h4 ] -> folder h1 (folder h2 (folder h3 (folder h4 state)))
+        | [ h1; h2; h3; h4; h5 ] -> folder h1 (folder h2 (folder h3 (folder h4 (folder h5 state))))
+        | _ ->
+            let array = List.toArray list
+            let mutable state = state
+
+            for i = array.Length - 1 downto 0 do
+                state <- folder array[i] state
+
+            state
+
 module List =
 
     let sortWithOrder (c: IComparer<'T>) elements =
