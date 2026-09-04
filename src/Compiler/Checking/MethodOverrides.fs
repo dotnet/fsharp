@@ -985,10 +985,9 @@ let FinalTypeDefinitionChecksAtEndOfInferenceScope (infoReader: InfoReader, nenv
 /// at the member signature prior to type inference. This is used to pre-assign type information if it does 
 let GetAbstractMethInfosForSynMethodDecl(infoReader: InfoReader, ad, memberName: Ident, bindm, typToSearchForAbstractMembers, valSynData, memberFlags: SynMemberFlags, findFlag: FindMemberFlag) =
 
-    let g = infoReader.g
     if not memberFlags.IsInstance && memberFlags.IsOverrideOrExplicitImpl then
-        checkLanguageFeatureRuntimeAndRecover infoReader LanguageFeature.InterfacesWithAbstractStaticMembers bindm
-        checkLanguageFeatureAndRecover g.langVersion LanguageFeature.InterfacesWithAbstractStaticMembers bindm
+        if not infoReader.IsRuntimeSupportForVirtualStaticsInInterfaces then
+            errorR(Error(FSComp.SR.chkFeatureNotRuntimeSupported(RichText.mkText (FSComp.SR.featureInterfacesWithAbstractStaticMembers())), bindm))
 
     let minfos = 
         match typToSearchForAbstractMembers with 
