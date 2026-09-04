@@ -44,22 +44,23 @@ module internal {1} =
 
     let generateSource (resx: string) (fullModuleName: string) (generateLegacy: bool) (generateLiteral: bool) =
         // Record paths inside the try so failures during derivation still reach the shared handler below.
-        let originalPaths = ResizeArray<string>()
-        originalPaths.Add resx
+        let mutable originalPaths = [ resx ]
 
         try
             let justFileName = Path.GetFileNameWithoutExtension(resx)
             let sourcePath = Path.Combine(_outputPath, justFileName + ".fs")
-            originalPaths.Add sourcePath
+            originalPaths <- [ resx; sourcePath ]
+
+            let rootedResx = taskEnvironment.RootedPath resx
+            let rootedSource = taskEnvironment.RootedPath sourcePath
 
             let printMessage fmt = Printf.ksprintf this.Log.LogMessage fmt
 
             // simple up-to-date check
             if
-                File.Exists(taskEnvironment.RootedPath resx)
-                && File.Exists(taskEnvironment.RootedPath sourcePath)
-                && File.GetLastWriteTimeUtc(taskEnvironment.RootedPath resx)
-                   <= File.GetLastWriteTimeUtc(taskEnvironment.RootedPath sourcePath)
+                File.Exists rootedResx
+                && File.Exists rootedSource
+                && File.GetLastWriteTimeUtc rootedResx <= File.GetLastWriteTimeUtc rootedSource
             then
                 printMessage "Skipping generation: '%s' since it is up-to-date." sourcePath
                 Some(sourcePath)
@@ -91,7 +92,7 @@ module internal {1} =
                 let body =
                     let xname = XName.op_Implicit
 
-                    XDocument.Load(taskEnvironment.RootedPath resx).Descendants(xname "data")
+                    XDocument.Load(rootedResx).Descendants(xname "data")
                     |> Seq.fold
                         (fun (sb: StringBuilder) (node: XElement) ->
                             let name =
@@ -129,7 +130,7 @@ module internal {1} =
                             sb.AppendLine().Append(commentBody).AppendLine(accessorBody))
                         sb
 
-                File.WriteAllText(taskEnvironment.RootedPath sourcePath, body.ToString())
+                File.WriteAllText(rootedSource, body.ToString())
                 printMessage "Done: %s" sourcePath
                 Some(sourcePath)
         with
@@ -141,7 +142,7 @@ module internal {1} =
                 sprintf
                     "An exception occurred when processing '%s': %s"
                     resx
-                    (taskEnvironment.RestoreOriginalPaths (e.ToString()) (List.ofSeq originalPaths))
+                    (taskEnvironment.RestoreOriginalPaths (e.ToString()) originalPaths)
             )
 
             None
