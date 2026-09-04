@@ -181,6 +181,15 @@ module internal Rewriting =
     /// Make a remapping table for viewing a module or namespace 'from the outside'
     val ApplyExportRemappingToEntity: TcGlobals -> Remap -> ModuleOrNamespace -> ModuleOrNamespace
 
+    /// As ApplyExportRemappingToEntity, rescoping every accessibility, so nothing is left saying
+    /// ILScopeRef.Local and reading in the consumer as internal to its own assembly.
+    val ApplyExportRemappingToEntityLeavingAssembly:
+        TcGlobals -> Remap -> rescopeAccessTo: ILScopeRef -> ModuleOrNamespace -> ModuleOrNamespace
+
+    /// Bring a just-exported signature to the shape unpickling produces: no value definitions, no
+    /// display-only data and no compiled-representation cache. Mutates a tree from the above.
+    val PruneExportedSignatureInPlace: ModuleOrNamespace -> ModuleOrNamespace
+
 [<AutoOpen>]
 module internal TupleCompilation =
 

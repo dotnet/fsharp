@@ -113,7 +113,8 @@ module internal TypeRemapping =
         { tpinst: TyparInstantiation
           valRemap: ValRemap
           tyconRefRemap: TyconRefRemap
-          removeTraitSolutions: bool }
+          removeTraitSolutions: bool
+          ccuRebind: (CcuThunk -> CcuThunk) option }
 
         static member Empty: Remap
 
@@ -127,6 +128,9 @@ module internal TypeRemapping =
 
     /// Remap a reference to a type definition using the given remapping substitution
     val remapTyconRef: TyconRefMap<TyconRef> -> TyconRef -> TyconRef
+
+    /// As remapTyconRef, re-pointing what the table does not rewrite at the reader's ccu of the same name
+    val remapOrRebindTyconRef: Remap -> TyconRef -> TyconRef
 
     /// Remap a reference to a union case using the given remapping substitution
     val remapUnionCaseRef: TyconRefMap<TyconRef> -> UnionCaseRef -> UnionCaseRef

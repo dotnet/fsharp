@@ -438,11 +438,12 @@ module internal SharedImportedCcus =
     /// ILAssemblyRef cannot serve: it does not separate one package's builds for different frameworks
     [<Struct; StructuralEquality; NoComparison>]
     type AssemblyFileId =
-        | AssemblyFileId of text: string
+        | AssemblyFileId of path: string * stamp: int64 option
 
         member this.Text =
             match this with
-            | AssemblyFileId text -> text
+            | AssemblyFileId(path, Some stamp) -> path + "|" + string stamp
+            | AssemblyFileId(path, None) -> path + "|nostamp"
 
     type AssemblyKeyInfo =
         {
@@ -468,7 +469,7 @@ module internal SharedImportedCcus =
     /// Weak: an entry is held by the projects using it, and holds the rest of its own closure
     let private cache = ConcurrentDictionary<SharedCcuKey, WeakReference<CcuThunk>>()
 
-    let private nameComparer = StringComparer.OrdinalIgnoreCase
+    let nameComparer = StringComparer.OrdinalIgnoreCase
 
     /// What a shared ccu may close over besides its own closure. Functions because TcImports comes later.
     type FrameworkLayer =
@@ -523,10 +524,12 @@ module internal SharedImportedCcus =
             Context: SharedImportContext
         }
 
-    type ShareableAssembly =
+    /// The key a ccu is published under, and the names it references - held strongly, which is what lets
+    /// the cache be weak
+    type SharedCcuClosure =
         {
             Key: SharedCcuKey
-            Closure: SimpleAssemblyName list
+            ReferencedNames: SimpleAssemblyName list
         }
 
     /// Names walked to inside the batch, then those leaving it - framework assemblies the stamp pins
@@ -548,7 +551,7 @@ module internal SharedImportedCcus =
     /// No key where the closure is not shareable: entities and their per-CCU caches would point into one
     /// project's copy of an unshared assembly.
     let computeKeys (frameworkStamp: int64) (assemblies: Dictionary<SimpleAssemblyName, AssemblyKeyInfo>) isShareable =
-        let keys = Dictionary<SimpleAssemblyName, ShareableAssembly>(nameComparer)
+        let keys = Dictionary<SimpleAssemblyName, SharedCcuClosure>(nameComparer)
 
         for KeyValue(name, assembly) in assemblies do
             let inside, outside = closureOf assemblies name
@@ -568,7 +571,7 @@ module internal SharedImportedCcus =
                                 FrameworkStamp = frameworkStamp
                                 CcuName = None
                             }
-                        Closure = assembly.References
+                        ReferencedNames = assembly.References
                     }
 
         keys
@@ -583,6 +586,9 @@ module internal SharedImportedCcus =
                 None
         | _ -> None
 
+    /// A racer builds its own rather than wait: claims can be taken in opposite orders.
+    let private claims = ConcurrentDictionary<SharedCcuKey, obj>()
+
     /// `build` is not called on a hit, which is what lets the F# path skip unpickling entirely
     let getOrBuild (entry: SharedImport option) (build: unit -> CcuThunk) =
         match entry with
@@ -591,15 +597,58 @@ module internal SharedImportedCcus =
             match tryGet entry.Key with
             | Some ccu -> ccu
             | None ->
-                let ccu = build ()
-                entry.Context.HoldForPublication(entry.Key, ccu)
-                ccu
+                let claim = obj ()
+                let owner = claims.GetOrAdd(entry.Key, claim)
+                let mine = obj.ReferenceEquals(owner, claim)
 
-    /// Last writer wins: two projects importing at once each keep the ccu they built, both consistent
+                // Winning the claim can mean the previous holder published between the miss above and here
+                match (if mine then tryGet entry.Key else None) with
+                | Some ccu ->
+                    claims.TryRemove entry.Key |> ignore
+                    ccu
+                | None ->
+
+                    let ccu =
+                        try
+                            build ()
+                        with _ ->
+                            if mine then
+                                claims.TryRemove entry.Key |> ignore
+
+                            reraise ()
+
+                    if mine then
+                        entry.Context.HoldForPublication(entry.Key, ccu)
+
+                    ccu
+
     let add (key: SharedCcuKey) (ccu: CcuThunk) =
-        cache[key] <- WeakReference<CcuThunk> ccu
+        let fresh = WeakReference<CcuThunk> ccu
 
-    let clear () = cache.Clear()
+        cache.AddOrUpdate(
+            key,
+            fresh,
+            fun _ existing ->
+                match existing.TryGetTarget() with
+                | true, _ -> existing
+                | _ -> fresh
+        )
+        |> ignore
+
+        claims.TryRemove key |> ignore
+
+    let clear () =
+        cache.Clear()
+        claims.Clear()
+
+type IImportedProjectCcu =
+    abstract Stamp: int64
+
+    abstract ReferencedCcuNames: string list
+
+    abstract CanBeTaken: bool
+
+    abstract GetCcu: callerTcGlobals: TcGlobals * resolve: (string -> CcuThunk option) -> CcuThunk
 
 type ImportedBinary =
     {
@@ -625,6 +674,19 @@ type ImportedAssembly =
         mutable TypeProviders: Tainted<ITypeProvider> list
 #endif
         FSharpOptimizationData: InterruptibleLazy<Optimizer.LazyModuleInfo option>
+    }
+
+let mkImportedAssembly (data: IRawFSharpAssemblyData) ilScopeRef ccu optimizationData =
+    {
+        FSharpViewOfMetadata = ccu
+        AssemblyAutoOpenAttributes = data.GetAutoOpenAttributes()
+        AssemblyInternalsVisibleToAttributes = data.GetInternalsVisibleToAttributes()
+        FSharpOptimizationData = optimizationData
+#if !NO_TYPEPROVIDERS
+        IsProviderGenerated = false
+        TypeProviders = []
+#endif
+        ILScopeRef = ilScopeRef
     }
 
 type AvailableImportedAssembly =
@@ -2313,6 +2375,26 @@ and [<Sealed>] TcImports
 
         phase2
 
+    member tcImports.TryImportProjectCcu
+        (m, assemblyData: IRawFSharpAssemblyData, ilScopeRef, willTake, takenCcus: ResizeArray<IImportedProjectCcu * CcuThunk>)
+        =
+        match assemblyData with
+        | :? IImportedProjectCcu as projectCcu ->
+            if willTake then
+                // The reader's ccus are not registered yet, so this is filled once the batch is
+                let delayed = CcuThunk.CreateDelayed assemblyData.ShortAssemblyName
+                takenCcus.Add(projectCcu, delayed)
+
+                let ccuinfo = mkImportedAssembly assemblyData ilScopeRef delayed (notlazy None)
+
+                tcImports.RegisterCcu ccuinfo
+
+                // Nothing to relink: built against the ccus this project has
+                Some(fun () -> [ ResolvedImportedAssembly(ccuinfo, m) ])
+            else
+                None
+        | _ -> None
+
     member tcImports.PrepareToImportReferencedFSharpAssembly
         (ctok, m, fileName, dllinfo: ImportedBinary, ?shared: SharedImportedCcus.SharedImport)
         =
@@ -2425,18 +2507,7 @@ and [<Sealed>] TcImports
 
                             Some(fixupThunk ()))
 
-                let ccuinfo =
-                    {
-                        FSharpViewOfMetadata = ccu
-                        AssemblyAutoOpenAttributes = ilModule.GetAutoOpenAttributes()
-                        AssemblyInternalsVisibleToAttributes = ilModule.GetInternalsVisibleToAttributes()
-                        FSharpOptimizationData = optdata
-#if !NO_TYPEPROVIDERS
-                        IsProviderGenerated = false
-                        TypeProviders = []
-#endif
-                        ILScopeRef = ilScopeRef
-                    }
+                let ccuinfo = mkImportedAssembly ilModule ilScopeRef ccu optdata
 
                 let phase2 () =
 #if !NO_TYPEPROVIDERS
@@ -2536,6 +2607,23 @@ and [<Sealed>] TcImports
                     return None
             }
 
+        let shortName (r: AssemblyResolution) =
+            Path.GetFileNameWithoutExtension r.resolvedPath
+
+        let tryGetSharedCcuClosure (keys: Dictionary<_, SharedImportedCcus.SharedCcuClosure> option) r =
+            keys
+            |> Option.bind (fun keys ->
+                match keys.TryGetValue(shortName r) with
+                | true, closure -> Some closure
+                | _ -> None)
+
+        /// Two resolutions claiming one name would key whichever was seen last, so neither is shared
+        let ambiguousNames all =
+            all
+            |> List.countBy (fun (r, _) -> shortName r)
+            |> List.choose (fun (name, n) -> if n > 1 then Some name else None)
+            |> fun names -> HashSet<_>(names, SharedImportedCcus.nameComparer)
+
         /// Also reports a multi-module assembly, whose auxiliary modules need the importing project
         let reachableAssemblyNames self (data: IRawFSharpAssemblyData) =
             let names = ResizeArray<SharedImportedCcus.SimpleAssemblyName>()
@@ -2568,54 +2656,55 @@ and [<Sealed>] TcImports
             | None -> false
 #endif
 
-        let fileIdentity (r: AssemblyResolution) : SharedImportedCcus.AssemblyFileId =
-            let writeStamp =
-                try
-                    string (FileSystem.GetLastWriteTimeShim r.resolvedPath).Ticks
-                with _ ->
-                    "nostamp"
+        let fileIdentity (r: AssemblyResolution) (data: IRawFSharpAssemblyData) =
+            let stamp =
+                match data with
+                | :? IImportedProjectCcu as projectCcu -> Some projectCcu.Stamp
+                | _ ->
+                    try
+                        Some (FileSystem.GetLastWriteTimeShim r.resolvedPath).Ticks
+                    with _ ->
+                        None
 
-            SharedImportedCcus.AssemblyFileId(r.resolvedPath + "|" + writeStamp)
+            SharedImportedCcus.AssemblyFileId(r.resolvedPath, stamp)
 
-        let sharedKeys (all: (AssemblyResolution * IRawFSharpAssemblyData) list) =
+        /// A referenced project may be pinned by a key only where this project takes its contents.
+        let sharedKeys (all: (AssemblyResolution * IRawFSharpAssemblyData) list) takenFromProject =
             let ic = StringComparer.OrdinalIgnoreCase
-            let short (p: string) = Path.GetFileNameWithoutExtension p
 
             let frameworkStamp =
                 match importsBase with
                 | Some b -> b.Stamp
                 | None -> 0L
 
-            // Two resolutions claiming one name would key whichever was seen last, so neither is shared
-            let ambiguous =
-                all
-                |> List.countBy (fun (r, _) -> short r.resolvedPath)
-                |> List.choose (fun (name, n) -> if n > 1 then Some name else None)
-                |> fun names -> HashSet<_>(names, ic)
+            let ambiguous = ambiguousNames all
 
             let assemblies =
                 Dictionary<SharedImportedCcus.SimpleAssemblyName, SharedImportedCcus.AssemblyKeyInfo>(ic)
 
-            let shareable = HashSet<_>(ic)
+            // phase2 mutates a type provider's contents. A project reference joins only when taken
+            let shareableNames = HashSet<_>(ic)
 
             for r, data in all do
-                let name = short r.resolvedPath
+                let name = shortName r
                 let refs, isMultiModule = reachableAssemblyNames name data
 
                 assemblies[name] <-
                     {
-                        File = fileIdentity r
+                        File = fileIdentity r data
                         References = refs
                     }
 
-                // A project's own output changes every build; phase2 mutates a type provider's contents
                 if
-                    r.ProjectReference.IsNone
-                    && not isMultiModule
+                    not isMultiModule
                     && not (ambiguous.Contains name)
                     && not (isTypeProviderAssembly data)
                 then
-                    shareable.Add name |> ignore
+                    match data with
+                    | :? IImportedProjectCcu when takenFromProject name -> shareableNames.Add name |> ignore
+                    | :? IImportedProjectCcu -> ()
+                    | _ when r.ProjectReference.IsNone -> shareableNames.Add name |> ignore
+                    | _ -> ()
 
             // A reference must resolve to what the key pins - this batch or the framework layer - or to
             // nothing anywhere. One only an earlier batch resolves would be keyed as unresolved.
@@ -2640,16 +2729,20 @@ and [<Sealed>] TcImports
                     pinnedByKey[ref] <- v
                     v
 
-            for name in List.ofSeq shareable do
+            for name in List.ofSeq shareableNames do
                 if not (assemblies[name].References |> List.forall isPinnedByKey) then
-                    shareable.Remove name |> ignore
+                    shareableNames.Remove name |> ignore
 
-            SharedImportedCcus.computeKeys frameworkStamp assemblies shareable.Contains
+            SharedImportedCcus.computeKeys frameworkStamp assemblies shareableNames.Contains
 
         let contexts = ResizeArray<SharedImportedCcus.SharedImportContext>()
 
+        /// The project ccus taken, each with the delayed thunk the bind below fills in.
+        let takenCcus = ResizeArray<IImportedProjectCcu * CcuThunk>()
+
         let registerDll
-            (keys: Dictionary<SharedImportedCcus.SimpleAssemblyName, SharedImportedCcus.ShareableAssembly> option)
+            (keys: Dictionary<SharedImportedCcus.SimpleAssemblyName, SharedImportedCcus.SharedCcuClosure> option)
+            (taken: HashSet<string>)
             (r: AssemblyResolution, assemblyData: IRawFSharpAssemblyData)
             =
             let m = r.originalReference.Range
@@ -2659,18 +2752,16 @@ and [<Sealed>] TcImports
 
             // A project's own output can share a simple name with a package, so it is excluded here
             let shared =
-                match keys with
-                | Some keys when r.ProjectReference.IsNone ->
-                    match keys.TryGetValue(Path.GetFileNameWithoutExtension fileName) with
-                    | true, shareable ->
-                        let ctx = SharedImportedCcus.SharedImportContext(frameworkLayer, shareable.Closure)
+                match tryGetSharedCcuClosure keys r with
+                | Some closure when r.ProjectReference.IsNone ->
+                    let ctx =
+                        SharedImportedCcus.SharedImportContext(frameworkLayer, closure.ReferencedNames)
 
-                        contexts.Add ctx
+                    contexts.Add ctx
 
-                        let import: SharedImportedCcus.SharedImport = { Key = shareable.Key; Context = ctx }
+                    let import: SharedImportedCcus.SharedImport = { Key = closure.Key; Context = ctx }
 
-                        Some import
-                    | _ -> None
+                    Some import
                 | _ -> None
 
             if tcImports.IsAlreadyRegistered ilShortAssemName then
@@ -2696,17 +2787,20 @@ and [<Sealed>] TcImports
                 tcImports.RegisterDll dllinfo
 
                 let phase2 =
-                    if assemblyData.HasAnyFSharpSignatureDataAttribute then
-                        if not assemblyData.HasMatchingFSharpSignatureDataAttribute then
-                            errorR (Error(FSComp.SR.buildDifferentVersionMustRecompile fileName, m))
-                            tcImports.PrepareToImportReferencedILAssembly(ctok, m, fileName, dllinfo, ?shared = shared)
+                    match tcImports.TryImportProjectCcu(m, assemblyData, ilScopeRef, taken.Contains(shortName r), takenCcus) with
+                    | Some phase2 -> phase2
+                    | None ->
+                        if assemblyData.HasAnyFSharpSignatureDataAttribute then
+                            if not assemblyData.HasMatchingFSharpSignatureDataAttribute then
+                                errorR (Error(FSComp.SR.buildDifferentVersionMustRecompile fileName, m))
+                                tcImports.PrepareToImportReferencedILAssembly(ctok, m, fileName, dllinfo, ?shared = shared)
+                            else
+                                try
+                                    tcImports.PrepareToImportReferencedFSharpAssembly(ctok, m, fileName, dllinfo, ?shared = shared)
+                                with e ->
+                                    error (Error(FSComp.SR.buildErrorOpeningBinaryFile (fileName, e.Message), m))
                         else
-                            try
-                                tcImports.PrepareToImportReferencedFSharpAssembly(ctok, m, fileName, dllinfo, ?shared = shared)
-                            with e ->
-                                error (Error(FSComp.SR.buildErrorOpeningBinaryFile (fileName, e.Message), m))
-                    else
-                        tcImports.PrepareToImportReferencedILAssembly(ctok, m, fileName, dllinfo, ?shared = shared)
+                            tcImports.PrepareToImportReferencedILAssembly(ctok, m, fileName, dllinfo, ?shared = shared)
 
                 async { return phase2 () }
 
@@ -2738,11 +2832,69 @@ and [<Sealed>] TcImports
                     && tcConfig.reduceMemoryUsage = ReduceMemoryFlag.Yes
                     && importsBase.Value.GetImportReuseKey ctok = tcConfig.importReuseKey
                 then
-                    Some(sharedKeys resolved)
-                else
-                    None
+                    // The keys come after: admitting these lets assemblies referencing them be keyed
+                    let taken = HashSet<string>(SharedImportedCcus.nameComparer)
 
-            let phase2s = resolved |> List.map (registerDll keys)
+                    for r, data in resolved do
+                        match data with
+                        | :? IImportedProjectCcu as projectCcu when projectCcu.CanBeTaken -> taken.Add(shortName r) |> ignore
+                        | _ -> ()
+
+                    Some(sharedKeys resolved taken.Contains), taken
+                else
+                    None, HashSet<string>(SharedImportedCcus.nameComparer)
+
+            let keys, taken = keys
+            let phase2s = resolved |> List.map (registerDll keys taken)
+
+            // Before anything relinks: an assembly unpickled here, or an orphan from an earlier batch,
+            // resolves the names it mentions against what is registered, and a delayed one errors there
+            if takenCcus.Count > 0 then
+                // The tree, not the reader's own thunk: that wrapper is unique to it
+                let boundCcus = Dictionary<string, CcuThunk>(SharedImportedCcus.nameComparer)
+
+                let resolve name =
+                    match boundCcus.TryGetValue name with
+                    | true, ccu -> Some ccu
+                    | _ ->
+                        match tcImports.FindCcu(ctok, range0, name, lookupOnly = true) with
+                        | ResolvedCcu ccu -> Some ccu
+                        | UnresolvedCcu _ -> None
+
+                // A ccu is bound after the ones it names
+                let ordered = ResizeArray<IImportedProjectCcu * CcuThunk>()
+                let placed = HashSet<string>(SharedImportedCcus.nameComparer)
+                let visiting = HashSet<string>(SharedImportedCcus.nameComparer)
+
+                let byName =
+                    Dictionary<string, IImportedProjectCcu * CcuThunk>(SharedImportedCcus.nameComparer)
+
+                for projectCcu, delayed in takenCcus do
+                    byName[delayed.AssemblyName] <- (projectCcu, delayed)
+
+                let rec place (name: string) =
+                    if not (placed.Contains name) && visiting.Add name then
+                        match byName.TryGetValue name with
+                        | true, ((projectCcu, _) as entry) ->
+                            for needed in projectCcu.ReferencedCcuNames do
+                                if not (String.Equals(needed, name, StringComparison.OrdinalIgnoreCase)) then
+                                    place needed
+
+                            if placed.Add name then
+                                ordered.Add entry
+                        | _ -> ()
+
+                        visiting.Remove name |> ignore
+
+                for _, delayed in takenCcus do
+                    place delayed.AssemblyName
+
+                let g = tcImports.GetTcGlobals()
+
+                for projectCcu, delayed in ordered do
+                    let bound = projectCcu.GetCcu(g, resolve)
+                    delayed.Fixup bound
+                    boundCcus[delayed.AssemblyName] <- bound
 
             fixupOrphanCcus ()
 

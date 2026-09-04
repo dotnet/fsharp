@@ -466,20 +466,33 @@ type internal BackgroundCompiler
         incrementalBuildersCache.TryGetAny(AnyCallerThread, options)
         |> Option.map (fun x -> x.GetOrComputeValue())
 
+    let setBuilderNode (options, userOpName) =
+        let getBuilderNode = GraphNode(CreateOneIncrementalBuilder(options, userOpName))
+        incrementalBuildersCache.Set(AnyCallerThread, options, getBuilderNode)
+        getBuilderNode
+
+    /// Replaces the cached build, for a caller that has decided it is stale.
     let createBuilderNode (options, userOpName, ct: CancellationToken) =
         lock gate (fun () ->
             if ct.IsCancellationRequested then
                 GraphNode.FromResult(None, [||])
             else
-                let getBuilderNode = GraphNode(CreateOneIncrementalBuilder(options, userOpName))
-                incrementalBuildersCache.Set(AnyCallerThread, options, getBuilderNode)
-                getBuilderNode)
+                setBuilderNode (options, userOpName))
 
-    let createAndGetBuilder (options, userOpName) =
+    /// Without this second look under the gate, callers arriving together each build the project.
+    let getOrCreateBuilderNode (options, userOpName, ct: CancellationToken) =
+        lock gate (fun () ->
+            if ct.IsCancellationRequested then
+                GraphNode.FromResult(None, [||])
+            else
+                match tryGetBuilderNode options with
+                | Some getBuilderNode -> getBuilderNode
+                | None -> setBuilderNode (options, userOpName))
+
+    let getBuilderFrom (getBuilderNode: _ * _ * CancellationToken -> GraphNode<_>) (options, userOpName) =
         async {
             let! ct = Async.CancellationToken
-            let getBuilderNode = createBuilderNode (options, userOpName, ct)
-            return! getBuilderNode.GetOrComputeValue()
+            return! (getBuilderNode (options, userOpName, ct)).GetOrComputeValue()
         }
 
     let getOrCreateBuilder (options, userOpName) : Async<IncrementalBuilder option * FSharpDiagnostic[]> =
@@ -502,8 +515,8 @@ type internal BackgroundCompiler
                             let key = (sourceFile, 0L, options)
                             checkFileInProjectCache.RemoveAnySimilar(ltok, key)))
 
-                    return! createAndGetBuilder (options, userOpName)
-            | _ -> return! createAndGetBuilder (options, userOpName)
+                    return! getBuilderFrom createBuilderNode (options, userOpName)
+            | _ -> return! getBuilderFrom getOrCreateBuilderNode (options, userOpName)
         }
 
     let getSimilarOrCreateBuilder (options, userOpName) =

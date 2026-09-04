@@ -225,11 +225,10 @@ type TypeCheckingConfig =
         DumpGraph: bool
     }
 
-/// A field belongs here when two projects differing in it cannot reuse one imported form
+/// What two projects must agree on before one can reuse the other's imports. Importing consults the
+/// settings in one place only, whether nullable-reference attributes are read into the TAST.
 [<RequireQualifiedAccess>]
-type ImportReuseKey =
-    { LangVersion: decimal
-      CheckNullness: bool }
+type ImportReuseKey = { ImportsNullness: bool }
 
 [<NoEquality; NoComparison>]
 type TcConfigBuilder =
