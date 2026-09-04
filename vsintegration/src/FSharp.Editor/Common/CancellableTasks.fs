@@ -1160,6 +1160,17 @@ module CancellableTasks =
                     return value
             }
 
+        /// If this CancellableTask gets canceled for another reason than the token being canceled, run the fallback instead.
+        let inline ifCanceledThen ([<InlineIfLambda>] fallback: unit -> unit) (ctask: CancellableTask<unit>) =
+            cancellableTask {
+                let! ct = getCancellationToken ()
+
+                try
+                    return! ctask
+                with :? OperationCanceledException when ct.IsCancellationRequested = false ->
+                    return fallback ()
+            }
+
     /// <exclude />
     [<AutoOpen>]
     module MergeSourcesExtensions =
