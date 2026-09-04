@@ -724,10 +724,6 @@ open Printf
 
     new() = FSharpEmbedResourceText(TaskEnvironment.Fallback)
 
-    // Reflection-only test hook (InternalsVisibleTo is granted to VisualFSharp.UnitTests alone).
-    member internal _.InternalRestoreOriginalPaths(message: string, originalPaths: string[]) =
-        restoreOriginalPaths message (List.ofArray originalPaths)
-
     interface IMultiThreadableTask with
         member _.TaskEnvironment
             with get () = _taskEnvironment

@@ -484,6 +484,23 @@ stages:
 
         # Linux
         - job: Linux
+          strategy:
+            matrix:
+              Standard:
+                mtArgs: ''
+                buildDisplayName: Build / Test
+                testRunTitle: Linux
+                artifactName: Linux
+                nugetArtifactName: Linux
+                allowFailure: false
+              Multithreaded:
+                mtArgs: '--mt true'
+                buildDisplayName: Build / Test with MSBuild multithreaded
+                testRunTitle: Linux MT
+                artifactName: Linux MT
+                nugetArtifactName: Linux-mt
+                allowFailure: true
+          continueOnError: $(allowFailure)
           pool:
             name: $(DncEngPublicBuildPool)
             demands: ImageOverride -equals $(LinuxMachineQueueName)
@@ -494,13 +511,13 @@ stages:
           steps:
           - checkout: self
             clean: true
-          - script: ./eng/cibuild.sh --configuration $(_BuildConfig) --testcoreclr
-            displayName: Build / Test
+          - script: ./eng/cibuild.sh --configuration $(_BuildConfig) --testcoreclr $(mtArgs)
+            displayName: $(buildDisplayName)
           - task: PublishTestResults@2
             displayName: Publish Test Results
             inputs:
               testResultsFormat: 'XUnit'
-              testRunTitle: Linux
+              testRunTitle: $(testRunTitle)
               testResultsFiles: '*.xml'
               mergeTestResults: true
               searchFolder: '$(Build.SourcesDirectory)/artifacts/TestResults/$(_BuildConfig)'
@@ -510,7 +527,7 @@ stages:
             displayName: Publish Test Logs
             inputs:
               PathtoPublish: '$(Build.SourcesDirectory)/artifacts/TestResults/$(_BuildConfig)'
-              ArtifactName: 'Linux $(_BuildConfig) test logs'
+              ArtifactName: '$(artifactName) $(_BuildConfig) test logs'
               publishLocation: Container
             continueOnError: true
             condition: failed()
@@ -521,52 +538,7 @@ stages:
             displayName: Publish NuGet cache contents
             inputs:
               PathtoPublish: '$(Build.SourcesDirectory)/artifacts/NugetPackageRootContents'
-              ArtifactName: 'NuGetPackageContents Linux'
-              publishLocation: Container
-            continueOnError: true
-            condition: failed()
-
-        # LinuxMT
-        - job: LinuxMT
-          continueOnError: true
-          pool:
-            name: $(DncEngPublicBuildPool)
-            demands: ImageOverride -equals $(LinuxMachineQueueName)
-          timeoutInMinutes: 120
-          variables:
-          - name: _SignType
-            value: Test
-          steps:
-          - checkout: self
-            clean: true
-          - script: ./eng/cibuild.sh --configuration $(_BuildConfig) --testcoreclr --mt true
-            displayName: Build / Test with MSBuild multithreaded
-          - task: PublishTestResults@2
-            displayName: Publish Test Results
-            inputs:
-              testResultsFormat: 'XUnit'
-              testRunTitle: Linux MT
-              testResultsFiles: '*.xml'
-              mergeTestResults: true
-              searchFolder: '$(Build.SourcesDirectory)/artifacts/TestResults/$(_BuildConfig)'
-            continueOnError: true
-            condition: succeededOrFailed()
-          - task: PublishBuildArtifacts@1
-            displayName: Publish Test Logs
-            inputs:
-              PathtoPublish: '$(Build.SourcesDirectory)/artifacts/TestResults/$(_BuildConfig)'
-              ArtifactName: 'Linux MT $(_BuildConfig) test logs'
-              publishLocation: Container
-            continueOnError: true
-            condition: failed()
-          - script: dotnet build $(Build.SourcesDirectory)/eng/DumpPackageRoot/DumpPackageRoot.csproj
-            displayName: Dump NuGet cache contents
-            condition: failed()
-          - task: PublishBuildArtifacts@1
-            displayName: Publish NuGet cache contents
-            inputs:
-              PathtoPublish: '$(Build.SourcesDirectory)/artifacts/NugetPackageRootContents'
-              ArtifactName: 'NuGetPackageContents Linux-mt'
+              ArtifactName: 'NuGetPackageContents $(nugetArtifactName)'
               publishLocation: Container
             continueOnError: true
             condition: failed()

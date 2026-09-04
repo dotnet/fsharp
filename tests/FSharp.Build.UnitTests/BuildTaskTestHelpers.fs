@@ -45,9 +45,6 @@ module BuildTaskTestHelpers =
         let environment = TaskEnvironment.CreateWithProjectDirectoryAndEnvironment(directory.FullName)
         environment, directory
 
-    let assignTaskEnvironment (task: IMultiThreadableTask) (environment: TaskEnvironment) =
-        task.TaskEnvironment <- environment
-
     // TaskEnvironment.Dispose (which releases the thread-local working-directory override) is internal
     // and TaskEnvironment is not IDisposable, so reflection is the only deterministic way to invoke it.
     let private taskEnvironmentDisposeMethod =
@@ -76,6 +73,3 @@ module BuildTaskTestHelpers =
                 disposeTaskEnvironment environmentB
         finally
             disposeTaskEnvironment environmentA
-
-    let withTaskEnvironmentPair body =
-        withTaskEnvironmentPairUsing createTaskEnvironmentInTemporaryDirectory body

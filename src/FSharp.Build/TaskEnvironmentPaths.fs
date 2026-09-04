@@ -16,6 +16,13 @@ module internal TaskEnvironmentPaths =
         else
             StringComparison.Ordinal
 
+    // ProcessStartInfo resolves relative tool paths against the host process current directory.
+    let normalizePathToTool (taskEnvironment: TaskEnvironment) (pathToTool: string) =
+        if String.IsNullOrEmpty(Path.GetDirectoryName pathToTool) then
+            pathToTool
+        else
+            taskEnvironment.GetAbsolutePath(pathToTool).Value
+
     // netstandard2.0 has no String.Replace(string, string, StringComparison) overload.
     let private replaceOrdinal (source: string) (oldValue: string) (newValue: string) =
         if String.IsNullOrEmpty oldValue then

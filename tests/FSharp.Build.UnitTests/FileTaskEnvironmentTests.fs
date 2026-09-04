@@ -4,6 +4,7 @@ namespace FSharp.Build.UnitTests
 
 open System
 open System.IO
+open System.Reflection
 open System.Runtime.InteropServices
 open System.Threading
 open System.Threading.Tasks
@@ -76,12 +77,14 @@ type FileTaskEnvironmentTests() =
 
     let withIsolatedTaskEnvironmentPair body =
         withDecoyCurrentDirectory (fun decoy ->
-            withTaskEnvironmentPair (fun environmentA directoryA environmentB directoryB ->
-                body environmentA directoryA environmentB directoryB
-                Assert.Empty(Directory.GetFiles(decoy.FullName, "*", SearchOption.AllDirectories))))
+            withTaskEnvironmentPairUsing
+                createTaskEnvironmentInTemporaryDirectory
+                (fun environmentA directoryA environmentB directoryB ->
+                    body environmentA directoryA environmentB directoryB
+                    Assert.Empty(Directory.GetFiles(decoy.FullName, "*", SearchOption.AllDirectories))))
 
     let assign environment (task: #IMultiThreadableTask) =
-        assignTaskEnvironment (task :> IMultiThreadableTask) environment
+        (task :> IMultiThreadableTask).TaskEnvironment <- environment
         task
 
     let createResourceTask kind environment engine (input: string) (intermediate: string) =
@@ -111,15 +114,10 @@ type FileTaskEnvironmentTests() =
         | ResxTask task -> task.Execute()
         | TextTask task -> task.Execute()
 
-    let kindName =
+    let resourceKindInfo =
         function
-        | Resx -> "FSharpEmbedResXSource"
-        | Text -> "FSharpEmbedResourceText"
-
-    let extension =
-        function
-        | Resx -> ".resx"
-        | Text -> ".txt"
+        | Resx -> "FSharpEmbedResXSource", ".resx"
+        | Text -> "FSharpEmbedResourceText", ".txt"
 
     let countOccurrences (needle: string) (text: string) =
         let rec count total start =
@@ -228,9 +226,9 @@ type FileTaskEnvironmentTests() =
     member _.``Resource generators isolate relative input and output paths per task``() =
         for kind in [ Resx; Text ] do
             withIsolatedTaskEnvironmentPair (fun environmentA directoryA environmentB directoryB ->
-                let scenario = kindName kind
+                let scenario, extension = resourceKindInfo kind
                 let intermediate = Path.Combine("obj", "Debug")
-                let input = "Resource" + extension kind
+                let input = "Resource" + extension
 
                 for directory in [ directoryA; directoryB ] do
                     Directory.CreateDirectory(Path.Combine(directory.FullName, intermediate))
@@ -250,25 +248,23 @@ type FileTaskEnvironmentTests() =
                 let taskB = createResourceTask kind environmentB (MockEngine()) input intermediate
                 runConcurrently scenario (fun () -> executeResourceTask taskA) (fun () -> executeResourceTask taskB)
 
+                let generatedSpecs task =
+                    match task with
+                    | ResxTask task -> task.GeneratedSource
+                    | TextTask task -> Array.append task.GeneratedSource task.GeneratedResx
+                    |> Array.map _.ItemSpec
+
+                let source = Path.Combine(intermediate, "Resource.fs")
                 let expectedSpecs, contentSpecs =
-                    match taskA, taskB with
-                    | ResxTask a, ResxTask b ->
-                        let source = Path.Combine(intermediate, "Resource.fs")
-                        Assert.Equal(source, Assert.Single(a.GeneratedSource).ItemSpec)
-                        Assert.Equal(source, Assert.Single(b.GeneratedSource).ItemSpec)
-                        [ source ], [ source ]
-                    | TextTask a, TextTask b ->
+                    match kind with
+                    | Resx -> [ source ], [ source ]
+                    | Text ->
                         let signature = Path.Combine(intermediate, "Resource.fsi")
-                        let source = Path.Combine(intermediate, "Resource.fs")
                         let resx = Path.Combine(intermediate, "Resource.resx")
-                        let expectedSources = [| signature; source |]
-                        let specs (items: ITaskItem[]) = items |> Array.map _.ItemSpec
-                        Assert.Equal<string[]>(expectedSources, specs a.GeneratedSource)
-                        Assert.Equal<string[]>(expectedSources, specs b.GeneratedSource)
-                        Assert.Equal(resx, Assert.Single(a.GeneratedResx).ItemSpec)
-                        Assert.Equal(resx, Assert.Single(b.GeneratedResx).ItemSpec)
                         [ signature; source; resx ], [ source; resx ]
-                    | _ -> failwith "Mismatched resource task kinds"
+
+                for task in [ taskA; taskB ] do
+                    Assert.Equal<string[]>(List.toArray expectedSpecs, generatedSpecs task)
 
                 for directory, own, other in
                     [ directoryA, "Hello from A", "Hello from B"; directoryB, "Hello from B", "Hello from A" ] do
@@ -335,8 +331,10 @@ type FileTaskEnvironmentTests() =
     member _.``Resource task diagnostics preserve every input path shape``() =
         for kind in [ Resx; Text ] do
             withTaskEnvironment (fun environment directory ->
-                for name, input, expectation in pathScenarios (extension kind) directory do
-                    let scenario = $"{kindName kind}: {name}"
+                let kindName, extension = resourceKindInfo kind
+
+                for name, input, expectation in pathScenarios extension directory do
+                    let scenario = $"{kindName}: {name}"
                     let engine = MockEngine()
                     let task = createResourceTask kind environment engine input "obj"
 
@@ -366,14 +364,14 @@ type FileTaskEnvironmentTests() =
             let shortOriginal = "p"
             let longOriginal = Path.Combine("p", "deeper", "..", "deeper")
             let canonicalLong = Path.GetFullPath(environment.GetAbsolutePath(longOriginal).Value)
-            let task = FSharpEmbedResourceText(environment)
-
             let restore =
-                FSharp.Test.ReflectionHelper.getPrivateInstanceMethod "InternalRestoreOriginalPaths" (task.GetType())
+                typeof<FSharpEmbedResourceText>
+                    .Assembly.GetType("FSharp.Build.TaskEnvironmentPaths")
+                    .GetMethod("restoreOriginalPaths", BindingFlags.NonPublic ||| BindingFlags.Static)
 
             let message = $"Could not find a part of the path '{canonicalLong}'."
             let actual =
-                restore.Invoke(task, [| box message; box [| shortOriginal; longOriginal |] |]) :?> string
+                restore.Invoke(null, [| box environment; box message; box [ shortOriginal; longOriginal ] |]) :?> string
 
             Assert.Equal($"Could not find a part of the path '{longOriginal}'.", actual)
             assertNotContains "overlapping path restoration" directory.FullName actual)

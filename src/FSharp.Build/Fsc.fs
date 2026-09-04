@@ -747,20 +747,8 @@ type public Fsc(taskEnvironment: TaskEnvironment) as this =
 
     member internal fsc.InternalGenerateFullPathToTool() = fsc.GenerateFullPathToTool() // expose for unit testing
 
-    // ProcessStartInfo resolves a relative tool path against the host process current directory, not
-    // the child WorkingDirectory, so root any path with a directory component (including Windows root-
-    // and drive-relative forms) against this task's TaskEnvironment. A bare filename is left untouched
-    // for ComputePathToTool's PATH lookup.
     member private fsc.NormalizePathToTool(pathToTool: string) : string =
-        if
-            String.IsNullOrEmpty pathToTool
-            || String.IsNullOrEmpty(System.IO.Path.GetDirectoryName pathToTool)
-        then
-            pathToTool
-        else
-            fsc.TaskEnvironment.GetAbsolutePath(pathToTool).Value
-
-    member internal fsc.InternalNormalizePathToTool(pathToTool: string) = fsc.NormalizePathToTool(pathToTool) // expose for unit testing
+        TaskEnvironmentPaths.normalizePathToTool fsc.TaskEnvironment pathToTool
 
     member internal _.BaseExecuteTool(pathToTool, responseFileCommands, commandLineCommands) = // F# does not allow protected members to be captured by lambdas, this is the standard workaround
         base.ExecuteTool(pathToTool, responseFileCommands, commandLineCommands)

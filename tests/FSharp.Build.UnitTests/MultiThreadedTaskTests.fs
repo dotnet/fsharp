@@ -37,7 +37,7 @@ module private FscFsiTestHooks =
     let fullPathToTool task = invoke<string> task "InternalGenerateFullPathToTool" [||]
     let generateResponseFileCommands task = invoke<string> task "InternalGenerateResponseFileCommands" [||]
     let executeTool task = invoke<int> task "InternalExecuteTool" [| box ""; box ""; box "" |]
-    let normalizePathToTool task path = invoke<string> task "InternalNormalizePathToTool" [| box path |]
+    let normalizePathToTool task path = invoke<string> task "NormalizePathToTool" [| box path |]
 
 type MultiThreadedTaskTests() =
 
@@ -70,29 +70,17 @@ type FscFsiMultiThreadedTaskTests() =
         variables["FSHARP_COMPILER_BIN"] <- compilerBin
         TaskEnvironment.CreateWithProjectDirectoryAndEnvironment(projectDirectory, variables), compilerBin
 
-    let compilerTasks =
-        [
-            "Fsc", "fsc.exe", (fun environment -> box (Fsc(environment)))
-            "Fsi", "fsi.exe", (fun environment -> box (Fsi(environment)))
-        ]
+    let fscTask = "Fsc", "fsc.exe", (fun environment -> box (Fsc(environment)))
+    let fsiTask = "Fsi", "fsi.exe", (fun environment -> box (Fsi(environment)))
+    let compilerTasks = [ fscTask; fsiTask ]
 
     [<Fact>]
     member _.``compiler tasks resolve tool paths from isolated compiler-bin environments``() =
-        let taskPairs =
-            [
-                "Fsc/Fsi",
-                "fsc.exe",
-                "fsi.exe",
-                (fun environmentA environmentB -> box (Fsc(environmentA)), box (Fsi(environmentB)))
-                "Fsc/Fsc",
-                "fsc.exe",
-                "fsc.exe",
-                (fun environmentA environmentB -> box (Fsc(environmentA)), box (Fsc(environmentB)))
-            ]
-
-        for scenario, executableA, executableB, create in taskPairs do
+        for (nameA, executableA, createA), (nameB, executableB, createB) in
+            [ fscTask, fsiTask; fscTask, fscTask ] do
             withTaskEnvironmentPairUsing environmentWithCompilerBin (fun environmentA binA environmentB binB ->
-                let taskA, taskB = create environmentA environmentB
+                let scenario = $"{nameA}/{nameB}"
+                let taskA, taskB = createA environmentA, createB environmentB
                 let pathA = FscFsiTestHooks.fullPathToTool taskA
                 let pathB = FscFsiTestHooks.fullPathToTool taskB
 
