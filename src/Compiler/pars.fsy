@@ -2258,12 +2258,25 @@ opt_typ:
          let ty = SynType.FromParseError(mColon.EndRange)
          Some ty }
 
-
-atomicPatternLongIdent:
+underscoreLongIdentPat:
   | UNDERSCORE DOT pathOp
      { let underscore = ident("_", rhs parseState 1)
        let mDot = rhs parseState 2
-       None, prependIdentInLongIdentWithTrivia (SynIdent(underscore, None)) mDot $3 }
+       prependIdentInLongIdentWithTrivia (SynIdent(underscore, None)) mDot $3 }
+  | UNDERSCORE DOT %prec prec_recover
+     { let underscore = ident("_", rhs parseState 1)
+       let mDot = rhs parseState 2
+       reportParseErrorAt mDot.EndRange (FSComp.SR.parsIdentifierExpected())
+       SynLongIdent([underscore], [mDot], [None]) }
+  | UNDERSCORE DOT ends_coming_soon_or_recover
+     { if not $3 then reportParseErrorAt (rhs parseState 3) (FSComp.SR.parsIdentifierExpected())
+       let underscore = ident("_", rhs parseState 1)
+       let mDot = rhs parseState 2
+       SynLongIdent([underscore], [mDot], [None]) }
+
+atomicPatternLongIdent:
+  | underscoreLongIdentPat
+     { None, $1 }
 
   | GLOBAL DOT pathOp
      { let globalIdent = ident(MangledGlobalName, rhs parseState 1)
@@ -2273,10 +2286,8 @@ atomicPatternLongIdent:
   | pathOp
      { (None, $1) }
 
-  | access UNDERSCORE DOT pathOp
-     { let underscore = ident("_", rhs parseState 2)
-       let mDot = rhs parseState 3
-       Some($1), prependIdentInLongIdentWithTrivia (SynIdent(underscore, None)) mDot $4 }
+  | access underscoreLongIdentPat
+     { Some($1), $2 }
 
   | access pathOp
      { (Some($1), $2) }
