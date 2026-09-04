@@ -73,6 +73,13 @@ type MultiThreadedTaskTests() =
 
         Assert.Equal(expectedBase, taskType.BaseType)
 
+/// One compiler task under test, named so scenarios stay self-describing instead of
+/// destructuring anonymous tuples.
+type private CompilerTaskCase =
+    { Name: string
+      Executable: string
+      Create: TaskEnvironment -> obj }
+
 type FscFsiMultiThreadedTaskTests() =
 
     static let environmentWithCompilerBin () =
@@ -83,26 +90,30 @@ type FscFsiMultiThreadedTaskTests() =
         TaskEnvironment.CreateWithProjectDirectoryAndEnvironment(projectDirectory, variables), compilerBin
 
     let fscTask =
-        "Fsc", "fsc.exe", (fun environment -> Fsc() |> assignTaskEnvironment environment |> box)
+        { Name = "Fsc"
+          Executable = "fsc.exe"
+          Create = fun environment -> Fsc() |> assignTaskEnvironment environment |> box }
 
     let fsiTask =
-        "Fsi", "fsi.exe", (fun environment -> Fsi() |> assignTaskEnvironment environment |> box)
+        { Name = "Fsi"
+          Executable = "fsi.exe"
+          Create = fun environment -> Fsi() |> assignTaskEnvironment environment |> box }
+
     let compilerTasks = [ fscTask; fsiTask ]
 
     [<Fact>]
     member _.``compiler tasks resolve tool paths from isolated compiler-bin environments``() =
-        for (nameA, executableA, createA), (nameB, executableB, createB) in
-            [ fscTask, fsiTask; fscTask, fscTask ] do
+        for caseA, caseB in [ fscTask, fsiTask; fscTask, fscTask ] do
             withTaskEnvironmentPairUsing environmentWithCompilerBin (fun environmentA binA environmentB binB ->
-                let scenario = $"{nameA}/{nameB}"
-                let taskA, taskB = createA environmentA, createB environmentB
+                let scenario = $"{caseA.Name}/{caseB.Name}"
+                let taskA, taskB = caseA.Create environmentA, caseB.Create environmentB
                 let pathA = FscFsiTestHooks.fullPathToTool taskA
                 let pathB = FscFsiTestHooks.fullPathToTool taskB
 
                 Assert.True(Path.IsPathRooted pathA, $"{scenario}: expected rooted path, got '{pathA}'")
                 Assert.True(Path.IsPathRooted pathB, $"{scenario}: expected rooted path, got '{pathB}'")
-                Assert.Equal(executableA, Path.GetFileName pathA)
-                Assert.Equal(executableB, Path.GetFileName pathB)
+                Assert.Equal(caseA.Executable, Path.GetFileName pathA)
+                Assert.Equal(caseB.Executable, Path.GetFileName pathB)
                 Assert.Equal(Path.GetFullPath binA, Path.GetDirectoryName pathA)
                 Assert.Equal(Path.GetFullPath binB, Path.GetDirectoryName pathB)
                 Assert.NotEqual<string>(pathA, pathB))
@@ -116,7 +127,7 @@ type FscFsiMultiThreadedTaskTests() =
                 Fsc(
                     BuildEngine = MockEngine(),
                     OtherFlags = flag,
-                    Sources = (sourceNames |> List.map (TaskItem >> fun item -> item :> ITaskItem) |> List.toArray),
+                    Sources = [| for name in sourceNames -> TaskItem name :> ITaskItem |],
                     HostObject = host
                 )
 
@@ -147,17 +158,17 @@ type FscFsiMultiThreadedTaskTests() =
     [<Fact>]
     member _.``compiler tasks normalize every tool-path shape against TaskEnvironment``() =
         withTaskEnvironment (fun environment directory ->
-            for name, executable, create in compilerTasks do
-                let task = create environment
-                let relative = Path.Combine("tools", executable)
+            for case in compilerTasks do
+                let task = case.Create environment
+                let relative = Path.Combine("tools", case.Executable)
                 let normalized = FscFsiTestHooks.normalizePathToTool task relative
 
-                Assert.True(Path.IsPathRooted normalized, $"{name}: expected rooted path, got '{normalized}'")
+                Assert.True(Path.IsPathRooted normalized, $"{case.Name}: expected rooted path, got '{normalized}'")
                 Assert.Equal(Path.Combine(directory.FullName, relative), normalized)
-                Assert.Equal(executable, FscFsiTestHooks.normalizePathToTool task executable)
+                Assert.Equal(case.Executable, FscFsiTestHooks.normalizePathToTool task case.Executable)
 
                 if RuntimeInformation.IsOSPlatform OSPlatform.Windows then
-                    for input in [ $@"\tools\{executable}"; $@"C:tools\{executable}" ] do
+                    for input in [ $@"\tools\{case.Executable}"; $@"C:tools\{case.Executable}" ] do
                         Assert.Equal(
                             environment.GetAbsolutePath(input).Value,
                             FscFsiTestHooks.normalizePathToTool task input
