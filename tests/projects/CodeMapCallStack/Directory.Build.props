@@ -1,0 +1,15 @@
+<Project>
+  <PropertyGroup>
+    <!-- Several bindings here are unused on purpose: an unused parameter is what gives a frame the
+         shape the Code Map has to render, and the repro is meant to read like ordinary user code. -->
+    <TolerateUnusedBindings>true</TolerateUnusedBindings>
+  </PropertyGroup>
+
+  <Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.props', '$(MSBuildThisFileDirectory)../'))" />
+
+  <PropertyGroup>
+    <!-- Opened in Visual Studio by hand; no solution the build produces contains it, so it takes
+         FSharp.Core from the SDK rather than from this repo's central package versions. -->
+    <ImportDirectoryPackagesProps>false</ImportDirectoryPackagesProps>
+  </PropertyGroup>
+</Project>
