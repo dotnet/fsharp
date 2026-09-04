@@ -527,6 +527,18 @@ module Array =
 
         loop 0
 
+    let inline tryPickV ([<InlineIfLambda>] chooser: 'T -> 'U voption) (array: 'T[]) =
+
+        let rec loop i =
+            if i >= array.Length then
+                ValueNone
+            else
+                match chooser array[i] with
+                | ValueNone -> loop (i + 1)
+                | res -> res
+
+        loop 0
+
     let inline chooseV ([<InlineIfLambda>] chooser: 'T -> 'U voption) (array: 'T[]) =
 
         let mutable i = 0

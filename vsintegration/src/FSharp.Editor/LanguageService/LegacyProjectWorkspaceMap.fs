@@ -117,7 +117,7 @@ type internal LegacyProjectWorkspaceMap
 
             optionsAssociation.Add(projectContext, updatedOptions)
 
-            projectContext.BinOutputPath <- Option.toObj site.CompilationBinOutputPath
+            projectContext.BinOutputPath <- ValueOption.toObj site.CompilationBinOutputPath
 
         let info = (updatedFiles, updatedRefs)
         legacyProjectLookup.AddOrUpdate(projectId, info, (fun _ _ -> info)) |> ignore
@@ -142,7 +142,7 @@ type internal LegacyProjectWorkspaceMap
                     projectFileName,
                     projectGuid,
                     hierarchy,
-                    Option.toObj site.CompilationBinOutputPath
+                    ValueOption.toObj site.CompilationBinOutputPath
                 )
 
             legacyProjectIdLookup.[projectGuid] <- projectContext.Id
