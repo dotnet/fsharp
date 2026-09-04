@@ -888,7 +888,6 @@ let main3
                     let sha256 = System.Security.Cryptography.SHA256.Create()
                     sha256.ComputeHash s)
                 |> List.sumBy (hash >> int64)
-                |> hash
 
             try
                 Fsharp.Compiler.SignatureHash.calculateSignatureHashOfFiles typedImplFiles tcGlobals observer
