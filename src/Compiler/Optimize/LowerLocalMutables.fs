@@ -6,6 +6,7 @@ open Internal.Utilities.Collections
 open Internal.Utilities.Library.Extras
 open FSharp.Compiler 
 open FSharp.Compiler.DiagnosticsLogger
+open FSharp.Compiler.RuntimeAsync
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypedTreeOps
@@ -104,8 +105,14 @@ let DecideExpr cenv exprF noInterceptF z expr  =
     | Expr.Op (c, tyargs, args, _m) ->
         DecideExprOp exprF noInterceptF z expr (c, tyargs, args) 
 
-    | _ -> 
-        noInterceptF z expr
+    | _ ->
+        match TryGetRuntimeAsyncReturn g expr with
+        | Some info ->
+            let z = Zset.union z (DecideEscapes [] info.Body)
+            exprF z info.Body
+        | None ->
+            noInterceptF z expr
+
 
 /// Find all the mutable locals that escape a binding
 let DecideBinding cenv z (TBind(v, expr, _m) as bind) = 
@@ -195,5 +202,4 @@ let TransformImplFile g amap implFile =
                 PostTransform = (fun _ -> None)
                 RewriteQuotations = true
                 StackGuard = StackGuard("AutoboxRewriteStackGuardDepth") } 
-
 
