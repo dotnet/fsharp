@@ -41,7 +41,7 @@ When the IDE's F# semantic tools are unavailable, use the `F#` MCP server (`.mcp
 
 ## Async and exceptions
 
-- `src/Compiler` targets `netstandard2.0`: use `async { }` and the repo's `cancellable { }` (`src/Compiler/Utilities/Cancellable.fs`). `task { }` has no foothold there.
+- `src/Compiler` targets `netstandard2.0`: prefer `async { }` and the repo's `cancellable { }` (`src/Compiler/Utilities/Cancellable.fs`). `task { }` appears only in `Service/FSharpProjectSnapshot.fs` and `Service/FSharpWorkspaceQuery.fs` – avoid it elsewhere in new core code.
 - `vsintegration` runs on the VS threading model where `task { }` is at home. When an override must return non-generic `Task`, annotate explicitly – `override _.M(…) : Task = task { … }` – never cast through pipelines.
 - Thread cancellation through; see `ExpertReview.instructions.md`.
 - `reraise ()` does not compile inside a `task`/`async` CE (FS0413). There, rethrow with `ExceptionDispatchInfo.Capture(ex).Throw()`; outside CEs plain `reraise ()` is correct.
