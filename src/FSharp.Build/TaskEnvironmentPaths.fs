@@ -7,6 +7,7 @@ open System.IO
 open System.Runtime.InteropServices
 open System.Text
 open Microsoft.Build.Framework
+open Microsoft.Build.Utilities
 
 module internal TaskEnvironmentPaths =
 
@@ -74,3 +75,22 @@ module internal TaskEnvironmentPaths =
 
         (message, replacements)
         ||> List.fold (fun message (rooted, original) -> replaceOrdinal message rooted original)
+
+/// Base for multithreadable FSharp.Build tasks: carries the per-task TaskEnvironment so relative
+/// paths resolve against it instead of the shared process current directory.
+[<AbstractClass>]
+type MultiThreadableTask() =
+    inherit Task()
+
+    let mutable taskEnvironment = TaskEnvironment.Fallback
+
+    member internal _.RootedPath(path: string) =
+        taskEnvironment.GetAbsolutePath(path).Value
+
+    member internal _.RestoreOriginalPaths (message: string) (originalPaths: string list) =
+        TaskEnvironmentPaths.restoreOriginalPaths taskEnvironment message originalPaths
+
+    interface IMultiThreadableTask with
+        member _.TaskEnvironment
+            with get () = taskEnvironment
+            and set value = taskEnvironment <- value

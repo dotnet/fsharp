@@ -13,13 +13,12 @@ open Microsoft.Build.Utilities
 type EscapedValue = { Escaped: string; Raw: string }
 
 [<MSBuildMultiThreadableTask>]
-type WriteCodeFragment(taskEnvironment: TaskEnvironment) as this =
-    inherit Task()
+type WriteCodeFragment() as this =
+    inherit MultiThreadableTask()
     let mutable _outputDirectory: ITaskItem | null = null
     let mutable _outputFile: ITaskItem | null = null
     let mutable _language: string = ""
     let mutable _assemblyAttributes: ITaskItem[] = [||]
-    let mutable _taskEnvironment = taskEnvironment
 
     let failTask fmt =
         Printf.ksprintf
@@ -50,13 +49,6 @@ type WriteCodeFragment(taskEnvironment: TaskEnvironment) as this =
             Escaped = sb.Append("\"").ToString()
             Raw = str
         }
-
-    new() = WriteCodeFragment(TaskEnvironment.Fallback)
-
-    interface IMultiThreadableTask with
-        member _.TaskEnvironment
-            with get () = _taskEnvironment
-            and set (value) = _taskEnvironment <- value
 
     member _.GenerateAttribute(item: ITaskItem, language: string) =
         let attributeName = item.ItemSpec
@@ -211,8 +203,7 @@ type WriteCodeFragment(taskEnvironment: TaskEnvironment) as this =
                             TaskItem(Path.Combine(outputDirectory.ItemSpec, fileName)) :> ITaskItem
 
                 let codeText = code.ToString()
-                let rootedFileName = _taskEnvironment.GetAbsolutePath(fileName)
-                File.WriteAllText(rootedFileName.Value, codeText)
+                File.WriteAllText(this.RootedPath fileName, codeText)
                 _outputFile <- outputFileItem
                 not this.Log.HasLoggedErrors
         with TaskFailed ->

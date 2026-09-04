@@ -8,23 +8,11 @@ open Microsoft.Build.Framework
 open Microsoft.Build.Utilities
 
 [<MSBuildMultiThreadableTask>]
-type SubstituteText(taskEnvironment: TaskEnvironment) =
-    inherit Task()
+type SubstituteText() =
+    inherit MultiThreadableTask()
 
     let mutable copiedFiles = new ResizeArray<ITaskItem>()
     let mutable embeddedResources: ITaskItem[] = [||]
-    let mutable _taskEnvironment = taskEnvironment
-
-    // Resolve relative paths against this task's TaskEnvironment, not the process current directory.
-    let rootedPath (path: string) =
-        _taskEnvironment.GetAbsolutePath(path).Value
-
-    new() = SubstituteText(TaskEnvironment.Fallback)
-
-    interface IMultiThreadableTask with
-        member _.TaskEnvironment
-            with get () = _taskEnvironment
-            and set (value) = _taskEnvironment <- value
 
     [<Required>]
     member _.EmbeddedResources
@@ -34,7 +22,7 @@ type SubstituteText(taskEnvironment: TaskEnvironment) =
     [<Output>]
     member _.CopiedFiles = copiedFiles.ToArray()
 
-    override _.Execute() =
+    override this.Execute() =
         copiedFiles.Clear()
 
         if not (isNull (box embeddedResources)) then // this check can't fail, the type is non-nullable
@@ -74,7 +62,7 @@ type SubstituteText(taskEnvironment: TaskEnvironment) =
                             item.ItemSpec <- targetPath
 
                             // Transform file
-                            let mutable contents = File.ReadAllText(rootedPath sourcePath)
+                            let mutable contents = File.ReadAllText(this.RootedPath sourcePath)
 
                             if not (String.IsNullOrWhiteSpace(pattern1)) then
                                 let replacement = item.GetMetadata("Replacement1")
@@ -86,10 +74,10 @@ type SubstituteText(taskEnvironment: TaskEnvironment) =
 
                             let directory = Path.GetDirectoryName(targetPath)
 
-                            if not (Directory.Exists(rootedPath directory)) then
-                                Directory.CreateDirectory(rootedPath directory) |> ignore
+                            if not (Directory.Exists(this.RootedPath directory)) then
+                                Directory.CreateDirectory(this.RootedPath directory) |> ignore
 
-                            File.WriteAllText(rootedPath targetPath, contents)
+                            File.WriteAllText(this.RootedPath targetPath, contents)
                         with _ ->
                             ()
 
