@@ -13,7 +13,13 @@ open Microsoft.Build.Utilities
 /// </summary>
 [<MSBuildMultiThreadableTask>]
 type GenerateILLinkSubstitutions() =
-    inherit MultiThreadableTask()
+    inherit Task()
+    let taskEnvironment = TaskEnvironmentState()
+
+    interface IMultiThreadableTask with
+        member _.TaskEnvironment
+            with get () = taskEnvironment.Value
+            and set value = taskEnvironment.Value <- value
 
     /// <summary>
     /// Assembly name to use when generating resource names to be removed.
@@ -80,8 +86,10 @@ type GenerateILLinkSubstitutions() =
             let outputFileName =
                 Path.Combine(this.IntermediateOutputPath, "ILLink.Substitutions.xml")
 
-            Directory.CreateDirectory(this.RootedPath this.IntermediateOutputPath) |> ignore
-            File.WriteAllText(this.RootedPath outputFileName, xmlContent)
+            Directory.CreateDirectory(taskEnvironment.RootedPath this.IntermediateOutputPath)
+            |> ignore
+
+            File.WriteAllText(taskEnvironment.RootedPath outputFileName, xmlContent)
 
             // Create a TaskItem for the generated file
             let item = TaskItem(outputFileName) :> ITaskItem

@@ -18,12 +18,9 @@ open Internal.Utilities
 //rest can be "backdoored" through the .OtherFlags property.
 
 [<MSBuildMultiThreadableTask>]
-type public Fsi(taskEnvironment: TaskEnvironment) as this =
+type public Fsi() as this =
 
     inherit ToolTask()
-
-    // Assign before the eager toolPath binding below, which resolves against it.
-    do this.TaskEnvironment <- taskEnvironment
 
     let mutable capturedArguments: string list = [] // list of individual args, to pass to HostObject Compile()
     let mutable capturedFilenames: string list = [] // list of individual source filenames, to pass to HostObject Compile()
@@ -48,20 +45,10 @@ type public Fsi(taskEnvironment: TaskEnvironment) as this =
     let mutable tailcalls: bool = true
     let mutable targetProfile: string | null = null
 
-    let mutable toolPath: string =
-        let locationOfThisDll =
-            try
-                Some(Path.GetDirectoryName(typeof<Fsi>.Assembly.Location))
-            with _ ->
-                None
+    let defaultToolPath () =
+        TaskEnvironmentPaths.defaultCompilerToolPath this.TaskEnvironment typeof<Fsi>
 
-        match
-            FSharpEnvironment.BinFolderOfDefaultFSharpCompilerUsingEnvironment
-                (fun name -> this.TaskEnvironment.GetEnvironmentVariable name)
-                locationOfThisDll
-        with
-        | Some s -> s
-        | None -> ""
+    let mutable toolPath: string option = None
 
     let mutable treatWarningsAsErrors: bool = false
     let mutable warningsAsErrors: string | null = null
@@ -168,8 +155,6 @@ type public Fsi(taskEnvironment: TaskEnvironment) as this =
 
     let textOutput =
         lazy System.Collections.Generic.Queue<_>(defaultArg bufferLimit 1024)
-
-    new() = Fsi(TaskEnvironment.Fallback)
 
     override this.LogEventsFromTextOutput(line, msgImportance) =
         if this.CaptureTextOutput then
@@ -286,8 +271,8 @@ type public Fsi(taskEnvironment: TaskEnvironment) as this =
 
     // For targeting other folders for "fsi.exe" (or ToolExe if different)
     member _.ToolPath
-        with get () = toolPath
-        and set value = toolPath <- value
+        with get () = Option.defaultWith defaultToolPath toolPath
+        and set value = toolPath <- Some value
 
     // --use:<string>: execute an F# source file on startup
     member _.UseSources
@@ -332,6 +317,8 @@ type public Fsi(taskEnvironment: TaskEnvironment) as this =
             base.StandardOutputEncoding
 
     override fsi.GenerateFullPathToTool() =
+        let toolPath = fsi.ToolPath
+
         if toolPath = "" then
             raise (new System.InvalidOperationException(FSBuild.SR.toolpathUnknown ()))
 

@@ -83,10 +83,6 @@ type FileTaskEnvironmentTests() =
                     body environmentA directoryA environmentB directoryB
                     Assert.Empty(Directory.GetFiles(decoy.FullName, "*", SearchOption.AllDirectories))))
 
-    let assign environment (task: #IMultiThreadableTask) =
-        (task :> IMultiThreadableTask).TaskEnvironment <- environment
-        task
-
     let createResourceTask kind environment engine (input: string) (intermediate: string) =
         match kind with
         | Resx ->
@@ -98,7 +94,7 @@ type FileTaskEnvironmentTests() =
                 EmbeddedResource = [| item |],
                 IntermediateOutputPath = intermediate
             )
-            |> assign environment
+            |> assignTaskEnvironment environment
             |> ResxTask
         | Text ->
             FSharpEmbedResourceText(
@@ -106,7 +102,7 @@ type FileTaskEnvironmentTests() =
                 EmbeddedText = [| TaskItem(input) :> ITaskItem |],
                 IntermediateOutputPath = intermediate
             )
-            |> assign environment
+            |> assignTaskEnvironment environment
             |> TextTask
 
     let executeResourceTask =
@@ -148,7 +144,7 @@ type FileTaskEnvironmentTests() =
                     AssemblyAttributes = [| TaskItem(name) :> ITaskItem |],
                     OutputFile = (TaskItem("Generated.fs") :> ITaskItem)
                 )
-                |> assign environment
+                |> assignTaskEnvironment environment
 
             let taskA = makeTask "AssemblyMetadataA" environmentA
             let taskB = makeTask "AssemblyMetadataB" environmentB
@@ -177,7 +173,7 @@ type FileTaskEnvironmentTests() =
                     OutputDirectory = (TaskItem("SubDir") :> ITaskItem),
                     OutputFile = (TaskItem("Generated2.fs") :> ITaskItem)
                 )
-                |> assign environment
+                |> assignTaskEnvironment environment
 
             Assert.True(task.Execute())
             assertFileExists "OutputDirectory quirk" (Path.Combine(directory.FullName, "Generated2.fs"))
@@ -193,7 +189,7 @@ type FileTaskEnvironmentTests() =
                     AssemblyName = assemblyName,
                     IntermediateOutputPath = intermediate
                 )
-                |> assign environment
+                |> assignTaskEnvironment environment
 
             let intermediateA = Path.Combine("obj", "DebugA")
             let intermediateB = Path.Combine("obj", "DebugB")
@@ -390,7 +386,7 @@ type FileTaskEnvironmentTests() =
                 item.SetMetadata("Pattern1", "PLACEHOLDER")
                 item.SetMetadata("Replacement1", "REPLACED")
                 SubstituteText(BuildEngine = MockEngine(), EmbeddedResources = [| item |])
-                |> assign environment
+                |> assignTaskEnvironment environment
 
             let taskA, taskB = makeTask environmentA, makeTask environmentB
             let scenario = "SubstituteText isolates relative input and output paths per task"
@@ -418,7 +414,7 @@ type FileTaskEnvironmentTests() =
 
             let task =
                 SubstituteText(BuildEngine = MockEngine(), EmbeddedResources = [| item |])
-                |> assign environment
+                |> assignTaskEnvironment environment
 
             Assert.True(task.Execute())
             let expectedItemSpec = Path.Combine("obj", "Missing.txt")

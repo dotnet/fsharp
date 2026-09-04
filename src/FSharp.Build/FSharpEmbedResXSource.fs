@@ -12,11 +12,12 @@ open Microsoft.Build.Utilities
 
 [<MSBuildMultiThreadableTask>]
 type FSharpEmbedResXSource() as this =
-    inherit MultiThreadableTask()
+    inherit Task()
     let mutable _embeddedText: ITaskItem[] = [||]
     let mutable _generatedSource: ITaskItem[] = [||]
     let mutable _outputPath: string = ""
     let mutable _targetFramework: string = ""
+    let taskEnvironment = TaskEnvironmentState()
 
     let failTask fmt =
         Printf.ksprintf
@@ -55,10 +56,10 @@ module internal {1} =
 
             // simple up-to-date check
             if
-                File.Exists(this.RootedPath resx)
-                && File.Exists(this.RootedPath sourcePath)
-                && File.GetLastWriteTimeUtc(this.RootedPath resx)
-                   <= File.GetLastWriteTimeUtc(this.RootedPath sourcePath)
+                File.Exists(taskEnvironment.RootedPath resx)
+                && File.Exists(taskEnvironment.RootedPath sourcePath)
+                && File.GetLastWriteTimeUtc(taskEnvironment.RootedPath resx)
+                   <= File.GetLastWriteTimeUtc(taskEnvironment.RootedPath sourcePath)
             then
                 printMessage "Skipping generation: '%s' since it is up-to-date." sourcePath
                 Some(sourcePath)
@@ -90,7 +91,7 @@ module internal {1} =
                 let body =
                     let xname = XName.op_Implicit
 
-                    XDocument.Load(this.RootedPath resx).Descendants(xname "data")
+                    XDocument.Load(taskEnvironment.RootedPath resx).Descendants(xname "data")
                     |> Seq.fold
                         (fun (sb: StringBuilder) (node: XElement) ->
                             let name =
@@ -128,7 +129,7 @@ module internal {1} =
                             sb.AppendLine().Append(commentBody).AppendLine(accessorBody))
                         sb
 
-                File.WriteAllText(this.RootedPath sourcePath, body.ToString())
+                File.WriteAllText(taskEnvironment.RootedPath sourcePath, body.ToString())
                 printMessage "Done: %s" sourcePath
                 Some(sourcePath)
         with
@@ -140,10 +141,15 @@ module internal {1} =
                 sprintf
                     "An exception occurred when processing '%s': %s"
                     resx
-                    (this.RestoreOriginalPaths (e.ToString()) (List.ofSeq originalPaths))
+                    (taskEnvironment.RestoreOriginalPaths (e.ToString()) (List.ofSeq originalPaths))
             )
 
             None
+
+    interface IMultiThreadableTask with
+        member _.TaskEnvironment
+            with get () = taskEnvironment.Value
+            and set value = taskEnvironment.Value <- value
 
     [<Required>]
     member _.EmbeddedResource

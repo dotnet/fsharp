@@ -57,9 +57,21 @@ type MultiThreadedTaskTests() =
 
     [<Theory>]
     [<MemberData(nameof MultiThreadedTaskTests.MultiThreadableTaskTypes)>]
-    member _.``task is marked directly multithreadable`` (taskType: Type) =
+    member _.``task preserves its public shape and is marked directly multithreadable`` (taskType: Type) =
         let attributes = taskType.GetCustomAttributes(typeof<MSBuildMultiThreadableTaskAttribute>, false)
         Assert.True(attributes.Length = 1, $"{taskType.Name}: expected one direct multithreadable attribute")
+        Assert.NotNull(taskType.GetConstructor(Type.EmptyTypes))
+        Assert.Single(taskType.GetConstructors()) |> ignore
+
+        let expectedBase =
+            if taskType = typeof<Fsc> || taskType = typeof<Fsi> then
+                typeof<ToolTask>
+            elif taskType = typeof<CreateFSharpManifestResourceName> then
+                typeof<Microsoft.Build.Tasks.CreateCSharpManifestResourceName>
+            else
+                typeof<Microsoft.Build.Utilities.Task>
+
+        Assert.Equal(expectedBase, taskType.BaseType)
 
 type FscFsiMultiThreadedTaskTests() =
 
@@ -70,8 +82,11 @@ type FscFsiMultiThreadedTaskTests() =
         variables["FSHARP_COMPILER_BIN"] <- compilerBin
         TaskEnvironment.CreateWithProjectDirectoryAndEnvironment(projectDirectory, variables), compilerBin
 
-    let fscTask = "Fsc", "fsc.exe", (fun environment -> box (Fsc(environment)))
-    let fsiTask = "Fsi", "fsi.exe", (fun environment -> box (Fsi(environment)))
+    let fscTask =
+        "Fsc", "fsc.exe", (fun environment -> Fsc() |> assignTaskEnvironment environment |> box)
+
+    let fsiTask =
+        "Fsi", "fsi.exe", (fun environment -> Fsi() |> assignTaskEnvironment environment |> box)
     let compilerTasks = [ fscTask; fsiTask ]
 
     [<Fact>]

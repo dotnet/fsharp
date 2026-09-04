@@ -7,7 +7,7 @@ open System.IO
 open System.Runtime.InteropServices
 open System.Text
 open Microsoft.Build.Framework
-open Microsoft.Build.Utilities
+open Internal.Utilities
 
 module internal TaskEnvironmentPaths =
 
@@ -23,6 +23,16 @@ module internal TaskEnvironmentPaths =
             pathToTool
         else
             taskEnvironment.GetAbsolutePath(pathToTool).Value
+
+    let defaultCompilerToolPath (taskEnvironment: TaskEnvironment) (taskType: Type) =
+        let probePoint =
+            try
+                Some(Path.GetDirectoryName(taskType.Assembly.Location))
+            with _ ->
+                None
+
+        FSharpEnvironment.BinFolderOfDefaultFSharpCompilerUsingEnvironment taskEnvironment.GetEnvironmentVariable probePoint
+        |> Option.defaultValue ""
 
     // netstandard2.0 has no String.Replace(string, string, StringComparison) overload.
     let private replaceOrdinal (source: string) (oldValue: string) (newValue: string) =
@@ -76,21 +86,14 @@ module internal TaskEnvironmentPaths =
         (message, replacements)
         ||> List.fold (fun message (rooted, original) -> replaceOrdinal message rooted original)
 
-/// Base for multithreadable FSharp.Build tasks: carries the per-task TaskEnvironment so relative
-/// paths resolve against it instead of the shared process current directory.
-[<AbstractClass>]
-type MultiThreadableTask() =
-    inherit Task()
+type internal TaskEnvironmentState() =
+    let mutable value = TaskEnvironment.Fallback
 
-    let mutable taskEnvironment = TaskEnvironment.Fallback
+    member _.Value
+        with get () = value
+        and set environment = value <- environment
 
-    member internal _.RootedPath(path: string) =
-        taskEnvironment.GetAbsolutePath(path).Value
+    member _.RootedPath(path: string) = value.GetAbsolutePath(path).Value
 
-    member internal _.RestoreOriginalPaths (message: string) (originalPaths: string list) =
-        TaskEnvironmentPaths.restoreOriginalPaths taskEnvironment message originalPaths
-
-    interface IMultiThreadableTask with
-        member _.TaskEnvironment
-            with get () = taskEnvironment
-            and set value = taskEnvironment <- value
+    member _.RestoreOriginalPaths (message: string) (originalPaths: string list) =
+        TaskEnvironmentPaths.restoreOriginalPaths value message originalPaths

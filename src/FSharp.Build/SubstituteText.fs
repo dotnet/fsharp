@@ -9,10 +9,16 @@ open Microsoft.Build.Utilities
 
 [<MSBuildMultiThreadableTask>]
 type SubstituteText() =
-    inherit MultiThreadableTask()
+    inherit Task()
 
     let mutable copiedFiles = new ResizeArray<ITaskItem>()
     let mutable embeddedResources: ITaskItem[] = [||]
+    let taskEnvironment = TaskEnvironmentState()
+
+    interface IMultiThreadableTask with
+        member _.TaskEnvironment
+            with get () = taskEnvironment.Value
+            and set value = taskEnvironment.Value <- value
 
     [<Required>]
     member _.EmbeddedResources
@@ -62,7 +68,7 @@ type SubstituteText() =
                             item.ItemSpec <- targetPath
 
                             // Transform file
-                            let mutable contents = File.ReadAllText(this.RootedPath sourcePath)
+                            let mutable contents = File.ReadAllText(taskEnvironment.RootedPath sourcePath)
 
                             if not (String.IsNullOrWhiteSpace(pattern1)) then
                                 let replacement = item.GetMetadata("Replacement1")
@@ -74,10 +80,10 @@ type SubstituteText() =
 
                             let directory = Path.GetDirectoryName(targetPath)
 
-                            if not (Directory.Exists(this.RootedPath directory)) then
-                                Directory.CreateDirectory(this.RootedPath directory) |> ignore
+                            if not (Directory.Exists(taskEnvironment.RootedPath directory)) then
+                                Directory.CreateDirectory(taskEnvironment.RootedPath directory) |> ignore
 
-                            File.WriteAllText(this.RootedPath targetPath, contents)
+                            File.WriteAllText(taskEnvironment.RootedPath targetPath, contents)
                         with _ ->
                             ()
 

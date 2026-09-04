@@ -13,11 +13,12 @@ exception TaskFailed
 
 [<MSBuildMultiThreadableTask>]
 type FSharpEmbedResourceText() as this =
-    inherit MultiThreadableTask()
+    inherit Task()
     let mutable _embeddedText: ITaskItem[] = [||]
     let mutable _generatedSource: ITaskItem[] = [||]
     let mutable _generatedResx: ITaskItem[] = [||]
     let mutable _outputPath: string = ""
+    let taskEnvironment = TaskEnvironmentState()
 
     let PrintErr (fileName, line, msg) =
         this.Log.LogError(null, null, null, fileName, line, 0, 0, 0, msg, Array.empty)
@@ -428,26 +429,29 @@ open Printf
                         justFileName
                 )
 
-            let condition1 = File.Exists(this.RootedPath outFileName)
-            let condition2 = condition1 && File.Exists(this.RootedPath outXmlFileName)
-            let condition3 = condition2 && File.Exists(this.RootedPath fileName)
+            let condition1 = File.Exists(taskEnvironment.RootedPath outFileName)
+
+            let condition2 =
+                condition1 && File.Exists(taskEnvironment.RootedPath outXmlFileName)
+
+            let condition3 = condition2 && File.Exists(taskEnvironment.RootedPath fileName)
 
             let condition4 =
                 condition3
-                && (File.GetLastWriteTimeUtc(this.RootedPath fileName)
-                    <= File.GetLastWriteTimeUtc(this.RootedPath outFileName))
+                && (File.GetLastWriteTimeUtc(taskEnvironment.RootedPath fileName)
+                    <= File.GetLastWriteTimeUtc(taskEnvironment.RootedPath outFileName))
 
             let condition5 =
                 condition4
-                && (File.GetLastWriteTimeUtc(this.RootedPath fileName)
-                    <= File.GetLastWriteTimeUtc(this.RootedPath outXmlFileName))
+                && (File.GetLastWriteTimeUtc(taskEnvironment.RootedPath fileName)
+                    <= File.GetLastWriteTimeUtc(taskEnvironment.RootedPath outXmlFileName))
 
             // A generated file does not record whether it was generated with RichText, so the flag has
             // to be recovered from the open the generator emits for it, or an existing file would be
             // taken as up-to-date after the flag changed
             let condition6 =
                 condition5
-                && (richText = (File.ReadLines(this.RootedPath outFileName)
+                && (richText = (File.ReadLines(taskEnvironment.RootedPath outFileName)
                                 |> Seq.truncate 40
                                 |> Seq.contains richTextOpen))
 
@@ -471,7 +475,7 @@ open Printf
                 printMessage "Reading %s" fileName
 
                 let lines =
-                    File.ReadAllLines(this.RootedPath fileName)
+                    File.ReadAllLines(taskEnvironment.RootedPath fileName)
                     |> Array.mapi (fun i s -> i, s) // keep line numbers
                     |> Array.filter (fun (_i, s) -> not (s.StartsWith "#")) // filter out comments
 
@@ -517,9 +521,12 @@ open Printf
                     allStrs.Add(str, (line, ident))
 
                 printMessage "Generating %s" outFileName
-                use outStream = File.Create(this.RootedPath outFileName)
+                use outStream = File.Create(taskEnvironment.RootedPath outFileName)
                 use out = new StreamWriter(outStream)
-                use outSignatureStream = File.Create(this.RootedPath outFileSignatureName)
+
+                use outSignatureStream =
+                    File.Create(taskEnvironment.RootedPath outFileSignatureName)
+
                 use outSignature = new StreamWriter(outSignatureStream)
                 fprintfn out "// This is a generated file; the original input is '%s'" fileName
                 fprintfn outSignature "// This is a generated file; the original input is '%s'" fileName
@@ -698,7 +705,7 @@ open Printf
                     xnc.AppendChild(xd.CreateTextNode netFormatString) |> ignore
                     xd.LastChild.AppendChild xn |> ignore)
 
-                use outXmlStream = File.Create(this.RootedPath outXmlFileName)
+                use outXmlStream = File.Create(taskEnvironment.RootedPath outXmlFileName)
                 xd.Save outXmlStream
                 printMessage "Done %s" outFileName
                 Some(fileName, outFileSignatureName, outFileName, outXmlFileName)
@@ -709,10 +716,15 @@ open Printf
                 sprintf
                     "An exception occurred when processing '%s'\n%s"
                     fileName
-                    (this.RestoreOriginalPaths (e.ToString()) (List.ofSeq originalPaths))
+                    (taskEnvironment.RestoreOriginalPaths (e.ToString()) (List.ofSeq originalPaths))
             )
 
             None
+
+    interface IMultiThreadableTask with
+        member _.TaskEnvironment
+            with get () = taskEnvironment.Value
+            and set value = taskEnvironment.Value <- value
 
     [<Required>]
     member _.EmbeddedText

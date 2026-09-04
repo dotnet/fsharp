@@ -53,6 +53,10 @@ module BuildTaskTestHelpers =
     let disposeTaskEnvironment (environment: TaskEnvironment) =
         taskEnvironmentDisposeMethod.Invoke(environment, null) |> ignore
 
+    let assignTaskEnvironment environment (task: #IMultiThreadableTask) =
+        (task :> IMultiThreadableTask).TaskEnvironment <- environment
+        task
+
     let withTaskEnvironment body =
         let environment, directory = createTaskEnvironmentInTemporaryDirectory ()
 

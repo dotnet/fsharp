@@ -14,11 +14,12 @@ type EscapedValue = { Escaped: string; Raw: string }
 
 [<MSBuildMultiThreadableTask>]
 type WriteCodeFragment() as this =
-    inherit MultiThreadableTask()
+    inherit Task()
     let mutable _outputDirectory: ITaskItem | null = null
     let mutable _outputFile: ITaskItem | null = null
     let mutable _language: string = ""
     let mutable _assemblyAttributes: ITaskItem[] = [||]
+    let taskEnvironment = TaskEnvironmentState()
 
     let failTask fmt =
         Printf.ksprintf
@@ -203,8 +204,13 @@ type WriteCodeFragment() as this =
                             TaskItem(Path.Combine(outputDirectory.ItemSpec, fileName)) :> ITaskItem
 
                 let codeText = code.ToString()
-                File.WriteAllText(this.RootedPath fileName, codeText)
+                File.WriteAllText(taskEnvironment.RootedPath fileName, codeText)
                 _outputFile <- outputFileItem
                 not this.Log.HasLoggedErrors
         with TaskFailed ->
             false
+
+    interface IMultiThreadableTask with
+        member _.TaskEnvironment
+            with get () = taskEnvironment.Value
+            and set value = taskEnvironment.Value <- value

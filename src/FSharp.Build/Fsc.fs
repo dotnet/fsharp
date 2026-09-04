@@ -17,12 +17,9 @@ open Internal.Utilities
 //rest can be "backdoored" through the .OtherFlags property.
 
 [<MSBuildMultiThreadableTask>]
-type public Fsc(taskEnvironment: TaskEnvironment) as this =
+type public Fsc() as this =
 
     inherit ToolTask()
-
-    // Assign before the eager defaultToolPath binding below, which resolves against it.
-    do this.TaskEnvironment <- taskEnvironment
 
     let mutable baseAddress: string | null = null
     let mutable capturedArguments: string list = [] // list of individual args, to pass to HostObject Compile()
@@ -76,20 +73,8 @@ type public Fsc(taskEnvironment: TaskEnvironment) as this =
     let mutable targetProfile: string | null = null
     let mutable targetType: string | null = null
 
-    let defaultToolPath =
-        let locationOfThisDll =
-            try
-                Some(Path.GetDirectoryName(typeof<Fsc>.Assembly.Location))
-            with _ ->
-                None
-
-        match
-            FSharpEnvironment.BinFolderOfDefaultFSharpCompilerUsingEnvironment
-                (fun name -> this.TaskEnvironment.GetEnvironmentVariable name)
-                locationOfThisDll
-        with
-        | Some s -> s
-        | None -> ""
+    let defaultToolPath () =
+        TaskEnvironmentPaths.defaultCompilerToolPath this.TaskEnvironment typeof<Fsc>
 
     let mutable treatWarningsAsErrors: bool = false
     let mutable useStandardResourceNames: bool = false
@@ -383,8 +368,6 @@ type public Fsc(taskEnvironment: TaskEnvironment) as this =
             builder.AppendSwitch("--refonly")
 
         builder
-
-    new() = Fsc(TaskEnvironment.Fallback)
 
     // --baseaddress
     member _.BaseAddress
@@ -737,6 +720,8 @@ type public Fsc(taskEnvironment: TaskEnvironment) as this =
             base.StandardOutputEncoding
 
     override fsc.GenerateFullPathToTool() =
+        let defaultToolPath = defaultToolPath ()
+
         if defaultToolPath = "" then
             raise (new System.InvalidOperationException(FSBuild.SR.toolpathUnknown ()))
 
