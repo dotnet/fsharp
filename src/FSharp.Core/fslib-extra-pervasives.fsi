@@ -7,7 +7,7 @@ namespace Microsoft.FSharp.Core
 ///
 /// <category>Basic Operators</category>
 [<AutoOpen>]
-module ExtraTopLevelOperators = 
+module ExtraTopLevelOperators =
 
     open System.IO
     open Microsoft.FSharp.Core
@@ -21,7 +21,7 @@ module ExtraTopLevelOperators =
     /// <param name="format">The formatter.</param>
     ///
     /// <returns>The formatted result.</returns>
-    /// 
+    ///
     /// <example>See <c>Printf.printf</c> (link: <see cref='M:Microsoft.FSharp.Core.PrintfModule.PrintFormat``1'/>) for examples.</example>
     [<CompiledName("PrintFormat")>]
     val printf: format: Printf.TextWriterFormat<'T> -> 'T
@@ -31,7 +31,7 @@ module ExtraTopLevelOperators =
     /// <param name="format">The formatter.</param>
     ///
     /// <returns>The formatted result.</returns>
-    /// 
+    ///
     /// <example>See <c>Printf.printfn</c> (link: <see cref='M:Microsoft.FSharp.Core.PrintfModule.PrintFormatLine``1'/>) for examples.</example>
     [<CompiledName("PrintFormatLine")>]
     val printfn: format: Printf.TextWriterFormat<'T> -> 'T
@@ -41,7 +41,7 @@ module ExtraTopLevelOperators =
     /// <param name="format">The formatter.</param>
     ///
     /// <returns>The formatted result.</returns>
-    /// 
+    ///
     /// <example>See <c>Printf.eprintf</c> (link: <see cref='M:Microsoft.FSharp.Core.PrintfModule.PrintFormatToError``1'/>) for examples.</example>
     [<CompiledName("PrintFormatToError")>]
     val eprintf: format: Printf.TextWriterFormat<'T> -> 'T
@@ -51,7 +51,7 @@ module ExtraTopLevelOperators =
     /// <param name="format">The formatter.</param>
     ///
     /// <returns>The formatted result.</returns>
-    /// 
+    ///
     /// <example>See <c>Printf.eprintfn</c> (link: <see cref='M:Microsoft.FSharp.Core.PrintfModule.PrintFormatLineToError``1'/>) for examples.</example>
     [<CompiledName("PrintFormatLineToError")>]
     val eprintfn: format: Printf.TextWriterFormat<'T> -> 'T
@@ -88,7 +88,7 @@ module ExtraTopLevelOperators =
     /// <param name="format">The formatter.</param>
     ///
     /// <returns>The formatted result.</returns>
-    /// 
+    ///
     /// <example>See <c>Printf.sprintf</c> (link: <see cref='M:Microsoft.FSharp.Core.PrintfModule.PrintFormatToStringThen``1'/>) for examples.</example>
     [<CompiledName("PrintFormatToString")>]
     val sprintf: format: Printf.StringFormat<'T> -> 'T
@@ -99,7 +99,7 @@ module ExtraTopLevelOperators =
     /// <param name="format">The formatter.</param>
     ///
     /// <returns>The formatted result.</returns>
-    /// 
+    ///
     /// <example>See <c>Printf.failwithf</c> (link: <see cref='M:Microsoft.FSharp.Core.PrintfModule.PrintFormatToStringThenFail``2'/>) for examples.</example>
     [<CompiledName("PrintFormatToStringThenFail")>]
     val failwithf: format: Printf.StringFormat<'T,'Result> -> 'T
@@ -110,7 +110,7 @@ module ExtraTopLevelOperators =
     /// <param name="format">The formatter.</param>
     ///
     /// <returns>The formatted result.</returns>
-    /// 
+    ///
     /// <example>See <c>Printf.fprintf</c> (link: <see cref='M:Microsoft.FSharp.Core.PrintfModule.PrintFormatToTextWriter``1'/>) for examples.</example>
     [<CompiledName("PrintFormatToTextWriter")>]
     val fprintf: textWriter: TextWriter -> format:Printf.TextWriterFormat<'T> -> 'T
@@ -121,7 +121,7 @@ module ExtraTopLevelOperators =
     /// <param name="format">The formatter.</param>
     ///
     /// <returns>The formatted result.</returns>
-    /// 
+    ///
     /// <example>See <c>Printf.fprintfn</c> (link: <see cref='M:Microsoft.FSharp.Core.PrintfModule.PrintFormatLineToTextWriter``1'/>) for examples.</example>
     [<CompiledName("PrintFormatLineToTextWriter")>]
     val fprintfn : textWriter: TextWriter -> format:Printf.TextWriterFormat<'T> -> 'T
@@ -131,7 +131,7 @@ module ExtraTopLevelOperators =
     /// <param name="elements">The input sequence of elements.</param>
     ///
     /// <returns>The created set.</returns>
-    /// 
+    ///
     /// <example id="set-1">
     /// <code lang="fsharp">
     /// let values = set [ 1; 2; 3; 5; 7; 11 ]
@@ -142,7 +142,7 @@ module ExtraTopLevelOperators =
     val set: elements: seq<'T> -> Set<'T>
 
     /// <summary>Builds an asynchronous workflow using computation expression syntax.</summary>
-    /// 
+    ///
     /// <example id="async-1">
     /// <code lang="fsharp">
     /// let sleepExample() =
@@ -161,9 +161,9 @@ module ExtraTopLevelOperators =
 
     /// <summary>Converts the argument to 32-bit float.</summary>
     ///
-    /// <remarks>This is a direct conversion for all 
+    /// <remarks>This is a direct conversion for all
     /// primitive numeric types. For strings, the input is converted using <c>Single.Parse()</c>  with InvariantCulture settings. Otherwise the operation requires and invokes a <c>ToSingle</c> method on the input type.</remarks>
-    /// 
+    ///
     /// <example id="single-1">
     /// <code lang="fsharp">
     /// single 45
@@ -175,16 +175,16 @@ module ExtraTopLevelOperators =
 
     /// <summary>Converts the argument to 64-bit float.</summary>
     ///
-    /// <remarks>This is a direct conversion for all 
+    /// <remarks>This is a direct conversion for all
     /// primitive numeric types. For strings, the input is converted using <c>Double.Parse()</c>  with InvariantCulture settings. Otherwise the operation requires and invokes a <c>ToDouble</c> method on the input type.</remarks>
-    /// 
+    ///
     /// <example id="double-1">
     /// <code lang="fsharp">
     /// double 45
     /// </code>
     /// Evaluates to <c>45.0</c>.
     /// </example>
-    /// 
+    ///
     /// <example id="double-2">
     /// <code lang="fsharp">
     /// double 12.3f
@@ -195,9 +195,9 @@ module ExtraTopLevelOperators =
     val inline double: value: ^T -> double when ^T : (static member op_Explicit : ^T -> double) and default ^T : int
 
     /// <summary>Converts the argument to byte.</summary>
-    /// <remarks>This is a direct conversion for all 
+    /// <remarks>This is a direct conversion for all
     /// primitive numeric types. For strings, the input is converted using <c>Byte.Parse()</c> on strings and otherwise requires a <c>ToByte</c> method on the input type.</remarks>
-    /// 
+    ///
     /// <example id="uint8-1">
     /// <code lang="fsharp">
     /// uint8 12
@@ -205,20 +205,20 @@ module ExtraTopLevelOperators =
     /// Evaluates to <c>12uy</c>.
     /// </example>
     [<CompiledName("ToByte")>]
-    val inline uint8: value: ^T -> uint8 when ^T : (static member op_Explicit : ^T -> uint8) and default ^T : int        
-    
+    val inline uint8: value: ^T -> uint8 when ^T : (static member op_Explicit : ^T -> uint8) and default ^T : int
+
     /// <summary>Converts the argument to signed byte.</summary>
-    /// <remarks>This is a direct conversion for all 
+    /// <remarks>This is a direct conversion for all
     /// primitive numeric types. For strings, the input is converted using <c>SByte.Parse()</c>  with InvariantCulture settings.
     /// Otherwise the operation requires and invokes a <c>ToSByte</c> method on the input type.</remarks>
-    /// 
+    ///
     /// <example id="int8-1">
     /// <code lang="fsharp">
     /// int8 -12
     /// </code>
     /// Evaluates to <c>-12y</c>.
     /// </example>
-    /// 
+    ///
     /// <example id="int8-2">
     /// <code lang="fsharp">
     /// int8 "3"
@@ -228,19 +228,19 @@ module ExtraTopLevelOperators =
     [<CompiledName("ToSByte")>]
     val inline int8: value: ^T -> int8 when ^T : (static member op_Explicit : ^T -> int8) and default ^T : int
 
-    module Checked = 
+    module Checked =
 
         /// <summary>Converts the argument to byte.</summary>
-        /// <remarks>This is a direct, checked conversion for all 
+        /// <remarks>This is a direct, checked conversion for all
         /// primitive numeric types. For strings, the input is converted using <c>Byte.Parse()</c> on strings and otherwise requires a <c>ToByte</c> method on the input type.</remarks>
-        /// 
+        ///
         /// <example id="uint8-1">
         /// <code lang="fsharp">
         /// Checked.uint8 12
         /// </code>
         /// Evaluates to <c>-12y</c>.
         /// </example>
-        /// 
+        ///
         /// <example id="uint8-2">
         /// <code lang="fsharp">
         /// Checked.uint8 -12
@@ -248,20 +248,20 @@ module ExtraTopLevelOperators =
         /// Throws <c>System.OverflowException</c>.
         /// </example>
         [<CompiledName("ToByte")>]
-        val inline uint8: value: ^T -> byte when ^T : (static member op_Explicit : ^T -> uint8) and default ^T : int        
-    
+        val inline uint8: value: ^T -> byte when ^T : (static member op_Explicit : ^T -> uint8) and default ^T : int
+
         /// <summary>Converts the argument to signed byte.</summary>
-        /// <remarks>This is a direct, checked conversion for all 
+        /// <remarks>This is a direct, checked conversion for all
         /// primitive numeric types. For strings, the input is converted using <c>SByte.Parse()</c>  with InvariantCulture settings.
         /// Otherwise the operation requires and invokes a <c>ToSByte</c> method on the input type.</remarks>
-        /// 
+        ///
         /// <example id="int8-1">
         /// <code lang="fsharp">
         /// Checked.int8 -12
         /// </code>
         /// Evaluates to <c>-12y</c>.
         /// </example>
-        /// 
+        ///
         /// <example id="int8-2">
         /// <code lang="fsharp">
         /// Checked.int8 "129"
@@ -272,7 +272,7 @@ module ExtraTopLevelOperators =
         val inline int8: value: ^T -> sbyte when ^T : (static member op_Explicit : ^T -> int8) and default ^T : int
 
     /// <summary>Builds a read-only lookup table from a sequence of key/value pairs. The key objects are indexed using generic hashing and equality.</summary>
-    /// 
+    ///
     /// <example id="dict-1">
     /// <code lang="fsharp">
     /// let table = dict [ (1, 100); (2, 200) ]
@@ -281,7 +281,7 @@ module ExtraTopLevelOperators =
     /// </code>
     /// Evaluates to <c>100</c>.
     /// </example>
-    /// 
+    ///
     /// <example id="dict-2">
     /// <code lang="fsharp">
     /// let table = dict [ (1, 100); (2, 200) ]
@@ -294,7 +294,7 @@ module ExtraTopLevelOperators =
     val dict: keyValuePairs: seq<'Key * 'Value> -> System.Collections.Generic.IDictionary<'Key,'Value> when 'Key : equality
 
     /// <summary>Builds a read-only lookup table from a sequence of key/value pairs. The key objects are indexed using generic hashing and equality.</summary>
-    /// 
+    ///
     /// <example id="readonlydict-1">
     /// <code lang="fsharp">
     /// let table = readOnlyDict [ (1, 100); (2, 200) ]
@@ -303,7 +303,7 @@ module ExtraTopLevelOperators =
     /// </code>
     /// Evaluates to <c>100</c>.
     /// </example>
-    /// 
+    ///
     /// <example id="readonlydict-2">
     /// <code lang="fsharp">
     /// let table = readOnlyDict [ (1, 100); (2, 200) ]
@@ -316,7 +316,7 @@ module ExtraTopLevelOperators =
     val readOnlyDict: keyValuePairs: seq<'Key * 'Value> -> System.Collections.Generic.IReadOnlyDictionary<'Key,'Value> when 'Key : equality
 
     /// <summary>Builds a 2D array from a sequence of sequences of elements.</summary>
-    /// 
+    ///
     /// <example id="array2d-1">
     /// <code lang="fsharp">
     /// array2D [ [ 1.0; 2.0 ]; [ 3.0; 4.0 ] ]
@@ -327,7 +327,7 @@ module ExtraTopLevelOperators =
     val array2D: rows: seq<#seq<'T>> -> 'T[,]
 
     /// <summary>Special prefix operator for splicing typed expressions into quotation holes.</summary>
-    /// 
+    ///
     /// <example id="splice-1">
     /// <code lang="fsharp">
     /// let f v = &lt;@ %v + %v @>
@@ -340,7 +340,7 @@ module ExtraTopLevelOperators =
     val (~%): expression: Expr<'T> -> 'T
 
     /// <summary>Special prefix operator for splicing untyped expressions into quotation holes.</summary>
-    /// 
+    ///
     /// <example id="rawsplice-1">
     /// <code lang="fsharp">
     /// let f v = &lt;@@ (%%v: int) + (%%v: int) @@>
@@ -353,7 +353,7 @@ module ExtraTopLevelOperators =
     val (~%%): expression: Expr -> 'T
 
     /// <summary>An active pattern to force the execution of values of type <c>Lazy&lt;_&gt;</c>.</summary>
-    /// 
+    ///
     /// <example id="lazy-1">
     /// <code lang="fsharp">
     /// let f (Lazy v) = v + v
@@ -369,7 +369,7 @@ module ExtraTopLevelOperators =
     val (|Lazy|): input: Lazy<'T> -> 'T
 
     /// <summary>Builds a query using query syntax and operators.</summary>
-    /// 
+    ///
     /// <example id="query-1">
     /// <code lang="fsharp">
     /// let findEvensAndSortAndDouble(xs: System.Linq.IQueryable&lt;int>) =
@@ -403,11 +403,11 @@ namespace Microsoft.FSharp.Core.CompilerServices
     ///   also <a href="https://learn.microsoft.com/dotnet/fsharp/tutorials/type-providers/">F# Type Providers</a> in the F# Language Guide.
     /// </summary></namespacedoc>
     [<Sealed>]
-    type MeasureProduct<'Measure1, 'Measure2> 
+    type MeasureProduct<'Measure1, 'Measure2>
 
     /// <summary>Represents the inverse of a measure expressions when returned as a generic argument of a provided type.</summary>
     [<Sealed>]
-    type MeasureInverse<'Measure> 
+    type MeasureInverse<'Measure>
 
     /// <summary>Represents the '1' measure expression when returned as a generic argument of a provided type.</summary>
     [<Sealed>]
@@ -427,10 +427,10 @@ namespace Microsoft.FSharp.Core.CompilerServices
         | SuppressRelocate = 0x80000000
         | IsErased = 0x40000000
 
-    /// <summary>Place this attribute on a runtime assembly to indicate that there is a corresponding design-time 
+    /// <summary>Place this attribute on a runtime assembly to indicate that there is a corresponding design-time
     /// assembly that contains a type provider. Runtime and design-time assembly may be the same. </summary>
     [<AttributeUsageAttribute(AttributeTargets.Assembly, AllowMultiple = false)>]
-    type TypeProviderAssemblyAttribute = 
+    type TypeProviderAssemblyAttribute =
         inherit Attribute
 
         /// <summary>Creates an instance of the attribute</summary>
@@ -445,10 +445,10 @@ namespace Microsoft.FSharp.Core.CompilerServices
         /// <summary>Gets the assembly name.</summary>
         member AssemblyName : string
 
-    /// <summary>A type provider may provide an instance of this attribute to indicate the documentation to show for 
+    /// <summary>A type provider may provide an instance of this attribute to indicate the documentation to show for
     /// a provided type or member.</summary>
     [<AttributeUsageAttribute(AttributeTargets.All, AllowMultiple = false)>]
-    type TypeProviderXmlDocAttribute = 
+    type TypeProviderXmlDocAttribute =
         inherit Attribute
 
         /// <summary>Creates an instance of the attribute</summary>
@@ -460,7 +460,7 @@ namespace Microsoft.FSharp.Core.CompilerServices
 
     /// <summary>A type provider may provide an instance of this attribute to indicate the definition location for a provided type or member.</summary>
     [<AttributeUsageAttribute(AttributeTargets.All, AllowMultiple = false)>]
-    type TypeProviderDefinitionLocationAttribute = 
+    type TypeProviderDefinitionLocationAttribute =
         inherit Attribute
         new : unit -> TypeProviderDefinitionLocationAttribute
 
@@ -475,7 +475,7 @@ namespace Microsoft.FSharp.Core.CompilerServices
 
     /// <summary>Indicates that a code editor should hide all System.Object methods from the intellisense menus for instances of a provided type</summary>
     [<AttributeUsageAttribute(AttributeTargets.Class ||| AttributeTargets.Interface ||| AttributeTargets.Struct ||| AttributeTargets.Delegate, AllowMultiple = false)>]
-    type TypeProviderEditorHideMethodsAttribute = 
+    type TypeProviderEditorHideMethodsAttribute =
         inherit Attribute
 
         /// <summary>Creates an instance of the attribute</summary>
@@ -504,7 +504,7 @@ namespace Microsoft.FSharp.Core.CompilerServices
         /// Get the full path to use for temporary files for the type provider instance.
         member TemporaryFolder : string with get,set
 
-        /// Indicates if the type provider host responds to invalidation events for type provider instances. 
+        /// Indicates if the type provider host responds to invalidation events for type provider instances.
         member IsInvalidationSupported : bool with get,set
 
         /// Indicates if the type provider instance is used in an environment which executes provided code such as F# Interactive.
@@ -524,13 +524,13 @@ namespace Microsoft.FSharp.Core.CompilerServices
         abstract NamespaceName : string
 
         /// The sub-namespaces in this namespace. An optional member to prevent generation of namespaces until an outer namespace is explored.
-        abstract GetNestedNamespaces : unit -> IProvidedNamespace array 
+        abstract GetNestedNamespaces : unit -> IProvidedNamespace array
 
         /// <summary>
         /// The top-level types
         /// </summary>
         /// <returns></returns>
-        abstract GetTypes : unit -> Type array 
+        abstract GetTypes : unit -> Type array
 
         /// <summary>
         /// Compilers call this method to query a type provider for a type <c>name</c>.
@@ -549,10 +549,10 @@ namespace Microsoft.FSharp.Core.CompilerServices
         /// <summary>
         /// Gets the namespaces provided by the type provider.
         /// </summary>
-        abstract GetNamespaces : unit -> IProvidedNamespace array 
+        abstract GetNamespaces : unit -> IProvidedNamespace array
 
         /// <summary>
-        /// Get the static parameters for a provided type. 
+        /// Get the static parameters for a provided type.
         /// </summary>
         ///
         /// <param name="typeWithoutArguments">A type returned by GetTypes or ResolveTypeName</param>
@@ -561,7 +561,7 @@ namespace Microsoft.FSharp.Core.CompilerServices
         abstract GetStaticParameters : typeWithoutArguments:Type -> ParameterInfo array
 
         /// <summary>
-        /// Apply static arguments to a provided type that accepts static arguments. 
+        /// Apply static arguments to a provided type that accepts static arguments.
         /// </summary>
         ///
         /// <remarks>The provider must return a type with the given mangled name.</remarks>
@@ -571,7 +571,7 @@ namespace Microsoft.FSharp.Core.CompilerServices
         /// <param name="staticArguments">the static parameters, indexed by name</param>
         ///
         /// <returns></returns>
-        abstract ApplyStaticArguments : typeWithoutArguments:Type * typePathWithArguments:string array * staticArguments:objnull array -> Type 
+        abstract ApplyStaticArguments : typeWithoutArguments:Type * typePathWithArguments:string array * staticArguments:objnull array -> Type
 
         /// <summary>
         /// Called by the compiler to ask for an Expression tree to replace the given MethodBase with.
@@ -598,16 +598,16 @@ namespace Microsoft.FSharp.Core.CompilerServices
     type ITypeProvider2 =
 
         /// <summary>
-        /// Get the static parameters for a provided method. 
+        /// Get the static parameters for a provided method.
         /// </summary>
         ///
         /// <param name="methodWithoutArguments">A method returned by GetMethod on a provided type</param>
         ///
         /// <returns>The static parameters of the provided method, if any</returns>
-        abstract GetStaticParametersForMethod : methodWithoutArguments:MethodBase -> ParameterInfo array 
+        abstract GetStaticParametersForMethod : methodWithoutArguments:MethodBase -> ParameterInfo array
 
         /// <summary>
-        /// Apply static arguments to a provided method that accepts static arguments. 
+        /// Apply static arguments to a provided method that accepts static arguments.
         /// </summary>
         /// <remarks>The provider must return a provided method with the given mangled name.</remarks>
         /// <param name="methodWithoutArguments">the provided method definition which has static parameters</param>

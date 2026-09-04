@@ -7,14 +7,14 @@ open System
 open System.Runtime.InteropServices
 
 /// Narrow abstraction over the project system.
-type internal AdviseProjectSiteChanges = delegate of unit -> unit  
+type internal AdviseProjectSiteChanges = delegate of unit -> unit
 
 [<ComImport; InterfaceType(ComInterfaceType.InterfaceIsIUnknown); Guid("ad98f020-bad0-0000-0000-abc037459871")>]
 type internal IProvideProjectSite =
     abstract GetProjectSite : unit -> IProjectSite
 
 /// Represents known F#-specific information about a project.
-and internal IProjectSite = 
+and internal IProjectSite =
 
     /// List of files in the project. In the correct order.
     abstract CompilationSourceFiles : string[]
@@ -37,17 +37,17 @@ and internal IProjectSite =
 
     /// Register for notifications when project is cleaned/rebuilt (and thus any live TypeProviders should be refreshed)
     abstract AdviseProjectSiteCleaned : callbackOwnerKey: string * AdviseProjectSiteChanges -> unit
-    
+
     // Register for notifications when project is closed.
     abstract AdviseProjectSiteClosed : callbackOwnerKey: string * AdviseProjectSiteChanges -> unit
- 
+
     /// A user-friendly description of the project. Used only for developer/DEBUG tooltips and such.
     abstract Description : string
 
     /// The error list task reporter
     abstract BuildErrorReporter : Microsoft.VisualStudio.Shell.Interop.IVsLanguageServiceBuildErrorReporter2 option with get, set
 
-    /// False type resolution errors are invalid. This occurs with orphaned source files. The prior 
+    /// False type resolution errors are invalid. This occurs with orphaned source files. The prior
     /// type checking state is unknown. In this case we don't want to squiggle the type checking files.
     abstract IsIncompleteTypeCheckEnvironment : bool
 
@@ -58,7 +58,7 @@ and internal IProjectSite =
     abstract ProjectGuid : string
 
     /// timestamp the site was last loaded
-    abstract LoadTime : System.DateTime 
+    abstract LoadTime : System.DateTime
 
     abstract ProjectProvider : IProvideProjectSite option
 

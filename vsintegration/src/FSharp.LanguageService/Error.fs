@@ -3,8 +3,8 @@
 namespace Microsoft.VisualStudio.FSharp.LanguageService
 open System
 
-/// Error messages 
-module internal Error = 
+/// Error messages
+module internal Error =
     let private invalidOperation s = new InvalidOperationException(s)
     let private argument s = new ArgumentException(s)
     let private argumentNull s = new ArgumentNullException(s)
@@ -24,7 +24,7 @@ module internal Error =
     let Bug = invalidOperation "Unexpected."
 
 /// Assert helpers
-type internal Assert() = 
+type internal Assert() =
     /// Display a good exception for this error message and then rethrow.
-    static member Exception(e:Exception) =  
+    static member Exception(e:Exception) =
         System.Diagnostics.Debug.Assert(false, "Unexpected exception seen in language service", e.ToString())
