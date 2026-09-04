@@ -357,11 +357,6 @@
         <target state="translated">灵活类型的约束交集</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureDefaultInterfaceMemberConsumption">
-        <source>default interface member consumption</source>
-        <target state="translated">默认接口成员消耗</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureDeprecatePlacesWhereSeqCanBeOmitted">
         <source>Deprecate places where 'seq' can be omitted</source>
         <target state="new">Deprecate places where 'seq' can be omitted</target>

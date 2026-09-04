@@ -357,11 +357,6 @@
         <target state="translated">Intersezione di vincoli su tipi flessibili</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureDefaultInterfaceMemberConsumption">
-        <source>default interface member consumption</source>
-        <target state="translated">utilizzo predefinito dei membri di interfaccia</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureDeprecatePlacesWhereSeqCanBeOmitted">
         <source>Deprecate places where 'seq' can be omitted</source>
         <target state="new">Deprecate places where 'seq' can be omitted</target>

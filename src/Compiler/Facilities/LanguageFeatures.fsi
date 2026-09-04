@@ -10,7 +10,6 @@ type LanguageFeature =
     | PackageManagement
     | FromEndSlicing
     | ResumableStateMachines
-    | DefaultInterfaceMemberConsumption
     | WitnessPassing
     | AdditionalTypeDirectedConversions
     | StringInterpolation

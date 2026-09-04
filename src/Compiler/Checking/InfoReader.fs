@@ -921,10 +921,12 @@ type InfoReader(g: TcGlobals, amap: ImportMap) as this =
     /// Check if the given language feature is supported by the runtime.
     member _.IsLanguageFeatureRuntimeSupported langFeature =
         match langFeature with
-        // Both default and static interface method consumption features are tied to the runtime support of DIMs.
-        | LanguageFeature.DefaultInterfaceMemberConsumption -> isRuntimeFeatureDefaultImplementationsOfInterfacesSupported.Value
+        // Static abstract interface member consumption is tied to the runtime support of virtual statics in interfaces.
         | LanguageFeature.InterfacesWithAbstractStaticMembers -> isRuntimeFeatureVirtualStaticsInInterfacesSupported.Value
         | _ -> true
+
+    /// Check if the target runtime supports default implementations of interfaces (DefaultImplementationsOfInterfaces).
+    member _.IsRuntimeSupportForDefaultImplementationsOfInterfaces = isRuntimeFeatureDefaultImplementationsOfInterfacesSupported.Value
             
     /// Get the declared constructors of any F# type
     member infoReader.GetIntrinsicConstructorInfosOfTypeAux m origTy metadataTy = 
@@ -1039,6 +1041,10 @@ let checkLanguageFeatureRuntimeAndRecover (infoReader: InfoReader) langFeature m
     if not (infoReader.IsLanguageFeatureRuntimeSupported langFeature) then
         let featureStr = LanguageVersion.GetFeatureString langFeature
         errorR (Error(FSComp.SR.chkFeatureNotRuntimeSupported (RichText.mkText featureStr), m))
+
+let checkRuntimeSupportForDefaultInterfaceMembersAndRecover (infoReader: InfoReader) m =
+    if not infoReader.IsRuntimeSupportForDefaultImplementationsOfInterfaces then
+        errorR (Error(FSComp.SR.chkFeatureNotRuntimeSupported (RichText.mkText "default interface member consumption"), m))
 
 let GetIntrinsicConstructorInfosOfType (infoReader: InfoReader) m ty = 
     infoReader.GetIntrinsicConstructorInfosOfTypeAux m ty ty

@@ -357,11 +357,6 @@
         <target state="translated">フレキシブル型の制約積集合</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureDefaultInterfaceMemberConsumption">
-        <source>default interface member consumption</source>
-        <target state="translated">既定のインターフェイス メンバーの消費</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureDeprecatePlacesWhereSeqCanBeOmitted">
         <source>Deprecate places where 'seq' can be omitted</source>
         <target state="new">Deprecate places where 'seq' can be omitted</target>
