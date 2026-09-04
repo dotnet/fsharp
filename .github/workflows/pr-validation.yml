@@ -1,0 +1,395 @@
+# Triggers the F# VS integration (Apex) DartLab pipeline on demand from a PR comment, so the tests
+# run only when an F# team member asks — never automatically on VS builds. Modeled on dotnet/roslyn's
+# .github/workflows/pr-validation.yml.
+#
+# Post `/pr-val` (or `/dart`) on a PR to run it. Only users with write access to this repo AND
+# membership in the `microsoft` org may trigger it; external-authored PRs additionally require an
+# explicit commit hash: `/pr-val <commit-hash>`.
+#
+# TODO(P0): before this works, register azure-pipelines-integration-dartlab.yml as a DevDiv pipeline
+# and fill in FSHARP_APEX_PIPELINE_ID below, plus configure the AZURE_* OIDC secrets and the
+# `fsharp_pr_validation` environment. See eng/pipelines/apex-integration/README.md.
+name: PR Validation (F# VS Integration)
+
+on:
+  issue_comment:
+    types: [created]
+
+permissions:
+  pull-requests: write
+  id-token: write  # Required to fetch an OIDC token for Azure authentication
+
+env:
+  # DevDiv AzDO pipeline ID for azure-pipelines-integration-dartlab.yml, once registered.
+  FSHARP_APEX_PIPELINE_ID: '0'  # TODO(P0): set the real pipeline ID.
+
+jobs:
+  validate-and-trigger:
+    name: Validate and Trigger Azure Pipeline
+    if: |
+      github.event.issue.pull_request &&
+      (contains(github.event.comment.body, '/pr-val') || contains(github.event.comment.body, '/dart'))
+    runs-on: ubuntu-latest
+    # TODO(P0): create this GitHub environment and scope the AZURE_* secrets to it.
+    environment: fsharp_pr_validation
+
+    steps:
+      - name: Check if command invoker has write access
+        id: check-invoker-access
+        uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7
+        with:
+          script: |
+            const { data: permission } = await github.rest.repos.getCollaboratorPermissionLevel({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              username: context.actor
+            });
+
+            const hasWriteAccess = ['admin', 'write', 'maintain'].includes(permission.permission);
+            console.log(`Command invoker ${context.actor} has permission: ${permission.permission}`);
+            core.setOutput('has-access', hasWriteAccess);
+            return hasWriteAccess;
+
+      - name: Check if command invoker is Microsoft org member
+        id: check-invoker-org
+        if: steps.check-invoker-access.outputs.has-access == 'true'
+        uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7
+        with:
+          script: |
+            try {
+              await github.rest.orgs.checkMembershipForUser({
+                org: 'microsoft',
+                username: context.actor
+              });
+              console.log(`Command invoker ${context.actor} is a member of Microsoft org`);
+              core.setOutput('is-member', 'true');
+              return true;
+            } catch (error) {
+              console.log(`Command invoker ${context.actor} is not a member of Microsoft org`);
+              core.setOutput('is-member', 'false');
+              return false;
+            }
+
+      - name: Block unauthorized users
+        if: steps.check-invoker-access.outputs.has-access != 'true' || steps.check-invoker-org.outputs.is-member != 'true'
+        uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7
+        with:
+          script: |
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: 'You do not have permission to trigger this workflow. Only Microsoft employees who are contributors to the dotnet/fsharp repository can run this pipeline.'
+            });
+            core.setFailed('Unauthorized user');
+
+      - name: Get PR author details
+        id: pr-author
+        uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7
+        with:
+          script: |
+            const { data: pr } = await github.rest.pulls.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.issue.number
+            });
+
+            const prAuthor = pr.user.login;
+            console.log(`PR author: ${prAuthor}`);
+            core.setOutput('username', prAuthor);
+
+            try {
+              const { data: permission } = await github.rest.repos.getCollaboratorPermissionLevel({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                username: prAuthor
+              });
+
+              const hasWriteAccess = ['admin', 'write', 'maintain'].includes(permission.permission);
+              console.log(`PR author ${prAuthor} has permission: ${permission.permission}`);
+              core.setOutput('has-access', hasWriteAccess);
+            } catch (error) {
+              console.log(`PR author ${prAuthor} does not have write access`);
+              core.setOutput('has-access', 'false');
+            }
+
+      - name: Check if PR author is Microsoft org member
+        id: pr-author-org
+        uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7
+        env:
+          PR_AUTHOR: ${{ steps.pr-author.outputs.username }}
+        with:
+          script: |
+            const prAuthor = process.env.PR_AUTHOR;
+            try {
+              await github.rest.orgs.checkMembershipForUser({
+                org: 'microsoft',
+                username: prAuthor
+              });
+              console.log(`PR author ${prAuthor} is a member of Microsoft org`);
+              core.setOutput('is-member', 'true');
+              return true;
+            } catch (error) {
+              console.log(`PR author ${prAuthor} is not a member of Microsoft org`);
+              core.setOutput('is-member', 'false');
+              return false;
+            }
+
+      - name: Parse commit hash from comment
+        id: parse-commit
+        uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7
+        with:
+          script: |
+            const commentBody = context.payload.comment.body;
+            // Extract an optional commit hash after /pr-val or /dart.
+            const match = commentBody.match(/\/(pr-val|dart)\s+([a-f0-9]{7,40})/i);
+
+            if (!match || !match[2]) {
+              console.log('No commit hash found in comment');
+              core.setOutput('has-commit', 'false');
+              return false;
+            }
+
+            const commitHash = match[2];
+            console.log(`Extracted commit hash: ${commitHash}`);
+            core.setOutput('has-commit', 'true');
+            core.setOutput('commit-hash', commitHash);
+            return true;
+
+      - name: Require commit hash for external PR authors
+        if: |
+          (steps.pr-author.outputs.has-access != 'true' || steps.pr-author-org.outputs.is-member != 'true') &&
+          steps.parse-commit.outputs.has-commit != 'true'
+        uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7
+        with:
+          script: |
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: 'This PR is from an external author. You must specify a commit hash to trigger this workflow. Please use the format `/pr-val <commit-hash>` or `/dart <commit-hash>`.'
+            });
+            core.setFailed('Commit hash required for external PR author');
+
+      - name: Get PR branch details
+        id: pr-details
+        uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7
+        with:
+          script: |
+            const { data: pr } = await github.rest.pulls.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.issue.number
+            });
+
+            const unsupportedBranchCharacters = /[`$'"{}()]/;
+            if (unsupportedBranchCharacters.test(pr.head.ref)) {
+              core.setFailed('The PR source branch contains unsupported characters. Rename the branch before running PR validation.');
+              return;
+            }
+
+            core.setOutput('ref', pr.head.ref);
+            core.setOutput('repo', pr.head.repo.full_name);
+            core.setOutput('sha', pr.head.sha);
+            core.setOutput('base', pr.base.ref);
+            console.log(`PR #${context.issue.number}: ${pr.head.repo.full_name}@${pr.head.ref} (${pr.head.sha}) -> ${pr.base.ref}`);
+
+      - name: Determine commit SHA to use
+        id: commit-sha
+        uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7
+        env:
+          HAS_COMMIT: ${{ steps.parse-commit.outputs.has-commit }}
+          PROVIDED_COMMIT: ${{ steps.parse-commit.outputs.commit-hash }}
+          PR_HEAD_SHA: ${{ steps.pr-details.outputs.sha }}
+        with:
+          script: |
+            const parseCommitOutput = process.env.HAS_COMMIT;
+            const providedCommit = process.env.PROVIDED_COMMIT;
+            const prHeadSha = process.env.PR_HEAD_SHA;
+
+            let commitSha;
+            if (parseCommitOutput === 'true' && providedCommit) {
+              commitSha = providedCommit;
+              console.log(`Using commit hash from comment: ${commitSha}`);
+            } else {
+              commitSha = prHeadSha;
+              console.log(`Using PR head SHA: ${commitSha}`);
+            }
+
+            core.setOutput('sha', commitSha);
+
+      - name: Validate commit exists in PR
+        if: steps.parse-commit.outputs.has-commit == 'true'
+        uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7
+        env:
+          COMMIT_SHA: ${{ steps.commit-sha.outputs.sha }}
+        with:
+          script: |
+            const commitSha = process.env.COMMIT_SHA;
+            const { data: commits } = await github.rest.pulls.listCommits({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.issue.number
+            });
+
+            const commitExists = commits.some(commit => commit.sha.startsWith(commitSha));
+
+            if (!commitExists) {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: `The specified commit hash \`${commitSha}\` was not found in this PR. Please ensure you are using a valid commit hash from this PR.`
+              });
+              core.setFailed(`Commit ${commitSha} not found in PR`);
+            } else {
+              console.log(`Validated commit ${commitSha} exists in PR`);
+            }
+
+      - name: Azure Login with OpenID Connect
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Determine target branch for pipeline
+        id: target-branch
+        env:
+          BASE_BRANCH: ${{ steps.pr-details.outputs.base }}
+        run: |
+          # The pipeline definition lives on the internal mirror; run its copy from the branch that
+          # matches the PR's base (main for main and release/* / feature/*, otherwise main).
+          if [ "$BASE_BRANCH" = "main" ]; then
+            PIPELINE_VERSION="main"
+          elif [[ "$BASE_BRANCH" =~ ^release/.+ ]] || [[ "$BASE_BRANCH" =~ ^feature/.+ ]]; then
+            PIPELINE_VERSION="$BASE_BRANCH"
+          else
+            PIPELINE_VERSION="main"
+          fi
+
+          echo "pipeline-version=$PIPELINE_VERSION" >> $GITHUB_OUTPUT
+          echo "Target branch: $BASE_BRANCH -> Pipeline version: $PIPELINE_VERSION"
+
+      - name: Trigger Pipeline
+        id: trigger-pipeline
+        env:
+          PIPELINE_ID: ${{ env.FSHARP_APEX_PIPELINE_ID }}
+          PIPELINE_VERSION: ${{ steps.target-branch.outputs.pipeline-version }}
+          HAS_COMMIT: ${{ steps.parse-commit.outputs.has-commit }}
+          PR_NUMBER: ${{ github.event.issue.number }}
+          COMMIT_SHA: ${{ steps.commit-sha.outputs.sha }}
+        run: |
+          if [ "$PIPELINE_ID" = "0" ]; then
+            echo "FSHARP_APEX_PIPELINE_ID is not configured yet (still the '0' placeholder)."
+            echo "Register azure-pipelines-integration-dartlab.yml as a DevDiv pipeline and set the ID."
+            exit 1
+          fi
+
+          # Azure DevOps resource GUID for AAD token acquisition.
+          AZDO_TOKEN=$(az account get-access-token --resource 499b84ac-1321-427f-aa17-267ca6975798 --query accessToken -o tsv)
+
+          DEVDIV_ORG="devdiv"
+          DEVDIV_PROJECT="DevDiv"
+
+          # If a commit was explicitly provided, don't enforce that it is the PR head.
+          if [ "$HAS_COMMIT" = "true" ]; then
+            ENFORCE_LATEST="false"
+          else
+            ENFORCE_LATEST="true"
+          fi
+
+          echo "Triggering DevDiv F# Apex DartLab pipeline (ID: $PIPELINE_ID)..."
+          echo "Pipeline version: $PIPELINE_VERSION"
+          echo "EnforceLatestCommit: $ENFORCE_LATEST"
+
+          REQUEST_BODY=$(cat <<EOF
+          {
+            "resources": {
+              "repositories": {
+                "self": {
+                  "refName": "refs/heads/$PIPELINE_VERSION"
+                }
+              }
+            },
+            "templateParameters": {
+              "prNumber": "$PR_NUMBER",
+              "sha": "$COMMIT_SHA",
+              "EnforceLatestCommit": "$ENFORCE_LATEST"
+            }
+          }
+          EOF
+          )
+
+          echo "Request body: $REQUEST_BODY"
+
+          RESPONSE=$(curl -X POST \
+            -H "Content-Type: application/json" \
+            -H "Authorization: Bearer $AZDO_TOKEN" \
+            -d "$REQUEST_BODY" \
+            "https://dev.azure.com/$DEVDIV_ORG/$DEVDIV_PROJECT/_apis/pipelines/$PIPELINE_ID/runs?api-version=7.0")
+
+          echo "Response: $RESPONSE"
+
+          BUILD_ID=$(echo $RESPONSE | jq -r '.id // empty')
+
+          if [ -z "$BUILD_ID" ]; then
+            echo "Failed to trigger pipeline"
+            echo "Error details: $(echo $RESPONSE | jq -r '.message // "Unknown error"')"
+            exit 1
+          fi
+
+          WEB_URL="https://dev.azure.com/$DEVDIV_ORG/$DEVDIV_PROJECT/_build/results?buildId=$BUILD_ID"
+          echo "pipeline-url=$WEB_URL" >> $GITHUB_OUTPUT
+          echo "build-id=$BUILD_ID" >> $GITHUB_OUTPUT
+          echo "Successfully triggered pipeline: $WEB_URL"
+
+      - name: Comment pipeline link
+        if: success()
+        uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7
+        env:
+          PIPELINE_URL: ${{ steps.trigger-pipeline.outputs.pipeline-url }}
+          PIPELINE_ID: ${{ env.FSHARP_APEX_PIPELINE_ID }}
+          PIPELINE_VERSION: ${{ steps.target-branch.outputs.pipeline-version }}
+          PR_NUMBER: ${{ github.event.issue.number }}
+          COMMIT_SHA: ${{ steps.commit-sha.outputs.sha }}
+          SOURCE_BRANCH: ${{ steps.pr-details.outputs.ref }}
+          TARGET_BRANCH: ${{ steps.pr-details.outputs.base }}
+          BUILD_ID: ${{ steps.trigger-pipeline.outputs.build-id }}
+        with:
+          script: |
+            const {
+              PIPELINE_URL: pipelineUrl,
+              PIPELINE_ID: pipelineId,
+              PIPELINE_VERSION: pipelineVersion,
+              PR_NUMBER: prNumber,
+              COMMIT_SHA: commitSha,
+              SOURCE_BRANCH: sourceBranch,
+              TARGET_BRANCH: targetBranch,
+              BUILD_ID: buildId
+            } = process.env;
+
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: `[View F# VS Integration (Apex) Run](${pipelineUrl}) triggered by @${context.actor}\n\n<details>\n<summary>Parameters</summary>\n\n- Pipeline ID: \`${pipelineId}\`\n- Pipeline Version: \`${pipelineVersion}\`\n- PR Number: \`${prNumber}\`\n- Commit SHA: \`${commitSha}\`\n- Source Branch: \`${sourceBranch}\`\n- Target Branch: \`${targetBranch}\`\n- Build ID: \`${buildId}\`\n</details>`
+            });
+
+      - name: Comment on failure
+        if: |
+          failure() &&
+          steps.check-invoker-access.outcome != 'failure' &&
+          steps.check-invoker-org.outcome != 'failure' &&
+          steps.pr-author.outcome != 'failure' &&
+          steps.pr-author-org.outcome != 'failure' &&
+          steps.parse-commit.outcome != 'failure'
+        uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7
+        with:
+          script: |
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: 'Failed to trigger the F# VS integration (Apex) pipeline. Please check the workflow logs for details.'
+            });
