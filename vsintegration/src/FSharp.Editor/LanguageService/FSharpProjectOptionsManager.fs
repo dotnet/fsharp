@@ -98,7 +98,7 @@ module private FSharpProjectOptionsHelpers =
                             result <- p1.Version <> p2.Version
                         else
                             let! v1 = p1.GetDependentVersionAsync(ct)
-                            let! v2 = p2.GetDependentVersionAsync(ct)
+                            and! v2 = p2.GetDependentVersionAsync(ct)
                             result <- v1 <> v2
 
                     return result
