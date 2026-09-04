@@ -15,8 +15,7 @@ type SubstituteText(taskEnvironment: TaskEnvironment) =
     let mutable embeddedResources: ITaskItem[] = [||]
     let mutable _taskEnvironment = taskEnvironment
 
-    // Resolve a (possibly relative) path against this task instance's TaskEnvironment, never the
-    // ambient process current directory. Original relative strings are kept for item.ItemSpec.
+    // Resolve relative paths against this task's TaskEnvironment, not the process current directory.
     let rootedPath (path: string) =
         _taskEnvironment.GetAbsolutePath(path).Value
 

@@ -20,8 +20,7 @@ type FSharpEmbedResourceText(taskEnvironment: TaskEnvironment) as this =
     let mutable _outputPath: string = ""
     let mutable _taskEnvironment = taskEnvironment
 
-    // Resolve a (possibly relative) path against this task instance's TaskEnvironment, never the
-    // ambient process current directory. Original relative strings are kept for messages and outputs.
+    // Resolve relative paths against this task's TaskEnvironment, not the process current directory.
     let rootedPath (path: string) =
         _taskEnvironment.GetAbsolutePath(path).Value
 
@@ -410,8 +409,7 @@ open Printf
     let generateResxAndSource (item: ITaskItem) =
         let fileName = item.ItemSpec
 
-        // Derive output paths inside the try and record every path first, so a malformed fileName is
-        // still caught and sanitized by the shared handler below.
+        // Record paths inside the try so failures during derivation still reach the shared handler below.
         let originalPaths = ResizeArray<string>()
         originalPaths.Add fileName
 

@@ -19,8 +19,7 @@ type FSharpEmbedResXSource(taskEnvironment: TaskEnvironment) as this =
     let mutable _targetFramework: string = ""
     let mutable _taskEnvironment = taskEnvironment
 
-    // Resolve a (possibly relative) path against this task instance's TaskEnvironment, never the
-    // ambient process current directory. Original relative strings are kept for messages and outputs.
+    // Resolve relative paths against this task's TaskEnvironment, not the process current directory.
     let rootedPath (path: string) =
         _taskEnvironment.GetAbsolutePath(path).Value
 
@@ -51,8 +50,7 @@ module internal {1} =
         "    let GetObject(name:System.String) : System.Object = ResourceManager.GetObject(name, CultureInfo.CurrentUICulture)"
 
     let generateSource (resx: string) (fullModuleName: string) (generateLegacy: bool) (generateLiteral: bool) =
-        // Derive the source path inside the try and record every path first, so a malformed resx is
-        // still caught and sanitized by the shared handler below.
+        // Record paths inside the try so failures during derivation still reach the shared handler below.
         let originalPaths = ResizeArray<string>()
         originalPaths.Add resx
 

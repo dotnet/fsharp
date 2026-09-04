@@ -21,8 +21,7 @@ type public Fsc(taskEnvironment: TaskEnvironment) as this =
 
     inherit ToolTask()
 
-    // Route ambient-environment lookups through this instance's TaskEnvironment. Must be assigned
-    // before the eager defaultToolPath binding below, which resolves against it.
+    // Assign before the eager defaultToolPath binding below, which resolves against it.
     do this.TaskEnvironment <- taskEnvironment
 
     let mutable baseAddress: string | null = null
@@ -385,8 +384,6 @@ type public Fsc(taskEnvironment: TaskEnvironment) as this =
 
         builder
 
-    // Parameterless constructor for explicit callers and MSBuild's LoadedType, falling back to the
-    // ambient environment.
     new() = Fsc(TaskEnvironment.Fallback)
 
     // --baseaddress
@@ -750,12 +747,10 @@ type public Fsc(taskEnvironment: TaskEnvironment) as this =
 
     member internal fsc.InternalGenerateFullPathToTool() = fsc.GenerateFullPathToTool() // expose for unit testing
 
-    // ToolTask.ComputePathToTool can hand a relative base ToolPath to ExecuteTool, where
-    // ProcessStartInfo resolves it against the host process current directory rather than the child
-    // WorkingDirectory. Root any path carrying a directory component against this task's
-    // TaskEnvironment; leave a null/empty value or a bare filename (no directory component) untouched
-    // so ComputePathToTool's OS/PATH lookup still works. Windows root-relative (\tools\fsc.exe) and
-    // drive-relative (C:tools\fsc.exe) forms are rooted too, since they otherwise bind to ambient state.
+    // ProcessStartInfo resolves a relative tool path against the host process current directory, not
+    // the child WorkingDirectory, so root any path with a directory component (including Windows root-
+    // and drive-relative forms) against this task's TaskEnvironment. A bare filename is left untouched
+    // for ComputePathToTool's PATH lookup.
     member private fsc.NormalizePathToTool(pathToTool: string) : string =
         if
             String.IsNullOrEmpty pathToTool
@@ -781,8 +776,7 @@ type public Fsc(taskEnvironment: TaskEnvironment) as this =
         if skipCompilerExecution then
             0
         else
-            // Normalize once so both the plain base call and the HostObject baseCallDelegate run
-            // against a project-directory-rooted tool path.
+            // Root once so both the base call and the HostObject delegate use the same rooted path.
             let pathToTool = fsc.NormalizePathToTool pathToTool
             let host = box fsc.HostObject
 
