@@ -3,7 +3,9 @@
 namespace FSharp.Editor.Tests
 
 open System
+open System.Collections.Generic
 open System.Threading
+open System.Threading.Tasks
 open Xunit
 open Microsoft.CodeAnalysis
 open Microsoft.VisualStudio.FSharp.Editor
@@ -62,6 +64,14 @@ type SemanticClassificationServiceTests() =
 
     let isCached (cache: DocumentCache<SemanticClassificationLookup>) (document: Document) =
         (cache.TryGetValueAsync document CancellationToken.None).GetAwaiter().GetResult().IsSome
+
+    let versionOf (document: Document) =
+        document.GetTextVersionAsync(CancellationToken.None).GetAwaiter().GetResult()
+
+    let isRemembered (document: Document) =
+        match FSharpClassificationService.OpenDocumentClassifications.TryGetValue document.Id with
+        | true, classification -> classification.Version = versionOf document
+        | _ -> false
 
     let lineSpan (text: SourceText) firstLine lastLine =
         TextSpan.FromBounds(text.Lines[firstLine].Start, text.Lines[lastLine].End)
@@ -479,10 +489,7 @@ let result2 = s.(*2*)IsHyperbolicCaseWithLongName
 
         Assert.NotEmpty(classify document (TextSpan(0, text.Length)))
 
-        Assert.True(
-            isCached FSharpClassificationService.OpenedDocumentsSemanticClassificationCache document,
-            "Classifying an open document must populate the opened-documents cache."
-        )
+        Assert.True(isRemembered document, "Classifying an open document must remember its classification.")
 
         Assert.False(
             isCached FSharpClassificationService.UnopenedDocumentsSemanticClassificationCache document,
@@ -537,10 +544,7 @@ let result2 = s.(*2*)IsHyperbolicCaseWithLongName
 
         Assert.NotEmpty(classify reopened (TextSpan(0, reopenedText.Length)))
 
-        Assert.False(
-            isCached FSharpClassificationService.OpenedDocumentsSemanticClassificationCache reopened,
-            "A miss must not be cached as a result."
-        )
+        Assert.False(isRemembered reopened, "A miss must not be remembered as a result.")
 
     // The lookup names positions in the text it was computed from, so against edited text it would
     // colour the wrong characters.
@@ -562,7 +566,7 @@ let result2 = s.(*2*)IsHyperbolicCaseWithLongName
         let text = sourceTextOf document
 
         Assert.Empty(classify document (TextSpan(0, text.Length)))
-        Assert.False(isCached FSharpClassificationService.OpenedDocumentsSemanticClassificationCache document)
+        Assert.False(isRemembered document)
         Assert.False(isCached FSharpClassificationService.UnopenedDocumentsSemanticClassificationCache document)
 
     // Roslyn keeps the previous tags only for a cancellation carrying its own token; nothing may catch it.
@@ -579,3 +583,68 @@ let result2 = s.(*2*)IsHyperbolicCaseWithLongName
         |> ignore
 
         Assert.True task.IsCanceled
+
+    // Roslyn's viewport taggers ask for the same version at once; the file must be walked once for all of them.
+    [<Fact>]
+    member _.``Overlapping requests for one version share a single classification``() =
+        let gate = TaskCompletionSource<OpenDocumentClassification voption>()
+        let computed = ref 0
+
+        let inFlight =
+            InFlightClassification(
+                VersionStamp.Create(),
+                fun _ ->
+                    Interlocked.Increment computed |> ignore
+                    gate.Task
+            )
+
+        let first = inFlight.Join CancellationToken.None
+        let second = inFlight.Join CancellationToken.None
+        Assert.False(first.IsCompleted || second.IsCompleted)
+
+        let classification =
+            {
+                Version = VersionStamp.Create()
+                Text = SourceText.From ""
+                Lookup = Dictionary()
+            }
+
+        gate.SetResult(ValueSome classification)
+
+        Assert.Same(classification.Lookup, first.Result.Value.Lookup)
+        Assert.Same(classification.Lookup, second.Result.Value.Lookup)
+        Assert.Equal(1, computed.Value)
+
+    [<Fact>]
+    member _.``A shared classification is cancelled only when its last waiter leaves``() =
+        let gate = TaskCompletionSource<OpenDocumentClassification voption>()
+        let sharedToken = ref CancellationToken.None
+
+        let inFlight =
+            InFlightClassification(
+                VersionStamp.Create(),
+                fun ct ->
+                    sharedToken.Value <- ct
+                    gate.Task
+            )
+
+        use first = new CancellationTokenSource()
+        use second = new CancellationTokenSource()
+        let firstJoin = inFlight.Join first.Token
+        let secondJoin = inFlight.Join second.Token
+
+        first.Cancel()
+
+        Assert.ThrowsAny<OperationCanceledException>(fun () -> firstJoin.GetAwaiter().GetResult() |> ignore)
+        |> ignore
+
+        Assert.False(sharedToken.Value.IsCancellationRequested, "One waiter leaving must not cancel the others.")
+        Assert.False(secondJoin.IsCompleted)
+
+        second.Cancel()
+
+        Assert.ThrowsAny<OperationCanceledException>(fun () -> secondJoin.GetAwaiter().GetResult() |> ignore)
+        |> ignore
+
+        Assert.True(sharedToken.Value.IsCancellationRequested, "The last waiter leaving must cancel the work.")
+        Assert.True inFlight.IsCancelled
