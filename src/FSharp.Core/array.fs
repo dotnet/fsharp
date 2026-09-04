@@ -289,7 +289,11 @@ module Array =
     [<CompiledName("Copy")>]
     let copy (array: 'T array) =
         checkNonNull "array" array
-        (array.Clone() :?> 'T array) // this is marginally faster
+
+        if array.Length = 0 then
+            [||]
+        else
+            array.Clone() :?> 'T array // this is marginally faster
     //let len = array.Length
     //let res = zeroCreate len
     //for i = 0 to len - 1 do
@@ -1969,7 +1973,7 @@ module Array =
         let valuesArray = Seq.toArray values
 
         if valuesArray.Length = 0 then
-            source.Clone() :?> 'T array
+            copy source
         else
             let length = source.Length + valuesArray.Length
             let result = Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked length

@@ -462,6 +462,70 @@ type ArrayModule() =
         this.CollectTester Array.Parallel.collect Array.Parallel.collect
 
     [<Fact>]
+    member _.EmptyResultsShareSingleton () =
+        // Zero-length results must reuse the Array.empty singleton (issue #20382).
+        let isShared (a: 'a[]) = obj.ReferenceEquals(a, Array.empty<'a>)
+        let ints: int[] = [||]
+
+        Assert.True(isShared (Array.collect (fun x -> [| x |]) ints), "collect (empty input)")
+        Assert.True(isShared (Array.collect (fun _ -> [||]) [| 1; 2; 3 |]), "collect (all-empty results)")
+        Assert.True(isShared (Array.map (fun x -> x + 1) ints), "map")
+        Assert.True(isShared (Array.mapi (fun i x -> i + x) ints), "mapi")
+        Assert.True(isShared (Array.indexed ints), "indexed")
+        Assert.True(isShared (Array.concat ([]: int[] list)), "concat (empty)")
+        Assert.True(isShared (Array.concat [ [||]; [||] ]), "concat (of empties)")
+        Assert.True(isShared (Array.take 0 [| 1; 2; 3 |]), "take 0")
+        Assert.True(isShared (Array.skip 3 [| 1; 2; 3 |]), "skip all")
+        Assert.True(isShared (Array.sub [| 1; 2; 3 |] 1 0), "sub len 0")
+        Assert.True(isShared (Array.distinctBy id ints), "distinctBy")
+        Assert.True(isShared (Array.groupBy id ints), "groupBy")
+        Assert.True(isShared (Array.Parallel.map (fun x -> x + 1) ints), "Parallel.map")
+        Assert.True(isShared (Array.Parallel.collect (fun x -> [| x |]) ints), "Parallel.collect")
+
+        Assert.True(isShared (Array.append ints ints), "append")
+        Assert.True(isShared (Array.map2 (fun a b -> a + b) ints ints), "map2")
+        Assert.True(isShared (Array.mapi2 (fun i a b -> i + a + b) ints ints), "mapi2")
+        Assert.True(isShared (Array.map3 (fun a b c -> a + b + c) ints ints ints), "map3")
+        Assert.True(isShared (Array.zip ints ints), "zip")
+        Assert.True(isShared (Array.zip3 ints ints ints), "zip3")
+        Assert.True(isShared (Array.allPairs ints ints), "allPairs")
+        Assert.True(isShared (Array.rev ints), "rev")
+        Assert.True(isShared (Array.distinct ints), "distinct")
+        Assert.True(isShared (Array.removeAt 0 [| 1 |]), "removeAt last")
+        Assert.True(isShared (Array.removeManyAt 0 1 [| 1 |]), "removeManyAt last")
+        Assert.True(isShared (Array.transpose [| ([||]: int[]) |]), "transpose (empty inner)")
+
+        let p1, p2 = Array.partition (fun _ -> true) ints
+        Assert.True(isShared p1 && isShared p2, "partition")
+        let u1, u2 = Array.unzip ([||]: (int * int)[])
+        Assert.True(isShared u1 && isShared u2, "unzip")
+        let t1, t2, t3 = Array.unzip3 ([||]: (int * int * int)[])
+        Assert.True(isShared t1 && isShared t2 && isShared t3, "unzip3")
+
+        Assert.True(isShared (Array.Parallel.mapi (fun i x -> i + x) ints), "Parallel.mapi")
+        Assert.True(isShared (Array.Parallel.choose Some ints), "Parallel.choose")
+        Assert.True(isShared (Array.Parallel.zip ints ints), "Parallel.zip")
+        Assert.True(isShared (Array.Parallel.filter (fun _ -> true) ints), "Parallel.filter")
+        Assert.True(isShared (Array.Parallel.groupBy id ints), "Parallel.groupBy")
+        let pp1, pp2 = Array.Parallel.partition (fun _ -> true) ints
+        Assert.True(isShared pp1 && isShared pp2, "Parallel.partition")
+
+        Assert.True(isShared (Array.zeroCreate 0: int[]), "zeroCreate 0")
+        Assert.True(isShared (Array.create 0 0), "create 0")
+        Assert.True(isShared (Array.init 0 id), "init 0")
+        Assert.True(isShared (Array.replicate 0 0), "replicate 0")
+        Assert.True(isShared (Array.copy ([||]: int[])), "copy")
+        Assert.True(isShared (Array.insertManyAt 0 (Seq.empty: seq<int>) ([||]: int[])), "insertManyAt (empty into empty)")
+
+        Assert.True(isShared (List.toArray ([]: int list)), "List.toArray")
+        Assert.True(isShared (Array.ofList ([]: int list)), "Array.ofList")
+        Assert.True(isShared (Seq.toArray (([||]: int[]) :> seq<int>)), "Seq.toArray (array fast-path)")
+        Assert.True(isShared (Seq.toArray (ResizeArray<int>() :> seq<int>)), "Seq.toArray (ICollection)")
+        Assert.True(isShared (Array.ofSeq (Seq.empty: seq<int>)), "Array.ofSeq (fallback)")
+        Assert.True(isShared (Set.toArray (Set.empty: Set<int>)), "Set.toArray")
+        Assert.True(isShared (Map.toArray (Map.empty: Map<int, int>)), "Map.toArray")
+
+    [<Fact>]
     member this.compareWith() =
         // compareWith should work on empty arrays
         Assert.AreEqual(0,Array.compareWith (fun _ -> failwith "should not be executed")  [||] [||])
