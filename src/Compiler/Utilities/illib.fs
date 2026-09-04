@@ -664,22 +664,19 @@ module List =
         | Some x -> x :: l
         | _ -> l
 
-    [<TailCall>]
-    let rec private vMapFoldWithAcc<'T, 'State, 'Result>
-        (mapping: 'State -> 'T -> struct ('Result * 'State))
+    let inline vMapFold
+        ([<InlineIfLambda>] mapping: 'State -> 'T -> struct ('Result * 'State))
         state
         list
-        acc
         : struct ('Result list * 'State) =
-        match list with
-        | [] -> acc, state
-        | [ h ] -> mapping state h |> ValueTuple.map1Of2 (fun x -> x :: acc)
-        | h :: t ->
-            let struct (mappedHead, stateHead) = mapping state h
-            vMapFoldWithAcc mapping stateHead t (mappedHead :: acc)
+        let rec go state list acc =
+            match list with
+            | [] -> struct (List.rev acc, state)
+            | h :: t ->
+                let struct (mappedHead, stateHead) = mapping state h
+                go stateHead t (mappedHead :: acc)
 
-    let vMapFold<'T, 'State, 'Result> (mapping: 'State -> 'T -> struct ('Result * 'State)) state list : struct ('Result list * 'State) =
-        vMapFoldWithAcc mapping state list [] |> ValueTuple.map1Of2 List.rev
+        go state list []
 
 module ResizeArray =
 

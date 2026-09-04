@@ -233,8 +233,8 @@ module internal List =
 
     val prependIfSome: x: 'a option -> l: 'a list -> 'a list
 
-    val vMapFold<'T, 'State, 'Result> :
-        mapping: ('State -> 'T -> struct ('Result * 'State)) ->
+    val inline vMapFold:
+        [<InlineIfLambda>] mapping: ('State -> 'T -> struct ('Result * 'State)) ->
         state: 'State ->
         list: 'T list ->
             struct ('Result list * 'State)
