@@ -6,12 +6,17 @@ open System
 open Microsoft.FSharp.Core
 open Microsoft.FSharp.Core.LanguagePrimitives.IntrinsicOperators
 open Microsoft.FSharp.Core.Operators.Checked
+open System.Diagnostics.CodeAnalysis
 
 #nowarn "3218" // mismatch of parameter name where 'count1' --> 'length1' would shadow function in module of same name
 
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 [<RequireQualifiedAccess>]
 module Array2D =
+
+    [<Literal>]
+    let private nonZeroBasedRequiresDynamicCode =
+        "Arrays with a non-zero lower bound cannot be created in an AOT-compiled application. Use Array2D.zeroCreate, Array2D.create or Array2D.init instead."
 
     let inline checkNonNull argName arg = 
         if isNull arg then
@@ -48,37 +53,62 @@ module Array2D =
         if length2 < 0 then invalidArgInputMustBeNonNegative "length2" length2 
         (# "newarr.multi 2 !0" type ('T) length1 length2 : 'T[,] #)
 
-    [<CompiledName("ZeroCreateBased")>]
-    let zeroCreateBased (base1:int) (base2:int) (length1:int) (length2:int) = 
+    // map, mapi and copy must stay on this unannotated path; the public based entry points
+    // carry RequiresDynamicCode instead.
+    let private zeroCreateBasedAux (base1:int) (base2:int) (length1:int) (length2:int) : 'T[,] = 
         if base1 = 0 && base2 = 0 then 
             zeroCreate length1 length2               
         else
+#if NET9_0_OR_GREATER
+            // Unlike Array.CreateInstance, this overload carries no RequiresDynamicCode.
+            (Array.CreateInstanceFromArrayType(typeof<'T[,]>, [|length1;length2|], [|base1;base2|]) :?> 'T[,])
+#else
             (Array.CreateInstance(typeof<'T>, [|length1;length2|], [|base1;base2|]) :?> 'T[,])
+#endif
 
-    [<CompiledName("CreateBased")>]
-    let createBased base1 base2 length1 length2 (initial:'T) = 
-        let array = (zeroCreateBased base1 base2 length1 length2 : 'T[,])
-        for i = base1 to base1 + length1 - 1 do 
-          for j = base2 to base2 + length2 - 1 do 
-            array.[i, j] <- initial
-        array
-
-    [<CompiledName("InitializeBased")>]
-    let initBased base1 base2 length1 length2 initializer = 
-        let array = (zeroCreateBased base1 base2 length1 length2 : 'T[,])
+    let private initBasedAux base1 base2 length1 length2 initializer : 'T[,] = 
+        let array = zeroCreateBasedAux base1 base2 length1 length2
         let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt(initializer)
         for i = base1 to base1 + length1 - 1 do 
           for j = base2 to base2 + length2 - 1 do 
             array.[i, j] <- f.Invoke(i, j)
         array
 
+    [<RequiresDynamicCode(nonZeroBasedRequiresDynamicCode)>]
+    [<CompiledName("ZeroCreateBased")>]
+    let zeroCreateBased (base1:int) (base2:int) (length1:int) (length2:int) : 'T[,] = 
+        zeroCreateBasedAux base1 base2 length1 length2
+
+    [<RequiresDynamicCode(nonZeroBasedRequiresDynamicCode)>]
+    [<CompiledName("CreateBased")>]
+    let createBased base1 base2 length1 length2 (initial:'T) = 
+        let array = (zeroCreateBasedAux base1 base2 length1 length2 : 'T[,])
+        for i = base1 to base1 + length1 - 1 do 
+          for j = base2 to base2 + length2 - 1 do 
+            array.[i, j] <- initial
+        array
+
+    [<RequiresDynamicCode(nonZeroBasedRequiresDynamicCode)>]
+    [<CompiledName("InitializeBased")>]
+    let initBased base1 base2 length1 length2 initializer : 'T[,] = 
+        initBasedAux base1 base2 length1 length2 initializer
+
     [<CompiledName("Create")>]
-    let create length1 length2 (value:'T) = 
-        createBased 0 0 length1 length2 value
+    let create length1 length2 (value:'T) =
+        let array = zeroCreate length1 length2
+        for i = 0 to length1 - 1 do
+            for j = 0 to length2 - 1 do
+                array.[i, j] <- value
+        array
 
     [<CompiledName("Initialize")>]
-    let init length1 length2 initializer = 
-        initBased 0 0 length1 length2 initializer
+    let init length1 length2 initializer =
+        let array = zeroCreate length1 length2
+        let f = OptimizedClosures.FSharpFunc<_, _, _>.Adapt(initializer)
+        for i = 0 to length1 - 1 do
+            for j = 0 to length2 - 1 do
+                array.[i, j] <- f.Invoke(i, j)
+        array
 
     [<CompiledName("Iterate")>]
     let iter action array = 
@@ -106,18 +136,18 @@ module Array2D =
     [<CompiledName("Map")>]
     let map mapping array = 
         checkNonNull "array" array
-        initBased (base1 array) (base2 array) (length1 array) (length2 array) (fun i j -> mapping array.[i,j])
+        initBasedAux (base1 array) (base2 array) (length1 array) (length2 array) (fun i j -> mapping array.[i,j])
 
     [<CompiledName("MapIndexed")>]
     let mapi mapping array = 
         checkNonNull "array" array
         let f = OptimizedClosures.FSharpFunc<_, _, _, _>.Adapt(mapping)
-        initBased (base1 array) (base2 array) (length1 array) (length2 array) (fun i j -> f.Invoke(i, j, array.[i,j]))
+        initBasedAux (base1 array) (base2 array) (length1 array) (length2 array) (fun i j -> f.Invoke(i, j, array.[i,j]))
 
     [<CompiledName("Copy")>]
     let copy array = 
         checkNonNull "array" array
-        initBased (base1 array) (base2 array) (length1 array) (length2 array) (fun i j -> array.[i,j])
+        initBasedAux (base1 array) (base2 array) (length1 array) (length2 array) (fun i j -> array.[i,j])
         
     [<CompiledName("Rebase")>]
     let rebase array = 
