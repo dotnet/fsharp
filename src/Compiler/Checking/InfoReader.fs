@@ -1044,7 +1044,7 @@ let checkLanguageFeatureRuntimeAndRecover (infoReader: InfoReader) langFeature m
 
 let checkRuntimeSupportForDefaultInterfaceMembersAndRecover (infoReader: InfoReader) m =
     if not infoReader.IsRuntimeSupportForDefaultImplementationsOfInterfaces then
-        errorR (Error(FSComp.SR.chkFeatureNotRuntimeSupported (RichText.mkText (FSComp.SR.featureDefaultInterfaceMemberConsumption ())), m))
+        errorR (Error(FSComp.SR.chkFeatureNotRuntimeSupported (RichText.mkText "default interface member consumption"), m))
 
 let GetIntrinsicConstructorInfosOfType (infoReader: InfoReader) m ty = 
     infoReader.GetIntrinsicConstructorInfosOfTypeAux m ty ty
