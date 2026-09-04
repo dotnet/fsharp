@@ -432,11 +432,6 @@
         <target state="translated">byref 및 GetPinnableReference에 대한 확장된 고정 바인딩</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureExtendedStringInterpolation">
-        <source>Extended string interpolation similar to C# raw string literals.</source>
-        <target state="translated">C# 원시 문자열 리터럴과 유사한 확장 문자열 보간입니다.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureExtensionConstraintSolutions">
         <source>Allow extension members to participate in SRTP constraint resolution</source>
         <target state="new">Allow extension members to participate in SRTP constraint resolution</target>
@@ -780,11 +775,6 @@
       <trans-unit id="lexColonDirectiveMustBeFirst">
         <source>#: directives must start at the beginning of a line</source>
         <target state="new">#: directives must start at the beginning of a line</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="lexExtendedStringInterpolationNotSupported">
-        <source>Extended string interpolation is not supported in this version of F#.</source>
-        <target state="translated">확장 문자열 보간은 이 버전의 F#에서 지원되지 않습니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="lexHashElifAfterElse">

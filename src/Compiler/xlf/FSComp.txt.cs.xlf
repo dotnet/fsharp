@@ -432,11 +432,6 @@
         <target state="translated">rozšířené pevné vazby pro byref a GetPinnableReference</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureExtendedStringInterpolation">
-        <source>Extended string interpolation similar to C# raw string literals.</source>
-        <target state="translated">Rozšířená interpolace řetězců podobná nezpracovaným řetězcovým literálům jazyka C#.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureExtensionConstraintSolutions">
         <source>Allow extension members to participate in SRTP constraint resolution</source>
         <target state="new">Allow extension members to participate in SRTP constraint resolution</target>
@@ -780,11 +775,6 @@
       <trans-unit id="lexColonDirectiveMustBeFirst">
         <source>#: directives must start at the beginning of a line</source>
         <target state="new">#: directives must start at the beginning of a line</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="lexExtendedStringInterpolationNotSupported">
-        <source>Extended string interpolation is not supported in this version of F#.</source>
-        <target state="translated">Rozšířená interpolace řetězců není v této verzi jazyka F# podporována.</target>
         <note />
       </trans-unit>
       <trans-unit id="lexHashElifAfterElse">
