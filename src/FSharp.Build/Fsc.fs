@@ -21,9 +21,8 @@ type public Fsc(taskEnvironment: TaskEnvironment) as this =
 
     inherit ToolTask()
 
-    // Route every ambient-environment lookup (current directory, environment variables) through this
-    // task instance's TaskEnvironment. Assign the inherited ToolTask.TaskEnvironment first so the
-    // eager defaultToolPath binding below resolves against it rather than shared process state.
+    // Route ambient-environment lookups through this instance's TaskEnvironment. Must be assigned
+    // before the eager defaultToolPath binding below, which resolves against it.
     do this.TaskEnvironment <- taskEnvironment
 
     let mutable baseAddress: string | null = null
@@ -386,8 +385,8 @@ type public Fsc(taskEnvironment: TaskEnvironment) as this =
 
         builder
 
-    // Public parameterless constructor for explicit callers and for MSBuild's LoadedType, which
-    // otherwise prefers the single-TaskEnvironment constructor. Falls back to the ambient environment.
+    // Parameterless constructor for explicit callers and MSBuild's LoadedType, falling back to the
+    // ambient environment.
     new() = Fsc(TaskEnvironment.Fallback)
 
     // --baseaddress
@@ -751,16 +750,12 @@ type public Fsc(taskEnvironment: TaskEnvironment) as this =
 
     member internal fsc.InternalGenerateFullPathToTool() = fsc.GenerateFullPathToTool() // expose for unit testing
 
-    // MSBuild's ToolTask.ComputePathToTool can hand a relative base ToolPath straight to the derived
-    // ExecuteTool, and ProcessStartInfo.FileName then resolves it against the host process current
-    // directory rather than the child WorkingDirectory. Route every path that reaches base.ExecuteTool
-    // (and the eager GenerateFullPathToTool computation) through this so a path with directory
-    // components is rooted against this task's TaskEnvironment. Only two shapes are left untouched: a
-    // null/empty value, and a true bare filename (no directory component), which preserves the OS/PATH
-    // lookup that ComputePathToTool relies on. Everything else - including Windows root-relative
-    // (\tools\fsc.exe) and drive-relative (C:tools\fsc.exe) forms, which Path.IsPathRooted reports as
-    // rooted yet still resolve against ambient process state - is sent through GetAbsolutePath so it is
-    // anchored to this task's project directory rather than the host current directory.
+    // ToolTask.ComputePathToTool can hand a relative base ToolPath to ExecuteTool, where
+    // ProcessStartInfo resolves it against the host process current directory rather than the child
+    // WorkingDirectory. Root any path carrying a directory component against this task's
+    // TaskEnvironment; leave a null/empty value or a bare filename (no directory component) untouched
+    // so ComputePathToTool's OS/PATH lookup still works. Windows root-relative (\tools\fsc.exe) and
+    // drive-relative (C:tools\fsc.exe) forms are rooted too, since they otherwise bind to ambient state.
     member private fsc.NormalizePathToTool(pathToTool: string) : string =
         if
             String.IsNullOrEmpty pathToTool
@@ -786,8 +781,8 @@ type public Fsc(taskEnvironment: TaskEnvironment) as this =
         if skipCompilerExecution then
             0
         else
-            // Normalize once so both the plain base call and the HostObject baseCallDelegate below run
-            // against a project-directory-rooted tool path rather than one resolved against the host CWD.
+            // Normalize once so both the plain base call and the HostObject baseCallDelegate run
+            // against a project-directory-rooted tool path.
             let pathToTool = fsc.NormalizePathToTool pathToTool
             let host = box fsc.HostObject
 

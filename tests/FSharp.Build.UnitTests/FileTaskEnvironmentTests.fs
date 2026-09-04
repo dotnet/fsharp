@@ -13,16 +13,14 @@ open FSharp.Build
 open Xunit
 open BuildTaskTestHelpers
 
-/// Verifies that FSharp.Build tasks performing file I/O (WriteCodeFragment, GenerateILLinkSubstitutions)
-/// resolve relative paths against the TaskEnvironment assigned to each task instance, rather than the
-/// single, process-wide Environment.CurrentDirectory. Each test runs two task instances concurrently,
-/// each wired to its own project directory/environment/build engine, while the process current directory
-/// points at a third, unrelated "decoy" directory that must remain untouched.
+/// Verifies FSharp.Build file-I/O tasks resolve relative paths against each task instance's
+/// TaskEnvironment rather than the process-wide current directory. Each test runs two instances
+/// concurrently, each wired to its own project directory/engine, while the process current directory
+/// points at a third "decoy" directory that must stay untouched.
 [<Collection(nameof FSharp.Test.NotThreadSafeResourceCollection)>]
 type FileTaskEnvironmentTests() =
 
-    /// Points Environment.CurrentDirectory at a fresh decoy directory for the duration of `body`, then
-    /// restores the original current directory. Used to prove tasks don't fall back to ambient process state.
+    /// Points Environment.CurrentDirectory at a fresh decoy directory for `body`, then restores it.
     let withDecoyCurrentDirectory (body: DirectoryInfo -> unit) =
         let decoyDirectory = TestFramework.createTemporaryDirectory ()
         let originalCurrentDirectory = Environment.CurrentDirectory
@@ -33,9 +31,8 @@ type FileTaskEnvironmentTests() =
         finally
             Environment.CurrentDirectory <- originalCurrentDirectory
 
-    /// Starts both executions on the thread pool and releases them together via a Barrier, so neither
-    /// execution can complete before both have started, then waits for both to finish. Bounded by a
-    /// timeout so that a deadlock in the code under test fails the test instead of hanging forever.
+    /// Releases both executions together via a Barrier, then waits for both. A timeout turns a deadlock
+    /// in the code under test into a failure rather than a hang.
     let runConcurrently (executeA: unit -> bool) (executeB: unit -> bool) =
         let barrier = new Barrier(2)
 
@@ -55,19 +52,16 @@ type FileTaskEnvironmentTests() =
 
         taskA.Result, taskB.Result
 
-    /// Composes the isolation scaffolding shared by every paired isolation fact: points the process
-    /// current directory at a fresh decoy (withDecoyCurrentDirectory), creates and disposes a pair of
-    /// temporary-directory-rooted TaskEnvironments (withTaskEnvironmentPair), and, after `body` runs,
-    /// asserts the decoy directory received no writes (proving no task fell back to ambient process state).
+    /// Runs `body` against a decoy current directory and a disposed TaskEnvironment pair, then asserts
+    /// the decoy received no writes (proving no task fell back to ambient process state).
     let withIsolatedTaskEnvironmentPair body =
         withDecoyCurrentDirectory (fun decoyDirectory ->
             withTaskEnvironmentPair (fun environmentA directoryA environmentB directoryB ->
                 body environmentA directoryA environmentB directoryB
                 Assert.Empty(Directory.GetFiles(decoyDirectory.FullName, "*", SearchOption.AllDirectories))))
 
-    /// Counts non-overlapping occurrences of `needle` in `text`. Used to prove that an absolute input
-    /// path survives diagnostic scrubbing in the exception body (not just the message prefix), which a
-    /// blind project-directory strip would corrupt.
+    /// Counts non-overlapping occurrences of `needle` in `text`, proving an absolute input path survives
+    /// diagnostic scrubbing in the exception body, which a blind project-directory strip would corrupt.
     let countOccurrences (needle: string) (text: string) =
         let mutable count = 0
         let mutable index = text.IndexOf(needle, StringComparison.Ordinal)
@@ -78,10 +72,9 @@ type FileTaskEnvironmentTests() =
 
         count
 
-    /// Windows partially qualified inputs - root-relative ('\foo') and drive-relative ('C:foo') - are
-    /// reported as rooted by Path.IsPathRooted yet TaskEnvironment still expands them against the project
-    /// directory. Asserts a failing task's single diagnostic keeps the caller's original spelling and
-    /// leaks neither the expanded rooted form nor the project directory.
+    /// Asserts a failing task's diagnostic keeps a Windows partially qualified input's original spelling
+    /// (root-relative '\foo' / drive-relative 'C:foo') and leaks neither its expanded rooted form nor the
+    /// project directory, even though TaskEnvironment expands it against the project directory.
     let assertPartiallyQualifiedDiagnostic
         (environment: TaskEnvironment)
         (projectDirectory: string)
@@ -136,7 +129,6 @@ type FileTaskEnvironmentTests() =
             Assert.DoesNotContain("AssemblyMetadataB", contentsA)
             Assert.DoesNotContain("AssemblyMetadataA", contentsB)
 
-            // The output item's ItemSpec must remain the original, unrooted relative value.
             Assert.Equal("Generated.fs", taskA.OutputFile.ItemSpec)
             Assert.Equal("Generated.fs", taskB.OutputFile.ItemSpec))
 
@@ -160,8 +152,8 @@ type FileTaskEnvironmentTests() =
 
             Assert.True(task.Execute())
 
-            // Existing quirk (preserved unchanged): the file is written using OutputFile.ItemSpec alone,
-            // ignoring OutputDirectory, even though OutputDirectory is folded into the returned OutputFile item.
+            // Preserved quirk: the file is written using OutputFile.ItemSpec alone, ignoring
+            // OutputDirectory, even though OutputDirectory is folded into the returned OutputFile item.
             let writtenPath = Path.Combine(directory.FullName, "Generated2.fs")
             Assert.True(File.Exists writtenPath, sprintf "Expected generated file at %s" writtenPath)
             Assert.False(File.Exists(Path.Combine(directory.FullName, "SubDir", "Generated2.fs")))
@@ -199,8 +191,7 @@ type FileTaskEnvironmentTests() =
             let expectedItemSpecA = Path.Combine(relativeIntermediateA, "ILLink.Substitutions.xml")
             let expectedItemSpecB = Path.Combine(relativeIntermediateB, "ILLink.Substitutions.xml")
 
-            // The generated item's ItemSpec must remain the original, unrooted relative value, and its
-            // LogicalName metadata must be unchanged.
+            // The generated item's ItemSpec must remain the original, unrooted relative value.
             Assert.Equal(expectedItemSpecA, taskA.GeneratedItems.[0].ItemSpec)
             Assert.Equal(expectedItemSpecB, taskB.GeneratedItems.[0].ItemSpec)
             Assert.Equal("ILLink.Substitutions.xml", taskA.GeneratedItems.[0].GetMetadata("LogicalName"))
@@ -225,8 +216,7 @@ type FileTaskEnvironmentTests() =
         ()
         =
         withIsolatedTaskEnvironmentPair (fun environmentA directoryA environmentB directoryB ->
-            // Both instances share the exact same relative paths; only the TaskEnvironment each is
-            // wired to (and therefore the project directory the paths are rooted against) differs.
+            // Both instances share identical relative paths; only their TaskEnvironment differs.
             let relativeIntermediate = Path.Combine("obj", "Debug")
             let relativeText = "Strings.txt"
 
@@ -263,8 +253,6 @@ type FileTaskEnvironmentTests() =
             let expectedSourceItemSpec = Path.Combine(relativeIntermediate, "Strings.fs")
             let expectedResxItemSpec = Path.Combine(relativeIntermediate, "Strings.resx")
 
-            // The generated items' ItemSpecs must remain the original, unrooted relative values, and
-            // are identical for both instances since both were configured with identical inputs.
             let itemSpecs (source: ITaskItem[]) = source |> Array.map (fun item -> item.ItemSpec)
             let expectedSourceItemSpecs = [| expectedSignatureItemSpec; expectedSourceItemSpec |]
 
@@ -309,8 +297,7 @@ type FileTaskEnvironmentTests() =
         ()
         =
         withIsolatedTaskEnvironmentPair (fun environmentA directoryA environmentB directoryB ->
-            // Both instances share the exact same relative paths; only the TaskEnvironment each is
-            // wired to (and therefore the project directory the paths are rooted against) differs.
+            // Both instances share identical relative paths; only their TaskEnvironment differs.
             let relativeIntermediate = Path.Combine("obj", "Debug")
             let relativeResx = "Resource.resx"
 
@@ -353,8 +340,6 @@ type FileTaskEnvironmentTests() =
 
             let expectedSourceItemSpec = Path.Combine(relativeIntermediate, "Resource.fs")
 
-            // The generated item's ItemSpec must remain the original, unrooted relative value, and is
-            // identical for both instances since both were configured with identical inputs.
             Assert.Equal(expectedSourceItemSpec, taskA.GeneratedSource.[0].ItemSpec)
             Assert.Equal(expectedSourceItemSpec, taskB.GeneratedSource.[0].ItemSpec)
 
@@ -412,16 +397,14 @@ type FileTaskEnvironmentTests() =
                     Console.SetOut originalConsoleOut
                     Console.SetError originalConsoleError
 
-            // Execute must fail without throwing (Execute=false), and without emitting any output
-            // via Console.Out/Console.Error, since only MSBuild's own error reporting is permitted.
+            // Execute must fail without throwing and without any Console output (only MSBuild's own
+            // error reporting is permitted).
             Assert.False result
             Assert.Equal("", capturedConsoleOut.ToString())
             Assert.Equal("", capturedConsoleError.ToString())
 
             let error = Assert.Single(engine.Errors)
 
-            // The diagnostic must name the original, unrooted relative resx input, and must never
-            // surface the rooted task project directory the file was actually loaded from.
             Assert.Contains(relativeResx, error.Message)
             Assert.DoesNotContain(directory.FullName, error.Message))
 
@@ -432,8 +415,8 @@ type FileTaskEnvironmentTests() =
         withTaskEnvironment (fun environment directory ->
             let relativeResx = "MissingName.resx"
 
-            // Well-formed XML, but the `<data>` element lacks the required `name` attribute, which
-            // fails via `failTask` (shared with FSharpEmbedResourceText) rather than an XML parse error.
+            // Well-formed XML whose `<data>` element lacks the required `name` attribute, so it fails
+            // via the shared `failTask` rather than an XML parse error.
             File.WriteAllText(
                 Path.Combine(directory.FullName, relativeResx),
                 "<?xml version=\"1.0\" encoding=\"utf-8\"?><root><data><value>Oops</value></data></root>"
@@ -455,9 +438,8 @@ type FileTaskEnvironmentTests() =
 
             let result = task.Execute()
 
-            // failTask already logs the error and raises TaskFailed; the catch in generateSource must
-            // not log a second error for this exception, so exactly one error is expected, and it must
-            // not contain a duplicated stack trace (which only the general-exception branch would emit).
+            // failTask logs the error and raises TaskFailed; the catch must not log a second error, so
+            // exactly one error is expected, with no duplicated stack trace.
             Assert.False result
             let error = Assert.Single(engine.Errors)
             Assert.Contains("Missing resource name", error.Message)
@@ -470,9 +452,8 @@ type FileTaskEnvironmentTests() =
         ()
         =
         withTaskEnvironment (fun environment directory ->
-            // The resx does not exist on disk, so XDocument.Load throws a FileNotFoundException whose
-            // text embeds the rooted absolute path it actually tried to open. The diagnostic must be
-            // restored to the original relative input, with no trace of the rooted project directory.
+            // The resx does not exist, so XDocument.Load throws a FileNotFoundException naming the rooted
+            // absolute path; the diagnostic must be restored to the original relative input.
             let relativeResx = "Missing.resx"
 
             let embeddedResource = TaskItem(relativeResx) :> ITaskItem
@@ -500,10 +481,9 @@ type FileTaskEnvironmentTests() =
         ()
         =
         withTaskEnvironment (fun environment directory ->
-            // An absolute input that happens to live beneath the project directory must survive intact:
-            // a blind project-directory strip would corrupt the rooted path embedded in the exception
-            // body back into a bogus relative path. Restoration by exact rooted-value replacement is a
-            // no-op here (rooted value == original), so the full absolute path is preserved everywhere.
+            // An absolute input beneath the project directory must survive intact: restoration by exact
+            // rooted-value replacement is a no-op (rooted == original), so a blind project-directory
+            // strip would wrongly corrupt it into a relative fragment.
             let absoluteResx = Path.Combine(directory.FullName, "AbsentUnderProject.resx")
 
             let embeddedResource = TaskItem(absoluteResx) :> ITaskItem
@@ -523,8 +503,8 @@ type FileTaskEnvironmentTests() =
             Assert.False(task.Execute())
             let error = Assert.Single(engine.Errors)
 
-            // Present in the message prefix AND preserved in the (FileNotFoundException) body, proving
-            // the absolute path was not stripped down to a relative fragment.
+            // Present in the message prefix AND in the (FileNotFoundException) body, proving the absolute
+            // path was not stripped to a relative fragment.
             Assert.Contains(absoluteResx, error.Message)
             Assert.True(countOccurrences absoluteResx error.Message >= 2, error.Message))
 
@@ -533,10 +513,8 @@ type FileTaskEnvironmentTests() =
         ()
         =
         withTaskEnvironment (fun environment directory ->
-            // GetAbsolutePath only prepends the project directory, so the rooted path still carries the
-            // 'sub/..' segments; XDocument.Load then hands them to the framework, whose FileNotFoundException
-            // embeds the *canonicalized* absolute path ('<project>/Missing.resx'). Restoring only the raw
-            // rooted form would miss that and leak the project root, so both forms must map back to the
+            // GetAbsolutePath leaves the 'sub/..' segments in the rooted path, but the framework
+            // canonicalizes to '<project>/Missing.resx' before throwing; both forms must map back to the
             // caller's original relative spelling.
             let relativeResx = Path.Combine("sub", "..", "Missing.resx")
 
@@ -557,18 +535,16 @@ type FileTaskEnvironmentTests() =
             Assert.False(task.Execute())
             let error = Assert.Single(engine.Errors)
 
-            // The original dot-segment spelling survives, and the canonicalized project root never leaks.
             Assert.Contains(relativeResx, error.Message)
             Assert.DoesNotContain(directory.FullName, error.Message))
 
     [<Fact>]
     member _.``FSharpEmbedResXSource handles an invalid path input inside its protected handler``() =
         withTaskEnvironment (fun environment directory ->
-            // A '|' is rejected by the framework Path APIs on .NET Framework, where path derivation
-            // (GetFileNameWithoutExtension/Path.Combine) throws; on .NET Core it is a valid-but-missing
-            // filename whose later load throws. Because derivation stays inside the task's try, both are
-            // caught: Execute reports failure (never propagates), the diagnostic names the caller's own
-            // input, and the project directory never leaks.
+            // A '|' is rejected by the framework Path APIs on .NET Framework (path derivation throws) and
+            // is a valid-but-missing filename on .NET Core (load throws). Because derivation stays inside
+            // the try, both are caught: Execute fails without propagating, the diagnostic names the
+            // caller's input, and the project directory never leaks.
             let invalidResx = "in|valid.resx"
 
             let embeddedResource = TaskItem(invalidResx) :> ITaskItem
@@ -595,15 +571,12 @@ type FileTaskEnvironmentTests() =
     member _.``FSharpEmbedResXSource restores a Windows partially qualified resx input and never leaks the expanded rooted form``
         ()
         =
-        // Windows-only: a leading '\' or 'C:' is an ordinary file name character on Unix, so these shapes
-        // only carry partial-qualification meaning on Windows.
+        // Windows-only: a leading '\' or 'C:' is an ordinary filename character on Unix.
         if RuntimeInformation.IsOSPlatform OSPlatform.Windows then
             withTaskEnvironment (fun environment directory ->
-                // A root-relative ('\Missing.resx') and a drive-relative ('C:Missing.resx') input are both
-                // reported as rooted by Path.IsPathRooted, yet GetAbsolutePath still expands them against
-                // the project directory before XDocument.Load throws its FileNotFoundException. The
-                // diagnostic must be restored to the caller's own partially qualified spelling, never the
-                // expanded rooted form (nor, for the drive-relative case, the project directory).
+                // Root-relative ('\Missing.resx') and drive-relative ('C:Missing.resx') inputs are both
+                // reported as rooted yet GetAbsolutePath expands them against the project directory before
+                // XDocument.Load throws. The diagnostic must keep the caller's partially qualified spelling.
                 for original in [ @"\Missing.resx"; @"C:Missing.resx" ] do
                     let embeddedResource = TaskItem(original) :> ITaskItem
                     embeddedResource.SetMetadata("GenerateSource", "true")
@@ -629,8 +602,8 @@ type FileTaskEnvironmentTests() =
         ()
         =
         withTaskEnvironment (fun environment directory ->
-            // The .txt does not exist, so File.ReadAllLines throws a FileNotFoundException naming the
-            // rooted absolute path. The diagnostic must surface only the original relative input.
+            // The .txt does not exist, so File.ReadAllLines throws naming the rooted absolute path; the
+            // diagnostic must surface only the original relative input.
             let relativeText = "Missing.txt"
 
             let engine = MockEngine()
@@ -680,9 +653,8 @@ type FileTaskEnvironmentTests() =
         ()
         =
         withTaskEnvironment (fun environment directory ->
-            // File.ReadAllLines canonicalizes 'sub/../Missing.txt' before throwing, so its
-            // FileNotFoundException names '<project>/Missing.txt', not the raw rooted 'sub/..' form. Both
-            // must be restored to the caller's original spelling with no project-directory leak.
+            // File.ReadAllLines canonicalizes 'sub/../Missing.txt' to '<project>/Missing.txt' before
+            // throwing; both forms must map back to the caller's original spelling.
             let relativeText = Path.Combine("sub", "..", "Missing.txt")
 
             let engine = MockEngine()
@@ -705,13 +677,10 @@ type FileTaskEnvironmentTests() =
     [<Fact>]
     member _.``FSharpEmbedResourceText handles an invalid path input inside its protected handler``() =
         withTaskEnvironment (fun environment directory ->
-            // A '|' is rejected by the framework Path APIs on .NET Framework (path derivation throws) and
-            // is a valid-but-missing filename on .NET Core (where it instead trips the letters-and-digits
-            // file name guard). Either way the failure is handled inside the task's try - proving path
-            // derivation stayed inside it - so Execute fails without propagating, every diagnostic names
-            // the caller's input, and none leaks the project directory. The number of diagnostics differs
-            // by framework (the guard on .NET Core also raises through the shared catch), so assert over
-            // the whole set rather than a single error.
+            // A '|' is rejected by the framework Path APIs on .NET Framework (derivation throws) and is a
+            // valid-but-missing filename on .NET Core (tripping the letters-and-digits guard). Either way
+            // the failure is handled inside the try, so Execute fails without propagating and no diagnostic
+            // leaks the project directory. The diagnostic count differs by framework, so assert over the set.
             let invalidText = "in|valid.txt"
 
             let engine = MockEngine()
@@ -738,11 +707,10 @@ type FileTaskEnvironmentTests() =
         ()
         =
         withTaskEnvironment (fun environment directory ->
-            // Prefix-overlap oracle. 'shortOriginal' roots to '<project>/p', a path-boundary prefix of the
-            // *canonicalized* form of 'longOriginal' ('<project>/p/deeper'). Replacing the shorter rooted
-            // form first would rewrite '<project>/p/deeper' into 'p/deeper', silently dropping the caller's
-            // dot-segment spelling; restoring the longest rooted form first yields the exact original. This
-            // exercises the private restoration directly (reachable only by reflection from this assembly).
+            // Prefix-overlap oracle. 'shortOriginal' roots to '<project>/p', a path-boundary prefix of
+            // the canonicalized form of 'longOriginal' ('<project>/p/deeper'). Restoring the shorter form
+            // first would rewrite the longer path into 'p/deeper', dropping the caller's dot-segment
+            // spelling; longest-first yields the exact original. Exercised directly by reflection.
             let shortOriginal = "p"
             let longOriginal = Path.Combine("p", "deeper", "..", "deeper")
 
@@ -760,8 +728,6 @@ type FileTaskEnvironmentTests() =
             let actual =
                 restore.Invoke(task, [| box message; box [| shortOriginal; longOriginal |] |]) :?> string
 
-            // Exact match proves the overlapping short prefix did not partially rewrite the long path and
-            // that the canonicalized project root was fully restored to the caller's spelling.
             Assert.Equal(expected, actual)
             Assert.DoesNotContain(directory.FullName, actual))
 
@@ -772,11 +738,9 @@ type FileTaskEnvironmentTests() =
         // Windows-only: a leading '\' or 'C:' is an ordinary file name character on Unix.
         if RuntimeInformation.IsOSPlatform OSPlatform.Windows then
             withTaskEnvironment (fun environment directory ->
-                // A root-relative ('\Missing.txt') and a drive-relative ('C:Missing.txt') input are both
-                // reported as rooted by Path.IsPathRooted, yet GetAbsolutePath still expands them against
-                // the project directory before File.ReadAllLines throws naming the expanded path. The
-                // diagnostic must surface the caller's original partially qualified spelling, never the
-                // expanded rooted form (nor, for the drive-relative case, the project directory).
+                // Root-relative ('\Missing.txt') and drive-relative ('C:Missing.txt') inputs are both
+                // reported as rooted yet GetAbsolutePath expands them against the project directory before
+                // File.ReadAllLines throws. The diagnostic must keep the caller's partially qualified spelling.
                 for original in [ @"\Missing.txt"; @"C:Missing.txt" ] do
                     let engine = MockEngine()
 
@@ -799,9 +763,7 @@ type FileTaskEnvironmentTests() =
         ()
         =
         withIsolatedTaskEnvironmentPair (fun environmentA directoryA environmentB directoryB ->
-            // Both instances share the exact same relative source/target names; only the
-            // TaskEnvironment each is wired to (and therefore the project directory the paths are
-            // rooted against) differs.
+            // Both instances share identical relative source/target names; only their TaskEnvironment differs.
             let relativeIntermediate = Path.Combine("obj", "Debug")
             let relativeSource = "Source.txt"
 
@@ -831,8 +793,6 @@ type FileTaskEnvironmentTests() =
 
             let expectedItemSpec = Path.Combine(relativeIntermediate, "Source.txt")
 
-            // The copied item's ItemSpec must remain the original, unrooted relative value, and is
-            // identical for both instances since both were configured with identical inputs.
             Assert.Equal(expectedItemSpec, taskA.CopiedFiles.[0].ItemSpec)
             Assert.Equal(expectedItemSpec, taskB.CopiedFiles.[0].ItemSpec)
 
@@ -853,8 +813,8 @@ type FileTaskEnvironmentTests() =
         ()
         =
         withTaskEnvironment (fun environment _directory ->
-            // Deliberately do not create "Missing.txt" on disk: File.ReadAllText must throw, and the
-            // existing broad catch must swallow it, preserving Execute=true.
+            // "Missing.txt" is never created: File.ReadAllText throws and the existing broad catch must
+            // swallow it, preserving Execute=true.
             let embeddedResource = TaskItem("Missing.txt") :> ITaskItem
             embeddedResource.SetMetadata("IntermediateTargetPath", "obj")
             embeddedResource.SetMetadata("Pattern1", "PLACEHOLDER")
@@ -869,9 +829,8 @@ type FileTaskEnvironmentTests() =
 
             let expectedItemSpec = Path.Combine("obj", "Missing.txt")
 
-            // Existing semantics (preserved unchanged): Execute still reports success, the item is
-            // still recorded in CopiedFiles, and its ItemSpec was already rewritten to the computed
-            // target before the (swallowed) I/O failure, even though nothing was ever written.
+            // Preserved semantics: Execute still succeeds, the item is recorded in CopiedFiles, and its
+            // ItemSpec was rewritten to the computed target before the swallowed I/O failure.
             Assert.True result
             let copiedItem = Assert.Single(task.CopiedFiles)
             Assert.Equal(expectedItemSpec, copiedItem.ItemSpec)

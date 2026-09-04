@@ -96,7 +96,6 @@ module internal FSharpEnvironment =
         with e ->
             None
 
-    // Reads the FSHARP_COMPILER_BIN override from the ambient process environment.
     let BinFolderOfDefaultFSharpCompiler (probePoint: string option) =
         BinFolderOfDefaultFSharpCompilerUsingEnvironment Environment.GetEnvironmentVariable probePoint
 

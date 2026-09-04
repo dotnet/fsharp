@@ -13,9 +13,8 @@ open Microsoft.Build.Utilities
 open FSharp.Build
 open Xunit
 
-/// Minimal ITaskHost stand-in mirroring the shape MSBuild passes to Fsc/Fsi via HostObject.
-/// Its Compile method is discovered by reflection inside Fsc/Fsi.ExecuteTool and receives the
-/// flags and source file names captured for that specific task instance.
+/// Minimal ITaskHost stand-in matching the shape MSBuild passes to Fsc/Fsi via HostObject. Its
+/// Compile method is discovered by reflection in Fsc/Fsi.ExecuteTool.
 type FauxHostObject() =
     let mutable flags: string[] = [||]
     let mutable sources: string[] = [||]
@@ -30,9 +29,8 @@ type FauxHostObject() =
 
     interface ITaskHost
 
-/// Reflection helpers for the internal test hooks Fsc/Fsi expose (InternalGenerateFullPathToTool,
-/// InternalGenerateResponseFileCommands, InternalExecuteTool). FSharp.Build only grants
-/// InternalsVisibleTo to VisualFSharp.UnitTests, so this assembly reaches them via reflection.
+/// Reflection helpers for the internal Fsc/Fsi test hooks (InternalsVisibleTo is granted only to
+/// VisualFSharp.UnitTests, so this assembly reaches them by reflection).
 module private FscFsiTestHooks =
 
     let private invoke (task: obj) (name: string) (args: obj[]) =
@@ -53,11 +51,8 @@ module private FscFsiTestHooks =
     let normalizePathToTool (task: obj) (pathToTool: string) : string =
         invoke task "InternalNormalizePathToTool" [| box pathToTool |] :?> string
 
-/// Verifies that the FSharp.Build tasks which are multithread-safe (their outputs depend only on
-/// their inputs and on an injected TaskEnvironment, with no reliance on ambient process state such
-/// as the current directory or environment variables) are marked directly with
-/// MSBuildMultiThreadableTaskAttribute, opting them into MSBuild's multi-threaded build scheduler
-/// instead of the single-threaded task queue.
+/// Verifies the multithread-safe FSharp.Build tasks are marked directly with
+/// MSBuildMultiThreadableTaskAttribute, opting them into MSBuild's multi-threaded scheduler.
 type MultiThreadedTaskTests() =
 
     static member MultiThreadableTaskTypes: obj[] seq =
@@ -80,13 +75,12 @@ type MultiThreadedTaskTests() =
 
         Assert.Equal(1, attributes.Length)
 
-/// Verifies that Fsc and Fsi resolve their tool location and capture their per-invocation state
-/// against the TaskEnvironment injected into their constructor, so concurrent instances running on
-/// the multi-threaded scheduler cannot observe each other's ambient state.
+/// Verifies Fsc and Fsi resolve their tool location and capture per-invocation state against the
+/// TaskEnvironment injected into their constructor, so concurrent instances stay isolated.
 type FscFsiMultiThreadedTaskTests() =
 
     /// Creates a TaskEnvironment whose FSHARP_COMPILER_BIN points at a fresh temporary directory,
-    /// returning the environment and that directory. Callers must dispose the environment.
+    /// returned with that directory. Callers must dispose the environment.
     static let environmentWithCompilerBin () =
         let projectDirectory = TestFramework.createTemporaryDirectory().FullName
         let compilerBin = TestFramework.createTemporaryDirectory().FullName
@@ -99,9 +93,7 @@ type FscFsiMultiThreadedTaskTests() =
 
         environment, compilerBin
 
-    /// Creates two compiler-bin TaskEnvironments, runs `body` against both, and disposes them afterwards.
-    /// Nested try/finally guarantees the first environment is disposed even if the second fails to construct,
-    /// and that both are disposed (second then first) once `body` completes.
+    /// As withCompilerBinEnvironment but with two independent environments, disposing both afterwards.
     static let withCompilerBinEnvironmentPair body =
         let environmentA, binA = environmentWithCompilerBin ()
 
@@ -118,15 +110,12 @@ type FscFsiMultiThreadedTaskTests() =
     [<Fact>]
     member _.``Fsc and Fsi resolve tool path against distinct injected compiler-bin environments``() =
         withCompilerBinEnvironmentPair (fun fscEnvironment fscBin fsiEnvironment fsiBin ->
-            // Constructing with the environment must route the eager compiler-bin lookup through it,
-            // which requires assigning TaskEnvironment before the defaultToolPath binding runs.
             let fsc = Fsc(fscEnvironment)
             let fsi = Fsi(fsiEnvironment)
 
             let fscPath = FscFsiTestHooks.fullPathToTool fsc
             let fsiPath = FscFsiTestHooks.fullPathToTool fsi
 
-            // Each task resolves an absolute path to its own tool under its own injected bin directory.
             Assert.True(Path.IsPathRooted fscPath, $"expected rooted path, got '{fscPath}'")
             Assert.True(Path.IsPathRooted fsiPath, $"expected rooted path, got '{fsiPath}'")
 
@@ -136,7 +125,6 @@ type FscFsiMultiThreadedTaskTests() =
             Assert.Equal(Path.GetFullPath fscBin, Path.GetDirectoryName fscPath)
             Assert.Equal(Path.GetFullPath fsiBin, Path.GetDirectoryName fsiPath)
 
-            // The two injected environments are distinct, so the resolved directories differ.
             Assert.NotEqual<string>(Path.GetDirectoryName fscPath, Path.GetDirectoryName fsiPath))
 
     [<Fact>]
@@ -154,8 +142,6 @@ type FscFsiMultiThreadedTaskTests() =
 
     [<Fact>]
     member _.``Two concurrent Fsc tasks route flags and sources to their own host objects``() =
-        // Each task gets its own HostObject, OtherFlags and Sources. Running them concurrently must
-        // not let one instance's captured arguments/filenames leak into another (no shared state).
         let makeTask (flag: string) (sourceNames: string list) =
             let task = Fsc()
             task.BuildEngine <- MockEngine()
@@ -178,8 +164,6 @@ type FscFsiMultiThreadedTaskTests() =
 
         let run (task: Fsc) =
             Task.Run(fun () ->
-                // Populate this instance's captured arguments/filenames, mirroring ToolTask.Execute,
-                // then hand off to the host object exactly as a real build would.
                 FscFsiTestHooks.generateResponseFileCommands task |> ignore
                 barrier.SignalAndWait()
                 FscFsiTestHooks.executeTool task |> ignore)
@@ -197,10 +181,6 @@ type FscFsiMultiThreadedTaskTests() =
 
     [<Fact>]
     member _.``Fsc roots a relative pathToTool against its injected project directory``() =
-        // MSBuild's ToolTask.ComputePathToTool can hand a relative base ToolPath straight to the
-        // derived ExecuteTool, and ProcessStartInfo.FileName then resolves it against the host
-        // current directory rather than the child WorkingDirectory. The production normalization must
-        // root such a relative path (with directory components) against this task's project directory.
         BuildTaskTestHelpers.withTaskEnvironment (fun environment directory ->
             let fsc = Fsc(environment)
             let relative = Path.Combine("tools", "fsc.exe")
@@ -213,11 +193,8 @@ type FscFsiMultiThreadedTaskTests() =
             // A bare filename must be left untouched so the OS/ComputePathToTool PATH lookup still works.
             Assert.Equal("fsc.exe", FscFsiTestHooks.normalizePathToTool fsc "fsc.exe")
 
-            // Any path with a directory component must be routed through GetAbsolutePath, matching the
-            // environment's own rooting exactly - even the Windows-only root-relative (\tools\fsc.exe)
-            // and drive-relative (C:tools\fsc.exe) forms that Path.IsPathRooted reports as rooted yet
-            // still bind to ambient process state. These shapes are only meaningful on Windows (on Unix
-            // a backslash is an ordinary filename character), so guard them accordingly.
+            // Windows root-relative and drive-relative forms, which IsPathRooted reports as rooted yet
+            // still bind to ambient state, must be routed through GetAbsolutePath (Windows-only shapes).
             if RuntimeInformation.IsOSPlatform OSPlatform.Windows then
                 let rootRelative = @"\tools\fsc.exe"
 
@@ -247,8 +224,7 @@ type FscFsiMultiThreadedTaskTests() =
             // A bare filename must be left untouched so the OS/ComputePathToTool PATH lookup still works.
             Assert.Equal("fsi.exe", FscFsiTestHooks.normalizePathToTool fsi "fsi.exe")
 
-            // Windows root-relative and drive-relative tool paths must also be rooted through
-            // GetAbsolutePath rather than escaped by an IsPathRooted check (guarded: Windows-only).
+            // Windows root-relative and drive-relative forms must also be rooted through GetAbsolutePath.
             if RuntimeInformation.IsOSPlatform OSPlatform.Windows then
                 let rootRelative = @"\tools\fsi.exe"
 
