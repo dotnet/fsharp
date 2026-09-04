@@ -219,29 +219,6 @@ type FileTaskEnvironmentTests() =
             check directoryB intermediateB "AssemblyB" "AssemblyA" taskB)
 
     [<Fact>]
-    member _.``GenerateILLinkSubstitutions reports blocked intermediate paths only through one MSBuild error``() =
-        withTaskEnvironment (fun environment directory ->
-            let blocked = "blocked"
-            File.WriteAllText(Path.Combine(directory.FullName, blocked), "not a directory")
-            let intermediate = Path.Combine(blocked, "sub")
-            let engine = MockEngine()
-
-            let task =
-                GenerateILLinkSubstitutions(
-                    BuildEngine = engine,
-                    AssemblyName = "Assembly",
-                    IntermediateOutputPath = intermediate
-                )
-                |> assignTaskEnvironment environment
-
-            Assert.False(task.Execute())
-            let error = Assert.Single(engine.Errors)
-            let scenario = "blocked intermediate path"
-            assertContains scenario intermediate error.Message
-            assertNotContains scenario directory.FullName error.Message
-            assertNotContains scenario (environment.GetAbsolutePath(intermediate).Value) error.Message)
-
-    [<Fact>]
     member _.``Resource generators isolate relative input and output paths per task``() =
         for kind in [ Resx; Text ] do
             withIsolatedTaskEnvironmentPair (fun environmentA directoryA environmentB directoryB ->

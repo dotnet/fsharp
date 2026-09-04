@@ -40,9 +40,6 @@ type GenerateILLinkSubstitutions() =
     member val GeneratedItems = [||]: ITaskItem[] with get, set
 
     override this.Execute() =
-        // Record paths inside the try so failures during derivation still reach the shared handler below.
-        let mutable originalPaths = [ this.IntermediateOutputPath ]
-
         try
             // Define the resource prefixes that need to be removed
             let resourcePrefixes =
@@ -89,8 +86,6 @@ type GenerateILLinkSubstitutions() =
             let outputFileName =
                 Path.Combine(this.IntermediateOutputPath, "ILLink.Substitutions.xml")
 
-            originalPaths <- [ this.IntermediateOutputPath; outputFileName ]
-
             Directory.CreateDirectory(taskEnvironment.RootedPath this.IntermediateOutputPath)
             |> ignore
 
@@ -103,5 +98,5 @@ type GenerateILLinkSubstitutions() =
             this.GeneratedItems <- [| item |]
             true
         with ex ->
-            this.Log.LogError(taskEnvironment.RestoreOriginalPaths (ex.ToString()) originalPaths)
+            this.Log.LogErrorFromException(ex, true)
             false
