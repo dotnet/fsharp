@@ -8,6 +8,7 @@ open System.Collections.Generic
 open System.Collections.Immutable
 open System.Threading
 open System.Runtime.Caching
+open System.Runtime.CompilerServices
 
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Classification
@@ -29,6 +30,12 @@ open Microsoft.VisualStudio.FSharp.Editor.Telemetry
 
 type SemanticClassificationData = SemanticClassificationView
 type SemanticClassificationLookup = IReadOnlyDictionary<int, ResizeArray<SemanticClassificationItem>>
+
+type internal LastGoodSemanticClassification =
+    {
+        Text: SourceText
+        Lookup: SemanticClassificationLookup
+    }
 
 [<Export(typeof<IFSharpClassificationService>)>]
 type internal FSharpClassificationService [<ImportingConstructor>] () =
@@ -149,6 +156,41 @@ type internal FSharpClassificationService [<ImportingConstructor>] () =
     static let openedDocumentsSemanticClassificationCache =
         new DocumentCache<SemanticClassificationLookup>("fsharp-opened-documents-semantic-classification-cache", 2.)
 
+    // Roslyn replaces a span's semantic tags with whatever this service returns, so answering "nothing"
+    // while the checker is unavailable (project loading or reloading, a superseded check) strips the
+    // colours the user already sees. Keep the last whole-file lookup per document, outliving the
+    // version-keyed cache above, and re-emit it for those requests.
+    static let lastGoodSemanticClassification =
+        ConditionalWeakTable<DocumentId, LastGoodSemanticClassification>()
+
+    static let rememberLastGood (documentId: DocumentId) (text: SourceText) (lookup: SemanticClassificationLookup) =
+        let lastGood = { Text = text; Lookup = lookup }
+        // net472 has no ConditionalWeakTable.AddOrUpdate.
+        lock lastGoodSemanticClassification (fun () ->
+            lastGoodSemanticClassification.Remove documentId |> ignore
+            lastGoodSemanticClassification.Add(documentId, lastGood))
+
+    // Only for the text it was computed from: the lookup names positions, so against edited text it
+    // would colour the wrong characters.
+    static let addLastGood (documentId: DocumentId) (sourceText: SourceText) (targetSpan: TextSpan) (result: List<ClassifiedSpan>) =
+        match lastGoodSemanticClassification.TryGetValue documentId with
+        | true, lastGood when lastGood.Text.ContentEquals sourceText ->
+            addSemanticClassificationByLookup sourceText targetSpan lastGood.Lookup result
+        | _ -> ()
+
+    static let addLastGoodForCurrentText (document: Document) (targetSpan: TextSpan) (result: List<ClassifiedSpan>) =
+        match document.TryGetText() with
+        | true, sourceText -> addLastGood document.Id sourceText targetSpan result
+        | _ -> ()
+
+    // Which of the two caches a document lands in is not observable from its classifications - a miss
+    // only costs a recheck - so tests reach the caches directly to tell the branches apart.
+    static member internal OpenedDocumentsSemanticClassificationCache =
+        openedDocumentsSemanticClassificationCache
+
+    static member internal UnopenedDocumentsSemanticClassificationCache =
+        unopenedDocumentsSemanticClassificationCache
+
     interface IFSharpClassificationService with
         // Do not perform classification if we don't have project options (#defines matter)
         member _.AddLexicalClassifications(_: SourceText, _: TextSpan, _: List<ClassifiedSpan>, _: CancellationToken) = ()
@@ -252,11 +294,12 @@ type internal FSharpClassificationService [<ImportingConstructor>] () =
                             use _eventDuration =
                                 TelemetryReporter.ReportSingleEventWithDuration(TelemetryEvents.AddSemanticClassifications, eventProps)
 
-                            let! classificationData = document.GetFSharpSemanticClassificationAsync(nameof (FSharpClassificationService))
-
-                            let classificationDataLookup = toSemanticClassificationLookup classificationData
-                            do! unopenedDocumentsSemanticClassificationCache.SetAsync(document, classificationDataLookup)
-                            addSemanticClassificationByLookup sourceText textSpan classificationDataLookup result
+                            match! document.TryGetFSharpSemanticClassificationAsync(nameof (FSharpClassificationService)) with
+                            | ValueNone -> ()
+                            | ValueSome classificationData ->
+                                let classificationDataLookup = toSemanticClassificationLookup classificationData
+                                do! unopenedDocumentsSemanticClassificationCache.SetAsync(document, classificationDataLookup)
+                                addSemanticClassificationByLookup sourceText textSpan classificationDataLookup result
                     else
 
                         match! openedDocumentsSemanticClassificationCache.TryGetValueAsync document with
@@ -288,21 +331,28 @@ type internal FSharpClassificationService [<ImportingConstructor>] () =
                             use _eventDuration =
                                 TelemetryReporter.ReportSingleEventWithDuration(TelemetryEvents.AddSemanticClassifications, eventProps)
 
-                            let! _, checkResults = document.GetFSharpParseAndCheckResultsAsync(nameof (IFSharpClassificationService))
+                            match! document.TryGetFSharpParseAndCheckResultsAsync(nameof (IFSharpClassificationService)) with
+                            | ValueNone -> addLastGood document.Id sourceText textSpan result
+                            | ValueSome(struct (_, checkResults)) ->
+                                // The cache is keyed by text version only, so it has to hold the whole file:
+                                // the next request at this version is usually for a different span.
+                                let classificationData =
+                                    checkResults.GetSemanticClassification(None, RelatedSymbolUseKind.All)
 
-                            let targetRange =
-                                RoslynHelpers.TextSpanToFSharpRange(document.FilePath, textSpan, sourceText)
-
-                            let classificationData =
-                                checkResults.GetSemanticClassification(Some targetRange, RelatedSymbolUseKind.All)
-
-                            if classificationData.Length > 0 then
-                                let classificationDataLookup = itemToSemanticClassificationLookup classificationData
-                                do! unopenedDocumentsSemanticClassificationCache.SetAsync(document, classificationDataLookup)
-
-                                addSemanticClassification sourceText textSpan classificationData result
+                                // Every checked file resolves at least its enclosing module, so nothing here means
+                                // the classification itself failed (SemanticClassification.fs recovers with an empty
+                                // array). Caching that would pin the version to no colours.
+                                if classificationData.Length = 0 then
+                                    addLastGood document.Id sourceText textSpan result
+                                else
+                                    let classificationDataLookup = itemToSemanticClassificationLookup classificationData
+                                    do! openedDocumentsSemanticClassificationCache.SetAsync(document, classificationDataLookup)
+                                    rememberLastGood document.Id sourceText classificationDataLookup
+                                    addSemanticClassificationByLookup sourceText textSpan classificationDataLookup result
                 }
-                |> CancellableTask.ifCanceledReturn ()
+                // A cancellation that is not Roslyn's own (a superseded or aborted check surfaces as one)
+                // must not turn into an empty answer, which Roslyn would paint as "no colours".
+                |> CancellableTask.ifCanceledThen (fun () -> addLastGoodForCurrentText document textSpan result)
                 |> CancellableTask.startAsTask cancellationToken
 
         // Do not perform classification if we don't have project options (#defines matter)
