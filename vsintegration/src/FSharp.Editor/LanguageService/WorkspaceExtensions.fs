@@ -619,16 +619,25 @@ type Document with
         match this.GetFsharpParsingOptions() with
         | defines, _ -> defines
 
+    /// Parses the given F# document; ValueNone while its project has no compilation options.
+    member this.TryGetFSharpParseResultsAsync(userOpName) : CancellableTask<FSharpParseFileResults voption> =
+        cancellableTask {
+            match! this.TryGetFSharpCompilationOptionsAsync(userOpName) with
+            | ValueNone -> return ValueNone
+            | ValueSome options ->
+                let! parseResults =
+                    if this.Project.UseTransparentCompiler then
+                        options.Checker.ParseDocumentUsingTransparentCompiler(this, options.ProjectOptions, userOpName)
+                    else
+                        options.Checker.ParseDocument(this, options.ParsingOptions, userOpName)
+
+                return ValueSome parseResults
+        }
+
     /// Parses the given F# document.
     member this.GetFSharpParseResultsAsync(userOpName) =
-        cancellableTask {
-            let! checker, _, parsingOptions, options = this.GetFSharpCompilationOptionsAsync(userOpName)
-
-            if this.Project.UseTransparentCompiler then
-                return! checker.ParseDocumentUsingTransparentCompiler(this, options, userOpName)
-            else
-                return! checker.ParseDocument(this, parsingOptions, userOpName)
-        }
+        this.TryGetFSharpParseResultsAsync(userOpName)
+        |> CancellableTask.map (orRaise "FSharp project options not found.")
 
     /// Parses and checks the given F# document; ValueNone while its project has no compilation options
     /// or the check was aborted.
