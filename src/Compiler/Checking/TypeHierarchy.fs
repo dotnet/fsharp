@@ -2,6 +2,7 @@
 
 module internal FSharp.Compiler.TypeHierarchy
 
+open Internal.Utilities.Library
 open Internal.Utilities.Library.Extras
 open FSharp.Compiler.Text
 open FSharp.Compiler.AbstractIL.IL
@@ -241,7 +242,7 @@ let FoldHierarchyOfTypeAux followInterfaces allowMultiIntfInst skipUnref visitor
             | _ -> false
 
         // Do not visit the same type twice. Could only be doing this if we've seen this tycon
-        if seenThisTycon && (match tcrefOpt with ValueSome tcref -> List.exists (typeEquiv g ty) (visited.Find tcref) | ValueNone -> false) then state else
+        if seenThisTycon && (match tcrefOpt with ValueSome tcref -> ListInline.exists (typeEquiv g ty) (visited.Find tcref) | ValueNone -> false) then state else
 
         // Do not visit the same tycon twice, e.g. I<int> and I<string>, collect I<int> only, unless directed to allow this
         if seenThisTycon && allowMultiIntfInst = AllowMultiIntfInstantiations.No then state else
@@ -255,10 +256,11 @@ let FoldHierarchyOfTypeAux followInterfaces allowMultiIntfInst skipUnref visitor
                 state
 
         if ndeep > 100 then (errorR(Error((FSComp.SR.recursiveClassHierarchy (RichText.mkText (showType ty))), m)); (visitedTycon, visited, acc)) else
+        // Local 'loop' is passed as a lambda, not 'loop (ndeep+1)': InlineIfLambda then inlines it instead of allocating it as a closure.
         let visitedTycon, visited, acc =
             if isInterfaceTy g ty then
-                List.foldBack
-                   (loop (ndeep+1))
+                ListInline.foldBack
+                   (fun ity st -> loop (ndeep+1) ity st)
                    (GetImmediateInterfacesOfType skipUnref g amap m ty)
                       (loop ndeep g.obj_ty_noNulls state)
             else
@@ -289,15 +291,15 @@ let FoldHierarchyOfTypeAux followInterfaces allowMultiIntfInst skipUnref visitor
                 | _ ->
                     let state =
                         if followInterfaces then
-                            List.foldBack
-                              (loop (ndeep+1))
+                            ListInline.foldBack
+                              (fun ity st -> loop (ndeep+1) ity st)
                               (GetImmediateInterfacesOfType skipUnref g amap m ty)
                               state
                         else
                             state
                     let state =
                         Option.foldBack
-                          (loop (ndeep+1))
+                          (fun sty st -> loop (ndeep+1) sty st)
                           (GetSuperTypeOfType g amap m ty)
                           state
                     state
