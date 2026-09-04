@@ -2,12 +2,18 @@
 
 namespace FSharp.Editor.Tests
 
+open System
+open System.Collections.Generic
+open System.Threading
+open System.Threading.Tasks
 open Xunit
+open Microsoft.CodeAnalysis
 open Microsoft.VisualStudio.FSharp.Editor
 open FSharp.Compiler.EditorServices
 open FSharp.Compiler.Text
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.Classification
+open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Classification
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Editor.Tests.Helpers
 open FSharp.Test
@@ -30,6 +36,61 @@ type SemanticClassificationServiceTests() =
         |> Async.RunSynchronously
         |> Option.toList
         |> List.collect Array.toList
+
+    let openDocument (source: string) =
+        let solution = RoslynTestHelpers.CreateSolution source
+        let workspace = solution.Workspace
+        let documentId = (RoslynTestHelpers.GetSingleDocument solution).Id
+        workspace.OpenDocument documentId
+        let document = workspace.CurrentSolution.GetDocument documentId
+        Assert.True(workspace.IsDocumentOpen documentId, "The document under test has to be open.")
+        document
+
+    let sourceTextOf (document: Document) =
+        document.GetTextAsync(CancellationToken.None).GetAwaiter().GetResult()
+
+    let classifyWith (ct: CancellationToken) (document: Document) (span: TextSpan) =
+        let result = ResizeArray<ClassifiedSpan>()
+
+        (FSharpClassificationService() :> IFSharpClassificationService)
+            .AddSemanticClassificationsAsync(document, span, result, ct)
+            .GetAwaiter()
+            .GetResult()
+
+        List.ofSeq result
+
+    let classify document span =
+        classifyWith CancellationToken.None document span
+
+    let isCached (cache: DocumentCache<SemanticClassificationLookup>) (document: Document) =
+        (cache.TryGetValueAsync document CancellationToken.None).GetAwaiter().GetResult().IsSome
+
+    let versionOf (document: Document) =
+        document.GetTextVersionAsync(CancellationToken.None).GetAwaiter().GetResult()
+
+    let isRemembered (document: Document) =
+        match FSharpClassificationService.OpenDocumentClassifications.TryGetValue document.Id with
+        | true, classification -> classification.Version = versionOf document
+        | _ -> false
+
+    let lineSpan (text: SourceText) firstLine lastLine =
+        TextSpan.FromBounds(text.Lines[firstLine].Start, text.Lines[lastLine].End)
+
+    let clearProjectOptions (document: Document) =
+        document.Project.Solution.Workspace.Services.GetService<IFSharpWorkspaceService>().FSharpProjectOptionsManager.ClearAllCaches()
+
+    // A project whose options were never supplied, i.e. one Visual Studio is still loading.
+    let openDocumentWithoutProjectOptions (source: string) =
+        let projectId = ProjectId.CreateNewId()
+        let documentInfo = RoslynTestHelpers.CreateDocumentInfo projectId "test.fs" source
+
+        let projectInfo =
+            RoslynTestHelpers.CreateProjectInfo projectId "test.fsproj" [ documentInfo ]
+
+        let solution = RoslynTestHelpers.CreateSolution [ projectInfo ]
+        let documentId = (RoslynTestHelpers.GetSingleDocument solution).Id
+        solution.Workspace.OpenDocument documentId
+        solution.Workspace.CurrentSolution.GetDocument documentId
 
     let verifyClassificationAtEndOfMarker (fileContents: string, marker: string, classificationType: string) =
         let text = SourceText.From(fileContents)
@@ -416,3 +477,174 @@ let result2 = s.(*2*)IsHyperbolicCaseWithLongName
                 && Range.rangeContainsPos item.Range longCasePos)
 
         Assert.True(longCaseUnionItems.Length > 0, "Expected a UnionCase classification covering 'IsHyperbolicCaseWithLongName'")
+
+    // Which cache a document lands in is invisible in its classifications - a miss only costs a
+    // recheck - so these reach the caches directly. Splitting one cache in two (#15954) left the
+    // open-document branch reading the opened cache and writing the unopened one, so the opened
+    // cache was never populated and every request for an open file re-ran the checker.
+    [<Fact>]
+    member _.``Semantic classification of an open document is cached for opened documents``() =
+        let document = openDocument "let x = 1"
+        let text = sourceTextOf document
+
+        Assert.NotEmpty(classify document (TextSpan(0, text.Length)))
+
+        Assert.True(isRemembered document, "Classifying an open document must remember its classification.")
+
+        Assert.False(
+            isCached FSharpClassificationService.UnopenedDocumentsSemanticClassificationCache document,
+            "An open document must not be cached as an unopened one."
+        )
+
+    // The cache is keyed by text version only, so what it holds has to cover the whole file:
+    // Roslyn asks for the visible span, then for other spans of the same version as the user scrolls.
+    [<Fact>]
+    member _.``Semantic classification computed for one span of an open document serves another span at the same version``() =
+        let source =
+            [
+                "type R = { Doop: int }"
+                "let r = { Doop = 12 }"
+                ""
+                "let mutable first = 12"
+                "let g () = first"
+            ]
+            |> String.concat "\n"
+
+        let document = openDocument source
+        let text = sourceTextOf document
+        let spanA = lineSpan text 0 1
+        let spanB = lineSpan text 3 4
+        Assert.False(spanA.IntersectsWith spanB)
+
+        let first = classify document spanA
+        Assert.NotEmpty first
+
+        let second = classify document spanB
+        Assert.NotEmpty second
+        Assert.All(second, fun span -> Assert.True(spanB.Contains span.TextSpan))
+
+        // A freshly opened copy has a new DocumentId and therefore cold caches: a direct computation for B.
+        Assert.Equal<ClassifiedSpan list>(classify (openDocument source) spanB, second)
+        Assert.Equal<ClassifiedSpan list>(first, classify document spanA)
+
+    // Roslyn replaces a span's tags with whatever comes back, so "no result" must re-emit the last
+    // good one rather than strip the colours the user already sees.
+    [<Fact>]
+    member _.``Semantic classification serves the last good lookup when project options become unavailable``() =
+        let source = "let x = 1\nlet y = 2"
+        let document = openDocument source
+        let text = sourceTextOf document
+        Assert.NotEmpty(classify document (TextSpan(0, text.Length)))
+
+        clearProjectOptions document
+        // A new text version misses the versioned cache; the text itself is unchanged, so the last
+        // good lookup still describes it.
+        let reopened = document.WithText(SourceText.From source)
+        let reopenedText = sourceTextOf reopened
+
+        Assert.NotEmpty(classify reopened (TextSpan(0, reopenedText.Length)))
+
+        Assert.False(isRemembered reopened, "A miss must not be remembered as a result.")
+
+    // The lookup names positions in the text it was computed from, so against edited text it would
+    // colour the wrong characters.
+    [<Fact>]
+    member _.``Semantic classification does not serve the last good lookup for edited text``() =
+        let document = openDocument "let x = 1\nlet y = 2"
+        let text = sourceTextOf document
+        Assert.NotEmpty(classify document (TextSpan(0, text.Length)))
+
+        clearProjectOptions document
+        let edited = document.WithText(SourceText.From "// a comment\nlet x = 1\nlet y = 2")
+        let editedText = sourceTextOf edited
+
+        Assert.Empty(classify edited (TextSpan(0, editedText.Length)))
+
+    [<Fact>]
+    member _.``Semantic classification without project options and without an earlier result returns nothing and caches nothing``() =
+        let document = openDocumentWithoutProjectOptions "let x = 1"
+        let text = sourceTextOf document
+
+        Assert.Empty(classify document (TextSpan(0, text.Length)))
+        Assert.False(isRemembered document)
+        Assert.False(isCached FSharpClassificationService.UnopenedDocumentsSemanticClassificationCache document)
+
+    // Roslyn keeps the previous tags only for a cancellation carrying its own token; nothing may catch it.
+    [<Fact>]
+    member _.``Semantic classification propagates cancellation as a canceled task``() =
+        let document = openDocument "let x = 1"
+        let text = sourceTextOf document
+
+        let task =
+            (FSharpClassificationService() :> IFSharpClassificationService)
+                .AddSemanticClassificationsAsync(document, TextSpan(0, text.Length), ResizeArray(), CancellationToken(true))
+
+        Assert.ThrowsAny<OperationCanceledException>(fun () -> task.GetAwaiter().GetResult())
+        |> ignore
+
+        Assert.True task.IsCanceled
+
+    // Roslyn's viewport taggers ask for the same version at once; the file must be walked once for all of them.
+    [<Fact>]
+    member _.``Overlapping requests for one version share a single classification``() =
+        let gate = TaskCompletionSource<OpenDocumentClassification voption>()
+        let computed = ref 0
+
+        let inFlight =
+            InFlightClassification(
+                VersionStamp.Create(),
+                fun _ ->
+                    Interlocked.Increment computed |> ignore
+                    gate.Task
+            )
+
+        let first = inFlight.Join CancellationToken.None
+        let second = inFlight.Join CancellationToken.None
+        Assert.False(first.IsCompleted || second.IsCompleted)
+
+        let classification =
+            {
+                Version = VersionStamp.Create()
+                Text = SourceText.From ""
+                Lookup = Dictionary()
+            }
+
+        gate.SetResult(ValueSome classification)
+
+        Assert.Same(classification.Lookup, first.Result.Value.Lookup)
+        Assert.Same(classification.Lookup, second.Result.Value.Lookup)
+        Assert.Equal(1, computed.Value)
+
+    [<Fact>]
+    member _.``A shared classification is cancelled only when its last waiter leaves``() =
+        let gate = TaskCompletionSource<OpenDocumentClassification voption>()
+        let sharedToken = ref CancellationToken.None
+
+        let inFlight =
+            InFlightClassification(
+                VersionStamp.Create(),
+                fun ct ->
+                    sharedToken.Value <- ct
+                    gate.Task
+            )
+
+        use first = new CancellationTokenSource()
+        use second = new CancellationTokenSource()
+        let firstJoin = inFlight.Join first.Token
+        let secondJoin = inFlight.Join second.Token
+
+        first.Cancel()
+
+        Assert.ThrowsAny<OperationCanceledException>(fun () -> firstJoin.GetAwaiter().GetResult() |> ignore)
+        |> ignore
+
+        Assert.False(sharedToken.Value.IsCancellationRequested, "One waiter leaving must not cancel the others.")
+        Assert.False(secondJoin.IsCompleted)
+
+        second.Cancel()
+
+        Assert.ThrowsAny<OperationCanceledException>(fun () -> secondJoin.GetAwaiter().GetResult() |> ignore)
+        |> ignore
+
+        Assert.True(sharedToken.Value.IsCancellationRequested, "The last waiter leaving must cancel the work.")
+        Assert.True inFlight.IsCancelled
