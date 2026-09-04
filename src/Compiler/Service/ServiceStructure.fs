@@ -2,6 +2,7 @@
 
 namespace FSharp.Compiler.EditorServices
 
+open System
 open Internal.Utilities.Library
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.SyntaxTreeOps
@@ -186,27 +187,39 @@ module Structure =
         }
 
     type LineNumber = int
-    type LineStr = string
 
     type CommentType =
         | SingleLine
         | XmlDoc
 
+    /// <summary>
+    /// Determines if a line is a single line or xml documentation comment.
+    /// </summary>
+    /// <remarks>
+    /// Kept at module scope: a local recursive function capturing a <see cref="T:System.ReadOnlySpan`1"/>-typed
+    /// helper as a closure field would need to instantiate <see cref="T:Microsoft.FSharp.Core.FSharpFunc`2"/>
+    /// over it, which the CLR disallows for byref-like type arguments (FS0412).
+    /// </remarks>
+    let commentTypeOf (line: ReadOnlySpan<char>) =
+        if line.StartsWithOrdinal("///") then ValueSome XmlDoc
+        elif line.StartsWithOrdinal("//") then ValueSome SingleLine
+        else ValueNone
+
     [<NoComparison>]
     type CommentList =
         {
-            Lines: ResizeArray<LineNumber * LineStr>
+            Lines: ResizeArray<LineNumber>
             Type: CommentType
         }
 
-        static member New ty lineStr =
+        static member New ty lineNum =
             {
                 Type = ty
-                Lines = ResizeArray [ lineStr ]
+                Lines = ResizeArray [ lineNum ]
             }
 
     /// Returns outlining ranges for given parsed input.
-    let getOutliningRanges (sourceLines: string[]) (parsedInput: ParsedInput) =
+    let getOutliningRanges (sourceLines: ReadOnlyMemory<char>[]) (parsedInput: ParsedInput) =
         let acc = ResizeArray()
 
         /// Validation function to ensure that ranges yielded for outlining span 2 or more lines
@@ -661,7 +674,7 @@ module Structure =
                     | r :: rest, last :: _ when
                         r.StartLine = last.EndLine + 1
                         || sourceLines[last.EndLine .. r.StartLine - 2]
-                           |> Array.forall System.String.IsNullOrWhiteSpace
+                           |> Array.forall _.Span.IsWhiteSpace()
                         ->
                         loop rest res (r :: currentBulk)
                     | r :: rest, _ -> loop rest (currentBulk :: res) [ r ]
@@ -719,7 +732,7 @@ module Structure =
 
         let collectConditionalDirectives directives sourceLines =
             // Adds a fold region from prevRange.Start to the line above nextLine
-            let addSectionFold (prevRange: range) (nextLine: int) (sourceLines: string array) =
+            let addSectionFold (prevRange: range) (nextLine: int) (sourceLines: ReadOnlyMemory<char>[]) =
                 let startLineIndex = nextLine - 2
 
                 if startLineIndex >= 0 then
@@ -753,7 +766,7 @@ module Structure =
                 | ConditionalDirectiveTrivia.Else r -> ValueSome r
                 | _ -> ValueNone
 
-            let rec group directives stack (sourceLines: string array) =
+            let rec group directives stack (sourceLines: ReadOnlyMemory<char>[]) =
                 match directives with
                 | [] -> ()
                 | ConditionalDirectiveTrivia.If _ as ifDirective :: directives -> group directives (ifDirective :: stack) sourceLines
@@ -822,36 +835,29 @@ module Structure =
             collectOpens decls
             List.iter parseDeclaration decls
 
-        /// Determine if a line is a single line or xml documentation comment
-        let (|Comment|_|) (line: string) =
-            if line.StartsWithOrdinal("///") then Some XmlDoc
-            elif line.StartsWithOrdinal("//") then Some SingleLine
-            else None
-
-        let getCommentRanges trivia (lines: string[]) =
-            let rec loop (lastLineNum, currentComment, result as state) (lines: string list) lineNum =
-                match lines with
-                | [] -> state
-                | lineStr :: rest ->
-                    match lineStr.TrimStart(), currentComment with
-                    | Comment commentType, Some comment ->
+        let getCommentRanges trivia (lines: ReadOnlyMemory<char>[]) =
+            let rec loop (struct (lastLineNum, currentComment, result) as state) lineNum =
+                if lineNum = lines.Length then
+                    state
+                else
+                    match commentTypeOf (lines[lineNum].Span.TrimStart()), currentComment with
+                    | ValueSome commentType, Some comment ->
                         loop
                             (if comment.Type = commentType && lineNum = lastLineNum + 1 then
-                                 comment.Lines.Add(lineNum, lineStr)
-                                 lineNum, currentComment, result
+                                 comment.Lines.Add lineNum
+                                 struct (lineNum, currentComment, result)
                              else
-                                 let comments = CommentList.New commentType (lineNum, lineStr)
-                                 lineNum, Some comments, comment :: result)
-                            rest
+                                 let comments = CommentList.New commentType lineNum
+                                 struct (lineNum, Some comments, comment :: result))
                             (lineNum + 1)
-                    | Comment commentType, None ->
-                        let comments = CommentList.New commentType (lineNum, lineStr)
-                        loop (lineNum, Some comments, result) rest (lineNum + 1)
-                    | _, Some comment -> loop (lineNum, None, comment :: result) rest (lineNum + 1)
-                    | _ -> loop (lineNum, None, result) rest (lineNum + 1)
+                    | ValueSome commentType, None ->
+                        let comments = CommentList.New commentType lineNum
+                        loop (struct (lineNum, Some comments, result)) (lineNum + 1)
+                    | ValueNone, Some comment -> loop (struct (lineNum, None, comment :: result)) (lineNum + 1)
+                    | ValueNone, None -> loop (struct (lineNum, None, result)) (lineNum + 1)
 
             let comments =
-                let _, lastComment, comments = loop (-1, None, []) (List.ofArray lines) 0
+                let struct (_, lastComment, comments) = loop (struct (-1, None, [])) 0
 
                 match lastComment with
                 | Some comment -> comment :: comments
@@ -859,13 +865,12 @@ module Structure =
                 |> List.rev
 
             comments
-            |> List.filter (fun comment -> comment.Lines.Count > 1)
-            |> List.map (fun comment ->
-                let lines = comment.Lines
-                let startLine, startStr = lines[0]
-                let endLine, endStr = lines[lines.Count - 1]
-                let startCol = startStr.IndexOf '/'
-                let endCol = endStr.TrimEnd().Length
+            |> Seq.filter (fun comment -> comment.Lines.Count > 1)
+            |> Seq.map (fun comment ->
+                let startLine = comment.Lines[0]
+                let endLine = comment.Lines[comment.Lines.Count - 1]
+                let startCol = lines[startLine].Span.IndexOf '/'
+                let endCol = lines[endLine].Span.TrimEnd().Length
 
                 let scopeType =
                     match comment.Type with
