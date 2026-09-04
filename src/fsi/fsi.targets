@@ -36,6 +36,8 @@
     <Compile Include="$(MSBuildThisFileDirectory)..\LegacyMSBuildResolver\LegacyMSBuildReferenceResolver.fsi" />
     <Compile Include="$(MSBuildThisFileDirectory)..\LegacyMSBuildResolver\LegacyMSBuildReferenceResolver.fs" />
     <Compile Include="$(MSBuildThisFileDirectory)console.fs" />
+    <Compile Include="$(MSBuildThisFileDirectory)interactiveProtocol.fs" />
+    <Compile Include="$(MSBuildThisFileDirectory)fsiserver.fs" />
     <Compile Include="$(MSBuildThisFileDirectory)fsimain.fs" />
     <NoneSubstituteText Include="$(MSBuildThisFileDirectory)App.config">
       <Pattern1>{{FSCoreVersion}}</Pattern1>
@@ -68,6 +70,12 @@
     <PackageReference Include="Microsoft.Build.Framework" />
     <PackageReference Include="Microsoft.Build.Tasks.Core" />
     <PackageReference Include="Microsoft.Build.Utilities.Core" />
+  </ItemGroup>
+
+  <!-- The server mode speaks JSON-RPC through StreamJsonRpc, the same library Roslyn's interactive
+       host and Visual Studio use, so that both ends of the protocol rest on one implementation. -->
+  <ItemGroup>
+    <PackageReference Include="StreamJsonRpc" />
   </ItemGroup>
 
 </Project>

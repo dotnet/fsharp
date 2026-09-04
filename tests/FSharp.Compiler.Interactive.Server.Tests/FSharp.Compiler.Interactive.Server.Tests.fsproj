@@ -1,0 +1,52 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks>net472;$(FSharpNetCoreProductTargetFramework)</TargetFrameworks>
+    <TargetFrameworks Condition="'$(OS)' == 'Unix' or '$(BUILDING_USING_DOTNET)' == 'true'">$(FSharpNetCoreProductTargetFramework)</TargetFrameworks>
+    <!-- xUnit3 requires test projects to be executable -->
+    <OutputType>Exe</OutputType>
+    <IsPackable>false</IsPackable>
+    <!-- Let xUnit3 generate the entry point -->
+    <GenerateProgramFile>false</GenerateProgramFile>
+    <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
+    <ExcludeFromSourceBuild>true</ExcludeFromSourceBuild>
+    <Optimize>false</Optimize>
+    <Tailcalls>false</Tailcalls>
+    <NoWarn>$(NoWarn);FS0988</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="StreamJsonRpc" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- The protocol types, shared with the session under test so that the two cannot drift. -->
+    <Compile Include="$(FSharpSourcesRoot)\fsi\interactiveProtocol.fs">
+      <Link>interactiveProtocol.fs</Link>
+    </Compile>
+    <Compile Include="FsiServerHarness.fs" />
+    <Compile Include="FsiJsonRpcServerTests.fs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="$(FSharpSourcesRoot)\Compiler\FSharp.Compiler.Service.fsproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- The tests launch the fsi this build produces. The reference exists to order the build, not
+         to link against it, so its output is deliberately not consumed. -->
+    <ProjectReference Include="$(FSharpSourcesRoot)\fsi\fsiProject\fsi.fsproj"
+                      ReferenceOutputAssembly="false"
+                      SkipGetTargetFrameworkProperties="true"
+                      Private="false" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(FSHARPCORE_USE_PACKAGE)' != 'true'">
+    <ProjectReference Include="$(FSharpSourcesRoot)\FSharp.Core\FSharp.Core.fsproj" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(FSHARPCORE_USE_PACKAGE)' == 'true'">
+    <PackageReference Include="FSharp.Core" />
+  </ItemGroup>
+
+</Project>
