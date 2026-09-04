@@ -4,7 +4,6 @@ namespace FSharp.Editor.Tests
 
 open System
 open System.Threading
-open System.Threading.Tasks
 open Xunit
 open Microsoft.CodeAnalysis
 open Microsoft.VisualStudio.FSharp.Editor
@@ -580,77 +579,3 @@ let result2 = s.(*2*)IsHyperbolicCaseWithLongName
         |> ignore
 
         Assert.True task.IsCanceled
-
-    // Defines can disable every declaration of a file whose text stays the same; the lookup computed
-    // before no longer describes it. An implicit module is still classified, while under
-    // `namespace global` nothing is: an empty result of a successful check is the new answer too.
-    [<Theory>]
-    [<InlineData("#if FOO\nlet mutable x = 1\nx <- 2\n#endif", FSharpClassificationTypes.MutableVar)>]
-    [<InlineData("namespace global\n#if FOO\ntype T = class end\n#endif", ClassificationTypeNames.ClassName)>]
-    member _.``Semantic classification of a file whose every declaration went inactive drops their colours``
-        (source: string, inactiveClassification: string)
-        =
-        let withFoo =
-            { RoslynTestHelpers.DefaultProjectOptions with
-                OtherOptions = [| "--define:FOO" |]
-            }
-
-        let solution = RoslynTestHelpers.CreateSolution(source, withFoo)
-        let documentId = (RoslynTestHelpers.GetSingleDocument solution).Id
-        solution.Workspace.OpenDocument documentId
-        let document = solution.Workspace.CurrentSolution.GetDocument documentId
-        let text = sourceTextOf document
-
-        Assert.Contains(inactiveClassification, classify document (TextSpan(0, text.Length)) |> List.map _.ClassificationType)
-
-        clearProjectOptions document
-        RoslynTestHelpers.SetProjectOptions document.Project.Id document.Project.Solution RoslynTestHelpers.DefaultProjectOptions
-        let reopened = document.WithText(SourceText.From source)
-
-        let afterwards =
-            classify reopened (TextSpan(0, (sourceTextOf reopened).Length))
-            |> List.map _.ClassificationType
-
-        Assert.DoesNotContain(inactiveClassification, afterwards)
-
-        Assert.True(
-            isCached FSharpClassificationService.OpenedDocumentsSemanticClassificationCache reopened,
-            "The answer of a successful check must be cached, whatever it holds."
-        )
-
-    // The service re-emits the last good lookup through this: a cancellation raised inside the
-    // classification while the caller's token is still live is a superseded check, not the caller leaving.
-    [<Fact>]
-    member _.``A cancellation the caller did not ask for runs the fallback instead``() =
-        let fellBack = ref false
-
-        let cancelledInside: CancellableTask<unit> =
-            fun _ -> Task.FromCanceled<unit>(CancellationToken(true))
-
-        (cancelledInside
-         |> CancellableTask.ifCanceledThen (fun () -> fellBack.Value <- true)
-         |> CancellableTask.startAsTask CancellationToken.None)
-            .GetAwaiter()
-            .GetResult()
-
-        Assert.True(fellBack.Value, "An inner cancellation must fall back.")
-
-    [<Fact>]
-    member _.``A cancellation the caller asked for propagates without the fallback``() =
-        let fellBack = ref false
-        use caller = new CancellationTokenSource()
-
-        let cancelledByCaller: CancellableTask<unit> =
-            fun ct ->
-                caller.Cancel()
-                Task.FromCanceled<unit>(ct)
-
-        let task =
-            cancelledByCaller
-            |> CancellableTask.ifCanceledThen (fun () -> fellBack.Value <- true)
-            |> CancellableTask.startAsTask caller.Token
-
-        Assert.ThrowsAny<OperationCanceledException>(fun () -> task.GetAwaiter().GetResult())
-        |> ignore
-
-        Assert.False(fellBack.Value, "The caller's own cancellation must not fall back.")

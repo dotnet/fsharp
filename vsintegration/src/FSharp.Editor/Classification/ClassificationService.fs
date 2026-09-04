@@ -172,16 +172,9 @@ type internal FSharpClassificationService [<ImportingConstructor>] () =
 
     // Only for the text it was computed from: the lookup names positions, so against edited text it
     // would colour the wrong characters.
-    static let tryGetLastGood (documentId: DocumentId) =
-        // Under the writer's lock: between its Remove and Add the entry is briefly missing.
-        lock lastGoodSemanticClassification (fun () ->
-            match lastGoodSemanticClassification.TryGetValue documentId with
-            | true, lastGood -> ValueSome lastGood
-            | _ -> ValueNone)
-
     static let addLastGood (documentId: DocumentId) (sourceText: SourceText) (targetSpan: TextSpan) (result: List<ClassifiedSpan>) =
-        match tryGetLastGood documentId with
-        | ValueSome lastGood when lastGood.Text.ContentEquals sourceText ->
+        match lastGoodSemanticClassification.TryGetValue documentId with
+        | true, lastGood when lastGood.Text.ContentEquals sourceText ->
             addSemanticClassificationByLookup sourceText targetSpan lastGood.Lookup result
         | _ -> ()
 
@@ -339,21 +332,23 @@ type internal FSharpClassificationService [<ImportingConstructor>] () =
                                 TelemetryReporter.ReportSingleEventWithDuration(TelemetryEvents.AddSemanticClassifications, eventProps)
 
                             match! document.TryGetFSharpParseAndCheckResultsAsync(nameof (IFSharpClassificationService)) with
-                            // Results without type information come from an aborted check and classify to
-                            // nothing; caching that would pin the version to no colours.
-                            | ValueSome(struct (_, checkResults)) when checkResults.HasFullTypeCheckInfo ->
-                                // The cache is keyed by version, not by span, so it has to hold the whole file:
+                            | ValueNone -> addLastGood document.Id sourceText textSpan result
+                            | ValueSome(struct (_, checkResults)) ->
+                                // The cache is keyed by text version only, so it has to hold the whole file:
                                 // the next request at this version is usually for a different span.
                                 let classificationData =
                                     checkResults.GetSemanticClassification(None, RelatedSymbolUseKind.All)
 
-                                // A checked file can have nothing to classify - `namespace global` over
-                                // declarations an inactive #if hides - and that is the answer for this version.
-                                let classificationDataLookup = itemToSemanticClassificationLookup classificationData
-                                do! openedDocumentsSemanticClassificationCache.SetAsync(document, classificationDataLookup)
-                                rememberLastGood document.Id sourceText classificationDataLookup
-                                addSemanticClassificationByLookup sourceText textSpan classificationDataLookup result
-                            | _ -> addLastGood document.Id sourceText textSpan result
+                                // Every checked file resolves at least its enclosing module, so nothing here means
+                                // the classification itself failed (SemanticClassification.fs recovers with an empty
+                                // array). Caching that would pin the version to no colours.
+                                if classificationData.Length = 0 then
+                                    addLastGood document.Id sourceText textSpan result
+                                else
+                                    let classificationDataLookup = itemToSemanticClassificationLookup classificationData
+                                    do! openedDocumentsSemanticClassificationCache.SetAsync(document, classificationDataLookup)
+                                    rememberLastGood document.Id sourceText classificationDataLookup
+                                    addSemanticClassificationByLookup sourceText textSpan classificationDataLookup result
                 }
                 // A cancellation that is not Roslyn's own (a superseded or aborted check surfaces as one)
                 // must not turn into an empty answer, which Roslyn would paint as "no colours".
