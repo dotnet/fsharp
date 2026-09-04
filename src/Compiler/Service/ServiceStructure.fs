@@ -836,7 +836,7 @@ module Structure =
             List.iter parseDeclaration decls
 
         let getCommentRanges trivia (lines: ReadOnlyMemory<char>[]) =
-            let rec loop (lastLineNum, currentComment, result as state) lineNum =
+            let rec loop (struct (lastLineNum, currentComment, result) as state) lineNum =
                 if lineNum = lines.Length then
                     state
                 else
@@ -845,19 +845,19 @@ module Structure =
                         loop
                             (if comment.Type = commentType && lineNum = lastLineNum + 1 then
                                  comment.Lines.Add lineNum
-                                 lineNum, currentComment, result
+                                 struct (lineNum, currentComment, result)
                              else
                                  let comments = CommentList.New commentType lineNum
-                                 lineNum, Some comments, comment :: result)
+                                 struct (lineNum, Some comments, comment :: result))
                             (lineNum + 1)
                     | ValueSome commentType, None ->
                         let comments = CommentList.New commentType lineNum
-                        loop (lineNum, Some comments, result) (lineNum + 1)
-                    | ValueNone, Some comment -> loop (lineNum, None, comment :: result) (lineNum + 1)
-                    | ValueNone, None -> loop (lineNum, None, result) (lineNum + 1)
+                        loop (struct (lineNum, Some comments, result)) (lineNum + 1)
+                    | ValueNone, Some comment -> loop (struct (lineNum, None, comment :: result)) (lineNum + 1)
+                    | ValueNone, None -> loop (struct (lineNum, None, result)) (lineNum + 1)
 
             let comments =
-                let _, lastComment, comments = loop (-1, None, []) 0
+                let struct (_, lastComment, comments) = loop (struct (-1, None, [])) 0
 
                 match lastComment with
                 | Some comment -> comment :: comments
