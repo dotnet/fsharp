@@ -427,11 +427,6 @@
         <target state="translated">więcej typów obsługuje jednostki miary</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureExtendedFixedBindings">
-        <source>extended fixed bindings for byref and GetPinnableReference</source>
-        <target state="translated">rozszerzone powiązania stałe dla elementów byref i GetPinnableReference</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureExtendedStringInterpolation">
         <source>Extended string interpolation similar to C# raw string literals.</source>
         <target state="translated">Rozszerzona interpolacja ciągów podobna do literałów nieprzetworzonych ciągów języka C#.</target>
