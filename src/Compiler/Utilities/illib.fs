@@ -149,18 +149,6 @@ module internal PervasiveAutoOpens =
         static member inline IndexOfOrdinal(str: ReadOnlySpan<char>, value: string) =
             str.IndexOf(value.AsSpan(), StringComparison.Ordinal)
 
-        static member inline IndexOfOrdinal(str: ReadOnlySpan<char>, value: ReadOnlySpan<char>, startIndex) =
-            str.Slice(startIndex).IndexOf(value, StringComparison.Ordinal)
-
-        static member inline IndexOfOrdinal(str: ReadOnlySpan<char>, value: string, startIndex) =
-            str.Slice(startIndex).IndexOf(value.AsSpan(), StringComparison.Ordinal)
-
-        static member inline IndexOfOrdinal(str: ReadOnlySpan<char>, value: ReadOnlySpan<char>, startIndex, count) =
-            str.Slice(startIndex, count).IndexOf(value, StringComparison.Ordinal)
-
-        static member inline IndexOfOrdinal(str: ReadOnlySpan<char>, value: string, startIndex, count) =
-            str.Slice(startIndex, count).IndexOf(value.AsSpan(), StringComparison.Ordinal)
-
     /// Get an initialization hole
     let getHole (r: _ ref) =
         match r.Value with
