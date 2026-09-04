@@ -1579,39 +1579,29 @@ module internal Makers =
             m
         )
 
-    let private mkILOptimizedClosureTy (g: TcGlobals) (formalTys: ILType list) =
-        let arity = formalTys.Length - 1
-
-        let tref =
-            mkILNestedTyRef (
-                g.ilg.fsharpCoreAssemblyScopeRef,
-                [ "Microsoft.FSharp.Core.OptimizedClosures" ],
-                "FSharpFunc`" + string (arity + 1)
-            )
-
-        mkILBoxedTy tref formalTys
-
-    let private mkILCurriedFSharpFuncTy (g: TcGlobals) dtys rty =
-        let mkOne dty rty =
-            mkILBoxedTy (mkILTyRef (g.ilg.fsharpCoreAssemblyScopeRef, "Microsoft.FSharp.Core.FSharpFunc`2")) [ dty; rty ]
-
-        List.foldBack mkOne dtys rty
-
-    /// `OptimizedClosures.FSharpFunc<argTys, retTy>.Adapt(folderExpr)`. Returns the call and its result type.
-    let mkCallOptimizedClosuresAdapt (g: TcGlobals) m (argTys: TType list) (retTy: TType) folderExpr =
+    let private optimizedClosureILShape (g: TcGlobals) (argTys: TType list) retTy =
         let arity = List.length argTys
         let formalArgTys = List.init arity (fun i -> ILType.TypeVar(uint16 i))
         let formalRetTy = ILType.TypeVar(uint16 arity)
-        let optClosILTy = mkILOptimizedClosureTy g (formalArgTys @ [ formalRetTy ])
-        let formalFolderTy = mkILCurriedFSharpFuncTy g formalArgTys formalRetTy
+
+        let optClosILTy =
+            mkILBoxedTy (g.optimizedClosures_FSharpFunc_tcref arity).CompiledRepresentationForNamedType (formalArgTys @ [ formalRetTy ])
+
+        formalArgTys, formalRetTy, optClosILTy, argTys @ [ retTy ]
+
+    let mkCallOptimizedClosuresAdapt (g: TcGlobals) m (argTys: TType list) (retTy: TType) folderExpr =
+        let formalArgTys, formalRetTy, optClosILTy, tinst =
+            optimizedClosureILShape g argTys retTy
+
+        let formalFolderTy =
+            (formalArgTys, formalRetTy)
+            ||> List.foldBack (fun dty rty -> mkILBoxedTy g.fastFunc_tcr.CompiledRepresentationForNamedType [ dty; rty ])
 
         let mspec =
             mkILNonGenericStaticMethSpecInTy (optClosILTy, "Adapt", [ formalFolderTy ], optClosILTy)
 
-        let tinst = argTys @ [ retTy ]
-
         let resultTy =
-            TType_app(g.optimizedClosures_FSharpFunc_tcref arity, tinst, g.knownWithoutNull)
+            mkWoNullAppTy (g.optimizedClosures_FSharpFunc_tcref argTys.Length) tinst
 
         let call =
             Expr.Op(
@@ -1623,17 +1613,12 @@ module internal Makers =
 
         call, resultTy
 
-    /// `fExpr.Invoke(argExprs)` on an `OptimizedClosures.FSharpFunc<argTys, retTy>`.
     let mkCallOptimizedClosuresInvoke (g: TcGlobals) m (argTys: TType list) (retTy: TType) fExpr argExprs =
-        let arity = List.length argTys
-        let formalArgTys = List.init arity (fun i -> ILType.TypeVar(uint16 i))
-        let formalRetTy = ILType.TypeVar(uint16 arity)
-        let optClosILTy = mkILOptimizedClosureTy g (formalArgTys @ [ formalRetTy ])
+        let formalArgTys, formalRetTy, optClosILTy, tinst =
+            optimizedClosureILShape g argTys retTy
 
         let mspec =
             mkILNonGenericInstanceMethSpecInTy (optClosILTy, "Invoke", formalArgTys, formalRetTy)
-
-        let tinst = argTys @ [ retTy ]
 
         Expr.Op(
             TOp.ILCall(true, false, false, false, ValUseFlag.NormalValUse, false, false, mspec.MethodRef, tinst, [], [ retTy ]),
