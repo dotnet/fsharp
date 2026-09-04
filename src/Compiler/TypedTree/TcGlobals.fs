@@ -199,6 +199,7 @@ type TcGlobals(
     pathMap: PathMap,
     langVersion: LanguageVersion,
     realsig: bool,
+    emitHotReloadClassStateMachines: bool,
     compilationMode: CompilationMode) =
 
   let v_langFeatureNullness = langVersion.SupportsFeature LanguageFeature.NullnessChecking
@@ -1177,6 +1178,9 @@ type TcGlobals(
   member _.langVersion = langVersion
 
   member _.realsig = realsig
+
+  /// Hot reload: emit resumable state machines as reference types.
+  member _.emitHotReloadClassStateMachines = emitHotReloadClassStateMachines
 
   member _.unionCaseRefEq x y = primUnionCaseRefEq compilingFSharpCore fslibCcu x y
 

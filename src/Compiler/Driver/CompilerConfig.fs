@@ -662,6 +662,8 @@ type TcConfigBuilder =
 
         mutable realsig: bool
 
+        mutable emitHotReloadClassStateMachines: bool
+
         mutable compilationMode: TcGlobals.CompilationMode
     }
 
@@ -862,6 +864,7 @@ type TcConfigBuilder =
                 }
             dumpSignatureData = false
             realsig = false
+            emitHotReloadClassStateMachines = false
             alwaysInline = None
             compilationMode = TcGlobals.CompilationMode.Unset
         }
@@ -1419,6 +1422,7 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
 
     member _.dumpSignatureData = data.dumpSignatureData
     member _.realsig = data.realsig
+    member _.emitHotReloadClassStateMachines = data.emitHotReloadClassStateMachines
     member _.compilationMode = data.compilationMode
 
     static member Create(builder, validate) =
