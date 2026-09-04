@@ -41,7 +41,6 @@ type MockEngine() =
 
 module BuildTaskTestHelpers =
 
-    /// Creates a TaskEnvironment rooted at a fresh temporary directory, returned alongside it.
     let createTaskEnvironmentInTemporaryDirectory () =
         let directory = TestFramework.createTemporaryDirectory ()
         let environment = TaskEnvironment.CreateWithProjectDirectoryAndEnvironment(directory.FullName)
@@ -58,8 +57,6 @@ module BuildTaskTestHelpers =
     let disposeTaskEnvironment (environment: TaskEnvironment) =
         taskEnvironmentDisposeMethod.Invoke(environment, null) |> ignore
 
-    /// Runs `body` against a fresh temporary-directory-rooted TaskEnvironment, disposing it afterwards
-    /// even if `body` throws.
     let withTaskEnvironment body =
         let environment, directory = createTaskEnvironmentInTemporaryDirectory ()
 
@@ -68,17 +65,18 @@ module BuildTaskTestHelpers =
         finally
             disposeTaskEnvironment environment
 
-    /// As withTaskEnvironment but with two independent environments; nested try/finally disposes both
-    /// (second then first) even if the second fails to construct.
-    let withTaskEnvironmentPair body =
-        let environmentA, directoryA = createTaskEnvironmentInTemporaryDirectory ()
+    let withTaskEnvironmentPairUsing create body =
+        let environmentA, stateA = create ()
 
         try
-            let environmentB, directoryB = createTaskEnvironmentInTemporaryDirectory ()
+            let environmentB, stateB = create ()
 
             try
-                body environmentA directoryA environmentB directoryB
+                body environmentA stateA environmentB stateB
             finally
                 disposeTaskEnvironment environmentB
         finally
             disposeTaskEnvironment environmentA
+
+    let withTaskEnvironmentPair body =
+        withTaskEnvironmentPairUsing createTaskEnvironmentInTemporaryDirectory body
