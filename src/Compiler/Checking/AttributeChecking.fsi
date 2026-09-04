@@ -73,7 +73,7 @@ val MethInfoHasWellKnownAttribute:
     m: range ->
     ilFlag: WellKnownILAttributes ->
     valFlag: WellKnownValAttributes ->
-    attribSpec: BuiltinAttribInfo ->
+    attribSpec: BuiltinAttribInfo voption ->
     minfo: MethInfo ->
         bool
 

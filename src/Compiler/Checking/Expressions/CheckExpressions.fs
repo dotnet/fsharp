@@ -10823,6 +10823,12 @@ and TcMethodApplication
 
     TcAdhocChecksOnLibraryMethods cenv env isInstance finalCalledMeth finalCalledMethInfo objArgs mMethExpr mItem
 
+    // FS-1095: reject positional calls to a method/constructor carrying RequireNamedArgumentAttribute.
+    if g.langVersion.SupportsFeature LanguageFeature.RequireNamedArgument then
+        finalCalledMeth.TryGetRequireNamedArgumentViolationName mMethExpr
+        |> Option.iter (fun calledName ->
+            errorR(Error(FSComp.SR.tcMethodRequiresNamedArguments(RichText.mkMethod calledName), mMethExpr)))
+
     // Indexer setters: when index args are named, the remaining unnamed args'
     // position values won't form a prefix (the 'value' arg has a non-zero j).
     // Without named args the check passes naturally, so blanket skip is safe.

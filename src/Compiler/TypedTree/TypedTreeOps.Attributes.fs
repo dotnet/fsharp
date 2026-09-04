@@ -165,6 +165,7 @@ module internal ILExtensions =
                 | "System.Runtime.CompilerServices.RequiredMemberAttribute" -> WellKnownILAttributes.RequiredMemberAttribute
                 | "System.Runtime.CompilerServices.OverloadResolutionPriorityAttribute" ->
                     WellKnownILAttributes.OverloadResolutionPriorityAttribute
+                | "System.Runtime.CompilerServices.RequireNamedArgumentAttribute" -> WellKnownILAttributes.RequireNamedArgumentAttribute
                 | _ -> WellKnownILAttributes.None
 
             elif name.StartsWith("Microsoft.FSharp.Core.") then
@@ -258,7 +259,11 @@ module internal AttributeHelpers =
             | ValueSome pubpath -> struct (ValueNone, ValueSome pubpath.FullPath)
             | ValueNone -> struct (ValueNone, ValueNone)
         else
-            struct (ValueNone, ValueNone)
+            // Resolve PublicPath for a local ref too, so a same-compilation-unit definition of an
+            // attribute recognised by full type name is still classified (cf. the compilingFSharpCore branch above).
+            match tcref.Deref.PublicPath with
+            | ValueSome pubpath -> struct (ValueSome pubpath.FullPath, ValueNone)
+            | ValueNone -> struct (ValueNone, ValueNone)
 
     /// Decode a bool-arg attribute and set the appropriate true/false flag.
     let inline decodeBoolAttribFlag (attrib: Attrib) trueFlag falseFlag defaultFlag =
@@ -578,6 +583,7 @@ module internal AttributeHelpers =
                 | "CallerLineNumberAttribute" -> WellKnownValAttributes.CallerLineNumberAttribute
                 | "MethodImplAttribute" -> WellKnownValAttributes.MethodImplAttribute
                 | "OverloadResolutionPriorityAttribute" -> WellKnownValAttributes.OverloadResolutionPriorityAttribute
+                | "RequireNamedArgumentAttribute" -> WellKnownValAttributes.RequireNamedArgumentAttribute
                 | _ -> WellKnownValAttributes.None
 
             | [| "System"; "Runtime"; "InteropServices"; name |] ->

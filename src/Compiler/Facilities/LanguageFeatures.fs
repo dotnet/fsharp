@@ -86,6 +86,7 @@ type LanguageFeature =
     | AccessProtectedBaseFieldFromClosure
     | ImprovedImpliedArgumentNamesPartTwo
     | RecordSpreads
+    | RequireNamedArgument
     | ErrorOnBitwiseOpsOnNonIntegralEnums
 
 /// LanguageVersion management
@@ -213,6 +214,7 @@ type LanguageVersion(versionText, ?disabledFeaturesArray: LanguageFeature array)
 
                 // F# preview
                 LanguageFeature.RecordConstructorSyntax, previewVersion // Allow constructing a record via its all-fields constructor, e.g. MyRecord(a, b)
+                LanguageFeature.RequireNamedArgument, previewVersion // FS-1095: enforce named arguments at call sites of methods marked with RequireNamedArgumentAttribute
 
                 // Unfinished features that still need work before they can be assigned a release language version.
                 LanguageFeature.FromEndSlicing, previewVersion // Unfinished features --- needs work
@@ -382,6 +384,7 @@ type LanguageVersion(versionText, ?disabledFeaturesArray: LanguageFeature array)
         | LanguageFeature.AccessProtectedBaseFieldFromClosure -> FSComp.SR.featureAccessProtectedBaseFieldFromClosure ()
         | LanguageFeature.ImprovedImpliedArgumentNamesPartTwo -> FSComp.SR.featureImprovedImpliedArgumentNamesPartTwo ()
         | LanguageFeature.RecordSpreads -> FSComp.SR.featureRecordSpreads ()
+        | LanguageFeature.RequireNamedArgument -> FSComp.SR.featureRequireNamedArgument ()
         | LanguageFeature.ErrorOnBitwiseOpsOnNonIntegralEnums -> FSComp.SR.featureErrorOnBitwiseOpsOnNonIntegralEnums ()
 
     /// Get a version string associated with the given feature.

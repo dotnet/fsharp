@@ -119,6 +119,7 @@ type internal WellKnownValAttributes =
     | TailCallAttribute = (1uL <<< 40)
     | NotNullIfNotNullAttribute = (1uL <<< 41)
     | OverloadResolutionPriorityAttribute = (1uL <<< 42)
+    | RequireNamedArgumentAttribute = (1uL <<< 43)
     | NotComputed = (1uL <<< 63)
 
 module internal Flags =
