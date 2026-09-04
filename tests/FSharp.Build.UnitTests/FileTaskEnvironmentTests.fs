@@ -80,6 +80,10 @@ type FileTaskEnvironmentTests() =
 
         taskA.Result, taskB.Result
 
+    let assertConcurrentSuccess scenario (successA, successB) =
+        Assert.True(successA, $"{scenario}: task A failed")
+        Assert.True(successB, $"{scenario}: task B failed")
+
     let withIsolatedTaskEnvironmentPair body =
         withDecoyCurrentDirectory (fun decoy ->
             withTaskEnvironmentPair (fun environmentA directoryA environmentB directoryB ->
@@ -185,10 +189,9 @@ type FileTaskEnvironmentTests() =
 
             let taskA = makeTask "AssemblyMetadataA" environmentA
             let taskB = makeTask "AssemblyMetadataB" environmentB
-            let successA, successB = runConcurrently taskA.Execute taskB.Execute
-
-            Assert.True successA
-            Assert.True successB
+            let scenario = "WriteCodeFragment isolates relative output paths per task"
+            runConcurrently taskA.Execute taskB.Execute
+            |> assertConcurrentSuccess scenario
 
             let check (directory: DirectoryInfo) own other (task: WriteCodeFragment) =
                 let path = Path.Combine(directory.FullName, "Generated.fs")
@@ -234,10 +237,9 @@ type FileTaskEnvironmentTests() =
             let intermediateB = Path.Combine("obj", "DebugB")
             let taskA = makeTask "AssemblyA" intermediateA environmentA
             let taskB = makeTask "AssemblyB" intermediateB environmentB
-            let successA, successB = runConcurrently taskA.Execute taskB.Execute
-
-            Assert.True successA
-            Assert.True successB
+            let scenario = "GenerateILLinkSubstitutions isolates relative output paths per task"
+            runConcurrently taskA.Execute taskB.Execute
+            |> assertConcurrentSuccess scenario
 
             let check
                 (directory: DirectoryInfo)
@@ -283,11 +285,8 @@ type FileTaskEnvironmentTests() =
 
                 let taskA = createResourceTask kind environmentA (MockEngine()) input intermediate
                 let taskB = createResourceTask kind environmentB (MockEngine()) input intermediate
-                let successA, successB =
-                    runConcurrently (fun () -> executeResourceTask taskA) (fun () -> executeResourceTask taskB)
-
-                Assert.True(successA, scenario)
-                Assert.True(successB, scenario)
+                runConcurrently (fun () -> executeResourceTask taskA) (fun () -> executeResourceTask taskB)
+                |> assertConcurrentSuccess scenario
 
                 let expectedSpecs, contentSpecs =
                     match taskA, taskB with
@@ -435,9 +434,9 @@ type FileTaskEnvironmentTests() =
                 |> assign environment
 
             let taskA, taskB = makeTask environmentA, makeTask environmentB
-            let successA, successB = runConcurrently taskA.Execute taskB.Execute
-            Assert.True successA
-            Assert.True successB
+            let scenario = "SubstituteText isolates relative input and output paths per task"
+            runConcurrently taskA.Execute taskB.Execute
+            |> assertConcurrentSuccess scenario
 
             let expectedItemSpec = Path.Combine(intermediate, input)
 
