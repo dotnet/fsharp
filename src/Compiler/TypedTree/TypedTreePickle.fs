@@ -733,6 +733,8 @@ let private p_lazy_impl p v st =
 let p_lazy p x st =
     p_lazy_impl p (InterruptibleLazy.force x) st
 
+let p_maybe_lazy p (x: MaybeLazy<_>) st = p_lazy_impl p x.Value st
+
 let p_hole () =
     let mutable h = None
 
@@ -2721,7 +2723,7 @@ let rec p_tycon_repr x st =
 
             let allFieldsText =
                 fields
-                |> Seq.map _.LogicalName
+                |> Array.map (fun f -> f.LogicalName)
                 |> String.concat System.Environment.NewLine
 
             raise (Error(FSComp.SR.pickleFsharpCoreBackwardsCompatible ("fields in union", allFieldsText), firstFieldRange))
@@ -2838,7 +2840,7 @@ and p_entity_spec_data (x: Entity) st =
     p_attribs (x.entity_attribs.AsList()) st
     let flagBit = p_tycon_repr x.entity_tycon_repr st
     p_option p_ty x.TypeAbbrev st
-    p_tcaug x.TypeContents st
+    p_tcaug (nonNull x.entity_tycon_tcaug) st
     p_string System.String.Empty st
     p_kind x.TypeOrMeasureKind st
 
@@ -2851,7 +2853,7 @@ and p_entity_spec_data (x: Entity) st =
         st
 
     p_option p_cpath x.entity_cpath st
-    p_lazy_impl p_modul_typ x.ModuleOrNamespaceType st
+    p_maybe_lazy p_modul_typ (nonNull x.entity_modul_type) st
     p_exnc_repr x.ExceptionInfo st
 
     if st.oInMem then
@@ -2859,7 +2861,7 @@ and p_entity_spec_data (x: Entity) st =
     else
         p_space 1 () st
 
-and p_tcaug (p : TyconAugmentation) st =
+and p_tcaug p st =
     p_tup9
         (p_option (p_tup2 (p_vref "compare_obj") (p_vref "compare")))
         (p_option (p_vref "compare_withc"))
@@ -2880,9 +2882,8 @@ and p_tcaug (p : TyconAugmentation) st =
           // in order to get check the well-formedness of an interface.
           // Keeping them across assembly boundaries is not valid, because relinking their ValRefs
           // does not work correctly (they may get incorrectly relinked to a default member)
-          |> Seq.filter (fun (isExplicitImpl, _) -> not isExplicitImpl)
-          |> Seq.map (fun (_, vref) -> vref.LogicalName, vref)
-          |> Seq.toList),
+          |> List.filter (fun (isExplicitImpl, _) -> not isExplicitImpl)
+          |> List.map (fun (_, vref) -> vref.LogicalName, vref)),
          p.tcaug_interfaces,
          p.tcaug_super,
          p.tcaug_abstract,
