@@ -1508,6 +1508,7 @@ Microsoft.FSharp.Core.FuncConvert: Microsoft.FSharp.Core.FSharpFunc`2[T1,Microso
 Microsoft.FSharp.Core.FuncConvert: Microsoft.FSharp.Core.FSharpFunc`2[T1,Microsoft.FSharp.Core.FSharpFunc`2[T2,TResult]] FuncFromTupled[T1,T2,TResult](Microsoft.FSharp.Core.FSharpFunc`2[System.Tuple`2[T1,T2],TResult])
 Microsoft.FSharp.Core.GeneralizableValueAttribute: Void .ctor()
 Microsoft.FSharp.Core.InlineIfLambdaAttribute: Void .ctor()
+Microsoft.FSharp.Core.OptimizeClosureIfNotInlinedAttribute: Void .ctor()
 Microsoft.FSharp.Core.InterfaceAttribute: Void .ctor()
 Microsoft.FSharp.Core.LanguagePrimitives+ErrorStrings: System.String AddressOpNotFirstClassString
 Microsoft.FSharp.Core.LanguagePrimitives+ErrorStrings: System.String InputArrayEmptyString

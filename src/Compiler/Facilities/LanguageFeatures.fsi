@@ -89,6 +89,7 @@ type LanguageFeature =
     | ImprovedImpliedArgumentNamesPartTwo
     | RecordSpreads
     | ErrorOnBitwiseOpsOnNonIntegralEnums
+    | OptimizeClosureIfNotInlined
 
 /// LanguageVersion management
 type LanguageVersion =

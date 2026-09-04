@@ -6705,7 +6705,10 @@ and TcIteratedLambdas (cenv: cenv) isFirst (env: TcEnv) overallTy takenNames tpe
                         v.SetArgReprInfoForDisplay (Some argInfo)
                         let inlineIfLambda = ArgReprInfoHasWellKnownAttribute g WellKnownValAttributes.InlineIfLambdaAttribute argInfo
                         if inlineIfLambda then
-                            v.SetInlineIfLambda())
+                            v.SetInlineIfLambda()
+                        let optimizeClosureIfNotInlined = ArgReprInfoHasWellKnownAttribute g WellKnownValAttributes.OptimizeClosureIfNotInlinedAttribute argInfo
+                        if optimizeClosureIfNotInlined then
+                            v.SetOptimizeClosureIfNotInlined())
                  { envinner with eLambdaArgInfos = rest }
             | [] -> envinner
 

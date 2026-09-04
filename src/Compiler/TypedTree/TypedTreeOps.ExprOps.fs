@@ -1579,6 +1579,69 @@ module internal Makers =
             m
         )
 
+    let private mkILOptimizedClosureTy (g: TcGlobals) (formalTys: ILType list) =
+        let arity = formalTys.Length - 1
+
+        let tref =
+            mkILNestedTyRef (
+                g.ilg.fsharpCoreAssemblyScopeRef,
+                [ "Microsoft.FSharp.Core.OptimizedClosures" ],
+                "FSharpFunc`" + string (arity + 1)
+            )
+
+        mkILBoxedTy tref formalTys
+
+    let private mkILCurriedFSharpFuncTy (g: TcGlobals) dtys rty =
+        let mkOne dty rty =
+            mkILBoxedTy (mkILTyRef (g.ilg.fsharpCoreAssemblyScopeRef, "Microsoft.FSharp.Core.FSharpFunc`2")) [ dty; rty ]
+
+        List.foldBack mkOne dtys rty
+
+    /// `OptimizedClosures.FSharpFunc<argTys, retTy>.Adapt(folderExpr)`. Returns the call and its result type.
+    let mkCallOptimizedClosuresAdapt (g: TcGlobals) m (argTys: TType list) (retTy: TType) folderExpr =
+        let arity = List.length argTys
+        let formalArgTys = List.init arity (fun i -> ILType.TypeVar(uint16 i))
+        let formalRetTy = ILType.TypeVar(uint16 arity)
+        let optClosILTy = mkILOptimizedClosureTy g (formalArgTys @ [ formalRetTy ])
+        let formalFolderTy = mkILCurriedFSharpFuncTy g formalArgTys formalRetTy
+
+        let mspec =
+            mkILNonGenericStaticMethSpecInTy (optClosILTy, "Adapt", [ formalFolderTy ], optClosILTy)
+
+        let tinst = argTys @ [ retTy ]
+
+        let resultTy =
+            TType_app(g.optimizedClosures_FSharpFunc_tcref arity, tinst, g.knownWithoutNull)
+
+        let call =
+            Expr.Op(
+                TOp.ILCall(false, false, false, false, ValUseFlag.NormalValUse, false, false, mspec.MethodRef, tinst, [], [ resultTy ]),
+                [],
+                [ folderExpr ],
+                m
+            )
+
+        call, resultTy
+
+    /// `fExpr.Invoke(argExprs)` on an `OptimizedClosures.FSharpFunc<argTys, retTy>`.
+    let mkCallOptimizedClosuresInvoke (g: TcGlobals) m (argTys: TType list) (retTy: TType) fExpr argExprs =
+        let arity = List.length argTys
+        let formalArgTys = List.init arity (fun i -> ILType.TypeVar(uint16 i))
+        let formalRetTy = ILType.TypeVar(uint16 arity)
+        let optClosILTy = mkILOptimizedClosureTy g (formalArgTys @ [ formalRetTy ])
+
+        let mspec =
+            mkILNonGenericInstanceMethSpecInTy (optClosILTy, "Invoke", formalArgTys, formalRetTy)
+
+        let tinst = argTys @ [ retTy ]
+
+        Expr.Op(
+            TOp.ILCall(true, false, false, false, ValUseFlag.NormalValUse, false, false, mspec.MethodRef, tinst, [], [ retTy ]),
+            [],
+            fExpr :: argExprs,
+            m
+        )
+
     /// Concatenate string-valued expressions, choosing the cheapest String.Concat overload by arity.
     /// An empty list yields "" and a singleton yields itself.
     let mkStringConcat (g: TcGlobals, m: range, exprs: Expr list) =

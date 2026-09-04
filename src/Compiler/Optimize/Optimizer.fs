@@ -1903,6 +1903,94 @@ let rec (|KnownValApp|_|) expr =
     | Expr.App (KnownValApp(vref, typeArgs1, otherArgs1), _, typeArgs2, otherArgs2, _) -> ValueSome(vref, typeArgs1@typeArgs2, otherArgs1@otherArgs2)
     | _ -> ValueNone
 
+/// When an inline function's `[<OptimizeClosureIfNotInlined>]` formal receives an opaque (non-lambda)
+/// argument, hoist one `OptimizedClosures.Adapt` of it and route the formal's saturated applications
+/// through the adapted closure's `Invoke`, before beta reduction substitutes the argument in. A lambda
+/// argument is left untouched, so `InlineIfLambda` still splices it and no closure is created.
+let AdaptOpaqueOptimizedClosureArgs g (lambdaExpr: Expr) (arginfos: Summary<ExprValueInfo> list) m =
+    // Fast path (this runs for every beta-reduced application): only an inline HOF that actually carries a
+    // flagged formal does any work, and we walk the lambda spine without allocating to decide.
+    let rec hasFlaggedFormal expr =
+        match expr with
+        | Expr.TyLambda(_, _, body, _, _) -> hasFlaggedFormal body
+        | Expr.Lambda(_, _, _, vs, body, _, _) -> List.exists (fun (v: Val) -> v.OptimizeClosureIfNotInlined) vs || hasFlaggedFormal body
+        | _ -> false
+
+    let rec collectFormals expr =
+        match expr with
+        | Expr.TyLambda(_, _, body, _, _) -> collectFormals body
+        | Expr.Lambda(_, _, _, vs, body, _, _) -> vs @ collectFormals body
+        | _ -> []
+
+    let isOpaqueCurried (v: Val) (info: Summary<ExprValueInfo>) =
+        match stripValue info.Info with
+        | CurriedLambdaValue _ -> false
+        | _ ->
+            let arity = List.length (fst (stripFunTy g v.Type))
+            arity >= 2 && arity <= 5
+
+    if not (hasFlaggedFormal lambdaExpr) then
+        lambdaExpr
+    else
+
+    let formals = collectFormals lambdaExpr
+
+    if List.length formals <> List.length arginfos then
+        lambdaExpr
+    else
+        let flagged =
+            List.zip formals arginfos
+            |> List.choose (fun (v, info) -> if v.OptimizeClosureIfNotInlined && isOpaqueCurried v info then Some v else None)
+
+        if List.isEmpty flagged then
+            // Every flagged formal received a lambda, so InlineIfLambda already spliced it: nothing to adapt.
+            lambdaExpr
+        else
+
+        // Hoist `let adapted = Adapt(folder)` at the spine's innermost body and route saturated `folder`
+        // applications through `adapted.Invoke`. The formal stays in scope, so beta later rewrites it to
+        // `Adapt actual` while the per-element arity dispatch is gone. If the body never applies the folder
+        // at the full arity (e.g. a function-typed accumulator inflates `stripFunTy`, or the folder is only
+        // partially applied), nothing is rewritten and we leave the body untouched rather than emit a dead
+        // `Adapt` and keep the slow path.
+        let adaptFormal body (folderVal: Val) =
+            let argTys, retTy = stripFunTy g folderVal.Type
+            let adaptCall, adaptTy = mkCallOptimizedClosuresAdapt g m argTys retTy (exprForVal m folderVal)
+            let adaptedVal, adaptedExpr = mkCompGenLocal m "adaptedClosure" adaptTy
+            let folderVref = mkLocalValRef folderVal
+            let arity = List.length argTys
+            let mutable rewrote = false
+            let env =
+                { PreIntercept =
+                    Some(fun cont e ->
+                        // Only a single application node that already carries all `arity` arguments is safe to
+                        // route through `Invoke`: F# evaluates its arguments left-to-right and then applies,
+                        // exactly like `Invoke`. A staged chain `((folder a) (eff; b))` is several App nodes and
+                        // is left alone, so no interleaved effect is reordered.
+                        match stripDebugPoints e with
+                        | Expr.App(f, _, _, args, _) when
+                            List.length args = arity
+                            && (match stripDebugPoints f with
+                                | Expr.Val(vref, _, _) -> valRefEq g vref folderVref
+                                | _ -> false) ->
+                            rewrote <- true
+                            Some(mkCallOptimizedClosuresInvoke g m argTys retTy adaptedExpr (List.map cont args))
+                        | _ -> None)
+                  PostTransform = (fun _ -> None)
+                  PreInterceptBinding = None
+                  RewriteQuotations = false
+                  StackGuard = StackGuard("OptimizeClosureIfNotInlinedStackGuard") }
+            let rewrittenBody = RewriteExpr env body
+            if rewrote then mkCompGenLet m adaptedVal adaptCall rewrittenBody else body
+
+        let rec mapInnermostBody expr =
+            match expr with
+            | Expr.TyLambda(uniq, tps, body, tym, bodyTy) -> Expr.TyLambda(uniq, tps, mapInnermostBody body, tym, bodyTy)
+            | Expr.Lambda(uniq, ctor, bas, vs, body, lm, bodyTy) -> Expr.Lambda(uniq, ctor, bas, vs, mapInnermostBody body, lm, bodyTy)
+            | innermost -> List.fold adaptFormal innermost flagged
+
+        mapInnermostBody lambdaExpr
+
 /// Matches boolean decision tree:
 /// check single case with bool const.
 [<return: Struct>]
@@ -4046,6 +4134,10 @@ and OptimizeApplication cenv env (f0, f0ty, tyargs, args, m) =
             | _ -> args |> List.map (fun arg -> UnknownValue, arg) 
 
         let newArgs, arginfos = OptimizeExprsThenReshapeAndConsiderSplits cenv env shapes
+        // Before beta reduction erases the flag-bearing formals, adapt any opaque argument passed to an
+        // [<OptimizeClosureIfNotInlined>] formal: hoist one OptimizedClosures.Adapt and route the formal's
+        // saturated applications through .Invoke, avoiding the per-call InvokeFast arity dispatch.
+        let newf0 = AdaptOpaqueOptimizedClosureArgs g newf0 arginfos m
         // beta reducing
         let reducedExpr = MakeApplicationAndBetaReduce g (newf0, f0ty, [tyargs], newArgs, m) 
         let newExpr = reducedExpr |> remake

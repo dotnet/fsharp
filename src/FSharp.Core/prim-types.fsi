@@ -807,6 +807,24 @@ namespace Microsoft.FSharp.Core
         /// <returns>InlineIfLambdaAttribute</returns>
         new: unit -> InlineIfLambdaAttribute
 
+    /// <summary>Adding this attribute to a function-typed parameter that also carries <c>InlineIfLambda</c> indicates that,
+    /// when the overall function or method is inlined but the argument is <b>not</b> a known lambda (so it cannot be inlined),
+    /// the compiler should adapt the closure once via <c>OptimizedClosures.FSharpFunc</c> and route repeated saturated calls
+    /// through it, hoisting the per-call arity dispatch out of the loop.</summary>
+    ///
+    /// <remarks>Only valid together with <c>InlineIfLambda</c>, on a curried function parameter of arity 2 to 5, that is
+    /// invoked repeatedly (in a loop or recursive traversal). It is a no-op when the argument is inlined as a lambda.</remarks>
+    ///
+    /// <category>Attributes</category>
+    [<AttributeUsage (AttributeTargets.Parameter,AllowMultiple=false)>]  
+    [<Sealed>]
+    type OptimizeClosureIfNotInlinedAttribute =
+        inherit Attribute
+
+        /// <summary>Creates an instance of the attribute</summary>
+        /// <returns>OptimizeClosureIfNotInlinedAttribute</returns>
+        new: unit -> OptimizeClosureIfNotInlinedAttribute
+
     /// <summary>This attribute is generated automatically by the F# compiler to tag functions and members 
     /// that accept a partial application of some of their arguments and return a residual function.
     /// </summary>

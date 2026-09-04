@@ -1836,6 +1836,12 @@ and CheckLambdas isTop (memberVal: Val option) cenv env inlined valReprInfo alwa
             if arg.InlineIfLambda && (not inlined || not (isFunTy g arg.Type || isFSharpDelegateTy g arg.Type)) then
                 errorR(Error(FSComp.SR.tcInlineIfLambdaUsedOnNonInlineFunctionOrMethod(), arg.Range))
 
+            if arg.OptimizeClosureIfNotInlined then
+                checkLanguageFeatureError g.langVersion LanguageFeature.OptimizeClosureIfNotInlined arg.Range
+                let arity = if isFunTy g arg.Type then List.length (fst (stripFunTy g arg.Type)) else 0
+                if not inlined || not arg.InlineIfLambda || not (isFunTy g arg.Type) || arity < 2 || arity > 5 then
+                    errorR(Error(FSComp.SR.tcOptimizeClosureIfNotInlinedRequiresInlineIfLambdaAndMultiArg(), arg.Range))
+
             CheckValSpecAux permitByRefType cenv env arg (fun () ->
                 if arg.IsCompilerGenerated then
                     errorR(Error(FSComp.SR.chkErrorUseOfByref(), arg.Range))
