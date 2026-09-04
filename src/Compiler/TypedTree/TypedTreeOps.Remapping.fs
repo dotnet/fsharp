@@ -2583,7 +2583,8 @@ module internal ExprAnalysis =
     and remarkInterfaceImpl m (ty, overrides) =
         (ty, List.map (remarkObjExprMethod m) overrides)
 
-    and remarkExprs m es = es |> List.map (remarkExpr m)
+    and remarkExprs m es =
+        es |> ListInline.map (fun e -> remarkExpr m e)
 
     and remarkDecisionTree m x =
         match x with

@@ -152,6 +152,12 @@ module internal Option =
 
     val attempt: f: (unit -> 'T) -> 'T option
 
+module internal ListInline =
+
+    val inline map: [<InlineIfLambda>] mapping: ('T -> 'U) -> list: 'T list -> 'U list
+
+    val inline forall2: [<InlineIfLambda>] predicate: ('T1 -> 'T2 -> bool) -> list1: 'T1 list -> list2: 'T2 list -> bool
+
 module internal List =
 
     val sortWithOrder: c: IComparer<'T> -> elements: 'T list -> 'T list
@@ -160,7 +166,7 @@ module internal List =
 
     val existsi: f: (int -> 'a -> bool) -> xs: 'a list -> bool
 
-    val lengthsEqAndForall2: p: ('a -> 'b -> bool) -> l1: 'a list -> l2: 'b list -> bool
+    val inline lengthsEqAndForall2: [<InlineIfLambda>] p: ('a -> 'b -> bool) -> l1: 'a list -> l2: 'b list -> bool
 
     val findi: n: int -> f: ('a -> bool) -> l: 'a list -> ('a * int) option
 
@@ -168,7 +174,7 @@ module internal List =
 
     val checkq: l1: 'a list -> l2: 'a list -> bool when 'a: not struct
 
-    val mapq: f: ('T -> 'T) -> inp: 'T list -> 'T list when 'T: not struct
+    val inline mapq: [<InlineIfLambda>] f: ('T -> 'T) -> inp: 'T list -> 'T list when 'T: not struct
 
     val frontAndBack: l: 'a list -> 'a list * 'a
 
