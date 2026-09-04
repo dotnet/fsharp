@@ -98,6 +98,29 @@ module internal PervasiveAutoOpens =
         [<Extension>]
         static member inline IndexOfOrdinal: str: ReadOnlySpan<char> * value: string -> int
 
+        /// Returns a position in <paramref name="str"/>, not in the slice searched, matching the
+        /// <see cref="T:System.String"/> overloads these mirror. -1 when there is no match.
+        [<Extension>]
+        static member inline IndexOfOrdinal:
+            str: ReadOnlySpan<char> * value: ReadOnlySpan<char> * startIndex: int -> int
+
+        /// Returns a position in <paramref name="str"/>, not in the slice searched, matching the
+        /// <see cref="T:System.String"/> overloads these mirror. -1 when there is no match.
+        [<Extension>]
+        static member inline IndexOfOrdinal: str: ReadOnlySpan<char> * value: string * startIndex: int -> int
+
+        /// Returns a position in <paramref name="str"/>, not in the slice searched, matching the
+        /// <see cref="T:System.String"/> overloads these mirror. -1 when there is no match.
+        [<Extension>]
+        static member inline IndexOfOrdinal:
+            str: ReadOnlySpan<char> * value: ReadOnlySpan<char> * startIndex: int * count: int -> int
+
+        /// Returns a position in <paramref name="str"/>, not in the slice searched, matching the
+        /// <see cref="T:System.String"/> overloads these mirror. -1 when there is no match.
+        [<Extension>]
+        static member inline IndexOfOrdinal:
+            str: ReadOnlySpan<char> * value: string * startIndex: int * count: int -> int
+
     type Async with
 
         /// Runs the computation synchronously, always starting on the current thread.
