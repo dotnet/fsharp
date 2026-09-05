@@ -83,6 +83,10 @@ module private FileChangeWatcherImpl =
     /// Roslyn's FileChangeWatcher.
     let defaultBatchingDelay = TimeSpan.FromMilliseconds 500.
 
+    /// Delay between the last observed change to a path and the callback: a rebuild typically
+    /// writes a temp file then renames, producing several rapid notifications.
+    let defaultNotificationDelay = TimeSpan.FromSeconds 2.
+
     let noOpWatchedFile =
         { new IFSharpWatchedFile with
             member _.Dispose() = ()
@@ -100,9 +104,7 @@ type private WatcherOperation =
     | UnwatchDirs of cookies: List<uint32>
 
 [<Sealed>]
-type internal FSharpFileChangeWatcher(fileChangeService: Task<IVsAsyncFileChangeEx2>, ?batchingDelay: TimeSpan) =
-
-    let batchingDelay = defaultArg batchingDelay defaultBatchingDelay
+type internal FSharpFileChangeWatcher(fileChangeService: Task<IVsAsyncFileChangeEx2>, batchingDelay: TimeSpan) =
 
     let applyBatch (service: IVsAsyncFileChangeEx2) (ops: WatcherOperation list) =
         cancellableTask {
@@ -228,6 +230,8 @@ type internal FSharpFileChangeWatcher(fileChangeService: Task<IVsAsyncFileChange
                 cancellationTokenSource.Token
             )
 
+    new(fileChangeService) = new FSharpFileChangeWatcher(fileChangeService, defaultBatchingDelay)
+
     member private _.Enqueue(op: WatcherOperation) = agent.Post op
 
     /// Production factory: obtains SVsFileChangeEx asynchronously without blocking any
@@ -337,11 +341,7 @@ and [<Sealed>] private FileChangeContext(enqueue: WatcherOperation -> unit, watc
 /// modelled on Roslyn's ReferenceFileChangeTracker. Multiple projects watching the same dll
 /// share one subscription; bursts of writes produce a single callback per path.
 [<Sealed>]
-type internal FSharpReferenceChangeTracker(watcher: IFSharpFileChangeWatcher, onChanged: string -> unit, ?notificationDelay: TimeSpan) =
-
-    /// Delay between the last observed change to a path and the callback: a rebuild typically
-    /// writes a temp file then renames, producing several rapid notifications.
-    let notificationDelay = defaultArg notificationDelay (TimeSpan.FromSeconds 2.)
+type internal FSharpReferenceChangeTracker(watcher: IFSharpFileChangeWatcher, onChanged: string -> unit, notificationDelay: TimeSpan) =
 
     let gate = obj ()
     let mutable disposed = false
@@ -414,6 +414,8 @@ type internal FSharpReferenceChangeTracker(watcher: IFSharpFileChangeWatcher, on
                          timer.Change(notificationDelay, Timeout.InfiniteTimeSpan) |> ignore))
 
              ctx)
+
+    new(watcher, onChanged) = new FSharpReferenceChangeTracker(watcher, onChanged, defaultNotificationDelay)
 
     /// Starts watching a path, ref-counted. Call StopWatchingReference exactly once per start.
     member _.StartWatchingReference(fullFilePath: string) =
