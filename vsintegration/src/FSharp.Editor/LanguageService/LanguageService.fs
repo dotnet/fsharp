@@ -206,7 +206,7 @@ type internal FSharpWorkspaceServiceFactory
                         |> ignore)
 
             let fileChangeWatcher =
-                FSharpFileChangeWatcher(FSharpFileChangeWatcher.CreateDefaultServiceTask())
+                new FSharpFileChangeWatcher(FSharpFileChangeWatcher.CreateDefaultServiceTask())
 
             let optionsManager =
                 FSharpProjectOptionsManager(checker, workspace, fileChangeWatcher)

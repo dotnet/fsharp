@@ -5,6 +5,7 @@ namespace Microsoft.VisualStudio.FSharp.Editor
 open System
 open System.Collections.Concurrent
 open System.Collections.Generic
+open System.Collections.Immutable
 open System.Threading
 open System.Threading.Tasks
 open Microsoft.VisualStudio
@@ -12,6 +13,8 @@ open Microsoft.VisualStudio.Shell
 open Microsoft.VisualStudio.Shell.Interop
 
 open Internal.Utilities.Library
+
+open CancellableTasks
 
 // Push-based file watching for FSharp.Editor, modelled on Roslyn's
 // Microsoft.VisualStudio.LanguageServices FileChangeWatcher (which is internal and not
@@ -21,7 +24,7 @@ open Internal.Utilities.Library
 /// A directory to watch recursively (with optional extension filters) so that individual
 /// files under it don't each need their own advise cookie.
 [<Sealed>]
-type internal WatchedDirectory(path: string, extensionFilters: string list) =
+type internal WatchedDirectory(path: string, extensionFilters: ImmutableArray<string>) =
     let path =
         if path.EndsWithOrdinal(string IO.Path.DirectorySeparatorChar) then
             path
@@ -36,12 +39,12 @@ type internal WatchedDirectory(path: string, extensionFilters: string list) =
     member _.Path = path
     member _.ExtensionFilters = extensionFilters
 
-    static member FilePathCoveredByWatchedDirectories(watchedDirectories: WatchedDirectory list, filePath: string) =
+    static member FilePathCoveredByWatchedDirectories(watchedDirectories: ImmutableArray<WatchedDirectory>, filePath: string) =
         watchedDirectories
-        |> List.exists (fun w ->
+        |> Seq.exists (fun w ->
             filePath.StartsWith(w.Path, StringComparison.OrdinalIgnoreCase)
             && (w.ExtensionFilters.IsEmpty
-                || w.ExtensionFilters |> List.exists filePath.EndsWithOrdinalIgnoreCase))
+                || w.ExtensionFilters |> Seq.exists filePath.EndsWithOrdinalIgnoreCase))
 
 /// A single watched file; disposing stops watching.
 type internal IFSharpWatchedFile =
@@ -59,7 +62,7 @@ type internal IFSharpFileChangeContext =
     abstract EnqueueWatchingFile: filePath: string -> IFSharpWatchedFile
 
 type internal IFSharpFileChangeWatcher =
-    abstract CreateContext: watchedDirectories: WatchedDirectory list -> IFSharpFileChangeContext
+    abstract CreateContext: watchedDirectories: ImmutableArray<WatchedDirectory> -> IFSharpFileChangeContext
 
 [<AutoOpen>]
 module private FileChangeWatcherImpl =
@@ -84,7 +87,7 @@ type internal FSharpWatchedFileToken() =
 
 /// Subscription operations queued for batched application against the file change service.
 type private WatcherOperation =
-    | WatchDir of path: string * filters: string list * sink: IVsFreeThreadedFileChangeEvents2 * cookies: List<uint32>
+    | WatchDir of path: string * filters: ImmutableArray<string> * sink: IVsFreeThreadedFileChangeEvents2 * cookies: List<uint32>
     | WatchFiles of paths: string list * tokens: FSharpWatchedFileToken list * sink: IVsFreeThreadedFileChangeEvents2
     | UnwatchFiles of tokens: FSharpWatchedFileToken list
     | UnwatchDirs of cookies: List<uint32>
@@ -93,7 +96,9 @@ type private WatcherOperation =
 type internal FSharpFileChangeWatcher(fileChangeService: Task<IVsAsyncFileChangeEx2>) =
 
     let applyBatch (service: IVsAsyncFileChangeEx2) (ops: WatcherOperation list) =
-        task {
+        cancellableTask {
+            let! ct = CancellableTask.getCancellationToken ()
+
             // Coalesce adjacent same-kind operations into single service calls, preserving order
             // between kinds (a watch enqueued before an unwatch must be applied first).
             let mutable pending = ops
@@ -103,55 +108,55 @@ type internal FSharpFileChangeWatcher(fileChangeService: Task<IVsAsyncFileChange
                 | [] -> ()
                 | WatchDir(path, filters, sink, cookies) :: rest ->
                     pending <- rest
-                    let! cookie = service.AdviseDirChangeAsync(path, true, sink, CancellationToken.None)
+                    let! cookie = service.AdviseDirChangeAsync(path, true, sink, ct)
                     cookies.Add cookie
 
                     if not filters.IsEmpty then
-                        do! service.FilterDirectoryChangesAsync(cookie, List.toArray filters, CancellationToken.None)
+                        do! service.FilterDirectoryChangesAsync(cookie, Seq.toArray filters, ct)
 
-                | WatchFiles _ :: _ ->
+                | WatchFiles(_, _, sink) :: _ ->
                     let batch =
                         pending
-                        |> List.takeWhile (function
+                        |> Seq.takeWhile (function
                             | WatchFiles _ -> true
                             | _ -> false)
+                        |> Seq.toArray
 
                     pending <- pending |> List.skip batch.Length
 
                     let paths =
-                        batch
-                        |> List.collect (function
-                            | WatchFiles(p, _, _) -> p
-                            | _ -> [])
+                        [|
+                            for op in batch do
+                                match op with
+                                | WatchFiles(p, _, _) -> yield! p
+                                | _ -> ()
+                        |]
 
                     let tokens =
-                        batch
-                        |> List.collect (function
-                            | WatchFiles(_, t, _) -> t
-                            | _ -> [])
+                        [|
+                            for op in batch do
+                                match op with
+                                | WatchFiles(_, t, _) -> yield! t
+                                | _ -> ()
+                        |]
 
-                    let sink =
-                        batch
-                        |> List.pick (function
-                            | WatchFiles(_, _, s) -> Some s
-                            | _ -> None)
+                    let! cookies = service.AdviseFileChangesAsync(paths, watchFlags, sink, ct)
 
-                    let! cookies = service.AdviseFileChangesAsync(List.toArray paths, watchFlags, sink, CancellationToken.None)
-
-                    (tokens, List.ofArray cookies)
-                    ||> List.iter2 (fun token cookie -> token.Cookie <- ValueSome cookie)
+                    (tokens, cookies)
+                    ||> Array.iter2 (fun token cookie -> token.Cookie <- ValueSome cookie)
 
                 | UnwatchFiles _ :: _ ->
                     let batch =
                         pending
-                        |> List.takeWhile (function
+                        |> Seq.takeWhile (function
                             | UnwatchFiles _ -> true
                             | _ -> false)
+                        |> Seq.toArray
 
                     pending <- pending |> List.skip batch.Length
 
                     let cookies =
-                        [
+                        [|
                             for op in batch do
                                 match op with
                                 | UnwatchFiles tokens ->
@@ -160,46 +165,58 @@ type internal FSharpFileChangeWatcher(fileChangeService: Task<IVsAsyncFileChange
                                         | ValueSome cookie -> cookie
                                         | ValueNone -> ()
                                 | _ -> ()
-                        ]
+                        |]
 
-                    if not cookies.IsEmpty then
-                        let! _ = service.UnadviseFileChangesAsync(List.toArray cookies, CancellationToken.None)
+                    if cookies.Length > 0 then
+                        let! _ = service.UnadviseFileChangesAsync(cookies, ct)
                         ()
 
                 | UnwatchDirs cookies :: rest ->
                     pending <- rest
 
                     if cookies.Count > 0 then
-                        let! _ = service.UnadviseDirChangesAsync(cookies.ToArray(), CancellationToken.None)
+                        let! _ = service.UnadviseDirChangesAsync(cookies.ToArray(), ct)
                         ()
         }
+
+    let cancellationTokenSource = new CancellationTokenSource()
 
     // Single consumer loop: waits for the first queued operation, sleeps out the batching
     // window, drains the queue and applies everything in one pass. Nothing ever blocks on the
     // service being available.
     let agent =
-        MailboxProcessor<WatcherOperation>.Start(fun inbox ->
-            async {
-                while true do
-                    try
-                        let! first = inbox.Receive()
-                        do! Async.Sleep(int batchingDelay.TotalMilliseconds)
+        MailboxProcessor<WatcherOperation>
+            .Start(
+                (fun inbox ->
+                    async {
+                        let! ct = Async.CancellationToken
 
-                        let ops = ResizeArray [ first ]
-                        let mutable draining = true
+                        while true do
+                            try
+                                let! first = inbox.Receive()
+                                do! Async.Sleep(int batchingDelay.TotalMilliseconds)
 
-                        while draining do
-                            match! inbox.TryReceive 0 with
-                            | Some op -> ops.Add op
-                            | None -> draining <- false
+                                let ops = ResizeArray [ first ]
+                                let mutable draining = true
 
-                        let! service = fileChangeService |> Async.AwaitTask
-                        do! applyBatch service (List.ofSeq ops) |> Async.AwaitTask
-                    with _ ->
-                        // Never let a failed advise/unadvise (e.g. non-existent path) kill the
-                        // subscription loop; we simply won't get events for that path.
-                        ()
-            })
+                                while draining do
+                                    match! inbox.TryReceive 0 with
+                                    | Some op -> ops.Add op
+                                    | None -> draining <- false
+
+                                let! service = fileChangeService |> Async.AwaitTask
+
+                                do!
+                                    applyBatch service (List.ofSeq ops)
+                                    |> CancellableTask.startAsTask ct
+                                    |> Async.AwaitTask
+                            with ex when not (ex :? OperationCanceledException) ->
+                                // Never let a failed advise/unadvise (e.g. non-existent path) kill the
+                                // subscription loop; we simply won't get events for that path.
+                                ()
+                    }),
+                cancellationTokenSource.Token
+            )
 
     member private _.Enqueue(op: WatcherOperation) = agent.Post op
 
@@ -215,7 +232,13 @@ type internal FSharpFileChangeWatcher(fileChangeService: Task<IVsAsyncFileChange
         member _.CreateContext(watchedDirectories) =
             new FileChangeContext(agent.Post, watchedDirectories) :> IFSharpFileChangeContext
 
-and [<Sealed>] private FileChangeContext(enqueue: WatcherOperation -> unit, watchedDirectories: WatchedDirectory list) as this =
+    interface IDisposable with
+        member _.Dispose() =
+            cancellationTokenSource.Cancel()
+            cancellationTokenSource.Dispose()
+            (agent :> IDisposable).Dispose()
+
+and [<Sealed>] private FileChangeContext(enqueue: WatcherOperation -> unit, watchedDirectories: ImmutableArray<WatchedDirectory>) as this =
 
     let gate = obj ()
     let mutable disposed = false
@@ -327,24 +350,26 @@ type internal FSharpReferenceChangeTracker(watcher: IFSharpFileChangeWatcher, on
     static let defaultWatchedDirectories () =
         let dotnetRoot = Environment.GetEnvironmentVariable "DOTNET_ROOT"
 
-        seq {
-            if not (String.IsNullOrEmpty dotnetRoot) then
-                IO.Path.Combine(dotnetRoot, "packs")
+        let directories =
+            seq {
+                if not (String.IsNullOrEmpty dotnetRoot) then
+                    IO.Path.Combine(dotnetRoot, "packs")
 
-            IO.Path.Combine(Environment.GetFolderPath Environment.SpecialFolder.ProgramFiles, "dotnet", "packs")
+                IO.Path.Combine(Environment.GetFolderPath Environment.SpecialFolder.ProgramFiles, "dotnet", "packs")
 
-            IO.Path.Combine(
-                Environment.GetFolderPath Environment.SpecialFolder.ProgramFilesX86,
-                "Reference Assemblies",
-                "Microsoft",
-                "Framework"
-            )
+                IO.Path.Combine(
+                    Environment.GetFolderPath Environment.SpecialFolder.ProgramFilesX86,
+                    "Reference Assemblies",
+                    "Microsoft",
+                    "Framework"
+                )
 
-            IO.Path.Combine(Environment.GetFolderPath Environment.SpecialFolder.UserProfile, ".nuget", "packages")
-        }
-        |> Seq.distinct
-        |> Seq.map (fun d -> WatchedDirectory(d, [ ".dll" ]))
-        |> Seq.toList
+                IO.Path.Combine(Environment.GetFolderPath Environment.SpecialFolder.UserProfile, ".nuget", "packages")
+            }
+            |> Seq.distinct
+            |> Seq.map (fun d -> WatchedDirectory(d, ImmutableArray.Create ".dll"))
+
+        directories.ToImmutableArray()
 
     let context =
         lazy
