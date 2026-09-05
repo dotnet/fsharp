@@ -212,7 +212,7 @@ type private FSharpProjectOptionsReactor(checker: FSharpChecker) =
         cancellableTask {
             let! ct = CancellableTask.getCancellationToken ()
             let! fileStamp = document.GetTextVersionAsync(ct)
-            let textViewAndCaret () : (IVsTextView * Position) option = document.TryGetTextViewAndCaretPos()
+            let textViewAndCaret () : (IVsTextView * Position) voption = document.TryGetTextViewAndCaretPos()
 
             match singleFileCache.TryGetValue(document.Id) with
             | false, _ ->
@@ -222,7 +222,7 @@ type private FSharpProjectOptionsReactor(checker: FSharpChecker) =
                     let caret = textViewAndCaret ()
 
                     match caret with
-                    | None ->
+                    | ValueNone ->
                         checker.GetProjectOptionsFromScript(
                             document.FilePath,
                             sourceText.ToFSharpSourceText(),
@@ -231,7 +231,7 @@ type private FSharpProjectOptionsReactor(checker: FSharpChecker) =
                             userOpName = userOpName
                         )
 
-                    | Some(_, caret) ->
+                    | ValueSome(_, caret) ->
                         checker.GetProjectOptionsFromScript(
                             document.FilePath,
                             sourceText.ToFSharpSourceText(),
@@ -294,9 +294,14 @@ type private FSharpProjectOptionsReactor(checker: FSharpChecker) =
                 let addToCacheAndSubscribe (entry: SingleFileCacheEntry) =
                     let subscription =
                         match textViewAndCaret () with
-                        | Some(textView, _) ->
-                            subscribeToTextViewEvents (textView, (Some onChangeCaretHandler), (Some onKillFocus), (Some onSetFocus))
-                        | None -> None
+                        | ValueSome(textView, _) ->
+                            subscribeToTextViewEvents (
+                                textView,
+                                (ValueSome onChangeCaretHandler),
+                                (ValueSome onKillFocus),
+                                (ValueSome onSetFocus)
+                            )
+                        | ValueNone -> ValueNone
 
                     { entry with
                         Subscription = subscription
@@ -311,7 +316,7 @@ type private FSharpProjectOptionsReactor(checker: FSharpChecker) =
                         FileStamp = fileStamp
                         ParsingOptions = parsingOptions
                         ProjectOptions = projectOptions
-                        Subscription = None
+                        Subscription = ValueNone
                     } // The value to add or update
                 )
                 |> ignore
@@ -327,7 +332,10 @@ type private FSharpProjectOptionsReactor(checker: FSharpChecker) =
               } ->
                 if fileStamp <> oldFileStamp || isProjectInvalidated document.Project oldProject ct then
                     match singleFileCache.TryRemove(document.Id) with
-                    | true, { Subscription = Some subscription } -> subscription.Dispose()
+                    | true,
+                      {
+                          Subscription = ValueSome subscription
+                      } -> subscription.Dispose()
                     | _ -> ()
 
                     return! tryComputeOptionsBySingleScriptOrFile document userOpName
@@ -547,7 +555,7 @@ type private FSharpProjectOptionsReactor(checker: FSharpChecker) =
                       } ->
                         lastSuccessfulCompilations.TryRemove(documentId.ProjectId) |> ignore
                         checker.ClearCache([ projectOptions ])
-                        subscription |> Option.iter (fun handler -> handler.Dispose())
+                        subscription |> ValueOption.iter (fun handler -> handler.Dispose())
                     | _ -> ()
         }
 
