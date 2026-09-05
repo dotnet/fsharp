@@ -361,6 +361,18 @@
     "20455": {
       "sha": "c3448ac37a93",
       "cats": []
+    },
+    "20457": {
+      "sha": "2c1ab982676a",
+      "cats": [
+        "Affects-Design-Time"
+      ]
+    },
+    "20456": {
+      "sha": "560a0cd197c6",
+      "cats": [
+        "Affects-Compiler-Output"
+      ]
     }
   }
 }
