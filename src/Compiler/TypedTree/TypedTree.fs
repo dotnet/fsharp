@@ -699,13 +699,13 @@ type Entity =
       /// The methods and properties of the type
       //
       // MUTABILITY; used only during creation and remapping of tycons
-      mutable entity_tycon_tcaug: TyconAugmentation | null
+      mutable entity_tycon_tcaug: TyconAugmentation
 
       /// This field is used when the 'tycon' is really a module definition. It holds statically nested type definitions and nested modules
       //
       // MUTABILITY: only used during creation and remapping of tycons and
       // when compiling fslib to fixup compiler forward references to internal items
-      mutable entity_modul_type: MaybeLazy<ModuleOrNamespaceType> | null
+      mutable entity_modul_type: MaybeLazy<ModuleOrNamespaceType>
 
       /// The stable path to the type, e.g. Microsoft.FSharp.Core.FSharpFunc`2
       // MUTABILITY: only for unpickle linkage
@@ -888,10 +888,10 @@ type Entity =
             | _ -> x.entity_opt_data <- Some { Entity.NewEmptyEntityOptData() with entity_xmldocsig = v }
 
     /// The logical contents of the entity when it is a module or namespace fragment.
-    member x.ModuleOrNamespaceType = (nonNull x.entity_modul_type).Value
+    member x.ModuleOrNamespaceType = x.entity_modul_type.Force()
 
     /// The logical contents of the entity when it is a type definition.
-    member x.TypeContents = nonNull x.entity_tycon_tcaug
+    member x.TypeContents = x.entity_tycon_tcaug
 
     /// The kind of the type definition - is it a measure definition or a type definition?
     member x.TypeOrMeasureKind =
@@ -6568,7 +6568,7 @@ type Construct() =
     /// contents of the module.
     static member NewModifiedModuleOrNamespace f orig =
         orig |> Construct.NewModifiedTycon (fun d ->
-            { d with entity_modul_type = MaybeLazy.Strict (f (nonNull d.entity_modul_type).Value) })
+            { d with entity_modul_type = MaybeLazy.Strict (f (d.entity_modul_type.Force())) })
 
     /// Create a Val based on an existing one using the function 'f'.
     /// We require that we be given the parent for the new Val.

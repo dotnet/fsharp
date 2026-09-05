@@ -2843,7 +2843,7 @@ and p_entity_spec_data (x: Entity) st =
     p_attribs (x.entity_attribs.AsList()) st
     let flagBit = p_tycon_repr x.entity_tycon_repr st
     p_option p_ty x.TypeAbbrev st
-    p_tcaug (nonNull x.entity_tycon_tcaug) st
+    p_tcaug x.entity_tycon_tcaug st
     p_string System.String.Empty st
     p_kind x.TypeOrMeasureKind st
 
@@ -2856,7 +2856,7 @@ and p_entity_spec_data (x: Entity) st =
         st
 
     p_option p_cpath x.entity_cpath st
-    p_maybe_lazy p_modul_typ (nonNull x.entity_modul_type) st
+    p_maybe_lazy p_modul_typ x.entity_modul_type st
     p_exnc_repr x.ExceptionInfo st
 
     if st.oInMem then
