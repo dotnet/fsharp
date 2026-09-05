@@ -42,7 +42,7 @@ type internal WatchedDirectory(path: string, extensionFilters: ImmutableArray<st
     static member FilePathCoveredByWatchedDirectories(watchedDirectories: ImmutableArray<WatchedDirectory>, filePath: string) =
         watchedDirectories
         |> Seq.exists (fun w ->
-            filePath.StartsWith(w.Path, StringComparison.OrdinalIgnoreCase)
+            filePath.StartsWithOrdinalIgnoreCase w.Path
             && (w.ExtensionFilters.IsEmpty
                 || w.ExtensionFilters |> Seq.exists filePath.EndsWithOrdinalIgnoreCase))
 
