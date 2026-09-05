@@ -11,6 +11,8 @@ open Microsoft.VisualStudio
 open Microsoft.VisualStudio.Shell
 open Microsoft.VisualStudio.Shell.Interop
 
+open Internal.Utilities.Library
+
 // Push-based file watching for FSharp.Editor, modelled on Roslyn's
 // Microsoft.VisualStudio.LanguageServices FileChangeWatcher (which is internal and not
 // exposed through ExternalAccess.FSharp). Uses the free-threaded IVsAsyncFileChangeEx2
@@ -21,14 +23,14 @@ open Microsoft.VisualStudio.Shell.Interop
 [<Sealed>]
 type internal WatchedDirectory(path: string, extensionFilters: string list) =
     let path =
-        if path.EndsWith(string IO.Path.DirectorySeparatorChar) then
+        if path.EndsWithOrdinal(string IO.Path.DirectorySeparatorChar) then
             path
         else
-            path + string IO.Path.DirectorySeparatorChar
+            $"{path}{IO.Path.DirectorySeparatorChar}"
 
     do
         for filter in extensionFilters do
-            if not (filter.StartsWith ".") then
+            if not (filter.StartsWithOrdinal ".") then
                 invalidArg (nameof extensionFilters) $"Filter '{filter}' must start with a period."
 
     member _.Path = path
@@ -39,8 +41,7 @@ type internal WatchedDirectory(path: string, extensionFilters: string list) =
         |> List.exists (fun w ->
             filePath.StartsWith(w.Path, StringComparison.OrdinalIgnoreCase)
             && (w.ExtensionFilters.IsEmpty
-                || w.ExtensionFilters
-                   |> List.exists (fun f -> filePath.EndsWith(f, StringComparison.OrdinalIgnoreCase))))
+                || w.ExtensionFilters |> List.exists filePath.EndsWithOrdinalIgnoreCase))
 
 /// A single watched file; disposing stops watching.
 type internal IFSharpWatchedFile =
@@ -79,7 +80,7 @@ module private FileChangeWatcherImpl =
 
 [<Sealed>]
 type internal FSharpWatchedFileToken() =
-    member val Cookie: uint32 option = None with get, set
+    member val Cookie: uint32 voption = ValueNone with get, set
 
 /// Subscription operations queued for batched application against the file change service.
 type private WatcherOperation =
@@ -91,77 +92,61 @@ type private WatcherOperation =
 [<Sealed>]
 type internal FSharpFileChangeWatcher(fileChangeService: Task<IVsAsyncFileChangeEx2>) =
 
-    let applyBatch (service: IVsAsyncFileChangeEx2) (ops: WatcherOperation list) =
+    let applyBatch (service: IVsAsyncFileChangeEx2) (ops: ResizeArray<WatcherOperation>) =
         task {
             // Coalesce adjacent same-kind operations into single service calls, preserving order
             // between kinds (a watch enqueued before an unwatch must be applied first).
-            let mutable pending = ops
+            let mutable i = 0
 
-            while not pending.IsEmpty do
-                match pending with
-                | [] -> ()
-                | WatchDir(path, filters, sink, cookies) :: rest ->
-                    pending <- rest
+            while i < ops.Count do
+                match ops[i] with
+                | WatchDir(path, filters, sink, cookies) ->
+                    i <- i + 1
                     let! cookie = service.AdviseDirChangeAsync(path, true, sink, CancellationToken.None)
                     cookies.Add cookie
 
                     if not filters.IsEmpty then
                         do! service.FilterDirectoryChangesAsync(cookie, List.toArray filters, CancellationToken.None)
 
-                | WatchFiles _ :: _ ->
-                    let batch =
-                        pending
-                        |> List.takeWhile (function
-                            | WatchFiles _ -> true
-                            | _ -> false)
+                | WatchFiles(_, _, sink) ->
+                    let paths = ResizeArray<string>()
+                    let tokens = ResizeArray<FSharpWatchedFileToken>()
+                    let mutable sameKind = true
 
-                    pending <- pending |> List.skip batch.Length
+                    while sameKind && i < ops.Count do
+                        match ops[i] with
+                        | WatchFiles(p, t, _) ->
+                            paths.AddRange p
+                            tokens.AddRange t
+                            i <- i + 1
+                        | _ -> sameKind <- false
 
-                    let paths =
-                        batch
-                        |> List.collect (function
-                            | WatchFiles(p, _, _) -> p
-                            | _ -> [])
+                    let! cookies = service.AdviseFileChangesAsync(paths.ToArray(), watchFlags, sink, CancellationToken.None)
 
-                    let tokens =
-                        batch
-                        |> List.collect (function
-                            | WatchFiles(_, t, _) -> t
-                            | _ -> [])
+                    for j in 0 .. tokens.Count - 1 do
+                        tokens[j].Cookie <- ValueSome cookies[j]
 
-                    let sink =
-                        batch
-                        |> List.pick (function
-                            | WatchFiles(_, _, s) -> Some s
-                            | _ -> None)
+                | UnwatchFiles _ ->
+                    let cookies = ResizeArray<uint32>()
+                    let mutable sameKind = true
 
-                    let! cookies = service.AdviseFileChangesAsync(List.toArray paths, watchFlags, sink, CancellationToken.None)
+                    while sameKind && i < ops.Count do
+                        match ops[i] with
+                        | UnwatchFiles tokens ->
+                            for token in tokens do
+                                match token.Cookie with
+                                | ValueSome cookie -> cookies.Add cookie
+                                | ValueNone -> ()
 
-                    (tokens, List.ofArray cookies)
-                    ||> List.iter2 (fun token cookie -> token.Cookie <- Some cookie)
+                            i <- i + 1
+                        | _ -> sameKind <- false
 
-                | UnwatchFiles _ :: _ ->
-                    let batch =
-                        pending
-                        |> List.takeWhile (function
-                            | UnwatchFiles _ -> true
-                            | _ -> false)
-
-                    pending <- pending |> List.skip batch.Length
-
-                    let cookies =
-                        batch
-                        |> List.collect (function
-                            | UnwatchFiles t -> t
-                            | _ -> [])
-                        |> List.choose (fun token -> token.Cookie)
-
-                    if not cookies.IsEmpty then
-                        let! _ = service.UnadviseFileChangesAsync(List.toArray cookies, CancellationToken.None)
+                    if cookies.Count > 0 then
+                        let! _ = service.UnadviseFileChangesAsync(cookies.ToArray(), CancellationToken.None)
                         ()
 
-                | UnwatchDirs cookies :: rest ->
-                    pending <- rest
+                | UnwatchDirs cookies ->
+                    i <- i + 1
 
                     if cookies.Count > 0 then
                         let! _ = service.UnadviseDirChangesAsync(cookies.ToArray(), CancellationToken.None)
@@ -188,7 +173,7 @@ type internal FSharpFileChangeWatcher(fileChangeService: Task<IVsAsyncFileChange
                             | None -> draining <- false
 
                         let! service = fileChangeService |> Async.AwaitTask
-                        do! applyBatch service (List.ofSeq ops) |> Async.AwaitTask
+                        do! applyBatch service ops |> Async.AwaitTask
                     with _ ->
                         // Never let a failed advise/unadvise (e.g. non-existent path) kill the
                         // subscription loop; we simply won't get events for that path.
@@ -321,7 +306,7 @@ type internal FSharpReferenceChangeTracker(watcher: IFSharpFileChangeWatcher, on
     static let defaultWatchedDirectories () =
         let dotnetRoot = Environment.GetEnvironmentVariable "DOTNET_ROOT"
 
-        [
+        seq {
             if not (String.IsNullOrEmpty dotnetRoot) then
                 IO.Path.Combine(dotnetRoot, "packs")
 
@@ -335,9 +320,10 @@ type internal FSharpReferenceChangeTracker(watcher: IFSharpFileChangeWatcher, on
             )
 
             IO.Path.Combine(Environment.GetFolderPath Environment.SpecialFolder.UserProfile, ".nuget", "packages")
-        ]
-        |> List.distinct
-        |> List.map (fun d -> WatchedDirectory(d, [ ".dll" ]))
+        }
+        |> Seq.distinct
+        |> Seq.map (fun d -> WatchedDirectory(d, [ ".dll" ]))
+        |> List.ofSeq
 
     let context =
         lazy
