@@ -3,6 +3,7 @@
 namespace FSharp.Editor.Tests
 
 open System
+open System.Collections.Immutable
 open System.Threading
 open Xunit
 open Microsoft.VisualStudio.FSharp.Editor
@@ -44,7 +45,8 @@ module FileChangeWatcherTests =
 
     [<Fact>]
     let ``WatchedDirectory covers files under it matching the extension filter`` () =
-        let dirs = [ WatchedDirectory(@"C:\refs", [ ".dll" ]) ]
+        let dirs =
+            ImmutableArray.Create(WatchedDirectory(@"C:\refs", ImmutableArray.Create ".dll"))
 
         Assert.True(WatchedDirectory.FilePathCoveredByWatchedDirectories(dirs, @"C:\refs\sub\a.dll"))
         Assert.True(WatchedDirectory.FilePathCoveredByWatchedDirectories(dirs, @"C:\REFS\A.DLL"))
@@ -53,7 +55,8 @@ module FileChangeWatcherTests =
 
     [<Fact>]
     let ``WatchedDirectory without filters covers any file under it`` () =
-        let dirs = [ WatchedDirectory(@"C:\refs", []) ]
+        let dirs =
+            ImmutableArray.Create(WatchedDirectory(@"C:\refs", ImmutableArray<string>.Empty))
 
         Assert.True(WatchedDirectory.FilePathCoveredByWatchedDirectories(dirs, @"C:\refs\a.xml"))
         Assert.False(WatchedDirectory.FilePathCoveredByWatchedDirectories(dirs, @"C:\refsx\a.xml"))
