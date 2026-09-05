@@ -1,33 +1,19 @@
 module FSharp.Compiler.Service.Tests.UnlinkedEntityTests
 
+open System
+
 open Xunit
 
 open FSharp.Compiler.TypedTree
 
-/// (#20269) An entity whose data was never linked has no contents. The IDE reaches these while a
-/// file is mid-edit, so reading the contents must yield empty stand-ins rather than throwing a
-/// NullReferenceException that takes down classification for the whole file.
+/// (#20269) A placeholder that unpickling never linked is not a readable entity — its
+/// representation, attributes, augmentation and contents are all absent, so no stand-in for a
+/// subset of them makes it safe. Resilience lives at the IDE read boundary instead.
 [<Fact>]
-let ``Unlinked entity exposes empty contents instead of throwing`` () =
+let ``An unlinked entity is not linked and not readable`` () =
     let entity = Entity.NewUnlinked()
 
-    Assert.Empty(entity.ModuleOrNamespaceType.AllEntities)
-    Assert.Empty(entity.ModuleOrNamespaceType.AllValsAndMembers)
-    Assert.Empty(entity.TypeContents.tcaug_interfaces)
+    Assert.False entity.IsLinked
 
-/// Reading the contents of an unlinked entity must not fill them in: the getters are hit from
-/// parallel checking, and writing shared typed-tree state from a getter is a race.
-[<Fact>]
-let ``Reading the contents of an unlinked entity does not link them in`` () =
-    let entity = Entity.NewUnlinked()
-
-    entity.ModuleOrNamespaceType |> ignore
-    entity.TypeContents |> ignore
-
-    match entity.entity_modul_type with
-    | null -> ()
-    | _ -> failwith "reading ModuleOrNamespaceType must not write the entity's contents"
-
-    match entity.entity_tycon_tcaug with
-    | null -> ()
-    | _ -> failwith "reading TypeContents must not write the entity's augmentation"
+    Assert.Throws<NullReferenceException>(fun () -> entity.ModuleOrNamespaceType |> ignore)
+    |> ignore
