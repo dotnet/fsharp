@@ -101,6 +101,15 @@ module private FSharpProjectOptionsHelpers =
         else
             hasProjectVersionChanged
 
+type private SingleFileCacheEntry =
+    {
+        Project: Project
+        FileStamp: VersionStamp
+        ParsingOptions: FSharpParsingOptions
+        ProjectOptions: FSharpProjectOptions
+        Subscription: ConnectionPointSubscription
+    }
+
 [<RequireQualifiedAccess>]
 type private FSharpProjectOptionsMessage =
     | TryGetOptionsByDocument of
@@ -124,8 +133,7 @@ type private FSharpProjectOptionsReactor(checker: FSharpChecker) =
     let cache =
         ConcurrentDictionary<ProjectId, Project * FSharpParsingOptions * FSharpProjectOptions>()
 
-    let singleFileCache =
-        ConcurrentDictionary<DocumentId, Project * VersionStamp * FSharpParsingOptions * FSharpProjectOptions * ConnectionPointSubscription>()
+    let singleFileCache = ConcurrentDictionary<DocumentId, SingleFileCacheEntry>()
 
     // This is used to not constantly emit the same compilation.
     let weakPEReferences = ConditionalWeakTable<Compilation, FSharpReferencedProject>()
@@ -279,31 +287,43 @@ type private FSharpProjectOptionsReactor(checker: FSharpChecker) =
                 let onKillFocus (_) = updateProjectOptions ()
                 let onSetFocus (_) = updateProjectOptions ()
 
-                let addToCacheAndSubscribe value =
-                    match value with
-                    | projectId, fileStamp, parsingOptions, projectOptions, _ ->
-                        let subscription =
-                            match textViewAndCaret () with
-                            | Some(textView, _) ->
-                                subscribeToTextViewEvents (textView, (Some onChangeCaretHandler), (Some onKillFocus), (Some onSetFocus))
-                            | None -> None
+                let addToCacheAndSubscribe (entry: SingleFileCacheEntry) =
+                    let subscription =
+                        match textViewAndCaret () with
+                        | Some(textView, _) ->
+                            subscribeToTextViewEvents (textView, (Some onChangeCaretHandler), (Some onKillFocus), (Some onSetFocus))
+                        | None -> None
 
-                        (projectId, fileStamp, parsingOptions, projectOptions, subscription)
+                    { entry with
+                        Subscription = subscription
+                    }
 
                 singleFileCache.AddOrUpdate(
                     document.Id, // The key to the cache
                     (fun _ value -> addToCacheAndSubscribe value), // Function to add the cached value if the key does not exist
                     (fun _ _ value -> value), // Function to update the value if the key exists
-                    (document.Project, fileStamp, parsingOptions, projectOptions, None) // The value to add or update
+                    {
+                        Project = document.Project
+                        FileStamp = fileStamp
+                        ParsingOptions = parsingOptions
+                        ProjectOptions = projectOptions
+                        Subscription = None
+                    } // The value to add or update
                 )
                 |> ignore
 
                 return ValueSome(parsingOptions, projectOptions)
 
-            | true, (oldProject, oldFileStamp, parsingOptions, projectOptions, _) ->
+            | true,
+              {
+                  Project = oldProject
+                  FileStamp = oldFileStamp
+                  ParsingOptions = parsingOptions
+                  ProjectOptions = projectOptions
+              } ->
                 if fileStamp <> oldFileStamp || isProjectInvalidated document.Project oldProject ct then
                     match singleFileCache.TryRemove(document.Id) with
-                    | true, (_, _, _, _, Some subscription) -> subscription.Dispose()
+                    | true, { Subscription = Some subscription } -> subscription.Dispose()
                     | _ -> ()
 
                     return! tryComputeOptionsBySingleScriptOrFile document userOpName
@@ -516,7 +536,11 @@ type private FSharpProjectOptionsReactor(checker: FSharpChecker) =
                     legacyProjectSites.TryRemove(projectId) |> ignore
                 | FSharpProjectOptionsMessage.ClearSingleFileOptionsCache(documentId) ->
                     match singleFileCache.TryRemove(documentId) with
-                    | true, (_, _, _, projectOptions, subscription) ->
+                    | true,
+                      {
+                          ProjectOptions = projectOptions
+                          Subscription = subscription
+                      } ->
                         lastSuccessfulCompilations.TryRemove(documentId.ProjectId) |> ignore
                         checker.ClearCache([ projectOptions ])
                         subscription |> Option.iter (fun handler -> handler.Dispose())
