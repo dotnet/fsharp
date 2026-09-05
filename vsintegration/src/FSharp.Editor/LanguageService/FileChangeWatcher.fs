@@ -14,6 +14,8 @@ open Microsoft.VisualStudio.Shell.Interop
 
 open Internal.Utilities.Library
 
+open Microsoft.VisualStudio.FSharp.Editor.DebugHelpers
+
 open CancellableTasks
 
 // Push-based file watching for FSharp.Editor, modelled on Roslyn's
@@ -79,7 +81,12 @@ module private FileChangeWatcherImpl =
 
     /// Empirically strong batching window during high activity (solution open/close); see
     /// Roslyn's FileChangeWatcher.
-    let batchingDelay = TimeSpan.FromMilliseconds 500.
+    let defaultBatchingDelay = TimeSpan.FromMilliseconds 500.
+
+    let noOpWatchedFile =
+        { new IFSharpWatchedFile with
+            member _.Dispose() = ()
+        }
 
 [<Sealed>]
 type internal FSharpWatchedFileToken() =
@@ -93,7 +100,9 @@ type private WatcherOperation =
     | UnwatchDirs of cookies: List<uint32>
 
 [<Sealed>]
-type internal FSharpFileChangeWatcher(fileChangeService: Task<IVsAsyncFileChangeEx2>) =
+type internal FSharpFileChangeWatcher(fileChangeService: Task<IVsAsyncFileChangeEx2>, ?batchingDelay: TimeSpan) =
+
+    let batchingDelay = defaultArg batchingDelay defaultBatchingDelay
 
     let applyBatch (service: IVsAsyncFileChangeEx2) (ops: WatcherOperation list) =
         cancellableTask {
@@ -118,7 +127,7 @@ type internal FSharpFileChangeWatcher(fileChangeService: Task<IVsAsyncFileChange
                     let batch =
                         pending
                         |> Seq.takeWhile (function
-                            | WatchFiles _ -> true
+                            | WatchFiles(_, _, s) -> obj.ReferenceEquals(s, sink)
                             | _ -> false)
                         |> Seq.toArray
 
@@ -155,6 +164,7 @@ type internal FSharpFileChangeWatcher(fileChangeService: Task<IVsAsyncFileChange
 
                     pending <- pending |> List.skip batch.Length
 
+                    // A token whose watch never got a cookie (or was already unadvised) is a no-op.
                     let cookies =
                         [|
                             for op in batch do
@@ -162,7 +172,9 @@ type internal FSharpFileChangeWatcher(fileChangeService: Task<IVsAsyncFileChange
                                 | UnwatchFiles tokens ->
                                     for token in tokens do
                                         match token.Cookie with
-                                        | ValueSome cookie -> cookie
+                                        | ValueSome cookie ->
+                                            token.Cookie <- ValueNone
+                                            cookie
                                         | ValueNone -> ()
                                 | _ -> ()
                         |]
@@ -197,12 +209,10 @@ type internal FSharpFileChangeWatcher(fileChangeService: Task<IVsAsyncFileChange
                                 do! Async.Sleep(int batchingDelay.TotalMilliseconds)
 
                                 let ops = ResizeArray [ first ]
-                                let mutable draining = true
 
-                                while draining do
-                                    match! inbox.TryReceive 0 with
-                                    | Some op -> ops.Add op
-                                    | None -> draining <- false
+                                while inbox.CurrentQueueLength > 0 do
+                                    let! op = inbox.Receive()
+                                    ops.Add op
 
                                 let! service = fileChangeService |> Async.AwaitTask
 
@@ -213,7 +223,7 @@ type internal FSharpFileChangeWatcher(fileChangeService: Task<IVsAsyncFileChange
                             with ex when not (ex :? OperationCanceledException) ->
                                 // Never let a failed advise/unadvise (e.g. non-existent path) kill the
                                 // subscription loop; we simply won't get events for that path.
-                                ()
+                                FSharpOutputPane.logExceptionWithContext (ex, nameof FSharpFileChangeWatcher)
                     }),
                 cancellationTokenSource.Token
             )
@@ -277,10 +287,7 @@ and [<Sealed>] private FileChangeContext(enqueue: WatcherOperation -> unit, watc
 
         member _.EnqueueWatchingFile filePath =
             if WatchedDirectory.FilePathCoveredByWatchedDirectories(watchedDirectories, filePath) then
-                // Covered by a directory watch; nothing extra to subscribe.
-                { new IFSharpWatchedFile with
-                    member _.Dispose() = ()
-                }
+                noOpWatchedFile
             else
                 let token = FSharpWatchedFileToken()
                 lock gate (fun () -> activeFileTokens.Add token |> ignore)
@@ -342,13 +349,13 @@ type internal FSharpReferenceChangeTracker(watcher: IFSharpFileChangeWatcher, on
     let watchedFiles =
         Dictionary<string, IFSharpWatchedFile * int>(StringComparer.OrdinalIgnoreCase)
 
-    let pendingTimers =
-        ConcurrentDictionary<string, Timer>(StringComparer.OrdinalIgnoreCase)
+    let pendingTimers = Dictionary<string, Timer>(StringComparer.OrdinalIgnoreCase)
 
     // On each platform there is a place framework reference assemblies live; these rarely change
     // but account for most watched paths, so cover them with directory watches up front.
     static let defaultWatchedDirectories () =
         let dotnetRoot = Environment.GetEnvironmentVariable "DOTNET_ROOT"
+        let nugetPackages = Environment.GetEnvironmentVariable "NUGET_PACKAGES"
 
         let directories =
             seq {
@@ -364,7 +371,10 @@ type internal FSharpReferenceChangeTracker(watcher: IFSharpFileChangeWatcher, on
                     "Framework"
                 )
 
-                IO.Path.Combine(Environment.GetFolderPath Environment.SpecialFolder.UserProfile, ".nuget", "packages")
+                if String.IsNullOrEmpty nugetPackages then
+                    IO.Path.Combine(Environment.GetFolderPath Environment.SpecialFolder.UserProfile, ".nuget", "packages")
+                else
+                    nugetPackages
             }
             |> Seq.distinct
             |> Seq.map (fun d -> WatchedDirectory(d, ImmutableArray.Create ".dll"))
@@ -377,22 +387,31 @@ type internal FSharpReferenceChangeTracker(watcher: IFSharpFileChangeWatcher, on
 
              ctx.FileChanged.Add(fun path ->
                  let fire (_: obj) =
-                     pendingTimers.TryRemove path
-                     |> function
-                         | true, timer -> timer.Dispose()
-                         | _ -> ()
+                     let isWatched =
+                         lock gate (fun () ->
+                             match pendingTimers.TryGetValue path with
+                             | true, timer ->
+                                 pendingTimers.Remove path |> ignore
+                                 timer.Dispose()
+                             | _ -> ()
 
-                     // Only notify for paths someone is actually watching; directory watches
-                     // cover whole trees.
-                     let isWatched = lock gate (fun () -> watchedFiles.ContainsKey path)
+                             watchedFiles.ContainsKey path)
 
                      if isWatched then
                          onChanged path
 
-                 let timer =
-                     pendingTimers.GetOrAdd(path, fun _ -> new Timer(fire, null, Timeout.Infinite, Timeout.Infinite))
+                 lock gate (fun () ->
+                     // Directory watches cover whole trees; only debounce paths someone watches.
+                     if not disposed && watchedFiles.ContainsKey path then
+                         let timer =
+                             match pendingTimers.TryGetValue path with
+                             | true, timer -> timer
+                             | _ ->
+                                 let timer = new Timer(fire, null, Timeout.Infinite, Timeout.Infinite)
+                                 pendingTimers[path] <- timer
+                                 timer
 
-                 timer.Change(notificationDelay, Timeout.InfiniteTimeSpan) |> ignore)
+                         timer.Change(notificationDelay, Timeout.InfiniteTimeSpan) |> ignore))
 
              ctx)
 
