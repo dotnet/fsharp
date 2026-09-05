@@ -129,15 +129,14 @@ type private FSharpProjectOptionsReactor(checker: FSharpChecker, fileChangeWatch
     let cache =
         ConcurrentDictionary<ProjectId, struct (Project * FSharpParsingOptions * FSharpProjectOptions)>()
 
-    // Push invalidation for on-disk '-r:' reference assemblies (not tracked by the Roslyn
-    // workspace): when one changes after an external rebuild, drop the cached options of every
-    // project referencing it instead of waiting for a timestamp poll to notice.
+    // Push invalidation for on-disk '-r:' reference assemblies, which the Roslyn workspace does not
+    // track. The cached options stay valid (same paths); only the FCS build behind them goes stale.
     let referenceWatches = ConcurrentDictionary<ProjectId, HashSet<string>>()
 
     let onWatchedReferenceChanged (path: string) =
         for KeyValue(projectId, paths) in referenceWatches do
             if paths.Contains path then
-                match cache.TryRemove projectId with
+                match cache.TryGetValue projectId with
                 | true, (_, _, projectOptions) -> checker.InvalidateConfiguration(projectOptions, userOpName = "onWatchedReferenceChanged")
                 | _ -> ()
 
@@ -152,19 +151,29 @@ type private FSharpProjectOptionsReactor(checker: FSharpChecker, fileChangeWatch
         | _ -> ()
 
     let watchReferenceFiles (projectId: ProjectId) (projectOptions: FSharpProjectOptions) =
-        clearReferenceWatches projectId
-
         let paths = HashSet<string>(StringComparer.OrdinalIgnoreCase)
 
         for option in projectOptions.OtherOptions do
             if option.StartsWithOrdinal "-r:" then
                 paths.Add(option.Substring "-r:".Length) |> ignore
 
-        if paths.Count > 0 then
+        match referenceWatches.TryGetValue projectId with
+        | true, previous ->
+            for path in previous do
+                if not (paths.Contains path) then
+                    referenceChangeTracker.StopWatchingReference path
+
+            for path in paths do
+                if not (previous.Contains path) then
+                    referenceChangeTracker.StartWatchingReference path
+        | _ ->
             for path in paths do
                 referenceChangeTracker.StartWatchingReference path
 
+        if paths.Count > 0 then
             referenceWatches[projectId] <- paths
+        else
+            referenceWatches.TryRemove projectId |> ignore
 
     let singleFileCache =
         ConcurrentDictionary<DocumentId, Project * VersionStamp * FSharpParsingOptions * FSharpProjectOptions * ConnectionPointSubscription>()
