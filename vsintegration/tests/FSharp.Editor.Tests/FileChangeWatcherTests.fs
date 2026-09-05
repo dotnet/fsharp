@@ -28,14 +28,14 @@ type private MockFileChangeContext() =
         member _.Dispose() = watched.Clear()
 
 type private MockFileChangeWatcher() =
-    let mutable context: MockFileChangeContext option = None
+    let mutable context: MockFileChangeContext voption = ValueNone
 
     member _.Context = context
 
     interface IFSharpFileChangeWatcher with
         member _.CreateContext _ =
             let ctx = new MockFileChangeContext()
-            context <- Some ctx
+            context <- ValueSome ctx
             ctx :> IFSharpFileChangeContext
 
 module FileChangeWatcherTests =
