@@ -472,10 +472,6 @@ type Entity =
 
     static member NewEmptyEntityOptData: unit -> EntityOptionalData
 
-    /// Stands in for the contents of an entity that was never linked, so that a broken mid-edit
-    /// file still classifies instead of crashing. Never reachable from a successfully checked entity.
-    static member EmptyModuleOrNamespaceType: ModuleOrNamespaceType
-
     /// Create a new entity with empty, unlinked data. Only used during unpickling of F# metadata.
     static member NewUnlinked: unit -> Entity
 
@@ -921,10 +917,6 @@ type TyconAugmentation =
     }
 
     static member Create: unit -> TyconAugmentation
-
-    /// Stands in for the augmentation of an entity that was never linked, so that a broken mid-edit
-    /// file still classifies instead of crashing. Never reachable from a successfully checked entity.
-    static member Empty: TyconAugmentation
 
     /// Record a member in declaration order, allocating the list on first use
     member AddAdhocMember: isExplicitImpl: bool * vref: ValRef -> unit

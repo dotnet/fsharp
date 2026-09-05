@@ -888,16 +888,10 @@ type Entity =
             | _ -> x.entity_opt_data <- Some { Entity.NewEmptyEntityOptData() with entity_xmldocsig = v }
 
     /// The logical contents of the entity when it is a module or namespace fragment.
-    member x.ModuleOrNamespaceType =
-        match x.entity_modul_type with
-        | null -> Entity.EmptyModuleOrNamespaceType
-        | modulType -> modulType.Force()
+    member x.ModuleOrNamespaceType = (nonNull x.entity_modul_type).Value
 
     /// The logical contents of the entity when it is a type definition.
-    member x.TypeContents =
-        match x.entity_tycon_tcaug with
-        | null -> TyconAugmentation.Empty
-        | tcaug -> tcaug
+    member x.TypeContents = nonNull x.entity_tycon_tcaug
 
     /// The kind of the type definition - is it a measure definition or a type definition?
     member x.TypeOrMeasureKind =
@@ -1113,17 +1107,12 @@ type Entity =
         | ValueNone -> None
 
     
-    /// Stands in for the contents of an entity that was never linked, so that a broken mid-edit
-    /// file still classifies instead of crashing. Never reachable from a successfully checked entity.
-    static member val EmptyModuleOrNamespaceType =
-        ModuleOrNamespaceType(ModuleOrType, QueueList.Empty, QueueList.Empty)
-
     /// Create a new entity with empty, unlinked data. Only used during unpickling of F# metadata.
     static member NewUnlinked() : Entity =
-        { entity_typars = LazyWithContext.NotLazy []
+        { entity_typars = Unchecked.defaultof<_>
           entity_flags = Unchecked.defaultof<_>
           entity_stamp = Unchecked.defaultof<_>
-          entity_logical_name = "<unknown>"
+          entity_logical_name = Unchecked.defaultof<_>
           entity_range = Unchecked.defaultof<_>
           entity_attribs = Unchecked.defaultof<_>
           entity_tycon_repr= Unchecked.defaultof<_>
@@ -1560,7 +1549,7 @@ type TyconAugmentation =
 
     member tcaug.SetHasObjectGetHashCode b = tcaug.tcaug_hasObjectGetHashCode <- b
 
-    static member Create() : TyconAugmentation =
+    static member Create() =
         { tcaug_compare=None
           tcaug_compare_withc=None
           tcaug_equals=None
@@ -1572,10 +1561,6 @@ type TyconAugmentation =
           tcaug_interfaces=[]
           tcaug_closed=false
           tcaug_abstract=false }
-
-    /// Stands in for the augmentation of an entity that was never linked, so that a broken mid-edit
-    /// file still classifies instead of crashing. Never reachable from a successfully checked entity.
-    static member val Empty = TyconAugmentation.Create()
 
     [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
     member x.DebugText = x.ToString()
@@ -6606,9 +6591,7 @@ type Construct() =
     /// contents of the module. 
     static member NewModifiedModuleOrNamespace f orig = 
         orig |> Construct.NewModifiedTycon (fun d ->
-            match d.entity_modul_type with
-            | null -> d
-            | modulType -> { d with entity_modul_type = MaybeLazy.Strict (f (modulType.Force())) })
+            { d with entity_modul_type = MaybeLazy.Strict (f (nonNull d.entity_modul_type).Value) })
 
     /// Create a Val based on an existing one using the function 'f'. 
     /// We require that we be given the parent for the new Val. 

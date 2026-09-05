@@ -2177,28 +2177,25 @@ module internal ExprRemapping =
         | TAsmRepr _ -> repr
         | TMeasureableRepr x -> TMeasureableRepr(remapType tmenv x)
 
-    and remapTyconAug tmenv (x: TyconAugmentation | null) =
-        match x with
-        | null -> null
-        | x ->
-            { x with
-                tcaug_equals = x.tcaug_equals |> Option.map (mapPair (remapValRef tmenv, remapValRef tmenv))
-                tcaug_compare = x.tcaug_compare |> Option.map (mapPair (remapValRef tmenv, remapValRef tmenv))
-                tcaug_compare_withc = x.tcaug_compare_withc |> Option.map (remapValRef tmenv)
-                tcaug_hash_and_equals_withc =
-                    x.tcaug_hash_and_equals_withc
-                    |> Option.map (mapQuadruple (remapValRef tmenv, remapValRef tmenv, remapValRef tmenv, Option.map (remapValRef tmenv)))
-                tcaug_adhoc = x.tcaug_adhoc |> NameMap.map (List.map (remapValRef tmenv))
-                tcaug_adhoc_list =
-                    let remapped: ResizeArray<bool * ValRef> | null =
-                        match x.tcaug_adhoc_list with
-                        | null -> null
-                        | l -> l |> ResizeArray.map (fun (flag, vref) -> (flag, remapValRef tmenv vref))
+    and remapTyconAug tmenv (x: TyconAugmentation) =
+        { x with
+            tcaug_equals = x.tcaug_equals |> Option.map (mapPair (remapValRef tmenv, remapValRef tmenv))
+            tcaug_compare = x.tcaug_compare |> Option.map (mapPair (remapValRef tmenv, remapValRef tmenv))
+            tcaug_compare_withc = x.tcaug_compare_withc |> Option.map (remapValRef tmenv)
+            tcaug_hash_and_equals_withc =
+                x.tcaug_hash_and_equals_withc
+                |> Option.map (mapQuadruple (remapValRef tmenv, remapValRef tmenv, remapValRef tmenv, Option.map (remapValRef tmenv)))
+            tcaug_adhoc = x.tcaug_adhoc |> NameMap.map (List.map (remapValRef tmenv))
+            tcaug_adhoc_list =
+                let remapped: ResizeArray<bool * ValRef> | null =
+                    match x.tcaug_adhoc_list with
+                    | null -> null
+                    | l -> l |> ResizeArray.map (fun (flag, vref) -> (flag, remapValRef tmenv vref))
 
-                    remapped
-                tcaug_super = x.tcaug_super |> Option.map (remapType tmenv)
-                tcaug_interfaces = x.tcaug_interfaces |> List.map (map1Of3 (remapType tmenv))
-            }
+                remapped
+            tcaug_super = x.tcaug_super |> Option.map (remapType tmenv)
+            tcaug_interfaces = x.tcaug_interfaces |> List.map (map1Of3 (remapType tmenv))
+        }
 
     and remapTyconExnInfo ctxt tmenv inp =
         match inp with
@@ -2302,12 +2299,13 @@ module internal ExprRemapping =
             tcdR.entity_attribs <- WellKnownEntityAttribs.Create(tcd.entity_attribs.AsList() |> remapAttribs ctxt tmenvinner2)
             tcdR.entity_tycon_repr <- tcd.entity_tycon_repr |> remapTyconRepr ctxt tmenvinner2
             let typeAbbrevR = tcd.TypeAbbrev |> Option.map (remapType tmenvinner2)
-            tcdR.entity_tycon_tcaug <- tcd.entity_tycon_tcaug |> remapTyconAug tmenvinner2
+            tcdR.entity_tycon_tcaug <- remapTyconAug tmenvinner2 (nonNull tcd.entity_tycon_tcaug)
 
             tcdR.entity_modul_type <-
-                match tcd.entity_modul_type with
-                | null -> null
-                | ty -> MaybeLazy.Strict(ty.Force() |> mapImmediateValsAndTycons lookupTycon lookupVal)
+                MaybeLazy.Strict(
+                    (nonNull tcd.entity_modul_type).Value
+                    |> mapImmediateValsAndTycons lookupTycon lookupVal
+                )
 
             let exnInfoR = tcd.ExceptionInfo |> remapTyconExnInfo ctxt tmenvinner2
 
