@@ -92,61 +92,82 @@ type private WatcherOperation =
 [<Sealed>]
 type internal FSharpFileChangeWatcher(fileChangeService: Task<IVsAsyncFileChangeEx2>) =
 
-    let applyBatch (service: IVsAsyncFileChangeEx2) (ops: ResizeArray<WatcherOperation>) =
+    let applyBatch (service: IVsAsyncFileChangeEx2) (ops: WatcherOperation list) =
         task {
             // Coalesce adjacent same-kind operations into single service calls, preserving order
             // between kinds (a watch enqueued before an unwatch must be applied first).
-            let mutable i = 0
+            let mutable pending = ops
 
-            while i < ops.Count do
-                match ops[i] with
-                | WatchDir(path, filters, sink, cookies) ->
-                    i <- i + 1
+            while not pending.IsEmpty do
+                match pending with
+                | [] -> ()
+                | WatchDir(path, filters, sink, cookies) :: rest ->
+                    pending <- rest
                     let! cookie = service.AdviseDirChangeAsync(path, true, sink, CancellationToken.None)
                     cookies.Add cookie
 
                     if not filters.IsEmpty then
                         do! service.FilterDirectoryChangesAsync(cookie, List.toArray filters, CancellationToken.None)
 
-                | WatchFiles(_, _, sink) ->
-                    let paths = ResizeArray<string>()
-                    let tokens = ResizeArray<FSharpWatchedFileToken>()
-                    let mutable sameKind = true
+                | WatchFiles _ :: _ ->
+                    let batch =
+                        pending
+                        |> List.takeWhile (function
+                            | WatchFiles _ -> true
+                            | _ -> false)
 
-                    while sameKind && i < ops.Count do
-                        match ops[i] with
-                        | WatchFiles(p, t, _) ->
-                            paths.AddRange p
-                            tokens.AddRange t
-                            i <- i + 1
-                        | _ -> sameKind <- false
+                    pending <- pending |> List.skip batch.Length
 
-                    let! cookies = service.AdviseFileChangesAsync(paths.ToArray(), watchFlags, sink, CancellationToken.None)
+                    let paths =
+                        batch
+                        |> List.collect (function
+                            | WatchFiles(p, _, _) -> p
+                            | _ -> [])
 
-                    for j in 0 .. tokens.Count - 1 do
-                        tokens[j].Cookie <- ValueSome cookies[j]
+                    let tokens =
+                        batch
+                        |> List.collect (function
+                            | WatchFiles(_, t, _) -> t
+                            | _ -> [])
 
-                | UnwatchFiles _ ->
-                    let cookies = ResizeArray<uint32>()
-                    let mutable sameKind = true
+                    let sink =
+                        batch
+                        |> List.pick (function
+                            | WatchFiles(_, _, s) -> Some s
+                            | _ -> None)
 
-                    while sameKind && i < ops.Count do
-                        match ops[i] with
-                        | UnwatchFiles tokens ->
-                            for token in tokens do
-                                match token.Cookie with
-                                | ValueSome cookie -> cookies.Add cookie
-                                | ValueNone -> ()
+                    let! cookies = service.AdviseFileChangesAsync(List.toArray paths, watchFlags, sink, CancellationToken.None)
 
-                            i <- i + 1
-                        | _ -> sameKind <- false
+                    (tokens, List.ofArray cookies)
+                    ||> List.iter2 (fun token cookie -> token.Cookie <- ValueSome cookie)
 
-                    if cookies.Count > 0 then
-                        let! _ = service.UnadviseFileChangesAsync(cookies.ToArray(), CancellationToken.None)
+                | UnwatchFiles _ :: _ ->
+                    let batch =
+                        pending
+                        |> List.takeWhile (function
+                            | UnwatchFiles _ -> true
+                            | _ -> false)
+
+                    pending <- pending |> List.skip batch.Length
+
+                    let cookies =
+                        [
+                            for op in batch do
+                                match op with
+                                | UnwatchFiles tokens ->
+                                    for token in tokens do
+                                        match token.Cookie with
+                                        | ValueSome cookie -> cookie
+                                        | ValueNone -> ()
+                                | _ -> ()
+                        ]
+
+                    if not cookies.IsEmpty then
+                        let! _ = service.UnadviseFileChangesAsync(List.toArray cookies, CancellationToken.None)
                         ()
 
-                | UnwatchDirs cookies ->
-                    i <- i + 1
+                | UnwatchDirs cookies :: rest ->
+                    pending <- rest
 
                     if cookies.Count > 0 then
                         let! _ = service.UnadviseDirChangesAsync(cookies.ToArray(), CancellationToken.None)
@@ -173,7 +194,7 @@ type internal FSharpFileChangeWatcher(fileChangeService: Task<IVsAsyncFileChange
                             | None -> draining <- false
 
                         let! service = fileChangeService |> Async.AwaitTask
-                        do! applyBatch service ops |> Async.AwaitTask
+                        do! applyBatch service (List.ofSeq ops) |> Async.AwaitTask
                     with _ ->
                         // Never let a failed advise/unadvise (e.g. non-existent path) kill the
                         // subscription loop; we simply won't get events for that path.
@@ -323,7 +344,7 @@ type internal FSharpReferenceChangeTracker(watcher: IFSharpFileChangeWatcher, on
         }
         |> Seq.distinct
         |> Seq.map (fun d -> WatchedDirectory(d, [ ".dll" ]))
-        |> List.ofSeq
+        |> Seq.toList
 
     let context =
         lazy
