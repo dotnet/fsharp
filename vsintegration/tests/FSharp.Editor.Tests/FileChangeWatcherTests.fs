@@ -48,8 +48,10 @@ type private ServiceCall =
     | UnadvisedFiles of cookies: uint32 list
     | UnadvisedDirs of cookies: uint32 list
 
-/// Stands in for IVsAsyncFileChangeEx2: hands out sequential cookies and records every call, so a
+/// <summary>
+/// Stands in for <see cref="IVsAsyncFileChangeEx2"/>: hands out sequential cookies and records every call, so a
 /// test can see how the watcher turned its queue into service calls.
+/// </summary>
 type private RecordingFileChangeService() =
     let calls = ResizeArray<ServiceCall>()
     let mutable nextCookie = 0u
