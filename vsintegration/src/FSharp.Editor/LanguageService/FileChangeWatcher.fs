@@ -476,17 +476,19 @@ type internal FSharpReferenceChangeTracker(watcher: IFSharpFileChangeWatcher, on
                 | true, entry -> entry.Stamp <- ValueNone
                 | _ -> ())
 
+    member _.Dispose() =
+        lock gate (fun () ->
+            if not disposed then
+                disposed <- true
+                watchedFiles.Clear()
+
+                for KeyValue(_, timer) in pendingTimers do
+                    timer.Dispose()
+
+                pendingTimers.Clear()
+
+                if context.IsValueCreated then
+                    context.Value.Dispose())
+
     interface IDisposable with
-        member _.Dispose() =
-            lock gate (fun () ->
-                if not disposed then
-                    disposed <- true
-                    watchedFiles.Clear()
-
-                    for KeyValue(_, timer) in pendingTimers do
-                        timer.Dispose()
-
-                    pendingTimers.Clear()
-
-                    if context.IsValueCreated then
-                        context.Value.Dispose())
+        member this.Dispose() = this.Dispose()
