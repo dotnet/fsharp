@@ -4,6 +4,7 @@ namespace FSharp.Editor.Tests
 
 open System
 open System.Collections.Immutable
+open System.IO
 open System.Threading
 open System.Threading.Tasks
 open Xunit
@@ -284,3 +285,76 @@ module FileChangeWatcherTests =
             UnadvisedDirs [ 1u ]
             UnadvisedFiles [ 2u ] ] -> Assert.Equal(@"C:\refs\", directory)
         | calls -> failwith $"Unexpected calls: %A{calls}"
+
+    let private t0 = DateTime(2020, 1, 1, 0, 0, 0, DateTimeKind.Utc)
+    let private t1 = t0.AddHours 1.
+
+    let private withTempFile (test: string -> unit) =
+        let path = Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid()}.dll")
+        File.WriteAllBytes(path, Array.empty)
+        File.SetLastWriteTimeUtc(path, t0)
+
+        try
+            test path
+        finally
+            File.Delete path
+
+    [<Fact>]
+    let ``Watched path is served from the cache until a change notification`` () =
+        withTempFile (fun path ->
+            let watcher = MockFileChangeWatcher()
+            use tracker = new FSharpReferenceChangeTracker(watcher, ignore, testDelay)
+            let stamps = tracker :> IReferenceStamps
+
+            tracker.StartWatchingReference path
+            Assert.Equal(t0, stamps.GetLastWriteTimeUtc path)
+
+            File.SetLastWriteTimeUtc(path, t1)
+            Assert.Equal(t0, stamps.GetLastWriteTimeUtc path)
+
+            watcher.Context.Value.Fire path
+            Assert.Equal(t1, stamps.GetLastWriteTimeUtc path))
+
+    [<Fact>]
+    let ``Unwatched path is stat'd on every read`` () =
+        withTempFile (fun path ->
+            let watcher = MockFileChangeWatcher()
+            use tracker = new FSharpReferenceChangeTracker(watcher, ignore, testDelay)
+            let stamps = tracker :> IReferenceStamps
+
+            Assert.Equal(t0, stamps.GetLastWriteTimeUtc path)
+
+            File.SetLastWriteTimeUtc(path, t1)
+            Assert.Equal(t1, stamps.GetLastWriteTimeUtc path))
+
+    [<Fact>]
+    let ``Invalidate drops the cached stamp`` () =
+        withTempFile (fun path ->
+            let watcher = MockFileChangeWatcher()
+            use tracker = new FSharpReferenceChangeTracker(watcher, ignore, testDelay)
+            let stamps = tracker :> IReferenceStamps
+
+            tracker.StartWatchingReference path
+            Assert.Equal(t0, stamps.GetLastWriteTimeUtc path)
+
+            File.SetLastWriteTimeUtc(path, t1)
+            stamps.Invalidate path
+            Assert.Equal(t1, stamps.GetLastWriteTimeUtc path))
+
+    [<Fact>]
+    let ``Stopping the last watch on a path falls back to stat`` () =
+        withTempFile (fun path ->
+            let watcher = MockFileChangeWatcher()
+            use tracker = new FSharpReferenceChangeTracker(watcher, ignore, testDelay)
+            let stamps = tracker :> IReferenceStamps
+
+            tracker.StartWatchingReference path
+            tracker.StartWatchingReference path
+            Assert.Equal(t0, stamps.GetLastWriteTimeUtc path)
+
+            File.SetLastWriteTimeUtc(path, t1)
+            tracker.StopWatchingReference path
+            Assert.Equal(t0, stamps.GetLastWriteTimeUtc path)
+
+            tracker.StopWatchingReference path
+            Assert.Equal(t1, stamps.GetLastWriteTimeUtc path))
