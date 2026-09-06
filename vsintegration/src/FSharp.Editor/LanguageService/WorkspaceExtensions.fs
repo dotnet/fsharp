@@ -2,7 +2,9 @@
 module internal Microsoft.VisualStudio.FSharp.Editor.WorkspaceExtensions
 
 open System
+open System.Collections.Generic
 open System.Runtime.CompilerServices
+open System.Threading
 
 open Microsoft.CodeAnalysis
 open Microsoft.VisualStudio.FSharp.Editor
@@ -11,6 +13,7 @@ open FSharp.Compiler
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.CodeAnalysis.ProjectSnapshot
 open FSharp.Compiler.Symbols
+open FSharp.Compiler.Syntax
 open FSharp.Compiler.BuildGraph
 
 open CancellableTasks
@@ -610,16 +613,18 @@ type Document with
                 |> Option.defaultWith (fun _ -> raise (OperationCanceledException("Unable to get FSharp semantic classification.")))
         }
 
-    /// Find F# references in the given F# document.
-    member inline this.FindFSharpReferencesAsync(symbol, projectSnapshot: FSharpProjectSnapshot, [<InlineIfLambda>] onFound, userOpName) =
+    /// Find F# references in the given F# document, through the project snapshot when the transparent
+    /// compiler is in use.
+    member inline this.FindFSharpReferencesAsync
+        (symbol, projectSnapshot: FSharpProjectSnapshot voption, [<InlineIfLambda>] onFound, userOpName)
+        =
         cancellableTask {
             let! checker, _, _, projectOptions = this.GetFSharpCompilationOptionsAsync(userOpName)
 
             let! symbolUses =
-
-                if this.Project.UseTransparentCompiler then
-                    checker.FindBackgroundReferencesInFile(this.FilePath, projectSnapshot, symbol)
-                else
+                match projectSnapshot with
+                | ValueSome projectSnapshot -> checker.FindBackgroundReferencesInFile(this.FilePath, projectSnapshot, symbol)
+                | ValueNone ->
                     checker.FindBackgroundReferencesInFile(
                         this.FilePath,
                         projectOptions,
@@ -657,24 +662,39 @@ type Document with
                 )
         }
 
+let private hasConditionalDirectives (parseTree: ParsedInput) =
+    match parseTree with
+    | ParsedInput.ImplFile file -> not file.Trivia.ConditionalDirectives.IsEmpty
+    | ParsedInput.SigFile file -> not file.Trivia.ConditionalDirectives.IsEmpty
+
 type Project with
 
-    /// Find F# references in the given project.
-    member this.FindFSharpReferencesAsync(symbol: FSharpSymbol, projectSnapshot, onFound, userOpName) =
+    /// Find F# references in the given project. When `searchedInstance` is another target-framework
+    /// instance of the same project file that has already been searched, only the documents whose
+    /// sources can differ from it are searched: files compiled only here and files with conditional
+    /// compilation.
+    member this.FindFSharpReferencesAsync
+        (
+            symbol: FSharpSymbol,
+            projectSnapshot: FSharpProjectSnapshot voption,
+            searchedInstance: Project voption,
+            throttle: SemaphoreSlim,
+            onFound,
+            userOpName
+        ) =
         cancellableTask {
-
-            let declarationLocation =
-                symbol.SignatureLocation
-                |> Option.map Some
-                |> Option.defaultValue symbol.DeclarationLocation
-
             let declarationDocument =
-                declarationLocation |> Option.bind this.Solution.TryGetDocumentFromFSharpRange
+                symbol.SignatureLocation
+                |> Option.orElse symbol.DeclarationLocation
+                |> Option.bind (fun range ->
+                    this.Solution.GetDocumentIdsWithFilePath(Path.GetFullPathSafe range.FileName)
+                    |> Seq.tryFind (fun id -> id.ProjectId = this.Id)
+                    |> Option.map this.GetDocument)
 
-            // Can we skip documents, which are above current, since they can't contain symbols from current one.
+            // Documents before the declaration in compile order cannot refer to it.
             let! canSkipDocuments =
                 match declarationDocument with
-                | Some document when this.IsFastFindReferencesEnabled && document.Project = this ->
+                | Some document when this.IsFastFindReferencesEnabled ->
                     cancellableTask {
                         let! _, _, _, options = document.GetFSharpCompilationOptionsAsync(userOpName)
 
@@ -685,7 +705,6 @@ type Project with
                                 null
 
                         return
-
                             options.SourceFiles
                             |> Seq.takeWhile ((<>) document.FilePath)
                             |> Seq.filter ((<>) signatureFile)
@@ -693,21 +712,39 @@ type Project with
                     }
                 | _ -> CancellableTask.singleton Set.empty
 
-            let documents =
-                this.Documents
-                |> Seq.filter (fun document -> isFSharpSourceFile document.FilePath)
-                |> Seq.filter (fun document -> not (canSkipDocuments.Contains document.FilePath))
+            let searchedPaths =
+                searchedInstance
+                |> ValueOption.map (fun instance -> HashSet(instance.Documents |> Seq.map _.FilePath, StringComparer.OrdinalIgnoreCase))
 
-            if this.IsFastFindReferencesEnabled then
-                do!
-                    documents
-                    |> Seq.map (fun doc ->
-                        doc.FindFSharpReferencesAsync(symbol, projectSnapshot, (fun range -> onFound doc range), userOpName))
-                    // Throttle to avoid launching a typecheck per document in the project all at once.
-                    |> CancellableTask.whenAllThrottled (max 1 Environment.ProcessorCount)
-            else
-                for doc in documents do
-                    do! doc.FindFSharpReferencesAsync(symbol, projectSnapshot, (onFound doc), userOpName)
+            let needsSearch (document: Document) =
+                match searchedPaths with
+                | ValueSome paths when paths.Contains document.FilePath ->
+                    document.GetFSharpParseResultsAsync userOpName
+                    |> CancellableTask.map (fun parseResults -> hasConditionalDirectives parseResults.ParseTree)
+                | _ -> CancellableTask.singleton true
+
+            let search (document: Document) =
+                cancellableTask {
+                    let! ct = CancellableTask.getCancellationToken ()
+                    do! throttle.WaitAsync ct
+
+                    try
+                        let! needed = needsSearch document
+
+                        if needed then
+                            do! document.FindFSharpReferencesAsync(symbol, projectSnapshot, onFound document, userOpName)
+                    finally
+                        throttle.Release() |> ignore
+                }
+
+            do!
+                this.Documents
+                |> Seq.filter (fun document ->
+                    isFSharpSourceFile document.FilePath
+                    && not (canSkipDocuments.Contains document.FilePath))
+                |> Seq.map search
+                |> CancellableTask.whenAll
+                |> CancellableTask.ignore
         }
 
     member this.GetFSharpCompilationOptionsAsync() = this |> getFSharpOptionsForProject
