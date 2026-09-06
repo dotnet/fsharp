@@ -40,7 +40,11 @@ type FSharpSymbol with
     member this.DocumentationCommentId =
         let xmlDocSig =
             match this with
-            | :? FSharpMemberOrFunctionOrValue as value -> value.XmlDocSig
+            | :? FSharpMemberOrFunctionOrValue as value ->
+                match value.XmlDocSig with
+                // A literal compiles to a field, which Roslyn names F: where FCS says P:.
+                | docSig when value.LiteralValue.IsSome && docSig.StartsWith("P:", StringComparison.Ordinal) -> $"F:{docSig.Substring 2}"
+                | docSig -> docSig
             | :? FSharpEntity as entity -> entity.XmlDocSig
             | :? FSharpField as field -> field.XmlDocSig
             | :? FSharpUnionCase as unionCase -> unionCase.XmlDocSig
