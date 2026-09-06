@@ -12,8 +12,6 @@ open Microsoft.VisualStudio
 open Microsoft.VisualStudio.Shell
 open Microsoft.VisualStudio.Shell.Interop
 
-open Internal.Utilities.Library
-
 open Microsoft.VisualStudio.FSharp.Editor.DebugHelpers
 
 open CancellableTasks
@@ -28,14 +26,14 @@ open CancellableTasks
 [<Sealed>]
 type internal WatchedDirectory(path: string, extensionFilters: ImmutableArray<string>) =
     let path =
-        if path.EndsWithOrdinal(string IO.Path.DirectorySeparatorChar) then
+        if path.EndsWith(string IO.Path.DirectorySeparatorChar, StringComparison.Ordinal) then
             path
         else
             $"{path}{IO.Path.DirectorySeparatorChar}"
 
     do
         for filter in extensionFilters do
-            if not (filter.StartsWithOrdinal ".") then
+            if not (filter.StartsWith(".", StringComparison.Ordinal)) then
                 invalidArg (nameof extensionFilters) $"Filter '{filter}' must start with a period."
 
     member _.Path = path
@@ -44,9 +42,10 @@ type internal WatchedDirectory(path: string, extensionFilters: ImmutableArray<st
     static member FilePathCoveredByWatchedDirectories(watchedDirectories: ImmutableArray<WatchedDirectory>, filePath: string) =
         watchedDirectories
         |> Seq.exists (fun w ->
-            filePath.StartsWithOrdinalIgnoreCase w.Path
+            filePath.StartsWith(w.Path, StringComparison.OrdinalIgnoreCase)
             && (w.ExtensionFilters.IsEmpty
-                || w.ExtensionFilters |> Seq.exists filePath.EndsWithOrdinalIgnoreCase))
+                || w.ExtensionFilters
+                   |> Seq.exists (fun filter -> filePath.EndsWith(filter, StringComparison.OrdinalIgnoreCase))))
 
 /// A single watched file; disposing stops watching.
 type internal IFSharpWatchedFile =
