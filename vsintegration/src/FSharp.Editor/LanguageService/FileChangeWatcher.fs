@@ -262,7 +262,7 @@ type internal FSharpFileChangeWatcher(fileChangeService: Task<IVsAsyncFileChange
         member _.Dispose() =
             cancellationTokenSource.Cancel()
             cancellationTokenSource.Dispose()
-            (agent :> IDisposable).Dispose()
+            agent.Dispose()
 
 and [<Sealed>] private FileChangeContext(enqueue: WatcherOperation -> unit, watchedDirectories: ImmutableArray<WatchedDirectory>) as this =
 
