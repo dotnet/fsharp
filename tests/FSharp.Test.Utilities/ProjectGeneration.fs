@@ -887,29 +887,30 @@ module Helpers =
             captureIdentifiersWhenParsing = true,
             useTransparentCompiler = true)
 
-        let options =
-            let baseOptions, _ =
+        async {
+            let! baseOptions, _ =
                 checker.GetProjectOptionsFromScript(
                     fileName,
                     SourceText.ofString "",
                     assumeDotNetFramework = false
                 )
-                |> Async.RunSynchronously
 
-            { baseOptions with
-                ProjectFileName = "project"
-                ProjectId = None
-                SourceFiles = [|fileName|]
-                IsIncompleteTypeCheckEnvironment = false
-                UseScriptResolutionRules = false
-                LoadTime = DateTime()
-                UnresolvedReferences = None
-                OriginalLoadReferences = []
-                Stamp = None }
+            let options =
+                { baseOptions with
+                    ProjectFileName = "project"
+                    ProjectId = None
+                    SourceFiles = [|fileName|]
+                    IsIncompleteTypeCheckEnvironment = false
+                    UseScriptResolutionRules = false
+                    LoadTime = DateTime()
+                    UnresolvedReferences = None
+                    OriginalLoadReferences = []
+                    Stamp = None }
 
-        let snapshot = FSharpProjectSnapshot.FromOptions(options, getSource) |> Async.RunSynchronously
+            let! snapshot = FSharpProjectSnapshot.FromOptions(options, getSource)
 
-        fileName, snapshot, checker
+            return fileName, snapshot, checker
+        }
 
 open Helpers
 

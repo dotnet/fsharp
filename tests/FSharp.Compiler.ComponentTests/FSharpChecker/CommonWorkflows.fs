@@ -3,6 +3,7 @@
 open System
 open System.IO
 open System.Diagnostics
+open System.Threading.Tasks
 
 open Xunit
 
@@ -142,19 +143,17 @@ let ``Using getSource and notifications instead of filesystem`` () =
     }
 
 [<Fact>]
-let GetAllUsesOfAllSymbols() =
+let GetAllUsesOfAllSymbols() : Task =
+    task {
+        let project = makeTestProject()
+        let checker = ProjectWorkflowBuilder(project, useGetSource=true, useChangeNotifications = true, enablePartialTypeChecking = false).Checker
+        do! saveProject project false checker
+        let options = project.GetProjectOptions checker
+        let! checkProjectResults = checker.ParseAndCheckProject(options)
+        let result = checkProjectResults.GetAllUsesOfAllSymbols()
 
-    let result =
-        async {
-            let project = makeTestProject()
-            let checker = ProjectWorkflowBuilder(project, useGetSource=true, useChangeNotifications = true, enablePartialTypeChecking = false).Checker
-            do! saveProject project false checker
-            let options = project.GetProjectOptions checker
-            let! checkProjectResults = checker.ParseAndCheckProject(options)
-            return checkProjectResults.GetAllUsesOfAllSymbols()
-        } |> Async.RunSynchronously
-
-    if result.Length <> 79 then failwith $"Expected 79 symbolUses, got {result.Length}:\n%A{result}"
+        if result.Length <> 79 then failwith $"Expected 79 symbolUses, got {result.Length}:\n%A{result}"
+    }
 
 [<Fact>]
 let ``We don't lose subsequent diagnostics when there's error in one file`` () =
