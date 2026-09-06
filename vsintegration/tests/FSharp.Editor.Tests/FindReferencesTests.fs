@@ -1,12 +1,8 @@
 ﻿module FSharp.Editor.Tests.FindReferencesTests
 
-open System.Threading.Tasks
-open System.Threading
 open System.IO
-open System.Collections.Concurrent
 
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Editor.FindUsages
-open Microsoft.CodeAnalysis.ExternalAccess.FSharp.FindUsages
 open Microsoft.VisualStudio.FSharp.Editor
 
 open Xunit
@@ -40,27 +36,7 @@ module FindReferences =
     let findUsagesService = FSharpFindUsagesService() :> IFSharpFindUsagesService
 
     let getContext () =
-        let foundDefinitions = ConcurrentBag()
-        let foundReferences = ConcurrentBag()
-
-        let context =
-            { new IFSharpFindUsagesContext with
-
-                member _.OnDefinitionFoundAsync(definition: FSharpDefinitionItem) =
-                    foundDefinitions.Add definition
-                    Task.CompletedTask
-
-                member _.OnReferenceFoundAsync(reference: FSharpSourceReferenceItem) =
-                    foundReferences.Add reference
-                    Task.CompletedTask
-
-                member _.ReportMessageAsync _ = Task.CompletedTask
-                member _.ReportProgressAsync(_, _) = Task.CompletedTask
-                member _.SetSearchTitleAsync _ = Task.CompletedTask
-                member _.CancellationToken = CancellationToken.None
-            }
-
-        context, foundDefinitions, foundReferences
+        RoslynTestHelpers.CreateFindUsagesContext()
 
     [<Fact>]
     let ``Find references to a document-local symbol`` () =
