@@ -869,9 +869,7 @@ module Helpers =
                 failwith $"No symbol found in {fileName} at {lineNumber}:{colAtEndOfNames}\nFile contents:\n\n{source}\n")
         }
 
-    let internal singleFileChecker source =
-
-        let fileName = "test.fs"
+    let internal singleFileCheckerWithName (fileName: string) source =
 
         let getSource _ fileName =
             FSharpFileSnapshot(
@@ -911,6 +909,9 @@ module Helpers =
 
             return fileName, snapshot, checker
         }
+
+    let internal singleFileChecker source =
+        singleFileCheckerWithName "test.fs" source
 
 open Helpers
 

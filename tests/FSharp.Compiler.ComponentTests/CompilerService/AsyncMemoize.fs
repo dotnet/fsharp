@@ -60,8 +60,8 @@ let internal wrapKey key =
         member _.GetLabel() = match key.ToString() with | null -> "" | s -> s
     }
 
-let assertTaskCanceled (task: Task<_>) : Task =
-    Assert.ThrowsAnyAsync<OperationCanceledException>(fun () -> task)
+let assertTaskCanceled (job: Task<_>) : Task =
+    Assert.ThrowsAnyAsync<OperationCanceledException>(fun () -> job)
 
 let awaitHandle h = h |> Async.AwaitWaitHandle |> Async.Ignore
 
@@ -546,7 +546,7 @@ let ``Preserve thread static diagnostics`` () : Task =
 
 
 [<Fact>]
-let ``Preserve thread static diagnostics already completed job`` () =
+let ``Preserve thread static diagnostics already completed job`` () : Task =
 
     let cache = AsyncMemoize()
 
@@ -578,7 +578,7 @@ let ``Preserve thread static diagnostics already completed job`` () =
 
 
 [<Fact>]
-let ``We get diagnostics from the job that failed`` () =
+let ``We get diagnostics from the job that failed`` () : Task =
 
     let cache = AsyncMemoize()
 
