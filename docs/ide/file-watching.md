@@ -4,13 +4,24 @@
 Roslyn's `FileChangeWatcher` and `ReferenceFileChangeTracker` (both internal to
 `Microsoft.VisualStudio.LanguageServices` and not exposed through `ExternalAccess.FSharp`).
 
-## Why a watcher
+## What the workspace already gives us
 
-The Roslyn workspace tracks documents, not the `-r:` references an F# project compiles against.
-When a referenced assembly is rebuilt outside VS nothing tells the F# language service; FCS only
-notices because it stats every reference again on the next request (`IsReferencesInvalidated` on
-the incremental builder, `ReferencesOnDisk` when a snapshot is reused). The watcher turns that into
-a push: one notification per changed path, delivered to the projects that reference it.
+Not every on-disk change needs this watcher. A `-r:` that the Roslyn workspace holds as a
+`MetadataReference` is already watched by Roslyn: `ProjectSystemProjectFactory` advises every
+reference path, and when one changes it swaps the reference on the solution, which bumps
+`Project.Version`. `FSharpProjectOptionsReactor` sees that version through `isProjectInvalidated`,
+recomputes, and calls `InvalidateConfiguration` — measured in VS, that path wins the race against
+a watcher subscribed to the same file, because Roslyn batches over 500 ms where this tracker
+additionally debounces for 2 s.
+
+So a second subscription to the same reference set buys nothing. What the workspace does *not*
+cover is everything it has no document or reference for, and every stat FCS still performs
+internally:
+
+- `#load` sources of a script: not documents, not references, invisible to the workspace.
+- `IsReferencesInvalidated` on the incremental builder, which stats every reference on every
+  request.
+- `ReferencesOnDisk` on snapshot reuse, which does the same per comparison.
 
 ## Shape
 
@@ -20,28 +31,24 @@ a push: one notification per changed path, delivered to the projects that refere
 - **Batching.** Subscribe/unsubscribe operations go through a single-consumer queue with a 500 ms
   window (Roslyn's empirical value for solution open/close). Consecutive operations of the same
   kind, and for file watches the same sink, are coalesced into one service call.
-- **Directory watches.** Each context starts with recursive `.dll` watches on the places
-  reference assemblies live: `DOTNET_ROOT/packs` and the machine-wide `dotnet/packs`, the .NET
-  Framework reference assemblies, and the NuGet cache (`NUGET_PACKAGES` or `~/.nuget/packages`).
-  A file under one of them costs no cookie of its own. Roslyn does not watch the NuGet cache; we
-  do because every `-r:` is watched uniformly and package assemblies are the bulk of them, so the
-  alternative is a per-file advise for each.
+- **Directory watches.** A context starts with recursive `.dll` watches on the places reference
+  assemblies live: `DOTNET_ROOT/packs` and the machine-wide `dotnet/packs`, the .NET Framework
+  reference assemblies, and the NuGet cache (`NUGET_PACKAGES` or `~/.nuget/packages`). A file
+  under one of them costs no cookie of its own. Roslyn does not watch the NuGet cache; a consumer
+  that watches every `-r:` uniformly wants it, since package assemblies are the bulk of them and
+  the alternative is a per-file advise for each.
 - **Per-file watches.** Paths outside those directories (project outputs, loose assemblies) get
-  an individual advise, ref-counted across projects by `FSharpReferenceChangeTracker`.
+  an individual advise, ref-counted across consumers by `FSharpReferenceChangeTracker`.
 - **Debounce.** A rebuild writes a temp file and renames it, producing several notifications; the
   tracker fires one callback per path after 2 s of quiet.
 
-## Consumer
+## Consumers
 
-`FSharpProjectOptionsReactor` watches the `-r:` set of every project it computes options for and
-calls `FSharpChecker.InvalidateConfiguration` for each project that references a changed path.
-The cached options stay valid (same paths); only the FCS build behind them is stale. Watch sets
-are diffed on recompute, so an unchanged reference list touches nothing.
+None yet — this is the transport, added on its own so the changes that need it stay reviewable:
 
-## Follow-ups
-
-1. A reference-change notification for the incremental builder on the FCS side, the analogue of
-   `useChangeNotifications` for sources, so `IsReferencesInvalidated` stops stat'ing every
-   reference on every request.
-2. A watcher-invalidated timestamp cache for snapshot reuse (`ReferencesOnDisk`).
-3. Scripts: watch `#r` references and `#load` sources the same way.
+1. Scripts: watch `#load` sources (and the script's own `#r` set) so an edit outside the editor
+   drops the cached options for that document.
+2. A watcher-invalidated timestamp cache serving `ReferencesOnDisk`, replacing the stat per
+   reference per snapshot comparison.
+3. A reference-change notification for the incremental builder on the FCS side, the analogue of
+   `useChangeNotifications` for sources, so `IsReferencesInvalidated` stops stat'ing at all.
