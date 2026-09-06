@@ -92,6 +92,7 @@
     <Compile Include="Navigation\GoToDefinitionService.fs" />
     <Compile Include="Navigation\NavigationBarItemService.fs" />
     <Compile Include="Navigation\NavigateToSearchService.fs" />
+    <Compile Include="Navigation\CrossLanguageSymbolNavigation.fs" />
     <Compile Include="Navigation\FindUsagesService.fs" />
     <Compile Include="Navigation\FindDefinitionService.fs" />
     <Compile Include="QuickInfo\WpfFactories.fs" />
