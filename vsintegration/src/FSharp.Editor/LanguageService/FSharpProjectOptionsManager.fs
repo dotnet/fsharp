@@ -116,18 +116,14 @@ type private PEReferenceCacheEntry(version: VersionStamp, compilation: Compilati
     member _.Version = version
 
     member _.TryGetCompilation() =
-        match latest.TryGetTarget() with
-        | true, compilation -> ValueSome compilation
-        | _ -> ValueNone
-
-    member _.Refresh(compilation: Compilation) =
-        latest.SetTarget compilation
-
         match pinned with
-        | null -> ()
-        | _ -> pinned <- compilation
+        | null ->
+            match latest.TryGetTarget() with
+            | true, compilation -> ValueSome compilation
+            | _ -> ValueNone
+        | pinned -> ValueSome pinned
 
-    member _.Emitted() = pinned <- Unchecked.defaultof<_>
+    member _.Emitted() = pinned <- null
 
 [<RequireQualifiedAccess>]
 type private FSharpProjectOptionsMessage =
@@ -159,7 +155,6 @@ type private FSharpProjectOptionsReactor(checker: FSharpChecker) =
     let singleFileCache =
         ConcurrentDictionary<DocumentId, Project * VersionStamp * FSharpParsingOptions * FSharpProjectOptions * ConnectionPointSubscription>()
 
-    // This is used to not constantly emit the same compilation.
     let peReferences =
         ConcurrentDictionary<ProjectId, PEReferenceCacheEntry * FSharpReferencedProject>()
 
@@ -167,7 +162,7 @@ type private FSharpProjectOptionsReactor(checker: FSharpChecker) =
 
     let scriptUpdatedEvent = Event<FSharpProjectOptions>()
 
-    let createNewPEReference (referencedProject: Project) (entry: PEReferenceCacheEntry) =
+    let buildPEReference (referencedProject: Project) (entry: PEReferenceCacheEntry) =
         let projectId = referencedProject.Id
         let mutable stamp = DateTime.UtcNow
 
@@ -185,12 +180,12 @@ type private FSharpProjectOptionsReactor(checker: FSharpChecker) =
                         let result = comp.Emit(ms, options = emitOptions, cancellationToken = ct)
 
                         if result.Success then
-                            entry.Emitted() // Stop strongly holding the compilation since we have a result.
+                            entry.Emitted()
                             lastSuccessfulCompilations.[projectId] <- comp
                             ms.Position <- 0L
                             ms :> Stream |> Some
                         else
-                            entry.Emitted() // Stop strongly holding the compilation since we have a result.
+                            entry.Emitted()
                             ms.Dispose() // it failed, dispose of stream
                             None
                     with
@@ -200,7 +195,7 @@ type private FSharpProjectOptionsReactor(checker: FSharpChecker) =
                         ms.Dispose()
                         None
                     | _ ->
-                        entry.Emitted() // Stop strongly holding the compilation since we have a result.
+                        entry.Emitted()
                         ms.Dispose() // it failed, dispose of stream
                         None
 
@@ -220,16 +215,16 @@ type private FSharpProjectOptionsReactor(checker: FSharpChecker) =
 
         FSharpReferencedProject.PEReference(getStamp, DelayedILModuleReader(referencedProject.OutputFilePath, getStream))
 
-    let createPEReference (referencedProject: Project) (version: VersionStamp) (comp: Compilation) =
+    let tryGetPEReference (referencedProject: Project) (version: VersionStamp) =
         match peReferences.TryGetValue referencedProject.Id with
-        | true, (entry, fsRefProj) when entry.Version = version ->
-            entry.Refresh comp
-            fsRefProj
-        | _ ->
-            let entry = PEReferenceCacheEntry(version, comp)
-            let fsRefProj = createNewPEReference referencedProject entry
-            peReferences.[referencedProject.Id] <- (entry, fsRefProj)
-            fsRefProj
+        | true, (entry, fsRefProj) when entry.Version = version -> ValueSome fsRefProj
+        | _ -> ValueNone
+
+    let createPEReference (referencedProject: Project) (version: VersionStamp) (comp: Compilation) =
+        let entry = PEReferenceCacheEntry(version, comp)
+        let fsRefProj = buildPEReference referencedProject entry
+        peReferences.[referencedProject.Id] <- (entry, fsRefProj)
+        fsRefProj
 
     let rec tryComputeOptionsBySingleScriptOrFile (document: Document) userOpName =
         cancellableTask {
@@ -382,9 +377,13 @@ type private FSharpProjectOptionsReactor(checker: FSharpChecker) =
                                     FSharpReferencedProject.FSharpReference(referencedProject.OutputFilePath, projectOptions)
                                 )
                         elif referencedProject.SupportsCompilation then
-                            let! comp = referencedProject.GetCompilationAsync(ct)
-                            and! version = referencedProject.GetDependentSemanticVersionAsync(ct)
-                            referencedProjects.Add(createPEReference referencedProject version comp)
+                            let! version = referencedProject.GetDependentSemanticVersionAsync(ct)
+
+                            match tryGetPEReference referencedProject version with
+                            | ValueSome peRef -> referencedProjects.Add peRef
+                            | ValueNone ->
+                                let! comp = referencedProject.GetCompilationAsync(ct)
+                                referencedProjects.Add(createPEReference referencedProject version comp)
 
                 if canBail then
                     return ValueNone
@@ -548,18 +547,15 @@ type private FSharpProjectOptionsReactor(checker: FSharpChecker) =
 
                 | FSharpProjectOptionsMessage.ClearOptions(projectId) ->
                     match cache.TryRemove(projectId) with
-                    | true, struct (_, _, projectOptions) ->
-                        lastSuccessfulCompilations.TryRemove(projectId) |> ignore
-                        peReferences.TryRemove(projectId) |> ignore
-                        checker.ClearCache([ projectOptions ])
+                    | true, struct (_, _, projectOptions) -> checker.ClearCache([ projectOptions ])
                     | _ -> ()
 
+                    lastSuccessfulCompilations.TryRemove(projectId) |> ignore
+                    peReferences.TryRemove(projectId) |> ignore
                     legacyProjectSites.TryRemove(projectId) |> ignore
                 | FSharpProjectOptionsMessage.ClearSingleFileOptionsCache(documentId) ->
                     match singleFileCache.TryRemove(documentId) with
                     | true, (_, _, _, projectOptions, subscription) ->
-                        lastSuccessfulCompilations.TryRemove(documentId.ProjectId) |> ignore
-                        peReferences.TryRemove(documentId.ProjectId) |> ignore
                         checker.ClearCache([ projectOptions ])
                         subscription |> Option.iter (fun handler -> handler.Dispose())
                     | _ -> ()
