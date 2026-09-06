@@ -21,7 +21,7 @@ internally:
 - `#load` sources of a script: not documents, not references, invisible to the workspace.
 - `IsReferencesInvalidated` on the incremental builder, which stats every reference on every
   request.
-- `ReferencesOnDisk` on snapshot reuse, which does the same per comparison.
+- `ReferencesOnDisk` on snapshot reuse, which did the same per comparison — the consumer below.
 
 ## Shape
 
@@ -38,17 +38,29 @@ internally:
   that watches every `-r:` uniformly wants it, since package assemblies are the bulk of them and
   the alternative is a per-file advise for each.
 - **Per-file watches.** Paths outside those directories (project outputs, loose assemblies) get
-  an individual advise, ref-counted across consumers by `FSharpReferenceChangeTracker`.
+  an individual advise, ref-counted across consumers by `FSharpReferenceChangeTracker`. The
+  tracker also keeps the last-write stamp of each watched path (see Consumers).
 - **Debounce.** A rebuild writes a temp file and renames it, producing several notifications; the
   tracker fires one callback per path after 2 s of quiet.
 
 ## Consumers
 
-None yet — this is the transport, added on its own so the changes that need it stay reviewable:
+**Snapshot reference stamps.** `FSharpProjectOptionsReactor` watches the `-r:` set of every
+project it computes options for, diffed on recompute so an unchanged set touches nothing. The
+tracker keeps each path's last-write stamp inside its watch entry and drops it on the raw change
+notification, before the debounce. The `ReferencesOnDisk` guard in `createProjectSnapshot` reads
+stamps through `IReferenceStamps`, so the comparison that runs for every new `Project` instance is
+a dictionary read per reference instead of a stat. A path nobody watches is stat'd directly. A
+mismatch against the snapshot's own stamps (FCS stats when it builds a snapshot) drops the
+project's stamps, so a missed notification costs one re-stat pass rather than a rebuild per
+`Project` instance. The reactor watch exists for these stamps, not to invalidate the FCS build —
+Roslyn already does that, as the previous section says.
 
-1. Scripts: watch `#load` sources (and the script's own `#r` set) so an edit outside the editor
-   drops the cached options for that document.
-2. A watcher-invalidated timestamp cache serving `ReferencesOnDisk`, replacing the stat per
-   reference per snapshot comparison.
+Still to come:
+
+1. Scripts: watch `#load` sources so an edit outside the editor drops the cached options for
+   that document.
+2. `FSharpProjectSnapshot.FromOptions` stats every `-r:` when a snapshot is built from scratch;
+   an overload taking host-supplied stamps lets it read the same cache.
 3. A reference-change notification for the incremental builder on the FCS side, the analogue of
    `useChangeNotifications` for sources, so `IsReferencesInvalidated` stops stat'ing at all.
