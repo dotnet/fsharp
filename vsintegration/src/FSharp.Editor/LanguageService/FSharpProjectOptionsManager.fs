@@ -21,7 +21,6 @@ open Microsoft.VisualStudio.FSharp.Interactive.Session
 open Microsoft.VisualStudio.FSharp.Editor.Extensions
 open Microsoft.VisualStudio.TextManager.Interop
 
-open Internal.Utilities.Library
 open CancellableTasks
 
 #nowarn "57"
@@ -151,7 +150,7 @@ type private FSharpProjectOptionsReactor(checker: FSharpChecker, fileChangeWatch
         let paths = HashSet<string>(StringComparer.OrdinalIgnoreCase)
 
         for option in projectOptions.OtherOptions do
-            if option.StartsWithOrdinal "-r:" then
+            if option.StartsWith("-r:", StringComparison.Ordinal) then
                 paths.Add(option.Substring "-r:".Length) |> ignore
 
         paths
