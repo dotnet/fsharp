@@ -29,6 +29,7 @@ let thrice x = x * 3
 type Shape =
     | Circle of radius: float
     | Square of side: float
+    | Dot
 
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module Shape =
@@ -36,6 +37,10 @@ module Shape =
         match shape with
         | Circle r -> Math.PI * r * r
         | Square s -> s * s
+        | Dot -> 0.0
+
+[<Literal>]
+let Answer = 42
 
 type Box<'T> = { Value: 'T }
 
@@ -71,6 +76,10 @@ let private items =
 [<InlineData("M:Widgets.Thrice(System.Int32)", "let thrice")>]
 [<InlineData("T:Widgets.Shape", "type Shape")>]
 [<InlineData("M:Widgets.ShapeModule.area(Widgets.Shape)", "let area")>]
+[<InlineData("M:Widgets.Shape.NewCircle(System.Double)", "| Circle")>]
+[<InlineData("P:Widgets.Shape.IsSquare", "| Square")>]
+[<InlineData("P:Widgets.Shape.Dot", "| Dot")>]
+[<InlineData("F:Widgets.Answer", "let Answer")>]
 [<InlineData("T:Widgets.Box`1", "type Box")>]
 [<InlineData("P:Widgets.Box`1.Value", "type Box")>]
 [<InlineData("P:Widgets.Point.X", "type Point")>]
