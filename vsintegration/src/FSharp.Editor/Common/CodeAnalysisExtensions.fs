@@ -117,3 +117,32 @@ type Solution with
         | Some projectId -> self.TryGetDocumentIdFromFSharpRange(range, projectId)
         | None -> self.TryGetDocumentIdFromFSharpRange range
         |> Option.map self.GetDocument
+
+type Document with
+
+    /// Runs a lookup against this document's solution and, when it finds nothing, against the
+    /// workspace's current solution: the document may come from a snapshot taken before every
+    /// project of the solution finished loading.
+    member document.TryFindInSolutions(find: Solution -> 'T voption) =
+        match find document.Project.Solution with
+        | ValueSome found -> ValueSome found
+        | ValueNone -> find document.Project.Solution.Workspace.CurrentSolution
+
+    /// Every document with the file path, from whichever project includes it.
+    member document.GetSolutionDocumentsWithFilePath(filePath: string) =
+        let filePath = Path.GetFullPathSafe filePath
+
+        document.TryFindInSolutions(fun solution ->
+            match solution.GetDocumentIdsWithFilePath filePath with
+            | ids when ids.IsEmpty -> ValueNone
+            | ids -> ValueSome [ for id in ids -> solution.GetDocument id ])
+        |> ValueOption.defaultValue []
+
+    member document.TryGetSolutionDocumentFromPath(filePath: string) =
+        document.GetSolutionDocumentsWithFilePath filePath |> Seq.tryHeadV
+
+    /// The document for the range's file, preferring this document's project or one it depends on.
+    member document.TryGetSolutionDocumentFromFSharpRange(range: range) =
+        document.TryFindInSolutions(fun solution ->
+            solution.TryGetDocumentFromFSharpRange(range, document.Project.Id)
+            |> ValueOption.ofOption)
