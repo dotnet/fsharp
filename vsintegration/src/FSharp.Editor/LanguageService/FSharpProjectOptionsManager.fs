@@ -21,7 +21,6 @@ open System.Windows
 open Microsoft.VisualStudio
 open FSharp.Compiler.Text
 open Microsoft.VisualStudio.TextManager.Interop
-open Internal.Utilities.Library
 
 #nowarn "57"
 
@@ -117,7 +116,7 @@ type private FSharpProjectOptionsMessage =
     | ClearSingleFileOptionsCache of DocumentId
 
 [<Sealed>]
-type private FSharpProjectOptionsReactor(checker: FSharpChecker, fileChangeWatcher: IFSharpFileChangeWatcher) =
+type private FSharpProjectOptionsReactor(checker: FSharpChecker) =
     let cancellationTokenSource = new CancellationTokenSource()
 
     // Store command line options
@@ -128,52 +127,6 @@ type private FSharpProjectOptionsReactor(checker: FSharpChecker, fileChangeWatch
 
     let cache =
         ConcurrentDictionary<ProjectId, struct (Project * FSharpParsingOptions * FSharpProjectOptions)>()
-
-    // Push invalidation for on-disk '-r:' reference assemblies, which the Roslyn workspace does not
-    // track. The cached options stay valid (same paths); only the FCS build behind them goes stale.
-    let referenceWatches = ConcurrentDictionary<ProjectId, HashSet<string>>()
-
-    let onWatchedReferenceChanged (path: string) =
-        for KeyValue(projectId, paths) in referenceWatches do
-            if paths.Contains path then
-                match cache.TryGetValue projectId with
-                | true, (_, _, projectOptions) -> checker.InvalidateConfiguration(projectOptions, userOpName = "onWatchedReferenceChanged")
-                | _ -> ()
-
-    let referenceChangeTracker =
-        new FSharpReferenceChangeTracker(fileChangeWatcher, onWatchedReferenceChanged)
-
-    let clearReferenceWatches (projectId: ProjectId) =
-        match referenceWatches.TryRemove projectId with
-        | true, paths ->
-            for path in paths do
-                referenceChangeTracker.StopWatchingReference path
-        | _ -> ()
-
-    let watchReferenceFiles (projectId: ProjectId) (projectOptions: FSharpProjectOptions) =
-        let paths = HashSet<string>(StringComparer.OrdinalIgnoreCase)
-
-        for option in projectOptions.OtherOptions do
-            if option.StartsWithOrdinal "-r:" then
-                paths.Add(option.Substring "-r:".Length) |> ignore
-
-        match referenceWatches.TryGetValue projectId with
-        | true, previous ->
-            for path in previous do
-                if not (paths.Contains path) then
-                    referenceChangeTracker.StopWatchingReference path
-
-            for path in paths do
-                if not (previous.Contains path) then
-                    referenceChangeTracker.StartWatchingReference path
-        | _ ->
-            for path in paths do
-                referenceChangeTracker.StartWatchingReference path
-
-        if paths.Count > 0 then
-            referenceWatches[projectId] <- paths
-        else
-            referenceWatches.TryRemove projectId |> ignore
 
     let singleFileCache =
         ConcurrentDictionary<DocumentId, Project * VersionStamp * FSharpParsingOptions * FSharpProjectOptions * ConnectionPointSubscription>()
@@ -480,8 +433,6 @@ type private FSharpProjectOptionsReactor(checker: FSharpChecker, fileChangeWatch
 
                             cache.[projectId] <- struct (project, parsingOptions, projectOptions)
 
-                            watchReferenceFiles projectId projectOptions
-
                             return ValueSome struct (parsingOptions, projectOptions)
 
             | true, struct (oldProject, parsingOptions, projectOptions) ->
@@ -567,7 +518,6 @@ type private FSharpProjectOptionsReactor(checker: FSharpChecker, fileChangeWatch
                     | _ -> ()
 
                     legacyProjectSites.TryRemove(projectId) |> ignore
-                    clearReferenceWatches projectId
                 | FSharpProjectOptionsMessage.ClearSingleFileOptionsCache(documentId) ->
                     match singleFileCache.TryRemove(documentId) with
                     | true, (_, _, _, projectOptions, subscription) ->
@@ -610,22 +560,18 @@ type private FSharpProjectOptionsReactor(checker: FSharpChecker, fileChangeWatch
         singleFileCache.Clear()
         lastSuccessfulCompilations.Clear()
 
-        for projectId in referenceWatches.Keys |> Array.ofSeq do
-            clearReferenceWatches projectId
-
     member _.ScriptUpdated = scriptUpdatedEvent.Publish
 
     interface IDisposable with
         member _.Dispose() =
-            (referenceChangeTracker :> IDisposable).Dispose()
             cancellationTokenSource.Cancel()
             cancellationTokenSource.Dispose()
             (agent :> IDisposable).Dispose()
 
 /// Manages mappings of Roslyn workspace Projects/Documents to FCS.
-type internal FSharpProjectOptionsManager(checker: FSharpChecker, workspace: Workspace, fileChangeWatcher: IFSharpFileChangeWatcher) =
+type internal FSharpProjectOptionsManager(checker: FSharpChecker, workspace: Workspace) =
 
-    let reactor = new FSharpProjectOptionsReactor(checker, fileChangeWatcher)
+    let reactor = new FSharpProjectOptionsReactor(checker)
 
     do
         // We need to listen to this event for lifecycle purposes.

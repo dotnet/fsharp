@@ -205,11 +205,7 @@ type internal FSharpWorkspaceServiceFactory
                         |> CancellableTask.startAsTask CancellationToken.None
                         |> ignore)
 
-            let fileChangeWatcher =
-                new FSharpFileChangeWatcher(FSharpFileChangeWatcher.CreateDefaultServiceTask())
-
-            let optionsManager =
-                FSharpProjectOptionsManager(checker, workspace, fileChangeWatcher)
+            let optionsManager = FSharpProjectOptionsManager(checker, workspace)
 
             { new IFSharpWorkspaceService with
                 member _.Checker = checker
