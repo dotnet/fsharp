@@ -1267,12 +1267,15 @@ module internal TypeTesters =
                 | _ -> getErasedTypes g domainTy false @ getErasedTypes g rangeTy false
             | TType_measure _ -> [ ty ]
 
-    let underlyingTypeOfEnumTy (g: TcGlobals) ty =
+    /// Determine the underlying type of an enum type (normally int32).
+    /// ValueNone while the representation of an F# enum is still being established: the 'value__' field
+    /// is only added once the representations of a recursive group are known.
+    let tryUnderlyingTypeOfEnumTy (g: TcGlobals) ty =
         assert (isEnumTy g ty)
 
         match metadataOfTy g ty with
 #if !NO_TYPEPROVIDERS
-        | ProvidedTypeMetadata info -> info.UnderlyingTypeOfEnum()
+        | ProvidedTypeMetadata info -> ValueSome(info.UnderlyingTypeOfEnum())
 #endif
         | ILTypeMetadata(TILObjectReprData(_, _, tdef)) ->
 
@@ -1280,25 +1283,31 @@ module internal TypeTesters =
             let ilTy = getTyOfILEnumInfo info
 
             match ilTy.TypeSpec.Name with
-            | "System.Byte" -> g.byte_ty
-            | "System.SByte" -> g.sbyte_ty
-            | "System.Int16" -> g.int16_ty
-            | "System.Int32" -> g.int32_ty
-            | "System.Int64" -> g.int64_ty
-            | "System.UInt16" -> g.uint16_ty
-            | "System.UInt32" -> g.uint32_ty
-            | "System.UInt64" -> g.uint64_ty
-            | "System.Single" -> g.float32_ty
-            | "System.Double" -> g.float_ty
-            | "System.Char" -> g.char_ty
-            | "System.Boolean" -> g.bool_ty
-            | _ -> g.int32_ty
+            | "System.Byte" -> ValueSome g.byte_ty
+            | "System.SByte" -> ValueSome g.sbyte_ty
+            | "System.Int16" -> ValueSome g.int16_ty
+            | "System.Int32" -> ValueSome g.int32_ty
+            | "System.Int64" -> ValueSome g.int64_ty
+            | "System.UInt16" -> ValueSome g.uint16_ty
+            | "System.UInt32" -> ValueSome g.uint32_ty
+            | "System.UInt64" -> ValueSome g.uint64_ty
+            | "System.Single" -> ValueSome g.float32_ty
+            | "System.Double" -> ValueSome g.float_ty
+            | "System.Char" -> ValueSome g.char_ty
+            | "System.Boolean" -> ValueSome g.bool_ty
+            | _ -> ValueSome g.int32_ty
         | FSharpOrArrayOrByrefOrTupleOrExnTypeMetadata ->
-            let tycon = (tcrefOfAppTy g ty).Deref
+            match (tcrefOfAppTy g ty).Deref.GetFieldByName "value__" with
+            | Some rf -> ValueSome rf.FormalType
+            | None -> ValueNone
 
-            match tycon.GetFieldByName "value__" with
-            | Some rf -> rf.FormalType
-            | None -> error (InternalError("no 'value__' field found for enumeration type " + tycon.LogicalName, tycon.Range))
+    /// Determine the underlying type of an enum type (normally int32)
+    let underlyingTypeOfEnumTy (g: TcGlobals) ty =
+        match tryUnderlyingTypeOfEnumTy g ty with
+        | ValueSome underlyingTy -> underlyingTy
+        | ValueNone ->
+            let tycon = (tcrefOfAppTy g ty).Deref
+            error (InternalError("no 'value__' field found for enumeration type " + tycon.LogicalName, tycon.Range))
 
     let normalizeEnumTy g ty =
         (if isEnumTy g ty then underlyingTypeOfEnumTy g ty else ty)
