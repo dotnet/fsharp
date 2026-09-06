@@ -8,20 +8,21 @@ open System.Collections.Concurrent
 open System.Collections.Immutable
 open System.IO
 open System.Linq
-open Microsoft.CodeAnalysis
+open System.Runtime.CompilerServices
+open System.Threading
+open System.Windows
 open FSharp.Compiler
 open FSharp.Compiler.CodeAnalysis
-open Microsoft.VisualStudio.FSharp.Editor
-open System.Threading
-open Microsoft.VisualStudio.FSharp.Interactive.Session
-open System.Runtime.CompilerServices
-open CancellableTasks
-open Microsoft.VisualStudio.FSharp.Editor.Extensions
-open System.Windows
-open Microsoft.VisualStudio
 open FSharp.Compiler.Text
+open Microsoft.CodeAnalysis
+open Microsoft.VisualStudio
+open Microsoft.VisualStudio.FSharp.Editor
+open Microsoft.VisualStudio.FSharp.Interactive.Session
+open Microsoft.VisualStudio.FSharp.Editor.Extensions
 open Microsoft.VisualStudio.TextManager.Interop
+
 open Internal.Utilities.Library
+open CancellableTasks
 
 #nowarn "57"
 
@@ -619,10 +620,10 @@ type private FSharpProjectOptionsReactor(checker: FSharpChecker, fileChangeWatch
 
     interface IDisposable with
         member _.Dispose() =
-            (referenceChangeTracker :> IDisposable).Dispose()
+            referenceChangeTracker.Dispose()
             cancellationTokenSource.Cancel()
             cancellationTokenSource.Dispose()
-            (agent :> IDisposable).Dispose()
+            agent.Dispose()
 
 /// Manages mappings of Roslyn workspace Projects/Documents to FCS.
 type internal FSharpProjectOptionsManager(checker: FSharpChecker, workspace: Workspace, fileChangeWatcher: IFSharpFileChangeWatcher) =
