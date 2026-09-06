@@ -3,17 +3,16 @@
 namespace Microsoft.VisualStudio.FSharp.Editor
 
 open System
+open System.Collections.Generic
 open System.Composition
-open System.Linq
 open System.Threading
 open System.Threading.Tasks
 
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Navigation
-open Microsoft.VisualStudio
-open Microsoft.VisualStudio.Shell
 open Microsoft.VisualStudio.LanguageServices
 
+open FSharp.Compiler.EditorServices
 open FSharp.Compiler.Symbols
 open FSharp.Compiler.Text
 open CancellableTasks
@@ -69,29 +68,64 @@ type FSharpNavigableLocation(metadataAsSource: FSharpMetadataAsSourceService, sy
             }
             |> CancellableTask.start cancellationToken
 
-[<Export(typeof<IFSharpCrossLanguageSymbolNavigationService>)>]
-[<Export(typeof<FSharpCrossLanguageSymbolNavigationService>)>]
-type FSharpCrossLanguageSymbolNavigationService() =
-    let componentModel =
-        Package.GetGlobalService(typeof<ComponentModelHost.SComponentModel>) :?> ComponentModelHost.IComponentModel
+/// Locates the F# declaration Roslyn names by assembly and documentation comment id when C# or
+/// Visual Basic navigates into an F# project. Kept apart from the MEF service so it can be exercised
+/// without a Visual Studio workspace.
+module internal CrossLanguageSymbolNavigation =
 
-    let workspace = componentModel.GetService<VisualStudioWorkspace>()
+    [<Literal>]
+    let private UserOpName = "CrossLanguageSymbolNavigation"
 
-    let metadataAsSource =
-        componentModel.DefaultExportProvider.GetExport<FSharpMetadataAsSourceService>().Value
+    let docCommentIdToPath (docId: string) =
+        match XmlDocSigParser.parseDocCommentId docId with
+        | ParsedDocCommentId.Type path -> DocCommentId.Type path
 
-    let tryFindFieldByName (name: string) (e: FSharpEntity) =
+        | ParsedDocCommentId.Member(typePath, memberName, genericArity, kind) ->
+            // The parser reports constructors as .ctor; the F# lookup needs the backticked form.
+            let memberOrValName = if memberName = ".ctor" then "``.ctor``" else memberName
+
+            let symbolMemberType =
+                match kind with
+                | DocCommentIdKind.Method ->
+                    if memberName = ".ctor" then
+                        SymbolMemberType.Constructor
+                    else
+                        SymbolMemberType.Method
+                | DocCommentIdKind.Property -> SymbolMemberType.Property
+                | DocCommentIdKind.Event -> SymbolMemberType.Event
+                | _ -> SymbolMemberType.Other
+
+            DocCommentId.Member(
+                {
+                    EntityPath = typePath
+                    MemberOrValName = memberOrValName
+                    GenericParameters = genericArity
+                },
+                symbolMemberType
+            )
+
+        | ParsedDocCommentId.Field(typePath, fieldName) ->
+            DocCommentId.Field
+                {
+                    EntityPath = typePath
+                    MemberOrValName = fieldName
+                    GenericParameters = 0
+                }
+
+        | ParsedDocCommentId.None -> DocCommentId.None
+
+    let private tryFindFieldByName (name: string) (e: FSharpEntity) =
         let fields =
             e.FSharpFields
             |> Seq.filter (fun x -> x.DisplayName = name && not x.IsCompilerGenerated)
             |> Seq.map (fun e -> e.DeclarationLocation)
 
-        if fields.Count() <= 0 && (e.IsFSharpUnion || e.IsFSharpRecord) then
+        if Seq.isEmpty fields && (e.IsFSharpUnion || e.IsFSharpRecord) then
             Seq.singleton e.DeclarationLocation
         else
             fields
 
-    let tryFindValByNameAndType
+    let private tryFindValByNameAndType
         (name: string)
         (symbolMemberType: SymbolMemberType)
         (genericParametersCount: int)
@@ -126,130 +160,223 @@ type FSharpCrossLanguageSymbolNavigationService() =
 
         filteredEntities
 
-    let tryFindVal
-        (name: string)
-        (documentCommentId: string)
-        (symbolMemberType: SymbolMemberType)
-        (genericParametersCount: int)
-        (e: FSharpEntity)
+    /// The members of the entity the id names: those whose compiled id matches exactly and, when
+    /// `byShape`, those whose name, kind and arity fit when no id matched.
+    let private memberLocations
+        (byShape: bool)
+        (documentationCommentId: string)
+        (symbolPath: SymbolPath)
+        (memberType: SymbolMemberType)
+        (entity: FSharpEntity)
         =
-        let entities = e.TryGetMembersFunctionsAndValues()
+        let members = entity.TryGetMembersFunctionsAndValues()
 
-        // First, try and find entity by exact xml signature, return if found,
-        // otherwise, just try and match by parsed name and number of arguments.
+        let exact =
+            members
+            |> Seq.filter (fun m -> m.XmlDocSig = documentationCommentId)
+            |> Seq.map _.DeclarationLocation
 
-        let entitiesByXmlSig =
-            entities
-            |> Seq.filter (fun e -> e.XmlDocSig = documentCommentId)
-            |> Seq.map (fun e -> e.DeclarationLocation)
-
-        if Seq.isEmpty entitiesByXmlSig then
-            tryFindValByNameAndType name symbolMemberType genericParametersCount e entities
+        if byShape && Seq.isEmpty exact then
+            tryFindValByNameAndType symbolPath.MemberOrValName memberType symbolPath.GenericParameters entity members
         else
-            entitiesByXmlSig
+            exact
 
-    /// Convert a documentation comment ID to a navigation path.
-    /// Uses the shared XmlDocSigParser from FSharp.Compiler.Symbols.
-    static member internal DocCommentIdToPath(docId: string) =
-        // Use the shared parser from FSharp.Compiler.Symbols
-        match XmlDocSigParser.parseDocCommentId docId with
-        | ParsedDocCommentId.Type path -> DocCommentId.Type path
+    let private declarationsIn (byShape: bool) (signature: FSharpAssemblySignature) (documentationCommentId: string) (path: DocCommentId) =
+        let inEntity entityPath (locationsOf: FSharpEntity -> range seq) =
+            signature.FindEntityByPath entityPath
+            |> Option.map locationsOf
+            |> Option.defaultValue Seq.empty
 
-        | ParsedDocCommentId.Member(typePath, memberName, genericArity, kind) ->
-            // Convert constructor name format (.ctor in parser, ``.ctor`` needed for F# lookup)
-            let memberOrValName = if memberName = ".ctor" then "``.ctor``" else memberName
+        match path with
+        | DocCommentId.Member(symbolPath, memberType) ->
+            inEntity symbolPath.EntityPath (memberLocations byShape documentationCommentId symbolPath memberType)
+        | DocCommentId.Field symbolPath -> inEntity symbolPath.EntityPath (tryFindFieldByName symbolPath.MemberOrValName)
+        | DocCommentId.Type entityPath -> inEntity entityPath (fun entity -> Seq.singleton entity.DeclarationLocation)
+        | DocCommentId.None -> Seq.empty
 
-            let symbolMemberType =
-                match kind with
-                | DocCommentIdKind.Method ->
-                    if memberName = ".ctor" then
-                        SymbolMemberType.Constructor
+    let private entityPathOf (path: DocCommentId) =
+        match path with
+        | DocCommentId.Member(symbolPath, _)
+        | DocCommentId.Field symbolPath -> symbolPath.EntityPath
+        | DocCommentId.Type entityPath -> entityPath
+        | DocCommentId.None -> []
+
+    /// A compiled segment of a doc id against a source segment: the generic arity suffix and the
+    /// `Module` suffix of `CompilationRepresentation(ModuleSuffix)` exist only in compiled names.
+    let private segmentMatches (compiled: ReadOnlySpan<char>) (source: ReadOnlySpan<char>) =
+        let compiled =
+            match compiled.IndexOf '`' with
+            | -1 -> compiled
+            | arity -> compiled.Slice(0, arity)
+
+        compiled.Equals(source, StringComparison.Ordinal)
+        || (compiled.Length = source.Length + "Module".Length
+            && compiled.Slice(0, source.Length).Equals(source, StringComparison.Ordinal)
+            && compiled.Slice(source.Length).Equals("Module".AsSpan(), StringComparison.Ordinal))
+
+    let rec private pathMatches (entityPath: string list) (source: ReadOnlySpan<char>) =
+        match entityPath with
+        | [] -> source.IsEmpty
+        | [ last ] -> source.IndexOf '.' = -1 && segmentMatches (last.AsSpan()) source
+        | segment :: rest ->
+            match source.IndexOf '.' with
+            | -1 -> false
+            | dot ->
+                segmentMatches (segment.AsSpan()) (source.Slice(0, dot))
+                && pathMatches rest (source.Slice(dot + 1))
+
+    /// Whether the parsed item declares the entity the doc id names.
+    let declaresEntity (entityPath: string list) (item: NavigableItem) =
+        match item.Kind with
+        | NavigableItemKind.Module
+        | NavigableItemKind.Type
+        | NavigableItemKind.Exception ->
+            match item.Container.FullName with
+            | "" -> pathMatches entityPath (item.Name.AsSpan())
+            | container -> pathMatches entityPath ($"{container}.{item.Name}".AsSpan())
+        | _ -> false
+
+    /// The project's documents whose parse tree declares the entity, in compile order.
+    let candidateDocuments (entityPath: string list) (project: Project) =
+        cancellableTask {
+            let! ct = CancellableTask.getCancellationToken ()
+            let! _, _, _, options = project.GetFSharpCompilationOptionsAsync()
+
+            let compileOrder = Dictionary<string, int>(StringComparer.OrdinalIgnoreCase)
+
+            options.SourceFiles
+            |> Array.iteri (fun index path -> compileOrder[path] <- index)
+
+            let declaresIn (document: Document) =
+                cancellableTask {
+                    ct.ThrowIfCancellationRequested()
+                    let! parseResults = document.GetFSharpParseResultsAsync UserOpName
+
+                    if
+                        NavigateTo.GetNavigableItems parseResults.ParseTree
+                        |> Array.exists (declaresEntity entityPath)
+                    then
+                        return ValueSome document
                     else
-                        SymbolMemberType.Method
-                | DocCommentIdKind.Property -> SymbolMemberType.Property
-                | DocCommentIdKind.Event -> SymbolMemberType.Event
-                | _ -> SymbolMemberType.Other
-
-            DocCommentId.Member(
-                {
-                    EntityPath = typePath
-                    MemberOrValName = memberOrValName
-                    GenericParameters = genericArity
-                },
-                symbolMemberType
-            )
-
-        | ParsedDocCommentId.Field(typePath, fieldName) ->
-            DocCommentId.Field
-                {
-                    EntityPath = typePath
-                    MemberOrValName = fieldName
-                    GenericParameters = 0
+                        return ValueNone
                 }
 
-        | ParsedDocCommentId.None -> DocCommentId.None
+            let! candidates =
+                project.Documents
+                |> Seq.filter (fun document -> isFSharpSourceFile document.FilePath)
+                |> Seq.map declaresIn
+                // Throttle to avoid launching a parse per document in the project all at once.
+                |> CancellableTask.whenAllThrottled (max 1 Environment.ProcessorCount)
+
+            return
+                candidates
+                |> Array.chooseV id
+                |> Array.sortBy (fun document ->
+                    match compileOrder.TryGetValue document.FilePath with
+                    | true, index -> index
+                    | _ -> Int32.MaxValue)
+                |> List.ofArray
+        }
+
+    let private tryLocateInDocument (byShape: bool) (documentationCommentId: string) (path: DocCommentId) (document: Document) =
+        cancellableTask {
+            let! _, checkResults = document.GetFSharpParseAndCheckResultsAsync UserOpName
+
+            return
+                declarationsIn byShape checkResults.PartialAssemblySignature documentationCommentId path
+                |> Seq.tryHeadV
+        }
+
+    /// Checks only the documents that declare the entity. An exact id match in any of them wins;
+    /// the name-and-shape heuristics run only on the last one, whose partial signature holds every
+    /// member the entity gets from the files that declare it.
+    let tryLocateViaNavigableItems (documentationCommentId: string) (path: DocCommentId) (project: Project) =
+        cancellableTask {
+            let! candidates = candidateDocuments (entityPathOf path) project
+
+            match!
+                candidates
+                |> CancellableTask.tryPick (tryLocateInDocument false documentationCommentId path)
+            with
+            | ValueSome range -> return ValueSome range
+            | ValueNone ->
+                match List.tryLast candidates with
+                | Some last -> return! tryLocateInDocument true documentationCommentId path last
+                | None -> return ValueNone
+        }
+
+    /// Checks the whole project.
+    let tryLocateInProject (documentationCommentId: string) (path: DocCommentId) (project: Project) =
+        cancellableTask {
+            let! checker, _, _, options = project.GetFSharpCompilationOptionsAsync()
+            let! result = checker.ParseAndCheckProject(options)
+
+            return
+                declarationsIn true result.AssemblySignature documentationCommentId path
+                |> Seq.tryHeadV
+        }
+
+    /// The declaration's range and the project holding it, for the assembly name and doc id Roslyn passes.
+    let tryFindDeclaration (solution: Solution) (assemblyName: string) (documentationCommentId: string) =
+        match docCommentIdToPath documentationCommentId with
+        | DocCommentId.None -> CancellableTask.singleton ValueNone
+        | path ->
+            cancellableTask {
+                // The target frameworks of one project declare the same entities in the same files apart
+                // from conditional compilation, so one instance per project file goes first.
+                let instances =
+                    solution.Projects
+                    |> Seq.filter (fun p -> p.IsFSharp && p.AssemblyName = assemblyName)
+                    |> Seq.groupBy _.FilePath
+                    |> Seq.map (snd >> List.ofSeq)
+                    |> List.ofSeq
+
+                let ordered =
+                    [
+                        for instance in instances -> instance.Head
+                        for instance in instances do
+                            yield! instance.Tail
+                    ]
+
+                let located (locate: Project -> CancellableTask<range voption>) (project: Project) =
+                    locate project
+                    |> CancellableTask.map (ValueOption.map (fun range -> struct (range, project)))
+
+                match!
+                    ordered
+                    |> CancellableTask.tryPick (located (tryLocateViaNavigableItems documentationCommentId path))
+                with
+                | ValueSome found -> return ValueSome found
+                | ValueNone ->
+                    return!
+                        ordered
+                        |> CancellableTask.tryPick (located (tryLocateInProject documentationCommentId path))
+            }
+
+[<Export(typeof<IFSharpCrossLanguageSymbolNavigationService>)>]
+[<Export(typeof<FSharpCrossLanguageSymbolNavigationService>)>]
+type internal FSharpCrossLanguageSymbolNavigationService
+    [<ImportingConstructor>]
+    (metadataAsSource: FSharpMetadataAsSourceService, [<Import(AllowDefault = true)>] workspace: VisualStudioWorkspace) =
+
+    static member internal DocCommentIdToPath(docId: string) =
+        CrossLanguageSymbolNavigation.docCommentIdToPath docId
 
     interface IFSharpCrossLanguageSymbolNavigationService with
         member _.TryGetNavigableLocationAsync
             (assemblyName: string, documentationCommentId: string, cancellationToken: CancellationToken)
             : Task<IFSharpNavigableLocation> =
-            let path =
-                FSharpCrossLanguageSymbolNavigationService.DocCommentIdToPath documentationCommentId
-
             cancellableTask {
-                let projects =
-                    workspace.CurrentSolution.Projects
-                    |> Seq.filter (fun p -> p.IsFSharp && p.AssemblyName = assemblyName)
-
-                let mutable locations = Seq.empty
-
-                for project in projects do
-                    let! checker, _, _, options = project.GetFSharpCompilationOptionsAsync()
-                    let! result = checker.ParseAndCheckProject(options)
-
-                    match path with
-                    | DocCommentId.Member({
-                                              EntityPath = entityPath
-                                              MemberOrValName = memberOrVal
-                                              GenericParameters = genericParametersCount
-                                          },
-                                          memberType) ->
-                        let entity = result.AssemblySignature.FindEntityByPath(entityPath)
-
-                        entity
-                        |> Option.iter (fun e ->
-                            locations <-
-                                e
-                                |> tryFindVal memberOrVal documentationCommentId memberType genericParametersCount
-                                |> Seq.map (fun m -> (m, project))
-                                |> Seq.append locations)
-                    | DocCommentId.Field {
-                                             EntityPath = entityPath
-                                             MemberOrValName = memberOrVal
-                                         } ->
-                        let entity = result.AssemblySignature.FindEntityByPath(entityPath)
-
-                        entity
-                        |> Option.iter (fun e ->
-                            locations <-
-                                e
-                                |> tryFindFieldByName memberOrVal
-                                |> Seq.map (fun m -> (m, project))
-                                |> Seq.append locations)
-                    | DocCommentId.Type entityPath ->
-                        let entity = result.AssemblySignature.FindEntityByPath(entityPath)
-
-                        entity
-                        |> Option.iter (fun e -> locations <- Seq.append locations [ e.DeclarationLocation, project ])
-                    | DocCommentId.None -> ()
-
-                // TODO: Figure out the way of giving the user choice where to navigate, if there are more than one result
-                // For now, we only take 1st one, since it's usually going to be only one result (given we process names correctly).
-                // More results can theoretically be returned in case of method overloads, or when we have both signature and implementation files.
-                if locations.Count() >= 1 then
-                    let (location, project) = locations.First()
-                    return FSharpNavigableLocation(metadataAsSource, location, project) :> IFSharpNavigableLocation
-                else
-                    return Unchecked.defaultof<_> // returning null here, so Roslyn can fallback to default source-as-metadata implementation.
+                match workspace with
+                | null -> return null
+                | workspace ->
+                    match!
+                        CrossLanguageSymbolNavigation.tryFindDeclaration workspace.CurrentSolution assemblyName documentationCommentId
+                    with
+                    | ValueSome(struct (range, project)) ->
+                        return FSharpNavigableLocation(metadataAsSource, range, project) :> IFSharpNavigableLocation
+                    | ValueNone ->
+                        // Roslyn falls back to its own metadata-as-source when no location comes back.
+                        return null
             }
             |> CancellableTask.start cancellationToken
