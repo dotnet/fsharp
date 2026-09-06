@@ -2,6 +2,7 @@
 
 namespace Microsoft.VisualStudio.FSharp.Editor
 
+open System.Collections.Generic
 open System.Collections.Immutable
 open System.Composition
 open System.Threading.Tasks
@@ -10,6 +11,8 @@ open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp.FindUsages
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Editor.FindUsages
+open Microsoft.CodeAnalysis.FindSymbols
+open Microsoft.CodeAnalysis.Text
 
 open FSharp.Compiler.EditorServices
 open FSharp.Compiler.Text
@@ -44,7 +47,7 @@ module FSharpFindUsagesService =
                             externalDefinitionItem
                         else
                             definitionItems
-                            |> Array.tryFind (snd >> (=) doc.Project.FilePath)
+                            |> Array.tryFind (fun (_, project: Project) -> project.FilePath = doc.Project.FilePath)
                             |> Option.map (fun (definitionItem, _) -> definitionItem)
                             |> Option.defaultValue externalDefinitionItem
 
@@ -83,6 +86,58 @@ module FSharpFindUsagesService =
 
                 return spans |> Array.choose id
             }
+
+    let private referencingCompilationProjects (declaringProject: Project) =
+        match declaringProject.OutputFilePath with
+        | null -> []
+        | outputFilePath ->
+            ProjectFiltering.getProjectsReferencingAssembly outputFilePath declaringProject.Solution
+            |> List.filter (fun project -> not project.IsFSharp && project.SupportsCompilation)
+
+    /// Locations in a C# or VB project of the symbol with the given documentation comment id.
+    let private findRoslynReferences (docId: string) (project: Project) =
+        cancellableTask {
+            let! cancellationToken = CancellableTask.getCancellationToken ()
+
+            match! project.GetCompilationAsync cancellationToken with
+            | null -> return Seq.empty
+            | compilation ->
+                match DocumentationCommentId.GetFirstSymbolForDeclarationId(docId, compilation) with
+                | null -> return Seq.empty
+                | symbol ->
+                    let! referencedSymbols =
+                        SymbolFinder.FindReferencesAsync(
+                            symbol,
+                            project.Solution,
+                            ImmutableHashSet.CreateRange project.Documents,
+                            cancellationToken
+                        )
+
+                    return referencedSymbols |> Seq.collect _.Locations
+        }
+
+    /// Reports the uses in C# and VB projects that reference the assembly of a project declaring the symbol.
+    let private findCrossLanguageReferences
+        (docId: string)
+        (definitionItems: (FSharpDefinitionItem * Project)[])
+        (onReferenceFoundAsync: FSharpSourceReferenceItem -> Task)
+        =
+        cancellableTask {
+            let reported = HashSet<struct (string * TextSpan)>()
+
+            for definitionItem, declaringProject in definitionItems do
+                for project in referencingCompilationProjects declaringProject do
+                    let! locations = findRoslynReferences docId project
+
+                    for location in locations do
+                        let span = location.Location.SourceSpan
+
+                        if reported.Add(struct (location.Document.FilePath, span)) then
+                            do!
+                                onReferenceFoundAsync (
+                                    FSharpSourceReferenceItem(definitionItem, FSharpDocumentSpan(location.Document, span))
+                                )
+        }
 
     let findReferencedSymbolsAsync
         (document: Document, position: int, context: IFSharpFindUsagesContext, allReferences: bool, userOp: string)
@@ -139,7 +194,7 @@ module FSharpFindUsagesService =
 
                     let definitionItems =
                         declarationSpans
-                        |> Array.map (fun span -> FSharpDefinitionItem.Create(tags, displayParts, span), span.Document.Project.FilePath)
+                        |> Array.map (fun span -> FSharpDefinitionItem.Create(tags, displayParts, span), span.Document.Project)
 
                     do!
                         definitionItems
@@ -160,6 +215,11 @@ module FSharpFindUsagesService =
                             context.OnReferenceFoundAsync
 
                     do! SymbolHelpers.findSymbolUses symbolUse document checkFileResults onFound
+
+                    if allReferences && not isExternal && not symbolUse.Symbol.IsInternalToProject then
+                        match symbolUse.Symbol.DocumentationCommentId with
+                        | ValueSome docId -> do! findCrossLanguageReferences docId definitionItems context.OnReferenceFoundAsync
+                        | ValueNone -> ()
         }
 
 open FSharpFindUsagesService
