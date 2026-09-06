@@ -410,6 +410,13 @@
     "20465": {
       "sha": "77d14c910a70",
       "cats": []
+    },
+    "20467": {
+      "sha": "6ddb240b6b64",
+      "cats": [
+        "Affects-Build-Infra",
+        "Affects-Restore"
+      ]
     }
   }
 }
