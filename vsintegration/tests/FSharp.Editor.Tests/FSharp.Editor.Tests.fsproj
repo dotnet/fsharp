@@ -29,6 +29,7 @@
     <Compile Include="CompletionProviderTests.fs" />
     <Compile Include="FindReferencesTests.fs" />
     <Compile Include="InlineRenameTests.fs" />
+    <Compile Include="MultiTargetFindReferencesTests.fs" />
     <Compile Include="GoToDefinitionServiceTests.fs" />
     <Compile Include="PathMapNavigationTests.fs" />
     <Compile Include="HelpContextServiceTests.fs" />
