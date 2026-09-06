@@ -22,7 +22,7 @@ open FSharp.Test.ProjectGeneration
 let private library =
     SyntheticProject.Create(
         { sourceFile "First" [] with
-            ExtraSource = "let twice x = x * 2\n"
+            ExtraSource = "let twice x = x * 2\n[<Literal>]\nlet answer = 42\n"
         }
     )
 
@@ -36,7 +36,7 @@ let private solution =
     RoslynTestHelpers.AddCSharpProject(
         librarySolution,
         "Consumer",
-        $"class Consumer {{ int M() => {moduleName}.twice(1); }}",
+        $"class Consumer {{ int M() => {moduleName}.twice(1); int N() => {moduleName}.answer; }}",
         library.GetProjectOptions checker,
         [ assembly ]
     )
@@ -99,6 +99,7 @@ let ``the consumer is found as a project referencing the F# assembly`` () =
 [<Theory>]
 [<InlineData("twice", "M:{0}.twice(System.Int32)")>]
 [<InlineData("ModuleFirst", "T:{0}")>]
+[<InlineData("answer", "F:{0}.answer")>]
 [<InlineData("x", null)>]
 let ``DocumentationCommentId is the compiled form Roslyn resolves`` (symbolName: string, expectedFormat: string) =
     let expected =
@@ -130,6 +131,21 @@ let ``Find All References on an F# function reports its C# call site`` () =
 
     let text = document.GetTextAsync(CancellationToken.None).Result
     Assert.Equal("twice", text.ToString span)
+
+[<Fact>]
+let ``Find All References on an F# literal reports its C# use`` () =
+    let context, _, foundReferences = RoslynTestHelpers.CreateFindUsagesContext()
+
+    let position =
+        (File.ReadAllText firstPath).IndexOf("answer", StringComparison.Ordinal)
+
+    findUsagesService.FindReferencesAsync(fsharpDocument, position, context).Wait()
+
+    let document, span = documentSpanOf (Assert.Single foundReferences)
+    Assert.Equal(LanguageNames.CSharp, document.Project.Language)
+
+    let text = document.GetTextAsync(CancellationToken.None).Result
+    Assert.Equal("answer", text.ToString span)
 
 [<Fact>]
 let ``Find Implementations on an F# function does not report C# call sites`` () =
