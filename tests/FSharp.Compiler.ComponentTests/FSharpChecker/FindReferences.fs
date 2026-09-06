@@ -1,4 +1,4 @@
-﻿module FSharpChecker.FindReferences
+module FSharpChecker.FindReferences
 
 open System.Threading.Tasks
 open Xunit
@@ -25,21 +25,25 @@ let deriveOccurrence (su:FSharpSymbolUse) =
 // Test Helpers - Reduce boilerplate in single-file find-references tests
 // =============================================================================
 
-/// Finds all references to a symbol in source code using singleFileChecker.
+/// Finds all references to a symbol in source code checked as `fileName` using singleFileCheckerWithName.
 /// Returns a list of (fileName, line, startCol, endCol) tuples.
-let findRefsInSource source symbolName =
+let findRefsInFile fileName source symbolName =
     async {
-        let! fileName, options, checker = singleFileChecker source
+        let! _, options, checker = singleFileCheckerWithName fileName source
         let! symbolUse = getSymbolUse fileName source symbolName options checker
         return! checker.FindBackgroundReferencesInFile(fileName, options, symbolUse.Symbol)
     }
 
-/// Runs a complete find-references test: finds symbol and asserts expected ranges.
-let testFindRefsInSource source symbolName expectedRanges : Task =
+/// Runs a complete find-references test on `fileName`: finds symbol and asserts expected ranges.
+let testFindRefsInFile fileName source symbolName expectedRanges : Task =
     task {
-        let! references = findRefsInSource source symbolName
+        let! references = findRefsInFile fileName source symbolName
         references |> expectToFind expectedRanges
     }
+
+/// Runs a complete find-references test: finds symbol and asserts expected ranges.
+let testFindRefsInSource source symbolName expectedRanges =
+    testFindRefsInFile "test.fs" source symbolName expectedRanges
 
 /// Asserts that the given ranges contain exactly the expected line numbers.
 let expectLines expectedLines (ranges: range seq) =
@@ -815,79 +819,26 @@ let foo = Foo() :> IFoo
 
 module LineDirectives =
 
-    open System
-
-    /// A variant of singleFileChecker that allows a custom filename
-    /// to avoid test isolation issues with LineDirectives.store
-    let singleFileCheckerWithName (fileName: string) source =
-        let getSource _ fn =
-            FSharpFileSnapshot(
-              FileName = fn,
-              Version = "1",
-              GetSource = fun () -> source |> SourceTextNew.ofString |> Task.FromResult )
-            |> async.Return
-
-        let checker = FSharpChecker.Create(
-            keepAllBackgroundSymbolUses = false,
-            enableBackgroundItemKeyStoreAndSemanticClassification = true,
-            enablePartialTypeChecking = true,
-            captureIdentifiersWhenParsing = true,
-            useTransparentCompiler = true)
-
-        async {
-            let! baseOptions, _ =
-                checker.GetProjectOptionsFromScript(
-                    fileName,
-                    SourceText.ofString "",
-                    assumeDotNetFramework = false
-                )
-
-            let options =
-                { baseOptions with
-                    ProjectFileName = "project"
-                    ProjectId = None
-                    SourceFiles = [|fileName|]
-                    IsIncompleteTypeCheckEnvironment = false
-                    UseScriptResolutionRules = false
-                    LoadTime = DateTime()
-                    UnresolvedReferences = None
-                    OriginalLoadReferences = []
-                    Stamp = None }
-
-            let! snapshot = FSharpProjectSnapshot.FromOptions(options, getSource)
-
-            return fileName, snapshot, checker
-        }
-
     /// https://github.com/dotnet/fsharp/issues/9928
     /// Find All References should work correctly with #line directives.
     /// When #line is used, the returned ranges should be the remapped ranges
     /// (the "fake" file name and line numbers from the directive).
     [<Fact>]
     let ``Find references works with #line directives`` () : Task =
-        task {
-            let source = """
+        let source = """
 module Foo
 #line 100 "generated.fs"
 let Thing = 42
 
 let use1 = Thing + 1
 """
-            // Use a unique filename to avoid test isolation issues with LineDirectives.store
-            let! fileName, options, checker = singleFileCheckerWithName "lineDirectivesTest.fs" source
-
-            let! symbolUse = getSymbolUse fileName source "Thing" options checker
-
-            let! references = checker.FindBackgroundReferencesInFile(fileName, options, symbolUse.Symbol)
-
-            references
-            |> expectToFind [
-                // Definition at #line 100 (original line 4)
-                "generated.fs", 100, 4, 9
-                // Use at #line 102 (original line 6)
-                "generated.fs", 102, 11, 16
-            ]
-        }
+        // Use a unique filename to avoid test isolation issues with LineDirectives.store
+        testFindRefsInFile "lineDirectivesTest.fs" source "Thing" [
+            // Definition at #line 100 (original line 4)
+            "generated.fs", 100, 4, 9
+            // Use at #line 102 (original line 6)
+            "generated.fs", 102, 11, 16
+        ]
 
 module OrPatternSymbolResolution =
 
