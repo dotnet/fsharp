@@ -174,29 +174,26 @@ type internal GoToDefinition(metadataAsSource: FSharpMetadataAsSourceService) =
             && symbol1.DeclaringEntity.CompiledName = symbol2.DeclaringEntity.CompiledName
         | _ -> false
 
+    /// The navigable item for the range in the document, when the range fits the document's text.
+    let navigableItemAt (document: Document) (range: range) =
+        cancellableTask {
+            let! cancellationToken = CancellableTask.getCancellationToken ()
+            let! sourceText = document.GetTextAsync(cancellationToken)
+
+            return
+                RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, range)
+                |> ValueOption.map (fun textSpan -> FSharpGoToDefinitionNavigableItem(document, textSpan))
+        }
+
     /// Use an origin document to provide the solution & workspace used to
     /// find the corresponding textSpan and INavigableItem for the range
     let rangeToNavigableItem (range: range, document: Document) =
         cancellableTask {
-            let fileName =
-                try
-                    System.IO.Path.GetFullPath range.FileName
-                with _ ->
-                    range.FileName
-
-            let refDocumentIds = document.Project.Solution.GetDocumentIdsWithFilePath fileName
-
-            if not refDocumentIds.IsEmpty then
-                let refDocumentId = refDocumentIds.First()
-                let refDocument = document.Project.Solution.GetDocument refDocumentId
-                let! cancellationToken = Async.CancellationToken
-                let! refSourceText = refDocument.GetTextAsync(cancellationToken) |> Async.AwaitTask
-
-                match RoslynHelpers.TryFSharpRangeToTextSpan(refSourceText, range) with
-                | ValueNone -> return None
-                | ValueSome refTextSpan -> return Some(FSharpGoToDefinitionNavigableItem(refDocument, refTextSpan))
-            else
-                return None
+            match document.TryGetSolutionDocumentFromFSharpRange range with
+            | ValueNone -> return None
+            | ValueSome refDocument ->
+                let! navItem = navigableItemAt refDocument range
+                return ValueOption.toOption navItem
         }
 
     member _.TryGetExternalDeclarationAsync(targetSymbolUse: FSharpSymbolUse, metadataReferences: seq<MetadataReference>) =
@@ -312,7 +309,7 @@ type internal GoToDefinition(metadataAsSource: FSharpMetadataAsSourceService) =
                             if not (File.Exists fsfilePath) then
                                 return None
                             else
-                                let implDoc = originDocument.Project.Solution.TryGetDocumentFromPath fsfilePath
+                                let implDoc = originDocument.TryGetSolutionDocumentFromPath fsfilePath
 
                                 match implDoc with
                                 | ValueNone -> return None
@@ -336,14 +333,9 @@ type internal GoToDefinition(metadataAsSource: FSharpMetadataAsSourceService) =
                                         | ValueNone -> return None
                                         | ValueSome implTextSpan -> return Some(FSharpGoToDefinitionNavigableItem(implDoc, implTextSpan))
                         else
-                            let targetDocument =
-                                originDocument.Project.Solution.TryGetDocumentFromFSharpRange fsSymbolUse.Range
-
-                            match targetDocument with
-                            | None -> return None
-                            | Some targetDocument ->
-                                let! navItem = rangeToNavigableItem (fsSymbolUse.Range, targetDocument)
-                                return navItem
+                            match originDocument.TryGetSolutionDocumentFromFSharpRange fsSymbolUse.Range with
+                            | ValueNone -> return None
+                            | ValueSome targetDocument -> return! rangeToNavigableItem (fsSymbolUse.Range, targetDocument)
             }
 
     /// if the symbol is defined in the given file, return its declaration location, otherwise use the targetSymbol to find the first
@@ -371,6 +363,55 @@ type internal GoToDefinition(metadataAsSource: FSharpMetadataAsSourceService) =
                     |> Array.tryHead
 
                 return implSymbol.Range
+        }
+
+    /// The navigable item for the target symbol's declaration in the implementation document.
+    member private this.FindNavigableDeclarationIn(targetSymbolUse: FSharpSymbolUse, implDocument: Document) =
+        cancellableTask {
+            let! declarationRange = this.FindSymbolDeclarationInDocument(targetSymbolUse, implDocument)
+
+            match declarationRange with
+            | None -> return ValueNone
+            | Some declarationRange -> return! navigableItemAt implDocument declarationRange
+        }
+
+    /// The caret is already on the declaration: in a signature file the target is the implementation,
+    /// in an implementation file it is the signature.
+    member private this.FindCounterpartOfDeclarationAtCaret
+        (
+            originDocument: Document,
+            targetSymbolUse: FSharpSymbolUse,
+            checkFileResults: FSharpCheckFileResults,
+            lexerSymbol: LexerSymbol,
+            fcsTextLineNumber: int,
+            textLineString: string
+        ) =
+        cancellableTask {
+            if isSignatureFile originDocument.FilePath then
+                let implFilePath = Path.ChangeExtension(originDocument.FilePath, "fs")
+
+                if not (File.Exists implFilePath) then
+                    return ValueNone
+                else
+                    match originDocument.TryGetSolutionDocumentFromPath implFilePath with
+                    | ValueNone -> return ValueNone
+                    | ValueSome implDocument -> return! this.FindNavigableDeclarationIn(targetSymbolUse, implDocument)
+            else
+                let declarations =
+                    checkFileResults.GetDeclarationLocation(
+                        fcsTextLineNumber,
+                        lexerSymbol.Ident.idRange.EndColumn,
+                        textLineString,
+                        lexerSymbol.FullIsland,
+                        true
+                    )
+
+                match declarations with
+                | FindDeclResult.DeclFound sigRange ->
+                    match originDocument.TryGetSolutionDocumentFromFSharpRange sigRange with
+                    | ValueNone -> return ValueNone
+                    | ValueSome sigDocument -> return! navigableItemAt sigDocument sigRange
+                | _ -> return ValueNone
         }
 
     member internal this.FindDefinitionAtPosition(originDocument: Document, position: int) =
@@ -417,8 +458,9 @@ type internal GoToDefinition(metadataAsSource: FSharpMetadataAsSourceService) =
                     match declarations with
                     | FindDeclResult.ExternalDecl(assembly, targetExternalSym) ->
                         let projectOpt =
-                            originDocument.Project.Solution.Projects
-                            |> Seq.tryFindV (fun p -> p.AssemblyName.Equals(assembly, StringComparison.OrdinalIgnoreCase))
+                            originDocument.TryFindInSolutions(fun solution ->
+                                solution.Projects
+                                |> Seq.tryFindV (fun p -> p.AssemblyName.Equals(assembly, StringComparison.OrdinalIgnoreCase)))
 
                         match projectOpt with
                         | ValueSome project ->
@@ -456,122 +498,45 @@ type internal GoToDefinition(metadataAsSource: FSharpMetadataAsSourceService) =
                             return ValueSome(FSharpGoToDefinitionResult.ExternalAssembly(targetSymbolUse, metadataReferences), idRange)
 
                     | FindDeclResult.DeclFound targetRange ->
-                        // If the file is not associated with a document, it's considered external.
-                        if not (originDocument.Project.Solution.ContainsDocumentWithFilePath(targetRange.FileName)) then
+                        match originDocument.TryGetSolutionDocumentFromFSharpRange targetRange with
+                        | ValueNone ->
+                            // No document for the file anywhere in the workspace: the symbol comes from an assembly.
                             let metadataReferences = originDocument.Project.MetadataReferences
                             return ValueSome(FSharpGoToDefinitionResult.ExternalAssembly(targetSymbolUse, metadataReferences), idRange)
-                        else if
-                            // if goto definition is called as we are already at the declaration location of a symbol in
-                            // either a signature or an implementation file then we jump to its respective position in the document
-                            lexerSymbol.Range = targetRange
-                        then
-                            // jump from signature to the corresponding implementation
-                            if isSignatureFile originDocument.FilePath then
-                                let implFilePath = Path.ChangeExtension(originDocument.FilePath, "fs")
+                        | ValueSome _ when lexerSymbol.Range = targetRange ->
+                            let! navItem =
+                                this.FindCounterpartOfDeclarationAtCaret(
+                                    originDocument,
+                                    targetSymbolUse,
+                                    checkFileResults,
+                                    lexerSymbol,
+                                    fcsTextLineNumber,
+                                    textLineString
+                                )
 
-                                if not (File.Exists implFilePath) then
-                                    return ValueNone
+                            return
+                                navItem
+                                |> ValueOption.map (fun navItem -> FSharpGoToDefinitionResult.NavigableItem navItem, idRange)
+                        | ValueSome targetDocument ->
+                            // gotoDefn origin = signature, destination = signature; origin = implementation, destination = implementation
+                            let! navItem =
+                                if isSignatureFile targetRange.FileName && preferSignature then
+                                    navigableItemAt targetDocument targetRange
                                 else
-                                    let implDocument =
-                                        originDocument.Project.Solution.TryGetDocumentFromPath implFilePath
+                                    // Bugfix: apparently the target document is not always a signature file
+                                    let implFilePath =
+                                        if isSignatureFile targetDocument.FilePath then
+                                            Path.ChangeExtension(targetDocument.FilePath, "fs")
+                                        else
+                                            targetDocument.FilePath
 
-                                    match implDocument with
-                                    | ValueNone -> return ValueNone
-                                    | ValueSome implDocument ->
-                                        let! targetRange = this.FindSymbolDeclarationInDocument(targetSymbolUse, implDocument)
+                                    match originDocument.TryGetSolutionDocumentFromPath implFilePath with
+                                    | ValueNone -> CancellableTask.singleton ValueNone
+                                    | ValueSome implDocument -> this.FindNavigableDeclarationIn(targetSymbolUse, implDocument)
 
-                                        match targetRange with
-                                        | None -> return ValueNone
-                                        | Some targetRange ->
-                                            let! implSourceText = implDocument.GetTextAsync(cancellationToken)
-
-                                            let implTextSpan =
-                                                RoslynHelpers.TryFSharpRangeToTextSpan(implSourceText, targetRange)
-
-                                            match implTextSpan with
-                                            | ValueNone -> return ValueNone
-                                            | ValueSome implTextSpan ->
-                                                let navItem = FSharpGoToDefinitionNavigableItem(implDocument, implTextSpan)
-                                                return ValueSome(FSharpGoToDefinitionResult.NavigableItem(navItem), idRange)
-
-                            else // jump from implementation to the corresponding signature
-                                let declarations =
-                                    checkFileResults.GetDeclarationLocation(
-                                        fcsTextLineNumber,
-                                        idRange.EndColumn,
-                                        textLineString,
-                                        lexerSymbol.FullIsland,
-                                        true
-                                    )
-
-                                match declarations with
-                                | FindDeclResult.DeclFound targetRange ->
-                                    let sigDocument =
-                                        originDocument.Project.Solution.TryGetDocumentFromPath targetRange.FileName
-
-                                    match sigDocument with
-                                    | ValueNone -> return ValueNone
-                                    | ValueSome sigDocument ->
-                                        let! sigSourceText = sigDocument.GetTextAsync(cancellationToken)
-
-                                        let sigTextSpan = RoslynHelpers.TryFSharpRangeToTextSpan(sigSourceText, targetRange)
-
-                                        match sigTextSpan with
-                                        | ValueNone -> return ValueNone
-                                        | ValueSome sigTextSpan ->
-                                            let navItem = FSharpGoToDefinitionNavigableItem(sigDocument, sigTextSpan)
-                                            return ValueSome(FSharpGoToDefinitionResult.NavigableItem(navItem), idRange)
-                                | _ -> return ValueNone
-                        // when the target range is different follow the navigation convention of
-                        // - gotoDefn origin = signature , gotoDefn destination = signature
-                        // - gotoDefn origin = implementation, gotoDefn destination = implementation
-                        else
-                            let sigDocument =
-                                originDocument.Project.Solution.TryGetDocumentFromPath targetRange.FileName
-
-                            match sigDocument with
-                            | ValueNone -> return ValueNone
-                            | ValueSome sigDocument ->
-                                let! sigSourceText = sigDocument.GetTextAsync(cancellationToken)
-                                let sigTextSpan = RoslynHelpers.TryFSharpRangeToTextSpan(sigSourceText, targetRange)
-
-                                match sigTextSpan with
-                                | ValueNone -> return ValueNone
-                                | ValueSome sigTextSpan ->
-                                    // if the gotodef call originated from a signature and the returned target is a signature, navigate there
-                                    if isSignatureFile targetRange.FileName && preferSignature then
-                                        let navItem = FSharpGoToDefinitionNavigableItem(sigDocument, sigTextSpan)
-                                        return ValueSome(FSharpGoToDefinitionResult.NavigableItem(navItem), idRange)
-                                    else // we need to get an FSharpSymbol from the targetRange found in the signature
-                                        // that symbol will be used to find the destination in the corresponding implementation file
-                                        let implFilePath =
-                                            // Bugfix: apparently sigDocument not always is a signature file
-                                            if isSignatureFile sigDocument.FilePath then
-                                                Path.ChangeExtension(sigDocument.FilePath, "fs")
-                                            else
-                                                sigDocument.FilePath
-
-                                        let implDocument =
-                                            originDocument.Project.Solution.TryGetDocumentFromPath implFilePath
-
-                                        match implDocument with
-                                        | ValueNone -> return ValueNone
-                                        | ValueSome implDocument ->
-                                            let! targetRange = this.FindSymbolDeclarationInDocument(targetSymbolUse, implDocument)
-
-                                            match targetRange with
-                                            | None -> return ValueNone
-                                            | Some targetRange ->
-                                                let! implSourceText = implDocument.GetTextAsync(cancellationToken)
-
-                                                let implTextSpan =
-                                                    RoslynHelpers.TryFSharpRangeToTextSpan(implSourceText, targetRange)
-
-                                                match implTextSpan with
-                                                | ValueNone -> return ValueNone
-                                                | ValueSome implTextSpan ->
-                                                    let navItem = FSharpGoToDefinitionNavigableItem(implDocument, implTextSpan)
-                                                    return ValueSome(FSharpGoToDefinitionResult.NavigableItem(navItem), idRange)
+                            return
+                                navItem
+                                |> ValueOption.map (fun navItem -> FSharpGoToDefinitionResult.NavigableItem navItem, idRange)
                     | _ -> return ValueNone
         }
 
