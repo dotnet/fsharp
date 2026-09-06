@@ -499,6 +499,9 @@ type IncrementalOptimizationEnv =
       /// definition-site replay finds no match; this call site does, letting the correct extension be honored
       /// instead of degrading to the throwing dynamic stub. None outside the debug-specialization path.
       debugInlineCallSite: range option
+
+      /// Inline resumable-code combinators while specializing an enclosing state-machine builder.
+      resumableCodeContext: bool
     }
 
     static member Empty = 
@@ -513,7 +516,8 @@ type IncrementalOptimizationEnv =
           methEnv = { pipelineCount = 0 }
           referencedCcus = []
           earlierImplFileSignatures = []
-          debugInlineCallSite = None }
+          debugInlineCallSite = None
+          resumableCodeContext = false }
 
     override x.ToString() = "<IncrementalOptimizationEnv>"
 
@@ -2504,6 +2508,49 @@ and ExprIsFrameLocal cenv env expr =
 
     FoldExpr folder false expr
 
+// A Debug helper method would hide this definition tree from LowerStateMachines.
+let HasResumableStateMachineBody cenv env (vref: ValRef) =
+    let rec hasResumableCodeArgument ty =
+        let ty = stripTyEqns cenv.g ty
+
+        if isFunTy cenv.g ty then
+            isResumableCodeTy cenv.g (domainOfFunTy cenv.g ty)
+            || hasResumableCodeArgument (rangeOfFunTy cenv.g ty)
+        else
+            false
+
+    let rec containsStateMachineBody visiting expr =
+        let folder =
+            { ExprFolder0 with
+                exprIntercept =
+                    fun _recurseF noInterceptF acc expr ->
+                        if acc then
+                            acc
+                        else
+                            match expr with
+                            | StructStateMachineExpr cenv.g _ -> true
+                            | Expr.Val (nestedVref, _, _) when nestedVref.ShouldInline ->
+                                hasStateMachineBody visiting nestedVref
+                            | _ -> noInterceptF acc expr }
+
+        FoldExpr folder false expr
+
+    and hasStateMachineBody visiting (vref: ValRef) =
+        if List.exists ((=) vref.Stamp) visiting then
+            false
+        else
+            let _, ty = tryDestForallTy cenv.g vref.Type
+
+            if not (hasResumableCodeArgument ty) then
+                false
+            else
+                match TryGetInfoForVal cenv env vref |> Option.map (fun info -> stripValue info.ValExprInfo) with
+                | Some(CurriedLambdaValue (_, _, _, body, _)) ->
+                    containsStateMachineBody (vref.Stamp :: visiting) body
+                | _ -> false
+
+    hasStateMachineBody [] vref
+
 let shouldForceInlineInDebug cenv env (vref: ValRef) : bool =
     let g = cenv.g
 
@@ -2511,6 +2558,10 @@ let shouldForceInlineInDebug cenv env (vref: ValRef) : bool =
     ValHasWellKnownAttribute g WellKnownValAttributes.NoDynamicInvocationAttribute_False vref.Deref ||
 
     (vref.HasDeclaringEntity && shouldForceInlineMembersInDebug g vref.DeclaringEntity) ||
+
+    (cenv.optimizing &&
+     (HasResumableStateMachineBody cenv env vref ||
+      (env.resumableCodeContext && isReturnsResumableCodeTy g vref.TauType))) ||
 
     HasFrameLocalBody cenv env vref
 
@@ -3657,9 +3708,10 @@ and TryDevirtualizeApplication cenv env (f, tyargs, args, m) =
 /// Attempt to inline an application of a known value at callsites
 and TryInlineApplication cenv env finfo (valExpr: Expr) (tyargs: TType list, args: Expr list, m) =
     let g = cenv.g
-
     match cenv.settings.alwaysInline, stripExpr valExpr with
-    | false, Expr.Val(vref, _, _) when vref.ShouldInline && not (shouldForceInlineInDebug cenv env vref) ->
+    | false, Expr.Val(vref, _, _) when vref.ShouldInline ->
+        let forceInline = shouldForceInlineInDebug cenv env vref
+        let hasResumableStateMachineBody = HasResumableStateMachineBody cenv env vref
         let hasNoTraits =
             let tps, _ = tryDestForallTy g vref.Type
             GetTraitConstraintInfosOfTypars g tps |> List.isEmpty
@@ -3678,17 +3730,25 @@ and TryInlineApplication cenv env finfo (valExpr: Expr) (tyargs: TType list, arg
         // so route those through the specialization path which inlines the body.
         let isHiddenBySignature = cenv.signatureHidingInfo.HiddenVals.Contains vref.Deref
         let canCallDirectly =
+            not forceInline &&
             (cenv.optimizing || (vref.Accessibility.IsPublic && not isHiddenBySignature)) &&
             (hasNoTraits || (allTyargsAreBareTypars && vref.ValReprInfo.IsSome))
 
-        let argsR = args |> List.map (OptimizeExpr cenv env >> fst)
+        // Keep nested resumable combinators in the same expression tree as the builder.
+        let inlineEnv =
+            if forceInline && hasResumableStateMachineBody then
+                { env with resumableCodeContext = true }
+            else
+                env
+
+        let argsR = args |> List.map (OptimizeExpr cenv inlineEnv >> fst)
         let info = { TotalSize = 1; FunctionSize = 1; HasEffect = true; MightMakeCriticalTailcall = false; Info = UnknownValue }
 
         if canCallDirectly then
             Some(mkApps g ((exprForValRef m vref, vref.Type), [tyargs], argsR, m), info)
         else
 
-        let origFinfo = GetInfoForVal cenv env m vref
+        let origFinfo = GetInfoForVal cenv inlineEnv m vref
         match stripValue origFinfo.ValExprInfo with
         | CurriedLambdaValue(origLambdaId, _, _, origLambda, origLambdaTy) ->
             let f2R = CopyExprForInlining cenv true origLambda m
@@ -3709,7 +3769,7 @@ and TryInlineApplication cenv env finfo (valExpr: Expr) (tyargs: TType list, arg
             // function (e.g. sum<int, int->int> can call sum<int, int> in its body). For
             // non-concrete type args, never specialize recursively.
             let canSpecialize =
-                match Map.tryFind origLambdaId env.dontInline with
+                match Map.tryFind origLambdaId inlineEnv.dontInline with
                 | Some tys ->
                     allTyargsAreConcrete &&
                     not tys.IsEmpty &&
@@ -3725,14 +3785,27 @@ and TryInlineApplication cenv env finfo (valExpr: Expr) (tyargs: TType list, arg
                     | Some (_, body) -> copyExpr g CloneAll body
                     | None ->
 
-                    let existingTypes = defaultArg (Map.tryFind origLambdaId env.dontInline) []
-                    let env = { env with dontInline = Map.add origLambdaId (specLambdaTy :: existingTypes) env.dontInline; debugInlineCallSite = Some m }
+                    let existingTypes = defaultArg (Map.tryFind origLambdaId inlineEnv.dontInline) []
+                    let currentDontInline = inlineEnv.dontInline
+                    let env = { inlineEnv with dontInline = Map.add origLambdaId (specLambdaTy :: existingTypes) currentDontInline; debugInlineCallSite = Some m }
                     let specLambdaR, _ = OptimizeExpr cenv env specLambda
                     cenv.specializedInlineVals.Add(origLambdaId, (specLambdaTy, specLambdaR))
                     specLambdaR
                 else
-                    let specLambdaR, _ = OptimizeExpr cenv { env with dontInline = Map.add origLambdaId [] env.dontInline; debugInlineCallSite = Some m } specLambda
+                    let currentDontInline = inlineEnv.dontInline
+                    let specLambdaR, _ = OptimizeExpr cenv { inlineEnv with dontInline = Map.add origLambdaId [] currentDontInline; debugInlineCallSite = Some m } specLambda
                     specLambdaR
+
+            let fullyInlineResumable =
+                forceInline &&
+                (hasResumableStateMachineBody ||
+                 (inlineEnv.resumableCodeContext && isReturnsResumableCodeTy g vref.TauType))
+
+            // A helper method boundary would hide the resumable definitions from lowering.
+            if fullyInlineResumable then
+                let reducedExpr = MakeApplicationAndBetaReduce g (specLambdaR, specLambdaTy, [], argsR, m)
+                Some(OptimizeExpr cenv inlineEnv reducedExpr)
+            else
 
             // Abstract the specialized lambda over its free typars so IlxGen emits a static
             // method with flattened arguments. The alternative closure form (valReprInfo = None)
