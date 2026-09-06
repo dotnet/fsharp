@@ -2551,6 +2551,11 @@ let HasResumableStateMachineBody cenv env (vref: ValRef) =
 
     hasStateMachineBody [] vref
 
+let isResumableInlineInDebug cenv env (vref: ValRef) =
+    cenv.optimizing &&
+    (HasResumableStateMachineBody cenv env vref ||
+     (env.resumableCodeContext && isReturnsResumableCodeTy cenv.g vref.TauType))
+
 let shouldForceInlineInDebug cenv env (vref: ValRef) : bool =
     let g = cenv.g
 
@@ -2559,9 +2564,7 @@ let shouldForceInlineInDebug cenv env (vref: ValRef) : bool =
 
     (vref.HasDeclaringEntity && shouldForceInlineMembersInDebug g vref.DeclaringEntity) ||
 
-    (cenv.optimizing &&
-     (HasResumableStateMachineBody cenv env vref ||
-      (env.resumableCodeContext && isReturnsResumableCodeTy g vref.TauType))) ||
+    isResumableInlineInDebug cenv env vref ||
 
     HasFrameLocalBody cenv env vref
 
@@ -3709,7 +3712,9 @@ and TryDevirtualizeApplication cenv env (f, tyargs, args, m) =
 and TryInlineApplication cenv env finfo (valExpr: Expr) (tyargs: TType list, args: Expr list, m) =
     let g = cenv.g
     match cenv.settings.alwaysInline, stripExpr valExpr with
-    | false, Expr.Val(vref, _, _) when vref.ShouldInline ->
+    | false, Expr.Val(vref, _, _)
+        when vref.ShouldInline &&
+             (not (shouldForceInlineInDebug cenv env vref) || isResumableInlineInDebug cenv env vref) ->
         let forceInline = shouldForceInlineInDebug cenv env vref
         let hasResumableStateMachineBody = HasResumableStateMachineBody cenv env vref
         let hasNoTraits =
@@ -3797,9 +3802,7 @@ and TryInlineApplication cenv env finfo (valExpr: Expr) (tyargs: TType list, arg
                     specLambdaR
 
             let fullyInlineResumable =
-                forceInline &&
-                (hasResumableStateMachineBody ||
-                 (inlineEnv.resumableCodeContext && isReturnsResumableCodeTy g vref.TauType))
+                forceInline && isResumableInlineInDebug cenv inlineEnv vref
 
             // A helper method boundary would hide the resumable definitions from lowering.
             if fullyInlineResumable then
