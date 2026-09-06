@@ -114,16 +114,26 @@ module internal CrossLanguageSymbolNavigation =
 
         | ParsedDocCommentId.None -> DocCommentId.None
 
+    /// The fields of the entity, and the literals of a module, which compile to fields.
     let private tryFindFieldByName (name: string) (e: FSharpEntity) =
         let fields =
             e.FSharpFields
             |> Seq.filter (fun x -> x.DisplayName = name && not x.IsCompilerGenerated)
-            |> Seq.map (fun e -> e.DeclarationLocation)
+            |> Seq.map _.DeclarationLocation
 
-        if Seq.isEmpty fields && (e.IsFSharpUnion || e.IsFSharpRecord) then
+        let literals =
+            e.TryGetMembersFunctionsAndValues()
+            |> Seq.filter (fun v -> v.LiteralValue.IsSome && (v.CompiledName = name || v.DisplayName = name))
+            |> Seq.map _.DeclarationLocation
+
+        if
+            Seq.isEmpty fields
+            && Seq.isEmpty literals
+            && (e.IsFSharpUnion || e.IsFSharpRecord)
+        then
             Seq.singleton e.DeclarationLocation
         else
-            fields
+            Seq.append fields literals
 
     let private tryFindValByNameAndType
         (name: string)
@@ -160,6 +170,18 @@ module internal CrossLanguageSymbolNavigation =
 
         filteredEntities
 
+    /// The union case behind its compiled members: the `NewCase` factory, the `IsCase` tester and
+    /// the `Case` property of a nullary case.
+    let private unionCaseLocations (name: string) (entity: FSharpEntity) =
+        if entity.IsFSharpUnion then
+            entity.UnionCases
+            |> Seq.filter (fun unionCase ->
+                let compiled = unionCase.CompiledName
+                name = compiled || name = $"New{compiled}" || name = $"Is{compiled}")
+            |> Seq.map _.DeclarationLocation
+        else
+            Seq.empty
+
     /// The members of the entity the id names: those whose compiled id matches exactly and, when
     /// `byShape`, those whose name, kind and arity fit when no id matched.
     let private memberLocations
@@ -172,9 +194,14 @@ module internal CrossLanguageSymbolNavigation =
         let members = entity.TryGetMembersFunctionsAndValues()
 
         let exact =
-            members
-            |> Seq.filter (fun m -> m.XmlDocSig = documentationCommentId)
-            |> Seq.map _.DeclarationLocation
+            seq {
+                yield!
+                    members
+                    |> Seq.filter (fun m -> m.XmlDocSig = documentationCommentId)
+                    |> Seq.map _.DeclarationLocation
+
+                yield! unionCaseLocations symbolPath.MemberOrValName entity
+            }
 
         if byShape && Seq.isEmpty exact then
             tryFindValByNameAndType symbolPath.MemberOrValName memberType symbolPath.GenericParameters entity members
