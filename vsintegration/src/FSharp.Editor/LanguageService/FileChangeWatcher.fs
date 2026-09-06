@@ -66,6 +66,18 @@ type internal IFSharpFileChangeContext =
 type internal IFSharpFileChangeWatcher =
     abstract CreateContext: watchedDirectories: ImmutableArray<WatchedDirectory> -> IFSharpFileChangeContext
 
+/// Last-write stamps of watched reference files; a path nobody watches is stat'd directly.
+type internal IReferenceStamps =
+    abstract GetLastWriteTimeUtc: fullFilePath: string -> DateTime
+    abstract Invalidate: fullFilePath: string -> unit
+
+type private WatchedReference =
+    {
+        Token: IFSharpWatchedFile
+        mutable Count: int
+        mutable Stamp: DateTime voption
+    }
+
 [<AutoOpen>]
 module private FileChangeWatcherImpl =
 
@@ -339,7 +351,9 @@ and [<Sealed>] private FileChangeContext(enqueue: WatcherOperation -> unit, watc
 
 /// Ref-counted, debounced watching of reference assemblies (or any other off-workspace files),
 /// modelled on Roslyn's ReferenceFileChangeTracker. Multiple projects watching the same dll
-/// share one subscription; bursts of writes produce a single callback per path.
+/// share one subscription; bursts of writes produce a single callback per path. The last-write
+/// stamp of a path lives inside its watch entry, so a cached stamp is only ever served while a
+/// change notification can still reach it.
 [<Sealed>]
 type internal FSharpReferenceChangeTracker(watcher: IFSharpFileChangeWatcher, onChanged: string -> unit, notificationDelay: TimeSpan) =
 
@@ -347,7 +361,7 @@ type internal FSharpReferenceChangeTracker(watcher: IFSharpFileChangeWatcher, on
     let mutable disposed = false
 
     let watchedFiles =
-        Dictionary<string, IFSharpWatchedFile * int>(StringComparer.OrdinalIgnoreCase)
+        Dictionary<string, WatchedReference>(StringComparer.OrdinalIgnoreCase)
 
     let pendingTimers = Dictionary<string, Timer>(StringComparer.OrdinalIgnoreCase)
 
@@ -402,7 +416,10 @@ type internal FSharpReferenceChangeTracker(watcher: IFSharpFileChangeWatcher, on
 
                  lock gate (fun () ->
                      // Directory watches cover whole trees; only debounce paths someone watches.
-                     if not disposed && watchedFiles.ContainsKey path then
+                     match watchedFiles.TryGetValue path with
+                     | true, entry when not disposed ->
+                         entry.Stamp <- ValueNone
+
                          let timer =
                              match pendingTimers.TryGetValue path with
                              | true, timer -> timer
@@ -411,7 +428,8 @@ type internal FSharpReferenceChangeTracker(watcher: IFSharpFileChangeWatcher, on
                                  pendingTimers[path] <- timer
                                  timer
 
-                         timer.Change(notificationDelay, Timeout.InfiniteTimeSpan) |> ignore))
+                         timer.Change(notificationDelay, Timeout.InfiniteTimeSpan) |> ignore
+                     | _ -> ()))
 
              ctx)
 
@@ -422,17 +440,40 @@ type internal FSharpReferenceChangeTracker(watcher: IFSharpFileChangeWatcher, on
         lock gate (fun () ->
             if not disposed then
                 match watchedFiles.TryGetValue fullFilePath with
-                | true, (token, count) -> watchedFiles[fullFilePath] <- (token, count + 1)
-                | _ -> watchedFiles[fullFilePath] <- (context.Value.EnqueueWatchingFile fullFilePath, 1))
+                | true, entry -> entry.Count <- entry.Count + 1
+                | _ ->
+                    watchedFiles[fullFilePath] <-
+                        {
+                            Token = context.Value.EnqueueWatchingFile fullFilePath
+                            Count = 1
+                            Stamp = ValueNone
+                        })
 
     member _.StopWatchingReference(fullFilePath: string) =
         lock gate (fun () ->
             if not disposed then
                 match watchedFiles.TryGetValue fullFilePath with
-                | true, (token, 1) ->
+                | true, { Count = 1; Token = token } ->
                     watchedFiles.Remove fullFilePath |> ignore
                     token.Dispose()
-                | true, (token, count) -> watchedFiles[fullFilePath] <- (token, count - 1)
+                | true, entry -> entry.Count <- entry.Count - 1
+                | _ -> ())
+
+    interface IReferenceStamps with
+        member _.GetLastWriteTimeUtc fullFilePath =
+            lock gate (fun () ->
+                match watchedFiles.TryGetValue fullFilePath with
+                | true, { Stamp = ValueSome stamp } -> stamp
+                | true, entry ->
+                    let stamp = IO.File.GetLastWriteTimeUtc fullFilePath
+                    entry.Stamp <- ValueSome stamp
+                    stamp
+                | _ -> IO.File.GetLastWriteTimeUtc fullFilePath)
+
+        member _.Invalidate fullFilePath =
+            lock gate (fun () ->
+                match watchedFiles.TryGetValue fullFilePath with
+                | true, entry -> entry.Stamp <- ValueNone
                 | _ -> ())
 
     interface IDisposable with
