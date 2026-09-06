@@ -6,9 +6,14 @@ open System
 open System.IO
 open System.Reflection
 open System.Linq
+open System.Collections.Concurrent
 open System.Collections.Generic
 open System.Collections.Immutable
+open System.Threading
+open System.Threading.Tasks
 open Microsoft.CodeAnalysis
+open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Editor.FindUsages
+open Microsoft.CodeAnalysis.ExternalAccess.FSharp.FindUsages
 open Microsoft.VisualStudio.Composition
 open Microsoft.CodeAnalysis.Host
 open Microsoft.CodeAnalysis.Text
@@ -304,6 +309,28 @@ type RoslynTestHelpers private () =
 
     static member SetEditorOptions (solution: Solution) options =
         solution.Workspace.Services.GetService<EditorOptions>().With(options)
+
+    static member CreateFindUsagesContext() =
+        let foundDefinitions = ConcurrentBag<FSharpDefinitionItem>()
+        let foundReferences = ConcurrentBag<FSharpSourceReferenceItem>()
+
+        let context =
+            { new IFSharpFindUsagesContext with
+                member _.OnDefinitionFoundAsync definition =
+                    foundDefinitions.Add definition
+                    Task.CompletedTask
+
+                member _.OnReferenceFoundAsync reference =
+                    foundReferences.Add reference
+                    Task.CompletedTask
+
+                member _.ReportMessageAsync _ = Task.CompletedTask
+                member _.ReportProgressAsync(_, _) = Task.CompletedTask
+                member _.SetSearchTitleAsync _ = Task.CompletedTask
+                member _.CancellationToken = CancellationToken.None
+            }
+
+        context, foundDefinitions, foundReferences
 
     static member CreateSolution(source, ?options: FSharpProjectOptions, ?extraFSharpProjectOtherOptions: string array, ?editorOptions) =
         let projId = ProjectId.CreateNewId()
