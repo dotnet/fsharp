@@ -64,11 +64,9 @@ type FSharpSymbolUse with
                     Some(SymbolScope.Projects([ currentDocument.Project ], isSymbolLocalForProject))
                 else
                     let projects =
-                        currentDocument.Project.Solution.GetDocumentIdsWithFilePath(filePath)
-                        |> Seq.map (fun x -> x.ProjectId)
-                        |> Seq.distinct
-                        |> Seq.map currentDocument.Project.Solution.GetProject
-                        |> Seq.toList
+                        currentDocument.GetSolutionDocumentsWithFilePath filePath
+                        |> List.map _.Project
+                        |> List.distinctBy _.Id
 
                     match projects with
                     | [] -> None
