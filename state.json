@@ -395,6 +395,17 @@
     "20462": {
       "sha": "a0e2ac3565de",
       "cats": []
+    },
+    "20464": {
+      "sha": "b01ead511ce5",
+      "cats": []
+    },
+    "20463": {
+      "sha": "94b4db175be1",
+      "cats": [
+        "Affects-Build-Infra",
+        "Affects-Restore"
+      ]
     }
   }
 }
