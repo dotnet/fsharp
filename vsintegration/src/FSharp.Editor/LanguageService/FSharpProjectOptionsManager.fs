@@ -100,11 +100,13 @@ module private FSharpProjectOptionsHelpers =
         else
             hasProjectVersionChanged
 
+/// <summary>
 /// The in-memory PE reference of a referenced project, kept while the project's dependent
-/// semantic version is unchanged. Roslyn recreates `Compilation` instances freely - on every
-/// solution fork, and under memory pressure because it holds the final compilation weakly - and
-/// a reference created per instance carries a fresh stamp that invalidates every FCS cache
-/// keyed on it.
+/// semantic version is unchanged. Roslyn recreates
+/// <see cref="T:Microsoft.CodeAnalysis.Compilation"/> instances freely - on every solution fork,
+/// and under memory pressure because it holds the final compilation weakly - and a reference
+/// created per instance carries a fresh stamp that invalidates every FCS cache keyed on it.
+/// </summary>
 [<Sealed>]
 type private PEReferenceCacheEntry(version: VersionStamp, compilation: Compilation) =
     // Pinned until the first emit result, so the reader can always be materialised.
