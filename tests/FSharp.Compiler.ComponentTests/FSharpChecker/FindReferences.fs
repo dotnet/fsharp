@@ -28,14 +28,18 @@ let deriveOccurrence (su:FSharpSymbolUse) =
 /// Finds all references to a symbol in source code using singleFileChecker.
 /// Returns a list of (fileName, line, startCol, endCol) tuples.
 let findRefsInSource source symbolName =
-    let fileName, options, checker = singleFileChecker source
-    let symbolUse = getSymbolUse fileName source symbolName options checker |> Async.RunSynchronously
-    checker.FindBackgroundReferencesInFile(fileName, options, symbolUse.Symbol)
-    |> Async.RunSynchronously
+    async {
+        let! fileName, options, checker = singleFileChecker source
+        let! symbolUse = getSymbolUse fileName source symbolName options checker
+        return! checker.FindBackgroundReferencesInFile(fileName, options, symbolUse.Symbol)
+    }
 
 /// Runs a complete find-references test: finds symbol and asserts expected ranges.
-let testFindRefsInSource source symbolName expectedRanges =
-    findRefsInSource source symbolName |> expectToFind expectedRanges
+let testFindRefsInSource source symbolName expectedRanges : Task =
+    task {
+        let! references = findRefsInSource source symbolName
+        references |> expectToFind expectedRanges
+    }
 
 /// Asserts that the given ranges contain exactly the expected line numbers.
 let expectLines expectedLines (ranges: range seq) =
@@ -450,7 +454,7 @@ let ``We find values of a type that has been aliased`` () =
     }
 
 [<Fact>]
-let ``We don't find type aliases for a type`` () =
+let ``We don't find type aliases for a type`` () : Task =
     let source = """
 type MyType =
     member _.foo = "boo"
@@ -526,7 +530,7 @@ module ActivePatterns =
 
     /// https://github.com/dotnet/fsharp/issues/14206
     [<Fact>]
-    let ``Finding references to an active pattern case shouldn't find other cases`` () =
+    let ``Finding references to an active pattern case shouldn't find other cases`` () : Task =
         let source = """
 let (|Even|Odd|) v =
     if v % 2 = 0 then Even else Odd
@@ -537,7 +541,7 @@ match 2 with
         testFindRefsInSource source "Even" ["test.fs", 2, 6, 10; "test.fs", 3, 22, 26; "test.fs", 5, 2, 6]
 
     [<Fact>]
-    let ``We don't find references to cases from other active patterns with the same name`` () =
+    let ``We don't find references to cases from other active patterns with the same name`` () : Task =
         let source = """
 module One =
 
@@ -706,7 +710,7 @@ type internal SomeType() =
         }
 
 [<Fact>]
-let ``Module with the same name as type`` () =
+let ``Module with the same name as type`` () : Task =
     let source = """
 module Foo
 
@@ -722,7 +726,7 @@ let y = MyType.Two
     testFindRefsInSource source "MyType" ["test.fs", 4, 5, 11; "test.fs", 7, 8, 14; "test.fs", 11, 8, 14]
 
 [<Fact>]
-let ``Module with the same name as type part 2`` () =
+let ``Module with the same name as type part 2`` () : Task =
     let source = """
 module Foo
 
@@ -745,7 +749,7 @@ module Properties =
     /// Documents compiler service behavior: returns property def, getter, setter, and usage references.
     /// VS layer filters out 'get'/'set' keywords using Tokenizer.tryFixupSpan.
     [<Fact>]
-    let ``We find all references for property with get and set accessors`` () =
+    let ``We find all references for property with get and set accessors`` () : Task =
         let source = """
 module Foo
 
@@ -775,7 +779,7 @@ module SingleLineInterfaceSyntax =
 
     /// Issue: https://github.com/dotnet/fsharp/issues/15399
     [<Fact>]
-    let ``We find interface members with single-line interface syntax`` () =
+    let ``We find interface members with single-line interface syntax`` () : Task =
         let source = """
 module Foo
 
@@ -793,7 +797,7 @@ foo.Bar()
         ]
 
     [<Fact>]
-    let ``We find interface type references with single-line interface syntax`` () =
+    let ``We find interface type references with single-line interface syntax`` () : Task =
         let source = """
 module Foo
 
@@ -830,56 +834,60 @@ module LineDirectives =
             captureIdentifiersWhenParsing = true,
             useTransparentCompiler = true)
 
-        let options =
-            let baseOptions, _ =
+        async {
+            let! baseOptions, _ =
                 checker.GetProjectOptionsFromScript(
                     fileName,
                     SourceText.ofString "",
                     assumeDotNetFramework = false
                 )
-                |> Async.RunSynchronously
 
-            { baseOptions with
-                ProjectFileName = "project"
-                ProjectId = None
-                SourceFiles = [|fileName|]
-                IsIncompleteTypeCheckEnvironment = false
-                UseScriptResolutionRules = false
-                LoadTime = DateTime()
-                UnresolvedReferences = None
-                OriginalLoadReferences = []
-                Stamp = None }
+            let options =
+                { baseOptions with
+                    ProjectFileName = "project"
+                    ProjectId = None
+                    SourceFiles = [|fileName|]
+                    IsIncompleteTypeCheckEnvironment = false
+                    UseScriptResolutionRules = false
+                    LoadTime = DateTime()
+                    UnresolvedReferences = None
+                    OriginalLoadReferences = []
+                    Stamp = None }
 
-        let snapshot = FSharpProjectSnapshot.FromOptions(options, getSource) |> Async.RunSynchronously
+            let! snapshot = FSharpProjectSnapshot.FromOptions(options, getSource)
 
-        fileName, snapshot, checker
+            return fileName, snapshot, checker
+        }
 
     /// https://github.com/dotnet/fsharp/issues/9928
     /// Find All References should work correctly with #line directives.
     /// When #line is used, the returned ranges should be the remapped ranges
     /// (the "fake" file name and line numbers from the directive).
     [<Fact>]
-    let ``Find references works with #line directives`` () =
-        let source = """
+    let ``Find references works with #line directives`` () : Task =
+        task {
+            let source = """
 module Foo
 #line 100 "generated.fs"
 let Thing = 42
 
 let use1 = Thing + 1
 """
-        // Use a unique filename to avoid test isolation issues with LineDirectives.store
-        let fileName, options, checker = singleFileCheckerWithName "lineDirectivesTest.fs" source
+            // Use a unique filename to avoid test isolation issues with LineDirectives.store
+            let! fileName, options, checker = singleFileCheckerWithName "lineDirectivesTest.fs" source
 
-        let symbolUse = getSymbolUse fileName source "Thing" options checker |> Async.RunSynchronously
+            let! symbolUse = getSymbolUse fileName source "Thing" options checker
 
-        checker.FindBackgroundReferencesInFile(fileName, options, symbolUse.Symbol)
-        |> Async.RunSynchronously
-        |> expectToFind [
-            // Definition at #line 100 (original line 4)
-            "generated.fs", 100, 4, 9
-            // Use at #line 102 (original line 6)
-            "generated.fs", 102, 11, 16
-        ]
+            let! references = checker.FindBackgroundReferencesInFile(fileName, options, symbolUse.Symbol)
+
+            references
+            |> expectToFind [
+                // Definition at #line 100 (original line 4)
+                "generated.fs", 100, 4, 9
+                // Use at #line 102 (original line 6)
+                "generated.fs", 102, 11, 16
+            ]
+        }
 
 module OrPatternSymbolResolution =
 
