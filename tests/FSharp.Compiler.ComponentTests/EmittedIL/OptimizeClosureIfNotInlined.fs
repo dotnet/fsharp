@@ -25,6 +25,13 @@ let mkFolder () : int -> int -> int -> int = fun s x y -> s + x * y
         |> compile
         |> shouldSucceed
 
+    let private runOutput source =
+        FSharp source
+        |> withLangVersionPreview
+        |> withOptions [ "--optimize+" ]
+        |> compileExeAndRun
+        |> shouldSucceed
+
     [<Fact>]
     let ``opaque multi-arg callback is Adapt-ed`` () =
         optimized (prelude + "let callOpaque (a: int[]) (b: int[]) = fold2 (mkFolder ()) 0 a b")
@@ -80,7 +87,7 @@ let callOpaque (xs: int[]) = foldN (mkFolder ()) 0 xs
     // callback invoked once per element in order, opaque actual evaluated exactly once.
     [<Fact>]
     let ``optimized opaque callback matches un-attributed results and effect order`` () =
-        FSharp """
+        runOutput """
 module M
 open System.Collections.Generic
 let log = List<string>()
@@ -118,11 +125,54 @@ let main _ =
     printfn "RESULT=%s" (if ok then "PASS" else "FAIL")
     0
 """
-        |> withLangVersionPreview
-        |> withOptions [ "--optimize+" ]
-        |> compileExeAndRun
-        |> shouldSucceed
         |> withStdOutContains "RESULT=PASS"
+
+    // The callback used both saturated (in the loop) and partially applied (captured) in the same body:
+    // the partial use suppresses adaptation but the result must still match the un-attributed form.
+    [<Fact>]
+    let ``callback used saturated and partially applied stays correct`` () =
+        runOutput """
+module M
+let inline foldMixed ([<InlineIfLambda; OptimizeClosureIfNotInlined>] folder: int -> int -> int -> int) (state: int) (a: int[]) =
+    let mutable s = state
+    let partial = folder state
+    for i in 0 .. a.Length - 1 do s <- folder s a.[i] a.[i]
+    s + partial 100 200
+
+[<System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)>]
+let mkFolder () : int -> int -> int -> int = fun s x y -> s + x * y
+
+[<EntryPoint>]
+let main _ =
+    printfn "RESULT=%d" (foldMixed (mkFolder ()) 0 [| 1; 2; 3 |])
+    0
+"""
+        |> withStdOutContains "RESULT=20014"
+
+    // A quotation of the call must be captured verbatim: the optimizer transform does not descend into
+    // quotations, so the reflected call stays `fold2 ...` with no Adapt/Invoke leaked into the tree.
+    [<Fact>]
+    let ``call inside a quotation is not rewritten`` () =
+        runOutput """
+module M
+open Microsoft.FSharp.Quotations
+let inline fold2 ([<InlineIfLambda; OptimizeClosureIfNotInlined>] folder: 'S -> 'a -> 'b -> 'S) (state: 'S) (a: 'a[]) (b: 'b[]) =
+    let mutable s = state
+    for i in 0 .. a.Length - 1 do s <- folder s a.[i] b.[i]
+    s
+
+[<System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)>]
+let mkFolder () : int -> int -> int -> int = fun s x y -> s + x * y
+
+let q : Expr<int> = <@ fold2 (mkFolder ()) 0 [| 1; 2; 3 |] [| 4; 5; 6 |] @>
+
+[<EntryPoint>]
+let main _ =
+    let s = q.ToString()
+    printfn "RESULT=%b" (s.Contains "fold2" && not (s.Contains "Adapt"))
+    0
+"""
+        |> withStdOutContains "RESULT=true"
 
     // Cross-assembly: the optimization crosses the assembly boundary into a consumer pinned to an old
     // language version, with no error and no leftover per-element InvokeFast dispatch.
