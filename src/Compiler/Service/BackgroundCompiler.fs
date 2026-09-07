@@ -416,7 +416,7 @@ type internal BackgroundCompiler
 
     // STATIC ROOT: FSharpLanguageServiceTestable.FSharpChecker.parseFileInProjectCache. Most recently used cache for parsing files.
     let parseFileCache =
-        MruCache<ParseCacheLockToken, _ * SourceTextHash * _, _>(
+        MruCache<ParseCacheLockToken, _ * SourceTextHash * _, GraphNode<FSharpParseFileResults>>(
             parseFileCacheSize,
             areSimilar = AreSimilarForParsing,
             areSame = AreSameForParsing
@@ -455,9 +455,6 @@ type internal BackgroundCompiler
     let tryGetBuilderNode options =
         incrementalBuildersCache.TryGet(AnyCallerThread, options)
 
-    let tryGetBuilder options : Async<IncrementalBuilder option * FSharpDiagnostic[]> option =
-        tryGetBuilderNode options |> Option.map (fun x -> x.GetOrComputeValue())
-
     let tryGetSimilarBuilder options : Async<IncrementalBuilder option * FSharpDiagnostic[]> option =
         incrementalBuildersCache.TryGetSimilar(AnyCallerThread, options)
         |> Option.map (fun x -> x.GetOrComputeValue())
@@ -475,10 +472,18 @@ type internal BackgroundCompiler
                 incrementalBuildersCache.Set(AnyCallerThread, options, getBuilderNode)
                 getBuilderNode)
 
-    let createAndGetBuilder (options, userOpName) =
+    /// Replaces the builder node the caller has observed (if any), unless a concurrent request already did so,
+    /// in which case that node is reused instead of creating a second builder for the same project.
+    let createAndGetBuilder (options, userOpName, observedNode: GraphNode<_> option) =
         async {
             let! ct = Async.CancellationToken
-            let getBuilderNode = createBuilderNode (options, userOpName, ct)
+
+            let getBuilderNode =
+                lock gate (fun () ->
+                    match tryGetBuilderNode options with
+                    | Some node when not (observedNode |> Option.contains node) -> node
+                    | _ -> createBuilderNode (options, userOpName, ct))
+
             return! getBuilderNode.GetOrComputeValue()
         }
 
@@ -486,9 +491,9 @@ type internal BackgroundCompiler
         async {
             use! _holder = Cancellable.UseToken()
 
-            match tryGetBuilder options with
-            | Some getBuilder ->
-                match! getBuilder with
+            match tryGetBuilderNode options with
+            | Some node ->
+                match! node.GetOrComputeValue() with
                 | builderOpt, creationDiags when builderOpt.IsNone || not builderOpt.Value.IsReferencesInvalidated ->
                     return builderOpt, creationDiags
                 | _ ->
@@ -502,8 +507,8 @@ type internal BackgroundCompiler
                             let key = (sourceFile, 0L, options)
                             checkFileInProjectCache.RemoveAnySimilar(ltok, key)))
 
-                    return! createAndGetBuilder (options, userOpName)
-            | _ -> return! createAndGetBuilder (options, userOpName)
+                    return! createAndGetBuilder (options, userOpName, Some node)
+            | None -> return! createAndGetBuilder (options, userOpName, None)
         }
 
     let getSimilarOrCreateBuilder (options, userOpName) =
@@ -573,13 +578,8 @@ type internal BackgroundCompiler
                         Activity.Tags.cache, cache.ToString()
                     |]
 
-            if cache then
-                let hash = sourceText.GetHashCode() |> int64
-
-                match parseCacheLock.AcquireLock(fun ltok -> parseFileCache.TryGet(ltok, (fileName, hash, options))) with
-                | Some res -> return res
-                | None ->
-                    Interlocked.Increment(&actualParseFileCount) |> ignore
+            let parse suggestNamesForErrors =
+                async {
                     let! ct = Async.CancellationToken
 
                     let parseDiagnostics, parseTree, anyErrors =
@@ -594,27 +594,26 @@ type internal BackgroundCompiler
                             ct
                         )
 
-                    let res =
-                        FSharpParseFileResults(parseDiagnostics, parseTree, anyErrors, options.SourceFiles)
+                    return FSharpParseFileResults(parseDiagnostics, parseTree, anyErrors, options.SourceFiles)
+                }
 
-                    parseCacheLock.AcquireLock(fun ltok -> parseFileCache.Set(ltok, (fileName, hash, options), res))
-                    return res
+            if cache then
+                let key = (fileName, sourceText.GetHashCode() |> int64, options)
+
+                // The node is created under the lock so concurrent requests for the same source share one parse.
+                let parseNode =
+                    parseCacheLock.AcquireLock(fun ltok ->
+                        match parseFileCache.TryGet(ltok, key) with
+                        | Some node -> node
+                        | None ->
+                            Interlocked.Increment(&actualParseFileCount) |> ignore
+                            let node = GraphNode(parse suggestNamesForErrors)
+                            parseFileCache.Set(ltok, key, node)
+                            node)
+
+                return! parseNode.GetOrComputeValue()
             else
-                let! ct = Async.CancellationToken
-
-                let parseDiagnostics, parseTree, anyErrors =
-                    ParseAndCheckFile.parseFile (
-                        sourceText,
-                        fileName,
-                        options,
-                        userOpName,
-                        false,
-                        flatErrors,
-                        captureIdentifiersWhenParsing,
-                        ct
-                    )
-
-                return FSharpParseFileResults(parseDiagnostics, parseTree, anyErrors, options.SourceFiles)
+                return! parse false
         }
 
     /// Fetch the parse information from the background compiler (which checks w.r.t. the FileSystem API)
