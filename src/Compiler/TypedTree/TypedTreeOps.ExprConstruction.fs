@@ -1267,8 +1267,6 @@ module internal TypeTesters =
                 | _ -> getErasedTypes g domainTy false @ getErasedTypes g rangeTy false
             | TType_measure _ -> [ ty ]
 
-    /// Determine the underlying type of an enum type (normally int32).
-    /// ValueNone while the representation of an F# enum is still being established.
     let tryUnderlyingTypeOfEnumTy (g: TcGlobals) ty =
         assert (isEnumTy g ty)
 
@@ -1300,7 +1298,6 @@ module internal TypeTesters =
             | Some rf -> ValueSome rf.FormalType
             | None -> ValueNone
 
-    /// Determine the underlying type of an enum type (normally int32)
     let underlyingTypeOfEnumTy (g: TcGlobals) ty =
         match tryUnderlyingTypeOfEnumTy g ty with
         | ValueSome underlyingTy -> underlyingTy
