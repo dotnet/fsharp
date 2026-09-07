@@ -807,25 +807,24 @@ type internal FSharpNavigation(metadataAsSource: FSharpMetadataAsSourceService, 
             ThreadHelper.JoinableTaskFactory.Run(
                 SR.NavigatingTo(),
                 (fun _progress dialogCancellationToken ->
-                    task {
-                        use linked =
-                            CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, dialogCancellationToken)
+                    let linked =
+                        CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, dialogCancellationToken)
 
-                        return!
-                            cancellableTask {
-                                match! gtd.FindDefinitionAsync(initialDoc, position) with
-                                | ValueSome(FSharpGoToDefinitionResult.NavigableItem(navItem), _) ->
-                                    gtd.NavigateToItem(navItem, linked.Token) |> ignore
-                                    navigated.Value <- true
-                                | ValueSome(FSharpGoToDefinitionResult.ExternalAssembly(targetSymbolUse, metadataReferences), _) ->
-                                    gtd.NavigateToExternalDeclaration(targetSymbolUse, metadataReferences, linked.Token)
-                                    |> ignore
+                    cancellableTask {
+                        use _ = linked
 
-                                    navigated.Value <- true
-                                | _ -> ()
-                            }
-                            |> CancellableTask.start linked.Token
-                    }),
+                        match! gtd.FindDefinitionAsync(initialDoc, position) with
+                        | ValueSome(FSharpGoToDefinitionResult.NavigableItem(navItem), _) ->
+                            gtd.NavigateToItem(navItem, linked.Token) |> ignore
+                            navigated.Value <- true
+                        | ValueSome(FSharpGoToDefinitionResult.ExternalAssembly(targetSymbolUse, metadataReferences), _) ->
+                            gtd.NavigateToExternalDeclaration(targetSymbolUse, metadataReferences, linked.Token)
+                            |> ignore
+
+                            navigated.Value <- true
+                        | _ -> ()
+                    }
+                    |> CancellableTask.start linked.Token),
                 TimeSpan.FromSeconds 1
             )
 
