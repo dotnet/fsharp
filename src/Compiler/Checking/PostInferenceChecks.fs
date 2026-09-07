@@ -702,7 +702,7 @@ let CheckTypeAux permitByRefLike (cenv: cenv) env m ty onInnerByrefError =
                         if isByrefTyconRef cenv.g tcref2 then
                             errorR(Error(FSComp.SR.chkNoByrefsOfByrefs(NicePrint.minimalRichTextOfType cenv.denv ty), m))
                 CheckTypesDeep cenv (visitType, None, None, None, None) cenv.g env tinst
-            
+
             // Check for interfaces with unimplemented static abstract members used as type arguments
             // This only applies when the type parameter has an interface constraint - using interfaces
             // with unconstrained generics (like List<ITest> or Dictionary<K, ITest>) is fine.
@@ -1399,7 +1399,7 @@ and CheckApplication cenv env expr (f, tyargs, argsl, m) ctxt =
     let env = { env with isInAppExpr = true }
 
     CheckTypeInstNoByrefs cenv env m tyargs
-    
+
     // Check for interfaces with unimplemented static abstract members used as type arguments
     // See: https://github.com/dotnet/fsharp/issues/19184
     if not tyargs.IsEmpty then
@@ -1412,7 +1412,7 @@ and CheckApplication cenv env expr (f, tyargs, argsl, m) ctxt =
                     (typars, tyargs) ||> List.iter2 (CheckInterfaceTypeArgForUnimplementedStaticAbstractMembers cenv m)
             | _ -> ()
         | _ -> ()
-    
+
     CheckExprNoByrefs cenv env f
 
     let hasReceiver =
@@ -2480,16 +2480,16 @@ let CheckEntityDefn cenv env (tycon: Entity) =
                     else
                         ValueNone
 
-                let errorIfNotStringTy m ty callerInfo = 
+                let errorIfNotStringTy m ty callerInfo =
                     if not (typeEquiv g g.string_ty ty) then
                         errorR(Error(FSComp.SR.tcCallerInfoWrongType(RichText.mkText (callerInfo |> string), RichText.mkText "string", NicePrint.minimalRichTextOfType cenv.denv ty), m))
-                        
+
                 let errorIfNotOptional tyToCompare desiredTyName m ty callerInfo =
 
                     match tryDestOptionalTy g ty with
                     | ValueSome t when typeEquiv g tyToCompare t -> ()
                     | ValueSome innerTy -> errorR(Error(FSComp.SR.tcCallerInfoWrongType(RichText.mkText (callerInfo |> string), RichText.mkText desiredTyName, NicePrint.minimalRichTextOfType cenv.denv innerTy), m))
-                    | ValueNone -> errorR(Error(FSComp.SR.tcCallerInfoWrongType(RichText.mkText (callerInfo |> string), RichText.mkText desiredTyName, NicePrint.minimalRichTextOfType cenv.denv ty), m))                   
+                    | ValueNone -> errorR(Error(FSComp.SR.tcCallerInfoWrongType(RichText.mkText (callerInfo |> string), RichText.mkText desiredTyName, NicePrint.minimalRichTextOfType cenv.denv ty), m))
 
                 minfo.GetParamDatas(cenv.amap, m, minfo.FormalMethodInst)
                 |> List.iterSquared (fun (ParamData(_, isInArg, _, optArgInfo, callerInfo, nameOpt, _, ty)) ->
@@ -2725,8 +2725,8 @@ let CheckEntityDefns cenv env tycons =
 /// parameter, which differentiates the IL signatures.
 let CheckForDuplicateExtensionMemberNames (cenv: cenv) (vals: Val seq) =
     if cenv.reportErrors then
-        let staticExtensionMembers = 
-            vals 
+        let staticExtensionMembers =
+            vals
             |> Seq.filter (fun v ->
                 v.IsExtensionMember
                 && v.IsMember
@@ -2739,14 +2739,14 @@ let CheckForDuplicateExtensionMemberNames (cenv: cenv) (vals: Val seq) =
             let groupedByLogicalName =
                 staticExtensionMembers
                 |> List.groupBy (fun v -> v.MemberApparentEntity.LogicalName)
-            
+
             for (logicalName, members) in groupedByLogicalName do
                 // Check if members extend types from different namespaces/assemblies
-                let distinctNamespacePaths = 
-                    members 
+                let distinctNamespacePaths =
+                    members
                     |> List.map (fun v -> v.MemberApparentEntity.CompilationPath.MangledPath)
                     |> List.distinct
-                
+
                 if distinctNamespacePaths.Length > 1 then
                     // Found extensions for types with same LogicalName but different fully qualified names
                     // Report error on the second (and subsequent) extensions
