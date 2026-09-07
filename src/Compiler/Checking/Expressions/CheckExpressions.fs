@@ -11315,8 +11315,6 @@ and TcAndBuildFixedExpr (cenv: cenv) env (overallPatTy, fixedExpr, overallExprTy
 
         match getPinnableReferenceMInfo with
         | Some mInfo ->
-            checkLanguageFeatureAndRecover g.langVersion LanguageFeature.ExtendedFixedBindings mBinding
-
             let mInst = FreshenMethInfo g env.TraitContext mBinding mInfo
             let pinnableReference, actualRetTy = BuildPossiblyConditionalMethodCall cenv env NeverMutates mBinding false mInfo NormalValUse mInst [ fixedExpr ] [] None
 
@@ -11352,23 +11350,6 @@ and TcAndBuildFixedExpr (cenv: cenv) env (overallPatTy, fixedExpr, overallExprTy
 
     match overallExprTy with
     | ty when isByrefTy g ty ->
-        // Feature ExtendedFixedBindings allows *any* byref to be used with fixed bindings, whereas the old logic only allowed a specific
-        // subset. This preserves the old logic when the feature is turned off.
-        if not (g.langVersion.SupportsFeature LanguageFeature.ExtendedFixedBindings) then
-            let okByRef =
-                match stripDebugPoints (stripExpr fixedExpr) with
-                | Expr.Op (op, tyargs, args, _) ->
-                    match op, tyargs, args with
-                    | TOp.ValFieldGetAddr (rfref, _), _, [_] -> not rfref.Tycon.IsStructOrEnumTycon
-                    | TOp.ILAsm ([ I_ldflda fspec], _), _, _ -> fspec.DeclaringType.Boxity = ILBoxity.AsObject
-                    | TOp.ILAsm ([ I_ldelema _], _), _, _ -> true
-                    | TOp.RefAddrGet _, _, _ -> true
-                    | _ -> false
-                | _ -> false
-
-            if not okByRef then
-                errorR (languageFeatureError g.langVersion LanguageFeature.ExtendedFixedBindings mBinding)
-
         let elemTy = destByrefTy g overallExprTy
         UnifyTypes cenv env mBinding (mkNativePtrTy g elemTy) overallPatTy
         mkCompGenLetIn mBinding "pinnedByref" ty fixedExpr (fun (v, ve) ->
