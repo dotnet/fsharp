@@ -1,4 +1,4 @@
-// #Regression #Conformance #ObjectOrientedTypes #TypeExtensions 
+// #Regression #Conformance #ObjectOrientedTypes #TypeExtensions
 
 
 // Verify error for invalid type extensions
@@ -9,7 +9,7 @@ type Foo =
     end
 
 // You can't add 'val' fields in type extension
-type Foo with 
+type Foo with
     let m_field : string = ""
 
 

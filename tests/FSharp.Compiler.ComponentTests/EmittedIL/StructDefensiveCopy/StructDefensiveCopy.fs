@@ -19,7 +19,7 @@ let doWork(kvp1:inref<KeyValuePair<int,int>>) =
     |> shouldSucceed
     |> verifyIL expectedIl
 
-#if NETSTANDARD 
+#if NETSTANDARD
 // KeyValuePair defined as a readonly struct (in C#)
 [<Fact>]
 let ``Defensive copy can be skipped on read-only structs``() =
@@ -37,7 +37,7 @@ let ``Defensive copy can be skipped on read-only structs``() =
 
 } """]
 
-#else 
+#else
 // KeyValuePair just a regular struct. Notice the "ldobj" instruction
 [<Fact>]
 let ``Non readonly struct needs a defensive copy``() =
@@ -79,7 +79,7 @@ let doWork(dt:inref<DateTime>) =
     |> shouldSucceed
     |> verifyIL expectedIl
 
-#if NETSTANDARD 
+#if NETSTANDARD
 // DateTime defined as a readonly struct (in C#)
 [<Fact>]
 let ``Defensive copy can be skipped for extension methods on read-only structs``() =
@@ -95,7 +95,7 @@ let ``Defensive copy can be skipped for extension methods on read-only structs``
         IL_000c:  ret
       } """]
 
-#else 
+#else
 // DateTime just a regular struct. Notice the "ldobj" instruction
 [<Fact>]
 let ``Non readonly struct needs a defensive copy when its extension method is called``() =
@@ -120,11 +120,11 @@ let ``Non readonly struct needs a defensive copy when its extension method is ca
 #endif
 
 
-#if NETSTANDARD 
+#if NETSTANDARD
 [<Fact>]
 #endif
 let ``Csharp extension method on a readonly struct does not need defensive copy``() =
-    let csLib = 
+    let csLib =
         CSharp """
 using System;
 public static class DateTimeExtensionMethod

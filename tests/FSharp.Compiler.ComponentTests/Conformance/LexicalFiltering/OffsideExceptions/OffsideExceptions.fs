@@ -35,7 +35,7 @@ module OffsideExceptions =
     [<Theory; FileInlineData("RelaxWhitespace2.fs")>]
     let RelaxWhitespace2 compilation =
         compilation
-        |> getCompilation 
+        |> getCompilation
         |> asFsx
         |> withLangVersion80
         |> withOptions ["--nowarn:25"; "--nowarn:3886"] // Incomplete pattern matches on this expression.
@@ -46,7 +46,7 @@ module OffsideExceptions =
     [<Theory; FileInlineData("RelaxWhitespace2.fs")>]
     let RelaxWhitespace2_Warning25 compilation =
         compilation
-        |> getCompilation 
+        |> getCompilation
         |> asFsx
         |> withLangVersion80
         |> withOptions ["--nowarn:3886"]

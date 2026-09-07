@@ -33,14 +33,14 @@ module MefHelpers =
         let loadedImports = resolvedImports.Select(fun p -> Assembly.LoadFrom(p)).ToList()
 
         let result = loadedImports.ToDictionary(fun k -> Path.GetFileNameWithoutExtension(k.Location))
-        result.Values 
+        result.Values
         |> Seq.append [|self|]
         |> Seq.append MefHostServices.DefaultAssemblies
         |> Array.ofSeq
 
     let createExportProvider() =
         let resolver = Resolver.DefaultInstance
-        let catalog = 
+        let catalog =
             let asms = getAssemblies()
             let partDiscovery = PartDiscovery.Combine(new AttributedPartDiscoveryV1(resolver), new AttributedPartDiscovery(resolver, isNonPublicSupported = true));
             let parts = partDiscovery.CreatePartsAsync(asms).Result
@@ -149,7 +149,7 @@ type TestHostWorkspaceServices(hostServices: HostServices, workspace: Workspace)
             Lazy<_, _>((fun () -> x.Value.CreateService(this)), x.Metadata)
         )
 
-    let otherServices1 = 
+    let otherServices1 =
         Seq.append factories1 services1
 
     let otherServicesMap1 =
@@ -205,7 +205,7 @@ type RoslynTestHelpers private () =
         let docInfo =
             DocumentInfo.Create(
                 docId,
-                docFilePath, 
+                docFilePath,
                 filePath=docFilePath,
                 loader = new FileTextLoader(docFilePath, Encoding.Default),
                 sourceCodeKind= if isScript then SourceCodeKind.Script else SourceCodeKind.Regular)
@@ -214,8 +214,8 @@ type RoslynTestHelpers private () =
         ProjectInfo.Create(
             projId,
             VersionStamp.Create(DateTime.UtcNow),
-            projName, 
-            "test.dll", 
+            projName,
+            "test.dll",
             LanguageNames.FSharp,
             documents = [docInfo],
             filePath = projFilePath

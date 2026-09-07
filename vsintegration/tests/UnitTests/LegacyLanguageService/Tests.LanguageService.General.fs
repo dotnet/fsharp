@@ -21,14 +21,14 @@ open UnitTests.TestLib.Utils
 open UnitTests.TestLib.LanguageService
 open UnitTests.TestLib.ProjectSystem
 
-module IFSharpSource_DEPRECATED = 
+module IFSharpSource_DEPRECATED =
 
     [<Fact>]
-    let MultipleSourceIsDirtyCallsChangeTimestamps() = 
+    let MultipleSourceIsDirtyCallsChangeTimestamps() =
         let recolorizeWholeFile() = ()
         let recolorizeLine (_line:int) = ()
         let isClosed() = false
-        let depFileChangeNotify = 
+        let depFileChangeNotify =
             { new IDependencyFileChangeNotify_DEPRECATED with
                 member this.DependencyFileCreated _projectSite = ()
                 member this.DependencyFileChanged _filename = () }
@@ -40,19 +40,19 @@ module IFSharpSource_DEPRECATED =
         let secondChangeCount = source.ChangeCount
         let secondDirtyTime = source.DirtyTime
         let lastTickCount =  System.Environment.TickCount
-            
+
         Assert.Equal(originalChangeCount + 1, secondChangeCount)
         Assert.NotEqual(secondDirtyTime, originalDirtyTime)
-            
+
         // Here's the test. NeedsVisualRefresh is true now, we call RecordChangeToView() and it should cause a new changeCount and dirty time.
-        while System.Environment.TickCount = lastTickCount do 
+        while System.Environment.TickCount = lastTickCount do
             System.Threading.Thread.Sleep 10 // Sleep a little to avoid grabbing the same 'Now'
         source.RecordChangeToView()
         let thirdChangeCount = source.ChangeCount
         let thirdDirtyTime = source.DirtyTime
-            
+
         Assert.Equal(secondChangeCount + 1, thirdChangeCount)
-        Assert.NotEqual(thirdDirtyTime, secondDirtyTime)            
+        Assert.NotEqual(thirdDirtyTime, secondDirtyTime)
 
 
 
@@ -62,7 +62,7 @@ type UsingMSBuild() =
 
     let stopWatch = new System.Diagnostics.Stopwatch()
     let ResetStopWatch() = stopWatch.Reset(); stopWatch.Start()
-    let time1 op a message = 
+    let time1 op a message =
         ResetStopWatch()
         let result = op a
         printf "%s %d ms\n" message stopWatch.ElapsedMilliseconds
@@ -103,12 +103,12 @@ type UsingMSBuild() =
                    ) 0
 
     [<Fact>]
-    member public this.``ReconcileErrors.Test1``() = 
+    member public this.``ReconcileErrors.Test1``() =
         let (_solution, project, file) = this.CreateSingleFileProject(["erroneous"])
         Build project |> ignore
         TakeCoffeeBreak(this.VS)  // Error list is populated on idle
         ()
- 
+
     /// FEATURE: (Project System only) Adding a file outside the project directory creates a link
     [<Fact>]
     member public this.``ProjectSystem.FilesOutsideProjectDirectoryBecomeLinkedFiles``() =
@@ -124,27 +124,27 @@ type UsingMSBuild() =
             Save(project)
             let projFileText = System.IO.File.ReadAllText(ProjectFile(project))
             AssertMatchesRegex '<' @"<ItemGroup>\s*<Compile Include=""..\\link.fs"">\s*<Link>link.fs</Link>" projFileText
-                                  
+
     // This was a bug in ReplaceAllText (subsequent calls to SetMarker would fail)
     [<Fact>]
     member public this.``Salsa.ReplaceAllText``() =
-        let code = 
-                ["//"; 
+        let code =
+                ["//";
                  "let x = \"A String Literal\""]
         let (_solution, _project, file) = this.CreateSingleFileProject(code)
-        
+
         // Sanity check
         MoveCursorToStartOfMarker(file,"//")
         AssertEqual(TokenType.Comment, GetTokenTypeAtCursor(file))
         MoveCursorToEndOfMarker(file,"let x = ")
         AssertEqual(TokenType.String, GetTokenTypeAtCursor(file))
-        
+
         // Replace file contents
         ReplaceFileInMemory file
                             [
                               "let x = 42 // comment!";
                               "let y = \"A String Literal\""]
-        
+
         // Verify able to move cursor and get correct results
         MoveCursorToEndOfMarker(file, "comment")
         AssertEqual(TokenType.Comment, GetTokenTypeAtCursor(file))   // Not a string, as was originally
@@ -152,8 +152,8 @@ type UsingMSBuild() =
         AssertEqual(TokenType.String, GetTokenTypeAtCursor(file))   // Able to find new marker
         MoveCursorToStartOfMarker(file, "let y = ")
         AssertEqual(TokenType.Keyword, GetTokenTypeAtCursor(file))  // Check MoveCursorToStartOfMarker
-        
-    
+
+
 
     // Make sure that possible overloads (and other related errors) are shown in the error list
     [<Fact>]
@@ -172,14 +172,14 @@ type UsingMSBuild() =
                                       ["let p = new N.M.LineChart()"
                                        "p.Plot(sin, 0., 0.)"])
         let build = time1 Build project "Time to build project"
-        
-        Assert.True(not build.BuildSucceeded, "Expected build to fail")              
-        
-        if SupportsOutputWindowPane(this.VS) then 
-            Helper.AssertListContainsInOrder(GetOutputWindowPaneLines(this.VS), 
+
+        Assert.True(not build.BuildSucceeded, "Expected build to fail")
+
+        if SupportsOutputWindowPane(this.VS) then
+            Helper.AssertListContainsInOrder(GetOutputWindowPaneLines(this.VS),
                                       ["error FS0041: A unique overload for method 'Plot' could not be determined based on type information prior to this program point. A type annotation may be needed. Candidates: member N.M.LineChart.Plot : f:(float -> float) * xmin:float * xmax:float -> unit, member N.M.LineChart.Plot : f:System.Func<double,double> * xmin:float * xmax:float -> unit"])
 
 // Context project system
-type UsingProjectSystem() = 
+type UsingProjectSystem() =
     inherit UsingMSBuild(VsOpts = LanguageServiceExtension.ProjectSystemTestFlavour)
 

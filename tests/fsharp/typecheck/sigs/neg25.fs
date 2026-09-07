@@ -1,8 +1,8 @@
 module Test
 
-module NegativeTests = 
+module NegativeTests =
 
-    module Test1 = 
+    module Test1 =
         type ITest =
             abstract member Meth1: string -> string
 
@@ -12,14 +12,14 @@ module NegativeTests =
 
         [<AbstractClass>]
         type Partial() =  // This should give an error  - Meth1 is not implemented
-            interface ITestSub with 
+            interface ITestSub with
                 override this.Meth2 x = x + 1
 
-        type ErroneousComplete () =   
+        type ErroneousComplete () =
             inherit Partial()
 
 
-    module Test2 = 
+    module Test2 =
         type ITest =
             abstract member Meth1: string -> string
 
@@ -35,10 +35,10 @@ module NegativeTests =
         type ErroneousComplete () =
             inherit Partial()
             abstract Meth1 : string -> string
-            override x.Meth1(s) = s                   
+            override x.Meth1(s) = s
 
 
-module NegativeTestsActualRepro1 = 
+module NegativeTestsActualRepro1 =
 
     open System
     [<NoEquality;NoComparison>]
@@ -76,7 +76,7 @@ module NegativeTestsActualRepro1 =
         let foo =
             TestVariableLevelEnumeratorFactory Seq.empty // Surely I can't do this at compile time?
 
-module NegativeTestsActualRepro3 = 
+module NegativeTestsActualRepro3 =
 
     open System
     type IThing =
@@ -88,9 +88,9 @@ module NegativeTestsActualRepro3 =
             member x.Action = [("bites", fun () -> printfn "ouch")]
 
     type MyDog() =   // expect an error here - Name not implemented
-        inherit Dog() 
+        inherit Dog()
 
-module AnotherNegativeTest = 
+module AnotherNegativeTest =
     type ITest =
         abstract member Meth1: int -> int
 
@@ -112,8 +112,8 @@ module AnotherNegativeTest =
     module Throwaway =
         let foo = OkComplete()
 
-module MissingInterfaceMemberTests = 
-        module Test0 = 
+module MissingInterfaceMemberTests =
+        module Test0 =
             type ITest =
                 abstract member Meth1: string -> string
 
@@ -123,7 +123,7 @@ module MissingInterfaceMemberTests =
 
             [<AbstractClass>]
             type Partial() =
-                interface ITestSub 
+                interface ITestSub
 
             type OkComplete () =
                 inherit Partial()
@@ -134,31 +134,7 @@ module MissingInterfaceMemberTests =
 
             module Throwaway =
                 let foo = OkComplete()
-        module Test1 = 
-            type ITest =
-                abstract member Meth1: string -> string
-
-            type ITestSub =
-                inherit ITest
-                abstract member Meth2: int -> int
-
-            [<AbstractClass>]
-            type Partial() =
-                interface ITestSub with
-                    override this.Meth2 x = x + 1
-
-            type OkComplete () =
-                inherit Partial()
-                interface ITest with
-                    override this.Meth1 x = x + "1"
-                interface ITestSub with
-                    override this.Meth2 x = x + 1
-
-            module Throwaway =
-                let foo = OkComplete()
-
-
-        module Test3 = 
+        module Test1 =
             type ITest =
                 abstract member Meth1: string -> string
 
@@ -170,6 +146,30 @@ module MissingInterfaceMemberTests =
             type Partial() =
                 interface ITestSub with
                     override this.Meth2 x = x + 1
+
+            type OkComplete () =
+                inherit Partial()
+                interface ITest with
+                    override this.Meth1 x = x + "1"
+                interface ITestSub with
+                    override this.Meth2 x = x + 1
+
+            module Throwaway =
+                let foo = OkComplete()
+
+
+        module Test3 =
+            type ITest =
+                abstract member Meth1: string -> string
+
+            type ITestSub =
+                inherit ITest
+                abstract member Meth2: int -> int
+
+            [<AbstractClass>]
+            type Partial() =
+                interface ITestSub with
+                    override this.Meth2 x = x + 1
             type OkComplete () =
                 inherit Partial()
                 interface ITest with
@@ -180,11 +180,11 @@ module MissingInterfaceMemberTests =
 
 
 
-    module NegativeTestsActualRepro2 = 
-        type IEvent<'del,'a> = 
+    module NegativeTestsActualRepro2 =
+        type IEvent<'del,'a> =
             abstract Add : ('a -> unit) -> unit
             abstract Add2 : ('a -> unit) -> unit
-            
+
         [<AbstractClass>]
         type wire<'a>() =
             abstract Send   : 'a -> unit
@@ -194,13 +194,13 @@ module MissingInterfaceMemberTests =
 
         let createWire() =
             let listeners = ref [] in
-            {new wire<'a>() with   
-              member obj.Send(x)   = List.iter (fun f -> f x) !listeners   
+            {new wire<'a>() with
+              member obj.Send(x)   = List.iter (fun f -> f x) !listeners
               member obj.Listen(f) = listeners := f :: !listeners
             }
 
 
-    module NegativeTestsActualRepro4 = 
+    module NegativeTestsActualRepro4 =
 
         open System
         type IThing =
@@ -208,8 +208,8 @@ module MissingInterfaceMemberTests =
             abstract Action: List< string * (unit -> unit) >
         [<AbstractClass>]
         type Dog() =                      // Expect an error here - Name not implemented
-            interface IThing with 
+            interface IThing with
                 member x.Action = [("bites", fun () -> printfn "ouch")]
 
-        let MyDog() =    { new Dog() with member x.ToString() = "2" }   
+        let MyDog() =    { new Dog() with member x.ToString() = "2" }
 

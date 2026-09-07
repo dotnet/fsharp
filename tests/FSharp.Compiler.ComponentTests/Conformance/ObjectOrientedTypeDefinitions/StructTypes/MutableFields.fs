@@ -1,13 +1,13 @@
-// #Conformance #ObjectOrientedTypes #Structs 
+// #Conformance #ObjectOrientedTypes #Structs
 
 namespace NS
-  module M = 
+  module M =
     type S1 (i : int) =
       struct
         [<DefaultValue>]
         val mutable m : int
       end
-      
+
     type S2 =
       struct
         val mutable m : int
@@ -18,10 +18,10 @@ namespace NS
         member x.M = i
       end
 
-  module Test = 
+  module Test =
     open M
     let mutable res = true
-    
+
     let mutable a = new S1(0)
     let b = S2()
     let c = S3()

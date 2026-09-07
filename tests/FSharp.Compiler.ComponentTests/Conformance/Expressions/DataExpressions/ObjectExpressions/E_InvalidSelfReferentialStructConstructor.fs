@@ -1,4 +1,4 @@
-// #Regression #Conformance #DataExpressions #ObjectConstructors 
+// #Regression #Conformance #DataExpressions #ObjectConstructors
 // FSB 6350, Compiler crash on invalid code: Crash by invalid type definition
 
 //<Expects status="error" span="(19,39)" id="FS0658">Structs may only bind a 'this' parameter at member declarations$</Expects>

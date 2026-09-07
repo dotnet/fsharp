@@ -24,12 +24,12 @@ type ArrayProperties() =
         let a = runAndCheckIfAnyError (fun () -> Array.blit source sourceIndex target1 targetIndex count)
         let b = runAndCheckIfAnyError (fun () -> Array.Copy(source, sourceIndex, target2, targetIndex, count))
         a = b && target1 = target2
- 
+
     [<Fact>]
     member this.``Array.distinctBy is stable`` () =
         Check.QuickThrowOnFailure this.distinctByStable<int>
         Check.QuickThrowOnFailure this.distinctByStable<string>
- 
+
     [<Fact>]
     member this.``Array.blit works like Array.Copy`` () =
         Check.QuickThrowOnFailure this.blitWorksLikeCopy<int>

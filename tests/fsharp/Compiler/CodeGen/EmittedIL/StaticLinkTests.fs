@@ -30,7 +30,7 @@ printfn "%A" y
                 """
             Compilation.Create(source, Exe, cmplRefs=[CompilationReference.CreateFSharp(module1, staticLink=true)])
 
-        CompilerAssert.Execute(module2, 
+        CompilerAssert.Execute(module2,
             beforeExecute=(fun _ deps ->
                 deps
                 |> List.iter (fun dep -> try File.Delete dep with | _ -> ())))
@@ -55,7 +55,7 @@ printfn "%A" y
             Compilation.Create(source, Exe, cmplRefs=[CompilationReference.CreateFSharp module1])
 
         Assert.Throws<TargetInvocationException>(fun _ ->
-            CompilerAssert.Execute(module2, 
+            CompilerAssert.Execute(module2,
                 beforeExecute=(fun _ deps ->
                     deps
                     |> List.iter (fun dep -> try File.Delete dep with | _ -> ())))) |> ignore

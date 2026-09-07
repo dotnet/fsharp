@@ -15,7 +15,7 @@ let sortedWords =
 // OrderBy - Simple 2
 let sortedWords2 =
     query {
-        for w in words do 
+        for w in words do
         sortBy (w.Length)
     } |> Seq.toList
 

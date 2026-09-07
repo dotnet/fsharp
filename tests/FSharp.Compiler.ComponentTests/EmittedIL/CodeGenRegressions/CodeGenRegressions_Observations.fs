@@ -22,7 +22,7 @@ let main _ = 0
         |> withPlatform ExecutionPlatform.X64
         |> compile
         |> shouldSucceed
-        |> withPeReader (fun rdr -> 
+        |> withPeReader (fun rdr ->
             let characteristics = rdr.PEHeaders.CoffHeader.Characteristics
             if not (characteristics.HasFlag(System.Reflection.PortableExecutable.Characteristics.LargeAddressAware)) then
                 failwith $"x64 binary should have LargeAddressAware flag. Found: {characteristics}"

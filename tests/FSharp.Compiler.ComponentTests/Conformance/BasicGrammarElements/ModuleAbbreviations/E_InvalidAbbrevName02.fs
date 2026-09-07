@@ -1,4 +1,4 @@
-// #Regression #Conformance #DeclarationElements #Modules 
+// #Regression #Conformance #DeclarationElements #Modules
 // Verify error when using a dot in the name
 
 

@@ -4,6 +4,6 @@
 //<Expects status="error" span="(7,12-7,13)" id="FS0583">Unmatched '\('$</Expects>
 let f<'T> (x : Lazy<'T>) = () // this version works
 
-let f1<'T> (x : 'T lazy) = () // Compiler doesn’t allow this notation  
+let f1<'T> (x : 'T lazy) = () // Compiler doesn’t allow this notation
 
 exit 1

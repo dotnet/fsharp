@@ -1,8 +1,8 @@
-// #Conformance #DeclarationElements #Import 
+// #Conformance #DeclarationElements #Import
 
 
 module TestModule1 =
-    
+
     type DiscUnion =
          | A of int
          | B of string
@@ -14,16 +14,16 @@ open TestModule1
 let mutable successes = 0
 
 let a = A 1
-let _ = 
-    match a with 
+let _ =
+    match a with
     | A _ -> successes <- successes + 1
              ()
     | _ -> failwith "error"
 
 let b = B "foo"
-let _ = 
+let _ =
     match b with
-    | B _ -> successes <- successes + 1 
+    | B _ -> successes <- successes + 1
              ()
     | _ -> failwith "error"
 
@@ -37,5 +37,5 @@ let _ =
 // Everything worked out ok
 if successes = 3 then
     ()
-else 
+else
     failwith "Failed: 1"

@@ -1,4 +1,4 @@
-// #Regression #NoMT #CompilerOptions 
+// #Regression #NoMT #CompilerOptions
 // Regression test for FSHARP1.0:3508
 // Note: the code here has nothing to do with the
 // test itself. Any F# code would pretty much do.

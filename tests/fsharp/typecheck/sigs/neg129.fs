@@ -5,14 +5,14 @@ module Neg129
 // This removes ^output as a type selector for the witness, but continues to pass a dummy ^output
 //
 // This is sufficient to make nearly all resolutions go through except when we instantiate by input type alone
-module Negative_SelectOverloadedWitnessBasedOnReturnTypeByPassingDummyArgumentNoOutputSelector = 
+module Negative_SelectOverloadedWitnessBasedOnReturnTypeByPassingDummyArgumentNoOutputSelector =
     open System
     open System.Numerics
     let _uint8max = bigint (uint32 Byte.MaxValue)
     let _uint16max = bigint (uint32 UInt16.MaxValue)
     let _uint32max = bigint UInt32.MaxValue
     let _uint64max = bigint UInt64.MaxValue
-    type witnesses = 
+    type witnesses =
       static member inline convert_witness (x : bigint, _output : int32) = int (uint32 (x &&& _uint32max))
       static member inline convert_witness (x : bigint, _output : int64) = int64 (uint64 (x &&& _uint64max))
       static member inline convert_witness (x : bigint, _output : bigint) = x
@@ -61,7 +61,7 @@ module Negative_SelectOverloadedWitnessBasedOnReturnTypeByPassingDummyArgumentNo
     let f10 : _ -> uint64 = convert
     let f11 : _ -> float32 = convert
     let f12 : _ -> decimal = convert
-    let f13 : _ -> Complex = convert 
+    let f13 : _ -> Complex = convert
 
     // This gives an error, because all selector types are known and overload resolution kicks in
     let inline inst (num: bigint) : ^output = convert num

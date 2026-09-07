@@ -1,4 +1,4 @@
-// #Regression #Conformance #DeclarationElements #MemberDefinitions #MethodsAndProperties 
+// #Regression #Conformance #DeclarationElements #MemberDefinitions #MethodsAndProperties
 // Regression test for FSHARP1.0:1407 (Poor error message when arguments do not match signature of overloaded operator. Also incorrect span.)
 
 

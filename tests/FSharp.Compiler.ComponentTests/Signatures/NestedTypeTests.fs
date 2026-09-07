@@ -92,7 +92,7 @@ type ImmutableArrayViaBuilder<'T>(builder: ImmutableArray<'T>.Builder) = class e
 
     let signature = printSignatures (Fs impl)
 
-    Fsi signature    
+    Fsi signature
     |> withAdditionalSourceFile (FsSource impl)
     |> compile
     |> shouldSucceed

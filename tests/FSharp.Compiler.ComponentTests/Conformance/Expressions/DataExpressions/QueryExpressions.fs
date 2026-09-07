@@ -25,16 +25,16 @@ open FSharp.Test.Compiler
 open System.IO
 
 module QueryExpressions =
-    
+
     let private basePath = Path.Combine(__SOURCE_DIRECTORY__, "QueryExpressions")
-    
+
     /// Create Utils.fs as a library CompilationUnit
     let private getUtilsLib () =
         let source = File.ReadAllText(Path.Combine(basePath, "Utils.fs"))
         FSharp source
         |> withName "Utils"
         |> asLibrary
-    
+
     /// Compile a test that depends on Utils.dll (compile-only, no run)
     let private compileWithUtils (fileName: string) =
         let source = File.ReadAllText(Path.Combine(basePath, fileName))
@@ -56,7 +56,7 @@ module QueryExpressions =
         |> shouldSucceed
         |> ignore
 
-    /// Compile a standalone test as library (compile-only, no run) 
+    /// Compile a standalone test as library (compile-only, no run)
     let private compileAsLibrary (fileName: string) =
         let source = File.ReadAllText(Path.Combine(basePath, fileName))
         FSharp source

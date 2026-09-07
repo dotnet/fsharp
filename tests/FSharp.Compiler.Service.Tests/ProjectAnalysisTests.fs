@@ -115,7 +115,7 @@ module ClearLanguageServiceRootCachesTest =
 
         // A private checker for this test.
         let checker = FSharpChecker.Create()
-    
+
         let test () =
             let _, checkFileAnswer = checker.ParseAndCheckFileInProject(Project1.fileName1, 0, Project1.fileSource1, Project1.options) |> Async.RunSynchronouslyImmediate
 
@@ -752,10 +752,10 @@ let ``Test project2 all uses of all signature symbols`` () =
                ("generic parameter T",
                 [("file1", ((22, 23), (22, 25))); ("file1", ((22, 30), (22, 32)));
                  ("file1", ((22, 45), (22, 47))); ("file1", ((22, 50), (22, 52)))]);
-               ("member get_IsD", []);             
+               ("member get_IsD", []);
                ("member get_IsDU1", []);
                ("member get_IsDU2", []);
-               ("property IsD", []);            
+               ("property IsD", []);
                ("property IsDU1", []);
                ("property IsDU2", []);
                ("DUWithNormalFields", [("file1", ((3, 5), (3, 23)))]);
@@ -5903,7 +5903,7 @@ let checkContentAsScript content =
     | FSharpCheckFileAnswer.Succeeded r -> r
 
 [<Collection(nameof NotThreadSafeResourceCollection)>]
-module ScriptClosureCacheUse =    
+module ScriptClosureCacheUse =
 
     [<FSharp.Test.FactSkipOnSignedBuild>]
     let ``References from #r nuget are included in script project options`` () =

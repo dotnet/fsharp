@@ -1,7 +1,7 @@
 module Foo
 
 { inherit Exception(
-    "This is a " + 
+    "This is a " +
     "multiline " +
     "message"
   )

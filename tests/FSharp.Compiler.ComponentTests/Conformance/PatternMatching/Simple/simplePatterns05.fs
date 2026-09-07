@@ -1,22 +1,22 @@
-// #Conformance #PatternMatching 
+// #Conformance #PatternMatching
 
 
-type Alphabet = 
-    | A         | B         | C         | D         | E 
+type Alphabet =
+    | A         | B         | C         | D         | E
     | F         | G         | H         | I         | J
     | K         | L         | M         | N         | O
     | P         | Q         | R         | S         | T
     | U         | V         | W         | X         | Y
     | Z
-    
+
 let isVowel letter =
     match letter with
     | A    | E  | I
-    | O    | U 
+    | O    | U
         -> true
     | Y -> true     // Only sometimes
     | _ -> false
-    
+
 if isVowel A <> true then exit 1
 if isVowel E <> true then exit 1
 if isVowel I <> true then exit 1

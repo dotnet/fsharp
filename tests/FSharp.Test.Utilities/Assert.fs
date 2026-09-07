@@ -45,20 +45,20 @@ module Assert =
     let shouldBeSameMultilineStringSets expectedText actualText =
         let getLines text =
             use reader = new StringReader(text)
-            Seq.initInfinite (fun _ -> reader.ReadLine()) 
+            Seq.initInfinite (fun _ -> reader.ReadLine())
             |> Seq.takeWhile (not << isNull)
             |> set
-        let actual   = getLines actualText  
+        let actual   = getLines actualText
         let expected = getLines expectedText
-       
-        let unexpectedlyMissing = Set.difference expected actual       
+
+        let unexpectedlyMissing = Set.difference expected actual
         let unexpectedlyPresent = Set.difference actual expected
 
         // If both sets are empty, the surface areas match so allow the test to pass.
         if Set.isEmpty unexpectedlyMissing
           && Set.isEmpty unexpectedlyPresent then
             None
-        else           
+        else
             let msg =
                 let inline newLine (sb : System.Text.StringBuilder) = sb.AppendLine () |> ignore
                 let sb = System.Text.StringBuilder ()

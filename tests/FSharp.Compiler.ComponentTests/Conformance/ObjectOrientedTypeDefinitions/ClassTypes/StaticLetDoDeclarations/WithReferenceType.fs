@@ -5,7 +5,7 @@
 type C() = member x.N() = 1
 
 let n (c:C) = c.N()
- 
+
 type T'() =
   static let c = C()
   let c2 = C()

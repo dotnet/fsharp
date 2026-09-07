@@ -1,4 +1,4 @@
-// #Regression #Conformance #DeclarationElements #Attributes 
+// #Regression #Conformance #DeclarationElements #Attributes
 // Regression test for FSharp1.0:4740
 
 //<Expects status="error" span="(10,3)" id="FS0850">This attribute cannot be used in this version of F#</Expects>

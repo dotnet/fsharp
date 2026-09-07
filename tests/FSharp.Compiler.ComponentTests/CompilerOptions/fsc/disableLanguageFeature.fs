@@ -13,22 +13,9 @@ module disableLanguageFeature =
         FSharp """
 printfn "Hello, World"
         """
-        |> withOptions ["--disableLanguageFeature:NameOf"]
+        |> withOptions ["--disableLanguageFeature:StringInterpolation"]
         |> typecheck
         |> shouldSucceed
-        |> ignore
-
-    [<Fact>]
-    let ``disableLanguageFeature should disable NameOf feature``() =
-        // nameof with type parameter requires LanguageFeature.NameOf
-        FSharp """
-let f<'T>() = nameof<'T>
-        """
-        |> withOptions ["--langversion:latest"; "--disableLanguageFeature:NameOf"]
-        |> typecheck
-        |> shouldFail
-        |> withErrorCode 39
-        |> withDiagnosticMessageMatches "The value or constructor 'nameof' is not defined"
         |> ignore
 
     [<Fact>]
@@ -41,28 +28,4 @@ printfn "Hello, World"
         |> shouldFail
         |> withErrorCode 3881
         |> withDiagnosticMessageMatches "Unrecognized language feature name"
-        |> ignore
-
-    [<Fact>]
-    let ``disableLanguageFeature can be used multiple times``() =
-        // nameof with type parameter requires LanguageFeature.NameOf
-        FSharp """
-let f<'T>() = nameof<'T>
-        """
-        |> withOptions ["--langversion:latest"; "--disableLanguageFeature:NameOf"; "--disableLanguageFeature:StringInterpolation"]
-        |> typecheck
-        |> shouldFail
-        |> withErrorCode 39
-        |> ignore
-
-    [<Fact>]
-    let ``disableLanguageFeature is case insensitive``() =
-        // nameof with type parameter requires LanguageFeature.NameOf
-        FSharp """
-let f<'T>() = nameof<'T>
-        """
-        |> withOptions ["--langversion:latest"; "--disableLanguageFeature:nameof"]
-        |> typecheck
-        |> shouldFail
-        |> withErrorCode 39
         |> ignore

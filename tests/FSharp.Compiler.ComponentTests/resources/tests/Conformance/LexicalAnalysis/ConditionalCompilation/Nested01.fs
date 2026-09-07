@@ -1,4 +1,4 @@
-// #Conformance #LexicalAnalysis 
+// #Conformance #LexicalAnalysis
 
 
 // Verify nested conditional compilation flags
@@ -30,7 +30,7 @@ exit 1
         (*Active Code2*)            let legitCode2 = 2
     #endif
     (*Active Code1*)                let legitCode1 = 1
-    
+
 #endif
 
 #if DEFINED1
@@ -55,5 +55,5 @@ exit 1
                                                     legitCode6
                                                     legitCode7
                                                 ]
-    
+
                                     exit 0

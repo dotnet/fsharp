@@ -28,6 +28,17 @@ module Inlining =
         |> getCompilation
         |> verifyCompilation
 
+    // Regression baseline for dotnet/fsharp#20368: the inline StackGuard.Guard shape must inline the
+    // [<InlineIfLambda>] lambda on the common path. In `callDirect` the closure `newobj` is confined to
+    // the cold else-branch (common path allocates nothing); `callPiped` shows the `<|` form hoisting it
+    // to method entry. A regression that reintroduces a common-path allocation changes this baseline.
+    // Realsig has no effect on this IL, so a single variant is snapshotted.
+    [<Theory; FileInlineData("StackGuardInlineIfLambda.fs")>]
+    let ``StackGuardInlineIfLambda_fs`` compilation =
+        compilation
+        |> getCompilation
+        |> verifyCompilation
+
     [<Theory; FileInlineData("Regression_TLR_MutualInnerRec.fs", Realsig=BooleanOptions.Both)>]
     let ``Regression_TLR_MutualInnerRec_fs`` compilation =
         compilation

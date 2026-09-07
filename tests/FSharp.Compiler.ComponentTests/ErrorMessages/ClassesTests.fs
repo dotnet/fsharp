@@ -122,7 +122,7 @@ type X() =
             (Error 512, Line 4, Col 13, Line 4, Col 18, "Accessibility modifiers are not permitted on 'do' bindings, but 'Private' was given.")
             (Error 222, Line 2, Col 1,  Line 3, Col 1,  "Files in libraries or multiple-file applications must begin with a namespace or module declaration, e.g. 'namespace SomeNamespace.SubNamespace' or 'module SomeNamespace.SomeModule'. Only the last source file of an application may omit such a declaration.")
         ]
-        
+
     [<Fact>]
     let ``No abstract or interface member was found that corresponds to this override with lang preview``() =
         Fsx """
@@ -156,7 +156,7 @@ type C() =
             (Error 855, Line 19, Col 19, Line 19, Col 21, "No abstract or interface member was found that corresponds to this override")
             (Error 855, Line 20, Col 19, Line 20, Col 21, "No abstract or interface member was found that corresponds to this override")
         ]
-    
+
     [<Fact>]
     let ``No abstract or interface member was found that corresponds to this override with lang version70``() =
         Fsx """
@@ -190,7 +190,7 @@ type C() =
             (Error 855, Line 19, Col 19, Line 19, Col 21, "No abstract or interface member was found that corresponds to this override")
             (Error 855, Line 20, Col 19, Line 20, Col 21, "No abstract or interface member was found that corresponds to this override")
         ]
-        
+
     [<Fact>]
     let ``Virtual member was found that corresponds to this override with lang version70`` () =
         let CSLib =
@@ -219,7 +219,7 @@ type B() =
         |> withLangVersionPreview
         |> compile
         |> shouldSucceed
-        
+
     [<Fact>]
     let ``Virtual member was found that corresponds to this override with lang preview`` () =
         let CSLib =
@@ -311,7 +311,7 @@ type B() =
         |> withDiagnostics [
             (Error 855, Line 7, Col 19, Line 7, Col 21, "No abstract or interface member was found that corresponds to this override")
         ]
-        
+
     [<Fact>]
     let ``Virtual member was not found that corresponds to this override nested base class with lang version preview`` () =
         let CSLib =
@@ -353,7 +353,7 @@ type C() =
             (Error 855, Line 7, Col 19, Line 7, Col 21, "No abstract or interface member was found that corresponds to this override")
             (Error 855, Line 8, Col 19, Line 8, Col 21, "No abstract or interface member was found that corresponds to this override")
         ]
-        
+
     [<Fact>]
     let ``Virtual member was not found that corresponds to this override nested 2 base class with lang preview`` () =
         let CSLib =
@@ -393,7 +393,7 @@ type C() =
             (Error 855, Line 7, Col 19, Line 7, Col 21, "No abstract or interface member was found that corresponds to this override")
             (Error 855, Line 8, Col 19, Line 8, Col 21, "No abstract or interface member was found that corresponds to this override")
         ]
-        
+
     [<Fact>]
     let ``Virtual member was not found that corresponds to this override nested 2 base classes and mixed methods with lang preview`` () =
         let CSLib =
@@ -546,7 +546,7 @@ type Over () =
 
     override _.M1 (s: string) = ()
         """
-        
+
         app
         |> withReferences [CSLib]
         |> withLangVersion80
@@ -613,7 +613,7 @@ type X =
         |> withLangVersion80
         |> compile
         |> shouldSucceed
-        
+
     [<Fact>]
     let ``No separator between member and type annotation`` () =
          FSharp """
@@ -622,7 +622,7 @@ type X =
             """
         |> typecheck
         |> shouldSucceed
-        
+
     [<Fact>]
     let ``Separator between member and type annotation`` () =
          FSharp """
@@ -655,7 +655,7 @@ type FooImpl =
             (Error 3133, Line 9, Col 9, Line 9, Col 40, "'member val' definitions are only permitted in types with a primary constructor. Consider adding arguments to your type definition, e.g. 'type X(args) = ...'.");
             (Error 3133, Line 10, Col 9, Line 10, Col 40, "'member val' definitions are only permitted in types with a primary constructor. Consider adding arguments to your type definition, e.g. 'type X(args) = ...'.")
         ]
-        
+
     [<Fact>]
     let ``No error if we try to have auto properties on types with primary constructor`` () =
          Fsx """
@@ -674,7 +674,7 @@ type FooImpl() =
             """
         |> typecheck
         |> shouldSucceed
-        
+
     [<Fact>]
     let ``No error if we try to have auto properties on types with primary constructor with args`` () =
          Fsx """
@@ -692,7 +692,7 @@ type FooImpl(x) =
             and set(value) = ()
             """
         |> typecheck
-        |> shouldSucceed   
+        |> shouldSucceed
 
     [<Fact>]
     let ``No error if we try to have static autoprop on a type without constructor`` () =
@@ -709,7 +709,7 @@ type FooImpl =
             """
         |> typecheck
         |> shouldSucceed
-    
+
     [<Fact>]
     let ``Error when declaring abstract members on a class, No [<AbstractClass>] or default implementation`` () =
             Fsx """
@@ -722,7 +722,7 @@ type A() =
                 (Error 365, Line 2, Col 6, Line 2, Col 7, "No implementation was given for 'abstract A.M: unit -> unit'")
                 (Error 54, Line 2, Col 6, Line 2, Col 7, "Non-abstract classes cannot contain abstract members. Either provide a default member implementation or add the '[<AbstractClass>]' attribute to your type.")
             ]
-            
+
     [<Fact>]
     let ``Not error when declaring abstract members on a class with [<AbstractClass>] attribute.`` () =
             Fsx """
@@ -742,7 +742,7 @@ type A() =
             """
             |> typecheck
             |> shouldSucceed
-            
+
     [<Fact>]
     let ``This 'inherit' declaration specifies the inherited type but no arguments. Consider supplying arguments, e. g. 'inherit BaseType(args)'`` () =
         Fsx """
@@ -757,7 +757,7 @@ type Class() =
             (Error 961, Line 5, Col 5, Line 5, Col 12, "This 'inherit' declaration specifies the inherited type but no arguments. Consider supplying arguments, e.g. 'inherit BaseType(args)'.")
             (Error 946, Line 5, Col 13, Line 5, Col 15, "Cannot inherit from interface type. Use interface ... with instead.")
         ]
-        
+
     [<Fact>]
     let ``This 'inherit' declaration specifies the inherited type but no arguments. Type name cannot be empty.`` () =
         Fsx """
@@ -788,7 +788,7 @@ type C5 = class inherit System.MulticastDelegate override x.ToString() = ""  end
             (Error 771, Line 5, Col 25, Line 5, Col 40, "The types System.ValueType, System.Enum, System.Delegate, System.MulticastDelegate and System.Array cannot be used as super types in an object expression or class");
             (Error 771, Line 6, Col 25, Line 6, Col 49, "The types System.ValueType, System.Enum, System.Delegate, System.MulticastDelegate and System.Array cannot be used as super types in an object expression or class")
         ]
-        
+
 
     [<Fact>]
     let ``Types can inherit from a single concrete type`` () =
@@ -822,7 +822,7 @@ type Class() =
             (Error 932, Line 10, Col 13, Line 10, Col 19, "Types cannot inherit from multiple concrete types")
             (Error 932, Line 11, Col 13, Line 11, Col 19, "Types cannot inherit from multiple concrete types")
         ]
-        
+
     [<Fact>]
     let ``Types cannot inherit from multiple concrete types. Type name cannot be empty.`` () =
         Fsx """
@@ -850,7 +850,7 @@ type I =
         """
         |> typecheck
         |> shouldSucceed
-    
+
     [<Fact>]
     let ``Class inheriting multiple base interfaces`` () =
         Fsx """

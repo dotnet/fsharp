@@ -1,41 +1,41 @@
 module Test
 
-type Foo = 
-    interface 
-        new() = 1 
+type Foo =
+    interface
+        new() = 1
     end
 
 [<Struct>]
-type N3 = 
+type N3 =
     abstract M : int
 
 [<Struct>]
-type N4 = 
+type N4 =
     interface
     end
 
 [<Class>]
-type N5 = 
+type N5 =
     interface
     end
 
 [<Struct>]
-type N6 = 
+type N6 =
     class
     end
 
 [<Interface>]
-type N7 = 
+type N7 =
     class
     end
 
 [<Class>]
-type N8 = 
+type N8 =
     struct
     end
 
 [<Interface>]
-type N9 = 
+type N9 =
     struct
     end
 

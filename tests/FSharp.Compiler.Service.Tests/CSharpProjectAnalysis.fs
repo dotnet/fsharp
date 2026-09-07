@@ -120,7 +120,7 @@ let _ = CSharpGenericOuterClass<int>.InnerClass.StaticMember()
     let results, _ = getProjectReferences(content, [csharpAssembly], None, None)
     results.GetAllUsesOfAllSymbols()
     |> Array.map (fun su -> su.Symbol.ToString())
-    |> shouldEqual 
+    |> shouldEqual
         [|"FSharp"; "Compiler"; "Service"; "Tests"; "FSharp"; "member .ctor"; "int";
           "CSharpGenericOuterClass`1"; "CSharpGenericOuterClass`1"; "int";
           "CSharpGenericOuterClass`1"; "InnerEnum"; "field Case1";

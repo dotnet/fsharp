@@ -1,7 +1,7 @@
-// #Conformance #TypesAndModules #GeneratedEqualityAndHashing #Attributes 
+// #Conformance #TypesAndModules #GeneratedEqualityAndHashing #Attributes
 //<Expects status="success"></Expects>
 
-module M09 = 
+module M09 =
   [<ReferenceEquality>]
   (* [<StructuralComparison(true)>] *)
   (* [<StructuralEquality(true)>] *)
@@ -11,13 +11,13 @@ module M09 =
   let r2b = { X = 11}
   let v1 = not (r1 = r2)        // expected true
   let v2 = not (r2 = r2b)       // expected true
-  
-//  let v3 = try 
+
+//  let v3 = try
 //               r1 < r2 |> ignore       // expected true
 //               false
 //           with
 //               | _ -> true
-               
+
   printfn "v1=%b" v1
   printfn "v2=%b" v2
   //printfn "v3=%b" v3

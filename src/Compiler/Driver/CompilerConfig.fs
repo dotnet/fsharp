@@ -445,6 +445,13 @@ type TypeCheckingConfig =
         DumpGraph: bool
     }
 
+[<RequireQualifiedAccess>]
+type ImportReuseKey =
+    {
+        LangVersion: decimal
+        CheckNullness: bool
+    }
+
 [<NoEquality; NoComparison>]
 type TcConfigBuilder =
     {
@@ -645,6 +652,8 @@ type TcConfigBuilder =
 
         mutable parallelReferenceResolution: ParallelReferenceResolution
 
+        mutable shareImportedAssemblies: bool
+
         mutable captureIdentifiersWhenParsing: bool
 
         mutable typeCheckingConfig: TypeCheckingConfig
@@ -844,6 +853,7 @@ type TcConfigBuilder =
             xmlDocInfoLoader = None
             exiter = QuitProcessExiter
             parallelReferenceResolution = ParallelReferenceResolution.On
+            shareImportedAssemblies = true
             captureIdentifiersWhenParsing = false
             typeCheckingConfig =
                 {
@@ -1397,8 +1407,16 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
     member _.xmlDocInfoLoader = data.xmlDocInfoLoader
     member _.exiter = data.exiter
     member _.parallelReferenceResolution = data.parallelReferenceResolution
+    member _.shareImportedAssemblies = data.shareImportedAssemblies
     member _.captureIdentifiersWhenParsing = data.captureIdentifiersWhenParsing
     member _.typeCheckingConfig = data.typeCheckingConfig
+
+    member _.importReuseKey =
+        {
+            ImportReuseKey.LangVersion = data.langVersion.SpecifiedVersion
+            ImportReuseKey.CheckNullness = data.checkNullness
+        }
+
     member _.dumpSignatureData = data.dumpSignatureData
     member _.realsig = data.realsig
     member _.compilationMode = data.compilationMode

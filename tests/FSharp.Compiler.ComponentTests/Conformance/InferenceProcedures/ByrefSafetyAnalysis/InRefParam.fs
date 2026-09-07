@@ -1,9 +1,9 @@
 open Prelude
 
-module InRefParam  = 
-    type C() = 
+module InRefParam  =
+    type C() =
          static member M(x: inref<System.DateTime>) = x
-    let Test() = 
+    let Test() =
         let res = System.DateTime.Now
         let v =  C.M(&res)
         check "cweweoiwe51btw" v res

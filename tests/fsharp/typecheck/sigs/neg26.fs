@@ -1,21 +1,21 @@
 module Test
 
-module ObjectExpressionNegativeTests = 
+module ObjectExpressionNegativeTests =
 
-    module Test1 = 
+    module Test1 =
         type ITest =
             abstract member Meth1: string -> string
 
         type ITestSub =
-            inherit ITest  
+            inherit ITest
             abstract member Meth2: int -> int
 
 
-        let ErroneousComplete () =    
+        let ErroneousComplete () =
             { new ITestSub with member x.Meth2(y) = 2 } // This should give an error  - Meth1 is not implemented
 
 
-    module Test2 = 
+    module Test2 =
         type ITest =
             abstract member Meth1: string -> string
 
@@ -24,10 +24,10 @@ module ObjectExpressionNegativeTests =
             abstract member Meth2: int -> int
 
         let ErroneousComplete () =
-            { new ITestSub with override x.Meth1(s:string) = s  }  // Expect an error here 
-            
-            
-module AnotherObjectExpressionTest = 
+            { new ITestSub with override x.Meth1(s:string) = s  }  // Expect an error here
+
+
+module AnotherObjectExpressionTest =
     type ITest =
         abstract member Meth1: int -> int
 
@@ -36,11 +36,11 @@ module AnotherObjectExpressionTest =
         abstract member Meth1: int -> int
 
     let Partial() =
-        { new ITestSub with                   // Expect an error here 
+        { new ITestSub with                   // Expect an error here
             override this.Meth1 (x:int) = x }
 
-            
-module YetAnotherObjectExpressionTest = 
+
+module YetAnotherObjectExpressionTest =
     type ITest =
         abstract member Meth1: int -> int
 

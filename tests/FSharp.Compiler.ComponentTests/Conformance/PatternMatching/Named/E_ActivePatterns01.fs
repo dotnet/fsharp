@@ -1,4 +1,4 @@
-// #Regression #Conformance #PatternMatching #ActivePatterns 
+// #Regression #Conformance #PatternMatching #ActivePatterns
 // Verify error if Active Patterns do not start with an upper case letter
 
 

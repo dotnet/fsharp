@@ -11,7 +11,7 @@ module ForInDoMutableRegressionTest =
     /// This test is to ensure we initialize locals inside loops.
     [<Fact>]
     let Script_ForInDoMutableRegressionTest() =
-        let script = 
+        let script =
             """
 open System.Collections.Generic
 

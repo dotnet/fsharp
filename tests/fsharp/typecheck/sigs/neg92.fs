@@ -1,7 +1,7 @@
 module Test
 
 
-module Test1 = 
+module Test1 =
     type SomeClass(x : 'T) = class end
         //member this.P = 1
         //member this.X = x
@@ -9,11 +9,11 @@ module Test1 =
     let SomeFunc<'U> (x : 'U) =
         SomeClass(x)
 
-module Test2 = 
+module Test2 =
     open System
 
     type SomeClass(updater : #IComparable->unit) =
-        let onLoaded () = 
+        let onLoaded () =
             let adorner : #IComparable = failwith ""
             updater adorner
         member this.OnLoaded = onLoaded

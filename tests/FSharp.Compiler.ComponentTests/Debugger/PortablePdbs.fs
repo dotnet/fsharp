@@ -68,7 +68,7 @@ module Baz =
                     { Kind = ImportDefinitionKind.ImportNamespace; Name = "System.IO" }
                 ]
             ]
-            VerifySequencePoints [ 
+            VerifySequencePoints [
                 Line 6, Col 21, Line 6, Col 49
                 Line 8, Col 26, Line 8, Col 32
                 Line 16, Col 20, Line 16, Col 22

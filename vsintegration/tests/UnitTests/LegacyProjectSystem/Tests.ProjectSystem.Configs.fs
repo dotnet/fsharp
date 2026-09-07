@@ -10,7 +10,7 @@ open System.Text.RegularExpressions
 open System.Xml.Linq
 open Xunit
 
-// VS namespaces 
+// VS namespaces
 open Microsoft.VisualStudio
 open Microsoft.VisualStudio.Shell.Interop
 open Microsoft.VisualStudio.FSharp
@@ -23,7 +23,7 @@ open UnitTests.TestLib.Utils.FilesystemHelpers
 open UnitTests.TestLib.ProjectSystem
 
 
-type Config() = 
+type Config() =
     inherit TheTests()
 
     /////////////////////////////////
@@ -33,8 +33,8 @@ type Config() =
 
     [<Fact>]
     member this.TargetPlatform () =
-        this.MakeProjectAndDoWithProjectFileAndConfigChangeNotifier(["foo.fs"], [], 
-            this.MSBuildProjectMultiPlatformBoilerplate "Library",  
+        this.MakeProjectAndDoWithProjectFileAndConfigChangeNotifier(["foo.fs"], [],
+            this.MSBuildProjectMultiPlatformBoilerplate "Library",
             (fun project ccn projFileName ->
                 ccn((project :> IVsHierarchy), "Debug|x86")
                 project.ComputeSourcesAndFlags()
@@ -45,21 +45,21 @@ type Config() =
 
     [<Fact>]
     member this.``Configs.EnsureAtLeastOneConfiguration`` () =
-        this.HelperEnsureAtLeastOne 
-            @"<PropertyGroup Condition="" '$(Platform)' == 'x86' "" />" 
+        this.HelperEnsureAtLeastOne
+            @"<PropertyGroup Condition="" '$(Platform)' == 'x86' "" />"
             [|"Debug"|]  // the goal of the test - when no configs, "Debug" should magically appear
             [|"x86"|]
 
     [<Fact>]
     member this.``Configs.EnsureAtLeastOnePlatform`` () =
-        this.HelperEnsureAtLeastOne 
+        this.HelperEnsureAtLeastOne
             @"<PropertyGroup Condition="" '$(Configuration)' == 'Release' "" />"
             [|"Release"|]
             [|"Any CPU"|] // the goal of the test - when no platforms, "AnyCPU" should magically appear
 
     [<Fact>]
     member this.``Configs.EnsureAtLeastOneConfigurationAndPlatform`` () =
-        this.HelperEnsureAtLeastOne 
+        this.HelperEnsureAtLeastOne
             ""
             [|"Debug"|] // first goal of the test - when no configs, "Debug" should magically appear
             [|"Any CPU"|] // second goal of the test - when no platforms, "AnyCPU" should magically appear
@@ -74,7 +74,7 @@ type Config() =
                     <PropertyGroup Condition="" '$(Platform)' == 'x86' "" />
                   </Project>")
 
-            this.HelperEnsureAtLeastOne 
+            this.HelperEnsureAtLeastOne
                 @"<Import Project=""..\foo.targets"" />"
                 [|"Debug"|]  // the goal of the test - when no configs, "Debug" should magically appear
                 [|"x86"|]
@@ -84,7 +84,7 @@ type Config() =
     [<Fact>]
     member this.``Configs.EnsureAtLeastOnePlatform.Imported`` () =
         // Take advantage of the fact that we always create projects one directory below TempPath
-        // The unit test failed due to the previous test use the same target name "foo.targets". 
+        // The unit test failed due to the previous test use the same target name "foo.targets".
         // The vs record the platform config "x86", so the next test failed for the unexpected platform.
         let tmpTargets = Path.Combine(Path.GetTempPath(), "foo2.targets")
         try
@@ -92,13 +92,13 @@ type Config() =
                 @"<Project ToolsVersion='4.0' DefaultTargets='Build' xmlns='http://schemas.microsoft.com/developer/msbuild/2003'>
                     <PropertyGroup Condition="" '$(Configuration)' == 'Release' "" />
                   </Project>")
-            this.HelperEnsureAtLeastOne 
+            this.HelperEnsureAtLeastOne
                 @"<Import Project=""..\foo2.targets"" />"
                 [|"Release"|]
                 [|"Any CPU"|] // the goal of the test - when no platforms, "AnyCPU" should magically appear
         finally
             File.Delete tmpTargets
-    
+
     [<Fact>]
     member this.``Configs.Renaming`` () =
         this.MakeProjectAndDoWithProjectFile(["foo.fs"], [],
@@ -112,9 +112,9 @@ type Config() =
                 let xDoc = XDocument.Load(new StringReader(fsprojFileText))
                 let expected = this.MSBuildProjectMultiConfigBoilerplate ["Buggy",""; "Release",""]
                 let expectedXDoc = XDocument.Load(new StringReader(TheTests.SimpleFsprojText(["foo.fs"],[],expected)))
-                TheTests.AssertSimilarXml(expectedXDoc.Root, xDoc.Root)                
+                TheTests.AssertSimilarXml(expectedXDoc.Root, xDoc.Root)
             ))
-            
+
     [<Fact>]
     member this.``Configs.Deleting`` () =
         this.MakeProjectAndDoWithProjectFile(["foo.fs"], [],
@@ -128,13 +128,13 @@ type Config() =
                 let xDoc = XDocument.Load(new StringReader(fsprojFileText))
                 let expected = this.MSBuildProjectMultiConfigBoilerplate ["Release",""]
                 let expectedXDoc = XDocument.Load(new StringReader(TheTests.SimpleFsprojText(["foo.fs"],[],expected)))
-                TheTests.AssertSimilarXml(expectedXDoc.Root, xDoc.Root)                
+                TheTests.AssertSimilarXml(expectedXDoc.Root, xDoc.Root)
             ))
     [<Fact>]
     member this.``Configs.Adding`` () =
         this.MakeProjectAndDoWithProjectFile(["foo.fs"], [],
             this.MSBuildProjectMultiConfigBoilerplate ["Debug","<Foo/>"; "Release",""],
-            (fun project projFileName ->    
+            (fun project projFileName ->
                 this.CheckConfigNames(project, [|"Debug";"Release"|])
                 project.ConfigProvider.AddCfgsOfCfgName("Buzz", "Debug", 0) |> AssertEqual VSConstants.S_OK
                 this.CheckConfigNames(project, [|"Debug";"Release";"Buzz"|])
@@ -143,7 +143,7 @@ type Config() =
                 let xDoc = XDocument.Load(new StringReader(fsprojFileText))
                 let expected = this.MSBuildProjectMultiConfigBoilerplate ["Debug","<Foo/>"; "Release",""; "Buzz","<Foo/>"]
                 let expectedXDoc = XDocument.Load(new StringReader(TheTests.SimpleFsprojText(["foo.fs"],[],expected)))
-                TheTests.AssertSimilarXml(expectedXDoc.Root, xDoc.Root)                
+                TheTests.AssertSimilarXml(expectedXDoc.Root, xDoc.Root)
             ))
     [<Fact>]
     member this.``Configs.AddingBaseless`` () =
@@ -158,7 +158,7 @@ type Config() =
                 let xDoc = XDocument.Load(new StringReader(fsprojFileText))
                 let expected = this.MSBuildProjectMultiConfigBoilerplate ["Debug","<Foo/>"; "Release",""; "Buzz",""]
                 let expectedXDoc = XDocument.Load(new StringReader(TheTests.SimpleFsprojText(["foo.fs"],[],expected)))
-                TheTests.AssertSimilarXml(expectedXDoc.Root, xDoc.Root)                
+                TheTests.AssertSimilarXml(expectedXDoc.Root, xDoc.Root)
             ))
 
     [<Fact>]
@@ -174,10 +174,10 @@ type Config() =
                 let xDoc = XDocument.Load(new StringReader(fsprojFileText))
                 let expected = this.MSBuildProjectMultiPlatform ["x86",""]
                 let expectedXDoc = XDocument.Load(new StringReader(TheTests.SimpleFsprojText(["foo.fs"],[],expected)))
-                TheTests.AssertSimilarXml(expectedXDoc.Root, xDoc.Root)                
+                TheTests.AssertSimilarXml(expectedXDoc.Root, xDoc.Root)
 
         ))
-        
+
     [<Fact>]
     member this.``Configs.Platforms.Adding`` () =
         this.MakeProjectAndDoWithProjectFile(["foo.fs"], [],
@@ -191,7 +191,7 @@ type Config() =
                 let xDoc = XDocument.Load(new StringReader(fsprojFileText))
                 let expected = this.MSBuildProjectMultiPlatform ["Any CPU",""; "x86","<Custom/>"; "x64","<Custom/>"]
                 let expectedXDoc = XDocument.Load(new StringReader(TheTests.SimpleFsprojText(["foo.fs"],[],expected)))
-                TheTests.AssertSimilarXml(expectedXDoc.Root, xDoc.Root)                
+                TheTests.AssertSimilarXml(expectedXDoc.Root, xDoc.Root)
 
         ))
 
@@ -208,6 +208,6 @@ type Config() =
                 let xDoc = XDocument.Load(new StringReader(fsprojFileText))
                 let expected = this.MSBuildProjectMultiPlatform ["Any CPU",""; "x86",""; "x64",""]
                 let expectedXDoc = XDocument.Load(new StringReader(TheTests.SimpleFsprojText(["foo.fs"],[],expected)))
-                TheTests.AssertSimilarXml(expectedXDoc.Root, xDoc.Root)                
+                TheTests.AssertSimilarXml(expectedXDoc.Root, xDoc.Root)
 
         ))

@@ -1,4 +1,4 @@
-// #Conformance #TypesAndModules #Unions 
+// #Conformance #TypesAndModules #Unions
 
 
 // Verify additional checks when using a dynamic type cast to ensure
@@ -13,7 +13,7 @@ type DUType =
 let test1 = (box C :?> DUType)
 
 // Dynamic type test should throw a null ref exception
-let testPassed = 
+let testPassed =
     try
         let _ = (box null :?> DUType)
         false

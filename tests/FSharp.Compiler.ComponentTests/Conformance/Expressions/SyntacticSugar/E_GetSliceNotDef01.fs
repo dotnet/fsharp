@@ -1,4 +1,4 @@
-// #Regression #Conformance #SyntacticSugar 
+// #Regression #Conformance #SyntacticSugar
 
 
 // Verify error if GetSlice is not defined

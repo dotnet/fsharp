@@ -1,6 +1,6 @@
 ﻿
 [<EntryPoint>]
-let main _ = 
+let main _ =
     InstanceTests.checkAll()
     try printfn "trigger = %A" StaticTest1.trigger with _ -> printfn "Good, got a static initialization failure"
     StaticTest1.checkAll()

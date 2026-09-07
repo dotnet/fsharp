@@ -34,7 +34,7 @@ module TestConsole =
     let private localIn = new RedirectingTextReader()
     let private localOut = new RedirectingTextWriter()
     let private localError = new RedirectingTextWriter()
-    
+
     let private isInstalled = ref 0
 
     /// Installs console redirection. Idempotent and thread-safe.
@@ -43,14 +43,14 @@ module TestConsole =
             Console.SetIn localIn
             Console.SetOut localOut
             Console.SetError localError
-    
+
     // Taps into the redirected console stream.
     type private CapturingWriter(redirecting: RedirectingTextWriter) as this =
         inherit StringWriter()
         let wrapped = redirecting.Writer
         do redirecting.Writer <- this
         override _.Encoding = Encoding.UTF8
-        override _.Write(value: char) = 
+        override _.Write(value: char) =
             wrapped.Write(value)
             base.Write(value)
         override _.Dispose (disposing: bool) =

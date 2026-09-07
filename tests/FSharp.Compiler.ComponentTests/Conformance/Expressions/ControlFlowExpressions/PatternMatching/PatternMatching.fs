@@ -9,7 +9,7 @@ open FSharp.Test.Compiler
 module PatternMatching =
 
     // This test was automatically generated (moved from FSharpQA suite - Conformance/Expressions/ControlFlowExpressions/PatternMatching)
-    
+
     [<Theory; FileInlineData("W_PatternMatchingCounterExample01.fs")>]
     let ``W_PatternMatchingCounterExample01_fs`` compilation =
         compilation
@@ -23,7 +23,7 @@ module PatternMatching =
         ]
 
     // This test was automatically generated (moved from FSharpQA suite - Conformance/Expressions/ControlFlowExpressions/PatternMatching)
-    
+
     [<Theory; FileInlineData("W_PatternMatchingCounterExample02.fs")>]
     let ``W_PatternMatchingCounterExample02_fs`` compilation =
         compilation
@@ -37,7 +37,7 @@ module PatternMatching =
         ]
 
     // This test was automatically generated (moved from FSharpQA suite - Conformance/Expressions/ControlFlowExpressions/PatternMatching)
-    
+
     [<Theory; FileInlineData("W_PatternMatchingCounterExample03.fs")>]
     let ``W_PatternMatchingCounterExample03_fs`` compilation =
         compilation

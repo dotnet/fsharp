@@ -6,20 +6,20 @@ open System.Collections.Generic
 
 let failures = ref []
 
-let report_failure (s : string) = 
+let report_failure (s : string) =
     stderr.Write" NO: "
     stderr.WriteLine s
     failures := !failures @ [s]
     ()
 
-let check s e r = 
+let check s e r =
   if r <> e then
       (stderr.WriteLine ($"\n***** {s}: Expected: '{e}' Results: '{r}' = FAIL\n"); report_failure s)
 
 let test t (s1:Lazy<string>) s2 =
 
     let s1 = s1.Force()
-    if s1 <> s2 then 
+    if s1 <> s2 then
         report_failure ("test "+t+": expected \n\t'"+s2+"' but produced \n\t'"+s1+"'")
         stdout.WriteLine ("test "+t+": expected \n\t'"+s2+"' but produced \n\t'"+s1+"'")
 
@@ -290,17 +290,17 @@ let testing1 () =
     let _ = test "weioj3ffd2" (lazy(try if true then failwithf "%s" "abc" else "d"with Failure "abc" -> "e")) "e"
 
     let _ = test "weioj3" (lazy(sprintf "%t" (fun () -> "10"))) "10"
-    
+
     let bug600 = sprintf "%d"
-    let _ = test "bug600a1" (lazy(bug600 2)) "2" 
+    let _ = test "bug600a1" (lazy(bug600 2)) "2"
     let _ = test "bug600b1" (lazy(bug600 2)) "2" (* not 22! *)
 
     let bug600b = sprintf "%s"
-    let _ = test "bug600a2" (lazy(bug600b "2")) "2" 
+    let _ = test "bug600a2" (lazy(bug600b "2")) "2"
     let _ = test "bug600b2" (lazy(bug600b "2")) "2" (* not 22! *)
 
     let bug600c = sprintf "%x"
-    let _ = test "bug600a3" (lazy(bug600c 2)) "2" 
+    let _ = test "bug600a3" (lazy(bug600c 2)) "2"
     let _ = test "bug600b3" (lazy(bug600c 2)) "2" (* not 22! *)
 
     let _ = test "ckwoih" (lazy(sprintf "%x" 0xFFy)) ("ff")
@@ -9370,7 +9370,7 @@ let testLazySimple () =
     check "lazy_simple" 12345 (f23())
 
 let testSeqWithTryFinally () =
-    let result = 
+    let result =
         seq {
             try
                 yield 1
@@ -9402,11 +9402,11 @@ let main _ =
     testLazySimple ()
     testSeqWithTryFinally ()
 
-    match !failures with 
-    | [] -> 
+    match !failures with
+    | [] ->
         stdout.WriteLine "All tests passed"
         exit 0
-    | _ -> 
+    | _ ->
         stdout.WriteLine "Some tests failed"
         exit 1
     0

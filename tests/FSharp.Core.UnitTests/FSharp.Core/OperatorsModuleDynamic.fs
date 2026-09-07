@@ -13,14 +13,14 @@ open Xunit
 
 #nowarn "1204" // CompilerMessage: This function is for use by dynamic invocations of F# code and should not be used directly
 module OperatorsModuleDynamic =
-    
+
     /// Check that the lambda throws an exception of the given type. Otherwise
     /// calls Assert.Fail()
     // Sync implementation with FSharp.Core.UnitTests.LibraryTestFx.CheckThrowsExn
     let CheckThrowsExn<'a when 'a :> exn> (f : unit -> unit) =
         try
             let _ = f ()
-            sprintf "Expected %O exception, got no exception" typeof<'a> |> Assert.Fail 
+            sprintf "Expected %O exception, got no exception" typeof<'a> |> Assert.Fail
         with
         | :? 'a -> ()
         | :? Reflection.TargetInvocationException as r when (r.InnerException :? 'a) -> ()
@@ -69,51 +69,51 @@ module OperatorsModuleDynamic =
             let uint32<'T> = LanguagePrimitives.CheckedExplicitDynamic<'T, uint32>
             let uint64<'T> = LanguagePrimitives.CheckedExplicitDynamic<'T, uint64>
             let unativeint<'T> = LanguagePrimitives.CheckedExplicitDynamic<'T, unativeint>
-    
+
     [<Fact>]
     let byte() =
         // int type
         let intByte = Operators.byte 100
         Assert.AreEqual(100uy, intByte)
-        
+
         // char type
         let charByte = Operators.byte '0'
         Assert.AreEqual(48uy, charByte)
-        
+
         // boundary value
         let boundByte = Operators.byte 255.0
         Assert.AreEqual(255uy, boundByte)
-        
+
         // Overflow
         let result = Operators.byte Int64.MaxValue
         Assert.AreEqual(Byte.MaxValue, result)
-        
+
         // Overflow
         let result = Operators.byte Int64.MinValue
         Assert.AreEqual(0uy, result)
-        
+
         // Overflow
         let result = Operators.byte Single.MinValue
         Assert.AreEqual(0uy, result)
-        
+
         // Overflow
         let result = Operators.byte Single.MaxValue
         if Info.isNetFramework then
             Assert.AreEqual(0uy, result)
         else
             Assert.AreEqual(255uy, result)
-        
+
         // Overflow
         let result = Operators.byte Double.MinValue
         Assert.AreEqual(0uy, result)
-        
+
         // Overflow
         let result = Operators.byte Double.MaxValue
         if Info.isNetFramework then
             Assert.AreEqual(0uy, result)
         else
             Assert.AreEqual(255uy, result)
-        
+
         // Overflow
         let result = Operators.byte (Int64.MaxValue * 8L)
         Assert.AreEqual(248uy, result)      // bit-complement
@@ -124,7 +124,7 @@ module OperatorsModuleDynamic =
 
         // OverflowException, from decimal is always checked
         CheckThrowsOverflowException(fun () -> Operators.byte Decimal.MinValue |> ignore)
-        
+
     [<Fact>]
     let char() =
         // int type
@@ -156,31 +156,31 @@ module OperatorsModuleDynamic =
         else
             Assert.AreEqual('\uffff', Operators.char Double.MaxValue)
         CheckThrowsOverflowException(fun () -> Operators.char Decimal.MinValue |> ignore)
-        
+
         // string type
         let stringchar = Operators.char " "
         Assert.AreEqual(' ', stringchar)
 
-    
+
     [<Fact>]
     let decimal () =
-        
+
         // int value
         let intdecimal = Operators.decimal (1)
         Assert.AreEqual(1M, intdecimal)
-        
+
         // nativeint value
         let nativeintdecimal = Operators.decimal 1n
         Assert.AreEqual(1M, nativeintdecimal)
-        
+
         // unativeint value
         let unativeintdecimal = Operators.decimal 1un
         Assert.AreEqual(1M, unativeintdecimal)
-        
+
         // char value
         let chardecimal = Operators.decimal '\001'
         Assert.AreEqual(1M, chardecimal)
-       
+
         // float value
         let floatdecimal = Operators.decimal (1.0)
         Assert.AreEqual(1M, floatdecimal)
@@ -190,11 +190,11 @@ module OperatorsModuleDynamic =
         // int type
         let intdouble = Operators.float 100
         Assert.AreEqual(100.0, intdouble)
-        
+
         // char type
         let chardouble = Operators.float '0'
         Assert.AreEqual(48.0, chardouble)
-        
+
         // decimal type
         let decimaldouble = Operators.float 100m
         Assert.AreEqual(100.0, decimaldouble)
@@ -204,7 +204,7 @@ module OperatorsModuleDynamic =
         // int type
         let intfloat = Operators.float 100
         Assert.AreEqual((float)100, intfloat)
-        
+
         // char type
         let charfloat = Operators.float '0'
         Assert.AreEqual((float)48, charfloat)
@@ -218,11 +218,11 @@ module OperatorsModuleDynamic =
         // int type
         let intfloat32 = Operators.float32 100
         Assert.AreEqual((float32)100, intfloat32)
-        
+
         // char type
         let charfloat32 = Operators.float32 '0'
         Assert.AreEqual((float32)48, charfloat32)
-        
+
         // decimal type
         let intfloat32 = Operators.float32 100m
         Assert.AreEqual((float32)100, intfloat32)
@@ -232,49 +232,49 @@ module OperatorsModuleDynamic =
         // int
         let result = Operators.int 10
         Assert.AreEqual(10, result)
-        
+
         // string
         let result = Operators.int "10"
         Assert.AreEqual(10, result)
-        
+
         // double
         let result = Operators.int 10.0
         Assert.AreEqual(10, result)
-        
+
         // negative
         let result = Operators.int -10
         Assert.AreEqual(-10, result)
-        
+
         // zero
         let result = Operators.int 0
         Assert.AreEqual(0, result)
-        
+
         // Overflow
         let result = Operators.int Single.MaxValue
         if Info.isNetFramework then
             Assert.AreEqual(Int32.MinValue, result)
         else
             Assert.AreEqual(Int32.MaxValue, result)
-        
+
         // Overflow
         let result = Operators.int Single.MinValue
         Assert.AreEqual(Int32.MinValue, result)
-        
+
         // Overflow
         let result = Operators.int Double.MaxValue
         if Info.isNetFramework then
             Assert.AreEqual(Int32.MinValue, result)
         else
             Assert.AreEqual(Int32.MaxValue, result)
-        
+
         // Overflow
         let result = Operators.int Double.MinValue
         Assert.AreEqual(Int32.MinValue, result)
-        
+
         // Overflow
         let result = Operators.int Int64.MaxValue
         Assert.AreEqual(-1, result)
-        
+
         // Overflow
         let result = Operators.int Int64.MinValue
         Assert.AreEqual(0, result)
@@ -285,29 +285,29 @@ module OperatorsModuleDynamic =
 
         // OverflowException, from decimal is always checked
         CheckThrowsOverflowException(fun () -> Operators.int Decimal.MinValue |> ignore)
-        
+
     [<Fact>]
     let int16() =
         // int
         let result = Operators.int16 10
         Assert.AreEqual(10s, result)
-        
+
         // double
         let result = Operators.int16 10.0
         Assert.AreEqual(10s, result)
-        
+
         // negative
         let result = Operators.int16 -10
         Assert.AreEqual(-10s, result)
-        
+
         // zero
         let result = Operators.int16 0
         Assert.AreEqual(0s, result)
-        
+
         // string
         let result = Operators.int16 "10"
         Assert.AreEqual(10s, result)
-        
+
         // Overflow
         let result = Operators.int16 Single.MaxValue
         if Info.isNetFramework then
@@ -318,7 +318,7 @@ module OperatorsModuleDynamic =
         // Overflow
         let result = Operators.int16 Single.MinValue
         Assert.AreEqual(0s, result)
-        
+
         // Overflow
         let result = Operators.int16 Double.MaxValue
         if Info.isNetFramework then
@@ -349,49 +349,49 @@ module OperatorsModuleDynamic =
         // int
         let result = Operators.int32 10
         Assert.AreEqual(10, result)
-        
+
         // double
         let result = Operators.int32 10.0
         Assert.AreEqual(10, result)
-        
+
         // negative
         let result = Operators.int32 -10
         Assert.AreEqual(-10, result)
-        
+
         // zero
         let result = Operators.int32 0
         Assert.AreEqual(0, result)
-        
+
         // string
         let result = Operators.int32 "10"
         Assert.AreEqual(10, result)
-        
+
         // Overflow
         let result = Operators.int32 Single.MaxValue
         if Info.isNetFramework then
             Assert.AreEqual(Int32.MinValue, result)
         else
             Assert.AreEqual(Int32.MaxValue, result)
-        
+
         // Overflow
         let result = Operators.int32 Single.MinValue
         Assert.AreEqual(Int32.MinValue, result)
-        
+
         // Overflow
         let result = Operators.int32 Double.MaxValue
         if Info.isNetFramework then
             Assert.AreEqual(Int32.MinValue, result)
         else
             Assert.AreEqual(Int32.MaxValue, result)
-        
+
         // Overflow
         let result = Operators.int32 Double.MinValue
         Assert.AreEqual(Int32.MinValue, result)
-        
+
         // Overflow
         let result = Operators.int32 Int64.MaxValue
         Assert.AreEqual(-1, result)
-        
+
         // Overflow
         let result = Operators.int32 Int64.MinValue
         Assert.AreEqual(0, result)
@@ -408,23 +408,23 @@ module OperatorsModuleDynamic =
         // int
         let result = Operators.int64 10
         Assert.AreEqual(10L, result)
-        
+
         // double
         let result = Operators.int64 10.0
         Assert.AreEqual(10L, result)
-        
+
         // negative
         let result = Operators.int64 -10
         Assert.AreEqual(-10L, result)
-        
+
         // zero
         let result = Operators.int64 0
         Assert.AreEqual(0L, result)
-        
+
         // string
         let result = Operators.int64 "10"
         Assert.AreEqual(10L, result)
-        
+
         // Overflow.
         let result = Operators.int64 Single.MaxValue
         if Info.isNetFramework then
@@ -435,7 +435,7 @@ module OperatorsModuleDynamic =
         // Overflow
         let result = Operators.int64 Single.MinValue
         Assert.AreEqual(Int64.MinValue, result)
-        
+
         // Overflow.
         let result = Operators.int64 Double.MaxValue
         if Info.isNetFramework then
@@ -458,29 +458,29 @@ module OperatorsModuleDynamic =
         // OverflowException, from decimal is always checked
         CheckThrowsOverflowException(fun () -> Operators.int64 Decimal.MinValue |> ignore)
 
-    
+
     [<Fact>]
     let nativeint() =
         // int
         let result = Operators.nativeint 10
         Assert.AreEqual(10n, result)
-        
+
         // double
         let result = Operators.nativeint 10.0
         Assert.AreEqual(10n, result)
-        
+
         // int64
         let result = Operators.nativeint 10L
         Assert.AreEqual(10n, result)
-       
+
         // negative
         let result = Operators.nativeint -10
         Assert.AreEqual(-10n, result)
-        
+
         // zero
         let result = Operators.nativeint 0
         Assert.AreEqual(0n, result)
-        
+
         // Overflow Double.MaxValue is equal on 32 bits and 64 bits runtimes
         let result = Operators.nativeint Single.MaxValue
         if Info.isX86Runtime then
@@ -561,21 +561,21 @@ module OperatorsModuleDynamic =
             Assert.AreEqual("-9223372036854775808", string -9223372036854775808n)
             Assert.AreEqual("9223372036854775807", string 9223372036854775807n)
 
-    
+
     [<Fact>]
     let sbyte() =
         // int
         let result = Operators.sbyte 10
         Assert.AreEqual(10y, result)
-        
+
         // double
         let result = Operators.sbyte 10.0
         Assert.AreEqual(10y, result)
-        
+
         // negative
         let result = Operators.sbyte -10
         Assert.AreEqual(-10y, result)
-        
+
         // zero
         let result = Operators.sbyte 0
         Assert.AreEqual(0y, result)
@@ -583,123 +583,123 @@ module OperatorsModuleDynamic =
         // Overflow
         let result = Operators.sbyte Int64.MaxValue
         Assert.AreEqual(-1y, result)
-        
+
         // Overflow
         let result = Operators.sbyte Int64.MinValue
         Assert.AreEqual(0y, result)
-        
+
         // Overflow
         let result = Operators.sbyte Single.MinValue
         Assert.AreEqual(0y, result)
-        
+
         // Overflow
         let result = Operators.sbyte Single.MaxValue
         if Info.isNetFramework then
             Assert.AreEqual(0y, result)
         else
             Assert.AreEqual(-1y, result)
-        
+
         // Overflow
         let result = Operators.sbyte Double.MinValue
         Assert.AreEqual(0y, result)
-        
+
         // Overflow
         let result = Operators.sbyte Double.MaxValue
         if Info.isNetFramework then
             Assert.AreEqual(0y, result)
         else
             Assert.AreEqual(-1y, result)
-        
+
         // Overflow
         let result = Operators.sbyte (Int64.MaxValue * 8L)
         Assert.AreEqual(-8y, result)      // bit-complement
-        
+
         // Overflow
         let result = 127y + 1y
         Assert.AreEqual(-128y, result)
 
         // OverflowException, from decimal is always checked
         CheckThrowsOverflowException(fun () -> Operators.sbyte Decimal.MinValue |> ignore)
-        
+
     [<Fact>]
     let single() =
         // int
         let result = Operators.float32 10
         Assert.AreEqual(10f, result)
-        
+
         // double
         let result = Operators.float32 10.0
         Assert.AreEqual(10f, result)
-        
+
         // string
         let result = Operators.float32 "10"
         Assert.AreEqual(10f, result)
 
-    
+
     [<Fact>]
     let uint16() =
         // int
         let result = Operators.uint16 100
         Assert.AreEqual(100us, result)
-        
+
         // double
         let result = Operators.uint16 (100.0:double)
         Assert.AreEqual(100us, result)
-        
+
         // decimal
         let result = Operators.uint16 100M
         Assert.AreEqual(100us, result)
-        
+
         // Overflow
         let result = Operators.uint16 Single.MaxValue
         if Info.isNetFramework then
             Assert.AreEqual(0us, result)
         else
             Assert.AreEqual(65535us, result)
-        
+
         // Overflow
         let result = Operators.uint16 Single.MinValue
         Assert.AreEqual(0us, result)
-        
+
         // Overflow
         let result = Operators.uint16 Double.MaxValue
         if Info.isNetFramework then
             Assert.AreEqual(0us, result)
         else
             Assert.AreEqual(65535us, result)
-        
+
         // Overflow
         let result = Operators.uint16 Double.MinValue
         Assert.AreEqual(0us, result)
 
         // OverflowException, from decimal is always checked
         CheckThrowsOverflowException(fun () -> Operators.uint16 Decimal.MinValue |> ignore)
-        
+
     [<Fact>]
     let uint32() =
         // int
         let result = Operators.uint32 100
         Assert.AreEqual(100u, result)
-        
+
         // double
         let result = Operators.uint32 (100.0:double)
         Assert.AreEqual(100u, result)
-        
+
         // decimal
         let result = Operators.uint32 100M
         Assert.AreEqual(100u, result)
-        
+
         // Overflow
         let result = Operators.uint32 Single.MaxValue
         if Info.isNetFramework then
             Assert.AreEqual(0u, result)
         else
             Assert.AreEqual(4294967295u, result)
-        
+
         // Overflow
         let result = Operators.uint32 Single.MinValue
         Assert.AreEqual(0u, result)
-        
+
         // Overflow
         let result = Operators.uint32 Double.MaxValue
         if Info.isNetFramework then
@@ -709,11 +709,11 @@ module OperatorsModuleDynamic =
         // Overflow
         let result = Operators.uint32 Double.MinValue
         Assert.AreEqual(0u, result)
-        
+
         // Overflow
         let result = Operators.uint32 Int64.MaxValue
         Assert.AreEqual(UInt32.MaxValue, result)
-        
+
         // Overflow
         let result = Operators.uint32 Int64.MinValue
         Assert.AreEqual(0u, result)
@@ -735,11 +735,11 @@ module OperatorsModuleDynamic =
         // int
         let result = Operators.uint64 100
         Assert.AreEqual(100UL, result)
-        
+
         // double
         let result = Operators.uint64 100.0
         Assert.AreEqual(100UL, result)
-        
+
         // decimal
         let result = Operators.uint64 100M
         Assert.AreEqual(100UL, result)
@@ -785,25 +785,25 @@ module OperatorsModuleDynamic =
 
         // OverflowException, from decimal is always checked
         CheckThrowsOverflowException(fun () -> Operators.uint64 Decimal.MinValue |> ignore)
-        
+
     [<Fact>]
     let unativeint() =
         // int
         let result = Operators.unativeint 100
         let x: unativeint = 12un
         Assert.AreEqual(100un, result)
-        
+
         // double
         let result = Operators.unativeint 100.0
         Assert.AreEqual(100un, result)
-        
+
         // Overflow Single.MaxValue is equal on 32 bits and 64 bits runtimes
         let result = Operators.unativeint Single.MaxValue
         if Info.isNetFramework then
             Assert.AreEqual(0un, result)
         else
             Assert.AreEqual(18446744073709551615un, result)
-        
+
         // Overflow (depends on pointer size)
         let result = Operators.unativeint Single.MinValue
         if Info.isX86Runtime then
@@ -813,14 +813,14 @@ module OperatorsModuleDynamic =
                 Assert.AreEqual(9223372036854775808un, result)      // surprising, but true, 2^63 + 1
             else
                 Assert.AreEqual(0un, result)
-        
+
         // Overflow Double.MaxValue is equal on 32 bits and 64 bits runtimes
         let result = Operators.unativeint Double.MaxValue
         if Info.isNetFramework then
             Assert.AreEqual(0un, result)
         else
             Assert.AreEqual(18446744073709551615un, result)
-        
+
         // Overflow (depends on pointer size)
         let result = Operators.unativeint Double.MinValue
         if Info.isX86Runtime then
@@ -845,13 +845,13 @@ module OperatorsModuleDynamic =
             Assert.AreEqual(18446744073709551615un, result)
 
     open Operators.Checked
-    
+
     [<Fact>]
     let Checkedbyte() =
         // int type
         let intByte = Operators.Checked.byte 100
         Assert.AreEqual(100uy, intByte)
- 
+
         // char type
         let charByte = Operators.Checked.byte '0'
         Assert.AreEqual(48uy, charByte)
@@ -877,15 +877,15 @@ module OperatorsModuleDynamic =
         // number
         let numberChar = Operators.Checked.char 48
         Assert.AreEqual('0', numberChar)
-        
+
         // letter
         let letterChar = Operators.Checked.char 65
         Assert.AreEqual('A', letterChar)
-        
+
         // boundary value
         let boundchar = Operators.Checked.char 126
         Assert.AreEqual('~', boundchar)
-        
+
         // overflow exception
         CheckThrowsOverflowException(fun () -> Operators.Checked.char (int64 Char.MaxValue + 1L) |> ignore)
         CheckThrowsOverflowException(fun () -> Operators.Checked.char Single.MaxValue |> ignore)
@@ -894,14 +894,14 @@ module OperatorsModuleDynamic =
         // overflow exception
         CheckThrowsOverflowException(fun () -> '\uFFFF' + '\u0001' |> ignore)
 
-        
+
     [<Fact>]
     let CheckedInt() =
 
         // char
         let charInt = Operators.Checked.int '0'
         Assert.AreEqual(48, charInt)
-        
+
         // float
         let floatInt = Operators.Checked.int 10.0
         Assert.AreEqual(10, floatInt)
@@ -909,7 +909,7 @@ module OperatorsModuleDynamic =
         // boundary value
         let boundInt = Operators.Checked.int 32767.0
         Assert.AreEqual(32767, boundInt)
-        
+
         // overflow exception
         CheckThrowsOverflowException(fun () -> Operators.Checked.int 2147483648.0 |> ignore)
         CheckThrowsOverflowException(fun () -> Operators.Checked.int Single.MaxValue |> ignore)
@@ -927,15 +927,15 @@ module OperatorsModuleDynamic =
         // char
         let charInt16 = Operators.Checked.int16 '0'
         Assert.AreEqual(48s, charInt16)
-        
+
         // float
         let floatInt16 = Operators.Checked.int16 10.0
         Assert.AreEqual(10s, floatInt16)
-        
+
         // boundary value
         let boundInt16 = Operators.Checked.int16 32767.0
         Assert.AreEqual(32767s, boundInt16)
-        
+
         // overflow exception
         CheckThrowsOverflowException(fun () -> Operators.Checked.int16 32768.0 |> ignore)
         CheckThrowsOverflowException(fun () -> Operators.Checked.int16 Single.MaxValue |> ignore)
@@ -953,15 +953,15 @@ module OperatorsModuleDynamic =
         // char
         let charInt32 = Operators.Checked.int32 '0'
         Assert.AreEqual(48, charInt32)
-        
+
         // float
         let floatInt32 = Operators.Checked.int32 10.0
         Assert.AreEqual(10, floatInt32)
-        
+
         // boundary value
         let boundInt32 = Operators.Checked.int32 2147483647.0
         Assert.AreEqual(2147483647, boundInt32)
-        
+
         // overflow exception
         CheckThrowsOverflowException(fun () -> Operators.Checked.int32 2147483648.0 |> ignore)
         CheckThrowsOverflowException(fun () -> Operators.Checked.int32 Single.MaxValue |> ignore)
@@ -979,21 +979,21 @@ module OperatorsModuleDynamic =
         // char
         let charInt64 = Operators.Checked.int64 '0'
         Assert.AreEqual(48L, charInt64)
-        
+
         // float
         let floatInt64 = Operators.Checked.int64 10.0
         Assert.AreEqual(10L, floatInt64)
-        
+
         // boundary value
         let boundInt64 = Operators.Checked.int64 9223372036854775807I
         let _  = 9223372036854775807L
         Assert.AreEqual(9223372036854775807L, boundInt64)
-        
+
         // boundary value
         let boundInt64 = Operators.Checked.int64 -9223372036854775808I
         let _  = -9223372036854775808L
         Assert.AreEqual(-9223372036854775808L, boundInt64)
-        
+
         // overflow exception
         CheckThrowsOverflowException(fun () -> Operators.Checked.int64 (float Int64.MaxValue + 1.0) |> ignore)
         CheckThrowsOverflowException(fun () -> Operators.Checked.int64 Single.MaxValue |> ignore)
@@ -1011,15 +1011,15 @@ module OperatorsModuleDynamic =
         // char
         let charnativeint = Operators.Checked.nativeint '0'
         Assert.AreEqual(48n, charnativeint)
-        
+
         // float
         let floatnativeint = Operators.Checked.nativeint 10.0
         Assert.AreEqual(10n, floatnativeint)
-        
+
         // boundary value
         let boundnativeint = Operators.Checked.nativeint 32767.0
         Assert.AreEqual(32767n, boundnativeint)
-        
+
         // overflow exception (depends on pointer size)
         CheckThrowsOverflowException(fun () ->
             if Info.isX86Runtime then
@@ -1029,22 +1029,22 @@ module OperatorsModuleDynamic =
         CheckThrowsOverflowException(fun () -> Operators.Checked.nativeint Single.MaxValue |> ignore)
         CheckThrowsOverflowException(fun () -> Operators.Checked.nativeint Double.MaxValue |> ignore)
 
-         
+
     [<Fact>]
     let Checkedsbyte() =
 
         // char
         let charsbyte = Operators.Checked.sbyte '0'
         Assert.AreEqual(48y, charsbyte)
-        
+
         // float
         let floatsbyte = Operators.Checked.sbyte -10.0
         Assert.AreEqual(-10y, floatsbyte)
-        
+
         // boundary value
         let boundsbyte = Operators.Checked.sbyte -127.0
         Assert.AreEqual(-127y, boundsbyte)
-        
+
         // overflow exception
         CheckThrowsOverflowException(fun () -> Operators.Checked.sbyte -256 |> ignore)
         CheckThrowsOverflowException(fun () -> Operators.Checked.sbyte Single.MaxValue |> ignore)
@@ -1062,15 +1062,15 @@ module OperatorsModuleDynamic =
         // char
         let charuint16 = Operators.Checked.uint16 '0'
         Assert.AreEqual(48us, charuint16)
-        
+
         // float
         let floatuint16 = Operators.Checked.uint16 10.0
         Assert.AreEqual(10us, floatuint16)
-        
+
         // boundary value
         let bounduint16 = Operators.Checked.uint16 65535.0
         Assert.AreEqual(65535us, bounduint16)
-        
+
         CheckThrowsOverflowException(fun () -> Operators.Checked.uint16 65536.0 |> ignore)
         CheckThrowsOverflowException(fun () -> Operators.Checked.uint16 Single.MaxValue |> ignore)
         CheckThrowsOverflowException(fun () -> Operators.Checked.uint16 Double.MaxValue |> ignore)
@@ -1087,11 +1087,11 @@ module OperatorsModuleDynamic =
         // char
         let charuint32 = Operators.Checked.uint32 '0'
         Assert.AreEqual(48u, charuint32)
-        
+
         // float
         let floatuint32 = Operators.Checked.uint32 10.0
         Assert.AreEqual(10u, floatuint32)
-        
+
         // boundary value
         let bounduint32 = Operators.Checked.uint32 429496729.0
         Assert.AreEqual(429496729u, bounduint32)
@@ -1113,15 +1113,15 @@ module OperatorsModuleDynamic =
         // char
         let charuint64 = Operators.Checked.uint64 '0'
         Assert.AreEqual(48UL, charuint64)
-        
+
         // float
         let floatuint64 = Operators.Checked.uint64 10.0
         Assert.AreEqual(10UL, floatuint64)
-        
+
         // boundary value
         let bounduint64 = Operators.Checked.uint64 429496729.0
         Assert.AreEqual(429496729UL, bounduint64)
-        
+
         // overflow exception
         CheckThrowsOverflowException(fun () -> Operators.Checked.uint64 (float System.UInt64.MaxValue + 1.0) |> ignore)
         CheckThrowsOverflowException(fun () -> Operators.Checked.uint64 Single.MaxValue |> ignore)
@@ -1139,11 +1139,11 @@ module OperatorsModuleDynamic =
         // char
         let charunativeint = Operators.Checked.unativeint '0'
         Assert.AreEqual(48un, charunativeint)
-        
+
         // float
         let floatunativeint = Operators.Checked.unativeint 10.0
         Assert.AreEqual(10un, floatunativeint)
-        
+
         // boundary value (dependent on pointer size)
         if Info.isX86Runtime then
             let boundunativeint = Operators.Checked.unativeint 4294967295.0
@@ -1151,12 +1151,12 @@ module OperatorsModuleDynamic =
         else
             let boundnativeint = Operators.Checked.unativeint 1.84467440737095505E+19  // 64 bit max value cannot be expressed exactly as double
             Assert.AreEqual(18446744073709549568un, boundnativeint)
-        
+
         // overflow exception (depends on pointer size)
-        CheckThrowsOverflowException(fun () -> 
+        CheckThrowsOverflowException(fun () ->
             if Info.isX86Runtime then
                 Operators.Checked.unativeint (float UInt32.MaxValue + 1.0) |> ignore
-            else 
+            else
                 Operators.Checked.unativeint (float UInt64.MaxValue + 1.0) |> ignore
         )
         CheckThrowsOverflowException(fun () -> Operators.Checked.unativeint Single.MaxValue |> ignore)

@@ -1,4 +1,4 @@
-// #Regression #Conformance #DeclarationElements #LetBindings #TypeTests 
+// #Regression #Conformance #DeclarationElements #LetBindings #TypeTests
 // Verify error associated with putting type functions inside types
 
 

@@ -24,7 +24,7 @@ let defaultStructural() = CacheOptions.getDefault HashIdentity.Structural
 
 [<Fact>]
 let ``Create and dispose many`` () =
-    let caches = 
+    let caches =
         [ for _  in 1 .. 100 do
             new Cache<string, int>(defaultStructural(), name = "Create and dispose many") :> IDisposable ]
 
@@ -204,7 +204,7 @@ let ``GetOrAdd with reference identity`` () =
     let t2 = BoxedKey (1, 2)
     let t3 = BoxedKey (1, 2)
     let mutable createdCOunter = 0
-    let factory _ = 
+    let factory _ =
             createdCOunter <- createdCOunter + 1
             createdCOunter
 

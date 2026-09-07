@@ -3,6 +3,6 @@
 type private X() = class end
 
 type XX() =
-    member val public PublicProperty = X() with get,set 
+    member val public PublicProperty = X() with get,set
 
 exit 1

@@ -1,4 +1,4 @@
-// #Regression #Conformance #Quotations 
+// #Regression #Conformance #Quotations
 
 
 // Verify restrictions for what can be written in a quotation
@@ -6,4 +6,4 @@
 
 let _ = <@ let mutable x = 0
            let y = &x
-           y @>     
+           y @>

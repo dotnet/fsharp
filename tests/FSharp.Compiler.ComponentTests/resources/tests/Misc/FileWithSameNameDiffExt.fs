@@ -1,4 +1,4 @@
-// #Regression #Misc 
+// #Regression #Misc
 // Regression test for FSHARP1.0:5268
 namespace N
 module M =

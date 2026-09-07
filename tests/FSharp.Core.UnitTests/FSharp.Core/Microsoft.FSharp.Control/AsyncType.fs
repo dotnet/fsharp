@@ -33,7 +33,7 @@ module AsyncType =
 
         async {
             Async.CancelDefaultToken()
-            return () 
+            return ()
         } |> expect Cancellation
 
         async { failwith "computation failed" } |> expect Exception
@@ -68,7 +68,7 @@ type AsyncType() =
 
     [<VolatileField>]
     let mutable spinloop = true
-        
+
     [<Theory; InlineData true; InlineData false>]
     member _.AsyncRunSynchronouslyReusesThreadPoolThread(immediate) =
         let run a = asyncWait immediate a
@@ -450,7 +450,7 @@ type AsyncType() =
                 return v
             // A canceled task yields TaskCanceledException via the exception continuation
             with
-               :? TaskCanceledException -> 
+               :? TaskCanceledException ->
                   ewh.Set() |> ignore // this is ok
         }
         let t1 = Async.StartAsTask a
@@ -493,7 +493,7 @@ type AsyncType() =
                 return v
             // A canceled task yields TaskCanceledException via the exception continuation
             with
-               :? TaskCanceledException -> 
+               :? TaskCanceledException ->
                   ewh.Set() |> ignore // this is ok
         }
         let t1 = Async.StartAsTask a
@@ -526,10 +526,10 @@ type AsyncType() =
             Console.WriteLine (if x = 10000 then failwith "finish" else x)
             return! loop(x+1)
         }
-    
+
         try asyncWait false (loop 0)
             hasThrown <- false
-        with Failure "finish" -> 
+        with Failure "finish" ->
             hasThrown <- true
         Assert.True hasThrown
 
@@ -558,7 +558,7 @@ type AsyncType() =
         res.Task.Wait()
 
     (* When an AggregateException has multiple inner exceptions, Await and AwaitTask behave identically *)
-    
+
     [<Theory; InlineData(false); InlineData(true)>]
     member _.``Await and AwaitTask(Task<'T>) valid AggregateException is surfaced``(newAwait) =
         let tcs = TaskCompletionSource<int>()
@@ -582,9 +582,9 @@ type AsyncType() =
             with :? AggregateException as ae -> return ae.InnerExceptions.Count = 2
         }
         Assert.True(asyncWaitImm a)
-        
+
     (* Async.Await behavioral differences
-    
+
        The following tests demonstrate where Async.Await deliberately differs from Async.AwaitTask *)
 
     // Async.AwaitTask(Task) surfaces the wrapping AggregateException ...
@@ -636,7 +636,7 @@ type AsyncType() =
         Assert.True(asyncWaitImm a)
 
     (* Await(Task/Task<'T>) overloads happy path *)
-    
+
     [<Fact>]
     member _.``Await(Task<'T>) happy path``() =
         let a = async {
@@ -820,7 +820,7 @@ module AsyncTaskLikeAwaitTests =
                 return v
             }
         Assert.Equal(42, asyncWaitImm a)
-        
+
 
     [<Fact>]
     let ``Await(task-like) happy path unit``() =
@@ -1016,7 +1016,7 @@ module AsyncAwaitStackTraceTests =
     let ``Await ValueTask-of-T: all three levels visible in stack trace`` () =
         // For a faulted ValueTask<unit>, IsCompletedSuccessfully is false; the overload falls
         // through to AwaitTask, which takes the same path as the specific Task<'T> overload.
-        let e = runAndCaptureException (async { do! Async.Await(ValueTask<unit>(level2Task())) }) 
+        let e = runAndCaptureException (async { do! Async.Await(ValueTask<unit>(level2Task())) })
         checkTrace 3 e
 
     [<Fact>]

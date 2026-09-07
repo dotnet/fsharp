@@ -2,6 +2,7 @@
 
 module internal FSharp.Compiler.TypeHierarchy
 
+open Internal.Utilities.Library
 open Internal.Utilities.Library.Extras
 open FSharp.Compiler.Text
 open FSharp.Compiler.AbstractIL.IL
@@ -28,13 +29,13 @@ let GetSuperTypeOfType g amap m ty =
 #if !NO_TYPEPROVIDERS
     let ty =
         match tryTcrefOfAppTy g ty with
-        | ValueSome tcref when tcref.IsProvided -> stripTyEqns g ty 
+        | ValueSome tcref when tcref.IsProvided -> stripTyEqns g ty
         | _ -> stripTyEqnsAndMeasureEqns g ty
 #else
     let ty = stripTyEqnsAndMeasureEqns g ty
 #endif
 
-    let resBeforeNull = 
+    let resBeforeNull =
         match metadataOfTy g ty with
 #if !NO_TYPEPROVIDERS
         | ProvidedTypeMetadata info ->
@@ -77,12 +78,12 @@ let GetSuperTypeOfType g amap m ty =
             else
                 None
 
-    match resBeforeNull with 
+    match resBeforeNull with
     | Some superTy ->
         let nullness = nullnessOfTy g ty
         let superTyWithNull = addNullnessToTy nullness superTy
         Some superTyWithNull
-    | None -> 
+    | None ->
         None
 
 /// Make a type for System.Collections.Generic.IList<ty>
@@ -204,11 +205,11 @@ and ExistsSystemNumericsTypeInInterfaceHierarchy skipUnref g amap m ity =
     ExistsInInterfaceHierarchy
         (fun ity2 ->
             match ity2 with
-            | AppTy g (tcref,_) -> 
+            | AppTy g (tcref,_) ->
                 match tcref.CompilationPath.AccessPath with
                 | [("System", _); ("Numerics", _)] -> true
                 | _ -> false
-            | _ -> false) 
+            | _ -> false)
         skipUnref g amap m ity
 
 // Check for IComparable<A>, IEquatable<A> and interfaces that derive from these
@@ -220,7 +221,7 @@ and ExistsInInterfaceHierarchy p skipUnref g amap m intfTy =
     match intfTy with
     | AppTy g (tcref, tinst) ->
         p intfTy ||
-        (GetImmediateInterfacesOfMetadataType g amap m skipUnref intfTy tcref tinst 
+        (GetImmediateInterfacesOfMetadataType g amap m skipUnref intfTy tcref tinst
          |> List.exists (ExistsInInterfaceHierarchy p skipUnref g amap m))
     | _ -> false
 
@@ -233,19 +234,21 @@ type AllowMultiIntfInstantiations = Yes | No
 let FoldHierarchyOfTypeAux followInterfaces allowMultiIntfInst skipUnref visitor g amap m ty acc =
     let rec loop ndeep ty (visitedTycon, visited: TyconRefMultiMap<_>, acc as state) =
 
-        let seenThisTycon = 
-            match tryTcrefOfAppTy g ty with
+        let tcrefOpt = tryTcrefOfAppTy g ty
+
+        let seenThisTycon =
+            match tcrefOpt with
             | ValueSome tcref -> Set.contains tcref.Stamp visitedTycon
             | _ -> false
 
         // Do not visit the same type twice. Could only be doing this if we've seen this tycon
-        if seenThisTycon && List.exists (typeEquiv g ty) (visited.Find (tcrefOfAppTy g ty)) then state else
+        if seenThisTycon && (match tcrefOpt with ValueSome tcref -> ListInline.exists (typeEquiv g ty) (visited.Find tcref) | ValueNone -> false) then state else
 
         // Do not visit the same tycon twice, e.g. I<int> and I<string>, collect I<int> only, unless directed to allow this
         if seenThisTycon && allowMultiIntfInst = AllowMultiIntfInstantiations.No then state else
 
         let state =
-            match tryTcrefOfAppTy g ty with
+            match tcrefOpt with
             | ValueSome tcref ->
                 let visitedTycon = Set.add tcref.Stamp visitedTycon
                 visitedTycon, visited.Add (tcref, ty), acc
@@ -253,10 +256,11 @@ let FoldHierarchyOfTypeAux followInterfaces allowMultiIntfInst skipUnref visitor
                 state
 
         if ndeep > 100 then (errorR(Error((FSComp.SR.recursiveClassHierarchy (RichText.mkText (showType ty))), m)); (visitedTycon, visited, acc)) else
+        // Local 'loop' is passed as a lambda, not 'loop (ndeep+1)': InlineIfLambda then inlines it instead of allocating it as a closure.
         let visitedTycon, visited, acc =
             if isInterfaceTy g ty then
-                List.foldBack
-                   (loop (ndeep+1))
+                ListInline.foldBack
+                   (fun ity st -> loop (ndeep+1) ity st)
                    (GetImmediateInterfacesOfType skipUnref g amap m ty)
                       (loop ndeep g.obj_ty_noNulls state)
             else
@@ -287,15 +291,15 @@ let FoldHierarchyOfTypeAux followInterfaces allowMultiIntfInst skipUnref visitor
                 | _ ->
                     let state =
                         if followInterfaces then
-                            List.foldBack
-                              (loop (ndeep+1))
+                            ListInline.foldBack
+                              (fun ity st -> loop (ndeep+1) ity st)
                               (GetImmediateInterfacesOfType skipUnref g amap m ty)
                               state
                         else
                             state
                     let state =
                         Option.foldBack
-                          (loop (ndeep+1))
+                          (fun sty st -> loop (ndeep+1) sty st)
                           (GetSuperTypeOfType g amap m ty)
                           state
                     state
@@ -385,12 +389,12 @@ let ImportILTypeFromMetadataWithAttributes amap m scoref tinst minst nullnessSou
         ty
 
 /// Get the parameter type of an IL method.
-let ImportParameterTypeFromMetadata amap m nullnessSource ilTy scoref tinst mist =   
+let ImportParameterTypeFromMetadata amap m nullnessSource ilTy scoref tinst mist =
     ImportILTypeFromMetadataWithAttributes amap m scoref tinst mist nullnessSource ilTy
 
 /// Get the return type of an IL method, taking into account instantiations for type, return attributes and method generic parameters, and
 /// translating 'void' to 'None'.
-let ImportReturnTypeFromMetadata amap m nullnessSource ilTy scoref tinst minst =  
+let ImportReturnTypeFromMetadata amap m nullnessSource ilTy scoref tinst minst =
     match ilTy with
     | ILType.Void -> None
     | retTy -> Some(ImportILTypeFromMetadataWithAttributes amap m scoref tinst minst nullnessSource retTy )
@@ -420,7 +424,7 @@ let CopyTyparConstraints (traitCtxt: ITraitContext option) m tprefInst (tporig: 
                TyparConstraint.IsEnum (instType tprefInst underlyingTy, m)
            | TyparConstraint.SupportsComparison _ ->
                TyparConstraint.SupportsComparison m
-           | TyparConstraint.NotSupportsNull _ -> 
+           | TyparConstraint.NotSupportsNull _ ->
                TyparConstraint.NotSupportsNull m
            | TyparConstraint.SupportsEquality _ ->
                TyparConstraint.SupportsEquality m

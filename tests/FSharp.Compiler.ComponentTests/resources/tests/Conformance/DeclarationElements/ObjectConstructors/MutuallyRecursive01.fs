@@ -1,4 +1,4 @@
-// #Conformance #DeclarationElements #ObjectConstructors 
+// #Conformance #DeclarationElements #ObjectConstructors
 
 
 // Verify the ability to define mutually recursive types.

@@ -1,4 +1,4 @@
-// #Conformance #DeclarationElements #ObjectConstructors 
+// #Conformance #DeclarationElements #ObjectConstructors
 open System
 
 // Test chaining of constructors.
@@ -6,9 +6,9 @@ open System
 type TestType(arg1 : int, arg2 : int) =
     let m_value = arg1 + arg2
     member this.Value = m_value
-    
+
     new (sarg1 : string, sarg2 : string) = TestType(Int32.Parse(sarg1), Int32.Parse(sarg2))
-    
+
     new (x : int list) = TestType((List.nth x 0), (List.nth x 1))
 
     new (x : string list) = TestType((List.nth x 0), (List.nth x 1))

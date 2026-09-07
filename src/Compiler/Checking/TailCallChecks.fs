@@ -317,8 +317,7 @@ and CheckExprLinear (cenv: cenv) expr (ctxt: PermitByRefExpr) (tailCall: TailCal
 and CheckExpr (cenv: cenv) origExpr (ctxt: PermitByRefExpr) (tailCall: TailCall) : unit =
 
     // Guard the stack for deeply nested expressions
-    cenv.stackGuard.Guard
-    <| fun () ->
+    cenv.stackGuard.Guard(fun () ->
 
         let g = cenv.g
 
@@ -408,7 +407,7 @@ and CheckExpr (cenv: cenv) origExpr (ctxt: PermitByRefExpr) (tailCall: TailCall)
 
         | Expr.WitnessArg _ -> ()
 
-        | Expr.Link _ -> failwith "Unexpected reclink"
+        | Expr.Link _ -> failwith "Unexpected reclink")
 
 and CheckStructStateMachineExpr cenv info =
 

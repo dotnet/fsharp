@@ -15,7 +15,7 @@ type MyRecord = {X:string}"""
 type MyRecord = {X:string}
 module private PrivateInnerModule = 
     let private add a b = a + b""")>]
-    
+
 [<InlineData("Adding a private let binding",
 (*BEFORE*)"""module Foo
 let a b = b - 1
@@ -167,7 +167,7 @@ let domeSomething() = { new System.IDisposable with member x.Dispose() = () }  "
         val mutable private boo : byte []        
         member this.P with set(x) = this.boo <- x  """)>]
 
-let ``Hash should be stable for`` (change:string,codeBefore:string,codeAfter:string) =    
+let ``Hash should be stable for`` (change:string,codeBefore:string,codeAfter:string) =
     let hashBefore = Fs codeBefore |> getImpliedSignatureHash
     let hashAfter = Fs codeAfter |> getImpliedSignatureHash
 
@@ -301,7 +301,7 @@ type MyRecord = { Mass: int<m> }""")>]
 //TODO add a lot more negative tests - in which cases should hash in fact change
 
 [<Theory>]
-let ``Hash should change when`` (change:string,codeBefore:string,codeAfter:string) =  
+let ``Hash should change when`` (change:string,codeBefore:string,codeAfter:string) =
     let hashBefore = Fs codeBefore |> getImpliedSignatureHash
     let hashAfter = Fs codeAfter |> getImpliedSignatureHash
 

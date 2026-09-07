@@ -1,4 +1,4 @@
-// #Regression #Conformance #PatternMatching 
+// #Regression #Conformance #PatternMatching
 // Regression test for FSharp1.0:4920
 // Title: Can't have a quotation with an incomplete pattern match
 // Regression test for FSharp1.0:4904
@@ -11,19 +11,19 @@
 
 let foo x =
     <@@
-        match x with 
+        match x with
         | 1 -> 1
-        | 2 -> 2 
+        | 2 -> 2
     @@>
 
-let g = 
-    <@ 
+let g =
+    <@
         let f ( int : int ) = function
             | 1 -> 0
             | 2 -> 1
         f
     @>
-    
+
 let h =
     <@@
         match 10 with
@@ -31,5 +31,5 @@ let h =
         | 1 -> 20
         | 10 -> 10
     @@>
-    
+
 printfn "Finished"
