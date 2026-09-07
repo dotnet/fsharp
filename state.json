@@ -101,7 +101,7 @@
       "cats": []
     },
     "20385": {
-      "sha": "e4f972fec96f",
+      "sha": "176a26a78dfa",
       "cats": []
     },
     "20374": {
@@ -254,7 +254,7 @@
       "cats": []
     },
     "20428": {
-      "sha": "393ef7d0b003",
+      "sha": "22259439e602",
       "cats": [
         "Affects-Compiler-Output"
       ]
@@ -268,11 +268,10 @@
       "cats": []
     },
     "20235": {
-      "sha": "52deaff98799",
+      "sha": "e33dabedbb99",
       "cats": [
         "Affects-Bootstrap",
-        "Affects-Compiler-Output",
-        "Affects-Test-Tooling"
+        "Affects-Compiler-Output"
       ]
     },
     "20435": {
@@ -285,10 +284,6 @@
     },
     "20437": {
       "sha": "75be5cec241b",
-      "cats": []
-    },
-    "20439": {
-      "sha": "7e75ab362322",
       "cats": []
     },
     "20440": {
@@ -315,7 +310,7 @@
       ]
     },
     "20447": {
-      "sha": "2c2509662680",
+      "sha": "4e9f68299e6b",
       "cats": []
     },
     "20452": {
@@ -405,7 +400,7 @@
       ]
     },
     "20468": {
-      "sha": "948a839a8232",
+      "sha": "2581871d5795",
       "cats": []
     },
     "20470": {
@@ -415,6 +410,12 @@
     "20473": {
       "sha": "11997b42112f",
       "cats": []
+    },
+    "20475": {
+      "sha": "cf7e575ff987",
+      "cats": [
+        "Affects-Agent-Config"
+      ]
     }
   }
 }
