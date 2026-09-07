@@ -1944,16 +1944,17 @@ let AdaptOpaqueOptimizedClosureArgs g (lambdaExpr: Expr) f0ty (arginfos: Summary
         let arity = List.length argTys
         let mutable rewrote = false
 
-        // Single saturated App only: rewriting a staged chain would reorder its intermediate effects.
+        // Reroute a single saturated application node; a staged chain is left alone so its effects keep order.
+        // PostTransform sees already-rewritten arguments and preserves any enclosing debug point.
         let env =
-            { PreIntercept =
-                Some(fun cont e ->
-                    match stripDebugPoints e with
+            { PreIntercept = None
+              PostTransform =
+                (fun e ->
+                    match e with
                     | ValApp g folderVref (_, args, _) when List.length args = arity ->
                         rewrote <- true
-                        Some(mkCallOptimizedClosuresInvoke g m argTys retTy adaptedExpr (List.map cont args))
+                        Some(mkCallOptimizedClosuresInvoke g m argTys retTy adaptedExpr args)
                     | _ -> None)
-              PostTransform = (fun _ -> None)
               PreInterceptBinding = None
               RewriteQuotations = false
               StackGuard = StackGuard("OptimizeClosureIfNotInlinedStackGuard") }
@@ -1961,7 +1962,9 @@ let AdaptOpaqueOptimizedClosureArgs g (lambdaExpr: Expr) f0ty (arginfos: Summary
         let rewrittenBody = RewriteExpr env body
         if rewrote then mkCompGenLet m adaptedVal adaptCall rewrittenBody else body
 
-    mkMultiLambdas g m tps vsl (List.fold adaptFormal body flagged, bodyTy)
+    let rewrittenBody = List.fold adaptFormal body flagged
+    if body === rewrittenBody then lambdaExpr
+    else mkMultiLambdas g m tps vsl (rewrittenBody, bodyTy)
 
 /// Matches boolean decision tree:
 /// check single case with bool const.

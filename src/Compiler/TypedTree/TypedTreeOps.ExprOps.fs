@@ -1614,6 +1614,8 @@ module internal Makers =
         call, resultTy
 
     let mkCallOptimizedClosuresInvoke (g: TcGlobals) m (argTys: TType list) (retTy: TType) fExpr argExprs =
+        assert (List.length argExprs = argTys.Length)
+
         let formalArgTys, formalRetTy, optClosILTy, tinst =
             optimizedClosureILShape g argTys retTy
 
