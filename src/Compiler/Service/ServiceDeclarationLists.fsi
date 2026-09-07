@@ -15,7 +15,7 @@ open FSharp.Compiler.AccessibilityLogic
 
 /// A single data tip display element
 [<RequireQualifiedAccess>]
-type public ToolTipElementData = 
+type public ToolTipElementData =
     {
       Symbol: FSharpSymbol option
 
@@ -39,7 +39,7 @@ type public ToolTipElementData =
 //
 // Note: instances of this type do not hold any references to any compiler resources.
 [<RequireQualifiedAccess>]
-type public ToolTipElement = 
+type public ToolTipElement =
     | None
 
     /// A single type, method, etc with comment. May represent a method overload group.
@@ -53,7 +53,7 @@ type public ToolTipElement =
 /// Information for building a tool tip box.
 //
 // Note: instances of this type do not hold any references to any compiler resources.
-type public ToolTipText = 
+type public ToolTipText =
 
     /// A list of data tip elements to display.
     | ToolTipText of ToolTipElement list
@@ -88,10 +88,10 @@ type internal CompletionItem =
 
       MinorPriority: int
 
-      Type: TyconRef option 
+      Type: TyconRef option
 
       Unresolved: UnresolvedSymbol option
-      
+
       CustomInsertText: string voption
       CustomDisplayText: string voption
     }
@@ -156,25 +156,25 @@ type public DeclarationListInfo =
 
     member IsError: bool
 
-    // Implementation details used by other code in the compiler    
+    // Implementation details used by other code in the compiler
     static member internal Create:
-        infoReader:InfoReader * 
+        infoReader:InfoReader *
         ad:AccessorDomain *
-        m:range * 
-        denv:DisplayEnv * 
-        getAccessibility:(Item -> FSharpAccessibility) * 
-        items:CompletionItem list * 
-        currentNamespace:string[] option * 
-        isAttributeApplicationContext:bool 
+        m:range *
+        denv:DisplayEnv *
+        getAccessibility:(Item -> FSharpAccessibility) *
+        items:CompletionItem list *
+        currentNamespace:string[] option *
+        isAttributeApplicationContext:bool
             -> DeclarationListInfo
 
     static member internal Error: message:string -> DeclarationListInfo
 
     static member Empty: DeclarationListInfo
 
-/// Represents one parameter for one method (or other item) in a group. 
+/// Represents one parameter for one method (or other item) in a group.
 [<Sealed>]
-type public MethodGroupItemParameter = 
+type public MethodGroupItemParameter =
 
     /// The name of the parameter.
     member ParameterName: string
@@ -189,10 +189,10 @@ type public MethodGroupItemParameter =
     /// Is the parameter optional
     member IsOptional: bool
 
-/// Represents one method (or other item) in a method group. The item may represent either a method or 
+/// Represents one method (or other item) in a method group. The item may represent either a method or
 /// a single, non-overloaded item such as union case or a named function value.
 [<Sealed; NoEquality; NoComparison>]
-type public MethodGroupItem = 
+type public MethodGroupItem =
 
     /// The documentation for the item
     member XmlDoc: FSharpXmlDoc
@@ -215,9 +215,9 @@ type public MethodGroupItem =
     /// Does the type name or method support a static arguments list, like TP<42,"foo"> or conn.CreateCommand<42, "foo">(arg1, arg2)?
     member StaticParameters: MethodGroupItemParameter[]
 
-/// Represents a group of methods (or other items) returned by GetMethods.  
+/// Represents a group of methods (or other items) returned by GetMethods.
 [<Sealed>]
-type public MethodGroup = 
+type public MethodGroup =
 
     internal new: string * MethodGroupItem[] -> MethodGroup
 
@@ -225,7 +225,7 @@ type public MethodGroup =
     member MethodName: string
 
     /// The methods (or other items) in the group
-    member Methods: MethodGroupItem[] 
+    member Methods: MethodGroupItem[]
 
     static member internal Create: InfoReader * AccessorDomain * range * DisplayEnv * ItemWithInst list -> MethodGroup
 
