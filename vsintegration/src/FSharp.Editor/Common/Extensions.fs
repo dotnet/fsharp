@@ -527,6 +527,24 @@ module Array =
 
         loop 0
 
+    let inline tryFindIndexV ([<InlineIfLambda>] predicate) (array: _[]) =
+
+        let rec loop i =
+            if i >= array.Length then ValueNone
+            else if predicate array.[i] then ValueSome i
+            else loop (i + 1)
+
+        loop 0
+
+    let inline tryFindIndexBackV ([<InlineIfLambda>] predicate) (array: _[]) =
+
+        let rec loop i =
+            if i < 0 then ValueNone
+            else if predicate array.[i] then ValueSome i
+            else loop (i - 1)
+
+        loop (array.Length - 1)
+
     let inline chooseV ([<InlineIfLambda>] chooser: 'T -> 'U voption) (array: 'T[]) =
 
         let mutable i = 0
@@ -602,6 +620,23 @@ module List =
         match list with
         | [] -> ValueNone
         | h :: t -> if predicate h then ValueSome h else tryFindV predicate t
+
+    let inline tryFindIndexV ([<InlineIfLambda>] predicate) list =
+        let rec loop i rest =
+            match rest with
+            | [] -> ValueNone
+            | h :: t -> if predicate h then ValueSome i else loop (i + 1) t
+
+        loop 0 list
+
+    /// Walks forward keeping the last match, so it stays tail-recursive on long lists.
+    let inline tryFindIndexBackV ([<InlineIfLambda>] predicate) list =
+        let rec loop i last rest =
+            match rest with
+            | [] -> last
+            | h :: t -> loop (i + 1) (if predicate h then ValueSome i else last) t
+
+        loop 0 ValueNone list
 
 [<RequireQualifiedAccess>]
 module Exception =
