@@ -13,7 +13,6 @@ type LanguageFeature =
     | WitnessPassing
     | AdditionalTypeDirectedConversions
     | StringInterpolation
-    | OverloadsForCustomOperations
     | ExpandedMeasurables
     | NullnessChecking
     | RefCellNotationInformationals
@@ -28,7 +27,6 @@ type LanguageFeature =
     | MatchNotAllowedForUnionCaseWithNoData
     | CSharpExtensionAttributeNotRequired
     | ErrorForNonVirtualMembersOverrides
-    | ArithmeticInLiterals
     | ErrorReportingOnStaticClasses
     | WarningWhenCopyAndUpdateRecordChangesAllFields
     | NonInlineLiteralsAsPrintfFormat
@@ -39,7 +37,6 @@ type LanguageFeature =
     | WarningWhenTailRecAttributeButNonTailRecUsage
     | UnmanagedConstraintCsharpInterop
     | ReuseSameFieldsInStructUnions
-    | ExtendedFixedBindings
     /// RFC-1137
     | PreferExtensionMethodOverPlainProperty
     | WarningIndexedPropertiesGetSetSameType

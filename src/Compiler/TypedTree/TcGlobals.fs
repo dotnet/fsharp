@@ -465,8 +465,8 @@ type TcGlobals(
   let v_string_ty       = mkNonGenericTy v_string_tcr
   let v_string_ty_ambivalent = mkNonGenericTyWithNullness v_string_tcr KnownAmbivalentToNull
   let v_decimal_ty      = mkSysNonGenericTy sys "Decimal"
-  let v_unit_ty         = mkNonGenericTy v_unit_tcr_nice 
-  let v_system_Type_ty = mkSysNonGenericTy sys "Type" 
+  let v_unit_ty         = mkNonGenericTy v_unit_tcr_nice
+  let v_system_Type_ty = mkSysNonGenericTy sys "Type"
   let v_Array_tcref = findSysTyconRef sys "Array"
 
   let v_system_Reflection_MethodInfo_ty = mkSysNonGenericTy ["System";"Reflection"] "MethodInfo"
@@ -649,16 +649,16 @@ type TcGlobals(
                             fslib_MFPrintfModule_nleref
                             fslib_MFSeqModule_nleref
                             fslib_MFListModule_nleref
-                            fslib_MFArrayModule_nleref   
-                            fslib_MFArray2DModule_nleref   
-                            fslib_MFArray3DModule_nleref   
-                            fslib_MFArray4DModule_nleref   
-                            fslib_MFSetModule_nleref   
-                            fslib_MFMapModule_nleref   
-                            fslib_MFStringModule_nleref   
-                            fslib_MFNativePtrModule_nleref   
-                            fslib_MFOptionModule_nleref   
-                            fslib_MFStateMachineHelpers_nleref 
+                            fslib_MFArrayModule_nleref
+                            fslib_MFArray2DModule_nleref
+                            fslib_MFArray3DModule_nleref
+                            fslib_MFArray4DModule_nleref
+                            fslib_MFSetModule_nleref
+                            fslib_MFMapModule_nleref
+                            fslib_MFStringModule_nleref
+                            fslib_MFNativePtrModule_nleref
+                            fslib_MFOptionModule_nleref
+                            fslib_MFStateMachineHelpers_nleref
                             fslib_MFRuntimeHelpers_nleref ] do
 
                     yield nleref.LastItemMangledName, ERefNonLocal nleref  ]
@@ -698,7 +698,7 @@ type TcGlobals(
       | Some ty -> ty
       | None -> TType_app(tcref, tinst, nullness)
 
-  let decodeTupleTy tupInfo tinst = 
+  let decodeTupleTy tupInfo tinst =
       decodeTupleTyAndNullness tupInfo tinst v_knownWithoutNull
 
   let mk_MFCore_attrib nm : BuiltinAttribInfo =
@@ -1068,11 +1068,11 @@ type TcGlobals(
           let entries = betterEntries
           let t = Dictionary.newWithSize entries.Length
           for nm, tcref, builder in entries do
-              t.Add(nm, 
-                     (fun tcref2 tinst2 nullness -> 
-                         if tyconRefEq tcref tcref2 then 
-                             builder tinst2 nullness 
-                         else 
+              t.Add(nm,
+                     (fun tcref2 tinst2 nullness ->
+                         if tyconRefEq tcref tcref2 then
+                             builder tinst2 nullness
+                         else
                              TType_app (tcref2, tinst2, nullness)))
           betterTypeDict1 <- t
           t
@@ -1487,8 +1487,8 @@ type TcGlobals(
   member val system_ExceptionDispatchInfo_ty =
       tryMkSysNonGenericTy ["System"; "Runtime"; "ExceptionServices"] "ExceptionDispatchInfo"
 
-  member _.mk_IAsyncStateMachine_ty = mkSysNonGenericTy sysCompilerServices "IAsyncStateMachine" 
-    
+  member _.mk_IAsyncStateMachine_ty = mkSysNonGenericTy sysCompilerServices "IAsyncStateMachine"
+
   member val system_Object_tcref = findSysTyconRef sys "Object"
   member val system_Value_tcref = findSysTyconRef sys "ValueType"
   member val system_Void_tcref = findSysTyconRef sys "Void"
@@ -1543,7 +1543,7 @@ type TcGlobals(
   member val iltyp_RuntimeMethodHandle = findSysILTypeRef tname_RuntimeMethodHandle |> mkILNonGenericValueTy
   member val iltyp_RuntimeTypeHandle   = findSysILTypeRef tname_RuntimeTypeHandle |> mkILNonGenericValueTy
   member val iltyp_ReferenceAssemblyAttributeOpt = tryFindSysILTypeRef tname_ReferenceAssemblyAttribute |> Option.map mkILNonGenericBoxedTy
-  member val iltyp_UnmanagedType   = findSysILTypeRef tname_UnmanagedType |> mkILNonGenericValueTy  
+  member val iltyp_UnmanagedType   = findSysILTypeRef tname_UnmanagedType |> mkILNonGenericValueTy
   member val attrib_AttributeUsageAttribute = findSysAttrib "System.AttributeUsageAttribute"
   member val attrib_ParamArrayAttribute = findSysAttrib "System.ParamArrayAttribute"
 
@@ -1934,7 +1934,7 @@ type TcGlobals(
 
   member _.DebuggerNonUserCodeAttribute = debuggerNonUserCodeAttribute
 
-  
+
   member _.MakeInternalsVisibleToAttribute(simpleAssemName) =
       mkILCustomAttribute (tref_InternalsVisibleToAttribute, [ilg.typ_String], [ILAttribElem.String (Some simpleAssemName)], [])
 
