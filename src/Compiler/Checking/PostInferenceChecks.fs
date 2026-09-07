@@ -2794,7 +2794,6 @@ and CheckModuleSpec cenv env mbind =
 let CheckImplFileContents cenv env implFileTy implFileContents  =
     let rpi, mhi = ComputeRemappingFromImplementationToSignature cenv.g implFileContents implFileTy
     let env = { env with sigToImplRemapInfo = (mkRepackageRemapping rpi, mhi) :: env.sigToImplRemapInfo }
-    UpdatePrettyTyparNames.updateModuleOrNamespaceType implFileTy
     CheckDefnInModule cenv env implFileContents
 
 let rec private collectInlineBindingBodies (acc: Dictionary<Stamp, Expr>) mdef =

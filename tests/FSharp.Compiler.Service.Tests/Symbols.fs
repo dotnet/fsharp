@@ -1955,9 +1955,8 @@ let y = First.x
         names (members second) |> shouldEqual [ "U"; "y" ]
         shouldMatchDefinitions checkResults second
 
-        // The partial assembly signature is built from a copy
-        let secondCopy = checkResults.PartialAssemblySignature.FindEntityByPath [ "Second" ] |> Option.get
-        Assert.NotEqual(stampOf (find "y" (members secondCopy)), stampOf (find "y" (members second)))
+        let secondInAssembly = checkResults.PartialAssemblySignature.FindEntityByPath [ "Second" ] |> Option.get
+        stampOf (find "y" (members secondInAssembly)) |> shouldEqual (stampOf (find "y" (members second)))
 
     [<Fact>]
     let ``FileSignature of an implementation file hidden by a signature file`` () =
