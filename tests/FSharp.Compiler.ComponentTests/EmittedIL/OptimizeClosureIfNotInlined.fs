@@ -228,3 +228,18 @@ let callOpaque (a: int[]) (b: int[]) = Lib.fold2 (mkFolder ()) 0 a b
         |> compile
         |> shouldFail
         |> withErrorCode 3350
+
+    // The optimization only fires for a singleton curried parameter of an inlined function, so the attribute
+    // is rejected where it would be silently ineffective: tupled/method arg groups and declaration-only
+    // positions (constructor, abstract member, delegate) that are never inlined higher-order functions.
+    [<Theory>]
+    [<InlineData("type H =\n    static member inline Fold([<InlineIfLambda; OptimizeClosureIfNotInlined>] f: int -> int -> int, xs: int[]) =\n        let mutable s = 0\n        for x in xs do s <- f s x\n        s")>]
+    [<InlineData("type C([<OptimizeClosureIfNotInlined>] value: int) =\n    member _.Value = value")>]
+    [<InlineData("type I =\n    abstract M: [<InlineIfLambda; OptimizeClosureIfNotInlined>] f: (int -> int -> int) -> unit")>]
+    [<InlineData("type D = delegate of [<InlineIfLambda; OptimizeClosureIfNotInlined>] f: (int -> int -> int) -> unit")>]
+    let ``attribute in an ineffective position is rejected`` (decl: string) =
+        FSharp ("module M\n" + decl)
+        |> withLangVersionPreview
+        |> compile
+        |> shouldFail
+        |> withErrorCode 3916
