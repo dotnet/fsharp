@@ -500,4 +500,4 @@ let inline run ([<InlineIfLambda>] f: int -> int -> int) (x: int) = f x x
         |> withLangVersionPreview
         |> compile
         |> shouldFail
-        |> withDiagnosticMessageMatches "OptimizeClosureIfNotInlined"
+        |> withErrorCode 3917

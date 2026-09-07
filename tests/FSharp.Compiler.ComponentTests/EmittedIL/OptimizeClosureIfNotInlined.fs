@@ -62,6 +62,8 @@ let callOverArrows (a: int[]) = applyOverArrows (mkF ()) id a
 
     [<Theory>]
     [<InlineData(2, "FSharpFunc`3")>]
+    [<InlineData(3, "FSharpFunc`4")>]
+    [<InlineData(4, "FSharpFunc`5")>]
     [<InlineData(5, "FSharpFunc`6")>]
     let ``boundary arity uses the matching OptimizedClosures type`` (arity: int) (expectedType: string) =
         let tyArrows = String.concat " -> " (List.replicate (arity + 1) "int")
@@ -83,14 +85,36 @@ let callOpaque (xs: int[]) = foldN (mkFolder ()) 0 xs
 """
         |> verifyILPresent [ $"OptimizedClosures/{expectedType}"; "::Adapt("; "::Invoke(" ]
 
+    // Distinct argument/result types across an arity-4 callback catch any generic-slot mix-up in the adapted
+    // Invoke that a homogeneous int callback would hide.
+    [<Fact>]
+    let ``adapted callback with heterogeneous argument types is correct`` () =
+        runOutput """
+module M
+let inline apply4 ([<InlineIfLambda; OptimizeClosureIfNotInlined>] f: int -> string -> bool -> float -> decimal) (xs: int[]) =
+    let mutable acc = 0M
+    for x in xs do acc <- acc + f x "k" true 2.0
+    acc
+
+[<System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)>]
+let mkF () : int -> string -> bool -> float -> decimal =
+    fun i s b d -> decimal i + decimal s.Length + (if b then 10M else 0M) + decimal d
+
+[<EntryPoint>]
+let main _ =
+    printfn "RESULT=%M" (apply4 (mkF ()) [| 1; 2; 3 |])
+    0
+"""
+        |> withStdOutContains "RESULT=45"
+
     // The adapted form must be observationally identical to the un-attributed (InvokeFast) form: same result,
-    // callback invoked once per element in order, opaque actual evaluated exactly once.
+    // callback invoked once per element with the accumulator and elements in order, opaque actual evaluated once.
     [<Fact>]
     let ``optimized opaque callback matches un-attributed results and effect order`` () =
         runOutput """
 module M
-open System.Collections.Generic
-let log = List<string>()
+let log = ResizeArray<int * int * int>()
+let mutable factoryCalls = 0
 
 let inline fold2_ocini ([<InlineIfLambda; OptimizeClosureIfNotInlined>] folder: 'S -> 'a -> 'b -> 'S) (state: 'S) (a: 'a[]) (b: 'b[]) =
     let mutable s = state
@@ -102,33 +126,35 @@ let inline fold2_plain ([<InlineIfLambda>] folder: 'S -> 'a -> 'b -> 'S) (state:
     s
 
 [<System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)>]
-let mkLoggingFolder (tag: string) : int -> int -> int -> int = fun s x y -> log.Add(tag); s + x * y
-
-let mutable factoryCalls = 0
-[<System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)>]
-let mkCountingFolder () : int -> int -> int -> int =
+let mkTracingFolder () : int -> int -> int -> int =
     factoryCalls <- factoryCalls + 1
-    fun s x y -> s + x + y
+    fun s x y -> log.Add((s, x, y)); s + x * y
 
 [<EntryPoint>]
 let main _ =
     let a = [| 1; 2; 3; 4 |]
     let b = [| 5; 6; 7; 8 |]
-    let rOcini = fold2_ocini (mkLoggingFolder "O") 0 a b
-    let orderOcini = String.concat "," log
-    log.Clear()
-    let rPlain = fold2_plain (mkLoggingFolder "P") 0 a b
-    let orderPlain = String.concat "," log
+    let expected = [ (0, 1, 5); (5, 2, 6); (17, 3, 7); (38, 4, 8) ]
+
     factoryCalls <- 0
-    let _ = fold2_ocini (mkCountingFolder ()) 0 a b
-    let ok = rOcini = rPlain && orderOcini = "O,O,O,O" && orderPlain = "P,P,P,P" && factoryCalls = 1
+    log.Clear()
+    let rOcini = fold2_ocini (mkTracingFolder ()) 0 a b
+    let traceOcini = List.ofSeq log
+    let callsOcini = factoryCalls
+
+    log.Clear()
+    let rPlain = fold2_plain (mkTracingFolder ()) 0 a b
+    let tracePlain = List.ofSeq log
+
+    let ok = rOcini = 70 && rPlain = 70 && traceOcini = expected && tracePlain = expected && callsOcini = 1
     printfn "RESULT=%s" (if ok then "PASS" else "FAIL")
     0
 """
         |> withStdOutContains "RESULT=PASS"
 
-    // The callback used both saturated (in the loop) and partially applied (captured) in the same body:
-    // the partial use suppresses adaptation but the result must still match the un-attributed form.
+    // The callback used both saturated (in the loop) and partially applied (captured) in the same body: the
+    // saturated calls are adapted and the partial application is left as-is; the result must still match the
+    // un-attributed form.
     [<Fact>]
     let ``callback used saturated and partially applied stays correct`` () =
         runOutput """
@@ -149,27 +175,24 @@ let main _ =
 """
         |> withStdOutContains "RESULT=20014"
 
-    // A quotation of the call must be captured verbatim: the optimizer transform does not descend into
-    // quotations, so the reflected call stays `fold2 ...` with no Adapt/Invoke leaked into the tree.
+    // A quotation inside a rewritten inline body must be left intact: the transform sets RewriteQuotations to
+    // false, so the reflected `f 1 2 3` stays an application even though the sibling call is adapted.
     [<Fact>]
-    let ``call inside a quotation is not rewritten`` () =
+    let ``quotation inside a rewritten body is not adapted`` () =
         runOutput """
 module M
 open Microsoft.FSharp.Quotations
-let inline fold2 ([<InlineIfLambda; OptimizeClosureIfNotInlined>] folder: 'S -> 'a -> 'b -> 'S) (state: 'S) (a: 'a[]) (b: 'b[]) =
-    let mutable s = state
-    for i in 0 .. a.Length - 1 do s <- folder s a.[i] b.[i]
-    s
+let inline applyAndQuote ([<InlineIfLambda; OptimizeClosureIfNotInlined>] f: int -> int -> int -> int) : int * Expr<int> =
+    f 1 2 3, <@ f 1 2 3 @>
 
 [<System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)>]
 let mkFolder () : int -> int -> int -> int = fun s x y -> s + x * y
 
-let q : Expr<int> = <@ fold2 (mkFolder ()) 0 [| 1; 2; 3 |] [| 4; 5; 6 |] @>
-
 [<EntryPoint>]
 let main _ =
-    let s = q.ToString()
-    printfn "RESULT=%b" (s.Contains "fold2" && not (s.Contains "Adapt"))
+    let result, quoted = applyAndQuote (mkFolder ())
+    let s = quoted.ToString()
+    printfn "RESULT=%b" (result = 7 && not (s.Contains "Invoke") && not (s.Contains "Adapt"))
     0
 """
         |> withStdOutContains "RESULT=true"
@@ -206,7 +229,10 @@ let callOpaque (a: int[]) (b: int[]) = Lib.fold2 (mkFolder ()) 0 a b
         consumer |> verifyILPresent [ "OptimizedClosures/FSharpFunc`4"; "::Adapt(" ]
         consumer |> verifyILNotPresent [ "InvokeFast" ]
 
-    // Accepted only with InlineIfLambda, on an inlined function whose type is a curried arity-2..5 F# function.
+    // FS3916: accepted only with InlineIfLambda, on an inlined function/member, where the parameter is alone
+    // in its argument group and has a curried F# function type of arity 2..5. Rejected everywhere else,
+    // including tupled/method groups and declaration-only positions (constructor, abstract member, delegate)
+    // where the optimization can never fire.
     [<Theory>]
     [<InlineData("let inline f ([<InlineIfLambda; OptimizeClosureIfNotInlined>] g: int -> int) x = g x")>]
     [<InlineData("let inline f ([<InlineIfLambda; OptimizeClosureIfNotInlined>] g: int -> int -> int -> int -> int -> int -> int) a b c d e h = g a b c d e h")>]
@@ -214,7 +240,11 @@ let callOpaque (a: int[]) (b: int[]) = Lib.fold2 (mkFolder ()) 0 a b
     [<InlineData("let inline f ([<InlineIfLambda; OptimizeClosureIfNotInlined>] g: (int * int) -> int) x = g x")>]
     [<InlineData("let f ([<InlineIfLambda; OptimizeClosureIfNotInlined>] g: int -> int -> int) x y = g x y")>]
     [<InlineData("let inline f ([<OptimizeClosureIfNotInlined>] g: int -> int -> int) x y = g x y")>]
-    let ``attribute misuse is rejected with FS3916`` (decl: string) =
+    [<InlineData("type H =\n    static member inline Fold([<InlineIfLambda; OptimizeClosureIfNotInlined>] f: int -> int -> int, xs: int[]) =\n        let mutable s = 0\n        for x in xs do s <- f s x\n        s")>]
+    [<InlineData("type C([<OptimizeClosureIfNotInlined>] value: int) =\n    member _.Value = value")>]
+    [<InlineData("type I =\n    abstract M: [<InlineIfLambda; OptimizeClosureIfNotInlined>] f: (int -> int -> int) -> unit")>]
+    [<InlineData("type D = delegate of [<InlineIfLambda; OptimizeClosureIfNotInlined>] f: (int -> int -> int) -> unit")>]
+    let ``attribute is rejected where it cannot take effect`` (decl: string) =
         FSharp ("module M\n" + decl)
         |> withLangVersionPreview
         |> compile
@@ -228,18 +258,3 @@ let callOpaque (a: int[]) (b: int[]) = Lib.fold2 (mkFolder ()) 0 a b
         |> compile
         |> shouldFail
         |> withErrorCode 3350
-
-    // The optimization only fires for a singleton curried parameter of an inlined function, so the attribute
-    // is rejected where it would be silently ineffective: tupled/method arg groups and declaration-only
-    // positions (constructor, abstract member, delegate) that are never inlined higher-order functions.
-    [<Theory>]
-    [<InlineData("type H =\n    static member inline Fold([<InlineIfLambda; OptimizeClosureIfNotInlined>] f: int -> int -> int, xs: int[]) =\n        let mutable s = 0\n        for x in xs do s <- f s x\n        s")>]
-    [<InlineData("type C([<OptimizeClosureIfNotInlined>] value: int) =\n    member _.Value = value")>]
-    [<InlineData("type I =\n    abstract M: [<InlineIfLambda; OptimizeClosureIfNotInlined>] f: (int -> int -> int) -> unit")>]
-    [<InlineData("type D = delegate of [<InlineIfLambda; OptimizeClosureIfNotInlined>] f: (int -> int -> int) -> unit")>]
-    let ``attribute in an ineffective position is rejected`` (decl: string) =
-        FSharp ("module M\n" + decl)
-        |> withLangVersionPreview
-        |> compile
-        |> shouldFail
-        |> withErrorCode 3916
