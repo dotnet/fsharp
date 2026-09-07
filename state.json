@@ -34,10 +34,6 @@
       "sha": "8afe94138bc6",
       "cats": []
     },
-    "20413": {
-      "sha": "ae11e8edb5a7",
-      "cats": []
-    },
     "20409": {
       "sha": "579180c69abd",
       "cats": [
@@ -270,10 +266,11 @@
       "cats": []
     },
     "20235": {
-      "sha": "e33dabedbb99",
+      "sha": "d2d7555540be",
       "cats": [
         "Affects-Bootstrap",
-        "Affects-Compiler-Output"
+        "Affects-Compiler-Output",
+        "Affects-Test-Tooling"
       ]
     },
     "20435": {
@@ -313,7 +310,7 @@
       ]
     },
     "20447": {
-      "sha": "7fa95f6ad0f4",
+      "sha": "1168952a24e7",
       "cats": []
     },
     "20452": {
