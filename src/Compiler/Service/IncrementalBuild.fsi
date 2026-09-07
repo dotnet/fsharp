@@ -68,6 +68,8 @@ type internal TcInfo =
 
         latestCcuSigForFile: ModuleOrNamespaceType option
 
+        latestOwnSigForFile: ModuleOrNamespaceType option
+
         /// Accumulated errors, last file first
         tcDiagnosticsRev: PhasedDiagnostic[] list
 

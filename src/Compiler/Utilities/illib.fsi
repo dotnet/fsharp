@@ -187,6 +187,8 @@ module internal List =
 
     val unzip4: l: ('a * 'b * 'c * 'd) list -> 'a list * 'b list * 'c list * 'd list
 
+    val unzip5: l: ('a * 'b * 'c * 'd * 'e) list -> 'a list * 'b list * 'c list * 'd list * 'e list
+
     val iter3: f: ('a -> 'b -> 'c -> unit) -> l1: 'a list -> l2: 'b list -> l3: 'c list -> unit
 
     val takeUntil: p: ('a -> bool) -> l: 'a list -> 'a list * 'a list

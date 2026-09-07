@@ -197,6 +197,8 @@ type TcInfo =
 
         latestCcuSigForFile: ModuleOrNamespaceType option
 
+        latestOwnSigForFile: ModuleOrNamespaceType option
+
         /// Accumulated diagnostics, last file first
         tcDiagnosticsRev:PhasedDiagnostic[] list
 
@@ -264,7 +266,7 @@ type BoundModel private (
             let hadParseErrors = not (Array.isEmpty parseErrors)
             let input, moduleNamesDict = DeduplicateParsedInputModuleName prevTcInfo.moduleNamesDict input
 
-            let! (tcEnvAtEndOfFile, topAttribs, implFile, ccuSigForFile), tcState =
+            let! (tcEnvAtEndOfFile, topAttribs, implFile, ccuSigForFile, ownSigForFile), tcState =
                 CheckOneInput (
                         (fun () -> hadParseErrors || diagnosticsLogger.ErrorCount > 0),
                         tcConfig, tcImports,
@@ -285,6 +287,7 @@ type BoundModel private (
                     tcEnvAtEndOfFile = tcEnvAtEndOfFile
                     moduleNamesDict = moduleNamesDict
                     latestCcuSigForFile = Some ccuSigForFile
+                    latestOwnSigForFile = Some ownSigForFile
                     tcDiagnosticsRev = newErrors :: prevTcInfo.tcDiagnosticsRev
                     topAttribs = Some topAttribs
                     tcDependencyFiles = fileName :: prevTcInfo.tcDependencyFiles
@@ -303,12 +306,13 @@ type BoundModel private (
         | Some syntaxTree, Some (_, qualifiedName) when syntaxTree.HasSignature ->
             let input, _, fileName, _ = syntaxTree.Skip qualifiedName
             SkippedImplFilePlaceholder(tcConfig, tcImports, tcGlobals, prevTcInfo.tcState, input)
-            |> Option.map (fun ((_, topAttribs, _, ccuSigForFile), tcState) ->
+            |> Option.map (fun ((_, topAttribs, _, ccuSigForFile, ownSigForFile), tcState) ->
                     {
                         tcState = tcState
                         tcEnvAtEndOfFile = tcState.TcEnvFromImpls
                         moduleNamesDict = prevTcInfo.moduleNamesDict
                         latestCcuSigForFile = Some ccuSigForFile
+                        latestOwnSigForFile = Some ownSigForFile
                         tcDiagnosticsRev = prevTcInfo.tcDiagnosticsRev
                         topAttribs = Some topAttribs
                         tcDependencyFiles = fileName :: prevTcInfo.tcDependencyFiles
@@ -755,6 +759,7 @@ module IncrementalBuilderHelpers =
               tcEnvAtEndOfFile=tcInitial
               topAttribs=None
               latestCcuSigForFile=None
+              latestOwnSigForFile=None
               tcDiagnosticsRev = [ initialErrors ]
               moduleNamesDict = Map.empty
               tcDependencyFiles = basicDependencies
@@ -803,7 +808,7 @@ module IncrementalBuilderHelpers =
 
         let results = [
             for tcInfo, latestImplFile in Seq.zip tcInfos latestImplFiles ->
-                tcInfo.tcEnvAtEndOfFile, defaultArg tcInfo.topAttribs EmptyTopAttrs, latestImplFile, tcInfo.latestCcuSigForFile
+                tcInfo.tcEnvAtEndOfFile, defaultArg tcInfo.topAttribs EmptyTopAttrs, latestImplFile, tcInfo.latestCcuSigForFile, tcInfo.latestOwnSigForFile
         ]
 
         // Get the state at the end of the type-checking of the last file
