@@ -2878,22 +2878,6 @@ and TranslateComputationExpression (ceenv: ComputationExpressionContext<'a>) fir
         | None ->
             // This only occurs in final position in a sequence
             match comp with
-            // "do! expr;" in tail call position is treated as { return! expr } when ReturnFromFinal is provided
-            | SynExpr.DoBang(rhsExpr, m, _) when ceenv.tailCall && (hasBuilderMethod ceenv m "ReturnFromFinal") ->
-                let returnFrom =
-                    // Flags indicate isTrueYield, isTrueReturn
-                    SynExpr.YieldOrReturnFrom((false, true), rhsExpr, m, SynExprYieldOrReturnFromTrivia.Zero)
-
-                TranslateComputationExpression ceenv CompExprTranslationPass.Initial q varSpace returnFrom translatedCtxt
-
-            // "do! expr;" in tail call position is treated as { yield! expr } when YieldFromFinal is provided
-            | SynExpr.DoBang(rhsExpr, m, _) when ceenv.tailCall && (hasBuilderMethod ceenv m "YieldFromFinal") ->
-                let returnFrom =
-                    // Flags indicate isTrueYield, isTrueReturn
-                    SynExpr.YieldOrReturnFrom((true, false), rhsExpr, m, SynExprYieldOrReturnFromTrivia.Zero)
-
-                TranslateComputationExpression ceenv CompExprTranslationPass.Initial q varSpace returnFrom translatedCtxt
-
             // "do! expr;" in final position is treated as { let! () = expr in return () } when Return is provided (and no Zero with Default attribute is available) or as { let! () = expr in zero } otherwise
             | SynExpr.DoBang(expr = rhsExpr; trivia = { DoBangKeyword = m }) ->
                 let mUnit = rhsExpr.Range
