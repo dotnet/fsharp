@@ -18,6 +18,16 @@ There is no third outcome. "File a follow-up issue" is never the resolution to u
 
 Ask: *does the code I am already writing justify this case?* If a transform, feature, or fix already handles shape A, and shape B is the same shape with the gate flipped, then B is not a follow-up — it is the same feature, half-done. Leaving B out is shipping a **half-arsed feature**, not scoping.
 
+```
+# You just wrote:
+#   "TODO: handle the tailcall case in a follow-up"
+# Apply the test:
+#   Does the code I just added already handle the non-tailcall case?  -> yes
+#   Is the tailcall case the same shape with one gate flipped?        -> yes
+# => Same feature, half-done. Do it now, or delete it with a stated reason.
+#    Never: open an issue and move on.
+```
+
 If B is genuinely a different, larger piece of work with its own design and risk surface — that is a real reason to draw a line. But then say so concretely ("B needs its own RFC / changes the pickle format / reopens a rejected design"), not "follow-up".
 
 ## Red flags (stop and decide)
