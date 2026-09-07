@@ -303,9 +303,10 @@
       "cats": []
     },
     "20443": {
-      "sha": "a3e8f4984012",
+      "sha": "1e21647a4831",
       "cats": [
         "Affects-Build-Infra",
+        "Affects-Compiler-Output",
         "Affects-Restore"
       ]
     },
@@ -333,7 +334,7 @@
       ]
     },
     "20454": {
-      "sha": "1f47b0c2165f",
+      "sha": "b9a12e59cd52",
       "cats": [
         "Affects-Bootstrap",
         "Affects-Compiler-Output"
@@ -416,6 +417,10 @@
       "cats": [
         "Affects-Agent-Config"
       ]
+    },
+    "20476": {
+      "sha": "54a06cf72521",
+      "cats": []
     }
   }
 }
