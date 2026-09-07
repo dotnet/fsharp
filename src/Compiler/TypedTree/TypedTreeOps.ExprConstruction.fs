@@ -1268,8 +1268,7 @@ module internal TypeTesters =
             | TType_measure _ -> [ ty ]
 
     /// Determine the underlying type of an enum type (normally int32).
-    /// ValueNone while the representation of an F# enum is still being established: the 'value__' field
-    /// is only added once the representations of a recursive group are known.
+    /// ValueNone while the representation of an F# enum is still being established.
     let tryUnderlyingTypeOfEnumTy (g: TcGlobals) ty =
         assert (isEnumTy g ty)
 

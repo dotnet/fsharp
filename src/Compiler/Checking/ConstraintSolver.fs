@@ -3124,9 +3124,8 @@ and SolveTypeIsEnum (csenv: ConstraintSolverEnv) ndeep m2 trace ty underlying =
             match tryUnderlyingTypeOfEnumTy g ty with
             | ValueSome underlyingTyOfEnum ->
                 SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace underlying underlyingTyOfEnum
+            // The underlying type is unknown until the representations of the recursive group are established
             | ValueNone ->
-                // The enum is part of the recursive group being checked, so its underlying type is not known
-                // yet. Solve the constraint once the representations of the group are established.
                 csenv.SolverState.PushPostInferenceCheck(
                     false,
                     fun () ->
