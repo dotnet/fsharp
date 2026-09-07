@@ -25,7 +25,6 @@ type LanguageFeature =
     | WitnessPassing
     | AdditionalTypeDirectedConversions
     | StringInterpolation
-    | OverloadsForCustomOperations
     | ExpandedMeasurables
     | NullnessChecking
     | RefCellNotationInformationals
@@ -40,7 +39,6 @@ type LanguageFeature =
     | MatchNotAllowedForUnionCaseWithNoData
     | CSharpExtensionAttributeNotRequired
     | ErrorForNonVirtualMembersOverrides
-    | ArithmeticInLiterals
     | ErrorReportingOnStaticClasses
     | WarningWhenCopyAndUpdateRecordChangesAllFields
     | NonInlineLiteralsAsPrintfFormat
@@ -51,7 +49,6 @@ type LanguageFeature =
     | WarningWhenTailRecAttributeButNonTailRecUsage
     | UnmanagedConstraintCsharpInterop
     | ReuseSameFieldsInStructUnions
-    | ExtendedFixedBindings
     | PreferExtensionMethodOverPlainProperty
     | WarningIndexedPropertiesGetSetSameType
     | WarningWhenTailCallAttrOnNonRec
@@ -138,7 +135,6 @@ type LanguageVersion(versionText, ?disabledFeaturesArray: LanguageFeature array)
 
                 // F# 6.0
                 LanguageFeature.AdditionalTypeDirectedConversions, languageVersion60
-                LanguageFeature.OverloadsForCustomOperations, languageVersion60
                 LanguageFeature.ExpandedMeasurables, languageVersion60
                 LanguageFeature.ResumableStateMachines, languageVersion60
                 LanguageFeature.RefCellNotationInformationals, languageVersion60
@@ -156,7 +152,6 @@ type LanguageVersion(versionText, ?disabledFeaturesArray: LanguageFeature array)
                 LanguageFeature.MatchNotAllowedForUnionCaseWithNoData, languageVersion80
                 LanguageFeature.CSharpExtensionAttributeNotRequired, languageVersion80
                 LanguageFeature.ErrorForNonVirtualMembersOverrides, languageVersion80
-                LanguageFeature.ArithmeticInLiterals, languageVersion80
                 LanguageFeature.ErrorReportingOnStaticClasses, languageVersion80
                 LanguageFeature.WarningWhenCopyAndUpdateRecordChangesAllFields, languageVersion80
                 LanguageFeature.NonInlineLiteralsAsPrintfFormat, languageVersion80
@@ -165,7 +160,6 @@ type LanguageVersion(versionText, ?disabledFeaturesArray: LanguageFeature array)
                 LanguageFeature.WarningWhenTailRecAttributeButNonTailRecUsage, languageVersion80
                 LanguageFeature.StaticLetInRecordsDusEmptyTypes, languageVersion80
                 LanguageFeature.ConstraintIntersectionOnFlexibleTypes, languageVersion80
-                LanguageFeature.ExtendedFixedBindings, languageVersion80
 
                 // F# 9.0
                 LanguageFeature.NullnessChecking, languageVersion90
@@ -324,7 +318,6 @@ type LanguageVersion(versionText, ?disabledFeaturesArray: LanguageFeature array)
         | LanguageFeature.WitnessPassing -> FSComp.SR.featureWitnessPassing ()
         | LanguageFeature.AdditionalTypeDirectedConversions -> FSComp.SR.featureAdditionalImplicitConversions ()
         | LanguageFeature.StringInterpolation -> FSComp.SR.featureStringInterpolation ()
-        | LanguageFeature.OverloadsForCustomOperations -> FSComp.SR.featureOverloadsForCustomOperations ()
         | LanguageFeature.ExpandedMeasurables -> FSComp.SR.featureExpandedMeasurables ()
         | LanguageFeature.RefCellNotationInformationals -> FSComp.SR.featureRefCellNotationInformationals ()
         | LanguageFeature.UnionIsPropertiesVisible -> FSComp.SR.featureUnionIsPropertiesVisible ()
@@ -338,7 +331,6 @@ type LanguageVersion(versionText, ?disabledFeaturesArray: LanguageFeature array)
         | LanguageFeature.MatchNotAllowedForUnionCaseWithNoData -> FSComp.SR.featureMatchNotAllowedForUnionCaseWithNoData ()
         | LanguageFeature.CSharpExtensionAttributeNotRequired -> FSComp.SR.featureCSharpExtensionAttributeNotRequired ()
         | LanguageFeature.ErrorForNonVirtualMembersOverrides -> FSComp.SR.featureErrorForNonVirtualMembersOverrides ()
-        | LanguageFeature.ArithmeticInLiterals -> FSComp.SR.featureArithmeticInLiterals ()
         | LanguageFeature.ErrorReportingOnStaticClasses -> FSComp.SR.featureErrorReportingOnStaticClasses ()
         | LanguageFeature.WarningWhenCopyAndUpdateRecordChangesAllFields ->
             FSComp.SR.featureWarningWhenCopyAndUpdateRecordChangesAllFields ()
@@ -350,7 +342,6 @@ type LanguageVersion(versionText, ?disabledFeaturesArray: LanguageFeature array)
         | LanguageFeature.WarningWhenTailRecAttributeButNonTailRecUsage -> FSComp.SR.featureChkNotTailRecursive ()
         | LanguageFeature.UnmanagedConstraintCsharpInterop -> FSComp.SR.featureUnmanagedConstraintCsharpInterop ()
         | LanguageFeature.ReuseSameFieldsInStructUnions -> FSComp.SR.featureReuseSameFieldsInStructUnions ()
-        | LanguageFeature.ExtendedFixedBindings -> FSComp.SR.featureExtendedFixedBindings ()
         | LanguageFeature.PreferExtensionMethodOverPlainProperty -> FSComp.SR.featurePreferExtensionMethodOverPlainProperty ()
         | LanguageFeature.WarningIndexedPropertiesGetSetSameType -> FSComp.SR.featureWarningIndexedPropertiesGetSetSameType ()
         | LanguageFeature.WarningWhenTailCallAttrOnNonRec -> FSComp.SR.featureChkTailCallAttrOnNonRec ()
