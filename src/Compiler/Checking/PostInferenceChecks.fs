@@ -2059,9 +2059,7 @@ and CheckValInfo cenv env (ValReprInfo(_, args, ret)) =
 and CheckArgInfo cenv env (argInfo : ArgReprInfo)  =
     CheckAttribs cenv env (argInfo.Attribs.AsList())
 
-// Reject the attribute anywhere the optimizer (Optimizer.AdaptOpaqueOptimizedClosureArgs) cannot act on it:
-// only a singleton curried parameter of an inlined function qualifies, never a tupled/method group or a
-// declaration-only position (constructor, abstract member, delegate).
+// Reject the attribute where the optimizer cannot act on it (see AdaptOpaqueOptimizedClosureArgs).
 and CheckOptimizeClosureIfNotInlinedAttribute cenv (v: Val) =
     let g = cenv.g
     let hasOptimizeClosureIfNotInlined = ArgReprInfoHasWellKnownAttribute g WellKnownValAttributes.OptimizeClosureIfNotInlinedAttribute

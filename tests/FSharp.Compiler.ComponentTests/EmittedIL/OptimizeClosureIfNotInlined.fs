@@ -42,7 +42,7 @@ let mkFolder () : int -> int -> int -> int = fun s x y -> s + x * y
         optimized (prelude + "let callLambda (a: int[]) (b: int[]) (k: int) = fold2 (fun s x y -> s + x * y + k) 0 a b")
         |> verifyILNotPresent [ "Adapt" ]
 
-    // Declared arity exceeds the arity actually applied, so nothing is rewritten.
+    // Declared arity exceeds the applied arity, so no application is rewritten.
     [<Fact>]
     let ``over-arrows callback emits no dead Adapt`` () =
         optimized """
@@ -85,8 +85,7 @@ let callOpaque (xs: int[]) = foldN (mkFolder ()) 0 xs
 """
         |> verifyILPresent [ $"OptimizedClosures/{expectedType}"; "::Adapt("; "::Invoke(" ]
 
-    // Distinct argument/result types across an arity-4 callback catch any generic-slot mix-up in the adapted
-    // Invoke that a homogeneous int callback would hide.
+    // Distinct arg/result types catch a generic-slot mix-up a homogeneous int callback hides.
     [<Fact>]
     let ``adapted callback with heterogeneous argument types is correct`` () =
         runOutput """
@@ -107,8 +106,6 @@ let main _ =
 """
         |> withStdOutContains "RESULT=45"
 
-    // The adapted form must be observationally identical to the un-attributed (InvokeFast) form: same result,
-    // callback invoked once per element with the accumulator and elements in order, opaque actual evaluated once.
     [<Fact>]
     let ``optimized opaque callback matches un-attributed results and effect order`` () =
         runOutput """
@@ -152,9 +149,7 @@ let main _ =
 """
         |> withStdOutContains "RESULT=PASS"
 
-    // The callback used both saturated (in the loop) and partially applied (captured) in the same body: the
-    // saturated calls are adapted and the partial application is left as-is; the result must still match the
-    // un-attributed form.
+    // Saturated calls are adapted and the partial application is left as-is.
     [<Fact>]
     let ``callback used saturated and partially applied stays correct`` () =
         runOutput """
@@ -175,8 +170,7 @@ let main _ =
 """
         |> withStdOutContains "RESULT=20014"
 
-    // A quotation inside a rewritten inline body must be left intact: the transform sets RewriteQuotations to
-    // false, so the reflected `f 1 2 3` stays an application even though the sibling call is adapted.
+    // RewriteQuotations is false, so the reflected call stays an application, not an adapted Invoke.
     [<Fact>]
     let ``quotation inside a rewritten body is not adapted`` () =
         runOutput """
@@ -197,8 +191,6 @@ let main _ =
 """
         |> withStdOutContains "RESULT=true"
 
-    // Cross-assembly: the optimization crosses the assembly boundary into a consumer pinned to an old
-    // language version, with no error and no leftover per-element InvokeFast dispatch.
     [<Fact>]
     let ``opaque callback is adapted across an assembly boundary at old langversion`` () =
         let library =
@@ -229,10 +221,6 @@ let callOpaque (a: int[]) (b: int[]) = Lib.fold2 (mkFolder ()) 0 a b
         consumer |> verifyILPresent [ "OptimizedClosures/FSharpFunc`4"; "::Adapt(" ]
         consumer |> verifyILNotPresent [ "InvokeFast" ]
 
-    // FS3916: accepted only with InlineIfLambda, on an inlined function/member, where the parameter is alone
-    // in its argument group and has a curried F# function type of arity 2..5. Rejected everywhere else,
-    // including tupled/method groups and declaration-only positions (constructor, abstract member, delegate)
-    // where the optimization can never fire.
     [<Theory>]
     [<InlineData("let inline f ([<InlineIfLambda; OptimizeClosureIfNotInlined>] g: int -> int) x = g x")>]
     [<InlineData("let inline f ([<InlineIfLambda; OptimizeClosureIfNotInlined>] g: int -> int -> int -> int -> int -> int -> int) a b c d e h = g a b c d e h")>]

@@ -1904,7 +1904,7 @@ let rec (|KnownValApp|_|) expr =
     | _ -> ValueNone
 
 let AdaptOpaqueOptimizedClosureArgs g (lambdaExpr: Expr) f0ty (arginfos: Summary<ExprValueInfo> list) m =
-    // Hot path: probe the flag before the costlier stripTopLambda.
+    // Hot path: probe the flag before stripping the spine.
     let rec hasFlaggedFormal expr =
         match expr with
         | Expr.TyLambda(_, _, body, _, _) -> hasFlaggedFormal body
@@ -1944,8 +1944,7 @@ let AdaptOpaqueOptimizedClosureArgs g (lambdaExpr: Expr) f0ty (arginfos: Summary
         let arity = List.length argTys
         let mutable rewrote = false
 
-        // Reroute a single saturated application node; a staged chain is left alone so its effects keep order.
-        // PostTransform sees already-rewritten arguments and preserves any enclosing debug point.
+        // Reroute one saturated application node. A staged chain keeps its effect order.
         let env =
             { PreIntercept = None
               PostTransform =
@@ -4109,7 +4108,7 @@ and OptimizeApplication cenv env (f0, f0ty, tyargs, args, m) =
             | _ -> args |> List.map (fun arg -> UnknownValue, arg) 
 
         let newArgs, arginfos = OptimizeExprsThenReshapeAndConsiderSplits cenv env shapes
-        // Must run before beta reduction, while the [<OptimizeClosureIfNotInlined>] formals still exist.
+        // Run before beta reduction removes the flagged formals.
         let newf0 = AdaptOpaqueOptimizedClosureArgs g newf0 f0ty arginfos m
         // beta reducing
         let reducedExpr = MakeApplicationAndBetaReduce g (newf0, f0ty, [tyargs], newArgs, m) 
