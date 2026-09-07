@@ -2064,19 +2064,19 @@ and CheckArgInfo cenv env (argInfo : ArgReprInfo)  =
 // declaration-only position (constructor, abstract member, delegate).
 and CheckOptimizeClosureIfNotInlinedAttribute cenv (v: Val) =
     let g = cenv.g
+    let hasOptimizeClosureIfNotInlined = ArgReprInfoHasWellKnownAttribute g WellKnownValAttributes.OptimizeClosureIfNotInlinedAttribute
     match v.ValReprInfo with
-    | Some valReprInfo when
-        (let (ValReprInfo(_, argInfos, _)) = valReprInfo
-         argInfos |> List.exists (List.exists (ArgReprInfoHasWellKnownAttribute g WellKnownValAttributes.OptimizeClosureIfNotInlinedAttribute))) ->
+    | Some (ValReprInfo(_, argInfos, _) as valReprInfo) when List.existsSquared hasOptimizeClosureIfNotInlined argInfos ->
         let _, curriedArgInfos, _, _ = GetValReprTypeInFSharpForm g valReprInfo v.Type v.Range
         for argGroup in curriedArgInfos do
             for argTy, argInfo in argGroup do
-                if ArgReprInfoHasWellKnownAttribute g WellKnownValAttributes.OptimizeClosureIfNotInlinedAttribute argInfo then
+                if hasOptimizeClosureIfNotInlined argInfo then
                     let m = match argInfo.Name with Some id -> id.idRange | None -> v.Range
                     checkLanguageFeatureError g.langVersion LanguageFeature.OptimizeClosureIfNotInlined m
                     let hasInlineIfLambda = ArgReprInfoHasWellKnownAttribute g WellKnownValAttributes.InlineIfLambdaAttribute argInfo
-                    let arity = if isFunTy g argTy then List.length (fst (stripFunTy g argTy)) else 0
-                    if not v.ShouldInline || not hasInlineIfLambda || argGroup.Length <> 1 || arity < 2 || arity > 5 then
+                    let arity = List.length (fst (stripFunTyN g 6 argTy))
+                    let valid = v.ShouldInline && hasInlineIfLambda && List.isSingleton argGroup && arity >= 2 && arity <= 5
+                    if not valid then
                         errorR(Error(FSComp.SR.tcOptimizeClosureIfNotInlinedRequiresInlineIfLambdaAndMultiArg(), m))
     | _ -> ()
 

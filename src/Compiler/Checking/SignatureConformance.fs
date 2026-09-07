@@ -467,19 +467,17 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
                                    warning(ArgumentsInSigAndImplMismatch(sname, iname))
                               | _ -> ()
                               
-                              let sigHasInlineIfLambda = ArgReprInfoHasWellKnownAttribute g WellKnownValAttributes.InlineIfLambdaAttribute sigArgInfo
-                              let implHasInlineIfLambda = ArgReprInfoHasWellKnownAttribute g WellKnownValAttributes.InlineIfLambdaAttribute implArgInfo
                               let m = 
                                   match implArgInfo.Name with 
                                   | Some iname-> iname.idRange
                                   | None -> implVal.Range
-                              if sigHasInlineIfLambda && not implHasInlineIfLambda then 
-                                  errorR(Error (FSComp.SR.implMissingInlineIfLambda(), m))
 
-                              let sigHasOptimizeClosureIfNotInlined = ArgReprInfoHasWellKnownAttribute g WellKnownValAttributes.OptimizeClosureIfNotInlinedAttribute sigArgInfo
-                              let implHasOptimizeClosureIfNotInlined = ArgReprInfoHasWellKnownAttribute g WellKnownValAttributes.OptimizeClosureIfNotInlinedAttribute implArgInfo
-                              if sigHasOptimizeClosureIfNotInlined && not implHasOptimizeClosureIfNotInlined then 
-                                  errorR(Error (FSComp.SR.implMissingOptimizeClosureIfNotInlined(), m))
+                              let requireImplAttribute flag diagnostic =
+                                  if ArgReprInfoHasWellKnownAttribute g flag sigArgInfo && not (ArgReprInfoHasWellKnownAttribute g flag implArgInfo) then 
+                                      errorR(Error (diagnostic (), m))
+
+                              requireImplAttribute WellKnownValAttributes.InlineIfLambdaAttribute FSComp.SR.implMissingInlineIfLambda
+                              requireImplAttribute WellKnownValAttributes.OptimizeClosureIfNotInlinedAttribute FSComp.SR.implMissingOptimizeClosureIfNotInlined
 
                               implArgInfo.OtherRange <- sigArgInfo.Name |> Option.map (fun ident -> ident.idRange)
                               sigArgInfo.OtherRange <- implArgInfo.Name |> Option.map (fun ident -> ident.idRange)

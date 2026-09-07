@@ -1688,8 +1688,8 @@
         <note />
       </trans-unit>
       <trans-unit id="tcOptimizeClosureIfNotInlinedRequiresInlineIfLambdaAndMultiArg">
-        <source>The 'OptimizeClosureIfNotInlined' attribute may only be used together with 'InlineIfLambda', on a parameter of an inlined function or method whose type is a curried F# function of arity 2 to 5.</source>
-        <target state="new">The 'OptimizeClosureIfNotInlined' attribute may only be used together with 'InlineIfLambda', on a parameter of an inlined function or method whose type is a curried F# function of arity 2 to 5.</target>
+        <source>The 'OptimizeClosureIfNotInlined' attribute requires 'InlineIfLambda' on a separately curried parameter of an inline function or method whose type is a curried F# function of arity 2 to 5.</source>
+        <target state="new">The 'OptimizeClosureIfNotInlined' attribute requires 'InlineIfLambda' on a separately curried parameter of an inline function or method whose type is a curried F# function of arity 2 to 5.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcOtherThenAdjacentListArgumentNeedsAdjustment">
