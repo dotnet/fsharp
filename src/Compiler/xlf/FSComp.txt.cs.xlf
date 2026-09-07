@@ -782,6 +782,11 @@
         <target state="translated">Atribut InlineIfLambda se nachází v signatuře, ale ne v implementaci.</target>
         <note />
       </trans-unit>
+      <trans-unit id="implMissingOptimizeClosureIfNotInlined">
+        <source>The 'OptimizeClosureIfNotInlined' attribute is present in the signature but not the implementation.</source>
+        <target state="new">The 'OptimizeClosureIfNotInlined' attribute is present in the signature but not the implementation.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="invalidXmlDocPosition">
         <source>XML comment is not placed on a valid language element.</source>
         <target state="translated">Komentář XML není umístěn v platném prvku jazyka.</target>

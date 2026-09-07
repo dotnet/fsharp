@@ -482,3 +482,22 @@ module Inner =
         |> shouldSucceed
         |> withWarningCode 3888
         |> withDiagnosticMessageMatches "RequireQualifiedAccess"
+
+    [<Fact>]
+    let ``OptimizeClosureIfNotInlined in sig but not impl raises`` () =
+        let sigSrc = """
+module M
+val inline run: [<InlineIfLambda; OptimizeClosureIfNotInlined>] f: (int -> int -> int) -> x: int -> int
+"""
+        let implSrc = """
+module M
+let inline run ([<InlineIfLambda>] f: int -> int -> int) (x: int) = f x x
+"""
+        fsFromString (fsi sigSrc)
+        |> FS
+        |> withAdditionalSourceFile (fs implSrc)
+        |> asLibrary
+        |> withLangVersionPreview
+        |> compile
+        |> shouldFail
+        |> withDiagnosticMessageMatches "OptimizeClosureIfNotInlined"

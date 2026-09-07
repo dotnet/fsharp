@@ -782,6 +782,11 @@
         <target state="translated">'InlineIfLambda' 屬性存在於簽章中，但不存在於實作中。</target>
         <note />
       </trans-unit>
+      <trans-unit id="implMissingOptimizeClosureIfNotInlined">
+        <source>The 'OptimizeClosureIfNotInlined' attribute is present in the signature but not the implementation.</source>
+        <target state="new">The 'OptimizeClosureIfNotInlined' attribute is present in the signature but not the implementation.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="invalidXmlDocPosition">
         <source>XML comment is not placed on a valid language element.</source>
         <target state="translated">XML 註解沒有放置在有效的語言元素上。</target>

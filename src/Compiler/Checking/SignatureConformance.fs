@@ -476,6 +476,11 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
                               if sigHasInlineIfLambda && not implHasInlineIfLambda then 
                                   errorR(Error (FSComp.SR.implMissingInlineIfLambda(), m))
 
+                              let sigHasOptimizeClosureIfNotInlined = ArgReprInfoHasWellKnownAttribute g WellKnownValAttributes.OptimizeClosureIfNotInlinedAttribute sigArgInfo
+                              let implHasOptimizeClosureIfNotInlined = ArgReprInfoHasWellKnownAttribute g WellKnownValAttributes.OptimizeClosureIfNotInlinedAttribute implArgInfo
+                              if sigHasOptimizeClosureIfNotInlined && not implHasOptimizeClosureIfNotInlined then 
+                                  errorR(Error (FSComp.SR.implMissingOptimizeClosureIfNotInlined(), m))
+
                               implArgInfo.OtherRange <- sigArgInfo.Name |> Option.map (fun ident -> ident.idRange)
                               sigArgInfo.OtherRange <- implArgInfo.Name |> Option.map (fun ident -> ident.idRange)
 
