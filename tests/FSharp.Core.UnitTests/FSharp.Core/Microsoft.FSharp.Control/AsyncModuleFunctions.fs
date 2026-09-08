@@ -263,3 +263,110 @@ let ``Async.catch propagates Cancellation (async)`` () =
 let ``Async.empty returns unit`` () =
     let actual = Async.empty |> asyncWait
     Assert.Equal((), actual)
+    
+
+[<Fact>]
+let ``Async.sequentialDo runs all tasks in order and returns unit`` () : Task =
+    task {
+        let order = ResizeArray()
+        let computations = [for i in 1..5 do async { order.Add i }]
+        do! Async.sequentialDo computations
+        Assert.Equal<int seq>([ 1; 2; 3; 4; 5 ], order)
+    }
+
+[<Fact>]
+let ``Async.sequentialDo runs computations one at a time`` () : Task =
+    task {
+        let mutable concurrent = 0
+        let mutable maxConcurrent = 0
+        let computations =
+            [for _ in 1..5 ->
+                async {
+                    let n = Interlocked.Increment &concurrent
+                    if n > maxConcurrent then maxConcurrent <- n
+                    do! Async.Sleep 1
+                    Interlocked.Decrement &concurrent |> ignore
+                }]
+        do! Async.sequentialDo computations
+        Assert.Equal(1, maxConcurrent)
+    }
+
+
+[<Fact>]
+let ``Async.parallelLimit runs all computations`` () =
+    let results =
+        [for i in 1..5 do async { return i * i }]
+        |> Async.parallelLimit 2
+        |> Async.RunSynchronouslyImmediate
+    Assert.True([| 1; 4; 9; 16; 25 |] = results)
+
+[<Fact>]
+let ``Async.parallelLimit limits concurrency`` () =
+    let mutable concurrent = 0
+    let mutable maxConcurrent = 0
+    let lockObj = obj()
+    let a =
+        [for _ in 1..10 do
+            async {
+                let n =
+                    lock lockObj (fun () ->
+                        concurrent <- concurrent + 1
+                        if concurrent > maxConcurrent then maxConcurrent <- concurrent
+                        concurrent)
+                do! Async.Sleep 1
+                lock lockObj (fun () -> concurrent <- concurrent - 1) |> ignore
+                return n
+            }]
+        |> Async.parallelLimit 3
+    a |> Async.RunSynchronouslyImmediate |> ignore
+    Assert.True(maxConcurrent <= 3, $"max concurrent was {maxConcurrent}, expected <= 3")
+
+[<Fact>]
+let ``Async.parallelLimit with multiple failures yields single exception, not AggregateException`` () : Async<unit> =
+    async {
+        use cts = new CancellationTokenSource()
+        let firstStarted, secondStarted = TaskCompletionSource<unit>(), TaskCompletionSource<unit>()
+        let releaseBoth = TaskCompletionSource<unit>()
+
+        let! sut =
+            Async.parallelLimit 2 [ 
+                async {
+                    firstStarted.SetResult ()
+                    do! releaseBoth.Task |> Async.Await
+                    return invalidOp "boom1"
+                }
+                async {
+                    secondStarted.SetResult ()
+                    do! releaseBoth.Task |> Async.Await
+                    return invalidArg "a" "boom2"
+                }
+            ]
+            |> Async.StartChild
+        let! _ = Task.WhenAll(firstStarted.Task, secondStarted.Task) |> Async.Await
+        releaseBoth.SetResult ()
+
+        match! Async.catch sut with
+        | Error (:? InvalidOperationException) | Error (:? ArgumentException) -> ()  // either sibling may win
+        | Error (:? AggregateException) -> failwith "should be a single exception, not an AggregateException"
+        | x -> failwith $"unexpected %A{x}"
+    }
+
+[<Fact>]
+let ``Async.catch does not Unwrap an AggregateException with a single inner`` () =
+    let sut = async { return raise (AggregateException("boom", exn "inner" )) } |> Async.catch
+    match sut |> Async.RunSynchronouslyImmediate with
+    | Error (:? AggregateException as ex) ->
+        Assert.Equal(1, ex.InnerExceptions.Count)
+        // on net48, Message renders as "boom", on others it's "boom (inner)"
+        Assert.True(ex.Message.StartsWith "boom", ex.Message) 
+    | x -> failwith $"unexpected %A{x}"
+
+[<Fact>]
+let ``Async.parallelDoLimit runs all computations and returns unit`` () =
+    let mutable count = 0
+    seq {
+        for i in 1..5 do
+            async { Interlocked.Increment &count |> ignore } }
+    |> Async.parallelDoLimit 2
+    |> Async.RunSynchronouslyImmediate
+    Assert.Equal(5, count)
