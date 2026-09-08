@@ -235,6 +235,11 @@ let main _ =
         |> compileExeAndRun
         |> shouldSucceed
         |> withStdOutContains "ran-closure"
+
+    // 'localloc' is legal in the protected 'try' body itself (only handler/filter/finally/fault
+    // regions reject it), so 'stackalloc' directly inside a 'try' must still compile.
+    [<Fact>]
+    let ``stackalloc in the try body is allowed`` () =
         FSharp """
 module Test
 open Microsoft.FSharp.NativeInterop
