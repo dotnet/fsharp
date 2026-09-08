@@ -359,7 +359,7 @@ module Array =
         res
 
     [<CompiledName("Iterate2")>]
-    let inline iter2 ([<InlineIfLambda>] action) (array1: 'T array) (array2: 'U array) =
+    let inline iter2 ([<InlineIfLambda; OptimizeClosureIfNotInlined>] action) (array1: 'T array) (array2: 'U array) =
         checkNonNull "array1" array1
         checkNonNull "array2" array2
 
@@ -440,14 +440,14 @@ module Array =
         res
 
     [<CompiledName("IterateIndexed")>]
-    let inline iteri ([<InlineIfLambda>] action) (array: 'T array) =
+    let inline iteri ([<InlineIfLambda; OptimizeClosureIfNotInlined>] action) (array: 'T array) =
         checkNonNull "array" array
 
         for i = 0 to array.Length - 1 do
             action i array.[i]
 
     [<CompiledName("IterateIndexed2")>]
-    let inline iteri2 ([<InlineIfLambda>] action) (array1: 'T array) (array2: 'U array) =
+    let inline iteri2 ([<InlineIfLambda; OptimizeClosureIfNotInlined>] action) (array1: 'T array) (array2: 'U array) =
         checkNonNull "array1" array1
         checkNonNull "array2" array2
 
@@ -503,7 +503,7 @@ module Array =
         state
 
     [<CompiledName("Exists2")>]
-    let inline exists2 ([<InlineIfLambda>] predicate) (array1: _ array) (array2: _ array) =
+    let inline exists2 ([<InlineIfLambda; OptimizeClosureIfNotInlined>] predicate) (array1: _ array) (array2: _ array) =
         checkNonNull "array1" array1
         checkNonNull "array2" array2
         let len1 = array1.Length
@@ -527,7 +527,7 @@ module Array =
         loop 0
 
     [<CompiledName("ForAll2")>]
-    let inline forall2 ([<InlineIfLambda>] predicate) (array1: _ array) (array2: _ array) =
+    let inline forall2 ([<InlineIfLambda; OptimizeClosureIfNotInlined>] predicate) (array1: _ array) (array2: _ array) =
         checkNonNull "array1" array1
         checkNonNull "array2" array2
         let len1 = array1.Length
@@ -1411,7 +1411,11 @@ module Array =
         res
 
     [<CompiledName("Fold")>]
-    let inline fold<'T, 'State> ([<InlineIfLambda>] folder: 'State -> 'T -> 'State) (state: 'State) (array: 'T array) =
+    let inline fold<'T, 'State>
+        ([<InlineIfLambda; OptimizeClosureIfNotInlined>] folder: 'State -> 'T -> 'State)
+        (state: 'State)
+        (array: 'T array)
+        =
         checkNonNull "array" array
         let mutable state = state
 
@@ -1422,7 +1426,7 @@ module Array =
 
     [<CompiledName("FoldBack")>]
     let inline foldBack<'T, 'State>
-        ([<InlineIfLambda>] folder: 'T -> 'State -> 'State)
+        ([<InlineIfLambda; OptimizeClosureIfNotInlined>] folder: 'T -> 'State -> 'State)
         (array: 'T array)
         (state: 'State)
         =
@@ -1436,7 +1440,7 @@ module Array =
 
     [<CompiledName("FoldBack2")>]
     let inline foldBack2<'T1, 'T2, 'State>
-        ([<InlineIfLambda>] folder: 'T1 -> 'T2 -> 'State -> 'State)
+        ([<InlineIfLambda; OptimizeClosureIfNotInlined>] folder: 'T1 -> 'T2 -> 'State -> 'State)
         (array1: 'T1 array)
         (array2: 'T2 array)
         (state: 'State)
@@ -1456,7 +1460,7 @@ module Array =
 
     [<CompiledName("Fold2")>]
     let inline fold2<'T1, 'T2, 'State>
-        ([<InlineIfLambda>] folder: 'State -> 'T1 -> 'T2 -> 'State)
+        ([<InlineIfLambda; OptimizeClosureIfNotInlined>] folder: 'State -> 'T1 -> 'T2 -> 'State)
         (state: 'State)
         (array1: 'T1 array)
         (array2: 'T2 array)
@@ -1510,7 +1514,7 @@ module Array =
             init (array.Length - 1) (fun i -> array.[i], array.[i + 1])
 
     [<CompiledName("Reduce")>]
-    let inline reduce ([<InlineIfLambda>] reduction) (array: _ array) =
+    let inline reduce ([<InlineIfLambda; OptimizeClosureIfNotInlined>] reduction) (array: _ array) =
         checkNonNull "array" array
         let len = array.Length
 
@@ -1525,7 +1529,7 @@ module Array =
             res
 
     [<CompiledName("ReduceBack")>]
-    let inline reduceBack ([<InlineIfLambda>] reduction) (array: _ array) =
+    let inline reduceBack ([<InlineIfLambda; OptimizeClosureIfNotInlined>] reduction) (array: _ array) =
         checkNonNull "array" array
         let len = array.Length
 

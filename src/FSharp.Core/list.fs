@@ -239,7 +239,7 @@ module List =
         Microsoft.FSharp.Primitives.Basics.List.takeWhile predicate list
 
     [<CompiledName("IterateIndexed")>]
-    let inline iteri ([<InlineIfLambda>] action) (list: 'T list) =
+    let inline iteri ([<InlineIfLambda; OptimizeClosureIfNotInlined>] action) (list: 'T list) =
         let mutable n = 0
 
         for x in list do
@@ -263,7 +263,7 @@ module List =
         result
 
     [<CompiledName("Iterate2")>]
-    let inline iter2 ([<InlineIfLambda>] action) list1 list2 =
+    let inline iter2 ([<InlineIfLambda; OptimizeClosureIfNotInlined>] action) list1 list2 =
         let rec loop list1 list2 =
             match list1, list2 with
             | [], [] -> ()
@@ -276,7 +276,7 @@ module List =
         loop list1 list2
 
     [<CompiledName("IterateIndexed2")>]
-    let inline iteri2 ([<InlineIfLambda>] action) list1 list2 =
+    let inline iteri2 ([<InlineIfLambda; OptimizeClosureIfNotInlined>] action) list1 list2 =
         let rec loop n list1 list2 =
             match list1, list2 with
             | [], [] -> ()
@@ -301,7 +301,11 @@ module List =
         Microsoft.FSharp.Primitives.Basics.List.map2 mapping list1 list2
 
     [<CompiledName("Fold")>]
-    let inline fold<'T, 'State> ([<InlineIfLambda>] folder: 'State -> 'T -> 'State) (state: 'State) (list: 'T list) =
+    let inline fold<'T, 'State>
+        ([<InlineIfLambda; OptimizeClosureIfNotInlined>] folder: 'State -> 'T -> 'State)
+        (state: 'State)
+        (list: 'T list)
+        =
         let mutable acc = state
 
         for x in list do
@@ -314,7 +318,7 @@ module List =
         Microsoft.FSharp.Primitives.Basics.List.pairwise list
 
     [<CompiledName("Reduce")>]
-    let inline reduce ([<InlineIfLambda>] reduction) list =
+    let inline reduce ([<InlineIfLambda; OptimizeClosureIfNotInlined>] reduction) list =
         match list with
         | [] -> emptyListError ()
         | h :: t -> fold reduction h t
@@ -329,7 +333,7 @@ module List =
 
     [<CompiledName("Fold2")>]
     let inline fold2<'T1, 'T2, 'State>
-        ([<InlineIfLambda>] folder: 'State -> 'T1 -> 'T2 -> 'State)
+        ([<InlineIfLambda; OptimizeClosureIfNotInlined>] folder: 'State -> 'T1 -> 'T2 -> 'State)
         (state: 'State)
         (list1: 'T1 list)
         (list2: 'T2 list)
@@ -445,7 +449,7 @@ module List =
         | xs1, [] -> invalidArgDifferentListLength "list2" "list1" xs1.Length
 
     [<CompiledName("ForAll2")>]
-    let inline forall2 ([<InlineIfLambda>] predicate) list1 list2 =
+    let inline forall2 ([<InlineIfLambda; OptimizeClosureIfNotInlined>] predicate) list1 list2 =
         let rec loop list1 list2 =
             match list1, list2 with
             | [], [] -> true
@@ -486,7 +490,7 @@ module List =
         contains value source
 
     [<CompiledName("Exists2")>]
-    let inline exists2 ([<InlineIfLambda>] predicate) list1 list2 =
+    let inline exists2 ([<InlineIfLambda; OptimizeClosureIfNotInlined>] predicate) list1 list2 =
         let rec loop list1 list2 =
             match list1, list2 with
             | [], [] -> false
