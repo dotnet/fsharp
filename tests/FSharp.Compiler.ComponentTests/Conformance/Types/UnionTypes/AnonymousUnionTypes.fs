@@ -189,6 +189,14 @@ module AnonymousUnionTypes =
         |> verifyCompileAndRunNoOverlapWarning
         |> shouldSucceed
 
+    [<Theory; FileInlineData("AnonDegenerate.fs")>]
+    let ``Degenerate_fs`` compilation =
+        compilation
+        |> getCompilation
+        |> withLangVersionPreview
+        |> verifyCompileAndRunNoOverlapWarning
+        |> shouldSucceed
+
     [<Theory; FileInlineData("E_AnonWildcard.fs")>]
     let ``E_Wildcard_fs`` compilation =
         compilation

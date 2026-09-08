@@ -5080,6 +5080,8 @@ and TcAnonUnionTypeOr (cenv: cenv) env (tpenv: UnscopedTyparEnv) synCases m =
         match tryAddNullnessToTy (Nullness.Known NullnessInfo.WithNull) singleTy with
         | Some withNullTy -> withNullTy, tpenv
         | None -> error(Error(FSComp.SR.tcTypeDoesNotHaveAnyNull(NicePrint.stringOfTy env.DisplayEnv singleTy), m))
+    | [ singleTy ], false ->
+        singleTy, tpenv
     | _ ->
         // Sort into order for ordered equality
         let sortedIndexedAnonUnionCases =
