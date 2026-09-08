@@ -270,7 +270,8 @@ let tryAddNullnessToTy nullnessNew (ty:TType) =
     | TType_anon_union (info, tys, NullnessWouldChangeTo after) -> Some (TType_anon_union (info, tys, after))
     | TType_var _
     | TType_app _
-    | TType_fun _ -> Some ty
+    | TType_fun _
+    | TType_anon_union _ -> Some ty
     | TType_ucase _
     | TType_tuple _
     | TType_anon _
