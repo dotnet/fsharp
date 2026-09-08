@@ -447,11 +447,6 @@
         <target state="new">Improved implied argument names with partial application</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureInterfacesWithAbstractStaticMembers">
-        <source>static abstract interface members</source>
-        <target state="translated">statik soyut arabirim üyeleri</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureLowerInterpolatedStringToConcat">
         <source>Optimizes interpolated strings in certain cases, by lowering to concatenation</source>
         <target state="translated">Birleştirmeye indirerek belirli durumlarda düz metin arasına kod eklenmiş dizeleri en iyi duruma getirir</target>
@@ -1265,6 +1260,11 @@
       <trans-unit id="reprStateMachineNotCompilableNoAlternative">
         <source>This state machine is not statically compilable and no alternative is available. {0}. Use an 'if __useResumableCode then &lt;state-machine&gt; else &lt;alternative&gt;' to give an alternative.</source>
         <target state="translated">Bu durum makinesi statik olarak derlenebilir değil ve kullanılabilir alternatif yok. {0}. Bir alternatif sağlamak için 'if__useResumableCode then &lt;state-machine&gt; else &lt;alternative&gt;' kullanın.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="runtimeStaticAbstractInterfaceMembers">
+        <source>static abstract interface members</source>
+        <target state="new">static abstract interface members</target>
         <note />
       </trans-unit>
       <trans-unit id="scriptSdkNotDetermined">

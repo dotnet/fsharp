@@ -987,7 +987,7 @@ let GetAbstractMethInfosForSynMethodDecl(infoReader: InfoReader, ad, memberName:
 
     if not memberFlags.IsInstance && memberFlags.IsOverrideOrExplicitImpl then
         if not infoReader.IsRuntimeSupportForVirtualStaticsInInterfaces then
-            errorR(Error(FSComp.SR.chkFeatureNotRuntimeSupported(RichText.mkText (FSComp.SR.featureInterfacesWithAbstractStaticMembers())), bindm))
+            errorR(Error(FSComp.SR.chkFeatureNotRuntimeSupported(RichText.mkText (FSComp.SR.runtimeStaticAbstractInterfaceMembers())), bindm))
 
     let minfos =
         match typToSearchForAbstractMembers with
