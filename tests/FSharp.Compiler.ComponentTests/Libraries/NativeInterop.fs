@@ -256,55 +256,29 @@ let f () = try () with _ -> printfn "handled"
     // used as a chained base-constructor argument loads the uninitialized 'this' before evaluating the
     // argument, so its 'localloc' ran with 'this' pending on the stack and could not be spilled - the
     // emitted IL threw InvalidProgramException at load. The args are now hoisted into locals before 'this'.
-    [<FactForNETCOREAPP>]
-    let ``stackalloc as a base-ctor argument`` () =
-        FSharp """
+    [<TheoryForNETCOREAPP>]
+    // simple nativeptr<int> base-ctor arg
+    [<InlineData("type A(p: nativeptr<int>) = class end",
+                 "type B() = inherit A(NativePtr.stackalloc<int> 1)")>]
+    // stackalloc as one of several base-ctor args
+    [<InlineData("type A(n: int, p: nativeptr<int>) = class end",
+                 "type B() = inherit A(1, NativePtr.stackalloc<int> 1)")>]
+    // generic base type instantiated concretely
+    [<InlineData("type A<'T when 'T: unmanaged>(p: nativeptr<'T>) = class end",
+                 "type B() = inherit A<int>(NativePtr.stackalloc<int> 1)")>]
+    let ``stackalloc as a base-ctor argument compiles and runs`` (baseType: string) (derived: string) =
+        $"""
 module Test
 open Microsoft.FSharp.NativeInterop
-type A(p: nativeptr<int>) = class end
-type B() = inherit A(NativePtr.stackalloc<int> 1)
+{baseType}
+{derived}
 [<EntryPoint>]
 let main _ =
     B() |> ignore
     printfn "ok"
     0
 """
-        |> withNoWarn 9
-        |> compileExeAndRun
-        |> shouldSucceed
-        |> withStdOutContains "ok"
-
-    [<FactForNETCOREAPP>]
-    let ``stackalloc as one of several base-ctor arguments`` () =
-        FSharp """
-module Test
-open Microsoft.FSharp.NativeInterop
-type A(n: int, p: nativeptr<int>) = class end
-type B() = inherit A(1, NativePtr.stackalloc<int> 1)
-[<EntryPoint>]
-let main _ =
-    B() |> ignore
-    printfn "ok"
-    0
-"""
-        |> withNoWarn 9
-        |> compileExeAndRun
-        |> shouldSucceed
-        |> withStdOutContains "ok"
-
-    [<FactForNETCOREAPP>]
-    let ``stackalloc as a generic base-ctor argument`` () =
-        FSharp """
-module Test
-open Microsoft.FSharp.NativeInterop
-type A<'T when 'T: unmanaged>(p: nativeptr<'T>) = class end
-type B() = inherit A<int>(NativePtr.stackalloc<int> 1)
-[<EntryPoint>]
-let main _ =
-    B() |> ignore
-    printfn "ok"
-    0
-"""
+        |> FSharp
         |> withNoWarn 9
         |> compileExeAndRun
         |> shouldSucceed
