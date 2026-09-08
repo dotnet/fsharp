@@ -1819,7 +1819,6 @@ and CheckLambdas isTop (memberVal: Val option) cenv env inlined valReprInfo alwa
         let restArgs = List.concat vsl
         let syntacticArgs = thisAndBase @ restArgs
         let env = BindArgVals env restArgs
-        let env = { env with withinHandler = false }
 
         match memInfo with
         | None -> ()

@@ -181,6 +181,9 @@ let call (s: Sink) =
     [<InlineData("try () with :? System.Exception -> NativePtr.stackalloc<int> 1 |> ignore")>]
     [<InlineData("try () finally NativePtr.stackalloc<int> 1 |> ignore")>]
     [<InlineData("try () with _ -> (try () with _ -> NativePtr.stackalloc<int> 1 |> ignore)")>]
+    // An immediately-applied lambda in a handler is inlined into the handler's IL region by the
+    // optimizer, so its 'localloc' still lands inside the exception region and must be rejected.
+    [<InlineData("try () with _ -> (fun () -> NativePtr.stackalloc<int> 1 |> ignore) ()")>]
     let ``stackalloc in a handler is rejected`` (handler: string) =
         $"""
 module Test
@@ -205,17 +208,6 @@ let f () = try NativePtr.stackalloc<int> 1 |> ignore with _ -> ()
         |> shouldSucceed
 
     [<Fact>]
-    let ``stackalloc in a lambda inside a handler is allowed`` () =
-        FSharp """
-module Test
-open Microsoft.FSharp.NativeInterop
-let f () = try () with _ -> (fun () -> NativePtr.stackalloc<int> 1 |> ignore) ()
-"""
-        |> withNoWarn 9
-        |> compile
-        |> shouldSucceed
-
-    [<Fact>]
     let ``stackalloc in an object-expression method inside a handler is allowed`` () =
         FSharp """
 module Test
@@ -225,10 +217,16 @@ let f () =
     with _ ->
         let d = { new System.IDisposable with member _.Dispose() = NativePtr.stackalloc<int> 1 |> ignore }
         d.Dispose()
+[<EntryPoint>]
+let main _ =
+    f ()
+    printfn "ok"
+    0
 """
         |> withNoWarn 9
-        |> compile
+        |> compileExeAndRun
         |> shouldSucceed
+        |> withStdOutContains "ok"
 
     [<Fact>]
     let ``stackalloc outside any try compiles and runs`` () =
