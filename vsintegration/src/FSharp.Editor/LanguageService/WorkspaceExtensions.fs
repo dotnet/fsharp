@@ -14,6 +14,7 @@ open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.CodeAnalysis.ProjectSnapshot
 open FSharp.Compiler.Symbols
 open FSharp.Compiler.Syntax
+open FSharp.Compiler.SyntaxTrivia
 open FSharp.Compiler.BuildGraph
 
 open CancellableTasks
@@ -662,10 +663,32 @@ type Document with
                 )
         }
 
-let private hasConditionalDirectives (parseTree: ParsedInput) =
-    match parseTree with
-    | ParsedInput.ImplFile file -> not file.Trivia.ConditionalDirectives.IsEmpty
-    | ParsedInput.SigFile file -> not file.Trivia.ConditionalDirectives.IsEmpty
+let rec private definesTestedBy expr =
+    seq {
+        match expr with
+        | IfDirectiveExpression.And(left, right)
+        | IfDirectiveExpression.Or(left, right) ->
+            yield! definesTestedBy left
+            yield! definesTestedBy right
+        | IfDirectiveExpression.Not expr -> yield! definesTestedBy expr
+        | IfDirectiveExpression.Ident name -> yield name
+    }
+
+/// Whether the file can parse differently under the given defines: it tests one of them in a
+/// conditional directive. A file whose `#if` only tests defines the two instances share compiles to
+/// the same tree in both, however many directives it has.
+let private dependsOnDefines (defines: string Set) (parseTree: ParsedInput) =
+    let directives =
+        match parseTree with
+        | ParsedInput.ImplFile file -> file.Trivia.ConditionalDirectives
+        | ParsedInput.SigFile file -> file.Trivia.ConditionalDirectives
+
+    directives
+    |> List.exists (function
+        | ConditionalDirectiveTrivia.If(expr, _)
+        | ConditionalDirectiveTrivia.Elif(expr, _) -> definesTestedBy expr |> Seq.exists defines.Contains
+        | ConditionalDirectiveTrivia.Else _
+        | ConditionalDirectiveTrivia.EndIf _ -> false)
 
 /// How many documents of one project a search keeps in flight. The throttle it shares with the other
 /// projects decides how many of those actually run.
@@ -676,8 +699,8 @@ type Project with
 
     /// Find F# references in the given project. When `searchedInstance` is another target-framework
     /// instance of the same project file that has already been searched, only the documents whose
-    /// sources can differ from it are searched: files compiled only here and files with conditional
-    /// compilation.
+    /// sources can differ from it are searched: files compiled only here and files whose conditional
+    /// compilation tests a define the two instances disagree on.
     member this.FindFSharpReferencesAsync
         (
             symbol: FSharpSymbol,
@@ -721,11 +744,30 @@ type Project with
                 searchedInstance
                 |> ValueOption.map (fun instance -> HashSet(instance.Documents |> Seq.map _.FilePath, StringComparer.OrdinalIgnoreCase))
 
+            // Only the defines one instance has and the other lacks can make a shared file parse
+            // differently; the ones they agree on cannot, however many directives test them.
+            let definesOf (project: Project) =
+                getFSharpOptionsForProject project
+                |> CancellableTask.map (fun (_, _, parsingOptions: FSharpParsingOptions, _) -> Set parsingOptions.ConditionalDefines)
+
+            let! differingDefines =
+                match searchedInstance with
+                | ValueNone -> CancellableTask.singleton Set.empty
+                | ValueSome instance ->
+                    cancellableTask {
+                        let! defines = definesOf this
+                        let! searchedDefines = definesOf instance
+                        return (defines - searchedDefines) + (searchedDefines - defines)
+                    }
+
             let needsSearch (document: Document) =
                 match searchedPaths with
                 | ValueSome paths when paths.Contains document.FilePath ->
-                    document.GetFSharpParseResultsAsync userOpName
-                    |> CancellableTask.map (fun parseResults -> hasConditionalDirectives parseResults.ParseTree)
+                    if differingDefines.IsEmpty then
+                        CancellableTask.singleton false
+                    else
+                        document.GetFSharpParseResultsAsync userOpName
+                        |> CancellableTask.map (fun parseResults -> dependsOnDefines differingDefines parseResults.ParseTree)
                 | _ -> CancellableTask.singleton true
 
             let search (document: Document) =

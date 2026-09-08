@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 /// One project loaded as two target-framework instances: `plain` compiles without the fourth file
-/// and without FOO, `foo` compiles everything with FOO defined.
+/// and without FOO, `foo` compiles everything with FOO defined. Both define COMMON.
 module FSharp.Editor.Tests.MultiTargetFindReferencesTests
 
 open System
@@ -26,10 +26,13 @@ let private project =
             ExtraSource = "let plainUse x = ModuleFirst.sharedFunc x"
         },
         { sourceFile "Third" [ "First" ] with
-            ExtraSource = "#if FOO\nlet fooUse x = ModuleFirst.sharedFunc x\n#endif"
+            ExtraSource = "#if FOO\nlet fooUse x = ModuleFirst.sharedFunc x\n#endif\nlet useBesideFoo x = ModuleFirst.sharedFunc x"
         },
         { sourceFile "Fourth" [ "First" ] with
             ExtraSource = "let fooOnlyFileUse x = ModuleFirst.sharedFunc x"
+        },
+        { sourceFile "Fifth" [ "First" ] with
+            ExtraSource = "#if COMMON\nlet commonUse x = ModuleFirst.sharedFunc x\n#endif"
         }
     )
 
@@ -39,11 +42,11 @@ let private solution, plainId, fooId =
             project,
             [
                 {
-                    Defines = []
+                    Defines = [ "COMMON" ]
                     ExcludedFileIds = [ "Fourth" ]
                 }
                 {
-                    Defines = [ "FOO" ]
+                    Defines = [ "COMMON"; "FOO" ]
                     ExcludedFileIds = []
                 }
             ]
@@ -77,8 +80,9 @@ let ``every file is searched once, files under conditional compilation and insta
         .Wait()
 
     Assert.Equal(1, foundDefinitions.Count)
-    // The signature, Second, Third under FOO and Fourth compiled only into foo: one hit each, not one per instance.
-    Assert.Equal(4, foundReferences.Count)
+    // The signature, Second, both uses in Third, Fourth compiled only into foo, and Fifth under the
+    // define both instances share: one hit each, not one per instance.
+    Assert.Equal(6, foundReferences.Count)
 
 /// What Rename works from: the symbol's uses grouped by Roslyn document.
 let private usesByDocument (document: Document) =
@@ -116,18 +120,25 @@ let private usesByDocument (document: Document) =
 [<Theory>]
 [<InlineData(0)>]
 [<InlineData(1)>]
-let ``rename gets one document per file, owned by an instance that compiles it`` (instance: int) =
+let ``rename gets every use once, from an instance that compiles its file`` (instance: int) =
     let uses = usesByDocument (documentIn (instanceOf instance) firstPath)
 
-    let instancesOf fileId =
+    let located =
         [
-            for id in uses.Keys do
-                if solution.GetDocument(id).FilePath = project.GetFilePath fileId then
-                    id.ProjectId
+            for KeyValue(documentId, ranges) in uses do
+                for range in ranges -> solution.GetDocument(documentId).FilePath, range
         ]
 
-    let files = [ for id in uses.Keys -> solution.GetDocument(id).FilePath ]
-    Assert.Equal(files.Length, List.length (List.distinct files))
-    Assert.Equal<ProjectId list>([ instanceOf instance ], instancesOf "Second")
-    Assert.Equal<ProjectId list>([ fooId ], instancesOf "Third")
-    Assert.Equal<ProjectId list>([ fooId ], instancesOf "Fourth")
+    // A file several instances compile is searched in each of them; the same use must reach Rename once.
+    Assert.Equal<(string * range) list>(List.distinct located, located)
+
+    let files = located |> List.map fst |> List.distinct
+
+    for fileId in [ "Second"; "Third"; "Fourth"; "Fifth" ] do
+        Assert.Contains(project.GetFilePath fileId, files)
+
+    for documentId in uses.Keys do
+        let compiledHere =
+            solution.GetProject(documentId.ProjectId).Documents |> Seq.map _.FilePath
+
+        Assert.Contains(solution.GetDocument(documentId).FilePath, compiledHere)

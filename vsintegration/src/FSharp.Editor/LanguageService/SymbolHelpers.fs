@@ -126,6 +126,21 @@ module internal SymbolHelpers =
                 TelemetryReporter.ReportSingleEvent(TelemetryEvents.GetSymbolUsesInProjectsStarted, props)
 
                 let! ct = CancellableTask.getCancellationToken ()
+
+                // A file that several projects compile - the target-framework instances of one project
+                // file, or two project files sharing a source file - is searched in each of them and
+                // reports the same range every time. The range carries its file, so the first project
+                // to report a use keeps it and the rest are dropped.
+                let reported = ConcurrentDictionary<range, unit>()
+
+                let onFound document ranges =
+                    let fresh =
+                        ranges |> Seq.filter (fun range -> reported.TryAdd(range, ())) |> Seq.toArray
+
+                    if fresh.Length = 0 then
+                        CancellableTask.singleton ()
+                    else
+                        onFound document fresh
                 // Mutated by the checker while a snapshot is built, so snapshots are built one at a time.
                 let snapshotAccumulator = Dictionary()
                 let searches = ResizeArray<Task>()
