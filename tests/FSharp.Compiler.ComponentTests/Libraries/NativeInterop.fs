@@ -171,3 +171,85 @@ let call (s: Sink) =
       IL_000f:  callvirt   instance int32 Test/Sink::Put(native int)
       IL_0014:  ret
     }""" ]
+
+    // Regression tests for https://github.com/dotnet/fsharp/issues/20295 (Case 1): 'NativePtr.stackalloc'
+    // emits the 'localloc' IL instruction, which the JIT rejects inside an exception-handling region.
+    // Such code used to compile and then throw InvalidProgramException at method load; it must now be
+    // rejected at compile time with FS3916.
+    [<Theory>]
+    [<InlineData("try () with _ -> NativePtr.stackalloc<int> 1 |> ignore")>]
+    [<InlineData("try () with :? System.Exception -> NativePtr.stackalloc<int> 1 |> ignore")>]
+    [<InlineData("try () finally NativePtr.stackalloc<int> 1 |> ignore")>]
+    [<InlineData("try () with _ -> (try () with _ -> NativePtr.stackalloc<int> 1 |> ignore)")>]
+    let ``stackalloc in a handler is rejected`` (handler: string) =
+        $"""
+module Test
+open Microsoft.FSharp.NativeInterop
+let f () = {handler}
+"""
+        |> FSharp
+        |> withNoWarn 9
+        |> compile
+        |> shouldFail
+        |> withErrorCode 3916
+
+    [<Fact>]
+    let ``stackalloc in the try body is allowed`` () =
+        FSharp """
+module Test
+open Microsoft.FSharp.NativeInterop
+let f () = try NativePtr.stackalloc<int> 1 |> ignore with _ -> ()
+"""
+        |> withNoWarn 9
+        |> compile
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``stackalloc in a lambda inside a handler is allowed`` () =
+        FSharp """
+module Test
+open Microsoft.FSharp.NativeInterop
+let f () = try () with _ -> (fun () -> NativePtr.stackalloc<int> 1 |> ignore) ()
+"""
+        |> withNoWarn 9
+        |> compile
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``stackalloc in an object-expression method inside a handler is allowed`` () =
+        FSharp """
+module Test
+open Microsoft.FSharp.NativeInterop
+let f () =
+    try ()
+    with _ ->
+        let d = { new System.IDisposable with member _.Dispose() = NativePtr.stackalloc<int> 1 |> ignore }
+        d.Dispose()
+"""
+        |> withNoWarn 9
+        |> compile
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``stackalloc outside any try compiles and runs`` () =
+        FSharp """
+module Test
+open Microsoft.FSharp.NativeInterop
+[<EntryPoint>]
+let main _ =
+    NativePtr.stackalloc<int> 1 |> ignore
+    printfn "ok"
+    0
+"""
+        |> withNoWarn 9
+        |> compileExeAndRun
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``handler without stackalloc is unaffected`` () =
+        FSharp """
+module Test
+let f () = try () with _ -> printfn "handled"
+"""
+        |> compile
+        |> shouldSucceed

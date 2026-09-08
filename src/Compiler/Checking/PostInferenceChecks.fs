@@ -100,6 +100,9 @@ type env =
 
       /// Are we expecting a  resumable code block etc
       resumableCode: Resumable
+
+      /// Are we inside the 'with' handler, filter, or 'finally' block of a 'try'?
+      withinHandler: bool
     }
 
     override _.ToString() = "<env>"
@@ -1248,6 +1251,11 @@ and CheckExpr (cenv: cenv) (env: env) origExpr (ctxt: PermitByRefExpr) : Limit =
 
     // Check an application
     | Expr.App (f, _fty, tyargs, argsl, m) ->
+        (match f with
+         | OptionalCoerce(Expr.Val (vref, _, _))
+               when env.withinHandler && cenv.reportErrors && valRefEq g vref g.nativeptr_stackalloc_vref ->
+             errorR(Error(FSComp.SR.chkNativePtrStackallocInHandler(), m))
+         | _ -> ())
         CheckApplication cenv env expr (f, tyargs, argsl, m) ctxt
 
     | Expr.Lambda (_, _, _, argvs, _, m, bodyTy) ->
@@ -1473,6 +1481,7 @@ and CheckMethod cenv env baseValOpt ty (TObjExprMethod(_, attribs, tps, vs, body
            { env with resumableCode = Resumable.ResumableExpr false }
         else
            { env with resumableCode = Resumable.None }
+    let env = { env with withinHandler = false }
     CheckAttribs cenv env attribs
     CheckNoReraise cenv None body
     CheckEscapes cenv true m (match baseValOpt with Some x -> x :: vs | None -> vs) body |> ignore
@@ -1514,7 +1523,7 @@ and CheckExprOp cenv env (op, tyargs, args, m) ctxt expr =
     | TOp.TryFinally _, [_], [Expr.Lambda (_, _, _, [_], e1, _, _); Expr.Lambda (_, _, _, [_], e2, _, _)] ->
         CheckTypeInstNoInnerByrefs cenv env m tyargs  // result of a try/finally can be a byref
         let limit = CheckExpr cenv env e1 ctxt   // result of a try/finally can be a byref if in a position where the overall expression is can be a byref
-        CheckExprNoByrefs cenv env e2
+        CheckExprNoByrefs cenv { env with withinHandler = true } e2
         limit
 
     | TOp.IntegerForLoop _, _, [Expr.Lambda (_, _, _, [_], e1, _, _);Expr.Lambda (_, _, _, [_], e2, _, _);Expr.Lambda (_, _, _, [_], e3, _, _)]  ->
@@ -1525,7 +1534,7 @@ and CheckExprOp cenv env (op, tyargs, args, m) ctxt expr =
         CheckTypeInstNoInnerByrefs cenv env m tyargs  // result of a try/catch can be a byref
         let limit1 = CheckExpr cenv env e1 ctxt // result of a try/catch can be a byref if in a position where the overall expression is can be a byref
         // [(* e2; -- don't check filter body - duplicates logic in 'catch' body *) e3]
-        let limit2 = CheckExpr cenv env e3 ctxt // result of a try/catch can be a byref if in a position where the overall expression is can be a byref
+        let limit2 = CheckExpr cenv { env with withinHandler = true } e3 ctxt // result of a try/catch can be a byref if in a position where the overall expression is can be a byref
         CombineTwoLimits limit1 limit2
 
     | TOp.ILCall (_, _, _, _, _, _, _, ilMethRef, enclTypeInst, methInst, retTypes), _, _ ->
@@ -1810,6 +1819,7 @@ and CheckLambdas isTop (memberVal: Val option) cenv env inlined valReprInfo alwa
         let restArgs = List.concat vsl
         let syntacticArgs = thisAndBase @ restArgs
         let env = BindArgVals env restArgs
+        let env = { env with withinHandler = false }
 
         match memInfo with
         | None -> ()
@@ -2852,7 +2862,8 @@ let CheckImplFile (g, amap, reportErrors, infoReader, internalsVisibleToPaths, v
           external=false
           returnScope = 0
           isInAppExpr = false
-          resumableCode = Resumable.None }
+          resumableCode = Resumable.None
+          withinHandler = false }
 
     CheckImplFileContents cenv env implFileTy implFileContents
     CheckAttribs cenv env extraAttribs
