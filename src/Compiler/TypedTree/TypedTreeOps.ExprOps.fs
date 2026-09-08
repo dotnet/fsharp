@@ -1491,7 +1491,7 @@ module internal Makers =
         // Use "Expr.WithValue" if it exists in FSharp.Core
         match vref.TryDeref with
         | ValueSome _ ->
-            let copyOfExpr = copyExpr g ValCopyFlag.CloneAll e1
+            let copyOfExpr = copyExprKeepingRecursiveValLinks g ValCopyFlag.CloneAll e1
             let quoteOfCopyOfExpr = Expr.Quote(copyOfExpr, ref None, false, m, qty)
 
             mkApps
