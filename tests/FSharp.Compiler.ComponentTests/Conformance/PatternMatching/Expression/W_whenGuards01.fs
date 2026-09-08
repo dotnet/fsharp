@@ -1,4 +1,4 @@
-// #Regression #Conformance #PatternMatching 
+// #Regression #Conformance #PatternMatching
 module TestModule
 
 // Regression testcase for FSharp 1.0: 2070

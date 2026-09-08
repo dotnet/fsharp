@@ -8,23 +8,23 @@ open FSharp.Test
 
 module ``DefaultOf Tests`` =
 
-    type DUType = 
+    type DUType =
         | A
         | B of int
         | C of DUType * DUType
-        
+
     type RecordType = { A : int; B : string; C : DUType }
-    
+
     type ClassType = string
-       
+
     type InterfaceType =
         abstract DoStuff : unit -> unit
-        
+
     type EnumType =
         | A = 1
         | B = 2
         | C = 4
-            
+
     type StructType = struct
         val m_ivalue : int
         val m_svalue : string

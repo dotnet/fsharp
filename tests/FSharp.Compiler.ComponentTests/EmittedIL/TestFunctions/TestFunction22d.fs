@@ -1,3 +1,3 @@
-// #NoMono #NoMT #CodeGen #EmittedIL 
+// #NoMono #NoMT #CodeGen #EmittedIL
 
 do System.Console.WriteLine()

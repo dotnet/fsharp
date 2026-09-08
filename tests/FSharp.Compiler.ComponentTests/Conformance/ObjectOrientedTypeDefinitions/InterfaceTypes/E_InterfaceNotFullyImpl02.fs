@@ -1,8 +1,8 @@
-// #Regression #Conformance #ObjectOrientedTypes #InterfacesAndImplementations 
+// #Regression #Conformance #ObjectOrientedTypes #InterfacesAndImplementations
 // Regression test for FSHARP1.0:3748
 // Now we emit an error:
 //<Expects id="FS0855" span="(14,22-14,25)" status="error">No abstract or interface member was found that corresponds to this override</Expects>
-module WireOld = 
+module WireOld =
     [<AbstractClass>]
     type 'a wire =
       class

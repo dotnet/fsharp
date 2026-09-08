@@ -1,4 +1,4 @@
-// #Regression #Diagnostics 
+// #Regression #Diagnostics
 // Regression test for FSHARP1.0:3292
 // Give a warning when the user attempts to redefine "=", "<", ">", ">=", "<=" or "<>" or define static members with these names
 //<Expects id="FS0086" span="(8,6-8,8)"     status="warning">The '<>' operator should not normally be redefined\. To define equality semantics for a type, override the 'Object.Equals' member in the definition of that type\.</Expects>

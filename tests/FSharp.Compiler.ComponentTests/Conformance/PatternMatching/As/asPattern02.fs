@@ -1,13 +1,13 @@
-// #Conformance #PatternMatching 
+// #Conformance #PatternMatching
 
 
 // Verify 'as pattern' construct
 
-let test x = 
+let test x =
     match x with
-    | (1, _) | (_, 2) as result 
-        -> if fst result <> 1 && 
-              snd result <> 2 then 
+    | (1, _) | (_, 2) as result
+        -> if fst result <> 1 &&
+              snd result <> 2 then
                false
            else
                true

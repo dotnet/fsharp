@@ -6,9 +6,9 @@ type Class1() =
   static member inline ($) (r:'R, _) = fun (x:'T) -> ((^R) : (static member method2: ^T -> ^R) x)
   static member inline method1 x = Unchecked.defaultof<'r> $ Class1()
 
-type IComm = 
+type IComm =
     [<CLIEvent>]
-    abstract CanExecuteChanged : IEvent<EventHandler,EventArgs> 
+    abstract CanExecuteChanged : IEvent<EventHandler,EventArgs>
 
 type Interface2<'T> =
     inherit IComm

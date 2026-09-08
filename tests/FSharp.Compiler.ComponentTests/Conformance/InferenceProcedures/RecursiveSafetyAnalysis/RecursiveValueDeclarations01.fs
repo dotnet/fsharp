@@ -1,10 +1,10 @@
-// #Regression #Conformance #TypeInference #Recursion 
+// #Regression #Conformance #TypeInference #Recursion
 // FSharp1.0:4821
 // Copying of "when" bindings is losing a recursive fixup point (was: ICE on code with mutually recursive functions used in pattern matching guards?)
 
 
 
-type Foo = 
+type Foo =
     | CSt of int*int*Foo
     | NCst of int
 
@@ -23,7 +23,7 @@ and
 and
  can_discharge x ty tenv =
   List.exists (fun ty' -> lunifies ty ty') (instances x tenv)
-  
+
 
 let rec f x tenv =
  match x with

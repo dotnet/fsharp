@@ -1,7 +1,7 @@
 open Prelude
 
-module OutRefParam_Overloaded  = 
-    type C() = 
+module OutRefParam_Overloaded  =
+    type C() =
          static member M(a: int, x: outref<int>) = x <- 7
          static member M(a: string, x: outref<int>) = x <- 8
     let mutable res = 9

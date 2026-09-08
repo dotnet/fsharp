@@ -361,7 +361,7 @@ let main _ =
 
     #if !NETCOREAPP
     [<Theory(Skip = "IWSAMs are not supported by NET472.")>]
-    #else   
+    #else
     [<InlineData("8.0")>]
     [<InlineData("preview")>]
     [<Theory>]
@@ -1131,12 +1131,12 @@ module StaticAbstractBug =
         |> compile
         |> shouldFail
         |> withDiagnostics [
-            (Error 855, Line 14, Col 18, Line 14, Col 23, "No abstract or interface member was found that corresponds to this override");   
-            (Error 859, Line 15, Col 21, Line 15, Col 29, "No abstract property was found that corresponds to this override");  
-            (Error 859, Line 17, Col 21, Line 17, Col 30, "No abstract property was found that corresponds to this override");  
+            (Error 855, Line 14, Col 18, Line 14, Col 23, "No abstract or interface member was found that corresponds to this override");
+            (Error 859, Line 15, Col 21, Line 15, Col 29, "No abstract property was found that corresponds to this override");
+            (Error 859, Line 17, Col 21, Line 17, Col 30, "No abstract property was found that corresponds to this override");
             (Error 859, Line 18, Col 21, Line 18, Col 30, "No abstract property was found that corresponds to this override")
         ]
-         
+
     [<InlineData(true)>]        // RealSig
     [<InlineData(false)>]       // Regular
     [<Theory>]
@@ -1323,7 +1323,7 @@ let execute = IPrintable.Say("hello")
         |> withLangVersion80
         |> typecheck
         |> shouldSucceed
-        
+
     [<InlineData(true)>]        // RealSig
     [<InlineData(false)>]       // Regular
     [<TheoryForNETCOREAPP>]
@@ -1600,7 +1600,7 @@ Note that all interface members must be implemented and listed under an appropri
         ]
 
     // Tests for IWSAM type argument validation (issue #19184)
-    
+
     [<FactForNETCOREAPP>]
     let ``Error when interface with unimplemented static abstract is used as type argument to constrained generic`` () =
         Fsx """
@@ -3640,7 +3640,7 @@ if totalMass <> 10.0<kg> then failwith (sprintf "Expected 10.0<kg> but got %A" t
 
     [<Fact>]
     let ``Extension operator SRTP resolves correctly under optimization`` () =
-        // Regression test: this exercises the optimizer's OptimizeTraitCall → 
+        // Regression test: this exercises the optimizer's OptimizeTraitCall →
         // CodegenWitnessExprForTraitConstraint → GenWitnessExpr code path.
         // The optimizer resolves trait calls before IlxGen, so bugs in
         // GenWitnessExpr expression construction only manifest with --optimize+.

@@ -1,4 +1,4 @@
-// #Conformance #TypeInference #TypeConstraints 
+// #Conformance #TypeInference #TypeConstraints
 
 
 // Verify happy case with an enum constraint

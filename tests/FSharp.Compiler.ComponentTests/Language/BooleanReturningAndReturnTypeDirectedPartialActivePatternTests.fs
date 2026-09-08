@@ -26,7 +26,7 @@ let ``Partial struct active pattern returns bool`` () =
     |> withLangVersion10
     |> typecheck
     |> shouldSucceed
-    
+
 [<Fact>]
 let ``Single case active pattern returning bool should success`` () =
     FSharp """
@@ -35,7 +35,7 @@ let (IsA r) = "A"
     """
     |> typecheck
     |> shouldSucceed
-    
+
 [<Fact>]
 let ``Partial struct active pattern results can be retrieved`` () =
     Fsx """

@@ -6,53 +6,53 @@ open System
 
 type Parent(o:obj) = class end
 
-type Parent<'t>(t:'t) = 
+type Parent<'t>(t:'t) =
     member val T = t
 
 // this used to not work, causing NullReferenceException
-module Implicit = 
+module Implicit =
 
     // Instantiating this type should throw InvalidOperationException.
-    type Broken() as bself = 
+    type Broken() as bself =
         inherit Parent(bself)
 
     // this should work.
-    type Ok() as self = 
+    type Ok() as self =
         inherit Parent<unit->Ok>(fun () -> self)
 
 module Explicit =
 
     // should throw InvalidOperationException.
-    type Broken = 
+    type Broken =
         inherit Parent
         new() as gself = { inherit Parent(gself) }
 
     // this should work.
-    type Ok = 
+    type Ok =
         inherit Parent<unit->Ok>
         new() as self = { inherit Parent<unit->Ok>(fun () -> self) }
 
-    
-let case1() = 
+
+let case1() =
   try
     let r = Implicit.Broken()
     false
-  with 
-    | :? InvalidOperationException -> true 
+  with
+    | :? InvalidOperationException -> true
     | _ -> false
-  
-let case2() = 
+
+let case2() =
   try
     let r = Explicit.Broken()
     false
-  with 
-    | :? InvalidOperationException -> true 
+  with
+    | :? InvalidOperationException -> true
     | _ -> false
 
-let case3() = 
+let case3() =
   let r = Implicit.Ok().T()
   true
-  
+
 let case4() =
   let r = Explicit.Ok().T()
   true

@@ -1,7 +1,7 @@
 open Prelude
 
 // Test a simple out argument
-module TryGetValueTests = 
+module TryGetValueTests =
     let d = dict [ (3,4) ]
     let mutable res = 9
     let v =  d.TryGetValue(3, &res)

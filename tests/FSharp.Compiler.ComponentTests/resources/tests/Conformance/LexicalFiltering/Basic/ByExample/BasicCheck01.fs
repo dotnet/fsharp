@@ -1,13 +1,13 @@
-// #Conformance #LexFilter 
+// #Conformance #LexFilter
 
 
 // Sanity check #light functionality
 
-let f x y z = 
+let f x y z =
     let a = x * y
     let b = y * z
     let c = x * z
-    let d = 
+    let d =
          match a with
          | 0 -> "x|y = 0"
          | _ when a < 0 -> "x|y < 0 && x|y > 0"
@@ -22,7 +22,7 @@ let f x y z =
             1
         else
             x * fact (x - 1)
-               
+
     (a, b, c, d, fact 4)
 
 // Without #light there would be a compile error

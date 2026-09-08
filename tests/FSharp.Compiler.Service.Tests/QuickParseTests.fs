@@ -12,16 +12,16 @@ open FSharp.Compiler.EditorServices
 [<Fact>]
 let ``QuickParse handles optional parameter identifier extraction when cursor is on question mark``() =
     let lineStr = "member _.memb(?optional:string) = optional"
-    
+
     // Test when cursor is exactly on the '?' character
     let posOnQuestionMark = 14
     Assert.Equal('?', lineStr[posOnQuestionMark])
-    
+
     let island = QuickParse.GetCompleteIdentifierIsland false lineStr posOnQuestionMark
-    
+
     // We expect to get "optional" as the identifier
     Assert.True(Option.isSome island, "Should extract identifier island when positioned on '?'")
-    
+
     match island with
     | Some(ident, startCol, isQuoted) ->
         Assert.Equal("optional", ident)
@@ -34,16 +34,16 @@ let ``QuickParse handles optional parameter identifier extraction when cursor is
 [<Fact>]
 let ``QuickParse handles optional parameter identifier extraction when cursor is on identifier``() =
     let lineStr = "member _.memb(?optional:string) = optional"
-    
+
     // Test when cursor is on the identifier "optional" after the '?'
     let posOnOptional = 17
     Assert.Equal('t', lineStr[posOnOptional])
-    
+
     let island = QuickParse.GetCompleteIdentifierIsland false lineStr posOnOptional
-    
+
     // We expect to get "optional" as the identifier
     Assert.True(Option.isSome island, "Should extract identifier island when positioned on identifier")
-    
+
     match island with
     | Some(ident, startCol, isQuoted) ->
         Assert.Equal("optional", ident)
@@ -54,13 +54,13 @@ let ``QuickParse handles optional parameter identifier extraction when cursor is
 [<Fact>]
 let ``QuickParse does not treat question mark as identifier in other contexts``() =
     let lineStr = "let x = y ? z"
-    
+
     // Test when cursor is on the '?' in a different context (not optional parameter)
     let posOnQuestionMark = 10
     Assert.Equal('?', lineStr[posOnQuestionMark])
-    
+
     let island = QuickParse.GetCompleteIdentifierIsland false lineStr posOnQuestionMark
-    
+
     // In this context, '?' is followed by space, not an identifier start
     // So we should get None or the next identifier 'z'
     // Let's check what we actually get

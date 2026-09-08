@@ -9,7 +9,7 @@ module ``TupleElimination`` =
 
 
     let compile cu =
-        cu 
+        cu
         |> withCheckNulls
         |> compile
 
@@ -174,7 +174,7 @@ public static int x()
     int num = TupleElimination.f();
     now = DateTime.Now;
     return 2 + num;
-}          
+}
 *)
                       """
 .method public static int32  x() cil managed
@@ -784,7 +784,7 @@ let testFunction(a,b) =
      |> shouldSucceed
      |> verifyIL [
 
-     // Checks the names of captured 'x' and 'y'. 
+     // Checks the names of captured 'x' and 'y'.
                   """
 
         .method public strict virtual instance int32 

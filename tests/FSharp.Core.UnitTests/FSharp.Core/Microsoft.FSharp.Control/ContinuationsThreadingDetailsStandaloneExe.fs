@@ -4,7 +4,7 @@ open System.Threading
 
 type MyForm(Tests) as this =
     inherit System.Windows.Forms.Form()
-    do 
+    do
         this.Load.Add(fun _ ->
             Tests()
             ThreadPool.QueueUserWorkItem(fun _ -> Thread.Sleep(1000); this.Invoke(new System.Action(fun _ -> this.Close())) |> ignore) |> ignore
@@ -17,7 +17,7 @@ type MyForm(Tests) as this =
 let Main(args) =
     let orig = Thread.CurrentThread.ManagedThreadId
     let ev = new Event<_>()
-    let pub = ev.Publish 
+    let pub = ev.Publish
 #if SYNC_CTXT
     System.Windows.Forms.Application.ThreadException.Add(fun e -> ev.Trigger("form exception:" + e.Exception.Message))
     System.Windows.Forms.Application.SetUnhandledExceptionMode(System.Windows.Forms.UnhandledExceptionMode.CatchException, true)
@@ -30,11 +30,11 @@ let Main(args) =
         use uhe = System.AppDomain.CurrentDomain.UnhandledException.Subscribe(fun e -> add "unhandled")
         use fe = pub.Subscribe(fun s -> add s)
         try
-            Async.StartWithContinuations( 
-                a, 
-                (fun _ -> add "ok"; failwith "boom"), 
-                (fun _ -> add "error"), 
-                (fun _ -> add "cancel" ) 
+            Async.StartWithContinuations(
+                a,
+                (fun _ -> add "ok"; failwith "boom"),
+                (fun _ -> add "error"),
+                (fun _ -> add "cancel" )
             )
         with
             e -> add("caught:"+e.Message)
@@ -94,19 +94,19 @@ let Main(args) =
 
     let FromContinuationsSchedulesFuture() =
         printf "FromContinuationsSchedulesFutureSuccess "
-        let r = SWCandContThrowsTimeout(Async.FromContinuations(fun (cont, _, _) -> 
+        let r = SWCandContThrowsTimeout(Async.FromContinuations(fun (cont, _, _) ->
                      ThreadPool.QueueUserWorkItem(fun _ -> Thread.Sleep(500); cont 10) |> ignore),
                      1000)
         Thread.Sleep(1500)
         printfn "%A" r
         printf "FromContinuationsSchedulesFutureError "
-        let r = SWCandContThrowsTimeout(Async.FromContinuations(fun (_, econt, _) -> 
+        let r = SWCandContThrowsTimeout(Async.FromContinuations(fun (_, econt, _) ->
                      ThreadPool.QueueUserWorkItem(fun _ -> Thread.Sleep(500); econt(new System.Exception("err"))) |> ignore),
                      1000)
         Thread.Sleep(1500)
         printfn "%A" r
         printf "FromContinuationsSchedulesFutureCancel "
-        let r = SWCandContThrowsTimeout(Async.FromContinuations(fun (_, _, ccont) -> 
+        let r = SWCandContThrowsTimeout(Async.FromContinuations(fun (_, _, ccont) ->
                      ThreadPool.QueueUserWorkItem(fun _ -> Thread.Sleep(500); ccont(new System.OperationCanceledException())) |> ignore),
                      1000)
         Thread.Sleep(1500)
@@ -114,7 +114,7 @@ let Main(args) =
 
     let FromContinuationsSchedulesFutureAndThrowsSlowly() =
         printf "FromContinuationsSchedulesFutureSuccessAndThrowsSlowly "
-        let r = SWCandContThrowsTimeout(Async.FromContinuations(fun (cont, _, _) -> 
+        let r = SWCandContThrowsTimeout(Async.FromContinuations(fun (cont, _, _) ->
                      ThreadPool.QueueUserWorkItem(fun _ -> cont 10) |> ignore
                      Thread.Sleep(500)
                      failwith "pow"),
@@ -122,7 +122,7 @@ let Main(args) =
         Thread.Sleep(1500)
         printfn "%A" r
         printf "FromContinuationsSchedulesFutureErrorAndThrowsSlowly "
-        let r = SWCandContThrowsTimeout(Async.FromContinuations(fun (_, econt, _) -> 
+        let r = SWCandContThrowsTimeout(Async.FromContinuations(fun (_, econt, _) ->
                      ThreadPool.QueueUserWorkItem(fun _ -> econt(new System.Exception("err"))) |> ignore
                      Thread.Sleep(500)
                      failwith "pow"),
@@ -130,7 +130,7 @@ let Main(args) =
         Thread.Sleep(1500)
         printfn "%A" r
         printf "FromContinuationsSchedulesFutureCancelAndThrowsSlowly "
-        let r = SWCandContThrowsTimeout(Async.FromContinuations(fun (_, _, ccont) -> 
+        let r = SWCandContThrowsTimeout(Async.FromContinuations(fun (_, _, ccont) ->
                      ThreadPool.QueueUserWorkItem(fun _ -> ccont(new System.OperationCanceledException())) |> ignore
                      Thread.Sleep(500)
                      failwith "pow"),
@@ -140,21 +140,21 @@ let Main(args) =
 
     let FromContinuationsSchedulesFutureAndThrowsQuickly() =
         printf "FromContinuationsSchedulesFutureSuccessAndThrowsQuickly "
-        let r = SWCandContThrowsTimeout(Async.FromContinuations(fun (cont, _, _) -> 
+        let r = SWCandContThrowsTimeout(Async.FromContinuations(fun (cont, _, _) ->
                      ThreadPool.QueueUserWorkItem(fun _ -> Thread.Sleep(500); cont 10) |> ignore
                      failwith "pow"),
                      1000)
         Thread.Sleep(1500)
         printfn "%A" r
         printf "FromContinuationsSchedulesFutureErrorAndThrowsQuickly "
-        let r = SWCandContThrowsTimeout(Async.FromContinuations(fun (_, econt, _) -> 
+        let r = SWCandContThrowsTimeout(Async.FromContinuations(fun (_, econt, _) ->
                      ThreadPool.QueueUserWorkItem(fun _ -> Thread.Sleep(500); econt(new System.Exception("err"))) |> ignore
                      failwith "pow"),
                      1000)
         Thread.Sleep(1500)
         printfn "%A" r
         printf "FromContinuationsSchedulesFutureCancelAndThrowsQuickly "
-        let r = SWCandContThrowsTimeout(Async.FromContinuations(fun (_, _, ccont) -> 
+        let r = SWCandContThrowsTimeout(Async.FromContinuations(fun (_, _, ccont) ->
                      ThreadPool.QueueUserWorkItem(fun _ -> Thread.Sleep(500); ccont(new System.OperationCanceledException())) |> ignore
                      failwith "pow"),
                      1000)

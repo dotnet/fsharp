@@ -277,7 +277,7 @@ let 1,1,1 = ()
         SynPat.Tuple(elementPats = [SynPat.Const _ as p41; SynPat.Const _ as p42; SynPat.Wild _ as p43])
         SynPat.Tuple(elementPats = [SynPat.Wild _ as p51; SynPat.Const _ as p52; SynPat.Const _ as p53])
         SynPat.Tuple(elementPats = [SynPat.Const _ as p61; SynPat.Wild _ as p62; SynPat.Const _ as p63])
-        
+
         SynPat.Tuple(elementPats = [SynPat.Const _ as p71; SynPat.Const _ as p72; SynPat.Const _ as p73]) ] ->
             [ p11; p12; p13; p21; p22; p23; p31; p32; p33
               p41; p42; p43; p51; p52; p53; p61; p62; p63
@@ -347,7 +347,7 @@ let (1,1,1) = ()
         SynPat.Tuple(elementPats = [SynPat.Const _ as p41; SynPat.Const _ as p42; SynPat.Wild _ as p43])
         SynPat.Tuple(elementPats = [SynPat.Wild _ as p51; SynPat.Const _ as p52; SynPat.Const _ as p53])
         SynPat.Tuple(elementPats = [SynPat.Const _ as p61; SynPat.Wild _ as p62; SynPat.Const _ as p63])
-        
+
         SynPat.Tuple(elementPats = [SynPat.Const _ as p71; SynPat.Const _ as p72; SynPat.Const _ as p73]) ] ->
             [ p11; p12; p13; p21; p22; p23; p31; p32; p33
               p41; p42; p43; p51; p52; p53; p61; p62; p63

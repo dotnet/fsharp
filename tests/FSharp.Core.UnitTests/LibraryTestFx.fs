@@ -16,7 +16,7 @@ open Xunit
 let CheckThrowsExn<'a when 'a :> exn> (f : unit -> unit) =
     try
         let _ = f ()
-        sprintf "Expected %O exception, got no exception" typeof<'a> |> Assert.Fail 
+        sprintf "Expected %O exception, got no exception" typeof<'a> |> Assert.Fail
     with
     | :? 'a -> ()
     | e -> sprintf "Expected %O exception, got: %O" typeof<'a> e |> Assert.Fail

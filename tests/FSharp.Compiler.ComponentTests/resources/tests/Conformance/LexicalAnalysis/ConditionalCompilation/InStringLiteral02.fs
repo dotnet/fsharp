@@ -1,12 +1,12 @@
-// #Conformance #LexicalAnalysis 
+// #Conformance #LexicalAnalysis
 
 
 // test1 --------------------------------------
-let test1 = 
+let test1 =
     "a"
     #if DEFINED
     + "b
-    #else 
+    #else
     c"
     #else
     + "d"

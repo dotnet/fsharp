@@ -1,7 +1,7 @@
 open Prelude
 
 // Test a simple ref  argument
-module CompareExchangeTests = 
+module CompareExchangeTests =
     let mutable x = 3
     let v =  System.Threading.Interlocked.CompareExchange(&x, 4, 3)
     check "cweweoiwekla" v 3

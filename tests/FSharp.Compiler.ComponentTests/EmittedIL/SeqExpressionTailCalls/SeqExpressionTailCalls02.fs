@@ -1,4 +1,4 @@
-// #Regression #NoMono #NoMT #CodeGen #EmittedIL #Sequences #TailCalls   
+// #Regression #NoMono #NoMT #CodeGen #EmittedIL #Sequences #TailCalls
 // Regression test for FSHARP1.0:4135
 // Same as SeqExpressionTailCalls01.fs, but with MUTUALLY RECURSIVE PAIR OF SEQUENCES
 module SeqExpressionTailCalls02

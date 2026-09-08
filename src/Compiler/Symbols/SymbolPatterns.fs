@@ -12,18 +12,18 @@ module FSharpSymbolPatterns =
     module Option =
         let attempt f = try Some(f()) with _ -> None
 
-    let hasModuleSuffixAttribute (entity: FSharpEntity) = 
+    let hasModuleSuffixAttribute (entity: FSharpEntity) =
             entity.TryGetAttribute<CompilationRepresentationAttribute>()
-            |> Option.bind (fun a -> 
+            |> Option.bind (fun a ->
                 Option.attempt (fun _ -> a.ConstructorArguments)
                 |> Option.bind (fun args -> args |> Seq.tryPick (fun (_, arg) ->
                     let res =
                         match arg with
-                        | :? int32 as arg when arg = int CompilationRepresentationFlags.ModuleSuffix -> 
-                            Some() 
-                        | :? CompilationRepresentationFlags as arg when arg = CompilationRepresentationFlags.ModuleSuffix -> 
-                            Some() 
-                        | _ -> 
+                        | :? int32 as arg when arg = int CompilationRepresentationFlags.ModuleSuffix ->
+                            Some()
+                        | :? CompilationRepresentationFlags as arg when arg = CompilationRepresentationFlags.ModuleSuffix ->
+                            Some()
+                        | _ ->
                             None
                     res)))
             |> Option.isSome
@@ -46,7 +46,7 @@ module FSharpSymbolPatterns =
     let (|Attribute|_|) (entity: FSharpEntity) =
         let isAttribute (entity: FSharpEntity) =
             let getBaseType (entity: FSharpEntity) =
-                try 
+                try
                     match entity.BaseType with
                     | Some (TypeWithDefinition def) -> Some def
                     | _ -> None
@@ -66,15 +66,15 @@ module FSharpSymbolPatterns =
         else None
 
 #if !NO_TYPEPROVIDERS
-    let (|Class|_|) (original: FSharpEntity, abbreviated: FSharpEntity, _) = 
-        if abbreviated.IsClass 
+    let (|Class|_|) (original: FSharpEntity, abbreviated: FSharpEntity, _) =
+        if abbreviated.IsClass
            && (not abbreviated.IsStaticInstantiation || original.IsFSharpAbbreviation) then Some()
         else None
 #else
     let (|Class|_|) (original: FSharpEntity, abbreviated: FSharpEntity, _) = 
         if abbreviated.IsClass && original.IsFSharpAbbreviation then Some()
         else None 
-#endif        
+#endif
 
     let (|Record|_|) (e: FSharpEntity) = if e.IsFSharpRecord then Some() else None
 
@@ -88,11 +88,11 @@ module FSharpSymbolPatterns =
 
     let (|AbstractClass|_|) (e: FSharpEntity) =
         if e.HasAttribute<AbstractClassAttribute>() then Some() else None
-            
-    let (|FSharpType|_|) (e: FSharpEntity) = 
-        if e.IsDelegate || e.IsFSharpExceptionDeclaration || e.IsFSharpRecord || e.IsFSharpUnion 
-            || e.IsInterface || e.IsMeasure 
-            || (e.IsFSharp && e.IsOpaque && not e.IsFSharpModule && not e.IsNamespace) then Some() 
+
+    let (|FSharpType|_|) (e: FSharpEntity) =
+        if e.IsDelegate || e.IsFSharpExceptionDeclaration || e.IsFSharpRecord || e.IsFSharpUnion
+            || e.IsInterface || e.IsMeasure
+            || (e.IsFSharp && e.IsOpaque && not e.IsFSharpModule && not e.IsNamespace) then Some()
         else None
 
 #if !NO_TYPEPROVIDERS
@@ -100,7 +100,7 @@ module FSharpSymbolPatterns =
         if (e.IsProvided || e.IsProvidedAndErased || e.IsProvidedAndGenerated) && e.CompiledName = e.DisplayName then
             Some()
         else None
-#endif        
+#endif
 
     let (|ByRef|_|) (e: FSharpEntity) = if e.IsByRef then Some() else None
 
@@ -110,7 +110,7 @@ module FSharpSymbolPatterns =
 
     let (|Namespace|_|) (entity: FSharpEntity) = if entity.IsNamespace then Some() else None
 
-#if !NO_TYPEPROVIDERS    
+#if !NO_TYPEPROVIDERS
     let (|ProvidedAndErasedType|_|) (entity: FSharpEntity) = if entity.IsProvidedAndErased then Some() else None
 #endif
 
@@ -119,14 +119,14 @@ module FSharpSymbolPatterns =
     let (|Tuple|_|) (ty: FSharpType) =
         if ty.IsTupleType then Some() else None
 
-    let (|RefCell|_|) (ty: FSharpType) = 
+    let (|RefCell|_|) (ty: FSharpType) =
         match ty.StripAbbreviations() with
-        | TypeWithDefinition def when 
-            def.IsFSharpRecord && def.FullName = "Microsoft.FSharp.Core.FSharpRef`1" -> Some() 
+        | TypeWithDefinition def when
+            def.IsFSharpRecord && def.FullName = "Microsoft.FSharp.Core.FSharpRef`1" -> Some()
         | _ -> None
 
-    let (|FunctionType|_|) (ty: FSharpType) = 
-        if ty.IsFunctionType then Some() 
+    let (|FunctionType|_|) (ty: FSharpType) =
+        if ty.IsFunctionType then Some()
         else None
 
     let (|Pattern|_|) (symbol: FSharpSymbol) =
@@ -140,8 +140,8 @@ module FSharpSymbolPatterns =
         | :? FSharpField as field -> Some (field, field.FieldType.StripAbbreviations())
         | _ -> None
 
-    let (|MutableVar|_|) (symbol: FSharpSymbol) = 
-        let isMutable = 
+    let (|MutableVar|_|) (symbol: FSharpSymbol) =
+        let isMutable =
             match symbol with
             | :? FSharpField as field -> field.IsMutable && not field.IsLiteral
             | :? FSharpMemberOrFunctionOrValue as func -> func.IsMutable
@@ -151,17 +151,17 @@ module FSharpSymbolPatterns =
     /// Entity (originalEntity, abbreviatedEntity, abbreviatedTy)
     let (|FSharpEntity|_|) (symbol: FSharpSymbol) =
         match symbol with
-        | :? FSharpEntity as entity -> 
+        | :? FSharpEntity as entity ->
             let abbreviatedEntity, abbreviatedTy = getEntityAbbreviatedType entity
             Some (entity, abbreviatedEntity, abbreviatedTy)
         | _ -> None
 
-    let (|Parameter|_|) (symbol: FSharpSymbol) = 
+    let (|Parameter|_|) (symbol: FSharpSymbol) =
         match symbol with
         | :? FSharpParameter -> Some()
         | _ -> None
 
-    let (|UnionCase|_|) (e: FSharpSymbol) = 
+    let (|UnionCase|_|) (e: FSharpSymbol) =
         match e with
         | :? FSharpUnionCase as uc -> Some uc
         | _ -> None
@@ -169,7 +169,7 @@ module FSharpSymbolPatterns =
     let (|RecordField|_|) (e: FSharpSymbol) =
         match e with
         | :? FSharpField as field ->
-            match field.DeclaringEntity with 
+            match field.DeclaringEntity with
             | None -> None
             | Some e -> if e.IsFSharpRecord then Some field else None
         | _ -> None
@@ -194,7 +194,7 @@ module FSharpSymbolPatterns =
     let (|Function|_|) excluded (func: FSharpMemberOrFunctionOrValue) =
         try let ty = func.FullType.StripAbbreviations()
             if ty.IsFunctionType
-               && not func.IsPropertyGetterMethod 
+               && not func.IsPropertyGetterMethod
                && not func.IsPropertySetterMethod
                && not excluded
                && not (PrettyNaming.IsOperatorDisplayName func.DisplayName) then Some()

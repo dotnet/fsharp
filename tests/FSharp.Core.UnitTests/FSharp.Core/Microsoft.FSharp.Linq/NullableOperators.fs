@@ -7,7 +7,7 @@ open Xunit
 open Microsoft.FSharp.Linq
 
 type NullableOperators() =
-    [<Fact>]    
+    [<Fact>]
     member _.CastingUint () =
         let expected = Nullable(12u)
         let actual = Nullable.uint (Nullable(12))

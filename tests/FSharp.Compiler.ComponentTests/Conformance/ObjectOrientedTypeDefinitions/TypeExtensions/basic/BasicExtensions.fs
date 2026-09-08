@@ -1,4 +1,4 @@
-// #Conformance #ObjectOrientedTypes #TypeExtensions 
+// #Conformance #ObjectOrientedTypes #TypeExtensions
 
 
 // Verify error for invalid type extensions

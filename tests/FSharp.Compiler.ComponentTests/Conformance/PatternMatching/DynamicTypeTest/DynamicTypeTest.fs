@@ -117,7 +117,7 @@ involves an indeterminate type based on information prior to this program point.
         |> withOptions ["--test:ErrorRanges"]
         |> typecheck
         |> shouldSucceed
-        
+
     // This test was automatically generated (moved from FSharpQA suite - Conformance/PatternMatching/DynamicTypeTest)
     [<Theory; FileInlineData("Regression02.fs")>]
     let ``DynamicTypeTest - Regression02_fs - --test:ErrorRanges`` compilation =
@@ -198,4 +198,3 @@ involves an indeterminate type based on information prior to this program point.
         |> withDiagnostics [
             (Warning 26, Line 8, Col 7, Line 8, Col 12, "This rule will never be matched")
         ]
-        

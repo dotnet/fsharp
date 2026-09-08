@@ -5,9 +5,9 @@ open TestBaseClass
 
 type DerivedClass() = class
     inherit BaseClass()
-        
+
     member x.SomeMethod() = x.ProtectedInstance()
-    static member AnotherMethod() = 
+    static member AnotherMethod() =
         let x = DerivedClass()
         x.ProtectedInstance()
 

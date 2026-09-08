@@ -2,8 +2,8 @@ module MyLib
 
 type BaseType() =
     abstract Msg : string with get,set
-    default this.Msg 
-        with get() = ""            
+    default this.Msg
+        with get() = ""
         and  set x = printfn "%s" x
 
 type DerivedType() =

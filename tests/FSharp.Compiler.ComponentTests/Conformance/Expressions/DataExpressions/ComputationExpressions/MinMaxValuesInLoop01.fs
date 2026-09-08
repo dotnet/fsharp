@@ -1,4 +1,4 @@
-// #Regression #Conformance #DataExpressions #ComputationExpressions 
+// #Regression #Conformance #DataExpressions #ComputationExpressions
 // Regression test for FSHARP1.0:4370
 // for loops involving System.Int32.MaxValue as the upper limit does not work correctly
 
@@ -20,7 +20,7 @@ i <- System.Int32.MinValue + 2
 while i > System.Int32.MinValue do
     acc <- acc - 1
     i <- i - 1
-    
+
 if acc <> 0 then exit 1
 
 exit 0

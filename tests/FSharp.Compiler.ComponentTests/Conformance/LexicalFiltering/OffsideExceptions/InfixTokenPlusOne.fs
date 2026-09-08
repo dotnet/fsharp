@@ -1,4 +1,4 @@
-// #Regression #Conformance #LexFilter #Exceptions 
+// #Regression #Conformance #LexFilter #Exceptions
 
 
 // FSB 1624, LexFilter should consider infix tokens according to their length
@@ -8,17 +8,17 @@
 let x = 3
 let y = x
       + x
-   
+
 let (--) = (-)
 let z =    x
         -- x
-     
+
 let ( *** ) = (*)
-let a = 
+let a =
                  x
              *** x
-    
+
 let (|>>>>>>>) = (|>)
-let veryLongIdentifier = (*  *)[1;2;3] 
-                            |> fun a -> a 
+let veryLongIdentifier = (*  *)[1;2;3]
+                            |> fun a -> a
                       |>>>>>>> fun b -> b

@@ -1,4 +1,4 @@
-﻿// #Regression #Conformance #LexicalAnalysis 
+﻿// #Regression #Conformance #LexicalAnalysis
 
 // Verify getting the byte value of a char works past the first 128 ASCII characters
 // It is not valid because it must be <= 127

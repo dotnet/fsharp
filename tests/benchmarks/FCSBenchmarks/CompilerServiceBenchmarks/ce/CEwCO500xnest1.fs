@@ -21,7 +21,7 @@
         member _.Mul(state: CalcState, x) =
             { state with
                 r = state.r * x }
-        
+
         [<CustomOperation "div">]
         member _.Div(state: CalcState, x) =
             if x = 0 then

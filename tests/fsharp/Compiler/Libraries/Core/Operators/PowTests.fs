@@ -6,10 +6,10 @@ open Xunit
 
 
 module ``Pow Tests`` =
-    
+
     type T() =
         static let mutable m = false
-        static member Pow (g: T, _: float) = 
+        static member Pow (g: T, _: float) =
             m <- true
             g
         static member Check() = m

@@ -1,4 +1,4 @@
-// #Conformance #TypesAndModules #Records 
+// #Conformance #TypesAndModules #Records
 
 
 // Verify syntax associated with defining and creating records
@@ -15,8 +15,8 @@ and Rec2 = {
 // Mixed
 and Rec3 = { A3 : int;
              B3 : string }
-    
- 
+
+
 
 let test1 = { A1 = 1; B1 = "1" }
 

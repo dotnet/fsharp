@@ -513,7 +513,7 @@ type T() =
 let t = T()
 t.{caret}
 """
-        
+
         [<Fact>]
         let ``Method - Static 01`` () =
             assertItemAllowed "Method" """
@@ -573,7 +573,7 @@ module Module2 =
     open Module1
     do {caret}
 """
-     
+
         [<Fact>]
         let ``Module - Value 05`` () =
             assertItemAllowed "x" """

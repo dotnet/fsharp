@@ -1,4 +1,4 @@
-// #Conformance #TypeInference #ApplicationExpressions 
+// #Conformance #TypeInference #ApplicationExpressions
 
 
 // Verify you can pipe a complex expression through the F# compiler

@@ -33,7 +33,7 @@ type BooleanOptions =
     | Both = 3
     | None = 0
 
-// realsig and optimized are boxed so null = not set, true or false = set  
+// realsig and optimized are boxed so null = not set, true or false = set
 // Keeping CompilationHelper as it may be used elsewhere
 [<NoComparison; NoEquality; AutoOpen>]
 type CompilationHelper internal (filename: obj, directory: obj, realsig: obj, optimize: obj) =
@@ -153,7 +153,7 @@ type CompilationHelper internal (filename: obj, directory: obj, realsig: obj, op
 [<NoComparison; NoEquality>]
 type FileInlineData(filenameArg: string, realsig: BooleanOptions option, optimize: BooleanOptions option, [<CallerFilePath; Optional; DefaultParameterValue("")>]directory: string) =
     inherit DataAttributeBase()
-    
+
     let mutable directory: string = directory
     let mutable filename: string = filenameArg
     let mutable optimize: BooleanOptions option = optimize
