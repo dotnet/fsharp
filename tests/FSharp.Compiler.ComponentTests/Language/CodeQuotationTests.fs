@@ -438,3 +438,45 @@ let rec loop x y =
         |> compile
         |> shouldFail
         |> withErrorCode 1230
+
+    // https://github.com/dotnet/fsharp/issues/20379
+    // A monomorphic recursive *data* value (lazy-initialized 'let rec') gains nothing from fixup-link
+    // preservation. Its recursive-use fixup node is re-mutated to a lazy 'Force' by the initialization-graph
+    // elimination, so preserving the link would leak that 'Force' into the captured quotation. The auto-quoted
+    // definition must reference the value directly, exactly as before the issue 20379 fix.
+    [<Fact>]
+    let ``Auto-quote of monomorphic recursive data value does not leak a lazy Force - issue 20379`` () =
+        Fsx """
+open Microsoft.FSharp.Quotations
+open Microsoft.FSharp.Quotations.Patterns
+
+#nowarn "21"
+#nowarn "40"
+
+let mutable captured: Expr option = None
+
+type Capture =
+    static member Run([<ReflectedDefinition(true)>] body: Expr<int -> int>) =
+        captured <- Some body
+        (fun (n: int) -> n)
+
+let rec data : int -> int =
+    Capture.Run(fun n -> data n)
+
+if data 3 <> 3 then failwith "Unexpected result"
+
+let rec containsForce expr =
+    match expr with
+    | Call(_, method, _) when method.Name = "Force" -> true
+    | ExprShape.ShapeVar _ -> false
+    | ExprShape.ShapeLambda(_, body) -> containsForce body
+    | ExprShape.ShapeCombination(_, args) -> List.exists containsForce args
+
+match captured with
+| Some(WithValue(_, _, definition)) ->
+    if containsForce definition then failwithf "Lazy Force leaked into quotation: %A" definition
+| expression -> failwithf "Unexpected quotation: %A" expression
+        """
+        |> asExe
+        |> compileAndRun
+        |> shouldSucceed

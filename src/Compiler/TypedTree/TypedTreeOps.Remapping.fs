@@ -1671,8 +1671,12 @@ module internal ExprRemapping =
             keepRecursiveValLinks = false
         }
 
-    /// Detect an Expr.Link that stands for a use of a recursive value which is still within its letrec scope
-    /// (and will therefore be fixed up by AdjustAndForgetUsesOfRecValue once type arguments are inferred).
+    /// Detect an Expr.Link that stands for a use of a recursive *function* value which is still within its
+    /// letrec scope (and will therefore be fixed up by AdjustAndForgetUsesOfRecValue once type arguments are
+    /// inferred). Only function-valued recursive bindings are matched: they are bound as lambdas and so are
+    /// never rewritten by the lazy-initialization morph in EliminateInitializationGraphs, whereas a monomorphic
+    /// recursive *data* value would have this same shared fixup node re-mutated to a lazy 'Force', leaking that
+    /// node into the captured quotation. See issue #20379.
     let isRecursiveValFixupLink (eref: Expr ref) =
         match stripDebugPoints eref.Value with
         | Expr.Val(vref, _, _)
@@ -1680,7 +1684,10 @@ module internal ExprRemapping =
         // the shape AdjustAndForgetUsesOfRecValue accepts), so match that exact shape.
         | Expr.App(Expr.Val(vref, _, _), _, _, [], _) ->
             match vref.RecursiveValInfo with
-            | ValInRecScope _ -> true
+            | ValInRecScope _ ->
+                match vref.ValReprInfo with
+                | Some info -> info.NumCurriedArgs > 0
+                | None -> false
             | ValNotInRecScope -> false
         | _ -> false
 
