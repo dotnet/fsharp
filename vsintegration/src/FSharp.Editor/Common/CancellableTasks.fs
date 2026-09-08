@@ -1130,6 +1130,31 @@ module CancellableTasks =
                 return! allTask
             }
 
+        /// Runs the work over the items with at most maxDegreeOfParallelism of them in flight. A worker
+        /// takes the next item when it frees up, so cancellation cancels the workers rather than a
+        /// pending task per item.
+        let forEachThrottled maxDegreeOfParallelism (work: 'T -> CancellableTask<unit>) (items: 'T seq) =
+            cancellableTask {
+                let! ct = getCancellationToken ()
+                let items = Seq.toArray items
+                let mutable next = -1
+
+                let worker () =
+                    backgroundTask {
+                        let mutable index = Interlocked.Increment &next
+
+                        while index < items.Length do
+                            ct.ThrowIfCancellationRequested()
+                            do! work items[index] ct
+                            index <- Interlocked.Increment &next
+                    }
+
+                let workers =
+                    Array.init (min (max 1 maxDegreeOfParallelism) items.Length) (fun _ -> worker ())
+
+                do! (Task.WhenAll workers :> Task)
+            }
+
         let inline whenAllTasks (tasks: CancellableTask seq) =
             cancellableTask {
                 let! ct = getCancellationToken ()
