@@ -90,14 +90,17 @@ module internal SymbolHelpers =
 
     /// One search per project file: the best-ranked target-framework instance is searched in full,
     /// the others only where their sources can differ from it.
-    let private groupInstances (currentProject: Project) (projects: Project list) =
+    let private groupInstances (currentProject: Project) (projects: Project seq) =
         let rank = rankInstances currentProject
 
-        projects
-        |> List.groupBy _.FilePath
-        |> List.map (fun (_, instances) ->
-            let ordered = List.sortBy rank instances
-            struct (ordered.Head, ordered.Tail))
+        seq {
+            for _, instances in projects |> Seq.groupBy _.FilePath do
+                let instances = Seq.toArray instances
+                // Ordering the rest buys nothing, and ranking every instance of the solution at once
+                // measures slower than one pass per group.
+                let primary = Array.minBy rank instances
+                struct (primary, instances |> Seq.filter (fun instance -> instance.Id <> primary.Id))
+        }
 
     /// One core is left to the thread that has to stay responsive, and every search in the editor
     /// shares what remains.
@@ -119,7 +122,7 @@ module internal SymbolHelpers =
                 if isFastFindReferencesEnabled then
                     groupInstances currentProject projects
                 else
-                    [ for project in projects -> struct (project, []) ]
+                    seq { for project in projects -> struct (project, Seq.empty) }
 
             cancellableTask {
                 // TODO: this needs to be a single event with a duration
@@ -152,7 +155,8 @@ module internal SymbolHelpers =
                     else
                         CancellableTask.singleton ValueNone
 
-                let start (project: Project) snapshot searchedInstance =
+                // Started, not awaited: the next project's snapshot is built while this one searches.
+                let startSearching (project: Project) snapshot searchedInstance =
                     searches.Add(
                         project.FindFSharpReferencesAsync
                             (symbol, snapshot, searchedInstance, searchThrottle, onFound, "getSymbolUsesInProjects")
@@ -161,11 +165,11 @@ module internal SymbolHelpers =
 
                 for struct (primary, secondaries) in groups do
                     let! snapshot = snapshotFor primary
-                    start primary snapshot ValueNone
+                    startSearching primary snapshot ValueNone
 
                     for secondary in secondaries do
                         let! snapshot = snapshotFor secondary
-                        start secondary snapshot (ValueSome primary)
+                        startSearching secondary snapshot (ValueSome primary)
 
                 do! Task.WhenAll searches
 
@@ -237,12 +241,11 @@ module internal SymbolHelpers =
         cancellableTask {
             let symbolUses = ConcurrentBag()
 
-            let onFound =
-                fun document (ranges: range seq) ->
-                    cancellableTask {
-                        for range in ranges do
-                            symbolUses.Add(document, range)
-                    }
+            let onFound document (ranges: range seq) =
+                cancellableTask {
+                    for range in ranges do
+                        symbolUses.Add(document, range)
+                }
 
             do! findSymbolUses symbolUse currentDocument checkFileResults onFound
 
