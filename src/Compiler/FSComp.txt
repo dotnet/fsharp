@@ -1513,7 +1513,6 @@ notAFunctionButMaybeDeclaration,"This value is not a function and cannot be appl
 3251,chkNoFirstClassNameOf,"Using the 'nameof' operator as a first-class function value is not permitted."
 3252,tcIllegalByrefsInOpenTypeDeclaration,"Byref types are not allowed in an open type declaration."
 3260,tcTypeDoesNotHaveAnyNull,"The type '%s' does not support a nullness qualification."
-3260,tcAnonUnionNullNotAllowed,"'null' cannot be applied to a parenthesized anonymous union. Write %s."
 #3261 reserved for ConstraintSolverNullnessWarningEquivWithTypes
 #3261 reserved for ConstraintSolverNullnessWarningWithTypes
 #3261 reserved for ConstraintSolverNullnessWarningWithType
@@ -1812,4 +1811,4 @@ featureReraiseInComputationExpressions,"calls to 'reraise' in a computation expr
 4501,tcNullableNotAllowedInAnonymousUnion,"The type System.Nullable<'T> is not allowed in an anonymous union type. Consider adding null case instead."
 4502,tcAnonUnionNullMustBeTrailing,"'null' may only appear as the last case of an outermost anonymous union, e.g. '(int | string | null)'."
 4503,tcAnonUnionNullRequiresReferenceAncestor,"The type '%s' does not support 'null' because it is not a reference type. A null case may only be added to an anonymous union whose common type is a reference type."
-4504,tcAnonUnionMultipleNullCases,"An anonymous union may only contain a single 'null' case."
+4504,tcAnonUnionNullNotAllowed,"'null' cannot be applied to a parenthesized anonymous union. Write %s."

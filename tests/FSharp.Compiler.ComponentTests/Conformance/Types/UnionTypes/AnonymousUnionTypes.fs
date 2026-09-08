@@ -260,7 +260,7 @@ module AnonymousUnionTypes =
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
-            (Error 3260, Line 4, Col 9, Line 4, Col 26, "'null' cannot be applied to a parenthesized anonymous union. Write (int | string | null).")
+            (Error 4504, Line 4, Col 9, Line 4, Col 26, "'null' cannot be applied to a parenthesized anonymous union. Write (int | string | null).")
         ]
 
     [<Theory; FileInlineData("E_AnonWithNullPosition2.fs")>]
