@@ -457,6 +457,9 @@
   <data name="6003" xml:space="preserve">
     <value>Visual F# Files (*.fs,*.fsi,*.fsx,*.fsscript);*.fs,*.fsi,*.fsx,*.fsscript</value>
   </data>
+  <data name="6015" xml:space="preserve">
+    <value>Compiler</value>
+  </data>
   <data name="7000" xml:space="preserve">
     <value>Visual F#</value>
   </data>
