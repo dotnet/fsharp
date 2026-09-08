@@ -251,3 +251,108 @@ let f () = try () with _ -> printfn "handled"
 """
         |> compile
         |> shouldSucceed
+
+    // Regression tests for https://github.com/dotnet/fsharp/issues/20295 (Case 2): a 'NativePtr.stackalloc'
+    // used as a chained base-constructor argument loads the uninitialized 'this' before evaluating the
+    // argument, so its 'localloc' ran with 'this' pending on the stack and could not be spilled - the
+    // emitted IL threw InvalidProgramException at load. The args are now hoisted into locals before 'this'.
+    [<FactForNETCOREAPP>]
+    let ``stackalloc as a base-ctor argument`` () =
+        FSharp """
+module Test
+open Microsoft.FSharp.NativeInterop
+type A(p: nativeptr<int>) = class end
+type B() = inherit A(NativePtr.stackalloc<int> 1)
+[<EntryPoint>]
+let main _ =
+    B() |> ignore
+    printfn "ok"
+    0
+"""
+        |> withNoWarn 9
+        |> compileExeAndRun
+        |> shouldSucceed
+        |> withStdOutContains "ok"
+
+    [<FactForNETCOREAPP>]
+    let ``stackalloc as one of several base-ctor arguments`` () =
+        FSharp """
+module Test
+open Microsoft.FSharp.NativeInterop
+type A(n: int, p: nativeptr<int>) = class end
+type B() = inherit A(1, NativePtr.stackalloc<int> 1)
+[<EntryPoint>]
+let main _ =
+    B() |> ignore
+    printfn "ok"
+    0
+"""
+        |> withNoWarn 9
+        |> compileExeAndRun
+        |> shouldSucceed
+        |> withStdOutContains "ok"
+
+    [<FactForNETCOREAPP>]
+    let ``stackalloc as a generic base-ctor argument`` () =
+        FSharp """
+module Test
+open Microsoft.FSharp.NativeInterop
+type A<'T when 'T: unmanaged>(p: nativeptr<'T>) = class end
+type B() = inherit A<int>(NativePtr.stackalloc<int> 1)
+[<EntryPoint>]
+let main _ =
+    B() |> ignore
+    printfn "ok"
+    0
+"""
+        |> withNoWarn 9
+        |> compileExeAndRun
+        |> shouldSucceed
+        |> withStdOutContains "ok"
+
+    // The hoist evaluates the base-ctor args left-to-right into locals before pushing 'this'; a
+    // side-effecting normal arg before the stackalloc arg must still run first.
+    [<FactForNETCOREAPP>]
+    let ``stackalloc base-ctor argument preserves left-to-right order`` () =
+        FSharp """
+module Test
+open Microsoft.FSharp.NativeInterop
+let trace = System.Text.StringBuilder()
+let step (name: string) x = trace.Append name |> ignore; x
+type A(n: int, p: nativeptr<int>) = class end
+type B() = inherit A(step "a" 1, step "b" (NativePtr.stackalloc<int> 1))
+[<EntryPoint>]
+let main _ =
+    B() |> ignore
+    if string trace <> "ab" then failwithf "wrong order: %O" trace
+    printfn "ok"
+    0
+"""
+        |> withNoWarn 9
+        |> compileExeAndRun
+        |> shouldSucceed
+        |> withStdOutContains "ok"
+
+    // No-regression: an ordinary base ctor without a 'localloc' argument must not hoist - the arg is
+    // pushed directly onto 'this', with no extra local introduced by the hoist.
+    [<Fact>]
+    let ``ordinary base-ctor argument is not hoisted`` () =
+        FSharp """
+module Test
+type A(n: int) = class end
+type B() = inherit A(1)
+"""
+        |> compile
+        |> shouldSucceed
+        |> verifyILContains [
+            """.method public specialname rtspecialname instance void  .ctor() cil managed
+      {
+        
+        .maxstack  8
+        IL_0000:  ldarg.0
+        IL_0001:  ldc.i4.1
+        IL_0002:  callvirt   instance void Test/A::.ctor(int32)
+        IL_0007:  ldarg.0
+        IL_0008:  pop
+        IL_0009:  ret
+      }""" ]
