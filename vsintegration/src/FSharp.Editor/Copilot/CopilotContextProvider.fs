@@ -6,6 +6,8 @@ open System
 open System.Collections.Generic
 open System.ComponentModel.Composition
 open System.IO
+open System.Diagnostics
+open System.Threading
 open System.Threading.Tasks
 
 open Microsoft.CodeAnalysis
@@ -34,10 +36,35 @@ module internal CopilotSymbolQuery =
     [<Literal>]
     let private UserOpName = "CopilotSymbolContext"
 
+    /// How long a query keeps parsing files nobody has opened yet. Copilot cancels on its own schedule
+    /// and takes no partial results, so an answer from what is already parsed beats a complete answer.
+    [<Literal>]
+    let private ColdSearchBudgetMs = 1500
+
+    let private parallelism = max 1 (Environment.ProcessorCount - 1)
+
     let private fsharpDocuments (solution: Solution) =
         solution.Projects
         |> Seq.where (fun project -> project.Language = FSharpConstants.FSharpLanguageName)
         |> Seq.collect _.Documents
+
+    /// The documents in the order a query visits them: the ones the user has open, the ones already
+    /// parsed into the cache, and the ones that would have to be parsed to answer.
+    let private tiers (cache: FSharpNavigableItemsCache) (openDocumentIds: DocumentId seq) (solution: Solution) =
+        let openIds = HashSet openDocumentIds
+        let opened = ResizeArray()
+        let cached = ResizeArray()
+        let cold = ResizeArray()
+
+        for document in fsharpDocuments solution do
+            if openIds.Contains document.Id then
+                opened.Add document
+            else
+                match cache.TryGetCachedNavigableItems document.Id with
+                | ValueSome items -> cached.Add(struct (document, items))
+                | ValueNone -> cold.Add document
+
+        struct (opened, cached, cold)
 
     let describe (item: NavigableItem) (document: Document) =
         let container =
@@ -50,67 +77,117 @@ module internal CopilotSymbolQuery =
         else
             $"{container} - {document.Project.Name}"
 
-    /// Declarations whose fully qualified name matches `searchText`, best match first, one entry per name.
-    let search (cache: FSharpNavigableItemsCache) (solution: Solution) (searchText: string) =
+    /// Declarations whose fully qualified name matches each search text, best match first, one entry
+    /// per name. Every document is visited once for all of the texts.
+    let search (cache: FSharpNavigableItemsCache) (openDocumentIds: DocumentId seq) (solution: Solution) (searchTexts: string[]) =
         cancellableTask {
             let! ct = CancellableTask.getCancellationToken ()
-            let tryMatch = cache.CreateMatcherFor searchText
+            let matchers = searchTexts |> Array.map cache.CreateMatcherFor
+            let hits = Array.init searchTexts.Length (fun _ -> ResizeArray())
+            let found = Array.init searchTexts.Length (fun _ -> HashSet StringComparer.Ordinal)
 
-            let matchesIn (document: Document) =
+            let collect (document: Document) (items: NavigableItem array) =
+                lock hits (fun () ->
+                    for index in 0 .. matchers.Length - 1 do
+                        let tryMatch = matchers[index]
+
+                        for item in items do
+                            match tryMatch item with
+                            | ValueSome patternMatch ->
+                                hits[index].Add(struct (patternMatch.Kind, item, document))
+
+                                found[index].Add(CopilotSymbolMapping.fullyQualifiedName item) |> ignore
+                            | ValueNone -> ())
+
+            let enough () =
+                lock hits (fun () -> found |> Array.forall (fun names -> names.Count >= MaxMentions))
+
+            let parseAndCollect (document: Document) =
                 cancellableTask {
-                    ct.ThrowIfCancellationRequested()
                     let! items = cache.GetNavigableItems document
-
-                    return
-                        items
-                        |> Seq.chooseV (fun item ->
-                            tryMatch item
-                            |> ValueOption.map (fun patternMatch -> struct (patternMatch.Kind, item, document)))
+                    collect document items
                 }
 
-            let! hits =
-                fsharpDocuments solution
-                |> Seq.map matchesIn
-                // Throttle to avoid launching a parse per document in the solution all at once.
-                |> CancellableTask.whenAllThrottled (max 1 Environment.ProcessorCount)
+            let struct (opened, cached, cold) = tiers cache openDocumentIds solution
+
+            do! opened |> CancellableTask.forEachThrottled parallelism parseAndCollect
+
+            if not (enough ()) then
+                for struct (document, items) in cached do
+                    ct.ThrowIfCancellationRequested()
+                    collect document items
+
+            if not (enough ()) then
+                let budget = Stopwatch.StartNew()
+
+                // The budget stops handing out documents rather than cancelling a parse under way:
+                // the first query of a session has to survive its first parse to answer at all.
+                let scan (document: Document) =
+                    cancellableTask {
+                        if budget.ElapsedMilliseconds < ColdSearchBudgetMs && not (enough ()) then
+                            do! parseAndCollect document
+                    }
+
+                do! cold |> CancellableTask.forEachThrottled parallelism scan
 
             return
                 hits
-                |> Seq.collect id
-                |> Seq.sortBy (fun (struct (kind, item: NavigableItem, document: Document)) ->
-                    document.IsFSharpSignatureFile, kind, item.Name.Length)
-                |> Seq.distinctBy (fun (struct (_, item, _)) -> CopilotSymbolMapping.fullyQualifiedName item)
-                |> Seq.truncate MaxMentions
-                |> Seq.map (fun (struct (_, item, document)) -> struct (item, document))
-                |> Seq.toArray
+                |> Array.map (
+                    Seq.sortBy (fun (struct (kind, item: NavigableItem, document: Document)) ->
+                        document.IsFSharpSignatureFile, kind, item.Name.Length)
+                    >> Seq.distinctBy (fun (struct (_, item, _)) -> CopilotSymbolMapping.fullyQualifiedName item)
+                    >> Seq.truncate MaxMentions
+                    >> Seq.map (fun (struct (_, item, document)) -> struct (item, document))
+                    >> Seq.toArray
+                )
         }
 
     /// Declarations carrying exactly this fully qualified name. Signature files answer only when no
-    /// implementation declares the name.
-    let declarationsOf (cache: FSharpNavigableItemsCache) (solution: Solution) (fullyQualifiedName: string) =
+    /// implementation declares the name, so the search stops once an implementation has answered.
+    let declarationsOf
+        (cache: FSharpNavigableItemsCache)
+        (openDocumentIds: DocumentId seq)
+        (solution: Solution)
+        (fullyQualifiedName: string)
+        =
         cancellableTask {
             let! ct = CancellableTask.getCancellationToken ()
+            let hits = ResizeArray()
 
-            let matchesIn (document: Document) =
+            let collect (document: Document) (items: NavigableItem array) =
+                lock hits (fun () ->
+                    for item in items do
+                        if CopilotSymbolMapping.hasFullyQualifiedName fullyQualifiedName item then
+                            hits.Add(struct (item, document)))
+
+            let declaredInImplementation () =
+                lock hits (fun () ->
+                    hits
+                    |> Seq.exists (fun (struct (_, document: Document)) -> not document.IsFSharpSignatureFile))
+
+            let parseAndCollect (document: Document) =
                 cancellableTask {
-                    ct.ThrowIfCancellationRequested()
                     let! items = cache.GetNavigableItems document
-
-                    return
-                        items
-                        |> Seq.chooseV (fun item ->
-                            if CopilotSymbolMapping.hasFullyQualifiedName fullyQualifiedName item then
-                                ValueSome struct (item, document)
-                            else
-                                ValueNone)
+                    collect document items
                 }
 
-            let! hits =
-                fsharpDocuments solution
-                |> Seq.map matchesIn
-                // Throttle to avoid launching a parse per document in the solution all at once.
-                |> CancellableTask.whenAllThrottled (max 1 Environment.ProcessorCount)
-                |> CancellableTask.map (Seq.collect id)
+            let struct (opened, cached, cold) = tiers cache openDocumentIds solution
+
+            do! opened |> CancellableTask.forEachThrottled parallelism parseAndCollect
+
+            if not (declaredInImplementation ()) then
+                for struct (document, items) in cached do
+                    ct.ThrowIfCancellationRequested()
+                    collect document items
+
+            if not (declaredInImplementation ()) then
+                let scan (document: Document) =
+                    cancellableTask {
+                        if not (declaredInImplementation ()) then
+                            do! parseAndCollect document
+                    }
+
+                do! cold |> CancellableTask.forEachThrottled parallelism scan
 
             let implementations =
                 hits
@@ -148,9 +225,14 @@ module internal CopilotSymbolQuery =
             return struct (sourceText.GetSubText(span).ToString(), span)
         }
 
-    let symbolContext (cache: FSharpNavigableItemsCache) (solution: Solution) (fullyQualifiedName: string) =
+    let symbolContext
+        (cache: FSharpNavigableItemsCache)
+        (openDocumentIds: DocumentId seq)
+        (solution: Solution)
+        (fullyQualifiedName: string)
+        =
         cancellableTask {
-            let! declarations = declarationsOf cache solution fullyQualifiedName
+            let! declarations = declarationsOf cache openDocumentIds solution fullyQualifiedName
 
             match Array.tryHeadV declarations with
             | ValueNone -> return ValueNone
@@ -242,17 +324,31 @@ type internal FSharpCopilotContextProvider
             | text -> ValueSome text
         | _ -> ValueNone
 
-    let mentionsFor (searchText: string voption) =
+    /// One pass over the solution for the whole batch: Copilot's picker asks for several texts at once
+    /// and each of them would otherwise walk the same documents.
+    let mentionsFor (searchTexts: string voption[]) =
         cancellableTask {
-            match workspace, searchText with
-            | null, _
-            | _, ValueNone -> return noMentions
-            | workspace, ValueSome searchText ->
-                let! hits = CopilotSymbolQuery.search cache workspace.CurrentSolution searchText
+            let distinct = searchTexts |> Seq.chooseV id |> Seq.distinct |> Seq.toArray
+
+            match workspace with
+            | null -> return searchTexts |> Array.map (fun _ -> noMentions)
+            | _ when Array.isEmpty distinct -> return searchTexts |> Array.map (fun _ -> noMentions)
+            | workspace ->
+                let! hits = CopilotSymbolQuery.search cache (workspace.GetOpenDocumentIds()) workspace.CurrentSolution distinct
+
+                let byText = Dictionary(StringComparer.Ordinal)
+
+                for index in 0 .. distinct.Length - 1 do
+                    byText[distinct[index]] <-
+                        hits[index]
+                        |> Array.map (fun (struct (item, document)) -> mentionFor item document)
+                        :> IReadOnlyCollection<CopilotQueriedMention>
 
                 return
-                    hits |> Array.map (fun (struct (item, document)) -> mentionFor item document)
-                    :> IReadOnlyCollection<CopilotQueriedMention>
+                    searchTexts
+                    |> Array.map (function
+                        | ValueSome text -> byText[text]
+                        | ValueNone -> noMentions)
         }
 
     let fullyQualifiedNameOf (inputs: IReadOnlyDictionary<string, CopilotValue> | null) =
@@ -292,7 +388,8 @@ type internal FSharpCopilotContextProvider
                 String.Equals(memberName, CopilotSymbolMapping.SymbolMember, StringComparison.Ordinal)
                 ->
                 cancellableTask {
-                    let! symbol = CopilotSymbolQuery.symbolContext cache workspace.CurrentSolution fullyQualifiedName
+                    let! symbol =
+                        CopilotSymbolQuery.symbolContext cache (workspace.GetOpenDocumentIds()) workspace.CurrentSolution fullyQualifiedName
 
                     match symbol with
                     | ValueNone -> return null
@@ -303,7 +400,9 @@ type internal FSharpCopilotContextProvider
 
     interface ICopilotMentionQueryable with
         member _.QueryMentionAsync(query, cancellationToken) : Task<IReadOnlyCollection<CopilotQueriedMention>> =
-            mentionsFor (searchTextOf query) |> CancellableTask.start cancellationToken
+            mentionsFor [| searchTextOf query |]
+            |> CancellableTask.map Array.head
+            |> CancellableTask.start cancellationToken
 
         member _.NavigateToMentionableAsync(mention, cancellationToken) : Task<bool> =
             match workspace, fullyQualifiedNameOf mention.Inputs with
@@ -313,7 +412,8 @@ type internal FSharpCopilotContextProvider
                 cancellableTask {
                     let! ct = CancellableTask.getCancellationToken ()
                     let solution = workspace.CurrentSolution
-                    let! declarations = CopilotSymbolQuery.declarationsOf cache solution fullyQualifiedName
+
+                    let! declarations = CopilotSymbolQuery.declarationsOf cache (workspace.GetOpenDocumentIds()) solution fullyQualifiedName
 
                     match Array.tryHeadV declarations with
                     | ValueNone -> return false
@@ -333,15 +433,8 @@ type internal FSharpCopilotContextProvider
                 |> CancellableTask.start cancellationToken
 
     // Copilot's own picker providers answer through the batch interface, one result collection per query.
-    // Each distinct search text scans the solution once, and the scans run side by side.
     interface ICopilotMentionBatchQueryable with
         member _.QueryMentionBatchAsync(queries, cancellationToken) : Task<IReadOnlyList<IReadOnlyCollection<CopilotQueriedMention>>> =
-            cancellableTask {
-                let searchTexts = queries |> Seq.map searchTextOf |> Seq.toArray
-                let distinct = Array.distinct searchTexts
-                let! mentions = distinct |> Array.map mentionsFor |> CancellableTask.whenAll
-                let byText = Array.zip distinct mentions |> dict
-
-                return searchTexts |> Array.map (fun text -> byText[text]) :> IReadOnlyList<IReadOnlyCollection<CopilotQueriedMention>>
-            }
+            mentionsFor (queries |> Seq.map searchTextOf |> Seq.toArray)
+            |> CancellableTask.map (fun mentions -> mentions :> IReadOnlyList<IReadOnlyCollection<CopilotQueriedMention>>)
             |> CancellableTask.start cancellationToken
