@@ -1,4 +1,4 @@
 // Anonymous Union Types
-// One constituent type is an interface and another is a type that implements that interface
+// Identical constituent types, but only warning because they are not on the same level
 
-let x: (System.IComparable | string) = "Hello"
+let x: (int|(string|int)) = 42

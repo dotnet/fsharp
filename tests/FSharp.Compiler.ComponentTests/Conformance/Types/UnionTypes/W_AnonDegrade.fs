@@ -1,5 +1,7 @@
 // Anonymous Union Types
 // Anonymous union degenerates to single type
 
-let x: (int|int) = 5
+type A = int
+type B = int
+let x: (A|B) = 5
 let y = x + 1

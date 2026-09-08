@@ -4986,14 +4986,23 @@ and TcAnonUnionTypeOr (cenv: cenv) env (tpenv: UnscopedTyparEnv) synCases m =
     // Helper method for eliminating duplicate types from lists of types that form a union type,
     // create a disjoint set of cases
     // taking into account that a subtype is a "duplicate" of its supertype.
-    let rec addToCases (pt: TType) (list: ResizeArray<TType>) (hasNullCase: bool ref) =
+    let rec addToCases (pt: TType) (list: ResizeArray<TType>) (hasNullCase: bool ref) (isNested: bool) =
+        // Check if two types are literally equivalent, not following aliases
+        let rec literalTypeEquiv g ty1 ty2 =
+            match ty1, ty2 with
+            | TType_app(tcref1, args1, _), TType_app(tcref2, args2, _) ->
+                tyconRefEq g tcref1 tcref2 && List.forall2 (literalTypeEquiv g) args1 args2
+            | _ -> false
+
         if (nullnessOfTy g pt).Evaluate() = NullnessInfo.WithNull then
             // hoist nullness
             hasNullCase := true
-        
         if isNullableTy g pt then
             // Error: System.Nullable cannot be a case of anon union
             error(Error(FSComp.SR.tcNullableNotAllowedInAnonymousUnion(), m))
+        elif Seq.exists (literalTypeEquiv g pt) list && not isNested then
+            // Error: exact duplicate type in anonymous union
+            error(Error(FSComp.SR.tcAnonUnionDuplicateCaseType(NicePrint.stringOfTy env.DisplayEnv pt), m))
         elif not (Seq.exists (isObjTyAnyNullness g) list) then
             if isObjTyAnyNullness g pt then
                 // Warning: all existing types are subtypes of obj and will be ignored
@@ -5006,7 +5015,7 @@ and TcAnonUnionTypeOr (cenv: cenv) env (tpenv: UnscopedTyparEnv) synCases m =
             elif isAnonUnionTy g pt then
                 let otherUnsortedCases = tryUnsortedAnonUnionTyCases g pt |> ValueOption.defaultValue []
                 for otherCase in otherUnsortedCases
-                    do addToCases otherCase list hasNullCase
+                    do addToCases otherCase list hasNullCase true
             else
                 let mutable shouldAdd = true
                 let mutable i = 0
@@ -5048,7 +5057,7 @@ and TcAnonUnionTypeOr (cenv: cenv) env (tpenv: UnscopedTyparEnv) synCases m =
         let n0 = DiagnosticsThreadStatics.DiagnosticsLogger.ErrorCount
         let tyR, _ = TcTypeAndRecover cenv NoNewTypars CheckCxs ItemOccurrence.UseInType WarnOnIWSAM.Yes env tpenv synTy
         if DiagnosticsThreadStatics.DiagnosticsLogger.ErrorCount = n0 then
-            addToCases tyR unionTypeCases hasNullCase
+            addToCases tyR unionTypeCases hasNullCase false
 
     let createDisjointTypes synAnonUnionCases =
         let unionTypeCases = ResizeArray()
@@ -5081,6 +5090,7 @@ and TcAnonUnionTypeOr (cenv: cenv) env (tpenv: UnscopedTyparEnv) synCases m =
         | Some withNullTy -> withNullTy, tpenv
         | None -> error(Error(FSComp.SR.tcTypeDoesNotHaveAnyNull(NicePrint.stringOfTy env.DisplayEnv singleTy), m))
     | [ singleTy ], false ->
+        warning(Error(FSComp.SR.tcAnonUnionDegraded(NicePrint.stringOfTy env.DisplayEnv singleTy), m))
         singleTy, tpenv
     | _ ->
         // Sort into order for ordered equality

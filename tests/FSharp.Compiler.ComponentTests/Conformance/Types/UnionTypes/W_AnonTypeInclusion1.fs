@@ -1,4 +1,4 @@
 // Anonymous Union Types
-// One contituent type is equal to another constituent type
+// One constituent type is a supertype of another constituent type
 
-let x: (int|int) = 42
+let y: (System.ValueType|int|string) = 42

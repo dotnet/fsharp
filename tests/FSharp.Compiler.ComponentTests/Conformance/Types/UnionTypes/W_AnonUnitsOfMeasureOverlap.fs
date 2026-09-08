@@ -1,4 +1,5 @@
 // Anonymous Union Types
-// One type is fully included in another w.r.t. runtime type tests (units of measure erasure)
+// Both types are int, but one of them has a unit of measure
+type [<Measure>] kg
 
-let x: (int|int<1>) = 42
+let x: (int | int<kg>) = 42

@@ -1812,3 +1812,5 @@ featureReraiseInComputationExpressions,"calls to 'reraise' in a computation expr
 4502,tcAnonUnionNullMustBeTrailing,"'null' may only appear as the last case of an outermost anonymous union, e.g. '(int | string | null)'."
 4503,tcAnonUnionNullRequiresReferenceAncestor,"The type '%s' does not support 'null' because it is not a reference type. A null case may only be added to an anonymous union whose common type is a reference type."
 4504,tcAnonUnionNullNotAllowed,"'null' cannot be applied to a parenthesized anonymous union. Write %s."
+4505,tcAnonUnionDuplicateCaseType,"This anonymous union type has multiple cases of the same type '%s'. Duplicate case types are not permitted in a directly-written anonymous union."
+4506,tcAnonUnionDegraded,"This anonymous union type degrades to a single type '%s'. Consider using the underlying type directly instead of an anonymous union."

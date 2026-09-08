@@ -1,4 +1,4 @@
 // Anonymous Union Types
-// One constituent type is a supertype of another constituent type
+// One constituent type is an interface and another is a type that implements that interface
 
-let z: (obj|int) = 42
+let x: (System.IComparable | string) = "Hello"
