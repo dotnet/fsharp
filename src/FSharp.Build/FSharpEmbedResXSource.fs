@@ -17,7 +17,10 @@ type FSharpEmbedResXSource() as this =
     let mutable _generatedSource: ITaskItem[] = [||]
     let mutable _outputPath: string = ""
     let mutable _targetFramework: string = ""
-    let taskEnvironment = TaskEnvironmentState()
+
+    // Bound against `this` once; each call reads the injected TaskEnvironment late.
+    let rootedPath = TaskEnvironmentPaths.rootedPath this
+    let restorePaths = TaskEnvironmentPaths.restoreTaskPaths this
 
     let failTask fmt =
         Printf.ksprintf
@@ -51,8 +54,8 @@ module internal {1} =
             let sourcePath = Path.Combine(_outputPath, justFileName + ".fs")
             originalPaths <- [ resx; sourcePath ]
 
-            let rootedResx = taskEnvironment.RootedPath resx
-            let rootedSource = taskEnvironment.RootedPath sourcePath
+            let rootedResx = rootedPath resx
+            let rootedSource = rootedPath sourcePath
 
             let printMessage fmt = Printf.ksprintf this.Log.LogMessage fmt
 
@@ -138,19 +141,12 @@ module internal {1} =
             // failTask already logged the error; re-logging would duplicate the diagnostic.
             None
         | e ->
-            this.Log.LogError(
-                sprintf
-                    "An exception occurred when processing '%s': %s"
-                    resx
-                    (taskEnvironment.RestoreOriginalPaths (e.ToString()) originalPaths)
-            )
+            this.Log.LogError(sprintf "An exception occurred when processing '%s': %s" resx (restorePaths (e.ToString()) originalPaths))
 
             None
 
     interface IMultiThreadableTask with
-        member _.TaskEnvironment
-            with get () = taskEnvironment.Value
-            and set value = taskEnvironment.Value <- value
+        member val TaskEnvironment = TaskEnvironment.Fallback with get, set
 
     [<Required>]
     member _.EmbeddedResource

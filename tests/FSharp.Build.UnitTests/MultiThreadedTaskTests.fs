@@ -3,11 +3,8 @@
 namespace FSharp.Build.UnitTests
 
 open System
-open System.Collections.Generic
 open System.IO
 open System.Runtime.InteropServices
-open System.Threading
-open System.Threading.Tasks
 open Microsoft.Build.Framework
 open Microsoft.Build.Utilities
 open FSharp.Build
@@ -85,8 +82,7 @@ type FscFsiMultiThreadedTaskTests() =
     static let environmentWithCompilerBin () =
         let projectDirectory = TestFramework.createTemporaryDirectory().FullName
         let compilerBin = TestFramework.createTemporaryDirectory().FullName
-        let variables = Dictionary<string, string>()
-        variables["FSHARP_COMPILER_BIN"] <- compilerBin
+        let variables = dict [ "FSHARP_COMPILER_BIN", compilerBin ]
         TaskEnvironment.CreateWithProjectDirectoryAndEnvironment(projectDirectory, variables), compilerBin
 
     let fscTask =
@@ -135,15 +131,16 @@ type FscFsiMultiThreadedTaskTests() =
 
         let firstTask, firstHost = makeTask "--firstflag" [ "first1.fs"; "first2.fs" ]
         let secondTask, secondHost = makeTask "--secondflag" [ "second1.fs" ]
-        use barrier = new Barrier(2)
 
-        let run task =
-            Task.Run(fun () ->
-                FscFsiTestHooks.generateResponseFileCommands task |> ignore
-                barrier.SignalAndWait()
-                FscFsiTestHooks.executeTool task |> ignore)
+        let run task release =
+            // Response-file preparation stays single-threaded; the barrier then releases both executions together.
+            FscFsiTestHooks.generateResponseFileCommands task |> ignore
+            release ()
+            FscFsiTestHooks.executeTool task |> ignore
 
-        Task.WaitAll(run firstTask, run secondTask)
+        runConcurrentlyWithBarrier "concurrent Fsc host objects" [ run firstTask; run secondTask ]
+        |> ignore
+
         Assert.Equal<string[]>([| "first1.fs"; "first2.fs" |], firstHost.Sources)
         Assert.Equal<string[]>([| "second1.fs" |], secondHost.Sources)
 
@@ -166,6 +163,11 @@ type FscFsiMultiThreadedTaskTests() =
                 Assert.True(Path.IsPathRooted normalized, $"{case.Name}: expected rooted path, got '{normalized}'")
                 Assert.Equal(Path.Combine(directory.FullName, relative), normalized)
                 Assert.Equal(case.Executable, FscFsiTestHooks.normalizePathToTool task case.Executable)
+
+                // Empty and whitespace tool names stay bare (never rooted): the host resolves them via PATH,
+                // and guarding before Path.GetDirectoryName avoids its net472 throw-on-whitespace behaviour.
+                Assert.Equal("", FscFsiTestHooks.normalizePathToTool task "")
+                Assert.Equal("   ", FscFsiTestHooks.normalizePathToTool task "   ")
 
                 if RuntimeInformation.IsOSPlatform OSPlatform.Windows then
                     for input in [ $@"\tools\{case.Executable}"; $@"C:tools\{case.Executable}" ] do

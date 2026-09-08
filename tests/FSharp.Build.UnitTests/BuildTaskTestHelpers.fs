@@ -2,7 +2,11 @@
 
 namespace FSharp.Build.UnitTests
 
+open System
+open System.Threading
+open System.Threading.Tasks
 open Microsoft.Build.Framework
+open Xunit
 open FSharp.Test.ReflectionHelper
 
 #nowarn "1182"
@@ -57,23 +61,33 @@ module BuildTaskTestHelpers =
         (task :> IMultiThreadableTask).TaskEnvironment <- environment
         task
 
-    let withTaskEnvironment body =
-        let environment, directory = createTaskEnvironmentInTemporaryDirectory ()
+    let withTaskEnvironmentUsing create body =
+        let environment, state = create ()
 
         try
-            body environment directory
+            body environment state
         finally
             disposeTaskEnvironment environment
 
+    let withTaskEnvironment body =
+        withTaskEnvironmentUsing createTaskEnvironmentInTemporaryDirectory body
+
+    // Same-thread nested disposal: environmentB is released before environmentA.
     let withTaskEnvironmentPairUsing create body =
-        let environmentA, stateA = create ()
+        withTaskEnvironmentUsing create (fun environmentA stateA ->
+            withTaskEnvironmentUsing create (fun environmentB stateB -> body environmentA stateA environmentB stateB))
 
-        try
-            let environmentB, stateB = create ()
+    /// Runs each action on its own thread, releasing them together through a shared barrier so any
+    /// single-threaded preparation an action performs before it calls `release` stays uncontended.
+    /// Fails `scenario` if the group does not finish within 30 seconds (deadlock guard); returns each result.
+    let runConcurrentlyWithBarrier scenario (actions: ((unit -> unit) -> 'T) list) =
+        use barrier = new Barrier(List.length actions)
+        let release () = barrier.SignalAndWait() |> ignore
+        let tasks = [| for action in actions -> Task.Run(fun () -> action release) |]
 
-            try
-                body environmentA stateA environmentB stateB
-            finally
-                disposeTaskEnvironment environmentB
-        finally
-            disposeTaskEnvironment environmentA
+        Assert.True(
+            Task.WaitAll([| for task in tasks -> task :> Task |], TimeSpan.FromSeconds 30.0),
+            $"{scenario}: concurrent executions timed out; possible deadlock."
+        )
+
+        [| for task in tasks -> task.Result |]

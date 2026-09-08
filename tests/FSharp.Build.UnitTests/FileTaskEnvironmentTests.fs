@@ -6,8 +6,6 @@ open System
 open System.IO
 open System.Reflection
 open System.Runtime.InteropServices
-open System.Threading
-open System.Threading.Tasks
 open Microsoft.Build.Framework
 open Microsoft.Build.Utilities
 open FSharp.Build
@@ -17,10 +15,6 @@ open BuildTaskTestHelpers
 type private ResourceTaskKind =
     | Resx
     | Text
-
-type private ResourceTask =
-    | ResxTask of FSharpEmbedResXSource
-    | TextTask of FSharpEmbedResourceText
 
 type private PathExpectation =
     | Restored
@@ -55,25 +49,22 @@ type FileTaskEnvironmentTests() =
         finally
             Environment.CurrentDirectory <- original
 
-    let runConcurrently scenario (executeA: unit -> bool) (executeB: unit -> bool) =
-        use barrier = new Barrier(2)
+    let runConcurrently scenario executeA executeB =
+        // No per-task preparation here, so both actions just wait on the shared barrier before executing.
+        let results =
+            runConcurrentlyWithBarrier
+                scenario
+                [
+                    (fun release ->
+                        release ()
+                        executeA ())
+                    (fun release ->
+                        release ()
+                        executeB ())
+                ]
 
-        let run (execute: unit -> bool) : System.Threading.Tasks.Task<bool> =
-            System.Threading.Tasks.Task.Run<bool>(fun () ->
-                barrier.SignalAndWait()
-                execute ())
-
-        let taskA, taskB = run executeA, run executeB
-        let tasks: System.Threading.Tasks.Task[] =
-            [| taskA :> System.Threading.Tasks.Task; taskB :> System.Threading.Tasks.Task |]
-
-        Assert.True(
-            System.Threading.Tasks.Task.WaitAll(tasks, TimeSpan.FromSeconds 30.0),
-            "Concurrent task executions timed out; possible deadlock."
-        )
-
-        Assert.True(taskA.Result, $"{scenario}: task A failed")
-        Assert.True(taskB.Result, $"{scenario}: task B failed")
+        Assert.True(results[0], $"{scenario}: task A failed")
+        Assert.True(results[1], $"{scenario}: task B failed")
 
     let withIsolatedTaskEnvironmentPair body =
         withDecoyCurrentDirectory (fun decoy ->
@@ -83,32 +74,32 @@ type FileTaskEnvironmentTests() =
                     body environmentA directoryA environmentB directoryB
                     Assert.Empty(Directory.GetFiles(decoy.FullName, "*", SearchOption.AllDirectories))))
 
-    let createResourceTask kind environment engine (input: string) (intermediate: string) =
+    let createResourceTask kind environment engine (input: string) (intermediate: string) : ITask * (unit -> ITaskItem[]) =
         match kind with
         | Resx ->
             let item = TaskItem(input) :> ITaskItem
             item.SetMetadata("GenerateSource", "true")
 
-            FSharpEmbedResXSource(
-                BuildEngine = engine,
-                EmbeddedResource = [| item |],
-                IntermediateOutputPath = intermediate
-            )
-            |> assignTaskEnvironment environment
-            |> ResxTask
-        | Text ->
-            FSharpEmbedResourceText(
-                BuildEngine = engine,
-                EmbeddedText = [| TaskItem(input) :> ITaskItem |],
-                IntermediateOutputPath = intermediate
-            )
-            |> assignTaskEnvironment environment
-            |> TextTask
+            let task =
+                FSharpEmbedResXSource(
+                    BuildEngine = engine,
+                    EmbeddedResource = [| item |],
+                    IntermediateOutputPath = intermediate
+                )
+                |> assignTaskEnvironment environment
 
-    let executeResourceTask =
-        function
-        | ResxTask task -> task.Execute()
-        | TextTask task -> task.Execute()
+            // Output projection is deferred so it observes the task's results only after Execute runs.
+            (task :> ITask), (fun () -> task.GeneratedSource)
+        | Text ->
+            let task =
+                FSharpEmbedResourceText(
+                    BuildEngine = engine,
+                    EmbeddedText = [| TaskItem(input) :> ITaskItem |],
+                    IntermediateOutputPath = intermediate
+                )
+                |> assignTaskEnvironment environment
+
+            (task :> ITask), (fun () -> Array.append task.GeneratedSource task.GeneratedResx)
 
     let resourceKindInfo =
         function
@@ -116,11 +107,7 @@ type FileTaskEnvironmentTests() =
         | Text -> "FSharpEmbedResourceText", ".txt"
 
     let countOccurrences (needle: string) (text: string) =
-        let rec count total start =
-            let index = text.IndexOf(needle, start, StringComparison.Ordinal)
-            if index < 0 then total else count (total + 1) (index + needle.Length)
-
-        count 0 0
+        text.Split([| needle |], StringSplitOptions.None).Length - 1
 
     let pathScenarios extension (directory: DirectoryInfo) =
         [
@@ -240,15 +227,11 @@ type FileTaskEnvironmentTests() =
                 File.WriteAllText(Path.Combine(directoryA.FullName, input), content "Hello from A")
                 File.WriteAllText(Path.Combine(directoryB.FullName, input), content "Hello from B")
 
-                let taskA = createResourceTask kind environmentA (MockEngine()) input intermediate
-                let taskB = createResourceTask kind environmentB (MockEngine()) input intermediate
-                runConcurrently scenario (fun () -> executeResourceTask taskA) (fun () -> executeResourceTask taskB)
+                let taskA, outputA = createResourceTask kind environmentA (MockEngine()) input intermediate
+                let taskB, outputB = createResourceTask kind environmentB (MockEngine()) input intermediate
+                runConcurrently scenario taskA.Execute taskB.Execute
 
-                let generatedSpecs task =
-                    match task with
-                    | ResxTask task -> task.GeneratedSource
-                    | TextTask task -> Array.append task.GeneratedSource task.GeneratedResx
-                    |> Array.map _.ItemSpec
+                let generatedSpecs (output: unit -> ITaskItem[]) = output () |> Array.map _.ItemSpec
 
                 let source = Path.Combine(intermediate, "Resource.fs")
                 let expectedSpecs, contentSpecs =
@@ -259,8 +242,8 @@ type FileTaskEnvironmentTests() =
                         let resx = Path.Combine(intermediate, "Resource.resx")
                         [ signature; source; resx ], [ source; resx ]
 
-                for task in [ taskA; taskB ] do
-                    Assert.Equal<string[]>(List.toArray expectedSpecs, generatedSpecs task)
+                for output in [ outputA; outputB ] do
+                    Assert.Equal<string[]>(List.toArray expectedSpecs, generatedSpecs output)
 
                 for directory, own, other in
                     [ directoryA, "Hello from A", "Hello from B"; directoryB, "Hello from B", "Hello from A" ] do
@@ -283,23 +266,13 @@ type FileTaskEnvironmentTests() =
             )
 
             let engine = MockEngine()
-            let task = createResourceTask Resx environment engine input "obj"
-            let originalOut, originalError = Console.Out, Console.Error
-            use capturedOut = new StringWriter()
-            use capturedError = new StringWriter()
-            Console.SetOut capturedOut
-            Console.SetError capturedError
-
-            let result =
-                try
-                    executeResourceTask task
-                finally
-                    Console.SetOut originalOut
-                    Console.SetError originalError
+            let task, _ = createResourceTask Resx environment engine input "obj"
+            use capture = new FSharp.Test.TestConsole.ExecutionCapture()
+            let result = task.Execute()
 
             Assert.False result
-            Assert.Equal("", capturedOut.ToString())
-            Assert.Equal("", capturedError.ToString())
+            Assert.Equal("", capture.OutText)
+            Assert.Equal("", capture.ErrorText)
             let error = Assert.Single(engine.Errors)
             assertContains "malformed resx" input error.Message
             assertNotContains "malformed resx" directory.FullName error.Message)
@@ -315,8 +288,8 @@ type FileTaskEnvironmentTests() =
             )
 
             let engine = MockEngine()
-            let task = createResourceTask Resx environment engine input "obj"
-            Assert.False(executeResourceTask task)
+            let task, _ = createResourceTask Resx environment engine input "obj"
+            Assert.False(task.Execute())
             let message = (Assert.Single(engine.Errors)).Message
             assertContains "missing resource name" "Missing resource name" message
 
@@ -332,9 +305,9 @@ type FileTaskEnvironmentTests() =
                 for name, input, expectation in pathScenarios extension directory do
                     let scenario = $"{kindName}: {name}"
                     let engine = MockEngine()
-                    let task = createResourceTask kind environment engine input "obj"
+                    let task, _ = createResourceTask kind environment engine input "obj"
 
-                    Assert.False(executeResourceTask task, scenario)
+                    Assert.False(task.Execute(), scenario)
                     Assert.NotEmpty engine.Errors
 
                     if kind <> Text || name <> "invalid path" then
@@ -371,6 +344,41 @@ type FileTaskEnvironmentTests() =
 
             Assert.Equal($"Could not find a part of the path '{longOriginal}'.", actual)
             assertNotContains "overlapping path restoration" directory.FullName actual)
+
+    [<Fact>]
+    member _.``FSharpEmbedResourceText regenerates when RichText metadata toggles without source change``() =
+        withTaskEnvironment (fun environment directory ->
+            let input = "Toggle.txt"
+            let intermediate = "obj"
+            Directory.CreateDirectory(Path.Combine(directory.FullName, intermediate)) |> ignore
+            // Written once and never touched again, so the up-to-date timestamps stay identical between runs;
+            // only the toggled RichText metadata can force regeneration.
+            File.WriteAllText(Path.Combine(directory.FullName, input), "greeting,\"Hello\"\n")
+
+            let runWith richText =
+                let item = TaskItem(input) :> ITaskItem
+                item.SetMetadata("RichText", if richText then "true" else "false")
+
+                let task =
+                    FSharpEmbedResourceText(
+                        BuildEngine = MockEngine(),
+                        EmbeddedText = [| item |],
+                        IntermediateOutputPath = intermediate
+                    )
+                    |> assignTaskEnvironment environment
+
+                Assert.True(task.Execute(), "RichText toggle: task should succeed")
+
+            let generatedFs = Path.Combine(directory.FullName, intermediate, "Toggle.fs")
+            let richTextOpen = "open FSharp.Compiler.Text"
+
+            runWith false
+            assertNotContains "RichText toggle" richTextOpen (File.ReadAllText generatedFs)
+
+            // With the source timestamp unchanged, only the RichText metadata differs; the generator must
+            // still rewrite the .fs. If the RichText up-to-date check were disabled the open would be missing.
+            runWith true
+            assertContains "RichText toggle" richTextOpen (File.ReadAllText generatedFs))
 
     [<Fact>]
     member _.``SubstituteText isolates relative input and output paths per task``() =

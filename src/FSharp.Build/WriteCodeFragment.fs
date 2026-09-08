@@ -19,7 +19,6 @@ type WriteCodeFragment() as this =
     let mutable _outputFile: ITaskItem | null = null
     let mutable _language: string = ""
     let mutable _assemblyAttributes: ITaskItem[] = [||]
-    let taskEnvironment = TaskEnvironmentState()
 
     let failTask fmt =
         Printf.ksprintf
@@ -204,13 +203,11 @@ type WriteCodeFragment() as this =
                             TaskItem(Path.Combine(outputDirectory.ItemSpec, fileName)) :> ITaskItem
 
                 let codeText = code.ToString()
-                File.WriteAllText(taskEnvironment.RootedPath fileName, codeText)
+                File.WriteAllText(TaskEnvironmentPaths.rootedPath this fileName, codeText)
                 _outputFile <- outputFileItem
                 not this.Log.HasLoggedErrors
         with TaskFailed ->
             false
 
     interface IMultiThreadableTask with
-        member _.TaskEnvironment
-            with get () = taskEnvironment.Value
-            and set value = taskEnvironment.Value <- value
+        member val TaskEnvironment = TaskEnvironment.Fallback with get, set

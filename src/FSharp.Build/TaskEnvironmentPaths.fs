@@ -4,25 +4,29 @@ namespace FSharp.Build
 
 open System
 open System.IO
-open System.Runtime.InteropServices
 open System.Text
 open Microsoft.Build.Framework
 open Internal.Utilities
+open Internal.Utilities.Library
 
 module internal TaskEnvironmentPaths =
 
     let pathComparison =
-        if RuntimeInformation.IsOSPlatform OSPlatform.Windows then
+        if FSharpEnvironment.isWindows then
             StringComparison.OrdinalIgnoreCase
         else
             StringComparison.Ordinal
 
     // ProcessStartInfo resolves relative tool paths against the host process current directory.
     let normalizePathToTool (taskEnvironment: TaskEnvironment) (pathToTool: string) =
-        match Path.GetDirectoryName pathToTool with
-        | null
-        | "" -> pathToTool
-        | _ -> taskEnvironment.GetAbsolutePath(pathToTool).Value
+        // Guard empty/whitespace before Path.GetDirectoryName: on net472 it throws on whitespace-only
+        // input, and a bare/whitespace tool name must stay unchanged so the host resolves it via PATH.
+        match pathToTool with
+        | NonEmptyString path when not (String.IsNullOrWhiteSpace path) ->
+            match Path.GetDirectoryName path with
+            | NonEmptyString _ -> taskEnvironment.GetAbsolutePath(path).Value
+            | _ -> pathToTool
+        | _ -> pathToTool
 
     let defaultCompilerToolPath (taskEnvironment: TaskEnvironment) (taskType: Type) =
         let probePoint =
@@ -86,14 +90,9 @@ module internal TaskEnvironmentPaths =
         (message, replacements)
         ||> List.fold (fun message (rooted, original) -> replaceOrdinal message rooted original)
 
-type internal TaskEnvironmentState() =
-    let mutable value = TaskEnvironment.Fallback
+    // Task-facing helpers that read the injected TaskEnvironment late (partially apply against `this`).
+    let rootedPath (task: #IMultiThreadableTask) path =
+        task.TaskEnvironment.GetAbsolutePath(path).Value
 
-    member _.Value
-        with get () = value
-        and set environment = value <- environment
-
-    member _.RootedPath(path: string) = value.GetAbsolutePath(path).Value
-
-    member _.RestoreOriginalPaths (message: string) (originalPaths: string list) =
-        TaskEnvironmentPaths.restoreOriginalPaths value message originalPaths
+    let restoreTaskPaths (task: #IMultiThreadableTask) message paths =
+        restoreOriginalPaths task.TaskEnvironment message paths

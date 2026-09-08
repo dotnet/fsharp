@@ -13,12 +13,9 @@ type SubstituteText() =
 
     let mutable copiedFiles = new ResizeArray<ITaskItem>()
     let mutable embeddedResources: ITaskItem[] = [||]
-    let taskEnvironment = TaskEnvironmentState()
 
     interface IMultiThreadableTask with
-        member _.TaskEnvironment
-            with get () = taskEnvironment.Value
-            and set value = taskEnvironment.Value <- value
+        member val TaskEnvironment = TaskEnvironment.Fallback with get, set
 
     [<Required>]
     member _.EmbeddedResources
@@ -29,6 +26,7 @@ type SubstituteText() =
     member _.CopiedFiles = copiedFiles.ToArray()
 
     override this.Execute() =
+        let rootedPath = TaskEnvironmentPaths.rootedPath this
         copiedFiles.Clear()
 
         if not (isNull (box embeddedResources)) then // this check can't fail, the type is non-nullable
@@ -69,22 +67,23 @@ type SubstituteText() =
 
                             // Transform file
                             let replaceFromMetadata pattern replacementName (contents: string) =
-                                match String.IsNullOrWhiteSpace pattern with
-                                | true -> contents
-                                | false -> contents.Replace(pattern, item.GetMetadata replacementName)
+                                if String.IsNullOrWhiteSpace pattern then
+                                    contents
+                                else
+                                    contents.Replace(pattern, item.GetMetadata replacementName)
 
                             let contents =
-                                File.ReadAllText(taskEnvironment.RootedPath sourcePath)
+                                File.ReadAllText(rootedPath sourcePath)
                                 |> replaceFromMetadata pattern1 "Replacement1"
                                 |> replaceFromMetadata pattern2 "Replacement2"
 
                             let directory = Path.GetDirectoryName(targetPath)
-                            let rootedDirectory = taskEnvironment.RootedPath directory
+                            let rootedDirectory = rootedPath directory
 
                             if not (Directory.Exists rootedDirectory) then
                                 Directory.CreateDirectory rootedDirectory |> ignore
 
-                            File.WriteAllText(taskEnvironment.RootedPath targetPath, contents)
+                            File.WriteAllText(rootedPath targetPath, contents)
                         with _ ->
                             ()
 

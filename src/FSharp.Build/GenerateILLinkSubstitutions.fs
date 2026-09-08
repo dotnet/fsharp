@@ -14,12 +14,9 @@ open Microsoft.Build.Utilities
 [<MSBuildMultiThreadableTask>]
 type GenerateILLinkSubstitutions() =
     inherit Task()
-    let taskEnvironment = TaskEnvironmentState()
 
     interface IMultiThreadableTask with
-        member _.TaskEnvironment
-            with get () = taskEnvironment.Value
-            and set value = taskEnvironment.Value <- value
+        member val TaskEnvironment = TaskEnvironment.Fallback with get, set
 
     /// <summary>
     /// Assembly name to use when generating resource names to be removed.
@@ -40,6 +37,8 @@ type GenerateILLinkSubstitutions() =
     member val GeneratedItems = [||]: ITaskItem[] with get, set
 
     override this.Execute() =
+        let rootedPath = TaskEnvironmentPaths.rootedPath this
+
         try
             // Define the resource prefixes that need to be removed
             let resourcePrefixes =
@@ -86,10 +85,9 @@ type GenerateILLinkSubstitutions() =
             let outputFileName =
                 Path.Combine(this.IntermediateOutputPath, "ILLink.Substitutions.xml")
 
-            Directory.CreateDirectory(taskEnvironment.RootedPath this.IntermediateOutputPath)
-            |> ignore
+            Directory.CreateDirectory(rootedPath this.IntermediateOutputPath) |> ignore
 
-            File.WriteAllText(taskEnvironment.RootedPath outputFileName, xmlContent)
+            File.WriteAllText(rootedPath outputFileName, xmlContent)
 
             // Create a TaskItem for the generated file
             let item = TaskItem(outputFileName) :> ITaskItem

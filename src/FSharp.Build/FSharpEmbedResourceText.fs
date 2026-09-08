@@ -18,7 +18,10 @@ type FSharpEmbedResourceText() as this =
     let mutable _generatedSource: ITaskItem[] = [||]
     let mutable _generatedResx: ITaskItem[] = [||]
     let mutable _outputPath: string = ""
-    let taskEnvironment = TaskEnvironmentState()
+
+    // Bound against `this` once; each call reads the injected TaskEnvironment late.
+    let rootedPath = TaskEnvironmentPaths.rootedPath this
+    let restorePaths = TaskEnvironmentPaths.restoreTaskPaths this
 
     let PrintErr (fileName, line, msg) =
         this.Log.LogError(null, null, null, fileName, line, 0, 0, 0, msg, Array.empty)
@@ -412,9 +415,10 @@ open Printf
             let outXmlFileName = Path.Combine(_outputPath, justFileName + ".resx")
             originalPaths <- [ fileName; outFileName; outFileSignatureName; outXmlFileName ]
 
-            let rootedInput = taskEnvironment.RootedPath fileName
-            let rootedOut = taskEnvironment.RootedPath outFileName
-            let rootedXml = taskEnvironment.RootedPath outXmlFileName
+            let rootedInput = rootedPath fileName
+            let rootedOut = rootedPath outFileName
+            let rootedSignature = rootedPath outFileSignatureName
+            let rootedXml = rootedPath outXmlFileName
 
             let printMessage fmt = Printf.ksprintf this.Log.LogMessage fmt
 
@@ -512,8 +516,7 @@ open Printf
                 use outStream = File.Create rootedOut
                 use out = new StreamWriter(outStream)
 
-                use outSignatureStream =
-                    File.Create(taskEnvironment.RootedPath outFileSignatureName)
+                use outSignatureStream = File.Create rootedSignature
 
                 use outSignature = new StreamWriter(outSignatureStream)
                 fprintfn out "// This is a generated file; the original input is '%s'" fileName
@@ -701,18 +704,13 @@ open Printf
             PrintErr(
                 fileName,
                 0,
-                sprintf
-                    "An exception occurred when processing '%s'\n%s"
-                    fileName
-                    (taskEnvironment.RestoreOriginalPaths (e.ToString()) originalPaths)
+                sprintf "An exception occurred when processing '%s'\n%s" fileName (restorePaths (e.ToString()) originalPaths)
             )
 
             None
 
     interface IMultiThreadableTask with
-        member _.TaskEnvironment
-            with get () = taskEnvironment.Value
-            and set value = taskEnvironment.Value <- value
+        member val TaskEnvironment = TaskEnvironment.Fallback with get, set
 
     [<Required>]
     member _.EmbeddedText
