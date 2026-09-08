@@ -201,3 +201,82 @@ printfn "Both F# record field orderings produce equivalent results"
         |> withLangVersionPreview
         |> compileAndRun
         |> shouldSucceed
+
+    // https://github.com/dotnet/fsharp/issues/20379
+    // [<ReflectedDefinition(true)>] on a parameter + inferred generic recursion must not ICE (FS0192 Iterate2D).
+    [<Fact>]
+    let ``ReflectedDefinition parameter with inferred generic recursion compiles - issue 20379`` () =
+        FSharp """
+module Test20379
+
+open Microsoft.FSharp.Quotations
+
+type Capture =
+    static member Run([<ReflectedDefinition(true)>] body: Expr<int -> int>) = 0
+
+let rec loop x =
+    Capture.Run(fun n -> loop x)
+        """
+        |> asLibrary
+        |> compile
+        |> shouldSucceed
+
+    // https://github.com/dotnet/fsharp/issues/20379
+    // Original attachment's essential 'append' shape: inferred generic recursion under an auto-quoted parameter.
+    [<Fact>]
+    let ``ReflectedDefinition parameter with recursive append shape compiles - issue 20379`` () =
+        FSharp """
+module Test20379Append
+
+open Microsoft.FSharp.Quotations
+
+type Capture =
+    static member Run([<ReflectedDefinition(true)>] body: Expr<'T list -> 'T list>) : 'T list = []
+
+let rec append xs ys =
+    Capture.Run(fun zs ->
+        match xs with
+        | [] -> ys
+        | h :: t -> h :: append t ys)
+        """
+        |> asLibrary
+        |> compile
+        |> shouldSucceed
+
+    // https://github.com/dotnet/fsharp/issues/20379
+    // Runtime seed: inferred two-parameter generic recursion must preserve exact generic-argument order,
+    // and the auto-quoted definition must agree with the executed value.
+    [<Fact>]
+    let ``ReflectedDefinition parameter preserves generic argument order at runtime - issue 20379`` () =
+        Fsx """
+open Microsoft.FSharp.Quotations
+open Microsoft.FSharp.Quotations.Patterns
+open Microsoft.FSharp.Linq.RuntimeHelpers
+
+let mutable captured: Expr option = None
+
+type Capture =
+    static member Run([<ReflectedDefinition(true)>] body: Expr<int -> int>) =
+        captured <- Some body
+        7
+
+let rec loop x y =
+    Capture.Run(fun n -> if n = 0 then 7 else loop x y)
+
+let check<'T, 'U> (x: 'T) (y: 'U) =
+    if loop x y <> 7 then failwith "Unexpected result"
+    match captured with
+    | Some(WithValue(value, _, (Lambda(v, IfThenElse(_, _, Call(None, method, [_; _]))) as definition))) ->
+        if v.Name <> "n" then failwith "Lambda parameter changed"
+        if method.GetGenericArguments() <> [|typeof<'T>; typeof<'U>|] then failwith "Incorrect generic arguments"
+        let actual = unbox<int -> int> value
+        let reflected = LeafExpressionConverter.EvaluateQuotation definition |> unbox<int -> int>
+        if actual 1 <> 7 || reflected 1 <> 7 then failwith "Value and quotation disagree"
+    | expression -> failwithf "Unexpected quotation: %A" expression
+
+check 42 "text"
+check "text" 42
+        """
+        |> asExe
+        |> compileAndRun
+        |> shouldSucceed
