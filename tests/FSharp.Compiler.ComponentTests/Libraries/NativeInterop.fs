@@ -196,8 +196,45 @@ let f () = {handler}
         |> shouldFail
         |> withErrorCode 3916
 
+    // A 'let inline' wrapper around 'stackalloc' is inlined into the handler's IL region, so its
+    // 'localloc' still lands inside the exception region and must be rejected. The pre-codegen syntactic
+    // check missed this because the wrapper hid the 'stackalloc' call behind an inlinable function.
     [<Fact>]
-    let ``stackalloc in the try body is allowed`` () =
+    let ``stackalloc via an inline wrapper inside a handler is rejected`` () =
+        FSharp """
+module Test
+open Microsoft.FSharp.NativeInterop
+let inline alloc () = NativePtr.stackalloc<int> 1 |> ignore
+let f () = try () with _ -> alloc ()
+"""
+        |> withNoWarn 9
+        |> compile
+        |> shouldFail
+        |> withErrorCode 3916
+
+    // An escaping closure defined in a handler is compiled to its own method, so its 'localloc' lives
+    // outside the exception region and is legal. Such code must not be rejected (regression guard against
+    // the pre-codegen syntactic check's false positive).
+    [<Fact>]
+    let ``stackalloc in an escaping closure inside a handler is allowed`` () =
+        FSharp """
+module Test
+open Microsoft.FSharp.NativeInterop
+let f () =
+    try ()
+    with _ ->
+        let g = fun () -> NativePtr.stackalloc<int> 1 |> ignore
+        System.Action(g).Invoke()
+[<EntryPoint>]
+let main _ =
+    f ()
+    printfn "ran-closure"
+    0
+"""
+        |> withNoWarn 9
+        |> compileExeAndRun
+        |> shouldSucceed
+        |> withStdOutContains "ran-closure"
         FSharp """
 module Test
 open Microsoft.FSharp.NativeInterop

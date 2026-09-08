@@ -791,8 +791,6 @@ type internal TcGlobals =
 
     member nativeptr_tobyref_vref: TypedTree.ValRef
 
-    member nativeptr_stackalloc_vref: TypedTree.ValRef
-
     member new_decimal_info: IntrinsicValRef
 
     member new_format_info: IntrinsicValRef

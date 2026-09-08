@@ -1261,6 +1261,12 @@ and IlxGenEnv =
         /// Are we under the scope of a try, catch or finally? If so we can't tailcall. SEH = structured exception handling
         withinSEH: bool
 
+        /// Are we within the 'with'/filter/'finally'/fault handler region of a 'try' (but not merely its try body)?
+        /// The JIT rejects the 'localloc' IL instruction (emitted by NativePtr.stackalloc) inside such a region, so
+        /// emitting it here is reported as error FS3916. This is checked at codegen, after inlining and closure
+        /// conversion, so an escaping closure whose 'localloc' lives in its own method stays legal.
+        withinExnHandler: bool
+
         /// Suppresses filter block emission inside finally/fault handlers (workaround for dotnet/runtime#112406).
         insideFinallyOrFaultHandler: bool
 
@@ -3055,6 +3061,7 @@ let CodeGenThen (cenv: cenv) mgbuf (entryPointInfo, methodName, eenv, alreadyUse
         cgbuf
         { eenv with
             withinSEH = false
+            withinExnHandler = false
             insideFinallyOrFaultHandler = false
             liveLocals = IntMap.empty ()
             innerVals = innerVals
@@ -5219,6 +5226,7 @@ and GenTryWith cenv cgbuf eenv (e1, valForFilter: Val, filterExpr, valForHandler
 
                 let eenvinner =
                     { eenvinner with
+                        withinExnHandler = true
                         exitSequel = sequelOnBranches
                     }
                 // We emit the debug point for the 'with' keyword span on the start of the filter
@@ -5289,6 +5297,7 @@ and GenTryWith cenv cgbuf eenv (e1, valForFilter: Val, filterExpr, valForHandler
 
                 let eenvinner =
                     { eenvinner with
+                        withinExnHandler = true
                         exitSequel = exitSequel
                     }
 
@@ -5334,6 +5343,7 @@ and GenTryFinally cenv cgbuf eenv (bodyExpr, handlerExpr, m, resTy, spTry, spFin
 
         let eenvHandler =
             { eenvinner with
+                withinExnHandler = true
                 insideFinallyOrFaultHandler = true
             }
 
@@ -5640,6 +5650,13 @@ and GenAsmCode cenv cgbuf eenv (il, tyargs, args, returnTys, m) sequel =
         ilAfterInst |> List.contains I_localloc
         && ilReturnTys |> List.forall (fun ty -> ty <> ILType.Void)
         ->
+
+        // The JIT rejects 'localloc' inside an exception-handling region, producing an
+        // InvalidProgramException at method load. By this point inlining and closure conversion have run,
+        // so eenv.withinExnHandler reflects the true handler region: an escaping closure carrying the
+        // 'localloc' into its own method has had the flag reset and stays legal.
+        if eenv.withinExnHandler then
+            errorR (Error(FSComp.SR.chkNativePtrStackallocInHandler (), m))
 
         CG.EmitLocallocCode cgbuf (fun () ->
             GenExprs cenv cgbuf eenv args
@@ -13131,6 +13148,7 @@ let GetEmptyIlxGenEnv (g: TcGlobals) ccu =
         innerVals = []
         sigToImplRemapInfo = [] (* "module remap info" *)
         withinSEH = false
+        withinExnHandler = false
         insideFinallyOrFaultHandler = false
         isInLoop = false
         initLocals = true

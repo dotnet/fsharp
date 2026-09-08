@@ -885,7 +885,6 @@ type TcGlobals(
   let v_option_defaultValue_info   = makeIntrinsicValRef(fslib_MFOptionModule_nleref,                          "defaultValue"                         , None                 , Some "DefaultValue" , [vara],     ([[varaTy]; [mkOptionTy varaTy]], varaTy))
 
   let v_nativeptr_tobyref_info     = makeIntrinsicValRef(fslib_MFNativePtrModule_nleref,                       "toByRef"                              , None                 , Some "ToByRefInlined", [vara], ([[mkNativePtrTy varaTy]], mkByrefTy varaTy))
-  let v_nativeptr_stackalloc_info  = makeIntrinsicValRef(fslib_MFNativePtrModule_nleref,                       "stackalloc"                           , None                 , Some "StackAllocate", [vara], ([[v_int32_ty]], mkNativePtrTy varaTy))
 
   let v_seq_collect_info           = makeIntrinsicValRef(fslib_MFSeqModule_nleref,                             "collect"                              , None                 , Some "Collect", [vara;varb;varc], ([[varaTy --> varbTy]; [mkSeqTy varaTy]], mkSeqTy varcTy))
   let v_seq_delay_info             = makeIntrinsicValRef(fslib_MFSeqModule_nleref,                             "delay"                                , None                 , Some "Delay"  , [varb],     ([[v_unit_ty --> mkSeqTy varbTy]], mkSeqTy varbTy))
@@ -1758,7 +1757,6 @@ type TcGlobals(
   member val seq_singleton_vref         = ValRefForIntrinsic v_seq_singleton_info
   member val seq_collect_vref           = ValRefForIntrinsic v_seq_collect_info
   member val nativeptr_tobyref_vref     = ValRefForIntrinsic v_nativeptr_tobyref_info
-  member val nativeptr_stackalloc_vref  = ValRefForIntrinsic v_nativeptr_stackalloc_info
   member val seq_using_vref             = ValRefForIntrinsic v_seq_using_info
   member val seq_delay_vref             = ValRefForIntrinsic  v_seq_delay_info
   member val seq_append_vref            = ValRefForIntrinsic  v_seq_append_info
