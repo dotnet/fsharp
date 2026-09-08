@@ -99,8 +99,12 @@ module internal SymbolHelpers =
             let ordered = List.sortBy rank instances
             struct (ordered.Head, ordered.Tail))
 
+    /// One core is left to the thread that has to stay responsive, and every search in the editor
+    /// shares what remains.
+    let searchThrottle = new SemaphoreSlim(max 1 (Environment.ProcessorCount - 1))
+
     let getSymbolUsesInProjects
-        (symbol: FSharpSymbol, currentProject: Project, projects: Project list, onFound: Document -> range -> CancellableTask<unit>)
+        (symbol: FSharpSymbol, currentProject: Project, projects: Project list, onFound: Document -> range seq -> CancellableTask<unit>)
         =
         match projects |> List.filter _.IsFSharp with
         | [] -> CancellableTask.singleton ()
@@ -122,8 +126,6 @@ module internal SymbolHelpers =
                 TelemetryReporter.ReportSingleEvent(TelemetryEvents.GetSymbolUsesInProjectsStarted, props)
 
                 let! ct = CancellableTask.getCancellationToken ()
-                // Not disposed: a search started before a later snapshot fails still has to release it.
-                let throttle = new SemaphoreSlim(max 1 Environment.ProcessorCount)
                 // Mutated by the checker while a snapshot is built, so snapshots are built one at a time.
                 let snapshotAccumulator = Dictionary()
                 let searches = ResizeArray<Task>()
@@ -138,7 +140,7 @@ module internal SymbolHelpers =
                 let start (project: Project) snapshot searchedInstance =
                     searches.Add(
                         project.FindFSharpReferencesAsync
-                            (symbol, snapshot, searchedInstance, throttle, onFound, "getSymbolUsesInProjects")
+                            (symbol, snapshot, searchedInstance, searchThrottle, onFound, "getSymbolUsesInProjects")
                             ct
                     )
 
@@ -159,7 +161,7 @@ module internal SymbolHelpers =
         (symbolUse: FSharpSymbolUse)
         (currentDocument: Document)
         (checkFileResults: FSharpCheckFileResults)
-        (onFound: Document -> range -> CancellableTask<unit>)
+        (onFound: Document -> range seq -> CancellableTask<unit>)
         =
         cancellableTask {
             match symbolUse.GetSymbolScope currentDocument with
@@ -168,10 +170,7 @@ module internal SymbolHelpers =
                 let symbolUses =
                     checkFileResults.GetUsesOfSymbolInFile(symbolUse.Symbol, relatedSymbolKinds = RelatedSymbolUseKind.All)
 
-                do!
-                    symbolUses
-                    |> Seq.map (fun symbolUse -> onFound currentDocument symbolUse.Range)
-                    |> CancellableTask.whenAll
+                do! onFound currentDocument (symbolUses |> Seq.map _.Range)
 
             | Some SymbolScope.SignatureAndImplementation ->
                 let otherFile = getOtherFile currentDocument.FilePath
@@ -185,13 +184,11 @@ module internal SymbolHelpers =
                         }
                     | ValueNone -> CancellableTask.singleton []
 
-                let symbolUses =
-                    (checkFileResults, currentDocument) :: otherFileCheckResults
-                    |> Seq.collect (fun (checkFileResults, doc) ->
+                for checkFileResults, doc in (checkFileResults, currentDocument) :: otherFileCheckResults do
+                    let symbolUses =
                         checkFileResults.GetUsesOfSymbolInFile(symbolUse.Symbol, relatedSymbolKinds = RelatedSymbolUseKind.All)
-                        |> Seq.map (fun symbolUse -> (doc, symbolUse.Range)))
 
-                do! symbolUses |> Seq.map ((<||) onFound) |> CancellableTask.whenAll
+                    do! onFound doc (symbolUses |> Seq.map _.Range)
 
             | Some(SymbolScope.Projects(scopeProjects, isLocalForProject)) ->
                 let projectsToCheck =
@@ -226,7 +223,11 @@ module internal SymbolHelpers =
             let symbolUses = ConcurrentBag()
 
             let onFound =
-                fun document range -> cancellableTask { symbolUses.Add(document, range) }
+                fun document (ranges: range seq) ->
+                    cancellableTask {
+                        for range in ranges do
+                            symbolUses.Add(document, range)
+                    }
 
             do! findSymbolUses symbolUse currentDocument checkFileResults onFound
 
