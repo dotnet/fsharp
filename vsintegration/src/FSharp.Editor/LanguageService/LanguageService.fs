@@ -434,14 +434,18 @@ type internal FSharpPackage() as this =
     member private this.RegisterCopilotContextProviderAsync(cancellationToken: CancellationToken) : Task =
         task {
             try
+                DebugHelpers.FSharpOutputPane.logInfo "Copilot: registering context provider (switching to main thread)…"
                 do! this.JoinableTaskFactory.SwitchToMainThreadAsync(alwaysYield = true, cancellationToken = cancellationToken)
 
+                DebugHelpers.FSharpOutputPane.logInfo "Copilot: getting brokered service container…"
                 let! container = this.GetServiceAsync(typeof<SVsBrokeredServiceContainer>)
 
                 match container with
                 | :? IBrokeredServiceContainer as container ->
                     // The Interactions service also serves the registration interface. It is absent when
                     // GitHub Copilot is not installed, in which case the proxy is null and F# stays out of the picker.
+                    DebugHelpers.FSharpOutputPane.logInfo "Copilot: getting registration service proxy…"
+
                     let! registration =
                         container
                             .GetFullAccessServiceBroker()
@@ -450,8 +454,10 @@ type internal FSharpPackage() as this =
                     use registration = registration
 
                     match registration with
-                    | null -> ()
+                    | null -> DebugHelpers.FSharpOutputPane.logInfo "Copilot: service proxy is null (Copilot not installed)"
                     | registration ->
+                        DebugHelpers.FSharpOutputPane.logInfo "Copilot: registering F# context provider…"
+
                         let moniker =
                             ServiceMoniker(
                                 FSharpConstants.copilotSymbolProviderName,
@@ -459,7 +465,8 @@ type internal FSharpPackage() as this =
                             )
 
                         do! registration.RegisterContextProviderAsync(moniker, cancellationToken)
-                | _ -> ()
+                        DebugHelpers.FSharpOutputPane.logInfo "Copilot: registration complete"
+                | _ -> DebugHelpers.FSharpOutputPane.logInfo "Copilot: container is not IBrokeredServiceContainer"
             // A Copilot failure - a contract version the installed build does not serve, say - must not take the
             // rest of the post-load work down with it.
             with ex when not (ex :? OperationCanceledException) ->
