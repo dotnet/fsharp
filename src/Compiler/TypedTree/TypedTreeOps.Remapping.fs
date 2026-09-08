@@ -1676,7 +1676,9 @@ module internal ExprRemapping =
     let isRecursiveValFixupLink (eref: Expr ref) =
         match stripDebugPoints eref.Value with
         | Expr.Val(vref, _, _)
-        | Expr.App(Expr.Val(vref, _, _), _, _, _, _) ->
+        // A recursive-use fixup node is always a type-only application with no value args (see mkTyAppExpr and
+        // the shape AdjustAndForgetUsesOfRecValue accepts), so match that exact shape.
+        | Expr.App(Expr.Val(vref, _, _), _, _, [], _) ->
             match vref.RecursiveValInfo with
             | ValInRecScope _ -> true
             | ValNotInRecScope -> false
