@@ -280,3 +280,161 @@ check "text" 42
         |> asExe
         |> compileAndRun
         |> shouldSucceed
+
+    // https://github.com/dotnet/fsharp/issues/20379
+    [<Fact>]
+    let ``Mutual inferred generic recursion under auto-quote compiles both directions - issue 20379`` () =
+        FSharp """
+module Test20379Mutual
+
+open Microsoft.FSharp.Quotations
+
+type Capture =
+    static member Run([<ReflectedDefinition(true)>] body: Expr<int -> int>) = 0
+
+let rec ping x y =
+    Capture.Run(fun n -> pong x y)
+and pong x y =
+    Capture.Run(fun n -> ping x y)
+        """
+        |> asLibrary
+        |> compile
+        |> shouldSucceed
+
+    // https://github.com/dotnet/fsharp/issues/20379
+    [<Fact>]
+    let ``Auto-quote with nested lambdas captured and shadowed names agrees value and quotation - issue 20379`` () =
+        Fsx """
+open Microsoft.FSharp.Quotations
+open Microsoft.FSharp.Quotations.Patterns
+open Microsoft.FSharp.Linq.RuntimeHelpers
+
+let mutable captured: Expr option = None
+
+type Capture =
+    static member Run([<ReflectedDefinition(true)>] body: Expr<int -> int>) =
+        captured <- Some body
+        7
+
+let rec loop x y =
+    let k = 3
+    let rec helper (m: int) = if m <= 0 then k else helper (m - 1)
+    Capture.Run(fun n ->
+        let n = n + helper 2
+        if n = 0 then 7 else loop x y)
+
+let check<'T, 'U> (x: 'T) (y: 'U) =
+    if loop x y <> 7 then failwith "Unexpected result"
+    match captured with
+    | Some(WithValue(value, _, definition)) ->
+        let actual = unbox<int -> int> value
+        let reflected = LeafExpressionConverter.EvaluateQuotation definition |> unbox<int -> int>
+        if actual 1 <> reflected 1 then failwith "Value and quotation disagree"
+    | expression -> failwithf "Unexpected quotation: %A" expression
+
+check 42 "text"
+        """
+        |> asExe
+        |> compileAndRun
+        |> shouldSucceed
+
+    // https://github.com/dotnet/fsharp/issues/20379
+    [<Theory>]
+    [<InlineData("static member Run", "Capture.Run")>]
+    [<InlineData("member _.Run", "(Capture()).Run")>]
+    let ``Auto-quote inferred generic recursion works for static and instance methods - issue 20379`` (decl: string) (call: string) =
+        FSharp(sprintf """
+module Test20379Methods
+
+open Microsoft.FSharp.Quotations
+
+type Capture() =
+    %s ([<ReflectedDefinition(true)>] body: Expr<int -> int>) = 0
+
+let rec loop x y =
+    %s(fun n -> if n = 0 then 7 else loop x y)
+        """ decl call)
+        |> asLibrary
+        |> compile
+        |> shouldSucceed
+
+    // https://github.com/dotnet/fsharp/issues/20379
+    [<Fact>]
+    let ``Auto-quote inferred generic recursion works across an F# assembly boundary - issue 20379`` () =
+        let lib =
+            FSharp """
+namespace Api
+open Microsoft.FSharp.Quotations
+type Capture =
+    static member Run([<ReflectedDefinition(true)>] body: Expr<int -> int>) = 0
+            """
+            |> withName "Api20379"
+            |> asLibrary
+
+        FSharp """
+module Consumer20379
+open Api
+let rec loop x y =
+    Capture.Run(fun n -> if n = 0 then 7 else loop x y)
+        """
+        |> withReferences [ lib ]
+        |> asLibrary
+        |> compile
+        |> shouldSucceed
+
+    // https://github.com/dotnet/fsharp/issues/20379
+    [<Fact>]
+    let ``Auto-quoted argument is constructed exactly once - issue 20379`` () =
+        Fsx """
+open Microsoft.FSharp.Quotations
+
+let mutable constructions = 0
+
+type Capture =
+    static member Run([<ReflectedDefinition(true)>] body: Expr<int -> int>) = 0
+
+let makeBody () =
+    constructions <- constructions + 1
+    (fun (n: int) -> n)
+
+let rec loop x y =
+    Capture.Run(makeBody ())
+
+let _ = loop 1 2
+if constructions <> 1 then failwithf "Expected exactly one construction, got %d" constructions
+        """
+        |> asExe
+        |> compileAndRun
+        |> shouldSucceed
+
+    // https://github.com/dotnet/fsharp/issues/20379 - controls that must keep working
+    [<Theory>]
+    [<InlineData("false-attribute", "type Capture = static member Run([<ReflectedDefinition(false)>] body: Expr<int -> int>) = 0\nlet rec loop x y = Capture.Run(fun n -> if n = 0 then 7 else loop x y)")>]
+    [<InlineData("nonrecursive", "type Capture = static member Run([<ReflectedDefinition(true)>] body: Expr<int -> int>) = 0\nlet go x = Capture.Run(fun n -> n + 1)")>]
+    [<InlineData("ordinary-parameter", "type Capture = static member Run(body: int -> int) = 0\nlet rec loop x y = Capture.Run(fun n -> if n = 0 then 7 else loop x y)")>]
+    [<InlineData("explicit-quotation", "type Capture = static member Run(body: Expr<int -> int>) = 0\nlet rec loop x y = Capture.Run(<@ fun n -> if n = 0 then 7 else loop x y @>)")>]
+    [<InlineData("monomorphic-recursion", "type Capture = static member Run([<ReflectedDefinition(true)>] body: Expr<int -> int>) = 0\nlet rec loop (x: int) = Capture.Run(fun n -> if n = 0 then 7 else loop x)")>]
+    [<InlineData("explicit-generic-recursion", "type Capture = static member Run([<ReflectedDefinition(true)>] body: Expr<int -> int>) = 0\nlet rec loop<'T, 'U> (x: 'T) (y: 'U) = Capture.Run(fun n -> if n = 0 then 7 else loop x y)")>]
+    let ``Auto-quote controls keep compiling - issue 20379`` (_name: string) (body: string) =
+        FSharp(sprintf "module Test20379Controls\nopen Microsoft.FSharp.Quotations\n%s" body)
+        |> asLibrary
+        |> compile
+        |> shouldSucceed
+
+    // https://github.com/dotnet/fsharp/issues/20379 - inner generic functions remain unsupported (FS1230), not an ICE
+    [<Fact>]
+    let ``Inner generic function inside quotation remains FS1230 - issue 20379`` () =
+        FSharp """
+module Test20379InnerGeneric
+open Microsoft.FSharp.Quotations
+type Capture =
+    static member Run([<ReflectedDefinition(true)>] body: Expr<int -> int>) = 0
+let rec loop x y =
+    Capture.Run(fun n ->
+        let inline g (z: 'a) = z
+        if n = 0 then 7 else loop (g x) (g y))
+        """
+        |> asLibrary
+        |> compile
+        |> shouldFail
+        |> withErrorCode 1230
