@@ -4,7 +4,6 @@ namespace FSharp.Build.UnitTests
 
 open System
 open System.IO
-open System.Reflection
 open System.Runtime.InteropServices
 open Microsoft.Build.Framework
 open Microsoft.Build.Utilities
@@ -308,10 +307,16 @@ type FileTaskEnvironmentTests() =
                     let task, _ = createResourceTask kind environment engine input "obj"
 
                     Assert.False(task.Execute(), scenario)
-                    Assert.NotEmpty engine.Errors
 
-                    if kind <> Text || name <> "invalid path" then
-                        Assert.True(engine.Errors.Count = 1, $"{scenario}: expected one error, got {engine.Errors.Count}")
+                    // The Text generator surfaces an invalid intermediate path as a second diagnostic; every
+                    // other scenario reports exactly one. Assert the exact count instead of skipping the odd one.
+                    let expectedErrorCount =
+                        if kind = Text && name = "invalid path" then 2 else 1
+
+                    Assert.True(
+                        engine.Errors.Count = expectedErrorCount,
+                        $"{scenario}: expected {expectedErrorCount} error(s), got {engine.Errors.Count}"
+                    )
 
                     let message = engine.Errors |> Seq.map _.Message |> String.concat Environment.NewLine
                     assertContains scenario input message
@@ -333,17 +338,27 @@ type FileTaskEnvironmentTests() =
             let shortOriginal = "p"
             let longOriginal = Path.Combine("p", "deeper", "..", "deeper")
             let canonicalLong = Path.GetFullPath(environment.GetAbsolutePath(longOriginal).Value)
-            let restore =
-                typeof<FSharpEmbedResourceText>
-                    .Assembly.GetType("FSharp.Build.TaskEnvironmentPaths")
-                    .GetMethod("restoreOriginalPaths", BindingFlags.NonPublic ||| BindingFlags.Static)
 
             let message = $"Could not find a part of the path '{canonicalLong}'."
+
             let actual =
-                restore.Invoke(null, [| box environment; box message; box [ shortOriginal; longOriginal ] |]) :?> string
+                TaskEnvironmentPaths.restoreOriginalPaths environment message [ shortOriginal; longOriginal ]
 
             Assert.Equal($"Could not find a part of the path '{longOriginal}'.", actual)
             assertNotContains "overlapping path restoration" directory.FullName actual)
+
+    [<Fact>]
+    member _.``FSharpEmbedResourceText leaves a rooted path that is only a lexical prefix untouched``() =
+        withTaskEnvironment (fun environment _ ->
+            // rooted "p" is a lexical prefix of rooted "parts/x"; restoration must not rewrite the latter.
+            let original = "p"
+            let unrelated = environment.GetAbsolutePath(Path.Combine("parts", "x")).Value
+            let message = $"Could not find a part of the path '{unrelated}'."
+
+            let actual =
+                TaskEnvironmentPaths.restoreOriginalPaths environment message [ original ]
+
+            Assert.Equal(message, actual))
 
     [<Fact>]
     member _.``FSharpEmbedResourceText regenerates when RichText metadata toggles without source change``() =

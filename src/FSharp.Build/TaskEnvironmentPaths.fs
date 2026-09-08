@@ -38,8 +38,19 @@ module internal TaskEnvironmentPaths =
         FSharpEnvironment.BinFolderOfDefaultFSharpCompilerUsingEnvironment taskEnvironment.GetEnvironmentVariable probePoint
         |> Option.defaultValue ""
 
-    // netstandard2.0 has no String.Replace(string, string, StringComparison) overload.
-    let private replaceOrdinal (source: string) (oldValue: string) (newValue: string) =
+    // A rooted path only stands for the original when the match ends a path token: at end-of-string, at a
+    // quote, or before a separator (a directory child). Otherwise the match is a mere lexical prefix of an
+    // unrelated path (e.g. rooted "p" inside rooted "parts/x") and rewriting it would corrupt that path.
+    let private endsPathToken (source: string) index =
+        index >= source.Length
+        || (match source[index] with
+            | '\''
+            | '"' -> true
+            | c -> c = '/' || c = '\\')
+
+    // netstandard2.0 has no String.Replace(string, string, StringComparison) overload, and a plain replace
+    // would also ignore the path-token boundary above, so both are handled here.
+    let private replacePathToken (source: string) (oldValue: string) (newValue: string) =
         if String.IsNullOrEmpty oldValue then
             source
         else
@@ -49,10 +60,15 @@ module internal TaskEnvironmentPaths =
                 match source.IndexOf(oldValue, searchStart, pathComparison) with
                 | -1 -> builder.Append(source, searchStart, source.Length - searchStart)
                 | matchIndex ->
-                    builder.Append(source, searchStart, matchIndex - searchStart).Append(newValue)
-                    |> ignore
+                    let afterMatch = matchIndex + oldValue.Length
+                    builder.Append(source, searchStart, matchIndex - searchStart) |> ignore
 
-                    loop (matchIndex + oldValue.Length)
+                    if endsPathToken source afterMatch then
+                        builder.Append(newValue) |> ignore
+                    else
+                        builder.Append(source, matchIndex, oldValue.Length) |> ignore
+
+                    loop afterMatch
 
             (loop 0).ToString()
 
@@ -88,7 +104,7 @@ module internal TaskEnvironmentPaths =
             |> List.sortByDescending (fun (rooted, _) -> rooted.Length)
 
         (message, replacements)
-        ||> List.fold (fun message (rooted, original) -> replaceOrdinal message rooted original)
+        ||> List.fold (fun message (rooted, original) -> replacePathToken message rooted original)
 
     // Task-facing helpers that read the injected TaskEnvironment late (partially apply against `this`).
     let rootedPath (task: #IMultiThreadableTask) path =

@@ -45,8 +45,8 @@ type public Fsi() as this =
     let mutable tailcalls: bool = true
     let mutable targetProfile: string | null = null
 
-    let defaultToolPath () =
-        TaskEnvironmentPaths.defaultCompilerToolPath this.TaskEnvironment typeof<Fsi>
+    let defaultToolPath =
+        lazy (TaskEnvironmentPaths.defaultCompilerToolPath this.TaskEnvironment typeof<Fsi>)
 
     let mutable toolPath: string option = None
 
@@ -271,7 +271,7 @@ type public Fsi() as this =
 
     // For targeting other folders for "fsi.exe" (or ToolExe if different)
     member _.ToolPath
-        with get () = Option.defaultWith defaultToolPath toolPath
+        with get () = Option.defaultWith (fun () -> defaultToolPath.Value) toolPath
         and set value = toolPath <- Some value
 
     // --use:<string>: execute an F# source file on startup
@@ -322,15 +322,12 @@ type public Fsi() as this =
         if toolPath = "" then
             raise (new System.InvalidOperationException(FSBuild.SR.toolpathUnknown ()))
 
-        fsi.NormalizePathToTool(System.IO.Path.Combine(toolPath, fsi.ToolExe))
+        TaskEnvironmentPaths.normalizePathToTool fsi.TaskEnvironment (System.IO.Path.Combine(toolPath, fsi.ToolExe))
 
     override fsi.LogToolCommand(message: string) =
         fsi.Log.LogMessageFromText(message, MessageImportance.Normal) |> ignore
 
     member internal fsi.InternalGenerateFullPathToTool() = fsi.GenerateFullPathToTool() // expose for unit testing
-
-    member private fsi.NormalizePathToTool(pathToTool: string) : string =
-        TaskEnvironmentPaths.normalizePathToTool fsi.TaskEnvironment pathToTool
 
     member internal _.BaseExecuteTool(pathToTool, responseFileCommands, commandLineCommands) = // F# does not allow protected members to be captured by lambdas, this is the standard workaround
         base.ExecuteTool(pathToTool, responseFileCommands, commandLineCommands)
@@ -347,7 +344,9 @@ type public Fsi() as this =
             0
         else
             // Root once so both the base call and the HostObject delegate use the same rooted path.
-            let pathToTool = fsi.NormalizePathToTool pathToTool
+            let pathToTool =
+                TaskEnvironmentPaths.normalizePathToTool fsi.TaskEnvironment pathToTool
+
             let host = box fsi.HostObject
 
             match host with

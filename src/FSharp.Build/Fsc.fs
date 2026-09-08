@@ -73,8 +73,8 @@ type public Fsc() as this =
     let mutable targetProfile: string | null = null
     let mutable targetType: string | null = null
 
-    let defaultToolPath () =
-        TaskEnvironmentPaths.defaultCompilerToolPath this.TaskEnvironment typeof<Fsc>
+    let defaultToolPath =
+        lazy (TaskEnvironmentPaths.defaultCompilerToolPath this.TaskEnvironment typeof<Fsc>)
 
     let mutable treatWarningsAsErrors: bool = false
     let mutable useStandardResourceNames: bool = false
@@ -720,20 +720,17 @@ type public Fsc() as this =
             base.StandardOutputEncoding
 
     override fsc.GenerateFullPathToTool() =
-        let defaultToolPath = defaultToolPath ()
+        let defaultToolPath = defaultToolPath.Value
 
         if defaultToolPath = "" then
             raise (new System.InvalidOperationException(FSBuild.SR.toolpathUnknown ()))
 
-        fsc.NormalizePathToTool(System.IO.Path.Combine(defaultToolPath, fsc.ToolExe))
+        TaskEnvironmentPaths.normalizePathToTool fsc.TaskEnvironment (System.IO.Path.Combine(defaultToolPath, fsc.ToolExe))
 
     override fsc.LogToolCommand(message: string) =
         fsc.Log.LogMessageFromText(message, MessageImportance.Normal) |> ignore
 
     member internal fsc.InternalGenerateFullPathToTool() = fsc.GenerateFullPathToTool() // expose for unit testing
-
-    member private fsc.NormalizePathToTool(pathToTool: string) : string =
-        TaskEnvironmentPaths.normalizePathToTool fsc.TaskEnvironment pathToTool
 
     member internal _.BaseExecuteTool(pathToTool, responseFileCommands, commandLineCommands) = // F# does not allow protected members to be captured by lambdas, this is the standard workaround
         base.ExecuteTool(pathToTool, responseFileCommands, commandLineCommands)
@@ -750,7 +747,9 @@ type public Fsc() as this =
             0
         else
             // Root once so both the base call and the HostObject delegate use the same rooted path.
-            let pathToTool = fsc.NormalizePathToTool pathToTool
+            let pathToTool =
+                TaskEnvironmentPaths.normalizePathToTool fsc.TaskEnvironment pathToTool
+
             let host = box fsc.HostObject
 
             match host with
