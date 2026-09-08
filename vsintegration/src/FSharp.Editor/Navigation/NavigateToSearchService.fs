@@ -52,6 +52,13 @@ type internal FSharpNavigableItemsCache
                 return items
         }
 
+    /// The items of the document's last parse, whatever version they came from. Reads no text, so a
+    /// closed document costs nothing; a caller that needs the items of the current text asks for them.
+    member _.TryGetCachedNavigableItems(documentId: DocumentId) =
+        match cache.TryGetValue documentId with
+        | true, struct (_, items) -> ValueSome items
+        | _ -> ValueNone
+
     member _.CreateMatcherFor(searchPattern: string) =
         let patternMatcher =
             patternMatcherFactory.CreatePatternMatcher(
