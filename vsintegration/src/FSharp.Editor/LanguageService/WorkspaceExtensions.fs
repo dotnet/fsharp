@@ -616,8 +616,12 @@ type Document with
     /// Find F# references in the given F# document, through the project snapshot when the transparent
     /// compiler is in use.
     member inline this.FindFSharpReferencesAsync
-        (symbol, projectSnapshot: FSharpProjectSnapshot voption, [<InlineIfLambda>] onFound, userOpName)
-        =
+        (
+            symbol,
+            projectSnapshot: FSharpProjectSnapshot voption,
+            [<InlineIfLambda>] onFound: Text.range seq -> CancellableTask<unit>,
+            userOpName
+        ) =
         cancellableTask {
             let! checker, _, _, projectOptions = this.GetFSharpCompilationOptionsAsync(userOpName)
 
@@ -633,11 +637,7 @@ type Document with
                         fastCheck = this.Project.IsFastFindReferencesEnabled
                     )
 
-            do!
-                symbolUses
-                |> Seq.map onFound
-                |> CancellableTask.whenAll
-                |> CancellableTask.ignore
+            do! onFound symbolUses
         }
 
     /// Try to find a F# lexer/token symbol of the given F# document and position.
@@ -666,6 +666,11 @@ let private hasConditionalDirectives (parseTree: ParsedInput) =
     match parseTree with
     | ParsedInput.ImplFile file -> not file.Trivia.ConditionalDirectives.IsEmpty
     | ParsedInput.SigFile file -> not file.Trivia.ConditionalDirectives.IsEmpty
+
+/// How many documents of one project a search keeps in flight. The throttle it shares with the other
+/// projects decides how many of those actually run.
+[<Literal>]
+let private WorkersPerProject = 4
 
 type Project with
 
@@ -742,9 +747,9 @@ type Project with
                 |> Seq.filter (fun document ->
                     isFSharpSourceFile document.FilePath
                     && not (canSkipDocuments.Contains document.FilePath))
-                |> Seq.map search
-                |> CancellableTask.whenAll
-                |> CancellableTask.ignore
+                // Workers take the next document when they free up. Starting one task per document
+                // instead would leave every document of the solution parked on the throttle at once.
+                |> CancellableTask.forEachThrottled WorkersPerProject search
         }
 
     member this.GetFSharpCompilationOptionsAsync() = this |> getFSharpOptionsForProject
