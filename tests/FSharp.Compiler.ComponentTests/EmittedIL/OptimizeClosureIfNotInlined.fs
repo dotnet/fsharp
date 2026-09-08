@@ -212,7 +212,7 @@ module App
 let mkFolder () : int -> int -> int -> int = fun s x y -> s + x * y
 let callOpaque (a: int[]) (b: int[]) = Lib.fold2 (mkFolder ()) 0 a b
 """
-            |> withLangVersion "7.0"
+            |> withLangVersion "8.0"
             |> withOptions [ "--optimize+" ]
             |> withReferences [ library ]
             |> compile
@@ -242,7 +242,7 @@ let callOpaque (a: int[]) (b: int[]) = Lib.fold2 (mkFolder ()) 0 a b
     [<Fact>]
     let ``attribute requires the preview language feature`` () =
         FSharp "module M\nlet inline f ([<InlineIfLambda; OptimizeClosureIfNotInlined>] g: int -> int -> int) x y = g x y"
-        |> withLangVersion "7.0"
+        |> withLangVersion "8.0"
         |> compile
         |> shouldFail
         |> withErrorCode 3350
