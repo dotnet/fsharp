@@ -2,10 +2,12 @@
 
 namespace FSharp.Editor.Tests
 
+open System
 open System.Threading
 
 open Xunit
 
+open Microsoft.CodeAnalysis
 open Microsoft.VisualStudio.Copilot
 open Microsoft.VisualStudio.FSharp.Editor
 
@@ -49,13 +51,21 @@ let twice x = x * 2
     let private run computation =
         computation |> CancellableTask.start CancellationToken.None |> _.Result
 
-    let private search pattern =
-        CopilotSymbolQuery.search cache solution pattern
-        |> run
+    let private namesOf hits =
+        hits
         |> Array.map (fun (struct (item, _)) -> CopilotSymbolMapping.fullyQualifiedName item)
 
+    let private searchIn cache openDocumentIds solution pattern =
+        CopilotSymbolQuery.search cache openDocumentIds solution [| pattern |]
+        |> run
+        |> Array.head
+        |> namesOf
+
+    let private search pattern =
+        searchIn cache Seq.empty solution pattern
+
     let private symbolContext name =
-        CopilotSymbolQuery.symbolContext cache solution name |> run
+        CopilotSymbolQuery.symbolContext cache Seq.empty solution name |> run
 
     let private contextOf name =
         match symbolContext name with
@@ -79,8 +89,9 @@ let twice x = x * 2
     [<InlineData("", false)>]
     let ``a name matches only the declaration it spells out`` (candidate: string, expected: bool) =
         let item =
-            CopilotSymbolQuery.search cache solution "Counter"
+            CopilotSymbolQuery.search cache Seq.empty solution [| "Counter" |]
             |> run
+            |> Array.head
             |> Array.pick (fun (struct (item, _)) ->
                 if CopilotSymbolMapping.fullyQualifiedName item = "Widgets.Counter" then
                     Some item
@@ -97,6 +108,104 @@ let twice x = x * 2
     [<Fact>]
     let ``an unknown name has no context`` () =
         Assert.True((symbolContext "Widgets.NoSuchThing").IsNone)
+
+    /// One matcher and one parse cache per test, so what a test leaves parsed cannot answer the next one.
+    let private freshCache () =
+        MefHelpers.createExportProvider().GetExportedValue<FSharpNavigableItemsCache>()
+
+    let private solutionOf files =
+        let projectId = ProjectId.CreateNewId()
+
+        let documents =
+            files
+            |> List.map (fun (path, source) -> RoslynTestHelpers.CreateDocumentInfo projectId path source)
+
+        let solution =
+            RoslynTestHelpers.CreateSolution [ RoslynTestHelpers.CreateProjectInfo projectId "C:\\many.fsproj" documents ]
+
+        { RoslynTestHelpers.DefaultProjectOptions with
+            SourceFiles = files |> List.map fst |> Array.ofList
+        }
+        |> RoslynTestHelpers.SetProjectOptions projectId solution
+
+        solution
+
+    let private documentsOf (solution: Solution) =
+        solution.Projects |> Seq.exactlyOne |> _.Documents |> Seq.toArray
+
+    let private documentNamed (name: string) solution =
+        documentsOf solution
+        |> Array.find _.FilePath.EndsWith(name, StringComparison.Ordinal)
+
+    /// A file holding more declarations matching `name` than one query reports.
+    let private manyDeclarations name count =
+        let members =
+            [ for i in 1..count -> $"    member _.{name}{i} = {i}" ] |> String.concat "\n"
+
+        $"module {name}Module\n\ntype {name}Holder() =\n{members}\n"
+
+    let private coldFile = "C:\\cold.fs", "module Cold\n\nlet widgetCounter = 1\n"
+
+    [<Fact>]
+    let ``an open document answers without parsing the rest of the solution`` () =
+        let cache = freshCache ()
+        let solution = solutionOf [ "C:\\open.fs", manyDeclarations "Widget" 25; coldFile ]
+        let opened = documentNamed "open.fs" solution
+
+        let names = searchIn cache [ opened.Id ] solution "Widget"
+
+        Assert.Equal(20, names.Length)
+        Assert.All(names, fun name -> Assert.StartsWith("WidgetModule", name, StringComparison.Ordinal))
+        Assert.True((cache.TryGetCachedNavigableItems (documentNamed "cold.fs" solution).Id).IsNone)
+
+    [<Fact>]
+    let ``documents already parsed answer without parsing the rest`` () =
+        let cache = freshCache ()
+        let solution = solutionOf [ "C:\\warm.fs", manyDeclarations "Widget" 25; coldFile ]
+        cache.GetNavigableItems(documentNamed "warm.fs" solution) |> run |> ignore
+
+        let names = searchIn cache Seq.empty solution "Widget"
+
+        Assert.Equal(20, names.Length)
+        Assert.True((cache.TryGetCachedNavigableItems (documentNamed "cold.fs" solution).Id).IsNone)
+
+    [<Fact>]
+    let ``the search stops once it has enough declarations`` () =
+        let cache = freshCache ()
+
+        let solution =
+            solutionOf
+                [
+                    for i in 1..150 -> $"C:\\cold{i}.fs", $"module Cold{i}\n\ntype Counter{i}() =\n    member _.Value = {i}\n"
+                ]
+
+        let names = searchIn cache Seq.empty solution "Counter"
+
+        Assert.Equal(20, names.Length)
+
+        Assert.NotEmpty(
+            documentsOf solution
+            |> Array.filter (fun document -> (cache.TryGetCachedNavigableItems document.Id).IsNone)
+        )
+
+    [<Fact>]
+    let ``a batch of texts answers like the same texts one by one`` () =
+        let cache = freshCache ()
+
+        let solution =
+            solutionOf
+                [
+                    "C:\\a.fs", "module A\n\nlet alpha = 1\n"
+                    "C:\\b.fs", "module B\n\nlet beta = 2\n"
+                ]
+
+        let batched =
+            CopilotSymbolQuery.search cache Seq.empty solution [| "alpha"; "beta" |]
+            |> run
+            |> Array.map namesOf
+
+        Assert.Equal<string>(searchIn cache Seq.empty solution "alpha", batched[0])
+        Assert.Equal<string>(searchIn cache Seq.empty solution "beta", batched[1])
 
     [<Fact>]
     let ``a type context carries the whole declaration and its doc comment`` () =
