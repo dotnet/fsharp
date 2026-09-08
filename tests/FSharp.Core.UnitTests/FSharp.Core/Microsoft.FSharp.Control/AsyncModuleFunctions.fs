@@ -1,9 +1,6 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 // Tests for camelCase functions in module Async
-
-// Intentionally in same collection to help rule out potential flakiness due to concurrency re #20306
-[<Xunit.Collection(nameof FSharp.Test.NotThreadSafeResourceCollection)>]
 module FSharp.Core.UnitTests.Control.AsyncModuleFunctionsTests
 
 open System
