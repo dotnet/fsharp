@@ -199,13 +199,10 @@ type internal MemoryMappedStream(mmf: MemoryMappedFile, length: int64) =
     override x.Write(buffer, offset, count) = viewStream.Write(buffer, offset, count)
     override x.Read(buffer, offset, count) = viewStream.Read(buffer, offset, count)
 
-    override x.Finalize() = x.Dispose()
-
-    interface IDisposable with
-        override x.Dispose() =
-            GC.SuppressFinalize x
-            mmf.Dispose()
-            viewStream.Dispose()
+    override _.Dispose disposing =
+        base.Dispose disposing
+        viewStream.Dispose()
+        mmf.Dispose()
 
 [<Experimental("This FCS API/Type is experimental and subject to change.")>]
 type RawByteMemory(addr: nativeptr<byte>, length: int, holder: obj) =
