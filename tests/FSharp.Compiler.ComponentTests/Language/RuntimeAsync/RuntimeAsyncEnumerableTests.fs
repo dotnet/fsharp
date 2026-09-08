@@ -9,6 +9,35 @@ open RuntimeTaskBuilder
 open RuntimeTaskBuilder.RuntimeTask
 open AsyncSeqAwaitableExtensions
 
+// Test that the runtime-async computation is not split by the Optimizer
+let except (itemsToExclude: IAsyncEnumerable<_>) (source: IAsyncEnumerable<_>) =
+
+    asyncSeq {
+        use e = source.GetAsyncEnumerator CancellationToken.None
+        let! hasFirst = e.MoveNextAsync()
+
+        if hasFirst then
+            // only create hashset by the time we actually start iterating;
+            // taskSeq enumerates sequentially, so a plain HashSet suffices — no locking needed.
+            let hashSet = HashSet<_>(HashIdentity.Structural)
+
+            use excl = itemsToExclude.GetAsyncEnumerator CancellationToken.None
+
+            while! excl.MoveNextAsync() do
+                hashSet.Add excl.Current |> ignore
+
+            // if true, it was added, and therefore unique, so we return it
+            // if false, it existed, and therefore a duplicate, and we skip
+            if hashSet.Add e.Current then
+                yield e.Current
+
+            while! e.MoveNextAsync() do
+                let current = e.Current
+
+                if hashSet.Add current then
+                    yield current
+    }
+
 let private assertEqual name expected actual =
     if expected <> actual then
         failwithf "%s failed. Expected %A, got %A." name expected actual

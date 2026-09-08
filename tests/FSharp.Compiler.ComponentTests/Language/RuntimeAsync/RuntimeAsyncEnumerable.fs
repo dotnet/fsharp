@@ -173,7 +173,7 @@ type AsyncSeqBuilder() =
         fun state -> continuation values state
 
     member inline _.Combine(
-        first: AsyncSequenceBody<'T>,
+        [<InlineIfLambda>] first: AsyncSequenceBody<'T>,
         [<InlineIfLambda>] second: AsyncSequenceBody<'T>
     ) : AsyncSequenceBody<'T> =
         fun state ->
@@ -214,7 +214,7 @@ type AsyncSeqBuilder() =
                 | _ -> ()
 
     member inline _.While(
-        guard: unit -> bool,
+        [<InlineIfLambda>] guard: unit -> bool,
         [<InlineIfLambda>] body: AsyncSequenceBody<'T>
     ) : AsyncSequenceBody<'T> =
         fun state ->
