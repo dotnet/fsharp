@@ -5,11 +5,6 @@
 
 .assembly extern runtime { }
 .assembly extern FSharp.Core { }
-.assembly extern netstandard
-{
-  .publickeytoken = (CC 7B 13 FF CD 2D DD 51 )                         
-  .ver 2:1:0:0
-}
 .assembly assembly
 {
   .custom instance void [FSharp.Core]Microsoft.FSharp.Core.FSharpInterfaceDataVersionAttribute::.ctor(int32,
@@ -630,11 +625,11 @@
     IL_0154:  stsfld     int32 assembly::arg_1@30
     IL_0159:  call       int32[0...,0...] assembly::get_a3()
     IL_015e:  ldc.i4.0
-    IL_015f:  callvirt   instance int32 [netstandard]System.Array::GetLowerBound(int32)
+    IL_015f:  callvirt   instance int32 [runtime]System.Array::GetLowerBound(int32)
     IL_0164:  stsfld     int32 assembly::arg_2@30
     IL_0169:  call       int32[0...,0...] assembly::get_a3()
     IL_016e:  ldc.i4.1
-    IL_016f:  callvirt   instance int32 [netstandard]System.Array::GetLowerBound(int32)
+    IL_016f:  callvirt   instance int32 [runtime]System.Array::GetLowerBound(int32)
     IL_0174:  stsfld     int32 assembly::arg_3@30
     IL_0179:  call       int32[0...,0...] assembly::get_a3()
     IL_017e:  ldc.i4.0

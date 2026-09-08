@@ -800,9 +800,7 @@ type AsyncType() =
         Assert.True(asyncWaitImm a)
 #endif
 
-// Intentionally in same collection to help rule out potential flakiness due to concurrency re #20306
-[<Collection(nameof FSharp.Test.NotThreadSafeResourceCollection)>]
-module AsyncTaskLikeAwaitTests =
+module AsyncAwaitTaskLikeTests =
 
     // Minimal custom task-like type wrapping Task<'T>
     type MyTask<'T>(inner: Task<'T>) =
@@ -904,8 +902,6 @@ module AsyncTaskLikeAwaitTests =
             |> asyncWaitImm
         Assert.Equal(42, result)
 
-// Intentionally in same collection to help rule out potential flakiness due to concurrency re #20306
-[<Collection(nameof FSharp.Test.NotThreadSafeResourceCollection)>]
 module AsyncStartTaskImmediateTaskLikeTests =
 
     [<Fact>]
@@ -946,8 +942,6 @@ module AsyncStartTaskImmediateTaskLikeTests =
 
         Assert.Equal(cts.Token, capturedCt)
 
-// Intentionally in same collection to help rule out potential flakiness due to concurrency re #20306
-[<Collection(nameof FSharp.Test.NotThreadSafeResourceCollection)>]
 module AsyncAwaitStackTraceTests =
 
     open System.Runtime.CompilerServices

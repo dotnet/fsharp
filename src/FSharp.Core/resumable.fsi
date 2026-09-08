@@ -29,7 +29,7 @@ type ResumableStateMachine<'Data> =
 
     interface IAsyncStateMachine
 
-and 
+and
     IResumableStateMachine<'Data> =
     /// Get the resumption point of the state machine
     abstract ResumptionPoint: int
@@ -44,12 +44,12 @@ and
 
     /// Create dynamic information for a state machine
     new: initial: ResumptionFunc<'Data> -> ResumptionDynamicInfo<'Data>
-    
+
     /// The continuation of the state machine
-    member ResumptionFunc: ResumptionFunc<'Data> with get, set 
-    
+    member ResumptionFunc: ResumptionFunc<'Data> with get, set
+
     /// Additional data associated with the state machine
-    member ResumptionData: objnull with get, set 
+    member ResumptionData: objnull with get, set
 
     /// Executes the MoveNext implementation of the state machine
     abstract MoveNext: machine: byref<ResumableStateMachine<'Data>> -> unit
@@ -124,7 +124,7 @@ type AfterCode<'Data, 'Result> = delegate of byref<ResumableStateMachine<'Data>>
 
 /// Contains compiler intrinsics related to the definition of state machines.
 [<AutoOpen>]
-module StateMachineHelpers = 
+module StateMachineHelpers =
 
     /// <summary>
     /// Indicates a named debug point arising from the context of inlined code.
@@ -153,7 +153,7 @@ module StateMachineHelpers =
     /// if not.
     /// </summary>
     [<MethodImpl(MethodImplOptions.NoInlining)>]
-    val __useResumableCode<'T> : bool 
+    val __useResumableCode<'T> : bool
 
     /// <summary>
     /// Indicates a resumption point within resumable code
@@ -178,7 +178,7 @@ module StateMachineHelpers =
     ///
     /// <remarks>
     /// At compile-time, the ResumableStateMachine type guides the generation of a new struct type by the F# compiler
-    /// with closure-capture fields in a way similar to an object expression. 
+    /// with closure-capture fields in a way similar to an object expression.
     /// Any mention of the ResumableStateMachine type in any the 'methods' is rewritten to this
     /// fresh struct type.  The 'methods' are used to implement the interfaces on ResumableStateMachine and are also rewritten.
     /// The 'after' method is then executed and must eliminate the ResumableStateMachine. For example,
@@ -189,9 +189,9 @@ module StateMachineHelpers =
     /// <param name="afterCode">Gives code to execute after the generation of the state machine and to produce the final result.</param>
     [<MethodImpl(MethodImplOptions.NoInlining)>]
     val __stateMachine<'Data, 'Result> :
-        moveNextMethod: MoveNextMethodImpl<'Data> -> 
-        setStateMachineMethod: SetStateMachineMethodImpl<'Data> -> 
-        afterCode: AfterCode<'Data, 'Result> 
+        moveNextMethod: MoveNextMethodImpl<'Data> ->
+        setStateMachineMethod: SetStateMachineMethodImpl<'Data> ->
+        afterCode: AfterCode<'Data, 'Result>
             -> 'Result
 
 /// <summary>Adding this attribute to the method adjusts the processing of some generic methods
@@ -202,7 +202,7 @@ module StateMachineHelpers =
 /// a simple value <c>x</c> without known type information), and a method qualifies for
 /// lambda constraint propagation, then member trait constraints from a method overload
 /// are eagerly applied to the caller argument type. This causes that overload to be preferred,
-/// regardless of other method overload resolution rules. Using this attribute suppresses this behaviour. 
+/// regardless of other method overload resolution rules. Using this attribute suppresses this behaviour.
 /// </remarks>
 ///
 /// <example>
@@ -212,16 +212,16 @@ module StateMachineHelpers =
 ///     [&lt;NoEagerConstraintApplicationAttribute&gt;]
 ///     static member inline SomeMethod&lt; ^T when ^T : (member Number: int) &gt; (x: ^T, f: ^T -> int) = 1
 ///     static member SomeMethod(x: 'T list, f: 'T list -> int) = 2
-/// 
-/// let inline f x = 
-///     OverloadsWithSrtp.SomeMethod (x, (fun a -> 1)) 
+///
+/// let inline f x =
+///     OverloadsWithSrtp.SomeMethod (x, (fun a -> 1))
 /// </code>
 /// With the attribute, the overload resolution fails, because both members are applicable.
 /// Without the attribute, the overload resolution succeeds, because the member constraint is
-/// eagerly applied, making the second member non-applicable.  
+/// eagerly applied, making the second member non-applicable.
 /// </example>
 /// <category>Attributes</category>
-[<AttributeUsage (AttributeTargets.Method,AllowMultiple=false)>]  
+[<AttributeUsage (AttributeTargets.Method,AllowMultiple=false)>]
 [<Sealed>]
 type NoEagerConstraintApplicationAttribute =
     inherit Attribute

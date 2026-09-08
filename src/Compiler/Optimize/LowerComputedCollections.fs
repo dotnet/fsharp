@@ -20,7 +20,7 @@ open FSharp.Compiler.TypeHierarchy
 
 /// Build the 'test and dispose' part of a 'use' statement
 let BuildDisposableCleanup tcVal (g: TcGlobals) infoReader m (v: Val) =
-    let disposeMethod = 
+    let disposeMethod =
         match GetIntrinsicMethInfosOfType infoReader (Some "Dispose") AccessibleFromSomewhere AllowMultiIntfInstantiations.Yes IgnoreOverrides m g.system_IDisposable_ty with
         | [x] -> x
         | _ -> error(InternalError(FSComp.SR.tcCouldNotFindIDisposable(), m))
@@ -31,7 +31,7 @@ let BuildDisposableCleanup tcVal (g: TcGlobals) infoReader m (v: Val) =
         // copy of it.
         let disposeExpr, _ = BuildMethodCall tcVal g infoReader.amap NeverMutates m false disposeMethod NormalValUse [] [exprForVal v.Range v] [] None
         //callNonOverloadedILMethod g infoReader.amap m "Dispose" g.system_IDisposable_ty [exprForVal v.Range v]
-        
+
         disposeExpr
     else
         let disposeObjVar, disposeObjExpr = mkCompGenLocal m "objectToDispose" g.system_IDisposableNull_ty
@@ -41,7 +41,7 @@ let BuildDisposableCleanup tcVal (g: TcGlobals) infoReader m (v: Val) =
 
 let mkCallCollectorMethod tcVal (g: TcGlobals) infoReader m name collExpr args =
     let listCollectorTy = tyOfExpr g collExpr
-    let addMethod = 
+    let addMethod =
         match GetIntrinsicMethInfosOfType infoReader (Some name) AccessibleFromSomewhere AllowMultiIntfInstantiations.Yes IgnoreOverrides m listCollectorTy with
         | [x] -> x
         | _ -> error(InternalError("no " + name + " method found on Collector", m))
@@ -68,7 +68,7 @@ let LowerComputedListOrArraySeqExpr tcVal g amap m collectorTy overallSeqExpr =
     //let collExpr = mkValAddr m false (mkLocalValRef collVal)
     let rec ConvertSeqExprCode isUninteresting isTailcall expr =
         match expr with
-        | SeqYield g (e, m) -> 
+        | SeqYield g (e, m) ->
             let exprR = mkCallCollectorAdd tcVal g infoReader m collExpr e
             Result.Ok (false, exprR)
 
@@ -78,15 +78,15 @@ let LowerComputedListOrArraySeqExpr tcVal g amap m collectorTy overallSeqExpr =
         | SeqAppend g (e1, e2, m) ->
             let res1 = ConvertSeqExprCode false false e1
             let res2 = ConvertSeqExprCode false isTailcall e2
-            match res1, res2 with 
-            | Result.Ok (_, e1R), Result.Ok (closed2, e2R) -> 
+            match res1, res2 with
+            | Result.Ok (_, e1R), Result.Ok (closed2, e2R) ->
                 let exprR = mkSequential m e1R e2R
                 Result.Ok (closed2, exprR)
             | Result.Error msg, _ | _, Result.Error msg -> Result.Error msg
 
         | SeqWhile g (guardExpr, bodyExpr, spWhile, m) ->
             let resBody = ConvertSeqExprCode false false bodyExpr
-            match resBody with 
+            match resBody with
             | Result.Ok (_, bodyExprR) ->
                 let exprR = mkWhile g (spWhile, NoSpecialWhileLoopMarker, guardExpr, bodyExprR, m)
                 Result.Ok (false, exprR)
@@ -94,11 +94,11 @@ let LowerComputedListOrArraySeqExpr tcVal g amap m collectorTy overallSeqExpr =
 
         | SeqUsing g (resource, v, bodyExpr, _elemTy, spBind, m) ->
             let resBody = ConvertSeqExprCode false false bodyExpr
-            match resBody with 
+            match resBody with
             | Result.Ok (_, bodyExprR) ->
                 // printfn "found Seq.using"
                 let cleanupE = BuildDisposableCleanup tcVal g infoReader m v
-                let exprR = 
+                let exprR =
                     mkLet spBind m v resource
                         // The lowered body is a unit-typed collector call, so the try/finally result type is unit,
                         // not the struct/ref body type (which would make the optimizer store a spurious default value).
@@ -108,7 +108,7 @@ let LowerComputedListOrArraySeqExpr tcVal g amap m collectorTy overallSeqExpr =
 
         | SeqForEach g (inp, v, bodyExpr, _genElemTy, mFor, mIn, spIn) ->
             let resBody = ConvertSeqExprCode false false bodyExpr
-            match resBody with 
+            match resBody with
             | Result.Ok (_, bodyExprR) ->
                 // printfn "found Seq.for"
                 let inpElemTy = v.Type
@@ -124,11 +124,11 @@ let LowerComputedListOrArraySeqExpr tcVal g amap m collectorTy overallSeqExpr =
 
                 let exprR =
                     mkInvisibleLet mFor enumv (callNonOverloadedILMethod g amap mFor "GetEnumerator" (mkSeqTy g inpElemTy) [inp])
-                        (mkTryFinally g 
-                            (mkWhile g (spInAsWhile, NoSpecialWhileLoopMarker, guardExpr, 
-                                (mkInvisibleLet mIn v 
+                        (mkTryFinally g
+                            (mkWhile g (spInAsWhile, NoSpecialWhileLoopMarker, guardExpr,
+                                (mkInvisibleLet mIn v
                                     (callNonOverloadedILMethod g amap mIn "get_Current" inpEnumTy [enumve]))
-                                    bodyExprR, mIn), 
+                                    bodyExprR, mIn),
                             cleanupE,
                             // Lowered body is unit-typed; the try/finally result type must be unit.
                             mFor, g.unit_ty, DebugPointAtTry.No, DebugPointAtFinally.No))
@@ -138,7 +138,7 @@ let LowerComputedListOrArraySeqExpr tcVal g amap m collectorTy overallSeqExpr =
 
         | SeqTryFinally g (bodyExpr, compensation, spTry, spFinally, m) ->
             let resBody = ConvertSeqExprCode false false bodyExpr
-            match resBody with 
+            match resBody with
             | Result.Ok (_, bodyExprR) ->
                 let exprR =
                     // Lowered body is unit-typed; the try/finally result type must be unit.
@@ -152,7 +152,7 @@ let LowerComputedListOrArraySeqExpr tcVal g amap m collectorTy overallSeqExpr =
 
         | Expr.Sequential (x1, bodyExpr, NormalSeq, m) ->
             let resBody = ConvertSeqExprCode isUninteresting isTailcall bodyExpr
-            match resBody with 
+            match resBody with
             | Result.Ok (closed, bodyExprR) ->
                 let exprR = Expr.Sequential (x1, bodyExprR, NormalSeq, m)
                 Result.Ok(closed, exprR)
@@ -160,7 +160,7 @@ let LowerComputedListOrArraySeqExpr tcVal g amap m collectorTy overallSeqExpr =
 
         | Expr.Let (bind, bodyExpr, m, _) ->
             let resBody = ConvertSeqExprCode isUninteresting isTailcall bodyExpr
-            match resBody with 
+            match resBody with
             | Result.Ok (closed, bodyExprR) ->
                 let exprR = mkLetBind m bind bodyExprR
                 Result.Ok(closed, exprR)
@@ -168,7 +168,7 @@ let LowerComputedListOrArraySeqExpr tcVal g amap m collectorTy overallSeqExpr =
 
         | Expr.LetRec (binds, bodyExpr, m, _) ->
             let resBody = ConvertSeqExprCode isUninteresting isTailcall bodyExpr
-            match resBody with 
+            match resBody with
             | Result.Ok (closed, bodyExprR) ->
                 let exprR = mkLetRecBinds m binds bodyExprR
                 Result.Ok(closed, exprR)
@@ -177,9 +177,9 @@ let LowerComputedListOrArraySeqExpr tcVal g amap m collectorTy overallSeqExpr =
         | Expr.Match (spBind, mExpr, pt, targets, m, ty) ->
             // lower all the targets. abandon if any fail to lower
             let resTargets =
-                targets |> Array.map (fun (TTarget(vs, targetExpr, flags)) -> 
-                    match ConvertSeqExprCode false false targetExpr with 
-                    | Result.Ok (_, targetExprR) -> 
+                targets |> Array.map (fun (TTarget(vs, targetExpr, flags)) ->
+                    match ConvertSeqExprCode false false targetExpr with
+                    | Result.Ok (_, targetExprR) ->
                         Result.Ok (TTarget(vs, targetExprR, flags))
                     | Result.Error msg -> Result.Error msg )
 
@@ -193,7 +193,7 @@ let LowerComputedListOrArraySeqExpr tcVal g amap m collectorTy overallSeqExpr =
 
         | Expr.DebugPoint(dp, innerExpr) ->
             let resInnerExpr = ConvertSeqExprCode isUninteresting isTailcall innerExpr
-            match resInnerExpr with 
+            match resInnerExpr with
             | Result.Ok (flag, innerExprR) ->
                 let exprR = Expr.DebugPoint(dp, innerExprR)
                 Result.Ok (flag, exprR)
@@ -214,7 +214,7 @@ let LowerComputedListOrArraySeqExpr tcVal g amap m collectorTy overallSeqExpr =
                     if typeEquiv g srcTy collectorSeqTy then arbitrarySeqExpr
                     else mkCoerceExpr (arbitrarySeqExpr, collectorSeqTy, m, srcTy)
                 // If we're the final in a sequential chain then we can AddMany, Close and return
-                if isTailcall then 
+                if isTailcall then
                     let exprR = mkCallCollectorAddManyAndClose tcVal (g: TcGlobals) infoReader m collExpr arbitrarySeqExpr
                     // Return 'true' to indicate the collector was closed and the overall result of the expression is the result
                     Result.Ok(true, exprR)
@@ -224,10 +224,10 @@ let LowerComputedListOrArraySeqExpr tcVal g amap m collectorTy overallSeqExpr =
 
 
     // Perform conversion
-    match ConvertSeqExprCode true true overallSeqExpr with 
+    match ConvertSeqExprCode true true overallSeqExpr with
     | Result.Ok (closed, overallSeqExprR) ->
-        mkInvisibleLet m collVal (mkDefault (m, collectorTy)) 
-            (if closed then 
+        mkInvisibleLet m collVal (mkDefault (m, collectorTy))
+            (if closed then
                 // If we ended with AddManyAndClose then we're done
                 overallSeqExprR
              else
@@ -235,10 +235,10 @@ let LowerComputedListOrArraySeqExpr tcVal g amap m collectorTy overallSeqExpr =
                     overallSeqExprR
                     (mkCallCollectorClose tcVal g infoReader m collExpr))
         |> Some
-    | Result.Error () -> 
+    | Result.Error () ->
         None
 
-let (|OptionalCoerce|) expr = 
+let (|OptionalCoerce|) expr =
     match expr with
     | Expr.Op (TOp.Coerce, _, [arg], _) -> arg
     | _ -> expr
@@ -249,9 +249,9 @@ let (|OptionalCoerce|) expr =
 let (|OptionalSeq|_|) g amap expr =
     match expr with
     // use 'seq { ... }' as an indicator
-    | Seq g (e, elemTy) -> 
+    | Seq g (e, elemTy) ->
         ValueSome (e, elemTy)
-    | _ -> 
+    | _ ->
     // search for the relevant element type
     match tyOfExpr g expr with
     | SeqElemTy g amap expr.Range elemTy ->
@@ -316,7 +316,7 @@ module List =
                 // let mutable current = enumerableExpr
                 mkLet spFor m currentVar srcList
                     // let mutable next = current.TailOrNull
-                    (mkInvisibleLet mFor nextVar tailOrNullExpr 
+                    (mkInvisibleLet mFor nextVar tailOrNullExpr
                         // while nonNull next do
                        (mkWhile g (spInWhile, WhileLoopForCompiledForEachExprMarker, guardExpr, body, mBody)))
 
