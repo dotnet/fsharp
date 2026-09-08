@@ -581,6 +581,12 @@ type Document with
                 return! checker.ParseDocument(this, parsingOptions, userOpName)
         }
 
+    /// Parses the given F# document with the parsing options its project has already produced, or with defaults when
+    /// it has none yet: the only parse available while the project system is still loading. The defines can be the
+    /// wrong ones, so the tree describes a compilation that may never happen.
+    member this.GetFSharpQuickParseResultsAsync(userOpName) =
+        this.GetFSharpChecker().ParseDocument(this, this.GetFSharpQuickParsingOptions(), userOpName)
+
     /// Parses and checks the given F# document.
     member this.GetFSharpParseAndCheckResultsAsync(userOpName) =
         cancellableTask {
