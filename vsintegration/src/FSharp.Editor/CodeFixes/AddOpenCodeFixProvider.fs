@@ -2,6 +2,7 @@
 
 namespace Microsoft.VisualStudio.FSharp.Editor
 
+open System
 open System.Composition
 open System.Collections.Immutable
 
@@ -17,6 +18,22 @@ open CancellableTasks
 [<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = CodeFix.AddOpen); Shared>]
 type internal AddOpenCodeFixProvider [<ImportingConstructor>] (assemblyContentProvider: AssemblyContentProvider) =
     inherit CodeFixProvider()
+
+    // A name can be reachable from a great many places, and the lightbulb is a menu a person reads.
+    // The same reason Roslyn's add-import fix stops at five suggestions and its fully-qualify at three.
+    let maxOpenSuggestions = 5
+    let maxQualifySuggestions = 3
+
+    // Which assembly the entity crawler reached first is no order to offer suggestions in. Sort them
+    // the way Roslyn's add-import fix does: what `System` holds first, the rest alphabetically after.
+    let suggestionOrder (declaration: string) =
+        let opened = declaration.Substring(declaration.LastIndexOf ' ' + 1)
+
+        let isSystem =
+            opened.Equals("System", StringComparison.Ordinal)
+            || opened.StartsWith("System.", StringComparison.Ordinal)
+
+        (if isSystem then 0 else 1), declaration
 
     let fixUnderscoresInMenuText (text: string) = text.Replace("_", "__")
 
@@ -65,10 +82,12 @@ type internal AddOpenCodeFixProvider [<ImportingConstructor>] (assemblyContentPr
                 |> Seq.distinctBy (fun (name, _) -> name)
                 |> Seq.sortBy fst
                 |> Seq.toArray)
+            |> Seq.sortBy (fst >> suggestionOrder)
             |> Seq.map (fun (declaration, names) ->
                 let multipleNames = names |> Array.length > 1
                 names |> Seq.map (fun (name, ctx) -> declaration, name, ctx, multipleNames))
             |> Seq.concat
+            |> Seq.truncate maxOpenSuggestions
             |> Seq.map (fun (declaration, name, ctx, multipleNames) -> openNamespaceFix ctx name declaration multipleNames sourceText)
 
             candidates
@@ -76,6 +95,7 @@ type internal AddOpenCodeFixProvider [<ImportingConstructor>] (assemblyContentPr
             |> Seq.map (fun (entity, _, _) -> entity.FullRelativeName, entity.Qualifier)
             |> Seq.distinct
             |> Seq.sort
+            |> Seq.truncate maxQualifySuggestions
             |> Seq.map (qualifySymbolFix context)
 
         }
@@ -83,10 +103,10 @@ type internal AddOpenCodeFixProvider [<ImportingConstructor>] (assemblyContentPr
 
     override _.FixableDiagnosticIds = ImmutableArray.Create("FS0039", "FS0043")
 
-    override this.RegisterCodeFixesAsync context = context.RegisterFsharpFix this
+    override this.RegisterCodeFixesAsync context = context.RegisterFsharpFixes this
 
-    interface IFSharpCodeFixProvider with
-        member _.GetCodeFixIfAppliesAsync context =
+    interface IFSharpMultiCodeFixProvider with
+        member _.GetCodeFixesAsync context =
             cancellableTask {
                 let document = context.Document
 
@@ -163,7 +183,7 @@ type internal AddOpenCodeFixProvider [<ImportingConstructor>] (assemblyContentPr
                                 |])
 
                         ParsedInput.GetLongIdentAt parseResults.ParseTree unresolvedIdentRange.End
-                        |> Option.bind (fun longIdent ->
+                        |> Option.map (fun longIdent ->
                             let maybeUnresolvedIdents =
                                 longIdent
                                 |> List.map (fun ident ->
@@ -191,8 +211,7 @@ type internal AddOpenCodeFixProvider [<ImportingConstructor>] (assemblyContentPr
                                 createEntity symbol
                                 |> Seq.map (fun (entity, ctx) -> entity, ctx, openableIdentCount))
                             |> Seq.toList
-                            |> getSuggestionsAsCodeFixes context sourceText
-                            |> Seq.tryHead))
+                            |> getSuggestionsAsCodeFixes context sourceText))
 
-                    |> ValueOption.ofOption
+                    |> Option.defaultValue Seq.empty
             }
