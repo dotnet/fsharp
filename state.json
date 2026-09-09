@@ -50,7 +50,7 @@
       "cats": []
     },
     "20399": {
-      "sha": "2bf70a2b30ee0073a7d856a6649b7e1ceb8c7fa9",
+      "sha": "f130d0c132bafe8c1518404ce854f2db17f77d38",
       "cats": [
         "Affects-Agent-Config"
       ]
@@ -106,11 +106,11 @@
       "cats": []
     },
     "20274": {
-      "sha": "7bf44359e4d5b6d7259a83d6266619c1450113ee",
+      "sha": "eb0c6a2197eeb4f0241378ec26c7fce39385363b",
       "cats": [
         "Affects-Bootstrap",
-        "Affects-Build-Infra",
         "Affects-Compiler-Output",
+        "Affects-Design-Time",
         "Scope-Review-Needed"
       ]
     },
@@ -119,8 +119,10 @@
       "cats": []
     },
     "20126": {
-      "sha": "862aa1fa1535076524109e258ce686e54b882cbe",
-      "cats": []
+      "sha": "b3d07b2d20796e46d9f349dfb9371bfb478c9b22",
+      "cats": [
+        "Affects-Design-Time"
+      ]
     },
     "20121": {
       "sha": "6e4e9c44fede809776195138632397f4e11b485a",
