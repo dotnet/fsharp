@@ -2233,6 +2233,25 @@ module internal ExprRemapping =
         | TMeasureableRepr x -> TMeasureableRepr(remapType tmenv x)
 
     and remapTyconAug tmenv (x: TyconAugmentation) =
+        let x =
+            match tmenv.ccuRebind with
+            | None -> x
+            | Some _ ->
+                // As p_tcaug: an explicit interface implementation relinks by name and type in the reader,
+                // and can land on a default member of the same name
+                let kept =
+                    x.AdhocMembers |> List.filter (fun (isExplicitImpl, _) -> not isExplicitImpl)
+
+                let keptList: ResizeArray<bool * ValRef> | null =
+                    match kept with
+                    | [] -> null
+                    | _ -> ResizeArray kept
+
+                { x with
+                    tcaug_adhoc = NameMultiMap.ofList [ for _, vref in kept -> vref.LogicalName, vref ]
+                    tcaug_adhoc_list = keptList
+                }
+
         { x with
             tcaug_equals = x.tcaug_equals |> Option.map (mapPair (remapValRef tmenv, remapValRef tmenv))
             tcaug_compare = x.tcaug_compare |> Option.map (mapPair (remapValRef tmenv, remapValRef tmenv))

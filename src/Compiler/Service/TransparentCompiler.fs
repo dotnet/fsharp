@@ -968,7 +968,7 @@ type internal TransparentCompiler
                 // for each cached project.  So here we create a new tcGlobals, with the existing framework values
                 // and updated realsig and langversion
                 let tcGlobals =
-                    tcGlobals.WithLanguageSettings(tcConfig.langVersion, tcConfig.realsig, tcConfig.compilationMode)
+                    tcGlobals.WithLanguageSettings(tcConfig.langVersion, tcConfig.realsig, tcConfig.compilationMode, tcConfig.checkNullness)
 
                 // Note we are not calling diagnosticsLogger.GetDiagnostics() anywhere for this task.
                 // This is ok because not much can actually go wrong here.

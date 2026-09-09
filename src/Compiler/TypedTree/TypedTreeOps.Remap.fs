@@ -250,13 +250,13 @@ module internal TypeRemapping =
             TType_ucase(UnionCaseRef(remapOrRebindTyconRef tyenv tcref, n), remapTypesAux tyenv tinst)
 
         | TType_anon(anonInfo, l) as ty ->
-            let tupInfoR = remapTupInfoAux tyenv anonInfo.TupInfo
+            let anonInfoR = remapAnonInfoAux tyenv anonInfo
             let lR = remapTypesAux tyenv l
 
-            if anonInfo.TupInfo === tupInfoR && l === lR then
+            if anonInfo === anonInfoR && l === lR then
                 ty
             else
-                TType_anon(AnonRecdTypeInfo.Create(anonInfo.Assembly, tupInfoR, anonInfo.SortedIds), lR)
+                TType_anon(anonInfoR, lR)
 
         | TType_tuple(tupInfo, l) as ty ->
             let tupInfoR = remapTupInfoAux tyenv tupInfo
@@ -314,6 +314,19 @@ module internal TypeRemapping =
             | Some(TType_measure unt) -> remapMeasureAux tyenv unt
             | Some ty -> failwithf "incorrect kinds: %A" ty
 
+    and remapAnonInfoAux tyenv (anonInfo: AnonRecdTypeInfo) =
+        let tupInfoR = remapTupInfoAux tyenv anonInfo.TupInfo
+
+        let ccuR =
+            match tyenv.ccuRebind with
+            | Some rebind -> rebind anonInfo.Assembly
+            | None -> anonInfo.Assembly
+
+        if anonInfo.TupInfo === tupInfoR && obj.ReferenceEquals(ccuR, anonInfo.Assembly) then
+            anonInfo
+        else
+            AnonRecdTypeInfo.Create(ccuR, tupInfoR, anonInfo.SortedIds)
+
     and remapTupInfoAux _tyenv unt =
         match unt with
         | TupInfo.Const _ -> unt
@@ -366,7 +379,8 @@ module internal TypeRemapping =
                         )
                     | FSRecdFieldSln(tinst, rfref, isSet) ->
                         FSRecdFieldSln(remapTypesAux tyenv tinst, remapRecdFieldRef tyenv.tyconRefRemap rfref, isSet)
-                    | FSAnonRecdFieldSln(anonInfo, tinst, n) -> FSAnonRecdFieldSln(anonInfo, remapTypesAux tyenv tinst, n)
+                    | FSAnonRecdFieldSln(anonInfo, tinst, n) ->
+                        FSAnonRecdFieldSln(remapAnonInfoAux tyenv anonInfo, remapTypesAux tyenv tinst, n)
                     | BuiltInSln -> BuiltInSln
                     | ClosedExprSln e -> ClosedExprSln e // no need to remap because it is a closed expression, referring only to external types
 
@@ -386,7 +400,10 @@ module internal TypeRemapping =
         // in the same way as types
         let newSlnCell = ref slnCell
 
-        TTrait(tysR, nm, flags, argTysR, retTyR, source, newSlnCell, traitCtxt)
+        // u_trait reads none: the producer's context would keep a reader's own extension members out
+        let traitCtxtR = if tyenv.ccuRebind.IsSome then None else traitCtxt
+
+        TTrait(tysR, nm, flags, argTysR, retTyR, source, newSlnCell, traitCtxtR)
 
     and bindTypars tps tyargs tpinst =
         match tps with

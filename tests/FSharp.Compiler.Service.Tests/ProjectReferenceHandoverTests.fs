@@ -79,13 +79,16 @@ let private ccuOf (assembly: FSharpAssembly) =
         | :? CcuThunk as ccu -> Some ccu.Contents
         | _ -> None)
 
-/// The ccu the given project ended up with for one of its references
-let private referencedCcu (checker: FSharpChecker) (options: FSharpProjectOptions) name =
+/// One of the given project's references, as the project sees it
+let private referencedAssembly (checker: FSharpChecker) (options: FSharpProjectOptions) name =
     let results = checker.ParseAndCheckProject options |> Async.RunSynchronously
 
     results.ProjectContext.GetReferencedAssemblies()
     |> List.find (fun assembly -> assembly.SimpleName = name)
-    |> ccuOf
+
+/// The ccu the given project ended up with for one of its references
+let private referencedCcu checker options name =
+    referencedAssembly checker options name |> ccuOf
 
 let private errorsIn (checker: FSharpChecker) (options: FSharpProjectOptions) =
     let results = checker.ParseAndCheckProject options |> Async.RunSynchronously
@@ -98,6 +101,7 @@ let private librarySource =
 module Library
 
 let publicValue = 1
+let anonymous = {| Value = 1 |}
 let internal secretValue = 2
 type internal SecretType = { S: int }
 type Colour = internal Red | Green
@@ -479,12 +483,8 @@ let private describeSymbol (s: FSharpSymbol) =
         @ attribsOfSymbol s)
 
 /// Everything a host can see of a referenced project, however this build of it arrived
-let private referencedSurface (checker: FSharpChecker) (options: FSharpProjectOptions) name =
-    let results = checker.ParseAndCheckProject options |> Async.RunSynchronously
-
-    let assembly =
-        results.ProjectContext.GetReferencedAssemblies()
-        |> List.find (fun a -> a.SimpleName = name)
+let private referencedSurface checker options name =
+    let assembly = referencedAssembly checker options name
 
     allSymbolsInEntities true assembly.Contents.Entities
     |> List.map describeSymbol
@@ -655,3 +655,150 @@ let carry (v: int) : Shared.Carried = Shared.make v
     // The builder failing leaves no error behind, so the signature is what says it ran at all
     Assert.NotEmpty(results.AssemblySignature.Entities)
     Assert.NotEmpty(results.ProjectContext.GetReferencedAssemblies())
+
+[<Fact>]
+let ``A project sharing the framework import does not inherit nullness checking`` () =
+    let checker = mkChecker true
+
+    let _, warm =
+        projectOptions checker "module Warm\nlet x = 1\n" [] [| "--langversion:8.0"; "--checknulls+" |]
+
+    Assert.Empty(errorsIn checker warm)
+
+    let _, target =
+        projectOptions
+            checker
+            "module Target\nlet x: string = null\n"
+            []
+            [| "--langversion:9.0"; "--checknulls-"; "--warnaserror:3261" |]
+
+    Assert.Empty(errorsIn checker target)
+
+[<Fact>]
+let ``An assembly built against a taken project is not shared across bindings of it`` () =
+    let checker = mkChecker true
+
+    let dependencySource = "module Dependency\ntype Marker = Marker\n"
+    let sharedSource = "module Shared\ntype Carried = { Value: Dependency.Marker option }\n"
+
+    let dependencyDll = compileDll checker "Dependency" dependencySource []
+    let sharedDll = compileDll checker "Shared" sharedSource [ dependencyDll ]
+
+    let middleDll =
+        compileDll checker "Middle" "module Middle\nlet carry (x: Shared.Carried) = x\n" [ sharedDll; dependencyDll ]
+
+    let dependencyProject () =
+        projectOptionsNamed checker (Some "Dependency") [| writeSource dependencySource |] [] [||]
+
+    let first = dependencyProject ()
+    let second = dependencyProject ()
+
+    let shared =
+        projectOptionsNamed checker (Some "Shared") [| writeSource sharedSource |] [ first ] [||]
+
+    let consumerWith dependency =
+        projectOptionsNamed
+            checker
+            None
+            [| writeSource "module Consumer\nlet x: Shared.Carried = Middle.carry { Value = None }\n" |]
+            [ shared; dependency ]
+            [| "-r:" + middleDll |]
+        |> snd
+
+    Assert.Empty(errorsIn checker (consumerWith first))
+    Assert.Empty(errorsIn checker (consumerWith second))
+
+[<Fact>]
+let ``A consumer's extension members solve a handed-over member constraint`` () =
+    let librarySource =
+        "module Library\nlet inline negate (x: ^T) = (^T : (static member Negate: ^T -> ^T) x)\n"
+
+    let consumerSource =
+        "module Consumer\ntype System.Int32 with\n    static member Negate(x: int) = -x\nlet value = Library.negate 42\n"
+
+    let errorsWith share =
+        let checker = mkChecker share
+        let library = projectOptions checker librarySource [] [||]
+        let _, consumer = projectOptions checker consumerSource [ library ] [||]
+        errorsIn checker consumer
+
+    Assert.Empty(errorsWith false)
+    Assert.Empty(errorsWith true)
+
+[<Fact>]
+let ``A type from an assembly the consumer does not reference is still an error`` () =
+    let errorsWith share =
+        let checker = mkChecker share
+        let leaf = projectOptions checker "module Leaf\ntype Carried = { Value: int }\n" [] [||]
+
+        let middle =
+            projectOptions checker "module Middle\nlet make () : Leaf.Carried = { Value = 1 }\n" [ leaf ] [||]
+
+        let _, consumer =
+            projectOptions checker "module Consumer\nlet value = (Middle.make()).Value\n" [ middle ] [||]
+
+        errorsIn checker consumer
+        |> Array.map (fun d -> d.ErrorNumber)
+        |> Array.distinct
+        |> Array.sort
+        |> List.ofArray
+
+    let unpickled = errorsWith false
+    Assert.True(List.contains 74 unpickled, sprintf "%A" unpickled)
+    Assert.Equal<int list>(unpickled, errorsWith true)
+
+[<Fact>]
+let ``A handed-over anonymous record type is owned by the referenced assembly`` () =
+    let ownerWith share =
+        let checker = mkChecker share
+        let dll, libraryOptions = projectOptions checker "module Library\nlet record = {| Value = 1 |}\n" [] [||]
+
+        let _, consumer =
+            projectOptions checker (consumerOf "let record = Library.record") [ dll, libraryOptions ] [||]
+
+        Assert.Empty(errorsIn checker consumer)
+
+        let library =
+            (referencedAssembly checker consumer (Path.GetFileNameWithoutExtension dll)).Contents.FindEntityByPath [ "Library" ]
+
+        let record = library.Value.MembersFunctionsAndValues |> Seq.find (fun v -> v.LogicalName = "record")
+        record.FullType.AnonRecordTypeDetails.Assembly.FileName = Some dll
+
+    Assert.True(ownerWith false)
+    Assert.True(ownerWith true)
+
+[<Fact>]
+let ``A handed-over type does not list its explicit interface implementations`` () =
+    let librarySource =
+        """
+module Library
+
+type IFoo =
+    abstract M: unit -> int
+
+type C() =
+    abstract M: unit -> int
+    default _.M() = 2
+
+    interface IFoo with
+        member _.M() = 1
+"""
+
+    let membersWith share =
+        let checker = mkChecker share
+        let library = projectOptions checker librarySource [] [||]
+        let libraryName = Path.GetFileNameWithoutExtension(fst library)
+        let _, consumer = projectOptions checker (consumerOf "let c = Library.C()") [ library ] [||]
+        Assert.Empty(errorsIn checker consumer)
+
+        let c =
+            (referencedAssembly checker consumer libraryName).Contents.FindEntityByPath [ "Library"; "C" ]
+
+        c.Value.MembersFunctionsAndValues
+        |> Seq.filter (fun m -> m.LogicalName = "M" && not m.IsDispatchSlot)
+        |> Seq.map (fun m -> m.DisplayName, m.IsExplicitInterfaceImplementation)
+        |> Seq.toArray
+
+    let unpickled = membersWith false
+    Assert.Equal<(string * bool)[]>([| "M", false |], unpickled)
+    Assert.Equal<(string * bool)[]>(unpickled, membersWith true)

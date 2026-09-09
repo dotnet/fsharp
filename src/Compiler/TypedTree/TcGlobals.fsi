@@ -158,7 +158,11 @@ type internal TcGlobals =
 
     /// The same framework import at another project's language settings; every entity is shared.
     member WithLanguageSettings:
-        newLangVersion: Features.LanguageVersion * newRealsig: bool * newCompilationMode: CompilationMode -> TcGlobals
+        newLangVersion: Features.LanguageVersion *
+        newRealsig: bool *
+        newCompilationMode: CompilationMode *
+        newCheckNullness: bool ->
+            TcGlobals
 
     member directoryToResolveRelativePaths: string
 

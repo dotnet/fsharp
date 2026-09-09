@@ -2632,6 +2632,10 @@ and [<Sealed>] TcImports
             for aref in data.ILAssemblyRefs do
                 names.Add aref.Name
 
+            match data with
+            | :? IImportedProjectCcu as projectCcu -> names.AddRange projectCcu.ReferencedCcuNames
+            | _ -> ()
+
             let mutable multiModule = false
 
             match data.TryGetILModuleDef() |> Option.bind (fun ilModule -> ilModule.Manifest) with

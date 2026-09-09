@@ -563,7 +563,7 @@ type FrameworkImportsCache(size) =
         // for each cached project.  So here we create a new tcGlobals, with the existing framework values
         // and updated realsig and langversion
         let tcGlobals =
-            tcGlobals.WithLanguageSettings(tcConfig.langVersion, tcConfig.realsig, tcConfig.compilationMode)
+            tcGlobals.WithLanguageSettings(tcConfig.langVersion, tcConfig.realsig, tcConfig.compilationMode, tcConfig.checkNullness)
 
         return tcGlobals, frameworkTcImports, nonFrameworkResolutions, unresolved
       }
@@ -649,22 +649,25 @@ type RawFSharpAssemblyDataBackedByLanguageService (tcConfig, tcGlobals: TcGlobal
     let bindTree (readerTcGlobals: TcGlobals) (resolve: string -> CcuThunk option) =
         let boundTo = Dictionary<string, CcuThunk * bool>(StringComparer.OrdinalIgnoreCase)
 
+        let viewedCcu = CcuThunk.CreateDelayed assemblyName
+
         // The thunk may still be delayed, so the reference is taken rather than fixed up. A name the
-        // reader does not have keeps ours: it has no second copy to disagree with.
+        // reader does not have stays unresolved, as u_ccuref leaves it, so that using it is an error.
         let ccuRebind =
             Some(fun (ccu: CcuThunk) ->
+                // Anonymous record types name the checking ccu, of which generatedCcu is a clone
+                if String.Equals(ccu.AssemblyName, assemblyName, StringComparison.OrdinalIgnoreCase) then viewedCcu else
+
                 match boundTo.TryGetValue ccu.AssemblyName with
                 | true, (already, _) -> already
                 | _ ->
                     let entry =
                         match resolve ccu.AssemblyName with
                         | Some readers -> readers, true
-                        | None -> ccu, false
+                        | None -> CcuThunk.CreateDelayed ccu.AssemblyName, false
 
                     boundTo[ccu.AssemblyName] <- entry
                     fst entry)
-
-        let viewedCcu = CcuThunk.CreateDelayed assemblyName
 
         let ilScopeRef = ILScopeRef.Assembly ilAssemRef
 
@@ -757,8 +760,9 @@ type RawFSharpAssemblyDataBackedByLanguageService (tcConfig, tcGlobals: TcGlobal
                     && List.forall2
                         (fun (n1: string, c1: CcuThunk, r1) (n2: string, c2: CcuThunk, r2) ->
                             String.Equals(n1, n2, StringComparison.OrdinalIgnoreCase)
-                            && obj.ReferenceEquals(c1, c2)
-                            && r1 = r2)
+                            && r1 = r2
+                            // An unresolved name gets a thunk of its own per copy
+                            && (not r1 || obj.ReferenceEquals(c1, c2)))
                         other
                         bindings
 

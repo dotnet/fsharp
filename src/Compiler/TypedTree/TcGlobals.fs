@@ -1178,11 +1178,12 @@ type TcGlobals(
 
   member _.realsig = realsig
 
-  member g.WithLanguageSettings(newLangVersion, newRealsig, newCompilationMode) =
+  member g.WithLanguageSettings(newLangVersion, newRealsig, newCompilationMode, newCheckNullness) =
       if
           newLangVersion = langVersion
           && newRealsig = realsig
           && newCompilationMode = compilationMode
+          && newCheckNullness = checkNullness
       then
           g
       else
@@ -1193,7 +1194,7 @@ type TcGlobals(
                   fslibCcu,
                   directoryToResolveRelativePaths,
                   isInteractive,
-                  checkNullness,
+                  newCheckNullness,
                   useReflectionFreeCodeGen,
                   tryFindSysTypeCcuHelper,
                   emitDebugInfoInQuotations,
