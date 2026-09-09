@@ -223,6 +223,31 @@ let main _argv = if run() = 6 then 0 else 1
 """
         |> compileOptimizedAndRun realsig
 
+    [<Theory; InlineData(true, true); InlineData(true, false); InlineData(false, true); InlineData(false, false)>]
+    let ``Namespace-rec forward values are initialized`` (realsig: bool, optimize: bool) =
+        let source = """
+namespace rec Repro
+module Values =
+    let x = C(42)
+type C(value: int) =
+    member _.Value = value
+module Check =
+    do if Values.x.Value <> 42 then failwith "Not initialized"
+"""
+        let main = """
+module Main
+[<EntryPoint>]
+let main _ = Repro.Values.x.Value - 42
+"""
+        FSharp source
+        |> withAdditionalSourceFile (FsSourceWithFileName "Main.fs" main)
+        |> withRealInternalSignature realsig
+        |> withOptimization optimize
+        |> withOptions ["--nowarn:22,40"]
+        |> asExe
+        |> compile
+        |> verifyPEAndRun
+
     [<Theory; InlineData(true); InlineData(false)>]
     let ``Quotation body is not affected by TLR`` (realsig: bool) =
         """module Sample

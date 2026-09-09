@@ -10687,7 +10687,10 @@ and AllocValReprWithinExpr cenv cgbuf endMark cloc v eenv =
     let effectiveCloc =
         if v.IsCompiledAsTopLevel && not v.IsMemberOrModuleBinding then
             if eenv.moduleCloc.Enclosing.IsEmpty then
-                CompLocForTopLevelFunctions eenv.moduleCloc
+                if IsFSharpValCompiledAsMethod cenv.g v then
+                    CompLocForTopLevelFunctions eenv.moduleCloc
+                else
+                    CompLocForInitClass eenv.moduleCloc
             else
                 eenv.moduleCloc
         else
