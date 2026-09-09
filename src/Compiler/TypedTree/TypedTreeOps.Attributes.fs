@@ -508,6 +508,21 @@ module internal AttributeHelpers =
 
         flags
 
+    // Keep the cache-miss computation fully applied to avoid allocating a query closure.
+    let private ensureEntityFlags (g: TcGlobals) (entity: Entity) : WellKnownEntityAttribs =
+        let wa = entity.EntityAttribs
+
+        if wa.NeedsCompute then
+            let attribs = wa.AsList()
+
+            let computed =
+                WellKnownEntityAttribs(attribs, computeEntityWellKnownFlags g attribs)
+
+            entity.SetEntityAttribs computed
+            computed
+        else
+            wa
+
     /// Find the first attribute matching a specific well-known entity flag.
     let tryFindEntityAttribByFlag g flag attribs =
         tryFindAttribByClassifier classifyEntityAttrib WellKnownEntityAttributes.None g flag attribs
@@ -552,14 +567,12 @@ module internal AttributeHelpers =
     let attribsHaveEntityFlag g (flag: WellKnownEntityAttributes) (attribs: Attribs) =
         attribsHaveFlag classifyEntityAttrib WellKnownEntityAttributes.None g flag attribs
 
-    /// Map a WellKnownILAttributes flag to its WellKnownValAttributes equivalent.
     /// Check if an Entity has a specific well-known attribute, computing and caching flags if needed.
     let EntityHasWellKnownAttribute (g: TcGlobals) (flag: WellKnownEntityAttributes) (entity: Entity) : bool =
-        entity.HasWellKnownAttribute(flag, computeEntityWellKnownFlags g)
+        (ensureEntityFlags g entity).HasWellKnownAttribute flag
 
     /// Get the computed well-known attribute flags for an entity.
-    let GetEntityWellKnownFlags (g: TcGlobals) (entity: Entity) : WellKnownEntityAttributes =
-        entity.GetWellKnownEntityFlags(computeEntityWellKnownFlags g)
+    let GetEntityWellKnownFlags (g: TcGlobals) (entity: Entity) : WellKnownEntityAttributes = (ensureEntityFlags g entity).Flags
 
     /// Classify a single Val-level attribute, returning its well-known flag (or None).
     let classifyValAttrib (g: TcGlobals) (attrib: Attrib) : WellKnownValAttributes =
@@ -668,6 +681,19 @@ module internal AttributeHelpers =
 
         flags
 
+    let inline private ensureValFlags
+        (g: TcGlobals)
+        (wa: WellKnownValAttribs)
+        ([<InlineIfLambda>] setAttribs: WellKnownValAttribs -> unit)
+        : WellKnownValAttribs =
+        if wa.NeedsCompute then
+            let attribs = wa.AsList()
+            let computed = WellKnownValAttribs(attribs, computeValWellKnownFlags g attribs)
+            setAttribs computed
+            computed
+        else
+            wa
+
     /// Find the first attribute in a list that matches a specific well-known val flag.
     let tryFindValAttribByFlag g flag attribs =
         tryFindAttribByClassifier classifyValAttrib WellKnownValAttributes.None g flag attribs
@@ -712,17 +738,11 @@ module internal AttributeHelpers =
 
     /// Check if an ArgReprInfo has a specific well-known attribute, computing and caching flags if needed.
     let ArgReprInfoHasWellKnownAttribute (g: TcGlobals) (flag: WellKnownValAttributes) (argInfo: ArgReprInfo) : bool =
-        let struct (result, waNew, changed) =
-            argInfo.Attribs.CheckFlag(flag, computeValWellKnownFlags g)
-
-        if changed then
-            argInfo.Attribs <- waNew
-
-        result
+        (ensureValFlags g argInfo.Attribs (fun attribs -> argInfo.Attribs <- attribs)).HasWellKnownAttribute flag
 
     /// Check if a Val has a specific well-known attribute, computing and caching flags if needed.
     let ValHasWellKnownAttribute (g: TcGlobals) (flag: WellKnownValAttributes) (v: Val) : bool =
-        v.HasWellKnownAttribute(flag, computeValWellKnownFlags g)
+        (ensureValFlags g v.ValAttribs (fun attribs -> v.SetValAttribs attribs)).HasWellKnownAttribute flag
 
     /// Query a three-state bool attribute on an entity. Returns bool option.
     let EntityTryGetBoolAttribute
@@ -731,13 +751,12 @@ module internal AttributeHelpers =
         (falseFlag: WellKnownEntityAttributes)
         (entity: Entity)
         : bool option =
-        if not (entity.HasWellKnownAttribute(trueFlag ||| falseFlag, computeEntityWellKnownFlags g)) then
+        let wa = ensureEntityFlags g entity
+
+        if not (wa.HasWellKnownAttribute(trueFlag ||| falseFlag)) then
             Option.None
         else
-            let struct (hasTrue, _, _) =
-                entity.EntityAttribs.CheckFlag(trueFlag, computeEntityWellKnownFlags g)
-
-            if hasTrue then Some true else Some false
+            Some(wa.HasWellKnownAttribute trueFlag)
 
     /// Query a three-state bool attribute on a Val. Returns bool option.
     let ValTryGetBoolAttribute
@@ -746,13 +765,12 @@ module internal AttributeHelpers =
         (falseFlag: WellKnownValAttributes)
         (v: Val)
         : bool option =
-        if not (v.HasWellKnownAttribute(trueFlag ||| falseFlag, computeValWellKnownFlags g)) then
+        let wa = ensureValFlags g v.ValAttribs (fun attribs -> v.SetValAttribs attribs)
+
+        if not (wa.HasWellKnownAttribute(trueFlag ||| falseFlag)) then
             Option.None
         else
-            let struct (hasTrue, _, _) =
-                v.ValAttribs.CheckFlag(trueFlag, computeValWellKnownFlags g)
-
-            if hasTrue then Some true else Some false
+            Some(wa.HasWellKnownAttribute trueFlag)
 
     /// Shared core for binding attributes on type definitions, supporting an optional
     /// WellKnownILAttributes flag for O(1) early exit on the IL metadata path.
