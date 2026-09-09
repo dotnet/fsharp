@@ -11,12 +11,14 @@ open CodeFixTestFramework
 
 let private codeFix = AddOpenCodeFixProvider(AssemblyContentProvider())
 
-/// Every `open` suggestion the fix offers, in the order the lightbulb lists them.
+/// Everything the fix offers, in the order the lightbulb lists it: the opens, then the qualifications.
+let private allFixes code mode =
+    codeFix |> multiFix code mode |> Seq.toList
+
+/// Just the `open` suggestions, for the tests that are about where the declaration lands.
 let private openFixes code mode =
-    codeFix
-    |> multiFix code mode
-    |> Seq.filter (fun fix -> fix.Message.StartsWith("open ", StringComparison.Ordinal))
-    |> Seq.toList
+    allFixes code mode
+    |> List.filter (fun fix -> fix.Message.StartsWith("open ", StringComparison.Ordinal))
 
 [<Fact>]
 let ``Fixes FS0039 for missing opens - basic`` () =
@@ -553,6 +555,29 @@ let readFile () = File.ReadAllText "example.txt"
     let actual = openFixes code Auto
 
     Assert.Equal<TestCodeFix list>(expected, actual)
+
+[<Fact>] // Qualifying the name in place is offered alongside opening what holds it
+let ``Offers qualifying the name after the opens`` () =
+    let code =
+        """module Module1
+
+let readFile () = File.ReadAllText "example.txt"
+"""
+
+    let expected =
+        [
+            "open System.IO"
+            "open type System.Net.WebRequestMethods"
+            // Qualifications, three of them at most, `System.IO.File` twice over because the type and
+            // the member being reached through it are both candidates.
+            "System.IO.File"
+            "System.IO.File.ReadAllText"
+            "System.Net.WebRequestMethods.File"
+        ]
+
+    let actual = allFixes code Auto |> List.map _.Message
+
+    Assert.Equal<string list>(expected, actual)
 
 [<Fact>] // `WriteLine` is a static member of four different types, `System` ones offered first
 let ``Offers every type a static member can be resolved from`` () =
