@@ -441,7 +441,6 @@ type cenv =
 
       specializedInlineVals: HashMultiMap<Stamp, TType * Expr>
 
-      /// Cache for 'HasForcedInlineBody'
       forcedInlineVals: Dictionary<Stamp, bool>
 
       signatureHidingInfo: SignatureHidingInfo
@@ -2469,11 +2468,8 @@ let instrIsFrameLocal instr =
     | I_localloc -> true
     | _ -> false
 
-/// The FSharp.Core values expanding to frame-local IL are marked [<NoDynamicInvocation>] and so are
-/// always inlined. A user 'inline' function wrapping one inherits the property but not the
-/// attribute - the callee is already inlined into the recorded body, leaving only its IL - so
-/// recover it from the body and propagate it through further wrappers.
-/// See https://github.com/dotnet/fsharp/issues/20063.
+/// Frame-local IL and resumable templates must remain in the caller's method.
+/// Inline wrappers inherit this requirement even when they do not inherit the callee's attributes.
 let rec HasForcedInlineBody cenv env (vref: ValRef) =
     let stamp = vref.Stamp
 

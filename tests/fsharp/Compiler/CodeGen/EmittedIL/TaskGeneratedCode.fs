@@ -36,6 +36,19 @@ let testTask() = task { return 1 }
             """,
             (fun verifier -> verifier.VerifyIL [
             """
+.class public abstract auto ansi sealed Test
+       extends [runtime]System.Object
+{
+  .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 07 00 00 00 00 00 )
+  .class auto autochar sealed nested assembly beforefieldinit specialname testTask@4
+         extends [runtime]System.ValueType
+         implements [runtime]System.Runtime.CompilerServices.IAsyncStateMachine,
+                    class [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.IResumableStateMachine`1<valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<int32>>
+  {
+    .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 )
+    .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 06 00 00 00 00 00 )
+    .field public valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<int32> Data
+    .field public int32 ResumptionPoint
     .method public strict virtual instance void MoveNext() cil managed
     {
       .override [runtime]System.Runtime.CompilerServices.IAsyncStateMachine::MoveNext
@@ -98,6 +111,80 @@ let testTask() = task { return 1 }
       IL_005a:  call       instance void valuetype [netstandard]System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1<int32>::SetException(class [netstandard]System.Exception)
       IL_005f:  ret
     }
+
+    .method public strict virtual instance void SetStateMachine(class [runtime]System.Runtime.CompilerServices.IAsyncStateMachine state) cil managed
+    {
+      .override [runtime]System.Runtime.CompilerServices.IAsyncStateMachine::SetStateMachine
+
+      .maxstack  8
+      IL_0000:  ldarg.0
+      IL_0001:  ldflda     valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<int32> Test/testTask@4::Data
+      IL_0006:  ldflda     valuetype [runtime]System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1<!0> valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<int32>::MethodBuilder
+      IL_000b:  ldarg.1
+      IL_000c:  call       instance void valuetype [netstandard]System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1<int32>::SetStateMachine(class [netstandard]System.Runtime.CompilerServices.IAsyncStateMachine)
+      IL_0011:  ret
+    }
+
+    .method public strict virtual instance int32 get_ResumptionPoint() cil managed
+    {
+      .override  method instance int32 class [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.IResumableStateMachine`1<valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<int32>>::get_ResumptionPoint()
+
+      .maxstack  8
+      IL_0000:  ldarg.0
+      IL_0001:  ldfld      int32 Test/testTask@4::ResumptionPoint
+      IL_0006:  ret
+    }
+
+    .method public strict virtual instance valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<int32> get_Data() cil managed
+    {
+      .override  method instance !0 class [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.IResumableStateMachine`1<valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<int32>>::get_Data()
+
+      .maxstack  8
+      IL_0000:  ldarg.0
+      IL_0001:  ldfld      valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<int32> Test/testTask@4::Data
+      IL_0006:  ret
+    }
+
+    .method public strict virtual instance void set_Data(valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<int32> 'value') cil managed
+    {
+      .override  method instance void class [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.IResumableStateMachine`1<valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<int32>>::set_Data(!0)
+
+      .maxstack  8
+      IL_0000:  ldarg.0
+      IL_0001:  ldarg.1
+      IL_0002:  stfld      valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<int32> Test/testTask@4::Data
+      IL_0007:  ret
+    }
+
+  }
+
+  .method public static class [runtime]System.Threading.Tasks.Task`1<int32> testTask() cil managed
+  {
+
+    .maxstack  4
+    .locals init (valuetype Test/testTask@4 V_0,
+             valuetype Test/testTask@4& V_1)
+    IL_0000:  ldloca.s   V_0
+    IL_0002:  initobj    Test/testTask@4
+    IL_0008:  ldloca.s   V_0
+    IL_000a:  stloc.1
+    IL_000b:  ldloc.1
+    IL_000c:  ldflda     valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<int32> Test/testTask@4::Data
+    IL_0011:  call       valuetype [netstandard]System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1<!0> valuetype [netstandard]System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1<int32>::Create()
+    IL_0016:  stfld      valuetype [runtime]System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1<!0> valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<int32>::MethodBuilder
+    IL_001b:  ldloc.1
+    IL_001c:  ldflda     valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<int32> Test/testTask@4::Data
+    IL_0021:  ldflda     valuetype [runtime]System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1<!0> valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<int32>::MethodBuilder
+    IL_0026:  ldloc.1
+    IL_0027:  call       instance void valuetype [netstandard]System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1<int32>::Start<valuetype Test/testTask@4>(!!0&)
+    IL_002c:  ldloc.1
+    IL_002d:  ldflda     valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<int32> Test/testTask@4::Data
+    IL_0032:  ldflda     valuetype [runtime]System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1<!0> valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<int32>::MethodBuilder
+    IL_0037:  call       instance class [netstandard]System.Threading.Tasks.Task`1<!0> valuetype [netstandard]System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1<int32>::get_Task()
+    IL_003c:  ret
+  }
+
+}
                 """
             ]))
 
@@ -197,6 +284,21 @@ let testTask(t: Task<int>) = task { let! res = t in return res+1 }
             """,
             (fun verifier -> verifier.VerifyIL [
             """
+.class public abstract auto ansi sealed Test
+       extends [runtime]System.Object
+{
+  .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 07 00 00 00 00 00 )
+  .class auto autochar sealed nested assembly beforefieldinit specialname testTask@4
+         extends [runtime]System.ValueType
+         implements [runtime]System.Runtime.CompilerServices.IAsyncStateMachine,
+                    class [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.IResumableStateMachine`1<valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<int32>>
+  {
+    .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 )
+    .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 06 00 00 00 00 00 )
+    .field public valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<int32> Data
+    .field public int32 ResumptionPoint
+    .field public class [runtime]System.Threading.Tasks.Task`1<int32> t
+    .field public valuetype [runtime]System.Runtime.CompilerServices.TaskAwaiter`1<int32> awaiter
     .method public strict virtual instance void MoveNext() cil managed
     {
       .override [runtime]System.Runtime.CompilerServices.IAsyncStateMachine::MoveNext
@@ -360,6 +462,83 @@ let testTask(t: Task<int>) = task { let! res = t in return res+1 }
       IL_0107:  call       instance void valuetype [netstandard]System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1<int32>::SetException(class [netstandard]System.Exception)
       IL_010c:  ret
     }
+
+    .method public strict virtual instance void SetStateMachine(class [runtime]System.Runtime.CompilerServices.IAsyncStateMachine state) cil managed
+    {
+      .override [runtime]System.Runtime.CompilerServices.IAsyncStateMachine::SetStateMachine
+
+      .maxstack  8
+      IL_0000:  ldarg.0
+      IL_0001:  ldflda     valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<int32> Test/testTask@4::Data
+      IL_0006:  ldflda     valuetype [runtime]System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1<!0> valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<int32>::MethodBuilder
+      IL_000b:  ldarg.1
+      IL_000c:  call       instance void valuetype [netstandard]System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1<int32>::SetStateMachine(class [netstandard]System.Runtime.CompilerServices.IAsyncStateMachine)
+      IL_0011:  ret
+    }
+
+    .method public strict virtual instance int32 get_ResumptionPoint() cil managed
+    {
+      .override  method instance int32 class [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.IResumableStateMachine`1<valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<int32>>::get_ResumptionPoint()
+
+      .maxstack  8
+      IL_0000:  ldarg.0
+      IL_0001:  ldfld      int32 Test/testTask@4::ResumptionPoint
+      IL_0006:  ret
+    }
+
+    .method public strict virtual instance valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<int32> get_Data() cil managed
+    {
+      .override  method instance !0 class [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.IResumableStateMachine`1<valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<int32>>::get_Data()
+
+      .maxstack  8
+      IL_0000:  ldarg.0
+      IL_0001:  ldfld      valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<int32> Test/testTask@4::Data
+      IL_0006:  ret
+    }
+
+    .method public strict virtual instance void set_Data(valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<int32> 'value') cil managed
+    {
+      .override  method instance void class [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.IResumableStateMachine`1<valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<int32>>::set_Data(!0)
+
+      .maxstack  8
+      IL_0000:  ldarg.0
+      IL_0001:  ldarg.1
+      IL_0002:  stfld      valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<int32> Test/testTask@4::Data
+      IL_0007:  ret
+    }
+
+  }
+
+  .method public static class [runtime]System.Threading.Tasks.Task`1<int32> testTask(class [runtime]System.Threading.Tasks.Task`1<int32> t) cil managed
+  {
+
+    .maxstack  4
+    .locals init (valuetype Test/testTask@4 V_0,
+             valuetype Test/testTask@4& V_1)
+    IL_0000:  ldloca.s   V_0
+    IL_0002:  initobj    Test/testTask@4
+    IL_0008:  ldloca.s   V_0
+    IL_000a:  stloc.1
+    IL_000b:  ldloc.1
+    IL_000c:  ldarg.0
+    IL_000d:  stfld      class [runtime]System.Threading.Tasks.Task`1<int32> Test/testTask@4::t
+    IL_0012:  ldloc.1
+    IL_0013:  ldflda     valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<int32> Test/testTask@4::Data
+    IL_0018:  call       valuetype [netstandard]System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1<!0> valuetype [netstandard]System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1<int32>::Create()
+    IL_001d:  stfld      valuetype [runtime]System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1<!0> valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<int32>::MethodBuilder
+    IL_0022:  ldloc.1
+    IL_0023:  ldflda     valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<int32> Test/testTask@4::Data
+    IL_0028:  ldflda     valuetype [runtime]System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1<!0> valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<int32>::MethodBuilder
+    IL_002d:  ldloc.1
+    IL_002e:  call       instance void valuetype [netstandard]System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1<int32>::Start<valuetype Test/testTask@4>(!!0&)
+    IL_0033:  ldloc.1
+    IL_0034:  ldflda     valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<int32> Test/testTask@4::Data
+    IL_0039:  ldflda     valuetype [runtime]System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1<!0> valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<int32>::MethodBuilder
+    IL_003e:  call       instance class [netstandard]System.Threading.Tasks.Task`1<!0> valuetype [netstandard]System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1<int32>::get_Task()
+    IL_0043:  ret
+  }
+
+}
                 """
             ]))
 
@@ -485,6 +664,19 @@ let testTask() = task { try 1+1 finally System.Console.WriteLine("finally") }
             """,
             (fun verifier -> verifier.VerifyIL [
             """
+.class public abstract auto ansi sealed Test
+       extends [runtime]System.Object
+{
+  .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 07 00 00 00 00 00 )
+  .class auto autochar sealed nested assembly beforefieldinit specialname testTask@4
+         extends [runtime]System.ValueType
+         implements [runtime]System.Runtime.CompilerServices.IAsyncStateMachine,
+                    class [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.IResumableStateMachine`1<valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<class [FSharp.Core]Microsoft.FSharp.Core.Unit>>
+  {
+    .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 )
+    .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 06 00 00 00 00 00 )
+    .field public valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<class [FSharp.Core]Microsoft.FSharp.Core.Unit> Data
+    .field public int32 ResumptionPoint
     .method public strict virtual instance void MoveNext() cil managed
     {
       .override [runtime]System.Runtime.CompilerServices.IAsyncStateMachine::MoveNext
@@ -590,6 +782,117 @@ let testTask() = task { try 1+1 finally System.Console.WriteLine("finally") }
       IL_0090:  call       instance void valuetype [netstandard]System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1<class [FSharp.Core]Microsoft.FSharp.Core.Unit>::SetException(class [netstandard]System.Exception)
       IL_0095:  ret
     }
+
+    .method public strict virtual instance void SetStateMachine(class [runtime]System.Runtime.CompilerServices.IAsyncStateMachine state) cil managed
+    {
+      .override [runtime]System.Runtime.CompilerServices.IAsyncStateMachine::SetStateMachine
+
+      .maxstack  8
+      IL_0000:  ldarg.0
+      IL_0001:  ldflda     valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<class [FSharp.Core]Microsoft.FSharp.Core.Unit> Test/testTask@4::Data
+      IL_0006:  ldflda     valuetype [runtime]System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1<!0> valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<class [FSharp.Core]Microsoft.FSharp.Core.Unit>::MethodBuilder
+      IL_000b:  ldarg.1
+      IL_000c:  call       instance void valuetype [netstandard]System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1<class [FSharp.Core]Microsoft.FSharp.Core.Unit>::SetStateMachine(class [netstandard]System.Runtime.CompilerServices.IAsyncStateMachine)
+      IL_0011:  ret
+    }
+
+    .method public strict virtual instance int32 get_ResumptionPoint() cil managed
+    {
+      .override  method instance int32 class [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.IResumableStateMachine`1<valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<class [FSharp.Core]Microsoft.FSharp.Core.Unit>>::get_ResumptionPoint()
+
+      .maxstack  8
+      IL_0000:  ldarg.0
+      IL_0001:  ldfld      int32 Test/testTask@4::ResumptionPoint
+      IL_0006:  ret
+    }
+
+    .method public strict virtual instance valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<class [FSharp.Core]Microsoft.FSharp.Core.Unit> get_Data() cil managed
+    {
+      .override  method instance !0 class [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.IResumableStateMachine`1<valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<class [FSharp.Core]Microsoft.FSharp.Core.Unit>>::get_Data()
+
+      .maxstack  8
+      IL_0000:  ldarg.0
+      IL_0001:  ldfld      valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<class [FSharp.Core]Microsoft.FSharp.Core.Unit> Test/testTask@4::Data
+      IL_0006:  ret
+    }
+
+    .method public strict virtual instance void set_Data(valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<class [FSharp.Core]Microsoft.FSharp.Core.Unit> 'value') cil managed
+    {
+      .override  method instance void class [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.IResumableStateMachine`1<valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<class [FSharp.Core]Microsoft.FSharp.Core.Unit>>::set_Data(!0)
+
+      .maxstack  8
+      IL_0000:  ldarg.0
+      IL_0001:  ldarg.1
+      IL_0002:  stfld      valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<class [FSharp.Core]Microsoft.FSharp.Core.Unit> Test/testTask@4::Data
+      IL_0007:  ret
+    }
+
+  }
+
+  .class auto ansi serializable sealed nested assembly beforefieldinit 'testTask@4-1'
+         extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>
+  {
+    .field static assembly initonly class Test/'testTask@4-1' @_instance
+    .method assembly specialname rtspecialname instance void  .ctor() cil managed
+    {
+      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 )
+      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 )
+
+      .maxstack  8
+      IL_0000:  ldarg.0
+      IL_0001:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::.ctor()
+      IL_0006:  ret
+    }
+
+    .method public strict virtual instance class [FSharp.Core]Microsoft.FSharp.Core.Unit Invoke(class [FSharp.Core]Microsoft.FSharp.Core.Unit unitVar) cil managed
+    {
+
+      .maxstack  8
+      IL_0000:  nop
+      IL_0001:  ldstr      "finally"
+      IL_0006:  call       void [runtime]System.Console::WriteLine(string)
+      IL_000b:  ldnull
+      IL_000c:  ret
+    }
+
+    .method private specialname rtspecialname static void  .cctor() cil managed
+    {
+
+      .maxstack  10
+      IL_0000:  newobj     instance void Test/'testTask@4-1'::.ctor()
+      IL_0005:  stsfld     class Test/'testTask@4-1' Test/'testTask@4-1'::@_instance
+      IL_000a:  ret
+    }
+
+  }
+
+  .method public static class [runtime]System.Threading.Tasks.Task`1<class [FSharp.Core]Microsoft.FSharp.Core.Unit> testTask() cil managed
+  {
+
+    .maxstack  4
+    .locals init (valuetype Test/testTask@4 V_0,
+             valuetype Test/testTask@4& V_1)
+    IL_0000:  ldloca.s   V_0
+    IL_0002:  initobj    Test/testTask@4
+    IL_0008:  ldloca.s   V_0
+    IL_000a:  stloc.1
+    IL_000b:  ldloc.1
+    IL_000c:  ldflda     valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<class [FSharp.Core]Microsoft.FSharp.Core.Unit> Test/testTask@4::Data
+    IL_0011:  call       valuetype [netstandard]System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1<!0> valuetype [netstandard]System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1<class [FSharp.Core]Microsoft.FSharp.Core.Unit>::Create()
+    IL_0016:  stfld      valuetype [runtime]System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1<!0> valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<class [FSharp.Core]Microsoft.FSharp.Core.Unit>::MethodBuilder
+    IL_001b:  ldloc.1
+    IL_001c:  ldflda     valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<class [FSharp.Core]Microsoft.FSharp.Core.Unit> Test/testTask@4::Data
+    IL_0021:  ldflda     valuetype [runtime]System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1<!0> valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<class [FSharp.Core]Microsoft.FSharp.Core.Unit>::MethodBuilder
+    IL_0026:  ldloc.1
+    IL_0027:  call       instance void valuetype [netstandard]System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1<class [FSharp.Core]Microsoft.FSharp.Core.Unit>::Start<valuetype Test/testTask@4>(!!0&)
+    IL_002c:  ldloc.1
+    IL_002d:  ldflda     valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<class [FSharp.Core]Microsoft.FSharp.Core.Unit> Test/testTask@4::Data
+    IL_0032:  ldflda     valuetype [runtime]System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1<!0> valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<class [FSharp.Core]Microsoft.FSharp.Core.Unit>::MethodBuilder
+    IL_0037:  call       instance class [netstandard]System.Threading.Tasks.Task`1<!0> valuetype [netstandard]System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1<class [FSharp.Core]Microsoft.FSharp.Core.Unit>::get_Task()
+    IL_003c:  ret
+  }
+
+}
                 """
             ]))
 
@@ -719,6 +1022,19 @@ let testTask() = task { try 1 with e -> System.Console.WriteLine("with"); 2 }
             """,
             (fun verifier -> verifier.VerifyIL [
             """
+.class public abstract auto ansi sealed Test
+       extends [runtime]System.Object
+{
+  .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 07 00 00 00 00 00 )
+  .class auto autochar sealed nested assembly beforefieldinit specialname testTask@4
+         extends [runtime]System.ValueType
+         implements [runtime]System.Runtime.CompilerServices.IAsyncStateMachine,
+                    class [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.IResumableStateMachine`1<valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<class [FSharp.Core]Microsoft.FSharp.Core.Unit>>
+  {
+    .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 )
+    .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 06 00 00 00 00 00 )
+    .field public valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<class [FSharp.Core]Microsoft.FSharp.Core.Unit> Data
+    .field public int32 ResumptionPoint
     .method public strict virtual instance void MoveNext() cil managed
     {
       .override [runtime]System.Runtime.CompilerServices.IAsyncStateMachine::MoveNext
@@ -822,6 +1138,80 @@ let testTask() = task { try 1 with e -> System.Console.WriteLine("with"); 2 }
       IL_0088:  call       instance void valuetype [netstandard]System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1<class [FSharp.Core]Microsoft.FSharp.Core.Unit>::SetException(class [netstandard]System.Exception)
       IL_008d:  ret
     }
+
+    .method public strict virtual instance void SetStateMachine(class [runtime]System.Runtime.CompilerServices.IAsyncStateMachine state) cil managed
+    {
+      .override [runtime]System.Runtime.CompilerServices.IAsyncStateMachine::SetStateMachine
+
+      .maxstack  8
+      IL_0000:  ldarg.0
+      IL_0001:  ldflda     valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<class [FSharp.Core]Microsoft.FSharp.Core.Unit> Test/testTask@4::Data
+      IL_0006:  ldflda     valuetype [runtime]System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1<!0> valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<class [FSharp.Core]Microsoft.FSharp.Core.Unit>::MethodBuilder
+      IL_000b:  ldarg.1
+      IL_000c:  call       instance void valuetype [netstandard]System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1<class [FSharp.Core]Microsoft.FSharp.Core.Unit>::SetStateMachine(class [netstandard]System.Runtime.CompilerServices.IAsyncStateMachine)
+      IL_0011:  ret
+    }
+
+    .method public strict virtual instance int32 get_ResumptionPoint() cil managed
+    {
+      .override  method instance int32 class [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.IResumableStateMachine`1<valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<class [FSharp.Core]Microsoft.FSharp.Core.Unit>>::get_ResumptionPoint()
+
+      .maxstack  8
+      IL_0000:  ldarg.0
+      IL_0001:  ldfld      int32 Test/testTask@4::ResumptionPoint
+      IL_0006:  ret
+    }
+
+    .method public strict virtual instance valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<class [FSharp.Core]Microsoft.FSharp.Core.Unit> get_Data() cil managed
+    {
+      .override  method instance !0 class [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.IResumableStateMachine`1<valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<class [FSharp.Core]Microsoft.FSharp.Core.Unit>>::get_Data()
+
+      .maxstack  8
+      IL_0000:  ldarg.0
+      IL_0001:  ldfld      valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<class [FSharp.Core]Microsoft.FSharp.Core.Unit> Test/testTask@4::Data
+      IL_0006:  ret
+    }
+
+    .method public strict virtual instance void set_Data(valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<class [FSharp.Core]Microsoft.FSharp.Core.Unit> 'value') cil managed
+    {
+      .override  method instance void class [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.IResumableStateMachine`1<valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<class [FSharp.Core]Microsoft.FSharp.Core.Unit>>::set_Data(!0)
+
+      .maxstack  8
+      IL_0000:  ldarg.0
+      IL_0001:  ldarg.1
+      IL_0002:  stfld      valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<class [FSharp.Core]Microsoft.FSharp.Core.Unit> Test/testTask@4::Data
+      IL_0007:  ret
+    }
+
+  }
+
+  .method public static class [runtime]System.Threading.Tasks.Task`1<class [FSharp.Core]Microsoft.FSharp.Core.Unit> testTask() cil managed
+  {
+
+    .maxstack  4
+    .locals init (valuetype Test/testTask@4 V_0,
+             valuetype Test/testTask@4& V_1)
+    IL_0000:  ldloca.s   V_0
+    IL_0002:  initobj    Test/testTask@4
+    IL_0008:  ldloca.s   V_0
+    IL_000a:  stloc.1
+    IL_000b:  ldloc.1
+    IL_000c:  ldflda     valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<class [FSharp.Core]Microsoft.FSharp.Core.Unit> Test/testTask@4::Data
+    IL_0011:  call       valuetype [netstandard]System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1<!0> valuetype [netstandard]System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1<class [FSharp.Core]Microsoft.FSharp.Core.Unit>::Create()
+    IL_0016:  stfld      valuetype [runtime]System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1<!0> valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<class [FSharp.Core]Microsoft.FSharp.Core.Unit>::MethodBuilder
+    IL_001b:  ldloc.1
+    IL_001c:  ldflda     valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<class [FSharp.Core]Microsoft.FSharp.Core.Unit> Test/testTask@4::Data
+    IL_0021:  ldflda     valuetype [runtime]System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1<!0> valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<class [FSharp.Core]Microsoft.FSharp.Core.Unit>::MethodBuilder
+    IL_0026:  ldloc.1
+    IL_0027:  call       instance void valuetype [netstandard]System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1<class [FSharp.Core]Microsoft.FSharp.Core.Unit>::Start<valuetype Test/testTask@4>(!!0&)
+    IL_002c:  ldloc.1
+    IL_002d:  ldflda     valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<class [FSharp.Core]Microsoft.FSharp.Core.Unit> Test/testTask@4::Data
+    IL_0032:  ldflda     valuetype [runtime]System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1<!0> valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<class [FSharp.Core]Microsoft.FSharp.Core.Unit>::MethodBuilder
+    IL_0037:  call       instance class [netstandard]System.Threading.Tasks.Task`1<!0> valuetype [netstandard]System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1<class [FSharp.Core]Microsoft.FSharp.Core.Unit>::get_Task()
+    IL_003c:  ret
+  }
+
+}
                 """
             ]))
 
@@ -937,6 +1327,19 @@ let testTask() = task { while x > 4 do System.Console.WriteLine("loop") }
             """,
             (fun verifier -> verifier.VerifyIL [
             """
+.class public abstract auto ansi sealed Test
+       extends [runtime]System.Object
+{
+  .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 07 00 00 00 00 00 )
+  .class auto autochar sealed nested assembly beforefieldinit specialname testTask@5
+         extends [runtime]System.ValueType
+         implements [runtime]System.Runtime.CompilerServices.IAsyncStateMachine,
+                    class [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.IResumableStateMachine`1<valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<class [FSharp.Core]Microsoft.FSharp.Core.Unit>>
+  {
+    .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 )
+    .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 06 00 00 00 00 00 )
+    .field public valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<class [FSharp.Core]Microsoft.FSharp.Core.Unit> Data
+    .field public int32 ResumptionPoint
     .method public strict virtual instance void MoveNext() cil managed
     {
       .override [runtime]System.Runtime.CompilerServices.IAsyncStateMachine::MoveNext
@@ -1022,6 +1425,161 @@ let testTask() = task { while x > 4 do System.Console.WriteLine("loop") }
       IL_007d:  call       instance void valuetype [netstandard]System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1<class [FSharp.Core]Microsoft.FSharp.Core.Unit>::SetException(class [netstandard]System.Exception)
       IL_0082:  ret
     }
+
+    .method public strict virtual instance void SetStateMachine(class [runtime]System.Runtime.CompilerServices.IAsyncStateMachine state) cil managed
+    {
+      .override [runtime]System.Runtime.CompilerServices.IAsyncStateMachine::SetStateMachine
+
+      .maxstack  8
+      IL_0000:  ldarg.0
+      IL_0001:  ldflda     valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<class [FSharp.Core]Microsoft.FSharp.Core.Unit> Test/testTask@5::Data
+      IL_0006:  ldflda     valuetype [runtime]System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1<!0> valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<class [FSharp.Core]Microsoft.FSharp.Core.Unit>::MethodBuilder
+      IL_000b:  ldarg.1
+      IL_000c:  call       instance void valuetype [netstandard]System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1<class [FSharp.Core]Microsoft.FSharp.Core.Unit>::SetStateMachine(class [netstandard]System.Runtime.CompilerServices.IAsyncStateMachine)
+      IL_0011:  ret
+    }
+
+    .method public strict virtual instance int32 get_ResumptionPoint() cil managed
+    {
+      .override  method instance int32 class [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.IResumableStateMachine`1<valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<class [FSharp.Core]Microsoft.FSharp.Core.Unit>>::get_ResumptionPoint()
+
+      .maxstack  8
+      IL_0000:  ldarg.0
+      IL_0001:  ldfld      int32 Test/testTask@5::ResumptionPoint
+      IL_0006:  ret
+    }
+
+    .method public strict virtual instance valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<class [FSharp.Core]Microsoft.FSharp.Core.Unit> get_Data() cil managed
+    {
+      .override  method instance !0 class [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.IResumableStateMachine`1<valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<class [FSharp.Core]Microsoft.FSharp.Core.Unit>>::get_Data()
+
+      .maxstack  8
+      IL_0000:  ldarg.0
+      IL_0001:  ldfld      valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<class [FSharp.Core]Microsoft.FSharp.Core.Unit> Test/testTask@5::Data
+      IL_0006:  ret
+    }
+
+    .method public strict virtual instance void set_Data(valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<class [FSharp.Core]Microsoft.FSharp.Core.Unit> 'value') cil managed
+    {
+      .override  method instance void class [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.IResumableStateMachine`1<valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<class [FSharp.Core]Microsoft.FSharp.Core.Unit>>::set_Data(!0)
+
+      .maxstack  8
+      IL_0000:  ldarg.0
+      IL_0001:  ldarg.1
+      IL_0002:  stfld      valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<class [FSharp.Core]Microsoft.FSharp.Core.Unit> Test/testTask@5::Data
+      IL_0007:  ret
+    }
+
+  }
+
+  .class auto ansi serializable sealed nested assembly beforefieldinit 'testTask@5-1'
+         extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,bool>
+  {
+    .field static assembly initonly class Test/'testTask@5-1' @_instance
+    .method assembly specialname rtspecialname instance void  .ctor() cil managed
+    {
+      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 )
+      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 )
+
+      .maxstack  8
+      IL_0000:  ldarg.0
+      IL_0001:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,bool>::.ctor()
+      IL_0006:  ret
+    }
+
+    .method public strict virtual instance bool Invoke(class [FSharp.Core]Microsoft.FSharp.Core.Unit unitVar) cil managed
+    {
+
+      .maxstack  8
+      IL_0000:  call       int32 Test::get_x()
+      IL_0005:  ldc.i4.4
+      IL_0006:  cgt
+      IL_0008:  ret
+    }
+
+    .method private specialname rtspecialname static void  .cctor() cil managed
+    {
+
+      .maxstack  10
+      IL_0000:  newobj     instance void Test/'testTask@5-1'::.ctor()
+      IL_0005:  stsfld     class Test/'testTask@5-1' Test/'testTask@5-1'::@_instance
+      IL_000a:  ret
+    }
+
+  }
+
+  .field static assembly int32 x@4
+  .custom instance void [runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 )
+  .method public specialname static int32 get_x() cil managed
+  {
+
+    .maxstack  8
+    IL_0000:  ldsfld     int32 Test::x@4
+    IL_0005:  ret
+  }
+
+  .method public specialname static void set_x(int32 'value') cil managed
+  {
+
+    .maxstack  8
+    IL_0000:  ldarg.0
+    IL_0001:  stsfld     int32 Test::x@4
+    IL_0006:  ret
+  }
+
+  .method public static class [runtime]System.Threading.Tasks.Task`1<class [FSharp.Core]Microsoft.FSharp.Core.Unit> testTask() cil managed
+  {
+
+    .maxstack  4
+    .locals init (valuetype Test/testTask@5 V_0,
+             valuetype Test/testTask@5& V_1)
+    IL_0000:  ldloca.s   V_0
+    IL_0002:  initobj    Test/testTask@5
+    IL_0008:  ldloca.s   V_0
+    IL_000a:  stloc.1
+    IL_000b:  ldloc.1
+    IL_000c:  ldflda     valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<class [FSharp.Core]Microsoft.FSharp.Core.Unit> Test/testTask@5::Data
+    IL_0011:  call       valuetype [netstandard]System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1<!0> valuetype [netstandard]System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1<class [FSharp.Core]Microsoft.FSharp.Core.Unit>::Create()
+    IL_0016:  stfld      valuetype [runtime]System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1<!0> valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<class [FSharp.Core]Microsoft.FSharp.Core.Unit>::MethodBuilder
+    IL_001b:  ldloc.1
+    IL_001c:  ldflda     valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<class [FSharp.Core]Microsoft.FSharp.Core.Unit> Test/testTask@5::Data
+    IL_0021:  ldflda     valuetype [runtime]System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1<!0> valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<class [FSharp.Core]Microsoft.FSharp.Core.Unit>::MethodBuilder
+    IL_0026:  ldloc.1
+    IL_0027:  call       instance void valuetype [netstandard]System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1<class [FSharp.Core]Microsoft.FSharp.Core.Unit>::Start<valuetype Test/testTask@5>(!!0&)
+    IL_002c:  ldloc.1
+    IL_002d:  ldflda     valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<class [FSharp.Core]Microsoft.FSharp.Core.Unit> Test/testTask@5::Data
+    IL_0032:  ldflda     valuetype [runtime]System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1<!0> valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<class [FSharp.Core]Microsoft.FSharp.Core.Unit>::MethodBuilder
+    IL_0037:  call       instance class [netstandard]System.Threading.Tasks.Task`1<!0> valuetype [netstandard]System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1<class [FSharp.Core]Microsoft.FSharp.Core.Unit>::get_Task()
+    IL_003c:  ret
+  }
+
+  .method private specialname rtspecialname static void  .cctor() cil managed
+  {
+
+    .maxstack  8
+    IL_0000:  ldc.i4.0
+    IL_0001:  stsfld     int32 '<StartupCode$assembly>'.$Test::init@
+    IL_0006:  ldsfld     int32 '<StartupCode$assembly>'.$Test::init@
+    IL_000b:  pop
+    IL_000c:  ret
+  }
+
+  .method assembly static void  staticInitialization@() cil managed
+  {
+
+    .maxstack  8
+    IL_0000:  ldc.i4.1
+    IL_0001:  stsfld     int32 Test::x@4
+    IL_0006:  ret
+  }
+
+  .property int32 x()
+  {
+    .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 09 00 00 00 00 00 )
+    .set void Test::set_x(int32)
+    .get int32 Test::get_x()
+  }
+}
                 """
             ]))
 #endif
