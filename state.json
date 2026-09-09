@@ -1,9 +1,5 @@
 {
   "prs": {
-    "20423": {
-      "sha": "8501fdeccd41",
-      "cats": []
-    },
     "20421": {
       "sha": "fdb4dfb6ae2a",
       "cats": []
@@ -25,10 +21,6 @@
       "cats": [
         "Affects-Compiler-Output"
       ]
-    },
-    "20415": {
-      "sha": "8afe94138bc6",
-      "cats": []
     },
     "20409": {
       "sha": "7ab3adf159b8",
