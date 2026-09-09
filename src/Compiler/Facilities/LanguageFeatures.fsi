@@ -17,7 +17,6 @@ type LanguageFeature =
     | NullnessChecking
     | RefCellNotationInformationals
     | UnionIsPropertiesVisible
-    | NonVariablePatternsToRightOfAsPatterns
     | AttributesToRightOfModuleKeyword
     | ReallyLongLists
     | ErrorOnDeprecatedRequireQualifiedAccess
