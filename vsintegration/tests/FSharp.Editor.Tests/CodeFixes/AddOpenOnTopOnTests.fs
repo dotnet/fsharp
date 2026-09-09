@@ -466,6 +466,56 @@ module M1 =
 
     Assert.Equal(expected, actual)
 
+[<Fact>] // A plain `open` only reaches namespaces and modules; a type nested in a type needs `open type`
+let ``Fixes FS0039 with open type for a type nested in a type`` () =
+    let code =
+        """module Module1
+
+let folder () = SpecialFolder.Desktop
+"""
+
+    let expected =
+        Some
+            {
+                Message = "open type System.Environment"
+                FixedCode =
+                    """module Module1
+
+open type System.Environment
+
+let folder () = SpecialFolder.Desktop
+"""
+            }
+
+    let actual = codeFix |> tryFix code Auto
+
+    Assert.Equal(expected, actual)
+
+[<Fact>] // NEGATIVE: a type sitting directly in a namespace is reached by a plain open
+let ``Fixes FS0039 with a plain open for a type in a namespace`` () =
+    let code =
+        """module Module1
+
+let write () = Console.WriteLine "hi"
+"""
+
+    let expected =
+        Some
+            {
+                Message = "open System"
+                FixedCode =
+                    """module Module1
+
+open System
+
+let write () = Console.WriteLine "hi"
+"""
+            }
+
+    let actual = codeFix |> tryFix code Auto
+
+    Assert.Equal(expected, actual)
+
 [<Fact>]
 let ``Doesn't fix FS0039 for random undefined symbols`` () =
     let code =

@@ -163,6 +163,11 @@ type public InsertionContextEntity =
         /// Namespace that is needed to open to make the entity resolvable in the current scope.
         Namespace: string option
 
+        /// How many leading idents of the entity's full name that namespace covers. Compare it with
+        /// `AssemblySymbol.OpenableIdentCount` to tell a namespace a plain `open` reaches from a type,
+        /// which only `open type` opens.
+        NamespaceIdentCount: int
+
         /// Full display name (i.e. last ident plus modules with `RequireQualifiedAccess` attribute prefixed).
         FullDisplayName: string
 

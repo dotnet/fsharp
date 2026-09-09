@@ -234,8 +234,8 @@ module internal OpenDeclarationHelper =
     /// </summary>
     /// <param name="sourceText">SourceText.</param>
     /// <param name="ctx">Insertion context. Typically returned from tryGetInsertionContext</param>
-    /// <param name="ns">Namespace to open.</param>
-    let getOpenDeclarationChange (sourceText: SourceText) (ctx: InsertionContext) (ns: string) : TextChange =
+    /// <param name="declaration">The declaration to add, `open Foo` or `open type Foo`.</param>
+    let getOpenDeclarationChange (sourceText: SourceText) (ctx: InsertionContext) (declaration: string) : TextChange =
         let getLineStr line =
             if line >= 0 && line < sourceText.Lines.Count then
                 sourceText.Lines[line].ToString().Trim()
@@ -283,10 +283,10 @@ module internal OpenDeclarationHelper =
         if trivia.Length > 0 then
             TextChange(
                 TextSpan(line.Start + trivia.Length, column - trivia.Length),
-                lineBreak + margin + "open " + ns + lineBreak + lineBreak + margin
+                lineBreak + margin + declaration + lineBreak + lineBreak + margin
             )
         else
-            TextChange(TextSpan(line.Start, 0), separatorAbove + margin + "open " + ns + separatorBelow)
+            TextChange(TextSpan(line.Start, 0), separatorAbove + margin + declaration + separatorBelow)
 
     /// <summary>
     /// Inserts open declaration into `SourceText`.
@@ -295,7 +295,7 @@ module internal OpenDeclarationHelper =
     /// <param name="ctx">Insertion context. Typically returned from tryGetInsertionContext</param>
     /// <param name="ns">Namespace to open.</param>
     let insertOpenDeclaration (sourceText: SourceText) (ctx: InsertionContext) (ns: string) : SourceText * int =
-        let change = getOpenDeclarationChange sourceText ctx ns
+        let change = getOpenDeclarationChange sourceText ctx ("open " + ns)
         sourceText.WithChanges change, change.Span.Start
 
 // http://www.fssnip.net/7S3/title/Intersperse-a-list
