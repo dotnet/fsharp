@@ -2,12 +2,21 @@
 
 module FSharp.Editor.Tests.CodeFixes.AddOpenOnTopOffTests
 
+open System
+
 open Microsoft.VisualStudio.FSharp.Editor
 open Xunit
 
 open CodeFixTestFramework
 
 let private codeFix = AddOpenCodeFixProvider(AssemblyContentProvider())
+
+/// Every `open` suggestion the fix offers, in the order the lightbulb lists them.
+let private openFixes code mode =
+    codeFix
+    |> multiFix code mode
+    |> Seq.filter (fun fix -> fix.Message.StartsWith("open ", StringComparison.Ordinal))
+    |> Seq.toList
 
 let mode =
     WithSettings
@@ -22,7 +31,7 @@ let ``Fixes FS0039 for missing opens - basic`` () =
 """
 
     let expected =
-        Some
+        [
             {
                 Message = "open System"
                 FixedCode =
@@ -31,10 +40,11 @@ let ``Fixes FS0039 for missing opens - basic`` () =
 Console.WriteLine 42
 """
             }
+        ]
 
-    let actual = codeFix |> tryFix code mode
+    let actual = openFixes code mode
 
-    Assert.Equal(expected, actual)
+    Assert.Equal<TestCodeFix list>(expected, actual)
 
 [<Fact>]
 let ``Fixes FS0039 for missing opens - first line is empty`` () =
@@ -44,7 +54,7 @@ Console.WriteLine 42
 """
 
     let expected =
-        Some
+        [
             {
                 Message = "open System"
                 FixedCode =
@@ -54,10 +64,11 @@ open System
 Console.WriteLine 42
 """
             }
+        ]
 
-    let actual = codeFix |> tryFix code mode
+    let actual = openFixes code mode
 
-    Assert.Equal(expected, actual)
+    Assert.Equal<TestCodeFix list>(expected, actual)
 
 [<Fact>]
 let ``Fixes FS0039 for missing opens - multiple first lines are empty`` () =
@@ -68,7 +79,7 @@ Console.WriteLine 42
 """
 
     let expected =
-        Some
+        [
             {
                 Message = "open System"
                 FixedCode =
@@ -79,10 +90,11 @@ open System
 Console.WriteLine 42
 """
             }
+        ]
 
-    let actual = codeFix |> tryFix code mode
+    let actual = openFixes code mode
 
-    Assert.Equal(expected, actual)
+    Assert.Equal<TestCodeFix list>(expected, actual)
 
 [<Fact>]
 let ``Fixes FS0039 for missing opens - there is already an open directive`` () =
@@ -93,7 +105,7 @@ Console.WriteLine 42
 """
 
     let expected =
-        Some
+        [
             {
                 Message = "open System"
                 FixedCode =
@@ -103,10 +115,11 @@ open System
 Console.WriteLine 42
 """
             }
+        ]
 
-    let actual = codeFix |> tryFix code mode
+    let actual = openFixes code mode
 
-    Assert.Equal(expected, actual)
+    Assert.Equal<TestCodeFix list>(expected, actual)
 
 [<Fact>]
 let ``Fixes FS0039 for missing opens - top level module is explicit`` () =
@@ -117,7 +130,7 @@ Console.WriteLine 42
 """
 
     let expected =
-        Some
+        [
             {
                 Message = "open System"
                 FixedCode =
@@ -128,10 +141,11 @@ open System
 Console.WriteLine 42
 """
             }
+        ]
 
-    let actual = codeFix |> tryFix code mode
+    let actual = openFixes code mode
 
-    Assert.Equal(expected, actual)
+    Assert.Equal<TestCodeFix list>(expected, actual)
 
 [<Fact>]
 let ``Fixes FS0039 for missing opens - module has an attribute on the same line`` () =
@@ -142,7 +156,7 @@ Console.WriteLine 42
 """
 
     let expected =
-        Some
+        [
             {
                 Message = "open System"
                 FixedCode =
@@ -153,10 +167,11 @@ open System
 Console.WriteLine 42
 """
             }
+        ]
 
-    let actual = codeFix |> tryFix code mode
+    let actual = openFixes code mode
 
-    Assert.Equal(expected, actual)
+    Assert.Equal<TestCodeFix list>(expected, actual)
 
 [<Fact>]
 let ``Fixes FS0039 for missing opens - nested module`` () =
@@ -167,7 +182,7 @@ let ``Fixes FS0039 for missing opens - nested module`` () =
 """
 
     let expected =
-        Some
+        [
             {
                 Message = "open System"
                 FixedCode =
@@ -178,10 +193,11 @@ let ``Fixes FS0039 for missing opens - nested module`` () =
     Console.WriteLine 42
 """
             }
+        ]
 
-    let actual = codeFix |> tryFix code mode
+    let actual = openFixes code mode
 
-    Assert.Equal(expected, actual)
+    Assert.Equal<TestCodeFix list>(expected, actual)
 
 [<Fact>]
 let ``Fixes FS0039 for missing opens - explicit module has attributes`` () =
@@ -194,7 +210,7 @@ Console.WriteLine 42
 """
 
     let expected =
-        Some
+        [
             {
                 Message = "open System"
                 FixedCode =
@@ -207,10 +223,11 @@ open System
 Console.WriteLine 42
 """
             }
+        ]
 
-    let actual = codeFix |> tryFix code mode
+    let actual = openFixes code mode
 
-    Assert.Equal(expected, actual)
+    Assert.Equal<TestCodeFix list>(expected, actual)
 
 [<Fact>]
 let ``Fixes FS0039 for missing opens - implicit module has attributes`` () =
@@ -222,7 +239,7 @@ type MyType() =
 """
 
     let expected =
-        Some
+        [
             {
                 Message = "open System"
                 FixedCode =
@@ -234,10 +251,11 @@ type MyType() =
     let now = DateTime.Now
 """
             }
+        ]
 
-    let actual = codeFix |> tryFix code Auto
+    let actual = openFixes code Auto
 
-    Assert.Equal(expected, actual)
+    Assert.Equal<TestCodeFix list>(expected, actual)
 
 // TODO: the open statement should actually be within the module
 [<Fact>]
@@ -251,7 +269,7 @@ module Module1 =
 """
 
     let expected =
-        Some
+        [
             {
                 Message = "open System"
                 FixedCode =
@@ -264,10 +282,11 @@ module Module1 =
     Console.WriteLine 42
 """
             }
+        ]
 
-    let actual = codeFix |> tryFix code Auto
+    let actual = openFixes code Auto
 
-    Assert.Equal(expected, actual)
+    Assert.Equal<TestCodeFix list>(expected, actual)
 
 [<Fact>]
 let ``Fixes FS0039 for missing opens - module has multiple attributes`` () =
@@ -281,7 +300,7 @@ Console.WriteLine 42
 """
 
     let expected =
-        Some
+        [
             {
                 Message = "open System"
                 FixedCode =
@@ -295,10 +314,11 @@ open System
 Console.WriteLine 42
 """
             }
+        ]
 
-    let actual = codeFix |> tryFix code mode
+    let actual = openFixes code mode
 
-    Assert.Equal(expected, actual)
+    Assert.Equal<TestCodeFix list>(expected, actual)
 
 [<Fact>]
 let ``Fixes FS0039 for missing opens - attributes are mixed with empty lines`` () =
@@ -313,7 +333,7 @@ Console.WriteLine 42
 """
 
     let expected =
-        Some
+        [
             {
                 Message = "open System"
                 FixedCode =
@@ -328,10 +348,11 @@ open System
 Console.WriteLine 42
 """
             }
+        ]
 
-    let actual = codeFix |> tryFix code mode
+    let actual = openFixes code mode
 
-    Assert.Equal(expected, actual)
+    Assert.Equal<TestCodeFix list>(expected, actual)
 
 [<Fact>]
 let ``Fixes FS0039 for missing opens - multiple modules in one file`` () =
@@ -347,7 +368,7 @@ module Module2 =
 """
 
     let expected =
-        Some
+        [
             {
                 Message = "open System"
                 FixedCode =
@@ -363,10 +384,11 @@ module Module2 =
     Console.WriteLine(42)
 """
             }
+        ]
 
-    let actual = codeFix |> tryFix code mode
+    let actual = openFixes code mode
 
-    Assert.Equal(expected, actual)
+    Assert.Equal<TestCodeFix list>(expected, actual)
 
 [<Fact>]
 let ``Fixes FS0039 for missing opens - explicit namespace`` () =
@@ -380,7 +402,7 @@ module M1 =
 """
 
     let expected =
-        Some
+        [
             {
                 Message = "open System"
                 FixedCode =
@@ -394,10 +416,11 @@ module M1 =
     Console.WriteLine 42
 """
             }
+        ]
 
-    let actual = codeFix |> tryFix code mode
+    let actual = openFixes code mode
 
-    Assert.Equal(expected, actual)
+    Assert.Equal<TestCodeFix list>(expected, actual)
 
 [<Fact>]
 let ``Doesn't fix FS0039 for random undefined symbols`` () =
@@ -406,11 +429,11 @@ let ``Doesn't fix FS0039 for random undefined symbols`` () =
 let f = g
 """
 
-    let expected = None
+    let expected = []
 
-    let actual = codeFix |> tryFix code mode
+    let actual = openFixes code mode
 
-    Assert.Equal(expected, actual)
+    Assert.Equal<TestCodeFix list>(expected, actual)
 
 [<Fact>]
 let ``Fixes FS0043 for missing opens`` () =
@@ -424,7 +447,7 @@ module N =
 """
 
     let expected =
-        Some
+        [
             {
                 Message = "open M"
                 FixedCode =
@@ -438,10 +461,11 @@ module N =
     let theAnswer = 4 ++ 2
 """
             }
+        ]
 
-    let actual = codeFix |> tryFix code mode
+    let actual = openFixes code mode
 
-    Assert.Equal(expected, actual)
+    Assert.Equal<TestCodeFix list>(expected, actual)
 
 [<Fact>]
 let ``Doesn't fix FS0043 for random unsupported values`` () =
@@ -452,11 +476,11 @@ type RecordType = { X : int }
 let x : RecordType = null
 """
 
-    let expected = None
+    let expected = []
 
-    let actual = codeFix |> tryFix code mode
+    let actual = openFixes code mode
 
-    Assert.Equal(expected, actual)
+    Assert.Equal<TestCodeFix list>(expected, actual)
 
 [<Fact>]
 let ``Fixes FS0039 for missing opens - module has multiline attributes`` () =
@@ -475,7 +499,7 @@ module FlatList =
 """
 
     let expected =
-        Some
+        [
             {
                 Message = "open System.Collections.Generic"
                 FixedCode =
@@ -494,7 +518,8 @@ module FlatList =
     let a : KeyValuePair<string, int> = KeyValuePair<string, int>("key", 1)
 """
             }
+        ]
 
-    let actual = codeFix |> tryFix code mode
+    let actual = openFixes code mode
 
-    Assert.Equal(expected, actual)
+    Assert.Equal<TestCodeFix list>(expected, actual)
