@@ -429,6 +429,12 @@
     "20496": {
       "sha": "53bb90deef34fa4dd591fa6f2e5dfbd01b14e927",
       "cats": []
+    },
+    "20499": {
+      "sha": "bddd2eb39132a06569b193ec84b5b2085fbd16c1",
+      "cats": [
+        "Affects-Design-Time"
+      ]
     }
   }
 }
