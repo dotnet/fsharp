@@ -13,6 +13,8 @@ Reviewers read code, not prose. Add bytes only when they pay for themselves.
 
 ## Comments
 
+Write comments for the future maintainer modifying accepted code, not for the reviewer deciding whether to accept the change. If a comment only defends the change, delete it or move that rationale to the PR. It should still be useful a year from now to someone who never saw the diff.
+
 Good names **always** beat comments. Before writing a comment, ask: *can I rename a value, extract a function, or use an active pattern so the comment becomes unnecessary?* If yes, do that instead.
 
 - **Do not** restate what the code says (variable name, type name, attribute name, function signature).
@@ -20,6 +22,7 @@ Good names **always** beat comments. Before writing a comment, ask: *can I renam
 - **Do not** justify design decisions inline ("we chose X over Y because…"). Put rationale in the commit message or PR body.
 - **Do not** leave war-story comments ("previously we did Z, but…", "counter-example: …"). The history is in `git log`.
 - **Do not** write multi-line `///` doc comments for internal helpers whose body is one expression.
+- Treat a moved comment as a new claim: re-check it against the code instead of trusting the prose that travelled with it.
 
 Acceptable comments answer **why**, not **what**, and only when the *why* is non-obvious and cannot be expressed by renaming:
 - Workarounds for compiler/runtime bugs (link the bug).
