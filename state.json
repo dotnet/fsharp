@@ -209,10 +209,6 @@
         "Affects-Restore"
       ]
     },
-    "20447": {
-      "sha": "1168952a24e7",
-      "cats": []
-    },
     "20452": {
       "sha": "5c70d1ee55c0",
       "cats": []
@@ -389,6 +385,88 @@
         "Affects-Bootstrap",
         "Affects-Compiler-Output"
       ]
+    },
+    "20495": {
+      "sha": "dd24832ada9b65e6841ab2d5ec4513e9054600a6",
+      "cats": [
+        "Affects-Agent-Config",
+        "Affects-Build-Infra"
+      ]
+    },
+    "20113": {
+      "sha": "4c499e3ea322713164604407faa3c906d2b18fe1",
+      "cats": []
+    },
+    "20111": {
+      "sha": "e83a149b149f21a841f66bcf90a869d1eccb25af",
+      "cats": [
+        "Affects-Compiler-Output"
+      ]
+    },
+    "20102": {
+      "sha": "184d5ab47a86875636e8e6d0c159fd1866a8210c",
+      "cats": [
+        "Affects-Design-Time"
+      ]
+    },
+    "20079": {
+      "sha": "8cf5f8a411d0ad1fbe287a4918a42b6e9fd20a5f",
+      "cats": [
+        "Affects-Build-Infra",
+        "Affects-Test-Tooling"
+      ]
+    },
+    "20031": {
+      "sha": "b713d69480ebb259fd8474bf56ba133ea8db9bdf",
+      "cats": [
+        "Affects-Compiler-Output"
+      ]
+    },
+    "20030": {
+      "sha": "98001b2e15d63e374e17898d40c95f6fb1000586",
+      "cats": [
+        "Affects-Compiler-Output"
+      ]
+    },
+    "20027": {
+      "sha": "56540495c995bcc30bed5c99b9789a8abd21d628",
+      "cats": [
+        "Affects-Compiler-Output"
+      ]
+    },
+    "20025": {
+      "sha": "b60372859149228943672888d78b89fa63f1f320",
+      "cats": []
+    },
+    "20016": {
+      "sha": "88e64501a0db50d05a18a0267434fa18f254527d",
+      "cats": [
+        "Affects-Build-Infra",
+        "Affects-Restore"
+      ]
+    },
+    "19994": {
+      "sha": "84c93dd77d47452fe70efd53fdc2b30698f09787",
+      "cats": [
+        "Affects-Compiler-Output"
+      ]
+    },
+    "19941": {
+      "sha": "3ca5dd6038a534ab739bd79d48018d6c83da0262",
+      "cats": [
+        "Affects-Compiler-Output"
+      ]
+    },
+    "19930": {
+      "sha": "fdb49f9abb55a8d81abaeb6d415c8bf9d3ef5c5e",
+      "cats": [
+        "Affects-Build-Infra",
+        "Affects-Test-Tooling"
+      ]
+    },
+    "19774": {
+      "sha": "0e262c5de4cbc31f0d594c589c0e4ac30c95c6a9",
+      "cats": []
     }
   }
 }
