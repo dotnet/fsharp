@@ -66,18 +66,51 @@ type SemanticClassificationServiceTests() =
         (cache.TryGetValueAsync document CancellationToken.None).GetAwaiter().GetResult().IsSome
 
     let versionOf (document: Document) =
-        document.GetTextVersionAsync(CancellationToken.None).GetAwaiter().GetResult()
+        {
+            TextVersion = document.GetTextVersionAsync(CancellationToken.None).GetAwaiter().GetResult()
+            SemanticVersion = document.Project.GetDependentSemanticVersionAsync(CancellationToken.None).GetAwaiter().GetResult()
+        }
 
     let isRemembered (document: Document) =
         match FSharpClassificationService.OpenDocumentClassifications.TryGetValue document.Id with
         | true, classification -> classification.Version = versionOf document
         | _ -> false
 
+    let someVersion () =
+        {
+            TextVersion = VersionStamp.Create()
+            SemanticVersion = VersionStamp.Create()
+        }
+
     let lineSpan (text: SourceText) firstLine lastLine =
         TextSpan.FromBounds(text.Lines[firstLine].Start, text.Lines[lastLine].End)
 
     let clearProjectOptions (document: Document) =
         document.Project.Solution.Workspace.Services.GetService<IFSharpWorkspaceService>().FSharpProjectOptionsManager.ClearAllCaches()
+
+    // Two files of one project, the second using what the first declares, with the second one open.
+    let openDependentDocument (declarations: string) (usage: string) =
+        let projectId = ProjectId.CreateNewId()
+        let declarationsPath = "C:\\declarations.fs"
+        let usagePath = "C:\\usage.fs"
+
+        let declarationsInfo =
+            RoslynTestHelpers.CreateDocumentInfo projectId declarationsPath declarations
+
+        let usageInfo = RoslynTestHelpers.CreateDocumentInfo projectId usagePath usage
+
+        let projectInfo =
+            RoslynTestHelpers.CreateProjectInfo projectId "C:\\test.fsproj" [ declarationsInfo; usageInfo ]
+
+        let solution = RoslynTestHelpers.CreateSolution [ projectInfo ]
+
+        { RoslynTestHelpers.DefaultProjectOptions with
+            SourceFiles = [| declarationsPath; usagePath |]
+        }
+        |> RoslynTestHelpers.SetProjectOptions projectId solution
+
+        solution.Workspace.OpenDocument usageInfo.Id
+        declarationsInfo.Id, usageInfo.Id, solution.Workspace
 
     // A project whose options were never supplied, i.e. one Visual Studio is still loading.
     let openDocumentWithoutProjectOptions (source: string) =
@@ -496,7 +529,7 @@ let result2 = s.(*2*)IsHyperbolicCaseWithLongName
             "An open document must not be cached as an unopened one."
         )
 
-    // The cache is keyed by text version only, so what it holds has to cover the whole file:
+    // The cache is keyed by version, not by span, so what it holds has to cover the whole file:
     // Roslyn asks for the visible span, then for other spans of the same version as the user scrolls.
     [<Fact>]
     member _.``Semantic classification computed for one span of an open document serves another span at the same version``() =
@@ -526,6 +559,32 @@ let result2 = s.(*2*)IsHyperbolicCaseWithLongName
         // A freshly opened copy has a new DocumentId and therefore cold caches: a direct computation for B.
         Assert.Equal<ClassifiedSpan list>(classify (openDocument source) spanB, second)
         Assert.Equal<ClassifiedSpan list>(first, classify document spanA)
+
+    // What a document's symbols mean is decided by the whole project, so an edit in another file
+    // reclassifies this one while its own text version stays put.
+    [<Fact>]
+    member _.``Semantic classification of an open document follows a change to another file of its project``() =
+        let declarationsId, usageId, workspace =
+            openDependentDocument "module Declarations\nlet counter = 1" "open Declarations\nlet read () = counter"
+
+        let classifyUsage () =
+            let document = workspace.CurrentSolution.GetDocument usageId
+
+            classify document (TextSpan(0, (sourceTextOf document).Length))
+            |> List.map _.ClassificationType
+
+        let before = classifyUsage ()
+        Assert.NotEmpty before
+        Assert.DoesNotContain(FSharpClassificationTypes.MutableVar, before)
+
+        let mutableCounter = SourceText.From "module Declarations\nlet mutable counter = 1"
+
+        Assert.True(
+            workspace.TryApplyChanges(workspace.CurrentSolution.WithDocumentText(declarationsId, mutableCounter)),
+            "The workspace has to accept the change to the other file."
+        )
+
+        Assert.Contains(FSharpClassificationTypes.MutableVar, classifyUsage ())
 
     // Roslyn replaces a span's tags with whatever comes back, so "no result" must re-emit the last
     // good one rather than strip the colours the user already sees.
@@ -592,7 +651,7 @@ let result2 = s.(*2*)IsHyperbolicCaseWithLongName
 
         let inFlight =
             InFlightClassification(
-                VersionStamp.Create(),
+                someVersion (),
                 fun _ ->
                     Interlocked.Increment computed |> ignore
                     gate.Task
@@ -604,7 +663,7 @@ let result2 = s.(*2*)IsHyperbolicCaseWithLongName
 
         let classification =
             {
-                Version = VersionStamp.Create()
+                Version = someVersion ()
                 Text = SourceText.From ""
                 Lookup = Dictionary()
             }
@@ -622,7 +681,7 @@ let result2 = s.(*2*)IsHyperbolicCaseWithLongName
 
         let inFlight =
             InFlightClassification(
-                VersionStamp.Create(),
+                someVersion (),
                 fun ct ->
                     sharedToken.Value <- ct
                     gate.Task
