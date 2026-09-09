@@ -27,10 +27,11 @@ type internal AddOpenCodeFixProvider [<ImportingConstructor>] (assemblyContentPr
             Changes = [ TextChange(context.Span, qualifier) ]
         }
 
-    let openNamespaceFix ctx name ns multipleNames sourceText =
-        let displayText = $"open {ns}" + (if multipleNames then " (" + name + ")" else "")
+    let openNamespaceFix ctx name declaration multipleNames sourceText =
+        let displayText = declaration + (if multipleNames then " (" + name + ")" else "")
 
-        let change = OpenDeclarationHelper.getOpenDeclarationChange sourceText ctx ns
+        let change =
+            OpenDeclarationHelper.getOpenDeclarationChange sourceText ctx declaration
 
         {
             Name = CodeFix.AddOpen
@@ -38,31 +39,41 @@ type internal AddOpenCodeFixProvider [<ImportingConstructor>] (assemblyContentPr
             Changes = [ change ]
         }
 
+    // A plain `open` reaches namespaces and F# modules. When the entity sits deeper than that - a type
+    // nested in a type, or a static member of one - the type itself has to be opened.
+    let openDeclaration (entity: InsertionContextEntity) openableIdentCount ns =
+        if entity.NamespaceIdentCount > openableIdentCount then
+            $"open type {ns}"
+        else
+            $"open {ns}"
+
     let getSuggestionsAsCodeFixes
         (context: CodeFixContext)
         (sourceText: SourceText)
-        (candidates: (InsertionContextEntity * InsertionContext) list)
+        (candidates: (InsertionContextEntity * InsertionContext * int) list)
         =
         seq {
             candidates
-            |> Seq.choose (fun (entity, ctx) -> entity.Namespace |> Option.map (fun ns -> ns, entity.FullDisplayName, ctx))
-            |> Seq.groupBy (fun (ns, _, _) -> ns)
-            |> Seq.map (fun (ns, xs) ->
-                ns,
+            |> Seq.choose (fun (entity, ctx, openableIdentCount) ->
+                entity.Namespace
+                |> Option.map (fun ns -> openDeclaration entity openableIdentCount ns, entity.FullDisplayName, ctx))
+            |> Seq.groupBy (fun (declaration, _, _) -> declaration)
+            |> Seq.map (fun (declaration, xs) ->
+                declaration,
                 xs
                 |> Seq.map (fun (_, name, ctx) -> name, ctx)
                 |> Seq.distinctBy (fun (name, _) -> name)
                 |> Seq.sortBy fst
                 |> Seq.toArray)
-            |> Seq.map (fun (ns, names) ->
+            |> Seq.map (fun (declaration, names) ->
                 let multipleNames = names |> Array.length > 1
-                names |> Seq.map (fun (name, ctx) -> ns, name, ctx, multipleNames))
+                names |> Seq.map (fun (name, ctx) -> declaration, name, ctx, multipleNames))
             |> Seq.concat
-            |> Seq.map (fun (ns, name, ctx, multipleNames) -> openNamespaceFix ctx name ns multipleNames sourceText)
+            |> Seq.map (fun (declaration, name, ctx, multipleNames) -> openNamespaceFix ctx name declaration multipleNames sourceText)
 
             candidates
-            |> Seq.filter (fun (entity, _) -> not (entity.LastIdent.StartsWith "op_")) // Don't include qualified operator names. The resultant codefix won't compile because it won't be an infix operator anymore.
-            |> Seq.map (fun (entity, _) -> entity.FullRelativeName, entity.Qualifier)
+            |> Seq.filter (fun (entity, _, _) -> not (entity.LastIdent.StartsWith "op_")) // Don't include qualified operator names. The resultant codefix won't compile because it won't be an infix operator anymore.
+            |> Seq.map (fun (entity, _, _) -> entity.FullRelativeName, entity.Qualifier)
             |> Seq.distinct
             |> Seq.sort
             |> Seq.map (qualifySymbolFix context)
@@ -130,7 +141,9 @@ type internal AddOpenCodeFixProvider [<ImportingConstructor>] (assemblyContentPr
                             assemblyContentProvider.GetAllEntitiesInProjectAndReferencedAssemblies checkResults
                             |> Array.collect (fun s ->
                                 [|
-                                    yield s.TopRequireQualifiedAccessParent, s.AutoOpenParent, s.Namespace, s.CleanedIdents
+                                    yield
+                                        s.OpenableIdentCount,
+                                        (s.TopRequireQualifiedAccessParent, s.AutoOpenParent, s.Namespace, s.CleanedIdents)
                                     if isAttribute then
                                         let lastIdent = s.CleanedIdents.[s.CleanedIdents.Length - 1]
 
@@ -139,13 +152,14 @@ type internal AddOpenCodeFixProvider [<ImportingConstructor>] (assemblyContentPr
                                             && s.Kind LookupType.Precise = EntityKind.Attribute
                                         then
                                             yield
-                                                s.TopRequireQualifiedAccessParent,
-                                                s.AutoOpenParent,
-                                                s.Namespace,
-                                                s.CleanedIdents
-                                                |> Array.replace
-                                                    (s.CleanedIdents.Length - 1)
-                                                    (lastIdent.Substring(0, lastIdent.Length - 9))
+                                                s.OpenableIdentCount,
+                                                (s.TopRequireQualifiedAccessParent,
+                                                 s.AutoOpenParent,
+                                                 s.Namespace,
+                                                 s.CleanedIdents
+                                                 |> Array.replace
+                                                     (s.CleanedIdents.Length - 1)
+                                                     (lastIdent.Substring(0, lastIdent.Length - 9)))
                                 |])
 
                         ParsedInput.GetLongIdentAt parseResults.ParseTree unresolvedIdentRange.End
@@ -173,8 +187,9 @@ type internal AddOpenCodeFixProvider [<ImportingConstructor>] (assemblyContentPr
                                     insertionPoint
 
                             entities
-                            |> Seq.map createEntity
-                            |> Seq.concat
+                            |> Seq.collect (fun (openableIdentCount, symbol) ->
+                                createEntity symbol
+                                |> Seq.map (fun (entity, ctx) -> entity, ctx, openableIdentCount))
                             |> Seq.toList
                             |> getSuggestionsAsCodeFixes context sourceText
                             |> Seq.tryHead))
