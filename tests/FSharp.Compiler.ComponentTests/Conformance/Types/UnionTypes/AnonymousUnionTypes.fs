@@ -204,6 +204,14 @@ module AnonymousUnionTypes =
         |> verifyCompileAndRunNoOverlapAndDegradeWarning
         |> shouldSucceed
 
+    [<Theory; FileInlineData("AnonErasedType.fs")>]
+    let ``ErasedType_fs`` compilation =
+        compilation
+        |> getCompilation
+        |> withLangVersionPreview
+        |> verifyCompileAndRun
+        |> shouldSucceed
+
     [<Theory; FileInlineData("E_AnonWildcard.fs")>]
     let ``E_Wildcard_fs`` compilation =
         compilation
