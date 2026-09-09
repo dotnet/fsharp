@@ -33,18 +33,29 @@ open Microsoft.VisualStudio.FSharp.Editor.Telemetry
 type SemanticClassificationData = SemanticClassificationView
 type SemanticClassificationLookup = IReadOnlyDictionary<int, ResizeArray<SemanticClassificationItem>>
 
+/// What a classification answers for: the text it colours and the semantics it was checked against.
+/// An edit elsewhere in the project reclassifies this document without touching its text.
+[<Struct>]
+type internal ClassificationVersion =
+    {
+        TextVersion: VersionStamp
+        SemanticVersion: VersionStamp
+    }
+
 /// The whole-file semantic classification of one version of an open document.
 type internal OpenDocumentClassification =
     {
-        Version: VersionStamp
+        Version: ClassificationVersion
         Text: SourceText
         Lookup: SemanticClassificationLookup
     }
 
+type internal ClassifyWholeFile = CancellationToken -> Task<OpenDocumentClassification voption>
+
 /// One classification of a document version, shared by every request that arrives while it runs.
 /// The computation starts with the first waiter and is cancelled only when the last one leaves.
 [<Sealed>]
-type internal InFlightClassification(version: VersionStamp, compute: CancellationToken -> Task<OpenDocumentClassification voption>) =
+type internal InFlightClassification(version: ClassificationVersion, compute: ClassifyWholeFile) =
     let cts = new CancellationTokenSource()
     let job = lazy (compute cts.Token)
     let mutable waiters = 0
@@ -225,7 +236,7 @@ type internal FSharpClassificationService [<ImportingConstructor>] () =
         | true, sourceText -> addLastGood document.Id sourceText targetSpan result
         | _ -> ()
 
-    static let classifyWholeFile (document: Document) (version: VersionStamp) (sourceText: SourceText) =
+    static let classifyWholeFile (document: Document) (version: ClassificationVersion) (sourceText: SourceText) =
         cancellableTask {
             match! document.TryGetFSharpParseAndCheckResultsAsync(nameof (IFSharpClassificationService)) with
             | ValueNone -> return ValueNone
@@ -252,7 +263,7 @@ type internal FSharpClassificationService [<ImportingConstructor>] () =
 
     // Requests for the same version that overlap - split views, the taggers above and below the
     // viewport - share one classification instead of each walking the whole file.
-    static let classifyOpenDocument (document: Document) (version: VersionStamp) (sourceText: SourceText) =
+    static let classifyOpenDocument (document: Document) (version: ClassificationVersion) (sourceText: SourceText) =
         cancellableTask {
             let! cancellationToken = CancellableTask.getCancellationToken ()
 
@@ -397,7 +408,14 @@ type internal FSharpClassificationService [<ImportingConstructor>] () =
                                 addSemanticClassificationByLookup sourceText textSpan classificationDataLookup result
                     else
 
-                        let! version = document.GetTextVersionAsync(cancellationToken)
+                        let! textVersion = document.GetTextVersionAsync(cancellationToken)
+                        let! semanticVersion = document.Project.GetDependentSemanticVersionAsync(cancellationToken)
+
+                        let version =
+                            {
+                                TextVersion = textVersion
+                                SemanticVersion = semanticVersion
+                            }
 
                         match openDocumentClassifications.TryGetValue document.Id with
                         | true, classification when classification.Version = version ->
