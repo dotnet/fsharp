@@ -304,8 +304,11 @@
       "cats": []
     },
     "20486": {
-      "sha": "4ae78d12e409c5c5824069ab67df067505dbb111",
-      "cats": []
+      "sha": "df2c9ad40ab4cdaec95cbee991c740e28cb4c2a2",
+      "cats": [
+        "Affects-Bootstrap",
+        "Affects-Compiler-Output"
+      ]
     },
     "20487": {
       "sha": "a8eeb1f57767d68bc72aa73827a112bd4d4ca7a8",
@@ -316,12 +319,18 @@
       "cats": []
     },
     "20490": {
-      "sha": "98d652f6755b342e8c4dfadaeca1045e0ec10456",
-      "cats": []
+      "sha": "3bb87bb5616607d21f8e39e85aa6bcfc90a7c50f",
+      "cats": [
+        "Affects-Bootstrap",
+        "Affects-Compiler-Output"
+      ]
     },
     "20489": {
-      "sha": "94ee8635c02924c13b9f85ae8873dd3143312c65",
-      "cats": []
+      "sha": "57c504f6738e57d4ac9c1e6d00044d3911e76110",
+      "cats": [
+        "Affects-Bootstrap",
+        "Affects-Compiler-Output"
+      ]
     },
     "20491": {
       "sha": "f0587a9f973453393aa162d5063f3a87dc50f1b1",
