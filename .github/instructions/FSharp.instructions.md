@@ -61,6 +61,8 @@ Enabled in `src/Compiler`, `src/FSharp.Build`, `src/FSharp.Compiler.LanguageServ
 
 Inline `#nowarn "NN"` / `#warnon "NN"` pairs around the smallest possible scope – they are valid anywhere in an `.fs` file, not only at the top. File-level suppression is a last resort.
 
+Scoped `#nowarn`/`#warnon` is an F# 10 feature (`LanguageFeature.ScopedNowarn`). `src/FSharp.Build` is pinned to `LangVersion 9`, where the same pair is FS3350 – there, suppression stays at the top of the file.
+
 ## Classes (mostly `vsintegration`)
 
 - Initializer syntax over post-construction property assignment: `MyType(ctorArg, MutableProp1 = v1, MutableProp2 = (5 |> string))` – settable properties by name after positional arguments, computed values in parentheses.
