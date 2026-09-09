@@ -340,10 +340,10 @@ and [<Sealed>] private FileChangeContext(enqueue: WatcherOperation -> unit, watc
         member _.EnqueueWatchingFile filePath =
             match
                 watchedDirectories
-                |> Seq.tryFindIndex (fun w -> WatchedDirectory.Covers(w, filePath))
+                |> Seq.tryFindIndexV (fun w -> WatchedDirectory.Covers(w, filePath))
             with
-            | Some i -> directoryWatchedFiles[i]
-            | None ->
+            | ValueSome i -> directoryWatchedFiles[i]
+            | ValueNone ->
                 let token = FSharpWatchedFileToken()
                 lock gate (fun () -> activeFileTokens.Add token |> ignore)
                 enqueue (WatchFiles([ filePath ], [ token ], this :> IVsFreeThreadedFileChangeEvents2))
