@@ -637,7 +637,9 @@ module internal Tokenizer =
                 if scanStartLine = 0 then
                     FSharpTokenizerLexState.Initial
                 else
-                    sourceTextDataCache.[scanStartLine - 1].Value.LexStateAtEndOfLine
+                    // scanStartLine is the entry the loop above just proved valid; scanStartLine - 1 was
+                    // never checked and can hold a stale entry from a concurrent scan of different text.
+                    sourceTextDataCache.[scanStartLine].Value.LexStateAtStartOfLine
 
             for i = scanStartLine to endLine do
                 ct.ThrowIfCancellationRequested()
