@@ -484,7 +484,6 @@ stages:
 
         # Linux
         - job: Linux
-          continueOnError: false
           pool:
             name: $(DncEngPublicBuildPool)
             demands: ImageOverride -equals $(LinuxMachineQueueName)
@@ -495,8 +494,15 @@ stages:
           steps:
           - checkout: self
             clean: true
-          - script: ./eng/cibuild.sh --configuration $(_BuildConfig) --testcoreclr
+          - script: ./eng/cibuild.sh --configuration $(_BuildConfig) --testcoreclr --mt true
             displayName: Build / Test
+          - script: ./eng/common/dotnet.sh fsi tests/EndToEndBuildTests/MultithreadedTasks/run.fsx -- --configuration $(_BuildConfig) --repetitions 3
+            displayName: Real SDK MP / MT integration
+          - task: PublishPipelineArtifact@1
+            condition: always()
+            inputs:
+              targetPath: '$(Build.SourcesDirectory)/artifacts/MultithreadedTasks'
+              artifact: Linux SDK MT evidence
           - task: PublishTestResults@2
             displayName: Publish Test Results
             inputs:
@@ -527,66 +533,6 @@ stages:
             continueOnError: true
             condition: failed()
 
-        - job: Linux_Multithreaded
-          continueOnError: true
-          pool:
-            name: $(DncEngPublicBuildPool)
-            demands: ImageOverride -equals $(LinuxMachineQueueName)
-          timeoutInMinutes: 120
-          variables:
-          - name: _SignType
-            value: Test
-          steps:
-          - checkout: self
-            clean: true
-          - script: ./build.sh -c $(_BuildConfig) --mt true
-            displayName: Build local products with MT
-          - script: ./eng/common/dotnet.sh test --project tests/FSharp.Build.UnitTests/FSharp.Build.UnitTests.fsproj -c $(_BuildConfig) --report-spekt-xunit --report-spekt-xunit-filename FSharp.Build.UnitTests.Linux-MT.xml --results-directory "$(Build.SourcesDirectory)/artifacts/TestResults/$(_BuildConfig)"
-            displayName: Focused FSharp.Build task tests
-          - script: ./eng/common/dotnet.sh fsi tests/EndToEndBuildTests/MultithreadedTasks/run.fsx -- --configuration $(_BuildConfig) --repetitions 3
-            displayName: Real SDK MP / MT integration
-            condition: succeededOrFailed()
-          - task: PublishTestResults@2
-            condition: succeededOrFailed()
-            inputs:
-              testResultsFormat: XUnit
-              testRunTitle: Linux MT
-              testResultsFiles: '*.xml'
-              mergeTestResults: true
-              searchFolder: '$(Build.SourcesDirectory)/artifacts/TestResults/$(_BuildConfig)'
-          - task: PublishPipelineArtifact@1
-            condition: always()
-            inputs:
-              targetPath: '$(Build.SourcesDirectory)/artifacts/MultithreadedTasks'
-              artifact: Linux SDK MT evidence
-
-        - job: Windows_SDK_Multithreaded
-          continueOnError: true
-          pool:
-            name: $(DncEngPublicBuildPool)
-            demands: ImageOverride -equals $(_WindowsMachineQueueName)
-          timeoutInMinutes: 120
-          steps:
-          - checkout: self
-            clean: true
-          - task: UseDotNet@2
-            inputs:
-              packageType: sdk
-              version: '10.x'
-              includePreviewVersions: true
-              installationPath: $(Build.SourcesDirectory)/.dotnet
-          - script: .\eng\common\dotnet.cmd
-            displayName: Install pinned SDK
-          - script: .\build.cmd -configuration Release -noVisualStudio
-            displayName: Build local SDK compiler and tasks
-          - script: .\eng\common\dotnet.cmd fsi tests\EndToEndBuildTests\MultithreadedTasks\run.fsx -- --configuration Release --repetitions 3
-            displayName: Real SDK MP / MT integration
-          - task: PublishPipelineArtifact@1
-            condition: always()
-            inputs:
-              targetPath: '$(Build.SourcesDirectory)/artifacts/MultithreadedTasks'
-              artifact: Windows SDK MT evidence
-
         # MacOS (split into 2 batches; batch 3 is desktop-only FSharpSuite)
         - job: MacOS
           strategy:
@@ -604,7 +550,7 @@ stages:
           steps:
           - template: /eng/templates/batched-test-steps.yml
             parameters:
-              buildCommand: ./eng/cibuild.sh --configuration $(_BuildConfig) --testcoreclrbatch $(batchNumber)
+              buildCommand: ./eng/cibuild.sh --configuration $(_BuildConfig) --testcoreclrbatch $(batchNumber) --mt true
               buildEnv:
                 COMPlus_DefaultStackSize: 1000000
               testRunTitlePrefix: 'MacOS'
@@ -627,6 +573,13 @@ stages:
             displayName: Verify FSharp.Core package assets
           - script: .\tests\EndToEndBuildTests\EndToEndBuildTests.cmd -c Release
             displayName: End to end build tests
+          - script: .\eng\common\dotnet.cmd fsi tests\EndToEndBuildTests\MultithreadedTasks\run.fsx -- --configuration Release --repetitions 3
+            displayName: Real SDK MP / MT integration
+          - task: PublishPipelineArtifact@1
+            condition: always()
+            inputs:
+              targetPath: '$(Build.SourcesDirectory)/artifacts/MultithreadedTasks'
+              artifact: Windows SDK MT evidence
           
           # Publish artifacts for regression testing
           - task: PublishPipelineArtifact@1
@@ -698,7 +651,7 @@ stages:
             clean: true
           - script: dotnet --list-sdks
             displayName: Report dotnet SDK versions
-          - script: .\eng\common\dotnet.cmd build .\FSharp.Compiler.Service.slnx /bl:\"artifacts/log/$(_BuildConfig)/ServiceRegularBuild.binlog\"
+          - script: .\eng\common\dotnet.cmd build .\FSharp.Compiler.Service.slnx -mt /bl:\"artifacts/log/$(_BuildConfig)/ServiceRegularBuild.binlog\"
             workingDirectory: $(Build.SourcesDirectory)
             displayName: Regular rebuild of FSharp.Compiler.Service.slnx
             continueOnError: false
@@ -717,7 +670,7 @@ stages:
             clean: true
           - script: dotnet --list-sdks
             displayName: Report dotnet SDK versions
-          - script: ./eng/common/dotnet.sh build ./FSharp.Compiler.Service.slnx /bl:\"artifacts/log/$(_BuildConfig)/ServiceRegularBuild.binlog\"
+          - script: ./eng/common/dotnet.sh build ./FSharp.Compiler.Service.slnx -mt /bl:\"artifacts/log/$(_BuildConfig)/ServiceRegularBuild.binlog\"
             workingDirectory: $(Build.SourcesDirectory)
             displayName: Regular rebuild of FSharp.Compiler.Service.slnx
             continueOnError: false
@@ -735,7 +688,7 @@ stages:
             clean: true
           - script: dotnet --list-sdks
             displayName: Report dotnet SDK versions
-          - script: ./eng/common/dotnet.sh build ./FSharp.Compiler.Service.slnx /bl:\"artifacts/log/$(_BuildConfig)/ServiceRegularBuild.binlog\"
+          - script: ./eng/common/dotnet.sh build ./FSharp.Compiler.Service.slnx -mt /bl:\"artifacts/log/$(_BuildConfig)/ServiceRegularBuild.binlog\"
             workingDirectory: $(Build.SourcesDirectory)
             displayName: Regular rebuild of FSharp.Compiler.Service.slnx
             continueOnError: false

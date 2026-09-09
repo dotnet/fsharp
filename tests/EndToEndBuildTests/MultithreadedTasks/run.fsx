@@ -33,6 +33,8 @@ let run label arguments =
     for argument in arguments do start.ArgumentList.Add argument
     start.Environment["DOTNET_CLI_UI_LANGUAGE"] <- "en-US"
     start.Environment["MSBUILDLOGALLASSEMBLYLOADS"] <- "1"
+    // Each comparison selects its own mode, independently of an enclosing CI build.
+    start.Environment.Remove("MSBUILDFORCEMULTITHREADED") |> ignore
     use child = Process.Start start
     let pid = child.Id
     let output = child.StandardOutput.ReadToEndAsync()
@@ -204,10 +206,12 @@ let validateOutputs label =
         failwithf "%s differs from the first MP build: %A" label (Seq.toList differences)
     printfn "%s: %d deterministic artifacts match" label manifest.Count
 
+let modeSwitch mt = if mt then "-mt" else "-mt:false"
+
 let build label mt =
-    let mode = if mt then [ "-mt" ] else []
     run label ([ "msbuild"; solution; "-t:Build"; "-p:Configuration=Release"; "-m:4"; "-nr:false"; "-v:diag"; "-clp:ErrorsOnly;Summary";
-                 "-bl:" + Path.Combine(root, label + ".binlog"); "-logger:EvidenceLogger," + probeAssembly + ";" + Path.Combine(root, label + ".tsv") ] @ mode)
+                 "-bl:" + Path.Combine(root, label + ".binlog"); "-logger:EvidenceLogger," + probeAssembly + ";" + Path.Combine(root, label + ".tsv");
+                 modeSwitch mt ])
 
 for iteration in 1 .. repetitions do
     for mt in [ false; true ] do
@@ -274,8 +278,8 @@ for disabled in [ true; false ] do
         succeed label ([ "publish"; Path.Combine(trimProject, projects[1] + ".fsproj"); "-c"; "Release";
                          "-r"; RuntimeInformation.RuntimeIdentifier; "--self-contained"; "true"; "-p:PublishTrimmed=true"; "-p:UseAppHost=true";
                          "-p:DisableILLinkSubstitutions=" + string disabled;
-                         "-p:PublishDir=published/"; "-nr:false"; "-v:minimal"; "-bl:" + Path.Combine(root, label + ".binlog") ]
-                       @ (if mt then [ "-mt" ] else [ "-m:4" ])) |> ignore
+                         "-p:PublishDir=published/"; "-nr:false"; "-v:minimal"; "-bl:" + Path.Combine(root, label + ".binlog");
+                         "-m:4"; modeSwitch mt ]) |> ignore
         let dll = Path.Combine(publish, projects[1] + ".dll")
         succeed (label + "-run") [ dll ] |> ignore
         let names = resourceNames dll

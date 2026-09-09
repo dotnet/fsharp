@@ -7,15 +7,15 @@ The `Microsoft.Build.*` package version (`18.12.0-1.26454.5`) is not the runtime
 This does not establish support for all MSBuild 18.x hosts.
 The production tasks retain their parameterless constructors and existing base types.
 
-Build the local products with the Linux canary command:
+Build the local products:
 
 ```sh
 ./build.sh -c Release --mt true
 ```
 
-The Windows canary uses `.\build.cmd -configuration Release -noVisualStudio`.
+On Windows, use `.\build.cmd -configuration Release -noVisualStudio`.
 
-The Linux canary runs focused task tests next, not the full compiler test suite:
+Run the focused task tests:
 
 ```sh
 ./eng/common/dotnet.sh test --project tests/FSharp.Build.UnitTests/FSharp.Build.UnitTests.fsproj -c Release --report-spekt-xunit --report-spekt-xunit-filename FSharp.Build.UnitTests.Linux-MT.xml --results-directory artifacts/TestResults/Release
@@ -28,10 +28,17 @@ Run the SDK E2E from the repository root:
 ```
 
 On Windows, replace `./eng/common/dotnet.sh` with `.\eng\common\dotnet.cmd`.
-Both canaries retain test evidence and use literal job-level `continueOnError: true`.
-Linux E2E runs even when focused tests fail. Standard Linux still runs the full compiler suite as a required job.
+CI runs this harness as required steps in the existing `Linux` and Windows `EndToEndBuildTests` jobs.
+Both reuse their built products and publish the SDK evidence. There are no separate MT jobs.
+The existing Linux and macOS build jobs use Arcade's `--mt true` option.
+The three `Plain_Build_*` SDK jobs pass `-mt` directly to MSBuild.
+VS/MSBuild.exe jobs and Arcade-managed source-build configuration are unchanged.
+No repository-wide environment override or replacement for Arcade's MT controls is added.
+
 Use `--repetitions 10` for local stress runs.
-Each repetition compares clean `/m:4` and `/m:4 -mt` builds of 16 independent SDK F# executables.
+Each repetition compares `/m:4 -mt:false` and `/m:4 -mt` builds of 16 independent SDK F# executables.
+The child processes clear `MSBUILDFORCEMULTITHREADED` so an enclosing CI setting cannot override the MP control.
+An inherited `MSBUILDENABLEMULTITHREADED` default is overridden by the explicit mode switch.
 Each clean build is followed by an unchanged incremental build. Fsi validation reruns, but Fsc must not execute.
 The minimum project count is four.
 The harness needs access to the repository NuGet feeds for self-contained runtime and ILLink packs.
@@ -60,4 +67,4 @@ A trimming failure fails the harness, even when the generated XML and build hash
 Missing concurrency, task-loading, or routing evidence fails the run.
 Logs, binlogs, event records, generated fixtures, and hash manifests remain under `artifacts/MultithreadedTasks/<timestamp>/`.
 
-The Windows canary uses the SDK host. Visual Studio HostObject integration remains untested because this harness does not start Visual Studio.
+The Windows SDK E2E step uses the SDK host. This harness does not start Visual Studio or exercise its HostObject integration.
