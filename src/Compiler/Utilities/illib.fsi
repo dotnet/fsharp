@@ -108,6 +108,8 @@ module internal Array =
 
     val mapq: f: ('a -> 'a) -> inp: 'a[] -> 'a[] when 'a: not struct
 
+    val inline tryPick: [<InlineIfLambda>] chooser: ('T -> 'U option) -> arr: 'T[] -> 'U option
+
     val lengthsEqAndForall2: p: ('a -> 'b -> bool) -> l1: 'a[] -> l2: 'b[] -> bool
 
     val order: eltOrder: IComparer<'T> -> IComparer<'T array>
