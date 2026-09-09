@@ -218,8 +218,7 @@ module Structure =
                 Lines = ResizeArray [ lineNum ]
             }
 
-    /// Returns outlining ranges for given parsed input.
-    let getOutliningRanges (sourceLines: ReadOnlyMemory<char>[]) (parsedInput: ParsedInput) =
+    let getOutliningRangesFromLineSlices (sourceLines: ReadOnlyMemory<char>[]) (parsedInput: ParsedInput) =
         let acc = ResizeArray()
 
         /// Validation function to ensure that ranges yielded for outlining span 2 or more lines
@@ -1109,3 +1108,6 @@ module Structure =
             getCommentRanges file.Trivia.CodeComments sourceLines
 
         acc :> seq<_>
+
+    let getOutliningRanges (sourceLines: string[]) (parsedInput: ParsedInput) =
+        getOutliningRangesFromLineSlices (sourceLines |> Array.map _.AsMemory()) parsedInput
