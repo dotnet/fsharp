@@ -108,6 +108,8 @@ module internal Array =
 
     val mapq: f: ('a -> 'a) -> inp: 'a[] -> 'a[] when 'a: not struct
 
+    val inline tryPick: [<InlineIfLambda>] chooser: ('T -> 'U option) -> arr: 'T[] -> 'U option
+
     val lengthsEqAndForall2: p: ('a -> 'b -> bool) -> l1: 'a[] -> l2: 'b[] -> bool
 
     val order: eltOrder: IComparer<'T> -> IComparer<'T array>
@@ -243,8 +245,8 @@ module internal List =
 
     val prependIfSome: x: 'a option -> l: 'a list -> 'a list
 
-    val vMapFold<'T, 'State, 'Result> :
-        mapping: ('State -> 'T -> struct ('Result * 'State)) ->
+    val inline vMapFold:
+        [<InlineIfLambda>] mapping: ('State -> 'T -> struct ('Result * 'State)) ->
         state: 'State ->
         list: 'T list ->
             struct ('Result list * 'State)
