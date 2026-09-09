@@ -39,17 +39,24 @@ type internal WatchedDirectory(path: string, extensionFilters: ImmutableArray<st
     member _.Path = path
     member _.ExtensionFilters = extensionFilters
 
+    static member Covers(directory: WatchedDirectory, filePath: string) =
+        filePath.StartsWith(directory.Path, StringComparison.OrdinalIgnoreCase)
+        && (directory.ExtensionFilters.IsEmpty
+            || directory.ExtensionFilters
+               |> Seq.exists (fun filter -> filePath.EndsWith(filter, StringComparison.OrdinalIgnoreCase)))
+
     static member FilePathCoveredByWatchedDirectories(watchedDirectories: ImmutableArray<WatchedDirectory>, filePath: string) =
-        watchedDirectories
-        |> Seq.exists (fun w ->
-            filePath.StartsWith(w.Path, StringComparison.OrdinalIgnoreCase)
-            && (w.ExtensionFilters.IsEmpty
-                || w.ExtensionFilters
-                   |> Seq.exists (fun filter -> filePath.EndsWith(filter, StringComparison.OrdinalIgnoreCase))))
+        watchedDirectories |> Seq.exists (fun w -> WatchedDirectory.Covers(w, filePath))
 
 /// A single watched file; disposing stops watching.
 type internal IFSharpWatchedFile =
     inherit IDisposable
+
+    /// True once the underlying advise has succeeded; false while queued or after it has
+    /// failed. A consumer that caches something derived from a watch must gate the cache on
+    /// this, not on the watch merely existing - there is no gap in which a change could be
+    /// missed once it is true.
+    abstract IsActive: bool
 
 /// A group of file/directory watches sharing one event sink. Disposing unsubscribes everything.
 type internal IFSharpFileChangeContext =
@@ -98,18 +105,18 @@ module private FileChangeWatcherImpl =
     /// writes a temp file then renames, producing several rapid notifications.
     let defaultNotificationDelay = TimeSpan.FromSeconds 2.
 
-    let noOpWatchedFile =
-        { new IFSharpWatchedFile with
-            member _.Dispose() = ()
-        }
-
 [<Sealed>]
 type internal FSharpWatchedFileToken() =
     member val Cookie: uint32 voption = ValueNone with get, set
 
 /// Subscription operations queued for batched application against the file change service.
 type private WatcherOperation =
-    | WatchDir of path: string * filters: ImmutableArray<string> * sink: IVsFreeThreadedFileChangeEvents2 * cookies: List<uint32>
+    | WatchDir of
+        path: string *
+        filters: ImmutableArray<string> *
+        sink: IVsFreeThreadedFileChangeEvents2 *
+        cookies: List<uint32> *
+        active: bool ref
     | WatchFiles of paths: string list * tokens: FSharpWatchedFileToken list * sink: IVsFreeThreadedFileChangeEvents2
     | UnwatchFiles of tokens: FSharpWatchedFileToken list
     | UnwatchDirs of cookies: List<uint32>
@@ -128,13 +135,19 @@ type internal FSharpFileChangeWatcher(fileChangeService: Task<IVsAsyncFileChange
             while not pending.IsEmpty do
                 match pending with
                 | [] -> ()
-                | WatchDir(path, filters, sink, cookies) :: rest ->
+                | WatchDir(path, filters, sink, cookies, active) :: rest ->
                     pending <- rest
-                    let! cookie = service.AdviseDirChangeAsync(path, true, sink, ct)
-                    cookies.Add cookie
 
-                    if not filters.IsEmpty then
-                        do! service.FilterDirectoryChangesAsync(cookie, Seq.toArray filters, ct)
+                    try
+                        let! cookie = service.AdviseDirChangeAsync(path, true, sink, ct)
+                        cookies.Add cookie
+
+                        if not filters.IsEmpty then
+                            do! service.FilterDirectoryChangesAsync(cookie, Seq.toArray filters, ct)
+
+                        active.Value <- true
+                    with ex when not (ex :? OperationCanceledException) ->
+                        FSharpOutputPane.logExceptionWithContext (ex, nameof FSharpFileChangeWatcher)
 
                 | WatchFiles(_, _, sink) :: _ ->
                     let batch =
@@ -162,10 +175,13 @@ type internal FSharpFileChangeWatcher(fileChangeService: Task<IVsAsyncFileChange
                                 | _ -> ()
                         |]
 
-                    let! cookies = service.AdviseFileChangesAsync(paths, watchFlags, sink, ct)
+                    try
+                        let! cookies = service.AdviseFileChangesAsync(paths, watchFlags, sink, ct)
 
-                    (tokens, cookies)
-                    ||> Array.iter2 (fun token cookie -> token.Cookie <- ValueSome cookie)
+                        (tokens, cookies)
+                        ||> Array.iter2 (fun token cookie -> token.Cookie <- ValueSome cookie)
+                    with ex when not (ex :? OperationCanceledException) ->
+                        FSharpOutputPane.logExceptionWithContext (ex, nameof FSharpFileChangeWatcher)
 
                 | UnwatchFiles _ :: _ ->
                     let batch =
@@ -192,16 +208,22 @@ type internal FSharpFileChangeWatcher(fileChangeService: Task<IVsAsyncFileChange
                                 | _ -> ()
                         |]
 
-                    if cookies.Length > 0 then
-                        let! _ = service.UnadviseFileChangesAsync(cookies, ct)
-                        ()
+                    try
+                        if cookies.Length > 0 then
+                            let! _ = service.UnadviseFileChangesAsync(cookies, ct)
+                            ()
+                    with ex when not (ex :? OperationCanceledException) ->
+                        FSharpOutputPane.logExceptionWithContext (ex, nameof FSharpFileChangeWatcher)
 
                 | UnwatchDirs cookies :: rest ->
                     pending <- rest
 
-                    if cookies.Count > 0 then
-                        let! _ = service.UnadviseDirChangesAsync(cookies.ToArray(), ct)
-                        ()
+                    try
+                        if cookies.Count > 0 then
+                            let! _ = service.UnadviseDirChangesAsync(cookies.ToArray(), ct)
+                            ()
+                    with ex when not (ex :? OperationCanceledException) ->
+                        FSharpOutputPane.logExceptionWithContext (ex, nameof FSharpFileChangeWatcher)
         }
 
     let cancellationTokenSource = new CancellationTokenSource()
@@ -271,6 +293,19 @@ and [<Sealed>] private FileChangeContext(enqueue: WatcherOperation -> unit, watc
     let directoryCookies = List<uint32>()
     let fileChanged = Event<string>()
 
+    // One activation flag per watched directory: a path it covers is only ever cached once that
+    // directory's own advise has succeeded, never while still queued or after it has failed.
+    let directoryActive =
+        watchedDirectories |> Seq.map (fun _ -> ref false) |> Seq.toArray
+
+    let directoryWatchedFiles =
+        directoryActive
+        |> Array.map (fun active ->
+            { new IFSharpWatchedFile with
+                member _.IsActive = active.Value
+                member _.Dispose() = ()
+            })
+
     let raiseChanges (count: uint32) (files: string[]) (changeFlags: uint32[]) =
         for i in 0 .. int count - 1 do
             if
@@ -282,15 +317,17 @@ and [<Sealed>] private FileChangeContext(enqueue: WatcherOperation -> unit, watc
         VSConstants.S_OK
 
     do
-        for watchedDirectory in watchedDirectories do
+        watchedDirectories
+        |> Seq.iteri (fun i watchedDirectory ->
             enqueue (
                 WatchDir(
                     watchedDirectory.Path,
                     watchedDirectory.ExtensionFilters,
                     this :> IVsFreeThreadedFileChangeEvents2,
-                    directoryCookies
+                    directoryCookies,
+                    directoryActive[i]
                 )
-            )
+            ))
 
     member private _.StopWatchingFile(token: FSharpWatchedFileToken) =
         lock gate (fun () -> activeFileTokens.Remove token |> ignore)
@@ -301,14 +338,18 @@ and [<Sealed>] private FileChangeContext(enqueue: WatcherOperation -> unit, watc
         member _.FileChanged = fileChanged.Publish
 
         member _.EnqueueWatchingFile filePath =
-            if WatchedDirectory.FilePathCoveredByWatchedDirectories(watchedDirectories, filePath) then
-                noOpWatchedFile
-            else
+            match
+                watchedDirectories
+                |> Seq.tryFindIndex (fun w -> WatchedDirectory.Covers(w, filePath))
+            with
+            | Some i -> directoryWatchedFiles[i]
+            | None ->
                 let token = FSharpWatchedFileToken()
                 lock gate (fun () -> activeFileTokens.Add token |> ignore)
                 enqueue (WatchFiles([ filePath ], [ token ], this :> IVsFreeThreadedFileChangeEvents2))
 
                 { new IFSharpWatchedFile with
+                    member _.IsActive = token.Cookie.IsSome
                     member _.Dispose() = this.StopWatchingFile token
                 }
 
@@ -462,11 +503,13 @@ type internal FSharpReferenceChangeTracker(watcher: IFSharpFileChangeWatcher, on
         member _.GetLastWriteTimeUtc fullFilePath =
             lock gate (fun () ->
                 match watchedFiles.TryGetValue fullFilePath with
-                | true, { Stamp = ValueSome stamp } -> stamp
-                | true, entry ->
-                    let stamp = IO.File.GetLastWriteTimeUtc fullFilePath
-                    entry.Stamp <- ValueSome stamp
-                    stamp
+                | true, entry when entry.Token.IsActive ->
+                    match entry.Stamp with
+                    | ValueSome stamp -> stamp
+                    | ValueNone ->
+                        let stamp = IO.File.GetLastWriteTimeUtc fullFilePath
+                        entry.Stamp <- ValueSome stamp
+                        stamp
                 | _ -> IO.File.GetLastWriteTimeUtc fullFilePath)
 
         member _.Invalidate fullFilePath =
