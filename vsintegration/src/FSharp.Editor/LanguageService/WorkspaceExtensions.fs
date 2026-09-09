@@ -536,6 +536,9 @@ module private CheckerExtensions =
                         checker.ParseAndCheckDocumentWithPossibleStaleResults(document, options, allowStaleResults, userOpName = userOpName)
             }
 
+let private orRaise message =
+    ValueOption.defaultWith (fun () -> raise (OperationCanceledException(message: string)))
+
 type Document with
 
     /// Get the compilation options of the F# project that is associated with the given F# document,
