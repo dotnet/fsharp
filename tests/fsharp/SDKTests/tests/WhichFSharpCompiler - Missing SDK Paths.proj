@@ -12,8 +12,8 @@
   <Import Project="ToolsTest.props" />
 
   <PropertyGroup>
-    <NetCoreRoot></NetCoreRoot>
-    <NETCoreSdkVersion></NETCoreSdkVersion>
+    <NetCoreRoot Condition="'$(MissingSdkPath)' != 'Version'"></NetCoreRoot>
+    <NETCoreSdkVersion Condition="'$(MissingSdkPath)' != 'Root'"></NETCoreSdkVersion>
     <FSharpPreferAnyCpuTools>true</FSharpPreferAnyCpuTools>
   </PropertyGroup>
 
