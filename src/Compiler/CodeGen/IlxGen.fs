@@ -1972,9 +1972,14 @@ let GenPossibleILDebugRange (cenv: cenv) m =
 // Helpers for merging property definitions
 //--------------------------------------------------------------------------
 
-// Most type definitions carry no properties at all, so the empty case is the one worth being cheap.
-// The sort keys are the insertion indices AddPropertyDefToHash hands out, which are unique, so an
-// unstable sort orders these exactly as the stable one did.
+/// <summary>
+/// Returns the merged property definitions ordered by the index they were added with.
+/// </summary>
+/// <remarks>
+/// Most type definitions carry no properties at all, so the empty case is the one worth being cheap.
+/// The sort keys are the indices <see cref="AddPropertyDefToHash"/> hands out, which are never
+/// duplicated, so an unstable sort orders these exactly as the stable one did.
+/// </remarks>
 let HashRangeSorted (ht: IDictionary<_, int * _>) =
     if ht.Count = 0 then
         []
