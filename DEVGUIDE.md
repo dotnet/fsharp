@@ -374,6 +374,8 @@ Then, use the **f5** or **ctrl+f5** keyboard shortcuts to test your tooling chan
 > [!TIP]
 > If the F# extension fails to load when you F5 (because the Roslyn version in the repo is ahead of the one in your Visual Studio), launch VS with `.\start-vs-VisualFSharpSln.ps1` instead of opening the solution directly. It builds the extension against the Roslyn your VS actually ships, so you don't need an internal/nightly VS or a local Roslyn build. Requires VS with Roslyn 5.10 or newer.
 
+Debug builds export traces and metrics over OTLP only when `FSHARP_OTEL_EXPORT` is set, so the default `VisualFSharpDebug` profile stays quiet without a collector running. Pick the `OTEL Export` launch profile - it points `FSHARP_OTEL_EXPORT` at `http://127.0.0.1:4317` - to debug against Jaeger, Prometheus or another OTLP collector listening there.
+
 Alternatively, you can do this entirely via the command line if you prefer that:
 
 ```shell
