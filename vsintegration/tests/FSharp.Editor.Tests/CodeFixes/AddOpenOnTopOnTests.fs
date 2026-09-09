@@ -128,6 +128,81 @@ Console.WriteLine 42
     Assert.Equal(expected, actual)
 
 [<Fact>]
+let ``Fixes FS0039 for missing opens - module has an attribute on the same line`` () =
+    let code =
+        """[<AutoOpen>] module Module1
+
+Console.WriteLine 42
+"""
+
+    let expected =
+        Some
+            {
+                Message = "open System"
+                FixedCode =
+                    """[<AutoOpen>] module Module1
+
+open System
+
+Console.WriteLine 42
+"""
+            }
+
+    let actual = codeFix |> tryFix code Auto
+
+    Assert.Equal(expected, actual)
+
+[<Fact>]
+let ``Fixes FS0039 for missing opens - explicit top level module without a blank line`` () =
+    let code =
+        """module Module1
+Console.WriteLine 42
+"""
+
+    let expected =
+        Some
+            {
+                Message = "open System"
+                FixedCode =
+                    """module Module1
+
+open System
+
+Console.WriteLine 42
+"""
+            }
+
+    let actual = codeFix |> tryFix code Auto
+
+    Assert.Equal(expected, actual)
+
+[<Fact>]
+let ``Fixes FS0039 for missing opens - namespace without a blank line`` () =
+    let code =
+        """namespace N1
+module M1 =
+    Console.WriteLine 42
+"""
+
+    let expected =
+        Some
+            {
+                Message = "open System"
+                FixedCode =
+                    """namespace N1
+
+open System
+
+module M1 =
+    Console.WriteLine 42
+"""
+            }
+
+    let actual = codeFix |> tryFix code Auto
+
+    Assert.Equal(expected, actual)
+
+[<Fact>]
 let ``Fixes FS0039 for missing opens - nested module`` () =
     let code =
         """module Module1 =
