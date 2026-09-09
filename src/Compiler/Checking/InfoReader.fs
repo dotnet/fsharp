@@ -741,7 +741,7 @@ type InfoReader(g: TcGlobals, amap: ImportMap) as this =
               // It would matter for different generic instantiations of the same type, but we don't cache that here - TType_app is always matched for `[]` typars.
               canMemoize=(fun (_flags, _: range, ty) ->
                                     match stripTyEqns g ty with
-                                    | TType_app(tcref, [], _) -> tcref.TypeContents.tcaug_closed
+                                    | TType_app(tcref, [], _) -> tcref.IsAugmentationClosed
                                     | _ -> false),
 
               keyComparer=

@@ -928,8 +928,7 @@ let FinalTypeDefinitionChecksAtEndOfInferenceScope (infoReader: InfoReader, nenv
     let g = infoReader.g
     let amap = infoReader.amap
 
-    let tcaug = tycon.TypeContents
-    tcaug.tcaug_closed <- true
+    tycon.SetAugmentationClosed()
 
     // Note you only have to explicitly implement 'System.IComparable' to customize structural comparison AND equality on F# types
     if isImplementation &&
