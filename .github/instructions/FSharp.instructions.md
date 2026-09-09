@@ -35,7 +35,7 @@ When the IDE's F# semantic tools are unavailable, use the `F#` MCP server (`.mcp
 ## Lambdas and collections
 
 - Prefer the `_.Property` shorthand in pipeline position: `tys |> List.map _.Type`. Complex expressions (`fun x -> x.Name = name`, `fun x -> x.A, x.B`) cannot use it. Never add a space – `_.MethodCall ()` breaks parsing. Unrelated to the `member _.Foo` self-identifier.
-- Eta-reduce: `Seq.map (fun x -> someFunction x)` must become `Seq.map someFunction`.
+- Eta-reduce: `Seq.map (fun x -> someFunction x)` must become `Seq.map someFunction` – unless the lambda is load-bearing. A method group names its captured receiver with a synthesized name that varies by optimization setting, so a closure something reflects over needs the explicit lambda (the Type Provider SDK's `tcImports` capture in `CompilerImports.fs`).
 - Prefer a single traversal – one `fold`, loop, or comprehension – to a chain of transformations: it allocates nothing per element, where a chain allocates at every stage.
 - When the chain reads better than one pass, route it through `Seq` and materialize once at the end – a `List`/`Array` chain allocates a whole intermediate collection per stage, a `Seq` chain only an enumerator.
 - Concatenate with `[ yield! xs; yield! ys ]` / `seq { yield! xs; yield! ys }` rather than `@` or `Seq.append` – `@` forces both sides to lists and is O(n).
