@@ -2033,6 +2033,20 @@ type CodegenFileScope private () =
 // Buffers for compiling modules. The entire assembly gets compiled via an AssemblyBuilder
 //--------------------------------------------------------------------------
 
+let private (|ControlFlowInstr|_|) instr =
+    match instr with
+    | I_ret
+    | I_br _
+    | I_jmp _
+    | I_brcmp _
+    | I_switch _
+    | I_throw
+    | I_rethrow
+    | I_endfinally
+    | I_endfilter
+    | I_leave _ -> true
+    | _ -> false
+
 /// The instructions (without the trailing 'ret') and stack depth of a straight-line initializer:
 /// no locals, no exception handlers, no control flow.
 let private tryGetStraightLineInitInstrs (md: ILMethodDef) =
@@ -2041,19 +2055,10 @@ let private tryGetStraightLineInitInstrs (md: ILMethodDef) =
         let body = il.Value
         let instrs = body.Code.Instrs
 
-        let isControlFlow instr =
+        let isStraightLine instr =
             match instr with
-            | I_ret
-            | I_br _
-            | I_jmp _
-            | I_brcmp _
-            | I_switch _
-            | I_throw
-            | I_rethrow
-            | I_endfinally
-            | I_endfilter
-            | I_leave _ -> true
-            | _ -> false
+            | ControlFlowInstr -> false
+            | _ -> true
 
         if
             body.Locals.IsEmpty
@@ -2061,7 +2066,7 @@ let private tryGetStraightLineInitInstrs (md: ILMethodDef) =
             && body.Code.Locals.IsEmpty
             && instrs.Length > 0
             && instrs[instrs.Length - 1] = I_ret
-            && instrs[0 .. instrs.Length - 2] |> Array.forall (isControlFlow >> not)
+            && instrs[0 .. instrs.Length - 2] |> Array.forall isStraightLine
         then
             Some(List.ofArray instrs[0 .. instrs.Length - 2], body.MaxStack)
         else
