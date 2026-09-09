@@ -690,6 +690,46 @@ let private dependsOnDefines (defines: string Set) (parseTree: ParsedInput) =
         | ConditionalDirectiveTrivia.Else _
         | ConditionalDirectiveTrivia.EndIf _ -> false)
 
+/// The files two instances of one project compile identically, counting from the first. F# reads a
+/// name's meaning from the files ahead of it, so a file that follows one parsing differently can
+/// resolve differently however plain it looks itself - the shared run ends at the first such file.
+let private identicallyCompiledPrefix
+    differingDefines
+    (documentsByPath: Dictionary<string, Document>)
+    (sourceFiles: string array)
+    (searchedSourceFiles: string array)
+    userOpName
+    =
+    cancellableTask {
+        let mutable index = 0
+        let mutable diverged = false
+
+        while not diverged && index < sourceFiles.Length do
+            let path = sourceFiles[index]
+
+            let! compilesTheSame =
+                if
+                    index >= searchedSourceFiles.Length
+                    || not (String.Equals(path, searchedSourceFiles[index], StringComparison.OrdinalIgnoreCase))
+                then
+                    CancellableTask.singleton false
+                elif Set.isEmpty differingDefines then
+                    CancellableTask.singleton true
+                else
+                    match documentsByPath.TryGetValue path with
+                    | true, document ->
+                        document.GetFSharpParseResultsAsync userOpName
+                        |> CancellableTask.map (fun parseResults -> not (dependsOnDefines differingDefines parseResults.ParseTree))
+                    | _ -> CancellableTask.singleton false
+
+            if compilesTheSame then
+                index <- index + 1
+            else
+                diverged <- true
+
+        return HashSet(Seq.truncate index sourceFiles, StringComparer.OrdinalIgnoreCase)
+    }
+
 /// How many documents of one project a search keeps in flight. The throttle it shares with the other
 /// projects decides how many of those actually run.
 [<Literal>]
@@ -698,9 +738,9 @@ let private WorkersPerProject = 4
 type Project with
 
     /// Find F# references in the given project. When `searchedInstance` is another target-framework
-    /// instance of the same project file that has already been searched, only the documents whose
-    /// sources can differ from it are searched: files compiled only here and files whose conditional
-    /// compilation tests a define the two instances disagree on.
+    /// instance of the same project file that has already been searched, the leading files both
+    /// compile identically are left to it; the search starts at the first file that can differ and
+    /// covers everything after it.
     member this.FindFSharpReferencesAsync
         (
             symbol: FSharpSymbol,
@@ -740,35 +780,30 @@ type Project with
                     }
                 | _ -> CancellableTask.singleton Set.empty
 
-            let searchedPaths =
-                searchedInstance
-                |> ValueOption.map (fun instance -> HashSet(instance.Documents |> Seq.map _.FilePath, StringComparer.OrdinalIgnoreCase))
-
             // Only the defines one instance has and the other lacks can make a shared file parse
             // differently; the ones they agree on cannot, however many directives test them.
-            let definesOf (project: Project) =
+            let optionsOf (project: Project) =
                 getFSharpOptionsForProject project
-                |> CancellableTask.map (fun (_, _, parsingOptions: FSharpParsingOptions, _) -> Set parsingOptions.ConditionalDefines)
+                |> CancellableTask.map (fun (_, _, parsingOptions: FSharpParsingOptions, options: FSharpProjectOptions) ->
+                    Set parsingOptions.ConditionalDefines, options.SourceFiles)
 
-            let! differingDefines =
+            let! alreadyCovered =
                 match searchedInstance with
-                | ValueNone -> CancellableTask.singleton Set.empty
+                | ValueNone -> CancellableTask.singleton (HashSet<string> StringComparer.OrdinalIgnoreCase)
                 | ValueSome instance ->
                     cancellableTask {
-                        let! defines = definesOf this
-                        let! searchedDefines = definesOf instance
-                        return (defines - searchedDefines) + (searchedDefines - defines)
-                    }
+                        let! defines, sourceFiles = optionsOf this
+                        let! searchedDefines, searchedSourceFiles = optionsOf instance
 
-            let needsSearch (document: Document) =
-                match searchedPaths with
-                | ValueSome paths when paths.Contains document.FilePath ->
-                    if differingDefines.IsEmpty then
-                        CancellableTask.singleton false
-                    else
-                        document.GetFSharpParseResultsAsync userOpName
-                        |> CancellableTask.map (fun parseResults -> dependsOnDefines differingDefines parseResults.ParseTree)
-                | _ -> CancellableTask.singleton true
+                        let differingDefines = (defines - searchedDefines) + (searchedDefines - defines)
+
+                        let documentsByPath = Dictionary(StringComparer.OrdinalIgnoreCase)
+
+                        for document in this.Documents do
+                            documentsByPath[document.FilePath] <- document
+
+                        return! identicallyCompiledPrefix differingDefines documentsByPath sourceFiles searchedSourceFiles userOpName
+                    }
 
             let search (document: Document) =
                 cancellableTask {
@@ -776,10 +811,7 @@ type Project with
                     do! throttle.WaitAsync ct
 
                     try
-                        let! needed = needsSearch document
-
-                        if needed then
-                            do! document.FindFSharpReferencesAsync(symbol, projectSnapshot, onFound document, userOpName)
+                        do! document.FindFSharpReferencesAsync(symbol, projectSnapshot, onFound document, userOpName)
                     finally
                         throttle.Release() |> ignore
                 }
@@ -788,7 +820,8 @@ type Project with
                 this.Documents
                 |> Seq.filter (fun document ->
                     isFSharpSourceFile document.FilePath
-                    && not (canSkipDocuments.Contains document.FilePath))
+                    && not (canSkipDocuments.Contains document.FilePath)
+                    && not (alreadyCovered.Contains document.FilePath))
                 // Workers take the next document when they free up. Starting one task per document
                 // instead would leave every document of the solution parked on the throttle at once.
                 |> CancellableTask.forEachThrottled WorkersPerProject search
