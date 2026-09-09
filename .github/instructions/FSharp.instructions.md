@@ -20,7 +20,8 @@ When the IDE's F# semantic tools are unavailable, use the `F#` MCP server (`.mcp
 - Prefer interpolated strings over `sprintf` and `String.Format`. Use `$"""…"""` when the text itself contains quotes.
 - Format specifiers are valid in interpolated strings and help type inference: `$"count %d{n}"`.
 - `nameof` over a string literal that names a value, member or type.
-- An explicit `StringComparison` on every `Equals`, `StartsWith`, `EndsWith`, `Contains`, `IndexOf` and `Compare`, and an explicit comparer on every `HashSet<string>` and `Dictionary<string, _>`. `Ordinal` by default, `OrdinalIgnoreCase` for identifiers and paths. Culture-sensitive comparison is a decision, never a default.
+- An explicit `StringComparison` on every `Equals`, `StartsWith`, `EndsWith`, `IndexOf` and `Compare`, and an explicit comparer on every `HashSet<string>` and `Dictionary<string, _>`. `Ordinal` by default; culture-sensitive comparison is a decision, never a default. Reach for `OrdinalIgnoreCase` only where the thing compared really is case-insensitive – never for identifiers, which are case-sensitive.
+- `Contains` has no `StringComparison` overload on `netstandard2.0`. Spell it `text.IndexOf(value, StringComparison.Ordinal) >= 0`, as `XmlDocInheritance.fs` does.
 
 ## Values and types
 
