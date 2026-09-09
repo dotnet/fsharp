@@ -238,14 +238,12 @@ type private FSharpProjectOptionsReactor(checker: FSharpChecker) =
 
                 let otherOptions =
                     if project.IsFSharpMetadata then
-                        project.ProjectReferences
-                        |> Seq.map (fun x -> "-r:" + project.Solution.GetProject(x.ProjectId).OutputFilePath)
-                        |> Array.ofSeq
-                        |> Array.append (
-                            project.MetadataReferences.OfType<PortableExecutableReference>()
-                            |> Seq.map (fun x -> "-r:" + x.FilePath)
-                            |> Array.ofSeq
-                        )
+                        [|
+                            for x in project.MetadataReferences.OfType<PortableExecutableReference>() do
+                                yield "-r:" + x.FilePath
+                            for x in project.ProjectReferences do
+                                yield "-r:" + project.Solution.GetProject(x.ProjectId).OutputFilePath
+                        |]
                     else
                         [||]
 
