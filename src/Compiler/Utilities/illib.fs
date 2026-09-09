@@ -257,6 +257,16 @@ module Array =
 
             if eq then inp else res
 
+    let inline tryPick ([<InlineIfLambda>] chooser: 'T -> 'U option) (arr: 'T[]) =
+        let mutable res = None
+        let mutable i = 0
+
+        while res.IsNone && i < arr.Length do
+            res <- chooser arr[i]
+            i <- i + 1
+
+        res
+
     let lengthsEqAndForall2 p l1 l2 =
         Array.length l1 = Array.length l2 && Array.forall2 p l1 l2
 
@@ -436,6 +446,78 @@ module Option =
 module internal ValueTuple =
     let inline map1Of2 ([<InlineIfLambda>] f) struct (a1, a2) = struct (f a1, a2)
 
+/// Inline counterparts to the `FSharp.Core` list combinators that take a function argument.
+/// The built-ins are not `inline`, so they force that argument into a heap `FSharpFunc`; marking
+/// these `inline` + `[<InlineIfLambda>]` and applying the function directly lets the optimizer
+/// beta-reduce it at the call site - even through an enclosing inline function - so no closure is
+/// allocated. Use in place of `List.map` / `List.forall2` on hot paths where the argument is a
+/// lambda or partial application.
+module ListInline =
+    /// List.exists, but inline so the predicate is inlined (InlineIfLambda) rather than allocated as a closure.
+    let inline exists ([<InlineIfLambda>] predicate: 'T -> bool) (list: 'T list) =
+        let mutable rest = list
+        let mutable result = false
+
+        while not result && not rest.IsEmpty do
+            result <- predicate rest.Head
+            rest <- rest.Tail
+
+        result
+
+    /// List.foldBack, but inline so the folder is inlined (InlineIfLambda). Folds lengths up to 5 directly; longer lists use an array, staying stack-safe like List.foldBack.
+    let inline foldBack ([<InlineIfLambda>] folder: 'T -> 'State -> 'State) (list: 'T list) (state: 'State) =
+        match list with
+        | [] -> state
+        | [ h ] -> folder h state
+        | [ h1; h2 ] -> folder h1 (folder h2 state)
+        | [ h1; h2; h3 ] -> folder h1 (folder h2 (folder h3 state))
+        | [ h1; h2; h3; h4 ] -> folder h1 (folder h2 (folder h3 (folder h4 state)))
+        | [ h1; h2; h3; h4; h5 ] -> folder h1 (folder h2 (folder h3 (folder h4 (folder h5 state))))
+        | _ ->
+            let array = List.toArray list
+            let mutable state = state
+
+            for i = array.Length - 1 downto 0 do
+                state <- folder array[i] state
+
+            state
+
+    /// List.fold, but inline so the folder is inlined (InlineIfLambda) rather than allocated as a closure.
+    let inline fold ([<InlineIfLambda>] folder: 'State -> 'T -> 'State) (state: 'State) (list: 'T list) =
+        let mutable state = state
+        let mutable rest = list
+
+        while not rest.IsEmpty do
+            state <- folder state rest.Head
+            rest <- rest.Tail
+
+        state
+
+    /// As `List.map`.
+    let inline map ([<InlineIfLambda>] mapping: 'T -> 'U) (list: 'T list) = [ for x in list -> mapping x ]
+
+    /// As `List.forall2` (raising `ArgumentException` when the lists have different lengths).
+    let inline forall2 ([<InlineIfLambda>] predicate: 'T1 -> 'T2 -> bool) (list1: 'T1 list) (list2: 'T2 list) =
+        let mutable r1 = list1
+        let mutable r2 = list2
+        let mutable result = true
+        let mutable go = true
+
+        while go do
+            // A struct tuple keeps the match flat without the per-iteration heap allocation a reference tuple would add.
+            match struct (r1, r2) with
+            | h1 :: t1, h2 :: t2 ->
+                if predicate h1 h2 then
+                    r1 <- t1
+                    r2 <- t2
+                else
+                    result <- false
+                    go <- false
+            | [], [] -> go <- false
+            | _ -> invalidArg (nameof list2) "The lists had different lengths."
+
+        result
+
 module List =
 
     let sortWithOrder (c: IComparer<'T>) elements =
@@ -458,8 +540,8 @@ module List =
 
         loop 0 xs
 
-    let lengthsEqAndForall2 p l1 l2 =
-        List.length l1 = List.length l2 && List.forall2 p l1 l2
+    let inline lengthsEqAndForall2 ([<InlineIfLambda>] p) l1 l2 =
+        List.length l1 = List.length l2 && ListInline.forall2 p l1 l2
 
     let rec findi n f l =
         match l with
@@ -482,7 +564,7 @@ module List =
         | h1 :: t1, h2 :: t2 -> h1 === h2 && checkq t1 t2
         | _ -> true
 
-    let mapq (f: 'T -> 'T) inp =
+    let inline mapq ([<InlineIfLambda>] f: 'T -> 'T) inp =
         assert not typeof<'T>.IsValueType
 
         match inp with
@@ -505,7 +587,7 @@ module List =
             else
                 [ h2a; h2b; h2c ]
         | _ ->
-            let res = List.map f inp
+            let res = ListInline.map f inp
             if checkq inp res then inp else res
 
     let frontAndBack l =
@@ -664,22 +746,19 @@ module List =
         | Some x -> x :: l
         | _ -> l
 
-    [<TailCall>]
-    let rec private vMapFoldWithAcc<'T, 'State, 'Result>
-        (mapping: 'State -> 'T -> struct ('Result * 'State))
+    let inline vMapFold
+        ([<InlineIfLambda>] mapping: 'State -> 'T -> struct ('Result * 'State))
         state
         list
-        acc
         : struct ('Result list * 'State) =
-        match list with
-        | [] -> acc, state
-        | [ h ] -> mapping state h |> ValueTuple.map1Of2 (fun x -> x :: acc)
-        | h :: t ->
-            let struct (mappedHead, stateHead) = mapping state h
-            vMapFoldWithAcc mapping stateHead t (mappedHead :: acc)
+        let rec go state list acc =
+            match list with
+            | [] -> struct (List.rev acc, state)
+            | h :: t ->
+                let struct (mappedHead, stateHead) = mapping state h
+                go stateHead t (mappedHead :: acc)
 
-    let vMapFold<'T, 'State, 'Result> (mapping: 'State -> 'T -> struct ('Result * 'State)) state list : struct ('Result list * 'State) =
-        vMapFoldWithAcc mapping state list [] |> ValueTuple.map1Of2 List.rev
+        go state list []
 
     let stableTopologicalSort (mustPrecede: 'T -> 'T -> bool) (xs: 'T list) =
         let rec emit remaining =

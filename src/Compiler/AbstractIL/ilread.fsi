@@ -2,35 +2,35 @@
 
 /// Binary reader.  Read a .NET binary and concert it to Abstract IL data
 /// structures.
-/// 
+///
 /// NOTE:
-///   - The metadata in the loaded modules will be relative to 
-///     those modules, e.g. ILScopeRef.Local will mean "local to 
-///     that module".  You must use [rescopeILType] etc. if you want to include 
-///     (i.e. copy) the metadata into your own module. 
+///   - The metadata in the loaded modules will be relative to
+///     those modules, e.g. ILScopeRef.Local will mean "local to
+///     that module".  You must use [rescopeILType] etc. if you want to include
+///     (i.e. copy) the metadata into your own module.
 ///
 ///   - PDB (debug info) reading/folding:
-///     The PDB reader is invoked if you give a PDB path 
-///     This indicates if you want to search for PDB files and have the 
-///     reader fold them in.  You cannot currently name the pdb file 
-///     directly - you can only name the path.  Giving "None" says 
-///     "do not read the PDB file even if one exists". 
-/// 
-///     The debug info appears primarily as I_seqpoint annotations in 
+///     The PDB reader is invoked if you give a PDB path
+///     This indicates if you want to search for PDB files and have the
+///     reader fold them in.  You cannot currently name the pdb file
+///     directly - you can only name the path.  Giving "None" says
+///     "do not read the PDB file even if one exists".
+///
+///     The debug info appears primarily as I_seqpoint annotations in
 ///     the instruction streams.  Unfortunately the PDB information does
 ///     not, for example, tell you how to map back from a class definition
 ///     to a source code line number - you will need to explicitly search
-///     for a sequence point in the code for one of the methods of the 
+///     for a sequence point in the code for one of the methods of the
 ///     class.  That is not particularly satisfactory, and it may be
 ///     a good idea to build a small library which extracts the information
-///     you need.  
-module FSharp.Compiler.AbstractIL.ILBinaryReader 
+///     you need.
+module FSharp.Compiler.AbstractIL.ILBinaryReader
 
 open System.IO
-open FSharp.Compiler.AbstractIL.IL 
+open FSharp.Compiler.AbstractIL.IL
 
 /// Used to implement a Binary file over native memory, used by Roslyn integration
-type ILReaderMetadataSnapshot = obj * nativeint * int 
+type ILReaderMetadataSnapshot = obj * nativeint * int
 type ILReaderTryGetMetadataSnapshot = (* path: *) string * (* snapshotTimeStamp: *) System.DateTime -> ILReaderMetadataSnapshot option
 
 [<RequireQualifiedAccess>]
@@ -64,29 +64,29 @@ type ILReaderOptions =
 type public ILModuleReader =
     abstract ILModuleDef: ILModuleDef
     abstract ILAssemblyRefs: ILAssemblyRef list
-    
+
     // ILModuleReader objects only need to be explicitly disposed if memory mapping is used, i.e. reduceMemoryUsage = false
     inherit System.IDisposable
 
 
-/// Open a binary reader, except first copy the entire contents of the binary into 
-/// memory, close the file and ensure any subsequent reads happen from the in-memory store. 
-/// PDB files may not be read with this option. 
+/// Open a binary reader, except first copy the entire contents of the binary into
+/// memory, close the file and ensure any subsequent reads happen from the in-memory store.
+/// PDB files may not be read with this option.
 /// Binary reader is internally cached.
 val internal OpenILModuleReader: string -> ILReaderOptions -> ILModuleReader
 
 val internal ClearAllILModuleReaderCache : unit -> unit
 
-/// Open a binary reader based on the given bytes. 
+/// Open a binary reader based on the given bytes.
 /// This binary reader is not internally cached.
 val internal OpenILModuleReaderFromBytes: fileName:string -> assemblyContents: byte[] -> options: ILReaderOptions -> ILModuleReader
 
-/// Open a binary reader based on the given stream. 
+/// Open a binary reader based on the given stream.
 /// This binary reader is not internally cached.
 /// The binary reader will own the given stream and the stream will be disposed when there are no references to the binary reader.
 val internal OpenILModuleReaderFromStream: fileName:string -> peStream: Stream -> options: ILReaderOptions -> ILModuleReader
 
-type internal Statistics = 
+type internal Statistics =
     { mutable rawMemoryFileCount : int
       mutable memoryMapFileOpenedCount : int
       mutable memoryMapFileClosedCount : int
