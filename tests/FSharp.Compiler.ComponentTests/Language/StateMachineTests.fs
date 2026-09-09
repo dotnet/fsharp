@@ -8,8 +8,8 @@ open FSharp.Test.Compiler
 
 module StateMachineTests =
 
-    [<FSharp.Test.FactForNETCOREAPP>]
-    let ``SRTP await helpers preserve generic state machine captures in Debug`` () =
+    [<FSharp.Test.TheoryForNETCOREAPP; InlineData(false); InlineData(true)>]
+    let ``SRTP await helpers preserve generic state machine captures`` optimize =
         FSharp """
 open System.Runtime.CompilerServices
 open System.Threading.Tasks
@@ -60,7 +60,7 @@ let main _ =
     0
 """
         |> withDebug
-        |> withNoOptimize
+        |> withOptimization optimize
         |> withFSharpCoreShippedNet
         |> compileExeAndRun
         |> shouldSucceed
@@ -114,7 +114,7 @@ let inline run () =
 """
             |> withName "ResumableLibrary"
             |> withDebug
-            |> withOptions [if optimizeLibrary then "--optimize+" else "--optimize-"]
+            |> withOptimization optimizeLibrary
             |> asLibrary
 
         FSharp """
@@ -124,7 +124,7 @@ let main _ =
 """
         |> withReferences [library]
         |> withDebug
-        |> withOptions [if optimizeConsumer then "--optimize+" else "--optimize-"]
+        |> withOptimization optimizeConsumer
         |> compileExeAndRun
         |> shouldSucceed
         |> withExitCode 0
