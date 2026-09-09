@@ -39,7 +39,7 @@ When the IDE's F# semantic tools are unavailable, use the `F#` MCP server (`.mcp
 - Prefer a single traversal – one `fold`, loop, or comprehension – to a chain of transformations: it allocates nothing per element, where a chain allocates at every stage.
 - When the chain reads better than one pass, route it through `Seq` and materialize once at the end – a `List`/`Array` chain allocates a whole intermediate collection per stage, a `Seq` chain only an enumerator.
 - Concatenate with `[ yield! xs; yield! ys ]` / `seq { yield! xs; yield! ys }` rather than `@` or `Seq.append` – `@` forces both sides to lists and is O(n).
-- Cast sequence items with `Seq.cast<Target>`, not `Seq.map (fun item -> item :> Target)`.
+- `Seq.cast<Target>` is for genuinely untyped input – a non-generic `IEnumerable` such as `MatchCollection` or `XmlNodeList` (`ServiceParsedInputOps.fs`, `fsihelp.fs`). It unboxes per item and is unchecked: `[ 1; 2; 3 ] |> Seq.cast<string>` compiles and throws at run time. Retype an already-typed sequence through an upcast the compiler checks instead.
 
 ## Async and exceptions
 
