@@ -224,47 +224,66 @@ type FileTaskEnvironmentTests() =
             check directoryB intermediateB "AssemblyB" "AssemblyA" taskB)
 
     [<Theory>]
+    [<InlineData("AssemblyA", false)>]
+    [<InlineData("AssemblyB", true)>]
+    member _.``ILLink substitutions only rewrite changed content``(assemblyName: string, changed: bool) =
+        withTaskEnvironment (fun environment directory ->
+            let task =
+                GenerateILLinkSubstitutions(BuildEngine = MockEngine(), AssemblyName = "AssemblyA", IntermediateOutputPath = "obj")
+                |> assignTaskEnvironment environment
+            Assert.True(task.Execute())
+            let output = Assert.Single(task.GeneratedItems).ItemSpec
+            let file = Path.Combine(directory.FullName, output)
+            let timestamp = DateTime(2001, 1, 1, 0, 0, 0, DateTimeKind.Utc)
+            File.SetLastWriteTimeUtc(file, timestamp)
+            task.AssemblyName <- assemblyName
+            Assert.True(task.Execute())
+            Assert.Equal(changed, File.GetLastWriteTimeUtc(file) <> timestamp)
+            Assert.Contains($"fullname=\"{assemblyName}\"", File.ReadAllText file)
+            Assert.Equal(output, Assert.Single(task.GeneratedItems).ItemSpec))
+
+    [<Theory>]
     [<MemberData(nameof FileTaskEnvironmentTests.ResourceKinds)>]
     member _.``Resource generators isolate relative input and output paths per task``(kind: ResourceTaskKind) =
-            withIsolatedTaskEnvironmentPair (fun environmentA directoryA environmentB directoryB ->
-                let scenario, extension = resourceKindInfo kind
-                let intermediate = Path.Combine("obj", "Debug")
-                let input = "Resource" + extension
+        withIsolatedTaskEnvironmentPair (fun environmentA directoryA environmentB directoryB ->
+            let scenario, extension = resourceKindInfo kind
+            let intermediate = Path.Combine("obj", "Debug")
+            let input = "Resource" + extension
 
-                for directory in [ directoryA; directoryB ] do
-                    Directory.CreateDirectory(Path.Combine(directory.FullName, intermediate))
-                    |> ignore
+            for directory in [ directoryA; directoryB ] do
+                Directory.CreateDirectory(Path.Combine(directory.FullName, intermediate))
+                |> ignore
 
-                File.WriteAllText(Path.Combine(directoryA.FullName, input), resourceContent kind "Hello from A")
-                File.WriteAllText(Path.Combine(directoryB.FullName, input), resourceContent kind "Hello from B")
+            File.WriteAllText(Path.Combine(directoryA.FullName, input), resourceContent kind "Hello from A")
+            File.WriteAllText(Path.Combine(directoryB.FullName, input), resourceContent kind "Hello from B")
 
-                let taskA, outputA = createResourceTask kind environmentA (MockEngine()) input intermediate
-                let taskB, outputB = createResourceTask kind environmentB (MockEngine()) input intermediate
-                runConcurrently scenario taskA.Execute taskB.Execute
+            let taskA, outputA = createResourceTask kind environmentA (MockEngine()) input intermediate
+            let taskB, outputB = createResourceTask kind environmentB (MockEngine()) input intermediate
+            runConcurrently scenario taskA.Execute taskB.Execute
 
-                let generatedSpecs (output: unit -> ITaskItem[]) = output () |> Array.map _.ItemSpec
+            let generatedSpecs (output: unit -> ITaskItem[]) = output () |> Array.map _.ItemSpec
 
-                let source = Path.Combine(intermediate, "Resource.fs")
-                let expectedSpecs, contentSpecs =
-                    match kind with
-                    | Resx -> [ source ], [ source ]
-                    | Text ->
-                        let signature = Path.Combine(intermediate, "Resource.fsi")
-                        let resx = Path.Combine(intermediate, "Resource.resx")
-                        [ signature; source; resx ], [ source; resx ]
+            let source = Path.Combine(intermediate, "Resource.fs")
+            let expectedSpecs, contentSpecs =
+                match kind with
+                | Resx -> [ source ], [ source ]
+                | Text ->
+                    let signature = Path.Combine(intermediate, "Resource.fsi")
+                    let resx = Path.Combine(intermediate, "Resource.resx")
+                    [ signature; source; resx ], [ source; resx ]
 
-                for output in [ outputA; outputB ] do
-                    Assert.Equal<string[]>(List.toArray expectedSpecs, generatedSpecs output)
+            for output in [ outputA; outputB ] do
+                Assert.Equal<string[]>(List.toArray expectedSpecs, generatedSpecs output)
 
-                for directory, own, other in
-                    [ directoryA, "Hello from A", "Hello from B"; directoryB, "Hello from B", "Hello from A" ] do
-                    for spec in expectedSpecs do
-                        assertFileExists scenario (Path.Combine(directory.FullName, spec))
+            for directory, own, other in
+                [ directoryA, "Hello from A", "Hello from B"; directoryB, "Hello from B", "Hello from A" ] do
+                for spec in expectedSpecs do
+                    assertFileExists scenario (Path.Combine(directory.FullName, spec))
 
-                    for spec in contentSpecs do
-                        let contents = File.ReadAllText(Path.Combine(directory.FullName, spec))
-                        assertContains scenario own contents
-                        assertNotContains scenario other contents)
+                for spec in contentSpecs do
+                    let contents = File.ReadAllText(Path.Combine(directory.FullName, spec))
+                    assertContains scenario own contents
+                    assertNotContains scenario other contents)
 
     [<Theory>]
     [<InlineData("Malformed.resx", "<root><data name=\"Broken\"><value>Oops</root>", "Malformed.resx", false)>]

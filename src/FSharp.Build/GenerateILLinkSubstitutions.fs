@@ -87,7 +87,10 @@ type GenerateILLinkSubstitutions() =
 
             Directory.CreateDirectory(rootedPath this.IntermediateOutputPath) |> ignore
 
-            File.WriteAllText(rootedPath outputFileName, xmlContent)
+            let outputPath = rootedPath outputFileName
+
+            if not (File.Exists outputPath) || File.ReadAllText(outputPath) <> xmlContent then
+                File.WriteAllText(outputPath, xmlContent)
 
             // Create a TaskItem for the generated file
             let item = TaskItem(outputFileName) :> ITaskItem
