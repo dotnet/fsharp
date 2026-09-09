@@ -47,11 +47,14 @@ function Get-Props([string[]]$extra) {
     Push-Location $work
     try {
         $args = @("msbuild", "probe.proj",
+                  "-getProperty:MSBuildToolsPath",
                   "-getProperty:FSharp_Shim_Present",
                   "-getProperty:FSharpPreferNetFrameworkTools",
+                  "-getProperty:FscToolPath",
                   "-getProperty:FscToolExe",
                   "-getProperty:DotnetFscCompilerPath") + $extra
         $json = & $DotNet @args 2>&1 | Out-String
+        if ($LASTEXITCODE -ne 0) { throw "MSBuild probe failed: $json" }
         return ($json | ConvertFrom-Json).Properties
     } finally { Pop-Location }
 }
@@ -63,37 +66,44 @@ function Check($name, $cond, $detail) {
 }
 
 try {
-    # Case 1: no registry value -> SDK selected (default flipped)
-    Clear-Reg
-    $p = Get-Props @()
-    Check "Case1 no-registry -> SDK" `
-        ($p.FSharpPreferNetFrameworkTools -eq 'false' -and $p.FscToolExe -eq 'dotnet.exe' -and $p.DotnetFscCompilerPath -match 'fsc\.dll') `
-        ("got: $($p | ConvertTo-Json -Compress)")
-
-    # Case 2: registry 0 -> .NET Framework selected
-    Set-Reg 0
-    $p = Get-Props @()
-    Check "Case2 registry=0 -> .NET Framework" `
-        ($p.FSharpPreferNetFrameworkTools -eq 'true' -and $p.FscToolExe -match '^fsc.*\.exe$' -and $p.DotnetFscCompilerPath -eq '') `
-        ("got: $($p | ConvertTo-Json -Compress)")
-
-    # Case 3: registry 1 -> SDK selected
-    Set-Reg 1
-    $p = Get-Props @()
-    Check "Case3 registry=1 -> SDK" `
-        ($p.FSharpPreferNetFrameworkTools -eq 'false' -and $p.FscToolExe -eq 'dotnet.exe' -and $p.DotnetFscCompilerPath -match 'fsc\.dll') `
-        ("got: $($p | ConvertTo-Json -Compress)")
-
-    # Case 4: explicit project value wins over registry 1
-    Set-Reg 1
-    $p = Get-Props @("-p:FSharpPreferNetFrameworkTools=true")
-    Check "Case4 explicit=true beats registry=1 -> .NET Framework" `
-        ($p.FSharpPreferNetFrameworkTools -eq 'true' -and $p.FscToolExe -match '^fsc.*\.exe$' -and $p.DotnetFscCompilerPath -eq '') `
-        ("got: $($p | ConvertTo-Json -Compress)")
+    $sdk = Get-Props @()
+    $sdkRoot = (Split-Path (Split-Path $sdk.MSBuildToolsPath -Parent) -Parent) + '\'
+    $sdkVersion = Split-Path $sdk.MSBuildToolsPath -Leaf
+    $sdkCases = @(
+        @{ Name = 'resolved SDK'; Root = $sdkRoot; Version = $sdkVersion },
+        @{ Name = 'missing root'; Root = ''; Version = $sdkVersion },
+        @{ Name = 'missing version'; Root = $sdkRoot; Version = '' },
+        @{ Name = 'non-SDK project'; Root = ''; Version = '' }
+    )
+    foreach ($registry in @($null, 0, 1)) {
+        if ($null -eq $registry) { Clear-Reg } else { Set-Reg $registry }
+        foreach ($sdkCase in $sdkCases) {
+            foreach ($explicit in @('', 'true', 'false')) {
+                $properties = @("-p:NetCoreRoot=$($sdkCase.Root)", "-p:NETCoreSdkVersion=$($sdkCase.Version)")
+                if ($explicit -ne '') { $properties += "-p:FSharpPreferNetFrameworkTools=$explicit" }
+                $p = Get-Props $properties
+                $desktop = $explicit -eq 'true' -or
+                    ($explicit -eq '' -and ($registry -eq 0 -or $sdkCase.Root -eq '' -or $sdkCase.Version -eq ''))
+                if ($desktop) {
+                    $correct = $p.FSharpPreferNetFrameworkTools -eq 'true' -and
+                        $p.FscToolExe -match '^fsc.*\.exe$' -and
+                        $p.FscToolPath -like '*/Common7/IDE/CommonExtensions/Microsoft/FSharp/Tools/' -and
+                        $p.DotnetFscCompilerPath -eq ''
+                } else {
+                    $correct = $p.FSharpPreferNetFrameworkTools -eq 'false' -and
+                        $p.FscToolExe -eq 'dotnet.exe' -and $p.FscToolPath -eq $sdkCase.Root -and
+                        $p.DotnetFscCompilerPath -eq "`"$($sdkCase.Root)sdk/$($sdkCase.Version)/FSharp/fsc.dll`""
+                }
+                Check "$($sdkCase.Name), registry='$registry', explicit='$explicit'" `
+                    ($p.FSharp_Shim_Present -eq 'true' -and $correct) `
+                    ("got: $($p | ConvertTo-Json -Compress)")
+            }
+        }
+    }
 
     # Case 5 (NEGATIVE): CLI build (shim absent) -> selection blocks skipped, unaffected
     Set-Reg 0
-    $p = Get-Props @("-p:FSharpCompilerPath=/Explicit/")
+    $p = Get-Props @("-p:FSharpCompilerPath=C:\Explicit\")
     Check "Case5 CLI (shim absent) -> unaffected (no fsc selection)" `
         ($p.FSharp_Shim_Present -eq '' -and $p.FscToolExe -eq '' -and $p.DotnetFscCompilerPath -eq '') `
         ("got: $($p | ConvertTo-Json -Compress)")
