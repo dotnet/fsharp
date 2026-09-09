@@ -382,6 +382,13 @@
     "20491": {
       "sha": "f5245514db58",
       "cats": []
+    },
+    "20494": {
+      "sha": "d2eb7f0c5d8f",
+      "cats": [
+        "Affects-Bootstrap",
+        "Affects-Compiler-Output"
+      ]
     }
   }
 }
