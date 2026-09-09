@@ -1,9 +1,5 @@
 {
   "prs": {
-    "20424": {
-      "sha": "7dc85b6be072",
-      "cats": []
-    },
     "20423": {
       "sha": "8501fdeccd41",
       "cats": []
@@ -387,10 +383,11 @@
       ]
     },
     "20495": {
-      "sha": "dd24832ada9b65e6841ab2d5ec4513e9054600a6",
+      "sha": "c827e351dd43370ff7045b9e55abd6d6efebb36a",
       "cats": [
         "Affects-Agent-Config",
-        "Affects-Build-Infra"
+        "Affects-Build-Infra",
+        "Suspicious-Prompting"
       ]
     },
     "20113": {
