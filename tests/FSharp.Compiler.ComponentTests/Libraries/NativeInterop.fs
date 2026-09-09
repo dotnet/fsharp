@@ -224,7 +224,7 @@ let f () =
     try ()
     with _ ->
         let g = fun () -> NativePtr.stackalloc<int> 1 |> ignore
-        System.Action(g).Invoke()
+        System.Action<unit>(g).Invoke()
 [<EntryPoint>]
 let main _ =
     f ()
