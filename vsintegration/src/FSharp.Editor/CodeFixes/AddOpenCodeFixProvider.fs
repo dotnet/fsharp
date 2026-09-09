@@ -30,8 +30,7 @@ type internal AddOpenCodeFixProvider [<ImportingConstructor>] (assemblyContentPr
     let openNamespaceFix ctx name ns multipleNames sourceText =
         let displayText = $"open {ns}" + (if multipleNames then " (" + name + ")" else "")
 
-        let change =
-            OpenDeclarationHelper.getOpenDeclarationChange sourceText ctx ns
+        let change = OpenDeclarationHelper.getOpenDeclarationChange sourceText ctx ns
 
         {
             Name = CodeFix.AddOpen
