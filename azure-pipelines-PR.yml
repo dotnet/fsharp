@@ -484,18 +484,7 @@ stages:
 
         # Linux
         - job: Linux
-          strategy:
-            matrix:
-              Standard:
-                mtArgs: ''
-                legSuffix: ''
-                allowFailure: false
-              Multithreaded:
-                mtArgs: '--mt true'
-                legSuffix: ' MT'
-                allowFailure: true
-          # MT is informational only; the Standard leg keeps the gating (allowFailure derives continueOnError).
-          continueOnError: $(allowFailure)
+          continueOnError: false
           pool:
             name: $(DncEngPublicBuildPool)
             demands: ImageOverride -equals $(LinuxMachineQueueName)
@@ -506,13 +495,13 @@ stages:
           steps:
           - checkout: self
             clean: true
-          - script: ./eng/cibuild.sh --configuration $(_BuildConfig) --testcoreclr $(mtArgs)
-            displayName: Build / Test$(legSuffix)
+          - script: ./eng/cibuild.sh --configuration $(_BuildConfig) --testcoreclr
+            displayName: Build / Test
           - task: PublishTestResults@2
             displayName: Publish Test Results
             inputs:
               testResultsFormat: 'XUnit'
-              testRunTitle: Linux$(legSuffix)
+              testRunTitle: Linux
               testResultsFiles: '*.xml'
               mergeTestResults: true
               searchFolder: '$(Build.SourcesDirectory)/artifacts/TestResults/$(_BuildConfig)'
@@ -522,7 +511,7 @@ stages:
             displayName: Publish Test Logs
             inputs:
               PathtoPublish: '$(Build.SourcesDirectory)/artifacts/TestResults/$(_BuildConfig)'
-              ArtifactName: 'Linux$(legSuffix) $(_BuildConfig) test logs'
+              ArtifactName: 'Linux $(_BuildConfig) test logs'
               publishLocation: Container
             continueOnError: true
             condition: failed()
@@ -533,10 +522,70 @@ stages:
             displayName: Publish NuGet cache contents
             inputs:
               PathtoPublish: '$(Build.SourcesDirectory)/artifacts/NugetPackageRootContents'
-              ArtifactName: 'NuGetPackageContents Linux$(legSuffix)'
+              ArtifactName: 'NuGetPackageContents Linux'
               publishLocation: Container
             continueOnError: true
             condition: failed()
+
+        - job: Linux_Multithreaded
+          continueOnError: true
+          pool:
+            name: $(DncEngPublicBuildPool)
+            demands: ImageOverride -equals $(LinuxMachineQueueName)
+          timeoutInMinutes: 120
+          variables:
+          - name: _SignType
+            value: Test
+          steps:
+          - checkout: self
+            clean: true
+          - script: ./build.sh -c $(_BuildConfig) --mt true
+            displayName: Build local products with MT
+          - script: ./eng/common/dotnet.sh test --project tests/FSharp.Build.UnitTests/FSharp.Build.UnitTests.fsproj -c $(_BuildConfig) --report-spekt-xunit --report-spekt-xunit-filename FSharp.Build.UnitTests.Linux-MT.xml --results-directory "$(Build.SourcesDirectory)/artifacts/TestResults/$(_BuildConfig)"
+            displayName: Focused FSharp.Build task tests
+          - script: ./eng/common/dotnet.sh fsi tests/EndToEndBuildTests/MultithreadedTasks/run.fsx -- --configuration $(_BuildConfig) --repetitions 3
+            displayName: Real SDK MP / MT integration
+            condition: succeededOrFailed()
+          - task: PublishTestResults@2
+            condition: succeededOrFailed()
+            inputs:
+              testResultsFormat: XUnit
+              testRunTitle: Linux MT
+              testResultsFiles: '*.xml'
+              mergeTestResults: true
+              searchFolder: '$(Build.SourcesDirectory)/artifacts/TestResults/$(_BuildConfig)'
+          - task: PublishPipelineArtifact@1
+            condition: always()
+            inputs:
+              targetPath: '$(Build.SourcesDirectory)/artifacts/MultithreadedTasks'
+              artifact: Linux SDK MT evidence
+
+        - job: Windows_SDK_Multithreaded
+          continueOnError: true
+          pool:
+            name: $(DncEngPublicBuildPool)
+            demands: ImageOverride -equals $(_WindowsMachineQueueName)
+          timeoutInMinutes: 120
+          steps:
+          - checkout: self
+            clean: true
+          - task: UseDotNet@2
+            inputs:
+              packageType: sdk
+              version: '10.x'
+              includePreviewVersions: true
+              installationPath: $(Build.SourcesDirectory)/.dotnet
+          - script: .\eng\common\dotnet.cmd
+            displayName: Install pinned SDK
+          - script: .\build.cmd -configuration Release -noVisualStudio
+            displayName: Build local SDK compiler and tasks
+          - script: .\eng\common\dotnet.cmd fsi tests\EndToEndBuildTests\MultithreadedTasks\run.fsx -- --configuration Release --repetitions 3
+            displayName: Real SDK MP / MT integration
+          - task: PublishPipelineArtifact@1
+            condition: always()
+            inputs:
+              targetPath: '$(Build.SourcesDirectory)/artifacts/MultithreadedTasks'
+              artifact: Windows SDK MT evidence
 
         # MacOS (split into 2 batches; batch 3 is desktop-only FSharpSuite)
         - job: MacOS
