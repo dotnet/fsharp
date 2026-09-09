@@ -108,6 +108,8 @@ module internal Array =
 
     val mapq: f: ('a -> 'a) -> inp: 'a[] -> 'a[] when 'a: not struct
 
+    val inline tryPick: [<InlineIfLambda>] chooser: ('T -> 'U option) -> arr: 'T[] -> 'U option
+
     val lengthsEqAndForall2: p: ('a -> 'b -> bool) -> l1: 'a[] -> l2: 'b[] -> bool
 
     val order: eltOrder: IComparer<'T> -> IComparer<'T array>
@@ -162,6 +164,10 @@ module internal ListInline =
     /// List.fold, but inline so the folder is inlined (InlineIfLambda) rather than allocated as a closure.
     val inline fold: [<InlineIfLambda>] folder: ('State -> 'T -> 'State) -> state: 'State -> list: 'T list -> 'State
 
+    val inline map: [<InlineIfLambda>] mapping: ('T -> 'U) -> list: 'T list -> 'U list
+
+    val inline forall2: [<InlineIfLambda>] predicate: ('T1 -> 'T2 -> bool) -> list1: 'T1 list -> list2: 'T2 list -> bool
+
 module internal List =
 
     val sortWithOrder: c: IComparer<'T> -> elements: 'T list -> 'T list
@@ -170,7 +176,7 @@ module internal List =
 
     val existsi: f: (int -> 'a -> bool) -> xs: 'a list -> bool
 
-    val lengthsEqAndForall2: p: ('a -> 'b -> bool) -> l1: 'a list -> l2: 'b list -> bool
+    val inline lengthsEqAndForall2: [<InlineIfLambda>] p: ('a -> 'b -> bool) -> l1: 'a list -> l2: 'b list -> bool
 
     val findi: n: int -> f: ('a -> bool) -> l: 'a list -> ('a * int) option
 
@@ -178,7 +184,7 @@ module internal List =
 
     val checkq: l1: 'a list -> l2: 'a list -> bool when 'a: not struct
 
-    val mapq: f: ('T -> 'T) -> inp: 'T list -> 'T list when 'T: not struct
+    val inline mapq: [<InlineIfLambda>] f: ('T -> 'T) -> inp: 'T list -> 'T list when 'T: not struct
 
     val frontAndBack: l: 'a list -> 'a list * 'a
 
@@ -243,8 +249,8 @@ module internal List =
 
     val prependIfSome: x: 'a option -> l: 'a list -> 'a list
 
-    val vMapFold<'T, 'State, 'Result> :
-        mapping: ('State -> 'T -> struct ('Result * 'State)) ->
+    val inline vMapFold:
+        [<InlineIfLambda>] mapping: ('State -> 'T -> struct ('Result * 'State)) ->
         state: 'State ->
         list: 'T list ->
             struct ('Result list * 'State)
